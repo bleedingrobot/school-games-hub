@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { Purse } from './Purse';
 import { PEOPLE, personArt, sceneArt, type PersonId, type SceneId } from './art';
 
 /**
@@ -14,6 +15,7 @@ export function Stage({ scene, children, size = 'normal', className = '' }: {
   return (
     <div className={`lord-stage lord-stage--${scene} lord-stage--${size}${art.wide ? ' has-art' : ''} ${className}`} style={style}>
       <div className="lord-stage__mist" aria-hidden="true" />
+      {size === 'short' && <div className="lord-stage__purse"><Purse /></div>}
       {children}
     </div>
   );

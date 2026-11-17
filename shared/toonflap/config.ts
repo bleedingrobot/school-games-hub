@@ -33,6 +33,8 @@ export const BUMP_PENALTY_STEPS = 3 * STEPS_PER_SECOND;
 export const RESPAWN_BACK = 0.55;
 /** …and this far below the middle of the opening, since the flap that sets off lifts it. */
 export const RESPAWN_LOW = 0.45;
+/** After bumping an answer wall the bird comes back this far past the wall before, so it can reach every answer. */
+export const ANSWER_RESPAWN_ROOM = 0.5;
 /** A right check takes this much off. */
 export const CHECK_BONUS_STEPS = 3 * STEPS_PER_SECOND;
 /** Flying through the right answer gap: a tailwind, this much off. */

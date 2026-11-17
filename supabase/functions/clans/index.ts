@@ -895,7 +895,7 @@ const CONFIG = {
 			strongroom: {
 				max: 5,
 				base: 50,
-				per: 200
+				per: 5
 			}
 		},
 		/** The width of each building's plan; its length is the level plus `planLengthExtra` (the area and fence moment). */
@@ -963,17 +963,9 @@ const CONFIG = {
 				20
 			]
 		},
-		raids: {
-			newClanDays: 3,
-			/** Raids on classmates a day, and on computer kingdoms a day. */
-			perDay: 1,
-			kingdomPerDay: 1,
-			shieldDays: 1,
-			/** A classmate must have between 1/this and this times your strength. */
-			fairRatio: 2,
-			/** Most you may take from a classmate, in percent. */
-			classmateLootMax: 10
-		},
+		raids: { 
+		/** Raids on computer kingdoms a day. (Raids on classmates are CONFIG.classRaids.) */
+kingdomPerDay: 1 },
 		/** What the old (pre-village) empire cost, so `upgradeSave` can give the right gold back. Nothing else reads this. */
 		legacy: {
 			plotSide: {
@@ -1014,6 +1006,55 @@ const CONFIG = {
 				}
 			}
 		}
+	},
+	/**
+	* Village Raids on classmates (docs/CLANS-PVP-PLAN.md, James 17 Nov 2026). Nobody loses anything: rewards are made by the
+	* game. `power` sizes a clan up to suggest rivals (heroes' levels, building levels, army might); `light` is how much
+	* stronger or weaker a rival is for "Should win" and "Tough". The siege knocks up to `siege.most` off the defenders' HP
+	* (a right answer times `rightBoost`); their Tower takes `towerPerLevel` a level off the raiders' HP first.
+	*/
+	classRaids: {
+		perDay: 3,
+		suggested: 3,
+		power: {
+			heroLevel: 10,
+			buildingLevel: 3,
+			mightPer: 5
+		},
+		light: {
+			easy: .8,
+			tough: 1.25
+		},
+		siege: {
+			most: .3,
+			rightBoost: 1.25,
+			towerPerLevel: .03,
+			forgePer: .1,
+			wallsPer: .1,
+			base: 10
+		},
+		reward: {
+			won: {
+				gold: 40,
+				banners: 3
+			},
+			wonTough: {
+				gold: 60,
+				banners: 4
+			},
+			lost: {
+				gold: 10,
+				banners: 1
+			},
+			held: {
+				gold: 20,
+				banners: 2
+			}
+		},
+		/** A village that holds is paid for this many holds a day. */
+		heldPaidPerDay: 3,
+		/** Extra gold on every raid won or held, for each Strongroom level. */
+		strongroomGold: 5
 	},
 	/** Quests (stage C.4 part C): one a day, small rewards next to the Mines (a fight earns about 50 gold and 4-13 followers). */
 	quests: {
@@ -1242,18 +1283,17 @@ const VILLAGE_BUILDINGS = [
 //#region shared/clans/empire.ts
 /**
 * The empire ("My Village"): eight buildings with levels, troops, six computer kingdoms, battles,
-* Friendly War, and the rule for raids on classmates. Plain data and plain functions, like
+* and Friendly War (raids on classmates are raids.ts). Plain data and plain functions, like
 * `fight.ts`: a battle is settled in one go from two armies, a battle plan and a seed, so the
 * same inputs always give the same answer and the server can replay it.
 *
-* There is one purse, `clan.gold`: it pays for upgrades and troops, and a raider can take a share
-* of it (the Strongroom keeps some safe). `empire.levels` is the truth about building levels;
+* There is one purse, `clan.gold`: it pays for upgrades and troops. `empire.levels` is the truth about building levels;
 * `clan.village` is only a copy of three of them, refreshed by `syncVillage`.
 * Every number is in `config.ts` (CONFIG.empire).
 */
 const E = CONFIG.empire;
-const ok$1 = { ok: true };
-const no$1 = (why, say) => ({
+const ok$2 = { ok: true };
+const no$2 = (why, say) => ({
 	ok: false,
 	why,
 	say
@@ -1406,13 +1446,13 @@ VILLAGE_BUILDINGS.reduce((t, b) => t + E.buildings[b].max, 0);
 /** Can this building go up a level now, and what stops it? */
 function canUpgrade(clan, b) {
 	const e = empireOf(clan);
-	if (!VILLAGE_BUILDINGS.includes(b)) return no$1("building", "Pick one of the buildings in your village.");
+	if (!VILLAGE_BUILDINGS.includes(b)) return no$2("building", "Pick one of the buildings in your village.");
 	const level = e.levels[b];
-	if (level >= maxLevel(b)) return no$1("max", `The ${BUILDING_NAMES[b]} is already as big as it can be.`);
-	if (buildsLeft(e) <= 0) return no$1("builds", "Your builders have done every job they can. They start again tomorrow!");
+	if (level >= maxLevel(b)) return no$2("max", `The ${BUILDING_NAMES[b]} is already as big as it can be.`);
+	if (buildsLeft(e) <= 0) return no$2("builds", "Your builders have done every job they can. They start again tomorrow!");
 	const cost = upgradeCost(b, level + 1);
-	if (clan.gold < cost) return no$1("gold", `The ${BUILDING_NAMES[b]} (level ${level + 1}) costs ${cost} gold and the clan has ${clan.gold}.`);
-	return ok$1;
+	if (clan.gold < cost) return no$2("gold", `The ${BUILDING_NAMES[b]} (level ${level + 1}) costs ${cost} gold and the clan has ${clan.gold}.`);
+	return ok$2;
 }
 /** Pay for one level of a building from the purse. Uses one of today's builds first, a saved one only when today's are gone. */
 function upgrade(clan, b) {
@@ -1425,22 +1465,20 @@ function upgrade(clan, b) {
 	else e.buildsSaved = Math.max(0, (e.buildsSaved ?? 0) - 1);
 	syncVillage(clan);
 	if (b === "barracks") joinFollowers(clan);
-	return ok$1;
+	return ok$2;
 }
-/** Gold raiders cannot take: 200 for each Strongroom level. */
-const safeGold = (e) => e.levels.strongroom * E.buildings.strongroom.per;
 const capacity = (e, kind) => e.levels.barracks * E.troopCap[kind];
 const room = (e, kind) => Math.max(0, capacity(e, kind) - e.troops[kind]);
 /** Buy troops from the purse, as far as the Barracks have room. */
 function buyTroops(clan, kind, n) {
 	const e = empireOf(clan);
-	if (!Number.isInteger(n) || n < 1) return no$1("amount", "Pick how many to buy.");
-	if (room(e, kind) < n) return no$1("room", `The barracks have room for ${room(e, kind)} more ${TROOP_NAMES[kind].many}.`);
+	if (!Number.isInteger(n) || n < 1) return no$2("amount", "Pick how many to buy.");
+	if (room(e, kind) < n) return no$2("room", `The barracks have room for ${room(e, kind)} more ${TROOP_NAMES[kind].many}.`);
 	const cost = n * E.troopCost[kind];
-	if (clan.gold < cost) return no$1("gold", `That costs ${cost} gold and the clan has ${clan.gold}.`);
+	if (clan.gold < cost) return no$2("gold", `That costs ${cost} gold and the clan has ${clan.gold}.`);
 	clan.gold -= cost;
 	e.troops[kind] += n;
-	return ok$1;
+	return ok$2;
 }
 /**
 * Followers join by themselves: as footmen, as far as the Barracks have room. The rest stay as followers
@@ -1655,9 +1693,9 @@ const lootGold = (treasury, percent) => Math.min(treasury, Math.ceil(treasury * 
 function raidKingdom(clan, kingdomId, push, seed) {
 	const e = empireOf(clan);
 	const k = kingdomById(kingdomId);
-	if (!k) return no$1("kingdom", "Pick one of the six kingdoms.");
-	if (might(e.troops) === 0) return no$1("army", "You need some troops to send.");
-	if (e.kingdomRaidsToday >= E.raids.kingdomPerDay) return no$1("limit", `You have already raided ${E.raids.kingdomPerDay} times today. Try again tomorrow, or have a Friendly War.`);
+	if (!k) return no$2("kingdom", "Pick one of the six kingdoms.");
+	if (might(e.troops) === 0) return no$2("army", "You need some troops to send.");
+	if (e.kingdomRaidsToday >= E.raids.kingdomPerDay) return no$2("limit", `You have already raided ${E.raids.kingdomPerDay} times today. Try again tomorrow, or have a Friendly War.`);
 	const result = battle(sideOf(e), kingdomSide(k), fixedPlan(push), seed);
 	e.kingdomRaidsToday++;
 	takeLosses(e, result.attackerLost);
@@ -1672,119 +1710,15 @@ function raidKingdom(clan, kingdomId, push, seed) {
 /** Friendly War: the same battle, but nobody loses or wins anything, and it does not count as a raid. */
 function friendlyWar(e, kingdomId, push, seed) {
 	const k = kingdomById(kingdomId);
-	if (!k) return no$1("kingdom", "Pick one of the six kingdoms.");
-	if (might(e.troops) === 0) return no$1("army", "You need some troops to send.");
+	if (!k) return no$2("kingdom", "Pick one of the six kingdoms.");
+	if (might(e.troops) === 0) return no$2("army", "You need some troops to send.");
 	return {
 		ok: true,
 		result: battle(sideOf(e), kingdomSide(k), fixedPlan(push), seed)
 	};
 }
-const TAKES = ["gold", "buildings"];
-/** Why a classmate raid is not allowed, or null if it is. `raidsOn` is the teacher's switch. */
-function raidRefusal(attacker, defender, today, raidsOn = true) {
-	const a = attacker.empire;
-	const d = defender.empire;
-	const r = E.raids;
-	if (!raidsOn) return {
-		why: "off",
-		say: "Your teacher has switched raids on classmates off."
-	};
-	if (attacker.id === defender.id) return {
-		why: "self",
-		say: "You cannot raid your own village."
-	};
-	if (today < a.createdDay + r.newClanDays) return {
-		why: "new-attacker",
-		say: `Your clan is new. Raids on classmates start on day ${a.createdDay + r.newClanDays}.`
-	};
-	if (today < d.createdDay + r.newClanDays) return {
-		why: "new-defender",
-		say: "That clan is brand new and is still protected."
-	};
-	if (a.raidsToday >= r.perDay) return {
-		why: "limit",
-		say: `You have already raided ${r.perDay === 1 ? "once" : `${r.perDay} times`} today.`
-	};
-	if (a.raidedToday.includes(defender.id)) return {
-		why: "same",
-		say: "You already raided that clan today."
-	};
-	if (today <= d.shieldUntil) return {
-		why: "shield",
-		say: "That clan was raided recently and is resting behind its shield."
-	};
-	const mine = might(a.troops);
-	const theirs = might(d.troops);
-	if (mine === 0) return {
-		why: "army",
-		say: "You need some troops to send."
-	};
-	if (theirs * r.fairRatio < mine || mine * r.fairRatio < theirs) return {
-		why: "unfair",
-		say: "That clan is not a fair match for the size of your army."
-	};
-	return null;
-}
-/** The shortest news line, safe to show: the raiders' clan name and what happened, never a student's name. */
-function raidNews(raiderClan, raid) {
-	if (raid.result.outcome !== "won") return `A raider from the ${raiderClan} clan was driven off.`;
-	if (raid.take === "gold") return `A raider from the ${raiderClan} clan took ${raid.gold} gold.`;
-	return `A raider from the ${raiderClan} clan knocked ${raid.destroyed.length} ${raid.destroyed.length === 1 ? "level" : "levels"} off the buildings.`;
-}
-/** Buildings a raid may damage: everything except the Walls and the Strongroom. */
-const RAIDABLE = VILLAGE_BUILDINGS.filter((b) => b !== "walls" && b !== "strongroom" && b !== "barracks");
-/** All the levels of all the buildings added up (what "10% of the buildings" is worked out from). */
+/** All the levels of all the buildings added up. */
 const levelTotal = (e) => VILLAGE_BUILDINGS.reduce((t, b) => t + e.levels[b], 0);
-/**
-* Raid a classmate. The defender is a saved copy played by the computer (same battle, steady
-* defence). Loot is 10%. A win takes gold (10% of the purse above the Strongroom's safe gold) or knocks levels off
-* buildings (10% of all the levels, rounded up, less one for each Walls level; never the Walls or the Strongroom).
-* Both sides lose the troops that do not come home, and the defender gets a shield. Both purses are in the parties.
-*/
-function raidClassmate(attacker, defender, take, push, seed, today, raidsOn = true) {
-	const refused = raidRefusal(attacker, defender, today, raidsOn);
-	if (refused) return {
-		ok: false,
-		...refused
-	};
-	if (!TAKES.includes(take)) return no$1("take", "Pick gold or buildings.");
-	const a = attacker.empire;
-	const d = defender.empire;
-	const plan = cleanPlan(fixedPlan(push), E.raids.classmateLootMax);
-	const result = battle(sideOf(a), sideOf(d), plan, seed);
-	const dice = { rng: seed ^ 1540483477 | 0 };
-	a.raidsToday++;
-	a.raidedToday.push(defender.id);
-	d.shieldUntil = today + E.raids.shieldDays;
-	takeLosses(a, result.attackerLost);
-	takeLosses(d, result.defenderLost);
-	const out = {
-		result,
-		take,
-		gold: 0,
-		destroyed: []
-	};
-	if (result.outcome === "won") {
-		if (take === "gold") {
-			out.gold = lootGold(Math.max(0, defender.gold - safeGold(d)), plan.loot);
-			defender.gold -= out.gold;
-			attacker.gold += out.gold;
-		} else {
-			const count = Math.max(0, Math.ceil(levelTotal(d) * plan.loot / 100) - d.levels.walls);
-			for (let i = 0; i < count; i++) {
-				const hit = RAIDABLE.filter((b) => d.levels[b] > 0);
-				if (hit.length === 0) break;
-				const b = hit[roll(dice, hit.length)];
-				d.levels[b]--;
-				out.destroyed.push(b);
-			}
-		}
-	}
-	return {
-		ok: true,
-		...out
-	};
-}
 //#endregion
 //#region shared/clans/items.ts
 /** Gold for each tier (index 0 is tier 1, which every member starts with). Round tens, so 10% off is always whole. */
@@ -12883,6 +12817,7 @@ function lookFromName(name) {
 	for (const ch of name) h = Math.imul(h, 31) + ch.charCodeAt(0) | 0;
 	return LOOKS[Math.abs(h) % LOOKS.length];
 }
+const lookOf = (m) => isLook(m.look) ? m.look : lookFromName(m.name);
 /** "Change look" for one member. Allowed any time, free. */
 function setLook(clan, memberIndex, look) {
 	const m = clan.members[memberIndex];
@@ -13251,8 +13186,8 @@ function recordBossWin(clan, depth, season) {
 * yes or no (with a kind sentence). The screens call these through `places.ts` on a copy of the clan; the server
 * calls the very same functions, so a changed browser cannot do anything the rules refuse.
 */
-const ok = { ok: true };
-const no = (why, say) => ({
+const ok$1 = { ok: true };
+const no$1 = (why, say) => ({
 	ok: false,
 	why,
 	say
@@ -13269,36 +13204,36 @@ const memberAt = (clan, index) => clan.members[index] ?? null;
 */
 function buyItem(clan, memberIndex, item, discount = false) {
 	const m = memberAt(clan, memberIndex);
-	if (!m) return no("member", "Pick one of your clan.");
+	if (!m) return no$1("member", "Pick one of your clan.");
 	const why = cannotBuy(clan, m, item);
-	if (why) return no("shelf", why);
+	if (why) return no$1("shelf", why);
 	const price = shopPrice(item, discount);
-	if (clan.gold < price) return no("gold", `That costs ${price} gold and the clan has ${clan.gold}.`);
-	return buy(clan, m, item, discount) ? ok : no("gold", "That cannot be bought right now.");
+	if (clan.gold < price) return no$1("gold", `That costs ${price} gold and the clan has ${clan.gold}.`);
+	return buy(clan, m, item, discount) ? ok$1 : no$1("gold", "That cannot be bought right now.");
 }
 /** Buy `count` of something at the Training Hall (stops early if the points run out). Fails if not even one could be bought. */
 function trainMember(clan, memberIndex, key, count) {
 	const m = memberAt(clan, memberIndex);
-	if (!m) return no("member", "Pick one of your clan.");
-	if (!TRAIN_KEYS.includes(key) || !Number.isInteger(count) || count < 1) return no("amount", "Pick what to train and how many.");
+	if (!m) return no$1("member", "Pick one of your clan.");
+	if (!TRAIN_KEYS.includes(key) || !Number.isInteger(count) || count < 1) return no$1("amount", "Pick what to train and how many.");
 	const hall = levelOf(clan, "trainingHall");
 	let done = 0;
 	for (let i = 0; i < count; i++) {
 		if (!(key === "hp" ? trainHp(m, hall) : key === "sp" ? trainSp(m, hall) : trainStat(m, key, hall))) break;
 		done++;
 	}
-	if (done > 0) return ok;
+	if (done > 0) return ok$1;
 	const cost = key === "hp" ? hpCost(hall) : key === "sp" ? spCost(hall) : Math.max(1, CONFIG.trainCost[key] - hall);
-	return no("points", `That needs ${cost} training points and ${m.name} has ${m.points}, or is already as strong as can be.`);
+	return no$1("points", `That needs ${cost} training points and ${m.name} has ${m.points}, or is already as strong as can be.`);
 }
 /** Wake one member at the Church (the first wake-up each day is free). */
 function wakeOne(clan, memberIndex) {
 	const m = memberAt(clan, memberIndex);
-	if (!m) return no("member", "Pick one of your clan.");
-	if (!m.knockedOut) return no("awake", `${m.name} is already awake.`);
+	if (!m) return no$1("member", "Pick one of your clan.");
+	if (!m.knockedOut) return no$1("awake", `${m.name} is already awake.`);
 	const cost = wakeCost(clan, m);
-	if (clan.gold < cost) return no("gold", `Waking ${m.name} costs ${cost} gold and the clan has ${clan.gold}.`);
-	return wake(clan, m) ? ok : no("gold", "That cannot be done right now.");
+	if (clan.gold < cost) return no$1("gold", `Waking ${m.name} costs ${cost} gold and the clan has ${clan.gold}.`);
+	return wake(clan, m) ? ok$1 : no$1("gold", "That cannot be done right now.");
 }
 const knockedOutMembers = (clan) => clan.members.map((m, i) => ({
 	m,
@@ -13316,16 +13251,16 @@ const wakeAllCost = (clan) => wakeAllPayers(clan).reduce((t, l) => t + (l + 1) *
 /** Wake everyone, dearest first. Nobody is woken unless the clan can afford the lot. */
 function wakeEveryone(clan) {
 	const order = wakeOrder(clan);
-	if (order.length === 0) return no("awake", "Everyone is already awake.");
+	if (order.length === 0) return no$1("awake", "Everyone is already awake.");
 	const cost = wakeAllCost(clan);
-	if (clan.gold < cost) return no("gold", `Waking everyone costs ${cost} gold and the clan has ${clan.gold}.`);
-	return order.every(({ i }) => wake(clan, clan.members[i])) ? ok : no("gold", "That cannot be done right now.");
+	if (clan.gold < cost) return no$1("gold", `Waking everyone costs ${cost} gold and the clan has ${clan.gold}.`);
+	return order.every(({ i }) => wake(clan, clan.members[i])) ? ok$1 : no$1("gold", "That cannot be done right now.");
 }
 const noMix = (mix) => TROOP_KINDS.every((k) => mix[k] === 0);
 /** Buy a mix of troops in one go, or none of them: the first thing that cannot be done is the answer. Works on the clan it is given, so callers keep a copy. */
 function buyTroopMix(clan, mix) {
 	const e = empireOf(clan);
-	if (noMix(mix)) return no("amount", "Pick how many to buy.");
+	if (noMix(mix)) return no$1("amount", "Pick how many to buy.");
 	const before = {
 		gold: clan.gold,
 		troops: { ...e.troops }
@@ -13339,7 +13274,7 @@ function buyTroopMix(clan, mix) {
 			return done;
 		}
 	}
-	return ok;
+	return ok$1;
 }
 /** The seed for the next raid or Friendly War: from the clan's seed and how many there have been. */
 const raidSeed = (baseSeed, raidNo) => Math.imul(baseSeed | 0, 625341585) ^ Math.imul(raidNo + 1, 668265263);
@@ -13409,11 +13344,7 @@ function readClock(raw) {
 		clockOn: r.clockOn
 	};
 }
-//#endregion
-//#region shared/clans/season.ts
-const S = CONFIG.season;
-/** Raids on classmates rest from day `warnFrom` to the end of the season (computer kingdoms stay open). */
-const classRaidsResting = (clock) => clock?.clockOn === true && clock.day >= S.warnFrom;
+CONFIG.season;
 /**
 * The full reset for a new season. Returns a copy. Every member starts again at level 1 (same name, race, class and look; slot 0 leads),
 * the purse goes back to the starting gold, followers, buildings, saved builds, the day's counts and last season's monster tries and supplies go,
@@ -13806,96 +13737,186 @@ function finishQuest(clan, day, q, choiceIndex, right) {
 	};
 }
 CONFIG.village.order;
-const partyOf = (id, empire, createdNzDay, gold = 0) => ({
-	id,
-	empire: {
-		...empire,
-		createdDay: createdNzDay
-	},
-	gold
-});
-/** Who this clan may raid, and why not for the rest. Allowed ones come first. */
-function raidTargetList(state, today, self, raidsOn, sketches) {
-	const attacker = partyOf(self, empireOf(state.clan), state.createdNzDay, state.clan.gold);
-	const list = sketches.map((s) => {
-		const defender = partyOf(s.id, {
-			...newEmpire(),
-			troops: s.troops,
-			shieldUntil: s.shieldUntil
-		}, s.createdNzDay);
-		const refused = raidRefusal(attacker, defender, today, raidsOn);
-		return {
-			id: s.id,
-			name: s.name,
-			allowed: !refused,
-			say: refused ? refused.say : "",
-			...s.shieldUntil >= today ? { shieldUntil: s.shieldUntil } : {}
-		};
-	});
-	return [...list.filter((t) => t.allowed), ...list.filter((t) => !t.allowed)];
-}
-/** What the raided clan reads next time. The raiders' clan name only. */
-function raidNote(raiderClan, raid) {
-	if (raid.result.outcome !== "won") return `A raider from the ${raiderClan} clan attacked, and your defenders drove them off!`;
-	if (raid.take === "gold") return `A raider from the ${raiderClan} clan beat your defenders and took ${raid.gold} gold from your purse.`;
-	return `A raider from the ${raiderClan} clan beat your defenders and knocked ${raid.destroyed.length} ${raid.destroyed.length === 1 ? "level" : "levels"} off your buildings.`;
-}
+/** The week a New Zealand day is in. Weeks start on Monday (day 0, 1 Jan 1970, was a Thursday). */
+const weekOf = (nzDay) => Math.floor((nzDay + 3) / 7);
+//#endregion
+//#region shared/clans/raids.ts
 /**
-* Raid a classmate with the attacker's saved state (which is changed: the caller passes a copy). The rules are
-* `raidClassmate`, with day numbers turned into New Zealand days. The defender's empire and purse come back changed; the
-* caller saves both clans in one go. The attacker's own empire and purse are changed in `state`.
+* Village Raids on classmates (docs/CLANS-PVP-PLAN.md), as plain rules the server and the screens share.
+*
+* A raid is a siege (your army and Forge against their army and Walls, their Tower shooting first, one maths question)
+* and then a hero fight: your four heroes against a computer-played copy of theirs, with a Battle Cry every round.
+* Nobody loses anything: neither clan's heroes, gold, troops or buildings change. The rewards (gold and Banners) are made
+* by the game, for the raiders whatever happens and for the raided village when it holds.
+*
+* Nothing here knows a pupil's name or id: a clan is its clan name and a hidden public id, and the defenders are shown by
+* race and class only.
 */
-function raidClassmateNz(state, self, target, take, push, seed, today, raidsOn) {
-	const mine = empireOf(state.clan);
-	const keep = mine.createdDay;
-	mine.createdDay = state.createdNzDay;
-	let defenderEmpire;
-	let defenderGold = target.gold;
-	if (target.empire.version === 2) defenderEmpire = structuredClone(target.empire);
-	else {
-		const scratch = {
-			name: target.name,
-			members: [],
-			gold: target.gold,
-			followers: 0,
-			village: {
-				trainingHall: 0,
-				smithy: 0,
-				church: 0
-			},
-			empire: target.empire
-		};
-		const up = needsUpgrade(scratch) ? upgradeSave(scratch, target.village) : scratch;
-		defenderEmpire = up.empire;
-		defenderGold = up.gold;
-	}
-	const originalCreated = target.empire.createdDay;
-	defenderEmpire.createdDay = target.createdNzDay;
-	const attacker = {
-		id: self,
-		empire: mine,
-		gold: state.clan.gold
+const R = CONFIG.classRaids;
+/** How strong a clan is, to suggest rivals: heroes' levels, building levels and army. */
+const powerOf = (heroLevels, buildingLevels, armyMight) => heroLevels * R.power.heroLevel + buildingLevels * R.power.buildingLevel + Math.floor(armyMight / R.power.mightPer);
+const clanPower = (clan) => {
+	const e = empireOf(clan);
+	return powerOf(clan.members.reduce((t, m) => t + m.level, 0), levelTotal(e), might(e.troops));
+};
+const lightOf = (mine, theirs) => theirs >= mine * R.light.tough ? "tough" : theirs <= mine * R.light.easy ? "easy" : "close";
+/** Banners this week (a save from an earlier week counts as none). */
+const bannersThisWeek = (b, week) => b && b.week === week ? b.count : 0;
+const sketchPower = (s) => {
+	const levels = Object.values(s.levels ?? {}).reduce((t, n) => t + (Number(n) || 0), 0);
+	const troops = {
+		footman: 0,
+		axeman: 0,
+		knight: 0,
+		...s.troops ?? {}
 	};
-	const defender = {
-		id: target.id,
-		empire: defenderEmpire,
-		gold: defenderGold
+	return powerOf(s.heroLevels, levels, might(troops));
+};
+/** Everyone in the class, the closest few in power first (the ones not raided today), then the rest by name. */
+function rivalList(clan, raidedToday, sketches) {
+	const mine = Math.max(1, clanPower(clan));
+	const all = sketches.map((s) => ({
+		s,
+		power: sketchPower(s),
+		raided: raidedToday.includes(s.id)
+	}));
+	const close = all.filter((x) => !x.raided).sort((a, b) => Math.abs(a.power - mine) - Math.abs(b.power - mine) || a.s.name.localeCompare(b.s.name)).slice(0, R.suggested);
+	const rest = all.filter((x) => !close.includes(x)).sort((a, b) => a.s.name.localeCompare(b.s.name));
+	return [...close.map((x) => ({
+		x,
+		suggested: true
+	})), ...rest.map((x) => ({
+		x,
+		suggested: false
+	}))].map(({ x, suggested }) => ({
+		id: x.s.id,
+		name: x.s.name,
+		light: lightOf(mine, x.power),
+		suggested,
+		raided: x.raided
+	}));
+}
+/** This week's Banners board: every clan with a Banner, and your own clan even with none. Most first. */
+function bannerBoard(clan, week, sketches) {
+	return [{
+		name: clan.name,
+		banners: bannersThisWeek(empireOf(clan).banners, week),
+		me: true
+	}, ...sketches.map((s) => ({
+		name: s.name,
+		banners: bannersThisWeek(s.banners, week),
+		me: false
+	}))].filter((r) => r.me || r.banners > 0).sort((a, b) => b.banners - a.banners || Number(b.me) - Number(a.me) || a.name.localeCompare(b.name));
+}
+/** Raids left today. */
+const raidsLeft = (e) => Math.max(0, R.perDay - e.raidsToday);
+/** The raided clan's empire in the new shape (an old save is converted in a scratch copy; nothing is saved from it). */
+function targetEmpire(t) {
+	if (t.empire.version === 2) return t.empire;
+	const scratch = {
+		name: t.name,
+		members: [],
+		gold: t.gold,
+		followers: 0,
+		village: {
+			trainingHall: 0,
+			smithy: 0,
+			church: 0
+		},
+		empire: t.empire
 	};
-	const out = raidClassmate(attacker, defender, take, push, seed, today, raidsOn);
-	mine.createdDay = keep;
-	if (!out.ok) return out;
-	state.clan.gold = attacker.gold;
-	defenderEmpire.createdDay = originalCreated;
-	const { ok: _ok, ...raid } = out;
+	return (needsUpgrade(scratch) ? upgradeSave(scratch, t.village) : scratch).empire;
+}
+/** A defender as the raid keeps it: everything the fight needs, with the name swapped for its race and class. */
+const defenderCopy = (m) => ({
+	...structuredClone(m),
+	name: `${m.race} ${m.cls}`,
+	look: lookOf(m),
+	knockedOut: false,
+	hp: m.maxHp,
+	sp: m.maxSp
+});
+/** The siege: your army and Forge against their army and Walls, then their Tower. The same seed gives the same siege. */
+function raidSiege(attacker, defender, right, seed) {
+	const S = R.siege;
+	const dice = { rng: Math.imul(seed | 0, 739982445) ^ 1374496523 };
+	const a = might(attacker.troops) * (1 + attacker.levels.forge * S.forgePer) + S.base;
+	const d = might(defender.troops) * (1 + defender.levels.walls * S.wallsPer) + S.base;
+	const luck = (90 + roll(dice, 21)) / 100;
+	const breach = Math.min(S.most * S.rightBoost, S.most * a / (a + d) * (right ? S.rightBoost : 1) * luck);
 	return {
-		ok: true,
-		raid,
-		defenderEmpire,
-		defenderGold: defender.gold,
-		news: raidNews(state.clan.name, raid),
-		note: raidNote(state.clan.name, raid)
+		breach: Math.round(breach * 100) / 100,
+		tower: Math.round(defender.levels.tower * S.towerPerLevel * 100) / 100
 	};
 }
+function defenderFighter(m, index, breach) {
+	return {
+		side: "enemy",
+		index,
+		name: m.name,
+		level: m.level,
+		hp: Math.max(1, Math.round(m.maxHp * (1 - breach))),
+		maxHp: m.maxHp,
+		sp: m.maxSp,
+		maxSp: m.maxSp,
+		stats: fightStats(m),
+		spells: m.spells,
+		mods: [],
+		tied: 0,
+		guarding: false,
+		difficulty: 0
+	};
+}
+/** Start a raid's hero fight. Your heroes come fresh (a raid never hurts them), less what the Tower did. */
+function newRaidFight(members, setup, seed) {
+	const state = newFight(members.map((m) => ({
+		...m,
+		knockedOut: false,
+		hp: m.maxHp,
+		sp: m.maxSp
+	})), 0, seed, false);
+	for (const f of state.clan) f.hp = Math.max(1, Math.round(f.maxHp * (1 - setup.tower)));
+	state.enemies = setup.defenders.map((m, i) => defenderFighter(m, i, setup.breach));
+	state.raid = { defenders: setup.defenders.map((m) => ({
+		race: m.race,
+		cls: m.cls,
+		look: m.look
+	})) };
+	return state;
+}
+/** Extra gold the Strongroom adds to a raid won or held. */
+const strongroomGold = (e) => e.levels.strongroom * R.strongroomGold;
+/** What the raiders get: a win pays more against a Tough rival (and the Strongroom adds to it); anything else still pays a little. */
+function raidReward(result, light, e) {
+	if (result !== "won") return { ...R.reward.lost };
+	const r = light === "tough" ? R.reward.wonTough : R.reward.won;
+	return {
+		gold: r.gold + strongroomGold(e),
+		banners: r.banners
+	};
+}
+/** Add Banners for the week `week` (a new week starts from 0). */
+const addBanners = (b, week, n) => ({
+	week,
+	count: bannersThisWeek(b, week) + n
+});
+/** The raided village held: what it is paid (the first few a day), and its new Banners and count. */
+function heldReward(e, nzDay) {
+	const paid = e.held && e.held.nzDay === nzDay ? e.held.paid : 0;
+	const pays = paid < R.heldPaidPerDay;
+	return {
+		gold: pays ? R.reward.held.gold + strongroomGold(e) : 0,
+		banners: addBanners(e.banners, weekOf(nzDay), pays ? R.reward.held.banners : 0),
+		held: {
+			nzDay,
+			paid: pays ? paid + 1 : paid
+		}
+	};
+}
+/** The village news line: clan names only. */
+const raidNews = (raiders, raided, won) => won ? `The ${raiders} clan raided the ${raided} clan and won!` : `The ${raided} clan held off a raid by the ${raiders} clan!`;
+/** What the raided clan reads next time. */
+const raidNote = (raiders, won, gold) => won ? `Raiders from the ${raiders} clan got past your walls. Nothing was taken.` : `Your village held off raiders from the ${raiders} clan!${gold > 0 ? ` You earned ${gold} gold.` : ""}`;
 //#endregion
 //#region shared/clans/actions.ts
 /**
@@ -13917,20 +13938,26 @@ function raidClassmateNz(state, self, target, take, push, seed, today, raidsOn) 
 * While a fight is open nothing else about the clan can change (that is what keeps the replay honest), and the night's
 * rest waits until the fight is over. Every new fight is a ladder fight (when the child's maths can be read): it keeps the questions the
 * server made from the child's maths focus, and `cryCheck` marks each Battle Cry answer as it is given (battleCry.ts).
-* "My Village" gives every clan its own buildings (`upgrade`, paid from the purse) and raids on classmates (which also change the raided clan,
-* saved in the same transaction). A save from before My Village is converted by `upgradeSave` when it loads.
+* "My Village" gives every clan its own buildings (`upgrade`, paid from the purse). A save from before My Village is converted by
+* `upgradeSave` when it loads. A Village Raid on a classmate (raids.ts) is `raidStart` (the siege) and then an open fight played
+* with `cryCheck` and `fightRound` like a mine fight; when it ends, the raided clan's reward (if it held) is saved in the same
+* transaction. Raids never take anything from anyone.
 */
 /** What ladder questions can be asked for, outside fights. */
 const ASK_FOR = [
 	"shop",
 	"quest",
-	"siege"
+	"siege",
+	"raid",
+	"duel"
 ];
 /** How many questions each one asks: the quest asks two (both right wins the big prize). */
 const ASK_COUNT = {
 	shop: 1,
 	quest: 2,
-	siege: 1
+	siege: 1,
+	raid: 1,
+	duel: 1
 };
 /** The most rounds any fight can have (a monster fight is longer than a mine fight). */
 const MOST_ROUNDS = Math.max(CONFIG.maxRounds, CONFIG.monster.rounds);
@@ -13938,8 +13965,9 @@ const MOST_ROUNDS = Math.max(CONFIG.maxRounds, CONFIG.monster.rounds);
 const monsterWeek = (clock) => !!clock && clock.clockOn && clock.number > 0 && clock.day >= CONFIG.season.monsterFrom;
 /** Are monster supplies on sale (the clock is on and it is day `warnFrom` or later)? */
 const suppliesOnSale = (clock) => !!clock && clock.clockOn && clock.number > 0 && clock.day >= CONFIG.season.warnFrom;
-/** The fight an open fight starts from: a mine fight, or a monster try's clan fight. */
+/** The fight an open fight starts from: a mine fight, a monster try's clan fight, or a Village Raid's hero fight. */
 function fightOf(members, open) {
+	if (open.raid) return newRaidFight(members, open.raid, open.seed);
 	return open.monster ? newMonsterFight(members, open.monster.setup, open.seed) : newFight(members, open.depth, open.seed, open.boss);
 }
 /** The seed for a monster try: from the clan's seed, the season and the try number. */
@@ -14166,16 +14194,10 @@ function parseAction(raw) {
 			cls: raw.cls
 		} : null;
 		case "repickDone": return { type: "repickDone" };
-		case "raidClass": {
-			const push = parsePush(raw.push);
-			const take = TAKES.includes(raw.take) ? raw.take : null;
-			return push && take && typeof raw.target === "string" && raw.target.length >= 1 && raw.target.length <= 40 ? {
-				type: "raidClass",
-				target: raw.target,
-				take,
-				push
-			} : null;
-		}
+		case "raidStart": return typeof raw.target === "string" && raw.target.length >= 1 && raw.target.length <= 40 ? {
+			type: "raidStart",
+			target: raw.target
+		} : null;
 		default: return null;
 	}
 }
@@ -14293,7 +14315,7 @@ function applyInner(saved, action, ctx, flags) {
 			rested = true;
 		}
 	}
-	if (state.fight && action.type !== "load" && action.type !== "fightStart" && action.type !== "monsterStart" && action.type !== "cryCheck" && action.type !== "fightRound" && action.type !== "raidTargets") return refuse("fight-open", "You are in the middle of a fight. Finish it first!");
+	if (state.fight && action.type !== "load" && action.type !== "fightStart" && action.type !== "monsterStart" && action.type !== "cryCheck" && action.type !== "fightRound" && action.type !== "raidTargets" && action.type !== "raidStart") return refuse("fight-open", "You are in the middle of a fight. Finish it first!");
 	const { clan } = state;
 	syncVillage(clan);
 	const settle = (r, result) => r.ok ? done(state, result) : refuse(r.why ?? "no", r.say ?? "That cannot be done right now.");
@@ -14315,7 +14337,8 @@ function applyInner(saved, action, ctx, flags) {
 		case "ask": {
 			if (!ctx.maths) return refuse("no-maths", "We couldn't get your maths questions just now.");
 			const waiting = state.ask;
-			if (waiting && waiting.for === action.for) return done(state, {
+			const spent = action.for === "duel" && !!waiting?.marks?.[0];
+			if (waiting && waiting.for === action.for && !spent) return done(state, {
 				type: "ask",
 				for: action.for,
 				questions: waiting.questions.map((q, i) => publicQuestion(q, i))
@@ -14422,44 +14445,76 @@ function applyInner(saved, action, ctx, flags) {
 			}, true, marked?.effects);
 		}
 		case "raidTargets": {
-			if (classRaidsResting(clock)) return done(state, {
-				type: "raidTargets",
-				targets: [],
-				resting: true
-			}, rested || upgraded);
-			const targets = raidTargetList(state, ctx.today, ctx.self ?? "", ctx.raidsOn ?? false, ctx.mates ?? []);
+			const e = empireOf(clan);
+			const mates = ctx.mates ?? [];
 			return done(state, {
 				type: "raidTargets",
-				targets
+				targets: rivalList(clan, e.raidedToday, mates),
+				board: bannerBoard(clan, weekOf(ctx.today), mates),
+				left: raidsLeft(e)
 			}, rested || upgraded);
 		}
-		case "raidClass": {
-			if (classRaidsResting(clock)) return refuse("resting-season", "Raids on classmates rest for the last two weeks of the season. Computer kingdoms are still open!");
-			if (!ctx.target || !ctx.self) return refuse("target", "That clan is not in your class.");
-			const out = raidClassmateNz(state, ctx.self, ctx.target, action.take, action.push, raidSeed(state.seed, state.raidNo), ctx.today, ctx.raidsOn ?? false);
-			if (!out.ok) return refuse(out.why, out.say);
-			state.raidNo++;
-			const { gold, destroyed } = out.raid;
-			return {
-				ok: true,
-				state,
-				changed: true,
-				result: {
-					type: "raidClass",
-					take: action.take,
-					result: out.raid.result,
-					gold,
-					destroyed,
-					...earnedPart(earnedOrNone({ classRaids: out.raid.result.outcome === "won" ? 1 : 0 }))
-				},
-				effects: { raid: {
-					targetId: ctx.target.id,
-					empire: out.defenderEmpire,
-					gold: out.defenderGold,
-					news: out.news,
-					note: out.note
-				} }
+		case "raidStart": {
+			if (state.fight) return state.fight.raid && state.fight.raid.target === action.target ? done(state, {
+				type: "raidStart",
+				resumed: true,
+				right: state.fight.raid.right,
+				breach: state.fight.raid.breach,
+				tower: state.fight.raid.tower
+			}, false) : refuse("fight-open", "You are in the middle of a fight. Finish it first!");
+			if (!ctx.raidsOn) return refuse("off", "Your teacher has switched raids on classmates off.");
+			const target = ctx.target;
+			if (!target || target.id === ctx.self) return refuse("target", "That clan is not in your class.");
+			const e = empireOf(clan);
+			if (raidsLeft(e) <= 0) return refuse("limit", `That's all ${CONFIG.classRaids.perDay} raids for today. Come back tomorrow!`);
+			if (e.raidedToday.includes(target.id)) return refuse("same", "You already raided that clan today. Pick another one!");
+			if (target.members.length === 0) return refuse("target", "That clan has no heroes yet.");
+			const theirs = targetEmpire(target);
+			const asked = takeAnswers(state, "raid", [], 0);
+			const mark = asked?.marks[0];
+			const right = asked ? mark?.correct === true : null;
+			const seed = raidSeed(state.seed, state.raidNo);
+			const siege = raidSiege(e, theirs, right, seed);
+			const sketch = {
+				id: target.id,
+				name: target.name,
+				heroLevels: target.members.reduce((t, m) => t + m.level, 0),
+				levels: theirs.levels,
+				troops: theirs.troops
 			};
+			const setup = {
+				target: target.id,
+				name: target.name,
+				light: lightOf(Math.max(1, clanPower(clan)), sketchPower(sketch)),
+				defenders: target.members.map(defenderCopy),
+				breach: siege.breach,
+				tower: siege.tower,
+				right
+			};
+			state.fight = {
+				depth: 0,
+				boss: false,
+				seed,
+				no: state.fightNo + 1,
+				settings,
+				rounds: [],
+				raid: setup
+			};
+			if (ctx.maths) {
+				state.fight.questions = makeRunQuestions(ctx.maths, CONFIG.maxRounds, seededRandom(`clans:raid:${seed}:${state.fightNo + 1}`));
+				state.fight.marks = [];
+			}
+			state.fightNo++;
+			state.raidNo++;
+			e.raidsToday++;
+			e.raidedToday.push(target.id);
+			return done(state, {
+				type: "raidStart",
+				resumed: false,
+				right,
+				breach: siege.breach,
+				tower: siege.tower
+			}, true, asked?.effects);
 		}
 		case "monsterStart": {
 			if (state.fight) {
@@ -14625,7 +14680,7 @@ function applyInner(saved, action, ctx, flags) {
 				orders: action.orders,
 				cry: action.cry
 			};
-			const { state: replayed, cries } = replayFight(clan.members, open.depth, open.seed, open.boss, [...open.rounds, played], open, open.monster ? fightOf(clan.members, open) : void 0);
+			const { state: replayed, cries } = replayFight(clan.members, open.depth, open.seed, open.boss, [...open.rounds, played], open, open.monster || open.raid ? fightOf(clan.members, open) : void 0);
 			if (cries.length !== open.rounds.length + 1) return refuse("no-fight", "That fight is already over.");
 			const cry = cries[cries.length - 1];
 			const answers = cry.answered && cry.question ? [{
@@ -14644,6 +14699,7 @@ function applyInner(saved, action, ctx, flags) {
 					...earnedPart(earnedOrNone({ cries: rightCry }))
 				}, true, effects);
 			}
+			if (open.raid) return finishRaid(state, open.raid, replayed, action.round, rightCry, effects, ctx);
 			const boss = open.boss;
 			const summary = payFight(clan, replayed);
 			state.fight = null;
@@ -14700,6 +14756,413 @@ function applyInner(saved, action, ctx, flags) {
 			}, true, effects);
 		}
 	}
+}
+/**
+* A Village Raid's last round: nobody's heroes, gold, troops or buildings change. The raiders are paid (more for a win), and
+* the raided clan (loaded again for this request) is paid when it held; both are saved together (`Effects.villageRaid`).
+*/
+function finishRaid(state, raid, fight, round, rightCry, effects, ctx) {
+	const clan = state.clan;
+	const e = empireOf(clan);
+	const won = fight.result === "won";
+	const week = weekOf(ctx.today);
+	const pay = raidReward(fight.result, raid.light, e);
+	clan.gold += pay.gold;
+	e.banners = addBanners(e.banners, week, pay.banners);
+	state.fight = null;
+	const result = {
+		type: "fightRound",
+		round,
+		over: true,
+		summary: {
+			result: fight.result,
+			gold: pay.gold,
+			followers: 0,
+			xp: clan.members.map(() => 0),
+			levels: clan.members.map(() => 0)
+		},
+		raid: {
+			name: raid.name,
+			light: raid.light,
+			won,
+			gold: pay.gold,
+			banners: pay.banners
+		},
+		...earnedPart(earnedOrNone({
+			classRaids: won ? 1 : 0,
+			cries: rightCry
+		}))
+	};
+	const target = ctx.target && ctx.target.id === raid.target ? ctx.target : null;
+	if (!target) return done(state, result, true, effects);
+	const theirs = targetEmpire(target);
+	const held = won ? {
+		gold: 0,
+		banners: addBanners(theirs.banners, week, 0),
+		held: theirs.held ?? {
+			nzDay: ctx.today,
+			paid: 0
+		}
+	} : heldReward(theirs, ctx.today);
+	return done(state, result, true, {
+		...effects ?? {},
+		villageRaid: {
+			targetId: target.id,
+			gold: held.gold,
+			banners: held.banners,
+			held: held.held,
+			news: raidNews(clan.name, target.name, won),
+			note: raidNote(clan.name, won, held.gold)
+		}
+	});
+}
+//#endregion
+//#region shared/clans/duel.ts
+const DUEL_MOVES = [
+	"charge",
+	"volley",
+	"shield"
+];
+const DUEL_MOVE_INFO = {
+	charge: {
+		name: "Charge",
+		icon: "🐎",
+		beats: "volley",
+		verb: "rides down"
+	},
+	volley: {
+		name: "Volley",
+		icon: "🏹",
+		beats: "shield",
+		verb: "rains over"
+	},
+	shield: {
+		name: "Shield Wall",
+		icon: "🛡️",
+		beats: "charge",
+		verb: "stops"
+	}
+};
+/** What each village level adds (levels top out at 5, the Church at 3). */
+const DUEL_BONUS = {
+	forgePer: .04,
+	wallsPer: .04,
+	barracksHp: 2,
+	towerHit: 2,
+	churchHeal: 3
+};
+const startHp = (v) => 60 + v.barracks * DUEL_BONUS.barracksHp;
+function duelClashOf(a, b) {
+	if (a === b) return "tie";
+	if (!a) return 1;
+	if (!b) return 0;
+	return DUEL_MOVE_INFO[a].beats === b ? 0 : 1;
+}
+/** How hard a clan's pick hits, with its Forge, against the other clan's Walls. */
+function duelHit(pick, result, mine, theirs) {
+	if (!pick.move) return 0;
+	const base = pick.right ? 10 : 4;
+	const clash = result === "win" ? base * 2 : result === "lose" ? base / 2 : base;
+	return Math.max(1, Math.round(clash * (1 + mine.forge * DUEL_BONUS.forgePer) * (1 - theirs.walls * DUEL_BONUS.wallsPer)));
+}
+function newDuel(villages) {
+	const max = [startHp(villages[0]), startHp(villages[1])];
+	const opening = [villages[0].tower * DUEL_BONUS.towerHit, villages[1].tower * DUEL_BONUS.towerHit];
+	return {
+		opening,
+		rounds: [],
+		hp: [max[0] - opening[1], max[1] - opening[0]],
+		max,
+		healed: [false, false],
+		over: false,
+		winner: null
+	};
+}
+/** Plays one round onto a duel that isn't over. */
+function playDuelRound(state, picks, villages) {
+	if (state.over) throw new Error("This duel is over");
+	const clash = duelClashOf(picks[0].move, picks[1].move);
+	const result = (side) => clash === "tie" ? "tie" : clash === side ? "win" : "lose";
+	const hits = [duelHit(picks[0], result(0), villages[0], villages[1]), duelHit(picks[1], result(1), villages[1], villages[0])];
+	const hp = [Math.max(0, state.hp[0] - hits[1]), Math.max(0, state.hp[1] - hits[0])];
+	const healed = [...state.healed];
+	const heals = [0, 0];
+	for (const side of [0, 1]) {
+		const heal = villages[side].church * DUEL_BONUS.churchHeal;
+		if (!healed[side] && heal > 0 && hp[side] > 0 && hp[side] < state.max[side] / 2) {
+			healed[side] = true;
+			heals[side] = Math.min(heal, state.max[side] - hp[side]);
+			hp[side] += heals[side];
+		}
+	}
+	const rounds = [...state.rounds, {
+		picks,
+		clash,
+		hits,
+		heals,
+		hp
+	}];
+	const knocked = hp[0] === 0 || hp[1] === 0;
+	const share = (side) => hp[side] / state.max[side];
+	const level = Math.abs(share(0) - share(1)) < 1e-9;
+	const over = knocked || rounds.length >= 5 && !level || rounds.length >= 8;
+	const winner = !over || level && !knocked ? null : hp[0] === 0 && hp[1] === 0 ? null : hp[1] === 0 ? 0 : hp[0] === 0 ? 1 : share(0) > share(1) ? 0 : 1;
+	return {
+		...state,
+		rounds,
+		hp,
+		healed,
+		over,
+		winner
+	};
+}
+function replayDuel(picks, villages) {
+	return picks.reduce((s, p) => playDuelRound(s, p, villages), newDuel(villages));
+}
+function readDuelMove(raw) {
+	return typeof raw === "string" && DUEL_MOVES.includes(raw) ? raw : null;
+}
+const DUEL_PRIZE = {
+	won: {
+		gold: 40,
+		banners: 3
+	},
+	lost: {
+		gold: 15,
+		banners: 1
+	},
+	draw: {
+		gold: 25,
+		banners: 2
+	},
+	strongroomGold: 5
+};
+/** What each side gets when a duel is played to the end. Nobody ever loses anything. */
+function duelPrize(winner, villages) {
+	const one = (side) => {
+		const p = winner === null ? DUEL_PRIZE.draw : winner === side ? DUEL_PRIZE.won : DUEL_PRIZE.lost;
+		return {
+			gold: p.gold + villages[side].strongroom * DUEL_PRIZE.strongroomGold,
+			banners: p.banners
+		};
+	};
+	const a = one(0);
+	const b = one(1);
+	return {
+		gold: [a.gold, b.gold],
+		banners: [a.banners, b.banners]
+	};
+}
+//#endregion
+//#region shared/clans/duelServer.ts
+/**
+* Live Clan Duels, the server's side (rules in duel.ts; database in migration 20261117000400_clans_live_duels.sql). The same
+* pattern as Dragon Maths' arena clashes (shared/lord/clashServer.ts): the browser only asks ("duel the Brave Owls", "yes",
+* "Charge", "the clock ran out", "I'm leaving"); this works out who is asking from their sign-in, keeps each pick hidden in
+* the database until both are in, and plays the round with the shared rules, saving "only if nothing changed since it looked".
+*
+*   duel-challenge  {other}               sends a challenge (same class only; `other` is the clan's hidden public id);
+*   duel-answer     {duel, accept}        the classmate says yes (round 1 starts) or no;
+*   duel-pick       {duel, round, move}   this round's order. Its maths is the clan's waiting `ask` for 'duel', marked by
+*                                         `askCheck` already; each question powers one round only;
+*   duel-times-up   {duel}                the round's time ran out (the server checks its own clock);
+*   duel-leave      {duel}                calls off a challenge, or gives up (the other side wins, no prizes).
+*
+* Prizes only for a duel played to the end, for each pupil's first PAID_DUELS_PER_DAY a day: gold and Banners to both sides.
+* Nobody ever loses gold, heroes, troops or buildings. Every reply carries the duel as it now is.
+*/
+const DUEL_CHALLENGE_MS = 3e4;
+const DUEL_ROUND_MS = 6e4;
+const DUEL_ROUND_GRACE_MS = 1500;
+const duelOpen = (d) => d.status === "asked" || d.status === "playing";
+const duelSeat = (d, player) => d.seat_a === player ? 0 : d.seat_b === player ? 1 : -1;
+const duelVillages = (d) => [d.clans[0].village, d.clans[1].village];
+const DUEL_ACTIONS = [
+	"duel-challenge",
+	"duel-answer",
+	"duel-pick",
+	"duel-times-up",
+	"duel-leave"
+];
+const DUEL_SAY = {
+	bad: "That couldn't be read.",
+	busy: "That couldn't be done just now. Try again in a moment.",
+	notYours: "That isn't your duel.",
+	away: "That clan isn't in Clan Quest right now.",
+	otherClass: "You can only duel clans in your own class.",
+	inDuel: "One of you is already in a duel. Try again when it's over.",
+	off: "Live duels are switched off for now. You can still practise against a computer clan!",
+	noClan: "You both need a clan first.",
+	late: "That challenge has run out.",
+	notStarted: "The duel hasn't started yet.",
+	over: "This duel has already ended.",
+	changed: "The duel changed just then. Have another look.",
+	round: "That round's already been played.",
+	notYet: "There's still time on the clock.",
+	stopped: "Your teacher has switched live duels off, so this duel has stopped."
+};
+const ok = (body) => ({
+	status: 200,
+	body
+});
+const no = (status, error, extra = {}) => ({
+	status,
+	body: {
+		error,
+		...extra
+	}
+});
+const failed = (o) => o.why === "refused" ? no(400, DUEL_SAY.bad) : no(503, DUEL_SAY.busy);
+const isId = (v) => Number.isSafeInteger(v) && v >= 1;
+async function afterRound(s, d, picks, missed) {
+	const villages = duelVillages(d);
+	let state;
+	try {
+		state = playDuelRound(replayDuel(d.rounds, villages), picks, villages);
+	} catch {
+		return no(409, DUEL_SAY.over, {
+			code: "over",
+			duel: d
+		});
+	}
+	const rounds = [...d.rounds, picks];
+	if (!state.over) {
+		const saved = await s.duelRound(d.id, d.version, rounds, missed, s.now() + DUEL_ROUND_MS);
+		if (!saved.ok) return failed(saved);
+		if (!saved.value) return no(409, DUEL_SAY.changed, { code: "changed" });
+		return ok({ duel: saved.value });
+	}
+	const prize = duelPrize(state.winner, villages);
+	const ended = await s.duelEnd(d.id, d.version, "done", "finished", state.winner, null, rounds, prize.gold, prize.banners, 3);
+	if (!ended.ok) return failed(ended);
+	if (!ended.value) return no(409, DUEL_SAY.changed, { code: "changed" });
+	return ok({ duel: ended.value });
+}
+async function handleDuel(s, player, action, body) {
+	if (action === "duel-challenge") {
+		if (typeof body.other !== "string" || body.other.length < 1 || body.other.length > 64) return no(400, DUEL_SAY.bad);
+		const r = await s.duelChallenge(player, body.other, DUEL_CHALLENGE_MS);
+		if (!r.ok) return failed(r);
+		const why = r.value.result;
+		if (why !== "ok" || r.value.duel === null) {
+			const words = why === "away" ? DUEL_SAY.away : why === "class" ? DUEL_SAY.otherClass : why === "busy" ? DUEL_SAY.inDuel : why === "off" ? DUEL_SAY.off : why === "no-clan" ? DUEL_SAY.noClan : DUEL_SAY.bad;
+			return no(409, words, { code: why });
+		}
+		const loaded = await s.duelLoad(r.value.duel);
+		if (!loaded.ok || !loaded.value) return no(503, DUEL_SAY.busy);
+		return ok({ duel: loaded.value.duel });
+	}
+	if (!isId(body.duel)) return no(400, DUEL_SAY.bad);
+	const loaded = await s.duelLoad(body.duel);
+	if (!loaded.ok) return failed(loaded);
+	const seat = loaded.value ? duelSeat(loaded.value.duel, player) : -1;
+	if (!loaded.value || seat < 0) return no(403, DUEL_SAY.notYours);
+	const d = loaded.value.duel;
+	const me = seat;
+	const other = 1 - me;
+	if ((!loaded.value.on[0] || !loaded.value.on[1]) && duelOpen(d)) {
+		const playing = d.status === "playing";
+		const ended = await s.duelEnd(d.id, d.version, playing ? "done" : "cancelled", playing ? "switched-off" : null, null, null, null, null, null, 3);
+		if (!ended.ok) return failed(ended);
+		return no(403, DUEL_SAY.stopped, {
+			code: "off",
+			duel: ended.value ?? d
+		});
+	}
+	if (action === "duel-answer") {
+		if (typeof body.accept !== "boolean") return no(400, DUEL_SAY.bad);
+		const r = await s.duelAnswer(player, d.id, body.accept, DUEL_ROUND_MS);
+		if (!r.ok) return failed(r);
+		const { result, duel } = r.value;
+		if (result === "not-yours") return no(403, DUEL_SAY.notYours);
+		if (result === "late") return no(409, DUEL_SAY.late, {
+			code: "late",
+			duel
+		});
+		if (result === "busy") return no(409, DUEL_SAY.inDuel, {
+			code: "busy",
+			duel
+		});
+		return ok({ duel });
+	}
+	if (action === "duel-leave") {
+		if (!duelOpen(d)) return ok({ duel: d });
+		const ended = d.status === "playing" ? await s.duelEnd(d.id, d.version, "done", "left", other, me, null, null, null, 3) : await s.duelEnd(d.id, d.version, me === 1 ? "declined" : "cancelled", null, null, null, null, null, null, 3);
+		if (!ended.ok) return failed(ended);
+		if (!ended.value) return no(409, DUEL_SAY.changed, { code: "changed" });
+		return ok({ duel: ended.value });
+	}
+	if (d.status === "asked") return no(409, DUEL_SAY.notStarted, {
+		code: "not-started",
+		duel: d
+	});
+	if (d.status !== "playing") return no(409, DUEL_SAY.over, {
+		code: "over",
+		duel: d
+	});
+	const round = d.rounds.length;
+	if (round >= 8) return no(409, DUEL_SAY.over, {
+		code: "over",
+		duel: d
+	});
+	if (action === "duel-pick") {
+		const move = readDuelMove(body.move);
+		if (!move || body.round !== round) {
+			if (Number.isInteger(body.round) && body.round < round) return no(409, DUEL_SAY.round, {
+				code: "round",
+				duel: d
+			});
+			return no(400, DUEL_SAY.bad);
+		}
+		const maths = await s.duelMaths(player);
+		const r = await s.duelPick(player, d.id, round, move, maths.right, maths.askNo);
+		if (!r.ok) return failed(r);
+		const { result, picks } = r.value;
+		const now = r.value.duel ?? d;
+		if (result === "not-yours") return no(403, DUEL_SAY.notYours);
+		if (result === "over") return no(409, DUEL_SAY.over, {
+			code: "over",
+			duel: now
+		});
+		if (result === "round") return no(409, DUEL_SAY.round, {
+			code: "round",
+			duel: now
+		});
+		if (result === "late") return no(409, DUEL_SAY.late, {
+			code: "late",
+			duel: now
+		});
+		if (result === "ok" && picks?.[0] && picks[1]) return afterRound(s, now, [picks[0], picks[1]], [0, 0]);
+		return ok({
+			duel: now,
+			picked: true
+		});
+	}
+	const left = Date.parse(d.deadline) + DUEL_ROUND_GRACE_MS - s.now();
+	if (!(left <= 0)) return no(409, DUEL_SAY.notYet, {
+		code: "not-yet",
+		secondsLeft: Number.isFinite(left) ? Math.ceil(left / 1e3) : 60,
+		duel: d
+	});
+	const got = await s.duelRoundPicks(d.id, round);
+	if (!got.ok) return failed(got);
+	const picks = [got.value[0] ?? {
+		move: null,
+		right: false
+	}, got.value[1] ?? {
+		move: null,
+		right: false
+	}];
+	const missed = [got.value[0] ? 0 : d.missed[0] + 1, got.value[1] ? 0 : d.missed[1] + 1];
+	const gone = [0, 1].filter((i) => missed[i] >= 2);
+	if (gone.length > 0) {
+		const winner = gone.length === 1 ? 1 - gone[0] : null;
+		const ended = await s.duelEnd(d.id, d.version, "done", "timeouts", winner, gone.length === 1 ? gone[0] : null, [...d.rounds, picks], null, null, 3);
+		if (!ended.ok) return failed(ended);
+		if (!ended.value) return no(409, DUEL_SAY.changed, { code: "changed" });
+		return ok({ duel: ended.value });
+	}
+	return afterRound(s, d, picks, missed);
 }
 //#endregion
 //#region supabase/functions/_shared/http.ts
@@ -14784,6 +15247,9 @@ var RateLimiter = class {
 * Ladder fights (20 Oct 2026): a `fightStart` that asks for one loads the child's maths (records, class settings, focus) so the rules
 * can make the fight's Battle Cry questions; `publicState` sends the browser only what to show of them, never an answer. Each
 * `cryCheck` answer goes in the child's own maths records (ladder place, skill map, focus results) once its save is kept.
+*
+* Village Raids (17 Nov 2026, docs/CLANS-PVP-PLAN.md): `raidStart` and every round of an open raid load the raided clan, and the
+* raid's last round saves both clans in one transaction (`save_village_raid`), which can only add the held reward to the raided one.
 */
 const hex = (bytes) => [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
 /** A batch id for the answers of one request: the same request always gives the same id, so a retry is never counted twice. */
@@ -14850,6 +15316,24 @@ function makeHandler(services) {
 		if (!player) return reply(401, { error: "Please sign in again." });
 		if (!limiter.allow(player, 40)) return reply(429, { error: "Slow down a little!" });
 		const body = await readJsonBody(request);
+		if (body && typeof body.action === "string" && DUEL_ACTIONS.includes(body.action)) {
+			const duelMaths = async (who) => {
+				const loaded = await services.load(who, "00000000-0000-4000-8000-000000000000");
+				const ask = loaded.ok ? loaded.value.state?.ask : null;
+				return ask && ask.for === "duel" && ask.marks?.[0] ? {
+					right: ask.marks[0].correct === true,
+					askNo: ask.no
+				} : {
+					right: false,
+					askNo: null
+				};
+			};
+			const out = await handleDuel({
+				...services,
+				duelMaths
+			}, player, body.action, body);
+			return reply(out.status, out.body);
+		}
 		const action = body ? parseAction(body.action) : null;
 		if (!body || typeof body.requestId !== "string" || !UUID.test(body.requestId) || !action) {
 			console.warn("clans: refused a request that could not be read");
@@ -14864,7 +15348,7 @@ function makeHandler(services) {
 		const typedNames = extras.value.settings.typedNames === true;
 		const unlimitedToday = extras.value.settings.unlimitedToday === true;
 		const clock = readClock(extras.value.clock);
-		const maths = action.type === "fightStart" || action.type === "monsterStart" || action.type === "ask" ? await services.mathsContext(player) : void 0;
+		const maths = action.type === "fightStart" || action.type === "monsterStart" || action.type === "raidStart" || action.type === "ask" ? await services.mathsContext(player) : void 0;
 		for (let attempt = 0; attempt < 4; attempt++) {
 			const loaded = await services.load(player, requestId);
 			if (!loaded.ok) return loaded.why === "busy" ? reply(503, { error: "We couldn't reach your clan just now." }) : reply(400, { error: "That couldn't be read." });
@@ -14900,8 +15384,9 @@ function makeHandler(services) {
 				if (!mates.ok) return mates.why === "busy" ? reply(503, { error: "We couldn't reach your village just now." }) : reply(400, { error: "That couldn't be read." });
 				Object.assign(ctx, { mates: mates.value });
 			}
-			if (state && action.type === "raidClass") {
-				const found = await services.target(player, action.target);
+			const raidOn = action.type === "raidStart" ? action.target : action.type === "fightRound" ? state?.fight?.raid?.target : void 0;
+			if (state && raidOn) {
+				const found = await services.target(player, raidOn);
 				if (!found.ok) return found.why === "busy" ? reply(503, { error: "We couldn't reach your village just now." }) : reply(400, { error: "That couldn't be read." });
 				target = found.value;
 				Object.assign(ctx, { target });
@@ -14926,13 +15411,15 @@ function makeHandler(services) {
 				result: applied.result,
 				...applied.newSeason ? { newSeason: true } : {}
 			});
-			const saved = effects.raid ? target ? await services.saveRaid(player, version, {
+			const raid = effects.villageRaid;
+			const saved = raid ? target ? await services.saveRaid(player, version, {
 				targetId: target.id,
 				targetVersion: target.version,
-				empire: effects.raid.empire,
-				gold: effects.raid.gold,
-				news: effects.raid.news,
-				note: effects.raid.note
+				gold: raid.gold,
+				banners: raid.banners,
+				held: raid.held,
+				news: raid.news,
+				note: raid.note
 			}, requestId, applied.state, applied.result) : {
 				ok: false,
 				why: "refused"
@@ -14959,7 +15446,7 @@ function makeHandler(services) {
 				const fresh = await services.extras(player);
 				if (fresh.ok) extras = fresh;
 				let latest = loaded.value;
-				if (applied.result.type === "raidClass") {
+				if (raid) {
 					const again = await services.load(player, "00000000-0000-4000-8000-000000000000");
 					if (again.ok) latest = again.value;
 				}
@@ -15060,15 +15547,59 @@ Deno.serve(makeHandler({
 		player,
 		target: targetId
 	}),
-	saveRaid: (player, expectedVersion, raid, requestId, state, result) => call("save_raid", {
+	duelLoad: (duel) => call("clan_duel_load", { duel }),
+	duelChallenge: (player, other, waitMs) => call("clan_duel_challenge", {
+		player,
+		other,
+		wait_ms: waitMs
+	}),
+	duelAnswer: (player, duel, accept, roundMs) => call("clan_duel_answer", {
+		player,
+		duel,
+		accept,
+		round_ms: roundMs
+	}),
+	duelPick: (player, duel, round, move, right, askNo) => call("clan_duel_pick", {
+		player,
+		duel,
+		round,
+		move,
+		is_right: right,
+		ask_no: askNo
+	}),
+	duelRoundPicks: (duel, round) => call("clan_duel_round_picks", {
+		duel,
+		round
+	}),
+	duelRound: (duel, version, rounds, missed, deadlineMs) => call("clan_duel_round", {
+		duel,
+		version,
+		rounds,
+		missed,
+		deadline_ms: deadlineMs
+	}),
+	duelEnd: (duel, version, status, ending, winner, leaver, rounds, gold, banners, paidPerDay) => call("clan_duel_end", {
+		duel,
+		version,
+		status,
+		ending,
+		winner,
+		leaver,
+		rounds,
+		gold,
+		banners,
+		paid_per_day: paidPerDay
+	}),
+	saveRaid: (player, expectedVersion, raid, requestId, state, result) => call("save_village_raid", {
 		player,
 		expected_version: expectedVersion,
 		target: raid.targetId,
 		target_version: raid.targetVersion,
 		request_id: requestId,
 		state,
-		defender_empire: raid.empire,
 		defender_gold: raid.gold,
+		defender_banners: raid.banners,
+		defender_held: raid.held,
 		result,
 		news: raid.news,
 		note: raid.note

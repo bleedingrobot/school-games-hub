@@ -118,6 +118,8 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   const [seen, setSeen] = useState<Tip[]>(() => seenTips());
   /** Land anchored last turn (spot numbers from…to), sparkling on My island until the next turn starts. */
   const [grew, setGrew] = useState<{ from: number; to: number } | null>(null);
+  /** The turn whose Last turn postcard was put away with OK (it comes back after the next turn). */
+  const [reportShut, setReportShut] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const voice = useIslesVoice();
   const [problem, setProblem] = useState<string | null>(null);
@@ -445,7 +447,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   const placing = turnStep === Step.Build && (build.kind === 'place' || build.kind === 'move');
 
   return (
-    <div className="si">
+    <div className={`si${screen.kind === 'howto' ? '' : ' si--play'}`}>
       <Say text={voiceLine} say={voice.say} />
       <TrophyWonLine games={['isles']} watch={view?.island.turn} off={backend.trial} />
       <header className={`si-top${turnStep !== null ? ' si-top--turn' : ''}`}>
@@ -454,6 +456,11 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
           <h2 ref={heading} tabIndex={-1}>
             {screen.kind === 'home' && view.name ? <><span aria-hidden="true">🏝️ </span>{view.name}</> : HEADINGS[screen.kind]}
           </h2>
+        )}
+        {screen.kind === 'home' && (
+          <button type="button" className="button button--light si-isle-name__btn" onClick={() => setScreen({ kind: 'name' })}>
+            {view.name ? 'Rename' : 'Name your island'}
+          </button>
         )}
         {turnStep !== null && <StepStrip step={turnStep} />}
         <div className="si-top__right">
@@ -472,17 +479,10 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
         </div>
       </header>
 
-      <Resources island={shownIsland} />
-      {screen.kind === 'home' && (
-        <p className="si-isle-name">
-          <button type="button" className="button button--light si-isle-name__btn" onClick={() => setScreen({ kind: 'name' })}>
-            {view.name ? 'Rename' : 'Name your island'}
-          </button>
-        </p>
-      )}
 
       {screen.kind === 'howto' ? (
         <section className="si-panel">
+          <Resources island={shownIsland} />
           <fieldset className="si-help">
             <legend>How much should Pip help?</legend>
             <div className="si-row" role="radiogroup" aria-label="Pip's help">
@@ -523,7 +523,8 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
           <div className="si-left">
             <IslandPicture
               island={shownIsland}
-              keeper={view.keeper}
+              // The Sky Keeper is in the top bar, so it isn't drawn on the island too (James, 17 Nov 2026).
+              keeper={null}
               lit={lit}
               selected={turnStep === Step.Build && build.kind === 'spot' ? build.spot : null}
               // Spots are buttons only on the Build step: on My island they're just the picture.
@@ -538,117 +539,123 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
               }}
               pops={pops}
               fresh={fresh}
-            />
-            {turnStep === null ? <Road island={shownIsland} /> : pipLine}
-          </div>
-
-          <div className="si-right">
-            {turnStep === null && pipLine}
-
-
-            {screen.kind === 'home' && cheer && (
-              <section className="si-panel si-cheer" aria-label="Pip says well done">
-                <h3>{cheer[0]}</h3>
-                {cheer.slice(1).map((line) => <p key={line}>{line}</p>)}
-                <button type="button" className="button button--primary si-close" onClick={() => setCheer(null)}>Thanks, Pip!</button>
-              </section>
-            )}
-
-            {tip && (
-              <section className="si-panel si-tip" aria-label="Pip's tip">
-                <p><strong>Pip's tip:</strong> {TIPS[tip]}</p>
-                <button
-                  type="button"
-                  className="button button--light si-close"
-                  onClick={() => {
-                    markTipSeen(tip);
-                    setSeen((list) => [...list, tip]);
-                  }}
-                >
-                  Got it
-                </button>
-              </section>
-            )}
-
-            {screen.kind === 'home' && post.length > 0 && (
-              <section className="si-panel si-post" aria-label="Sky post">
-                <h3>Sky post</h3>
-                <ul className="si-sums">{post.map((p, i) => <li key={i}>{postLine(p)}</li>)}</ul>
-              </section>
-            )}
-
-            {lastTurn.length > 0 && (
-              <section className="si-panel si-report" aria-label="Last turn">
-                <h3>Last turn</h3>
-                {report?.weather && <Card art={weatherArt(report.weather)} />}
-                <ul className="si-sums">{lastTurn.map((line) => <li key={line}>{line}</li>)}</ul>
-              </section>
-            )}
-
-            {screen.kind === 'home' && (
-              <section className="si-panel si-home">
-                {island.turnsLeft < 1 && !unlimited ? (
-                  <div className="si-resting">
-                    <Card art={sceneArt('night')} />
-                    <p><strong>Your island is resting. See you tomorrow!</strong></p>
-                    <p className="si-note">Tomorrow brings {TURNS_PER_DAY} new turns and more land on the wind.</p>
-                  </div>
-                ) : (
-                  <button type="button" className={`button button--play si-big${lit === 'play' || stepOf(lit) !== null ? ' si-lit' : ''}`} data-pip="play" onClick={startTurn}>
-                    Play a turn
-                  </button>
+            >
+              {/* What the island has, and the road to Grand Isle, sit on the painting in the sky beside the island. */}
+              <div className="si-over si-over--top"><Resources island={shownIsland} /></div>
+              {turnStep === null && <div className="si-over si-over--road"><Road island={shownIsland} /></div>}
+              {/* Last turn: a little postcard in the sky on the right, with OK to put it away (James, 17 Nov 2026). */}
+              {lastTurn.length > 0 && reportShut !== island.turn && (
+                <section className="si-over si-over--report si-panel si-report" aria-label="Last turn">
+                  {report?.weather && <Card art={weatherArt(report.weather)} />}
+                  <h3>Last turn</h3>
+                  <ul className="si-sums">{lastTurn.map((line) => <li key={line}>{line}</li>)}</ul>
+                  <button type="button" className="button button--light si-close" onClick={() => setReportShut(island.turn)}>OK</button>
+                </section>
+              )}
+              {/* Pip, the step and the buttons sit along the bottom of the painting (James, 17 Nov 2026). */}
+              <div className="si-over si-over--dock si-dock">
+                {/* While a spot, the shelf or a place is open, its choices get the whole row (unless Pip is guiding). */}
+                {!(turnStep === Step.Build && build.kind !== 'island' && !again && !guideNow) && pipLine}
+                {screen.kind === 'home' && (
+                  <section className="si-panel si-home">
+                    {island.turnsLeft < 1 && !unlimited ? (
+                      <div className="si-resting">
+                        <Card art={sceneArt('night')} />
+                        <div>
+                          <p><strong>Your island is resting. See you tomorrow!</strong></p>
+                          <p className="si-note">Tomorrow brings {TURNS_PER_DAY} new turns and more land on the wind.</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <button type="button" className={`button button--play si-big${lit === 'play' || stepOf(lit) !== null ? ' si-lit' : ''}`} data-pip="play" onClick={startTurn}>
+                        Play a turn
+                      </button>
+                    )}
+                    <div className="si-row si-home__more">
+                      {/* The race button only shows when a race can start (James, 16 Nov 2026). */}
+                      {raceWords === null && (
+                        <button
+                          type="button"
+                          className={`button button--primary${lit === 'race' ? ' si-lit' : ''}`}
+                          data-pip="race"
+                          onClick={() => setScreen({ kind: 'race', open: null })}
+                        >
+                          Sky Race
+                        </button>
+                      )}
+                      <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'sky' })}>Class sky</button>
+                      <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'howto', back: { kind: 'home' } })}>How to play</button>
+                    </div>
+                    {problem && <p className="si-problem" role="alert">{problem}</p>}
+                  </section>
                 )}
-                <div className="si-row">
-                  {/* The race button only shows when a race can start (James, 16 Nov 2026). */}
-                  {raceWords === null && (
+
+                {screen.kind === 'home' && cheer && (
+                  <section className="si-panel si-cheer" aria-label="Pip says well done">
+                    <h3>{cheer[0]}</h3>
+                    {cheer.slice(1).map((line) => <p key={line}>{line}</p>)}
+                    <button type="button" className="button button--primary si-close" onClick={() => setCheer(null)}>Thanks, Pip!</button>
+                  </section>
+                )}
+
+                {tip && (
+                  <section className="si-panel si-tip" aria-label="Pip's tip">
+                    <p><strong>Pip's tip:</strong> {TIPS[tip]}</p>
                     <button
                       type="button"
-                      className={`button button--primary${lit === 'race' ? ' si-lit' : ''}`}
-                      data-pip="race"
-                      onClick={() => setScreen({ kind: 'race', open: null })}
+                      className="button button--light si-close"
+                      onClick={() => {
+                        markTipSeen(tip);
+                        setSeen((list) => [...list, tip]);
+                      }}
                     >
-                      Sky Race
+                      Got it
                     </button>
-                  )}
-                  <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'howto', back: { kind: 'home' } })}>How to play</button>
-                </div>
-                <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'sky' })}>Class sky</button>
-                {problem && <p className="si-problem" role="alert">{problem}</p>}
-              </section>
-            )}
+                  </section>
+                )}
 
-            {turnStep !== null && planned && (
-              <TurnStep
-                step={turnStep}
-                island={planned}
-                lines={picks.map((a, i) => actionText(steps[i], a))}
-                newLand={planned.spots.length - island.spots.length}
-                again={again}
-                build={build}
-                lit={lit}
-                busy={busy}
-                problem={problem}
-                headingRef={heading}
-                collectLines={collectLines(island, windy)}
-                countFor={pops ? Object.keys(pops).length * POP_GAP + 0.6 : 0}
-                windy={windy}
-                question={view.question ? { answered: view.question.answered ?? null } : null}
-                raceWhy={raceWords}
-                canBuild={canBuildThisTurn}
-                // Nothing can be built this turn: the Build step is skipped (the last step says the coins are saved).
-                onNext={() => goTo((turnStep === Step.Collect && !canBuildThisTurn ? Step.Rest : Math.min(turnStep + 1, Step.Rest)) as Step)}
-                onBack={stepBack}
-                onChoose={choose}
-                onBuild={(b) => {
-                  setAgain(false);
-                  setBuild(b);
-                }}
-                onAnother={() => setAgain(false)}
-                onUndo={() => setPicks((list) => list.slice(0, -1))}
-                onRace={() => setScreen({ kind: 'race', open: null, inTurn: true })}
-                onEnd={() => void endTurn()}
-              />
-            )}
+                {screen.kind === 'home' && post.length > 0 && (
+                  <section className="si-panel si-post" aria-label="Sky post">
+                    <h3>Sky post</h3>
+                    <ul className="si-sums">{post.map((p, i) => <li key={i}>{postLine(p)}</li>)}</ul>
+                  </section>
+                )}
+
+
+                {turnStep !== null && planned && (
+                  <TurnStep
+                    step={turnStep}
+                    island={planned}
+                    lines={picks.map((a, i) => actionText(steps[i], a))}
+                    newLand={planned.spots.length - island.spots.length}
+                    again={again}
+                    build={build}
+                    lit={lit}
+                    busy={busy}
+                    problem={problem}
+                    headingRef={heading}
+                    collectLines={collectLines(island, windy)}
+                    countFor={pops ? Object.keys(pops).length * POP_GAP + 0.6 : 0}
+                    windy={windy}
+                    question={view.question ? { answered: view.question.answered ?? null } : null}
+                    raceWhy={raceWords}
+                    canBuild={canBuildThisTurn}
+                    // Nothing can be built this turn: the Build step is skipped (the last step says the coins are saved).
+                    onNext={() => goTo((turnStep === Step.Collect && !canBuildThisTurn ? Step.Rest : Math.min(turnStep + 1, Step.Rest)) as Step)}
+                    onBack={stepBack}
+                    onChoose={choose}
+                    onBuild={(b) => {
+                      setAgain(false);
+                      setBuild(b);
+                    }}
+                    onAnother={() => setAgain(false)}
+                    onUndo={() => setPicks((list) => list.slice(0, -1))}
+                    onRace={() => setScreen({ kind: 'race', open: null, inTurn: true })}
+                    onEnd={() => void endTurn()}
+                  />
+                )}
+              </div>
+            </IslandPicture>
           </div>
         </div>
       )}

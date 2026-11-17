@@ -3,7 +3,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { userIdFromToken } from '../_shared/signIn';
 import type { Result, ServerState } from '../../../shared/clans/actions';
-import type { Sketch } from '../../../shared/clans/village';
+import type { RivalSketch } from '../../../shared/clans/raids';
+import type { DuelRow } from '../../../shared/clans/duelServer';
 import { FACT_PACK } from '../../../shared/clans/battleCry';
 import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
 import { parseFocus } from '../../../shared/maths/focus';
@@ -75,12 +76,21 @@ Deno.serve(
     load: (player, requestId) => call<Loaded>('load_clan', { player, request_id: requestId }),
     save: (player, expectedVersion, requestId, action, state: ServerState, result: Result) =>
       call<SaveStatus>('save_clan', { player, expected_version: expectedVersion, request_id: requestId, action, state, result }),
-    mates: (player) => call<Sketch[]>('clan_village_mates', { player }),
+    mates: (player) => call<RivalSketch[]>('clan_village_mates', { player }),
     target: (player, targetId) => call<LoadedTarget>('clan_raid_target', { player, target: targetId }),
+    // Live Clan Duels (migration 20261117000400_clans_live_duels.sql).
+    duelLoad: (duel) => call('clan_duel_load', { duel }),
+    duelChallenge: (player, other, waitMs) => call('clan_duel_challenge', { player, other, wait_ms: waitMs }),
+    duelAnswer: (player, duel, accept, roundMs) => call('clan_duel_answer', { player, duel, accept, round_ms: roundMs }),
+    duelPick: (player, duel, round, move, right, askNo) => call('clan_duel_pick', { player, duel, round, move, is_right: right, ask_no: askNo }),
+    duelRoundPicks: (duel, round) => call('clan_duel_round_picks', { duel, round }),
+    duelRound: (duel, version, rounds, missed, deadlineMs) => call<DuelRow | null>('clan_duel_round', { duel, version, rounds, missed, deadline_ms: deadlineMs }),
+    duelEnd: (duel, version, status, ending, winner, leaver, rounds, gold, banners, paidPerDay) =>
+      call<DuelRow | null>('clan_duel_end', { duel, version, status, ending, winner, leaver, rounds, gold, banners, paid_per_day: paidPerDay }),
     saveRaid: (player, expectedVersion, raid, requestId, state, result) =>
-      call<SaveStatus>('save_raid', {
+      call<SaveStatus>('save_village_raid', {
         player, expected_version: expectedVersion, target: raid.targetId, target_version: raid.targetVersion, request_id: requestId,
-        state, defender_empire: raid.empire, defender_gold: raid.gold, result, news: raid.news, note: raid.note,
+        state, defender_gold: raid.gold, defender_banners: raid.banners, defender_held: raid.held, result, news: raid.news, note: raid.note,
       }),
   }),
 );

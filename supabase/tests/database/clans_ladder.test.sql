@@ -84,7 +84,7 @@ select is(pg_temp.save('b', 1, 3, pg_temp.state('b', fight => pg_temp.fight(1), 
 select ok(not (public.load_clan(pg_temp.id('b'), pg_temp.req(50)) -> 'state' -> 'fight' ? 'questions'), 'and loads with no questions');
 
 -- ---- Nonsense is refused ----
-select throws_ok($$ select pg_temp.save('c', 1, 4, pg_temp.state('c', fight => pg_temp.fight(1) || '{"questions":[1,2,3,4,5,6,7,8,9]}'::jsonb, fight_no => 1)) $$, '23514', null, 'no more than 8 questions');
+select throws_ok($$ select pg_temp.save('c', 1, 4, pg_temp.state('c', fight => pg_temp.fight(1) || '{"questions":[1,2,3,4,5,6,7,8,9,10,11,12,13]}'::jsonb, fight_no => 1)) $$, '23514', null, 'no more than 12 questions (a monster fight has one a round)');
 
 -- ---- Closing the fight removes it all ----
 select is(pg_temp.save('a', 3, 5, pg_temp.state('a', fight_no => 1)) ->> 'status', 'saved', 'closing the fight saves');

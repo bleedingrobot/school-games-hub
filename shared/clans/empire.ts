@@ -1,11 +1,10 @@
 /**
  * The empire ("My Village"): eight buildings with levels, troops, six computer kingdoms, battles,
- * Friendly War, and the rule for raids on classmates. Plain data and plain functions, like
+ * and Friendly War (raids on classmates are raids.ts). Plain data and plain functions, like
  * `fight.ts`: a battle is settled in one go from two armies, a battle plan and a seed, so the
  * same inputs always give the same answer and the server can replay it.
  *
- * There is one purse, `clan.gold`: it pays for upgrades and troops, and a raider can take a share
- * of it (the Strongroom keeps some safe). `empire.levels` is the truth about building levels;
+ * There is one purse, `clan.gold`: it pays for upgrades and troops. `empire.levels` is the truth about building levels;
  * `clan.village` is only a copy of three of them, refreshed by `syncVillage`.
  * Every number is in `config.ts` (CONFIG.empire).
  */
@@ -43,10 +42,10 @@ export const BUILDING_BLURBS: Record<VillageBuilding, string> = {
   smithy: 'The shop sells better things.',
   church: 'One more free wake-up a day.',
   barracks: 'Room for 20 footmen, 10 axemen and 5 knights for each level.',
-  walls: 'Raiders do 10% less damage for each level, and fewer buildings get knocked down.',
-  tower: 'Defenders hit back 10% harder for each level.',
-  forge: 'Your raiders hit 10% harder for each level.',
-  strongroom: 'Keeps 200 gold safe from raiders for each level.',
+  walls: 'When classmates raid you, their army breaks through 10% less for each level. The monster hits softer too.',
+  tower: 'Shoots raiders before they reach your heroes (3% of their health for each level), and fires at the monster.',
+  forge: 'Your army hits 10% harder for each level, in raids and sieges.',
+  strongroom: 'Each level adds 5 gold to every Village Raid you win, and every raid your village holds.',
 };
 export const TROOP_NAMES: Record<TroopKind, { one: string; many: string }> = {
   footman: { one: 'footman', many: 'footmen' },
@@ -187,9 +186,6 @@ export function upgrade(clan: Clan, b: VillageBuilding): Done {
 // ---------------------------------------------------------------------------
 // Gold, troops and followers
 // ---------------------------------------------------------------------------
-
-/** Gold raiders cannot take: 200 for each Strongroom level. */
-export const safeGold = (e: Empire) => e.levels.strongroom * E.buildings.strongroom.per;
 
 export const capacity = (e: Empire, kind: TroopKind) => e.levels.barracks * E.troopCap[kind];
 export const room = (e: Empire, kind: TroopKind) => Math.max(0, capacity(e, kind) - e.troops[kind]);
@@ -416,97 +412,5 @@ export function friendlyWar(e: Empire, kingdomId: string, push: Push, seed: numb
   return { ok: true, result: battle(sideOf(e), kingdomSide(k), fixedPlan(push), seed) };
 }
 
-// ---------------------------------------------------------------------------
-// Raids on classmates
-// ---------------------------------------------------------------------------
-
-export type Take = 'gold' | 'buildings';
-export const TAKES: readonly Take[] = ['gold', 'buildings'];
-
-/** A classmate clan as the rules see it. `id` is private: news only ever shows the clan name. `gold` is its purse. */
-export interface Party {
-  id: string;
-  empire: Empire;
-  gold: number;
-}
-
-/** Why a classmate raid is not allowed, or null if it is. `raidsOn` is the teacher's switch. */
-export function raidRefusal(attacker: Party, defender: Party, today: number, raidsOn = true): { why: string; say: string } | null {
-  const a = attacker.empire;
-  const d = defender.empire;
-  const r = E.raids;
-  if (!raidsOn) return { why: 'off', say: 'Your teacher has switched raids on classmates off.' };
-  if (attacker.id === defender.id) return { why: 'self', say: 'You cannot raid your own village.' };
-  if (today < a.createdDay + r.newClanDays) return { why: 'new-attacker', say: `Your clan is new. Raids on classmates start on day ${a.createdDay + r.newClanDays}.` };
-  if (today < d.createdDay + r.newClanDays) return { why: 'new-defender', say: 'That clan is brand new and is still protected.' };
-  if (a.raidsToday >= r.perDay) return { why: 'limit', say: `You have already raided ${r.perDay === 1 ? 'once' : `${r.perDay} times`} today.` };
-  if (a.raidedToday.includes(defender.id)) return { why: 'same', say: 'You already raided that clan today.' };
-  if (today <= d.shieldUntil) return { why: 'shield', say: 'That clan was raided recently and is resting behind its shield.' };
-  const mine = might(a.troops);
-  const theirs = might(d.troops);
-  if (mine === 0) return { why: 'army', say: 'You need some troops to send.' };
-  if (theirs * r.fairRatio < mine || mine * r.fairRatio < theirs) return { why: 'unfair', say: 'That clan is not a fair match for the size of your army.' };
-  return null;
-}
-
-export interface ClassmateRaid {
-  result: BattleResult;
-  take: Take;
-  /** Gold taken (0 unless the raiders won). */
-  gold: number;
-  /** One entry for each level knocked off a building (empty unless the raiders won). */
-  destroyed: VillageBuilding[];
-}
-
-/** The shortest news line, safe to show: the raiders' clan name and what happened, never a student's name. */
-export function raidNews(raiderClan: string, raid: ClassmateRaid): string {
-  if (raid.result.outcome !== 'won') return `A raider from the ${raiderClan} clan was driven off.`;
-  if (raid.take === 'gold') return `A raider from the ${raiderClan} clan took ${raid.gold} gold.`;
-  return `A raider from the ${raiderClan} clan knocked ${raid.destroyed.length} ${raid.destroyed.length === 1 ? 'level' : 'levels'} off the buildings.`;
-}
-
-/** Buildings a raid may damage: everything except the Walls and the Strongroom. */
-export const RAIDABLE: readonly VillageBuilding[] = VILLAGE_BUILDINGS.filter((b) => b !== 'walls' && b !== 'strongroom' && b !== 'barracks');
-
-/** All the levels of all the buildings added up (what "10% of the buildings" is worked out from). */
+/** All the levels of all the buildings added up. */
 export const levelTotal = (e: Empire) => VILLAGE_BUILDINGS.reduce((t, b) => t + e.levels[b], 0);
-
-/**
- * Raid a classmate. The defender is a saved copy played by the computer (same battle, steady
- * defence). Loot is 10%. A win takes gold (10% of the purse above the Strongroom's safe gold) or knocks levels off
- * buildings (10% of all the levels, rounded up, less one for each Walls level; never the Walls or the Strongroom).
- * Both sides lose the troops that do not come home, and the defender gets a shield. Both purses are in the parties.
- */
-export function raidClassmate(attacker: Party, defender: Party, take: Take, push: Push, seed: number, today: number, raidsOn = true): Fail | ({ ok: true } & ClassmateRaid) {
-  const refused = raidRefusal(attacker, defender, today, raidsOn);
-  if (refused) return { ok: false, ...refused };
-  if (!TAKES.includes(take)) return no('take', 'Pick gold or buildings.');
-  const a = attacker.empire;
-  const d = defender.empire;
-  const plan = cleanPlan(fixedPlan(push), E.raids.classmateLootMax);
-  const result = battle(sideOf(a), sideOf(d), plan, seed);
-  const dice = { rng: (seed ^ 0x5bd1e995) | 0 };
-  a.raidsToday++;
-  a.raidedToday.push(defender.id);
-  d.shieldUntil = today + E.raids.shieldDays;
-  takeLosses(a, result.attackerLost);
-  takeLosses(d, result.defenderLost);
-  const out: ClassmateRaid = { result, take, gold: 0, destroyed: [] };
-  if (result.outcome === 'won') {
-    if (take === 'gold') {
-      out.gold = lootGold(Math.max(0, defender.gold - safeGold(d)), plan.loot);
-      defender.gold -= out.gold;
-      attacker.gold += out.gold;
-    } else {
-      const count = Math.max(0, Math.ceil((levelTotal(d) * plan.loot) / 100) - d.levels.walls);
-      for (let i = 0; i < count; i++) {
-        const hit = RAIDABLE.filter((b) => d.levels[b] > 0);
-        if (hit.length === 0) break;
-        const b = hit[roll(dice, hit.length)];
-        d.levels[b]--;
-        out.destroyed.push(b);
-      }
-    }
-  }
-  return { ok: true, ...out };
-}

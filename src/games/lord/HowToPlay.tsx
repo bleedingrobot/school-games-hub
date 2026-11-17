@@ -4,7 +4,21 @@
  * constants, so they cannot drift.
  */
 import { ARENA_FIGHTS_PER_DAY, MAX_LEVEL, FOREST_FIGHTS_PER_DAY, SKILL_USES_PER_DAY } from '../../../shared/lord/data';
+import { useState } from 'react';
 import { Place } from './Places';
+import { setShortcuts, shortcutsOn } from './shortcuts';
+
+/** A switch for the letter keys, for people who find them in the way. Esc, Tab and Enter always work. */
+function KeysSwitch() {
+  const [on, setOn] = useState(shortcutsOn);
+  return (
+    <p className="lord-soft">
+      <label>
+        <input type="checkbox" checked={on} onChange={(e) => { setShortcuts(e.target.checked); setOn(e.target.checked); }} /> Letter-key shortcuts (F, S, A…). Turn off if keys get pressed by accident.
+      </label>
+    </p>
+  );
+}
 
 export function HowToPlayBody() {
   return (
@@ -27,7 +41,7 @@ export function HowToPlayBody() {
         <li><strong>Bank:</strong> keeps gold safe. From level 4, once a day, the banker pays 1 gold for every 20 gold you have saved, if you can work out how much that is.</li>
         <li><strong>Inn:</strong> a song, the riddle of the day, and a number-guessing game. No gambling.</li>
         <li><strong>Training grounds:</strong> when you have enough experience, fight your master to go up a level. Three questions first make you a little stronger.</li>
-        <li><strong>The Arena:</strong> {ARENA_FIGHTS_PER_DAY} fights a day against classmates’ heroes and computer heroes. Losing costs nothing.</li>
+        <li><strong>The Arena:</strong> practice clashes against computer heroes as often as you like (a little gold for the first few each day): pick Hammer, Sword or Net (Hammer smashes Sword, Sword cuts Net, Net tangles Hammer), then answer a question to power it up. When your teacher has switched them on, challenge a classmate who is in the game to a live clash: the winner gets gold and the other side half that (for your first 3 a day). Plus {ARENA_FIGHTS_PER_DAY} quick fights a day that the computer plays for you. Losing costs nothing.</li>
         <li><strong>News, Warriors list, Hall of Heroes:</strong> what happened, who is doing best, and who has beaten the dragon.</li>
       </ul>
 
@@ -46,11 +60,16 @@ export function HowToPlayBody() {
 
       <h3>Keys</h3>
       <p>
-        In the village, press the letter on a button (F for the forest, S for the shop, and so on). <kbd>Esc</kbd> goes back. In a fight, number keys pick moves. In a question, type the answer and press Enter. The whole game works with only a keyboard or by tapping.
+        In the village, press the letter by a place on the map (F for the forest, S for the shop, Y for your hero, and so on), or tap it. <kbd>Esc</kbd> goes back. In a fight, number keys pick moves. In a question, type the answer and press Enter. The whole game works with only a keyboard or by tapping.
       </p>
+
+      <KeysSwitch />
 
       <h3>Seasons</h3>
       <p>Every five weeks there is a new season and everyone starts again at level 1. Your stars, the Hall of Heroes and your achievements stay. Fights you win against the computer earn hub points, within the same daily limit as every other game.</p>
+
+      <h3>Thanks</h3>
+      <p className="lord-soft">Based on the rules of Legend of the Red Dragon. Pictures: made for this game (see CREDITS) and Kenney 1-Bit Pack (CC0).</p>
     </div>
   );
 }

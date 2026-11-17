@@ -3,8 +3,8 @@
 import { describe, expect, it } from 'vitest';
 import { botRun } from './bot';
 import { addRun, emptyProgress, finishesToUnlock, flyersUnlocked, levelOpen, unlockRuns, type RunSummary } from './collection';
-import { BUMP_PENALTY_STEPS, POTIONS_MAX, STEPS_PER_SECOND } from './config';
-import { decodeFlaps, encodeFlaps, medalFor, newRun, replayRun, scoreRun, stepRun } from './engine';
+import { BUMP_PENALTY_STEPS, POTIONS_MAX, STEPS_PER_SECOND, WALL_WIDTH } from './config';
+import { decodeFlaps, encodeFlaps, medalFor, newRun, replayRun, scoreRun, stepRun, type RunState } from './engine';
 import { buildCourse, LEVELS } from './levels';
 import { buildDashCourse, earnFeather, newDash, stepDash } from './dash';
 import { gapLabels, gapsRight, rightGaps } from './maths';
@@ -103,5 +103,37 @@ describe('Toon Flap rules', () => {
     expect(p.potions).toBe(POTIONS_MAX);
     expect(addRun(p, finish('garden', { medal: 'gold' }), D2).unlocks.potion).toBe(false);
     expect(addRun(p, finish('mesa', { potionUsed: true, bumps: 1 }), D2).progress.potions).toBe(POTIONS_MAX - 1);
+  });
+  it('after bumping an answer wall, every answer (top, middle and bottom) can still be reached', () => {
+    // A simple flyer aiming for gap `want`: flap whenever it is falling below a target height near the gap's middle.
+    const reach = (course: ReturnType<typeof buildCourse>, start: RunState, wall: number, want: number): boolean => {
+      const target = course.walls[wall].gaps[want].y;
+      return [-0.6, -0.4, -0.2, 0, 0.2, 0.4].some((aim) => {
+        const s = structuredClone(start);
+        for (let i = 0; i < 600; i++) {
+          if (stepRun(course, s, s.mode === 'hover' || (s.y < target + aim && s.vy <= 0)) === 'bump') return false;
+          const pick = s.picks[course.walls[wall].answer!];
+          if (pick !== null && pick !== want) return false;
+          if (s.nextWall > wall) return true;
+        }
+        return false;
+      });
+    };
+    const missed: string[] = [];
+    for (const def of LEVELS) {
+      const course = buildCourse(def);
+      for (const sign of course.signs) {
+        const wall = course.walls[sign.wall];
+        // Fly into the wall's face below its lowest opening: a bump, then a hover in front of it.
+        const s = newRun(course);
+        Object.assign(s, { mode: 'fly', x: wall.x - 0.35, y: 0.5, vy: 0, nextWall: sign.wall, perches: course.perches.filter((p) => p.x < wall.x).length });
+        expect(stepRun(course, s, false)).toBe('bump');
+        expect(s.x).toBeLessThan(course.walls[sign.wall - 1].x + WALL_WIDTH + 1);
+        wall.gaps.forEach((_, g) => {
+          if (!reach(course, s, sign.wall, g)) missed.push(`${def.id} sign ${sign.i} gap ${g}`);
+        });
+      }
+    }
+    expect(missed).toEqual([]);
   });
 });

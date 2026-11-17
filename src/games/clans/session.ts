@@ -43,10 +43,6 @@ export interface Session {
   notes?: string[];
   /** The teacher's switch for raids on classmates. */
   raidsOn?: boolean;
-  /** Test page only: pretend classmates that are resting behind a shield after a raid. */
-  pretendShield?: string[];
-  /** Test page only: how many raids on pretend classmates were made today. */
-  pretendRaids?: number;
   /** Fame (never goes down; a new season starts it again from 0), the fame season, and the mine fights a day the teacher gives. */
   fame?: number;
   season?: number;
@@ -64,7 +60,7 @@ export interface Session {
 export const newSession = (clan: Clan, baseSeed: number, settings: PracticalSettings = DEFAULT_PRACTICAL_SETTINGS): Session => ({
   clan, fightsLeft: CONFIG.fightsPerDay, fightNo: 0, baseSeed, raidNo: 0, day: 1, depth: 0, settings,
   fame: 0, season: 1, fightsPerDay: CONFIG.fightsPerDay, achievements: [], stats: NO_STATS,
-  news: ['The Swift Foxes clan upgraded its Walls! (pretend)'], notes: [], raidsOn: true, pretendShield: [], pretendRaids: 0,
+  news: ['The Swift Foxes clan upgraded its Walls! (pretend)'], notes: [], raidsOn: true,
 });
 
 export const averageLevel = (clan: Clan) => clan.members.reduce((t, m) => t + m.level, 0) / Math.max(1, clan.members.length);
@@ -103,7 +99,7 @@ export function skipDay(s: Session): Session {
   const clan = structuredClone(s.clan);
   dayReset(clan);
   empireNewDay(clan);
-  return { ...s, clan, fightsLeft: s.fightsPerDay ?? CONFIG.fightsPerDay, day: s.day + 1, pretendShield: [], pretendRaids: 0 };
+  return { ...s, clan, fightsLeft: s.fightsPerDay ?? CONFIG.fightsPerDay, day: s.day + 1 };
 }
 
 /** The stats a card shows by default: HP, attack, defence and one star (the member's best stat). */

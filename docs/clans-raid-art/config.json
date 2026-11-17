@@ -1,0 +1,60 @@
+{
+  "_from": "docs/game-guide/templates/art-config.json. Clan Quest Village Raids paintings (docs/CLANS-PVP-PLAN.md).",
+  "game": "clans-raid",
+  "filename_prefix": "clans-raid/img",
+  "comfy": "http://127.0.0.1:8188",
+  "style": "a",
+  "styles": {
+    "a": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, suitable for children aged 8 to 12, no blood, no gore, no writing, no letters, no numbers anywhere. "
+  },
+  "inbox": "~/dragon-art-inbox/clans-raid",
+  "picks": "docs/clans-raid-art/picks.json",
+  "art_dir": "src/games/clans/art",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "raid-hall",
+      "prompt": "Inside a huge torch-lit medieval war hall at night, dozens of colourful clan banners with animal emblems hanging from high wooden rafters, a long table with a map of villages and little carved figures, glowing braziers, shields and spears on the stone walls, warm golden light and drifting smoke, wide empty floor in the foreground, epic and inviting, no people.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "scenes",
+      "file": "raid-hall"
+    },
+    {
+      "name": "raid-siege",
+      "prompt": "A dramatic wide view of a small fortified wooden and stone village wall at dusk under attack, a band of clan warriors with round shields and banners charging up a dirt slope towards the gate, wooden ladders against the palisade, flaming arrows arcing through the orange sky from a watchtower, sparks and smoke, defenders with shields on the wall, cinematic action, heroic and exciting, no blood.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "scenes",
+      "file": "raid-siege"
+    },
+    {
+      "name": "raid-arena",
+      "prompt": "A completely deserted, empty cobbled village square inside a medieval clan village at night, nobody there at all, seen from low at ground level, wooden houses with thatched roofs at the far edges, burning torches and braziers, a smoking broken gate in the far distance, clan banners on tall poles, a wide bare open stone floor filling the middle and foreground like a stage for a battle, glowing embers floating in the air, dramatic orange and blue light, empty scene without any people, figures or animals.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "scenes",
+      "file": "raid-arena"
+    },
+    {
+      "name": "raid-camp",
+      "prompt": "A cosy warrior camp in a forest clearing at night after a battle, a big crackling campfire, tents with clan banners, shields leaning on logs, steaming cooking pot, a distant village on a hill with lit windows, starry sky, calm, warm and friendly feeling of resting and planning the next adventure, no people.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "scenes",
+      "file": "raid-camp"
+    }
+  ]
+}

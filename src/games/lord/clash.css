@@ -1,0 +1,77 @@
+/* Dragon Maths: arena clashes (Hammer, Sword, Net). Sits on the big stage (big.css). Transform and opacity only. */
+.lord-clash__round { align-self: flex-start; display: flex; flex-direction: column; align-items: center; gap: 2px; padding-top: 4px; font-family: var(--lord-display); font-size: clamp(1.1rem, 2.4vw, 1.6rem); color: #ffd36b; text-shadow: 0 2px 0 #000, 0 0 12px #000; white-space: nowrap; }
+.lord-clash__round small { font-family: inherit; font-size: 0.8em; color: #f6e9cc; }
+.lord-clash__round small.is-low { color: #ff8a6b; }
+
+/* The circle of attacks: always on screen during a clash. */
+.lord-clash__circle { position: relative; z-index: 3; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; align-self: center; margin: 10px 12px 0; padding: 6px 14px; width: fit-content; max-width: calc(100% - 24px); border: 1px solid var(--lord-gold); border-radius: 999px; background: rgba(24, 15, 8, 0.78); color: #f6e9cc; font-size: clamp(0.95rem, 1.8vw, 1.2rem); font-weight: 700; }
+.lord-clash__circle b { font-size: 1.35em; }
+.lord-clash__circle.is-compact { margin-top: 6px; }
+.lord-clash__rule { white-space: nowrap; }
+
+/* The attack each hero picked, big over their head. */
+.lord-clash__move, .lord-clash__think { position: absolute; left: 50%; top: 2%; z-index: 4; transform: translateX(-50%); font-size: clamp(4rem, 15cqh, 8rem); line-height: 1; filter: drop-shadow(0 6px 0 #000) drop-shadow(0 0 18px rgba(0, 0, 0, 0.9)); }
+.lord-clash__move.is-win { filter: drop-shadow(0 6px 0 #000) drop-shadow(0 0 26px rgba(255, 200, 60, 1)); }
+.lord-clash__move.is-lose { opacity: 0.55; }
+.lord-clash__move.is-ready { font-size: clamp(2.6rem, 9cqh, 5rem); }
+.lord-clash__think { font-family: var(--lord-display); color: rgba(255, 220, 150, 0.85); }
+
+/* "Hammer smashes Sword!" across the middle. */
+.lord-clash__line { position: absolute; left: 50%; top: 40%; z-index: 5; width: max-content; max-width: 92%; margin: 0; transform: translate(-50%, -50%); padding: 8px 22px; border-radius: 8px; background: rgba(20, 12, 6, 0.82); border: 2px solid var(--lord-gold); font-family: var(--lord-display); font-size: clamp(1.6rem, 5vw, 3rem); line-height: 1.1; text-align: center; color: #ffd36b; text-shadow: 0 3px 0 #000; pointer-events: none; }
+.lord-clash__line.is-me { color: #b9ff8a; border-color: #8fdc5c; }
+.lord-clash__line.is-them { color: #ffb19a; border-color: #e0715a; }
+
+/* The three attack buttons. */
+.lord-clash__pick { display: inline-flex; flex-direction: column; align-items: center; gap: 0; min-width: 9.5em; line-height: 1.1; padding-top: 4px; padding-bottom: 6px; }
+.lord-clash__icon { font-size: 2rem; line-height: 1; }
+.lord-clash__wait { margin: 0; align-self: center; padding: 10px 16px; border-radius: 6px; background: rgba(24, 15, 8, 0.78); color: #f6e9cc; font-weight: 700; font-size: 1.15rem; }
+.lord-clash__wait:empty { display: none; }
+.lord-clash__note { font-size: 1rem; font-weight: 600; opacity: 0.95; }
+
+@media (max-width: 640px) {
+  .lord-clash__pick { min-width: 0; flex: 1 1 0; padding-left: 8px; padding-right: 8px; font-size: 1.05rem; }
+  .lord-clash__pick small { display: none; }
+  .lord-clash__line { top: 34%; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lord-clash__move { animation: lord-slam 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
+  .lord-big__fig--foe .lord-clash__move { animation-delay: 0.15s; }
+  .lord-clash__move.is-ready { animation: lord-pop 0.4s ease-out both; }
+  .lord-clash__line { animation: lord-clash-line 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.3) 0.35s both; }
+  .lord-clash__think { animation: lord-bob 1.4s ease-in-out infinite; }
+  @keyframes lord-clash-line { from { opacity: 0; transform: translate(-50%, -50%) scale(2.2); } }
+}
+
+/* Live clashes: cheers, problems, the classmates list, a challenge coming in. */
+.lord-clash__cheer { margin: 8px 0 0; padding: 6px 16px; border-radius: 18px; background: #fff8e6; color: #3a2203; font-weight: 800; font-size: clamp(1rem, 2.2vw, 1.3rem); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5); }
+.lord-clash__problem { position: absolute; left: 50%; bottom: 84px; z-index: 6; transform: translateX(-50%); width: max-content; max-width: 90%; margin: 0; padding: 8px 14px; border-radius: 6px; background: #5a1408; color: #fff; font-weight: 700; }
+.lord-clash__cheers { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 100%; }
+.lord-clash__said { margin: 0; align-self: center; color: #f6e9cc; font-weight: 700; }
+
+.lord-mates { position: absolute; right: 3%; top: 16%; z-index: 4; width: min(320px, 44%); max-height: 58%; overflow: auto; padding: 10px 12px; border: 2px solid var(--lord-gold); border-radius: 8px; background: rgba(20, 12, 6, 0.86); color: #f6e9cc; }
+.lord-mates h3 { margin: 0 0 6px; font-family: var(--lord-display); font-size: 1.25rem; color: #ffd36b; }
+.lord-mates p { margin: 4px 0; font-size: 0.98rem; }
+.lord-mates ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.lord-mates li { display: flex; align-items: center; gap: 8px; }
+.lord-mates li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.lord-mates .lord-btn { min-height: 44px; }
+.lord-mates__busy { font-weight: 600; opacity: 0.8; font-size: 0.9rem; }
+
+.lord-ask { position: fixed; left: 50%; top: 14px; z-index: 50; transform: translateX(-50%); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px; width: max-content; max-width: calc(100vw - 24px); padding: 12px 16px; border: 3px solid #ffd36b; border-radius: 10px; background: #2a1708; color: #fff4dc; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6); }
+.lord-ask p { margin: 0; font-size: 1.15rem; font-weight: 800; }
+.lord-ask small { display: block; font-weight: 600; opacity: 0.85; font-size: 0.9rem; }
+
+@media (max-width: 640px) {
+  .lord-mates { left: 3%; right: 3%; width: auto; top: auto; bottom: 150px; max-height: 40%; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lord-ask { animation: lord-ask-in 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
+  .lord-clash__cheer { animation: lord-pop 0.5s ease-out both; }
+  @keyframes lord-ask-in { from { opacity: 0; transform: translate(-50%, -30px) scale(0.9); } }
+}
+.lord-big .lord-mates h3 { color: #ffd36b; }
+.lord-arena.has-mates .lord-big__title p { margin-left: 3%; max-width: min(46%, 46ch); text-align: left; }
+@media (max-width: 640px) {
+  .lord-arena.has-mates .lord-big__title p { margin-left: auto; max-width: 46ch; text-align: center; }
+}

@@ -9960,6 +9960,16 @@ const MOMENT_TOPICS = {
 		"decimals",
 		"money",
 		"patterns"
+	],
+	arena: [
+		"add-sub",
+		"times-tables",
+		"place-value",
+		"division",
+		"fractions",
+		"decimals",
+		"money",
+		"patterns"
 	]
 };
 /** Every topic Dragon Maths can ask about (the teacher's tick-list, all on to start). */
@@ -10559,6 +10569,122 @@ const FINISH_ACTIONS = [
 	"dragon-finish"
 ];
 //#endregion
+//#region shared/lord/clash.ts
+/**
+* Arena clashes: a hero against a hero, one round at a time (James, 17 Nov 2026). Each round both players secretly pick
+* one of three attacks, then each answers a maths question:
+*
+*   Hammer smashes Sword, Sword cuts Net, Net tangles Hammer.
+*
+* Both heroes always swing. The one whose attack wins the clash hits twice as hard, the one whose attack loses hits half
+* as hard, and the same attack on both sides is a normal hit each. A right answer gives a full hit, a wrong answer only a
+* graze. Both heroes are the same strength here, whatever their level, so the picks and the maths decide it.
+*
+* No timer on the maths itself (the game's rule: no speed bonus); a round only has a long time limit so a classmate who
+* walks away can't hold the other up. A pick the clock took counts as no attack at all.
+*
+* Pure, so the server, the classmate screens and the practice fight all play the very same rounds.
+*/
+const CLASH_MOVES = [
+	"hammer",
+	"sword",
+	"net"
+];
+const MOVE_INFO = {
+	hammer: {
+		name: "Hammer",
+		icon: "🔨",
+		beats: "sword",
+		verb: "smashes"
+	},
+	sword: {
+		name: "Sword",
+		icon: "⚔️",
+		beats: "net",
+		verb: "cuts"
+	},
+	net: {
+		name: "Net",
+		icon: "🕸️",
+		beats: "hammer",
+		verb: "tangles"
+	}
+};
+/** Which attack wins: 0, 1 or 'tie'. No attack loses to any attack; two no-attacks tie. */
+function clashOf(a, b) {
+	if (a === b) return "tie";
+	if (!a) return 1;
+	if (!b) return 0;
+	return MOVE_INFO[a].beats === b ? 0 : 1;
+}
+/** How hard a pick hits, given whether its attack won, lost or tied the clash. */
+function hitFor(pick, result) {
+	if (!pick.move) return 0;
+	const base = pick.right ? 10 : 4;
+	return result === "win" ? base * 2 : result === "lose" ? Math.ceil(base / 2) : base;
+}
+const newClash = () => ({
+	rounds: [],
+	hp: [50, 50],
+	over: false,
+	winner: null
+});
+/** Plays one round onto a clash that isn't over. */
+function playRound(state, picks) {
+	if (state.over) throw new Error("This clash is over");
+	const clash = clashOf(picks[0].move, picks[1].move);
+	const result = (side) => clash === "tie" ? "tie" : clash === side ? "win" : "lose";
+	const hits = [hitFor(picks[0], result(0)), hitFor(picks[1], result(1))];
+	const hp = [Math.max(0, state.hp[0] - hits[1]), Math.max(0, state.hp[1] - hits[0])];
+	const rounds = [...state.rounds, {
+		picks,
+		clash,
+		hits,
+		hp
+	}];
+	const knocked = hp[0] === 0 || hp[1] === 0;
+	const level = hp[0] === hp[1];
+	const over = knocked || rounds.length >= 5 && !level || rounds.length >= 8;
+	return {
+		rounds,
+		hp,
+		over,
+		winner: !over || level ? null : hp[0] > hp[1] ? 0 : 1
+	};
+}
+/** The clash after these rounds of picks. Throws if a round comes after the end. */
+function replayClash(picks) {
+	return picks.reduce((s, p) => playRound(s, p), newClash());
+}
+/** Reads a pick as the browser sends it (null if it isn't one). The clock's "no attack" is never sent: only the server makes those. */
+function readMove(raw) {
+	return typeof raw === "string" && CLASH_MOVES.includes(raw) ? raw : null;
+}
+/** The winner's gold: about what a forest fight at their level pays. */
+const clashGold = (winnerLevel) => friendly(tierPower(winnerLevel) * 1.2);
+/** What each side is paid when a clash ends: the winner the full amount, the other half of it. A draw pays both half. */
+function clashPrize(winner, levels) {
+	if (winner === null) {
+		const half = (l) => Math.max(1, Math.round(clashGold(l) / 2));
+		return [half(levels[0]), half(levels[1])];
+	}
+	const full = clashGold(levels[winner]);
+	const half = Math.max(1, Math.round(full / 2));
+	return winner === 0 ? [full, half] : [half, full];
+}
+/** A practice clash's gold: a little for a win (about 0.4 of a forest fight), half that for a loss or a draw. */
+function practiceGold(winner, level) {
+	const win = Math.max(2, friendly(tierPower(level) * .4));
+	return winner === 0 ? win : Math.max(1, Math.round(win / 2));
+}
+/** A practice opponent's pick: any attack, and a right answer about 7 times in 10. */
+function computerPick(rand) {
+	return {
+		move: CLASH_MOVES[Math.floor(rand() * 3) % 3],
+		right: rand() < .7
+	};
+}
+//#endregion
 //#region shared/lord/server.ts
 const newStats = () => ({
 	forestWins: 0,
@@ -10577,7 +10703,8 @@ const newExtra = (stats = newStats()) => ({
 	dragon: null,
 	dragonDay: "",
 	classOpen: false,
-	stats
+	stats,
+	practice: null
 });
 /** An `extra` as saved, filled in where an older save had no such part. */
 const readExtra = (saved) => ({
@@ -10613,6 +10740,7 @@ const ACTIONS = [
 	"bank",
 	"inn",
 	"arena",
+	"practice",
 	"tools"
 ];
 function parseActions(raw) {
@@ -11278,6 +11406,100 @@ function inn(c) {
 	}
 	return { refuse: "bad-request" };
 }
+/**
+* A practice clash against a computer hero (shared/lord/clash.ts), one round per request: the pupil's attack and the
+* maths answer that powers it come in, the server marks the answer and picks the computer's attack. When the clash is
+* over it pays a little gold (the first PAID_PRACTICE_PER_DAY a day): a win, or half that for a loss or a draw.
+*/
+function practice(c) {
+	const { hero, extra } = c.w;
+	const today = extra.practice && extra.practice.day === c.today ? extra.practice : {
+		day: c.today,
+		paid: 0,
+		foe: "",
+		picks: []
+	};
+	if (c.req.op === "leave") return {
+		extra: {
+			...extra,
+			practice: {
+				...today,
+				foe: "",
+				picks: []
+			}
+		},
+		summary: { practice: "leave" },
+		result: {}
+	};
+	const move = readMove(c.req.move);
+	if (c.req.op !== "round" || !move) return { refuse: "bad-request" };
+	const rand = makeRandom(c.s.seed());
+	const fresh = c.req.fresh === true || today.picks.length === 0;
+	const named = COMPUTER_HEROES.find((h) => h.id === c.req.foe)?.id;
+	const foe = !fresh && today.foe ? today.foe : named ?? COMPUTER_HEROES[Math.floor(rand() * COMPUTER_HEROES.length)].id;
+	let before = fresh ? newClash() : replayClash(today.picks);
+	if (before.over) before = newClash();
+	const m = mark(c, c.req.proof, "arena");
+	const mine = {
+		move,
+		right: m.result !== "wrong"
+	};
+	const after = playRound(before, [mine, computerPick(rand)]);
+	const picks = after.rounds.map((r) => r.picks);
+	if (!after.over) return {
+		extra: {
+			...extra,
+			practice: {
+				...today,
+				foe,
+				picks
+			}
+		},
+		answers: m.answers,
+		notes: m.notes,
+		summary: {
+			practice: "round",
+			move,
+			right: mine.right
+		},
+		result: {
+			foe,
+			picks,
+			over: false
+		}
+	};
+	const gold = today.paid < 3 ? practiceGold(after.winner, hero.level) : 0;
+	return {
+		hero: gold > 0 ? {
+			...hero,
+			gold: hero.gold + gold
+		} : void 0,
+		extra: {
+			...extra,
+			practice: {
+				day: c.today,
+				paid: today.paid + (gold > 0 ? 1 : 0),
+				foe: "",
+				picks: []
+			}
+		},
+		answers: m.answers,
+		notes: m.notes,
+		summary: {
+			practice: "over",
+			winner: after.winner,
+			gold
+		},
+		result: {
+			foe,
+			picks,
+			over: true,
+			winner: after.winner,
+			gold,
+			paidLeft: Math.max(0, 3 - today.paid - (gold > 0 ? 1 : 0))
+		}
+	};
+}
 const sane = (h) => {
 	const x = h;
 	return !!x && typeof x === "object" && Number.isInteger(x.level) && x.level >= 1 && x.level <= 12 && Number.isInteger(x.weapon) && x.weapon >= 0 && x.weapon < WEAPONS.length && Number.isInteger(x.armour) && x.armour >= 0 && x.armour < ARMOURS.length && Number.isFinite(x.strength) && Number.isFinite(x.defence) && Number.isFinite(x.maxHp) && x.maxHp > 0 && typeof x.heroClass === "string" && x.heroClass in CLASSES;
@@ -11886,6 +12108,9 @@ async function runLord(s, player, raw) {
 		case "arena":
 			done = await arena(ctx);
 			break;
+		case "practice":
+			done = practice(ctx);
+			break;
 		case "tools":
 			done = await tools(ctx);
 			break;
@@ -11983,6 +12208,217 @@ async function runLord(s, player, raw) {
 	return reply(after, out.value.version);
 }
 //#endregion
+//#region shared/lord/clashServer.ts
+/** How long a challenge waits for an answer, and each round's time to pick and answer. */
+const CHALLENGE_MS = 3e4;
+const ROUND_MS = 6e4;
+/** Extra time before "the clock ran out" is believed (the network). */
+const ROUND_GRACE_MS = 1500;
+const clashOpen = (c) => c.status === "asked" || c.status === "playing";
+const seatIn = (c, player) => c.seat_a === player ? 0 : c.seat_b === player ? 1 : -1;
+const CLASH_ACTIONS = [
+	"clash-challenge",
+	"clash-answer",
+	"clash-pick",
+	"clash-times-up",
+	"clash-leave"
+];
+/** Words pupils see. Kind, short, nothing technical. */
+const CLASH_SAY = {
+	bad: "That couldn't be read.",
+	busy: "That couldn't be done just now. Try again in a moment.",
+	notYours: "That isn't your clash.",
+	away: "That classmate isn't in Dragon Maths right now.",
+	otherClass: "You can only challenge classmates in your own class.",
+	inClash: "One of you is already in a clash. Try again when it's over.",
+	off: "Classmate clashes are switched off for now. You can still practise against a computer hero!",
+	noHero: "You both need a hero first.",
+	late: "That challenge has run out.",
+	notStarted: "The clash hasn't started yet.",
+	over: "This clash has already ended.",
+	changed: "The clash changed just then. Have another look.",
+	round: "That round's already been played.",
+	notYet: "There's still time on the clock.",
+	stopped: "Your teacher has switched classmate clashes off, so this clash has stopped."
+};
+const ok = (body) => ({
+	status: 200,
+	body
+});
+const no = (status, error, extra = {}) => ({
+	status,
+	body: {
+		error,
+		...extra
+	}
+});
+const failed = (o) => o.why === "refused" ? no(400, CLASH_SAY.bad) : no(503, CLASH_SAY.busy);
+const isUuid = (v) => typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
+const isId = (v) => Number.isSafeInteger(v) && v >= 1;
+/** The clash after a round: saved as the next round, or ended (with gold) if that round finished it. */
+async function afterRound(s, c, picks, missed) {
+	let state;
+	try {
+		state = playRound(replayClash(c.rounds), picks);
+	} catch {
+		return no(409, CLASH_SAY.over, {
+			code: "over",
+			clash: c
+		});
+	}
+	const rounds = [...c.rounds, picks];
+	if (!state.over) {
+		const saved = await s.clashRound(c.id, c.version, rounds, missed, s.now() + ROUND_MS);
+		if (!saved.ok) return failed(saved);
+		if (!saved.value) return no(409, CLASH_SAY.changed, { code: "changed" });
+		return ok({ clash: saved.value });
+	}
+	const want = clashPrize(state.winner, [c.heroes[0]?.level ?? 1, c.heroes[1]?.level ?? 1]);
+	const ended = await s.clashEnd(c.id, c.version, "done", "finished", state.winner, null, rounds, want, 3);
+	if (!ended.ok) return failed(ended);
+	if (!ended.value) return no(409, CLASH_SAY.changed, { code: "changed" });
+	return ok({ clash: ended.value });
+}
+/** Marks the maths answer that came with a pick. One that can't be checked counts as wrong (never an error the pupil sees). */
+async function markAnswer(s, player, raw, batchKey) {
+	const [loaded, settings] = await Promise.all([s.load(player), s.settings(player)]);
+	const level = loaded.ok ? loaded.value.row?.hero.level ?? 1 : 1;
+	const topics = settings.ok ? topicsOn(settings.value.topics) : void 0;
+	const marked = markProof(raw, "arena", level, s.now(), void 0, topics);
+	if (!marked.ok) return false;
+	const { pack, ...answer } = marked.answer;
+	try {
+		await s.recordAnswers(player, pack, batchKey, [answer]);
+	} catch {}
+	return marked.correct;
+}
+async function handleClash(s, player, action, body) {
+	if (action === "clash-challenge") {
+		if (!isUuid(body.other)) return no(400, CLASH_SAY.bad);
+		const r = await s.clashChallenge(player, body.other, CHALLENGE_MS);
+		if (!r.ok) return failed(r);
+		const why = r.value.result;
+		if (why !== "ok" || r.value.clash === null) {
+			const words = why === "away" ? CLASH_SAY.away : why === "class" ? CLASH_SAY.otherClass : why === "busy" ? CLASH_SAY.inClash : why === "off" ? CLASH_SAY.off : why === "no-hero" ? CLASH_SAY.noHero : CLASH_SAY.bad;
+			return no(409, words, { code: why });
+		}
+		const loaded = await s.clashLoad(r.value.clash);
+		if (!loaded.ok || !loaded.value) return no(503, CLASH_SAY.busy);
+		return ok({ clash: loaded.value.clash });
+	}
+	if (!isId(body.clash)) return no(400, CLASH_SAY.bad);
+	const loaded = await s.clashLoad(body.clash);
+	if (!loaded.ok) return failed(loaded);
+	const seat = loaded.value ? seatIn(loaded.value.clash, player) : -1;
+	if (!loaded.value || seat < 0) return no(403, CLASH_SAY.notYours);
+	const c = loaded.value.clash;
+	const me = seat;
+	const other = 1 - me;
+	if ((!loaded.value.on[0] || !loaded.value.on[1]) && clashOpen(c)) {
+		const playing = c.status === "playing";
+		const ended = await s.clashEnd(c.id, c.version, playing ? "done" : "cancelled", playing ? "switched-off" : null, null, null, null, null, 3);
+		if (!ended.ok) return failed(ended);
+		return no(403, CLASH_SAY.stopped, {
+			code: "off",
+			clash: ended.value ?? c
+		});
+	}
+	if (action === "clash-answer") {
+		if (typeof body.accept !== "boolean") return no(400, CLASH_SAY.bad);
+		const r = await s.clashAnswer(player, c.id, body.accept, ROUND_MS);
+		if (!r.ok) return failed(r);
+		const { result, clash } = r.value;
+		if (result === "not-yours") return no(403, CLASH_SAY.notYours);
+		if (result === "late") return no(409, CLASH_SAY.late, {
+			code: "late",
+			clash
+		});
+		if (result === "busy") return no(409, CLASH_SAY.inClash, {
+			code: "busy",
+			clash
+		});
+		return ok({ clash });
+	}
+	if (action === "clash-leave") {
+		if (!clashOpen(c)) return ok({ clash: c });
+		const ended = c.status === "playing" ? await s.clashEnd(c.id, c.version, "done", "left", other, me, null, null, 3) : await s.clashEnd(c.id, c.version, me === 1 ? "declined" : "cancelled", null, null, null, null, null, 3);
+		if (!ended.ok) return failed(ended);
+		if (!ended.value) return no(409, CLASH_SAY.changed, { code: "changed" });
+		return ok({ clash: ended.value });
+	}
+	if (c.status === "asked") return no(409, CLASH_SAY.notStarted, {
+		code: "not-started",
+		clash: c
+	});
+	if (c.status !== "playing") return no(409, CLASH_SAY.over, {
+		code: "over",
+		clash: c
+	});
+	const round = c.rounds.length;
+	if (round >= 8) return no(409, CLASH_SAY.over, {
+		code: "over",
+		clash: c
+	});
+	if (action === "clash-pick") {
+		const move = readMove(body.move);
+		if (!move || body.round !== round) {
+			if (Number.isInteger(body.round) && body.round < round) return no(409, CLASH_SAY.round, {
+				code: "round",
+				clash: c
+			});
+			return no(400, CLASH_SAY.bad);
+		}
+		const right = await markAnswer(s, player, body.proof, `clash:${c.id}:${round}:${seat}`);
+		const r = await s.clashPick(player, c.id, round, move, right);
+		if (!r.ok) return failed(r);
+		const { result, picks } = r.value;
+		const now = r.value.clash ?? c;
+		if (result === "not-yours") return no(403, CLASH_SAY.notYours);
+		if (result === "over") return no(409, CLASH_SAY.over, {
+			code: "over",
+			clash: now
+		});
+		if (result === "round") return no(409, CLASH_SAY.round, {
+			code: "round",
+			clash: now
+		});
+		if (result === "late") return no(409, CLASH_SAY.late, {
+			code: "late",
+			clash: now
+		});
+		if (result === "ok" && picks?.[0] && picks[1]) return afterRound(s, now, [picks[0], picks[1]], [0, 0]);
+		return ok({
+			clash: now,
+			picked: true
+		});
+	}
+	const left = Date.parse(c.deadline) + ROUND_GRACE_MS - s.now();
+	if (!(left <= 0)) return no(409, CLASH_SAY.notYet, {
+		code: "not-yet",
+		secondsLeft: Number.isFinite(left) ? Math.ceil(left / 1e3) : 60,
+		clash: c
+	});
+	const got = await s.clashRoundPicks(c.id, round);
+	if (!got.ok) return failed(got);
+	const picks = [got.value[0] ?? {
+		move: null,
+		right: false
+	}, got.value[1] ?? {
+		move: null,
+		right: false
+	}];
+	const missed = [got.value[0] ? 0 : c.missed[0] + 1, got.value[1] ? 0 : c.missed[1] + 1];
+	const gone = [0, 1].filter((i) => missed[i] >= 2);
+	if (gone.length > 0) {
+		const winner = gone.length === 1 ? 1 - gone[0] : null;
+		const ended = await s.clashEnd(c.id, c.version, "done", "timeouts", winner, gone.length === 1 ? gone[0] : null, [...c.rounds, picks], null, 3);
+		if (!ended.ok) return failed(ended);
+		if (!ended.value) return no(409, CLASH_SAY.changed, { code: "changed" });
+		return ok({ clash: ended.value });
+	}
+	return afterRound(s, c, picks, missed);
+}
+//#endregion
 //#region supabase/functions/_shared/http.ts
 /** Websites allowed to call the server functions from a browser. */
 const ALLOWED_ORIGINS = [
@@ -12071,6 +12507,11 @@ function makeHandler(services) {
 		if (!limiter.allow(player, 60)) return reply(429, { error: "Slow down a little!" });
 		const body = await readJsonBody(request);
 		if (!body || typeof body !== "object") return reply(400, { error: "That couldn't be read." });
+		const action = body.action;
+		if (CLASH_ACTIONS.includes(action)) {
+			const out = await handleClash(services, player, action, body);
+			return reply(out.status, out.body);
+		}
 		const out = await runLord(services, player, body);
 		if (out.body && "ok" in out.body && !out.body.ok && [
 			"tampered",
@@ -12186,6 +12627,47 @@ Deno.serve(makeHandler({
 		player,
 		news_day: day,
 		lines
+	}),
+	clashLoad: (clash) => call("lord_clash_load", { clash }),
+	clashChallenge: (player, other, waitMs) => call("lord_clash_challenge", {
+		player,
+		other,
+		wait_ms: waitMs
+	}),
+	clashAnswer: (player, clash, accept, roundMs) => call("lord_clash_answer", {
+		player,
+		clash,
+		accept,
+		round_ms: roundMs
+	}),
+	clashPick: (player, clash, round, move, right) => call("lord_clash_pick", {
+		player,
+		clash,
+		round,
+		move,
+		is_right: right
+	}),
+	clashRoundPicks: (clash, round) => call("lord_clash_round_picks", {
+		clash,
+		round
+	}),
+	clashRound: (clash, version, rounds, missed, deadlineMs) => call("lord_clash_round", {
+		clash,
+		version,
+		rounds,
+		missed,
+		deadline_ms: deadlineMs
+	}),
+	clashEnd: (clash, version, status, ending, winner, leaver, rounds, want, paidPerDay) => call("lord_clash_end", {
+		clash,
+		version,
+		status,
+		ending,
+		winner,
+		leaver,
+		rounds,
+		want,
+		paid_per_day: paidPerDay
 	})
 }));
 //#endregion

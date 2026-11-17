@@ -149,9 +149,13 @@ export function TurnStep(p: StepProps) {
       body = (
         <>
           {p.windy && <p className="si-wind">The fair wind is blowing: your coins grow this turn.</p>}
-          <div className="si-after" style={{ '--si-after': `${p.countFor}s` } as CSSProperties}>
-            <ul className="si-sums">{p.collectLines.map((line) => <li key={line}>{line}</li>)}</ul>
-            <p><strong>Coins to spend: {n(island.coins)}</strong></p>
+          {/* While the coins pop off the buildings, a "counting" line holds the place; the sums take its place after. */}
+          <div className="si-count" style={{ '--si-after': `${p.countFor}s` } as CSSProperties}>
+            {p.countFor > 0 && <p className="si-counting" aria-hidden="true">Counting your coins<span className="si-counting__dots"><span>.</span><span>.</span><span>.</span></span></p>}
+            <div className="si-after">
+              <ul className="si-sums">{p.collectLines.map((line) => <li key={line}>{line}</li>)}</ul>
+              <p><strong>Coins to spend: {n(island.coins)}</strong></p>
+            </div>
           </div>
         </>
       );
@@ -273,8 +277,10 @@ export function TurnStep(p: StepProps) {
 
   return (
     <section className="si-panel si-step" aria-label={STEP_NAMES[step - 1]}>
-      <h3 ref={p.headingRef} tabIndex={-1}>{title}</h3>
-      {body}
+      <div className="si-step__body">
+        <h3 ref={p.headingRef} tabIndex={-1}>{title}</h3>
+        {body}
+      </div>
       <div className="si-row si-step__nav">
         {/* Back from the last step to change what's built (the header's Stop button is the way out). */}
         {step === Step.Rest && p.canBuild && <button type="button" className="button button--light" onClick={p.onBack}>Back to building</button>}

@@ -558,6 +558,7 @@ function Mirror({ go, help, phase, counted, guide, onFish }: {
   go: Go; help: Help; phase: Phase; counted: string[]; guide: 0 | 1 | 2 | null; onFish: (id: string) => void;
 }) {
   const rows = rowsOf(go.n);
+  const lastRow = rows.length - 1;
   // The reflection is the rock's rows in the opposite order, so the bottom row sits nearest the water's edge.
   const reflection = help !== 'none' || phase !== 'ask' ? help === 'none' ? 'full' : help : null;
   let idx = 0;
@@ -566,10 +567,12 @@ function Mirror({ go, help, phase, counted, guide, onFish }: {
     idx += count;
     return { r, count, start };
   });
+  // Near doubles: the one more fish swims in the water at the end of the row by the water's edge, a different colour,
+  // with nothing above it on the rock: the double, then one left over.
+  const near = go.kind === 'near' && !!reflection;
   return (
     <div className="kr-mirror">
-      {go.kind === 'near' && reflection && <span className="kr-sr">{WORDS.nearMirror(go.n)}</span>}
-      <div className="kr-rockline">
+      {near && <span className="kr-sr">{WORDS.nearMirror(go.n)}</span>}
       <div className={`kr-rock${guide === 0 ? ' kr-guide' : ''}`}>
         <div className="kr-rows">
           {rock.map(({ r, count, start }) => (
@@ -577,17 +580,11 @@ function Mirror({ go, help, phase, counted, guide, onFish }: {
               {Array.from({ length: count }, (_, i) => (
                 <FishSpot key={i} id={`r${start + i}`} counted={counted} onTap={() => onFish(`r${start + i}`)} className={help === 'full' ? 'kr-fish--linked' : ''} />
               ))}
+              {/* Near doubles: an empty spot on the rock above the one more fish, so the double lines up fish for fish. */}
+              {near && r === lastRow && <span className="kr-fish kr-fish--gap" aria-hidden="true" />}
             </div>
           ))}
         </div>
-      </div>
-      {/* Near doubles: the one more fish sits on its own, out of the water, and is not part of the reflection. */}
-      {go.kind === 'near' && reflection && (
-        <div className="kr-more">
-          <FishSpot id={`w${go.n}`} counted={counted} onTap={() => onFish(`w${go.n}`)} className="kr-fish--extra" />
-          <span className="kr-more__label" aria-hidden="true">+ 1</span>
-        </div>
-      )}
       </div>
       <div className={`kr-water${reflection ? ` kr-water--${reflection}` : ''}${guide === 1 ? ' kr-guide' : ''}`}>
         {reflection && (
@@ -597,6 +594,9 @@ function Mirror({ go, help, phase, counted, guide, onFish }: {
                 {Array.from({ length: count }, (_, i) => (
                   <FishSpot key={i} id={`w${start + i}`} counted={counted} onTap={() => onFish(`w${start + i}`)} className="kr-fish--mirror" />
                 ))}
+                {near && r === lastRow && (
+                  <FishSpot id={`w${go.n}`} counted={counted} onTap={() => onFish(`w${go.n}`)} className="kr-fish--extra" />
+                )}
               </div>
             ))}
           </div>

@@ -124,7 +124,7 @@ export function GlyphGame({ backend, extra, onExit }: { backend: GlyphBackend; e
     return (
       <div className="gg-root">
         <p className="gg-error" role="status">Glyph Gates isn’t switched on for your class yet.</p>
-        {onExit && <button type="button" className="gg-btn" onClick={onExit}>Back to games</button>}
+        {onExit && <button type="button" className="gg-btn" onClick={onExit}>Back to activities</button>}
       </div>
     );
   }

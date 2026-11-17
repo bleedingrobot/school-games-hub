@@ -15,6 +15,7 @@ import { MONSTERS } from './gamedata';
 import { roll } from './rng';
 import { SPELLS, type SpellDef } from './spells';
 import { STATS, type Member, type MonsterDef, type MonsterKind, type Stat, type Stats } from './types';
+import type { Look } from './looks';
 
 export interface Mod {
   stat: Stat;
@@ -88,6 +89,11 @@ export interface MonsterInFight {
   rounds: number;
 }
 
+/** What makes a fight a Village Raid (raids.ts sets it up): how to draw each defender (never a pupil's name). */
+export interface RaidInFight {
+  defenders: { race: string; cls: string; look?: Look }[];
+}
+
 export interface FightState {
   /** Random state (see rng.ts). */
   rng: number;
@@ -107,6 +113,8 @@ export interface FightState {
   monster?: MonsterInFight;
   /** A shallow mine fight asks its Battle Cry only in the first round or two: the bonus earned then carries on (battleCry.ts, `cryAsked`). */
   cryKept?: Cry;
+  /** Only in a Village Raid. */
+  raid?: RaidInFight;
 }
 
 const stat = (f: Fighter, s: Stat): number => {

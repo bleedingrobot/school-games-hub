@@ -7,7 +7,6 @@ import { buildingArt, troopArt } from './art';
 import { buyTroopMix, canBuyMix, canUpgradeBuilding, upgradeBuilding } from './places';
 import { nextVillageStep, strengthKey } from './nextStep';
 import type { Session, Change } from './session';
-import { shielded, shieldEnds } from './shield';
 
 type Phase =
   | { t: 'idle' }
@@ -27,7 +26,7 @@ const readSeen = (clanName: string): Partial<Record<VillageBuilding, number>> =>
  * bottom corners); tap a building for its card and Upgrade button; the Barracks' card also shows the troops (James, 17 Nov 2026).
  * One purse pays for everything. The area and fence questions are asked when you upgrade, but they never stop it.
  */
-export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid, top }: { session: Session; onChange: Change; onBack: () => void; onRaid: () => void; onClassRaid: () => void; top?: React.ReactNode }) {
+export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid, onDuels, top }: { session: Session; onChange: Change; onBack: () => void; onRaid: () => void; onClassRaid: () => void; onDuels?: () => void; top?: React.ReactNode }) {
   const { clan } = session;
   const e = empireOf(clan);
   const [phase, setPhase] = useState<Phase>({ t: 'idle' });
@@ -139,7 +138,8 @@ export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid, top 
         {top}
         <VillageScene e={e} states={states} picked={b} total={levels} cheer={cheer} smoky={smoky} onPick={(x) => pick(x === picked ? undefined : x)} />
         <button type="button" className="cq-btn cq-btn--hot cq-vstage2__raid cq-vstage2__raid--left" onClick={onRaid}>Raid a kingdom / Practice battle</button>
-        <button type="button" className="cq-btn cq-btn--hot cq-vstage2__raid cq-vstage2__raid--right" onClick={onClassRaid}>Raid a classmate</button>
+        <button type="button" className="cq-btn cq-btn--hot cq-vstage2__raid cq-vstage2__raid--right" onClick={onClassRaid}>Village Raids</button>
+        {onDuels && <button type="button" className="cq-btn cq-btn--hot cq-vstage2__raid cq-vstage2__raid--duel" onClick={onDuels}>⚔️ Duel Arena</button>}
       </div>
       <div className="cq-place__head">
         <h2>My Village</h2>
@@ -185,7 +185,6 @@ export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid, top 
         <strong>Builds left: {left}{saved > 0 && ` (${today} today + ${saved} saved)`}</strong> · Clan purse: <strong>{clan.gold} gold</strong>
       </p>
       <p className="cq-soft">Builds you don&apos;t use are saved for later, up to {CONFIG.empire.buildsSavedMax}.</p>
-      {shielded(e.shieldUntil) && <p className="cq-ok" role="status">You are safe from raids until {shieldEnds(e.shieldUntil)}.</p>}
     </section>
   );
 }

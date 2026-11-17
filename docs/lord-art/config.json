@@ -1,0 +1,50 @@
+{
+  "_from": "docs/game-guide/templates/art-config.json. Dragon Maths pictures painted on James's PC (the older ones came from docs/lord-art/PROMPTS.md). The map has every place on it, so the village needs no list of buttons (17 Nov 2026).",
+  "game": "lord",
+  "filename_prefix": "lord/img",
+  "comfy": "http://127.0.0.1:8188",
+  "style": "b",
+  "styles": {
+    "a": "Hand-painted illustrated fantasy storybook game map, rich warm colours, soft painterly light, detailed but clear, friendly for children aged 8 to 11, no writing, no letters, no numbers, no labels anywhere. ",
+    "b": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours, weathered stone, mud and soot, smoke and mist, warm firelight glow against cold shadow, dramatic cinematic light, suitable for children aged 8 to 12, no writing, no letters, no numbers, no labels anywhere. "
+  },
+  "inbox": "~/dragon-art-inbox/lord",
+  "picks": "docs/lord-art/picks.json",
+  "art_dir": "src/games/lord/art",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "map",
+      "prompt": "A bird's-eye three-quarter view of a small fantasy kingdom seen from high above at an angle like a game world map, at stormy dusk under heavy grey clouds, every place small, clear and well apart with grass and winding dirt paths between them. Far left: a big dark green forest of tall pine and oak trees with a path leading into it. Centre: a cosy village of timber houses with red roofs around a stone fountain square. In the village, clearly separate: a tavern inn with a hanging sign and warm glowing windows; a blacksmith's forge with an anvil, glowing orange fire and swords on a rack; a healer's thatched cottage with a herb garden and a green cross-free round window; a solid stone bank with a gold dome and heavy door; a wooden town notice board covered in pinned papers. Lower centre: a fenced training yard with straw dummies and weapon racks. Right: a round stone arena with banners. Upper right: a tall white hall of heroes with golden statues and columns. Top: dark jagged volcanic mountains with a huge cave mouth glowing red and smoke, the dragon's lair. Bottom: a dark river winding to the sea. Muddy tracks, weathered stone, smoke from chimneys, lanterns glowing. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "scenes",
+      "file": "map"
+    },
+    {
+      "name": "arena",
+      "prompt": "A deserted, completely empty round stone fighting arena at stormy dusk, eye-level view from the sandy floor, a wide bare sand floor with only scattered pebbles and old footprints, curved weathered stone walls with empty wooden benches, flaming torches on iron poles, tattered banners, smoke, dark storm clouds. Abandoned and quiet: no people, no figures, no fighters, no crowd, no animals anywhere. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "scenes",
+      "file": "arena"
+    },
+    {
+      "name": "warriors",
+      "prompt": "Inside a torchlit stone warriors' tower hall at night, a huge carved wooden wall board hung with painted hero shields in rows, crossed swords and spears, faded banners, iron candle chandelier, worn flagstone floor, a long wooden table in front, warm firelight and deep shadows, nobody in it, no people. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "scenes",
+      "file": "warriors"
+    }
+  ]
+}

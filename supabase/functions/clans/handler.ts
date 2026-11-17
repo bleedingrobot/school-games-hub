@@ -19,11 +19,15 @@
  * Ladder fights (20 Oct 2026): a `fightStart` that asks for one loads the child's maths (records, class settings, focus) so the rules
  * can make the fight's Battle Cry questions; `publicState` sends the browser only what to show of them, never an answer. Each
  * `cryCheck` answer goes in the child's own maths records (ladder place, skill map, focus results) once its save is kept.
+ *
+ * Village Raids (17 Nov 2026, docs/CLANS-PVP-PLAN.md): `raidStart` and every round of an open raid load the raided clan, and the
+ * raid's last round saves both clans in one transaction (`save_village_raid`), which can only add the held reward to the raided one.
  */
 import { applyAction, parseAction, type Applied, type Effects, type Result, type ServerState, type ShownFight } from '../../../shared/clans/actions';
 import { readClock, type SeasonClock } from '../../../shared/clans/season';
-import type { Empire, Village } from '../../../shared/clans/types';
-import type { RaidTarget, Sketch } from '../../../shared/clans/village';
+import type { Banners, Held, Village } from '../../../shared/clans/types';
+import type { RaidTarget, RivalSketch } from '../../../shared/clans/raids';
+import { DUEL_ACTIONS, handleDuel, type DuelAction, type DuelServices } from '../../../shared/clans/duelServer';
 import { nzDayNumber } from '../../../shared/clans/clock';
 import { UNTIMED_MS } from '../../../shared/clans/battleCry';
 import { CONFIG } from '../../../shared/clans/config';
@@ -60,13 +64,14 @@ export interface Loaded {
 /** A clan to be raided, as the database loads it. `version` is the copy the save will be checked against. */
 export type LoadedTarget = (RaidTarget & { version: number }) | null;
 
-/** What a raid saves besides the raiders' clan: the raided clan's empire and purse (checked against its version) and the lines to write. */
+/** What a Village Raid saves besides the raiders' clan (checked against the raided clan's version): its reward and the lines to write. */
 export interface RaidSave {
   targetId: string;
   targetVersion: number;
-  empire: Empire;
-  /** The raided clan's purse after the raid. */
+  /** Gold the raided clan earned for holding (0 if it didn't, or was already paid for today's holds). */
   gold: number;
+  banners: Banners;
+  held: Held;
   news: string;
   note: string;
 }
@@ -83,17 +88,17 @@ export interface Extras {
 
 export type SaveStatus = { status: 'saved'; version: number } | { status: 'duplicate'; result: Result } | { status: 'stale' };
 
-/** Everything this needs from Supabase, passed in so the tests can stand in for it. */
-export interface Services {
+/** Everything this needs from Supabase, passed in so the tests can stand in for it. Live duels' steps are DuelServices (duelServer.ts). */
+export interface Services extends Omit<DuelServices, 'now' | 'duelMaths'> {
   /** Who owns this sign-in token? Null if it's missing, expired or fake. */
   userIdFor(token: string): Promise<string | null>;
   load(player: string, requestId: string): Promise<Outcome<Loaded>>;
   save(player: string, expectedVersion: number, requestId: string, action: string, state: ServerState, result: Result): Promise<Outcome<SaveStatus>>;
-  /** The other clans in the pupil's class, for the list of who can be raided. None if the pupil has no class. */
-  mates(player: string): Promise<Outcome<Sketch[]>>;
+  /** The other clans in the pupil's class, for the list of who can be raided and the Banners board. None if the pupil has no class. */
+  mates(player: string): Promise<Outcome<RivalSketch[]>>;
   /** One clan in the pupil's class, to raid it. Null if there is none. */
   target(player: string, targetId: string): Promise<Outcome<LoadedTarget>>;
-  /** Saves a raid: both clans, one transaction. */
+  /** Saves a finished Village Raid: both clans, one transaction. */
   saveRaid(player: string, expectedVersion: number, raid: RaidSave, requestId: string, state: ServerState, result: Result): Promise<Outcome<SaveStatus>>;
   /** The teacher's settings, and this pupil's fame and achievements. */
   extras(player: string): Promise<Outcome<Extras>>;
@@ -160,6 +165,16 @@ export function makeHandler(services: Services) {
     if (!limiter.allow(player, MAX_REQUESTS_PER_MINUTE)) return reply(429, { error: 'Slow down a little!' });
 
     const body = (await readJsonBody(request)) as { requestId?: unknown; action?: unknown } | null;
+    // Live Clan Duels between classmates (shared/clans/duelServer.ts): their own small requests, like Dragon Maths' clashes.
+    if (body && typeof body.action === 'string' && DUEL_ACTIONS.includes(body.action as DuelAction)) {
+      const duelMaths = async (who: string) => {
+        const loaded = await services.load(who, '00000000-0000-4000-8000-000000000000');
+        const ask = loaded.ok ? loaded.value.state?.ask : null;
+        return ask && ask.for === 'duel' && ask.marks?.[0] ? { right: ask.marks[0].correct === true, askNo: ask.no } : { right: false, askNo: null };
+      };
+      const out = await handleDuel({ ...services, duelMaths }, player, body.action as DuelAction, body as Record<string, unknown>);
+      return reply(out.status, out.body);
+    }
     const action = body ? parseAction(body.action) : null;
     if (!body || typeof body.requestId !== 'string' || !UUID.test(body.requestId) || !action) {
       // Logs say what was wrong, never who sent it.
@@ -178,7 +193,7 @@ export function makeHandler(services: Services) {
     const unlimitedToday = extras.value.settings.unlimitedToday === true;
     // Only starting a fight and asking a question need the child's maths. If it can't be read a fight is an old-style one (the rules decide).
     const clock: SeasonClock | null = readClock(extras.value.clock);
-    const maths = action.type === 'fightStart' || action.type === 'monsterStart' || action.type === 'ask' ? await services.mathsContext(player) : undefined;
+    const maths = action.type === 'fightStart' || action.type === 'monsterStart' || action.type === 'raidStart' || action.type === 'ask' ? await services.mathsContext(player) : undefined;
 
     for (let attempt = 0; attempt < MAX_TRIES; attempt++) {
       const loaded = await services.load(player, requestId);
@@ -198,8 +213,10 @@ export function makeHandler(services: Services) {
         if (!mates.ok) return mates.why === 'busy' ? reply(503, { error: "We couldn't reach your village just now." }) : reply(400, { error: "That couldn't be read." });
         Object.assign(ctx, { mates: mates.value });
       }
-      if (state && action.type === 'raidClass') {
-        const found = await services.target(player, action.target);
+      // A raid's target: to start it, and on every round of an open raid (the last round pays it if it held).
+      const raidOn = action.type === 'raidStart' ? action.target : action.type === 'fightRound' ? state?.fight?.raid?.target : undefined;
+      if (state && raidOn) {
+        const found = await services.target(player, raidOn);
         if (!found.ok) return found.why === 'busy' ? reply(503, { error: "We couldn't reach your village just now." }) : reply(400, { error: "That couldn't be read." });
         target = found.value;
         Object.assign(ctx, { target });
@@ -218,9 +235,10 @@ export function makeHandler(services: Services) {
         return reply(200, { ok: true, replayed: false, seed, state: applied.state && shown(applied.state), result: applied.result, ...(applied.newSeason ? { newSeason: true } : {}) });
       }
 
-      const saved = effects.raid
+      const raid = effects.villageRaid;
+      const saved = raid
         ? target
-          ? await services.saveRaid(player, version, { targetId: target.id, targetVersion: target.version, empire: effects.raid.empire, gold: effects.raid.gold, news: effects.raid.news, note: effects.raid.note }, requestId, applied.state, applied.result)
+          ? await services.saveRaid(player, version, { targetId: target.id, targetVersion: target.version, gold: raid.gold, banners: raid.banners, held: raid.held, news: raid.news, note: raid.note }, requestId, applied.state, applied.result)
           : ({ ok: false, why: 'refused' } as const)
         : await services.save(player, version, requestId, action.type, applied.state, applied.result);
       if (!saved.ok) return saved.why === 'busy' ? reply(503, { error: "We couldn't save your clan just now." }) : reply(400, { error: "That couldn't be saved." });
@@ -240,7 +258,7 @@ export function makeHandler(services: Services) {
         if (fresh.ok) extras = fresh;
         // A raid wrote a line of news: ask again so the browser sees it.
         let latest: Pick<Loaded, 'news' | 'raidsOn' | 'notes'> = loaded.value;
-        if (applied.result.type === 'raidClass') {
+        if (raid) {
           const again = await services.load(player, '00000000-0000-4000-8000-000000000000');
           if (again.ok) latest = again.value;
         }

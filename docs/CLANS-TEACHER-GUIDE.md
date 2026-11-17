@@ -33,12 +33,19 @@ Pupils have a **How to play** button on their clan page, and a "How to play" box
 - Pupils can **give gold to the village chest** from their clan purse. Nobody has to give, and nobody can take gold out. Gold they give stays with the group they were in when they gave it.
 - Each **week** (Monday to Sunday, New Zealand time) the group **votes** on one building: Training Hall (cheaper training), Smithy (a better shop) or Church (one more free wake-up a day for each level). One vote each, picked from buttons; a pupil can change their vote until the week ends. At Monday's midnight the winner is built if the chest has enough gold (a tie goes to the cheaper building). If the chest is short, nothing is built and the gold stays.
 - The **Village** screen shows the class goal as a progress bar ("Smithy level 1: 120 / 250 gold") with a small maths question about it. A wrong answer blocks nothing.
-- The **Village news** page shows lines the game writes: fights won, bosses beaten, buildings built, raids. They name **clans only** (for example "A raider from the Red Banner clan took 40 gold."), never a pupil. You can see which pupil has which clan on their page.
+- The **Village news** page shows lines the game writes: fights won, bosses beaten, buildings built, raids. They name **clans only** (for example "The Red Banner clan raided the Swift Foxes clan and won!"), never a pupil. You can see which pupil has which clan on their page.
 
-## Raids on classmates
-- **Off until you switch them on** (the Raids switch in the Clan Quest villages panel). While off, the screen says so and the server refuses every raid.
-- Pupils can only raid someone **in their own group**, and only a clan whose army is about the same size (never more than twice as big or small). The rules that keep it fair: a new clan is safe for 3 days, one raid on a classmate a day, never the same clan twice in a day, at most 10% of the loot, and a clan that was just raided is shielded for a day.
-- A raid can take some of the other clan's **vault gold**, some of their **empty land**, or knock down some **buildings** (walls protect them). It never touches the clan purse or the village chest. The raided clan reads what happened next time they open the game ("While you were away"), and the village news says which clan did it.
+## Village Raids (raids on classmates)
+- **On** for every class at Douglas Park (James, 17 Nov 2026: the school defaults have it on, so new classes start with it on too). You can switch it off for a class with the Raids switch in the Clan Quest villages panel; while off, the screen says so and the server refuses every raid.
+- Pupils can only raid clans **in their own class**, from their very first day. Each pupil gets **3 raids a day**, each on a different clan. The screen suggests the three clans closest in strength, with a colour: *Should win*, *Close* or *Tough*.
+- A raid is a short siege (one maths question from the pupil's own maths) and then a fight between the raiders' heroes and a computer-played copy of the other clan's heroes, with a Battle Cry question every round. Village buildings matter: Forge and troops break walls, Walls and Tower defend, Strongroom adds gold.
+- **Nobody loses anything.** No gold, heroes, troops or buildings are ever taken. A win earns gold and Banners, a loss still earns a little, and a village that holds off a raid earns gold and Banners too. The raided pupil reads a kind note next time ("Your village held off raiders..." or "...got past your walls. Nothing was taken.").
+- **Banners** count for the week and show on a class board on the raid screen; it starts again every Monday. Banners never come from maths scores, and the board shows clan names only.
+
+## Live duels
+- **On** to start. Switch it off for a class with **Live duels** in the Clan Quest settings panel; an open duel then stops.
+- Two pupils in the same class duel live: each round both pick Charge, Volley or Shield Wall in secret and answer one maths question from their own maths. Village buildings give small bonuses, so a brand-new clan can still win.
+- **Nobody loses anything.** Both sides are paid gold and Banners for a finished duel (the first 3 a day). Pupils only see clan names and three ready-made cheers; there is no chat.
 
 ## The maths
 In the **Clan Quest maths** panel on the Teacher view you choose, for the whole school:

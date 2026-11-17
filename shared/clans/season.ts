@@ -22,8 +22,6 @@ const S = CONFIG.season;
 export const phaseOf = (day: number): SeasonPhase => (day >= S.monsterFrom ? 'monster' : day >= S.warnFrom ? 'warning' : 'build');
 
 
-/** Raids on classmates rest from day `warnFrom` to the end of the season (computer kingdoms stay open). */
-export const classRaidsResting = (clock: SeasonClock | null | undefined): boolean => clock?.clockOn === true && clock.day >= S.warnFrom;
 
 /**
  * The full reset for a new season. Returns a copy. Every member starts again at level 1 (same name, race, class and look; slot 0 leads),
@@ -82,7 +80,7 @@ export function seasonRoad(clock: SeasonClock, monster: { name: string; short: s
   const { short } = monster;
   const defs: Omit<SeasonStage, 'state'>[] = [
     { id: 'build', name: 'Build', from: 1, to: warnFrom - 1, when: `Days 1–${warnFrom - 1}`, say: 'Grow your clan and village' },
-    { id: 'ready', name: 'Get ready', from: warnFrom, to: monsterFrom - 1, when: `Days ${warnFrom}–${monsterFrom - 1}`, say: 'Supplies on sale · raids rest' },
+    { id: 'ready', name: 'Get ready', from: warnFrom, to: monsterFrom - 1, when: `Days ${warnFrom}–${monsterFrom - 1}`, say: 'Monster supplies on sale' },
     { id: 'monster', name: 'Monster week', from: monsterFrom, to: length, when: `Days ${monsterFrom}–${length}`, say: `${short} attacks! One try a day` },
     { id: 'new', name: 'New season', from: length + 1, to: length + 1, when: 'Day 1 again', say: 'Fresh start · trophies stay' },
   ];

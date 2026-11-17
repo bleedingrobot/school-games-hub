@@ -16,6 +16,7 @@ import { cardsById, type FriendGame, type FriendStats, type PlayerCard } from '.
 import type { PowerGame } from './powerGames';
 import { FriendlyError } from './profile';
 import type { MyProgress } from './progress';
+import type { MyQuest } from './quests';
 import type { TrophyShelf } from './trophies';
 import type { SpaceGame } from './spaceGames';
 
@@ -55,6 +56,8 @@ export interface HomePage {
   recentTrophies: RecentTrophy[];
   /** The once-only "new season" note (profile card P10), or null when there is none to show. */
   seasonNote: { season: number } | null;
+  /** The class's weekly quest and my days in it (docs/CLASS-QUESTS-PLAN.md), or null when there is none. */
+  classQuest: MyQuest | null;
   /**
    * The cards' parts as the database sent them, each read by its own card (so the maths code stays in the maths cards' download).
    * A part the answer doesn't have is left out, and that card asks for itself.
@@ -111,6 +114,7 @@ export async function fetchMyHomePage(): Promise<HomePage> {
     trophyShelf: row<TrophyShelf>(raw, 'trophyShelf'),
     seasonNote: row<{ season: number }>(raw, 'seasonNote'),
     recentTrophies: readRecentTrophies(raw.recentTrophies),
+    classQuest: row<MyQuest>(raw, 'classQuest'),
     parts: Object.fromEntries(CARD_PARTS.filter((part) => part in raw).map((part) => [part, raw[part]])),
   };
 }
