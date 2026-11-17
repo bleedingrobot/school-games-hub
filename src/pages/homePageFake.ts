@@ -89,7 +89,7 @@ export function homeAnswer(): Row {
     trophyShelf: job('my_trophy_shelf'),
     seasonNote: job('my_season_note'),
     recentTrophies: job('recent_trophies') ?? [],
-    classQuest: job('my_class_quest'),
+    classQuests: job('my_class_quests') ?? [],
     myClass: job('my_class'),
     focus: job('my_maths_focus'),
     ladder: job('my_ladder'),

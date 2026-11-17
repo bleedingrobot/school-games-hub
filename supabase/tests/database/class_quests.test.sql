@@ -61,7 +61,7 @@ select is(pg_temp.days('a', 'clans'), 1, 'Clan Quest: the last mine fight makes 
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000f', 'fox@douglaspark.school.nz');
 select lives_ok($$ select public.teacher_start_class_quest('11111111-1111-4111-8111-111111111111', 'trader') $$, 'the teacher starts a Star Trader quest');
 select throws_ok($$ select public.teacher_start_class_quest('11111111-1111-4111-8111-111111111111', 'lord') $$, '22023', null,
-                 '... only one quest runs at a time');
+                 '... only one daily quest runs at a time');
 select throws_ok($$ select public.teacher_start_class_quest('22222222-2222-4222-8222-222222222222', 'lord') $$, '42501', null,
                  '... and not in a class that isn''t theirs');
 select is((public.teacher_class_quests('11111111-1111-4111-8111-111111111111') -> 'pupils' -> 0 -> 'days' ->> 0)::date

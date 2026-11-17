@@ -435,7 +435,7 @@ function DashboardPage() {
         <>
 
         {/* Teachers see their class's quest too, so they can play along. */}
-        <QuestBar quest={answer?.classQuest} moves={answer?.moves} />
+        {answer?.classQuests.map((quest) => <QuestBar key={quest.quest.id} quest={quest} moves={answer.moves} />)}
 
         {answer?.recentTrophies && <RecentTrophies trophies={answer.recentTrophies} />}
 
