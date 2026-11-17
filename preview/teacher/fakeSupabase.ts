@@ -97,7 +97,7 @@ Object.assign(settingsRow, {
   lord_forest_per_day: 10, lord_season_start: new Date(Date.now() - 20 * 86_400_000).toISOString().slice(0, 10), lord_paused_since: null, lord_topics: ['add', 'times'],
   monsters_topics: ['add', 'times'], marble_maths: 'choose', marble_rescue: true, mine_maths: 'choose', toonflap_maths: 'choose', toonflap_read_time: 4,
   trader_jumps: 3, trader_loans: true, trader_maths: 'choose', archery_duels: true, beanstalk_dots: true, hop_labels: true, isles_races: true,
-  discount_days: [], unlimited_days: [], training_first: true, clan_raids_enabled: true, clan_typed_names: false, non_maths_games: true,
+  discount_days: [], unlimited_days: [], training_first: true, clan_raids_enabled: true, clan_live_duels: true, clan_typed_names: false, non_maths_games: true,
   trader_forge: true, trader_forge_typing: false,
   hop_help: true, korora_help: true, lizard_help: true, orderup_help: true, parrot_help: true, pigeon_help: true, pipi_help: true, robin_help: true,
   swamphen_help: true, tui_help: true, weka_help: true,

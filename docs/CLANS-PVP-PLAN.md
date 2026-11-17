@@ -1,6 +1,6 @@
 # Clan Quest: fighting classmates (plan, 17 Nov 2026)
 
-**Status:** stage 1 (Village Raids) live 17 Nov 2026 (#544, art and animation #545). Stage 2 (Live Clan Duels) not started.
+**Status:** stage 1 (Village Raids) live 17 Nov 2026 (#544, art and animation #545). Stage 2 (Live Clan Duels) built on `claude/clans-live-duels`. Stage 2 (Live Clan Duels) not started.
 
 James (17 Nov 2026) wants clans to fight each other. He chose **option C**: Village Raids first (any time, the other pupil
 doesn't need to be on), then Live Clan Duels for class time (like the Dragon Maths arena). His rules:
@@ -66,8 +66,28 @@ BREACH! stamp; the fight opens with the two clans' banners clashing and RAID! sl
 your clan's banner over the results. Rival cards and the Banners board animate in, Tough rivals glow red, embers drift.
 Nothing moves with reduced motion.
 
-## Stage 2: Live Clan Duels (later)
+## Stage 2: Live Clan Duels
 
-Like the Dragon Maths arena: two pupils online at once, a move each round (rock-paper-scissors style) plus a maths
-question, village upgrades as bonuses, practice duels against computer clans, ready-made cheers, a teacher switch off by
-default. Pays into the same Banners board.
+James (17 Nov 2026): "Start". Built like Dragon Maths' live arena (`shared/lord/clash*.ts`), with clan names only.
+
+- **Duel Arena** (My Village → ⚔️ Duel Arena, or from Village Raids): classmates' clans with Clan Quest open, a **Duel!**
+  button each, three practice clans (Gentle, Fair, Tough; no prizes), and the three painted order cards. A classmate's
+  challenge pops up on any screen with 30 seconds to answer.
+- **Each round** both pick in secret: **Charge** rides down **Volley**, **Volley** rains over **Shield Wall**, **Shield Wall**
+  stops **Charge**. Then one maths question (the pupil's own ladder, `ask` for 'duel'): a right answer is a full hit, a wrong
+  one a graze. The winning order hits twice as hard. 60 seconds a round, 5 rounds (3 extra if level).
+- **Village bonuses** (never more than about a fifth, so a new clan can win): Forge +4% a level, Walls −4% a level,
+  Barracks +2 strength a level, Tower an opening volley of 2 a level, Church one heal of 3 a level below half strength.
+- **Nobody loses anything.** Win 40 gold + 3 Banners, loss 15 + 1, draw 25 + 2 (+5 gold a Strongroom level), for each
+  pupil's first 3 duels a day. Giving up or walking away ends it with no prizes. Three cheers at the end, no chat.
+- **Teacher switch:** "Live duels" in Clan Quest settings, ON to start (James: on).
+
+### How it is built
+
+- Rules `shared/clans/duel.ts`; server steps `shared/clans/duelServer.ts` (the `clans` function's `duel-*` requests);
+  migration `20261117000400_clans_live_duels.sql` (clan_here, clan_duels with Realtime, hidden clan_duel_picks, prizes,
+  cron tidy, `teacher_set_clan_live_duels`). One maths question powers one round only (`used_ask`).
+- Screens `Duels.tsx`, `useDuels.ts`, `src/data/clanDuel.ts`; the test page plays against pretend clans (`pretendDuels.ts`).
+- Art (`docs/clans-duel-art/`): the tournament field, the arena gate, and three order cards. The duel fills the screen: the
+  two clans' banners swing in, painted order cards slam together from the sides (the winner glows, the loser cracks),
+  hits pop, the Church heal sparkles, and a win rains Banners.

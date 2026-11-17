@@ -1,0 +1,41 @@
+{
+  "_from": "docs/game-guide/templates/art-config.json. Clan Quest Live Clan Duels paintings (docs/CLANS-PVP-PLAN.md, stage 2).",
+  "game": "clans-duel",
+  "filename_prefix": "clans-duel/img",
+  "comfy": "http://127.0.0.1:8188",
+  "style": "a",
+  "styles": {
+    "a": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, suitable for children aged 8 to 12, no blood, no gore, no writing, no letters, no numbers anywhere. "
+  },
+  "inbox": "~/dragon-art-inbox/clans-duel",
+  "picks": "docs/clans-duel-art/picks.json",
+  "art_dir": "src/games/clans/art",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "duel-field",
+      "prompt": "A wide medieval tournament field at golden sunset seen from ground level, two rival clan camps on the far left and far right edges with colourful tents and tall banners, wooden spectator stands with fluttering flags in the far background, torches and braziers, a wide empty trampled grass field in the middle and foreground like a stage, dust and glowing embers in the warm air, epic and exciting, empty field with no people in the middle.",
+      "size": [1536, 864], "kind": "scene", "folder": "scenes", "file": "duel-field"
+    },
+    {
+      "name": "duel-gate",
+      "prompt": "The grand entrance of a medieval clan duelling arena at dusk, a huge carved wooden gate with iron studs between two stone towers, rows of colourful clan banners with animal emblems on both sides, flaming braziers, a crowd silhouette in the stands beyond, a path of torches leading to the gate, heroic and inviting, no people in the foreground.",
+      "size": [1536, 864], "kind": "scene", "folder": "scenes", "file": "duel-gate"
+    },
+    {
+      "name": "move-charge",
+      "prompt": "Heroic close view of armoured clan riders on horses charging forward at full gallop straight towards the viewer, lances lowered, dust and sparks flying, a clan banner streaming, dramatic low angle, golden backlight, powerful motion, square composition.",
+      "size": [1024, 1024], "kind": "scene", "folder": "duel", "file": "move-charge"
+    },
+    {
+      "name": "move-volley",
+      "prompt": "A line of clan archers on a hill drawing longbows and loosing a huge volley of glowing flaming arrows high into an orange sunset sky, arrows arcing overhead like a rain of sparks, dramatic low angle, powerful and exciting, square composition.",
+      "size": [1024, 1024], "kind": "scene", "folder": "duel", "file": "move-volley"
+    },
+    {
+      "name": "move-shield",
+      "prompt": "A tight shield wall of clan warriors seen from the front, big round painted wooden shields with iron rims locked edge to edge, spear points poking between them, arrows bouncing off with sparks, braced and unbreakable, dramatic firelight, square composition.",
+      "size": [1024, 1024], "kind": "scene", "folder": "duel", "file": "move-shield"
+    }
+  ]
+}

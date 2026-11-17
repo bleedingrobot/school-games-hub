@@ -10,6 +10,7 @@ import {
   fetchClanMathsSettings,
   fetchClanMathsStudent,
   fetchClanRaidsEnabled,
+  fetchClanLiveDuels,
   fetchClanTypedNames,
   fetchClansEnabled,
   fetchClassClanMaths,
@@ -18,6 +19,7 @@ import {
   resetClan,
   saveClanMathsSettings,
   saveClanRaidsEnabled,
+  saveClanLiveDuels,
   saveClanTypedNames,
   startClansNewSeason,
   type ClanInfo,
@@ -65,6 +67,7 @@ function ClansSettingsPanel({ classId }: { classId: string }) {
   const enabled = useSetting(() => fetchClansEnabled(classId), [classId]);
   const typedNames = useSetting(() => fetchClanTypedNames(classId), [classId]);
   const raids = useSetting(() => fetchClanRaidsEnabled(classId), [classId]);
+  const duels = useSetting(() => fetchClanLiveDuels(classId), [classId]);
   const maths = useSetting(() => fetchClanMathsSettings(classId), [classId]);
   const m = maths.value;
 
@@ -118,12 +121,21 @@ function ClansSettingsPanel({ classId }: { classId: string }) {
       <p className="panel__empty">There is no Practice Mode: nothing in Clan Quest is a test.</p>
       <h3>Raids</h3>
       <SettingToggle
-        label="Raids on classmates"
-        about="Clans can raid other clans in the same class, once a day, and a raided clan is safe the next day. Off until you turn it on."
+        label="Village Raids on classmates"
+        about="Clans raid a computer-played copy of a classmate's village, 3 times a day. Nobody ever loses gold, heroes, troops or buildings: both sides are paid by the game."
         value={raids.value}
         loadFailed={raids.failed}
         save={async (on) => {
           await saveClanRaidsEnabled(on, classId);
+        }}
+      />
+      <SettingToggle
+        label="Live duels"
+        about="Two classmates' clans duel live, round by round (Charge, Volley or Shield Wall, then a maths question). Clan names only, three ready-made cheers, no chat. Nobody loses anything. On to start."
+        value={duels.value}
+        loadFailed={duels.failed}
+        save={async (on) => {
+          await saveClanLiveDuels(on, classId);
         }}
       />
     </section>

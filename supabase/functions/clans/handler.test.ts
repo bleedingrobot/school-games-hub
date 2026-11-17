@@ -6,6 +6,8 @@ import { startingDrafts } from '../../../shared/clans/create';
 import type { Village } from '../../../shared/clans/types';
 import { empireOf } from '../../../shared/clans/empire';
 import type { RivalSketch } from '../../../shared/clans/raids';
+import type { DuelRow } from '../../../shared/clans/duelServer';
+import { villageOf, type DuelPick } from '../../../shared/clans/duel';
 import { addEarned, fameFor, measures, NO_STATS, pointsFor, reached, type ClanStats, type Earned } from '../../../shared/clans/rewards';
 import type { FactAnswer } from '../../../shared/maths/leitner';
 import { parseFocus } from '../../../shared/maths/focus';
@@ -27,7 +29,7 @@ function fakeDb() {
   const clans = new Map<string, { version: number; state: ServerState; requests: Map<string, Result> }>();
   const seeds = new Map<string, number>();
   const log: string[] = [];
-  const flags = { enabled: true, raidsOn: false, news: ['One fight was won in the Mines yesterday.'] as string[], clock: undefined as unknown };
+  const flags = { enabled: true, duelsOn: true, raidsOn: false, news: ['One fight was won in the Mines yesterday.'] as string[], clock: undefined as unknown };
   const village = { news: [] as string[] };
   const group: { levels: Village | null } = { levels: null };
   const notes = new Map<string, string[]>();
@@ -51,6 +53,75 @@ function fakeDb() {
   };
   const publicId = (player: string) => player.replace('student-', 'pid-');
   const playerOf = (id: string) => [...clans.keys()].find((p) => publicId(p) === id);
+  // Live duels, the way migration 20261117000400 keeps them: hidden picks, one maths answer per round, prizes to both sides.
+  const duels = new Map<number, DuelRow & { used: [number, number] }>();
+  const duelPicks = new Map<string, [DuelPick | null, DuelPick | null]>();
+  const bump = (d: DuelRow & { used: [number, number] }) => ({ ...json(d), used: d.used, version: d.version + 1 });
+  const duelDb: Pick<Services, 'duelLoad' | 'duelChallenge' | 'duelAnswer' | 'duelPick' | 'duelRoundPicks' | 'duelRound' | 'duelEnd'> = {
+    async duelLoad(id) {
+      const d = duels.get(id);
+      return { ok: true, value: d ? { duel: json(d), on: [flags.duelsOn, flags.duelsOn] } : null };
+    },
+    async duelChallenge(player, other) {
+      const them = playerOf(other);
+      const a = clans.get(player);
+      const b = them ? clans.get(them) : undefined;
+      if (!a || !b || !them || them === player) return { ok: true, value: { result: 'away', duel: null } };
+      if (!flags.duelsOn) return { ok: true, value: { result: 'off', duel: null } };
+      const clanOf = (c: ServerState['clan']) => ({ heroes: c.members.map((m) => ({ race: m.race, cls: m.cls, look: m.look ?? null })), village: villageOf(empireOf(c).levels) });
+      const id = duels.size + 1;
+      duels.set(id, {
+        id, seat_a: player, seat_b: them, name_a: a.state.clan.name, name_b: b.state.clan.name, clans: [clanOf(a.state.clan), clanOf(b.state.clan)],
+        status: 'asked', rounds: [], missed: [0, 0], deadline: new Date(NOW + 30_000).toISOString(), winner: null, ending: null, leaver: null,
+        gold: [0, 0], banners: [0, 0], cheers: [null, null], version: 0, created_at: new Date(NOW).toISOString(), finished_at: null, used: [0, 0],
+      });
+      return { ok: true, value: { result: 'ok', duel: id } };
+    },
+    async duelAnswer(player, id, accept) {
+      const d = duels.get(id);
+      if (!d || d.seat_b !== player) return { ok: true, value: { result: 'not-yours' } };
+      const next = { ...bump(d), status: accept ? 'playing' as const : 'declined' as const, deadline: new Date(NOW + 60_000).toISOString() };
+      duels.set(id, next);
+      return { ok: true, value: { result: 'ok', duel: json(next) } };
+    },
+    async duelPick(player, id, round, move, right, askNo) {
+      const d = duels.get(id)!;
+      const seat = d.seat_a === player ? 0 : 1;
+      const key = `${id}:${round}`;
+      const picks = duelPicks.get(key) ?? [null, null];
+      // Like the database: a maths question already used for an earlier round counts as wrong.
+      const fresh = askNo !== null && askNo > d.used[seat];
+      if (picks[seat]) return { ok: true, value: { result: 'already', duel: json(d), picks } };
+      picks[seat] = { move: move as DuelPick['move'], right: right && fresh };
+      if (fresh) d.used[seat] = askNo!;
+      duelPicks.set(key, picks);
+      return { ok: true, value: { result: 'ok', duel: json(d), picks: json(picks) } };
+    },
+    async duelRoundPicks(id, round) {
+      return { ok: true, value: duelPicks.get(`${id}:${round}`) ?? [null, null] };
+    },
+    async duelRound(id, version, rounds, missed) {
+      const d = duels.get(id)!;
+      if (d.version !== version) return { ok: true, value: null };
+      const next = { ...bump(d), rounds: json(rounds), missed };
+      duels.set(id, next);
+      return { ok: true, value: json(next) };
+    },
+    async duelEnd(id, version, status, ending, winner, leaver, rounds, gold, banners) {
+      const d = duels.get(id)!;
+      if (d.version !== version) return { ok: true, value: null };
+      const next = { ...bump(d), status, ending, winner, leaver, rounds: rounds ? json(rounds) : d.rounds, gold: gold ?? [0, 0] as [number, number], banners: banners ?? [0, 0] as [number, number] };
+      ([d.seat_a, d.seat_b] as const).forEach((who, i) => {
+        const row = clans.get(who)!;
+        row.state.clan.gold += next.gold[i];
+        const e = empireOf(row.state.clan);
+        e.banners = { week: 1, count: (e.banners?.count ?? 0) + next.banners[i] };
+        row.version++;
+      });
+      duels.set(id, next);
+      return { ok: true, value: json(next) };
+    },
+  };
   const db: Pick<Services, 'load' | 'save' | 'mates' | 'target' | 'saveRaid' | 'extras' | 'recordAnswers' | 'mathsContext' | 'recordLadderAnswers'> & { raceOnce?: () => void } = {
     async load(player, requestId) {
       if (!seeds.has(player)) seeds.set(player, SEED + seeds.size);
@@ -138,11 +209,11 @@ function fakeDb() {
       return { ok: true, value: { status: 'saved', version: a.version + 1 } };
     },
   };
-  return { db, clans, log, flags, village, group, notes, fame, points, answers, teacher, stats, ladder };
+  return { db: { ...db, ...duelDb }, clans, log, flags, village, group, notes, fame, points, answers, teacher, stats, ladder, duelPicks };
 }
 
 function setup(over: Partial<Services> = {}, now = () => NOW) {
-  const { db, clans, log, flags, village, group, notes, fame, points, answers, teacher, stats, ladder } = fakeDb();
+  const { db, clans, log, flags, village, group, notes, fame, points, answers, teacher, stats, ladder, duelPicks } = fakeDb();
   const services: Services = {
     now,
     userIdFor: vi.fn(async (token: string) => (token === 'ana' ? 'student-1' : token === 'ben' ? 'student-2' : token === 'cai' ? 'student-3' : null)),
@@ -159,7 +230,7 @@ function setup(over: Partial<Services> = {}, now = () => NOW) {
     const response = await handler(new Request('http://x/clans', { method: 'POST', headers, body: JSON.stringify(opts.raw ?? { requestId: opts.requestId ?? id(), action }) }));
     return { status: response.status, body: (await response.json()) as Record<string, any> };
   };
-  return { send, clans, log, services, id, handler, flags, village, group, notes, fame, points, answers, teacher, stats, ladder };
+  return { send, clans, log, services, id, handler, flags, village, group, notes, fame, points, answers, teacher, stats, ladder, duelPicks };
 }
 
 const create = (seed = SEED) => ({ type: 'create', name: 'Red Banner', drafts: startingDrafts(seed) });
@@ -216,8 +287,8 @@ async function village(t: ReturnType<typeof setup>) {
 const idOf = async (t: ReturnType<typeof setup>, name: string, token = 'ana') =>
   (await t.send({ type: 'raidTargets' }, { token })).body.result.targets.find((x: any) => x.name === name)?.id as string;
 
-describe('Village Raids on classmates', () => {
-  it('starts from day one, takes nothing from anyone, pays both sides and refuses what the rules refuse', async () => {
+describe('Village Raids and Live Clan Duels', () => {
+  it('raids and live duels: from day one, nothing taken from anyone, both sides paid, and the rules refuse what they should', async () => {
     const t = setup();
     await village(t);
     const ben = await idOf(t, 'Swift Foxes');
@@ -257,6 +328,38 @@ describe('Village Raids on classmates', () => {
     // The teacher's switch stops a raid before it starts.
     t.flags.raidsOn = false;
     expect((await t.send({ type: 'raidStart', target: await idOf(t, 'Brave Owls') })).body).toMatchObject({ ok: false, why: 'off' });
+
+    // ---- Live Clan Duels (shared/clans/duelServer.ts): ana duels ben, each round powered by one maths question. ----
+    const duelSend = (raw: Record<string, unknown>, token = 'ana') => t.send(null, { token, raw });
+    const gold = (who: string) => t.clans.get(who)!.state.clan.gold;
+    const before2 = [gold('student-1'), gold('student-2')];
+    const asked = await duelSend({ action: 'duel-challenge', other: ben });
+    expect(asked.status).toBe(200);
+    const duelId = asked.body.duel.id as number;
+    expect(asked.body.duel).toMatchObject({ status: 'asked', name_a: 'Red Banner', name_b: 'Swift Foxes' });
+    // The defenders are shown by race and class only, never a pupil's hero names.
+    expect(JSON.stringify(asked.body.duel.clans)).not.toContain(t.clans.get('student-2')!.state.clan.members[0].name);
+    expect((await duelSend({ action: 'duel-answer', duel: duelId, accept: true }, 'ben')).body.duel.status).toBe('playing');
+    // One answer, one round: a pick sent with no new question counts as a graze.
+    const answer = async (token: string) => {
+      const who = token === 'ana' ? 'student-1' : 'student-2';
+      await t.send({ type: 'ask', for: 'duel' }, { token });
+      const q = t.clans.get(who)!.state.ask!.questions[0];
+      await t.send({ type: 'askCheck', slot: 0, answer: q.answer, ms: 2000 }, { token });
+    };
+    let row: Record<string, any> = {};
+    for (let round = 0; round < 8; round++) {
+      if (round !== 1) await answer('ana');
+      await answer('ben');
+      await duelSend({ action: 'duel-pick', duel: duelId, round, move: 'charge' });
+      if (round === 1) expect(t.duelPicks.get(`${duelId}:1`)![0]).toEqual({ move: 'charge', right: false });
+      row = (await duelSend({ action: 'duel-pick', duel: duelId, round, move: 'volley' }, 'ben')).body.duel;
+      if (row.status === 'done') break;
+    }
+    // Charge rides down Volley every round, so ana's clan wins; both clans are paid, and nobody loses anything.
+    expect(row).toMatchObject({ status: 'done', ending: 'finished', winner: 0, gold: [40, 15], banners: [3, 1] });
+    expect([gold('student-1'), gold('student-2')]).toEqual([before2[0] + 40, before2[1] + 15]);
+    expect((await duelSend({ action: 'duel-pick', duel: duelId, round: 9, move: 'charge' })).status).toBe(409);
   });
 });
 

@@ -27,6 +27,7 @@ import { applyAction, parseAction, type Applied, type Effects, type Result, type
 import { readClock, type SeasonClock } from '../../../shared/clans/season';
 import type { Banners, Held, Village } from '../../../shared/clans/types';
 import type { RaidTarget, RivalSketch } from '../../../shared/clans/raids';
+import { DUEL_ACTIONS, handleDuel, type DuelAction, type DuelServices } from '../../../shared/clans/duelServer';
 import { nzDayNumber } from '../../../shared/clans/clock';
 import { UNTIMED_MS } from '../../../shared/clans/battleCry';
 import { CONFIG } from '../../../shared/clans/config';
@@ -87,8 +88,8 @@ export interface Extras {
 
 export type SaveStatus = { status: 'saved'; version: number } | { status: 'duplicate'; result: Result } | { status: 'stale' };
 
-/** Everything this needs from Supabase, passed in so the tests can stand in for it. */
-export interface Services {
+/** Everything this needs from Supabase, passed in so the tests can stand in for it. Live duels' steps are DuelServices (duelServer.ts). */
+export interface Services extends Omit<DuelServices, 'now' | 'duelMaths'> {
   /** Who owns this sign-in token? Null if it's missing, expired or fake. */
   userIdFor(token: string): Promise<string | null>;
   load(player: string, requestId: string): Promise<Outcome<Loaded>>;
@@ -164,6 +165,16 @@ export function makeHandler(services: Services) {
     if (!limiter.allow(player, MAX_REQUESTS_PER_MINUTE)) return reply(429, { error: 'Slow down a little!' });
 
     const body = (await readJsonBody(request)) as { requestId?: unknown; action?: unknown } | null;
+    // Live Clan Duels between classmates (shared/clans/duelServer.ts): their own small requests, like Dragon Maths' clashes.
+    if (body && typeof body.action === 'string' && DUEL_ACTIONS.includes(body.action as DuelAction)) {
+      const duelMaths = async (who: string) => {
+        const loaded = await services.load(who, '00000000-0000-4000-8000-000000000000');
+        const ask = loaded.ok ? loaded.value.state?.ask : null;
+        return ask && ask.for === 'duel' && ask.marks?.[0] ? { right: ask.marks[0].correct === true, askNo: ask.no } : { right: false, askNo: null };
+      };
+      const out = await handleDuel({ ...services, duelMaths }, player, body.action as DuelAction, body as Record<string, unknown>);
+      return reply(out.status, out.body);
+    }
     const action = body ? parseAction(body.action) : null;
     if (!body || typeof body.requestId !== 'string' || !UUID.test(body.requestId) || !action) {
       // Logs say what was wrong, never who sent it.

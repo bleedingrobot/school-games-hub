@@ -13,6 +13,8 @@ const data = vi.hoisted(() => ({
   fetchClanInfo: vi.fn(),
   resetClan: vi.fn(async () => true),
   fetchClanRaidsEnabled: vi.fn(),
+  fetchClanLiveDuels: vi.fn(),
+  saveClanLiveDuels: vi.fn(),
   saveClanRaidsEnabled: vi.fn(),
   fetchClanMathsSettings: vi.fn(),
   saveClanMathsSettings: vi.fn(),
@@ -46,6 +48,7 @@ beforeEach(() => {
   data.saveClansEnabled.mockImplementation(async (on: boolean) => on);
   data.fetchClanInfo.mockResolvedValue(info());
   data.fetchClanRaidsEnabled.mockResolvedValue(false);
+  data.fetchClanLiveDuels.mockResolvedValue(true);
   data.saveClanRaidsEnabled.mockImplementation(async (on: boolean) => on);
   data.fetchClanTypedNames.mockResolvedValue(false);
   data.saveClanTypedNames.mockImplementation(async (on: boolean) => on);

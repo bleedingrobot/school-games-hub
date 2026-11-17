@@ -25,13 +25,15 @@ type Phase = { t: 'list' } | { t: 'ask'; rival: Rival } | { t: 'working' } | { t
 const pct = (x: number) => Math.round(x * 100);
 const R = CONFIG.classRaids;
 
-export function VillageRaids({ session, ask, onStart, onFight, onBack }: {
+export function VillageRaids({ session, ask, onStart, onFight, onBack, onDuels }: {
   session: Session;
   /** With a server: send an action and get its answer. Without one (the test page), pretend classmates stand in. */
   ask?: Asker;
   onStart: (target: string) => Promise<RaidGo>;
   onFight: (open: ShownFight) => void;
   onBack: () => void;
+  /** Over to the Duel Arena (live duels with classmates). */
+  onDuels?: () => void;
 }) {
   const [list, setList] = useState<{ targets: Rival[]; board: BoardRow[]; left: number } | null>(null);
   const [failed, setFailed] = useState('');
@@ -148,6 +150,7 @@ export function VillageRaids({ session, ask, onStart, onFight, onBack }: {
     <section className="cq-place" aria-label="Village Raids">
       <div className="cq-place__head">
         <h2>Village Raids</h2>
+        {onDuels && <button type="button" className="cq-btn cq-btn--hot" onClick={onDuels}>⚔️ Live duels</button>}
         <button type="button" className="cq-btn" onClick={onBack}>Back to My Village</button>
       </div>
       {body}

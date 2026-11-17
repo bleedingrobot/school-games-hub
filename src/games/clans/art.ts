@@ -19,7 +19,7 @@ const file = (group: string, name: string): string | undefined => FILES[`./art/$
 export const SCENES = [
   'village', 'news', 'scoreboard', 'market', 'training', 'church', 'mines', 'empire', 'barracks', 'raid', 'quests', 'creator',
   'battlefield', 'victory', 'rest', 'town', 'zone-meadow', 'zone-caves', 'zone-swamp', 'zone-ruins', 'zone-mountain',
-  'raid-hall', 'raid-siege', 'raid-arena', 'raid-camp',
+  'raid-hall', 'raid-siege', 'raid-arena', 'raid-camp', 'duel-field', 'duel-gate',
 ] as const;
 export type SceneId = (typeof SCENES)[number];
 
@@ -128,4 +128,10 @@ export const boulderArt = () => file('season-monsters', 'boulder');
 export function storyArt(kind: MonsterKind, page: number): { wide?: string; small?: string } {
   const wide = file('season-monsters', `story-${kind}-${page}`);
   return { wide, small: file('season-monsters', `story-${kind}-${page}-800`) ?? wide };
+}
+
+/** A Live Clan Duel move card (art/duel/move-<move>.webp, painted for docs/clans-duel-art): the full one and an 800px copy. */
+export function duelArt(move: 'charge' | 'volley' | 'shield'): { wide?: string; small?: string } {
+  const wide = file('duel', `move-${move}`);
+  return { wide, small: file('duel', `move-${move}-800`) ?? wide };
 }

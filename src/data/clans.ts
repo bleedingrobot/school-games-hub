@@ -50,10 +50,27 @@ export async function resetClan(student: string): Promise<boolean> {
 }
 
 // ---------------------------------------------------------------------------
+// Live Clan Duels (migration 20261117000400): the teacher's switch, on to start
+// ---------------------------------------------------------------------------
+
+export async function fetchClanLiveDuels(classId?: string | null): Promise<boolean> {
+  const data = await readSettings(['clan_live_duels'], classId);
+  if (!data) throw new FriendlyError('We couldn’t load the live duels setting.');
+  return data.clan_live_duels !== false;
+}
+
+export async function saveClanLiveDuels(enabled: boolean, classId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('teacher_set_clan_live_duels', { enabled, target_class: classId });
+  forgetSettings();
+  if (error || typeof data !== 'boolean') throw new FriendlyError('We couldn’t save the live duels setting.');
+  return data;
+}
+
+// ---------------------------------------------------------------------------
 // Raids on classmates (stage C.6 part A; the village groups went with My Village, 28 Oct 2026)
 // ---------------------------------------------------------------------------
 
-/** Are raids on classmates switched on? Off until a teacher turns them on. */
+/** Are Village Raids on classmates switched on? */
 export async function fetchClanRaidsEnabled(classId?: string | null): Promise<boolean> {
   const data = await readSettings(['clan_raids_enabled'], classId);
   if (!data) throw new FriendlyError('We couldn’t load the raids setting.');

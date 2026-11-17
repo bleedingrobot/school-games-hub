@@ -101,10 +101,10 @@ export interface ServerState {
 }
 
 /** What ladder questions can be asked for, outside fights. */
-export const ASK_FOR = ['shop', 'quest', 'siege', 'raid'] as const;
+export const ASK_FOR = ['shop', 'quest', 'siege', 'raid', 'duel'] as const;
 export type AskFor = (typeof ASK_FOR)[number];
 /** How many questions each one asks: the quest asks two (both right wins the big prize). */
-export const ASK_COUNT: Record<AskFor, number> = { shop: 1, quest: 2, siege: 1, raid: 1 };
+export const ASK_COUNT: Record<AskFor, number> = { shop: 1, quest: 2, siege: 1, raid: 1, duel: 1 };
 
 /** Questions waiting for an answer. `no` makes the answers' record id (`clans:ask:<seed>:<no>`). */
 export interface Asked<Q = Question> {
@@ -531,7 +531,9 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
     case 'ask': {
       if (!ctx.maths) return refuse('no-maths', "We couldn't get your maths questions just now.");
       const waiting = state.ask;
-      if (waiting && waiting.for === action.for) return done(state, { type: 'ask', for: action.for, questions: waiting.questions.map((q, i) => publicQuestion(q, i)) }, rested || upgraded);
+      // A live duel asks one question a round: once its question is answered, the next ask is a new one (duelServer.ts).
+      const spent = action.for === 'duel' && !!waiting?.marks?.[0];
+      if (waiting && waiting.for === action.for && !spent) return done(state, { type: 'ask', for: action.for, questions: waiting.questions.map((q, i) => publicQuestion(q, i)) }, rested || upgraded);
       const no = (state.askNo ?? 0) + 1;
       const questions = makeRunQuestions(ctx.maths, ASK_COUNT[action.for], seededRandom(`clans:ask:${state.seed}:${no}`));
       if (questions.length === 0) return refuse('no-maths', "We couldn't get your maths questions just now.");
