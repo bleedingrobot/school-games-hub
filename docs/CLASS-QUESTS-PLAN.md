@@ -1,6 +1,6 @@
 # Weekly class quests
 
-**Status:** stage 1 being built (18 Nov 2026), branch `claude/class-quests`. Migration `20261118000100_class_quests.sql`.
+**Status:** stage 1 live 18 Nov 2026 (PR #551, migration `20261118000100_class_quests.sql`): Star Trader, Dragon Maths and Clan Quest "all your turns" quests, with the class teacher playing along. Stage 2 (two quests for every complex and easy maths game) planned below, not built.
 
 James (18 Nov 2026): a teacher sets a weekly class quest; pupils must play a game properly on 5 days out of 7. A quest tracker
 bar on the home page when the class has one. Teachers track every pupil. Achievements for 1, 5, 10, 15 and 20 quests done.
@@ -92,6 +92,99 @@ how many classmates have won (a number only), and my quests done in total.
 
 1. **Everything above** in one PR: migration, watchers, rules, home bar, teacher tab, art, achievements and trophy.
 2. Later: more quest kinds (James will send ideas), maybe quests needing other things than "all turns".
+
+## Stage 2: two quests for every complex and easy maths game (planned 18 Nov 2026)
+
+James (18 Nov 2026): plan 2 quests for each complex maths game and each easy maths game. They must **not be too hard**:
+they reward **playing more**, never winning, stars, medals or right answers.
+
+### Sizing from real play
+
+Last 3 weeks of pupils' goes (live database, 18 Nov 2026): on a day a pupil plays a game they usually do **1 to 4 goes**
+(Toon Flap 4, most others 2), and most pupils play a game on only **1 or 2 days in 3 weeks**. So the targets are small:
+
+- **Daily quests** ("days"): a small amount on **5 of 7 days**, the same rule as the first quests. The daily amount is at or
+  below what a pupil already does on a day they play. Building the habit is the hard part, not the day.
+- **Weekly quests** ("total"): a modest total over the 7 days, on **any days**: about two or three normal days of play.
+  Catch-up friendly: a pupil who missed Monday can still finish.
+
+Every number below is a first guess from that data, kept in one config list so it can be tuned after a week of real quests.
+
+### Complex maths games
+
+| Game | Quest | Kind | To finish |
+|---|---|---|---|
+| Star Trader | **Every Jump** (live) | days | Use all your jumps, 5 of 7 days |
+| Star Trader | **Star Explorer** | total | Land at **6 different planets** this week |
+| Dragon Maths | **Forest Hunter** (live) | days | Use all your forest fights, 5 of 7 days |
+| Dragon Maths | **Arena Regular** | days | Fight **1 arena fight** (any result), 5 of 7 days |
+| Clan Quest | **Mine Raider** (live) | days | Use all your mine fights, 5 of 7 days |
+| Clan Quest | **Village Raider** | total | Raid classmates' villages **6 times** this week (losing costs nothing) |
+| Kingdom Keeper | **Royal Routine** | days | Rule **1 year** of your reign, 5 of 7 days |
+| Kingdom Keeper | **Crown Week** | total | Finish **2 reigns** this week (any rating) |
+| Maths Monsters | **Monster Trainer** | days | Have **3 battles**, 5 of 7 days (12 allowed a day) |
+| Maths Monsters | **Monster Catcher** | total | **Catch 3 monsters** this week |
+
+### Easy maths games
+
+| Game | Quest | Kind | To finish |
+|---|---|---|---|
+| Archery Challenge | **Daily Archer** | days | Finish **1 bot fight** (win or lose), 5 of 7 days |
+| Archery Challenge | **Quiver Filler** | total | Finish **6 maths sets** this week |
+| Bond Match | **Match Habit** | days | Finish **2 matches**, 5 of 7 days |
+| Bond Match | **Match Marathon** | total | Finish **10 matches** this week |
+| Royal Decree | **Daily Decrees** | days | Decide **10 cards**, 5 of 7 days |
+| Royal Decree | **Meet the Village** | total | Meet **6 different villagers** this week |
+| Diamond Drop | **Daily Dig** | days | Play **1 level** (replays count), 5 of 7 days |
+| Diamond Drop | **Claw Champion** | total | Play **10 levels** this week (replays count) |
+| Gem Keep | **Keeper's Watch** | days | Play **1 level** (any result), 5 of 7 days |
+| Gem Keep | **Wave Breaker** | total | Play **6 levels** this week |
+| Sky Isles | **Island Keeper** | days | Use all **6 turns**, 5 of 7 days |
+| Sky Isles | **Sky Racer** | total | Start **6 races** this week (any result) |
+| Marble Rush | **Daily Roll** | days | Roll **2 runs**, 5 of 7 days |
+| Marble Rush | **Marble Marathon** | total | Roll **12 runs** this week |
+| Mine Runner | **Daily Dive** | days | Fly **2 runs**, 5 of 7 days |
+| Mine Runner | **Deep Diver** | total | Fly **10 runs** this week |
+| Wormholes & Black Holes | **Launch Day** | days | Finish **1 space game** (bots or classmates), 5 of 7 days |
+| Wormholes & Black Holes | **Wormhole Rider** | total | Ride **10 wormholes** this week |
+| Toon Flap | **Daily Flight** | days | Finish **3 runs**, 5 of 7 days |
+| Toon Flap | **Frequent Flyer** | total | Finish **15 runs** this week |
+
+That is 30 quests: the 3 live ones plus 27 new. Every quest finished counts towards the same quests-done achievements
+(1, 5, 10, 15, 20) and the Questing Hero trophy.
+
+### How it counts (changes from stage 1)
+
+- `quest_kinds` gains the quest's game, its **rule** (`days` or `total`), the daily amount or the weekly target, and the
+  **measure** it counts. One list in `shared/quests/kinds.ts` matches it.
+- New table **`quest_tallies`** (player, measure, NZ day, count), written only by small watchers on each game's own table
+  (same pattern as stage 1: the games' code is not changed, a watcher error never loses a save). For example a new row in
+  `marble_runs` adds 1 to `marble_runs` for today; `kingdom_reigns.year` going up adds 1 to `kingdom_years`.
+- "Different" quests (Star Explorer's planets, Meet the Village's villagers) also keep which ones were counted
+  (`quest_marks`: player, measure, key, day), so the same planet twice counts once.
+- **days** quests: a day is done when that day's tally reaches the daily amount; 5 of 7 wins. **total** quests: the week's
+  tallies (or different keys) reach the target. The stage 1 "all your turns" quests keep working as they are.
+- The win is written the moment the tally crosses the line, as now.
+
+### Screens
+
+- **Quest bar:** days quests look as now. Total quests keep the seven day-stones (lit on days the pupil played) and the meter
+  becomes the count, "7 of 12 runs", with a spark on the meter each time it grows.
+- **Teacher's Quests tab:** the cards are grouped **Complex maths** and **Easy maths**, then by game (two cards each). The
+  table's "Days" column becomes "7/12" for a total quest. Still one quest at a time per class.
+- A quest whose game is switched off for the class still shows the warning.
+
+### Art (ComfyUI on this PC)
+
+One wide painting per new quest, **27 paintings** (about 25 seconds each), in each game's own look, plus a day-stone spark
+per game (emoji: 🏹 Archery, 💎 Diamond Drop, 🎈 Toon Flap, and so on). The three live paintings stay.
+
+### Building it
+
+1. Engine: `quest_kinds` columns, `quest_tallies`, `quest_marks`, the general win check, watchers for all 12 games,
+   the bar and teacher tab changes, database test.
+2. Art: the 27 paintings, picked and tidied.
+3. After a week: look at how many pupils finished each quest and tune the numbers in the one list.
 
 ## Privacy
 
