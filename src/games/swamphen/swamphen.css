@@ -175,9 +175,15 @@
 .sh-tools .sh-hand { left: 58%; top: 30%; }
 .sh-cards--which, .sh-cards--turn { display: grid; grid-template-columns: repeat(2, 1fr); max-width: 340px; margin: 0 auto; }
 .sh-cards--which .sh-choice, .sh-cards--turn .sh-choice, .sh-cards--equal .sh-choice { width: auto; }
-/* Equal rows: the four gardens are the whole go, so they are big, two by two, in the middle of the painting. */
-.sh-cards--equal { display: grid; grid-template-columns: repeat(2, 1fr); width: min(100%, 520px); margin: 0 auto; }
-.sh-cards--equal .sh-garden--small { max-height: 22dvh; }
+/* Equal rows: the four gardens are the whole go, so they are big: in one row on a wide screen, two by two on a narrow one. */
+.sh-cards--equal { display: grid; grid-template-columns: repeat(4, 1fr); width: min(100%, 820px); margin: 0 auto; }
+.sh-cards--equal .sh-garden--small { max-height: 24dvh; }
+@media (max-width: 640px) {
+  .sh-cards--equal { grid-template-columns: repeat(2, 1fr); }
+  .sh-cards--equal .sh-garden--small { max-height: 16dvh; }
+}
+/* A demo hides the cards: the grids above must not show them again. */
+.sh-cards[hidden] { display: none; }
 .sh-cards--equal .sh-choice { animation: sh-in 0.4s ease-out backwards; }
 .sh-cards--equal .sh-choice:nth-child(2) { animation-delay: 0.1s; }
 .sh-cards--equal .sh-choice:nth-child(3) { animation-delay: 0.2s; }

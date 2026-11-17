@@ -54,7 +54,7 @@ export const WORDS = {
   },
   rowTurned: (metal: Exclude<Metal, 'mud'>) => `Well done! A reed row turned ${metal}!`,
   doneToday: 'Well done! Come back tomorrow to change another reed row.',
-  nextStep: (step: Step) => `You worked hard and you are ready for more! Next time: ${stepName(step).toLowerCase()}.`,
+  nextStep: (step: Step) => `You worked hard and you are ready for more! Next time: ${stepName(step)}.`,
   /** The finish screen when the child has passed every step before the Big Garden. */
   bigGate: 'The Big Garden gate is open!',
   bigGarden: 'Big Garden',

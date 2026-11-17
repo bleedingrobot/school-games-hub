@@ -51,7 +51,8 @@ it('finishes only a pupil’s own, finished challenge, once; records each key on
   expect(log.answers).toHaveLength(1);
   const [{ once, answers }] = log.answers;
   expect(once).toBe(`swamphen:${round.seed}`);
-  const keys = [...new Set(round.goes.map((g) => g.key))];
+  // Equal-rows goes (the first step) are about seeing equal groups and are not recorded.
+  const keys = [...new Set(round.goes.map((g) => g.key))].filter((k) => !k.startsWith('equal:'));
   // Each key once (the wobbled first go wrong), and the plain times-table key beside every go that is a times fact.
   const own = answers.filter((a) => !a.key.startsWith('mul:'));
   expect(own.map((a) => [a.key, a.correct])).toEqual(keys.map((k) => [k, k !== GUIDED_KEY]));
