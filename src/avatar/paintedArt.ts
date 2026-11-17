@@ -53,6 +53,7 @@ export const TROPHY_ART: Record<string, string> = {
   'hw-star': 'homework-star',
   'hw-weekend': 'weekend-explorer',
   'hw-cup': 'home-learning-cup',
+  'quest-hero': 'questing-hero',
 };
 
 /** Each early-years game's Garden Cup is `<game>-cup`. */
