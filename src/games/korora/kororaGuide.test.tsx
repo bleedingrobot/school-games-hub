@@ -24,7 +24,7 @@ describe('Penguin Pairs help', () => {
     render(<SoundProvider><KororaGame backend={trial.backend} /></SoundProvider>);
     await userEvent.click(await screen.findByRole('button', { name: 'Play' }));
     // Double 2: the hand moves from the fish to the right number, 4.
-    await waitFor(() => expect(hand()).not.toBeNull(), { timeout: 6000 });
+    await waitFor(() => expect(hand()).not.toBeNull());
     expect(hand()!.closest('button')!.getAttribute('aria-label')).toBe('4, try this one');
     cleanup();
 
@@ -50,7 +50,7 @@ describe('Penguin Pairs help', () => {
     expect(document.querySelector('.kr-why--look')).toHaveTextContent('Let’s look together.');
     await userEvent.click(wrong[2]); // taps are off while Bella explains
     expect(wrong[2]).not.toBeDisabled();
-    await waitFor(() => expect(document.querySelector('.kr-why--try')).toHaveTextContent('Now you try one like it.'), { timeout: 16000 });
+    await waitFor(() => expect(document.querySelector('.kr-why--try')).toHaveTextContent('Now you try one like it.'));
     // A sister go: a neighbouring number, every stone back, nothing pointed at. A wrong stone on it shows why, then the first go
     // comes back with its right stone pointed at.
     const sisterAsk = document.querySelector('.kr-ask')!.textContent!;
@@ -62,7 +62,7 @@ describe('Penguin Pairs help', () => {
     await userEvent.click(stones().find((b) => !b.getAttribute('aria-label')!.startsWith(sisterRight))!);
     expect(document.querySelector('.kr-why--look')).toBeNull();
     expect(document.querySelector('.kr-why')).not.toHaveTextContent('Now you try');
-    await waitFor(() => expect(hand()!.closest('button')!.getAttribute('aria-label')).toBe(`${right}, try this one`), { timeout: 6000 });
+    await waitFor(() => expect(hand()!.closest('button')!.getAttribute('aria-label')).toBe(`${right}, try this one`));
     expect(document.querySelector('.kr-ask')!.textContent).toBe(ask);
   }, 40000);
 });

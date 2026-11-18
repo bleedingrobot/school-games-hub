@@ -26,14 +26,14 @@ describe('Weka’s Stepping Stones help', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Play' }));
     // 9 + 2: first how many hops to the big rock (1), then where Weka lands (11).
     expect(await screen.findByText('9 + 2: how many hops to 10?')).toBeTruthy();
-    await waitFor(() => expect(hand()).not.toBeNull(), { timeout: 6000 });
+    await waitFor(() => expect(hand()).not.toBeNull());
     expect(label()).toBe('1, try this one');
     await userEvent.click(hand()!.closest('button')!);
-    await waitFor(() => expect(document.querySelector('.wk-stem')!.textContent).toBe('9 + 1 = 10, then + 1'), { timeout: 4000 });
-    await waitFor(() => expect(label()).toBe('11, try this one'), { timeout: 6000 });
+    await waitFor(() => expect(document.querySelector('.wk-stem')!.textContent).toBe('9 + 1 = 10, then + 1'));
+    await waitFor(() => expect(label()).toBe('11, try this one'));
     // Then the same question with pebbles: 9 gold and 2 silver; one silver moves across to fill the first ten.
     await userEvent.click(hand()!.closest('button')!);
-    await waitFor(() => expect(document.querySelector('.wk-pebbles__sum')!.textContent).toBe('9 + 2'), { timeout: 8000 });
+    await waitFor(() => expect(document.querySelector('.wk-pebbles__sum')!.textContent).toBe('9 + 2'));
     expect(document.querySelectorAll('.wk-pebble--move')).toHaveLength(2);
     await waitFor(() => expect(label()).toMatch(/move it to the first ten-frame, try this one$/));
     await userEvent.click(hand()!.closest('button')!);
@@ -44,7 +44,7 @@ describe('Weka’s Stepping Stones help', () => {
     expect(document.querySelectorAll('.wk-pebble--move')).toHaveLength(1);
     await userEvent.click(screen.getByRole('button', { name: /Next/ }));
     // Then the split as a bond: the 2 is 1 to the big rock and 1 more, with the hand showing each part on the guided go.
-    await waitFor(() => expect(document.querySelector('.wk-bond__whole')!.textContent).toBe('2'), { timeout: 8000 });
+    await waitFor(() => expect(document.querySelector('.wk-bond__whole')!.textContent).toBe('2'));
     expect(label()).toBe('1, try this one');
     await userEvent.click(hand()!.closest('button')!);
     expect(document.querySelector('.wk-bond__part--to')!.textContent).toBe('1');
@@ -75,7 +75,7 @@ describe('Weka’s Stepping Stones help', () => {
     await userEvent.click(wrong[1]);
     expect(document.querySelector('.wk-why--look')).not.toBeNull();
     expect(document.querySelector('.wk-stem')!.textContent).toMatch(/= 10, then \+ \d/);
-    await waitFor(() => expect(document.querySelector('.wk-why--try')).not.toBeNull(), { timeout: 15000 });
+    await waitFor(() => expect(document.querySelector('.wk-why--try')).not.toBeNull());
     expect(document.querySelector('.wk-path')).toBeNull();
     // "Now you try one like it": another fact, nothing pointed at, and a wrong tap on it brings the original back with its answer pointed at.
     const [c, d] = document.querySelector('.wk-ask')!.textContent!.match(/\d+/g)!.map(Number);
