@@ -68,7 +68,7 @@ export const BACKGROUNDS: Background[] = [
   { kind: 'background', id: 'space', name: 'Space station', emoji: '🚀', img: space, small: spaceSmall, particle: 'stars', how: 'Win a game in under 20 of your moves.' },
 ];
 
-/** Piece sets arrive in stage 4. Pupils can already earn them. */
+/** Painted piece sets (art/set/<id>/), keeping the normal chess shapes so they read on small squares. */
 export const SETS: Look[] = [
   { kind: 'set', id: 'classic', name: 'Classic', how: null, emoji: '♞' },
   { kind: 'set', id: 'wood', name: 'Carved Wood', emoji: '🪵', how: 'Finish 3 games.', toGo: (n) => `Finish ${games(n)}` },
@@ -107,8 +107,8 @@ export const BOARDS: BoardLook[] = [
   },
 ];
 
-/** Kinds pupils can pick and see revealed so far. Sets join in stage 4. */
-export const READY_KINDS: LookKind[] = ['board', 'background'];
+/** Kinds pupils can pick and see revealed: every kind now. */
+export const READY_KINDS: LookKind[] = ['set', 'board', 'background'];
 
 const PREFIX: Record<LookKind, string> = { set: 'set:', board: 'board:', background: 'bg:' };
 export const keyOf = (look: Pick<Look, 'kind' | 'id'>) => PREFIX[look.kind] + look.id;

@@ -5,6 +5,7 @@ import chestOpen from './art/fx/chest-open.webp';
 import chestShut from './art/fx/chest-shut.webp';
 import stand from './art/fx/stand.webp';
 import { BoardPreview } from './BoardFace';
+import { SetPreview } from './SetFace';
 import { READY_KINDS, chooseLook, lookByKey, type Background, type BoardLook } from './looks';
 
 const SPARKS = Array.from({ length: 18 }, (_, i) => ({
@@ -56,7 +57,9 @@ export function Reveal({ itemKey, more, onDone }: { itemKey: string; more: numbe
             ) : look.kind === 'board' ? (
               <BoardPreview look={look as BoardLook} className="cr__board" />
             ) : (
-              <span>{look.emoji}</span>
+              <span className="cr__set">
+                <SetPreview set={look.id} big />
+              </span>
             )}
           </div>
           <img className="cr__stand" src={stand} alt="" />

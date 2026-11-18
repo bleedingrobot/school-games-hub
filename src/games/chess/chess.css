@@ -328,6 +328,8 @@
   to { transform: scale(1.08); }
 }
 .cw .board__piece {
+  /* Painted sets are taller than wide: keep their shape. */
+  object-fit: contain;
   filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.4));
   transition: transform 0.18s cubic-bezier(0.3, 1.6, 0.5, 1), filter 0.18s ease;
 }
@@ -578,4 +580,46 @@
   .board-fx {
     display: none;
   }
+}
+
+.cw .captured img,
+.cw .promotion__choice img {
+  object-fit: contain;
+}
+
+/* Painted sets (art/set): every picture is cut to the same height, so stand each kind at its own height, like a real
+   set, and give the two sides a coloured edge so they read apart at a glance (the NZ birds most of all). */
+.cw .board__piece.is-painted {
+  position: absolute;
+  left: 4%;
+  bottom: 3%;
+  width: 92%;
+  height: 97%;
+  object-position: 50% 100%;
+  transform-origin: 50% 100%;
+}
+.cw .board__piece.pc--p {
+  height: 72%;
+}
+.cw .board__piece.pc--r {
+  height: 80%;
+}
+.cw .board__piece.pc--n {
+  height: 86%;
+}
+.cw .board__piece.pc--b {
+  height: 89%;
+}
+.cw .board__piece.pc--q {
+  height: 94%;
+}
+.cw .board__piece.pc--w.pc-set--birds,
+.cs__piece.pc--w.pc-set--birds {
+  filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1.5px #fff)
+    drop-shadow(0 3px 3px rgba(0, 0, 0, 0.4));
+}
+.cw .board__piece.pc--b.pc-set--birds,
+.cs__piece.pc--b.pc-set--birds {
+  filter: brightness(0.82) drop-shadow(0 0 1.5px #e3202b)
+    drop-shadow(0 0 1.5px #e3202b) drop-shadow(0 3px 3px rgba(0, 0, 0, 0.5));
 }

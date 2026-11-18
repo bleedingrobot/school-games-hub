@@ -140,6 +140,68 @@
   height: 100%;
   border-width: 3px;
 }
+/* A piece set stands on the plinth, in the thumbs and on the chest's stand, its pieces bobbing in turn (SetFace.tsx). */
+.cs {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2%;
+  height: 100%;
+}
+.cs__piece {
+  height: 92%;
+  min-width: 0;
+  max-width: 48%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 5px rgba(0, 0, 0, 0.5));
+  animation: cs-bob 2.4s ease-in-out infinite;
+}
+.cs--big .cs__piece {
+  max-width: 24%;
+}
+.cs--big .cs__piece--wk {
+  height: 100%;
+}
+.cs--big .cs__piece--wq {
+  height: 94%;
+}
+.cs--big .cs__piece--wn,
+.cs--big .cs__piece--bn {
+  height: 78%;
+}
+@keyframes cs-bob {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-7%) rotate(-3deg); }
+}
+.cl__plinth--set {
+  width: min(78vw, 330px);
+  aspect-ratio: 3 / 2;
+  border-radius: 45%;
+}
+.cl__plinth--set .cs {
+  height: 88%;
+  width: 100%;
+}
+.cl__thumb-set {
+  position: relative;
+}
+.cl__thumb-set .cs {
+  position: absolute;
+  inset: 8% 0 4%;
+  height: auto;
+}
+.cr__set {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 10;
+  margin-bottom: 4%;
+  filter: drop-shadow(0 0 18px rgba(255, 215, 110, 0.85));
+}
+.cr__set .cs {
+  position: absolute;
+  inset: 0;
+  height: auto;
+}
 .cr__board {
   width: 62%;
   margin: 0 auto 6%;
@@ -229,7 +291,7 @@
   box-shadow: 0 0 0 3px rgba(255, 215, 106, 0.5), 0 0 22px rgba(255, 200, 80, 0.9);
   transform: translateY(-4px);
 }
-.cl__thumb img,
+.cl__thumb > img,
 .cl__thumb-emoji {
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -444,8 +506,8 @@
   from { transform: rotateY(-1080deg); }
   to { transform: rotateY(0); }
 }
-.cr__spin img,
-.cr__spin > span:not(.cb-mini) {
+.cr__spin > img,
+.cr__spin > span:not(.cb-mini):not(.cr__set) {
   display: grid;
   place-items: center;
   width: 100%;

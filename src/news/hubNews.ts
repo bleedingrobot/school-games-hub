@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'chess-sets-2026-11-19',
+    date: '2026-11-19',
+    emoji: '♞',
+    title: 'Six new chess sets to unlock!',
+    text: 'Wood, ice, robots, dragons, gold and NZ birds. Open the Chess Locker to win them!',
+    game: 'chess',
+  },
+  {
     id: 'achievement-hall-2026-11-19',
     date: '2026-11-19',
     emoji: '🏛️',
