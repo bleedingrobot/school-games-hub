@@ -47,6 +47,8 @@ export function DiamondGame({ backend, extra, onServer = false }: { backend: Dia
   const [prefs, setPrefsState] = useState<DiamondPrefs>(loadPrefs);
   const [busy, setBusy] = useState(false);
   const [unlimited, setUnlimited] = useState(false);
+  /** Coins from a quest's Game Coins pouch, opened as the game loaded (said once, on the map). */
+  const [pouch, setPouch] = useState(0);
   const still = wantsLessMotion(prefs);
   const glowTimer = useRef(0);
 
@@ -57,6 +59,7 @@ export function DiamondGame({ backend, extra, onServer = false }: { backend: Dia
     if (!r.ok) { setTrouble(r.message); return; }
     setPlayer(r.value.player);
     setUnlimited(r.value.unlimited === true);
+    if (r.value.pouch && r.value.pouch.amount > 0) setPouch(r.value.pouch.amount);
     setClock({ server: r.value.now, at: Date.now() });
     setSelected(bestLevel(r.value.player, new Date(r.value.now), r.value.unlimited === true));
     setScreen((s) => (s === 'play' ? s : 'map'));
@@ -206,6 +209,12 @@ export function DiamondGame({ backend, extra, onServer = false }: { backend: Dia
       {screen === 'book' && <GemBook player={player} onBack={() => go('map')} />}
       {screen === 'how' && <HowToPlay onBack={() => go('map')} />}
       {screen === 'hall' && <Hall backend={backend} onBack={() => go('map')} />}
+      {pouch > 0 && screen === 'map' && (
+        <p className="dd-pouch" role="status">
+          💰 Quest pouch: +{pouch} coins!
+          <button type="button" className="dd-pouch__ok" onClick={() => setPouch(0)}>OK</button>
+        </p>
+      )}
       {extra && screen !== 'play' && extra({ reload: () => void load() })}
       <TrophyWonLine games={['diamond']} watch={ended} off={!onServer} />
       <AchievementPop games={['diamond']} watch={ended} off={!onServer} pretend={pretendNew('diamond', achieved.map((a) => ({ ...a, how: a.for })))} />

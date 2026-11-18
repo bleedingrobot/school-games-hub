@@ -67,7 +67,7 @@ export interface HallRow {
 
 /** What opening the game finds. */
 export type LordLoad =
-  | { kind: 'ready'; state: LordState; facts: PackFact[]; teacher: boolean; abandoned?: 'forest' | 'master' | 'dragon' }
+  | { kind: 'ready'; state: LordState; facts: PackFact[]; teacher: boolean; abandoned?: 'forest' | 'master' | 'dragon'; pouch?: { amount: number } }
   | { kind: 'closed' }
   | { kind: 'not-started'; message: string }
   | { kind: 'offline' };
@@ -251,7 +251,7 @@ export function createServerBackend(player: string): LordBackend {
         return { kind: 'offline' };
       }
       const abandoned = (reply.result as { abandoned?: 'forest' | 'master' | 'dragon' } | undefined)?.abandoned;
-      return { kind: 'ready', state: reply.state, facts, teacher, abandoned };
+      return { kind: 'ready', state: reply.state, facts, teacher, abandoned, ...(reply.pouch ? { pouch: reply.pouch } : {}) };
     },
     async send(request) {
       if (isFinish(request.action)) {

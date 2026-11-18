@@ -46,6 +46,8 @@ export type Outcome<T> = { ok: true; value: T } | { ok: false; why: 'refused' | 
 /** A pupil's Armory as the database gives it back. */
 export interface ArmoryState extends Armory {
   best: Partial<Record<WorldId, number>>;
+  /** Coins in a quest's Game Coins pouch opened by this load (the database function says; missing or 0: none). */
+  pouch?: number;
 }
 
 export interface StoredRound {
@@ -305,7 +307,7 @@ function answerReply(round: StoredRound, correct: boolean, answer: number, coins
 }
 
 function withoutCount(s: ArmoryState & { coinsToday: number; roundsToday?: number }): ArmoryState {
-  const { coinsToday: _skip, roundsToday: _old, ...rest } = s;
+  const { coinsToday: _skip, roundsToday: _old, ...rest } = s; // `pouch` stays: the load says what was opened.
   void _skip;
   void _old;
   return rest;

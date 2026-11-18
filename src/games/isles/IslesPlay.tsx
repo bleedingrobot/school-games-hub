@@ -131,6 +131,8 @@ function IslesScreens({ backend = liveIsles }: { backend?: IslesBackend; level?:
   const [grew, setGrew] = useState<{ from: number; to: number } | null>(null);
   /** The turn whose Last turn postcard was put away with OK (it comes back after the next turn). */
   const [reportShut, setReportShut] = useState<number | null>(null);
+  /** Coins from a quest's Game Coins pouch, opened as the island loaded. */
+  const [pouch, setPouch] = useState(0);
   const [busy, setBusy] = useState(false);
   const voice = useIslesVoice();
   const [problem, setProblem] = useState<string | null>(null);
@@ -140,6 +142,7 @@ function IslesScreens({ backend = liveIsles }: { backend?: IslesBackend; level?:
     setView(v);
     if (v.report) setReport(v.report);
     if (v.post?.length) setPost(v.post);
+    if (v.pouch && v.pouch.amount > 0) setPouch(v.pouch.amount);
   }, []);
 
   const load = useCallback(async () => {
@@ -628,6 +631,13 @@ function IslesScreens({ backend = liveIsles }: { backend?: IslesBackend; level?:
                     >
                       Got it
                     </button>
+                  </section>
+                )}
+
+                {screen.kind === 'home' && pouch > 0 && (
+                  <section className="si-panel si-post" aria-label="Quest pouch">
+                    <h3>💰 Quest pouch: +{pouch} coins!</h3>
+                    <button type="button" className="button button--light" onClick={() => setPouch(0)}>OK</button>
                   </section>
                 )}
 

@@ -254,6 +254,8 @@ const answers: Record<string, (a: Row) => unknown> = {
           { id: 'r1', reward: 'scroll', kind: 'trader', gotAt: new Date().toISOString(), usedAt: null },
           { id: 'r2', reward: 'title', kind: 'marble-total', gotAt: new Date().toISOString(), usedAt: null },
           { id: 'r4', reward: 'turns', kind: 'diamond-daily', gotAt: new Date().toISOString(), usedAt: null },
+          { id: 'r5', reward: 'coins', kind: 'trader', gotAt: new Date().toISOString(), usedAt: null, game: 'trader' },
+          { id: 'r6', reward: 'coins', kind: 'lord', gotAt: qDay(-2), usedAt: qDay(-1), game: 'dragon-maths', amount: 340 },
           { id: 'r0', reward: 'scroll', kind: 'lord', gotAt: qDay(-8), usedAt: qDay(-7) },
           { id: 'r3', reward: 'title', kind: 'lord', gotAt: qDay(-15), usedAt: qDay(-15), title: 'moon-walker' },
         ]

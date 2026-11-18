@@ -94,6 +94,44 @@ it('plays each turn once, six a day, and refuses an impossible spend (test 2)', 
   ({ island } = (await send('pupil-a', { action: 'load' })).body);
   expect(island.turnsLeft).toBe(TURNS_PER_DAY);
   expect((await send('pupil-a', { action: 'turn', turn: TURNS_PER_DAY, actions: [] })).status).toBe(200);
+  // Quest Game Coins pouch: opened on load.
+  {
+    const { services } = setup();
+    let waiting = 75;
+    const calls: number[] = [];
+    const handler = makeHandler({
+      ...services,
+      userIdFor: async (t) => t,
+      async openPouches(player, version) {
+        calls.push(version);
+        const mine = services.data.islands[player];
+        if (!waiting || !mine?.island || mine.version !== version) return null;
+        mine.island.coins += waiting;
+        mine.version++;
+        const amount = waiting;
+        waiting = 0;
+        return { amount, version: mine.version };
+      },
+    });
+    const send = async (body: object) => {
+      const res = await handler(new Request('https://x/isles', { method: 'POST', headers: { Authorization: 'Bearer pupil-a' }, body: JSON.stringify(body) }));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (await res.json()) as Record<string, any>;
+    };
+    const first = await send({ action: 'load' });
+    expect(first.pouch).toEqual({ amount: 75 });
+    expect(first.island.coins).toBe(services.data.islands['pupil-a'].island!.coins);
+    const version = services.data.islands['pupil-a'].version;
+    expect(calls).toEqual([version - 1]);
+    const second = await send({ action: 'load' });
+    expect(second).not.toHaveProperty('pouch');
+    expect(second.island.coins).toBe(first.island.coins);
+    expect(calls[1]).toBe(version);
+    // Other actions never open a pouch.
+    waiting = 75;
+    await send({ action: 'sky' });
+    expect(calls).toHaveLength(2);
+  }
 });
 
 it("works a Sky Race out from its seed and the answers the server marked, so the browser can't rig it (test 3)", async () => {

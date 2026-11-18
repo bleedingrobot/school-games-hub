@@ -9,6 +9,7 @@ import { FACT_PACK } from '../../../shared/clans/battleCry';
 import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
 import { parseFocus } from '../../../shared/maths/focus';
 import type { MathsContext } from '../../../shared/maths/serverQuestions';
+import { openCoinPouches } from '../_shared/coinPouch';
 import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { batchIdFor, makeHandler, type Extras, type Loaded, type LoadedTarget, type Outcome, type SaveStatus } from './handler';
 
@@ -76,6 +77,7 @@ Deno.serve(
     load: (player, requestId) => call<Loaded>('load_clan', { player, request_id: requestId }),
     save: (player, expectedVersion, requestId, action, state: ServerState, result: Result) =>
       call<SaveStatus>('save_clan', { player, expected_version: expectedVersion, request_id: requestId, action, state, result }),
+    openPouches: (player, version) => openCoinPouches((name, args) => admin.rpc(name, args), player, 'clan-quest', version),
     mates: (player) => call<RivalSketch[]>('clan_village_mates', { player }),
     target: (player, targetId) => call<LoadedTarget>('clan_raid_target', { player, target: targetId }),
     // Live Clan Duels (migration 20261117000400_clans_live_duels.sql).

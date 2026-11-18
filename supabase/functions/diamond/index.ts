@@ -10260,6 +10260,17 @@ async function handleDiamond(services, player, body) {
 	if (body.action === "load") {
 		const s = await services.load(player);
 		if (s === "busy") return busy();
+		const pouch = s.version > 0 ? await services.openPouches?.(player, s.version) : null;
+		if (pouch && pouch !== "busy" && pouch.amount > 0) {
+			s.player.coins += pouch.amount;
+			s.version = pouch.version;
+			return ok({
+				player: s.player,
+				now: services.now(),
+				unlimited,
+				pouch: { amount: pouch.amount }
+			});
+		}
 		return ok({
 			player: s.player,
 			now: services.now(),
@@ -10667,6 +10678,12 @@ Deno.serve(makeHandler({
 	async load(player) {
 		return await call("diamond_load", { player }) ?? unplayed();
 	},
+	openPouches: (player, version) => call("open_coin_pouches", {
+		player,
+		game: "diamond",
+		expected_version: version,
+		per_unit: 1
+	}),
 	start: (player, version, state, level) => call("diamond_start", {
 		player,
 		version,

@@ -9589,6 +9589,18 @@ async function handleIsles(services, player, body) {
 			}
 		}
 	}
+	let pouch = null;
+	if (action === "load") {
+		const got = await services.openPouches?.(player, saved.version);
+		if (got && got !== "busy" && got.amount > 0) {
+			island = {
+				...island,
+				coins: island.coins + got.amount
+			};
+			saved.version = got.version;
+			pouch = { amount: got.amount };
+		}
+	}
 	/** This turn's question set, made the first time it's needed (none if the maths can't be read). */
 	const turnQuestions = async (turn) => {
 		const found = await services.questions(player, { ref: turnRef(saved.seed, turn) });
@@ -9648,7 +9660,8 @@ async function handleIsles(services, player, body) {
 		}));
 		return view(island, {
 			openRace,
-			post
+			post,
+			...pouch ? { pouch } : {}
 		});
 	}
 	if (action === "answer") {
@@ -10142,6 +10155,12 @@ Deno.serve(makeHandler({
 	news: (player, since) => call("isles_news_board", {
 		player,
 		since
+	}),
+	openPouches: (player, expectedVersion) => call("open_coin_pouches", {
+		player,
+		game: "isles",
+		expected_version: expectedVersion,
+		per_unit: 1
 	}),
 	start: (player, seed, island, day) => call("record_isles_start", {
 		player,

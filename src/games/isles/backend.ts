@@ -60,6 +60,8 @@ export interface IslandView {
   already?: boolean;
   /** Post from classmates opened on this load. */
   post?: PostShown[];
+  /** A quest's Game Coins pouch opened by this load (already in the island's coins). */
+  pouch?: { amount: number };
 }
 
 /** A gift, or a classmate's race against this island, as opened from the post. */

@@ -14,6 +14,8 @@ export interface Loaded {
   now: number;
   /** The teacher's switch: new levels aren't limited to one a day today. */
   unlimited?: boolean;
+  /** A quest's Game Coins pouch opened by this load (already in `player.coins`). */
+  pouch?: { amount: number };
 }
 
 export interface Started {
