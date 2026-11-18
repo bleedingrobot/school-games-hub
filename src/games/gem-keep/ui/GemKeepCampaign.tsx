@@ -5,12 +5,13 @@
  * the `on…` props (GemKeepPlay saves them to the student's account). Without those props
  * (the stand-alone preview, tests), progress is kept in this browser as in the class trial.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { CAMPAIGN } from '../../../../shared/gem-keep/levels';
 import { AUTO_FOCUS, currentFocus, focusKey, focusNote, makeFocusPack, type MathsFocus } from '../../../../shared/maths/focus';
 import { showingPack, type ShowingPack, type ShownAnswer } from '../../../../shared/maths/claim';
 import type { FactStats } from '../../../../shared/maths/leitner';
 import type { SkillPack } from '../../../../shared/maths/skillPack';
+import { boardUrl, campaignUrl } from '../art';
 import type { GameEngine } from '../engine/GameEngine';
 import { loadProgress, saveProgress, withKey, withWin, type CampaignProgress } from '../progress';
 import { DEFAULT_SETTINGS, type GemKeepSettings } from '../settings';
@@ -48,6 +49,7 @@ export function GemKeepCampaign({
   onEngine,
   focus = AUTO_FOCUS,
   loadFocus,
+  after,
 }: {
   settings?: GemKeepSettings;
   /** The maths focus when Gem Keep opened. Auto (the default) is the campaign's own tables, as always. */
@@ -74,6 +76,8 @@ export function GemKeepCampaign({
    */
   onAnswers?: (answers: ShownAnswer[], facts: FactStats[]) => void;
   onEngine?: (engine: GameEngine) => void;
+  /** Shown under the map or level, inside the full-window layer (the trophy line). */
+  after?: ReactNode;
 }) {
   const [progress, setProgress] = useState<CampaignProgress>(() => initialProgress ?? loadProgress());
   const [playing, setPlaying] = useState<number | null>(null);
@@ -148,39 +152,47 @@ export function GemKeepCampaign({
     setPlaying(index);
   }
 
-  if (playing === null) {
-    return <CampaignMap progress={progress} note={note} focusNote={focusNote(packFocus)} onPlay={(i) => void play(i)} />;
-  }
-  const level = CAMPAIGN[playing];
+  // Gem Keep fills the whole window, over the hub's bar (James, 18 Nov 2026: like Star Trader). The painting of the map or
+  // level shows blurred behind everything, so no hub colour shows round the edges.
+  const level = playing === null ? null : CAMPAIGN[playing];
+  const backdrop = level ? boardUrl(level.id, true) : campaignUrl(true);
+  const windowStyle = backdrop ? ({ '--gk-backdrop': `url(${backdrop})` } as CSSProperties) : undefined;
   return (
-    <GemKeepGame
-      key={level.id}
-      level={level}
-      levelNumber={playing + 1}
-      settings={settings}
-      pack={pack}
-      onEngine={onEngine}
-      keyDone={!!progress[level.id]?.keyPassed}
-      onWin={(stars) => update((p) => withWin(p, level.id, stars))}
-      onEnd={(end) => {
-        const now = totals(pack);
-        onLevelEnd?.({
-          ...end,
-          levelId: level.id,
-          asked: now.asked - startTotals.current.asked,
-          right: now.right - startTotals.current.right,
-        });
-        begin();
-        reportFacts();
-      }}
-      onKeyResult={(right) => {
-        onKey?.(level.id, right);
-        begin();
-        reportFacts();
-      }}
-      onKeyPassed={() => update((p) => withKey(p, level.id))}
-      onNext={playing + 1 < CAMPAIGN.length ? () => void play(playing + 1) : undefined}
-      onMap={() => void play(null)}
-    />
+    <div className="gk-window" style={windowStyle}>
+      {playing === null || !level ? (
+        <CampaignMap progress={progress} note={note} focusNote={focusNote(packFocus)} onPlay={(i) => void play(i)} />
+      ) : (
+        <GemKeepGame
+          key={level.id}
+          level={level}
+          levelNumber={playing + 1}
+          settings={settings}
+          pack={pack}
+          onEngine={onEngine}
+          keyDone={!!progress[level.id]?.keyPassed}
+          onWin={(stars) => update((p) => withWin(p, level.id, stars))}
+          onEnd={(end) => {
+            const now = totals(pack);
+            onLevelEnd?.({
+              ...end,
+              levelId: level.id,
+              asked: now.asked - startTotals.current.asked,
+              right: now.right - startTotals.current.right,
+            });
+            begin();
+            reportFacts();
+          }}
+          onKeyResult={(right) => {
+            onKey?.(level.id, right);
+            begin();
+            reportFacts();
+          }}
+          onKeyPassed={() => update((p) => withKey(p, level.id))}
+          onNext={playing + 1 < CAMPAIGN.length ? () => void play(playing + 1) : undefined}
+          onMap={() => void play(null)}
+        />
+      )}
+      {after}
+    </div>
   );
 }
