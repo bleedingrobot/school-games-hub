@@ -17,7 +17,7 @@
 
 ## Screen checks: phone, iPad and laptop
 
-Screenshot every screen of the game (home, a go, right, wrong and show-why, help, guide, finish) at these sizes, look at each one yourself, and fix anything cut off, overlapping, too small to tap or off screen:
+Screenshot every screen of the game (home, a go, right, wrong and show-why, help, guide, finish) at these sizes, look at each one yourself, and fix anything cut off, overlapping, too small to tap or off screen. Every screen is full window ([3-files-and-clashes.md](3-files-and-clashes.md) "Full window"): no hub bar or red margin showing, paintings edge to edge, and nothing scrolls sideways (`scrollWidth <= clientWidth` on the layer):
 
 | Device | Size |
 |---|---|

@@ -41,14 +41,14 @@ Do these in order. Each line says what, then where. Tags: **J** junior only, **O
 7. **Server.** `supabase/functions/<id>/` (`handler.ts`, `entry.ts`); marks or replays everything that counts; checks the teacher switch; `npm run build:functions -- <id>` ([5-server-and-saving.md](5-server-and-saving.md)).
 8. **Maths.** **O:** way A from the focus ([4-maths.md](4-maths.md)). **J:** rounds from early-facts records, `recordMathsAnswers(…, JUNIOR_QUICK_MS)`.
 9. **Database.** `supabase/migrations/<number>_<id>.sql` from [templates/migration.sql](templates/migration.sql): tables with RLS, `hub_games`, achievements, `record_<id>` functions, revoke/grant. Save everything in "What to save per go".
-10. **Screens.** `src/games/<id>/` with kit parts first, your own prefixed CSS, How to play from the config.
+10. **Screens.** `src/games/<id>/` with kit parts first, your own prefixed CSS, How to play from the config. **Full window from the start:** the game covers the hub bar, paintings edge to edge, its own ⌂ Hub and sound buttons ([3-files-and-clashes.md](3-files-and-clashes.md) "Full window").
 11. **Guide for new players.** Guided first go, next-step line, first-time tips ([1-design.md](1-design.md) question 7).
 12. **Voice.** `voiceLines.ts`, the voice-lines test, Bella clips ([6-art-voice-cards.md](6-art-voice-cards.md)).
 13. **Art.** Drawn stand-ins; `docs/<ID>-ART-PLAN.md` and `docs/<id>-art/config.json` with the home card ([6-art-voice-cards.md](6-art-voice-cards.md)).
 14. **Teacher.** The `teacher` part, settings through `teacher_set_<id>()`, `hardest`, `alerts`. **J:** the Foundational entry ([templates/foundational-entry.ts](templates/foundational-entry.ts)), `teacher_foundational_class` block, step-history trigger, `GOOD_TO_PASS` or `STEP_KEYS`. **O:** `progressColumns` and a `teacher_progress_other_games` block ([2-steps-and-progress.md](2-steps-and-progress.md)).
 15. **Turns.** Limited turns or levels a day? Add the game to `UNLIMITED_GAMES` and `teacher_set_unlimited_today()` ([1-design.md](1-design.md) question 3).
 16. **Tests.** Within [TESTING.md](../TESTING.md) "How many", plus `supabase/tests/database/<id>.test.sql` on a scratch copy ([7-testing.md](7-testing.md)).
-17. **Screens checked** at phone, iPad and laptop sizes ([7-testing.md](7-testing.md)).
+17. **Screens checked** at phone, iPad and laptop sizes: full window, nothing scrolls sideways ([7-testing.md](7-testing.md)).
 18. **Shared one-line edits** after merging `main`: registry, `FUNCTIONS`, `package.json` scripts, `shared/README.md`, `docs/PRIVACY-SUMMARY.md` ([3-files-and-clashes.md](3-files-and-clashes.md)).
 19. **Ready check.** Every box in [templates/golive-pr.md](templates/golive-pr.md) ticked.
 20. **PR and merge.** `typecheck`, `test:changed`, `build`; open the PR, merge when green; migrations and the function go live by themselves ([8-going-live.md](8-going-live.md)).
@@ -62,7 +62,7 @@ Do these in order. Each line says what, then where. Tags: **J** junior only, **O
 |---|---|
 | [1-design.md](1-design.md) | the pieces of a game; the design questions for the plan; learning design in short |
 | [2-steps-and-progress.md](2-steps-and-progress.md) | step words; showing on the teacher's Progress tab |
-| [3-files-and-clashes.md](3-files-and-clashes.md) | branches; your files; shared files and database rules; the game definition; reuse; the hub's look |
+| [3-files-and-clashes.md](3-files-and-clashes.md) | branches; your files; shared files and database rules; the game definition; reuse; the hub's look; full window |
 | [4-maths.md](4-maths.md) | the maths focus; way A and B; worked example |
 | [5-server-and-saving.md](5-server-and-saving.md) | sign-in, school check, saving, cost, points and achievements, what to save per go, replay |
 | [6-art-voice-cards.md](6-art-voice-cards.md) | painted art, the home card, Bella's voice |
