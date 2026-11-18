@@ -11,7 +11,7 @@ create function pg_temp.has(trophy text) returns integer language sql as $$
   select count(*)::integer from public.trophies w where w.player = '00000000-0000-0000-0000-00000000000a' and w.trophy = has.trophy
 $$;
 create function pg_temp.cup() returns integer language sql as $$
-  select c.level from public.trophy_counts('00000000-0000-0000-0000-00000000000a') c where c.trophy = 'diamond-rare-cup'
+  select c.level from public.trophy_counts('00000000-0000-0000-0000-00000000000a') c where c.trophy = 'diamond-rare-collection'
 $$;
 create function pg_temp.rare(variadic gems text[]) returns jsonb language sql as $$
   select jsonb_build_object('lifetime', jsonb_build_object('rare',

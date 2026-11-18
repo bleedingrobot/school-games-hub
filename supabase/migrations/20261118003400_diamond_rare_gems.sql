@@ -67,7 +67,7 @@ insert into public.achievement_types (id, game, name, emoji, measure, goal, sort
 -- ---------------------------------------------------------------------------
 
 insert into public.trophy_types (id, game, name, how, kind, repeat, art, sort) values
-  ('diamond-rare-cup', 'diamond', 'Rare Gem Cup', 'Catch 3, 5 or all 7 different rare gems in Diamond Drop.', 'trophy', 'steps', null, 281),
+  ('diamond-rare-collection', 'diamond', 'Rare Gem Cup', 'Catch 3, 5 or all 7 different rare gems in Diamond Drop.', 'trophy', 'steps', null, 281),
   ('diamond-phoenix', 'diamond', 'Phoenix Gem', 'Catch the Phoenix Gem, the rarest gem in Diamond Drop (1 in 100 levels).', 'picture', 'once', null, 282);
 
 -- ---------------------------------------------------------------------------
@@ -87,7 +87,7 @@ declare
 begin
   for step in 1..3 loop
     if kinds >= (array[3, 5, 7])[step] then
-      perform public.award_trophy(who, 'diamond-rare-cup', jsonb_build_object('step', step));
+      perform public.award_trophy(who, 'diamond-rare-collection', jsonb_build_object('step', step));
     end if;
   end loop;
   if public.diamond_rare_book(state) ? 'phoenixGem' then
