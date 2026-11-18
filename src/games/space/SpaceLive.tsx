@@ -28,6 +28,7 @@ import { SpaceBoard, type Seat } from './SpaceBoard';
 import { ANSWER_FIRST, ANSWER_FIRST_BUTTON, choiceQuestion, itemName, ORDINAL, SEAT_COLOURS, SEAT_SHAPES, squareInfo, type SquareInfo } from './text';
 import { useEventPlayer, type Batch } from './useEventPlayer';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import './space.css';
 
 /** A missed stretch longer than this isn't replayed: the board just jumps to now. */
@@ -638,6 +639,7 @@ export function SpaceLive({ session, timeScale = 1 }: { session: SpaceSession; t
 
         <RocketsPanel view={view} seats={seats} positions={positions} turnSeat={turnSeat} over={finished} note={note} />
         <TrophyWonLine games={['space']} watch={finished ? game.id : null} />
+        <AchievementPop games={['space']} watch={finished ? game.id : null} />
 
         {reactionsOn && playing && mySeat >= 0 && (
           <section className="space-panel space-reactions" aria-label="Reactions">

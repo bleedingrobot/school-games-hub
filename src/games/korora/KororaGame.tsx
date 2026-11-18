@@ -237,7 +237,7 @@ export function Finish({ result, say, onOpenWeka, onNext }: { result: KororaFini
     <div className={`kr-home${won ? ' kr-home--prize' : ''}`}>
       <Pool scenery={scenery} pebbles={pebbles} friend={pool.friend} pose="cheer" at={at} shoes={won ? null : pool.today} />
       {wekaOn !== null && (
-        <WhatsNext prefix="kr" wearMe={result.goldenFish} title={main} spoken={line} note={up ? WORDS.levelUp(up) : null} buttonLabel="OK" say={sayThen} onNext={onNext}>
+        <WhatsNext prefix="kr" game="korora" wearMe={result.goldenFish} title={main} spoken={line} note={up ? WORDS.levelUp(up) : null} buttonLabel="OK" say={sayThen} onNext={onNext}>
           {won && <p className="kr-chip">{opening}</p>}
           {band === 'tricky' && <p className="kr-chip">{WORDS.trickyChip}</p>}
           {won && (

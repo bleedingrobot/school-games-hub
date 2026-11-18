@@ -8,6 +8,7 @@ import { pageTheme, ThemeTrialProvider, useThemeTrial } from '../theme/hubTheme'
 import { activitiesOn } from '../activities/switch';
 import { trainingOn } from '../training/switch';
 import { NewTrophyMoment } from '../trophies/NewTrophyMoment';
+import { NewAchievementMoment } from '../achievements/NewAchievementMoment';
 import { YearGate } from '../year/YearQuestion';
 import { CrashScreen } from './CrashScreen';
 import { FullScreenButton } from './FullScreenButton';
@@ -80,6 +81,8 @@ function ThemedLayout() {
         </YearGate>
       </main>
       <NewTrophyMoment />
+      {/* After any trophy, never at the same time. */}
+      <NewAchievementMoment />
     </div>
   );
 }

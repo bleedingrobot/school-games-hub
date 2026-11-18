@@ -232,7 +232,7 @@ function Finish({ result, say, onNext }: { result: SwamphenFinish; say: (t: stri
   return (
     <div className={`sh-home${result.goldenGarden ? ' sh-home--prize' : ''}`}>
       <Branch scenery={result.goldenGarden ? 'gold' : branch.today} rows={rowList} friend={branch.friend} pose="cheer" />
-      <WhatsNext prefix="sh" wearMe={result.goldenGarden} title={main} spoken={line} buttonLabel="OK" say={say} onNext={onNext}>
+      <WhatsNext prefix="sh" game="swamphen" wearMe={result.goldenGarden} title={main} spoken={line} buttonLabel="OK" say={say} onNext={onNext}>
         <p className="sh-chip">{how}</p>
         {up === BIG_GARDEN_STEP && <BigGate label={WORDS.bigGate} />}
         {up && <p className="sh-chip sh-stepup">{WORDS.newStep} {WORDS.nextStep(up)}</p>}

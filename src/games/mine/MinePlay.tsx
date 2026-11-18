@@ -16,6 +16,7 @@ import { MineBoard } from './MineBoard';
 import { loadBests, loadPrefs, savePrefs, type Bests, type MinePrefs } from './prefs';
 import { ControlsHelp, HowToPlayBody, SettingsPanel } from './Settings';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import './mine.css';
 
 // The picture (three.js) and the run screen load only when someone starts a mine.
@@ -246,6 +247,7 @@ function MineRoot({ trial }: { trial: boolean }) {
     <>
       <MineScreens trial={trial} onSaved={() => setSaves((n) => n + 1)} />
       <TrophyWonLine games={['mine']} watch={saves || null} off={trial} />
+      <AchievementPop games={['mine']} watch={saves || null} off={trial} />
     </>
   );
 }

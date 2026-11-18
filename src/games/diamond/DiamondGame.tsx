@@ -14,6 +14,8 @@ import { PlayLevel } from './PlayLevel';
 import { helpFor, shopAdvice, type TipId } from './guide';
 import { loadPrefs, savePrefs, wantsLessMotion, type DiamondPrefs } from './prefs';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
+import { AchievementPop } from '../../achievements/AchievementPop';
+import { pretendNew } from '../../data/newAchievements';
 import './diamond.css';
 
 type Screen = 'map' | 'play' | 'end' | 'shop' | 'book' | 'how' | 'hall';
@@ -176,7 +178,6 @@ export function DiamondGame({ backend, extra, onServer = false }: { backend: Dia
         <LevelEnd
           ended={ended}
           unlimited={unlimited}
-          achieved={achieved}
           againLabel={againLabel}
           onShop={() => { setShopTab('boosts'); go('shop'); }}
           onAgain={() => void start(canStart(player, selected, today, unlimited) ? selected : ended.result.level)}
@@ -207,6 +208,7 @@ export function DiamondGame({ backend, extra, onServer = false }: { backend: Dia
       {screen === 'hall' && <Hall backend={backend} onBack={() => go('map')} />}
       {extra && screen !== 'play' && extra({ reload: () => void load() })}
       <TrophyWonLine games={['diamond']} watch={ended} off={!onServer} />
+      <AchievementPop games={['diamond']} watch={ended} off={!onServer} pretend={pretendNew('diamond', achieved.map((a) => ({ ...a, how: a.for })))} />
     </div>
   );
 }

@@ -6,3 +6,5 @@ Painted for School Games Hub on 19 Nov 2026 in ComfyUI (James's PC), from `docs/
 - `hall.webp`, `hall-800.webp`: the hall of fame (wide screens). `hall-tall.webp`, `hall-tall-800.webp`: the tower hall (portrait).
 - `frame-bronze.webp`, `frame-silver.webp`, `frame-gold.webp`: earned medallion frames by tier. `frame-locked.webp`: not yet earned.
 - `shelf.webp`: the plank each row of medallions stands on.
+- `burst-gold.webp`, `sparkles-gold.webp` (and their `-silver`, `-bronze` recoloured copies): the earn moment's starburst and
+  sparkle ring (stage 3, 19 Nov 2026). Painted on black (`--style glow`); `tidy` turns their brightness into see-through.

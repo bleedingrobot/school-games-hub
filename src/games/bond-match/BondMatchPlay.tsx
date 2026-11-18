@@ -7,6 +7,7 @@ import type { BondMatchSaver, ServerBest } from '../../data/bondMatch';
 import { BondPicker, type StarsBySet } from './BondPicker';
 import { recordGame, type RecordedGame } from './bests';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import { Finish, VersusFinish, type SaveState } from './Finish';
 import { TEXT, type Players } from './strings';
 import type { BondSuggestion } from './suggest';
@@ -136,6 +137,7 @@ export function BondMatchPlay({ makeSeed = randomSeed, mismatchMs, finishMs, sav
         />
       )}
       <TrophyWonLine games={['bond-match']} watch={saves || null} off={!saver} />
+      <AchievementPop games={['bond-match']} watch={saves || null} off={!saver} />
     </div>
   );
 }

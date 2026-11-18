@@ -31,6 +31,7 @@ import { useAsk, type Answer } from './useAsk';
 import { HubButtons } from './HubButtons';
 import { useClashes } from './useClashes';
 import { ClashAskBanner } from './LiveArena';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import './lord.css';
 import './big.css';
 
@@ -567,6 +568,8 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
   const keysOn = screen.name === 'village';
   return (
     <Frame backend={backend} state={state} hero={hero} bare={['fight', 'encounter', 'event', 'dragon', 'arena', 'news', 'warriors', 'hall', 'bank', 'shop', 'healer', 'inn', 'training', 'hero', 'look', 'howto'].includes(screen.name) || (screen.name === 'village' && hasMap())}>
+      {/* A finished fight adds a deed: then any new Dragon Maths achievement pops up. */}
+      <AchievementPop games={['dragon-maths']} watch={deeds.length ? deeds : null} off={backend.trial} />
       {keysOn && <VillageKeys onKey={(k) => {
         if (busyRef.current) return;
         if (k === 'f') void goForest();

@@ -232,7 +232,7 @@ export function Finish({ result, say, onOpenWeka, onNext }: { result: TuiFinish;
     <div className={`tui-home${result.goldenNest ? ' tui-home--prize' : ''}`}>
       <Tree scenery={result.goldenNest ? 'gold' : tree.today} flowers={flowers} friend={tree.friend} pose="cheer" />
       {wekaOn !== null && (
-        <WhatsNext prefix="tui" wearMe={result.goldenNest} title={main} spoken={line} note={up ? WORDS.nextStep(up) : null} buttonLabel="OK" say={sayThen} onNext={onNext}>
+        <WhatsNext prefix="tui" game="tui" wearMe={result.goldenNest} title={main} spoken={line} note={up ? WORDS.nextStep(up) : null} buttonLabel="OK" say={sayThen} onNext={onNext}>
           {result.goldenNest && <p className="tui-chip">{opening}</p>}
           {band === 'tricky' && <p className="tui-chip">{WORDS.trickyChip}</p>}
           {result.goldenNest && <span className="tui-prize"><GoldenNest cushion /></span>}

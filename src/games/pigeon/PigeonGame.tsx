@@ -194,7 +194,7 @@ function Finish({ result, say, onNext }: { result: PigeonFinish; say: (t: string
   return (
     <div className={`pg-home${result.goldenBranch ? ' pg-home--prize' : ''}`}>
       <Branch scenery={result.goldenBranch ? 'gold' : branch.today} clusters={clusters} friend={branch.friend} pose="cheer" />
-      <WhatsNext prefix="pg" wearMe={result.goldenBranch} title={main} spoken={line} buttonLabel="OK" say={say} onNext={onNext}>
+      <WhatsNext prefix="pg" game="pigeon" wearMe={result.goldenBranch} title={main} spoken={line} buttonLabel="OK" say={say} onNext={onNext}>
         <p className="pg-chip">{how}</p>
         {up && <p className="pg-chip">{WORDS.nextStep(up)}</p>}
         {result.goldenBranch && <span className="pg-prize"><GoldenBranch /></span>}

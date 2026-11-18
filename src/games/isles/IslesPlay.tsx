@@ -16,6 +16,7 @@ import { QuestionModal } from '../../maths/QuestionModal';
 import { liveIsles } from '../../data/isles';
 import { keeperArt, pipArt, sceneArt, weatherArt } from './art';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import { IslesError, type IslandView, type IslesBackend, type PostShown, type PublicRace } from './backend';
 import { freePlaces } from './Decorations';
 import { HubButtons } from './HubButtons';
@@ -463,6 +464,7 @@ function IslesScreens({ backend = liveIsles }: { backend?: IslesBackend; level?:
     <div className={`si${screen.kind === 'howto' ? '' : ' si--play'}`}>
       <Say text={voiceLine} say={voice.say} />
       <TrophyWonLine games={['isles']} watch={view?.island.turn} off={backend.trial} />
+      <AchievementPop games={['isles']} watch={view?.island.turn} off={backend.trial} />
       <header className={`si-top${turnStep !== null ? ' si-top--turn' : ''}`}>
         {turnStep === null && <HubButtons />}
         {screen.kind === 'turn' ? <h2>Your turn</h2> : (

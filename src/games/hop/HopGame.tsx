@@ -218,7 +218,7 @@ function Finish({ result, say, nextGame, onNext }: { result: HopFinish; say: (t:
         pose="cheer"
         at={result.jar ? PADS : result.padChanged ?? -1}
       />
-      <WhatsNext prefix="hp" wearMe={result.jar} title={main} spoken={line} note={stepUp} buttonLabel="OK" say={say} onNext={onNext}>
+      <WhatsNext prefix="hp" game="hop" wearMe={result.jar} title={main} spoken={line} note={stepUp} buttonLabel="OK" say={say} onNext={onNext}>
         {result.jar && <p className="hp-chip">{opening}</p>}
         {band === 'tricky' && <p className="hp-chip">{WORDS.trickyChip}</p>}
         {result.jar && (cushion ? <img className="hp-prize" src={cushion} alt="The Golden Glow Jar" /> : <span className="hp-jar hp-jar--big" role="img" aria-label="The Golden Glow Jar" />)}

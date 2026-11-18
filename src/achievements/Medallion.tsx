@@ -5,6 +5,7 @@ import bronze from './art/frame-bronze.webp';
 import silver from './art/frame-silver.webp';
 import gold from './art/frame-gold.webp';
 import locked from './art/frame-locked.webp';
+import './medallion.css';
 
 const FRAMES = { 1: bronze, 2: silver, 3: gold } as const;
 export const TIER_WORDS = { 1: 'Bronze', 2: 'Silver', 3: 'Gold' } as const;

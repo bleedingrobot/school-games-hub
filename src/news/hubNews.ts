@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'achievement-pop-2026-11-19',
+    date: '2026-11-19',
+    emoji: '🏅',
+    title: 'Achievements now pop!',
+    text: 'Earn one and its medallion bursts onto your screen with a chime. Collect them all!',
+    to: '/achievements',
+  },
+  {
     id: 'chess-sets-2026-11-19',
     date: '2026-11-19',
     emoji: '♞',

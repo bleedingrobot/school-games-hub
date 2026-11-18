@@ -250,7 +250,7 @@ function Finish({ result, say, onNext }: { result: RobinFinish; say: (t: string,
   return (
     <div className={`rb-home${result.feast ? ' rb-home--prize' : ''}${showing ? ' rb-showing' : ''}`}>
       <Log baskets={things} friend={row.friend} glowAt={result.changed} pose="cheer" />
-      <WhatsNext prefix="rb" wearMe={result.feast} title={main} spoken={finishLine(main, how, next)} buttonLabel={WORDS.ok} say={say} onNext={onNext}>
+      <WhatsNext prefix="rb" game="robin" wearMe={result.feast} title={main} spoken={finishLine(main, how, next)} buttonLabel={WORDS.ok} say={say} onNext={onNext}>
         <p className="rb-chip">{how}</p>
         <p className="rb-chip">{next}</p>
         {result.feast && <span className="rb-prize"><GoldenFeast /></span>}

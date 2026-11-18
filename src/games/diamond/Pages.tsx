@@ -42,11 +42,9 @@ const sharePercent = Math.round(REPLAY_COIN_SHARE * 100);
 
 // ————————————————————————————————————— Level end —————————————————————————————————————
 
-export function LevelEnd({ ended, unlimited = false, achieved, onShop, onAgain, onMap, againLabel }: {
+export function LevelEnd({ ended, unlimited = false, onShop, onAgain, onMap, againLabel }: {
   ended: Ended;
   unlimited?: boolean;
-  /** Hub achievements this level just earned. */
-  achieved: readonly (typeof ACHIEVEMENTS)[number][];
   onShop: () => void;
   onAgain: () => void;
   onMap: () => void;
@@ -98,13 +96,6 @@ export function LevelEnd({ ended, unlimited = false, achieved, onShop, onAgain, 
         {r.questions > 0 && <p>Hold on! questions: you held on {r.held} of {r.questions} times.</p>}
         {r.freeBoost && <p>A mystery sack gave you a free {BOOSTS.find((b) => b.id === r.freeBoost)?.name} for your next level.</p>}
         {ended.newLevel && r.level < LAST_LEVEL && !unlimited && <p>Level {r.level + 1} opens tomorrow. You can replay any level you’ve passed for stars, gems and coins.</p>}
-        {achieved.length > 0 && (
-          <ul className="dd-achieved" role="status" aria-label="Achievements earned">
-            {achieved.map((a) => (
-              <li key={a.id}><span aria-hidden="true">{a.emoji}</span> Achievement: <strong>{a.name}</strong> ({a.for.toLowerCase()})</li>
-            ))}
-          </ul>
-        )}
         {ended.points > 0 && <p>+{ended.points} {ended.points === 1 ? 'point' : 'points'} for the hub.</p>}
         {ended.earned.length > 0 && (
           <p className="dd-earned" role="status">New claw looks for you (in the Shop): {ended.earned.map((id) => itemOf(id)?.name ?? id).join(', ')}!</p>

@@ -111,6 +111,56 @@ Learned while building:
 
 ### Stage 3: the earn moment
 
+**Built 19 Nov 2026** (migration `20261119000300_achievement_earn_moment.sql`, `src/achievements/`):
+- Database: `achievements.seen_at` (everything earned before was marked seen, so nobody was flooded), `my_new_achievements()`
+  (unseen, newest first, at most 50, games switched off for the class left out like `my_progress`) and
+  `mark_my_achievements_seen(ids)` (null = all of mine), both for `authenticated`, in the `security.test.sql` allow-list,
+  tested in `achievement_earn_moment.test.sql`.
+- Which saves report what was just earned: none of the server saves did. Clan Quest and Diamond Drop worked it out in the
+  browser (before/after counts), Order Up only says "new level". Rather than change thirty save functions, the shared pop
+  asks `my_new_achievements()` once right after a saved go (the same moment `TrophyWonLine` reads the trophies) and marks
+  only the ones it shows, so the hub never repeats them. One small read per finished go.
+- `AchievementPop` (games): a card at the top of the screen; the medallion slides in spinning, the painted burst flashes
+  (rays, sparkle ring and sparks in the tier's metal), then "New achievement!", the name, "+10 points · Gold" and "See it"
+  (the Hall). Several flip in one after another (easiest first, gold last), with dots and "Next (2)"; it leaves by itself.
+- `NewAchievementMoment` (hub pages, the same list as `NewTrophyMoment`): full screen like the trophy moment, up to 3 in a
+  queue ("1 of 3", "Next (2 more)"), then "…and N more waiting in your Achievement Hall!" with "See them all". It waits
+  while the trophy moment is asking or showing (a small shared flag in `NewTrophyMoment`), so a trophy always comes
+  first and never two at once. On `/achievements` each medallion flies onto its own spot on the shelf ("Put it on my
+  shelf"), which lights up.
+- Chime: `playSound('medal')`, only with the hub sound switch on. Reduced motion: no slide, flip, burst or flight, just
+  the card (the spot on the shelf gets a gold ring instead).
+- Art: `burst-*.webp` and `sparkles-*.webp` (gold, with silver and bronze recoloured copies), painted on black with
+  `--style glow`; `scripts/game_art.py` has a new `glow` kind that turns brightness into see-through.
+- The medallion's CSS moved to `medallion.css` so games can use `Medallion` without the whole Hall.
+
+**Games with the pop:** Clan Quest and Diamond Drop (their own lines removed), Dragon Maths (after each fight), chess and
+checkers (bots and classmates), Wormholes & Black Holes, 101, Power Clash, Archery, Bond Match, Royal Decree, Gem Keep,
+Sky Isles (each turn), Marble Rush, Mine Runner, Maths Monsters, Toon Flap, Order Up, and the junior games through
+`WhatsNext`: Weka, Hop, Penguin Pairs, Lizard, Parrot, Pigeon, Pipi, Robin, Swamp Hen and Tūī.
+**Not yet** (the hub moment still shows theirs): Kiwi's Beanstalk (its finish panel is a signpost, check when it opens),
+Glyph Gates, Kingdom Keeper. Homework and class quests are earned off any game, so they show on the hub only.
+
+Learned while building:
+- The Browser pane runs animations slowly while hidden; to screenshot a frame, pause the page's animations at a time with
+  `document.getAnimations()`.
+- `overflow: hidden` on a full-screen layer can still be scrolled by focus or flying sparks; use `overflow: clip`, and
+  `focus({ preventScroll: true })`.
+- The home preview: `?ach=5` gives five unseen achievements (hub moment and queue; on `#/achievements` they fly), `?pop=3`
+  shows the game pop a second after opening.
+
+**What stage 4 needs** (the "🏅 3 of 12" button in each game):
+- A shared `GameAchievements` button + panel in `src/achievements/`: "🏅 3 of 12" in the game's slim top row (beside ⌂ Hub
+  and sound), opening that game's shelf (medallions on the painted plank, tap for the badge card) over the game. Lift
+  `ShelfView` and `BadgeCard` out of `AchievementHall.tsx` so the Hall and the panel share them.
+- Data: one game's achievements without loading the whole home page: a small `my_game_achievements(game)` (the
+  `my_progress` achievement rows for one game, with the same switched-off rules), or `my_progress` filtered in the browser.
+- Swap Clan Quest's own Achievements screen and Diamond Drop's list (and their words in `shared/clans/rewards.ts` and
+  `shared/diamond/config.ts`) for the shared panel, so there's one list.
+- The button can refresh after an `AchievementPop` (the count goes up), and the newly earned one can shine.
+- A few games per PR; full-window games first. Test budgets are full in most game folders: test the panel once in
+  `src/achievements` (5 of 8 used after stage 3).
+
 - **In the game**: when a save returns new achievements, a shared `<AchievementPop>` slides a medallion in with a burst,
   name and "+10 points", and a "See it" link to the Hall. One shared component replaces the Clans and Diamond lines and
   goes into every game's result screen. The save functions report what was just earned (most `*_save` functions

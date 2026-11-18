@@ -1,6 +1,4 @@
 import { CONFIG } from '../../../shared/clans/config';
-import type { ReactNode } from 'react';
-import type { AchievementDef } from '../../../shared/clans/rewards';
 import { achievementList } from './fame';
 import type { Session } from './session';
 
@@ -27,23 +25,7 @@ export function Achievements({ session, onBack }: { session: Session; onBack: ()
   );
 }
 
-/** A small celebration for achievements just earned. Gentle: no sound, and the sparkle stops when the pupil prefers less movement. */
-export function Celebration({ fresh, onClose }: { fresh: AchievementDef[]; onClose: () => void }) {
-  if (fresh.length === 0) return null;
-  return (
-    <div className="cq-celebrate" role="status" aria-live="polite">
-      <p>
-        <span aria-hidden="true" className="cq-celebrate__spark">🎉</span>{' '}
-        {fresh.length === 1 ? 'New achievement!' : 'New achievements!'}{' '}
-        {fresh.map((a) => <strong key={a.id}>{a.emoji} {a.name}</strong>).reduce<ReactNode[]>((out, node, i) => (i ? [...out, ', ', node] : [node]), [])}
-        {' '}(+10 points each)
-      </p>
-      <button type="button" className="cq-btn" onClick={onClose}>Great!</button>
-    </div>
-  );
-}
-
-/** The small dialog for finishing the whole village. Gentle like the other celebration: no sound, and the sparkle stops with reduced motion. */
+/** The small dialog for finishing the whole village. Gentle: no sound, and the sparkle stops with reduced motion. */
 export function VillageDone({ onClose }: { onClose: () => void }) {
   return (
     <div className="cq-celebrate cq-celebrate--village" role="dialog" aria-label="Village complete" aria-modal="false">

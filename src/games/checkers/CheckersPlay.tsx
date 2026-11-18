@@ -20,6 +20,7 @@ import { BotLevelPicker } from '../../components/BotLevelPicker';
 import { refreshSaveToken, saveAbandonedGame, saveBotGame } from '../../data/botGames';
 import { FriendlyError } from '../../data/profile';
 import { useSound } from '../../sound';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import { playSound, type GameSound } from '../sounds';
 import { BOT_LEVELS, type BotLevel } from '../types';
 import { BOT_DESCRIPTIONS } from './bot';
@@ -327,6 +328,7 @@ export function CheckersPlay({ level }: { level: BotLevel }) {
           onHint={setHint}
         />
 
+        <AchievementPop games={['checkers']} watch={saveStatus === 'saved' && showResult ? game?.id ?? null : null} />
         {judged && showResult && headline && (
           <div className="chess-result" role="dialog" aria-modal="true" aria-labelledby="result-title">
             <div className={`chess-result__card chess-result__card--${judged.outcome}`}>

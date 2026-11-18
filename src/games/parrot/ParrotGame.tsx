@@ -244,7 +244,7 @@ function Finish({ result, say, onNext }: { result: ParrotFinish; say: (t: string
   return (
     <div className={`pr-home${result.goldenBell ? ' pr-home--prize' : ''}`}>
       <Rope things={things} friend={rope.friend} glowAt={result.changed} pose="cheer" />
-      <WhatsNext prefix="pr" wearMe={result.goldenBell} title={main} spoken={finishLine(main, how, next)} buttonLabel={WORDS.ok} say={say} onNext={onNext}>
+      <WhatsNext prefix="pr" game="parrot" wearMe={result.goldenBell} title={main} spoken={finishLine(main, how, next)} buttonLabel={WORDS.ok} say={say} onNext={onNext}>
         <p className="pr-chip">{how}</p>
         <p className="pr-chip">{next}</p>
         {result.goldenBell && <span className="pr-prize"><GoldenBell /></span>}

@@ -338,76 +338,7 @@
   overflow: hidden;
 }
 
-/* A medallion: frame, emoji, and either shine (earned) or a progress ring (not yet). */
-.ah-medal {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: var(--ah-size);
-  height: var(--ah-size);
-  flex: none;
-}
-.ah-medal__frame { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-.ah-medal__emoji {
-  position: relative;
-  font-size: calc(var(--ah-size) * 0.4);
-  line-height: 1;
-  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
-}
-.ah-medal.is-earned { filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45)); }
-.ah-medal.is-earned.ah-medal--t3 { filter: drop-shadow(0 0 12px rgba(255, 196, 60, 0.6)); }
-.ah-medal:not(.is-earned) .ah-medal__frame { opacity: 0.85; }
-.ah-medal:not(.is-earned) .ah-medal__emoji { filter: grayscale(0.9) brightness(0.95) drop-shadow(0 0 4px rgba(0, 0, 0, 0.6)); opacity: 0.7; }
-/* The shine: a bright band sweeping across, kept inside the round medal. */
-.ah-medal__shine {
-  position: absolute;
-  inset: 4%;
-  border-radius: 50%;
-  overflow: hidden;
-  pointer-events: none;
-}
-.ah-medal__shine::before {
-  content: '';
-  position: absolute;
-  top: -20%;
-  bottom: -20%;
-  width: 34%;
-  left: -60%;
-  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.75), transparent);
-  transform: skewX(-18deg);
-  animation: ah-shine 5.5s ease-in-out infinite;
-}
-li:nth-child(3n + 2) .ah-medal__shine::before { animation-delay: 1.8s; }
-li:nth-child(3n + 3) .ah-medal__shine::before { animation-delay: 3.4s; }
-@keyframes ah-shine {
-  0%, 62% { left: -60%; }
-  85%, 100% { left: 130%; }
-}
-.ah-medal__twinkle {
-  position: absolute;
-  color: #fffbe0;
-  text-shadow: 0 0 6px #ffd84a;
-  font-size: calc(var(--ah-size) * 0.17);
-  animation: ah-twinkle 2.6s ease-in-out infinite;
-}
-.ah-medal__twinkle--a { top: 4%; right: 6%; }
-.ah-medal__twinkle--b { bottom: 10%; left: 4%; animation-delay: 1.3s; font-size: calc(var(--ah-size) * 0.12); }
-@keyframes ah-twinkle {
-  0%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); }
-  50% { opacity: 1; transform: scale(1.1) rotate(45deg); }
-}
-.ah-medal__ring { position: absolute; inset: -7%; width: 114%; height: 114%; transform: rotate(-90deg); }
-.ah-medal__ring circle { fill: none; stroke-width: 2.6; stroke-linecap: round; }
-.ah-medal__track { stroke: rgba(255, 255, 255, 0.16); }
-.ah-medal__fill {
-  stroke-dasharray: 100;
-  stroke-dashoffset: calc(100 - var(--ah-done, 0));
-  animation: ah-ring-fill 1.1s ease-out both;
-  animation-delay: var(--ah-delay, 0ms);
-}
-.ah-medal--t1 .ah-medal__fill { stroke: #e39a5b; }
-.ah-medal--t2 .ah-medal__fill { stroke: #d9ecff; }
-.ah-medal--t3 .ah-medal__fill { stroke: #ffcf3f; }
+/* The medallion itself is in medallion.css (shared with the earn moment). */
 
 /* The badge card, zooming out of its medallion. */
 .ah-card-layer {
@@ -541,10 +472,10 @@ li:nth-child(3n + 3) .ah-medal__shine::before { animation-delay: 3.4s; }
 
 /* Reduced motion: no drifting, twinkles, sweeps or zooms. */
 @media (prefers-reduced-motion: reduce) {
-  .ah-backdrop img, .ah-ring__fill, .ah-medal__fill, .ah-medal__shine::before, .ah-medal__twinkle, .ah-shelf,
+  .ah-backdrop img, .ah-ring__fill, .ah-shelf,
   .ah-banner__bar span, .ah-card, .ah-card-layer, .ah-card__rays, .ah-card__bar span, .ah-sparkles span {
     animation: none;
   }
-  .ah-medal__twinkle, .ah-sparkles { display: none; }
+  .ah-sparkles { display: none; }
   .ah-item .ah-medal, .ah-next__item { transition: none; }
 }

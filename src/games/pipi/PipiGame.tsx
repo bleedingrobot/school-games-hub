@@ -221,7 +221,7 @@ export function Finish({ result, say, onOpenBeanstalk, onNext }: { result: PipiF
     <div className={`pp-home${result.pearl ? ' pp-home--pearl' : ''}`}>
       <Beach scenery={result.pearl ? 'gold' : beach.today} shells={shells} friend={beach.friend} pose="cheer" />
       {beanstalkOn !== null && (
-        <WhatsNext prefix="pp" wearMe={result.pearl} title={main} spoken={line} note={levelUp} buttonLabel="OK" say={sayThen} onNext={onNext}>
+        <WhatsNext prefix="pp" game="pipi" wearMe={result.pearl} title={main} spoken={line} note={levelUp} buttonLabel="OK" say={sayThen} onNext={onNext}>
           {result.pearl && <p className="pp-chip">{opening}</p>}
           {band === 'tricky' && <p className="pp-chip">{WORDS.trickyChip}</p>}
           {result.pearl && (
