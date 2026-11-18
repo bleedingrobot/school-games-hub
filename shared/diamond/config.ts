@@ -259,17 +259,17 @@ export const ACHIEVEMENT_NEEDS: Record<AchievementMeasure, number> = {
  */
 export const ACHIEVEMENTS = [
   { id: 'diamond-first-catch', name: 'First Catch', emoji: '💎', measure: 'diamond_gems', goal: 1, for: 'Catch your first gem' },
-  { id: 'diamond-firm-grip', name: 'Firm Grip', emoji: '✊', measure: 'diamond_grips', goal: 10, for: 'Hold on to 10 slipping gems' },
-  { id: 'diamond-halfway', name: 'Halfway Down', emoji: '⛏️', measure: 'diamond_level', goal: 5, for: 'Pass level 5' },
-  { id: 'diamond-collector', name: 'Gem Collector', emoji: '📖', measure: 'diamond_kinds', goal: 9, for: 'Catch every kind of gem' },
+  { id: 'diamond-firm-grip', name: 'Firm Grip: 10 slipping gems', emoji: '✊', measure: 'diamond_grips', goal: 10, for: 'Hold on to 10 slipping gems' },
+  { id: 'diamond-halfway', name: 'Halfway Down: pass level 5', emoji: '⛏️', measure: 'diamond_level', goal: 5, for: 'Pass level 5' },
+  { id: 'diamond-collector', name: 'Gem Collector: every kind of gem', emoji: '📖', measure: 'diamond_kinds', goal: 9, for: 'Catch every kind of gem' },
   { id: 'diamond-finder', name: 'Diamond Finder', emoji: '💖', measure: 'diamond_found', goal: 1, for: 'Catch the Heart Diamond' },
-  { id: 'diamond-star-miner', name: 'Star Miner', emoji: '⭐', measure: 'diamond_stars', goal: 30, for: '3 stars on every level' },
+  { id: 'diamond-star-miner', name: 'Star Miner: all 30 stars', emoji: '⭐', measure: 'diamond_stars', goal: 30, for: '3 stars on every level' },
   // Rare gems (migration 20261118003400): kept for good, like the rest.
-  { id: 'diamond-lucky-find', name: 'Lucky Find', emoji: '🍀', measure: 'diamond_rare_kinds', goal: 1, for: 'Catch your first rare gem' },
-  { id: 'diamond-rare-hunter', name: 'Rare Hunter', emoji: '🔮', measure: 'diamond_rare_kinds', goal: 4, for: 'Catch 4 different rare gems' },
-  { id: 'diamond-rare-hoard', name: 'Rare Hoard', emoji: '👑', measure: 'diamond_rare_total', goal: 25, for: 'Catch 25 rare gems' },
+  { id: 'diamond-lucky-find', name: 'Lucky Find: a rare gem', emoji: '🍀', measure: 'diamond_rare_kinds', goal: 1, for: 'Catch your first rare gem' },
+  { id: 'diamond-rare-hunter', name: 'Rare Hunter: 4 rare gems', emoji: '🔮', measure: 'diamond_rare_kinds', goal: 4, for: 'Catch 4 different rare gems' },
+  { id: 'diamond-rare-hoard', name: 'Rare Hoard: 25 rare gems', emoji: '👑', measure: 'diamond_rare_total', goal: 25, for: 'Catch 25 rare gems' },
   { id: 'diamond-phoenix', name: 'Fablet Rose Finder', emoji: '🌹', measure: 'diamond_phoenix', goal: 1, for: 'Catch the Fablet Rose (1% chance!)' },
-  { id: 'diamond-full-book', name: 'Complete Collection', emoji: '🏆', measure: 'diamond_rare_kinds', goal: 7, for: 'Catch all 7 rare gems' },
+  { id: 'diamond-full-book', name: 'Complete Collection: all 7 rare gems', emoji: '🏆', measure: 'diamond_rare_kinds', goal: 7, for: 'Catch all 7 rare gems' },
 ] as const;
 /** Gem Book trophy steps: different rare gems caught for bronze, silver and gold (the Rare Gem Cup). */
 export const RARE_CUP_STEPS = [3, 5, 7] as const;

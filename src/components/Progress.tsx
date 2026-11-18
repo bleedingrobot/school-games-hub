@@ -78,7 +78,8 @@ export function AchievementList({
         const counted = a.measure !== 'rank' && a.goal > 1;
         const name = showGame ? `${a.name} (${gameLabel(a.game) ?? a.game})` : a.name;
         return (
-          <li key={a.id} className={done ? 'is-done' : undefined}>
+          // The small chips on the home page keep the how-to line for a hover or long press; the full list shows it.
+          <li key={a.id} className={done ? 'is-done' : undefined} title={compact && a.how ? a.how : undefined}>
             <span className="achievement-list__emoji" aria-hidden="true">
               {a.emoji}
             </span>
@@ -89,6 +90,7 @@ export function AchievementList({
                   {done ? '✓ Earned' : counted ? `${a.progress}/${a.goal}` : 'Not yet'}
                 </span>
               </span>
+              {!compact && a.how && <span className="achievement-list__how">{a.how}</span>}
               <progress
                 max={a.goal}
                 value={done ? a.goal : a.progress}
