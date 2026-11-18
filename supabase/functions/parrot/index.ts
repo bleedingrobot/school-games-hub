@@ -4153,6 +4153,11 @@ const EARLY_FACTS = {
 *   bedmas:mixed           2 + 3 × 4 − 5   three steps, no brackets
 *   bedmas:mixed-brackets  (2 + 3) × 4 − 5 three steps with brackets
 *
+* Small numbers (James, 19 Nov 2026: "test order of operations, not get kids hung up on big numbers"): in every step worked the
+* right way, an add or take-away step has a number under 10 (3 + 20, 20 − 7, never 23 + 15), and every × or ÷ step is a fact
+* from the 2, 3, 4 or 5 times tables (4 × 7, 35 ÷ 5). New questions are only rolled like that; `build` still accepts the bigger
+* numbers of questions rolled before, so they are still marked.
+*
 * Every question is four choices to tap (James, 19 Oct 2026). The wrong choices are what a student gets by following a named
 * mistake (working left to right gives 20 for 2 + 3 × 4), never a random number, and they are always different from the right
 * answer and from each other. A question where fewer than three mistakes give a different whole number is never asked.
@@ -4259,6 +4264,11 @@ function evaluate(all, way) {
 	let i = 0;
 	const level = (op) => way.rank === "flat" ? 1 : (op === "×" || op === "÷") === (way.rank === "normal") ? 2 : 1;
 	const apply = (op, a, b) => {
+		way.steps?.push([
+			op,
+			a,
+			b
+		]);
 		const v = op === "+" ? a + b : op === "−" ? a - b : op === "×" ? a * b : b === 0 ? NaN : a / b;
 		return way.exact && (!Number.isInteger(v) || v < 0) ? NaN : v;
 	};
@@ -4340,7 +4350,32 @@ function mistakesFor(tokens) {
 	}
 	return named;
 }
-const MAX_NUMBER = 30;
+/** A × or ÷ step from the 2, 3, 4 or 5 times tables: 4 × 7, 7 × 4, 35 ÷ 5 (the other number 1 to 10). */
+const SMALL_TABLES = [
+	2,
+	3,
+	4,
+	5
+];
+const tableFact = (a, b) => SMALL_TABLES.includes(a) && isInt(b, 1, 10) || SMALL_TABLES.includes(b) && isInt(a, 1, 10);
+/**
+* Every step of the right way is small: adding or taking away with a number under 10, × from the 2 to 5 tables, ÷ by 2 to 5
+* with an answer up to 10. Every number written is 10 or under, except a number that is divided (35 ÷ 5).
+*/
+function smallSteps(tokens) {
+	const steps = [];
+	const value = evaluate(tokens, {
+		...RIGHT,
+		steps
+	});
+	if (!Number.isInteger(value)) return false;
+	return steps.every(([op, a, b]) => {
+		if (op === "×") return tableFact(a, b);
+		if (op === "÷") return SMALL_TABLES.includes(b) && Number.isInteger(a / b) && isInt(a / b, 1, 10);
+		return Math.min(a, b) < 10 && Math.max(a, b) <= 50;
+	}) && tokens.every((t, i) => typeof t !== "number" || t <= 10 || tokens[i + 1] === "÷");
+}
+const MAX_NUMBER = 50;
 const MAX_ANSWER = 300;
 function build(templateIndex, nums) {
 	const template = TEMPLATES[templateIndex];
@@ -4361,9 +4396,9 @@ function bedmasFamily(key, label) {
 	return oneKey(key, label, ["MS.Y6.NUM.OP.P1"], null, (_k, r) => {
 		for (;;) {
 			const t = pickOne(r, mine);
-			const nums = Array.from({ length: lettersOf(t.src) }, (_, n) => int(r, 2, n === 0 && /^a [+−]/.test(t.src) ? 30 : 12));
+			const nums = Array.from({ length: lettersOf(t.src) }, () => r() < .25 ? int(r, 11, 50) : int(r, 2, 10));
 			const made = build(t.i, nums);
-			if (made && withMistakes({
+			if (made && smallSteps(made.tokens) && withMistakes({
 				parts: [],
 				spoken: "",
 				answer: made.answer
