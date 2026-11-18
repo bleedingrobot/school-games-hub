@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'bonus-turns-2026-11-19',
+    date: '2026-11-19',
+    emoji: '⏳',
+    title: 'Bonus Turns Days!',
+    text: 'Win a Bonus Turns Day from a class quest: unlimited turns in that game, on a day you pick.',
+    to: '/profile#rewards',
+  },
+  {
     id: 'hero-titles-2026-11-19',
     date: '2026-11-19',
     emoji: '🏷️',

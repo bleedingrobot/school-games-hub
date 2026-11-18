@@ -103,6 +103,8 @@ export interface MyQuestReward {
   usedAt: string | null;
   /** A used Hero Title: the title it became. */
   title?: string | null;
+  /** A used Bonus Turns Day: the NZ day ('YYYY-MM-DD') it was for. */
+  day?: string | null;
 }
 
 export async function fetchMyQuestRewards(): Promise<MyQuestReward[]> {
