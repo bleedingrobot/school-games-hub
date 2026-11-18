@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'diamond-rare-rarer-2026-11-19',
+    date: '2026-11-19',
+    emoji: '💎',
+    title: 'Rare gems are rarer',
+    text: 'Diamond Drop rare gems now turn up about 1 go in 4. Each one is a real treasure!',
+    game: 'diamond',
+  },
+  {
     id: 'quest-frames-2026-11-19',
     date: '2026-11-19',
     emoji: '🖼️',
