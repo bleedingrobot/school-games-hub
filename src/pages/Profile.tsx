@@ -512,6 +512,9 @@ function MyAchievements({ achievements }: { achievements: Achievement[] }) {
 
   return (
     <div className="profile-achievements">
+      <Link className="profile-achievements__hall" to="/achievements">
+        <span aria-hidden="true">🏛️</span> Open my Achievement Hall
+      </Link>
       <div>
         <h3>Earned</h3>
         {earned.length === 0 ? (

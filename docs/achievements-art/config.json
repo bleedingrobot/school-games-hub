@@ -1,0 +1,78 @@
+{
+  "_from": "docs/game-guide/templates/art-config.json. The Achievement Hall (docs/ACHIEVEMENTS-PLAN.md, stage 2). Hall paintings: --style hall; frames and shelf: --style metal.",
+  "game": "achievements",
+  "filename_prefix": "achievements/img",
+  "comfy": "http://127.0.0.1:8188",
+  "style": "hall",
+  "seed_by": "name+style",
+  "styles": {
+    "hall": "Epic vibrant painterly fantasy game key art, rich saturated colour, warm glowing magical light, sense of wonder, friendly and inviting, made for children aged 8 to 11, no people, no text, no letters, no numbers anywhere. ",
+    "metal": "Polished game UI asset, painterly fantasy style, one object alone on a plain pure white background, seen straight on, perfectly centred and symmetrical, crisp clean edges, soft studio light, no shadow on the background, no text, no letters, no numbers. "
+  },
+  "inbox": "~/dragon-art-inbox/achievements",
+  "picks": "docs/achievements-art/picks.json",
+  "art_dir": "src",
+  "pictures": [
+    {
+      "name": "hall",
+      "prompt": "A grand magical hall of fame inside a castle, seen from the middle of the floor looking down a long gallery: tall arched windows with golden sunbeams and starry night sky glimpses, rows of glowing wooden display shelves along both walls holding shining gold, silver and bronze medals and trophies, hanging banners in red, blue and gold, floating sparkles and magic dust in the air, a warm polished stone floor with a long red carpet, a huge round stained-glass star window at the far end glowing, calm darker open space in the upper middle.",
+      "size": [1536, 864],
+      "kind": "scene",
+      "folder": "achievements/art",
+      "file": "hall"
+    },
+    {
+      "name": "hall-tall",
+      "prompt": "A tall grand magical tower hall of fame inside a castle, looking up: tall arched windows with golden sunbeams, tiers of glowing wooden display shelves climbing the walls holding shining gold, silver and bronze medals and trophies, hanging red, blue and gold banners, floating sparkles and magic dust, a huge round stained-glass star window high above glowing, warm polished stone floor with a red carpet at the bottom.",
+      "size": [864, 1536],
+      "kind": "scene",
+      "folder": "achievements/art",
+      "file": "hall-tall"
+    },
+    {
+      "name": "frame-bronze",
+      "prompt": "A round bronze medal frame: a thick ring of warm reddish-brown bronze metal with a simple rope-twist edge and small leaf engravings, the centre a smooth flat empty dark bronze disc, sturdy and plain.",
+      "size": [1024, 1024],
+      "kind": "cut",
+      "folder": "achievements/art",
+      "file": "frame-bronze",
+      "max": 320
+    },
+    {
+      "name": "frame-silver",
+      "prompt": "A round silver medal frame: a thick ring of bright polished silver metal with fine laurel leaf engravings and a beaded edge, the centre a smooth flat empty pale blue-grey enamel disc, gleaming.",
+      "size": [1024, 1024],
+      "kind": "cut",
+      "folder": "achievements/art",
+      "file": "frame-silver",
+      "max": 320
+    },
+    {
+      "name": "frame-gold",
+      "prompt": "A round gold medal frame: a thick ring of rich shining gold metal with ornate laurel wreath engravings, small star points around the rim and tiny red gems, the centre a smooth flat empty deep royal-blue enamel disc, radiant and grand.",
+      "size": [1024, 1024],
+      "kind": "cut",
+      "folder": "achievements/art",
+      "file": "frame-gold",
+      "max": 320
+    },
+    {
+      "name": "frame-locked",
+      "prompt": "A round medal frame made of dark grey weathered stone, a thick plain ring with a few cracks and faint carved swirls, the centre a smooth flat empty dark slate disc, quiet and mysterious, waiting to be filled.",
+      "size": [1024, 1024],
+      "kind": "cut",
+      "folder": "achievements/art",
+      "file": "frame-locked",
+      "max": 320
+    },
+    {
+      "name": "shelf",
+      "prompt": "A long straight wide wooden display shelf seen from the front, warm polished dark oak plank with a carved gold trim along its front edge and small gold brackets underneath, very wide and thin, filling the picture from left edge to right edge.",
+      "size": [1536, 384],
+      "kind": "cut",
+      "folder": "achievements/art",
+      "file": "shelf",
+      "max": 1400
+    }
+  ]
+}

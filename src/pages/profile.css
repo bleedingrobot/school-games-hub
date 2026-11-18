@@ -142,3 +142,28 @@
     padding: 4px 16px 16px;
   }
 }
+
+/* The big painted way into the Achievement Hall (/achievements). */
+.profile-achievements__hall {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 96px;
+  padding: 16px 20px;
+  border-radius: var(--radius, 14px);
+  background: linear-gradient(180deg, rgba(20, 10, 34, 0.25), rgba(20, 10, 34, 0.7)), url('../achievements/art/hall-800.webp') center 40% / cover;
+  border: 2px solid #f5c451;
+  box-shadow: var(--shadow);
+  color: #fff3d6;
+  font-family: var(--display);
+  font-size: 1.4rem;
+  font-weight: 800;
+  text-decoration: none;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  transition: transform 0.15s;
+}
+.profile-achievements__hall:hover { transform: translateY(-2px); }
+@media (prefers-reduced-motion: reduce) {
+  .profile-achievements__hall { transition: none; }
+}

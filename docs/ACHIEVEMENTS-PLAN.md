@@ -63,6 +63,38 @@ pupils can see step numbers in those games.
 
 ### Stage 2: the Achievement Hall (new page, art-first)
 
+**Built 19 Nov 2026** (`src/achievements/`): `/achievements`, full window over the hub bar with the painted hall
+(`hall.webp`, and `hall-tall.webp` on portrait screens), Hub, sound and "My trophies" in a slim row on top. A top strip
+with "N of M", a ring that fills as the Hall opens (the number counts up) and three "Next up" medallions; filter chips
+(All · Earned · Nearly there · Not started) and a game picker, remembered per device (`localStorage`
+`achievement-hall`), with a sparkle on change; one shelf per game with its home card painting as the banner, "5 of 12"
+and a mini bar, each row of medallions standing on a painted plank. Medallions use painted bronze, silver and gold
+frames by tier (earned: shine sweep and twinkles) and a stone frame with a progress ring in the tier's colour (not yet).
+Tapping one zooms a badge card out of it: tier, name, `how`, "7 of 10" (badges and one-offs: Not yet / Earned), "Earned
+on Tuesday 12 November" (NZ time), "+10 points", and a Play button (homework and class quests go to the home page).
+Linked from the home panel's "See them all" and a painted button at the top of the Profile fold. Not in the top bar:
+one more link there made the bar wider than a 1366px classroom laptop (teachers have a sixth link too). Reduced motion stops the drift, sweeps, twinkles, ring fills and zooms. Art: `docs/achievements-art/config.json`
+(`scripts/game_art.py achievements`). The home preview (`preview/home`, `#/achievements`) shows the real list, made from
+the migrations into `preview/home/achievements.json` by a one-off script.
+
+Learned while building:
+- Shelf order needs no new data: `my_home_page().topGames.mine` (most played, 14 days) goes first, then anything
+  started, then untouched games.
+- The early games (Robin, Pigeon, Parrot, Lizard, Swamp Hen) do show "Step N: name" in play, so "Reach step N" stays.
+- The Profile fold's "Every game" list is still there; the Hall covers everything it shows (ask James before removing).
+- The site has no dark mode of its own (only the three page themes); the Hall is a dark painting in every theme.
+
+**What stage 3 needs** (the earn moment):
+- Database: `seen_at timestamptz` on `achievements`, `my_new_achievements()` (unseen, newest first, with name, emoji,
+  how, tier, game) and `mark_my_achievements_seen()`, both granted to `authenticated` and added to the allow-list in
+  `security.test.sql`; the count in `progress_access.test.sql` if achievement types change.
+- Which save functions already return what was just earned, and adding it where missing, so a game's result screen can
+  show it straight away.
+- A shared `AchievementPop` (reusing `Medallion` and the frames from `src/achievements/`): medallion slides in with a
+  burst, name, "+10 points", "See it" to `/achievements`; swapped into Clans' and Diamond Drop's own lines first.
+- A hub moment like `NewTrophyMoment` (same hub pages list), queuing several, then "and 3 more"; the medallion flies to
+  its shelf when opened from the Hall. Paint a burst/sparks sheet; a short chime through the hub sound switch.
+
 - **`/achievements`**, its own page (the Profile fold becomes a big button to it; "See them all" on home goes there).
 - **Painted hall backdrop** filling the window (ComfyUI, painted for this): a grand hall of shelves or a starry trophy
   wall; Hub + sound in a slim top row, as in the full-window games.

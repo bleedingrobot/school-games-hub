@@ -25,6 +25,7 @@ const Activities = lazy(() => import('./activities/ActivitiesPage').then((m) => 
 const HowPoints = lazy(() => import('./pages/HowPoints').then((m) => ({ default: m.HowPoints })));
 const Leaderboard = lazy(() => import('./pages/Leaderboard').then((m) => ({ default: m.Leaderboard })));
 const Lobby = lazy(() => import('./pages/Lobby').then((m) => ({ default: m.Lobby })));
+const AchievementHall = lazy(() => import('./achievements/AchievementHall').then((m) => ({ default: m.AchievementHall })));
 const Profile = lazy(() => import('./pages/Profile').then((m) => ({ default: m.Profile })));
 const BadgeSignIn = lazy(() => import('./pages/BadgeSignIn').then((m) => ({ default: m.BadgeSignIn })));
 const SpaceGamePage = lazy(() => import('./pages/SpaceGamePage').then((m) => ({ default: m.SpaceGamePage })));
@@ -165,6 +166,7 @@ export function AppRoutes() {
             }
           />
           <Route path="profile" element={<Profile />} />
+          <Route path="achievements" element={<AchievementHall />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Route>
