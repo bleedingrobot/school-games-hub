@@ -56,7 +56,7 @@ function Preview() {
   };
   return (
     <>
-      <div className="si-previewbar" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'center', padding: '8px 12px', color: '#fff' }}>
+      <div className="si-previewbar" style={{ position: 'fixed', right: 8, bottom: 8, zIndex: 50, fontSize: '0.8rem', opacity: 0.9, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', padding: '6px 10px', borderRadius: 12, background: 'rgba(15, 53, 86, 0.85)', color: '#fff' }}>
         <span style={{ fontWeight: 700 }}>Sky Isles preview (nothing is sent anywhere){days ? ` · day ${days + 1}` : ''}</span>
         <button type="button" className="button button--light" style={{ width: "auto" }} onClick={skip}>Skip to tomorrow</button>
         <button type="button" className="button button--light-outline" onClick={again}>Start again</button>
