@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'diamond-rare-gems-2026-11-18',
+    date: '2026-11-18',
+    emoji: '💎',
+    title: 'Rare gems in Diamond Drop',
+    text: 'A pupil’s idea! Seven sparkly rare gems hide deep down. Can you find the 1% Phoenix Gem?',
+    game: 'diamond',
+  },
+  {
     id: 'marble-easier-2026-11-18',
     date: '2026-11-18',
     emoji: '🎉',

@@ -8244,7 +8244,94 @@ const GEMS = [
 	}
 ];
 const GEM_IDS = GEMS.map((g) => g.id);
-const gemOf = (id) => GEMS[GEM_IDS.indexOf(id)];
+const gemOf = (id) => GEMS[GEM_IDS.indexOf(id)] ?? RARE_GEMS.find((g) => g.id === id);
+const RARE_GEMS = [
+	{
+		id: "moonstone",
+		name: "Moonstone",
+		chance: .3,
+		tier: "uncommon",
+		value: 20,
+		weight: "light",
+		slip: .3,
+		r: 24,
+		minY: 480,
+		about: "Glows softly, like the moon over the hills."
+	},
+	{
+		id: "sunstone",
+		name: "Sunstone",
+		chance: .25,
+		tier: "uncommon",
+		value: 25,
+		weight: "light",
+		slip: .3,
+		r: 24,
+		minY: 490,
+		about: "Warm as a summer morning, full of golden sparkles."
+	},
+	{
+		id: "frostCrystal",
+		name: "Frost Crystal",
+		chance: .2,
+		tier: "rare",
+		value: 35,
+		weight: "light",
+		slip: .35,
+		r: 24,
+		minY: 500,
+		about: "A snowflake that never melts."
+	},
+	{
+		id: "rainbowOpal",
+		name: "Rainbow Opal",
+		chance: .15,
+		tier: "rare",
+		value: 50,
+		weight: "medium",
+		slip: .35,
+		r: 24,
+		minY: 510,
+		about: "Every colour of the rainbow, dancing inside."
+	},
+	{
+		id: "dragonEye",
+		name: "Dragon's Eye",
+		chance: .1,
+		tier: "epic",
+		value: 75,
+		weight: "medium",
+		slip: .4,
+		r: 25,
+		minY: 520,
+		about: "Some say it still watches the dragon’s treasure."
+	},
+	{
+		id: "galaxyGem",
+		name: "Galaxy Gem",
+		chance: .05,
+		tier: "epic",
+		value: 120,
+		weight: "medium",
+		slip: .4,
+		r: 25,
+		minY: 540,
+		about: "A whole galaxy of stars, small enough to hold."
+	},
+	{
+		id: "phoenixGem",
+		name: "Phoenix Gem",
+		chance: .01,
+		tier: "legendary",
+		value: 250,
+		weight: "medium",
+		slip: .45,
+		r: 26,
+		minY: 560,
+		about: "Born from fire. Only the luckiest miners ever see one."
+	}
+];
+const RARE_IDS = RARE_GEMS.map((g) => g.id);
 /** The Heart Diamond's two slips happen at these shares of the way up (from the level's seed, inside each range). */
 const DIAMOND_SLIPS = [[.7, .85], [.25, .45]];
 /** A gem that slips does so somewhere between these shares of the way up. */
@@ -8761,7 +8848,8 @@ function mixSeed(seed, n) {
 const STREAM = {
 	field: 0,
 	catch: 1e3,
-	landing: 5e3
+	landing: 5e3,
+	rare: 9e3
 };
 //#endregion
 //#region shared/diamond/field.ts
@@ -8964,7 +9052,7 @@ function buildField(level, rng) {
 /** Gem value buried in a field (crabs' gems not counted). */
 function fieldValue(things) {
 	let total = 0;
-	for (const t of things) if (t.kind === "gem" && t.gem) total += t.value ?? GEMS.find((g) => g.id === t.gem).value;
+	for (const t of things) if (t.kind === "gem" && t.gem) total += t.value ?? gemOf(t.gem).value;
 	return total;
 }
 /** Can the claw reach the Heart Diamond without touching anything else first (crabs aside), at DIAMOND_OPENING degrees or more? */
@@ -8980,14 +9068,39 @@ function fieldOk(level, things) {
 	if (level === LAST_LEVEL) return diamondReachable(things);
 	return fieldValue(things) >= FIELD_VALUE_MARGIN * spec.target;
 }
+/** Which rare gem (if any) turns up on a go with this seed: the rarest is tried first, and the first that turns up wins. */
+function rareFor(seed) {
+	const rng = makeRandom(mixSeed(seed, STREAM.rare));
+	for (let i = RARE_GEMS.length - 1; i >= 0; i--) if (rng.fraction() < RARE_GEMS[i].chance) return RARE_GEMS[i].id;
+	return null;
+}
+/**
+* Buries the go's rare gem (if one turned up) somewhere the claw can reach, clear of everything else and of the line down
+* to the Heart Diamond. Its own random stream, so the rest of the field is exactly as it would be without it.
+*/
+function addRare(things, seed) {
+	const id = rareFor(seed);
+	if (!id) return things;
+	const g = gemOf(id);
+	const rng = makeRandom(mixSeed(seed, STREAM.rare + 1));
+	const clear = things.find((t) => t.gem === "heartDiamond") ?? null;
+	const at = spot(rng, things, g.r, g.minY, 700 - g.r - 6, clear) ?? spot(rng, things, g.r, 380, 700 - g.r - 6, clear);
+	return at ? [...things, {
+		id: things.length,
+		kind: "gem",
+		gem: id,
+		...at,
+		r: g.r
+	}] : things;
+}
 /** The field for a level from its seed. Tries the next seed in line until every gem fits and the level can be passed. */
 function makeField(level, seed) {
 	let things = [];
 	for (let attempt = 0; attempt < 60; attempt++) {
 		things = buildField(level, makeRandom(mixSeed(seed, STREAM.field + attempt)));
-		if (fieldOk(level, things)) return things;
+		if (fieldOk(level, things)) break;
 	}
-	return things;
+	return addRare(things, seed);
 }
 /**
 * The guided first go's field: level 1 with a big quartz straight below and nothing in the way, so wherever the slow,
@@ -9660,7 +9773,8 @@ function newPlayer() {
 			found: 0,
 			kinds: [],
 			bestLevel: 0,
-			bestStars: 0
+			bestStars: 0,
+			rare: {}
 		}
 	};
 }
@@ -9728,11 +9842,15 @@ function takeBoosts(p, level, ids) {
 }
 /** Achievement measures (counts_fn in Stage 4). */
 function measures(p) {
+	const rare = p.lifetime.rare ?? {};
 	return {
+		diamond_rare_kinds: RARE_IDS.filter((id) => rare[id]).length,
+		diamond_rare_total: RARE_IDS.reduce((n, id) => n + (rare[id]?.count ?? 0), 0),
+		diamond_phoenix: rare.phoenixGem?.count ?? 0,
 		diamond_gems: p.lifetime.gems,
 		diamond_grips: p.lifetime.grips,
 		diamond_level: p.lifetime.bestLevel,
-		diamond_kinds: p.lifetime.kinds.filter((k) => k !== "heartDiamond").length,
+		diamond_kinds: p.lifetime.kinds.filter((k) => k !== "heartDiamond" && GEMS.some((g) => g.id === k)).length,
 		diamond_found: p.lifetime.found,
 		diamond_stars: p.lifetime.bestStars
 	};
@@ -9754,10 +9872,12 @@ function applyResult(before, r, now, unlimited = false) {
 		gemBook: { ...before.gemBook },
 		lifetime: {
 			...before.lifetime,
-			kinds: [...before.lifetime.kinds]
+			kinds: [...before.lifetime.kinds],
+			rare: { ...before.lifetime.rare ?? {} }
 		},
 		owned: [...before.owned]
 	};
+	const newRare = [];
 	let points = 0;
 	let newLevel = false;
 	let extra = false;
@@ -9789,6 +9909,16 @@ function applyResult(before, r, now, unlimited = false) {
 		p.lifetime.gems += n;
 		if (!p.lifetime.kinds.includes(g.id)) p.lifetime.kinds.push(g.id);
 	}
+	for (const g of RARE_GEMS) {
+		const n = r.caught[g.id] ?? 0;
+		if (!n) continue;
+		const page = p.lifetime.rare[g.id];
+		if (!page) newRare.push(g.id);
+		p.lifetime.rare[g.id] = {
+			count: (page?.count ?? 0) + n,
+			first: page?.first ?? today
+		};
+	}
 	p.lifetime.grips += r.held;
 	p.lifetime.plays++;
 	p.lifetime.bestLevel = Math.max(p.lifetime.bestLevel, p.deepest);
@@ -9801,7 +9931,8 @@ function applyResult(before, r, now, unlimited = false) {
 		coins,
 		points: extra ? 0 : points,
 		newLevel,
-		earned
+		earned,
+		newRare
 	};
 }
 //#endregion
@@ -10042,6 +10173,7 @@ async function handleDiamond(services, player, body) {
 					points: applied.points,
 					newLevel: applied.newLevel,
 					earned: applied.earned,
+					newRare: applied.newRare,
 					player: applied.player
 				});
 			}

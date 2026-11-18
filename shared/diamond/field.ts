@@ -5,8 +5,8 @@
 import { COS, SIN } from './angles';
 import {
   BOOST_IDS, CLAW_R, CRAB_GEM_CHANCE, CRAB_R, CRAB_SPEED, DIAMOND_CORRIDOR, DIAMOND_GUARDS, DIAMOND_OPENING, FIELD_H, FIELD_VALUE_MARGIN, FIELD_W, GAP,
-  GEMS, GROUND_Y, LAST_LEVEL, PIVOT, REACH_SLOPE, ROCKS, SACK, SACK_R, STARTER, SWING_RANGE, levelSpec,
-  type BoostId, type GemId,
+  GEMS, GROUND_Y, LAST_LEVEL, PIVOT, RARE_GEMS, REACH_SLOPE, ROCKS, SACK, SACK_R, STARTER, SWING_RANGE, gemOf, levelSpec,
+  type BoostId, type GemId, type RareId,
 } from './config';
 import { STREAM, makeRandom, mixSeed, type Random } from './random';
 
@@ -197,7 +197,7 @@ function buildField(level: number, rng: Random): Thing[] {
 /** Gem value buried in a field (crabs' gems not counted). */
 export function fieldValue(things: readonly Thing[]): number {
   let total = 0;
-  for (const t of things) if (t.kind === 'gem' && t.gem) total += t.value ?? GEMS.find((g) => g.id === t.gem)!.value;
+  for (const t of things) if (t.kind === 'gem' && t.gem) total += t.value ?? gemOf(t.gem).value;
   return total;
 }
 
@@ -217,15 +217,40 @@ function fieldOk(level: number, things: readonly Thing[]): boolean {
   return fieldValue(things) >= FIELD_VALUE_MARGIN * spec.target;
 }
 
+/** Which rare gem (if any) turns up on a go with this seed: the rarest is tried first, and the first that turns up wins. */
+export function rareFor(seed: number): RareId | null {
+  const rng = makeRandom(mixSeed(seed, STREAM.rare));
+  for (let i = RARE_GEMS.length - 1; i >= 0; i--) if (rng.fraction() < RARE_GEMS[i].chance) return RARE_GEMS[i].id;
+  return null;
+}
+
+/**
+ * Buries the go's rare gem (if one turned up) somewhere the claw can reach, clear of everything else and of the line down
+ * to the Heart Diamond. Its own random stream, so the rest of the field is exactly as it would be without it.
+ */
+function addRare(things: Thing[], seed: number): Thing[] {
+  const id = rareFor(seed);
+  if (!id) return things;
+  const g = gemOf(id);
+  const rng = makeRandom(mixSeed(seed, STREAM.rare + 1));
+  const clear = things.find((t) => t.gem === 'heartDiamond') ?? null;
+  // Near the bottom; if the deep rock is too full, a little higher (never above the middle).
+  const at = spot(rng, things, g.r, g.minY, FIELD_H - g.r - 6, clear) ?? spot(rng, things, g.r, 380, FIELD_H - g.r - 6, clear);
+  return at ? [...things, { id: things.length, kind: 'gem', gem: id, ...at, r: g.r }] : things;
+}
+
 /** The field for a level from its seed. Tries the next seed in line until every gem fits and the level can be passed. */
 export function makeField(level: number, seed: number): Thing[] {
   let things: Thing[] = [];
   for (let attempt = 0; attempt < 60; attempt++) {
     things = buildField(level, makeRandom(mixSeed(seed, STREAM.field + attempt)));
-    if (fieldOk(level, things)) return things;
+    if (fieldOk(level, things)) break;
   }
-  return things;
+  return addRare(things, seed);
 }
+
+/** The rare gem buried in a field, if there is one. */
+export const rareIn = (things: readonly Thing[]): Thing | undefined => things.find((t) => t.kind === 'gem' && RARE_GEMS.some((g) => g.id === t.gem));
 
 /**
  * The guided first go's field: level 1 with a big quartz straight below and nothing in the way, so wherever the slow,

@@ -13,7 +13,20 @@ import { trialBackend } from '../../src/games/diamond/trialBackend';
 import '../../src/styles.css';
 import './preview.css';
 
-const trial = trialBackend({ storageKey: 'diamond-preview-pupil' });
+/** Preview only: seeds (as 0 to 1) whose go has each rare gem, so the next level can be made to show one. */
+const RARE_SEED: Record<string, number> = {
+  moonstone: 0.000015, sunstone: 0.00002, frostCrystal: 0.00003, rainbowOpal: 0.00007,
+  dragonEye: 0.000045, galaxyGem: 0.000005, phoenixGem: 0.00001,
+};
+let nextSeed: number | null = null;
+const trial = trialBackend({
+  storageKey: 'diamond-preview-pupil',
+  random: () => {
+    const r = nextSeed ?? Math.random();
+    nextSeed = null;
+    return r;
+  },
+});
 
 createRoot(document.getElementById('root') as HTMLElement).render(
   <StrictMode>
@@ -29,6 +42,14 @@ createRoot(document.getElementById('root') as HTMLElement).render(
           <p>Jump to level (everything above it passed):</p>
           {Array.from({ length: LAST_LEVEL }, (_, i) => i + 1).map((n) => (
             <button key={n} type="button" onClick={() => { trial.tools.jumpTo(n); h.reload(); }}>{n}</button>
+          ))}
+          <p>Rare gems in the Gem Book:</p>
+          {[0, 3, 5, 7].map((n) => (
+            <button key={n} type="button" onClick={() => { trial.tools.rareBook(n); h.reload(); }}>{n}</button>
+          ))}
+          <p>Next level has this rare gem:</p>
+          {Object.keys(RARE_SEED).map((id) => (
+            <button key={id} type="button" data-rare={id} onClick={() => { nextSeed = RARE_SEED[id]; }}>{id}</button>
           ))}
           <p>
             <button type="button" onClick={() => { trial.tools.restart(); h.reload(); }}>Start again as a new pupil</button>

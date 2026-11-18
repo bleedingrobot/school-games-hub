@@ -203,7 +203,7 @@ export async function handleDiamond(services: DiamondServices, player: string, b
       if (kept) {
         if (applied.points > 0) await services.awardPoints(player, applied.points, `diamond:${seed}`);
         await services.progressChanged(player);
-        return ok({ result, coins: applied.coins, points: applied.points, newLevel: applied.newLevel, earned: applied.earned, player: applied.player });
+        return ok({ result, coins: applied.coins, points: applied.points, newLevel: applied.newLevel, earned: applied.earned, newRare: applied.newRare, player: applied.player });
       }
     }
     return busy();

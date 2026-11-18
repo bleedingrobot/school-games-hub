@@ -7,14 +7,15 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../maths/QuestionModal';
-import { FIELD_H, FIELD_W, LAST_LEVEL, PIVOT, TICKS_PER_SECOND, gemOf, levelSpec, type GemId } from '../../../shared/diamond/config';
+import { FIELD_H, FIELD_W, LAST_LEVEL, PIVOT, RARE_TIER_NAME, TICKS_PER_SECOND, chanceWords, gemOf, isRare, levelSpec, rareOf, type GemId, type RareId } from '../../../shared/diamond/config';
 import { answer as answerSlip, startLevel, step, type LevelState, type Phase } from '../../../shared/diamond/engine';
-import { direction, thingAt, type Thing } from '../../../shared/diamond/field';
-import { Effects, NUGGET_SPOT, drawAmbient, drawBackground, drawClaw, drawCrab, drawGem, drawNugget, drawRock, drawRope, drawSack, drawTrail, drawWinch } from './art/draw';
+import { direction, rareIn, thingAt, type Thing } from '../../../shared/diamond/field';
+import { Effects, NUGGET_SPOT, drawRareAura, drawRareGleam, drawAmbient, drawBackground, drawClaw, drawCrab, drawGem, drawNugget, drawRock, drawRope, drawSack, drawTrail, drawWinch } from './art/draw';
 import type { Worn } from './art/items';
 import { paintFile, paintNow } from './art/paint';
 import type { DiamondBackend, Ended, Started } from './backend';
 import { factText } from './factText';
+import { Sprite } from './Sprite';
 import { TIPS, guideStep, showsTip, type Help, type TipId } from './guide';
 import { stepsPerSecond, type DiamondPrefs } from './prefs';
 
@@ -82,6 +83,17 @@ export function PlayLevel({
   const [paused, setPaused] = useState(false);
   const [slot, setSlot] = useState<number | null>(null);
   const [say, setSay] = useState('');
+  // A rare gem in this level: a big banner when the level starts, and another when it's caught.
+  const rareGem = useRef((rareIn(stateRef.current.things)?.gem ?? null) as RareId | null).current;
+  const [rareBanner, setRareBanner] = useState<{ gem: RareId; caught: boolean; key: number } | null>(rareGem ? { gem: rareGem, caught: false, key: 0 } : null);
+  useEffect(() => {
+    if (!rareBanner) return;
+    const t = window.setTimeout(() => setRareBanner(null), rareBanner.caught ? 4200 : 4800);
+    return () => window.clearTimeout(t);
+  }, [rareBanner]);
+  useEffect(() => {
+    if (rareGem) setSay(`A rare gem is hiding near the bottom: a ${rareOf(rareGem).name}! ${RARE_TIER_NAME[rareOf(rareGem).tier]}, ${chanceWords(rareOf(rareGem))}.`);
+  }, [rareGem]);
   const [tip, setTip] = useState<string | null>(null);
   const [guiding, setGuiding] = useState(guided && help !== 'off');
   const guidingRef = useRef(guiding);
@@ -182,6 +194,12 @@ export function PlayLevel({
         if (shot.banked > 0 && shot.gem) {
           effects.current.spawn(worn.catch, PIVOT.x, PIVOT.y + 20, now, still, shot.gem);
           const name = gemOf(shot.gem).name;
+          if (isRare(shot.gem)) {
+            effects.current.rare(shot.gem, PIVOT.x, PIVOT.y + 20, now, still);
+            setRareBanner({ gem: shot.gem, caught: true, key: now });
+            setSay(`Rare gem caught! A ${name} for your Gem Book! ${s.banked} of ${spec.target}.`);
+            continue;
+          }
           setSay(last ? `Caught ${name === 'Heart Diamond' ? 'the Heart Diamond!' : `a ${name}!`}` : `Caught a ${name}! ${s.banked} of ${spec.target}.`);
         } else if (shot.kind === 'sack') {
           const t = s.things.find((x) => x.id === shot.grabbed);
@@ -199,7 +217,11 @@ export function PlayLevel({
     const thingPos = (t: Thing, tick: number) => thingAt(t, tick);
 
     const drawThing = (c: CanvasRenderingContext2D, t: Thing, x: number, y: number, time: number, dir: 1 | -1 = 1) => {
-      if (t.kind === 'gem' && t.gem) drawGem(c, t.gem, x, y, t.r, { halo: true, sparkle: still ? 0 : Math.max(0, Math.sin(time * 2 + t.id) * 1.4 - 0.4) });
+      if (t.kind === 'gem' && t.gem && isRare(t.gem)) {
+        drawRareAura(c, t.gem, x, y, t.r, time + t.id, still);
+        drawGem(c, t.gem, x, y, t.r * 1.15, { sparkle: still ? 0.8 : 0.6 + Math.sin(time * 4) * 0.4 });
+        if (!still) drawRareGleam(c, x, y, t.r * 1.15, time);
+      } else if (t.kind === 'gem' && t.gem) drawGem(c, t.gem, x, y, t.r, { halo: true, sparkle: still ? 0 : Math.max(0, Math.sin(time * 2 + t.id) * 1.4 - 0.4) });
       else if (t.kind === 'rock') drawRock(c, x, y, t.r, t.id);
       else if (t.kind === 'sack') drawSack(c, x, y, t.r);
       else if (t.kind === 'crab') drawCrab(c, x, y, t.r, time, still, t.crab?.gem, dir);
@@ -360,6 +382,9 @@ export function PlayLevel({
             <button type="button" className="button button--light-outline dd-btn dd-btn--small" onClick={endGuide}>Skip the guide</button>
           </div>
         )}
+        {rareBanner && (
+          <RareBanner key={rareBanner.key} gem={rareBanner.gem} caught={rareBanner.caught} still={still} onClose={() => setRareBanner(null)} />
+        )}
         {tip && !guide && (
           <div className="dd-tip" role="note">
             <span>{tip}</span>
@@ -415,5 +440,24 @@ export function PlayLevel({
         />
       )}
     </section>
+  );
+}
+
+/** The big banner for a rare gem: when a level starts with one buried, and when it's caught. It doesn't stop the clock. */
+function RareBanner({ gem, caught, still, onClose }: { gem: RareId; caught: boolean; still: boolean; onClose: () => void }) {
+  const g = rareOf(gem);
+  return (
+    <div className={`dd-rare-banner is-${g.tier}${caught ? ' is-caught' : ''}${still ? ' is-still' : ''}`} aria-hidden="true" onPointerDown={(e) => { e.stopPropagation(); onClose(); }}>
+      <div className="dd-rare-banner__rays" />
+      <div className="dd-rare-banner__gem">
+        <Sprite size={92} animate={!still} draw={(c, t) => { drawRareAura(c, gem, 50, 50, 20, t, still); drawGem(c, gem, 50, 50, 24); }} />
+      </div>
+      <div className="dd-rare-banner__words">
+        <span className="dd-rare-banner__kicker">{caught ? 'Rare gem caught!' : '✨ A rare gem appeared! ✨'}</span>
+        <strong className="dd-rare-banner__name">{g.name}</strong>
+        <span className="dd-rare-banner__tier">{RARE_TIER_NAME[g.tier]} · {chanceWords(g)}{caught ? ' · added to your Gem Book' : ' · buried near the bottom'}</span>
+      </div>
+      {!still && <div className="dd-rare-banner__glitter">{Array.from({ length: 14 }, (_, i) => <i key={i} style={{ ['--i' as string]: i }} />)}</div>}
+    </div>
   );
 }

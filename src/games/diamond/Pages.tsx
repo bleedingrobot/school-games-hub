@@ -4,13 +4,13 @@
  */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
-  ACHIEVEMENTS, BOOSTS, POINTS, EXTRA_TIME_SECONDS, GEMS, LAST_LEVEL, LEVELS, QUESTION_CAP, QUESTION_CAP_LAST, RARITY_PRICE, REPLAY_COIN_SHARE,
-  SACK, SPECIAL_SHARE, STAR_TWO_SECONDS, levelSpec, type BoostId, type Slot,
+  ACHIEVEMENTS, BOOSTS, POINTS, EXTRA_TIME_SECONDS, GEMS, LAST_LEVEL, LEVELS, QUESTION_CAP, QUESTION_CAP_LAST, RARE_GEMS, RARE_TIER_NAME, RARITY_PRICE,
+  REPLAY_COIN_SHARE, SACK, SPECIAL_SHARE, STAR_TWO_SECONDS, chanceWords, levelSpec, type BoostId, type RareGem, type Slot,
 } from '../../../shared/diamond/config';
 import { boostPrice, type Player } from '../../../shared/diamond/progress';
 import { itemOf } from '../../../shared/diamond/workshop';
-import { drawGem, GEM_LOOK } from './art/draw';
-import { paintFile } from './art/paint';
+import { drawGem, drawRareAura, GEM_LOOK } from './art/draw';
+import { paintFile, paintNow } from './art/paint';
 import { drawRig } from './art/items';
 import type { DiamondBackend, Ended, HallRow } from './backend';
 
@@ -55,6 +55,8 @@ export function LevelEnd({ ended, unlimited = false, achieved, onShop, onAgain, 
   const r = ended.result;
   const spec = levelSpec(r.level);
   const caught = GEMS.filter((g) => (r.caught[g.id] ?? 0) > 0);
+  const rareCaught = RARE_GEMS.filter((g) => (r.caught[g.id] ?? 0) > 0);
+  const newRare = new Set(ended.newRare ?? []);
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
   const title = r.level === LAST_LEVEL && r.diamond ? 'You found the Heart Diamond!' : r.passed ? `Level ${r.level} passed!` : 'So close!';
@@ -63,11 +65,21 @@ export function LevelEnd({ ended, unlimited = false, achieved, onShop, onAgain, 
       <h2 id="dd-end-title" ref={heading} tabIndex={-1} className="dd-title">{title}</h2>
       <p className="dd-soft">Level {r.level} · {spec.place}</p>
       {r.passed ? <Stars n={r.stars} /> : <p>{r.level === LAST_LEVEL ? 'The Heart Diamond is still down there. Try again!' : `You banked ${r.banked} of ${spec.target}. Try again!`}</p>}
+      {rareCaught.map((g) => (
+        <div key={g.id} className={`dd-rare-won is-${g.tier}`} role="status">
+          <Sprite size={110} animate draw={(c, t) => { drawRareAura(c, g.id, 50, 50, 18, t); drawGem(c, g.id, 50, 50, 22); }} />
+          <div>
+            <p className="dd-rare-won__kicker">{newRare.has(g.id) ? 'New page in your Gem Book!' : 'Rare gem caught!'}</p>
+            <p className="dd-rare-won__name">{g.name}</p>
+            <p className="dd-small">{RARE_TIER_NAME[g.tier]} · {chanceWords(g)}</p>
+          </div>
+        </div>
+      ))}
       <div className="dd-card">
         <h3 className="dd-h3">Gems caught</h3>
         {caught.length === 0 ? <p>No gems this time.</p> : (
           <ul className="dd-gems">
-            {caught.map((g) => (
+            {[...caught, ...rareCaught].map((g) => (
               <li key={g.id}>
                 <Sprite size={40} draw={(c) => drawGem(c, g.id, 50, 50, 38)} />
                 <span>{g.name} × {r.caught[g.id]}</span>
@@ -186,12 +198,36 @@ export function Shop({ player, level, tab, onTab, basket, onToggle, onStart, can
 
 // ————————————————————————————————————— Gem Book —————————————————————————————————————
 
-const prettyDate = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' });
+const prettyDate = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 
 export function GemBook({ player, onBack }: { player: Player; onBack: () => void }) {
   const found = GEMS.filter((g) => player.gemBook[g.id]).length;
+  const rare = player.lifetime.rare ?? {};
+  const rareFound = RARE_GEMS.filter((g) => rare[g.id]).length;
+  const cover = paintFile('rare', 'cover');
+  const vault = paintFile('rare', 'vault-800') ?? paintFile('rare', 'vault');
   return (
     <Page id="dd-book-title" title="Gem Book" onBack={onBack}>
+      <section className={`dd-rarebook${rareFound === RARE_GEMS.length ? ' is-complete' : ''}`} aria-labelledby="dd-rarebook-title">
+        {vault && <img className="dd-rarebook__vault" src={vault} alt="" aria-hidden="true" />}
+        <div className="dd-rarebook__head">
+          {cover ? <img className="dd-rarebook__cover" src={cover} alt="" aria-hidden="true" /> : <span className="dd-rarebook__cover dd-rarebook__cover--drawn" aria-hidden="true">💎</span>}
+          <div>
+            <h3 id="dd-rarebook-title" className="dd-rarebook__title">The Rare Gem Collection</h3>
+            <p className="dd-rarebook__lede">Rare gems turn up deep down, now and then. Each one you catch is kept here for good, even after a New Season.</p>
+            <div className="dd-rarebook__count" role="img" aria-label={`${rareFound} of ${RARE_GEMS.length} rare gems found`}>
+              <div className="dd-rarebook__bar"><div style={{ width: `${(rareFound / RARE_GEMS.length) * 100}%` }} /></div>
+              <span>{rareFound} / {RARE_GEMS.length}</span>
+            </div>
+          </div>
+        </div>
+        {rareFound === RARE_GEMS.length && <p className="dd-rarebook__done" role="status">🏆 Complete Collection! You have found every rare gem! 🏆</p>}
+        <ul className="dd-rarebook__grid">
+          {RARE_GEMS.map((g, i) => <RarePage key={g.id} gem={g} page={rare[g.id]} index={i} />)}
+        </ul>
+      </section>
+
+      <h3 className="dd-h3 dd-book__season">This season&rsquo;s gems</h3>
       <p className="dd-soft">{found} of {GEMS.length} gems found this season.</p>
       <ul className="dd-book">
         {GEMS.map((g, i) => {
@@ -211,6 +247,57 @@ export function GemBook({ player, onBack }: { player: Player; onBack: () => void
       </ul>
     </Page>
   );
+}
+
+/** One rare gem's page: a jewel-box card with its painting, or a locked shadow until it's found. */
+function RarePage({ gem: g, page, index }: { gem: RareGem; page?: { count: number; first: string }; index: number }) {
+  return (
+    <li className={`dd-rarepage is-${g.tier}${page ? ' is-found' : ' is-locked'}`} style={{ ['--i' as string]: index }}>
+      <span className="dd-rarepage__ribbon">{RARE_TIER_NAME[g.tier]}</span>
+      <div className="dd-rarepage__frame">
+        <Sprite
+          size={132}
+          animate={!!page}
+          label={page ? `${g.name}: ${GEM_LOOK[g.id].shape}` : 'A rare gem not found yet'}
+          draw={(c, t) => {
+            if (page) {
+              if (!drawBookCard(c, g, t)) { drawRareAura(c, g.id, 50, 50, 20, t); drawGem(c, g.id, 50, 50, 26); }
+            } else drawGem(c, g.id, 50, 50, 28, { shadow: true });
+          }}
+        />
+        {!page && <span className="dd-rarepage__q" aria-hidden="true">?</span>}
+        {page && <span className="dd-rarepage__shine" aria-hidden="true" />}
+        {page && <span className="dd-rarepage__twinkles" aria-hidden="true"><i /><i /><i /><i /></span>}
+      </div>
+      <h4 className="dd-rarepage__name">{page ? g.name : '? ? ?'}</h4>
+      <p className="dd-rarepage__chance">{chanceWords(g)}</p>
+      {page ? (
+        <>
+          <p className="dd-rarepage__about">{g.about}</p>
+          <p className="dd-small">Caught {page.count} · first on {prettyDate(page.first)}</p>
+        </>
+      ) : (
+        <p className="dd-small dd-rarepage__hint">{g.tier === 'legendary' ? 'The rarest of all. Will you ever see it?' : 'Not found yet. Keep digging deep!'}</p>
+      )}
+    </li>
+  );
+}
+
+/** The painted book card (gem on a velvet cushion) with a soft breathing glow over it. False when it hasn't downloaded. */
+function drawBookCard(c: CanvasRenderingContext2D, g: RareGem, t: number): boolean {
+  const img = paintNow('book', g.id);
+  if (!img) return false;
+  c.drawImage(img, 0, 0, 100, 100);
+  c.save();
+  c.globalCompositeOperation = 'lighter';
+  const k = 0.18 + Math.sin(t * 2.2) * 0.1;
+  const glow = c.createRadialGradient(50, 46, 2, 50, 46, 34);
+  glow.addColorStop(0, `rgba(255,255,255,${k})`);
+  glow.addColorStop(1, 'rgba(255,255,255,0)');
+  c.fillStyle = glow;
+  c.fillRect(0, 0, 100, 100);
+  c.restore();
+  return true;
 }
 
 // ————————————————————————————————————— Hall of Diamond Finders —————————————————————————————————————
@@ -260,7 +347,13 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
         <p>Each level has a clock and a target. Level 1 gives you {first.seconds} seconds to bank {first.target} gem coins. Reach the target before the clock runs out to pass. On level {LAST_LEVEL}, catch the Heart Diamond.</p>
         <p>After you pass, keep digging for more coins, or press Finish.</p>
         <h3 className="dd-h3">Hold on!</h3>
-        <p>Rare gems can slip on the way up. A maths question pops up and the clock stops while you answer. Get it right and the claw holds on. Get it wrong and the gem falls back into the rock, where you can catch it again. At most {QUESTION_CAP} questions a level ({QUESTION_CAP_LAST} on level {LAST_LEVEL}).</p>
+        <p>Big gems can slip on the way up. A maths question pops up and the clock stops while you answer. Get it right and the claw holds on. Get it wrong and the gem falls back into the rock, where you can catch it again. At most {QUESTION_CAP} questions a level ({QUESTION_CAP_LAST} on level {LAST_LEVEL}).</p>
+        <h3 className="dd-h3">Rare gems</h3>
+        <p>Sometimes a rare gem is buried near the bottom of a level. It sparkles so you can spot it. At most one turns up on a level, and some are very rare:</p>
+        <ul>
+          {RARE_GEMS.map((g) => <li key={g.id}><strong>{g.name}</strong> ({RARE_TIER_NAME[g.tier]}): {chanceWords(g)}.</li>)}
+        </ul>
+        <p>Catch one and it goes in your Gem Book for good, even after a new season. Collect them all for a trophy!</p>
         <h3 className="dd-h3">One new level a day</h3>
         <p>You can try today’s new level as many times as you like. Once you pass it, the next level opens tomorrow. Levels you’ve passed are always open to replay. Some days your teacher may give unlimited new levels.</p>
         <h3 className="dd-h3">Stars and coins</h3>

@@ -4,8 +4,8 @@
  * boosts, and what New Season clears and keeps. The server runs exactly these before saving.
  */
 import {
-  ACHIEVEMENTS, ACHIEVEMENT_NEEDS, BOOSTS, GEMS, LAST_LEVEL, POINTS, REPLAY_COIN_SHARE,
-  type AchievementMeasure, type BoostId, type GemId, type Slot,
+  ACHIEVEMENTS, ACHIEVEMENT_NEEDS, BOOSTS, GEMS, LAST_LEVEL, POINTS, RARE_GEMS, RARE_IDS, REPLAY_COIN_SHARE,
+  type AchievementMeasure, type BoostId, type GemId, type RareId, type RareMeasure, type Slot,
 } from './config';
 import { EXTRA_TURN_POINTS } from '../unlimited';
 import type { LevelResult } from './engine';
@@ -50,13 +50,15 @@ export interface Player {
     kinds: GemId[];
     bestLevel: number;
     bestStars: number;
+    /** The rare gems' Gem Book pages, kept for good (missing in saves from before rare gems). */
+    rare?: Partial<Record<RareId, GemPage>>;
   };
 }
 
 export function newPlayer(): Player {
   return {
     deepest: 0, newLevelDate: null, coins: 0, stars: Array(LAST_LEVEL).fill(0), gemBook: {}, freeBoost: null,
-    owned: [], worn: {}, lifetime: { plays: 0, gems: 0, grips: 0, found: 0, kinds: [], bestLevel: 0, bestStars: 0 },
+    owned: [], worn: {}, lifetime: { plays: 0, gems: 0, grips: 0, found: 0, kinds: [], bestLevel: 0, bestStars: 0, rare: {} },
   };
 }
 
@@ -113,12 +115,16 @@ export function takeBoosts(p: Player, level: number, ids: readonly BoostId[]): {
 }
 
 /** Achievement measures (counts_fn in Stage 4). */
-export function measures(p: Player): Record<AchievementMeasure | 'diamond_gems' | 'diamond_level', number> {
+export function measures(p: Player): Record<AchievementMeasure | RareMeasure | 'diamond_gems' | 'diamond_level', number> {
+  const rare = p.lifetime.rare ?? {};
   return {
+    diamond_rare_kinds: RARE_IDS.filter((id) => rare[id]).length,
+    diamond_rare_total: RARE_IDS.reduce((n, id) => n + (rare[id]?.count ?? 0), 0),
+    diamond_phoenix: rare.phoenixGem?.count ?? 0,
     diamond_gems: p.lifetime.gems,
     diamond_grips: p.lifetime.grips,
     diamond_level: p.lifetime.bestLevel,
-    diamond_kinds: p.lifetime.kinds.filter((k) => k !== 'heartDiamond').length,
+    diamond_kinds: p.lifetime.kinds.filter((k) => k !== 'heartDiamond' && GEMS.some((g) => g.id === k)).length,
     diamond_found: p.lifetime.found,
     diamond_stars: p.lifetime.bestStars,
   };
@@ -147,6 +153,8 @@ export interface Applied {
   newLevel: boolean;
   /** Workshop upgrades just earned. */
   earned: string[];
+  /** Rare gems caught for the very first time (new Gem Book pages). */
+  newRare: RareId[];
 }
 
 /**
@@ -159,9 +167,10 @@ export function applyResult(before: Player, r: LevelResult, now: Date, unlimited
     ...before,
     stars: [...before.stars],
     gemBook: { ...before.gemBook },
-    lifetime: { ...before.lifetime, kinds: [...before.lifetime.kinds] },
+    lifetime: { ...before.lifetime, kinds: [...before.lifetime.kinds], rare: { ...(before.lifetime.rare ?? {}) } },
     owned: [...before.owned],
   };
+  const newRare: RareId[] = [];
   let points = 0;
   let newLevel = false;
   let extra = false;
@@ -193,6 +202,13 @@ export function applyResult(before: Player, r: LevelResult, now: Date, unlimited
     p.lifetime.gems += n;
     if (!p.lifetime.kinds.includes(g.id)) p.lifetime.kinds.push(g.id);
   }
+  for (const g of RARE_GEMS) {
+    const n = r.caught[g.id] ?? 0;
+    if (!n) continue;
+    const page = p.lifetime.rare![g.id];
+    if (!page) newRare.push(g.id);
+    p.lifetime.rare![g.id] = { count: (page?.count ?? 0) + n, first: page?.first ?? today };
+  }
   p.lifetime.grips += r.held;
   p.lifetime.plays++;
   p.lifetime.bestLevel = Math.max(p.lifetime.bestLevel, p.deepest);
@@ -201,11 +217,11 @@ export function applyResult(before: Player, r: LevelResult, now: Date, unlimited
   const earned = newlyEarned(p);
   p.owned.push(...earned);
   // Extra new levels give everything but hub points.
-  return { player: p, coins, points: extra ? EXTRA_TURN_POINTS : points, newLevel, earned };
+  return { player: p, coins, points: extra ? EXTRA_TURN_POINTS : points, newLevel, earned, newRare };
 }
 
 /** New Season: back to level 1 with no coins, stars or Gem Book. Workshop upgrades, what's worn and achievement totals stay. */
 export function newSeason(p: Player): Player {
   const fresh = newPlayer();
-  return { ...fresh, owned: [...p.owned], worn: { ...p.worn }, lifetime: { ...p.lifetime, kinds: [...p.lifetime.kinds] } };
+  return { ...fresh, owned: [...p.owned], worn: { ...p.worn }, lifetime: { ...p.lifetime, kinds: [...p.lifetime.kinds], rare: { ...(p.lifetime.rare ?? {}) } } };
 }

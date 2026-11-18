@@ -39,4 +39,4 @@ export function mixSeed(seed: number, n: number): number {
 }
 
 /** Streams of the level seed, kept apart so a new kind of random draw never shifts another. */
-export const STREAM = { field: 0, catch: 1000, landing: 5000 } as const;
+export const STREAM = { field: 0, catch: 1000, landing: 5000, rare: 9000 } as const;

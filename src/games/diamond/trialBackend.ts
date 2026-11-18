@@ -5,7 +5,7 @@
  */
 import { AUTO_FOCUS, type MathsFocus } from '../../../shared/maths/focus';
 import type { MathsContext } from '../../../shared/maths/serverQuestions';
-import { LAST_LEVEL } from '../../../shared/diamond/config';
+import { LAST_LEVEL, RARE_GEMS } from '../../../shared/diamond/config';
 import { emptyData, memoryServices, type MemoryData } from '../../../shared/diamond/memoryServices';
 import { nzDate, newPlayer } from '../../../shared/diamond/progress';
 import { handleDiamond } from '../../../shared/diamond/server';
@@ -42,6 +42,8 @@ export interface Trial {
     nextDay(): void;
     /** Pretend every level above this one is passed (and today's new level not yet used). */
     jumpTo(level: number): void;
+    /** Pretend this many rare gems have been caught (the commonest first), to see the Gem Book. */
+    rareBook(kinds: number): void;
     restart(): void;
   };
 }
@@ -105,6 +107,12 @@ export function trialBackend(options: TrialOptions = {}): Trial {
       },
       nextDay() {
         stored.skippedDays++;
+        save();
+      },
+      rareBook(kinds) {
+        const p = player();
+        p.lifetime.rare = {};
+        RARE_GEMS.slice(0, kinds).forEach((g, i) => { p.lifetime.rare![g.id] = { count: 7 - i, first: '2026-11-18' }; });
         save();
       },
       jumpTo(level) {
