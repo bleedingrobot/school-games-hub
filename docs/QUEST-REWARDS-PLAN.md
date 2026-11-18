@@ -1,6 +1,6 @@
 # Class quest rewards
 
-**Status:** stage 1 (rewards core + Rename Scroll) built 19 Nov 2026, migration `20261119000400_quest_rewards.sql`. Stages 2 to 5 not built. The red dot on the profile link is left for a later stage; the quest bar's "Use my …" button and the open My rewards fold do that job for now. Builds on [CLASS-QUESTS-PLAN.md](CLASS-QUESTS-PLAN.md) (stages 1 and 2 live).
+**Status:** stage 1 (rewards core + Rename Scroll) LIVE 19 Nov 2026 (#606, migration `20261119000400_quest_rewards.sql`). Stage 2 (Hero Titles) built 19 Nov 2026, migration `20261119000500_hero_titles.sql`: 32 titles in `shared/quests/titles.ts`, worn in the avatar's `title` key (server-written only), so leaderboards get it with the avatar; `owned_titles` table instead of a `profiles.title` column; `use_quest_reward`, `set_my_title`, `my_titles`. Stages 3 to 5 not built. The red dot on the profile link is left for a later stage. Builds on [CLASS-QUESTS-PLAN.md](CLASS-QUESTS-PLAN.md) (stages 1 and 2 live).
 
 James (19 Nov 2026): class quests should give a reward, and the first one is a Rename Scroll. When a teacher starts a quest, they
 choose the reward. I suggested 15 rewards. James picked the first five, then swapped Look Token for Game Coins (19 Nov 2026):
