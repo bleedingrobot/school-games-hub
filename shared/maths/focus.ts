@@ -9,7 +9,7 @@
 import { parseFactKey } from './facts';
 import type { FactStats } from './leitner';
 import { isBondPairKey } from './skillPacks/bondPairs';
-import { AutoPack, FOCUS_PACKS, focusSkills, ladderKeyPacks, LADDER, packIdOfKey, type FocusPackId, type FocusSpec } from './ladder';
+import { AutoPack, currentSkillIds, FOCUS_PACKS, focusSkills, FORMER_SKILLS, ladderKeyPacks, LADDER, packIdOfKey, type FocusPackId, type FocusSpec } from './ladder';
 import { floorRank, NO_LADDER, parseLadderInfo, type LadderInfo } from './place';
 import type { SkillPack } from './skillPack';
 import { solveArray, solveCounting, solveEquals, solveLine, solveOddEven, solvePart, solveSkip } from './skillPacks/earlyFacts';
@@ -39,8 +39,9 @@ export const AUTO_FOCUS: MathsFocus = { source: 'auto', skills: [], onlyThese: f
 const SOURCES: readonly FocusSource[] = ['teacher-student', 'teacher-group', 'teacher-class', 'student', 'auto'];
 const SKILL_ID = /^[a-z0-9-]{1,40}$/;
 
+/** A focus's skills, with ids saved before a skill was split read as the skills it became ("tables-6-9" → ×6 and ×9). */
 const cleanSkills = (raw: unknown): string[] =>
-  Array.isArray(raw) ? [...new Set(raw.filter((s): s is string => typeof s === 'string' && SKILL_ID.test(s)))].slice(0, 12) : [];
+  Array.isArray(raw) ? currentSkillIds(raw.filter((s): s is string => typeof s === 'string' && SKILL_ID.test(s))).slice(0, 12) : [];
 
 /** Reads what the server sent. Anything odd counts as auto: nobody gets a strange focus by accident. */
 export function parseFocus(raw: unknown): MathsFocus {
@@ -84,7 +85,7 @@ export const focusKey = (focus: MathsFocus | null | undefined) =>
       : 'auto';
 
 /** What the student and teacher see for a skill. */
-export const skillLabel = (id: string) => LADDER.find((s) => s.id === id)?.label ?? id;
+export const skillLabel = (id: string) => LADDER.find((s) => s.id === id)?.label ?? (Object.hasOwn(FORMER_SKILLS, id) ? FORMER_SKILLS[id].label : id);
 
 /** Short names for notes: "×6, ×9" rather than "Times tables: ×6, ×9". */
 export function skillShortLabel(id: string): string {

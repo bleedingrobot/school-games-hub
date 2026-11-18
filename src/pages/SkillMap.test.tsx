@@ -78,9 +78,10 @@ const ana = (over: Partial<skillMap.MapStudent> = {}): skillMap.MapStudent => ({
   enabledTables: undefined,
   division: true,
   facts: [
+    ...known('facts-5'),
     ...known('facts-10'),
     ...known('dbl-half-10', 4),
-    ...skill('tables-6-9')
+    ...skill('tables-6')
       .keys.filter((k) => k.startsWith('mul:'))
       .slice(0, 4)
       .map((k) => rec(k, 1)),
@@ -148,7 +149,7 @@ describe('the skill map', () => {
         id,
         name: `Calm Tui ${id}`,
         realName: null,
-        facts: ['facts-10', 'dbl-half-10', 'ten-and', 'facts-20', 'dbl-half-20'].flatMap((k) => known(k)),
+        facts: ['facts-5', 'facts-10', 'dbl-half-10', 'ten-and', 'facts-20', 'dbl-half-20'].flatMap((k) => known(k)),
       });
     vi.mocked(skillMap.fetchClassMap).mockResolvedValue(map([ana(), ben(), cara('c1'), cara('c2'), cara('c3')]));
     await show(teacher, '/teacher/c12/maths/skills?pupil=s2');

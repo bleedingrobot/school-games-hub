@@ -40,6 +40,10 @@ export interface LadderSkill {
    * it doesn't count towards progress. A teacher can still choose it as a focus, and a game (Pipi) can ask it from its own rules.
    */
   inAuto?: false;
+  /** For a times-tables skill: its table (7 for ×7). */
+  table?: number;
+  /** For a times-tables skill: which step of `CAMPAIGN_STEPS` its table is in (0 for ×2, ×5 and ×10). */
+  tablesStep?: number;
 }
 
 const earlyKeys = (family: string) => EARLY_FACTS.families[family].keys;
@@ -59,31 +63,42 @@ const divKeys = (divisors: number[]) =>
       return m && divisors.includes(Number(m[2]));
     });
 
-/** Times tables, one skill per campaign step. The multiplication and division facts of a table go together. */
+/**
+ * Times tables, one skill per table (James, 19 Nov 2026: "split them apart"), in the order of `CAMPAIGN_STEPS`: ×2, ×5, ×10,
+ * ×3, ×4, ×8, ×6, ×9, ×7, ×11, ×12. The multiplication and division facts of a table go together. A fact like 3 × 4 sits in
+ * the first table that uses it, so a later table is only its new facts. `tablesStep` says which campaign step a table came
+ * from: jumping ahead, Training and missing-factor questions still go by the old steps.
+ */
 function tablesSkills(): LadderSkill[] {
   const tags = ['MS.Y2.NUM.OP.P9', 'MS.Y3.NUM.OP.P6', 'MS.Y4.NUM.OP.P2', 'MS.Y4.NUM.OP.P2', 'MS.Y5.NUM.OP.P2'];
   const seen = new Set<string>();
-  return CAMPAIGN_STEPS.map((step, i) => {
+  return CAMPAIGN_STEPS.flatMap((step, i) => {
     const upTo = step.upTo ?? 12;
-    // A fact like 3 × 4 sits in the first step that uses it, so a later step is only its new facts.
-    const mul = [...factsIn(step.add)].filter((k) => parseFactKey(k)!.b <= upTo && !seen.has(k));
-    mul.forEach((k) => seen.add(k));
-    const div = divKeys(step.add).filter((k) => !seen.has(k)); // facts like 132 ÷ 12 are in the pack too
-    div.forEach((k) => seen.add(k));
-    return {
-      id: `tables-${step.add.join('-')}`,
-      label: 'Times tables: ' + step.add.map((t) => `×${t}`).join(', '),
-      stage: 'times-tables' as const,
-      curriculumTags: [tags[i] ?? tags[tags.length - 1]],
-      keys: [...mul, ...div],
-      built: true,
-    };
+    return step.add.map((table, j): LadderSkill => {
+      const mul = [...factsIn([table])].filter((k) => parseFactKey(k)!.b <= upTo && !seen.has(k));
+      mul.forEach((k) => seen.add(k));
+      const div = divKeys([table]).filter((k) => !seen.has(k)); // facts like 132 ÷ 12 are in the pack too
+      div.forEach((k) => seen.add(k));
+      return {
+        id: `tables-${table}`,
+        label: `Times tables: ×${table}`,
+        stage: 'times-tables',
+        curriculumTags: [tags[i] ?? tags[tags.length - 1]],
+        keys: [...mul, ...div],
+        built: true,
+        table,
+        tablesStep: i,
+        // The warm-up asks the first table of each old step only, so its ten questions still reach as high as before.
+        ...(j > 0 ? { inWarmUp: false as const } : {}),
+      };
+    });
   });
 }
 
 /** A skill made of generated question types (kept per type, not per fact). */
 const generated = (id: string, label: string, stage: LadderStage, keys: readonly string[], ...curriculumTags: string[]): LadderSkill => ({ id, label, stage, curriculumTags, keys: [...keys], built: true });
 const tables = tablesSkills();
+const tablesOfStep = (step: number) => tables.filter((s) => s.tablesStep === step);
 
 /** Easiest first. Table skills are in the order of `CAMPAIGN_STEPS`. */
 export const LADDER: LadderSkill[] = [
@@ -91,7 +106,9 @@ export const LADDER: LadderSkill[] = [
   // child's own records, so they stay beside the ladder (`inAuto`) and an older student's auto practice never meets them.
   { id: 'parts-5', label: 'Parts of numbers to 5', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P1'], keys: earlyKeys('parts5'), built: true, inWarmUp: false, inAuto: false },
   { id: 'parts-10', label: 'Parts of numbers to 10', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P1'], keys: earlyKeys('parts10'), built: true, inWarmUp: false, inAuto: false },
-  { id: 'facts-10', label: 'Number facts to 10', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P1'], keys: [...earlyKeys('bond10'), ...addKeys((s) => s <= 10)], built: true },
+  // Facts to 5 (1 + 4, 5 − 2) come first (James, 19 Nov 2026), so the youngest start with the smallest numbers.
+  { id: 'facts-5', label: 'Number facts to 5', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P1'], keys: addKeys((s) => s <= 5), built: true },
+  { id: 'facts-10', label: 'Number facts to 10', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P1'], keys: [...earlyKeys('bond10'), ...addKeys((s) => s > 5 && s <= 10)], built: true },
   { id: 'dbl-half-10', label: 'Doubles and halves to 10', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P2'], keys: earlyKeys('dblHalf10'), built: true },
   { id: 'ten-and', label: 'Ten and a number (10 + 4)', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P6'], keys: [...earlyKeys('tenAnd'), ...earlyKeys('tenLess')], built: true },
   { id: 'facts-20', label: 'Number facts to 20', stage: 'early-facts', curriculumTags: ['MS.Y2.NUM.OP.P1'], keys: [...earlyKeys('bond20'), ...addKeys((s) => s > 10)], built: true },
@@ -130,22 +147,22 @@ export const LADDER: LadderSkill[] = [
   { id: 'count-out-10', label: 'Counting out and counting a set to 10', stage: 'early-facts', curriculumTags: [], keys: [...earlyKeys('give').filter((k) => Number(k.slice(6)) <= 10), ...earlyKeys('howMany')], built: true, inWarmUp: false, inAuto: false },
   { id: 'count-out-20', label: 'Counting out and counting a set to 20', stage: 'early-facts', curriculumTags: [], keys: [...earlyKeys('give').filter((k) => Number(k.slice(6)) > 10), ...earlyKeys('across')], built: true, inWarmUp: false, inAuto: false },
   { id: 'count-on', label: 'One more: counting on from a covered plate', stage: 'early-facts', curriculumTags: [], keys: earlyKeys('countOn'), built: true, inWarmUp: false, inAuto: false },
-  tables[0],
+  ...tablesOfStep(0),
   generated('bonds-100', 'Pairs that make 100', 'place-value', GENERATED_SKILL_KEYS['bonds-100'], 'MS.Y3.NUM.OP.P1'),
-  tables[1],
+  ...tablesOfStep(1),
   generated('round-10-100', 'Rounding to the nearest 10 and 100', 'rounding', GENERATED_SKILL_KEYS['round-10-100'], 'MS.Y3.NUM.NS.P5'),
   generated('bonds-1000', 'Hundreds that make 1000', 'place-value', GENERATED_SKILL_KEYS['bonds-1000']),
   generated('unit-fraction-of', 'A fraction of an amount (⅓ of 15)', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['unit-fraction-of'], 'MS.Y3.NUM.RN.P7'),
   generated('fraction-bonds', 'Fractions that make 1 (⅜ + ⅝)', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['fraction-bonds'], 'MS.Y3.NUM.RN.P6', 'MS.Y3.NUM.RN.K6'),
-  tables[2],
-  tables[3],
+  ...tablesOfStep(2),
+  ...tablesOfStep(3),
   generated('times-tens', 'Times with tens and hundreds (30 × 4)', 'place-value', GENERATED_SKILL_KEYS['times-tens'], 'MS.Y4.NUM.OP.P3'),
   generated('tenths', 'Tenths and decimals of a half', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['tenths'], 'MS.Y4.NUM.RN.P3', 'MS.Y4.NUM.RN.P5'),
   generated('add-tenths', 'Adding and taking away tenths', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['add-tenths'], 'MS.Y4.NUM.RN.P10'),
   generated('round-1000', 'Rounding to the nearest 1000', 'rounding', GENERATED_SKILL_KEYS['round-1000'], 'MS.Y4.NUM.NS.K4'),
-  tables[4],
+  ...tablesOfStep(4),
   generated('factor-pairs', 'Factor pairs', 'place-value', GENERATED_SKILL_KEYS['factor-pairs'], 'MS.Y5.NUM.NS.P2'),
-  generated('round-big', 'Rounding bigger numbers and decimals', 'rounding', GENERATED_SKILL_KEYS['round-big'], 'MS.Y5.NUM.NS.P3', 'MS.Y5.NUM.NS.P4'),
+  generated('round-big', 'Rounding decimals', 'rounding', GENERATED_SKILL_KEYS['round-big'], 'MS.Y5.NUM.NS.P3', 'MS.Y5.NUM.NS.P4'),
   generated('decimal-equivalents', 'Fractions as decimals', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['decimal-equivalents'], 'MS.Y5.NUM.RN.P4'),
   generated('decimal-bonds', 'Decimals that make 1 and 10 (0.35 + 0.65)', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['decimal-bonds'], 'MS.Y4.NUM.RN.P10', 'MS.Y5.NUM.RN.P12'),
   generated('percent-basic', '10%, 25% and 50%', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['percent-basic'], 'MS.Y5.NUM.RN.P5', 'MS.Y5.NUM.RN.P15'),
@@ -153,12 +170,43 @@ export const LADDER: LadderSkill[] = [
   generated('times-decimals', 'Times 10 and 100 with decimals', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['times-decimals'], 'MS.Y5.NUM.RN.P7'),
   generated('equivalent-fractions', 'Equivalent fractions and simplifying', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['equivalent-fractions'], 'MS.Y5.NUM.RN.P9', 'MS.Y6.NUM.RN.P6'),
   generated('squares-cubes', 'Square and cube numbers', 'place-value', GENERATED_SKILL_KEYS['squares-cubes'], 'MS.Y6.NUM.NS.P6'),
-  generated('round-million', 'Rounding to the nearest million', 'rounding', GENERATED_SKILL_KEYS['round-million'], 'MS.Y6.NUM.NS.P3', 'MS.Y6.NUM.NS.P4'),
   generated('fdp-equivalents', 'Fractions, decimals and percentages', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['fdp-equivalents'], 'MS.Y6.NUM.RN.P3', 'MS.Y6.NUM.RN.P4'),
   generated('percent-of', 'Percentages of an amount', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['percent-of'], 'MS.Y6.NUM.RN.P13', 'MS.Y6.NUM.RN.P14'),
   generated('whole-from-fraction', 'Finding the whole from a fraction', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['whole-from-fraction'], 'MS.Y6.NUM.RN.P12'),
   generated('bedmas', 'Order of operations', 'order-of-operations', GENERATED_SKILL_KEYS.bedmas, 'MS.Y6.NUM.OP.P1'),
 ];
+
+/**
+ * Skills that were renamed or taken out (19 Nov 2026: the times-table steps split into one table each, and rounding to a million
+ * dropped). Teachers' focuses, placements and furthest places saved before then still name the old ids, so they are read as the
+ * new ones. An old id with no new ones (round-million) is just dropped from a focus.
+ */
+export const FORMER_SKILLS: Readonly<Record<string, { label: string; now: readonly string[] }>> = {
+  'tables-2-5-10': { label: 'Times tables: ×2, ×5, ×10', now: ['tables-2', 'tables-5', 'tables-10'] },
+  'tables-3-4-8': { label: 'Times tables: ×3, ×4, ×8', now: ['tables-3', 'tables-4', 'tables-8'] },
+  'tables-6-9': { label: 'Times tables: ×6, ×9', now: ['tables-6', 'tables-9'] },
+  'tables-11-12': { label: 'Times tables: ×11, ×12', now: ['tables-11', 'tables-12'] },
+  'round-million': { label: 'Rounding to the nearest million', now: [] },
+};
+
+/** Skill ids as they are now: an old id becomes the skills it was split into. Order kept, no repeats. */
+export function currentSkillIds(ids: readonly string[]): string[] {
+  return [...new Set(ids.flatMap((id) => (Object.hasOwn(FORMER_SKILLS, id) ? FORMER_SKILLS[id].now : [id])))];
+}
+
+/**
+ * A saved place (placement or furthest) as a skill id now: the first table an old step was split into, or for a dropped skill
+ * the one that came after it, so nobody's place moves back.
+ */
+export function currentPlaceId(id: string): string {
+  if (id === 'round-million') return 'fdp-equivalents';
+  return Object.hasOwn(FORMER_SKILLS, id) ? FORMER_SKILLS[id].now[0] : id;
+}
+
+/** The old ids a skill used to be part of ('tables-6' → ['tables-6-9']), so answers still count for a focus saved with them. */
+export function formerIdsOf(id: string): string[] {
+  return Object.entries(FORMER_SKILLS).filter(([, f]) => f.now.includes(id)).map(([old]) => old);
+}
 
 // ---------------------------------------------------------------- progress
 
@@ -228,12 +276,13 @@ export function activeKeys(skill: LadderSkill, enabledTables: readonly number[],
  */
 export function tablesJumpFloor(byKey: ReadonlyMap<string, FactStats>, enabled: readonly number[] = TABLES): number {
   let jump = 0;
-  LADDER.forEach((skill, index) => {
-    if (!skill.built || skill.stage !== 'times-tables') return;
-    const times = activeKeys(skill, enabled, false).filter((k) => k.startsWith('mul:'));
+  // The tables of a campaign step count together (30 to 60 facts), as they did before each table was its own skill.
+  CAMPAIGN_STEPS.forEach((_, step) => {
+    const skills = LADDER.filter((s) => s.built && s.tablesStep === step);
+    const times = skills.flatMap((s) => activeKeys(s, enabled, false)).filter((k) => k.startsWith('mul:'));
     if (times.length === 0) return;
     const share = times.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / times.length;
-    if (share >= STEP_SECURE_SHARE) jump = index + 1;
+    if (share >= STEP_SECURE_SHARE) jump = Math.max(jump, ...skills.map((s) => LADDER.indexOf(s) + 1));
   });
   return jump;
 }
@@ -287,7 +336,7 @@ export function autoPools(progress: LadderProgress, opts: LadderOptions = {}): P
 
 /** The built ladder skills a focus really names, in ladder order. Unknown or not-yet-built names are ignored. */
 export function focusSkills(spec: FocusSpec): LadderSkill[] {
-  const wanted = new Set(spec.skills);
+  const wanted = new Set(currentSkillIds(spec.skills));
   return LADDER.filter((s) => s.built && wanted.has(s.id));
 }
 
@@ -432,9 +481,12 @@ export class AutoPack implements SkillPack {
     const picked = pickFromPools(pools, ctx, byKey, this.memory, this.random, weight);
     if (!picked) return null;
     const pack = this.ownerOf(picked.key);
-    // Missing-factor questions come in once the first tables skill is behind the student.
+    // Missing-factor questions come in once ×2, ×5 and ×10 (the first campaign step) are behind the student.
     // Under a focus the teacher's own setting decides, else it starts at the first chosen skill after ×2, ×5, ×10.
-    const firstTables = progress.skills.findIndex((p) => p.skill.stage === 'times-tables');
+    let firstTables = -1;
+    progress.skills.forEach((p, i) => {
+      if (p.skill.tablesStep === 0) firstTables = i;
+    });
     const at = focusSpec ? LADDER.indexOf(focusSkills(focusSpec)[0]) : progress.skills.findIndex((p) => p.status === 'current');
     const missingFactor = focusSpec && ctx.missingFactor !== undefined ? ctx.missingFactor : at < 0 || at > firstTables;
     return { ...pack.questionFor(picked.key, picked.band, { ...ctx, missingFactor }), id: ++this.asked };

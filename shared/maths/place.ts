@@ -11,6 +11,7 @@
 import { PLACEMENT_JUMP, PLACEMENT_QUESTIONS, quickMsForPack } from "./config";
 import type { FactStats } from "./leitner";
 import {
+  currentPlaceId,
   LADDER,
   ladderProgress,
   packIdOfKey,
@@ -40,12 +41,12 @@ export const NO_LADDER: LadderInfo = {
 };
 
 const ID = /^[a-z0-9-]{1,40}$/;
-const skillId = (v: unknown) =>
-  typeof v === "string" &&
-  ID.test(v) &&
-  LADDER.some((s) => s.id === v && s.built)
-    ? v
-    : null;
+/** A saved skill id, read as it is now (a place saved on "tables-6-9" is on "tables-6"). Null if it isn't a built skill. */
+const skillId = (v: unknown) => {
+  if (typeof v !== "string" || !ID.test(v)) return null;
+  const id = currentPlaceId(v);
+  return LADDER.some((s) => s.id === id && s.built) ? id : null;
+};
 
 export function parseLadderInfo(raw: unknown): LadderInfo {
   if (!raw || typeof raw !== "object") return NO_LADDER;

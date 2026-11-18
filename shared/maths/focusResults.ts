@@ -5,7 +5,7 @@
  */
 import { quickMsForPack } from './config';
 import type { FactAnswer } from './leitner';
-import { LADDER } from './ladder';
+import { formerIdsOf, LADDER } from './ladder';
 
 /** One answer, as add_maths_focus_results takes it. */
 export interface FocusResultAnswer {
@@ -24,7 +24,8 @@ export function skillsOfKey(key: string): string[] {
   if (!owners) {
     owners = new Map();
     for (const skill of LADDER) {
-      for (const k of skill.keys) owners.set(k, [...(owners.get(k) ?? []), skill.id]);
+      // A focus saved before a skill was split names the old id ("tables-6-9"), so an answer counts for that too.
+      for (const k of skill.keys) owners.set(k, [...(owners.get(k) ?? []), skill.id, ...formerIdsOf(skill.id)]);
     }
   }
   return owners.get(key) ?? [];
