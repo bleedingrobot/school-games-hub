@@ -25,7 +25,7 @@ export type MapSpot = (typeof SPOTS)[number]['id'] | 'hero';
 export const hasMap = () => !!sceneArt('map').wide;
 
 /**
- * The village: the kingdom map as big as the screen allows, every place a label on it (a real button, with its letter
+ * The village: the kingdom map filling the window (a little of its top may be cut off on a wide window, never a place), every place a label on it (a real button, with its letter
  * key), your hero standing by the fountain (tap to see your hero), whatever is passed in (the purse, the help button) on top, and `below` (notes) under it.
  */
 export function KingdomMap({ onGo, dragonReady, forestOpen, heroClass, look, busy, children, below }: {
@@ -37,6 +37,8 @@ export function KingdomMap({ onGo, dragonReady, forestOpen, heroClass, look, bus
     <div className="lord-map">
       <div className="lord-map__frame">
       <div className="lord-map__scroll">
+        {/* The same painting, blurred, behind the map: fills the window's edges when its shape isn't the map's. */}
+        <img className="lord-map__blur" src={art.small ?? art.wide} alt="" aria-hidden="true" draggable={false} />
         <div className="lord-map__paper">
           <picture aria-hidden="true">
             <source media="(max-width: 900px)" srcSet={art.small} />
@@ -55,7 +57,7 @@ export function KingdomMap({ onGo, dragonReady, forestOpen, heroClass, look, bus
               </button>
             );
           })}
-          <button type="button" className="lord-map__hero" style={{ left: '9%', top: '99%' }} onClick={() => onGo('hero')} aria-label="Your hero" aria-keyshortcuts="Y" disabled={busy}>
+          <button type="button" className="lord-map__hero" style={{ left: '9%', top: '97%' }} onClick={() => onGo('hero')} aria-label="Your hero" aria-keyshortcuts="Y" disabled={busy}>
             <HeroSprite heroClass={heroClass} look={look} scale={4} label="" />
             <span><kbd>Y</kbd>You</span>
           </button>

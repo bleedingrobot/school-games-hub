@@ -28,6 +28,7 @@ import { forestScene } from './art';
 import { KingdomMap, hasMap } from './KingdomMap';
 import { SeasonRoad } from './SeasonRoad';
 import { useAsk, type Answer } from './useAsk';
+import { HubButtons } from './HubButtons';
 import { useClashes } from './useClashes';
 import { ClashAskBanner } from './LiveArena';
 import './lord.css';
@@ -606,7 +607,8 @@ function VillageKeys({ onKey }: { onKey: (key: string) => void }) {
 /**
  * Before there is a hero the frame has the game's name on top. After that every screen is a painting with what it
  * needs on it (the purse, the place's name): no title, season or stats rows above the art (James, 17 Nov 2026).
- * `bare`: the painting fills the frame (fights and the map).
+ * `bare`: the painting fills the frame (fights and the map). The frame itself fills the whole window, over the hub's
+ * bar, like Star Trader (James, 18 Nov 2026); the map carries the way back to the hub and the sound switch.
  */
 function Frame({ children, hero, bare, backend, state }: { children: ReactNode; hero?: Hero; bare?: boolean; backend: LordBackend; state?: LordState }) {
   const hud = useMemo(() => (hero ? { hero, unlimited: !!state?.unlimited } : null), [hero, state?.unlimited]);
@@ -615,6 +617,7 @@ function Frame({ children, hero, bare, backend, state }: { children: ReactNode; 
       {!hero && (
         <header className="lord-top">
           <h1>Dragon Maths</h1>
+          <HubButtons />
           {backend.trial && <span className="lord-trial">Trial: saved on this browser only, no points yet</span>}
         </header>
       )}
@@ -644,7 +647,7 @@ function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest,
   const over = (
     <>
       <div className="lord-map__top">
-        <h1>Dragon Maths{trial && <small> (trial)</small>}</h1>
+        <div className="lord-map__title"><HubButtons /><h1>Dragon Maths{trial && <small> (trial)</small>}</h1></div>
         <Purse />
       </div>
       <div className="lord-map__corner">
