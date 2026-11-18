@@ -1,0 +1,24 @@
+{
+  "_about": "Chess backgrounds, boards and piece sets (docs/CHESS-LOOK-PLAN.md). Paint: python scripts/game_art.py chess paint ~/dragon-art-inbox/chess",
+  "game": "chess",
+  "comfy": "http://127.0.0.1:8188",
+  "filename_prefix": "chess/img",
+  "style": "a",
+  "styles": {
+    "a": "Hand-painted fantasy storybook game background, rich glowing colours, soft painterly light, magical and inviting, detailed edges with a calm uncluttered middle, friendly for children aged 8 to 11, no people, no chess pieces, no chessboard, no writing, no letters, no numbers, no labels anywhere. "
+  },
+  "inbox": "~/dragon-art-inbox/chess",
+  "picks": "docs/chess-art/picks.json",
+  "art_dir": "src/games/chess/art",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "bg/castle",
+      "prompt": "The inside of a grand royal castle great hall seen straight on from the middle of the room, tall stone arches and pillars on both sides, huge stained-glass windows glowing gold and blue, red and gold banners hanging from the walls, flickering torches and candle chandeliers, a polished stone floor stretching back to a big throne on a raised step far away in the distance, warm golden light pouring down the centre, soft floating dust motes, the middle of the picture open and calm, wide landscape.",
+      "size": [1536, 864],
+      "kind": "scene",
+      "folder": "bg",
+      "file": "castle"
+    }
+  ]
+}

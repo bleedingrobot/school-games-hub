@@ -18,12 +18,19 @@ import { FriendlyError } from '../../data/profile';
 import { useSound } from '../../sound';
 import { BOT_LEVELS, type BotLevel } from '../types';
 import { Board } from './Board';
+import { ChessWindow } from './ChessWindow';
 import { Captured, figurine } from './moveText';
 import { BOT_DESCRIPTIONS, chooseBotMove, randomishMove, type ChessEngine } from './bot';
 import { playSound, type GameSound } from '../sounds';
 import { startBrowserStockfish } from './stockfish';
 
-const BOT_EMOJI: Record<BotLevel, string> = { 'very-easy': '🐣', easy: '🤖', medium: '🧠' };
+const BOT_EMOJI: Record<BotLevel, string> = {
+  'very-easy': '🐣',
+  easy: '🤖',
+  medium: '🧠',
+};
+/** After a checkmate, the king topples and fireworks go off before the result card shows. */
+const MATE_PAUSE_MS = 2200;
 /** The bot always waits at least this long, so its moves don't appear instantly. */
 const BOT_PAUSE_MS = { min: 600, extra: 700 };
 
@@ -47,9 +54,15 @@ const ENDING_TEXT: Record<string, { won?: string; lost?: string; drawn?: string 
   stalemate: {
     drawn: 'Stalemate! It’s someone’s turn, but they have no legal moves and aren’t in check. That’s a draw.',
   },
-  'threefold-repetition': { drawn: 'The same position happened three times, so it’s a draw.' },
-  'fifty-moves': { drawn: '50 moves each without a capture or a pawn move, so it’s a draw.' },
-  'not-enough-pieces': { drawn: 'There aren’t enough pieces left for anyone to checkmate, so it’s a draw.' },
+  'threefold-repetition': {
+    drawn: 'The same position happened three times, so it’s a draw.',
+  },
+  'fifty-moves': {
+    drawn: '50 moves each without a capture or a pawn move, so it’s a draw.',
+  },
+  'not-enough-pieces': {
+    drawn: 'There aren’t enough pieces left for anyone to checkmate, so it’s a draw.',
+  },
   resigned: { lost: 'You resigned. Good effort. Have another go!' },
 };
 
@@ -165,7 +178,14 @@ export function ChessPlay({ level }: { level: BotLevel }) {
       const done = { ...g, judged: judged.game };
       setGame(done);
       setConfirming(null);
-      setShowResult(true);
+      if (judged.game.reason === 'checkmate') {
+        setShowResult(false);
+        setTimeout(() => {
+          if (live.current?.id === g.id) setShowResult(true);
+        }, MATE_PAUSE_MS);
+      } else {
+        setShowResult(true);
+      }
       sound(judged.game.outcome === 'won' ? 'win' : 'end');
       void save(done, ending);
     },
@@ -190,7 +210,13 @@ export function ChessPlay({ level }: { level: BotLevel }) {
     recordIfAbandoned();
     engine.current?.newGame();
     void refreshSaveToken();
-    setGame({ id: Date.now(), level, studentColour: pickColour(colourChoice), moves: [], judged: null });
+    setGame({
+      id: Date.now(),
+      level,
+      studentColour: pickColour(colourChoice),
+      moves: [],
+      judged: null,
+    });
     setSaveStatus(null);
     setConfirming(null);
     setShowResult(false);
@@ -226,53 +252,55 @@ export function ChessPlay({ level }: { level: BotLevel }) {
   // ---------- Before a game: pick the bot and a colour ----------
   if (!game) {
     return (
-      <section className="chess-setup" aria-labelledby="setup-title">
-        <h1 id="setup-title" className="page-title">
-          ♟️ Chess vs bot
-        </h1>
-        <div className="chess-setup__card">
-          <BotLevelPicker
-            name="chess-level"
-            legend="Pick your bot"
-            value={level}
-            onChange={(next) => setParams({ bot: next }, { replace: true })}
-          />
-          <p className="chess-setup__bot">
-            <span aria-hidden="true">{BOT_EMOJI[level]}</span> <strong>{levelInfo.label} bot:</strong>{' '}
-            {BOT_DESCRIPTIONS[level]}
-          </p>
-          <fieldset className="level-picker">
-            <legend>Your pieces</legend>
-            <div className="level-picker__options">
-              {(
-                [
-                  ['white', 'White (you go first)'],
-                  ['black', 'Black'],
-                  ['random', 'Surprise me'],
-                ] as const
-              ).map(([value, text]) => (
-                <label key={value} className="level-picker__option">
-                  <input
-                    type="radio"
-                    name="chess-colour"
-                    value={value}
-                    checked={colourChoice === value}
-                    onChange={() => setColourChoice(value)}
-                  />
-                  <span>{text}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <button type="button" className="button button--play chess-setup__start" onClick={start}>
-            <span aria-hidden="true">▶</span> Start game
-          </button>
-          <p className="chess-setup__help">
-            How to move: tap one of your pieces, then tap a dot to move it there. With a keyboard, use the arrow keys
-            and press Enter.
-          </p>
-        </div>
-      </section>
+      <ChessWindow>
+        <section className="chess-setup" aria-labelledby="setup-title">
+          <h1 id="setup-title" className="page-title">
+            ♟️ Chess vs bot
+          </h1>
+          <div className="chess-setup__card">
+            <BotLevelPicker
+              name="chess-level"
+              legend="Pick your bot"
+              value={level}
+              onChange={(next) => setParams({ bot: next }, { replace: true })}
+            />
+            <p className="chess-setup__bot">
+              <span aria-hidden="true">{BOT_EMOJI[level]}</span> <strong>{levelInfo.label} bot:</strong>{' '}
+              {BOT_DESCRIPTIONS[level]}
+            </p>
+            <fieldset className="level-picker">
+              <legend>Your pieces</legend>
+              <div className="level-picker__options">
+                {(
+                  [
+                    ['white', 'White (you go first)'],
+                    ['black', 'Black'],
+                    ['random', 'Surprise me'],
+                  ] as const
+                ).map(([value, text]) => (
+                  <label key={value} className="level-picker__option">
+                    <input
+                      type="radio"
+                      name="chess-colour"
+                      value={value}
+                      checked={colourChoice === value}
+                      onChange={() => setColourChoice(value)}
+                    />
+                    <span>{text}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <button type="button" className="button button--play chess-setup__start" onClick={start}>
+              <span aria-hidden="true">▶</span> Start game
+            </button>
+            <p className="chess-setup__help">
+              How to move: tap one of your pieces, then tap a dot to move it there. With a keyboard, use the arrow keys
+              and press Enter.
+            </p>
+          </div>
+        </section>
+      </ChessWindow>
     );
   }
 
@@ -287,7 +315,9 @@ export function ChessPlay({ level }: { level: BotLevel }) {
     rows[row][move.color === 'w' ? 'white' : 'black'] = figurine(move.san, move.color);
   });
   const captured = (by: 'w' | 'b') =>
-    history.filter((m) => m.color === by && m.captured).map((m) => ({ type: m.captured!, colour: by === 'w' ? 'b' : 'w' }));
+    history
+      .filter((m) => m.color === by && m.captured)
+      .map((m) => ({ type: m.captured!, colour: by === 'w' ? 'b' : 'w' }));
   const studentCode = game.studentColour === 'white' ? 'w' : 'b';
   const botCode = studentCode === 'w' ? 'b' : 'w';
 
@@ -301,142 +331,150 @@ export function ChessPlay({ level }: { level: BotLevel }) {
   const explanation = judged && ENDING_TEXT[judged.reason]?.[judged.outcome];
 
   return (
-    <div className="chess-game">
-      <div className="chess-game__board">
-        <Board
-          chess={chess}
-          orientation={game.studentColour}
-          canMove={studentTurn}
-          lastMove={lastMoveOf(chess)}
-          onMove={(from: Square, to: Square, promotion?: PromotionPiece) => addMove(game, from + to + (promotion ?? ''))}
-        />
+    <ChessWindow>
+      <div className="chess-game">
+        <div className="chess-game__board">
+          <Board
+            chess={chess}
+            orientation={game.studentColour}
+            canMove={studentTurn}
+            lastMove={lastMoveOf(chess)}
+            onMove={(from: Square, to: Square, promotion?: PromotionPiece) =>
+              addMove(game, from + to + (promotion ?? ''))
+            }
+          />
 
-        {judged && showResult && headline && (
-          <div className="chess-result" role="dialog" aria-modal="true" aria-labelledby="result-title">
-            <div className={`chess-result__card chess-result__card--${judged.outcome}`}>
-              <div className="chess-result__emoji" aria-hidden="true">
-                {headline.emoji}
-              </div>
-              <h2 id="result-title">{headline.title}</h2>
-              {explanation && <p>{explanation}</p>}
-              <p className="chess-result__save" role="status">
-                {saveStatus === 'saving' && 'Saving your game…'}
-                {saveStatus === 'saved' && '✓ Saved to your games'}
-                {saveStatus === 'left' && 'This game was already recorded as unfinished.'}
-                {saveStatus === 'error' && (
-                  <>
-                    {saveMessage}{' '}
-                    <button type="button" className="link-button" onClick={() => void save(game, judged.reason === 'resigned' ? 'resigned' : 'finished')}>
-                      Try again
-                    </button>
-                  </>
-                )}
-              </p>
-              <div className="chess-result__buttons">
-                <button type="button" className="button button--primary" onClick={start} autoFocus>
-                  Play again
-                </button>
-                <button type="button" className="button button--light" onClick={() => setShowResult(false)}>
-                  Look at the board
-                </button>
-                <button type="button" className="link-button" onClick={() => setGame(null)}>
-                  Change bot or colour
-                </button>
+          {judged && showResult && headline && (
+            <div className="chess-result" role="dialog" aria-modal="true" aria-labelledby="result-title">
+              <div className={`chess-result__card chess-result__card--${judged.outcome}`}>
+                <div className="chess-result__emoji" aria-hidden="true">
+                  {headline.emoji}
+                </div>
+                <h2 id="result-title">{headline.title}</h2>
+                {explanation && <p>{explanation}</p>}
+                <p className="chess-result__save" role="status">
+                  {saveStatus === 'saving' && 'Saving your game…'}
+                  {saveStatus === 'saved' && '✓ Saved to your games'}
+                  {saveStatus === 'left' && 'This game was already recorded as unfinished.'}
+                  {saveStatus === 'error' && (
+                    <>
+                      {saveMessage}{' '}
+                      <button
+                        type="button"
+                        className="link-button"
+                        onClick={() => void save(game, judged.reason === 'resigned' ? 'resigned' : 'finished')}
+                      >
+                        Try again
+                      </button>
+                    </>
+                  )}
+                </p>
+                <div className="chess-result__buttons">
+                  <button type="button" className="button button--primary" onClick={start} autoFocus>
+                    Play again
+                  </button>
+                  <button type="button" className="button button--light" onClick={() => setShowResult(false)}>
+                    Look at the board
+                  </button>
+                  <button type="button" className="link-button" onClick={() => setGame(null)}>
+                    Change bot or colour
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
-
-      <aside className="chess-game__side" aria-label="Game information">
-        <div className={`player-card${botsTurn ? ' is-turn' : ''}`}>
-          <span className="player-card__bot" aria-hidden="true">
-            {BOT_EMOJI[game.level]}
-          </span>
-          <div title={BOT_DESCRIPTIONS[game.level]}>
-            <strong>{levelInfo.label} bot</strong>
-            <span className="player-card__colour">{game.studentColour === 'white' ? 'Black' : 'White'}</span>
-          </div>
-          <Captured pieces={captured(botCode)} who="The bot" />
-        </div>
-
-        <div className={`player-card${studentTurn ? ' is-turn' : ''}`}>
-          <AvatarImage avatar={profile?.avatar} size={48} />
-          <div>
-            <strong>{profile?.display_name ?? 'You'}</strong>
-            <span className="player-card__colour">{game.studentColour === 'white' ? 'White' : 'Black'} (you)</span>
-          </div>
-          <Captured pieces={captured(studentCode)} who="You" />
-        </div>
-
-        <p className={`turn-status${chess.inCheck() && !judged ? ' is-check' : ''}`} role="status" aria-live="polite">
-          {status}
-        </p>
-        {engineBroken && (
-          <p className="chess-note">The bot’s brain didn’t load properly, so it’s just making random moves.</p>
-        )}
-
-        {judged ? (
-          <div className="chess-actions">
-            <button type="button" className="button button--primary" onClick={start}>
-              Play again
-            </button>
-            {!showResult && (
-              <button type="button" className="button button--light" onClick={() => setShowResult(true)}>
-                Show result
-              </button>
-            )}
-          </div>
-        ) : confirming ? (
-          <div className="chess-confirm" role="group" aria-label="Are you sure?">
-            <p>
-              {confirming === 'resign'
-                ? 'Give up this game? It will count as a loss.'
-                : 'Start a new game? This one will count as unfinished.'}
-            </p>
-            <div className="chess-actions">
-              <button
-                type="button"
-                className="button button--danger"
-                onClick={() => (confirming === 'resign' ? finish(game, 'resigned') : start())}
-              >
-                {confirming === 'resign' ? 'Yes, resign' : 'Yes, start again'}
-              </button>
-              <button type="button" className="button button--light" onClick={() => setConfirming(null)} autoFocus>
-                Keep playing
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="chess-actions">
-            <button type="button" className="button button--light" onClick={() => setConfirming('new')}>
-              New game
-            </button>
-            <button type="button" className="button button--light" onClick={() => setConfirming('resign')}>
-              🏳️ Resign
-            </button>
-          </div>
-        )}
-
-        <section className="move-list" aria-labelledby="moves-title">
-          <h2 id="moves-title">Moves</h2>
-          {rows.length === 0 ? (
-            <p className="move-list__empty">
-              {game.studentColour === 'white' ? 'You go first. White always starts!' : 'The bot goes first.'}
-            </p>
-          ) : (
-            <ol>
-              {rows.map((row) => (
-                <li key={row.number}>
-                  <span className="move-list__number">{row.number}.</span>
-                  <span>{row.white}</span>
-                  <span>{row.black ?? ''}</span>
-                </li>
-              ))}
-            </ol>
           )}
-        </section>
-      </aside>
-    </div>
+        </div>
+
+        <aside className="chess-game__side" aria-label="Game information">
+          <div className={`player-card${botsTurn ? ' is-turn' : ''}`}>
+            <span className="player-card__bot" aria-hidden="true">
+              {BOT_EMOJI[game.level]}
+            </span>
+            <div title={BOT_DESCRIPTIONS[game.level]}>
+              <strong>{levelInfo.label} bot</strong>
+              <span className="player-card__colour">{game.studentColour === 'white' ? 'Black' : 'White'}</span>
+            </div>
+            <Captured pieces={captured(botCode)} who="The bot" />
+          </div>
+
+          <div className={`player-card${studentTurn ? ' is-turn' : ''}`}>
+            <AvatarImage avatar={profile?.avatar} size={48} />
+            <div>
+              <strong>{profile?.display_name ?? 'You'}</strong>
+              <span className="player-card__colour">{game.studentColour === 'white' ? 'White' : 'Black'} (you)</span>
+            </div>
+            <Captured pieces={captured(studentCode)} who="You" />
+          </div>
+
+          <p className={`turn-status${chess.inCheck() && !judged ? ' is-check' : ''}`} role="status" aria-live="polite">
+            {status}
+          </p>
+          {engineBroken && (
+            <p className="chess-note">The bot’s brain didn’t load properly, so it’s just making random moves.</p>
+          )}
+
+          {judged ? (
+            <div className="chess-actions">
+              <button type="button" className="button button--primary" onClick={start}>
+                Play again
+              </button>
+              {!showResult && (
+                <button type="button" className="button button--light" onClick={() => setShowResult(true)}>
+                  Show result
+                </button>
+              )}
+            </div>
+          ) : confirming ? (
+            <div className="chess-confirm" role="group" aria-label="Are you sure?">
+              <p>
+                {confirming === 'resign'
+                  ? 'Give up this game? It will count as a loss.'
+                  : 'Start a new game? This one will count as unfinished.'}
+              </p>
+              <div className="chess-actions">
+                <button
+                  type="button"
+                  className="button button--danger"
+                  onClick={() => (confirming === 'resign' ? finish(game, 'resigned') : start())}
+                >
+                  {confirming === 'resign' ? 'Yes, resign' : 'Yes, start again'}
+                </button>
+                <button type="button" className="button button--light" onClick={() => setConfirming(null)} autoFocus>
+                  Keep playing
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="chess-actions">
+              <button type="button" className="button button--light" onClick={() => setConfirming('new')}>
+                New game
+              </button>
+              <button type="button" className="button button--light" onClick={() => setConfirming('resign')}>
+                🏳️ Resign
+              </button>
+            </div>
+          )}
+
+          <section className="move-list" aria-labelledby="moves-title">
+            <h2 id="moves-title">Moves</h2>
+            {rows.length === 0 ? (
+              <p className="move-list__empty">
+                {game.studentColour === 'white' ? 'You go first. White always starts!' : 'The bot goes first.'}
+              </p>
+            ) : (
+              <ol>
+                {rows.map((row) => (
+                  <li key={row.number}>
+                    <span className="move-list__number">{row.number}.</span>
+                    <span>{row.white}</span>
+                    <span>{row.black ?? ''}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+        </aside>
+      </div>
+    </ChessWindow>
   );
 }
