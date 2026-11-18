@@ -1,6 +1,6 @@
 # Class quest rewards
 
-**Status:** planned 19 Nov 2026, not built. Builds on [CLASS-QUESTS-PLAN.md](CLASS-QUESTS-PLAN.md) (stages 1 and 2 live).
+**Status:** stage 1 (rewards core + Rename Scroll) LIVE 19 Nov 2026 (PR #606, migration `20261119000400_quest_rewards.sql`, applied and checked: pupils and visitors can't read `quest_rewards` or call the reward giver). The one quest already running live reads as Rename Scroll, so its winners from now on get a scroll (nobody back-dated). Next: stage 2, Hero Titles. The red dot on the profile link is left for later; the quest bar's "Use my …" button and the self-opening My rewards fold do that job for now.
 
 James (19 Nov 2026): class quests should give a reward, and the first one is a Rename Scroll. When a teacher starts a quest, they
 choose the reward. I suggested 15 rewards. James picked the first five, then swapped Look Token for Game Coins (19 Nov 2026):
