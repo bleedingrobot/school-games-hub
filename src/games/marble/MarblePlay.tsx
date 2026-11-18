@@ -24,6 +24,7 @@ import { COURSE_INFO } from './courseInfo';
 import { courseAccent, courseArt, courseGradient } from './courseArt';
 import { HubButtons } from './HubButtons';
 import type { FinishedRun } from './RunScreen';
+import { checkGhost } from './ghostCheck';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import './marble.css';
 
@@ -121,10 +122,12 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
       setPick({ id, mode, round, ghost: null, two, started: null, setup: runSetup(course, `local-${Math.floor(Math.random() * 1e9)}`, list, true) });
       return;
     }
-    const [started, ghost] = await Promise.all([
+    const [started, loaded] = await Promise.all([
       player && !two ? startRun(id, mode, wantMaths) : Promise.resolve(null),
       !two && ghostChoice !== 'none' ? loadGhost(id, mode, ghostChoice, wantMaths) : Promise.resolve(null),
     ]);
+    // A ghost recorded before a course changed can't follow it any more: leave it out.
+    const ghost = course ? checkGhost(course, mode, loaded) : null;
     setBusy(false);
     if (!two && ghostChoice !== 'none' && !ghost) setNote('No ghost to race on that course yet, so this one is just you.');
     if (player && !two && !started) setNote('We couldn’t reach the server, so this run is just for fun: it won’t be saved and has no maths questions.');

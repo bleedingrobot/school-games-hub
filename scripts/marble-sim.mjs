@@ -58,8 +58,9 @@ if (WRITE_MEDALS) {
     const ref = rows.find((r) => r.course === c.def.id && r.mode === 'up').seconds;
     const wrong = ref + GATE_COST * c.gates.length;
     const gold = Math.ceil(ref);
-    const silver = Math.max(Math.round(gold * 1.48), Math.ceil(wrong * 1.05));
-    const bronze = Math.max(Math.round(gold * 2.3), Math.ceil(silver * 1.45));
+    // Kinder since 18 Nov 2026 (James: too hard for many kids): silver and bronze have more room, so nearly every finish gets a medal.
+    const silver = Math.max(Math.round(gold * 1.7), Math.ceil(wrong * 1.15));
+    const bronze = Math.max(Math.round(gold * 3.5), Math.ceil(silver * 2));
     const hard = Math.max(Math.round(gold * 2), Math.ceil(wrong * 1.1));
     // With maths every right pit stop takes seconds off, so gold is a little faster.
     const goldMaths = Math.min(gold, Math.ceil(rows.find((r) => r.course === c.def.id && r.mode === 'maths').seconds));

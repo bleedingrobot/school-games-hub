@@ -10,11 +10,15 @@ export type RunEvent =
   | { kind: 'land'; x: number; y: number; z: number; speed: number }
   | { kind: 'fall'; x: number; y: number; z: number }
   | { kind: 'gem'; id: number }
+  | { kind: 'checkpoint'; x: number; y: number; z: number }
+  | { kind: 'bigair'; x: number; y: number; z: number }
   | { kind: 'finish'; x: number; y: number; z: number }
   | { kind: 'respawn'; x: number; y: number; z: number };
 
 /** A landing slower than this (tiles per second, downwards) is just rolling down a step: no dust. */
 export const LAND_MIN_SPEED = 1;
+/** A landing this fast (tiles per second, downwards) was a big jump: it gets a cheer as well as dust. */
+export const BIG_AIR_SPEED = 6;
 
 /**
  * What happened between `prev` and `now` (one physics step, or a few).
@@ -30,8 +34,10 @@ export function runEvents(prev: RunState, now: RunState): RunEvent[] {
     // The engine zeroes vz on landing, so use the speed before it, plus the step of gravity it had just added.
     const speed = -(prev.vz - AIR_GRAVITY * DT);
     if (speed > LAND_MIN_SPEED) out.push({ kind: 'land', x: now.x, y: now.y, z: now.z, speed });
+    if (speed >= BIG_AIR_SPEED) out.push({ kind: 'bigair', x: now.x, y: now.y, z: now.z });
   }
   for (const id of now.gemsTaken) if (!prev.gemsTaken.includes(id)) out.push({ kind: 'gem', id });
+  if (now.checkpoints.length > prev.checkpoints.length) out.push({ kind: 'checkpoint', x: now.x, y: now.y, z: now.z });
   if (prev.outcome === 'running' && now.outcome === 'finished') out.push({ kind: 'finish', x: now.x, y: now.y, z: now.z });
   return out;
 }

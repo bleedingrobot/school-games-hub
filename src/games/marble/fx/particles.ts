@@ -54,6 +54,8 @@ export interface Particles {
   splash(x: number, y: number, z: number): void;
   sparkle(x: number, y: number, z: number): void;
   confetti(x: number, y: number, z: number): void;
+  /** A round burst of stars and dots in the given colours (a rainbow by default): checkpoints, gems, big jumps. */
+  burst(x: number, y: number, z: number, colours?: number[], power?: number): void;
   update(dt: number): void;
   setQuality(settings: QualitySettings): void;
   /** How many dots are alive right now (for tests and the try-out page). */
@@ -187,6 +189,14 @@ export function createParticles(settings: QualitySettings, reducedMotion: boolea
         const v = rnd(0.5, 2.2);
         // Flutter sways the bit sideways as it falls; not with reduced motion.
         spawn(x, y + 0.3, z, Math.cos(a) * v, rnd(3, 6), Math.sin(a) * v, rnd(0.1, 0.17), rnd(1.4, 2.2), CONFETTI[k % CONFETTI.length], SHAPE.square, 6, 0.8, 0, reducedMotion ? 0 : rnd(1, 3));
+      }
+    },
+    burst(x, y, z, colours = CONFETTI, power = 1) {
+      const n = amount(Math.round(26 * power));
+      for (let k = 0; k < n; k++) {
+        const a = rnd(0, Math.PI * 2);
+        const v = rnd(0.8, 2.4) * power;
+        spawn(x, y + 0.3, z, Math.cos(a) * v, rnd(1.5, 3.5), Math.sin(a) * v, rnd(0.16, 0.3), rnd(0.6, 1), colours[k % colours.length], k % 2 ? SHAPE.star : SHAPE.dot, 4, 1.4, 0.6);
       }
     },
     update(dt) {
