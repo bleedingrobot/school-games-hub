@@ -52,7 +52,7 @@ looking, not with a test.
 
 ## Before you finish
 
-`npm run typecheck`, `npm run test:changed` (the test files your changes touch, slow ones included) and `npm run build`.
+`npm run typecheck`, `npm run test:changed` (the test files your changes touch, slow ones included, plus the test-budget check) and `npm run build`.
 Leave the full run (`npm run test:all`, about a minute on one machine) to the pull request's "Site checks", which split it
 across 4 machines. `npm run check` still runs everything locally if you need it. If a test fails because you changed behaviour on
 purpose, change or delete the test. Don't add a second one beside it.
