@@ -133,7 +133,7 @@ export function DiamondGame({ backend, extra, onServer = false }: { backend: Dia
   const againLabel = ended && ended.result.passed && selected !== ended.result.level ? `Play level ${selected}` : `Play level ${ended?.result.level ?? selected} again`;
 
   return (
-    <div className={`dd-root${screen === 'play' ? ' dd-root--play' : ''}${still ? ' dd-still' : ''}`}>
+    <div className={`dd-root${screen === 'play' ? ' dd-root--play' : screen === 'map' ? ' dd-root--map' : ''}${still ? ' dd-still' : ''}`}>
       {trouble && <p className="dd-trouble" role="alert">{trouble}</p>}
       {screen === 'map' && (
         <LevelMap

@@ -52,40 +52,109 @@
 .dd-chip--gold { background: var(--dd-gold); color: var(--dd-gold-ink); border-color: var(--dd-gold); margin-left: 6px; }
 .dd-why { margin: 4px 0 0; color: var(--dd-warn); }
 
-/* ——— Level map ——— */
-.dd-map { display: grid; grid-template-columns: minmax(280px, 420px) minmax(0, 1fr); gap: 16px; align-items: start; max-width: 1100px; margin: 0 auto; }
-.dd-map__side { display: flex; flex-direction: column; gap: 12px; }
-.dd-nugget { display: flex; align-items: flex-end; gap: 8px; }
-.dd-bubble { flex: 1; background: var(--card); color: var(--ink); border-radius: 16px; padding: 10px 12px; position: relative; }
-.dd-bubble::before { content: ''; position: absolute; left: -8px; bottom: 16px; border: 8px solid transparent; border-right-color: var(--card); border-left: 0; }
+/* ——— Level map: the home screen ———
+ * Art first (James, 18 Nov 2026: "improve this landing page"). The chosen level's painting fills the whole window,
+ * sparks drift up through it, and three columns sit on top: Nugget and the buttons on a glass panel on the left, the
+ * chosen level big in the middle (the claw swinging over its gem), and the depth gauge down the full height on the right.
+ */
+.dd-root--map { padding: 0; }
+.dd-map {
+  display: grid; gap: 14px 18px; align-items: stretch; min-height: 100dvh;
+  grid-template-columns: minmax(300px, 400px) minmax(0, 1fr) minmax(300px, 400px);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: 'top top gauge' 'side hero gauge';
+  padding: max(12px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+.dd-map__art { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: var(--dd-bg); pointer-events: none; }
+.dd-map__paint { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.dd-map__shade {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(90deg, rgba(18, 11, 6, 0.78) 0%, rgba(18, 11, 6, 0.25) 34%, rgba(18, 11, 6, 0.15) 62%, rgba(18, 11, 6, 0.7) 100%),
+    radial-gradient(ellipse at 50% 55%, transparent 40%, rgba(10, 6, 3, 0.6) 100%);
+}
+.dd-spark { position: absolute; bottom: -12px; width: 7px; height: 7px; border-radius: 50%; background: #fff6c8; box-shadow: 0 0 10px 3px rgba(252, 211, 77, 0.8); opacity: 0; }
+
+.dd-map__top { grid-area: top; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.dd-map__top .dd-title { font-size: clamp(1.8rem, 3.6vw, 2.8rem); color: var(--dd-gold); text-shadow: 0 3px 0 #92400e, 0 6px 18px rgba(0, 0, 0, 0.7); letter-spacing: 0.5px; }
+.dd-map__top .dd-hubbtns { margin-left: auto; }
+.dd-map .dd-chip { background: rgba(20, 13, 8, 0.72); backdrop-filter: blur(6px); font-weight: 700; }
+.dd-root .dd-map .dd-hubbtn { background: rgba(20, 13, 8, 0.72); color: #ffffff; border-color: var(--dd-line); }
+
+.dd-map__side {
+  grid-area: side; display: flex; flex-direction: column; gap: 14px; align-self: start;
+  background: rgba(20, 13, 8, 0.66); backdrop-filter: blur(10px); border: 1px solid rgba(252, 211, 77, 0.3);
+  border-radius: 24px; padding: 14px; margin-top: 30px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+.dd-nugget { display: flex; align-items: flex-end; gap: 4px; margin: -44px 0 0 -10px; }
+.dd-nugget > canvas { flex: none; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.6)); }
+.dd-bubble { flex: 1; background: var(--card); color: var(--ink); border-radius: 18px; padding: 10px 12px; position: relative; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4); }
+.dd-bubble::before { content: ''; position: absolute; left: -8px; bottom: 18px; border: 8px solid transparent; border-right-color: var(--card); border-left: 0; }
 .dd-bubble__text { margin: 0 0 8px; font-weight: 700; }
 .dd-stats { display: flex; flex-wrap: wrap; gap: 6px; }
-.dd-menu { display: flex; flex-direction: column; gap: 8px; }
-.dd-menu__row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.dd-rig { display: flex; justify-content: center; }
-.dd-settings { background: var(--dd-panel); border: 1px solid var(--dd-line); border-radius: 12px; padding: 0 12px; }
+.dd-menu { display: flex; flex-direction: column; gap: 10px; }
+.dd-root .dd-map .dd-btn--big { min-height: 76px; font-size: 1.8rem; }
+.dd-menu__row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dd-tile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 78px; padding: 8px;
+  border-radius: 18px; border: 2px solid var(--dd-line); background: linear-gradient(#3a2818, #22170f); color: var(--dd-ink);
+  font: inherit; font-weight: 800; font-size: 1.02rem; cursor: pointer; box-shadow: 0 4px 0 #0d0906;
+}
+.dd-tile__icon { font-size: 1.7rem; line-height: 1; }
+.dd-tile:hover { border-color: var(--dd-gold); }
+.dd-tile:active { transform: translateY(2px); box-shadow: 0 2px 0 #0d0906; }
+.dd-settings { background: rgba(20, 13, 8, 0.6); border: 1px solid var(--dd-line); border-radius: 14px; padding: 0 12px; }
 .dd-settings summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; }
 .dd-check { display: flex; align-items: center; gap: 10px; min-height: 44px; }
 .dd-check input { width: 24px; height: 24px; }
 
-.dd-gauge { list-style: none; margin: 0; padding: 0; border-radius: 18px; overflow: hidden; border: 3px solid #0d0906; }
-.dd-gauge__sky { height: 26px; background: linear-gradient(#7cc8f5, #c9ecff); border-bottom: 6px solid #4cae4f; }
-.dd-gauge__layer { padding: 4px 10px; }
-.dd-chamber {
-  display: grid; grid-template-columns: 40px 1fr auto 34px; align-items: center; gap: 8px; width: 100%; min-height: 46px;
-  background: var(--dd-face); color: var(--dd-ink); border: 2px solid var(--dd-line); border-radius: 999px; padding: 4px 10px 4px 6px;
-  font: inherit; font-weight: 700; text-align: left; cursor: pointer; position: relative;
+.dd-hero { grid-area: hero; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 0; padding-bottom: 4vh; }
+.dd-hero p { margin: 0; text-shadow: 0 3px 12px rgba(0, 0, 0, 0.9), 0 1px 2px #000000; }
+.dd-hero__rig { margin-bottom: -40px; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6)); }
+.dd-hero__gem { filter: drop-shadow(0 0 24px rgba(255, 255, 255, 0.55)); }
+.dd-hero__lock { font-size: 5rem; line-height: 150px; }
+.dd-hero__level { font-size: 1.3rem; font-weight: 800; color: var(--dd-gold); letter-spacing: 3px; text-transform: uppercase; }
+.dd-hero__place { font-size: clamp(2.2rem, 4.6vw, 4rem); font-weight: 900; line-height: 1.05; color: #ffffff; }
+.dd-hero .dd-hero__state { margin-top: 10px; font-size: 1.3rem; font-weight: 800; background: rgba(20, 13, 8, 0.75); border-radius: 999px; padding: 6px 20px; text-shadow: none; }
+.dd-hero__stars { color: var(--dd-gold); font-size: 1.8rem; letter-spacing: 4px; }
+.dd-hero__stars .is-off { color: #8a7a6a; }
+
+.dd-gauge {
+  grid-area: gauge; list-style: none; margin: 0; padding: 0; border-radius: 22px; overflow: hidden; border: 3px solid #0d0906;
+  display: flex; flex-direction: column; height: calc(100dvh - 24px); position: sticky; top: 12px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
 }
+.dd-gauge__sky { flex: none; height: 22px; background: linear-gradient(#7cc8f5, #c9ecff); border-bottom: 6px solid #4cae4f; }
+.dd-gauge__layer { flex: 1 1 0; min-height: 50px; display: flex; align-items: center; padding: 3px 12px; }
+.dd-chamber {
+  display: grid; grid-template-columns: 40px 1fr auto 34px; align-items: center; gap: 8px; width: 100%; min-height: 44px;
+  background: rgba(31, 22, 16, 0.92); color: var(--dd-ink); border: 2px solid var(--dd-line); border-radius: 999px; padding: 4px 10px 4px 6px;
+  font: inherit; font-weight: 700; text-align: left; cursor: pointer; position: relative; transition: transform 0.15s;
+}
+.dd-chamber:hover { transform: translateX(-4px); border-color: var(--dd-gold); }
 .dd-chamber__num { width: 34px; height: 34px; border-radius: 50%; background: var(--dd-gold); color: var(--dd-gold-ink); display: grid; place-items: center; }
 .dd-chamber__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dd-chamber__state { color: var(--dd-gold); white-space: nowrap; }
 .dd-chamber__you { position: absolute; right: 48px; top: -10px; background: var(--dd-gold); color: var(--dd-gold-ink); font-size: 0.75rem; border-radius: 999px; padding: 1px 8px; }
-.dd-chamber.is-locked { background: var(--dd-locked-bg); color: var(--dd-locked); border-style: dashed; }
+.dd-chamber.is-locked { background: rgba(18, 12, 8, 0.92); color: var(--dd-locked); border-style: dashed; }
 .dd-chamber.is-locked .dd-chamber__num { background: #3a2e25; color: var(--dd-locked); }
 .dd-chamber.is-locked .dd-chamber__state { color: var(--dd-locked); }
 .dd-chamber.is-tomorrow .dd-chamber__state { color: var(--dd-warn); }
-.dd-chamber.is-selected { border-color: var(--dd-gold); box-shadow: 0 0 0 3px var(--dd-gold); }
-.dd-gauge__heart { display: grid; place-items: center; padding: 10px; background: radial-gradient(circle, #6b2a5a 0%, #180f2b 70%); }
+.dd-chamber.is-selected { border-color: var(--dd-gold); box-shadow: 0 0 0 3px var(--dd-gold), 0 0 22px rgba(252, 211, 77, 0.6); transform: translateX(-6px); }
+.dd-gauge__heart { flex: none; display: grid; place-items: center; padding: 6px; background: radial-gradient(circle, #6b2a5a 0%, #180f2b 70%); }
+
+/* Not wide enough for three columns: the chosen level sits above the panel, the gauge stays on the right. */
+@media (max-width: 1099px) {
+  .dd-map { grid-template-columns: minmax(300px, 1fr) minmax(280px, 380px); grid-template-rows: auto auto 1fr; grid-template-areas: 'top gauge' 'hero gauge' 'side gauge'; }
+  .dd-hero { padding-bottom: 0; }
+  .dd-hero .dd-hero__rig, .dd-hero .dd-hero__gem { width: 110px !important; height: 110px !important; }
+  .dd-hero__rig { margin-bottom: -26px; }
+}
+/* A phone, or a short window: one column that scrolls. */
+@media (max-width: 720px), (max-height: 560px) {
+  .dd-map { grid-template-columns: 1fr; grid-template-rows: none; grid-template-areas: 'top' 'hero' 'side' 'gauge'; min-height: 0; }
+  .dd-gauge { position: static; height: auto; }
+  .dd-map__shade { background: rgba(18, 11, 6, 0.55); }
+}
 
 /* ——— Play ——— */
 .dd-root--play { padding-top: max(6px, env(safe-area-inset-top, 0px)); }
@@ -126,7 +195,6 @@
   .dd-field { grid-column: 1; grid-row: 1 / span 2; width: min(100%, calc((100dvh - 20px) * 10 / 7)); }
   .dd-play__controls { grid-column: 2; grid-row: 2; flex-direction: column; align-items: stretch; justify-content: flex-start; }
   .dd-drop { min-width: 0; }
-  .dd-map { grid-template-columns: minmax(260px, 360px) minmax(0, 1fr); }
 }
 
 /* ——— Pages: level end, shop, workshop, Gem Book, How to play ——— */
@@ -183,7 +251,6 @@ img.dd-item__icon { object-fit: contain; padding: 4px; }
 .dd-book__page.is-heart { grid-column: 1 / -1; }
 
 @media (max-width: 720px) {
-  .dd-map { grid-template-columns: 1fr; }
   .dd-ws { grid-template-columns: 1fr; }
   .dd-ws__try { position: static; }
 }
@@ -193,6 +260,15 @@ img.dd-item__icon { object-fit: contain; padding: 4px; }
   .dd-glow { animation: dd-glow 0.9s ease-in-out infinite alternate; }
   .dd-pulse { animation: dd-pulse 2.4s ease-in-out infinite; }
   .dd-target__fill { transition: width 0.25s ease-out; }
+  .dd-map__paint { animation: dd-paint-in 0.7s ease-out, dd-drift 40s ease-in-out 0.7s infinite alternate; }
+  .dd-hero { animation: dd-hero-in 0.5s cubic-bezier(0.2, 1.4, 0.4, 1); }
+  .dd-float { animation: dd-float 3s ease-in-out infinite; }
+  .dd-spark { animation: dd-rise 7s linear infinite; }
+  @keyframes dd-paint-in { from { opacity: 0; transform: scale(1.06); } }
+  @keyframes dd-drift { to { transform: scale(1.08) translate(-1.5%, -1%); } }
+  @keyframes dd-hero-in { from { opacity: 0; transform: translateY(24px) scale(0.92); } }
+  @keyframes dd-float { 50% { transform: translateY(-12px) rotate(4deg); filter: drop-shadow(0 0 36px rgba(255, 255, 255, 0.85)); } }
+  @keyframes dd-rise { 0% { opacity: 0; transform: translateY(0) scale(0.6); } 15% { opacity: 1; } 80% { opacity: 0.8; } 100% { opacity: 0; transform: translate(30px, -105vh) scale(1.2); } }
   @keyframes dd-glow { from { box-shadow: 0 0 0 0 rgba(252, 211, 77, 0.9); } to { box-shadow: 0 0 0 8px rgba(252, 211, 77, 0.35); } }
   @keyframes dd-pulse { 50% { transform: scale(1.08); filter: brightness(1.25); } }
 }
@@ -208,7 +284,6 @@ img.dd-item__icon { object-fit: contain; padding: 4px; }
  * painting, blurred, fills the edges round it. On a wide window the HUD is a slim row on top and Pause / Drop / Finish
  * stand in the spare edge on the right; on a squarer window they stay under the field.
  */
-.dd-map__top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .dd-hubbtns { display: inline-flex; gap: 6px; }
 .dd-root .dd-hubbtn { text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
 .dd-root--play { padding: 0; overflow: hidden; }
