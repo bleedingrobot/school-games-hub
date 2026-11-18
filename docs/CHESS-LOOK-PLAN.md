@@ -5,8 +5,8 @@ different ways … a few different backgrounds … full screen … flashy and en
 
 **Status:** stage 1 live (PR #578: full window, castle hall painting, all the move animations). Stage 2 live (PR #579:
 the 🎒 Chess Locker, 6 more backgrounds with their own particles, unlocks worked out on the server, the treasure chest).
-Stage 3 live (PR #580, 18 Nov 2026: the 4 painted boards, lively, in the Locker and the chest). Stage 4 (the 6
-painted piece sets) in review, 19 Nov 2026. Stage 5 to do.
+Stage 3 live (PR #580, 18 Nov 2026: the 4 painted boards, lively, in the Locker and the chest). Stage 4 live (PR #594,
+19 Nov 2026: the 6 painted piece sets on the board, the Locker and the chest). Stage 5 to do.
 
 ## Decisions
 
