@@ -3,9 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const fetchMyProfile = vi.fn();
 const signOut = vi.fn(async () => ({ error: null }));
+const getSession = vi.fn();
 let fire: (event: string, session: unknown) => void = () => {};
 
 vi.mock('../lib/supabase', () => ({
+  SIGNED_OUT_REPLY: 'hub:signed-out-reply',
   supabase: {
     auth: {
       onAuthStateChange: (cb: (event: string, session: unknown) => void) => {
@@ -13,6 +15,7 @@ vi.mock('../lib/supabase', () => ({
         return { data: { subscription: { unsubscribe: () => {} } } };
       },
       signOut: () => signOut(),
+      getSession: () => getSession(),
     },
   },
 }));
@@ -47,6 +50,15 @@ describe('loading the profile after sign-in', () => {
     expect(screen.getByText('signed-in')).toBeInTheDocument();
     expect(fetchMyProfile).toHaveBeenCalledTimes(2);
     expect(signOut).not.toHaveBeenCalled();
+
+    // Another Safari tab signs out: this page's next request comes back "not signed in", so it shows the sign-in screen
+    // instead of pretending to be signed in ("Class Warp isn't working right now").
+    getSession.mockResolvedValue({ data: { session: null }, error: null });
+    await act(async () => {
+      window.dispatchEvent(new Event('hub:signed-out-reply'));
+      await vi.runAllTimersAsync();
+    });
+    expect(screen.getByText('signed-out: You were signed out. Please sign in again.')).toBeInTheDocument();
   });
 
   it('still signs out (with a message) if the profile never loads', async () => {
