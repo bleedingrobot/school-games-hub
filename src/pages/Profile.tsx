@@ -15,11 +15,11 @@ import {
   type HubTheme,
 } from '../avatar/avatarParts';
 import { RecentList, recentGamesFrom, SpaceStatsLine, StatsTable, statsFrom, type MyStats, type RecentGame } from '../components/MyGames';
-import { AchievementList, RankBadge } from '../components/Progress';
+import { RankBadge } from '../components/Progress';
 import { fetchMyHomePage } from '../data/homePage';
 import { chooseMyName, fetchNameWords, FriendlyError, saveMyAvatar, type NameWords } from '../data/profile';
 import { OwnNamePanel, ScrollNote } from '../profile/OwnName';
-import { nextRankText, type Achievement, type MyProgress } from '../data/progress';
+import { nextRankText, type MyProgress } from '../data/progress';
 import { pictureOf } from '../avatar/earnedPictures';
 import type { MyTrophy } from '../data/trophies';
 import { gameLabel } from '../games/registry';
@@ -29,8 +29,6 @@ import './profile.css';
 
 /** How many recent games the profile's My stats shows. */
 const RECENT_SHOWN = 10;
-/** How many not-yet-earned achievements My achievements shows before "See all". */
-const NEAREST_SHOWN = 3;
 
 const PARTS = Object.keys(AVATAR_OPTIONS) as AvatarPart[];
 const COLOUR_PARTS: AvatarPart[] = ['colour', 'topColour', 'bg'];
@@ -44,9 +42,9 @@ const OPTION_LABELS: Record<string, string> = {
   glasses: 'Glasses', freckles: 'Freckles', blush: 'Rosy cheeks', headphones: 'Headphones',
 };
 
-/** The folds, top to bottom. Their ids are also the page's anchors (/profile#stats, /profile#achievements). */
-type FoldId = 'trophies' | 'achievements' | 'stats' | 'theme';
-const FOLD_IDS: FoldId[] = ['trophies', 'achievements', 'stats', 'theme'];
+/** The folds, top to bottom. Their ids are also the page's anchors (/profile#stats, /profile#theme). */
+type FoldId = 'trophies' | 'stats' | 'theme';
+const FOLD_IDS: FoldId[] = ['trophies', 'stats', 'theme'];
 
 function errorText(error: unknown) {
   return error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.';
@@ -121,7 +119,6 @@ export function Profile() {
   }
 
   const progress = home.progress;
-  const earnedCount = progress?.achievements.filter((a) => a.earnedAt).length ?? 0;
 
   return (
     <div className="profile">
@@ -173,16 +170,6 @@ export function Profile() {
         onToggle={toggle}
       >
         <TrophyCabinet cabinet={cabinet} />
-      </Fold>
-
-      <Fold
-        id="achievements"
-        title="⭐ My achievements"
-        count={progress ? `${earnedCount} of ${progress.achievements.length}` : undefined}
-        open={open.has('achievements')}
-        onToggle={toggle}
-      >
-        {progress ? <MyAchievements achievements={progress.achievements} /> : <p className="panel__empty">{home.failed ? 'We couldn’t load your achievements just now.' : 'Loading…'}</p>}
       </Fold>
 
       <Fold
@@ -498,37 +485,6 @@ function useMyHome(me: string | undefined): MyHome {
   }, [me]);
 
   return { progress, stats, recent, failed };
-}
-
-/** The way into the Achievement Hall (every game's shelf), then what the pupil has earned and the three they are closest to. */
-function MyAchievements({ achievements }: { achievements: Achievement[] }) {
-  const earned = achievements.filter((a) => a.earnedAt).sort((a, b) => (b.earnedAt ?? '').localeCompare(a.earnedAt ?? ''));
-  const nearest = achievements
-    .filter((a) => !a.earnedAt)
-    .sort((a, b) => b.progress / b.goal - a.progress / a.goal)
-    .slice(0, NEAREST_SHOWN);
-
-  return (
-    <div className="profile-achievements">
-      <Link className="profile-achievements__hall" to="/achievements">
-        <span aria-hidden="true">🏛️</span> Open my Achievement Hall
-      </Link>
-      <div>
-        <h3>Earned</h3>
-        {earned.length === 0 ? (
-          <p className="panel__empty">None yet. Play a game to win your first!</p>
-        ) : (
-          <AchievementList achievements={earned} showGame compact />
-        )}
-      </div>
-      {nearest.length > 0 && (
-        <div>
-          <h3>Nearly there</h3>
-          <AchievementList achievements={nearest} showGame />
-        </div>
-      )}
-    </div>
-  );
 }
 
 /** Inside My stats: points and badges, then recent games and the tables for bots and friends. */

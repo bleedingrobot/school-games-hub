@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'achievements-menu-2026-11-19',
+    date: '2026-11-19',
+    emoji: '🏆',
+    title: 'Achievements in the menu',
+    text: 'Tap Achievements at the top of the page to visit your Achievement Hall any time.',
+    to: '/achievements',
+  },
+  {
     id: 'chess-bots-2026-11-19',
     date: '2026-11-19',
     emoji: '🐣',
@@ -59,7 +67,7 @@ export const HUB_NEWS: NewsItem[] = [
     emoji: '🏅',
     title: 'Achievements now say how to get them',
     text: 'Every achievement now tells you what to do to earn it. See what you’re close to!',
-    to: '/profile#achievements',
+    to: '/achievements',
   },
   {
     id: 'gemkeep-red-blast-2026-11-18',
