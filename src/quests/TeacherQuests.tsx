@@ -4,6 +4,7 @@
  */
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { DAYS_NEEDED, isDaily, QUEST_KINDS, questKind, type QuestGroup, type QuestKind, type QuestKindInfo } from '../../shared/quests/kinds';
+import { DEFAULT_REWARD, QUEST_REWARDS, questReward, rewardFit, type QuestReward } from '../../shared/quests/rewards';
 import { questWeek, weekday } from '../../shared/quests/week';
 import { FriendlyError } from '../data/profile';
 import { fetchPeople, type Person } from '../data/teacher';
@@ -37,6 +38,7 @@ function QuestsPage({ classId }: { classId: string }) {
   const [people, setPeople] = useState<Map<string, Person>>(new Map());
   const [which, setWhich] = useState<string | undefined>();
   const [picked, setPicked] = useState<QuestKind | null>(null);
+  const [reward, setReward] = useState<QuestReward>(DEFAULT_REWARD);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,6 +69,7 @@ function QuestsPage({ classId }: { classId: string }) {
       await job();
       setWhich(undefined);
       setPicked(null);
+      setReward(DEFAULT_REWARD);
       await load();
     } catch (e) {
       setError(errorText(e));
@@ -119,10 +122,39 @@ function QuestsPage({ classId }: { classId: string }) {
               ))}
             </div>
           ))}
+          <div className="tquests__group" role="radiogroup" aria-labelledby="tq-reward">
+            <h3 id="tq-reward" className="tquests__group-title">Reward for finishing</h3>
+            <div className="tquests__rewards">
+              {QUEST_REWARDS.map((r) => {
+                const why = rewardFit(picked, r.id);
+                return (
+                  <button
+                    key={r.id}
+                    type="button"
+                    role="radio"
+                    className={`tquests__reward${reward === r.id ? ' is-picked' : ''}`}
+                    aria-checked={reward === r.id}
+                    disabled={why !== null}
+                    onClick={() => setReward(r.id)}
+                  >
+                    <span className="tquests__reward-emoji" aria-hidden="true">{r.emoji}</span>
+                    <strong>{r.name}</strong>
+                    <span className="tquests__reward-what">{r.what}</span>
+                    {why && <span className="tquests__reward-why">{why}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <div className="tquests__startbar">
             <span>{picked ? `${questKind(picked)?.game}: ${questKind(picked)?.name}` : 'Pick a quest above'}</span>
-            <button type="button" className="button button--play" disabled={!picked || busy} onClick={() => picked && act(() => startQuest(classId, picked))}>
-              Start this week&rsquo;s quest
+            <button
+              type="button"
+              className="button button--play"
+              disabled={!picked || busy || rewardFit(picked, reward) !== null}
+              onClick={() => picked && act(() => startQuest(classId, picked, reward))}
+            >
+              Start this week&rsquo;s quest · Reward: {questReward(reward)?.name}
             </button>
           </div>
         </section>
@@ -151,7 +183,7 @@ function QuestsPage({ classId }: { classId: string }) {
                   <button type="button" className={`tquests__past-row${q.id === data.shown ? ' is-shown' : ''}`} onClick={() => setWhich(q.id)}>
                     <span>{niceDate(q.startsOn)} – {niceDate(q.endsOn)}</span>
                     <span>{k ? `${k.game}: ${k.name}` : q.kind}</span>
-                    <span>🏅 {q.won} finished{q.stoppedAt ? ' · stopped' : ''}</span>
+                    <span>🏅 {q.won} finished{q.reward ? ` · ${questReward(q.reward)?.emoji} ${questReward(q.reward)?.name}` : ''}{q.stoppedAt ? ' · stopped' : ''}</span>
                   </button>
                 </li>
               );
@@ -192,6 +224,7 @@ function QuestTable({ data, people, isRunning, busy, onStop }: { data: Data; peo
         </h2>
         <p className="tquests__line">
           {niceDate(quest.startsOn)} – {niceDate(quest.endsOn)} · <strong>{quest.won} of {data.pupils.length} finished</strong>
+          {quest.reward && ` · Reward: ${questReward(quest.reward)?.emoji} ${questReward(quest.reward)?.name}`}
           {quest.stoppedAt ? ' · stopped' : isRunning ? '' : ' · ended'}
         </p>
         {isRunning && (

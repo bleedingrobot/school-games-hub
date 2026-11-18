@@ -72,6 +72,40 @@
   background: rgb(180 35 24 / 0.85);
 }
 
+.tquests__rewards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.6rem;
+}
+.tquests__reward {
+  display: grid;
+  align-content: start;
+  gap: 0.2rem;
+  padding: 0.6rem 0.75rem;
+  border: 3px solid #e3dcf5;
+  border-radius: 0.8rem;
+  color: #1b1036;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  background: linear-gradient(160deg, #fffaf0, #f3edff);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.tquests__reward:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 0.4rem 1rem rgb(20 10 50 / 0.2); }
+.tquests__reward.is-picked { border-color: #ffd45c; box-shadow: 0 0 0 3px rgb(255 212 92 / 0.45); }
+.tquests__reward:disabled { cursor: default; opacity: 0.55; filter: grayscale(0.6); }
+.tquests__reward-emoji { font-size: 1.8rem; line-height: 1; }
+.tquests__reward-what { font-size: 0.85rem; }
+.tquests__reward-why {
+  justify-self: start;
+  margin-top: 0.15rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: #e3dcf5;
+}
+
 .tquests__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 1rem; }
 .tquests__head .tquests__line { margin: 0; }
 .tquests__stop { margin-left: auto; }

@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'quest-rewards-2026-11-19',
+    date: '2026-11-19',
+    emoji: '🎁',
+    title: 'Quests give rewards!',
+    text: 'Finish a class quest to win a reward, like a Rename Scroll to make up your own name!',
+    to: '/profile#rewards',
+  },
+  {
     id: 'achievements-menu-2026-11-19',
     date: '2026-11-19',
     emoji: '🏆',
