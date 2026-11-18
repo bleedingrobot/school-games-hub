@@ -10,13 +10,10 @@ describe('Hero Titles', () => {
     expect(ids).toEqual(HERO_TITLES.map((t) => t.id));
   });
 
-  it('has ids an avatar can carry, and no repeats', () => {
+  it('has ids an avatar can carry, no repeats, and is read from an avatar', () => {
     for (const t of HERO_TITLES) expect(t.id).toMatch(/^[a-z0-9-]{1,24}$/);
     expect(new Set(HERO_TITLES.map((t) => t.id)).size).toBe(HERO_TITLES.length);
     expect(new Set(HERO_TITLES.map((t) => t.name)).size).toBe(HERO_TITLES.length);
-  });
-
-  it('reads the worn title from an avatar', () => {
     expect(titleOf({ kind: 'cat', title: 'moon-walker' })?.name).toBe('Moon Walker');
     expect(titleOf({ title: 'the-best' })).toBeUndefined();
     expect(titleOf(null)).toBeUndefined();

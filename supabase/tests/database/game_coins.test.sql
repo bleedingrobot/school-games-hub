@@ -59,7 +59,7 @@ select is(public.quest_reward_fits('marble-total', 'scroll'), true, 'a Name Scro
 select is(public.quest_reward_fits('marble-total', 'title'), true, 'a Hero Title fits any quest');
 select is(public.quest_reward_fits('trader', 'turns'), true, 'Bonus Turns still fit a game with turns');
 select is(public.quest_reward_fits('mine-total', 'turns'), false, 'Bonus Turns still don''t fit a game without turns');
-select is(public.quest_reward_fits('trader', 'frame'), false, 'a reward that isn''t ready is refused');
+select is(public.quest_reward_fits('trader', 'banner'), false, 'a reward that isn''t ready is refused');
 select is(public.quest_reward_fits(null, 'coins'), false, 'no quest, no reward');
 
 -- ---- The teacher can start a coins quest, but not in a game without money ----

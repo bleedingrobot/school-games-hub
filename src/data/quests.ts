@@ -105,6 +105,8 @@ export interface MyQuestReward {
   title?: string | null;
   /** A used Bonus Turns Day: the NZ day ('YYYY-MM-DD') it was for. */
   day?: string | null;
+  /** A used Quest Frame: the frame it became. */
+  frame?: string | null;
   /** Game Coins: the game id the pouch is for (shared/quests/rewards.ts COIN_POUCH). */
   game?: string | null;
   /** An opened Game Coins pouch: how much money it held. */
@@ -138,4 +140,21 @@ export async function fetchMyTitles(): Promise<MyTitles> {
 export async function setMyTitle(title: string | null): Promise<void> {
   const { error } = await supabase.rpc('set_my_title', { title });
   if (error) fail(error, 'We couldn’t change your title. Please try again.');
+}
+
+export interface MyFrames {
+  owned: string[];
+  wearing: string | null;
+}
+
+export async function fetchMyFrames(): Promise<MyFrames> {
+  const { data, error } = await supabase.rpc('my_frames');
+  if (error) fail(error, 'We couldn’t load your frames.');
+  return (data ?? { owned: [], wearing: null }) as MyFrames;
+}
+
+/** Wears one of my frames, or none (null). */
+export async function setMyFrame(frame: string | null): Promise<void> {
+  const { error } = await supabase.rpc('set_my_frame', { frame });
+  if (error) fail(error, 'We couldn’t change your frame. Please try again.');
 }

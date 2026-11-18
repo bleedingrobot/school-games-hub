@@ -26,6 +26,7 @@ import { gameLabel } from '../games/registry';
 import { useThemeTrial } from '../theme/hubTheme';
 import { TrophyCabinet, useMyTrophies } from '../trophies/TrophyCabinet';
 import { HeroTitleLine, TitlePicker, useMyTitles } from '../quests/HeroTitles';
+import { FramePicker, useMyFrames } from '../quests/QuestFrames';
 import { MyRewards, useMyQuestRewards } from '../quests/MyRewards';
 import './profile.css';
 
@@ -78,10 +79,13 @@ export function Profile() {
   const trophyCount = cabinet.data?.trophies.length;
   const questRewards = useMyQuestRewards();
 
-  const [editing, setEditing] = useState<'look' | 'name' | 'title' | null>(null);
+  const [editing, setEditing] = useState<'look' | 'name' | 'title' | 'frame' | null>(null);
   // Spending a Hero Title reward: its id. Changing which title I wear: undefined.
   const [titleReward, setTitleReward] = useState<string | undefined>();
   const myTitles = useMyTitles(profile?.avatar);
+  // Spending a Quest Frame reward: its id. Changing which frame I wear: undefined.
+  const [frameReward, setFrameReward] = useState<string | undefined>();
+  const myFrames = useMyFrames(profile?.avatar);
   // My trophies starts open: they are the hub's top rewards.
   const [open, setOpen] = useState<ReadonlySet<FoldId>>(() => new Set(['trophies']));
   const toggle = (id: FoldId) =>
@@ -172,6 +176,19 @@ export function Profile() {
                 🏷️ My titles
               </button>
             )}
+            {(myFrames?.owned.length ?? 0) > 0 && (
+              <button
+                type="button"
+                className="button button--light-outline"
+                aria-expanded={editing === 'frame' && frameReward === undefined}
+                onClick={() => {
+                  setFrameReward(undefined);
+                  setEditing(editing === 'frame' && frameReward === undefined ? null : 'frame');
+                }}
+              >
+                🖼️ My frames
+              </button>
+            )}
           </div>
         </div>
         <div className="profile-top__out">
@@ -190,6 +207,19 @@ export function Profile() {
         <TitlePicker
           key={titleReward ?? 'wear'}
           rewardId={titleReward}
+          onClose={() => setEditing(null)}
+          onDone={() => {
+            setEditing(null);
+            questRewards.reload();
+            void refreshProfile();
+          }}
+        />
+      )}
+      {editing === 'frame' && (
+        <FramePicker
+          key={frameReward ?? 'wear'}
+          avatar={profile?.avatar}
+          rewardId={frameReward}
           onClose={() => setEditing(null)}
           onDone={() => {
             setEditing(null);
@@ -225,6 +255,9 @@ export function Profile() {
             else if (r.reward === 'title') {
               setTitleReward(r.id);
               setEditing('title');
+            } else if (r.reward === 'frame') {
+              setFrameReward(r.id);
+              setEditing('frame');
             } else return;
             window.scrollTo?.({ top: 0, behavior: 'smooth' });
           }}

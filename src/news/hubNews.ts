@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'quest-frames-2026-11-19',
+    date: '2026-11-19',
+    emoji: '🖼️',
+    title: 'Quest Frames!',
+    text: 'Some class quests now give a Quest Frame to go around your avatar. Pick your favourite!',
+    to: '/profile#rewards',
+  },
+  {
     id: 'game-coins-2026-11-19',
     date: '2026-11-19',
     emoji: '💰',
