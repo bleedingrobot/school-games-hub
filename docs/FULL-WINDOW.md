@@ -136,5 +136,6 @@ Rough order: biggest win first. Each line is a prompt to paste into a new chat.
 | ☑ | Marble Rush (`marble`, `.mr-window`) | Make Marble Rush full window like Star Trader, following docs/FULL-WINDOW.md. | Less art, 960px cap. Smaller win. **Done:** `.mr-window` wraps every screen; the picker sits on the big Crown Range painting in a 1280px column with Hub + sound by How to play, and a run's track fills the window with the clock bar floating on top and the buttons along the foot. |
 | ☑ | Gem Keep (`gem-keep`) | Make Gem Keep full window like Star Trader, following docs/FULL-WINDOW.md. | Narrow (420px) campaign board. Smaller win; check the board doesn't just get blurry when bigger. **Done:** `.gk-window` wraps the map and every level with the painting blurred behind. On wide screens the campaign painting is the window (stops on a 16:9 `.gk-world__paper`, title bar with Hub + sound, level card and save note floating on it); a level's board grows to the full height (`--gk-chrome` 170px) and stays sharp, as the canvas redraws at its new size. |
 
-Not worth doing (boards, cards or question screens with little painting): Chess, Checkers, 101, Wormholes & Black
+Chess is full window too, with a painted hall behind the board and moves that slide, burst and celebrate
+(docs/CHESS-LOOK-PLAN.md). Not worth doing (boards, cards or question screens with little painting): Checkers, 101, Wormholes & Black
 Holes, Power Clash, Bond Match, Order Up, Glyph Gates.
