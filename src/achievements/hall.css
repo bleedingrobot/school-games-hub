@@ -1,0 +1,550 @@
+/* The Achievement Hall (/achievements). Full window over the hub bar, like the full-window games (docs/FULL-WINDOW.md). */
+.ah-window {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  background: #160d24;
+  color: #fff8e7;
+  font-family: var(--display, 'Trebuchet MS', sans-serif);
+}
+.ah-backdrop {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+.ah-backdrop img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  animation: ah-drift 40s ease-in-out infinite alternate;
+}
+/* Darker towards the bottom, where the shelves sit, so their words stay easy to read. */
+.ah-backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(18, 9, 30, 0.15) 0%, rgba(18, 9, 30, 0.55) 45%, rgba(18, 9, 30, 0.8) 100%);
+}
+@keyframes ah-drift {
+  from { transform: scale(1.02); }
+  to { transform: scale(1.1) translateY(-1.5%); }
+}
+
+.ah {
+  position: relative;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 16px 48px;
+}
+
+/* The slim row on top of the painting. */
+.ah-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+}
+.ah-top__buttons { display: inline-flex; gap: 6px; }
+.ah-btn {
+  min-height: 44px;
+  padding: 4px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 230, 170, 0.45);
+  background: rgba(20, 10, 34, 0.72);
+  backdrop-filter: blur(6px);
+  color: #fff3d6;
+  font: inherit;
+  font-weight: 700;
+  font-size: 1rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+.ah-btn:hover { background: rgba(48, 26, 76, 0.85); }
+.ah-btn--gold { border-color: #f5c451; }
+.ah-btn:focus-visible, .ah-chip:focus-visible, .ah-item:focus-visible, .ah-next__item:focus-visible,
+.ah-card__play:focus-visible, .ah-card__close:focus-visible, .ah-picker select:focus-visible {
+  outline: 3px solid #ffd76a;
+  outline-offset: 3px;
+}
+.ah-title {
+  margin: 0;
+  flex: 1;
+  text-align: center;
+  font-size: clamp(1.4rem, 3.4vw, 2.4rem);
+  letter-spacing: 0.02em;
+  background: linear-gradient(180deg, #fff6c8 0%, #ffd25a 55%, #e28a12 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 0 #4a2208) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6));
+}
+.ah-title:focus { outline: none; }
+.ah-note {
+  margin: 40px auto;
+  max-width: 520px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: rgba(20, 10, 34, 0.78);
+  text-align: center;
+  font-size: 1.1rem;
+}
+
+/* The top strip: ring + Next up. */
+.ah-hero {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 18px 28px;
+  margin: 6px 0 14px;
+  padding: 16px 22px;
+  border-radius: 22px;
+  background: rgba(22, 11, 38, 0.66);
+  border: 1.5px solid rgba(255, 214, 120, 0.35);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+}
+.ah-ring { position: relative; width: 170px; height: 170px; }
+.ah-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ah-ring circle { fill: none; stroke-width: 11; stroke-linecap: round; }
+.ah-ring__track { stroke: rgba(255, 255, 255, 0.14); }
+.ah-ring__fill {
+  stroke: url(#ah-ring-gold);
+  stroke-dasharray: 100;
+  stroke-dashoffset: calc(100 - var(--ah-ring, 0));
+  filter: drop-shadow(0 0 6px rgba(255, 200, 70, 0.7));
+  animation: ah-ring-fill 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes ah-ring-fill { from { stroke-dashoffset: 100; } }
+.ah-ring__words {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.ah-ring__words strong { font-size: 3rem; color: #ffe08a; text-shadow: 0 2px 0 #5a2c06; }
+.ah-ring__words span { margin-top: 4px; font-size: 1.05rem; opacity: 0.9; }
+
+.ah-next__title { margin: 0 0 8px; font-size: 1.15rem; color: #ffd98a; letter-spacing: 0.04em; text-transform: uppercase; }
+.ah-next__all { margin: 0; font-size: 1.2rem; }
+.ah-next__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.ah-next__item {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s;
+}
+.ah-next__item:hover { transform: translateY(-3px); background: rgba(255, 255, 255, 0.12); }
+.ah-next__name { font-weight: 700; font-size: 0.95rem; text-align: center; line-height: 1.2; }
+.ah-next__count { font-size: 0.9rem; color: #ffd98a; }
+
+/* Filters. */
+.ah-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+.ah-chip {
+  position: relative;
+  min-height: 48px;
+  padding: 6px 18px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 230, 170, 0.4);
+  background: rgba(20, 10, 34, 0.75);
+  color: #fff3d6;
+  font: inherit;
+  font-weight: 700;
+  font-size: 1.02rem;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+.ah-chip[aria-pressed='true'] {
+  background: linear-gradient(180deg, #ffe189, #f0a722);
+  border-color: #fff1b8;
+  color: #3b1c03;
+  box-shadow: 0 0 16px rgba(255, 196, 64, 0.55);
+}
+.ah-picker select {
+  min-height: 48px;
+  max-width: 100%;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 230, 170, 0.4);
+  background: rgba(20, 10, 34, 0.85);
+  color: #fff3d6;
+  font: inherit;
+  font-weight: 700;
+  font-size: 1rem;
+}
+.ah-picker { margin-left: auto; max-width: 100%; }
+/* The little sparkle when a filter changes. */
+.ah-sparkles { position: absolute; left: 50%; top: 50%; pointer-events: none; }
+.ah-sparkles span {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px;
+  border-radius: 50%;
+  background: #fff4b0;
+  box-shadow: 0 0 8px #ffd34d;
+  animation: ah-spark 0.7s ease-out forwards;
+  --a: calc(var(--i) * 45deg);
+}
+@keyframes ah-spark {
+  from { transform: rotate(var(--a)) translateX(8px) scale(1); opacity: 1; }
+  to { transform: rotate(var(--a)) translateX(46px) scale(0.2); opacity: 0; }
+}
+
+/* Shelves. */
+.ah-shelves { display: grid; gap: 18px; }
+.ah-shelf {
+  border-radius: 20px;
+  background: rgba(22, 11, 38, 0.62);
+  border: 1.5px solid rgba(255, 214, 120, 0.22);
+  backdrop-filter: blur(6px);
+  overflow: hidden;
+  animation: ah-shelf-in 0.5s ease-out both;
+  animation-delay: var(--ah-delay, 0ms);
+}
+@keyframes ah-shelf-in {
+  from { opacity: 0; transform: translateY(16px); }
+}
+.ah-banner {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 4px 12px;
+  min-height: 92px;
+  padding: 12px 18px 22px;
+  background:
+    linear-gradient(90deg, rgba(14, 7, 26, 0.88) 0%, rgba(14, 7, 26, 0.45) 55%, rgba(14, 7, 26, 0.1) 100%),
+    var(--ah-banner) var(--ah-focus, center) / cover no-repeat;
+}
+.ah-banner--plain { background: linear-gradient(110deg, var(--ah-c1), var(--ah-c2)); }
+.ah-banner__name {
+  margin: 0;
+  font-size: clamp(1.2rem, 2.6vw, 1.7rem);
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+}
+.ah-banner__count {
+  margin: 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(14, 7, 26, 0.78);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #ffe08a;
+}
+.ah-banner__bar {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 9px;
+  height: 7px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.22);
+  overflow: hidden;
+}
+.ah-banner__bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ffe58a, #f2a51f);
+  animation: ah-bar-fill 1s ease-out both;
+  animation-delay: calc(var(--ah-delay, 0ms) + 200ms);
+}
+@keyframes ah-bar-fill { from { width: 0; } }
+
+.ah-rows { padding: 12px 10px 6px; }
+.ah-row { position: relative; margin-bottom: 8px; }
+.ah-row__items {
+  position: relative;
+  z-index: 1;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+}
+.ah-row__items li { flex: 0 0 116px; display: flex; justify-content: center; }
+/* The painted plank each row of medallions stands on. */
+.ah-row__plank {
+  display: block;
+  width: 100%;
+  height: 34px;
+  margin-top: -30px;
+  object-fit: fill;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.45));
+}
+.ah-item {
+  width: 112px;
+  min-height: 44px;
+  padding: 4px 2px 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  border-radius: 14px;
+}
+.ah-item .ah-medal { transition: transform 0.18s cubic-bezier(0.3, 1.6, 0.5, 1); }
+.ah-item:hover .ah-medal { transform: translateY(-5px) scale(1.06); }
+.ah-item__name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  text-shadow: 0 1px 3px #000;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* A medallion: frame, emoji, and either shine (earned) or a progress ring (not yet). */
+.ah-medal {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: var(--ah-size);
+  height: var(--ah-size);
+  flex: none;
+}
+.ah-medal__frame { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.ah-medal__emoji {
+  position: relative;
+  font-size: calc(var(--ah-size) * 0.4);
+  line-height: 1;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
+}
+.ah-medal.is-earned { filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45)); }
+.ah-medal.is-earned.ah-medal--t3 { filter: drop-shadow(0 0 12px rgba(255, 196, 60, 0.6)); }
+.ah-medal:not(.is-earned) .ah-medal__frame { opacity: 0.85; }
+.ah-medal:not(.is-earned) .ah-medal__emoji { filter: grayscale(0.9) brightness(0.95) drop-shadow(0 0 4px rgba(0, 0, 0, 0.6)); opacity: 0.7; }
+/* The shine: a bright band sweeping across, kept inside the round medal. */
+.ah-medal__shine {
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ah-medal__shine::before {
+  content: '';
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  width: 34%;
+  left: -60%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  transform: skewX(-18deg);
+  animation: ah-shine 5.5s ease-in-out infinite;
+}
+li:nth-child(3n + 2) .ah-medal__shine::before { animation-delay: 1.8s; }
+li:nth-child(3n + 3) .ah-medal__shine::before { animation-delay: 3.4s; }
+@keyframes ah-shine {
+  0%, 62% { left: -60%; }
+  85%, 100% { left: 130%; }
+}
+.ah-medal__twinkle {
+  position: absolute;
+  color: #fffbe0;
+  text-shadow: 0 0 6px #ffd84a;
+  font-size: calc(var(--ah-size) * 0.17);
+  animation: ah-twinkle 2.6s ease-in-out infinite;
+}
+.ah-medal__twinkle--a { top: 4%; right: 6%; }
+.ah-medal__twinkle--b { bottom: 10%; left: 4%; animation-delay: 1.3s; font-size: calc(var(--ah-size) * 0.12); }
+@keyframes ah-twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.1) rotate(45deg); }
+}
+.ah-medal__ring { position: absolute; inset: -7%; width: 114%; height: 114%; transform: rotate(-90deg); }
+.ah-medal__ring circle { fill: none; stroke-width: 2.6; stroke-linecap: round; }
+.ah-medal__track { stroke: rgba(255, 255, 255, 0.16); }
+.ah-medal__fill {
+  stroke-dasharray: 100;
+  stroke-dashoffset: calc(100 - var(--ah-done, 0));
+  animation: ah-ring-fill 1.1s ease-out both;
+  animation-delay: var(--ah-delay, 0ms);
+}
+.ah-medal--t1 .ah-medal__fill { stroke: #e39a5b; }
+.ah-medal--t2 .ah-medal__fill { stroke: #d9ecff; }
+.ah-medal--t3 .ah-medal__fill { stroke: #ffcf3f; }
+
+/* The badge card, zooming out of its medallion. */
+.ah-card-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(10, 4, 20, 0.72);
+  backdrop-filter: blur(4px);
+  animation: ah-fade 0.25s ease-out both;
+}
+@keyframes ah-fade { from { opacity: 0; } }
+.ah-card {
+  position: relative;
+  width: min(440px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: 28px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  border-radius: 26px;
+  border: 3px solid var(--ah-tier, #d9ecff);
+  background: radial-gradient(120% 70% at 50% 0%, #4b2b78 0%, #251339 60%, #170c26 100%);
+  box-shadow: 0 0 0 6px rgba(0, 0, 0, 0.25), 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 40px color-mix(in srgb, var(--ah-tier, #fff) 35%, transparent);
+  animation: ah-card-in 0.45s cubic-bezier(0.2, 1.25, 0.4, 1) both;
+}
+.ah-card--t1 { --ah-tier: #e39a5b; }
+.ah-card--t2 { --ah-tier: #cfe3f7; }
+.ah-card--t3 { --ah-tier: #ffcf3f; }
+@keyframes ah-card-in {
+  from { transform: translate(var(--ah-from-x, 0), var(--ah-from-y, 0)) scale(0.18); opacity: 0.2; }
+}
+.ah-card__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+.ah-card__rays {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  width: 340px;
+  height: 340px;
+  margin-left: -170px;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--ah-tier) 30%, transparent) 0 10deg, transparent 10deg 24deg);
+  -webkit-mask: radial-gradient(circle, #000 20%, transparent 68%);
+  mask: radial-gradient(circle, #000 20%, transparent 68%);
+  animation: ah-spin 18s linear infinite;
+  pointer-events: none;
+}
+@keyframes ah-spin { to { transform: rotate(360deg); } }
+.ah-card .ah-medal { margin-bottom: 4px; }
+.ah-card__tier { position: relative; margin: 0; font-weight: 700; color: var(--ah-tier); letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.9rem; }
+.ah-card__name { position: relative; margin: 0; font-size: 1.7rem; line-height: 1.15; color: #fff; }
+.ah-card__how { margin: 2px 0 4px; font-size: 1.15rem; line-height: 1.35; color: #f5ead6; }
+.ah-card__when { margin: 0; font-weight: 700; font-size: 1.05rem; color: #b8f5c4; }
+.ah-card__progress { width: 100%; display: grid; gap: 6px; justify-items: center; }
+.ah-card__progress strong { font-size: 1.35rem; color: #ffe08a; }
+.ah-card__bar { width: 80%; height: 12px; border-radius: 99px; background: rgba(255, 255, 255, 0.16); overflow: hidden; }
+.ah-card__bar span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #ffe58a, #f2a51f); animation: ah-bar-fill 0.9s 0.25s ease-out both; }
+.ah-card__points {
+  margin: 2px 0 6px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(255, 210, 90, 0.16);
+  color: #ffe08a;
+  font-weight: 700;
+}
+.ah-card__play {
+  min-height: 56px;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #7ee08a, #2e9e48);
+  border: 2px solid #c8ffd0;
+  color: #0b2a12;
+  font-weight: 800;
+  font-size: 1.25rem;
+  text-decoration: none;
+  box-shadow: 0 6px 0 #1b6b2e, 0 10px 20px rgba(0, 0, 0, 0.35);
+}
+.ah-card__play:active { transform: translateY(3px); box-shadow: 0 3px 0 #1b6b2e; }
+
+/* Phones and narrow iPads. */
+@media (max-width: 760px) {
+  .ah { padding: 0 10px 40px; }
+  .ah-top { flex-wrap: wrap; }
+  .ah-title { order: 3; flex-basis: 100%; }
+  .ah-hero { grid-template-columns: 1fr; justify-items: center; padding: 14px 12px; }
+  .ah-ring { width: 140px; height: 140px; }
+  .ah-ring__words strong { font-size: 2.4rem; }
+  .ah-next { width: 100%; }
+  .ah-next__title { text-align: center; }
+  .ah-next__list { gap: 6px; }
+  .ah-next__name { font-size: 0.85rem; }
+  .ah-picker { margin-left: 0; flex-basis: 100%; }
+  .ah-picker select { width: 100%; }
+  .ah-chip { padding: 6px 14px; font-size: 0.95rem; }
+  .ah-rows { padding: 10px 4px 4px; }
+}
+@media (max-width: 760px) and (orientation: landscape) {
+  .ah-hero { grid-template-columns: auto 1fr; }
+}
+
+/* Short screens (a phone on its side): a smaller top strip, so the shelves start on the first screen. */
+@media (max-height: 500px) {
+  .ah-top { padding: 6px 0; }
+  .ah-hero { padding: 8px 14px; gap: 10px 18px; margin-bottom: 10px; }
+  .ah-ring { width: 104px; height: 104px; }
+  .ah-ring__words strong { font-size: 1.8rem; }
+  .ah-next__item { padding: 6px; gap: 2px; }
+  .ah-next__item .ah-medal { --ah-size: 48px !important; }
+  .ah-next__name { font-size: 0.82rem; }
+}
+
+/* Reduced motion: no drifting, twinkles, sweeps or zooms. */
+@media (prefers-reduced-motion: reduce) {
+  .ah-backdrop img, .ah-ring__fill, .ah-medal__fill, .ah-medal__shine::before, .ah-medal__twinkle, .ah-shelf,
+  .ah-banner__bar span, .ah-card, .ah-card-layer, .ah-card__rays, .ah-card__bar span, .ah-sparkles span {
+    animation: none;
+  }
+  .ah-medal__twinkle, .ah-sparkles { display: none; }
+  .ah-item .ah-medal, .ah-next__item { transition: none; }
+}

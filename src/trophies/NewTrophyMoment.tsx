@@ -9,7 +9,7 @@ import { TrophyArt } from './TrophyArt';
 import './trophies.css';
 
 /** The hub's own pages, where the moment may appear. Never inside a game, a lesson or a teacher page. */
-const HUB_PAGES = ['/', '/lobby', '/leaderboard', '/profile', '/points', '/warp'];
+const HUB_PAGES = ['/', '/lobby', '/leaderboard', '/profile', '/points', '/warp', '/achievements'];
 
 const METAL_WORDS = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold' } as const;
 

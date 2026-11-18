@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'achievement-hall-2026-11-19',
+    date: '2026-11-19',
+    emoji: '🏛️',
+    title: 'The Achievement Hall is open!',
+    text: 'See every achievement shine on its shelf, and tap one to find out how to win it.',
+    to: '/achievements',
+  },
+  {
     id: 'achievement-words-2026-11-19',
     date: '2026-11-19',
     emoji: '🏅',

@@ -582,7 +582,7 @@ function DashboardPage() {
               <>
                 <AchievementList achievements={nextAchievements(progress.achievements)} showGame compact />
                 <p className="panel__more">
-                  <Link to="/profile#achievements">See them all</Link>
+                  <Link to="/achievements">See them all</Link>
                 </p>
               </>
             ) : (

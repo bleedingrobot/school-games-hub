@@ -5,6 +5,7 @@
  */
 import { fakeSupabase, homeAnswer, setWorld, busyPupil } from '../../src/pages/homePageFake';
 import { LADDER } from '../../shared/maths/ladder';
+import ALL_ACHIEVEMENTS from './achievements.json';
 import { newStats } from '../../shared/maths/leitner';
 
 // Profile card P12's child check: ?pupil=new (no avatar, no trophies), ?pupil=bronze (one bronze trophy) or ?pupil=gold (golds in two
@@ -18,6 +19,19 @@ let ME = {
   avatar: (PUPIL === 'new' ? {} : PUPIL === 'gold' ? { kind: 'cat', bg: '#9b6bff', top: 'bow', pic: 'dm-first-five', picTier: 'gold' } : { kind: 'cat', bg: '#9b6bff', top: 'bow' }) as Record<string, string>,
 };
 const ago = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
+
+/**
+ * The Achievement Hall's made-up shelves: the real list (achievements.json, made from the migrations), with about a third
+ * earned and a third started, the same every time (from each id).
+ */
+function hallAchievements() {
+  return (ALL_ACHIEVEMENTS as { id: string; goal: number; measure: string }[]).map((a, i) => {
+    const roll = [...a.id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 997, 7) % 10;
+    const earned = roll < 3;
+    const progress = earned ? a.goal : roll < 6 ? Math.max(1, Math.floor((a.goal * (roll + 1)) / 8)) : 0;
+    return { ...a, progress: Math.min(progress, a.goal - (earned ? 0 : 1)), earnedAt: earned ? ago(1 + (i % 40)) : null };
+  });
+}
 const secure = LADDER.filter((s) => s.built).slice(0, 4).flatMap((s) => s.keys.map((k) => ({ ...newStats(k), attempts: 3, correct: 3, box: 3 })));
 const ladderInfo = { on: true, placed: 'done', placement: 'facts-10', furthest: null };
 const focus = { source: 'auto', skills: [], onlyThese: false, endsAt: null, canChoose: true, own: null, ladder: ladderInfo };
@@ -52,14 +66,7 @@ world.jobs.my_progress = {
     { game: 'chess', rank: { rank: 'silver', next: 'gold', progress: 0.4, gamesNeeded: null, ratedGames: 6 }, weekRatingChange: 5 },
     { game: 'checkers', rank: { rank: 'bronze', next: 'silver', progress: 0.7, gamesNeeded: null, ratedGames: 4 }, weekRatingChange: 2 },
   ],
-  achievements: [
-    { id: 'chess-first-win', game: 'chess', name: 'First win', emoji: '🏆', measure: 'wins', goal: 1, progress: 1, earnedAt: ago(3) },
-    { id: 'chess-games-10', game: 'chess', name: 'Play 10 games', emoji: '🔟', measure: 'games', goal: 10, progress: 7, earnedAt: null },
-    { id: 'checkers-first-win', game: 'checkers', name: 'First win', emoji: '🏁', measure: 'wins', goal: 1, progress: 1, earnedAt: ago(1) },
-    { id: 'checkers-crown-5', game: 'checkers', name: 'Crown 5 kings', emoji: '👑', measure: 'crowns', goal: 5, progress: 2, earnedAt: null },
-    { id: 'checkers-gold', game: 'checkers', name: 'Reach Gold', emoji: '🥇', measure: 'rank', goal: 2, progress: 1, earnedAt: null },
-    { id: 'space-first', game: 'space', name: 'Dock first', emoji: '🚀', measure: 'firsts', goal: 1, progress: 1, earnedAt: ago(5) },
-  ],
+  achievements: hallAchievements(),
   recent: [{ id: 'b1', points: 3 }, { id: 'f1', points: 5 }],
 };
 world.jobs.my_maths_focus = focus;
