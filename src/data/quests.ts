@@ -4,6 +4,7 @@
  */
 import { supabase } from '../lib/supabase';
 import type { QuestKind, QuestRule } from '../../shared/quests/kinds';
+import type { QuestReward } from '../../shared/quests/rewards';
 import { FriendlyError } from './profile';
 
 export interface ClassQuest {
@@ -14,6 +15,8 @@ export interface ClassQuest {
   daysNeeded: number;
   /** Missing before stage 2 (then it is a 'turns' quest). */
   rule?: QuestRule;
+  /** What finishing gives (quest rewards stage 1). */
+  reward?: QuestReward;
 }
 
 export interface MyQuest {
@@ -25,6 +28,8 @@ export interface MyQuest {
   count?: number;
   target?: number;
   won: boolean;
+  /** My reward from this quest, once won (its id in My rewards). */
+  myReward?: string | null;
   /** How many in my class have finished it (a number only). */
   classWon: number;
   /** My quests finished, ever. */
@@ -37,6 +42,7 @@ export interface TeacherQuestRow {
   startsOn: string;
   endsOn: string;
   stoppedAt: string | null;
+  reward?: QuestReward;
   won: number;
 }
 
@@ -77,12 +83,28 @@ export async function fetchTeacherQuests(classId: string, which?: string): Promi
   return data as TeacherQuests;
 }
 
-export async function startQuest(classId: string, kind: QuestKind): Promise<void> {
-  const { error } = await supabase.rpc('teacher_start_class_quest', { target_class: classId, which: kind });
+export async function startQuest(classId: string, kind: QuestKind, reward: QuestReward): Promise<void> {
+  const { error } = await supabase.rpc('teacher_start_class_quest', { target_class: classId, which: kind, reward });
   if (error) fail(error, 'We couldn’t start the quest.');
 }
 
 export async function stopQuest(classId: string): Promise<void> {
   const { error } = await supabase.rpc('teacher_stop_class_quest', { target_class: classId });
   if (error) fail(error, 'We couldn’t stop the quest.');
+}
+
+/** A reward from a class quest, on the profile's My rewards shelf. */
+export interface MyQuestReward {
+  id: string;
+  reward: QuestReward;
+  kind: QuestKind;
+  gotAt: string;
+  /** When it was used (a Rename Scroll: when its name was asked for). Null: still waiting to be used. */
+  usedAt: string | null;
+}
+
+export async function fetchMyQuestRewards(): Promise<MyQuestReward[]> {
+  const { data, error } = await supabase.rpc('my_quest_rewards');
+  if (error) fail(error, 'We couldn’t load your rewards.');
+  return (data ?? []) as MyQuestReward[];
 }

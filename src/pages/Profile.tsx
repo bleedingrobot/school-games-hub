@@ -25,6 +25,7 @@ import type { MyTrophy } from '../data/trophies';
 import { gameLabel } from '../games/registry';
 import { useThemeTrial } from '../theme/hubTheme';
 import { TrophyCabinet, useMyTrophies } from '../trophies/TrophyCabinet';
+import { MyRewards, useMyQuestRewards } from '../quests/MyRewards';
 import './profile.css';
 
 /** How many recent games the profile's My stats shows. */
@@ -43,8 +44,8 @@ const OPTION_LABELS: Record<string, string> = {
 };
 
 /** The folds, top to bottom. Their ids are also the page's anchors (/profile#stats, /profile#theme). */
-type FoldId = 'trophies' | 'stats' | 'theme';
-const FOLD_IDS: FoldId[] = ['trophies', 'stats', 'theme'];
+type FoldId = 'trophies' | 'rewards' | 'stats' | 'theme';
+const FOLD_IDS: FoldId[] = ['trophies', 'rewards', 'stats', 'theme'];
 
 function errorText(error: unknown) {
   return error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.';
@@ -74,6 +75,7 @@ export function Profile() {
   const savedPic = pictureOf(profile?.avatar)?.id ?? null;
   const cabinet = useMyTrophies(profile?.id);
   const trophyCount = cabinet.data?.trophies.length;
+  const questRewards = useMyQuestRewards();
 
   const [editing, setEditing] = useState<'look' | 'name' | null>(null);
   // My trophies starts open: they are the hub's top rewards.
@@ -84,6 +86,11 @@ export function Profile() {
       if (!next.delete(id)) next.add(id);
       return next;
     });
+
+  // Rewards waiting to be used open their fold.
+  useEffect(() => {
+    if (questRewards.unused > 0) setOpen((was) => new Set(was).add('rewards'));
+  }, [questRewards.unused]);
 
   // A link to a fold (the home page's "See more" goes to /profile#stats) opens it and brings it into view.
   useEffect(() => {
@@ -170,6 +177,25 @@ export function Profile() {
         onToggle={toggle}
       >
         <TrophyCabinet cabinet={cabinet} />
+      </Fold>
+
+      <Fold
+        id="rewards"
+        title="🎁 My rewards"
+        count={questRewards.unused > 0 ? `${questRewards.unused} to use` : undefined}
+        open={open.has('rewards')}
+        onToggle={toggle}
+      >
+        <MyRewards
+          rewards={questRewards.rewards}
+          failed={questRewards.failed}
+          onUse={(r) => {
+            if (r.reward === 'scroll') {
+              setEditing('name');
+              window.scrollTo?.({ top: 0, behavior: 'smooth' });
+            }
+          }}
+        />
       </Fold>
 
       <Fold
