@@ -70,6 +70,11 @@ export interface DiamondServices {
    * closed or the version moved on.
    */
   end(player: string, seed: number, version: number, state: Player, ending: { drops: number[]; finish: number | null; result: LevelResult }): Promise<boolean | 'busy'>;
+  /**
+   * Opens any Game Coins pouches a quest gave this pupil, if the save is still at this version (docs/QUEST-REWARDS-PLAN.md).
+   * Returns the coins added and the save's new version, or null if there was nothing to open or the save moved on.
+   */
+  openPouches?(player: string, version: number): Promise<{ amount: number; version: number } | null | 'busy'>;
   /** Saves the progress (the Workshop). False if the version moved on. */
   save(player: string, version: number, state: Player): Promise<boolean | 'busy'>;
   /** Adds answers to the pupil's maths records (sent twice, counted once, by `once`). A failure is only logged. */
@@ -128,6 +133,13 @@ export async function handleDiamond(services: DiamondServices, player: string, b
   if (body.action === 'load') {
     const s = await services.load(player);
     if (s === 'busy') return busy();
+    // A quest's coin pouch is opened right after loading (a pupil who has never played has no save to add to).
+    const pouch = s.version > 0 ? await services.openPouches?.(player, s.version) : null;
+    if (pouch && pouch !== 'busy' && pouch.amount > 0) {
+      s.player.coins += pouch.amount;
+      s.version = pouch.version;
+      return ok({ player: s.player, now: services.now(), unlimited, pouch: { amount: pouch.amount } });
+    }
     return ok({ player: s.player, now: services.now(), unlimited });
   }
 

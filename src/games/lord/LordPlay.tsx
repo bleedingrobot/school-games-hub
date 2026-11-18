@@ -131,7 +131,8 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     setWaiting(backend.waiting());
     if (result.kind === 'ready') {
       setState(result.state);
-      if (result.abandoned) setNote(ABANDONED[result.abandoned]);
+      const pouchNote = result.pouch ? `💰 Quest pouch: +${result.pouch.amount.toLocaleString()} gold!` : '';
+      if (result.abandoned || pouchNote) setNote([result.abandoned ? ABANDONED[result.abandoned] : '', pouchNote].filter(Boolean).join(' '));
     }
   }, [backend]);
 

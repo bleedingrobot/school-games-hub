@@ -98,6 +98,7 @@ export function trialBackend(options: TrialOptions = {}): Trial {
       return true;
     },
     market: async (_p, day) => data.market.view(day),
+    openPouches: async () => null,
     save: async (_p, a: SaveArgs) => {
       if ((data.game?.version ?? 0) !== a.expectedVersion) return null;
       const version = a.expectedVersion + 1;

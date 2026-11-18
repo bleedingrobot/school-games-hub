@@ -105,6 +105,10 @@ export interface MyQuestReward {
   title?: string | null;
   /** A used Bonus Turns Day: the NZ day ('YYYY-MM-DD') it was for. */
   day?: string | null;
+  /** Game Coins: the game id the pouch is for (shared/quests/rewards.ts COIN_POUCH). */
+  game?: string | null;
+  /** An opened Game Coins pouch: how much money it held. */
+  amount?: number | null;
 }
 
 export async function fetchMyQuestRewards(): Promise<MyQuestReward[]> {

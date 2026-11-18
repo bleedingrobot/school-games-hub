@@ -9,6 +9,7 @@ import { parseMathsSwitch } from '../../../shared/space/mathsSwitch';
 import { MARKET_DEPTH_DAYS } from '../../../shared/trader/config';
 import { MARKET_RULES, type SchoolView } from '../../../shared/trader/schoolMarket';
 import { isUnlimitedFor } from '../../../shared/unlimited';
+import { openCoinPouches } from '../_shared/coinPouch';
 import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { userIdFromToken } from '../_shared/signIn';
 import { PICTURE_GAP_MINUTES } from '../../../shared/trader/gallery';
@@ -145,6 +146,7 @@ Deno.serve(
       const row = data as Partial<SchoolView>;
       return { pushes: Array.isArray(row.pushes) ? row.pushes : [], news: Array.isArray(row.news) ? row.news : [] };
     },
+    openPouches: (player, version) => openCoinPouches((name, args) => admin.rpc(name, args), player, 'trader', version),
     async save(player, a) {
       const { data, error } = await admin.rpc('trader_save', {
         player,

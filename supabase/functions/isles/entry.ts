@@ -102,6 +102,8 @@ Deno.serve(
       if (error) console.error(`isles: news failed (${error.code ?? 'unknown'})`);
     },
     news: (player, since) => call<NewsItem[]>('isles_news_board', { player, since }),
+    openPouches: (player, expectedVersion) =>
+      call<{ amount: number; version: number } | null>('open_coin_pouches', { player, game: 'isles', expected_version: expectedVersion, per_unit: 1 }),
     start: (player, seed, island, day) => call<boolean>('record_isles_start', { player, seed, island, day }),
     saveTurn: (player, expectedVersion, island, day, turn) =>
       call<boolean>('record_isles_turn', {

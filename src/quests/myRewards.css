@@ -46,3 +46,5 @@
   color: #1b1036;
   background: #e6fbe9;
 }
+.myrewards__pouch { display: grid; gap: 0.4rem; justify-items: center; margin: 0.2rem 0 0; font-size: 0.9rem; }
+.myrewards__pouch .button--play { font-size: 0.95rem; padding: 0.45rem 0.9rem; min-height: 0; line-height: 1.2; }

@@ -151,6 +151,8 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const [villageDone, setVillageDone] = useState(false);
   /** The reply said a new season has just begun. */
   const [newSeasonNotice, setNewSeasonNotice] = useState(false);
+  /** The gold in a quest's Game Coins pouch, opened when the clan loaded (shown once). */
+  const [pouchGold, setPouchGold] = useState(0);
   /** The fame the last fight earned (the server's word), for the results screen. */
   const fameEarned = useRef(0);
   /** The last fight's best hit, for the results screen. */
@@ -205,6 +207,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const take = (reply: ServerReply) => {
     setServerSeed(reply.seed);
     if (reply.newSeason) setNewSeasonNotice(true);
+    if (reply.ok && reply.pouch) setPouchGold(reply.pouch.amount);
     if (waiting.current === 0) {
       setSession((previous) => (reply.state ? sessionFrom(reply.state, previous) : previous));
       // A fight is open on the server (this was opened after a refresh, or on another Chromebook): go straight back to it.
@@ -500,6 +503,12 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
         <div className="cq-celebrate" role="status">
           <p>A new season has begun! Your clan starts fresh. Your badges and the Hall of Legends stay forever.</p>
           <button type="button" className="cq-btn" onClick={() => setNewSeasonNotice(false)}>OK</button>
+        </div>
+      )}
+      {pouchGold > 0 && (
+        <div className="cq-celebrate" role="status">
+          <p>💰 Quest pouch: +{pouchGold.toLocaleString()} gold!</p>
+          <button type="button" className="cq-btn" onClick={() => setPouchGold(0)}>OK</button>
         </div>
       )}
       {notice && <p className="cq-note" role="alert">{notice}</p>}

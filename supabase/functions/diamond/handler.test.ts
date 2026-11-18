@@ -5,6 +5,7 @@ import { markQuestion, type MathsContext } from '../../../shared/maths/serverQue
 import { botLevel } from '../../../shared/diamond/bot';
 import { playLevel } from '../../../shared/diamond/engine';
 import { memoryServices, type MemoryOptions } from '../../../shared/diamond/memoryServices';
+import { newPlayer } from '../../../shared/diamond/progress';
 import { makeRandom } from '../../../shared/diamond/random';
 import { makeHandler } from './handler';
 
@@ -92,6 +93,45 @@ it('saves what its own replay says, never a total the browser sends', async () =
   const tooDear = await send('pupil-a', { action: 'levelStart', level: 2, boosts: ['strongWinch', 'luckyCharm', 'extraTime', 'rockBlaster'] });
   expect(tooDear.status).toBe(400);
   expect((await send('pupil-a', { action: 'levelStart', level: 2, boosts: ['luckyCharm', 'luckyCharm'] })).status).toBe(400);
+  // Quest Game Coins pouch: opened on load.
+  {
+    const { services } = setup();
+    const calls: Array<[string, number]> = [];
+    let waiting = 75;
+    const handler = makeHandler({
+      ...services,
+      userIdFor: async (t) => t,
+      async openPouches(player, version) {
+        calls.push([player, version]);
+        const mine = services.data.players[player];
+        if (!waiting || !mine || mine.version !== version) return null;
+        mine.player.coins += waiting;
+        mine.version++;
+        const amount = waiting;
+        waiting = 0;
+        return { amount, version: mine.version };
+      },
+    });
+    const send = async (who: string, body: object) => {
+      const res = await handler(new Request('https://x/diamond', { method: 'POST', headers: { Authorization: `Bearer ${who}` }, body: JSON.stringify(body) }));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (await res.json()) as Record<string, any>;
+    };
+    // Never played: nothing to open into.
+    expect(await send('pupil-new', { action: 'load' })).not.toHaveProperty('pouch');
+    expect(calls).toEqual([]);
+    services.data.players['pupil-a'] = { player: { ...services.data.players['pupil-new']?.player ?? newPlayer(), coins: 10 }, version: 3 };
+    const first = await send('pupil-a', { action: 'load' });
+    expect(calls).toEqual([['pupil-a', 3]]);
+    expect(first.pouch).toEqual({ amount: 75 });
+    expect(first.player.coins).toBe(85);
+    expect(services.data.players['pupil-a'].version).toBe(4);
+    // Nothing more waiting: unchanged and no message.
+    const second = await send('pupil-a', { action: 'load' });
+    expect(second).not.toHaveProperty('pouch');
+    expect(second.player.coins).toBe(85);
+    expect(calls[1]).toEqual(['pupil-a', 4]);
+  }
 });
 
 describe('the deployable file', () => {

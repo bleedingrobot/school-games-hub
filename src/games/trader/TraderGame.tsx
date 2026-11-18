@@ -111,6 +111,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
       setPrices(r.value.prices ?? []);
       setQueue([]);
       setProblem(null);
+      if (r.value.pouch) setNote(`💰 Quest pouch: +${r.value.pouch.amount.toLocaleString()} credits!`);
     } else setProblem({ kind: r.kind, message: r.message });
   }, [api]);
   useEffect(() => {
@@ -327,6 +328,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
     setQueue([]);
     setDraft(null);
     setProblem(null);
+    if (r.value.pouch) setNote(`💰 Quest pouch: +${r.value.pouch.amount.toLocaleString()} credits!`);
     return null;
   }
 

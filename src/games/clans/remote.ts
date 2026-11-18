@@ -42,7 +42,7 @@ export interface ServerClan {
 }
 
 export type ServerReply =
-  | { ok: true; replayed: boolean; seed: number; state: ServerClan | null; result: Result; newSeason?: true }
+  | { ok: true; replayed: boolean; seed: number; state: ServerClan | null; result: Result; newSeason?: true; pouch?: { amount: number } }
   | { ok: false; why: string; say: string; seed: number; state: ServerClan | null; newSeason?: true };
 
 /** Sends one action and gives the server's answer. Rejects if the server cannot be reached. */

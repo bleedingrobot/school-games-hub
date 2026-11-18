@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'game-coins-2026-11-19',
+    date: '2026-11-19',
+    emoji: '💰',
+    title: 'Coin pouches!',
+    text: 'Some class quests now give a pouch of game money. Play that game to open it!',
+    to: '/profile#rewards',
+  },
+  {
     id: 'bonus-turns-2026-11-19',
     date: '2026-11-19',
     emoji: '⏳',

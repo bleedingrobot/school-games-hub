@@ -8762,6 +8762,27 @@ function isUnlimitedFor(days, game, now = new Date()) {
 	return days[game] === nzToday(now);
 }
 //#endregion
+//#region supabase/functions/_shared/coinPouch.ts
+/** Opens waiting pouches. Null means nothing to open, the save moved on, or it could not be done: the game just carries on. */
+async function openCoinPouches(rpc, player, game, expectedVersion, perUnit = 1) {
+	const { data, error } = await rpc("open_coin_pouches", {
+		player,
+		game,
+		expected_version: expectedVersion,
+		per_unit: perUnit
+	});
+	if (error) {
+		console.error(`${game}: open_coin_pouches failed (${error.code ?? "unknown"})`);
+		return null;
+	}
+	const row = data;
+	if (!row || !Number.isInteger(row.amount) || !Number.isInteger(row.version) || row.amount <= 0) return null;
+	return {
+		amount: row.amount,
+		version: row.version
+	};
+}
+//#endregion
 //#region shared/maths/focusResults.ts
 /**
 * What the game servers tell the database about answers given while a maths focus ran (docs/MATHS-FOCUS-PLAN.md, "Stage F.8
@@ -11451,10 +11472,22 @@ function makeHandler(services) {
 					version = newVersion;
 					if (chosen && !await services.chooseSeason(player, chosen.choice, picture, chosen.name)) console.error("trader: the season choice could not be recorded");
 				}
+				const pouch = await services.openPouches(player, version);
+				if (pouch) {
+					game = {
+						...game,
+						t: {
+							...game.t,
+							credits: game.t.credits + pouch.amount
+						}
+					};
+					version = pouch.version;
+				}
 				const day = await dayQuestions();
 				if (day === "busy") return reply(503, { error: "We couldn't load your game just now." });
 				const questions = day ? day.questions.map((q, slot) => publicQuestion(q, slot)) : [];
 				return reply(200, {
+					...pouch ? { pouch: { amount: pouch.amount } } : {},
 					galaxySeed: school.seed,
 					season: school.season,
 					game,
@@ -11783,6 +11816,7 @@ Deno.serve(makeHandler({
 			news: Array.isArray(row.news) ? row.news : []
 		};
 	},
+	openPouches: (player, version) => openCoinPouches((name, args) => admin.rpc(name, args), player, "trader", version),
 	async save(player, a) {
 		const { data, error } = await admin.rpc("trader_save", {
 			player,

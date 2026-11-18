@@ -12569,6 +12569,27 @@ function solveParts(parts) {
 	} : null;
 }
 //#endregion
+//#region supabase/functions/_shared/coinPouch.ts
+/** Opens waiting pouches. Null means nothing to open, the save moved on, or it could not be done: the game just carries on. */
+async function openCoinPouches(rpc, player, game, expectedVersion, perUnit = 1) {
+	const { data, error } = await rpc("open_coin_pouches", {
+		player,
+		game,
+		expected_version: expectedVersion,
+		per_unit: perUnit
+	});
+	if (error) {
+		console.error(`${game}: open_coin_pouches failed (${error.code ?? "unknown"})`);
+		return null;
+	}
+	const row = data;
+	if (!row || !Number.isInteger(row.amount) || !Number.isInteger(row.version) || row.amount <= 0) return null;
+	return {
+		amount: row.amount,
+		version: row.version
+	};
+}
+//#endregion
 //#region shared/maths/focusResults.ts
 /**
 * What the game servers tell the database about answers given while a maths focus ran (docs/MATHS-FOCUS-PLAN.md, "Stage F.8
@@ -15595,14 +15616,35 @@ function makeHandler(services) {
 				});
 			}
 			const effects = applied.effects ?? {};
-			if (!applied.changed || !applied.state) return reply(200, {
-				ok: true,
-				replayed: false,
-				seed,
-				state: applied.state && shown(applied.state),
-				result: applied.result,
-				...applied.newSeason ? { newSeason: true } : {}
-			});
+			/** A quest's Game Coins pouch, opened when the clan is loaded (after any night's rest is saved): the same gold the database adds. */
+			const pouchFor = async (s, atVersion) => {
+				if (action.type !== "load" || !s) return null;
+				const opened = await services.openPouches(player, atVersion);
+				if (!opened) return null;
+				return {
+					state: {
+						...s,
+						clan: {
+							...s.clan,
+							gold: Math.min(s.clan.gold + opened.amount, 1e8)
+						}
+					},
+					version: opened.version,
+					pouch: { amount: opened.amount }
+				};
+			};
+			if (!applied.changed || !applied.state) {
+				const opened = await pouchFor(applied.state, version);
+				return reply(200, {
+					ok: true,
+					replayed: false,
+					seed,
+					state: opened ? shown(opened.state) : applied.state && shown(applied.state),
+					result: applied.result,
+					...opened ? { pouch: opened.pouch } : {},
+					...applied.newSeason ? { newSeason: true } : {}
+				});
+			}
 			const raid = effects.villageRaid;
 			const saved = raid ? target ? await services.saveRaid(player, version, {
 				targetId: target.id,
@@ -15642,12 +15684,14 @@ function makeHandler(services) {
 					const again = await services.load(player, "00000000-0000-4000-8000-000000000000");
 					if (again.ok) latest = again.value;
 				}
+				const opened = await pouchFor(applied.state, saved.value.version);
 				return reply(200, {
 					ok: true,
 					replayed: false,
 					seed,
-					state: shown(applied.state, latest),
+					state: shown(opened ? opened.state : applied.state, latest),
 					result: applied.result,
+					...opened ? { pouch: opened.pouch } : {},
 					...applied.newSeason ? { newSeason: true } : {}
 				});
 			}
@@ -15734,6 +15778,7 @@ Deno.serve(makeHandler({
 		state,
 		result
 	}),
+	openPouches: (player, version) => openCoinPouches((name, args) => admin.rpc(name, args), player, "clan-quest", version),
 	mates: (player) => call("clan_village_mates", { player }),
 	target: (player, targetId) => call("clan_raid_target", {
 		player,
