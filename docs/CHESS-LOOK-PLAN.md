@@ -3,7 +3,7 @@
 James, 18 Nov 2026: "a graphical upgrade for chess … a few different sets and boards and kids could unlock them in
 different ways … a few different backgrounds … full screen … flashy and entertaining animations."
 
-**Status:** stage 1 live (PR #578: full window, castle hall painting, all the move animations). Stage 2 live (PR #STAGE2:
+**Status:** stage 1 live (PR #578: full window, castle hall painting, all the move animations). Stage 2 live (PR #579:
 the 🎒 Chess Locker, 6 more backgrounds with their own particles, unlocks worked out on the server, the treasure chest).
 Stages 3 to 5 to do.
 
