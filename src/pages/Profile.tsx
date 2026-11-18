@@ -25,6 +25,7 @@ import type { MyTrophy } from '../data/trophies';
 import { gameLabel } from '../games/registry';
 import { useThemeTrial } from '../theme/hubTheme';
 import { TrophyCabinet, useMyTrophies } from '../trophies/TrophyCabinet';
+import { HeroTitleLine, TitlePicker, useMyTitles } from '../quests/HeroTitles';
 import { MyRewards, useMyQuestRewards } from '../quests/MyRewards';
 import './profile.css';
 
@@ -77,7 +78,10 @@ export function Profile() {
   const trophyCount = cabinet.data?.trophies.length;
   const questRewards = useMyQuestRewards();
 
-  const [editing, setEditing] = useState<'look' | 'name' | null>(null);
+  const [editing, setEditing] = useState<'look' | 'name' | 'title' | null>(null);
+  // Spending a Hero Title reward: its id. Changing which title I wear: undefined.
+  const [titleReward, setTitleReward] = useState<string | undefined>();
+  const myTitles = useMyTitles(profile?.avatar);
   // My trophies starts open: they are the hub's top rewards.
   const [open, setOpen] = useState<ReadonlySet<FoldId>>(() => new Set(['trophies']));
   const toggle = (id: FoldId) =>
@@ -135,6 +139,7 @@ export function Profile() {
         <AvatarImage avatar={profile?.avatar} size={112} label="Your avatar" />
         <div className="profile-top__who">
           <h2 className="profile-top__name">{profile?.display_name}</h2>
+          <HeroTitleLine avatar={profile?.avatar} />
           {!madeAvatar && <p className="profile-top__nudge">You haven’t made your avatar yet. Pick a face, hair and colours!</p>}
           <ScrollNote />
           <div className="profile-top__buttons">
@@ -154,6 +159,19 @@ export function Profile() {
             >
               ✏️ Change my name
             </button>
+            {(myTitles?.owned.length ?? 0) > 0 && (
+              <button
+                type="button"
+                className="button button--light-outline"
+                aria-expanded={editing === 'title' && titleReward === undefined}
+                onClick={() => {
+                  setTitleReward(undefined);
+                  setEditing(editing === 'title' && titleReward === undefined ? null : 'title');
+                }}
+              >
+                🏷️ My titles
+              </button>
+            )}
           </div>
         </div>
         <div className="profile-top__out">
@@ -168,6 +186,18 @@ export function Profile() {
         <LookMaker pictures={cabinet.data?.trophies.filter((t) => t.kind === 'picture') ?? null} onClose={() => setEditing(null)} />
       )}
       {editing === 'name' && <NamePicker onClose={() => setEditing(null)} />}
+      {editing === 'title' && (
+        <TitlePicker
+          key={titleReward ?? 'wear'}
+          rewardId={titleReward}
+          onClose={() => setEditing(null)}
+          onDone={() => {
+            setEditing(null);
+            questRewards.reload();
+            void refreshProfile();
+          }}
+        />
+      )}
 
       <Fold
         id="trophies"
@@ -190,10 +220,12 @@ export function Profile() {
           rewards={questRewards.rewards}
           failed={questRewards.failed}
           onUse={(r) => {
-            if (r.reward === 'scroll') {
-              setEditing('name');
-              window.scrollTo?.({ top: 0, behavior: 'smooth' });
-            }
+            if (r.reward === 'scroll') setEditing('name');
+            else if (r.reward === 'title') {
+              setTitleReward(r.id);
+              setEditing('title');
+            } else return;
+            window.scrollTo?.({ top: 0, behavior: 'smooth' });
           }}
         />
       </Fold>

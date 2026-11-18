@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'hero-titles-2026-11-19',
+    date: '2026-11-19',
+    emoji: '🏷️',
+    title: 'Hero Titles!',
+    text: 'Some class quests now give a Hero Title, like “Moon Walker”, to show under your name.',
+    to: '/profile#rewards',
+  },
+  {
     id: 'quest-rewards-2026-11-19',
     date: '2026-11-19',
     emoji: '🎁',

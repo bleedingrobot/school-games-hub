@@ -101,10 +101,35 @@ export interface MyQuestReward {
   gotAt: string;
   /** When it was used (a Rename Scroll: when its name was asked for). Null: still waiting to be used. */
   usedAt: string | null;
+  /** A used Hero Title: the title it became. */
+  title?: string | null;
 }
 
 export async function fetchMyQuestRewards(): Promise<MyQuestReward[]> {
   const { data, error } = await supabase.rpc('my_quest_rewards');
   if (error) fail(error, 'We couldn’t load your rewards.');
   return (data ?? []) as MyQuestReward[];
+}
+
+/** Spends a reward. Hero Title: { title: id }. */
+export async function spendQuestReward(rewardId: string, choice: Record<string, string>): Promise<void> {
+  const { error } = await supabase.rpc('use_quest_reward', { reward_id: rewardId, choice });
+  if (error) fail(error, 'We couldn’t use that reward. Please try again.');
+}
+
+export interface MyTitles {
+  owned: string[];
+  wearing: string | null;
+}
+
+export async function fetchMyTitles(): Promise<MyTitles> {
+  const { data, error } = await supabase.rpc('my_titles');
+  if (error) fail(error, 'We couldn’t load your titles.');
+  return (data ?? { owned: [], wearing: null }) as MyTitles;
+}
+
+/** Wears one of my titles, or none (null). */
+export async function setMyTitle(title: string | null): Promise<void> {
+  const { error } = await supabase.rpc('set_my_title', { title });
+  if (error) fail(error, 'We couldn’t change your title. Please try again.');
 }

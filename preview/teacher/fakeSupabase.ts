@@ -107,7 +107,7 @@ Object.assign(settingsRow, {
 
 // ---- Student scenes use the home page's own fake -------------------------------------------------------------------------------
 const PROFILE_TEACHER = { id: 'me', display_name: 'Sneaky Dragon 28', role: 'teacher', school_admin: false, avatar: {} };
-const PROFILE_STUDENT = { id: 'me', display_name: 'Speedy Otter 27', role: 'student', school_admin: false, avatar: { kind: 'cat', bg: '#9b6bff' } };
+const PROFILE_STUDENT = { id: 'me', display_name: 'Speedy Otter 27', role: 'student', school_admin: false, avatar: { kind: 'cat', bg: '#9b6bff', ...(new URLSearchParams(location.search).get('quest') === 'won' ? { title: 'moon-walker' } : {}) } };
 const profile = SCENE === 'student' ? PROFILE_STUDENT : PROFILE_TEACHER;
 
 const world = SCENE === 'student' ? newPupil() : busyPupil();
@@ -252,9 +252,14 @@ const answers: Record<string, (a: Row) => unknown> = {
     QUEST === 'won'
       ? [
           { id: 'r1', reward: 'scroll', kind: 'trader', gotAt: new Date().toISOString(), usedAt: null },
+          { id: 'r2', reward: 'title', kind: 'marble-total', gotAt: new Date().toISOString(), usedAt: null },
           { id: 'r0', reward: 'scroll', kind: 'lord', gotAt: qDay(-8), usedAt: qDay(-7) },
+          { id: 'r3', reward: 'title', kind: 'lord', gotAt: qDay(-15), usedAt: qDay(-15), title: 'moon-walker' },
         ]
       : [],
+  my_titles: () => ({ owned: QUEST === 'won' ? ['moon-walker'] : [], wearing: QUEST === 'won' ? 'moon-walker' : null }),
+  use_quest_reward: () => null,
+  set_my_title: () => null,
   my_maths_focus: () => AUTO,
   my_ladder: () => ({ facts: [], settings: {}, focus: AUTO }),
 };

@@ -5,12 +5,14 @@
 import { useEffect, useState } from 'react';
 import { questKind } from '../../shared/quests/kinds';
 import { questReward, type QuestReward } from '../../shared/quests/rewards';
+import { heroTitle } from '../../shared/quests/titles';
 import { fetchMyQuestRewards, type MyQuestReward } from '../data/quests';
 import './myRewards.css';
 
 export function useMyQuestRewards() {
   const [rewards, setRewards] = useState<MyQuestReward[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const [round, setRound] = useState(0);
   useEffect(() => {
     let live = true;
     fetchMyQuestRewards()
@@ -19,8 +21,8 @@ export function useMyQuestRewards() {
     return () => {
       live = false;
     };
-  }, []);
-  return { rewards, failed, unused: rewards?.filter((r) => !r.usedAt).length ?? 0 };
+  }, [round]);
+  return { rewards, failed, unused: rewards?.filter((r) => !r.usedAt).length ?? 0, reload: () => setRound((n) => n + 1) };
 }
 
 const USE_WORDS: Record<QuestReward, string> = {
@@ -67,7 +69,8 @@ export function MyRewards({ rewards, failed, onUse }: { rewards: MyQuestReward[]
           <ul>
             {used.map((r) => (
               <li key={r.id}>
-                {questReward(r.reward)?.emoji} {questReward(r.reward)?.name} · {questKind(r.kind)?.name ?? ''}
+                {questReward(r.reward)?.emoji} {questReward(r.reward)?.name}
+                {r.title && heroTitle(r.title) ? `: ${heroTitle(r.title)?.name}` : ''} · {questKind(r.kind)?.name ?? ''}
               </li>
             ))}
           </ul>
