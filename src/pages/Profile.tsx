@@ -219,6 +219,7 @@ export function Profile() {
         <MyRewards
           rewards={questRewards.rewards}
           failed={questRewards.failed}
+          onChanged={questRewards.reload}
           onUse={(r) => {
             if (r.reward === 'scroll') setEditing('name');
             else if (r.reward === 'title') {

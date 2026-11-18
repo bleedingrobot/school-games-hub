@@ -32,3 +32,17 @@
 @media (prefers-reduced-motion: reduce) {
   .myrewards__card { animation: none; }
 }
+.myrewards__ask { display: grid; gap: 0.4rem; justify-items: center; }
+.myrewards__ask p { margin: 0; font-size: 0.9rem; }
+.myrewards__today {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.8rem;
+  font-weight: 700;
+  color: #1b1036;
+  background: #e6fbe9;
+}
