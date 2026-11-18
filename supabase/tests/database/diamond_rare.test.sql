@@ -1,5 +1,5 @@
 -- Diamond Drop rare gems (migration 20261118003400_diamond_rare_gems.sql): the new counts, the Rare Gem Cup's three steps,
--- the Phoenix Gem picture, and that nothing is given twice.
+-- the Fablet Rose picture, and that nothing is given twice.
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -30,13 +30,13 @@ select is(pg_temp.cup(), 1, 'three kinds: a bronze Rare Gem Cup');
 
 update public.diamond_players set state = pg_temp.rare('moonstone', 'sunstone', 'frostCrystal', 'rainbowOpal', 'phoenixGem') where player = '00000000-0000-0000-0000-00000000000a';
 select is(pg_temp.cup(), 2, 'five kinds: silver');
-select is(pg_temp.has('diamond-phoenix'), 1, 'the Phoenix Gem gives its picture');
-select is(public.diamond_counts('00000000-0000-0000-0000-00000000000a') -> 'diamond_phoenix', '2'::jsonb, '... and counts for Phoenix Finder');
+select is(pg_temp.has('diamond-phoenix'), 1, 'the Fablet Rose gives its picture');
+select is(public.diamond_counts('00000000-0000-0000-0000-00000000000a') -> 'diamond_phoenix', '2'::jsonb, '... and counts for Fablet Rose Finder');
 
 update public.diamond_players set state = pg_temp.rare('moonstone', 'sunstone', 'frostCrystal', 'rainbowOpal', 'dragonEye', 'galaxyGem', 'phoenixGem') where player = '00000000-0000-0000-0000-00000000000a';
 select is(pg_temp.cup(), 3, 'all seven: gold');
 update public.diamond_players set version = version + 1, state = state where player = '00000000-0000-0000-0000-00000000000a';
-select is(pg_temp.has('diamond-phoenix'), 1, 'saving again gives no second Phoenix picture');
+select is(pg_temp.has('diamond-phoenix'), 1, 'saving again gives no second Fablet Rose picture');
 
 -- A gem page with a broken count is not counted.
 select is(public.diamond_rare_kinds('{"lifetime": {"rare": {"moonstone": {"count": "lots"}, "sunstone": {"count": 0}}}}'), 0, 'broken or empty pages count as nothing');

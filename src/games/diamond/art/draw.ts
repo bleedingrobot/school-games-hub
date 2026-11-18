@@ -75,7 +75,7 @@ export const GEM_LOOK: Record<GemId, { fill: string; dark: string; light: string
   rainbowOpal: { fill: '#f2e9ff', dark: '#6d4fa3', light: '#ffffff', shape: 'an oval full of rainbow colours' },
   dragonEye: { fill: '#3fd16b', dark: '#0e4a22', light: '#e8ff7a', shape: 'an eye with a slit' },
   galaxyGem: { fill: '#3b1c8f', dark: '#120633', light: '#c9b6ff', shape: 'a round ball full of stars' },
-  phoenixGem: { fill: '#ff7a1a', dark: '#7a1600', light: '#fff07a', shape: 'a flame with wings' },
+  phoenixGem: { fill: '#ff4f8b', dark: '#7a0f3a', light: '#ffe9a8', shape: 'a crystal rose' },
 };
 
 /** The glow colours of each rare tier: [main, bright]. */
@@ -270,20 +270,26 @@ export function drawGem(ctx: Ctx, gem: GemId, x: number, y: number, r: number, o
       break;
     }
     case 'phoenixGem': {
-      // Wings either side, then a flame-shaped gem in the middle.
+      // The Fablet Rose (its id stays phoenixGem): a gold stem and two leaves, then rings of petals round a gem heart.
+      ctx.strokeStyle = opts.shadow ? fill : '#d9a520'; ctx.lineWidth = Math.max(1.5, r * 0.1);
+      ctx.beginPath(); ctx.moveTo(x, y + r * 0.4); ctx.lineTo(x, y + r * 1.05); ctx.stroke();
       for (const side of [-1, 1]) {
-        ctx.beginPath(); ctx.moveTo(x + side * r * 0.3, y + r * 0.1);
-        ctx.quadraticCurveTo(x + side * r * 1.2, y - r * 0.2, x + side * r * 1.15, y - r * 0.85);
-        ctx.quadraticCurveTo(x + side * r * 0.9, y - r * 0.3, x + side * r * 0.3, y - r * 0.25); ctx.closePath();
-        ctx.fillStyle = opts.shadow ? fill : '#ffb020'; ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(x + side * r * 0.32, y + r * 0.78, r * 0.3, r * 0.13, side * -0.5, 0, Math.PI * 2);
+        ctx.fillStyle = opts.shadow ? fill : '#2fbf6a'; ctx.fill();
       }
-      ctx.beginPath(); ctx.moveTo(x, y - r);
-      ctx.bezierCurveTo(x + r * 0.25, y - r * 0.55, x + r * 0.65, y - r * 0.2, x + r * 0.5, y + r * 0.35);
-      ctx.arc(x, y + r * 0.35, r * 0.5, 0, Math.PI);
-      ctx.bezierCurveTo(x - r * 0.65, y - r * 0.2, x - r * 0.25, y - r * 0.55, x, y - r); ctx.closePath();
-      if (!opts.shadow) { const g = ctx.createLinearGradient(x, y - r, x, y + r); g.addColorStop(0, '#fff07a'); g.addColorStop(0.5, fill); g.addColorStop(1, '#c81e1e'); ctx.fillStyle = g; } else ctx.fillStyle = fill;
-      ctx.fill(); ctx.stroke();
-      ctx.fillStyle = light; ctx.beginPath(); ctx.ellipse(x, y + r * 0.2, r * 0.16, r * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = dark; ctx.lineWidth = Math.max(1, r * 0.06);
+      for (const [ring, size, petals, turn] of [[0.55, 0.42, 6, 0], [0.32, 0.34, 5, 0.6]] as const) {
+        for (let i = 0; i < petals; i++) {
+          const a = (i / petals) * Math.PI * 2 + turn;
+          const px = x + Math.cos(a) * r * ring, py = y - r * 0.05 + Math.sin(a) * r * ring * 0.85;
+          ctx.beginPath(); ctx.ellipse(px, py, r * size, r * size * 0.8, a, 0, Math.PI * 2);
+          if (!opts.shadow) { const g = ctx.createRadialGradient(x, y, r * 0.1, px, py, r * size); g.addColorStop(0, fill); g.addColorStop(0.7, '#d81b60'); g.addColorStop(1, '#ffd36b'); ctx.fillStyle = g; } else ctx.fillStyle = fill;
+          ctx.fill(); ctx.stroke();
+        }
+      }
+      ctx.beginPath(); ctx.arc(x, y - r * 0.05, r * 0.24, 0, Math.PI * 2);
+      ctx.fillStyle = opts.shadow ? fill : '#ff9ec4'; ctx.fill(); ctx.stroke();
+      ctx.fillStyle = light; ctx.beginPath(); ctx.ellipse(x - r * 0.07, y - r * 0.12, r * 0.08, r * 0.12, -0.4, 0, Math.PI * 2); ctx.fill();
       break;
     }
   }

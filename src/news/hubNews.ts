@@ -26,7 +26,7 @@ export const HUB_NEWS: NewsItem[] = [
     date: '2026-11-18',
     emoji: '💎',
     title: 'Rare gems in Diamond Drop',
-    text: 'A pupil’s idea! Seven sparkly rare gems hide deep down. Can you find the 1% Phoenix Gem?',
+    text: 'A pupil’s idea! Seven sparkly rare gems hide deep down. Can you find the 1% Fablet Rose?',
     game: 'diamond',
   },
   {
