@@ -11,11 +11,12 @@
  *   bonds-100    bond100:tens  bond100:fives  bond100:any  bond100:take
  *   bonds-1000   bond1000:hundreds  bond1000:fifties  bond1000:tens  bond1000:take
  *   times-tens   times:tens  times:hundreds  times:tens-tens  times:shift  times:powers  times:div-tens
- *   factor-pairs factor:pair  factor:count  factor:largest  factor:common
+ *   factor-pairs factor:pair  factor:pick (factor:count, factor:largest and factor:common are no longer asked)
  *   squares-cubes square:of  cube:of  square:root  cube:root  square:next
  */
 import { int, isInt, pickOne, show, speak, type Family } from '../banded';
 import { oneKey, readNumber, withMistakes, type Named, type Parser } from './generatedKit';
+import { goodPick, pick, rollPick } from './pickKit';
 
 const range = (from: number, to: number, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
 const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
@@ -172,7 +173,7 @@ const parseTimes: Parser = (parts) => {
 
 // ---------------------------------------------------------------- factor pairs
 
-const PAIR_NUMBERS = [12, 16, 18, 20, 24, 28, 30, 32, 36, 40, 42, 45, 48, 50, 54, 56, 60, 63, 64, 72, 80, 81, 84, 90, 96, 100];
+const PAIR_NUMBERS = [12, 14, 15, 16, 18, 20, 21, 24, 27, 28, 30, 32, 35, 36, 40, 42, 45, 48, 50, 54, 56, 60, 63, 64, 72, 80, 81, 84, 90, 96, 100];
 const COUNT_NUMBERS = [6, 8, 10, 12, 14, 15, 16, 18, 20, 21, 24, 28, 30, 32, 36, 40, 42, 45, 48];
 const LARGEST_NUMBERS = [6, 8, 9, 10, 12, 14, 15, 16, 18, 20, 21, 24, 25, 27, 28, 30, 32, 35, 36, 40, 42, 45, 48, 49, 50, 54, 56, 60, 63, 64, 72, 81];
 const factorTags = ['MS.Y5.NUM.NS.P2'];
@@ -180,6 +181,39 @@ const factorTags = ['MS.Y5.NUM.NS.P2'];
 const smallestPrime = (n: number) => range(2, n).find((d) => n % d === 0)!;
 /** Two numbers whose biggest shared factor is `g`, found as g × a and g × b with a and b sharing nothing. */
 const commonPairs = range(2, 12).flatMap((g) => range(2, 6).flatMap((a) => range(a + 1, 7).filter((b) => gcd(a, b) === 1 && g * b <= 60).map((b) => [g * a, g * b])));
+
+/** "3 and 7": how a pair is shown as a choice. */
+const pairLabel = (a: number, b: number) => `${Math.min(a, b)} and ${Math.max(a, b)}`;
+
+/**
+ * The wrong pairs for "Which is a factor pair of n?", from named mistakes: a pair that adds to n, a pair one off, a pair of a
+ * number next to n, and two factors of n that don't multiply to it. None of them multiplies to n.
+ */
+function wrongPairs(n: number, a: number): Record<string, string> {
+  const b = n / a;
+  const named: Record<string, [number, number]> = {
+    'adds to the number': [a, n - a],
+    'one too many': [a, b + 1],
+    'one too few': [a, b - 1],
+    'the other one off': [a + 1, b],
+  };
+  for (const near of [n - 1, n + 1, n - 2, n + 2]) {
+    const d = divisorsOf(near).find((x) => x >= 2 && x * x <= near && x !== a);
+    if (d) {
+      named[`a pair of ${near}`] = [d, near / d];
+      break;
+    }
+  }
+  const factors = divisorsOf(n).filter((x) => x >= 2 && x < n);
+  for (const x of factors) {
+    const y = factors.find((f) => f > x && x * f !== n);
+    if (y) {
+      named['two factors that do not make it'] = [x, y];
+      break;
+    }
+  }
+  return Object.fromEntries(Object.entries(named).filter(([, [x, y]]) => x >= 1 && y >= 1 && x * y !== n).map(([name, [x, y]]) => [name, pairLabel(x, y)]));
+}
 
 const factorFamilies: Family[] = [
   oneKey(
@@ -199,6 +233,22 @@ const factorFamilies: Family[] = [
         { parts, spoken: `${a} and what are a factor pair of ${n}?`, answer, fact: `${a} × ${answer} = ${n}, so ${a} and ${answer} are a factor pair of ${n}` },
         { 'took away': n - a, 'added': n + a, 'one too many': answer + 1, 'one too few': answer - 1, 'the number itself': n },
       );
+    },
+  ),
+  oneKey(
+    'factor:pick',
+    'Picking a factor pair (which pair makes 21?)',
+    factorTags,
+    4,
+    (_k, r) => {
+      const n = pickOne(r, PAIR_NUMBERS);
+      return [n, pickOne(r, divisorsOf(n).filter((d) => d >= 2 && d * d <= n)), ...rollPick(r)];
+    },
+    (_k, [n, a, slot, salt]) => {
+      if (!PAIR_NUMBERS.includes(n) || !isInt(a, 2, n - 1) || n % a !== 0 || a * a > n || !goodPick(slot, salt)) return null;
+      const right = pairLabel(a, n / a);
+      const parts = ['Which is a factor pair of', `${n}?`];
+      return pick({ parts, spoken: `Which is a factor pair of ${n}?`, fact: `${a} × ${n / a} = ${n}, so ${right} are a factor pair of ${n}` }, right, wrongPairs(n, a), { slot, salt });
     },
   ),
   oneKey(
@@ -409,7 +459,9 @@ export const PLACE_SKILL_KEYS = {
   'bonds-100': ['bond100:tens', 'bond100:fives', 'bond100:any', 'bond100:take'],
   'bonds-1000': ['bond1000:hundreds', 'bond1000:fifties', 'bond1000:tens', 'bond1000:take'],
   'times-tens': ['times:tens', 'times:hundreds', 'times:tens-tens', 'times:shift', 'times:powers', 'times:div-tens'],
-  'factor-pairs': ['factor:pair', 'factor:count', 'factor:largest', 'factor:common'],
+  // Two styles only (James, 19 Nov 2026): "3 and ? are a factor pair of 21" and picking the pair. The other factor types stay in the
+  // pack so old records and questions still read, but no skill asks them.
+  'factor-pairs': ['factor:pair', 'factor:pick'],
   'squares-cubes': ['square:of', 'cube:of', 'square:root', 'cube:root', 'square:next'],
 };
 

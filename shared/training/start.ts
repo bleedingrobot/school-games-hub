@@ -4,13 +4,15 @@
  * already behind them, so Training doesn't teach it again. Kept out of session.ts so the training server function doesn't
  * bundle the ladder.
  */
+import { CAMPAIGN_STEPS } from '../maths/config';
 import { LADDER } from '../maths/ladder';
 import { floorRank, type LadderInfo } from '../maths/place';
 
 /** How many Training steps (times-table families, in order) the starting place has put behind the student. */
 export function trainingPassedSteps(info: LadderInfo): number {
   const floor = floorRank(info);
-  return LADDER.filter((skill, index) => skill.stage === 'times-tables' && index < floor).length;
+  // Each table is its own ladder skill now; a Training step (×3, ×4, ×8) is behind them once all its tables are.
+  return CAMPAIGN_STEPS.filter((_, step) => LADDER.every((skill, index) => skill.tablesStep !== step || index < floor)).length;
 }
 
 /** The class wants the warm-up and this student hasn't done it yet (teachers never have to). */

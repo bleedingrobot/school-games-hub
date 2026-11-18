@@ -14,7 +14,7 @@ import { labelValue } from './skillPacks/pickKit';
 
 // F.6's skills, and M.5's decimal and fraction bonds (docs/BOND-MATCH-PLAN.md), which are built the same way.
 const NEW_SKILLS = ['fraction-bonds', 'decimal-bonds', 'unit-fraction-of', 'tenths', 'add-tenths', 'decimal-equivalents', 'percent-basic', 'fraction-of', 'times-decimals', 'equivalent-fractions', 'fdp-equivalents', 'percent-of', 'whole-from-fraction'] as const;
-const KEYS = NEW_SKILLS.flatMap((id) => GENERATED_SKILL_KEYS[id]);
+const KEYS = [...NEW_SKILLS.flatMap((id) => GENERATED_SKILL_KEYS[id]), 'factor:pick'];
 const pack = generatedPack();
 
 // ---------------------------------------------------------------- separate arithmetic
@@ -71,7 +71,7 @@ function oracle(key: string, parts: string[]): number {
 }
 
 const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
-const PICK_KEYS = new Set(KEYS.filter((k) => /^(pct:to-fraction|tenth:to-fraction|tenth:to-decimal|deceq:pick|deceq:to-fraction|deceq:compare|equiv:same-as|equiv:simplify|fdp:pct-to-frac|fdp:match|bondf1:small|bondf1:big|bondf1:take)$/.test(k)));
+const PICK_KEYS = new Set(KEYS.filter((k) => /^(pct:to-fraction|tenth:to-fraction|tenth:to-decimal|deceq:pick|deceq:to-fraction|deceq:compare|equiv:same-as|equiv:simplify|fdp:pct-to-frac|fdp:match|bondf1:small|bondf1:big|bondf1:take|factor:pick)$/.test(k)));
 
 describe('fractions, decimals and percentages', () => {
   it('every roll of every question type is right by separate arithmetic and rebuilt from its numbers', () => {
@@ -114,7 +114,15 @@ describe('fractions, decimals and percentages', () => {
         // The right choice is worth what the question says.
         const right = labels[q!.answer];
         const shown = q!.parts.filter((p) => /^[\d.]+(\/\d+)?%?$/.test(p));
-        if (key === 'deceq:compare') {
+        if (key === 'factor:pick') {
+          // "Which is a factor pair of 48?": the right pair multiplies to 48 and no wrong pair does.
+          const n = parseInt(q!.parts[1], 10);
+          const product = (label: string) => label.split(' and ').map(Number).reduce((x, y) => x * y);
+          expect(product(right), where).toBe(n);
+          labels.forEach((label, k) => {
+            if (k !== q!.answer) expect(product(label), `${where} ${label}`).not.toBe(n);
+          });
+        } else if (key === 'deceq:compare') {
           const [a, b] = labels.map(worth);
           expect(worth(right), where).toBe(Math.max(a, b));
         } else if (key === 'equiv:simplify') {
