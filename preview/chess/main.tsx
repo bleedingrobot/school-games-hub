@@ -11,6 +11,9 @@ import { AuthContext, type AuthState } from '../../src/auth/AuthContext';
 import { replay } from '../../shared/chess/rules';
 import { Board } from '../../src/games/chess/Board';
 import { ChessPlay } from '../../src/games/chess/ChessPlay';
+
+// Try a bot with #x&bot=easy or #x&bot=medium (Very Easy if not given).
+const previewBot = (['very-easy', 'easy', 'medium'] as const).find((b) => location.hash.includes(`bot=${b}`)) ?? 'very-easy';
 import { ChessWindow } from '../../src/games/chess/ChessWindow';
 import { checkUnlocks } from '../../src/games/chess/looks';
 import { SoundProvider } from '../../src/sound';
@@ -75,8 +78,8 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <SoundProvider>
       <AuthContext.Provider value={auth}>
-        <MemoryRouter initialEntries={['/chess?bot=very-easy']}>
-          {location.hash.startsWith('#show') ? <Show /> : <ChessPlay level="very-easy" />}
+        <MemoryRouter initialEntries={[`/chess?bot=${previewBot}`]}>
+          {location.hash.startsWith('#show') ? <Show /> : <ChessPlay level={previewBot} />}
         </MemoryRouter>
       </AuthContext.Provider>
     </SoundProvider>

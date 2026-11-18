@@ -19,6 +19,7 @@ import { useSound } from '../../sound';
 import { AchievementPop } from '../../achievements/AchievementPop';
 import { BOT_LEVELS, type BotLevel } from '../types';
 import { Board } from './Board';
+import { BotPortrait } from './BotPortrait';
 import { ChessWindow } from './ChessWindow';
 import { checkUnlocks } from './looks';
 import { Captured, figurine } from './moveText';
@@ -26,11 +27,6 @@ import { BOT_DESCRIPTIONS, chooseBotMove, randomishMove, type ChessEngine } from
 import { playSound, type GameSound } from '../sounds';
 import { startBrowserStockfish } from './stockfish';
 
-const BOT_EMOJI: Record<BotLevel, string> = {
-  'very-easy': '🐣',
-  easy: '🤖',
-  medium: '🧠',
-};
 /** After a checkmate, the king topples and fireworks go off before the result card shows. */
 const MATE_PAUSE_MS = 2200;
 /** The bot always waits at least this long, so its moves don't appear instantly. */
@@ -276,10 +272,12 @@ export function ChessPlay({ level }: { level: BotLevel }) {
               value={level}
               onChange={(next) => setParams({ bot: next }, { replace: true })}
             />
-            <p className="chess-setup__bot">
-              <span aria-hidden="true">{BOT_EMOJI[level]}</span> <strong>{levelInfo.label} bot:</strong>{' '}
-              {BOT_DESCRIPTIONS[level]}
-            </p>
+            <div className="chess-setup__bot has-pic">
+              <BotPortrait key={level} level={level} big />
+              <p>
+                <strong>{levelInfo.label} bot:</strong> {BOT_DESCRIPTIONS[level]}
+              </p>
+            </div>
             <fieldset className="level-picker">
               <legend>Your pieces</legend>
               <div className="level-picker__options">
@@ -400,8 +398,8 @@ export function ChessPlay({ level }: { level: BotLevel }) {
 
         <aside className="chess-game__side" aria-label="Game information">
           <div className={`player-card${botsTurn ? ' is-turn' : ''}`}>
-            <span className="player-card__bot" aria-hidden="true">
-              {BOT_EMOJI[game.level]}
+            <span className="player-card__bot has-pic" aria-hidden="true">
+              <BotPortrait level={game.level} thinking={botsTurn && !judged} />
             </span>
             <div title={BOT_DESCRIPTIONS[game.level]}>
               <strong>{levelInfo.label} bot</strong>

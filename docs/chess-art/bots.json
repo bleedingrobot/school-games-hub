@@ -1,0 +1,43 @@
+{
+  "_about": "Chess bot portraits (docs/CHESS-LOOK-PLAN.md stage 5): the Very Easy chick, the Easy robot and the Medium wizard, cut out of white. Paint: python scripts/game_art.py docs/chess-art/bots.json paint ~/dragon-art-inbox/chess-bots",
+  "game": "chess",
+  "comfy": "http://127.0.0.1:8188",
+  "filename_prefix": "chess/bot",
+  "style": "a",
+  "styles": {
+    "a": "Hand-painted fantasy storybook character portrait for a children's game, rich glowing colours, soft painterly light, bold clean readable shape, friendly and full of personality, for children aged 8 to 11, no writing, no letters, no numbers. "
+  },
+  "inbox": "~/dragon-art-inbox/chess-bots",
+  "picks": "docs/chess-art/bots-picks.json",
+  "art_dir": "src/games/chess/art",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "bot/very-easy",
+      "prompt": "A cute fluffy little yellow baby chick that has just hatched, a broken half eggshell sitting on its head like a hat, big shiny happy eyes, tiny orange beak open in a giggle, hugging a small wooden chess pawn a bit wobbly, sweet and silly. Upper body, facing the viewer, the whole character and the chess piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [1024, 1024],
+      "kind": "cut",
+      "folder": "bot",
+      "file": "very-easy",
+      "max": 384
+    },
+    {
+      "name": "bot/easy",
+      "prompt": "A cheerful friendly little round robot made of shiny teal and silver metal, a glowing screen face with two big round blue eyes and a smile, a springy antenna with a glowing ball on top, holding up a white chess knight piece proudly. Upper body, facing the viewer, the whole character and the chess piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [1024, 1024],
+      "kind": "cut",
+      "folder": "bot",
+      "file": "easy",
+      "max": 384
+    },
+    {
+      "name": "bot/medium",
+      "prompt": "A wise kind old wizard with a long fluffy white beard, twinkling eyes and rosy cheeks, a tall pointed deep purple hat and robe covered in little gold stars and moons, holding up a glowing magical chess queen piece in one hand, a knowing smile. Upper body, facing the viewer, the whole character and the chess piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [1024, 1024],
+      "kind": "cut",
+      "folder": "bot",
+      "file": "medium",
+      "max": 384
+    }
+  ]
+}
