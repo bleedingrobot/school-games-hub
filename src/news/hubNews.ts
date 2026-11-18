@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'achievement-words-2026-11-19',
+    date: '2026-11-19',
+    emoji: '🏅',
+    title: 'Achievements now say how to get them',
+    text: 'Every achievement now tells you what to do to earn it. See what you’re close to!',
+    to: '/profile#achievements',
+  },
+  {
     id: 'gemkeep-red-blast-2026-11-18',
     date: '2026-11-18',
     emoji: '🔺',

@@ -4,7 +4,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(64);
+select plan(65);
 -- Homework achievements (migration 20261113000100) depend on the time of day a game is saved; keep them out of this file's
 -- points so it gives the same answer whenever it runs.
 alter table public.scored_games disable trigger homework_when_scored;
@@ -76,6 +76,8 @@ select throws_ok($$ select public.award_achievements(auth.uid(), 'chess', now())
   'a student can''t hand out achievements');
 select throws_ok($$ update public.bot_games set result = 'won' $$, '42501', null, 'a student can''t change a saved game');
 select is((select count(*)::int from public.achievement_types), 236, 'students can read the achievement list');  -- (+ Weekly class quests' 5) (+ Homework's 7) 83 + Archery's 10 + Kingdom Keeper's 6 + Clan Quest's Master Builder and Giant Slayer + Diamond Drop's 6 + Maths Monsters quests' 5 + Sky Isles' 8 + Kiwi's Beanstalk's 6 + Hop's Glow-worm Pond's 6 + Pipi's Hidden Shells' 6 + Penguin Pairs' 6 + Weka's Stepping Stones' 6 + Tūī's Ten Tree's 5 + Royal Decree's 6 + Pigeon's 5 + Parrot's See-saw's 5 + Lizard's Bundles' 5 + Swamp Hen's Reed Rows' 5 + Robin's Berry Basket's 5 + Toon Flap's 10 + Marble Rush's 3 + Bond Match's 3 + Glyph Gates' 9 + Order Up's 8 + Diamond Drop rare gems' 5
+select is((select count(*)::int from public.achievement_types where how is null), 0,
+  'every achievement says how to earn it (achievement_types.how, docs/game-guide/5-server-and-saving.md)');
 
 -- ---- Signed-out visitors and outsiders see nothing ----
 select pg_temp.act_as_anon();

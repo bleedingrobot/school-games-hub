@@ -368,7 +368,7 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
         <p><strong>Claw looks</strong> are kept for good. They change how your claw looks, never how it digs: Common {RARITY_PRICE.common}, Cool {RARITY_PRICE.cool}, Epic {RARITY_PRICE.epic}, Legendary {RARITY_PRICE.legendary} coins. The special of the week costs {Math.round(SPECIAL_SHARE * 100)}% of its price. A few can’t be bought: you win them.</p>
         <h3 className="dd-h3">Achievements and points</h3>
         <ul>
-          {ACHIEVEMENTS.map((a) => <li key={a.id}><span aria-hidden="true">{a.emoji}</span> <strong>{a.name}</strong>: {a.for}.</li>)}
+          {ACHIEVEMENTS.map((a) => <li key={a.id}><span aria-hidden="true">{a.emoji}</span> <strong>{a.name}</strong> – {a.for}.</li>)}
         </ul>
         <p>Points: {POINTS.firstPass} for passing a level for the first time, {POINTS.newStar} for each new star, {POINTS.diamond} for the Heart Diamond. Everyone who finds it goes in the Hall of Diamond Finders.</p>
       </div>

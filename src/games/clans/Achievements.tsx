@@ -16,7 +16,7 @@ export function Achievements({ session, onBack }: { session: Session; onBack: ()
           <li key={def.id} className={earned ? 'cq-achievement cq-achievement--earned' : 'cq-achievement'}>
             <span aria-hidden="true" className="cq-achievement__emoji">{def.emoji}</span>
             <span>
-              <strong>{def.name}</strong>: {def.how}
+              <strong>{def.name}</strong> – {def.how}
               <span className="cq-soft"> {earned ? '(Earned!)' : '(Not yet)'}</span>
             </span>
           </li>
