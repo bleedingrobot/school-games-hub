@@ -38,7 +38,7 @@ create function pg_temp.questions() returns jsonb language sql as $$ select '[{"
 select ok(exists (select 1 from public.hub_games where id = 'diamond' and switch_column = 'diamond_enabled' and counts_fn is not null
   and rules_fn is not null and players_fn is not null and season_fn is not null and last_played_fn is not null and keep_achievements),
   'Diamond Drop is registered with its hooks, keeping achievements through New Season');
-select is((select count(*)::integer from public.achievement_types where game = 'diamond'), 6, 'with six achievements');
+select is((select count(*)::integer from public.achievement_types where game = 'diamond'), 11, 'with eleven achievements (six, then five for rare gems)');
 select is((select diamond_enabled from public.app_settings limit 1), false, 'the game starts switched off');
 
 -- ---- Pupils can't reach anything directly ----
@@ -78,7 +78,7 @@ select is(public.diamond_level(pg_temp.id('0a'), 777) -> 'marks', '[true, null]'
 select ok(public.diamond_end(pg_temp.id('0a'), 777, 1, pg_temp.state(10, 300, 1), '[5, 90]', null, '{"diamond": true}'), 'the level ends');
 select ok(not public.diamond_end(pg_temp.id('0a'), 777, 2, pg_temp.state(10, 900, 1), '[5, 90]', null, '{"diamond": true}'), '... once');
 select is(public.diamond_counts(pg_temp.id('0a')),
-  '{"diamond_gems": 12, "diamond_grips": 2, "diamond_level": 10, "diamond_kinds": 2, "diamond_found": 1, "diamond_stars": 5}'::jsonb,
+  '{"diamond_gems": 12, "diamond_grips": 2, "diamond_level": 10, "diamond_kinds": 2, "diamond_found": 1, "diamond_stars": 5, "diamond_rare_kinds": 0, "diamond_rare_total": 0, "diamond_phoenix": 0}'::jsonb,
   'the achievement counts');
 
 -- ---- The Hall, own school only ----

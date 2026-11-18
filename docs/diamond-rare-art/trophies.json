@@ -1,0 +1,67 @@
+{
+  "filename_prefix": "diamond-trophies/img",
+  "style": "epic",
+  "seed_by": "name+style",
+  "styles": {
+    "epic": "Epic collectible-card illustration, luminous painterly fantasy art, a radiant sunburst of light rays behind the subject, glowing magic particles and lens sparkles, mirror-bright metal, rich saturated colour, deep dark midnight-blue and violet jewel-toned background, one subject, large and centred, filling the square, bold clear silhouette, friendly and heroic, made for children aged 5 to 11, no text, no letters, no numbers. ",
+    "plain": "Legendary fantasy game reward frame, painted with rich detail, mirror-bright polished metal with strong specular highlights and warm rim light, glittering. "
+  },
+  "art_dir": "src/avatar/art",
+  "game": "diamond-trophies",
+  "inbox": "~/dragon-art-inbox/diamond-trophies",
+  "picks": "docs/diamond-rare-art/trophy-picks.json",
+  "pictures": [
+    {
+      "name": "diamond-rare-cup-bronze",
+      "prompt": "A tall slender trophy cup shaped like an open treasure chalice, seven different coloured gems set in a ring around its middle (a moonstone, a sunstone, an ice crystal, an opal, a dragon eye gem, a galaxy gem and a phoenix flame gem), small crystal handles, the cup made of warm reddish-brown bronze metal, sturdy with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "rare-gem-cup-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "diamond-rare-cup-silver",
+      "prompt": "A tall slender trophy cup shaped like an open treasure chalice, seven different coloured gems set in a ring around its middle (a moonstone, a sunstone, an ice crystal, an opal, a dragon eye gem, a galaxy gem and a phoenix flame gem), small crystal handles, the cup made of bright gleaming silver, finely engraved, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "rare-gem-cup-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "diamond-rare-cup-gold",
+      "prompt": "A tall slender trophy cup shaped like an open treasure chalice, seven different coloured gems set in a ring around its middle (a moonstone, a sunstone, an ice crystal, an opal, a dragon eye gem, a galaxy gem and a phoenix flame gem), small crystal handles, the cup made of dazzling polished gold, richly ornate, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "rare-gem-cup-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "phoenix-gem",
+      "prompt": "A legendary phoenix gem: a flame-shaped crimson, orange and gold faceted crystal with two small spread wings of golden crystal feathers on its sides and a curling tail of crystal flame below, glowing with fire from within, tiny embers, floating and blazing with light, a fiery phoenix shape of glowing flame rising behind it with wings spread wide.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "phoenix-gem",
+      "max": 512,
+      "small": 160
+    }
+  ]
+}

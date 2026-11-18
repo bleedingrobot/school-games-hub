@@ -4,7 +4,7 @@
  * (shared/diamond/server.ts), so `fromServer` turns either one's replies into what the screens use.
  */
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
-import type { BoostId, Slot } from '../../../shared/diamond/config';
+import type { BoostId, RareId, Slot } from '../../../shared/diamond/config';
 import type { LevelResult } from '../../../shared/diamond/engine';
 import type { Player } from '../../../shared/diamond/progress';
 
@@ -43,6 +43,8 @@ export interface Ended {
   newLevel: boolean;
   /** Workshop upgrades just earned. */
   earned: string[];
+  /** Rare gems caught for the very first time this level (new Gem Book pages). */
+  newRare?: RareId[];
   player: Player;
 }
 

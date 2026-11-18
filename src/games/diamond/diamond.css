@@ -304,3 +304,126 @@ img.dd-item__icon { object-fit: contain; padding: 4px; }
   .dd-field { width: min(100%, calc((100dvh - 20px) * 10 / 7)); }
   .dd-play__controls { padding-top: 0; }
 }
+
+/* ——— Rare gems (shared/diamond/config.ts RARE_GEMS): banner, level end and the Gem Book's collection ——— */
+.dd-root { --dd-uncommon: #7dd3fc; --dd-rare: #c084fc; --dd-epic: #f472b6; --dd-legendary: #fbbf24; }
+.is-uncommon { --tier: var(--dd-uncommon); --tier-deep: #0c4a6e; }
+.is-rare { --tier: var(--dd-rare); --tier-deep: #4c1d95; }
+.is-epic { --tier: var(--dd-epic); --tier-deep: #831843; }
+.is-legendary { --tier: var(--dd-legendary); --tier-deep: #78350f; }
+
+/* The banner on the play screen. */
+.dd-rare-banner {
+  position: absolute; left: 50%; top: 8%; transform: translateX(-50%); z-index: 3; display: flex; align-items: center; gap: 10px;
+  padding: 8px 22px 8px 10px; border-radius: 999px; overflow: hidden; color: #fff; max-width: 94%;
+  background: radial-gradient(circle at 18% 50%, color-mix(in srgb, var(--tier) 55%, transparent), transparent 60%), linear-gradient(135deg, #1b1033, var(--tier-deep) 60%, #1b1033);
+  border: 3px solid var(--tier); box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35) inset, 0 0 28px var(--tier), 0 10px 30px rgba(0, 0, 0, 0.55);
+}
+.dd-rare-banner__rays { position: absolute; inset: -150%; background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.14) 0 8deg, transparent 8deg 24deg); pointer-events: none; }
+.dd-rare-banner__gem { position: relative; flex: none; filter: drop-shadow(0 0 10px var(--tier)); }
+.dd-rare-banner__words { position: relative; display: flex; flex-direction: column; line-height: 1.15; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6); }
+.dd-rare-banner__kicker { font-size: 0.85rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tier); }
+.dd-rare-banner__name {
+  font-size: clamp(1.4rem, 3.4vw, 2.2rem); font-weight: 900;
+  background: linear-gradient(90deg, #fff 20%, var(--tier) 40%, #fff 55%, var(--tier) 75%, #fff 90%); background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none;
+}
+.dd-rare-banner__tier { font-size: 0.9rem; font-weight: 700; opacity: 0.95; }
+.dd-rare-banner__glitter { position: absolute; inset: 0; pointer-events: none; }
+.dd-rare-banner__glitter i { position: absolute; left: calc(var(--i) * 7%); top: calc(20% + (var(--i) * 37 % 60) * 1%); width: 6px; height: 6px; background: #fff; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); opacity: 0; }
+
+/* Level end: a big card for each rare gem caught. */
+.dd-rare-won {
+  display: flex; align-items: center; gap: 14px; margin: 10px auto; padding: 10px 22px 10px 10px; max-width: 520px; border-radius: 22px; color: #fff; text-align: left;
+  background: radial-gradient(circle at 15% 50%, color-mix(in srgb, var(--tier) 50%, transparent), transparent 55%), linear-gradient(135deg, #1b1033, var(--tier-deep));
+  border: 3px solid var(--tier); box-shadow: 0 0 30px color-mix(in srgb, var(--tier) 70%, transparent), 0 0 0 2px rgba(255, 255, 255, 0.3) inset;
+}
+.dd-rare-won p { margin: 0; }
+.dd-rare-won__kicker { font-weight: 800; color: var(--tier); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.9rem; }
+.dd-rare-won__name { font-size: 1.8rem; font-weight: 900; text-shadow: 0 0 14px var(--tier); }
+
+/* The Gem Book's rare collection: a jewel vault. */
+.dd-rarebook {
+  position: relative; overflow: hidden; isolation: isolate; border-radius: 24px; padding: 18px; margin-bottom: 18px; color: #fdf6e3;
+  background: radial-gradient(ellipse at 50% 0%, #4c1d95 0%, #1e0b3a 55%, #0b0418 100%);
+  border: 4px solid #d4a72c; box-shadow: 0 0 0 3px #5b3a07, 0 0 0 7px #f3d47a, 0 0 40px rgba(212, 167, 44, 0.45), inset 0 0 60px rgba(0, 0, 0, 0.6);
+}
+.dd-rarebook::before { /* gold filigree corners */
+  content: ''; position: absolute; inset: 8px; border-radius: 18px; pointer-events: none; z-index: 1;
+  border: 2px solid rgba(243, 212, 122, 0.55);
+  background:
+    radial-gradient(circle at 0 0, transparent 22px, rgba(243, 212, 122, 0.8) 23px, transparent 25px) top left / 50px 50px no-repeat,
+    radial-gradient(circle at 100% 0, transparent 22px, rgba(243, 212, 122, 0.8) 23px, transparent 25px) top right / 50px 50px no-repeat,
+    radial-gradient(circle at 0 100%, transparent 22px, rgba(243, 212, 122, 0.8) 23px, transparent 25px) bottom left / 50px 50px no-repeat,
+    radial-gradient(circle at 100% 100%, transparent 22px, rgba(243, 212, 122, 0.8) 23px, transparent 25px) bottom right / 50px 50px no-repeat;
+}
+.dd-rarebook__vault { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.38; z-index: -1; }
+.dd-rarebook__head { position: relative; z-index: 2; display: flex; align-items: center; gap: 16px; }
+.dd-rarebook__cover { width: 120px; height: auto; flex: none; filter: drop-shadow(0 0 18px rgba(243, 212, 122, 0.7)) drop-shadow(0 8px 10px rgba(0, 0, 0, 0.6)); }
+.dd-rarebook__cover--drawn { font-size: 72px; text-align: center; }
+.dd-rarebook__title {
+  margin: 0; font-size: clamp(1.5rem, 4vw, 2.3rem); font-weight: 900; letter-spacing: 0.02em;
+  background: linear-gradient(180deg, #fff7d1 0%, #f3d47a 45%, #b8861b 55%, #fde68a 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.8));
+}
+.dd-rarebook__lede { margin: 4px 0 8px; opacity: 0.92; }
+.dd-rarebook__count { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 1.2rem; color: #fde68a; }
+.dd-rarebook__bar { flex: 1; max-width: 320px; height: 14px; border-radius: 99px; background: rgba(0, 0, 0, 0.5); border: 2px solid #b8861b; overflow: hidden; }
+.dd-rarebook__bar div { height: 100%; background: linear-gradient(90deg, var(--dd-uncommon), var(--dd-rare), var(--dd-epic), var(--dd-legendary)); box-shadow: 0 0 10px #fde68a; }
+.dd-rarebook__done { position: relative; z-index: 2; text-align: center; font-size: 1.4rem; font-weight: 900; color: #fde68a; text-shadow: 0 0 16px #fbbf24; margin: 12px 0 0; }
+.dd-rarebook__grid { position: relative; z-index: 2; list-style: none; margin: 16px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; }
+.dd-book__season { margin-top: 8px; }
+
+.dd-rarepage {
+  position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 26px 12px 14px; border-radius: 18px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tier-deep) 85%, #000), #120722 70%);
+  border: 3px solid var(--tier); box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6), 0 0 0 4px color-mix(in srgb, var(--tier) 45%, transparent), 0 0 22px color-mix(in srgb, var(--tier) 45%, transparent);
+}
+.dd-rarepage p, .dd-rarepage h4 { margin: 0; }
+.dd-rarepage.is-legendary { grid-column: 1 / -1; max-width: 420px; justify-self: center; width: 100%; }
+.dd-rarepage.is-legendary.is-found { border-width: 4px; }
+.dd-rarepage__ribbon {
+  position: absolute; top: -12px; left: 50%; transform: translateX(-50%); padding: 3px 16px; border-radius: 99px; white-space: nowrap;
+  font-size: 0.78rem; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; color: #1b1033;
+  background: linear-gradient(180deg, #fff, var(--tier)); border: 2px solid var(--tier-deep); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+}
+.dd-rarepage__frame { position: relative; width: 132px; height: 132px; border-radius: 50%; overflow: hidden; border: 4px solid #d4a72c; box-shadow: 0 0 0 2px #5b3a07, 0 0 18px var(--tier), inset 0 0 18px rgba(0, 0, 0, 0.7); background: radial-gradient(circle, #2a1048, #0b0418); }
+.dd-rarepage__frame canvas { display: block; }
+.dd-rarepage__q { position: absolute; inset: 0; display: grid; place-items: center; font-size: 3.4rem; font-weight: 900; color: rgba(255, 255, 255, 0.55); text-shadow: 0 0 12px var(--tier); }
+.dd-rarepage__shine { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.55) 48%, transparent 60%); transform: translateX(-120%); pointer-events: none; }
+.dd-rarepage__twinkles i { position: absolute; width: 12px; height: 12px; background: #fff; clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%); opacity: 0.9; }
+.dd-rarepage__twinkles i:nth-child(1) { top: 12%; left: 18%; } .dd-rarepage__twinkles i:nth-child(2) { top: 20%; right: 14%; }
+.dd-rarepage__twinkles i:nth-child(3) { bottom: 16%; left: 22%; } .dd-rarepage__twinkles i:nth-child(4) { bottom: 22%; right: 18%; }
+.dd-rarepage__name { font-size: 1.25rem; font-weight: 900; color: #fff; text-shadow: 0 0 10px var(--tier); margin-top: 6px !important; }
+.dd-rarepage__chance { font-size: 0.8rem; font-weight: 800; color: var(--tier); }
+.dd-rarepage__about { font-style: italic; opacity: 0.92; }
+.dd-rarepage__hint { opacity: 0.75; }
+.dd-rarepage.is-locked { filter: saturate(0.4); }
+.dd-rarepage.is-locked .dd-rarepage__name { color: rgba(255, 255, 255, 0.6); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .dd-rare-banner { animation: dd-rare-in 0.7s cubic-bezier(0.2, 1.5, 0.4, 1), dd-rare-out 0.5s ease-in 4.3s forwards; }
+  .dd-rare-banner.is-caught { animation: dd-rare-in 0.7s cubic-bezier(0.2, 1.5, 0.4, 1), dd-rare-out 0.5s ease-in 3.7s forwards; }
+  .dd-rare-banner__rays { animation: dd-spin 9s linear infinite; }
+  .dd-rare-banner__name { animation: dd-shimmer 2.2s linear infinite; }
+  .dd-rare-banner__glitter i { animation: dd-twinkle 1.6s ease-in-out infinite; animation-delay: calc(var(--i) * 0.13s); }
+  .dd-rare-won { animation: dd-hero-in 0.6s cubic-bezier(0.2, 1.4, 0.4, 1), dd-tier-pulse 2s ease-in-out 0.6s infinite; }
+  .dd-rarepage { animation: dd-page-in 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) both; animation-delay: calc(var(--i) * 0.09s); }
+  .dd-rarepage.is-found .dd-rarepage__shine { animation: dd-sweep 4.5s ease-in-out infinite; animation-delay: calc(var(--i) * 0.6s); }
+  .dd-rarepage.is-found .dd-rarepage__twinkles i { animation: dd-twinkle 2s ease-in-out infinite; }
+  .dd-rarepage.is-found .dd-rarepage__twinkles i:nth-child(2) { animation-delay: 0.5s; } .dd-rarepage.is-found .dd-rarepage__twinkles i:nth-child(3) { animation-delay: 1s; } .dd-rarepage.is-found .dd-rarepage__twinkles i:nth-child(4) { animation-delay: 1.5s; }
+  .dd-rarepage.is-found:hover { transform: translateY(-4px) scale(1.02); transition: transform 0.2s; }
+  .dd-rarepage.is-legendary.is-found { animation: dd-page-in 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) both, dd-tier-pulse 2.4s ease-in-out infinite; }
+  .dd-rarebook__cover { animation: dd-float 4s ease-in-out infinite; }
+  .dd-rarebook__title { background-size: 100% 200%; }
+  .dd-rarebook.is-complete { animation: dd-tier-pulse 2.6s ease-in-out infinite; --tier: #fbbf24; }
+  @keyframes dd-rare-in { from { opacity: 0; transform: translateX(-50%) scale(0.3) rotate(-6deg); } }
+  @keyframes dd-rare-out { to { opacity: 0; transform: translateX(-50%) translateY(-20px) scale(0.9); } }
+  @keyframes dd-spin { to { transform: rotate(360deg); } }
+  @keyframes dd-shimmer { to { background-position: -200% 0; } }
+  @keyframes dd-twinkle { 0%, 100% { opacity: 0; transform: scale(0.3) rotate(0); } 50% { opacity: 1; transform: scale(1.2) rotate(45deg); } }
+  @keyframes dd-sweep { 0%, 60% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
+  @keyframes dd-page-in { from { opacity: 0; transform: translateY(18px) rotateX(35deg) scale(0.9); } }
+  @keyframes dd-tier-pulse { 50% { box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6), 0 0 0 4px var(--tier), 0 0 44px var(--tier); } }
+}
+/* With less motion the banner still goes away by itself (the play screen clears it), it just doesn't move. */
