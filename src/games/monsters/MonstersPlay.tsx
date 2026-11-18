@@ -3,7 +3,7 @@
  * as they play. Saving moments: a new game, a healing spot, after a Tower battle, on getting a badge,
  * every few minutes, and when the page is hidden or closed. See src/data/monsters.ts.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { FactStats } from '../../../shared/maths/leitner';
 import { makePack, type TopicId } from '../../../shared/maths/skillPacks';
 import { WORLD_MAPS } from '../../../shared/monsters/maps';
@@ -18,6 +18,7 @@ import { useAuth } from '../../auth/AuthContext';
 import {
   enqueueSave, flushQueue, loadMonsters, readTail, savingStopped, writeBattleCount, writeTail, type FlushResult, type MonstersData, type Tail,
 } from '../../data/monsters';
+import { HubButtons } from './HubButtons';
 import { StartScreen } from './StartScreen';
 import { loadWorldSettings, saveWorldSettings, type WorldSettings } from './world/settings';
 import { WorldGame } from './world/WorldGame';
@@ -194,12 +195,14 @@ export function MonstersPlay() {
 
   if (!data) {
     return (
-      <p className="panel__empty" role="status">
-        {WORDS.loading}
-      </p>
+      <Window hub>
+        <p className="panel__empty" role="status">
+          {WORDS.loading}
+        </p>
+      </Window>
     );
   }
-  if (!data.settings.enabled && !data.offline) return <p className="panel__empty">{WORDS.closed}</p>;
+  if (!data.settings.enabled && !data.offline) return <Window hub><p className="panel__empty">{WORDS.closed}</p></Window>;
   // A new day (the game left open past midnight) starts again from nothing.
   const spent = battles.day === nzDay(Date.now()) && battles.today >= data.battles.perDay;
   // The teacher's switch: no resting, the extra battles earn no hub points (the database sees to that).
@@ -209,17 +212,21 @@ export function MonstersPlay() {
   if (!initial) {
     if (data.offline) {
       return (
-        <div className="panel__empty" role="alert">
-          <p>{WORDS.cantLoad}</p>
-          <button type="button" className="button button--primary" onClick={() => setTryAgain((n) => n + 1)}>
-            Try again
-          </button>
-        </div>
+        <Window hub>
+          <div className="panel__empty" role="alert">
+            <p>{WORDS.cantLoad}</p>
+            <button type="button" className="button button--primary" onClick={() => setTryAgain((n) => n + 1)}>
+              Try again
+            </button>
+          </div>
+        </Window>
       );
     }
-    return <StartScreen onStart={begin} />;
+    return <Window hub><StartScreen onStart={begin} /></Window>;
   }
+  // On the map the Hub and sound buttons are in its top bar (WorldGame).
   return (
+    <Window>
     <div className="mp-play">
       <WorldGame
         initial={initial}
@@ -254,6 +261,17 @@ export function MonstersPlay() {
       <p className="mp-play__note" role="status">
         {status === 'saved' ? WORDS.saved : status === 'later' ? WORDS.later : WORDS.stopped}
       </p>
+    </div>
+    </Window>
+  );
+}
+
+/** The whole window, over the hub's bar, like Star Trader (James, 18 Nov 2026). Off the map, a Hub and sound bar on top. */
+function Window({ hub = false, children }: { hub?: boolean; children: ReactNode }) {
+  return (
+    <div className="mp-window">
+      {hub && <div className="mp-window__top"><HubButtons /></div>}
+      {children}
     </div>
   );
 }

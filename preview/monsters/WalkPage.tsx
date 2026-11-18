@@ -72,6 +72,9 @@ function giveFullTeamAndBag(s: WorldState): WorldState {
 }
 const giveAllBadges = (s: WorldState): WorldState => ({ ...s, badges: [...BADGE_ORDER] });
 
+/** Preview only: `?full` shows the game in the real full-window layer (and with more battles, to reach one quickly). */
+const FULL = new URLSearchParams(location.search).has('full');
+
 export function WalkPage({ onBattling, testing }: { onBattling?: (on: boolean) => void; testing?: Pick<WorldGameProps, 'random' | 'packFor' | 'timeScale'> }) {
   const [picks, setPicks] = useState<[TypeId, TypeId]>(['water', 'fire']);
   const [team, setTeam] = useState<Monster[] | null>(null);
@@ -126,6 +129,7 @@ export function WalkPage({ onBattling, testing }: { onBattling?: (on: boolean) =
     );
   }
 
+  const game = <WorldGame key={run} initial={initial} settings={settings} onSettingsChange={change} fast={fast || FULL} teleport={teleport} cheat={cheat} quest={TODAY} {...testing} onBattling={(on) => { setBattling(on); onBattling?.(on); }} />;
   return (
     <section className="wp-page" ref={page}>
       <details className="wp-tools" hidden={battling}>
@@ -151,7 +155,10 @@ export function WalkPage({ onBattling, testing }: { onBattling?: (on: boolean) =
           <button type="button" onClick={() => { setTeam(null); setTeleport(undefined); setCheat(undefined); setRun((r) => r + 1); }}>Start again</button>
         </div>
       </details>
-      <WorldGame key={run} initial={initial} settings={settings} onSettingsChange={change} fast={fast} teleport={teleport} cheat={cheat} quest={TODAY} {...testing} onBattling={(on) => { setBattling(on); onBattling?.(on); }} />
+      {FULL ? (
+        // ?full: the full-window layer the real game sits in (MonstersPlay), to check the layout without signing in.
+        <div className="mp-window"><div className="mp-play">{game}<p className="mp-play__note">Your game is saved to your account.</p></div></div>
+      ) : game}
     </section>
   );
 }
