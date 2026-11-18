@@ -17,7 +17,8 @@
   font-family: system-ui, sans-serif;
   overflow: hidden;
 }
-.hp-root--cover { position: fixed; inset: 0; z-index: 20; }
+/* Full window like Star Trader (James, 18 Nov 2026): always over the hub's top bar, scrolling inside itself. */
+.hp-root--cover { position: fixed; inset: 0; z-index: 40; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }
 .hp-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .hp-message { margin: auto; font-size: 1.6rem; color: #fff; padding: 24px; text-align: center; }
 
