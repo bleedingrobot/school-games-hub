@@ -191,7 +191,16 @@ const answers: Record<string, (a: Row) => unknown> = {
   teacher_student_card: (a) => studentCard(String(a.student)),
   teacher_students: () => people,
   teacher_student_detail: () => ({ points: 120, games: [], recent: [] }),
-  teacher_maths_focuses: () => [],
+  teacher_maths_focuses: () => [
+    { batch: 'f1', classId: CLASS_ID, className: 'Room 12', scope: 'class', targets: [], skills: ['facts-10'], onlyThese: true,
+      startsAt: ago(120), endsAt: new Date(Date.now() + 5 * 3600_000).toISOString(), createdAt: ago(120), status: 'running' },
+  ],
+  teacher_maths_focus_results: () => {
+    const done = [[35, 28, 16], [16, 7, 2], [22, 18, 12], [3, 1, 1], [0, 0, 0], [46, 36, 12], [27, 4, 1], [23, 11, 6], [1, 1, 0], [12, 10, 3]];
+    const students = PEOPLE.map(([id, name, real], i) => ({ id, name, realName: real, answers: done[i][0], correct: done[i][1], quick: done[i][2] }));
+    const sum = (k: 0 | 1 | 2) => done.reduce((t, d) => t + d[k], 0);
+    return { since: ago(60 * 24 * 30), students, total: { answers: sum(0), correct: sum(1), quick: sum(2) } };
+  },
   teacher_class_skill_map: () => skillMap,
   teacher_maths_focus_history: () => [],
   teacher_student_ladder: () => mapStudents[0].ladder,
