@@ -26,7 +26,7 @@ export const HUB_NEWS: NewsItem[] = [
     date: '2026-11-19',
     emoji: '♞',
     title: 'Six new chess sets to unlock!',
-    text: 'Wood, ice, robots, dragons, gold and NZ birds with a kiwi army. Open the Chess Locker to see how to win them.',
+    text: 'Wood, ice, robots, dragons, gold and NZ birds. Open the Chess Locker to win them!',
     game: 'chess',
   },
   {
