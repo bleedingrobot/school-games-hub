@@ -60,7 +60,14 @@ Stages 3 to 5 to do.
    "coming soon" with unlock progress, so pupils can earn them already), `Reveal.tsx` (the chest, after the result
    card, in bot and classmate games). Preview: `#reveal` opens the chest; `preview/chess/fakeLooks.ts` stands in for
    the server. Stages 3 and 4 add their kind to `READY_KINDS` in `looks.ts`; their unlocks are already saved.
-3. **Boards:** 4 painted boards (kind `texture`) and their unlocks.
+3. **Boards** (done). `board/<id>-light` and `board/<id>-dark` in the art config are flat painted textures (`--style t`,
+   no chess words). `BoardFace.tsx` gives `Board.tsx` the pupil's board: each square shows its own eighth of one big
+   painting (`--c`, `--r`), so veins and cracks run across the board. `boards.css` has each board's frame and what moves:
+   a gleam across the marble, paua squares shimmering and sun glints on the beach, lava squares throbbing with rising
+   embers, twinkling stars and a shooting star on the starfield. Every board sweeps in square by square. The Locker's
+   plinth and shelf and the treasure chest show small real boards. Classic wood is unchanged. The squares were the
+   wrong way round before this stage (a1 was light); now a1 is dark. Preview: add `&board=lava` (or marble, beach,
+   starfield) to the address.
 4. **Piece sets:** 6 sets × 12 cut-out pieces, keeping the normal chess shapes so they read on small squares. The
    SVG pieces stay as the fallback.
 5. **Bot portraits** (🐣 Chick, 🤖 Robot, 🧠 Wizard as painted characters on the start screen) and polish.

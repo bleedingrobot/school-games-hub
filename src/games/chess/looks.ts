@@ -13,6 +13,14 @@ import underwater from './art/bg/underwater.webp';
 import underwaterSmall from './art/bg/underwater-800.webp';
 import volcano from './art/bg/volcano.webp';
 import volcanoSmall from './art/bg/volcano-800.webp';
+import beachDark from './art/board/beach-dark.webp';
+import beachLight from './art/board/beach-light.webp';
+import lavaDark from './art/board/lava-dark.webp';
+import lavaLight from './art/board/lava-light.webp';
+import marbleDark from './art/board/marble-dark.webp';
+import marbleLight from './art/board/marble-light.webp';
+import starfieldDark from './art/board/starfield-dark.webp';
+import starfieldLight from './art/board/starfield-light.webp';
 import { fetchLooks, markSeen, saveLook, type LookData, type LookKind } from './lookData';
 
 export type { LookKind } from './lookData';
@@ -60,7 +68,7 @@ export const BACKGROUNDS: Background[] = [
   { kind: 'background', id: 'space', name: 'Space station', emoji: '🚀', img: space, small: spaceSmall, particle: 'stars', how: 'Win a game in under 20 of your moves.' },
 ];
 
-/** Piece sets and boards arrive in stages 3 and 4. Pupils can already earn them. */
+/** Piece sets arrive in stage 4. Pupils can already earn them. */
 export const SETS: Look[] = [
   { kind: 'set', id: 'classic', name: 'Classic', how: null, emoji: '♞' },
   { kind: 'set', id: 'wood', name: 'Carved Wood', emoji: '🪵', how: 'Finish 3 games.', toGo: (n) => `Finish ${games(n)}` },
@@ -71,22 +79,43 @@ export const SETS: Look[] = [
   { kind: 'set', id: 'golden', name: 'Golden', emoji: '👑', how: 'Win 20 games against anyone.', toGo: (n) => `Win ${games(n)}` },
 ];
 
-export const BOARDS: Look[] = [
-  { kind: 'board', id: 'classic', name: 'Classic wood', how: null, emoji: '🟫' },
-  { kind: 'board', id: 'marble', name: 'Marble', emoji: '🏛️', how: 'Win 5 games by checkmate.', toGo: (n) => `${n} more checkmate${n === 1 ? '' : 's'}` },
-  { kind: 'board', id: 'beach', name: 'Beach sand and shell', emoji: '🐚', how: 'Win a game playing Black.' },
-  { kind: 'board', id: 'lava', name: 'Glowing lava rock', emoji: '🔥', how: 'Promote 3 pawns.', toGo: (n) => `Promote ${n} more pawn${n === 1 ? '' : 's'}` },
-  { kind: 'board', id: 'starfield', name: 'Starfield glass', emoji: '✨', how: 'Win 5 games against classmates.', toGo: (n) => `Win ${games(n)} against classmates` },
+/** What moves on each board: a gleam across the marble, sun glints on the beach, lava throbbing, stars twinkling. */
+export type BoardFx = 'none' | 'gleam' | 'glint' | 'lava' | 'twinkle';
+
+export interface BoardLook extends Look {
+  kind: 'board';
+  /** Painted textures for the light and dark squares. Classic wood has none: it keeps its flat colours. */
+  light?: string;
+  dark?: string;
+  fx: BoardFx;
+}
+
+export const BOARDS: BoardLook[] = [
+  { kind: 'board', id: 'classic', name: 'Classic wood', how: null, emoji: '🟫', fx: 'none' },
+  {
+    kind: 'board', id: 'marble', name: 'Marble', emoji: '🏛️', light: marbleLight, dark: marbleDark, fx: 'gleam',
+    how: 'Win 5 games by checkmate.', toGo: (n) => `${n} more checkmate${n === 1 ? '' : 's'}`,
+  },
+  { kind: 'board', id: 'beach', name: 'Beach sand and shell', emoji: '🐚', light: beachLight, dark: beachDark, fx: 'glint', how: 'Win a game playing Black.' },
+  {
+    kind: 'board', id: 'lava', name: 'Glowing lava rock', emoji: '🔥', light: lavaLight, dark: lavaDark, fx: 'lava',
+    how: 'Promote 3 pawns.', toGo: (n) => `Promote ${n} more pawn${n === 1 ? '' : 's'}`,
+  },
+  {
+    kind: 'board', id: 'starfield', name: 'Starfield glass', emoji: '✨', light: starfieldLight, dark: starfieldDark, fx: 'twinkle',
+    how: 'Win 5 games against classmates.', toGo: (n) => `Win ${games(n)} against classmates`,
+  },
 ];
 
-/** Kinds pupils can pick and see revealed so far. Sets and boards join in stages 3 and 4. */
-export const READY_KINDS: LookKind[] = ['background'];
+/** Kinds pupils can pick and see revealed so far. Sets join in stage 4. */
+export const READY_KINDS: LookKind[] = ['board', 'background'];
 
 const PREFIX: Record<LookKind, string> = { set: 'set:', board: 'board:', background: 'bg:' };
 export const keyOf = (look: Pick<Look, 'kind' | 'id'>) => PREFIX[look.kind] + look.id;
 export const ALL_LOOKS: Look[] = [...BACKGROUNDS, ...SETS, ...BOARDS];
 export const lookByKey = (key: string) => ALL_LOOKS.find((l) => keyOf(l) === key);
 export const backgroundById = (id: string | undefined) => BACKGROUNDS.find((b) => b.id === id) ?? BACKGROUNDS[0];
+export const boardById = (id: string | undefined) => BOARDS.find((b) => b.id === id) ?? BOARDS[0];
 
 // ---------- The pupil's looks, shared by every chess screen on the page ----------
 
