@@ -4,7 +4,7 @@
  * Maths (stage M.6): when the teacher allows it, a run starts by asking the server for its questions and which
  * shortcut doors are open; pit-stop answers are marked by the server. Runs with maths have their own best times and boards.
  */
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { AvatarImage } from '../../avatar/AvatarImage';
 import { courseById } from '../../../shared/marble/courses';
@@ -22,6 +22,7 @@ import { formatSteps, loadBests, mergeBests, saveBests, withFinish, type Bests }
 import { HowToPlayBody } from './HowToPlay';
 import { COURSE_INFO } from './courseInfo';
 import { courseAccent, courseArt, courseGradient } from './courseArt';
+import { HubButtons } from './HubButtons';
 import type { FinishedRun } from './RunScreen';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import './marble.css';
@@ -202,9 +203,19 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
   );
 }
 
-export const MarblePlay = () => <MarbleRoot localMaths={false} />;
+/**
+ * The whole game sits in one layer over the whole window, the hub's bar included (James, 18 Nov 2026: like Star
+ * Trader). The course picker sits on a big course painting; a run's track fills the window.
+ */
+function Window({ children }: { children: ReactNode }) {
+  const art = courseArt('crown-range');
+  const style = art ? ({ '--mr-art': `url("${art.card}")` } as CSSProperties) : undefined;
+  return <div className="mr-window" style={style}>{children}</div>;
+}
+
+export const MarblePlay = () => <Window><MarbleRoot localMaths={false} /></Window>;
 /** The stand-alone preview: questions made and marked in the browser. */
-export const MarblePreview = () => <MarbleRoot localMaths />;
+export const MarblePreview = () => <Window><MarbleRoot localMaths /></Window>;
 
 /** The preview marks its own questions. */
 async function markHere(question: Question | undefined, answer: number): Promise<{ right: boolean; answer: number } | null> {
@@ -306,7 +317,10 @@ function CoursePicker({
     <section className="marble-picker">
       <div className="marble-picker__top">
         <h2>Marble Rush</h2>
-        <button type="button" className="button button--light" onClick={onHowTo}>How to play</button>
+        <span className="marble-picker__tools">
+          <button type="button" className="button button--light" onClick={onHowTo}>How to play</button>
+          <HubButtons />
+        </span>
       </div>
       <div className="marble-picker__bar">
         <div className="marble-ghost" role="radiogroup" aria-labelledby="marble-ghost-label">

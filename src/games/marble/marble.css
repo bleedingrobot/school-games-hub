@@ -514,3 +514,123 @@
     transform: none;
   }
 }
+
+/* ---- Full window (James, 18 Nov 2026: like Star Trader; docs/FULL-WINDOW.md) ----
+   The game is one layer over the whole window, the hub's bar included. The picker sits on a big course painting in a
+   centred column; a run's track fills the window, with the clock on top and the buttons along the foot. */
+.mr-window {
+  --mr-pad: 18px;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  background: #0b1220;
+}
+.mr-window::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(2, 6, 23, 0.25) 0%, rgba(2, 6, 23, 0.55) 55%, rgba(2, 6, 23, 0.8) 100%),
+    var(--mr-art, linear-gradient(160deg, #0e7490, #7c3aed)) center 60% / cover no-repeat;
+}
+.mr-window { isolation: isolate; }
+.mr-window > .marble-picker,
+.mr-window > .loading {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 14px var(--mr-pad) 32px;
+}
+.mr-window > .loading { color: #fff; }
+.marble-picker__top h2 {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.6);
+}
+.marble-picker__heading,
+.marble-howto-screen > h2 {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+.marble-picker__tools,
+.mr-hubbtns {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.mr-glass {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+.mr-glass:hover { background: rgba(15, 23, 42, 0.75); }
+.mr-glass:focus-visible { outline: 3px solid #fde047; outline-offset: 2px; }
+.marble-courses { grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+
+/* A run: the track is the whole window. */
+.mr-window > .marble-run {
+  --mr-top: 62px;
+  --mr-foot: 72px;
+  position: relative;
+  display: block;
+  max-width: none;
+  height: 100dvh;
+  margin: 0;
+}
+.mr-window .marble-stage {
+  position: absolute;
+  inset: 0;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+}
+.mr-window .marble-hud {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  width: min(100% - 16px, 1100px);
+  min-height: 46px;
+  box-sizing: border-box;
+  background: rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  pointer-events: none;
+}
+.mr-window .marble-hud__flame { color: #fca5a5; }
+.mr-window .marble-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  padding: 8px 12px;
+  background: linear-gradient(0deg, rgba(2, 6, 23, 0.7), rgba(2, 6, 23, 0));
+  pointer-events: none;
+}
+.mr-window .marble-bar > * { pointer-events: auto; }
+.mr-window .marble-bar__help { text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); }
+/* Things inside the stage clear the clock bar and the button row. */
+.mr-window .marble-gate { top: var(--mr-top); }
+.mr-window .marble-toast,
+.mr-window .marble-stick { bottom: calc(var(--mr-foot) + 10px); }
+.mr-window .marble-overlay { padding: var(--mr-top) 16px var(--mr-foot); }
+
+@media (max-width: 760px) {
+  .mr-window { --mr-pad: 10px; }
+  .mr-window > .marble-run { --mr-top: 96px; --mr-foot: 136px; }
+  .mr-window .marble-bar__help { display: none; }
+}
