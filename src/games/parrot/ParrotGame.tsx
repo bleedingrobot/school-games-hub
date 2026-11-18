@@ -4,7 +4,7 @@
  * then bronze, silver and gold); thirty days win the Golden Bell, and a friend gets a see-saw. The screens only show what
  * the backend says. Built on the shape of Tūī’s Ten Tree.
  */
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { NextPartChip } from '../../components/NextPartChip';
 import { FRIEND_NAMES, type Friend as FriendName } from '../../../shared/parrot/config';
 import type { Tap } from '../../../shared/parrot/play';
@@ -71,34 +71,13 @@ interface Props {
   extra?: (h: Helpers) => ReactNode;
 }
 
-/** Below this much room under the hub's top bar, the game covers the whole screen, bar and all (as Tūī does). */
-const ROOM_UNDER_BAR = 420;
-function useFitBelow(root: RefObject<HTMLDivElement | null>) {
-  useLayoutEffect(() => {
-    const el = root.current;
-    if (!el) return;
-    const fit = () => {
-      el.classList.remove('pr-root--cover');
-      const top = Math.round(el.getBoundingClientRect().top + window.scrollY);
-      const cover = top > 0 && window.innerHeight - top - 12 < ROOM_UNDER_BAR;
-      el.classList.toggle('pr-root--cover', cover);
-      el.style.setProperty('--pr-room', top === 0 || cover ? '100dvh' : `calc(100dvh - ${top + 12}px)`);
-    };
-    fit();
-    window.addEventListener('resize', fit);
-    return () => window.removeEventListener('resize', fit);
-  }, [root]);
-}
-
 export function ParrotGame({ backend, onExit, extra }: Props) {
   const [state, setState] = useState<ParrotState | null>(null);
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
   const [failed, setFailed] = useState<string | null>(null);
   const fail = useCallback((e: unknown) => setFailed(e instanceof ParrotError ? e.message : WORDS.wentWrong), []);
   const voice = useVoice();
-  const { soundOn } = useSound();
-  const root = useRef<HTMLDivElement>(null);
-  useFitBelow(root);
+  const { soundOn, setSoundOn } = useSound();
 
   const reload = useCallback(() => {
     setFailed(null);
@@ -141,13 +120,19 @@ export function ParrotGame({ backend, onExit, extra }: Props) {
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
-    <div className="pr-root" ref={root}>
+    <div className="pr-root pr-root--cover">
       <div className="pr-bar">
         {onExit && (
           <button type="button" className="pr-button" onClick={onExit}>
             <span aria-hidden="true">🏠</span> {WORDS.home}
           </button>
         )}
+        <button
+          type="button" className="pr-button" aria-pressed={soundOn} aria-label="Sound" onClick={() => setSoundOn(!soundOn)}
+          title={soundOn ? 'Sound is on: tap to mute' : 'Sound is off: tap to turn on'}
+        >
+          <span aria-hidden="true">{soundOn ? '🔊' : '🔇'}</span>
+        </button>
         {voice.available && (
           <button type="button" className="pr-button" aria-pressed={voice.on} onClick={() => voice.setOn(!voice.on)}>
             <span aria-hidden="true">{voice.on ? '🗣️' : '🤫'}</span> {voice.on ? WORDS.voiceOn : WORDS.voiceOff}
