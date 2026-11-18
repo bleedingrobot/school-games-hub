@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'marble-easier-2026-11-18',
+    date: '2026-11-18',
+    emoji: '🎉',
+    title: 'Marble Rush is easier',
+    text: 'More rails, fewer gaps, slower geysers. And confetti and stars when you finish!',
+    game: 'marble',
+  },
+  {
     id: 'whats-new-2026-11-18',
     date: '2026-11-18',
     emoji: '📣',

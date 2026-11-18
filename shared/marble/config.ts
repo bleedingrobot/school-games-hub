@@ -42,15 +42,15 @@ export const BOUNCE = 0.45;
 
 /** Jump pads throw the marble up this fast, tiles/s. */
 export const JUMP_SPEED = 7;
-/** Landing harder than this (tiles/s downwards) is an "ouch": back to the checkpoint. */
-export const OUCH_SPEED = 9;
+/** Landing harder than this (tiles/s downwards) is an "ouch": back to the checkpoint. Raised from 9 on 18 Nov 2026 (kids found it too hard). */
+export const OUCH_SPEED = 14;
 
 /** Bumpers push the marble out of a circle this big, at this speed. */
 export const BUMPER_RADIUS = 0.45;
 export const BUMPER_SPEED = 3.5;
 
-/** Falling off or an ouch: back onto the track near where it happened (see `SAFE_SPOT_AGE`), and the clock gains this much (James: about 3 seconds). */
-export const FALL_PENALTY_STEPS = 3 * STEPS_PER_SECOND;
+/** Falling off or an ouch: back onto the track near where it happened (see `SAFE_SPOT_AGE`), and the clock gains this much (James: about 3 seconds; 2 since 18 Nov 2026, to be kinder). */
+export const FALL_PENALTY_STEPS = 2 * STEPS_PER_SECOND;
 /**
  * After a fall the marble goes back to the last safe tile it was rolling on at least this long before (James, 20 Oct 2026:
  * "put you back on track near where you fell off", instead of the last checkpoint). A safe tile is flat, not ice, and not
@@ -90,12 +90,13 @@ export const CONVEYOR_PUSH = 6;
 /**
  * Timed hazards. Everything is worked out from the step number, so the same run always meets the same hazard
  * at the same moment (no randomness, nothing to remember). Times are in steps (60 a second).
+ * Made gentler on 18 Nov 2026 (James: kids found timing the geysers too hard): longer warnings, trapdoors and crane arms open longer.
  */
 export const TIMED = {
   /** A geyser puffs every `period` steps; for the first `warn` it only steams (a warning), then for `active` it throws the marble up. */
-  geyser: { period: 180, warn: 15, active: 30, boost: 1.2 },
+  geyser: { period: 180, warn: 30, active: 30, boost: 1 },
   /** A trapdoor is solid for `solid` steps out of every `period`, then drops away. It flickers for the last `warn` steps before. */
-  trapdoor: { period: 240, solid: 170, warn: 25 },
+  trapdoor: { period: 240, solid: 210, warn: 45 },
   /** A gate (a sweeping arm) is open for `open` steps out of every `period`, then shuts. */
-  gate: { period: 210, open: 120, warn: 25 },
+  gate: { period: 210, open: 150, warn: 40 },
 } as const;
