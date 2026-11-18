@@ -107,7 +107,7 @@ Object.assign(settingsRow, {
 
 // ---- Student scenes use the home page's own fake -------------------------------------------------------------------------------
 const PROFILE_TEACHER = { id: 'me', display_name: 'Sneaky Dragon 28', role: 'teacher', school_admin: false, avatar: {} };
-const PROFILE_STUDENT = { id: 'me', display_name: 'Speedy Otter 27', role: 'student', school_admin: false, avatar: { kind: 'cat', bg: '#9b6bff', ...(new URLSearchParams(location.search).get('quest') === 'won' ? { title: 'moon-walker' } : {}) } };
+const PROFILE_STUDENT = { id: 'me', display_name: 'Speedy Otter 27', role: 'student', school_admin: false, avatar: { kind: 'cat', bg: '#9b6bff', ...(new URLSearchParams(location.search).get('quest') === 'won' ? { title: 'moon-walker', frame: 'vine' } : {}) } };
 const profile = SCENE === 'student' ? PROFILE_STUDENT : PROFILE_TEACHER;
 
 const world = SCENE === 'student' ? newPupil() : busyPupil();
@@ -253,6 +253,8 @@ const answers: Record<string, (a: Row) => unknown> = {
       ? [
           { id: 'r1', reward: 'scroll', kind: 'trader', gotAt: new Date().toISOString(), usedAt: null },
           { id: 'r2', reward: 'title', kind: 'marble-total', gotAt: new Date().toISOString(), usedAt: null },
+          { id: 'r7', reward: 'frame', kind: 'archery-fights', gotAt: new Date().toISOString(), usedAt: null },
+          { id: 'r8', reward: 'frame', kind: 'clans', gotAt: qDay(-9), usedAt: qDay(-9), frame: 'vine' },
           { id: 'r4', reward: 'turns', kind: 'diamond-daily', gotAt: new Date().toISOString(), usedAt: null },
           { id: 'r5', reward: 'coins', kind: 'trader', gotAt: new Date().toISOString(), usedAt: null, game: 'trader' },
           { id: 'r6', reward: 'coins', kind: 'lord', gotAt: qDay(-2), usedAt: qDay(-1), game: 'dragon-maths', amount: 340 },
@@ -263,6 +265,8 @@ const answers: Record<string, (a: Row) => unknown> = {
   my_titles: () => ({ owned: QUEST === 'won' ? ['moon-walker'] : [], wearing: QUEST === 'won' ? 'moon-walker' : null }),
   use_quest_reward: () => null,
   set_my_title: () => null,
+  my_frames: () => ({ owned: QUEST === 'won' ? ['vine'] : [], wearing: QUEST === 'won' ? 'vine' : null }),
+  set_my_frame: () => null,
   my_maths_focus: () => AUTO,
   my_ladder: () => ({ facts: [], settings: {}, focus: AUTO }),
 };

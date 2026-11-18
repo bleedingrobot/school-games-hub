@@ -5,7 +5,7 @@
  */
 import type { Tier } from './earnedPictures';
 
-const FILES = import.meta.glob('./art/{pictures,trophies,rings,cabinet}/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+const FILES = import.meta.glob('./art/{pictures,trophies,rings,cabinet,frames}/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
 function find(folder: string, file: string): string | undefined {
   return FILES[`./art/${folder}/${file}.webp`];
@@ -80,3 +80,9 @@ export function paintedRing(tier: Tier): string | undefined {
 export const SHELF_ART: string | undefined = find('cabinet', 'shelf-800') ?? find('cabinet', 'shelf');
 /** The glow painted behind a friend's picture. */
 export const BACKDROP_GOLD = paintedPicture('backdrop-gold');
+
+/** A Quest Frame's painting (docs/quests-art/config.json `frame-<id>`), full size and small, once it is painted. */
+export function paintedFrame(id: string): { art: string; artSmall: string } | undefined {
+  const art = find('frames', id);
+  return art ? { art, artSmall: find('frames', `${id}-small`) ?? art } : undefined;
+}

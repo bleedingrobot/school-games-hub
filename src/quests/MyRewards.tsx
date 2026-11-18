@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { questKind } from '../../shared/quests/kinds';
 import { COIN_POUCH, questReward, type CoinGame, type QuestReward } from '../../shared/quests/rewards';
+import { questFrame } from '../../shared/quests/frames';
 import { heroTitle } from '../../shared/quests/titles';
 import { FriendlyError } from '../data/profile';
 import { fetchMyQuestRewards, spendQuestReward, type MyQuestReward } from '../data/quests';
@@ -160,6 +161,7 @@ export function MyRewards({
               <li key={r.id}>
                 {questReward(r.reward)?.emoji} {questReward(r.reward)?.name}
                 {r.title && heroTitle(r.title) ? `: ${heroTitle(r.title)?.name}` : ''}
+                {r.frame && questFrame(r.frame) ? `: ${questFrame(r.frame)?.name}` : ''}
                 {r.reward === 'coins' ? `: ${pouchWords(r)} in ${questKind(r.kind)?.game ?? 'your game'}` : ''}
                 {r.reward === 'turns' && r.day ? ` (${questKind(r.kind)?.game ?? ''}, ${r.day === today ? 'today' : r.day})` : ''} ·{' '}
                 {questKind(r.kind)?.name ?? ''}

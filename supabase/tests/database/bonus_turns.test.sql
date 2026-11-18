@@ -36,7 +36,7 @@ select throws_ok($$ select public.teacher_start_class_quest('11111111-1111-4111-
                  '22023', 'That reward can''t be given for this quest.', 'a quest in a game with no daily turns can''t give Bonus Turns');
 select throws_ok($$ select public.teacher_start_class_quest('11111111-1111-4111-8111-111111111111', 'bond-total', 'turns') $$,
                  '22023', 'That reward can''t be given for this quest.', '... nor can Bond Match');
-select throws_ok($$ select public.teacher_start_class_quest('11111111-1111-4111-8111-111111111111', 'trader', 'frame') $$,
+select throws_ok($$ select public.teacher_start_class_quest('11111111-1111-4111-8111-111111111111', 'trader', 'banner') $$,
                  '22023', 'That reward can''t be given for this quest.', 'a reward that isn''t ready yet is still refused');
 select lives_ok($$ select public.teacher_start_class_quest('11111111-1111-4111-8111-111111111111', 'mine-total', 'scroll') $$,
                 'a Name Scroll quest still starts');

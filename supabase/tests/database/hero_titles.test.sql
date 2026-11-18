@@ -33,7 +33,7 @@ $$;
 
 -- ---- Starting with a Hero Title ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000f', 'fox@douglaspark.school.nz');
-select throws_ok($$ select public.teacher_start_class_quest('11111111-1111-4111-8111-111111111111', 'marble-total', 'frame') $$,
+select throws_ok($$ select public.teacher_start_class_quest('11111111-1111-4111-8111-111111111111', 'marble-total', 'banner') $$,
                  '22023', 'That reward can''t be given for this quest.', 'a reward that isn''t ready yet is still refused');
 select lives_ok($$ select public.teacher_start_class_quest('11111111-1111-4111-8111-111111111111', 'marble-total', 'title') $$,
                 'the teacher starts Marble Marathon with a Hero Title');
