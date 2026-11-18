@@ -3,32 +3,57 @@
  * focuses running (with Extend and End now) and the history; and say whether students may choose their own focus.
  * Every action is checked by the database, which refuses anyone who does not teach the class.
  */
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { useSearchParams } from 'react-router';
-import { useAuth } from '../auth/AuthContext';
-import { fetchClassDetail, type ClassDetail, type ClassSummary } from '../data/classes';
-import { fetchMathsAuto, fetchStudentsChooseFocus, saveMathsAuto, saveStudentsChooseFocus } from '../data/classSettings';
-import { endFocus, extendFocus, fetchFocuses, setFocus, type FocusBatch, type FocusLength, type FocusScope } from '../data/focus';
-import { FriendlyError } from '../data/profile';
-import { describeEnd, nzLocalToIso, skillList, timeLeft } from '../../shared/maths/focus';
-import { LADDER } from '../../shared/maths/ladder';
-import { FocusHistory } from '../maths/FocusHistory';
-import { FocusResults } from '../maths/FocusResults';
-import { whoFor } from '../maths/focusText';
-import { LengthPicker, LENGTHS } from '../maths/LengthPicker';
-import { SkillPicker } from '../maths/SkillPicker';
-import { useTeacherClass } from '../teacher/TeacherClass';
-import '../maths/focus.css';
-import './classes.css';
+import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useSearchParams } from "react-router";
+import { useAuth } from "../auth/AuthContext";
+import {
+  fetchClassDetail,
+  type ClassDetail,
+  type ClassSummary,
+} from "../data/classes";
+import {
+  fetchMathsAuto,
+  fetchStudentsChooseFocus,
+  saveMathsAuto,
+  saveStudentsChooseFocus,
+} from "../data/classSettings";
+import {
+  endFocus,
+  extendFocus,
+  fetchFocuses,
+  setFocus,
+  type FocusBatch,
+  type FocusLength,
+  type FocusScope,
+} from "../data/focus";
+import { FriendlyError } from "../data/profile";
+import {
+  describeEnd,
+  nzLocalToIso,
+  skillList,
+  timeLeft,
+} from "../../shared/maths/focus";
+import { LADDER } from "../../shared/maths/ladder";
+import { FocusHistory } from "../maths/FocusHistory";
+import { FocusResults } from "../maths/FocusResults";
+import { endWords, whoFor } from "../maths/focusText";
+import { LengthPicker } from "../maths/LengthPicker";
+import { SkillPicker } from "../maths/SkillPicker";
+import { useTeacherClass } from "../teacher/TeacherClass";
+import "../maths/focus.css";
+import "./classes.css";
 
-const errorText = (error: unknown) => (error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.');
+const errorText = (error: unknown) =>
+  error instanceof FriendlyError
+    ? error.message
+    : "Something went wrong. Please try again.";
 
 /** How often the running list looks again, in milliseconds. */
 export const REFRESH_MS = 30_000;
 
 export default function SetFocus() {
   const { profile } = useAuth();
-  if (profile?.role !== 'teacher') {
+  if (profile?.role !== "teacher") {
     return (
       <section className="coming-soon">
         <div className="coming-soon__emoji" aria-hidden="true">
@@ -53,9 +78,20 @@ function SetFocusView() {
     <div className="classes">
       <h2 className="sr-only">Maths focus</h2>
       <p className="teacher__classes-link">
-        Choose the maths that Gem Keep and Mission Control ask. With no focus, they ask what each student is ready for.
+        Choose the maths that Gem Keep and Mission Control ask. With no focus,
+        they ask what each student is ready for.
       </p>
-      {current && <ClassFocus key={current.id} summary={current} preset={{ student: params.get('student'), students: (params.get('students') ?? '').split(',').filter(Boolean), skill: params.get('skill') }} />}
+      {current && (
+        <ClassFocus
+          key={current.id}
+          summary={current}
+          preset={{
+            student: params.get("student"),
+            students: (params.get("students") ?? "").split(",").filter(Boolean),
+            skill: params.get("skill"),
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -67,7 +103,13 @@ interface Preset {
   skill: string | null;
 }
 
-function ClassFocus({ summary, preset }: { summary: ClassSummary; preset: Preset }) {
+function ClassFocus({
+  summary,
+  preset,
+}: {
+  summary: ClassSummary;
+  preset: Preset;
+}) {
   const classId = summary.id;
   const [detail, setDetail] = useState<ClassDetail | null>(null);
   const [batches, setBatches] = useState<FocusBatch[] | null>(null);
@@ -101,31 +143,35 @@ function ClassFocus({ summary, preset }: { summary: ClassSummary; preset: Preset
   // The running list looks again by itself, so "ends in 40 minutes" stays true and a focus that has run out drops off.
   useEffect(() => {
     const timer = window.setInterval(() => {
-      if (document.visibilityState !== 'hidden') void refresh();
+      if (document.visibilityState !== "hidden") void refresh();
     }, REFRESH_MS);
     return () => window.clearInterval(timer);
   }, [refresh]);
 
   async function changeChoose(on: boolean) {
-    setStatus('Saving…');
+    setStatus("Saving…");
     try {
       await saveStudentsChooseFocus(on, classId);
       setChoose(on);
-      setStatus(on ? 'Students can choose their own focus.' : 'Students can’t choose their own focus. The games use your focus, or auto.');
+      setStatus(
+        on
+          ? "Students can choose their own focus."
+          : "Students can’t choose their own focus. The games use your focus, or auto.",
+      );
     } catch (error) {
       setStatus(errorText(error));
     }
   }
 
   async function changeAuto(on: boolean) {
-    setStatus('Saving…');
+    setStatus("Saving…");
     try {
       await saveMathsAuto(on, classId);
       setAuto(on);
       setStatus(
         on
-          ? 'The games now pick the maths for students with no focus. It starts with their next level or game.'
-          : 'The games ask the times tables for students with no focus, as before.',
+          ? "The games now pick the maths for students with no focus. It starts with their next level or game."
+          : "The games ask the times tables for students with no focus, as before.",
       );
     } catch (error) {
       setStatus(errorText(error));
@@ -140,12 +186,18 @@ function ClassFocus({ summary, preset }: { summary: ClassSummary; preset: Preset
         </h2>
         {choose !== null && (
           <label className="classes__check">
-            <input type="checkbox" checked={choose} onChange={(e) => void changeChoose(e.target.checked)} /> Students can choose their own focus
+            <input
+              type="checkbox"
+              checked={choose}
+              onChange={(e) => void changeChoose(e.target.checked)}
+            />{" "}
+            Students can choose their own focus
           </label>
         )}
         <p className="class-panel__hint">
-          On: a student can pick their own skills on their home page, unless a focus from you is running. Off: they get your focus, or
-          auto. What a student picked is kept, and comes back if you turn this back on.
+          On: a student can pick their own skills on their home page, unless a
+          focus from you is running. Off: they get your focus, or auto. What a
+          student picked is kept, and comes back if you turn this back on.
         </p>
       </section>
 
@@ -155,14 +207,20 @@ function ClassFocus({ summary, preset }: { summary: ClassSummary; preset: Preset
         </h2>
         {auto !== null && (
           <label className="classes__check">
-            <input type="checkbox" checked={auto} onChange={(e) => void changeAuto(e.target.checked)} /> Games pick the maths (auto) when
-            there is no focus
+            <input
+              type="checkbox"
+              checked={auto}
+              onChange={(e) => void changeAuto(e.target.checked)}
+            />{" "}
+            Games pick the maths (auto) when there is no focus
           </label>
         )}
         <p className="class-panel__hint">
-          On: a student with no focus is walked up the ladder, from number facts to the times tables and beyond, starting where they are
-          ready (they can do a short warm-up to find it). Their place never goes
-          backwards. Your focus, or one a student picked, always comes first. Off: the games ask the times tables, as they always have.
+          On: a student with no focus is walked up the ladder, from number facts
+          to the times tables and beyond, starting where they are ready (they
+          can do a short warm-up to find it). Their place never goes backwards.
+          Your focus, or one a student picked, always comes first. Off: the
+          games ask the times tables, as they always have.
         </p>
       </section>
 
@@ -174,11 +232,22 @@ function ClassFocus({ summary, preset }: { summary: ClassSummary; preset: Preset
         {!batches ? (
           <p className="panel__empty">Loading…</p>
         ) : batches.length === 0 ? (
-          <p className="panel__empty">None running. Students follow their own choice, or auto.</p>
+          <p className="panel__empty">
+            None running. Students follow their own choice, or auto.
+          </p>
         ) : (
           <ul className="class-panel__list">
             {batches.map((b) => (
-              <Running key={b.batch} batch={b} now={now} onDone={(message) => { setStatus(message); void refresh(); }} onError={(e) => setStatus(errorText(e))} />
+              <Running
+                key={b.batch}
+                batch={b}
+                now={now}
+                onDone={(message) => {
+                  setStatus(message);
+                  void refresh();
+                }}
+                onError={(e) => setStatus(errorText(e))}
+              />
             ))}
           </ul>
         )}
@@ -189,8 +258,8 @@ function ClassFocus({ summary, preset }: { summary: ClassSummary; preset: Preset
           classId={classId}
           detail={detail}
           preset={preset}
-          onSet={(message) => {
-            setStatus(message);
+          onSet={() => {
+            setStatus(null);
             void refresh();
           }}
           onError={(e) => setStatus(errorText(e))}
@@ -206,14 +275,25 @@ function ClassFocus({ summary, preset }: { summary: ClassSummary; preset: Preset
   );
 }
 
-function Running({ batch, now, onDone, onError }: { batch: FocusBatch; now: Date; onDone: (message: string) => void; onError: (error: unknown) => void }) {
+function Running({
+  batch,
+  now,
+  onDone,
+  onError,
+}: {
+  batch: FocusBatch;
+  now: Date;
+  onDone: (message: string) => void;
+  onError: (error: unknown) => void;
+}) {
   const [extending, setExtending] = useState(false);
-  const [length, setLength] = useState<FocusLength>('week');
-  const [custom, setCustom] = useState('');
+  const [length, setLength] = useState<FocusLength>("week");
+  const [custom, setCustom] = useState("");
 
   async function extend() {
-    const iso = length === 'custom' ? nzLocalToIso(custom) : undefined;
-    if (length === 'custom' && !iso) return onError(new FriendlyError('Pick a date and time first.'));
+    const iso = length === "custom" ? nzLocalToIso(custom) : undefined;
+    if (length === "custom" && !iso)
+      return onError(new FriendlyError("Pick a date and time first."));
     try {
       const ends = await extendFocus(batch.batch, length, iso ?? undefined);
       setExtending(false);
@@ -240,27 +320,55 @@ function Running({ batch, now, onDone, onError }: { batch: FocusBatch; now: Date
       </span>
       <span className="running-focus__meta">
         {timeLeft(batch.endsAt, now)} ({describeEnd(batch.endsAt, now)})
-        {batch.status === 'later' && ' · starts later'}
+        {batch.status === "later" && " · starts later"}
       </span>
       <span className="running-focus__actions">
         {!extending && (
-          <button type="button" className="button button--light-outline" onClick={() => setExtending(true)}>
+          <button
+            type="button"
+            className="button button--light-outline"
+            onClick={() => setExtending(true)}
+          >
             Extend
           </button>
         )}
-        <button type="button" className="button button--light-outline" aria-label={`End now: ${whoFor(batch)}`} onClick={() => void end()}>
+        <button
+          type="button"
+          className="button button--light-outline"
+          aria-label={`End now: ${whoFor(batch)}`}
+          onClick={() => void end()}
+        >
           End now
         </button>
       </span>
-      <FocusResults batch={batch.batch} startsAt={batch.startsAt} endsAt={batch.endsAt} running />
+      <FocusResults
+        batch={batch.batch}
+        startsAt={batch.startsAt}
+        endsAt={batch.endsAt}
+        running
+      />
       {extending && (
         <div className="set-focus__form">
-          <LengthPicker value={length} custom={custom} onChange={setLength} onCustom={setCustom} legend="Run it until…" />
+          <LengthPicker
+            value={length}
+            custom={custom}
+            onChange={setLength}
+            onCustom={setCustom}
+            legend="Run it until…"
+          />
           <span className="running-focus__actions">
-            <button type="button" className="button button--primary" onClick={() => void extend()}>
+            <button
+              type="button"
+              className="button button--primary"
+              onClick={() => void extend()}
+            >
               Extend it
             </button>
-            <button type="button" className="button button--light-outline" onClick={() => setExtending(false)}>
+            <button
+              type="button"
+              className="button button--light-outline"
+              onClick={() => setExtending(false)}
+            >
               Cancel
             </button>
           </span>
@@ -270,37 +378,82 @@ function Running({ batch, now, onDone, onError }: { batch: FocusBatch; now: Date
   );
 }
 
-function NewFocus({ classId, detail, preset, onSet, onError }: { classId: string; detail: ClassDetail; preset: Preset; onSet: (message: string) => void; onError: (error: unknown) => void }) {
+function NewFocus({
+  classId,
+  detail,
+  preset,
+  onSet,
+  onError,
+}: {
+  classId: string;
+  detail: ClassDetail;
+  preset: Preset;
+  onSet: () => void;
+  onError: (error: unknown) => void;
+}) {
   const wanted = new Set([preset.student, ...(preset.students ?? [])]);
-  const presetStudents = detail.members.filter((m) => wanted.has(m.id)).map((m) => m.id);
-  const presetSkill = LADDER.find((l) => l.built && l.id === preset.skill)?.id ?? null;
-  const [scope, setScope] = useState<FocusScope>(presetStudents.length ? 'student' : 'class');
-  const [group, setGroup] = useState('');
-  const [students, setStudents] = useState<Set<string>>(new Set(presetStudents));
-  const [skills, setSkills] = useState<string[]>(presetSkill ? [presetSkill] : []);
+  const presetStudents = detail.members
+    .filter((m) => wanted.has(m.id))
+    .map((m) => m.id);
+  const presetSkill =
+    LADDER.find((l) => l.built && l.id === preset.skill)?.id ?? null;
+  const [scope, setScope] = useState<FocusScope>(
+    presetStudents.length ? "student" : "class",
+  );
+  const [group, setGroup] = useState("");
+  const [students, setStudents] = useState<Set<string>>(
+    new Set(presetStudents),
+  );
+  const [skills, setSkills] = useState<string[]>(
+    presetSkill ? [presetSkill] : [],
+  );
   const [onlyThese, setOnlyThese] = useState(false);
-  const [length, setLength] = useState<FocusLength>('friday');
-  const [custom, setCustom] = useState('');
+  const [length, setLength] = useState<FocusLength>("friday");
+  const [custom, setCustom] = useState("");
   const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState<string | null>(null);
 
-  const targets = scope === 'group' ? (group ? [group] : []) : scope === 'student' ? [...students] : [];
-  const needsTarget = scope !== 'class' && targets.length === 0;
-  const customIso = length === 'custom' ? nzLocalToIso(custom) : null;
-  const ready = skills.length > 0 && !needsTarget && (length !== 'custom' || customIso !== null);
+  const targets =
+    scope === "group"
+      ? group
+        ? [group]
+        : []
+      : scope === "student"
+        ? [...students]
+        : [];
+  const needsTarget = scope !== "class" && targets.length === 0;
+  const customIso = length === "custom" ? nzLocalToIso(custom) : null;
+  const ready =
+    skills.length > 0 &&
+    !needsTarget &&
+    (length !== "custom" || customIso !== null);
 
   function who(): string {
-    if (scope === 'class') return 'the whole class';
-    if (scope === 'group') return `the ${detail.groups.find((g) => g.id === group)?.name ?? ''} group`;
-    return `${students.size} student${students.size === 1 ? '' : 's'}`;
+    if (scope === "class") return "the whole class";
+    if (scope === "group")
+      return `the ${detail.groups.find((g) => g.id === group)?.name ?? ""} group`;
+    return `${students.size} student${students.size === 1 ? "" : "s"}`;
   }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!ready) return;
     setBusy(true);
+    setDone(null);
     try {
-      await setFocus({ classId, scope, targets, skills, onlyThese, length, custom: customIso ?? undefined });
-      onSet(`Focus set for ${who()}: ${skillList(skills)} ${LENGTHS.find((l) => l.value === length)?.label.toLowerCase()}.`);
+      await setFocus({
+        classId,
+        scope,
+        targets,
+        skills,
+        onlyThese,
+        length,
+        custom: customIso ?? undefined,
+      });
+      setDone(
+        `Focus has been set for ${who()} (${skillList(skills)}) ${endWords(length, customIso)}.`,
+      );
+      onSet();
       setSkills([]);
       setStudents(new Set());
     } catch (error) {
@@ -320,17 +473,38 @@ function NewFocus({ classId, detail, preset, onSet, onError }: { classId: string
           <legend>Who is it for?</legend>
           <div className="set-focus__options">
             <label>
-              <input type="radio" name="focus-scope" checked={scope === 'class'} onChange={() => setScope('class')} /> The whole class
+              <input
+                type="radio"
+                name="focus-scope"
+                checked={scope === "class"}
+                onChange={() => setScope("class")}
+              />{" "}
+              The whole class
             </label>
             <label>
-              <input type="radio" name="focus-scope" checked={scope === 'group'} onChange={() => setScope('group')} disabled={detail.groups.length === 0} /> A group
-              {detail.groups.length === 0 && ' (make a group on Class set-up first)'}
+              <input
+                type="radio"
+                name="focus-scope"
+                checked={scope === "group"}
+                onChange={() => setScope("group")}
+                disabled={detail.groups.length === 0}
+              />{" "}
+              A group
+              {detail.groups.length === 0 &&
+                " (make a group on Class set-up first)"}
             </label>
             <label>
-              <input type="radio" name="focus-scope" checked={scope === 'student'} onChange={() => setScope('student')} disabled={detail.members.length === 0} /> Some students
+              <input
+                type="radio"
+                name="focus-scope"
+                checked={scope === "student"}
+                onChange={() => setScope("student")}
+                disabled={detail.members.length === 0}
+              />{" "}
+              Some students
             </label>
           </div>
-          {scope === 'group' && (
+          {scope === "group" && (
             <label className="teacher__type">
               <span>Group</span>
               <select value={group} onChange={(e) => setGroup(e.target.value)}>
@@ -343,7 +517,7 @@ function NewFocus({ classId, detail, preset, onSet, onError }: { classId: string
               </select>
             </label>
           )}
-          {scope === 'student' && (
+          {scope === "student" && (
             <ul className="set-focus__students" aria-label="Students">
               {detail.members.map((m) => (
                 <li key={m.id}>
@@ -357,7 +531,7 @@ function NewFocus({ classId, detail, preset, onSet, onError }: { classId: string
                         else next.add(m.id);
                         setStudents(next);
                       }}
-                    />{' '}
+                    />{" "}
                     {m.name}
                     {m.group && <span className="tag">{m.group}</span>}
                   </label>
@@ -367,22 +541,55 @@ function NewFocus({ classId, detail, preset, onSet, onError }: { classId: string
           )}
         </fieldset>
 
-        <SkillPicker value={skills} onChange={setSkills} legend="What maths?" />
+        <SkillPicker
+          value={skills}
+          onChange={(next) => {
+            setSkills(next);
+            setDone(null);
+          }}
+          legend="What maths?"
+        />
         <label className="classes__check">
-          <input type="checkbox" checked={onlyThese} onChange={(e) => setOnlyThese(e.target.checked)} /> Only these skills. Leave this off and earlier skills still come up as
+          <input
+            type="checkbox"
+            checked={onlyThese}
+            onChange={(e) => setOnlyThese(e.target.checked)}
+          />{" "}
+          Only these skills. Leave this off and earlier skills still come up as
           review (about a third of the questions).
         </label>
 
-        <LengthPicker value={length} custom={custom} onChange={setLength} onCustom={setCustom} />
+        <LengthPicker
+          value={length}
+          custom={custom}
+          onChange={setLength}
+          onCustom={setCustom}
+        />
 
         <div className="set-focus__row">
-          <button type="submit" className="button button--primary" disabled={!ready || busy}>
+          <button
+            type="submit"
+            className="button button--primary"
+            disabled={!ready || busy}
+          >
             Set focus
           </button>
-          {!ready && (
-            <span className="class-panel__hint">
-              {skills.length === 0 ? 'Pick at least one skill.' : needsTarget ? (scope === 'group' ? 'Pick a group.' : 'Pick at least one student.') : 'Pick an end time.'}
+          {done ? (
+            <span className="set-focus__done" role="status">
+              ✓ {done}
             </span>
+          ) : (
+            !ready && (
+              <span className="class-panel__hint">
+                {skills.length === 0
+                  ? "Pick at least one skill."
+                  : needsTarget
+                    ? scope === "group"
+                      ? "Pick a group."
+                      : "Pick at least one student."
+                    : "Pick an end time."}
+              </span>
+            )
           )}
         </div>
       </form>
