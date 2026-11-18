@@ -4,6 +4,10 @@ James, 18 Nov 2026: Star Trader "looks amazing because it takes up the entire sc
 should do the same: no hub bar, no red margins, no frame, the art edge to edge. This file says how, and which games
 are still to do. One game per chat, one PR per game (the bird games can share one).
 
+**New games are full window from the start:** the rules are in
+[game-guide/3-files-and-clashes.md](game-guide/3-files-and-clashes.md) "Full window". This file is for converting
+older games, and its steps 3 to 7 are the how-to for new ones too.
+
 **Done:** Star Trader, Mine Runner, Archery Challenge (built that way), Dragon Maths (#564), Clan Quest (#565), Sky Isles.
 Read those two PRs' diffs before starting. They are the pattern.
 

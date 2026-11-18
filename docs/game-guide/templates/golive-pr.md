@@ -16,6 +16,7 @@
 
 ## Should be true
 - [ ] Every kind of question shows and can be answered (older games: every `LADDER` skill).
+- [ ] Full window: covers the hub bar, paintings edge to edge, ⌂ Hub and sound buttons work, nothing scrolls sideways.
 - [ ] Screens checked at 1366×640, 1024×768, 820×1180, 844×390 and 390×844; 44 px targets, 4.5:1 contrast, focus moved, reduced motion.
 - [ ] A new pupil gets through the first go with no adult (guided first go, skip, replay, next-step line).
 - [ ] Learning design: guessing doesn't win; a wrong answer shows why; help follows results; clock starts after the voice; scored 3+ on every line of `docs/reviews/maths-review/research-design.md`.
