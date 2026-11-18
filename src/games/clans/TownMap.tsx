@@ -36,8 +36,10 @@ export function TownMap({ onGo, shown, off = [], hot = [], notes = {}, top }: {
   if (!art.wide) return null;
   return (
     <div className="cq-town">
+      {/* The same painting, blurred, behind the map: fills the window's edges when its shape isn't the map's. */}
+      <img className="cq-town__blur" src={art.small ?? art.wide} alt="" aria-hidden="true" draggable={false} />
       {top}
-      <nav aria-label="Places in town">
+      <nav aria-label="Places in town" className="cq-town__paper">
       <picture>
         <source media="(max-width: 900px)" srcSet={art.small} />
         <img src={art.wide} alt="" draggable={false} />
