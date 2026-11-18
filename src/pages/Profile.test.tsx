@@ -1,4 +1,4 @@
-import { render, screen, within, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -90,7 +90,7 @@ describe('my profile', () => {
     await renderAt('/profile', state);
     expect(screen.getByRole('heading', { name: 'Brave Kiwi 7' })).toBeInTheDocument();
     expect(fold(/My trophies/)).toHaveAttribute('aria-expanded', 'true');
-    for (const name of [/My achievements/, /My stats/, /Page theme/]) {
+    for (const name of [/My stats/, /Page theme/]) {
       expect(fold(name)).toHaveAttribute('aria-expanded', 'false');
     }
     expect(await screen.findByRole('button', { name: 'Knight Head, Silver' })).toBeInTheDocument();
@@ -99,18 +99,9 @@ describe('my profile', () => {
     expect(state.signOut).toHaveBeenCalled();
   });
 
-  it('shows what is earned, the three nearest achievements, and a game\'s full list on request', async () => {
-    const user = userEvent.setup();
+  it('has no achievements fold (they live in the Achievement Hall now)', async () => {
     await renderAt('/profile', auth());
-    await user.click(fold(/My achievements/));
-    expect(await within(fold(/My achievements/)).findByText('1 of 6')).toBeInTheDocument();
-    const earned = screen.getByRole('heading', { name: 'Earned' }).parentElement!;
-    expect(within(earned).getByText(/Earned one/)).toBeInTheDocument();
-    const nearly = screen.getByRole('heading', { name: 'Nearly there' }).parentElement!;
-    for (const name of [/^Closest/, /Second closest/, /Third closest/]) expect(within(nearly).getByText(name)).toBeInTheDocument();
-    expect(screen.queryByText(/Fourth closest/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Fifth closest/)).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Open my Achievement Hall/ })).toHaveAttribute('href', '/achievements');
+    expect(screen.queryByRole('button', { name: /My achievements/ })).not.toBeInTheDocument();
   });
 
   it('saves a new look together with the theme, and a new theme together with the look', async () => {

@@ -19,6 +19,7 @@ const NAV = [
   { to: '/', label: 'Home', emoji: '🏠' },
   { to: '/lobby', label: 'Lobby', emoji: '🤝' },
   { to: '/leaderboard', label: 'Leaderboard', emoji: '🏅' },
+  { to: '/achievements', label: 'Achievements', emoji: '🏆' },
 ];
 
 export function Layout() {
