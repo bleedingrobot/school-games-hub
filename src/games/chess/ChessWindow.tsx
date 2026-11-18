@@ -1,46 +1,31 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useSound } from '../../sound';
-import castle from './art/bg/castle.webp';
-import castleSmall from './art/bg/castle-800.webp';
+import { Locker } from './Locker';
+import { loadLooks, revealShown, useLooks } from './looks';
+import { Reveal } from './Reveal';
+import { Scenery } from './Scenery';
 import './chess.css';
-
-/** Golden dust drifting up through the hall's light. Fixed numbers, so it looks the same every time. */
-const MOTES = Array.from({ length: 22 }, (_, i) => ({
-  left: (i * 37) % 100,
-  size: 3 + ((i * 7) % 5),
-  duration: 9 + ((i * 13) % 9),
-  delay: -((i * 11) % 17),
-  drift: ((i * 29) % 60) - 30,
-}));
+import './locker.css';
 
 /**
- * Chess fills the whole window, over the hub's bar (James, 18 Nov 2026: like Star Trader), with a painted
- * background behind the board. The way back to the hub and the sound switch sit on the painting instead.
+ * Chess fills the whole window, over the hub's bar (James, 18 Nov 2026: like Star Trader), with the pupil's own
+ * background painting behind the board: their choice from the 🎒 Chess Locker, in bot games and classmate games alike
+ * (each kid sees their own look, never the opponent's). The way back to the hub, the Locker and the sound switch sit on
+ * the painting. When a saved game unlocks something, the treasure chest (Reveal) opens on top of everything.
  */
 export function ChessWindow({ children }: { children: ReactNode }) {
   const { soundOn, setSoundOn } = useSound();
+  const { data, reveal } = useLooks();
+  const [lockerOpen, setLockerOpen] = useState(false);
+  const fresh = data?.fresh.some((k) => k.startsWith('bg:')) ?? false;
+
+  useEffect(() => {
+    void loadLooks();
+  }, []);
+
   return (
     <div className="cw">
-      <div className="cw__bg" aria-hidden="true">
-        <img src={castle} srcSet={`${castleSmall} 800w, ${castle} 1600w`} sizes="100vw" alt="" />
-        <div className="cw__motes">
-          {MOTES.map((m, i) => (
-            <span
-              key={i}
-              style={
-                {
-                  left: `${m.left}%`,
-                  width: m.size,
-                  height: m.size,
-                  animationDuration: `${m.duration}s`,
-                  animationDelay: `${m.delay}s`,
-                  '--cw-drift': `${m.drift}px`,
-                } as CSSProperties
-              }
-            />
-          ))}
-        </div>
-      </div>
+      <Scenery background={data?.background} className="cw__bg" />
       <div className="cw__inner">
         <div className="cw__top">
           <a className="cw-btn" href="#/">
@@ -49,19 +34,29 @@ export function ChessWindow({ children }: { children: ReactNode }) {
           <span className="cw__title" aria-hidden="true">
             ♞ Chess
           </span>
-          <button
-            type="button"
-            className="cw-btn"
-            aria-pressed={soundOn}
-            onClick={() => setSoundOn(!soundOn)}
-            title={soundOn ? 'Sound is on: click to mute' : 'Sound is off: click to turn on'}
-          >
-            <span aria-hidden="true">{soundOn ? '🔊' : '🔇'}</span>
-            <span className="cw-sr">Sound</span>
-          </button>
+          <div className="cw__right">
+            <button type="button" className={`cw-btn cw-btn--locker${fresh ? ' is-new' : ''}`} onClick={() => setLockerOpen(true)}>
+              <span aria-hidden="true">🎒</span> <span className="cw__locker-word">Locker</span>
+              {fresh && <span className="cw-sr"> (something new)</span>}
+            </button>
+            <button
+              type="button"
+              className="cw-btn"
+              aria-pressed={soundOn}
+              onClick={() => setSoundOn(!soundOn)}
+              title={soundOn ? 'Sound is on: click to mute' : 'Sound is off: click to turn on'}
+            >
+              <span aria-hidden="true">{soundOn ? '🔊' : '🔇'}</span>
+              <span className="cw-sr">Sound</span>
+            </button>
+          </div>
         </div>
         {children}
       </div>
+      {lockerOpen && <Locker onClose={() => setLockerOpen(false)} />}
+      {reveal.length > 0 && !lockerOpen && (
+        <Reveal itemKey={reveal[0]} more={reveal.length - 1} onDone={() => revealShown(reveal[0])} />
+      )}
     </div>
   );
 }

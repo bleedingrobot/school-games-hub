@@ -1,1 +1,9 @@
-{ "bg/castle": 2 }
+{
+  "bg/castle": 2,
+  "bg/forest": 3,
+  "bg/coast": 2,
+  "bg/snow": 3,
+  "bg/volcano": 3,
+  "bg/underwater": 4,
+  "bg/space": 2
+}

@@ -1,0 +1,43 @@
+{
+  "_about": "Chess cut-outs: the treasure chest and stand for the unlock reveal (docs/CHESS-LOOK-PLAN.md stage 2). Paint: python scripts/game_art.py docs/chess-art/fx.json paint ~/dragon-art-inbox/chess-fx",
+  "game": "chess",
+  "comfy": "http://127.0.0.1:8188",
+  "filename_prefix": "chess/fx",
+  "style": "a",
+  "styles": {
+    "a": "Hand-painted fantasy storybook game art, rich glowing colours, soft painterly light, friendly for children aged 8 to 11, no writing, no letters, no numbers. "
+  },
+  "inbox": "~/dragon-art-inbox/chess-fx",
+  "picks": "docs/chess-art/fx-picks.json",
+  "art_dir": "src/games/chess/art",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "fx/chest-shut",
+      "prompt": "A big closed wooden pirate treasure chest with a rounded lid, gold metal bands and corners, a golden lock on the front, a little golden light glowing from the crack under the lid, seen from the front and a little above, the whole chest visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [1024, 1024],
+      "kind": "cut",
+      "folder": "fx",
+      "file": "chest-shut",
+      "max": 700
+    },
+    {
+      "name": "fx/chest-open",
+      "prompt": "A big open wooden pirate treasure chest with gold metal bands and corners, the rounded lid thrown wide open backwards, bright golden light and sparkles bursting up out of it, gold coins and jewels inside, seen from the front and a little above, the whole chest visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [1024, 1024],
+      "kind": "cut",
+      "folder": "fx",
+      "file": "chest-open",
+      "max": 700
+    },
+    {
+      "name": "fx/stand",
+      "prompt": "A round display pedestal stand made of polished dark wood with a gold rim and a soft blue velvet top, short and wide like a trophy plinth, seen from the front and a little above, the whole stand visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [1024, 768],
+      "kind": "cut",
+      "folder": "fx",
+      "file": "stand",
+      "max": 600
+    }
+  ]
+}

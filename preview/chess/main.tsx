@@ -1,7 +1,8 @@
 /**
  * A stand-alone copy of chess against the bots, for trying the look and animations. No sign-in, nothing saved.
  * Run: npx vite --config vite.chess-preview.config.ts. Add #show to watch a short game with a capture, check,
- * castling, a promotion and checkmate, one move at a time.
+ * castling, a promotion and checkmate, one move at a time. Add #reveal to open the treasure chest straight away. The
+ * 🎒 Locker uses a stand-in (fakeLooks.ts): the coast is unlocked, and each finished game unlocks the next background.
  */
 import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -11,6 +12,7 @@ import { replay } from '../../shared/chess/rules';
 import { Board } from '../../src/games/chess/Board';
 import { ChessPlay } from '../../src/games/chess/ChessPlay';
 import { ChessWindow } from '../../src/games/chess/ChessWindow';
+import { checkUnlocks } from '../../src/games/chess/looks';
 import { SoundProvider } from '../../src/sound';
 import '../../src/styles.css';
 
@@ -66,6 +68,8 @@ function Show() {
     </ChessWindow>
   );
 }
+
+if (location.hash === '#reveal') void checkUnlocks();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
