@@ -465,3 +465,40 @@
 @media (max-width: 600px), (max-height: 480px) {
   .si-top--turn .si-voice__words { display: none; }
 }
+
+/* ---------------------------------------------------------------- the whole window (James, 18 Nov 2026)
+   Like Star Trader, Dragon Maths and Clan Quest (docs/FULL-WINDOW.md): Sky Isles covers the hub's bar, with no frame.
+   My island and a turn fill the window and their painting runs edge to edge (past the column's padding, `--si-pad`);
+   the text screens (class sky, Hall, keepers, names) stay in a readable column. The way back to the hub and the sound
+   sit in the top bar. */
+.si-window {
+  position: fixed; inset: 0; z-index: 40; overflow-y: auto; overscroll-behavior: contain;
+  background: linear-gradient(180deg, #cfeaf9, #eef8fe 60%) fixed, #cfeaf9;
+}
+.si-window > .si { --si-pad: 12px; min-height: 100%; padding: 8px var(--si-pad) 14px; border-radius: 0; background: none; }
+.si-window > .si--play { max-width: none; }
+.si-hubbtns { display: inline-flex; gap: 6px; flex: 0 0 auto; }
+.si-top > h2:last-child { margin-right: auto; }
+.si .si-hubbtn { width: auto; min-height: 44px; padding: 4px 12px; font-size: 0.95rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+/* The painting: edge to edge, no rounded corners. */
+.si-window .si-stage { width: calc(100% + 2 * var(--si-pad)); margin-left: calc(-1 * var(--si-pad)); margin-right: calc(-1 * var(--si-pad)); border-radius: 0; }
+@media (min-width: 760px) and (min-height: 481px) {
+  /* My island and a turn: the top bar, then the painting down to the window's bottom edge. */
+  .si-window > .si--play:not(:has(.si-stage--tall)) { height: 100dvh; padding-bottom: 0; }
+}
+/* An island laid out as a long page gets the room the hub's bar had. */
+.si-window .si-isle { --si-h: max(240px, calc(100dvh - 230px)); }
+/* The race course: edge to edge, down to the window's bottom edge (at least half the window once the result shows). */
+.si-window .si-race { display: flex; flex-direction: column; min-height: calc(100dvh - 22px); }
+.si-window .si-course { flex: 1 0 0; height: auto; min-height: clamp(170px, 50dvh, 420px); width: calc(100% + 2 * var(--si-pad)); margin: 0 calc(-1 * var(--si-pad)) -14px; border-radius: 0; }
+.si-window .si-race:has(.si-raceresult) .si-course { margin-bottom: 0; }
+@media (max-width: 759px) {
+  .si-window > .si { --si-pad: 8px; }
+  .si .si-hubbtn { min-height: 40px; padding: 2px 10px; }
+  .si-window .si-top { justify-content: flex-start; }
+}
+@media (max-height: 480px) and (min-width: 700px) {
+  .si-window > .si { --si-pad: 10px; padding-top: 6px; }
+  .si-window .si-isle { --si-h: max(180px, calc(100dvh - 110px)); }
+  .si-window .si-course { min-height: 150px; }
+}

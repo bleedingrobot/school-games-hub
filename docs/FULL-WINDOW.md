@@ -4,7 +4,7 @@ James, 18 Nov 2026: Star Trader "looks amazing because it takes up the entire sc
 should do the same: no hub bar, no red margins, no frame, the art edge to edge. This file says how, and which games
 are still to do. One game per chat, one PR per game (the bird games can share one).
 
-**Done:** Star Trader, Mine Runner, Archery Challenge (built that way), Dragon Maths (#564), Clan Quest (#565).
+**Done:** Star Trader, Mine Runner, Archery Challenge (built that way), Dragon Maths (#564), Clan Quest (#565), Sky Isles.
 Read those two PRs' diffs before starting. They are the pattern.
 
 ## What "full window" means
@@ -123,7 +123,7 @@ Rough order: biggest win first. Each line is a prompt to paste into a new chat.
 
 | Done | Game | Prompt for a new chat | Notes |
 |---|---|---|---|
-| ☐ | Sky Isles (`isles`, `.si`) | Make Sky Isles full window like Star Trader, following docs/FULL-WINDOW.md. | Already up to 1600px wide and partly `100dvh` (`.si--play`, `.si-isle --si-h`), so mostly the hub bar, frame and the `- 300px` style caps. Isles is at its test budget. |
+| ☑ | Sky Isles (`isles`, `.si`) | Make Sky Isles full window like Star Trader, following docs/FULL-WINDOW.md. | Already up to 1600px wide and partly `100dvh` (`.si--play`, `.si-isle --si-h`), so mostly the hub bar, frame and the `- 300px` style caps. Isles is at its test budget. |
 | ☐ | Maths Monsters (`monsters`, `.mb`) | Make Maths Monsters full window like Star Trader, following docs/FULL-WINDOW.md. | Board height is capped at `min(100dvh, 640px)` (`--mb-height`): let it use the whole window so the monsters grow. Max width 900px. |
 | ☐ | Diamond Drop (`diamond`, `.dd-root`) | Make Diamond Drop full window like Star Trader, following docs/FULL-WINDOW.md. | The digging field is sized `(100dvh - 170px) * 10 / 7`: drop the hub-bar part. Check its `.dd-overlay` pop-ups (z-index 5) still sit on top. |
 | ☐ | Royal Decree (`decree`, `.rd`) | Make Royal Decree full window like Star Trader, following docs/FULL-WINDOW.md. | Built like Dragon Maths was before #564 (980px frame, `min(100dvh - 120px, 600px)`), so copy #564 closely. |

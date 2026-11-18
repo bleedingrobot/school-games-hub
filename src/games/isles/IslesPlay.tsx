@@ -18,6 +18,7 @@ import { keeperArt, pipArt, sceneArt, weatherArt } from './art';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import { IslesError, type IslandView, type IslesBackend, type PostShown, type PublicRace } from './backend';
 import { freePlaces } from './Decorations';
+import { HubButtons } from './HubButtons';
 import { HowToPlayBody } from './HowToPlay';
 import { ClassSky, VisitIsland } from './ClassSky';
 import { HallOfSkies } from './Hall';
@@ -94,7 +95,16 @@ function Road({ island }: { island: Island }) {
   );
 }
 
-export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; level?: unknown }) {
+/** Sky Isles covers the whole window, over the hub's bar, like Star Trader (James, 18 Nov 2026; docs/FULL-WINDOW.md). */
+export function IslesPlay(props: { backend?: IslesBackend; level?: unknown }) {
+  return (
+    <div className="si-window">
+      <IslesScreens {...props} />
+    </div>
+  );
+}
+
+function IslesScreens({ backend = liveIsles }: { backend?: IslesBackend; level?: unknown }) {
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
   const [view, setView] = useState<IslandView | null>(null);
   const [report, setReport] = useState<TurnReport | undefined>(undefined);
@@ -291,7 +301,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   if (screen.kind === 'loading' || screen.kind === 'problem' || !view || !island || !shownIsland) {
     return (
       <div className="si">
-        <h2 ref={heading} tabIndex={-1}>Sky Isles</h2>
+        <header className="si-top"><HubButtons /><h2 ref={heading} tabIndex={-1}>Sky Isles</h2></header>
         {screen.kind === 'problem' ? (
           <div className="si-panel" role="alert">
             <p>{screen.message}</p>
@@ -307,6 +317,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   if (screen.kind === 'keeper') {
     return (
       <div className="si">
+        {screen.first && <header className="si-top"><HubButtons /></header>}
         <Keepers current={view.keeper} busy={busy} onChoose={(id) => void saveKeeper(id)} onBack={screen.first ? undefined : () => setScreen({ kind: 'home' })} />
         {problem && <p className="si-problem" role="alert">{problem}</p>}
       </div>
@@ -453,6 +464,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
       <Say text={voiceLine} say={voice.say} />
       <TrophyWonLine games={['isles']} watch={view?.island.turn} off={backend.trial} />
       <header className={`si-top${turnStep !== null ? ' si-top--turn' : ''}`}>
+        {turnStep === null && <HubButtons />}
         {screen.kind === 'turn' ? <h2>Your turn</h2> : (
           // A named island is called by its name at the top (James, 4 Nov 2026); until then it's "My island".
           <h2 ref={heading} tabIndex={-1}>
