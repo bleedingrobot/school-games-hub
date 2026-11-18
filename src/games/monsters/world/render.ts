@@ -37,9 +37,12 @@ export interface Scene {
   cache: TileCache;
 }
 
-/** How many screen pixels each pixel of art takes: a whole number, at most 3 (on a Chromebook that shows about 12 tiles from top to bottom). */
+/**
+ * How many screen pixels each pixel of art takes: a whole number, 3 on a Chromebook (about 12 tiles from top to bottom).
+ * The game fills the window, so on a big screen that still shows 12 tiles at 4 the world grows to 4 instead.
+ */
 export function scaleFor(cssHeight: number, dpr: number): number {
-  const css = Math.min(3, Math.max(2, Math.floor(cssHeight / (TILE * 8))));
+  const css = Math.min(4, Math.max(2, Math.min(3, Math.floor(cssHeight / (TILE * 8))), Math.floor(cssHeight / (TILE * 12))));
   return Math.max(2, Math.round(css * dpr));
 }
 
