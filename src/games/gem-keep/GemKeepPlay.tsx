@@ -92,22 +92,20 @@ export function GemKeepPlay() {
     );
   }
   return (
-    <>
-      <GemKeepCampaign
-        settings={data.settings}
-        focus={data.focus}
-        loadFocus={offline ? undefined : tryFetchMyFocus}
-        initialProgress={data.progress}
-        initialFacts={data.facts}
-        note={offline ? TEXT.savingLater : TEXT.savedAccount}
-        onProgress={onProgress}
-        onLevelEnd={onLevelEnd}
-        onKey={onKey}
-        onAnswers={onAnswers}
-        // Local browser checks drive the game through this. Left out of the real site.
-        onEngine={import.meta.env.DEV ? (engine) => Object.assign(window, { gemKeepEngine: engine }) : undefined}
-      />
-      <TrophyWonLine games={['gem-keep']} watch={saves || null} />
-    </>
+    <GemKeepCampaign
+      settings={data.settings}
+      focus={data.focus}
+      loadFocus={offline ? undefined : tryFetchMyFocus}
+      initialProgress={data.progress}
+      initialFacts={data.facts}
+      note={offline ? TEXT.savingLater : TEXT.savedAccount}
+      onProgress={onProgress}
+      onLevelEnd={onLevelEnd}
+      onKey={onKey}
+      onAnswers={onAnswers}
+      // Local browser checks drive the game through this. Left out of the real site.
+      onEngine={import.meta.env.DEV ? (engine) => Object.assign(window, { gemKeepEngine: engine }) : undefined}
+      after={<TrophyWonLine games={['gem-keep']} watch={saves || null} />}
+    />
   );
 }
