@@ -19,7 +19,8 @@ import { useSound } from '../../sound';
 import { AchievementPop } from '../../achievements/AchievementPop';
 import { BOT_LEVELS, type BotLevel } from '../types';
 import { Board } from './Board';
-import { BotPortrait } from './BotPortrait';
+import { BotPortrait } from '../../components/BotPortrait';
+import { CHESS_BOTS } from './botPictures';
 import { ChessWindow } from './ChessWindow';
 import { checkUnlocks } from './looks';
 import { Captured, figurine } from './moveText';
@@ -273,7 +274,7 @@ export function ChessPlay({ level }: { level: BotLevel }) {
               onChange={(next) => setParams({ bot: next }, { replace: true })}
             />
             <div className="chess-setup__bot has-pic">
-              <BotPortrait key={level} level={level} big />
+              <BotPortrait key={level} pictures={CHESS_BOTS} level={level} big />
               <p>
                 <strong>{levelInfo.label} bot:</strong> {BOT_DESCRIPTIONS[level]}
               </p>
@@ -399,7 +400,7 @@ export function ChessPlay({ level }: { level: BotLevel }) {
         <aside className="chess-game__side" aria-label="Game information">
           <div className={`player-card${botsTurn ? ' is-turn' : ''}`}>
             <span className="player-card__bot has-pic" aria-hidden="true">
-              <BotPortrait level={game.level} thinking={botsTurn && !judged} />
+              <BotPortrait pictures={CHESS_BOTS} level={game.level} thinking={botsTurn && !judged} />
             </span>
             <div title={BOT_DESCRIPTIONS[game.level]}>
               <strong>{levelInfo.label} bot</strong>
