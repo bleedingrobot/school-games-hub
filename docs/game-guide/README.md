@@ -54,7 +54,7 @@ Do these in order. Each line says what, then where. Tags: **J** junior only, **O
 20. **PR and merge.** `typecheck`, `test:changed`, `build`; open the PR, merge when green; migrations and the function go live by themselves ([8-going-live.md](8-going-live.md)).
 21. **After the merge.** Check the publish run, tables, the 401 from the function, refusals from outside; try it as a teacher.
 22. **Switch on.** Code switch PR (`ON = true`, id in `src/games/registry.test.ts`), then the teacher switch.
-23. **Write it down.** Plan's Status line (what is live, which PR), project memory, and the next part's copy-ready prompt on the Prompts board. Do this after **every** merge, not only the last.
+23. **Write it down.** Plan's Status line (what is live, which PR), a "What's new" line for pupils if they'll notice it ([8-going-live.md](8-going-live.md)), project memory, and the next part's copy-ready prompt on the Prompts board. Do this after **every** merge, not only the last.
 
 ## The parts
 
