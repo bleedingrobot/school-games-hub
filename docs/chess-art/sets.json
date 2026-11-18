@@ -1,0 +1,664 @@
+{
+  "_about": "Chess piece sets (docs/CHESS-LOOK-PLAN.md stage 4): 6 sets, white (w) and black (b), pawn P, knight N, bishop B, rook R, queen Q, king K. Cut out of white. Paint: python scripts/game_art.py docs/chess-art/sets.json paint ~/dragon-art-inbox/chess-sets",
+  "game": "chess",
+  "comfy": "http://127.0.0.1:8188",
+  "filename_prefix": "chess/set",
+  "style": "a",
+  "styles": {
+    "a": "Hand-painted fantasy storybook game piece, rich glowing colours, soft painterly light, bold clean readable silhouette, friendly for children aged 8 to 11, no writing, no letters, no numbers. "
+  },
+  "inbox": "~/dragon-art-inbox/chess-sets",
+  "picks": "docs/chess-art/sets-picks.json",
+  "art_dir": "src/games/chess/art",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "set/wood/wP",
+      "prompt": "A chess pawn: a small piece with a round ball head on a short neck and a wide round base, carved from pale honey-coloured maple wood with fine wood grain, smooth polished varnish. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/wood",
+      "file": "wP",
+      "max": 256
+    },
+    {
+      "name": "set/wood/wR",
+      "prompt": "A chess rook shaped like a short wide round castle turret: a straight round column with a flat open top ringed by four square notched battlements like a castle wall, and a wide round base, carved from pale honey-coloured maple wood with fine wood grain, smooth polished varnish. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/wood",
+      "file": "wR",
+      "max": 256
+    },
+    {
+      "name": "set/wood/wN",
+      "prompt": "A chess knight: a proud horse head and neck facing left, on a wide round base, carved from pale honey-coloured maple wood with fine wood grain, smooth polished varnish. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/wood",
+      "file": "wN",
+      "max": 256
+    },
+    {
+      "name": "set/wood/wB",
+      "prompt": "A chess bishop: a tall slim piece with a pointed rounded mitre top with a diagonal slit and a small ball on the tip, on a wide round base, carved from pale honey-coloured maple wood with fine wood grain, smooth polished varnish. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/wood",
+      "file": "wB",
+      "max": 256
+    },
+    {
+      "name": "set/wood/wQ",
+      "prompt": "A chess queen: a tall elegant piece with a coronet of small points each tipped with a round pearl, on a wide round base, carved from pale honey-coloured maple wood with fine wood grain, smooth polished varnish. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/wood",
+      "file": "wQ",
+      "max": 256
+    },
+    {
+      "name": "set/wood/wK",
+      "prompt": "A chess king: the tallest chess piece, with a crown topped by a small cross, on a wide round base, carved from pale honey-coloured maple wood with fine wood grain, smooth polished varnish. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/wood",
+      "file": "wK",
+      "max": 256
+    },
+    {
+      "name": "set/wood/bP",
+      "prompt": "A chess pawn: a small piece with a round ball head on a short neck and a wide round base, carved from rich dark chocolate-brown walnut wood with fine wood grain, smooth polished varnish. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/wood",
+      "file": "bP",
+      "max": 256
+    },
+    {
+      "name": "set/wood/bR",
+      "prompt": "A chess rook shaped like a short wide round castle turret: a straight round column with a flat open top ringed by four square notched battlements like a castle wall, and a wide round base, carved from rich dark chocolate-brown walnut wood with fine wood grain, smooth polished varnish. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/wood",
+      "file": "bR",
+      "max": 256
+    },
+    {
+      "name": "set/wood/bN",
+      "prompt": "A chess knight: a proud horse head and neck facing left, on a wide round base, carved from rich dark chocolate-brown walnut wood with fine wood grain, smooth polished varnish. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/wood",
+      "file": "bN",
+      "max": 256
+    },
+    {
+      "name": "set/wood/bB",
+      "prompt": "A chess bishop: a tall slim piece with a pointed rounded mitre top with a diagonal slit and a small ball on the tip, on a wide round base, carved from rich dark chocolate-brown walnut wood with fine wood grain, smooth polished varnish. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/wood",
+      "file": "bB",
+      "max": 256
+    },
+    {
+      "name": "set/wood/bQ",
+      "prompt": "A chess queen: a tall elegant piece with a coronet of small points each tipped with a round pearl, on a wide round base, carved from rich dark chocolate-brown walnut wood with fine wood grain, smooth polished varnish. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/wood",
+      "file": "bQ",
+      "max": 256
+    },
+    {
+      "name": "set/wood/bK",
+      "prompt": "A chess king: the tallest chess piece, with a crown topped by a small cross, on a wide round base, carved from rich dark chocolate-brown walnut wood with fine wood grain, smooth polished varnish. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/wood",
+      "file": "bK",
+      "max": 256
+    },
+    {
+      "name": "set/ice/wP",
+      "prompt": "A chess pawn: a small piece with a round ball head on a short neck and a wide round base, carved from clear glowing pale-blue and white ice crystal, frosty edges, glittering. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/ice",
+      "file": "wP",
+      "max": 256
+    },
+    {
+      "name": "set/ice/wR",
+      "prompt": "A chess rook shaped like a short wide round castle turret: a straight round column with a flat open top ringed by four square notched battlements like a castle wall, and a wide round base, carved from clear glowing pale-blue and white ice crystal, frosty edges, glittering. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/ice",
+      "file": "wR",
+      "max": 256
+    },
+    {
+      "name": "set/ice/wN",
+      "prompt": "A chess knight: a proud horse head and neck facing left, on a wide round base, carved from clear glowing pale-blue and white ice crystal, frosty edges, glittering. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/ice",
+      "file": "wN",
+      "max": 256
+    },
+    {
+      "name": "set/ice/wB",
+      "prompt": "A chess bishop: a tall slim piece with a pointed rounded mitre top with a diagonal slit and a small ball on the tip, on a wide round base, carved from clear glowing pale-blue and white ice crystal, frosty edges, glittering. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/ice",
+      "file": "wB",
+      "max": 256
+    },
+    {
+      "name": "set/ice/wQ",
+      "prompt": "A chess queen: a tall elegant piece with a coronet of small points each tipped with a round pearl, on a wide round base, carved from clear glowing pale-blue and white ice crystal, frosty edges, glittering. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/ice",
+      "file": "wQ",
+      "max": 256
+    },
+    {
+      "name": "set/ice/wK",
+      "prompt": "A chess king: the tallest chess piece, with a crown topped by a small cross, on a wide round base, carved from clear glowing pale-blue and white ice crystal, frosty edges, glittering. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/ice",
+      "file": "wK",
+      "max": 256
+    },
+    {
+      "name": "set/ice/bP",
+      "prompt": "A chess pawn: a small piece with a round ball head on a short neck and a wide round base, carved from deep sapphire-blue and violet ice crystal glowing from inside, frosty edges, glittering. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/ice",
+      "file": "bP",
+      "max": 256
+    },
+    {
+      "name": "set/ice/bR",
+      "prompt": "A short squat castle turret chess rook, as wide as it is tall: a straight round column with a flat open top ringed by four square notched battlements like a castle wall, and a wide round base, the same shape as a sandcastle bucket tower, carved from deep sapphire-blue and violet ice crystal glowing from inside, frosty edges, glittering. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/ice",
+      "file": "bR",
+      "max": 256
+    },
+    {
+      "name": "set/ice/bN",
+      "prompt": "A chess knight: a proud horse head and neck facing left, on a wide round base, carved from deep sapphire-blue and violet ice crystal glowing from inside, frosty edges, glittering. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/ice",
+      "file": "bN",
+      "max": 256
+    },
+    {
+      "name": "set/ice/bB",
+      "prompt": "A chess bishop: a tall slim piece with a pointed rounded mitre top with a diagonal slit and a small ball on the tip, on a wide round base, carved from deep sapphire-blue and violet ice crystal glowing from inside, frosty edges, glittering. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/ice",
+      "file": "bB",
+      "max": 256
+    },
+    {
+      "name": "set/ice/bQ",
+      "prompt": "A chess queen: a tall elegant piece with a coronet of small points each tipped with a round pearl, on a wide round base, carved from deep sapphire-blue and violet ice crystal glowing from inside, frosty edges, glittering. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/ice",
+      "file": "bQ",
+      "max": 256
+    },
+    {
+      "name": "set/ice/bK",
+      "prompt": "A chess king: the tallest chess piece, with a crown topped by a small cross, on a wide round base, carved from deep sapphire-blue and violet ice crystal glowing from inside, frosty edges, glittering. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/ice",
+      "file": "bK",
+      "max": 256
+    },
+    {
+      "name": "set/robot/wP",
+      "prompt": "A chess pawn: a small piece with a round ball head on a short neck and a wide round base, built as a cute friendly robot from shiny white and silver metal panels with rivets and glowing sky-blue lights, with two round glowing robot eyes on the front. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/robot",
+      "file": "wP",
+      "max": 256
+    },
+    {
+      "name": "set/robot/wR",
+      "prompt": "A chess rook shaped like a short wide round castle turret: a straight round column with a flat open top ringed by four square notched battlements like a castle wall, and a wide round base, built as a cute friendly robot from shiny white and silver metal panels with rivets and glowing sky-blue lights, with two round glowing robot eyes on the front. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/robot",
+      "file": "wR",
+      "max": 256
+    },
+    {
+      "name": "set/robot/wN",
+      "prompt": "A chess knight shaped as a robot horse head and neck facing left, on a wide round base, built as a cute friendly robot from shiny white and silver metal panels with rivets and glowing sky-blue lights, with two round glowing robot eyes on the front. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/robot",
+      "file": "wN",
+      "max": 256
+    },
+    {
+      "name": "set/robot/wB",
+      "prompt": "A chess bishop: a tall slim piece with a pointed rounded mitre top with a diagonal slit and a small ball on the tip, on a wide round base, built as a cute friendly robot from shiny white and silver metal panels with rivets and glowing sky-blue lights, with two round glowing robot eyes on the front. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/robot",
+      "file": "wB",
+      "max": 256
+    },
+    {
+      "name": "set/robot/wQ",
+      "prompt": "A chess queen: a tall elegant piece with a coronet of small points each tipped with a round pearl, on a wide round base, built as a cute friendly robot from shiny white and silver metal panels with rivets and glowing sky-blue lights, with two round glowing robot eyes on the front. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/robot",
+      "file": "wQ",
+      "max": 256
+    },
+    {
+      "name": "set/robot/wK",
+      "prompt": "A chess king: the tallest chess piece, with a crown topped by a small cross, on a wide round base, built as a cute friendly robot from shiny white and silver metal panels with rivets and glowing sky-blue lights, with two round glowing robot eyes on the front. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/robot",
+      "file": "wK",
+      "max": 256
+    },
+    {
+      "name": "set/robot/bP",
+      "prompt": "A chess pawn: a small piece with a round ball head on a short neck and a wide round base, built as a cute friendly robot from dark gunmetal-black metal panels with rivets and glowing red-orange lights, with two round glowing robot eyes on the front. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/robot",
+      "file": "bP",
+      "max": 256
+    },
+    {
+      "name": "set/robot/bR",
+      "prompt": "A chess rook shaped like a short wide round castle turret: a straight round column with a flat open top ringed by four square notched battlements like a castle wall, and a wide round base, built as a cute friendly robot from dark gunmetal-black metal panels with rivets and glowing red-orange lights, with two round glowing robot eyes on the front. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/robot",
+      "file": "bR",
+      "max": 256
+    },
+    {
+      "name": "set/robot/bN",
+      "prompt": "A chess knight shaped as a robot horse head and neck facing left, on a wide round base, built as a cute friendly robot from dark gunmetal-black metal panels with rivets and glowing red-orange lights, with two round glowing robot eyes on the front. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/robot",
+      "file": "bN",
+      "max": 256
+    },
+    {
+      "name": "set/robot/bB",
+      "prompt": "A chess bishop: a tall slim piece with a pointed rounded mitre top with a diagonal slit and a small ball on the tip, on a wide round base, built as a cute friendly robot from dark gunmetal-black metal panels with rivets and glowing red-orange lights, with two round glowing robot eyes on the front. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/robot",
+      "file": "bB",
+      "max": 256
+    },
+    {
+      "name": "set/robot/bQ",
+      "prompt": "A chess queen: a tall elegant piece with an open round ring-shaped coronet of eight small points each tipped with a round pearl, the middle of the coronet open, on a wide round base, built as a cute friendly robot from dark gunmetal-black metal panels with rivets and glowing red-orange lights, with two round glowing robot eyes on the front. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/robot",
+      "file": "bQ",
+      "max": 256
+    },
+    {
+      "name": "set/robot/bK",
+      "prompt": "A chess king: the tallest chess piece, with a crown topped by a small cross, on a wide round base, built as a cute friendly robot from dark gunmetal-black metal panels with rivets and glowing red-orange lights, with two round glowing robot eyes on the front. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/robot",
+      "file": "bK",
+      "max": 256
+    },
+    {
+      "name": "set/dragon/wP",
+      "prompt": "A chess pawn: a small piece with a round ball head on a short neck and a wide round base, in a dragon knight style, made of ivory-white enamel with gold trim and small dragon scales and wings carved on it. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/dragon",
+      "file": "wP",
+      "max": 256
+    },
+    {
+      "name": "set/dragon/wR",
+      "prompt": "A chess rook shaped like a short wide round castle turret: a straight round column with a flat open top ringed by four square notched battlements like a castle wall, and a wide round base, in a dragon knight style, made of ivory-white enamel with gold trim and small dragon scales and wings carved on it. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/dragon",
+      "file": "wR",
+      "max": 256
+    },
+    {
+      "name": "set/dragon/wN",
+      "prompt": "A chess knight shaped as a fierce dragon head and neck facing left, on a wide round base, in a dragon knight style, made of ivory-white enamel with gold trim and small dragon scales and wings carved on it. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/dragon",
+      "file": "wN",
+      "max": 256
+    },
+    {
+      "name": "set/dragon/wB",
+      "prompt": "A chess bishop: a tall slim piece with a pointed rounded mitre top with a diagonal slit and a small ball on the tip, on a wide round base, in a dragon style, shaped like a smooth egg-shaped bishop hat, made of ivory-white enamel with gold trim and small dragon scales and wings carved on it. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/dragon",
+      "file": "wB",
+      "max": 256
+    },
+    {
+      "name": "set/dragon/wQ",
+      "prompt": "A chess queen: a tall elegant piece with a coronet of small points each tipped with a round pearl, on a wide round base, in a dragon knight style, made of ivory-white enamel with gold trim and small dragon scales and wings carved on it. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/dragon",
+      "file": "wQ",
+      "max": 256
+    },
+    {
+      "name": "set/dragon/wK",
+      "prompt": "A chess king: the tallest chess piece, with a crown topped by a small cross, on a wide round base, in a dragon knight style, made of ivory-white enamel with gold trim and small dragon scales and wings carved on it. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/dragon",
+      "file": "wK",
+      "max": 256
+    },
+    {
+      "name": "set/dragon/bP",
+      "prompt": "A chess pawn: a small piece with a round ball head on a short neck and a wide round base, in a dragon knight style, made of glossy black enamel with crimson-red trim and small dragon scales and wings carved on it. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/dragon",
+      "file": "bP",
+      "max": 256
+    },
+    {
+      "name": "set/dragon/bR",
+      "prompt": "A chess rook shaped like a short wide round castle turret: a straight round column with a flat open top ringed by four square notched battlements like a castle wall, and a wide round base, in a dragon knight style, made of glossy black enamel with crimson-red trim and small dragon scales and wings carved on it. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/dragon",
+      "file": "bR",
+      "max": 256
+    },
+    {
+      "name": "set/dragon/bN",
+      "prompt": "A chess knight shaped as a fierce dragon head and neck facing left, on a wide round base, in a dragon knight style, made of glossy black enamel with crimson-red trim and small dragon scales and wings carved on it. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/dragon",
+      "file": "bN",
+      "max": 256
+    },
+    {
+      "name": "set/dragon/bB",
+      "prompt": "A chess bishop: a tall slim piece with a pointed rounded mitre top with a diagonal slit and a small ball on the tip, on a wide round base, in a dragon style, shaped like a smooth egg-shaped bishop hat, made of glossy black enamel with crimson-red trim and small dragon scales and wings carved on it. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/dragon",
+      "file": "bB",
+      "max": 256
+    },
+    {
+      "name": "set/dragon/bQ",
+      "prompt": "A chess queen: a tall elegant piece with a coronet of small points each tipped with a round pearl, on a wide round base, in a dragon knight style, made of glossy black enamel with crimson-red trim and small dragon scales and wings carved on it. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/dragon",
+      "file": "bQ",
+      "max": 256
+    },
+    {
+      "name": "set/dragon/bK",
+      "prompt": "A chess king: the tallest chess piece, with a crown topped by a small cross, on a wide round base, in a dragon knight style, made of glossy black enamel with crimson-red trim and small dragon scales and wings carved on it. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/dragon",
+      "file": "bK",
+      "max": 256
+    },
+    {
+      "name": "set/golden/wP",
+      "prompt": "A chess pawn: a small piece with a round ball head on a short neck and a wide round base, made of shiny polished bright gold, studded with small sparkling clear diamonds. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/golden",
+      "file": "wP",
+      "max": 256
+    },
+    {
+      "name": "set/golden/wR",
+      "prompt": "A chess rook shaped like a short wide round castle turret: a straight round column with a flat open top ringed by four square notched battlements like a castle wall, and a wide round base, made of shiny polished bright gold, studded with small sparkling clear diamonds. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/golden",
+      "file": "wR",
+      "max": 256
+    },
+    {
+      "name": "set/golden/wN",
+      "prompt": "A chess knight: a proud horse head and neck facing left, on a wide round base, made of shiny polished bright gold, studded with small sparkling clear diamonds. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/golden",
+      "file": "wN",
+      "max": 256
+    },
+    {
+      "name": "set/golden/wB",
+      "prompt": "A chess bishop: a tall slim piece with a pointed rounded mitre top with a diagonal slit and a small ball on the tip, on a wide round base, made of shiny polished bright gold, studded with small sparkling clear diamonds. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/golden",
+      "file": "wB",
+      "max": 256
+    },
+    {
+      "name": "set/golden/wQ",
+      "prompt": "A chess queen: a tall elegant piece with a coronet of small points each tipped with a round pearl, on a wide round base, made of shiny polished bright gold, studded with small sparkling clear diamonds. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/golden",
+      "file": "wQ",
+      "max": 256
+    },
+    {
+      "name": "set/golden/wK",
+      "prompt": "A chess king: the tallest chess piece, with a crown topped by a small cross, on a wide round base, made of shiny polished bright gold, studded with small sparkling clear diamonds. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/golden",
+      "file": "wK",
+      "max": 256
+    },
+    {
+      "name": "set/golden/bP",
+      "prompt": "A chess pawn: a small piece with a round ball head on a short neck and a wide round base, made of shiny polished dark bronze and black onyx stone with thin gold trim and small sparkling red rubies. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/golden",
+      "file": "bP",
+      "max": 256
+    },
+    {
+      "name": "set/golden/bR",
+      "prompt": "A chess rook shaped like a short wide round castle turret: a straight round column with a flat open top ringed by four square notched battlements like a castle wall, and a wide round base, made of shiny polished dark bronze and black onyx stone with thin gold trim and small sparkling red rubies. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/golden",
+      "file": "bR",
+      "max": 256
+    },
+    {
+      "name": "set/golden/bN",
+      "prompt": "A chess knight: a proud horse head and neck facing left, on a wide round base, made of shiny polished dark bronze and black onyx stone with thin gold trim and small sparkling red rubies. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/golden",
+      "file": "bN",
+      "max": 256
+    },
+    {
+      "name": "set/golden/bB",
+      "prompt": "A chess bishop: a tall slim piece with a pointed rounded mitre top with a diagonal slit and a small ball on the tip, on a wide round base, made of shiny polished dark bronze and black onyx stone with thin gold trim and small sparkling red rubies. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/golden",
+      "file": "bB",
+      "max": 256
+    },
+    {
+      "name": "set/golden/bQ",
+      "prompt": "A chess queen: a tall elegant piece with a coronet of small points each tipped with a round pearl, on a wide round base, made of shiny polished dark bronze and black onyx stone with thin gold trim and small sparkling red rubies. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/golden",
+      "file": "bQ",
+      "max": 256
+    },
+    {
+      "name": "set/golden/bK",
+      "prompt": "A chess king: the tallest chess piece, with a crown topped by a small cross, on a wide round base, made of shiny polished dark bronze and black onyx stone with thin gold trim and small sparkling red rubies. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/golden",
+      "file": "bK",
+      "max": 256
+    },
+    {
+      "name": "set/birds/wP",
+      "prompt": "A chess piece made as a little brown kiwi, the round fluffy flightless New Zealand bird with shaggy brown feathers, no wings, a very long thin curved beak and sturdy legs, standing on a round chess-piece base of polished cream-white marble with a thin gold rim, painted in natural colours. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/birds",
+      "file": "wP",
+      "max": 256
+    },
+    {
+      "name": "set/birds/wN",
+      "prompt": "A chess piece made as a plump kererū wood pigeon with a shiny green-purple head and white chest, shown as head and chest facing left, standing on a round chess-piece base of polished cream-white marble with a thin gold rim, painted in natural colours. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/birds",
+      "file": "wN",
+      "max": 256
+    },
+    {
+      "name": "set/birds/wB",
+      "prompt": "A chess piece made as a ruru morepork owl with big golden eyes, standing tall, standing on a round chess-piece base of polished cream-white marble with a thin gold rim, painted in natural colours. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/birds",
+      "file": "wB",
+      "max": 256
+    },
+    {
+      "name": "set/birds/wR",
+      "prompt": "A chess piece made as a tūī bird with dark glossy feathers and a white throat tuft, perched on top of a small grey stone castle tower with battlements, standing on a round chess-piece base of polished cream-white marble with a thin gold rim, painted in natural colours. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/birds",
+      "file": "wR",
+      "max": 256
+    },
+    {
+      "name": "set/birds/wQ",
+      "prompt": "A chess piece made as a green kākāpō parrot wearing a small golden crown, standing on a round chess-piece base of polished cream-white marble with a thin gold rim, painted in natural colours. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/birds",
+      "file": "wQ",
+      "max": 256
+    },
+    {
+      "name": "set/birds/wK",
+      "prompt": "A chess piece made as a tall blue takahē bird with a big red beak, wearing a golden crown with a small cross on top, standing on a round chess-piece base of polished cream-white marble with a thin gold rim, painted in natural colours. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/birds",
+      "file": "wK",
+      "max": 256
+    },
+    {
+      "name": "set/birds/bP",
+      "prompt": "A chess piece made as a little brown kiwi, the round fluffy flightless New Zealand bird with shaggy brown feathers, no wings, a very long thin curved beak and sturdy legs, standing on a round chess-piece base of polished jet-black stone with a thin red rim, painted in natural colours. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/birds",
+      "file": "bP",
+      "max": 256
+    },
+    {
+      "name": "set/birds/bN",
+      "prompt": "A chess piece made as a plump kererū wood pigeon with a shiny green-purple head and white chest, shown as head and chest facing left, standing on a round chess-piece base of polished jet-black stone with a thin red rim, painted in natural colours. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/birds",
+      "file": "bN",
+      "max": 256
+    },
+    {
+      "name": "set/birds/bB",
+      "prompt": "A chess piece made as a ruru morepork owl with big golden eyes, standing tall, standing on a round chess-piece base of polished jet-black stone with a thin red rim, painted in natural colours. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/birds",
+      "file": "bB",
+      "max": 256
+    },
+    {
+      "name": "set/birds/bR",
+      "prompt": "A chess piece made as a tūī bird with dark glossy feathers and a white throat tuft, perched on top of a small grey stone castle tower with battlements, standing on a round chess-piece base of polished jet-black stone with a thin red rim, painted in natural colours. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/birds",
+      "file": "bR",
+      "max": 256
+    },
+    {
+      "name": "set/birds/bQ",
+      "prompt": "A chess piece made as a green kākāpō parrot wearing a small golden crown, standing on a round chess-piece base of polished jet-black stone with a thin red rim, painted in natural colours. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/birds",
+      "file": "bQ",
+      "max": 256
+    },
+    {
+      "name": "set/birds/bK",
+      "prompt": "A chess piece made as a tall blue takahē bird with a big red beak, wearing a golden crown with a small cross on top, standing on a round chess-piece base of polished jet-black stone with a thin red rim, painted in natural colours. A single chess piece standing upright, seen from the front and a little above, the whole piece visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [768, 1024],
+      "kind": "cut",
+      "folder": "set/birds",
+      "file": "bK",
+      "max": 256
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BoardPreview } from './BoardFace';
+import { SetPreview } from './SetFace';
 import {
   BACKGROUNDS,
   BOARDS,
@@ -22,7 +23,7 @@ const TABS: { kind: LookKind; label: string; emoji: string; looks: Look[] }[] = 
   { kind: 'background', label: 'Backgrounds', emoji: '🖼️', looks: BACKGROUNDS },
 ];
 
-/** The Chess Locker: a full-window showroom for picking a board and a background (and, from stage 4, a piece set). */
+/** The Chess Locker: a full-window showroom for picking a piece set, a board and a background. */
 export function Locker({ onClose }: { onClose: () => void }) {
   const { data, error } = useLooks();
   const [kind, setKind] = useState<LookKind>('background');
@@ -77,8 +78,12 @@ export function Locker({ onClose }: { onClose: () => void }) {
 
         <div className="cl__stage" key={kind + look.id}>
           {kind !== 'background' && (
-            <div className={`cl__plinth${open ? '' : ' is-locked'}${kind === 'board' ? ' cl__plinth--board' : ''}`} aria-hidden="true">
-              {kind === 'board' ? <BoardPreview look={look as BoardLook} className="cl__board" /> : <span>{look.emoji}</span>}
+            <div className={`cl__plinth${open ? '' : ' is-locked'} cl__plinth--${kind}`} aria-hidden="true">
+              {kind === 'board' ? (
+                <BoardPreview look={look as BoardLook} className="cl__board" />
+              ) : (
+                <SetPreview set={look.id} big />
+              )}
             </div>
           )}
           <div className="cl__card" aria-live="polite">
@@ -142,8 +147,8 @@ export function Locker({ onClose }: { onClose: () => void }) {
                       <BoardPreview look={l as BoardLook} />
                     </span>
                   ) : (
-                    <span className="cl__thumb-emoji" aria-hidden="true">
-                      {l.emoji}
+                    <span className="cl__thumb-emoji cl__thumb-set" aria-hidden="true">
+                      <SetPreview set={l.id} />
                     </span>
                   )}
                   <span className="cl__thumb-name">

@@ -1,15 +1,16 @@
 // The preview saves nothing: these stand in for src/games/chess/lookData. The pupil starts with the coast unlocked
 // (and not yet revealed), and every finished game unlocks the next board or background, so the treasure chest can be
-// watched. Add board=lava (or marble, beach, starfield) to the address to start on that board, e.g. #show&board=lava.
+// watched. Add board=lava (or marble, beach, starfield) or set=birds (wood, ice, robot, dragon, golden) to the address to
+// start with that look, e.g. #show&board=lava&set=dragon.
 import type { LookData, LookKind } from '../../src/games/chess/lookData';
 
-const ORDER = ['board:beach', 'board:starfield', 'bg:forest', 'bg:volcano', 'bg:snow', 'bg:underwater', 'bg:space'];
+const ORDER = ['set:birds', 'board:beach', 'board:starfield', 'bg:forest', 'bg:volcano', 'bg:snow', 'bg:underwater', 'bg:space'];
 let fetches = 0;
 const state: LookData = {
-  set: 'classic',
+  set: /[#&]set=(\w+)/.exec(location.hash)?.[1] ?? 'classic',
   board: /board=(\w+)/.exec(location.hash)?.[1] ?? 'classic',
   background: 'castle',
-  unlocked: ['bg:coast', 'set:wood', 'board:marble', 'board:lava'],
+  unlocked: ['bg:coast', 'set:wood', 'board:marble', 'board:lava', 'set:dragon', 'set:ice'],
   fresh: ['bg:coast', 'board:lava'],
   progress: {
     'set:wood': { have: 3, need: 3 }, 'set:birds': { have: 0, need: 1 }, 'set:ice': { have: 0, need: 1 },

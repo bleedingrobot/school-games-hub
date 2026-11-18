@@ -5,8 +5,8 @@ different ways … a few different backgrounds … full screen … flashy and en
 
 **Status:** stage 1 live (PR #578: full window, castle hall painting, all the move animations). Stage 2 live (PR #579:
 the 🎒 Chess Locker, 6 more backgrounds with their own particles, unlocks worked out on the server, the treasure chest).
-Stage 3 live (PR #580, 18 Nov 2026: the 4 painted boards, lively, in the Locker and the chest). Stages 4
-and 5 to do.
+Stage 3 live (PR #580, 18 Nov 2026: the 4 painted boards, lively, in the Locker and the chest). Stage 4 (the 6
+painted piece sets) in review, 19 Nov 2026. Stage 5 to do.
 
 ## Decisions
 
@@ -69,8 +69,14 @@ and 5 to do.
    plinth and shelf and the treasure chest show small real boards. Classic wood is unchanged. The squares were the
    wrong way round before this stage (a1 was light); now a1 is dark. Preview: add `&board=lava` (or marble, beach,
    starfield) to the address.
-4. **Piece sets:** 6 sets × 12 cut-out pieces, keeping the normal chess shapes so they read on small squares. The
-   SVG pieces stay as the fallback.
+4. **Piece sets** (done). `docs/chess-art/sets.json` paints `set/<set>/<w|b><P|R|N|B|Q|K>` (72 cut-outs, picks in
+   `sets-picks.json`): Carved Wood, Ice Crystal, Robot (glowing eyes), Dragon Knights, Golden (diamonds and rubies) and
+   Bush Birds (kiwi pawns, kererū knights, ruru bishops, tūī rooks, kākāpō queen, takahē king). Say "flat open top"
+   for rooks and keep "knight" out of the dragon bishops, or the painter puts a king's cross on top. `Board.tsx`
+   `pieceImage(colour, type, set)` uses the painted piece, or the drawn one for Classic or anything missing;
+   `pieceClass` stands each kind at its own height (pictures are all cut to the same height), and the birds get a white
+   or red edge so the sides read apart. `SetFace.tsx` shows a set on the Locker plinth, the shelf and the chest.
+   Preview: add `&set=birds` (or wood, ice, robot, dragon, golden).
 5. **Bot portraits** (🐣 Chick, 🤖 Robot, 🧠 Wizard as painted characters on the start screen) and polish.
 
 ## Art

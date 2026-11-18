@@ -40,8 +40,22 @@ export const PIECE_NAMES: Record<string, string> = {
 const FILES = 'abcdefgh';
 const PROMOTION_CHOICES: PromotionPiece[] = ['q', 'r', 'b', 'n'];
 
-export function pieceImage(colour: 'w' | 'b', type: string) {
-  return PIECE_IMAGES[colour + type.toUpperCase()];
+/** The painted piece sets from the Chess Locker (art/set/<set>/<colour><piece>.webp). */
+const PAINTED = import.meta.glob('./art/set/*/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<
+  string,
+  string
+>;
+
+/** A piece's picture in the pupil's set. Classic (and any set whose picture is missing) uses the drawn pieces. */
+export function pieceImage(colour: 'w' | 'b', type: string, set = 'classic') {
+  const key = colour + type.toUpperCase();
+  return (set !== 'classic' && PAINTED[`./art/set/${set}/${key}.webp`]) || PIECE_IMAGES[key];
+}
+
+/** Classes for a painted piece: its kind (a pawn stands shorter than a king) and side (chess.css sizes and outlines them). */
+export function pieceClass(colour: 'w' | 'b', type: string, set = 'classic') {
+  if (set === 'classic' || !PAINTED[`./art/set/${set}/${colour}${type.toUpperCase()}.webp`]) return '';
+  return ` is-painted pc--${type.toLowerCase()} pc--${colour} pc-set--${set}`;
 }
 
 /** The 64 squares in the order they're drawn, top-left first, from this player's side. */
@@ -123,7 +137,9 @@ export function Board({ chess, orientation, canMove, lastMove, onMove }: BoardPr
   const fxId = useRef(0);
   const [fx, setFx] = useState<Fx[]>([]);
   // The pupil's own board from the Chess Locker (classic wood until the looks load).
-  const look = boardById(useLooks().data?.board);
+  const { data } = useLooks();
+  const look = boardById(data?.board);
+  const set = data?.set ?? 'classic';
 
   const squares = squaresFor(orientation);
   const myColour = orientation === 'white' ? 'w' : 'b';
@@ -203,7 +219,7 @@ export function Board({ chess, orientation, canMove, lastMove, onMove }: BoardPr
         id: next(),
         kind: 'capture',
         at: squares.indexOf(taken),
-        piece: pieceImage(colour, move.captured),
+        piece: pieceImage(colour, move.captured, set),
       });
       boardRef.current?.animate?.(
         [
@@ -330,8 +346,8 @@ export function Board({ chess, orientation, canMove, lastMove, onMove }: BoardPr
             >
               {piece && (
                 <img
-                  className={`board__piece${square === mated ? ' is-toppled' : ''}`}
-                  src={pieceImage(piece.color, piece.type)}
+                  className={`board__piece${pieceClass(piece.color, piece.type, set)}${square === mated ? ' is-toppled' : ''}`}
+                  src={pieceImage(piece.color, piece.type, set)}
                   alt=""
                   draggable={false}
                 />
@@ -432,7 +448,7 @@ export function Board({ chess, orientation, canMove, lastMove, onMove }: BoardPr
                     setSelected(null);
                   }}
                 >
-                  <img src={pieceImage(myColour, type)} alt="" />
+                  <img src={pieceImage(myColour, type, set)} alt="" />
                   <span>{PIECE_NAMES[type][0].toUpperCase() + PIECE_NAMES[type].slice(1)}</span>
                 </button>
               ))}
