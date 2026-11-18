@@ -164,6 +164,18 @@ let newOnes = params.get('new') ? [
   { id: 'dm-slayer', game: 'dragon-maths', name: 'Dragon Slayer', how: 'Slay the dragon in Dragon Maths.', kind: 'trophy', tier: 'gold', count: 4 },
   { id: 'dm-first-five', game: 'dragon-maths', name: 'Dragon Head', how: 'Be one of the first five in the school to slay the dragon in a season.', kind: 'picture', tier: 'silver', count: 2 },
 ] : [];
+/**
+ * Achievements stage 3: ?ach=5 gives five earned achievements not shown yet (gold, silver and bronze), for the hub's
+ * "New achievement!" moment, its queue and "and 2 more". Each is one the Hall shows as earned, so on #/achievements the
+ * medallion flies onto its shelf. Shown once, like the real one.
+ */
+export function pretendNewAchievements(count: number) {
+  const earned = hallAchievements().filter((a) => a.earnedAt) as unknown as { id: string; game: string; name: string; emoji: string; how: string; tier: 1 | 2 | 3 }[];
+  const pick = [3, 2, 1, 2, 3, 1].flatMap((tier, n) => earned.filter((a) => a.tier === tier).slice(n, n + 1));
+  return pick.slice(0, count).map((a, n) => ({ id: a.id, game: a.game, name: a.name, emoji: a.emoji, how: a.how, tier: a.tier, earnedAt: ago(n / 100) }));
+}
+let unseenAchievements = pretendNewAchievements(Number(params.get('ach') ?? 0));
+
 /** Made-up pupils for the leaderboard redesign's boards (leaderboard plan L2). */
 const BOARD_PEOPLE = [
   ['Swift Kea 3', 48, 5, 5, 31], ['Calm Tui 7', 44, 2, 5, 24], ['Lucky Weka 9', 41, 7, 4, 19], ['Happy Ruru 4', 37, 0, 2, 9],
@@ -279,6 +291,13 @@ export const supabase = {
     if (name === 'mark_season_note_seen') {
       seasonNote = null;
       return Promise.resolve({ data: null, error: null });
+    }
+    if (name === 'my_new_achievements') return Promise.resolve({ data: unseenAchievements, error: null });
+    if (name === 'mark_my_achievements_seen') {
+      const ids = args?.ids as string[] | undefined;
+      const before = unseenAchievements.length;
+      unseenAchievements = ids ? unseenAchievements.filter((a) => !ids.includes(a.id)) : [];
+      return Promise.resolve({ data: before - unseenAchievements.length, error: null });
     }
     if (name === 'my_new_trophies') return Promise.resolve({ data: newOnes, error: null });
     if (name === 'mark_my_trophies_seen') {

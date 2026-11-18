@@ -1,5 +1,5 @@
 {
-  "_from": "docs/game-guide/templates/art-config.json. The Achievement Hall (docs/ACHIEVEMENTS-PLAN.md, stage 2). Hall paintings: --style hall; frames and shelf: --style metal.",
+  "_from": "docs/game-guide/templates/art-config.json. The Achievement Hall (docs/ACHIEVEMENTS-PLAN.md, stage 2). Hall paintings: --style hall; frames and shelf: --style metal. Earn moment bursts (stage 3): --style glow.",
   "game": "achievements",
   "filename_prefix": "achievements/img",
   "comfy": "http://127.0.0.1:8188",
@@ -7,7 +7,8 @@
   "seed_by": "name+style",
   "styles": {
     "hall": "Epic vibrant painterly fantasy game key art, rich saturated colour, warm glowing magical light, sense of wonder, friendly and inviting, made for children aged 8 to 11, no people, no text, no letters, no numbers anywhere. ",
-    "metal": "Polished game UI asset, painterly fantasy style, one object alone on a plain pure white background, seen straight on, perfectly centred and symmetrical, crisp clean edges, soft studio light, no shadow on the background, no text, no letters, no numbers. "
+    "metal": "Polished game UI asset, painterly fantasy style, one object alone on a plain pure white background, seen straight on, perfectly centred and symmetrical, crisp clean edges, soft studio light, no shadow on the background, no text, no letters, no numbers. ",
+    "glow": "Magical glowing light effect for a children's fantasy game, painterly, bright luminous light on a pure solid black background, centred and symmetrical, nothing else in the picture, no objects, no people, no text, no letters, no numbers. "
   },
   "inbox": "~/dragon-art-inbox/achievements",
   "picks": "docs/achievements-art/picks.json",
@@ -73,6 +74,44 @@
       "folder": "achievements/art",
       "file": "shelf",
       "max": 1400
+    },
+    {
+      "name": "burst",
+      "prompt": "A radiant golden starburst explosion seen straight on: bright warm white-gold core, long thin golden light rays shooting out evenly in every direction, dozens of tiny glittering golden sparks and four-pointed star twinkles flying outwards, soft golden glow fading into the black.",
+      "size": [1024, 1024],
+      "kind": "glow",
+      "folder": "achievements/art",
+      "file": "burst-gold",
+      "max": 512,
+      "tints": {
+        "silver": "burst-silver",
+        "bronze": "burst-bronze"
+      }
+    },
+    {
+      "name": "sparkles",
+      "prompt": "A loose ring of scattered golden sparkles: many small bright four-pointed golden star twinkles and glittering golden dust specks of different sizes spread in a wide circle, the middle empty and black, soft glow around each sparkle.",
+      "size": [1024, 1024],
+      "kind": "glow",
+      "folder": "achievements/art",
+      "file": "sparkles-gold",
+      "max": 512,
+      "tints": {
+        "silver": "sparkles-silver",
+        "bronze": "sparkles-bronze"
+      }
     }
-  ]
+  ],
+  "tints": {
+    "silver": {
+      "dark": [70, 86, 110],
+      "mid": [176, 192, 214],
+      "shine": [255, 255, 255]
+    },
+    "bronze": {
+      "dark": [96, 44, 16],
+      "mid": [214, 128, 64],
+      "shine": [255, 226, 190]
+    }
+  }
 }

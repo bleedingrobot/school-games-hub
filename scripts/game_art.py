@@ -37,6 +37,8 @@ Config (all paths are relative to the repo unless they start with ~):
           "card"  a home page card, 1600 px and 800 px -> <home_dir>/<file>.webp and <file>-small.webp
           "icon"  kept whole with its painted background (a trophy, an earned picture), shrunk to `max` px, and to `small` px
                   too if given -> <art_dir>/<folder>/<file>.webp and <file>-small.webp
+          "glow"  light painted on a pure black background (sparks, a burst): its brightness becomes see-through, so it glows
+                  over anything; trimmed, shrunk to `max` px -> <art_dir>/<folder>/<file>.webp (tints allowed)
     hollow true on a cut-out: it has a see-through middle (a picture ring), so the hole is cut out too, not filled in
     tints  {tint name: file name}: also write a recoloured copy of a cut-out to <art_dir>/<folder>/<file name>.webp
 """
@@ -51,8 +53,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_COMFY = 'http://100.97.96.115:8188'
-KINDS = ('cut', 'scene', 'card', 'texture', 'icon')
-QUALITY = {'cut': 82, 'scene': 72, 'scene_small': 70, 'card': 80, 'card_small': 78, 'icon': 86}
+KINDS = ('cut', 'scene', 'card', 'texture', 'icon', 'glow')
+QUALITY = {'glow': 76, 'cut': 82, 'scene': 72, 'scene_small': 70, 'card': 80, 'card_small': 78, 'icon': 86}
 GRAPH = {'steps': 8, 'cfg': 1.0, 'shift': 3.0, 'second_pass_scale': 1.5, 'second_pass_denoise': 0.4}
 
 
@@ -109,13 +111,13 @@ def check(c: dict) -> list[str]:
         if 'file' not in p or (kind != 'card' and 'folder' not in p):
             bad.append(f'{label}: needs "file"' + ('' if kind == 'card' else ' and "folder"'))
             continue
-        if kind in ('cut', 'texture', 'icon') and not isinstance(p.get('max'), int):
+        if kind in ('cut', 'texture', 'icon', 'glow') and not isinstance(p.get('max'), int):
             bad.append(f'{label}: a cut-out needs a whole-number "max" size')
         if kind == 'card' and 'home_dir' not in c:
             bad.append(f'{label}: a card needs "home_dir" in the config')
         for tint, tint_file in p.get('tints', {}).items():
-            if kind != 'cut':
-                bad.append(f'{label}: only a cut-out can have tints')
+            if kind not in ('cut', 'glow'):
+                bad.append(f'{label}: only a cut-out or a glow can have tints')
             if tint not in c.get('tints', {}):
                 bad.append(f'{label}: tint "{tint}" is not in tints')
             spot = f'{p.get("folder")}/{tint_file}'
@@ -324,12 +326,25 @@ def tidy(c: dict, style: str, force: bool, dry: bool):
         k = np.clip(np.minimum.outer(wy, wx) * 2.5, 0, 1)[..., None]
         return Image.fromarray((a * k + moved * (1 - k)).round().astype(np.uint8), 'RGB')
 
+    def unscreen(img):
+        # Black becomes see-through and bright stays solid; the colour is lifted back so a faint spark keeps its hue.
+        rgb = np.asarray(img.convert('RGB')).astype(np.float32) / 255
+        a = np.clip((rgb.max(axis=2, keepdims=True) - 0.08) / 0.92, 0, 1)
+        lifted = np.where(a > 0, rgb / np.maximum(a, 1e-3), 0).clip(0, 1)
+        return Image.fromarray((np.dstack([lifted, a]) * 255).round().astype(np.uint8), 'RGBA')
+
     for name, t in picks.items():
         p = by_name[name]
         outs = destinations(c, p)
         if outs[0].exists() and not force:
             continue
         img = Image.open(inbox / file_name(name, t))
+        if p['kind'] == 'glow':
+            glow = trim(unscreen(img), pad=8)
+            save(fit(glow, p['max']), outs[0], quality['glow'])
+            for (tint_name, _), out in zip(p.get('tints', {}).items(), outs[1:]):
+                save(fit(tint(glow, c['tints'][tint_name]), p['max']), out, quality['glow'])
+            continue
         if p['kind'] == 'card':
             img = img.convert('RGB')
             save(fit(img, 1600), outs[0], quality['card'])

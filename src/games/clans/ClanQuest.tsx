@@ -33,7 +33,9 @@ import { Training } from './Training';
 import { Scoreboard } from './Scoreboard';
 import type { HallRow } from '../../data/clans';
 import { HowToPlay } from './HowToPlay';
-import { Achievements, Celebration, VillageDone } from './Achievements';
+import { Achievements, VillageDone } from './Achievements';
+import { AchievementPop } from '../../achievements/AchievementPop';
+import { pretendNew } from '../../data/newAchievements';
 import { SeasonRoad } from './SeasonRoad';
 import { TownMap, hasTownMap, type TownPlace } from './TownMap';
 import { empireOf, villageComplete } from '../../../shared/clans/empire';
@@ -141,7 +143,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const outcome = useRef<FightSummary | null>(null);
   const [serverSeed, setServerSeed] = useState(seed);
   const [notice, setNotice] = useState('');
-  /** Achievements just earned, shown with a small celebration. The first clan the screen sees is not celebrated: those were earned before. */
+  /** Achievements just earned: a new list starts the shared AchievementPop. The first clan the screen sees is not celebrated: those were earned before. */
   const [celebrate, setCelebrate] = useState<AchievementDef[]>([]);
   const knownAchievements = useRef<string[] | null>(null);
   /** Was the village complete the last time we looked? (null until the first clan is seen: that one is not celebrated.) */
@@ -490,7 +492,8 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
       {screen !== 'fight' && !onPicture && top(false)}
       {/* The quest is one painted stage of its own (Quest.tsx), so no painting across the top. */}
       {screen !== 'quest' && screen !== 'results' && scene && <Scene key={scene} name={scene} art={sceneArt(scene)} top={onPicture ? top(true) : undefined} />}
-      <Celebration fresh={celebrate} onClose={() => setCelebrate([])} />
+      {/* The shared earn moment: the server's new Clan Quest achievements (on the test page, the ones just seen here). */}
+      <AchievementPop games={['clan-quest']} watch={celebrate.length ? celebrate : null} off={!server} pretend={pretendNew('clan-quest', celebrate)} />
       {villageDone && <VillageDone onClose={() => setVillageDone(false)} />}
       <TrophyWonLine games={['clan-quest']} watch={monsterDone ?? (villageDone ? 'village' : null)} off={!server} />
       {newSeasonNotice && (

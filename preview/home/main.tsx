@@ -2,7 +2,7 @@
  * Preview only: the new home page and the three themes (D.2–D.4b), built from the real site with made-up data. Nothing is sent
  * anywhere. The bar at the bottom switches the theme; the profile page's own picker works too.
  */
-import { StrictMode, useState } from 'react';
+import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HashRouter } from 'react-router';
 import { AppRoutes } from '../../src/App';
@@ -10,7 +10,8 @@ import { AuthProvider, useAuth } from '../../src/auth/AuthContext';
 import { THEMES } from '../../src/avatar/avatarParts';
 import { SoundProvider } from '../../src/sound';
 import '../../src/styles.css';
-import { previewTheme, setPreviewTheme } from './fakeSupabase';
+import { AchievementPop } from '../../src/achievements/AchievementPop';
+import { pretendNewAchievements, previewTheme, setPreviewTheme } from './fakeSupabase';
 import './preview.css';
 
 // Nothing in this page may reach the live server: a game's own requests (sign-in tokens, saves) are refused here.
@@ -45,6 +46,19 @@ function ThemeBar() {
   );
 }
 
+/** ?pop=3: the in-game AchievementPop as a game's result screen shows it, with three just earned (a second after opening). */
+function PopTry() {
+  const count = Number(new URLSearchParams(window.location.search).get('pop') ?? 0);
+  const [ended, setEnded] = useState<number | null>(null);
+  useEffect(() => {
+    if (!count) return;
+    const t = setTimeout(() => setEnded(1), 1000);
+    return () => clearTimeout(t);
+  }, [count]);
+  if (!count) return null;
+  return <AchievementPop games={['any']} watch={ended} off pretend={pretendNewAchievements(count)} />;
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <SoundProvider>
@@ -52,6 +66,7 @@ createRoot(document.getElementById('root')!).render(
         <HashRouter>
           <AppRoutes />
           <ThemeBar />
+          <PopTry />
         </HashRouter>
       </AuthProvider>
     </SoundProvider>

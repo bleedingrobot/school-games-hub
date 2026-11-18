@@ -208,8 +208,6 @@
 .dd-gems { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 16px; }
 .dd-gems li { display: flex; align-items: center; gap: 6px; font-weight: 700; }
 .dd-earned { background: var(--dd-gold); color: var(--dd-gold-ink); border-radius: 10px; padding: 6px 10px; font-weight: 700; }
-.dd-achieved { list-style: none; margin: 8px 0; padding: 6px 10px; background: var(--dd-gold); color: var(--dd-gold-ink); border-radius: 10px; }
-.dd-achieved li { margin: 2px 0; }
 .dd-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
 .dd-item { display: flex; gap: 10px; align-items: flex-start; background: var(--card); color: var(--ink); border-radius: 16px; padding: 10px; border: 3px solid transparent; }
 .dd-item.is-chosen { border-color: var(--won); }

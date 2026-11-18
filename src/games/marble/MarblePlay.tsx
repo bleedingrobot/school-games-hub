@@ -26,6 +26,7 @@ import { HubButtons } from './HubButtons';
 import type { FinishedRun } from './RunScreen';
 import { checkGhost } from './ghostCheck';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import './marble.css';
 
 // The picture (three.js) and the run screen load only when someone starts a run.
@@ -60,7 +61,7 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
   const [busy, setBusy] = useState(false);
   // Runs the server has taken: each may have won a trophy (the line says so).
   const [saves, setSaves] = useState(0);
-  const wonLine = <TrophyWonLine games={['marble']} watch={saves || null} off={localMaths || !player} />;
+  const wonLine = <><TrophyWonLine games={['marble']} watch={saves || null} off={localMaths || !player} /><AchievementPop games={['marble']} watch={saves || null} off={localMaths || !player} /></>;
   const [note, setNote] = useState('');
   const runKey = pick ? `${pick.id}-${pick.mode}-${pick.round}` : '';
   const wantMaths = mathsSwitch !== 'off';

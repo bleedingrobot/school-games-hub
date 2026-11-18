@@ -309,6 +309,7 @@ function ShelfView({ shelf, picked, index, onOpen }: { shelf: Shelf; picked: Ach
                   <button
                     type="button"
                     className="ah-item"
+                    data-achievement={a.id}
                     onClick={(e) => onOpen(a, e.currentTarget)}
                     aria-label={`${a.name}, ${TIER_WORDS[a.tier ?? 2]}: ${a.earnedAt ? 'earned' : progressWords(a)}`}
                   >

@@ -16,6 +16,7 @@ import { BotLevelPicker } from '../../components/BotLevelPicker';
 import { refreshSaveToken, saveAbandonedGame, saveBotGame } from '../../data/botGames';
 import { FriendlyError } from '../../data/profile';
 import { useSound } from '../../sound';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import { BOT_LEVELS, type BotLevel } from '../types';
 import { Board } from './Board';
 import { ChessWindow } from './ChessWindow';
@@ -355,6 +356,7 @@ export function ChessPlay({ level }: { level: BotLevel }) {
             }
           />
 
+          <AchievementPop games={['chess']} watch={savedGameId ?? null} />
           {judged && showResult && headline && (
             <div className="chess-result" role="dialog" aria-modal="true" aria-labelledby="result-title">
               <div className={`chess-result__card chess-result__card--${judged.outcome}`}>

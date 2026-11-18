@@ -8,6 +8,7 @@ import type { FactStats } from '../../../shared/maths/leitner';
 import type { CampaignProgress } from './progress';
 import { TEXT } from './strings';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import { GemKeepCampaign, type FinishedLevel } from './ui/GemKeepCampaign';
 
 /**
@@ -105,7 +106,7 @@ export function GemKeepPlay() {
       onAnswers={onAnswers}
       // Local browser checks drive the game through this. Left out of the real site.
       onEngine={import.meta.env.DEV ? (engine) => Object.assign(window, { gemKeepEngine: engine }) : undefined}
-      after={<TrophyWonLine games={['gem-keep']} watch={saves || null} />}
+      after={<><TrophyWonLine games={['gem-keep']} watch={saves || null} /><AchievementPop games={['gem-keep']} watch={saves || null} /></>}
     />
   );
 }

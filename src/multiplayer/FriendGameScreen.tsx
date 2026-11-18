@@ -6,6 +6,7 @@ import { AvatarImage } from '../avatar/AvatarImage';
 import { playSound, type GameSound } from '../games/sounds';
 import { useSound } from '../sound';
 import { TrophyWonLine } from '../trophies/TrophyWonLine';
+import { AchievementPop } from '../achievements/AchievementPop';
 import type { FriendSession } from './useFriendGame';
 
 export interface MoveRow {
@@ -203,6 +204,7 @@ export function FriendGameScreen({ session, board, rows, alert, note, endings, l
           {status}
         </p>
         <TrophyWonLine games={[game.game]} watch={finished ? game.id : null} />
+        <AchievementPop games={[game.game]} watch={finished ? game.id : null} />
         {myTurn && note}
 
         {session.live === 'down' && playing && (

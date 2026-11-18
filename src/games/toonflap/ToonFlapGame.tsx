@@ -16,6 +16,7 @@ import { MapScreen } from './MapScreen';
 import { PlayScreen } from './PlayScreen';
 import { ResultsScreen } from './ResultsScreen';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import { HubButtons } from './HubButtons';
 import './toonflap.css';
 
@@ -195,6 +196,7 @@ export function ToonFlapGame({ backend, extra, onServer = false }: { backend: To
         <ResultsScreen talk={talk} today={loaded.today ?? nzDate(new Date())} reply={reply} level={level} gentle={run.gentle} maths={run.maths} onNext={(n) => void begin(n)} onAgain={() => void begin(level)} onMap={() => setScreen('map')} />
       )}
       <TrophyWonLine games={['toonflap']} watch={reply ?? dashReply} off={!onServer} />
+      <AchievementPop games={['toonflap']} watch={reply ?? dashReply} off={!onServer} />
     </div>
     </Window>
   );

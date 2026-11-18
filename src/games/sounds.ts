@@ -28,7 +28,7 @@ function tone(frequency: number, duration: number, volume: number, type: Oscilla
  * 'alert' is check in chess, and a new king in checkers. 'dice' to 'cosmic' are for
  * Wormholes & Black Holes; 'flick', 'tap' and 'knock' are for 101. 'door' to 'chest' are for
  * the Maths Monsters map: a door, a talk blip, the wild-battle flash, the healing jingle,
- * the badge fanfare and a chest.
+ * the badge fanfare and a chest. 'medal' is the chime for a new achievement (the earn moment).
  */
 export type GameSound =
   | 'move'
@@ -60,7 +60,8 @@ export type GameSound =
   | 'wheel'
   | 'rewind'
   | 'chaos'
-  | 'draw';
+  | 'draw'
+  | 'medal';
 
 export function playSound(sound: GameSound) {
   switch (sound) {
@@ -159,5 +160,9 @@ export function playSound(sound: GameSound) {
       return setTimeout(() => tone(988, 0.2, 0.12, 'triangle', 1), 300);
     case 'draw':
       return tone(392, 0.4, 0.14, 'sine', 0.8);
+    case 'medal':
+      // A bright chime: a quick sparkle up, then a ringing top note.
+      [1047, 1319, 1568].forEach((f, i) => setTimeout(() => tone(f, 0.12, 0.12, 'triangle', 1), i * 70));
+      return setTimeout(() => tone(2093, 0.7, 0.1, 'sine', 1), 220);
   }
 }

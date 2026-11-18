@@ -8,6 +8,7 @@ import type { FactStats } from '../../../shared/maths/leitner';
 import { makePack, type TopicId } from '../../../shared/maths/skillPacks';
 import { WORLD_MAPS } from '../../../shared/monsters/maps';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import type { BattleReport } from '../../../shared/monsters/save/check';
 import type { TypeId } from '../../../shared/monsters/types';
 import { UNLIMITED_LABEL } from '../../../shared/unlimited';
@@ -258,6 +259,7 @@ export function MonstersPlay() {
         </p>
       )}
       <TrophyWonLine games={['monsters']} watch={saves || null} />
+      <AchievementPop games={['monsters']} watch={saves || null} />
       <p className="mp-play__note" role="status">
         {status === 'saved' ? WORDS.saved : status === 'later' ? WORDS.later : WORDS.stopped}
       </p>

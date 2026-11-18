@@ -5,5 +5,7 @@
   "frame-silver": 1,
   "frame-gold": 1,
   "frame-locked": 1,
-  "shelf": 2
+  "shelf": 2,
+  "burst": 1,
+  "sparkles": 3
 }

@@ -27,6 +27,7 @@ import { WORLD_NAMES as WORLD_NAMES_FOR } from './text';
 import { SpeedRound } from './SpeedRound';
 import { useDuels } from './useDuels';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import './archery.css';
 
 type Screen =
@@ -414,6 +415,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
     <div className="ar-shell" data-screen={screen.kind}>
       {body}
       <TrophyWonLine games={['archery']} watch={saves} off={!onServer} />
+      <AchievementPop games={['archery']} watch={saves} off={!onServer} />
       {ask && (
         <ChallengeAsk
           key={ask.duel} ask={ask} serverNow={duels.serverNow} busy={duelBusy} problem={askProblem}

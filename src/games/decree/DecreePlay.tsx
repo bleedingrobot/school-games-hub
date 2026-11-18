@@ -22,6 +22,7 @@ import { HubButtons } from './HubButtons';
 import { speak, stopSpeaking } from '../../speech';
 import { haleVoiceOn, setHaleVoiceOn, setTutorialOn, spoken, TIPS, TOUR, tutorialOn, VOICE_FOLDER, YOUR_TURN, type Spot } from './tutorial';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import './decree.css';
 
 const SEASON_NAMES = ['Spring', 'Summer', 'Autumn', 'Winter'];
@@ -406,6 +407,7 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
       </header>
       {body}
       <TrophyWonLine games={['decree']} watch={points} off={backend.trial} />
+      <AchievementPop games={['decree']} watch={points} off={backend.trial} />
     </div>
   );
 

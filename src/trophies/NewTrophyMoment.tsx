@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { fetchMyNewTrophies, markMyTrophiesSeen, type NewTrophy } from '../data/trophies';
@@ -9,7 +9,29 @@ import { TrophyArt } from './TrophyArt';
 import './trophies.css';
 
 /** The hub's own pages, where the moment may appear. Never inside a game, a lesson or a teacher page. */
-const HUB_PAGES = ['/', '/lobby', '/leaderboard', '/profile', '/points', '/warp', '/achievements'];
+export const HUB_PAGES = ['/', '/lobby', '/leaderboard', '/profile', '/points', '/warp', '/achievements'];
+
+/**
+ * Whether the trophy moment is asking the server or showing, so the new-achievement moment waits its turn: a trophy
+ * first, then achievements, never two at once.
+ */
+let trophyBusy = false;
+const listeners = new Set<() => void>();
+function setTrophyBusy(busy: boolean) {
+  if (busy === trophyBusy) return;
+  trophyBusy = busy;
+  listeners.forEach((l) => l());
+}
+export function useTrophyMomentBusy(): boolean {
+  return useSyncExternalStore(
+    (l) => {
+      listeners.add(l);
+      return () => listeners.delete(l);
+    },
+    () => trophyBusy,
+    () => false,
+  );
+}
 
 const METAL_WORDS = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold' } as const;
 
@@ -31,6 +53,7 @@ export function NewTrophyMoment() {
   const navigate = useNavigate();
   const { soundOn } = useSound();
   const [queue, setQueue] = useState<NewTrophy[]>([]);
+  const [checking, setChecking] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
   const isPupil = profile?.role === 'student';
   const onHubPage = HUB_PAGES.includes(pathname);
@@ -40,7 +63,9 @@ export function NewTrophyMoment() {
   useEffect(() => {
     if (!isPupil || !onHubPage || queue.length > 0) return;
     let current = true;
+    setChecking(true);
     void fetchMyNewTrophies().then((fresh) => {
+      setChecking(false);
       if (!current || fresh.length === 0) return;
       setQueue(fresh);
       // Shown once: tell the server straight away, so a reload or another tab doesn't show them again.
@@ -52,6 +77,11 @@ export function NewTrophyMoment() {
     // Only a new page (or a new pupil) asks again; emptying the queue does not.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPupil, onHubPage, pathname]);
+
+  // Busy while asking or while one shows; free again once the last is closed (or the pupil leaves the hub pages).
+  const busy = checking || !!showing;
+  useEffect(() => setTrophyBusy(busy), [busy]);
+  useEffect(() => () => setTrophyBusy(false), []);
 
   useEffect(() => {
     if (!showing) return;

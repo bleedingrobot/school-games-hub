@@ -11,6 +11,7 @@ import { OrderUpError, type BagReply, type OrderUpBackend, type OrderUpState } f
 import { BagPlay, OrderCard } from './BagPlay';
 import { EXAMPLES, exampleLines } from './look';
 import { BADGES, LEVEL_NAMES, VOICE_FOLDER, WORDS } from './words';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import './orderup.css';
 
 type Screen =
@@ -214,6 +215,7 @@ function Result({ set, reply, state, say, onAgain, onNext, onRoad }: {
       <h3>{title}</h3>
       <p>{WORDS.setDone(reply.good, set.bags.length)}</p>
       {reply.newLevel && <p className="ou-badge">{WORDS.newBadge(BADGES[set.level])}</p>}
+      <AchievementPop games={['orderup']} watch atOpen />
       {!reply.passedSet && <p>{WORDS.notYet}</p>}
       <p className="ou-result__buttons">
         {canNext && <button type="button" className="ou-button ou-button--go" onClick={() => onNext(next)}>{WORDS.nextLevel}</button>}

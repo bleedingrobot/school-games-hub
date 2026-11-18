@@ -1,0 +1,413 @@
+/* The achievement earn moment (docs/ACHIEVEMENTS-PLAN.md, stage 3): the painted burst (EarnBurst), the in-game pop
+   (AchievementPop) and the hub's moment (NewAchievementMoment). Everything here starts with ach- (and .ah-item.is-landed,
+   the Hall's spot lighting up when a medallion lands on it). Reduced motion: no flying, bursts or slides, just the card. */
+
+/* ---- The burst ---- */
+
+.ach-burst {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--ach-burst);
+  height: var(--ach-burst);
+  margin: calc(var(--ach-burst) / -2) 0 0 calc(var(--ach-burst) / -2);
+  pointer-events: none;
+}
+.ach-burst__rays,
+.ach-burst__ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+}
+.ach-burst__spark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px;
+  border-radius: 50%;
+  background: #fff6c8;
+  box-shadow: 0 0 8px 3px #ffc93c;
+  opacity: 0;
+  --a: calc(var(--i) * 30deg + 8deg);
+}
+.ach-burst--t2 .ach-burst__spark { background: #ffffff; box-shadow: 0 0 8px 3px #b9d4ff; }
+.ach-burst--t1 .ach-burst__spark { background: #ffe1c4; box-shadow: 0 0 8px 3px #e08a4a; }
+
+/* ---- The pop on a game's result screen ---- */
+
+.ach-pop {
+  position: fixed;
+  z-index: 3000;
+  left: 50%;
+  top: max(12px, env(safe-area-inset-top));
+  width: min(560px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  pointer-events: none;
+  font-family: var(--display, 'Trebuchet MS', sans-serif);
+}
+.ach-pop__card {
+  pointer-events: auto;
+  position: relative;
+  display: grid;
+  grid-template-columns: 92px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px 10px 14px;
+  border-radius: 20px;
+  color: #fff8e7;
+  background:
+    radial-gradient(circle at 12% 50%, rgba(255, 214, 102, 0.35), transparent 45%),
+    linear-gradient(135deg, #3a2468, #1c1238 70%);
+  border: 3px solid #f2c14e;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45), inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+}
+.ach-pop--t2 .ach-pop__card { border-color: #cfe0f5; background: radial-gradient(circle at 12% 50%, rgba(200, 225, 255, 0.3), transparent 45%), linear-gradient(135deg, #2b3550, #161c2e 70%); }
+.ach-pop--t1 .ach-pop__card { border-color: #d98a4e; background: radial-gradient(circle at 12% 50%, rgba(240, 160, 100, 0.3), transparent 45%), linear-gradient(135deg, #4a2a1c, #24140c 70%); }
+.ach-pop__medal {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+}
+.ach-pop__words {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.ach-pop__kicker {
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fde047;
+}
+.ach-pop--t2 .ach-pop__kicker { color: #dbeafe; }
+.ach-pop--t1 .ach-pop__kicker { color: #fdba74; }
+.ach-pop__name {
+  font-size: 1.25rem;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.ach-pop__points {
+  font-weight: 800;
+  color: #fff3c4;
+}
+.ach-pop__buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.ach-pop__see,
+.ach-pop__next,
+.ach-pop__close {
+  min-height: 48px;
+  min-width: 48px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 900;
+  font-size: 1rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+.ach-pop__see {
+  background: #fde047;
+  color: #1d1b3a;
+  box-shadow: 0 4px 0 #b45309;
+}
+.ach-pop__next,
+.ach-pop__close {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+.ach-pop__close { padding: 0; }
+.ach-pop__see:focus-visible,
+.ach-pop__next:focus-visible,
+.ach-pop__close:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+.ach-pop__dots {
+  display: flex;
+  gap: 6px;
+}
+.ach-pop__dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+.ach-pop__dots .is-on { background: #fde047; transform: scale(1.25); }
+
+/* Phones: words beside the medallion, buttons in their own row underneath. */
+@media (max-width: 520px) {
+  .ach-pop__card {
+    grid-template-columns: 76px 1fr;
+    gap: 8px 10px;
+  }
+  .ach-pop__medal { width: 76px; height: 76px; }
+  .ach-pop__medal .ah-medal { --ah-size: 70px !important; }
+  .ach-pop__buttons { grid-column: 1 / -1; justify-content: stretch; }
+  .ach-pop__see { flex: 1; }
+  .ach-pop__name { font-size: 1.1rem; }
+}
+
+/* ---- The hub's moment ---- */
+
+.ach-moment {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  /* clip, not hidden: the sparks fly past the edges, and nothing may scroll the moment off the screen. */
+  overflow: hidden;
+  overflow: clip;
+  padding: 16px;
+  font-family: var(--display, 'Trebuchet MS', sans-serif);
+  background: radial-gradient(circle at 50% 38%, #5a3d9c 0%, #241650 55%, #0d0824 100%);
+  transition: background-color 0.4s;
+}
+.ach-moment--t3 { background: radial-gradient(circle at 50% 38%, #7a5600 0%, #33210a 55%, #120b02 100%); }
+.ach-moment--t2 { background: radial-gradient(circle at 50% 38%, #4b5870 0%, #1e2533 55%, #0b0e14 100%); }
+.ach-moment--t1 { background: radial-gradient(circle at 50% 38%, #7a3f1e 0%, #33190c 55%, #120804 100%); }
+.ach-moment__rays {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  width: 180vmax;
+  height: 180vmax;
+  margin: -90vmax 0 0 -90vmax;
+  background: repeating-conic-gradient(rgba(255, 236, 160, 0.14) 0deg 8deg, transparent 8deg 20deg);
+  mask-image: radial-gradient(circle, #000 0%, transparent 42%);
+  -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 42%);
+  pointer-events: none;
+}
+.ach-moment__count {
+  position: absolute;
+  top: max(14px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-weight: 800;
+}
+.ach-moment__card {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: min(100%, 560px);
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 12px 20px;
+  text-align: center;
+  color: #fff;
+  perspective: 900px;
+}
+.ach-moment__kicker {
+  margin: 0;
+  font-size: clamp(1.9rem, 6.5vw, 2.9rem);
+  line-height: 1.1;
+  font-weight: 900;
+  color: #fde047;
+  text-shadow: 0 4px 0 #b45309, 0 0 30px rgba(253, 224, 71, 0.6);
+}
+.ach-moment__medal {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 190px;
+  height: 190px;
+  margin: 4px 0;
+  z-index: 1;
+}
+.ach-moment__name {
+  margin: 0;
+  font-size: clamp(1.5rem, 5vw, 2.1rem);
+  color: #fff;
+}
+.ach-moment__tier {
+  margin: 0;
+  padding: 3px 16px;
+  border-radius: 999px;
+  font-weight: 900;
+  color: #1d1b3a;
+  background: #ffcf3f;
+}
+.ach-moment__tier--t2 { background: #dbe7f5; }
+.ach-moment__tier--t1 { background: #e7a26b; }
+.ach-moment__how {
+  margin: 0;
+  max-width: 36ch;
+  font-size: 1.05rem;
+}
+.ach-moment__points {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #fff3c4;
+}
+.ach-moment__more {
+  margin: 0;
+  font-weight: 800;
+  color: #fde68a;
+}
+.ach-moment__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+.ach-moment__go,
+.ach-moment__hall {
+  min-height: 52px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 1.15rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+.ach-moment__go {
+  min-width: 150px;
+  background: #fde047;
+  color: #1d1b3a;
+  box-shadow: 0 5px 0 #b45309;
+}
+.ach-moment__hall {
+  background: rgba(255, 255, 255, 0.92);
+  color: #2a1d4a;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.35);
+}
+.ach-moment__go:focus-visible,
+.ach-moment__hall:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+/* Flying to the shelf: the dark backdrop and the words fade, so the Hall shows through and the medallion travels over it. */
+.ach-moment.is-leaving {
+  background: transparent;
+  pointer-events: none;
+}
+.ach-moment.is-leaving .ach-moment__rays,
+.ach-moment.is-leaving .ach-moment__count,
+.ach-moment.is-leaving .ach-moment__card > :not(.ach-moment__medal),
+.ach-moment.is-leaving .ach-burst {
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+/* Short screens (a phone on its side, a classroom screen zoomed in): a smaller medallion so the buttons stay in view. */
+@media (max-height: 560px) {
+  .ach-moment__kicker { font-size: 1.8rem; }
+  .ach-moment__medal { width: 120px; height: 120px; }
+  .ach-moment__medal .ah-medal { --ah-size: 110px !important; }
+  .ach-moment__how { display: none; }
+}
+
+/* The Hall's spot lighting up as a medallion lands on it. */
+.ah-item.is-landed .ah-medal {
+  animation: ach-landed 1.1s ease-out;
+}
+@keyframes ach-landed {
+  0% { transform: scale(1.5); filter: drop-shadow(0 0 0 #fff6c8) brightness(2); }
+  35% { transform: scale(0.92); }
+  60% { transform: scale(1.08); filter: drop-shadow(0 0 22px #ffd84a) brightness(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* ---- Animation (not for reduced motion) ---- */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* The burst: rays flash out and fade, the sparkle ring spreads and spins, sparks fly off. */
+  .ach-burst__rays { animation: ach-rays 1.5s cubic-bezier(0.2, 0.8, 0.3, 1) 0.32s both; }
+  .ach-burst__ring { animation: ach-ring 1.9s ease-out 0.36s both; }
+  .ach-burst__spark { animation: ach-spark 1s cubic-bezier(0.1, 0.7, 0.3, 1) calc(0.34s + var(--i) * 0.015s) both; }
+
+  /* The pop drops in from the top; the first medallion slides in spinning from the left and lands with the burst. */
+  .ach-pop__card { animation: ach-flip-in 0.55s cubic-bezier(0.2, 1.3, 0.4, 1) both; transform-origin: 50% 0; }
+  .ach-pop__card[data-first] { animation: ach-drop-in 0.55s cubic-bezier(0.2, 1.3, 0.4, 1) both; }
+  .ach-pop__medal .ah-medal { animation: ach-slide-in 0.5s cubic-bezier(0.25, 1.2, 0.4, 1) 0.05s both; }
+  .ach-pop__words > * { animation: ach-rise 0.4s ease-out both; }
+  .ach-pop__kicker { animation-delay: 0.35s !important; }
+  .ach-pop__name { animation-delay: 0.45s !important; }
+  .ach-pop__points { animation-delay: 0.55s !important; }
+  .ach-pop__buttons { animation: ach-rise 0.4s ease-out 0.6s both; }
+
+  /* The hub moment: fades in; each medallion swoops in from below and lands with the burst; the next flips in. */
+  .ach-moment { animation: ach-fade 0.35s ease-out; }
+  .ach-moment__rays { animation: ach-spin 26s linear infinite; }
+  .ach-moment__card { animation: ach-flip-in 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) both; }
+  .ach-moment__card[data-first] { animation: ach-pop-in 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+  .ach-moment__medal .ah-medal { animation: ach-swoop 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) 0.05s both, ach-float 3s ease-in-out 1.2s infinite; }
+  .ach-moment__card > :not(.ach-moment__medal):not(.ach-moment__kicker) { animation: ach-rise 0.45s ease-out 0.5s both; }
+}
+
+@keyframes ach-rays {
+  0% { opacity: 0; transform: scale(0.2) rotate(-20deg); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.35) rotate(12deg); }
+}
+@keyframes ach-ring {
+  0% { opacity: 0; transform: scale(0.35) rotate(0deg); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.25) rotate(70deg); }
+}
+@keyframes ach-spark {
+  0% { opacity: 1; transform: rotate(var(--a)) translateX(0) scale(1.4); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateX(calc(var(--ach-burst) * 0.55)) scale(0.3); }
+}
+@keyframes ach-drop-in {
+  from { opacity: 0; transform: translateY(-130%) scale(0.9); }
+}
+@keyframes ach-flip-in {
+  from { opacity: 0; transform: rotateX(-85deg); }
+}
+@keyframes ach-slide-in {
+  from { opacity: 0; transform: translateX(-160px) rotate(-300deg) scale(0.4); }
+}
+@keyframes ach-swoop {
+  from { opacity: 0; transform: translateY(160px) rotate(-200deg) scale(0.3); }
+}
+@keyframes ach-pop-in {
+  from { opacity: 0; transform: scale(0.85); }
+}
+@keyframes ach-rise {
+  from { opacity: 0; transform: translateY(10px); }
+}
+@keyframes ach-fade {
+  from { opacity: 0; }
+}
+@keyframes ach-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes ach-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ach-burst { display: none; }
+  .ah-item.is-landed .ah-medal { animation: none; outline: 3px solid #fde047; outline-offset: 4px; border-radius: 50%; }
+}

@@ -188,7 +188,7 @@ function Finish({ result, say, onNext }: { result: LizardFinish; say: (t: string
   return (
     <div className={`lz-home${result.goldenRaft ? ' lz-home--prize' : ''}`}>
       <Den scenery={result.goldenRaft ? 'gold' : den.today} bundles={bundles} friend={den.friend} pose="cheer" />
-      <WhatsNext prefix="lz" wearMe={result.goldenRaft} title={main} spoken={line} buttonLabel="OK" say={say} onNext={onNext}>
+      <WhatsNext prefix="lz" game="lizard" wearMe={result.goldenRaft} title={main} spoken={line} buttonLabel="OK" say={say} onNext={onNext}>
         <p className="lz-chip">{how}</p>
         {up && <p className="lz-chip">{WORDS.nextStep(up)}</p>}
         <p className="lz-chip">{WORDS.firstTime(result.firstRight, GOES_PER_ROUND)}</p>
