@@ -24,6 +24,10 @@ export default defineConfig({
   test: {
     // Screen tests are slow when many run at once; 5 seconds gave false failures on a busy computer.
     testTimeout: 20_000,
+    // In the PR checks a test that fails gets one more go, so a random failure doesn't block the PR. One that needed it shows
+    // as a yellow "Flaky test" warning on the checks (scripts/flaky-reporter.ts): fix it, don't ignore it. Locally: no second go.
+    retry: process.env.CI ? 1 : 0,
+    reporters: process.env.CI ? ['default', './scripts/flaky-reporter.ts'] : ['default'],
     passWithNoTests: which === 'slow',
     projects: [
       {

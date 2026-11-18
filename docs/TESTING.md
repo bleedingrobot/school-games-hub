@@ -56,3 +56,10 @@ looking, not with a test.
 Leave the full run (`npm run test:all`, about a minute on one machine) to the pull request's "Site checks", which split it
 across 4 machines. `npm run check` still runs everything locally if you need it. If a test fails because you changed behaviour on
 purpose, change or delete the test. Don't add a second one beside it.
+
+## Random failures (added 18 Nov 2026)
+
+- **Over budget can't be pushed:** `.githooks/pre-push` runs the budget check on every `git push` (turned on by `npm install`).
+- **PR checks give a failed test one more go**, so a random failure doesn't block the PR. A test that needed it shows a
+  yellow "Flaky test" warning on the checks: fix it the same day, don't leave it. Locally there is no second go.
+- **Fast-clock tests:** don't pass `{ timeout }` to findBy/waitFor; `fastClock()` already stretches the limit for its speed.

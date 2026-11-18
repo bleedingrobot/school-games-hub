@@ -1,0 +1,15 @@
+#!/bin/sh
+# Refuses a push that would put a game or site area over its test budget (docs/TESTING.md "How many"), the most common
+# PR check failure. Takes about a second. Turned on by `npm install` (package.json "prepare"). Skip once: git push --no-verify
+if [ ! -d node_modules/vitest ]; then
+  echo "pre-push: no node_modules here, test budget not checked (run npm install)"; exit 0
+fi
+npx vitest run --project logic scripts/test-budget.test.ts --reporter=dot > /tmp/pre-push-budget.$$ 2>&1
+status=$?
+if [ $status -ne 0 ]; then
+  grep -E "Over budget|expected" /tmp/pre-push-budget.$$ | head -5
+  echo ""
+  echo "Push stopped: over the test budget. Delete weaker tests to make room (docs/TESTING.md), then push again."
+fi
+rm -f /tmp/pre-push-budget.$$
+exit $status
