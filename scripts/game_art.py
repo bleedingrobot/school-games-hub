@@ -64,7 +64,7 @@ def load_config(arg: str) -> dict:
         path = (Path.cwd() / path) if (Path.cwd() / path).exists() else ROOT / path
     if not path.exists():
         sys.exit(f'No config at {path}')
-    config = json.loads(path.read_text())
+    config = json.loads(path.read_text(encoding="utf-8"))  # utf-8: Windows reads macrons wrong otherwise
     problems = check(config)
     if problems:
         sys.exit(f'{path}: {len(problems)} problem(s)\n  ' + '\n  '.join(problems))
@@ -259,7 +259,7 @@ def tint(img, colours: dict):
 
 def tidy(c: dict, style: str, force: bool, dry: bool):
     picks_path = resolve(c, 'picks')
-    picks = json.loads(picks_path.read_text()) if picks_path.exists() else {}
+    picks = json.loads(picks_path.read_text(encoding="utf-8")) if picks_path.exists() else {}
     by_name = {p['name']: p for p in c['pictures']}
     stray = [n for n in picks if n not in by_name]
     if stray:

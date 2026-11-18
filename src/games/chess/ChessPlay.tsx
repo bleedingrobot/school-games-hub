@@ -19,6 +19,7 @@ import { useSound } from '../../sound';
 import { BOT_LEVELS, type BotLevel } from '../types';
 import { Board } from './Board';
 import { ChessWindow } from './ChessWindow';
+import { checkUnlocks } from './looks';
 import { Captured, figurine } from './moveText';
 import { BOT_DESCRIPTIONS, chooseBotMove, randomishMove, type ChessEngine } from './bot';
 import { playSound, type GameSound } from '../sounds';
@@ -33,6 +34,8 @@ const BOT_EMOJI: Record<BotLevel, string> = {
 const MATE_PAUSE_MS = 2200;
 /** The bot always waits at least this long, so its moves don't appear instantly. */
 const BOT_PAUSE_MS = { min: 600, extra: 700 };
+/** The result card shows for this long before a treasure chest (a new unlock) can burst open over it. */
+const CHEST_AFTER_MS = 1400;
 
 type ColourChoice = Colour | 'random';
 type SaveStatus = 'saving' | 'saved' | 'error' | 'left';
@@ -223,6 +226,14 @@ export function ChessPlay({ level }: { level: BotLevel }) {
   }
 
   const botsTurn = !!game && !game.judged && (chess.turn() === 'w' ? 'white' : 'black') !== game.studentColour;
+
+  // Once the game is saved and its result card is up, ask the server whether it unlocked anything new.
+  const savedGameId = saveStatus === 'saved' && showResult ? game?.id : undefined;
+  useEffect(() => {
+    if (savedGameId === undefined) return;
+    const t = setTimeout(() => void checkUnlocks(), CHEST_AFTER_MS);
+    return () => clearTimeout(t);
+  }, [savedGameId]);
 
   // The bot's turn: think, wait a moment so it feels natural, then move.
   useEffect(() => {

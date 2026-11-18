@@ -3,7 +3,9 @@
 James, 18 Nov 2026: "a graphical upgrade for chess … a few different sets and boards and kids could unlock them in
 different ways … a few different backgrounds … full screen … flashy and entertaining animations."
 
-**Status:** stage 1 done (full window, castle hall painting, all the move animations). Stages 2 to 5 to do.
+**Status:** stage 1 live (PR #578: full window, castle hall painting, all the move animations). Stage 2 live (PR #579:
+the 🎒 Chess Locker, 6 more backgrounds with their own particles, unlocks worked out on the server, the treasure chest).
+Stages 3 to 5 to do.
 
 ## Decisions
 
@@ -47,9 +49,17 @@ different ways … a few different backgrounds … full screen … flashy and en
    CHECK!, raises a pillar of light on promotion, and on checkmate topples the king with fireworks before the result
    card. Everything stops for devices that ask for less motion. Preview: `npx vite --config vite.chess-preview.config.ts`
    (add `#show` to step through captures, checks, castling, a promotion and a checkmate).
-2. **Backgrounds and the Chess Locker:** a migration with `chess_looks` (each pupil's chosen set, board and
-   background) and `my_chess_looks()` working out the unlocks from saved games; a 🎒 Locker screen to pick; the other
-   6 background paintings; an unlock reveal (a chest bursts open) after the game that earned it.
+2. **Backgrounds and the Chess Locker** (done). Migration `20261118003300_chess_looks.sql`: `chess_looks` (each
+   pupil's chosen set, board and background, plus `unlocked` and `seen`), `chess_look_rules()` (the table above),
+   `chess_looks_refresh(who)` counting the pupil's checked games (`chess_look_facts()` walks the moves for castling,
+   promotions and the mating piece). Triggers on `bot_games` and `mp_games` write unlocks down the moment a chess game
+   is saved, because a New Season deletes the games; `unlocked` only grows. Only games that count (10 of your own
+   moves, not abandoned) count. The browser calls `my_chess_looks()`, `set_chess_look(kind, item)` (refuses anything
+   locked) and `mark_chess_looks_seen(items)`. Screens: `looks.ts` (names, words, the shared store), `Scenery.tsx`
+   (painting plus particles: dust, leaves, spray, embers, snow, bubbles, stars), `Locker.tsx` (Sets and Boards show
+   "coming soon" with unlock progress, so pupils can earn them already), `Reveal.tsx` (the chest, after the result
+   card, in bot and classmate games). Preview: `#reveal` opens the chest; `preview/chess/fakeLooks.ts` stands in for
+   the server. Stages 3 and 4 add their kind to `READY_KINDS` in `looks.ts`; their unlocks are already saved.
 3. **Boards:** 4 painted boards (kind `texture`) and their unlocks.
 4. **Piece sets:** 6 sets × 12 cut-out pieces, keeping the normal chess shapes so they read on small squares. The
    SVG pieces stay as the fallback.
@@ -58,4 +68,7 @@ different ways … a few different backgrounds … full screen … flashy and en
 ## Art
 
 All in `docs/chess-art/config.json`, painted with `python scripts/game_art.py chess paint ~/dragon-art-inbox/chess`,
-picked in `picks.json`, then `tidy`. Style: bright storybook fantasy, calm middle so the board stands out.
+picked in `picks.json`, then `tidy`. Style: bright storybook fantasy, calm middle so the board stands out. Style a's
+"no chessboard" words made the painter put a board on the ground for the volcano, underwater palace and space station,
+so those three use `--style b` (no chess words). The chest and stand are cut-outs in `docs/chess-art/fx.json`
+(`fx-picks.json`), tidied with rembg.
