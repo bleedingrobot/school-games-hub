@@ -26,7 +26,7 @@ export const HUB_NEWS: NewsItem[] = [
     date: '2026-11-18',
     emoji: '🎉',
     title: 'Marble Rush is easier',
-    text: 'More rails, fewer gaps and slower geysers. Plus confetti, stars and cheers when you finish!',
+    text: 'More rails, fewer gaps, slower geysers. And confetti and stars when you finish!',
     game: 'marble',
   },
   {
