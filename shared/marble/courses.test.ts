@@ -6,10 +6,12 @@ import { doorsForSeed } from './maths';
 import { COURSES } from './courses';
 import { medalFor, replay } from './engine';
 import { NZ_COURSE_DEFS } from './nzCourses';
+import { encodeInputs } from './inputs';
+import { checkGhost } from '../../src/games/marble/ghostCheck';
 
 // The server's Marble Cup and Golden Marble use their own copy of the gold times (public.marble_gold_steps in
 // supabase/migrations/20261112002300_trophies_games_4.sql): if a course's medals change here, change that copy in a new migration.
-it('the bot finishes every course without falling and earns gold, and replays to the same time; the server knows the same golds', () => {
+it('the bot finishes every course without falling and earns gold, and replays to the same time (and as a ghost); the server knows the same golds', () => {
   const sql = readFileSync(resolve(__dirname, '../../supabase/migrations/20261112002300_trophies_games_4.sql'), 'utf8');
   const server = Object.fromEntries(
     [...sql.matchAll(/when '([a-z-]+)' then case when maths then (\d+) else (\d+) end/g)].map((m) => [m[1], { goldMaths: Number(m[2]), gold: Number(m[3]) }]),
@@ -22,5 +24,9 @@ it('the bot finishes every course without falling and earns gold, and replays to
     expect(bot.state.falls, c.def.id).toBe(0);
     expect(medalFor(c, bot.state.finishSteps), c.def.id).toBe('gold');
     expect(replay(c, bot.runs, { openDoors })?.finishSteps, c.def.id).toBe(bot.state.finishSteps);
+    // A ghost that still finishes is kept with today's time; one that drives off the changed track is dropped.
+    const ghost = { name: 'Ari', steps: 99999, inputs: encodeInputs(bot.runs), doors: openDoors, gems: [] };
+    expect(checkGhost(c, 'up', ghost)?.steps, c.def.id).toBe(bot.state.finishSteps);
+    expect(checkGhost(c, 'up', { ...ghost, inputs: '3x60' }), c.def.id).toBeNull();
   }
 });
