@@ -22,6 +22,7 @@ import { paletteFor } from './palette';
 import { lowerQuality, startQuality, type Quality } from './quality';
 import { isGoodGuess } from './guess';
 import { gateSigns, gemSprites } from './signs';
+import { questionOrder, questionToShow } from './questionOrder';
 import type { MarbleView, OtherKind } from './renderer';
 
 /** A recorded run to race against (from src/data/marble.ts). */
@@ -52,10 +53,6 @@ export type Marker = (slot: number, answer: number, ms: number) => Promise<{ rig
 
 type Phase = 'loading' | 'ready' | 'playing' | 'reading' | 'question' | 'paused' | 'finished' | 'timeout' | 'broken';
 
-/** How close (in tiles) the marble has to be to a gate's sign for its question to show. */
-const SIGN_RANGE = 7;
-/** How close to a number gem trail's gems its question shows. */
-const GEM_RANGE = 8;
 /** The longest the game waits for a student to read a gate, in milliseconds. */
 const READ_TIME_MS = 10_000;
 
@@ -261,6 +258,8 @@ export function RunScreen({
     let lastRescueAt = -Infinity;
     let nearGate = -1;
     let nearTrail = -1;
+    const order = questionOrder(course);
+    const passedTrails = new Set<number>();
     const read = new Set<number>();
     let readTimer = 0;
     let wasGrounded = true;
@@ -296,6 +295,7 @@ export function RunScreen({
       lastRescueAt = -Infinity;
       nearGate = -1;
       nearTrail = -1;
+      passedTrails.clear();
       setGuessResult(null);
       read.clear();
       window.clearTimeout(readTimer);
@@ -483,21 +483,12 @@ export function RunScreen({
           }
         }
         if (n === 6) acc = 0;
-        // The nearest gate whose tunnel hasn't been chosen yet, if its sign is close: its question shows, and the game can wait to be read.
-        // (When no gate is near, a number-gem trail's question shows while the marble is among its gems.)
+        // The next question along the track, if the marble is near it: a gate's question only once every stop before it is done
+        // (questionOrder.ts), so the maths comes in the order the track meets it. A gate's question can wait to be read.
         if (setup.maths && !state2 && phaseRef.current === 'playing') {
-          let near = -1;
-          course.gates.forEach((gate, i) => {
-            if (near >= 0 || state.gateChoices[i] >= 0) return;
-            if ((gate.sign[0] + 0.5 - state.x) ** 2 + (gate.sign[1] + 0.5 - state.y) ** 2 < SIGN_RANGE * SIGN_RANGE) near = i;
-          });
-          let trail = -1;
-          if (near < 0) {
-            course.gems.forEach((t, i) => {
-              if (trail >= 0) return;
-              if (t.groups.some((g) => g.spots.some(([gx, gy]) => (gx - state.x) ** 2 + (gy - state.y) ** 2 < GEM_RANGE * GEM_RANGE) || (t.sign[0] + 0.5 - state.x) ** 2 + (t.sign[1] + 0.5 - state.y) ** 2 < SIGN_RANGE * SIGN_RANGE)) trail = i;
-            });
-          }
+          const next = questionToShow(course, order, state, passedTrails);
+          const near = next?.kind === 'gate' ? next.index : -1;
+          const trail = next?.kind === 'gems' ? next.index : -1;
           if (trail !== nearTrail) {
             nearTrail = trail;
             if (near < 0) setBanner(trail >= 0 && setup.gems[trail] ? { kind: 'gems', question: setup.gems[trail].question } : null);
