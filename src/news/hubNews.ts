@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'gemkeep-red-blast-2026-11-18',
+    date: '2026-11-18',
+    emoji: '🔺',
+    title: 'Red gems hit harder in Gem Keep',
+    text: 'Red gems now blast a bigger area and hurt the whole group more. Watch for the red ring!',
+    game: 'gem-keep',
+  },
+  {
     id: 'diamond-rare-gems-2026-11-18',
     date: '2026-11-18',
     emoji: '💎',

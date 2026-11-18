@@ -52,7 +52,7 @@ export interface Projectile {
 
 export type GameEvent =
   | { type: 'shot'; x: number; y: number; colours: Colour[] }
-  | { type: 'hit'; x: number; y: number; colours: Colour[]; crit: boolean; splash: number }
+  | { type: 'hit'; x: number; y: number; colours: Colour[]; crit: boolean; splash: number; splashRadius: number }
   | { type: 'kill'; x: number; y: number; kind: EnemyKind; mana: number }
   | { type: 'leak'; kind: EnemyKind; damage: number }
   | { type: 'wave-start'; wave: number; surge: number }
@@ -398,7 +398,7 @@ export function hit(state: GameState, target: Enemy, stats: ShotStats, colours: 
     if (state.time >= target.poisonUntil || perSecond >= target.poisonPerSecond) target.poisonPerSecond = perSecond;
     target.poisonUntil = state.time + stats.poisonSeconds;
   }
-  state.events.push({ type: 'hit', x: target.x, y: target.y, colours, crit, splash });
+  state.events.push({ type: 'hit', x: target.x, y: target.y, colours, crit, splash, splashRadius: stats.splashRadius });
 }
 
 /** Moves the game on by one step (1/60 of a second). Does nothing between waves. */

@@ -60,7 +60,7 @@ export const GEM = {
 /** What each colour does. "g" in a comment means the gem's grade. */
 export const EFFECTS = {
   /** Red: area damage. Everything within radius (+ per g) takes this share of the hit. */
-  red: { radius: 0.8, radiusPerGrade: 0.1, share: 0.5 },
+  red: { radius: 1.2, radiusPerGrade: 0.1, share: 0.65 },
   /** Blue: slows. Speed is cut by this much (+ per g, up to max) for this long. */
   blue: { slow: 0.3, slowPerGrade: 0.05, maxSlow: 0.6, seconds: 1.5 },
   /** Green: poison. This share of the hit again every second, for this long. */
