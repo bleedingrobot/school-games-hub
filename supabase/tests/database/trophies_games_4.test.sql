@@ -4,7 +4,7 @@
 -- Run on a throw-away copy: scripts/scratch-test.sh <db> supabase/tests/database/trophies_games_4.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(26);
+select plan(27);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -114,11 +114,16 @@ insert into public.decree_reigns (player, look, reign, answered) values (pg_temp
   (select jsonb_object_agg(n::text, jsonb_build_object('value', 1, 'right', true)) from generate_series(0, 7) n));
 update public.decree_reigns set status = 'over', finished_at = now() where player = pg_temp.id('0b') and status = 'playing';
 select is(pg_temp.wins('0b', 'decree-crown'), 0, 'all riddles right in a reign that ends early: no Crown');
-insert into public.decree_reigns (player, look, reign, answered) values (pg_temp.id('0b'), 'ruler-girl-1', '{}',
-  (select jsonb_object_agg(n::text, jsonb_build_object('value', 1, 'right', true)) from generate_series(0, 7) n));
-update public.decree_reigns set status = 'full', finished_at = now() where player = pg_temp.id('0b') and status = 'playing';
+-- 20 perfect reigns in the season give the Crown (20261119000200): the 19th gives nothing, the 20th does.
+create function pg_temp.perfect_reign() returns void language sql as $$
+  insert into public.decree_reigns (player, look, reign, answered, status, finished_at) values (pg_temp.id('0b'), 'ruler-girl-1',
+    '{}', (select jsonb_object_agg(n::text, jsonb_build_object('value', 1, 'right', true)) from generate_series(0, 7) n), 'full', now())
+$$;
+select pg_temp.perfect_reign() from generate_series(1, 19);
+select ok(pg_temp.wins('0b', 'decree-crown') = 0, '19 perfect reigns: no Crown yet');
+select pg_temp.perfect_reign();
 select is((select string_agg(season::text, ',') from public.trophies where player = pg_temp.id('0b') and trophy = 'decree-crown'),
-  public.hub_season(1)::text, 'a full reign with all 8 right gives the Royal Crown in the hub season');
+  public.hub_season(1)::text, 'the 20th perfect reign in a season gives the Royal Crown in the hub season');
 
 -- ---- Training ----
 insert into public.training_sessions (player, kind, seed, answers, finished_at)
