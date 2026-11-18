@@ -31,6 +31,7 @@ import { BOT_LEVELS, type BotLevel, type DashboardGroup, type GameDefinition } f
 import { RecentTrophies } from '../trophies/RecentTrophies';
 import { SeasonNote } from '../trophies/SeasonNote';
 import { QuestBar } from '../quests/QuestBar';
+import { WhatsNew } from '../news/WhatsNew';
 
 // The teacher pages and older tests still find these here.
 export { cardRecentGame, friendRecentGame, powerRecentGame, spaceRecentGame, whenPlayed, type RecentGame } from '../components/MyGames';
@@ -433,6 +434,9 @@ function DashboardPage() {
         </div>
       ) : (
         <>
+
+        {/* New games, pictures and achievements, for pupils (src/news/hubNews.ts). */}
+        {meId && <WhatsNew me={meId} today={nzDay(Date.now())} canSee={(game) => tiles.some((t) => t.id === game)} />}
 
         {/* Teachers see their class's quest too, so they can play along. */}
         <QuestBar quest={answer?.classQuest} moves={answer?.moves} />
