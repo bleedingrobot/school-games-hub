@@ -268,10 +268,6 @@
   .tf-btn:active:not(:disabled) { transform: none; }
 }
 
-.tf-exit {
-  display: block;
-  margin: 12px auto;
-}
 .tf-hud__right { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .tf-help { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }
 .tf-help__label { font-weight: 800; }
@@ -286,3 +282,19 @@
 .tf-board__me td { background: rgba(255, 214, 102, 0.45); }
 .tf-dash-potion { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 8px; color: #fff; font-weight: 800; font-size: 0.95rem; pointer-events: auto; cursor: pointer; }
 .tf-dash-potion input { width: 22px; height: 22px; }
+
+/* Full window (James, 18 Nov 2026: like Star Trader; docs/FULL-WINDOW.md). The game covers the hub's bar, the map and
+   hangar paintings reach every edge, and the run fills the whole window (the hub bar no longer takes any height). */
+.tf-window { position: fixed; inset: 0; z-index: 40; overflow-y: auto; overscroll-behavior: contain; background: #0b1020; }
+.tf-window > .tf-root { --tf-pad: 14px; max-width: none; min-height: 100%; margin: 0; padding: var(--tf-pad); border-radius: 0; }
+.tf-window > .tf-root[data-screen='play'], .tf-window > .tf-root[data-screen='dash'] { padding: 0; }
+.tf-window .tf-play { height: 100dvh; }
+/* the painted screens: the painting edge to edge and at least the window's height, the trail in a centred column */
+.tf-window .tf-map, .tf-window .tf-hangar {
+  min-height: 100dvh;
+  margin: calc(-1 * var(--tf-pad)) calc(-1 * var(--tf-pad)) 0;
+  padding: var(--tf-pad) max(var(--tf-pad), calc((100% - 1240px) / 2)) 20px;
+}
+.tf-window .tf-howto { max-width: 1180px; margin: 0 auto; }
+.tf-hubbtns { display: inline-flex; gap: 8px; }
+.tf-hubbtn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }

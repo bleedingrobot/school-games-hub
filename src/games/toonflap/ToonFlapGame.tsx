@@ -16,6 +16,7 @@ import { MapScreen } from './MapScreen';
 import { PlayScreen } from './PlayScreen';
 import { ResultsScreen } from './ResultsScreen';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
+import { HubButtons } from './HubButtons';
 import './toonflap.css';
 
 type Screen = 'map' | 'hangar' | 'howto' | 'play' | 'results' | 'dash' | 'dash-results';
@@ -29,7 +30,7 @@ const readGentle = (): boolean => {
   }
 };
 
-export function ToonFlapGame({ backend, extra, onExit, onServer = false }: { backend: ToonFlapBackend; /** The school's server is behind `backend`, so trophies can be won. */ onServer?: boolean; extra?: (h: { reload(): void }) => ReactNode; onExit?: () => void }) {
+export function ToonFlapGame({ backend, extra, onServer = false }: { backend: ToonFlapBackend; /** The school's server is behind `backend`, so trophies can be won. */ onServer?: boolean; extra?: (h: { reload(): void }) => ReactNode }) {
   const [screen, setScreen] = useState<Screen>('map');
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [failed, setFailed] = useState(false);
@@ -111,23 +112,28 @@ export function ToonFlapGame({ backend, extra, onExit, onServer = false }: { bac
 
   if (failed) {
     return (
-      <div className="tf-root">
-        <p className="tf-error" role="alert">Toon Flap couldn't load.</p>
-        <button type="button" className="tf-btn" onClick={reload}>Try again</button>
-      </div>
+      <Window>
+        <div className="tf-root">
+          <p className="tf-error" role="alert">Toon Flap couldn't load.</p>
+          <div className="tf-row"><button type="button" className="tf-btn" onClick={reload}>Try again</button><HubButtons /></div>
+        </div>
+      </Window>
     );
   }
-  if (!loaded) return <div className="tf-root"><p className="tf-loading" role="status">Loading Toon Flap…</p></div>;
+  if (!loaded) return <Window><div className="tf-root"><p className="tf-loading" role="status">Loading Toon Flap…</p></div></Window>;
   if (!loaded.enabled) {
     return (
-      <div className="tf-root">
-        <p className="tf-error" role="status">Toon Flap isn’t switched on for your class yet.</p>
-        {onExit && <button type="button" className="tf-btn" onClick={onExit}>Back to games</button>}
-      </div>
+      <Window>
+        <div className="tf-root">
+          <p className="tf-error" role="status">Toon Flap isn’t switched on for your class yet.</p>
+          <HubButtons />
+        </div>
+      </Window>
     );
   }
 
   return (
+    <Window>
     <div className="tf-root" data-screen={screen}>
       {screen === 'map' && (
         <>
@@ -136,7 +142,6 @@ export function ToonFlapGame({ backend, extra, onExit, onServer = false }: { bac
             onHangar={() => setScreen('hangar')} onHowTo={() => setScreen('howto')} busy={busy} error={error}
             help={help} onHelp={chooseHelp} onReplayGuide={() => void begin(1, true)} voice={voice} talk={talk}
           />
-          {onExit && <button type="button" className="tf-btn tf-exit" onClick={onExit}>Back to games</button>}
           {extra?.({ reload })}
         </>
       )}
@@ -191,5 +196,11 @@ export function ToonFlapGame({ backend, extra, onExit, onServer = false }: { bac
       )}
       <TrophyWonLine games={['toonflap']} watch={reply ?? dashReply} off={!onServer} />
     </div>
+    </Window>
   );
+}
+
+/** Toon Flap covers the whole window, over the hub's bar (James, 18 Nov 2026: like Star Trader). */
+function Window({ children }: { children: ReactNode }) {
+  return <div className="tf-window">{children}</div>;
 }

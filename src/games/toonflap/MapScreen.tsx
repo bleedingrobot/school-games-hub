@@ -4,6 +4,7 @@ import { LEVELS } from '../../../shared/toonflap/levels';
 import { useEffect } from 'react';
 import { DASH_LINES, HELP_SETTINGS, type HelpSetting } from './guide';
 import { screenArt } from './art/art';
+import { HubButtons } from './HubButtons';
 
 /** A painted picture as a soft page background (the list stays easy to read over it). */
 export const paintedBackground = (url: string | undefined) =>
@@ -75,6 +76,7 @@ export function MapScreen({ progress, today, maths, gentle, onGentle, onPlay, on
               {voice.on ? '🔊 Voice on' : '🔈 Voice off'}
             </button>
           )}
+          <HubButtons />
         </div>
       </header>
 
