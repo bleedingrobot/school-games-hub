@@ -188,3 +188,42 @@ img.rd-portrait--big { height: 170px; }
 .rd-tour__buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 .rd-switch { display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
 .rd-switch input { width: 24px; height: 24px; accent-color: #1f5f94; }
+
+/* ---------------------------------------------------------------- the whole window (James, 18 Nov 2026)
+   Like Star Trader: the game covers the whole browser window, over the hub's bar, with no frame. The start, the
+   throne room and the endings have their painting filling the window behind them; text screens (the album, how to
+   play) keep the sky and a readable column in the middle. The Hub and sound buttons sit next to the game's name. */
+.rd {
+  position: fixed; inset: 0; z-index: 40; max-width: none; margin: 0; min-height: 0;
+  overflow-y: auto; overscroll-behavior: contain; border-radius: 0; box-shadow: none;
+  padding: 12px max(14px, calc((100% - 980px) / 2)) 24px;
+}
+.rd--art { background-color: #1d3247; background-size: cover; background-position: center; background-repeat: no-repeat; }
+.rd--art::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(16, 40, 64, 0.55) 0, rgba(16, 40, 64, 0) 120px); }
+.rd-head__name { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.rd-hubbtns { display: inline-flex; gap: 6px; }
+.rd-hubbtns .rd-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 2px 12px; text-decoration: none; color: var(--rd-ink); }
+/* The start and the endings: the painting shows above, the panel sits at the foot of the window. */
+.rd--art .rd-hero { flex: 1 0 170px; background: none; border: 0; box-shadow: none; padding: 0; }
+.rd--art .rd-hero .rd-sign { box-shadow: 0 4px 14px rgba(29, 50, 71, 0.3); }
+.rd--art > .rd-panel { background: rgba(255, 255, 255, 0.95); }
+/* The throne room: the council painting fills the window; the year road and meters sit along its top, the ruler
+   stands at the window's bottom left and the villagers come to the middle. */
+.rd--play { padding: 10px 14px 0; }
+.rd--play > .rd-road, .rd--play > .rd-meters, .rd--play > .rd-head { width: 100%; max-width: 1200px; margin: 0 auto; }
+.rd--play .rd-hall { background: none; border: 0; border-radius: 0; box-shadow: none; min-height: 380px; margin: 0 -14px; padding: 14px 14px 24px; }
+.rd--play .rd-ruler { left: 3%; height: 66%; max-height: 560px; }
+.rd--play .rd-deal, .rd--play .rd-after { width: min(480px, 100%); }
+@media (min-height: 860px) { .rd--play img.rd-portrait--big { height: 220px; } }
+@media (max-height: 700px) { .rd--play .rd-hall { min-height: 300px; } }
+@media (max-height: 440px) {
+  .rd { padding: 6px 10px 12px; }
+  .rd--play { padding: 6px 10px 0; }
+  .rd--play .rd-hall { min-height: 240px; margin: 0 -10px; padding: 8px; }
+  .rd-hubbtns .rd-btn { min-height: 36px; padding: 2px 8px; }
+}
+@media (max-width: 600px) {
+  .rd { padding-left: 10px; padding-right: 10px; }
+  .rd--play .rd-hall { margin: 0 -10px; padding: 10px 10px 18px; }
+  .rd--art .rd-hero { flex-basis: 140px; }
+}

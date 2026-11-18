@@ -18,6 +18,7 @@ import { personArt, rulerArt, rulerThumb, sceneArt, type SceneId } from './art';
 import type { AnswerReply, DecreeBackend, LoadReply, ReignReply } from './backend';
 import { factText } from './factText';
 import { HowToPlayBody } from './HowToPlay';
+import { HubButtons } from './HubButtons';
 import { speak, stopSpeaking } from '../../speech';
 import { haleVoiceOn, setHaleVoiceOn, setTutorialOn, spoken, TIPS, TOUR, tutorialOn, VOICE_FOLDER, YOUR_TURN, type Spot } from './tutorial';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
@@ -393,10 +394,14 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
 
   // ---------------------------------------------------------------- screens
 
-  const frame = (body: React.ReactNode) => (
-    <div className="rd">
+  /**
+   * Every screen fills the whole window, over the hub's bar, like Star Trader (James, 18 Nov 2026). `art`: that
+   * painting fills the window behind the screen (the start, the throne room, the endings); text screens keep the sky.
+   */
+  const frame = (body: React.ReactNode, art?: string, play = false) => (
+    <div className={`rd${art ? ' rd--art' : ''}${play ? ' rd--play' : ''}`} style={art ? { backgroundImage: `url("${art}")` } : undefined}>
       <header className="rd-head">
-        <h1>Royal Decree</h1>
+        <span className="rd-head__name"><HubButtons /><h1>Royal Decree</h1></span>
         {backend.trial && <span className="rd-trial">Trial: saved on this browser only, no points</span>}
       </header>
       {body}
@@ -456,7 +461,7 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
     const open = local?.status === 'playing' && pub ? local : null;
     return frame(
       <>
-        <div className="rd-hero" style={title.wide ? { backgroundImage: `url("${title.wide}")` } : undefined}>
+        <div className="rd-hero">
           <h2 ref={heading} tabIndex={-1} className="rd-sign">Riverstone needs a ruler</h2>
         </div>
         <div className="rd-panel">
@@ -490,6 +495,7 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
           {!backend.trial && <p className="rd-soft">{pointsLeft > 0 ? `Reigns that give points today: ${pointsLeft}.` : 'You’ve had today’s points. You can still play!'}</p>}
         </div>
       </>,
+      title.wide,
     );
   }
 
@@ -499,7 +505,7 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
     const newFaces = local.met.filter((w) => !(album?.met ?? []).includes(w));
     return frame(
       <>
-        <div className="rd-hero" style={scene.wide ? { backgroundImage: `url("${scene.wide}")` } : undefined}>
+        <div className="rd-hero">
           <h2 ref={heading} tabIndex={-1} className="rd-sign">{ending.title}</h2>
         </div>
         <div className="rd-panel">
@@ -519,6 +525,7 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
           </p>
         </div>
       </>,
+      scene.wide,
     );
   }
 
@@ -532,7 +539,7 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
     <>
       <Road turn={local.turn} spot={spot === 'road'} />
       <MeterBar meters={local.meters} hint={hint} changed={after ? changed : null} spot={spot === 'meters'} />
-      <div className="rd-hall" style={council.wide ? { backgroundImage: `url("${council.wide}")` } : undefined}>
+      <div className="rd-hall">
         <h2 ref={heading} tabIndex={-1} className="rd-sr">The throne room</h2>
         {rulerArt(pub.look) && <img className="rd-ruler" src={rulerArt(pub.look)} alt="" />}
         {tour !== null && <TourBubble step={tour} onNext={() => (tour + 1 < TOUR.length ? setTour(tour + 1) : endTour())} onSkip={endTour} />}
@@ -602,5 +609,7 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
         />
       )}
     </>,
+    council.wide,
+    true,
   );
 }
