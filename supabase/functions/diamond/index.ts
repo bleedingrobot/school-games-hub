@@ -8320,7 +8320,7 @@ const RARE_GEMS = [
 	},
 	{
 		id: "phoenixGem",
-		name: "Phoenix Gem",
+		name: "Fablet Rose",
 		chance: .01,
 		tier: "legendary",
 		value: 250,
@@ -8328,7 +8328,7 @@ const RARE_GEMS = [
 		slip: .45,
 		r: 26,
 		minY: 560,
-		about: "Born from fire. Only the luckiest miners ever see one."
+		about: "A rose made of glowing crystal. Only the luckiest miners ever see one."
 	}
 ];
 const RARE_IDS = RARE_GEMS.map((g) => g.id);
