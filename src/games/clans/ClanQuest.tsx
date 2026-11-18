@@ -42,6 +42,7 @@ import { ACHIEVEMENTS, fameFor, type AchievementDef } from '../../../shared/clan
 import { earn, finishFight, newSession, skipDay, type FightSummary, type Session } from './session';
 import { sessionFrom, type ClanServer, type ServerReply } from './remote';
 import { bannerArt, questArt, sceneArt, type SceneId } from './art';
+import { HubButtons } from './HubButtons';
 import './clans.css';
 
 type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'myvillage' | 'raid' | 'quest' | 'news' | 'classraid' | 'duels' | 'scoreboard' | 'achievements' | 'howto' | 'monster';
@@ -475,12 +476,14 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const onPicture = loading === null && screen !== 'fight' && (session && (screen === 'quest' || screen === 'results' || screen === 'myvillage' || screen === 'mines') ? true : session && screen === 'home' ? !repicking && hasTownMap() : !!scene && !!sceneArt(scene).wide);
   const top = (over: boolean) => (
     <header className={over ? 'cq-top cq-top--over' : 'cq-top'}>
-      <h1>Clan Quest</h1>
+      <div className="cq-top__title"><HubButtons /><h1>Clan Quest</h1></div>
       <span className="cq-soft">{session ? `${session.clan.gold} gold · ${session.clan.followers} followers · ${session.fame ?? 0} fame` : 'Test version: nothing is saved'}</span>
     </header>
   );
 
   return (
+    // The whole window, over the hub's bar, like Star Trader and Dragon Maths (James, 18 Nov 2026).
+    <div className="cq-window">
     <div className="cq" ref={root}>
       {backdrop && <div className="cq-backdrop" style={{ '--cq-backdrop': `url("${backdrop}")` } as React.CSSProperties} />}
       {/* In a fight the picture gets the room: no title, gold, followers or fame (the fight names itself for screen readers). */}
@@ -613,6 +616,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {!server && <SettingsStrip session={session} onChange={setSession} open={screen === 'home'} />}
         </>
       )}
+    </div>
     </div>
   );
 }
