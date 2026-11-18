@@ -90,32 +90,6 @@
   font-size: 1rem;
   margin-bottom: 8px;
 }
-.profile-achievements__games {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
-  gap: 10px 24px;
-  align-items: start;
-}
-.profile-achievements__games li {
-  display: grid;
-  gap: 10px;
-}
-.profile-achievements__game {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.profile-achievements__game strong {
-  flex: 1;
-}
-.profile-achievements__all {
-  min-height: 44px;
-  padding: 6px 14px;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .profile-fold__arrow {
     transition: none;

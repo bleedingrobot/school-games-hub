@@ -81,7 +81,8 @@ Learned while building:
 - Shelf order needs no new data: `my_home_page().topGames.mine` (most played, 14 days) goes first, then anything
   started, then untouched games.
 - The early games (Robin, Pigeon, Parrot, Lizard, Swamp Hen) do show "Step N: name" in play, so "Reach step N" stays.
-- The Profile fold's "Every game" list is still there; the Hall covers everything it shows (ask James before removing).
+- The Profile fold's "Every game" list was removed after (James, 19 Nov 2026): the Hall replaces it. The fold keeps the
+  Hall button, Earned and Nearly there.
 - The site has no dark mode of its own (only the three page themes); the Hall is a dark painting in every theme.
 
 **What stage 3 needs** (the earn moment):

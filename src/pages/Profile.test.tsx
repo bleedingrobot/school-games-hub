@@ -110,10 +110,7 @@ describe('my profile', () => {
     for (const name of [/^Closest/, /Second closest/, /Third closest/]) expect(within(nearly).getByText(name)).toBeInTheDocument();
     expect(screen.queryByText(/Fourth closest/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Fifth closest/)).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: 'See all: Chess' }));
-    expect(screen.getByText('Fifth closest')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Hide: Chess' })).toHaveTextContent('Hide');
+    expect(screen.getByRole('link', { name: /Open my Achievement Hall/ })).toHaveAttribute('href', '/achievements');
   });
 
   it('saves a new look together with the theme, and a new theme together with the look', async () => {

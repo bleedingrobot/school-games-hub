@@ -22,7 +22,7 @@ import { OwnNamePanel, ScrollNote } from '../profile/OwnName';
 import { nextRankText, type Achievement, type MyProgress } from '../data/progress';
 import { pictureOf } from '../avatar/earnedPictures';
 import type { MyTrophy } from '../data/trophies';
-import { ALL_GAMES, gameLabel, HUB_ACHIEVEMENT_GROUPS } from '../games/registry';
+import { gameLabel } from '../games/registry';
 import { useThemeTrial } from '../theme/hubTheme';
 import { TrophyCabinet, useMyTrophies } from '../trophies/TrophyCabinet';
 import './profile.css';
@@ -500,15 +500,13 @@ function useMyHome(me: string | undefined): MyHome {
   return { progress, stats, recent, failed };
 }
 
-/** What the pupil has earned, the three they are closest to, then each game's full list behind its own "See all". */
+/** The way into the Achievement Hall (every game's shelf), then what the pupil has earned and the three they are closest to. */
 function MyAchievements({ achievements }: { achievements: Achievement[] }) {
-  const [shown, setShown] = useState<ReadonlySet<string>>(() => new Set());
   const earned = achievements.filter((a) => a.earnedAt).sort((a, b) => (b.earnedAt ?? '').localeCompare(a.earnedAt ?? ''));
   const nearest = achievements
     .filter((a) => !a.earnedAt)
     .sort((a, b) => b.progress / b.goal - a.progress / a.goal)
     .slice(0, NEAREST_SHOWN);
-  const games = [...ALL_GAMES, ...HUB_ACHIEVEMENT_GROUPS].filter((game) => achievements.some((a) => a.game === game.id));
 
   return (
     <div className="profile-achievements">
@@ -529,41 +527,6 @@ function MyAchievements({ achievements }: { achievements: Achievement[] }) {
           <AchievementList achievements={nearest} showGame />
         </div>
       )}
-      <div>
-        <h3>Every game</h3>
-        <ul className="profile-achievements__games">
-          {games.map((game) => {
-            const mine = achievements.filter((a) => a.game === game.id);
-            const isShown = shown.has(game.id);
-            return (
-              <li key={game.id}>
-                <div className="profile-achievements__game">
-                  <strong>{game.name}</strong>
-                  <span className="panel__count">
-                    {mine.filter((a) => a.earnedAt).length} of {mine.length}
-                  </span>
-                  <button
-                    type="button"
-                    className="button button--light-outline profile-achievements__all"
-                    aria-expanded={isShown}
-                    aria-label={`${isShown ? 'Hide' : 'See all'}: ${game.name}`}
-                    onClick={() =>
-                      setShown((was) => {
-                        const next = new Set(was);
-                        if (!next.delete(game.id)) next.add(game.id);
-                        return next;
-                      })
-                    }
-                  >
-                    {isShown ? 'Hide' : 'See all'}
-                  </button>
-                </div>
-                {isShown && <AchievementList achievements={mine} />}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
     </div>
   );
 }
