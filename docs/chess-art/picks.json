@@ -5,5 +5,13 @@
   "bg/snow": 3,
   "bg/volcano": 3,
   "bg/underwater": 4,
-  "bg/space": 2
+  "bg/space": 2,
+  "board/marble-light": 3,
+  "board/marble-dark": 3,
+  "board/beach-light": 2,
+  "board/beach-dark": 1,
+  "board/lava-light": 2,
+  "board/lava-dark": 1,
+  "board/starfield-light": 2,
+  "board/starfield-dark": 3
 }

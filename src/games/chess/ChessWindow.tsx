@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useSound } from '../../sound';
 import { Locker } from './Locker';
-import { loadLooks, revealShown, useLooks } from './looks';
+import { READY_KINDS, loadLooks, lookByKey, revealShown, useLooks } from './looks';
 import { Reveal } from './Reveal';
 import { Scenery } from './Scenery';
 import './chess.css';
@@ -17,7 +17,10 @@ export function ChessWindow({ children }: { children: ReactNode }) {
   const { soundOn, setSoundOn } = useSound();
   const { data, reveal } = useLooks();
   const [lockerOpen, setLockerOpen] = useState(false);
-  const fresh = data?.fresh.some((k) => k.startsWith('bg:')) ?? false;
+  const fresh = data?.fresh.some((k) => {
+    const look = lookByKey(k);
+    return !!look && READY_KINDS.includes(look.kind);
+  }) ?? false;
 
   useEffect(() => {
     void loadLooks();

@@ -12,6 +12,8 @@ import wN from './pieces/wN.svg';
 import wP from './pieces/wP.svg';
 import wQ from './pieces/wQ.svg';
 import wR from './pieces/wR.svg';
+import { BoardFx, boardClass, boardStyle, squareStyle } from './BoardFace';
+import { boardById, useLooks } from './looks';
 
 const PIECE_IMAGES: Record<string, string> = {
   bB,
@@ -49,8 +51,9 @@ export function squaresFor(orientation: Colour): Square[] {
   return ranks.flatMap((rank) => [...files].map((file) => `${file}${rank}` as Square));
 }
 
+/** a1 is dark and h1 is light ("light on the right"). */
 function isLight(square: Square) {
-  return (FILES.indexOf(square[0]) + Number(square[1])) % 2 === 1;
+  return (FILES.indexOf(square[0]) + Number(square[1])) % 2 === 0;
 }
 
 /** True when the device asks for less movement: then pieces just appear, with no bursts or banners. */
@@ -119,6 +122,8 @@ export function Board({ chess, orientation, canMove, lastMove, onMove }: BoardPr
   const shownPly = useRef<number | null>(null);
   const fxId = useRef(0);
   const [fx, setFx] = useState<Fx[]>([]);
+  // The pupil's own board from the Chess Locker (classic wood until the looks load).
+  const look = boardById(useLooks().data?.board);
 
   const squares = squaresFor(orientation);
   const myColour = orientation === 'white' ? 'w' : 'b';
@@ -287,7 +292,15 @@ export function Board({ chess, orientation, canMove, lastMove, onMove }: BoardPr
 
   return (
     <div className="board-wrap">
-      <div ref={boardRef} className="board" role="group" aria-label={`Chess board. You are ${orientation}.`}>
+      <div
+        // A new board sweeps in square by square.
+        key={look.id}
+        ref={boardRef}
+        className={`board ${boardClass(look)}`}
+        style={boardStyle(look)}
+        role="group"
+        aria-label={`Chess board. You are ${orientation}.`}
+      >
         {squares.map((square, index) => {
           const piece = chess.get(square);
           const classes = ['board__square', isLight(square) ? 'is-light' : 'is-dark'];
@@ -301,6 +314,7 @@ export function Board({ chess, orientation, canMove, lastMove, onMove }: BoardPr
               key={square}
               type="button"
               className={classes.join(' ')}
+              style={squareStyle(index)}
               ref={(el) => {
                 if (el) squareRefs.current.set(square, el);
                 else squareRefs.current.delete(square);
@@ -327,6 +341,7 @@ export function Board({ chess, orientation, canMove, lastMove, onMove }: BoardPr
             </button>
           );
         })}
+        <BoardFx look={look} />
       </div>
 
       <div className="board-fx" aria-hidden="true">

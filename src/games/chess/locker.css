@@ -108,12 +108,42 @@
   font-size: min(22vw, 110px);
   animation: cl-float 3s ease-in-out infinite;
 }
-.cl__plinth.is-locked span {
+.cl__plinth.is-locked > span {
   filter: grayscale(1) brightness(0.6);
 }
 @keyframes cl-float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
+}
+/* A board floats on the plinth, tipped back like it's lying on a table, and slowly turns to show off. */
+.cl__plinth--board {
+  width: min(56vw, 250px);
+  perspective: 800px;
+}
+.cl__board {
+  width: 78%;
+  transform: rotateX(42deg) rotateZ(-8deg);
+  animation: cl-board-turn 9s ease-in-out infinite;
+}
+@keyframes cl-board-turn {
+  0%, 100% { transform: rotateX(42deg) rotateZ(-8deg); }
+  50% { transform: rotateX(36deg) rotateZ(8deg); }
+}
+.cl__plinth.is-locked .cl__board {
+  filter: grayscale(1) brightness(0.6);
+}
+.cl__thumb-board {
+  padding: 6%;
+  justify-items: center;
+}
+.cl__thumb-board .cb-mini {
+  height: 100%;
+  border-width: 3px;
+}
+.cr__board {
+  width: 62%;
+  margin: 0 auto 6%;
+  border-width: 8px;
 }
 .cl__card {
   width: min(100%, 520px);
@@ -415,7 +445,7 @@
   to { transform: rotateY(0); }
 }
 .cr__spin img,
-.cr__spin span {
+.cr__spin > span:not(.cb-mini) {
   display: grid;
   place-items: center;
   width: 100%;

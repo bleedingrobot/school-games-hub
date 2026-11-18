@@ -4,7 +4,8 @@ import { playSound } from '../sounds';
 import chestOpen from './art/fx/chest-open.webp';
 import chestShut from './art/fx/chest-shut.webp';
 import stand from './art/fx/stand.webp';
-import { chooseLook, lookByKey, type Background } from './looks';
+import { BoardPreview } from './BoardFace';
+import { READY_KINDS, chooseLook, lookByKey, type Background, type BoardLook } from './looks';
 
 const SPARKS = Array.from({ length: 18 }, (_, i) => ({
   angle: i * 20 + ((i * 7) % 11),
@@ -50,7 +51,13 @@ export function Reveal({ itemKey, more, onDone }: { itemKey: string; more: numbe
         </div>
         <div className="cr__prize">
           <div className="cr__spin">
-            {picture ? <img src={picture} alt="" /> : <span>{look.emoji}</span>}
+            {picture ? (
+              <img src={picture} alt="" />
+            ) : look.kind === 'board' ? (
+              <BoardPreview look={look as BoardLook} className="cr__board" />
+            ) : (
+              <span>{look.emoji}</span>
+            )}
           </div>
           <img className="cr__stand" src={stand} alt="" />
         </div>
@@ -59,7 +66,7 @@ export function Reveal({ itemKey, more, onDone }: { itemKey: string; more: numbe
         <h2 id="cr-title">New {KIND_WORDS[look.kind]} unlocked!</h2>
         <p className="cr__name">{look.name}</p>
         <div className="cr__buttons">
-          {look.kind === 'background' && (
+          {READY_KINDS.includes(look.kind) && (
             <button
               type="button"
               className="button button--play"

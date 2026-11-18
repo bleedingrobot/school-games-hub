@@ -69,14 +69,14 @@ function Show() {
   );
 }
 
-if (location.hash === '#reveal') void checkUnlocks();
+if (location.hash.startsWith('#reveal')) void checkUnlocks();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <SoundProvider>
       <AuthContext.Provider value={auth}>
         <MemoryRouter initialEntries={['/chess?bot=very-easy']}>
-          {location.hash === '#show' ? <Show /> : <ChessPlay level="very-easy" />}
+          {location.hash.startsWith('#show') ? <Show /> : <ChessPlay level="very-easy" />}
         </MemoryRouter>
       </AuthContext.Provider>
     </SoundProvider>

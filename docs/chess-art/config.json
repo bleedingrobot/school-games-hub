@@ -1,12 +1,13 @@
 {
-  "_about": "Chess backgrounds, boards and piece sets (docs/CHESS-LOOK-PLAN.md). Paint: python scripts/game_art.py chess paint ~/dragon-art-inbox/chess. bg/volcano, bg/underwater and bg/space are painted and tidied with --style b: style a's words about no chessboard made the painter put a chessboard on the ground.",
+  "_about": "Chess backgrounds, boards and piece sets (docs/CHESS-LOOK-PLAN.md). Paint: python scripts/game_art.py chess paint ~/dragon-art-inbox/chess. bg/volcano, bg/underwater and bg/space are painted and tidied with --style b: style a's words about no chessboard made the painter put a chessboard on the ground. board/* are flat square textures (light and dark squares for each board), painted with --style t.",
   "game": "chess",
   "comfy": "http://127.0.0.1:8188",
   "filename_prefix": "chess/img",
   "style": "a",
   "styles": {
     "a": "Hand-painted fantasy storybook game background, rich glowing colours, soft painterly light, magical and inviting, detailed edges with a calm uncluttered middle, friendly for children aged 8 to 11, no people, no chess pieces, no chessboard, no writing, no letters, no numbers, no labels anywhere. ",
-    "b": "Hand-painted fantasy storybook game background, rich glowing colours, soft painterly light, magical and inviting, detailed edges with a calm uncluttered middle, friendly for children aged 8 to 11, no people, no writing, no letters, no numbers anywhere. "
+    "b": "Hand-painted fantasy storybook game background, rich glowing colours, soft painterly light, magical and inviting, detailed edges with a calm uncluttered middle, friendly for children aged 8 to 11, no people, no writing, no letters, no numbers anywhere. ",
+    "t": "Stylised hand-painted game texture, painterly brush strokes, soft even light with no strong shadows, rich glowing colours, clean and readable, made for a children's game. "
   },
   "inbox": "~/dragon-art-inbox/chess",
   "picks": "docs/chess-art/picks.json",
@@ -68,6 +69,94 @@
       "kind": "scene",
       "folder": "bg",
       "file": "space"
+    },
+    {
+      "name": "board/marble-light",
+      "prompt": "Polished white and pale cream Carrara marble with soft thin grey and faint gold veins, glossy and smooth. Seen straight on from above, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "size": [1024, 1024],
+      "kind": "texture",
+      "folder": "board",
+      "file": "marble-light",
+      "max": 512,
+      "region": [0.08, 0.08, 0.92, 0.92],
+      "blend": true
+    },
+    {
+      "name": "board/marble-dark",
+      "prompt": "Polished deep green malachite and dark emerald marble with swirling lighter green and thin gold veins, glossy and smooth. Seen straight on from above, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "size": [1024, 1024],
+      "kind": "texture",
+      "folder": "board",
+      "file": "marble-dark",
+      "max": 512,
+      "region": [0.08, 0.08, 0.92, 0.92],
+      "blend": true
+    },
+    {
+      "name": "board/beach-light",
+      "prompt": "Smooth pale golden beach sand with gentle wind ripples and a few tiny pink and white shell flecks, warm sunny light. Seen straight on from above, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "size": [1024, 1024],
+      "kind": "texture",
+      "folder": "board",
+      "file": "beach-light",
+      "max": 512,
+      "region": [0.08, 0.08, 0.92, 0.92],
+      "blend": true
+    },
+    {
+      "name": "board/beach-dark",
+      "prompt": "Macro close-up of an iridescent mother-of-pearl surface, abstract swirling flowing bands of deep blue, teal, purple and green with a soft pearly sheen, natural and organic. Seen straight on from above, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "size": [1024, 1024],
+      "kind": "texture",
+      "folder": "board",
+      "file": "beach-dark",
+      "max": 512,
+      "region": [0.08, 0.08, 0.92, 0.92],
+      "blend": true
+    },
+    {
+      "name": "board/lava-light",
+      "prompt": "Natural warm orange-tan volcanic sandstone surface, smooth and organic with soft mottled colour, a few thin wandering glowing golden cracks and tiny ember sparkles. Seen straight on from above, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "size": [1024, 1024],
+      "kind": "texture",
+      "folder": "board",
+      "file": "lava-light",
+      "max": 512,
+      "region": [0.08, 0.08, 0.92, 0.92],
+      "blend": true
+    },
+    {
+      "name": "board/lava-dark",
+      "prompt": "Dark basalt lava rock, nearly black with deep red, with bright glowing orange and yellow molten lava cracks running through it. Seen straight on from above, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "size": [1024, 1024],
+      "kind": "texture",
+      "folder": "board",
+      "file": "lava-dark",
+      "max": 512,
+      "region": [0.08, 0.08, 0.92, 0.92],
+      "blend": true
+    },
+    {
+      "name": "board/starfield-light",
+      "prompt": "Abstract soft pale lavender and sky-blue frosted glass surface, smooth and seamless, with a faint glowing pastel pink and blue nebula mist and tiny twinkling stars. Seen straight on from above, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "size": [1024, 1024],
+      "kind": "texture",
+      "folder": "board",
+      "file": "starfield-light",
+      "max": 512,
+      "region": [0.08, 0.08, 0.92, 0.92],
+      "blend": true
+    },
+    {
+      "name": "board/starfield-dark",
+      "prompt": "Deep midnight blue and violet glass full of a glowing swirling nebula, bright twinkling stars and sparkles inside. Seen straight on from above, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "size": [1024, 1024],
+      "kind": "texture",
+      "folder": "board",
+      "file": "starfield-dark",
+      "max": 512,
+      "region": [0.08, 0.08, 0.92, 0.92],
+      "blend": true
     }
   ]
 }

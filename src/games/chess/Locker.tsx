@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { BoardPreview } from './BoardFace';
 import {
   BACKGROUNDS,
   BOARDS,
@@ -9,6 +10,7 @@ import {
   isUnlocked,
   keyOf,
   useLooks,
+  type BoardLook,
   type Look,
   type LookKind,
 } from './looks';
@@ -20,7 +22,7 @@ const TABS: { kind: LookKind; label: string; emoji: string; looks: Look[] }[] = 
   { kind: 'background', label: 'Backgrounds', emoji: '🖼️', looks: BACKGROUNDS },
 ];
 
-/** The Chess Locker: a full-window showroom for picking a background (and, from stages 3 and 4, a set and a board). */
+/** The Chess Locker: a full-window showroom for picking a board and a background (and, from stage 4, a piece set). */
 export function Locker({ onClose }: { onClose: () => void }) {
   const { data, error } = useLooks();
   const [kind, setKind] = useState<LookKind>('background');
@@ -75,8 +77,8 @@ export function Locker({ onClose }: { onClose: () => void }) {
 
         <div className="cl__stage" key={kind + look.id}>
           {kind !== 'background' && (
-            <div className={`cl__plinth${open ? '' : ' is-locked'}`} aria-hidden="true">
-              <span>{look.emoji}</span>
+            <div className={`cl__plinth${open ? '' : ' is-locked'}${kind === 'board' ? ' cl__plinth--board' : ''}`} aria-hidden="true">
+              {kind === 'board' ? <BoardPreview look={look as BoardLook} className="cl__board" /> : <span>{look.emoji}</span>}
             </div>
           )}
           <div className="cl__card" aria-live="polite">
@@ -133,7 +135,17 @@ export function Locker({ onClose }: { onClose: () => void }) {
                   onClick={() => setPicked((p) => ({ ...p, [kind]: l.id }))}
                   aria-pressed={l.id === look.id}
                 >
-                  {'small' in l ? <img src={(l as { small: string }).small} alt="" /> : <span className="cl__thumb-emoji" aria-hidden="true">{l.emoji}</span>}
+                  {'small' in l ? (
+                    <img src={(l as { small: string }).small} alt="" />
+                  ) : l.kind === 'board' ? (
+                    <span className="cl__thumb-emoji cl__thumb-board" aria-hidden="true">
+                      <BoardPreview look={l as BoardLook} />
+                    </span>
+                  ) : (
+                    <span className="cl__thumb-emoji" aria-hidden="true">
+                      {l.emoji}
+                    </span>
+                  )}
                   <span className="cl__thumb-name">
                     {!lOpen && <span aria-hidden="true">🔒 </span>}
                     {l.name}
