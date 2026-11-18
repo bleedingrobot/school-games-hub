@@ -61,24 +61,39 @@ export function LevelMap({
   const why = selected === open.next && !open.nextOpen ? `Level ${selected} opens tomorrow.` : selected > player.deepest + 1 ? `Level ${selected} is still locked.` : '';
   const worn: Worn = player.worn;
 
+  const pick = levelSpec(selected);
+  const pickPassed = selected <= player.deepest;
+  const pickNext = selected === open.next;
+  const pickLocked = !pickPassed && !pickNext;
+  const pickStars = player.stars[selected - 1] ?? 0;
+  const pickArt = paintFile('levels', `${selected}`);
+
   return (
-    <section className="dd-map" aria-labelledby="dd-map-title">
-      <div className="dd-map__side">
-        <div className="dd-map__top">
-          <h2 id="dd-map-title" ref={heading} tabIndex={-1} className="dd-title">Diamond Drop</h2>
-          <HubButtons />
-        </div>
-        <div className="dd-nugget">
-          <Sprite size={120} draw={(c, t) => drawNugget(c, 46, 96, 82, player.worn.hat, glow ? 'point' : 'wave', t, still)} animate={!still} />
-          <div className="dd-bubble">
-            <p className="dd-bubble__text" aria-live="polite">{step.text}</p>
-            <button type="button" className="button button--light dd-btn dd-btn--small" onClick={onShowMe}>Show me</button>
-          </div>
-        </div>
+    <section className={`dd-map${still ? ' is-still' : ''}`} aria-labelledby="dd-map-title">
+      {/* The chosen level's painting fills the whole window behind everything, fading in afresh when a new level is picked. */}
+      <div className="dd-map__art" aria-hidden="true">
+        {pickArt ? <img key={selected} className="dd-map__paint" src={pickArt} alt="" style={{ background: `${CHAMBER[selected - 1]} url(${paintFile('levels', `${selected}-800`) ?? ''}) center / cover` }} /> : <div key={selected} className="dd-map__paint" style={{ background: CHAMBER[selected - 1] }} />}
+        <div className="dd-map__shade" />
+        {!still && Array.from({ length: 14 }, (_, i) => <span key={i} className="dd-spark" style={{ left: `${(i * 37) % 100}%`, animationDelay: `${(i * 0.83) % 7}s`, animationDuration: `${6 + (i % 5)}s` }} />)}
+      </div>
+
+      <div className="dd-map__top">
+        <h2 id="dd-map-title" ref={heading} tabIndex={-1} className="dd-title">Diamond Drop</h2>
         <div className="dd-stats">
           <span className="dd-chip"><span aria-hidden="true">🪙</span> {player.coins} coins</span>
           <span className="dd-chip">Deepest: {player.deepest ? `level ${player.deepest}` : 'not started'}</span>
           {player.freeBoost && <span className="dd-chip dd-chip--gold">Free boost waiting</span>}
+        </div>
+        <HubButtons />
+      </div>
+
+      <div className="dd-map__side">
+        <div className="dd-nugget">
+          <Sprite size={150} draw={(c, t) => drawNugget(c, 46, 96, 82, player.worn.hat, glow ? 'point' : 'wave', t, still)} animate={!still} />
+          <div className="dd-bubble">
+            <p className="dd-bubble__text" aria-live="polite">{step.text}</p>
+            <button type="button" className="button button--light dd-btn dd-btn--small" onClick={onShowMe}>Show me</button>
+          </div>
         </div>
         <div className="dd-menu">
           <button type="button" className={`button button--play dd-btn dd-btn--big${glow === 'play' ? ' dd-glow' : ''}`} onClick={() => onOpen('play')} disabled={!canPlay} aria-describedby={why ? 'dd-why' : undefined}>
@@ -86,14 +101,11 @@ export function LevelMap({
           </button>
           {why && <p id="dd-why" className="dd-why">{why}</p>}
           <div className="dd-menu__row">
-            <button type="button" className={`button button--light dd-btn${glow === 'shop' ? ' dd-glow' : ''}`} onClick={() => onOpen('shop')}>Shop</button>
-            <button type="button" className={`button button--light dd-btn${glow === 'book' ? ' dd-glow' : ''}`} onClick={() => onOpen('book')}>Gem Book</button>
-            <button type="button" className={`button button--light dd-btn${glow === 'hall' ? ' dd-glow' : ''}`} onClick={() => onOpen('hall')}>Hall of Finders</button>
-            <button type="button" className={`button button--light dd-btn${glow === 'how' ? ' dd-glow' : ''}`} onClick={() => onOpen('how')}>How to play</button>
+            <button type="button" className={`dd-tile${glow === 'shop' ? ' dd-glow' : ''}`} onClick={() => onOpen('shop')}><span className="dd-tile__icon" aria-hidden="true">🛒</span>Shop</button>
+            <button type="button" className={`dd-tile${glow === 'book' ? ' dd-glow' : ''}`} onClick={() => onOpen('book')}><span className="dd-tile__icon" aria-hidden="true">📖</span>Gem Book</button>
+            <button type="button" className={`dd-tile${glow === 'hall' ? ' dd-glow' : ''}`} onClick={() => onOpen('hall')}><span className="dd-tile__icon" aria-hidden="true">🏆</span>Hall of Finders</button>
+            <button type="button" className={`dd-tile${glow === 'how' ? ' dd-glow' : ''}`} onClick={() => onOpen('how')}><span className="dd-tile__icon" aria-hidden="true">❓</span>How to play</button>
           </div>
-        </div>
-        <div className="dd-rig">
-          <Sprite size={130} box={200} draw={(c, t) => drawRig(c, worn, t, still, trail.current, false)} animate label="Your claw, swinging" />
         </div>
         <details className="dd-settings">
           <summary>Settings</summary>
@@ -123,6 +135,19 @@ export function LevelMap({
           </button>
           {prefs.guideAgain && <p className="dd-small" role="status">Nugget will guide your next go at level 1.</p>}
         </details>
+      </div>
+
+
+      {/* The chosen level, big in the middle: the claw swinging over its gem, the place's name and how it went. */}
+      <div className="dd-hero" key={selected} aria-hidden="true">
+        <Sprite size={170} box={200} className="dd-hero__rig" draw={(c, t) => drawRig(c, worn, t, still, trail.current, false)} animate />
+        {pickLocked ? <span className="dd-hero__lock">🔒</span> : <Sprite size={150} className={`dd-hero__gem${still ? '' : ' dd-float'}`} draw={(c) => drawGem(c, pick.gem, 50, 50, 40)} />}
+        <p className="dd-hero__level">Level {selected}</p>
+        <p className="dd-hero__place">{pickLocked ? 'Still locked' : pick.place}</p>
+        <p className="dd-hero__state">
+          {pickPassed ? <span className="dd-hero__stars">{'★★★'.slice(0, pickStars)}<span className="is-off">{'☆☆☆'.slice(0, 3 - pickStars)}</span></span>
+            : pickNext && !open.nextOpen ? 'Opens tomorrow' : pickNext ? `Bank ${pick.target} in ${pick.seconds} seconds` : 'Pass the levels above to dig down here'}
+        </p>
       </div>
 
       <ol className="dd-gauge" aria-label="The levels, from the top of the ground down to the diamond">
