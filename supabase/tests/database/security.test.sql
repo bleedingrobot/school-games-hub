@@ -78,6 +78,7 @@ $$, array[
   'diamond_hall', 'teacher_diamond_class', 'teacher_diamond_student', 'teacher_diamond_restart', 'teacher_set_diamond',
   'teacher_set_isles', 'my_isles', 'isles_sky', 'teacher_isles_class', 'teacher_isles_student', 'teacher_reset_isles', 'teacher_isles_halls',
   'my_class_quest', 'teacher_class_quests', 'teacher_start_class_quest', 'teacher_stop_class_quest',
+  'my_chess_looks', 'set_chess_look', 'mark_chess_looks_seen',
   'trophy_shelves', 'teacher_set_beanstalk', 'teacher_beanstalk_class', 'teacher_beanstalk_student',
   'teacher_set_hop', 'teacher_hop_class', 'teacher_hop_student',
   'teacher_set_pipi', 'teacher_pipi_class', 'teacher_pipi_student',
