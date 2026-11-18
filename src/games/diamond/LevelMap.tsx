@@ -10,6 +10,7 @@ import { drawGem, drawNugget } from './art/draw';
 import { paintFile } from './art/paint';
 import { drawRig, type Worn } from './art/items';
 import type { DiamondPrefs } from './prefs';
+import { HubButtons } from './HubButtons';
 import { Sprite } from './Sprite';
 
 /** The colour of each level's chamber wall, from the topsoil down to the diamond heart. */
@@ -63,7 +64,10 @@ export function LevelMap({
   return (
     <section className="dd-map" aria-labelledby="dd-map-title">
       <div className="dd-map__side">
-        <h2 id="dd-map-title" ref={heading} tabIndex={-1} className="dd-title">Diamond Drop</h2>
+        <div className="dd-map__top">
+          <h2 id="dd-map-title" ref={heading} tabIndex={-1} className="dd-title">Diamond Drop</h2>
+          <HubButtons />
+        </div>
         <div className="dd-nugget">
           <Sprite size={120} draw={(c, t) => drawNugget(c, 46, 96, 82, player.worn.hat, glow ? 'point' : 'wave', t, still)} animate={!still} />
           <div className="dd-bubble">

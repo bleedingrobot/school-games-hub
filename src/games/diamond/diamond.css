@@ -41,7 +41,6 @@
 .dd-loading, .dd-checking { text-align: center; font-size: 1.2rem; margin: 30vh auto 0; }
 .dd-checking { position: fixed; left: 50%; top: 40%; transform: translateX(-50%); margin: 0; background: var(--dd-panel); padding: 14px 20px; border-radius: 14px; border: 2px solid var(--dd-line); z-index: 6; }
 .dd-trouble { background: #7f1d1d; color: #ffffff; border-radius: 12px; padding: 10px 14px; margin: 0 0 10px; }
-.dd-exit { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: max(10px, env(safe-area-inset-top, 0px)); z-index: 3; }
 
 /* Shared buttons, sized for the game (only on elements that also carry .dd-btn). */
 .dd-root .dd-btn { min-height: 48px; padding: 8px 16px; font-size: 1rem; width: auto; border-radius: 14px; }
@@ -187,7 +186,6 @@ img.dd-item__icon { object-fit: contain; padding: 4px; }
   .dd-map { grid-template-columns: 1fr; }
   .dd-ws { grid-template-columns: 1fr; }
   .dd-ws__try { position: static; }
-  .dd-exit { position: static; margin-bottom: 8px; }
 }
 
 /* ——— Movement (only for pupils who haven't asked for less) ——— */
@@ -203,3 +201,31 @@ img.dd-item__icon { object-fit: contain; padding: 4px; }
 .dd-root.dd-still *, .dd-root.dd-still .button--play { animation: none !important; transition: none !important; }
 /* "Show me" still points the way with less motion: a steady ring instead of a pulsing one. */
 .dd-glow { outline: 4px solid var(--dd-gold); outline-offset: 3px; }
+
+/*
+ * ——— Full window, like Star Trader (James, 18 Nov 2026; docs/FULL-WINDOW.md) ———
+ * The root already covers the window. The dig field now takes the whole height, with no frame, and the level's
+ * painting, blurred, fills the edges round it. On a wide window the HUD is a slim row on top and Pause / Drop / Finish
+ * stand in the spare edge on the right; on a squarer window they stay under the field.
+ */
+.dd-map__top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.dd-hubbtns { display: inline-flex; gap: 6px; }
+.dd-root .dd-hubbtn { text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.dd-root--play { padding: 0; overflow: hidden; }
+.dd-play { max-width: none; height: 100dvh; min-height: 0; gap: 0; padding: max(6px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px)); }
+.dd-play__blur { position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; object-fit: cover; filter: blur(24px) brightness(0.55); transform: scale(1.08); pointer-events: none; }
+.dd-play__hud { flex: none; min-height: 44px; padding-bottom: 6px; }
+.dd-play__title, .dd-hud__item { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); }
+.dd-play__title { background: rgba(28, 19, 13, 0.75); border-radius: 999px; padding: 4px 14px; }
+.dd-field { flex: none; width: min(100%, calc((100dvh - 130px) * 10 / 7)); border: 0; border-radius: 0; box-shadow: 0 0 40px rgba(0, 0, 0, 0.6); }
+.dd-play__controls { flex: none; padding-top: 6px; }
+@media (min-aspect-ratio: 16 / 10) and (min-height: 521px) {
+  .dd-play { position: relative; }
+  .dd-field { width: min(100% - 2 * 170px, calc((100dvh - 56px) * 10 / 7)); }
+  .dd-play__controls { position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); width: 150px; padding: 0; flex-direction: column-reverse; align-items: stretch; }
+  .dd-drop { min-width: 0; padding: 8px 12px; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  .dd-field { width: min(100%, calc((100dvh - 20px) * 10 / 7)); }
+  .dd-play__controls { padding-top: 0; }
+}

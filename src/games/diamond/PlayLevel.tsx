@@ -12,7 +12,7 @@ import { answer as answerSlip, startLevel, step, type LevelState, type Phase } f
 import { direction, thingAt, type Thing } from '../../../shared/diamond/field';
 import { Effects, NUGGET_SPOT, drawAmbient, drawBackground, drawClaw, drawCrab, drawGem, drawNugget, drawRock, drawRope, drawSack, drawTrail, drawWinch } from './art/draw';
 import type { Worn } from './art/items';
-import { paintNow } from './art/paint';
+import { paintFile, paintNow } from './art/paint';
 import type { DiamondBackend, Ended, Started } from './backend';
 import { factText } from './factText';
 import { TIPS, guideStep, showsTip, type Help, type TipId } from './guide';
@@ -328,6 +328,8 @@ export function PlayLevel({
 
   return (
     <section className="dd-play" aria-labelledby="dd-play-title">
+      {/* The level's painting, blurred, behind the whole window: it fills whatever edge the field doesn't reach. */}
+      {paintFile('levels', `${started.level}-800`) && <img className="dd-play__blur" src={paintFile('levels', `${started.level}-800`)} alt="" aria-hidden="true" />}
       <div className="dd-play__hud">
         <h2 id="dd-play-title" ref={heading} tabIndex={-1} className="dd-play__title">
           Level {started.level} <span className="dd-soft">· {spec.place}</span>

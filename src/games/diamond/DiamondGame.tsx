@@ -30,7 +30,7 @@ function bestLevel(p: Player, now: Date, unlimited = false): number {
   return Math.max(1, p.deepest);
 }
 
-export function DiamondGame({ backend, onExit, extra, onServer = false }: { backend: DiamondBackend; onExit?: () => void; /** The school's server is behind `backend`, so trophies can be won. */ onServer?: boolean; extra?: (h: GameHandle) => ReactNode }) {
+export function DiamondGame({ backend, extra, onServer = false }: { backend: DiamondBackend; /** The school's server is behind `backend`, so trophies can be won. */ onServer?: boolean; extra?: (h: GameHandle) => ReactNode }) {
   const [player, setPlayer] = useState<Player | null>(null);
   const [clock, setClock] = useState<{ server: number; at: number }>({ server: Date.now(), at: Date.now() });
   const [screen, setScreen] = useState<Screen>('map');
@@ -134,9 +134,6 @@ export function DiamondGame({ backend, onExit, extra, onServer = false }: { back
 
   return (
     <div className={`dd-root${screen === 'play' ? ' dd-root--play' : ''}${still ? ' dd-still' : ''}`}>
-      {onExit && screen !== 'play' && (
-        <button type="button" className="button button--light-outline dd-btn dd-exit" onClick={onExit}>Leave Diamond Drop</button>
-      )}
       {trouble && <p className="dd-trouble" role="alert">{trouble}</p>}
       {screen === 'map' && (
         <LevelMap
