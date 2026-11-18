@@ -80,8 +80,8 @@ export const gemOf = (id: GemId): Gem => GEMS[GEM_IDS.indexOf(id)] ?? RARE_GEMS.
 
 // ---- Rare gems (a pupil's idea, 18 Nov 2026) ----
 /**
- * At most one rare gem is buried on each go of any level, or none. The game tries the rarest first, each with its own
- * chance, and stops at the first that turns up (James chose this, 18 Nov 2026), so about 7 goes in 10 have one.
+ * At most one rare gem is buried on each go of any level, or none. Each `chance` is that gem's real chance on a go; together
+ * about 1 go in 4 has one (James, 19 Nov 2026: they used to stack, so about 7 goes in 10 had one, far too many).
  * Kept for good in the Gem Book (`lifetime.rare`): New Season never clears them. Buried near the bottom (James, 18 Nov
  * 2026), the rarest deepest (`minY`).
  */
@@ -89,27 +89,27 @@ export type RareId = 'moonstone' | 'sunstone' | 'frostCrystal' | 'rainbowOpal' |
 export type RareTier = 'uncommon' | 'rare' | 'epic' | 'legendary';
 export interface RareGem extends Gem {
   id: RareId;
-  /** Chance (0 to 1) that this gem turns up, if no rarer one did. */
+  /** Chance (0 to 1) that this gem turns up on a go. All of them add up to the chance of any rare gem. */
   chance: number;
   tier: RareTier;
   /** A line for its Gem Book page. */
   about: string;
 }
 export const RARE_GEMS: readonly RareGem[] = [
-  { id: 'moonstone', name: 'Moonstone', chance: 0.3, tier: 'uncommon', value: 20, weight: 'light', slip: 0.3, r: 24, minY: 480, about: 'Glows softly, like the moon over the hills.' },
-  { id: 'sunstone', name: 'Sunstone', chance: 0.25, tier: 'uncommon', value: 25, weight: 'light', slip: 0.3, r: 24, minY: 490, about: 'Warm as a summer morning, full of golden sparkles.' },
-  { id: 'frostCrystal', name: 'Frost Crystal', chance: 0.2, tier: 'rare', value: 35, weight: 'light', slip: 0.35, r: 24, minY: 500, about: 'A snowflake that never melts.' },
-  { id: 'rainbowOpal', name: 'Rainbow Opal', chance: 0.15, tier: 'rare', value: 50, weight: 'medium', slip: 0.35, r: 24, minY: 510, about: 'Every colour of the rainbow, dancing inside.' },
-  { id: 'dragonEye', name: "Dragon's Eye", chance: 0.1, tier: 'epic', value: 75, weight: 'medium', slip: 0.4, r: 25, minY: 520, about: 'Some say it still watches the dragon’s treasure.' },
-  { id: 'galaxyGem', name: 'Galaxy Gem', chance: 0.05, tier: 'epic', value: 120, weight: 'medium', slip: 0.4, r: 25, minY: 540, about: 'A whole galaxy of stars, small enough to hold.' },
+  { id: 'moonstone', name: 'Moonstone', chance: 0.08, tier: 'uncommon', value: 20, weight: 'light', slip: 0.3, r: 24, minY: 480, about: 'Glows softly, like the moon over the hills.' },
+  { id: 'sunstone', name: 'Sunstone', chance: 0.06, tier: 'uncommon', value: 25, weight: 'light', slip: 0.3, r: 24, minY: 490, about: 'Warm as a summer morning, full of golden sparkles.' },
+  { id: 'frostCrystal', name: 'Frost Crystal', chance: 0.04, tier: 'rare', value: 35, weight: 'light', slip: 0.35, r: 24, minY: 500, about: 'A snowflake that never melts.' },
+  { id: 'rainbowOpal', name: 'Rainbow Opal', chance: 0.03, tier: 'rare', value: 50, weight: 'medium', slip: 0.35, r: 24, minY: 510, about: 'Every colour of the rainbow, dancing inside.' },
+  { id: 'dragonEye', name: "Dragon's Eye", chance: 0.02, tier: 'epic', value: 75, weight: 'medium', slip: 0.4, r: 25, minY: 520, about: 'Some say it still watches the dragon’s treasure.' },
+  { id: 'galaxyGem', name: 'Galaxy Gem', chance: 0.015, tier: 'epic', value: 120, weight: 'medium', slip: 0.4, r: 25, minY: 540, about: 'A whole galaxy of stars, small enough to hold.' },
   { id: 'phoenixGem', name: 'Fablet Rose', chance: 0.01, tier: 'legendary', value: 250, weight: 'medium', slip: 0.45, r: 26, minY: 560, about: 'A rose made of glowing crystal. Only the luckiest miners ever see one.' },
 ];
 export const RARE_IDS: readonly RareId[] = RARE_GEMS.map((g) => g.id);
 export const isRare = (id: GemId | undefined | null): id is RareId => !!id && (RARE_IDS as readonly string[]).includes(id);
 export const rareOf = (id: RareId): RareGem => RARE_GEMS.find((g) => g.id === id)!;
 export const RARE_TIER_NAME: Record<RareTier, string> = { uncommon: 'Uncommon', rare: 'Rare', epic: 'Epic', legendary: 'Legendary' };
-/** The chance shown in the Gem Book, as a pupil reads it ("1 in 100"). */
-export const chanceWords = (g: RareGem) => `${Math.round(g.chance * 100)}% chance`;
+/** The chance shown in the Gem Book, as a pupil reads it ("1.5% chance"). */
+export const chanceWords = (g: RareGem) => `${Math.round(g.chance * 1000) / 10}% chance`;
 
 /** The Heart Diamond's two slips happen at these shares of the way up (from the level's seed, inside each range). */
 export const DIAMOND_SLIPS: readonly [number, number][] = [[0.7, 0.85], [0.25, 0.45]];
