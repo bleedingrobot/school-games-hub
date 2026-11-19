@@ -13,5 +13,7 @@ paintings are our own impressions.
 |---|---|---|
 | planets/ | A flat surface map (1024 × 512, left and right edges blended) for each of the 24 planets and Your moon, each with a 256 × 128 -small copy | 27 Oct 2026 |
 | ships/ | The 6 trader ships and 3 pirates, side-on facing right and cut out (512 px), each with a 160 px -card copy | 27 Oct 2026 |
+| top/ | The 6 trader ships from straight above, nose right, and the cargo pod, cut out (1200 px ships, 700 px pod), for the hold view. Made with `scripts/game_art.py trader-hold`; `docs/trader-hold-art/picks.json` records which try. Originals in `~/dragon-art-inbox/trader-hold` | 20 Nov 2026 |
+| goods/ | The 10 goods as bright icons, cut out (128 px), for the hold view | 20 Nov 2026 |
 
 Where a picture isn't there, the game draws its own version in code (`src/games/trader/art/`).
