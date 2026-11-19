@@ -179,3 +179,8 @@
   .gs-banner, .gs-card, .gs-hint__hand { animation: none; }
   .gs-pick:hover:not(:disabled), .gs-card:hover { transform: none; }
 }
+
+/* Painted icons and portraits (Pic.tsx): sized to the emoji they replace. */
+.gs-pic { display: inline-block; width: 1.25em; height: 1.25em; object-fit: contain; vertical-align: middle; border-radius: 0.25em; }
+.gs-pic--portrait { width: 2em; height: 2em; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,0.25); }
+.gs-pic--inline { width: 1.3em; height: 1.3em; }

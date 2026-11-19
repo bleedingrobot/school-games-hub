@@ -2,7 +2,7 @@
 
 *Written 19 Nov 2026 with [GOBLINSTORM-PLAN.md](GOBLINSTORM-PLAN.md). James paints the final art on his gaming PC (ComfyUI) in the evening. Pupils chose painted top-down art, with the attacks drawn in code.*
 
-**Status: not painted yet.** Words, sizes and file names for every picture are in [goblinstorm-art/config.json](goblinstorm-art/config.json) (81 pictures).
+**Status: all 81 painted 19 Nov 2026 and swapped in, stand-ins kept as the fallback; picks in [goblinstorm-art/picks.json](goblinstorm-art/picks.json). The home card waits in `src/games/goblinstorm/art/card/` until the code switch PR.** Words, sizes and file names for every picture are in [goblinstorm-art/config.json](goblinstorm-art/config.json) (81 pictures).
 
 ## The one rule
 
@@ -45,7 +45,7 @@ Files follow the other games' layout: `art_dir` is `src/games/goblinstorm/art/pa
 
 **Home card.** Wide, about 1600 × 900, flat storybook, no text, calm dusk sky at the top. In the middle a small knight stands on a castle field with glowing spinning blades in a ring around them. A ring of goblins and slimes comes in from the edges.
 
-**Heroes** (ids as in `shared/goblinstorm/config.ts`): `knight`, `ranger`, `wizard`, `barbarian`, `cleric`, `rogue`, `witch` (Frost Witch), `dragonkid` (Dragon Kid, secret). Top-down, facing down the picture. The game turns and flips them in code, so one `stand` pose and one `hurt` pose each is enough.
+**Heroes** (ids as in `shared/goblinstorm/config.ts`): `knight`, `ranger`, `wizard`, `barbarian`, `cleric`, `rogue`, `witch` (Frost Witch), `dragonkid` (Dragon Kid, secret). Seen from high above at a slant, looking down on them, big head, face looking up (James picked this view on 19 Nov 2026 over straight-down, which hid some faces). The game flips them in code, so one `stand` pose and one `hurt` pose each is enough.
 
 **Monsters** (the order in `MAPS`: common, fast, tough, mini-boss, boss):
 
@@ -81,6 +81,6 @@ Every picture is optional. A map with some monsters painted and some drawn still
 
 - The style words are in `styles` in the config and go in front of every prompt. Three are for sprites, icons and portraits on a plain background, one for ground, and one for scenes and the card.
 - Cut-outs are on plain pure white with space around them, so they cut out cleanly.
-- Top-down sprites face down the picture. Keep each hero and each map's monsters in the same style as the first good one (use the first good try as the reference).
+- Sprites are high-angle top-down with the face showing (the `sprite` style words). Keep each hero and each map's monsters in the same style as the first good one (use the first good try as the reference).
 - Never put in a real game's or show's characters, names or logos.
 - Suitable for children aged 8 to 11: cute, bright, kind.

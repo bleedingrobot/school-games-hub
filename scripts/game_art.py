@@ -42,6 +42,7 @@ Config (all paths are relative to the repo unless they start with ~):
     hollow true on a cut-out: it has a see-through middle (a picture ring), so the hole is cut out too, not filled in, and
            the ring is centred on a square
     cut_by "white" on a cut-out: cut it out by how far each pixel is from white, not with rembg (for one rembg fades out)
+    biggest_only true on a cut-out: keep only its biggest shape (for a painting that keeps adding a second, small copy)
     small  on an icon or a cut-out: also write a copy shrunk to this many px as <file>-small.webp
     tints  {tint name: file name}: also write a recoloured copy of a cut-out to <art_dir>/<folder>/<file name>.webp
 """
@@ -319,6 +320,17 @@ def tidy(c: dict, style: str, force: bool, dry: bool):
         px[areas == areas[cy, cx], 3] = 0
         return Image.fromarray(px, 'RGBA')
 
+    def biggest_only(cut):
+        # The painter keeps adding a second, smaller copy (a little ghost in the corner): keep only the biggest shape.
+        from scipy.ndimage import label
+        px = np.asarray(cut).copy()
+        areas, n = label(px[..., 3] > 40)
+        if n > 1:
+            sizes = np.bincount(areas.ravel())
+            sizes[0] = 0
+            px[(areas != sizes.argmax()) & (px[..., 3] > 0), 3] = 0
+        return Image.fromarray(px, 'RGBA')
+
     def white_key(img):
         # For a picture rembg cuts badly (a lacy ring of leaves): how far each pixel is from white becomes how solid it is.
         rgb = np.asarray(img).astype(np.float32)
@@ -389,6 +401,8 @@ def tidy(c: dict, style: str, force: bool, dry: bool):
                 session = new_session('isnet-general-use')
             from rembg import remove
             cut = white_key(img.convert('RGB')) if p.get('cut_by') == 'white' else remove(img.convert('RGB'), session=session, alpha_matting=True)
+            if p.get('biggest_only'):
+                cut = biggest_only(cut)
             cut = trim(punch_middle(cut, img.convert('RGB')) if p.get('hollow') else fill_holes(cut, img.convert('RGB')))
             if p.get('hollow'):
                 # A ring is drawn into a square box, so centre it on a square, see-through canvas.
