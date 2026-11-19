@@ -39,7 +39,7 @@ create function pg_temp.quest(class_no text, which text) returns uuid language s
   returning id
 $$;
 
-select is((select count(*)::integer from public.quest_kinds), 32, '32 quests: the 3 first ones, 27 new and Goblin Storm''s 2 (20261120000200)');
+select is((select count(*)::integer from public.quest_kinds), 32, '32 quests: the 3 first ones, 27 new and Goblin Storm''s 2 (20261120000400)');
 
 -- ---- Nothing is kept without a quest ----
 select public.quest_add(pg_temp.id('a'), 'marble_runs', 3);

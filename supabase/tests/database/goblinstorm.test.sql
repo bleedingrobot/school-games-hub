@@ -13,7 +13,7 @@ insert into auth.users (id, email) values
 update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
 select set_config('test.cls', (select default_class::text from public.schools where id = 1), true);
 insert into public.class_teachers (class_id, teacher_id) values (current_setting('test.cls')::uuid, '00000000-0000-0000-0000-00000000000e') on conflict do nothing;
--- A week's Storm Chaser class quest is running, so finished runs are counted (migration 20261120000200).
+-- A week's Storm Chaser class quest is running, so finished runs are counted (migration 20261120000400).
 insert into public.class_quests (class_id, kind, starts_on, ends_on)
 values (current_setting('test.cls')::uuid, 'goblinstorm-total', public.nz_day(now()), public.nz_day(now()) + 6);
 
