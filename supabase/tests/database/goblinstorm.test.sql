@@ -4,7 +4,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh goblinstorm, then scripts/scratch-test.sh goblinstorm supabase/tests/database/goblinstorm.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(69);
+select plan(73);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -13,6 +13,9 @@ insert into auth.users (id, email) values
 update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
 select set_config('test.cls', (select default_class::text from public.schools where id = 1), true);
 insert into public.class_teachers (class_id, teacher_id) values (current_setting('test.cls')::uuid, '00000000-0000-0000-0000-00000000000e') on conflict do nothing;
+-- A week's Storm Chaser class quest is running, so finished runs are counted (migration 20261120000400).
+insert into public.class_quests (class_id, kind, starts_on, ends_on)
+values (current_setting('test.cls')::uuid, 'goblinstorm-total', public.nz_day(now()), public.nz_day(now()) + 6);
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -113,6 +116,13 @@ select is((select array_agg(a.achievement order by a.achievement) from public.ac
 select is((select count(*)::integer from public.trophies t where t.player = pg_temp.id('0a') and t.trophy = 'goblinstorm-crown'), 1,
   'beating the Goblin King wins the Crown, once');
 select is((select how from public.trophy_types where id = 'goblinstorm-crown'), 'Beat the Goblin King in Goblin Storm.', '... with its words for pupils');
+update public.goblinstorm_saves set bosses = bosses || 4::smallint where player = pg_temp.id('0a');
+select is((select array_agg(t.trophy order by t.trophy) from public.trophies t where t.player = pg_temp.id('0a') and t.trophy like 'goblinstorm-%'),
+  array['goblinstorm-crown', 'goblinstorm-scale'], 'beating the Fire Dragon wins the Fire Dragon''s Scale');
+-- Back to 2 bosses for the board and save checks below (the trophy stays).
+update public.goblinstorm_saves set bosses = array_remove(bosses, 4::smallint) where player = pg_temp.id('0a');
+select is((select coalesce(sum(n), 0)::integer from public.quest_tallies q where q.player = pg_temp.id('0a') and q.measure = 'goblinstorm_runs'), 3,
+  'each run played to the end counts for the class quest');
 
 -- An extra turn (Unlimited today) and a run left early give gold but no points; achievements still count.
 select pg_temp.act_as_server();
@@ -127,6 +137,9 @@ select is((select count(*)::integer from public.game_points g where g.player = p
 select is((select gold from public.goblinstorm_saves where player = pg_temp.id('0b')), 23, '... but the gold still counts');
 select ok(exists (select 1 from public.achievements a where a.player = pg_temp.id('0b') and a.achievement = 'goblinstorm-first'),
   '... and First Storm is still earned by the run played to the end');
+select is((select coalesce(sum(n), 0)::integer from public.quest_tallies q where q.player = pg_temp.id('0b') and q.measure = 'goblinstorm_runs'), 1,
+  'an extra turn played to the end counts for the quest; a run left early doesn''t');
+select is((select count(*)::integer from public.quest_kinds where id like 'goblinstorm-%'), 2, 'Goblin Storm has its two class quests');
 
 -- ---- The gold shop: own save only, gold and top level checked ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz');
@@ -134,9 +147,9 @@ select is(public.buy_goblinstorm('might') - 'shop', '{"bought": false, "reason":
 select pg_temp.reset();
 update public.goblinstorm_saves set gold = 2000, shop = '{"armour": 2}' where player = pg_temp.id('0b');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz');
-select is(public.buy_goblinstorm('armour'), '{"bought": true, "reason": null, "gold": 1500, "shop": {"armour": 3}}'::jsonb, 'Armour level 3 costs 500');
+select is(public.buy_goblinstorm('armour'), '{"bought": true, "reason": null, "gold": 1300, "shop": {"armour": 3}}'::jsonb, 'Armour level 3 costs 700');
 select is(public.buy_goblinstorm('armour') ->> 'reason', 'top', '... and Armour stops at 3');
-select is(public.buy_goblinstorm('gold') -> 'gold', '1350'::jsonb, 'Gold level 1 costs 150');
+select is(public.buy_goblinstorm('gold') -> 'gold', '1100'::jsonb, 'Gold level 1 costs 200');
 select throws_ok($$ select public.buy_goblinstorm('rocket') $$, '22023', null, 'only the six upgrades');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
 select is(public.buy_goblinstorm('might') ->> 'reason', 'none', 'a teacher has no save to buy with');

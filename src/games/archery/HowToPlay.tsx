@@ -28,9 +28,9 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
         <li>No single arrow can take more than {MAX_SHOT_DAMAGE} from you, so one lucky shot never ends a round.</li>
         <li>Keys: ← → angle, ↑ ↓ power (Shift for 5 at a time), space to shoot. On a touch screen, drag back from your archer like pulling a bowstring.</li>
       </ul>
-      <h3>Fights against classmates</h3>
+      <h3>Fights against friends</h3>
       <ul>
-        <li><b>Challenge a classmate</b> shows who in your class has the game open. Pick a world and challenge them; they can say yes or no.</li>
+        <li><b>Challenge a friend</b> shows who at school has the game open, your class first. Pick a world and challenge them; they can say yes or no.</li>
         <li>You both pack your quivers, then it's <b>one round</b>: win it to win the fight. Whoever did more maths brings better gear!</li>
         <li>Each turn has {DUEL_TURN_MS / 1000} seconds. If the time runs out, that turn is missed. Miss {DUEL_MAX_TIMEOUTS} in a row and the fight stops.</li>
         <li>Leaving part-way lets the other player win, and nobody gets points.</li>
@@ -58,7 +58,7 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
       </ul>
       <h3>Points</h3>
       <ul>
-        <li>Finish a fight against a bot: {FIGHT_POINTS} points ({WIN_POINTS} if you win). Against a classmate: {DUEL_POINTS} points ({DUEL_WIN_POINTS} if you win).</li>
+        <li>Finish a fight against a bot: {FIGHT_POINTS} points ({WIN_POINTS} if you win). Against a friend: {DUEL_POINTS} points ({DUEL_WIN_POINTS} if you win).</li>
         <li>Get {POINT_AT} or more right in a speed round: {ROUND_POINTS} point.</li>
         <li>A New Season starts everyone again with {START_COINS} coins and no gear.</li>
       </ul>

@@ -1,6 +1,6 @@
 /**
  * The gold shop and the Weapon Codex, as pure rules (docs/GOBLINSTORM-PLAN.md, "Between runs" and stage 5). The
- * database's buy_goblinstorm() keeps the same prices and tops (migration 20261120000100): change them together.
+ * database's buy_goblinstorm() keeps the same prices and tops (migration 20261120000600): change them together.
  */
 import { SHOP_ARMOUR_MAX, SHOP_COSTS, SHOP_IDS, SHOP_LEVELS, WEAPON_IDS, type ShopId, type ShopLevels, type WeaponId } from './config';
 
@@ -19,7 +19,7 @@ export function nextCost(shop: ShopLevels, id: ShopId): number | null {
   return level >= shopTop(id) ? null : SHOP_COSTS[level];
 }
 
-/** Every level of every item: 15,700 gold. */
+/** Every level of every item: 21,300 gold. */
 export const SHOP_TOTAL = SHOP_IDS.reduce((sum, id) => sum + SHOP_COSTS.slice(0, shopTop(id)).reduce((a, b) => a + b, 0), 0);
 
 /** Is the whole shop bought? Then gold is shown only as the best haul. */

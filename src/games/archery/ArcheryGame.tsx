@@ -26,6 +26,7 @@ import { loadChoices, loadPrefs, saveChoices, wantsLessMotion } from './prefs';
 import { WORLD_NAMES as WORLD_NAMES_FOR } from './text';
 import { SpeedRound } from './SpeedRound';
 import { useDuels } from './useDuels';
+import { useAskFromHub } from '../../multiplayer/useAskFromHub';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import { AchievementPop } from '../../achievements/AchievementPop';
 import './archery.css';
@@ -169,6 +170,10 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
     took(r);
     if (!r.ok) setAskProblem(r.message);
   }
+
+  // "Yes" on the hub's challenge banner: once the Armory has opened, say yes here as the pop-up would.
+  const hubReady = screen.kind !== 'loading' && screen.kind !== 'off' && screen.kind !== 'offline' && matesOn;
+  useAskFromHub(hubReady ? duels.asks.map((a) => a.duel) : [], (id) => void answer(id, true));
 
   async function packForDuel(d: DuelRow, pack: PlayerSetup) {
     setStarting(true);
@@ -410,7 +415,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
       );
     }
     const [title, words] = d.status === 'declined'
-      ? seat === 0 ? [`${them} said no`, 'Maybe next time! Try another classmate, or a bot.'] : ['Challenge turned down', 'Maybe next time!']
+      ? seat === 0 ? [`${them} said no`, 'Maybe next time! Try another friend, or a bot.'] : ['Challenge turned down', 'Maybe next time!']
       : d.status === 'expired'
         ? ['The challenge ran out', seat === 0 ? `${them} didn't answer in time.` : 'It wasn\'t answered in time.']
         : ['The fight was called off', "It didn't start, so any arrows you packed are back in your bag."];

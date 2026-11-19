@@ -11,6 +11,7 @@ import { GAMES } from '../games/registry';
 /** Class switches that aren't a game's own. */
 const CONTROLS: Record<string, string> = {
   multiplayer_enabled: 'Games against friends',
+  play_other_classes: 'Play other classes',
   space_reactions_enabled: 'Emoji reactions',
   non_maths_games: 'Non-maths games',
   training_first: 'Training before games',

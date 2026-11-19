@@ -200,6 +200,13 @@ export async function fetchLobby(): Promise<LobbyGame[]> {
   return data as LobbyGame[];
 }
 
+/** Is "Play other classes" on (on unless a teacher turned it off)? */
+export async function fetchPlayOtherClasses(classId?: string | null): Promise<boolean> {
+  const data = await readSettings(['play_other_classes'], classId);
+  if (!data) throw new FriendlyError('We couldn’t load that setting.');
+  return data.play_other_classes !== false;
+}
+
 /** Is playing friends switched on? (The teacher can switch it off for everyone.) */
 export async function fetchMultiplayerEnabled(classId?: string | null): Promise<boolean> {
   const data = await readSettings(['multiplayer_enabled'], classId);

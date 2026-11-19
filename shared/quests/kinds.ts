@@ -1,6 +1,6 @@
 /**
  * The kinds of weekly class quest (docs/CLASS-QUESTS-PLAN.md). Each must match a row in public.quest_kinds (same rule and
- * amount) and a watcher on its game's own table (migrations 20261118000100 and 20261118003100). A new kind = an entry here,
+ * amount) and a watcher on its game's own table (migrations 20261118000100, 20261118003100 and later ones for newer games). A new kind = an entry here,
  * a row, a watcher, a painting (docs/quests-art/config.json).
  *
  * Rules: 'turns' use all of the day's turns on 5 of 7 days; 'days' do `amount` on 5 of 7 days; 'total' reach `amount` in the
@@ -71,6 +71,8 @@ export const QUEST_KINDS: QuestKindInfo[] = [
   k('space-wormholes', 'Wormhole Rider', 'space', 'Wormholes & Black Holes', 'easy', 'total', 10, 'Ride 10 wormholes', 'wormhole', 'wormholes', '🌌'),
   k('toonflap-daily', 'Daily Flight', 'toonflap', 'Toon Flap', 'easy', 'days', 3, 'Finish 3 runs', 'run', 'runs', '🎈'),
   k('toonflap-total', 'Frequent Flyer', 'toonflap', 'Toon Flap', 'easy', 'total', 15, 'Finish 15 runs', 'run', 'runs', '🪶'),
+  k('goblinstorm-daily', 'Daily Storm', 'goblinstorm', 'Goblin Storm', 'easy', 'days', 2, 'Finish 2 runs', 'run', 'runs', '⚔️'),
+  k('goblinstorm-total', 'Storm Chaser', 'goblinstorm', 'Goblin Storm', 'easy', 'total', 12, 'Finish 12 runs', 'run', 'runs', '🌪️'),
 ];
 
 export const questKind = (id: string | null | undefined): QuestKindInfo | undefined => QUEST_KINDS.find((q) => q.id === id);

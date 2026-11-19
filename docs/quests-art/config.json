@@ -503,6 +503,28 @@
       "file": "glow-worm",
       "max": 512,
       "small": 160
+    },
+    {
+      "name": "quest-goblinstorm-daily",
+      "prompt": "A brave cartoon knight hero in the middle of a sunny castle field, spinning glowing swords around them, a ring of silly little green goblins and bats charging in from every side, sparkling blue gems on the grass, bright and fun, not scary.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-goblinstorm-daily"
+    },
+    {
+      "name": "quest-goblinstorm-total",
+      "prompt": "A cartoon hero running along one long wide picture through five lands, a castle field, a dark forest, a haunted graveyard, frozen peaks and glowing lava mines, a friendly goblin king, a big ogre and a fire dragon peeking in, a trail of glowing gems, bright and fun, not scary.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-goblinstorm-total"
     }
   ]
 }

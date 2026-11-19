@@ -272,6 +272,20 @@ export const WARM_UP_DAMAGE = 0.5;
 export const HEALTH_GROWTH_SECONDS = 90;
 
 /**
+ * On top of that, monsters born near the end are tougher still (James, 20 Nov 2026): × LAST_MINUTE_HEALTH from 2:00,
+ * × LAST_HALF_MINUTE_HEALTH from 2:30. Common, fast and tough monsters only; the mini-boss and boss keep their health.
+ */
+export const LAST_MINUTE_HEALTH = 1.5;
+export const LAST_HALF_MINUTE_HEALTH = 2;
+
+/** How much tougher a common, fast or tough monster born at step `t` is than one born at the start. */
+export function healthGrowth(t: number): number {
+  const seconds = t / STEPS_PER_SECOND;
+  const late = seconds >= RUN_SECONDS - 30 ? LAST_HALF_MINUTE_HEALTH : seconds >= RUN_SECONDS - 60 ? LAST_MINUTE_HEALTH : 1;
+  return (1 + seconds / HEALTH_GROWTH_SECONDS) * late;
+}
+
+/**
  * When each kind of monster comes (same for every map; the map's tier makes it harder). `kind` is 0 common, 1 fast,
  * 2 tough. Between `from` and `to` seconds, `count` of them every `every` steps.
  */
@@ -307,7 +321,7 @@ export const SHOP: Record<ShopId, { name: string; blurb: string; step: number }>
 export const SHOP_IDS = Object.keys(SHOP) as ShopId[];
 export const SHOP_LEVELS = 5;
 export const SHOP_ARMOUR_MAX = 3;
-export const SHOP_COSTS = [150, 300, 500, 800, 1200];
+export const SHOP_COSTS = [200, 400, 700, 1100, 1600];
 export type ShopLevels = Partial<Record<ShopId, number>>;
 
 /** Monster damage grows with the map's tier more gently than health: × (1 + (tier − 1) × this). */

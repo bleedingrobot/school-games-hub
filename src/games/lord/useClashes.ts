@@ -119,7 +119,7 @@ export function useClashes(api: ClashApi | undefined, me: string): Clashes {
   }, [clash, serverNow, refresh]);
 
   const send = useCallback(async (request: ClashRequest) => {
-    if (!api) return { ok: false as const, message: 'Classmate clashes aren’t on here.' };
+    if (!api) return { ok: false as const, message: 'Arena clashes with friends aren’t on here.' };
     const r = await api.send(request);
     accept(r.clash ?? undefined);
     return r;

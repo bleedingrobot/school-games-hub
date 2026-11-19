@@ -81,10 +81,10 @@ export const CLASH_SAY = {
   bad: "That couldn't be read.",
   busy: "That couldn't be done just now. Try again in a moment.",
   notYours: "That isn't your clash.",
-  away: "That classmate isn't in Dragon Maths right now.",
-  otherClass: 'You can only challenge classmates in your own class.',
+  away: "That player isn't in Dragon Maths right now.",
+  otherClass: "That player's class isn't playing other classes right now.",
   inClash: "One of you is already in a clash. Try again when it's over.",
-  off: 'Classmate clashes are switched off for now. You can still practise against a computer hero!',
+  off: 'Arena clashes with friends are switched off for now. You can still practise against a computer hero!',
   noHero: 'You both need a hero first.',
   late: 'That challenge has run out.',
   notStarted: "The clash hasn't started yet.",
@@ -92,7 +92,7 @@ export const CLASH_SAY = {
   changed: 'The clash changed just then. Have another look.',
   round: "That round's already been played.",
   notYet: "There's still time on the clock.",
-  stopped: 'Your teacher has switched classmate clashes off, so this clash has stopped.',
+  stopped: 'Your teacher has switched arena clashes with friends off, so this clash has stopped.',
 } as const;
 
 const ok = (body: Record<string, unknown>): ClashReply => ({ status: 200, body });

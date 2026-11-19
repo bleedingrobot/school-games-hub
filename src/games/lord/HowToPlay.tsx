@@ -41,7 +41,7 @@ export function HowToPlayBody() {
         <li><strong>Bank:</strong> keeps gold safe. From level 4, once a day, the banker pays 1 gold for every 20 gold you have saved, if you can work out how much that is.</li>
         <li><strong>Inn:</strong> a song, the riddle of the day, and a number-guessing game. No gambling.</li>
         <li><strong>Training grounds:</strong> when you have enough experience, fight your master to go up a level. Three questions first make you a little stronger.</li>
-        <li><strong>The Arena:</strong> practice clashes against computer heroes as often as you like (a little gold for the first few each day): pick Hammer, Sword or Net (Hammer smashes Sword, Sword cuts Net, Net tangles Hammer), then answer a question to power it up. When your teacher has switched them on, challenge a classmate who is in the game to a live clash: the winner gets gold and the other side half that (for your first 3 a day). Plus {ARENA_FIGHTS_PER_DAY} quick fights a day that the computer plays for you. Losing costs nothing.</li>
+        <li><strong>The Arena:</strong> practice clashes against computer heroes as often as you like (a little gold for the first few each day): pick Hammer, Sword or Net (Hammer smashes Sword, Sword cuts Net, Net tangles Hammer), then answer a question to power it up. When your teacher has switched them on, challenge a friend from anywhere in the school who is in the game to a live clash: the winner gets gold and the other side half that (for your first 3 a day). Plus {ARENA_FIGHTS_PER_DAY} quick fights a day that the computer plays for you. Losing costs nothing.</li>
         <li><strong>News, Warriors list, Hall of Heroes:</strong> what happened, who is doing best, and who has beaten the dragon.</li>
       </ul>
 

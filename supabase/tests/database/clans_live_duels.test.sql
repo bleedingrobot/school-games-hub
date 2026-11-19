@@ -19,6 +19,8 @@ insert into public.class_members (student_id, class_id, how) values
   ('00000000-0000-0000-0000-00000000000b', '11111111-1111-4111-8111-111111111111', 'teacher'),
   ('00000000-0000-0000-0000-00000000000d', '22222222-2222-4222-8222-222222222222', 'teacher');
 update public.app_settings set clans_enabled = true;
+-- These checks are about one class on its own: "Play other classes" off (play_anyone.test.sql covers it on).
+update public.app_settings set play_other_classes = false;
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),

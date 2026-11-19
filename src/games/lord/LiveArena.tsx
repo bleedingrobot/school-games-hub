@@ -9,6 +9,7 @@ import { MOVE_INFO, type ClashMove } from '../../../shared/lord/clash';
 import type { ClashRow } from '../../../shared/lord/clashServer';
 import type { HeroClass, Hero } from '../../../shared/lord/types';
 import { AvatarImage } from '../../avatar/AvatarImage';
+import { ClassTag, SchoolPlayerList } from '../../components/SchoolPlayerList';
 import type { Cheer } from '../../data/lordClash';
 import { ClashScreen, type ClashEnding } from './Clash';
 import { BigStage } from './Fight';
@@ -35,32 +36,34 @@ function useSecondsTo(deadline: string | null, serverNow: () => number): number 
   return Math.max(0, Math.ceil((Date.parse(deadline) - serverNow()) / 1000));
 }
 
-/** The classmates with Dragon Maths open, to challenge. On the arena painting, beside your hero. */
+/** The players at school with Dragon Maths open (my class first), to challenge. On the arena painting, beside your hero. */
 export function ClassmatesPanel({ clashes, onChallenge, busy }: { clashes: Clashes; onChallenge: (id: string) => void; busy: boolean }) {
   const list = clashes.online;
   return (
-    <section className="lord-mates" aria-label="Classmates here">
-      <h3>Classmates here</h3>
+    <section className="lord-mates" aria-label="Friends here">
+      <h3>Friends here</h3>
       {list === null && <p role="status">Looking…</p>}
       {list && list.length === 0 && <p>Nobody else is in Dragon Maths right now. Try a practice clash!</p>}
       {list && list.length > 0 && (
-        <ul>
-          {list.map((m) => (
-            <li key={m.id}>
+        <SchoolPlayerList
+          people={list}
+          label="Players in Dragon Maths now"
+          row={(m) => (
+            <>
               <AvatarImage avatar={m.avatar} size={32} />
-              <span>{m.name}</span>
+              <span>{m.name}<ClassTag player={m} /></span>
               {m.busy ? <em className="lord-mates__busy">in a clash</em> : (
                 <button type="button" className="lord-btn lord-btn--hot" disabled={busy} onClick={() => onChallenge(m.id)}>⚔️ Challenge</button>
               )}
-            </li>
-          ))}
-        </ul>
+            </>
+          )}
+        />
       )}
     </section>
   );
 }
 
-/** A classmate's challenge, over whatever village screen is showing. */
+/** A friend's challenge, over whatever village screen is showing. */
 export function ClashAskBanner({ clashes, onYes }: { clashes: Clashes; onYes: (clash: number) => void }) {
   const first = clashes.asks[0];
   const left = useSecondsTo(first?.deadline ?? null, clashes.serverNow);
@@ -77,7 +80,7 @@ export function ClashAskBanner({ clashes, onYes }: { clashes: Clashes; onYes: (c
   );
 }
 
-/** Waiting for the classmate to say yes. */
+/** Waiting for the other player to say yes. */
 export function ChallengeWait({ clash, hero, clashes }: { clash: ClashRow; hero: Hero; clashes: Clashes }) {
   const left = useSecondsTo(clash.deadline, clashes.serverNow);
   const them = clash.heroes[1];
@@ -108,7 +111,7 @@ function endingOf(c: ClashRow, seat: 0 | 1, them: string): ClashEnding | null {
       if (c.leaver === other) return { title: 'Victory!', line: `${them} stopped playing. No gold this time.`, won: true };
       return { title: 'Clash over', line: 'Nobody picked for two rounds.' };
     case 'switched-off':
-      return { title: 'Clash stopped', line: 'Your teacher has switched classmate clashes off for now.' };
+      return { title: 'Clash stopped', line: 'Your teacher has switched arena clashes with friends off for now.' };
     case 'idle':
       return { title: 'Clash over', line: 'Nobody played for a while.' };
     default:
