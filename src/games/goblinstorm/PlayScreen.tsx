@@ -5,7 +5,7 @@
  * server can replay exactly the same run (shared/goblinstorm/replay.ts).
  */
 import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
-import { BOSS_AT, MINIBOSS_AT, PASSIVES, QUESTIONS_PER_RUN, RUN_STEPS, STEPS_PER_SECOND, WEAPONS, gemsToNext, questionSlot, type HeroDef, type MapDef, type WeaponId } from '../../../shared/goblinstorm/config';
+import { BOSS_AT, MINIBOSS_AT, PASSIVES, QUESTIONS_PER_RUN, RUN_STEPS, STEPS_PER_SECOND, WEAPONS, WEAPON_LEVELS, gemsToNext, questionSlot, type HeroDef, type MapDef, type WeaponId } from '../../../shared/goblinstorm/config';
 import { applyPick, makeOffer, newRun, stepRun, waiting, type RunState, type Upgrade } from '../../../shared/goblinstorm/engine';
 import { choicesFor, encodeSteering } from '../../../shared/goblinstorm/replay';
 import { STILL } from '../../../shared/goblinstorm/trig';
@@ -16,6 +16,11 @@ import { HubButtons } from './HubButtons';
 import { PASSIVE_ICON, WEAPON_COLOUR, WEAPON_ICON } from './look';
 import { Pic } from './Pic';
 import { View, type Stick } from './renderer';
+import { useSound } from '../../sound';
+import { playSounds, type StormSound } from './sfx';
+import type { Quality } from './quality';
+import { hush, say, sayQuestion } from './voice';
+import { GUIDE } from './voiceLines';
 
 const STEP_MS = 1000 / STEPS_PER_SECOND;
 const MAX_STEPS_A_FRAME = 4;
@@ -47,13 +52,26 @@ interface Game {
 
 export interface RunEnd { reply: FinishReply | null; hero: HeroDef; map: MapDef }
 
-export function PlayScreen({ backend, start, hero, map, onEnd }: {
+type GuideLine = keyof typeof GUIDE;
+
+export function PlayScreen({ backend, start, hero, map, onEnd, guided = false, quality = 'high' }: {
   backend: GoblinStormBackend;
   start: StartReply;
   hero: HeroDef;
   map: MapDef;
   onEnd: (end: RunEnd) => void;
+  /** The guided first go (docs/GOBLINSTORM-PLAN.md, Design point 7): Bella's tips at each new moment, skippable. */
+  guided?: boolean;
+  /** The effects setting; slow frames drop to low by themselves. */
+  quality?: Quality;
 }) {
+  const { soundOn } = useSound();
+  const soundRef = useRef(soundOn);
+  soundRef.current = soundOn;
+  const qualityRef = useRef(quality);
+  qualityRef.current = quality;
+  /** Sounds asked for outside the run's own events (banners, picks, the end). */
+  const extraSounds = useRef(new Set<StormSound>());
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hpRef = useRef<HTMLDivElement>(null);
@@ -77,9 +95,42 @@ export function PlayScreen({ backend, start, hero, map, onEnd }: {
   const [saving, setSaving] = useState(false);
   const [hint, setHint] = useState(true);
   useEffect(() => {
+    // In the guide the pointing hand stays until the hero moves.
+    if (guided) return;
     const t = setTimeout(() => setHint(false), 12000);
     return () => clearTimeout(t);
+  }, [guided]);
+  // ---- the guide: each line once, said by Bella when sound is on; Skip stops it for the rest of the run
+  const guideOn = useRef(guided);
+  const guideSaid = useRef(new Set<GuideLine>());
+  const [coach, setCoach] = useState<GuideLine | null>(null);
+  const coachTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const tell = (line: GuideLine, then?: () => void, ms = 6500): boolean => {
+    if (!guideOn.current || guideSaid.current.has(line)) return false;
+    guideSaid.current.add(line);
+    setCoach(line);
+    clearTimeout(coachTimer.current);
+    if (ms) coachTimer.current = setTimeout(() => setCoach((c) => (c === line ? null : c)), ms);
+    if (soundRef.current) say(GUIDE[line], then);
+    else then?.();
+    return true;
+  };
+  const skipGuide = () => {
+    guideOn.current = false;
+    setCoach(null);
+    hush();
+  };
+  useEffect(() => {
+    if (guided) tell('move', undefined, 0);
+    return () => {
+      hush();
+      clearTimeout(coachTimer.current);
+    };
+    // Once, as the run starts.
   }, []);
+  // ---- the answer clock starts when Bella has finished reading the question
+  const askedAt = useRef(0);
+  const heardAt = useRef<number | null>(null);
   const [announce, setAnnounce] = useState('');
   const markRef = useRef<Mark | null>(null);
   const bannerTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -100,6 +151,11 @@ export function PlayScreen({ backend, start, hero, map, onEnd }: {
     if (q) {
       g.stage = 'ask';
       setQuestion(q);
+      askedAt.current = performance.now();
+      heardAt.current = null;
+      const heard = () => { heardAt.current = performance.now(); };
+      const read = () => (soundRef.current ? sayQuestion(q.spoken, heard) : heard());
+      if (!tell('levelUp', read, 0)) read();
     } else offerCards(null);
   };
   const offerCards = (mark: Mark | null) => {
@@ -107,6 +163,8 @@ export function PlayScreen({ backend, start, hero, map, onEnd }: {
     g.stage = 'cards';
     const offer = makeOffer(g.s, choicesFor(mark));
     setCards({ offer: [...offer], mark });
+    // After the first question: how its answer changed the number of cards.
+    if (mark) tell('cards', undefined, 0);
   };
   const pick = (i: number) => {
     const g = G.current as Game;
@@ -114,6 +172,9 @@ export function PlayScreen({ backend, start, hero, map, onEnd }: {
     g.picks.push(i);
     const u = cards?.offer[i];
     setCards(null);
+    setCoach((c) => (c === 'cards' ? null : c));
+    extraSounds.current.add(u?.kind === 'evolve' ? 'evolve' : 'pick');
+    if (g.s.weapons.some((w) => !w.evolved && w.level >= WEAPON_LEVELS)) tell('partner');
     if (u?.kind === 'evolve') {
       g.view.flash = g.view.reduced ? 0.4 : 0.8;
       g.view.flashColour = WEAPON_COLOUR[u.id].evolved;
@@ -203,13 +264,19 @@ export function PlayScreen({ backend, start, hero, map, onEnd }: {
     const warnings = () => {
       const s = g.s;
       const m = s.setup.map.monsters;
-      const at = (key: string, step: number, text: string) => {
-        if (s.t >= step && !g.warned.has(key)) { g.warned.add(key); showBanner(text); }
+      const at = (key: string, step: number, text: string): boolean => {
+        if (s.t < step || g.warned.has(key)) return false;
+        g.warned.add(key);
+        showBanner(text);
+        return true;
       };
-      at('mini-soon', MINIBOSS_AT - 5 * STEPS_PER_SECOND, `⚠️ A ${m[3].name} is coming!`);
+      // The 5-second warnings get the warning sound and Bella's guide line; the arrivals have their own boss sound.
+      if (at('mini-soon', MINIBOSS_AT - 5 * STEPS_PER_SECOND, `⚠️ A ${m[3].name} is coming!`)) { extraSounds.current.add('warn'); tell('miniBoss'); }
       at('mini', MINIBOSS_AT, `${m[3].name}!`);
-      at('boss-soon', BOSS_AT - 5 * STEPS_PER_SECOND, `⚠️ The ${m[4].name} is coming!`);
+      if (at('boss-soon', BOSS_AT - 5 * STEPS_PER_SECOND, `⚠️ The ${m[4].name} is coming!`)) { extraSounds.current.add('warn'); tell('boss'); }
       at('boss', BOSS_AT, `The ${m[4].name}! Beat it to win!`);
+      // The guide's last line, once the boss fight is under way.
+      if (s.t >= BOSS_AT + 10 * STEPS_PER_SECOND) tell('done');
     };
 
     let raf = 0;
@@ -220,9 +287,12 @@ export function PlayScreen({ backend, start, hero, map, onEnd }: {
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
       g.time += dt;
-      // Fewer particles if the frame rate drops (drawing only).
+      // Low effects by choice, or by themselves while frames are slow (drawing only).
       slow = slow * 0.95 + (dt > 0.024 ? 0.05 : 0);
-      g.view.fx.quality = slow > 0.5 ? 0.45 : 1;
+      const low = qualityRef.current === 'low' || slow > 0.5;
+      g.view.low = low;
+      g.view.fx.low = low;
+      g.view.fx.quality = low ? 0.45 : 1;
       const s = g.s;
       if (g.stage === 'play' && s.outcome === 'running') {
         acc += dt * 1000;
@@ -233,7 +303,7 @@ export function PlayScreen({ backend, start, hero, map, onEnd }: {
           acc -= STEP_MS;
           steps++;
           const d = direction();
-          if (d !== STILL && !g.moved) { g.moved = true; setHint(false); }
+          if (d !== STILL && !g.moved) { g.moved = true; setHint(false); setCoach((c) => (c === 'move' ? null : c)); }
           g.steering.push(d);
           stepRun(s, d);
           g.view.take(s, s.events);
@@ -245,13 +315,21 @@ export function PlayScreen({ backend, start, hero, map, onEnd }: {
         if (s.outcome === 'won') showBanner('🏆 You beat the boss!');
         else if (s.outcome === 'survived') showBanner('You survived!');
         else showBanner('You fell!');
+        extraSounds.current.add(s.outcome === 'lost' ? 'fall' : 'win');
         finish(false);
       }
 
       g.view.tick(dt);
+      // Sounds: the run's and the screen's together, at most two a frame.
+      for (const c of g.view.cues) extraSounds.current.add(c);
+      g.view.cues.clear();
+      playSounds(extraSounds.current, soundRef.current);
       // HUD (straight into the page: no React render each frame)
       if (hpRef.current) hpRef.current.style.width = `${Math.max(0, (s.hero.hp / s.hero.maxHp) * 100)}%`;
-      if (gemRef.current) gemRef.current.style.width = `${Math.min(100, (s.gemBar / gemsToNext(s.level)) * 100)}%`;
+      if (gemRef.current) {
+        gemRef.current.style.width = `${Math.min(100, (s.gemBar / gemsToNext(s.level)) * 100)}%`;
+        gemRef.current.style.filter = g.view.gemPulse > 0 ? `brightness(${(1 + g.view.gemPulse * 0.8).toFixed(2)})` : '';
+      }
       if (levelRef.current) levelRef.current.textContent = String(s.level);
       if (killsRef.current) killsRef.current.textContent = String(s.kills);
       if (timeRef.current) {
@@ -353,7 +431,7 @@ export function PlayScreen({ backend, start, hero, map, onEnd }: {
         </div>
       </div>
       {banner && <div className="gs-banner" aria-hidden="true">{banner}</div>}
-      {hint && !question && !cards && (
+      {hint && !coach && !question && !cards && (
         <div className="gs-hint" aria-hidden="true">
           <span className="gs-hint__hand">👆</span>
           <span>Drag anywhere to move. Your hero attacks by themselves!</span>
@@ -368,7 +446,12 @@ export function PlayScreen({ backend, start, hero, map, onEnd }: {
             note="Answer to power up. Right: 3 choices. Right and quick: 4."
             spot="goblinstorm"
             onSubmit={async (value, ms): Promise<MarkedAnswer> => {
-              const r = await backend.answer(start.seed, question.slot, value, ms);
+              // The clock starts when Bella has finished reading (an answer while she's still reading counts from 0).
+              // If she never says she's finished (a stuck browser voice), wait at most about as long as reading it takes.
+              const longest = 1500 + question.spoken.length * 90;
+              const wait = Math.min(longest, (heardAt.current ?? performance.now()) - askedAt.current);
+              hush();
+              const r = await backend.answer(start.seed, question.slot, value, Math.max(0, Math.round(ms - wait)));
               markRef.current = r.mark;
               return { correct: r.correct, fact: r.fact, boxBefore: 0, boxAfter: 0, answer: r.answer, reward: r.mark === 'quick' ? 'Quick! 4 choices' : r.mark === 'right' ? '3 choices' : undefined };
             }}
@@ -379,7 +462,8 @@ export function PlayScreen({ backend, start, hero, map, onEnd }: {
           />
         </div>
       )}
-      {cards && <LevelUpCards s={(G.current as Game).s} offer={cards.offer} mark={cards.mark} onPick={pick} />}
+      {cards && <LevelUpCards s={(G.current as Game).s} offer={cards.offer} mark={cards.mark} onPick={pick} coach={coach === 'cards' ? <Coach line="cards" onSkip={skipGuide} /> : null} />}
+      {coach && coach !== 'cards' && coach !== 'levelUp' && !question && !cards && <Coach line={coach} onSkip={skipGuide} />}
       {confirm && (
         <div className="gs-dim" role="alertdialog" aria-label="Leave this run?" data-nostick>
           <div className="gs-box">
@@ -470,12 +554,24 @@ function Card({ s, u, onPick, index }: { s: RunState; u: Upgrade; onPick: (i: nu
   );
 }
 
-function LevelUpCards({ s, offer, mark, onPick }: { s: RunState; offer: Upgrade[]; mark: Mark | null; onPick: (i: number) => void }) {
+/** Bella's guide line during the guided first go, with Skip. Never about the maths answer. */
+function Coach({ line, onSkip }: { line: GuideLine; onSkip: () => void }) {
+  return (
+    <div className={`gs-coach gs-coach--${line}`} data-nostick>
+      <span className="gs-coach__face" aria-hidden="true">🧚</span>
+      <p className="gs-coach__say" role="status"><strong>Bella:</strong> {GUIDE[line]}</p>
+      <button type="button" className="gs-btn gs-btn--glass gs-btn--small" onClick={onSkip}>Skip guide</button>
+    </div>
+  );
+}
+
+function LevelUpCards({ s, offer, mark, onPick, coach }: { s: RunState; offer: Upgrade[]; mark: Mark | null; onPick: (i: number) => void; coach?: ReactNode }) {
   const title = mark === 'quick' ? 'Quick and right! Pick one of 4' : mark === 'right' ? 'Right! Pick one of 3' : mark === 'wrong' ? 'Pick one of 2' : 'Pick a power';
   return (
     <div className="gs-dim gs-dim--cards" data-nostick role="dialog" aria-label={title}>
       <div className="gs-cards">
         <h2 className="gs-cards__title">Level {s.level}! {title}</h2>
+        {coach}
         <div className="gs-cards__row">
           {offer.map((u, i) => <Card key={i} s={s} u={u} index={i} onPick={onPick} />)}
         </div>

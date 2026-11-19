@@ -18,6 +18,12 @@ import { HubButtons } from './HubButtons';
 import { HERO_ICON, MAP_ICON, WEAPON_ICON } from './look';
 import { Pic } from './Pic';
 import { PlayScreen, type RunEnd } from './PlayScreen';
+import { FirstTimeTip } from '../../kit';
+import { useSound } from '../../sound';
+import { nextStep, type ShowMe } from './nextStep';
+import { readQuality, saveQuality, setTipsSeen, tipsSeen, type Quality } from './quality';
+import { hush, say } from './voice';
+import { TIPS } from './voiceLines';
 import './goblinstorm.css';
 
 type Screen = 'hero' | 'map' | 'play' | 'end' | 'shop' | 'codex';
@@ -59,6 +65,13 @@ export function GoblinStormGame({ backend, extra, onServer = false }: {
   const [saveError, setSaveError] = useState(false);
   /** The map this run opened, if it beat a boss for the first time. */
   const [newMap, setNewMap] = useState<number | null>(null);
+  /** This run is the guided first go (Castle Fields, until the server says it's been seen, or "Replay the guide"). */
+  const [guided, setGuided] = useState(false);
+  const [quality, setQuality] = useState<Quality>(readQuality);
+  /** What "Show me" is pointing at on the map screen. */
+  const [shown, setShown] = useState<ShowMe | null>(null);
+  const [tip, setTip] = useState<number | null>(null);
+  const { soundOn } = useSound();
 
   const loadSave = useCallback(() => {
     setSaveError(false);
@@ -66,11 +79,32 @@ export function GoblinStormGame({ backend, extra, onServer = false }: {
   }, [backend]);
   useEffect(loadSave, [loadSave]);
 
-  const play = async (i: number) => {
+  // The first-time tips on the map screen, once the guide has been seen and after the first run (kept on this device).
+  useEffect(() => {
+    if (screen === 'map' && save?.guideSeen && save.runs > 0 && tip === null && !tipsSeen()) setTip(0);
+  }, [screen, save, tip]);
+  useEffect(() => {
+    if (tip !== null && tip < TIPS.length && soundOn) say(TIPS[tip]);
+  }, [tip]);
+  const closeTips = () => {
+    setTip(TIPS.length);
+    setTipsSeen();
+    hush();
+  };
+
+  const play = async (i: number, replayGuide = false) => {
     setBusy(true);
     setError(null);
+    setShown(null);
     try {
       const reply = await backend.start(hero.id, i);
+      const guide = i === 0 && (replayGuide || (save !== null && !save.guideSeen));
+      setGuided(guide);
+      if (guide && save && !save.guideSeen) {
+        // Kept in the server's save, so it isn't offered again on another device. A failure only means it shows again.
+        setSave({ ...save, guideSeen: true });
+        backend.guideSeen().catch(() => undefined);
+      }
       setMapIndex(i);
       setRun(reply);
       setScreen('play');
@@ -133,7 +167,7 @@ export function GoblinStormGame({ backend, extra, onServer = false }: {
               const open = save ? mapOpen(save, i) : i === 0;
               const beaten = save?.bosses.includes(i);
               return (
-                <button key={m.id} type="button" disabled={!open || busy} className={`gs-pick gs-pick--map gs-pick--${m.id}${open ? '' : ' gs-pick--locked'}`} onClick={() => void play(i)}>
+                <button key={m.id} type="button" disabled={!open || busy} className={`gs-pick gs-pick--map gs-pick--${m.id}${open ? '' : ' gs-pick--locked'}${shown?.kind === 'map' && shown.map === i ? ' gs-show' : ''}`} onClick={() => void play(i)}>
                   <span className="gs-pick__icon" aria-hidden="true">{MAP_ICON[m.id]}</span>
                   <span className="gs-pick__name">{m.name}</span>
                   <span className="gs-pick__blurb">{m.monsters.slice(0, 3).map((x) => x.name).join(', ')}</span>
@@ -143,11 +177,45 @@ export function GoblinStormGame({ backend, extra, onServer = false }: {
               );
             })}
           </div>
+          {save && tip !== null && tip < TIPS.length && (
+            <FirstTimeTip
+              prefix="gs" who="Bella" face={<span className="gs-coach__face" aria-hidden="true">🧚</span>}
+              say={TIPS[tip]} n={tip} of={TIPS.length} inline
+              nextLabel="Next" lastLabel="Got it" closeLabel="Close the tips"
+              onNext={() => setTip(tip + 1)} onClose={closeTips}
+            />
+          )}
+          {save && (() => {
+            const next = nextStep(save);
+            return (
+              <p className="gs-next">
+                <span>👉 {next.text}</span>
+                <button type="button" className="gs-btn gs-btn--glass gs-btn--small" onClick={() => {
+                  if (next.show.kind === 'hero') setScreen('hero');
+                  else setShown(next.show);
+                }}>Show me</button>
+              </p>
+            );
+          })()}
           {save && (
             <div className="gs-row gs-between">
               <GoldLine save={save} />
-              <button type="button" className="gs-btn gs-btn--ghost" onClick={() => setScreen('shop')}>🛒 Shop</button>
-              <button type="button" className="gs-btn gs-btn--ghost" onClick={() => setScreen('codex')}>📖 Codex {codexOf(save)}/{CODEX_SIZE}</button>
+              <button type="button" className={`gs-btn gs-btn--ghost${shown?.kind === 'shop' ? ' gs-show' : ''}`} onClick={() => setScreen('shop')}>🛒 Shop</button>
+              <button type="button" className={`gs-btn gs-btn--ghost${shown?.kind === 'codex' ? ' gs-show' : ''}`} onClick={() => setScreen('codex')}>📖 Codex {codexOf(save)}/{CODEX_SIZE}</button>
+            </div>
+          )}
+          {save && (
+            <div className="gs-row gs-between gs-settings">
+              {save.guideSeen && (
+                <button type="button" className="gs-btn gs-btn--ghost gs-btn--small" disabled={busy} onClick={() => void play(0, true)}>🧚 Replay the guide</button>
+              )}
+              <span className="gs-quality" role="group" aria-label="Effects">
+                <span>Effects:</span>
+                {(['high', 'low'] as const).map((q) => (
+                  <button key={q} type="button" aria-pressed={quality === q} className={`gs-btn gs-btn--small${quality === q ? '' : ' gs-btn--ghost'}`}
+                    onClick={() => { setQuality(q); saveQuality(q); }}>{q === 'high' ? 'High' : 'Low'}</button>
+                ))}
+              </span>
             </div>
           )}
           {busy && <p className="gs-menu__sub" role="status">Getting ready…</p>}
@@ -174,6 +242,8 @@ export function GoblinStormGame({ backend, extra, onServer = false }: {
           start={run}
           hero={hero}
           map={MAPS[mapIndex]}
+          guided={guided}
+          quality={quality}
           onEnd={(e) => {
             const opened = e.reply?.valid && e.reply.summary.bossBeaten && !save?.bosses.includes(mapIndex) && mapIndex + 1 < MAPS.length;
             setNewMap(opened ? mapIndex + 1 : null);

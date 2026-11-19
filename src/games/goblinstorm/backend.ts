@@ -27,9 +27,11 @@ export interface MySave extends Save {
   bestGold: number;
   /** Runs started today (NZ date). */
   today: number;
+  /** Has had the guided first go (or skipped it), on any device. */
+  guideSeen: boolean;
 }
 
-export const emptySave = (): MySave => ({ ...freshSave(), codex: [], weapons: [], runs: 0, today: 0, bestGold: 0 });
+export const emptySave = (): MySave => ({ ...freshSave(), codex: [], weapons: [], runs: 0, today: 0, bestGold: 0, guideSeen: false });
 
 export interface StartReply {
   seed: number;
@@ -67,6 +69,8 @@ export interface GoblinStormBackend {
   finish(seed: number, steering: string, picks: number[]): Promise<FinishReply>;
   /** Buys the next level of one shop item with the pupil's own gold (live: the `buy_goblinstorm()` database function). */
   buy(item: ShopId): Promise<BuyReply>;
+  /** Notes that the pupil has had the guided first go (live: the `goblinstorm_guide_seen()` database function). */
+  guideSeen(): Promise<void>;
 }
 
 /** The preview's pretend focus: the times tables, as if the teacher had set them. */
@@ -133,6 +137,9 @@ export function standInBackend(focus: MathsFocus = PREVIEW_FOCUS, multipleChoice
       save.shop = done.shop;
       return { bought: true, reason: null, gold: save.gold, shop: { ...save.shop } };
     },
+    async guideSeen() {
+      save.guideSeen = true;
+    },
   };
 }
 
@@ -148,9 +155,10 @@ type Send = (body: Record<string, unknown>) => Promise<{ status: number; body: R
 /**
  * The screens' backend over any server that answers like the `goblinstorm` function (shared/goblinstorm/server.ts).
  * `loadSave` reads the pupil's own save (live: the `my_goblinstorm()` database function) and `buy` spends its gold
- * (live: `buy_goblinstorm()`, which needs no replay, so it isn't a server action).
+ * (live: `buy_goblinstorm()`, which needs no replay, so it isn't a server action). `guideSeen` notes the guided first
+ * go (live: `goblinstorm_guide_seen()`).
  */
-export function fromServer(send: Send, loadSave: () => Promise<Partial<MySave>>, buy: (item: ShopId) => Promise<BuyReply>): GoblinStormBackend {
+export function fromServer(send: Send, loadSave: () => Promise<Partial<MySave>>, buy: (item: ShopId) => Promise<BuyReply>, guideSeen: () => Promise<void>): GoblinStormBackend {
   async function ask(body: Record<string, unknown>): Promise<Record<string, unknown>> {
     const r = await send(body);
     if (r.status === 200) return r.body;
@@ -165,5 +173,6 @@ export function fromServer(send: Send, loadSave: () => Promise<Partial<MySave>>,
     answer: async (seed, slot, value, ms) => (await ask({ action: 'answer', seed, slot, value, ms })) as unknown as AnswerReply,
     finish: async (seed, steering, picks) => (await ask({ action: 'finish', seed, steering, picks })) as unknown as FinishReply,
     buy,
+    guideSeen,
   };
 }
