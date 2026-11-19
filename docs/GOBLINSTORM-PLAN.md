@@ -263,6 +263,7 @@ After **every** merge: the Status line here, project memory, and the next prompt
     - About 6,100–6,650 gold is spent by then. The shop is not yet all bought, so gold still has a use.
   - Before tuning, runs had 9–13 level-ups and bosses were almost never beaten. Gold piled up, with the shop all bought by day 5–6 and 20,000+ unspent.
   - The big goal (3–4 weeks) now rests more on the shop, the Codex and boss wins with every hero (stage 5) than on opening maps.
+- **Replay speed:** longer runs keep more monsters alive, so a whole Castle Fields replay went from about 79 ms to 133 ms (bundled, on the Mac; `moveEnemies` is most of it). Still far inside the function's CPU. Under vitest the same replay takes about 470 ms (imports go through getters), so the rule test's limit is now 4 s instead of 1 s. It had failed on a CI shard at 1.75 s.
 - **Determinism:** the tuning and warm-up change the runs, so the fingerprint moved from `ba14927f` to **`67a677c4`**. It is identical in Node, WebKit and Chromium.
 - **Tests:**
   - 4 server tests (unlock rules added) and the deployable-file check.

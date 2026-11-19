@@ -34,8 +34,11 @@ describe('Goblin Storm rules', () => {
     expect(replay.summary).toEqual(replayRun({ setup: knight, steering: live.steering, picks: live.picks, choices: live.choices }).summary);
     expect(replay.state.kills).toBe(live.state.kills);
     expect(replay.state.outcome).toBe(live.state.outcome);
-    // The server has well under 2 s of CPU; a whole run must replay in a fraction of that.
-    expect(ms).toBeLessThan(1000);
+    // The server has well under 2 s of CPU; a whole run must replay in a fraction of that. Under vitest the engine's
+    // imports go through getters, so it runs about 3.5x slower than the bundled function (469 ms here vs 133 ms bundled
+    // on the Mac, 19 Nov 2026), and CI shards are slower again. 4 s here is about 1 s on the server: this catches a
+    // runaway (say, every monster checking every other), not a few percent.
+    expect(ms).toBeLessThan(4000);
     // Extra steering after the run ended, a missing pick, or a card that wasn't offered can't have come from playing.
     expect(replayRun({ setup: knight, steering: [...live.steering, 0], picks: live.picks, choices: live.choices }).valid).toBe(live.state.outcome === 'running');
     expect(replayRun({ setup: knight, steering: live.steering, picks: live.picks.slice(1), choices: live.choices }).valid).toBe(false);
