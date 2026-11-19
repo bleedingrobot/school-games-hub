@@ -9181,7 +9181,7 @@ function spawn(s, kind, x, y) {
 	}
 	if (!e) return null;
 	const def = s.setup.map.monsters[kind];
-	const grow = kind >= 3 ? 1 : 1 + s.t / 60 / 120;
+	const grow = kind >= 3 ? 1 : 1 + s.t / 60 / 90;
 	e.alive = true;
 	e.id = s.nextId++;
 	e.kind = kind;
@@ -9576,7 +9576,7 @@ function hurtHero(s) {
 			}
 			return;
 		}
-		const warm = s.t < 1800 ? WARM_UP_DAMAGE : 1;
+		const warm = s.t < 1200 ? WARM_UP_DAMAGE : 1;
 		const dmg = Math.max(1, e.damage * warm - armour(s));
 		h.hp -= dmg;
 		s.sinceHit = 0;
@@ -9695,8 +9695,8 @@ function candidates(s) {
 	};
 }
 /**
-* The cards for the waiting level-up: `choices` of them (2 wrong, 3 right, 4 quick). An evolution, when one is ready,
-* is always the first card. Seeded by the run and the level-up number, so the browser and the replay agree.
+* The cards for the waiting level-up: `choices` of them (2 wrong, 3 right, 4 quick) and then a Gold card. An evolution,
+* when one is ready, is always the first card. Seeded by the run and the level-up number, so the browser and the replay agree.
 */
 function makeOffer(s, choices) {
 	if (!waiting(s)) return [];
@@ -9707,7 +9707,7 @@ function makeOffer(s, choices) {
 	const offer = evolve.slice(0, n);
 	while (offer.length < n && rest.length > 0) offer.push(rest.splice(rng.int(rest.length), 1)[0]);
 	if (offer.length < n) offer.push({ kind: "heal" });
-	if (offer.length < n) offer.push({ kind: "gold" });
+	offer.push({ kind: "gold" });
 	s.offer = offer;
 	return offer;
 }

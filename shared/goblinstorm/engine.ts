@@ -684,8 +684,8 @@ function candidates(s: RunState): { evolve: Upgrade[]; rest: Upgrade[] } {
 }
 
 /**
- * The cards for the waiting level-up: `choices` of them (2 wrong, 3 right, 4 quick). An evolution, when one is ready,
- * is always the first card. Seeded by the run and the level-up number, so the browser and the replay agree.
+ * The cards for the waiting level-up: `choices` of them (2 wrong, 3 right, 4 quick) and then a Gold card. An evolution,
+ * when one is ready, is always the first card. Seeded by the run and the level-up number, so the browser and the replay agree.
  */
 export function makeOffer(s: RunState, choices: number): Upgrade[] {
   if (!waiting(s)) return [];
@@ -696,7 +696,7 @@ export function makeOffer(s: RunState, choices: number): Upgrade[] {
   const offer: Upgrade[] = evolve.slice(0, n);
   while (offer.length < n && rest.length > 0) offer.push(rest.splice(rng.int(rest.length), 1)[0]);
   if (offer.length < n) offer.push({ kind: 'heal' });
-  if (offer.length < n) offer.push({ kind: 'gold' });
+  offer.push({ kind: 'gold' }); // always the last card, on top of the ones the answer earned (James, 20 Nov 2026)
   s.offer = offer;
   return offer;
 }
