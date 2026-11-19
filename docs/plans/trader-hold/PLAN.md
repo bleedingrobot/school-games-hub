@@ -4,7 +4,7 @@
 
 **Mock-up (approved 20 Nov):** [hold-mockup.jpg](hold-mockup.jpg). First tries at the goods pictures: [goods-tries.jpg](goods-tries.jpg).
 
-**Status:** plan only, nothing built. No migration expected (the game is saved as one JSON blob; see H.3).
+**Status:** plan merged 20 Nov (#635), nothing built. No migration expected (the game is saved as one JSON blob; see H.3).
 
 ## What it looks like
 
@@ -46,7 +46,7 @@ Pictures go in `src/games/trader/art/paint/top/` and `.../goods/` (WebP, ships a
 
 The Beetle has 50 holds and the Termite 60. On a laptop that's still fine (10 × 5 and 12 × 5, boxes about 30 px). On a phone the boxes get too small to tap.
 
-**Recommended:** one box per hold on every ship on laptop and iPad (that's the whole idea: count the boxes). On a narrow phone, show a short strip instead: one tile per good with "× 6", and a tiny ship picture with the full bar. Tapping a tile opens the same card.
+**Decided (James, 20 Nov):** one box per hold on every ship on laptop and iPad (that's the whole idea: count the boxes). On a narrow phone, show a short strip instead: one tile per good with "× 6", and a tiny ship picture with the full bar. Tapping a tile opens the same card.
 
 ## Stages
 
