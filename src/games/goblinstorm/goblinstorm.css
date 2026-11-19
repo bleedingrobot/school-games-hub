@@ -197,3 +197,28 @@
 .gs-codex__page--evolved { background: linear-gradient(160deg, rgba(255,210,58,0.22), rgba(255,140,40,0.1)); }
 .gs-codex__page--unseen { opacity: 0.55; }
 .gs-codex__plus { font-weight: 800; color: #cfc4ef; font-size: 0.95rem; }
+
+/* ---- Stage 6: Bella's guide, first-time tips, "Show me", the effects setting ---- */
+.gs-btn--small { font-size: 0.85rem; padding: 0.35rem 0.75rem; }
+.gs-soft { color: #d9cff5; font-size: 0.85rem; }
+.gs-coach {
+  display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+  background: rgba(14,10,31,0.86); color: #fff; border: 2px solid #ffd36b; border-radius: 16px;
+  padding: 0.6rem 0.8rem; box-shadow: 0 6px 20px rgba(0,0,0,0.45); max-width: 34rem;
+}
+.gs-play > .gs-coach, .gs-coach--move, .gs-coach--partner, .gs-coach--miniBoss, .gs-coach--boss, .gs-coach--done {
+  position: absolute; left: 50%; bottom: max(1.2rem, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 6; width: calc(100% - 2rem);
+}
+.gs-coach__face { font-size: 1.8rem; line-height: 1; }
+.gs-coach__say { margin: 0; flex: 1 1 14rem; font-weight: 700; }
+.gs-coach__say strong { color: #ffd36b; }
+.gs-cards .gs-coach { margin: 0 auto 0.6rem; }
+.gs-tip { margin: 0 auto 0.8rem; }
+.gs-tip__btns { display: flex; align-items: center; gap: 0.4rem; }
+.gs-tip__x { background: rgba(255,255,255,0.08); color: #fff; border-color: rgba(255,255,255,0.4); box-shadow: none; }
+.gs-next { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.6rem; margin: 0.8rem 0 0; font-weight: 700; }
+.gs-show { outline: 4px solid #ffd36b; outline-offset: 3px; animation: gs-show 1s ease-in-out 3; }
+@keyframes gs-show { 50% { outline-color: #fff6c8; transform: scale(1.03); } }
+.gs-settings { margin-top: 0.2rem; }
+.gs-quality { display: inline-flex; align-items: center; gap: 0.35rem; color: #d9cff5; font-weight: 700; }
+@media (prefers-reduced-motion: reduce) { .gs-show { animation: none; } }

@@ -38,4 +38,8 @@ export const liveGoblinStorm: GoblinStormBackend = fromServer(async (body) => {
   const { data, error } = await supabase.rpc('buy_goblinstorm', { item });
   if (error || !data) throw new GoblinStormError('That couldn’t be bought. Check the internet and try again.');
   return data as BuyReply;
+}, async () => {
+  // Only ever sets the pupil's own "has had the guide" to true; if it fails, the guide just shows again next time.
+  const { error } = await supabase.rpc('goblinstorm_guide_seen');
+  if (error) throw new GoblinStormError('Couldn’t save that.');
 });

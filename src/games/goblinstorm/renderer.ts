@@ -368,6 +368,11 @@ function buildGround(mapId: string, scale: number): Canvas {
 interface Bolt { x: number; y: number; r: number; age: number; life: number; c: string; pts: number[] }
 interface WipeShow { weapon: WeaponId; age: number; life: number; streaks: { x: number; y: number; vx: number; vy: number; s: number }[] }
 
+/** A sound the run asked for this frame; the play screen decides which to play (at most a couple a frame). */
+export type Cue = 'hit' | 'gem' | 'levelup' | 'wipe' | 'hurt' | 'boss' | 'kill-big';
+
+interface BossShow { kind: number; name: string; age: number; life: number }
+
 export class View {
   fx = new Fx();
   bolts: Bolt[] = [];
@@ -375,6 +380,15 @@ export class View {
   shake = 0;
   flash = 0;
   flashColour = '#fff';
+  /** 0–1: the level-up column of light at the hero. */
+  levelGlow = 0;
+  /** 0–1: the gem bar's pulse after a pickup (the HUD reads it). */
+  gemPulse = 0;
+  bossShow: BossShow | null = null;
+  /** Sounds asked for since the play screen last emptied this. */
+  cues = new Set<Cue>();
+  /** Low effects: fewer particles, no soft glows (the quality setting or slow frames). */
+  low = false;
   private sprites: Sprites | null = null;
   private ground: { canvas: Canvas; pattern: CanvasPattern | null; scale: number; mapId: string; painted: number } | null = null;
   reduced = false;
@@ -383,6 +397,8 @@ export class View {
   take(s: RunState, events: readonly GameEvent[]): void {
     const fx = this.fx;
     const looks = s.setup.map.monsters;
+    let hits = 0;
+    let gems = 0;
     for (const ev of events) {
       if (ev.k === 'kill') {
         const L = MONSTER_LOOKS[looks[ev.kind]?.id] ?? MONSTER_LOOKS.goblin;
@@ -393,8 +409,19 @@ export class View {
           fx.sparks(ev.x, ev.y, 60, '#ffd23a', 12, 0.14);
           fx.word(ev.kind === 4 ? 'BOSS BEATEN!' : 'MINI-BOSS DOWN!', ev.x, ev.y - 1.5, '#ffd23a', 1.1, 1.8);
           this.addShake(0.5);
+          this.cues.add('kill-big');
+          if (ev.kind === 4 && !this.low) {
+            fx.ring(ev.x, ev.y, 1, 16, 1.1, '#ffffff');
+            fx.glow(ev.x, ev.y, 2, 24, 0.8, '#ffe68a');
+          }
         }
       } else if (ev.k === 'hit') {
+        // Lots of these at once late in a run: only the first few in a step get sparks.
+        if (hits++ < (this.low ? 2 : 6)) {
+          fx.sparks(ev.x, ev.y, ev.crit ? 7 : 3, ev.crit ? '#ffe04a' : '#ffffff', ev.crit ? 7 : 4, ev.crit ? 0.11 : 0.07);
+          if (ev.crit && !this.low) fx.ring(ev.x, ev.y, 0.15, 0.9, 0.18, '#fff3b0');
+          this.cues.add('hit');
+        }
         if (ev.crit) fx.word(String(Math.round(ev.damage)), ev.x, ev.y - 0.5, '#ffe04a', 0.45, 0.6);
       } else if (ev.k === 'strike') {
         const c = WEAPON_COLOUR[ev.weapon];
@@ -420,17 +447,41 @@ export class View {
         this.flash = Math.max(this.flash, 0.35);
         this.flashColour = '#ff2a2a';
         fx.sparks(s.hero.x, s.hero.y, 8, '#ff6a5a', 5);
+        this.cues.add('hurt');
       } else if (ev.k === 'block') {
         fx.ring(s.hero.x, s.hero.y, 0.6, 1.8, 0.35, '#c8f4ff');
         fx.sparks(s.hero.x, s.hero.y, 14, '#9ae6ff', 6);
         fx.word('Blocked!', s.hero.x, s.hero.y - 1.2, '#c8f4ff', 0.45, 0.7);
       } else if (ev.k === 'levelup') {
         fx.ring(s.hero.x, s.hero.y, 0.3, 3, 0.6, '#9affc8');
+        fx.ring(s.hero.x, s.hero.y, 0.2, 5, 0.9, '#ffffff');
         fx.sparks(s.hero.x, s.hero.y, 30, '#9affc8', 8, 0.12);
+        // Sparkles rising up the column of light.
+        for (let i = 0, n = this.low ? 6 : 18; i < n; i++) {
+          fx.add('spark', s.hero.x + (Math.random() - 0.5) * 1.4, s.hero.y + Math.random() * 0.6, { vy: -4 - Math.random() * 6, life: 0.6 + Math.random() * 0.5, size: 0.09, drag: 0.5, c: i % 2 ? '#d8ffe8' : '#9affc8', add: true });
+        }
+        fx.word('LEVEL UP!', s.hero.x, s.hero.y - 1.8, '#9affc8', 0.7, 1.1);
+        this.levelGlow = 1;
+        this.cues.add('levelup');
       } else if (ev.k === 'gem') {
-        // quiet: lots of these
+        gems++;
+      } else if (ev.k === 'boss') {
+        this.startBoss(looks[ev.kind]?.name ?? 'Boss', ev.kind);
       }
     }
+    if (gems) {
+      // One little sparkle at the hero a step, however many gems came in (the event has no place).
+      fx.sparks(s.hero.x, s.hero.y - 0.2, Math.min(6, 2 + gems), '#8af0ff', 3, 0.07);
+      this.gemPulse = 1;
+      this.cues.add('gem');
+    }
+  }
+
+  /** A boss walks in: the screen darkens, warning stripes slide in, its name drops in big and the ground shakes. */
+  private startBoss(name: string, kind: number): void {
+    this.bossShow = { kind, name, age: 0, life: this.reduced ? 1.6 : 2.4 };
+    this.addShake(kind === 4 ? 0.8 : 0.5);
+    this.cues.add('boss');
   }
 
   addShake(n: number): void {
@@ -472,6 +523,16 @@ export class View {
     this.fx.ring(s.hero.x, s.hero.y, 0.5, WIPE_RADIUS * 0.7, 0.55, '#ffffff');
     this.fx.glow(s.hero.x, s.hero.y, 2, 30, 0.5, c.glow);
     this.fx.word(WEAPONS[weapon].evolved.name.toUpperCase() + '!', s.hero.x, s.hero.y - 2.5, c.evolved, 1.3, 1.6);
+    if (!this.low) {
+      // A second, later shockwave and a spray of shards in the weapon's colours.
+      this.fx.ring(s.hero.x, s.hero.y, 0.2, WIPE_RADIUS * 1.2, 1.0, c.main);
+      for (let i = 0, k = this.reduced ? 12 : 36; i < k; i++) {
+        const a = (i / k) * TAU;
+        const sp = 10 + Math.random() * 12;
+        this.fx.add('shard', s.hero.x, s.hero.y, { vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.7, size: 0.22, rot: a, vr: 10, drag: 1.2, c: i % 2 ? c.evolved : '#ffffff' });
+      }
+    }
+    this.cues.add('wipe');
   }
 
   /** Real-time parts of the effects (not the run). */
@@ -479,6 +540,12 @@ export class View {
     this.fx.step(dt);
     this.shake = Math.max(0, this.shake - dt * 2.2);
     this.flash = Math.max(0, this.flash - dt * 1.6);
+    this.levelGlow = Math.max(0, this.levelGlow - dt * 1.4);
+    this.gemPulse = Math.max(0, this.gemPulse - dt * 4);
+    if (this.bossShow) {
+      this.bossShow.age += dt;
+      if (this.bossShow.age >= this.bossShow.life) this.bossShow = null;
+    }
     for (const b of this.bolts) b.age += dt;
     while (this.bolts.length && this.bolts[0].age >= this.bolts[0].life) this.bolts.shift();
     if (this.wipeShow) {
@@ -527,6 +594,7 @@ export class View {
     this.drawAura(ctx, s, time);
     this.drawGems(ctx, s, time, onScreen);
     this.drawEnemies(ctx, s, time, onScreen);
+    this.drawLevelGlow(ctx, s);
     this.drawHero(ctx, s, time);
     this.drawBlades(ctx, s, time);
     this.drawBubble(ctx, s, time);
@@ -541,6 +609,7 @@ export class View {
     this.drawBossArrows(ctx, s, w, h, toScreen);
     this.fx.drawWords(ctx, toScreen, scale);
     this.drawVignette(ctx, map.id, w, h);
+    this.drawBossShow(ctx, w, h, time);
     if (this.flash > 0) {
       ctx.globalAlpha = Math.min(0.85, this.flash) * (this.reduced ? 0.5 : 1);
       ctx.fillStyle = this.flashColour;
@@ -879,6 +948,81 @@ export class View {
     }
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
+  }
+
+  /** The level-up column of light: a tall soft beam over the hero that fades in about 0.7 s. */
+  private drawLevelGlow(ctx: CanvasRenderingContext2D, s: RunState): void {
+    const a = this.levelGlow;
+    if (a <= 0) return;
+    const x = s.hero.x;
+    const y = s.hero.y;
+    const wide = 0.9 + (1 - a) * 0.6;
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = a * (this.reduced ? 0.5 : 0.85);
+    const g = ctx.createLinearGradient(x - wide, 0, x + wide, 0);
+    g.addColorStop(0, 'rgba(154,255,200,0)');
+    g.addColorStop(0.5, 'rgba(220,255,236,0.9)');
+    g.addColorStop(1, 'rgba(154,255,200,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x - wide, y - 14, wide * 2, 14.4);
+    if (!this.low) {
+      ctx.globalAlpha = a;
+      const r = 1.6 + (1 - a) * 1.5;
+      ctx.drawImage(glowSprite('#9affc8') as CanvasImageSource, x - r, y - r, r * 2, r * 2);
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  /** A boss arriving, in screen px: a dark pulse, hazard stripes top and bottom, and its name. */
+  private drawBossShow(ctx: CanvasRenderingContext2D, w: number, h: number, time: number): void {
+    const b = this.bossShow;
+    if (!b) return;
+    const t = b.age / b.life;
+    const inOut = Math.min(1, t * 6, (1 - t) * 4);
+    const big = b.kind === 4;
+    // darken
+    ctx.globalAlpha = inOut * (big ? 0.38 : 0.25) * (this.reduced ? 0.6 : 1);
+    ctx.fillStyle = '#12020a';
+    ctx.fillRect(0, 0, w, h);
+    // hazard stripes
+    const band = Math.max(18, Math.min(34, h * 0.05));
+    const slide = this.reduced ? 0 : (time * 60) % (band * 2);
+    ctx.globalAlpha = inOut * 0.9;
+    for (const y of [0, h - band]) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, y, w, band);
+      ctx.clip();
+      ctx.fillStyle = big ? '#b3121e' : '#c46a0c';
+      ctx.fillRect(0, y, w, band);
+      ctx.fillStyle = '#1a0a0a';
+      for (let x = -band * 2 + (y ? -slide : slide); x < w + band * 2; x += band * 2) {
+        ctx.beginPath();
+        ctx.moveTo(x, y + band);
+        ctx.lineTo(x + band, y);
+        ctx.lineTo(x + band * 1.6, y);
+        ctx.lineTo(x + band * 0.6, y + band);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+    // the name, dropping in
+    const drop = this.reduced ? 1 : Math.min(1, t * 5);
+    const size = Math.round(Math.min(w * 0.09, h * 0.12) * (big ? 1 : 0.8) * (1.6 - drop * 0.6));
+    ctx.globalAlpha = inOut;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `900 ${size}px system-ui, sans-serif`;
+    ctx.lineWidth = Math.max(3, size * 0.14);
+    ctx.strokeStyle = 'rgba(20,0,10,0.9)';
+    const text = big ? `${b.name.toUpperCase()}!` : b.name.toUpperCase();
+    const ty = h * 0.42; // below the arrival banner
+    ctx.strokeText(text, w / 2, ty);
+    ctx.fillStyle = big ? '#ff5a4a' : '#ffb04a';
+    ctx.fillText(text, w / 2, ty);
+    ctx.globalAlpha = 1;
   }
 
   private drawWipe(ctx: CanvasRenderingContext2D, time: number): void {

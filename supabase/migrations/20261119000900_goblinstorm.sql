@@ -38,6 +38,8 @@ create table public.goblinstorm_saves (
   weapons text[] not null default '{}',
   runs integer not null default 0 check (runs >= 0),
   kills integer not null default 0 check (kills >= 0),
+  -- Has had the guided first go on Castle Fields (or skipped it), so it isn't guided again on another device.
+  guide_seen boolean not null default false,
   updated_at timestamptz not null default now()
 );
 
@@ -279,13 +281,34 @@ as $$
     'gold', coalesce(s.gold, 0), 'shop', coalesce(s.shop, '{}'::jsonb), 'heroes', to_jsonb(coalesce(s.heroes, '{}')),
     'bosses', to_jsonb(coalesce(s.bosses, '{}')), 'codex', to_jsonb(coalesce(s.codex, '{}')),
     'weapons', to_jsonb(coalesce(s.weapons, '{}')),
-    'runs', coalesce(s.runs, 0), 'kills', coalesce(s.kills, 0),
+    'runs', coalesce(s.runs, 0), 'kills', coalesce(s.kills, 0), 'guideSeen', coalesce(s.guide_seen, false),
     'bestGold', coalesce((select max(r.gold) from public.goblinstorm_runs r where r.player = me.player), 0),
     'today', (select count(*)::integer from public.goblinstorm_runs r
               where r.player = auth.uid() and r.day = (now() at time zone 'Pacific/Auckland')::date))
   from (select auth.uid() as player) me
   left join public.goblinstorm_saves s on s.player = me.player
   where me.player is not null
+$$;
+
+-- Notes that the signed-in pupil has had the guided first go (stage 6). It can only ever set the caller's own flag to
+-- true, so it changes nothing that counts; a pupil with no save yet gets one with nothing else in it.
+create function public.goblinstorm_guide_seen()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  me uuid := auth.uid();
+begin
+  if me is null then
+    raise exception 'Please sign in again.' using errcode = '42501';
+  end if;
+  perform public.gem_keep_check_player(me);
+  insert into public.goblinstorm_saves (player, guide_seen) values (me, true)
+  on conflict (player) do update set guide_seen = true, updated_at = now()
+  where not public.goblinstorm_saves.guide_seen;
+end;
 $$;
 
 -- ---------------------------------------------------------------------------
@@ -560,13 +583,15 @@ revoke execute on function
   public.teacher_set_goblinstorm(boolean, uuid),
   public.goblinstorm_last_played(uuid),
   public.my_goblinstorm(),
+  public.goblinstorm_guide_seen(),
   public.buy_goblinstorm(text),
   public.goblinstorm_counts(uuid), public.goblinstorm_point_rules(), public.goblinstorm_players_list(),
   public.goblinstorm_save_trophies(),
   public.goblinstorm_board(text)
 from public, anon, authenticated;
 grant execute on function
-  public.teacher_set_goblinstorm(boolean, uuid), public.my_goblinstorm(), public.buy_goblinstorm(text), public.goblinstorm_board(text)
+  public.teacher_set_goblinstorm(boolean, uuid), public.my_goblinstorm(), public.goblinstorm_guide_seen(),
+  public.buy_goblinstorm(text), public.goblinstorm_board(text)
 to authenticated;
 grant execute on function
   public.goblinstorm_load(uuid), public.goblinstorm_runs_on(uuid, date),

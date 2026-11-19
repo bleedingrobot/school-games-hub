@@ -56,6 +56,8 @@ export class Fx {
   gentle = false;
   /** 0–1: fewer particles when the frame rate drops. */
   quality = 1;
+  /** Low effects: small soft glows are left out (they are the slowest thing to draw). */
+  low = false;
 
   constructor(max = 900, maxWords = 24) {
     for (let i = 0; i < max; i++) {
@@ -95,7 +97,7 @@ export class Fx {
   /** A monster beaten: a soft puff, a few shards in its colours and a pop of light. */
   pop(x: number, y: number, r: number, c: string, c2: string): void {
     const sp = this.gentle ? 0.5 : 1;
-    this.add('glow', x, y, { life: 0.22, size: r * 1.6, grow: r * 3, c: '#fff6c8', add: true });
+    if (!this.low) this.add('glow', x, y, { life: 0.22, size: r * 1.6, grow: r * 3, c: '#fff6c8', add: true });
     for (let i = 0, n = this.n(4); i < n; i++) {
       this.add('puff', x + rand(-r, r) * 0.5, y + rand(-r, r) * 0.5, { vx: rand(-1, 1) * sp, vy: rand(-1.5, 0.3) * sp, life: rand(0.35, 0.6), size: r * rand(0.5, 0.8), grow: r * 0.8, drag: 2, c: c2 });
     }
@@ -112,6 +114,7 @@ export class Fx {
 
   /** A soft burst of light that swells and fades. */
   glow(x: number, y: number, size: number, grow: number, life: number, c: string): void {
+    if (this.low && size < 2) return;
     this.add('glow', x, y, { size, grow, life, c, add: true });
   }
 
