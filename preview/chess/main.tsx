@@ -11,8 +11,9 @@ import { AuthContext, type AuthState } from '../../src/auth/AuthContext';
 import { replay } from '../../shared/chess/rules';
 import { Board } from '../../src/games/chess/Board';
 import { ChessPlay } from '../../src/games/chess/ChessPlay';
+import { CheckersPlay } from '../../src/games/checkers/CheckersPlay';
 
-// Try a bot with #x&bot=easy or #x&bot=medium (Very Easy if not given).
+// Try a bot with #x&bot=easy or #x&bot=medium (Very Easy if not given). #checkers shows checkers against the bots.
 const previewBot = (['very-easy', 'easy', 'medium'] as const).find((b) => location.hash.includes(`bot=${b}`)) ?? 'very-easy';
 import { ChessWindow } from '../../src/games/chess/ChessWindow';
 import { checkUnlocks } from '../../src/games/chess/looks';
@@ -79,7 +80,15 @@ createRoot(document.getElementById('root')!).render(
     <SoundProvider>
       <AuthContext.Provider value={auth}>
         <MemoryRouter initialEntries={[`/chess?bot=${previewBot}`]}>
-          {location.hash.startsWith('#show') ? <Show /> : <ChessPlay level={previewBot} />}
+          {location.hash.startsWith('#show') ? (
+            <Show />
+          ) : location.hash.startsWith('#checkers') ? (
+            <main className="page">
+              <CheckersPlay level={previewBot} />
+            </main>
+          ) : (
+            <ChessPlay level={previewBot} />
+          )}
         </MemoryRouter>
       </AuthContext.Provider>
     </SoundProvider>

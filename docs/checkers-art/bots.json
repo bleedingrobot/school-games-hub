@@ -1,0 +1,52 @@
+{
+  "_about": "Checkers bot portraits (docs/CHECKERS-LOOK-PLAN.md): pirate versions of the bots, each holding a checkers piece, cut out of white. Paint: python scripts/game_art.py docs/checkers-art/bots.json paint ~/dragon-art-inbox/checkers-bots",
+  "game": "checkers",
+  "comfy": "http://127.0.0.1:8188",
+  "filename_prefix": "checkers/bot",
+  "style": "a",
+  "styles": {
+    "a": "Hand-painted fantasy storybook character portrait for a children's game, rich glowing colours, soft painterly light, bold clean readable shape, friendly and full of personality, for children aged 8 to 11, no writing, no letters, no numbers. "
+  },
+  "inbox": "~/dragon-art-inbox/checkers-bots",
+  "picks": "docs/checkers-art/bots-picks.json",
+  "art_dir": "src/games/checkers/art",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "bot/very-easy",
+      "prompt": "A cute fluffy little yellow baby chick wearing a tiny folded paper pirate hat, big shiny happy eyes, tiny orange beak open in a giggle, hugging a round flat red checkers game counter with ridged edges that is nearly as big as itself, a bit wobbly, sweet and silly. Upper body, facing the viewer, the whole character and the round counter visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "bot",
+      "file": "very-easy",
+      "max": 384
+    },
+    {
+      "name": "bot/easy",
+      "prompt": "A cheerful friendly little round robot made of shiny teal and silver metal wearing a red and white striped pirate bandana, a glowing screen face with one big round blue eye and a little black eyepatch drawn on the screen over the other, a smile, holding up a round flat red checkers game counter with ridged edges proudly in one metal hand. Upper body, facing the viewer, the whole character and the round counter visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "bot",
+      "file": "easy",
+      "max": 384
+    },
+    {
+      "name": "bot/medium",
+      "prompt": "A clever cheeky old New Zealand kea parrot pirate captain, olive green feathers with flashes of bright orange under its wings, a curved grey beak, a big black tricorn captain's hat with a gold trim, a little gold earring, a sly knowing grin, holding up a round flat red checkers game counter with ridged edges with a gold crown stamped on it in one claw. Upper body, facing the viewer, the whole character and the round counter visible and centred with space all around, on a plain pure white background, clean empty white all around.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "bot",
+      "file": "medium",
+      "max": 384
+    }
+  ]
+}
