@@ -8,8 +8,9 @@
 - Sky Isles is one whole-school sky.
 - The Banners board is whole school.
 - Star Forge is not in the Lobby.
+- Stage 8: stars, not a friends list. Starring someone is private and one-sided, with no requests and no counts.
 
-**Status:** stage 1 built 20 Nov 2026 (migration `20261120000300_play_other_classes.sql`); stage 2 built 20 Nov 2026 (migration `20261120000500_hub_here.sql`); stage 3 built 20 Nov 2026 (migration `20261120000700_lobby_here.sql`); stage 4 built 20 Nov 2026 (migration `20261120000800_name_invites.sql`); stage 5 built 20 Nov 2026 (migration `20261120000900_raids_school_wide.sql`); see the "Stage results" sections at the end. Stages 6 and 7 not started.
+**Status:** stage 1 built 20 Nov 2026 (migration `20261120000300_play_other_classes.sql`); stage 2 built 20 Nov 2026 (migration `20261120000500_hub_here.sql`); stage 3 built 20 Nov 2026 (migration `20261120000700_lobby_here.sql`); stage 4 built 20 Nov 2026 (migration `20261120000800_name_invites.sql`); stage 5 built 20 Nov 2026 (migration `20261120000900_raids_school_wide.sql`); see the "Stage results" sections at the end. Stages 6, 7 and 8 not started.
 
 ## Where things are now
 
@@ -93,6 +94,33 @@ The open-games list stays a 20-second refresh. Challenges arrive live, as they d
 
 **Inviting someone by name to chess, checkers, 101, space or Power Clash.** This is new. You tap a kid and choose "Chess", and they get an ask like the duel games. The server makes a private game for just the two of you, with no code to type.
 
+### F. Stars: find your friends fast (stage 8)
+
+**Asked by James, 20 Nov 2026.** Kids should find their friends quickly, without a social-media friends list.
+
+**Why not a normal friends list.** Requests, accept/decline and mutual friends cause playground trouble: a declined or ignored request reads as "you're not my friend", friend counts become a popularity score, and "unfriending" gets used after a fall-out. Stars give the speed without any of that.
+
+**The rules.**
+- **⭐ Star a player** from any "who's here" row (Lobby, Archery, Dragon Maths, Clan duels, Village Raids, the shared `SchoolPlayerList`). Tap again to unstar.
+- **Private and one-sided.** Only you see your stars. The other kid is never told and can't find out: no notice, no "starred you" list, no counts anywhere. Teachers don't see them either.
+- **Order only.** Stars change the order of a list, never who can play whom. Every stage 1 rule still applies (same school, hidden pupils never shown, "Play other classes" on). A starred kid who becomes hidden, changes school or whose class turns "Play other classes" off simply drops out of your lists. The star is kept quietly, in case they come back.
+- **A cap of 30 stars**, so it stays a short list of real friends.
+
+**What kids see.**
+- **"⭐ Your stars"** sits at the top of every "who's here" list, above "Your class". A green "here now" dot shows who's online. In the Lobby, stars who aren't on sit greyed under the online ones with "Not here right now", so you know not to wait for them.
+- **"Played recently."** A row of up to 8 kids you finished a game with in the last 14 days, any game. It builds itself, so a new pairing is easy to find again. Each has a ☆ to star them. It's made from the games' own records, so nothing new is stored. If that read is slow, keep a tiny `played_with (player, other, last_at)` table, filled in when a game ends.
+- **First time:** one hint on the Lobby's Who's here, "Tap ☆ to keep your friends at the top", read aloud with a Kokoro af_bella clip.
+
+**Server.**
+- New table `lobby_stars (player, star, created_at)`, primary key (player, star). Pupils reach it only through `lobby_star(other, on)`, which checks same school, not self and the 30 cap. They never read the table directly.
+- `lobby_here()` adds `starred: true` on online kids I starred, `stars_away` (my starred kids who may be listed but aren't here: id, name, avatar, class name), and `recent` (the played-recently list, same fields and states as `online`).
+- The game "here" functions add the `starred` flag so their lists can sort by it. Hidden pupils never come back, whether starred or not.
+
+**Tests.**
+- Database: the star cap; can't star yourself or someone at another school; a star is never visible to the starred kid or through any read they can make; hidden and "Play other classes" off still hide a starred kid; the recent list respects every stage 1 rule.
+- Screens: the Your stars group on top, the here-now dot, not-here greyed, star and unstar, played recently. Checked at phone, iPad and laptop sizes.
+- A "What's new" line: "⭐ Star your friends to keep them at the top of the Lobby."
+
 ### E. Small things to check
 
 - Trophies for beating classmates (for example Archery's): still fine school-wide? Rename "classmate" to "friend" where kids see it.
@@ -113,8 +141,9 @@ Each stage is its own PR, merged when green, and goes live switched on.
 | **5** | Village Raids school-wide (B4). | 1 |
 | **6** | Sky Isles: whole school in one sky (B5). | 1 |
 | **7** | Star Forge whole-school gallery (B6). | 1 |
+| **8** | Stars and Played recently (F). | 3 (needs stage 4 live too, for the invite games in Played recently) |
 
-Stages 5, 6 and 7 touch only their own game, so they can run in parallel once stage 1 is live.
+Stages 5, 6 and 7 touch only their own game, so they can run in parallel once stage 1 is live. Stage 8 touches the Lobby and `SchoolPlayerList`, not those games' own screens, so it can run alongside them too. Take the next free migration number when it's built.
 
 ## Tests
 
