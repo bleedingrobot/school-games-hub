@@ -410,7 +410,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
       );
     }
     const [title, words] = d.status === 'declined'
-      ? seat === 0 ? [`${them} said no`, 'Maybe next time! Try another classmate, or a bot.'] : ['Challenge turned down', 'Maybe next time!']
+      ? seat === 0 ? [`${them} said no`, 'Maybe next time! Try another friend, or a bot.'] : ['Challenge turned down', 'Maybe next time!']
       : d.status === 'expired'
         ? ['The challenge ran out', seat === 0 ? `${them} didn't answer in time.` : 'It wasn\'t answered in time.']
         : ['The fight was called off', "It didn't start, so any arrows you packed are back in your bag."];

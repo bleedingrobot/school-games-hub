@@ -15202,7 +15202,7 @@ const DUEL_SAY = {
 	busy: "That couldn't be done just now. Try again in a moment.",
 	notYours: "That isn't your duel.",
 	away: "That clan isn't in Clan Quest right now.",
-	otherClass: "You can only duel clans in your own class.",
+	otherClass: "That player's class isn't playing other classes right now.",
 	inDuel: "One of you is already in a duel. Try again when it's over.",
 	off: "Live duels are switched off for now. You can still practise against a computer clan!",
 	noClan: "You both need a clan first.",

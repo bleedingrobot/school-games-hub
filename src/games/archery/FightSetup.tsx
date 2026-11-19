@@ -54,7 +54,7 @@ export function PickScreen({ world, level, onWorld, onLevel, onNext, onBack, onC
           </button>
         ))}
       </div>
-      <h3>2. Against which bot?{onClassmate && ' Or a classmate?'}</h3>
+      <h3>2. Against which bot?{onClassmate && ' Or a friend?'}</h3>
       <div className="ar-choices ar-choices--three">
         {BOT_LEVELS.map((l) => (
           <button key={l} type="button" className="button button--light ar-btn ar-choice" aria-pressed={level === l} onClick={() => onLevel(l)}>
@@ -66,7 +66,7 @@ export function PickScreen({ world, level, onWorld, onLevel, onNext, onBack, onC
       </div>
       {onClassmate && (
         <p className="ar-page__alt">
-          <button type="button" className="button button--light ar-btn" onClick={onClassmate}>Against a classmate instead</button>
+          <button type="button" className="button button--light ar-btn" onClick={onClassmate}>Against a friend instead</button>
         </p>
       )}
       <p className="ar-page__go">

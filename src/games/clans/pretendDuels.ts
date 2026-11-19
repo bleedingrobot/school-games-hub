@@ -124,7 +124,7 @@ export function pretendDuelApi(myClan: () => Clan | null, options: { askMe?: boo
   return {
     me: ME,
     async here() {
-      const online = BOTS.map((b) => ({ id: b.id, name: b.name, busy: [...duels.values()].some((d) => d.status === 'playing' && (d.seat_a === b.id || d.seat_b === b.id) && d.seat_a !== ME && d.seat_b !== ME) }));
+      const online = BOTS.map((b, i) => ({ id: b.id, name: b.name, sameClass: i === 0, className: i === 0 ? null : 'Room 9', busy: [...duels.values()].some((d) => d.status === 'playing' && (d.seat_a === b.id || d.seat_b === b.id) && d.seat_a !== ME && d.seat_b !== ME) }));
       const asks = [...duels.values()].filter((d) => d.seat_b === ME && d.status === 'asked').map((d) => ({ duel: d.id, from: d.name_a, deadline: d.deadline }));
       const duel = [...duels.values()].reverse().find((d) => (d.status === 'playing' && (d.seat_a === ME || d.seat_b === ME)) || (d.status === 'asked' && d.seat_a === ME)) ?? null;
       return { off: false, online, asks, duel };

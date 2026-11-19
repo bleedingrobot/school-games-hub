@@ -1167,6 +1167,7 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 .cq-rival__banner { height: 110px; width: auto; filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.7)); animation: cq-rival-sway 3.2s ease-in-out infinite; transform-origin: top center; }
 @keyframes cq-rival-sway { 0%, 100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
 .cq-rival__name { font-weight: 700; font-size: 1.1rem; color: var(--f-head); }
+.cq-rival__name .school-list__class { display: block; width: fit-content; margin: 3px auto 0; background: rgba(224, 169, 58, 0.2); color: var(--f-head); }
 .cq-rival .cq-btn--hot { min-width: 110px; font-size: 1.1rem; }
 .cq-rivals--small .cq-rival { flex-direction: row; justify-content: space-between; padding: 6px 10px; }
 .cq-rivals--small { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }

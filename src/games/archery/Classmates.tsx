@@ -1,9 +1,10 @@
 /**
- * Finding a classmate to fight (docs/ARCHERY-PLAN.md, section 7, Stage 6), inside the game: the classmates in your
- * own class who have Archery Challenge open right now (display names only), a challenge sent with the world picked,
+ * Finding someone to fight (docs/ARCHERY-PLAN.md, section 7, Stage 6), inside the game: the players at school who have
+ * Archery Challenge open right now (display names only; my class first, then other classes, docs/plans/play-anyone), a challenge sent with the world picked,
  * the pop-up when someone challenges you, and the waits in between ("Waiting for Mia to say yes…").
  */
 import { useEffect, useRef, useState } from 'react';
+import { ClassTag, SchoolPlayerList } from '../../components/SchoolPlayerList';
 import type { Ask, Classmate } from '../../../shared/archery/duel';
 import { SNOOZE_MS } from '../../../shared/archery/config';
 import { WORLD_IDS, type WorldId } from '../../../shared/archery/types';
@@ -39,7 +40,7 @@ export function ClassmatesScreen({ online, offline, world, sending, problem, onW
   return (
     <section className="ar-page" aria-labelledby="ar-mates-title">
       <div className="ar-page__head">
-        <h2 id="ar-mates-title" ref={heading} tabIndex={-1}>Challenge a classmate</h2>
+        <h2 id="ar-mates-title" ref={heading} tabIndex={-1}>Challenge a friend</h2>
         <button type="button" className="button button--light ar-btn" onClick={onBack}>Back</button>
       </div>
       <p>One round, one turn each. Win the round to win the fight! You both bring whatever you've packed.</p>
@@ -55,22 +56,26 @@ export function ClassmatesScreen({ online, offline, world, sending, problem, onW
       <h3>2. Who?</h3>
       {problem && <p className="ar-problem" role="alert">{problem}</p>}
       {online === null ? (
-        <p className="ar-help" role="status">{offline ? 'The school server could not be reached. Check the Wi-Fi.' : 'Looking for classmates…'}</p>
+        <p className="ar-help" role="status">{offline ? 'The school server could not be reached. Check the Wi-Fi.' : 'Looking for players…'}</p>
       ) : online.length === 0 ? (
-        <p className="ar-help" role="status">Nobody else in your class has Archery Challenge open right now. Ask a classmate to open it, then look again.</p>
+        <p className="ar-help" role="status">Nobody else has Archery Challenge open right now. Ask a friend to open it, then look again.</p>
       ) : (
-        <ul className="ar-mates" aria-label="Classmates in Archery Challenge now">
-          {online.map((c) => (
-            <li key={c.id} className="ar-mate">
-              <span className="ar-mate__name">{c.name}</span>
+        <SchoolPlayerList
+          people={online}
+          label="Players in Archery Challenge now"
+          listClassName="ar-mates"
+          itemClassName="ar-mate"
+          row={(c) => (
+            <>
+              <span className="ar-mate__name">{c.name}<ClassTag player={c} /></span>
               {c.snoozed ? <span className="ar-mate__busy">Not now</span> : c.busy ? <span className="ar-mate__busy">In a fight</span> : (
                 <button type="button" className="button button--play ar-btn" disabled={sending} aria-label={`Challenge ${c.name} in the ${WORLD_NAMES[world]}`} onClick={() => onChallenge(c)}>
                   Challenge
                 </button>
               )}
-            </li>
-          ))}
-        </ul>
+            </>
+          )}
+        />
       )}
       <p className="ar-page__go">
         <button type="button" className="button button--light ar-btn" onClick={onRefresh}>Look again</button>
@@ -115,7 +120,7 @@ export function ChallengeAsk({ ask, serverNow, busy, problem, onAccept, onDeclin
   );
 }
 
-/** A wait between screens: for an answer, or for the classmate to pack. */
+/** A wait between screens: for an answer, or for the other player to pack. */
 export function DuelWait({ title, words, deadline, serverNow, onCancel, cancelLabel, onTimeUp }: {
   title: string;
   words: string;

@@ -96,6 +96,13 @@ export async function setMultiplayer(enabled: boolean, classId: string): Promise
   if (error) fail(error, 'We couldn’t change that.');
 }
 
+/** "Play other classes": off keeps this class's live games (Archery fights, Dragon Maths clashes, Clan duels) inside the class. */
+export async function setPlayOtherClasses(enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_play_other_classes', { enabled, target_class: classId });
+  forgetSettings();
+  if (error) fail(error, 'We couldn’t change that.');
+}
+
 export async function setSpaceReactions(enabled: boolean, classId: string): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_space_reactions', { enabled, target_class: classId });
   forgetSettings();
