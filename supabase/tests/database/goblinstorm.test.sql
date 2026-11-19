@@ -1,0 +1,78 @@
+-- Goblin Storm (migration 20261119000900, id goblinstorm): saves, runs, questions, the switch and the hub row.
+-- Pupils can't read or change any of it directly; the server function does everything.
+-- Run on a throw-away copy: scripts/scratch-db.sh goblinstorm, then scripts/scratch-test.sh goblinstorm supabase/tests/database/goblinstorm.test.sql
+begin;
+create extension if not exists pgtap with schema extensions;
+select plan(30);
+
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
+  ('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz'),
+  ('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
+update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
+select set_config('test.cls', (select default_class::text from public.schools where id = 1), true);
+insert into public.class_teachers (class_id, teacher_id) values (current_setting('test.cls')::uuid, '00000000-0000-0000-0000-00000000000e') on conflict do nothing;
+
+create function pg_temp.act_as(id text, email text) returns void language sql as $$
+  select set_config('role', 'authenticated', true),
+         set_config('request.jwt.claims', json_build_object('sub', id, 'email', email, 'role', 'authenticated')::text, true);
+$$;
+create function pg_temp.act_as_server() returns void language sql as $$
+  select set_config('role', 'service_role', true), set_config('request.jwt.claims', '{"role":"service_role"}', true);
+$$;
+create function pg_temp.reset() returns void language sql as $$
+  select set_config('role', 'postgres', true), set_config('request.jwt.claims', '', true);
+$$;
+create function pg_temp.id(who text) returns uuid language sql as $$ select ('00000000-0000-0000-0000-0000000000' || who)::uuid $$;
+create function pg_temp.summary(gold integer, boss boolean, evolved text[]) returns jsonb language sql as $$
+  select jsonb_build_object('outcome', case when boss then 'won' else 'fell' end, 'seconds', 95, 'level', 12, 'kills', 240,
+    'miniBeaten', true, 'bossBeaten', boss, 'evolved', to_jsonb(evolved), 'longestNoHitSeconds', 20, 'gold', gold)
+$$;
+
+-- ---- On for every class, and in the hub's list ----
+select is((select bool_and(goblinstorm_enabled) from public.app_settings), true, 'the game is on everywhere (the code switch holds it back)');
+select ok(exists (select 1 from public.hub_games where id = 'goblinstorm' and switch_column = 'goblinstorm_enabled' and last_played_fn is not null),
+  'it is in hub_games with its switch and last played');
+
+-- ---- Pupils can't reach anything directly ----
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
+select throws_ok($$ select * from public.goblinstorm_saves $$, '42501', null, 'a pupil cannot read anyone''s save');
+select throws_ok($$ select * from public.goblinstorm_runs $$, '42501', null, '... or the runs');
+select throws_ok($$ select * from public.goblinstorm_questions $$, '42501', null, '... or the questions with their answers');
+select throws_ok($$ select public.goblinstorm_load_questions(auth.uid(), 1) $$, '42501', null, '... or read them through the server functions');
+select throws_ok($$ select public.goblinstorm_store_questions(auth.uid(), 1, 'knight', 0, current_date, false, '[]') $$, '42501', null, '... or start a run');
+select throws_ok($$ select public.goblinstorm_claim_answer(auth.uid(), 1, 0, 42, 500, 'quick') $$, '42501', null, '... or mark their own answer');
+select throws_ok($$ select public.record_goblinstorm_run(auth.uid(), 1, '', '[]', '{}') $$, '42501', null, '... or save a run with any gold');
+select throws_ok($$ select public.goblinstorm_load(auth.uid()) $$, '42501', null, '... or load a save through the server function');
+select throws_ok($$ select public.teacher_set_goblinstorm(false) $$, null, null, 'a pupil cannot switch the game off');
+
+-- ---- The teacher's switch ----
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
+select lives_ok($$ select public.teacher_set_goblinstorm(false, current_setting('test.cls')::uuid) $$, 'a teacher can switch it off for the class');
+select throws_ok($$ select public.teacher_set_goblinstorm(null, current_setting('test.cls')::uuid) $$, '22023', null, 'a setting must be given');
+select pg_temp.reset();
+select is((select goblinstorm_enabled from public.app_settings where id = public.settings_id_of(pg_temp.id('0e'))), false, '... and it stays off');
+
+-- ---- A run: started once, each slot marked once, finished once with the save ----
+select pg_temp.act_as_server();
+select is(public.goblinstorm_load(pg_temp.id('0a')), null, 'a new pupil has no save yet');
+select throws_ok($$ select public.goblinstorm_load('00000000-0000-0000-0000-000000000099') $$, '22023', null, 'nobody who is not a pupil');
+select ok(public.goblinstorm_store_questions(pg_temp.id('0a'), 123456, 'knight', 0, '2026-11-19', false, '[{"answer": 42}]'), 'a run starts');
+select ok(not public.goblinstorm_store_questions(pg_temp.id('0a'), 123456, 'knight', 0, '2026-11-19', false, '[]'), 'a seed is used once per pupil');
+select ok(public.goblinstorm_store_questions(pg_temp.id('0b'), 123456, 'ranger', 0, '2026-11-19', false, '[]'), '... but another pupil may have the same seed');
+select is(public.goblinstorm_runs_on(pg_temp.id('0a'), '2026-11-19'), 1, 'it counts towards today');
+select is(public.goblinstorm_load_questions(pg_temp.id('0a'), 123456) -> 'questions', '[{"answer": 42}]'::jsonb, 'the server reads its own questions back');
+select is(public.goblinstorm_load_questions(pg_temp.id('0a'), 999), null, '... and nothing for a seed that isn''t theirs');
+select ok(public.goblinstorm_claim_answer(pg_temp.id('0a'), 123456, 0, 41, 2500, 'wrong'), 'a slot is marked');
+select ok(not public.goblinstorm_claim_answer(pg_temp.id('0a'), 123456, 0, 42, 900, 'quick'), '... once: the first answer counts');
+select is(public.goblinstorm_load_questions(pg_temp.id('0a'), 123456) #>> '{answers,0,mark}', 'wrong', '... and it keeps the first mark');
+select ok(public.record_goblinstorm_run(pg_temp.id('0a'), 123456, '4x600', '[0,1]', pg_temp.summary(30, true, array['blades'])), 'a run is saved');
+select ok(not public.record_goblinstorm_run(pg_temp.id('0a'), 123456, '4x600', '[0,1]', pg_temp.summary(30, true, array['blades'])), '... once');
+select is(public.goblinstorm_load(pg_temp.id('0a')), '{"gold": 30, "shop": {}, "heroes": [], "bosses": [0]}'::jsonb, 'the save has the gold and the boss');
+select ok(not public.goblinstorm_claim_answer(pg_temp.id('0a'), 123456, 1, 42, 900, 'right'), 'an ended run takes no more answers');
+select pg_temp.reset();
+select is((select outcome || ':' || gold || ':' || array_to_string(evolutions, ',') from public.goblinstorm_runs where player = pg_temp.id('0a')),
+  'won:30:blades', 'the run row keeps what the replay said');
+
+select * from finish();
+rollback;

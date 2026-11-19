@@ -7,7 +7,7 @@
  */
 import { useState, type ReactNode } from 'react';
 import { HEROES, MAPS, UNLOCK_WORDS, WEAPONS, type HeroDef } from '../../../shared/goblinstorm/config';
-import type { GoblinStormBackend, StartReply } from './backend';
+import { GoblinStormError, type GoblinStormBackend, type StartReply } from './backend';
 import { HubButtons } from './HubButtons';
 import { HERO_ICON, MAP_ICON, WEAPON_ICON } from './look';
 import { PlayScreen, type RunEnd } from './PlayScreen';
@@ -52,8 +52,9 @@ export function GoblinStormGame({ backend, extra }: { backend: GoblinStormBacken
       setMapIndex(i);
       setRun(reply);
       setScreen('play');
-    } catch {
-      setError("Couldn't start a run. Try again.");
+    } catch (e) {
+      // The server's own words when it said no ("All done for today. See you tomorrow!").
+      setError(e instanceof GoblinStormError ? e.message : "Couldn't start a run. Try again.");
     } finally {
       setBusy(false);
     }

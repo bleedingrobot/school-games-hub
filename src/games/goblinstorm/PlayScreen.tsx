@@ -5,7 +5,7 @@
  * server can replay exactly the same run (shared/goblinstorm/replay.ts).
  */
 import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
-import { BOSS_AT, MINIBOSS_AT, PASSIVES, QUESTIONS_PER_RUN, RUN_STEPS, STEPS_PER_SECOND, WEAPONS, gemsToNext, type HeroDef, type MapDef, type WeaponId } from '../../../shared/goblinstorm/config';
+import { BOSS_AT, MINIBOSS_AT, PASSIVES, QUESTIONS_PER_RUN, RUN_STEPS, STEPS_PER_SECOND, WEAPONS, gemsToNext, questionSlot, type HeroDef, type MapDef, type WeaponId } from '../../../shared/goblinstorm/config';
 import { applyPick, makeOffer, newRun, stepRun, waiting, type RunState, type Upgrade } from '../../../shared/goblinstorm/engine';
 import { choicesFor, encodeSteering } from '../../../shared/goblinstorm/replay';
 import { STILL } from '../../../shared/goblinstorm/trig';
@@ -90,11 +90,11 @@ export function PlayScreen({ backend, start, hero, map, onEnd }: {
     bannerTimer.current = setTimeout(() => setBanner(null), 3200);
   };
 
-  /** The next waiting level-up: its question if there is one, else straight to 3 cards. */
+  /** The next waiting level-up: its question if it asks one (every third), else straight to 3 cards. */
   const beginLevelUp = () => {
     const g = G.current as Game;
-    const slot = g.s.levelUps;
-    const q = slot < QUESTIONS_PER_RUN ? start.questions[slot] : undefined;
+    const slot = questionSlot(g.s.levelUps);
+    const q = slot !== null && slot < QUESTIONS_PER_RUN ? start.questions[slot] : undefined;
     markRef.current = null;
     if (q) {
       g.stage = 'ask';

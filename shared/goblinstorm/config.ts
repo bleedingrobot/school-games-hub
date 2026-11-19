@@ -45,8 +45,17 @@ export const MAX_WEAPONS = 4;
 export const MAX_PASSIVES = 4;
 export const WEAPON_LEVELS = 5;
 export const PASSIVE_LEVELS = 5;
+/**
+ * Only every third level-up asks a maths question (James, 19 Nov 2026: one at every level-up was too many to play). The
+ * others go straight to the "right" 3 cards. About 6 to 8 questions a run.
+ */
+export const ASK_EVERY = 3;
+/** The question slot a level-up asks (level-ups 3, 6, 9 … ask slots 0, 1, 2 …), or null for a level-up with no question. */
+export function questionSlot(levelUp: number): number | null {
+  return levelUp % ASK_EVERY === ASK_EVERY - 1 ? (levelUp - (ASK_EVERY - 1)) / ASK_EVERY : null;
+}
 /** Level-up questions kept per run; past this a level-up gives the "right" 3 choices without a question. */
-export const QUESTIONS_PER_RUN = 40;
+export const QUESTIONS_PER_RUN = 14;
 export const CHOICES = { wrong: 2, right: 3, quick: 4 } as const;
 
 // ---------------------------------------------------------------- weapons

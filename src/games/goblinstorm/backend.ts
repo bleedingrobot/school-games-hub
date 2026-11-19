@@ -1,7 +1,7 @@
 /**
- * What the Goblin Storm screens need from a server (docs/GOBLINSTORM-PLAN.md, "Server"). Stage 2 only has the stand-in
- * below: it lives in the browser, uses a fixed pretend focus and never calls the live site. Stage 3 adds the real
- * function, which makes and marks the questions (way A) and replays the run itself.
+ * What the Goblin Storm screens need from a server (docs/GOBLINSTORM-PLAN.md, "Server"). The real one is the
+ * `goblinstorm` function (liveBackend.ts), which makes and marks the questions (way A) and replays the run itself. The
+ * stand-in below is for the preview: it lives in the browser, uses a fixed pretend focus and never calls the live site.
  */
 import { CHOICES, HEROES, MAPS, QUESTIONS_PER_RUN, type HeroId } from '../../../shared/goblinstorm/config';
 import { replayRun, choicesFor, decodeSteering } from '../../../shared/goblinstorm/replay';
@@ -11,7 +11,9 @@ import { quickMsForPack } from '../../../shared/maths/config';
 import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRandom, type PublicQuestion } from '../../../shared/maths/serverQuestions';
 import type { Question } from '../../../shared/maths/skillPack';
 
-export type Mark = 'wrong' | 'right' | 'quick';
+import { factText, type Mark } from '../../../shared/goblinstorm/server';
+
+export { factText, type Mark };
 
 export interface StartReply {
   seed: number;
@@ -34,11 +36,6 @@ export interface GoblinStormBackend {
 
 /** The preview's pretend focus: the times tables, as if the teacher had set them. */
 export const PREVIEW_FOCUS: MathsFocus = { ...AUTO_FOCUS, source: 'teacher-class', skills: ['times-tables'], onlyThese: false };
-
-/** A whole fact with its answer in place of the '?': "6 × 7 = 42". */
-export function factText(parts: readonly string[], answer: number): string {
-  return parts.some((p) => p.includes('?')) ? parts.map((p) => p.replace('?', String(answer))).join(' ') : `${parts.join(' ')} = ${answer}`;
-}
 
 interface Kept { hero: HeroId; map: number; questions: Question[]; marks: (Mark | null)[] }
 
@@ -75,5 +72,31 @@ export function standInBackend(focus: MathsFocus = PREVIEW_FOCUS, multipleChoice
       const r = replayRun({ setup: { seed, hero, map, shop: {} }, steering: dirs, picks, choices });
       return { valid: r.valid, summary: r.summary };
     },
+  };
+}
+
+/** A refusal from the server, with its words for the pupil and its code ('done-today', 'locked', 'game-off' …). */
+export class GoblinStormError extends Error {
+  constructor(message: string, readonly code?: string) {
+    super(message);
+  }
+}
+
+type Send = (body: Record<string, unknown>) => Promise<{ status: number; body: Record<string, unknown> }>;
+
+/** The screens' backend over any server that answers like the `goblinstorm` function (shared/goblinstorm/server.ts). */
+export function fromServer(send: Send): GoblinStormBackend {
+  async function ask(body: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const r = await send(body);
+    if (r.status === 200) return r.body;
+    throw new GoblinStormError(
+      typeof r.body.error === 'string' ? r.body.error : 'Something went wrong. Please try again soon.',
+      typeof r.body.code === 'string' ? r.body.code : undefined,
+    );
+  }
+  return {
+    start: async (hero, map) => (await ask({ action: 'start', hero, map })) as unknown as StartReply,
+    answer: async (seed, slot, value, ms) => (await ask({ action: 'answer', seed, slot, value, ms })) as unknown as AnswerReply,
+    finish: async (seed, steering, picks) => (await ask({ action: 'finish', seed, steering, picks })) as unknown as FinishReply,
   };
 }

@@ -2,6 +2,7 @@
  * A simple Goblin Storm player for the tests and the balance sim: it runs away from the monsters close by and always
  * takes the first card (evolutions come first). Not clever, so a run it survives is one a pupil can survive.
  */
+import { CHOICES, questionSlot } from './config';
 import { applyPick, makeOffer, newRun, stepRun, waiting, type RunSetup, type RunState } from './engine';
 import { DIR_X, DIR_Y, DIRECTIONS, STILL } from './trig';
 
@@ -29,7 +30,7 @@ export function botDirection(s: RunState): number {
 
 export interface BotRun { state: RunState; steering: number[]; picks: number[]; choices: number[] }
 
-/** Plays a whole run. `choiceFor(slot)` says how many cards each level-up earns (default: 3, a right answer). */
+/** Plays a whole run. `choiceFor(slot)` says how many cards each level-up question earns (default: 3, a right answer). */
 export function botRun(setup: RunSetup, choiceFor: (slot: number) => number = () => 3, maxSteps = Infinity): BotRun {
   const s = newRun(setup);
   const steering: number[] = [];
@@ -37,8 +38,9 @@ export function botRun(setup: RunSetup, choiceFor: (slot: number) => number = ()
   const choices: number[] = [];
   while (s.outcome === 'running' && steering.length < maxSteps) {
     if (waiting(s)) {
-      const c = choiceFor(s.levelUps);
-      choices.push(c);
+      const slot = questionSlot(s.levelUps);
+      const c = slot === null ? CHOICES.right : choiceFor(slot);
+      if (slot !== null) choices.push(c);
       makeOffer(s, c);
       picks.push(0);
       applyPick(s, 0);
