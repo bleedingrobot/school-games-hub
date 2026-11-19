@@ -12,6 +12,7 @@ import { coordText, makeGalaxy, type Galaxy } from '../../../shared/trader/galax
 import type { NewsItem } from '../../../shared/trader/news';
 import { schoolPushes } from '../../../shared/trader/priceGuide';
 import { runPlan } from '../../../shared/trader/plan';
+import { HoldView } from './HoldView';
 import { applyBatch, type Action, type Game, type Mark, type Settings } from '../../../shared/trader/server';
 import { emptyDesign, type SystemDesign } from '../../../shared/trader/system';
 import { type ApiResult, type Loaded, type MoveReply, type TraderApi } from '../../data/trader';
@@ -595,6 +596,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   const gain = upgrade && galaxy && t ? upgradeGain(galaxy, t, upgrade, allLines) : null;
   const suggest = upgrade && bolt ? { target: upgrade.target, why: upgrade.kind === 'pod' ? `${gain ?? upgrade.why}` : `${upgrade.why}${gain ? ` ${gain}.` : ''}` } : null;
 
+  const marketRun = t && marketPlan?.some((n) => n !== 0) ? runPlan(t, marketPlan) : null;
+  const marketAfter = marketRun?.ok ? marketRun.out.state : null;
   const playing = phase.k !== 'title';
   const panelBusy = busy || asking || phase.k === 'warp';
   const tabs: [Tab, string][] = [['trade', 'Trade'], ['ship', 'Ship'], ['bank', 'Bank'], ['map', 'Star chart'], ...(forgeOn ? [['forge', '🌟 Forge'], ['gallery', '🌌 Gallery']] as [Tab, string][] : [])];
@@ -627,6 +630,12 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
       ) : (
         <>
           <Hud goal={forgeOn ? goalOf(design, t.credits, t.moon) : null} t={t} jumpsPerDay={loaded.settings.jumpsPerDay} unlimited={loaded.settings.unlimited === true} planet={`${here.name} ${coordText(here)}`} government={GOVERNMENTS[here.government].name} onExit={onExit} help={helpButton} helpOpen={helpOpen} onHelp={() => (helpOpen ? closeHelp() : setHelpOpen(true))} captain={game?.captain} onCaptain={phase.k === 'planet' && !pending ? () => setPicking(true) : undefined} />
+          {phase.k === 'planet' && !pending && tab === 'trade' && (
+            // On a wide screen the hold sits over the planet, on the right (the market's own copy is hidden by CSS).
+            <div className="st-holdside">
+              <HoldView t={t} after={marketAfter} />
+            </div>
+          )}
           <div className={`st-main ${phase.k === 'planet' && !pending && (tab === 'map' || tab === 'forge' || tab === 'gallery') ? 'st-main--wide' : ''} ${phase.k === 'planet' && !pending && tab === 'forge' ? 'st-main--forge' : ''}`}>
             {phase.k === 'planet' && !pending && (
               <>

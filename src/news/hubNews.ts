@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'trader-hold-2026-11-20',
+    date: '2026-11-20',
+    emoji: '🚀',
+    title: 'Star Trader: see your hold',
+    text: 'In the market your ship has a box for every hold. Watch them fill up with what you buy!',
+    game: 'trader',
+  },
+  {
     id: 'goblinstorm-hero-powers-2026-11-20',
     date: '2026-11-20',
     emoji: '🧙',
