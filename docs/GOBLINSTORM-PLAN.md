@@ -2,7 +2,7 @@
 
 *Name **Goblin Storm** (James picked it, 19 Nov 2026; id `goblinstorm`, CSS prefix `.gs-`). James, 19 Nov 2026: pupils want a "bullet heaven" game: "big attacks that can wipe out the entire screen, less damage shields, spinning blades, amazing graphics especially the attacks and lots of different characters to unlock that have different speeds and stuff." It is our own game, with our own name, heroes, monsters, maps and art. The genre (steer only, attacks fire by themselves, level-ups, evolving weapons) isn't owned by anyone; nothing is copied from any one game.*
 
-**Status: LIVE 19 Nov 2026 for every class. Go-live PR #622 (migration `20261119000900`, hub entry, Unlimited today, Progress column, What's new) and switch PR #623 (`GOBLINSTORM_ON = true`). Art (stage 8) painted and in. Players tracker still to add (see Went live). Bonus Turns (class quest reward) doesn't cover Goblin Storm yet.**
+**Status: LIVE 19 Nov 2026 for every class. Go-live PR #622 (migration `20261119000900`, hub entry, Unlimited today, Progress column, What's new) and switch PR #623 (`GOBLINSTORM_ON = true`). Art (stage 8) painted and in. Players tracker still to add (see Went live). Bonus Turns (class quest reward) doesn't cover Goblin Storm yet. 20 Nov 2026: heroes slower to unlock (Wizard level 35, Barbarian 20,000 monsters, Rogue 120 s unhit) and the shop half as dear again (150/300/500/800/1,200, 15,700 in all), migration `20261120000100`.**
 
 ## The short version
 
@@ -235,7 +235,7 @@ After **every** merge: the Status line here, project memory, and the next prompt
   - Every map already had its own mini-boss and boss look (stage 2). A browser check at 1:32 and 2:32 on each map saw each one drawn, with its own banner.
 - **Unlocks on the server:**
   - `newUnlocks(save, summary, map)` in `server.ts` (the function's finish reply).
-  - The same rules in `record_goblinstorm_run`, from the replay's summary only, never from the browser: Wizard level ≥ 20; Barbarian 5,000 monsters in total (new `goblinstorm_saves.kills`); Cleric beats map 1's boss; Rogue 90 s unhit; Frost Witch beats map 4's boss; Dragon Kid 3 different evolutions. Heroes are never added twice.
+  - The same rules in `record_goblinstorm_run`, from the replay's summary only, never from the browser: Wizard level ≥ 20; Barbarian 5,000 monsters (raised 20 Nov: see Status) in total (new `goblinstorm_saves.kills`); Cleric beats map 1's boss; Rogue 90 s unhit; Frost Witch beats map 4's boss; Dragon Kid 3 different evolutions. Heroes are never added twice.
   - `my_goblinstorm()`: authenticated, the caller's own save only (gold, shop, heroes, bosses, codex, runs, kills, runs today). It is on the security allow-list.
 - **Fixes:**
   - The runs table's outcome check said `'fell'`, but the engine says `'lost'`. It now allows `'lost'`.

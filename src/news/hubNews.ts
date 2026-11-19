@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'goblinstorm-harder-2026-11-20',
+    date: '2026-11-20',
+    emoji: '🦸',
+    title: 'Goblin Storm heroes are a bigger quest',
+    text: 'Wizard, Barbarian and Rogue take longer to unlock. Shop upgrades cost more gold.',
+    game: 'goblinstorm',
+  },
+  {
     id: 'goblinstorm-new-2026-11-19',
     date: '2026-11-19',
     emoji: '🌪️',
