@@ -38,7 +38,7 @@ export const BASE_MAGNET = 1.6;
 
 /** Gems needed to go from level n to n + 1. */
 export function gemsToNext(level: number): number {
-  return 3 + level * 2;
+  return 2 + level;
 }
 
 export const MAX_WEAPONS = 4;
@@ -192,15 +192,20 @@ export interface HeroDef {
   secret?: boolean;
 }
 
-export type UnlockId = 'free' | 'level15' | 'kills1000' | 'boss1' | 'nohit60' | 'boss4' | 'evolve3';
+export type UnlockId = 'free' | 'level' | 'kills' | 'boss1' | 'nohit' | 'boss4' | 'evolve3';
+/**
+ * The numbers in the unlocks (balance sim, stage 4: with 15 to 25 level-ups a run, level 15 and 1,000 monsters came on
+ * the first day). record_goblinstorm_run in migration 20261119000900 uses the same numbers: change both together.
+ */
+export const UNLOCK_AT = { level: 20, kills: 5000, noHitSeconds: 90, evolutions: 3 } as const;
 export const UNLOCK_WORDS: Record<UnlockId, string> = {
   free: 'Ready to play',
-  level15: 'Reach level 15 in one run',
-  kills1000: 'Beat 1,000 monsters in total',
+  level: `Reach level ${UNLOCK_AT.level} in one run`,
+  kills: `Beat ${UNLOCK_AT.kills.toLocaleString('en-NZ')} monsters in total`,
   boss1: 'Beat the Goblin King',
-  nohit60: 'Survive 60 seconds without being hit',
+  nohit: `Survive ${UNLOCK_AT.noHitSeconds} seconds without being hit`,
   boss4: 'Beat the Ice Dragon',
-  evolve3: 'Evolve 3 different weapons in one run',
+  evolve3: `Evolve ${UNLOCK_AT.evolutions} different weapons in one run`,
 };
 
 const hero = (h: Partial<HeroDef> & Pick<HeroDef, 'id' | 'name' | 'blurb' | 'speed' | 'health' | 'weapon' | 'unlock'>): HeroDef =>
@@ -209,10 +214,10 @@ const hero = (h: Partial<HeroDef> & Pick<HeroDef, 'id' | 'name' | 'blurb' | 'spe
 export const HEROES: HeroDef[] = [
   hero({ id: 'knight', name: 'Knight', blurb: 'Slow but very tough.', speed: 3.0, health: 140, weapon: 'blades', armour: 2, unlock: 'free' }),
   hero({ id: 'ranger', name: 'Ranger', blurb: 'Quick, with a long gem pull.', speed: 4.2, health: 80, weapon: 'arrows', magnet: 1.3, unlock: 'free' }),
-  hero({ id: 'wizard', name: 'Wizard', blurb: 'Bigger spells.', speed: 3.5, health: 80, weapon: 'fireball', area: 1.2, unlock: 'level15' }),
-  hero({ id: 'barbarian', name: 'Barbarian', blurb: 'Hits harder when hurt.', speed: 3.5, health: 120, weapon: 'axes', rage: 0.5, unlock: 'kills1000' }),
+  hero({ id: 'wizard', name: 'Wizard', blurb: 'Bigger spells.', speed: 3.5, health: 80, weapon: 'fireball', area: 1.2, unlock: 'level' }),
+  hero({ id: 'barbarian', name: 'Barbarian', blurb: 'Hits harder when hurt.', speed: 3.5, health: 120, weapon: 'axes', rage: 0.5, unlock: 'kills' }),
   hero({ id: 'cleric', name: 'Cleric', blurb: 'Heals as they go.', speed: 3.1, health: 100, weapon: 'aura', regen: 1, unlock: 'boss1' }),
-  hero({ id: 'rogue', name: 'Rogue', blurb: 'The fastest, with lucky hits.', speed: 4.6, health: 75, weapon: 'lightning', crit: 0.2, unlock: 'nohit60' }),
+  hero({ id: 'rogue', name: 'Rogue', blurb: 'The fastest, with lucky hits.', speed: 4.6, health: 75, weapon: 'lightning', crit: 0.2, unlock: 'nohit' }),
   hero({ id: 'witch', name: 'Frost Witch', blurb: 'Monsters near her slow down.', speed: 3.5, health: 95, weapon: 'nova', chill: 0.15, unlock: 'boss4' }),
   hero({ id: 'dragonkid', name: 'Dragon Kid', blurb: 'Tough scales, hot breath.', speed: 3.6, health: 100, weapon: 'fireball', armour: 1, might: 1.1, unlock: 'evolve3', secret: true }),
 ];
@@ -245,15 +250,22 @@ export interface MapDef {
 const m = (id: string, name: string, health: number, speed: number, damage: number, radius: number, gems: number): MonsterDef => ({ id, name, health, speed, damage, radius, gems });
 
 export const MAPS: MapDef[] = [
-  { id: 'castle', name: 'Castle Fields', tier: 1, monsters: [m('goblin', 'Goblin', 8, 1.9, 6, 0.4, 1), m('bat', 'Bat', 5, 3.0, 4, 0.3, 1), m('slime', 'Big Slime', 30, 1.2, 10, 0.6, 3), m('troll', 'Troll', 700, 1.5, 16, 1.1, 40), m('goblinking', 'Goblin King', 1600, 1.4, 22, 1.4, 0)] },
-  { id: 'forest', name: 'Dark Forest', tier: 1.4, monsters: [m('mushroom', 'Angry Mushroom', 8, 1.8, 6, 0.4, 1), m('wolf', 'Wolf', 6, 3.2, 5, 0.4, 1), m('spider', 'Spider', 30, 1.4, 10, 0.6, 3), m('giantspider', 'Giant Spider', 700, 1.7, 16, 1.2, 40), m('ogre', 'Forest Ogre', 1600, 1.4, 22, 1.5, 0)] },
-  { id: 'graveyard', name: 'Haunted Graveyard', tier: 1.9, monsters: [m('skeleton', 'Skeleton', 8, 1.9, 6, 0.4, 1), m('ghost', 'Ghost', 5, 3.0, 5, 0.4, 1), m('zombie', 'Zombie', 34, 1.1, 11, 0.6, 3), m('boneknight', 'Bone Knight', 700, 1.6, 18, 1.1, 40), m('lich', 'Lich', 1600, 1.4, 24, 1.3, 0)] },
-  { id: 'peaks', name: 'Frozen Peaks', tier: 2.5, monsters: [m('imp', 'Ice Imp', 8, 2.0, 6, 0.4, 1), m('frostwolf', 'Frost Wolf', 6, 3.3, 5, 0.4, 1), m('yeti', 'Yeti', 34, 1.2, 12, 0.7, 3), m('yetichief', 'Yeti Chief', 700, 1.6, 18, 1.2, 40), m('icedragon', 'Ice Dragon', 1600, 1.5, 26, 1.6, 0)] },
-  { id: 'lava', name: 'Lava Mines', tier: 3.2, monsters: [m('sprite', 'Fire Sprite', 8, 2.1, 7, 0.35, 1), m('slug', 'Lava Slug', 6, 2.8, 6, 0.4, 1), m('magma', 'Magma Golem', 36, 1.1, 13, 0.7, 3), m('golem', 'Golem', 700, 1.5, 20, 1.3, 40), m('firedragon', 'Fire Dragon', 1600, 1.5, 28, 1.7, 0)] },
+  { id: 'castle', name: 'Castle Fields', tier: 1, monsters: [m('goblin', 'Goblin', 8, 1.9, 6, 0.4, 1), m('bat', 'Bat', 5, 3.0, 4, 0.3, 1), m('slime', 'Big Slime', 30, 1.2, 10, 0.6, 3), m('troll', 'Troll', 350, 1.5, 16, 1.1, 40), m('goblinking', 'Goblin King', 750, 1.4, 22, 1.4, 0)] },
+  { id: 'forest', name: 'Dark Forest', tier: 1.35, monsters: [m('mushroom', 'Angry Mushroom', 8, 1.8, 6, 0.4, 1), m('wolf', 'Wolf', 6, 3.2, 5, 0.4, 1), m('spider', 'Spider', 30, 1.4, 10, 0.6, 3), m('giantspider', 'Giant Spider', 350, 1.7, 16, 1.2, 40), m('ogre', 'Forest Ogre', 750, 1.4, 22, 1.5, 0)] },
+  { id: 'graveyard', name: 'Haunted Graveyard', tier: 1.8, monsters: [m('skeleton', 'Skeleton', 8, 1.9, 6, 0.4, 1), m('ghost', 'Ghost', 5, 3.0, 5, 0.4, 1), m('zombie', 'Zombie', 34, 1.1, 11, 0.6, 3), m('boneknight', 'Bone Knight', 350, 1.6, 18, 1.1, 40), m('lich', 'Lich', 750, 1.4, 24, 1.3, 0)] },
+  { id: 'peaks', name: 'Frozen Peaks', tier: 2.3, monsters: [m('imp', 'Ice Imp', 8, 2.0, 6, 0.4, 1), m('frostwolf', 'Frost Wolf', 6, 3.3, 5, 0.4, 1), m('yeti', 'Yeti', 34, 1.2, 12, 0.7, 3), m('yetichief', 'Yeti Chief', 350, 1.6, 18, 1.2, 40), m('icedragon', 'Ice Dragon', 750, 1.5, 26, 1.6, 0)] },
+  { id: 'lava', name: 'Lava Mines', tier: 2.8, monsters: [m('sprite', 'Fire Sprite', 8, 2.1, 7, 0.35, 1), m('slug', 'Lava Slug', 6, 2.8, 6, 0.4, 1), m('magma', 'Magma Golem', 36, 1.1, 13, 0.7, 3), m('golem', 'Golem', 350, 1.5, 20, 1.3, 40), m('firedragon', 'Fire Dragon', 750, 1.5, 28, 1.7, 0)] },
 ];
 export function mapByIndex(i: number): MapDef | undefined {
   return MAPS[i];
 }
+
+/**
+ * A gentle start: for the first this-many seconds monsters do only this share of their damage (stage 4 sim: a Ranger
+ * standing still on Castle Fields used to fall at 0:14).
+ */
+export const WARM_UP_SECONDS = 30;
+export const WARM_UP_DAMAGE = 0.5;
 
 /** Monster health grows during a run: × (1 + seconds / this). */
 export const HEALTH_GROWTH_SECONDS = 120;
@@ -264,8 +276,8 @@ export const HEALTH_GROWTH_SECONDS = 120;
  */
 export interface Wave { from: number; to: number; kind: 0 | 1 | 2; every: number; count: number }
 export const WAVES: Wave[] = [
-  { from: 0, to: 40, kind: 0, every: 45, count: 2 },
-  { from: 15, to: 70, kind: 1, every: 70, count: 3 },
+  { from: 2, to: 40, kind: 0, every: 60, count: 2 },
+  { from: 25, to: 70, kind: 1, every: 70, count: 3 },
   { from: 40, to: 180, kind: 0, every: 30, count: 3 },
   { from: 60, to: 180, kind: 2, every: 100, count: 2 },
   { from: 95, to: 180, kind: 1, every: 45, count: 4 },
@@ -294,7 +306,7 @@ export const SHOP: Record<ShopId, { name: string; blurb: string; step: number }>
 export const SHOP_IDS = Object.keys(SHOP) as ShopId[];
 export const SHOP_LEVELS = 5;
 export const SHOP_ARMOUR_MAX = 3;
-export const SHOP_COSTS = [20, 40, 70, 110, 160];
+export const SHOP_COSTS = [100, 200, 350, 550, 800];
 export type ShopLevels = Partial<Record<ShopId, number>>;
 
 /** Monster damage grows with the map's tier more gently than health: × (1 + (tier − 1) × this). */

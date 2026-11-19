@@ -17,7 +17,7 @@ import { quickMsForPack } from '../maths/config';
 import { packIdOfKey } from '../maths/ladder';
 import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
-import { CHOICES, HEROES, MAPS, QUESTIONS_PER_RUN, STEPS_PER_SECOND, type HeroId, type ShopLevels } from './config';
+import { CHOICES, HEROES, MAPS, QUESTIONS_PER_RUN, STEPS_PER_SECOND, type HeroId, type ShopLevels, type UnlockId, UNLOCK_AT } from './config';
 import type { RunSummary } from './engine';
 import { choicesFor, decodeSteering, replayRun } from './replay';
 
@@ -40,6 +40,8 @@ export interface Save {
   heroes: HeroId[];
   /** Map indexes whose boss has been beaten. */
   bosses: number[];
+  /** Monsters beaten in all finished runs (for the Barbarian). */
+  kills: number;
 }
 
 /** One answered level-up question: the value given, how long it took and its mark. */
@@ -137,6 +139,30 @@ export const heroOpen = (save: Save, hero: HeroId): boolean =>
 
 /** Is this map open? The first always; each next one once the boss before it is beaten. */
 export const mapOpen = (save: Save, map: number): boolean => map === 0 || save.bosses.includes(map - 1);
+
+/** The map whose boss opens the Cleric (the Goblin King) and the Frost Witch (the Ice Dragon). */
+export const UNLOCK_BOSS_MAP = { boss1: 0, boss4: 3 } as const;
+
+/**
+ * Has this run (the replay's summary, on map `map`) met this unlock? `killsBefore` is the save's total before the
+ * run. The database's record_goblinstorm_run uses the same rules (migration 20261119000900): keep them together.
+ */
+export function unlockMet(unlock: UnlockId, run: Pick<RunSummary, 'level' | 'kills' | 'bossBeaten' | 'evolved' | 'longestNoHitSeconds'>, map: number, killsBefore: number): boolean {
+  switch (unlock) {
+    case 'free': return true;
+    case 'level': return run.level >= UNLOCK_AT.level;
+    case 'kills': return killsBefore + run.kills >= UNLOCK_AT.kills;
+    case 'boss1': return run.bossBeaten && map === UNLOCK_BOSS_MAP.boss1;
+    case 'nohit': return run.longestNoHitSeconds >= UNLOCK_AT.noHitSeconds;
+    case 'boss4': return run.bossBeaten && map === UNLOCK_BOSS_MAP.boss4;
+    case 'evolve3': return run.evolved.length >= UNLOCK_AT.evolutions;
+  }
+}
+
+/** Heroes this finished run unlocks that the save doesn't have yet, in the order of HEROES. */
+export function newUnlocks(save: Save, run: Pick<RunSummary, 'level' | 'kills' | 'bossBeaten' | 'evolved' | 'longestNoHitSeconds'>, map: number): HeroId[] {
+  return HEROES.filter((h) => h.unlock !== 'free' && !save.heroes.includes(h.id) && unlockMet(h.unlock, run, map, save.kills)).map((h) => h.id);
+}
 
 /** Cards for each level-up: a slot with a question uses its mark (unanswered: wrong); past the last question, right. */
 export function choicesOf(run: Pick<KeptRun, 'questions' | 'answers'>): number[] {
@@ -241,11 +267,12 @@ export async function handleGoblinStorm(services: GoblinStormServices, player: s
     const kept = await services.finish(player, seed, { steering, picks: picks as number[], summary: replay.summary });
     if (kept === 'busy') return busy();
     if (!kept) return no(409, 'That run has already ended.', 'ended');
-    return ok({ valid: true, summary: replay.summary });
+    // The database saved the unlocks by the same rules; this only tells the pupil which are new.
+    return ok({ valid: true, summary: replay.summary, unlocked: newUnlocks(save, replay.summary, run.map) });
   }
 
   return unreadable();
 }
 
 /** A pupil who has never played. */
-export const freshSave = (): Save => ({ gold: 0, shop: {}, heroes: [], bosses: [] });
+export const freshSave = (): Save => ({ gold: 0, shop: {}, heroes: [], bosses: [], kills: 0 });

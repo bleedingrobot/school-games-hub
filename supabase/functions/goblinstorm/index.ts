@@ -8308,7 +8308,7 @@ const BOSS_WIPE_SHARE = .25;
 const BASE_MAGNET = 1.6;
 /** Gems needed to go from level n to n + 1. */
 function gemsToNext(level) {
-	return 3 + level * 2;
+	return 2 + level;
 }
 /** The question slot a level-up asks (level-ups 3, 6, 9 … ask slots 0, 1, 2 …), or null for a level-up with no question. */
 function questionSlot(levelUp) {
@@ -8555,6 +8555,17 @@ const PASSIVE_STEP = {
 	magnet: .25,
 	heart: 20
 };
+/**
+* The numbers in the unlocks (balance sim, stage 4: with 15 to 25 level-ups a run, level 15 and 1,000 monsters came on
+* the first day). record_goblinstorm_run in migration 20261119000900 uses the same numbers: change both together.
+*/
+const UNLOCK_AT = {
+	level: 20,
+	kills: 5e3,
+	noHitSeconds: 90,
+	evolutions: 3
+};
+`${UNLOCK_AT.level}`, `${UNLOCK_AT.kills.toLocaleString("en-NZ")}`, `${UNLOCK_AT.noHitSeconds}`, `${UNLOCK_AT.evolutions}`;
 const hero = (h) => ({
 	armour: 0,
 	might: 1,
@@ -8595,7 +8606,7 @@ const HEROES = [
 		health: 80,
 		weapon: "fireball",
 		area: 1.2,
-		unlock: "level15"
+		unlock: "level"
 	}),
 	hero({
 		id: "barbarian",
@@ -8605,7 +8616,7 @@ const HEROES = [
 		health: 120,
 		weapon: "axes",
 		rage: .5,
-		unlock: "kills1000"
+		unlock: "kills"
 	}),
 	hero({
 		id: "cleric",
@@ -8625,7 +8636,7 @@ const HEROES = [
 		health: 75,
 		weapon: "lightning",
 		crit: .2,
-		unlock: "nohit60"
+		unlock: "nohit"
 	}),
 	hero({
 		id: "witch",
@@ -8668,69 +8679,70 @@ const MAPS = [
 			m("goblin", "Goblin", 8, 1.9, 6, .4, 1),
 			m("bat", "Bat", 5, 3, 4, .3, 1),
 			m("slime", "Big Slime", 30, 1.2, 10, .6, 3),
-			m("troll", "Troll", 700, 1.5, 16, 1.1, 40),
-			m("goblinking", "Goblin King", 1600, 1.4, 22, 1.4, 0)
+			m("troll", "Troll", 350, 1.5, 16, 1.1, 40),
+			m("goblinking", "Goblin King", 750, 1.4, 22, 1.4, 0)
 		]
 	},
 	{
 		id: "forest",
 		name: "Dark Forest",
-		tier: 1.4,
+		tier: 1.35,
 		monsters: [
 			m("mushroom", "Angry Mushroom", 8, 1.8, 6, .4, 1),
 			m("wolf", "Wolf", 6, 3.2, 5, .4, 1),
 			m("spider", "Spider", 30, 1.4, 10, .6, 3),
-			m("giantspider", "Giant Spider", 700, 1.7, 16, 1.2, 40),
-			m("ogre", "Forest Ogre", 1600, 1.4, 22, 1.5, 0)
+			m("giantspider", "Giant Spider", 350, 1.7, 16, 1.2, 40),
+			m("ogre", "Forest Ogre", 750, 1.4, 22, 1.5, 0)
 		]
 	},
 	{
 		id: "graveyard",
 		name: "Haunted Graveyard",
-		tier: 1.9,
+		tier: 1.8,
 		monsters: [
 			m("skeleton", "Skeleton", 8, 1.9, 6, .4, 1),
 			m("ghost", "Ghost", 5, 3, 5, .4, 1),
 			m("zombie", "Zombie", 34, 1.1, 11, .6, 3),
-			m("boneknight", "Bone Knight", 700, 1.6, 18, 1.1, 40),
-			m("lich", "Lich", 1600, 1.4, 24, 1.3, 0)
+			m("boneknight", "Bone Knight", 350, 1.6, 18, 1.1, 40),
+			m("lich", "Lich", 750, 1.4, 24, 1.3, 0)
 		]
 	},
 	{
 		id: "peaks",
 		name: "Frozen Peaks",
-		tier: 2.5,
+		tier: 2.3,
 		monsters: [
 			m("imp", "Ice Imp", 8, 2, 6, .4, 1),
 			m("frostwolf", "Frost Wolf", 6, 3.3, 5, .4, 1),
 			m("yeti", "Yeti", 34, 1.2, 12, .7, 3),
-			m("yetichief", "Yeti Chief", 700, 1.6, 18, 1.2, 40),
-			m("icedragon", "Ice Dragon", 1600, 1.5, 26, 1.6, 0)
+			m("yetichief", "Yeti Chief", 350, 1.6, 18, 1.2, 40),
+			m("icedragon", "Ice Dragon", 750, 1.5, 26, 1.6, 0)
 		]
 	},
 	{
 		id: "lava",
 		name: "Lava Mines",
-		tier: 3.2,
+		tier: 2.8,
 		monsters: [
 			m("sprite", "Fire Sprite", 8, 2.1, 7, .35, 1),
 			m("slug", "Lava Slug", 6, 2.8, 6, .4, 1),
 			m("magma", "Magma Golem", 36, 1.1, 13, .7, 3),
-			m("golem", "Golem", 700, 1.5, 20, 1.3, 40),
-			m("firedragon", "Fire Dragon", 1600, 1.5, 28, 1.7, 0)
+			m("golem", "Golem", 350, 1.5, 20, 1.3, 40),
+			m("firedragon", "Fire Dragon", 750, 1.5, 28, 1.7, 0)
 		]
 	}
 ];
+const WARM_UP_DAMAGE = .5;
 const WAVES = [
 	{
-		from: 0,
+		from: 2,
 		to: 40,
 		kind: 0,
-		every: 45,
+		every: 60,
 		count: 2
 	},
 	{
-		from: 15,
+		from: 25,
 		to: 70,
 		kind: 1,
 		every: 70,
@@ -9563,7 +9575,8 @@ function hurtHero(s) {
 			}
 			return;
 		}
-		const dmg = Math.max(1, e.damage - armour(s));
+		const warm = s.t < 1800 ? WARM_UP_DAMAGE : 1;
+		const dmg = Math.max(1, e.damage * warm - armour(s));
 		h.hp -= dmg;
 		s.sinceHit = 0;
 		s.events.push({
@@ -9852,6 +9865,30 @@ function factText(parts, answer) {
 const heroOpen = (save, hero) => HEROES.some((h) => h.id === hero && (h.unlock === "free" || save.heroes.includes(hero)));
 /** Is this map open? The first always; each next one once the boss before it is beaten. */
 const mapOpen = (save, map) => map === 0 || save.bosses.includes(map - 1);
+/** The map whose boss opens the Cleric (the Goblin King) and the Frost Witch (the Ice Dragon). */
+const UNLOCK_BOSS_MAP = {
+	boss1: 0,
+	boss4: 3
+};
+/**
+* Has this run (the replay's summary, on map `map`) met this unlock? `killsBefore` is the save's total before the
+* run. The database's record_goblinstorm_run uses the same rules (migration 20261119000900): keep them together.
+*/
+function unlockMet(unlock, run, map, killsBefore) {
+	switch (unlock) {
+		case "free": return true;
+		case "level": return run.level >= UNLOCK_AT.level;
+		case "kills": return killsBefore + run.kills >= UNLOCK_AT.kills;
+		case "boss1": return run.bossBeaten && map === UNLOCK_BOSS_MAP.boss1;
+		case "nohit": return run.longestNoHitSeconds >= UNLOCK_AT.noHitSeconds;
+		case "boss4": return run.bossBeaten && map === UNLOCK_BOSS_MAP.boss4;
+		case "evolve3": return run.evolved.length >= UNLOCK_AT.evolutions;
+	}
+}
+/** Heroes this finished run unlocks that the save doesn't have yet, in the order of HEROES. */
+function newUnlocks(save, run, map) {
+	return HEROES.filter((h) => h.unlock !== "free" && !save.heroes.includes(h.id) && unlockMet(h.unlock, run, map, save.kills)).map((h) => h.id);
+}
 /** Cards for each level-up: a slot with a question uses its mark (unanswered: wrong); past the last question, right. */
 function choicesOf(run) {
 	return Array.from({ length: 14 }, (_, i) => i < run.questions.length ? choicesFor(run.answers[String(i)]?.mark ?? "wrong") : CHOICES.right);
@@ -9989,7 +10026,8 @@ async function handleGoblinStorm(services, player, body) {
 		if (!kept) return no(409, "That run has already ended.", "ended");
 		return ok({
 			valid: true,
-			summary: replay.summary
+			summary: replay.summary,
+			unlocked: newUnlocks(save, replay.summary, run.map)
 		});
 	}
 	return unreadable();
@@ -9999,7 +10037,8 @@ const freshSave = () => ({
 	gold: 0,
 	shop: {},
 	heroes: [],
-	bosses: []
+	bosses: [],
+	kills: 0
 });
 //#endregion
 //#region shared/maths/focusResults.ts

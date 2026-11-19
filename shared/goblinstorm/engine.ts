@@ -10,7 +10,7 @@ import {
   BASE_MAGNET, BOSS_AT, DAMAGE_PER_TIER, BOSS_CHARGE, BOSS_WIPE_SHARE, CELL, DT, FAR_AWAY, GEM_PICKUP, GEM_PULL_SPEED, GOLD, GRID, HEALTH_GROWTH_SECONDS,
   HERO_RADIUS, HURT_GAP, MAX_ENEMIES, MAX_GEMS, MAX_PASSIVES, MAX_SHOTS, MAX_WEAPONS, MINIBOSS_AT, PASSIVE_IDS, PASSIVE_LEVELS,
   PASSIVE_STEP, RUN_STEPS, SEPARATE_CHECKS, SHOP, SHOP_ARMOUR_MAX, SPAWN_RING, STEPS_PER_SECOND, SWARM_SIZE, SWARMS, WAVES,
-  WEAPON_IDS, WEAPON_LEVELS, WEAPONS, WIPE_RADIUS, gemsToNext,
+  WARM_UP_DAMAGE, WARM_UP_SECONDS, WEAPON_IDS, WEAPON_LEVELS, WEAPONS, WIPE_RADIUS, gemsToNext,
   type HeroDef, type MapDef, type PassiveId, type ShopLevels, type WeaponId, type WeaponLevel,
 } from './config';
 import { makeRandom, mixSeed, type Random } from './random';
@@ -584,7 +584,8 @@ function hurtHero(s: RunState): void {
       }
       return;
     }
-    const dmg = Math.max(1, e.damage - armour(s));
+    const warm = s.t < WARM_UP_SECONDS * STEPS_PER_SECOND ? WARM_UP_DAMAGE : 1;
+    const dmg = Math.max(1, e.damage * warm - armour(s));
     h.hp -= dmg;
     s.sinceHit = 0;
     s.events.push({ k: 'hurt', damage: dmg });

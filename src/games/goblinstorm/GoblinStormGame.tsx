@@ -1,13 +1,15 @@
 /**
- * Goblin Storm's screens (docs/GOBLINSTORM-PLAN.md, stage 2): pick a hero, pick a map, the run, and the end of the run.
+ * Goblin Storm's screens (docs/GOBLINSTORM-PLAN.md): pick a hero, pick a map, the run, and the end of the run.
  * All of it sits in one full-window layer over the hub. The game only talks to the backend it is given: the stand-in
- * in the preview for now, the school's server from stage 3.
+ * in the preview, the school's server live.
  *
- * Stage 2 has no save yet, so only the free heroes and the first map are open; the rest show what opens them.
+ * What's open comes from the pupil's save (`backend.me()`): Knight and Ranger and Castle Fields at first, each other
+ * hero by its own deed and each map by beating the boss before it. The server checks both again when a run starts.
  */
-import { useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { HEROES, MAPS, UNLOCK_WORDS, WEAPONS, type HeroDef } from '../../../shared/goblinstorm/config';
-import { GoblinStormError, type GoblinStormBackend, type StartReply } from './backend';
+import { heroOpen, mapOpen } from '../../../shared/goblinstorm/server';
+import { GoblinStormError, type GoblinStormBackend, type MySave, type StartReply } from './backend';
 import { HubButtons } from './HubButtons';
 import { HERO_ICON, MAP_ICON, WEAPON_ICON } from './look';
 import { PlayScreen, type RunEnd } from './PlayScreen';
@@ -27,7 +29,7 @@ function Dots({ n, label }: { n: number; label: string }) {
   );
 }
 
-/** Which maps open: each map's boss opens the next. Stage 2 has no save, so only the first. */
+/** What opens each map after the first: the boss of the map before it. */
 const MAP_LOCK: Record<string, string> = {
   forest: 'Beat the Goblin King to open',
   graveyard: 'Beat the Forest Ogre to open',
@@ -43,6 +45,16 @@ export function GoblinStormGame({ backend, extra }: { backend: GoblinStormBacken
   const [end, setEnd] = useState<RunEnd | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [save, setSave] = useState<MySave | null>(null);
+  const [saveError, setSaveError] = useState(false);
+  /** The map this run opened, if it beat a boss for the first time. */
+  const [newMap, setNewMap] = useState<number | null>(null);
+
+  const loadSave = useCallback(() => {
+    setSaveError(false);
+    backend.me().then(setSave, () => setSaveError(true));
+  }, [backend]);
+  useEffect(loadSave, [loadSave]);
 
   const play = async (i: number) => {
     setBusy(true);
@@ -64,9 +76,20 @@ export function GoblinStormGame({ backend, extra }: { backend: GoblinStormBacken
     <div className="gs-window">
       {screen === 'hero' && (
         <Menu title="Pick your hero" extra={extra}>
+          {save && (
+            <p className="gs-menu__sub gs-progress">
+              🦸 Heroes {HEROES.filter((h) => heroOpen(save, h.id)).length}/{HEROES.length} · 👑 Bosses beaten {save.bosses.length}/{MAPS.length}
+            </p>
+          )}
+          {!save && !saveError && <p className="gs-menu__sub" role="status">Loading your save…</p>}
+          {saveError && (
+            <p className="gs-menu__error" role="alert">
+              Your save couldn't be loaded. <button type="button" className="gs-btn gs-btn--ghost" onClick={loadSave}>Try again</button>
+            </p>
+          )}
           <div className="gs-grid">
             {HEROES.map((h) => {
-              const open = h.unlock === 'free';
+              const open = save ? heroOpen(save, h.id) : false;
               const secret = h.secret && !open;
               return (
                 <button
@@ -97,13 +120,14 @@ export function GoblinStormGame({ backend, extra }: { backend: GoblinStormBacken
           <p className="gs-menu__sub">Playing as {HERO_ICON[hero.id]} {hero.name}. Survive 3 minutes. A mini-boss comes at 1:30 and the boss at 2:30: beat the boss to win!</p>
           <div className="gs-grid gs-grid--maps">
             {MAPS.map((m, i) => {
-              const open = i === 0;
+              const open = save ? mapOpen(save, i) : i === 0;
+              const beaten = save?.bosses.includes(i);
               return (
                 <button key={m.id} type="button" disabled={!open || busy} className={`gs-pick gs-pick--map gs-pick--${m.id}${open ? '' : ' gs-pick--locked'}`} onClick={() => void play(i)}>
                   <span className="gs-pick__icon" aria-hidden="true">{MAP_ICON[m.id]}</span>
                   <span className="gs-pick__name">{m.name}</span>
                   <span className="gs-pick__blurb">{m.monsters.slice(0, 3).map((x) => x.name).join(', ')}</span>
-                  <span className="gs-pick__blurb">Boss: {m.monsters[4].name}</span>
+                  <span className="gs-pick__blurb">Boss: {m.monsters[4].name}{beaten ? ' 👑 beaten' : ''}</span>
                   {!open && <span className="gs-pick__lock">🔒 {MAP_LOCK[m.id]}</span>}
                 </button>
               );
@@ -121,12 +145,18 @@ export function GoblinStormGame({ backend, extra }: { backend: GoblinStormBacken
           start={run}
           hero={hero}
           map={MAPS[mapIndex]}
-          onEnd={(e) => { setEnd(e); setScreen('end'); }}
+          onEnd={(e) => {
+            const opened = e.reply?.valid && e.reply.summary.bossBeaten && !save?.bosses.includes(mapIndex) && mapIndex + 1 < MAPS.length;
+            setNewMap(opened ? mapIndex + 1 : null);
+            setEnd(e);
+            setScreen('end');
+            loadSave();
+          }}
         />
       )}
 
       {screen === 'end' && end && (
-        <EndScreen end={end} onAgain={() => void play(mapIndex)} onMenu={() => setScreen('hero')} busy={busy} />
+        <EndScreen end={end} onAgain={() => void play(mapIndex)} onMenu={() => setScreen('hero')} busy={busy} error={error} newMap={newMap} />
       )}
     </div>
   );
@@ -157,7 +187,9 @@ const OUTCOME_WORDS = {
   running: { title: 'Run over', icon: '🚪', line: '' },
 } as const;
 
-function EndScreen({ end, onAgain, onMenu, busy }: { end: RunEnd; onAgain: () => void; onMenu: () => void; busy: boolean }) {
+function EndScreen({ end, onAgain, onMenu, busy, error, newMap }: {
+  end: RunEnd; onAgain: () => void; onMenu: () => void; busy: boolean; error: string | null; newMap: number | null;
+}) {
   const sum = end.reply?.summary;
   const words = OUTCOME_WORDS[sum?.outcome ?? 'quit'];
   const time = sum ? `${Math.floor(sum.seconds / 60)}:${String(sum.seconds % 60).padStart(2, '0')}` : '–';
@@ -183,11 +215,17 @@ function EndScreen({ end, onAgain, onMenu, busy }: { end: RunEnd; onAgain: () =>
             <div><dt>Bosses</dt><dd>{[sum.miniBeaten && end.map.monsters[3].name, sum.bossBeaten && end.map.monsters[4].name].filter(Boolean).join(', ') || 'none yet'}</dd></div>
           </dl>
         )}
+        {newMap !== null && <p className="gs-end__new">{MAP_ICON[MAPS[newMap].id]} New map open: {MAPS[newMap].name}!</p>}
+        {end.reply?.unlocked?.map((id) => {
+          const h = HEROES.find((x) => x.id === id);
+          return h ? <p key={id} className="gs-end__new">{HERO_ICON[h.id]} New hero: {h.name}!</p> : null;
+        })}
         <p className="gs-end__who">{HERO_ICON[end.hero.id]} {end.hero.name} on {MAP_ICON[end.map.id]} {end.map.name}</p>
         <div className="gs-row">
           <button type="button" className="gs-btn gs-btn--big" onClick={onAgain} disabled={busy} autoFocus>Play again</button>
           <button type="button" className="gs-btn gs-btn--ghost" onClick={onMenu}>Change hero</button>
         </div>
+        {error && <p className="gs-menu__error" role="alert">{error}</p>}
       </div>
     </div>
   );

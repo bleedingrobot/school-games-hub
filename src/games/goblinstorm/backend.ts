@@ -11,9 +11,19 @@ import { quickMsForPack } from '../../../shared/maths/config';
 import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRandom, type PublicQuestion } from '../../../shared/maths/serverQuestions';
 import type { Question } from '../../../shared/maths/skillPack';
 
-import { factText, type Mark } from '../../../shared/goblinstorm/server';
+import { factText, freshSave, newUnlocks, type Mark, type Save } from '../../../shared/goblinstorm/server';
 
 export { factText, type Mark };
+
+/** The pupil's own save, as `my_goblinstorm()` gives it: what's open, plus totals for the screens. */
+export interface MySave extends Save {
+  codex: string[];
+  runs: number;
+  /** Runs started today (NZ date). */
+  today: number;
+}
+
+export const emptySave = (): MySave => ({ ...freshSave(), codex: [], runs: 0, today: 0 });
 
 export interface StartReply {
   seed: number;
@@ -26,9 +36,16 @@ export interface StartReply {
 
 export interface AnswerReply { mark: Mark; correct: boolean; answer: number; fact: string }
 
-export interface FinishReply { valid: boolean; summary: RunSummary }
+export interface FinishReply {
+  valid: boolean;
+  summary: RunSummary;
+  /** Heroes this run opened (worked out on the server from the replay). */
+  unlocked?: HeroId[];
+}
 
 export interface GoblinStormBackend {
+  /** The pupil's own save: which heroes and maps are open. */
+  me(): Promise<MySave>;
   start(hero: HeroId, map: number): Promise<StartReply>;
   answer(seed: number, slot: number, value: number, ms: number): Promise<AnswerReply>;
   finish(seed: number, steering: string, picks: number[]): Promise<FinishReply>;
@@ -39,15 +56,23 @@ export const PREVIEW_FOCUS: MathsFocus = { ...AUTO_FOCUS, source: 'teacher-class
 
 interface Kept { hero: HeroId; map: number; questions: Question[]; marks: (Mark | null)[] }
 
-/** The stand-in server: makes questions from the pretend focus, marks them once, and replays the run like the real one will. */
-export function standInBackend(focus: MathsFocus = PREVIEW_FOCUS, multipleChoice = false): GoblinStormBackend {
+/**
+ * The stand-in server: makes questions from the pretend focus, marks them once, and replays the run like the real one
+ * will. It keeps a pretend save in the page (gone on reload), opening heroes and maps the way the server does.
+ */
+export function standInBackend(focus: MathsFocus = PREVIEW_FOCUS, multipleChoice = false, start: MySave = emptySave()): GoblinStormBackend {
   const runs = new Map<number, Kept>();
   const quickMs = quickMsForPack(null);
+  const save: MySave = { ...start, heroes: [...start.heroes], bosses: [...start.bosses], codex: [...start.codex] };
   return {
+    async me() {
+      return { ...save, heroes: [...save.heroes], bosses: [...save.bosses], codex: [...save.codex] };
+    },
     async start(hero, map) {
       const seed = (Date.now() ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0;
       const questions = makeRunQuestions({ facts: [], settings: { multipleChoice }, focus }, QUESTIONS_PER_RUN, seededRandom(`goblinstorm:${seed}`));
       runs.set(seed, { hero, map, questions, marks: questions.map(() => null) });
+      save.today++;
       return { seed, hero, map, questions: questions.map((q, i) => publicQuestion(q, i)), quickMs };
     },
     async answer(seed, slot, value, ms) {
@@ -69,8 +94,17 @@ export function standInBackend(focus: MathsFocus = PREVIEW_FOCUS, multipleChoice
       if (!run || !dirs || !hero || !map) throw new Error('No such run');
       // A slot with no question (the focus ran short) gives the "right" 3 cards, as the play screen does.
       const choices = Array.from({ length: QUESTIONS_PER_RUN }, (_, i) => (i < run.questions.length ? choicesFor(run.marks[i] ?? 'wrong') : CHOICES.right));
-      const r = replayRun({ setup: { seed, hero, map, shop: {} }, steering: dirs, picks, choices });
-      return { valid: r.valid, summary: r.summary };
+      const r = replayRun({ setup: { seed, hero, map, shop: save.shop }, steering: dirs, picks, choices });
+      if (!r.valid) return { valid: false, summary: r.summary };
+      runs.delete(seed);
+      const unlocked = newUnlocks(save, r.summary, run.map);
+      save.heroes.push(...unlocked);
+      if (r.summary.bossBeaten && !save.bosses.includes(run.map)) save.bosses.push(run.map);
+      save.gold += r.summary.gold;
+      save.kills += r.summary.kills;
+      save.runs++;
+      save.codex = [...new Set([...save.codex, ...r.summary.evolved])].sort();
+      return { valid: true, summary: r.summary, unlocked };
     },
   };
 }
@@ -84,8 +118,11 @@ export class GoblinStormError extends Error {
 
 type Send = (body: Record<string, unknown>) => Promise<{ status: number; body: Record<string, unknown> }>;
 
-/** The screens' backend over any server that answers like the `goblinstorm` function (shared/goblinstorm/server.ts). */
-export function fromServer(send: Send): GoblinStormBackend {
+/**
+ * The screens' backend over any server that answers like the `goblinstorm` function (shared/goblinstorm/server.ts).
+ * `loadSave` reads the pupil's own save (live: the `my_goblinstorm()` database function).
+ */
+export function fromServer(send: Send, loadSave: () => Promise<Partial<MySave>>): GoblinStormBackend {
   async function ask(body: Record<string, unknown>): Promise<Record<string, unknown>> {
     const r = await send(body);
     if (r.status === 200) return r.body;
@@ -95,6 +132,7 @@ export function fromServer(send: Send): GoblinStormBackend {
     );
   }
   return {
+    me: async () => ({ ...emptySave(), ...(await loadSave()) }),
     start: async (hero, map) => (await ask({ action: 'start', hero, map })) as unknown as StartReply,
     answer: async (seed, slot, value, ms) => (await ask({ action: 'answer', seed, slot, value, ms })) as unknown as AnswerReply,
     finish: async (seed, steering, picks) => (await ask({ action: 'finish', seed, steering, picks })) as unknown as FinishReply,

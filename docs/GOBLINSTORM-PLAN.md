@@ -2,7 +2,7 @@
 
 *Name **Goblin Storm** (James picked it, 19 Nov 2026; id `goblinstorm`, CSS prefix `.gs-`). James, 19 Nov 2026: pupils want a "bullet heaven" game: "big attacks that can wipe out the entire screen, less damage shields, spinning blades, amazing graphics especially the attacks and lots of different characters to unlock that have different speeds and stuff." It is our own game, with our own name, heroes, monsters, maps and art. The genre (steer only, attacks fire by themselves, level-ups, evolving weapons) isn't owned by anyone; nothing is copied from any one game.*
 
-**Status: stage 3 (the `goblinstorm` server function, migration `20261119000900` on hold, real backend behind a code switch that is off) from branch `claude/goblinstorm-3`, 19 Nov 2026. Not live and not on the hub; only the preview plays it. Next: stage 4 (hero picker and unlocks, map picker, all bosses, balance sim). Prompt: `docs/prompts/goblinstorm-stage4.md`.**
+**Status: stage 4 (hero and map pickers from the pupil's save, unlocks checked on the server, `my_goblinstorm()`, every map's bosses, balance sim and tuning) from branch `claude/goblinstorm-4`, 19 Nov 2026. Not live and not on the hub; migration `20261119000900` still on hold; only the preview plays it. Next: stage 5 (gold shop, Weapon Codex, achievements, trophy, hall of fame, teacher column, points). Prompt: `docs/prompts/goblinstorm-stage5.md`.**
 
 ## The short version
 
@@ -11,7 +11,7 @@
   - Right: pick from **3** upgrades. Right and quick: **4**.
   - Wrong: **2**, and the right answer shows. You never lose the level.
 - **Evolutions wipe the screen.** A weapon at full level plus its matching passive offers an **Evolve!** card. Evolved weapons are much stronger, and every few seconds they unleash a screen-wide blast (Meteor Storm, Blizzard, Thunder God …). This is the only way to wipe the screen, so it feels earned.
-- **8 heroes** with different speed, health, start weapon and trait. The Knight and Ranger are free. The other 6 are unlocked by challenges: beat a boss, survive 60 s without a hit, evolve 3 weapons in one run, and so on.
+- **8 heroes** with different speed, health, start weapon and trait. The Knight and Ranger are free. The other 6 are unlocked by challenges: beat a boss, survive 90 s without a hit, evolve 3 weapons in one run, and so on.
 - **8 weapons, 10 passives, 3 kinds of shield.** The shields are the Armour passive (−1 damage a hit per level), the Bubble Shield (blocks a hit, then recharges) and the Spiky Shield (hurts monsters that touch you). Some heroes are also tough by nature.
 - **5 maps**, each with its own monster family, a mini-boss at 1:30 and a boss at 2:30. Beat a map's boss to open the next map.
 - **Between runs:** gold buys small forever-upgrades, 6 kinds × 5 levels, with the total boost capped. A **Weapon Codex** fills in as you discover weapons and evolutions. Achievements and a profile trophy are on offer, and the class hall of fame shows bosses beaten and best runs, never maths.
@@ -50,10 +50,10 @@
 |---|---|---|---|---|---|
 | Knight | slow | very high | Spinning Blades | +2 armour | free |
 | Ranger | fast | low | Arrows | +30% magnet | free |
-| Wizard | medium | low | Fireball | +20% area | reach level 15 in a run |
-| Barbarian | medium | high | Throwing Axes | up to +50% might as health drops | 1,000 monsters beaten in total |
+| Wizard | medium | low | Fireball | +20% area | reach level 20 in a run |
+| Barbarian | medium | high | Throwing Axes | up to +50% might as health drops | 5,000 monsters beaten in total |
 | Cleric | slow | medium | Holy Aura | heals 1 health a second | beat the Castle Fields boss |
-| Rogue | fastest | low | Lightning | 1 in 5 hits do double | survive 60 s without a hit |
+| Rogue | fastest | low | Lightning | 1 in 5 hits do double | survive 90 s without a hit |
 | Frost Witch | medium | medium | Ice Nova | monsters 15% slower | beat the Frozen Peaks boss |
 | Dragon Kid (secret) | medium | medium | Fireball | +1 armour, +10% might | evolve 3 weapons in one run |
 
@@ -71,7 +71,7 @@
 **Forever-upgrades:** Might +5%, Armour +1 (max 3), Speed +4%, Max health +10, Magnet +10%, Gold +5%. Each has 5 levels.
 
 ## Design (docs/game-guide/1-design.md)
-1. **Big goal:** beat all 5 bosses, unlock all 8 heroes and fill the Weapon Codex (8 weapons + 8 evolutions). At 5 runs a day, 3 to 4 days a week, that's about 3 to 4 weeks for a steady player (the sim will check this in stage 4). Afterwards there are best runs on the hall of fame and boss wins with every hero.
+1. **Big goal:** beat all 5 bosses, unlock all 8 heroes and fill the Weapon Codex (8 weapons + 8 evolutions). At 5 runs a day, 3 to 4 days a week, that's about 3 to 4 weeks for a steady player (stage 4 sim: all bosses and heroes in about 6–10 school days; the whole shop, the Codex and boss wins with every hero take longer). Afterwards there are best runs on the hall of fame and boss wins with every hero.
 2. **Season game?** No. Forever-upgrades are small and capped, so late joiners catch up in a few days.
 3. **Play a day:** **5 runs** (James). The server counts finished *and* abandoned starts by NZ date. Add the game to `UNLIMITED_GAMES` and `teacher_set_unlimited_today()`. Extra turns give gold but no hub points.
 4. **Progress bars:** the in-run gem bar and level; on the map screen, bosses beaten out of 5, heroes out of 8 and codex out of 16.
@@ -225,6 +225,50 @@ After **every** merge: the Status line here, project memory, and the next prompt
 - **Maths change (James, 19 Nov):** only every 3rd level-up asks, so 6–8 questions a run; `QUESTIONS_PER_RUN` 40 → 14. The fingerprint is still `ba14927f`.
 - **Tests:** 3 server tests + the deployable-file check; `supabase/tests/database/goblinstorm.test.sql` (30 checks) passes on a clean copy, as does `security.test.sql`.
 - **Left for later stages:** `GAME_SWITCH_COLUMNS`, `UNLIMITED_GAMES` and `teacher_set_unlimited_today` wait for go-live (the column isn't live while the migration is on hold). Hub points, the shop, unlocks, achievements and `my_goblinstorm()` for the screens come in stages 4–5.
+
+## Stage 4 results
+- **Built:**
+  - Hero picker: all 8 heroes with speed, health and starting weapon; locked heroes say what opens them (`UNLOCK_WORDS`, made from `UNLOCK_AT`); `heroOpen(save)` decides.
+  - Map picker: `mapOpen(save)` decides; beaten bosses show 👑. The hero screen shows "Heroes x/8 · Bosses beaten x/5".
+  - The end screen shows "New hero: …" (the finish reply's `unlocked`) and "New map open: …".
+  - `GoblinStormBackend.me()`: live it reads `my_goblinstorm()`; the stand-in keeps a pretend save in the page. The preview's `?open=all` opens everything.
+  - Every map already had its own mini-boss and boss look (stage 2). A browser check at 1:32 and 2:32 on each map saw each one drawn, with its own banner.
+- **Unlocks on the server:**
+  - `newUnlocks(save, summary, map)` in `server.ts` (the function's finish reply).
+  - The same rules in `record_goblinstorm_run`, from the replay's summary only, never from the browser: Wizard level ≥ 20; Barbarian 5,000 monsters in total (new `goblinstorm_saves.kills`); Cleric beats map 1's boss; Rogue 90 s unhit; Frost Witch beats map 4's boss; Dragon Kid 3 different evolutions. Heroes are never added twice.
+  - `my_goblinstorm()`: authenticated, the caller's own save only (gold, shop, heroes, bosses, codex, runs, kills, runs today). It is on the security allow-list.
+- **Fixes:**
+  - The runs table's outcome check said `'fell'`, but the engine says `'lost'`. It now allows `'lost'`.
+  - Text literals in `earned || '…'` were read as arrays. They are now `'…'::text`.
+- **Balance sim:** `node scripts/goblinstorm-sim.mjs [--seeds N] [--only still|grid|journey]`. It uses `botRun` with the new `sensibleDirection` (keeps away from monsters, walks to near gems) and `sensiblePick` (evolve, then level up held weapons, heal when low). Answers are 65% right, 20% quick and 15% wrong. It runs in worker threads, about 25 s.
+- **Tuning** (all in `config.ts`):
+  - Gem curve `3 + 2·level` → `2 + level`.
+  - Map tiers 1/1.4/1.9/2.5/3.2 → 1/1.35/1.8/2.3/2.8.
+  - Mini-boss health 700 → 350; boss health 1600 → 750.
+  - The first wave starts thinner (2 every second, from 0:02); fast monsters wait until 0:25.
+  - A warm-up: monsters do half damage for the first 30 s (`WARM_UP_SECONDS`, `WARM_UP_DAMAGE`).
+  - Shop costs `[20, 40, 70, 110, 160]` → `[100, 200, 350, 550, 800]` (the whole shop is 10,650 gold).
+- **Sim numbers after tuning** (5 seeds, every hero; L = level-ups, Q = questions):
+
+  | Shop | Castle | Forest | Graveyard | Peaks | Lava |
+  |---|---|---|---|---|---|
+  | none | L14 Q4, won 10% | L16, won 20% | L11, 0% | L11, 0% | L6, 0% |
+  | level 2 | L21 Q7, won 28% | won 38% | won 8% | won 8% | L11, 0% |
+  | whole | L26 Q8, won 50% | L30, won 58% | won 15% | won 25% | won 18% |
+
+  - A Ranger standing still on Castle Fields now lasts 0:37–2:38, mostly about 1:37 (was 0:14); a Knight about 1:37. Pupil-style runs on Castle survive or win.
+  - **A steady player** (5 runs a day, cheapest shop level first, strongest open hero, first unbeaten map):
+    - All 5 bosses take 6–10 school days.
+    - Rogue, Wizard, Barbarian, Cleric and Dragon Kid open on days 1–2; Frost Witch on days 3–6.
+    - About 6,100–6,650 gold is spent by then. The shop is not yet all bought, so gold still has a use.
+  - Before tuning, runs had 9–13 level-ups and bosses were almost never beaten. Gold piled up, with the shop all bought by day 5–6 and 20,000+ unspent.
+  - The big goal (3–4 weeks) now rests more on the shop, the Codex and boss wins with every hero (stage 5) than on opening maps.
+- **Replay speed:** longer runs keep more monsters alive, so a whole Castle Fields replay went from about 79 ms to 133 ms (bundled, on the Mac; `moveEnemies` is most of it). Still far inside the function's CPU. Under vitest the same replay takes about 470 ms (imports go through getters), so the rule test's limit is now 4 s instead of 1 s. It had failed on a CI shard at 1.75 s.
+- **Determinism:** the tuning and warm-up change the runs, so the fingerprint moved from `ba14927f` to **`67a677c4`**. It is identical in Node, WebKit and Chromium.
+- **Tests:**
+  - 4 server tests (unlock rules added) and the deployable-file check.
+  - `goblinstorm.test.sql` now has 40 checks (unlocks once each, `my_goblinstorm` own save only, signed-out refused). It passes on a clean copy, as does `security.test.sql`.
+- **Still not done (by plan):** no hub registration, migration on hold, code switch off. Stage 7 must add `goblinstorm_enabled` to `GAME_SWITCH_COLUMNS`, add goblinstorm to `UNLIMITED_GAMES` and `teacher_set_unlimited_today`, and take the line out of `supabase/migrations-on-hold.txt`.
 
 ## Went live
 (fill in)
