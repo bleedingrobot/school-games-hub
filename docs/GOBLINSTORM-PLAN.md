@@ -2,7 +2,7 @@
 
 *Name **Goblin Storm** (James picked it, 19 Nov 2026; id `goblinstorm`, CSS prefix `.gs-`). James, 19 Nov 2026: pupils want a "bullet heaven" game: "big attacks that can wipe out the entire screen, less damage shields, spinning blades, amazing graphics especially the attacks and lots of different characters to unlock that have different speeds and stuff." It is our own game, with our own name, heroes, monsters, maps and art. The genre (steer only, attacks fire by themselves, level-ups, evolving weapons) isn't owned by anyone; nothing is copied from any one game.*
 
-**Status: stage 1 (plan, rules engine, 3 rule tests) merged from branch `claude/goblinstorm`. Not live; nothing pupils can see yet. Next: stage 2 (playable Canvas run).**
+**Status: stage 2 (playable Canvas run, preview, art plan, fingerprint check) merged from branch `claude/goblinstorm-2`, 19 Nov 2026. Not live and not on the hub; only the preview plays it. Next: stage 3 (the server). Prompt: `docs/prompts/goblinstorm-stage3.md`.**
 
 ## The short version
 
@@ -195,6 +195,26 @@ After **every** merge: the Status line here, project memory, and the next prompt
   - Lava Mines: every fresh hero falls within 80 s.
   - Stage 4's sim must tune map tiers, the gem curve and wave sizes, aiming for about 15–25 level-ups a run. Map 1 should be beatable on day 1, and later maps should need shop upgrades and better heroes.
 - **Not done yet:** a determinism fingerprint across Node, Chromium and WebKit (copy Marble's), planned for stage 2 once the browser plays it.
+
+## Stage 2 results
+- **Built:** `src/games/goblinstorm/`:
+  - `GoblinStormGame.tsx` holds the hero, map and end screens.
+  - `PlayScreen.tsx` has the fixed 1/60 s loop copied from Toon Flap, the floating stick and WASD/arrows, the level-up question in the shared QuestionModal, and then the cards.
+  - `renderer.ts`, `fx.ts` and `look.ts` are the drawn stand-in art, pooled particles, glow, shake and the evolution flash.
+  - `backend.ts` is the server shape stage 3 must meet (start, answer, finish), plus `standInBackend`, which marks in the browser and replays with `replayRun`.
+  - `HubButtons.tsx` and `goblinstorm.css` (all `.gs-`).
+- **Preview:** `preview/goblinstorm/`, using a pretend focus of the times tables. Add `?mc=1` for pick-an-answer questions. To run it: `npx vite --config vite.goblinstorm-preview.config.ts`. To build it: `npm run goblinstorm:preview`.
+- **Recording:** steering is recorded only for real steps, in the order `replayRun` uses (end check, then waiting check, then step). Runs played in the preview, by keyboard and by touch, came back valid from the replay.
+- **Determinism:** `shared/goblinstorm/determinism.ts` plays every hero on every map with random steering and picks (540 state lines). `npm run goblinstorm:determinism` gives fingerprint `ba14927f` in Node, WebKit and Chromium (set `PLAYWRIGHT_DIR` to a folder with Playwright to include the browsers).
+- **Browser check** (Playwright on the Mac's GPU, at 1366×640, 1024×768, 820×1180, 844×390 and 390×844):
+  - Full window at every size, with no sideways scroll.
+  - 320 monsters ran at a steady 60 fps, with about 1 ms of drawing a frame.
+  - The Blade Storm evolution cleared 320 monsters down to 40–50 newcomers. Bosses stay, as the engine says.
+  - The question shows above the play layer, then the cards: 2 after a wrong answer, with Evolve! first.
+  - In the software-only headless browser it ran at 30 fps. That's a graphics-card effect, not our drawing; the game drops its particles to 45% when frames run slow.
+- **Dev-only hook:** `window.__goblinstorm` (only on the dev server, never in a build) lets browser checks jump ahead. Builds don't include it.
+- **For the stage 4 sim:** a Ranger standing still fell at 0:14, while one who moved lasted 0:50. That's harsh for a first go; check it when tuning.
+- **Not done (by plan):** no hub registration, no migration, no tests (the 2 screen tests are stage 6), no sounds yet, and only Knight, Ranger and Castle Fields open until saves exist.
 
 ## Went live
 (fill in)
