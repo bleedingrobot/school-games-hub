@@ -460,7 +460,7 @@ export function DuelScreen({ duel, me, serverNow, onShot, onTimesUp, onLeave, on
     if (duel.ending === 'left') return "No points this time, because the fight didn't finish.";
     if (duel.ending === 'timeouts') return `${duel.leaver === seat ? 'Your' : `${them}'s`} time ran out ${DUEL_MAX_TIMEOUTS} turns in a row. Nobody gets points.`;
     if (duel.ending === 'switched-off') return 'Your teacher switched Archery Challenge off. Nobody gets points.';
-    if (duel.ending === 'duels-off') return "Your teacher switched classmate fights off for now. Nobody gets points, and any arrows you didn't use are back in your bag.";
+    if (duel.ending === 'duels-off') return "Your teacher switched fights against friends off for now. Nobody gets points, and any arrows you didn't use are back in your bag.";
     if (duel.ending === 'idle') return 'Nobody shot for a long time. Nobody gets points.';
     return '';
   })();

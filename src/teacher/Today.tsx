@@ -6,12 +6,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { fetchSchoolDefaults, saveSchoolDefaults } from '../data/admin';
-import { fetchMultiplayerEnabled } from '../data/multiplayer';
+import { fetchMultiplayerEnabled, fetchPlayOtherClasses } from '../data/multiplayer';
 import { FriendlyError } from '../data/profile';
 import { fetchQuestionSkips } from '../data/questionLog';
 import { fetchSkipMode, parseSkipMode, saveSkipMode } from '../data/questionSkips';
 import { fetchReactionsEnabled } from '../data/spaceGames';
-import { setMultiplayer, setSpaceReactions } from '../data/teacher';
+import { setMultiplayer, setPlayOtherClasses, setSpaceReactions } from '../data/teacher';
 import { fetchTrainingFirst, saveTrainingFirst } from '../data/trainingGate';
 import { fetchNonMathsGames, saveNonMathsGames } from '../data/nonMathsGames';
 import { useChangedLine } from '../data/settingsChanges';
@@ -68,6 +68,7 @@ export function LessonControls({ target, name }: { target: SettingsTarget; name?
   const own = !school;
   const row = useSetting(fetchSchoolDefaults, [], school);
   const friends = useSetting(() => fetchMultiplayerEnabled(classId), [classId], own);
+  const others = useSetting(() => fetchPlayOtherClasses(classId), [classId], own);
   const reactions = useSetting(() => fetchReactionsEnabled(classId), [classId], own);
   const training = useSetting(() => fetchTrainingFirst(classId), [classId], own && trainingOn());
   const skip = useSetting(() => fetchSkipMode(classId), [classId], own);
@@ -80,6 +81,7 @@ export function LessonControls({ target, name }: { target: SettingsTarget; name?
   const pick = <T,>(mine: { value: T | null; failed: boolean }, column: string, read: (v: unknown) => T) => (school ? fromRow(column, read) : mine);
   const on = (v: unknown) => v === true;
   const f = pick(friends, 'multiplayer_enabled', (v) => v !== false);
+  const o = pick(others, 'play_other_classes', (v) => v !== false);
   const r = pick(reactions, 'space_reactions_enabled', on);
   const n = pick(nonMaths, 'non_maths_games', (v) => v !== false);
   const t = pick(training, 'training_first', on);
@@ -101,6 +103,15 @@ export function LessonControls({ target, name }: { target: SettingsTarget; name?
           loadFailed={f.failed}
           changed={changed('multiplayer_enabled')}
           save={saveColumn('multiplayer_enabled', (on: boolean) => setMultiplayer(on, classId))}
+        />
+        <SettingToggle
+          label="Play other classes"
+          about="Archery fights, Dragon Maths clashes and Clan duels with kids in other classes at school. Both classes need it on. Off keeps these games inside this class."
+          value={o.value}
+          savedText={PUPILS_SEE_IT}
+          loadFailed={o.failed}
+          changed={changed('play_other_classes')}
+          save={saveColumn('play_other_classes', (on: boolean) => setPlayOtherClasses(on, classId))}
         />
         <SettingToggle
           label="Emoji reactions"

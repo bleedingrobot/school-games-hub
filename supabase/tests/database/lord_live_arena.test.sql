@@ -33,6 +33,8 @@ insert into public.lord_heroes (player, hero, version, season, day) values
   (pg_temp.id('0a'), '{"heroClass": "knight", "look": "knight-girl-01-1", "level": 3, "gold": 10}', 1, 1, '2026-11-17'),
   (pg_temp.id('0b'), '{"heroClass": "mage", "level": 5, "gold": 0}', 1, 1, '2026-11-17');
 update public.app_settings set lord_enabled = true;
+-- These checks are about one class on its own: "Play other classes" off (play_anyone.test.sql covers it on).
+update public.app_settings set play_other_classes = false;
 
 -- ---- The switch: off to start ----
 select is((select lord_live_arena from public.app_settings where class_id = current_setting('test.cls')::uuid), false, 'classmate clashes start switched off');

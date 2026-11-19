@@ -15,6 +15,7 @@ import {
 import { duelOpen, type DuelClan, type DuelRow } from '../../../shared/clans/duelServer';
 import { BUILDING_NAMES, empireOf } from '../../../shared/clans/empire';
 import { LOOKS, isLook, lookOf } from '../../../shared/clans/looks';
+import { ClassTag, SchoolPlayerList } from '../../components/SchoolPlayerList';
 import type { DuelCheer } from '../../data/clanDuel';
 import { bannerArt, duelArt, sceneArt } from './art';
 import { LadderAsk, type Asker } from './LadderAsk';
@@ -276,7 +277,7 @@ export function DuelStage({ myName, theirName, clans, seat, rounds, waiting, onP
   );
 }
 
-/** A classmate's challenge, over whatever screen is showing. */
+/** Another clan's challenge, over whatever screen is showing. */
 export function DuelAskBanner({ duels, onYes }: { duels: Duels; onYes: (duel: number) => void }) {
   const first = duels.asks[0];
   const left = useSecondsTo(first?.deadline ?? null, duels.serverNow);
@@ -312,7 +313,7 @@ function endingOf(d: DuelRow, seat: DuelSide, them: string): DuelEnding | null {
   }
 }
 
-/** A live duel with a classmate's clan. The order is sent after the round's maths question (the server marks it). */
+/** A live duel with another clan. The order is sent after the round's maths question (the server marks it). */
 function LiveDuel({ duel: d, duels, ask, onBack }: { duel: DuelRow; duels: Duels; ask?: Asker; onBack: () => void }) {
   const seat: DuelSide = d.seat_a === duels.me ? 0 : 1;
   const other: DuelSide = seat === 0 ? 1 : 0;
@@ -407,7 +408,7 @@ function PracticeDuel({ session, rival, ask, onBack }: { session: Session; rival
   );
 }
 
-/** Waiting for the classmate to say yes. */
+/** Waiting for the other clan to say yes. */
 function DuelWait({ duel: d, duels }: { duel: DuelRow; duels: Duels }) {
   const left = useSecondsTo(d.deadline, duels.serverNow);
   return (
@@ -448,23 +449,28 @@ export function DuelArena({ session, duels, ask, onBack }: { session: Session; d
       <div className="cq-raids">
         <Embers />
         <div className="cq-panel">
-          <h3>Live duels with your class</h3>
+          <h3>Live duels with friends</h3>
           {d && d.status === 'asked' && duelOpen(d) && d.seat_a === duels.me ? <DuelWait duel={d} duels={duels} /> : !duels.on ? (
             <p>Live duels are switched off for your class right now. You can still practise below!</p>
           ) : duels.online === null ? <p role="status">Looking for clans…</p> : duels.online.length === 0 ? (
-            <p>No other clans in your class are playing right now. Try a practice duel!</p>
+            <p>No other clans are playing right now. Try a practice duel!</p>
           ) : (
-            <ul className="cq-rivals">
-              {duels.online.map((m) => (
-                <li key={m.id} className="cq-rival cq-rival--big cq-rival--close">
+            <SchoolPlayerList
+              people={duels.online}
+              label="Clans in Clan Quest now"
+              searchLabel="Find a clan"
+              listClassName="cq-rivals"
+              itemClassName="cq-rival cq-rival--big cq-rival--close"
+              row={(m) => (
+                <>
                   {bannerArt(m.name) && <img className="cq-rival__banner" src={bannerArt(m.name)} alt="" />}
-                  <span className="cq-rival__name">{m.name}</span>
+                  <span className="cq-rival__name">{m.name}<ClassTag player={m} /></span>
                   {m.busy ? <span className="cq-light cq-light--close">In a duel</span> : (
                     <button type="button" className="cq-btn cq-btn--hot" disabled={sending} onClick={() => void challenge(m.id)} aria-label={`Challenge the ${m.name} clan`}>⚔️ Duel!</button>
                   )}
-                </li>
-              ))}
-            </ul>
+                </>
+              )}
+            />
           )}
           {problem && <p className="cq-warn" role="alert">{problem}</p>}
           <h3>Practice against a computer clan</h3>

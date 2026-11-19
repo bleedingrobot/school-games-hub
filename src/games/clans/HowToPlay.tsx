@@ -82,7 +82,7 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
         </section>
         <section aria-labelledby="htp-duels">
           <h3 id="htp-duels">Live duels</h3>
-          <p>In the <strong>Duel Arena</strong> you can challenge a classmate's clan to a live duel. Each round you both pick an order in secret: <strong>Charge</strong> rides down <strong>Volley</strong>, <strong>Volley</strong> rains over <strong>Shield Wall</strong>, and <strong>Shield Wall</strong> stops <strong>Charge</strong>. Then a maths question powers your hit.</p>
+          <p>In the <strong>Duel Arena</strong> you can challenge any clan at school to a live duel. Each round you both pick an order in secret: <strong>Charge</strong> rides down <strong>Volley</strong>, <strong>Volley</strong> rains over <strong>Shield Wall</strong>, and <strong>Shield Wall</strong> stops <strong>Charge</strong>. Then a maths question powers your hit.</p>
           <p>Your Forge, Walls, Barracks, Tower and Church each help a little. <strong>Nobody loses anything</strong>: both clans earn gold and Banners for a finished duel. You can practise against computer clans any time.</p>
         </section>
         <section aria-labelledby="htp-season">

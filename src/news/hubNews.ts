@@ -30,6 +30,13 @@ export const HUB_NEWS: NewsItem[] = [
     game: 'goblinstorm',
   },
   {
+    id: 'play-other-classes-2026-11-20',
+    date: '2026-11-20',
+    emoji: '🤝',
+    title: 'Play friends in other classes',
+    text: 'You can now challenge friends in other classes in Archery, Dragon Maths and Clan duels!',
+  },
+  {
     id: 'goblinstorm-gold-card-2026-11-20',
     date: '2026-11-20',
     emoji: '🪙',
