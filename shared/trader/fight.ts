@@ -7,7 +7,6 @@
 import { seededRandom } from '../maths/serverQuestions';
 import {
   FIGHT_ROUNDS,
-  GOODS,
   LASER_DAMAGE_MULT,
   PIRATE_DAMAGE_PCT,
   PIRATE_LOOT_PCT,
@@ -19,7 +18,7 @@ import {
   WEAPONS,
   WRONG_SHOT_PCT,
 } from './config';
-import type { Trader } from './state';
+import { setCargo, type Trader } from './state';
 
 export type FightAction = 'charge' | 'shield' | 'flee';
 export type FightOutcome = 'going' | 'won' | 'fled' | 'robbed' | 'destroyed';
@@ -112,11 +111,11 @@ export function settleFight(t: Trader, fight: Fight): Trader {
       state.credits += PIRATE_TIERS[fight.tier].bounty;
       break;
     case 'robbed':
-      state.cargo = state.cargo.map((q) => q - Math.floor((q * PIRATE_LOOT_PCT) / 100));
+      state.cargo.forEach((q, good) => setCargo(state, good, q - Math.floor((q * PIRATE_LOOT_PCT) / 100)));
       break;
     case 'destroyed': {
       // Escape pod: the cargo, ship and gear are lost, the credits are kept, and a Flea is waiting.
-      state.cargo = GOODS.map(() => 0);
+      state.cargo.forEach((_, good) => setCargo(state, good, 0));
       state.ship = 0;
       state.hull = SHIPS[0].hull;
       state.weapons = [];

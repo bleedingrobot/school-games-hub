@@ -10200,6 +10200,21 @@ const clone = (t) => ({
 	loan: { ...t.loan },
 	market: t.market.map((m) => ({ ...m }))
 });
+/** What you paid per good in total (-1: not known, for goods carried since before this was kept). */
+const paidOf = (t) => t.paid ?? t.cargo.map((q) => q > 0 ? -1 : 0);
+/**
+* Set how many of a good are in the hold and keep `paid` in step: what's added costs `cost` in total; what goes takes
+* its average share of what was paid. Changes `t` in place (callers have already copied it), with a new `paid` array.
+*/
+function setCargo(t, good, qty, cost = 0) {
+	const had = t.cargo[good];
+	const paid = [...paidOf(t)];
+	if (qty === 0) paid[good] = 0;
+	else if (paid[good] >= 0 && qty > had) paid[good] += cost;
+	else if (paid[good] >= 0 && qty < had) paid[good] -= Math.round(paid[good] * (had - qty) / had);
+	t.cargo[good] = qty;
+	t.paid = paid;
+}
 const holdsOf = (t) => SHIPS[t.ship].holds + t.pods * 5;
 const usedHolds = (t) => t.cargo.reduce((a, b) => a + b, 0);
 const freeHolds = (t) => holdsOf(t) - usedHolds(t);
@@ -10213,6 +10228,7 @@ function newTrader(galaxy, day, pushes) {
 		credits: 100,
 		ship: 0,
 		cargo: GOODS.map(() => 0),
+		paid: GOODS.map(() => 0),
 		fuel: SHIPS[0].fuelTank,
 		hull: SHIPS[0].hull,
 		weapons: [],
@@ -10254,7 +10270,7 @@ function buy(t, good, qty, bp = 0) {
 	if (total > t.credits) return no("You cannot afford that.");
 	const next = clone(t);
 	next.credits -= total;
-	next.cargo[good] += qty;
+	setCargo(next, good, next.cargo[good] + qty, total);
 	next.market[good].stock -= qty;
 	return {
 		ok: true,
@@ -10270,7 +10286,7 @@ function sell(t, good, qty, bp = 0) {
 	if (qty > t.cargo[good]) return no("You do not have that many.");
 	const total = priceWithDiscount(line.sell, bp) * qty;
 	const next = clone(t);
-	next.cargo[good] -= qty;
+	setCargo(next, good, next.cargo[good] - qty);
 	next.credits += total;
 	if (next.loan.owed > 0) {
 		const pay = Math.min(next.loan.owed, Math.floor(total * 30 / 100));
@@ -10527,7 +10543,7 @@ function settleCustoms(t, banned) {
 	let taken = 0;
 	for (const good of banned) {
 		taken += state.cargo[good];
-		state.cargo[good] = 0;
+		setCargo(state, good, 0);
 	}
 	const fine = taken > 0 ? Math.min(state.credits, 5 + 2 * taken) : 0;
 	state.credits -= fine;
@@ -10555,10 +10571,10 @@ function acceptDeal(t, e) {
 		const cost = e.price * e.qty;
 		if (cost > state.credits || e.qty > freeHolds(t)) return null;
 		state.credits -= cost;
-		state.cargo[e.good] += e.qty;
+		setCargo(state, e.good, state.cargo[e.good] + e.qty, cost);
 	} else {
 		if (state.cargo[e.good] < e.qty) return null;
-		state.cargo[e.good] -= e.qty;
+		setCargo(state, e.good, state.cargo[e.good] - e.qty);
 		state.credits += e.price * e.qty;
 	}
 	return state;
@@ -10656,10 +10672,10 @@ function settleFight(t, fight) {
 			state.credits += PIRATE_TIERS[fight.tier].bounty;
 			break;
 		case "robbed":
-			state.cargo = state.cargo.map((q) => q - Math.floor(q * 40 / 100));
+			state.cargo.forEach((q, good) => setCargo(state, good, q - Math.floor(q * 40 / 100)));
 			break;
 		case "destroyed":
-			state.cargo = GOODS.map(() => 0);
+			state.cargo.forEach((_, good) => setCargo(state, good, 0));
 			state.ship = 0;
 			state.hull = SHIPS[0].hull;
 			state.weapons = [];

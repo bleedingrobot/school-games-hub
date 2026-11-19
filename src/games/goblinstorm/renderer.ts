@@ -5,12 +5,13 @@
  * Speed: every monster kind is drawn once into a small picture (both ways round) and stamped with drawImage, the ground
  * is one repeating pattern, and glows are one stretched picture each, so 300+ monsters stay smooth.
  */
-import { MAX_ENEMIES, WEAPONS, WIPE_RADIUS, type MapDef, type WeaponId } from '../../../shared/goblinstorm/config';
+import { MAX_ENEMIES, WIPE_RADIUS, type HeroId, type MapDef, type WeaponId } from '../../../shared/goblinstorm/config';
 import { area, stats, type GameEvent, type RunState } from '../../../shared/goblinstorm/engine';
 import { COS, SIN, TURN } from '../../../shared/goblinstorm/trig';
 import { groundArt, heroArt, monsterArt, paintedCount, paintedImage } from './art';
 import { Fx, glowSprite } from './fx';
-import { HERO_LOOKS, MAP_LOOKS, MONSTER_LOOKS, WEAPON_COLOUR, type MonsterLook } from './look';
+import { powerColour, powerWords } from './heroPowers';
+import { HERO_LOOKS, MAP_LOOKS, MONSTER_LOOKS, type MonsterLook } from './look';
 
 const TAU = Math.PI * 2;
 type Canvas = HTMLCanvasElement | OffscreenCanvas;
@@ -393,8 +394,13 @@ export class View {
   private ground: { canvas: Canvas; pattern: CanvasPattern | null; scale: number; mapId: string; painted: number } | null = null;
   reduced = false;
 
+  /** The hero now playing: their weapons take their colours and names (heroPowers.ts). */
+  private hero: HeroId = 'knight';
+  private colour(weapon: WeaponId) { return powerColour(this.hero, weapon); }
+
   /** Turns the step's events into effects. Called after every engine step. */
   take(s: RunState, events: readonly GameEvent[]): void {
+    this.hero = s.setup.hero.id;
     const fx = this.fx;
     const looks = s.setup.map.monsters;
     let hits = 0;
@@ -424,7 +430,7 @@ export class View {
         }
         if (ev.crit) fx.word(String(Math.round(ev.damage)), ev.x, ev.y - 0.5, '#ffe04a', 0.45, 0.6);
       } else if (ev.k === 'strike') {
-        const c = WEAPON_COLOUR[ev.weapon];
+        const c = this.colour(ev.weapon);
         if (ev.weapon === 'lightning') this.bolt(ev.x, ev.y, ev.r, c.main);
         else {
           fx.glow(ev.x, ev.y, ev.r * 0.6, ev.r * 2.5, 0.3, c.glow);
@@ -432,7 +438,7 @@ export class View {
           fx.ring(ev.x, ev.y, ev.r * 0.3, ev.r * 1.1, 0.3, c.main);
         }
       } else if (ev.k === 'nova') {
-        const c = WEAPON_COLOUR[ev.weapon];
+        const c = this.colour(ev.weapon);
         fx.ring(s.hero.x, s.hero.y, 0.4, ev.r, 0.45, c.main);
         fx.ring(s.hero.x, s.hero.y, 0.2, ev.r * 0.8, 0.5, c.glow);
         fx.glow(s.hero.x, s.hero.y, ev.r * 0.4, ev.r * 1.5, 0.35, c.glow);
@@ -506,7 +512,7 @@ export class View {
 
   /** An evolution's screen-wipe: a big flash in the weapon's colour, streaks across the screen and shake. */
   private startWipe(s: RunState, weapon: WeaponId): void {
-    const c = WEAPON_COLOUR[weapon];
+    const c = this.colour(weapon);
     this.flash = this.reduced ? 0.45 : 0.9;
     this.flashColour = c.evolved;
     this.addShake(0.9);
@@ -522,7 +528,7 @@ export class View {
     this.fx.ring(s.hero.x, s.hero.y, 0.5, WIPE_RADIUS, 0.7, c.evolved);
     this.fx.ring(s.hero.x, s.hero.y, 0.5, WIPE_RADIUS * 0.7, 0.55, '#ffffff');
     this.fx.glow(s.hero.x, s.hero.y, 2, 30, 0.5, c.glow);
-    this.fx.word(WEAPONS[weapon].evolved.name.toUpperCase() + '!', s.hero.x, s.hero.y - 2.5, c.evolved, 1.3, 1.6);
+    this.fx.word(powerWords(this.hero, weapon).evolved.toUpperCase() + '!', s.hero.x, s.hero.y - 2.5, c.evolved, 1.3, 1.6);
     if (!this.low) {
       // A second, later shockwave and a spray of shards in the weapon's colours.
       this.fx.ring(s.hero.x, s.hero.y, 0.2, WIPE_RADIUS * 1.2, 1.0, c.main);
@@ -625,7 +631,7 @@ export class View {
     for (const wpn of s.weapons) {
       if (wpn.id !== 'aura') continue;
       const r = stats(wpn).area * area(s);
-      const c = WEAPON_COLOUR.aura;
+      const c = this.colour('aura');
       const pulse = 1 + Math.sin(time * 5) * 0.04;
       ctx.globalCompositeOperation = 'lighter';
       ctx.globalAlpha = 0.35;
@@ -786,7 +792,7 @@ export class View {
       if (wpn.id !== 'blades') continue;
       const st = stats(wpn);
       const r = st.area * ar;
-      const c = WEAPON_COLOUR.blades;
+      const c = this.colour('blades');
       const col = wpn.evolved ? c.evolved : c.main;
       // a glowing trail ring
       ctx.globalCompositeOperation = 'lighter';
@@ -835,7 +841,7 @@ export class View {
   private drawBubble(ctx: CanvasRenderingContext2D, s: RunState, time: number): void {
     const wpn = s.weapons.find((x) => x.id === 'bubble');
     if (!wpn || wpn.charges <= 0) return;
-    const c = WEAPON_COLOUR.bubble;
+    const c = this.colour('bubble');
     const r = 0.85 + Math.sin(time * 3) * 0.03;
     ctx.globalAlpha = 0.25;
     ctx.fillStyle = wpn.evolved ? c.evolved : c.glow;
@@ -872,7 +878,7 @@ export class View {
     const evolved = (id: WeaponId) => s.weapons.some((x) => x.id === id && x.evolved);
     for (const p of s.shots) {
       if (!p.alive) continue;
-      const c = WEAPON_COLOUR[p.weapon];
+      const c = this.colour(p.weapon);
       if (p.weapon === 'fireball') {
         const big = evolved('fireball') ? 1.5 : 1;
         ctx.globalCompositeOperation = 'lighter';
@@ -1028,7 +1034,7 @@ export class View {
   private drawWipe(ctx: CanvasRenderingContext2D, time: number): void {
     const w = this.wipeShow;
     if (!w) return;
-    const c = WEAPON_COLOUR[w.weapon];
+    const c = this.colour(w.weapon);
     const a = 1 - w.age / w.life;
     ctx.globalCompositeOperation = 'lighter';
     for (const st of w.streaks) {

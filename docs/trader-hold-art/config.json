@@ -1,0 +1,221 @@
+{
+ "_from": "Star Trader \"see your hold\" (docs/plans/trader-hold/PLAN.md, stage H.0). Ships and pod: --style top. Goods: --style goods.",
+ "game": "trader-hold",
+ "filename_prefix": "traderhold/img",
+ "style": "top",
+ "seed_by": "name",
+ "styles": {
+  "top": "Top-down 2D game sprite of a painted sci-fi spaceship, viewed from straight overhead like a floor plan, flat orthographic plan view with no perspective and no tilt, none of the ship's sides visible, mirror symmetrical top to bottom, nose pointing right, weathered off-white and grey hull plates with orange trim and glowing blue engines at the back, one object alone on a plain pure white background, centred, soft even light, no shadow, no text, no letters, no numbers. ",
+  "goods": "Game UI icon, painterly sci-fi trading game style, one cargo item alone on a plain pure white background, seen from slightly above, centred, bright friendly colours, made for children aged 8 to 11, crisp edges, soft studio light, no shadow, no text, no letters, no numbers. "
+ },
+ "inbox": "~/dragon-art-inbox/trader-hold",
+ "picks": "docs/trader-hold-art/picks.json",
+ "art_dir": "src/games/trader/art/paint",
+ "home_dir": "src/games/trader/art/paint",
+ "pictures": [
+  {
+   "name": "flea-top",
+   "prompt": "A small short stubby spaceship, its body a fat rounded oval seen from above, a round glass cockpit dome at the nose end, two small swept wings, one round blue thruster at the tail, an open square cargo hatch in the middle of its back showing a flat empty grey floor.",
+   "size": [
+    1344,
+    768
+   ],
+   "kind": "cut",
+   "folder": "top",
+   "file": "flea",
+   "max": 1200
+  },
+  {
+   "name": "gnat-top",
+   "prompt": "A small slim fast spaceship shaped like an arrowhead seen from above, a glass cockpit near the nose, two long thin engine pods with round blue thrusters either side of the tail, an open rectangular cargo deck in the middle of its back showing a flat empty grey floor.",
+   "size": [
+    1344,
+    768
+   ],
+   "kind": "cut",
+   "folder": "top",
+   "file": "gnat",
+   "max": 1200
+  },
+  {
+   "name": "firefly-top",
+   "prompt": "A small sleek cargo trader spaceship, long body with an open cargo deck in the middle showing a flat empty floor divided into a neat grid of square bays, small cockpit canopy at the nose, two short swept wings, two round blue thruster engines at the tail.",
+   "size": [
+    1344,
+    768
+   ],
+   "kind": "cut",
+   "folder": "top",
+   "file": "firefly",
+   "max": 1200
+  },
+  {
+   "name": "bumblebee-top",
+   "prompt": "A chubby rounded oval medium spaceship seen from above, a yellow stripe band across its middle, a glass cockpit at the nose, a small twin gun turret at the back, short stubby wings with round blue thrusters, a wide almost square open cargo deck in the middle showing a flat empty grey floor.",
+   "size": [
+    1344,
+    768
+   ],
+   "kind": "cut",
+   "folder": "top",
+   "file": "bumblebee",
+   "max": 1200
+  },
+  {
+   "name": "beetle-top",
+   "prompt": "A big wide rounded bulky cargo hauler spaceship like a beetle shell, a small cockpit window at the nose, round blue thrusters at the back, a very large wide open rectangular cargo deck taking up most of the body showing a flat empty floor.",
+   "size": [
+    1344,
+    768
+   ],
+   "kind": "cut",
+   "folder": "top",
+   "file": "beetle",
+   "max": 1200
+  },
+  {
+   "name": "termite-top",
+   "prompt": "A long heavy armoured freighter spaceship seen from above, wide flat rectangular body, a row of four round blue thrusters at the tail, a small gun turret at the very back, a pointed nose, a very big wide open rectangular cargo deck taking up most of the body from the tail end almost to the nose, showing a flat empty grey floor.",
+   "size": [
+    1344,
+    768
+   ],
+   "kind": "cut",
+   "folder": "top",
+   "file": "termite",
+   "max": 1200
+  },
+  {
+   "name": "pod",
+   "prompt": "A long thin open-topped cargo pod container, a simple rectangular tray, top-down view, off-white and grey hull panels with orange trim around the rim, the inside floor divided into five equal square compartments in one straight row, all empty, small metal docking clamps on one long side, no engines, no cockpit, no wings.",
+   "size": [
+    1344,
+    512
+   ],
+   "kind": "cut",
+   "folder": "top",
+   "file": "pod",
+   "max": 700
+  },
+  {
+   "name": "good-water",
+   "prompt": "A sealed clear blue water tank barrel with sloshing blue water inside.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "cut",
+   "folder": "goods",
+   "file": "water",
+   "max": 128
+  },
+  {
+   "name": "good-furs",
+   "prompt": "A bundled stack of soft fluffy fur pelts tied with rope.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "cut",
+   "folder": "goods",
+   "file": "furs",
+   "max": 128
+  },
+  {
+   "name": "good-food",
+   "prompt": "A crate of fresh fruit and vegetables and bread loaves.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "cut",
+   "folder": "goods",
+   "file": "food",
+   "max": 128
+  },
+  {
+   "name": "good-ore",
+   "prompt": "A pile of chunky glittering metal ore rocks with copper and silver veins in a small mine cart.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "cut",
+   "folder": "goods",
+   "file": "ore",
+   "max": 128
+  },
+  {
+   "name": "good-games",
+   "prompt": "A box of colourful board games and a handheld game console.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "cut",
+   "folder": "goods",
+   "file": "games",
+   "max": 128
+  },
+  {
+   "name": "good-fireworks",
+   "prompt": "A wooden crate packed with colourful firework rockets.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "cut",
+   "folder": "goods",
+   "file": "fireworks",
+   "max": 128
+  },
+  {
+   "name": "good-medicine",
+   "prompt": "A white medical case with a red cross and glowing potion bottles.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "cut",
+   "folder": "goods",
+   "file": "medicine",
+   "max": 128
+  },
+  {
+   "name": "good-machines",
+   "prompt": "A heap of chunky machine parts: gears, a motor and pistons.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "cut",
+   "folder": "goods",
+   "file": "machines",
+   "max": 128
+  },
+  {
+   "name": "good-lollies",
+   "prompt": "A big glass jar overflowing with colourful wrapped sweets and swirl lollipops.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "cut",
+   "folder": "goods",
+   "file": "lollies",
+   "max": 128
+  },
+  {
+   "name": "good-robots",
+   "prompt": "A friendly small boxy helper robot with glowing blue eyes standing in a crate.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "cut",
+   "folder": "goods",
+   "file": "robots",
+   "max": 128
+  }
+ ]
+}

@@ -6,10 +6,12 @@
  * each weapon once picked up, each evolution once made, and the passive that evolves it.
  */
 import { useState } from 'react';
-import { PASSIVES, SHOP, SHOP_IDS, WEAPON_IDS, WEAPONS, type ShopId } from '../../../shared/goblinstorm/config';
+import { HEROES, PASSIVES, SHOP, SHOP_IDS, WEAPON_IDS, WEAPONS, type HeroDef, type ShopId } from '../../../shared/goblinstorm/config';
 import { CODEX_SIZE, allBought, codexCount, nextCost, shopLevelOf, shopTop } from '../../../shared/goblinstorm/shop';
 import { GoblinStormError, type GoblinStormBackend, type MySave } from './backend';
-import { PASSIVE_ICON, WEAPON_ICON } from './look';
+import { heroOpen } from '../../../shared/goblinstorm/server';
+import { powerPic, powerWords } from './heroPowers';
+import { HERO_ICON, PASSIVE_ICON, WEAPON_ICON } from './look';
 import { Pic } from './Pic';
 
 const SHOP_ICON: Record<ShopId, string> = { might: '💪', armour: '🛡️', speed: '👟', health: '❤️', magnet: '🧲', gold: '🪙' };
@@ -78,31 +80,39 @@ export function ShopScreen({ backend, save, onSave }: { backend: GoblinStormBack
   );
 }
 
-export function CodexScreen({ save }: { save: MySave }) {
+export function CodexScreen({ save, hero, onHero }: { save: MySave; hero: HeroDef; onHero: (h: HeroDef) => void }) {
   return (
     <>
       <p className="gs-menu__sub gs-progress">📖 Codex {codexOf(save)}/{CODEX_SIZE}</p>
       <p className="gs-menu__sub">Pick up a weapon to add it. Get it to level 5 with its partner to evolve it!</p>
+      <div className="gs-codex__heroes" role="group" aria-label="Whose weapons to show">
+        {HEROES.filter((h) => heroOpen(save, h.id)).map((h) => (
+          <button key={h.id} type="button" className={`gs-btn gs-btn--ghost${h.id === hero.id ? ' gs-codex__hero--on' : ''}`} aria-pressed={h.id === hero.id} onClick={() => onHero(h)}>
+            <Pic path={`portraits/${h.id}`} small fallback={HERO_ICON[h.id]} className="gs-pic--inline" /> {h.name}
+          </button>
+        ))}
+      </div>
       <div className="gs-grid gs-codex">
         {WEAPON_IDS.map((id) => {
           const w = WEAPONS[id];
+          const own = powerWords(hero.id, id);
           const seen = save.weapons.includes(id);
           const evolved = save.codex.includes(id);
           const partner = PASSIVES[w.evolvesWith];
           return (
             <div key={id} className="gs-pick gs-codex__pair">
               <div className={`gs-codex__page${seen ? '' : ' gs-codex__page--unseen'}`}>
-                <span className="gs-pick__icon" aria-hidden="true">{seen ? <Pic path={`weapons/${id}`} small fallback={WEAPON_ICON[id]} className="gs-pic--inline" /> : '❔'}</span>
-                <span className="gs-pick__name">{seen ? w.name : 'Not found yet'}</span>
-                {seen && <span className="gs-pick__blurb">{w.blurb}</span>}
+                <span className="gs-pick__icon" aria-hidden="true">{seen ? <Pic path={powerPic(hero.id, id)} small fallback={WEAPON_ICON[id]} className="gs-pic--inline" /> : '❔'}</span>
+                <span className="gs-pick__name">{seen ? own.name : 'Not found yet'}</span>
+                {seen && <span className="gs-pick__blurb">{own.blurb}</span>}
               </div>
               <span className="gs-codex__plus">
                 + <Pic path={`passives/${partner.id}`} small fallback={PASSIVE_ICON[partner.id]} className="gs-pic--inline" /> {partner.name} =
               </span>
               <div className={`gs-codex__page gs-codex__page--evolved${evolved ? '' : ' gs-codex__page--unseen'}`}>
-                <span className="gs-pick__icon" aria-hidden="true">{evolved ? <Pic path={`evolved/${id}`} small fallback="✨" className="gs-pic--inline" /> : '❔'}</span>
-                <span className="gs-pick__name">{evolved ? w.evolved.name : 'Evolution not made yet'}</span>
-                {evolved && <span className="gs-pick__blurb">{w.evolved.blurb}</span>}
+                <span className="gs-pick__icon" aria-hidden="true">{evolved ? <Pic path={powerPic(hero.id, id, true)} small fallback="✨" className="gs-pic--inline" /> : '❔'}</span>
+                <span className="gs-pick__name">{evolved ? own.evolved : 'Evolution not made yet'}</span>
+                {evolved && <span className="gs-pick__blurb">{own.evolvedBlurb}</span>}
               </div>
             </div>
           );

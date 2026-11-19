@@ -17,7 +17,7 @@ import {
 } from './config';
 import type { Galaxy } from './galaxy';
 import { isBanned } from './market';
-import { freeHolds, type Trader } from './state';
+import { freeHolds, setCargo, type Trader } from './state';
 
 export type Encounter =
   | { kind: 'none' }
@@ -71,7 +71,7 @@ export function settleCustoms(t: Trader, banned: number[]): { state: Trader; tak
   let taken = 0;
   for (const good of banned) {
     taken += state.cargo[good];
-    state.cargo[good] = 0;
+    setCargo(state, good, 0);
   }
   const fine = taken > 0 ? Math.min(state.credits, CUSTOMS_FINE_BASE + CUSTOMS_FINE_PER_UNIT * taken) : 0;
   state.credits -= fine;
@@ -94,10 +94,10 @@ export function acceptDeal(t: Trader, e: Extract<Encounter, { kind: 'trader' }>)
     const cost = e.price * e.qty;
     if (cost > state.credits || e.qty > freeHolds(t)) return null;
     state.credits -= cost;
-    state.cargo[e.good] += e.qty;
+    setCargo(state, e.good, state.cargo[e.good] + e.qty, cost);
   } else {
     if (state.cargo[e.good] < e.qty) return null;
-    state.cargo[e.good] -= e.qty;
+    setCargo(state, e.good, state.cargo[e.good] - e.qty);
     state.credits += e.price * e.qty;
   }
   return state;

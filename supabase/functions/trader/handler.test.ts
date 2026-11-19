@@ -150,11 +150,16 @@ function world(opts: { settings?: Partial<ClassSettings>; now?: () => number } =
 }
 
 describe('the Star Trader server function', () => {
-  it('refuses a missing or fake sign-in and anything that is not a POST', async () => {
+  it('refuses a missing or fake sign-in and anything that is not a POST, and pupils cannot touch each other\'s games', async () => {
     const { call } = world();
     expect((await call({ action: 'load' }, 'nope')).status).toBe(401);
     const handler = makeHandler(world().state as unknown as Services);
     expect((await handler(new Request('https://x/trader', { method: 'GET' }))).status).toBe(405);
+    const w = world();
+    await w.call({ action: 'load' });
+    await w.call({ action: 'load' }, 'good2');
+    expect(w.state.games.has('ben')).toBe(true);
+    expect(w.state.games.get('ben')!.game).not.toBe(w.state.games.get('ana')!.game);
   });
 
   it('applies a trade with the shared rules and a request sent twice counts once', async () => {
@@ -212,14 +217,6 @@ describe('the Star Trader server function', () => {
     plan2[line.good] = 1;
     const again = await w.call({ action: 'act', requestId: w.id(), version: 2, actions: [{ type: 'trade', plan: plan2, ask: { slot: 0, value: right, ms: 1 } }] });
     expect(again.status).toBe(400);
-  });
-
-  it('pupils cannot touch each other\'s games', async () => {
-    const w = world();
-    await w.call({ action: 'load' });
-    await w.call({ action: 'load' }, 'good2');
-    expect(w.state.games.has('ben')).toBe(true);
-    expect(w.state.games.get('ben')!.game).not.toBe(w.state.games.get('ana')!.game);
   });
 });
 

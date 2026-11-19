@@ -27,6 +27,15 @@ export const planetMap = (name: string, small?: boolean) => (small && file('plan
 /** A trader ship by its name in SHIPS ("Beetle"), side-on facing right and cut out. `card` is the 160 px copy for the shipyard. */
 export const shipArt = (name: string, card?: boolean) => (card && file('ships', `${slug(name)}-card`)) || file('ships', slug(name));
 
+/** A trader ship by its name in SHIPS, seen from directly above with its cargo deck open (nose right), for the hold view. */
+export const shipTopArt = (name: string) => file('top', slug(name));
+
+/** A cargo pod seen from above: an open tray with five bays, for the hold view. */
+export const podArt = () => file('top', 'pod');
+
+/** A good by its name in GOODS ("Lollies"), a small cut-out picture for the hold's boxes. */
+export const goodArt = (name: string) => file('goods', slug(name));
+
 /** The painting for each pirate in PIRATE_TIERS, in the same order. */
 export const PIRATE_ART = ['pirate-scrappy', 'pirate-raider', 'pirate-captain'] as const;
 

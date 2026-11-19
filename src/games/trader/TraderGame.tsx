@@ -12,6 +12,7 @@ import { coordText, makeGalaxy, type Galaxy } from '../../../shared/trader/galax
 import type { NewsItem } from '../../../shared/trader/news';
 import { schoolPushes } from '../../../shared/trader/priceGuide';
 import { runPlan } from '../../../shared/trader/plan';
+import { HoldView } from './HoldView';
 import { applyBatch, type Action, type Game, type Mark, type Settings } from '../../../shared/trader/server';
 import { emptyDesign, type SystemDesign } from '../../../shared/trader/system';
 import { type ApiResult, type Loaded, type MoveReply, type TraderApi } from '../../data/trader';
@@ -70,6 +71,15 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   const [queue, setQueue] = useState<Action[]>([]);
   const [phase, setPhase] = useState<Phase>({ k: startAt === 'title' ? 'title' : 'planet' });
   const [tab, setTab] = useState<Tab>('trade');
+  // H.4: a planet the hold card asked to see on the star chart (`n` counts, so asking again pulses again).
+  const [mapFocus, setMapFocus] = useState<{ planet: number; n: number } | null>(null);
+  const showOnMap = useCallback((planet: number) => {
+    setMapFocus((f) => ({ planet, n: (f?.n ?? 0) + 1 }));
+    setTab('map');
+  }, []);
+  useEffect(() => {
+    if (tab !== 'map') setMapFocus(null);
+  }, [tab]);
   const [prefs, setPrefs] = useState(loadPrefs);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -595,6 +605,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   const gain = upgrade && galaxy && t ? upgradeGain(galaxy, t, upgrade, allLines) : null;
   const suggest = upgrade && bolt ? { target: upgrade.target, why: upgrade.kind === 'pod' ? `${gain ?? upgrade.why}` : `${upgrade.why}${gain ? ` ${gain}.` : ''}` } : null;
 
+  const marketRun = t && marketPlan?.some((n) => n !== 0) ? runPlan(t, marketPlan) : null;
+  const marketAfter = marketRun?.ok ? marketRun.out.state : null;
   const playing = phase.k !== 'title';
   const panelBusy = busy || asking || phase.k === 'warp';
   const tabs: [Tab, string][] = [['trade', 'Trade'], ['ship', 'Ship'], ['bank', 'Bank'], ['map', 'Star chart'], ...(forgeOn ? [['forge', '🌟 Forge'], ['gallery', '🌌 Gallery']] as [Tab, string][] : [])];
@@ -627,6 +639,12 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
       ) : (
         <>
           <Hud goal={forgeOn ? goalOf(design, t.credits, t.moon) : null} t={t} jumpsPerDay={loaded.settings.jumpsPerDay} unlimited={loaded.settings.unlimited === true} planet={`${here.name} ${coordText(here)}`} government={GOVERNMENTS[here.government].name} onExit={onExit} help={helpButton} helpOpen={helpOpen} onHelp={() => (helpOpen ? closeHelp() : setHelpOpen(true))} captain={game?.captain} onCaptain={phase.k === 'planet' && !pending ? () => setPicking(true) : undefined} />
+          {phase.k === 'planet' && !pending && tab === 'trade' && (
+            // On a wide screen the hold sits over the planet, on the right (the market's own copy is hidden by CSS).
+            <div className="st-holdside">
+              <HoldView t={t} after={marketAfter} galaxy={galaxy} pushes={pushes} onShowMap={showOnMap} />
+            </div>
+          )}
           <div className={`st-main ${phase.k === 'planet' && !pending && (tab === 'map' || tab === 'forge' || tab === 'gallery') ? 'st-main--wide' : ''} ${phase.k === 'planet' && !pending && tab === 'forge' ? 'st-main--forge' : ''}`}>
             {phase.k === 'planet' && !pending && (
               <>
@@ -639,7 +657,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
                 </div>
                 {tipCard ?? (step && !flight && bolt && <CoachBar step={step} onShow={showMe} />)}
                 <div className="st-focus" ref={heading} tabIndex={-1} aria-label={`${tabs.find((x) => x[0] === tab)?.[1]} screen`} />
-                {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} want={marketWant} level={level} onTrade={doTrade} onPlan={setMarketPlan} />}
+                {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} want={marketWant} level={level} onTrade={doTrade} onPlan={setMarketPlan} onShowMap={showOnMap} />}
                 {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} suggest={suggest} askFirst={level === 'some'} forge={forgeOn} onForge={() => setTab('forge')} onAct={act} onMoon={() => void buyMoon()} captain={game?.captain} onCaptain={() => setPicking(true)} />}
                 {tab === 'forge' && forgeOn && <Forge saved={savedSystem} draft={design} credits={t.credits} ownsMoon={t.moon} busy={panelBusy} lessMotion={lessMotion} level={level} typing={loaded.settings.forgeTyping !== false} onDraft={setDraft} onPlan={planForge} onApply={applyForge} onPicture={savePicture} />}
                 {tab === 'gallery' && forgeOn && <Gallery api={api} lessMotion={lessMotion} />}
@@ -655,7 +673,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
                     bolt={bolt && loanNotNeeded(t, trips) ? "You can already fill your hold with the best buy here. You don't need a loan right now." : null}
                   />
                 )}
-                {tab === 'map' && <MapPanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} guide={showFlight ? flight?.guide ?? null : null} level={level} unlimited={settings.unlimited} onAim={setAimed} onJump={(d) => void jump(d)} onRefuel={(units) => act({ type: 'refuel', units }, 'Fuel bought.')} />}
+                {tab === 'map' && <MapPanel galaxy={galaxy} t={t} busy={panelBusy} focus={mapFocus} news={news} pushes={pushes} guide={showFlight ? flight?.guide ?? null : null} level={level} unlimited={settings.unlimited} onAim={setAimed} onJump={(d) => void jump(d)} onRefuel={(units) => act({ type: 'refuel', units }, 'Fuel bought.')} />}
                 {note && <p className="st-note st-note--float" role="status">{note}</p>}
                 {t.jumpsLeft < 1 && !settings.unlimited && <p className="st-note st-note--float">That is all your jumps for today. You can still trade here. Come back tomorrow!</p>}
               </>

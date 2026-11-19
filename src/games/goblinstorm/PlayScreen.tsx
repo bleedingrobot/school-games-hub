@@ -13,7 +13,8 @@ import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../math
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import type { FinishReply, GoblinStormBackend, Mark, StartReply } from './backend';
 import { HubButtons } from './HubButtons';
-import { PASSIVE_ICON, WEAPON_COLOUR, WEAPON_ICON } from './look';
+import { powerColour, powerPic, powerWords } from './heroPowers';
+import { PASSIVE_ICON, WEAPON_ICON } from './look';
 import { Pic } from './Pic';
 import { View, type Stick } from './renderer';
 import { useSound } from '../../sound';
@@ -177,10 +178,10 @@ export function PlayScreen({ backend, start, hero, map, onEnd, guided = false, q
     if (g.s.weapons.some((w) => !w.evolved && w.level >= WEAPON_LEVELS)) tell('partner');
     if (u?.kind === 'evolve') {
       g.view.flash = g.view.reduced ? 0.4 : 0.8;
-      g.view.flashColour = WEAPON_COLOUR[u.id].evolved;
+      g.view.flashColour = powerColour(g.s.setup.hero.id, u.id).evolved;
       g.view.addShake(0.6);
       // The canvas writes the evolved name big; this is for screen readers.
-      setAnnounce(`${WEAPONS[u.id].evolved.name}! It clears the screen every few seconds.`);
+      setAnnounce(`${powerWords(g.s.setup.hero.id, u.id).evolved}! It clears the screen every few seconds.`);
     }
     if (waiting(g.s)) beginLevelUp();
     else g.stage = 'play';
@@ -505,20 +506,21 @@ function Card({ s, u, onPick, index }: { s: RunState; u: Upgrade; onPick: (i: nu
   let blurb = '';
   let extra: ReactNode = null;
   if (u.kind === 'evolve') {
-    const def = WEAPONS[u.id];
+    const own = powerWords(s.setup.hero.id, u.id);
     cls += ' gs-card--evolve';
-    icon = <Pic path={`evolved/${u.id}`} small fallback={WEAPON_ICON[u.id]} />;
-    name = def.evolved.name;
+    icon = <Pic path={powerPic(s.setup.hero.id, u.id, true)} small fallback={WEAPON_ICON[u.id]} />;
+    name = own.evolved;
     tag = 'Evolve!';
-    blurb = def.evolved.blurb;
+    blurb = own.evolvedBlurb;
     extra = <span className="gs-card__note">Wipes the screen every few seconds</span>;
   } else if (u.kind === 'weapon') {
     const def = WEAPONS[u.id];
+    const own = powerWords(s.setup.hero.id, u.id);
     cls += ' gs-card--weapon';
-    icon = <Pic path={`weapons/${u.id}`} small fallback={WEAPON_ICON[u.id]} />;
-    name = def.name;
+    icon = <Pic path={powerPic(s.setup.hero.id, u.id)} small fallback={WEAPON_ICON[u.id]} />;
+    name = own.name;
     tag = u.level === 1 ? 'New weapon' : `Level ${u.level}`;
-    blurb = def.blurb;
+    blurb = own.blurb;
     const partner = PASSIVES[def.evolvesWith];
     extra = <><Pips level={u.level} /><span className="gs-card__note">Evolves with {PASSIVE_ICON[partner.id]} {partner.name}</span></>;
   } else if (u.kind === 'passive') {
@@ -529,7 +531,7 @@ function Card({ s, u, onPick, index }: { s: RunState; u: Upgrade; onPick: (i: nu
     tag = u.level === 1 ? 'New power' : `Level ${u.level}`;
     blurb = def.blurb;
     const partner = partnerOf(s, u.id);
-    extra = <><Pips level={u.level} />{partner && <span className="gs-card__note gs-card__note--star">⭐ Partner of {WEAPONS[partner].name}</span>}</>;
+    extra = <><Pips level={u.level} />{partner && <span className="gs-card__note gs-card__note--star">⭐ Partner of {powerWords(s.setup.hero.id, partner).name}</span>}</>;
   } else if (u.kind === 'heal') {
     cls += ' gs-card--other';
     icon = '🍗';
@@ -586,8 +588,8 @@ function Held({ s }: { s: RunState }) {
   return (
     <div className="gs-held" aria-label="What you have">
       {s.weapons.map((w) => (
-        <span key={w.id} className={`gs-held__item${w.evolved ? ' gs-held__item--evolved' : ''}`} title={w.evolved ? WEAPONS[w.id].evolved.name : WEAPONS[w.id].name}>
-          <Pic path={`${w.evolved ? 'evolved' : 'weapons'}/${w.id}`} small fallback={WEAPON_ICON[w.id]} /><small>{w.evolved ? '★' : w.level}</small>
+        <span key={w.id} className={`gs-held__item${w.evolved ? ' gs-held__item--evolved' : ''}`} title={w.evolved ? powerWords(s.setup.hero.id, w.id).evolved : powerWords(s.setup.hero.id, w.id).name}>
+          <Pic path={powerPic(s.setup.hero.id, w.id, w.evolved)} small fallback={WEAPON_ICON[w.id]} /><small>{w.evolved ? '★' : w.level}</small>
         </span>
       ))}
       {s.passives.map((p) => (
