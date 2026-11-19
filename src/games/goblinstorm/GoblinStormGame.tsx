@@ -7,7 +7,7 @@
  * hero by its own deed and each map by beating the boss before it. The server checks both again when a run starts.
  */
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { HEROES, MAPS, UNLOCK_WORDS, WEAPONS, type HeroDef } from '../../../shared/goblinstorm/config';
+import { HEROES, MAPS, UNLOCK_WORDS, type HeroDef } from '../../../shared/goblinstorm/config';
 import { heroOpen, mapOpen, RUNS_A_DAY } from '../../../shared/goblinstorm/server';
 import { CODEX_SIZE } from '../../../shared/goblinstorm/shop';
 import { AchievementPop } from '../../achievements/AchievementPop';
@@ -15,6 +15,7 @@ import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import { CodexScreen, GoldLine, ShopScreen, codexOf } from './BetweenRuns';
 import { GoblinStormError, type GoblinStormBackend, type MySave, type StartReply } from './backend';
 import { HubButtons } from './HubButtons';
+import { powerPic, powerWords } from './heroPowers';
 import { HERO_ICON, MAP_ICON, WEAPON_ICON } from './look';
 import { Pic } from './Pic';
 import { PlayScreen, type RunEnd } from './PlayScreen';
@@ -199,7 +200,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
                     <span className="gs-pick__stats">
                       <Dots n={dots(h.speed, 3, 4.6)} label="Speed" />
                       <Dots n={dots(h.health, 75, 140)} label="Health" />
-                      <span className="gs-pick__weapon"><Pic path={`weapons/${h.weapon}`} small fallback={WEAPON_ICON[h.weapon]} className="gs-pic--inline" /> {WEAPONS[h.weapon].name}</span>
+                      <span className="gs-pick__weapon"><Pic path={powerPic(h.id, h.weapon)} small fallback={WEAPON_ICON[h.weapon]} className="gs-pic--inline" /> {powerWords(h.id, h.weapon).name}</span>
                     </span>
                   )}
                   {!open && <span className="gs-pick__lock">🔒 {UNLOCK_WORDS[h.unlock]}</span>}
@@ -285,7 +286,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
 
       {screen === 'codex' && save && (
         <Menu title="Weapon Codex" back={() => setScreen('map')} extra={extra}>
-          <CodexScreen save={save} />
+          <CodexScreen save={save} hero={hero} onHero={setHero} />
         </Menu>
       )}
 
@@ -371,7 +372,7 @@ function EndScreen({ end, onAgain, onMenu, onShop, busy, error, newMap, left }: 
             <div><dt>Level</dt><dd>{sum.level}</dd></div>
             <div><dt>Monsters beaten</dt><dd>{sum.kills}</dd></div>
             <div><dt>Gold</dt><dd>🪙 {sum.gold}</dd></div>
-            <div><dt>Evolutions</dt><dd>{sum.evolved.length ? sum.evolved.map((w) => WEAPONS[w].evolved.name).join(', ') : 'none yet'}</dd></div>
+            <div><dt>Evolutions</dt><dd>{sum.evolved.length ? sum.evolved.map((w) => powerWords(end.hero.id, w).evolved).join(', ') : 'none yet'}</dd></div>
             <div><dt>Bosses</dt><dd>{[sum.miniBeaten && end.map.monsters[3].name, sum.bossBeaten && end.map.monsters[4].name].filter(Boolean).join(', ') || 'none yet'}</dd></div>
           </dl>
         )}
