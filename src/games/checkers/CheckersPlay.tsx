@@ -17,6 +17,7 @@ import {
 import { useAuth } from '../../auth/AuthContext';
 import { AvatarImage } from '../../avatar/AvatarImage';
 import { BotLevelPicker } from '../../components/BotLevelPicker';
+import { BotPortrait } from '../../components/BotPortrait';
 import { refreshSaveToken, saveAbandonedGame, saveBotGame } from '../../data/botGames';
 import { FriendlyError } from '../../data/profile';
 import { useSound } from '../../sound';
@@ -24,11 +25,11 @@ import { AchievementPop } from '../../achievements/AchievementPop';
 import { playSound, type GameSound } from '../sounds';
 import { BOT_LEVELS, type BotLevel } from '../types';
 import { BOT_DESCRIPTIONS } from './bot';
+import { CHECKERS_BOTS } from './botPictures';
 import { startCheckersBot, type CheckersBot } from './botThread';
 import { Board } from './Board';
 import { Captured, pretty } from './moveText';
 
-const BOT_EMOJI: Record<BotLevel, string> = { 'very-easy': '🐣', easy: '🤖', medium: '🧠' };
 /** The bot always waits at least this long, so its moves don't appear instantly. */
 const BOT_PAUSE_MS = { min: 600, extra: 700 };
 
@@ -246,10 +247,12 @@ export function CheckersPlay({ level }: { level: BotLevel }) {
             value={level}
             onChange={(next) => setParams({ bot: next }, { replace: true })}
           />
-          <p className="chess-setup__bot">
-            <span aria-hidden="true">{BOT_EMOJI[level]}</span> <strong>{levelInfo.label} bot:</strong>{' '}
-            {BOT_DESCRIPTIONS[level]}
-          </p>
+          <div className="chess-setup__bot has-pic">
+            <BotPortrait key={level} pictures={CHECKERS_BOTS} level={level} big />
+            <p>
+              <strong>{levelInfo.label} bot:</strong> {BOT_DESCRIPTIONS[level]}
+            </p>
+          </div>
           <fieldset className="level-picker">
             <legend>Your pieces</legend>
             <div className="level-picker__options">
@@ -372,8 +375,8 @@ export function CheckersPlay({ level }: { level: BotLevel }) {
 
       <aside className="chess-game__side" aria-label="Game information">
         <div className={`player-card${botsTurn ? ' is-turn' : ''}`}>
-          <span className="player-card__bot" aria-hidden="true">
-            {BOT_EMOJI[game.level]}
+          <span className="player-card__bot has-pic" aria-hidden="true">
+            <BotPortrait pictures={CHECKERS_BOTS} level={game.level} thinking={botsTurn && !judged} />
           </span>
           <div title={BOT_DESCRIPTIONS[game.level]}>
             <strong>{levelInfo.label} bot</strong>

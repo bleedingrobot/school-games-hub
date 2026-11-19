@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'checkers-pirate-bots-2026-11-19',
+    date: '2026-11-19',
+    emoji: '🏴‍☠️',
+    title: 'Pirate bots',
+    text: 'The checkers bots are now a pirate crew: a chick, a robot and a kea captain!',
+    game: 'checkers',
+  },
+  {
     id: 'diamond-rare-rarer-2026-11-19',
     date: '2026-11-19',
     emoji: '💎',

@@ -74,4 +74,6 @@ counter seen from directly above".
 ## Open questions for James
 
 - Are the unlock rules above about right, and is Moon base (6 pieces left) too hard?
-- Should the bot portraits (chess stage 5) be shared with checkers?
+- ~~Should the bot portraits (chess stage 5) be shared with checkers?~~ Done 19 Nov 2026: checkers shares the
+  painted-bot piece (`src/components/BotPortrait.tsx`) with its own pirate crew (a chick, a robot, a kea captain;
+  `docs/checkers-art/bots.json`, art in `src/games/checkers/art/bot/`).
