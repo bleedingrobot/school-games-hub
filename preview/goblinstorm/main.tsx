@@ -15,7 +15,9 @@ const params = new URLSearchParams(location.search);
 const multipleChoice = params.get('mc') === '1';
 // ?open=all: every hero and map open, to try them all (the pretend save is otherwise fresh and lives in this page).
 const openAll = params.get('open') === 'all';
-const start = openAll ? { ...emptySave(), heroes: HEROES.map((h) => h.id), bosses: MAPS.map((_, i) => i) } : emptySave();
+// ?gold=2000: start with that much gold, to try the shop.
+const gold = Math.max(0, Math.floor(Number(params.get('gold')) || 0));
+const start = { ...(openAll ? { ...emptySave(), heroes: HEROES.map((h) => h.id), bosses: MAPS.map((_, i) => i) } : emptySave()), gold };
 const backend = standInBackend(undefined, multipleChoice, start);
 
 createRoot(document.getElementById('root') as HTMLElement).render(
@@ -23,7 +25,7 @@ createRoot(document.getElementById('root') as HTMLElement).render(
     <SoundProvider>
       <GoblinStormGame
         backend={backend}
-        extra={<p className="gs-menu__sub" style={{ marginTop: '1.5rem', fontSize: '0.85rem' }}>Preview only: nothing is saved to the school. Pretend focus: times tables. Add ?mc=1 for pick-an-answer questions, ?open=all to open every hero and map.</p>}
+        extra={<p className="gs-menu__sub" style={{ marginTop: '1.5rem', fontSize: '0.85rem' }}>Preview only: nothing is saved to the school. Pretend focus: times tables. Add ?mc=1 for pick-an-answer questions, ?open=all to open every hero and map, ?gold=2000 to try the shop.</p>}
       />
     </SoundProvider>
   </StrictMode>,

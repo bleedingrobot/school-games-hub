@@ -4,11 +4,12 @@
  * tests run this with services kept in memory (memoryServices.ts), so both use exactly the same rules.
  *
  *   start   checks the teacher's switch, the hero and map are open and the 5-runs-a-day limit, stamps a seed, and makes
- *           and keeps up to 40 level-up questions from the pupil's own focus (way A). Sends them without answers.
+ *           and keeps up to 14 level-up questions from the pupil's own focus (way A). Sends them without answers.
  *   answer  marks one level-up question against the kept one, once (the first answer counts), records it for the maths
  *           records and says wrong, right or quick.
- *   finish  decodes the steering and replays the run with the cards the server's own marks gave, refuses a run sent
- *           faster than it could be played, and saves only what the replay says.
+ *   finish  decodes the steering and replays the run with the cards the server's own marks gave and the shop kept at
+ *           start, refuses a run sent faster than it could be played, and saves only what the replay says. The
+ *           database gives the hub points (normal turns only) as it saves.
  *
  * Nothing that counts comes from the browser: the seed, the questions, the marks and the result are the server's.
  */
@@ -55,6 +56,8 @@ export interface KeptRun {
   questions: Question[];
   /** Answers so far, by slot. */
   answers: Record<string, Answered>;
+  /** The shop levels when the run started: the browser plays with these, so the replay uses them too. */
+  shop: ShopLevels;
   /** When `start` kept it (ms since 1970). */
   startedAt: number;
   open: boolean;
@@ -67,6 +70,8 @@ export interface RunToKeep {
   hero: HeroId;
   map: number;
   questions: Question[];
+  /** The save's shop at start, kept with the run (buying in another tab mid-run can't change the replay). */
+  shop: ShopLevels;
   /** The NZ date it counts against. */
   day: string;
   /** Past the normal turns, on an "Unlimited today" day. */
@@ -191,11 +196,12 @@ export async function handleGoblinStorm(services: GoblinStormServices, player: s
     for (let tries = 0; tries < 3; tries++) {
       const seed = Math.floor(services.random() * 2 ** 32);
       const questions = runQuestions(context, seed);
-      const kept = await services.start(player, { seed, hero: hero as HeroId, map: map as number, questions, day, extra: today >= RUNS_A_DAY });
+      const shop = save.shop ?? {};
+      const kept = await services.start(player, { seed, hero: hero as HeroId, map: map as number, questions, shop, day, extra: today >= RUNS_A_DAY });
       if (kept === 'busy') return busy();
       if (kept) {
         return ok({
-          seed, hero, map,
+          seed, hero, map, shop,
           questions: questions.map((q, slot) => publicQuestion(q, slot)),
           quickMs: quickMsForPack(null),
           runsLeft: unlimited ? null : Math.max(0, RUNS_A_DAY - today - 1),
@@ -262,7 +268,8 @@ export async function handleGoblinStorm(services: GoblinStormServices, player: s
     const hero = HEROES.find((h) => h.id === run.hero);
     const map = MAPS[run.map];
     if (!hero || !map) return unreadable();
-    const replay = replayRun({ setup: { seed, hero, map, shop: save.shop }, steering: dirs, picks: picks as number[], choices: choicesOf(run) });
+    // The shop as it was at start (kept with the run), not as it is now: the browser played with that one.
+    const replay = replayRun({ setup: { seed, hero, map, shop: run.shop ?? {} }, steering: dirs, picks: picks as number[], choices: choicesOf(run) });
     if (!replay.valid) return no(422, 'That run couldn’t be checked.', 'not-valid');
     const kept = await services.finish(player, seed, { steering, picks: picks as number[], summary: replay.summary });
     if (kept === 'busy') return busy();

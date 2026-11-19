@@ -749,6 +749,8 @@ export interface RunSummary {
   miniBeaten: boolean;
   bossBeaten: boolean;
   evolved: WeaponId[];
+  /** Every weapon held in the run, in the order picked up (weapons are never dropped). Fills the Weapon Codex. */
+  weapons: WeaponId[];
   longestNoHitSeconds: number;
   gold: number;
 }
@@ -769,6 +771,7 @@ export function summary(s: RunState): RunSummary {
     miniBeaten: s.miniBeaten,
     bossBeaten: s.bossBeaten,
     evolved: [...s.evolved],
+    weapons: s.weapons.map((w) => w.id),
     longestNoHitSeconds: Math.floor(s.longestNoHit / STEPS_PER_SECOND),
     gold: goldFor(s),
   };

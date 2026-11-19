@@ -7,6 +7,7 @@ import { botRun } from '../../../shared/goblinstorm/bot';
 import { CHOICES, HEROES, MAPS, QUESTIONS_PER_RUN, type WeaponId } from '../../../shared/goblinstorm/config';
 import { memoryServices } from '../../../shared/goblinstorm/memoryServices';
 import { RUNS_A_DAY, freshSave, newUnlocks, runQuestions } from '../../../shared/goblinstorm/server';
+import { goldFor } from '../../../shared/goblinstorm/engine';
 import { encodeSteering } from '../../../shared/goblinstorm/replay';
 import { makeHandler } from './handler';
 
@@ -78,9 +79,14 @@ it('refuses: signed out, switch off, locked, a 6th run, too fast and another pup
   expect((await send('pupil-a', START)).body).toMatchObject({ code: 'game-off' });
 });
 
-it('marks a slot once, records it, and replays with the cards those marks gave', async () => {
+it('marks a slot once, records it, and replays with the cards those marks gave and the shop it started with', async () => {
   const { send, world, rightAnswer } = setup();
-  const { seed } = (await send('pupil-a', START)).body;
+  const shop = { might: 3, health: 2, gold: 2 };
+  world.saves.set('pupil-a', { ...freshSave(), gold: 500, shop });
+  const started = (await send('pupil-a', START)).body;
+  const { seed } = started;
+  // The browser plays with the shop the server kept for this run.
+  expect(started.shop).toEqual(shop);
   const at = { action: 'answer', seed };
   const wrong = await send('pupil-a', { ...at, slot: 0, value: rightAnswer('pupil-a', seed, 0) + 1, ms: 3000 });
   expect(wrong.body).toMatchObject({ mark: 'wrong', correct: false, answer: rightAnswer('pupil-a', seed, 0) });
@@ -96,11 +102,13 @@ it('marks a slot once, records it, and replays with the cards those marks gave',
 
   // The replay uses the server's marks: 2, 4 and 3 cards for the first three questions (then 2 for unanswered ones).
   const marks = { 0: CHOICES.wrong, 1: CHOICES.quick, 2: CHOICES.right } as Record<number, number>;
-  const bot = botRun({ seed, hero: HEROES[0], map: MAPS[0], shop: {} }, (slot) => marks[slot] ?? CHOICES.wrong, 60 * 90);
+  const bot = botRun({ seed, hero: HEROES[0], map: MAPS[0], shop }, (slot) => marks[slot] ?? CHOICES.wrong, 60 * 90);
   world.clock += 90_000;
+  // Buying more mid-run (in another tab) changes nothing: the finish replays with the shop kept at start.
+  world.saves.get('pupil-a')!.shop = { might: 5, health: 5, gold: 5, speed: 5 };
   const finish = { action: 'finish', seed, steering: encodeSteering(bot.steering), picks: bot.picks };
-  expect((await send('pupil-a', finish)).body).toMatchObject({ valid: true, summary: { level: bot.state.level, kills: bot.state.kills } });
-  expect(world.saves.get('pupil-a')?.gold).toBe(world.runs.get(`pupil-a:${seed}`)?.summary?.gold);
+  expect((await send('pupil-a', finish)).body).toMatchObject({ valid: true, summary: { level: bot.state.level, kills: bot.state.kills, gold: goldFor(bot.state) } });
+  expect(world.saves.get('pupil-a')?.gold).toBe(500 + world.runs.get(`pupil-a:${seed}`)!.summary!.gold);
   // Once ended, no more answers.
   expect((await send('pupil-a', { ...at, slot: 3, value: 1 })).body).toMatchObject({ code: 'gone' });
 });

@@ -4,7 +4,7 @@
  */
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../../config';
 import { supabase } from '../../lib/supabase';
-import { fromServer, GoblinStormError, type GoblinStormBackend, type MySave } from './backend';
+import { fromServer, GoblinStormError, type BuyReply, type GoblinStormBackend, type MySave } from './backend';
 
 export const liveGoblinStorm: GoblinStormBackend = fromServer(async (body) => {
   const { data } = await supabase.auth.getSession();
@@ -33,4 +33,9 @@ export const liveGoblinStorm: GoblinStormBackend = fromServer(async (body) => {
   const { data, error } = await supabase.rpc('my_goblinstorm');
   if (error || !data) throw new GoblinStormError('Your save couldn’t be loaded. Check the internet and try again.');
   return data as Partial<MySave>;
+}, async (item) => {
+  // One locked update on the pupil's own save: it checks the gold and the top level, so it can never overspend.
+  const { data, error } = await supabase.rpc('buy_goblinstorm', { item });
+  if (error || !data) throw new GoblinStormError('That couldn’t be bought. Check the internet and try again.');
+  return data as BuyReply;
 });

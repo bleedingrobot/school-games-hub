@@ -3,7 +3,8 @@
  * `goblinstorm` function (liveBackend.ts), which makes and marks the questions (way A) and replays the run itself. The
  * stand-in below is for the preview: it lives in the browser, uses a fixed pretend focus and never calls the live site.
  */
-import { CHOICES, HEROES, MAPS, QUESTIONS_PER_RUN, type HeroId } from '../../../shared/goblinstorm/config';
+import { CHOICES, HEROES, MAPS, QUESTIONS_PER_RUN, type HeroId, type ShopId, type ShopLevels } from '../../../shared/goblinstorm/config';
+import { buy as buyLevel } from '../../../shared/goblinstorm/shop';
 import { replayRun, choicesFor, decodeSteering } from '../../../shared/goblinstorm/replay';
 import type { RunSummary } from '../../../shared/goblinstorm/engine';
 import { AUTO_FOCUS, type MathsFocus } from '../../../shared/maths/focus';
@@ -17,13 +18,18 @@ export { factText, type Mark };
 
 /** The pupil's own save, as `my_goblinstorm()` gives it: what's open, plus totals for the screens. */
 export interface MySave extends Save {
+  /** Weapons evolved (the Codex's evolution pages). */
   codex: string[];
+  /** Every weapon ever picked up (the Codex's weapon pages). */
+  weapons: string[];
   runs: number;
+  /** The most gold from one run (shown instead of gold once the shop is all bought). */
+  bestGold: number;
   /** Runs started today (NZ date). */
   today: number;
 }
 
-export const emptySave = (): MySave => ({ ...freshSave(), codex: [], runs: 0, today: 0 });
+export const emptySave = (): MySave => ({ ...freshSave(), codex: [], weapons: [], runs: 0, today: 0, bestGold: 0 });
 
 export interface StartReply {
   seed: number;
@@ -32,6 +38,16 @@ export interface StartReply {
   /** Up to 40 questions, one per level-up slot (never their answers). */
   questions: PublicQuestion[];
   quickMs: number;
+  /** The shop this run plays with, kept by the server at start (buying mid-run changes nothing). */
+  shop: ShopLevels;
+}
+
+/** The answer to a shop purchase: the gold and shop now, and why not if it wasn't bought. */
+export interface BuyReply {
+  bought: boolean;
+  reason: null | 'gold' | 'top' | 'none';
+  gold: number;
+  shop: ShopLevels;
 }
 
 export interface AnswerReply { mark: Mark; correct: boolean; answer: number; fact: string }
@@ -49,12 +65,14 @@ export interface GoblinStormBackend {
   start(hero: HeroId, map: number): Promise<StartReply>;
   answer(seed: number, slot: number, value: number, ms: number): Promise<AnswerReply>;
   finish(seed: number, steering: string, picks: number[]): Promise<FinishReply>;
+  /** Buys the next level of one shop item with the pupil's own gold (live: the `buy_goblinstorm()` database function). */
+  buy(item: ShopId): Promise<BuyReply>;
 }
 
 /** The preview's pretend focus: the times tables, as if the teacher had set them. */
 export const PREVIEW_FOCUS: MathsFocus = { ...AUTO_FOCUS, source: 'teacher-class', skills: ['times-tables'], onlyThese: false };
 
-interface Kept { hero: HeroId; map: number; questions: Question[]; marks: (Mark | null)[] }
+interface Kept { hero: HeroId; map: number; questions: Question[]; marks: (Mark | null)[]; shop: ShopLevels }
 
 /**
  * The stand-in server: makes questions from the pretend focus, marks them once, and replays the run like the real one
@@ -63,17 +81,17 @@ interface Kept { hero: HeroId; map: number; questions: Question[]; marks: (Mark 
 export function standInBackend(focus: MathsFocus = PREVIEW_FOCUS, multipleChoice = false, start: MySave = emptySave()): GoblinStormBackend {
   const runs = new Map<number, Kept>();
   const quickMs = quickMsForPack(null);
-  const save: MySave = { ...start, heroes: [...start.heroes], bosses: [...start.bosses], codex: [...start.codex] };
+  const save: MySave = { ...start, heroes: [...start.heroes], bosses: [...start.bosses], codex: [...start.codex], weapons: [...start.weapons], shop: { ...start.shop } };
   return {
     async me() {
-      return { ...save, heroes: [...save.heroes], bosses: [...save.bosses], codex: [...save.codex] };
+      return { ...save, heroes: [...save.heroes], bosses: [...save.bosses], codex: [...save.codex], weapons: [...save.weapons], shop: { ...save.shop } };
     },
     async start(hero, map) {
       const seed = (Date.now() ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0;
       const questions = makeRunQuestions({ facts: [], settings: { multipleChoice }, focus }, QUESTIONS_PER_RUN, seededRandom(`goblinstorm:${seed}`));
-      runs.set(seed, { hero, map, questions, marks: questions.map(() => null) });
+      runs.set(seed, { hero, map, questions, marks: questions.map(() => null), shop: { ...save.shop } });
       save.today++;
-      return { seed, hero, map, questions: questions.map((q, i) => publicQuestion(q, i)), quickMs };
+      return { seed, hero, map, questions: questions.map((q, i) => publicQuestion(q, i)), quickMs, shop: { ...save.shop } };
     },
     async answer(seed, slot, value, ms) {
       const run = runs.get(seed);
@@ -94,7 +112,7 @@ export function standInBackend(focus: MathsFocus = PREVIEW_FOCUS, multipleChoice
       if (!run || !dirs || !hero || !map) throw new Error('No such run');
       // A slot with no question (the focus ran short) gives the "right" 3 cards, as the play screen does.
       const choices = Array.from({ length: QUESTIONS_PER_RUN }, (_, i) => (i < run.questions.length ? choicesFor(run.marks[i] ?? 'wrong') : CHOICES.right));
-      const r = replayRun({ setup: { seed, hero, map, shop: save.shop }, steering: dirs, picks, choices });
+      const r = replayRun({ setup: { seed, hero, map, shop: run.shop }, steering: dirs, picks, choices });
       if (!r.valid) return { valid: false, summary: r.summary };
       runs.delete(seed);
       const unlocked = newUnlocks(save, r.summary, run.map);
@@ -104,7 +122,16 @@ export function standInBackend(focus: MathsFocus = PREVIEW_FOCUS, multipleChoice
       save.kills += r.summary.kills;
       save.runs++;
       save.codex = [...new Set([...save.codex, ...r.summary.evolved])].sort();
+      save.weapons = [...new Set([...save.weapons, ...r.summary.weapons])].sort();
+      save.bestGold = Math.max(save.bestGold, r.summary.gold);
       return { valid: true, summary: r.summary, unlocked };
+    },
+    async buy(item) {
+      const done = buyLevel(save, item);
+      if (typeof done === 'string') return { bought: false, reason: done, gold: save.gold, shop: { ...save.shop } };
+      save.gold = done.gold;
+      save.shop = done.shop;
+      return { bought: true, reason: null, gold: save.gold, shop: { ...save.shop } };
     },
   };
 }
@@ -120,9 +147,10 @@ type Send = (body: Record<string, unknown>) => Promise<{ status: number; body: R
 
 /**
  * The screens' backend over any server that answers like the `goblinstorm` function (shared/goblinstorm/server.ts).
- * `loadSave` reads the pupil's own save (live: the `my_goblinstorm()` database function).
+ * `loadSave` reads the pupil's own save (live: the `my_goblinstorm()` database function) and `buy` spends its gold
+ * (live: `buy_goblinstorm()`, which needs no replay, so it isn't a server action).
  */
-export function fromServer(send: Send, loadSave: () => Promise<Partial<MySave>>): GoblinStormBackend {
+export function fromServer(send: Send, loadSave: () => Promise<Partial<MySave>>, buy: (item: ShopId) => Promise<BuyReply>): GoblinStormBackend {
   async function ask(body: Record<string, unknown>): Promise<Record<string, unknown>> {
     const r = await send(body);
     if (r.status === 200) return r.body;
@@ -136,5 +164,6 @@ export function fromServer(send: Send, loadSave: () => Promise<Partial<MySave>>)
     start: async (hero, map) => (await ask({ action: 'start', hero, map })) as unknown as StartReply,
     answer: async (seed, slot, value, ms) => (await ask({ action: 'answer', seed, slot, value, ms })) as unknown as AnswerReply,
     finish: async (seed, steering, picks) => (await ask({ action: 'finish', seed, steering, picks })) as unknown as FinishReply,
+    buy,
   };
 }
