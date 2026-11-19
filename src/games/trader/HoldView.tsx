@@ -5,7 +5,7 @@
  * instead: one tile per good with how many. Tap or hover a good (H.2) for a card: the two best places in reach to sell
  * it today, and what it sells for here; what you paid (H.3); and a button to find each place on the star chart (H.4).
  */
-import { useMemo, useState, type KeyboardEvent } from 'react';
+import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { GOODS, SHIPS } from '../../../shared/trader/config';
 import type { Galaxy } from '../../../shared/trader/galaxy';
 import { topSales, type BestSale } from '../../../shared/trader/priceGuide';
@@ -114,19 +114,25 @@ function byGood(fills: readonly Filled[]): { good: number; at: number[] }[] {
   return out;
 }
 
-export function HoldView({ t, after, galaxy, pushes, onShowMap }: {
+export function HoldView({ t, after, galaxy, pushes, onShowMap, want }: {
   t: Trader;
   after?: Trader | null;
   galaxy?: Galaxy;
   pushes?: Pushes;
   /** H.4: opens the star chart with this planet picked and pulsing. */
   onShowMap?: (planet: number) => void;
+  /** What Bolt's "Show me" points at (H.5): `hold-<good>`, maybe with "#n", opens that good's card. */
+  want?: string;
 }) {
   // The card: `pinned` from a tap or the keyboard stays until closed; `hover` follows the mouse.
   const [pinned, setPinned] = useState<number | null>(null);
   const [hover, setHover] = useState<number | null>(null);
   const tops = useMemo(() => (galaxy ? topSales(galaxy, t, pushes, 2) : null), [galaxy, t, pushes]);
   const shown = [hover, pinned].find((g) => g !== null && t.cargo[g] > 0) ?? null;
+  useEffect(() => {
+    const m = /^hold-(\d+)(#|$)/.exec(want ?? '');
+    if (m) setPinned(Number(m[1]));
+  }, [want]);
   const pick = (good: number) => setPinned((p) => (p === good ? null : good));
   const keys = (good: number) => (e: KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -191,6 +197,7 @@ export function HoldView({ t, after, galaxy, pushes, onShowMap }: {
               tabIndex={0}
               aria-label={`${GOODS[good]}, ${held} in hold. Where it sells best`}
               aria-pressed={pinned === good}
+              data-coach={`hold-${good}`}
               className={`st-hold__group ${shown === good ? 'st-hold__group--lit' : ''}`}
               onClick={() => pick(good)}
               onKeyDown={keys(good)}
@@ -210,7 +217,7 @@ export function HoldView({ t, after, galaxy, pushes, onShowMap }: {
             const pic = goodArt(GOODS[good]);
             return (
               <li key={GOODS[good]} className={next > q ? 'st-hold__tile--buying' : next < q ? 'st-hold__tile--selling' : ''}>
-                <button type="button" disabled={!tops || q === 0} aria-pressed={pinned === good} onClick={() => pick(good)}>
+                <button type="button" disabled={!tops || q === 0} aria-pressed={pinned === good} onClick={() => pick(good)} data-coach={`hold-${good}`}>
                   {pic ? <img src={pic} alt="" /> : <span aria-hidden="true">{goodIcon(good)}</span>}
                   <span>{GOODS[good]}</span>
                   <strong>× {q}{next !== q && ` → ${next}`}</strong>

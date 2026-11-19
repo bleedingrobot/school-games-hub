@@ -169,6 +169,7 @@ export function trialBackend(options: TrialOptions = {}): Trial {
           g.t.hull = SHIPS[ship].hull;
           g.t.fuel = SHIPS[ship].fuelTank;
           g.t.cargo = g.t.cargo.map(() => 0);
+          g.t.paid = g.t.cargo.map(() => 0);
           g.t.pods = 0;
           // A test ship comes fitted with the best gear that fits, so fights can be tried straight away.
           g.t.weapons = Array.from({ length: SHIPS[ship].weaponSlots }, () => 1);

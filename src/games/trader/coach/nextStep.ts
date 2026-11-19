@@ -87,6 +87,8 @@ export function nextStep(v: CoachView): NextStep {
       if (plan.best.fuel > t.fuel) {
         return { say: `Fill your tank, then fly your ${name} to ${dest.name} at ${coordText(dest)}. ${pays}`, target: tabTarget('ship', tab, 'ship-fuel'), tab: 'ship' };
       }
+      // In the market Bolt points at the good in the hold: its card shows the best places and the way on the star chart.
+      if (tab === 'trade') return { say: `Fly your ${name} to ${dest.name} at ${coordText(dest)}. ${pays} Tap your ${name} in the hold to find the way.`, target: `hold-${plan.good}`, tab: 'trade' };
       return { say: `Fly your ${name} to ${dest.name} at ${coordText(dest)}. ${pays}`, target: tab === 'map' ? `planet-${dest.id}` : 'tab-map', tab: 'map' };
     }
     return { say: `Nobody near here buys ${name} today. Try a planet further away, or keep it for another day.`, target: 'tab-map', tab: 'map' };
