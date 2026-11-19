@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'goblinstorm-quests-2026-11-20',
+    date: '2026-11-20',
+    emoji: '🐉',
+    title: 'Goblin Storm: class quests and a new trophy',
+    text: 'Your teacher can now pick Goblin Storm quests. Beat the Fire Dragon to win its Scale!',
+    game: 'goblinstorm',
+  },
+  {
     id: 'play-other-classes-2026-11-20',
     date: '2026-11-20',
     emoji: '🤝',
