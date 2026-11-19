@@ -12,7 +12,7 @@ import { quickMsForPack } from '../../../shared/maths/config';
 import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRandom, type PublicQuestion } from '../../../shared/maths/serverQuestions';
 import type { Question } from '../../../shared/maths/skillPack';
 
-import { factText, freshSave, newUnlocks, type Mark, type Save } from '../../../shared/goblinstorm/server';
+import { factText, freshSave, newUnlocks, RUNS_A_DAY, type Mark, type Save } from '../../../shared/goblinstorm/server';
 
 export { factText, type Mark };
 
@@ -42,6 +42,8 @@ export interface StartReply {
   quickMs: number;
   /** The shop this run plays with, kept by the server at start (buying mid-run changes nothing). */
   shop: ShopLevels;
+  /** Normal runs left today after this one; null on an Unlimited day (the stand-in leaves it out). */
+  runsLeft?: number | null;
 }
 
 /** The answer to a shop purchase: the gold and shop now, and why not if it wasn't bought. */
@@ -91,11 +93,13 @@ export function standInBackend(focus: MathsFocus = PREVIEW_FOCUS, multipleChoice
       return { ...save, heroes: [...save.heroes], bosses: [...save.bosses], codex: [...save.codex], weapons: [...save.weapons], shop: { ...save.shop } };
     },
     async start(hero, map) {
+      // The same 5-a-day rule as the server (no Unlimited today in the preview).
+      if (save.today >= RUNS_A_DAY) throw new GoblinStormError('All done for today. See you tomorrow!', 'done-today');
       const seed = (Date.now() ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0;
       const questions = makeRunQuestions({ facts: [], settings: { multipleChoice }, focus }, QUESTIONS_PER_RUN, seededRandom(`goblinstorm:${seed}`));
       runs.set(seed, { hero, map, questions, marks: questions.map(() => null), shop: { ...save.shop } });
       save.today++;
-      return { seed, hero, map, questions: questions.map((q, i) => publicQuestion(q, i)), quickMs, shop: { ...save.shop } };
+      return { seed, hero, map, questions: questions.map((q, i) => publicQuestion(q, i)), quickMs, shop: { ...save.shop }, runsLeft: RUNS_A_DAY - save.today };
     },
     async answer(seed, slot, value, ms) {
       const run = runs.get(seed);
