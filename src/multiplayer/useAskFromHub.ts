@@ -15,10 +15,10 @@ export function askInAddress(hash = window.location.hash): number {
   return Number.isSafeInteger(id) && id > 0 ? id : 0;
 }
 
-function dropAskFromAddress() {
+function dropAskFromAddress(key = 'ask') {
   const [path, query = ''] = window.location.hash.split('?');
   const params = new URLSearchParams(query);
-  params.delete('ask');
+  params.delete(key);
   const rest = params.toString();
   window.history.replaceState(window.history.state, '', `${window.location.pathname}${window.location.search}${path}${rest ? `?${rest}` : ''}`);
 }
@@ -33,4 +33,27 @@ export function useAskFromHub(asks: number[], onYes: (id: number) => void): void
     dropAskFromAddress();
     yes.current(wanted);
   }, [wanted, asks]);
+}
+
+/**
+ * The Lobby (stage 3) opens a game at one screen as `#/<game>?open=<screen>`: `live` for the fight, clash or duel screen
+ * (after the Lobby sent a challenge, or for "Carry on"), `race` for a Sky race, `raid` for a Village Raid. Once the game
+ * is `ready` (loaded, with a hero, clan or island), this calls `onOpen` with that word, once, and takes it out of the address.
+ */
+export function openInAddress(hash = window.location.hash): string {
+  const query = hash.split('?')[1] ?? '';
+  const what = new URLSearchParams(query).get('open') ?? '';
+  return /^[a-z]{1,12}$/.test(what) ? what : '';
+}
+
+export function useOpenFromHub(ready: boolean, onOpen: (what: string) => void): void {
+  const [wanted, setWanted] = useState(openInAddress);
+  const go = useRef(onOpen);
+  go.current = onOpen;
+  useEffect(() => {
+    if (!wanted || !ready) return;
+    setWanted('');
+    dropAskFromAddress('open');
+    go.current(wanted);
+  }, [wanted, ready]);
 }

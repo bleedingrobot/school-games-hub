@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'play-a-friend-lobby-2026-11-20',
+    date: '2026-11-20',
+    emoji: '🤝',
+    title: 'A new Play a friend page',
+    text: 'See who’s here, pick a game, and challenge a friend from any class!',
+    to: '/lobby',
+  },
+  {
     id: 'trader-show-map-2026-11-20',
     date: '2026-11-20',
     emoji: '🗺️',

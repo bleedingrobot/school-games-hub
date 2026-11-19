@@ -30,7 +30,7 @@ import { SeasonRoad } from './SeasonRoad';
 import { useAsk, type Answer } from './useAsk';
 import { HubButtons } from './HubButtons';
 import { useClashes } from './useClashes';
-import { useAskFromHub } from '../../multiplayer/useAskFromHub';
+import { useAskFromHub, useOpenFromHub } from '../../multiplayer/useAskFromHub';
 import { ClashAskBanner } from './LiveArena';
 import { AchievementPop } from '../../achievements/AchievementPop';
 import './lord.css';
@@ -111,6 +111,9 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
   useAskFromHub(clashes.asks.map((a) => a.clash), (id) => {
     void clashes.send({ action: 'clash-answer', clash: id, accept: true }).then((r) => { if (r.ok) setScreen({ name: 'arena' }); else setNote(r.message); });
   });
+
+  // The Lobby sent a challenge (or "Carry on"): straight to the arena, where the wait or the clash shows.
+  useOpenFromHub(!!hero, (what) => what === 'live' && setScreen({ name: 'arena' }));
 
   const stateRef = useRef<LordState | null>(null);
   stateRef.current = state;

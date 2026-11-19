@@ -22,7 +22,7 @@ import { VillageRaids, type RaidGo } from './VillageRaids';
 import { BannerRain } from './RaidStage';
 import { DuelArena, DuelAskBanner } from './Duels';
 import { useDuels } from './useDuels';
-import { useAskFromHub } from '../../multiplayer/useAskFromHub';
+import { useAskFromHub, useOpenFromHub } from '../../multiplayer/useAskFromHub';
 import { pretendDuelApi } from './pretendDuels';
 import type { DuelApi } from '../../data/clanDuel';
 import { News } from './News';
@@ -128,6 +128,11 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   useAskFromHub(duels.asks.map((a) => a.duel), (id) => {
     void duels.send({ action: 'duel-answer', duel: id, accept: true });
     setScreen('duels');
+  });
+  // From the Lobby: the Duel Arena (after a challenge sent there, or "Carry on"), or the Village Raid screen.
+  useOpenFromHub(!!session, (what) => {
+    if (what === 'live') setScreen('duels');
+    else if (what === 'raid') setScreen('classraid');
   });
   const [boss, setBoss] = useState(false);
   const [summary, setSummary] = useState<FightSummary | null>(null);
