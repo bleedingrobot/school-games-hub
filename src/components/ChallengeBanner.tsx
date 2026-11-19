@@ -27,6 +27,8 @@ export function HubChallengeBanner() {
   const { pathname } = useLocation();
   if (profile?.role !== 'student') return null;
   const page = pathname.split('/')[1] ?? '';
+  // The Lobby lists the challenges itself ("Challenges for you").
+  if (page === 'lobby') return null;
   return <ChallengeBanner link={serverHubAskLink} me={profile.id} page={page} inGame={PLAY_PAGES.has(page)} />;
 }
 

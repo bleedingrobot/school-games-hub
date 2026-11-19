@@ -33,6 +33,7 @@ import { buildChoices, upgradeChoice } from './canDo';
 import { BUILD_ALL_DONE, QUESTION_WORDS, REST_NO_RACE, STEP_PIP, Step, StepStrip, TurnStep, canStop, stepOf, type BuildView } from './TurnSteps';
 import { Say, cheerLine, nextTurnLine, useIslesVoice } from './voice';
 import { actionText, collectLines, n, plural, postLine, reportLines } from './words';
+import { useOpenFromHub } from '../../multiplayer/useAskFromHub';
 import './isles.css';
 
 type Screen =
@@ -107,6 +108,8 @@ export function IslesPlay(props: { backend?: IslesBackend; level?: unknown }) {
 
 function IslesScreens({ backend = liveIsles }: { backend?: IslesBackend; level?: unknown }) {
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
+  // From the Lobby's Sky race tile: straight to the race screen, once the island has loaded (and has its Sky Keeper).
+  useOpenFromHub(screen.kind === 'home', (what) => what === 'race' && setScreen({ kind: 'race', open: null }));
   const [view, setView] = useState<IslandView | null>(null);
   const [report, setReport] = useState<TurnReport | undefined>(undefined);
   /** Post opened on load, shown on My island until a turn starts (kept if a second load comes back without it). */
