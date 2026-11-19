@@ -9,7 +9,7 @@
 - The Banners board is whole school.
 - Star Forge is not in the Lobby.
 
-**Status:** stage 1 built 20 Nov 2026 (migration `20261120000300_play_other_classes.sql`); stage 2 built 20 Nov 2026 (migration `20261120000400_hub_here.sql`); see "Stage 1 results" and "Stage 2 results" at the end. Stages 3 to 7 not started.
+**Status:** stage 1 built 20 Nov 2026 (migration `20261120000300_play_other_classes.sql`); stage 2 built 20 Nov 2026 (migration `20261120000500_hub_here.sql`); see "Stage 1 results" and "Stage 2 results" at the end. Stages 3 to 7 not started.
 
 ## Where things are now
 
@@ -141,7 +141,7 @@ Built on branch `claude/play-anyone-1`, migration `20261120000300_play_other_cla
 
 ## Stage 2 results (20 Nov 2026)
 
-Built on branch `claude/play-anyone-2`, migration `20261120000400_hub_here.sql` (one new table, create or replace for the rest).
+Built on branch `claude/play-anyone-2`, migration `20261120000500_hub_here.sql` (one new table, create or replace for the rest).
 
 - **Who has the hub open.** New table `hub_here (player, seen_at)`, no pupil access. `hub_here()` records "I'm here" for a school pupil who isn't hidden, and returns only which of my games have a challenge waiting for me (`{waiting: [...]}`), nothing about anyone else. `hub_seen(player)` is the 75-second check. `tidy-hub-here` cron (03:29 daily) clears rows older than a day.
 - **Game lists count the hub.** `archery_here`, `lord_here` and `clan_duel_here` list a kid who is in that game or has the hub open; the three challenge functions accept them the same way. Because a hub-only kid never runs the game's own "here", the lists now check each listed kid's own game switches (Archery on + Classmate fights on, Dragon Maths live arena on, Clan duels on). Every stage 1 rule kept.

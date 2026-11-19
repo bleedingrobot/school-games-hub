@@ -1,4 +1,4 @@
--- Play anyone, stage 2 (migration 20261120000400): a pupil with only the hub open (hub_here) counts as here for Archery,
+-- Play anyone, stage 2 (migration 20261120000500): a pupil with only the hub open (hub_here) counts as here for Archery,
 -- Dragon Maths and Clan duels, for 75 seconds. Every stage 1 rule still holds for them: not hidden, same school, "Play other
 -- classes", each game's switch. hub_here() says which games have a challenge waiting. Inside one transaction now() does not
 -- move, so old check-ins are made by setting seen_at back.
