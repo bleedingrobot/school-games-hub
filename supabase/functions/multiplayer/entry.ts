@@ -2,6 +2,7 @@
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
 import { userIdFromToken } from '../_shared/signIn';
+import { inviteServices } from '../_shared/invites';
 import { multiplayerHandler, type GameRow } from './handler';
 
 declare const Deno: {
@@ -30,6 +31,7 @@ function logProblem(step: string, code: string | undefined) {
 
 Deno.serve(
   multiplayerHandler({
+    ...inviteServices(admin, 'multiplayer'),
     now: () => Date.now(),
     random: () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32,
     userIdFor: userIdFromToken(admin.auth),

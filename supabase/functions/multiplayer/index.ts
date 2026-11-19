@@ -25,6 +25,39 @@ function userIdFromToken(auth) {
 		}
 	};
 }
+//#endregion
+//#region supabase/functions/_shared/invites.ts
+/** The invite id in a request, or null. */
+function inviteIdOf(value) {
+	return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? value : null;
+}
+/** What a kid sees when the invite has gone (answered, called off, run out, or a switch went off). */
+const INVITE_GONE = "That invite has gone. Ask your friend to send another.";
+/** The two database steps, for a function's entry.ts. Logs say which step went wrong, never who. */
+function inviteServices(admin, name) {
+	return {
+		async takeInvite(invite, player, game) {
+			const { data, error } = await admin.rpc("board_invite_take", {
+				invite,
+				player,
+				kind: game
+			});
+			if (error) console.error(`${name}: invite take failed (${error.code ?? "unknown"})`);
+			const row = Array.isArray(data) ? data[0] : void 0;
+			return row && typeof row.seat_a === "string" ? {
+				from: row.seat_a,
+				setup: row.setup ?? null
+			} : null;
+		},
+		async inviteMade(invite, path) {
+			const { error } = await admin.rpc("board_invite_made", {
+				invite,
+				made_path: path
+			});
+			if (error) console.error(`${name}: invite made failed (${error.code ?? "unknown"})`);
+		}
+	};
+}
 function otherColour(colour) {
 	return colour === "red" ? "white" : "red";
 }
@@ -446,6 +479,7 @@ const MESSAGES = {
 	"draw-limit": [409, "You’ve offered all the draws you can in this game."],
 	"draw-wait": [409, `Make 5 more moves before offering another draw.`],
 	"no-opponent": [409, "Your opponent can’t play a rematch right now."],
+	"invite-gone": [410, INVITE_GONE],
 	failed: [500, "Something went wrong. Please try again."]
 };
 var Refused = class {
@@ -535,6 +569,7 @@ function multiplayerHandler(services) {
 const ACTIONS = {
 	create,
 	join,
+	invite: acceptInvite,
 	cancel,
 	move,
 	resign,
@@ -775,6 +810,42 @@ async function rematch(context, tries = 0) {
 	});
 	return await services.loadGame(asked.id) ?? asked;
 }
+/**
+* Yes to an invite from the Lobby: claims it (the database checks every rule again), then makes a private game for
+* just the two of us, already started, with the inviter as the first player (White in chess, Red in checkers). No
+* code, and not in the open-games list.
+*/
+async function acceptInvite({ services, me, body }) {
+	const invite = inviteIdOf(body.invite);
+	if (!invite || !isGameKind(body.game)) throw new Refused("bad-request");
+	const status = await mustBeAllowed(services, me, true);
+	const taken = await services.takeInvite(invite, me, body.game);
+	if (!taken) throw new Refused("invite-gone");
+	let made = null;
+	try {
+		const maker = await services.playerStatus(taken.from);
+		if (!maker?.school || maker.hidden || maker.schoolId !== status.schoolId) throw new Refused("invite-gone");
+		const now = iso(services.now());
+		const inserted = await services.insertGame({
+			game: body.game,
+			code: null,
+			in_lobby: false,
+			created_by: taken.from,
+			first_player: taken.from,
+			second_player: me,
+			status: "playing",
+			expires_at: iso(services.now() + WAITING_GAME_MS),
+			started_at: now,
+			turn_started_at: now
+		});
+		if (typeof inserted === "string") throw new Refused("failed");
+		made = inserted;
+	} finally {
+		await services.inviteMade(invite, made ? `/play/${made.id}` : null);
+	}
+	await cancelWaitingGame(services, me);
+	return made;
+}
 //#endregion
 //#region supabase/functions/multiplayer/entry.ts
 /** The server's own key. Supabase provides it automatically; it never leaves the server. */
@@ -794,6 +865,7 @@ function logProblem(step, code) {
 	console.error(`multiplayer: ${step} failed (${code ?? "unknown"})`);
 }
 Deno.serve(multiplayerHandler({
+	...inviteServices(admin, "multiplayer"),
 	now: () => Date.now(),
 	random: () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32,
 	userIdFor: userIdFromToken(admin.auth),

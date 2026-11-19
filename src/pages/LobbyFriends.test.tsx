@@ -24,10 +24,10 @@ describe('the new Lobby', () => {
     expect(onNo).toHaveBeenCalledWith(ask);
   });
 
-  it('finds a kid who’s here, says why a game can’t be played, and sends a challenge', async () => {
+  it('finds a kid who’s here, says why a game can’t be played, and sends a challenge or an invite', async () => {
     const online = [
       kid('Ari', { 'dragon-maths': 'ok' }), kid('Ben', {}), kid('Cal', {}), kid('Dee', {}), kid('Eve', {}), kid('Fin', {}),
-      kid('Mia', { 'dragon-maths': 'none', archery: 'ok', 'clan-quest': 'busy' }, false),
+      kid('Mia', { 'dragon-maths': 'none', archery: 'ok', 'clan-quest': 'busy', chess: 'ok', space: 'busy', 'power-clash': 'off' }, false),
     ];
     const onSend = vi.fn();
     render(
@@ -36,6 +36,7 @@ describe('the new Lobby', () => {
           online={online}
           me={{ archery: 'ready', 'dragon-maths': 'ready', 'clan-quest': 'ready', isles: 'ready', raid: 'ready' }}
           games={['archery', 'dragon-maths', 'clan-quest']}
+          boards={['chess', 'space', 'power-clash']}
           focus={null}
           onClearFocus={() => {}}
           sending={false}
@@ -52,5 +53,10 @@ describe('the new Lobby', () => {
     expect(screen.getByText('Mia is busy in a game right now')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Archery fight' }));
     expect(onSend).toHaveBeenCalledWith('archery', online[6]);
+    // Board games are invites by name.
+    expect(screen.getByText('Mia has another invite waiting')).toBeInTheDocument();
+    expect(screen.getByText('Mia’s class has paused Power Clash')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Chess' }));
+    expect(onSend).toHaveBeenCalledWith('chess', online[6]);
   });
 });

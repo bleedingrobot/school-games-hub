@@ -24,6 +24,7 @@ import {
   type Side,
 } from '../../../shared/multiplayer';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
+import { INVITE_GONE, inviteIdOf, type InviteServices } from '../_shared/invites';
 
 /** One row of the mp_games table. */
 export interface GameRow {
@@ -69,7 +70,7 @@ export interface PlayerStatus {
 }
 
 /** Everything this needs from Supabase, passed in so the tests can stand in for it. */
-export interface Services {
+export interface Services extends InviteServices {
   /** Milliseconds since 1970, by the server's clock. Tests use a fake clock. */
   now(): number;
   random(): number;
@@ -115,6 +116,7 @@ type Problem =
   | 'draw-limit'
   | 'draw-wait'
   | 'no-opponent'
+  | 'invite-gone'
   | 'failed';
 
 /** What students see. Friendly, and nothing technical. */
@@ -140,6 +142,7 @@ const MESSAGES: Record<Problem, [status: number, text: string]> = {
   'draw-limit': [409, 'You’ve offered all the draws you can in this game.'],
   'draw-wait': [409, `Make ${MOVES_BETWEEN_DRAW_OFFERS} more moves before offering another draw.`],
   'no-opponent': [409, 'Your opponent can’t play a rematch right now.'],
+  'invite-gone': [410, INVITE_GONE],
   failed: [500, 'Something went wrong. Please try again.'],
 };
 
@@ -224,6 +227,7 @@ interface Context {
 const ACTIONS: Record<string, (c: Context) => Promise<GameRow>> = {
   create,
   join,
+  invite: acceptInvite,
   cancel,
   move,
   resign,
@@ -493,4 +497,46 @@ async function rematch(context: Context, tries = 0): Promise<GameRow> {
   // The other player's request got there first and started its own rematch. Drop this one.
   await services.updateGame(next.id, next.version, { status: 'cancelled', version: next.version + 1 });
   return (await services.loadGame(asked.id)) ?? asked;
+}
+
+// ---------------------------------------------------------------------------
+// Invites by name (play anyone, stage 4)
+// ---------------------------------------------------------------------------
+
+/**
+ * Yes to an invite from the Lobby: claims it (the database checks every rule again), then makes a private game for
+ * just the two of us, already started, with the inviter as the first player (White in chess, Red in checkers). No
+ * code, and not in the open-games list.
+ */
+async function acceptInvite({ services, me, body }: Context): Promise<GameRow> {
+  const invite = inviteIdOf(body.invite);
+  if (!invite || !isGameKind(body.game)) throw new Refused('bad-request');
+  const status = await mustBeAllowed(services, me, true);
+  const taken = await services.takeInvite(invite, me, body.game);
+  if (!taken) throw new Refused('invite-gone');
+  let made: GameRow | null = null;
+  try {
+    const maker = await services.playerStatus(taken.from);
+    if (!maker?.school || maker.hidden || maker.schoolId !== status.schoolId) throw new Refused('invite-gone');
+    const now = iso(services.now());
+    const inserted = await services.insertGame({
+      game: body.game,
+      code: null,
+      in_lobby: false,
+      created_by: taken.from,
+      first_player: taken.from,
+      second_player: me,
+      status: 'playing',
+      expires_at: iso(services.now() + WAITING_GAME_MS),
+      started_at: now,
+      turn_started_at: now,
+    });
+    if (typeof inserted === 'string') throw new Refused('failed');
+    made = inserted;
+  } finally {
+    await services.inviteMade(invite, made ? `/play/${made.id}` : null);
+  }
+  // You're playing now, so any game you were waiting on is no longer needed.
+  await cancelWaitingGame(services, me);
+  return made;
 }

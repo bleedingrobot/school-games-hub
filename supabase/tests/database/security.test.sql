@@ -43,7 +43,7 @@ $$, 'signed-in users can only read tables, never write to them');
 select set_eq($$
   select table_name::text from information_schema.role_table_grants
   where table_schema = 'public' and grantee = 'authenticated'
-$$, array['achievement_types', 'app_settings', 'archery_duels', 'bot_games', 'lord_clashes', 'clan_duels', 'card_game_seats', 'mp_games', 'name_words', 'profiles',
+$$, array['achievement_types', 'app_settings', 'archery_duels', 'board_invites', 'bot_games', 'lord_clashes', 'clan_duels', 'card_game_seats', 'mp_games', 'name_words', 'profiles',
   'power_games', 'space_game_log', 'space_games'],
   'signed-in users can read only these tables (row level security narrows them further)');
 
@@ -56,7 +56,7 @@ select set_eq($$
   select p.proname::text from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public' and has_function_privilege('authenticated', p.oid, 'execute')
 $$, array[
-  'admin_archive_classes', 'admin_copy_defaults_to_classes', 'admin_school_defaults', 'admin_set_school_default', 'admin_classes', 'admin_clans_new_season', 'admin_create_class', 'admin_delete_leavers', 'admin_mark_step', 'admin_new_points_season', 'admin_year', 'admin_overview', 'admin_students', 'admin_teachers', 'admin_set_lord_holiday', 'admin_set_lord_season', 'archery_here', 'hub_here', 'lobby_here', 'lord_here', 'lord_clash_cheer', 'clan_duel_here', 'clan_duel_cheer', 'can_manage_student', 'cancel_warp_request', 'card_lobby_games', 'choose_my_name', 'clan_hall_of_legends', 'clan_scoreboard', 'clear_my_maths_focus',
+  'admin_archive_classes', 'admin_copy_defaults_to_classes', 'admin_school_defaults', 'admin_set_school_default', 'admin_classes', 'admin_clans_new_season', 'admin_create_class', 'admin_delete_leavers', 'admin_mark_step', 'admin_new_points_season', 'admin_year', 'admin_overview', 'admin_students', 'admin_teachers', 'admin_set_lord_holiday', 'admin_set_lord_season', 'archery_here', 'board_invite_cancel', 'board_invite_decline', 'board_invite_send', 'hub_here', 'lobby_here', 'lord_here', 'lord_clash_cheer', 'clan_duel_here', 'clan_duel_cheer', 'can_manage_student', 'cancel_warp_request', 'card_lobby_games', 'choose_my_name', 'clan_hall_of_legends', 'clan_scoreboard', 'clear_my_maths_focus',
   'gem_keep_leaderboard', 'hub_answer_totals', 'is_player_in', 'is_school_admin', 'is_school_email', 'is_school_user', 'is_site_owner',
   'is_teacher', 'is_valid_avatar', 'leaderboard', 'lobby', 'lobby_games', 'log_page_away', 'log_questions', 'lord_first_five', 'lord_hall', 'lord_news', 'lord_school_season', 'lord_warriors', 'marble_board', 'marble_ghost', 'mine_board',
   'monsters_leaderboard', 'my_bond_match', 'my_bot_game_stats', 'my_card_game_stats', 'my_class', 'my_friend_game_stats',
@@ -116,8 +116,8 @@ $$, 'every function has a fixed search_path');
 
 select set_eq($$
   select schemaname || '.' || tablename from pg_publication_tables where pubname = 'supabase_realtime'
-$$, array['public.archery_duels', 'public.card_game_seats', 'public.clan_duels', 'public.lord_clashes', 'public.mp_games', 'public.power_games', 'public.space_games'],
-  'live updates are switched on for friend games, space games, Power Clash games, 101 seat rows, Archery classmate fights, Dragon Maths clashes and Clan Quest duels only');
+$$, array['public.archery_duels', 'public.board_invites', 'public.card_game_seats', 'public.clan_duels', 'public.lord_clashes', 'public.mp_games', 'public.power_games', 'public.space_games'],
+  'live updates are switched on for friend games, space games, Power Clash games, 101 seat rows, Archery classmate fights, Dragon Maths clashes, Clan Quest duels and board game invites only');
 
 -- A table made by a future migration starts locked, even if it forgets to say so.
 create table public.zz_security_test (id integer);

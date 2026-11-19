@@ -143,16 +143,16 @@ select pg_temp.set_room(1, 'lord_live_arena', true);
 select pg_temp.set_room(1, 'clan_raids_enabled', true);
 
 -- What Ana can play with each kid.
-select is(pg_temp.games(pg_temp.lobby('a'), 'b'), '{"archery": "ok", "dragon-maths": "none", "clan-quest": "none"}'::jsonb,
-  'Ben: archery yes; no hero, no clan');
-select is(pg_temp.games(pg_temp.lobby('a'), 'c'), '{"archery": "ok", "dragon-maths": "ok", "clan-quest": "ok"}'::jsonb, 'Cat: all three');
+select is(pg_temp.games(pg_temp.lobby('a'), 'b'), '{"chess": "ok", "checkers": "ok", "101": "ok", "space": "ok", "power-clash": "ok"}'::jsonb || '{"archery": "ok", "dragon-maths": "none", "clan-quest": "none"}'::jsonb,
+  'Ben: archery yes; no hero, no clan; every board game (stage 4)');
+select is(pg_temp.games(pg_temp.lobby('a'), 'c'), '{"chess": "ok", "checkers": "ok", "101": "ok", "space": "ok", "power-clash": "ok"}'::jsonb || '{"archery": "ok", "dragon-maths": "ok", "clan-quest": "ok"}'::jsonb, 'Cat: all three, and every board game');
 select is((select o ->> 'clan' from jsonb_array_elements(pg_temp.lobby('a') -> 'online') o where o ->> 'id' = pg_temp.id('c')::text),
   pg_temp.pid('c')::text, 'Cat''s clan id, for a duel');
 select pg_temp.set_room(2, 'lord_live_arena', false);
 select is(pg_temp.games(pg_temp.lobby('a'), 'c') ->> 'dragon-maths', 'off', 'Room 2''s arena off: Cat''s Dragon Maths is off');
 select pg_temp.set_room(2, 'lord_live_arena', true);
 insert into public.archery_players (player) values (pg_temp.id('b'));
-select is(pg_temp.games(pg_temp.lobby('b'), 'c'), '{"archery": "ok"}'::jsonb, 'Ben sees only the game he can play himself');
+select is(pg_temp.games(pg_temp.lobby('b'), 'c'), '{"chess": "ok", "checkers": "ok", "101": "ok", "space": "ok", "power-clash": "ok"}'::jsonb || '{"archery": "ok"}'::jsonb, 'Ben sees only the live game he can play himself');
 
 -- My own waiting challenge shows as going.
 insert into public.lord_clashes (seat_a, seat_b, name_a, name_b, heroes, status, deadline)

@@ -35,6 +35,7 @@ import {
 import type { Action, GameEvent, PowerId } from '../../../shared/power-clash/types';
 import type { PowerClashStats } from '../../../shared/power-clash/solo';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
+import { INVITE_GONE, inviteIdOf, type InviteServices } from '../_shared/invites';
 import { RateLimiter } from '../_shared/limits';
 
 /** One row of the power_games table. */
@@ -81,7 +82,7 @@ export interface PlayerStatus {
 }
 
 /** Everything this needs from Supabase, passed in so the tests can stand in for it. */
-export interface Services {
+export interface Services extends InviteServices {
   /** Milliseconds since 1970, by the server's clock. */
   now(): number;
   /** Secure random numbers from 0 up to (not including) 1: game codes, and who plays X. */
@@ -122,6 +123,7 @@ type Problem =
   | 'full'
   | 'expired'
   | 'rematch-gone'
+  | 'invite-gone'
   | 'failed';
 
 /** What students see. Friendly, and nothing technical. */
@@ -144,6 +146,7 @@ const MESSAGES: Record<Problem, [status: number, text: string]> = {
   full: [409, 'That game is full, or it has already started.'],
   expired: [410, 'That game stopped waiting. Ask your friend to make a new one.'],
   'rematch-gone': [409, 'That rematch has already started or stopped waiting.'],
+  'invite-gone': [410, INVITE_GONE],
   failed: [500, 'Something went wrong. Please try again.'],
 };
 
@@ -209,6 +212,7 @@ export function powerClashHandler(services: Services) {
 const ACTIONS: Record<string, (c: Context) => Promise<PowerGameRow>> = {
   create,
   join,
+  invite: acceptInvite,
   cancel: leave,
   leave,
   'set-powers': setPowers,
@@ -573,4 +577,29 @@ async function rematch(context: Context, tries = 0): Promise<PowerGameRow> {
   await services.updateGame(nextGame.id, nextGame.version, { status: 'cancelled', version: nextGame.version + 1 });
   if (tries >= 2) throw new Refused('changed');
   return rematch(context, tries + 1);
+}
+
+// ---------------------------------------------------------------------------
+// Invites by name (play anyone, stage 4)
+// ---------------------------------------------------------------------------
+
+/**
+ * Yes to an invite from the Lobby: claims it (the database checks every rule again), then makes a private game hosted
+ * by the inviter (seat 1) and takes the second seat. Both pick their powers next, as in a code game.
+ */
+async function acceptInvite({ services, me, body }: Context): Promise<PowerGameRow> {
+  const invite = inviteIdOf(body.invite);
+  if (!invite) throw new Refused('bad-request');
+  const status = await mustBeAllowed(services, me, true);
+  const taken = await services.takeInvite(invite, me, 'power-clash');
+  if (!taken) throw new Refused('invite-gone');
+  let made: PowerGameRow | null = null;
+  try {
+    await mustBeSameSchool(services, status, taken.from);
+    const waiting = await newWaitingGame(services, taken.from, false, null, null);
+    made = await joinWaiting(services, me, waiting, null);
+  } finally {
+    await services.inviteMade(invite, made ? `/power-game/${made.id}` : null);
+  }
+  return made;
 }

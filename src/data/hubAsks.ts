@@ -1,5 +1,6 @@
 /**
- * Challenges from anywhere in the hub (docs/plans/play-anyone/PLAN.md, section D1, stage 2).
+ * Challenges from anywhere in the hub (docs/plans/play-anyone/PLAN.md, section D1, stage 2), and invites by name to the
+ * board games (stage 4: one table, `board_invites`, read through its own rule and heard live the same way).
  *
  * - `hub_here()` says "I'm here" for the hub (so friends can challenge me even when I'm not in their game) and tells me
  *   which games have a challenge waiting for me. Nothing about anyone else comes back.
@@ -13,9 +14,17 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { fetchClockOffset } from './multiplayer';
 
-/** The games whose challenges can pop up anywhere in the hub, by their page id. */
-export const ASK_GAMES = ['archery', 'dragon-maths', 'clan-quest'] as const;
-export type AskGame = (typeof ASK_GAMES)[number];
+/** The live games whose challenges can pop up anywhere in the hub, by their page id. */
+export const LIVE_GAMES = ['archery', 'dragon-maths', 'clan-quest'] as const;
+export type LiveGame = (typeof LIVE_GAMES)[number];
+/** The board games a kid can be invited to by name (stage 4), by their game id. */
+export const INVITE_GAMES = ['chess', 'checkers', '101', 'space', 'power-clash'] as const;
+export type InviteGame = (typeof INVITE_GAMES)[number];
+/** Everything that can ask a kid to play: the live games' challenges and the board games' invites. */
+export const ASK_GAMES = [...LIVE_GAMES, ...INVITE_GAMES] as const;
+export type AskGame = LiveGame | InviteGame;
+
+export const isInviteGame = (g: unknown): g is InviteGame => typeof g === 'string' && (INVITE_GAMES as readonly string[]).includes(g);
 
 export interface HubAsk {
   game: AskGame;
@@ -36,6 +45,8 @@ export interface HubAskLink {
   asksIn(game: AskGame): Promise<HubAsk[] | null>;
   /** Says no, through that game's own server step. */
   decline(ask: HubAsk): Promise<void>;
+  /** Yes to a board game invite: the game's own server makes the game. Where it is, or why not in the pupil's words. */
+  accept(ask: HubAsk): Promise<{ path: string } | { problem: string }>;
   /** Hears my challenges as they change. Returns the way to stop. */
   watch(me: string, onHeard: (heard: HeardAsk) => void): () => void;
   /** How far the server's clock is ahead of this device's (ms). */
@@ -44,7 +55,7 @@ export interface HubAskLink {
 
 const isAskGame = (g: unknown): g is AskGame => typeof g === 'string' && (ASK_GAMES as readonly string[]).includes(g);
 
-const TABLES: Record<AskGame, string> = { archery: 'archery_duels', 'dragon-maths': 'lord_clashes', 'clan-quest': 'clan_duels' };
+const TABLES: Record<LiveGame, string> = { archery: 'archery_duels', 'dragon-maths': 'lord_clashes', 'clan-quest': 'clan_duels' };
 
 /** A challenge row heard through Realtime, as an ask (or gone, once it isn't waiting any more). */
 export function heardFrom(game: AskGame, row: unknown): HeardAsk | null {
@@ -68,6 +79,20 @@ export const serverHubAskLink: HubAskLink = {
     }
   },
   async asksIn(game) {
+    if (isInviteGame(game)) {
+      // Only invites sent to me can be read (the table's rule).
+      const { data, error } = await supabase
+        .from('board_invites')
+        .select('id, game, status, name_a, deadline')
+        .eq('status', 'asked')
+        .eq('game', game)
+        .gt('deadline', new Date(Date.now() + (await fetchClockOffset().catch(() => 0))).toISOString());
+      if (error || !Array.isArray(data)) return null;
+      return data.flatMap((row) => {
+        const heard = heardFrom(game, row);
+        return heard && 'ask' in heard ? [heard.ask] : [];
+      });
+    }
     if (game === 'archery') {
       const { serverDuelLink } = await import('./archery');
       const r = await serverDuelLink.here();
@@ -86,7 +111,9 @@ export const serverHubAskLink: HubAskLink = {
     return r.off ? [] : r.asks.map((a) => ({ game, id: a.duel, from: a.from, deadline: a.deadline }));
   },
   async decline(ask) {
-    if (ask.game === 'archery') {
+    if (isInviteGame(ask.game)) {
+      await supabase.rpc('board_invite_decline', { invite: ask.id });
+    } else if (ask.game === 'archery') {
       const { archeryApi, serverTransport } = await import('./archery');
       await archeryApi(serverTransport).duelAnswer(ask.id, false);
     } else if (ask.game === 'dragon-maths') {
@@ -97,9 +124,20 @@ export const serverHubAskLink: HubAskLink = {
       await sendDuel({ action: 'duel-answer', duel: ask.id, accept: false });
     }
   },
+  async accept(ask) {
+    if (!isInviteGame(ask.game)) return { problem: 'That couldn’t be opened.' };
+    const { acceptInvite } = await import('./boardInvites');
+    return acceptInvite(ask.game, ask.id);
+  },
   watch(me, onHeard) {
     let channel: RealtimeChannel = supabase.channel(`hub-asks:${me}`);
-    for (const game of ASK_GAMES) {
+    // Board game invites sent to me: one table, the game is in the row.
+    channel = channel.on('postgres_changes', { event: '*', schema: 'public', table: 'board_invites', filter: `seat_b=eq.${me}` }, (payload: { new?: unknown }) => {
+      const game = (payload.new as { game?: unknown } | undefined)?.game;
+      const heard = isInviteGame(game) ? heardFrom(game, payload.new) : null;
+      if (heard) onHeard(heard);
+    });
+    for (const game of LIVE_GAMES) {
       // Only challenges sent to me (Realtime checks each table's rule too, so only my own rows arrive).
       channel = channel.on('postgres_changes', { event: '*', schema: 'public', table: TABLES[game], filter: `seat_b=eq.${me}` }, (payload: { new?: unknown }) => {
         const heard = heardFrom(game, payload.new);

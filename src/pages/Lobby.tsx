@@ -13,7 +13,9 @@ import { CLAN_QUEST_ON, DRAGON_MATHS_ON, findGame, GAMES, POWER_CLASH_ON } from 
 import { archeryOn } from '../games/archery/switch';
 import { islesOn } from '../games/isles/switch';
 import { GAME_NAMES } from '../components/challengeWords';
-import { serverHubAskLink, type AskGame, type HubAsk } from '../data/hubAsks';
+import { INVITE_GAMES, isInviteGame, serverHubAskLink, type HubAsk, type InviteGame, type LiveGame } from '../data/hubAsks';
+import { cancelInvite, sendInvite, watchSentInvite } from '../data/boardInvites';
+import type { LiveSetup } from '../../shared/space/live';
 import { fetchLobbyHere, livePath, sendChallenge, type HerePlayer, type LobbyHere, type MyGame } from '../data/lobbyHere';
 import { useHubAsks } from '../multiplayer/useHubAsks';
 import { ChallengesForYou, EMOJI, FIRST, GameTiles, PAUSED, WhosHere, type Tile } from './LobbyFriends';
@@ -115,9 +117,14 @@ export function Lobby() {
   // The live games (stage 3): what I can start, my fights, and who's here. The hub banner doesn't show on this page, so
   // this page says "I'm here" for the hub and lists the challenges itself.
   const [here, setHere] = useState<LobbyHere | null>(null);
-  const [focus, setFocus] = useState<AskGame | null>(null);
+  const [focus, setFocus] = useState<LiveGame | null>(null);
   const [sending, setSending] = useState(false);
   const [problem, setProblem] = useState('');
+  // Invites by name (stage 4): the one I've sent (until it's answered), what happened to the last one, and a Yes that
+  // couldn't open its game.
+  const [sent, setSent] = useState<{ id: number; game: InviteGame; with: string; deadline: string } | null>(null);
+  const [inviteNote, setInviteNote] = useState('');
+  const [askProblem, setAskProblem] = useState('');
   const hubAsks = useHubAsks(profile?.role === 'student' ? serverHubAskLink : undefined, profile?.id);
 
   // One request for the open games, my own games and the other players' names (S.4); the switch comes from the remembered
@@ -222,30 +229,39 @@ export function Lobby() {
       void go('create', async () => friendPath(await ask(request)));
       return;
     }
-    void go('create', async () => {
-      const [{ loadPrefs, mathsOn, savePrefs, setupFrom, todaysGalaxy }, { DESIGNED_BOARDS }] = await Promise.all([
-        spacePrefs(),
-        import('../../shared/space/boards'),
-      ]);
-      const saved = loadPrefs();
-      const galaxy = spaceBoard === 'galaxy-of-the-day';
-      const withMaths = { ...saved, maths: spaceMaths };
-      // Cosmic events come with the board (on for Deep Space), as on the bot game's settings.
-      const setup = setupFrom(
-        {
-          ...withMaths,
-          mode: spaceMode,
-          board: galaxy ? 'galaxy' : spaceBoard,
-          galaxy: galaxy ? todaysGalaxy() : saved.galaxy,
-          galaxySize: 100,
-          cosmicEvents: galaxy ? saved.cosmicEvents : DESIGNED_BOARDS[spaceBoard].cosmicEvents,
-        },
-        mathsOn(mathsMode, withMaths),
-      );
-      if ('problem' in setup) throw new Error(setup.problem);
-      savePrefs({ ...saved, mode: spaceMode, ...(mathsMode === 'choose' ? { maths: spaceMaths } : {}), ...(galaxy ? {} : { board: spaceBoard }) });
-      return spacePath(await askSpace({ action: 'create', setup, lobby: inLobby }));
-    });
+    void go('create', async () => spacePath(await askSpace({ action: 'create', setup: await spaceSetup(), lobby: inLobby })));
+  }
+
+  /**
+   * The space game's setup from the start form, or (for an invite sent before the form was opened) from the pupil's
+   * last choices. Remembers the choices for next time.
+   */
+  async function spaceSetup(): Promise<LiveSetup> {
+    const [{ loadPrefs, mathsOn, savePrefs, setupFrom, todaysGalaxy }, { DESIGNED_BOARDS }] = await Promise.all([
+      spacePrefs(),
+      import('../../shared/space/boards'),
+    ]);
+    const saved = loadPrefs();
+    const fromForm = spaceTouched.current || gameKind === 'space';
+    const board: SpaceBoardChoice = fromForm ? spaceBoard : saved.board === 'galaxy' ? 'galaxy-of-the-day' : saved.board;
+    const mode = fromForm ? spaceMode : saved.mode;
+    const galaxy = board === 'galaxy-of-the-day';
+    const withMaths = { ...saved, maths: fromForm ? spaceMaths : saved.maths };
+    // Cosmic events come with the board (on for Deep Space), as on the bot game's settings.
+    const setup = setupFrom(
+      {
+        ...withMaths,
+        mode,
+        board: galaxy ? 'galaxy' : board,
+        galaxy: galaxy ? todaysGalaxy() : saved.galaxy,
+        galaxySize: 100,
+        cosmicEvents: galaxy ? saved.cosmicEvents : DESIGNED_BOARDS[board].cosmicEvents,
+      },
+      mathsOn(mathsMode, withMaths),
+    );
+    if ('problem' in setup) throw new Error(setup.problem);
+    savePrefs({ ...saved, mode, ...(mathsMode === 'choose' ? { maths: withMaths.maths } : {}), ...(galaxy ? {} : { board }) });
+    return setup;
   }
 
   const playing = mine.filter((g) => g.status === 'playing');
@@ -288,19 +304,80 @@ export function Lobby() {
   // ---- The live games and the tiles (stage 3) ----
   const boardsOpen = enabled !== false;
   const liveGames = ([archeryOn() && 'archery', DRAGON_MATHS_ON && 'dragon-maths', CLAN_QUEST_ON && 'clan-quest'] as const).filter(
-    (g): g is AskGame => !!g,
+    (g): g is LiveGame => !!g,
   );
-  const liveGoing = here?.going ?? [];
+  /** The board games I can invite someone to: friends' games on, non-maths games open (space is maths), Power Clash on. */
+  const inviteGames: InviteGame[] = enabled
+    ? INVITE_GAMES.filter((g) => (g === 'space' || !nonMathsShut) && (g !== 'power-clash' || POWER_CLASH_ON))
+    : [];
+  const going = here?.going ?? [];
+  const liveGoing = going.filter((g): g is typeof g & { game: LiveGame } => !isInviteGame(g.game));
+  // My waiting invite: the one just sent, or (after a reload) the one the server says is waiting.
+  const goingInvite = going.find((g) => isInviteGame(g.game) && g.status === 'asked');
+  const inviteOut = sent ?? (goingInvite && isInviteGame(goingInvite.game) ? { id: goingInvite.id, game: goingInvite.game, with: goingInvite.with, deadline: '' } : null);
+  const inviteOutId = inviteOut?.id ?? null;
+  const inviteOutWith = inviteOut?.with ?? '';
+
+  // Hear what happens to my invite: Yes opens the game, No says so, and it's gone once called off or run out.
+  useEffect(() => {
+    if (inviteOutId === null) return;
+    return watchSentInvite(inviteOutId, (i) => {
+      if (i.status === 'accepted' && i.path) {
+        navigate(i.path);
+      } else if (i.status === 'declined' || i.status === 'cancelled' || i.status === 'expired') {
+        if (i.status === 'declined') setInviteNote(`${inviteOutWith} said no this time.`);
+        else if (i.status === 'expired') setInviteNote(`${inviteOutWith} didn’t answer in time.`);
+        setSent(null);
+        void refresh();
+      }
+    });
+  }, [inviteOutId, inviteOutWith, navigate, refresh]);
+  // An invite isn't waiting once its minute is up, even before the server tidies it.
+  useEffect(() => {
+    if (!sent) return;
+    const t = setTimeout(() => {
+      setInviteNote(`${sent.with} didn’t answer in time.`);
+      setSent(null);
+      void refresh();
+    }, Math.max(0, Date.parse(sent.deadline) - Date.now()) + 2000);
+    return () => clearTimeout(t);
+  }, [sent, refresh]);
 
   const sayYes = (a: HubAsk) => {
     hubAsks.drop(a);
-    navigate(`/${a.game}?ask=${a.id}`);
+    if (!isInviteGame(a.game)) {
+      navigate(`/${a.game}?ask=${a.id}`);
+      return;
+    }
+    setAskProblem('');
+    void serverHubAskLink.accept(a).then((r) => ('path' in r ? navigate(r.path) : setAskProblem(r.problem)));
   };
   const sayNo = (a: HubAsk) => {
     hubAsks.drop(a);
     void serverHubAskLink.decline(a);
   };
-  async function challenge(game: AskGame, them: HerePlayer) {
+  async function invite(game: InviteGame, them: HerePlayer) {
+    setSending(true);
+    setProblem('');
+    setInviteNote('');
+    try {
+      const setup = game === 'space' ? await spaceSetup() : game === '101' ? { target: cardTarget } : undefined;
+      const r = await sendInvite(game, them.id, setup);
+      if (r.ok) setSent({ id: r.id, game, with: them.name, deadline: r.deadline });
+      else setProblem(r.message);
+      void refresh();
+    } catch (e) {
+      setProblem(e instanceof Error && e.message ? e.message : 'That couldn’t be sent just now. Please try again.');
+    } finally {
+      setSending(false);
+    }
+  }
+  async function callOff() {
+    setSent(null);
+    await cancelInvite().catch(() => {});
+    void refresh();
+  }
+  async function challenge(game: LiveGame, them: HerePlayer) {
     setSending(true);
     setProblem('');
     try {
@@ -331,7 +408,7 @@ export function Lobby() {
       onPick,
     };
   };
-  const pickLive = (game: AskGame) => () => {
+  const pickLive = (game: LiveGame) => () => {
     setFocus(game);
     setStartOpen(false);
     document.getElementById('whos-here')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
@@ -365,13 +442,39 @@ export function Lobby() {
       {loadFailed && !open && <p className="chess-note">We couldn’t load the lobby. Check the Wi-Fi; we’ll keep trying.</p>}
 
       <ChallengesForYou asks={hubAsks.asks} serverNow={hubAsks.serverNow} onYes={sayYes} onNo={sayNo} />
+      {askProblem && (
+        <p className="chess-note" role="alert">
+          {askProblem}
+        </p>
+      )}
+      {inviteNote && !inviteOut && (
+        <p className="chess-note" role="status">
+          {inviteNote}
+        </p>
+      )}
 
-      {(playing.length > 0 || waiting || spaceGoing.length > 0 || spaceWaiting || cardGoing.length > 0 || cardWaiting || powerGoing.length > 0 || powerWaiting || liveGoing.length > 0) && (
+      {(inviteOut || playing.length > 0 || waiting || spaceGoing.length > 0 || spaceWaiting || cardGoing.length > 0 || cardWaiting || powerGoing.length > 0 || powerWaiting || liveGoing.length > 0) && (
         <section className="panel" aria-labelledby="mine-title">
           <h2 id="mine-title" className="panel__title">
             Your games
           </h2>
           <ul className="lobby-list">
+            {inviteOut && (
+              <li className="lobby-invite-out">
+                <span className="lobby-list__emoji" aria-hidden="true">
+                  {EMOJI[inviteOut.game]}
+                </span>
+                <span className="lobby-list__what">
+                  <strong>
+                    {GAME_NAMES[inviteOut.game]} with {inviteOut.with}
+                  </strong>
+                  <span>Waiting for {inviteOut.with} to say yes</span>
+                </span>
+                <button type="button" className="button button--light" onClick={() => void callOff()}>
+                  Call off
+                </button>
+              </li>
+            )}
             {liveGoing.map((g) => (
               <li key={`${g.game}:${g.id}`}>
                 <span className="lobby-list__emoji" aria-hidden="true">
@@ -781,16 +884,17 @@ export function Lobby() {
         </section>
       )}
 
-      {liveGames.length > 0 && (
+      {(liveGames.length > 0 || inviteGames.length > 0) && (
         <WhosHere
           online={here?.online ?? null}
           me={here?.me ?? null}
           games={liveGames}
+          boards={inviteGames}
           focus={focus}
           onClearFocus={() => setFocus(null)}
           sending={sending}
           problem={problem}
-          onSend={(g, them) => void challenge(g, them)}
+          onSend={(g, them) => void (isInviteGame(g) ? invite(g, them) : challenge(g, them))}
         />
       )}
 

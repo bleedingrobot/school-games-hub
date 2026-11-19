@@ -143,9 +143,24 @@ button.lobby-tile__face:hover {
     min-height: 118px;
     padding: 10px 6px;
   }
-  .lobby-list li:has(.lobby-asks__buttons) {
+  .lobby-list li:has(.lobby-asks__buttons),
+  .lobby-list li.lobby-invite-out {
     flex-wrap: wrap;
   }
+  /* On a phone the words get the row and the buttons go underneath, never a thin column of words. */
+  .lobby-list li:has(.lobby-asks__buttons) .lobby-list__what,
+  .lobby-list li.lobby-invite-out .lobby-list__what {
+    flex-basis: calc(100% - 60px);
+  }
+  .lobby-list li.lobby-invite-out .button {
+    margin-left: 56px;
+  }
+}
+
+/* My waiting invite (stage 4): its Call off button is only as wide as its words. */
+.lobby-invite-out .button {
+  width: auto;
+  margin: 0;
 }
 
 /* The start-a-game form, under the tiles. */

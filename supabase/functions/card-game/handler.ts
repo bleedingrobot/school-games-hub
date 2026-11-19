@@ -32,6 +32,7 @@ import {
 import type { Card101Stats } from '../../../shared/card101/save';
 import type { Dice } from '../../../shared/card101/random';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
+import { INVITE_GONE, inviteIdOf, type InviteServices } from '../_shared/invites';
 import { RateLimiter } from '../_shared/limits';
 
 /** One row of the card_games table: the whole game. Never sent to a browser. */
@@ -79,7 +80,7 @@ export interface PlayerStatus {
 export type WriteResult = CardGameRow | 'changed' | 'code-taken' | 'already-waiting' | 'failed';
 
 /** Everything this needs from Supabase, passed in so the tests can stand in for it. */
-export interface Services {
+export interface Services extends InviteServices {
   /** Milliseconds since 1970, by the server's clock. */
   now(): number;
   /** Secure random numbers from 0 up to (not including) 1, for game codes. */
@@ -127,6 +128,7 @@ type Problem =
   | 'full'
   | 'expired'
   | 'rematch-gone'
+  | 'invite-gone'
   | 'failed';
 
 /** What students see. Friendly, and nothing technical. */
@@ -150,6 +152,7 @@ const MESSAGES: Record<Problem, [status: number, text: string]> = {
   full: [409, 'That game is full, or it has already started.'],
   expired: [410, 'That game stopped waiting. Ask your friend to make a new one.'],
   'rematch-gone': [409, 'That rematch has already started or stopped waiting.'],
+  'invite-gone': [410, INVITE_GONE],
   failed: [500, 'Something went wrong. Please try again.'],
 };
 
@@ -231,6 +234,7 @@ function mySeat(saved: Saved, me: string): SeatRow | null {
 const ACTIONS: Record<string, (c: Context) => Promise<Saved>> = {
   create,
   join,
+  invite: acceptInvite,
   cancel: leave,
   leave,
   start,
@@ -629,4 +633,31 @@ async function rematch(context: Context, tries = 0): Promise<Saved> {
   await commit(services, next.row, { status: 'cancelled' }).catch(() => null);
   if (tries >= 2) throw new Refused('changed');
   return rematch(context, tries + 1);
+}
+
+// ---------------------------------------------------------------------------
+// Invites by name (play anyone, stage 4)
+// ---------------------------------------------------------------------------
+
+/**
+ * Yes to an invite from the Lobby: claims it (the database checks every rule again), then makes a private two-player
+ * game hosted by the inviter (seat 1) with their target, and takes the second seat, which deals the first round.
+ */
+async function acceptInvite({ services, me, body }: Context): Promise<Saved> {
+  const invite = inviteIdOf(body.invite);
+  if (!invite) throw new Refused('bad-request');
+  const status = await mustBeAllowed(services, me, true);
+  const taken = await services.takeInvite(invite, me, '101');
+  if (!taken) throw new Refused('invite-gone');
+  let made: Saved | null = null;
+  try {
+    await mustBeSameSchool(services, status, taken.from);
+    const settings = parseSettings(taken.setup) ?? parseSettings({ target: 50 });
+    if (!settings) throw new Refused('failed');
+    const waiting = await newWaitingGame(services, taken.from, 2, settings, false);
+    made = await joinWaiting(services, me, waiting.row);
+  } finally {
+    await services.inviteMade(invite, made ? `/card-game/${made.row.id}` : null);
+  }
+  return made;
 }
