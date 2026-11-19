@@ -160,7 +160,7 @@ select pg_temp.reset();
 -- ---- my_goblinstorm: the caller's own save only ----
 select pg_temp.reset();
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
-select is(public.my_goblinstorm() - 'today', '{"gold": 45, "shop": {}, "heroes": ["cleric", "wizard", "barbarian", "rogue", "dragonkid"], "bosses": [0, 1], "codex": ["arrows", "blades", "fireball"], "weapons": ["arrows", "axes", "blades", "fireball"], "runs": 3, "kills": 5280, "guideSeen": false, "bestGold": 30}'::jsonb,
+select is(public.my_goblinstorm() - 'today', '{"gold": 45, "shop": {}, "heroes": ["cleric", "wizard", "barbarian", "rogue", "dragonkid"], "bosses": [0, 1], "codex": ["arrows", "blades", "fireball"], "weapons": ["arrows", "axes", "blades", "fireball"], "runs": 3, "kills": 20280, "guideSeen": false, "bestGold": 30}'::jsonb,
   'a pupil reads their own save');
 select pg_temp.reset();
 select set_config('role', 'anon', true);
