@@ -185,7 +185,9 @@ function fakeDb() {
       for (const [p, row] of clans) {
         if (p === player) continue;
         const e = empireOf(row.state.clan);
-        list.push({ id: publicId(p), name: row.state.clan.name, heroLevels: row.state.clan.members.reduce((t, m) => t + m.level, 0), levels: { ...e.levels }, troops: { ...e.troops }, banners: e.banners ?? null });
+        // Brave Owls are in another class at school (play anyone, stage 5).
+        const other = row.state.clan.name === 'Brave Owls';
+        list.push({ id: publicId(p), name: row.state.clan.name, heroLevels: row.state.clan.members.reduce((t, m) => t + m.level, 0), levels: { ...e.levels }, troops: { ...e.troops }, banners: e.banners ?? null, sameClass: !other, className: other ? 'Room 7' : null });
       }
       return { ok: true, value: list };
     },
@@ -352,6 +354,9 @@ describe('Village Raids and Live Clan Duels', () => {
     const list = (await t.send({ type: 'raidTargets' })).body.result;
     expect(list.left).toBe(CONFIG.classRaids.perDay - 1);
     expect(list.board.find((r: any) => r.me)).toMatchObject({ name: 'Red Banner', banners: raid.banners });
+    // A clan from another class can be raided too, shown with its class name.
+    expect(list.targets.find((x: any) => x.name === 'Brave Owls')).toMatchObject({ sameClass: false, className: 'Room 7' });
+    expect(list.targets.find((x: any) => x.name === 'Swift Foxes')).toMatchObject({ sameClass: true, className: null });
     // The teacher's switch stops a raid before it starts.
     t.flags.raidsOn = false;
     expect((await t.send({ type: 'raidStart', target: await idOf(t, 'Brave Owls') })).body).toMatchObject({ ok: false, why: 'off' });

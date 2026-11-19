@@ -211,10 +211,13 @@ const PRETEND_TODAY = 30000;
 export const pretendToday = (s: Session) => PRETEND_TODAY + s.day - 1;
 
 const PRETEND = [
-  { id: 'pretend-foxes', name: 'Swift Foxes', share: 0.75, banners: 4, looks: [['Elf', 'Assassin'], ['Halfling', 'Healer'], ['Elf', 'Wizard'], ['Imp', 'Warrior']] },
-  { id: 'pretend-owls', name: 'Brave Owls', share: 1, banners: 7, looks: [['Dwarf', 'Knight'], ['Human', 'Healer'], ['Half-Elf', 'Sorcerer'], ['Human', 'Pirate']] },
-  { id: 'pretend-wolves', name: 'Iron Wolves', share: 1.4, banners: 2, looks: [['Orc', 'Barbarian'], ['Minotaur', 'Warrior'], ['Muya', 'Necromancer'], ['Orc', 'Samurai']] },
-  { id: 'pretend-stars', name: 'Lucky Stars', share: 1.05, banners: 0, looks: [['Human', 'Martial Artist'], ['Elf', 'Healer'], ['Halfling', 'Assassin'], ['Dwarf', 'Wizard']] },
+  { id: 'pretend-foxes', name: 'Swift Foxes', className: null, share: 0.75, banners: 4, looks: [['Elf', 'Assassin'], ['Halfling', 'Healer'], ['Elf', 'Wizard'], ['Imp', 'Warrior']] },
+  { id: 'pretend-owls', name: 'Brave Owls', className: null, share: 1, banners: 7, looks: [['Dwarf', 'Knight'], ['Human', 'Healer'], ['Half-Elf', 'Sorcerer'], ['Human', 'Pirate']] },
+  { id: 'pretend-wolves', name: 'Iron Wolves', className: null, share: 1.4, banners: 2, looks: [['Orc', 'Barbarian'], ['Minotaur', 'Warrior'], ['Muya', 'Necromancer'], ['Orc', 'Samurai']] },
+  { id: 'pretend-stars', name: 'Lucky Stars', className: null, share: 1.05, banners: 0, looks: [['Human', 'Martial Artist'], ['Elf', 'Healer'], ['Halfling', 'Assassin'], ['Dwarf', 'Wizard']] },
+  // From other classes at school (play anyone, stage 5).
+  { id: 'pretend-hawks', name: 'Silver Hawks', className: 'Room 7', share: 0.9, banners: 5, looks: [['Elf', 'Ranger'], ['Human', 'Knight'], ['Dwarf', 'Healer'], ['Imp', 'Wizard']] },
+  { id: 'pretend-bears', name: 'Storm Bears', className: 'Room 12', share: 1.2, banners: 1, looks: [['Minotaur', 'Barbarian'], ['Orc', 'Warrior'], ['Human', 'Healer'], ['Elf', 'Sorcerer']] },
 ] as const;
 
 const scaled = (n: number, share: number) => Math.max(1, Math.round(n * share));
@@ -242,7 +245,7 @@ export function pretendSketches(s: Session): RivalSketch[] {
   const week = weekOf(pretendToday(s));
   return PRETEND.map((p) => {
     const e = pretendEmpire(s, p.share);
-    return { id: p.id, name: p.name, heroLevels: pretendHeroes(s, p).reduce((t, m) => t + m.level, 0), levels: e.levels, troops: e.troops, banners: { week, count: p.banners } };
+    return { id: p.id, name: p.name, heroLevels: pretendHeroes(s, p).reduce((t, m) => t + m.level, 0), levels: e.levels, troops: e.troops, banners: { week, count: p.banners }, sameClass: !p.className, className: p.className };
   });
 }
 
@@ -262,7 +265,7 @@ export function pretendRaidList(s: Session): { targets: Rival[]; board: BoardRow
 /** Test page only: start a raid (no siege question in Practice). The same siege and fight the server would make. */
 export function pretendRaidStart(s: Session, id: string): { ok: true; session: Session; open: ShownFight; breach: number; tower: number } | Fail {
   const target = pretendTarget(s, id);
-  if (!target) return { ok: false, why: 'target', say: 'That clan is not in your class.' };
+  if (!target) return { ok: false, why: 'target', say: "That clan can't be raided right now." };
   const clan = structuredClone(s.clan);
   const e = empireOf(clan);
   if (raidsLeft(e) <= 0) return { ok: false, why: 'limit', say: `That's all ${CONFIG.classRaids.perDay} raids for today. Come back tomorrow!` };

@@ -42,7 +42,7 @@ export const LIGHT_NAMES: Record<Light, string> = { easy: 'Should win', close: '
 /** Banners this week (a save from an earlier week counts as none). */
 export const bannersThisWeek = (b: Banners | null | undefined, week: number) => (b && b.week === week ? b.count : 0);
 
-/** What a clan may know about a classmate's clan: its name, how strong it is and its Banners. No gold, no pupil. */
+/** What a clan may know about another clan at school: its name, how strong it is and its Banners. No gold, no pupil. */
 export interface RivalSketch {
   id: string;
   name: string;
@@ -51,6 +51,12 @@ export interface RivalSketch {
   levels: Partial<Levels> | null;
   troops: Partial<Troops> | null;
   banners?: Banners | null;
+  /** In my class (missing on older replies: treat as my class). */
+  sameClass?: boolean;
+  /** Its class's name, only for clans from other classes. */
+  className?: string | null;
+  /** May be raided (false when its class has raids paused: it still shows on the Banners board). Missing means yes. */
+  canRaid?: boolean;
 }
 
 export const sketchPower = (s: RivalSketch) => {
@@ -62,6 +68,10 @@ export const sketchPower = (s: RivalSketch) => {
 export interface Rival {
   id: string;
   name: string;
+  /** In my class. */
+  sameClass: boolean;
+  /** Its class's name, for clans from other classes. */
+  className: string | null;
   light: Light;
   /** One of the closest few: shown big at the top. */
   suggested: boolean;
@@ -69,14 +79,19 @@ export interface Rival {
   raided: boolean;
 }
 
-/** Everyone in the class, the closest few in power first (the ones not raided today), then the rest by name. */
+/**
+ * Every clan that can be raided at school: the closest few in power first (not raided today, from my class when it has
+ * enough), then the rest by name (the screen shows my class first, then the rest of the school with a search).
+ */
 export function rivalList(clan: Clan, raidedToday: readonly string[], sketches: RivalSketch[]): Rival[] {
   const mine = Math.max(1, clanPower(clan));
-  const all = sketches.map((s) => ({ s, power: sketchPower(s), raided: raidedToday.includes(s.id) }));
-  const close = all.filter((x) => !x.raided).sort((a, b) => Math.abs(a.power - mine) - Math.abs(b.power - mine) || a.s.name.localeCompare(b.s.name)).slice(0, R.suggested);
+  const all = sketches.filter((s) => s.canRaid !== false).map((s) => ({ s, power: sketchPower(s), raided: raidedToday.includes(s.id), same: s.sameClass !== false }));
+  const close = all.filter((x) => !x.raided)
+    .sort((a, b) => Number(b.same) - Number(a.same) || Math.abs(a.power - mine) - Math.abs(b.power - mine) || a.s.name.localeCompare(b.s.name))
+    .slice(0, R.suggested);
   const rest = all.filter((x) => !close.includes(x)).sort((a, b) => a.s.name.localeCompare(b.s.name));
   return [...close.map((x) => ({ x, suggested: true })), ...rest.map((x) => ({ x, suggested: false }))].map(({ x, suggested }) => ({
-    id: x.s.id, name: x.s.name, light: lightOf(mine, x.power), suggested, raided: x.raided,
+    id: x.s.id, name: x.s.name, sameClass: x.same, className: x.same ? null : x.s.className ?? null, light: lightOf(mine, x.power), suggested, raided: x.raided,
   }));
 }
 
@@ -85,15 +100,21 @@ export interface BoardRow {
   banners: number;
   /** This is your own clan. */
   me: boolean;
+  /** Its place on the board (1 is the most). */
+  place: number;
 }
 
-/** This week's Banners board: every clan with a Banner, and your own clan even with none. Most first. */
+/** How many clans the whole-school board shows (your own clan shows too, below them, if it isn't among them). */
+export const BOARD_TOP = 10;
+
+/** This week's Banners board for the whole school: the top clans with a Banner, and your own clan even with none. Most first. */
 export function bannerBoard(clan: Clan, week: number, sketches: RivalSketch[]): BoardRow[] {
-  const rows: BoardRow[] = [
+  const rows = [
     { name: clan.name, banners: bannersThisWeek(empireOf(clan).banners, week), me: true },
     ...sketches.map((s) => ({ name: s.name, banners: bannersThisWeek(s.banners, week), me: false })),
-  ];
-  return rows.filter((r) => r.me || r.banners > 0).sort((a, b) => b.banners - a.banners || Number(b.me) - Number(a.me) || a.name.localeCompare(b.name));
+  ].filter((r) => r.me || r.banners > 0).sort((a, b) => b.banners - a.banners || Number(b.me) - Number(a.me) || a.name.localeCompare(b.name));
+  const placed = rows.map((r, i) => ({ ...r, place: i + 1 }));
+  return placed.filter((r) => r.place <= BOARD_TOP || r.me);
 }
 
 /** Raids left today. */
