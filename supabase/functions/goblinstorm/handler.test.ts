@@ -4,9 +4,9 @@ import { describe, expect, it } from 'vitest';
 import { LADDER } from '../../../shared/maths/ladder';
 import { markQuestion, type MathsContext } from '../../../shared/maths/serverQuestions';
 import { botRun } from '../../../shared/goblinstorm/bot';
-import { CHOICES, HEROES, MAPS, QUESTIONS_PER_RUN } from '../../../shared/goblinstorm/config';
+import { CHOICES, HEROES, MAPS, QUESTIONS_PER_RUN, type WeaponId } from '../../../shared/goblinstorm/config';
 import { memoryServices } from '../../../shared/goblinstorm/memoryServices';
-import { RUNS_A_DAY, runQuestions } from '../../../shared/goblinstorm/server';
+import { RUNS_A_DAY, freshSave, newUnlocks, runQuestions } from '../../../shared/goblinstorm/server';
 import { encodeSteering } from '../../../shared/goblinstorm/replay';
 import { makeHandler } from './handler';
 
@@ -54,7 +54,13 @@ it('refuses: signed out, switch off, locked, a 6th run, too fast and another pup
   // A made-up run (one pick too many) is refused.
   expect((await send('pupil-a', { ...run, picks: [...run.picks, 0] })).body).toMatchObject({ code: 'not-valid' });
   const saved = await send('pupil-a', run);
-  expect(saved.body).toMatchObject({ valid: true, summary: { outcome: 'quit', seconds: 20 } });
+  expect(saved.body).toMatchObject({ valid: true, summary: { outcome: 'quit', seconds: 20 }, unlocked: [] });
+  // Unlocks come only from the replay's summary: the Goblin King opens the Cleric (not another map's boss), level 20
+  // the Wizard, and a hero already open isn't unlocked twice.
+  const won = { level: 20, kills: 900, bossBeaten: true, evolved: [] as WeaponId[], longestNoHitSeconds: 10 };
+  expect(newUnlocks(freshSave(), won, 0)).toEqual(['wizard', 'cleric']);
+  expect(newUnlocks(freshSave(), { ...won, level: 19 }, 1)).toEqual([]);
+  expect(newUnlocks({ ...freshSave(), heroes: ['wizard'], kills: 4200 }, won, 3)).toEqual(['barbarian', 'witch']);
   expect((await send('pupil-a', run)).body).toMatchObject({ already: true, summary: saved.body.summary });
 
   // 5 runs a day (finished or not), then "come back tomorrow"; Unlimited today lifts it.

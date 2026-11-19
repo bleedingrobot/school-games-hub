@@ -4,7 +4,7 @@
  */
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../../config';
 import { supabase } from '../../lib/supabase';
-import { fromServer, type GoblinStormBackend } from './backend';
+import { fromServer, GoblinStormError, type GoblinStormBackend, type MySave } from './backend';
 
 export const liveGoblinStorm: GoblinStormBackend = fromServer(async (body) => {
   const { data } = await supabase.auth.getSession();
@@ -28,4 +28,9 @@ export const liveGoblinStorm: GoblinStormBackend = fromServer(async (body) => {
     // An empty or broken reply: the status still says what happened.
   }
   return { status: response.status, body: parsed };
+}, async () => {
+  // The pupil's own save only (the function reads auth.uid()); an empty one before their first finished run.
+  const { data, error } = await supabase.rpc('my_goblinstorm');
+  if (error || !data) throw new GoblinStormError('Your save couldn’t be loaded. Check the internet and try again.');
+  return data as Partial<MySave>;
 });

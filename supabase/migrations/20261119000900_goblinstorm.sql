@@ -13,6 +13,8 @@
 -- 4. The switch (app_settings.goblinstorm_enabled, ON for every class to start; the code switch holds the game back)
 --    and teacher_set_goblinstorm().
 -- 5. The hub_games row (the switch and "last played"). Points, achievements and the trophy come in stage 5.
+-- 6. Stage 4: heroes unlocked in record_goblinstorm_run from the replay's summary, and my_goblinstorm() so the screens
+--    can show the pupil's own gold, heroes and bosses.
 --
 -- Depends on 20261017001100_gem_keep.sql (gem_keep_check_player) and 20261020000100_game_hooks.sql.
 
@@ -45,7 +47,7 @@ create table public.goblinstorm_runs (
   open boolean not null default true,
   steering text check (steering is null or length(steering) <= 200000),
   picks jsonb check (picks is null or jsonb_typeof(picks) = 'array'),
-  outcome text check (outcome is null or outcome in ('won', 'survived', 'fell', 'quit')),
+  outcome text check (outcome is null or outcome in ('won', 'survived', 'lost', 'quit')),
   seconds integer check (seconds >= 0),
   level integer check (level >= 1),
   kills integer check (kills >= 0),
@@ -78,7 +80,7 @@ revoke all on public.goblinstorm_saves, public.goblinstorm_runs, public.goblinst
 -- The server function's jobs (service role only)
 -- ---------------------------------------------------------------------------
 
--- The pupil's save ({ gold, shop, heroes, bosses }), or null if they've never finished a run.
+-- The pupil's save ({ gold, shop, heroes, bosses, kills }), or null if they've never finished a run.
 create function public.goblinstorm_load(player uuid)
 returns jsonb
 language plpgsql
@@ -88,7 +90,7 @@ set search_path = ''
 as $$
 begin
   perform public.gem_keep_check_player(player);
-  return (select jsonb_build_object('gold', s.gold, 'shop', s.shop, 'heroes', to_jsonb(s.heroes), 'bosses', to_jsonb(s.bosses))
+  return (select jsonb_build_object('gold', s.gold, 'shop', s.shop, 'heroes', to_jsonb(s.heroes), 'bosses', to_jsonb(s.bosses), 'kills', s.kills)
           from public.goblinstorm_saves s where s.player = goblinstorm_load.player);
 end;
 $$;
@@ -168,6 +170,12 @@ $$;
 
 -- Closes an open run with what the server's replay said and adds it to the save, together. False if it was already
 -- closed (a finish sent twice counts once).
+--
+-- Heroes are unlocked here from the replay's summary (never from anything the browser said), by the same rules as
+-- `unlockMet` in shared/goblinstorm/server.ts and `UNLOCK_AT` in config.ts (change them together):
+--   wizard     reach level 20 in one run          barbarian  5,000 monsters beaten in all runs
+--   cleric     beat the Goblin King (map 0)       rogue      90 seconds without being hit
+--   witch      beat the Ice Dragon (map 3)        dragonkid  evolve 3 different weapons in one run
 create function public.record_goblinstorm_run(player uuid, seed bigint, steering text, picks jsonb, summary jsonb)
 returns boolean
 language plpgsql
@@ -176,10 +184,14 @@ set search_path = ''
 as $$
 declare
   map_index smallint;
-  evolved text[] := array(select jsonb_array_elements_text(coalesce(summary -> 'evolved', '[]'::jsonb)));
+  evolved text[] := array(select distinct jsonb_array_elements_text(coalesce(summary -> 'evolved', '[]'::jsonb)));
   boss boolean := coalesce((summary ->> 'bossBeaten')::boolean, false);
   run_gold integer := greatest(0, coalesce((summary ->> 'gold')::integer, 0));
   run_kills integer := greatest(0, coalesce((summary ->> 'kills')::integer, 0));
+  run_level integer := coalesce((summary ->> 'level')::integer, 1);
+  no_hit integer := coalesce((summary ->> 'longestNoHitSeconds')::integer, 0);
+  kills_before integer;
+  earned text[] := '{}';
 begin
   if jsonb_typeof(record_goblinstorm_run.summary) is distinct from 'object' or jsonb_typeof(record_goblinstorm_run.picks) is distinct from 'array' then
     raise exception 'That run is not right.' using errcode = '22023';
@@ -187,7 +199,7 @@ begin
   update public.goblinstorm_runs r
   set open = false, steering = record_goblinstorm_run.steering, picks = record_goblinstorm_run.picks,
       outcome = record_goblinstorm_run.summary ->> 'outcome', seconds = (record_goblinstorm_run.summary ->> 'seconds')::integer,
-      level = (record_goblinstorm_run.summary ->> 'level')::integer,
+      level = run_level,
       kills = run_kills, gold = run_gold, boss_beaten = boss, evolutions = evolved,
       summary = record_goblinstorm_run.summary, finished_at = now()
   where r.player = record_goblinstorm_run.player and r.seed = record_goblinstorm_run.seed and r.open
@@ -195,10 +207,19 @@ begin
   if not found then
     return false;
   end if;
-  insert into public.goblinstorm_saves as s (player, gold, bosses, codex, runs, kills)
-  values (player, run_gold, case when boss then array[map_index] else '{}' end, evolved, 1, run_kills)
+  select s.kills into kills_before from public.goblinstorm_saves s where s.player = record_goblinstorm_run.player for update;
+  kills_before := coalesce(kills_before, 0);
+  if run_level >= 20 then earned := earned || 'wizard'::text; end if;
+  if kills_before + run_kills >= 5000 then earned := earned || 'barbarian'::text; end if;
+  if boss and map_index = 0 then earned := earned || 'cleric'::text; end if;
+  if no_hit >= 90 then earned := earned || 'rogue'::text; end if;
+  if boss and map_index = 3 then earned := earned || 'witch'::text; end if;
+  if cardinality(evolved) >= 3 then earned := earned || 'dragonkid'::text; end if;
+  insert into public.goblinstorm_saves as s (player, gold, heroes, bosses, codex, runs, kills)
+  values (player, run_gold, earned, case when boss then array[map_index] else '{}' end, evolved, 1, run_kills)
   on conflict on constraint goblinstorm_saves_pkey do update
   set gold = s.gold + excluded.gold,
+      heroes = s.heroes || array(select h from unnest(excluded.heroes) h where not (h = any (s.heroes))),
       bosses = case when boss and not (map_index = any (s.bosses)) then s.bosses || map_index else s.bosses end,
       codex = array(select distinct unnest(s.codex || excluded.codex) order by 1),
       runs = s.runs + 1,
@@ -206,6 +227,26 @@ begin
       updated_at = now();
   return true;
 end;
+$$;
+
+-- The signed-in pupil's own save, for the screens: gold, shop, heroes unlocked, bosses beaten, the codex, totals and
+-- runs started today (NZ date). Only ever the caller's own row; a pupil who has never played gets an empty save.
+create function public.my_goblinstorm()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select jsonb_build_object(
+    'gold', coalesce(s.gold, 0), 'shop', coalesce(s.shop, '{}'::jsonb), 'heroes', to_jsonb(coalesce(s.heroes, '{}')),
+    'bosses', to_jsonb(coalesce(s.bosses, '{}')), 'codex', to_jsonb(coalesce(s.codex, '{}')),
+    'runs', coalesce(s.runs, 0), 'kills', coalesce(s.kills, 0),
+    'today', (select count(*)::integer from public.goblinstorm_runs r
+              where r.player = auth.uid() and r.day = (now() at time zone 'Pacific/Auckland')::date))
+  from (select auth.uid() as player) me
+  left join public.goblinstorm_saves s on s.player = me.player
+  where me.player is not null
 $$;
 
 -- ---------------------------------------------------------------------------
@@ -260,9 +301,10 @@ revoke execute on function
   public.goblinstorm_claim_answer(uuid, bigint, integer, numeric, integer, text),
   public.record_goblinstorm_run(uuid, bigint, text, jsonb, jsonb),
   public.teacher_set_goblinstorm(boolean, uuid),
-  public.goblinstorm_last_played(uuid)
+  public.goblinstorm_last_played(uuid),
+  public.my_goblinstorm()
 from public, anon, authenticated;
-grant execute on function public.teacher_set_goblinstorm(boolean, uuid) to authenticated;
+grant execute on function public.teacher_set_goblinstorm(boolean, uuid), public.my_goblinstorm() to authenticated;
 grant execute on function
   public.goblinstorm_load(uuid), public.goblinstorm_runs_on(uuid, date),
   public.goblinstorm_store_questions(uuid, bigint, text, integer, date, boolean, jsonb),

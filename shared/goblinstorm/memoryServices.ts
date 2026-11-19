@@ -4,7 +4,7 @@
  */
 import type { FactAnswer } from '../maths/leitner';
 import type { MathsContext } from '../maths/serverQuestions';
-import { freshSave, type Answered, type Finished, type GoblinStormServices, type KeptRun, type RunToKeep, type Save } from './server';
+import { freshSave, newUnlocks, type Answered, type Finished, type GoblinStormServices, type KeptRun, type RunToKeep, type Save } from './server';
 
 export interface MemoryWorld {
   enabled: boolean;
@@ -56,6 +56,8 @@ export function memoryServices(options: Partial<Pick<MemoryWorld, 'enabled' | 'u
       r.finished = finished;
       r.summary = finished.summary;
       const save = world.saves.get(player) ?? freshSave();
+      save.heroes.push(...newUnlocks(save, finished.summary, r.map));
+      save.kills += finished.summary.kills;
       save.gold += finished.summary.gold;
       if (finished.summary.bossBeaten && !save.bosses.includes(r.map)) save.bosses.push(r.map);
       world.saves.set(player, save);
