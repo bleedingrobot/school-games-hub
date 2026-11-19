@@ -13,7 +13,7 @@ Use the worktree /Users/jriley/games-hub-goblinstorm on a fresh branch claude/go
 2. Recopy `teacher_progress_other_games` into the migration if any migration after 20261114000300 changed it (grep supabase/migrations for it; copy the newest body and keep the Goblin Storm block).
 3. Check the migration still runs last: if a newer migration has landed on main since 20261119000900, renumber ours to come after it (docs/game-guide: migration numbers).
 4. Register the game on the hub, switched ON (code and every class; memory note switches-on-by-default):
-   - add `goblinstorm_enabled` to `GAME_SWITCH_COLUMNS` (src/data/games.ts) and the game to `GAMES`, with its home card from the art plan's config.json
+   - add `goblinstorm_enabled` to `GAME_SWITCH_COLUMNS` (src/data/games.ts) and the game to `GAMES`, and move its home card from src/games/goblinstorm/art/card/ to src/assets/home/ (art.test.ts needs the game in ALL_GAMES first)
    - add `goblinstorm` to `UNLIMITED_GAMES` (shared/unlimited.ts, src/data/unlimitedTurns.ts) and to `teacher_set_unlimited_today` in the migration
    - pass `onServer` to `GoblinStormGame` on the hub
    - add the "Goblin Storm" Progress column with `useGoblinStormCells` (src/games/goblinstorm/teacher.ts)
