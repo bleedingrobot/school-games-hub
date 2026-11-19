@@ -2,12 +2,12 @@
 
 *Name **Goblin Storm** (James picked it, 19 Nov 2026; id `goblinstorm`, CSS prefix `.gs-`). James, 19 Nov 2026: pupils want a "bullet heaven" game: "big attacks that can wipe out the entire screen, less damage shields, spinning blades, amazing graphics especially the attacks and lots of different characters to unlock that have different speeds and stuff." It is our own game, with our own name, heroes, monsters, maps and art. The genre (steer only, attacks fire by themselves, level-ups, evolving weapons) isn't owned by anyone; nothing is copied from any one game.*
 
-**Status: stage 2 (playable Canvas run, preview, art plan, fingerprint check) merged from branch `claude/goblinstorm-2`, 19 Nov 2026. Not live and not on the hub; only the preview plays it. Next: stage 3 (the server). Prompt: `docs/prompts/goblinstorm-stage3.md`.**
+**Status: stage 3 (the `goblinstorm` server function, migration `20261119000900` on hold, real backend behind a code switch that is off) from branch `claude/goblinstorm-3`, 19 Nov 2026. Not live and not on the hub; only the preview plays it. Next: stage 4 (hero picker and unlocks, map picker, all bosses, balance sim). Prompt: `docs/prompts/goblinstorm-stage4.md`.**
 
 ## The short version
 
 - **Steer, don't shoot.** Pick a hero and a map, then survive **3 minutes** against growing swarms. Weapons fire by themselves. Drag anywhere to steer (touch) or use WASD/arrows (laptop).
-- **Level-ups are maths.** Beaten monsters drop gems. When the gem bar fills, the game pauses for **one question from the pupil's own focus** (way A).
+- **Level-ups are maths, every third one.** Beaten monsters drop gems. When the gem bar fills you level up. **Every 3rd level-up** (the 2nd, 5th, 8th…) pauses for **one question from the pupil's own focus** (way A); the others go straight to 3 cards. James, 19 Nov 2026, after trying it: a question at every level-up meant you "can't really play".
   - Right: pick from **3** upgrades. Right and quick: **4**.
   - Wrong: **2**, and the right answer shows. You never lose the level.
 - **Evolutions wipe the screen.** A weapon at full level plus its matching passive offers an **Evolve!** card. Evolved weapons are much stronger, and every few seconds they unleash a screen-wide blast (Meteor Storm, Blizzard, Thunder God …). This is the only way to wipe the screen, so it feels earned.
@@ -107,8 +107,8 @@
    - **What the maths does.** It is not "the move" in this game: steering and choices win runs. A right answer gives one more upgrade card, and a quick right answer gives two more. That nudges which upgrades a pupil gets. A wrong answer gives 2 cards, so guessing costs you choice and never blocks play.
    - **Answering.** Each level-up is one question and only the first answer counts. There's no retry and no re-ask of that slot. There is no maths switch, because the maths is the level-up itself.
    - **Where the questions come from.**
-     - `start` reads `space_maths_context` once and holds the focus for the whole run (`parseFocus`, `seededRandom`, `makeFocusPack` with the class's `multipleChoice`, `enabledTables`, `division`). It stores up to 40 questions.
-     - After question 40 a level-up gives 3 cards with no question. Pick-only (`choiceLabels`) questions show their choices.
+     - `start` reads `space_maths_context` once and holds the focus for the whole run (`parseFocus`, `seededRandom`, `makeFocusPack` with the class's `multipleChoice`, `enabledTables`, `division`). It stores up to 14 questions (`QUESTIONS_PER_RUN`).
+     - Only every 3rd level-up asks (`ASK_EVERY`, `questionSlot`); after question 14, or between asks, a level-up gives 3 cards with no question. Pick-only (`choiceLabels`) questions show their choices.
    - **Showing and timing.**
      - The question shows in the shared `QuestionModal` inside the full-window layer.
      - "Quick" is `quickMsForPack(pack)`.
@@ -122,7 +122,7 @@
    - **Evidence:** each answer (value, ms, first right) is saved on the run row. The teacher sees answers in the shared Skill map, never in this game.
    - **Before go-live:** score the game against `research-design.md` (3 on every line).
 
-**Lesson fit:** a 3-minute "finished my work" reward with about 15 to 25 focus questions a run. **Who plays with whom:** solo; the hall of fame is own school, pupils only (teachers and hidden profiles left out), on the 🎮 Game boards tab. **Teacher:** an "Other games" column (bosses beaten, "zz" if not played, last played), the on/off switch (`goblinstorm_enabled` default true, `GAME_SWITCH_COLUMNS`, `teacher_set_goblinstorm(…, target_class)` with `require_settings_target()`), `hardest` and `alerts` from the shared focus. **Rewards and coins:** gold is spent only in the shop. The sim (`scripts/goblinstorm-sim.mjs`) checks that gold doesn't pile up unused once the shop is full. Once everything is bought, gold is shown as "best haul" only. **Hub points** go through `add_game_points(player, 'goblinstorm', points, seed)`: 5 for a finished run, +5 for a boss win. They count only on normal turns, within the 40-a-day cap, and write a `scored_games` row so the effort boards count it.
+**Lesson fit:** a 3-minute "finished my work" reward with about 6 to 8 focus questions a run (every 3rd level-up). **Who plays with whom:** solo; the hall of fame is own school, pupils only (teachers and hidden profiles left out), on the 🎮 Game boards tab. **Teacher:** an "Other games" column (bosses beaten, "zz" if not played, last played), the on/off switch (`goblinstorm_enabled` default true, `GAME_SWITCH_COLUMNS`, `teacher_set_goblinstorm(…, target_class)` with `require_settings_target()`), `hardest` and `alerts` from the shared focus. **Rewards and coins:** gold is spent only in the shop. The sim (`scripts/goblinstorm-sim.mjs`) checks that gold doesn't pile up unused once the shop is full. Once everything is bought, gold is shown as "best haul" only. **Hub points** go through `add_game_points(player, 'goblinstorm', points, seed)`: 5 for a finished run, +5 for a boss win. They count only on normal turns, within the 40-a-day cap, and write a `scored_games` row so the effort boards count it.
 
 **Season:** `season_fn = null`, `keep_achievements = true`. New Season keeps gold, the shop, heroes, maps and the codex; only hub points go.
 
@@ -146,7 +146,7 @@ Trophy: a `trophy_types` row "Goblin King's Crown" ("Beat the Goblin King in Gob
 Not a stepped game (older route). The teacher's Progress tab gets one number: bosses beaten (0–5).
 
 ## Server, data and cost
-- **Function `goblinstorm`.** `start` checks the switch and the 5-a-day count, stamps a seed and stores up to 40 questions. `answer` marks a slot once and returns how many choices you get. `finish` replays the run and saves it. `buy` and `codex` handle the shop and the codex.
+- **Function `goblinstorm`.** `start` checks the switch and the 5-a-day count, stamps a seed and stores up to 14 questions. `answer` marks a slot once and returns how many choices you get. `finish` replays the run and saves it. `buy` and `codex` handle the shop and the codex.
 - **Replay.** The run is pure and seeded (`shared/goblinstorm/engine.ts`). The browser sends its steering, one of 17 directions per step, run-length encoded, plus its upgrade picks. The server replays these with the choice counts the marks gave and works out the result itself: time, kills, level, bosses, gold, evolutions and unlocks. A run can't finish faster than real time (95%). The replay must stay well inside the function's CPU budget, which a stage 1 test checks.
 - **Determinism.** The engine uses only `+ − × ÷` and `Math.sqrt`, never `sin`, `cos`, `atan2`, `hypot` or `Math.random`. Directions come from a written-out table (`trig.ts`). The renderer may use real trig for drawing.
 - **Tables:** `goblinstorm_saves` (gold, shop levels, heroes, maps, codex, totals), `goblinstorm_runs` and `goblinstorm_questions`. All have RLS on and pupils reach them only through functions. `goblinstorm_questions` has no policy and no grant. The functions are `goblinstorm_store_questions`, `_load_questions` and `_claim_answer`, plus `record_goblinstorm_*`. Every new `authenticated` function goes on the `security.test.sql` allow-list.
@@ -215,6 +215,16 @@ After **every** merge: the Status line here, project memory, and the next prompt
 - **Dev-only hook:** `window.__goblinstorm` (only on the dev server, never in a build) lets browser checks jump ahead. Builds don't include it.
 - **For the stage 4 sim:** a Ranger standing still fell at 0:14, while one who moved lasted 0:50. That's harsh for a first go; check it when tuning.
 - **Not done (by plan):** no hub registration, no migration, no tests (the 2 screen tests are stage 6), no sounds yet, and only Knight, Ranger and Castle Fields open until saves exist.
+
+## Stage 3 results
+- **Built:** `shared/goblinstorm/server.ts` (`handleGoblinStorm`: `start`, `answer`, `finish`) with `memoryServices.ts` for tests; the function `supabase/functions/goblinstorm/` (`handler.ts`, `entry.ts`, built `index.ts`, in `FUNCTIONS`); `src/games/goblinstorm/liveBackend.ts` and `switch.ts` (`GOBLINSTORM_ON = false`; the preview keeps `standInBackend`).
+- **start:** switch check, 5 runs a day by NZ date (Unlimited today from `settings_of().unlimited_days.goblinstorm` lifts it; such runs are marked `extra`), hero and map must be open in the save, then a fresh seed and up to 14 way-A questions from `space_maths_context`. The browser gets only `publicQuestion`s.
+- **answer:** marks a slot once (`goblinstorm_claim_answer`) as wrong, right or quick (each question's own pack quick time), records it with `recordMathsAnswers(…, '${seed}:${slot}', 'goblinstorm')`, and says the answer and the fact. A second answer to the slot gets the first mark back.
+- **finish:** decodes the steering, replays it with `replayRun` and the server's marks (`choicesFor`), refuses a run shorter than 95% of real time (`too-fast`) or one that doesn't replay (`not-valid`), then `record_goblinstorm_run` saves the summary, gold and bosses beaten, once.
+- **Migration `20261119000900_goblinstorm.sql` (on hold, not live):** `goblinstorm_saves`, `goblinstorm_runs`, `goblinstorm_questions` (no policies, nothing granted), the server-only functions, `goblinstorm_enabled` default true, `teacher_set_goblinstorm` (on the security allow-list), `goblinstorm_last_played` and the `hub_games` row.
+- **Maths change (James, 19 Nov):** only every 3rd level-up asks, so 6–8 questions a run; `QUESTIONS_PER_RUN` 40 → 14. The fingerprint is still `ba14927f`.
+- **Tests:** 3 server tests + the deployable-file check; `supabase/tests/database/goblinstorm.test.sql` (30 checks) passes on a clean copy, as does `security.test.sql`.
+- **Left for later stages:** `GAME_SWITCH_COLUMNS`, `UNLIMITED_GAMES` and `teacher_set_unlimited_today` wait for go-live (the column isn't live while the migration is on hold). Hub points, the shop, unlocks, achievements and `my_goblinstorm()` for the screens come in stages 4–5.
 
 ## Went live
 (fill in)

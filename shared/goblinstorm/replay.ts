@@ -6,7 +6,7 @@
  * The server knows how many cards each level-up earned (from its own marks), replays the run with the shared engine
  * and keeps only what the replay says.
  */
-import { CHOICES, QUESTIONS_PER_RUN, RUN_STEPS } from './config';
+import { CHOICES, QUESTIONS_PER_RUN, RUN_STEPS, questionSlot } from './config';
 import { applyPick, makeOffer, newRun, stepRun, summary, waiting, type RunSetup, type RunState, type RunSummary } from './engine';
 import { STILL } from './trig';
 
@@ -47,7 +47,7 @@ export interface ReplayInput {
   setup: RunSetup;
   steering: readonly number[];
   picks: readonly number[];
-  /** Cards earned at each level-up, from the server's marks (slot i = level-up i). */
+  /** Cards earned at each level-up question, from the server's marks (by question slot: see `questionSlot`). */
   choices: readonly number[];
 }
 
@@ -70,8 +70,8 @@ export function replayRun(input: ReplayInput): Replay {
   while (s.outcome === 'running') {
     if (waiting(s)) {
       if (pick >= input.picks.length) break;
-      const slot = s.levelUps;
-      makeOffer(s, slot < QUESTIONS_PER_RUN ? input.choices[slot] ?? CHOICES.wrong : CHOICES.right);
+      const slot = questionSlot(s.levelUps);
+      makeOffer(s, slot !== null && slot < QUESTIONS_PER_RUN ? input.choices[slot] ?? CHOICES.wrong : CHOICES.right);
       if (!applyPick(s, input.picks[pick++])) { valid = false; break; }
       continue;
     }
