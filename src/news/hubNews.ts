@@ -26,7 +26,7 @@ export const HUB_NEWS: NewsItem[] = [
     date: '2026-11-19',
     emoji: '🌪️',
     title: 'New game: Goblin Storm',
-    text: 'Steer your hero through goblin swarms for 3 minutes. Level up, evolve your weapons and wipe the whole screen! Unlock 8 heroes and beat 5 bosses.',
+    text: 'Survive the goblin swarm! Level up, evolve your weapons and wipe the whole screen.',
     game: 'goblinstorm',
   },
   {
