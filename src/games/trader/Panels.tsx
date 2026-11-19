@@ -44,7 +44,7 @@ type MarketStep = 'sell' | 'buy';
 const stepShowing = (target: string | undefined): MarketStep | null =>
   target?.startsWith('sell-all-') ? 'sell' : target?.startsWith('buy-max-') ? 'buy' : null;
 
-export function TradePanel({ galaxy, t, busy, news = [], pushes, want, level = 'lots', onTrade, onPlan }: {
+export function TradePanel({ galaxy, t, busy, news = [], pushes, want, level = 'lots', onTrade, onPlan, onShowMap }: {
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
@@ -60,6 +60,8 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, want, level = '
   onTrade: (plan: number[]) => Promise<string | null>;
   /** Tells the game what is picked but not traded yet (for First Flight), and null when the market closes. */
   onPlan?: (plan: number[] | null) => void;
+  /** The hold card's "Show on star chart". */
+  onShowMap?: (planet: number) => void;
 }) {
   const [plan, setPlan] = useState<number[]>(emptyPlan);
   const [message, setMessage] = useState('');
@@ -149,7 +151,7 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, want, level = '
         </details>
       )}
       <div className="st-hold-inpanel">
-        <HoldView t={t} after={any ? out?.state : null} galaxy={galaxy} pushes={pushes} />
+        <HoldView t={t} after={any ? out?.state : null} galaxy={galaxy} pushes={pushes} onShowMap={onShowMap} />
       </div>
       <div className="st-steps" role="group" aria-label="Market steps">
         <button type="button" className={`st-stepbtn ${step === 'sell' ? 'st-stepbtn--on' : ''}`} aria-pressed={step === 'sell'} onClick={() => setStep('sell')} data-coach="market-sell">
