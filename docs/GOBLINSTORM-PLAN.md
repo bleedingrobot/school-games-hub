@@ -2,7 +2,7 @@
 
 *Name **Goblin Storm** (James picked it, 19 Nov 2026; id `goblinstorm`, CSS prefix `.gs-`). James, 19 Nov 2026: pupils want a "bullet heaven" game: "big attacks that can wipe out the entire screen, less damage shields, spinning blades, amazing graphics especially the attacks and lots of different characters to unlock that have different speeds and stuff." It is our own game, with our own name, heroes, monsters, maps and art. The genre (steer only, attacks fire by themselves, level-ups, evolving weapons) isn't owned by anyone; nothing is copied from any one game.*
 
-**Status: stage 6 (effects pass, sounds, Bella voice, guided first go, effects setting, the 2 screen tests) from branch `claude/goblinstorm-6`, 19 Nov 2026. Not live and not on the hub; migration `20261119000900` still on hold; only the preview plays it. Next: stage 7 (go live). Prompt: `docs/prompts/goblinstorm-stage7.md`.**
+**Status: LIVE 19 Nov 2026 for every class. Go-live PR #622 (migration `20261119000900`, hub entry, Unlimited today, Progress column, What's new) and switch PR #623 (`GOBLINSTORM_ON = true`). Art (stage 8) painted and in. Players tracker still to add (see Went live). Bonus Turns (class quest reward) doesn't cover Goblin Storm yet.**
 
 ## The short version
 
@@ -302,4 +302,8 @@ After **every** merge: the Status line here, project memory, and the next prompt
 - **Stage 7 must also:** add a "What's new" line, put Goblin Storm in the players tracker, and check Bella's clips play on the hub (the folder is `voice/goblinstorm/`).
 
 ## Went live
-(fill in)
+- **19 Nov 2026, #622 (go-live):** migration `20261119000900` taken off hold and applied by the publish run (it now also re-makes `teacher_set_unlimited_today` with `goblinstorm`); the function was already deployed from stage 3. Hub: `src/games/goblinstorm/index.tsx` (GameDefinition, teacher switch, "Follows focus", Progress column "bosses beaten"), `GoblinStormPlay.tsx` (`liveGoblinStorm`, `onServer`), `GAME_SWITCH_COLUMNS`, `UNLIMITED_GAMES`, home card moved to `src/assets/home/`, a "What's new" line, `docs/PRIVACY-SUMMARY.md`.
+- **Before merging:** database tests on a clean copy built from every migration: goblinstorm 69, security 50, progress_access 65, unlimited_turns 12, bonus_turns 29, teacher_set_games 10, progress_other_games 8, home_my_games 7, non_maths_games 9, trophies_games_4 27, all pass. Determinism `67a677c4`.
+- **Checked live after the merge:** the migration is in the live history; the three tables exist and are empty; `goblinstorm_enabled` is on for all 11 settings rows; `hub_games` row and the Crown trophy are there; the function answers 401 "Please sign in again." signed out; signed out, `my_goblinstorm` and `goblinstorm_saves` give 42501; RLS on; `goblinstorm_questions` has no grants; Bella's clips load from the live site (200); `scored_games` not smaller. A signed-in run on the live site was not tried (no test pupil sign-in; never save test data live).
+- **19 Nov 2026, #623 (switch):** `GOBLINSTORM_ON = true`; the card, the board and the What's new line show to every class.
+- **Players tracker:** not done. The tracker page (made 2 Nov) can't be opened with this session's artifact tools; add `goblinstorm_runs` (one row per run started, `player`, `started_at`) to its query by hand.
