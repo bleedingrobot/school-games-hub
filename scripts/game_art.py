@@ -39,7 +39,10 @@ Config (all paths are relative to the repo unless they start with ~):
                   too if given -> <art_dir>/<folder>/<file>.webp and <file>-small.webp
           "glow"  light painted on a pure black background (sparks, a burst): its brightness becomes see-through, so it glows
                   over anything; trimmed, shrunk to `max` px -> <art_dir>/<folder>/<file>.webp (tints allowed)
-    hollow true on a cut-out: it has a see-through middle (a picture ring), so the hole is cut out too, not filled in
+    hollow true on a cut-out: it has a see-through middle (a picture ring), so the hole is cut out too, not filled in, and
+           the ring is centred on a square
+    cut_by "white" on a cut-out: cut it out by how far each pixel is from white, not with rembg (for one rembg fades out)
+    small  on an icon or a cut-out: also write a copy shrunk to this many px as <file>-small.webp
     tints  {tint name: file name}: also write a recoloured copy of a cut-out to <art_dir>/<folder>/<file name>.webp
 """
 from __future__ import annotations
@@ -245,7 +248,8 @@ def destinations(c: dict, p: dict) -> list[Path]:
         return [folder / f'{p["file"]}.webp', folder / f'{p["file"]}-800.webp']
     if p['kind'] == 'icon':
         return [folder / f'{p["file"]}.webp'] + ([folder / f'{p["file"]}-small.webp'] if p.get('small') else [])
-    return [folder / f'{p["file"]}.webp'] + [folder / f'{f}.webp' for f in p.get('tints', {}).values()]
+    small = [folder / f'{p["file"]}-small.webp'] if p.get('small') else []
+    return [folder / f'{p["file"]}.webp'] + [folder / f'{f}.webp' for f in p.get('tints', {}).values()] + small
 
 
 def tint(img, colours: dict):
@@ -315,6 +319,13 @@ def tidy(c: dict, style: str, force: bool, dry: bool):
         px[areas == areas[cy, cx], 3] = 0
         return Image.fromarray(px, 'RGBA')
 
+    def white_key(img):
+        # For a picture rembg cuts badly (a lacy ring of leaves): how far each pixel is from white becomes how solid it is.
+        rgb = np.asarray(img).astype(np.float32)
+        far = (255 - rgb).max(axis=2)
+        a = np.clip((far - 14) / 46, 0, 1)
+        return Image.fromarray(np.dstack([rgb, a * 255]).round().astype(np.uint8))
+
     def blend_tile(part):
         # Seamless without mirroring: the painting's own middle forms the tile's edges (a copy moved half a tile wraps
         # cleanly), faded into the untouched painting towards the centre.
@@ -377,11 +388,19 @@ def tidy(c: dict, style: str, force: bool, dry: bool):
                 from rembg import new_session
                 session = new_session('isnet-general-use')
             from rembg import remove
-            cut = remove(img.convert('RGB'), session=session, alpha_matting=True)
+            cut = white_key(img.convert('RGB')) if p.get('cut_by') == 'white' else remove(img.convert('RGB'), session=session, alpha_matting=True)
             cut = trim(punch_middle(cut, img.convert('RGB')) if p.get('hollow') else fill_holes(cut, img.convert('RGB')))
+            if p.get('hollow'):
+                # A ring is drawn into a square box, so centre it on a square, see-through canvas.
+                side = max(cut.size)
+                square = Image.new('RGBA', (side, side), (0, 0, 0, 0))
+                square.paste(cut, ((side - cut.width) // 2, (side - cut.height) // 2))
+                cut = square
             save(fit(cut, p['max']), outs[0], quality['cut'])
             for (tint_name, _), out in zip(p.get('tints', {}).items(), outs[1:]):
                 save(fit(tint(cut, c['tints'][tint_name]), p['max']), out, quality['cut'])
+            if p.get('small'):
+                save(fit(cut, p['small']), outs[-1], quality['cut'])
 
 
 def main(args: list[str]):

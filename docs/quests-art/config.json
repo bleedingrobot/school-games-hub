@@ -470,6 +470,7 @@
       "style": "plain",
       "folder": "avatar/art/frames",
       "file": "autumn",
+      "cut_by": "white",
       "max": 512,
       "small": 160
     },
