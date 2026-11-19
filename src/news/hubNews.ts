@@ -22,6 +22,13 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'challenge-anywhere-2026-11-20',
+    date: '2026-11-20',
+    emoji: '⚔️',
+    title: 'Challenges reach you anywhere',
+    text: "Friends can now challenge you even when you're not in that game!",
+  },
+  {
     id: 'goblinstorm-quests-2026-11-20',
     date: '2026-11-20',
     emoji: '🐉',

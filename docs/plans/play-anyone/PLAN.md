@@ -9,7 +9,7 @@
 - The Banners board is whole school.
 - Star Forge is not in the Lobby.
 
-**Status:** stage 1 built 20 Nov 2026 (migration `20261120000300_play_other_classes.sql`); see "Stage 1 results" at the end. Stages 2 to 7 not started.
+**Status:** stage 1 built 20 Nov 2026 (migration `20261120000300_play_other_classes.sql`); stage 2 built 20 Nov 2026 (migration `20261120000400_hub_here.sql`); see "Stage 1 results" and "Stage 2 results" at the end. Stages 3 to 7 not started.
 
 ## Where things are now
 
@@ -138,3 +138,13 @@ Built on branch `claude/play-anyone-1`, migration `20261120000300_play_other_cla
 - **Words.** "That player's class isn't playing other classes right now." replaces "You can only challenge classmates in your own class". Kids now see "friend" or "player" instead of "classmate" in these three games (teacher labels unchanged).
 - **Trophies.** No change needed: the classmate-win trophies are only for Chess, Checkers, 101, Power Clash and Wormholes, none of which this stage touches.
 - **Tests.** New `supabase/tests/database/play_anyone.test.sql` (31 checks: cross-class challenge in all three games, other schools never, hidden kids never listed, either class off stops it, same class unaffected). The older class-only tests (`archery_classmates`, `clans_live_duels`, `lord_live_arena`) now switch the setting off so they still test one class on its own; `security.test.sql` lists the new teacher function.
+
+## Stage 2 results (20 Nov 2026)
+
+Built on branch `claude/play-anyone-2`, migration `20261120000400_hub_here.sql` (one new table, create or replace for the rest).
+
+- **Who has the hub open.** New table `hub_here (player, seen_at)`, no pupil access. `hub_here()` records "I'm here" for a school pupil who isn't hidden, and returns only which of my games have a challenge waiting for me (`{waiting: [...]}`), nothing about anyone else. `hub_seen(player)` is the 75-second check. `tidy-hub-here` cron (03:29 daily) clears rows older than a day.
+- **Game lists count the hub.** `archery_here`, `lord_here` and `clan_duel_here` list a kid who is in that game or has the hub open; the three challenge functions accept them the same way. Because a hub-only kid never runs the game's own "here", the lists now check each listed kid's own game switches (Archery on + Classmate fights on, Dragon Maths live arena on, Clan duels on). Every stage 1 rule kept.
+- **Check-in.** `src/multiplayer/useHubAsks.ts`: every 30 s (plus up to 10 % at random so a class doesn't ask in step) while the page shows, and again when it comes back into view. Only games with something waiting get asked for their challenges, through each game's own "here". New challenges also arrive live by Realtime (`seat_b = me` on the three challenge tables), because a challenge only waits 30 to 60 s.
+- **Banner (D1).** `src/components/ChallengeBanner.tsx`, in the hub shell (`Layout.tsx`), pupils only. Yes opens `/<game>?ask=<id>`, and the game says yes with its own step (`src/multiplayer/useAskFromHub.ts`, wired into ArcheryGame, LordPlay and ClanQuest). No goes through that game's own server step. Not now hides every challenge known then; the next new one shows. Never shows inside the game it's from. On hub pages it sits at the bottom; inside another game it sits at the top between the corner buttons, and on a phone it starts as a small "⚔️ Challenge!" tab. Read aloud with Kokoro af_bella clips (`public/voice/challenge/`, no names spoken).
+- **Tests.** `supabase/tests/database/play_anyone_hub.test.sql` (32 checks: check-in rules, hidden and teacher not recorded, 75-second window, hub-only kids listed and challengeable in all three games, other schools and switched-off classes still refused, waiting list). `src/components/ChallengeBanner.test.tsx` (3 screen tests: shows + Yes, No + hidden in its own game, Not now until the next one) and the voice-lines test. Checked at phone, iPad and laptop sizes.

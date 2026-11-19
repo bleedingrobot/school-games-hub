@@ -30,6 +30,7 @@ import { SeasonRoad } from './SeasonRoad';
 import { useAsk, type Answer } from './useAsk';
 import { HubButtons } from './HubButtons';
 import { useClashes } from './useClashes';
+import { useAskFromHub } from '../../multiplayer/useAskFromHub';
 import { ClashAskBanner } from './LiveArena';
 import { AchievementPop } from '../../achievements/AchievementPop';
 import './lord.css';
@@ -105,6 +106,11 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
   const sendRef = useRef<Parameters<typeof useAsk>[0]['current']>(null);
   const { ask, modal } = useAsk(sendRef);
   const clashes = useClashes(hero ? backend.clashes : undefined, player);
+
+  // "Yes" on the hub's challenge banner: say yes here as the banner's Fight! would, and go to the arena.
+  useAskFromHub(clashes.asks.map((a) => a.clash), (id) => {
+    void clashes.send({ action: 'clash-answer', clash: id, accept: true }).then((r) => { if (r.ok) setScreen({ name: 'arena' }); else setNote(r.message); });
+  });
 
   const stateRef = useRef<LordState | null>(null);
   stateRef.current = state;

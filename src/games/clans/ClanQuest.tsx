@@ -22,6 +22,7 @@ import { VillageRaids, type RaidGo } from './VillageRaids';
 import { BannerRain } from './RaidStage';
 import { DuelArena, DuelAskBanner } from './Duels';
 import { useDuels } from './useDuels';
+import { useAskFromHub } from '../../multiplayer/useAskFromHub';
 import { pretendDuelApi } from './pretendDuels';
 import type { DuelApi } from '../../data/clanDuel';
 import { News } from './News';
@@ -123,6 +124,11 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const pretendDuels = useMemo(() => (server ? undefined : pretendDuelApi(() => sessionRef.current?.clan ?? null, { askMe: true })), [server]);
   const duels = useDuels(session ? duelApi ?? pretendDuels : undefined);
   const [screen, setScreen] = useState<Screen>('home');
+  // "Yes" on the hub's challenge banner: say yes here as the banner's Duel! would, and open the Duel Arena.
+  useAskFromHub(duels.asks.map((a) => a.duel), (id) => {
+    void duels.send({ action: 'duel-answer', duel: id, accept: true });
+    setScreen('duels');
+  });
   const [boss, setBoss] = useState(false);
   const [summary, setSummary] = useState<FightSummary | null>(null);
   const [loading, setLoading] = useState<'loading' | 'failed' | 'off' | null>(server ? 'loading' : null);
