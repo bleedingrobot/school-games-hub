@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'trader-sells-best-2026-11-20',
+    date: '2026-11-20',
+    emoji: '🪐',
+    title: 'Star Trader: where does it sell best?',
+    text: 'Tap a good in your hold to see the two best planets to sell it.',
+    game: 'trader',
+  },
+  {
     id: 'trader-hold-2026-11-20',
     date: '2026-11-20',
     emoji: '🚀',

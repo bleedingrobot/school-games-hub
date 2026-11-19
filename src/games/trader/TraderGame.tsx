@@ -633,7 +633,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
           {phase.k === 'planet' && !pending && tab === 'trade' && (
             // On a wide screen the hold sits over the planet, on the right (the market's own copy is hidden by CSS).
             <div className="st-holdside">
-              <HoldView t={t} after={marketAfter} />
+              <HoldView t={t} after={marketAfter} galaxy={galaxy} pushes={pushes} />
             </div>
           )}
           <div className={`st-main ${phase.k === 'planet' && !pending && (tab === 'map' || tab === 'forge' || tab === 'gallery') ? 'st-main--wide' : ''} ${phase.k === 'planet' && !pending && tab === 'forge' ? 'st-main--forge' : ''}`}>

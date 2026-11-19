@@ -681,7 +681,9 @@
 .st-hold__item--selling .st-hold__full { stroke: #ff7a6b; stroke-dasharray: 10 6; }
 @keyframes st-hold-drop { from { transform: translateY(-30%) scale(0.6); opacity: 0; } }
 .st-hold__strip { display: none; list-style: none; margin: 6px 0 0; padding: 0; gap: 6px; flex-wrap: wrap; }
-.st-hold__strip li { display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-radius: 10px; background: rgba(255, 255, 255, 0.1); font-size: 0.9rem; }
+.st-hold__strip li { border-radius: 10px; }
+.st-hold__strip button { display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border: 0; border-radius: 10px; background: rgba(255, 255, 255, 0.1); color: inherit; font: inherit; font-size: 0.9rem; cursor: pointer; }
+.st-hold__strip button[aria-pressed='true'] { background: rgba(253, 224, 71, 0.25); outline: 2px solid var(--st-gold); }
 .st-hold__strip img { width: 28px; height: 28px; object-fit: contain; }
 .st-hold__strip .st-hold__tile--buying { outline: 2px dashed #ffc43c; }
 .st-hold__strip .st-hold__tile--selling { outline: 2px dashed #ff7a6b; }
@@ -695,6 +697,22 @@
   .st-hold__barfill { transition: none; }
 }
 
+/* H.2: tap or hover a good for where it sells best. */
+.st-hold__group { cursor: pointer; outline: none; }
+.st-hold__group--lit .st-hold__full, .st-hold__group:focus-visible .st-hold__full { stroke: var(--st-gold); stroke-width: 6; }
+.st-hold__card {
+  margin-top: 8px; padding: 10px 14px; border-radius: 14px; background: var(--st-panel-solid); border: 2px solid var(--st-gold);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); max-width: 420px;
+}
+.st-hold__card p { margin: 6px 0 0; }
+.st-hold__cardhead { display: flex; align-items: center; gap: 8px; font-size: 1.05rem; }
+.st-hold__cardhead img { width: 36px; height: 36px; object-fit: contain; }
+.st-hold__close { margin-left: auto; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--st-line); background: none; color: inherit; font-size: 1.2rem; cursor: pointer; }
+.st-hold__sales { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.st-hold__sales li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.st-hold__gain { color: var(--st-good); font-weight: 700; }
+.st-hold__note { font-size: 0.82rem; }
+
 /* Wide screens: the hold floats over the planet on the right, big, and the market's copy goes. Narrower screens keep
    it at the top of the market. (Tried a bottom-right dock and a top-right card too; over the planet gave the biggest
    boxes and looks like the ship in orbit.) */
@@ -705,7 +723,8 @@
     display: block; position: absolute; z-index: 2; left: min(700px, 55%); right: 16px; top: 50%; transform: translateY(-50%);
     pointer-events: none;
   }
-  .st-holdside .st-hold { pointer-events: auto; background: none; border: 0; padding: 0; }
+  .st-holdside .st-hold { pointer-events: auto; background: none; border: 0; padding: 0; position: relative; }
+  .st-holdside .st-hold__card { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: min(420px, 100%); }
   .st-holdside .st-hold__head { background: var(--st-panel); border: 1px solid var(--st-line); border-radius: 12px; padding: 6px 12px; }
-  .st-holdside .st-hold__ship { max-height: 64vh; filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.6)); }
+  .st-holdside .st-hold__ship { max-height: min(64vh, calc(100vh - 340px)); filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.6)); }
 }
