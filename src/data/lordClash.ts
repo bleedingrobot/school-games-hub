@@ -9,6 +9,7 @@ import type { ClashRow } from '../../shared/lord/clashServer';
 import type { AskTicket } from '../../shared/lord/server';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { supabase } from '../lib/supabase';
+import { readClassBits } from '../components/SchoolPlayerList';
 import { fetchClockOffset, type LiveStatus } from './multiplayer';
 
 export type { ClashRow, LiveStatus };
@@ -18,6 +19,9 @@ export interface ClashClassmate {
   name: string;
   avatar: unknown;
   busy: boolean;
+  /** In my class; otherwise className says which class they're in. */
+  sameClass: boolean;
+  className: string | null;
 }
 
 export interface ClashAsk {
@@ -35,7 +39,7 @@ export async function sayHere(): Promise<Here | null> {
     if (error || !data || typeof data !== 'object') return null;
     const d = data as { off?: boolean; online?: ClashClassmate[]; asks?: ClashAsk[]; clash?: ClashRow | null };
     if (d.off) return { off: true };
-    return { off: false, online: Array.isArray(d.online) ? d.online : [], asks: Array.isArray(d.asks) ? d.asks : [], clash: d.clash ?? null };
+    return { off: false, online: Array.isArray(d.online) ? d.online.map((o) => ({ ...o, ...readClassBits(o as unknown as Record<string, unknown>) })) : [], asks: Array.isArray(d.asks) ? d.asks : [], clash: d.clash ?? null };
   } catch {
     return null;
   }

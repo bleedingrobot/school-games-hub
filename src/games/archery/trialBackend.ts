@@ -363,7 +363,7 @@ export function trialServices(opts: TrialOptions = {}) {
         const p = opts.pupils?.[id];
         return !!p && p.classId === me.classId && (p.school ?? 1) === (me.school ?? 1);
       })
-      .map(([id]) => ({ id, name: opts.pupils![id].name, avatar: {}, busy: busy(id), snoozed: snoozed(id, player) }))
+      .map(([id]) => ({ id, name: opts.pupils![id].name, avatar: {}, busy: busy(id), snoozed: snoozed(id, player), sameClass: true, className: null }))
       .sort((a, b) => a.name.localeCompare(b.name));
     const all = Object.values(duels());
     const asks = all

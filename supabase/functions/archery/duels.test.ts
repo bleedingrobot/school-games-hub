@@ -84,7 +84,7 @@ describe('challenging a classmate', () => {
     expect(h.hub.readDuel(CAT, id)).toBeNull();
     expect(h.hub.here(CAT).online.map((o) => o.id)).toEqual([]);
     h.hub.here(ANA);
-    expect(Object.keys(h.hub.here(BEN).online[0])).toEqual(['id', 'name', 'avatar', 'busy', 'snoozed']);
+    expect(Object.keys(h.hub.here(BEN).online[0])).toEqual(['id', 'name', 'avatar', 'busy', 'snoozed', 'sameClass', 'className']);
   });
 
 
