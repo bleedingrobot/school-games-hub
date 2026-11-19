@@ -11,6 +11,7 @@ import { NewTrophyMoment } from '../trophies/NewTrophyMoment';
 import { NewAchievementMoment } from '../achievements/NewAchievementMoment';
 import { YearGate } from '../year/YearQuestion';
 import { CrashScreen } from './CrashScreen';
+import { HubChallengeBanner } from './ChallengeBanner';
 import { FullScreenButton } from './FullScreenButton';
 import { MuteButton } from './MuteButton';
 import banner from '../assets/dps-banner.png';
@@ -81,6 +82,8 @@ function ThemedLayout() {
           </CrashScreen>
         </YearGate>
       </main>
+      {/* A friend's challenge from any game, wherever the pupil is in the hub (and the hub's own "I'm here"). */}
+      <HubChallengeBanner />
       <NewTrophyMoment />
       {/* After any trophy, never at the same time. */}
       <NewAchievementMoment />
