@@ -13985,15 +13985,19 @@ const sketchPower = (s) => {
 	};
 	return powerOf(s.heroLevels, levels, might(troops));
 };
-/** Everyone in the class, the closest few in power first (the ones not raided today), then the rest by name. */
+/**
+* Every clan that can be raided at school: the closest few in power first (not raided today, from my class when it has
+* enough), then the rest by name (the screen shows my class first, then the rest of the school with a search).
+*/
 function rivalList(clan, raidedToday, sketches) {
 	const mine = Math.max(1, clanPower(clan));
-	const all = sketches.map((s) => ({
+	const all = sketches.filter((s) => s.canRaid !== false).map((s) => ({
 		s,
 		power: sketchPower(s),
-		raided: raidedToday.includes(s.id)
+		raided: raidedToday.includes(s.id),
+		same: s.sameClass !== false
 	}));
-	const close = all.filter((x) => !x.raided).sort((a, b) => Math.abs(a.power - mine) - Math.abs(b.power - mine) || a.s.name.localeCompare(b.s.name)).slice(0, R.suggested);
+	const close = all.filter((x) => !x.raided).sort((a, b) => Number(b.same) - Number(a.same) || Math.abs(a.power - mine) - Math.abs(b.power - mine) || a.s.name.localeCompare(b.s.name)).slice(0, R.suggested);
 	const rest = all.filter((x) => !close.includes(x)).sort((a, b) => a.s.name.localeCompare(b.s.name));
 	return [...close.map((x) => ({
 		x,
@@ -14004,12 +14008,14 @@ function rivalList(clan, raidedToday, sketches) {
 	}))].map(({ x, suggested }) => ({
 		id: x.s.id,
 		name: x.s.name,
+		sameClass: x.same,
+		className: x.same ? null : x.s.className ?? null,
 		light: lightOf(mine, x.power),
 		suggested,
 		raided: x.raided
 	}));
 }
-/** This week's Banners board: every clan with a Banner, and your own clan even with none. Most first. */
+/** This week's Banners board for the whole school: the top clans with a Banner, and your own clan even with none. Most first. */
 function bannerBoard(clan, week, sketches) {
 	return [{
 		name: clan.name,
@@ -14019,7 +14025,10 @@ function bannerBoard(clan, week, sketches) {
 		name: s.name,
 		banners: bannersThisWeek(s.banners, week),
 		me: false
-	}))].filter((r) => r.me || r.banners > 0).sort((a, b) => b.banners - a.banners || Number(b.me) - Number(a.me) || a.name.localeCompare(b.name));
+	}))].filter((r) => r.me || r.banners > 0).sort((a, b) => b.banners - a.banners || Number(b.me) - Number(a.me) || a.name.localeCompare(b.name)).map((r, i) => ({
+		...r,
+		place: i + 1
+	})).filter((r) => r.place <= 10 || r.me);
 }
 /** Raids left today. */
 const raidsLeft = (e) => Math.max(0, R.perDay - e.raidsToday);
@@ -14675,9 +14684,9 @@ function applyInner(saved, action, ctx, flags) {
 				breach: state.fight.raid.breach,
 				tower: state.fight.raid.tower
 			}, false) : refuse("fight-open", "You are in the middle of a fight. Finish it first!");
-			if (!ctx.raidsOn) return refuse("off", "Your teacher has switched raids on classmates off.");
+			if (!ctx.raidsOn) return refuse("off", "Your teacher has switched Village Raids off.");
 			const target = ctx.target;
-			if (!target || target.id === ctx.self) return refuse("target", "That clan is not in your class.");
+			if (!target || target.id === ctx.self) return refuse("target", "That clan can't be raided right now.");
 			const e = empireOf(clan);
 			if (raidsLeft(e) <= 0) return refuse("limit", `That's all ${CONFIG.classRaids.perDay} raids for today. Come back tomorrow!`);
 			if (e.raidedToday.includes(target.id)) return refuse("same", "You already raided that clan today. Pick another one!");

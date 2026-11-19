@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'clan-raids-school-wide-2026-11-20',
+    date: '2026-11-20',
+    emoji: '🏰',
+    title: 'Clan Quest: raid any village at school',
+    text: 'Raid clans from other classes too, and see the whole school’s Banners board!',
+    game: 'clan-quest',
+  },
+  {
     id: 'invite-by-name-2026-11-20',
     date: '2026-11-20',
     emoji: '🎲',

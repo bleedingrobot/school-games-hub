@@ -1,7 +1,8 @@
 /**
- * Village Raids on classmates (docs/CLANS-PVP-PLAN.md): pick a rival (the three closest in strength are shown big, with a
- * traffic light), answer the siege question, watch the siege, then the heroes fight (Fight.tsx). This week's Banners board
- * sits beside the rivals. Display only: the rules are shared/clans/raids.ts, and the server (or, on the test page, the very
+ * Village Raids (docs/CLANS-PVP-PLAN.md; whole school since play anyone stage 5): pick a rival (the three closest in
+ * strength are shown big, with a traffic light; then my class, then the rest of the school with a search), answer the
+ * siege question, watch the siege, then the heroes fight (Fight.tsx). This week's whole-school Banners board sits beside
+ * the rivals. Display only: the rules are shared/clans/raids.ts, and the server (or, on the test page, the very
  * same rules in places.ts) decides everything. Clans are shown by name only, never a pupil.
  */
 import { useEffect, useState } from 'react';
@@ -9,6 +10,7 @@ import type { ShownFight } from '../../../shared/clans/actions';
 import { CONFIG } from '../../../shared/clans/config';
 import { BUILDING_NAMES, empireOf } from '../../../shared/clans/empire';
 import { LIGHT_NAMES, type BoardRow, type Rival } from '../../../shared/clans/raids';
+import { ClassTag, SchoolPlayerList } from '../../components/SchoolPlayerList';
 import { bannerArt } from './art';
 import { LadderAsk, type Asker } from './LadderAsk';
 import { pretendRaidList } from './places';
@@ -87,16 +89,17 @@ export function VillageRaids({ session, ask, onStart, onFight, onBack, onDuels }
   const left = list?.left ?? Math.max(0, R.perDay - e.raidsToday);
   const suggested = list?.targets.filter((t) => t.suggested) ?? [];
   const others = list?.targets.filter((t) => !t.suggested) ?? [];
-  const card = (t: Rival, big: boolean) => (
-    <li key={t.id} className={`cq-rival cq-rival--${t.light} ${big ? 'cq-rival--big' : ''} ${t.raided ? 'is-raided' : ''}`}>
+  const rival = (t: Rival, big: boolean) => (
+    <>
       {big && bannerArt(t.name) && <img className="cq-rival__banner" src={bannerArt(t.name)} alt="" />}
-      <span className="cq-rival__name">{t.name}</span>
+      <span className="cq-rival__name">{t.name}<ClassTag player={t} /></span>
       <span className={`cq-light cq-light--${t.light}`}>{LIGHT_NAMES[t.light]}</span>
       <button type="button" className={big ? 'cq-btn cq-btn--hot' : 'cq-btn'} disabled={t.raided || left === 0} onClick={() => pick(t)} aria-label={`Raid the ${t.name} clan (${LIGHT_NAMES[t.light]})`}>
         {t.raided ? 'Raided today' : 'Raid!'}
       </button>
-    </li>
+    </>
   );
+  const rivalClass = (t: Rival, big: boolean) => `cq-rival cq-rival--${t.light} ${big ? 'cq-rival--big' : ''} ${t.raided ? 'is-raided' : ''}`;
 
   let body: React.ReactNode;
   if (!raidsOn) body = <p className="cq-panel" role="status">Your teacher has switched Village Raids off for now. You can still raid the computer kingdoms.</p>;
@@ -107,20 +110,26 @@ export function VillageRaids({ session, ask, onStart, onFight, onBack, onDuels }
         <button type="button" className="cq-btn cq-btn--hot" onClick={load}>Try again</button>
       </div>
     );
-  } else if (!list) body = <p role="status">Looking at your class…</p>;
+  } else if (!list) body = <p role="status">Looking for villages…</p>;
   else {
     body = (
       <div className="cq-raids">
         <Embers />
         <div className="cq-panel cq-raids__rivals">
           <h3>{left > 0 ? `Pick a village to raid: ${left} ${left === 1 ? 'raid' : 'raids'} left today` : `That's all ${R.perDay} raids for today. Come back tomorrow!`}</h3>
-          {list.targets.length === 0 ? <p>There are no other clans in your class yet.</p> : (
+          {list.targets.length === 0 ? <p>There are no other clans to raid yet.</p> : (
             <>
-              <ul className="cq-rivals">{suggested.map((t) => card(t, true))}</ul>
+              <ul className="cq-rivals">{suggested.map((t) => <li key={t.id} className={rivalClass(t, true)}>{rival(t, true)}</li>)}</ul>
               {others.length > 0 && (
                 <details className="cq-rivals__more">
-                  <summary>Everyone else in your class ({others.length})</summary>
-                  <ul className="cq-rivals cq-rivals--small">{others.map((t) => card(t, false))}</ul>
+                  <summary>More villages to raid ({others.length})</summary>
+                  <SchoolPlayerList
+                    people={others}
+                    label="More villages to raid"
+                    searchLabel="Find a clan or class"
+                    listClassName="cq-rivals cq-rivals--small"
+                    row={(t) => <div className={rivalClass(t, false)}>{rival(t, false)}</div>}
+                  />
                 </details>
               )}
             </>
@@ -133,14 +142,14 @@ export function VillageRaids({ session, ask, onStart, onFight, onBack, onDuels }
           <h3>Banners this week</h3>
           <ol className="cq-board">
             {list.board.map((r, i) => (
-              <li key={r.name} className={r.me ? 'is-me' : undefined} style={{ '--i': i } as React.CSSProperties}>
-                <span className="cq-board__place">{i + 1}</span>
+              <li key={`${r.place}-${r.name}`} className={r.me ? 'is-me' : undefined} style={{ '--i': i } as React.CSSProperties}>
+                <span className="cq-board__place">{r.place}</span>
                 <span className="cq-board__name">{r.name}{r.me ? ' (you)' : ''}</span>
                 <span className="cq-board__count">{r.banners} {r.banners === 1 ? 'Banner' : 'Banners'}</span>
               </li>
             ))}
           </ol>
-          <p className="cq-soft">The board starts again every Monday.</p>
+          <p className="cq-soft">The top clans in the whole school. The board starts again every Monday.</p>
         </div>
       </div>
     );

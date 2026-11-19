@@ -19,6 +19,8 @@ insert into public.class_members (student_id, class_id, how) values
   ('00000000-0000-0000-0000-00000000000b', '11111111-1111-4111-8111-111111111111', 'teacher'),
   ('00000000-0000-0000-0000-00000000000d', '22222222-2222-4222-8222-222222222222', 'teacher');
 update public.app_settings set clans_enabled = true, clan_raids_enabled = true;
+-- These checks are about one class on its own: "Play other classes" is off. play_anyone_raids.test.sql tests the whole school.
+update public.app_settings set play_other_classes = false;
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -98,7 +100,7 @@ select is(pg_temp.gold('b'), 220, '... the raided clan''s gold is unchanged');
 select throws_ok($$ select pg_temp.go('b', 11, true, 20, 2) $$, '22023', 'That raid paid too much.', 'a won raid pays the raided clan nothing');
 select throws_ok($$ select pg_temp.go('b', 12, false, 0, 9) $$, '22023', 'That raid gave too many Banners.', 'Banners go up by 2 at most');
 select throws_ok($$ select pg_temp.go('b', 13, false, 0, 2, 'The Red Banner clan took everything!') $$, '22023', 'That news could not be read.', 'only the game''s own news lines');
-select throws_ok($$ select pg_temp.go('d', 14, false, 0, 0, 'The Gold Hawk clan held off a raid by the Red Banner clan!') $$, '22023', 'That clan is in another class.', 'never a clan in another class');
+select throws_ok($$ select pg_temp.go('d', 14, false, 0, 0, 'The Gold Hawk clan held off a raid by the Red Banner clan!') $$, '22023', 'That clan can''t be raided right now.', 'never a clan in another class (with "Play other classes" off)');
 update public.app_settings set clan_raids_enabled = false;
 select throws_ok($$ select pg_temp.go('b', 15, false, 0, 2) $$, '22023', 'Raids on classmates are switched off.', 'the teacher''s switch is checked');
 

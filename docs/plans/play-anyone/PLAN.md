@@ -9,7 +9,7 @@
 - The Banners board is whole school.
 - Star Forge is not in the Lobby.
 
-**Status:** stage 1 built 20 Nov 2026 (migration `20261120000300_play_other_classes.sql`); stage 2 built 20 Nov 2026 (migration `20261120000500_hub_here.sql`); stage 3 built 20 Nov 2026 (migration `20261120000700_lobby_here.sql`); stage 4 built 20 Nov 2026 (migration `20261120000800_name_invites.sql`); see the "Stage results" sections at the end. Stages 5 to 7 not started.
+**Status:** stage 1 built 20 Nov 2026 (migration `20261120000300_play_other_classes.sql`); stage 2 built 20 Nov 2026 (migration `20261120000500_hub_here.sql`); stage 3 built 20 Nov 2026 (migration `20261120000700_lobby_here.sql`); stage 4 built 20 Nov 2026 (migration `20261120000800_name_invites.sql`); stage 5 built 20 Nov 2026 (migration `20261120000900_raids_school_wide.sql`); see the "Stage results" sections at the end. Stages 6 and 7 not started.
 
 ## Where things are now
 
@@ -170,4 +170,16 @@ Built on branch `claude/play-anyone-4`, migration `20261120000800_name_invites.s
 - **Who's here.** `lobby_here()` gives each kid `ok`, `off` (their class paused it) or `busy` (an invite already waiting) for the five games. Board games that aren't ok are grouped into one line under the buttons ("Mia's class has paused Chess, Checkers, 101 and Power Clash", "Mia has another invite waiting").
 - **Trophies.** No change: classmate wins come from each game's scored rows, which invite games write the same way as code games.
 - **Tests.** `supabase/tests/database/name_invites.test.sql` (39 checks: across classes, seat 1, who can read it, one out and one in, decline, other school / hidden / self never, "Play other classes" off, switches off, take only by the right kid and game and only once, pupils can't take, expiry). `lobby_here`, `security` tests updated. A chess invite handler test. Screen tests folded into existing ones to stay in budget (Lobby invite, wait, Call off, said no, yes; banner Yes/No on invites; Who's here states). Checked at phone, iPad and laptop sizes on made-up data.
+
+## Stage 5 results (20 Nov 2026)
+
+Built on branch `claude/play-anyone-5`, migration `20261120000900_raids_school_wide.sql` (one new function, create or replace for the rest).
+
+- **The rule.** New `clan_can_raid(raider, defender)` (server only): different pupils at one school, the defender a pupil who isn't hidden, both in a class, `plays_other_classes` (stage 1), and the **defender's** class has Clan Quest and Village Raids on. `clan_raid_target` and `save_village_raid` use it in place of "same class"; the save still checks the raider's own switch first. Refusal words: "That clan can't be raided right now."
+- **The list.** `clan_village_mates` now gives every clan I may play at school, my class first (no cut-off at 100; a safety cap of 2000). Each row adds `sameClass`, `className` (other classes only) and `canRaid` (false when that class has raids paused). Still never gold or a pupil's name.
+- **The screen** (`VillageRaids.tsx`). The three closest in strength stay big at the top (from my class when it has enough). "More villages to raid" uses `SchoolPlayerList`: Your class, then Rest of the school with the class name tag, a search once there are more than 6, and 20 at a time with Show more. The test page has two pretend clans from other classes.
+- **Banners board: one for the whole school** (shared/clans/raids.ts `bannerBoard`). It reads the same list, so it shows clans I may play with (a class with "Play other classes" off sees only its own class, and isn't seen by others). Clans whose class has raids paused still show. Top 10, plus my own clan with its place if it isn't in the top 10; the place number now comes from the server. Trophies and rewards: none read the board (the class quest "clans-raids" counts the raider's raids, and Clan Banner is the village + monster trophy), so nothing else changed.
+- **Words kids see.** "Raid another clan's village anywhere in your school" (How to play), "When other clans raid you" (Walls), "Your teacher has switched Village Raids off."
+- **Lobby.** The Village Raid tile and Who's here read only my own raid state from `lobby_here`, so they work unchanged (lobby_here.test.sql passes).
+- **Tests.** New `supabase/tests/database/play_anyone_raids.test.sql` (23 checks: my class first then Room 2 with its class name, cross-class load + raid + held reward + Banners, other school never, hidden never, either class off stops it, defender's raids off keeps it on the board but refuses the raid). `clans_village_raids` and `clans_my_village` now switch "Play other classes" off so they still test one class. The clans server test checks a clan from another class comes with its class name. No new screen tests. Checked at phone, iPad and laptop sizes on the test page.
 
