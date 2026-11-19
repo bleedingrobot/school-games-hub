@@ -83,9 +83,9 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
     expect(trial.data.game?.game.t.credits).toBe(100);
 
     // The hold card (H.2 to H.4): tap the Water in the hold, see what you paid, and find the best place on the star chart.
-    fireEvent.click(screen.getAllByRole('button', { name: /^Water, 1 in hold/ })[0]);
-    expect(screen.getByText(/You paid/)).toBeTruthy();
-    fireEvent.click(screen.getAllByRole('button', { name: /Show on star chart/ })[0]);
+    fireEvent.click((await screen.findAllByRole('button', { name: /^Water, 1 in hold/ }))[0]);
+    await screen.findByText(/You paid/);
+    fireEvent.click((await screen.findAllByRole('button', { name: /Show on star chart/ }))[0]);
     await screen.findByRole('heading', { name: 'Star chart' });
     expect(document.querySelectorAll('.st-planet--pulse')).toHaveLength(1);
   }, 20000);

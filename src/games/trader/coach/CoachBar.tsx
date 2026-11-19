@@ -60,7 +60,9 @@ export function lightUp(root: HTMLElement | null, name: string, still: boolean):
   if (!root) return false;
   for (const old of root.querySelectorAll('.st-lit')) old.classList.remove('st-lit');
   window.clearTimeout(glowTimer);
-  const el = root.querySelector<HTMLElement>(`[data-coach="${name}"]`);
+  // The first one on screen (the hold is drawn twice, and CSS hides one of them for the screen size).
+  const all = [...root.querySelectorAll<HTMLElement>(`[data-coach="${name}"]`)];
+  const el = all.find((e) => e.getClientRects().length > 0) ?? all[0];
   if (!el) return false;
   el.scrollIntoView?.({ block: 'nearest', inline: 'nearest', behavior: still ? 'auto' : 'smooth' });
   el.classList.add('st-lit');
