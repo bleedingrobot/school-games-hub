@@ -81,11 +81,11 @@ select is((select outcome || ':' || gold || ':' || array_to_string(evolutions, '
 -- ---- Heroes unlock from what the replay said, once each ----
 select pg_temp.act_as_server();
 select ok(public.goblinstorm_store_questions(pg_temp.id('0a'), 2, 'knight', 1, '2026-11-19', false, '[]', '{}'), 'a second run starts');
-select ok(public.record_goblinstorm_run(pg_temp.id('0a'), 2, '4x600', '[]', pg_temp.summary(10, true, array['blades', 'fireball', 'arrows'], 20, 4800, 95)),
+select ok(public.record_goblinstorm_run(pg_temp.id('0a'), 2, '4x600', '[]', pg_temp.summary(10, true, array['blades', 'fireball', 'arrows'], 35, 19800, 125)),
   'a big run on the Dark Forest is saved');
 select pg_temp.reset();
 select is((select heroes from public.goblinstorm_saves where player = pg_temp.id('0a')), array['cleric', 'wizard', 'barbarian', 'rogue', 'dragonkid'],
-  'level 20, 5,000 monsters in all, 90 s unhit and 3 evolutions each open a hero; another map''s boss doesn''t open the Witch');
+  'level 35, 20,000 monsters in all, 120 s unhit and 3 evolutions each open a hero; another map''s boss doesn''t open the Witch');
 select pg_temp.act_as_server();
 select ok(public.goblinstorm_store_questions(pg_temp.id('0a'), 3, 'cleric', 0, '2026-11-19', false, '[]', '{}'), 'a third run starts');
 select ok(public.record_goblinstorm_run(pg_temp.id('0a'), 3, '4x600', '[]', pg_temp.summary(5, true, array['blades'], 22)), '... and is saved');
@@ -134,9 +134,9 @@ select is(public.buy_goblinstorm('might') - 'shop', '{"bought": false, "reason":
 select pg_temp.reset();
 update public.goblinstorm_saves set gold = 2000, shop = '{"armour": 2}' where player = pg_temp.id('0b');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz');
-select is(public.buy_goblinstorm('armour'), '{"bought": true, "reason": null, "gold": 1650, "shop": {"armour": 3}}'::jsonb, 'Armour level 3 costs 350');
+select is(public.buy_goblinstorm('armour'), '{"bought": true, "reason": null, "gold": 1500, "shop": {"armour": 3}}'::jsonb, 'Armour level 3 costs 500');
 select is(public.buy_goblinstorm('armour') ->> 'reason', 'top', '... and Armour stops at 3');
-select is(public.buy_goblinstorm('gold') -> 'gold', '1550'::jsonb, 'Gold level 1 costs 100');
+select is(public.buy_goblinstorm('gold') -> 'gold', '1350'::jsonb, 'Gold level 1 costs 150');
 select throws_ok($$ select public.buy_goblinstorm('rocket') $$, '22023', null, 'only the six upgrades');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
 select is(public.buy_goblinstorm('might') ->> 'reason', 'none', 'a teacher has no save to buy with');

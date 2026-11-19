@@ -8556,13 +8556,14 @@ const PASSIVE_STEP = {
 	heart: 20
 };
 /**
-* The numbers in the unlocks (balance sim, stage 4: with 15 to 25 level-ups a run, level 15 and 1,000 monsters came on
-* the first day). record_goblinstorm_run in migration 20261119000900 uses the same numbers: change both together.
+* The numbers in the unlocks. Raised 20 Nov 2026 (James: heroes came too fast; a first test reached level 31 and 38 and
+* about 2,000 monsters a run): level 35 needs a strong run, and 20,000 monsters is about two school days of runs.
+* record_goblinstorm_run in migration 20261120000100 uses the same numbers: change both together.
 */
 const UNLOCK_AT = {
-	level: 20,
-	kills: 5e3,
-	noHitSeconds: 90,
+	level: 35,
+	kills: 2e4,
+	noHitSeconds: 120,
 	evolutions: 3
 };
 `${UNLOCK_AT.level}`, `${UNLOCK_AT.kills.toLocaleString("en-NZ")}`, `${UNLOCK_AT.noHitSeconds}`, `${UNLOCK_AT.evolutions}`;
