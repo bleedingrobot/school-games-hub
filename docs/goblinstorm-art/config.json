@@ -1,0 +1,1109 @@
+{
+  "_from": "docs/game-guide/templates/art-config.json. Goblin Storm (docs/GOBLINSTORM-ART-PLAN.md). Check with: python3 scripts/game_art.py goblinstorm paint OUT --dry-run. Attacks and effects are drawn in code, not painted.",
+  "game": "goblinstorm",
+  "filename_prefix": "goblinstorm/img",
+  "style": "sprite",
+  "styles": {
+    "a": "Bright flat storybook fantasy illustration, clean shapes, soft light, cheerful saturated colours, friendly and inviting, no blood, no gore, no scary faces, no text, no letters, no numbers. ",
+    "sprite": "Bright flat storybook fantasy game sprite seen from directly above (top-down), chunky rounded friendly shapes, thin dark outline, soft shading, cheerful colours, cute not scary, no blood, no gore, no text, no letters. ",
+    "icon": "Bright flat storybook fantasy game icon, one bold object centred on a soft plain pale background, thick friendly shapes, thin dark outline, glowing magical light, cheerful colours, no text, no letters, no numbers. ",
+    "portrait": "Bright flat storybook fantasy character portrait, head and shoulders, front view, friendly smile, thin dark outline, soft light, plain soft coloured background, cheerful colours, no blood, no text, no letters. ",
+    "ground": "Flat top-down tiling ground texture for a children's fantasy game, calm soft colours with low contrast so small things on top stand out, even all over, no big features, no shadows from the side, no text. "
+  },
+  "inbox": "~/dragon-art-inbox/goblinstorm-art",
+  "picks": "docs/goblinstorm-art/picks.json",
+  "art_dir": "src/games/goblinstorm/art/paint",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "card",
+      "prompt": "Wide storybook landscape, calm pale dusk sky across the top with a few soft clouds, a small friendly knight in silver armour and a blue cape stands in the middle of a green castle field with a tiny castle far behind, bright glowing spinning blades circling the knight in a ring of golden light, a ring of cartoon goblins and round green slimes marching in from every edge of the picture, wide landscape picture for a game title card, the knight small and clear in the middle. Suitable for children aged 8 to 11.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "card",
+      "style": "a",
+      "file": "goblinstorm"
+    },
+    {
+      "name": "ground-castle",
+      "prompt": "Top-down ground for the castle map: soft green grass with tiny daisies and a few flat pale paving stones, warm and sunny. Seamless, even, wide.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "texture",
+      "style": "ground",
+      "folder": "ground",
+      "file": "castle",
+      "max": 512,
+      "blend": true
+    },
+    {
+      "name": "ground-forest",
+      "prompt": "Top-down ground for the forest map: dark mossy forest floor with fallen leaves, small ferns and a few roots, deep green and brown. Seamless, even, wide.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "texture",
+      "style": "ground",
+      "folder": "ground",
+      "file": "forest",
+      "max": 512,
+      "blend": true
+    },
+    {
+      "name": "ground-graveyard",
+      "prompt": "Top-down ground for the graveyard map: grey-green grassy ground with scattered flat cracked paving stones and a little mist, moody purple-grey. Seamless, even, wide.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "texture",
+      "style": "ground",
+      "folder": "ground",
+      "file": "graveyard",
+      "max": 512,
+      "blend": true
+    },
+    {
+      "name": "ground-peaks",
+      "prompt": "Top-down ground for the peaks map: white snow with pale blue shadows and a few small ice patches and tiny pebbles. Seamless, even, wide.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "texture",
+      "style": "ground",
+      "folder": "ground",
+      "file": "peaks",
+      "max": 512,
+      "blend": true
+    },
+    {
+      "name": "ground-lava",
+      "prompt": "Top-down ground for the lava map: dark charcoal rock floor with thin glowing orange cracks, warm and fiery but friendly. Seamless, even, wide.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "texture",
+      "style": "ground",
+      "folder": "ground",
+      "file": "lava",
+      "max": 512,
+      "blend": true
+    },
+    {
+      "name": "hero-knight-stand",
+      "prompt": "Knight: a small knight in shiny silver armour with a blue plume and cape, holding a short sword and a round shield, seen from directly above, facing down the picture, standing, arms down, calm and ready, the whole figure. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "heroes",
+      "file": "knight-stand",
+      "max": 256
+    },
+    {
+      "name": "hero-knight-hurt",
+      "prompt": "Knight: a small knight in shiny silver armour with a blue plume and cape, holding a short sword and a round shield, seen from directly above, facing down the picture, leaning back with a surprised wide-eyed face, a little star above the head, the whole figure. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "heroes",
+      "file": "knight-hurt",
+      "max": 256
+    },
+    {
+      "name": "hero-ranger-stand",
+      "prompt": "Ranger: a small ranger in a green hood and brown leather, with a bow on the back and a quiver of arrows, seen from directly above, facing down the picture, standing, arms down, calm and ready, the whole figure. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "heroes",
+      "file": "ranger-stand",
+      "max": 256
+    },
+    {
+      "name": "hero-ranger-hurt",
+      "prompt": "Ranger: a small ranger in a green hood and brown leather, with a bow on the back and a quiver of arrows, seen from directly above, facing down the picture, leaning back with a surprised wide-eyed face, a little star above the head, the whole figure. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "heroes",
+      "file": "ranger-hurt",
+      "max": 256
+    },
+    {
+      "name": "hero-wizard-stand",
+      "prompt": "Wizard: a small wizard in a purple robe and tall pointed hat with stars, holding a glowing staff, seen from directly above, facing down the picture, standing, arms down, calm and ready, the whole figure. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "heroes",
+      "file": "wizard-stand",
+      "max": 256
+    },
+    {
+      "name": "hero-wizard-hurt",
+      "prompt": "Wizard: a small wizard in a purple robe and tall pointed hat with stars, holding a glowing staff, seen from directly above, facing down the picture, leaning back with a surprised wide-eyed face, a little star above the head, the whole figure. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "heroes",
+      "file": "wizard-hurt",
+      "max": 256
+    },
+    {
+      "name": "hero-barbarian-stand",
+      "prompt": "Barbarian: a big friendly barbarian with red hair and beard, fur vest and horned helmet, holding an axe, seen from directly above, facing down the picture, standing, arms down, calm and ready, the whole figure. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "heroes",
+      "file": "barbarian-stand",
+      "max": 256
+    },
+    {
+      "name": "hero-barbarian-hurt",
+      "prompt": "Barbarian: a big friendly barbarian with red hair and beard, fur vest and horned helmet, holding an axe, seen from directly above, facing down the picture, leaning back with a surprised wide-eyed face, a little star above the head, the whole figure. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "heroes",
+      "file": "barbarian-hurt",
+      "max": 256
+    },
+    {
+      "name": "hero-cleric-stand",
+      "prompt": "Cleric: a small cleric in a white and gold robe with a glowing golden ring over the head, holding a little mace, seen from directly above, facing down the picture, standing, arms down, calm and ready, the whole figure. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "heroes",
+      "file": "cleric-stand",
+      "max": 256
+    },
+    {
+      "name": "hero-cleric-hurt",
+      "prompt": "Cleric: a small cleric in a white and gold robe with a glowing golden ring over the head, holding a little mace, seen from directly above, facing down the picture, leaning back with a surprised wide-eyed face, a little star above the head, the whole figure. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "heroes",
+      "file": "cleric-hurt",
+      "max": 256
+    },
+    {
+      "name": "hero-rogue-stand",
+      "prompt": "Rogue: a small quick rogue in a dark teal hood and scarf with two little daggers, light on their feet, seen from directly above, facing down the picture, standing, arms down, calm and ready, the whole figure. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "heroes",
+      "file": "rogue-stand",
+      "max": 256
+    },
+    {
+      "name": "hero-rogue-hurt",
+      "prompt": "Rogue: a small quick rogue in a dark teal hood and scarf with two little daggers, light on their feet, seen from directly above, facing down the picture, leaning back with a surprised wide-eyed face, a little star above the head, the whole figure. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "heroes",
+      "file": "rogue-hurt",
+      "max": 256
+    },
+    {
+      "name": "hero-witch-stand",
+      "prompt": "Frost Witch: a small frost witch in an icy blue dress and a snowflake hat, long pale hair, holding a crystal wand, seen from directly above, facing down the picture, standing, arms down, calm and ready, the whole figure. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "heroes",
+      "file": "witch-stand",
+      "max": 256
+    },
+    {
+      "name": "hero-witch-hurt",
+      "prompt": "Frost Witch: a small frost witch in an icy blue dress and a snowflake hat, long pale hair, holding a crystal wand, seen from directly above, facing down the picture, leaning back with a surprised wide-eyed face, a little star above the head, the whole figure. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "heroes",
+      "file": "witch-hurt",
+      "max": 256
+    },
+    {
+      "name": "hero-dragonkid-stand",
+      "prompt": "Dragon Kid: a small child in a red dragon onesie with little horns, a spiky tail and small wings, tiny puffs of flame, seen from directly above, facing down the picture, standing, arms down, calm and ready, the whole figure. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "heroes",
+      "file": "dragonkid-stand",
+      "max": 256
+    },
+    {
+      "name": "hero-dragonkid-hurt",
+      "prompt": "Dragon Kid: a small child in a red dragon onesie with little horns, a spiky tail and small wings, tiny puffs of flame, seen from directly above, facing down the picture, leaning back with a surprised wide-eyed face, a little star above the head, the whole figure. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "heroes",
+      "file": "dragonkid-hurt",
+      "max": 256
+    },
+    {
+      "name": "monster-goblin",
+      "prompt": "a small green goblin with pointy ears and a tiny wooden club, seen from directly above, facing down the picture, cute and friendly-scary, for the Castle Fields map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/castle",
+      "file": "goblin",
+      "max": 200
+    },
+    {
+      "name": "monster-bat",
+      "prompt": "a small purple bat with wings spread wide and little fangs, seen from directly above, facing down the picture, cute and friendly-scary, for the Castle Fields map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/castle",
+      "file": "bat",
+      "max": 200
+    },
+    {
+      "name": "monster-slime",
+      "prompt": "a big round wobbly green slime blob with two big eyes, seen from directly above, facing down the picture, cute and friendly-scary, for the Castle Fields map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/castle",
+      "file": "slime",
+      "max": 256
+    },
+    {
+      "name": "monster-troll",
+      "prompt": "a big grey-green troll with a mossy back and a stone club, chunky and grumpy, seen from directly above, facing down the picture, cute and friendly-scary, for the Castle Fields map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/castle",
+      "file": "troll",
+      "max": 448
+    },
+    {
+      "name": "monster-goblinking",
+      "prompt": "the Goblin King: a big green goblin with a gold crown, a red cape and a big scepter, proud and grumpy, seen from directly above, facing down the picture, cute and friendly-scary, for the Castle Fields map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/castle",
+      "file": "goblinking",
+      "max": 512
+    },
+    {
+      "name": "monster-mushroom",
+      "prompt": "an angry little red mushroom with white spots, walking on stubby feet, seen from directly above, facing down the picture, cute and friendly-scary, for the Dark Forest map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/forest",
+      "file": "mushroom",
+      "max": 200
+    },
+    {
+      "name": "monster-wolf",
+      "prompt": "a lean grey wolf, ears back, running, seen from directly above, facing down the picture, cute and friendly-scary, for the Dark Forest map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/forest",
+      "file": "wolf",
+      "max": 200
+    },
+    {
+      "name": "monster-spider",
+      "prompt": "a round purple spider with eight stubby legs and big eyes, seen from directly above, facing down the picture, cute and friendly-scary, for the Dark Forest map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/forest",
+      "file": "spider",
+      "max": 256
+    },
+    {
+      "name": "monster-giantspider",
+      "prompt": "a giant dark green spider with yellow stripes on its back, chunky and big, seen from directly above, facing down the picture, cute and friendly-scary, for the Dark Forest map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/forest",
+      "file": "giantspider",
+      "max": 448
+    },
+    {
+      "name": "monster-ogre",
+      "prompt": "the Forest Ogre: a huge mossy brown ogre with a tree-trunk club and leaves on his shoulders, seen from directly above, facing down the picture, cute and friendly-scary, for the Dark Forest map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/forest",
+      "file": "ogre",
+      "max": 512
+    },
+    {
+      "name": "monster-skeleton",
+      "prompt": "a small white skeleton with a round skull and a tiny rusty sword, seen from directly above, facing down the picture, cute and friendly-scary, for the Haunted Graveyard map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/graveyard",
+      "file": "skeleton",
+      "max": 200
+    },
+    {
+      "name": "monster-ghost",
+      "prompt": "a small white floating ghost with a wavy tail and big round eyes, a little see-through, seen from directly above, facing down the picture, cute and friendly-scary, for the Haunted Graveyard map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/graveyard",
+      "file": "ghost",
+      "max": 200
+    },
+    {
+      "name": "monster-zombie",
+      "prompt": "a slow green zombie with tattered clothes and arms stretched out, goofy not gross, seen from directly above, facing down the picture, cute and friendly-scary, for the Haunted Graveyard map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/graveyard",
+      "file": "zombie",
+      "max": 256
+    },
+    {
+      "name": "monster-boneknight",
+      "prompt": "a Bone Knight: a big skeleton in dented dark armour with a big sword and shield, seen from directly above, facing down the picture, cute and friendly-scary, for the Haunted Graveyard map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/graveyard",
+      "file": "boneknight",
+      "max": 448
+    },
+    {
+      "name": "monster-lich",
+      "prompt": "the Lich: a tall skeleton in a purple robe with a glowing green staff and a floating crown, seen from directly above, facing down the picture, cute and friendly-scary, for the Haunted Graveyard map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/graveyard",
+      "file": "lich",
+      "max": 512
+    },
+    {
+      "name": "monster-imp",
+      "prompt": "a small pale blue ice imp with little horns and a pointy tail, seen from directly above, facing down the picture, cute and friendly-scary, for the Frozen Peaks map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/peaks",
+      "file": "imp",
+      "max": 200
+    },
+    {
+      "name": "monster-frostwolf",
+      "prompt": "a white and icy-blue frost wolf with frosty fur, running, seen from directly above, facing down the picture, cute and friendly-scary, for the Frozen Peaks map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/peaks",
+      "file": "frostwolf",
+      "max": 200
+    },
+    {
+      "name": "monster-yeti",
+      "prompt": "a big white furry yeti with blue face and big feet, seen from directly above, facing down the picture, cute and friendly-scary, for the Frozen Peaks map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/peaks",
+      "file": "yeti",
+      "max": 256
+    },
+    {
+      "name": "monster-yetichief",
+      "prompt": "the Yeti Chief: a huge white yeti with a fur cloak, a bone necklace and a snowy club, seen from directly above, facing down the picture, cute and friendly-scary, for the Frozen Peaks map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/peaks",
+      "file": "yetichief",
+      "max": 448
+    },
+    {
+      "name": "monster-icedragon",
+      "prompt": "the Ice Dragon: a big pale blue dragon with icicle spikes and frosty wings spread wide, seen from directly above, facing down the picture, cute and friendly-scary, for the Frozen Peaks map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/peaks",
+      "file": "icedragon",
+      "max": 512
+    },
+    {
+      "name": "monster-sprite",
+      "prompt": "a small flickering orange fire sprite with a cheeky face and a flame on top, seen from directly above, facing down the picture, cute and friendly-scary, for the Lava Mines map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/lava",
+      "file": "sprite",
+      "max": 200
+    },
+    {
+      "name": "monster-slug",
+      "prompt": "a bright orange lava slug with glowing spots, sliding along, seen from directly above, facing down the picture, cute and friendly-scary, for the Lava Mines map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/lava",
+      "file": "slug",
+      "max": 200
+    },
+    {
+      "name": "monster-magma",
+      "prompt": "a Magma Golem: a chunky dark rock body with glowing orange cracks, seen from directly above, facing down the picture, cute and friendly-scary, for the Lava Mines map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/lava",
+      "file": "magma",
+      "max": 256
+    },
+    {
+      "name": "monster-golem",
+      "prompt": "a big Golem: a huge rock giant with glowing orange eyes and cracks, mossy shoulders, seen from directly above, facing down the picture, cute and friendly-scary, for the Lava Mines map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/lava",
+      "file": "golem",
+      "max": 448
+    },
+    {
+      "name": "monster-firedragon",
+      "prompt": "the Fire Dragon: a big red dragon with golden belly and flame spikes, wings spread wide, seen from directly above, facing down the picture, cute and friendly-scary, for the Lava Mines map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/lava",
+      "file": "firedragon",
+      "max": 512
+    },
+    {
+      "name": "weapon-blades",
+      "prompt": "Icon for the weapon Spinning Blades: three shiny swords in a spinning ring with a blue motion swirl. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons",
+      "file": "blades",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-blades",
+      "prompt": "Icon for the evolved weapon Blade Storm: a whirlwind of dozens of glowing swords filling the picture, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved",
+      "file": "blades",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-fireball",
+      "prompt": "Icon for the weapon Fireball: a round orange fireball with a yellow core and a trail of sparks. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons",
+      "file": "fireball",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-fireball",
+      "prompt": "Icon for the evolved weapon Meteor Storm: a sky full of falling flaming meteors with fiery trails, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved",
+      "file": "fireball",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-lightning",
+      "prompt": "Icon for the weapon Lightning: a bright yellow lightning bolt striking down with a white glow. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons",
+      "file": "lightning",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-lightning",
+      "prompt": "Icon for the evolved weapon Thunder God: a huge golden thunder god bolt with a ring of crackling light, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved",
+      "file": "lightning",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-aura",
+      "prompt": "Icon for the weapon Holy Aura: a glowing golden ring of light with soft sparkles. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons",
+      "file": "aura",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-aura",
+      "prompt": "Icon for the evolved weapon Sun Flare: a blazing golden sun with long flare rays, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved",
+      "file": "aura",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-nova",
+      "prompt": "Icon for the weapon Ice Nova: a ring of pale blue ice crystals bursting outward. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons",
+      "file": "nova",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-nova",
+      "prompt": "Icon for the evolved weapon Blizzard: a swirling blizzard of snowflakes and ice shards in a spiral, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved",
+      "file": "nova",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-axes",
+      "prompt": "Icon for the weapon Throwing Axes: two steel throwing axes tumbling through the air. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons",
+      "file": "axes",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-axes",
+      "prompt": "Icon for the evolved weapon Axe Tornado: a big tornado of spinning axes in a funnel, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved",
+      "file": "axes",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-arrows",
+      "prompt": "Icon for the weapon Arrows: three arrows with green feathers flying together. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons",
+      "file": "arrows",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-arrows",
+      "prompt": "Icon for the evolved weapon Arrow Rain: a rain of glowing arrows from a bright sky, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved",
+      "file": "arrows",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-bubble",
+      "prompt": "Icon for the weapon Bubble Shield: a big shiny see-through blue bubble with white highlights. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons",
+      "file": "bubble",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-bubble",
+      "prompt": "Icon for the evolved weapon Spiky Fortress: a big bubble covered in friendly golden spikes, glowing, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved",
+      "file": "bubble",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "passive-armour",
+      "prompt": "Icon for the power-up Armour: a shiny silver chest plate with a blue gem. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "passives",
+      "file": "armour",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "passive-spiky",
+      "prompt": "Icon for the power-up Spiky Shield: a round wooden shield with a ring of steel spikes. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "passives",
+      "file": "spiky",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "passive-boots",
+      "prompt": "Icon for the power-up Swift Boots: a pair of brown boots with little white wings. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "passives",
+      "file": "boots",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "passive-tome",
+      "prompt": "Icon for the power-up Spell Tome: a purple spell book with a glowing star and floating sparkles. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "passives",
+      "file": "tome",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "passive-crown",
+      "prompt": "Icon for the power-up Crown: a gold crown with red and blue jewels. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "passives",
+      "file": "crown",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "passive-holywater",
+      "prompt": "Icon for the power-up Holy Water: a small glass bottle of glowing clear blue water with a golden cork. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "passives",
+      "file": "holywater",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "passive-snow",
+      "prompt": "Icon for the power-up Snow Crystal: a big six-pointed pale blue snow crystal gem. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "passives",
+      "file": "snow",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "passive-gauntlets",
+      "prompt": "Icon for the power-up Gauntlets: a steel armoured glove with a red jewel on the back. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "passives",
+      "file": "gauntlets",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "passive-magnet",
+      "prompt": "Icon for the power-up Magnet: a red and silver horseshoe magnet with little glowing gems flying towards it. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "passives",
+      "file": "magnet",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "passive-heart",
+      "prompt": "Icon for the power-up Heart: a bright red heart with a white shine. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "passives",
+      "file": "heart",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "portrait-knight",
+      "prompt": "Portrait of the Knight: a small knight in shiny silver armour with a blue plume and cape, holding a short sword and a round shield, shown as a head and shoulders picture, smiling. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "portrait",
+      "folder": "portraits",
+      "file": "knight",
+      "max": 384,
+      "small": 160
+    },
+    {
+      "name": "portrait-ranger",
+      "prompt": "Portrait of the Ranger: a small ranger in a green hood and brown leather, with a bow on the back and a quiver of arrows, shown as a head and shoulders picture, smiling. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "portrait",
+      "folder": "portraits",
+      "file": "ranger",
+      "max": 384,
+      "small": 160
+    },
+    {
+      "name": "portrait-wizard",
+      "prompt": "Portrait of the Wizard: a small wizard in a purple robe and tall pointed hat with stars, holding a glowing staff, shown as a head and shoulders picture, smiling. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "portrait",
+      "folder": "portraits",
+      "file": "wizard",
+      "max": 384,
+      "small": 160
+    },
+    {
+      "name": "portrait-barbarian",
+      "prompt": "Portrait of the Barbarian: a big friendly barbarian with red hair and beard, fur vest and horned helmet, holding an axe, shown as a head and shoulders picture, smiling. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "portrait",
+      "folder": "portraits",
+      "file": "barbarian",
+      "max": 384,
+      "small": 160
+    },
+    {
+      "name": "portrait-cleric",
+      "prompt": "Portrait of the Cleric: a small cleric in a white and gold robe with a glowing golden ring over the head, holding a little mace, shown as a head and shoulders picture, smiling. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "portrait",
+      "folder": "portraits",
+      "file": "cleric",
+      "max": 384,
+      "small": 160
+    },
+    {
+      "name": "portrait-rogue",
+      "prompt": "Portrait of the Rogue: a small quick rogue in a dark teal hood and scarf with two little daggers, light on their feet, shown as a head and shoulders picture, smiling. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "portrait",
+      "folder": "portraits",
+      "file": "rogue",
+      "max": 384,
+      "small": 160
+    },
+    {
+      "name": "portrait-witch",
+      "prompt": "Portrait of the Frost Witch: a small frost witch in an icy blue dress and a snowflake hat, long pale hair, holding a crystal wand, shown as a head and shoulders picture, smiling. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "portrait",
+      "folder": "portraits",
+      "file": "witch",
+      "max": 384,
+      "small": 160
+    },
+    {
+      "name": "portrait-dragonkid",
+      "prompt": "Portrait of the Dragon Kid: a small child in a red dragon onesie with little horns, a spiky tail and small wings, tiny puffs of flame, shown as a head and shoulders picture, smiling. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "portrait",
+      "folder": "portraits",
+      "file": "dragonkid",
+      "max": 384,
+      "small": 160
+    }
+  ]
+}

@@ -25,6 +25,8 @@
     "functions:serve": "supabase functions serve --no-verify-jwt",
     "space:sim": "node scripts/space-sim.mjs",
     "marble:determinism": "node scripts/marble-determinism.mjs",
+    "goblinstorm:determinism": "node scripts/goblinstorm-determinism.mjs",
+    "goblinstorm:preview": "vite build --config vite.goblinstorm-preview.config.ts",
     "marble:sim": "node scripts/marble-sim.mjs",
     "marble:preview": "vite build --config vite.marble-preview.config.ts",
     "pipi:single": "PIPI_INLINE=1 vite build --config vite.pipi-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-pipi pipis-hidden-shells-test-page.html",
