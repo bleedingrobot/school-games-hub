@@ -25,6 +25,33 @@ describe('the lord server function', () => {
     expect((await fresh.raw({ action: 'load' })).status).toBe(429);
   });
 
+  it('opens a waiting quest pouch on load: gold for five forest wins at the hero level, version moved, pouch in the reply', async () => {
+    const g = new Game();
+    await g.start();
+    const asked: { version: number; perUnit: number }[] = [];
+    let waiting = true;
+    g.services.openPouches = async (_p, version, perUnit) => {
+      asked.push({ version, perUnit });
+      if (!waiting) return null;
+      waiting = false;
+      const amount = 5 * perUnit;
+      g.patch({ gold: g.hero().gold + amount });
+      g.db.row = { ...g.db.row!, version: version + 1 };
+      return { amount, version: version + 1 };
+    };
+    const before = g.hero().gold;
+    const versionBefore = g.db.row!.version;
+    const out = await g.send({ action: 'load' });
+    expect(asked[0]).toEqual({ version: versionBefore, perUnit: 11 }); // level 1: friendly(10 * 1.08)
+    expect(out.body.pouch).toEqual({ amount: 55 });
+    expect(out.body.state.hero.gold).toBe(before + 55);
+    expect(out.body.state.version).toBe(versionBefore + 1);
+    const again = await g.send({ action: 'load' });
+    expect(again.body.pouch).toBeUndefined();
+    expect(again.body.state.hero.gold).toBe(before + 55);
+    expect(again.body.state.version).toBe(versionBefore + 1);
+  });
+
   it('hands out a fight, uses a turn, and pays gold and experience only after the played actions check out', async () => {
     const g = new Game();
     await g.start();

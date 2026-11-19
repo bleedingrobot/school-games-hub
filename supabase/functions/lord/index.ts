@@ -25,6 +25,27 @@ function userIdFromToken(auth) {
 	};
 }
 //#endregion
+//#region supabase/functions/_shared/coinPouch.ts
+/** Opens waiting pouches. Null means nothing to open, the save moved on, or it could not be done: the game just carries on. */
+async function openCoinPouches(rpc, player, game, expectedVersion, perUnit = 1) {
+	const { data, error } = await rpc("open_coin_pouches", {
+		player,
+		game,
+		expected_version: expectedVersion,
+		per_unit: perUnit
+	});
+	if (error) {
+		console.error(`${game}: open_coin_pouches failed (${error.code ?? "unknown"})`);
+		return null;
+	}
+	const row = data;
+	if (!row || !Number.isInteger(row.amount) || !Number.isInteger(row.version) || row.amount <= 0) return null;
+	return {
+		amount: row.amount,
+		version: row.version
+	};
+}
+//#endregion
 //#region shared/maths/config.ts
 /**
 * Tuning numbers for the maths engine, in one place. Nothing here knows about any game.
@@ -11565,6 +11586,34 @@ async function runLord(s, player, raw) {
 		};
 	}
 	const finishNow = (state, version) => viewOf(state, version, today, season, settings);
+	/** A quest's Game Coins pouch, opened now that the day and season are done and saved: gold for each forest win it holds, at the hero's level. */
+	const withPouch = async (state, version, result) => {
+		const opened = s.openPouches ? await s.openPouches(player, version, friendly(tierPower(state.hero.level) * 1.08)) : null;
+		if (!opened) return {
+			status: 200,
+			body: {
+				ok: true,
+				state: finishNow(state, version),
+				result
+			}
+		};
+		const hero = {
+			...state.hero,
+			gold: state.hero.gold + opened.amount
+		};
+		return {
+			status: 200,
+			body: {
+				ok: true,
+				state: finishNow({
+					...state,
+					hero
+				}, opened.version),
+				result,
+				pouch: { amount: opened.amount }
+			}
+		};
+	};
 	if (action === "load" || action === "rollover") {
 		const note = abandoned ? { abandoned } : {};
 		if (!row || !w) return {
@@ -11575,14 +11624,7 @@ async function runLord(s, player, raw) {
 				result: {}
 			}
 		};
-		if (!rolled) return {
-			status: 200,
-			body: {
-				ok: true,
-				state: finishNow(w, row.version),
-				result: note
-			}
-		};
+		if (!rolled) return withPouch(w, row.version, note);
 		const out = await s.commit(player, {
 			expect: row.version,
 			hero: w.hero,
@@ -11628,14 +11670,7 @@ async function runLord(s, player, raw) {
 			};
 			return busy();
 		}
-		return {
-			status: 200,
-			body: {
-				ok: true,
-				state: finishNow(w, out.value.version),
-				result: note
-			}
-		};
+		return withPouch(w, out.value.version, note);
 	}
 	const refuse = (reason, message) => ({
 		status: 200,
@@ -12260,6 +12295,7 @@ Deno.serve(makeHandler({
 		season,
 		lvl: level
 	}),
+	openPouches: (player, version, perUnit) => openCoinPouches((name, args) => admin.rpc(name, args), player, "dragon-maths", version, perUnit),
 	dailyNews: (player, day, lines) => call("lord_daily_news", {
 		player,
 		news_day: day,

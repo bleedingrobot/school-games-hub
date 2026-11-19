@@ -143,6 +143,11 @@ export interface IslesServices {
   load(player: string): Promise<{ saved: SavedIsland | null; classMiddle: number; openRace: StoredRace | null; racesThisSeason: number; post: Post[] } | 'busy'>;
   /** Opens the post (by id) into the island, only if the island is still at `expectedVersion` and the post unopened. */
   openPost(player: string, expectedVersion: number, island: Island, day: number, ids: number[]): Promise<boolean | 'busy'>;
+  /**
+   * Opens any Game Coins pouches a quest gave this pupil, only if the island is still at `expectedVersion`
+   * (docs/QUEST-REWARDS-PLAN.md). The coins added and the island's new version, or null if there was nothing to open.
+   */
+  openPouches?(player: string, expectedVersion: number): Promise<{ amount: number; version: number } | null | 'busy'>;
   /** The other islands in the pupil's class (pupils with an island only), and how many gifts the pupil sent today. */
   classSky(player: string, day: number): Promise<{ classmates: Classmate[]; giftsSentToday: number } | 'busy'>;
   /**
@@ -460,6 +465,17 @@ export async function handleIsles(services: IslesServices, player: string, body:
     }
   }
 
+  // A quest's coin pouch is opened after the day, New Season and post are done, into the island as it is now.
+  let pouch: { amount: number } | null = null;
+  if (action === 'load') {
+    const got = await services.openPouches?.(player, saved.version);
+    if (got && got !== 'busy' && got.amount > 0) {
+      island = { ...island, coins: island.coins + got.amount };
+      saved.version = got.version;
+      pouch = { amount: got.amount };
+    }
+  }
+
   /** This turn's question set, made the first time it's needed (none if the maths can't be read). */
   const turnQuestions = async (turn: number): Promise<QuestionSet | null | 'busy'> => {
     const found = await services.questions(player, { ref: turnRef(saved.seed, turn) });
@@ -503,7 +519,7 @@ export async function handleIsles(services: IslesServices, player: string, body:
       openRace = publicRace(state.openRace, set, name);
     }
     const post = opened.map(({ fromName, coins, ...p }) => ({ fromName, coins, kind: p.kind, ...(p.kind === 'gift' ? { gift: p.gift } : { homeWin: p.homeWin }) }));
-    return view(island, { openRace, post });
+    return view(island, { openRace, post, ...(pouch ? { pouch } : {}) });
   }
 
   if (action === 'answer') {

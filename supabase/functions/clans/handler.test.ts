@@ -122,7 +122,8 @@ function fakeDb() {
       return { ok: true, value: json(next) };
     },
   };
-  const db: Pick<Services, 'load' | 'save' | 'mates' | 'target' | 'saveRaid' | 'extras' | 'recordAnswers' | 'mathsContext' | 'recordLadderAnswers'> & { raceOnce?: () => void } = {
+  const pouch = { amount: 0 };
+  const db: Pick<Services, 'load' | 'openPouches' | 'save' | 'mates' | 'target' | 'saveRaid' | 'extras' | 'recordAnswers' | 'mathsContext' | 'recordLadderAnswers'> & { raceOnce?: () => void } = {
     async load(player, requestId) {
       if (!seeds.has(player)) seeds.set(player, SEED + seeds.size);
       const row = clans.get(player);
@@ -150,6 +151,15 @@ function fakeDb() {
       earn(player, result);
       log.push(`${player}:${action}`);
       return { ok: true, value: { status: 'saved', version: expected + 1 } };
+    },
+    async openPouches(player, version) {
+      const row = clans.get(player);
+      if (!pouch.amount || !row || row.version !== version) return null;
+      row.state.clan.gold += pouch.amount;
+      row.version++;
+      const amount = pouch.amount;
+      pouch.amount = 0;
+      return { amount, version: row.version };
     },
     async extras(player): Promise<Outcome<Extras>> {
       const row = clans.get(player);
@@ -209,11 +219,11 @@ function fakeDb() {
       return { ok: true, value: { status: 'saved', version: a.version + 1 } };
     },
   };
-  return { db: { ...db, ...duelDb }, clans, log, flags, village, group, notes, fame, points, answers, teacher, stats, ladder, duelPicks };
+  return { db: { ...db, ...duelDb }, pouch, clans, log, flags, village, group, notes, fame, points, answers, teacher, stats, ladder, duelPicks };
 }
 
 function setup(over: Partial<Services> = {}, now = () => NOW) {
-  const { db, clans, log, flags, village, group, notes, fame, points, answers, teacher, stats, ladder, duelPicks } = fakeDb();
+  const { db, pouch, clans, log, flags, village, group, notes, fame, points, answers, teacher, stats, ladder, duelPicks } = fakeDb();
   const services: Services = {
     now,
     userIdFor: vi.fn(async (token: string) => (token === 'ana' ? 'student-1' : token === 'ben' ? 'student-2' : token === 'cai' ? 'student-3' : null)),
@@ -230,7 +240,7 @@ function setup(over: Partial<Services> = {}, now = () => NOW) {
     const response = await handler(new Request('http://x/clans', { method: 'POST', headers, body: JSON.stringify(opts.raw ?? { requestId: opts.requestId ?? id(), action }) }));
     return { status: response.status, body: (await response.json()) as Record<string, any> };
   };
-  return { send, clans, log, services, id, handler, flags, village, group, notes, fame, points, answers, teacher, stats, ladder, duelPicks };
+  return { send, pouch, clans, log, services, id, handler, flags, village, group, notes, fame, points, answers, teacher, stats, ladder, duelPicks };
 }
 
 const create = (seed = SEED) => ({ type: 'create', name: 'Red Banner', drafts: startingDrafts(seed) });
@@ -246,7 +256,24 @@ describe('the clans server function', () => {
     const ben = await send({ type: 'load' }, { token: 'ben' });
     expect(ben.body.state.clan.gold).toBe(200);
     expect(ben.body.state.seed).not.toBe(SEED);
+    // Quest Game Coins pouch: opened on load.
+    {
+      const { send, pouch, clans } = setup();
+      await send(create());
+      const before = clans.get('student-1')!.state.clan.gold;
+      const version = clans.get('student-1')!.version;
+      pouch.amount = 150;
+      const r = await send({ type: 'load' });
+      expect(r.body.pouch).toEqual({ amount: 150 });
+      expect(r.body.state.clan.gold).toBe(before + 150);
+      expect(clans.get('student-1')!.state.clan.gold).toBe(before + 150);
+      expect(clans.get('student-1')!.version).toBe(version + 1);
+      const again = await send({ type: 'load' });
+      expect(again.body.pouch).toBeUndefined();
+      expect(again.body.state.clan.gold).toBe(before + 150);
+    }
   });
+
   it('pays a request once: the same request id sent again gets the first answer back, even if the rules would now say no', async () => {
     const { send, clans, log } = setup();
     await send(create());

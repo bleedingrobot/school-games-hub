@@ -94,6 +94,8 @@ export interface Services extends Omit<DuelServices, 'now' | 'duelMaths'> {
   userIdFor(token: string): Promise<string | null>;
   load(player: string, requestId: string): Promise<Outcome<Loaded>>;
   save(player: string, expectedVersion: number, requestId: string, action: string, state: ServerState, result: Result): Promise<Outcome<SaveStatus>>;
+  /** Opens waiting quest Game Coins pouches for a clan saved at this version: the gold added and the new version, or null (nothing to open, or the save moved on). */
+  openPouches(player: string, version: number): Promise<{ amount: number; version: number } | null>;
   /** The other clans in the pupil's class, for the list of who can be raided and the Banners board. None if the pupil has no class. */
   mates(player: string): Promise<Outcome<RivalSketch[]>>;
   /** One clan in the pupil's class, to raid it. Null if there is none. */
@@ -230,9 +232,18 @@ export function makeHandler(services: Services) {
       }
       const effects: Effects = applied.effects ?? {};
 
+      /** A quest's Game Coins pouch, opened when the clan is loaded (after any night's rest is saved): the same gold the database adds. */
+      const pouchFor = async (s: ServerState | null | undefined, atVersion: number): Promise<{ state: ServerState; version: number; pouch: { amount: number } } | null> => {
+        if (action.type !== 'load' || !s) return null;
+        const opened = await services.openPouches(player, atVersion);
+        if (!opened) return null;
+        return { state: { ...s, clan: { ...s.clan, gold: Math.min(s.clan.gold + opened.amount, 100_000_000) } }, version: opened.version, pouch: { amount: opened.amount } };
+      };
+
       if (!applied.changed || !applied.state) {
         // Nothing to save.
-        return reply(200, { ok: true, replayed: false, seed, state: applied.state && shown(applied.state), result: applied.result, ...(applied.newSeason ? { newSeason: true } : {}) });
+        const opened = await pouchFor(applied.state, version);
+        return reply(200, { ok: true, replayed: false, seed, state: opened ? shown(opened.state) : applied.state && shown(applied.state), result: applied.result, ...(opened ? { pouch: opened.pouch } : {}), ...(applied.newSeason ? { newSeason: true } : {}) });
       }
 
       const raid = effects.villageRaid;
@@ -262,7 +273,8 @@ export function makeHandler(services: Services) {
           const again = await services.load(player, '00000000-0000-4000-8000-000000000000');
           if (again.ok) latest = again.value;
         }
-        return reply(200, { ok: true, replayed: false, seed, state: shown(applied.state, latest), result: applied.result, ...(applied.newSeason ? { newSeason: true } : {}) });
+        const opened = await pouchFor(applied.state, saved.value.version);
+        return reply(200, { ok: true, replayed: false, seed, state: shown(opened ? opened.state : applied.state, latest), result: applied.result, ...(opened ? { pouch: opened.pouch } : {}), ...(applied.newSeason ? { newSeason: true } : {}) });
       }
       // 'duplicate' or 'stale': another copy of this request, or another request, saved first. Load again.
     }

@@ -25,6 +25,9 @@ import type { MyTrophy } from '../data/trophies';
 import { gameLabel } from '../games/registry';
 import { useThemeTrial } from '../theme/hubTheme';
 import { TrophyCabinet, useMyTrophies } from '../trophies/TrophyCabinet';
+import { HeroTitleLine, TitlePicker, useMyTitles } from '../quests/HeroTitles';
+import { FramePicker, useMyFrames } from '../quests/QuestFrames';
+import { MyRewards, useMyQuestRewards } from '../quests/MyRewards';
 import './profile.css';
 
 /** How many recent games the profile's My stats shows. */
@@ -43,8 +46,8 @@ const OPTION_LABELS: Record<string, string> = {
 };
 
 /** The folds, top to bottom. Their ids are also the page's anchors (/profile#stats, /profile#theme). */
-type FoldId = 'trophies' | 'stats' | 'theme';
-const FOLD_IDS: FoldId[] = ['trophies', 'stats', 'theme'];
+type FoldId = 'trophies' | 'rewards' | 'stats' | 'theme';
+const FOLD_IDS: FoldId[] = ['trophies', 'rewards', 'stats', 'theme'];
 
 function errorText(error: unknown) {
   return error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.';
@@ -74,8 +77,15 @@ export function Profile() {
   const savedPic = pictureOf(profile?.avatar)?.id ?? null;
   const cabinet = useMyTrophies(profile?.id);
   const trophyCount = cabinet.data?.trophies.length;
+  const questRewards = useMyQuestRewards();
 
-  const [editing, setEditing] = useState<'look' | 'name' | null>(null);
+  const [editing, setEditing] = useState<'look' | 'name' | 'title' | 'frame' | null>(null);
+  // Spending a Hero Title reward: its id. Changing which title I wear: undefined.
+  const [titleReward, setTitleReward] = useState<string | undefined>();
+  const myTitles = useMyTitles(profile?.avatar);
+  // Spending a Quest Frame reward: its id. Changing which frame I wear: undefined.
+  const [frameReward, setFrameReward] = useState<string | undefined>();
+  const myFrames = useMyFrames(profile?.avatar);
   // My trophies starts open: they are the hub's top rewards.
   const [open, setOpen] = useState<ReadonlySet<FoldId>>(() => new Set(['trophies']));
   const toggle = (id: FoldId) =>
@@ -84,6 +94,11 @@ export function Profile() {
       if (!next.delete(id)) next.add(id);
       return next;
     });
+
+  // Rewards waiting to be used open their fold.
+  useEffect(() => {
+    if (questRewards.unused > 0) setOpen((was) => new Set(was).add('rewards'));
+  }, [questRewards.unused]);
 
   // A link to a fold (the home page's "See more" goes to /profile#stats) opens it and brings it into view.
   useEffect(() => {
@@ -128,6 +143,7 @@ export function Profile() {
         <AvatarImage avatar={profile?.avatar} size={112} label="Your avatar" />
         <div className="profile-top__who">
           <h2 className="profile-top__name">{profile?.display_name}</h2>
+          <HeroTitleLine avatar={profile?.avatar} />
           {!madeAvatar && <p className="profile-top__nudge">You haven’t made your avatar yet. Pick a face, hair and colours!</p>}
           <ScrollNote />
           <div className="profile-top__buttons">
@@ -147,6 +163,32 @@ export function Profile() {
             >
               ✏️ Change my name
             </button>
+            {(myTitles?.owned.length ?? 0) > 0 && (
+              <button
+                type="button"
+                className="button button--light-outline"
+                aria-expanded={editing === 'title' && titleReward === undefined}
+                onClick={() => {
+                  setTitleReward(undefined);
+                  setEditing(editing === 'title' && titleReward === undefined ? null : 'title');
+                }}
+              >
+                🏷️ My titles
+              </button>
+            )}
+            {(myFrames?.owned.length ?? 0) > 0 && (
+              <button
+                type="button"
+                className="button button--light-outline"
+                aria-expanded={editing === 'frame' && frameReward === undefined}
+                onClick={() => {
+                  setFrameReward(undefined);
+                  setEditing(editing === 'frame' && frameReward === undefined ? null : 'frame');
+                }}
+              >
+                🖼️ My frames
+              </button>
+            )}
           </div>
         </div>
         <div className="profile-top__out">
@@ -161,6 +203,31 @@ export function Profile() {
         <LookMaker pictures={cabinet.data?.trophies.filter((t) => t.kind === 'picture') ?? null} onClose={() => setEditing(null)} />
       )}
       {editing === 'name' && <NamePicker onClose={() => setEditing(null)} />}
+      {editing === 'title' && (
+        <TitlePicker
+          key={titleReward ?? 'wear'}
+          rewardId={titleReward}
+          onClose={() => setEditing(null)}
+          onDone={() => {
+            setEditing(null);
+            questRewards.reload();
+            void refreshProfile();
+          }}
+        />
+      )}
+      {editing === 'frame' && (
+        <FramePicker
+          key={frameReward ?? 'wear'}
+          avatar={profile?.avatar}
+          rewardId={frameReward}
+          onClose={() => setEditing(null)}
+          onDone={() => {
+            setEditing(null);
+            questRewards.reload();
+            void refreshProfile();
+          }}
+        />
+      )}
 
       <Fold
         id="trophies"
@@ -170,6 +237,31 @@ export function Profile() {
         onToggle={toggle}
       >
         <TrophyCabinet cabinet={cabinet} />
+      </Fold>
+
+      <Fold
+        id="rewards"
+        title="🎁 My rewards"
+        count={questRewards.unused > 0 ? `${questRewards.unused} to use` : undefined}
+        open={open.has('rewards')}
+        onToggle={toggle}
+      >
+        <MyRewards
+          rewards={questRewards.rewards}
+          failed={questRewards.failed}
+          onChanged={questRewards.reload}
+          onUse={(r) => {
+            if (r.reward === 'scroll') setEditing('name');
+            else if (r.reward === 'title') {
+              setTitleReward(r.id);
+              setEditing('title');
+            } else if (r.reward === 'frame') {
+              setFrameReward(r.id);
+              setEditing('frame');
+            } else return;
+            window.scrollTo?.({ top: 0, behavior: 'smooth' });
+          }}
+        />
       </Fold>
 
       <Fold

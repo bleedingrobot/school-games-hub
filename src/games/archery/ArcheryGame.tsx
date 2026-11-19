@@ -63,6 +63,8 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
 }) {
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
   const [state, setState] = useState<ArmoryState | null>(null);
+  /** Coins from a quest's Game Coins pouch, opened as the game loaded (shown once on Home). */
+  const [pouch, setPouch] = useState(0);
   const [coinsLeft, setCoinsLeft] = useState(DAILY_COINS);
   /** The teacher's Discount day: every arrow half price today (the server sets the real price). */
   const [discount, setDiscount] = useState(false);
@@ -100,6 +102,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
       return;
     }
     setState(r.value.state);
+    setPouch(typeof r.value.state.pouch === 'number' && r.value.state.pouch > 0 ? r.value.state.pouch : 0);
     setCoinsLeft(r.value.coinsLeft);
     setDiscount(r.value.discount === true);
     setScreen({ kind: 'home' });
@@ -269,6 +272,12 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
             onExit={onExit}
             onClassmate={matesOn ? () => setScreen({ kind: 'classmates' }) : undefined}
           />
+          {pouch > 0 && (
+            <p className="ar-pouch" role="status">
+              💰 Quest pouch: +{pouch} coins!
+              <button type="button" className="ar-pouch__ok" onClick={() => setPouch(0)}>OK</button>
+            </p>
+          )}
           {extra?.(() => void load())}
         </>
       );

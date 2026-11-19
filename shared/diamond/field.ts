@@ -217,10 +217,14 @@ function fieldOk(level: number, things: readonly Thing[]): boolean {
   return fieldValue(things) >= FIELD_VALUE_MARGIN * spec.target;
 }
 
-/** Which rare gem (if any) turns up on a go with this seed: the rarest is tried first, and the first that turns up wins. */
+/** Which rare gem (if any) turns up on a go with this seed: one roll, so each gem's chance is its real chance on a go. */
 export function rareFor(seed: number): RareId | null {
-  const rng = makeRandom(mixSeed(seed, STREAM.rare));
-  for (let i = RARE_GEMS.length - 1; i >= 0; i--) if (rng.fraction() < RARE_GEMS[i].chance) return RARE_GEMS[i].id;
+  const roll = makeRandom(mixSeed(seed, STREAM.rare)).fraction();
+  let upTo = 0;
+  for (let i = RARE_GEMS.length - 1; i >= 0; i--) {
+    upTo += RARE_GEMS[i].chance;
+    if (roll < upTo) return RARE_GEMS[i].id;
+  }
   return null;
 }
 

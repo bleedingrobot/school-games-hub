@@ -24,6 +24,7 @@ function world(opts: { settings?: Partial<ClassSettings>; now?: () => number } =
     requests: new Map<string, unknown>(),
     records: [] as { once: string; answers: unknown }[],
     saves: 0,
+    pouch: 0,
     settings: { enabled: true, ...DEFAULT_SETTINGS, ...opts.settings } as ClassSettings,
     busy: false,
     market: new SchoolMarket(),
@@ -68,6 +69,15 @@ function world(opts: { settings?: Partial<ClassSettings>; now?: () => number } =
     market: async (_p, day) => {
       state.marketReads++;
       return state.market.view(day);
+    },
+    openPouches: async (p, version) => {
+      const cur = state.games.get(p);
+      if (!state.pouch || !cur || cur.version !== version) return null;
+      cur.game.t.credits += state.pouch;
+      cur.version++;
+      const amount = state.pouch;
+      state.pouch = 0;
+      return { amount, version: cur.version };
     },
     save: async (p, a: SaveArgs) => {
       const cur = state.games.get(p);
@@ -165,6 +175,21 @@ describe('the Star Trader server function', () => {
     expect(r2.body).toEqual(r1.body);
     expect(w.state.saves).toBe(2);
     expect(w.state.games.get('ana')!.game.t.credits).toBe(100 - line.buy * 2);
+    // Quest Game Coins pouch: opened on load.
+    {
+      const w = world();
+      await w.call({ action: 'load' });
+      w.state.pouch = 200;
+      const r = await w.call({ action: 'load' });
+      expect(r.body.pouch).toEqual({ amount: 200 });
+      expect(r.body.game.t.credits).toBe(300);
+      expect(r.body.version).toBe(2);
+      expect(w.state.games.get('ana')!.game.t.credits).toBe(300);
+      const again = await w.call({ action: 'load' });
+      expect(again.body.pouch).toBeUndefined();
+      expect(again.body.game.t.credits).toBe(300);
+      expect(again.body.version).toBe(2);
+    }
   });
 
   it('marks an answer on the server, uses the question once, and records it for the maths ladder', async () => {

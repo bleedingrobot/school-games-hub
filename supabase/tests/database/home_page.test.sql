@@ -167,11 +167,18 @@ create function pg_temp.separate() returns jsonb language sql as $$
     'ladder', public.my_ladder())
 $$;
 create function pg_temp.home() returns jsonb language sql as $$ select public.my_home_page() $$;
+-- Points made in the same moment can come back in either order, so the comparisons sort progress.recent first.
+create function pg_temp.steady(j jsonb) returns jsonb language sql as $$
+  select case when jsonb_typeof(j #> '{progress,recent}') = 'array'
+              then jsonb_set(j, '{progress,recent}',
+                             (select coalesce(jsonb_agg(r order by r::text), '[]'::jsonb) from jsonb_array_elements(j #> '{progress,recent}') r))
+              else j end
+$$;
 create function pg_temp.len(part text) returns integer language sql as $$ select jsonb_array_length(public.my_home_page() -> part) $$;
 
 -- ---- Ana: lots of games ----
 select pg_temp.as(1);
-select is(pg_temp.home(), pg_temp.separate(), 'Ana (lots of games of every kind): the same answer as the separate requests');
+select is(pg_temp.steady(pg_temp.home()), pg_temp.steady(pg_temp.separate()), 'Ana (lots of games of every kind): the same answer as the separate requests');
 select is(pg_temp.len('botRecent'), 5, 'her 5 most recent bot games');
 select is((select array_agg(g ->> 'finished_at') from jsonb_array_elements(pg_temp.home() -> 'botRecent') g),
   (select array_agg(f::text) from (select to_jsonb(finished_at) #>> '{}' f from public.bot_games order by finished_at desc limit 5) x),
@@ -202,7 +209,7 @@ select is(pg_temp.home() -> 'movesLeft', public.my_moves_left(), 'moves left are
 
 -- ---- Ben: a classmate in a class without a focus, who also played Cat ----
 select pg_temp.as(2);
-select is(pg_temp.home(), pg_temp.separate(), 'Ben (class without a focus): the same answer as the separate requests');
+select is(pg_temp.steady(pg_temp.home()), pg_temp.steady(pg_temp.separate()), 'Ben (class without a focus): the same answer as the separate requests');
 select is(pg_temp.home() -> 'focus' ->> 'source', 'auto', 'no focus in his class');
 select is((select count(*)::int from jsonb_array_elements((pg_temp.home() -> 'cardRecent') || (pg_temp.home() -> 'cardOpen')) s
            where s ->> 'player' <> pg_temp.uid(2)::text), 0, 'he never sees Ana''s seat rows of 101 (her cards)');
@@ -212,12 +219,12 @@ select is((select count(*)::int from jsonb_array_elements(pg_temp.home() -> 'fri
 
 -- ---- Cat: hidden ----
 select pg_temp.as(3);
-select is(pg_temp.home(), pg_temp.separate(), 'Cat (hidden): the same answer as the separate requests');
+select is(pg_temp.steady(pg_temp.home()), pg_temp.steady(pg_temp.separate()), 'Cat (hidden): the same answer as the separate requests');
 select is(pg_temp.len('friendRecent'), 2, 'a hidden pupil still sees her own games');
 
 -- ---- Dan: brand new ----
 select pg_temp.as(4);
-select is(pg_temp.home(), pg_temp.separate(), 'Dan (brand new): the same answer as the separate requests');
+select is(pg_temp.steady(pg_temp.home()), pg_temp.steady(pg_temp.separate()), 'Dan (brand new): the same answer as the separate requests');
 select is((select count(*)::int from jsonb_each(pg_temp.home()) p where case when jsonb_typeof(p.value) = 'array' then jsonb_array_length(p.value) > 0 else false end), 0,
   'every list is empty for a brand-new pupil (no other pupil''s games)');
 select is(pg_temp.home() -> 'spaceStats', '{"played": 0, "firsts": 0}', 'and his totals are nought');
@@ -225,17 +232,17 @@ select is(pg_temp.home() -> 'myClass' ->> 'className', null, 'no class yet');
 
 -- ---- Teachers ----
 select pg_temp.as(11);
-select is(pg_temp.home(), pg_temp.separate(), 'Ana''s teacher: the same answer as the separate requests');
+select is(pg_temp.steady(pg_temp.home()), pg_temp.steady(pg_temp.separate()), 'Ana''s teacher: the same answer as the separate requests');
 select pg_temp.as(12);
-select is(pg_temp.home(), pg_temp.separate(), 'Ben''s teacher: the same answer as the separate requests');
+select is(pg_temp.steady(pg_temp.home()), pg_temp.steady(pg_temp.separate()), 'Ben''s teacher: the same answer as the separate requests');
 
 -- ---- Every game switched off ----
 select pg_temp.reset();
 update public.app_settings set monsters_enabled = false, lord_enabled = false, clans_enabled = false, multiplayer_enabled = false;
 select pg_temp.as(1);
-select is(pg_temp.home(), pg_temp.separate(), 'with every game switched off, Ana still gets the same answer');
+select is(pg_temp.steady(pg_temp.home()), pg_temp.steady(pg_temp.separate()), 'with every game switched off, Ana still gets the same answer');
 select pg_temp.as(2);
-select is(pg_temp.home(), pg_temp.separate(), 'and so does Ben');
+select is(pg_temp.steady(pg_temp.home()), pg_temp.steady(pg_temp.separate()), 'and so does Ben');
 
 -- ---- The season clock (my_moves_left gives the school's Clan Quest season to every signed-in pupil) ----
 select pg_temp.as(1);

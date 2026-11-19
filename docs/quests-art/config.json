@@ -7,7 +7,8 @@
   "seed_by": "name+style",
   "styles": {
     "scene": "Epic vibrant painterly game key art, wide cinematic banner, rich saturated colour, dramatic glowing light, sense of adventure and motion, friendly and heroic, made for children aged 8 to 11, no blood, no gore, no text, no letters, no numbers anywhere. ",
-    "epic": "Epic collectible-card illustration, luminous painterly fantasy art, a radiant sunburst of light rays behind the subject, glowing magic particles and lens sparkles, mirror-bright metal, rich saturated colour, deep dark midnight-blue and violet jewel-toned background, one subject, large and centred, filling the square, bold clear silhouette, friendly and heroic, made for children aged 5 to 11, no text, no letters, no numbers. "
+    "epic": "Epic collectible-card illustration, luminous painterly fantasy art, a radiant sunburst of light rays behind the subject, glowing magic particles and lens sparkles, mirror-bright metal, rich saturated colour, deep dark midnight-blue and violet jewel-toned background, one subject, large and centred, filling the square, bold clear silhouette, friendly and heroic, made for children aged 5 to 11, no text, no letters, no numbers. ",
+    "plain": "Bright friendly fantasy game reward frame for children, painted with rich detail and glowing colour, crisp clean edges. "
   },
   "inbox": "~/dragon-art-inbox/quests",
   "picks": "docs/quests-art/picks.json",
@@ -381,6 +382,126 @@
       "kind": "scene",
       "folder": "quests/art",
       "file": "quest-toonflap-total"
+    },
+    {
+      "name": "frame-vine",
+      "prompt": "An empty round picture frame seen flat from straight in front: one perfectly circular ring made of twisting green leafy vines with small pink flowers and curling tendrils. The ring is fairly thin, its hole takes up about four fifths of its width, with nothing at all inside the ring. Single object, centred, the whole ring visible with a little space around it, on a plain pure white background, clean empty white all around and in the middle.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "hollow": true,
+      "style": "plain",
+      "folder": "avatar/art/frames",
+      "file": "vine",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "frame-flame",
+      "prompt": "An empty round picture frame seen flat from straight in front: one perfectly circular ring made of bright orange and yellow flickering flames, warm and friendly, not scary. The ring is fairly thin, its hole takes up about four fifths of its width, with nothing at all inside the ring. Single object, centred, the whole ring visible with a little space around it, on a plain pure white background, clean empty white all around and in the middle.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "hollow": true,
+      "style": "plain",
+      "folder": "avatar/art/frames",
+      "file": "flame",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "frame-starfield",
+      "prompt": "An empty round picture frame seen flat from straight in front: one perfectly circular ring made of deep violet night sky with tiny glowing gold stars and a few small planets. The ring is fairly thin, its hole takes up about four fifths of its width, with nothing at all inside the ring. Single object, centred, the whole ring visible with a little space around it, on a plain pure white background, clean empty white all around and in the middle.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "hollow": true,
+      "style": "plain",
+      "folder": "avatar/art/frames",
+      "file": "starfield",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "frame-crystal",
+      "prompt": "An empty round picture frame seen flat from straight in front: one perfectly circular ring made of clear icy-blue crystal shards and sparkling gems. The ring is fairly thin, its hole takes up about four fifths of its width, with nothing at all inside the ring. Single object, centred, the whole ring visible with a little space around it, on a plain pure white background, clean empty white all around and in the middle.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "hollow": true,
+      "style": "plain",
+      "folder": "avatar/art/frames",
+      "file": "crystal",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "frame-ocean",
+      "prompt": "An empty round picture frame seen flat from straight in front: one perfectly circular ring made of curling turquoise ocean waves with white foam and small bubbles. The ring is fairly thin, its hole takes up about four fifths of its width, with nothing at all inside the ring. Single object, centred, the whole ring visible with a little space around it, on a plain pure white background, clean empty white all around and in the middle.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "hollow": true,
+      "style": "plain",
+      "folder": "avatar/art/frames",
+      "file": "ocean",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "frame-autumn",
+      "prompt": "An empty round picture frame seen flat from straight in front: one perfectly circular ring made of overlapping orange, red and gold autumn leaves. The ring is fairly thin, its hole takes up about four fifths of its width, with nothing at all inside the ring. Single object, centred, the whole ring visible with a little space around it, on a plain pure white background, clean empty white all around and in the middle.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "hollow": true,
+      "style": "plain",
+      "folder": "avatar/art/frames",
+      "file": "autumn",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "frame-laurel",
+      "prompt": "An empty round picture frame seen flat from straight in front: one perfectly circular ring made of a shining golden laurel wreath of polished gold leaves. The ring is fairly thin, its hole takes up about four fifths of its width, with nothing at all inside the ring. Single object, centred, the whole ring visible with a little space around it, on a plain pure white background, clean empty white all around and in the middle.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "hollow": true,
+      "style": "plain",
+      "folder": "avatar/art/frames",
+      "file": "laurel",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "frame-glow-worm",
+      "prompt": "An empty round picture frame seen flat from straight in front: one perfectly circular ring made of dark mossy cave rock dotted with glowing blue-green glow-worm lights like little stars. The ring is fairly thin, its hole takes up about four fifths of its width, with nothing at all inside the ring. Single object, centred, the whole ring visible with a little space around it, on a plain pure white background, clean empty white all around and in the middle.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "hollow": true,
+      "style": "plain",
+      "folder": "avatar/art/frames",
+      "file": "glow-worm",
+      "max": 512,
+      "small": 160
     }
   ]
 }

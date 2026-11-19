@@ -25,7 +25,7 @@ import type { FactAnswer } from '../maths/leitner';
 import { packIdOfKey } from '../maths/ladder';
 import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
-import { CLASSES, FOREST_FIGHTS_PER_DAY, isLook, MAX_LEVEL, SEASON_DAYS, WEAPONS, ARMOURS, baseStats, expNeeded, masterFor } from './data';
+import { CLASSES, FOREST_FIGHTS_PER_DAY, isLook, MAX_LEVEL, SEASON_DAYS, WEAPONS, ARMOURS, baseStats, expNeeded, friendly, masterFor, tierPower } from './data';
 import { EXTRA_TURN_POINTS } from '../unlimited';
 import { computerHeroes } from './computer';
 import { EVENT_BY_ID, eventsOn } from './events';
@@ -218,6 +218,11 @@ export interface Services {
   /** The day's own news lines (the village event, the computer heroes). Each line is kept once. */
   /** Today's news for the school of the student who opened the game (each school has its own). */
   dailyNews(player: string, day: string, lines: NewsLine[]): Promise<Outcome<null>>;
+  /**
+   * Opens waiting quest Game Coins pouches for a hero saved at this version: `perUnit` gold for each forest win in them.
+   * Gives the gold added and the new version, or null (nothing to open, or the save moved on). Left out in the browser trial.
+   */
+  openPouches?(player: string, version: number, perUnit: number): Promise<{ amount: number; version: number } | null>;
 }
 
 // ---------- What goes back to the browser ----------
@@ -262,7 +267,7 @@ export type Reason =
   | 'busy'; // the database could not be reached
 
 export type LordReply =
-  | { ok: true; state: LordState; result: Record<string, unknown> }
+  | { ok: true; state: LordState; result: Record<string, unknown>; pouch?: { amount: number } }
   | { ok: false; reason: Reason; message?: string; state?: LordState };
 
 // ---------- The requests ----------
@@ -1036,11 +1041,19 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
 
   const finishNow = (state: Work | null, version: number): LordState => viewOf(state, version, today, season, settings);
 
+  /** A quest's Game Coins pouch, opened now that the day and season are done and saved: gold for each forest win it holds, at the hero's level. */
+  const withPouch = async (state: Work, version: number, result: Record<string, unknown>): Promise<RunResult> => {
+    const opened = s.openPouches ? await s.openPouches(player, version, friendly(tierPower(state.hero.level) * 1.08)) : null;
+    if (!opened) return { status: 200, body: { ok: true, state: finishNow(state, version), result } };
+    const hero = { ...state.hero, gold: state.hero.gold + opened.amount };
+    return { status: 200, body: { ok: true, state: finishNow({ ...state, hero }, opened.version), result, pouch: { amount: opened.amount } } };
+  };
+
   // 2. Looking and rolling over.
   if (action === 'load' || action === 'rollover') {
     const note = abandoned ? { abandoned } : {};
     if (!row || !w) return { status: 200, body: { ok: true, state: finishNow(null, 0), result: {} } };
-    if (!rolled) return { status: 200, body: { ok: true, state: finishNow(w, row.version), result: note } };
+    if (!rolled) return withPouch(w, row.version, note);
     const out = await s.commit(player, {
       expect: row.version, hero: w.hero, season: w.season, extra: w.extra, openFight: null, closeFight: null,
       event: { requestId: s.newId(), action: 'rollover', summary: { day: today, season: w.season } },
@@ -1056,7 +1069,7 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
       }
       return busy();
     }
-    return { status: 200, body: { ok: true, state: finishNow(w, out.value.version), result: note } };
+    return withPouch(w, out.value.version, note);
   }
 
   const refuse = (reason: Reason, message?: string): RunResult => ({

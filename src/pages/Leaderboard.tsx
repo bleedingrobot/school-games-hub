@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
 import type { TrophyShelf } from '../data/trophies';
+import { HeroTitleLine } from '../quests/HeroTitles';
 import { FavouriteTrophies, useTrophyShelves } from '../trophies/FavouriteTrophies';
 import { HallOfFame } from '../trophies/HallOfFame';
 import { fetchStarsBoard, type StarsRow } from '../data/gemKeep';
@@ -231,6 +232,7 @@ function OneGameBoard({ game, scope }: { game: string; scope: BoardScope }) {
       <span className="board-list__name">
         {row.name}
         {row.is_me && <span className="board-list__you"> (you)</span>}
+        <HeroTitleLine avatar={row.avatar} />
         <FavouriteTrophies shelf={shelves[row.name]} />
       </span>
       <span className="board-list__points">
@@ -463,6 +465,7 @@ function AchievementsLine({
         <span className="board-list__name">
           {row.name}
           {row.is_me && <span className="board-list__you"> (you)</span>}
+          <HeroTitleLine avatar={row.avatar} />
           {row.hard && (
             <span className="board-list__hard" title="Played on 4 or 5 school days this week" aria-label="Played on 4 or 5 school days this week">
               {' '}
@@ -610,6 +613,7 @@ function TrophiesLine({
         <span className="board-list__name">
           {row.name}
           {row.is_me && <span className="board-list__you"> (you)</span>}
+          <HeroTitleLine avatar={row.avatar} />
         </span>
         <span className="board-list__points">
           🏆 {board === 'season' ? row.season : row.count}
@@ -749,6 +753,7 @@ function HardLine({ row, most, shelf }: { row: HardWorkerRow; most: number | nul
       <span className="board-list__name">
         {row.name}
         {row.is_me && <span className="board-list__you"> (you)</span>}
+        <HeroTitleLine avatar={row.avatar} />
         <FavouriteTrophies shelf={shelf} />
       </span>
       <span className="board-list__points">
@@ -939,6 +944,7 @@ function MonstersLine({ row, shelf }: { row: MonstersRow; shelf?: TrophyShelf })
       <span className="board-list__name">
         {row.display_name}
         {row.is_me && <span className="board-list__you"> (you)</span>}
+        <HeroTitleLine avatar={row.avatar} />
         <FavouriteTrophies shelf={shelf} />
       </span>
       <span className="board-list__points">🐾 {row.monsters}</span>
@@ -956,6 +962,7 @@ function StarsLine({ row, shelf }: { row: StarsRow; shelf?: TrophyShelf }) {
       <span className="board-list__name">
         {row.display_name}
         {row.is_me && <span className="board-list__you"> (you)</span>}
+        <HeroTitleLine avatar={row.avatar} />
         <FavouriteTrophies shelf={shelf} />
       </span>
       <span className="board-list__points">★ {row.stars}</span>
@@ -974,6 +981,7 @@ function BoardLine({ row, board, shelf }: { row: BoardRow; board: Board; shelf?:
       <span className="board-list__name">
         {row.display_name}
         {row.is_me && <span className="board-list__you"> (you)</span>}
+        <HeroTitleLine avatar={row.avatar} />
         <FavouriteTrophies shelf={shelf} />
       </span>
       <RankBadge rank={row.rank} />

@@ -57,7 +57,7 @@ select pg_temp.reset();
 
 -- ---- A new Armory ----
 select pg_temp.act_as_server();
-select is(public.archery_state(pg_temp.id('0a')) - 'roundsToday' - 'coinsToday',
+select is(public.archery_state(pg_temp.id('0a')) - 'roundsToday' - 'coinsToday' - 'pouch',
   '{"coins": 100, "gear": {}, "shields": [], "bows": [], "spent": 0, "best": {}}'::jsonb, 'a new pupil starts with 100 coins and nothing else');
 select is((public.archery_state(pg_temp.id('0a')) ->> 'coinsToday')::integer, 0, '... and no coins earned from maths today yet');
 select is((select column_default from information_schema.columns where table_schema = 'public' and table_name = 'archery_players' and column_name = 'coins'),

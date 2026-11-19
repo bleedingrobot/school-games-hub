@@ -20,19 +20,17 @@ describe('Diamond Drop rules', () => {
       expect(playLevel(input)).toEqual(replay);
     }
 
-    // Rare gems: the chances in config (rarest tried first), at most one a level, near the bottom, clear of everything.
+    // Rare gems: each turns up at its own chance in config, at most one a level, near the bottom, clear of everything.
     const n = 40000;
     const seen: Record<string, number> = {};
     for (let seed = 1; seed <= n; seed++) {
       const id = rareFor(seed) ?? 'none';
       seen[id] = (seen[id] ?? 0) + 1;
     }
-    let none = 1;
-    for (const g of [...RARE_GEMS].reverse()) {
-      expect(Math.abs((seen[g.id] ?? 0) / n - none * g.chance)).toBeLessThan(0.01);
-      none *= 1 - g.chance;
-    }
-    expect(Math.abs((seen.none ?? 0) / n - none)).toBeLessThan(0.01);
+    for (const g of RARE_GEMS) expect(Math.abs((seen[g.id] ?? 0) / n - g.chance)).toBeLessThan(0.005);
+    const any = RARE_GEMS.reduce((a, g) => a + g.chance, 0);
+    expect(any).toBeLessThan(0.3);
+    expect(Math.abs((seen.none ?? 0) / n - (1 - any))).toBeLessThan(0.01);
     let found = 0;
     for (let seed = 1; seed <= 400; seed++) {
       const things = makeField(1 + (seed % LAST_LEVEL), seed);
@@ -46,7 +44,7 @@ describe('Diamond Drop rules', () => {
       expect(r.y).toBeLessThanOrEqual(FIELD_H - r.r);
       for (const t of things) if (t !== r && !t.crab) expect(Math.hypot(t.x - r.x, t.y - r.y)).toBeGreaterThan(t.r + r.r - 0.001);
     }
-    expect(found).toBeGreaterThan(200);
+    expect(found).toBeGreaterThan(60);
     // A rare gem can be caught, and a level with one replays exactly.
     let caught = 0;
     for (let seed = 1; seed <= 120 && caught < 3; seed++) {

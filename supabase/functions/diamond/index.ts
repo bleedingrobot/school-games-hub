@@ -8437,7 +8437,7 @@ const RARE_GEMS = [
 	{
 		id: "moonstone",
 		name: "Moonstone",
-		chance: .3,
+		chance: .08,
 		tier: "uncommon",
 		value: 20,
 		weight: "light",
@@ -8449,7 +8449,7 @@ const RARE_GEMS = [
 	{
 		id: "sunstone",
 		name: "Sunstone",
-		chance: .25,
+		chance: .06,
 		tier: "uncommon",
 		value: 25,
 		weight: "light",
@@ -8461,7 +8461,7 @@ const RARE_GEMS = [
 	{
 		id: "frostCrystal",
 		name: "Frost Crystal",
-		chance: .2,
+		chance: .04,
 		tier: "rare",
 		value: 35,
 		weight: "light",
@@ -8473,7 +8473,7 @@ const RARE_GEMS = [
 	{
 		id: "rainbowOpal",
 		name: "Rainbow Opal",
-		chance: .15,
+		chance: .03,
 		tier: "rare",
 		value: 50,
 		weight: "medium",
@@ -8485,7 +8485,7 @@ const RARE_GEMS = [
 	{
 		id: "dragonEye",
 		name: "Dragon's Eye",
-		chance: .1,
+		chance: .02,
 		tier: "epic",
 		value: 75,
 		weight: "medium",
@@ -8497,7 +8497,7 @@ const RARE_GEMS = [
 	{
 		id: "galaxyGem",
 		name: "Galaxy Gem",
-		chance: .05,
+		chance: .015,
 		tier: "epic",
 		value: 120,
 		weight: "medium",
@@ -9256,10 +9256,14 @@ function fieldOk(level, things) {
 	if (level === LAST_LEVEL) return diamondReachable(things);
 	return fieldValue(things) >= FIELD_VALUE_MARGIN * spec.target;
 }
-/** Which rare gem (if any) turns up on a go with this seed: the rarest is tried first, and the first that turns up wins. */
+/** Which rare gem (if any) turns up on a go with this seed: one roll, so each gem's chance is its real chance on a go. */
 function rareFor(seed) {
-	const rng = makeRandom(mixSeed(seed, STREAM.rare));
-	for (let i = RARE_GEMS.length - 1; i >= 0; i--) if (rng.fraction() < RARE_GEMS[i].chance) return RARE_GEMS[i].id;
+	const roll = makeRandom(mixSeed(seed, STREAM.rare)).fraction();
+	let upTo = 0;
+	for (let i = RARE_GEMS.length - 1; i >= 0; i--) {
+		upTo += RARE_GEMS[i].chance;
+		if (roll < upTo) return RARE_GEMS[i].id;
+	}
 	return null;
 }
 /**
@@ -10260,6 +10264,17 @@ async function handleDiamond(services, player, body) {
 	if (body.action === "load") {
 		const s = await services.load(player);
 		if (s === "busy") return busy();
+		const pouch = s.version > 0 ? await services.openPouches?.(player, s.version) : null;
+		if (pouch && pouch !== "busy" && pouch.amount > 0) {
+			s.player.coins += pouch.amount;
+			s.version = pouch.version;
+			return ok({
+				player: s.player,
+				now: services.now(),
+				unlimited,
+				pouch: { amount: pouch.amount }
+			});
+		}
 		return ok({
 			player: s.player,
 			now: services.now(),
@@ -10667,6 +10682,12 @@ Deno.serve(makeHandler({
 	async load(player) {
 		return await call("diamond_load", { player }) ?? unplayed();
 	},
+	openPouches: (player, version) => call("open_coin_pouches", {
+		player,
+		game: "diamond",
+		expected_version: version,
+		per_unit: 1
+	}),
 	start: (player, version, state, level) => call("diamond_start", {
 		player,
 		version,

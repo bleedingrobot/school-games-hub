@@ -6,9 +6,9 @@ different ways … a few different backgrounds … full screen … flashy and en
 **Status:** stage 1 live (PR #578: full window, castle hall painting, all the move animations). Stage 2 live (PR #579:
 the 🎒 Chess Locker, 6 more backgrounds with their own particles, unlocks worked out on the server, the treasure chest).
 Stage 3 live (PR #580, 18 Nov 2026: the 4 painted boards, lively, in the Locker and the chest). Stage 4 live (PR #594,
-19 Nov 2026: the 6 painted piece sets on the board, the Locker and the chest). Stage 5 built
-19 Nov 2026: painted bots (a chick, a robot, a wizard) that pop in on the start screen and think with bubbles in
-the game. Checkers keeps its emoji for now (its own bots would need pictures holding draughts).
+19 Nov 2026: the 6 painted piece sets on the board, the Locker and the chest). Stage 5 live (PR #600,
+19 Nov 2026: painted bots, a chick, a robot and a wizard, that pop in on the start screen and think with bubbles in
+the game). All 5 stages are live. Checkers keeps its emoji for now (its own bots would need pictures holding draughts).
 
 ## Decisions
 

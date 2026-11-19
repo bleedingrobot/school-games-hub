@@ -65,6 +65,8 @@ export interface Loaded {
   news?: NewsItem[];
   /** The school's pushes on prices right now: [planet, good, push]. */
   prices?: [number, number, number][];
+  /** A quest's Game Coins pouch, opened as the game loaded: the credits it added (already in `game`). */
+  pouch?: { amount: number };
 }
 
 /** The New Season choice (docs/TRADER-SYSTEM-PLAN.md, 1.2): last season's system, and what starting fresh would keep (credits already capped). */
