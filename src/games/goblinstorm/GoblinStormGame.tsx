@@ -8,7 +8,7 @@
  */
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { HEROES, MAPS, UNLOCK_WORDS, WEAPONS, type HeroDef } from '../../../shared/goblinstorm/config';
-import { heroOpen, mapOpen } from '../../../shared/goblinstorm/server';
+import { heroOpen, mapOpen, RUNS_A_DAY } from '../../../shared/goblinstorm/server';
 import { CODEX_SIZE } from '../../../shared/goblinstorm/shop';
 import { AchievementPop } from '../../achievements/AchievementPop';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
@@ -48,9 +48,41 @@ const MAP_LOCK: Record<string, string> = {
   lava: 'Beat the Ice Dragon to open',
 };
 
-export function GoblinStormGame({ backend, extra, onServer = false }: {
+/**
+ * How many of today's runs are left, so "all done for today" is plain on every screen (James, 20 Nov 2026: pupils
+ * couldn't tell they'd run out). On an Unlimited day there's no count.
+ */
+function RunsToday({ left, unlimited }: { left: number; unlimited: boolean }) {
+  if (unlimited) return <p className="gs-runs gs-runs--unlimited">♾️ Unlimited runs today!</p>;
+  return (
+    <p className={`gs-runs${left === 0 ? ' gs-runs--none' : ''}`} aria-label={`Runs left today: ${left} of ${RUNS_A_DAY}`}>
+      <span>⚔️ Runs left today:</span>
+      <span className="gs-runs__pips" aria-hidden="true">
+        {Array.from({ length: RUNS_A_DAY }, (_, i) => <i key={i} className={i < left ? 'on' : ''} />)}
+      </span>
+      <b>{left} of {RUNS_A_DAY}</b>
+    </p>
+  );
+}
+
+/** The big "come back tomorrow" card, shown at the top of each screen once today's runs are used up. */
+function DoneToday() {
+  return (
+    <div className="gs-done" role="status">
+      <span className="gs-done__icon" aria-hidden="true">🌙</span>
+      <div>
+        <h2 className="gs-done__title">All {RUNS_A_DAY} runs done for today!</h2>
+        <p className="gs-done__line">Come back tomorrow for {RUNS_A_DAY} more. You can still look in the Shop and the Codex.</p>
+      </div>
+    </div>
+  );
+}
+
+export function GoblinStormGame({ backend, extra, onServer = false, unlimitedToday }: {
   backend: GoblinStormBackend;
   extra?: ReactNode;
+  /** Whether the class has Unlimited today on for Goblin Storm (live only; the preview has the normal 5). */
+  unlimitedToday?: () => Promise<boolean>;
   /** The school's server is behind `backend`, so achievements and the Crown can be won (off in the preview). */
   onServer?: boolean;
 }) {
@@ -72,6 +104,13 @@ export function GoblinStormGame({ backend, extra, onServer = false }: {
   const [shown, setShown] = useState<ShowMe | null>(null);
   const [tip, setTip] = useState<number | null>(null);
   const { soundOn } = useSound();
+  const [unlimited, setUnlimited] = useState(false);
+  useEffect(() => {
+    unlimitedToday?.().then(setUnlimited, () => undefined);
+  }, [unlimitedToday]);
+  /** Runs left today, or null before the save loads. */
+  const left = save ? Math.max(0, RUNS_A_DAY - save.today) : null;
+  const outToday = left === 0 && !unlimited;
 
   const loadSave = useCallback(() => {
     setSaveError(false);
@@ -102,15 +141,25 @@ export function GoblinStormGame({ backend, extra, onServer = false }: {
       setGuided(guide);
       if (guide && save && !save.guideSeen) {
         // Kept in the server's save, so it isn't offered again on another device. A failure only means it shows again.
-        setSave({ ...save, guideSeen: true });
+        setSave((s) => (s ? { ...s, guideSeen: true } : s));
         backend.guideSeen().catch(() => undefined);
       }
+      if (reply.runsLeft === null) setUnlimited(true);
+      // Count this run straight away; the save reloads at the end of the run.
+      setSave((s) => (s ? { ...s, today: s.today + 1 } : s));
       setMapIndex(i);
       setRun(reply);
       setScreen('play');
     } catch (e) {
       // The server's own words when it said no ("All done for today. See you tomorrow!").
-      setError(e instanceof GoblinStormError ? e.message : "Couldn't start a run. Try again.");
+      if (e instanceof GoblinStormError && e.code === 'done-today') {
+        // Out of runs (perhaps on another device): show the big card rather than a small line.
+        setUnlimited(false);
+        setSave((s) => (s ? { ...s, today: Math.max(s.today, RUNS_A_DAY) } : s));
+        setScreen((now) => (now === 'end' ? 'map' : now));
+      } else {
+        setError(e instanceof GoblinStormError ? e.message : "Couldn't start a run. Try again.");
+      }
     } finally {
       setBusy(false);
     }
@@ -120,6 +169,8 @@ export function GoblinStormGame({ backend, extra, onServer = false }: {
     <div className="gs-window">
       {screen === 'hero' && (
         <Menu title="Pick your hero" extra={extra}>
+          {outToday && <DoneToday />}
+          {left !== null && !outToday && <RunsToday left={left} unlimited={unlimited} />}
           {save && (
             <p className="gs-menu__sub gs-progress">
               🦸 Heroes {HEROES.filter((h) => heroOpen(save, h.id)).length}/{HEROES.length} · 👑 Bosses beaten {save.bosses.length}/{MAPS.length}
@@ -161,18 +212,21 @@ export function GoblinStormGame({ backend, extra, onServer = false }: {
 
       {screen === 'map' && (
         <Menu title="Pick a map" back={() => setScreen('hero')} extra={extra}>
+          {outToday && <DoneToday />}
+          {left !== null && !outToday && <RunsToday left={left} unlimited={unlimited} />}
           <p className="gs-menu__sub">Playing as {HERO_ICON[hero.id]} {hero.name}. Survive 3 minutes. A mini-boss comes at 1:30 and the boss at 2:30: beat the boss to win!</p>
           <div className="gs-grid gs-grid--maps">
             {MAPS.map((m, i) => {
               const open = save ? mapOpen(save, i) : i === 0;
               const beaten = save?.bosses.includes(i);
               return (
-                <button key={m.id} type="button" disabled={!open || busy} className={`gs-pick gs-pick--map gs-pick--${m.id}${open ? '' : ' gs-pick--locked'}${shown?.kind === 'map' && shown.map === i ? ' gs-show' : ''}`} onClick={() => void play(i)}>
+                <button key={m.id} type="button" disabled={!open || busy || outToday} className={`gs-pick gs-pick--map gs-pick--${m.id}${open ? '' : ' gs-pick--locked'}${shown?.kind === 'map' && shown.map === i ? ' gs-show' : ''}`} onClick={() => void play(i)}>
                   <span className="gs-pick__icon" aria-hidden="true">{MAP_ICON[m.id]}</span>
                   <span className="gs-pick__name">{m.name}</span>
                   <span className="gs-pick__blurb">{m.monsters.slice(0, 3).map((x) => x.name).join(', ')}</span>
                   <span className="gs-pick__blurb">Boss: {m.monsters[4].name}{beaten ? ' 👑 beaten' : ''}</span>
                   {!open && <span className="gs-pick__lock">🔒 {MAP_LOCK[m.id]}</span>}
+                  {open && outToday && <span className="gs-pick__lock">🌙 Come back tomorrow</span>}
                 </button>
               );
             })}
@@ -185,7 +239,7 @@ export function GoblinStormGame({ backend, extra, onServer = false }: {
               onNext={() => setTip(tip + 1)} onClose={closeTips}
             />
           )}
-          {save && (() => {
+          {save && !outToday && (() => {
             const next = nextStep(save);
             return (
               <p className="gs-next">
@@ -207,7 +261,7 @@ export function GoblinStormGame({ backend, extra, onServer = false }: {
           {save && (
             <div className="gs-row gs-between gs-settings">
               {save.guideSeen && (
-                <button type="button" className="gs-btn gs-btn--ghost gs-btn--small" disabled={busy} onClick={() => void play(0, true)}>🧚 Replay the guide</button>
+                <button type="button" className="gs-btn gs-btn--ghost gs-btn--small" disabled={busy || outToday} onClick={() => void play(0, true)}>🧚 Replay the guide</button>
               )}
               <span className="gs-quality" role="group" aria-label="Effects">
                 <span>Effects:</span>
@@ -255,7 +309,8 @@ export function GoblinStormGame({ backend, extra, onServer = false }: {
       )}
 
       {screen === 'end' && end && (
-        <EndScreen end={end} onAgain={() => void play(mapIndex)} onMenu={() => setScreen('hero')} onShop={() => setScreen('shop')} busy={busy} error={error} newMap={newMap} />
+        <EndScreen end={end} onAgain={() => void play(mapIndex)} onMenu={() => setScreen('hero')} onShop={() => setScreen('shop')} busy={busy} error={error} newMap={newMap}
+          left={unlimited || left === null ? null : left} />
       )}
       {/* Mounted for the whole game, so the trophy line knows what the pupil had before the run ended. */}
       <TrophyWonLine games={['goblinstorm']} watch={end?.reply ?? null} off={!onServer} />
@@ -289,9 +344,12 @@ const OUTCOME_WORDS = {
   running: { title: 'Run over', icon: '🚪', line: '' },
 } as const;
 
-function EndScreen({ end, onAgain, onMenu, onShop, busy, error, newMap }: {
+function EndScreen({ end, onAgain, onMenu, onShop, busy, error, newMap, left }: {
   end: RunEnd; onAgain: () => void; onMenu: () => void; onShop: () => void; busy: boolean; error: string | null; newMap: number | null;
+  /** Runs left today after this one (null on an Unlimited day). */
+  left: number | null;
 }) {
+  const out = left === 0;
   const sum = end.reply?.summary;
   const words = OUTCOME_WORDS[sum?.outcome ?? 'quit'];
   const time = sum ? `${Math.floor(sum.seconds / 60)}:${String(sum.seconds % 60).padStart(2, '0')}` : '–';
@@ -323,8 +381,10 @@ function EndScreen({ end, onAgain, onMenu, onShop, busy, error, newMap }: {
           return h ? <p key={id} className="gs-end__new">{HERO_ICON[h.id]} New hero: {h.name}!</p> : null;
         })}
         <p className="gs-end__who">{HERO_ICON[end.hero.id]} {end.hero.name} on {MAP_ICON[end.map.id]} {end.map.name}</p>
+        {out && <DoneToday />}
+        {left !== null && !out && <RunsToday left={left} unlimited={false} />}
         <div className="gs-row">
-          <button type="button" className="gs-btn gs-btn--big" onClick={onAgain} disabled={busy} autoFocus>Play again</button>
+          {!out && <button type="button" className="gs-btn gs-btn--big" onClick={onAgain} disabled={busy} autoFocus>Play again</button>}
           <button type="button" className="gs-btn gs-btn--ghost" onClick={onShop}>🛒 Shop</button>
           <button type="button" className="gs-btn gs-btn--ghost" onClick={onMenu}>Change hero</button>
         </div>

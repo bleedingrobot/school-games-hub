@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'goblinstorm-runs-left-2026-11-20',
+    date: '2026-11-20',
+    emoji: '🌙',
+    title: 'Goblin Storm: see your runs left',
+    text: 'See how many of your 5 runs are left today, and when they are all used up.',
+    game: 'goblinstorm',
+  },
+  {
     id: 'goblinstorm-dearer-shop-2026-11-20',
     date: '2026-11-20',
     emoji: '🪙',
