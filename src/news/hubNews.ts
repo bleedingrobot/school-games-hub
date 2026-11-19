@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'quest-frames-painted-2026-11-19',
+    date: '2026-11-19',
+    emoji: '🎨',
+    title: 'Painted Quest Frames',
+    text: 'All eight Quest Frames are now painted pictures. Leaves, flames, stars, gems and more!',
+    to: '/profile#rewards',
+  },
+  {
     id: 'checkers-pirate-bots-2026-11-19',
     date: '2026-11-19',
     emoji: '🏴‍☠️',

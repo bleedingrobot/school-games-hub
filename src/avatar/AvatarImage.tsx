@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { normaliseAvatar, type Avatar } from './avatarParts';
 import { pictureOf, TIER_COLOURS, type WornPicture } from './earnedPictures';
 import { frameOf, type QuestFrame } from '../../shared/quests/frames';
@@ -282,6 +282,9 @@ function Framed({ frame, size, label, children }: { frame: QuestFrame; size: num
   const id = useId();
   const [light, main, dark] = frame.colours;
   const painted = paintedFrame(frame.id);
+  // The painting has gaps (between leaves, flames), so the drawn ring is only drawn when there is no painting to show.
+  const [failed, setFailed] = useState(false);
+  const drawn = !painted || failed;
   return (
     <svg
       className="avatar"
@@ -300,14 +303,20 @@ function Framed({ frame, size, label, children }: { frame: QuestFrame; size: num
           <stop offset="1" stopColor={dark} />
         </linearGradient>
       </defs>
-      <circle cx="50" cy="50" r="50" fill={`url(#${id}-frame)`} />
-      <circle cx="50" cy="50" r="40" fill={dark} />
-      {Array.from({ length: 12 }, (_, i) => {
-        const angle = (Math.PI / 6) * i;
-        return <circle key={i} cx={50 + 45 * Math.cos(angle)} cy={50 + 45 * Math.sin(angle)} r="2.4" fill={frame.bead} opacity="0.9" />;
-      })}
+      {drawn && (
+        <>
+          <circle cx="50" cy="50" r="50" fill={`url(#${id}-frame)`} />
+          <circle cx="50" cy="50" r="40" fill={dark} />
+          {Array.from({ length: 12 }, (_, i) => {
+            const angle = (Math.PI / 6) * i;
+            return <circle key={i} cx={50 + 45 * Math.cos(angle)} cy={50 + 45 * Math.sin(angle)} r="2.4" fill={frame.bead} opacity="0.9" />;
+          })}
+        </>
+      )}
       {children}
-      {painted && <image href={size <= 80 ? painted.artSmall : painted.art} x="0" y="0" width="100" height="100" />}
+      {painted && !failed && (
+        <image href={size <= 80 ? painted.artSmall : painted.art} x="0" y="0" width="100" height="100" onError={() => setFailed(true)} />
+      )}
     </svg>
   );
 }
