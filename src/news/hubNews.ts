@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'goblinstorm-new-2026-11-19',
+    date: '2026-11-19',
+    emoji: '🌪️',
+    title: 'New game: Goblin Storm',
+    text: 'Survive the goblin swarm! Level up, evolve your weapons and wipe the whole screen.',
+    game: 'goblinstorm',
+  },
+  {
     id: 'quest-frames-painted-2026-11-19',
     date: '2026-11-19',
     emoji: '🎨',
