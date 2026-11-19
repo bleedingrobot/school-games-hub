@@ -42,6 +42,7 @@ export const GAME_SWITCH_COLUMNS: Readonly<Record<string, string>> = {
   toonflap: 'toonflap_enabled',
   glyph: 'glyph_enabled',
   orderup: 'orderup_enabled',
+  goblinstorm: 'goblinstorm_enabled',
 };
 
 /**

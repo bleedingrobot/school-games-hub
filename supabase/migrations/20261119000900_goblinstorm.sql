@@ -571,6 +571,31 @@ revoke execute on function public.teacher_progress_other_games(uuid) from public
 grant execute on function public.teacher_progress_other_games(uuid) to authenticated;
 
 -- ---------------------------------------------------------------------------
+-- Unlimited today: Goblin Storm joins the games the teacher can lift (newest body: 20261105000200_unlimited_turns.sql).
+-- create or replace keeps its grants.
+-- ---------------------------------------------------------------------------
+
+create or replace function public.teacher_set_unlimited_today(game text, enabled boolean, target_class uuid default null)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform public.require_teacher();
+  if enabled is null or game is null or game not in ('dragon-maths', 'clan-quest', 'monsters', 'diamond', 'trader', 'isles', 'goblinstorm') then
+    raise exception 'Unknown Unlimited turns setting' using errcode = '22023';
+  end if;
+  perform public.require_settings_target(target_class);
+  update public.app_settings
+  set unlimited_days = case when enabled
+    then unlimited_days || jsonb_build_object(game, to_char((now() at time zone 'Pacific/Auckland')::date, 'YYYY-MM-DD'))
+    else unlimited_days - game end
+  where id in (select public.settings_to_change(target_class));
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
 -- Who can call what
 -- ---------------------------------------------------------------------------
 
