@@ -1,7 +1,7 @@
 // Goblin Storm's rules (docs/GOBLINSTORM-PLAN.md): the 3 rule tests the plan allows. Balance is the sim's job.
 import { describe, expect, it } from 'vitest';
 import { botRun } from './bot';
-import { HEROES, MAPS, RUN_STEPS, WEAPONS } from './config';
+import { HEROES, MAPS, RUN_STEPS, STEPS_PER_SECOND, WEAPONS, healthGrowth } from './config';
 import { applyPick, makeOffer, newRun, stepRun, waiting, type RunSetup } from './engine';
 import { decodeSteering, encodeSteering, replayRun } from './replay';
 
@@ -47,6 +47,15 @@ describe('Goblin Storm rules', () => {
     const half = Math.floor(live.steering.length / 2);
     const quit = replayRun({ setup: knight, steering: live.steering.slice(0, half), picks: live.picks.slice(0, replayRun({ setup: knight, steering: live.steering.slice(0, half), picks: live.picks, choices: live.choices }).state.levelUps), choices: live.choices });
     expect(quit.summary.outcome).toBe('quit');
+  });
+
+  it('monsters get tougher through a run, more so in the last minute and more again in the last 30 seconds', () => {
+    const at = (sec: number) => healthGrowth(sec * STEPS_PER_SECOND);
+    expect(at(0)).toBe(1);
+    expect(at(119.9)).toBeCloseTo(1 + 119.9 / 90);
+    expect(at(120)).toBeCloseTo((1 + 120 / 90) * 1.5);
+    expect(at(149.9)).toBeCloseTo((1 + 149.9 / 90) * 1.5);
+    expect(at(150)).toBeCloseTo((1 + 150 / 90) * 2);
   });
 
   it('answers decide how many cards show, and a full weapon with its partner offers an evolution first', () => {

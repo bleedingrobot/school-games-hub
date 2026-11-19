@@ -8734,6 +8734,17 @@ const MAPS = [
 	}
 ];
 const WARM_UP_DAMAGE = .5;
+/**
+* On top of that, monsters born near the end are tougher still (James, 20 Nov 2026): × LAST_MINUTE_HEALTH from 2:00,
+* × LAST_HALF_MINUTE_HEALTH from 2:30. Common, fast and tough monsters only; the mini-boss and boss keep their health.
+*/
+const LAST_MINUTE_HEALTH = 1.5;
+/** How much tougher a common, fast or tough monster born at step `t` is than one born at the start. */
+function healthGrowth(t) {
+	const seconds = t / 60;
+	const late = seconds >= 150 ? 2 : seconds >= 120 ? LAST_MINUTE_HEALTH : 1;
+	return (1 + seconds / 90) * late;
+}
 const WAVES = [
 	{
 		from: 2,
@@ -9181,7 +9192,7 @@ function spawn(s, kind, x, y) {
 	}
 	if (!e) return null;
 	const def = s.setup.map.monsters[kind];
-	const grow = kind >= 3 ? 1 : 1 + s.t / 60 / 90;
+	const grow = kind >= 3 ? 1 : healthGrowth(s.t);
 	e.alive = true;
 	e.id = s.nextId++;
 	e.kind = kind;
