@@ -29,23 +29,23 @@ export interface BestSale {
 }
 
 /**
- * For each good: the planet (not this one) within a full tank's reach that pays most for it today, nearest first on a
- * tie. Null if nowhere in reach buys it.
+ * For each good: the `n` planets (not this one) within a full tank's reach that pay most for it today, best first,
+ * nearest first on a tie. Empty if nowhere in reach buys it.
  */
-export function bestSales(galaxy: Galaxy, t: Trader, pushes?: Pushes): (BestSale | null)[] {
+export function topSales(galaxy: Galaxy, t: Trader, pushes: Pushes | undefined, n: number): BestSale[][] {
   const here = galaxy.planets[t.location];
   const range = SHIPS[t.ship].fuelTank;
-  const best: (BestSale | null)[] = t.market.map(() => null);
+  const all: BestSale[][] = t.market.map(() => []);
   for (const p of galaxy.planets) {
     if (p.id === t.location) continue;
     const fuel = distance(here, p);
     if (fuel > range) continue;
-    const lines = pricesAt(galaxy, p.id, t.day, pushes);
-    lines.forEach((line, good) => {
-      if (line.sell <= 0) return;
-      const cur = best[good];
-      if (!cur || line.sell > cur.sell || (line.sell === cur.sell && fuel < cur.fuel)) best[good] = { planet: p.id, sell: line.sell, fuel };
+    pricesAt(galaxy, p.id, t.day, pushes).forEach((line, good) => {
+      if (line.sell > 0) all[good]?.push({ planet: p.id, sell: line.sell, fuel });
     });
   }
-  return best;
+  return all.map((list) => list.sort((a, b) => b.sell - a.sell || a.fuel - b.fuel).slice(0, n));
 }
+
+/** For each good: the one best place to sell it in reach (see topSales), or null if nowhere in reach buys it. */
+export const bestSales = (galaxy: Galaxy, t: Trader, pushes?: Pushes): (BestSale | null)[] => topSales(galaxy, t, pushes, 1).map((l) => l[0] ?? null);

@@ -2,9 +2,14 @@
  * The hold view at the top of the market (docs/plans/trader-hold/PLAN.md, H.1): the ship from above with a box for
  * every hold, cargo pods clamped alongside, and each box showing what's in it. While a trade is picked but not done,
  * boxes about to be bought show faintly and boxes about to be sold fade. Big ships on a narrow phone show a strip
- * instead: one tile per good with how many.
+ * instead: one tile per good with how many. Tap or hover a good (H.2) for a card: the two best places in reach to sell
+ * it today, and what it sells for here.
  */
+import { useMemo, useState, type KeyboardEvent } from 'react';
 import { GOODS, SHIPS } from '../../../shared/trader/config';
+import type { Galaxy } from '../../../shared/trader/galaxy';
+import { topSales, type BestSale } from '../../../shared/trader/priceGuide';
+import type { Pushes } from '../../../shared/trader/schoolMarket';
 import { holdsOf, usedHolds, type Trader } from '../../../shared/trader/state';
 import { goodArt, podArt, shipTopArt } from './art/paint';
 import { fillHold, holdBoxes, holdViewBox, podPlaces, POD, SHIP_HOLDS, type Box, type Filled } from './holdLayout';
@@ -45,7 +50,64 @@ function Item({ box, fill }: { box: Box; fill: Filled }) {
   );
 }
 
-export function HoldView({ t, after }: { t: Trader; after?: Trader | null }) {
+function GoodCard({ galaxy, t, good, tops, onClose }: { galaxy: Galaxy; t: Trader; good: number; tops: readonly BestSale[]; onClose: () => void }) {
+  const name = GOODS[good];
+  const pic = goodArt(name);
+  const here = t.market.find((l) => l.good === good)?.sell ?? 0;
+  return (
+    <div className="st-hold__card" role="status">
+      <div className="st-hold__cardhead">
+        {pic ? <img src={pic} alt="" /> : <span aria-hidden="true">{goodIcon(good)}</span>}
+        <strong>{name} × {t.cargo[good]}</strong>
+        <button type="button" className="st-hold__close" aria-label="Close" onClick={onClose}>×</button>
+      </div>
+      {tops.length === 0 ? (
+        <p>Nowhere you can reach on a full tank buys {name} today.</p>
+      ) : (
+        <ol className="st-hold__sales">
+          {tops.map((s, i) => {
+            const gain = here > 0 ? s.sell - here : 0;
+            return (
+              <li key={s.planet}>
+                <span>{i === 0 ? '🥇' : '🥈'} <strong>{galaxy.planets[s.planet].name}</strong> pays <strong>{s.sell}</strong></span>
+                {gain > 0 && <span className="st-hold__gain">+{gain} each</span>}
+                <small className="st-soft">{s.fuel} fuel away</small>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+      <p className="st-hold__here">{here > 0 ? <>Here it sells for <strong>{here}</strong>.{(tops[0]?.sell ?? 0) <= here && <> That's the best price in reach: sell it here!</>}</> : <>This planet doesn't buy {name}.</>}</p>
+      <p className="st-soft st-hold__note">Today's prices. They can change before you land.</p>
+    </div>
+  );
+}
+
+/** Groups the filled boxes by good (fillHold keeps each good's boxes together). */
+function byGood(fills: readonly Filled[]): { good: number; at: number[] }[] {
+  const out: { good: number; at: number[] }[] = [];
+  fills.forEach((f, i) => {
+    const last = out[out.length - 1];
+    if (last && last.good === f.good) last.at.push(i);
+    else out.push({ good: f.good, at: [i] });
+  });
+  return out;
+}
+
+export function HoldView({ t, after, galaxy, pushes }: { t: Trader; after?: Trader | null; galaxy?: Galaxy; pushes?: Pushes }) {
+  // The card: `pinned` from a tap or the keyboard stays until closed; `hover` follows the mouse.
+  const [pinned, setPinned] = useState<number | null>(null);
+  const [hover, setHover] = useState<number | null>(null);
+  const tops = useMemo(() => (galaxy ? topSales(galaxy, t, pushes, 2) : null), [galaxy, t, pushes]);
+  const shown = [hover, pinned].find((g) => g !== null && t.cargo[g] > 0) ?? null;
+  const pick = (good: number) => setPinned((p) => (p === good ? null : good));
+  const keys = (good: number) => (e: KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      pick(good);
+    }
+  };
+
   const capacity = holdsOf(t);
   const used = usedHolds(t);
   const fills = fillHold(t.cargo, capacity, after?.cargo);
@@ -90,25 +152,49 @@ export function HoldView({ t, after }: { t: Trader; after?: Trader | null }) {
         {boxes.map((b, i) => (
           <rect key={`e${i}`} className="st-hold__empty" x={b.x} y={b.y} width={b.w} height={b.h} rx={Math.min(b.w, b.h) * 0.16} />
         ))}
-        {fills.map((f, i) => boxes[i] && <Item key={`${f.good}-${f.n}`} box={boxes[i]} fill={f} />)}
+        {byGood(fills).map(({ good, at }) => {
+          const held = t.cargo[good];
+          const items = at.map((i) => boxes[i] && <Item key={`${good}-${fills[i].n}`} box={boxes[i]} fill={fills[i]} />);
+          // Only goods already in the hold open a card (a planned buy isn't yours yet).
+          if (!tops || held === 0) return <g key={good}>{items}</g>;
+          return (
+            <g
+              key={good}
+              role="button"
+              tabIndex={0}
+              aria-label={`${GOODS[good]}, ${held} in hold. Where it sells best`}
+              aria-pressed={pinned === good}
+              className={`st-hold__group ${shown === good ? 'st-hold__group--lit' : ''}`}
+              onClick={() => pick(good)}
+              onKeyDown={keys(good)}
+              onMouseEnter={() => setHover(good)}
+              onMouseLeave={() => setHover(null)}
+            >
+              {items}
+            </g>
+          );
+        })}
       </svg>
       {big && (
-        <ul className="st-hold__strip" aria-hidden="true">
+        <ul className="st-hold__strip">
           {t.cargo.map((q, good) => {
             const next = after?.cargo[good] ?? q;
             if (q === 0 && next === 0) return null;
             const pic = goodArt(GOODS[good]);
             return (
               <li key={GOODS[good]} className={next > q ? 'st-hold__tile--buying' : next < q ? 'st-hold__tile--selling' : ''}>
-                {pic ? <img src={pic} alt="" /> : <span>{goodIcon(good)}</span>}
-                <span>{GOODS[good]}</span>
-                <strong>× {q}{next !== q && ` → ${next}`}</strong>
+                <button type="button" disabled={!tops || q === 0} aria-pressed={pinned === good} onClick={() => pick(good)}>
+                  {pic ? <img src={pic} alt="" /> : <span aria-hidden="true">{goodIcon(good)}</span>}
+                  <span>{GOODS[good]}</span>
+                  <strong>× {q}{next !== q && ` → ${next}`}</strong>
+                </button>
               </li>
             );
           })}
           {used === 0 && afterUsed === 0 && <li className="st-soft">Empty</li>}
         </ul>
       )}
+      {galaxy && tops && shown !== null && <GoodCard galaxy={galaxy} t={t} good={shown} tops={tops[shown] ?? []} onClose={() => { setPinned(null); setHover(null); }} />}
     </div>
   );
 }

@@ -149,7 +149,7 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, want, level = '
         </details>
       )}
       <div className="st-hold-inpanel">
-        <HoldView t={t} after={any ? out?.state : null} />
+        <HoldView t={t} after={any ? out?.state : null} galaxy={galaxy} pushes={pushes} />
       </div>
       <div className="st-steps" role="group" aria-label="Market steps">
         <button type="button" className={`st-stepbtn ${step === 'sell' ? 'st-stepbtn--on' : ''}`} aria-pressed={step === 'sell'} onClick={() => setStep('sell')} data-coach="market-sell">
