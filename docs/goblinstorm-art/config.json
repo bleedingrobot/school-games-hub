@@ -1150,7 +1150,7 @@
     },
     {
       "name": "evolved-ranger-fireball",
-      "prompt": "Icon for the evolved weapon Hawk Flock: a flock of glowing hawks diving together, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "prompt": "Icon for the evolved weapon Hawk Flock: five brown hawks diving down together in a V, with a glowing green magic trail, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
       "size": [
         768,
         768
@@ -1164,7 +1164,7 @@
     },
     {
       "name": "weapon-ranger-lightning",
-      "prompt": "Icon for the weapon Stinging Wasps: three cute cartoon wasps zooming with motion lines. Suitable for children aged 8 to 11.",
+      "prompt": "Icon for the weapon Stinging Wasps: three small cute cartoon yellow and black striped wasps flying in a row, with little motion lines. Suitable for children aged 8 to 11.",
       "size": [
         768,
         768
@@ -1514,7 +1514,7 @@
     },
     {
       "name": "evolved-barbarian-blades",
-      "prompt": "Icon for the evolved weapon Flail Storm: a whirlwind of many spiked flails, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "prompt": "Icon for the evolved weapon Flail Storm: a spinning circle of many spiked iron balls swinging on chains around a centre, motion swirls, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
       "size": [
         768,
         768
@@ -1836,7 +1836,7 @@
     },
     {
       "name": "weapon-cleric-arrows",
-      "prompt": "Icon for the weapon Light Darts: three darts made of golden light flying. Suitable for children aged 8 to 11.",
+      "prompt": "Icon for the weapon Light Darts: three small glowing golden arrows made of light flying side by side to the right, with soft light trails. Suitable for children aged 8 to 11.",
       "size": [
         768,
         768
@@ -1892,7 +1892,7 @@
     },
     {
       "name": "weapon-rogue-blades",
-      "prompt": "Icon for the weapon Spinning Daggers: three daggers spinning in a ring with a purple swirl. Suitable for children aged 8 to 11.",
+      "prompt": "Icon for the weapon Spinning Daggers: three small silver daggers arranged in a circle, blades pointing outwards like a pinwheel, with a purple spinning swirl. Suitable for children aged 8 to 11.",
       "size": [
         768,
         768
@@ -1948,7 +1948,7 @@
     },
     {
       "name": "weapon-rogue-lightning",
-      "prompt": "Icon for the weapon Shadow Strikes: a purple shadow claw slashing down. Suitable for children aged 8 to 11.",
+      "prompt": "Icon for the weapon Shadow Strikes: three glowing purple claw slash marks striking down through dark purple shadow smoke. Suitable for children aged 8 to 11.",
       "size": [
         768,
         768
@@ -2396,7 +2396,7 @@
     },
     {
       "name": "weapon-dragonkid-nova",
-      "prompt": "Icon for the weapon Smoke Rings: grey smoke rings spreading out. Suitable for children aged 8 to 11.",
+      "prompt": "Icon for the weapon Smoke Rings: three round grey smoke rings floating one behind the other, with little orange embers. Suitable for children aged 8 to 11.",
       "size": [
         768,
         768
