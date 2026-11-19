@@ -147,9 +147,9 @@ select is(public.buy_goblinstorm('might') - 'shop', '{"bought": false, "reason":
 select pg_temp.reset();
 update public.goblinstorm_saves set gold = 2000, shop = '{"armour": 2}' where player = pg_temp.id('0b');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz');
-select is(public.buy_goblinstorm('armour'), '{"bought": true, "reason": null, "gold": 1500, "shop": {"armour": 3}}'::jsonb, 'Armour level 3 costs 500');
+select is(public.buy_goblinstorm('armour'), '{"bought": true, "reason": null, "gold": 1300, "shop": {"armour": 3}}'::jsonb, 'Armour level 3 costs 700');
 select is(public.buy_goblinstorm('armour') ->> 'reason', 'top', '... and Armour stops at 3');
-select is(public.buy_goblinstorm('gold') -> 'gold', '1350'::jsonb, 'Gold level 1 costs 150');
+select is(public.buy_goblinstorm('gold') -> 'gold', '1100'::jsonb, 'Gold level 1 costs 200');
 select throws_ok($$ select public.buy_goblinstorm('rocket') $$, '22023', null, 'only the six upgrades');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
 select is(public.buy_goblinstorm('might') ->> 'reason', 'none', 'a teacher has no save to buy with');

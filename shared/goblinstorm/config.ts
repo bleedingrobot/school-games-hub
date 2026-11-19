@@ -321,7 +321,7 @@ export const SHOP: Record<ShopId, { name: string; blurb: string; step: number }>
 export const SHOP_IDS = Object.keys(SHOP) as ShopId[];
 export const SHOP_LEVELS = 5;
 export const SHOP_ARMOUR_MAX = 3;
-export const SHOP_COSTS = [150, 300, 500, 800, 1200];
+export const SHOP_COSTS = [200, 400, 700, 1100, 1600];
 export type ShopLevels = Partial<Record<ShopId, number>>;
 
 /** Monster damage grows with the map's tier more gently than health: × (1 + (tier − 1) × this). */

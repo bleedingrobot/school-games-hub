@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'goblinstorm-dearer-shop-2026-11-20',
+    date: '2026-11-20',
+    emoji: '🪙',
+    title: 'Goblin Storm: the shop costs more',
+    text: 'Shop upgrades now cost more gold. Save up! What you have bought stays yours.',
+    game: 'goblinstorm',
+  },
+  {
     id: 'goblinstorm-tough-ending-2026-11-20',
     date: '2026-11-20',
     emoji: '💪',
