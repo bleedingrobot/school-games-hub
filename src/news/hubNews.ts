@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'trader-show-map-2026-11-20',
+    date: '2026-11-20',
+    emoji: '🗺️',
+    title: 'Star Trader: find it on the star chart',
+    text: 'On the hold card, press Show on star chart to see where to fly and the way there.',
+    game: 'trader',
+  },
+  {
     id: 'trader-you-paid-2026-11-20',
     date: '2026-11-20',
     emoji: '💰',

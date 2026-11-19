@@ -61,7 +61,7 @@ const market = () => screen.findByRole('heading', { name: 'Market' });
 
 describe('Star Trader screen (talking to the real server logic on a pretend database)', () => {
 
-  it('a trade is sent with the next jump, not on its own, and the server saves it', async () => {
+  it('a trade is sent with the next jump, not on its own, and the server saves it; the hold card finds where to sell on the star chart', async () => {
     const { trial, sent } = play();
     await market();
     const hud = screen.getByTitle('Your credits');
@@ -81,6 +81,13 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
     // Nothing but the opening request has gone to the server yet.
     expect(sent.filter((b) => b.action === 'act')).toHaveLength(0);
     expect(trial.data.game?.game.t.credits).toBe(100);
+
+    // The hold card (H.2 to H.4): tap the Water in the hold, see what you paid, and find the best place on the star chart.
+    fireEvent.click(screen.getAllByRole('button', { name: /^Water, 1 in hold/ })[0]);
+    expect(screen.getByText(/You paid/)).toBeTruthy();
+    fireEvent.click(screen.getAllByRole('button', { name: /Show on star chart/ })[0]);
+    await screen.findByRole('heading', { name: 'Star chart' });
+    expect(document.querySelectorAll('.st-planet--pulse')).toHaveLength(1);
   }, 20000);
 
 });

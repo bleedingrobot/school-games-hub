@@ -3,7 +3,7 @@
  * every hold, cargo pods clamped alongside, and each box showing what's in it. While a trade is picked but not done,
  * boxes about to be bought show faintly and boxes about to be sold fade. Big ships on a narrow phone show a strip
  * instead: one tile per good with how many. Tap or hover a good (H.2) for a card: the two best places in reach to sell
- * it today, and what it sells for here.
+ * it today, and what it sells for here; what you paid (H.3); and a button to find each place on the star chart (H.4).
  */
 import { useMemo, useState, type KeyboardEvent } from 'react';
 import { GOODS, SHIPS } from '../../../shared/trader/config';
@@ -50,7 +50,7 @@ function Item({ box, fill }: { box: Box; fill: Filled }) {
   );
 }
 
-function GoodCard({ galaxy, t, good, tops, onClose }: { galaxy: Galaxy; t: Trader; good: number; tops: readonly BestSale[]; onClose: () => void }) {
+function GoodCard({ galaxy, t, good, tops, onClose, onShowMap }: { galaxy: Galaxy; t: Trader; good: number; tops: readonly BestSale[]; onClose: () => void; onShowMap?: (planet: number) => void }) {
   const name = GOODS[good];
   const pic = goodArt(name);
   const here = t.market.find((l) => l.good === good)?.sell ?? 0;
@@ -78,6 +78,11 @@ function GoodCard({ galaxy, t, good, tops, onClose }: { galaxy: Galaxy; t: Trade
                 {gain > 0 && <span className="st-hold__gain">+{gain} each</span>}
                 {paid !== null && gain < 0 && <span className="st-hold__loss">{gain} each</span>}
                 <small className="st-soft">{s.fuel} fuel away</small>
+                {onShowMap && (
+                  <button type="button" className="st-hold__mapbtn" onClick={() => onShowMap(s.planet)}>
+                    🗺️ Show on star chart
+                  </button>
+                )}
               </li>
             );
           })}
@@ -109,7 +114,14 @@ function byGood(fills: readonly Filled[]): { good: number; at: number[] }[] {
   return out;
 }
 
-export function HoldView({ t, after, galaxy, pushes }: { t: Trader; after?: Trader | null; galaxy?: Galaxy; pushes?: Pushes }) {
+export function HoldView({ t, after, galaxy, pushes, onShowMap }: {
+  t: Trader;
+  after?: Trader | null;
+  galaxy?: Galaxy;
+  pushes?: Pushes;
+  /** H.4: opens the star chart with this planet picked and pulsing. */
+  onShowMap?: (planet: number) => void;
+}) {
   // The card: `pinned` from a tap or the keyboard stays until closed; `hover` follows the mouse.
   const [pinned, setPinned] = useState<number | null>(null);
   const [hover, setHover] = useState<number | null>(null);
@@ -209,7 +221,7 @@ export function HoldView({ t, after, galaxy, pushes }: { t: Trader; after?: Trad
           {used === 0 && afterUsed === 0 && <li className="st-soft">Empty</li>}
         </ul>
       )}
-      {galaxy && tops && shown !== null && <GoodCard galaxy={galaxy} t={t} good={shown} tops={tops[shown] ?? []} onClose={() => { setPinned(null); setHover(null); }} />}
+      {galaxy && tops && shown !== null && <GoodCard galaxy={galaxy} t={t} good={shown} tops={tops[shown] ?? []} onClose={() => { setPinned(null); setHover(null); }} onShowMap={onShowMap} />}
     </div>
   );
 }

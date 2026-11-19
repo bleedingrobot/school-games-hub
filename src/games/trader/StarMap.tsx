@@ -55,7 +55,7 @@ function usePaintedIcons(names: readonly string[]): void {
 const VIEW = GRID_SIZE - 1 + 3;
 const pos = (n: number): number => ((n + 1.5) / VIEW) * 100;
 
-export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuide = null, level = 'lots', unlimited = false, onAim, onJump, onRefuel }: {
+export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuide = null, level = 'lots', unlimited = false, focus = null, onAim, onJump, onRefuel }: {
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
@@ -71,10 +71,19 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuid
   guide?: number | null;
   /** Bolt's help level: trip ideas and guide lines (for the tapped planet) on Lots; the customs and pirate warnings unless Off. */
   level?: HelpLevel;
+  /** From the hold card (H.4): a planet to pick and pulse, with the route to it when a full tank reaches. */
+  focus?: { planet: number; n: number } | null;
   onJump: (dest: number) => void;
   onRefuel: (units: number) => void;
 }) {
-  const [picked, setPicked] = useState<number | null>(null);
+  const [picked, setPicked] = useState<number | null>(focus?.planet ?? null);
+  const [pulse, setPulse] = useState<number | null>(focus?.planet ?? null);
+  useEffect(() => {
+    if (!focus) return;
+    setPicked(focus.planet);
+    setPulse(focus.planet);
+    document.querySelector(`[data-coach="planet-${focus.planet}"]`)?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+  }, [focus]);
   const [xs, setXs] = useState('');
   const [ys, setYs] = useState('');
   usePaintedIcons(galaxy.planets.map((p) => p.name));
@@ -106,7 +115,10 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuid
 
   function pick(id: number) {
     setPicked(id === t.location ? null : id);
+    setPulse(null);
   }
+  // The route to the pulsing planet: across, then up or down, like reading its coordinates (only if a full tank reaches).
+  const routeTo = pulse !== null && pulse !== t.location && galaxy.planets[pulse] && distance(here, galaxy.planets[pulse]) <= tank ? galaxy.planets[pulse] : null;
   const reach = t.fuel;
   const diamond = useMemo(() => {
     const cx = here.x;
@@ -153,6 +165,9 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuid
                 <circle cx="-0.75" cy={galaxy.planets[guide].y} r="0.48" fill="none" stroke="#fde047" strokeWidth="0.08" />
               </g>
             )}
+            {routeTo && (
+              <path className="st-route" d={`M ${here.x} ${here.y} H ${routeTo.x} V ${routeTo.y}`} fill="none" stroke="#4ade80" strokeWidth="0.14" strokeDasharray="0.35 0.22" strokeLinecap="round" />
+            )}
             {aim && (
               <g>
                 {/* Where the typed numbers land: lines in from the x and y axes and a crosshair. */}
@@ -170,7 +185,7 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuid
               <button
                 key={p.id}
                 type="button"
-                className={`st-planet ${p.id === t.location ? 'st-planet--here' : ''} ${picked === p.id ? 'st-planet--picked' : ''} ${dest?.id === p.id ? 'st-planet--aimed' : ''} ${far ? 'st-planet--far' : ''}`}
+                className={`st-planet ${p.id === t.location ? 'st-planet--here' : ''} ${picked === p.id ? 'st-planet--picked' : ''} ${dest?.id === p.id ? 'st-planet--aimed' : ''} ${pulse === p.id ? 'st-planet--pulse' : ''} ${far ? 'st-planet--far' : ''}`}
                 style={{ left: `${pos(p.x)}%`, top: `${pos(p.y)}%` }}
                 onClick={() => pick(p.id)}
                 data-coach={`planet-${p.id}`}
