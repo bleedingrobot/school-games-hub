@@ -119,6 +119,8 @@ select is((select how from public.trophy_types where id = 'goblinstorm-crown'), 
 update public.goblinstorm_saves set bosses = bosses || 4::smallint where player = pg_temp.id('0a');
 select is((select array_agg(t.trophy order by t.trophy) from public.trophies t where t.player = pg_temp.id('0a') and t.trophy like 'goblinstorm-%'),
   array['goblinstorm-crown', 'goblinstorm-scale'], 'beating the Fire Dragon wins the Fire Dragon''s Scale');
+-- Back to 2 bosses for the board and save checks below (the trophy stays).
+update public.goblinstorm_saves set bosses = array_remove(bosses, 4::smallint) where player = pg_temp.id('0a');
 select is((select coalesce(sum(n), 0)::integer from public.quest_tallies q where q.player = pg_temp.id('0a') and q.measure = 'goblinstorm_runs'), 3,
   'each run played to the end counts for the class quest');
 
