@@ -68,6 +68,7 @@ export type SpaceAction =
   | { action: 'create'; setup: LiveSetup; lobby: boolean }
   | { action: 'join'; code: string }
   | { action: 'join'; gameId: string }
+  | { action: 'invite'; invite: number }
   | { action: 'cancel' | 'leave' | 'times-up' | 'take-controls' | 'rematch'; gameId: string }
   | { action: 'launch'; gameId: string; bots: number }
   | { action: 'roll'; gameId: string; version: number }

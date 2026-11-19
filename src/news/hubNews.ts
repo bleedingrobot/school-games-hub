@@ -30,6 +30,14 @@ export const HUB_NEWS: NewsItem[] = [
     game: 'clan-quest',
   },
   {
+    id: 'invite-by-name-2026-11-20',
+    date: '2026-11-20',
+    emoji: '🎲',
+    title: 'Invite a friend by name',
+    text: 'Invite anyone who’s here to Chess, Checkers, 101, Wormholes or Power Clash!',
+    to: '/lobby',
+  },
+  {
     id: 'play-a-friend-lobby-2026-11-20',
     date: '2026-11-20',
     emoji: '🤝',

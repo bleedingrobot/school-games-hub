@@ -2,6 +2,7 @@
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
 import { userIdFromToken } from '../_shared/signIn';
+import { inviteServices } from '../_shared/invites';
 import { powerClashHandler, type PowerGameRow } from './handler';
 
 declare const Deno: {
@@ -32,6 +33,7 @@ const isUuid = (id: string) => /^[0-9a-f-]{36}$/i.test(id);
 
 Deno.serve(
   powerClashHandler({
+    ...inviteServices(admin, 'power-clash'),
     now: () => Date.now(),
     random: () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32,
     userIdFor: userIdFromToken(admin.auth),

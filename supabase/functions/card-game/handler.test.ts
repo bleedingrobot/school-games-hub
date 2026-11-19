@@ -27,6 +27,8 @@ function world() {
   const random = seeded(11);
 
   const services: Services = {
+    takeInvite: async () => null,
+    inviteMade: async () => {},
     now: () => clock,
     random,
     dice: seededDice('card-game-test'),

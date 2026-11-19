@@ -2,6 +2,7 @@
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
 import { userIdFromToken } from '../_shared/signIn';
+import { inviteServices } from '../_shared/invites';
 import { secureDice } from '../../../shared/card101/random';
 import { cardGameHandler, type CardGameRow } from './handler';
 
@@ -33,6 +34,7 @@ const isUuid = (id: string) => /^[0-9a-f-]{36}$/i.test(id);
 
 Deno.serve(
   cardGameHandler({
+    ...inviteServices(admin, 'card-game'),
     now: () => Date.now(),
     random: () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32,
     dice: secureDice,

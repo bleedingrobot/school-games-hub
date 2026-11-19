@@ -1,6 +1,7 @@
 /**
  * The new Lobby's parts (docs/plans/play-anyone/PLAN.md, section D, stage 3): challenges waiting for me, the game tiles
- * (greyed with a reason and a fix when I can't play yet), and who's here with what we can play together.
+ * (greyed with a reason and a fix when I can't play yet), and who's here with what we can play together: the live games'
+ * challenges, and invites by name to the board games (stage 4).
  * Lobby.tsx puts them together with the start-a-game form, the open games and the code box.
  */
 import { useState } from 'react';
@@ -8,7 +9,7 @@ import { Link } from 'react-router';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { ClassTag, SchoolPlayerList } from '../components/SchoolPlayerList';
 import { GAME_NAMES, askLine } from '../components/challengeWords';
-import type { AskGame, HubAsk } from '../data/hubAsks';
+import { isInviteGame, type AskGame, type HubAsk, type InviteGame, type LiveGame } from '../data/hubAsks';
 import type { HerePlayer, MyGame, MyState, WithThem } from '../data/lobbyHere';
 import './lobbyFriends.css';
 
@@ -24,14 +25,32 @@ export const FIRST: Record<MyGame, { why: string; fix: string; to: string }> = {
   raid: { why: 'Start your clan first', fix: 'Start my clan', to: '/clan-quest' },
 };
 
-/** The one-word button for each live game. */
-const SEND: Record<AskGame, string> = { archery: 'Archery fight', 'dragon-maths': 'Dragon Maths clash', 'clan-quest': 'Clan duel' };
-export const EMOJI: Record<AskGame, string> = { archery: '🏹', 'dragon-maths': '🐉', 'clan-quest': '🛡️' };
+/** The one-word button for each game. */
+const SEND: Record<AskGame, string> = {
+  archery: 'Archery fight',
+  'dragon-maths': 'Dragon Maths clash',
+  'clan-quest': 'Clan duel',
+  chess: 'Chess',
+  checkers: 'Checkers',
+  '101': '101',
+  space: 'Wormholes',
+  'power-clash': 'Power Clash',
+};
+export const EMOJI: Record<AskGame, string> = {
+  archery: '🏹',
+  'dragon-maths': '🐉',
+  'clan-quest': '🛡️',
+  chess: '♟️',
+  checkers: '🔴',
+  '101': '🃏',
+  space: '🚀',
+  'power-clash': '⚡',
+};
 
-/** Can I play this live game with them, and if not, why (in words for the pupil). */
+/** Can I play this game with them, and if not, why (in words for the pupil). Board games are always 'ready' for me here. */
 export function withThemWords(game: AskGame, mine: MyState, them: HerePlayer): { ok: boolean; text: string } {
   if (mine === 'off') return { ok: false, text: PAUSED };
-  if (mine === 'none') return { ok: false, text: FIRST[game].why };
+  if (mine === 'none' && !isInviteGame(game)) return { ok: false, text: FIRST[game].why };
   const state: WithThem | undefined = them.games[game];
   const name = them.name;
   switch (state) {
@@ -42,7 +61,7 @@ export function withThemWords(game: AskGame, mine: MyState, them: HerePlayer): {
     case 'off':
       return { ok: false, text: `${name}’s class has paused ${GAME_NAMES[game]}` };
     case 'busy':
-      return { ok: false, text: `${name} is busy in a game right now` };
+      return { ok: false, text: isInviteGame(game) ? `${name} has another invite waiting` : `${name} is busy in a game right now` };
     default:
       return { ok: false, text: `${name} can’t play this right now` };
   }
@@ -140,14 +159,16 @@ export function GameTiles({ tiles }: { tiles: Tile[] }) {
 // Who's here (D4)
 // ---------------------------------------------------------------------------
 
-export function WhosHere({ online, me, games, focus, onClearFocus, sending, problem, onSend }: {
+export function WhosHere({ online, me, games, boards, focus, onClearFocus, sending, problem, onSend }: {
   /** null while loading. */
   online: HerePlayer[] | null;
   me: Record<MyGame, MyState> | null;
   /** The live games shown (their code switches are on). */
-  games: AskGame[];
+  games: LiveGame[];
+  /** The board games I can invite a kid to (friends' games on, not paused for me). */
+  boards: InviteGame[];
   /** A live game picked from its tile: each kid shows only that game. */
-  focus: AskGame | null;
+  focus: LiveGame | null;
   onClearFocus: () => void;
   sending: boolean;
   problem: string;
@@ -155,13 +176,35 @@ export function WhosHere({ online, me, games, focus, onClearFocus, sending, prob
 }) {
   const [openKid, setOpenKid] = useState<string | null>(null);
   // A game I can't play myself shows only on its tile (with the reason and the fix), not on every kid.
-  const shownGames = focus ? [focus] : games.filter((g) => !me || me[g] === 'ready');
+  const shownGames: AskGame[] = focus ? [focus] : [...games.filter((g) => !me || me[g] === 'ready'), ...boards];
+
+  /** The board games that can't be played with them, one line per reason (not five "has paused" lines). */
+  const boardsNot = (p: HerePlayer) => {
+    const why = new Map<string, InviteGame[]>();
+    for (const g of shownGames) {
+      if (!isInviteGame(g) || p.games[g] === 'ok') continue;
+      const key = p.games[g] ?? 'unknown';
+      why.set(key, [...(why.get(key) ?? []), g]);
+    }
+    return [...why].map(([state, games]) => {
+      const names = games.map((g) => GAME_NAMES[g]);
+      const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0];
+      const text = state === 'off' ? `${p.name}’s class has paused ${list}` : state === 'busy' ? `${p.name} has another invite waiting` : `${p.name} can’t play ${list} right now`;
+      return (
+        <span key={state} className="lobby-here__no">
+          <span aria-hidden="true">{games.length > 1 ? '🎲' : EMOJI[games[0]]} </span>
+          {text}
+        </span>
+      );
+    });
+  };
 
   const choices = (p: HerePlayer) => (
     <span className="lobby-here__games">
       {shownGames.length === 0 && <span className="lobby-here__no">Look at the games above to see what to do first.</span>}
       {shownGames.map((g) => {
-        const w = me ? withThemWords(g, me[g], p) : { ok: false, text: 'Checking…' };
+        if (isInviteGame(g) && p.games[g] !== 'ok') return null;
+        const w = isInviteGame(g) ? withThemWords(g, 'ready', p) : me ? withThemWords(g, me[g], p) : { ok: false, text: 'Checking…' };
         return w.ok ? (
           <button key={g} type="button" className="button button--primary" disabled={sending} onClick={() => onSend(g, p)}>
             <span aria-hidden="true">{EMOJI[g]} </span>
@@ -174,6 +217,7 @@ export function WhosHere({ online, me, games, focus, onClearFocus, sending, prob
           </span>
         );
       })}
+      {boardsNot(p)}
     </span>
   );
 

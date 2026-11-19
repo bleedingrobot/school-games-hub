@@ -35,6 +35,8 @@ function world() {
   const rolled: number[] = [];
 
   const services: Services = {
+    takeInvite: async () => null,
+    inviteMade: async () => {},
     now: () => clock,
     random: () => {
       const value = random();

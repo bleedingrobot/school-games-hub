@@ -31,6 +31,7 @@ export type CardAction =
   | { action: 'create'; players: number; settings: { target: Target }; lobby: boolean }
   | { action: 'join'; code: string }
   | { action: 'join'; gameId: string }
+  | { action: 'invite'; invite: number }
   | { action: 'cancel' | 'leave' | 'start' | 'peek-done' | 'next' | 'times-up' | 'rematch'; gameId: string }
   | { action: 'draw'; gameId: string; version: number; from: 'stack' | 'discard' }
   | { action: 'swap'; gameId: string; version: number; slot: Slot }
