@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'trader-you-paid-2026-11-20',
+    date: '2026-11-20',
+    emoji: '💰',
+    title: 'Star Trader: what did you pay?',
+    text: 'The hold card shows what you paid each, and warns you if selling here loses money.',
+    game: 'trader',
+  },
+  {
     id: 'trader-sells-best-2026-11-20',
     date: '2026-11-20',
     emoji: '🪐',
