@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'goblinstorm-hero-powers-2026-11-20',
+    date: '2026-11-20',
+    emoji: '🧙',
+    title: 'Goblin Storm: every hero has their own powers',
+    text: 'The Wizard casts runes, the Ranger sends hawks, the Rogue throws daggers. Try them all!',
+    game: 'goblinstorm',
+  },
+  {
     id: 'goblinstorm-gold-card-2026-11-20',
     date: '2026-11-20',
     emoji: '🪙',

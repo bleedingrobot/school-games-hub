@@ -1105,6 +1105,1406 @@
       "file": "dragonkid",
       "max": 384,
       "small": 160
+    },
+    {
+      "name": "weapon-ranger-blades",
+      "prompt": "Icon for the weapon Whirling Leaves: sharp green leaves whirling in a ring with a green swirl. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/ranger",
+      "file": "blades",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-ranger-blades",
+      "prompt": "Icon for the evolved weapon Leaf Storm: a huge whirlwind of glowing green leaves, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/ranger",
+      "file": "blades",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-ranger-fireball",
+      "prompt": "Icon for the weapon Hunting Hawk: a brown hawk diving with wings swept back. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/ranger",
+      "file": "fireball",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-ranger-fireball",
+      "prompt": "Icon for the evolved weapon Hawk Flock: a flock of glowing hawks diving together, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/ranger",
+      "file": "fireball",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-ranger-lightning",
+      "prompt": "Icon for the weapon Stinging Wasps: three cute cartoon wasps zooming with motion lines. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/ranger",
+      "file": "lightning",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-ranger-lightning",
+      "prompt": "Icon for the evolved weapon Hornet Swarm: a big buzzing swarm of cute cartoon hornets, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/ranger",
+      "file": "lightning",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-ranger-aura",
+      "prompt": "Icon for the weapon Thorn Ring: a round ring of green thorny vines. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/ranger",
+      "file": "aura",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-ranger-aura",
+      "prompt": "Icon for the evolved weapon Wild Brambles: a huge burst of thorny brambles with pink flowers, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/ranger",
+      "file": "aura",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-ranger-nova",
+      "prompt": "Icon for the weapon Tangle Vines: rings of curling green vines spreading out. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/ranger",
+      "file": "nova",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-ranger-nova",
+      "prompt": "Icon for the evolved weapon Forest Grasp: giant tree roots spreading out in every direction, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/ranger",
+      "file": "nova",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-ranger-axes",
+      "prompt": "Icon for the weapon Boomerangs: two wooden boomerangs spinning in an arc. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/ranger",
+      "file": "axes",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-ranger-axes",
+      "prompt": "Icon for the evolved weapon Boomerang Tornado: a tornado of spinning wooden boomerangs, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/ranger",
+      "file": "axes",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-ranger-bubble",
+      "prompt": "Icon for the weapon Bark Shield: a round shield made of tree bark with a leaf on it. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/ranger",
+      "file": "bubble",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-ranger-bubble",
+      "prompt": "Icon for the evolved weapon Great Oak: a mighty glowing oak tree with a strong trunk, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/ranger",
+      "file": "bubble",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-wizard-blades",
+      "prompt": "Icon for the weapon Orbiting Runes: three glowing purple rune stones circling in a ring. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/wizard",
+      "file": "blades",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-wizard-blades",
+      "prompt": "Icon for the evolved weapon Rune Storm: a whirlwind of dozens of glowing purple runes, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/wizard",
+      "file": "blades",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-wizard-lightning",
+      "prompt": "Icon for the weapon Magic Missiles: three glowing purple magic bolts streaking down. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/wizard",
+      "file": "lightning",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-wizard-lightning",
+      "prompt": "Icon for the evolved weapon Star Fall: shining stars falling from a purple night sky, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/wizard",
+      "file": "lightning",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-wizard-aura",
+      "prompt": "Icon for the weapon Arcane Circle: a glowing purple magic circle with swirling symbols. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/wizard",
+      "file": "aura",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-wizard-aura",
+      "prompt": "Icon for the evolved weapon Spell Burst: a huge burst of purple and blue magic sparkles, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/wizard",
+      "file": "aura",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-wizard-nova",
+      "prompt": "Icon for the weapon Time Ripple: a magic pocket watch sending out blue rings. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/wizard",
+      "file": "nova",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-wizard-nova",
+      "prompt": "Icon for the evolved weapon Time Stop: a giant glowing hourglass with frozen sparkles, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/wizard",
+      "file": "nova",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-wizard-axes",
+      "prompt": "Icon for the weapon Flying Spellbooks: two flying spellbooks with flapping pages. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/wizard",
+      "file": "axes",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-wizard-axes",
+      "prompt": "Icon for the evolved weapon Book Tornado: a tornado of flying spellbooks and loose pages, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/wizard",
+      "file": "axes",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-wizard-arrows",
+      "prompt": "Icon for the weapon Wand Sparks: a magic wand shooting a line of sparkles. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/wizard",
+      "file": "arrows",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-wizard-arrows",
+      "prompt": "Icon for the evolved weapon Spark Rain: sparkling magic raining down from a purple cloud, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/wizard",
+      "file": "arrows",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-wizard-bubble",
+      "prompt": "Icon for the weapon Magic Shield: a glowing purple magic bubble shield. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/wizard",
+      "file": "bubble",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-wizard-bubble",
+      "prompt": "Icon for the evolved weapon Crystal Fortress: a sparkling purple crystal fortress, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/wizard",
+      "file": "bubble",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-barbarian-blades",
+      "prompt": "Icon for the weapon Whirling Flails: two spiked iron balls on chains spinning in a ring. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/barbarian",
+      "file": "blades",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-barbarian-blades",
+      "prompt": "Icon for the evolved weapon Flail Storm: a whirlwind of many spiked flails, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/barbarian",
+      "file": "blades",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-barbarian-fireball",
+      "prompt": "Icon for the weapon Hurled Boulder: a big round grey boulder flying with dust trail. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/barbarian",
+      "file": "fireball",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-barbarian-fireball",
+      "prompt": "Icon for the evolved weapon Boulder Barrage: many boulders crashing down from the sky, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/barbarian",
+      "file": "fireball",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-barbarian-lightning",
+      "prompt": "Icon for the weapon Thunder Stomp: a big fur boot stomping the ground making cracks. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/barbarian",
+      "file": "lightning",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-barbarian-lightning",
+      "prompt": "Icon for the evolved weapon Earthquake: the ground cracking open with flying rocks, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/barbarian",
+      "file": "lightning",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-barbarian-aura",
+      "prompt": "Icon for the weapon Battle Fury: a ring of fierce red glowing energy. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/barbarian",
+      "file": "aura",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-barbarian-aura",
+      "prompt": "Icon for the evolved weapon Berserk Blaze: a huge burst of red and orange fury flames, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/barbarian",
+      "file": "aura",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-barbarian-nova",
+      "prompt": "Icon for the weapon Battle Cry: a viking horn blowing out rings of sound. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/barbarian",
+      "file": "nova",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-barbarian-nova",
+      "prompt": "Icon for the evolved weapon Mighty Roar: a giant horn blasting huge rings of sound, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/barbarian",
+      "file": "nova",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-barbarian-arrows",
+      "prompt": "Icon for the weapon Throwing Spears: two wooden spears with stone tips flying. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/barbarian",
+      "file": "arrows",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-barbarian-arrows",
+      "prompt": "Icon for the evolved weapon Spear Rain: spears raining down from a stormy sky, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/barbarian",
+      "file": "arrows",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-barbarian-bubble",
+      "prompt": "Icon for the weapon War Shield: a round wooden viking shield with iron rim. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/barbarian",
+      "file": "bubble",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-barbarian-bubble",
+      "prompt": "Icon for the evolved weapon Iron Fortress: a strong iron fortress with spikes, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/barbarian",
+      "file": "bubble",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-cleric-blades",
+      "prompt": "Icon for the weapon Holy Hammers: three glowing golden hammers circling in a ring. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/cleric",
+      "file": "blades",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-cleric-blades",
+      "prompt": "Icon for the evolved weapon Hammer Halo: a shining halo made of many golden hammers, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/cleric",
+      "file": "blades",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-cleric-fireball",
+      "prompt": "Icon for the weapon Holy Orb: a glowing white and gold orb of light. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/cleric",
+      "file": "fireball",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-cleric-fireball",
+      "prompt": "Icon for the evolved weapon Orb Storm: many glowing golden orbs raining down, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/cleric",
+      "file": "fireball",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-cleric-lightning",
+      "prompt": "Icon for the weapon Sunbeams: golden beams of sunlight shining down. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/cleric",
+      "file": "lightning",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-cleric-lightning",
+      "prompt": "Icon for the evolved weapon Judgement: huge golden pillars of light from the sky, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/cleric",
+      "file": "lightning",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-cleric-nova",
+      "prompt": "Icon for the weapon Holy Bell: a golden bell ringing with rings of light. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/cleric",
+      "file": "nova",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-cleric-nova",
+      "prompt": "Icon for the evolved weapon Great Bell: a giant golden bell sending out huge rings of light, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/cleric",
+      "file": "nova",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-cleric-axes",
+      "prompt": "Icon for the weapon Holy Maces: two golden maces spinning in an arc. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/cleric",
+      "file": "axes",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-cleric-axes",
+      "prompt": "Icon for the evolved weapon Mace Tornado: a tornado of shining golden maces, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/cleric",
+      "file": "axes",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-cleric-arrows",
+      "prompt": "Icon for the weapon Light Darts: three darts made of golden light flying. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/cleric",
+      "file": "arrows",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-cleric-arrows",
+      "prompt": "Icon for the evolved weapon Light Rain: golden light raining from a bright cloud, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/cleric",
+      "file": "arrows",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-cleric-bubble",
+      "prompt": "Icon for the weapon Angel Shield: a white and gold shield with a small wing on each side. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/cleric",
+      "file": "bubble",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-cleric-bubble",
+      "prompt": "Icon for the evolved weapon Angel Wings: a pair of huge glowing white angel wings, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/cleric",
+      "file": "bubble",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-rogue-blades",
+      "prompt": "Icon for the weapon Spinning Daggers: three daggers spinning in a ring with a purple swirl. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/rogue",
+      "file": "blades",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-rogue-blades",
+      "prompt": "Icon for the evolved weapon Dagger Storm: a whirlwind of dozens of daggers, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/rogue",
+      "file": "blades",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-rogue-fireball",
+      "prompt": "Icon for the weapon Smoke Bombs: a round black smoke bomb with a lit fuse. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/rogue",
+      "file": "fireball",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-rogue-fireball",
+      "prompt": "Icon for the evolved weapon Bomb Barrage: many smoke bombs falling with puffs of smoke, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/rogue",
+      "file": "fireball",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-rogue-lightning",
+      "prompt": "Icon for the weapon Shadow Strikes: a purple shadow claw slashing down. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/rogue",
+      "file": "lightning",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-rogue-lightning",
+      "prompt": "Icon for the evolved weapon Shadow Army: many friendly purple shadow figures leaping, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/rogue",
+      "file": "lightning",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-rogue-aura",
+      "prompt": "Icon for the weapon Caltrops: a scatter of little spiky metal caltrops in a ring. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/rogue",
+      "file": "aura",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-rogue-aura",
+      "prompt": "Icon for the evolved weapon Spike Field: a big field of glowing spikes bursting up, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/rogue",
+      "file": "aura",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-rogue-nova",
+      "prompt": "Icon for the weapon Sticky Nets: a round rope net spreading out. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/rogue",
+      "file": "nova",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-rogue-nova",
+      "prompt": "Icon for the evolved weapon Giant Net: a giant glowing rope net spreading wide, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/rogue",
+      "file": "nova",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-rogue-axes",
+      "prompt": "Icon for the weapon Throwing Stars: two silver throwing stars spinning. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/rogue",
+      "file": "axes",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-rogue-axes",
+      "prompt": "Icon for the evolved weapon Star Tornado: a tornado of spinning silver throwing stars, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/rogue",
+      "file": "axes",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-rogue-arrows",
+      "prompt": "Icon for the weapon Throwing Knives: three slim throwing knives flying in a row. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/rogue",
+      "file": "arrows",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-rogue-arrows",
+      "prompt": "Icon for the evolved weapon Knife Rain: knives raining down from a dark purple cloud, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/rogue",
+      "file": "arrows",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-rogue-bubble",
+      "prompt": "Icon for the weapon Shadow Cloak: a dark purple hooded cloak floating. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/rogue",
+      "file": "bubble",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-rogue-bubble",
+      "prompt": "Icon for the evolved weapon Night Veil: a swirling veil of night sky with stars, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/rogue",
+      "file": "bubble",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-witch-blades",
+      "prompt": "Icon for the weapon Icicle Ring: three icicles spinning in a ring with a frosty swirl. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/witch",
+      "file": "blades",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-witch-blades",
+      "prompt": "Icon for the evolved weapon Icicle Storm: a whirlwind of dozens of glowing icicles, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/witch",
+      "file": "blades",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-witch-fireball",
+      "prompt": "Icon for the weapon Ice Bolt: a pointed bolt of blue ice with a frosty trail. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/witch",
+      "file": "fireball",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-witch-fireball",
+      "prompt": "Icon for the evolved weapon Hailstorm: hailstones pouring down from a blue cloud, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/witch",
+      "file": "fireball",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-witch-lightning",
+      "prompt": "Icon for the weapon Frost Spikes: sharp blue ice spikes bursting up from the ground. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/witch",
+      "file": "lightning",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-witch-lightning",
+      "prompt": "Icon for the evolved weapon Glacier Burst: a huge burst of ice crystals and glacier chunks, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/witch",
+      "file": "lightning",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-witch-aura",
+      "prompt": "Icon for the weapon Chill Circle: a frosty ring of snowflakes and cold mist. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/witch",
+      "file": "aura",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-witch-aura",
+      "prompt": "Icon for the evolved weapon Polar Flare: a burst of cold blue and white polar light, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/witch",
+      "file": "aura",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-witch-axes",
+      "prompt": "Icon for the weapon Snowballs: two round snowballs flying in an arc. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/witch",
+      "file": "axes",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-witch-axes",
+      "prompt": "Icon for the evolved weapon Snowball Avalanche: an avalanche of tumbling snowballs, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/witch",
+      "file": "axes",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-witch-arrows",
+      "prompt": "Icon for the weapon Ice Shards: three sharp ice shards flying in a row. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/witch",
+      "file": "arrows",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-witch-arrows",
+      "prompt": "Icon for the evolved weapon Shard Rain: ice shards raining down from a blue cloud, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/witch",
+      "file": "arrows",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-witch-bubble",
+      "prompt": "Icon for the weapon Ice Wall: a shield-shaped wall of clear blue ice. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/witch",
+      "file": "bubble",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-witch-bubble",
+      "prompt": "Icon for the evolved weapon Ice Castle: a sparkling blue ice castle, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/witch",
+      "file": "bubble",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-dragonkid-blades",
+      "prompt": "Icon for the weapon Ember Ring: glowing hot embers spinning in a ring. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/dragonkid",
+      "file": "blades",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-dragonkid-blades",
+      "prompt": "Icon for the evolved weapon Inferno Ring: a huge blazing ring of fire, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/dragonkid",
+      "file": "blades",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-dragonkid-lightning",
+      "prompt": "Icon for the weapon Lava Bursts: a little burst of orange lava splashing up. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/dragonkid",
+      "file": "lightning",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-dragonkid-lightning",
+      "prompt": "Icon for the evolved weapon Volcano: a small cartoon volcano erupting lava, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/dragonkid",
+      "file": "lightning",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-dragonkid-aura",
+      "prompt": "Icon for the weapon Dragon Heat: a ring of shimmering orange heat waves. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/dragonkid",
+      "file": "aura",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-dragonkid-aura",
+      "prompt": "Icon for the evolved weapon Dragon Sun: a blazing fiery sun with a dragon shape in it, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/dragonkid",
+      "file": "aura",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-dragonkid-nova",
+      "prompt": "Icon for the weapon Smoke Rings: grey smoke rings spreading out. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/dragonkid",
+      "file": "nova",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-dragonkid-nova",
+      "prompt": "Icon for the evolved weapon Ash Storm: a swirling storm of grey ash and embers, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/dragonkid",
+      "file": "nova",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-dragonkid-axes",
+      "prompt": "Icon for the weapon Lava Rocks: two glowing hot lava rocks flying in an arc. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/dragonkid",
+      "file": "axes",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-dragonkid-axes",
+      "prompt": "Icon for the evolved weapon Lava Tornado: a tornado of glowing lava rocks, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/dragonkid",
+      "file": "axes",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-dragonkid-arrows",
+      "prompt": "Icon for the weapon Fire Breath: a stream of dragon fire shooting forward. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/dragonkid",
+      "file": "arrows",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-dragonkid-arrows",
+      "prompt": "Icon for the evolved weapon Flame Rain: flames raining down from a red cloud, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/dragonkid",
+      "file": "arrows",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "weapon-dragonkid-bubble",
+      "prompt": "Icon for the weapon Scale Shield: a round shield made of red dragon scales. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "weapons/dragonkid",
+      "file": "bubble",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "evolved-dragonkid-bubble",
+      "prompt": "Icon for the evolved weapon Dragon Wings: a pair of huge red dragon wings, grander and brighter than the plain version, with a golden glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "evolved/dragonkid",
+      "file": "bubble",
+      "max": 256,
+      "small": 128
     }
   ]
 }

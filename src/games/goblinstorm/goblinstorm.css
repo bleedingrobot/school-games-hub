@@ -196,6 +196,8 @@
 .gs-codex__page { display: flex; flex-direction: column; gap: 0.2rem; width: 100%; padding: 0.6rem; border-radius: 12px; background: rgba(255,255,255,0.06); }
 .gs-codex__page--evolved { background: linear-gradient(160deg, rgba(255,210,58,0.22), rgba(255,140,40,0.1)); }
 .gs-codex__page--unseen { opacity: 0.55; }
+.gs-codex__heroes { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem; margin: 0 0 0.8rem; }
+.gs-codex__hero--on { background: rgba(255,210,58,0.28); border-color: #ffd23a; }
 .gs-codex__plus { font-weight: 800; color: #cfc4ef; font-size: 0.95rem; }
 
 /* ---- Stage 6: Bella's guide, first-time tips, "Show me", the effects setting ---- */
