@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'goblinstorm-tough-ending-2026-11-20',
+    date: '2026-11-20',
+    emoji: '💪',
+    title: 'Goblin Storm: a tougher ending',
+    text: 'Monsters in the last minute are tougher, and tougher again in the last 30 seconds!',
+    game: 'goblinstorm',
+  },
+  {
     id: 'challenge-anywhere-2026-11-20',
     date: '2026-11-20',
     emoji: '⚔️',
