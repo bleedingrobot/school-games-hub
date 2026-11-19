@@ -1,6 +1,6 @@
 /**
  * A level-up that asks a question shows the question first, then the cards its mark earns: 2 for wrong, 3 for right,
- * 4 for right and quick (docs/GOBLINSTORM-PLAN.md, the question modal). The server marks the answer; the screen only
+ * 4 for right and quick (docs/GOBLINSTORM-PLAN.md, the question modal), and then a Gold card every time. The server marks the answer; the screen only
  * shows what it was told. The canvas drawing is left out (jsdom has no canvas). (Screen test 1 of the game's 2.)
  */
 import { act, render, screen, within } from '@testing-library/react';
@@ -72,7 +72,9 @@ describe('Goblin Storm level-up', () => {
 
       const offer = await screen.findByRole('dialog', { name: /pick/i }, { timeout: 4000 });
       expect(screen.queryByRole('dialog', { name: /level up/i })).toBeNull();
-      expect(within(offer).getAllByRole('button')).toHaveLength(cards);
+      const buttons = within(offer).getAllByRole('button');
+      expect(buttons).toHaveLength(cards + 1);
+      expect(buttons[cards].textContent).toContain('Gold');
     },
   );
 });

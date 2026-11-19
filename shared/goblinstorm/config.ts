@@ -263,13 +263,13 @@ export function mapByIndex(i: number): MapDef | undefined {
 
 /**
  * A gentle start: for the first this-many seconds monsters do only this share of their damage (stage 4 sim: a Ranger
- * standing still on Castle Fields used to fall at 0:14).
+ * standing still on Castle Fields used to fall at 0:14). 30 seconds until 20 Nov 2026 (a little harder).
  */
-export const WARM_UP_SECONDS = 30;
+export const WARM_UP_SECONDS = 20;
 export const WARM_UP_DAMAGE = 0.5;
 
-/** Monster health grows during a run: × (1 + seconds / this). */
-export const HEALTH_GROWTH_SECONDS = 120;
+/** Monster health grows during a run: × (1 + seconds / this). 120 until 20 Nov 2026, when James asked for a little harder. */
+export const HEALTH_GROWTH_SECONDS = 90;
 
 /**
  * When each kind of monster comes (same for every map; the map's tier makes it harder). `kind` is 0 common, 1 fast,

@@ -566,7 +566,7 @@ function Coach({ line, onSkip }: { line: GuideLine; onSkip: () => void }) {
 }
 
 function LevelUpCards({ s, offer, mark, onPick, coach }: { s: RunState; offer: Upgrade[]; mark: Mark | null; onPick: (i: number) => void; coach?: ReactNode }) {
-  const title = mark === 'quick' ? 'Quick and right! Pick one of 4' : mark === 'right' ? 'Right! Pick one of 3' : mark === 'wrong' ? 'Pick one of 2' : 'Pick a power';
+  const title = mark === 'quick' ? 'Quick and right! Pick from 4 powers or gold' : mark === 'right' ? 'Right! Pick from 3 powers or gold' : mark === 'wrong' ? 'Pick from 2 powers or gold' : 'Pick a power or gold';
   return (
     <div className="gs-dim gs-dim--cards" data-nostick role="dialog" aria-label={title}>
       <div className="gs-cards">

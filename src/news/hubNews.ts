@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'goblinstorm-gold-card-2026-11-20',
+    date: '2026-11-20',
+    emoji: '🪙',
+    title: 'Goblin Storm: a Gold card every level',
+    text: 'Every level-up now has a Gold card. Watch out: the monsters get tough faster!',
+    game: 'goblinstorm',
+  },
+  {
     id: 'goblinstorm-harder-2026-11-20',
     date: '2026-11-20',
     emoji: '🦸',

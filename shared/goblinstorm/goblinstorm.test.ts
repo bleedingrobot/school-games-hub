@@ -53,14 +53,18 @@ describe('Goblin Storm rules', () => {
     const s = newRun(knight);
     while (!waiting(s)) stepRun(s, 16);
     const two = makeOffer(s, 2);
-    expect(two).toHaveLength(2);
+    expect(two).toHaveLength(3); // the two the answer earned, then Gold
+    expect(two[2]).toEqual({ kind: 'gold' });
     expect(makeOffer(s, 4)).toEqual(two); // the offer is fixed once shown
-    expect(applyPick(s, 2)).toBe(false);
+    expect(applyPick(s, 3)).toBe(false);
     expect(applyPick(s, 1)).toBe(true);
     // Same seed, same level-up: the same cards, whatever the answer gave.
     const t = newRun(knight);
     while (!waiting(t)) stepRun(t, 16);
-    expect(makeOffer(t, 4).slice(0, 2)).toEqual(two);
+    const four = makeOffer(t, 4);
+    expect(four.slice(0, 2)).toEqual(two.slice(0, 2));
+    expect(four).toHaveLength(5);
+    expect(four[4]).toEqual({ kind: 'gold' });
     // Evolution: blades at full level plus Armour.
     const e = newRun(knight);
     e.weapons[0].level = WEAPONS.blades.levels.length;
