@@ -64,7 +64,7 @@ export function PlayScreen({ backend, start, hero, map, onEnd }: {
   const G = useRef<Game | null>(null);
   if (G.current === null) {
     G.current = {
-      s: newRun({ seed: start.seed, hero, map, shop: {} }),
+      s: newRun({ seed: start.seed, hero, map, shop: start.shop ?? {} }),
       steering: [], picks: [], stage: 'play',
       keys: { up: false, down: false, left: false, right: false },
       stick: null, view: new View(), moved: false, warned: new Set(), time: 0,

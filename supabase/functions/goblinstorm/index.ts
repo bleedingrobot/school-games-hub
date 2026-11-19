@@ -9761,6 +9761,7 @@ function summary(s) {
 		miniBeaten: s.miniBeaten,
 		bossBeaten: s.bossBeaten,
 		evolved: [...s.evolved],
+		weapons: s.weapons.map((w) => w.id),
 		longestNoHitSeconds: Math.floor(s.longestNoHit / 60),
 		gold: goldFor(s)
 	};
@@ -9913,11 +9914,13 @@ async function handleGoblinStorm(services, player, body) {
 		for (let tries = 0; tries < 3; tries++) {
 			const seed = Math.floor(services.random() * 2 ** 32);
 			const questions = runQuestions(context, seed);
+			const shop = save.shop ?? {};
 			const kept = await services.start(player, {
 				seed,
 				hero,
 				map,
 				questions,
+				shop,
 				day,
 				extra: today >= 5
 			});
@@ -9926,6 +9929,7 @@ async function handleGoblinStorm(services, player, body) {
 				seed,
 				hero,
 				map,
+				shop,
 				questions: questions.map((q, slot) => publicQuestion(q, slot)),
 				quickMs: quickMsForPack(null),
 				runsLeft: unlimited ? null : Math.max(0, 5 - today - 1)
@@ -10010,7 +10014,7 @@ async function handleGoblinStorm(services, player, body) {
 				seed,
 				hero,
 				map,
-				shop: save.shop
+				shop: run.shop ?? {}
 			},
 			steering: dirs,
 			picks,
@@ -10336,7 +10340,8 @@ Deno.serve(makeHandler({
 		map: run.map,
 		day: run.day,
 		extra: run.extra,
-		questions: run.questions
+		questions: run.questions,
+		shop: run.shop
 	}),
 	async run(player, seed) {
 		const r = await call("goblinstorm_load_questions", {

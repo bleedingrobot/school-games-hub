@@ -4,7 +4,8 @@
 // 1. still:   a hero who never moves on Castle Fields (how harsh are the first seconds?).
 // 2. grid:    every hero on every map, with no shop, half the shop and the whole shop, steering like a pupil
 //             (keeps away from monsters, walks to gems) and mostly right answers.
-// 3. journey: a steady player, 5 runs a school day, spending gold on the cheapest shop level, playing the best open
+// 3. journey: a steady player, 5 runs a school day, spending gold on the cheapest shop level (with the real shop's
+//             rules, shared/goblinstorm/shop.ts), playing the best open
 //             hero on the first map whose boss isn't beaten yet. How many days to each boss and hero?
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { availableParallelism, tmpdir } from 'node:os';
@@ -29,6 +30,7 @@ async function buildBundle() {
     `export * from ${JSON.stringify(join(root, 'shared/goblinstorm/config.ts'))};`,
     `export { summary } from ${JSON.stringify(join(root, 'shared/goblinstorm/engine.ts'))};`,
     `export { heroOpen, mapOpen, newUnlocks, freshSave } from ${JSON.stringify(join(root, 'shared/goblinstorm/server.ts'))};`,
+    `export { buy, nextCost, allBought as shopAllBought } from ${JSON.stringify(join(root, 'shared/goblinstorm/shop.ts'))};`,
   ].join('\n'));
   const bundle = await rolldown({ input: join(dir, 'entry.ts'), logLevel: 'silent', platform: 'node' });
   await bundle.write({ file: join(dir, 'sim.mjs'), format: 'esm' });
@@ -38,7 +40,7 @@ async function buildBundle() {
 
 const bundlePath = isMainThread ? await buildBundle() : workerData.bundlePath;
 const G = await import(pathToFileURL(bundlePath).href);
-const { botRun, sensibleDirection, sensiblePick, HEROES, MAPS, SHOP_IDS, SHOP_COSTS, SHOP_LEVELS, SHOP_ARMOUR_MAX, summary, STEPS_PER_SECOND } = G;
+const { botRun, sensibleDirection, sensiblePick, HEROES, MAPS, SHOP_IDS, SHOP_LEVELS, SHOP_ARMOUR_MAX, summary, STEPS_PER_SECOND } = G;
 
 const STYLES = { pupil: { steer: sensibleDirection, pick: sensiblePick }, still: { steer: () => 16, pick: sensiblePick }, simple: {} };
 /** Mostly right: 65% right, 20% quick, 15% wrong, fixed by the seed and slot. */
@@ -65,7 +67,8 @@ function journey(p) {
   let day = 0;
   let runNo = 0;
   let allBought = null;
-  while (day < 40 && (save.bosses.length < MAPS.length || save.heroes.length < HEROES.length - 2)) {
+  // Keeps going until every boss, every hero and the whole shop are done (or 40 days).
+  while (day < 40 && (save.bosses.length < MAPS.length || save.heroes.length < HEROES.length - 2 || allBought === null)) {
     day++;
     for (let r = 0; r < 5; r++) {
       runNo++;
@@ -80,14 +83,14 @@ function journey(p) {
       if (s.bossBeaten && !save.bosses.includes(mapIndex)) { save.bosses.push(mapIndex); events.push(`d${day} ${MAPS[mapIndex].monsters[4].name}`); }
       for (const u of unlocked) { save.heroes.push(u); events.push(`d${day} +${HEROES.find((h) => h.id === u).name}`); }
       for (;;) {
-        const next = SHOP_IDS.map((id) => ({ id, lv: save.shop[id] ?? 0 }))
-          .filter((x) => x.lv < (x.id === 'armour' ? SHOP_ARMOUR_MAX : SHOP_LEVELS))
-          .sort((a, b) => SHOP_COSTS[a.lv] - SHOP_COSTS[b.lv])[0];
-        if (!next) { allBought ??= day; break; }
-        if (SHOP_COSTS[next.lv] > save.gold) break;
-        save.gold -= SHOP_COSTS[next.lv];
-        spent += SHOP_COSTS[next.lv];
-        save.shop = { ...save.shop, [next.id]: next.lv + 1 };
+        if (G.shopAllBought(save.shop)) { allBought ??= day; break; }
+        const next = SHOP_IDS.filter((id) => G.nextCost(save.shop, id) !== null)
+          .sort((a, b) => G.nextCost(save.shop, a) - G.nextCost(save.shop, b))[0];
+        const done = G.buy(save, next);
+        if (typeof done === 'string') break;
+        spent += save.gold - done.gold;
+        save.gold = done.gold;
+        save.shop = done.shop;
       }
     }
   }

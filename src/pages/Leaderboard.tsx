@@ -9,6 +9,7 @@ import { FavouriteTrophies, useTrophyShelves } from '../trophies/FavouriteTrophi
 import { HallOfFame } from '../trophies/HallOfFame';
 import { fetchStarsBoard, type StarsRow } from '../data/gemKeep';
 import { fetchMonstersBoard, type MonstersRow } from '../data/monsters';
+import { fetchGoblinStormBoard, type GoblinStormRow } from '../data/goblinstorm';
 import { useClassSwitches } from '../data/classSwitches';
 import { fetchLeaderboard, type Board, type BoardRow } from '../data/progress';
 import { GAMES, gameLabel } from '../games/registry';
@@ -190,6 +191,8 @@ function GameBoards({ scope, scopeRow }: { scope: BoardScope; scopeRow: ReactNod
         <StarsBoard />
       ) : game === 'monsters' ? (
         <MonstersBoard />
+      ) : game === 'goblinstorm' ? (
+        <GoblinStormBoard scope={scope} />
       ) : special ? (
         <RankedBoard game={game} />
       ) : (
@@ -931,6 +934,77 @@ function MonstersBoard() {
       )}
       {rows && !me && <p className="leaderboard__me-off">Start a game of Maths Monsters to get on this board!</p>}
     </>
+  );
+}
+
+/** Goblin Storm: bosses beaten, then the most monsters beaten in one run. Never maths. */
+function GoblinStormBoard({ scope }: { scope: BoardScope }) {
+  const [rows, setRows] = useState<GoblinStormRow[] | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let current = true;
+    setRows(null);
+    setFailed(false);
+    fetchGoblinStormBoard(scope)
+      .then((r) => current && setRows(r))
+      .catch(() => current && setFailed(true));
+    return () => {
+      current = false;
+    };
+  }, [scope]);
+
+  const top = rows?.slice(0, 10) ?? [];
+  const meBelow = rows?.slice(10).find((r) => r.is_me);
+  const me = rows?.find((r) => r.is_me);
+  const shelves = useTrophyShelves([...top, meBelow].map((r) => r?.name));
+
+  return (
+    <>
+      <p className="leaderboard__about">Most bosses beaten in Goblin Storm, then the most monsters beaten in one run.</p>
+      {failed ? (
+        <p className="panel__empty">We couldn’t load the leaderboard just now. Please try again soon.</p>
+      ) : !rows ? (
+        <p className="panel__empty">Loading…</p>
+      ) : top.length === 0 ? (
+        <p className="panel__empty">{emptyText(scope, 'finished a run')}</p>
+      ) : (
+        <ol className="board-list" aria-label="Goblin Storm leaderboard">
+          {top.map((row) => (
+            <GoblinStormLine key={row.name} row={row} shelf={shelves[row.name]} />
+          ))}
+          {meBelow && (
+            <>
+              <li className="board-list__gap" aria-hidden="true">
+                ⋯
+              </li>
+              <GoblinStormLine row={meBelow} shelf={shelves[meBelow.name]} />
+            </>
+          )}
+        </ol>
+      )}
+      {rows && !me && <p className="leaderboard__me-off">Finish a run of Goblin Storm to get on this board!</p>}
+    </>
+  );
+}
+
+function GoblinStormLine({ row, shelf }: { row: GoblinStormRow; shelf?: TrophyShelf }) {
+  return (
+    <li className={row.is_me ? 'is-me' : undefined} value={row.place}>
+      <span className="board-list__place" aria-label={`Place ${row.place}`}>
+        {row.place <= 3 ? MEDALS[row.place - 1] : row.place}
+      </span>
+      <AvatarImage avatar={row.avatar} size={40} />
+      <span className="board-list__name">
+        {row.name}
+        {row.is_me && <span className="board-list__you"> (you)</span>}
+        <HeroTitleLine avatar={row.avatar} />
+        <FavouriteTrophies shelf={shelf} />
+      </span>
+      <span className="board-list__points">
+        👑 {row.bosses} · 💥 {row.best}
+      </span>
+    </li>
   );
 }
 

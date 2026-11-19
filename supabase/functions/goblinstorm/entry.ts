@@ -85,7 +85,7 @@ Deno.serve(
     runsOn: (player, day) => call<number>('goblinstorm_runs_on', { player, day }),
     start: (player, run) =>
       call<boolean>('goblinstorm_store_questions', {
-        player, seed: run.seed, hero: run.hero, map: run.map, day: run.day, extra: run.extra, questions: run.questions,
+        player, seed: run.seed, hero: run.hero, map: run.map, day: run.day, extra: run.extra, questions: run.questions, shop: run.shop,
       }),
     async run(player, seed) {
       const r = await call<(Omit<KeptRun, 'startedAt'> & { startedAt: string }) | null>('goblinstorm_load_questions', { player, seed });

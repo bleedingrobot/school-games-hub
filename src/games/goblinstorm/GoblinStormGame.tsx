@@ -1,6 +1,6 @@
 /**
  * Goblin Storm's screens (docs/GOBLINSTORM-PLAN.md): pick a hero, pick a map, the run, and the end of the run.
- * All of it sits in one full-window layer over the hub. The game only talks to the backend it is given: the stand-in
+ * Between runs: the gold shop and the Weapon Codex (BetweenRuns.tsx). All of it sits in one full-window layer over the hub. The game only talks to the backend it is given: the stand-in
  * in the preview, the school's server live.
  *
  * What's open comes from the pupil's save (`backend.me()`): Knight and Ranger and Castle Fields at first, each other
@@ -9,6 +9,10 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { HEROES, MAPS, UNLOCK_WORDS, WEAPONS, type HeroDef } from '../../../shared/goblinstorm/config';
 import { heroOpen, mapOpen } from '../../../shared/goblinstorm/server';
+import { CODEX_SIZE } from '../../../shared/goblinstorm/shop';
+import { AchievementPop } from '../../achievements/AchievementPop';
+import { TrophyWonLine } from '../../trophies/TrophyWonLine';
+import { CodexScreen, GoldLine, ShopScreen, codexOf } from './BetweenRuns';
 import { GoblinStormError, type GoblinStormBackend, type MySave, type StartReply } from './backend';
 import { HubButtons } from './HubButtons';
 import { HERO_ICON, MAP_ICON, WEAPON_ICON } from './look';
@@ -16,7 +20,7 @@ import { Pic } from './Pic';
 import { PlayScreen, type RunEnd } from './PlayScreen';
 import './goblinstorm.css';
 
-type Screen = 'hero' | 'map' | 'play' | 'end';
+type Screen = 'hero' | 'map' | 'play' | 'end' | 'shop' | 'codex';
 
 /** Speed and health as 1–5 dots, for the hero cards. */
 const dots = (v: number, lo: number, hi: number) => Math.max(1, Math.min(5, Math.round(1 + ((v - lo) / (hi - lo)) * 4)));
@@ -38,7 +42,12 @@ const MAP_LOCK: Record<string, string> = {
   lava: 'Beat the Ice Dragon to open',
 };
 
-export function GoblinStormGame({ backend, extra }: { backend: GoblinStormBackend; extra?: ReactNode }) {
+export function GoblinStormGame({ backend, extra, onServer = false }: {
+  backend: GoblinStormBackend;
+  extra?: ReactNode;
+  /** The school's server is behind `backend`, so achievements and the Crown can be won (off in the preview). */
+  onServer?: boolean;
+}) {
   const [screen, setScreen] = useState<Screen>('hero');
   const [hero, setHero] = useState<HeroDef>(HEROES[0]);
   const [mapIndex, setMapIndex] = useState(0);
@@ -134,8 +143,27 @@ export function GoblinStormGame({ backend, extra }: { backend: GoblinStormBacken
               );
             })}
           </div>
+          {save && (
+            <div className="gs-row gs-between">
+              <GoldLine save={save} />
+              <button type="button" className="gs-btn gs-btn--ghost" onClick={() => setScreen('shop')}>🛒 Shop</button>
+              <button type="button" className="gs-btn gs-btn--ghost" onClick={() => setScreen('codex')}>📖 Codex {codexOf(save)}/{CODEX_SIZE}</button>
+            </div>
+          )}
           {busy && <p className="gs-menu__sub" role="status">Getting ready…</p>}
           {error && <p className="gs-menu__error" role="alert">{error}</p>}
+        </Menu>
+      )}
+
+      {screen === 'shop' && save && (
+        <Menu title="Gold shop" back={() => setScreen('map')} extra={extra}>
+          <ShopScreen backend={backend} save={save} onSave={setSave} />
+        </Menu>
+      )}
+
+      {screen === 'codex' && save && (
+        <Menu title="Weapon Codex" back={() => setScreen('map')} extra={extra}>
+          <CodexScreen save={save} />
         </Menu>
       )}
 
@@ -157,8 +185,11 @@ export function GoblinStormGame({ backend, extra }: { backend: GoblinStormBacken
       )}
 
       {screen === 'end' && end && (
-        <EndScreen end={end} onAgain={() => void play(mapIndex)} onMenu={() => setScreen('hero')} busy={busy} error={error} newMap={newMap} />
+        <EndScreen end={end} onAgain={() => void play(mapIndex)} onMenu={() => setScreen('hero')} onShop={() => setScreen('shop')} busy={busy} error={error} newMap={newMap} />
       )}
+      {/* Mounted for the whole game, so the trophy line knows what the pupil had before the run ended. */}
+      <TrophyWonLine games={['goblinstorm']} watch={end?.reply ?? null} off={!onServer} />
+      <AchievementPop games={['goblinstorm']} watch={end?.reply ?? null} off={!onServer} />
     </div>
   );
 }
@@ -188,8 +219,8 @@ const OUTCOME_WORDS = {
   running: { title: 'Run over', icon: '🚪', line: '' },
 } as const;
 
-function EndScreen({ end, onAgain, onMenu, busy, error, newMap }: {
-  end: RunEnd; onAgain: () => void; onMenu: () => void; busy: boolean; error: string | null; newMap: number | null;
+function EndScreen({ end, onAgain, onMenu, onShop, busy, error, newMap }: {
+  end: RunEnd; onAgain: () => void; onMenu: () => void; onShop: () => void; busy: boolean; error: string | null; newMap: number | null;
 }) {
   const sum = end.reply?.summary;
   const words = OUTCOME_WORDS[sum?.outcome ?? 'quit'];
@@ -224,6 +255,7 @@ function EndScreen({ end, onAgain, onMenu, busy, error, newMap }: {
         <p className="gs-end__who">{HERO_ICON[end.hero.id]} {end.hero.name} on {MAP_ICON[end.map.id]} {end.map.name}</p>
         <div className="gs-row">
           <button type="button" className="gs-btn gs-btn--big" onClick={onAgain} disabled={busy} autoFocus>Play again</button>
+          <button type="button" className="gs-btn gs-btn--ghost" onClick={onShop}>🛒 Shop</button>
           <button type="button" className="gs-btn gs-btn--ghost" onClick={onMenu}>Change hero</button>
         </div>
         {error && <p className="gs-menu__error" role="alert">{error}</p>}

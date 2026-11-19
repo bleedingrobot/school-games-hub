@@ -184,3 +184,16 @@
 .gs-pic { display: inline-block; width: 1.25em; height: 1.25em; object-fit: contain; vertical-align: middle; border-radius: 0.25em; }
 .gs-pic--portrait { width: 2em; height: 2em; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,0.25); }
 .gs-pic--inline { width: 1.3em; height: 1.3em; }
+
+/* between runs: gold, the shop and the Weapon Codex (stage 5) */
+.gs-between { justify-content: flex-start; align-items: center; margin: 1rem 0 0.5rem; }
+.gs-gold { font-weight: 900; color: #ffe68a; font-size: 1.05rem; }
+.gs-shop .gs-btn { margin-top: auto; align-self: stretch; }
+.gs-shop .gs-dots i { width: 14px; height: 14px; }
+.gs-shop .gs-dots i.on { background: #ffd23a; }
+.gs-codex { grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+.gs-codex__pair { cursor: default; gap: 0.5rem; }
+.gs-codex__page { display: flex; flex-direction: column; gap: 0.2rem; width: 100%; padding: 0.6rem; border-radius: 12px; background: rgba(255,255,255,0.06); }
+.gs-codex__page--evolved { background: linear-gradient(160deg, rgba(255,210,58,0.22), rgba(255,140,40,0.1)); }
+.gs-codex__page--unseen { opacity: 0.55; }
+.gs-codex__plus { font-weight: 800; color: #cfc4ef; font-size: 0.95rem; }
