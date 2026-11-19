@@ -10,7 +10,7 @@ import { GOODS, SHIPS } from '../../../shared/trader/config';
 import type { Galaxy } from '../../../shared/trader/galaxy';
 import { topSales, type BestSale } from '../../../shared/trader/priceGuide';
 import type { Pushes } from '../../../shared/trader/schoolMarket';
-import { holdsOf, usedHolds, type Trader } from '../../../shared/trader/state';
+import { holdsOf, paidEach, usedHolds, type Trader } from '../../../shared/trader/state';
 import { goodArt, podArt, shipTopArt } from './art/paint';
 import { fillHold, holdBoxes, holdViewBox, podPlaces, POD, SHIP_HOLDS, type Box, type Filled } from './holdLayout';
 import { goodIcon } from './text';
@@ -54,6 +54,10 @@ function GoodCard({ galaxy, t, good, tops, onClose }: { galaxy: Galaxy; t: Trade
   const name = GOODS[good];
   const pic = goodArt(name);
   const here = t.market.find((l) => l.good === good)?.sell ?? 0;
+  // H.3: gains are counted against what you paid, when that's known; otherwise against the price here.
+  const paid = paidEach(t, good);
+  const against = paid ?? (here > 0 ? here : null);
+  const loses = paid !== null && here > 0 && here < paid;
   return (
     <div className="st-hold__card" role="status">
       <div className="st-hold__cardhead">
@@ -61,23 +65,34 @@ function GoodCard({ galaxy, t, good, tops, onClose }: { galaxy: Galaxy; t: Trade
         <strong>{name} × {t.cargo[good]}</strong>
         <button type="button" className="st-hold__close" aria-label="Close" onClick={onClose}>×</button>
       </div>
+      {paid !== null && <p className="st-hold__paid">You paid <strong>{paid}</strong> each.</p>}
       {tops.length === 0 ? (
         <p>Nowhere you can reach on a full tank buys {name} today.</p>
       ) : (
         <ol className="st-hold__sales">
           {tops.map((s, i) => {
-            const gain = here > 0 ? s.sell - here : 0;
+            const gain = against !== null ? s.sell - against : 0;
             return (
               <li key={s.planet}>
                 <span>{i === 0 ? '🥇' : '🥈'} <strong>{galaxy.planets[s.planet].name}</strong> pays <strong>{s.sell}</strong></span>
                 {gain > 0 && <span className="st-hold__gain">+{gain} each</span>}
+                {paid !== null && gain < 0 && <span className="st-hold__loss">{gain} each</span>}
                 <small className="st-soft">{s.fuel} fuel away</small>
               </li>
             );
           })}
         </ol>
       )}
-      <p className="st-hold__here">{here > 0 ? <>Here it sells for <strong>{here}</strong>.{(tops[0]?.sell ?? 0) <= here && <> That's the best price in reach: sell it here!</>}</> : <>This planet doesn't buy {name}.</>}</p>
+      <p className={`st-hold__here ${loses ? 'st-hold__here--loss' : ''}`}>
+        {here > 0 ? (
+          <>
+            Here it sells for <strong>{here}</strong>.
+            {loses ? <> That's less than you paid: you'd lose {paid - here} each.</> : (tops[0]?.sell ?? 0) <= here && <> That's the best price in reach: sell it here!</>}
+          </>
+        ) : (
+          <>This planet doesn't buy {name}.</>
+        )}
+      </p>
       <p className="st-soft st-hold__note">Today's prices. They can change before you land.</p>
     </div>
   );

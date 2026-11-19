@@ -4,7 +4,7 @@
 
 **Mock-up (approved 20 Nov):** [hold-mockup.jpg](hold-mockup.jpg). First tries at the goods pictures: [goods-tries.jpg](goods-tries.jpg).
 
-**Status:** plan merged 20 Nov (#635). H.0 pictures and H.1 hold view built 20 Nov: all 6 ships, the pod and 10 goods painted; on screens 1100 px and wider the hold floats big over the planet on the right (tried a bottom-right dock and a top-right card too; over the planet gave the biggest boxes), narrower screens keep it at the top of the market (#637, live). H.2 built 20 Nov: tap or hover a good for the two best places in reach, the gain on each against the price here, and "sell it here" when here is best; phone strip tiles open the same card. Next: H.3 "you paid". No migration expected (the game is saved as one JSON blob; see H.3).
+**Status:** plan merged 20 Nov (#635). H.0 pictures and H.1 hold view built 20 Nov: all 6 ships, the pod and 10 goods painted; on screens 1100 px and wider the hold floats big over the planet on the right (tried a bottom-right dock and a top-right card too; over the planet gave the biggest boxes), narrower screens keep it at the top of the market (#637, live). H.2 built 20 Nov: tap or hover a good for the two best places in reach, the gain on each against the price here, and "sell it here" when here is best; phone strip tiles open the same card (#638, live). H.3 built 20 Nov: the game keeps what you paid for the goods in the hold (`paid`, kept in step by one helper, `setCargo`); the card shows "You paid N each", gains against that, and red when selling here loses money. Next: H.4 "Show on star map". No migration expected (the game is saved as one JSON blob; see H.3).
 
 ## What it looks like
 

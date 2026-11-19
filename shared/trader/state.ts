@@ -42,6 +42,11 @@ export interface Trader {
   ship: number;
   /** How many of each good is in the hold. */
   cargo: number[];
+  /**
+   * What you paid for the goods now in the hold: total credits per good, -1 when not known. Missing in games saved
+   * before it was kept. Only ever changed through `setCargo`, so it can't drift from `cargo`.
+   */
+  paid?: number[];
   fuel: number;
   hull: number;
   /** Indexes into WEAPONS and SHIELDS. */
@@ -62,6 +67,29 @@ export type Result<T> = { ok: true; state: T; info?: number } | { ok: false; rea
 const no = (reason: string): { ok: false; reason: string } => ({ ok: false, reason });
 const clone = (t: Trader): Trader => ({ ...t, cargo: [...t.cargo], weapons: [...t.weapons], shields: [...t.shields], loan: { ...t.loan }, market: t.market.map((m) => ({ ...m })) });
 
+/** What you paid per good in total (-1: not known, for goods carried since before this was kept). */
+export const paidOf = (t: Trader): number[] => t.paid ?? t.cargo.map((q) => (q > 0 ? -1 : 0));
+
+/** What you paid each for a good in the hold, rounded, or null when not known or none held. */
+export function paidEach(t: Trader, good: number): number | null {
+  const paid = paidOf(t)[good];
+  return t.cargo[good] > 0 && paid >= 0 ? Math.round(paid / t.cargo[good]) : null;
+}
+
+/**
+ * Set how many of a good are in the hold and keep `paid` in step: what's added costs `cost` in total; what goes takes
+ * its average share of what was paid. Changes `t` in place (callers have already copied it), with a new `paid` array.
+ */
+export function setCargo(t: Trader, good: number, qty: number, cost = 0): void {
+  const had = t.cargo[good];
+  const paid = [...paidOf(t)];
+  if (qty === 0) paid[good] = 0;
+  else if (paid[good] >= 0 && qty > had) paid[good] += cost;
+  else if (paid[good] >= 0 && qty < had) paid[good] -= Math.round((paid[good] * (had - qty)) / had);
+  t.cargo[good] = qty;
+  t.paid = paid;
+}
+
 export const holdsOf = (t: Trader): number => SHIPS[t.ship].holds + t.pods * POD_HOLDS;
 export const usedHolds = (t: Trader): number => t.cargo.reduce((a, b) => a + b, 0);
 export const freeHolds = (t: Trader): number => holdsOf(t) - usedHolds(t);
@@ -76,6 +104,7 @@ export function newTrader(galaxy: Galaxy, day: number, pushes?: Pushes): Trader 
     credits: START_CREDITS,
     ship: 0,
     cargo: GOODS.map(() => 0),
+    paid: GOODS.map(() => 0),
     fuel: SHIPS[0].fuelTank,
     hull: SHIPS[0].hull,
     weapons: [],
@@ -117,7 +146,7 @@ export function buy(t: Trader, good: number, qty: number, bp = 0): Result<Trader
   if (total > t.credits) return no('You cannot afford that.');
   const next = clone(t);
   next.credits -= total;
-  next.cargo[good] += qty;
+  setCargo(next, good, next.cargo[good] + qty, total);
   next.market[good].stock -= qty;
   return { ok: true, state: next, info: total };
 }
@@ -131,7 +160,7 @@ export function sell(t: Trader, good: number, qty: number, bp = 0): Result<Trade
   const price = priceWithDiscount(line.sell, bp);
   const total = price * qty;
   const next = clone(t);
-  next.cargo[good] -= qty;
+  setCargo(next, good, next.cargo[good] - qty);
   next.credits += total;
   if (next.loan.owed > 0) {
     const pay = Math.min(next.loan.owed, Math.floor((total * LOAN_REPAY_SHARE_PCT) / 100));
