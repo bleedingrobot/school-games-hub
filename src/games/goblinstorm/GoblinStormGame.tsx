@@ -12,6 +12,7 @@ import { heroOpen, mapOpen } from '../../../shared/goblinstorm/server';
 import { GoblinStormError, type GoblinStormBackend, type MySave, type StartReply } from './backend';
 import { HubButtons } from './HubButtons';
 import { HERO_ICON, MAP_ICON, WEAPON_ICON } from './look';
+import { Pic } from './Pic';
 import { PlayScreen, type RunEnd } from './PlayScreen';
 import './goblinstorm.css';
 
@@ -97,14 +98,14 @@ export function GoblinStormGame({ backend, extra }: { backend: GoblinStormBacken
                   className={`gs-pick${open ? '' : ' gs-pick--locked'}${hero.id === h.id && open ? ' gs-pick--chosen' : ''}`}
                   onClick={() => { setHero(h); setScreen('map'); }}
                 >
-                  <span className="gs-pick__icon" aria-hidden="true">{secret ? '❔' : HERO_ICON[h.id]}</span>
+                  <span className="gs-pick__icon" aria-hidden="true">{secret ? '❔' : <Pic path={`portraits/${h.id}`} small fallback={HERO_ICON[h.id]} className="gs-pic--portrait" />}</span>
                   <span className="gs-pick__name">{secret ? 'Secret hero' : h.name}</span>
                   {!secret && <span className="gs-pick__blurb">{h.blurb}</span>}
                   {!secret && (
                     <span className="gs-pick__stats">
                       <Dots n={dots(h.speed, 3, 4.6)} label="Speed" />
                       <Dots n={dots(h.health, 75, 140)} label="Health" />
-                      <span className="gs-pick__weapon">{WEAPON_ICON[h.weapon]} {WEAPONS[h.weapon].name}</span>
+                      <span className="gs-pick__weapon"><Pic path={`weapons/${h.weapon}`} small fallback={WEAPON_ICON[h.weapon]} className="gs-pic--inline" /> {WEAPONS[h.weapon].name}</span>
                     </span>
                   )}
                   {!open && <span className="gs-pick__lock">🔒 {UNLOCK_WORDS[h.unlock]}</span>}

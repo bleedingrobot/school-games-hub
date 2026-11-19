@@ -8,6 +8,7 @@
 import { MAX_ENEMIES, WEAPONS, WIPE_RADIUS, type MapDef, type WeaponId } from '../../../shared/goblinstorm/config';
 import { area, stats, type GameEvent, type RunState } from '../../../shared/goblinstorm/engine';
 import { COS, SIN, TURN } from '../../../shared/goblinstorm/trig';
+import { groundArt, heroArt, monsterArt, paintedCount, paintedImage } from './art';
 import { Fx, glowSprite } from './fx';
 import { HERO_LOOKS, MAP_LOOKS, MONSTER_LOOKS, WEAPON_COLOUR, type MonsterLook } from './look';
 
@@ -285,13 +286,21 @@ function drawMonster(g: Ctx, L: MonsterLook, r: number, cx: number, cy: number):
   }
 }
 
-interface Sprites { scale: number; mapId: string; pics: Canvas[][]; size: number[] }
+interface Sprites { scale: number; mapId: string; painted: number; pics: Canvas[][]; size: number[] }
 
+/** Draws a painted picture centred in a box of side `box`, keeping its shape. */
+function stamp(g: Ctx, img: CanvasImageSource & { width: number; height: number }, cx: number, cy: number, box: number): void {
+  const k = box / Math.max(img.width, img.height);
+  g.drawImage(img, cx - (img.width * k) / 2, cy - (img.height * k) / 2, img.width * k, img.height * k);
+}
+
+/** Each monster kind drawn once, both ways round: its painting if it has one, otherwise the stand-in shapes. */
 function buildSprites(map: MapDef, scale: number): Sprites {
   const pics: Canvas[][] = [];
   const size: number[] = [];
   for (const m of map.monsters) {
     const L = MONSTER_LOOKS[m.id] ?? MONSTER_LOOKS.goblin;
+    const art = paintedImage(monsterArt(map.id, m.id));
     const r = m.radius * scale * 1.15;
     const S = Math.ceil(r * 3.2);
     const pair: Canvas[] = [];
@@ -299,13 +308,14 @@ function buildSprites(map: MapDef, scale: number): Sprites {
       const c = makeCanvas(S, S);
       const g = c.getContext('2d') as Ctx;
       if (flip) { g.translate(S, 0); g.scale(-1, 1); }
-      drawMonster(g, L, r, S / 2, S / 2);
+      if (art) stamp(g, art, S / 2, S / 2, r * 2.9);
+      else drawMonster(g, L, r, S / 2, S / 2);
       pair.push(c);
     }
     pics.push(pair);
     size.push(S / scale);
   }
-  return { scale, mapId: map.id, pics, size };
+  return { scale, mapId: map.id, painted: paintedCount(), pics, size };
 }
 
 /** One tile of ground (6 × 6 units) that repeats forever. */
@@ -314,6 +324,11 @@ function buildGround(mapId: string, scale: number): Canvas {
   const T = Math.round(6 * scale);
   const c = makeCanvas(T, T);
   const g = c.getContext('2d') as Ctx;
+  const art = paintedImage(groundArt(mapId));
+  if (art) {
+    g.drawImage(art, 0, 0, T, T);
+    return c;
+  }
   g.fillStyle = look.ground;
   g.fillRect(0, 0, T, T);
   // fixed scatter (same every time for a map)
@@ -361,7 +376,7 @@ export class View {
   flash = 0;
   flashColour = '#fff';
   private sprites: Sprites | null = null;
-  private ground: { canvas: Canvas; pattern: CanvasPattern | null; scale: number; mapId: string } | null = null;
+  private ground: { canvas: Canvas; pattern: CanvasPattern | null; scale: number; mapId: string; painted: number } | null = null;
   reduced = false;
 
   /** Turns the step's events into effects. Called after every engine step. */
@@ -477,10 +492,12 @@ export class View {
   draw(ctx: CanvasRenderingContext2D, s: RunState, w: number, h: number, time: number, stick: Stick | null): void {
     const scale = viewScale(w, h);
     const map = s.setup.map;
-    if (!this.sprites || this.sprites.scale !== scale || this.sprites.mapId !== map.id) this.sprites = buildSprites(map, scale);
-    if (!this.ground || this.ground.scale !== scale || this.ground.mapId !== map.id) {
+    // A painting that finishes downloading mid-run replaces its stand-in at once.
+    const painted = paintedCount();
+    if (!this.sprites || this.sprites.scale !== scale || this.sprites.mapId !== map.id || this.sprites.painted !== painted) this.sprites = buildSprites(map, scale);
+    if (!this.ground || this.ground.scale !== scale || this.ground.mapId !== map.id || this.ground.painted !== painted) {
       const canvas = buildGround(map.id, scale);
-      this.ground = { canvas, scale, mapId: map.id, pattern: ctx.createPattern(canvas as CanvasImageSource, 'repeat') };
+      this.ground = { canvas, scale, mapId: map.id, painted, pattern: ctx.createPattern(canvas as CanvasImageSource, 'repeat') };
     }
     const sh = this.reduced ? 0 : this.shake * this.shake * 0.5;
     const shx = sh ? (Math.random() - 0.5) * sh : 0;
@@ -650,6 +667,14 @@ export class View {
     ctx.ellipse(0, r * 0.9, r * 0.85, r * 0.28, 0, 0, TAU);
     ctx.fill();
     ctx.globalAlpha = hurt ? 0.45 : 1;
+    const art = paintedImage(heroArt(s.setup.hero.id, h.hurtUntil > s.t ? 'hurt' : 'stand')) ?? paintedImage(heroArt(s.setup.hero.id, 'stand'));
+    if (art) {
+      if (fx < 0) ctx.scale(-1, 1);
+      stamp(ctx, art, 0, step * 0.5, r * 3.4);
+      ctx.restore();
+      ctx.globalAlpha = 1;
+      return;
+    }
     ctx.lineWidth = 0.06;
     ctx.strokeStyle = 'rgba(20,10,25,0.85)';
     // cape

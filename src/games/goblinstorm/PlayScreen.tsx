@@ -14,6 +14,7 @@ import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import type { FinishReply, GoblinStormBackend, Mark, StartReply } from './backend';
 import { HubButtons } from './HubButtons';
 import { PASSIVE_ICON, WEAPON_COLOUR, WEAPON_ICON } from './look';
+import { Pic } from './Pic';
 import { View, type Stick } from './renderer';
 
 const STEP_MS = 1000 / STEPS_PER_SECOND;
@@ -414,7 +415,7 @@ function Pips({ level }: { level: number }) {
 
 function Card({ s, u, onPick, index }: { s: RunState; u: Upgrade; onPick: (i: number) => void; index: number }) {
   let cls = 'gs-card';
-  let icon = '';
+  let icon: ReactNode = '';
   let name = '';
   let tag = '';
   let blurb = '';
@@ -422,7 +423,7 @@ function Card({ s, u, onPick, index }: { s: RunState; u: Upgrade; onPick: (i: nu
   if (u.kind === 'evolve') {
     const def = WEAPONS[u.id];
     cls += ' gs-card--evolve';
-    icon = WEAPON_ICON[u.id];
+    icon = <Pic path={`evolved/${u.id}`} small fallback={WEAPON_ICON[u.id]} />;
     name = def.evolved.name;
     tag = 'Evolve!';
     blurb = def.evolved.blurb;
@@ -430,7 +431,7 @@ function Card({ s, u, onPick, index }: { s: RunState; u: Upgrade; onPick: (i: nu
   } else if (u.kind === 'weapon') {
     const def = WEAPONS[u.id];
     cls += ' gs-card--weapon';
-    icon = WEAPON_ICON[u.id];
+    icon = <Pic path={`weapons/${u.id}`} small fallback={WEAPON_ICON[u.id]} />;
     name = def.name;
     tag = u.level === 1 ? 'New weapon' : `Level ${u.level}`;
     blurb = def.blurb;
@@ -439,7 +440,7 @@ function Card({ s, u, onPick, index }: { s: RunState; u: Upgrade; onPick: (i: nu
   } else if (u.kind === 'passive') {
     const def = PASSIVES[u.id];
     cls += ' gs-card--passive';
-    icon = PASSIVE_ICON[u.id];
+    icon = <Pic path={`passives/${u.id}`} small fallback={PASSIVE_ICON[u.id]} />;
     name = def.name;
     tag = u.level === 1 ? 'New power' : `Level ${u.level}`;
     blurb = def.blurb;
@@ -490,12 +491,12 @@ function Held({ s }: { s: RunState }) {
     <div className="gs-held" aria-label="What you have">
       {s.weapons.map((w) => (
         <span key={w.id} className={`gs-held__item${w.evolved ? ' gs-held__item--evolved' : ''}`} title={w.evolved ? WEAPONS[w.id].evolved.name : WEAPONS[w.id].name}>
-          {WEAPON_ICON[w.id]}<small>{w.evolved ? '★' : w.level}</small>
+          <Pic path={`${w.evolved ? 'evolved' : 'weapons'}/${w.id}`} small fallback={WEAPON_ICON[w.id]} /><small>{w.evolved ? '★' : w.level}</small>
         </span>
       ))}
       {s.passives.map((p) => (
         <span key={p.id} className="gs-held__item gs-held__item--passive" title={PASSIVES[p.id].name}>
-          {PASSIVE_ICON[p.id]}<small>{p.level}</small>
+          <Pic path={`passives/${p.id}`} small fallback={PASSIVE_ICON[p.id]} /><small>{p.level}</small>
         </span>
       ))}
     </div>
