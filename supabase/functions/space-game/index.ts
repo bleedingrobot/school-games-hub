@@ -25,6 +25,39 @@ function userIdFromToken(auth) {
 	};
 }
 //#endregion
+//#region supabase/functions/_shared/invites.ts
+/** The invite id in a request, or null. */
+function inviteIdOf(value) {
+	return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? value : null;
+}
+/** What a kid sees when the invite has gone (answered, called off, run out, or a switch went off). */
+const INVITE_GONE = "That invite has gone. Ask your friend to send another.";
+/** The two database steps, for a function's entry.ts. Logs say which step went wrong, never who. */
+function inviteServices(admin, name) {
+	return {
+		async takeInvite(invite, player, game) {
+			const { data, error } = await admin.rpc("board_invite_take", {
+				invite,
+				player,
+				kind: game
+			});
+			if (error) console.error(`${name}: invite take failed (${error.code ?? "unknown"})`);
+			const row = Array.isArray(data) ? data[0] : void 0;
+			return row && typeof row.seat_a === "string" ? {
+				from: row.seat_a,
+				setup: row.setup ?? null
+			} : null;
+		},
+		async inviteMade(invite, path) {
+			const { error } = await admin.rpc("board_invite_made", {
+				invite,
+				made_path: path
+			});
+			if (error) console.error(`${name}: invite made failed (${error.code ?? "unknown"})`);
+		}
+	};
+}
+//#endregion
 //#region shared/maths/config.ts
 /**
 * Tuning numbers for the maths engine, in one place. Nothing here knows about any game.
@@ -11117,6 +11150,7 @@ const MESSAGES = {
 	"maths-off": [403, "Your teacher has switched Mission Control maths off."],
 	"reaction-wait": [429, "Wait a few seconds before sending another."],
 	"reaction-limit": [429, "That’s all the reactions for this game."],
+	"invite-gone": [410, INVITE_GONE],
 	failed: [500, "Something went wrong. Please try again."]
 };
 var Refused = class {
@@ -11200,6 +11234,7 @@ var WithGame = class {
 const ACTIONS = {
 	create,
 	join,
+	invite: acceptInvite,
 	cancel: leave,
 	leave,
 	launch,
@@ -11694,6 +11729,28 @@ async function react({ services, me, body }) {
 	if (result !== "ok") throw new Refused("bad-request");
 	return await services.loadGame(game.id) ?? game;
 }
+/**
+* Yes to an invite from the Lobby: claims it (the database checks every rule again), then makes a private game hosted
+* by the inviter (seat 1) with their board and settings, as their teacher's maths switch allows, and takes a seat. The
+* host launches it from the waiting room, as with a code game (and can add bots).
+*/
+async function acceptInvite({ services, me, body }) {
+	const invite = inviteIdOf(body.invite);
+	if (!invite) throw new Refused("bad-request");
+	const status = await mustBeAllowed(services, me, true);
+	const taken = await services.takeInvite(invite, me, "space");
+	if (!taken) throw new Refused("invite-gone");
+	let made = null;
+	try {
+		await mustBeSameSchool(services, status, taken.from);
+		const setup = parseLiveSetup(taken.setup);
+		if (!setup) throw new Refused("failed");
+		made = await joinWaiting(services, me, await newWaitingGame(services, taken.from, withMathsSwitch(setup, await services.mathsSwitch(taken.from)), false));
+	} finally {
+		await services.inviteMade(invite, made ? `/space-game/${made.id}` : null);
+	}
+	return made;
+}
 //#endregion
 //#region supabase/functions/space-game/entry.ts
 /** The server's own key. Supabase provides it automatically; it never leaves the server. */
@@ -11738,6 +11795,7 @@ async function batchIdFor(text) {
 	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 }
 Deno.serve(spaceGameHandler({
+	...inviteServices(admin, "space-game"),
 	now: () => Date.now(),
 	random: () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32,
 	userIdFor: userIdFromToken(admin.auth),

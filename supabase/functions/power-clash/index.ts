@@ -25,6 +25,39 @@ function userIdFromToken(auth) {
 	};
 }
 //#endregion
+//#region supabase/functions/_shared/invites.ts
+/** The invite id in a request, or null. */
+function inviteIdOf(value) {
+	return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? value : null;
+}
+/** What a kid sees when the invite has gone (answered, called off, run out, or a switch went off). */
+const INVITE_GONE = "That invite has gone. Ask your friend to send another.";
+/** The two database steps, for a function's entry.ts. Logs say which step went wrong, never who. */
+function inviteServices(admin, name) {
+	return {
+		async takeInvite(invite, player, game) {
+			const { data, error } = await admin.rpc("board_invite_take", {
+				invite,
+				player,
+				kind: game
+			});
+			if (error) console.error(`${name}: invite take failed (${error.code ?? "unknown"})`);
+			const row = Array.isArray(data) ? data[0] : void 0;
+			return row && typeof row.seat_a === "string" ? {
+				from: row.seat_a,
+				setup: row.setup ?? null
+			} : null;
+		},
+		async inviteMade(invite, path) {
+			const { error } = await admin.rpc("board_invite_made", {
+				invite,
+				made_path: path
+			});
+			if (error) console.error(`${name}: invite made failed (${error.code ?? "unknown"})`);
+		}
+	};
+}
+//#endregion
 //#region shared/gameCode.ts
 /** Game codes use these: no vowels (so no rude words) and no lookalikes like O/0 or I/1. */
 const CODE_ALPHABET = "CDFGHJKMNPQRTVWXY34679";
@@ -1062,6 +1095,7 @@ const MESSAGES = {
 	full: [409, "That game is full, or it has already started."],
 	expired: [410, "That game stopped waiting. Ask your friend to make a new one."],
 	"rematch-gone": [409, "That rematch has already started or stopped waiting."],
+	"invite-gone": [410, INVITE_GONE],
 	failed: [500, "Something went wrong. Please try again."]
 };
 var Refused = class {
@@ -1131,6 +1165,7 @@ function powerClashHandler(services) {
 const ACTIONS = {
 	create,
 	join,
+	invite: acceptInvite,
 	cancel: leave,
 	leave,
 	"set-powers": setPowers,
@@ -1487,6 +1522,25 @@ async function rematch(context, tries = 0) {
 	if (tries >= 2) throw new Refused("changed");
 	return rematch(context, tries + 1);
 }
+/**
+* Yes to an invite from the Lobby: claims it (the database checks every rule again), then makes a private game hosted
+* by the inviter (seat 1) and takes the second seat. Both pick their powers next, as in a code game.
+*/
+async function acceptInvite({ services, me, body }) {
+	const invite = inviteIdOf(body.invite);
+	if (!invite) throw new Refused("bad-request");
+	const status = await mustBeAllowed(services, me, true);
+	const taken = await services.takeInvite(invite, me, "power-clash");
+	if (!taken) throw new Refused("invite-gone");
+	let made = null;
+	try {
+		await mustBeSameSchool(services, status, taken.from);
+		made = await joinWaiting(services, me, await newWaitingGame(services, taken.from, false, null, null), null);
+	} finally {
+		await services.inviteMade(invite, made ? `/power-game/${made.id}` : null);
+	}
+	return made;
+}
 //#endregion
 //#region supabase/functions/power-clash/entry.ts
 /** The server's own key. Supabase provides it automatically; it never leaves the server. */
@@ -1507,6 +1561,7 @@ function logProblem(step, code) {
 }
 const isUuid = (id) => /^[0-9a-f-]{36}$/i.test(id);
 Deno.serve(powerClashHandler({
+	...inviteServices(admin, "power-clash"),
 	now: () => Date.now(),
 	random: () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32,
 	userIdFor: userIdFromToken(admin.auth),

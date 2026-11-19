@@ -47,6 +47,8 @@ function world() {
   const random = seeded(11);
 
   const services: Services = {
+    takeInvite: async () => null,
+    inviteMade: async () => {},
     now: () => clock,
     random,
     userIdFor: async (token) => (token.endsWith('-token') && players.has(token.slice(0, -6)) ? token.slice(0, -6) : null),

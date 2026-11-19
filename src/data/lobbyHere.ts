@@ -1,6 +1,6 @@
 /**
  * The Lobby's live games (docs/plans/play-anyone/PLAN.md, section D, stage 3): Archery fights, Dragon Maths clashes and
- * Clan duels, plus the Sky race and Village Raid tiles.
+ * Clan duels, plus the Sky race and Village Raid tiles; and who here I can invite to a board game (stage 4).
  *
  * - `lobby_here()` (one read, every 20 seconds with the open games) says what I can start in each game, my own fights
  *   that are waiting or going, and who is here now with what we could play together. It records nothing: the hub's own
@@ -10,12 +10,12 @@
  */
 import { supabase } from '../lib/supabase';
 import { readClassBits, type SchoolPlayer } from '../components/SchoolPlayerList';
-import { ASK_GAMES, type AskGame } from './hubAsks';
+import { ASK_GAMES, LIVE_GAMES, type AskGame, type LiveGame } from './hubAsks';
 
 /** What I can do in a game from the Lobby: ready, nothing made yet (archer, hero, clan or island), or paused by the teacher. */
 export type MyState = 'ready' | 'none' | 'off';
 /** The Lobby's tiles that need something of mine: the three live games, the Sky race and the Village Raid. */
-export type MyGame = AskGame | 'isles' | 'raid';
+export type MyGame = LiveGame | 'isles' | 'raid';
 /** What I could play with one kid here: yes, they haven't made a hero or clan, their class has it paused, or they're busy. */
 export type WithThem = 'ok' | 'none' | 'off' | 'busy';
 
@@ -23,14 +23,14 @@ export interface HerePlayer extends SchoolPlayer {
   avatar: unknown;
   /** Their clan's id for a duel (only when I have a clan myself). */
   clan: string | null;
-  /** Only the live games I can play myself. */
+  /** Only the games I can play myself: the live games, and the board games I can invite them to (stage 4). */
   games: Partial<Record<AskGame, WithThem>>;
 }
 
 export interface GoingFight {
   game: AskGame;
   id: number;
-  /** 'asked' is my own challenge, waiting for a yes. */
+  /** 'asked' is my own challenge or invite, waiting for a yes. Board game invites are only ever 'asked' here. */
   status: 'asked' | 'packing' | 'playing';
   with: string;
 }
@@ -41,7 +41,7 @@ export interface LobbyHere {
   online: HerePlayer[];
 }
 
-const MY_GAMES: MyGame[] = [...ASK_GAMES, 'isles', 'raid'];
+const MY_GAMES: MyGame[] = [...LIVE_GAMES, 'isles', 'raid'];
 const isAskGame = (g: unknown): g is AskGame => typeof g === 'string' && (ASK_GAMES as readonly string[]).includes(g);
 const WITH: WithThem[] = ['ok', 'none', 'off', 'busy'];
 
@@ -84,10 +84,10 @@ export async function fetchLobbyHere(): Promise<LobbyHere | null> {
 }
 
 /** Where a game opens at its fight, clash or duel screen (after a challenge is sent, or for "Carry on"). */
-export const livePath = (game: AskGame) => (game === 'archery' ? '/archery' : `/${game}?open=live`);
+export const livePath = (game: LiveGame) => (game === 'archery' ? '/archery' : `/${game}?open=live`);
 
 /** Sends a challenge through the game's own server step. Null if it went; otherwise the game's words for why not. */
-export async function sendChallenge(game: AskGame, them: HerePlayer): Promise<string | null> {
+export async function sendChallenge(game: LiveGame, them: HerePlayer): Promise<string | null> {
   if (game === 'archery') {
     const [{ archeryApi, serverTransport }, { loadChoices }] = await Promise.all([import('./archery'), import('../games/archery/prefs')]);
     const r = await archeryApi(serverTransport).duelChallenge(them.id, loadChoices().world);

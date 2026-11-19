@@ -59,6 +59,7 @@ export type PowerAction =
   | { action: 'create'; lobby: boolean }
   | { action: 'join'; code: string }
   | { action: 'join'; gameId: string }
+  | { action: 'invite'; invite: number }
   | { action: 'cancel' | 'leave' | 'times-up' | 'rematch'; gameId: string }
   | { action: 'set-powers'; gameId: string; powers: PowerId[] }
   | { action: 'place'; gameId: string; version: number; square: number }

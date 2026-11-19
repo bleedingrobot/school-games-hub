@@ -64,6 +64,8 @@ export function chooseWhoIAm(id: string) {
 const tell = (id: string) => channel.postMessage({ type: 'game', id });
 
 const services: Services = {
+  takeInvite: async () => null,
+  inviteMade: async () => {},
   now: () => Date.now() + skew(),
   random: () => Math.random(),
   userIdFor: async (token) => (token in PLAYERS ? token : null),

@@ -74,6 +74,7 @@ export type Action =
   | { action: 'create'; game: GameKind; side: Side | 'random'; lobby: boolean }
   | { action: 'join'; code: string }
   | { action: 'join'; gameId: string }
+  | { action: 'invite'; invite: number; game: GameKind }
   | { action: 'cancel' | 'resign' | 'offer-draw' | 'claim-win' | 'rematch'; gameId: string }
   | { action: 'move'; gameId: string; move: string; ply: number }
   | { action: 'answer-draw'; gameId: string; accept: boolean };
