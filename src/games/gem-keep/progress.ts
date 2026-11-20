@@ -3,9 +3,13 @@
  * (a passed Level Key unlocks the next level). Phase 5 saves this to the database; until
  * then it's kept in this browser only.
  */
+import { nzToday } from '../../../shared/unlimited';
+
 export interface LevelProgress {
   stars: number;
   keyPassed: boolean;
+  /** The New Zealand day ('YYYY-MM-DD') the Level Key was passed, if it was. */
+  keyPassedOn?: string;
 }
 
 export type CampaignProgress = Record<string, LevelProgress>;
@@ -35,9 +39,17 @@ export function withWin(progress: CampaignProgress, id: string, stars: number): 
   return { ...progress, [id]: { ...was, stars: Math.max(was.stars, stars) } };
 }
 
-export function withKey(progress: CampaignProgress, id: string): CampaignProgress {
+export function withKey(progress: CampaignProgress, id: string, today: string = nzToday()): CampaignProgress {
   const was = progress[id] ?? { stars: 0, keyPassed: false };
-  return { ...progress, [id]: { ...was, keyPassed: true } };
+  return { ...progress, [id]: { ...was, keyPassed: true, keyPassedOn: today } };
+}
+
+/**
+ * One new level a day (James, 20 Nov 2026): once a Level Key is passed, no other Level Key can be passed until tomorrow
+ * (New Zealand time). The server checks this too.
+ */
+export function keyPassedToday(progress: CampaignProgress, today: string = nzToday()): boolean {
+  return Object.values(progress).some((p) => p.keyPassed && p.keyPassedOn === today);
 }
 
 /** Level 1 is always open; every other level opens when the one before's Level Key is passed. */

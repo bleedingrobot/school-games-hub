@@ -13,7 +13,7 @@ import type { FactStats } from '../../../../shared/maths/leitner';
 import type { SkillPack } from '../../../../shared/maths/skillPack';
 import { boardUrl, campaignUrl } from '../art';
 import type { GameEngine } from '../engine/GameEngine';
-import { loadProgress, saveProgress, withKey, withWin, type CampaignProgress } from '../progress';
+import { keyPassedToday, loadProgress, saveProgress, withKey, withWin, type CampaignProgress } from '../progress';
 import { DEFAULT_SETTINGS, type GemKeepSettings } from '../settings';
 import { TEXT } from '../strings';
 import { CampaignMap } from './CampaignMap';
@@ -68,7 +68,7 @@ export function GemKeepCampaign({
   /** The progress changed (stars or a Level Key). */
   onProgress?: (progress: CampaignProgress) => void;
   onLevelEnd?: (level: FinishedLevel) => void;
-  /** A Level Key round finished: right answers out of 10. */
+  /** A Level Key round finished: right answers out of 5. */
   onKey?: (levelId: string, right: number) => void;
   /**
    * The answers given since the last report (oldest first), and the records they make.
@@ -170,6 +170,7 @@ export function GemKeepCampaign({
           pack={pack}
           onEngine={onEngine}
           keyDone={!!progress[level.id]?.keyPassed}
+          keyWaits={!progress[level.id]?.keyPassed && keyPassedToday(progress)}
           onWin={(stars) => update((p) => withWin(p, level.id, stars))}
           onEnd={(end) => {
             const now = totals(pack);

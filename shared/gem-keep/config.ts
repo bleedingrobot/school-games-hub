@@ -99,8 +99,11 @@ export const MATHS = {
   gate: { questions: 3, surge: [0, 0, 0.1, 0.25] as const },
   /** Keep Shield: once a level, when the Keep drops below this share, 5 quick questions, each right one heals this share. */
   shield: { below: 0.25, questions: 5, heal: 0.05 },
-  /** Level Key: questions on the level's focus tables, and how many must be right to unlock the next level. */
-  key: { questions: 10, passMark: 8 },
+  /**
+   * Level Key: questions on the level's focus tables, and the class's pass mark. Five questions (James, 20 Nov 2026); the
+   * pass mark teachers set is still out of 10 (5 to 10), so `keyRightNeeded` halves it: 8 out of 10 is 4 out of 5.
+   */
+  key: { questions: 5, passMark: 8 },
   /** Gem Forge: combining gems of this grade asks facts from these mastery boxes (none listed = any). */
   combineBoxes: { 1: [3, 4], 2: [], 3: [0, 1, 2], 4: [0, 1, 2] } as Record<number, number[]>,
   /** Challenge mode: the game keeps running at this share of its speed while a question is up. */
@@ -109,3 +112,6 @@ export const MATHS = {
 
 /** Speeds the student can pick. */
 export const SPEEDS = [1, 2] as const;
+
+/** Right answers out of the Level Key's 5 a student needs, from the class's pass mark out of 10 (rounded up: 5 → 3, 8 → 4). */
+export const keyRightNeeded = (passMarkOutOf10: number): number => Math.ceil((passMarkOutOf10 * MATHS.key.questions) / 10);

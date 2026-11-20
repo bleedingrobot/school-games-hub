@@ -7675,61 +7675,6 @@ async function countForFocuses(rpc, player, pack, answers, from) {
 	}
 }
 //#endregion
-//#region shared/gem-keep/config.ts
-/**
-* The maths in the game. Right answers give; wrong answers never take anything away.
-*/
-const MATHS = {
-	/**
-	* Mana Well: up to this many questions between waves, this much mana each, plus a bonus from 3 right in a row.
-	* Three questions (James, 20 Nov 2026): all three right gives 190 mana, the same as ten right in a row did before.
-	*/
-	well: {
-		questions: 3,
-		mana: 60,
-		streakFrom: 3,
-		streakBonus: 10
-	},
-	/** Wave Gate before a boss wave: 3 questions. 3 right = Power Surge (+25% damage that wave), 2 right = +10%. */
-	gate: {
-		questions: 3,
-		surge: [
-			0,
-			0,
-			.1,
-			.25
-		]
-	},
-	/** Keep Shield: once a level, when the Keep drops below this share, 5 quick questions, each right one heals this share. */
-	shield: {
-		below: .25,
-		questions: 5,
-		heal: .05
-	},
-	/** Level Key: questions on the level's focus tables, and how many must be right to unlock the next level. */
-	key: {
-		questions: 10,
-		passMark: 8
-	},
-	/** Gem Forge: combining gems of this grade asks facts from these mastery boxes (none listed = any). */
-	combineBoxes: {
-		1: [3, 4],
-		2: [],
-		3: [
-			0,
-			1,
-			2
-		],
-		4: [
-			0,
-			1,
-			2
-		]
-	},
-	/** Challenge mode: the game keeps running at this share of its speed while a question is up. */
-	challengeSpeed: .5
-};
-//#endregion
 //#region shared/gem-keep/levels/index.ts
 const CAMPAIGN = [
 	{
@@ -9335,7 +9280,7 @@ function checkKey(x) {
 		ok: false,
 		problem: "level"
 	};
-	if (!isInt(x.right, 0, MATHS.key.questions)) return {
+	if (!isInt(x.right, 0, 10)) return {
 		ok: false,
 		problem: "answers"
 	};
