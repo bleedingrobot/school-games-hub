@@ -21,7 +21,7 @@ import { HowToPlay, HowToPlayBody } from './HowToPlay';
 import { Bank, ClassPick, Healer, HeroPage, Inn, LookPage, Shop, Training, type PlaceProps, type Reply } from './Places';
 import { Arena, HallOfHeroes, NewsPage, Warriors } from './Social';
 import { StoryBook, useGameKeys, useStoryOnce } from '../../kit';
-import { OPENING } from './stories';
+import { LAIR, OPENING, VICTORY, masterStory } from './stories';
 import { SeasonCeremony } from './SeasonCeremony';
 import { HeroSprite, MonsterSprite } from './Sprite';
 import { withArticle } from './text';
@@ -114,6 +114,22 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
   // The opening story, once per pupil, as soon as the village has loaded (docs/plans/stories/PLAN.md, ST.2). Skippable.
   const opening = useStoryOnce(OPENING.id, !!state);
   const openingBook = opening.open && <StoryBook story={OPENING} onClose={opening.close} endLabel="Let's go!" className="lord-storybook" />;
+  // ST.5: the first dragon win's victory story, then meeting each master (Training) and the lair (before the first dragon
+  // fight). One at a time, never over the opening; each once per pupil, skippable, and on the shelf afterwards.
+  const [victoryDue, setVictoryDue] = useState(false);
+  const laterStory = victoryDue ? VICTORY
+    : screen.name === 'training' && hero ? masterStory(hero.level + 1)
+    : screen.name === 'dragon' ? LAIR
+    : null;
+  const later = useStoryOnce(laterStory?.id ?? null, !!state && !opening.open);
+  const laterBook = later.open && laterStory && (
+    <StoryBook
+      story={laterStory}
+      onClose={() => { later.close(); if (laterStory === VICTORY) setVictoryDue(false); }}
+      endLabel={laterStory === VICTORY ? 'The end' : "Let's go!"}
+      className="lord-storybook"
+    />
+  );
   const clashes = useClashes(hero ? backend.clashes : undefined, player);
 
   // "Yes" on the hub's challenge banner: say yes here as the banner's Fight! would, and go to the arena.
@@ -475,6 +491,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     if (!r.finished) return void beginDragonStage((r.stage + 1) as 2 | 3);
     addDeed(`You beat the Red Dragon! That is star number ${r.stars}.`);
     say('You beat the Red Dragon! The village treasure, food and light are back. Your hero starts again at level 1, with a gold star.');
+    setVictoryDue(true);
     toVillage();
   }
 
@@ -501,7 +518,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     case 'arena': body = <Arena unlimited={!!state.unlimited} hero={hero} act={act} say={say} back={toVillage} busy={busy} ask={ask} clashes={clashes} me={player} />; break;
     case 'news': body = <NewsPage backend={backend} deeds={deeds} today={today} back={toVillage} />; break;
     case 'warriors': body = <Warriors backend={backend} back={toVillage} />; break;
-    case 'howto': body = <HowToPlay back={toVillage} />; break;
+    case 'howto': body = <HowToPlay back={toVillage} hero={hero} />; break;
     case 'hall': body = <HallOfHeroes backend={backend} back={toVillage} ceremony={summary ? { season: summary.season, watch: () => setCeremony('again') } : undefined} />; break;
     case 'tools':
       body = backend.trial ? (
@@ -608,7 +625,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
       );
   }
 
-  const keysOn = screen.name === 'village' && !opening.open;
+  const keysOn = screen.name === 'village' && !opening.open && !later.open;
   return (
     <Frame backend={backend} state={state} hero={hero} bare={['fight', 'encounter', 'event', 'dragon', 'arena', 'news', 'warriors', 'hall', 'bank', 'shop', 'healer', 'inn', 'training', 'hero', 'look', 'howto'].includes(screen.name) || (screen.name === 'village' && hasMap())}>
       {/* A finished fight adds a deed: then any new Dragon Maths achievement pops up. */}
@@ -629,6 +646,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
       )}
       {modal}
       {openingBook}
+      {laterBook}
     </Frame>
   );
 }

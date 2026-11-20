@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'lord-stories-2026-11-21',
+    date: '2026-11-21',
+    emoji: '🐉',
+    title: 'Dragon Maths stories',
+    text: "Meet each master in a painted story, peek in Scorchtail's lair, and win the lights back!",
+    game: 'dragon-maths',
+  },
+  {
     id: 'story-pictures-2026-11-21',
     date: '2026-11-21',
     emoji: '🎨',

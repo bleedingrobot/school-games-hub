@@ -7,7 +7,8 @@ import { ARENA_FIGHTS_PER_DAY, MAX_LEVEL, FOREST_FIGHTS_PER_DAY, SKILL_USES_PER_
 import { useState } from 'react';
 import { Place } from './Places';
 import { setShortcuts, shortcutsOn } from './shortcuts';
-import { StoryShelf } from '../../kit';
+import { StoryShelf, useStories } from '../../kit';
+import type { Hero } from '../../../shared/lord/types';
 import { lordShelf } from './stories';
 
 /** A switch for the letter keys, for people who find them in the way. Esc, Tab and Enter always work. */
@@ -22,12 +23,13 @@ function KeysSwitch() {
   );
 }
 
-export function HowToPlayBody() {
+export function HowToPlayBody({ hero = null }: { hero?: Hero | null }) {
+  const { hasSeen } = useStories();
   return (
     <div className="lord-howto">
       <h3>The story</h3>
       <p>The Red Dragon stole the village’s treasure, food and light. You are a hero, and you are going to get them back.</p>
-      <StoryShelf stories={lordShelf()} book={{ className: 'lord-storybook', endLabel: "Let's go!" }} />
+      <StoryShelf stories={lordShelf(hero, hasSeen)} book={{ className: 'lord-storybook', endLabel: "Let's go!" }} />
 
       <h3>A day in the game</h3>
       <ul>
@@ -77,10 +79,10 @@ export function HowToPlayBody() {
   );
 }
 
-export function HowToPlay({ back }: { back: () => void }) {
+export function HowToPlay({ back, hero = null }: { back: () => void; hero?: Hero | null }) {
   return (
     <Place title="How to play" scene="map" back={back}>
-      <HowToPlayBody />
+      <HowToPlayBody hero={hero} />
     </Place>
   );
 }

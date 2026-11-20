@@ -76,6 +76,204 @@
       "kind": "scene",
       "folder": "story",
       "file": "lord-opening-6"
+    },
+    {
+      "name": "lord-master-pip-1",
+      "prompt": "Inside a dusty stone training hall with weapon racks and old banners, a very short little old sword-master, even shorter than the ten-year-old hero standing next to them, with a big grey moustache and a very serious frown, both little hands gripping an enormous wooden staff that rises far above their head to the ceiling, the young hero with a wooden sword looking down at the tiny master in surprise. Funny and charming. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-master-pip-1"
+    },
+    {
+      "name": "lord-master-wren-1",
+      "prompt": "A sharp-eyed woman knight in worn steel armour sitting by a warm fireplace sharpening a sword on a whetstone, raising one eyebrow at a young hero of about ten with muddy boots standing in the doorway of a stone hall. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-master-wren-1"
+    },
+    {
+      "name": "lord-master-tumble-1",
+      "prompt": "A clumsy cheerful knight with a dented helmet tripping over a wooden bucket in a sunny castle training yard, arms flailing, sword still held perfectly steady, a young hero of about ten watching, trying not to laugh. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-master-tumble-1"
+    },
+    {
+      "name": "lord-master-marrow-1",
+      "prompt": "A very old wiry fighter with a long white beard, bald head and a wooden staff, sitting calmly on a bench sipping a cup of tea under a huge ancient gnarled tree, smiling kindly at a young hero of about ten. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-master-marrow-1"
+    },
+    {
+      "name": "lord-master-quill-1",
+      "prompt": "An elegant woman fencer with a thin rapier, feathered hat and fine coat, unrolling an enormously long blank parchment scroll that spills across the floor of a grand hall, the parchment completely blank with no writing and no marks, a young hero of about ten staring at the long scroll. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-master-quill-1"
+    },
+    {
+      "name": "lord-master-basalt-1",
+      "prompt": "A huge broad man with stone-grey skin and hands as big as boulders striding into a rocky quarry training ground, small pebbles bouncing off the ground as he walks, a young hero of about ten looking up at him. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-master-basalt-1"
+    },
+    {
+      "name": "lord-master-thistle-1",
+      "prompt": "A sweet-smiling woman knight in thistle-purple armour in a garden of tall purple thistles, holding out a teacup in one hand and a gleaming very sharp sword in the other, a young hero of about ten opposite her. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-master-thistle-1"
+    },
+    {
+      "name": "lord-master-brisk-1",
+      "prompt": "A crisp upright army captain with a neat moustache, smart blue coat and a sabre, checking a brass pocket watch on a chain beside a castle clock tower at dawn, a young hero of about ten standing to attention. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-master-brisk-1"
+    },
+    {
+      "name": "lord-master-ember-1",
+      "prompt": "An old wizard-warrior with a grey beard and a tall pointed hat with a small friendly flame burning on top of it, warming his hands at the flame on a cosy evening hilltop, a young hero of about ten listening. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-master-ember-1"
+    },
+    {
+      "name": "lord-master-stonefist-1",
+      "prompt": "A giant gatekeeper in heavy stone-coloured armour with huge gauntlets standing in front of a massive stone gate across a mountain road, arms folded, blocking the way, a young hero of about ten in front of him. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-master-stonefist-1"
+    },
+    {
+      "name": "lord-master-orrin-1",
+      "prompt": "A calm powerful grand master in white and gold robes with a softly glowing sword, standing under an old pine tree on a high mountain path at sunset, a smoking dark mountain far behind, a young hero of about ten facing him. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-master-orrin-1"
+    },
+    {
+      "name": "lord-lair-1",
+      "prompt": "A huge black volcanic mountain at dusk with smoke curling from its peak and a great cave mouth, warm lantern light glowing from deep inside the cave, a small young hero standing at the bottom of the path looking up. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-lair-1"
+    },
+    {
+      "name": "lord-lair-2",
+      "prompt": "Inside a vast cave, a huge red dragon with spiky dark-red scales, pale belly, curling horns and glowing yellow eyes uncurling from a pile of gold coins, treasure and stolen glowing lanterns, smoke from its nostrils, looking down at a small young hero with a sword. Impressive, not gory. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-lair-2"
+    },
+    {
+      "name": "lord-victory-1",
+      "prompt": "A huge red dragon with spiky dark-red scales and curling horns flying away over the mountains at dawn, grumpy and sulky, a puff of smoke behind it, a young hero of about ten standing safe and proud on a rocky ledge below, unhurt. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-victory-1"
+    },
+    {
+      "name": "lord-victory-2",
+      "prompt": "A young hero of about ten pulling a wooden cart piled with treasure chests, bread baskets and strings of unlit lanterns along a sunny forest road towards a little village, smiling. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-victory-2"
+    },
+    {
+      "name": "lord-victory-3",
+      "prompt": "Dusk in a medieval village, a kind old grey-haired woman in green robes lighting the first paper lantern with a taper, more lanterns starting to glow one by one along the cobbled street, villagers coming out of their doors. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-victory-3"
+    },
+    {
+      "name": "lord-victory-4",
+      "prompt": "A joyful crowd of villagers in a lantern-lit village square at night cheering and throwing flowers, lifting a small child hero, a ten-year-old boy with a short cloak and a wooden sword, up on their shoulders, a baker handing out warm loaves of bread. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-victory-4"
+    },
+    {
+      "name": "lord-victory-5",
+      "prompt": "A kind old grey-haired woman in green robes kneeling down to pin a shining gold star badge onto the cloak of a small proud child hero, a ten-year-old boy with no beard, in a lantern-lit village square, friendly villagers smiling behind. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-victory-5"
     }
   ]
 }
