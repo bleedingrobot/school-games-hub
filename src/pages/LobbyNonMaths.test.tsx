@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext, type AuthState } from '../auth/AuthContext';
@@ -46,6 +46,7 @@ vi.mock('../data/lobbyHere', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../data/lobbyHere')>()),
   fetchLobbyHere: vi.fn(async () => ({
     me: { archery: 'ready', 'dragon-maths': 'none', 'clan-quest': 'ready', isles: 'ready', raid: 'off' },
+    teacher: false,
     going: [],
     online: [],
   })),
@@ -87,7 +88,7 @@ beforeEach(() => {
 });
 
 describe('the lobby with the non-maths games switch', () => {
-  it('greys each tile it can’t use with the reason and a fix, and hides open chess and checkers games', async () => {
+  it('greys each tile it can’t use with the reason and a fix, hides open chess and checkers games, and leaves a teacher’s tiles open', async () => {
     vi.mocked(classSettings.readSettings).mockResolvedValue({ non_maths_games: false });
     renderLobby();
     const tiles = within(screen.getByRole('list', { name: 'Games' }));
@@ -106,5 +107,17 @@ describe('the lobby with the non-maths games switch', () => {
     expect(await within(list).findByText(/No open games right now/)).toBeInTheDocument();
     expect(within(list).queryByText(/Brave Kiwi 7/)).not.toBeInTheDocument();
     await import('../games/space/prefs');
+    cleanup();
+
+    // A teacher (no game states from the server): the live game tiles open their games, nothing paused.
+    const { fetchLobbyHere, readLobbyHere } = await import('../data/lobbyHere');
+    vi.mocked(fetchLobbyHere).mockResolvedValue(readLobbyHere({ me: null, going: [], online: [] }));
+    vi.mocked(classSettings.readSettings).mockResolvedValue({});
+    renderLobby();
+    const teacherTiles = within(screen.getByRole('list', { name: 'Games' }));
+    for (const name of [/Archery fight/, /Dragon Maths clash/, /Village Raid/]) {
+      expect(await teacherTiles.findByRole('button', { name })).toBeEnabled();
+    }
+    expect(screen.queryByText('Your teacher has paused this.')).not.toBeInTheDocument();
   });
 });
