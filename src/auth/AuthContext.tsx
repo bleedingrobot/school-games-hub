@@ -2,7 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import type { Session } from '@supabase/supabase-js';
 import { fetchMyProfile, FriendlyError, type Profile } from '../data/profile';
 import { forgetSettings } from '../data/settingsMemory';
-import { SIGNED_OUT_REPLY, supabase } from '../lib/supabase';
+import { SIGNED_OUT_REPLY } from '../lib/signedOutReply';
+import { supabase } from '../lib/supabase';
 import { readSignInError } from './signInErrors';
 
 export type AuthStatus = 'loading' | 'signed-out' | 'signed-in';

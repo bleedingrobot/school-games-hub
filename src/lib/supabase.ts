@@ -1,8 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
-
-/** Fired when the database says "you're not signed in", so the page can check who (if anyone) still is. */
-export const SIGNED_OUT_REPLY = 'hub:signed-out-reply';
+import { SIGNED_OUT_REPLY } from './signedOutReply';
 
 /**
  * Every request, plus a look at the answer: a 401 from the database means this page has no session any more

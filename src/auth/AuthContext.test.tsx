@@ -7,7 +7,6 @@ const getSession = vi.fn();
 let fire: (event: string, session: unknown) => void = () => {};
 
 vi.mock('../lib/supabase', () => ({
-  SIGNED_OUT_REPLY: 'hub:signed-out-reply',
   supabase: {
     auth: {
       onAuthStateChange: (cb: (event: string, session: unknown) => void) => {
