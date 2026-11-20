@@ -1,6 +1,6 @@
 # Ultimate Dragon Slayer
 
-**Status:** built 20 Nov 2026 (migration `20261120001700_ultimate_dragon_slayer.sql`). The crown's painting still to come.
+**Status:** LIVE 20 Nov 2026 (#653, migration `20261120001700_ultimate_dragon_slayer.sql`). Crown painted 20 Nov 2026 (try 1 of each metal, from the second set of prompts).
 
 James, 20 Nov 2026: "add this as a new achievable title, achievement and trophy, if you manage to kill the dragon twice in
 one season." The title started as a one-off, hand-given special title for Bubbly Bear 1 (#652).
@@ -34,6 +34,6 @@ Only the trophy needs painting; the achievement and title use the 🐲 emoji.
   (folder `trophies`, 512 px plus a 160 px `-small`), the same metal wording as the Slayer's Sword so they sit together
   on the shelf. Shape: a crown of curved dragon horns and scales, a dragon's head on the front breathing a little flame,
   on a small cushion.
-- Until then the cabinet draws the stand-in cup with the Dragon Maths icon.
+- Painted 20 Nov 2026. The first prompts put a dark figure inside the crown; "an empty royal crown ... nobody wearing it" fixed it.
 - When painted: drop the six files in `src/avatar/art/trophies/`, add `'dm-crown': 'dragon-crown'` to `TROPHY_ART` in
   `src/avatar/paintedArt.ts`, and record the picks in `docs/profile-art/picks.json`.
