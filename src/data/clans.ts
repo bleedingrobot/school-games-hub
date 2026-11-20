@@ -152,6 +152,65 @@ export async function fetchHallOfLegends(): Promise<HallRow[] | null> {
   }));
 }
 
+/** One of the school's top 10 clans by fame at the end of a season (pupils only). */
+export interface SeasonTopClan {
+  name: string;
+  avatar: unknown;
+  clanName: string;
+  fame: number;
+  /** Beat the season's monster. */
+  monster: boolean;
+  /** Finished the whole village. */
+  village: boolean;
+  isMe: boolean;
+}
+
+/** clan_season_summary(): my clan at the end of my last finished season, and the school's top 10 by fame then. */
+export interface ClanSeasonSummary {
+  season: number;
+  seen: boolean;
+  /** My place in the fame table (null for a teacher, a hidden pupil or no fame). */
+  place: number | null;
+  /** How many pupils' clans the school had that season, and how many beat the monster. */
+  clans: number;
+  monsterWins: number;
+  mine: {
+    clanName: string;
+    fame: number;
+    gold: number;
+    followers: number;
+    members: { slot: number; name: string; race: string; cls: string; level: number; look?: string | null }[];
+    bestLevel: number;
+    buildings: Record<string, unknown>;
+    monsterBeaten: boolean;
+    villageDone: boolean;
+    monsterTries: number;
+  };
+  /** Clan Quest trophy ids won that season. */
+  trophies: string[];
+  top: SeasonTopClan[];
+}
+
+/** My last finished Clan Quest season (the new-season ceremony), or null if I have none or it can't be read. Never throws. */
+export async function fetchClanSeasonSummary(): Promise<ClanSeasonSummary | null> {
+  try {
+    const { data, error } = await supabase.rpc('clan_season_summary');
+    if (error || !data || typeof (data as ClanSeasonSummary).season !== 'number') return null;
+    return data as ClanSeasonSummary;
+  } catch {
+    return null;
+  }
+}
+
+/** The ceremony for that season has been watched, so it doesn't open by itself again (on any Chromebook). */
+export async function markClanSeasonSeen(season: number): Promise<void> {
+  try {
+    await supabase.rpc('clan_season_seen', { season });
+  } catch {
+    // Not saved: the ceremony opens again next time, which is fine.
+  }
+}
+
 /** What the teacher sets for Clan Quest's maths and mine fights. The same shape the server sends with each clan. */
 export interface ClanMathsSettings extends PracticalSettings {
   /** Mine fights a day, 1 to 30. */

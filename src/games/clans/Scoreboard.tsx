@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { HallRow } from '../../data/clans';
+import type { ClanSeasonSummary, HallRow } from '../../data/clans';
 import { Hall } from './Hall';
 import { pretendBoard, type ScoreRow } from './fame';
 import type { Session } from './session';
@@ -9,7 +9,12 @@ import { bannerArt } from './art';
  * The Scoreboard: the top ten clans by fame, and your own clan. Clan names and fame only: no pupil's name, and never anything about maths.
  * With a server the rows come from the database (`load`); on the test page they are pretend clans.
  */
-export function Scoreboard({ session, load, hall, onBack }: { session: Session; load?: () => Promise<ScoreRow[]>; hall?: () => Promise<HallRow[] | null>; onBack: () => void }) {
+export function Scoreboard({ session, load, hall, past, onWatch, onBack }: {
+  session: Session; load?: () => Promise<ScoreRow[]>; hall?: () => Promise<HallRow[] | null>;
+  /** My last finished season (its fame top 10 goes in the Hall), and watching its ceremony again. */
+  past?: ClanSeasonSummary; onWatch?: () => void;
+  onBack: () => void;
+}) {
   const [rows, setRows] = useState<ScoreRow[] | null>(load ? null : pretendBoard(session));
   const [failed, setFailed] = useState(false);
   const [showHall, setShowHall] = useState(false);
@@ -37,7 +42,7 @@ export function Scoreboard({ session, load, hall, onBack }: { session: Session; 
     };
   }, [load, session.fame, session]);
 
-  if (showHall && hall) return <Hall load={hall} onBack={() => setShowHall(false)} />;
+  if (showHall && hall) return <Hall load={hall} past={past} onWatch={onWatch} onBack={() => setShowHall(false)} />;
   return (
     <section className="cq-scoreboard" aria-label="Scoreboard">
       <h2>Scoreboard</h2>

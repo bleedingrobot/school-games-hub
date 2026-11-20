@@ -18,7 +18,7 @@ import { MonsterWarning, MonsterWeek, MonsterResult, type MonsterTry } from './M
 import { finishPracticeTry, startPracticeTry } from './monsterPlay';
 import { Repick } from './Repick';
 import { Mines, Results, depthArt } from './Mines';
-import { armyToLose, armyToWin, changeLook, questToday, questUsed, barracksAndFill, freshQuest, freshRaid, giveFollowers, giveGold, givePoints, giveSupplies, knockOutSome, pretendRaidFinish, pretendRaidStart } from './places';
+import { repickDone, armyToLose, armyToWin, changeLook, questToday, questUsed, barracksAndFill, freshQuest, freshRaid, giveFollowers, giveGold, givePoints, giveSupplies, knockOutSome, pretendRaidFinish, pretendRaidStart } from './places';
 import { VillageRaids, type RaidGo } from './VillageRaids';
 import { BannerRain } from './RaidStage';
 import { DuelArena, DuelAskBanner } from './Duels';
@@ -33,7 +33,8 @@ import { Quest } from './Quest';
 import { QUESTS } from '../../../shared/clans/quests';
 import { Training } from './Training';
 import { Scoreboard } from './Scoreboard';
-import type { HallRow } from '../../data/clans';
+import type { ClanSeasonSummary, HallRow } from '../../data/clans';
+import { SeasonCeremony } from './SeasonCeremony';
 import { HowToPlay } from './HowToPlay';
 import { Achievements, VillageDone } from './Achievements';
 import { AchievementPop } from '../../achievements/AchievementPop';
@@ -122,7 +123,9 @@ function SettingsStrip({ session, onChange, open }: { session: Session; onChange
  * With a `server`, the clan lives on the server: it is loaded when this opens, every change is sent as an action, and
  * what the server answers replaces the browser's copy. With none (the test page), everything stays in the browser.
  */
-export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board, hall, typedNames = false, duelApi }: { seed?: number; initial?: Session | null; server?: ClanServer; board?: () => Promise<ScoreRow[]>; hall?: () => Promise<HallRow[] | null>; typedNames?: boolean; duelApi?: DuelApi }) {
+export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board, hall, typedNames = false, duelApi, pastSeason }: { seed?: number; initial?: Session | null; server?: ClanServer; board?: () => Promise<ScoreRow[]>; hall?: () => Promise<HallRow[] | null>; typedNames?: boolean; duelApi?: DuelApi;
+  /** The last finished season, for the new-season ceremony (docs/plans/clans-season-end, stage 3). Left out: no ceremony. */
+  pastSeason?: { load: () => Promise<ClanSeasonSummary | null>; seen: (season: number) => Promise<void> } }) {
   const [session, setSession] = useState<Session | null>(initial);
   // Live Clan Duels: the school's server, or pretend classmates' clans on the test page.
   const sessionRef = useRef<Session | null>(initial);
@@ -168,6 +171,21 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const [villageDone, setVillageDone] = useState(false);
   /** The reply said a new season has just begun. */
   const [newSeasonNotice, setNewSeasonNotice] = useState(false);
+  /** My last finished season (null until read, or none), and whether its ceremony is showing: by itself once, or again from the Hall. */
+  const [past, setPast] = useState<ClanSeasonSummary | null>(null);
+  const [ceremony, setCeremony] = useState<'first' | 'again' | null>(null);
+  useEffect(() => {
+    if (!pastSeason) return;
+    let current = true;
+    pastSeason.load().then((s) => {
+      if (!current || !s) return;
+      setPast(s);
+      if (!s.seen) setCeremony('first');
+    }, () => undefined);
+    return () => {
+      current = false;
+    };
+  }, [pastSeason]);
   /** The gold in a quest's Game Coins pouch, opened when the clan loaded (shown once). */
   const [pouchGold, setPouchGold] = useState(0);
   // Stories (docs/plans/stories/PLAN.md): the opening first, then the season monster's arrival when its week comes.
@@ -528,7 +546,22 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
         <StoryBook story={arrivalStory(monsterKind)} blanks={{ clan: session.clan.name }} endLabel="To the walls!" onClose={arrival.close} className="cq-storybook" />
       )}
       <TrophyWonLine games={['clan-quest']} watch={monsterDone ?? (villageDone ? 'village' : null)} off={!server} />
-      {newSeasonNotice && (
+      {ceremony && past && loading === null && (
+        <SeasonCeremony
+          summary={past}
+          canRepick={ceremony === 'first' && repicking}
+          onDone={(next) => {
+            if (ceremony === 'first') void pastSeason?.seen(past.season);
+            setPast({ ...past, seen: true });
+            setCeremony(null);
+            setNewSeasonNotice(false);
+            if (next === 'keep' && session && repicking) change(repickDone(session), { type: 'repickDone' });
+            // Watched again from the Hall: back to the Hall, which is still open underneath.
+            if (ceremony === 'first') setScreen('home');
+          }}
+        />
+      )}
+      {newSeasonNotice && !ceremony && (
         <div className="cq-celebrate" role="status">
           <p>A new season has begun! Your clan starts fresh. Your badges and the Hall of Legends stay forever.</p>
           <button data-key="enter" type="button" className="cq-btn" onClick={() => setNewSeasonNotice(false)}>OK</button>
@@ -624,7 +657,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {screen !== 'duels' && screen !== 'fight' && <DuelAskBanner duels={duels} onYes={(id) => { void duels.send({ action: 'duel-answer', duel: id, accept: true }); setScreen('duels'); }} />}
           {screen === 'raid' && <Raid session={session} onChange={change} onBack={() => setScreen('myvillage')} />}
           {screen === 'news' && <News session={session} onBack={() => setScreen('home')} />}
-          {screen === 'scoreboard' && <Scoreboard session={session} load={board} hall={hall} onBack={() => setScreen('home')} />}
+          {screen === 'scoreboard' && <Scoreboard session={session} load={board} hall={hall} past={past ?? undefined} onWatch={past ? () => setCeremony('again') : undefined} onBack={() => setScreen('home')} />}
           {screen === 'stories' && (
             <section className="cq-panel" aria-label="Stories">
               <h2>📖 Stories</h2>

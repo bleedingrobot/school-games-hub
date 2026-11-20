@@ -30,6 +30,8 @@ export const TROPHY_ART: Record<string, string> = {
   'dm-slayer': 'slayers-sword',
   'dm-crown': 'dragon-crown',
   'dm-veteran': 'season-veteran',
+  // Clan Quest's Clan Veteran shares the Season Veteran medal until it has its own painting.
+  'clan-veteran': 'season-veteran',
   'clan-tooth': 'monster-tooth',
   'chess-knight': 'champions-knight',
   'checkers-king': 'champions-king',

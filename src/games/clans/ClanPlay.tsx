@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { fetchClanTypedNames, fetchHallOfLegends, fetchScoreboard, liveClanServer } from '../../data/clans';
+import { fetchClanSeasonSummary, fetchClanTypedNames, fetchHallOfLegends, fetchScoreboard, liveClanServer, markClanSeasonSeen } from '../../data/clans';
 import { ClanQuest } from './ClanQuest';
 import { useAuth } from '../../auth/AuthContext';
 import { serverDuelApi } from '../../data/clanDuel';
+
+/** The new-season ceremony's results, read from the database. */
+const PAST_SEASON = { load: fetchClanSeasonSummary, seen: markClanSeasonSeen };
 
 /** Clan Quest on the hub: the clan lives on the school's server (the `clans` function), not in the browser. */
 export function ClanPlay() {
@@ -19,5 +22,5 @@ export function ClanPlay() {
       current = false;
     };
   }, []);
-  return <ClanQuest server={server} board={fetchScoreboard} hall={fetchHallOfLegends} typedNames={typedNames} duelApi={duelApi} />;
+  return <ClanQuest server={server} board={fetchScoreboard} hall={fetchHallOfLegends} typedNames={typedNames} duelApi={duelApi} pastSeason={PAST_SEASON} />;
 }
