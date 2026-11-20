@@ -2,7 +2,7 @@
 
 21 Nov 2026. James: "What other games could do with story pictures? Make a plan like Clans and Lord, draw all the art, and start adding. Make sure they are skippable: intro stories for each Goblin Storm hero, opening stories for Star Trader, Clans and Dragon Maths, a story-based challenge in games like Gem Keep. What other games could have stories that then progress as a playable narrative? Not the Foundational games."
 
-**Status:** ST.0–ST.4 done (#671–#674, 21 Nov 2026). Art not painted yet. Keeper's Tale trophy left out for now (needs a migration). Next: ST.5.
+**Status:** ST.0–ST.5 done (#671–#674 and the ST.5 PR, 21 Nov 2026). ST.1–ST.5 art painted (#679 and ST.5). Keeper's Tale trophy left out for now (needs a migration). Next: ST.6.
 
 ## 1. What we have now
 
@@ -138,7 +138,7 @@ Each stage is its own PR, goes live switched on, and adds a "What's new" line.
 - [x] **ST.2** Opening stories for Clans, Dragon Maths and Star Trader; Clans arrivals; Clans' win story onto `StoryBook`.
 - [x] **ST.3** Goblin Storm: opening, 8 hero stories, maps, bosses.
 - [x] **ST.4** Gem Keep: The Keeper's Tale, Tale challenges, ending, trophy.
-- [ ] **ST.5** Dragon Maths: masters, lair, victory.
+- [x] **ST.5** Dragon Maths: masters, lair, victory.
 - [ ] **ST.6** Maths Monsters: opening and quest pages.
 - [ ] **ST.7** Diamond Drop: Nugget's Journey.
 - [ ] **ST.8** Toon Flap: The Ink Thief.
