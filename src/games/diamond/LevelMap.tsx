@@ -12,6 +12,7 @@ import { drawRig, type Worn } from './art/items';
 import type { DiamondPrefs } from './prefs';
 import { HubButtons } from './HubButtons';
 import { Sprite } from './Sprite';
+import { KeyBadge } from '../../kit';
 
 /** The colour of each level's chamber wall, from the topsoil down to the diamond heart. */
 const CHAMBER = ['#7d4f25', '#b86236', '#7f7665', '#232b45', '#33254c', '#1b344c', '#7c6d57', '#52332d', '#331512', '#24163d'];
@@ -96,15 +97,15 @@ export function LevelMap({
           </div>
         </div>
         <div className="dd-menu">
-          <button type="button" className={`button button--play dd-btn dd-btn--big${glow === 'play' ? ' dd-glow' : ''}`} onClick={() => onOpen('play')} disabled={!canPlay} aria-describedby={why ? 'dd-why' : undefined}>
+          <button type="button" className={`button button--play dd-btn dd-btn--big${glow === 'play' ? ' dd-glow' : ''}`} data-key="enter" onClick={() => onOpen('play')} disabled={!canPlay} aria-describedby={why ? 'dd-why' : undefined}>
             Play level {selected}
           </button>
           {why && <p id="dd-why" className="dd-why">{why}</p>}
           <div className="dd-menu__row">
-            <button type="button" className={`dd-tile${glow === 'shop' ? ' dd-glow' : ''}`} onClick={() => onOpen('shop')}><span className="dd-tile__icon" aria-hidden="true">🛒</span>Shop</button>
-            <button type="button" className={`dd-tile${glow === 'book' ? ' dd-glow' : ''}`} onClick={() => onOpen('book')}><span className="dd-tile__icon" aria-hidden="true">📖</span>Gem Book</button>
-            <button type="button" className={`dd-tile${glow === 'hall' ? ' dd-glow' : ''}`} onClick={() => onOpen('hall')}><span className="dd-tile__icon" aria-hidden="true">🏆</span>Hall of Finders</button>
-            <button type="button" className={`dd-tile${glow === 'how' ? ' dd-glow' : ''}`} onClick={() => onOpen('how')}><span className="dd-tile__icon" aria-hidden="true">❓</span>How to play</button>
+            <button type="button" className={`dd-tile${glow === 'shop' ? ' dd-glow' : ''}`} data-key="1" onClick={() => onOpen('shop')}><KeyBadge k="1" /><span className="dd-tile__icon" aria-hidden="true">🛒</span>Shop</button>
+            <button type="button" className={`dd-tile${glow === 'book' ? ' dd-glow' : ''}`} data-key="2" onClick={() => onOpen('book')}><KeyBadge k="2" /><span className="dd-tile__icon" aria-hidden="true">📖</span>Gem Book</button>
+            <button type="button" className={`dd-tile${glow === 'hall' ? ' dd-glow' : ''}`} data-key="3" onClick={() => onOpen('hall')}><KeyBadge k="3" /><span className="dd-tile__icon" aria-hidden="true">🏆</span>Hall of Finders</button>
+            <button type="button" className={`dd-tile${glow === 'how' ? ' dd-glow' : ''}`} data-key="4" onClick={() => onOpen('how')}><KeyBadge k="4" /><span className="dd-tile__icon" aria-hidden="true">❓</span>How to play</button>
           </div>
         </div>
         <details className="dd-settings">

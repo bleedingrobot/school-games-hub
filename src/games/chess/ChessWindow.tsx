@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useGameKeys } from '../../kit';
 import { useSound } from '../../sound';
 import { Locker } from './Locker';
 import { READY_KINDS, loadLooks, lookByKey, revealShown, useLooks } from './looks';
@@ -17,6 +18,8 @@ export function ChessWindow({ children }: { children: ReactNode }) {
   const { soundOn, setSoundOn } = useSound();
   const { data, reveal } = useLooks();
   const [lockerOpen, setLockerOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  useGameKeys(rootRef);
   const fresh = data?.fresh.some((k) => {
     const look = lookByKey(k);
     return !!look && READY_KINDS.includes(look.kind);
@@ -27,7 +30,7 @@ export function ChessWindow({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div className="cw">
+    <div className="cw" ref={rootRef}>
       <Scenery background={data?.background} className="cw__bg" />
       <div className="cw__inner">
         <div className="cw__top">

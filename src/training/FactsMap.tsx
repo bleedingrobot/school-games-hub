@@ -13,7 +13,7 @@ export function FactsMap({ state, today, onBack }: { state: TrainingState; today
     <section className="tr-screen tr-map-screen">
       <div className="tr-row tr-row-between">
         <h2>My facts map</h2>
-        <button type="button" className="tr-btn" onClick={onBack}>
+        <button data-key="esc" type="button" className="tr-btn" onClick={onBack}>
           Back
         </button>
       </div>

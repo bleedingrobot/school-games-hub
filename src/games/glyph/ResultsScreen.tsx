@@ -28,9 +28,9 @@ export function ResultsScreen({ temple, result, points, onNext, onAgain, onMap, 
       <p>{result.passed ? RESULT_PASSED : `${RESULT_CLOSE} Open ${PASS_FIRST_GO} first go to pass.`}</p>
       {points > 0 && <p className="gg-points">+{points} points</p>}
       <div className="gg-results__btns">
-        {result.passed && temple < TOP_TEMPLE && <button type="button" className="gg-btn gg-btn--primary" onClick={onNext}>Next temple</button>}
-        <button type="button" className={`gg-btn${result.passed ? '' : ' gg-btn--primary'}`} onClick={onAgain}>Try again</button>
-        <button type="button" className="gg-btn" onClick={onMap}>Map</button>
+        {result.passed && temple < TOP_TEMPLE && <button type="button" className="gg-btn gg-btn--primary" data-key="enter" onClick={onNext}>Next temple</button>}
+        <button type="button" className={`gg-btn${result.passed ? '' : ' gg-btn--primary'}`} data-key={result.passed && temple < TOP_TEMPLE ? undefined : 'enter'} onClick={onAgain}>Try again</button>
+        <button type="button" className="gg-btn" data-key="esc" onClick={onMap}>Map</button>
       </div>
     </section>
   );

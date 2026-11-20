@@ -108,7 +108,7 @@ export function Creator({ seed, typedNames = false, onDone }: { seed: number; ty
             {CLAN_NOUNS.map((n, i) => <option key={n} value={i}>{n}</option>)}
           </select>
         </label>
-        <button type="button" className="cq-btn cq-btn--hot" disabled={!ready} onClick={() => { const name = clanNameFrom(adj, noun); onDone(makeClan(name, final), { name, drafts: final }); }}>
+        <button data-key="enter" type="button" className="cq-btn cq-btn--hot" disabled={!ready} onClick={() => { const name = clanNameFrom(adj, noun); onDone(makeClan(name, final), { name, drafts: final }); }}>
           Start the adventure
         </button>
         {!ready && <span className="cq-warn">Fix the names marked above first.</span>}

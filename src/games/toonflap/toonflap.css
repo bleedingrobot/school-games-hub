@@ -90,6 +90,7 @@
 .tf-trail { list-style: none; margin: 8px 0 4px; padding: 0 0 0 4px; display: grid; gap: 10px; position: relative; }
 .tf-stop { position: relative; }
 .tf-stop__btn {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;

@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { finishBand } from '../../../shared/kit/finishBand';
 import { WhatsNext } from '../../kit/WhatsNext';
+import { useGameKeys } from '../../kit';
 import { NextPartChip } from '../../components/NextPartChip';
 import { BERRY_CLUSTERS } from '../../../shared/pigeon/config';
 import type { Tap } from '../../../shared/pigeon/play';
@@ -86,6 +87,9 @@ export function PigeonGame({ backend, onExit, extra }: Props) {
       if (soundOn) playSound(result.goldenBranch ? 'win' : 'badge');
     }, fail);
 
+  const rootRef = useRef<HTMLDivElement>(null);
+  useGameKeys(rootRef, screen.kind !== 'play');
+
   let body: ReactNode;
   if (failed) body = <p className="pg-message">{failed}</p>;
   else if (!state || screen.kind === 'loading') body = <p className="pg-message">…</p>;
@@ -103,10 +107,10 @@ export function PigeonGame({ backend, onExit, extra }: Props) {
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
-    <div className="pg-root pg-root--cover">
+    <div className="pg-root pg-root--cover" ref={rootRef}>
       <div className="pg-bar">
         {onExit && (
-          <button type="button" className="pg-button" onClick={onExit}>
+          <button type="button" className="pg-button" data-key="esc" onClick={onExit}>
             <span aria-hidden="true">🏠</span> {WORDS.home}
           </button>
         )}
@@ -165,7 +169,7 @@ function Home({ state, say, onPlay }: { state: PigeonState; say: (t: string) => 
         <NextPartChip noun={WORDS.part} done={doneToday} onHear={say} />
         <p className="pg-chip">{WORDS.step(state.step)}</p>
         {doneToday && <p>{WORDS.doneToday}</p>}
-        <button type="button" className="button button--play pg-play-button" onClick={onPlay}>
+        <button type="button" className="button button--play pg-play-button" data-key="enter" onClick={onPlay}>
           {doneToday ? WORDS.playAgain : WORDS.play}
         </button>
         {branch.prizes > 0 && (

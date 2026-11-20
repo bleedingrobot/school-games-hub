@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
+import { useGameKeys } from '../kit';
 import { isResting, recordTyping, type TrainingState } from '../../shared/training/records';
 import type { AnswerEvent } from '../../shared/training/save';
 import type { SessionSummary } from '../../shared/training/summary';
@@ -60,6 +61,9 @@ export function TrainingApp({ state, onState, today, onAnswered, tools, quick, o
   const [seed, setSeed] = useState(1);
   const [checkDone, setCheckDone] = useState(false);
   const checkDue = !!check?.due && !checkDone;
+  // Keys only on the menu-like screens: the typing, session and Quick looks screens have their own (digits type answers).
+  const root = useRef<HTMLElement>(null);
+  useGameKeys(root, screen === 'home' || screen === 'summary' || screen === 'map' || screen === 'check');
 
   const start = () => {
     setSeed(seedFor(today, state.sessionsDone));
@@ -83,7 +87,7 @@ export function TrainingApp({ state, onState, today, onAnswered, tools, quick, o
   }
 
   return (
-    <main className="tr-app">
+    <main className="tr-app" ref={root}>
       {screen === 'home' && (
         <section className="tr-screen">
           <h1>Basic facts training</h1>
@@ -99,12 +103,12 @@ export function TrainingApp({ state, onState, today, onAnswered, tools, quick, o
             (checkDue ? (
               <>
                 <p className="tr-note">Time for your facts check: the same facts every few weeks, to see how you’re growing.</p>
-                <button type="button" className="tr-btn tr-btn-primary tr-big" onClick={() => setScreen('check')}>
+                <button data-key="enter" type="button" className="tr-btn tr-btn-primary tr-big" onClick={() => setScreen('check')}>
                   Facts check
                 </button>
               </>
             ) : (
-              <button type="button" className="tr-btn tr-btn-primary tr-big" onClick={start}>
+              <button data-key="enter" type="button" className="tr-btn tr-btn-primary tr-big" onClick={start}>
                 Today’s session
               </button>
             ))}

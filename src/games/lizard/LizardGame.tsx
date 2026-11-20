@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { finishBand } from '../../../shared/kit/finishBand';
 import { WhatsNext } from '../../kit/WhatsNext';
+import { useGameKeys } from '../../kit';
 import { NextPartChip } from '../../components/NextPartChip';
 import { DEN_BUNDLES } from '../../../shared/lizard/config';
 import type { Tap } from '../../../shared/lizard/play';
@@ -87,6 +88,9 @@ export function LizardGame({ backend, onExit, extra }: Props) {
       if (soundOn) playSound(result.goldenRaft ? 'win' : 'badge');
     }, fail);
 
+  const rootRef = useRef<HTMLDivElement>(null);
+  useGameKeys(rootRef, screen.kind !== 'play');
+
   let body: ReactNode;
   if (failed) body = <p className="lz-message">{failed}</p>;
   else if (!state || screen.kind === 'loading') body = <p className="lz-message">…</p>;
@@ -97,10 +101,10 @@ export function LizardGame({ backend, onExit, extra }: Props) {
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
-    <div className="lz-root lz-root--cover">
+    <div className="lz-root lz-root--cover" ref={rootRef}>
       <div className="lz-bar">
         {onExit && (
-          <button type="button" className="lz-button" onClick={onExit}>
+          <button type="button" className="lz-button" data-key="esc" onClick={onExit}>
             <span aria-hidden="true">🏠</span> {WORDS.home}
           </button>
         )}
@@ -159,7 +163,7 @@ function Home({ state, say, onPlay }: { state: LizardState; say: (t: string) => 
         <NextPartChip noun={WORDS.part} done={doneToday} onHear={say} />
         <p className="lz-chip">{WORDS.step(state.step)}</p>
         {doneToday && <p>{WORDS.doneToday}</p>}
-        <button type="button" className="button button--play lz-play-button" onClick={onPlay}>
+        <button type="button" className="button button--play lz-play-button" data-key="enter" onClick={onPlay}>
           {doneToday ? WORDS.playAgain : WORDS.play}
         </button>
         {den.prizes > 0 && (

@@ -137,7 +137,7 @@
 .pc__modes legend { width: 100%; text-align: center; font-weight: 800; margin-bottom: 4px; }
 .pc__mode {
   padding: 8px 16px; border-radius: 999px; border: 2px solid #94a3b8; background: rgba(15, 23, 42, 0.6); color: #fff;
-  font: inherit; font-weight: 800; cursor: pointer;
+  font: inherit; font-weight: 800; cursor: pointer; position: relative;
 }
 .pc__mode--on { border-color: #fde047; background: #3b2a8f; }
 .pc__mode:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }

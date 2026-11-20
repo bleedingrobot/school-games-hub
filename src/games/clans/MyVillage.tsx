@@ -143,11 +143,11 @@ export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid, onDu
       </div>
       <div className="cq-place__head">
         <h2>My Village</h2>
-        <button type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
+        <button data-key="esc" type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
       </div>
       <div className="cq-panel cq-vpanel" aria-live="polite" ref={card}>
         {phase.t === 'done' && (
-          <div role="status"><p className="cq-note">{phase.text}</p><button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={idle}>Carry on</button></div>
+          <div role="status"><p className="cq-note">{phase.text}</p><button data-key="enter" type="button" className="cq-btn cq-btn--hot" autoFocus onClick={idle}>Carry on</button></div>
         )}
         {note && <p className="cq-ok" role="status">{note}</p>}
         {b ? (
@@ -160,7 +160,7 @@ export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid, onDu
               <p className="cq-bcard__level">Level {e.levels[b]} of {maxLevel(b)}{e.levels[b] === 0 && ' (not built yet)'}</p>
               <p className="cq-soft">{BUILDING_BLURBS[b]}</p>
               {upgradeButton(b)}
-              <button type="button" className="cq-btn cq-vpanel__close" onClick={() => pick(undefined)}>Close</button>
+              <button data-key="esc" type="button" className="cq-btn cq-vpanel__close" onClick={() => pick(undefined)}>Close</button>
             </div>
             {b === 'barracks' && troopsPanel}
           </div>

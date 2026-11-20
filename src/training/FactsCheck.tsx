@@ -67,7 +67,7 @@ export function FactsCheck({ state, last, onState, onDone, onHome, newId = () =>
           2 minutes.
         </p>
         <p className="tr-small">Answer the ones you know. If you’re not sure, tap “Not sure yet”: that’s fine.</p>
-        <button type="button" className="tr-btn tr-btn-primary tr-big" onClick={() => setStep('typing')}>
+        <button data-key="enter" type="button" className="tr-btn tr-btn-primary tr-big" onClick={() => setStep('typing')}>
           Start the check
         </button>
       </section>
@@ -109,7 +109,7 @@ export function FactsCheck({ state, last, onState, onDone, onHome, newId = () =>
           <p>{checkDoneLine(result, last)}</p>
         </>
       )}
-      <button type="button" className="tr-btn tr-btn-primary" onClick={onHome}>
+      <button data-key="enter" type="button" className="tr-btn tr-btn-primary" onClick={onHome}>
         Back to Training
       </button>
     </section>

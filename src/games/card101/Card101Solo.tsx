@@ -15,6 +15,7 @@
  * preview) means a practice game, and the page says so.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useGameKeys } from '../../kit';
 import { randomAvatar } from '../../avatar/avatarParts';
 import { useSound } from '../../sound';
 import { playSound, type GameSound } from '../sounds';
@@ -366,6 +367,9 @@ export function Card101Solo({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [game]);
+  // Enter presses the main "go on" button; S, D, K, T and Esc stay with the game's own keys above.
+  const gameRoot = useRef<HTMLDivElement>(null);
+  useGameKeys(gameRoot);
 
   // When it becomes the student's turn to place a card, put focus on their first face-down card.
   const placing = phase === 'student' && view?.phase === 'play' && view.holding?.seat === STUDENT_SEAT;
@@ -448,7 +452,7 @@ export function Card101Solo({
       shared={(view.winners?.length ?? 0) > 1}
       note={saveNote(saveStatus, saveMessage, !!saving)}
     >
-      <button type="button" className="button button--primary" onClick={() => void start()} disabled={starting} autoFocus>
+      <button data-key="enter" type="button" className="button button--primary" onClick={() => void start()} disabled={starting} autoFocus>
         Play again
       </button>
       <button type="button" className="button button--light" onClick={() => setShowPodium(false)}>
@@ -461,7 +465,7 @@ export function Card101Solo({
   ) : null;
 
   return (
-    <div className="c101-game">
+    <div className="c101-game" ref={gameRoot}>
       <h1 className="sr-only">101</h1>
       <div className="c101-game__felt">
         <Table
@@ -481,7 +485,7 @@ export function Card101Solo({
               {status}
             </p>
             {peeking && (
-              <button type="button" className="button button--play" onClick={() => doAct('peek')} autoFocus>
+              <button data-key="enter" type="button" className="button button--play" onClick={() => doAct('peek')} autoFocus>
                 I’ve remembered them {timeScale > 0 && <span className="c101-countdown">{peekLeft}</span>}
               </button>
             )}
@@ -510,7 +514,7 @@ export function Card101Solo({
               </span>
             )}
             {between && !scoring && !showPodium && (
-              <button type="button" className="button button--play" onClick={() => (over ? setShowPodium(true) : setScoringRound(view.round))}>
+              <button data-key="enter" type="button" className="button button--play" onClick={() => (over ? setShowPodium(true) : setScoringRound(view.round))}>
                 {over ? '🏆 Places' : 'Scores'}
               </button>
             )}
@@ -549,7 +553,7 @@ export function Card101Solo({
         ) : (
           <div className="c101-actions">
             {over ? (
-              <button type="button" className="c101-action is-main" onClick={() => void start()} disabled={starting}>
+              <button data-key="enter" type="button" className="c101-action is-main" onClick={() => void start()} disabled={starting}>
                 Play again
               </button>
             ) : (

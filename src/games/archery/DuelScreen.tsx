@@ -557,7 +557,7 @@ export function DuelScreen({ duel, me, serverNow, onShot, onTimesUp, onLeave, on
           <div className="ar-panel">
             <h2 id="ar-duel-problem" ref={dialogHeading} tabIndex={-1}>The battlefield won't start</h2>
             <p>{problem}</p>
-            <button type="button" className="button button--play ar-btn" onClick={() => void leaveNow().then(onDone)}>Back</button>
+            <button type="button" className="button button--play ar-btn" data-key="enter" onClick={() => void leaveNow().then(onDone)}>Back</button>
           </div>
         </div>
       )}
@@ -570,7 +570,7 @@ export function DuelScreen({ duel, me, serverNow, onShot, onTimesUp, onLeave, on
             {endWords && <p>{endWords}</p>}
             <p className="ar-help">Any arrows and helpers you didn't use are back in your bag.</p>
             <div className="ar-row">
-              <button type="button" className="button button--play ar-btn" onClick={onDone}>Done</button>
+              <button type="button" className="button button--play ar-btn" data-key="enter" onClick={onDone}>Done</button>
             </div>
           </div>
         </div>

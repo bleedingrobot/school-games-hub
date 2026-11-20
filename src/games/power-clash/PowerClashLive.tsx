@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useGameKeys } from '../../kit';
 import { Link } from 'react-router';
 import { legalSkip, placeableSquares, powerBlockedReason, targetChoices } from '../../../shared/power-clash/engine';
 import { GRACE_MS, matchIsOver, roundIsOver, seatOf, sideOf } from '../../../shared/power-clash/live';
@@ -200,6 +201,9 @@ export function PowerClashLive({ session, tick = 1000 }: { session: PowerSession
     return () => window.clearTimeout(timer);
   }, [present, foeId, finished]);
 
+  // Enter presses "Next round"; the digits stay with the squares and Esc and ? with the keys below.
+  const gameRoot = useRef<HTMLElement>(null);
+  useGameKeys(gameRoot);
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setSelected(null);
@@ -298,7 +302,7 @@ export function PowerClashLive({ session, tick = 1000 }: { session: PowerSession
     );
 
   return (
-    <section className={`pc pcl ${calm ? 'pc--calm' : ''}`} aria-label={`${TEXT.name} with ${foeName}`}>
+    <section ref={gameRoot} className={`pc pcl ${calm ? 'pc--calm' : ''}`} aria-label={`${TEXT.name} with ${foeName}`}>
       <header className="pc__top">
         <h1>{TEXT.name}</h1>
         <button type="button" className="button button--light pc__help" ref={helpButton} onClick={() => setHelpOpen(true)}>
@@ -404,7 +408,7 @@ export function PowerClashLive({ session, tick = 1000 }: { session: PowerSession
               </button>
             ) : null}
             {!finished && roundOver && !matchOver ? (
-              <button
+              <button data-key="enter"
                 type="button"
                 className="button button--play"
                 disabled={busy || iPressedNext}

@@ -209,3 +209,6 @@
 .mn-card [aria-pressed='true'] { outline: 3px solid currentColor; }
 .mn-save { margin: 0; font-size: 0.95rem; }
 .mn-save[data-state='waiting'], .mn-save[data-state='break'], .mn-save[data-state='refused'] { color: #fde68a; }
+
+/* Key badges (docs/plans/game-keys/PLAN.md). */
+.mn-level__actions .button--play { position: relative; }

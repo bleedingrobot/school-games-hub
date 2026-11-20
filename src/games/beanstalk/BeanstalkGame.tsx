@@ -6,6 +6,7 @@
 import { NextPartChip } from '../../components/NextPartChip';
 import { WEAR_ME_LINE, WhatsNext } from '../../kit/WhatsNext';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { KeyBadge, useGameKeys } from '../../kit';
 import { DAYS_PER_EGG, LEAVES_ON_STALK, METALS, shownDots, stageTarget, stalkAfter } from '../../../shared/beanstalk/progress';
 import { TARGETS, type Round as StageRound, type Tap } from '../../../shared/beanstalk/round';
 import type { FinishReply } from '../../../shared/beanstalk/server';
@@ -88,6 +89,8 @@ export function BeanstalkGame({ backend, onExit, signpost, extra }: Props) {
   const fail = useCallback((e: unknown) => setFailed(e instanceof BeanstalkError ? e.message : WORDS.wentWrong), []);
   const voice = useVoice();
   const { soundOn, setSoundOn } = useSound();
+  const rootRef = useRef<HTMLDivElement>(null);
+  useGameKeys(rootRef);
 
   const reload = useCallback(() => {
     backend
@@ -151,10 +154,10 @@ export function BeanstalkGame({ backend, onExit, signpost, extra }: Props) {
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
-    <div className="bs-root bs-root--cover">
+    <div className="bs-root bs-root--cover" ref={rootRef}>
       <div className="bs-bar">
         {onExit && (
-          <button type="button" className="bs-voice" onClick={onExit}>
+          <button type="button" className="bs-voice" data-key={screen.kind === 'play' ? undefined : 'esc'} onClick={onExit}>
             <span aria-hidden="true">🏠</span> {WORDS.home}
           </button>
         )}
@@ -187,8 +190,9 @@ function Choose({ say, onChoose }: { say: (t: string) => void; onChoose: (c: Chi
     <div className="bs-choose">
       <h2 tabIndex={-1} ref={heading}>{WORDS.whoAreYou}</h2>
       <div className="bs-choose__row">
-        {(['jack', 'jill'] as const).map((c) => (
-          <button key={c} type="button" className="bs-choose__child" onClick={() => onChoose(c)}>
+        {(['jack', 'jill'] as const).map((c, i) => (
+          <button key={c} type="button" className="bs-choose__child" data-key={String(i + 1)} onClick={() => onChoose(c)}>
+            <KeyBadge k={String(i + 1)} />
             <img src={childArt(c, 'wave')} alt="" />
             <span>{WORDS[c]}</span>
           </button>
@@ -217,7 +221,7 @@ function Home({ state, say, onPlay }: { state: BeanstalkState; say: (t: string) 
         <p className="bs-day">{WORDS.dayCount(Math.min(stalk.day + 1, DAYS_PER_EGG))}</p>
         <NextPartChip noun={WORDS.part} done={doneToday} onHear={say} />
         {doneToday && <p>{WORDS.doneToday}</p>}
-        <button type="button" className="button button--play bs-play-button" onClick={onPlay}>
+        <button type="button" className="button button--play bs-play-button" data-key="enter" onClick={onPlay}>
           {doneToday ? WORDS.playAgain : WORDS.play}
         </button>
         {stalk.eggs > 0 && (
@@ -284,7 +288,7 @@ export function Finish({ result, child, say, signpost, onNext }: { result: Finis
         {moveLine && <p className="bs-moved">{moveLine}</p>}
         {result.egg && <img className="bs-prize" src={paint('things/egg-cushion')} alt="The Golden Egg" />}
         {result.egg && <p className="bs-moved bs-wear-me">{WEAR_ME_LINE}</p>}
-        <button type="button" className="button button--play bs-play-button" onClick={onNext}>
+        <button type="button" className="button button--play bs-play-button" data-key="enter" onClick={onNext}>
           OK
         </button>
         {signpost && wekaOn && secure && heard && (

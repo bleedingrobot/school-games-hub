@@ -34,7 +34,7 @@ export function Church({ session, onChange, onBack }: { session: Session; onChan
   const allCost = wakeAllCost(clan);
   let body: React.ReactNode;
   if (phase.t === 'done') {
-    body = <div className="cq-panel" role="status"><p className="cq-note">{phase.text} {clan.gold} gold left.</p><button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={idle}>Carry on</button></div>;
+    body = <div className="cq-panel" role="status"><p className="cq-note">{phase.text} {clan.gold} gold left.</p><button data-key="enter" type="button" className="cq-btn cq-btn--hot" autoFocus onClick={idle}>Carry on</button></div>;
   } else if (out.length === 0) {
     body = <p>Everyone is awake and well. Nobody needs the Church today.</p>;
   } else {
@@ -67,7 +67,7 @@ export function Church({ session, onChange, onBack }: { session: Session; onChan
     <section className="cq-place" aria-label="The Church">
       <div className="cq-place__head">
         <h2><PlaceSprite place="church" /> The Church</h2>
-        <button type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
+        <button data-key="esc" type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
       </div>
       <p className="cq-soft">You have <strong>{clan.gold} gold</strong>. {out.length > 0 && `${out.length} knocked out.`}</p>
       {body}

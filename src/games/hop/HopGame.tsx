@@ -5,6 +5,7 @@
  */
 import { NextPartChip } from '../../components/NextPartChip';
 import { useCallback, useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react';
+import { useGameKeys } from '../../kit';
 import type { Tap } from '../../../shared/hop/play';
 import { DAYS_PER_JAR, METALS, PADS, pondAfter } from '../../../shared/hop/progress';
 import type { Round } from '../../../shared/hop/round';
@@ -82,6 +83,8 @@ export function HopGame({ backend, onExit, nextGame, extra }: Props) {
   const [failed, setFailed] = useState<string | null>(null);
   const fail = useCallback((e: unknown) => setFailed(e instanceof HopError ? e.message : WORDS.wentWrong), []);
   const voice = useVoice();
+  const rootRef = useRef<HTMLDivElement>(null);
+  useGameKeys(rootRef);
   const { soundOn, setSoundOn } = useSound();
 
   const reload = useCallback(() => {
@@ -131,10 +134,10 @@ export function HopGame({ backend, onExit, nextGame, extra }: Props) {
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
-    <div className="hp-root hp-root--cover">
+    <div className="hp-root hp-root--cover" ref={rootRef}>
       <div className="hp-bar">
         {onExit && (
-          <button type="button" className="hp-button" onClick={onExit}>
+          <button type="button" className="hp-button" data-key={screen.kind === 'play' ? undefined : 'esc'} onClick={onExit}>
             <span aria-hidden="true">🏠</span> {WORDS.home}
           </button>
         )}
@@ -176,7 +179,7 @@ function Home({ state, say, onPlay }: { state: HopState; say: (t: string) => voi
         <NextPartChip noun={WORDS.part} done={doneToday} onHear={say} />
         <p className="hp-chip">{WORDS.counting(state.step)}</p>
         {doneToday && <p>{WORDS.doneToday}</p>}
-        <button type="button" className="button button--play hp-play-button" onClick={onPlay}>
+        <button type="button" className="button button--play hp-play-button" data-key="enter" onClick={onPlay}>
           {doneToday ? WORDS.playAgain : WORDS.play}
         </button>
         {pond.jars > 0 && (

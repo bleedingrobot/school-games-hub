@@ -40,8 +40,8 @@ export function ResultsScreen({ reply, today, level, gentle, maths, onNext, onAg
         <h2 id="tf-res-h" className="tf-h" tabIndex={-1} ref={heading}>{def.name}</h2>
         <p className="tf-card-note">{RESULT_LINES.notChecked}</p>
         <div className="tf-row">
-          <button type="button" className="tf-btn tf-btn--big" onClick={onAgain}>Fly again</button>
-          <button type="button" className="tf-btn tf-btn--ghost" onClick={onMap}>Map</button>
+          <button type="button" className="tf-btn tf-btn--big" data-key="enter" onClick={onAgain}>Fly again</button>
+          <button type="button" className="tf-btn tf-btn--ghost" data-key="esc" onClick={onMap}>Map</button>
         </div>
       </section>
     );
@@ -121,9 +121,9 @@ export function ResultsScreen({ reply, today, level, gentle, maths, onNext, onAg
 
       {unlocks.levelTomorrow && <p className="tf-card-note" role="status">{RESULT_LINES.tomorrow}</p>}
       <div className="tf-row tf-row--end">
-        {nextOpen && <button type="button" className="tf-btn tf-btn--big tf-btn--play" onClick={() => onNext(level + 1)}>Next level: {LEVELS[level].name}</button>}
-        <button type="button" className={nextOpen ? 'tf-btn' : 'tf-btn tf-btn--big tf-btn--play'} onClick={onAgain}>Fly again</button>
-        <button type="button" className="tf-btn tf-btn--ghost" onClick={onMap}>Map</button>
+        {nextOpen && <button type="button" className="tf-btn tf-btn--big tf-btn--play" data-key="enter" onClick={() => onNext(level + 1)}>Next level: {LEVELS[level].name}</button>}
+        <button type="button" className={nextOpen ? 'tf-btn' : 'tf-btn tf-btn--big tf-btn--play'} data-key={nextOpen ? undefined : 'enter'} onClick={onAgain}>Fly again</button>
+        <button type="button" className="tf-btn tf-btn--ghost" data-key="esc" onClick={onMap}>Map</button>
       </div>
     </section>
   );

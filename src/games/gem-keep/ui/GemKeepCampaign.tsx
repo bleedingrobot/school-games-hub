@@ -11,6 +11,7 @@ import { AUTO_FOCUS, currentFocus, focusKey, focusNote, makeFocusPack, type Math
 import { showingPack, type ShowingPack, type ShownAnswer } from '../../../../shared/maths/claim';
 import type { FactStats } from '../../../../shared/maths/leitner';
 import type { SkillPack } from '../../../../shared/maths/skillPack';
+import { useGameKeys } from '../../../kit';
 import { boardUrl, campaignUrl } from '../art';
 import type { GameEngine } from '../engine/GameEngine';
 import { keyPassedToday, loadProgress, saveProgress, withKey, withWin, type CampaignProgress } from '../progress';
@@ -155,10 +156,12 @@ export function GemKeepCampaign({
   // Gem Keep fills the whole window, over the hub's bar (James, 18 Nov 2026: like Star Trader). The painting of the map or
   // level shows blurred behind everything, so no hub colour shows round the edges.
   const level = playing === null ? null : CAMPAIGN[playing];
+  const root = useRef<HTMLDivElement>(null);
+  useGameKeys(root);
   const backdrop = level ? boardUrl(level.id, true) : campaignUrl(true);
   const windowStyle = backdrop ? ({ '--gk-backdrop': `url(${backdrop})` } as CSSProperties) : undefined;
   return (
-    <div className="gk-window" style={windowStyle}>
+    <div ref={root} className="gk-window" style={windowStyle}>
       {playing === null || !level ? (
         <CampaignMap progress={progress} note={note} focusNote={focusNote(packFocus)} onPlay={(i) => void play(i)} />
       ) : (

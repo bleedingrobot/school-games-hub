@@ -162,7 +162,7 @@ export function VillageRaids({ session, ask, onStart, onFight, onBack, onDuels }
       <div className="cq-place__head">
         <h2>Village Raids</h2>
         {onDuels && <button type="button" className="cq-btn cq-btn--hot" onClick={onDuels}>⚔️ Live duels</button>}
-        <button type="button" className="cq-btn" onClick={onBack}>Back to My Village</button>
+        <button data-key="esc" type="button" className="cq-btn" onClick={onBack}>Back to My Village</button>
       </div>
       {body}
     </section>

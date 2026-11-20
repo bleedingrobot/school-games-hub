@@ -75,7 +75,7 @@ export function Hall({ load, onBack }: { load: () => Promise<HallRow[] | null>; 
           );
         })
       )}
-      <div className="cq-actions"><button type="button" className="cq-btn" onClick={onBack}>Back to the scoreboard</button></div>
+      <div className="cq-actions"><button data-key="esc" type="button" className="cq-btn" onClick={onBack}>Back to the scoreboard</button></div>
     </section>
   );
 }

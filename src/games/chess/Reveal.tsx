@@ -73,6 +73,7 @@ export function Reveal({ itemKey, more, onDone }: { itemKey: string; more: numbe
             <button
               type="button"
               className="button button--play"
+              data-key="enter"
               autoFocus
               onClick={() => {
                 void chooseLook(look.kind, look.id);
@@ -82,7 +83,7 @@ export function Reveal({ itemKey, more, onDone }: { itemKey: string; more: numbe
               Use it now
             </button>
           )}
-          <button type="button" className="button button--light" onClick={onDone}>
+          <button type="button" className="button button--light" data-key="esc" onClick={onDone}>
             {more > 0 ? `Next prize (${more} more)` : 'Later'}
           </button>
         </div>

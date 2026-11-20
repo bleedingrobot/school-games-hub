@@ -9,6 +9,7 @@
 import { useState, useSyncExternalStore } from "react";
 import { CAMPAIGN } from "../../../../shared/gem-keep/levels";
 import { campaignTables } from "../../../../shared/maths/selector";
+import { KeyBadge } from "../../../kit";
 import { CAMPAIGN_MARKERS, campaignUrl } from "../art";
 import { isUnlocked, totalStars, type CampaignProgress } from "../progress";
 import { TEXT } from "../strings";
@@ -96,6 +97,7 @@ export function CampaignMap({
                 <button
                   type="button"
                   className="gk-stop"
+                  data-key={i < 9 ? String(i + 1) : undefined}
                   disabled={!open[i]}
                   data-next={
                     (i === next && !progress[level.id]?.keyPassed) || undefined
@@ -104,6 +106,7 @@ export function CampaignMap({
                   title={open[i] ? level.intro : TEXT.locked(i)}
                   onClick={() => onPlay(i)}
                 >
+                  {i < 9 && <KeyBadge k={String(i + 1)} />}
                   <span className="gk-stop__number" aria-hidden="true">
                     {i + 1}
                   </span>
@@ -190,6 +193,7 @@ function PaintedWorld({
                 <button
                   type="button"
                   className="gk-gemstop"
+                  data-key={i < 9 ? String(i + 1) : undefined}
                   aria-label={TEXT.stopLabel(i + 1, l.name, s, !open[i])}
                   aria-describedby="gk-world-card"
                   aria-pressed={i === picked}
@@ -230,6 +234,7 @@ function PaintedWorld({
           <button
             type="button"
             className="button button--play gk-world__play"
+            data-key="enter"
             onClick={() => onPlay(shown)}
           >
             {TEXT.playLevel(shown + 1)}

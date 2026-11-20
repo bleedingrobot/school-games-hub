@@ -8,6 +8,7 @@ import type { Clan } from '../../../shared/clans/types';
 import type { Draft } from '../../../shared/clans/create';
 import { YEAR_BANDS, type YearBand } from '../../../shared/maths/practical';
 import { CONFIG } from '../../../shared/clans/config';
+import { useGameKeys } from '../../kit';
 import { Creator } from './Creator';
 import { Fight, type BestNote, type CryChecked } from './Fight';
 import { MemberCard } from './MemberCard';
@@ -170,6 +171,8 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const bestNote = useRef<BestNote | undefined>(undefined);
   /** When a new screen opens, focus its heading so a keyboard or screen-reader user starts at the top of it (not on a button that is gone). */
   const root = useRef<HTMLDivElement>(null);
+  // The Mines, the fight and the results page have their own keys (Enter, B, C, A, S, G...), so these stay off there.
+  useGameKeys(root, screen !== 'mines' && screen !== 'fight' && screen !== 'results');
   const firstScreen = useRef(true);
   useEffect(() => {
     if (firstScreen.current) {
@@ -513,13 +516,13 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
       {newSeasonNotice && (
         <div className="cq-celebrate" role="status">
           <p>A new season has begun! Your clan starts fresh. Your badges and the Hall of Legends stay forever.</p>
-          <button type="button" className="cq-btn" onClick={() => setNewSeasonNotice(false)}>OK</button>
+          <button data-key="enter" type="button" className="cq-btn" onClick={() => setNewSeasonNotice(false)}>OK</button>
         </div>
       )}
       {pouchGold > 0 && (
         <div className="cq-celebrate" role="status">
           <p>💰 Quest pouch: +{pouchGold.toLocaleString()} gold!</p>
-          <button type="button" className="cq-btn" onClick={() => setPouchGold(0)}>OK</button>
+          <button data-key="enter" type="button" className="cq-btn" onClick={() => setPouchGold(0)}>OK</button>
         </div>
       )}
       {notice && <p className="cq-note" role="alert">{notice}</p>}
@@ -528,7 +531,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
       ) : loading === 'failed' ? (
         <div className="cq-panel" role="alert">
           <p>We couldn't reach your clan just now.</p>
-          <button type="button" className="cq-btn cq-btn--hot" onClick={open}>Try again</button>
+          <button data-key="enter" type="button" className="cq-btn cq-btn--hot" onClick={open}>Try again</button>
         </div>
       ) : loading === 'off' ? (
         <p className="cq-panel" role="status">Clan Quest isn't switched on yet. Ask your teacher when it will be ready!</p>
@@ -575,7 +578,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
                 {/* The town map above is the way to every place; this list is only for when the map can't be shown. */}
                 {!hasTownMap() && (
                   <>
-                  <button type="button" className="cq-btn cq-btn--hot" onClick={() => setScreen('mines')}>Go to the Mines</button>
+                  <button data-key="enter" type="button" className="cq-btn cq-btn--hot" onClick={() => setScreen('mines')}>Go to the Mines</button>
                   {(monsterWeek(session.clock) || !server) && (
                     <button type="button" className="cq-btn cq-btn--hot" onClick={() => setScreen('monster')}>{monsterWeek(session.clock) ? 'The Monster' : 'The Monster (practice)'}</button>
                   )}

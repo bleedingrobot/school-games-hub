@@ -20,6 +20,7 @@ import { shortcutsOn } from './shortcuts';
 import { HowToPlay, HowToPlayBody } from './HowToPlay';
 import { Bank, ClassPick, Healer, HeroPage, Inn, LookPage, Shop, Training, type PlaceProps, type Reply } from './Places';
 import { Arena, HallOfHeroes, NewsPage, Warriors } from './Social';
+import { useGameKeys } from '../../kit';
 import { SeasonCeremony } from './SeasonCeremony';
 import { HeroSprite, MonsterSprite } from './Sprite';
 import { withArticle } from './text';
@@ -295,7 +296,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
           <h2>Can’t connect</h2>
           <p className="lord-lead">{OFFLINE}</p>
           {waiting > 0 && <p className="lord-note">Your last fight is saved on this Chromebook and will be sent as soon as you are back online.</p>}
-          <button type="button" className="lord-btn lord-btn--hot" autoFocus onClick={() => void open()}>Try again</button>
+          <button type="button" className="lord-btn lord-btn--hot" data-key="enter" autoFocus onClick={() => void open()}>Try again</button>
         </section>
       </Frame>
     );
@@ -520,7 +521,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
             <div className="lord-big__fig lord-big__fig--me"><div className="lord-big__body"><HeroSprite heroClass={hero.heroClass} look={hero.look} scale={8} label="" /></div></div>
           </div>
           <div className="lord-big__bar">
-            <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus disabled={busy} onClick={() => void resolveEvent(event.id)}>
+            <button type="button" className="lord-btn lord-btn--hot lord-btn--big" data-key="enter" autoFocus disabled={busy} onClick={() => void resolveEvent(event.id)}>
               {event.maths ? 'Have a go' : 'Continue'}
             </button>
           </div>
@@ -548,11 +549,11 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
           </div>
           <div className="lord-big__bar" role="group" aria-label="What will you do?">
             {sizeUp && (
-              <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus onClick={() => void beginFight(true)}>
+              <button type="button" className="lord-btn lord-btn--hot lord-btn--big" data-key="enter" autoFocus onClick={() => void beginFight(true)}>
                 Size it up <small>first hit ×{sizeItUpBonus('right')}, +{Math.round(SIZE_IT_UP_GOLD * 100)}% gold</small>
               </button>
             )}
-            <button type="button" className={`lord-btn lord-btn--big ${sizeUp ? 'lord-btn--glass' : 'lord-btn--hot'}`} autoFocus={!sizeUp} onClick={() => void beginFight(false)}>Fight!</button>
+            <button type="button" className={`lord-btn lord-btn--big ${sizeUp ? 'lord-btn--glass' : 'lord-btn--hot'}`} data-key={sizeUp ? undefined : 'enter'} autoFocus={!sizeUp} onClick={() => void beginFight(false)}>Fight!</button>
           </div>
         </BigStage>
       );
@@ -583,7 +584,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
             <div className="lord-big__fig lord-big__fig--foe lord-big__fig--dragon"><div className="lord-big__body lord-breathe"><MonsterSprite monster={{ id: 'dragon-1', name: 'Scorchtail, the Red Dragon', level: 13 }} scale={13} /></div></div>
           </div>
           <div className="lord-big__bar">
-            <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus={!triedToday} disabled={busy || triedToday} onClick={() => void beginDragonStage(next)}>
+            <button type="button" className="lord-btn lord-btn--hot lord-btn--big" data-key="enter" autoFocus={!triedToday} disabled={busy || triedToday} onClick={() => void beginDragonStage(next)}>
               {next === 1 ? 'Go in' : `Carry on: fight ${next} of 3`}
             </button>
             <button type="button" className="lord-btn lord-btn--glass lord-btn--big" autoFocus={triedToday} onClick={toVillage}>Not yet</button>
@@ -652,8 +653,11 @@ function VillageKeys({ onKey }: { onKey: (key: string) => void }) {
  */
 function Frame({ children, hero, bare, backend, state }: { children: ReactNode; hero?: Hero; bare?: boolean; backend: LordBackend; state?: LordState }) {
   const hud = useMemo(() => (hero ? { hero, unlimited: !!state?.unlimited } : null), [hero, state?.unlimited]);
+  const root = useRef<HTMLDivElement>(null);
+  // Dragon Maths has its own letter keys, Esc and Enter-on-the-focused-button; this only adds Enter for a few go-on buttons.
+  useGameKeys(root);
   return (
-    <div className={`lord${bare ? ' lord--bare' : ''}`} data-testid="lord">
+    <div ref={root} className={`lord${bare ? ' lord--bare' : ''}`} data-testid="lord">
       {!hero && (
         <header className="lord-top">
           <h1>Dragon Maths</h1>

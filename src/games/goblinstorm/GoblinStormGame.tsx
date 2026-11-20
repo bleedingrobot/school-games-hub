@@ -6,7 +6,8 @@
  * What's open comes from the pupil's save (`backend.me()`): Knight and Ranger and Castle Fields at first, each other
  * hero by its own deed and each map by beating the boss before it. The server checks both again when a run starts.
  */
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { KeyBadge, useGameKeys } from '../../kit';
 import { HEROES, MAPS, UNLOCK_WORDS, type HeroDef } from '../../../shared/goblinstorm/config';
 import { heroOpen, mapOpen, RUNS_A_DAY } from '../../../shared/goblinstorm/server';
 import { CODEX_SIZE } from '../../../shared/goblinstorm/shop';
@@ -132,6 +133,10 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
     hush();
   };
 
+  const windowRef = useRef<HTMLDivElement>(null);
+  // Keys press the menu buttons (heroes and maps 1 to 9, Play again = Enter, Back = Esc); a run has its own keys (PlayScreen).
+  useGameKeys(windowRef, screen !== 'play');
+
   const play = async (i: number, replayGuide = false) => {
     setBusy(true);
     setError(null);
@@ -167,7 +172,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
   };
 
   return (
-    <div className="gs-window">
+    <div className="gs-window" ref={windowRef}>
       {screen === 'hero' && (
         <Menu title="Pick your hero" extra={extra}>
           {outToday && <DoneToday />}
@@ -184,15 +189,16 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
             </p>
           )}
           <div className="gs-grid">
-            {HEROES.map((h) => {
+            {HEROES.map((h, i) => {
               const open = save ? heroOpen(save, h.id) : false;
               const secret = h.secret && !open;
               return (
                 <button
-                  key={h.id} type="button" disabled={!open}
+                  key={h.id} type="button" disabled={!open} data-key={i < 9 ? String(i + 1) : undefined}
                   className={`gs-pick${open ? '' : ' gs-pick--locked'}${hero.id === h.id && open ? ' gs-pick--chosen' : ''}`}
                   onClick={() => { setHero(h); setScreen('map'); }}
                 >
+                  {i < 9 && <KeyBadge k={String(i + 1)} />}
                   <span className="gs-pick__icon" aria-hidden="true">{secret ? '❔' : <Pic path={`portraits/${h.id}`} small fallback={HERO_ICON[h.id]} className="gs-pic--portrait" />}</span>
                   <span className="gs-pick__name">{secret ? 'Secret hero' : h.name}</span>
                   {!secret && <span className="gs-pick__blurb">{h.blurb}</span>}
@@ -221,7 +227,8 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
               const open = save ? mapOpen(save, i) : i === 0;
               const beaten = save?.bosses.includes(i);
               return (
-                <button key={m.id} type="button" disabled={!open || busy || outToday} className={`gs-pick gs-pick--map gs-pick--${m.id}${open ? '' : ' gs-pick--locked'}${shown?.kind === 'map' && shown.map === i ? ' gs-show' : ''}`} onClick={() => void play(i)}>
+                <button key={m.id} type="button" disabled={!open || busy || outToday} data-key={i < 9 ? String(i + 1) : undefined} className={`gs-pick gs-pick--map gs-pick--${m.id}${open ? '' : ' gs-pick--locked'}${shown?.kind === 'map' && shown.map === i ? ' gs-show' : ''}`} onClick={() => void play(i)}>
+                  {i < 9 && <KeyBadge k={String(i + 1)} />}
                   <span className="gs-pick__icon" aria-hidden="true">{MAP_ICON[m.id]}</span>
                   <span className="gs-pick__name">{m.name}</span>
                   <span className="gs-pick__blurb">{m.monsters.slice(0, 3).map((x) => x.name).join(', ')}</span>
@@ -325,7 +332,7 @@ function Menu({ title, back, extra, children }: { title: string; back?: () => vo
     <div className="gs-menu">
       <header className="gs-menu__top">
         <div className="gs-menu__brand">
-          {back && <button type="button" className="gs-btn gs-btn--glass" onClick={back}>← Back</button>}
+          {back && <button type="button" className="gs-btn gs-btn--glass" data-key="esc" onClick={back}>← Back</button>}
           <h1 className="gs-title">Goblin Storm</h1>
         </div>
         <HubButtons />
@@ -385,9 +392,9 @@ function EndScreen({ end, onAgain, onMenu, onShop, busy, error, newMap, left }: 
         {out && <DoneToday />}
         {left !== null && !out && <RunsToday left={left} unlimited={false} />}
         <div className="gs-row">
-          {!out && <button type="button" className="gs-btn gs-btn--big" onClick={onAgain} disabled={busy} autoFocus>Play again</button>}
+          {!out && <button type="button" className="gs-btn gs-btn--big" data-key="enter" onClick={onAgain} disabled={busy} autoFocus>Play again</button>}
           <button type="button" className="gs-btn gs-btn--ghost" onClick={onShop}>🛒 Shop</button>
-          <button type="button" className="gs-btn gs-btn--ghost" onClick={onMenu}>Change hero</button>
+          <button type="button" className="gs-btn gs-btn--ghost" data-key="esc" onClick={onMenu}>Change hero</button>
         </div>
         {error && <p className="gs-menu__error" role="alert">{error}</p>}
       </div>

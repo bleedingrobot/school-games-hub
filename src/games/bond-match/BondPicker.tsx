@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { KeyBadge } from '../../kit';
 import { BOND_SETS, type BondSet } from '../../../shared/bond-match/bonds';
 import { BOARD_PAIRS, BOARD_SIZES, pairsOnBoard, type BoardSize } from '../../../shared/bond-match/deck';
 import { sideText } from '../../../shared/bond-match/exact';
@@ -50,6 +51,13 @@ const PLAYER_CHOICES = [
 /** "What are you practising?": who's playing and the board size, then the bond sets on three shelves. Picking a bond starts the game. */
 export function BondPicker({ onPick, initialSize = 'medium', stars, players, onPlayers, suggested }: Props) {
   const [size, setSize] = useState<BoardSize>(initialSize);
+  // The sets take keys 1 to 9 in the order they show (the suggested one first on its shelf).
+  const keyOf = new Map<string, number>();
+  for (const shelf of SHELVES) {
+    const onShelf = BOND_SETS.filter((b) => b.shelf === shelf.id);
+    for (const b of [...onShelf.filter((x) => x.id === suggested?.bondId), ...onShelf.filter((x) => x.id !== suggested?.bondId)]) keyOf.set(b.id, keyOf.size + 1);
+  }
+
   return (
     <section className="bm-picker" aria-labelledby="bm-pick-title">
       <header className="bm-hero">
@@ -137,9 +145,11 @@ export function BondPicker({ onPick, initialSize = 'medium', stars, players, onP
                     key={set.id}
                     type="button"
                     className={badge ? 'bm-bond bm-bond--suggested' : 'bm-bond'}
+                    data-key={(keyOf.get(set.id) ?? 99) <= 9 ? String(keyOf.get(set.id)) : undefined}
                     aria-label={(why ? `${TEXT.suggestSpoken[why]}: ` : '') + TEXT.bondButton(set.label, size, pairsOnBoard(set, size)) + (best ? `. ${TEXT.bestStarsLabel}: ${best}` : '')}
                     onClick={() => onPick(set, size)}
                   >
+                    {(keyOf.get(set.id) ?? 99) <= 9 && <KeyBadge k={String(keyOf.get(set.id))} />}
                     {badge && <span className="bm-bond__badge" aria-hidden="true" data-testid="bond-suggested">{badge}</span>}
                     <span className={`bm-bond__target${targetText(set).length >= 4 ? ' bm-bond__target--long' : ''}`} aria-hidden="true">{targetText(set)}</span>
                     <span className="bm-bond__body" aria-hidden="true">

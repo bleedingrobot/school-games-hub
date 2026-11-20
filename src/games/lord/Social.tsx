@@ -144,7 +144,7 @@ function PracticeClash({ hero, ask, act, back }: { hero: Hero; ask: Ask; act: (a
         setEnding({ title: 'You stepped out', line: 'Practice is over. Come back any time!' });
       }}
       buttons={<>
-        <button type="button" className="lord-btn lord-btn--hot lord-btn--big lord-end__go" autoFocus onClick={again}>Practise again</button>
+        <button type="button" className="lord-btn lord-btn--hot lord-btn--big lord-end__go" data-key="enter" autoFocus onClick={again}>Practise again</button>
         <button type="button" className="lord-btn lord-btn--glass lord-btn--big lord-end__go" onClick={back}>Back to the arena</button>
       </>}
     />

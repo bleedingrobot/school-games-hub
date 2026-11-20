@@ -171,13 +171,13 @@ export function SeasonCeremony({ summary, look, canPick, onDone }: {
         {page > 0 && <button type="button" className="lord-btn lord-btn--glass" onClick={() => setPage(page - 1)}>Back</button>}
         <button type="button" className="lord-btn lord-btn--glass" onClick={() => speak(CEREMONY_LINES[page], CEREMONY_VOICE)} aria-label="Say it again">🔊</button>
         {page < last
-          ? <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus onClick={() => setPage(page + 1)}>Next</button>
+          ? <button type="button" className="lord-btn lord-btn--hot lord-btn--big" data-key="enter" autoFocus onClick={() => setPage(page + 1)}>Next</button>
           : canPick
             ? <>
-                <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus onClick={() => onDone('class')}>Pick your hero</button>
+                <button type="button" className="lord-btn lord-btn--hot lord-btn--big" data-key="enter" autoFocus onClick={() => onDone('class')}>Pick your hero</button>
                 <button type="button" className="lord-btn lord-btn--glass" onClick={() => onDone('village')}>Keep my class</button>
               </>
-            : <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus onClick={() => onDone('village')}>Done</button>}
+            : <button type="button" className="lord-btn lord-btn--hot lord-btn--big" data-key="enter" autoFocus onClick={() => onDone('village')}>Done</button>}
         {page < last && <button type="button" className="lord-btn lord-btn--glass" onClick={() => setPage(last)}>Skip</button>}
       </div>
     </BigStage>

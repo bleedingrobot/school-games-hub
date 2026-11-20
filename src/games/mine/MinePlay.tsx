@@ -6,12 +6,13 @@
  * flown as practice and nothing counts. The phone preview (`trial`) never calls the server: its question doors and pads
  * use trial questions made in the browser (trialMaths.ts), and best times stay on the device.
  */
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type RefObject } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { fetchMineMaths, flushRuns, loadServerBests, queuedRuns, startRun, bestKey, type ServerBests, type StartReply } from '../../data/mine';
 import { medalFor, MEDALS, type Medal } from '../../../shared/mine/medals';
 import type { MathsSwitch } from '../../../shared/space/mathsSwitch';
 import { LEVELS, PRACTICE, baseOf, formatClock, hardOf, type LevelInfo } from './levels';
+import { KeyBadge, useGameKeys } from '../../kit';
 import { MineBoard } from './MineBoard';
 import { loadBests, loadPrefs, savePrefs, type Bests, type MinePrefs } from './prefs';
 import { ControlsHelp, HowToPlayBody, SettingsPanel } from './Settings';
@@ -41,7 +42,7 @@ interface Dive {
  * `trial` is for the stand-alone preview (no server): question doors and pads use trial questions made and marked in the
  * browser, and nothing is sent anywhere.
  */
-function MineScreens({ trial, onSaved }: { trial: boolean; onSaved: () => void }) {
+function MineScreens({ trial, onSaved, keysRef }: { trial: boolean; onSaved: () => void; keysRef: RefObject<HTMLElement | null> }) {
   const { profile } = useAuth();
   const player = profile?.id ?? '';
   const [prefs, setPrefs] = useState<MinePrefs>(() => loadPrefs(player));
@@ -49,6 +50,8 @@ function MineScreens({ trial, onSaved }: { trial: boolean; onSaved: () => void }
   const [serverBests, setServerBests] = useState<ServerBests | null>(null);
   const [mathsSwitch, setMathsSwitch] = useState<MathsSwitch | null>(null);
   const [run, setRun] = useState<Dive | null>(null);
+  // The picker, How to play and board screens take the keys; a flight (MineRun) has its own.
+  useGameKeys(keysRef, !run);
   const [screen, setScreen] = useState<'picker' | 'howto' | 'controls' | 'board'>('picker');
   const [boardFor, setBoardFor] = useState<LevelInfo>(LEVELS[0]);
   const [hard, setHard] = useState(false);
@@ -138,7 +141,7 @@ function MineScreens({ trial, onSaved }: { trial: boolean; onSaved: () => void }
       <section className="mn-picker">
         <Heading>{screen === 'howto' ? 'How to play Mine Runner' : 'Controls'}</Heading>
         <div className="mn-card">{screen === 'howto' ? <HowToPlayBody questions /> : <ControlsHelp easy={prefs.scheme === 'easy'} />}</div>
-        <button type="button" className="button button--play mn-btn" onClick={() => setScreen('picker')}>Back to the mines</button>
+        <button type="button" className="button button--play mn-btn" data-key="enter esc" onClick={() => setScreen('picker')}>Back to the mines</button>
       </section>
     );
   }
@@ -152,6 +155,8 @@ function MineScreens({ trial, onSaved }: { trial: boolean; onSaved: () => void }
     const bestSteps = trial ? deviceBests[l.id] : serverBests?.[bestKey(l.id, wantsMaths)];
     const medal = bestSteps !== undefined ? medalFor(l.id, bestSteps) : null;
     const goals = MEDALS[l.id];
+    // The picker's Play buttons are 1 (practice), then 2 and up for the mines.
+    const slot = base.id === PRACTICE.id ? 0 : LEVELS.findIndex((x) => x.id === base.id) + 1;
     return (
       <li key={l.id} className="mn-level">
         <div className="mn-level__head">
@@ -171,7 +176,8 @@ function MineScreens({ trial, onSaved }: { trial: boolean; onSaved: () => void }
         )}
         {goals && <p className="mn-hint">Medals: gold {formatClock(goals.gold * 30)}, silver {formatClock(goals.silver * 30)}, bronze {formatClock(goals.bronze * 30)}</p>}
         <div className="mn-level__actions">
-          <button type="button" className="button button--play mn-btn" disabled={starting !== null} onClick={() => void dive(l, 0)}>
+          <button type="button" className="button button--play mn-btn" data-key={slot < 9 ? String(slot + 1) : undefined} disabled={starting !== null} onClick={() => void dive(l, 0)}>
+            {slot < 9 && <KeyBadge k={String(slot + 1)} />}
             {starting === l.id ? 'Starting…' : `Play ${l.name}`}
           </button>
           {!trial && !l.practice && (
@@ -243,9 +249,12 @@ function MineScreens({ trial, onSaved }: { trial: boolean; onSaved: () => void }
 function MineRoot({ trial }: { trial: boolean }) {
   // Finished runs: each one the server has taken may have won a trophy (the line says so).
   const [saves, setSaves] = useState(0);
+  const keysRef = useRef<HTMLDivElement>(null);
   return (
     <>
-      <MineScreens trial={trial} onSaved={() => setSaves((n) => n + 1)} />
+      <div ref={keysRef} style={{ display: 'contents' }}>
+        <MineScreens trial={trial} onSaved={() => setSaves((n) => n + 1)} keysRef={keysRef} />
+      </div>
       <TrophyWonLine games={['mine']} watch={saves || null} off={trial} />
       <AchievementPop games={['mine']} watch={saves || null} off={trial} />
     </>

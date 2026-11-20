@@ -790,3 +790,6 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* Key badges (docs/plans/game-keys/PLAN.md): the number badge sits in the button's corner. */
+.marble-course .marble-course__buttons .button--play { position: relative; }

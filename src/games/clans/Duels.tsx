@@ -24,6 +24,7 @@ import { BannerRain, Embers } from './RaidStage';
 import { Portrait } from './Sprite';
 import type { Session } from './session';
 import type { Duels } from './useDuels';
+import { KeyBadge } from '../../kit';
 
 export const DUEL_CHEERS: { id: DuelCheer; label: string }[] = [
   { id: 'good-fight', label: '👏 Good fight!' },
@@ -85,7 +86,7 @@ export function DuelCards({ onPick, disabled = false, compact = false }: { onPic
           </>
         );
         return onPick ? (
-          <button key={m} type="button" className={`cq-dcard cq-dcard--${m}`} disabled={disabled} autoFocus={i === 0} onClick={() => onPick(m)}>{body}</button>
+          <button key={m} type="button" className={`cq-dcard cq-dcard--${m}`} data-key={i + 1} disabled={disabled} autoFocus={i === 0} onClick={() => onPick(m)}><KeyBadge k={String(i + 1)} />{body}</button>
         ) : (
           <div key={m} className={`cq-dcard cq-dcard--${m}`}>{body}</div>
         );
@@ -363,7 +364,7 @@ function LiveDuel({ duel: d, duels, ask, onBack }: { duel: DuelRow; duels: Duels
               {DUEL_CHEERS.map((x) => <button key={x.id} type="button" className="cq-btn" onClick={() => void duels.cheer(x.id)}>{x.label}</button>)}
             </div>
           )}
-          <button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={() => { duels.forget(d.id); onBack(); }}>Back to the Duel Arena</button>
+          <button data-key="enter" type="button" className="cq-btn cq-btn--hot" autoFocus onClick={() => { duels.forget(d.id); onBack(); }}>Back to the Duel Arena</button>
         </>}
       />
       {asking && ask && (
@@ -395,8 +396,8 @@ function PracticeDuel({ session, rival, ask, onBack }: { session: Session; rival
         note="Practice duel: no prizes, nothing lost."
         onLeave={onBack}
         buttons={<>
-          <button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={() => { setRounds([]); setGame((g) => g + 1); }}>Duel again</button>
-          <button type="button" className="cq-btn" onClick={onBack}>Back to the Duel Arena</button>
+          <button data-key="enter" type="button" className="cq-btn cq-btn--hot" autoFocus onClick={() => { setRounds([]); setGame((g) => g + 1); }}>Duel again</button>
+          <button data-key="esc" type="button" className="cq-btn" onClick={onBack}>Back to the Duel Arena</button>
         </>}
       />
       {asking && ask && (
@@ -445,7 +446,7 @@ export function DuelArena({ session, duels, ask, onBack }: { session: Session; d
     <section className="cq-place cq-darena" aria-label="Duel Arena">
       <div className="cq-place__head">
         <h2>Duel Arena</h2>
-        <button type="button" className="cq-btn" onClick={onBack}>Back to My Village</button>
+        <button data-key="esc" type="button" className="cq-btn" onClick={onBack}>Back to My Village</button>
       </div>
       <div className="cq-raids">
         <Embers />
@@ -477,8 +478,8 @@ export function DuelArena({ session, duels, ask, onBack }: { session: Session; d
           {problem && <p className="cq-warn" role="alert">{problem}</p>}
           <h3>Practice against a computer clan</h3>
           <div className="cq-dpractice">
-            {PRACTICE.map((p) => (
-              <button key={p.name} type="button" className="cq-btn" onClick={() => setPractice(p)}>{p.name} <small>({p.light})</small></button>
+            {PRACTICE.map((p, i) => (
+              <button key={p.name} type="button" className="cq-btn" data-key={i + 1} onClick={() => setPractice(p)}><KeyBadge k={String(i + 1)} />{p.name} <small>({p.light})</small></button>
             ))}
           </div>
         </div>

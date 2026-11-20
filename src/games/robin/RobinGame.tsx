@@ -13,6 +13,7 @@ import { DAYS_PER_FEAST, basketsAfter, type Metal } from '../../../shared/robin/
 import type { Round } from '../../../shared/robin/round';
 import { FirstTimeTip } from '../../kit/FirstTimeTip';
 import { WhatsNext } from '../../kit/WhatsNext';
+import { useGameKeys } from '../../kit';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { playSound } from '../sounds';
@@ -96,6 +97,9 @@ export function RobinGame({ backend, onExit, extra }: Props) {
       if (soundOn) playSound(result.feast ? 'win' : 'badge');
     }, fail);
 
+  const rootRef = useRef<HTMLDivElement>(null);
+  useGameKeys(rootRef, screen.kind !== 'play');
+
   let body: ReactNode;
   if (failed) body = <p className="rb-message">{failed}</p>;
   else if (!state || screen.kind === 'loading') body = <p className="rb-message">…</p>;
@@ -121,10 +125,10 @@ export function RobinGame({ backend, onExit, extra }: Props) {
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
-    <div className="rb-root rb-root--cover">
+    <div className="rb-root rb-root--cover" ref={rootRef}>
       <div className="rb-bar">
         {onExit && (
-          <button type="button" className="rb-button" onClick={onExit}>
+          <button type="button" className="rb-button" data-key="esc" onClick={onExit}>
             <span aria-hidden="true">🏠</span> {WORDS.home}
           </button>
         )}
@@ -211,7 +215,7 @@ function Home({ state, say, onPlay }: { state: RobinState; say: (t: string) => v
         <p className="rb-day">{WORDS.dayCount(Math.min(row.day + 1, DAYS_PER_FEAST))}</p>
         <NextPartChip noun={WORDS.part} done={doneToday} onHear={say} />
         <p className="rb-chip">{WORDS.step(state.step)}</p>
-        <button type="button" className="button button--play rb-play-button" onClick={onPlay}>
+        <button type="button" className="button button--play rb-play-button" data-key="enter" onClick={onPlay}>
           {doneToday ? WORDS.playAgain : WORDS.play}
         </button>
         <button type="button" className="rb-button rb-hear-home" onClick={() => say(homeLine(title, doneToday))}>

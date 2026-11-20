@@ -7,6 +7,7 @@ import { FRAME_CAPACITY } from '../../shared/subitising/config';
 import { parseKey } from '../../shared/subitising/keys';
 import { makeGapPicture } from '../../shared/subitising/patterns';
 import { buildTrial, choicesFor, rngFor, type Trial } from '../../shared/subitising/trials';
+import { useGameKeys } from '../kit';
 import { speak, useReadAloud } from '../speech';
 import { FlashRunner, type AnswerResult } from './FlashRunner';
 import { Garden } from './Garden';
@@ -81,6 +82,7 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
   const [before, setBefore] = useState<ReturnType<typeof progressFrom> | null>(null);
   const [looked, setLooked] = useState(0);
 
+  const rootRef = useRef<HTMLElement>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
   const checkAnswers = useRef<boolean[]>([]);
@@ -154,8 +156,9 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
 
   const practising = screen === 'demo' || screen === 'demoGap' || screen === 'check' || screen === 'session';
   const Frame = onBack ? 'div' : 'main';
+  useGameKeys(rootRef);
   return (
-    <Frame className={onBack ? 'sb-app sb-app--hub' : 'sb-app'}>
+    <Frame ref={rootRef as never} className={onBack ? 'sb-app sb-app--hub' : 'sb-app'}>
       <GardenScene className={practising ? 'sb-scene--faint sb-scene--nobeds' : 'sb-scene--nobeds'} />
       {screen === 'home' && (
         <>
@@ -165,7 +168,7 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
           {gateNote}
           {state.placed ? (
             <>
-              <button type="button" className="sb-btn sb-btn-primary sb-big" onClick={startSession}>
+              <button type="button" className="sb-btn sb-btn-primary sb-big" data-key="enter" onClick={startSession}>
                 Start looking
               </button>
               <button type="button" className="sb-btn sb-btn-quiet" onClick={startCheck}>
@@ -175,7 +178,7 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
           ) : (
             <>
               <p className="sb-small">First, a few quick pictures so we know where to start.</p>
-              <button type="button" className="sb-btn sb-btn-primary sb-big" onClick={startCheck}>
+              <button type="button" className="sb-btn sb-btn-primary sb-big" data-key="enter" onClick={startCheck}>
                 Start with a quick check
               </button>
             </>
@@ -191,7 +194,7 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
             Keep the picture on the screen (no flashing)
           </label>
           {onBack && (
-            <button type="button" className="sb-btn sb-btn-quiet" onClick={onBack}>
+            <button type="button" className="sb-btn sb-btn-quiet" data-key="esc" onClick={onBack}>
               Back to Training
             </button>
           )}
@@ -233,10 +236,10 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
           <p>
             You’ll start with <strong>{STAGES[state.startStage - 1].name}</strong>. Pictures get a bit harder as you go.
           </p>
-          <button type="button" className="sb-btn sb-btn-primary sb-big" onClick={startSession}>
+          <button type="button" className="sb-btn sb-btn-primary sb-big" data-key="enter" onClick={startSession}>
             Start looking
           </button>
-          <button type="button" className="sb-btn" onClick={() => setScreen('home')}>
+          <button type="button" className="sb-btn" data-key="esc" onClick={() => setScreen('home')}>
             Back to my garden
           </button>
         </section>
@@ -256,7 +259,7 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
           ))}
           {allDone && <p className="sb-small">Every plant is in flower. More pictures are coming soon.</p>}
           {gateNote}
-          <button type="button" className="sb-btn sb-btn-primary sb-big" onClick={() => setScreen('home')}>
+          <button type="button" className="sb-btn sb-btn-primary sb-big" data-key="enter" onClick={() => setScreen('home')}>
             Back to my garden
           </button>
         </section>

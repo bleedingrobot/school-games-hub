@@ -276,7 +276,7 @@ export function WallScreen({ wall, index, templeName, help, guide = false, marks
                   ? PRESS_LIGHT
                   : nextStep(wall.gold, lit.length, phase === 'open' ? 'open' : phase === 'glyphs' ? 'glyphs' : 'tiles')}
           </p>
-          {guide && <p className="gg-tip" role="status"><b>Mango:</b> {guideLine}{guideStep === 0 && <button type="button" className="gg-btn gg-btn--primary gg-btn--small" onClick={() => setIntro(true)}>Next</button>}</p>}
+          {guide && <p className="gg-tip" role="status"><b>Mango:</b> {guideLine}{guideStep === 0 && <button type="button" className="gg-btn gg-btn--primary gg-btn--small" data-key="enter" onClick={() => setIntro(true)}>Next</button>}</p>}
         </div>
 
         <div className="gg-side">
@@ -285,6 +285,7 @@ export function WallScreen({ wall, index, templeName, help, guide = false, marks
               type="button"
               className={`gg-btn gg-btn--primary gg-light${lit.length ? ' gg-light--ready' : ''}`}
               aria-disabled={!lit.length || !guideReady}
+              data-key="enter"
               onClick={light}
             >
               Light the runes

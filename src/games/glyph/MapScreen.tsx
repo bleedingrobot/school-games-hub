@@ -4,6 +4,7 @@ import { PASS_FIRST_GO, TEMPLES, WALLS_PER_TEMPLE } from '../../../shared/glyph/
 import { templeOpen, type Progress } from '../../../shared/glyph/play';
 import { GlyphStar, Lock } from './Art';
 import { paint } from './art';
+import { KeyBadge } from '../../kit';
 
 /** Where each temple button sits, in percent of the map, wide and narrow (wide: just below the six painted temples, in order). */
 
@@ -78,9 +79,11 @@ export function MapScreen({ progress, busy, error, onPlay, onHowTo, onReplayGuid
               style={{ ['--x' as string]: `${WIDE[i][0]}%`, ['--y' as string]: `${WIDE[i][1]}%`, ['--mx' as string]: `${NARROW[i][0]}%`, ['--my' as string]: `${NARROW[i][1]}%` }}
               aria-label={label}
               aria-disabled={!open}
+              data-key={String(i + 1)}
               disabled={busy && open}
               onClick={() => open && onPlay(t.id)}
             >
+              <KeyBadge k={String(i + 1)} />
               <span className="gg-temple__stone" aria-hidden="true">{open ? t.id : <Lock />}</span>
               <span className="gg-temple__name">{t.name}</span>
               {open && (
@@ -94,7 +97,7 @@ export function MapScreen({ progress, busy, error, onPlay, onHowTo, onReplayGuid
         })}
       </div>
       <p className="gg-soft gg-map__pass">Open {PASS_FIRST_GO} of {WALLS_PER_TEMPLE} walls at the first go to pass a temple.</p>
-      {onExit && <button type="button" className="gg-btn" onClick={onExit}>Back to activities</button>}
+      {onExit && <button type="button" className="gg-btn" data-key="esc" onClick={onExit}>Back to activities</button>}
     </section>
   );
 }
