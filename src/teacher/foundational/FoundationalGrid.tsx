@@ -3,7 +3,7 @@
  * cell (the skill map's own four words, so the colour is never the only clue), and a small "! 3" button by the pupil's name that
  * opens, in words, what they are stuck on. It only draws the rows it is given; the page that loads them and mounts it is Stage 2 of R7.
  */
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { LEVELS } from '../../../shared/maths/skillMap';
 import { IDEAS } from './ideas';
 import type { PupilRow } from './flags';
@@ -29,6 +29,27 @@ export function FoundationalGrid({
   onPick?: (cell: PickedCell | null) => void;
 }) {
   const [flagsFor, setFlagsFor] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+  const checkEnds = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanLeft(el.scrollLeft > 1);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
+  useEffect(() => {
+    checkEnds();
+    window.addEventListener('resize', checkEnds);
+    return () => window.removeEventListener('resize', checkEnds);
+  }, [checkEnds, rows]);
+  /** Move about three idea columns at a time, so the teacher never loses their place. */
+  const nudge = (dir: -1 | 1) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const step = Math.max(150, Math.min(360, (el.clientWidth - 180) * 0.7));
+    el.scrollBy({ left: dir * step, behavior: 'smooth' });
+  };
   return (
     <div className="fg">
       <ul className="fg__legend" aria-label="Key">
@@ -41,13 +62,29 @@ export function FoundationalGrid({
           </li>
         ))}
       </ul>
-      <div className="fg__scroll" role="region" aria-label={`Foundational skills for ${className}`} tabIndex={0}>
+      <div
+        ref={scrollRef}
+        onScroll={checkEnds}
+        className="fg__scroll"
+        role="region" aria-label={`Foundational skills for ${className}`} tabIndex={0}>
         <table className="fg__table">
           <caption className="sr-only">Foundational skills for {className}: one row for each student, one column for each idea.</caption>
           <thead>
             <tr>
               <th scope="col" className="fg__who">
-                Student
+                <span className="fg__whohead">
+                  <span>Student</span>
+                  {(canLeft || canRight) && (
+                    <span className="fg__nudge">
+                      <button type="button" aria-label="Scroll left" title="Show the ideas to the left" disabled={!canLeft} onClick={() => nudge(-1)}>
+                        ◀
+                      </button>
+                      <button type="button" aria-label="Scroll right" title="Show more ideas to the right" disabled={!canRight} onClick={() => nudge(1)}>
+                        ▶
+                      </button>
+                    </span>
+                  )}
+                </span>
               </th>
               {IDEAS.map((idea) => (
                 <th key={idea.id} scope="col" className="fg__idea" title={idea.note}>
