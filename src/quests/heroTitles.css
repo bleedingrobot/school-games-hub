@@ -7,6 +7,12 @@
   color: #8a5a00;
   line-height: 1.2;
 }
+.hero-title--special {
+  font-style: normal;
+  color: #b07800;
+  text-shadow: 0 0 6px rgb(255 204 51 / 0.7);
+  letter-spacing: 0.02em;
+}
 .profile-top__name + .hero-title { font-size: 1rem; margin-top: -0.2rem; }
 
 .title-picker__grid {
@@ -26,5 +32,6 @@
   cursor: pointer;
 }
 .title-picker__chip.is-picked { border-color: #ffb800; background: #fff3c4; box-shadow: 0 0 0 3px rgb(255 184 0 / 0.35); }
+.title-picker__chip--special { border-color: #d4a017; background: linear-gradient(#fff8dc, #ffe9a8); }
 .title-picker__chip:disabled { opacity: 0.5; cursor: default; }
 .title-picker__bar { display: flex; flex-wrap: wrap; gap: 0.5rem; }

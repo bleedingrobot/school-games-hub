@@ -9,6 +9,8 @@ export interface HeroTitle {
   id: string;
   name: string;
   emoji: string;
+  /** A special title: given by hand for something remarkable, never on the quest list, shown in gold. */
+  special?: boolean;
 }
 
 export const HERO_TITLES: readonly HeroTitle[] = [
@@ -46,7 +48,15 @@ export const HERO_TITLES: readonly HeroTitle[] = [
   { id: 'light-bringer', name: 'Light Bringer', emoji: '🔦' },
 ];
 
-const BY_ID = new Map(HERO_TITLES.map((t) => [t.id, t]));
+/**
+ * Special titles: given by hand (a row in owned_titles) for something remarkable, never picked from a quest reward.
+ * Mirrored in special_title_ids() in supabase/migrations/20261120001600_special_titles.sql (a test checks they match).
+ */
+export const SPECIAL_TITLES: readonly HeroTitle[] = [
+  { id: 'ultimate-dragon-slayer', name: 'Ultimate Dragon Slayer', emoji: '🐲', special: true },
+];
+
+const BY_ID = new Map([...HERO_TITLES, ...SPECIAL_TITLES].map((t) => [t.id, t]));
 
 export const heroTitle = (id: unknown): HeroTitle | undefined => (typeof id === 'string' ? BY_ID.get(id) : undefined);
 

@@ -4,7 +4,7 @@
  * list) or changes which of my titles I wear. The server checks both.
  */
 import { useEffect, useState } from 'react';
-import { HERO_TITLES, titleOf } from '../../shared/quests/titles';
+import { HERO_TITLES, SPECIAL_TITLES, heroTitle, titleOf } from '../../shared/quests/titles';
 import { FriendlyError } from '../data/profile';
 import { fetchMyTitles, setMyTitle, spendQuestReward, type MyTitles } from '../data/quests';
 import './heroTitles.css';
@@ -14,7 +14,7 @@ export function HeroTitleLine({ avatar }: { avatar: unknown }) {
   const title = titleOf(avatar);
   if (!title) return null;
   return (
-    <small className="hero-title">
+    <small className={`hero-title${title.special ? ' hero-title--special' : ''}`}>
       <span aria-hidden="true">{title.emoji} </span>
       {title.name}
     </small>
@@ -48,7 +48,8 @@ export function TitlePicker({ rewardId, onDone, onClose }: { rewardId?: string; 
   const [status, setStatus] = useState<string | null>(null);
   const owned = new Set(titles?.owned ?? []);
   const choosing = rewardId !== undefined;
-  const shown = choosing ? HERO_TITLES : HERO_TITLES.filter((t) => owned.has(t.id));
+  // Special titles are never on the quest list; they only show once given, in My titles.
+  const shown = choosing ? HERO_TITLES : [...SPECIAL_TITLES, ...HERO_TITLES].filter((t) => owned.has(t.id));
 
   useEffect(() => {
     if (!choosing && titles) setPicked(titles.wearing);
@@ -73,7 +74,7 @@ export function TitlePicker({ rewardId, onDone, onClose }: { rewardId?: string; 
     }
   }
 
-  const pickedName = HERO_TITLES.find((t) => t.id === picked)?.name;
+  const pickedName = heroTitle(picked)?.name;
   return (
     <section className="panel title-picker" aria-labelledby="title-picker-title">
       <h2 id="title-picker-title" className="panel__title">
@@ -101,7 +102,7 @@ export function TitlePicker({ rewardId, onDone, onClose }: { rewardId?: string; 
                 role="radio"
                 aria-checked={picked === t.id}
                 disabled={have}
-                className={`title-picker__chip${picked === t.id ? ' is-picked' : ''}`}
+                className={`title-picker__chip${picked === t.id ? ' is-picked' : ''}${t.special ? ' title-picker__chip--special' : ''}`}
                 onClick={() => setPicked(t.id)}
               >
                 <span aria-hidden="true">{t.emoji}</span> {t.name}
