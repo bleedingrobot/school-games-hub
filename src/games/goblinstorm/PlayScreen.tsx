@@ -498,8 +498,8 @@ function Pips({ level }: { level: number }) {
   );
 }
 
-function Card({ s, u, onPick, index }: { s: RunState; u: Upgrade; onPick: (i: number) => void; index: number }) {
-  let cls = 'gs-card';
+function Card({ s, u, onPick, index, chosen }: { s: RunState; u: Upgrade; onPick: (i: number) => void; index: number; chosen: boolean }) {
+  let cls = chosen ? 'gs-card gs-card--chosen' : 'gs-card';
   let icon: ReactNode = '';
   let name = '';
   let tag = '';
@@ -546,7 +546,8 @@ function Card({ s, u, onPick, index }: { s: RunState; u: Upgrade; onPick: (i: nu
     blurb = '+5 gold at the end of the run.';
   }
   return (
-    <button type="button" className={cls} onClick={() => onPick(index)} autoFocus={index === 0}>
+    <button type="button" className={cls} onClick={() => onPick(index)} autoFocus={index === 0} aria-keyshortcuts={String(index + 1)} data-card={index}>
+      <span className="gs-card__key" aria-hidden="true">{index + 1}</span>
       <span className="gs-card__tag">{tag}</span>
       <span className="gs-card__icon" aria-hidden="true">{icon}</span>
       <span className="gs-card__name">{name}</span>
@@ -568,6 +569,49 @@ function Coach({ line, onSkip }: { line: GuideLine; onSkip: () => void }) {
 }
 
 function LevelUpCards({ s, offer, mark, onPick, coach }: { s: RunState; offer: Upgrade[]; mark: Mark | null; onPick: (i: number) => void; coach?: ReactNode }) {
+  // Keys: 1 to 5 pick that card; ← → (or A D) move the yellow ring; Enter or Space picks the ringed card.
+  const [sel, setSel] = useState(0);
+  const selRef = useRef(0);
+  selRef.current = sel;
+  const pickRef = useRef(onPick);
+  pickRef.current = onPick;
+  useEffect(() => {
+    // A held-down Enter from answering the question mustn't pick a card straight away.
+    const openedAt = performance.now();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.repeat || performance.now() - openedAt < 400) return;
+      const t = e.target as HTMLElement | null;
+      if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+      const n = offer.length;
+      const key = e.key.toLowerCase();
+      const num = Number(e.key);
+      let go: number | null = null;
+      if (Number.isInteger(num) && num >= 1 && num <= n) go = num - 1;
+      else if (key === 'enter' || key === ' ') {
+        // The focused card if one has focus (Tab), else the ringed one. Another focused button (Skip guide) works as normal.
+        const focused = t?.closest?.('[data-card]')?.getAttribute('data-card');
+        if (focused == null && t instanceof HTMLButtonElement) return;
+        go = focused != null ? Number(focused) : selRef.current;
+      } else if (key === 'arrowright' || key === 'd' || key === 'arrowdown' || key === 's') {
+        e.preventDefault();
+        setSel((v) => (v + 1) % n);
+        return;
+      } else if (key === 'arrowleft' || key === 'a' || key === 'arrowup' || key === 'w') {
+        e.preventDefault();
+        setSel((v) => (v - 1 + n) % n);
+        return;
+      } else return;
+      e.preventDefault();
+      e.stopPropagation();
+      pickRef.current(go);
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [offer]);
+  // Keep keyboard focus on the ringed card so Tab and the ring agree.
+  useEffect(() => {
+    (document.querySelector(`.gs-cards [data-card="${sel}"]`) as HTMLElement | null)?.focus({ preventScroll: true });
+  }, [sel]);
   const title = mark === 'quick' ? 'Quick and right! Pick from 4 powers or gold' : mark === 'right' ? 'Right! Pick from 3 powers or gold' : mark === 'wrong' ? 'Pick from 2 powers or gold' : 'Pick a power or gold';
   return (
     <div className="gs-dim gs-dim--cards" data-nostick role="dialog" aria-label={title}>
@@ -575,8 +619,9 @@ function LevelUpCards({ s, offer, mark, onPick, coach }: { s: RunState; offer: U
         <h2 className="gs-cards__title">Level {s.level}! {title}</h2>
         {coach}
         <div className="gs-cards__row">
-          {offer.map((u, i) => <Card key={i} s={s} u={u} index={i} onPick={onPick} />)}
+          {offer.map((u, i) => <Card key={i} s={s} u={u} index={i} onPick={onPick} chosen={i === sel} />)}
         </div>
+        <p className="gs-cards__keys">Keys: 1 to {offer.length} to pick · ← → then Enter</p>
         <Held s={s} />
       </div>
     </div>

@@ -75,6 +75,13 @@ describe('Goblin Storm level-up', () => {
       const buttons = within(offer).getAllByRole('button');
       expect(buttons).toHaveLength(cards + 1);
       expect(buttons[cards].textContent).toContain('Gold');
+
+      // A number key picks that card (after a short pause, so a held Enter from the question doesn't).
+      if (mark === 'right') {
+        await new Promise((r) => setTimeout(r, 450));
+        await userEvent.keyboard('2');
+        expect(screen.queryByRole('dialog', { name: /pick/i })).toBeNull();
+      }
     },
   );
 });
