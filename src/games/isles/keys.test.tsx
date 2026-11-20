@@ -19,9 +19,9 @@ function Board({ onNext, onBuild, onSpot }: { onNext: () => void; onBuild: () =>
 }
 
 describe('Sky Isles keys', () => {
-  it('Enter, B and a number press the matching button', () => {
+  it('Enter, B and a number press the matching button, but never a greyed-out one or while typing', () => {
     const onNext = vi.fn(), onBuild = vi.fn(), onSpot = vi.fn();
-    render(<Board onNext={onNext} onBuild={onBuild} onSpot={onSpot} />);
+    const { getByLabelText, container } = render(<Board onNext={onNext} onBuild={onBuild} onSpot={onSpot} />);
     fireEvent.keyDown(window, { key: 'Enter' });
     fireEvent.keyDown(window, { key: 'b' });
     fireEvent.keyDown(window, { key: 'Escape' });
@@ -29,15 +29,12 @@ describe('Sky Isles keys', () => {
     expect(onNext).toHaveBeenCalledTimes(1);
     expect(onBuild).toHaveBeenCalledTimes(2);
     expect(onSpot).toHaveBeenCalledTimes(1);
-  });
 
-  it('skips greyed-out buttons, typing, held keys and keys with Ctrl', () => {
-    const onNext = vi.fn();
-    const { getByLabelText, container } = render(<Board onNext={onNext} onBuild={vi.fn()} onSpot={vi.fn()} />);
+    // Greyed-out buttons, typing in a box, held keys and Ctrl+key do nothing.
     expect(buttonFor(container, 'u')).toBeNull();
     fireEvent.keyDown(getByLabelText('answer'), { key: 'Enter' });
     fireEvent.keyDown(window, { key: 'Enter', repeat: true });
     fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
-    expect(onNext).not.toHaveBeenCalled();
+    expect(onNext).toHaveBeenCalledTimes(1);
   });
 });
