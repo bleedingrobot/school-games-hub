@@ -1,12 +1,14 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { forestTrip, newHero } from '../../../shared/lord/engine';
 import { emptyDb, type MemoryDb } from '../../../shared/lord/memoryServices';
 import { AuthContext } from '../../auth/AuthContext';
 import type { LordBackend } from '../../data/lord';
 import { LordPlay } from './LordPlay';
 import { createLocalBackend } from './trialBackend';
+import { resetStoriesForTest } from '../../kit/useStories';
+import { ALL_STORIES } from './stories';
 
 const auth = {
   status: 'signed-in',
@@ -51,6 +53,8 @@ async function pickHero(user: ReturnType<typeof userEvent.setup>, heroClass: Reg
 }
 
 describe('Dragon Maths with a server keeping the hero', () => {
+  // Stories already seen, so none pops up over the village part-way through (that depends on timing).
+  beforeEach(() => resetStoriesForTest(ALL_STORIES.map((s) => s.id)));
   afterEach(cleanup);
 
   it('plays a fight in the browser and is paid by the server only after the replay', async () => {
@@ -65,7 +69,8 @@ describe('Dragon Maths with a server keeping the hero', () => {
     await user.click(await screen.findByRole('button', { name: /^Fight!/ }));
     expect(db.openFight).not.toBeNull();
     await user.keyboard('a');
-    await user.keyboard('{Enter}');
+    // Wait for Continue (a key pressed before it is shown is lost on a busy test machine).
+    await user.click(await screen.findByRole('button', { name: /Continue/ }));
     await village();
     expect(db.fights.map((f) => f.status)).toEqual(['finished']);
     expect(db.row!.hero.forestWins).toBe(1);
