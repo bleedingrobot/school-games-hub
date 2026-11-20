@@ -10,7 +10,7 @@ describe('Hero Titles', () => {
       return [...body.matchAll(/'([a-z-]+)'/g)].map((m) => m[1]);
     };
     expect(idsIn('20261119000500_hero_titles.sql')).toEqual(HERO_TITLES.map((t) => t.id));
-    expect(idsIn('20261120001600_special_titles.sql')).toEqual(SPECIAL_TITLES.map((t) => t.id));
+    expect(idsIn('20261121000300_tess_title.sql')).toEqual(SPECIAL_TITLES.map((t) => t.id));
   });
 
   it('has ids an avatar can carry, no repeats, and is read from an avatar', () => {

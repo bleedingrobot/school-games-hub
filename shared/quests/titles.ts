@@ -52,11 +52,14 @@ export const HERO_TITLES: readonly HeroTitle[] = [
 
 /**
  * Special titles: won by a feat (the server adds the owned_titles row) or given by hand, never picked from a quest reward.
- * Mirrored in special_title_ids() in supabase/migrations/20261120001600_special_titles.sql (a test checks they match).
+ * Mirrored in special_title_ids() in supabase/migrations/20261121000300_tess_title.sql (latest version; a test checks they match).
+ * Before that: 20261120001600_special_titles.sql.
  */
 export const SPECIAL_TITLES: readonly HeroTitle[] = [
   // Won with the Dragon Slayer's Crown (20261120001700_ultimate_dragon_slayer.sql).
   { id: 'ultimate-dragon-slayer', name: 'Ultimate Dragon Slayer', emoji: '🐲', special: true, how: 'Slay the dragon twice in one season in Dragon Maths.' },
+  // Given by hand to Lucky Lynx 65 (20261121000300_tess_title.sql).
+  { id: 'tess-the-best', name: 'Tess the Best! Nepotism Award!', emoji: '🏅', special: true, how: 'Given by Mr Riley.' },
 ];
 
 const BY_ID = new Map([...HERO_TITLES, ...SPECIAL_TITLES].map((t) => [t.id, t]));
