@@ -1,5 +1,8 @@
 {
   "map": 4,
   "warriors": 1,
-  "arena": 4
+  "arena": 4,
+  "lair-asleep": 2,
+  "hall-banners": 1,
+  "village-dawn": 1
 }

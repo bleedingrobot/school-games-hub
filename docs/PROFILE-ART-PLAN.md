@@ -101,6 +101,7 @@ The two placed pictures are made by `scripts/game_art.py`'s sister step in secti
 | Trophy | Game | File (add `-bronze`, `-silver`, `-gold`) | The shape |
 |---|---|---|---|
 | Slayer's Sword | Dragon Maths | `trophies/slayers-sword` | a hero's sword, point down, dragon-wing crossguard |
+| Season Veteran | Dragon Maths (play a whole season) | `trophies/season-veteran` | a medal on a ribbon with a big star, dragon-scale rim |
 | Dragon Slayer's Crown | Dragon Maths (slay it twice in one season) | `trophies/dragon-crown` | a crown of dragon horns and scales, a dragon's head on the front, on a cushion |
 | Monster Tooth | Clan Quest | `trophies/monster-tooth` | one big ivory fang on a metal stand |
 | Champion's Knight | Chess | `trophies/champions-knight` | a chess knight |

@@ -29,6 +29,7 @@ export function paintedPictureByTier(name: string): Record<Tier, { art: string; 
 export const TROPHY_ART: Record<string, string> = {
   'dm-slayer': 'slayers-sword',
   'dm-crown': 'dragon-crown',
+  'dm-veteran': 'season-veteran',
   'clan-tooth': 'monster-tooth',
   'chess-knight': 'champions-knight',
   'checkers-king': 'champions-king',

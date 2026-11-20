@@ -94,8 +94,24 @@ export interface LordBackend {
   /** The Dragon Head race (profile plan P4): how many of this season's five first-five places are left in my school.
    * Null if it couldn't be fetched. The browser-only trial has no race, so it leaves this out. */
   fetchFirstFive?(): Promise<FirstFive | null>;
+  /** My last finished season (the ceremony): null if I have none or it couldn't be fetched. Left out where there is none. */
+  fetchSeasonSummary?(): Promise<SeasonSummary | null>;
+  /** The ceremony for that season has been watched, so it doesn't open by itself again. */
+  markSeasonSeen?(season: number): Promise<void>;
   /** Live arena clashes between classmates (none in the browser-only trial unless the preview asks for pretend ones). */
   clashes?: ClashApi;
+}
+
+/** lord_season_summary(): my hero at the end of my last finished season, and that season's slayers in my school. */
+export interface SeasonSummary {
+  season: number;
+  seen: boolean;
+  mine: { heroClass: string; level: number; masters: number; forestWins: number; arenaWins: number; gold: number; weapon: number; armour: number; dragons: number };
+  /** Dragon Maths trophy ids won that season, in shelf order. */
+  trophies: string[];
+  /** Pupils who beat the dragon that season, most wins first. */
+  slayers: { name: string; avatar: unknown; kills: number; isMe: boolean }[];
+  kills: number;
 }
 
 /** lord_first_five(): the dragon season in my school today (null before season 1) and the first-five places left (0 to 5). */
@@ -225,6 +241,22 @@ export function createServerBackend(player: string): LordBackend {
         return data as FirstFive;
       } catch {
         return null;
+      }
+    },
+    async fetchSeasonSummary() {
+      try {
+        const { data, error } = await supabase.rpc('lord_season_summary');
+        if (error || !data || typeof (data as SeasonSummary).season !== 'number') return null;
+        return data as SeasonSummary;
+      } catch {
+        return null;
+      }
+    },
+    async markSeasonSeen(season: number) {
+      try {
+        await supabase.rpc('lord_season_seen', { season });
+      } catch {
+        // Not saved: the ceremony opens again next time, which is fine.
       }
     },
     async load() {
