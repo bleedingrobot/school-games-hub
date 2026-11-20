@@ -7680,12 +7680,15 @@ async function countForFocuses(rpc, player, pack, answers, from) {
 * The maths in the game. Right answers give; wrong answers never take anything away.
 */
 const MATHS = {
-	/** Mana Well: up to this many questions between waves, this much mana each, plus a bonus from 3 right in a row. */
+	/**
+	* Mana Well: up to this many questions between waves, this much mana each, plus a bonus from 3 right in a row.
+	* Three questions (James, 20 Nov 2026): all three right gives 190 mana, the same as ten right in a row did before.
+	*/
 	well: {
-		questions: 10,
-		mana: 15,
+		questions: 3,
+		mana: 60,
 		streakFrom: 3,
-		streakBonus: 5
+		streakBonus: 10
 	},
 	/** Wave Gate before a boss wave: 3 questions. 3 right = Power Surge (+25% damage that wave), 2 right = +10%. */
 	gate: {

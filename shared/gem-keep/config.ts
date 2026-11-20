@@ -90,8 +90,11 @@ export const STARS = { three: 0.9, two: 0.5 };
  * The maths in the game. Right answers give; wrong answers never take anything away.
  */
 export const MATHS = {
-  /** Mana Well: up to this many questions between waves, this much mana each, plus a bonus from 3 right in a row. */
-  well: { questions: 10, mana: 15, streakFrom: 3, streakBonus: 5 },
+  /**
+   * Mana Well: up to this many questions between waves, this much mana each, plus a bonus from 3 right in a row.
+   * Three questions (James, 20 Nov 2026): all three right gives 190 mana, the same as ten right in a row did before.
+   */
+  well: { questions: 3, mana: 60, streakFrom: 3, streakBonus: 10 },
   /** Wave Gate before a boss wave: 3 questions. 3 right = Power Surge (+25% damage that wave), 2 right = +10%. */
   gate: { questions: 3, surge: [0, 0, 0.1, 0.25] as const },
   /** Keep Shield: once a level, when the Keep drops below this share, 5 quick questions, each right one heals this share. */
