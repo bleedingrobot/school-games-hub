@@ -9,12 +9,14 @@ const news: NewsItem[] = [
   { id: 'chess', date: '2026-11-18', emoji: '2', title: 'Chess', text: 'x', game: 'chess' },
   { id: 'all', date: '2026-11-17', emoji: '3', title: 'All', text: 'x' },
   { id: 'later', date: '2026-11-30', emoji: '4', title: 'Later', text: 'x' },
+  { id: 'over', date: '2026-11-16', emoji: '5', title: 'Over', text: 'x', until: '2026-11-17' },
 ];
 
 describe('newsToShow', () => {
   it('keeps recent lines for games the class can see, newest first', () => {
     expect(newsToShow('2026-11-18', () => true, news).map((n) => n.id)).toEqual(['chess', 'all']);
     expect(newsToShow('2026-11-18', () => false, news).map((n) => n.id)).toEqual(['all']);
+    expect(newsToShow('2026-11-17', () => false, news).map((n) => n.id)).toEqual(['all', 'over']);
   });
 
   it('every real line has a unique id, a YYYY-MM-DD date and short words', () => {

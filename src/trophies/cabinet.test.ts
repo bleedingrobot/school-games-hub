@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MyTrophy, TrophyPair, TrophyType } from '../data/trophies';
 import { GAMES } from '../games/registry';
-import { halfLitPairs, metalLabel, nextMetalLine, nextSpots, shelfOrder, trophyGame, trophyPlace, winLine } from './cabinet';
+import { halfLitPairs, metalLabel, nextMetalLine, nextSpots, seasonHeroLine, shelfOrder, trophyGame, trophyPlace, winLine } from './cabinet';
 
 const type = (id: string, game: string, repeat: TrophyType['repeat'] = 'season'): TrophyType => ({
   id, game, name: id, how: `Win ${id}`, kind: 'trophy', repeat, art: null,
@@ -25,6 +25,11 @@ describe('trophy cabinet rules', () => {
     expect(winLine({ repeat: 'steps' }, win)).toBe('Step 2 · 14 Nov 2026');
     expect(winLine({ repeat: 'once' }, win)).toBe('14 Nov 2026');
     expect(metalLabel({ tier: 'gold', count: 4 })).toBe('Gold ×4');
+    // A Dragon Maths Season Veteran wears a gold line for each season played.
+    const veteranWin = (n: number) => ({ season: 3, year: 2026, at: '2026-11-21T11:00:00Z', detail: { dragonSeason: n, level: 9 } });
+    expect(seasonHeroLine([mine('a')])).toBeNull();
+    expect(seasonHeroLine([mine('dm-veteran', { wins: [veteranWin(1)] })])).toBe('Season 1 Hero');
+    expect(seasonHeroLine([mine('dm-veteran', { wins: [veteranWin(3), veteranWin(1), veteranWin(2)] })])).toBe('Seasons 1, 2 and 3 Hero');
     expect(metalLabel({ tier: 'silver', count: 1 })).toBe('Silver');
     expect(nextMetalLine(mine('a'), 1)).toBe('Win it again next season to make it silver.');
     expect(nextMetalLine(mine('a'), 2)).toBe('Win it again this season to make it silver!');
