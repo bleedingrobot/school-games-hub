@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import { CONFIG } from '../../shared/clans/config';
 import { MONSTER_LOOKS, monsterOf } from '../../shared/clans/monster';
-import { seasonRoad, type SeasonClock, type StageId } from '../../shared/clans/season';
+import { seasonBanner, seasonRoad, type SeasonClock, type StageId } from '../../shared/clans/season';
 
 // Only the few pictures this strip needs (not the whole Clan Quest picture set).
 const FILES = import.meta.glob('../games/clans/art/{timeline,season-monsters}/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
@@ -19,6 +19,7 @@ export default function SeasonStrip({ clock, title = 'This season' }: { clock: S
   const look = MONSTER_LOOKS[kind];
   const road = seasonRoad(clock, look, false);
   const { before, strong, after } = road.headline;
+  const banner = seasonBanner(clock, look);
   return (
     <section className="panel season-strip" aria-label={road.label}>
       <div className="panel__head season-strip__head">
@@ -27,6 +28,11 @@ export default function SeasonStrip({ clock, title = 'This season' }: { clock: S
           Season {clock.number} · day {clock.day} of {CONFIG.season.length}
         </p>
       </div>
+      {banner && (
+        <div className={`season-strip__banner season-strip__banner--${banner.kind}`} role="note">
+          <strong>{banner.kind === 'last' ? '⏳ ' : '⚔️ '}{banner.title}</strong> {banner.text}
+        </div>
+      )}
       <p className="season-strip__headline">
         {before}
         <strong>{strong}</strong>
