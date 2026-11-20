@@ -94,7 +94,7 @@ select is((select jsonb_agg(x ->> 'name') from jsonb_array_elements(public.lord_
     (select display_name from public.profiles where id = pg_temp.id('01')))),
   'slayers: this school''s pupils only, most kills first (no teacher, hidden pupil or other school)');
 select is(public.lord_season_summary() #>> '{mine,level}', '12', 'my own season 1 level');
-select is(public.lord_season_summary() -> 'trophies', '["dm-veteran", "dm-first-five", "dm-slayer"]'::jsonb,
+select is(public.lord_season_summary() -> 'trophies', '["dm-first-five", "dm-slayer", "dm-veteran"]'::jsonb,
   'the trophies I won in season 1');
 select public.lord_season_seen(1);
 select is(public.lord_season_summary() ->> 'seen', 'true', 'watching the ceremony is remembered');

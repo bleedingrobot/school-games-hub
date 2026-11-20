@@ -45,7 +45,7 @@ revoke all on public.lord_season_results from anon, authenticated;
 
 insert into public.trophy_types (id, game, name, how, kind, repeat, art, sort) values
   ('dm-veteran', 'dragon-maths', 'Season Veteran', 'Play a whole Dragon Maths season: win in the forest or reach level 2.',
-   'trophy', 'season', null, 5);
+   'trophy', 'season', null, 30);
 
 -- ---------------------------------------------------------------------------
 -- 3. Saving them when the season turns
