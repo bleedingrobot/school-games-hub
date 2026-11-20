@@ -1,12 +1,12 @@
 /**
  * A story told in painted pages (docs/plans/stories/PLAN.md), lifted from Clan Quest's win story with Skip added.
  * Full window. Skip (top right, or Escape) closes it from any page; arrow keys and Enter turn the pages. Closing it any way
- * marks the story seen. 🔊 reads each page aloud (the shared "Read to me" setting) with the game's Bella clips.
+ * marks the story seen. 🔊 reads each page aloud (the shared "Read to me" setting) with the narrator's clips (public/voice/stories/).
  * A page with no painting yet shows its drawn stand-in. Reduced motion: no slow zoom. Look: CSS variables on `.kit-story`
  * (--story-bg, --story-ink, --story-gold, --story-frame, --story-font) set by the game; the defaults suit a dark game.
  */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { fillStory, type Story } from '../../shared/kit/stories';
+import { fillStory, STORY_VOICE_FOLDER, storyVoiceLine, type Story } from '../../shared/kit/stories';
 import { speak, stopSpeaking, useReadAloud } from '../speech';
 import { markStorySeen } from './useStories';
 import './storyBook.css';
@@ -16,7 +16,7 @@ export interface StoryBookProps {
   onClose: () => void;
   /** Blanks in the words, e.g. `{ clan: 'The Red Foxes' }` for `{clan}`. */
   blanks?: Record<string, string>;
-  /** Folder of Bella clips for the words, e.g. `/voice/trader/`. Without one the browser's voice reads. */
+  /** Folder of narrator clips (default the shared stories folder). A line with no clip falls back to the browser's voice. */
   clips?: string;
   /** Something drawn in the picture's bottom-left corner on every page (a captain's face). */
   corner?: ReactNode;
@@ -26,7 +26,7 @@ export interface StoryBookProps {
   className?: string;
 }
 
-export function StoryBook({ story, onClose, blanks = {}, clips, corner, endLabel = 'The end', className }: StoryBookProps) {
+export function StoryBook({ story, onClose, blanks = {}, clips = STORY_VOICE_FOLDER, corner, endLabel = 'The end', className }: StoryBookProps) {
   const pages = story.pages;
   const [at, setAt] = useState(0);
   const next = useRef<HTMLButtonElement>(null);
@@ -45,7 +45,7 @@ export function StoryBook({ story, onClose, blanks = {}, clips, corner, endLabel
 
   useEffect(() => {
     next.current?.focus();
-    if (read.on) speak(`${title}. ${words}`, clips);
+    if (read.on) speak(storyVoiceLine(page), clips);
   }, [at, read.on]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => stopSpeaking(), []);
 

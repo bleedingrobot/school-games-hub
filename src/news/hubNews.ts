@@ -24,6 +24,13 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'stories-narrator-2026-11-21',
+    date: '2026-11-21',
+    emoji: '🔊',
+    title: 'Stories read aloud',
+    text: 'Turn on "Read to me" in a story and a storyteller reads every page to you.',
+  },
+  {
     id: 'gemkeep-tale-2026-11-21',
     date: '2026-11-21',
     emoji: '📜',
