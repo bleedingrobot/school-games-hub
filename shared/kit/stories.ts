@@ -55,3 +55,15 @@ export function storyProblems(stories: readonly Story[]): string[] {
 export function fillStory(text: string, blanks: Record<string, string>): string {
   return text.replace(/\{(\w+)\}/g, (all, key: string) => blanks[key] ?? all);
 }
+
+/** Where the stories' narrator clips live (Kokoro am_michael, James's pick 21 Nov 2026), page-relative like every game's. */
+export const STORY_VOICE_FOLDER = 'voice/stories/';
+
+/** What the narrator says for blanks: the clips are recorded once, so a pupil's own clan name is "your clan". */
+const SPOKEN_BLANKS: Record<string, string> = { clan: 'your clan' };
+
+/** The line the narrator reads for a page (its clip is named from it): title, then words. */
+export function storyVoiceLine(page: Pick<StoryPage, 'title' | 'text'>): string {
+  const title = fillStory(page.title, SPOKEN_BLANKS);
+  return `${title}${/[.!?…]$/.test(title) ? '' : '.'} ${fillStory(page.text, SPOKEN_BLANKS)}`;
+}
