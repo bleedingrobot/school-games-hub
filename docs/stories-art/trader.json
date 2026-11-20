@@ -1,0 +1,81 @@
+{
+  "_from": "docs/plans/stories/PLAN.md. Story paintings for trader: one 1536x864 scene a page, filed as art/story/<story id>-<page>.webp. The captain face is laid over the corner in the game, so leave the bottom-left quiet.",
+  "game": "stories-trader",
+  "filename_prefix": "stories/trader/img",
+  "style": "a",
+  "styles": {
+    "a": "Painterly sci-fi storybook illustration, deep space blues and purples with glowing planets and warm cockpit light, cinematic, hopeful and friendly, suitable for children aged 8 to 12, no writing, no letters, no numbers, no logos anywhere. "
+  },
+  "inbox": "~/stories-art-inbox/trader",
+  "picks": "docs/stories-art/trader-picks.json",
+  "art_dir": "src/games/trader/art",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "trader-opening-1",
+      "prompt": "A child at a bedroom window at night looking up at a sky full of stars and one big glowing moon, a toy rocket on the windowsill. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "trader-opening-1"
+    },
+    {
+      "name": "trader-opening-2",
+      "prompt": "A busy future spaceport hangar, and in a dusty corner a small scruffy rusty spaceship with patched panels, cheap but lovable, warm hangar lights. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "trader-opening-2"
+    },
+    {
+      "name": "trader-opening-3",
+      "prompt": "Inside a small cosy spaceship cockpit, a cute little round helper robot with big glowing blue eyes blinking awake on the dashboard, stars outside the window. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "trader-opening-3"
+    },
+    {
+      "name": "trader-opening-4",
+      "prompt": "A small cargo spaceship flying between a green farm planet with crop fields and a grey factory planet with glowing chimneys, cargo crates floating in the hold. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "trader-opening-4"
+    },
+    {
+      "name": "trader-opening-5",
+      "prompt": "Deep space with floating junk and asteroid rocks, a cartoonish pirate spaceship with a skull-free flag-shaped fin in the distance, a small ship dodging. Exciting, not scary. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "trader-opening-5"
+    },
+    {
+      "name": "trader-opening-6",
+      "prompt": "A small spaceship flying towards a beautiful glowing silver moon, golden sparkles around it, a big starry sky, hopeful and grand. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "trader-opening-6"
+    }
+  ]
+}

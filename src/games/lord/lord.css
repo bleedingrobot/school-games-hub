@@ -463,3 +463,8 @@
 @keyframes lord-ceremony-land { 0% { opacity: 0; transform: translateY(-80px) scale(1.6) rotate(-10deg); } 100% { opacity: 1; transform: none; } }
 @keyframes lord-ceremony-glow { from { box-shadow: 0 0 12px rgba(242, 201, 76, 0.5); } to { box-shadow: 0 0 30px rgba(242, 201, 76, 0.95); } }
 @media (prefers-reduced-motion: reduce) { .lord-ceremony__card, .lord-ceremony__slayers li, .lord-ceremony__trophies li, .lord-ceremony__champion { animation: none; } }
+
+/* The opening story (kit StoryBook, docs/plans/stories/PLAN.md): dark wood, cream words, the storybook's own font. */
+.lord-storybook { --story-bg: #1a0f08; --story-ink: #f6e9cc; --story-gold: #e0b25a; --story-frame: #3a2615; --story-dim: #5c4630; --story-font: var(--lord-body); }
+.lord-storybook .kit-story__words h2 { font-family: var(--lord-display); color: #e0b25a; }
+.lord-howto .kit-shelf { margin: 0.5rem 0 1rem; }
