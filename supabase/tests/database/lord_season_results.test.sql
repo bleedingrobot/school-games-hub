@@ -58,30 +58,30 @@ select is((select kind || '/' || repeat || '/' || game from public.trophy_types 
   'the Season Veteran is a trophy, won each season, in Dragon Maths');
 
 -- ---- Season 1 ----
-select is(pg_temp.save('01', 1, pg_temp.hero(11, 40, 10)), 'ok', 'pupil 1 plays season 1 to level 11');
-select is(pg_temp.save('02', 1, pg_temp.hero(1, 0, 0)), 'ok', 'pupil 2 opens season 1 but never plays');
-select is(pg_temp.save('03', 1, pg_temp.hero(12, 60, 11)), 'ok', 'pupil 3 reaches level 12');
+select is(pg_temp.save('01', 1, pg_temp.hero(11, 40, 10)), 'saved', 'pupil 1 plays season 1 to level 11');
+select is(pg_temp.save('02', 1, pg_temp.hero(1, 0, 0)), 'saved', 'pupil 2 opens season 1 but never plays');
+select is(pg_temp.save('03', 1, pg_temp.hero(12, 60, 11)), 'saved', 'pupil 3 reaches level 12');
 select pg_temp.slew('03', 1, 2, 30);
 select pg_temp.slew('01', 1, 1, 20);
 select pg_temp.slew('0d', 1, 1, 40);
 select pg_temp.slew('0e', 1, 1, 50);
 select pg_temp.slew('0f', 1, 3, 60);
 select is((select count(*)::integer from public.lord_season_results), 0, 'nothing is saved while the season goes on');
-select is(pg_temp.save('01', 1, pg_temp.hero(12, 41, 11)), 'ok', 'another save in season 1');
+select is(pg_temp.save('01', 1, pg_temp.hero(12, 41, 11)), 'saved', 'another save in season 1');
 select is((select count(*)::integer from public.lord_season_results), 0, '... still saves nothing');
 
 -- ---- Season 2 starts ----
-select is(pg_temp.save('01', 2, pg_temp.hero(1, 0, 0)), 'ok', 'pupil 1''s first save in season 2 (the hero starts again)');
+select is(pg_temp.save('01', 2, pg_temp.hero(1, 0, 0)), 'saved', 'pupil 1''s first save in season 2 (the hero starts again)');
 select is((select format('%s/%s/%s/%s/%s/%s/%s', season, level, masters, forest_wins, gold, dragons, hero_class)
   from public.lord_season_results where player = pg_temp.id('01')), '1/12/11/41/75/1/mage',
   'pupil 1''s season 1 is kept: level 12, 11 masters, 41 forest wins, gold and bank, 1 dragon, mage');
 select is(pg_temp.veteran('01'), 1, 'pupil 1 wins the Season Veteran trophy');
 select is((select (detail ->> 'level')::integer from public.trophies where player = pg_temp.id('01') and trophy = 'dm-veteran'), 12,
   '... which notes the level reached');
-select is(pg_temp.save('01', 2, pg_temp.hero(2, 5, 1)), 'ok', 'another save in season 2');
+select is(pg_temp.save('01', 2, pg_temp.hero(2, 5, 1)), 'saved', 'another save in season 2');
 select is((select count(*)::integer from public.lord_season_results where player = pg_temp.id('01')), 1, '... saves no second row');
 
-select is(pg_temp.save('02', 2, pg_temp.hero(1, 0, 0)), 'ok', 'pupil 2 comes back in season 2');
+select is(pg_temp.save('02', 2, pg_temp.hero(1, 0, 0)), 'saved', 'pupil 2 comes back in season 2');
 select is((select level from public.lord_season_results where player = pg_temp.id('02')), 1, 'pupil 2''s empty season is kept');
 select is(pg_temp.veteran('02'), 0, '... but a pupil who never played gets no Season Veteran trophy');
 
