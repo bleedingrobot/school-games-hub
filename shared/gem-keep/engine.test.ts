@@ -26,15 +26,13 @@ describe('maths rewards', () => {
     expect(state.mana - start).toBe(190);
     expect(state.wellLeft).toBe(0);
     expect(state.stats).toMatchObject({ wellAsked: 3, wellRight: 3 });
-  });
 
-  it('a wrong answer at the Mana Well takes nothing and ends the streak', () => {
-    const state = newGame(STRAIGHT);
-    act(state, { type: 'well-answer', correct: true });
-    const before = state.mana;
-    act(state, { type: 'well-answer', correct: false });
-    expect(state.mana).toBe(before);
-    expect(state.wellStreak).toBe(0);
-    expect(state.stats).toMatchObject({ wellAsked: 2, wellRight: 1 });
+    const other = newGame(STRAIGHT);
+    act(other, { type: 'well-answer', correct: true });
+    const before = other.mana;
+    act(other, { type: 'well-answer', correct: false });
+    expect(other.mana).toBe(before);
+    expect(other.wellStreak).toBe(0);
+    expect(other.stats).toMatchObject({ wellAsked: 2, wellRight: 1 });
   });
 });
