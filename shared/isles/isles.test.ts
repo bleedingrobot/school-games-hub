@@ -6,7 +6,7 @@ import { coinsCollected, collect, newIsland, playTurn, room, type Action, type I
 import { GULL_RIDERS, gullRiders, racerOf, raceProblem, runRace, type Racer } from './race';
 
 describe('Sky Isles rules', () => {
-  it('never lets a challenger win with no answers right, on any of 2,000 seeds (James, 3 Nov 2026)', () => {
+  it('never lets a challenger win with no answers right (James, 3 Nov 2026), never loses anything at the end of a turn, and checks the choices', () => {
     expect(raceProblem({ ...newIsland(), turn: 1 }, GULL_RIDERS, 'me')).toBeNull();
     let wins = 0;
     for (let i = 0; i < 2000; i++) {
@@ -17,9 +17,8 @@ describe('Sky Isles rules', () => {
     }
     // One right answer still wins a fair share, so the answers really do decide it.
     expect(wins).toBeGreaterThan(200);
-  });
 
-  it('is cosy: nothing is ever lost at the end of a turn, and the choices are checked', () => {
+    // Cosy: nothing is ever lost at the end of a turn, and the choices are checked.
     const random = seededRandom('cosy');
     let island = newIsland();
     for (let t = 0; t < 400; t++) {

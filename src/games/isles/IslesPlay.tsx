@@ -34,6 +34,7 @@ import { BUILD_ALL_DONE, QUESTION_WORDS, REST_NO_RACE, STEP_PIP, Step, StepStrip
 import { Say, cheerLine, nextTurnLine, useIslesVoice } from './voice';
 import { actionText, collectLines, n, plural, postLine, reportLines } from './words';
 import { useOpenFromHub } from '../../multiplayer/useAskFromHub';
+import { useIslesKeys } from './keys';
 import './isles.css';
 
 type Screen =
@@ -99,8 +100,10 @@ function Road({ island }: { island: Island }) {
 
 /** Sky Isles covers the whole window, over the hub's bar, like Star Trader (James, 18 Nov 2026; docs/FULL-WINDOW.md). */
 export function IslesPlay(props: { backend?: IslesBackend; level?: unknown }) {
+  const root = useRef<HTMLDivElement>(null);
+  useIslesKeys(root, true);
   return (
-    <div className="si-window">
+    <div className="si-window" ref={root}>
       <IslesScreens {...props} />
     </div>
   );
@@ -590,7 +593,7 @@ function IslesScreens({ backend = liveIsles }: { backend?: IslesBackend; level?:
                         </div>
                       </div>
                     ) : (
-                      <button type="button" className={`button button--play si-big${lit === 'play' || stepOf(lit) !== null ? ' si-lit' : ''}`} data-pip="play" onClick={startTurn}>
+                      <button type="button" className={`button button--play si-big${lit === 'play' || stepOf(lit) !== null ? ' si-lit' : ''}`} data-pip="play" aria-keyshortcuts="Enter" onClick={startTurn}>
                         Play a turn
                       </button>
                     )}
@@ -606,8 +609,8 @@ function IslesScreens({ backend = liveIsles }: { backend?: IslesBackend; level?:
                           Sky Race
                         </button>
                       )}
-                      <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'sky' })}>Class sky</button>
-                      <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'howto', back: { kind: 'home' } })}>How to play</button>
+                      <button type="button" className="button button--light" data-key="sky" aria-keyshortcuts="C" onClick={() => setScreen({ kind: 'sky' })}>Class sky</button>
+                      <button type="button" className="button button--light" data-key="howto" aria-keyshortcuts="H" onClick={() => setScreen({ kind: 'howto', back: { kind: 'home' } })}>How to play</button>
                     </div>
                     {problem && <p className="si-problem" role="alert">{problem}</p>}
                   </section>

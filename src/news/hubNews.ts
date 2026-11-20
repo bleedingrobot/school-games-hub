@@ -50,6 +50,14 @@ export const HUB_NEWS: NewsItem[] = [
     until: '2026-11-21',
   },
   {
+    id: 'isles-keys-2026-11-20',
+    date: '2026-11-20',
+    emoji: '⌨️',
+    title: 'Sky Isles keyboard keys',
+    text: 'Press Enter to zoom through your turn and B to build. How to play lists all the keys.',
+    game: 'isles',
+  },
+  {
     id: 'ultimate-dragon-slayer-2026-11-20',
     date: '2026-11-20',
     emoji: '🐲',

@@ -7,6 +7,7 @@ import {
   LATER_WIN_PRIZE, LEVEL_CRYSTALS, LEVEL_TIMES, LIGHTHOUSE, MOST_TURNS_SAVED, RACES_PER_DAY, RACE_QUESTIONS, START, TURNS_PER_DAY,
   WELL_RACED_COINS,
 } from '../../../shared/isles/config';
+import { KEY_HELP } from './keys';
 import { crystalWords } from './words';
 
 const pct = (x: number) => `${Math.round((x - 1) * 100)}%`;
@@ -80,6 +81,11 @@ export function HowToPlayBody() {
         <strong>Race a classmate's island:</strong> once a day each, after the island's first {CALM_TURNS} turns, and an island can be raced {MOST_CHALLENGED} times
         a day. Their island races at home and gets {WELL_RACED_COINS} coins for racing well, whoever wins.
       </p>
+
+      <h3>Keyboard shortcuts</h3>
+      <ul>
+        {KEY_HELP.map(([key, does]) => <li key={key}><kbd>{key}</kbd>: {does}</li>)}
+      </ul>
     </div>
   );
 }
