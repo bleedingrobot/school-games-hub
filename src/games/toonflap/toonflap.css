@@ -70,6 +70,8 @@
 .tf-pad:focus-visible,
 .tf-gentle input:focus-visible { outline: 4px solid var(--tf-focus); outline-offset: 3px; box-shadow: 0 0 0 7px #fff; }
 .tf-chip { display: inline-flex; align-items: center; min-height: 32px; padding: 2px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.92); color: #0f172a; font-weight: 800; font-size: 0.95rem; }
+.tf-chip--turns { background: #fef3c7; color: #78350f; }
+.tf-done-today { margin: 8px 20px; padding: 8px 12px; border-radius: 12px; background: #fff; color: #14532d; font-weight: 800; font-size: 1.05rem; }
 .tf-chip--potion { background: #ede9fe; color: #4c1d95; }
 .tf-chip--good { background: #dcfce7; color: #14532d; }
 

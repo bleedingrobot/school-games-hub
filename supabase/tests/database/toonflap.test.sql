@@ -62,7 +62,7 @@ select is(public.toonflap_run(pg_temp.id('0b'), '123456'), null, 'another pupil'
 select is(public.toonflap_run(pg_temp.id('0a'), '123456') -> 'questions', '[{"answer": 42}]'::jsonb, 'the questions are kept as the server made them');
 select ok(public.toonflap_claim(pg_temp.id('0a'), '123456', 0, true), 'a check is marked');
 select ok(not public.toonflap_claim(pg_temp.id('0a'), '123456', 0, false), '... once');
-select is(public.toonflap_runs_today(pg_temp.id('0a'), (now() at time zone 'Pacific/Auckland')::date), '{"started": 1, "finished": 0}'::jsonb, 'runs today are counted');
+select is(public.toonflap_runs_today(pg_temp.id('0a'), (now() at time zone 'Pacific/Auckland')::date), '{"started": 1, "finished": 0, "wins": 0, "dashes": 0}'::jsonb, 'runs today are counted');
 select ok(public.toonflap_finish(pg_temp.id('0a'), '123456', 0, pg_temp.progress(1, 'gold'), '1,2,3', 27.5, 'gold', 0, 1, 0, false), 'the run finishes, making the pupil''s progress');
 select ok(not public.toonflap_finish(pg_temp.id('0a'), '123456', 1, pg_temp.progress(2, 'gold'), '1,2,3', 27.5, 'gold', 0, 1, 0, false), '... once');
 select ok(not public.toonflap_claim(pg_temp.id('0a'), '123456', 1, true), 'a finished run''s checks can''t be marked');

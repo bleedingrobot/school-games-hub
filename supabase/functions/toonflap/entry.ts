@@ -4,7 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 import { parseFocus } from '../../../shared/maths/focus';
 import type { FactStats } from '../../../shared/maths/leitner';
 import { parseMathsSwitch } from '../../../shared/space/mathsSwitch';
-import { unplayed, type DashBoard, type KeptRun, type Saved } from '../../../shared/toonflap/server';
+import { unplayed, type DashBoard, type KeptRun, type RunsToday, type Saved } from '../../../shared/toonflap/server';
+import { isUnlimitedFor } from '../../../shared/unlimited';
 import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { userIdFromToken } from '../_shared/signIn';
 import { makeHandler } from './handler';
@@ -46,8 +47,12 @@ Deno.serve(
         console.error(`toonflap: settings failed (${error?.code ?? 'none'})`);
         return null;
       }
-      const row = data as { toonflap_enabled?: boolean; toonflap_maths?: string; toonflap_read_time?: boolean };
-      return { enabled: row.toonflap_enabled === true, maths: parseMathsSwitch(row.toonflap_maths) !== 'off', readTime: row.toonflap_read_time !== false };
+      const row = data as { toonflap_enabled?: boolean; toonflap_maths?: string; toonflap_read_time?: boolean; unlimited_days?: unknown };
+      return {
+        enabled: row.toonflap_enabled === true, maths: parseMathsSwitch(row.toonflap_maths) !== 'off', readTime: row.toonflap_read_time !== false,
+        // "Unlimited today" is on while the class's unlimited_days names today's NZ date for Toon Flap.
+        unlimited: isUnlimitedFor(row.unlimited_days, 'toonflap'),
+      };
     },
     async load(player) {
       const saved = await call<Saved | null>('toonflap_load', { player });
@@ -64,7 +69,11 @@ Deno.serve(
         settings: { enabledTables, division, multipleChoice, ...(typeof missingFactor === 'boolean' ? { missingFactor } : {}) },
       };
     },
-    runsToday: (player, day) => call<{ started: number; finished: number }>('toonflap_runs_today', { player, day }),
+    async runsToday(player, day) {
+      const r = await call<Partial<RunsToday> | null>('toonflap_runs_today', { player, day });
+      if (r === 'busy') return 'busy';
+      return { started: Number(r?.started ?? 0), finished: Number(r?.finished ?? 0), wins: Number(r?.wins ?? 0), dashes: Number(r?.dashes ?? 0) };
+    },
     start: (player, seed, run) =>
       call<boolean>('toonflap_start', { player, seed, level: run.level, gentle: run.gentle, maths: run.maths, questions: run.questions, labels: run.labels }),
     run: (player, seed) => call<KeptRun | null>('toonflap_run', { player, seed }),

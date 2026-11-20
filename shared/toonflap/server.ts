@@ -13,6 +13,8 @@
  *   finish  replays the flaps on the kept run (it must reach the nest, no faster than real time allows), marks the answer
  *           gaps from the replay, works out the time and medal, saves the run with the new progress (unlocks, potions)
  *           and gives points for the first runs of the day.
+ *   Limits (James, 20 Nov 2026): 10 level wins a day and 2 Sky Dash goes a day (config.ts); the teacher's
+ *           "Unlimited today" lifts both. A break is still suggested after 30 runs.
  *   dash    starts a Sky Dash (open after level 5): its own course from the seed, one question per check (stage F.7);
  *   dash-finish  replays the dash with the server's marks (a right check is a spare feather) and the potion if one was
  *           brought and held, saves the walls flown past, the season best for the class board, and points;
@@ -29,7 +31,7 @@ import { TimesTables } from '../maths/skillPacks/timesTables';
 import { nzDate } from '../kit/dayArc';
 import { makeSpacePack, pickSpaceQuestion, type MathsQuestionSettings } from '../space/mathsQuestion';
 import { addDash, addRun, emptyProgress, flyersUnlocked, levelOpen, skyDashOpen, trailsUnlocked, type Progress, type Unlocks } from './collection';
-import { BREAK_AFTER_RUNS, DASH_POINTS, POINT_RUNS_A_DAY, POINTS, READ_TIME_LEVELS, SIGN_SECONDS, STEPS_PER_SECOND } from './config';
+import { BREAK_AFTER_RUNS, DASH_POINTS, DASHES_A_DAY, WINS_A_DAY, POINT_RUNS_A_DAY, POINTS, READ_TIME_LEVELS, SIGN_SECONDS, STEPS_PER_SECOND } from './config';
 import { buildDashCourse, dashWalls, replayDash } from './dash';
 import { decodeFlaps, medalFor, replayRun, scoreRun, type Medal, type Score } from './engine';
 import { buildCourse, levelById, type Course } from './levels';
@@ -55,6 +57,8 @@ export interface Settings {
   maths: boolean;
   /** Pause at each answer sign until Go: on for levels 3 to 5 unless the teacher turns it off. */
   readTime: boolean;
+  /** The teacher's "Unlimited today" switch for Toon Flap: the daily wins and dashes are lifted. Missing means off. */
+  unlimited?: boolean;
 }
 
 export interface MathsContext {
@@ -113,14 +117,32 @@ export interface DashBoard {
   mine: BoardRow | null;
 }
 
+export interface RunsToday {
+  started: number;
+  finished: number;
+  wins: number;
+  dashes: number;
+}
+
+/** Wins and Sky Dash goes left today (null: Unlimited today is on). */
+export interface TurnsLeft {
+  winsLeft: number | null;
+  dashesLeft: number | null;
+}
+
+export function turnsLeft(today: RunsToday, unlimited: boolean): TurnsLeft {
+  if (unlimited) return { winsLeft: null, dashesLeft: null };
+  return { winsLeft: Math.max(0, WINS_A_DAY - today.wins), dashesLeft: Math.max(0, DASHES_A_DAY - today.dashes) };
+}
+
 export interface ToonFlapServices {
   now(): number;
   random(): number;
   settings(player: string): Promise<Settings | null>;
   load(player: string): Promise<Saved | 'busy'>;
   maths(player: string): Promise<MathsContext | 'busy'>;
-  /** Runs this pupil started and finished on this NZ day. */
-  runsToday(player: string, day: string): Promise<{ started: number; finished: number } | 'busy'>;
+  /** Runs this pupil started and finished on this NZ day; `wins` are levels finished, `dashes` Sky Dashes started. */
+  runsToday(player: string, day: string): Promise<RunsToday | 'busy'>;
   /** Keeps a new run (and closes any other open one). False if the pupil has used this seed before. */
   start(player: string, seed: string, run: Omit<KeptRun, 'marks' | 'open' | 'startedAt'>): Promise<boolean | 'busy'>;
   /** One of this pupil's runs by its seed; null if it isn't theirs. */
@@ -158,7 +180,7 @@ export interface GapSign {
   labels: number[];
 }
 
-export interface StartReply {
+export interface StartReply extends TurnsLeft {
   seed: string;
   level: string;
   gentle: boolean;
@@ -246,9 +268,10 @@ function keptPicks(saved: Saved): Picks {
 export async function handleToonFlap(services: ToonFlapServices, player: string, body: Record<string, unknown>): Promise<Reply> {
   const action = body.action;
   if (action === 'load') {
-    const [settings, saved] = await Promise.all([services.settings(player), services.load(player)]);
-    if (!settings || saved === 'busy') return busy();
-    return { status: 200, body: { enabled: settings.enabled, maths: settings.maths, readTime: settings.readTime, progress: saved.progress, picks: keptPicks(saved), today: nzDate(new Date(services.now())) } };
+    const day = nzDate(new Date(services.now()));
+    const [settings, saved, today] = await Promise.all([services.settings(player), services.load(player), services.runsToday(player, day)]);
+    if (!settings || saved === 'busy' || today === 'busy') return busy();
+    return { status: 200, body: { enabled: settings.enabled, maths: settings.maths, readTime: settings.readTime, progress: saved.progress, picks: keptPicks(saved), today: day, ...turnsLeft(today, settings.unlimited === true) } };
   }
 
   const settings = await services.settings(player);
@@ -276,6 +299,7 @@ export async function handleToonFlap(services: ToonFlapServices, player: string,
     if (saved === 'busy' || today === 'busy') return busy();
     if (!levelOpen(saved.progress, def.n, nzDate(new Date(services.now())))) return { status: 409, body: { error: 'That level isn’t open yet. One new level opens each day.', code: 'locked' } };
     if (today.started >= BREAK_AFTER_RUNS) return { status: 429, body: { error: 'Time for a break? Your wings need a rest. Come back tomorrow!', code: 'break' } };
+    if (!settings.unlimited && today.wins >= WINS_A_DAY) return { status: 429, body: { error: `That’s ${WINS_A_DAY} wins today. Great flying! Come back tomorrow.`, code: 'done-today' } };
     const course = buildCourse(def, gentle);
     const seed = seedText(services.random);
     let questions: Question[] = [];
@@ -306,6 +330,7 @@ export async function handleToonFlap(services: ToonFlapServices, player: string,
         })
         : [],
       readTime: settings.readTime && READ_TIME_LEVELS.includes(def.n),
+      ...turnsLeft(today, settings.unlimited === true),
     };
     return { status: 200, body: reply as unknown as Record<string, unknown> };
   }
@@ -337,6 +362,7 @@ export async function handleToonFlap(services: ToonFlapServices, player: string,
     if (saved === 'busy' || today === 'busy') return busy();
     if (!skyDashOpen(saved.progress)) return { status: 409, body: { error: 'Finish Donut Town (level 5) to open Sky Dash.', code: 'locked' } };
     if (today.started >= BREAK_AFTER_RUNS) return { status: 429, body: { error: 'Time for a break? Your wings need a rest. Come back tomorrow!', code: 'break' } };
+    if (!settings.unlimited && today.dashes >= DASHES_A_DAY) return { status: 429, body: { error: `That’s your ${DASHES_A_DAY} Sky Dashes for today. Come back tomorrow!`, code: 'done-today' } };
     const seed = seedText(services.random);
     const course = buildDashCourse(seed);
     let questions: Question[] = [];
@@ -351,6 +377,7 @@ export async function handleToonFlap(services: ToonFlapServices, player: string,
     const reply: StartReply = {
       seed, level: 'dash', gentle: false, maths: settings.maths,
       checks: questions.map((q, slot) => publicQuestion(q, slot)), signs: [], readTime: false,
+      ...turnsLeft({ ...today, dashes: today.dashes + 1 }, settings.unlimited === true),
     };
     return { status: 200, body: reply as unknown as Record<string, unknown> };
   }
