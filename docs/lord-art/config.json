@@ -45,6 +45,39 @@
       "kind": "scene",
       "folder": "scenes",
       "file": "warriors"
+    },
+    {
+      "name": "lair-asleep",
+      "prompt": "A huge red dragon with spiky dark-red scales, a pale belly, curling horns and folded wings, curled up fast asleep with its eyes closed and its head resting on its front claws on a big pile of gold coins, treasure chests and old lanterns, thin curls of smoke drifting from its nostrils, in a dark mountain cave with a warm red glow from cracks in the floor, a thin waterfall and stalactites. Calm, peaceful and cosy, friendly not scary, nothing gory. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "scenes",
+      "file": "lair-asleep"
+    },
+    {
+      "name": "hall-banners",
+      "prompt": "The grand stone Hall of Heroes, celebrating a victory: very tall hanging cloth victory banners in red, blue and gold with plain emblems of swords and dragons, rows of flaming wall torches, a long red carpet, a tall stone statue of a hero holding a sword aloft at the far end, shafts of golden light from high windows, floating confetti and sparkles. Proud, joyful and heroic. No people, no writing. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "scenes",
+      "file": "hall-banners"
+    },
+    {
+      "name": "village-dawn",
+      "prompt": "The cosy village of Hollowbrook seen from above at an angle at sunrise, crooked timber-and-plaster cottages with thatched roofs, a stone fountain in the cobbled square, golden morning sunlight pouring over the rooftops, the sky pink and gold, lanterns hanging lit on the posts, birds in the sky, dew sparkling. A fresh hopeful new beginning, warm and bright. No people, no writing. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "scenes",
+      "file": "village-dawn"
     }
   ]
 }

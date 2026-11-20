@@ -4,11 +4,10 @@ Asked for by James, 20 Nov 2026: "it should be epic and tell them all the detail
 and what is resetting." Branch `claude/dragon-season-end`. Migration numbers from `20261120001800` (check again).
 
 **Status (20 Nov 2026):** stage 1 banner LIVE (#658). Stage 2 LIVE (#657): table, trigger, `lord_season_summary`,
-`lord_season_seen`, `lord_save_season` and the `dm-veteran` trophy checked on the live database 20 Nov. Stage 3 ceremony merged
-(#660). Profile "Season 1 Hero" line, a drawn medal stand-in for the Season Veteran trophy, and the Season 2 What's new line
-(held back until 22 Nov; the "ends Saturday" line stops after 21 Nov) in the follow-up PR. Still to do: check on Sun 22 Nov
-that results are filling up; stage 4 paintings (the medal stand-in is `src/avatar/art/trophies/season-veteran-*.webp`, so
-the painting replaces the same files).
+`lord_season_seen`, `lord_save_season` and the `dm-veteran` trophy checked on the live database 20 Nov. Stage 3 ceremony LIVE
+(#660). Profile "Season 1 Hero" line and the Season 2 What's new line (held back until 22 Nov) LIVE (#662). Stage 4 paintings
+(three scenes + the Season Veteran trophy) in the stage 4 PR. Still to do: the Sun 22 Nov check that results are filling up
+(docs/prompts/dragon-season-2-check.md).
 
 ## When it happens
 
@@ -105,7 +104,7 @@ Then, the same day:
 - The ceremony can be seen again from the Hall of Heroes ("Watch the Season 1 ceremony").
 - Preview: `preview/lord?ceremony=1` with made-up results, for screenshots at phone, iPad and laptop sizes.
 
-### Stage 4: painted scenes (when the gaming PC is free)
+### Stage 4: painted scenes (DONE 20 Nov: new scenes lair-asleep, hall-banners, village-dawn for pages 1, 2 and 5, plus the Season Veteran trophy painted)
 
 Three ComfyUI paintings in the game's style, the stand-ins swapped out with the same file names:
 - **Hall of Heroes with banners**, for pages 1–2 (Season 1 slayers).

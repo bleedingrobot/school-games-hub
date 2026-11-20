@@ -1441,6 +1441,45 @@
       "file": "home-learning-cup-gold",
       "max": 512,
       "small": 160
+    },
+    {
+      "name": "season-veteran-bronze",
+      "prompt": "A hero's medal on a ribbon, a round medal with a big bright five-pointed star in the middle and a dragon's scale pattern around the rim, hanging from a folded ribbon with two tails, the whole medal made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "season-veteran-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "season-veteran-silver",
+      "prompt": "A hero's medal on a ribbon, a round medal with a big bright five-pointed star in the middle and a dragon's scale pattern around the rim, hanging from a folded ribbon with two tails, the whole medal made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "season-veteran-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "season-veteran-gold",
+      "prompt": "A hero's medal on a ribbon, a round medal with a big bright five-pointed star in the middle and a dragon's scale pattern around the rim, hanging from a folded ribbon with two tails, the whole medal made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "season-veteran-gold",
+      "max": 512,
+      "small": 160
     }
   ]
 }
