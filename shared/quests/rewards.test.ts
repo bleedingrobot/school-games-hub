@@ -16,3 +16,10 @@ describe('Game Coins', () => {
     expect(rewardFit('monsters-battles', 'coins')).toMatch(/no coins/);
   });
 });
+
+describe('Bonus Turns Day in Toon Flap and Goblin Storm', () => {
+  it('fits their quests', () => {
+    expect(rewardFit('toonflap-daily', 'turns')).toBeNull();
+    expect(rewardFit('goblinstorm-total', 'turns')).toBeNull();
+  });
+});

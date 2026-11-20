@@ -18,14 +18,14 @@ import { quickMsForPack } from '../maths/config';
 import { packIdOfKey } from '../maths/ladder';
 import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
-import { CHOICES, HEROES, MAPS, QUESTIONS_PER_RUN, STEPS_PER_SECOND, type HeroId, type ShopLevels, type UnlockId, UNLOCK_AT } from './config';
+import { CHOICES, HEROES, MAPS, QUESTIONS_PER_RUN, RUNS_A_DAY, STEPS_PER_SECOND, type HeroId, type ShopLevels, type UnlockId, UNLOCK_AT } from './config';
 import type { RunSummary } from './engine';
 import { choicesFor, decodeSteering, replayRun } from './replay';
 
 export type Mark = 'wrong' | 'right' | 'quick';
 
-/** Runs a day on normal turns (James, 19 Nov 2026). The teacher's "Unlimited today" lifts it. */
-export const RUNS_A_DAY = 5;
+/** Runs a day on normal turns: kept in config.ts so the home page can read it without the rules. */
+export { RUNS_A_DAY };
 /** A run's real time must be at least this share of its played time (pauses only add time). */
 export const REAL_TIME_SHARE = 0.95;
 /** The longest an answer is said to have taken, for the maths records. */
