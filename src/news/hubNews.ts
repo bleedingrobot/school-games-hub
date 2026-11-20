@@ -58,6 +58,14 @@ export const HUB_NEWS: NewsItem[] = [
     until: '2026-11-21',
   },
   {
+    id: 'trader-keys-2026-11-20',
+    date: '2026-11-20',
+    emoji: '⌨️',
+    title: 'Star Trader keyboard keys',
+    text: 'Type x and y, then press Enter to jump! Bolt\'s help lists all the keys.',
+    game: 'trader',
+  },
+  {
     id: 'isles-keys-2026-11-20',
     date: '2026-11-20',
     emoji: '⌨️',

@@ -317,7 +317,7 @@ function JumpBox(props: {
         )}
       </div>
       <div className="st-actions">
-        <button type="button" className="st-btn st-btn--primary st-btn--big" disabled={busy || !target || target.id === here.id || tooFar || short > 0 || (t.jumpsLeft < 1 && !unlimited)} onClick={onJump} data-coach="jump-go">
+        <button type="button" className="st-btn st-btn--primary st-btn--big" disabled={busy || !target || target.id === here.id || tooFar || short > 0 || (t.jumpsLeft < 1 && !unlimited)} onClick={onJump} data-coach="jump-go" data-key="go">
           Jump!{target && target.id !== here.id ? ` (${need} fuel)` : ''}
         </button>
         {t.jumpsLeft < 1 && (unlimited ? <span className="st-soft">{UNLIMITED_LABEL}</span> : <span className="st-soft">No jumps left today.</span>)}
