@@ -18,7 +18,6 @@ import { parseFactKey } from '../maths/facts';
 import { OLD_BOND_KEY, totalOfPairKey } from '../maths/skillPacks/bondPairs';
 import { FOCUS_PACKS, isFocusKey, packIdOfKey, type FocusPackId } from '../maths/focus';
 import type { FactAnswer, FactStats } from '../maths/leitner';
-import { MATHS } from './config';
 import type { LevelData } from './level';
 import { CAMPAIGN, findLevel } from './levels';
 
@@ -87,7 +86,7 @@ export interface SaveRequest {
 /** What happened to each item, in order. */
 export type ItemResult =
   | { type: 'run'; status: 'saved' | 'duplicate' | 'locked'; points: number | null }
-  | { type: 'key'; status: 'passed' | 'already' | 'not-passed' | 'no-win' }
+  | { type: 'key'; status: 'passed' | 'already' | 'not-passed' | 'no-win' | 'not-today' }
   | { type: 'facts'; changed: number }
   | { type: 'answers'; added: number }
   | { type: 'import'; status: 'imported' | 'skipped' }
@@ -166,7 +165,8 @@ function checkRun(x: Record<string, unknown>): Checked<RunItem> {
 function checkKey(x: Record<string, unknown>): Checked<KeyItem> {
   const found = typeof x.levelId === 'string' ? findLevel(x.levelId) : null;
   if (!found) return { ok: false, problem: 'level' };
-  if (!isInt(x.right, 0, MATHS.key.questions)) return { ok: false, problem: 'answers' };
+  // Up to 10: a save still waiting from when the Level Key had 10 questions is kept.
+  if (!isInt(x.right, 0, 10)) return { ok: false, problem: 'answers' };
   return { ok: true, item: { type: 'key', levelId: found.level.id, right: x.right } };
 }
 

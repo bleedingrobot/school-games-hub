@@ -145,7 +145,7 @@ function GemKeepSettingsPanel({ classId }: { classId: string }) {
       />
       <SettingNumber
         label="Level Key pass mark"
-        about="Right answers out of 10 a student needs to pass a Level Key, which opens the next level."
+        about="Right answers out of 10 a student needs to pass a Level Key, which opens the next level. The Level Key is 5 questions, so this is halved: 8 means 4 of 5."
         min={5}
         max={10}
         suffix="out of 10"

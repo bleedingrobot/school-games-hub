@@ -7,7 +7,7 @@
  * control is a real button, and the map takes arrow keys and Enter.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { GEM, KEEP_HEALTH, MATHS, SPEEDS, TOWER } from '../../../../shared/gem-keep/config';
+import { GEM, KEEP_HEALTH, keyRightNeeded, MATHS, SPEEDS, TOWER } from '../../../../shared/gem-keep/config';
 import { canBuildOn, isBossWave, towerAt, type Action, type GemPlace, type GameState } from '../../../../shared/gem-keep/engine';
 import { combineCost, combineProblem, COLOURS, shotStats, type Colour, type Gem } from '../../../../shared/gem-keep/gems';
 import type { LevelData } from '../../../../shared/gem-keep/level';
@@ -65,6 +65,7 @@ export function GemKeepGame({
   onEngine,
   timeScale,
   keyDone = false,
+  keyWaits = false,
   onWin,
   onEnd,
   onKeyPassed,
@@ -83,11 +84,13 @@ export function GemKeepGame({
   timeScale?: number;
   /** This level's Level Key was passed before, so a win goes straight on. */
   keyDone?: boolean;
+  /** A Level Key was passed today already: this one opens tomorrow (one new level a day). */
+  keyWaits?: boolean;
   onWin?: (stars: number) => void;
   /** Every finish, won or lost. */
   onEnd?: (end: LevelEnd) => void;
   onKeyPassed?: () => void;
-  /** Every Level Key round, passed or not: right answers out of 10. */
+  /** Every Level Key round, passed or not: right answers out of 5. */
   onKeyResult?: (right: number) => void;
   /** Go to the next level (only given when there is one). */
   onNext?: () => void;
@@ -392,7 +395,7 @@ export function GemKeepGame({
               setQuiz(null);
               setKeyResult(result);
               onKeyResult?.(result.right);
-              if (result.right >= settings.keyPassMark) onKeyPassed?.();
+              if (result.right >= keyRightNeeded(settings.keyPassMark)) onKeyPassed?.();
             }}
           />
         );
@@ -507,7 +510,8 @@ export function GemKeepGame({
               state={state}
               keyResult={keyResult}
               keyDone={keyDone}
-              passMark={settings.keyPassMark}
+              keyWaits={keyWaits}
+              passMark={keyRightNeeded(settings.keyPassMark)}
               onKey={() => openQuiz({ kind: 'key' })}
               onAgain={restart}
               onNext={onNext}
@@ -735,6 +739,7 @@ function EndCard({
   state,
   keyResult,
   keyDone,
+  keyWaits,
   passMark,
   onKey,
   onAgain,
@@ -744,6 +749,7 @@ function EndCard({
   state: GameState;
   keyResult: RoundResult | null;
   keyDone: boolean;
+  keyWaits: boolean;
   passMark: number;
   onKey: () => void;
   onAgain: () => void;
@@ -758,8 +764,10 @@ function EndCard({
   // The main button: the Level Key until it's passed, then the next level, else play again.
   const main = !won
     ? { label: TEXT.tryAgain, run: onAgain }
-    : !open
+    : !open && !keyWaits
       ? { label: keyResult ? TEXT.keyAgain : TEXT.keyStart, run: onKey }
+      : keyWaits && !open
+        ? { label: TEXT.playAgain, run: onAgain }
       : onNext
         ? { label: TEXT.nextLevel, run: onNext }
         : { label: TEXT.playAgain, run: onAgain };
@@ -777,7 +785,8 @@ function EndCard({
           </p>
         )}
         <p>{won ? TEXT.wonBody(Math.round((state.keep / KEEP_HEALTH) * 100)) : TEXT.lostBody}</p>
-        {won && !open && !keyResult && <p className="gk-key">{TEXT.keyIntro(passMark)}</p>}
+        {won && !open && keyWaits && <p className="gk-key">{TEXT.keyTomorrow}</p>}
+        {won && !open && !keyWaits && !keyResult && <p className="gk-key">{TEXT.keyIntro(passMark)}</p>}
         {keyResult && (
           <div className="gk-key" role="status" data-passed={passed || undefined}>
             <p>{passed ? TEXT.keyPassed(keyResult.right) : TEXT.keyFailed(keyResult.right, passMark)}</p>

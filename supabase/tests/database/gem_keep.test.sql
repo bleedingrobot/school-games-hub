@@ -3,7 +3,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(69);
+select plan(71);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -37,7 +37,7 @@ returns jsonb language sql as $$
     'result', result, 'stars', case when result = 'won' then stars else 0 end, 'waves', waves, 'wavesTotal', 8,
     'gameSeconds', 400, 'asked', 30, 'right', 25))
 $$;
-create function pg_temp.key(who text, n integer, right_answers integer default 9) returns text language sql as $$
+create function pg_temp.key(who text, n integer, right_answers integer default 5) returns text language sql as $$
   select public.record_gem_keep_key(pg_temp.id(who), 'level-' || lpad(n::text, 2, '0'), right_answers)
 $$;
 create function pg_temp.points(who text) returns integer language sql as $$
@@ -92,17 +92,20 @@ select is((select count(*)::integer from public.gem_keep_runs where player = pg_
 
 -- ---- Level Keys ----
 select is(pg_temp.key('b', 1), 'no-win', 'a Level Key needs a win on that level first');
-select is(pg_temp.key('a', 1, 7), 'not-passed', '7 out of 10 does not pass with the default mark of 8');
+select is(pg_temp.key('a', 1, 3), 'not-passed', '3 out of 5 does not pass with the default mark of 8 (half: 4 of 5)');
 select ok(not pg_temp.has('a', 'gk-first-key'), '... and earns no Key achievement');
-select is(pg_temp.key('a', 1, 8), 'passed', '8 out of 10 passes');
-select is(pg_temp.key('a', 1, 10), 'already', 'passing again changes nothing');
+select is(pg_temp.key('a', 1, 4), 'passed', '4 out of 5 passes');
+select is(pg_temp.key('a', 1, 5), 'already', 'passing again changes nothing');
 select ok(pg_temp.has('a', 'gk-first-win') and pg_temp.has('a', 'gk-first-key') and pg_temp.has('a', 'gk-three-stars'),
   'first win, first Key and 3 stars are achievements');
 select is(pg_temp.run('a', 2, 'won', 2) ->> 'status', 'saved', 'level 2 opens after the Key');
+select is(pg_temp.key('a', 2, 5), 'not-today', 'only one Level Key a day');
+update public.gem_keep_progress set key_passed_at = now() - interval '1 day' where player = pg_temp.id('a') and level_id = 'level-01';
+select is(pg_temp.key('a', 2, 5), 'passed', '... the next one passes the day after');
 
 update public.app_settings set gem_keep_key_pass = 10 where true;
 select pg_temp.run('c', 1);
-select is(pg_temp.key('c', 1, 9), 'not-passed', 'the teacher''s pass mark is the one used');
+select is(pg_temp.key('c', 1, 4), 'not-passed', 'the teacher''s pass mark is the one used (10 needs 5 of 5)');
 update public.app_settings set gem_keep_key_pass = 8 where true;
 
 -- ---- The daily cap is shared with bot games ----

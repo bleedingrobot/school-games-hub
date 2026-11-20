@@ -30,6 +30,14 @@ export const HUB_NEWS: NewsItem[] = [
     game: 'toonflap',
   },
   {
+    id: 'gem-keep-short-key-2026-11-20',
+    date: '2026-11-20',
+    emoji: '🗝️',
+    title: 'Gem Keep: a shorter Level Key',
+    text: 'The Level Key is just 5 questions now. You can open one new level each day.',
+    game: 'gem-keep',
+  },
+  {
     id: 'gem-keep-short-well-2026-11-20',
     date: '2026-11-20',
     emoji: '💧',

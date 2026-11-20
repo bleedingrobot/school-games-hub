@@ -32,7 +32,7 @@ export interface GemKeepData {
 }
 
 interface ServerData {
-  progress: { levelId: string; stars: number; keyPassed: boolean }[];
+  progress: { levelId: string; stars: number; keyPassed: boolean; keyPassedOn?: string | null }[];
   facts: FactStats[];
   settings: Omit<GemKeepSettings, 'missingFactor'> & { missingFactor: boolean | null };
   focus?: unknown;
@@ -147,7 +147,9 @@ async function sendQueue(player: string, keepalive: boolean): Promise<boolean> {
 
 function fromServer(raw: ServerData): GemKeepData {
   const progress: CampaignProgress = {};
-  for (const p of raw.progress) progress[p.levelId] = { stars: p.stars, keyPassed: p.keyPassed };
+  for (const p of raw.progress) {
+    progress[p.levelId] = { stars: p.stars, keyPassed: p.keyPassed, ...(p.keyPassedOn ? { keyPassedOn: p.keyPassedOn } : {}) };
+  }
   const { missingFactor, ...rest } = raw.settings;
   return {
     progress,

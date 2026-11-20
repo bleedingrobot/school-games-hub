@@ -33,19 +33,19 @@ function setup(settings: GemKeepSettings = DEFAULT_SETTINGS) {
 }
 
 describe('Gem Keep maths', () => {
-  it('the Level Key: 8 of 10 unlocks the next level; a fail shows the missed facts and can be tried again', async () => {
+  it('the Level Key: 4 of 5 unlocks the next level; a fail shows the missed facts and can be tried again', async () => {
     const { user, answer, engine } = setup();
     engine().state.phase = 'won';
     engine().state.stars = 3;
     engine().setPaused(false);
     await user.click(await screen.findByRole('button', { name: 'Try the Level Key' }));
-    for (let i = 0; i < 10; i++) await answer(i >= 3); // 7 right
-    const failed = await screen.findByText(/7 out of 10. You need 8/);
+    for (let i = 0; i < 5; i++) await answer(i >= 2); // 3 right
+    const failed = await screen.findByText(/3 out of 5. You need 4/);
     expect(failed).toBeInTheDocument();
-    expect(screen.getAllByRole('listitem')).toHaveLength(3);
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
     await user.click(screen.getByRole('button', { name: 'Try the Level Key again' }));
-    for (let i = 0; i < 10; i++) await answer(i !== 0); // 9 right
-    expect(await screen.findByText(/9 out of 10. The next level is unlocked!/)).toBeInTheDocument();
+    for (let i = 0; i < 5; i++) await answer(i !== 0); // 4 right
+    expect(await screen.findByText(/4 out of 5. The next level is unlocked!/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Level Key/ })).not.toBeInTheDocument();
   });
 });
