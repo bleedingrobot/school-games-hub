@@ -33,6 +33,14 @@ export const HUB_NEWS: NewsItem[] = [
     game: 'dragon-maths',
   },
   {
+    id: 'goblinstorm-card-keys-2026-11-20',
+    date: '2026-11-20',
+    emoji: '⌨️',
+    title: 'Goblin Storm power keys',
+    text: 'On a keyboard? Press 1, 2, 3 or 4 to pick a power, or use the arrows and Enter.',
+    game: 'goblinstorm',
+  },
+  {
     id: 'clans-season-1-ends-2026-11-20',
     date: '2026-11-20',
     emoji: '🛡️',
