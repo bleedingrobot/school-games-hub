@@ -26,7 +26,7 @@ export const HUB_NEWS: NewsItem[] = [
     date: '2026-11-20',
     emoji: '⏳',
     title: 'Bonus Turns Days for Toon Flap and Goblin Storm',
-    text: 'Win one from a class quest! Their game cards now show how many goes you have left today too.',
+    text: 'Win one from a class quest! Their cards now show your goes left today.',
   },
   {
     id: 'toonflap-daily-limits-2026-11-20',
