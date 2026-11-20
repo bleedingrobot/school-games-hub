@@ -28,6 +28,7 @@ export function paintedPictureByTier(name: string): Record<Tier, { art: string; 
 /** The art name of each trophy (kind 'trophy') id; every one is painted in all three metals. */
 export const TROPHY_ART: Record<string, string> = {
   'dm-slayer': 'slayers-sword',
+  'dm-crown': 'dragon-crown',
   'clan-tooth': 'monster-tooth',
   'chess-knight': 'champions-knight',
   'checkers-king': 'champions-king',
