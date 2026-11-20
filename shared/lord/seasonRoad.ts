@@ -101,3 +101,51 @@ export function readLordSeason(raw: unknown, lord: unknown, today: string): Home
   const hero = level === null ? null : { level, ready: level >= MAX_LEVEL && exp >= expNeeded(MAX_LEVEL - 1) };
   return { clock: { number: s.number, day: s.dayOfSeason }, hero };
 }
+
+/** What a new season keeps and what starts again (newHero in engine.ts and the reset in server.ts). Shown before and after. */
+export const SEASON_KEEPS: readonly { emoji: string; text: string }[] = [
+  { emoji: '⭐', text: 'Your dragon stars' },
+  { emoji: '🏆', text: 'Your achievements' },
+  { emoji: '🗡️', text: 'Your trophies: the Slayer’s Sword, Dragon Head and Crown' },
+  { emoji: '👑', text: 'Your titles' },
+  { emoji: '🏛️', text: 'The Hall of Heroes, for ever' },
+  { emoji: '🎨', text: 'Your hero’s look' },
+];
+export const SEASON_RESETS: readonly { emoji: string; text: string }[] = [
+  { emoji: '1️⃣', text: 'Your level and experience (back to level 1)' },
+  { emoji: '🪙', text: 'Your gold and the bank' },
+  { emoji: '💎', text: 'Your gems' },
+  { emoji: '⚔️', text: 'Your sword and armour' },
+  { emoji: '🧙', text: 'Your hero class: pick a new one if you like' },
+];
+
+/** The last days of a season this banner shows on. */
+export const LAST_CHANCE_DAYS = 3;
+/** The first days of a new season the "has begun" banner shows on. */
+export const NEW_SEASON_DAYS = 3;
+
+/**
+ * A banner for the end and start of a season, or null on other days:
+ * - the last three days: "Season 1 ends in 3 days!", "… ends tomorrow night!", "Last day of Season 1!";
+ * - days 1 to 3 of season 2 and later: "Season 2 has begun!".
+ */
+export function seasonBanner(clock: LordClock): { kind: 'last' | 'new'; title: string; text: string } | null {
+  if (clock.number <= 0 || clock.day <= 0) return null;
+  const left = SEASON_DAYS - clock.day;
+  if (left < LAST_CHANCE_DAYS) {
+    const title = left === 0 ? `Last day of Season ${clock.number}! It ends tonight.`
+      : left === 1 ? `Season ${clock.number} ends tomorrow night!`
+      : `Season ${clock.number} ends in ${left + 1} days!`;
+    return {
+      kind: 'last', title,
+      text: 'Last chance to slay the Red Dragon. Then every hero starts again at level 1, but your stars, trophies, achievements and the Hall of Heroes stay forever.',
+    };
+  }
+  if (clock.number >= 2 && clock.day <= NEW_SEASON_DAYS) {
+    return {
+      kind: 'new', title: `Season ${clock.number} has begun!`,
+      text: `Every hero starts again at level 1. Five new Dragon Head places are waiting for the first five to slay the dragon in Season ${clock.number}.`,
+    };
+  }
+  return null;
+}

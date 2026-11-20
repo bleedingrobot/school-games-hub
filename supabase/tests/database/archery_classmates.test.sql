@@ -42,6 +42,8 @@ values ((select school_id from public.profiles where id = pg_temp.id('0a')), 'Ro
 update public.class_members set class_id = (select id from public.classes where name = 'Room Two') where student_id = pg_temp.id('0c');
 -- The game on everywhere, and some gear to pack.
 update public.app_settings set archery_enabled = true;
+-- These checks are about one class on its own: "Play other classes" off (play_anyone.test.sql covers it on).
+update public.app_settings set play_other_classes = false;
 insert into public.archery_players (player, gear, shields)
 select p, '{"steel": 3, "apple": 2, "giant": 1}', '["wood"]' from unnest(array[pg_temp.id('0a'), pg_temp.id('0b'), pg_temp.id('0c'), pg_temp.id('0d')]) p;
 
@@ -68,7 +70,7 @@ select is(public.archery_here() -> 'online', '[]'::jsonb, 'Ana is here, alone');
 select pg_temp.ben();
 select is(jsonb_array_length(public.archery_here() -> 'online'), 1, 'Ben sees Ana');
 select is(public.archery_here() -> 'online' -> 0 ->> 'id', pg_temp.id('0a')::text, '... by id');
-select is((select array_agg(k order by k) from jsonb_object_keys(public.archery_here() -> 'online' -> 0) k), array['avatar', 'busy', 'id', 'name', 'snoozed'],
+select is((select array_agg(k order by k) from jsonb_object_keys(public.archery_here() -> 'online' -> 0) k), array['avatar', 'busy', 'className', 'id', 'name', 'sameClass', 'snoozed', 'starred'],
   '... with a display name and avatar only (no coins or maths)');
 select pg_temp.cat();
 select is(public.archery_here() -> 'online', '[]'::jsonb, 'Cat (another class) sees nobody');

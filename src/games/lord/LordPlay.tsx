@@ -14,12 +14,15 @@ import { SIZE_IT_UP_GOLD, sizeItUpBonus } from '../../../shared/lord/maths';
 import type { LordAction, LordState } from '../../../shared/lord/server';
 import type { FightAction, FightState, Hero, HeroClass } from '../../../shared/lord/types';
 import { useAuth } from '../../auth/AuthContext';
-import { createServerBackend, type LordBackend, type LordLoad } from '../../data/lord';
+import { createServerBackend, type LordBackend, type LordLoad, type SeasonSummary } from '../../data/lord';
 import { BigStage, FightScreen, fightScene } from './Fight';
 import { shortcutsOn } from './shortcuts';
 import { HowToPlay, HowToPlayBody } from './HowToPlay';
 import { Bank, ClassPick, Healer, HeroPage, Inn, LookPage, Shop, Training, type PlaceProps, type Reply } from './Places';
 import { Arena, HallOfHeroes, NewsPage, Warriors } from './Social';
+import { StoryBook, useGameKeys, useStoryOnce } from '../../kit';
+import { OPENING } from './stories';
+import { SeasonCeremony } from './SeasonCeremony';
 import { HeroSprite, MonsterSprite } from './Sprite';
 import { withArticle } from './text';
 import { Stage } from './Stage';
@@ -28,8 +31,11 @@ import { forestScene } from './art';
 import { KingdomMap, hasMap } from './KingdomMap';
 import { SeasonRoad } from './SeasonRoad';
 import { useAsk, type Answer } from './useAsk';
+import { HubButtons } from './HubButtons';
 import { useClashes } from './useClashes';
+import { useAskFromHub, useOpenFromHub } from '../../multiplayer/useAskFromHub';
 import { ClashAskBanner } from './LiveArena';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import './lord.css';
 import './big.css';
 
@@ -98,11 +104,25 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
   const [busy, setBusy] = useState(false);
   const [waiting, setWaiting] = useState(0);
   const [deeds, setDeeds] = useState<string[]>([]);
+  // The end-of-season ceremony: my last finished season, and whether it is showing (by itself, or again from the Hall).
+  const [summary, setSummary] = useState<SeasonSummary | null>(null);
+  const [ceremony, setCeremony] = useState<'first' | 'again' | null>(null);
   const hero = state?.hero ?? null;
   // The game's own request function, for the question boxes (set once `act` is made, below).
   const sendRef = useRef<Parameters<typeof useAsk>[0]['current']>(null);
   const { ask, modal } = useAsk(sendRef);
+  // The opening story, once per pupil, as soon as the village has loaded (docs/plans/stories/PLAN.md, ST.2). Skippable.
+  const opening = useStoryOnce(OPENING.id, !!state);
+  const openingBook = opening.open && <StoryBook story={OPENING} onClose={opening.close} endLabel="Let's go!" className="lord-storybook" />;
   const clashes = useClashes(hero ? backend.clashes : undefined, player);
+
+  // "Yes" on the hub's challenge banner: say yes here as the banner's Fight! would, and go to the arena.
+  useAskFromHub(clashes.asks.map((a) => a.clash), (id) => {
+    void clashes.send({ action: 'clash-answer', clash: id, accept: true }).then((r) => { if (r.ok) setScreen({ name: 'arena' }); else setNote(r.message); });
+  });
+
+  // The Lobby sent a challenge (or "Carry on"): straight to the arena, where the wait or the clash shows.
+  useOpenFromHub(!!hero, (what) => what === 'live' && setScreen({ name: 'arena' }));
 
   const stateRef = useRef<LordState | null>(null);
   stateRef.current = state;
@@ -129,7 +149,14 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     setWaiting(backend.waiting());
     if (result.kind === 'ready') {
       setState(result.state);
-      if (result.abandoned) setNote(ABANDONED[result.abandoned]);
+      const pouchNote = result.pouch ? `💰 Quest pouch: +${result.pouch.amount.toLocaleString()} gold!` : '';
+      if (result.abandoned || pouchNote) setNote([result.abandoned ? ABANDONED[result.abandoned] : '', pouchNote].filter(Boolean).join(' '));
+      // A season has ended since I last played: the ceremony opens once. (The hero was saved when the season turned.)
+      const ended = await backend.fetchSeasonSummary?.();
+      if (ended) {
+        setSummary(ended);
+        if (!ended.seen) setCeremony('first');
+      }
     }
   }, [backend]);
 
@@ -273,8 +300,25 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
           <h2>Can’t connect</h2>
           <p className="lord-lead">{OFFLINE}</p>
           {waiting > 0 && <p className="lord-note">Your last fight is saved on this Chromebook and will be sent as soon as you are back online.</p>}
-          <button type="button" className="lord-btn lord-btn--hot" autoFocus onClick={() => void open()}>Try again</button>
+          <button type="button" className="lord-btn lord-btn--hot" data-key="enter" autoFocus onClick={() => void open()}>Try again</button>
         </section>
+      </Frame>
+    );
+  }
+
+  if (ceremony && summary) {
+    const first = ceremony === 'first';
+    return (
+      <Frame backend={backend} state={state} hero={hero ?? undefined} bare>
+        <SeasonCeremony
+          summary={summary} look={hero?.look} canPick={first && state.classOpen}
+          onDone={(next) => {
+            if (first) void backend.markSeasonSeen?.(summary.season);
+            setSummary({ ...summary, seen: true });
+            setCeremony(null);
+            setScreen(first && next === 'class' ? { name: 'class' } : first ? { name: 'village' } : { name: 'hall' });
+          }}
+        />
       </Frame>
     );
   }
@@ -298,6 +342,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
         </details>
         {!choosing && <button type="button" className="lord-btn" onClick={() => setScreen({ name: 'village' })}>Keep my class</button>}
         {busy && <p className="lord-soft" role="status">One moment…</p>}
+        {openingBook}
       </Frame>
     );
   }
@@ -457,7 +502,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     case 'news': body = <NewsPage backend={backend} deeds={deeds} today={today} back={toVillage} />; break;
     case 'warriors': body = <Warriors backend={backend} back={toVillage} />; break;
     case 'howto': body = <HowToPlay back={toVillage} />; break;
-    case 'hall': body = <HallOfHeroes backend={backend} back={toVillage} />; break;
+    case 'hall': body = <HallOfHeroes backend={backend} back={toVillage} ceremony={summary ? { season: summary.season, watch: () => setCeremony('again') } : undefined} />; break;
     case 'tools':
       body = backend.trial ? (
         <Suspense fallback={<p className="lord-soft">Loading…</p>}>
@@ -481,7 +526,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
             <div className="lord-big__fig lord-big__fig--me"><div className="lord-big__body"><HeroSprite heroClass={hero.heroClass} look={hero.look} scale={8} label="" /></div></div>
           </div>
           <div className="lord-big__bar">
-            <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus disabled={busy} onClick={() => void resolveEvent(event.id)}>
+            <button type="button" className="lord-btn lord-btn--hot lord-btn--big" data-key="enter" autoFocus disabled={busy} onClick={() => void resolveEvent(event.id)}>
               {event.maths ? 'Have a go' : 'Continue'}
             </button>
           </div>
@@ -509,11 +554,11 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
           </div>
           <div className="lord-big__bar" role="group" aria-label="What will you do?">
             {sizeUp && (
-              <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus onClick={() => void beginFight(true)}>
+              <button type="button" className="lord-btn lord-btn--hot lord-btn--big" data-key="enter" autoFocus onClick={() => void beginFight(true)}>
                 Size it up <small>first hit ×{sizeItUpBonus('right')}, +{Math.round(SIZE_IT_UP_GOLD * 100)}% gold</small>
               </button>
             )}
-            <button type="button" className={`lord-btn lord-btn--big ${sizeUp ? 'lord-btn--glass' : 'lord-btn--hot'}`} autoFocus={!sizeUp} onClick={() => void beginFight(false)}>Fight!</button>
+            <button type="button" className={`lord-btn lord-btn--big ${sizeUp ? 'lord-btn--glass' : 'lord-btn--hot'}`} data-key={sizeUp ? undefined : 'enter'} autoFocus={!sizeUp} onClick={() => void beginFight(false)}>Fight!</button>
           </div>
         </BigStage>
       );
@@ -544,7 +589,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
             <div className="lord-big__fig lord-big__fig--foe lord-big__fig--dragon"><div className="lord-big__body lord-breathe"><MonsterSprite monster={{ id: 'dragon-1', name: 'Scorchtail, the Red Dragon', level: 13 }} scale={13} /></div></div>
           </div>
           <div className="lord-big__bar">
-            <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus={!triedToday} disabled={busy || triedToday} onClick={() => void beginDragonStage(next)}>
+            <button type="button" className="lord-btn lord-btn--hot lord-btn--big" data-key="enter" autoFocus={!triedToday} disabled={busy || triedToday} onClick={() => void beginDragonStage(next)}>
               {next === 1 ? 'Go in' : `Carry on: fight ${next} of 3`}
             </button>
             <button type="button" className="lord-btn lord-btn--glass lord-btn--big" autoFocus={triedToday} onClick={toVillage}>Not yet</button>
@@ -563,9 +608,11 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
       );
   }
 
-  const keysOn = screen.name === 'village';
+  const keysOn = screen.name === 'village' && !opening.open;
   return (
-    <Frame backend={backend} state={state} hero={hero} bare={['fight', 'encounter', 'event', 'dragon', 'arena', 'news', 'warriors', 'hall'].includes(screen.name) || (screen.name === 'village' && hasMap())}>
+    <Frame backend={backend} state={state} hero={hero} bare={['fight', 'encounter', 'event', 'dragon', 'arena', 'news', 'warriors', 'hall', 'bank', 'shop', 'healer', 'inn', 'training', 'hero', 'look', 'howto'].includes(screen.name) || (screen.name === 'village' && hasMap())}>
+      {/* A finished fight adds a deed: then any new Dragon Maths achievement pops up. */}
+      <AchievementPop games={['dragon-maths']} watch={deeds.length ? deeds : null} off={backend.trial} />
       {keysOn && <VillageKeys onKey={(k) => {
         if (busyRef.current) return;
         if (k === 'f') void goForest();
@@ -581,6 +628,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
         }} />
       )}
       {modal}
+      {openingBook}
     </Frame>
   );
 }
@@ -606,15 +654,20 @@ function VillageKeys({ onKey }: { onKey: (key: string) => void }) {
 /**
  * Before there is a hero the frame has the game's name on top. After that every screen is a painting with what it
  * needs on it (the purse, the place's name): no title, season or stats rows above the art (James, 17 Nov 2026).
- * `bare`: the painting fills the frame (fights and the map).
+ * `bare`: the painting fills the frame (fights and the map). The frame itself fills the whole window, over the hub's
+ * bar, like Star Trader (James, 18 Nov 2026); the map carries the way back to the hub and the sound switch.
  */
 function Frame({ children, hero, bare, backend, state }: { children: ReactNode; hero?: Hero; bare?: boolean; backend: LordBackend; state?: LordState }) {
   const hud = useMemo(() => (hero ? { hero, unlimited: !!state?.unlimited } : null), [hero, state?.unlimited]);
+  const root = useRef<HTMLDivElement>(null);
+  // Dragon Maths has its own letter keys, Esc and Enter-on-the-focused-button; this only adds Enter for a few go-on buttons.
+  useGameKeys(root);
   return (
-    <div className={`lord${bare ? ' lord--bare' : ''}`} data-testid="lord">
+    <div ref={root} className={`lord${bare ? ' lord--bare' : ''}`} data-testid="lord">
       {!hero && (
         <header className="lord-top">
           <h1>Dragon Maths</h1>
+          <HubButtons />
           {backend.trial && <span className="lord-trial">Trial: saved on this browser only, no points yet</span>}
         </header>
       )}
@@ -644,7 +697,7 @@ function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest,
   const over = (
     <>
       <div className="lord-map__top">
-        <h1>Dragon Maths{trial && <small> (trial)</small>}</h1>
+        <div className="lord-map__title"><HubButtons /><h1>Dragon Maths{trial && <small> (trial)</small>}</h1></div>
         <Purse />
       </div>
       <div className="lord-map__corner">

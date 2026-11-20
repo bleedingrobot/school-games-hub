@@ -6,17 +6,21 @@
  * Maths questions come from the pupil's own focus, in order, and the server marks each answer.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useTraderKeys } from './keys';
 import { ASK_EVERY, BIG_TRADE_CREDITS, GOVERNMENTS, MOON_PRICE, PIRATE_TIERS, SHIPS } from '../../../shared/trader/config';
 import type { FightAction } from '../../../shared/trader/fight';
 import { coordText, makeGalaxy, type Galaxy } from '../../../shared/trader/galaxy';
 import type { NewsItem } from '../../../shared/trader/news';
 import { schoolPushes } from '../../../shared/trader/priceGuide';
 import { runPlan } from '../../../shared/trader/plan';
+import { HoldView } from './HoldView';
 import { applyBatch, type Action, type Game, type Mark, type Settings } from '../../../shared/trader/server';
 import { emptyDesign, type SystemDesign } from '../../../shared/trader/system';
 import { type ApiResult, type Loaded, type MoveReply, type TraderApi } from '../../data/trader';
 import { useAsk } from './Ask';
 import { CaptainFace, CaptainPicker } from './Captain';
+import { StoryBook, useStoryOnce } from '../../kit';
+import { OPENING } from './stories';
 import { DealPanel, FightPanel, JunkPanel, SummaryPanel } from './Encounter';
 import { laserPower } from '../../../shared/trader/fight';
 import { hasShipyard } from '../../../shared/trader/state';
@@ -70,6 +74,15 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   const [queue, setQueue] = useState<Action[]>([]);
   const [phase, setPhase] = useState<Phase>({ k: startAt === 'title' ? 'title' : 'planet' });
   const [tab, setTab] = useState<Tab>('trade');
+  // H.4: a planet the hold card asked to see on the star chart (`n` counts, so asking again pulses again).
+  const [mapFocus, setMapFocus] = useState<{ planet: number; n: number } | null>(null);
+  const showOnMap = useCallback((planet: number) => {
+    setMapFocus((f) => ({ planet, n: (f?.n ?? 0) + 1 }));
+    setTab('map');
+  }, []);
+  useEffect(() => {
+    if (tab !== 'map') setMapFocus(null);
+  }, [tab]);
   const [prefs, setPrefs] = useState(loadPrefs);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -97,6 +110,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   /** The "Choose your captain" picker is open. */
   const [picking, setPicking] = useState(false);
   const helpButton = useRef<HTMLButtonElement>(null);
+  /** The opening story: once per pupil on the title screen, and again from its "📖 The story" button. Skippable. */
+  const [storyAgain, setStoryAgain] = useState(false);
   const lock = useRef(false);
   const latest = useRef({ loaded, queue });
   latest.current = { loaded, queue };
@@ -111,6 +126,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
       setPrices(r.value.prices ?? []);
       setQueue([]);
       setProblem(null);
+      if (r.value.pouch) setNote(`💰 Quest pouch: +${r.value.pouch.amount.toLocaleString()} credits!`);
     } else setProblem({ kind: r.kind, message: r.message });
   }, [api]);
   useEffect(() => {
@@ -327,6 +343,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
     setQueue([]);
     setDraft(null);
     setProblem(null);
+    if (r.value.pouch) setNote(`💰 Quest pouch: +${r.value.pouch.amount.toLocaleString()} credits!`);
     return null;
   }
 
@@ -593,8 +610,13 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   const gain = upgrade && galaxy && t ? upgradeGain(galaxy, t, upgrade, allLines) : null;
   const suggest = upgrade && bolt ? { target: upgrade.target, why: upgrade.kind === 'pod' ? `${gain ?? upgrade.why}` : `${upgrade.why}${gain ? ` ${gain}.` : ''}` } : null;
 
+  const marketRun = t && marketPlan?.some((n) => n !== 0) ? runPlan(t, marketPlan) : null;
+  const marketAfter = marketRun?.ok ? marketRun.out.state : null;
   const playing = phase.k !== 'title';
   const panelBusy = busy || asking || phase.k === 'warp';
+  const opening = useStoryOnce(OPENING.id, phase.k === 'title' && !!game && !loaded?.seasonChoice);
+  const storyOpen = opening.open || storyAgain;
+  useTraderKeys(root, !asking && !picking && !problem && !storyOpen);
   const tabs: [Tab, string][] = [['trade', 'Trade'], ['ship', 'Ship'], ['bank', 'Bank'], ['map', 'Star chart'], ...(forgeOn ? [['forge', '🌟 Forge'], ['gallery', '🌌 Gallery']] as [Tab, string][] : [])];
   const label = here && t && galaxy ? `${here.name}, a ${GOVERNMENTS[here.government].name.toLowerCase()} world. Your ${SHIPS[t.ship].name} is in orbit.` : 'Star Trader';
 
@@ -621,10 +643,17 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
           level={level}
           onLevel={(l) => remember((m) => ({ ...m, level: l }))}
           onExit={onExit}
+          onStory={() => setStoryAgain(true)}
         />
       ) : (
         <>
           <Hud goal={forgeOn ? goalOf(design, t.credits, t.moon) : null} t={t} jumpsPerDay={loaded.settings.jumpsPerDay} unlimited={loaded.settings.unlimited === true} planet={`${here.name} ${coordText(here)}`} government={GOVERNMENTS[here.government].name} onExit={onExit} help={helpButton} helpOpen={helpOpen} onHelp={() => (helpOpen ? closeHelp() : setHelpOpen(true))} captain={game?.captain} onCaptain={phase.k === 'planet' && !pending ? () => setPicking(true) : undefined} />
+          {phase.k === 'planet' && !pending && tab === 'trade' && (
+            // On a wide screen the hold sits over the planet, on the right (the market's own copy is hidden by CSS).
+            <div className="st-holdside">
+              <HoldView t={t} after={marketAfter} galaxy={galaxy} pushes={pushes} onShowMap={showOnMap} want={marketWant} />
+            </div>
+          )}
           <div className={`st-main ${phase.k === 'planet' && !pending && (tab === 'map' || tab === 'forge' || tab === 'gallery') ? 'st-main--wide' : ''} ${phase.k === 'planet' && !pending && tab === 'forge' ? 'st-main--forge' : ''}`}>
             {phase.k === 'planet' && !pending && (
               <>
@@ -637,7 +666,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
                 </div>
                 {tipCard ?? (step && !flight && bolt && <CoachBar step={step} onShow={showMe} />)}
                 <div className="st-focus" ref={heading} tabIndex={-1} aria-label={`${tabs.find((x) => x[0] === tab)?.[1]} screen`} />
-                {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} want={marketWant} level={level} onTrade={doTrade} onPlan={setMarketPlan} />}
+                {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} want={marketWant} level={level} onTrade={doTrade} onPlan={setMarketPlan} onShowMap={showOnMap} />}
                 {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} suggest={suggest} askFirst={level === 'some'} forge={forgeOn} onForge={() => setTab('forge')} onAct={act} onMoon={() => void buyMoon()} captain={game?.captain} onCaptain={() => setPicking(true)} />}
                 {tab === 'forge' && forgeOn && <Forge saved={savedSystem} draft={design} credits={t.credits} ownsMoon={t.moon} busy={panelBusy} lessMotion={lessMotion} level={level} typing={loaded.settings.forgeTyping !== false} onDraft={setDraft} onPlan={planForge} onApply={applyForge} onPicture={savePicture} />}
                 {tab === 'gallery' && forgeOn && <Gallery api={api} lessMotion={lessMotion} />}
@@ -653,7 +682,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
                     bolt={bolt && loanNotNeeded(t, trips) ? "You can already fill your hold with the best buy here. You don't need a loan right now." : null}
                   />
                 )}
-                {tab === 'map' && <MapPanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} guide={showFlight ? flight?.guide ?? null : null} level={level} unlimited={settings.unlimited} onAim={setAimed} onJump={(d) => void jump(d)} onRefuel={(units) => act({ type: 'refuel', units }, 'Fuel bought.')} />}
+                {tab === 'map' && <MapPanel galaxy={galaxy} t={t} busy={panelBusy} focus={mapFocus} news={news} pushes={pushes} guide={showFlight ? flight?.guide ?? null : null} level={level} unlimited={settings.unlimited} onAim={setAimed} onJump={(d) => void jump(d)} onRefuel={(units) => act({ type: 'refuel', units }, 'Fuel bought.')} />}
                 {note && <p className="st-note st-note--float" role="status">{note}</p>}
                 {t.jumpsLeft < 1 && !settings.unlimited && <p className="st-note st-note--float">That is all your jumps for today. You can still trade here. Come back tomorrow!</p>}
               </>
@@ -710,6 +739,15 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
           onAck={(id) => remember((m) => (id === 'profit' ? { ...m, flight: 'done', run: null } : m.run ? { ...m, run: { ...m.run, acks: [...m.run.acks, id] } } : m))}
           onShow={showMe}
           onSkip={() => remember((m) => ({ ...m, flight: 'skipped', run: null }))}
+        />
+      )}
+      {storyOpen && (
+        <StoryBook
+          story={OPENING}
+          onClose={() => { opening.close(); setStoryAgain(false); }}
+          endLabel="Let's fly!"
+          className="st-storybook"
+          corner={game?.captain ? <CaptainFace id={game.captain} size={72} /> : undefined}
         />
       )}
       {modal}
@@ -813,7 +851,7 @@ function MoonProgress({ t }: { t: Game['t'] }) {
   );
 }
 
-function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, level, onLevel, onExit }: {
+function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, level, onLevel, onExit, onStory }: {
   heading: React.RefObject<HTMLDivElement | null>;
   prefs: ReturnType<typeof loadPrefs>;
   lessMotion: boolean;
@@ -824,6 +862,7 @@ function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, level,
   level: HelpLevel;
   onLevel: (level: HelpLevel) => void;
   onExit?: () => void;
+  onStory: () => void;
 }) {
   return (
     <div className="st-title">
@@ -831,8 +870,9 @@ function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, level,
         <h1 className="st-title__h">Star Trader</h1>
         <p className="st-title__p">Fly a small ship between the planets. Buy cargo where it is cheap and sell it where it is dear. Upgrade your ship, outsmart the pirates, and save up to buy a moon of your very own.</p>
         <div className="st-actions st-actions--centre">
-          <button type="button" className="st-btn st-btn--primary st-btn--big" onClick={onStart}>Start trading</button>
+          <button type="button" className="st-btn st-btn--primary st-btn--big" onClick={onStart} data-key="go">Start trading</button>
           {onExit && <button type="button" className="st-btn st-btn--big" onClick={onExit}>Back to the hub</button>}
+          <button type="button" className="st-btn st-btn--big" onClick={onStory}>📖 The story</button>
         </div>
         {firstTime && <p className="st-soft">New here? {COACH_NAME}, your ship's robot, will fly with you on your first trip.</p>}
         <div className="st-title__opts">

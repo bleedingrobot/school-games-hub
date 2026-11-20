@@ -28,6 +28,9 @@
  "slayers-sword-bronze": 1,
  "slayers-sword-silver": 1,
  "slayers-sword-gold": 1,
+ "dragon-crown-bronze": 1,
+ "dragon-crown-silver": 1,
+ "dragon-crown-gold": 1,
  "monster-tooth-bronze": 2,
  "monster-tooth-silver": 2,
  "monster-tooth-gold": 1,
@@ -105,5 +108,8 @@
  "weekend-explorer-gold": 2,
  "home-learning-cup-bronze": 3,
  "home-learning-cup-silver": 3,
- "home-learning-cup-gold": 3
+ "home-learning-cup-gold": 3,
+ "season-veteran-bronze": 3,
+ "season-veteran-silver": 2,
+ "season-veteran-gold": 2
 }

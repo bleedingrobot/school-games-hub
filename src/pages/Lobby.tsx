@@ -9,7 +9,16 @@ import { ask, MultiplayerError, fetchMultiplayerEnabled, type Action, type Frien
 import { askSpace, seatsOf, type SpaceGame, type SpaceLobbyGame } from '../data/spaceGames';
 import { askCard, type CardLobbyGame, type SeatSummary } from '../data/cardGames';
 import { askPower, seatsOf as powerSeatsOf, type PowerGame, type PowerLobbyGame } from '../data/powerGames';
-import { findGame, GAMES, POWER_CLASH_ON } from '../games/registry';
+import { CLAN_QUEST_ON, DRAGON_MATHS_ON, findGame, GAMES, POWER_CLASH_ON } from '../games/registry';
+import { archeryOn } from '../games/archery/switch';
+import { islesOn } from '../games/isles/switch';
+import { GAME_NAMES } from '../components/challengeWords';
+import { INVITE_GAMES, isInviteGame, serverHubAskLink, type HubAsk, type InviteGame, type LiveGame } from '../data/hubAsks';
+import { cancelInvite, sendInvite, watchSentInvite } from '../data/boardInvites';
+import type { LiveSetup } from '../../shared/space/live';
+import { fetchLobbyHere, livePath, sendChallenge, type HerePlayer, type LobbyHere, type MyGame } from '../data/lobbyHere';
+import { useHubAsks } from '../multiplayer/useHubAsks';
+import { ChallengesForYou, EMOJI, FIRST, GameTiles, PAUSED, WhosHere, type Tile } from './LobbyFriends';
 import { useMathsMode } from '../games/space/mathsMode';
 import { useNonMathsGamesOpen } from '../data/nonMathsGames';
 import type { DesignedBoardId } from '../../shared/space/boards';
@@ -36,7 +45,14 @@ type OpenGame =
   | { kind: '101'; game: CardLobbyGame }
   | { kind: 'power-clash'; game: PowerLobbyGame };
 
-/** The lobby: start a game, join one with a code, or tap an open game. */
+/** Each board game's tile picture. */
+const BOARD_EMOJI: Record<string, string> = { chess: '♟️', checkers: '🔴', '101': '🃏', space: '🚀', 'power-clash': '⚡' };
+
+/**
+ * The lobby, "Play a friend" (docs/plans/play-anyone/PLAN.md, section D): challenges waiting for me, my games, a tile for
+ * every way to play (greyed with the reason and a fix when I can't yet), who's here with what we can play together, the
+ * start-a-game form and open games for the board games, and the code box.
+ */
 export function Lobby() {
   const navigate = useNavigate();
   const { profile } = useAuth();
@@ -95,11 +111,27 @@ export function Lobby() {
   };
   const [inLobby, setInLobby] = useState(false);
   const [code, setCode] = useState('');
+  /** A board game's tile was tapped: its start form shows. */
+  const [startOpen, setStartOpen] = useState(false);
+
+  // The live games (stage 3): what I can start, my fights, and who's here. The hub banner doesn't show on this page, so
+  // this page says "I'm here" for the hub and lists the challenges itself.
+  const [here, setHere] = useState<LobbyHere | null>(null);
+  const [focus, setFocus] = useState<LiveGame | null>(null);
+  const [sending, setSending] = useState(false);
+  const [problem, setProblem] = useState('');
+  // Invites by name (stage 4): the one I've sent (until it's answered), what happened to the last one, and a Yes that
+  // couldn't open its game.
+  const [sent, setSent] = useState<{ id: number; game: InviteGame; with: string; deadline: string } | null>(null);
+  const [inviteNote, setInviteNote] = useState('');
+  const [askProblem, setAskProblem] = useState('');
+  const hubAsks = useHubAsks(profile?.role === 'student' ? serverHubAskLink : undefined, profile?.id);
 
   // One request for the open games, my own games and the other players' names (S.4); the switch comes from the remembered
   // settings read (S.1). If either fails, the lobby keeps what it has and says so if it has nothing yet. Asks again for whoever
   // signs in.
   const refresh = useCallback(async () => {
+    void fetchLobbyHere().then((h) => h && setHere(h));
     try {
       const [on, lobby] = await Promise.all([fetchMultiplayerEnabled(), fetchLobbyPage()]);
       // Power Clash is not on the lobby until James switches it on.
@@ -197,30 +229,39 @@ export function Lobby() {
       void go('create', async () => friendPath(await ask(request)));
       return;
     }
-    void go('create', async () => {
-      const [{ loadPrefs, mathsOn, savePrefs, setupFrom, todaysGalaxy }, { DESIGNED_BOARDS }] = await Promise.all([
-        spacePrefs(),
-        import('../../shared/space/boards'),
-      ]);
-      const saved = loadPrefs();
-      const galaxy = spaceBoard === 'galaxy-of-the-day';
-      const withMaths = { ...saved, maths: spaceMaths };
-      // Cosmic events come with the board (on for Deep Space), as on the bot game's settings.
-      const setup = setupFrom(
-        {
-          ...withMaths,
-          mode: spaceMode,
-          board: galaxy ? 'galaxy' : spaceBoard,
-          galaxy: galaxy ? todaysGalaxy() : saved.galaxy,
-          galaxySize: 100,
-          cosmicEvents: galaxy ? saved.cosmicEvents : DESIGNED_BOARDS[spaceBoard].cosmicEvents,
-        },
-        mathsOn(mathsMode, withMaths),
-      );
-      if ('problem' in setup) throw new Error(setup.problem);
-      savePrefs({ ...saved, mode: spaceMode, ...(mathsMode === 'choose' ? { maths: spaceMaths } : {}), ...(galaxy ? {} : { board: spaceBoard }) });
-      return spacePath(await askSpace({ action: 'create', setup, lobby: inLobby }));
-    });
+    void go('create', async () => spacePath(await askSpace({ action: 'create', setup: await spaceSetup(), lobby: inLobby })));
+  }
+
+  /**
+   * The space game's setup from the start form, or (for an invite sent before the form was opened) from the pupil's
+   * last choices. Remembers the choices for next time.
+   */
+  async function spaceSetup(): Promise<LiveSetup> {
+    const [{ loadPrefs, mathsOn, savePrefs, setupFrom, todaysGalaxy }, { DESIGNED_BOARDS }] = await Promise.all([
+      spacePrefs(),
+      import('../../shared/space/boards'),
+    ]);
+    const saved = loadPrefs();
+    const fromForm = spaceTouched.current || gameKind === 'space';
+    const board: SpaceBoardChoice = fromForm ? spaceBoard : saved.board === 'galaxy' ? 'galaxy-of-the-day' : saved.board;
+    const mode = fromForm ? spaceMode : saved.mode;
+    const galaxy = board === 'galaxy-of-the-day';
+    const withMaths = { ...saved, maths: fromForm ? spaceMaths : saved.maths };
+    // Cosmic events come with the board (on for Deep Space), as on the bot game's settings.
+    const setup = setupFrom(
+      {
+        ...withMaths,
+        mode,
+        board: galaxy ? 'galaxy' : board,
+        galaxy: galaxy ? todaysGalaxy() : saved.galaxy,
+        galaxySize: 100,
+        cosmicEvents: galaxy ? saved.cosmicEvents : DESIGNED_BOARDS[board].cosmicEvents,
+      },
+      mathsOn(mathsMode, withMaths),
+    );
+    if ('problem' in setup) throw new Error(setup.problem);
+    savePrefs({ ...saved, mode, ...(mathsMode === 'choose' ? { maths: withMaths.maths } : {}), ...(galaxy ? {} : { board }) });
+    return setup;
   }
 
   const playing = mine.filter((g) => g.status === 'playing');
@@ -260,18 +301,201 @@ export function Lobby() {
           </Fragment>
         ));
 
+  // ---- The live games and the tiles (stage 3) ----
+  const boardsOpen = enabled !== false;
+  const liveGames = ([archeryOn() && 'archery', DRAGON_MATHS_ON && 'dragon-maths', CLAN_QUEST_ON && 'clan-quest'] as const).filter(
+    (g): g is LiveGame => !!g,
+  );
+  /** The board games I can invite someone to: friends' games on, non-maths games open (space is maths), Power Clash on. */
+  const inviteGames: InviteGame[] = enabled
+    ? INVITE_GAMES.filter((g) => (g === 'space' || !nonMathsShut) && (g !== 'power-clash' || POWER_CLASH_ON))
+    : [];
+  const going = here?.going ?? [];
+  const liveGoing = going.filter((g): g is typeof g & { game: LiveGame } => !isInviteGame(g.game));
+  // My waiting invite: the one just sent, or (after a reload) the one the server says is waiting.
+  const goingInvite = going.find((g) => isInviteGame(g.game) && g.status === 'asked');
+  const inviteOut = sent ?? (goingInvite && isInviteGame(goingInvite.game) ? { id: goingInvite.id, game: goingInvite.game, with: goingInvite.with, deadline: '' } : null);
+  const inviteOutId = inviteOut?.id ?? null;
+  const inviteOutWith = inviteOut?.with ?? '';
+
+  // Hear what happens to my invite: Yes opens the game, No says so, and it's gone once called off or run out.
+  useEffect(() => {
+    if (inviteOutId === null) return;
+    return watchSentInvite(inviteOutId, (i) => {
+      if (i.status === 'accepted' && i.path) {
+        navigate(i.path);
+      } else if (i.status === 'declined' || i.status === 'cancelled' || i.status === 'expired') {
+        if (i.status === 'declined') setInviteNote(`${inviteOutWith} said no this time.`);
+        else if (i.status === 'expired') setInviteNote(`${inviteOutWith} didn’t answer in time.`);
+        setSent(null);
+        void refresh();
+      }
+    });
+  }, [inviteOutId, inviteOutWith, navigate, refresh]);
+  // An invite isn't waiting once its minute is up, even before the server tidies it.
+  useEffect(() => {
+    if (!sent) return;
+    const t = setTimeout(() => {
+      setInviteNote(`${sent.with} didn’t answer in time.`);
+      setSent(null);
+      void refresh();
+    }, Math.max(0, Date.parse(sent.deadline) - Date.now()) + 2000);
+    return () => clearTimeout(t);
+  }, [sent, refresh]);
+
+  const sayYes = (a: HubAsk) => {
+    hubAsks.drop(a);
+    if (!isInviteGame(a.game)) {
+      navigate(`/${a.game}?ask=${a.id}`);
+      return;
+    }
+    setAskProblem('');
+    void serverHubAskLink.accept(a).then((r) => ('path' in r ? navigate(r.path) : setAskProblem(r.problem)));
+  };
+  const sayNo = (a: HubAsk) => {
+    hubAsks.drop(a);
+    void serverHubAskLink.decline(a);
+  };
+  async function invite(game: InviteGame, them: HerePlayer) {
+    setSending(true);
+    setProblem('');
+    setInviteNote('');
+    try {
+      const setup = game === 'space' ? await spaceSetup() : game === '101' ? { target: cardTarget } : undefined;
+      const r = await sendInvite(game, them.id, setup);
+      if (r.ok) setSent({ id: r.id, game, with: them.name, deadline: r.deadline });
+      else setProblem(r.message);
+      void refresh();
+    } catch (e) {
+      setProblem(e instanceof Error && e.message ? e.message : 'That couldn’t be sent just now. Please try again.');
+    } finally {
+      setSending(false);
+    }
+  }
+  async function callOff() {
+    setSent(null);
+    await cancelInvite().catch(() => {});
+    void refresh();
+  }
+  async function challenge(game: LiveGame, them: HerePlayer) {
+    setSending(true);
+    setProblem('');
+    try {
+      const why = await sendChallenge(game, them);
+      if (why === null) {
+        navigate(livePath(game));
+        return;
+      }
+      setProblem(why);
+      void refresh();
+    } catch {
+      setProblem('That couldn’t be sent just now. Please try again.');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const myTile = (id: MyGame, name: string, emoji: string, blurb: string, onPick: () => void): Tile => {
+    const state = here?.me[id];
+    if (here?.teacher) {
+      // Teachers can't be challenged or challenge anyone, so each tile simply opens its game.
+      const to = id === 'archery' ? '/archery' : id === 'isles' ? '/isles' : id === 'dragon-maths' ? '/dragon-maths' : '/clan-quest';
+      return { id, name, emoji, blurb: 'Open the game', why: null, picked: false, onPick: () => navigate(to) };
+    }
+    return {
+      id,
+      name,
+      emoji,
+      blurb,
+      why: !here ? 'Checking…' : state === 'off' ? PAUSED : state === 'none' ? FIRST[id].why : null,
+      fix: state === 'none' ? { label: FIRST[id].fix, to: FIRST[id].to } : undefined,
+      picked: focus === id,
+      onPick,
+    };
+  };
+  const pickLive = (game: LiveGame) => () => {
+    setFocus(game);
+    setStartOpen(false);
+    document.getElementById('whos-here')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+  };
+  const tiles: Tile[] = [
+    ...GAMES.filter((g) => g.Live || g.id === 'space' || g.id === '101' || g.id === 'power-clash').map(
+      (g): Tile => ({
+        id: g.id,
+        name: g.name,
+        emoji: BOARD_EMOJI[g.id] ?? '🎲',
+        blurb: g.id === 'space' || g.id === '101' ? '2–4 players. Start a game or join one' : 'Start a game or join one',
+        why: enabled === false || (nonMathsShut && g.group === 'no-maths') ? PAUSED : null,
+        picked: startOpen && gameKind === g.id,
+        onPick: () => {
+          setGameKind(g.id as LobbyGameKind);
+          setStartOpen(true);
+          setFocus(null);
+          setTimeout(() => document.getElementById('create-title')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }), 50);
+        },
+      }),
+    ),
+    ...liveGames.map((g) => myTile(g, g === 'archery' ? 'Archery fight' : g === 'dragon-maths' ? 'Dragon Maths clash' : 'Clan duel', EMOJI[g], 'Pick someone who’s here', pickLive(g))),
+    ...(islesOn() ? [myTile('isles', 'Sky race', '☁️', 'Race another island', () => navigate('/isles?open=race'))] : []),
+    ...(CLAN_QUEST_ON ? [myTile('raid', 'Village Raid', '🏰', 'Raid a village', () => navigate('/clan-quest?open=raid'))] : []),
+  ];
+
   return (
     <div className="lobby">
       <h1 className="page-title">🤝 Play a friend</h1>
 
       {loadFailed && !open && <p className="chess-note">We couldn’t load the lobby. Check the Wi-Fi; we’ll keep trying.</p>}
 
-      {(playing.length > 0 || waiting || spaceGoing.length > 0 || spaceWaiting || cardGoing.length > 0 || cardWaiting || powerGoing.length > 0 || powerWaiting) && (
+      <ChallengesForYou asks={hubAsks.asks} serverNow={hubAsks.serverNow} onYes={sayYes} onNo={sayNo} />
+      {askProblem && (
+        <p className="chess-note" role="alert">
+          {askProblem}
+        </p>
+      )}
+      {inviteNote && !inviteOut && (
+        <p className="chess-note" role="status">
+          {inviteNote}
+        </p>
+      )}
+
+      {(inviteOut || playing.length > 0 || waiting || spaceGoing.length > 0 || spaceWaiting || cardGoing.length > 0 || cardWaiting || powerGoing.length > 0 || powerWaiting || liveGoing.length > 0) && (
         <section className="panel" aria-labelledby="mine-title">
           <h2 id="mine-title" className="panel__title">
             Your games
           </h2>
           <ul className="lobby-list">
+            {inviteOut && (
+              <li className="lobby-invite-out">
+                <span className="lobby-list__emoji" aria-hidden="true">
+                  {EMOJI[inviteOut.game]}
+                </span>
+                <span className="lobby-list__what">
+                  <strong>
+                    {GAME_NAMES[inviteOut.game]} with {inviteOut.with}
+                  </strong>
+                  <span>Waiting for {inviteOut.with} to say yes</span>
+                </span>
+                <button type="button" className="button button--light" onClick={() => void callOff()}>
+                  Call off
+                </button>
+              </li>
+            )}
+            {liveGoing.map((g) => (
+              <li key={`${g.game}:${g.id}`}>
+                <span className="lobby-list__emoji" aria-hidden="true">
+                  {EMOJI[g.game]}
+                </span>
+                <span className="lobby-list__what">
+                  <strong>
+                    {GAME_NAMES[g.game]} vs {g.with}
+                  </strong>
+                  <span>{g.status === 'asked' ? `Waiting for ${g.with} to say yes` : 'Still going!'}</span>
+                </span>
+                <Link to={livePath(g.game)} className="button button--primary">
+                  {g.status === 'asked' ? 'Open' : 'Carry on'}
+                </Link>
+              </li>
+            ))}
             {playing.map((g) => {
               const opponentId = g.first_player === profile?.id ? g.second_player : g.first_player;
               const card = opponentId ? cards.get(opponentId) : undefined;
@@ -406,44 +630,23 @@ export function Lobby() {
         </section>
       )}
 
-      {enabled === false ? (
-        <section className="friend-wait__card lobby-paused" aria-labelledby="paused-title">
-          <div className="friend-wait__emoji" aria-hidden="true">
-            ⏸️
-          </div>
-          <h2 id="paused-title">Games against friends are paused</h2>
-          <p>Your teacher has paused games against friends for now. You can still play against the bots!</p>
-          <Link to="/" className="button button--primary">
-            Play a bot
-          </Link>
-        </section>
-      ) : (
-        <>
-          <div className="lobby-grid">
-            <section className="panel" aria-labelledby="create-title">
-              <h2 id="create-title" className="panel__title">
-                Start a game
-              </h2>
-              <fieldset className="level-picker">
-                <legend>Game</legend>
-                <div className="level-picker__options">
-                  {GAMES.filter((g) => (g.Live || g.id === 'space' || g.id === '101' || g.id === 'power-clash') && !(nonMathsShut && g.group === 'no-maths')).map((g) => (
-                    <label key={g.id} className="level-picker__option">
-                      <input
-                        type="radio"
-                        name="friend-game"
-                        value={g.id}
-                        checked={gameKind === g.id}
-                        onChange={() => setGameKind(g.id as LobbyGameKind)}
-                      />
-                      <span>
-                        {g.name}
-                        {(g.id === 'space' || g.id === '101') && ' (2–4 players)'}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
+      <section className="panel" aria-labelledby="pick-title">
+        <h2 id="pick-title" className="panel__title">
+          Pick a game
+        </h2>
+        <GameTiles tiles={tiles} />
+      </section>
+
+      {startOpen && boardsOpen && (
+        <section className="panel lobby-start" aria-labelledby="create-title">
+          <h2 id="create-title" className="panel__title">
+            Start a game
+          </h2>
+          <p className="lobby-start__which">
+            <strong>{gameName(gameKind)}</strong>
+            {(gameKind === 'space' || gameKind === '101') && ' (2–4 players)'}
+          </p>
+          <div className="lobby-grid lobby-grid--one">
               {gameKind === '101' ? (
                 <>
                   <fieldset className="level-picker">
@@ -574,42 +777,15 @@ export function Lobby() {
                   {message.text}
                 </p>
               )}
-            </section>
-
-            <section className="panel" aria-labelledby="join-title">
-              <h2 id="join-title" className="panel__title">
-                Join with a code
-              </h2>
-              <form className="code-form" onSubmit={joinWithCode}>
-                <label htmlFor="game-code">Type the code your friend gives you</label>
-                <input
-                  id="game-code"
-                  className="code-form__input"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 8))}
-                  placeholder="KM4 TP"
-                  autoComplete="off"
-                  autoCapitalize="characters"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  maxLength={8}
-                />
-                <button type="submit" className="button button--primary" disabled={busy || code.trim() === ''}>
-                  Join game
-                </button>
-              </form>
-              {message?.where === 'join' && (
-                <p className="chess-note" role="alert">
-                  {message.text}
-                </p>
-              )}
-            </section>
           </div>
+        </section>
+      )}
 
-          <section className="panel" aria-labelledby="open-title">
-            <h2 id="open-title" className="panel__title">
-              Open games
-            </h2>
+      {boardsOpen && (
+        <section className="panel" aria-labelledby="open-title">
+          <h2 id="open-title" className="panel__title">
+            Open games
+          </h2>
             {message?.where === 'list' && (
               <p className="chess-note" role="alert">
                 {message.text}
@@ -710,12 +886,59 @@ export function Lobby() {
                 )}
               </ul>
             )}
-          </section>
-        </>
+        </section>
+      )}
+
+      {(liveGames.length > 0 || inviteGames.length > 0) && (
+        <WhosHere
+          online={here?.online ?? null}
+          starsAway={here?.starsAway}
+          recent={here?.recent}
+          me={here?.me ?? null}
+          games={liveGames}
+          boards={inviteGames}
+          focus={focus}
+          onClearFocus={() => setFocus(null)}
+          sending={sending}
+          problem={problem}
+          onSend={(g, them) => void (isInviteGame(g) ? invite(g, them) : challenge(g, them))}
+        />
+      )}
+
+      {boardsOpen && (
+        <section className="panel lobby-code" aria-labelledby="join-title">
+          <h2 id="join-title" className="panel__title">
+            Join with a code
+          </h2>
+              <form className="code-form" onSubmit={joinWithCode}>
+                <label htmlFor="game-code">Type the code your friend gives you</label>
+                <input
+                  id="game-code"
+                  className="code-form__input"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 8))}
+                  placeholder="KM4 TP"
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  maxLength={8}
+                />
+                <button type="submit" className="button button--primary" disabled={busy || code.trim() === ''}>
+                  Join game
+                </button>
+              </form>
+              {message?.where === 'join' && (
+                <p className="chess-note" role="alert">
+                  {message.text}
+                </p>
+              )}
+        </section>
       )}
     </div>
   );
 }
+
 
 const friendPath = (game: { id: string }) => `/play/${game.id}`;
 const spacePath = (game: { id: string }) => `/space-game/${game.id}`;

@@ -4,14 +4,15 @@
  * Maths (stage M.6): when the teacher allows it, a run starts by asking the server for its questions and which
  * shortcut doors are open; pit-stop answers are marked by the server. Runs with maths have their own best times and boards.
  */
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { AvatarImage } from '../../avatar/AvatarImage';
 import { courseById } from '../../../shared/marble/courses';
 import { medalFor, type ClockMode } from '../../../shared/marble/engine';
+import { MARBLE_RUNS_A_DAY } from '../../../shared/marble/config';
 import { encodeInputs } from '../../../shared/marble/inputs';
 import { useAuth } from '../../auth/AuthContext';
-import { answerQuestion, enqueueRun, fetchMarbleSwitches, flushRuns, loadBoard, loadGhost, loadServerBests, startRun, type Board, type Ghost, type GhostKind } from '../../data/marble';
+import { answerQuestion, enqueueRun, fetchMarbleRunsLeft, fetchMarbleSwitches, flushRuns, loadBoard, loadGhost, loadServerBests, startRun, type Board, type Ghost, type GhostKind } from '../../data/marble';
 import { fetchMyFocus } from '../../data/focus';
 import { plainSetup, type RunSetup, type StartReply } from '../../../shared/marble/maths';
 import type { MathsFocus } from '../../../shared/maths/focus';
@@ -22,8 +23,12 @@ import { formatSteps, loadBests, mergeBests, saveBests, withFinish, type Bests }
 import { HowToPlayBody } from './HowToPlay';
 import { COURSE_INFO } from './courseInfo';
 import { courseAccent, courseArt, courseGradient } from './courseArt';
+import { HubButtons } from './HubButtons';
+import { KeyBadge, useGameKeys } from '../../kit';
 import type { FinishedRun } from './RunScreen';
+import { checkGhost } from './ghostCheck';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import './marble.css';
 
 // The picture (three.js) and the run screen load only when someone starts a run.
@@ -37,6 +42,7 @@ const GHOST_CHOICES: { value: GhostKind | 'none'; label: string; hint: string }[
 ];
 
 const MEDAL_ICON = { gold: '🥇', silver: '🥈', bronze: '🥉' } as const;
+const DONE_TODAY = `That's all ${MARBLE_RUNS_A_DAY} runs for today. See you tomorrow!`;
 
 /**
  * `localMaths` is for the stand-alone preview (nobody signed in, no server): the questions are made and marked in this
@@ -58,8 +64,11 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
   const [busy, setBusy] = useState(false);
   // Runs the server has taken: each may have won a trophy (the line says so).
   const [saves, setSaves] = useState(0);
-  const wonLine = <TrophyWonLine games={['marble']} watch={saves || null} off={localMaths || !player} />;
+  const wonLine = <><TrophyWonLine games={['marble']} watch={saves || null} off={localMaths || !player} /><AchievementPop games={['marble']} watch={saves || null} off={localMaths || !player} /></>;
   const [note, setNote] = useState('');
+  // Runs left today (10 a day): null on an "Unlimited today" day, undefined until it's known. Read again after each save.
+  const [runsLeft, setRunsLeft] = useState<number | null | undefined>(undefined);
+  const doneToday = runsLeft === 0;
   const runKey = pick ? `${pick.id}-${pick.mode}-${pick.round}` : '';
   const wantMaths = mathsSwitch !== 'off';
   const bests = wantMaths ? mathsBests : plainBests;
@@ -76,6 +85,15 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
       current = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!player || localMaths) return;
+    let current = true;
+    void fetchMarbleRunsLeft().then((left) => current && setRunsLeft(left));
+    return () => {
+      current = false;
+    };
+  }, [player, saves]);
 
   // Send anything still waiting from an earlier visit, then bring in the server's bests (with and without maths).
   useEffect(() => {
@@ -108,6 +126,8 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
   // Without the server (offline) or for two players the run is plain: arrows at the gates, and it only counts on this device.
   const begin = async (id: string, mode: ClockMode, round: number, two = false) => {
     setNote('');
+    // The picker says so already.
+    if (doneToday) return;
     setBusy(true);
     const course = courseById(id);
     // The preview makes its own questions (nothing to ask a server).
@@ -120,10 +140,19 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
       setPick({ id, mode, round, ghost: null, two, started: null, setup: runSetup(course, `local-${Math.floor(Math.random() * 1e9)}`, list, true) });
       return;
     }
-    const [started, ghost] = await Promise.all([
+    const [reply, loaded] = await Promise.all([
       player && !two ? startRun(id, mode, wantMaths) : Promise.resolve(null),
       !two && ghostChoice !== 'none' ? loadGhost(id, mode, ghostChoice, wantMaths) : Promise.resolve(null),
     ]);
+    if (reply === 'done-today') {
+      setBusy(false);
+      setRunsLeft(0);
+      setPick(null);
+      return;
+    }
+    const started = reply;
+    // A ghost recorded before a course changed can't follow it any more: leave it out.
+    const ghost = course ? checkGhost(course, mode, loaded) : null;
     setBusy(false);
     if (!two && ghostChoice !== 'none' && !ghost) setNote('No ghost to race on that course yet, so this one is just you.');
     if (player && !two && !started) setNote('We couldn’t reach the server, so this run is just for fun: it won’t be saved and has no maths questions.');
@@ -194,17 +223,28 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
       hasFinished={hasFinished}
       ghostChoice={ghostChoice}
       onGhostChoice={setGhostChoice}
-      busy={busy}
+      busy={busy || doneToday}
       note={note}
+      runsLeft={runsLeft}
     />
     {wonLine}
     </>
   );
 }
 
-export const MarblePlay = () => <MarbleRoot localMaths={false} />;
+/**
+ * The whole game sits in one layer over the whole window, the hub's bar included (James, 18 Nov 2026: like Star
+ * Trader). The course picker sits on a big course painting; a run's track fills the window.
+ */
+function Window({ children }: { children: ReactNode }) {
+  const art = courseArt('crown-range');
+  const style = art ? ({ '--mr-art': `url("${art.card}")` } as CSSProperties) : undefined;
+  return <div className="mr-window" style={style}>{children}</div>;
+}
+
+export const MarblePlay = () => <Window><MarbleRoot localMaths={false} /></Window>;
 /** The stand-alone preview: questions made and marked in the browser. */
-export const MarblePreview = () => <MarbleRoot localMaths />;
+export const MarblePreview = () => <Window><MarbleRoot localMaths /></Window>;
 
 /** The preview marks its own questions. */
 async function markHere(question: Question | undefined, answer: number): Promise<{ right: boolean; answer: number } | null> {
@@ -217,19 +257,21 @@ async function markHere(question: Question | undefined, answer: number): Promise
 function HowToPlay({ mathsAllowed, onBack }: { mathsAllowed: boolean; onBack: () => void }) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
+  const root = useRef<HTMLElement>(null);
+  useGameKeys(root);
   return (
-    <section className="marble-picker marble-howto-screen">
+    <section className="marble-picker marble-howto-screen" ref={root}>
       <h2 ref={heading} tabIndex={-1}>How to play Marble Rush</h2>
       <div className="marble-picker__panel">
         <HowToPlayBody mathsAllowed={mathsAllowed} />
       </div>
-      <button type="button" className="button button--play" onClick={onBack}>Back to the courses</button>
+      <button type="button" className="button button--play" data-key="enter esc" onClick={onBack}>Back to the courses</button>
     </section>
   );
 }
 
 function CoursePicker({
-  onHowTo, bests, mathsSwitch, focus, wantMaths, onPlay, hasFinished, ghostChoice, onGhostChoice, busy, note,
+  onHowTo, bests, mathsSwitch, focus, wantMaths, onPlay, hasFinished, ghostChoice, onGhostChoice, busy, note, runsLeft,
 }: {
   onHowTo: () => void;
   bests: Bests;
@@ -242,7 +284,10 @@ function CoursePicker({
   onGhostChoice: (c: GhostKind | 'none') => void;
   busy: boolean;
   note: string;
+  runsLeft: number | null | undefined;
 }) {
+  const root = useRef<HTMLElement>(null);
+  useGameKeys(root);
   const real = useMemo(() => COURSE_INFO.filter((c) => !c.practice), []);
   const practice = useMemo(() => COURSE_INFO.filter((c) => c.practice), []);
   const card = (c: (typeof COURSE_INFO)[number]) => {
@@ -250,6 +295,7 @@ function CoursePicker({
     const best = bests[c.id]?.up ?? (c.playable ? bests[c.playable]?.up : undefined);
     const bestHard = c.playable ? bests[c.playable]?.down : undefined;
     const medal = course && best !== undefined ? medalFor(course, best, wantMaths) : null;
+    const slot = [...real, ...practice].indexOf(c);
     const art = courseArt(c.id);
     const style = {
       '--course-grad': courseGradient(c.id),
@@ -286,7 +332,7 @@ function CoursePicker({
               {bestHard !== undefined && <span> · 🔥 {formatSteps(bestHard)}</span>}
             </div>
             <div className="marble-course__buttons">
-              <button type="button" className="button button--play" disabled={busy} onClick={() => onPlay(course.def.id, 'up')}>Play {c.name}</button>
+              <button type="button" className="button button--play" data-key={slot < 9 ? String(slot + 1) : undefined} disabled={busy} onClick={() => onPlay(course.def.id, 'up')}>{slot < 9 && <KeyBadge k={String(slot + 1)} />}Play {c.name}</button>
               {hasFinished(course.def.id) && (
                 <button type="button" className="button button--light" disabled={busy} onClick={() => onPlay(course.def.id, 'down')}>Hard mode 🔥</button>
               )}
@@ -303,10 +349,13 @@ function CoursePicker({
   };
 
   return (
-    <section className="marble-picker">
+    <section className="marble-picker" ref={root}>
       <div className="marble-picker__top">
         <h2>Marble Rush</h2>
-        <button type="button" className="button button--light" onClick={onHowTo}>How to play</button>
+        <span className="marble-picker__tools">
+          <button type="button" className="button button--light" onClick={onHowTo}>How to play</button>
+          <HubButtons />
+        </span>
       </div>
       <div className="marble-picker__bar">
         <div className="marble-ghost" role="radiogroup" aria-labelledby="marble-ghost-label">
@@ -322,7 +371,12 @@ function CoursePicker({
             ))}
           </div>
         </div>
-        {busy && <p role="status">Setting up your run…</p>}
+        {runsLeft !== undefined && (
+          <p className="marble-picker__runs">
+            {runsLeft === null ? '🔵 Unlimited runs today' : runsLeft === 0 ? `🔵 ${DONE_TODAY}` : `🔵 ${runsLeft} of ${MARBLE_RUNS_A_DAY} runs left today`}
+          </p>
+        )}
+        {busy && runsLeft !== 0 && <p role="status">Setting up your run…</p>}
         {note && <p role="status">{note}</p>}
         {mathsSwitch !== 'off' && <FocusNote focus={focus} />}
       </div>

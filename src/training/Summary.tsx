@@ -38,7 +38,7 @@ export function Summary({
         <button type="button" className="tr-btn" onClick={onMap}>
           My facts map
         </button>
-        <button type="button" className="tr-btn tr-btn-primary" onClick={onHome}>
+        <button data-key="enter" type="button" className="tr-btn tr-btn-primary" onClick={onHome}>
           Done
         </button>
       </div>

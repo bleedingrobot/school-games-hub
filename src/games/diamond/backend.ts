@@ -4,7 +4,7 @@
  * (shared/diamond/server.ts), so `fromServer` turns either one's replies into what the screens use.
  */
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
-import type { BoostId, Slot } from '../../../shared/diamond/config';
+import type { BoostId, RareId, Slot } from '../../../shared/diamond/config';
 import type { LevelResult } from '../../../shared/diamond/engine';
 import type { Player } from '../../../shared/diamond/progress';
 
@@ -14,6 +14,8 @@ export interface Loaded {
   now: number;
   /** The teacher's switch: new levels aren't limited to one a day today. */
   unlimited?: boolean;
+  /** A quest's Game Coins pouch opened by this load (already in `player.coins`). */
+  pouch?: { amount: number };
 }
 
 export interface Started {
@@ -43,6 +45,8 @@ export interface Ended {
   newLevel: boolean;
   /** Workshop upgrades just earned. */
   earned: string[];
+  /** Rare gems caught for the very first time this level (new Gem Book pages). */
+  newRare?: RareId[];
   player: Player;
 }
 

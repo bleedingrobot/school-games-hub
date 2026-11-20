@@ -3,10 +3,11 @@
  * finish turns one reed row (mud, then bronze, silver, gold); thirty days win the Golden Reed Garden, and a new friend plants a
  * new garden. The screens only show what the backend says. Copied from Pigeon's Number Line (a model, not a dependency).
  */
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { finishBand } from '../../../shared/kit/finishBand';
 import { FirstTimeTip } from '../../kit/FirstTimeTip';
 import { WhatsNext } from '../../kit/WhatsNext';
+import { useGameKeys } from '../../kit';
 import { NextPartChip } from '../../components/NextPartChip';
 import { ROWS } from '../../../shared/swamphen/progress';
 import type { Tap } from '../../../shared/swamphen/play';
@@ -71,34 +72,13 @@ interface Props {
   extra?: (h: Helpers) => ReactNode;
 }
 
-/** Below this much room under the hub's top bar, the game covers the whole screen, bar and all (as Weka does). */
-const ROOM_UNDER_BAR = 420;
-function useFitBelow(root: RefObject<HTMLDivElement | null>) {
-  useLayoutEffect(() => {
-    const el = root.current;
-    if (!el) return;
-    const fit = () => {
-      el.classList.remove('sh-root--cover');
-      const top = Math.round(el.getBoundingClientRect().top + window.scrollY);
-      const cover = top > 0 && window.innerHeight - top - 12 < ROOM_UNDER_BAR;
-      el.classList.toggle('sh-root--cover', cover);
-      el.style.setProperty('--sh-room', top === 0 || cover ? '100dvh' : `calc(100dvh - ${top + 12}px)`);
-    };
-    fit();
-    window.addEventListener('resize', fit);
-    return () => window.removeEventListener('resize', fit);
-  }, [root]);
-}
-
 export function SwamphenGame({ backend, onExit, extra }: Props) {
   const [state, setState] = useState<SwamphenState | null>(null);
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
   const [failed, setFailed] = useState<string | null>(null);
   const fail = useCallback((e: unknown) => setFailed(e instanceof SwamphenError ? e.message : WORDS.wentWrong), []);
   const voice = useVoice();
-  const { soundOn } = useSound();
-  const root = useRef<HTMLDivElement>(null);
-  useFitBelow(root);
+  const { soundOn, setSoundOn } = useSound();
 
   const reload = useCallback(() => {
     setFailed(null);
@@ -122,6 +102,9 @@ export function SwamphenGame({ backend, onExit, extra }: Props) {
       if (soundOn) playSound(result.goldenGarden ? 'win' : 'badge');
     }, fail);
 
+  const rootRef = useRef<HTMLDivElement>(null);
+  useGameKeys(rootRef, screen.kind !== 'play');
+
   let body: ReactNode;
   if (failed) body = <p className="sh-message">{failed}</p>;
   else if (!state || screen.kind === 'loading') body = <p className="sh-message">…</p>;
@@ -132,13 +115,19 @@ export function SwamphenGame({ backend, onExit, extra }: Props) {
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
-    <div className="sh-root" ref={root}>
+    <div className="sh-root sh-root--cover" ref={rootRef}>
       <div className="sh-bar">
         {onExit && (
-          <button type="button" className="sh-button" onClick={onExit}>
+          <button type="button" className="sh-button" data-key="esc" onClick={onExit}>
             <span aria-hidden="true">🏠</span> {WORDS.home}
           </button>
         )}
+        <button
+          type="button" className="sh-button" aria-pressed={soundOn} aria-label="Sound" onClick={() => setSoundOn(!soundOn)}
+          title={soundOn ? 'Sound is on: tap to mute' : 'Sound is off: tap to turn on'}
+        >
+          <span aria-hidden="true">{soundOn ? '🔊' : '🔇'}</span>
+        </button>
         {voice.available && (
           <button type="button" className="sh-button" aria-pressed={voice.on} onClick={() => voice.setOn(!voice.on)}>
             <span aria-hidden="true">{voice.on ? '🗣️' : '🤫'}</span> {voice.on ? WORDS.voiceOn : WORDS.voiceOff}
@@ -214,7 +203,7 @@ function Home({ state, say, onPlay }: { state: SwamphenState; say: (t: string) =
         <NextPartChip noun={WORDS.part} done={doneToday} onHear={say} />
         <p className="sh-chip">{WORDS.step(state.step)}</p>
         {doneToday && <p>{WORDS.doneToday}</p>}
-        <button type="button" className="button button--play sh-play-button" onClick={onPlay}>
+        <button type="button" className="button button--play sh-play-button" data-key="enter" onClick={onPlay}>
           {doneToday ? WORDS.playAgain : WORDS.play}
         </button>
         <button type="button" className="sh-button sh-hear-home" onClick={() => say(homeLine(title, doneToday))}>
@@ -247,7 +236,7 @@ function Finish({ result, say, onNext }: { result: SwamphenFinish; say: (t: stri
   return (
     <div className={`sh-home${result.goldenGarden ? ' sh-home--prize' : ''}`}>
       <Branch scenery={result.goldenGarden ? 'gold' : branch.today} rows={rowList} friend={branch.friend} pose="cheer" />
-      <WhatsNext prefix="sh" wearMe={result.goldenGarden} title={main} spoken={line} buttonLabel="OK" say={say} onNext={onNext}>
+      <WhatsNext prefix="sh" game="swamphen" wearMe={result.goldenGarden} title={main} spoken={line} buttonLabel="OK" say={say} onNext={onNext}>
         <p className="sh-chip">{how}</p>
         {up === BIG_GARDEN_STEP && <BigGate label={WORDS.bigGate} />}
         {up && <p className="sh-chip sh-stepup">{WORDS.newStep} {WORDS.nextStep(up)}</p>}

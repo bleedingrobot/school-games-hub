@@ -22,6 +22,8 @@ import sys
 VOICE = 'af_bella'  # picked by James, 4 Nov 2026
 LANG = 'en-us'
 SPEED = 0.9
+# Folders with their own voice: (voice, speed). The stories' narrator is am_michael, a little slow (James, 21 Nov 2026).
+VOICE_FOR = {'stories': ('am_michael', 0.85)}
 KOKORO = os.path.expanduser(os.environ.get('KOKORO_DIR', '~/kokoro'))
 VOICES = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'public', 'voice')
 
@@ -111,14 +113,15 @@ def main() -> None:
     with open(os.path.join(folder, 'lines.json')) as f:
         lines = json.load(f)
     todo = [l for l in lines if redo or not os.path.exists(os.path.join(folder, l['slug'] + '.mp3'))]
-    print(f'{games[0]}: {len(todo)} of {len(lines)} lines to record with {VOICE}')
+    voice, speed = VOICE_FOR.get(games[0], (VOICE, SPEED))
+    print(f'{games[0]}: {len(todo)} of {len(lines)} lines to record with {voice}')
     if not todo:
         return
     import soundfile as sf
     from kokoro_onnx import Kokoro
     kokoro = Kokoro(os.path.join(KOKORO, 'kokoro-v1.0.onnx'), os.path.join(KOKORO, 'voices-v1.0.bin'))
     for i, line in enumerate(todo, 1):
-        audio, sr = kokoro.create(spoken(line['text']), voice=VOICE, speed=SPEED, lang=LANG)
+        audio, sr = kokoro.create(spoken(line['text']), voice=voice, speed=speed, lang=LANG)
         sf.write(os.path.join(folder, line['slug'] + '.mp3'), trimmed(audio, sr), sr, format='MP3', compression_level=0.7)
         if i % 25 == 0 or i == len(todo):
             print(f'  {i}/{len(todo)}')

@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -7,6 +7,8 @@ import * as data from '../data/multiplayer';
 import * as space from '../data/spaceGames';
 import * as cardData from '../data/cardGames';
 import * as power from '../data/powerGames';
+import * as here from '../data/lobbyHere';
+import * as invites from '../data/boardInvites';
 import { Lobby } from './Lobby';
 
 vi.mock('../data/multiplayer', async (importOriginal) => ({
@@ -36,6 +38,11 @@ vi.mock('../data/cardGames', async (importOriginal) => ({
   fetchCardLobby: vi.fn(),
   fetchMyOpenCardGames: vi.fn(),
 }));
+vi.mock('../data/lobbyHere', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../data/lobbyHere')>()),
+  fetchLobbyHere: vi.fn(async () => null),
+}));
+vi.mock('../data/boardInvites', () => ({ sendInvite: vi.fn(), cancelInvite: vi.fn(async () => {}), watchSentInvite: vi.fn(() => () => {}) }));
 // The lobby's one request (S.4), answered from the separate fakes above.
 vi.mock('../data/lobby', async () => ({ fetchLobbyPage: (await import('./lobbyFromSeparate')).lobbyFromSeparate }));
 
@@ -83,9 +90,49 @@ beforeEach(() => {
 const NOT_FOUND = 'We couldn’t find a game with that code. Check it and try again.';
 
 describe('the lobby', () => {
-  it('lists open games with just a name and avatar, and joins one with a tap', async () => {
-    vi.mocked(data.ask).mockResolvedValue({ id: 'open-1' } as data.FriendGame);
+  it('invites a kid who’s here by name, then lists open games with just a name and avatar and joins one with a tap', async () => {
+    const off = { archery: 'off', 'dragon-maths': 'off', 'clan-quest': 'off', isles: 'off', raid: 'off' } as const;
+    vi.mocked(here.fetchLobbyHere).mockResolvedValue({
+      me: off,
+      teacher: false,
+      going: [],
+      online: [{ id: 'mia', name: 'Mia', avatar: null, clan: null, games: { chess: 'ok', checkers: 'ok' }, sameClass: true, className: null, here: true }],
+      starsAway: [], recent: [],
+    });
+    vi.mocked(invites.sendInvite).mockResolvedValue({ ok: true, id: 4, deadline: new Date(Date.now() + 60_000).toISOString() });
+    let heard: (i: invites.SentInvite) => void = () => {};
+    vi.mocked(invites.watchSentInvite).mockImplementation((_id, on) => ((heard = on), () => {}));
     const user = userEvent.setup();
+    const invited = renderLobby();
+    const inviteMia = async () => {
+      const play = await screen.findByRole('button', { name: /(Play with|Close) Mia/ });
+      if (play.getAttribute('aria-expanded') === 'false') await user.click(play);
+      await user.click(screen.getByRole('button', { name: 'Chess' }));
+    };
+
+    await inviteMia();
+    expect(invites.sendInvite).toHaveBeenCalledWith('chess', 'mia', undefined);
+    expect(await screen.findByText('Waiting for Mia to say yes')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Call off' }));
+    expect(invites.cancelInvite).toHaveBeenCalled();
+    expect(screen.queryByText('Waiting for Mia to say yes')).not.toBeInTheDocument();
+
+    // No: the sender is told.
+    await inviteMia();
+    await screen.findByText('Waiting for Mia to say yes');
+    act(() => heard({ id: 4, status: 'declined', path: null }));
+    expect(await screen.findByText('Mia said no this time.')).toBeInTheDocument();
+
+    // Yes: the private game opens.
+    await inviteMia();
+    await screen.findByText('Waiting for Mia to say yes');
+    act(() => heard({ id: 4, status: 'accepted', path: '/play/g-9' }));
+    expect(await screen.findByText('Game page')).toBeInTheDocument();
+    invited.unmount();
+    vi.mocked(here.fetchLobbyHere).mockResolvedValue(null);
+
+    // Open games.
+    vi.mocked(data.ask).mockResolvedValue({ id: 'open-1' } as data.FriendGame);
     renderLobby();
     const list = screen.getByRole('region', { name: 'Open games' });
     const row = (await within(list).findByText(/Brave Kiwi 7/)).closest('li')!;

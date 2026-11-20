@@ -5,7 +5,7 @@
  */
 import type { Tier } from './earnedPictures';
 
-const FILES = import.meta.glob('./art/{pictures,trophies,rings,cabinet}/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+const FILES = import.meta.glob('./art/{pictures,trophies,rings,cabinet,frames}/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
 function find(folder: string, file: string): string | undefined {
   return FILES[`./art/${folder}/${file}.webp`];
@@ -28,6 +28,8 @@ export function paintedPictureByTier(name: string): Record<Tier, { art: string; 
 /** The art name of each trophy (kind 'trophy') id; every one is painted in all three metals. */
 export const TROPHY_ART: Record<string, string> = {
   'dm-slayer': 'slayers-sword',
+  'dm-crown': 'dragon-crown',
+  'dm-veteran': 'season-veteran',
   'clan-tooth': 'monster-tooth',
   'chess-knight': 'champions-knight',
   'checkers-king': 'champions-king',
@@ -54,6 +56,7 @@ export const TROPHY_ART: Record<string, string> = {
   'hw-weekend': 'weekend-explorer',
   'hw-cup': 'home-learning-cup',
   'quest-hero': 'questing-hero',
+  'diamond-rare-collection': 'rare-gem-cup',
 };
 
 /** Each early-years game's Garden Cup is `<game>-cup`. */
@@ -79,3 +82,9 @@ export function paintedRing(tier: Tier): string | undefined {
 export const SHELF_ART: string | undefined = find('cabinet', 'shelf-800') ?? find('cabinet', 'shelf');
 /** The glow painted behind a friend's picture. */
 export const BACKDROP_GOLD = paintedPicture('backdrop-gold');
+
+/** A Quest Frame's painting (docs/quests-art/config.json `frame-<id>`), full size and small, once it is painted. */
+export function paintedFrame(id: string): { art: string; artSmall: string } | undefined {
+  const art = find('frames', id);
+  return art ? { art, artSmall: find('frames', `${id}-small`) ?? art } : undefined;
+}

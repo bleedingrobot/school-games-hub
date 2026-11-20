@@ -4,7 +4,8 @@
  * Golden Glow Jar, and a new friend crosses a fresh pond. The screens only show what the backend says.
  */
 import { NextPartChip } from '../../components/NextPartChip';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ComponentType, type ReactNode, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react';
+import { useGameKeys } from '../../kit';
 import type { Tap } from '../../../shared/hop/play';
 import { DAYS_PER_JAR, METALS, PADS, pondAfter } from '../../../shared/hop/progress';
 import type { Round } from '../../../shared/hop/round';
@@ -76,34 +77,15 @@ interface Props {
   extra?: (h: Helpers) => ReactNode;
 }
 
-/** Below this much room under the hub's top bar, the game covers the whole screen, bar and all (as Beanstalk does). */
-const ROOM_UNDER_BAR = 420;
-function useFitBelow(root: RefObject<HTMLDivElement | null>) {
-  useLayoutEffect(() => {
-    const el = root.current;
-    if (!el) return;
-    const fit = () => {
-      el.classList.remove('hp-root--cover');
-      const top = Math.round(el.getBoundingClientRect().top + window.scrollY);
-      const cover = top > 0 && window.innerHeight - top - 12 < ROOM_UNDER_BAR;
-      el.classList.toggle('hp-root--cover', cover);
-      el.style.setProperty('--hp-room', top === 0 || cover ? '100dvh' : `calc(100dvh - ${top + 12}px)`);
-    };
-    fit();
-    window.addEventListener('resize', fit);
-    return () => window.removeEventListener('resize', fit);
-  }, [root]);
-}
-
 export function HopGame({ backend, onExit, nextGame, extra }: Props) {
   const [state, setState] = useState<HopState | null>(null);
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
   const [failed, setFailed] = useState<string | null>(null);
   const fail = useCallback((e: unknown) => setFailed(e instanceof HopError ? e.message : WORDS.wentWrong), []);
   const voice = useVoice();
-  const { soundOn } = useSound();
-  const root = useRef<HTMLDivElement>(null);
-  useFitBelow(root);
+  const rootRef = useRef<HTMLDivElement>(null);
+  useGameKeys(rootRef);
+  const { soundOn, setSoundOn } = useSound();
 
   const reload = useCallback(() => {
     setFailed(null);
@@ -152,13 +134,19 @@ export function HopGame({ backend, onExit, nextGame, extra }: Props) {
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
-    <div className="hp-root" ref={root}>
+    <div className="hp-root hp-root--cover" ref={rootRef}>
       <div className="hp-bar">
         {onExit && (
-          <button type="button" className="hp-button" onClick={onExit}>
+          <button type="button" className="hp-button" data-key={screen.kind === 'play' ? undefined : 'esc'} onClick={onExit}>
             <span aria-hidden="true">🏠</span> {WORDS.home}
           </button>
         )}
+        <button
+          type="button" className="hp-button" aria-pressed={soundOn} aria-label="Sound" onClick={() => setSoundOn(!soundOn)}
+          title={soundOn ? 'Sound is on: tap to mute' : 'Sound is off: tap to turn on'}
+        >
+          <span aria-hidden="true">{soundOn ? '🔊' : '🔇'}</span>
+        </button>
         {voice.available && (
           <button type="button" className="hp-button" aria-pressed={voice.on} onClick={() => voice.setOn(!voice.on)}>
             <span aria-hidden="true">{voice.on ? '🗣️' : '🤫'}</span> {voice.on ? WORDS.voiceOn : WORDS.voiceOff}
@@ -191,7 +179,7 @@ function Home({ state, say, onPlay }: { state: HopState; say: (t: string) => voi
         <NextPartChip noun={WORDS.part} done={doneToday} onHear={say} />
         <p className="hp-chip">{WORDS.counting(state.step)}</p>
         {doneToday && <p>{WORDS.doneToday}</p>}
-        <button type="button" className="button button--play hp-play-button" onClick={onPlay}>
+        <button type="button" className="button button--play hp-play-button" data-key="enter" onClick={onPlay}>
           {doneToday ? WORDS.playAgain : WORDS.play}
         </button>
         {pond.jars > 0 && (
@@ -233,7 +221,7 @@ function Finish({ result, say, nextGame, onNext }: { result: HopFinish; say: (t:
         pose="cheer"
         at={result.jar ? PADS : result.padChanged ?? -1}
       />
-      <WhatsNext prefix="hp" wearMe={result.jar} title={main} spoken={line} note={stepUp} buttonLabel="OK" say={say} onNext={onNext}>
+      <WhatsNext prefix="hp" game="hop" wearMe={result.jar} title={main} spoken={line} note={stepUp} buttonLabel="OK" say={say} onNext={onNext}>
         {result.jar && <p className="hp-chip">{opening}</p>}
         {band === 'tricky' && <p className="hp-chip">{WORDS.trickyChip}</p>}
         {result.jar && (cushion ? <img className="hp-prize" src={cushion} alt="The Golden Glow Jar" /> : <span className="hp-jar hp-jar--big" role="img" aria-label="The Golden Glow Jar" />)}

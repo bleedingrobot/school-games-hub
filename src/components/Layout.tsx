@@ -8,8 +8,10 @@ import { pageTheme, ThemeTrialProvider, useThemeTrial } from '../theme/hubTheme'
 import { activitiesOn } from '../activities/switch';
 import { trainingOn } from '../training/switch';
 import { NewTrophyMoment } from '../trophies/NewTrophyMoment';
+import { NewAchievementMoment } from '../achievements/NewAchievementMoment';
 import { YearGate } from '../year/YearQuestion';
 import { CrashScreen } from './CrashScreen';
+import { HubChallengeBanner } from './ChallengeBanner';
 import { FullScreenButton } from './FullScreenButton';
 import { MuteButton } from './MuteButton';
 import banner from '../assets/dps-banner.png';
@@ -18,6 +20,7 @@ const NAV = [
   { to: '/', label: 'Home', emoji: '🏠' },
   { to: '/lobby', label: 'Lobby', emoji: '🤝' },
   { to: '/leaderboard', label: 'Leaderboard', emoji: '🏅' },
+  { to: '/achievements', label: 'Achievements', emoji: '🏆' },
 ];
 
 export function Layout() {
@@ -79,7 +82,11 @@ function ThemedLayout() {
           </CrashScreen>
         </YearGate>
       </main>
+      {/* A friend's challenge from any game, wherever the pupil is in the hub (and the hub's own "I'm here"). */}
+      <HubChallengeBanner />
       <NewTrophyMoment />
+      {/* After any trophy, never at the same time. */}
+      <NewAchievementMoment />
     </div>
   );
 }

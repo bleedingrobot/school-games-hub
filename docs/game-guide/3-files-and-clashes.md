@@ -93,3 +93,27 @@ The site look lives in `src/styles.css` (school-red page, soft pink cards, navy 
 - Prefix every class of your own (`.tf-`, `.wk-`). Never style a bare element or shared class (`.button`, `h2`, `.panel`).
 - Targets at least 44 px, contrast at least 4.5:1, visible `:focus-visible`, focus moved to each new screen's heading, `prefers-reduced-motion` respected.
 - Words: short, kind, plain. Never show a pupil's year level ("Year 3 skill") or anyone else's maths results.
+
+## Full window: the default for every new game
+
+James, 18 Nov 2026: Star Trader "looks amazing because it takes up the entire screen". Every new game is built that
+way from the first screen, not fixed later. The hub's colours and buttons above still apply to text and buttons; the
+red page and hub bar just don't show while the game is open.
+
+- **One full-window layer** wraps every screen: `position: fixed; inset: 0; z-index: 40; overflow-y: auto;
+  overscroll-behavior: contain;` with the game's darkest colour as its background, so nothing of the hub shows through.
+  No frame, border, rounded corners or narrow `max-width` on it (`.cq-window` in Clans is the pattern to copy).
+- **Paintings fill the window:** every stage, fight, map and place is `100dvh` tall and edge to edge (`object-fit:
+  cover`). Size things from the whole `100dvh`, never `100dvh - <hub bar>`, and don't use `useFitBelow`.
+- **A map with labels at fixed spots** keeps its 16:9 "paper" so labels stay on their buildings, with a blurred copy
+  of the picture behind it filling the edges (Dragon's `.lord-map__paper`, Clans' `.cq-town__paper`).
+- **Text screens** (lists, tables, settings) sit in a readable column in the middle of the layer.
+- **⌂ Hub and sound** sit on the main screen's painting, because the hub bar is hidden: copy
+  `src/games/lord/HubButtons.tsx` into your folder (a plain `<a href="#/">` link and a `useSound()` toggle) and style it
+  with your own button class.
+- **Phones:** below about 760px wide nothing scrolls sideways and nothing important is cut off. To go edge to edge from
+  inside a padded column, use negative margins equal to the padding, not `100vw`/`100cqw` (they include the scroll
+  bar and make the page scroll sideways).
+
+[docs/FULL-WINDOW.md](../FULL-WINDOW.md) has the details, gotchas and CSS for each of these (it was written to convert
+old games; steps 3 to 7 apply as written to a new one).

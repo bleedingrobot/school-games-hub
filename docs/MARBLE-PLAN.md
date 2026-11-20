@@ -4,6 +4,10 @@
 Written 16 October 2026 after searching GitHub for existing versions and reading the code on `main` (Stages 1–10 live, Stage 11 Gem Keep under way).
 **Status: idea saved, not scheduled.** Nothing is built. Maths added to the plan 18 Oct 2026 (section 7, James picked all six ideas). **All questions in section 12 answered 18 Oct 2026**: Marble Rush; count-up clock plus a countdown hard mode; New Zealand landscapes inspired by real places (section 3); two boards per course; rescue questions on. James asked whether it can be built **alongside** Maths Monsters (section 10).
 
+**18 Nov 2026: easier courses and big celebrations.** Kids found Geyser Valley, Alpine Crossing and Windy Welly too hard (live: 11, 7 and 6 falls a finished run). Geyser Valley has no gaps left (geyser rows with solid bridges); Crown Range and Alpine Crossing are railed all the way; Windy Welly and Alpine are wider with gentler wind; Glacier Run and Gap and Ice jump gaps are 1 tile. Geysers, trapdoors and gates give longer warnings and stay open longer; bumps need more speed to hurt; a fall costs 2 s not 3 s. Gold times are unchanged (the server copy in the trophies migration must match); silver and bronze are kinder. Ghosts that no longer finish on a changed course are hidden. New pops during a run (Checkpoint!, gems, time off, Big air!, On a roll!) and a confetti finish panel with stars, a counting clock and a stamped medal.
+
+**19 Nov 2026: questions in track order.** A gate's question used to show as soon as its sign was 7 tiles away, even with a pit stop still to come (Glacier Run, Windy Welly, Alpine Crossing, Gap and Ice). Now every stop, gate and gem trail is put in order along the route (src/games/marble/questionOrder.ts) and a gate's or trail's question only shows once everything before it is done.
+
 **Graphics upgrade (28 Oct 2026):** planned in [MARBLE-ART-PLAN.md](MARBLE-ART-PLAN.md).
 
 ## The short version

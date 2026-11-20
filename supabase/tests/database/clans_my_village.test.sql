@@ -27,6 +27,8 @@ insert into public.class_members (student_id, class_id, how) values
   ('00000000-0000-0000-0000-00000000000c', '11111111-1111-4111-8111-111111111111', 'teacher'),
   ('00000000-0000-0000-0000-00000000000d', '22222222-2222-4222-8222-222222222222', 'teacher');
 update public.app_settings set clans_enabled = true, clan_raids_enabled = false;
+-- These checks are about one class on its own: "Play other classes" (play anyone stage 1) is off. play_anyone_raids.test.sql tests the whole school.
+update public.app_settings set play_other_classes = false;
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -117,11 +119,12 @@ select ok(has_function_privilege('service_role', 'public.save_raid(uuid, integer
 select ok(not has_function_privilege('service_role', 'public.save_raid(uuid, integer, uuid, integer, uuid, jsonb, jsonb, jsonb, text, text)', 'execute'), '... and no longer the old one');
 select ok(not has_function_privilege('service_role', 'public.clan_my_village_share_chests()', 'execute'), 'nothing in the app can run the chest sharing');
 
--- ---- Raid targets: the same class only ----
+-- ---- Raid targets: the same class only (with "Play other classes" off), and only while raids are on in the raided class ----
+update public.app_settings set clan_raids_enabled = true;
 select is((select string_agg(x ->> 'name', ',' order by x ->> 'name') from jsonb_array_elements(public.clan_village_mates(pg_temp.id('a'))) x), 'Blue Fox,Green Owl',
   'ana can pick ben''s and cai''s clans (same class), not dee''s (another class) or fay''s (no class)');
-select is((select string_agg(k, ',' order by k) from jsonb_object_keys(public.clan_village_mates(pg_temp.id('a')) -> 0) k), 'banners,heroLevels,id,levels,name,troops',
-  'all it is told about them is a hidden id, the name, its heroes'' levels, building levels, troops and Banners (Village Raids, 17 Nov 2026)');
+select is((select string_agg(k, ',' order by k) from jsonb_object_keys(public.clan_village_mates(pg_temp.id('a')) -> 0) k), 'banners,canRaid,className,heroLevels,id,levels,name,sameClass,starred,troops',
+  'all it is told about them is a hidden id, the name, its heroes'' levels, building levels, troops, Banners, its class and whether it can be raided, and whether I starred it (no gold, no pupil)');
 select is(jsonb_array_length(public.clan_village_mates(pg_temp.id('d'))), 0, 'dee is alone in her class: no one to raid');
 select is(jsonb_array_length(public.clan_village_mates(pg_temp.id('f'))), 0, 'a pupil with no class gets no targets');
 select is(public.clan_raid_target(pg_temp.id('a'), pg_temp.self('b')) ->> 'name', 'Blue Fox', 'a classmate''s clan can be loaded to raid');
@@ -130,6 +133,7 @@ select is(public.clan_raid_target(pg_temp.id('a'), pg_temp.self('d')), null::jso
 select is(public.clan_raid_target(pg_temp.id('a'), pg_temp.self('f')), null::jsonb, '... nor one with no class');
 select is(public.clan_raid_target(pg_temp.id('f'), pg_temp.self('a')), null::jsonb, '... and a pupil with no class cannot load anyone');
 select is(public.clan_raid_target(pg_temp.id('a'), pg_temp.self('a')), null::jsonb, '... or themselves');
+update public.app_settings set clan_raids_enabled = false;
 
 -- ---- A raid on gold ----
 select throws_ok($$ select pg_temp.go('a', 'b', 10, 160, pg_temp.dmod('b', '{}'), 940, 60) $$, '22023', 'Raids on classmates are switched off.', 'the database refuses a raid while the class has raids off');

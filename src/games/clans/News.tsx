@@ -8,7 +8,7 @@ export function News({ session, onBack }: { session: Session; onBack: () => void
     <section className="cq-place" aria-label="News">
       <div className="cq-place__head">
         <h2>News</h2>
-        <button type="button" className="cq-btn" onClick={onBack}>Back</button>
+        <button data-key="esc" type="button" className="cq-btn" onClick={onBack}>Back</button>
       </div>
       {notes.length > 0 && (
         <div className="cq-panel" role="group" aria-label="Just for you">

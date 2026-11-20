@@ -15,22 +15,24 @@ import {
   type HubTheme,
 } from '../avatar/avatarParts';
 import { RecentList, recentGamesFrom, SpaceStatsLine, StatsTable, statsFrom, type MyStats, type RecentGame } from '../components/MyGames';
-import { AchievementList, RankBadge } from '../components/Progress';
+import { RankBadge } from '../components/Progress';
 import { fetchMyHomePage } from '../data/homePage';
 import { chooseMyName, fetchNameWords, FriendlyError, saveMyAvatar, type NameWords } from '../data/profile';
 import { OwnNamePanel, ScrollNote } from '../profile/OwnName';
-import { nextRankText, type Achievement, type MyProgress } from '../data/progress';
+import { nextRankText, type MyProgress } from '../data/progress';
 import { pictureOf } from '../avatar/earnedPictures';
 import type { MyTrophy } from '../data/trophies';
-import { ALL_GAMES, gameLabel, HUB_ACHIEVEMENT_GROUPS } from '../games/registry';
+import { gameLabel } from '../games/registry';
 import { useThemeTrial } from '../theme/hubTheme';
 import { TrophyCabinet, useMyTrophies } from '../trophies/TrophyCabinet';
+import { seasonHeroLine } from '../trophies/cabinet';
+import { HeroTitleLine, TitlePicker, useMyTitles } from '../quests/HeroTitles';
+import { FramePicker, useMyFrames } from '../quests/QuestFrames';
+import { MyRewards, useMyQuestRewards } from '../quests/MyRewards';
 import './profile.css';
 
 /** How many recent games the profile's My stats shows. */
 const RECENT_SHOWN = 10;
-/** How many not-yet-earned achievements My achievements shows before "See all". */
-const NEAREST_SHOWN = 3;
 
 const PARTS = Object.keys(AVATAR_OPTIONS) as AvatarPart[];
 const COLOUR_PARTS: AvatarPart[] = ['colour', 'topColour', 'bg'];
@@ -44,9 +46,9 @@ const OPTION_LABELS: Record<string, string> = {
   glasses: 'Glasses', freckles: 'Freckles', blush: 'Rosy cheeks', headphones: 'Headphones',
 };
 
-/** The folds, top to bottom. Their ids are also the page's anchors (/profile#stats, /profile#achievements). */
-type FoldId = 'trophies' | 'achievements' | 'stats' | 'theme';
-const FOLD_IDS: FoldId[] = ['trophies', 'achievements', 'stats', 'theme'];
+/** The folds, top to bottom. Their ids are also the page's anchors (/profile#stats, /profile#theme). */
+type FoldId = 'trophies' | 'rewards' | 'stats' | 'theme';
+const FOLD_IDS: FoldId[] = ['trophies', 'rewards', 'stats', 'theme'];
 
 function errorText(error: unknown) {
   return error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.';
@@ -76,8 +78,16 @@ export function Profile() {
   const savedPic = pictureOf(profile?.avatar)?.id ?? null;
   const cabinet = useMyTrophies(profile?.id);
   const trophyCount = cabinet.data?.trophies.length;
+  const seasonHero = seasonHeroLine(cabinet.data?.trophies);
+  const questRewards = useMyQuestRewards();
 
-  const [editing, setEditing] = useState<'look' | 'name' | null>(null);
+  const [editing, setEditing] = useState<'look' | 'name' | 'title' | 'frame' | null>(null);
+  // Spending a Hero Title reward: its id. Changing which title I wear: undefined.
+  const [titleReward, setTitleReward] = useState<string | undefined>();
+  const myTitles = useMyTitles(profile?.avatar);
+  // Spending a Quest Frame reward: its id. Changing which frame I wear: undefined.
+  const [frameReward, setFrameReward] = useState<string | undefined>();
+  const myFrames = useMyFrames(profile?.avatar);
   // My trophies starts open: they are the hub's top rewards.
   const [open, setOpen] = useState<ReadonlySet<FoldId>>(() => new Set(['trophies']));
   const toggle = (id: FoldId) =>
@@ -86,6 +96,11 @@ export function Profile() {
       if (!next.delete(id)) next.add(id);
       return next;
     });
+
+  // Rewards waiting to be used open their fold.
+  useEffect(() => {
+    if (questRewards.unused > 0) setOpen((was) => new Set(was).add('rewards'));
+  }, [questRewards.unused]);
 
   // A link to a fold (the home page's "See more" goes to /profile#stats) opens it and brings it into view.
   useEffect(() => {
@@ -121,7 +136,6 @@ export function Profile() {
   }
 
   const progress = home.progress;
-  const earnedCount = progress?.achievements.filter((a) => a.earnedAt).length ?? 0;
 
   return (
     <div className="profile">
@@ -131,6 +145,13 @@ export function Profile() {
         <AvatarImage avatar={profile?.avatar} size={112} label="Your avatar" />
         <div className="profile-top__who">
           <h2 className="profile-top__name">{profile?.display_name}</h2>
+          <HeroTitleLine avatar={profile?.avatar} />
+          {seasonHero && (
+            <small className="hero-title hero-title--special profile-top__season-hero">
+              <span aria-hidden="true">🎖️ </span>
+              {seasonHero}
+            </small>
+          )}
           {!madeAvatar && <p className="profile-top__nudge">You haven’t made your avatar yet. Pick a face, hair and colours!</p>}
           <ScrollNote />
           <div className="profile-top__buttons">
@@ -150,6 +171,32 @@ export function Profile() {
             >
               ✏️ Change my name
             </button>
+            {(myTitles?.owned.length ?? 0) > 0 && (
+              <button
+                type="button"
+                className="button button--light-outline"
+                aria-expanded={editing === 'title' && titleReward === undefined}
+                onClick={() => {
+                  setTitleReward(undefined);
+                  setEditing(editing === 'title' && titleReward === undefined ? null : 'title');
+                }}
+              >
+                🏷️ My titles
+              </button>
+            )}
+            {(myFrames?.owned.length ?? 0) > 0 && (
+              <button
+                type="button"
+                className="button button--light-outline"
+                aria-expanded={editing === 'frame' && frameReward === undefined}
+                onClick={() => {
+                  setFrameReward(undefined);
+                  setEditing(editing === 'frame' && frameReward === undefined ? null : 'frame');
+                }}
+              >
+                🖼️ My frames
+              </button>
+            )}
           </div>
         </div>
         <div className="profile-top__out">
@@ -164,6 +211,31 @@ export function Profile() {
         <LookMaker pictures={cabinet.data?.trophies.filter((t) => t.kind === 'picture') ?? null} onClose={() => setEditing(null)} />
       )}
       {editing === 'name' && <NamePicker onClose={() => setEditing(null)} />}
+      {editing === 'title' && (
+        <TitlePicker
+          key={titleReward ?? 'wear'}
+          rewardId={titleReward}
+          onClose={() => setEditing(null)}
+          onDone={() => {
+            setEditing(null);
+            questRewards.reload();
+            void refreshProfile();
+          }}
+        />
+      )}
+      {editing === 'frame' && (
+        <FramePicker
+          key={frameReward ?? 'wear'}
+          avatar={profile?.avatar}
+          rewardId={frameReward}
+          onClose={() => setEditing(null)}
+          onDone={() => {
+            setEditing(null);
+            questRewards.reload();
+            void refreshProfile();
+          }}
+        />
+      )}
 
       <Fold
         id="trophies"
@@ -176,13 +248,28 @@ export function Profile() {
       </Fold>
 
       <Fold
-        id="achievements"
-        title="⭐ My achievements"
-        count={progress ? `${earnedCount} of ${progress.achievements.length}` : undefined}
-        open={open.has('achievements')}
+        id="rewards"
+        title="🎁 My rewards"
+        count={questRewards.unused > 0 ? `${questRewards.unused} to use` : undefined}
+        open={open.has('rewards')}
         onToggle={toggle}
       >
-        {progress ? <MyAchievements achievements={progress.achievements} /> : <p className="panel__empty">{home.failed ? 'We couldn’t load your achievements just now.' : 'Loading…'}</p>}
+        <MyRewards
+          rewards={questRewards.rewards}
+          failed={questRewards.failed}
+          onChanged={questRewards.reload}
+          onUse={(r) => {
+            if (r.reward === 'scroll') setEditing('name');
+            else if (r.reward === 'title') {
+              setTitleReward(r.id);
+              setEditing('title');
+            } else if (r.reward === 'frame') {
+              setFrameReward(r.id);
+              setEditing('frame');
+            } else return;
+            window.scrollTo?.({ top: 0, behavior: 'smooth' });
+          }}
+        />
       </Fold>
 
       <Fold
@@ -498,71 +585,6 @@ function useMyHome(me: string | undefined): MyHome {
   }, [me]);
 
   return { progress, stats, recent, failed };
-}
-
-/** What the pupil has earned, the three they are closest to, then each game's full list behind its own "See all". */
-function MyAchievements({ achievements }: { achievements: Achievement[] }) {
-  const [shown, setShown] = useState<ReadonlySet<string>>(() => new Set());
-  const earned = achievements.filter((a) => a.earnedAt).sort((a, b) => (b.earnedAt ?? '').localeCompare(a.earnedAt ?? ''));
-  const nearest = achievements
-    .filter((a) => !a.earnedAt)
-    .sort((a, b) => b.progress / b.goal - a.progress / a.goal)
-    .slice(0, NEAREST_SHOWN);
-  const games = [...ALL_GAMES, ...HUB_ACHIEVEMENT_GROUPS].filter((game) => achievements.some((a) => a.game === game.id));
-
-  return (
-    <div className="profile-achievements">
-      <div>
-        <h3>Earned</h3>
-        {earned.length === 0 ? (
-          <p className="panel__empty">None yet. Play a game to win your first!</p>
-        ) : (
-          <AchievementList achievements={earned} showGame compact />
-        )}
-      </div>
-      {nearest.length > 0 && (
-        <div>
-          <h3>Nearly there</h3>
-          <AchievementList achievements={nearest} showGame />
-        </div>
-      )}
-      <div>
-        <h3>Every game</h3>
-        <ul className="profile-achievements__games">
-          {games.map((game) => {
-            const mine = achievements.filter((a) => a.game === game.id);
-            const isShown = shown.has(game.id);
-            return (
-              <li key={game.id}>
-                <div className="profile-achievements__game">
-                  <strong>{game.name}</strong>
-                  <span className="panel__count">
-                    {mine.filter((a) => a.earnedAt).length} of {mine.length}
-                  </span>
-                  <button
-                    type="button"
-                    className="button button--light-outline profile-achievements__all"
-                    aria-expanded={isShown}
-                    aria-label={`${isShown ? 'Hide' : 'See all'}: ${game.name}`}
-                    onClick={() =>
-                      setShown((was) => {
-                        const next = new Set(was);
-                        if (!next.delete(game.id)) next.add(game.id);
-                        return next;
-                      })
-                    }
-                  >
-                    {isShown ? 'Hide' : 'See all'}
-                  </button>
-                </div>
-                {isShown && <AchievementList achievements={mine} />}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    </div>
-  );
 }
 
 /** Inside My stats: points and badges, then recent games and the tables for bots and friends. */

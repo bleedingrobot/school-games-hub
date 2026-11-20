@@ -98,11 +98,12 @@ export const TEXT = {
   shielded: (healed: number) => (healed > 0 ? `The Keep Shield healed ${healed} health!` : 'The Keep Shield fizzled. Keep going!'),
   keyTitle: 'Level Key',
   keyNote: (asked: number, right: number) => `Question ${asked + 1} of 10 · ${right} right`,
-  keyIntro: (pass: number) => `Unlock the next level with the Level Key: get ${pass} out of 10 right.`,
+  keyIntro: (pass: number) => `Unlock the next level with the Level Key: get ${pass} out of 5 right.`,
   keyStart: 'Try the Level Key',
+  keyTomorrow: 'You opened a new level today. Come back tomorrow to try this Level Key!',
   keyAgain: 'Try the Level Key again',
-  keyPassed: (right: number) => `Level Key: ${right} out of 10. The next level is unlocked!`,
-  keyFailed: (right: number, pass: number) => `Level Key: ${right} out of 10. You need ${pass}. You can try again straight away with new questions.`,
+  keyPassed: (right: number) => `Level Key: ${right} out of 5. The next level is unlocked!`,
+  keyFailed: (right: number, pass: number) => `Level Key: ${right} out of 5. You need ${pass}. You can try again straight away with new questions.`,
   keyPractise: 'Facts to practise:',
 } as const;
 

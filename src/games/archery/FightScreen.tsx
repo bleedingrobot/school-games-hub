@@ -544,7 +544,7 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STAR
           <div className="ar-panel">
             <h2 id="ar-problem-title" ref={dialogHeading} tabIndex={-1}>The battlefield won't start</h2>
             <p>{problem}</p>
-            <button type="button" className="button button--play ar-btn" onClick={onExit}>Back</button>
+            <button type="button" className="button button--play ar-btn" data-key="enter" onClick={onExit}>Back</button>
           </div>
         </div>
       )}
@@ -556,7 +556,7 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STAR
             <p className="ar-score">Rounds: You {run.roundWins[0]} – {run.roundWins[1]} {BOT_NAME}</p>
             <p>First to win 2 rounds wins the fight. The next round has new land and new wind.</p>
             <div className="ar-row">
-              <button type="button" className="button button--play ar-btn" onClick={nextRound}>Next round</button>
+              <button type="button" className="button button--play ar-btn" data-key="enter" onClick={nextRound}>Next round</button>
             </div>
           </div>
         </div>
@@ -570,7 +570,7 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STAR
             <p>Your score (damage you did): <strong>{score}</strong>{newBest ? <strong> A new best in the {WORLD_NAMES[world]}!</strong> : <> Best here: {best}</>}</p>
             {saveLine && <p className="ar-help" role="status">{saveLine}</p>}
             <div className="ar-row">
-              <button type="button" className="button button--play ar-btn" onClick={playAgain}>Play again</button>
+              <button type="button" className="button button--play ar-btn" data-key="enter" onClick={playAgain}>Play again</button>
               <button type="button" className="button button--light ar-btn" onClick={onExit}>Choose another fight</button>
             </div>
           </div>

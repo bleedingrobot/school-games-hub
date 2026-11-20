@@ -2715,12 +2715,12 @@ const LAYOUTS = [
 	"scatter",
 	"ring"
 ];
-const range$6 = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
+const range$7 = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
 const COUNT_KEYS = {
-	give: range$6(1, 20).map((n) => `give:n${n}`),
-	howmany: LAYOUTS.flatMap((layout) => range$6(1, 10).map((n) => `howmany:n${n}:${layout}`)),
-	counton: range$6(4, 9).map((s) => `counton:${s}+1`),
-	across: range$6(11, 20).map((n) => `across:n${n}`)
+	give: range$7(1, 20).map((n) => `give:n${n}`),
+	howmany: LAYOUTS.flatMap((layout) => range$7(1, 10).map((n) => `howmany:n${n}:${layout}`)),
+	counton: range$7(4, 9).map((s) => `counton:${s}+1`),
+	across: range$7(11, 20).map((n) => `across:n${n}`)
 };
 Object.values(COUNT_KEYS).flat();
 /** The numbers a key names: give:n6 is [6], howmany:n6:ring is [6], counton:5+1 is [5, 1]. */
@@ -2810,11 +2810,11 @@ function bonds(label, tag, prefix, total, from) {
 		}
 	};
 }
-const range$5 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
+const range$6 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
 /** Doubles of dblFrom–dblTo and halves of the even numbers halfFrom–halfTo. */
 function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
-	const dbls = range$5(dblFrom, dblTo);
-	const halves = range$5(halfFrom, halfTo, 2);
+	const dbls = range$6(dblFrom, dblTo);
+	const halves = range$6(halfFrom, halfTo, 2);
 	const keys = [...dbls.map((n) => `dbl:${n}`), ...halves.map((n) => `half:${n}`)];
 	return {
 		label,
@@ -2886,7 +2886,7 @@ function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
 const tenAnd = {
 	label: "\"Ten and\" facts (10 + 4)",
 	curriculumTags: ["MS.Y1.NUM.OP.P6"],
-	keys: range$5(1, 9).map((n) => `tenand:${n}`),
+	keys: range$6(1, 9).map((n) => `tenand:${n}`),
 	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 1)],
 	make: (key, [n, v]) => {
 		if (!isInt(n, 1, 9) || key !== `tenand:${n}` || !isInt(v, 0, 3)) return null;
@@ -2935,7 +2935,7 @@ const tenAnd = {
 const tenLess = {
 	label: "\"Ten less\" facts (14 − 10)",
 	curriculumTags: ["MS.Y1.NUM.OP.P6"],
-	keys: range$5(1, 9).map((n) => `tenless:${n}`),
+	keys: range$6(1, 9).map((n) => `tenless:${n}`),
 	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 1)],
 	make: (key, [n, v]) => {
 		if (!isInt(n, 1, 9) || key !== `tenless:${n}` || !isInt(v, 0, 1)) return null;
@@ -2968,7 +2968,7 @@ const tenLess = {
 	}
 };
 const tenMove = (up) => {
-	const keys = range$5(up ? 10 : 20, (up ? 10 : 20) + 9).map((n) => `${up ? "tenup" : "tendown"}:${n}`);
+	const keys = range$6(up ? 10 : 20, (up ? 10 : 20) + 9).map((n) => `${up ? "tenup" : "tendown"}:${n}`);
 	return {
 		label: up ? "Ten more than a teen (14 + 10)" : "Ten less than a number in the twenties (24 − 10)",
 		curriculumTags: ["MS.Y1.NUM.OP.P6"],
@@ -3096,7 +3096,7 @@ const SKIP_FROM_STEPS = [
 function skipTerms(spec, kind, answer, at, offset = 0) {
 	const { step, upTo } = spec;
 	if (kind === "next" ? at !== 3 && at !== 4 : at !== 1 && at !== 2) return null;
-	const terms = kind === "up" ? range$5(answer - at * step, answer + (3 - at) * step, step) : kind === "back" ? range$5(answer - (3 - at) * step, answer + at * step, step).reverse() : range$5(answer - at * step, answer, step);
+	const terms = kind === "up" ? range$6(answer - at * step, answer + (3 - at) * step, step) : kind === "back" ? range$6(answer - (3 - at) * step, answer + at * step, step).reverse() : range$6(answer - at * step, answer, step);
 	if (spec.offsets && (kind === "back" || terms[0] !== offset)) return null;
 	if (spec.above !== void 0 && answer <= spec.above) return null;
 	return terms.every((n) => n >= 0 && n <= upTo) && answer % step === offset ? terms : null;
@@ -3106,7 +3106,7 @@ const skipKeys = (spec) => skipOffsets(spec).flatMap((offset) => (spec.offsets ?
 	"up",
 	"next",
 	"back"
-]).flatMap((kind) => range$5(offset, spec.upTo, spec.step).filter((n) => [
+]).flatMap((kind) => range$6(offset, spec.upTo, spec.step).filter((n) => [
 	1,
 	2,
 	3,
@@ -3192,7 +3192,7 @@ const skipFamilies = {
 		step,
 		upTo: step * 5,
 		word,
-		offsets: range$5(1, step - 1),
+		offsets: range$6(1, step - 1),
 		prefix: (offset) => `skip${step}o${offset}`
 	})]))
 };
@@ -3203,7 +3203,7 @@ const PART_WHOLES = {
 	parts5: [3, 5],
 	parts10: [6, 10]
 };
-const partKeys = (from, to) => range$5(from, to).flatMap((w) => range$5(0, w).map((s) => `part${w}:${s}`));
+const partKeys = (from, to) => range$6(from, to).flatMap((w) => range$6(0, w).map((s) => `part${w}:${s}`));
 const parsePart = (key) => {
 	const m = /^part(\d+):(\d+)$/.exec(key);
 	return m ? {
@@ -3265,7 +3265,7 @@ const ODD_EVEN_LABELS = ["odd", "even"];
 const oddEven = {
 	label: "Odd and even numbers to 20",
 	curriculumTags: ["MS.Y2.NUM.OP.P2"],
-	keys: range$5(1, 20).map((n) => `oddeven:${n}`),
+	keys: range$6(1, 20).map((n) => `oddeven:${n}`),
 	roll: (key) => [Number(key.split(":")[1])],
 	make: (key, [n]) => {
 		if (!isInt(n, 1, 20) || key !== `oddeven:${n}`) return null;
@@ -3326,7 +3326,7 @@ function solveSkip(parts) {
 	}
 	return null;
 }
-const LINE_TENS = range$5(1, 9).map((n) => n * 10);
+const LINE_TENS = range$6(1, 9).map((n) => n * 10);
 const LINE_OTHERS_100 = [
 	11,
 	14,
@@ -3350,7 +3350,7 @@ const LINE_OTHERS_100 = [
 	94,
 	97
 ];
-const LINE_HUNDREDS = range$5(1, 9).map((n) => n * 100);
+const LINE_HUNDREDS = range$6(1, 9).map((n) => n * 100);
 const LINE_OTHERS_1000 = [
 	120,
 	140,
@@ -3409,8 +3409,8 @@ const TENS_LESS = [
 	100
 ];
 /** Not a tens number and not halfway: every third, so the spread covers the whole line. */
-const NEAR10_OTHERS = range$5(1, 99).filter((n) => n % 5 !== 0).filter((_, i) => i % 3 === 0).slice(0, 26);
-const NEAR10_HALF = range$5(5, 95, 10);
+const NEAR10_OTHERS = range$6(1, 99).filter((n) => n % 5 !== 0).filter((_, i) => i % 3 === 0).slice(0, 26);
+const NEAR10_HALF = range$6(5, 95, 10);
 const NEAR100_OTHERS = [
 	130,
 	180,
@@ -3432,16 +3432,16 @@ const NEAR100_OTHERS = [
 	920,
 	960
 ].filter((_, i) => i % 2 === 0).concat([440]);
-const NEAR100_HALF = range$5(150, 950, 100);
+const NEAR100_HALF = range$6(150, 950, 100);
 const ZOOM_KEYS = [
-	...range$5(41, 49).map((n) => `zoom:40-50:${n}`),
-	...range$5(71, 79).map((n) => `zoom:70-80:${n}`),
+	...range$6(41, 49).map((n) => `zoom:40-50:${n}`),
+	...range$6(71, 79).map((n) => `zoom:70-80:${n}`),
 	"zoom:0-200:130",
 	"zoom:300-400:350"
 ];
-const PV_TENS = range$5(1, 9).map((n) => n * 10);
+const PV_TENS = range$6(1, 9).map((n) => n * 10);
 /** Two-digit numbers that are not tens: four ones digits for each ten, spread so no two ends repeat. */
-const PV_OTHERS = range$5(1, 9).flatMap((t) => [
+const PV_OTHERS = range$6(1, 9).flatMap((t) => [
 	1,
 	3,
 	5,
@@ -3509,9 +3509,9 @@ const PV_TEN_LESS = [
 	39,
 	72
 ];
-const PV_HUNDREDS = range$5(1, 9).map((h) => h * 100);
+const PV_HUNDREDS = range$6(1, 9).map((h) => h * 100);
 /** Three-digit numbers that are not hundreds: for each hundred, one with every digit, one with a zero in the middle, one with a zero at the end. */
-const PV3_OTHERS = range$5(1, 9).flatMap((h) => [
+const PV3_OTHERS = range$6(1, 9).flatMap((h) => [
 	h * 100 + (h * 3 % 9 + 1) * 10 + h * 2 % 9 + 1,
 	h * 100 + h * 2 % 9 + 1,
 	h * 100 + ((h + 4) % 9 + 1) * 10
@@ -3845,16 +3845,16 @@ function solveCounting(parts) {
 	}
 	return null;
 }
-const ROWS_KEYS = range$5(2, 5).flatMap((r) => range$5(2, 10).map((c) => `rows:${r}x${c}`));
-const TURN_PAIRS = range$5(2, 6).flatMap((r) => range$5(2, 6).filter((c) => c !== r).map((c) => [r, c]));
+const ROWS_KEYS = range$6(2, 5).flatMap((r) => range$6(2, 10).map((c) => `rows:${r}x${c}`));
+const TURN_PAIRS = range$6(2, 6).flatMap((r) => range$6(2, 6).filter((c) => c !== r).map((c) => [r, c]));
 const SHARE_KEYS = [
 	2,
 	3,
 	4,
 	5,
 	10
-].flatMap((r) => range$5(2, 7).map((a) => `share:${r * a}/${r}`));
-const CUT_KEYS = range$5(6, 9).flatMap((r) => range$5(3, 9).map((c) => `cut:${r}x${c}`));
+].flatMap((r) => range$6(2, 7).map((a) => `share:${r * a}/${r}`));
+const CUT_KEYS = range$6(6, 9).flatMap((r) => range$6(3, 9).map((c) => `cut:${r}x${c}`));
 const keyPair = (key) => {
 	const m = /(\d+)[x/](\d+)$/.exec(key);
 	return [Number(m[1]), Number(m[2])];
@@ -4017,6 +4017,11 @@ const earlyFactsPack = (saved, random, now) => new BandedPack(EARLY_FACTS, saved
 *   bedmas:mixed           2 + 3 × 4 − 5   three steps, no brackets
 *   bedmas:mixed-brackets  (2 + 3) × 4 − 5 three steps with brackets
 *
+* Small numbers (James, 19 Nov 2026: "test order of operations, not get kids hung up on big numbers"): in every step worked the
+* right way, an add or take-away step has a number under 10 (3 + 20, 20 − 7, never 23 + 15), and every × or ÷ step is a fact
+* from the 2, 3, 4 or 5 times tables (4 × 7, 35 ÷ 5). New questions are only rolled like that; `build` still accepts the bigger
+* numbers of questions rolled before, so they are still marked.
+*
 * Every question is four choices to tap (James, 19 Oct 2026). The wrong choices are what a student gets by following a named
 * mistake (working left to right gives 20 for 2 + 3 × 4), never a random number, and they are always different from the right
 * answer and from each other. A question where fewer than three mistakes give a different whole number is never asked.
@@ -4123,6 +4128,11 @@ function evaluate(all, way) {
 	let i = 0;
 	const level = (op) => way.rank === "flat" ? 1 : (op === "×" || op === "÷") === (way.rank === "normal") ? 2 : 1;
 	const apply = (op, a, b) => {
+		way.steps?.push([
+			op,
+			a,
+			b
+		]);
 		const v = op === "+" ? a + b : op === "−" ? a - b : op === "×" ? a * b : b === 0 ? NaN : a / b;
 		return way.exact && (!Number.isInteger(v) || v < 0) ? NaN : v;
 	};
@@ -4204,7 +4214,32 @@ function mistakesFor(tokens) {
 	}
 	return named;
 }
-const MAX_NUMBER = 30;
+/** A × or ÷ step from the 2, 3, 4 or 5 times tables: 4 × 7, 7 × 4, 35 ÷ 5 (the other number 1 to 10). */
+const SMALL_TABLES = [
+	2,
+	3,
+	4,
+	5
+];
+const tableFact = (a, b) => SMALL_TABLES.includes(a) && isInt(b, 1, 10) || SMALL_TABLES.includes(b) && isInt(a, 1, 10);
+/**
+* Every step of the right way is small: adding or taking away with a number under 10, × from the 2 to 5 tables, ÷ by 2 to 5
+* with an answer up to 10. Every number written is 10 or under, except a number that is divided (35 ÷ 5).
+*/
+function smallSteps(tokens) {
+	const steps = [];
+	const value = evaluate(tokens, {
+		...RIGHT,
+		steps
+	});
+	if (!Number.isInteger(value)) return false;
+	return steps.every(([op, a, b]) => {
+		if (op === "×") return tableFact(a, b);
+		if (op === "÷") return SMALL_TABLES.includes(b) && Number.isInteger(a / b) && isInt(a / b, 1, 10);
+		return Math.min(a, b) < 10 && Math.max(a, b) <= 50;
+	}) && tokens.every((t, i) => typeof t !== "number" || t <= 10 || tokens[i + 1] === "÷");
+}
+const MAX_NUMBER = 50;
 const MAX_ANSWER = 300;
 function build(templateIndex, nums) {
 	const template = TEMPLATES[templateIndex];
@@ -4225,9 +4260,9 @@ function bedmasFamily(key, label) {
 	return oneKey(key, label, ["MS.Y6.NUM.OP.P1"], null, (_k, r) => {
 		for (;;) {
 			const t = pickOne(r, mine);
-			const nums = Array.from({ length: lettersOf(t.src) }, (_, n) => int(r, 2, n === 0 && /^a [+−]/.test(t.src) ? 30 : 12));
+			const nums = Array.from({ length: lettersOf(t.src) }, () => r() < .25 ? int(r, 11, 50) : int(r, 2, 10));
 			const made = build(t.i, nums);
-			if (made && withMistakes({
+			if (made && smallSteps(made.tokens) && withMistakes({
 				parts: [],
 				spoken: "",
 				answer: made.answer
@@ -4371,7 +4406,7 @@ function pick(base, right, named, opts) {
 *   fraction-bonds  bondf1:whole  bondf1:missing-top  bondf1:small  bondf1:big  bondf1:take
 *   decimal-bonds   bondd1:next-whole  bondd1:hundredths  bondd1:take  bondd10:tenths  bondd10:take
 */
-const range$4 = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
+const range$5 = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
 const notTen$1 = (n) => n % 10 !== 0;
 const FRACTION_TAGS = ["MS.Y3.NUM.RN.P6", "MS.Y3.NUM.RN.K6"];
 const ALL_DENS = [
@@ -4516,9 +4551,9 @@ const fractionFamilies = [
 ];
 const DECIMAL_TAGS = ["MS.Y4.NUM.RN.P10", "MS.Y5.NUM.RN.P12"];
 /** Hundredths that are not whole tenths (0.01 to 0.99, not 0.3): those are tenths to 1, in add-tenths. */
-const HUNDREDTHS = range$4(1, 99).filter(notTen$1);
+const HUNDREDTHS = range$5(1, 99).filter(notTen$1);
 /** Tenths from 0.1 to 9.9 that are not whole numbers. */
-const TENTHS = range$4(1, 99).filter(notTen$1);
+const TENTHS = range$5(1, 99).filter(notTen$1);
 /**
 * A number of small units (hundredths or tenths) and a target of `whole` such units: the answer is `whole - u`, written with
 * `scale` (100 for hundredths, 10 for tenths). Every value is worked out in whole units and only divided at the end.
@@ -4584,7 +4619,7 @@ function decimalFamilies(prefix, word, labels, pool, scale, target) {
 	})];
 }
 /** Tenths up to the next whole number, the step that makes 10 easy: 6.3 + ? = 7. Tenth counts 11 to 89 that are not whole. */
-const PAST_ONE = range$4(11, 89).filter(notTen$1);
+const PAST_ONE = range$5(11, 89).filter(notTen$1);
 const decimalBondFamilies = [
 	oneKey("bondd1:next-whole", "Tenths up to the next whole number (6.3 + ? = 7)", DECIMAL_TAGS, 1, (_k, r) => [pickOne(r, PAST_ONE)], (_k, [u]) => {
 		if (!PAST_ONE.includes(u)) return null;
@@ -4649,13 +4684,13 @@ const BOND_SKILL_KEYS = {
 *   decimal-equivalents deceq:common  deceq:pick  deceq:hundredths  deceq:to-fraction  deceq:compare
 *   times-decimals      timesdec:ten  timesdec:hundred  timesdec:div-ten  timesdec:div-hundred  timesdec:missing
 */
-const range$3 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
+const range$4 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
 const tenths = (n) => show(n / 10);
 const hundredths = (n) => show(n / 100);
 const notTen = (n) => n % 10 !== 0;
 const TENTH_TAGS = ["MS.Y4.NUM.RN.P3", "MS.Y4.NUM.RN.P5"];
 /** Whole tenths, which a tenth count of 1 to 39 that is not a whole number can be shown as (0.7, 1.4, 3.9). */
-const COUNTS = range$3(1, 39).filter(notTen);
+const COUNTS = range$4(1, 39).filter(notTen);
 const tenthFamilies = [
 	oneKey("tenth:to-fraction", "A decimal as tenths (0.3 = 3/10)", TENTH_TAGS, 3, (_k, r) => [int(r, 2, 9), ...rollPick(r)], (_k, [d, slot, salt]) => {
 		if (!isInt(d, 2, 9) || !goodPick(slot, salt)) return null;
@@ -4701,7 +4736,7 @@ const tenthFamilies = [
 			salt
 		});
 	}),
-	oneKey("tenth:divide", "Dividing by 10 to make tenths (27 ÷ 10 = 2.7)", TENTH_TAGS, 1, (_k, r) => [pickOne(r, range$3(1, 99).filter(notTen))], (_k, [n]) => {
+	oneKey("tenth:divide", "Dividing by 10 to make tenths (27 ÷ 10 = 2.7)", TENTH_TAGS, 1, (_k, r) => [pickOne(r, range$4(1, 99).filter(notTen))], (_k, [n]) => {
 		if (!isInt(n, 1, 99) || !notTen(n)) return null;
 		const parts = [
 			show(n),
@@ -4741,7 +4776,7 @@ const tenthFamilies = [
 			"one tenth too few": t - 1
 		});
 	}),
-	oneKey("tenth:half", "Half and double of tenths (half of 1.4 = 0.7)", TENTH_TAGS, 2, (_k, r) => r() < .5 ? [pickOne(r, range$3(2, 38, 2)), 0] : [int(r, 1, 24), 1], (_k, [t, v]) => {
+	oneKey("tenth:half", "Half and double of tenths (half of 1.4 = 0.7)", TENTH_TAGS, 2, (_k, r) => r() < .5 ? [pickOne(r, range$4(2, 38, 2)), 0] : [int(r, 1, 24), 1], (_k, [t, v]) => {
 		if (v === 0) {
 			if (!isInt(t, 2, 38) || t % 2 !== 0) return null;
 			const parts = [
@@ -4794,7 +4829,7 @@ const ones = (t) => Math.floor(t / 10);
 const dig = (t) => t % 10;
 /** A pair of tenth counts for "a + b" or "a − b", made by `make`; the type checks which kind of pair it is. */
 function twoTenths(key, label, ok, sign, named, aLo, aHi) {
-	const pool = range$3(aLo, aHi).flatMap((a) => range$3(1, aHi).filter((b) => ok(a, b)).map((b) => [a, b]));
+	const pool = range$4(aLo, aHi).flatMap((a) => range$4(1, aHi).filter((b) => ok(a, b)).map((b) => [a, b]));
 	return oneKey(key, label, ADD_TAGS, 2, (_k, r) => pickOne(r, pool), (_k, [a, b]) => {
 		if (!isInt(a, 1, 99) || !isInt(b, 1, 99) || !ok(a, b)) return null;
 		const parts = [
@@ -5026,7 +5061,7 @@ const equivFamilies$1 = [
 			salt
 		});
 	}),
-	oneKey("deceq:hundredths", "Hundredths as a decimal (7/100 = 0.07)", EQUIV_TAGS$1, 1, (_k, r) => [pickOne(r, range$3(1, 99).filter(notTen))], (_k, [n]) => {
+	oneKey("deceq:hundredths", "Hundredths as a decimal (7/100 = 0.07)", EQUIV_TAGS$1, 1, (_k, r) => [pickOne(r, range$4(1, 99).filter(notTen))], (_k, [n]) => {
 		if (!isInt(n, 1, 99) || !notTen(n)) return null;
 		const parts = [
 			frac(n, 100),
@@ -5066,7 +5101,7 @@ const equivFamilies$1 = [
 	}),
 	oneKey("deceq:compare", "Which decimal is bigger? (0.25 or 0.3)", EQUIV_TAGS$1, 5, (_k, r) => {
 		if (r() < .5) {
-			const x = pickOne(r, range$3(1, 98).filter(notTen));
+			const x = pickOne(r, range$4(1, 98).filter(notTen));
 			return [
 				x,
 				int(r, Math.floor(x / 10) + 1, 9),
@@ -5074,7 +5109,7 @@ const equivFamilies$1 = [
 				...rollPick(r, 1)
 			];
 		}
-		const x = pickOne(r, range$3(11, 99).filter(notTen));
+		const x = pickOne(r, range$4(11, 99).filter(notTen));
 		return [
 			x,
 			Math.floor(x / 10),
@@ -5124,7 +5159,7 @@ function moveFamily(key, label, make, check, build) {
 	});
 }
 const timesFamilies = [
-	moveFamily("timesdec:ten", "Times 10 with a decimal (3.4 × 10)", (r) => [pickOne(r, range$3(11, 99).filter(notTen))], (t) => t >= 11 && t <= 99 && notTen(t), (t) => ({
+	moveFamily("timesdec:ten", "Times 10 with a decimal (3.4 × 10)", (r) => [pickOne(r, range$4(11, 99).filter(notTen))], (t) => t >= 11 && t <= 99 && notTen(t), (t) => ({
 		parts: [
 			tenths(t),
 			"×",
@@ -5140,7 +5175,7 @@ const timesFamilies = [
 			"moved the point two places the wrong way": t / 1e3
 		}
 	})),
-	moveFamily("timesdec:hundred", "Times 100 with a decimal (0.35 × 100)", (r) => [pickOne(r, range$3(11, 999).filter((h) => h % 100 !== 0))], (h) => h >= 11 && h <= 999 && h % 100 !== 0, (h) => ({
+	moveFamily("timesdec:hundred", "Times 100 with a decimal (0.35 × 100)", (r) => [pickOne(r, range$4(11, 999).filter((h) => h % 100 !== 0))], (h) => h >= 11 && h <= 999 && h % 100 !== 0, (h) => ({
 		parts: [
 			hundredths(h),
 			"×",
@@ -5156,7 +5191,7 @@ const timesFamilies = [
 			"moved the point three places": h * 10
 		}
 	})),
-	moveFamily("timesdec:div-ten", "Dividing a decimal by 10 (3.4 ÷ 10)", (r) => [pickOne(r, range$3(11, 199).filter(notTen))], (t) => t >= 11 && t <= 199 && notTen(t), (t) => ({
+	moveFamily("timesdec:div-ten", "Dividing a decimal by 10 (3.4 ÷ 10)", (r) => [pickOne(r, range$4(11, 199).filter(notTen))], (t) => t >= 11 && t <= 199 && notTen(t), (t) => ({
 		parts: [
 			tenths(t),
 			"÷",
@@ -5172,7 +5207,7 @@ const timesFamilies = [
 			"moved the point two places the wrong way": t * 10
 		}
 	})),
-	moveFamily("timesdec:div-hundred", "Dividing by 100 (345 ÷ 100)", (r) => [pickOne(r, range$3(12, 999).filter((n) => n % 100 !== 0))], (n) => n >= 12 && n <= 999 && n % 100 !== 0, (n) => ({
+	moveFamily("timesdec:div-hundred", "Dividing by 100 (345 ÷ 100)", (r) => [pickOne(r, range$4(12, 999).filter((n) => n % 100 !== 0))], (n) => n >= 12 && n <= 999 && n % 100 !== 0, (n) => ({
 		parts: [
 			show(n),
 			"÷",
@@ -5188,7 +5223,7 @@ const timesFamilies = [
 			"did not move the point": n
 		}
 	})),
-	oneKey("timesdec:missing", "A missing 10 or 100 (0.6 × ? = 60)", TIMES_TAGS, 2, (_k, r) => [pickOne(r, range$3(11, 99).filter(notTen)), int(r, 0, 3)], (_k, [t, v]) => {
+	oneKey("timesdec:missing", "A missing 10 or 100 (0.6 × ? = 60)", TIMES_TAGS, 2, (_k, r) => [pickOne(r, range$4(11, 99).filter(notTen)), int(r, 0, 3)], (_k, [t, v]) => {
 		if (!isInt(t, 11, 99) || !notTen(t) || !isInt(v, 0, 3)) return null;
 		const small = tenths(t);
 		const [parts, answer] = v === 0 ? [[
@@ -5273,7 +5308,7 @@ const DECIMAL_SKILL_KEYS = {
 * Types: fdp:frac-to-pct  fdp:pct-to-frac  fdp:dec-to-pct  fdp:pct-to-dec  fdp:match
 */
 const TAGS = ["MS.Y6.NUM.RN.P3", "MS.Y6.NUM.RN.P4"];
-const range$2 = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
+const range$3 = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
 const reversed = (n) => Number(String(n).split("").reverse().join(""));
 /** Fractions with an easy percentage: [top, bottom]. */
 const FRACTIONS = [
@@ -5364,13 +5399,13 @@ const FRACTION_FOR = {
 };
 const FRACTION_PERCENTS = Object.keys(FRACTION_FOR).map(Number);
 /** Percentages for the typed percentage-to-decimal and the match question: not the ones other skills already ask. */
-const OTHERS = range$2(1, 99).filter((p) => ![
+const OTHERS = range$3(1, 99).filter((p) => ![
 	10,
 	25,
 	50,
 	75
 ].includes(p));
-const MATCH = range$2(1, 99).filter((h) => h % 10 !== 0 && h !== 25 && h !== 75);
+const MATCH = range$3(1, 99).filter((h) => h % 10 !== 0 && h !== 25 && h !== 75);
 const families$1 = [
 	oneKey("fdp:frac-to-pct", "A fraction as a percentage (3/5 = 60%)", TAGS, 2, (_k, r) => pickOne(r, FRACTIONS), (_k, [n, d]) => {
 		if (!FRACTIONS.some(([a, b]) => a === n && b === d)) return null;
@@ -5411,7 +5446,7 @@ const families$1 = [
 			salt
 		});
 	}),
-	oneKey("fdp:dec-to-pct", "A decimal as a percentage (0.35 = 35%)", TAGS, 1, (_k, r) => [pickOne(r, range$2(1, 99))], (_k, [h]) => {
+	oneKey("fdp:dec-to-pct", "A decimal as a percentage (0.35 = 35%)", TAGS, 1, (_k, r) => [pickOne(r, range$3(1, 99))], (_k, [h]) => {
 		if (!isInt(h, 1, 99)) return null;
 		const parts = [
 			show(h / 100),
@@ -5498,7 +5533,7 @@ const FDP_SKILL_KEYS = { "fdp-equivalents": [
 *   equivalent-fractions equiv:missing-top  equiv:missing-bottom  equiv:same-as  equiv:simplify  equiv:simplify-blank
 *   whole-from-fraction  whole:half  whole:unit  whole:thirds  whole:quarters  whole:other
 */
-const range$1 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
+const range$2 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
 const UNIT_TAGS = ["MS.Y3.NUM.RN.P7"];
 /** 1/d of an amount that d goes into exactly. `dens` are the bottom numbers this type uses. */
 function unitFamily(key, label, dens, qLo, qHi) {
@@ -5607,10 +5642,10 @@ function nonUnitFamily(word) {
 }
 const EQUIV_TAGS = ["MS.Y5.NUM.RN.P9", "MS.Y6.NUM.RN.P6"];
 /** Fractions in their simplest form, under one, with a bottom number up to 6. */
-const SIMPLEST = range$1(2, 6).flatMap((d) => range$1(1, d - 1).filter((n) => gcd$1(n, d) === 1).map((n) => [n, d]));
+const SIMPLEST = range$2(2, 6).flatMap((d) => range$2(1, d - 1).filter((n) => gcd$1(n, d) === 1).map((n) => [n, d]));
 const isSimplest = (n, d) => isInt(d, 2, 6) && isInt(n, 1, d - 1) && gcd$1(n, d) === 1;
 /** Smallest number that divides k other than 1, if k is not prime (so 12/16 can be "only halved"). */
-const smallestFactor = (k) => range$1(2, k - 1).find((p) => k % p === 0);
+const smallestFactor = (k) => range$2(2, k - 1).find((p) => k % p === 0);
 const equivFamilies = [
 	oneKey("equiv:missing-top", "Equivalent fractions, the top number (1/2 = ?/8)", EQUIV_TAGS, 3, (_k, r) => {
 		const [n, d] = pickOne(r, SIMPLEST);
@@ -5896,6 +5931,7 @@ const FRACTION_SKILL_KEYS = {
 const BASIC_TAGS = ["MS.Y5.NUM.RN.P5", "MS.Y5.NUM.RN.P15"];
 const OF_TAGS = ["MS.Y6.NUM.RN.P13", "MS.Y6.NUM.RN.P14"];
 const pct = (p) => `${p}%`;
+const range$1 = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
 /** The answer a student gets by following a named mistake, for "p% of a". */
 function ofMistakes(p, a) {
 	const named = {};
@@ -5912,9 +5948,13 @@ function ofMistakes(p, a) {
 	named["divided by the percent"] = a / p;
 	return named;
 }
-/** "p% of an amount that is q × step". */
-function ofFamily(key, label, tags, p, step, qLo, qHi) {
-	return oneKey(key, label, tags, 1, (_k, r) => [int(r, qLo, qHi)], (_k, [q]) => {
+/**
+* "p% of an amount that is q × step". `tidy` lists the q a new question rolls, when not every q in range is quick to work out
+* (James, 19 Nov 2026: "nice and tidy" numbers, for fluency). Any q in range still makes a question, so questions rolled
+* before keep working.
+*/
+function ofFamily(key, label, tags, p, step, qLo, qHi, tidy) {
+	return oneKey(key, label, tags, 1, (_k, r) => [tidy ? pickOne(r, tidy) : int(r, qLo, qHi)], (_k, [q]) => {
 		if (!isInt(q, qLo, qHi)) return null;
 		const amount = q * step;
 		const parts = [
@@ -6104,9 +6144,24 @@ const toDecimal = oneKey("pct:to-decimal", "A percentage as a decimal (25% = 0.2
 	});
 });
 const PERCENT_FAMILIES = Object.fromEntries([
-	ofFamily("pct:half", "50% of an amount (50% of 60)", BASIC_TAGS, 50, 2, 1, 50),
+	ofFamily("pct:half", "50% of an amount (50% of 60)", BASIC_TAGS, 50, 2, 1, 50, [
+		...range$1(1, 10),
+		15,
+		20,
+		25,
+		30,
+		35,
+		40,
+		45,
+		50
+	]),
 	ofFamily("pct:ten", "10% of an amount (10% of 70)", BASIC_TAGS, 10, 10, 1, 20),
-	ofFamily("pct:quarter", "25% of an amount (25% of 80)", BASIC_TAGS, 25, 4, 1, 25),
+	ofFamily("pct:quarter", "25% of an amount (25% of 80)", BASIC_TAGS, 25, 4, 1, 25, [
+		...range$1(1, 10),
+		15,
+		20,
+		25
+	]),
 	toFraction,
 	fromFraction,
 	toDecimal,
@@ -6152,7 +6207,7 @@ const PERCENT_SKILL_KEYS = {
 *   bonds-100    bond100:tens  bond100:fives  bond100:any  bond100:take
 *   bonds-1000   bond1000:hundreds  bond1000:fifties  bond1000:tens  bond1000:take
 *   times-tens   times:tens  times:hundreds  times:tens-tens  times:shift  times:powers  times:div-tens
-*   factor-pairs factor:pair  factor:count  factor:largest  factor:common
+*   factor-pairs factor:pair  factor:pick (factor:count, factor:largest and factor:common are no longer asked)
 *   squares-cubes square:of  cube:of  square:root  cube:root  square:next
 */
 const range = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
@@ -6336,13 +6391,18 @@ const parseTimes = (parts) => {
 };
 const PAIR_NUMBERS = [
 	12,
+	14,
+	15,
 	16,
 	18,
 	20,
+	21,
 	24,
+	27,
 	28,
 	30,
 	32,
+	35,
 	36,
 	40,
 	42,
@@ -6421,6 +6481,42 @@ const factorTags = ["MS.Y5.NUM.NS.P2"];
 const smallestPrime = (n) => range(2, n).find((d) => n % d === 0);
 /** Two numbers whose biggest shared factor is `g`, found as g × a and g × b with a and b sharing nothing. */
 const commonPairs = range(2, 12).flatMap((g) => range(2, 6).flatMap((a) => range(a + 1, 7).filter((b) => gcd(a, b) === 1 && g * b <= 60).map((b) => [g * a, g * b])));
+/** "3 and 7": how a pair is shown as a choice. */
+const pairLabel = (a, b) => `${Math.min(a, b)} and ${Math.max(a, b)}`;
+/**
+* The wrong pairs for "Which is a factor pair of n?", from named mistakes: a pair that adds to n, a pair one off, a pair of a
+* number next to n, and two factors of n that don't multiply to it. None of them multiplies to n.
+*/
+function wrongPairs(n, a) {
+	const b = n / a;
+	const named = {
+		"adds to the number": [a, n - a],
+		"one too many": [a, b + 1],
+		"one too few": [a, b - 1],
+		"the other one off": [a + 1, b]
+	};
+	for (const near of [
+		n - 1,
+		n + 1,
+		n - 2,
+		n + 2
+	]) {
+		const d = divisorsOf(near).find((x) => x >= 2 && x * x <= near && x !== a);
+		if (d) {
+			named[`a pair of ${near}`] = [d, near / d];
+			break;
+		}
+	}
+	const factors = divisorsOf(n).filter((x) => x >= 2 && x < n);
+	for (const x of factors) {
+		const y = factors.find((f) => f > x && x * f !== n);
+		if (y) {
+			named["two factors that do not make it"] = [x, y];
+			break;
+		}
+	}
+	return Object.fromEntries(Object.entries(named).filter(([, [x, y]]) => x >= 1 && y >= 1 && x * y !== n).map(([name, [x, y]]) => [name, pairLabel(x, y)]));
+}
 const factorFamilies = [
 	oneKey("factor:pair", "Finding the other number in a factor pair", factorTags, 2, (_k, r) => {
 		const n = pickOne(r, PAIR_NUMBERS);
@@ -6445,6 +6541,25 @@ const factorFamilies = [
 			"one too many": answer + 1,
 			"one too few": answer - 1,
 			"the number itself": n
+		});
+	}),
+	oneKey("factor:pick", "Picking a factor pair (which pair makes 21?)", factorTags, 4, (_k, r) => {
+		const n = pickOne(r, PAIR_NUMBERS);
+		return [
+			n,
+			pickOne(r, divisorsOf(n).filter((d) => d >= 2 && d * d <= n)),
+			...rollPick(r)
+		];
+	}, (_k, [n, a, slot, salt]) => {
+		if (!PAIR_NUMBERS.includes(n) || !isInt(a, 2, n - 1) || n % a !== 0 || a * a > n || !goodPick(slot, salt)) return null;
+		const right = pairLabel(a, n / a);
+		return pick({
+			parts: ["Which is a factor pair of", `${n}?`],
+			spoken: `Which is a factor pair of ${n}?`,
+			fact: `${a} × ${n / a} = ${n}, so ${right} are a factor pair of ${n}`
+		}, right, wrongPairs(n, a), {
+			slot,
+			salt
 		});
 	}),
 	oneKey("factor:count", "Counting the factors of a number", factorTags, 1, (_k, r) => [pickOne(r, COUNT_NUMBERS)], (_k, [n]) => {
@@ -6727,12 +6842,7 @@ const PLACE_SKILL_KEYS = {
 		"times:powers",
 		"times:div-tens"
 	],
-	"factor-pairs": [
-		"factor:pair",
-		"factor:count",
-		"factor:largest",
-		"factor:common"
-	],
+	"factor-pairs": ["factor:pair", "factor:pick"],
 	"squares-cubes": [
 		"square:of",
 		"cube:of",
@@ -6999,7 +7109,7 @@ const parseRounding = (parts) => {
 const ROUNDING_SKILL_KEYS = {
 	"round-10-100": Object.keys(ROUNDING_FAMILIES).filter((k) => /^round:(10|100):/.test(k)),
 	"round-1000": Object.keys(ROUNDING_FAMILIES).filter((k) => k.startsWith("round:1000:")),
-	"round-big": Object.keys(ROUNDING_FAMILIES).filter((k) => /^round:(10000|100000):(5digit|6digit|halfway)$|^round:whole:|^round:tenth:/.test(k)),
+	"round-big": Object.keys(ROUNDING_FAMILIES).filter((k) => /^round:whole:|^round:tenth:/.test(k)),
 	"round-million": Object.keys(ROUNDING_FAMILIES).filter((k) => /^round:1000000:|^round:100000:7digit$|^round:hundredth:/.test(k))
 };
 //#endregion
@@ -7093,7 +7203,12 @@ const divKeys$1 = (divisors) => Object.values(BANDED_PACKS.division.families).fl
 	const m = /^div:(\d+)\/(\d+)$/.exec(k);
 	return m && divisors.includes(Number(m[2]));
 });
-/** Times tables, one skill per campaign step. The multiplication and division facts of a table go together. */
+/**
+* Times tables, one skill per table (James, 19 Nov 2026: "split them apart"), in the order of `CAMPAIGN_STEPS`: ×2, ×5, ×10,
+* ×3, ×4, ×8, ×6, ×9, ×7, ×11, ×12. The multiplication and division facts of a table go together. A fact like 3 × 4 sits in
+* the first table that uses it, so a later table is only its new facts. `tablesStep` says which campaign step a table came
+* from: jumping ahead, Training and missing-factor questions still go by the old steps.
+*/
 function tablesSkills() {
 	const tags = [
 		"MS.Y2.NUM.OP.P9",
@@ -7103,20 +7218,25 @@ function tablesSkills() {
 		"MS.Y5.NUM.OP.P2"
 	];
 	const seen = new Set();
-	return CAMPAIGN_STEPS.map((step, i) => {
+	return CAMPAIGN_STEPS.flatMap((step, i) => {
 		const upTo = step.upTo ?? 12;
-		const mul = [...factsIn(step.add)].filter((k) => parseFactKey(k).b <= upTo && !seen.has(k));
-		mul.forEach((k) => seen.add(k));
-		const div = divKeys$1(step.add).filter((k) => !seen.has(k));
-		div.forEach((k) => seen.add(k));
-		return {
-			id: `tables-${step.add.join("-")}`,
-			label: "Times tables: " + step.add.map((t) => `×${t}`).join(", "),
-			stage: "times-tables",
-			curriculumTags: [tags[i] ?? tags[tags.length - 1]],
-			keys: [...mul, ...div],
-			built: true
-		};
+		return step.add.map((table, j) => {
+			const mul = [...factsIn([table])].filter((k) => parseFactKey(k).b <= upTo && !seen.has(k));
+			mul.forEach((k) => seen.add(k));
+			const div = divKeys$1([table]).filter((k) => !seen.has(k));
+			div.forEach((k) => seen.add(k));
+			return {
+				id: `tables-${table}`,
+				label: `Times tables: ×${table}`,
+				stage: "times-tables",
+				curriculumTags: [tags[i] ?? tags[tags.length - 1]],
+				keys: [...mul, ...div],
+				built: true,
+				table,
+				tablesStep: i,
+				...j > 0 ? { inWarmUp: false } : {}
+			};
+		});
 	});
 }
 /** A skill made of generated question types (kept per type, not per fact). */
@@ -7129,6 +7249,7 @@ const generated = (id, label, stage, keys, ...curriculumTags) => ({
 	built: true
 });
 const tables = tablesSkills();
+const tablesOfStep = (step) => tables.filter((s) => s.tablesStep === step);
 /** Easiest first. Table skills are in the order of `CAMPAIGN_STEPS`. */
 const LADDER = [
 	{
@@ -7152,11 +7273,19 @@ const LADDER = [
 		inAuto: false
 	},
 	{
+		id: "facts-5",
+		label: "Number facts to 5",
+		stage: "early-facts",
+		curriculumTags: ["MS.Y1.NUM.OP.P1"],
+		keys: addKeys((s) => s <= 5),
+		built: true
+	},
+	{
 		id: "facts-10",
 		label: "Number facts to 10",
 		stage: "early-facts",
 		curriculumTags: ["MS.Y1.NUM.OP.P1"],
-		keys: [...earlyKeys("bond10"), ...addKeys((s) => s <= 10)],
+		keys: [...earlyKeys("bond10"), ...addKeys((s) => s > 5 && s <= 10)],
 		built: true
 	},
 	{
@@ -7443,22 +7572,22 @@ const LADDER = [
 		inWarmUp: false,
 		inAuto: false
 	},
-	tables[0],
+	...tablesOfStep(0),
 	generated("bonds-100", "Pairs that make 100", "place-value", GENERATED_SKILL_KEYS["bonds-100"], "MS.Y3.NUM.OP.P1"),
-	tables[1],
+	...tablesOfStep(1),
 	generated("round-10-100", "Rounding to the nearest 10 and 100", "rounding", GENERATED_SKILL_KEYS["round-10-100"], "MS.Y3.NUM.NS.P5"),
 	generated("bonds-1000", "Hundreds that make 1000", "place-value", GENERATED_SKILL_KEYS["bonds-1000"]),
 	generated("unit-fraction-of", "A fraction of an amount (⅓ of 15)", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["unit-fraction-of"], "MS.Y3.NUM.RN.P7"),
 	generated("fraction-bonds", "Fractions that make 1 (⅜ + ⅝)", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["fraction-bonds"], "MS.Y3.NUM.RN.P6", "MS.Y3.NUM.RN.K6"),
-	tables[2],
-	tables[3],
+	...tablesOfStep(2),
+	...tablesOfStep(3),
 	generated("times-tens", "Times with tens and hundreds (30 × 4)", "place-value", GENERATED_SKILL_KEYS["times-tens"], "MS.Y4.NUM.OP.P3"),
 	generated("tenths", "Tenths and decimals of a half", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["tenths"], "MS.Y4.NUM.RN.P3", "MS.Y4.NUM.RN.P5"),
 	generated("add-tenths", "Adding and taking away tenths", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["add-tenths"], "MS.Y4.NUM.RN.P10"),
 	generated("round-1000", "Rounding to the nearest 1000", "rounding", GENERATED_SKILL_KEYS["round-1000"], "MS.Y4.NUM.NS.K4"),
-	tables[4],
+	...tablesOfStep(4),
 	generated("factor-pairs", "Factor pairs", "place-value", GENERATED_SKILL_KEYS["factor-pairs"], "MS.Y5.NUM.NS.P2"),
-	generated("round-big", "Rounding bigger numbers and decimals", "rounding", GENERATED_SKILL_KEYS["round-big"], "MS.Y5.NUM.NS.P3", "MS.Y5.NUM.NS.P4"),
+	generated("round-big", "Rounding decimals", "rounding", GENERATED_SKILL_KEYS["round-big"], "MS.Y5.NUM.NS.P3", "MS.Y5.NUM.NS.P4"),
 	generated("decimal-equivalents", "Fractions as decimals", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["decimal-equivalents"], "MS.Y5.NUM.RN.P4"),
 	generated("decimal-bonds", "Decimals that make 1 and 10 (0.35 + 0.65)", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["decimal-bonds"], "MS.Y4.NUM.RN.P10", "MS.Y5.NUM.RN.P12"),
 	generated("percent-basic", "10%, 25% and 50%", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["percent-basic"], "MS.Y5.NUM.RN.P5", "MS.Y5.NUM.RN.P15"),
@@ -7466,12 +7595,62 @@ const LADDER = [
 	generated("times-decimals", "Times 10 and 100 with decimals", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["times-decimals"], "MS.Y5.NUM.RN.P7"),
 	generated("equivalent-fractions", "Equivalent fractions and simplifying", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["equivalent-fractions"], "MS.Y5.NUM.RN.P9", "MS.Y6.NUM.RN.P6"),
 	generated("squares-cubes", "Square and cube numbers", "place-value", GENERATED_SKILL_KEYS["squares-cubes"], "MS.Y6.NUM.NS.P6"),
-	generated("round-million", "Rounding to the nearest million", "rounding", GENERATED_SKILL_KEYS["round-million"], "MS.Y6.NUM.NS.P3", "MS.Y6.NUM.NS.P4"),
 	generated("fdp-equivalents", "Fractions, decimals and percentages", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["fdp-equivalents"], "MS.Y6.NUM.RN.P3", "MS.Y6.NUM.RN.P4"),
 	generated("percent-of", "Percentages of an amount", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["percent-of"], "MS.Y6.NUM.RN.P13", "MS.Y6.NUM.RN.P14"),
 	generated("whole-from-fraction", "Finding the whole from a fraction", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["whole-from-fraction"], "MS.Y6.NUM.RN.P12"),
 	generated("bedmas", "Order of operations", "order-of-operations", GENERATED_SKILL_KEYS.bedmas, "MS.Y6.NUM.OP.P1")
 ];
+/**
+* Skills that were renamed or taken out (19 Nov 2026: the times-table steps split into one table each, and rounding to a million
+* dropped). Teachers' focuses, placements and furthest places saved before then still name the old ids, so they are read as the
+* new ones. An old id with no new ones (round-million) is just dropped from a focus.
+*/
+const FORMER_SKILLS = {
+	"tables-2-5-10": {
+		label: "Times tables: ×2, ×5, ×10",
+		now: [
+			"tables-2",
+			"tables-5",
+			"tables-10"
+		]
+	},
+	"tables-3-4-8": {
+		label: "Times tables: ×3, ×4, ×8",
+		now: [
+			"tables-3",
+			"tables-4",
+			"tables-8"
+		]
+	},
+	"tables-6-9": {
+		label: "Times tables: ×6, ×9",
+		now: ["tables-6", "tables-9"]
+	},
+	"tables-11-12": {
+		label: "Times tables: ×11, ×12",
+		now: ["tables-11", "tables-12"]
+	},
+	"round-million": {
+		label: "Rounding to the nearest million",
+		now: []
+	}
+};
+/** Skill ids as they are now: an old id becomes the skills it was split into. Order kept, no repeats. */
+function currentSkillIds(ids) {
+	return [...new Set(ids.flatMap((id) => Object.hasOwn(FORMER_SKILLS, id) ? FORMER_SKILLS[id].now : [id]))];
+}
+/**
+* A saved place (placement or furthest) as a skill id now: the first table an old step was split into, or for a dropped skill
+* the one that came after it, so nobody's place moves back.
+*/
+function currentPlaceId(id) {
+	if (id === "round-million") return "fdp-equivalents";
+	return Object.hasOwn(FORMER_SKILLS, id) ? FORMER_SKILLS[id].now[0] : id;
+}
+/** The old ids a skill used to be part of ('tables-6' → ['tables-6-9']), so answers still count for a focus saved with them. */
+function formerIdsOf(id) {
+	return Object.entries(FORMER_SKILLS).filter(([, f]) => f.now.includes(id)).map(([old]) => old);
+}
 /** The skill's keys once switched-off tables are taken out. */
 function activeKeys(skill, enabledTables, division = true) {
 	const on = new Set(enabledTables);
@@ -7491,11 +7670,11 @@ function activeKeys(skill, enabledTables, division = true) {
 */
 function tablesJumpFloor(byKey, enabled = TABLES) {
 	let jump = 0;
-	LADDER.forEach((skill, index) => {
-		if (!skill.built || skill.stage !== "times-tables") return;
-		const times = activeKeys(skill, enabled, false).filter((k) => k.startsWith("mul:"));
+	CAMPAIGN_STEPS.forEach((_, step) => {
+		const skills = LADDER.filter((s) => s.built && s.tablesStep === step);
+		const times = skills.flatMap((s) => activeKeys(s, enabled, false)).filter((k) => k.startsWith("mul:"));
 		if (times.length === 0) return;
-		if (times.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / times.length >= .7) jump = index + 1;
+		if (times.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / times.length >= .7) jump = Math.max(jump, ...skills.map((s) => LADDER.indexOf(s) + 1));
 	});
 	return jump;
 }
@@ -7587,7 +7766,7 @@ function autoPools(progress, opts = {}) {
 }
 /** The built ladder skills a focus really names, in ladder order. Unknown or not-yet-built names are ignored. */
 function focusSkills(spec) {
-	const wanted = new Set(spec.skills);
+	const wanted = new Set(currentSkillIds(spec.skills));
 	return LADDER.filter((s) => s.built && wanted.has(s.id));
 }
 /**
@@ -7712,7 +7891,10 @@ var AutoPack = class {
 		const picked = pickFromPools(pools, ctx, new Map(this.stats().map((s) => [s.key, s])), this.memory, this.random, weight);
 		if (!picked) return null;
 		const pack = this.ownerOf(picked.key);
-		const firstTables = progress.skills.findIndex((p) => p.skill.stage === "times-tables");
+		let firstTables = -1;
+		progress.skills.forEach((p, i) => {
+			if (p.skill.tablesStep === 0) firstTables = i;
+		});
 		const at = focusSpec ? LADDER.indexOf(focusSkills(focusSpec)[0]) : progress.skills.findIndex((p) => p.status === "current");
 		const missingFactor = focusSpec && ctx.missingFactor !== void 0 ? ctx.missingFactor : at < 0 || at > firstTables;
 		return {
@@ -7738,7 +7920,12 @@ const NO_LADDER = {
 	furthest: null
 };
 const ID = /^[a-z0-9-]{1,40}$/;
-const skillId = (v) => typeof v === "string" && ID.test(v) && LADDER.some((s) => s.id === v && s.built) ? v : null;
+/** A saved skill id, read as it is now (a place saved on "tables-6-9" is on "tables-6"). Null if it isn't a built skill. */
+const skillId = (v) => {
+	if (typeof v !== "string" || !ID.test(v)) return null;
+	const id = currentPlaceId(v);
+	return LADDER.some((s) => s.id === id && s.built) ? id : null;
+};
 function parseLadderInfo(raw) {
 	if (!raw || typeof raw !== "object") return NO_LADDER;
 	const r = raw;
@@ -7784,7 +7971,8 @@ const SOURCES = [
 	"auto"
 ];
 const SKILL_ID = /^[a-z0-9-]{1,40}$/;
-const cleanSkills = (raw) => Array.isArray(raw) ? [...new Set(raw.filter((s) => typeof s === "string" && SKILL_ID.test(s)))].slice(0, 12) : [];
+/** A focus's skills, with ids saved before a skill was split read as the skills it became ("tables-6-9" → ×6 and ×9). */
+const cleanSkills = (raw) => Array.isArray(raw) ? currentSkillIds(raw.filter((s) => typeof s === "string" && SKILL_ID.test(s))).slice(0, 12) : [];
 /** Reads what the server sent. Anything odd counts as auto: nobody gets a strange focus by accident. */
 function parseFocus(raw) {
 	if (!raw || typeof raw !== "object") return AUTO_FOCUS;
@@ -8012,6 +8200,23 @@ function parseMathsSwitch(value) {
 	return MATHS_SWITCHES.includes(value) ? value : "off";
 }
 //#endregion
+//#region shared/unlimited.ts
+/** Today's date in New Zealand, 'YYYY-MM-DD'. */
+const nzToday = (now = new Date()) => new Intl.DateTimeFormat("en-CA", {
+	timeZone: "Pacific/Auckland",
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit"
+}).format(now);
+/**
+* Is this game's switch on today? `days` is the settings row's `unlimited_days` ({ game id: NZ date }). Anything that
+* isn't today's date (missing, an old day, junk) is off.
+*/
+function isUnlimitedFor(days, game, now = new Date()) {
+	if (!days || typeof days !== "object") return false;
+	return days[game] === nzToday(now);
+}
+//#endregion
 //#region shared/maths/focusResults.ts
 /**
 * What the game servers tell the database about answers given while a maths focus ran (docs/MATHS-FOCUS-PLAN.md, "Stage F.8
@@ -8023,7 +8228,11 @@ let owners = null;
 function skillsOfKey(key) {
 	if (!owners) {
 		owners = new Map();
-		for (const skill of LADDER) for (const k of skill.keys) owners.set(k, [...owners.get(k) ?? [], skill.id]);
+		for (const skill of LADDER) for (const k of skill.keys) owners.set(k, [
+			...owners.get(k) ?? [],
+			skill.id,
+			...formerIdsOf(skill.id)
+		]);
 	}
 	return owners.get(key) ?? [];
 }
@@ -8212,26 +8421,27 @@ const STOP_BONUS_STEPS = {
 /**
 * Timed hazards. Everything is worked out from the step number, so the same run always meets the same hazard
 * at the same moment (no randomness, nothing to remember). Times are in steps (60 a second).
+* Made gentler on 18 Nov 2026 (James: kids found timing the geysers too hard): longer warnings, trapdoors and crane arms open longer.
 */
 const TIMED = {
 	/** A geyser puffs every `period` steps; for the first `warn` it only steams (a warning), then for `active` it throws the marble up. */
 	geyser: {
 		period: 180,
-		warn: 15,
+		warn: 30,
 		active: 30,
-		boost: 1.2
+		boost: 1
 	},
 	/** A trapdoor is solid for `solid` steps out of every `period`, then drops away. It flickers for the last `warn` steps before. */
 	trapdoor: {
 		period: 240,
-		solid: 170,
-		warn: 25
+		solid: 210,
+		warn: 45
 	},
 	/** A gate (a sweeping arm) is open for `open` steps out of every `period`, then shuts. */
 	gate: {
 		period: 210,
-		open: 120,
-		warn: 25
+		open: 150,
+		warn: 40
 	}
 };
 //#endregion
@@ -8513,8 +8723,8 @@ const NZ_COURSE_DEFS = [
 		],
 		medals: {
 			gold: 22,
-			silver: 33,
-			bronze: 51,
+			silver: 37,
+			bronze: 77,
 			goldMaths: 18
 		},
 		hardSeconds: 44,
@@ -8582,185 +8792,187 @@ const NZ_COURSE_DEFS = [
 		id: "crown-range",
 		name: "Crown Range Zig-Zag",
 		rows: [
-			"..............................................",
-			"..=====================.......................",
-			"..=##############>>#######....................",
-			"..=#######b######>>#######....................",
-			"..=s#############>>#######....................",
-			"..=###########b##>>#######....................",
-			"..=##############>>#######....................",
-			"..===================#####....................",
-			".#####<<###B#####mm#######....................",
-			".#####<<###B#####mm#######....................",
-			".#####<<###======mm#######....................",
-			".#####<<###A#####mm#######....................",
-			".#####<<###A#####mm#######....................",
-			".#####================........................",
-			".#######k#######>>cc#####.....................",
-			".#######k####b##>>cc#####.....................",
-			".#######k#######>>cc#####.....................",
-			".#######kb######>>cc#####.....................",
-			".#######k#######>>cc#####.....................",
-			".....===============#####=================....",
-			"....................#######mm#####C###>>#####.",
-			"....................#######mm#####C###>>#####.",
-			"....................#######mm======###>>#####.",
-			"....................#######mm#####D###>>#####.",
-			"....................#######mm#####D###>>#####.",
-			"........................================#####.",
-			".....................#######<<####h##########.",
-			".....................#######<<##b#h##########.",
-			".....................#######<<####h##########.",
-			".....................#######<<####h#b########.",
-			".....................#######<<####h##########.",
-			"....=================#####===============.....",
-			".#####<<###F#####mm#######....................",
-			".#####<<###F#####mm#######....................",
-			".#####<<###======mm#######....................",
-			".#####<<###E#####mm#######....................",
-			".#####<<###E#####mm#######....................",
-			".kkkkk================........................",
-			".###########>>fff=............................",
-			".###########>>fff=............................",
-			".###########>>fff=............................",
-			".###########>>fff=............................",
-			".###########>>fff=............................",
-			".....=============............................",
-			".............................................."
+			"................................................",
+			"...=========================....................",
+			"...=##############>>#######=....................",
+			"...=#######b######>>#######=....................",
+			"...=s#############>>#######=....................",
+			"...=###########b##>>#######=....................",
+			"...=##############>>#######=....................",
+			".=====================#####=....................",
+			".=#####<<###B#####mm#######=....................",
+			".=#####<<###B#####mm#######=....................",
+			".=#####<<###======mm#######=....................",
+			".=#####<<###A#####mm#######=....................",
+			".=#####<<###A#####mm#######=....................",
+			".=#####=====================....................",
+			".=#######k#######>>cc#####=.....................",
+			".=#######k####b##>>cc#####=.....................",
+			".=#######k#######>>cc#####=.....................",
+			".=#######kb######>>cc#####=.....................",
+			".=#######k#######>>cc#####=.....................",
+			".====================#####=====================.",
+			"....................=#######mm#####C###>>#####=.",
+			"....................=#######mm#####C###>>#####=.",
+			"....................=#######mm======###>>#####=.",
+			"....................=#######mm#####D###>>#####=.",
+			"....................=#######mm#####D###>>#####=.",
+			"....................=====================#####=.",
+			".....................=#######<<####h##########=.",
+			".....................=#######<<##b#h##########=.",
+			".....................=#######<<####h##########=.",
+			".....................=#######<<####h#b########=.",
+			".....................=#######<<####h##########=.",
+			".=====================#####====================.",
+			".=#####<<###F#####mm#######=....................",
+			".=#####<<###F#####mm#######=....................",
+			".=#####<<###======mm#######=....................",
+			".=#####<<###E#####mm#######=....................",
+			".=#####<<###E#####mm#######=....................",
+			".=kkkkk=====================....................",
+			".=###########>>fff=.............................",
+			".=###########>>fff=.............................",
+			".=###########>>fff=.............................",
+			".=###########>>fff=.............................",
+			".=###########>>fff=.............................",
+			".==================.............................",
+			"................................................"
 		],
 		heights: [
-			"0000000000000000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000",
-			"000ooooooooooooooonmmmmmmm00000000000000000000",
-			"000ooooooooooooooonmmmmmmm00000000000000000000",
-			"000ooooooooooooooonmmmmmmm00000000000000000000",
-			"000ooooooooooooooonmmmmmmm00000000000000000000",
-			"000ooooooooooooooonmmmmmmm00000000000000000000",
-			"000000000000000000000mmmmm00000000000000000000",
-			"0kkkkklmmmmmmmmmmmmmmmmmmm00000000000000000000",
-			"0kkkkklmmmmmmmmmmmmmmmmmmm00000000000000000000",
-			"0kkkkklmmmm000000mmmmmmmmm00000000000000000000",
-			"0kkkkklmmmmmmmmmmmmmmmmmmm00000000000000000000",
-			"0kkkkklmmmmmmmmmmmmmmmmmmm00000000000000000000",
-			"0kkkkk0000000000000000000000000000000000000000",
-			"0kkkkkkkkkkkkkkkkjiiiiiii000000000000000000000",
-			"0kkkkkkkkkkkkkkkkjiiiiiii000000000000000000000",
-			"0kkkkkkkkkkkkkkkkjiiiiiii000000000000000000000",
-			"0kkkkkkkkkkkkkkkkjiiiiiii000000000000000000000",
-			"0kkkkkkkkkkkkkkkkjiiiiiii000000000000000000000",
-			"00000000000000000000iiiii000000000000000000000",
-			"00000000000000000000iiiiiiiiiiiiiiiiiiihggggg0",
-			"00000000000000000000iiiiiiiiiiiiiiiiiiihggggg0",
-			"00000000000000000000iiiiiiiii000000iiiihggggg0",
-			"00000000000000000000iiiiiiiiiiiiiiiiiiihggggg0",
-			"00000000000000000000iiiiiiiiiiiiiiiiiiihggggg0",
-			"0000000000000000000000000000000000000000ggggg0",
-			"000000000000000000000eeeeeeefgggggggggggggggg0",
-			"000000000000000000000eeeeeeefgggggggggggggggg0",
-			"000000000000000000000eeeeeeefgggggggggggggggg0",
-			"000000000000000000000eeeeeeefgggggggggggggggg0",
-			"000000000000000000000eeeeeeefgggggggggggggggg0",
-			"000000000000000000000eeeee00000000000000000000",
-			"0cccccdeeeeeeeeeeeeeeeeeee00000000000000000000",
-			"0cccccdeeeeeeeeeeeeeeeeeee00000000000000000000",
-			"0cccccdeeee000000eeeeeeeee00000000000000000000",
-			"0cccccdeeeeeeeeeeeeeeeeeee00000000000000000000",
-			"0cccccdeeeeeeeeeeeeeeeeeee00000000000000000000",
-			"0ccccc0000000000000000000000000000000000000000",
-			"0ccccccccccccbaaa00000000000000000000000000000",
-			"0ccccccccccccbaaa00000000000000000000000000000",
-			"0ccccccccccccbaaa00000000000000000000000000000",
-			"0ccccccccccccbaaa00000000000000000000000000000",
-			"0ccccccccccccbaaa00000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000"
+			"000000000000000000000000000000000000000000000000",
+			"000000000000000000000000000000000000000000000000",
+			"0000ooooooooooooooonmmmmmmm000000000000000000000",
+			"0000ooooooooooooooonmmmmmmm000000000000000000000",
+			"0000ooooooooooooooonmmmmmmm000000000000000000000",
+			"0000ooooooooooooooonmmmmmmm000000000000000000000",
+			"0000ooooooooooooooonmmmmmmm000000000000000000000",
+			"0000000000000000000000mmmmm000000000000000000000",
+			"00kkkkklmmmmmmmmmmmmmmmmmmm000000000000000000000",
+			"00kkkkklmmmmmmmmmmmmmmmmmmm000000000000000000000",
+			"00kkkkklmmmm000000mmmmmmmmm000000000000000000000",
+			"00kkkkklmmmmmmmmmmmmmmmmmmm000000000000000000000",
+			"00kkkkklmmmmmmmmmmmmmmmmmmm000000000000000000000",
+			"00kkkkk00000000000000000000000000000000000000000",
+			"00kkkkkkkkkkkkkkkkjiiiiiii0000000000000000000000",
+			"00kkkkkkkkkkkkkkkkjiiiiiii0000000000000000000000",
+			"00kkkkkkkkkkkkkkkkjiiiiiii0000000000000000000000",
+			"00kkkkkkkkkkkkkkkkjiiiiiii0000000000000000000000",
+			"00kkkkkkkkkkkkkkkkjiiiiiii0000000000000000000000",
+			"000000000000000000000iiiii0000000000000000000000",
+			"000000000000000000000iiiiiiiiiiiiiiiiiiihggggg00",
+			"000000000000000000000iiiiiiiiiiiiiiiiiiihggggg00",
+			"000000000000000000000iiiiiiiii000000iiiihggggg00",
+			"000000000000000000000iiiiiiiiiiiiiiiiiiihggggg00",
+			"000000000000000000000iiiiiiiiiiiiiiiiiiihggggg00",
+			"00000000000000000000000000000000000000000ggggg00",
+			"0000000000000000000000eeeeeeefgggggggggggggggg00",
+			"0000000000000000000000eeeeeeefgggggggggggggggg00",
+			"0000000000000000000000eeeeeeefgggggggggggggggg00",
+			"0000000000000000000000eeeeeeefgggggggggggggggg00",
+			"0000000000000000000000eeeeeeefgggggggggggggggg00",
+			"0000000000000000000000eeeee000000000000000000000",
+			"00cccccdeeeeeeeeeeeeeeeeeee000000000000000000000",
+			"00cccccdeeeeeeeeeeeeeeeeeee000000000000000000000",
+			"00cccccdeeee000000eeeeeeeee000000000000000000000",
+			"00cccccdeeeeeeeeeeeeeeeeeee000000000000000000000",
+			"00cccccdeeeeeeeeeeeeeeeeeee000000000000000000000",
+			"00ccccc00000000000000000000000000000000000000000",
+			"00ccccccccccccbaaa000000000000000000000000000000",
+			"00ccccccccccccbaaa000000000000000000000000000000",
+			"00ccccccccccccbaaa000000000000000000000000000000",
+			"00ccccccccccccbaaa000000000000000000000000000000",
+			"00ccccccccccccbaaa000000000000000000000000000000",
+			"000000000000000000000000000000000000000000000000",
+			"000000000000000000000000000000000000000000000000"
 		],
 		route: [
-			[5.5, 4.5],
 			[6.5, 4.5],
-			[9.5, 4.5],
-			[12.5, 4.5],
-			[15.5, 4.5],
+			[7.5, 4.5],
+			[10.5, 4.5],
+			[13.5, 4.5],
 			[16.5, 4.5],
 			[17.5, 4.5],
 			[18.5, 4.5],
-			[21.5, 4.5],
+			[19.5, 4.5],
 			[22.5, 4.5],
 			[23.5, 4.5],
-			[23.5, 9.5],
-			[23.5, 10.5],
-			[20.5, 10.5],
-			[17.5, 10.5],
-			[8.5, 10.5],
+			[24.5, 4.5],
+			[24.5, 9.5],
+			[24.5, 10.5],
+			[21.5, 10.5],
+			[18.5, 10.5],
+			[9.5, 10.5],
+			[9.5, 10.5],
 			[8.5, 10.5],
 			[7.5, 10.5],
-			[6.5, 10.5],
+			[5.5, 10.5],
 			[4.5, 10.5],
-			[3.5, 10.5],
-			[3.5, 15.5],
-			[3.5, 16.5],
-			[8.5, 16.5],
-			[11.5, 16.5],
-			[14.5, 16.5],
+			[4.5, 15.5],
+			[4.5, 16.5],
+			[9.5, 16.5],
+			[12.5, 16.5],
 			[15.5, 16.5],
 			[16.5, 16.5],
 			[17.5, 16.5],
-			[19.5, 16.5],
-			[21.5, 16.5],
+			[18.5, 16.5],
+			[20.5, 16.5],
 			[22.5, 16.5],
-			[22.5, 21.5],
-			[22.5, 22.5],
-			[25.5, 22.5],
-			[28.5, 22.5],
-			[37.5, 22.5],
-			[37.5, 22.5],
+			[23.5, 16.5],
+			[23.5, 21.5],
+			[23.5, 22.5],
+			[26.5, 22.5],
+			[29.5, 22.5],
+			[38.5, 22.5],
 			[38.5, 22.5],
 			[39.5, 22.5],
-			[41.5, 22.5],
+			[40.5, 22.5],
 			[42.5, 22.5],
-			[42.5, 27.5],
-			[42.5, 28.5],
-			[37.5, 28.5],
-			[34.5, 28.5],
+			[43.5, 22.5],
+			[43.5, 27.5],
+			[43.5, 28.5],
+			[38.5, 28.5],
+			[35.5, 28.5],
+			[32.5, 28.5],
 			[31.5, 28.5],
 			[30.5, 28.5],
 			[29.5, 28.5],
-			[28.5, 28.5],
+			[26.5, 28.5],
 			[25.5, 28.5],
 			[24.5, 28.5],
-			[23.5, 28.5],
-			[23.5, 33.5],
-			[23.5, 34.5],
-			[20.5, 34.5],
-			[17.5, 34.5],
-			[8.5, 34.5],
+			[24.5, 33.5],
+			[24.5, 34.5],
+			[21.5, 34.5],
+			[18.5, 34.5],
+			[9.5, 34.5],
+			[9.5, 34.5],
 			[8.5, 34.5],
 			[7.5, 34.5],
-			[6.5, 34.5],
+			[5.5, 34.5],
 			[4.5, 34.5],
-			[3.5, 34.5],
-			[3.5, 39.5],
-			[3.5, 40.5],
-			[8.5, 40.5],
-			[11.5, 40.5],
+			[4.5, 39.5],
+			[4.5, 40.5],
+			[9.5, 40.5],
 			[12.5, 40.5],
 			[13.5, 40.5],
-			[16.5, 40.5]
+			[14.5, 40.5],
+			[17.5, 40.5]
 		],
 		medals: {
 			gold: 52,
-			silver: 77,
-			bronze: 120,
+			silver: 88,
+			bronze: 182,
 			goldMaths: 47
 		},
 		hardSeconds: 104,
 		gates: [
 			{
-				sign: [19, 10],
+				sign: [20, 10],
 				after: 15,
 				tunnels: [{
 					door: 0,
 					cells: [
+						[17, 12],
+						[17, 11],
 						[16, 12],
 						[16, 11],
 						[15, 12],
@@ -8768,26 +8980,26 @@ const NZ_COURSE_DEFS = [
 						[14, 12],
 						[14, 11],
 						[13, 12],
-						[13, 11],
-						[12, 12],
-						[12, 11]
+						[13, 11]
 					],
 					route: [
-						[16.5, 12],
-						[14.5, 12],
-						[12.5, 12],
-						[11.5, 12]
+						[17.5, 12],
+						[15.5, 12],
+						[13.5, 12],
+						[12.5, 12]
 					],
 					dead: [
-						[16.5, 12],
-						[14.5, 12],
-						[12.5, 12],
-						[14.5, 12],
-						[16.5, 12]
+						[17.5, 12],
+						[15.5, 12],
+						[13.5, 12],
+						[15.5, 12],
+						[17.5, 12]
 					]
 				}, {
 					door: 1,
 					cells: [
+						[17, 9],
+						[17, 8],
 						[16, 9],
 						[16, 8],
 						[15, 9],
@@ -8795,33 +9007,29 @@ const NZ_COURSE_DEFS = [
 						[14, 9],
 						[14, 8],
 						[13, 9],
-						[13, 8],
-						[12, 9],
-						[12, 8]
+						[13, 8]
 					],
 					route: [
-						[16.5, 9],
-						[14.5, 9],
-						[12.5, 9],
-						[11.5, 9]
+						[17.5, 9],
+						[15.5, 9],
+						[13.5, 9],
+						[12.5, 9]
 					],
 					dead: [
-						[16.5, 9],
-						[14.5, 9],
-						[12.5, 9],
-						[14.5, 9],
-						[16.5, 9]
+						[17.5, 9],
+						[15.5, 9],
+						[13.5, 9],
+						[15.5, 9],
+						[17.5, 9]
 					]
 				}]
 			},
 			{
-				sign: [26, 22],
+				sign: [27, 22],
 				after: 36,
 				tunnels: [{
 					door: 2,
 					cells: [
-						[29, 20],
-						[29, 21],
 						[30, 20],
 						[30, 21],
 						[31, 20],
@@ -8829,26 +9037,26 @@ const NZ_COURSE_DEFS = [
 						[32, 20],
 						[32, 21],
 						[33, 20],
-						[33, 21]
+						[33, 21],
+						[34, 20],
+						[34, 21]
 					],
 					route: [
-						[29.5, 21],
-						[31.5, 21],
-						[33.5, 21],
-						[34.5, 21]
+						[30.5, 21],
+						[32.5, 21],
+						[34.5, 21],
+						[35.5, 21]
 					],
 					dead: [
-						[29.5, 21],
-						[31.5, 21],
-						[33.5, 21],
-						[31.5, 21],
-						[29.5, 21]
+						[30.5, 21],
+						[32.5, 21],
+						[34.5, 21],
+						[32.5, 21],
+						[30.5, 21]
 					]
 				}, {
 					door: 3,
 					cells: [
-						[29, 23],
-						[29, 24],
 						[30, 23],
 						[30, 24],
 						[31, 23],
@@ -8856,29 +9064,33 @@ const NZ_COURSE_DEFS = [
 						[32, 23],
 						[32, 24],
 						[33, 23],
-						[33, 24]
+						[33, 24],
+						[34, 23],
+						[34, 24]
 					],
 					route: [
-						[29.5, 24],
-						[31.5, 24],
-						[33.5, 24],
-						[34.5, 24]
+						[30.5, 24],
+						[32.5, 24],
+						[34.5, 24],
+						[35.5, 24]
 					],
 					dead: [
-						[29.5, 24],
-						[31.5, 24],
-						[33.5, 24],
-						[31.5, 24],
-						[29.5, 24]
+						[30.5, 24],
+						[32.5, 24],
+						[34.5, 24],
+						[32.5, 24],
+						[30.5, 24]
 					]
 				}]
 			},
 			{
-				sign: [19, 34],
+				sign: [20, 34],
 				after: 57,
 				tunnels: [{
 					door: 4,
 					cells: [
+						[17, 36],
+						[17, 35],
 						[16, 36],
 						[16, 35],
 						[15, 36],
@@ -8886,26 +9098,26 @@ const NZ_COURSE_DEFS = [
 						[14, 36],
 						[14, 35],
 						[13, 36],
-						[13, 35],
-						[12, 36],
-						[12, 35]
+						[13, 35]
 					],
 					route: [
-						[16.5, 36],
-						[14.5, 36],
-						[12.5, 36],
-						[11.5, 36]
+						[17.5, 36],
+						[15.5, 36],
+						[13.5, 36],
+						[12.5, 36]
 					],
 					dead: [
-						[16.5, 36],
-						[14.5, 36],
-						[12.5, 36],
-						[14.5, 36],
-						[16.5, 36]
+						[17.5, 36],
+						[15.5, 36],
+						[13.5, 36],
+						[15.5, 36],
+						[17.5, 36]
 					]
 				}, {
 					door: 5,
 					cells: [
+						[17, 33],
+						[17, 32],
 						[16, 33],
 						[16, 32],
 						[15, 33],
@@ -8913,22 +9125,20 @@ const NZ_COURSE_DEFS = [
 						[14, 33],
 						[14, 32],
 						[13, 33],
-						[13, 32],
-						[12, 33],
-						[12, 32]
+						[13, 32]
 					],
 					route: [
-						[16.5, 33],
-						[14.5, 33],
-						[12.5, 33],
-						[11.5, 33]
+						[17.5, 33],
+						[15.5, 33],
+						[13.5, 33],
+						[12.5, 33]
 					],
 					dead: [
-						[16.5, 33],
-						[14.5, 33],
-						[12.5, 33],
-						[14.5, 33],
-						[16.5, 33]
+						[17.5, 33],
+						[15.5, 33],
+						[13.5, 33],
+						[15.5, 33],
+						[17.5, 33]
 					]
 				}]
 			}
@@ -8940,26 +9150,26 @@ const NZ_COURSE_DEFS = [
 		rows: [
 			".........................................................................",
 			".===============================.........................................",
-			".=#####>>mmm##=...###>>cc######=.........................................",
-			".=#####>>mmm##=...###>>cc######=.........................................",
-			".=s####>>mmm##g...###>>cc######=.........................................",
-			".=#####>>mmm##=...###>>cc######=.........................................",
-			".=#####>>mmm##=...###>>cc######=.........................................",
+			".=#####>>mmm##g######>>cc######=.........................................",
+			".=#####>>mmm##g######>>cc######=.........................................",
+			".=s####>>mmm##g######>>cc######=.........................................",
+			".=#####>>mmm##g######>>cc######=.........................................",
+			".=#####>>mmm##g######>>cc######=.........................................",
 			".=========================#####=.........................................",
 			".........................=vvvvv=.........................................",
 			".........................=vvvvv=.........................................",
 			".........................=kkkkk=.........................................",
 			".........................=#####=.........................................",
 			".........................==ggg==.........................................",
-			".........................=.....=.........................................",
-			".........................=.....=.....................=============.......",
-			".........................=.....=.....................=#mm#####C##=.......",
+			".........................=#####=.........................................",
+			".........................=#####=.....................=============.......",
+			".........................=#####=.....................=#mm#####C##=.......",
 			".........................=#####=======================#mm#####C##=======.",
-			".........................=#######mm#####A##mh>>>##..###mm======###>>fff=.",
-			".........................=#######mm#####A##mh>>>##..###mm#####D###>>fff=.",
-			".........................=#######mm======##mh>>>g#..###mm#####D###>>fff=.",
-			".........................=#######mm#####B##mh>>>##..###mm======###>>fff=.",
-			".........................=#######mm#####B##mh>>>##..###mm#####E###>>fff=.",
+			".........................=#######mm#####A##mh>>>#######mm======###>>fff=.",
+			".........................=#######mm#####A##mh>>>#######mm#####D###>>fff=.",
+			".........................=#######mm======##mh>>>g######mm#####D###>>fff=.",
+			".........................=#######mm#####B##mh>>>#######mm======###>>fff=.",
+			".........................=#######mm#####B##mh>>>#######mm#####E###>>fff=.",
 			".........................=============================#mm#####E##=======.",
 			".....................................................=#mm======##=.......",
 			".....................................................=====....====.......",
@@ -8968,26 +9178,26 @@ const NZ_COURSE_DEFS = [
 		heights: [
 			"0000000000000000000000000000000000000000000000000000000000000000000000000",
 			"0000000000000000000000000000000000000000000000000000000000000000000000000",
-			"00ggggggfeeeee0000eeeedcccccccc000000000000000000000000000000000000000000",
-			"00ggggggfeeeee0000eeeedcccccccc000000000000000000000000000000000000000000",
-			"00ggggggfeeeeee000eeeedcccccccc000000000000000000000000000000000000000000",
-			"00ggggggfeeeee0000eeeedcccccccc000000000000000000000000000000000000000000",
-			"00ggggggfeeeee0000eeeedcccccccc000000000000000000000000000000000000000000",
+			"00ggggggfeeeeeeeeeeeeedcccccccc000000000000000000000000000000000000000000",
+			"00ggggggfeeeeeeeeeeeeedcccccccc000000000000000000000000000000000000000000",
+			"00ggggggfeeeeeeeeeeeeedcccccccc000000000000000000000000000000000000000000",
+			"00ggggggfeeeeeeeeeeeeedcccccccc000000000000000000000000000000000000000000",
+			"00ggggggfeeeeeeeeeeeeedcccccccc000000000000000000000000000000000000000000",
 			"00000000000000000000000000ccccc000000000000000000000000000000000000000000",
 			"00000000000000000000000000ccccc000000000000000000000000000000000000000000",
 			"00000000000000000000000000bbbbb000000000000000000000000000000000000000000",
 			"00000000000000000000000000aaaaa000000000000000000000000000000000000000000",
 			"00000000000000000000000000aaaaa000000000000000000000000000000000000000000",
 			"000000000000000000000000000aaa0000000000000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000000000007777777777700000000",
+			"00000000000000000000000000aaaaa000000000000000000000000000000000000000000",
+			"00000000000000000000000000aaaaa000000000000000000000000000000000000000000",
 			"00000000000000000000000000aaaaa000000000000000000000007777777777700000000",
-			"00000000000000000000000000aaaaaaaaaaaaaaaaaaaa987700777770000007777655500",
-			"00000000000000000000000000aaaaaaaaaaaaaaaaaaaa987700777777777777777655500",
-			"00000000000000000000000000aaaaaaaaa000000aaaaa987700777777777777777655500",
-			"00000000000000000000000000aaaaaaaaaaaaaaaaaaaa987700777770000007777655500",
-			"00000000000000000000000000aaaaaaaaaaaaaaaaaaaa987700777777777777777655500",
+			"00000000000000000000000000aaaaa000000000000000000000007777777777700000000",
+			"00000000000000000000000000aaaaaaaaaaaaaaaaaaaa987777777770000007777655500",
+			"00000000000000000000000000aaaaaaaaaaaaaaaaaaaa987777777777777777777655500",
+			"00000000000000000000000000aaaaaaaaa000000aaaaa987777777777777777777655500",
+			"00000000000000000000000000aaaaaaaaaaaaaaaaaaaa987777777770000007777655500",
+			"00000000000000000000000000aaaaaaaaaaaaaaaaaaaa987777777777777777777655500",
 			"0000000000000000000000000000000000000000000000000000007777777777700000000",
 			"0000000000000000000000000000000000000000000000000000007770000007700000000",
 			"0000000000000000000000000000000000000000000000000000000000000000000000000",
@@ -9001,8 +9211,6 @@ const NZ_COURSE_DEFS = [
 			[11.5, 4.5],
 			[13.5, 4.5],
 			[14.5, 4.5],
-			[15.5, 4.5],
-			[16.5, 4.5],
 			[17.5, 4.5],
 			[20.5, 4.5],
 			[21.5, 4.5],
@@ -9015,8 +9223,6 @@ const NZ_COURSE_DEFS = [
 			[28.5, 9.5],
 			[28.5, 11.5],
 			[28.5, 12.5],
-			[28.5, 13.5],
-			[28.5, 14.5],
 			[28.5, 15.5],
 			[28.5, 18.5],
 			[28.5, 19.5],
@@ -9028,8 +9234,7 @@ const NZ_COURSE_DEFS = [
 			[46.5, 19.5],
 			[47.5, 19.5],
 			[49.5, 19.5],
-			[50.5, 19.5],
-			[51.5, 19.5],
+			[52.5, 19.5],
 			[53.5, 19.5],
 			[56.5, 19.5],
 			[65.5, 19.5],
@@ -9040,14 +9245,14 @@ const NZ_COURSE_DEFS = [
 		],
 		medals: {
 			gold: 28,
-			silver: 43,
-			bronze: 64,
+			silver: 48,
+			bronze: 98,
 			goldMaths: 24
 		},
 		hardSeconds: 56,
 		gates: [{
 			sign: [32, 19],
-			after: 28,
+			after: 24,
 			tunnels: [{
 				door: 0,
 				cells: [
@@ -9105,7 +9310,7 @@ const NZ_COURSE_DEFS = [
 			}]
 		}, {
 			sign: [54, 19],
-			after: 38,
+			after: 33,
 			tunnels: [
 				{
 					door: 2,
@@ -9198,94 +9403,92 @@ const NZ_COURSE_DEFS = [
 		id: "glacier-run",
 		name: "Glacier Run",
 		rows: [
-			"..........................................................",
-			".===========================..............................",
-			".=iiiiiiiii>>>iiiij..k#####=..............................",
-			".=iiiiiiiii>>>iiiij..k#####=..............................",
-			".=siiiiiiii>>>iiiij..k#####=..............................",
-			".=iiiiiiiii>>>iiiij..k#####=..............................",
-			".=iiiiiiiii>>>iiiij..k#####=..............................",
-			".=====================iiiii=..............................",
-			".....................=#####=..............................",
-			".....................=mmmmm=..............................",
-			".....................=mmmmm=..............................",
-			".....................=##=##=..............................",
-			".....................=##=##=..............................",
-			".....................=##=##=..............................",
-			".....................=##=##=..............................",
-			".....................=##=##=..............................",
-			".....................=AA=BB=..............................",
-			".....................=#####=..............................",
-			".....................=#####=..............................",
-			".....................=iiiii=..............................",
-			".....................=vvvvv=..............................",
-			".....................=vvvvv=..............................",
-			".....................=vvvvv=..............................",
-			".....................=iiiii=..............................",
-			".....................=iiiii=..............................",
-			".....................=iiiii=..............................",
-			".....................=ccccc=..............................",
-			".....................=ccccc=..............................",
-			".....................=iiiii=..............................",
-			".....................=iiiii=..............................",
-			".....................=jjjjj=..............................",
-			".....................=.....=....=============.............",
-			".....................=.....=....=#mm#####C##=.............",
-			".....................=iiiii======#mm#####C##=============.",
-			".....................=#####ihi>>m#mm======##mm>>mmmmmmff=.",
-			".....................=#####ihi>>m#mm#####D##mm>>mmmmmmff=.",
-			".....................=#####ihi>>m#mm#####D##mm>>mmmmmmff=.",
-			".....................=#####ihi>>m#mm======##mm>>mmmmbmff=.",
-			".....................=#####ihi>>m#mm#####E##mm>>mmmmmmff=.",
-			".....................============#mm#####E##=============.",
-			"................................=#mm======##=.............",
-			"................................=====....====.............",
-			".........................................................."
+			".........................................................",
+			".==========================..............................",
+			".=iiiiiiiii>>>iiiij.k#####=..............................",
+			".=iiiiiiiii>>>iiiij.k#####=..............................",
+			".=siiiiiiii>>>iiiij.k#####=..............................",
+			".=iiiiiiiii>>>iiiij.k#####=..............................",
+			".=iiiiiiiii>>>iiiij.k#####=..............................",
+			".====================iiiii=..............................",
+			"....................=#####=..............................",
+			"....................=mmmmm=..............................",
+			"....................=mmmmm=..............................",
+			"....................=##=##=..............................",
+			"....................=##=##=..............................",
+			"....................=##=##=..............................",
+			"....................=##=##=..............................",
+			"....................=##=##=..............................",
+			"....................=AA=BB=..............................",
+			"....................=#####=..............................",
+			"....................=#####=..............................",
+			"....................=iiiii=..............................",
+			"....................=vvvvv=..............................",
+			"....................=vvvvv=..............................",
+			"....................=vvvvv=..............................",
+			"....................=iiiii=..............................",
+			"....................=iiiii=..............................",
+			"....................=iiiii=..............................",
+			"....................=ccccc=..............................",
+			"....................=ccccc=..............................",
+			"....................=iiiii=..............................",
+			"....................=iiiii=..............................",
+			"....................=jjjjj=....=============.............",
+			"....................=.....=....=#mm#####C##=.............",
+			"....................=iiiii======#mm#####C##=============.",
+			"....................=#####ihi>>m#mm======##mm>>mmmmmmff=.",
+			"....................=#####ihi>>m#mm#####D##mm>>mmmmmmff=.",
+			"....................=#####ihi>>m#mm#####D##mm>>mmmmmmff=.",
+			"....................=#####ihi>>m#mm======##mm>>mmmmbmff=.",
+			"....................=#####ihi>>m#mm#####E##mm>>mmmmmmff=.",
+			"....................============#mm#####E##=============.",
+			"...............................=#mm======##=.............",
+			"...............................=====....====.............",
+			"........................................................."
 		],
 		heights: [
-			"0000000000000000000000000000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000000000000000",
-			"00qqqqqqqqqqponnnnn00nnnnnn0000000000000000000000000000000",
-			"00qqqqqqqqqqponnnnn00nnnnnn0000000000000000000000000000000",
-			"00qqqqqqqqqqponnnnn00nnnnnn0000000000000000000000000000000",
-			"00qqqqqqqqqqponnnnn00nnnnnn0000000000000000000000000000000",
-			"00qqqqqqqqqqponnnnn00nnnnnn0000000000000000000000000000000",
-			"0000000000000000000000nnnnn0000000000000000000000000000000",
-			"0000000000000000000000nnnnn0000000000000000000000000000000",
-			"0000000000000000000000nnnnn0000000000000000000000000000000",
-			"0000000000000000000000nnnnn0000000000000000000000000000000",
-			"0000000000000000000000nn0nn0000000000000000000000000000000",
-			"0000000000000000000000nn0nn0000000000000000000000000000000",
-			"0000000000000000000000nn0nn0000000000000000000000000000000",
-			"0000000000000000000000nn0nn0000000000000000000000000000000",
-			"0000000000000000000000nn0nn0000000000000000000000000000000",
-			"0000000000000000000000nn0nn0000000000000000000000000000000",
-			"0000000000000000000000nnnnn0000000000000000000000000000000",
-			"0000000000000000000000nnnnn0000000000000000000000000000000",
-			"0000000000000000000000nnnnn0000000000000000000000000000000",
-			"0000000000000000000000nnnnn0000000000000000000000000000000",
-			"0000000000000000000000mmmmm0000000000000000000000000000000",
-			"0000000000000000000000lllll0000000000000000000000000000000",
-			"0000000000000000000000kkkkk0000000000000000000000000000000",
-			"0000000000000000000000kkkkk0000000000000000000000000000000",
-			"0000000000000000000000kkkkk0000000000000000000000000000000",
-			"0000000000000000000000kkkkk0000000000000000000000000000000",
-			"0000000000000000000000kkkkk0000000000000000000000000000000",
-			"0000000000000000000000kkkkk0000000000000000000000000000000",
-			"0000000000000000000000kkkkk0000000000000000000000000000000",
-			"0000000000000000000000kkkkk0000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000000000000000",
-			"000000000000000000000000000000000iiiiiiiiiii00000000000000",
-			"0000000000000000000000kkkkk000000iiiiiiiiiii00000000000000",
-			"0000000000000000000000kkkkkkkkkjiiii000000iiiiihgggggggg00",
-			"0000000000000000000000kkkkkkkkkjiiiiiiiiiiiiiiihgggggggg00",
-			"0000000000000000000000kkkkkkkkkjiiiiiiiiiiiiiiihgggggggg00",
-			"0000000000000000000000kkkkkkkkkjiiii000000iiiiihgggggggg00",
-			"0000000000000000000000kkkkkkkkkjiiiiiiiiiiiiiiihgggggggg00",
-			"000000000000000000000000000000000iiiiiiiiiii00000000000000",
-			"000000000000000000000000000000000iii000000ii00000000000000",
-			"0000000000000000000000000000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000000000000000"
+			"000000000000000000000000000000000000000000000000000000000",
+			"000000000000000000000000000000000000000000000000000000000",
+			"00qqqqqqqqqqponnnnn0nnnnnn0000000000000000000000000000000",
+			"00qqqqqqqqqqponnnnn0nnnnnn0000000000000000000000000000000",
+			"00qqqqqqqqqqponnnnn0nnnnnn0000000000000000000000000000000",
+			"00qqqqqqqqqqponnnnn0nnnnnn0000000000000000000000000000000",
+			"00qqqqqqqqqqponnnnn0nnnnnn0000000000000000000000000000000",
+			"000000000000000000000nnnnn0000000000000000000000000000000",
+			"000000000000000000000nnnnn0000000000000000000000000000000",
+			"000000000000000000000nnnnn0000000000000000000000000000000",
+			"000000000000000000000nnnnn0000000000000000000000000000000",
+			"000000000000000000000nn0nn0000000000000000000000000000000",
+			"000000000000000000000nn0nn0000000000000000000000000000000",
+			"000000000000000000000nn0nn0000000000000000000000000000000",
+			"000000000000000000000nn0nn0000000000000000000000000000000",
+			"000000000000000000000nn0nn0000000000000000000000000000000",
+			"000000000000000000000nn0nn0000000000000000000000000000000",
+			"000000000000000000000nnnnn0000000000000000000000000000000",
+			"000000000000000000000nnnnn0000000000000000000000000000000",
+			"000000000000000000000nnnnn0000000000000000000000000000000",
+			"000000000000000000000nnnnn0000000000000000000000000000000",
+			"000000000000000000000mmmmm0000000000000000000000000000000",
+			"000000000000000000000lllll0000000000000000000000000000000",
+			"000000000000000000000kkkkk0000000000000000000000000000000",
+			"000000000000000000000kkkkk0000000000000000000000000000000",
+			"000000000000000000000kkkkk0000000000000000000000000000000",
+			"000000000000000000000kkkkk0000000000000000000000000000000",
+			"000000000000000000000kkkkk0000000000000000000000000000000",
+			"000000000000000000000kkkkk0000000000000000000000000000000",
+			"000000000000000000000kkkkk0000000000000000000000000000000",
+			"000000000000000000000kkkkk0000000000000000000000000000000",
+			"00000000000000000000000000000000iiiiiiiiiii00000000000000",
+			"000000000000000000000kkkkk000000iiiiiiiiiii00000000000000",
+			"000000000000000000000kkkkkkkkkjiiii000000iiiiihgggggggg00",
+			"000000000000000000000kkkkkkkkkjiiiiiiiiiiiiiiihgggggggg00",
+			"000000000000000000000kkkkkkkkkjiiiiiiiiiiiiiiihgggggggg00",
+			"000000000000000000000kkkkkkkkkjiiii000000iiiiihgggggggg00",
+			"000000000000000000000kkkkkkkkkjiiiiiiiiiiiiiiihgggggggg00",
+			"00000000000000000000000000000000iiiiiiiiiii00000000000000",
+			"00000000000000000000000000000000iii000000ii00000000000000",
+			"000000000000000000000000000000000000000000000000000000000",
+			"000000000000000000000000000000000000000000000000000000000"
 		],
 		route: [
 			[4.5, 4.5],
@@ -9299,217 +9502,215 @@ const NZ_COURSE_DEFS = [
 			[17.5, 4.5],
 			[18.5, 4.5],
 			[19.5, 4.5],
-			[20.5, 4.5],
+			[22.5, 4.5],
 			[23.5, 4.5],
-			[24.5, 4.5],
-			[24.5, 7.5],
-			[24.5, 10.5],
-			[24.5, 19.5],
-			[24.5, 19.5],
-			[24.5, 20.5],
-			[24.5, 21.5],
-			[24.5, 22.5],
-			[24.5, 25.5],
-			[24.5, 27.5],
-			[24.5, 29.5],
-			[24.5, 30.5],
-			[24.5, 31.5],
-			[24.5, 32.5],
-			[24.5, 35.5],
-			[24.5, 36.5],
-			[29.5, 36.5],
-			[30.5, 36.5],
-			[31.5, 36.5],
-			[32.5, 36.5],
-			[35.5, 36.5],
-			[44.5, 36.5],
-			[45.5, 36.5],
-			[46.5, 36.5],
-			[47.5, 36.5],
-			[50.5, 36.5],
-			[53.5, 36.5],
-			[55.5, 36.5]
+			[23.5, 7.5],
+			[23.5, 10.5],
+			[23.5, 19.5],
+			[23.5, 19.5],
+			[23.5, 20.5],
+			[23.5, 21.5],
+			[23.5, 22.5],
+			[23.5, 25.5],
+			[23.5, 27.5],
+			[23.5, 29.5],
+			[23.5, 30.5],
+			[23.5, 31.5],
+			[23.5, 34.5],
+			[23.5, 35.5],
+			[28.5, 35.5],
+			[29.5, 35.5],
+			[30.5, 35.5],
+			[31.5, 35.5],
+			[34.5, 35.5],
+			[43.5, 35.5],
+			[44.5, 35.5],
+			[45.5, 35.5],
+			[46.5, 35.5],
+			[49.5, 35.5],
+			[52.5, 35.5],
+			[54.5, 35.5]
 		],
 		medals: {
 			gold: 27,
-			silver: 42,
-			bronze: 62,
+			silver: 45,
+			bronze: 91,
 			goldMaths: 23
 		},
 		hardSeconds: 54,
 		gates: [{
-			sign: [24, 8],
-			after: 16,
+			sign: [23, 8],
+			after: 15,
 			tunnels: [{
 				door: 0,
 				cells: [
+					[21, 11],
 					[22, 11],
-					[23, 11],
+					[21, 12],
 					[22, 12],
-					[23, 12],
+					[21, 13],
 					[22, 13],
-					[23, 13],
+					[21, 14],
 					[22, 14],
-					[23, 14],
-					[22, 15],
-					[23, 15]
+					[21, 15],
+					[22, 15]
 				],
 				route: [
-					[23, 11.5],
-					[23, 13.5],
-					[23, 15.5],
-					[23, 16.5]
+					[22, 11.5],
+					[22, 13.5],
+					[22, 15.5],
+					[22, 16.5]
 				],
 				dead: [
-					[23, 11.5],
-					[23, 13.5],
-					[23, 15.5],
-					[23, 13.5],
-					[23, 11.5]
+					[22, 11.5],
+					[22, 13.5],
+					[22, 15.5],
+					[22, 13.5],
+					[22, 11.5]
 				]
 			}, {
 				door: 1,
 				cells: [
+					[24, 11],
 					[25, 11],
-					[26, 11],
+					[24, 12],
 					[25, 12],
-					[26, 12],
+					[24, 13],
 					[25, 13],
-					[26, 13],
+					[24, 14],
 					[25, 14],
-					[26, 14],
-					[25, 15],
-					[26, 15]
+					[24, 15],
+					[25, 15]
 				],
 				route: [
-					[26, 11.5],
-					[26, 13.5],
-					[26, 15.5],
-					[26, 16.5]
+					[25, 11.5],
+					[25, 13.5],
+					[25, 15.5],
+					[25, 16.5]
 				],
 				dead: [
-					[26, 11.5],
-					[26, 13.5],
-					[26, 15.5],
-					[26, 13.5],
-					[26, 11.5]
+					[25, 11.5],
+					[25, 13.5],
+					[25, 15.5],
+					[25, 13.5],
+					[25, 11.5]
 				]
 			}]
 		}, {
-			sign: [33, 36],
-			after: 34,
+			sign: [32, 35],
+			after: 32,
 			tunnels: [
 				{
 					door: 2,
 					cells: [
+						[35, 31],
+						[35, 32],
+						[36, 31],
 						[36, 32],
-						[36, 33],
+						[37, 31],
 						[37, 32],
-						[37, 33],
+						[38, 31],
 						[38, 32],
-						[38, 33],
-						[39, 32],
-						[39, 33],
-						[40, 32],
-						[40, 33]
+						[39, 31],
+						[39, 32]
 					],
 					route: [
-						[36.5, 33],
-						[38.5, 33],
-						[40.5, 33],
-						[41.5, 33]
+						[35.5, 32],
+						[37.5, 32],
+						[39.5, 32],
+						[40.5, 32]
 					],
 					dead: [
-						[36.5, 33],
-						[38.5, 33],
-						[40.5, 33],
-						[38.5, 33],
-						[36.5, 33]
+						[35.5, 32],
+						[37.5, 32],
+						[39.5, 32],
+						[37.5, 32],
+						[35.5, 32]
 					]
 				},
 				{
 					door: 3,
 					cells: [
+						[35, 34],
+						[35, 35],
+						[36, 34],
 						[36, 35],
-						[36, 36],
+						[37, 34],
 						[37, 35],
-						[37, 36],
+						[38, 34],
 						[38, 35],
-						[38, 36],
-						[39, 35],
-						[39, 36],
-						[40, 35],
-						[40, 36]
+						[39, 34],
+						[39, 35]
 					],
 					route: [
-						[36.5, 36],
-						[38.5, 36],
-						[40.5, 36],
-						[41.5, 36]
+						[35.5, 35],
+						[37.5, 35],
+						[39.5, 35],
+						[40.5, 35]
 					],
 					dead: [
-						[36.5, 36],
-						[38.5, 36],
-						[40.5, 36],
-						[38.5, 36],
-						[36.5, 36]
+						[35.5, 35],
+						[37.5, 35],
+						[39.5, 35],
+						[37.5, 35],
+						[35.5, 35]
 					]
 				},
 				{
 					door: 4,
 					cells: [
+						[35, 37],
+						[35, 38],
+						[36, 37],
 						[36, 38],
-						[36, 39],
+						[37, 37],
 						[37, 38],
-						[37, 39],
+						[38, 37],
 						[38, 38],
-						[38, 39],
-						[39, 38],
-						[39, 39],
-						[40, 38],
-						[40, 39]
+						[39, 37],
+						[39, 38]
 					],
 					route: [
-						[36.5, 39],
-						[38.5, 39],
-						[40.5, 39],
-						[41.5, 39]
+						[35.5, 38],
+						[37.5, 38],
+						[39.5, 38],
+						[40.5, 38]
 					],
 					dead: [
-						[36.5, 39],
-						[38.5, 39],
-						[40.5, 39],
-						[38.5, 39],
-						[36.5, 39]
+						[35.5, 38],
+						[37.5, 38],
+						[39.5, 38],
+						[37.5, 38],
+						[35.5, 38]
 					]
 				}
 			]
 		}],
 		gems: [{
-			sign: [40, 36],
+			sign: [39, 35],
 			groups: [
 				{
-					after: 36,
+					after: 34,
 					spots: [
-						[45.5, 35.5],
-						[45.5, 36.5],
-						[45.5, 37.5]
+						[44.5, 34.5],
+						[44.5, 35.5],
+						[44.5, 36.5]
 					]
 				},
 				{
-					after: 39,
+					after: 37,
 					spots: [
-						[50.5, 35.5],
-						[50.5, 36.5],
-						[50.5, 37.5]
+						[49.5, 34.5],
+						[49.5, 35.5],
+						[49.5, 36.5]
 					]
 				},
 				{
-					after: 40,
+					after: 38,
 					spots: [
-						[53.5, 35.5],
-						[53.5, 36.5],
-						[53.5, 37.5]
+						[52.5, 34.5],
+						[52.5, 35.5],
+						[52.5, 36.5]
 					]
 				}
 			]
@@ -9663,7 +9864,7 @@ const NZ_COURSE_DEFS = [
 		medals: {
 			gold: 49,
 			silver: 73,
-			bronze: 113,
+			bronze: 137,
 			goldMaths: 43
 		},
 		hardSeconds: 98,
@@ -9878,386 +10079,390 @@ const NZ_COURSE_DEFS = [
 			dx: 0,
 			dy: 1,
 			period: 360,
-			on: 70,
-			warn: 40,
-			force: 8
+			on: 60,
+			warn: 60,
+			force: 4
 		}
 	},
 	{
 		id: "alpine-crossing",
 		name: "Alpine Crossing",
 		rows: [
-			".....................................................................................",
-			".=======....................#mm#####A##..............................................",
-			".=###########>##>##>##>##cc##mm#####A###tk#t#####....................................",
-			".=s##########>##>##>##>##cc##mm======###tk#t#####....................................",
-			".=###########>##>##>##>##cc##mm#####B###tk#t#####....................................",
-			".=======....................#mm#####B##.......###....................................",
-			"...........................................#########.................................",
-			"...........................................mmmmmmmmm.................................",
-			"...........................................mmmmmmmmm.................................",
-			"...........................................##=##=##..................................",
-			"...........................................##=##=##..................................",
-			"...........................................##=##=##..................................",
-			"...........................................##=##=##..................................",
-			"...........................................##=##=##..................................",
-			"...........................................CC=DD=EE..................................",
-			"...........................................#########.................................",
-			"...........................................#########.................................",
-			"..............................................###....................................",
-			"..............................................###....................................",
-			"..............................................vvv....................................",
-			"..............................................vvv....................................",
-			"..............................................###....................................",
-			"..............................................###....................................",
-			"..............................................ttt....................................",
-			"..............................................ccc....................................",
-			"..............................................ccc...................================.",
-			"..............................................###...................=##mm#####F##ff=.",
-			"..............................................########>##>##>##t#h#>>##mm#####F##ff=.",
-			"..............................................########>##>##>##t#h#>>##mm======##ff=.",
-			"..............................................########>##>##>##t#h#>>##mm#####G##ff=.",
-			"....................................................................=##mm#####G##ff=.",
-			"....................................................................================.",
-			"....................................................................................."
+			"......................................................................................",
+			".==================================================...................................",
+			".=###########>##>##>##>##cc##mm#####A###tk########=...................................",
+			".=###########>##>##>##>##cc##mm#####A###tk########=...................................",
+			".=s##########>##>##>##>##cc##mm======###tk########=...................................",
+			".=###########>##>##>##>##cc##mm#####B###tk########=...................................",
+			".=###########>##>##>##>##cc##mm#####B###tk########=...................................",
+			".============================================#####===.................................",
+			"..........................................=#########=.................................",
+			"..........................................=mmmmmmmmm=.................................",
+			"..........................................=mmmmmmmmm=.................................",
+			"..........................................=##=##=##==.................................",
+			"..........................................=##=##=##=..................................",
+			"..........................................=##=##=##=..................................",
+			"..........................................=##=##=##=..................................",
+			"..........................................=##=##=##=..................................",
+			"..........................................=CC=DD=EE==.................................",
+			"..........................................=#########=.................................",
+			"..........................................=#########=.................................",
+			"..........................................===#####===.................................",
+			"............................................=#####=...................................",
+			"............................................=vvvvv=...................................",
+			"............................................=vvvvv=...................................",
+			"............................................=#####=...................................",
+			"............................................=#####=...................................",
+			"............................................=#####=...................................",
+			"............................................=ccccc=...................................",
+			"............................................=ccccc===================================.",
+			"............................................=##########>##>##>##t#h#>>##mm#####F##ff=.",
+			"............................................=##########>##>##>##t#h#>>##mm#####F##ff=.",
+			"............................................=##########>##>##>##t#h#>>##mm======##ff=.",
+			"............................................=##########>##>##>##t#h#>>##mm#####G##ff=.",
+			"............................................=##########>##>##>##t#h#>>##mm#####G##ff=.",
+			"............................................=========================================.",
+			"......................................................................................"
 		],
 		heights: [
-			"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-			"0000000000000000000000000000qqqqqqqqqqq0000000000000000000000000000000000000000000000",
-			"00uuuuuuuuuuuutttsssrrrqqqqqqqqqqqqqqqqqqqqqqqqqq000000000000000000000000000000000000",
-			"00uuuuuuuuuuuutttsssrrrqqqqqqqq000000qqqqqqqqqqqq000000000000000000000000000000000000",
-			"00uuuuuuuuuuuutttsssrrrqqqqqqqqqqqqqqqqqqqqqqqqqq000000000000000000000000000000000000",
-			"0000000000000000000000000000qqqqqqqqqqq0000000qqq000000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000qqqqqqqqq000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000qqqqqqqqq000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000qqqqqqqqq000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000qq0qq0qq0000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000qq0qq0qq0000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000qq0qq0qq0000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000qq0qq0qq0000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000qq0qq0qq0000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000qq0qq0qq0000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000qqqqqqqqq000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000qqqqqqqqq000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000qqq000000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000qqq000000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000qqq000000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000ppp000000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000ooo000000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000ooo000000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000ooo000000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000ooo000000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000ooo000000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000ooo00000000000000000000jjjjjjjjjjjjjj00",
-			"0000000000000000000000000000000000000000000000ooooooooonnnmmmlllllllkjjjjjjjjjjjjjj00",
-			"0000000000000000000000000000000000000000000000ooooooooonnnmmmlllllllkjjjj000000jjjj00",
-			"0000000000000000000000000000000000000000000000ooooooooonnnmmmlllllllkjjjjjjjjjjjjjj00",
-			"000000000000000000000000000000000000000000000000000000000000000000000jjjjjjjjjjjjjj00",
-			"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-			"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+			"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+			"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+			"00uuuuuuuuuuuutttsssrrrqqqqqqqqqqqqqqqqqqqqqqqqqqq000000000000000000000000000000000000",
+			"00uuuuuuuuuuuutttsssrrrqqqqqqqqqqqqqqqqqqqqqqqqqqq000000000000000000000000000000000000",
+			"00uuuuuuuuuuuutttsssrrrqqqqqqqq000000qqqqqqqqqqqqq000000000000000000000000000000000000",
+			"00uuuuuuuuuuuutttsssrrrqqqqqqqqqqqqqqqqqqqqqqqqqqq000000000000000000000000000000000000",
+			"00uuuuuuuuuuuutttsssrrrqqqqqqqqqqqqqqqqqqqqqqqqqqq000000000000000000000000000000000000",
+			"000000000000000000000000000000000000000000000qqqqq000000000000000000000000000000000000",
+			"0000000000000000000000000000000000000000000qqqqqqqqq0000000000000000000000000000000000",
+			"0000000000000000000000000000000000000000000qqqqqqqqq0000000000000000000000000000000000",
+			"0000000000000000000000000000000000000000000qqqqqqqqq0000000000000000000000000000000000",
+			"0000000000000000000000000000000000000000000qq0qq0qq00000000000000000000000000000000000",
+			"0000000000000000000000000000000000000000000qq0qq0qq00000000000000000000000000000000000",
+			"0000000000000000000000000000000000000000000qq0qq0qq00000000000000000000000000000000000",
+			"0000000000000000000000000000000000000000000qq0qq0qq00000000000000000000000000000000000",
+			"0000000000000000000000000000000000000000000qq0qq0qq00000000000000000000000000000000000",
+			"0000000000000000000000000000000000000000000qq0qq0qq00000000000000000000000000000000000",
+			"0000000000000000000000000000000000000000000qqqqqqqqq0000000000000000000000000000000000",
+			"0000000000000000000000000000000000000000000qqqqqqqqq0000000000000000000000000000000000",
+			"000000000000000000000000000000000000000000000qqqqq000000000000000000000000000000000000",
+			"000000000000000000000000000000000000000000000qqqqq000000000000000000000000000000000000",
+			"000000000000000000000000000000000000000000000qqqqq000000000000000000000000000000000000",
+			"000000000000000000000000000000000000000000000ppppp000000000000000000000000000000000000",
+			"000000000000000000000000000000000000000000000ooooo000000000000000000000000000000000000",
+			"000000000000000000000000000000000000000000000ooooo000000000000000000000000000000000000",
+			"000000000000000000000000000000000000000000000ooooo000000000000000000000000000000000000",
+			"000000000000000000000000000000000000000000000ooooo000000000000000000000000000000000000",
+			"000000000000000000000000000000000000000000000ooooo000000000000000000000000000000000000",
+			"000000000000000000000000000000000000000000000ooooooooooonnnmmmlllllllkjjjjjjjjjjjjjj00",
+			"000000000000000000000000000000000000000000000ooooooooooonnnmmmlllllllkjjjjjjjjjjjjjj00",
+			"000000000000000000000000000000000000000000000ooooooooooonnnmmmlllllllkjjjj000000jjjj00",
+			"000000000000000000000000000000000000000000000ooooooooooonnnmmmlllllllkjjjjjjjjjjjjjj00",
+			"000000000000000000000000000000000000000000000ooooooooooonnnmmmlllllllkjjjjjjjjjjjjjj00",
+			"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+			"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 		],
 		route: [
-			[4.5, 3.5],
-			[6.5, 3.5],
-			[9.5, 3.5],
-			[12.5, 3.5],
-			[13.5, 3.5],
-			[15.5, 3.5],
-			[16.5, 3.5],
-			[18.5, 3.5],
-			[19.5, 3.5],
-			[21.5, 3.5],
-			[22.5, 3.5],
-			[24.5, 3.5],
-			[26.5, 3.5],
-			[27.5, 3.5],
-			[30.5, 3.5],
-			[39.5, 3.5],
-			[39.5, 3.5],
-			[40.5, 3.5],
-			[42.5, 3.5],
-			[43.5, 3.5],
-			[45.5, 3.5],
-			[46.5, 3.5],
-			[47.5, 3.5],
-			[47.5, 5.5],
-			[47.5, 8.5],
-			[47.5, 17.5],
-			[47.5, 18.5],
+			[4.5, 4.5],
+			[6.5, 4.5],
+			[9.5, 4.5],
+			[12.5, 4.5],
+			[13.5, 4.5],
+			[15.5, 4.5],
+			[16.5, 4.5],
+			[18.5, 4.5],
+			[19.5, 4.5],
+			[21.5, 4.5],
+			[22.5, 4.5],
+			[24.5, 4.5],
+			[26.5, 4.5],
+			[27.5, 4.5],
+			[30.5, 4.5],
+			[39.5, 4.5],
+			[39.5, 4.5],
+			[40.5, 4.5],
+			[42.5, 4.5],
+			[43.5, 4.5],
+			[45.5, 4.5],
+			[46.5, 4.5],
+			[47.5, 4.5],
+			[47.5, 7.5],
+			[47.5, 10.5],
 			[47.5, 19.5],
 			[47.5, 20.5],
+			[47.5, 21.5],
 			[47.5, 22.5],
-			[47.5, 23.5],
+			[47.5, 24.5],
 			[47.5, 25.5],
 			[47.5, 27.5],
-			[47.5, 28.5],
-			[51.5, 28.5],
-			[52.5, 28.5],
-			[53.5, 28.5],
-			[54.5, 28.5],
-			[56.5, 28.5],
-			[57.5, 28.5],
-			[59.5, 28.5],
-			[60.5, 28.5],
-			[62.5, 28.5],
-			[63.5, 28.5],
-			[66.5, 28.5],
-			[67.5, 28.5],
-			[68.5, 28.5],
-			[69.5, 28.5],
-			[72.5, 28.5],
-			[81.5, 28.5],
-			[82.5, 28.5]
+			[47.5, 29.5],
+			[47.5, 30.5],
+			[52.5, 30.5],
+			[53.5, 30.5],
+			[54.5, 30.5],
+			[55.5, 30.5],
+			[57.5, 30.5],
+			[58.5, 30.5],
+			[60.5, 30.5],
+			[61.5, 30.5],
+			[63.5, 30.5],
+			[64.5, 30.5],
+			[67.5, 30.5],
+			[68.5, 30.5],
+			[69.5, 30.5],
+			[70.5, 30.5],
+			[73.5, 30.5],
+			[82.5, 30.5],
+			[83.5, 30.5]
 		],
 		medals: {
 			gold: 35,
-			silver: 57,
-			bronze: 83,
+			silver: 58,
+			bronze: 116,
 			goldMaths: 30
 		},
 		hardSeconds: 70,
 		gates: [
 			{
-				sign: [28, 3],
+				sign: [28, 4],
 				after: 15,
 				tunnels: [{
 					door: 0,
 					cells: [
-						[31, 1],
 						[31, 2],
-						[32, 1],
+						[31, 3],
 						[32, 2],
-						[33, 1],
+						[32, 3],
 						[33, 2],
-						[34, 1],
+						[33, 3],
 						[34, 2],
-						[35, 1],
-						[35, 2]
+						[34, 3],
+						[35, 2],
+						[35, 3]
 					],
 					route: [
-						[31.5, 2],
-						[33.5, 2],
-						[35.5, 2],
-						[36.5, 2]
+						[31.5, 3],
+						[33.5, 3],
+						[35.5, 3],
+						[36.5, 3]
 					],
 					dead: [
-						[31.5, 2],
-						[33.5, 2],
-						[35.5, 2],
-						[33.5, 2],
-						[31.5, 2]
+						[31.5, 3],
+						[33.5, 3],
+						[35.5, 3],
+						[33.5, 3],
+						[31.5, 3]
 					]
 				}, {
 					door: 1,
 					cells: [
-						[31, 4],
 						[31, 5],
-						[32, 4],
+						[31, 6],
 						[32, 5],
-						[33, 4],
+						[32, 6],
 						[33, 5],
-						[34, 4],
+						[33, 6],
 						[34, 5],
-						[35, 4],
-						[35, 5]
+						[34, 6],
+						[35, 5],
+						[35, 6]
 					],
 					route: [
-						[31.5, 5],
-						[33.5, 5],
-						[35.5, 5],
-						[36.5, 5]
+						[31.5, 6],
+						[33.5, 6],
+						[35.5, 6],
+						[36.5, 6]
 					],
 					dead: [
-						[31.5, 5],
-						[33.5, 5],
-						[35.5, 5],
-						[33.5, 5],
-						[31.5, 5]
+						[31.5, 6],
+						[33.5, 6],
+						[35.5, 6],
+						[33.5, 6],
+						[31.5, 6]
 					]
 				}]
 			},
 			{
-				sign: [47, 6],
+				sign: [47, 8],
 				after: 25,
 				tunnels: [
 					{
 						door: 2,
 						cells: [
-							[43, 9],
-							[44, 9],
-							[43, 10],
-							[44, 10],
 							[43, 11],
 							[44, 11],
 							[43, 12],
 							[44, 12],
 							[43, 13],
-							[44, 13]
+							[44, 13],
+							[43, 14],
+							[44, 14],
+							[43, 15],
+							[44, 15]
 						],
 						route: [
-							[44, 9.5],
 							[44, 11.5],
 							[44, 13.5],
-							[44, 14.5]
+							[44, 15.5],
+							[44, 16.5]
 						],
 						dead: [
-							[44, 9.5],
 							[44, 11.5],
 							[44, 13.5],
-							[44, 11.5],
-							[44, 9.5]
+							[44, 15.5],
+							[44, 13.5],
+							[44, 11.5]
 						]
 					},
 					{
 						door: 3,
 						cells: [
-							[46, 9],
-							[47, 9],
-							[46, 10],
-							[47, 10],
 							[46, 11],
 							[47, 11],
 							[46, 12],
 							[47, 12],
 							[46, 13],
-							[47, 13]
+							[47, 13],
+							[46, 14],
+							[47, 14],
+							[46, 15],
+							[47, 15]
 						],
 						route: [
-							[47, 9.5],
 							[47, 11.5],
 							[47, 13.5],
-							[47, 14.5]
+							[47, 15.5],
+							[47, 16.5]
 						],
 						dead: [
-							[47, 9.5],
 							[47, 11.5],
 							[47, 13.5],
-							[47, 11.5],
-							[47, 9.5]
+							[47, 15.5],
+							[47, 13.5],
+							[47, 11.5]
 						]
 					},
 					{
 						door: 4,
 						cells: [
-							[49, 9],
-							[50, 9],
-							[49, 10],
-							[50, 10],
 							[49, 11],
 							[50, 11],
 							[49, 12],
 							[50, 12],
 							[49, 13],
-							[50, 13]
+							[50, 13],
+							[49, 14],
+							[50, 14],
+							[49, 15],
+							[50, 15]
 						],
 						route: [
-							[50, 9.5],
 							[50, 11.5],
 							[50, 13.5],
-							[50, 14.5]
+							[50, 15.5],
+							[50, 16.5]
 						],
 						dead: [
-							[50, 9.5],
 							[50, 11.5],
 							[50, 13.5],
-							[50, 11.5],
-							[50, 9.5]
+							[50, 15.5],
+							[50, 13.5],
+							[50, 11.5]
 						]
 					}
 				]
 			},
 			{
-				sign: [70, 28],
+				sign: [71, 30],
 				after: 49,
 				tunnels: [{
 					door: 5,
 					cells: [
-						[73, 26],
-						[73, 27],
-						[74, 26],
-						[74, 27],
-						[75, 26],
-						[75, 27],
-						[76, 26],
-						[76, 27],
-						[77, 26],
-						[77, 27]
+						[74, 28],
+						[74, 29],
+						[75, 28],
+						[75, 29],
+						[76, 28],
+						[76, 29],
+						[77, 28],
+						[77, 29],
+						[78, 28],
+						[78, 29]
 					],
 					route: [
-						[73.5, 27],
-						[75.5, 27],
-						[77.5, 27],
-						[78.5, 27]
+						[74.5, 29],
+						[76.5, 29],
+						[78.5, 29],
+						[79.5, 29]
 					],
 					dead: [
-						[73.5, 27],
-						[75.5, 27],
-						[77.5, 27],
-						[75.5, 27],
-						[73.5, 27]
+						[74.5, 29],
+						[76.5, 29],
+						[78.5, 29],
+						[76.5, 29],
+						[74.5, 29]
 					]
 				}, {
 					door: 6,
 					cells: [
-						[73, 29],
-						[73, 30],
-						[74, 29],
-						[74, 30],
-						[75, 29],
-						[75, 30],
-						[76, 29],
-						[76, 30],
-						[77, 29],
-						[77, 30]
+						[74, 31],
+						[74, 32],
+						[75, 31],
+						[75, 32],
+						[76, 31],
+						[76, 32],
+						[77, 31],
+						[77, 32],
+						[78, 31],
+						[78, 32]
 					],
 					route: [
-						[73.5, 30],
-						[75.5, 30],
-						[77.5, 30],
-						[78.5, 30]
+						[74.5, 32],
+						[76.5, 32],
+						[78.5, 32],
+						[79.5, 32]
 					],
 					dead: [
-						[73.5, 30],
-						[75.5, 30],
-						[77.5, 30],
-						[75.5, 30],
-						[73.5, 30]
+						[74.5, 32],
+						[76.5, 32],
+						[78.5, 32],
+						[76.5, 32],
+						[74.5, 32]
 					]
 				}]
 			}
 		],
 		gems: [{
-			sign: [7, 3],
+			sign: [7, 4],
 			groups: [{
 				after: 4,
 				spots: [
-					[12.5, 2.5],
 					[12.5, 3.5],
-					[12.5, 4.5]
+					[12.5, 4.5],
+					[12.5, 5.5]
 				]
 			}, {
 				after: 21,
 				spots: [
-					[45.5, 2.5],
 					[45.5, 3.5],
-					[45.5, 4.5]
+					[45.5, 4.5],
+					[45.5, 5.5]
 				]
 			}]
 		}, {
-			sign: [47, 28],
+			sign: [48, 30],
 			groups: [{
 				after: 36,
 				spots: [
-					[52.5, 27.5],
-					[52.5, 28.5],
-					[52.5, 29.5]
+					[53.5, 29.5],
+					[53.5, 30.5],
+					[53.5, 31.5]
 				]
 			}, {
 				after: 45,
 				spots: [
-					[66.5, 27.5],
-					[66.5, 28.5],
-					[66.5, 29.5]
+					[67.5, 29.5],
+					[67.5, 30.5],
+					[67.5, 31.5]
 				]
 			}]
 		}],
@@ -10265,9 +10470,9 @@ const NZ_COURSE_DEFS = [
 			dx: 1,
 			dy: 0,
 			period: 420,
-			on: 80,
-			warn: 40,
-			force: 6
+			on: 60,
+			warn: 60,
+			force: 3
 		}
 	},
 	{
@@ -10380,8 +10585,8 @@ const NZ_COURSE_DEFS = [
 		],
 		medals: {
 			gold: 23,
-			silver: 34,
-			bronze: 53,
+			silver: 39,
+			bronze: 81,
 			goldMaths: 19
 		},
 		hardSeconds: 46,
@@ -10449,98 +10654,98 @@ const NZ_COURSE_DEFS = [
 		id: "gap-and-ice",
 		name: "Gap and Ice",
 		rows: [
-			"..........................................",
-			".=========================................",
-			".=########>>###j..#k#####=................",
-			".=########>>###j..#k#####=................",
-			".=s#######>>###j..#k#####=................",
-			".=########>>###j..#k#####=................",
-			".=########>>###j..#k#####=................",
-			".===================#####=................",
-			"...................=#####=................",
-			"...................=mmmmm=................",
-			"...................=mmmmm=................",
-			"...................=##=##=................",
-			"...................=##=##=................",
-			"...................=##=##=................",
-			"...................=##=##=................",
-			"...................=##=##=................",
-			"...................=AA=BB=................",
-			"...................=#####=................",
-			"...................=#####=................",
-			"...................=#####=................",
-			"...................=vvvvv=................",
-			"...................=vvvvv=................",
-			"...................=ccccc=................",
-			"...................=ccccc=................",
-			"...................=iiiii=................",
-			"...................=iiiii=................",
-			"...................=iiiii=................",
-			"...................=iiiii=................",
-			"...................=iiiii=................",
-			"...................=#####================.",
-			"...................=##########h#>>######=.",
-			"...................=##########h#>>######=.",
-			"...................=#######b##h#>>######=.",
-			"...................=##########h#>>######=.",
-			"...................=##########h#>>######=.",
-			"...................================#####=.",
-			"..................................=#####=.",
-			"..................................=#####=.",
-			"..................................=#####=.",
-			"..................................=#####=.",
-			"..................................=vvvvv=.",
-			"..................................=fffff=.",
-			"..................................=fffff=.",
-			"..................................=======.",
-			".........................................."
+			".........................................",
+			".========================................",
+			".=########>>###j.#k#####=................",
+			".=########>>###j.#k#####=................",
+			".=s#######>>###j.#k#####=................",
+			".=########>>###j.#k#####=................",
+			".=########>>###j.#k#####=................",
+			".==================#####=................",
+			"..................=#####=................",
+			"..................=mmmmm=................",
+			"..................=mmmmm=................",
+			"..................=##=##=................",
+			"..................=##=##=................",
+			"..................=##=##=................",
+			"..................=##=##=................",
+			"..................=##=##=................",
+			"..................=AA=BB=................",
+			"..................=#####=................",
+			"..................=#####=................",
+			"..................=#####=................",
+			"..................=vvvvv=................",
+			"..................=vvvvv=................",
+			"..................=ccccc=................",
+			"..................=ccccc=................",
+			"..................=iiiii=................",
+			"..................=iiiii=................",
+			"..................=iiiii=................",
+			"..................=iiiii=................",
+			"..................=iiiii=................",
+			"..................=#####================.",
+			"..................=##########h#>>######=.",
+			"..................=##########h#>>######=.",
+			"..................=#######b##h#>>######=.",
+			"..................=##########h#>>######=.",
+			"..................=##########h#>>######=.",
+			"..................================#####=.",
+			".................................=#####=.",
+			".................................=#####=.",
+			".................................=#####=.",
+			".................................=#####=.",
+			".................................=vvvvv=.",
+			".................................=fffff=.",
+			".................................=fffff=.",
+			".................................=======.",
+			"........................................."
 		],
 		heights: [
-			"000000000000000000000000000000000000000000",
-			"000000000000000000000000000000000000000000",
-			"00mmmmmmmmmlkkkk00kkkkkkk00000000000000000",
-			"00mmmmmmmmmlkkkk00kkkkkkk00000000000000000",
-			"00mmmmmmmmmlkkkk00kkkkkkk00000000000000000",
-			"00mmmmmmmmmlkkkk00kkkkkkk00000000000000000",
-			"00mmmmmmmmmlkkkk00kkkkkkk00000000000000000",
-			"00000000000000000000kkkkk00000000000000000",
-			"00000000000000000000kkkkk00000000000000000",
-			"00000000000000000000kkkkk00000000000000000",
-			"00000000000000000000kkkkk00000000000000000",
-			"00000000000000000000kk0kk00000000000000000",
-			"00000000000000000000kk0kk00000000000000000",
-			"00000000000000000000kk0kk00000000000000000",
-			"00000000000000000000kk0kk00000000000000000",
-			"00000000000000000000kk0kk00000000000000000",
-			"00000000000000000000kk0kk00000000000000000",
-			"00000000000000000000kkkkk00000000000000000",
-			"00000000000000000000kkkkk00000000000000000",
-			"00000000000000000000kkkkk00000000000000000",
-			"00000000000000000000kkkkk00000000000000000",
-			"00000000000000000000jjjjj00000000000000000",
-			"00000000000000000000iiiii00000000000000000",
-			"00000000000000000000iiiii00000000000000000",
-			"00000000000000000000iiiii00000000000000000",
-			"00000000000000000000iiiii00000000000000000",
-			"00000000000000000000iiiii00000000000000000",
-			"00000000000000000000iiiii00000000000000000",
-			"00000000000000000000iiiii00000000000000000",
-			"00000000000000000000iiiii00000000000000000",
-			"00000000000000000000iiiiiiiiiiiiihgggggg00",
-			"00000000000000000000iiiiiiiiiiiiihgggggg00",
-			"00000000000000000000iiiiiiiiiiiiihgggggg00",
-			"00000000000000000000iiiiiiiiiiiiihgggggg00",
-			"00000000000000000000iiiiiiiiiiiiihgggggg00",
-			"00000000000000000000000000000000000ggggg00",
-			"00000000000000000000000000000000000ggggg00",
-			"00000000000000000000000000000000000ggggg00",
-			"00000000000000000000000000000000000ggggg00",
-			"00000000000000000000000000000000000ggggg00",
-			"00000000000000000000000000000000000ggggg00",
-			"00000000000000000000000000000000000fffff00",
-			"00000000000000000000000000000000000fffff00",
-			"000000000000000000000000000000000000000000",
-			"000000000000000000000000000000000000000000"
+			"00000000000000000000000000000000000000000",
+			"00000000000000000000000000000000000000000",
+			"00mmmmmmmmmlkkkk0kkkkkkk00000000000000000",
+			"00mmmmmmmmmlkkkk0kkkkkkk00000000000000000",
+			"00mmmmmmmmmlkkkk0kkkkkkk00000000000000000",
+			"00mmmmmmmmmlkkkk0kkkkkkk00000000000000000",
+			"00mmmmmmmmmlkkkk0kkkkkkk00000000000000000",
+			"0000000000000000000kkkkk00000000000000000",
+			"0000000000000000000kkkkk00000000000000000",
+			"0000000000000000000kkkkk00000000000000000",
+			"0000000000000000000kkkkk00000000000000000",
+			"0000000000000000000kk0kk00000000000000000",
+			"0000000000000000000kk0kk00000000000000000",
+			"0000000000000000000kk0kk00000000000000000",
+			"0000000000000000000kk0kk00000000000000000",
+			"0000000000000000000kk0kk00000000000000000",
+			"0000000000000000000kk0kk00000000000000000",
+			"0000000000000000000kkkkk00000000000000000",
+			"0000000000000000000kkkkk00000000000000000",
+			"0000000000000000000kkkkk00000000000000000",
+			"0000000000000000000kkkkk00000000000000000",
+			"0000000000000000000jjjjj00000000000000000",
+			"0000000000000000000iiiii00000000000000000",
+			"0000000000000000000iiiii00000000000000000",
+			"0000000000000000000iiiii00000000000000000",
+			"0000000000000000000iiiii00000000000000000",
+			"0000000000000000000iiiii00000000000000000",
+			"0000000000000000000iiiii00000000000000000",
+			"0000000000000000000iiiii00000000000000000",
+			"0000000000000000000iiiii00000000000000000",
+			"0000000000000000000iiiiiiiiiiiiihgggggg00",
+			"0000000000000000000iiiiiiiiiiiiihgggggg00",
+			"0000000000000000000iiiiiiiiiiiiihgggggg00",
+			"0000000000000000000iiiiiiiiiiiiihgggggg00",
+			"0000000000000000000iiiiiiiiiiiiihgggggg00",
+			"0000000000000000000000000000000000ggggg00",
+			"0000000000000000000000000000000000ggggg00",
+			"0000000000000000000000000000000000ggggg00",
+			"0000000000000000000000000000000000ggggg00",
+			"0000000000000000000000000000000000ggggg00",
+			"0000000000000000000000000000000000ggggg00",
+			"0000000000000000000000000000000000fffff00",
+			"0000000000000000000000000000000000fffff00",
+			"00000000000000000000000000000000000000000",
+			"00000000000000000000000000000000000000000"
 		],
 		route: [
 			[4.5, 4.5],
@@ -10551,96 +10756,95 @@ const NZ_COURSE_DEFS = [
 			[14.5, 4.5],
 			[15.5, 4.5],
 			[16.5, 4.5],
-			[17.5, 4.5],
+			[19.5, 4.5],
 			[20.5, 4.5],
 			[21.5, 4.5],
-			[22.5, 4.5],
-			[22.5, 7.5],
-			[22.5, 10.5],
-			[22.5, 19.5],
-			[22.5, 19.5],
-			[22.5, 20.5],
-			[22.5, 21.5],
-			[22.5, 23.5],
-			[22.5, 26.5],
-			[22.5, 28.5],
-			[22.5, 31.5],
-			[22.5, 32.5],
+			[21.5, 7.5],
+			[21.5, 10.5],
+			[21.5, 19.5],
+			[21.5, 19.5],
+			[21.5, 20.5],
+			[21.5, 21.5],
+			[21.5, 23.5],
+			[21.5, 26.5],
+			[21.5, 28.5],
+			[21.5, 31.5],
+			[21.5, 32.5],
+			[26.5, 32.5],
 			[27.5, 32.5],
-			[28.5, 32.5],
+			[30.5, 32.5],
 			[31.5, 32.5],
 			[32.5, 32.5],
-			[33.5, 32.5],
+			[35.5, 32.5],
 			[36.5, 32.5],
-			[37.5, 32.5],
-			[37.5, 37.5],
-			[37.5, 39.5],
-			[37.5, 40.5],
-			[37.5, 42.5]
+			[36.5, 37.5],
+			[36.5, 39.5],
+			[36.5, 40.5],
+			[36.5, 42.5]
 		],
 		medals: {
 			gold: 23,
-			silver: 34,
-			bronze: 53,
+			silver: 37,
+			bronze: 77,
 			goldMaths: 19
 		},
 		hardSeconds: 46,
 		gates: [{
-			sign: [22, 8],
-			after: 14,
+			sign: [21, 8],
+			after: 13,
 			tunnels: [{
 				door: 0,
 				cells: [
+					[19, 11],
 					[20, 11],
-					[21, 11],
+					[19, 12],
 					[20, 12],
-					[21, 12],
+					[19, 13],
 					[20, 13],
-					[21, 13],
+					[19, 14],
 					[20, 14],
-					[21, 14],
-					[20, 15],
-					[21, 15]
+					[19, 15],
+					[20, 15]
 				],
 				route: [
-					[21, 11.5],
-					[21, 13.5],
-					[21, 15.5],
-					[21, 16.5]
+					[20, 11.5],
+					[20, 13.5],
+					[20, 15.5],
+					[20, 16.5]
 				],
 				dead: [
-					[21, 11.5],
-					[21, 13.5],
-					[21, 15.5],
-					[21, 13.5],
-					[21, 11.5]
+					[20, 11.5],
+					[20, 13.5],
+					[20, 15.5],
+					[20, 13.5],
+					[20, 11.5]
 				]
 			}, {
 				door: 1,
 				cells: [
+					[22, 11],
 					[23, 11],
-					[24, 11],
+					[22, 12],
 					[23, 12],
-					[24, 12],
+					[22, 13],
 					[23, 13],
-					[24, 13],
+					[22, 14],
 					[23, 14],
-					[24, 14],
-					[23, 15],
-					[24, 15]
+					[22, 15],
+					[23, 15]
 				],
 				route: [
-					[24, 11.5],
-					[24, 13.5],
-					[24, 15.5],
-					[24, 16.5]
+					[23, 11.5],
+					[23, 13.5],
+					[23, 15.5],
+					[23, 16.5]
 				],
 				dead: [
-					[24, 11.5],
-					[24, 13.5],
-					[24, 15.5],
-					[24, 13.5],
-					[24, 11.5]
+					[23, 11.5],
+					[23, 13.5],
+					[23, 15.5],
+					[23, 13.5],
+					[23, 11.5]
 				]
 			}]
 		}]
@@ -11168,8 +11372,8 @@ function clockSteps(w, s) {
 }
 function fall(w, s) {
 	s.falls++;
-	s.penalty += 180;
-	s.refundable = 180;
+	s.penalty += 120;
+	s.refundable = 120;
 	const spots = s.safeSpots;
 	let spot = -1;
 	for (let i = spots.length - 2; i >= 0; i -= 2) if (spots[i + 1] <= s.steps - 60) {
@@ -11267,7 +11471,7 @@ function stepRun(w, s, input) {
 	if (!s.grounded) {
 		s.z += s.vz * DT;
 		if (floor !== null && s.z <= floor) {
-			if (-s.vz > 9) gone = true;
+			if (-s.vz > 14) gone = true;
 			else {
 				s.z = floor;
 				s.vz = 0;
@@ -11534,6 +11738,7 @@ var RateLimiter = class {
 	}
 };
 const TOO_MANY = "That's a lot of rolling today! Have a break and come back tomorrow.";
+const DONE_TODAY = `That's your 10 runs for today. See you tomorrow!`;
 /** How long a gate answer is said to have taken. The server can't time a roll through a tunnel, so it is slow enough not to count as quick. */
 const GATE_MS = 8e3;
 const MAX_ANSWER_MS = 6e4;
@@ -11573,6 +11778,12 @@ function makeHandler(services) {
 			const mode = body.mode;
 			const course = typeof body.course === "string" ? courseById(body.course) : void 0;
 			if (!course || mode !== "up" && mode !== "down") return reply(400, { error: "That course couldn't be found." });
+			const today = await services.runsToday(player);
+			if (today && !today.unlimited && today.runs >= 10) return reply(409, {
+				error: DONE_TODAY,
+				code: "done-today"
+			});
+			const runsLeft = !today ? void 0 : today.unlimited ? null : Math.max(0, 10 - today.runs - 1);
 			const seed = makeMarbleSeed(nowSeconds, services.randomHex(12));
 			const stamp = await services.stamp(marbleStampText(player, course.def.id, mode, seed));
 			if (!stamp) return reply(500, { error: "The run couldn't start." });
@@ -11593,7 +11804,8 @@ function makeHandler(services) {
 			return reply(200, {
 				seed,
 				stamp,
-				...runSetup(course, seed, questions, rescue)
+				...runSetup(course, seed, questions, rescue),
+				...runsLeft !== void 0 ? { runsLeft } : {}
 			});
 		}
 		if (body.action === "answer") {
@@ -11769,6 +11981,18 @@ Deno.serve(makeHandler({
 	randomHex: (bytes) => Array.from(crypto.getRandomValues(new Uint8Array(bytes)), (b) => b.toString(16).padStart(2, "0")).join(""),
 	stamp: stamper(key, "marble-run"),
 	userIdFor: userIdFromToken(admin.auth),
+	async runsToday(player) {
+		const [count, settings] = await Promise.all([admin.rpc("marble_runs_today", { player }), admin.rpc("settings_of", { player }).maybeSingle()]);
+		if (count.error || typeof count.data !== "number") {
+			console.error(`marble: runs today failed (${count.error?.code ?? "none"})`);
+			return null;
+		}
+		const days = settings.data?.unlimited_days;
+		return {
+			runs: count.data,
+			unlimited: isUnlimitedFor(days, "marble")
+		};
+	},
 	async settings(player) {
 		const { data, error } = await admin.rpc("settings_of", { player }).maybeSingle();
 		if (error || !data) {

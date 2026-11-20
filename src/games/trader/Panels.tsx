@@ -15,6 +15,7 @@ import { fuelCost, hasShipyard, holdsOf, tradeInValue, usedHolds, type Trader } 
 import { shipArt } from './art/paint';
 import { drawShip } from './art/ships';
 import { goodIcon } from './text';
+import { HoldView } from './HoldView';
 import { emptyPlan, runPlan } from './tradePlan';
 import { allPrices, bestBuy, bestBuyWorking, sellElsewhere, tradeIdeas } from './coach/advice';
 import { COACH_NAME } from './text';
@@ -43,7 +44,7 @@ type MarketStep = 'sell' | 'buy';
 const stepShowing = (target: string | undefined): MarketStep | null =>
   target?.startsWith('sell-all-') ? 'sell' : target?.startsWith('buy-max-') ? 'buy' : null;
 
-export function TradePanel({ galaxy, t, busy, news = [], pushes, want, level = 'lots', onTrade, onPlan }: {
+export function TradePanel({ galaxy, t, busy, news = [], pushes, want, level = 'lots', onTrade, onPlan, onShowMap }: {
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
@@ -59,6 +60,8 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, want, level = '
   onTrade: (plan: number[]) => Promise<string | null>;
   /** Tells the game what is picked but not traded yet (for First Flight), and null when the market closes. */
   onPlan?: (plan: number[] | null) => void;
+  /** The hold card's "Show on star chart". */
+  onShowMap?: (planet: number) => void;
 }) {
   const [plan, setPlan] = useState<number[]>(emptyPlan);
   const [message, setMessage] = useState('');
@@ -147,6 +150,9 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, want, level = '
           <p className="st-soft">Prices here were fixed when you landed. When lots of traders sell something on a planet it gets cheaper there; when lots buy, it gets dearer. Prices drift back overnight.</p>
         </details>
       )}
+      <div className="st-hold-inpanel">
+        <HoldView t={t} after={any ? out?.state : null} galaxy={galaxy} pushes={pushes} onShowMap={onShowMap} want={want} />
+      </div>
       <div className="st-steps" role="group" aria-label="Market steps">
         <button type="button" className={`st-stepbtn ${step === 'sell' ? 'st-stepbtn--on' : ''}`} aria-pressed={step === 'sell'} onClick={() => setStep('sell')} data-coach="market-sell">
           <span className="st-stepbtn__n" aria-hidden="true">1</span> Sell{selling.length > 0 && <span className="st-stepbtn__tick" aria-label="(picked)"> ✓</span>}

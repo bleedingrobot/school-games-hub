@@ -18,6 +18,7 @@ import { frac, goodPick, pick, rollPick, talk } from './pickKit';
 const BASIC_TAGS = ['MS.Y5.NUM.RN.P5', 'MS.Y5.NUM.RN.P15'];
 const OF_TAGS = ['MS.Y6.NUM.RN.P13', 'MS.Y6.NUM.RN.P14'];
 const pct = (p: number) => `${p}%`;
+const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
 
 /** The answer a student gets by following a named mistake, for "p% of a". */
 function ofMistakes(p: number, a: number): Named {
@@ -29,14 +30,18 @@ function ofMistakes(p: number, a: number): Named {
   return named;
 }
 
-/** "p% of an amount that is q × step". */
-function ofFamily(key: string, label: string, tags: string[], p: number, step: number, qLo: number, qHi: number): Family {
+/**
+ * "p% of an amount that is q × step". `tidy` lists the q a new question rolls, when not every q in range is quick to work out
+ * (James, 19 Nov 2026: "nice and tidy" numbers, for fluency). Any q in range still makes a question, so questions rolled
+ * before keep working.
+ */
+function ofFamily(key: string, label: string, tags: string[], p: number, step: number, qLo: number, qHi: number, tidy?: readonly number[]): Family {
   return oneKey(
     key,
     label,
     tags,
     1,
-    (_k, r) => [int(r, qLo, qHi)],
+    (_k, r) => [tidy ? pickOne(r, tidy) : int(r, qLo, qHi)],
     (_k, [q]) => {
       if (!isInt(q, qLo, qHi)) return null;
       const amount = q * step;
@@ -174,9 +179,12 @@ const toDecimal = oneKey(
 
 export const PERCENT_FAMILIES: Record<string, Family> = Object.fromEntries(
   [
-    ofFamily('pct:half', '50% of an amount (50% of 60)', BASIC_TAGS, 50, 2, 1, 50),
+    // Half of an even number to 20, or of a multiple of 10 to 100: 50% of 14, 50% of 70 (not 50% of 74).
+    ofFamily('pct:half', '50% of an amount (50% of 60)', BASIC_TAGS, 50, 2, 1, 50, [...range(1, 10), 15, 20, 25, 30, 35, 40, 45, 50]),
+    // A tenth of a multiple of 10 to 200 is always tidy.
     ofFamily('pct:ten', '10% of an amount (10% of 70)', BASIC_TAGS, 10, 10, 1, 20),
-    ofFamily('pct:quarter', '25% of an amount (25% of 80)', BASIC_TAGS, 25, 4, 1, 25),
+    // A quarter with an answer from the tables (25% of 4 to 40), or of 60, 80 and 100: not 25% of 68.
+    ofFamily('pct:quarter', '25% of an amount (25% of 80)', BASIC_TAGS, 25, 4, 1, 25, [...range(1, 10), 15, 20, 25]),
     toFraction,
     fromFraction,
     toDecimal,

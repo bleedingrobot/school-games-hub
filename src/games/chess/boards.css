@@ -1,0 +1,243 @@
+/*
+ * The boards from the 🎒 Chess Locker (docs/CHESS-LOOK-PLAN.md stage 3). Each painted board gives its light and dark
+ * squares one big painting each (--sq-light, --sq-dark, set by BoardFace.tsx), and each square shows its own eighth of
+ * it (--c, --r), so the marble's veins and the lava's cracks run across the whole board. Classic wood keeps chess.css.
+ * Every board sweeps in square by square when it appears; the painted ones keep moving (a gleam, sun glints, glowing
+ * lava, twinkling stars). chess.css stops all of it for devices that ask for less motion.
+ */
+
+/* ---------- Squares ---------- */
+
+.cw .board.cb {
+  position: relative;
+}
+.cw .board.cb .board__square {
+  animation: cb-in 0.55s cubic-bezier(0.2, 1.5, 0.4, 1) calc((var(--c) + var(--r)) * 32ms) backwards;
+}
+@keyframes cb-in {
+  from { transform: scale(0.15) rotate(-35deg); opacity: 0; }
+}
+
+.cw .board.cb--painted .board__square.is-light,
+.cb-mini.cb--painted .cb-mini__sq.is-light {
+  background: var(--sq-light) calc(var(--c) * 100% / 7) calc(var(--r) * 100% / 7) / 800% 800%;
+}
+.cw .board.cb--painted .board__square.is-dark,
+.cb-mini.cb--painted .cb-mini__sq.is-dark {
+  background: var(--sq-dark) calc(var(--c) * 100% / 7) calc(var(--r) * 100% / 7) / 800% 800%;
+}
+
+/* Paua and lava squares shimmer and throb: a colour washed over the painting, never over the pieces. */
+.cw .board.cb--beach .board__square.is-dark,
+.cb-mini.cb--beach .cb-mini__sq.is-dark {
+  background-blend-mode: overlay;
+  animation:
+    cb-in 0.55s cubic-bezier(0.2, 1.5, 0.4, 1) calc((var(--c) + var(--r)) * 32ms) backwards,
+    cb-paua 5s ease-in-out calc((var(--c) + var(--r)) * -0.35s) infinite;
+}
+@keyframes cb-paua {
+  0%, 100% { background-color: rgb(110, 128, 140); }
+  33% { background-color: rgb(150, 120, 175); }
+  66% { background-color: rgb(110, 160, 135); }
+}
+.cw .board.cb--lava .board__square.is-dark,
+.cb-mini.cb--lava .cb-mini__sq.is-dark {
+  background-blend-mode: screen;
+  animation:
+    cb-in 0.55s cubic-bezier(0.2, 1.5, 0.4, 1) calc((var(--c) + var(--r)) * 32ms) backwards,
+    cb-lava 2.6s ease-in-out calc((var(--c) * 3 + var(--r) * 5) * -0.17s) infinite;
+}
+@keyframes cb-lava {
+  0%, 100% { background-color: rgb(0, 0, 0); }
+  50% { background-color: rgb(120, 34, 0); }
+}
+.cw .board.cb--starfield .board__square.is-dark,
+.cb-mini.cb--starfield .cb-mini__sq.is-dark {
+  background-blend-mode: overlay;
+  animation:
+    cb-in 0.55s cubic-bezier(0.2, 1.5, 0.4, 1) calc((var(--c) + var(--r)) * 32ms) backwards,
+    cb-nebula 7s ease-in-out calc((var(--c) - var(--r)) * 0.4s) infinite;
+}
+@keyframes cb-nebula {
+  0%, 100% { background-color: rgba(70, 90, 255, 0.55); }
+  50% { background-color: rgba(220, 70, 255, 0.55); }
+}
+
+/* ---------- Frames and the letters round the edge ---------- */
+
+.cw .board.cb--marble {
+  border-color: #ece6da;
+  box-shadow:
+    inset 0 0 0 2px #d6aa4c,
+    0 0 0 2px #d6aa4c,
+    0 0 0 6px #6f6450,
+    0 0 50px rgba(255, 246, 220, 0.55);
+}
+.cw .cb--marble .is-light > .board__rank,
+.cw .cb--marble .is-light > .board__file { color: #2f6b4e; }
+.cw .cb--marble .is-dark > .board__rank,
+.cw .cb--marble .is-dark > .board__file { color: #f6f1e6; }
+
+.cw .board.cb--beach {
+  border-color: #c99d62;
+  box-shadow:
+    inset 0 0 0 2px #fff1cf,
+    0 0 0 2px #fff1cf,
+    0 0 0 6px #7a5530,
+    0 0 50px rgba(110, 230, 235, 0.55);
+}
+.cw .cb--beach .is-light > .board__rank,
+.cw .cb--beach .is-light > .board__file { color: #8a5a28; }
+.cw .cb--beach .is-dark > .board__rank,
+.cw .cb--beach .is-dark > .board__file { color: #f2fbff; }
+
+.cw .board.cb--lava {
+  border-color: #23140f;
+  box-shadow:
+    inset 0 0 0 2px #ff7a1a,
+    0 0 0 2px #ff7a1a,
+    0 0 0 6px #0c0705,
+    0 0 50px rgba(255, 90, 20, 0.7);
+  animation: cb-hot 2.6s ease-in-out infinite;
+}
+@keyframes cb-hot {
+  50% {
+    box-shadow:
+      inset 0 0 0 2px #ffc04a,
+      0 0 0 2px #ffc04a,
+      0 0 0 6px #0c0705,
+      0 0 80px rgba(255, 120, 30, 0.95);
+  }
+}
+.cw .cb--lava .is-light > .board__rank,
+.cw .cb--lava .is-light > .board__file { color: #5a1d06; }
+.cw .cb--lava .is-dark > .board__rank,
+.cw .cb--lava .is-dark > .board__file { color: #ffd27a; }
+
+.cw .board.cb--starfield {
+  border-color: #1d1650;
+  box-shadow:
+    inset 0 0 0 2px #9be7ff,
+    0 0 0 2px #9be7ff,
+    0 0 0 6px #0a0726,
+    0 0 50px rgba(150, 120, 255, 0.7);
+}
+.cw .cb--starfield .is-light > .board__rank,
+.cw .cb--starfield .is-light > .board__file { color: #3b2a8a; }
+.cw .cb--starfield .is-dark > .board__rank,
+.cw .cb--starfield .is-dark > .board__file { color: #e6f7ff; }
+
+/* ---------- The moving layer: above the squares, under the pieces ---------- */
+
+.cb__fx {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.cb__fx i {
+  position: absolute;
+  display: block;
+}
+
+/* Marble: a bright gleam sweeps across the polished stone now and then. */
+.cb__fx--gleam {
+  background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.55) 48%, rgba(255, 248, 225, 0.2) 52%, transparent 62%) no-repeat;
+  background-size: 300% 100%;
+  mix-blend-mode: soft-light;
+  animation: cb-gleam 5.5s ease-in-out infinite;
+}
+@keyframes cb-gleam {
+  0%, 20% { background-position: 120% 0; }
+  70%, 100% { background-position: -20% 0; }
+}
+.cb__fx--gleam i {
+  display: none;
+}
+
+/* Beach: warm sun glints sparkle on the sand and shell. */
+.cb__fx--glint {
+  background: radial-gradient(ellipse at 20% 0%, rgba(255, 240, 190, 0.35), transparent 60%);
+}
+.cb__fx--glint i,
+.cb__fx--twinkle i {
+  width: 4%;
+  aspect-ratio: 1;
+  background: #fff;
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  filter: drop-shadow(0 0 4px #fff);
+  animation: cb-twinkle 4s ease-in-out infinite;
+}
+.cb__fx--glint i {
+  background: #fff6c8;
+}
+.cb__fx--twinkle i:nth-child(3n) {
+  background: #b9f0ff;
+}
+.cb__fx--twinkle i:nth-child(3n + 1) {
+  background: #ffd1ff;
+}
+@keyframes cb-twinkle {
+  0%, 60%, 100% { transform: scale(0) rotate(0); opacity: 0; }
+  75% { transform: scale(1.4) rotate(45deg); opacity: 1; }
+  90% { transform: scale(0.6) rotate(90deg); opacity: 0.7; }
+}
+
+/* Lava: embers float up off the rock. */
+.cb__fx--lava i {
+  width: 1.4%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #ffcf5a;
+  box-shadow: 0 0 6px 2px rgba(255, 120, 20, 0.9);
+  animation: cb-ember 3.4s ease-out infinite;
+}
+@keyframes cb-ember {
+  0% { transform: translate(0, 0) scale(1); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translate(18px, -90px) scale(0.2); opacity: 0; }
+}
+
+/* Starfield: a soft shooting star crosses now and then, over the twinkles. */
+.cb__fx--twinkle::after {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: -30%;
+  width: 26%;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, #fff);
+  box-shadow: 0 0 8px #bfe9ff;
+  transform: rotate(18deg);
+  animation: cb-shoot 6s ease-in 2s infinite;
+}
+@keyframes cb-shoot {
+  0% { translate: 0 0; opacity: 0; }
+  4% { opacity: 1; }
+  18%, 100% { translate: 520% 160%; opacity: 0; }
+}
+
+/* ---------- Small boards: the Locker and the treasure chest ---------- */
+
+.cb-mini {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 6px solid #5a3214;
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px #e8b65a, 0 8px 18px rgba(0, 0, 0, 0.5);
+}
+.cb-mini.cb--classic .cb-mini__sq.is-light { background: #f3dcb2; }
+.cb-mini.cb--classic .cb-mini__sq.is-dark { background: #b07a4a; }
+.cb-mini.cb--marble { border-color: #ece6da; box-shadow: 0 0 0 2px #d6aa4c, 0 0 22px rgba(255, 246, 220, 0.6); }
+.cb-mini.cb--beach { border-color: #c99d62; box-shadow: 0 0 0 2px #fff1cf, 0 0 22px rgba(110, 230, 235, 0.6); }
+.cb-mini.cb--lava { border-color: #23140f; box-shadow: 0 0 0 2px #ff7a1a, 0 0 22px rgba(255, 90, 20, 0.8); }
+.cb-mini.cb--starfield { border-color: #1d1650; box-shadow: 0 0 0 2px #9be7ff, 0 0 22px rgba(150, 120, 255, 0.8); }
+.cb-mini .cb__fx i {
+  min-width: 3px;
+}

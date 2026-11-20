@@ -87,6 +87,20 @@
   border: 1px solid rgb(255 255 255 / 0.25);
 }
 
+/* The quest's reward (docs/QUEST-REWARDS-PLAN.md). */
+.qbar__reward {
+  margin-left: auto;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #1b1036;
+  background: #ffd45c;
+  box-shadow: 0 0 10px rgb(255 212 92 / 0.6);
+}
+.qbar__reward + .qbar__class { margin-left: 0; }
+.qbar__got { color: #ffd45c; font-size: 1.05rem; animation: qbar-rise 1s cubic-bezier(0.2, 1.4, 0.4, 1) 1.6s both; }
+
 /* Seven day-stones across the middle of the painting. */
 .qbar__stones {
   display: grid;
@@ -269,7 +283,7 @@
 
 @media (max-width: 560px) {
   .qbar { min-height: 13rem; padding: 0.75rem 0.75rem 0.85rem; }
-  .qbar__class { margin-left: 0; }
+  .qbar__class, .qbar__reward { margin-left: 0; }
   .qbar__go { margin-left: 0; width: 100%; justify-content: center; }
 }
 

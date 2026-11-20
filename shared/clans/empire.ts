@@ -42,7 +42,7 @@ export const BUILDING_BLURBS: Record<VillageBuilding, string> = {
   smithy: 'The shop sells better things.',
   church: 'One more free wake-up a day.',
   barracks: 'Room for 20 footmen, 10 axemen and 5 knights for each level.',
-  walls: 'When classmates raid you, their army breaks through 10% less for each level. The monster hits softer too.',
+  walls: 'When other clans raid you, their army breaks through 10% less for each level. The monster hits softer too.',
   tower: 'Shoots raiders before they reach your heroes (3% of their health for each level), and fires at the monster.',
   forge: 'Your army hits 10% harder for each level, in raids and sieges.',
   strongroom: 'Each level adds 5 gold to every Village Raid you win, and every raid your village holds.',

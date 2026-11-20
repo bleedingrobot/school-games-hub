@@ -1,6 +1,6 @@
 /**
  * "Moves left today" for the dashboard cards: the pupil's own daily allowances in the games that have them (Dragon Maths
- * forest, arena and master fights; Clan Quest mine fights; Maths Monsters battles; Diamond Drop's one new level a day; Star Trader jumps; Sky Isles turns). Read-only, through my_moves_left(). Any trouble just means no
+ * forest, arena and master fights; Clan Quest mine fights; Maths Monsters battles; Diamond Drop's one new level a day; Star Trader jumps; Sky Isles turns; Toon Flap wins and Sky Dashes; Goblin Storm runs; Marble Rush runs; Gem Keep's one new level a day). Read-only, through my_moves_left(). Any trouble just means no
  * line on the card, so the dashboard never waits for it or complains about it.
  */
 import { levelsOpen, type Player } from '../../shared/diamond/progress';
@@ -12,6 +12,10 @@ import { eggWarmth, isReady } from '../../shared/monsters/quests/eggs';
 import type { Egg } from '../../shared/monsters/quests/types';
 import { supabase } from '../lib/supabase';
 import { UNLIMITED_LABEL } from '../../shared/unlimited';
+import { DASHES_A_DAY, WINS_A_DAY } from '../../shared/toonflap/config';
+import { RUNS_A_DAY } from '../../shared/goblinstorm/config';
+import { MARBLE_RUNS_A_DAY } from '../../shared/marble/config';
+import { LEVEL_COUNT as GEM_KEEP_LEVELS } from '../../shared/gem-keep/config';
 
 export interface RawMovesLeft {
   /** The games whose "Unlimited turns today" switch is on for the class (20261105000200). */
@@ -37,6 +41,14 @@ export interface RawMovesLeft {
   trader?: { day: number; jumpsLeft: number; perDay: number } | null;
   /** Sky Isles: the New Zealand day number the island was last saved on and the turns left then. Missing until 20261104000200 is applied. */
   isles?: { day: number; turnsLeft: number } | null;
+  /** Toon Flap today: levels won, Sky Dashes started, and whether Sky Dash is open (null: never played). From 20261120001400. */
+  toonflap?: { wins: number; dashes: number; dashOpen: boolean } | null;
+  /** Goblin Storm runs started today. From 20261120001400. */
+  goblinstorm?: { runs: number } | null;
+  /** Marble Rush runs saved today. From 20261120001500. */
+  marble?: { runs: number } | null;
+  /** Gem Keep: Level Keys passed, and whether one was passed today (one new level a day). From 20261120001500. */
+  gemKeep?: { keys: number; keyToday: boolean } | null;
 }
 
 /** One thing on a card: "🌲 7 forest fights". `empty` is for a used-up allowance, which is drawn quietly. */
@@ -130,6 +142,38 @@ export function movesFromRaw(raw: RawMovesLeft | null | undefined, now: Date = n
       : Math.max(isles.turnsLeft, 0);
     const chip = lifted({ emoji: '🏝️', text: plural(left, 'turn', 'turns') + ' left', empty: left === 0 }, on('isles'));
     out.isles = { chips: [chip], allDone: chip.empty };
+  }
+  // Toon Flap (10 wins and 2 Sky Dashes a day): a pupil who hasn't played yet still sees their wins.
+  const flap = raw?.toonflap;
+  if (raw && 'toonflap' in raw) {
+    const wins = Math.max(WINS_A_DAY - (flap?.wins ?? 0), 0);
+    const chips = [lifted({ emoji: '🏁', text: plural(wins, 'win', 'wins'), empty: wins === 0 }, on('toonflap'))];
+    if (flap?.dashOpen) {
+      const dashes = Math.max(DASHES_A_DAY - flap.dashes, 0);
+      chips.push(lifted({ emoji: '☄️', text: plural(dashes, 'Sky Dash', 'Sky Dashes'), empty: dashes === 0 }, on('toonflap')));
+    }
+    out.toonflap = { chips, allDone: chips.every((c) => c.empty) };
+  }
+  const storm = raw?.goblinstorm;
+  if (storm && typeof storm.runs === 'number') {
+    const left = Math.max(RUNS_A_DAY - storm.runs, 0);
+    const chip = lifted({ emoji: '⚔️', text: `${left} of ${RUNS_A_DAY} runs`, empty: left === 0 }, on('goblinstorm'));
+    out.goblinstorm = { chips: [chip], allDone: chip.empty };
+  }
+  const marble = raw?.marble;
+  if (marble && typeof marble.runs === 'number') {
+    const left = Math.max(MARBLE_RUNS_A_DAY - marble.runs, 0);
+    const chip = lifted({ emoji: '🔵', text: `${left} of ${MARBLE_RUNS_A_DAY} runs`, empty: left === 0 }, on('marble'));
+    out.marble = { chips: [chip], allDone: chip.empty };
+  }
+  // Gem Keep opens one new level a day. Its old levels can always be played, so it's never "all done"; once every level
+  // is open there's nothing to say.
+  const keep = raw?.gemKeep;
+  if (keep && typeof keep.keys === 'number' && keep.keys < GEM_KEEP_LEVELS - 1) {
+    const chip = keep.keyToday
+      ? { emoji: '🔒', text: 'Next new level tomorrow', empty: true }
+      : { emoji: '🔑', text: `New level ${keep.keys + 2} to unlock`, empty: false };
+    out['gem-keep'] = { chips: [chip], allDone: false };
   }
   return out;
 }

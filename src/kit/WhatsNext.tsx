@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { AchievementPop } from '../achievements/AchievementPop';
 
 /**
  * Said by the friend on a golden-prize day (profile card P9): the server has just given the child that friend's painting to
@@ -10,10 +11,11 @@ export const WEAR_ME_LINE = 'You can wear me on your profile now!';
 /**
  * "What's next" after a round (R8): one panel that says what happened, then the one button that moves on. Lifted from
  * Weka's finish screen. The heading takes focus and the line is read aloud once when it appears. The game passes its own
- * words and CSS prefix; `prefix="wk"` gives `wk-panel`, `wk-chip` and `wk-play-button`. `children` sit between the note
+ * words and CSS prefix; `prefix="wk"` gives `wk-panel`, `wk-chip` and `wk-play-button`. With `game` (its achievement
+ * group), any achievement the round just earned pops up (the shared AchievementPop). `children` sit between the note
  * and the button (a prize picture, for example). `wearMe` (a golden-prize day) adds WEAR_ME_LINE as a chip, said after the rest.
  */
-export function WhatsNext({ prefix, title, spoken = title, note, buttonLabel, say, onNext, wearMe = false, children }: {
+export function WhatsNext({ prefix, title, spoken = title, note, buttonLabel, say, onNext, wearMe = false, game, children }: {
   prefix: string;
   /** The heading. */
   title: string;
@@ -27,6 +29,8 @@ export function WhatsNext({ prefix, title, spoken = title, note, buttonLabel, sa
   onNext: () => void;
   /** A golden-prize day: the friend's picture can now be worn on the profile. */
   wearMe?: boolean;
+  /** The game's achievement group (achievement_types.game): shows any it just earned. */
+  game?: string;
   children?: ReactNode;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
@@ -41,7 +45,8 @@ export function WhatsNext({ prefix, title, spoken = title, note, buttonLabel, sa
       {note && <p className={`${prefix}-chip`}>{note}</p>}
       {children}
       {wearMe && <p className={`${prefix}-chip ${prefix}-wear-me`}>{WEAR_ME_LINE}</p>}
-      <button type="button" className={`button button--play ${prefix}-play-button`} onClick={onNext}>
+      {game && <AchievementPop games={[game]} watch atOpen />}
+      <button type="button" className={`button button--play ${prefix}-play-button`} onClick={onNext} data-key="enter">
         {buttonLabel}
       </button>
     </div>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
+import { useGameKeys } from '../../kit';
 import type { ClaimedEnding } from '../../../shared/botGame';
 import {
   judgeCheckersGame,
@@ -17,17 +18,19 @@ import {
 import { useAuth } from '../../auth/AuthContext';
 import { AvatarImage } from '../../avatar/AvatarImage';
 import { BotLevelPicker } from '../../components/BotLevelPicker';
+import { BotPortrait } from '../../components/BotPortrait';
 import { refreshSaveToken, saveAbandonedGame, saveBotGame } from '../../data/botGames';
 import { FriendlyError } from '../../data/profile';
 import { useSound } from '../../sound';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import { playSound, type GameSound } from '../sounds';
 import { BOT_LEVELS, type BotLevel } from '../types';
 import { BOT_DESCRIPTIONS } from './bot';
+import { CHECKERS_BOTS } from './botPictures';
 import { startCheckersBot, type CheckersBot } from './botThread';
 import { Board } from './Board';
 import { Captured, pretty } from './moveText';
 
-const BOT_EMOJI: Record<BotLevel, string> = { 'very-easy': '🐣', easy: '🤖', medium: '🧠' };
 /** The bot always waits at least this long, so its moves don't appear instantly. */
 const BOT_PAUSE_MS = { min: 600, extra: 700 };
 
@@ -83,6 +86,8 @@ export function CheckersPlay({ level }: { level: BotLevel }) {
   const [hint, setHint] = useState('');
 
   const bot = useRef<CheckersBot | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  useGameKeys(rootRef);
   const live = useRef<Game | null>(null);
   const abandoned = useRef(new Set<number>());
   const soundOnRef = useRef(soundOn);
@@ -234,7 +239,7 @@ export function CheckersPlay({ level }: { level: BotLevel }) {
   // ---------- Before a game: pick the bot and a colour ----------
   if (!game) {
     return (
-      <section className="chess-setup" aria-labelledby="setup-title">
+      <section className="chess-setup" aria-labelledby="setup-title" ref={rootRef}>
         <h1 id="setup-title" className="page-title">
           🔴 Checkers vs bot
         </h1>
@@ -245,10 +250,12 @@ export function CheckersPlay({ level }: { level: BotLevel }) {
             value={level}
             onChange={(next) => setParams({ bot: next }, { replace: true })}
           />
-          <p className="chess-setup__bot">
-            <span aria-hidden="true">{BOT_EMOJI[level]}</span> <strong>{levelInfo.label} bot:</strong>{' '}
-            {BOT_DESCRIPTIONS[level]}
-          </p>
+          <div className="chess-setup__bot has-pic">
+            <BotPortrait key={level} pictures={CHECKERS_BOTS} level={level} big />
+            <p>
+              <strong>{levelInfo.label} bot:</strong> {BOT_DESCRIPTIONS[level]}
+            </p>
+          </div>
           <fieldset className="level-picker">
             <legend>Your pieces</legend>
             <div className="level-picker__options">
@@ -272,7 +279,7 @@ export function CheckersPlay({ level }: { level: BotLevel }) {
               ))}
             </div>
           </fieldset>
-          <button type="button" className="button button--play chess-setup__start" onClick={start}>
+          <button type="button" className="button button--play chess-setup__start" data-key="enter" onClick={start}>
             <span aria-hidden="true">▶</span> Start game
           </button>
           <div className="chess-setup__help">
@@ -316,7 +323,7 @@ export function CheckersPlay({ level }: { level: BotLevel }) {
   const explanation = judged && ENDING_TEXT[judged.reason]?.[judged.outcome];
 
   return (
-    <div className="chess-game">
+    <div className="chess-game" ref={rootRef}>
       <div className="chess-game__board">
         <Board
           position={position}
@@ -327,6 +334,7 @@ export function CheckersPlay({ level }: { level: BotLevel }) {
           onHint={setHint}
         />
 
+        <AchievementPop games={['checkers']} watch={saveStatus === 'saved' && showResult ? game?.id ?? null : null} />
         {judged && showResult && headline && (
           <div className="chess-result" role="dialog" aria-modal="true" aria-labelledby="result-title">
             <div className={`chess-result__card chess-result__card--${judged.outcome}`}>
@@ -353,10 +361,10 @@ export function CheckersPlay({ level }: { level: BotLevel }) {
                 )}
               </p>
               <div className="chess-result__buttons">
-                <button type="button" className="button button--primary" onClick={rematch} autoFocus>
+                <button type="button" className="button button--primary" data-key="enter" onClick={rematch} autoFocus>
                   Rematch
                 </button>
-                <button type="button" className="button button--light" onClick={() => setShowResult(false)}>
+                <button type="button" className="button button--light" data-key="esc" onClick={() => setShowResult(false)}>
                   Look at the board
                 </button>
                 <button type="button" className="link-button" onClick={() => setGame(null)}>
@@ -370,8 +378,8 @@ export function CheckersPlay({ level }: { level: BotLevel }) {
 
       <aside className="chess-game__side" aria-label="Game information">
         <div className={`player-card${botsTurn ? ' is-turn' : ''}`}>
-          <span className="player-card__bot" aria-hidden="true">
-            {BOT_EMOJI[game.level]}
+          <span className="player-card__bot has-pic" aria-hidden="true">
+            <BotPortrait pictures={CHECKERS_BOTS} level={game.level} thinking={botsTurn && !judged} />
           </span>
           <div title={BOT_DESCRIPTIONS[game.level]}>
             <strong>{levelInfo.label} bot</strong>
@@ -403,7 +411,7 @@ export function CheckersPlay({ level }: { level: BotLevel }) {
 
         {judged ? (
           <div className="chess-actions">
-            <button type="button" className="button button--primary" onClick={rematch}>
+            <button type="button" className="button button--primary" data-key="enter" onClick={rematch}>
               Rematch
             </button>
             {!showResult && (
@@ -427,7 +435,7 @@ export function CheckersPlay({ level }: { level: BotLevel }) {
               >
                 {confirming === 'resign' ? 'Yes, resign' : 'Yes, start again'}
               </button>
-              <button type="button" className="button button--light" onClick={() => setConfirming(null)} autoFocus>
+              <button type="button" className="button button--light" data-key="esc" onClick={() => setConfirming(null)} autoFocus>
                 Keep playing
               </button>
             </div>

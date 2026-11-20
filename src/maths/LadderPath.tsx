@@ -35,12 +35,10 @@ function tablesOf(
   p: SkillProgress,
   byKey: Map<string, FactStats>,
 ): { table: number; secure: boolean }[] {
-  if (p.skill.stage !== "times-tables") return [];
-  const step = CAMPAIGN_STEPS.find(
-    (s) => `tables-${s.add.join("-")}` === p.skill.id,
-  );
+  if (p.skill.table === undefined || p.skill.tablesStep === undefined) return [];
+  const step = CAMPAIGN_STEPS[p.skill.tablesStep];
   if (!step) return [];
-  return step.add.map((table) => {
+  return [p.skill.table].map((table) => {
     const keys = tableFacts(table).filter(
       (k) => parseFactKey(k)!.b <= (step.upTo ?? 12),
     );

@@ -398,3 +398,14 @@
   .ar-shell .ar-chunky--play { min-height: 52px; font-size: 1.5rem; width: min(260px, 40%); }
   .ar-shell .ar-chunky--mates { min-height: 52px; }
 }
+
+/* A quest's Game Coins pouch, said once on Home. */
+.ar-pouch {
+  position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 20; margin: 0;
+  display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 14px;
+  background: #fff6d6; color: #4a3200; border: 3px solid #ffc83d; font-weight: 700; font-size: 1.1rem;
+}
+.ar-pouch__ok { min-height: 44px; padding: 4px 16px; border-radius: 10px; border: 2px solid #4a3200; background: #ffc83d; color: #4a3200; font: inherit; cursor: pointer; }
+
+/* Key badges (docs/plans/game-keys/PLAN.md). */
+.ar-chunky, .ar-shell .ar-choice, .ar-tab { position: relative; }

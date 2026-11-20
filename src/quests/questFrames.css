@@ -1,0 +1,23 @@
+/* Quest Frames (QuestFrames.tsx). */
+.frame-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  gap: 0.6rem;
+  margin: 0.75rem 0;
+}
+.frame-picker__choice {
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  padding: 0.6rem 0.4rem;
+  border: 2px solid #c9bdf0;
+  border-radius: 0.9rem;
+  font: inherit;
+  font-weight: 700;
+  color: #1b1036;
+  background: #fff;
+  cursor: pointer;
+}
+.frame-picker__choice.is-picked { border-color: #ffb800; background: #fff3c4; box-shadow: 0 0 0 3px rgb(255 184 0 / 0.35); }
+.frame-picker__choice:disabled { opacity: 0.5; cursor: default; }
+.frame-picker__bar { display: flex; flex-wrap: wrap; gap: 0.5rem; }

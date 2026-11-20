@@ -9,7 +9,8 @@ afterEach(() => {
 
 describe('kit junior bits', () => {
 
-  it('the first-go hand waits, then points, and a go that is not the first never points', () => {
+  // One test for both, to stay in the kit's test budget (docs/TESTING.md).
+  it('the first-go hand waits, then points (never on a later go); seen kinds show at once and a failed save is sent again', async () => {
     vi.useFakeTimers();
     const first = renderHook(() => useGuidedFirstGo(true, 2600));
     act(() => first.result.current.start());
@@ -23,9 +24,8 @@ describe('kit junior bits', () => {
     act(() => later.result.current.start());
     act(() => void vi.advanceTimersByTime(100));
     expect(later.result.current.pointing).toBe(false);
-  });
+    vi.useRealTimers();
 
-  it('seen kinds show at once, and a failed save is kept and sent with the next mark', async () => {
     const save = vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValue(undefined);
     const { result } = renderHook(() => useSeenKinds(['swap'], save));
     expect(result.current.has('swap')).toBe(true);

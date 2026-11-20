@@ -7,7 +7,8 @@
  * classmates who are too, pops up challenges over any screen, and plays the fight one turn at a time through `api`.
  * While the teacher has classmate fights switched off (Stage 7), none of that shows.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useGameKeys } from '../../kit';
 import type { BotLevel } from '../../../shared/archery/bot';
 import { PACK_MS } from '../../../shared/archery/config';
 import { duelOpen, seatOf, type Classmate, type DuelRow } from '../../../shared/archery/duel';
@@ -26,7 +27,9 @@ import { loadChoices, loadPrefs, saveChoices, wantsLessMotion } from './prefs';
 import { WORLD_NAMES as WORLD_NAMES_FOR } from './text';
 import { SpeedRound } from './SpeedRound';
 import { useDuels } from './useDuels';
+import { useAskFromHub } from '../../multiplayer/useAskFromHub';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import './archery.css';
 
 type Screen =
@@ -61,7 +64,10 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
   onServer?: boolean;
 }) {
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
+  const rootRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<ArmoryState | null>(null);
+  /** Coins from a quest's Game Coins pouch, opened as the game loaded (shown once on Home). */
+  const [pouch, setPouch] = useState(0);
   const [coinsLeft, setCoinsLeft] = useState(DAILY_COINS);
   /** The teacher's Discount day: every arrow half price today (the server sets the real price). */
   const [discount, setDiscount] = useState(false);
@@ -73,6 +79,8 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
   const [packProblem, setPackProblem] = useState('');
   // Maths over a bot fight: a restock between rounds, or the loot chest at the end.
   const [overFight, setOverFight] = useState<{ set: SetRequest; won?: boolean } | null>(null);
+  // Keys press the on-screen buttons. A fight's own keys (arrows, Space) have no data-key; off under the restock pop-up so it can't press the fight's buttons beneath it.
+  useGameKeys(rootRef, !overFight);
   const prefs = loadPrefs();
   const lessMotion = wantsLessMotion(prefs);
   const [mateWorld, setMateWorld] = useState<WorldId>(choices.world);
@@ -99,6 +107,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
       return;
     }
     setState(r.value.state);
+    setPouch(typeof r.value.state.pouch === 'number' && r.value.state.pouch > 0 ? r.value.state.pouch : 0);
     setCoinsLeft(r.value.coinsLeft);
     setDiscount(r.value.discount === true);
     setScreen({ kind: 'home' });
@@ -166,6 +175,10 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
     if (!r.ok) setAskProblem(r.message);
   }
 
+  // "Yes" on the hub's challenge banner: once the Armory has opened, say yes here as the pop-up would.
+  const hubReady = screen.kind !== 'loading' && screen.kind !== 'off' && screen.kind !== 'offline' && matesOn;
+  useAskFromHub(hubReady ? duels.asks.map((a) => a.duel) : [], (id) => void answer(id, true));
+
   async function packForDuel(d: DuelRow, pack: PlayerSetup) {
     setStarting(true);
     setPackProblem('');
@@ -229,17 +242,17 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
     setScreen({ kind: 'home' });
   }
 
-  if (screen.kind === 'loading') return <div className="ar-shell"><p className="ar-wait" role="status">Opening the Armory…</p></div>;
+  if (screen.kind === 'loading') return <div className="ar-shell" ref={rootRef}><p className="ar-wait" role="status">Opening the Armory…</p></div>;
   if (screen.kind === 'off' || screen.kind === 'offline' || !state) {
     const message = screen.kind === 'off' || screen.kind === 'offline' ? screen.message : '';
     return (
-      <div className="ar-shell">
+      <div className="ar-shell" ref={rootRef}>
         <section className="ar-page" aria-labelledby="ar-closed-title">
           <h2 id="ar-closed-title">{screen.kind === 'off' ? 'Archery Challenge is closed' : "Archery Challenge can't open just now"}</h2>
           <p>{message}</p>
           <div className="ar-row">
-            {screen.kind !== 'off' && <button type="button" className="button button--play ar-btn" onClick={() => void load()}>Try again</button>}
-            {onExit && <button type="button" className="button button--light ar-btn" onClick={onExit}>Back</button>}
+            {screen.kind !== 'off' && <button type="button" className="button button--play ar-btn" data-key="enter" onClick={() => void load()}>Try again</button>}
+            {onExit && <button type="button" className="button button--light ar-btn" data-key="esc" onClick={onExit}>Back</button>}
           </div>
         </section>
       </div>
@@ -268,6 +281,12 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
             onExit={onExit}
             onClassmate={matesOn ? () => setScreen({ kind: 'classmates' }) : undefined}
           />
+          {pouch > 0 && (
+            <p className="ar-pouch" role="status">
+              💰 Quest pouch: +{pouch} coins!
+              <button type="button" className="ar-pouch__ok" onClick={() => setPouch(0)}>OK</button>
+            </p>
+          )}
           {extra?.(() => void load())}
         </>
       );
@@ -400,7 +419,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
       );
     }
     const [title, words] = d.status === 'declined'
-      ? seat === 0 ? [`${them} said no`, 'Maybe next time! Try another classmate, or a bot.'] : ['Challenge turned down', 'Maybe next time!']
+      ? seat === 0 ? [`${them} said no`, 'Maybe next time! Try another friend, or a bot.'] : ['Challenge turned down', 'Maybe next time!']
       : d.status === 'expired'
         ? ['The challenge ran out', seat === 0 ? `${them} didn't answer in time.` : 'It wasn\'t answered in time.']
         : ['The fight was called off', "It didn't start, so any arrows you packed are back in your bag."];
@@ -411,9 +430,10 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
   // fights are switched off.
   const ask = screen.kind !== 'duel' && matesOn ? duels.asks[0] : undefined;
   return (
-    <div className="ar-shell" data-screen={screen.kind}>
+    <div className="ar-shell" data-screen={screen.kind} ref={rootRef}>
       {body}
       <TrophyWonLine games={['archery']} watch={saves} off={!onServer} />
+      <AchievementPop games={['archery']} watch={saves} off={!onServer} />
       {ask && (
         <ChallengeAsk
           key={ask.duel} ask={ask} serverNow={duels.serverNow} busy={duelBusy} problem={askProblem}

@@ -23,7 +23,7 @@ export interface Services {
   /** Who owns this sign-in token? Null if it's missing, expired or fake. */
   userIdFor(token: string): Promise<string | null>;
   recordRun(player: string, run: RunRow): Promise<Outcome<{ status: 'saved' | 'duplicate' | 'locked'; points: number | null }>>;
-  recordKey(player: string, levelId: string, right: number): Promise<Outcome<'passed' | 'already' | 'not-passed' | 'no-win'>>;
+  recordKey(player: string, levelId: string, right: number): Promise<Outcome<'passed' | 'already' | 'not-passed' | 'no-win' | 'not-today'>>;
   recordFacts(player: string, pack: string, facts: FactStats[]): Promise<Outcome<number>>;
   /** Adds answers to the records. 0 if this batch was counted before. */
   recordAnswers(player: string, pack: string, batchId: string, answers: FactAnswer[]): Promise<Outcome<number>>;

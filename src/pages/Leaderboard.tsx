@@ -4,10 +4,12 @@ import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
 import type { TrophyShelf } from '../data/trophies';
+import { HeroTitleLine } from '../quests/HeroTitles';
 import { FavouriteTrophies, useTrophyShelves } from '../trophies/FavouriteTrophies';
 import { HallOfFame } from '../trophies/HallOfFame';
 import { fetchStarsBoard, type StarsRow } from '../data/gemKeep';
 import { fetchMonstersBoard, type MonstersRow } from '../data/monsters';
+import { fetchGoblinStormBoard, type GoblinStormRow } from '../data/goblinstorm';
 import { useClassSwitches } from '../data/classSwitches';
 import { fetchLeaderboard, type Board, type BoardRow } from '../data/progress';
 import { GAMES, gameLabel } from '../games/registry';
@@ -189,6 +191,8 @@ function GameBoards({ scope, scopeRow }: { scope: BoardScope; scopeRow: ReactNod
         <StarsBoard />
       ) : game === 'monsters' ? (
         <MonstersBoard />
+      ) : game === 'goblinstorm' ? (
+        <GoblinStormBoard scope={scope} />
       ) : special ? (
         <RankedBoard game={game} />
       ) : (
@@ -231,6 +235,7 @@ function OneGameBoard({ game, scope }: { game: string; scope: BoardScope }) {
       <span className="board-list__name">
         {row.name}
         {row.is_me && <span className="board-list__you"> (you)</span>}
+        <HeroTitleLine avatar={row.avatar} />
         <FavouriteTrophies shelf={shelves[row.name]} />
       </span>
       <span className="board-list__points">
@@ -463,6 +468,7 @@ function AchievementsLine({
         <span className="board-list__name">
           {row.name}
           {row.is_me && <span className="board-list__you"> (you)</span>}
+          <HeroTitleLine avatar={row.avatar} />
           {row.hard && (
             <span className="board-list__hard" title="Played on 4 or 5 school days this week" aria-label="Played on 4 or 5 school days this week">
               {' '}
@@ -610,6 +616,7 @@ function TrophiesLine({
         <span className="board-list__name">
           {row.name}
           {row.is_me && <span className="board-list__you"> (you)</span>}
+          <HeroTitleLine avatar={row.avatar} />
         </span>
         <span className="board-list__points">
           🏆 {board === 'season' ? row.season : row.count}
@@ -749,6 +756,7 @@ function HardLine({ row, most, shelf }: { row: HardWorkerRow; most: number | nul
       <span className="board-list__name">
         {row.name}
         {row.is_me && <span className="board-list__you"> (you)</span>}
+        <HeroTitleLine avatar={row.avatar} />
         <FavouriteTrophies shelf={shelf} />
       </span>
       <span className="board-list__points">
@@ -929,6 +937,77 @@ function MonstersBoard() {
   );
 }
 
+/** Goblin Storm: bosses beaten, then the most monsters beaten in one run. Never maths. */
+function GoblinStormBoard({ scope }: { scope: BoardScope }) {
+  const [rows, setRows] = useState<GoblinStormRow[] | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let current = true;
+    setRows(null);
+    setFailed(false);
+    fetchGoblinStormBoard(scope)
+      .then((r) => current && setRows(r))
+      .catch(() => current && setFailed(true));
+    return () => {
+      current = false;
+    };
+  }, [scope]);
+
+  const top = rows?.slice(0, 10) ?? [];
+  const meBelow = rows?.slice(10).find((r) => r.is_me);
+  const me = rows?.find((r) => r.is_me);
+  const shelves = useTrophyShelves([...top, meBelow].map((r) => r?.name));
+
+  return (
+    <>
+      <p className="leaderboard__about">Most bosses beaten in Goblin Storm, then the most monsters beaten in one run.</p>
+      {failed ? (
+        <p className="panel__empty">We couldn’t load the leaderboard just now. Please try again soon.</p>
+      ) : !rows ? (
+        <p className="panel__empty">Loading…</p>
+      ) : top.length === 0 ? (
+        <p className="panel__empty">{emptyText(scope, 'finished a run')}</p>
+      ) : (
+        <ol className="board-list" aria-label="Goblin Storm leaderboard">
+          {top.map((row) => (
+            <GoblinStormLine key={row.name} row={row} shelf={shelves[row.name]} />
+          ))}
+          {meBelow && (
+            <>
+              <li className="board-list__gap" aria-hidden="true">
+                ⋯
+              </li>
+              <GoblinStormLine row={meBelow} shelf={shelves[meBelow.name]} />
+            </>
+          )}
+        </ol>
+      )}
+      {rows && !me && <p className="leaderboard__me-off">Finish a run of Goblin Storm to get on this board!</p>}
+    </>
+  );
+}
+
+function GoblinStormLine({ row, shelf }: { row: GoblinStormRow; shelf?: TrophyShelf }) {
+  return (
+    <li className={row.is_me ? 'is-me' : undefined} value={row.place}>
+      <span className="board-list__place" aria-label={`Place ${row.place}`}>
+        {row.place <= 3 ? MEDALS[row.place - 1] : row.place}
+      </span>
+      <AvatarImage avatar={row.avatar} size={40} />
+      <span className="board-list__name">
+        {row.name}
+        {row.is_me && <span className="board-list__you"> (you)</span>}
+        <HeroTitleLine avatar={row.avatar} />
+        <FavouriteTrophies shelf={shelf} />
+      </span>
+      <span className="board-list__points">
+        👑 {row.bosses} · 💥 {row.best}
+      </span>
+    </li>
+  );
+}
+
 function MonstersLine({ row, shelf }: { row: MonstersRow; shelf?: TrophyShelf }) {
   return (
     <li className={row.is_me ? 'is-me' : undefined} value={row.place}>
@@ -939,6 +1018,7 @@ function MonstersLine({ row, shelf }: { row: MonstersRow; shelf?: TrophyShelf })
       <span className="board-list__name">
         {row.display_name}
         {row.is_me && <span className="board-list__you"> (you)</span>}
+        <HeroTitleLine avatar={row.avatar} />
         <FavouriteTrophies shelf={shelf} />
       </span>
       <span className="board-list__points">🐾 {row.monsters}</span>
@@ -956,6 +1036,7 @@ function StarsLine({ row, shelf }: { row: StarsRow; shelf?: TrophyShelf }) {
       <span className="board-list__name">
         {row.display_name}
         {row.is_me && <span className="board-list__you"> (you)</span>}
+        <HeroTitleLine avatar={row.avatar} />
         <FavouriteTrophies shelf={shelf} />
       </span>
       <span className="board-list__points">★ {row.stars}</span>
@@ -974,6 +1055,7 @@ function BoardLine({ row, board, shelf }: { row: BoardRow; board: Board; shelf?:
       <span className="board-list__name">
         {row.display_name}
         {row.is_me && <span className="board-list__you"> (you)</span>}
+        <HeroTitleLine avatar={row.avatar} />
         <FavouriteTrophies shelf={shelf} />
       </span>
       <RankBadge rank={row.rank} />

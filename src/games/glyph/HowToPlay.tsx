@@ -9,7 +9,7 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
     <section className="gg-howto" aria-labelledby="gg-how-h">
       <header className="gg-map__top">
         <h2 id="gg-how-h" className="gg-h" tabIndex={-1} ref={heading}>How to play</h2>
-        <button type="button" className="gg-btn" onClick={onBack}>Back</button>
+        <button type="button" className="gg-btn" data-key="esc" onClick={onBack}>Back</button>
       </header>
       <div className="gg-howto__body">
         <section>

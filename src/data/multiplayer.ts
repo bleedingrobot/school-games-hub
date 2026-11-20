@@ -74,6 +74,7 @@ export type Action =
   | { action: 'create'; game: GameKind; side: Side | 'random'; lobby: boolean }
   | { action: 'join'; code: string }
   | { action: 'join'; gameId: string }
+  | { action: 'invite'; invite: number; game: GameKind }
   | { action: 'cancel' | 'resign' | 'offer-draw' | 'claim-win' | 'rematch'; gameId: string }
   | { action: 'move'; gameId: string; move: string; ply: number }
   | { action: 'answer-draw'; gameId: string; accept: boolean };
@@ -198,6 +199,13 @@ export async function fetchLobby(): Promise<LobbyGame[]> {
   const { data, error } = await supabase.rpc('lobby_games');
   if (error || !data) throw new FriendlyError('We couldn’t load the lobby.');
   return data as LobbyGame[];
+}
+
+/** Is "Play other classes" on (on unless a teacher turned it off)? */
+export async function fetchPlayOtherClasses(classId?: string | null): Promise<boolean> {
+  const data = await readSettings(['play_other_classes'], classId);
+  if (!data) throw new FriendlyError('We couldn’t load that setting.');
+  return data.play_other_classes !== false;
 }
 
 /** Is playing friends switched on? (The teacher can switch it off for everyone.) */

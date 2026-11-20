@@ -187,8 +187,8 @@ export function SpeedRound({ api, coins, coinsLeft, set = { kind: 'speed' }, won
             <p>Each right answer in time earns <strong>{COINS_PER_RIGHT} coins</strong>, and {STREAK_AT} or more in a row earn {STREAK_BONUS} extra each. A wrong answer just moves on to the next one. Get {POINT_AT} or more right for a hub point.</p>
             <p className="ar-speed__note">{leftToday}</p>
             <div className="ar-row">
-              <button type="button" className="button button--play ar-btn ar-btn--big" onClick={() => void start()}>Start</button>
-              <button type="button" className="button button--light ar-btn" onClick={onExit}>{exitLabel}</button>
+              <button type="button" className="button button--play ar-btn ar-btn--big" data-key="enter" onClick={() => void start()}>Start</button>
+              <button type="button" className="button button--light ar-btn" data-key="esc" onClick={onExit}>{exitLabel}</button>
             </div>
           </>
         )}
@@ -204,8 +204,8 @@ export function SpeedRound({ api, coins, coinsLeft, set = { kind: 'speed' }, won
             <p>{SHORT_SECONDS} seconds for each. Get all {SHORT_QUESTIONS} right for a {STREAK_BONUS}-coin streak bonus.</p>
             {coinsLeft <= 0 && <p className="ar-speed__note">{leftToday}</p>}
             <div className="ar-row">
-              <button type="button" className="button button--play ar-btn ar-btn--big" onClick={() => void start()}>{isChest ? 'Open the chest' : 'Start'}</button>
-              <button type="button" className="button button--light ar-btn ar-btn--small" onClick={onExit}>Skip</button>
+              <button type="button" className="button button--play ar-btn ar-btn--big" data-key="enter" onClick={() => void start()}>{isChest ? 'Open the chest' : 'Start'}</button>
+              <button type="button" className="button button--light ar-btn ar-btn--small" data-key="esc" onClick={onExit}>Skip</button>
             </div>
           </>
         )}
@@ -229,8 +229,8 @@ export function SpeedRound({ api, coins, coinsLeft, set = { kind: 'speed' }, won
             {phase.point && <p>+1 hub point for {POINT_AT} or more right.</p>}
             {!phase.earns && <p className="ar-speed__note">That was practice: no coins, but your maths still counts.</p>}
             <div className="ar-row">
-              {speed && <button type="button" className="button button--play ar-btn" onClick={() => void start()}>Another round</button>}
-              <button type="button" className={`button ${speed ? 'button--light' : 'button--play'} ar-btn`} onClick={onExit}>{exitLabel}</button>
+              {speed && <button type="button" className="button button--play ar-btn" data-key="enter" onClick={() => void start()}>Another round</button>}
+              <button type="button" className={`button ${speed ? 'button--light' : 'button--play'} ar-btn`} data-key={speed ? 'esc' : 'enter esc'} onClick={onExit}>{exitLabel}</button>
             </div>
           </>
         )}
@@ -238,8 +238,8 @@ export function SpeedRound({ api, coins, coinsLeft, set = { kind: 'speed' }, won
           <>
             <p role="alert">{phase.message}</p>
             <div className="ar-row">
-              <button type="button" className="button button--play ar-btn" onClick={() => setPhase({ kind: 'intro' })}>Try again</button>
-              <button type="button" className="button button--light ar-btn" onClick={onExit}>{exitLabel}</button>
+              <button type="button" className="button button--play ar-btn" data-key="enter" onClick={() => setPhase({ kind: 'intro' })}>Try again</button>
+              <button type="button" className="button button--light ar-btn" data-key="esc" onClick={onExit}>{exitLabel}</button>
             </div>
           </>
         )}

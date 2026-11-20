@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { botLevel } from './bot';
-import { LAST_LEVEL, TICKS_PER_SECOND, levelSpec, questionCap, type BoostId } from './config';
+import { FIELD_H, LAST_LEVEL, RARE_GEMS, RARE_IDS, TICKS_PER_SECOND, gemOf, isRare, levelSpec, questionCap, type BoostId, type RareId } from './config';
 import { levelKinds, levelResult, playLevel, starterLevel, startLevel, step } from './engine';
-import { applyResult, canStart, newPlayer, type Player } from './progress';
+import { makeField, rareFor, rareIn } from './field';
+import { applyResult, canStart, measures, newPlayer, newSeason, type Player } from './progress';
 import { makeRandom } from './random';
 
 const steady = { wobble: 4, choice: 3, maths: 0.6 };
@@ -18,6 +19,42 @@ describe('Diamond Drop rules', () => {
       expect(replay).toEqual(played.result);
       expect(playLevel(input)).toEqual(replay);
     }
+
+    // Rare gems: each turns up at its own chance in config, at most one a level, near the bottom, clear of everything.
+    const n = 40000;
+    const seen: Record<string, number> = {};
+    for (let seed = 1; seed <= n; seed++) {
+      const id = rareFor(seed) ?? 'none';
+      seen[id] = (seen[id] ?? 0) + 1;
+    }
+    for (const g of RARE_GEMS) expect(Math.abs((seen[g.id] ?? 0) / n - g.chance)).toBeLessThan(0.005);
+    const any = RARE_GEMS.reduce((a, g) => a + g.chance, 0);
+    expect(any).toBeLessThan(0.3);
+    expect(Math.abs((seen.none ?? 0) / n - (1 - any))).toBeLessThan(0.01);
+    let found = 0;
+    for (let seed = 1; seed <= 400; seed++) {
+      const things = makeField(1 + (seed % LAST_LEVEL), seed);
+      expect(things.filter((t) => isRare(t.gem)).length).toBeLessThanOrEqual(1);
+      const r = rareIn(things);
+      expect(r?.gem ?? null).toBe(rareFor(seed));
+      if (!r) continue;
+      found++;
+      expect(gemOf(r.gem!).value).toBe(RARE_GEMS.find((g) => g.id === r.gem)!.value);
+      expect(r.y).toBeGreaterThanOrEqual(380);
+      expect(r.y).toBeLessThanOrEqual(FIELD_H - r.r);
+      for (const t of things) if (t !== r && !t.crab) expect(Math.hypot(t.x - r.x, t.y - r.y)).toBeGreaterThan(t.r + r.r - 0.001);
+    }
+    expect(found).toBeGreaterThan(60);
+    // A rare gem can be caught, and a level with one replays exactly.
+    let caught = 0;
+    for (let seed = 1; seed <= 120 && caught < 3; seed++) {
+      const level = 3 + (seed % 6);
+      if (!rareFor(seed)) continue;
+      const played = botLevel(level, seed, [], steady, makeRandom(seed));
+      expect(playLevel({ level, seed, drops: played.drops, marks: played.marks, finish: played.finish })).toEqual(played.result);
+      if (RARE_IDS.some((id) => (played.result.caught[id] ?? 0) > 0)) caught++;
+    }
+    expect(caught).toBeGreaterThan(0);
   });
 
   it('slips come only from the seed and the marks; a wrong mark drops the gem; nothing slips past the cap; the first go cannot miss', () => {
@@ -96,6 +133,23 @@ describe('Diamond Drop rules', () => {
     p = applyResult(p, { ...win, level: 2 }, afterMidnight).player;
     expect(p.deepest).toBe(2);
     expect(canStart(p, 3, afterMidnight)).toBe(false);
+
+    // The rare gem collection is kept for good: counts, first date, new pages, and through a New Season.
+    const rareDay = new Date('2026-11-18T01:00:00Z');
+    const rareBase = { ...levelResult(startLevel(1, 9)), passed: true, stars: 1 as const };
+    const caughtOf = (id: RareId) => ({ ...rareBase, caught: { ...rareBase.caught, [id]: 1 } });
+    const firstRare = applyResult(newPlayer(), caughtOf('frostCrystal'), rareDay);
+    expect(firstRare.newRare).toEqual(['frostCrystal']);
+    expect(firstRare.player.lifetime.rare?.frostCrystal).toEqual({ count: 1, first: '2026-11-18' });
+    const againRare = applyResult(firstRare.player, caughtOf('frostCrystal'), new Date('2026-11-19T01:00:00Z'));
+    expect(againRare.newRare).toEqual([]);
+    expect(againRare.player.lifetime.rare?.frostCrystal).toEqual({ count: 2, first: '2026-11-18' });
+    const phoenix = applyResult(againRare.player, caughtOf('phoenixGem'), rareDay).player;
+    expect(measures(phoenix)).toMatchObject({ diamond_rare_kinds: 2, diamond_rare_total: 3, diamond_phoenix: 1 });
+    expect(phoenix.gemBook.frostCrystal).toBeUndefined();
+    const nextSeason = newSeason(phoenix);
+    expect(nextSeason.lifetime.rare).toEqual(phoenix.lifetime.rare);
+    expect(nextSeason.gemBook).toEqual({});
   });
 
   it('on an unlimited day a second new level opens and counts, with no hub points; a normal day still refuses', () => {

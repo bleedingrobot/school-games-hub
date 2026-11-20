@@ -52,7 +52,7 @@ export function pretendClashApi(me: string, options: { askMe?: boolean } = {}): 
 
   return {
     async here() {
-      const online = [BEA, MOE].map((id) => ({ id, name: mem.pupils.get(id)!.name, avatar: null, busy: [...mem.clashes.values()].some((c) => c.status === 'playing' && (c.seat_a === id || c.seat_b === id) && c.seat_a !== me && c.seat_b !== me) }));
+      const online = [BEA, MOE].map((id) => ({ id, name: mem.pupils.get(id)!.name, avatar: null, sameClass: id === BEA, className: id === BEA ? null : 'Room 9', busy: [...mem.clashes.values()].some((c) => c.status === 'playing' && (c.seat_a === id || c.seat_b === id) && c.seat_a !== me && c.seat_b !== me) }));
       const asks = [...mem.clashes.values()].filter((c) => c.seat_b === me && c.status === 'asked').map((c) => ({ clash: c.id, from: c.name_a, deadline: c.deadline }));
       const clash = [...mem.clashes.values()].reverse().find((c) => (c.status === 'playing' && (c.seat_a === me || c.seat_b === me)) || (c.status === 'asked' && c.seat_a === me)) ?? null;
       return { off: false, online, asks, clash };

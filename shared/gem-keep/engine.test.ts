@@ -22,10 +22,17 @@ describe('maths rewards', () => {
     expect(state.mana).toBe(start + 2 * MATHS.well.mana);
     act(state, { type: 'well-answer', correct: true }); // third in a row: bonus
     expect(state.mana).toBe(start + 3 * MATHS.well.mana + MATHS.well.streakBonus);
-    const before = state.mana;
-    act(state, { type: 'well-answer', correct: false });
-    expect(state.mana).toBe(before);
-    expect(state.wellStreak).toBe(0);
-    expect(state.stats).toMatchObject({ wellAsked: 4, wellRight: 3 });
+    // Three right is worth what ten right in a row was before the well was cut to three questions.
+    expect(state.mana - start).toBe(190);
+    expect(state.wellLeft).toBe(0);
+    expect(state.stats).toMatchObject({ wellAsked: 3, wellRight: 3 });
+
+    const other = newGame(STRAIGHT);
+    act(other, { type: 'well-answer', correct: true });
+    const before = other.mana;
+    act(other, { type: 'well-answer', correct: false });
+    expect(other.mana).toBe(before);
+    expect(other.wellStreak).toBe(0);
+    expect(other.stats).toMatchObject({ wellAsked: 2, wellRight: 1 });
   });
 });

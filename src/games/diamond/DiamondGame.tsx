@@ -4,6 +4,7 @@
  * backend last sent it. Every rule is the shared one (shared/diamond/).
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useGameKeys } from '../../kit';
 import { type BoostId, type Slot } from '../../../shared/diamond/config';
 import { nextStep } from '../../../shared/diamond/nextStep';
 import { canStart, levelsOpen, newAchievements, type Player } from '../../../shared/diamond/progress';
@@ -14,6 +15,8 @@ import { PlayLevel } from './PlayLevel';
 import { helpFor, shopAdvice, type TipId } from './guide';
 import { loadPrefs, savePrefs, wantsLessMotion, type DiamondPrefs } from './prefs';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
+import { AchievementPop } from '../../achievements/AchievementPop';
+import { pretendNew } from '../../data/newAchievements';
 import './diamond.css';
 
 type Screen = 'map' | 'play' | 'end' | 'shop' | 'book' | 'how' | 'hall';
@@ -30,7 +33,7 @@ function bestLevel(p: Player, now: Date, unlimited = false): number {
   return Math.max(1, p.deepest);
 }
 
-export function DiamondGame({ backend, onExit, extra, onServer = false }: { backend: DiamondBackend; onExit?: () => void; /** The school's server is behind `backend`, so trophies can be won. */ onServer?: boolean; extra?: (h: GameHandle) => ReactNode }) {
+export function DiamondGame({ backend, extra, onServer = false }: { backend: DiamondBackend; /** The school's server is behind `backend`, so trophies can be won. */ onServer?: boolean; extra?: (h: GameHandle) => ReactNode }) {
   const [player, setPlayer] = useState<Player | null>(null);
   const [clock, setClock] = useState<{ server: number; at: number }>({ server: Date.now(), at: Date.now() });
   const [screen, setScreen] = useState<Screen>('map');
@@ -45,8 +48,13 @@ export function DiamondGame({ backend, onExit, extra, onServer = false }: { back
   const [prefs, setPrefsState] = useState<DiamondPrefs>(loadPrefs);
   const [busy, setBusy] = useState(false);
   const [unlimited, setUnlimited] = useState(false);
+  /** Coins from a quest's Game Coins pouch, opened as the game loaded (said once, on the map). */
+  const [pouch, setPouch] = useState(0);
   const still = wantsLessMotion(prefs);
   const glowTimer = useRef(0);
+  const rootRef = useRef<HTMLDivElement>(null);
+  // Keys press the on-screen buttons; off while playing (Space and Enter drop the claw).
+  useGameKeys(rootRef, screen !== 'play');
 
   const now = useCallback(() => new Date(clock.server + (Date.now() - clock.at)), [clock]);
 
@@ -55,6 +63,7 @@ export function DiamondGame({ backend, onExit, extra, onServer = false }: { back
     if (!r.ok) { setTrouble(r.message); return; }
     setPlayer(r.value.player);
     setUnlimited(r.value.unlimited === true);
+    if (r.value.pouch && r.value.pouch.amount > 0) setPouch(r.value.pouch.amount);
     setClock({ server: r.value.now, at: Date.now() });
     setSelected(bestLevel(r.value.player, new Date(r.value.now), r.value.unlimited === true));
     setScreen((s) => (s === 'play' ? s : 'map'));
@@ -133,10 +142,7 @@ export function DiamondGame({ backend, onExit, extra, onServer = false }: { back
   const againLabel = ended && ended.result.passed && selected !== ended.result.level ? `Play level ${selected}` : `Play level ${ended?.result.level ?? selected} again`;
 
   return (
-    <div className={`dd-root${screen === 'play' ? ' dd-root--play' : ''}${still ? ' dd-still' : ''}`}>
-      {onExit && screen !== 'play' && (
-        <button type="button" className="button button--light-outline dd-btn dd-exit" onClick={onExit}>Leave Diamond Drop</button>
-      )}
+    <div ref={rootRef} className={`dd-root${screen === 'play' ? ' dd-root--play' : screen === 'map' ? ' dd-root--map' : ''}${still ? ' dd-still' : ''}`}>
       {trouble && <p className="dd-trouble" role="alert">{trouble}</p>}
       {screen === 'map' && (
         <LevelMap
@@ -179,7 +185,6 @@ export function DiamondGame({ backend, onExit, extra, onServer = false }: { back
         <LevelEnd
           ended={ended}
           unlimited={unlimited}
-          achieved={achieved}
           againLabel={againLabel}
           onShop={() => { setShopTab('boosts'); go('shop'); }}
           onAgain={() => void start(canStart(player, selected, today, unlimited) ? selected : ended.result.level)}
@@ -208,8 +213,15 @@ export function DiamondGame({ backend, onExit, extra, onServer = false }: { back
       {screen === 'book' && <GemBook player={player} onBack={() => go('map')} />}
       {screen === 'how' && <HowToPlay onBack={() => go('map')} />}
       {screen === 'hall' && <Hall backend={backend} onBack={() => go('map')} />}
+      {pouch > 0 && screen === 'map' && (
+        <p className="dd-pouch" role="status">
+          💰 Quest pouch: +{pouch} coins!
+          <button type="button" className="dd-pouch__ok" onClick={() => setPouch(0)}>OK</button>
+        </p>
+      )}
       {extra && screen !== 'play' && extra({ reload: () => void load() })}
       <TrophyWonLine games={['diamond']} watch={ended} off={!onServer} />
+      <AchievementPop games={['diamond']} watch={ended} off={!onServer} pretend={pretendNew('diamond', achieved.map((a) => ({ ...a, how: a.for })))} />
     </div>
   );
 }

@@ -12,7 +12,7 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
     <section className="tf-howto" aria-labelledby="tf-how-h">
       <header className="tf-map__top">
         <h2 id="tf-how-h" className="tf-h" tabIndex={-1} ref={heading}>How to play</h2>
-        <button type="button" className="tf-btn" onClick={onBack}>Back</button>
+        <button type="button" className="tf-btn" data-key="enter esc" onClick={onBack}>Back</button>
       </header>
       <div className="tf-howto__body">
         <section>

@@ -1,0 +1,180 @@
+{
+  "_from": "docs/plans/stories/PLAN.md. Story paintings for clans: one 1536x864 scene a page, filed as art/story/<story id>-<page>.webp. The win stories keep their old paintings in art/season-monsters.",
+  "game": "stories-clans",
+  "filename_prefix": "stories/clans/img",
+  "style": "a",
+  "styles": {
+    "a": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, a storybook illustration, suitable for children aged 8 to 12, no blood, no gore, no romance, no writing, no letters, no numbers anywhere. "
+  },
+  "inbox": "~/stories-art-inbox/clans",
+  "picks": "docs/stories-art/clans-picks.json",
+  "art_dir": "src/games/clans/art",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "clans-opening-1",
+      "prompt": "A wide green valley at golden sunset, many small proud villages with colourful clan banners on the hillsides, miners with lanterns at mine mouths, smoke curling from chimneys. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "clans-opening-1"
+    },
+    {
+      "name": "clans-opening-2",
+      "prompt": "An empty, quiet little timber village at the foot of grassy hills, doors shut, an old gate with no banner, weeds between the cobbles, soft grey morning mist. No people. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "clans-opening-2"
+    },
+    {
+      "name": "clans-opening-3",
+      "prompt": "Four young cartoon-proportioned heroes, a knight, an archer, a wizard and a dwarf miner, raising a blank colourful banner over a wooden village gate, cheerful and brave, seen from behind and the side. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "clans-opening-3"
+    },
+    {
+      "name": "clans-opening-4",
+      "prompt": "A deep underground mine with tunnels glowing with gold veins and blue gems, wooden supports, a mine cart, and big friendly-scary monster shadows deep in the dark tunnels. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "clans-opening-4"
+    },
+    {
+      "name": "clans-opening-5",
+      "prompt": "Six castles on six distant hilltops around a small village in a valley, each castle a different colour of banner, and far away a misty peak with a sleeping dragon shape. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "clans-opening-5"
+    },
+    {
+      "name": "clans-opening-6",
+      "prompt": "Night, a great dark mountain range under a purple sky, two huge glowing eyes opening inside a mountain, a tiny village with lit windows far below. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "clans-opening-6"
+    },
+    {
+      "name": "clans-arrives-giant-1",
+      "prompt": "A purple stormy sky over a little village on hills, lightning flashing, a stone church bell tower with its bell swinging, villagers looking up. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "clans-arrives-giant-1"
+    },
+    {
+      "name": "clans-arrives-giant-2",
+      "prompt": "High in stormy mountains, Grimmor the huge Storm Giant with grey stony skin, a wild white beard crackling with lightning, stretching and yawning, picking up a boulder as big as a house. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "clans-arrives-giant-2"
+    },
+    {
+      "name": "clans-arrives-giant-3",
+      "prompt": "Village wall at dusk, brave scouts on the wooden ramparts pointing at a distant giant silhouette in a storm, defenders running with shields and torches. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "clans-arrives-giant-3"
+    },
+    {
+      "name": "clans-arrives-golem-1",
+      "prompt": "Inside a cosy village tavern, cups rattling on tables, dust drifting down from the roof beams, villagers gripping the table, a shaking feeling. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "clans-arrives-golem-1"
+    },
+    {
+      "name": "clans-arrives-golem-2",
+      "prompt": "A whole rocky hillside standing up as Old Craghold the Stone Golem, mossy boulders for a body, two glowing amber eyes, rocks tumbling off, at dusk. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "clans-arrives-golem-2"
+    },
+    {
+      "name": "clans-arrives-golem-3",
+      "prompt": "Village wall at dusk, scouts on wooden ramparts pointing at a huge stone golem rolling down distant hills, defenders running with shields and torches. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "clans-arrives-golem-3"
+    },
+    {
+      "name": "clans-arrives-troll-1",
+      "prompt": "Snow falling over a little village in the middle of the day, a frozen stone well, chickens hiding under hay in a barn, villagers wrapped in cloaks. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "clans-arrives-troll-1"
+    },
+    {
+      "name": "clans-arrives-troll-2",
+      "prompt": "From a frozen northern wasteland comes Frostjaw the big blue Ice Troll with icicle tusks, sniffing the air and grinning a frosty grin, snow swirling. Funny-scary, not gory. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "clans-arrives-troll-2"
+    },
+    {
+      "name": "clans-arrives-troll-3",
+      "prompt": "Village wall in snowy dusk, scouts on wooden ramparts pointing at a distant ice troll stomping through snow, defenders running with shields and torches. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "clans-arrives-troll-3"
+    }
+  ]
+}

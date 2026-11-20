@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext, type AuthState } from '../auth/AuthContext';
@@ -41,6 +41,17 @@ vi.mock('../data/cardGames', async (importOriginal) => ({
   fetchCardLobby: vi.fn(),
   fetchMyOpenCardGames: vi.fn(),
 }));
+// The live games: I haven't made a Dragon Maths hero, and my class has the Village Raid paused.
+vi.mock('../data/lobbyHere', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../data/lobbyHere')>()),
+  fetchLobbyHere: vi.fn(async () => ({
+    me: { archery: 'ready', 'dragon-maths': 'none', 'clan-quest': 'ready', isles: 'ready', raid: 'off' },
+    teacher: false,
+    going: [],
+    online: [],
+  })),
+}));
+vi.mock('../multiplayer/useHubAsks', () => ({ useHubAsks: () => ({ asks: [], serverNow: Date.now, drop: () => {} }) }));
 vi.mock('../data/lobby', async () => ({ fetchLobbyPage: (await import('./lobbyFromSeparate')).lobbyFromSeparate }));
 
 const signedIn = {
@@ -77,21 +88,36 @@ beforeEach(() => {
 });
 
 describe('the lobby with the non-maths games switch', () => {
-  it('offers only the space game, and hides open chess and checkers games, when it is off', async () => {
+  it('greys each tile it can’t use with the reason and a fix, hides open chess and checkers games, and leaves a teacher’s tiles open', async () => {
     vi.mocked(classSettings.readSettings).mockResolvedValue({ non_maths_games: false });
     renderLobby();
-    const create = screen.getByRole('region', { name: 'Start a game' });
-    const games = within(within(create).getByRole('group', { name: 'Game' }));
-    await waitFor(() => expect(games.getAllByRole('radio')).toHaveLength(1));
-    expect(games.getByRole('radio').closest('label')).toHaveTextContent(/^Wormholes/);
-    await waitFor(() => expect(games.getByRole('radio')).toBeChecked());
-    // The space game's own options have loaded before the test ends.
-    expect((await within(create).findAllByRole('radio', { name: /Nebula/i })).length).toBeGreaterThan(0);
+    const tiles = within(screen.getByRole('list', { name: 'Games' }));
+    // Non-maths games in maths-only time: paused, no fix.
+    for (const name of ['Chess', 'Checkers']) {
+      expect(await tiles.findByRole('group', { name })).toHaveTextContent('Your teacher has paused this.');
+    }
+    // No hero yet: the reason and the button that fixes it.
+    const hero = await tiles.findByRole('group', { name: 'Dragon Maths clash' });
+    expect(hero).toHaveTextContent('Make your hero first to battle your friends');
+    expect(within(hero).getByRole('link', { name: 'Make my hero' })).toHaveAttribute('href', '/dragon-maths');
+    expect(tiles.getByRole('group', { name: 'Village Raid' })).toHaveTextContent('Your teacher has paused this.');
+    // The space game still starts.
+    expect(tiles.getByRole('button', { name: /Wormholes/ })).toBeEnabled();
     const list = screen.getByRole('region', { name: 'Open games' });
     expect(await within(list).findByText(/No open games right now/)).toBeInTheDocument();
     expect(within(list).queryByText(/Brave Kiwi 7/)).not.toBeInTheDocument();
-    // The lobby loads the space game's saved choices in the background: let that finish, or it can land after the file
-    // is torn down ("Vite module runner has been closed").
     await import('../games/space/prefs');
+    cleanup();
+
+    // A teacher (no game states from the server): the live game tiles open their games, nothing paused.
+    const { fetchLobbyHere, readLobbyHere } = await import('../data/lobbyHere');
+    vi.mocked(fetchLobbyHere).mockResolvedValue(readLobbyHere({ me: null, going: [], online: [] }));
+    vi.mocked(classSettings.readSettings).mockResolvedValue({});
+    renderLobby();
+    const teacherTiles = within(screen.getByRole('list', { name: 'Games' }));
+    for (const name of [/Archery fight/, /Dragon Maths clash/, /Village Raid/]) {
+      expect(await teacherTiles.findByRole('button', { name })).toBeEnabled();
+    }
+    expect(screen.queryByText('Your teacher has paused this.')).not.toBeInTheDocument();
   });
 });

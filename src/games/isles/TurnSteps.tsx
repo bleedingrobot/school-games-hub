@@ -116,7 +116,7 @@ function SoFar({ lines, onUndo }: { lines: string[]; onUndo: () => void }) {
     <div className="si-sofar">
       <p className="si-note">This turn:</p>
       <ol className="si-step__check">{lines.map((line, i) => <li key={i}>{line}</li>)}</ol>
-      <button type="button" className="button button--light" onClick={onUndo}>Undo last</button>
+      <button type="button" className="button button--light" data-key="undo" aria-keyshortcuts="Z" onClick={onUndo}>Undo last</button>
     </div>
   );
 }
@@ -127,12 +127,13 @@ export function TurnStep(p: StepProps) {
   let body: ReactNode = null;
   /** The main buttons, right of Back. */
   let main: ReactNode = null;
+  // Enter presses Next (keys.ts); on Collect, B does too when it leads to building.
   const next = (label = 'Next') => (
-    <button type="button" className={`button button--primary si-step__main${p.lit === 'next' ? ' si-lit' : ''}`} data-pip="next" onClick={p.onNext}>{label}</button>
+    <button type="button" className={`button button--primary si-step__main${p.lit === 'next' ? ' si-lit' : ''}`} data-pip="next" data-key={step === Step.Collect && p.canBuild ? 'b' : undefined} aria-keyshortcuts="Enter" onClick={p.onNext}>{label}</button>
   );
   const doneBuilding = next('Done building');
   const toIsland = (
-    <button type="button" className={`button button--light${p.lit === 'back-to-island' ? ' si-lit' : ''}`} data-pip="back-to-island" onClick={() => p.onBuild({ kind: 'island' })}>
+    <button type="button" className={`button button--light${p.lit === 'back-to-island' ? ' si-lit' : ''}`} data-pip="back-to-island" data-key="b esc" aria-keyshortcuts="B Escape" onClick={() => p.onBuild({ kind: 'island' })}>
       Back to the island
     </button>
   );
@@ -180,7 +181,7 @@ export function TurnStep(p: StepProps) {
         // Only ask "build more?" when there's something more that can be built.
         main = buildChoices(island).any ? (
           <>
-            <button type="button" className="button button--light si-step__main" onClick={p.onAnother}>Yes, build more</button>
+            <button type="button" className="button button--light si-step__main" data-key="b" aria-keyshortcuts="B" onClick={p.onAnother}>Yes, build more</button>
             {doneBuilding}
           </>
         ) : doneBuilding;
@@ -189,7 +190,7 @@ export function TurnStep(p: StepProps) {
         title = `Spot ${b.spot + 1}: ${spotName(here.kind, here.level)}`;
         body = <SpotChoices island={island} spot={b.spot} onChoose={p.onChoose} lit={p.lit} upgradeOnly={b.upgrade} />;
         main = b.upgrade ? (
-          <button type="button" className="button button--light" onClick={() => p.onBuild({ kind: 'upgrade' })}>Pick another building</button>
+          <button type="button" className="button button--light" data-key="esc" aria-keyshortcuts="Escape" onClick={() => p.onBuild({ kind: 'upgrade' })}>Pick another building</button>
         ) : toIsland;
       } else if (b.kind === 'upgrade') {
         title = 'Upgrade a building';
@@ -296,7 +297,7 @@ export function TurnStep(p: StepProps) {
         </>
       );
       main = (
-        <button type="button" className={`button button--primary si-step__main si-end${p.lit === 'end-turn' ? ' si-lit' : ''}`} data-pip="end-turn" onClick={p.onEnd} disabled={p.busy}>
+        <button type="button" className={`button button--primary si-step__main si-end${p.lit === 'end-turn' ? ' si-lit' : ''}`} data-pip="end-turn" aria-keyshortcuts="Enter" onClick={p.onEnd} disabled={p.busy}>
           {p.busy ? 'Ending the turn…' : 'End turn'}
         </button>
       );
@@ -311,7 +312,7 @@ export function TurnStep(p: StepProps) {
       </div>
       <div className="si-row si-step__nav">
         {/* Back from the last step to change what's built (the header's Stop button is the way out). */}
-        {step === Step.Rest && p.canBuild && <button type="button" className="button button--light" onClick={p.onBack}>Back to building</button>}
+        {step === Step.Rest && p.canBuild && <button type="button" className="button button--light" data-key="b" aria-keyshortcuts="B" onClick={p.onBack}>Back to building</button>}
         {main}
       </div>
     </section>

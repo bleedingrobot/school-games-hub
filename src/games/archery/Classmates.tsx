@@ -1,13 +1,16 @@
 /**
- * Finding a classmate to fight (docs/ARCHERY-PLAN.md, section 7, Stage 6), inside the game: the classmates in your
- * own class who have Archery Challenge open right now (display names only), a challenge sent with the world picked,
+ * Finding someone to fight (docs/ARCHERY-PLAN.md, section 7, Stage 6), inside the game: the players at school who have
+ * Archery Challenge open right now (display names only; my class first, then other classes, docs/plans/play-anyone), a challenge sent with the world picked,
  * the pop-up when someone challenges you, and the waits in between ("Waiting for Mia to say yes…").
  */
 import { useEffect, useRef, useState } from 'react';
+import { ClassTag, SchoolPlayerList } from '../../components/SchoolPlayerList';
+import { starPlayer } from '../../data/lobbyStars';
 import type { Ask, Classmate } from '../../../shared/archery/duel';
 import { SNOOZE_MS } from '../../../shared/archery/config';
 import { WORLD_IDS, type WorldId } from '../../../shared/archery/types';
 import { WORLD_HINTS, WORLD_NAMES } from './text';
+import { KeyBadge } from '../../kit';
 
 /** Seconds until an ISO time, by the server's clock (never below 0), ticking once a second. */
 function useSecondsUntil(deadline: string, serverNow: () => number): number {
@@ -39,14 +42,15 @@ export function ClassmatesScreen({ online, offline, world, sending, problem, onW
   return (
     <section className="ar-page" aria-labelledby="ar-mates-title">
       <div className="ar-page__head">
-        <h2 id="ar-mates-title" ref={heading} tabIndex={-1}>Challenge a classmate</h2>
-        <button type="button" className="button button--light ar-btn" onClick={onBack}>Back</button>
+        <h2 id="ar-mates-title" ref={heading} tabIndex={-1}>Challenge a friend</h2>
+        <button type="button" className="button button--light ar-btn" data-key="esc" onClick={onBack}>Back</button>
       </div>
       <p>One round, one turn each. Win the round to win the fight! You both bring whatever you've packed.</p>
       <h3>1. Where?</h3>
       <div className="ar-choices">
-        {WORLD_IDS.map((w) => (
-          <button key={w} type="button" className={`button button--light ar-btn ar-choice ar-choice--${w}`} aria-pressed={world === w} onClick={() => onWorld(w)}>
+        {WORLD_IDS.map((w, i) => (
+          <button key={w} type="button" className={`button button--light ar-btn ar-choice ar-choice--${w}`} data-key={String(i + 1)} aria-pressed={world === w} onClick={() => onWorld(w)}>
+            <KeyBadge k={String(i + 1)} />
             <b>{WORLD_NAMES[w]}</b>
             <span>{WORLD_HINTS[w]}</span>
           </button>
@@ -55,22 +59,27 @@ export function ClassmatesScreen({ online, offline, world, sending, problem, onW
       <h3>2. Who?</h3>
       {problem && <p className="ar-problem" role="alert">{problem}</p>}
       {online === null ? (
-        <p className="ar-help" role="status">{offline ? 'The school server could not be reached. Check the Wi-Fi.' : 'Looking for classmates…'}</p>
+        <p className="ar-help" role="status">{offline ? 'The school server could not be reached. Check the Wi-Fi.' : 'Looking for players…'}</p>
       ) : online.length === 0 ? (
-        <p className="ar-help" role="status">Nobody else in your class has Archery Challenge open right now. Ask a classmate to open it, then look again.</p>
+        <p className="ar-help" role="status">Nobody else has Archery Challenge open right now. Ask a friend to open it, then look again.</p>
       ) : (
-        <ul className="ar-mates" aria-label="Classmates in Archery Challenge now">
-          {online.map((c) => (
-            <li key={c.id} className="ar-mate">
-              <span className="ar-mate__name">{c.name}</span>
+        <SchoolPlayerList
+          people={online}
+          onStar={starPlayer}
+          label="Players in Archery Challenge now"
+          listClassName="ar-mates"
+          itemClassName="ar-mate"
+          row={(c) => (
+            <>
+              <span className="ar-mate__name">{c.name}<ClassTag player={c} /></span>
               {c.snoozed ? <span className="ar-mate__busy">Not now</span> : c.busy ? <span className="ar-mate__busy">In a fight</span> : (
                 <button type="button" className="button button--play ar-btn" disabled={sending} aria-label={`Challenge ${c.name} in the ${WORLD_NAMES[world]}`} onClick={() => onChallenge(c)}>
                   Challenge
                 </button>
               )}
-            </li>
-          ))}
-        </ul>
+            </>
+          )}
+        />
       )}
       <p className="ar-page__go">
         <button type="button" className="button button--light ar-btn" onClick={onRefresh}>Look again</button>
@@ -106,7 +115,7 @@ export function ChallengeAsk({ ask, serverNow, busy, problem, onAccept, onDeclin
         <p id="ar-ask-words">A fight in the {WORLD_NAMES[ask.world]}: one round, one turn each. Answer within {secs} seconds.</p>
         {problem && <p className="ar-problem" role="alert">{problem}</p>}
         <div className="ar-row">
-          <button type="button" className="button button--play ar-btn" disabled={busy} onClick={onAccept}>Accept</button>
+          <button type="button" className="button button--play ar-btn" data-key="enter" disabled={busy} onClick={onAccept}>Accept</button>
           <button type="button" className="button button--light ar-btn" disabled={busy} onClick={onDecline}>Say no</button>
           <button type="button" className="button button--light ar-btn" disabled={busy} onClick={onSnooze}>Snooze {ask.from} for {SNOOZE_MS / 60_000} min</button>
         </div>
@@ -115,7 +124,7 @@ export function ChallengeAsk({ ask, serverNow, busy, problem, onAccept, onDeclin
   );
 }
 
-/** A wait between screens: for an answer, or for the classmate to pack. */
+/** A wait between screens: for an answer, or for the other player to pack. */
 export function DuelWait({ title, words, deadline, serverNow, onCancel, cancelLabel, onTimeUp }: {
   title: string;
   words: string;
@@ -142,7 +151,7 @@ export function DuelWait({ title, words, deadline, serverNow, onCancel, cancelLa
       <p>{words}</p>
       <p className="ar-help" role="timer" aria-label={`${secs} seconds left`}>{secs} seconds left</p>
       <p className="ar-page__go">
-        <button type="button" className="button button--light ar-btn" onClick={onCancel}>{cancelLabel}</button>
+        <button type="button" className="button button--light ar-btn" data-key="esc" onClick={onCancel}>{cancelLabel}</button>
       </p>
     </section>
   );
@@ -157,7 +166,7 @@ export function DuelNotStarted({ title, words, onBack }: { title: string; words:
       <h2 id="ar-nostart-title" ref={heading} tabIndex={-1}>{title}</h2>
       <p>{words}</p>
       <p className="ar-page__go">
-        <button type="button" className="button button--play ar-btn" onClick={onBack}>OK</button>
+        <button type="button" className="button button--play ar-btn" data-key="enter" onClick={onBack}>OK</button>
       </p>
     </section>
   );

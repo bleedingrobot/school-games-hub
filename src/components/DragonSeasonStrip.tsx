@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 import { SEASON_DAYS } from '../../shared/lord/data';
-import { lordSeasonRoad, type HomeLordSeason, type LordStageId } from '../../shared/lord/seasonRoad';
+import { lordSeasonRoad, seasonBanner, type HomeLordSeason, type LordStageId } from '../../shared/lord/seasonRoad';
 
 // Only the four round pictures this strip needs (not the whole Dragon Maths picture set).
 const FILES = import.meta.glob('../games/lord/art/timeline/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
@@ -15,6 +15,7 @@ export default function DragonSeasonStrip({ season, title = 'This season' }: { s
   const { clock, hero } = season;
   const road = lordSeasonRoad(clock, hero);
   const { before, strong, after } = road.headline;
+  const banner = seasonBanner(clock);
   return (
     <section className="panel season-strip season-strip--dragon" aria-label={`Dragon Maths. ${road.label}`}>
       <div className="panel__head season-strip__head">
@@ -23,6 +24,11 @@ export default function DragonSeasonStrip({ season, title = 'This season' }: { s
           Season {clock.number} · day {clock.day} of {SEASON_DAYS}
         </p>
       </div>
+      {banner && (
+        <div className={`season-strip__banner season-strip__banner--${banner.kind}`} role="note">
+          <strong>{banner.kind === 'last' ? '⏳ ' : '⚔️ '}{banner.title}</strong> {banner.text}
+        </div>
+      )}
       <p className="season-strip__headline">
         {before}
         <strong>{strong}</strong>

@@ -7,7 +7,8 @@ import { NextPartChip } from '../../components/NextPartChip';
 import { fetchBeanstalkEnabled } from '../../data/beanstalk';
 import { finishBand } from '../../../shared/kit/finishBand';
 import { WhatsNext } from '../../kit/WhatsNext';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useGameKeys } from '../../kit';
 import type { Tap } from '../../../shared/pipi/play';
 import { beachAfter, DAYS_PER_PEARL, SHELLS } from '../../../shared/pipi/progress';
 import type { Round } from '../../../shared/pipi/round';
@@ -72,34 +73,15 @@ interface Props {
   extra?: (h: Helpers) => ReactNode;
 }
 
-/** Below this much room under the hub's top bar, the game covers the whole screen, bar and all (as Beanstalk and Hop do). */
-const ROOM_UNDER_BAR = 420;
-function useFitBelow(root: RefObject<HTMLDivElement | null>) {
-  useLayoutEffect(() => {
-    const el = root.current;
-    if (!el) return;
-    const fit = () => {
-      el.classList.remove('pp-root--cover');
-      const top = Math.round(el.getBoundingClientRect().top + window.scrollY);
-      const cover = top > 0 && window.innerHeight - top - 12 < ROOM_UNDER_BAR;
-      el.classList.toggle('pp-root--cover', cover);
-      el.style.setProperty('--pp-room', top === 0 || cover ? '100dvh' : `calc(100dvh - ${top + 12}px)`);
-    };
-    fit();
-    window.addEventListener('resize', fit);
-    return () => window.removeEventListener('resize', fit);
-  }, [root]);
-}
-
 export function PipiGame({ backend, onExit, onOpenBeanstalk, extra }: Props) {
   const [state, setState] = useState<PipiState | null>(null);
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
   const [failed, setFailed] = useState<string | null>(null);
   const fail = useCallback((e: unknown) => setFailed(e instanceof PipiError ? e.message : WORDS.wentWrong), []);
   const voice = useVoice();
-  const { soundOn } = useSound();
-  const root = useRef<HTMLDivElement>(null);
-  useFitBelow(root);
+  const rootRef = useRef<HTMLDivElement>(null);
+  useGameKeys(rootRef);
+  const { soundOn, setSoundOn } = useSound();
 
   const reload = useCallback(() => {
     setFailed(null);
@@ -145,13 +127,19 @@ export function PipiGame({ backend, onExit, onOpenBeanstalk, extra }: Props) {
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
-    <div className="pp-root" ref={root}>
+    <div className="pp-root pp-root--cover" ref={rootRef}>
       <div className="pp-bar">
         {onExit && (
-          <button type="button" className="pp-button" onClick={onExit}>
+          <button type="button" className="pp-button" data-key={screen.kind === 'play' ? undefined : 'esc'} onClick={onExit}>
             <span aria-hidden="true">🏠</span> {WORDS.home}
           </button>
         )}
+        <button
+          type="button" className="pp-button" aria-pressed={soundOn} aria-label="Sound" onClick={() => setSoundOn(!soundOn)}
+          title={soundOn ? 'Sound is on: tap to mute' : 'Sound is off: tap to turn on'}
+        >
+          <span aria-hidden="true">{soundOn ? '🔊' : '🔇'}</span>
+        </button>
         {voice.available && (
           <button type="button" className="pp-button" aria-pressed={voice.on} onClick={() => voice.setOn(!voice.on)}>
             <span aria-hidden="true">{voice.on ? '🗣️' : '🤫'}</span> {voice.on ? WORDS.voiceOn : WORDS.voiceOff}
@@ -184,7 +172,7 @@ function Home({ state, say, onPlay }: { state: PipiState; say: (t: string) => vo
         <NextPartChip noun={WORDS.part} done={doneToday} onHear={say} />
         <p className="pp-chip">{WORDS.level(state.level)}</p>
         {doneToday && <p>{WORDS.doneToday}</p>}
-        <button type="button" className="button button--play pp-play-button" onClick={onPlay}>
+        <button type="button" className="button button--play pp-play-button" data-key="enter" onClick={onPlay}>
           {doneToday ? WORDS.playAgain : WORDS.play}
         </button>
         {beach.pearls > 0 && (
@@ -236,7 +224,7 @@ export function Finish({ result, say, onOpenBeanstalk, onNext }: { result: PipiF
     <div className={`pp-home${result.pearl ? ' pp-home--pearl' : ''}`}>
       <Beach scenery={result.pearl ? 'gold' : beach.today} shells={shells} friend={beach.friend} pose="cheer" />
       {beanstalkOn !== null && (
-        <WhatsNext prefix="pp" wearMe={result.pearl} title={main} spoken={line} note={levelUp} buttonLabel="OK" say={sayThen} onNext={onNext}>
+        <WhatsNext prefix="pp" game="pipi" wearMe={result.pearl} title={main} spoken={line} note={levelUp} buttonLabel="OK" say={sayThen} onNext={onNext}>
           {result.pearl && <p className="pp-chip">{opening}</p>}
           {band === 'tricky' && <p className="pp-chip">{WORDS.trickyChip}</p>}
           {result.pearl && (

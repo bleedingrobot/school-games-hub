@@ -55,10 +55,11 @@ values ('<id>', '<id>_enabled', 'public.<id>_counts(uuid)', 'public.<id>_point_r
   'public.<id>_players_list()', null, 'public.<id>_last_played(uuid)', true);
 
 insert into public.achievement_measures (measure) values ('<id>_days'), ('<id>_step');
-insert into public.achievement_types (id, game, name, emoji, measure, goal, sort) values
-  ('<id>-first', '<id>', '<First go name>', '<emoji>', '<id>_days', 1, 1),
-  ('<id>-steady', '<id>', '<Steady play name>', '<emoji>', '<id>_days', 10, 2),
-  ('<id>-top', '<id>', '<Big goal name>', '<emoji>', '<id>_step', <top>, 3);
+-- how: one plain sentence a pupil can follow. tier: 1 easy, 2 medium, 3 hard (bronze, silver, gold frame).
+insert into public.achievement_types (id, game, name, emoji, measure, goal, sort, how, tier) values
+  ('<id>-first', '<id>', '<First go name>', '<emoji>', '<id>_days', 1, 1, '<Finish your first day.>', 1),
+  ('<id>-steady', '<id>', '<Steady play name>', '<emoji>', '<id>_days', 10, 2, '<Finish 10 days.>', 2),
+  ('<id>-top', '<id>', '<Big goal name>', '<emoji>', '<id>_step', <top>, 3, '<Reach step N.>', 3);
 
 -- 5. Teacher reads: teacher_<id>_class(target_class) and teacher_<id>_student(student), security definer, starting with
 --    require_teacher() + teaches_class(...) or require_teacher_of(student). Copy teacher_lizard_class / _student; the

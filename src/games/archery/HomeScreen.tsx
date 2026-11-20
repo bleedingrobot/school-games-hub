@@ -9,6 +9,7 @@ import { WORLD_IDS, type BowId, type WorldId } from '../../../shared/archery/typ
 import { CoinCount } from './CoinCount';
 import { HomeScene } from './HomeScene';
 import { WORLD_NAMES } from './text';
+import { KeyBadge } from '../../kit';
 
 const WORLD_ICONS: Record<WorldId, string> = {
   forest: 'M12 2 4 12h4l-5 6h7v4h4v-4h7l-5-6h4z',
@@ -45,7 +46,7 @@ export function HomeScreen({ coins, goal, world, bow, lessMotion, simple = false
       <div className="ar-home__ui">
         <div className="ar-home__top">
           <div className="ar-home__corner">
-            {onExit && <button type="button" className="button button--light ar-btn" onClick={onExit}>Leave</button>}
+            {onExit && <button type="button" className="button button--light ar-btn" data-key="esc" onClick={onExit}>Leave</button>}
             <button type="button" className="button button--light ar-btn" onClick={onHowTo}>How to play</button>
           </div>
           <h2 id="ar-home-title" ref={heading} tabIndex={-1} className="ar-banner">
@@ -57,15 +58,16 @@ export function HomeScreen({ coins, goal, world, bow, lessMotion, simple = false
           </div>
         </div>
         <div className="ar-home__worlds" role="group" aria-label="Pick a world to fight in">
-          {WORLD_IDS.map((w) => (
-            <button key={w} type="button" className={`button button--play ar-btn ar-chunky ar-chunky--${w}`} onClick={() => onWorld(w)}>
+          {WORLD_IDS.map((w, i) => (
+            <button key={w} type="button" className={`button button--play ar-btn ar-chunky ar-chunky--${w}`} data-key={String(i + 1)} onClick={() => onWorld(w)}>
+              <KeyBadge k={String(i + 1)} />
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d={WORLD_ICONS[w]} fill="#fff" /></svg>
               {WORLD_NAMES[w]}
             </button>
           ))}
         </div>
         <div className="ar-home__go">
-          <button type="button" className="button button--play ar-btn ar-chunky ar-chunky--play" onClick={onPlay}>
+          <button type="button" className="button button--play ar-btn ar-chunky ar-chunky--play" data-key="enter" onClick={onPlay}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h13l-3 3 1.5 1.5L21 12l-6.5-5.5L13 8l3 3H3z" fill="#fff" /></svg>
             Play
           </button>

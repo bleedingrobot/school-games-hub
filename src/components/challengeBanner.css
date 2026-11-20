@@ -1,0 +1,119 @@
+/* The hub's challenge banner (ChallengeBanner.tsx). On hub pages: a card at the bottom. Inside a game: at the top, and on a
+   phone only a small "Challenge!" tab until it's tapped, so it never covers the game's own buttons. */
+.hub-ask {
+  position: fixed;
+  left: 50%;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 900;
+  width: min(520px, calc(100vw - 24px));
+  font-family: inherit;
+}
+.hub-ask--in-game {
+  bottom: auto;
+  top: max(8px, env(safe-area-inset-top));
+  width: min(440px, calc(100vw - 160px));
+}
+.hub-ask__card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: #1e1b4b;
+  color: #fff;
+  border: 2px solid #fbbf24;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+  animation: hub-ask-in 240ms ease-out;
+}
+.hub-ask__line {
+  flex: 1 1 220px;
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.hub-ask__line small {
+  display: block;
+  font-weight: 400;
+  opacity: 0.85;
+}
+.hub-ask__buttons {
+  display: flex;
+  gap: 6px;
+}
+.hub-ask__buttons button,
+.hub-ask__tab {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 0;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.hub-ask__yes {
+  background: #fbbf24;
+  color: #1e1b4b;
+}
+.hub-ask__no {
+  background: #fff;
+  color: #1e1b4b;
+}
+.hub-ask__later {
+  background: transparent;
+  color: #fff;
+  text-decoration: underline;
+}
+.hub-ask__tab {
+  display: none;
+  margin: 0 auto;
+  background: #fbbf24;
+  color: #1e1b4b;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 35%);
+  animation: hub-ask-in 240ms ease-out;
+}
+.hub-ask__secs {
+  font-weight: 400;
+}
+/* A phone, inside a game: just the tab until it's tapped; then the card, over the top of the game. */
+@media (max-width: 699px) {
+  .hub-ask--in-game {
+    width: auto;
+  }
+  .hub-ask--in-game .hub-ask__tab {
+    display: block;
+  }
+  .hub-ask--in-game .hub-ask__card {
+    display: none;
+  }
+  .hub-ask--in-game.hub-ask--open {
+    width: calc(100vw - 24px);
+  }
+  .hub-ask--in-game.hub-ask--open .hub-ask__tab {
+    display: none;
+  }
+  .hub-ask--in-game.hub-ask--open .hub-ask__card {
+    display: flex;
+  }
+}
+@media (max-width: 420px) {
+  .hub-ask__buttons {
+    width: 100%;
+  }
+  .hub-ask__buttons button {
+    flex: 1;
+  }
+}
+@keyframes hub-ask-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hub-ask__card,
+  .hub-ask__tab {
+    animation: none;
+  }
+}

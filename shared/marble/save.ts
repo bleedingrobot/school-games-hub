@@ -14,7 +14,7 @@ import { BONUS, countCode, decodeInputs, MAX_INPUT_STEPS, REFUND } from './input
 
 /** How long a seed can be used for. A run takes minutes; a forgotten tab, hours. */
 export const MARBLE_SEED_LIFETIME_SECONDS = 6 * 60 * 60;
-/** Runs a student can save in a day (a very keen student does a few hundred). */
+/** A safety cap on runs saved in 24 hours (the real daily limit, checked at the start of a run, is MARBLE_RUNS_A_DAY in config.ts). */
 export const MARBLE_RUNS_PER_DAY = 400;
 /** The longest inputs text a save may carry (the database keeps the same limit). */
 export const MAX_INPUTS_TEXT = 60000;

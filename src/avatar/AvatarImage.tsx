@@ -1,9 +1,19 @@
-import { useId, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { normaliseAvatar, type Avatar } from './avatarParts';
 import { pictureOf, TIER_COLOURS, type WornPicture } from './earnedPictures';
-import { paintedRing } from './paintedArt';
+import { frameOf, type QuestFrame } from '../../shared/quests/frames';
+import { paintedFrame, paintedRing } from './paintedArt';
 
 const INK = '#1d1b3a';
+
+/** Where a framed avatar sits inside its frame (in the frame's 100 × 100 box). */
+const INSIDE = { x: 11, y: 11, width: 78, height: 78 };
+
+/** The outer <svg>'s own attributes, or, inside a frame, just its place in the frame. */
+function svgBox(size: number, label: string | undefined, nested: boolean) {
+  if (nested) return INSIDE;
+  return { className: 'avatar', width: size, height: size, role: label ? 'img' : undefined, 'aria-label': label, 'aria-hidden': label ? undefined : true };
+}
 
 function star(cx: number, cy: number, r: number) {
   const points = Array.from({ length: 10 }, (_, i) => {
@@ -209,19 +219,18 @@ function Extras({ a, layer }: { a: Avatar; layer: 'face' | 'over' }) {
  * An earned picture in its bronze, silver or gold ring. Until its painting lands (and if the painting fails to load) it is
  * the game's emoji on a disc of the same metal.
  */
-function EarnedPicture({ picture, size, label }: { picture: WornPicture; size: number; label?: string }) {
+function EarnedPicture({ picture, size, label, nested = false }: { picture: WornPicture; size: number; label?: string; nested?: boolean }) {
   const id = useId();
+  // In a Quest Frame the frame replaces the metal ring, so the picture fills the whole circle.
+  const r = nested ? 50 : 41;
+  const at = nested ? 0 : 9;
+  const wide = nested ? 100 : 82;
   const [light, main, dark] = TIER_COLOURS[picture.tier];
   const ring = paintedRing(picture.tier);
   return (
     <svg
-      className="avatar"
-      width={size}
-      height={size}
+      {...svgBox(size, label, nested)}
       viewBox="0 0 100 100"
-      role={label ? 'img' : undefined}
-      aria-label={label}
-      aria-hidden={label ? undefined : true}
       data-pic={picture.id}
       data-tier={picture.tier}
     >
@@ -236,43 +245,103 @@ function EarnedPicture({ picture, size, label }: { picture: WornPicture; size: n
           <stop offset="1" stopColor={main} />
         </radialGradient>
         <clipPath id={`${id}-clip`}>
-          <circle cx="50" cy="50" r="41" />
+          <circle cx="50" cy="50" r={r} />
         </clipPath>
       </defs>
-      <circle cx="50" cy="50" r="50" fill={`url(#${id}-ring)`} />
-      <circle cx="50" cy="50" r="43" fill={dark} />
-      <circle cx="50" cy="50" r="41" fill={`url(#${id}-disc)`} />
+      {!nested && <circle cx="50" cy="50" r="50" fill={`url(#${id}-ring)`} />}
+      {!nested && <circle cx="50" cy="50" r="43" fill={dark} />}
+      <circle cx="50" cy="50" r={r} fill={`url(#${id}-disc)`} />
       <text x="50" y="52" fontSize="46" textAnchor="middle" dominantBaseline="central">
         {picture.emoji}
       </text>
       {picture.backdrop && (
-        <image href={picture.backdrop} x="9" y="9" width="82" height="82" preserveAspectRatio="xMidYMid slice" clipPath={`url(#${id}-clip)`} />
+        <image href={picture.backdrop} x={at} y={at} width={wide} height={wide} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${id}-clip)`} />
       )}
       {picture.art && (
         <image
           href={size <= 80 ? (picture.artSmall ?? picture.art) : picture.art}
-          x="9"
-          y="9"
-          width="82"
-          height="82"
+          x={at}
+          y={at}
+          width={wide}
+          height={wide}
           preserveAspectRatio="xMidYMid slice"
           clipPath={`url(#${id}-clip)`}
         />
       )}
       {/* The painted ring is for big sizes only: at small sizes the drawn ring above is crisper. */}
-      {size >= 120 && ring && <image href={ring} x="0" y="0" width="100" height="100" />}
+      {!nested && size >= 120 && ring && <image href={ring} x="0" y="0" width="100" height="100" />}
     </svg>
   );
 }
 
-/** Draws an avatar from its saved codes: the built avatar, or the earned picture the pupil is wearing (`pic`). */
+/**
+ * A Quest Frame (docs/QUEST-REWARDS-PLAN.md, stage 4) around an avatar: the painting once it is painted, and until then (or
+ * if it fails to load) a ring drawn in the frame's colours with beads around it.
+ */
+function Framed({ frame, size, label, children }: { frame: QuestFrame; size: number; label?: string; children: ReactNode }) {
+  const id = useId();
+  const [light, main, dark] = frame.colours;
+  const painted = paintedFrame(frame.id);
+  // The painting has gaps (between leaves, flames), so the drawn ring is only drawn when there is no painting to show.
+  const [failed, setFailed] = useState(false);
+  const drawn = !painted || failed;
+  return (
+    <svg
+      className="avatar"
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      role={label ? 'img' : undefined}
+      aria-label={label}
+      aria-hidden={label ? undefined : true}
+      data-frame={frame.id}
+    >
+      <defs>
+        <linearGradient id={`${id}-frame`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor={light} />
+          <stop offset="0.5" stopColor={main} />
+          <stop offset="1" stopColor={dark} />
+        </linearGradient>
+      </defs>
+      {drawn && (
+        <>
+          <circle cx="50" cy="50" r="50" fill={`url(#${id}-frame)`} />
+          <circle cx="50" cy="50" r="40" fill={dark} />
+          {Array.from({ length: 12 }, (_, i) => {
+            const angle = (Math.PI / 6) * i;
+            return <circle key={i} cx={50 + 45 * Math.cos(angle)} cy={50 + 45 * Math.sin(angle)} r="2.4" fill={frame.bead} opacity="0.9" />;
+          })}
+        </>
+      )}
+      {children}
+      {painted && !failed && (
+        <image href={size <= 80 ? painted.artSmall : painted.art} x="0" y="0" width="100" height="100" onError={() => setFailed(true)} />
+      )}
+    </svg>
+  );
+}
+
+/**
+ * Draws an avatar from its saved codes: the built avatar, or the earned picture the pupil is wearing (`pic`), in their
+ * Quest Frame if they wear one. An earned picture keeps its metal ring at small sizes, where a frame round it would be too
+ * busy; from 120 px the frame replaces the ring.
+ */
 export function AvatarImage(props: { avatar: unknown; size?: number; label?: string }) {
+  const size = props.size ?? 96;
   const picture = pictureOf(props.avatar);
-  if (picture) return <EarnedPicture picture={picture} size={props.size ?? 96} label={props.label} />;
+  const frame = frameOf(props.avatar);
+  if (frame && (!picture || size >= 120)) {
+    return (
+      <Framed frame={frame} size={size} label={props.label}>
+        {picture ? <EarnedPicture picture={picture} size={size} nested /> : <BuiltAvatar avatar={props.avatar} size={size} nested />}
+      </Framed>
+    );
+  }
+  if (picture) return <EarnedPicture picture={picture} size={size} label={props.label} />;
   return <BuiltAvatar {...props} />;
 }
 
-function BuiltAvatar({ avatar, size = 96, label }: { avatar: unknown; size?: number; label?: string }) {
+function BuiltAvatar({ avatar, size = 96, label, nested = false }: { avatar: unknown; size?: number; label?: string; nested?: boolean }) {
   const a = normaliseAvatar(avatar);
   const clipId = useId();
   const layers: ReactNode = (
@@ -290,15 +359,7 @@ function BuiltAvatar({ avatar, size = 96, label }: { avatar: unknown; size?: num
     </>
   );
   return (
-    <svg
-      className="avatar"
-      width={size}
-      height={size}
-      viewBox="0 0 100 100"
-      role={label ? 'img' : undefined}
-      aria-label={label}
-      aria-hidden={label ? undefined : true}
-    >
+    <svg {...svgBox(size, label, nested)} viewBox="0 0 100 100">
       <defs>
         <clipPath id={clipId}>
           <circle cx="50" cy="50" r="50" />

@@ -293,6 +293,18 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 
 /* The season road (docs/CLANS-SEASON-TIMELINE-PLAN.md): four round stops, a bar that fills as the days pass. */
 .cq-road { margin: 14px 0 12px; padding: 10px 14px 12px; border: 1px solid var(--f-dot); border-radius: 3px; background: linear-gradient(#1c1d20, var(--f-deep)); box-shadow: inset 0 0 0 1px #000, 0 0 0 1px #000; }
+.cq-road__banner { margin: 0 0 10px; padding: 8px 10px; border: 2px solid var(--cq-red); border-radius: 3px; background: rgba(120, 30, 24, 0.35); color: var(--cq-ink); line-height: 1.4; }
+.cq-road__banner--new { border-color: var(--cq-yellow); background: rgba(120, 80, 20, 0.3); }
+.cq-road__banner > strong { color: var(--cq-red); }
+.cq-road__banner--new > strong { color: var(--cq-yellow); }
+.cq-road__next-btn { font: inherit; font-weight: 700; color: var(--cq-yellow); background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }
+.cq-changes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-top: 8px; }
+.cq-changes__col { padding: 8px 10px; border-radius: 3px; background: rgba(0, 0, 0, 0.35); border: 1px solid var(--f-dot); }
+.cq-changes__col h4 { margin: 0 0 4px; }
+.cq-changes__col--keep h4 { color: var(--cq-green); }
+.cq-changes__col--reset h4 { color: var(--cq-red); }
+.cq-changes__col ul { margin: 0; padding-left: 0; list-style: none; }
+.cq-changes__col li { margin: 2px 0; }
 .cq-road__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; }
 .cq-road__head h3 { margin: 0 !important; }
 .cq-road__head p { margin: 0; color: var(--cq-ink); }
@@ -1167,6 +1179,7 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 .cq-rival__banner { height: 110px; width: auto; filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.7)); animation: cq-rival-sway 3.2s ease-in-out infinite; transform-origin: top center; }
 @keyframes cq-rival-sway { 0%, 100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
 .cq-rival__name { font-weight: 700; font-size: 1.1rem; color: var(--f-head); }
+.cq-rival__name .school-list__class { display: block; width: fit-content; margin: 3px auto 0; background: rgba(224, 169, 58, 0.2); color: var(--f-head); }
 .cq-rival .cq-btn--hot { min-width: 110px; font-size: 1.1rem; }
 .cq-rivals--small .cq-rival { flex-direction: row; justify-content: space-between; padding: 6px 10px; }
 .cq-rivals--small { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
@@ -1312,6 +1325,7 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 .cq-dcards.is-pick .cq-dcard { cursor: pointer; min-height: 44px; }
 .cq-dcards.is-pick .cq-dcard:focus-visible { outline: 3px solid #ffd36b; outline-offset: 3px; }
 .cq-dpractice { display: flex; flex-wrap: wrap; gap: 8px; }
+.cq-dpractice .cq-btn { position: relative; }
 .cq-dbonus { margin: 0; padding-left: 18px; }
 .cq-dwait { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; text-align: center; }
 .cq-dwait__banner { height: 90px; width: auto; filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.7)); }
@@ -1448,3 +1462,65 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
   .cq-dfloat--me { left: 4%; } .cq-dfloat--them { right: 4%; }
   .cq-duel__end { padding: 12px 14px; margin: 0 8px; }
 }
+
+/* ---------------------------------------------------------------- the whole window (James, 18 Nov 2026)
+   Like Star Trader and Dragon Maths: Clan Quest covers the hub's bar, edge to edge, with no frame. The column is wide so
+   every painted stage is big; the town map fills the window, and the painting across the top of a place runs from edge
+   to edge (it reaches past the column's padding, `--cq-pad`). The way back to the hub and the sound sit on the title. */
+.cq-window {
+  position: fixed; inset: 0; z-index: 40; overflow-y: auto; overscroll-behavior: contain;
+  background: radial-gradient(120% 80% at 50% 0%, #222428 0%, #18191b 60%), #18191b;
+}
+.cq-window > .cq { --cq-pad: 14px; max-width: 1600px; min-height: 100%; padding: 0 var(--cq-pad) 24px; border: 0; border-radius: 0; box-shadow: none; background: none; }
+.cq-window .cq-backdrop { position: fixed; }
+.cq-window .cq > .cq-top { padding-top: 10px; }
+.cq-top__title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.cq-hubbtns { display: inline-flex; gap: 6px; pointer-events: auto; }
+.cq-hubbtns .cq-btn { min-height: 40px; padding: 2px 12px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-family: 'IM Fell English SC', Georgia, serif; font-size: 1.05rem; color: #f3e6c8; background: rgba(20, 18, 16, 0.85); }
+.cq-top--over { align-items: center; }
+
+/* The painting across the top of a place: edge to edge, and taller. */
+.cq-window .cq > .cq-scenebox, .cq-window .cq > .cq-scene { width: calc(100% + 2 * var(--cq-pad)); max-width: none; margin-left: calc(-1 * var(--cq-pad)); margin-right: calc(-1 * var(--cq-pad)); }
+.cq-window .cq-scene { max-height: min(72dvh, 56.25vw); outline: 0; border-radius: 0; }
+.cq-window .cq-scenebox::after { border-radius: 0; }
+.cq-window .cq-scenebox + :is(.cq-place, .cq-scoreboard) > :is(.cq-place__head, h2):first-child { margin-top: -78px; }
+
+/* The town: fills the window. Never cut at the sides; on a wide window at most about an eighth off the top and bottom
+   (sat low, so it's mostly sky); the same painting blurred behind any edge it doesn't reach. */
+.cq-window .cq-town {
+  width: calc(100% + 2 * var(--cq-pad)); min-width: 0; height: 100dvh; margin: 0 calc(-1 * var(--cq-pad)) 12px; outline: 0; border-radius: 0; box-shadow: none;
+  container-type: size; background: #101113;
+}
+.cq-town__blur { display: none; }
+.cq-window .cq-town__blur { display: block; position: absolute; inset: -40px; width: calc(100% + 80px); height: calc(100% + 80px); object-fit: cover; filter: blur(24px) brightness(0.55); pointer-events: none; user-select: none; }
+.cq-window .cq-town__paper { position: absolute; left: 50%; top: 85%; transform: translate(-50%, -85%); width: min(100cqw, 100cqh * 16 / 9 * 1.14); aspect-ratio: 16 / 9; box-shadow: 0 0 60px rgba(0, 0, 0, 0.8); }
+.cq-window .cq-town__paper img { width: 100%; height: 100%; object-fit: cover; }
+.cq-window .cq-town > .cq-top--over { z-index: 4; }
+
+/* The painted stages (the mines, today's quest, a won fight): edge to edge, the window's full height. */
+@media (min-width: 761px) {
+  .cq-window :is(.cq-mines__stage, .cq-qstage, .cq-vstage) {
+    width: calc(100% + 2 * var(--cq-pad)); margin-left: calc(-1 * var(--cq-pad)); margin-right: calc(-1 * var(--cq-pad));
+    min-height: 100dvh; outline: 0; border-radius: 0;
+  }
+}
+
+/* The fights get the room the hub's bar had. */
+.cq-window .cq-fight { --fig: clamp(130px, calc(100dvh - 290px), 480px); }
+@media (min-width: 761px) {
+  .cq-window .cq-fight { width: calc(100% + 2 * var(--cq-pad)); margin-left: calc(-1 * var(--cq-pad)); margin-right: calc(-1 * var(--cq-pad)); }
+  .cq-window .cq-fight .cq-arena--stage { min-height: calc(100dvh - 34px); outline: 0; border-radius: 0; }
+}
+
+@media (max-width: 760px) {
+  .cq-window > .cq { --cq-pad: 8px; }
+  .cq-window .cq-town { height: auto; container-type: normal; }
+  .cq-window .cq-town__blur { display: none; }
+  .cq-window .cq-town__paper { position: relative; left: auto; top: auto; transform: none; width: 100%; box-shadow: none; }
+  .cq-window .cq-scenebox + :is(.cq-place, .cq-scoreboard) > :is(.cq-place__head, h2):first-child { margin-top: -50px; }
+  .cq-hubbtns .cq-btn { min-height: 36px; padding: 2px 8px; font-size: 0.9rem; }
+}
+
+/* Stories (the kit's StoryBook, docs/plans/stories/PLAN.md) in Clan Quest's colours */
+.cq-storybook { --story-bg: #060509; --story-ink: #f3e6c8; --story-gold: #ffd36b; --story-frame: #6a5233; --story-dim: #4a3d2a; }
+.cq-storybook .kit-story__words h2 { font-family: 'VT323', ui-monospace, monospace; font-weight: 400; letter-spacing: 0.03em; }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   ARMOURS, CLASSES, EXP_TO_CHALLENGE, LOOKS, MAX_LEVEL, WEAPONS, expNeeded, masterFor,
 } from '../../../shared/lord/data';
@@ -14,7 +14,9 @@ import type { Asked, AskOptions } from './useAsk';
 import { ArmourSprite, HeroSprite, Icon, MonsterSprite, WeaponSprite } from './Sprite';
 import { ICON_TILES } from './tileMap';
 import { BARD_SONGS, dayHash } from './text';
-import { Portrait, Stage } from './Stage';
+import { Portrait } from './Stage';
+import { Bar, BigStage } from './Fight';
+import { Purse } from './Purse';
 import { shortcutsOn } from './shortcuts';
 import { lookThumb, type PersonId, type SceneId } from './art';
 import type { MomentId } from '../../../shared/lord/maths';
@@ -37,31 +39,35 @@ export interface PlaceProps {
 }
 
 /**
- * One place in the village: its painting at the top with the person who works there standing in it, the name on a
- * sign, and what you can do there on a parchment panel below. `more` is the end of a long title, left off on phones
- * so the sign stays on one line (the shop's forge shows).
+ * One place in the village, on its big painting like the fights, the arena and the bank (James, 18 Nov 2026: every
+ * screen as big and immersive as it can be). The painting fills the screen; the person who works there stands in it;
+ * the name and the purse sit along the top; what you can read sits on a parchment card on the painting; and the
+ * buttons sit in a row along the bottom. `figure` stands someone else on the painting (a master, your hero), on the
+ * side the person would stand. `more` is the end of a long title, left off on phones.
  */
-export function Place({ title, more, children, back, tile, scene = 'village', person, note }: {
-  title: string; more?: string; children: ReactNode; back: () => void; tile?: keyof typeof ICON_TILES; scene?: SceneId; person?: PersonId; note?: string;
+export function Place({ title, more, children, back, tile, scene = 'village', person, note, bar, figure, className = '', cardClass = '' }: {
+  title: string; more?: string; children?: ReactNode; back: () => void; tile?: keyof typeof ICON_TILES; scene?: SceneId; person?: PersonId; note?: string;
+  bar?: ReactNode; figure?: ReactNode; className?: string; cardClass?: string;
 }) {
   return (
-    <section className="lord-place" aria-label={title + (more ?? '')}>
-      <Stage scene={scene} size="short">
-        {person && <Portrait who={person} />}
-        <header className="lord-place__head">
-          <h2 className="lord-sign">
-            {tile && <Icon name={tile} scale={2} />} <span>{title}{more && <span className="lord-sign__long">{more}</span>}</span>
-          </h2>
-          <button type="button" className="lord-btn" onClick={back}>
-            <kbd>Esc</kbd> Back to the village
-          </button>
-        </header>
-      </Stage>
-      <div className="lord-panel">
-        {note && <p className="lord-note" role="status">{note}</p>}
-        {children}
+    <BigStage scene={scene} label={title + (more ?? '')} className={`lord-bigplace${person || figure ? ' has-figure' : ''} ${className}`}>
+      <div className="lord-big__top">
+        <h2 className="lord-big__heading">
+          {tile && <Icon name={tile} scale={2} />} <span>{title}{more && <span className="lord-sign__long">{more}</span>}</span>
+        </h2>
+        <Purse />
       </div>
-    </section>
+      {person && <Portrait who={person} />}
+      {figure && <div className="lord-bigplace__figure">{figure}</div>}
+      <div className="lord-bigplace__middle">
+        {children && <div className={`lord-panel lord-bigplace__card ${cardClass}`}>{children}</div>}
+        {note && <p className="lord-big__note" role="status" key={note}>{note}</p>}
+      </div>
+      <div className="lord-big__bar">
+        {bar}
+        <button type="button" className="lord-btn lord-btn--glass lord-btn--big" autoFocus={!bar} onClick={back}><kbd>Esc</kbd> Back to the village</button>
+      </div>
+    </BigStage>
   );
 }
 
@@ -88,19 +94,19 @@ export function Shop({ hero, act, ask, say, note, back, busy }: PlaceProps) {
   }
 
   return (
-    <Place title="The Blacksmith" more=" and Armourer" tile="sword" scene="shop" person="shop" note={note} back={back}>
+    <Place
+      title="The Blacksmith" more=" and Armourer" tile="sword" scene="shop" person="shop" note={note} back={back} cardClass="lord-bigplace__card--list"
+      bar={(['weapon', 'armour'] as const).map((s) => (
+        <button key={s} type="button" aria-pressed={slot === s} autoFocus={s === 'weapon'} className={`lord-btn lord-btn--big ${slot === s ? 'lord-btn--hot' : 'lord-btn--glass'}`} onClick={() => setSlot(s)}>
+          {s === 'weapon' ? '⚔️ Weapons' : '🛡️ Armour'}
+        </button>
+      ))}
+    >
       <p className="lord-lead">
         Your old gear sells back for half price. The best gear needs enough base {stat}: you get that by beating your masters.
         {kindnessDiscount(hero) > 0 && ` Your kindness gives ${Math.round(kindnessDiscount(hero) * 100)}% off.`}
       </p>
-      <div className="lord-tabs" role="tablist">
-        {(['weapon', 'armour'] as const).map((s) => (
-          <button key={s} type="button" role="tab" aria-selected={slot === s} className={`lord-btn${slot === s ? ' lord-btn--hot' : ''}`} onClick={() => setSlot(s)}>
-            {s === 'weapon' ? 'Weapons' : 'Armour'}
-          </button>
-        ))}
-      </div>
-      <ul className="lord-shop">
+      <ul className="lord-shop" key={slot}>
         {table.map((item, i) => {
           if (i === 0) return null;
           const owned = hero[slot] === i;
@@ -136,6 +142,13 @@ export function Shop({ hero, act, ask, say, note, back, busy }: PlaceProps) {
 export function Healer({ hero, act, ask, say, note, back, busy }: PlaceProps) {
   const missing = hero.maxHp - hero.hp;
   const price = healPrice(hero.level);
+  // The last heal, for the green burst and the number that floats up over the health bar.
+  const [healed, setHealed] = useState<{ key: number; hp: number } | null>(null);
+  useEffect(() => {
+    if (!healed) return;
+    const t = window.setTimeout(() => setHealed(null), 1600);
+    return () => window.clearTimeout(t);
+  }, [healed]);
 
   async function pay(hp: number) {
     const amount = Math.min(hp, missing);
@@ -150,6 +163,7 @@ export function Healer({ hero, act, ask, say, note, back, busy }: PlaceProps) {
     if (!reply) return;
     const r = reply.result as { healed: number; paid: number; discount: number };
     say(`The healer mends ${r.healed} health for ${r.paid} gold${r.discount ? ` (10% off!)` : ''}.`);
+    if (r.healed > 0) setHealed({ key: Date.now(), hp: r.healed });
   }
 
   // Enter or H = heal everything (Enter on a focused button still just presses that button).
@@ -169,37 +183,64 @@ export function Healer({ hero, act, ask, say, note, back, busy }: PlaceProps) {
   });
 
   return (
-    <Place title="The Healer’s Hut" tile="heart" scene="healer" person="healer" note={note} back={back}>
-      <p className="lord-lead">
-        Health: <strong>{hero.hp} / {hero.maxHp}</strong>. Every point costs <strong>{price}</strong> gold. All your health comes back free tomorrow.
-      </p>
-      <div className="lord-actions">
-        {[10, 25].map((n) => (
-          <button key={n} type="button" className="lord-btn" disabled={missing <= 0 || busy} onClick={() => void pay(n)}>
-            Heal {Math.min(n, missing) || n} <small>({healCost(hero, Math.min(n, Math.max(missing, 1)))} gold)</small>
+    <Place
+      title="The Healer’s Hut" tile="heart" scene="healer" person="healer" note={note} back={back} className={`lord-healer${healed ? ' is-healing' : ''}`}
+      bar={<>
+        <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus disabled={missing <= 0 || busy} onClick={() => void pay(missing)}>
+          <kbd>H</kbd> Heal everything <small>{missing > 0 ? `${healCost(hero, missing)} gold` : 'you are well'}</small>
+        </button>
+        {missing > 10 && [10, 25].filter((n) => n < missing).map((n) => (
+          <button key={n} type="button" className="lord-btn lord-btn--glass lord-btn--big" disabled={missing <= 0 || busy} onClick={() => void pay(n)}>
+            Heal {Math.min(n, missing) || n} <small>{healCost(hero, Math.min(n, Math.max(missing, 1)))} gold</small>
           </button>
         ))}
-        <button type="button" className="lord-btn lord-btn--hot" disabled={missing <= 0 || busy} onClick={() => void pay(missing)}>
-          <kbd>H</kbd> Heal everything <small>({healCost(hero, missing)} gold)</small>
-        </button>
+      </>}
+    >
+      <div className="lord-healer__health">
+        <Bar value={hero.hp} max={hero.maxHp} label="Your health" side="me" />
+        {healed && <span className="lord-float lord-float--heal" key={healed.key}>+{healed.hp}</span>}
       </div>
+      <p className="lord-lead">
+        {missing > 0 ? <>Every point costs <strong>{price}</strong> gold.</> : <>You are in perfect health!</>} All your health comes back free tomorrow.
+      </p>
       {hero.gold < healCost(hero, missing) && missing > 0 && <p className="lord-soft">You do not have enough for everything. The healer will heal as much as you can pay for.</p>}
+      {healed && <span className="lord-healer__sparkles" key={`s${healed.key}`} aria-hidden="true">{Array.from({ length: 14 }, (_, i) => <span key={i} style={{ '--i': i } as CSSProperties} />)}</span>}
     </Place>
   );
 }
 
 // ---------------------------------------------------------------- the bank
 
+/** How many coins fly across when gold moves, and how long the flight lasts (ms). */
+const FLIGHT_COINS = 12;
+const FLIGHT_MS = 1400;
+
+/**
+ * The bank, on its big painting like the arena and the news (James, 18 Nov 2026: every screen as big and immersive as
+ * it can be). Mr Penny stands at his counter; what you carry and what is in the vault sit on the painting as two big
+ * glowing piles, and when gold moves the coins fly from one to the other. The buttons sit in a row along the bottom.
+ */
 export function Bank({ hero, state, act, say, note, back, busy }: PlaceProps) {
   const due = interestDue(hero.bank);
-  const canAskInterest = hero.level >= 4 && hero.bank >= INTEREST_EVERY && !state.interestDone;
+  const showInterest = hero.level >= 4;
+  const canAskInterest = showInterest && hero.bank >= INTEREST_EVERY && !state.interestDone;
   // The banker's question, while it is on screen: one from the pupil's maths ladder or focus, made and marked by the server.
   const [question, setQuestion] = useState<{ id: number; shown: PublicQuestion } | null>(null);
   const outcome = useRef<{ interest: number; right: boolean; answer: number; bank: number } | null>(null);
+  // Coins in flight: which way, and a key so a second press starts a fresh flight.
+  const [flight, setFlight] = useState<{ key: number; to: 'vault' | 'pocket' } | null>(null);
+  useEffect(() => {
+    if (!flight) return;
+    const t = window.setTimeout(() => setFlight(null), FLIGHT_MS + 400);
+    return () => window.clearTimeout(t);
+  }, [flight]);
 
   async function move(op: 'deposit' | 'withdraw', amount: number) {
     const reply = await act({ action: 'bank', op, amount });
-    if (reply) say(op === 'deposit' ? `You put ${(reply.result as { moved: number }).moved} gold in the bank.` : `You take ${(reply.result as { moved: number }).moved} gold out of the bank.`);
+    if (!reply) return;
+    const moved = (reply.result as { moved: number }).moved;
+    say(op === 'deposit' ? `You put ${moved} gold in the vault. It is safe there!` : `You take ${moved} gold out of the vault.`);
+    if (moved > 0) setFlight({ key: Date.now(), to: op === 'deposit' ? 'vault' : 'pocket' });
   }
 
   async function interest() {
@@ -214,36 +255,59 @@ export function Bank({ hero, state, act, say, note, back, busy }: PlaceProps) {
     const r = outcome.current;
     outcome.current = null;
     if (!r) return;
-    if (r.right) say(`The banker adds ${r.interest} gold of interest. You now have ${r.bank + r.interest} gold saved. Well done!`);
-    else say(`Not quite, so the banker adds nothing today. Try again tomorrow!`);
+    if (r.right) {
+      say(`The banker adds ${r.interest} gold of interest. You now have ${r.bank + r.interest} gold saved. Well done!`);
+      setFlight({ key: Date.now(), to: 'vault' });
+    } else say(`Not quite, so the banker adds nothing today. Try again tomorrow!`);
   }
 
+  const interestHelp = state.interestDone ? 'done for today'
+    : hero.bank < INTEREST_EVERY ? `save ${INTEREST_EVERY} gold first`
+    : `answer a question for +${due} gold`;
+
   return (
-    <Place title="The Bank" tile="coin" scene="bank" person="bank" note={note} back={back}>
-      <p className="lord-lead">Gold in the bank is safe. If you lose a fight, only the gold you are carrying is lost.</p>
-      <p className="lord-banked">
-        <Icon name="gold" /> Carrying <strong>{hero.gold}</strong> · In the bank <strong>{hero.bank}</strong>
-      </p>
-      <div className="lord-actions">
-        <button type="button" className="lord-btn lord-btn--hot" disabled={hero.gold <= 0 || busy} onClick={() => void move('deposit', hero.gold)}>Deposit all</button>
-        <button type="button" className="lord-btn" disabled={hero.gold <= 1 || busy} onClick={() => void move('deposit', Math.floor(hero.gold / 2))}>Deposit half</button>
-        <button type="button" className="lord-btn" disabled={hero.bank <= 0 || busy} onClick={() => void move('withdraw', hero.bank)}>Withdraw all</button>
-        <button type="button" className="lord-btn" disabled={hero.bank <= 1 || busy} onClick={() => void move('withdraw', Math.floor(hero.bank / 2))}>Withdraw half</button>
-      </div>
-      {hero.level >= 4 && (
-        <div className="lord-card">
-          <h3>Interest</h3>
-          <p className="lord-soft">
-            Once a day the banker pays <strong>1 gold for every {INTEREST_EVERY} gold</strong> you have saved (that is 5%), if you can answer a maths question.
-            {hero.bank >= INTEREST_EVERY ? ` Today's interest on your ${hero.bank} gold is ${due} gold.` : ` Save at least ${INTEREST_EVERY} gold to earn some.`}
-          </p>
-          <div className="lord-actions">
-            <button type="button" className="lord-btn" disabled={!canAskInterest || busy} onClick={interest}>
-              Ask about interest {state.interestDone ? '(done today)' : hero.bank < INTEREST_EVERY ? `(save ${INTEREST_EVERY} gold first)` : ''}
-            </button>
+    <BigStage scene="bank" label="The Bank" className={`lord-bank${flight ? ` is-to-${flight.to}` : ''}`}>
+      <div className="lord-big__top"><h2 className="lord-big__heading">The Bank</h2><Purse /></div>
+      <Portrait who="bank" />
+      <div className="lord-bank__middle">
+        <p className="lord-bank__lead">Gold in the vault is safe. Lose a fight and you only lose the gold you carry.</p>
+        <div className="lord-bank__piles">
+          <div className="lord-bank__pile lord-bank__pile--pocket" key={`p${flight?.to === 'pocket' ? flight.key : ''}`}>
+            <span className="lord-bank__label">You carry</span>
+            <span className="lord-bank__num"><span aria-hidden="true" className="lord-bank__coin" />{hero.gold}</span>
+          </div>
+          <div className="lord-bank__lane" aria-hidden="true">
+            <span className="lord-bank__arrow">{flight?.to === 'pocket' ? '◀' : '▶'}</span>
+            {flight && (
+              <span className="lord-bank__flight" key={flight.key}>
+                {Array.from({ length: FLIGHT_COINS }, (_, i) => <span key={i} style={{ '--i': i } as CSSProperties} />)}
+              </span>
+            )}
+          </div>
+          <div className="lord-bank__pile lord-bank__pile--vault" key={`v${flight?.to === 'vault' ? flight.key : ''}`}>
+            <span className="lord-bank__label">In the vault</span>
+            <span className="lord-bank__num"><span aria-hidden="true" className="lord-bank__coin" />{hero.bank}</span>
           </div>
         </div>
-      )}
+        {showInterest && (
+          <p className="lord-bank__interest">
+            Once a day Mr Penny pays <strong>1 gold for every {INTEREST_EVERY}</strong> you save (5%), if you answer his maths question.
+          </p>
+        )}
+        {note && <p className="lord-big__note" role="status" key={note}>{note}</p>}
+      </div>
+      <div className="lord-big__bar">
+        <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus disabled={hero.gold <= 0 || busy} onClick={() => void move('deposit', hero.gold)}>Deposit all<small>put it all in the vault</small></button>
+        <button type="button" className="lord-btn lord-btn--glass lord-btn--big" disabled={hero.gold <= 1 || busy} onClick={() => void move('deposit', Math.floor(hero.gold / 2))}>Deposit half</button>
+        <button type="button" className="lord-btn lord-btn--glass lord-btn--big" disabled={hero.bank <= 1 || busy} onClick={() => void move('withdraw', Math.floor(hero.bank / 2))}>Take out half</button>
+        <button type="button" className="lord-btn lord-btn--glass lord-btn--big" disabled={hero.bank <= 0 || busy} onClick={() => void move('withdraw', hero.bank)}>Take out all</button>
+        {showInterest && (
+          <button type="button" className={`lord-btn lord-btn--big ${canAskInterest ? 'lord-btn--gold' : 'lord-btn--glass'}`} disabled={!canAskInterest || busy} onClick={interest}>
+            Ask for interest<small>{interestHelp}</small>
+          </button>
+        )}
+        <button type="button" className="lord-btn lord-btn--glass lord-btn--big" onClick={back}><kbd>Esc</kbd> Back to the village</button>
+      </div>
       {question && (
         <QuestionModal
           key={question.id}
@@ -265,7 +329,7 @@ export function Bank({ hero, state, act, say, note, back, busy }: PlaceProps) {
           onDone={answered}
         />
       )}
-    </Place>
+    </BigStage>
   );
 }
 
@@ -306,13 +370,15 @@ export function Inn({ state, act, ask, say, note, back, busy, today }: PlaceProp
   }
 
   return (
-    <Place title="The Inn" tile="potion" scene="inn" person="inn" note={note} back={back}>
-      <blockquote className="lord-song"><Portrait who="bard" /><p>The bard sings:</p>{song.split(' / ').map((l) => <p key={l}>{l}</p>)}</blockquote>
-      <div className="lord-actions">
-        <button type="button" className="lord-btn lord-btn--hot" disabled={state.riddleDone || busy} onClick={() => void riddle()}>
-          Riddle of the day {state.riddleDone && '(done today)'}
+    <Place
+      title="The Inn" tile="potion" scene="inn" person="inn" note={note} back={back}
+      bar={(
+        <button type="button" className={`lord-btn lord-btn--big ${state.riddleDone ? 'lord-btn--glass' : 'lord-btn--hot'}`} autoFocus disabled={state.riddleDone || busy} onClick={() => void riddle()}>
+          🧩 Riddle of the day <small>{state.riddleDone ? 'done today' : 'a right answer earns gold'}</small>
         </button>
-      </div>
+      )}
+    >
+      <blockquote className="lord-song"><Portrait who="bard" /><p>The bard sings:</p>{song.split(' / ').map((l) => <p key={l}>{l}</p>)}</blockquote>
       <div className="lord-card">
         <h3>Number guess</h3>
         {guess?.done ? (
@@ -354,35 +420,30 @@ export function Training({ hero, back, onChallenge, onDragon }: Pick<PlaceProps,
   const share = Number.isFinite(need) ? Math.max(0, Math.min(1, (hero.exp - prev) / (need - prev))) : 1;
 
   return (
-    <Place title="The Training Grounds" tile="shield" scene="training" back={back}>
+    <Place
+      title="The Training Grounds" tile="shield" scene="training" back={back} className="lord-training"
+      figure={master && <div className="lord-big__body lord-enter"><MonsterSprite monster={{ id: `master-${master.level}`, name: master.name, level: master.level }} scale={10} /></div>}
+      bar={master ? (
+        <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus disabled={!check.ok} onClick={onChallenge}>
+          ⚔️ Challenge {master.name} <small>3 questions first</small>
+        </button>
+      ) : canFaceDragon(hero) ? (
+        <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus onClick={onDragon}>🐉 Face the Red Dragon</button>
+      ) : undefined}
+    >
       {master ? (
-        <div className="lord-master">
-          <MonsterSprite monster={{ id: `master-${master.level}`, name: master.name, level: master.level }} scale={7} />
-          <div>
-            <h3>{master.name}</h3>
-            <p>{master.intro}</p>
-            <p className="lord-soft">Beat them to reach level {master.level}. You get stronger, and you are healed. Lose, and you only lose the try for today.</p>
-            <div className="lord-bar" role="meter" aria-label="Experience towards your master" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(share * 100)}>
-              <div className="lord-bar__fill" style={{ width: `${share * 100}%`, background: 'var(--lord-cyan)' }} />
-              <span className="lord-bar__text">Experience: {hero.exp} / {need}</span>
-            </div>
-            <div className="lord-actions">
-              <button type="button" className="lord-btn lord-btn--hot" disabled={!check.ok} onClick={onChallenge}>
-                Challenge {master.name} (3 questions first)
-              </button>
-            </div>
-            {!check.ok && <p className="lord-soft">{check.reason}</p>}
+        <>
+          <h3>Your master: {master.name}</h3>
+          <p>{master.intro}</p>
+          <p className="lord-soft">Beat them to reach level {master.level}. You get stronger, and you are healed. Lose, and you only lose the try for today.</p>
+          <div className="lord-bar" role="meter" aria-label="Experience towards your master" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(share * 100)}>
+            <div className="lord-bar__fill" style={{ width: `${share * 100}%`, background: 'var(--lord-cyan)' }} />
+            <span className="lord-bar__text">Experience: {hero.exp} / {need}</span>
           </div>
-        </div>
+          {!check.ok && <p className="lord-soft">{check.reason}</p>}
+        </>
       ) : (
-        <div className="lord-master">
-          <p className="lord-lead">You have beaten every master. {canFaceDragon(hero) ? 'The Red Dragon waits in the mountains.' : 'Earn a little more experience to face the dragon.'}</p>
-          {canFaceDragon(hero) && (
-            <button type="button" className="lord-btn lord-btn--hot" onClick={onDragon}>
-              Face the Red Dragon
-            </button>
-          )}
-        </div>
+        <p className="lord-lead">You have beaten every master. {canFaceDragon(hero) ? 'The Red Dragon waits in the mountains.' : 'Earn a little more experience to face the dragon.'}</p>
       )}
     </Place>
   );
@@ -393,12 +454,12 @@ export function Training({ hero, back, onChallenge, onDragon }: Pick<PlaceProps,
 export function HeroPage({ hero, stats, back, onLook }: { hero: Hero; stats?: Stats; back: () => void; onLook: () => void }) {
   const need = expNeeded(hero.level);
   return (
-    <Place title="Your hero" scene="map" back={back}>
+    <Place
+      title="Your hero" scene="warriors" back={back} className="lord-heropage"
+      figure={<div className="lord-big__body lord-enter"><HeroSprite heroClass={hero.heroClass} look={hero.look} scale={8} /></div>}
+      bar={<button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus onClick={onLook}>{hero.look ? 'Change my look' : 'Choose my look'}</button>}
+    >
       <div className="lord-hero">
-        <div className="lord-hero__look">
-          <HeroSprite heroClass={hero.heroClass} look={hero.look} scale={8} />
-          <button type="button" className="lord-btn" onClick={onLook}>{hero.look ? 'Change my look' : 'Choose my look'}</button>
-        </div>
         <dl className="lord-stats">
           <div><dt>Class</dt><dd>{CLASSES[hero.heroClass].name}</dd></div>
           <div><dt>Level</dt><dd>{hero.level} / {MAX_LEVEL}</dd></div>
@@ -465,41 +526,37 @@ export function ClassPick({ onPick }: { onPick: (c: HeroClass, look: string) => 
   const [chosen, setChosen] = useState<HeroClass | null>(null);
   if (chosen) {
     return (
-      <section className="lord-place" aria-label="Choose your look">
-        <Stage scene="village" size="short">
-          <header className="lord-place__head">
-            <h2 className="lord-sign">Choose your look</h2>
-            <button type="button" className="lord-btn" onClick={() => setChosen(null)}>Pick a different class</button>
-          </header>
-        </Stage>
-        <div className="lord-panel">
-          <p className="lord-lead">Which {CLASSES[chosen].name.toLowerCase()} are you? You can change your look later, on Your hero.</p>
-          <LookPick heroClass={chosen} onPick={(look) => onPick(chosen, look)} />
+      <BigStage scene="village" label="Choose your look" className="lord-bigplace lord-classpick">
+        <div className="lord-big__top"><h2 className="lord-big__heading">Choose your look</h2></div>
+        <div className="lord-bigplace__middle">
+          <div className="lord-panel lord-bigplace__card lord-bigplace__card--wide">
+            <p className="lord-lead">Which {CLASSES[chosen].name.toLowerCase()} are you? You can change your look later, on Your hero.</p>
+            <LookPick heroClass={chosen} onPick={(look) => onPick(chosen, look)} />
+          </div>
         </div>
-      </section>
+        <div className="lord-big__bar">
+          <button type="button" className="lord-btn lord-btn--glass lord-btn--big" onClick={() => setChosen(null)}>Pick a different class</button>
+        </div>
+      </BigStage>
     );
   }
   return (
-    <section className="lord-place" aria-label="Choose your class">
-      <Stage scene="village" size="short">
-        <header className="lord-place__head">
-          <h2 className="lord-sign">Welcome, hero!</h2>
-        </header>
-      </Stage>
-      <div className="lord-panel">
-      <p className="lord-lead">
-        The Red Dragon has stolen the village’s treasure, its food and its light. Someone has to get them back. Pick the kind of hero you want to be. You can change next season.
-      </p>
-      <div className="lord-classes">
-        {(Object.keys(CLASSES) as HeroClass[]).map((c) => (
-          <button key={c} type="button" className="lord-class" onClick={() => setChosen(c)}>
-            <HeroSprite heroClass={c} scale={8} />
-            <strong>{CLASSES[c].name}</strong>
-            <span>{CLASSES[c].blurb}</span>
-          </button>
-        ))}
+    <BigStage scene="village" label="Choose your class" className="lord-bigplace lord-classpick">
+      <div className="lord-big__title">
+        <h2>Welcome, hero!</h2>
+        <p>The Red Dragon has stolen the village’s treasure, its food and its light. Someone has to get them back. Pick the kind of hero you want to be. You can change next season.</p>
       </div>
+      <div className="lord-bigplace__middle">
+        <div className="lord-classes">
+          {(Object.keys(CLASSES) as HeroClass[]).map((c) => (
+            <button key={c} type="button" className="lord-class" onClick={() => setChosen(c)}>
+              <HeroSprite heroClass={c} scale={8} />
+              <strong>{CLASSES[c].name}</strong>
+              <span>{CLASSES[c].blurb}</span>
+            </button>
+          ))}
+        </div>
       </div>
-    </section>
+    </BigStage>
   );
 }

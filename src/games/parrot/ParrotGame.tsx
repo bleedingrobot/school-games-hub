@@ -4,7 +4,7 @@
  * then bronze, silver and gold); thirty days win the Golden Bell, and a friend gets a see-saw. The screens only show what
  * the backend says. Built on the shape of Tūī’s Ten Tree.
  */
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { NextPartChip } from '../../components/NextPartChip';
 import { FRIEND_NAMES, type Friend as FriendName } from '../../../shared/parrot/config';
 import type { Tap } from '../../../shared/parrot/play';
@@ -13,6 +13,7 @@ import type { Round } from '../../../shared/parrot/round';
 import { FirstTimeTip } from '../../kit/FirstTimeTip';
 import { finishBand } from '../../../shared/kit/finishBand';
 import { WhatsNext } from '../../kit/WhatsNext';
+import { useGameKeys } from '../../kit';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { playSound } from '../sounds';
@@ -71,34 +72,13 @@ interface Props {
   extra?: (h: Helpers) => ReactNode;
 }
 
-/** Below this much room under the hub's top bar, the game covers the whole screen, bar and all (as Tūī does). */
-const ROOM_UNDER_BAR = 420;
-function useFitBelow(root: RefObject<HTMLDivElement | null>) {
-  useLayoutEffect(() => {
-    const el = root.current;
-    if (!el) return;
-    const fit = () => {
-      el.classList.remove('pr-root--cover');
-      const top = Math.round(el.getBoundingClientRect().top + window.scrollY);
-      const cover = top > 0 && window.innerHeight - top - 12 < ROOM_UNDER_BAR;
-      el.classList.toggle('pr-root--cover', cover);
-      el.style.setProperty('--pr-room', top === 0 || cover ? '100dvh' : `calc(100dvh - ${top + 12}px)`);
-    };
-    fit();
-    window.addEventListener('resize', fit);
-    return () => window.removeEventListener('resize', fit);
-  }, [root]);
-}
-
 export function ParrotGame({ backend, onExit, extra }: Props) {
   const [state, setState] = useState<ParrotState | null>(null);
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
   const [failed, setFailed] = useState<string | null>(null);
   const fail = useCallback((e: unknown) => setFailed(e instanceof ParrotError ? e.message : WORDS.wentWrong), []);
   const voice = useVoice();
-  const { soundOn } = useSound();
-  const root = useRef<HTMLDivElement>(null);
-  useFitBelow(root);
+  const { soundOn, setSoundOn } = useSound();
 
   const reload = useCallback(() => {
     setFailed(null);
@@ -116,6 +96,9 @@ export function ParrotGame({ backend, onExit, extra }: Props) {
       setScreen({ kind: 'finish', result });
       if (soundOn) playSound(result.goldenBell ? 'win' : 'badge');
     }, fail);
+
+  const rootRef = useRef<HTMLDivElement>(null);
+  useGameKeys(rootRef, screen.kind !== 'play');
 
   let body: ReactNode;
   if (failed) body = <p className="pr-message">{failed}</p>;
@@ -141,13 +124,19 @@ export function ParrotGame({ backend, onExit, extra }: Props) {
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
-    <div className="pr-root" ref={root}>
+    <div className="pr-root pr-root--cover" ref={rootRef}>
       <div className="pr-bar">
         {onExit && (
-          <button type="button" className="pr-button" onClick={onExit}>
+          <button type="button" className="pr-button" data-key="esc" onClick={onExit}>
             <span aria-hidden="true">🏠</span> {WORDS.home}
           </button>
         )}
+        <button
+          type="button" className="pr-button" aria-pressed={soundOn} aria-label="Sound" onClick={() => setSoundOn(!soundOn)}
+          title={soundOn ? 'Sound is on: tap to mute' : 'Sound is off: tap to turn on'}
+        >
+          <span aria-hidden="true">{soundOn ? '🔊' : '🔇'}</span>
+        </button>
         {voice.available && (
           <button type="button" className="pr-button" aria-pressed={voice.on} onClick={() => voice.setOn(!voice.on)}>
             <span aria-hidden="true">{voice.on ? '🗣️' : '🤫'}</span> {voice.on ? WORDS.voiceOn : WORDS.voiceOff}
@@ -225,7 +214,7 @@ function Home({ state, say, onPlay }: { state: ParrotState; say: (t: string) => 
         <p className="pr-day">{WORDS.dayCount(Math.min(rope.day + 1, DAYS_PER_BELL))}</p>
         <NextPartChip noun={WORDS.part} done={doneToday} onHear={say} />
         <p className="pr-chip">{WORDS.step(state.step)}</p>
-        <button type="button" className="button button--play pr-play-button" onClick={onPlay}>
+        <button type="button" className="button button--play pr-play-button" data-key="enter" onClick={onPlay}>
           {doneToday ? WORDS.playAgain : WORDS.play}
         </button>
         <button type="button" className="pr-button pr-hear-home" onClick={() => say(homeLine(title, doneToday))}>
@@ -259,7 +248,7 @@ function Finish({ result, say, onNext }: { result: ParrotFinish; say: (t: string
   return (
     <div className={`pr-home${result.goldenBell ? ' pr-home--prize' : ''}`}>
       <Rope things={things} friend={rope.friend} glowAt={result.changed} pose="cheer" />
-      <WhatsNext prefix="pr" wearMe={result.goldenBell} title={main} spoken={finishLine(main, how, next)} buttonLabel={WORDS.ok} say={say} onNext={onNext}>
+      <WhatsNext prefix="pr" game="parrot" wearMe={result.goldenBell} title={main} spoken={finishLine(main, how, next)} buttonLabel={WORDS.ok} say={say} onNext={onNext}>
         <p className="pr-chip">{how}</p>
         <p className="pr-chip">{next}</p>
         {result.goldenBell && <span className="pr-prize"><GoldenBell /></span>}

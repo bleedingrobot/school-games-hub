@@ -25,6 +25,7 @@ import { playSound, type GameSound } from '../../sounds';
 import type { BattleReport } from '../../../../shared/monsters/save/check';
 import { BattleScreen, type BattleResult } from '../BattleScreen';
 import { MonsterArt } from '../art/MonsterArt';
+import { HubButtons } from '../HubButtons';
 import { monsterPic, personPic, preload, scenePic } from '../art/painted';
 import { nameOf } from '../text';
 import { MapMenu, type MenuPage } from './MapMenu';
@@ -501,6 +502,7 @@ export function WorldGame({
         />
         {!sheets && <p className="mw-loading">{loadError ? 'The map pictures did not load. Try reloading.' : 'Loading the map…'}</p>}
         <div className="mw-hud">
+          <HubButtons />
           <span className="mw-place">{map.name}</span>
           <TeamStrip team={world.team} />
           <NextLine world={world} quest={quest} />

@@ -41,7 +41,6 @@
 .dd-loading, .dd-checking { text-align: center; font-size: 1.2rem; margin: 30vh auto 0; }
 .dd-checking { position: fixed; left: 50%; top: 40%; transform: translateX(-50%); margin: 0; background: var(--dd-panel); padding: 14px 20px; border-radius: 14px; border: 2px solid var(--dd-line); z-index: 6; }
 .dd-trouble { background: #7f1d1d; color: #ffffff; border-radius: 12px; padding: 10px 14px; margin: 0 0 10px; }
-.dd-exit { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: max(10px, env(safe-area-inset-top, 0px)); z-index: 3; }
 
 /* Shared buttons, sized for the game (only on elements that also carry .dd-btn). */
 .dd-root .dd-btn { min-height: 48px; padding: 8px 16px; font-size: 1rem; width: auto; border-radius: 14px; }
@@ -53,40 +52,109 @@
 .dd-chip--gold { background: var(--dd-gold); color: var(--dd-gold-ink); border-color: var(--dd-gold); margin-left: 6px; }
 .dd-why { margin: 4px 0 0; color: var(--dd-warn); }
 
-/* ——— Level map ——— */
-.dd-map { display: grid; grid-template-columns: minmax(280px, 420px) minmax(0, 1fr); gap: 16px; align-items: start; max-width: 1100px; margin: 0 auto; }
-.dd-map__side { display: flex; flex-direction: column; gap: 12px; }
-.dd-nugget { display: flex; align-items: flex-end; gap: 8px; }
-.dd-bubble { flex: 1; background: var(--card); color: var(--ink); border-radius: 16px; padding: 10px 12px; position: relative; }
-.dd-bubble::before { content: ''; position: absolute; left: -8px; bottom: 16px; border: 8px solid transparent; border-right-color: var(--card); border-left: 0; }
+/* ——— Level map: the home screen ———
+ * Art first (James, 18 Nov 2026: "improve this landing page"). The chosen level's painting fills the whole window,
+ * sparks drift up through it, and three columns sit on top: Nugget and the buttons on a glass panel on the left, the
+ * chosen level big in the middle (the claw swinging over its gem), and the depth gauge down the full height on the right.
+ */
+.dd-root--map { padding: 0; }
+.dd-map {
+  display: grid; gap: 14px 18px; align-items: stretch; min-height: 100dvh;
+  grid-template-columns: minmax(300px, 400px) minmax(0, 1fr) minmax(300px, 400px);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: 'top top gauge' 'side hero gauge';
+  padding: max(12px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+.dd-map__art { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: var(--dd-bg); pointer-events: none; }
+.dd-map__paint { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.dd-map__shade {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(90deg, rgba(18, 11, 6, 0.78) 0%, rgba(18, 11, 6, 0.25) 34%, rgba(18, 11, 6, 0.15) 62%, rgba(18, 11, 6, 0.7) 100%),
+    radial-gradient(ellipse at 50% 55%, transparent 40%, rgba(10, 6, 3, 0.6) 100%);
+}
+.dd-spark { position: absolute; bottom: -12px; width: 7px; height: 7px; border-radius: 50%; background: #fff6c8; box-shadow: 0 0 10px 3px rgba(252, 211, 77, 0.8); opacity: 0; }
+
+.dd-map__top { grid-area: top; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.dd-map__top .dd-title { font-size: clamp(1.8rem, 3.6vw, 2.8rem); color: var(--dd-gold); text-shadow: 0 3px 0 #92400e, 0 6px 18px rgba(0, 0, 0, 0.7); letter-spacing: 0.5px; }
+.dd-map__top .dd-hubbtns { margin-left: auto; }
+.dd-map .dd-chip { background: rgba(20, 13, 8, 0.72); backdrop-filter: blur(6px); font-weight: 700; }
+.dd-root .dd-map .dd-hubbtn { background: rgba(20, 13, 8, 0.72); color: #ffffff; border-color: var(--dd-line); }
+
+.dd-map__side {
+  grid-area: side; display: flex; flex-direction: column; gap: 14px; align-self: start;
+  background: rgba(20, 13, 8, 0.66); backdrop-filter: blur(10px); border: 1px solid rgba(252, 211, 77, 0.3);
+  border-radius: 24px; padding: 14px; margin-top: 30px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+.dd-nugget { display: flex; align-items: flex-end; gap: 4px; margin: -44px 0 0 -10px; }
+.dd-nugget > canvas { flex: none; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.6)); }
+.dd-bubble { flex: 1; background: var(--card); color: var(--ink); border-radius: 18px; padding: 10px 12px; position: relative; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4); }
+.dd-bubble::before { content: ''; position: absolute; left: -8px; bottom: 18px; border: 8px solid transparent; border-right-color: var(--card); border-left: 0; }
 .dd-bubble__text { margin: 0 0 8px; font-weight: 700; }
 .dd-stats { display: flex; flex-wrap: wrap; gap: 6px; }
-.dd-menu { display: flex; flex-direction: column; gap: 8px; }
-.dd-menu__row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.dd-rig { display: flex; justify-content: center; }
-.dd-settings { background: var(--dd-panel); border: 1px solid var(--dd-line); border-radius: 12px; padding: 0 12px; }
+.dd-menu { display: flex; flex-direction: column; gap: 10px; }
+.dd-root .dd-map .dd-btn--big { min-height: 76px; font-size: 1.8rem; }
+.dd-menu__row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dd-tile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 78px; padding: 8px;
+  border-radius: 18px; border: 2px solid var(--dd-line); background: linear-gradient(#3a2818, #22170f); color: var(--dd-ink);
+  font: inherit; font-weight: 800; font-size: 1.02rem; cursor: pointer; box-shadow: 0 4px 0 #0d0906;
+}
+.dd-tile__icon { font-size: 1.7rem; line-height: 1; }
+.dd-tile:hover { border-color: var(--dd-gold); }
+.dd-tile:active { transform: translateY(2px); box-shadow: 0 2px 0 #0d0906; }
+.dd-settings { background: rgba(20, 13, 8, 0.6); border: 1px solid var(--dd-line); border-radius: 14px; padding: 0 12px; }
 .dd-settings summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; }
 .dd-check { display: flex; align-items: center; gap: 10px; min-height: 44px; }
 .dd-check input { width: 24px; height: 24px; }
 
-.dd-gauge { list-style: none; margin: 0; padding: 0; border-radius: 18px; overflow: hidden; border: 3px solid #0d0906; }
-.dd-gauge__sky { height: 26px; background: linear-gradient(#7cc8f5, #c9ecff); border-bottom: 6px solid #4cae4f; }
-.dd-gauge__layer { padding: 4px 10px; }
-.dd-chamber {
-  display: grid; grid-template-columns: 40px 1fr auto 34px; align-items: center; gap: 8px; width: 100%; min-height: 46px;
-  background: var(--dd-face); color: var(--dd-ink); border: 2px solid var(--dd-line); border-radius: 999px; padding: 4px 10px 4px 6px;
-  font: inherit; font-weight: 700; text-align: left; cursor: pointer; position: relative;
+.dd-hero { grid-area: hero; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 0; padding-bottom: 4vh; }
+.dd-hero p { margin: 0; text-shadow: 0 3px 12px rgba(0, 0, 0, 0.9), 0 1px 2px #000000; }
+.dd-hero__rig { margin-bottom: -40px; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6)); }
+.dd-hero__gem { filter: drop-shadow(0 0 24px rgba(255, 255, 255, 0.55)); }
+.dd-hero__lock { font-size: 5rem; line-height: 150px; }
+.dd-hero__level { font-size: 1.3rem; font-weight: 800; color: var(--dd-gold); letter-spacing: 3px; text-transform: uppercase; }
+.dd-hero__place { font-size: clamp(2.2rem, 4.6vw, 4rem); font-weight: 900; line-height: 1.05; color: #ffffff; }
+.dd-hero .dd-hero__state { margin-top: 10px; font-size: 1.3rem; font-weight: 800; background: rgba(20, 13, 8, 0.75); border-radius: 999px; padding: 6px 20px; text-shadow: none; }
+.dd-hero__stars { color: var(--dd-gold); font-size: 1.8rem; letter-spacing: 4px; }
+.dd-hero__stars .is-off { color: #8a7a6a; }
+
+.dd-gauge {
+  grid-area: gauge; list-style: none; margin: 0; padding: 0; border-radius: 22px; overflow: hidden; border: 3px solid #0d0906;
+  display: flex; flex-direction: column; height: calc(100dvh - 24px); position: sticky; top: 12px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
 }
+.dd-gauge__sky { flex: none; height: 22px; background: linear-gradient(#7cc8f5, #c9ecff); border-bottom: 6px solid #4cae4f; }
+.dd-gauge__layer { flex: 1 1 0; min-height: 50px; display: flex; align-items: center; padding: 3px 12px; }
+.dd-chamber {
+  display: grid; grid-template-columns: 40px 1fr auto 34px; align-items: center; gap: 8px; width: 100%; min-height: 44px;
+  background: rgba(31, 22, 16, 0.92); color: var(--dd-ink); border: 2px solid var(--dd-line); border-radius: 999px; padding: 4px 10px 4px 6px;
+  font: inherit; font-weight: 700; text-align: left; cursor: pointer; position: relative; transition: transform 0.15s;
+}
+.dd-chamber:hover { transform: translateX(-4px); border-color: var(--dd-gold); }
 .dd-chamber__num { width: 34px; height: 34px; border-radius: 50%; background: var(--dd-gold); color: var(--dd-gold-ink); display: grid; place-items: center; }
 .dd-chamber__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dd-chamber__state { color: var(--dd-gold); white-space: nowrap; }
 .dd-chamber__you { position: absolute; right: 48px; top: -10px; background: var(--dd-gold); color: var(--dd-gold-ink); font-size: 0.75rem; border-radius: 999px; padding: 1px 8px; }
-.dd-chamber.is-locked { background: var(--dd-locked-bg); color: var(--dd-locked); border-style: dashed; }
+.dd-chamber.is-locked { background: rgba(18, 12, 8, 0.92); color: var(--dd-locked); border-style: dashed; }
 .dd-chamber.is-locked .dd-chamber__num { background: #3a2e25; color: var(--dd-locked); }
 .dd-chamber.is-locked .dd-chamber__state { color: var(--dd-locked); }
 .dd-chamber.is-tomorrow .dd-chamber__state { color: var(--dd-warn); }
-.dd-chamber.is-selected { border-color: var(--dd-gold); box-shadow: 0 0 0 3px var(--dd-gold); }
-.dd-gauge__heart { display: grid; place-items: center; padding: 10px; background: radial-gradient(circle, #6b2a5a 0%, #180f2b 70%); }
+.dd-chamber.is-selected { border-color: var(--dd-gold); box-shadow: 0 0 0 3px var(--dd-gold), 0 0 22px rgba(252, 211, 77, 0.6); transform: translateX(-6px); }
+.dd-gauge__heart { flex: none; display: grid; place-items: center; padding: 6px; background: radial-gradient(circle, #6b2a5a 0%, #180f2b 70%); }
+
+/* Not wide enough for three columns: the chosen level sits above the panel, the gauge stays on the right. */
+@media (max-width: 1099px) {
+  .dd-map { grid-template-columns: minmax(300px, 1fr) minmax(280px, 380px); grid-template-rows: auto auto 1fr; grid-template-areas: 'top gauge' 'hero gauge' 'side gauge'; }
+  .dd-hero { padding-bottom: 0; }
+  .dd-hero .dd-hero__rig, .dd-hero .dd-hero__gem { width: 110px !important; height: 110px !important; }
+  .dd-hero__rig { margin-bottom: -26px; }
+}
+/* A phone, or a short window: one column that scrolls. */
+@media (max-width: 720px), (max-height: 560px) {
+  .dd-map { grid-template-columns: 1fr; grid-template-rows: none; grid-template-areas: 'top' 'hero' 'side' 'gauge'; min-height: 0; }
+  .dd-gauge { position: static; height: auto; }
+  .dd-map__shade { background: rgba(18, 11, 6, 0.55); }
+}
 
 /* ——— Play ——— */
 .dd-root--play { padding-top: max(6px, env(safe-area-inset-top, 0px)); }
@@ -127,7 +195,6 @@
   .dd-field { grid-column: 1; grid-row: 1 / span 2; width: min(100%, calc((100dvh - 20px) * 10 / 7)); }
   .dd-play__controls { grid-column: 2; grid-row: 2; flex-direction: column; align-items: stretch; justify-content: flex-start; }
   .dd-drop { min-width: 0; }
-  .dd-map { grid-template-columns: minmax(260px, 360px) minmax(0, 1fr); }
 }
 
 /* ——— Pages: level end, shop, workshop, Gem Book, How to play ——— */
@@ -141,8 +208,6 @@
 .dd-gems { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 16px; }
 .dd-gems li { display: flex; align-items: center; gap: 6px; font-weight: 700; }
 .dd-earned { background: var(--dd-gold); color: var(--dd-gold-ink); border-radius: 10px; padding: 6px 10px; font-weight: 700; }
-.dd-achieved { list-style: none; margin: 8px 0; padding: 6px 10px; background: var(--dd-gold); color: var(--dd-gold-ink); border-radius: 10px; }
-.dd-achieved li { margin: 2px 0; }
 .dd-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
 .dd-item { display: flex; gap: 10px; align-items: flex-start; background: var(--card); color: var(--ink); border-radius: 16px; padding: 10px; border: 3px solid transparent; }
 .dd-item.is-chosen { border-color: var(--won); }
@@ -184,10 +249,8 @@ img.dd-item__icon { object-fit: contain; padding: 4px; }
 .dd-book__page.is-heart { grid-column: 1 / -1; }
 
 @media (max-width: 720px) {
-  .dd-map { grid-template-columns: 1fr; }
   .dd-ws { grid-template-columns: 1fr; }
   .dd-ws__try { position: static; }
-  .dd-exit { position: static; margin-bottom: 8px; }
 }
 
 /* ——— Movement (only for pupils who haven't asked for less) ——— */
@@ -195,6 +258,15 @@ img.dd-item__icon { object-fit: contain; padding: 4px; }
   .dd-glow { animation: dd-glow 0.9s ease-in-out infinite alternate; }
   .dd-pulse { animation: dd-pulse 2.4s ease-in-out infinite; }
   .dd-target__fill { transition: width 0.25s ease-out; }
+  .dd-map__paint { animation: dd-paint-in 0.7s ease-out, dd-drift 40s ease-in-out 0.7s infinite alternate; }
+  .dd-hero { animation: dd-hero-in 0.5s cubic-bezier(0.2, 1.4, 0.4, 1); }
+  .dd-float { animation: dd-float 3s ease-in-out infinite; }
+  .dd-spark { animation: dd-rise 7s linear infinite; }
+  @keyframes dd-paint-in { from { opacity: 0; transform: scale(1.06); } }
+  @keyframes dd-drift { to { transform: scale(1.08) translate(-1.5%, -1%); } }
+  @keyframes dd-hero-in { from { opacity: 0; transform: translateY(24px) scale(0.92); } }
+  @keyframes dd-float { 50% { transform: translateY(-12px) rotate(4deg); filter: drop-shadow(0 0 36px rgba(255, 255, 255, 0.85)); } }
+  @keyframes dd-rise { 0% { opacity: 0; transform: translateY(0) scale(0.6); } 15% { opacity: 1; } 80% { opacity: 0.8; } 100% { opacity: 0; transform: translate(30px, -105vh) scale(1.2); } }
   @keyframes dd-glow { from { box-shadow: 0 0 0 0 rgba(252, 211, 77, 0.9); } to { box-shadow: 0 0 0 8px rgba(252, 211, 77, 0.35); } }
   @keyframes dd-pulse { 50% { transform: scale(1.08); filter: brightness(1.25); } }
 }
@@ -203,3 +275,164 @@ img.dd-item__icon { object-fit: contain; padding: 4px; }
 .dd-root.dd-still *, .dd-root.dd-still .button--play { animation: none !important; transition: none !important; }
 /* "Show me" still points the way with less motion: a steady ring instead of a pulsing one. */
 .dd-glow { outline: 4px solid var(--dd-gold); outline-offset: 3px; }
+
+/*
+ * ——— Full window, like Star Trader (James, 18 Nov 2026; docs/FULL-WINDOW.md) ———
+ * The root already covers the window. The dig field now takes the whole height, with no frame, and the level's
+ * painting, blurred, fills the edges round it. On a wide window the HUD is a slim row on top and Pause / Drop / Finish
+ * stand in the spare edge on the right; on a squarer window they stay under the field.
+ */
+.dd-hubbtns { display: inline-flex; gap: 6px; }
+.dd-root .dd-hubbtn { text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.dd-root--play { padding: 0; overflow: hidden; }
+.dd-play { max-width: none; height: 100dvh; min-height: 0; gap: 0; padding: max(6px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px)); }
+.dd-play__blur { position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; object-fit: cover; filter: blur(24px) brightness(0.55); transform: scale(1.08); pointer-events: none; }
+.dd-play__hud { flex: none; min-height: 44px; padding-bottom: 6px; }
+.dd-play__title, .dd-hud__item { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); }
+.dd-play__title { background: rgba(28, 19, 13, 0.75); border-radius: 999px; padding: 4px 14px; }
+.dd-field { flex: none; width: min(100%, calc((100dvh - 130px) * 10 / 7)); border: 0; border-radius: 0; box-shadow: 0 0 40px rgba(0, 0, 0, 0.6); }
+.dd-play__controls { flex: none; padding-top: 6px; }
+@media (min-aspect-ratio: 16 / 10) and (min-height: 521px) {
+  .dd-play { position: relative; }
+  .dd-field { width: min(100% - 2 * 170px, calc((100dvh - 56px) * 10 / 7)); }
+  .dd-play__controls { position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); width: 150px; padding: 0; flex-direction: column-reverse; align-items: stretch; }
+  .dd-drop { min-width: 0; padding: 8px 12px; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  .dd-field { width: min(100%, calc((100dvh - 20px) * 10 / 7)); }
+  .dd-play__controls { padding-top: 0; }
+}
+
+/* ——— Rare gems (shared/diamond/config.ts RARE_GEMS): banner, level end and the Gem Book's collection ——— */
+.dd-root { --dd-uncommon: #7dd3fc; --dd-rare: #c084fc; --dd-epic: #f472b6; --dd-legendary: #fbbf24; }
+.is-uncommon { --tier: var(--dd-uncommon); --tier-deep: #0c4a6e; }
+.is-rare { --tier: var(--dd-rare); --tier-deep: #4c1d95; }
+.is-epic { --tier: var(--dd-epic); --tier-deep: #831843; }
+.is-legendary { --tier: var(--dd-legendary); --tier-deep: #78350f; }
+
+/* The banner on the play screen. */
+.dd-rare-banner {
+  position: absolute; left: 50%; top: 8%; transform: translateX(-50%); z-index: 3; display: flex; align-items: center; gap: 10px;
+  padding: 8px 22px 8px 10px; border-radius: 999px; overflow: hidden; color: #fff; max-width: 94%;
+  background: radial-gradient(circle at 18% 50%, color-mix(in srgb, var(--tier) 55%, transparent), transparent 60%), linear-gradient(135deg, #1b1033, var(--tier-deep) 60%, #1b1033);
+  border: 3px solid var(--tier); box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35) inset, 0 0 28px var(--tier), 0 10px 30px rgba(0, 0, 0, 0.55);
+}
+.dd-rare-banner__rays { position: absolute; inset: -150%; background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.14) 0 8deg, transparent 8deg 24deg); pointer-events: none; }
+.dd-rare-banner__gem { position: relative; flex: none; filter: drop-shadow(0 0 10px var(--tier)); }
+.dd-rare-banner__words { position: relative; display: flex; flex-direction: column; line-height: 1.15; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6); }
+.dd-rare-banner__kicker { font-size: 0.85rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tier); }
+.dd-rare-banner__name {
+  font-size: clamp(1.4rem, 3.4vw, 2.2rem); font-weight: 900;
+  background: linear-gradient(90deg, #fff 20%, var(--tier) 40%, #fff 55%, var(--tier) 75%, #fff 90%); background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none;
+}
+.dd-rare-banner__tier { font-size: 0.9rem; font-weight: 700; opacity: 0.95; }
+.dd-rare-banner__glitter { position: absolute; inset: 0; pointer-events: none; }
+.dd-rare-banner__glitter i { position: absolute; left: calc(var(--i) * 7%); top: calc(20% + (var(--i) * 37 % 60) * 1%); width: 6px; height: 6px; background: #fff; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); opacity: 0; }
+
+/* Level end: a big card for each rare gem caught. */
+.dd-rare-won {
+  display: flex; align-items: center; gap: 14px; margin: 10px auto; padding: 10px 22px 10px 10px; max-width: 520px; border-radius: 22px; color: #fff; text-align: left;
+  background: radial-gradient(circle at 15% 50%, color-mix(in srgb, var(--tier) 50%, transparent), transparent 55%), linear-gradient(135deg, #1b1033, var(--tier-deep));
+  border: 3px solid var(--tier); box-shadow: 0 0 30px color-mix(in srgb, var(--tier) 70%, transparent), 0 0 0 2px rgba(255, 255, 255, 0.3) inset;
+}
+.dd-rare-won p { margin: 0; }
+.dd-rare-won__kicker { font-weight: 800; color: var(--tier); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.9rem; }
+.dd-rare-won__name { font-size: 1.8rem; font-weight: 900; text-shadow: 0 0 14px var(--tier); }
+
+/* The Gem Book's rare collection: a jewel vault. */
+.dd-rarebook {
+  position: relative; overflow: hidden; isolation: isolate; border-radius: 24px; padding: 18px; margin-bottom: 18px; color: #fdf6e3;
+  background: radial-gradient(ellipse at 50% 0%, #4c1d95 0%, #1e0b3a 55%, #0b0418 100%);
+  border: 4px solid #d4a72c; box-shadow: 0 0 0 3px #5b3a07, 0 0 0 7px #f3d47a, 0 0 40px rgba(212, 167, 44, 0.45), inset 0 0 60px rgba(0, 0, 0, 0.6);
+}
+.dd-rarebook::before { /* gold filigree corners */
+  content: ''; position: absolute; inset: 8px; border-radius: 18px; pointer-events: none; z-index: 1;
+  border: 2px solid rgba(243, 212, 122, 0.55);
+  background:
+    radial-gradient(circle at 0 0, transparent 22px, rgba(243, 212, 122, 0.8) 23px, transparent 25px) top left / 50px 50px no-repeat,
+    radial-gradient(circle at 100% 0, transparent 22px, rgba(243, 212, 122, 0.8) 23px, transparent 25px) top right / 50px 50px no-repeat,
+    radial-gradient(circle at 0 100%, transparent 22px, rgba(243, 212, 122, 0.8) 23px, transparent 25px) bottom left / 50px 50px no-repeat,
+    radial-gradient(circle at 100% 100%, transparent 22px, rgba(243, 212, 122, 0.8) 23px, transparent 25px) bottom right / 50px 50px no-repeat;
+}
+.dd-rarebook__vault { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.38; z-index: -1; }
+.dd-rarebook__head { position: relative; z-index: 2; display: flex; align-items: center; gap: 16px; }
+.dd-rarebook__cover { width: 120px; height: auto; flex: none; filter: drop-shadow(0 0 18px rgba(243, 212, 122, 0.7)) drop-shadow(0 8px 10px rgba(0, 0, 0, 0.6)); }
+.dd-rarebook__cover--drawn { font-size: 72px; text-align: center; }
+.dd-rarebook__title {
+  margin: 0; font-size: clamp(1.5rem, 4vw, 2.3rem); font-weight: 900; letter-spacing: 0.02em;
+  background: linear-gradient(180deg, #fff7d1 0%, #f3d47a 45%, #b8861b 55%, #fde68a 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.8));
+}
+.dd-rarebook__lede { margin: 4px 0 8px; opacity: 0.92; }
+.dd-rarebook__count { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 1.2rem; color: #fde68a; }
+.dd-rarebook__bar { flex: 1; max-width: 320px; height: 14px; border-radius: 99px; background: rgba(0, 0, 0, 0.5); border: 2px solid #b8861b; overflow: hidden; }
+.dd-rarebook__bar div { height: 100%; background: linear-gradient(90deg, var(--dd-uncommon), var(--dd-rare), var(--dd-epic), var(--dd-legendary)); box-shadow: 0 0 10px #fde68a; }
+.dd-rarebook__done { position: relative; z-index: 2; text-align: center; font-size: 1.4rem; font-weight: 900; color: #fde68a; text-shadow: 0 0 16px #fbbf24; margin: 12px 0 0; }
+.dd-rarebook__grid { position: relative; z-index: 2; list-style: none; margin: 16px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; }
+.dd-book__season { margin-top: 8px; }
+
+.dd-rarepage {
+  position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 26px 12px 14px; border-radius: 18px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tier-deep) 85%, #000), #120722 70%);
+  border: 3px solid var(--tier); box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6), 0 0 0 4px color-mix(in srgb, var(--tier) 45%, transparent), 0 0 22px color-mix(in srgb, var(--tier) 45%, transparent);
+}
+.dd-rarepage p, .dd-rarepage h4 { margin: 0; }
+.dd-rarepage.is-legendary { grid-column: 1 / -1; max-width: 420px; justify-self: center; width: 100%; }
+.dd-rarepage.is-legendary.is-found { border-width: 4px; }
+.dd-rarepage__ribbon {
+  position: absolute; top: -12px; left: 50%; transform: translateX(-50%); padding: 3px 16px; border-radius: 99px; white-space: nowrap;
+  font-size: 0.78rem; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; color: #1b1033;
+  background: linear-gradient(180deg, #fff, var(--tier)); border: 2px solid var(--tier-deep); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+}
+.dd-rarepage__frame { position: relative; width: 132px; height: 132px; border-radius: 50%; overflow: hidden; border: 4px solid #d4a72c; box-shadow: 0 0 0 2px #5b3a07, 0 0 18px var(--tier), inset 0 0 18px rgba(0, 0, 0, 0.7); background: radial-gradient(circle, #2a1048, #0b0418); }
+.dd-rarepage__frame canvas { display: block; }
+.dd-rarepage__q { position: absolute; inset: 0; display: grid; place-items: center; font-size: 3.4rem; font-weight: 900; color: rgba(255, 255, 255, 0.55); text-shadow: 0 0 12px var(--tier); }
+.dd-rarepage__shine { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.55) 48%, transparent 60%); transform: translateX(-120%); pointer-events: none; }
+.dd-rarepage__twinkles i { position: absolute; width: 12px; height: 12px; background: #fff; clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%); opacity: 0.9; }
+.dd-rarepage__twinkles i:nth-child(1) { top: 12%; left: 18%; } .dd-rarepage__twinkles i:nth-child(2) { top: 20%; right: 14%; }
+.dd-rarepage__twinkles i:nth-child(3) { bottom: 16%; left: 22%; } .dd-rarepage__twinkles i:nth-child(4) { bottom: 22%; right: 18%; }
+.dd-rarepage__name { font-size: 1.25rem; font-weight: 900; color: #fff; text-shadow: 0 0 10px var(--tier); margin-top: 6px !important; }
+.dd-rarepage__chance { font-size: 0.8rem; font-weight: 800; color: var(--tier); }
+.dd-rarepage__about { font-style: italic; opacity: 0.92; }
+.dd-rarepage__hint { opacity: 0.75; }
+.dd-rarepage.is-locked { filter: saturate(0.4); }
+.dd-rarepage.is-locked .dd-rarepage__name { color: rgba(255, 255, 255, 0.6); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .dd-rare-banner { animation: dd-rare-in 0.7s cubic-bezier(0.2, 1.5, 0.4, 1), dd-rare-out 0.5s ease-in 4.3s forwards; }
+  .dd-rare-banner.is-caught { animation: dd-rare-in 0.7s cubic-bezier(0.2, 1.5, 0.4, 1), dd-rare-out 0.5s ease-in 3.7s forwards; }
+  .dd-rare-banner__rays { animation: dd-spin 9s linear infinite; }
+  .dd-rare-banner__name { animation: dd-shimmer 2.2s linear infinite; }
+  .dd-rare-banner__glitter i { animation: dd-twinkle 1.6s ease-in-out infinite; animation-delay: calc(var(--i) * 0.13s); }
+  .dd-rare-won { animation: dd-hero-in 0.6s cubic-bezier(0.2, 1.4, 0.4, 1), dd-tier-pulse 2s ease-in-out 0.6s infinite; }
+  .dd-rarepage { animation: dd-page-in 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) both; animation-delay: calc(var(--i) * 0.09s); }
+  .dd-rarepage.is-found .dd-rarepage__shine { animation: dd-sweep 4.5s ease-in-out infinite; animation-delay: calc(var(--i) * 0.6s); }
+  .dd-rarepage.is-found .dd-rarepage__twinkles i { animation: dd-twinkle 2s ease-in-out infinite; }
+  .dd-rarepage.is-found .dd-rarepage__twinkles i:nth-child(2) { animation-delay: 0.5s; } .dd-rarepage.is-found .dd-rarepage__twinkles i:nth-child(3) { animation-delay: 1s; } .dd-rarepage.is-found .dd-rarepage__twinkles i:nth-child(4) { animation-delay: 1.5s; }
+  .dd-rarepage.is-found:hover { transform: translateY(-4px) scale(1.02); transition: transform 0.2s; }
+  .dd-rarepage.is-legendary.is-found { animation: dd-page-in 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) both, dd-tier-pulse 2.4s ease-in-out infinite; }
+  .dd-rarebook__cover { animation: dd-float 4s ease-in-out infinite; }
+  .dd-rarebook__title { background-size: 100% 200%; }
+  .dd-rarebook.is-complete { animation: dd-tier-pulse 2.6s ease-in-out infinite; --tier: #fbbf24; }
+  @keyframes dd-rare-in { from { opacity: 0; transform: translateX(-50%) scale(0.3) rotate(-6deg); } }
+  @keyframes dd-rare-out { to { opacity: 0; transform: translateX(-50%) translateY(-20px) scale(0.9); } }
+  @keyframes dd-spin { to { transform: rotate(360deg); } }
+  @keyframes dd-shimmer { to { background-position: -200% 0; } }
+  @keyframes dd-twinkle { 0%, 100% { opacity: 0; transform: scale(0.3) rotate(0); } 50% { opacity: 1; transform: scale(1.2) rotate(45deg); } }
+  @keyframes dd-sweep { 0%, 60% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
+  @keyframes dd-page-in { from { opacity: 0; transform: translateY(18px) rotateX(35deg) scale(0.9); } }
+  @keyframes dd-tier-pulse { 50% { box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6), 0 0 0 4px var(--tier), 0 0 44px var(--tier); } }
+}
+/* With less motion the banner still goes away by itself (the play screen clears it), it just doesn't move. */
+
+/* A quest's Game Coins pouch, said once on the map. */
+.dd-pouch {
+  position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 20; margin: 0;
+  display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 14px;
+  background: #fff6d6; color: #4a3200; border: 3px solid #ffc83d; font-weight: 700; font-size: 1.1rem;
+}
+.dd-pouch__ok { min-height: 44px; padding: 4px 16px; border-radius: 10px; border: 2px solid #4a3200; background: #ffc83d; color: #4a3200; font: inherit; cursor: pointer; }
+
+/* Key badges (docs/plans/game-keys/PLAN.md). */
+.dd-tile, .dd-shoptab { position: relative; }

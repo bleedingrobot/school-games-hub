@@ -1,0 +1,81 @@
+{
+  "_from": "docs/plans/stories/PLAN.md. Story paintings for lord: one 1536x864 scene a page, filed as art/story/<story id>-<page>.webp. Matches docs/lord-art style b.",
+  "game": "stories-lord",
+  "filename_prefix": "stories/lord/img",
+  "style": "a",
+  "styles": {
+    "a": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, a storybook illustration, suitable for children aged 8 to 12, no blood, no gore, no romance, no writing, no letters, no numbers anywhere. "
+  },
+  "inbox": "~/stories-art-inbox/lord",
+  "picks": "docs/stories-art/lord-picks.json",
+  "art_dir": "src/games/lord/art",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "lord-opening-1",
+      "prompt": "A happy medieval village at night, a hundred warm paper lanterns glowing along the cobbled streets, a bakery with warm light and steam, villagers chatting. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-opening-1"
+    },
+    {
+      "name": "lord-opening-2",
+      "prompt": "A great red dragon swooping over village rooftops at night, carrying sacks of treasure, baskets of bread and strings of lanterns in its claws, villagers hiding. Not scary-gory. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-opening-2"
+    },
+    {
+      "name": "lord-opening-3",
+      "prompt": "The same village in grey dim morning, no lanterns, an empty market with bare stalls, a quiet inn with shutters closed, sad but safe. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-opening-3"
+    },
+    {
+      "name": "lord-opening-4",
+      "prompt": "A very old kind grey-haired village woman holding a big rusty key, opening the heavy wooden door of a dusty stone training hall with weapon racks and old banners inside, light spilling out. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-opening-4"
+    },
+    {
+      "name": "lord-opening-5",
+      "prompt": "A young hero of about ten holding a wooden sword high in the village square, determined and brave, villagers watching hopefully, seen from slightly behind. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-opening-5"
+    },
+    {
+      "name": "lord-opening-6",
+      "prompt": "A winding dirt road leading from a little village through a dark forest towards distant volcanic mountains with a glowing red cave mouth, a small hero walking the road. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "lord-opening-6"
+    }
+  ]
+}

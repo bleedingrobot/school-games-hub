@@ -4,6 +4,7 @@
  */
 import { supabase } from '../lib/supabase';
 import type { QuestKind, QuestRule } from '../../shared/quests/kinds';
+import type { QuestReward } from '../../shared/quests/rewards';
 import { FriendlyError } from './profile';
 
 export interface ClassQuest {
@@ -14,6 +15,8 @@ export interface ClassQuest {
   daysNeeded: number;
   /** Missing before stage 2 (then it is a 'turns' quest). */
   rule?: QuestRule;
+  /** What finishing gives (quest rewards stage 1). */
+  reward?: QuestReward;
 }
 
 export interface MyQuest {
@@ -25,6 +28,8 @@ export interface MyQuest {
   count?: number;
   target?: number;
   won: boolean;
+  /** My reward from this quest, once won (its id in My rewards). */
+  myReward?: string | null;
   /** How many in my class have finished it (a number only). */
   classWon: number;
   /** My quests finished, ever. */
@@ -37,6 +42,7 @@ export interface TeacherQuestRow {
   startsOn: string;
   endsOn: string;
   stoppedAt: string | null;
+  reward?: QuestReward;
   won: number;
 }
 
@@ -77,8 +83,8 @@ export async function fetchTeacherQuests(classId: string, which?: string): Promi
   return data as TeacherQuests;
 }
 
-export async function startQuest(classId: string, kind: QuestKind): Promise<void> {
-  const { error } = await supabase.rpc('teacher_start_class_quest', { target_class: classId, which: kind });
+export async function startQuest(classId: string, kind: QuestKind, reward: QuestReward): Promise<void> {
+  const { error } = await supabase.rpc('teacher_start_class_quest', { target_class: classId, which: kind, reward });
   if (error) fail(error, 'We couldn’t start the quest.');
 }
 
@@ -86,4 +92,70 @@ export async function startQuest(classId: string, kind: QuestKind): Promise<void
 export async function stopQuest(classId: string, questId: string): Promise<void> {
   const { error } = await supabase.rpc('teacher_stop_class_quest', { target_class: classId, which: questId });
   if (error) fail(error, 'We couldn’t stop the quest.');
+}
+
+/** A reward from a class quest, on the profile's My rewards shelf. */
+export interface MyQuestReward {
+  id: string;
+  reward: QuestReward;
+  kind: QuestKind;
+  gotAt: string;
+  /** When it was used (a Rename Scroll: when its name was asked for). Null: still waiting to be used. */
+  usedAt: string | null;
+  /** A used Hero Title: the title it became. */
+  title?: string | null;
+  /** A used Bonus Turns Day: the NZ day ('YYYY-MM-DD') it was for. */
+  day?: string | null;
+  /** A used Quest Frame: the frame it became. */
+  frame?: string | null;
+  /** Game Coins: the game id the pouch is for (shared/quests/rewards.ts COIN_POUCH). */
+  game?: string | null;
+  /** An opened Game Coins pouch: how much money it held. */
+  amount?: number | null;
+}
+
+export async function fetchMyQuestRewards(): Promise<MyQuestReward[]> {
+  const { data, error } = await supabase.rpc('my_quest_rewards');
+  if (error) fail(error, 'We couldn’t load your rewards.');
+  return (data ?? []) as MyQuestReward[];
+}
+
+/** Spends a reward. Hero Title: { title: id }. */
+export async function spendQuestReward(rewardId: string, choice: Record<string, string>): Promise<void> {
+  const { error } = await supabase.rpc('use_quest_reward', { reward_id: rewardId, choice });
+  if (error) fail(error, 'We couldn’t use that reward. Please try again.');
+}
+
+export interface MyTitles {
+  owned: string[];
+  wearing: string | null;
+}
+
+export async function fetchMyTitles(): Promise<MyTitles> {
+  const { data, error } = await supabase.rpc('my_titles');
+  if (error) fail(error, 'We couldn’t load your titles.');
+  return (data ?? { owned: [], wearing: null }) as MyTitles;
+}
+
+/** Wears one of my titles, or none (null). */
+export async function setMyTitle(title: string | null): Promise<void> {
+  const { error } = await supabase.rpc('set_my_title', { title });
+  if (error) fail(error, 'We couldn’t change your title. Please try again.');
+}
+
+export interface MyFrames {
+  owned: string[];
+  wearing: string | null;
+}
+
+export async function fetchMyFrames(): Promise<MyFrames> {
+  const { data, error } = await supabase.rpc('my_frames');
+  if (error) fail(error, 'We couldn’t load your frames.');
+  return (data ?? { owned: [], wearing: null }) as MyFrames;
+}
+
+/** Wears one of my frames, or none (null). */
+export async function setMyFrame(frame: string | null): Promise<void> {
+  const { error } = await supabase.rpc('set_my_frame', { frame });
+  if (error) fail(error, 'We couldn’t change your frame. Please try again.');
 }

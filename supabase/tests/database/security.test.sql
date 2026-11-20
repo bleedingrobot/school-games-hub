@@ -43,7 +43,7 @@ $$, 'signed-in users can only read tables, never write to them');
 select set_eq($$
   select table_name::text from information_schema.role_table_grants
   where table_schema = 'public' and grantee = 'authenticated'
-$$, array['achievement_types', 'app_settings', 'archery_duels', 'bot_games', 'lord_clashes', 'clan_duels', 'card_game_seats', 'mp_games', 'name_words', 'profiles',
+$$, array['achievement_types', 'app_settings', 'archery_duels', 'board_invites', 'bot_games', 'lord_clashes', 'clan_duels', 'card_game_seats', 'mp_games', 'name_words', 'profiles',
   'power_games', 'space_game_log', 'space_games'],
   'signed-in users can read only these tables (row level security narrows them further)');
 
@@ -56,12 +56,12 @@ select set_eq($$
   select p.proname::text from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public' and has_function_privilege('authenticated', p.oid, 'execute')
 $$, array[
-  'admin_archive_classes', 'admin_copy_defaults_to_classes', 'admin_school_defaults', 'admin_set_school_default', 'admin_classes', 'admin_clans_new_season', 'admin_create_class', 'admin_delete_leavers', 'admin_mark_step', 'admin_new_points_season', 'admin_year', 'admin_overview', 'admin_students', 'admin_teachers', 'admin_set_lord_holiday', 'admin_set_lord_season', 'archery_here', 'lord_here', 'lord_clash_cheer', 'clan_duel_here', 'clan_duel_cheer', 'can_manage_student', 'cancel_warp_request', 'card_lobby_games', 'choose_my_name', 'clan_hall_of_legends', 'clan_scoreboard', 'clear_my_maths_focus',
+  'admin_archive_classes', 'admin_copy_defaults_to_classes', 'admin_school_defaults', 'admin_set_school_default', 'admin_classes', 'admin_clans_new_season', 'admin_create_class', 'admin_delete_leavers', 'admin_mark_step', 'admin_new_points_season', 'admin_year', 'admin_overview', 'admin_students', 'admin_teachers', 'admin_set_lord_holiday', 'admin_set_lord_season', 'archery_here', 'board_invite_cancel', 'board_invite_decline', 'board_invite_send', 'hub_here', 'lobby_here', 'lobby_star', 'lobby_star_clan', 'lord_here', 'lord_clash_cheer', 'clan_duel_here', 'clan_duel_cheer', 'can_manage_student', 'cancel_warp_request', 'card_lobby_games', 'choose_my_name', 'clan_hall_of_legends', 'clan_scoreboard', 'clan_season_seen', 'clan_season_summary', 'clear_my_maths_focus',
   'gem_keep_leaderboard', 'hub_answer_totals', 'is_player_in', 'is_school_admin', 'is_school_email', 'is_school_user', 'is_site_owner',
-  'is_teacher', 'is_valid_avatar', 'leaderboard', 'lobby', 'lobby_games', 'log_page_away', 'log_questions', 'lord_first_five', 'lord_hall', 'lord_news', 'lord_school_season', 'lord_warriors', 'marble_board', 'marble_ghost', 'mine_board',
+  'is_teacher', 'is_valid_avatar', 'leaderboard', 'lobby', 'lobby_games', 'log_page_away', 'log_questions', 'lord_first_five', 'lord_hall', 'lord_news', 'lord_school_season', 'lord_season_seen', 'lord_season_summary', 'lord_warriors', 'marble_board', 'marble_ghost', 'mine_board',
   'monsters_leaderboard', 'my_bond_match', 'my_bot_game_stats', 'my_card_game_stats', 'my_class', 'my_friend_game_stats',
-  'mark_my_trophies_seen', 'my_gem_keep', 'my_home_layout', 'my_home_page', 'my_ladder', 'my_lord', 'my_marble', 'my_maths_focus', 'my_mine', 'my_monsters', 'my_moves_left', 'my_new_trophies', 'my_next_parts', 'my_power_game_stats', 'my_progress', 'my_school', 'my_school_info', 'my_top_games',
-  'my_settings_id', 'my_space_game_stats', 'my_training', 'my_training_lock', 'my_trophies', 'my_trophy_shelf', 'my_trophy_pairs', 'my_season_note', 'mark_season_note_seen', 'hall_of_fame', 'owner_add_school', 'owner_add_school_domain',
+  'mark_my_achievements_seen', 'mark_my_trophies_seen', 'my_gem_keep', 'my_home_layout', 'my_home_page', 'my_ladder', 'my_lord', 'my_marble', 'my_maths_focus', 'my_mine', 'my_monsters', 'my_moves_left', 'my_new_achievements', 'my_new_trophies', 'my_next_parts', 'my_power_game_stats', 'my_progress', 'my_school', 'my_school_info', 'my_top_games',
+  'my_settings_id', 'my_space_game_stats', 'my_training', 'my_training_lock', 'my_trophies', 'my_trophy_shelf', 'my_trophy_pairs', 'my_season_note', 'mark_season_note_seen', 'my_stories_seen', 'mark_story_seen', 'hall_of_fame', 'owner_add_school', 'owner_add_school_domain',
   'owner_schools', 'owner_set_school_active', 'owner_set_school_contact', 'power_lobby_games', 'progress_rules',
   'save_my_avatar', 'save_my_home_layout', 'school_set_admin', 'school_set_default_class', 'server_time', 'set_my_favourite_trophies', 'set_my_maths_focus', 'space_lobby_games',
   'teacher_add_co_teacher', 'teacher_add_to_class', 'teacher_answer_warp', 'teacher_archive_class', 'teacher_bond_match_student',
@@ -74,10 +74,11 @@ $$, array[
   'teacher_reset_clan', 'teacher_list_hero_names', 'teacher_reset_lord_hero', 'teacher_reset_name', 'teacher_reset_placement', 'teacher_reset_warp_code',
   'teacher_school_teachers', 'teacher_set_clan_maths', 'teacher_set_clan_raids', 'teacher_set_clan_typed_names', 'teacher_set_clans',
   'teacher_set_games', 'teacher_settings_changes', 'teacher_set_gem_keep', 'teacher_set_group_member', 'teacher_set_kingdom', 'teacher_set_maths_auto', 'teacher_set_hidden', 'teacher_set_lord', 'teacher_set_marble_maths', 'teacher_set_marble_rescue', 'teacher_set_maths_focus',
-  'teacher_archery_summary', 'teacher_set_archery', 'teacher_set_archery_duels', 'teacher_set_lord_live_arena', 'teacher_set_clan_live_duels', 'teacher_set_bond_match', 'teacher_set_mine', 'teacher_set_mine_maths', 'teacher_set_monsters', 'teacher_set_multiplayer', 'teacher_set_non_maths_games', 'teacher_set_unlimited_today', 'teacher_set_discount_today', 'teacher_set_question_skips', 'teacher_set_role', 'teacher_set_space_maths', 'teacher_set_students_choose_focus', 'teacher_set_trader', 'teacher_reset_trader', 'teacher_set_trader_forge', 'teacher_set_trader_forge_typing', 'teacher_clear_trader_names', 'teacher_trader_class_systems',
+  'teacher_archery_summary', 'teacher_set_archery', 'teacher_set_archery_duels', 'teacher_set_lord_live_arena', 'teacher_set_clan_live_duels', 'teacher_set_play_other_classes', 'teacher_set_bond_match', 'teacher_set_mine', 'teacher_set_mine_maths', 'teacher_set_monsters', 'teacher_set_multiplayer', 'teacher_set_non_maths_games', 'teacher_set_unlimited_today', 'teacher_set_discount_today', 'teacher_set_question_skips', 'teacher_set_role', 'teacher_set_space_maths', 'teacher_set_students_choose_focus', 'teacher_set_trader', 'teacher_reset_trader', 'teacher_set_trader_forge', 'teacher_set_trader_forge_typing', 'teacher_clear_trader_names', 'teacher_trader_class_systems',
   'diamond_hall', 'teacher_diamond_class', 'teacher_diamond_student', 'teacher_diamond_restart', 'teacher_set_diamond',
   'teacher_set_isles', 'my_isles', 'isles_sky', 'teacher_isles_class', 'teacher_isles_student', 'teacher_reset_isles', 'teacher_isles_halls',
-  'my_class_quest', 'my_class_quests', 'teacher_class_quests', 'teacher_start_class_quest', 'teacher_stop_class_quest',
+  'my_class_quest', 'my_class_quests', 'teacher_class_quests', 'teacher_start_class_quest', 'teacher_stop_class_quest', 'my_quest_rewards', 'use_quest_reward', 'set_my_title', 'my_titles', 'set_my_frame', 'my_frames',
+  'my_chess_looks', 'set_chess_look', 'mark_chess_looks_seen',
   'trophy_shelves', 'teacher_set_beanstalk', 'teacher_beanstalk_class', 'teacher_beanstalk_student',
   'teacher_set_hop', 'teacher_hop_class', 'teacher_hop_student',
   'teacher_set_pipi', 'teacher_pipi_class', 'teacher_pipi_student',
@@ -92,6 +93,7 @@ $$, array[
   'teacher_set_toonflap', 'teacher_toonflap_class', 'teacher_toonflap_student',
   'teacher_set_glyph', 'my_glyph', 'teacher_glyph_class', 'teacher_glyph_student',
   'teacher_set_orderup', 'teacher_orderup_class',
+  'teacher_set_goblinstorm', 'my_goblinstorm', 'goblinstorm_guide_seen', 'buy_goblinstorm', 'goblinstorm_board',
   'teacher_progress_other_games', 'teacher_page_away', 'teacher_facts_checks', 'my_facts_check',
   'my_name_status', 'ask_for_my_name', 'cancel_my_name_request', 'teacher_name_requests', 'teacher_answer_name', 'teacher_name_history', 'teacher_made_up_name_back', 'teacher_give_name_scroll', 'teacher_name_scrolls',
   'achievements_board', 'hard_workers_board', 'achievements_by_game', 'recent_trophies', 'trophies_board', 'trophies_of', 'game_board',
@@ -114,8 +116,8 @@ $$, 'every function has a fixed search_path');
 
 select set_eq($$
   select schemaname || '.' || tablename from pg_publication_tables where pubname = 'supabase_realtime'
-$$, array['public.archery_duels', 'public.card_game_seats', 'public.clan_duels', 'public.lord_clashes', 'public.mp_games', 'public.power_games', 'public.space_games'],
-  'live updates are switched on for friend games, space games, Power Clash games, 101 seat rows, Archery classmate fights, Dragon Maths clashes and Clan Quest duels only');
+$$, array['public.archery_duels', 'public.board_invites', 'public.card_game_seats', 'public.clan_duels', 'public.lord_clashes', 'public.mp_games', 'public.power_games', 'public.space_games'],
+  'live updates are switched on for friend games, space games, Power Clash games, 101 seat rows, Archery classmate fights, Dragon Maths clashes, Clan Quest duels and board game invites only');
 
 -- A table made by a future migration starts locked, even if it forgets to say so.
 create table public.zz_security_test (id integer);

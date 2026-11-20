@@ -262,3 +262,36 @@
 .mwm-pins { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
 .mwm-pins li.is-todo { font-weight: 800; }
 .mwm-travel { margin-top: 10px; }
+
+/* ---------- The whole window, over the hub's bar, like Star Trader (James, 18 Nov 2026; docs/FULL-WINDOW.md) ---------- */
+.mp-window {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+/* Off the map (new game, loading): the Hub and sound bar, then the card in a readable column. */
+.mp-window__top { display: flex; padding: 8px; }
+.mp-window > .mp-start { margin: 8px auto 24px; }
+.mp-window > .panel__empty { color: #e2e8f0; }
+/* On the map and in battles: the picture takes the whole window, the saving line a slim strip under it. */
+.mp-window > .mp-play { display: flex; flex-direction: column; height: 100dvh; min-height: 300px; }
+.mp-window .mw,
+.mp-window .mw-battle { flex: 1 1 0; min-height: 0; }
+.mp-window .mw { height: auto; border-radius: 0; box-shadow: none; }
+.mp-window .mw-battle { max-width: none; margin: 0; }
+.mp-window .mw-battle > .mb { height: 100%; min-height: 0; border-radius: 0; box-shadow: none; }
+.mp-window .mp-play__note,
+.mp-window .mp-play > :not(.mw):not(.mw-battle) { flex: none; }
+.mp-window .mp-play__note { margin: 2px auto; padding: 1px 12px; background: none; color: #cbd5e1; font-size: 0.8rem; text-align: center; }
+.mp-window .mp-play__note:last-child { margin-bottom: 4px; }
+/* The Hub and sound buttons, at the left of the map's top bar. */
+.mw-hubbtns { display: flex; gap: 6px; }
+.mw-hubbtns .mw-gear { display: inline-flex; align-items: center; gap: 4px; color: var(--mw-ink); text-decoration: none; }
+@media (max-width: 640px) {
+  .mw-hubbtns .mw-gear { padding: 2px 10px; }
+  .mw-hud .mw-place { display: none; }
+}

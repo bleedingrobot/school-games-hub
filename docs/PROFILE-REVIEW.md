@@ -129,7 +129,7 @@ Keep points themselves (they still drive "points this week" and stop any one gam
 | Archery | Beat Hawk | Hawk Feather trophy | Each season (new season counter) |
 | Archery | Beat Hawk with plain arrows in all 4 worlds (new) | **Golden Bow picture** | Once a year |
 | Royal Decree | Finish a full reign | Royal Seal trophy | Each season |
-| Royal Decree | A full reign with all 8 riddles right (new) | **Royal Crown picture** | Each season |
+| Royal Decree | 20 full reigns with all 8 riddles right in a season (one was too easy; changed 19 Nov 2026) | **Royal Crown picture** | Each season |
 | Star Trader | Build the ring around your sun | Star Ring trophy | Once a year |
 | Star Trader | Make the black hole | **Black Hole picture** | Once a year |
 | Diamond Drop | Find the Heart Diamond | **Heart Diamond picture** | Once a year |

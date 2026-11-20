@@ -11,6 +11,7 @@ import type { ItemId } from '../../../shared/archery/types';
 import type { ArcheryApi, ArmoryState } from '../../data/archery';
 import { CoinCount } from './CoinCount';
 import { ItemIcon } from './ItemIcon';
+import { KeyBadge } from '../../kit';
 
 export type Shelf = 'arrows' | 'helpers' | 'shields' | 'bows';
 
@@ -90,11 +91,11 @@ export function ArmoryScreen({ api, state, discount = false, onState, onExit, on
           <small>{next === null ? 'Top level: everything is open!' : `Spend ${next} more coins to reach level ${level + 1}.`}</small>
         </div>
         <CoinCount coins={state.coins} onEarn={onEarn} />
-        <button type="button" className="button button--light ar-btn" onClick={onExit}>Back</button>
+        <button type="button" className="button button--light ar-btn" data-key="esc" onClick={onExit}>Back</button>
       </div>
       <div className="ar-tabs" role="tablist" aria-label="Shelves">
-        {SHELVES.map((s) => (
-          <button key={s.id} type="button" role="tab" aria-selected={shelf === s.id} className="button button--light ar-btn ar-tab" onClick={() => setShelf(s.id)}>{s.name}</button>
+        {SHELVES.map((s, i) => (
+          <button key={s.id} type="button" role="tab" data-key={String(i + 1)} aria-selected={shelf === s.id} className="button button--light ar-btn ar-tab" onClick={() => setShelf(s.id)}><KeyBadge k={String(i + 1)} />{s.name}</button>
         ))}
       </div>
       {discount && <p className="ar-armory__discount">Discount day! Every arrow is half price today.</p>}

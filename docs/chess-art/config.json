@@ -1,0 +1,162 @@
+{
+  "_about": "Chess backgrounds, boards and piece sets (docs/CHESS-LOOK-PLAN.md). Paint: python scripts/game_art.py chess paint ~/dragon-art-inbox/chess. bg/volcano, bg/underwater and bg/space are painted and tidied with --style b: style a's words about no chessboard made the painter put a chessboard on the ground. board/* are flat square textures (light and dark squares for each board), painted with --style t.",
+  "game": "chess",
+  "comfy": "http://127.0.0.1:8188",
+  "filename_prefix": "chess/img",
+  "style": "a",
+  "styles": {
+    "a": "Hand-painted fantasy storybook game background, rich glowing colours, soft painterly light, magical and inviting, detailed edges with a calm uncluttered middle, friendly for children aged 8 to 11, no people, no chess pieces, no chessboard, no writing, no letters, no numbers, no labels anywhere. ",
+    "b": "Hand-painted fantasy storybook game background, rich glowing colours, soft painterly light, magical and inviting, detailed edges with a calm uncluttered middle, friendly for children aged 8 to 11, no people, no writing, no letters, no numbers anywhere. ",
+    "t": "Stylised hand-painted game texture, painterly brush strokes, soft even light with no strong shadows, rich glowing colours, clean and readable, made for a children's game. "
+  },
+  "inbox": "~/dragon-art-inbox/chess",
+  "picks": "docs/chess-art/picks.json",
+  "art_dir": "src/games/chess/art",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "bg/castle",
+      "prompt": "The inside of a grand royal castle great hall seen straight on from the middle of the room, tall stone arches and pillars on both sides, huge stained-glass windows glowing gold and blue, red and gold banners hanging from the walls, flickering torches and candle chandeliers, a polished stone floor stretching back to a big throne on a raised step far away in the distance, warm golden light pouring down the centre, soft floating dust motes, the middle of the picture open and calm, wide landscape.",
+      "size": [1536, 864],
+      "kind": "scene",
+      "folder": "bg",
+      "file": "castle"
+    },
+    {
+      "name": "bg/forest",
+      "prompt": "A sunlit magical forest clearing seen from inside the trees, giant old mossy trees framing both sides, ferns and glowing mushrooms along the edges, shafts of golden light falling through the green leafy canopy, a soft grassy clearing stretching back to misty trees in the distance, a few drifting leaves, the middle of the picture open and calm, wide landscape.",
+      "size": [1536, 864],
+      "kind": "scene",
+      "folder": "bg",
+      "file": "forest"
+    },
+    {
+      "name": "bg/coast",
+      "prompt": "A wild New Zealand Wairarapa coastline at sunset, a long sweep of grey sand beach and rocky shore platform, tall pointed rock pinnacles and a white lighthouse on a far headland, golden orange and pink sunset sky over the calm sea, waves rolling in with sea spray, flax bushes and pōhutukawa trees on the edges, the middle of the picture open and calm, wide landscape.",
+      "size": [1536, 864],
+      "kind": "scene",
+      "folder": "bg",
+      "file": "coast"
+    },
+    {
+      "name": "bg/volcano",
+      "prompt": "A dramatic volcano landscape at dusk seen from a high rocky cliff top, a huge smoking volcano far away across a wide valley with glowing orange lava rivers running down its sides and winding through the valley below, jagged black rocks and glowing cracks framing the left and right edges, a deep red and purple sky with drifting embers and sparks, exciting but not scary, the middle of the picture open sky and distant valley, calm, wide landscape.",
+      "size": [1536, 864],
+      "kind": "scene",
+      "folder": "bg",
+      "file": "volcano"
+    },
+    {
+      "name": "bg/snow",
+      "prompt": "A snowy mountain top above the clouds, sparkling white snow peaks all around, a sea of soft clouds far below, a clear deep blue sky with the first evening stars, snow-covered pine trees and ice crystals at the edges, gentle snowflakes falling, crisp cold sunlight, the middle of the picture open and calm, wide landscape.",
+      "size": [1536, 864],
+      "kind": "scene",
+      "folder": "bg",
+      "file": "snow"
+    },
+    {
+      "name": "bg/underwater",
+      "prompt": "A magical underwater palace seen while swimming in the open blue water, tall coral towers and pearl-white arches on both sides, colourful coral reefs, sea anemones and swaying kelp along the edges, schools of small bright fish in the distance, beams of blue-green sunlight shining down from the water surface, rising bubbles, the sea floor soft white sand with shells, the middle of the picture open blue water, calm, wide landscape.",
+      "size": [1536, 864],
+      "kind": "scene",
+      "folder": "bg",
+      "file": "underwater"
+    },
+    {
+      "name": "bg/space",
+      "prompt": "Floating in space beside a futuristic white space station, its curved panels, glowing blue lights and solar wings framing the left and right edges, a big glowing ringed planet and a colourful swirling nebula full of stars beyond, a small blue Earth-like planet far away, the middle of the picture open starry space, calm and wondrous, wide landscape.",
+      "size": [1536, 864],
+      "kind": "scene",
+      "folder": "bg",
+      "file": "space"
+    },
+    {
+      "name": "board/marble-light",
+      "prompt": "Polished white and pale cream Carrara marble with soft thin grey and faint gold veins, glossy and smooth. Seen straight on from above, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "size": [1024, 1024],
+      "kind": "texture",
+      "folder": "board",
+      "file": "marble-light",
+      "max": 512,
+      "region": [0.08, 0.08, 0.92, 0.92],
+      "blend": true
+    },
+    {
+      "name": "board/marble-dark",
+      "prompt": "Polished deep green malachite and dark emerald marble with swirling lighter green and thin gold veins, glossy and smooth. Seen straight on from above, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "size": [1024, 1024],
+      "kind": "texture",
+      "folder": "board",
+      "file": "marble-dark",
+      "max": 512,
+      "region": [0.08, 0.08, 0.92, 0.92],
+      "blend": true
+    },
+    {
+      "name": "board/beach-light",
+      "prompt": "Smooth pale golden beach sand with gentle wind ripples and a few tiny pink and white shell flecks, warm sunny light. Seen straight on from above, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "size": [1024, 1024],
+      "kind": "texture",
+      "folder": "board",
+      "file": "beach-light",
+      "max": 512,
+      "region": [0.08, 0.08, 0.92, 0.92],
+      "blend": true
+    },
+    {
+      "name": "board/beach-dark",
+      "prompt": "Macro close-up of an iridescent mother-of-pearl surface, abstract swirling flowing bands of deep blue, teal, purple and green with a soft pearly sheen, natural and organic. Seen straight on from above, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "size": [1024, 1024],
+      "kind": "texture",
+      "folder": "board",
+      "file": "beach-dark",
+      "max": 512,
+      "region": [0.08, 0.08, 0.92, 0.92],
+      "blend": true
+    },
+    {
+      "name": "board/lava-light",
+      "prompt": "Natural warm orange-tan volcanic sandstone surface, smooth and organic with soft mottled colour, a few thin wandering glowing golden cracks and tiny ember sparkles. Seen straight on from above, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "size": [1024, 1024],
+      "kind": "texture",
+      "folder": "board",
+      "file": "lava-light",
+      "max": 512,
+      "region": [0.08, 0.08, 0.92, 0.92],
+      "blend": true
+    },
+    {
+      "name": "board/lava-dark",
+      "prompt": "Dark basalt lava rock, nearly black with deep red, with bright glowing orange and yellow molten lava cracks running through it. Seen straight on from above, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "size": [1024, 1024],
+      "kind": "texture",
+      "folder": "board",
+      "file": "lava-dark",
+      "max": 512,
+      "region": [0.08, 0.08, 0.92, 0.92],
+      "blend": true
+    },
+    {
+      "name": "board/starfield-light",
+      "prompt": "Abstract soft pale lavender and sky-blue frosted glass surface, smooth and seamless, with a faint glowing pastel pink and blue nebula mist and tiny twinkling stars. Seen straight on from above, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "size": [1024, 1024],
+      "kind": "texture",
+      "folder": "board",
+      "file": "starfield-light",
+      "max": 512,
+      "region": [0.08, 0.08, 0.92, 0.92],
+      "blend": true
+    },
+    {
+      "name": "board/starfield-dark",
+      "prompt": "Deep midnight blue and violet glass full of a glowing swirling nebula, bright twinkling stars and sparkles inside. Seen straight on from above, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "size": [1024, 1024],
+      "kind": "texture",
+      "folder": "board",
+      "file": "starfield-dark",
+      "max": 512,
+      "region": [0.08, 0.08, 0.92, 0.92],
+      "blend": true
+    }
+  ]
+}

@@ -32,6 +32,7 @@
   min-height: 44px; padding: 8px 16px; border-radius: 10px; border: 1px solid var(--ou-line);
   background: var(--ou-counter); color: var(--ou-text); font: inherit; font-weight: 600; cursor: pointer;
 }
+.ou-stop__buttons .ou-button { position: relative; }
 .ou-button:hover { border-color: var(--ou-muted); }
 .ou-button--go { background: var(--ou-red); border-color: var(--ou-red); color: #fff; }
 .ou-button--go:hover { background: #a92c23; }

@@ -36,13 +36,13 @@ export function Training({ session, onChange, onBack }: { session: Session; onCh
           <div className="cq-actions">
             <button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={() => buyNow(opt.key, 1, opt.label.toLowerCase())}>Buy 1</button>
             {opt.most > 1 && <button type="button" className="cq-btn" onClick={() => buyNow(opt.key, opt.most, opt.label.toLowerCase())}>Buy {opt.most} (all you can)</button>}
-            <button type="button" className="cq-btn" onClick={idle}>Not now</button>
+            <button data-key="esc" type="button" className="cq-btn" onClick={idle}>Not now</button>
           </div>
         )}
       </div>
     );
   } else if (phase.t === 'done') {
-    body = <div className="cq-panel" role="status"><p className="cq-note">{phase.text}</p><button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={idle}>Keep training</button></div>;
+    body = <div className="cq-panel" role="status"><p className="cq-note">{phase.text}</p><button data-key="enter" type="button" className="cq-btn cq-btn--hot" autoFocus onClick={idle}>Keep training</button></div>;
   } else {
     body = (
       <table className="cq-train">
@@ -69,7 +69,7 @@ export function Training({ session, onChange, onBack }: { session: Session; onCh
     <section className="cq-place" aria-label="The Training Hall">
       <div className="cq-place__head">
         <h2><PlaceSprite place="training" /> The Training Hall</h2>
-        <button type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
+        <button data-key="esc" type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
       </div>
       <p className="cq-soft">Members earn <strong>{CONFIG.pointsPerLevel} training points</strong> for every level. Who is training?</p>
       <div className="cq-pick" role="group" aria-label="Who is training?">

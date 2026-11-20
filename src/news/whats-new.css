@@ -1,0 +1,73 @@
+/* The small "What's new" box at the top of the home page (src/news/WhatsNew.tsx). */
+.whats-new {
+  margin: 12px 0;
+  padding: 10px 14px 10px 16px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #e0f2fe, #ede9fe);
+  color: #1e1b4b;
+}
+.whats-new__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.whats-new__title {
+  margin: 0;
+  font-size: 1rem;
+}
+.whats-new__close {
+  border: 0;
+  background: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: inherit;
+  padding: 6px;
+}
+.whats-new__list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.whats-new__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.whats-new__item p {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.35;
+}
+.whats-new__item a {
+  color: inherit;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.whats-new__emoji {
+  font-size: 1.3rem;
+  line-height: 1.1;
+}
+.whats-new__tag {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #7c3aed;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+.whats-new__more {
+  margin-top: 6px;
+  border: 0;
+  background: none;
+  color: #5b21b6;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 0;
+}

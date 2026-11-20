@@ -5,14 +5,19 @@
  * the `on…` props (GemKeepPlay saves them to the student's account). Without those props
  * (the stand-alone preview, tests), progress is kept in this browser as in the class trial.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { CAMPAIGN } from '../../../../shared/gem-keep/levels';
 import { AUTO_FOCUS, currentFocus, focusKey, focusNote, makeFocusPack, type MathsFocus } from '../../../../shared/maths/focus';
 import { showingPack, type ShowingPack, type ShownAnswer } from '../../../../shared/maths/claim';
 import type { FactStats } from '../../../../shared/maths/leitner';
 import type { SkillPack } from '../../../../shared/maths/skillPack';
+import { StoryBook, StoryShelf, useGameKeys, useStories, useStoryOnce } from '../../../kit';
+import type { Story } from '../../../../shared/kit/stories';
+import { TALE_GOALS, taleMet, taleWords } from '../../../../shared/gem-keep/tale';
+import { ENDING, OPENING, chapterStory, taleId, taleShelf, taleStory } from '../stories';
+import { boardUrl, campaignUrl } from '../art';
 import type { GameEngine } from '../engine/GameEngine';
-import { loadProgress, saveProgress, withKey, withWin, type CampaignProgress } from '../progress';
+import { isUnlocked, keyPassedToday, loadProgress, saveProgress, withKey, withWin, type CampaignProgress } from '../progress';
 import { DEFAULT_SETTINGS, type GemKeepSettings } from '../settings';
 import { TEXT } from '../strings';
 import { CampaignMap } from './CampaignMap';
@@ -48,6 +53,7 @@ export function GemKeepCampaign({
   onEngine,
   focus = AUTO_FOCUS,
   loadFocus,
+  after,
 }: {
   settings?: GemKeepSettings;
   /** The maths focus when Gem Keep opened. Auto (the default) is the campaign's own tables, as always. */
@@ -66,7 +72,7 @@ export function GemKeepCampaign({
   /** The progress changed (stars or a Level Key). */
   onProgress?: (progress: CampaignProgress) => void;
   onLevelEnd?: (level: FinishedLevel) => void;
-  /** A Level Key round finished: right answers out of 10. */
+  /** A Level Key round finished: right answers out of 5. */
   onKey?: (levelId: string, right: number) => void;
   /**
    * The answers given since the last report (oldest first), and the records they make.
@@ -74,6 +80,8 @@ export function GemKeepCampaign({
    */
   onAnswers?: (answers: ShownAnswer[], facts: FactStats[]) => void;
   onEngine?: (engine: GameEngine) => void;
+  /** Shown under the map or level, inside the full-window layer (the trophy line). */
+  after?: ReactNode;
 }) {
   const [progress, setProgress] = useState<CampaignProgress>(() => initialProgress ?? loadProgress());
   const [playing, setPlaying] = useState<number | null>(null);
@@ -128,6 +136,29 @@ export function GemKeepCampaign({
     return currentFocus(answer ?? packFocus);
   }
 
+  // The Keeper's Tale (docs/plans/stories/PLAN.md, ST.4): the opening on the map once, a chapter page before each level the
+  // first time, a Tale page for winning a level's Tale challenge (seen = the Tale star), the ending once all ten are won.
+  const stories = useStories();
+  const taleWon = CAMPAIGN.map((_, i) => stories.hasSeen(taleId(i)));
+  const opening = useStoryOnce(OPENING.id, playing === null);
+  const ending = useStoryOnce(ENDING.id, playing === null && !opening.open && taleWon.every(Boolean));
+  const [book, setBook] = useState<{ story: Story; then?: () => void } | null>(null);
+  const [shelf, setShelf] = useState(false);
+  const storyOpen = opening.open || ending.open || book !== null || shelf;
+  useEffect(() => {
+    if (!shelf || book) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !document.querySelector('.kit-story')) setShelf(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [shelf, book]);
+
+  /** Starts a level, after its chapter page the first time. */
+  function start(index: number | null) {
+    const chapter = index === null ? null : chapterStory(index);
+    if (chapter && stories.shouldShow(chapter.id)) setBook({ story: chapter, then: () => void play(index) });
+    else void play(index);
+  }
+
   async function play(index: number | null) {
     let next = pack;
     if (index !== null) {
@@ -148,39 +179,82 @@ export function GemKeepCampaign({
     setPlaying(index);
   }
 
-  if (playing === null) {
-    return <CampaignMap progress={progress} note={note} focusNote={focusNote(packFocus)} onPlay={(i) => void play(i)} />;
-  }
-  const level = CAMPAIGN[playing];
+  // Gem Keep fills the whole window, over the hub's bar (James, 18 Nov 2026: like Star Trader). The painting of the map or
+  // level shows blurred behind everything, so no hub colour shows round the edges.
+  const level = playing === null ? null : CAMPAIGN[playing];
+  const root = useRef<HTMLDivElement>(null);
+  useGameKeys(root, !storyOpen);
+  const backdrop = level ? boardUrl(level.id, true) : campaignUrl(true);
+  const windowStyle = backdrop ? ({ '--gk-backdrop': `url(${backdrop})` } as CSSProperties) : undefined;
   return (
-    <GemKeepGame
-      key={level.id}
-      level={level}
-      levelNumber={playing + 1}
-      settings={settings}
-      pack={pack}
-      onEngine={onEngine}
-      keyDone={!!progress[level.id]?.keyPassed}
-      onWin={(stars) => update((p) => withWin(p, level.id, stars))}
-      onEnd={(end) => {
-        const now = totals(pack);
-        onLevelEnd?.({
-          ...end,
-          levelId: level.id,
-          asked: now.asked - startTotals.current.asked,
-          right: now.right - startTotals.current.right,
-        });
-        begin();
-        reportFacts();
-      }}
-      onKeyResult={(right) => {
-        onKey?.(level.id, right);
-        begin();
-        reportFacts();
-      }}
-      onKeyPassed={() => update((p) => withKey(p, level.id))}
-      onNext={playing + 1 < CAMPAIGN.length ? () => void play(playing + 1) : undefined}
-      onMap={() => void play(null)}
-    />
+    <div ref={root} className="gk-window" style={windowStyle}>
+      {playing === null || !level ? (
+        <CampaignMap
+          progress={progress} note={note} focusNote={focusNote(packFocus)} onPlay={start}
+          taleWon={taleWon} taleWords={(i) => taleWords(TALE_GOALS[i])}
+          taleButton={<button type="button" className="button gk-tale-button" onClick={() => setShelf(true)}>📜 The Keeper's Tale {taleWon.filter(Boolean).length}/{CAMPAIGN.length}</button>}
+        />
+      ) : (
+        <GemKeepGame
+          key={level.id}
+          level={level}
+          levelNumber={playing + 1}
+          settings={settings}
+          pack={pack}
+          onEngine={onEngine}
+          keyDone={!!progress[level.id]?.keyPassed}
+          keyWaits={!progress[level.id]?.keyPassed && keyPassedToday(progress)}
+          tale={{ words: taleWords(TALE_GOALS[playing]), won: taleWon[playing] }}
+          onWin={(stars, state) => {
+            update((p) => withWin(p, level.id, stars));
+            const tale = taleStory(playing);
+            if (taleMet(TALE_GOALS[playing], state) && stories.shouldShow(tale.id)) setBook({ story: tale });
+          }}
+          onEnd={(end) => {
+            const now = totals(pack);
+            onLevelEnd?.({
+              ...end,
+              levelId: level.id,
+              asked: now.asked - startTotals.current.asked,
+              right: now.right - startTotals.current.right,
+            });
+            begin();
+            reportFacts();
+          }}
+          onKeyResult={(right) => {
+            onKey?.(level.id, right);
+            begin();
+            reportFacts();
+          }}
+          onKeyPassed={() => update((p) => withKey(p, level.id))}
+          onNext={playing + 1 < CAMPAIGN.length ? () => start(playing + 1) : undefined}
+          onMap={() => void play(null)}
+        />
+      )}
+      {opening.open && <StoryBook story={OPENING} onClose={opening.close} endLabel="Let's go!" className="gk-storybook" />}
+      {ending.open && <StoryBook story={ENDING} onClose={ending.close} className="gk-storybook" />}
+      {book && (
+        <StoryBook
+          story={book.story}
+          endLabel={book.then ? "Let's go!" : 'The end'}
+          className="gk-storybook"
+          onClose={() => { const then = book.then; setBook(null); then?.(); }}
+        />
+      )}
+      {shelf && (
+        <div className="gk-tale-shelf" role="dialog" aria-modal="true" aria-label="The Keeper's Tale">
+          <div className="gk-tale-shelf__box">
+            <h2>📜 The Keeper's Tale</h2>
+            <p>Win a level's Tale challenge to read what happens next. Win all ten to finish the story.</p>
+            <StoryShelf
+              stories={taleShelf((i) => isUnlocked(progress, CAMPAIGN.map((l) => l.id), i), (i) => taleWon[i])}
+              book={{ className: 'gk-storybook' }}
+            />
+            <button type="button" className="button" data-key="esc" onClick={() => setShelf(false)}>Close</button>
+          </div>
+        </div>
+      )}
+      {after}
+    </div>
   );
 }

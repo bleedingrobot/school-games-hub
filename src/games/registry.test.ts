@@ -3,8 +3,8 @@ import { ALL_GAMES, GAMES, POWER_CLASH_ON, findGame } from './registry';
 import { BOT_LEVELS, isBotLevel, isRanked } from './types';
 
 describe('game registry', () => {
-  it('has chess, checkers, Wormholes & Black Holes, 101, Gem Keep, Power Clash, Maths Monsters, Dragon Maths, Clan Quest, Marble Rush, Bond Match, Mine Runner, Archery Challenge, Star Trader, Diamond Drop, Sky Isles, Royal Decree, Glyph Gates and the Order Up! activity (Kingdom Keeper is off, kept for teachers)', () => {
-    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space', '101', 'gem-keep', 'power-clash', 'monsters', 'dragon-maths', 'clan-quest', 'marble', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'decree', 'robin', 'pipi', 'beanstalk', 'korora', 'tui', 'weka', 'parrot', 'hop', 'lizard', 'pigeon', 'swamphen', 'toonflap', 'glyph', 'orderup']);
+  it('has chess, checkers, Wormholes & Black Holes, 101, Gem Keep, Power Clash, Maths Monsters, Dragon Maths, Clan Quest, Marble Rush, Bond Match, Mine Runner, Archery Challenge, Star Trader, Diamond Drop, Sky Isles, Royal Decree, Glyph Gates, the Order Up! activity and Goblin Storm (Kingdom Keeper is off, kept for teachers)', () => {
+    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space', '101', 'gem-keep', 'power-clash', 'monsters', 'dragon-maths', 'clan-quest', 'marble', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'decree', 'robin', 'pipi', 'beanstalk', 'korora', 'tui', 'weka', 'parrot', 'hop', 'lizard', 'pigeon', 'swamphen', 'toonflap', 'glyph', 'orderup', 'goblinstorm']);
   });
 
   it('shows Power Clash on the dashboard while the switch is on', () => {
@@ -33,7 +33,7 @@ describe('game registry', () => {
     const inGroup = (group: string) => ALL_GAMES.filter((g) => g.group === group).map((g) => g.id);
     expect(inGroup('no-maths')).toEqual(['chess', 'checkers', '101', 'power-clash']);
     expect(inGroup('foundational')).toEqual(['robin', 'pipi', 'beanstalk', 'korora', 'tui', 'weka', 'parrot', 'hop', 'lizard', 'pigeon', 'swamphen']);
-    expect(inGroup('easy-maths')).toEqual(['space', 'gem-keep', 'marble', 'bond-match', 'mine', 'archery', 'diamond', 'isles', 'decree', 'toonflap']);
+    expect(inGroup('easy-maths')).toEqual(['space', 'gem-keep', 'marble', 'bond-match', 'mine', 'archery', 'diamond', 'isles', 'decree', 'toonflap', 'goblinstorm']);
     expect(inGroup('complex-maths')).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'trader', 'kingdom']);
     // Activities have no group: they are listed on the Activities page, not the home page.
     expect(ALL_GAMES.filter((g) => !g.group).map((g) => g.id)).toEqual(['glyph', 'orderup']);
@@ -41,9 +41,9 @@ describe('game registry', () => {
   });
 
   it('the games with a teacher switch and teacher parts say so themselves', () => {
-    expect(ALL_GAMES.filter((g) => g.teacherSwitch).map((g) => g.id)).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'decree', 'robin', 'pipi', 'beanstalk', 'korora', 'tui', 'weka', 'parrot', 'hop', 'lizard', 'pigeon', 'swamphen', 'toonflap', 'glyph', 'orderup', 'kingdom']);
+    expect(ALL_GAMES.filter((g) => g.teacherSwitch).map((g) => g.id)).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'decree', 'robin', 'pipi', 'beanstalk', 'korora', 'tui', 'weka', 'parrot', 'hop', 'lizard', 'pigeon', 'swamphen', 'toonflap', 'glyph', 'orderup', 'goblinstorm', 'kingdom']);
     // The teacher contract (docs/TEACHER-VIEW-PLAN.md, stage 3).
-    expect(ALL_GAMES.filter((g) => g.teacher).map((g) => g.id)).toEqual(['space', 'gem-keep', 'monsters', 'dragon-maths', 'clan-quest', 'marble', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'decree', 'robin', 'pipi', 'beanstalk', 'korora', 'tui', 'weka', 'parrot', 'hop', 'lizard', 'pigeon', 'swamphen', 'toonflap', 'glyph', 'orderup', 'kingdom']);
+    expect(ALL_GAMES.filter((g) => g.teacher).map((g) => g.id)).toEqual(['space', 'gem-keep', 'monsters', 'dragon-maths', 'clan-quest', 'marble', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'decree', 'robin', 'pipi', 'beanstalk', 'korora', 'tui', 'weka', 'parrot', 'hop', 'lizard', 'pigeon', 'swamphen', 'toonflap', 'glyph', 'orderup', 'goblinstorm', 'kingdom']);
   });
 
   it('finds games by id', () => {
@@ -54,11 +54,8 @@ describe('game registry', () => {
 });
 
 describe('bot levels', () => {
-  it('are Very Easy, Easy and Medium', () => {
+  it('are Very Easy, Easy and Medium, and unknown levels are rejected', () => {
     expect(BOT_LEVELS.map((l) => l.label)).toEqual(['Very Easy', 'Easy', 'Medium']);
-  });
-
-  it('rejects unknown levels', () => {
     expect(isBotLevel('easy')).toBe(true);
     expect(isBotLevel('impossible')).toBe(false);
     expect(isBotLevel(null)).toBe(false);

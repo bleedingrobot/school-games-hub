@@ -7,6 +7,7 @@
  * run through `onDone`.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useGameKeys } from '../../kit';
 import { DT, MAX_GEM_BONUSES, RESCUE_GAP_STEPS } from '../../../shared/marble/config';
 import type { Course } from '../../../shared/marble/course';
 import { clockSteps, makeWorld, medalFor, newRun, stepRun, type ClockMode, type RunState } from '../../../shared/marble/engine';
@@ -22,6 +23,7 @@ import { paletteFor } from './palette';
 import { lowerQuality, startQuality, type Quality } from './quality';
 import { isGoodGuess } from './guess';
 import { gateSigns, gemSprites } from './signs';
+import { questionOrder, questionToShow } from './questionOrder';
 import type { MarbleView, OtherKind } from './renderer';
 
 /** A recorded run to race against (from src/data/marble.ts). */
@@ -52,10 +54,6 @@ export type Marker = (slot: number, answer: number, ms: number) => Promise<{ rig
 
 type Phase = 'loading' | 'ready' | 'playing' | 'reading' | 'question' | 'paused' | 'finished' | 'timeout' | 'broken';
 
-/** How close (in tiles) the marble has to be to a gate's sign for its question to show. */
-const SIGN_RANGE = 7;
-/** How close to a number gem trail's gems its question shows. */
-const GEM_RANGE = 8;
 /** The longest the game waits for a student to read a gate, in milliseconds. */
 const READ_TIME_MS = 10_000;
 
@@ -65,6 +63,82 @@ const questionText = (q: PublicQuestion) => q.parts.map((p) => (p === '?' ? '…
 
 const MEDAL = { gold: '🥇 Gold', silver: '🥈 Silver', bronze: '🥉 Bronze' } as const;
 const DEAD_ZONE = 14;
+
+// ---- cheers (visual only: nothing here touches the time or the score) ----
+const CHEERS = ['Awesome!', 'Wicked!', 'Sweet as!', 'Choice!', 'Mean!', 'Ka pai!', 'Nice one!'];
+const AIR_WORDS = ['WHOOSH!', 'BIG AIR!', 'WHEEE!'];
+const pick = <T,>(list: readonly T[]): T => list[Math.floor(Math.random() * list.length)];
+/** A jump this long in the air (seconds) gets a cheer. */
+const BIG_AIR_SECONDS = 0.6;
+/** Rolling this long (seconds) without a fall gets "On a roll!". */
+const STREAK_SECONDS = 10;
+type PopKind = 'check' | 'gem' | 'nice' | 'air' | 'roll' | 'oops' | 'finish';
+/** Show a short pop near the top of the stage. It removes itself, never takes a tap, and at most three show at once. */
+function showPop(host: HTMLElement | null, text: string, kind: PopKind) {
+  if (!host) return;
+  while (host.childElementCount >= 3) host.firstElementChild?.remove();
+  const el = document.createElement('div');
+  el.className = `marble-pop marble-pop--${kind}`;
+  el.textContent = text;
+  host.appendChild(el);
+  window.setTimeout(() => el.remove(), 1200);
+}
+
+/** Medal glow colours and star count for the finish panel. Purely for show. */
+const MEDAL_GLOW = { gold: '#facc15', silver: '#e2e8f0', bronze: '#fb923c' } as const;
+const starsFor = (medal: keyof typeof MEDAL | null, falls: number) => (medal === 'gold' || falls === 0 ? 3 : medal === 'silver' || falls <= 1 ? 2 : 1);
+
+/** A time that rolls up from 0 to the real one in about a second. */
+function CountUp({ steps }: { steps: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (prefersReducedMotion()) {
+      el.textContent = formatSteps(steps);
+      return;
+    }
+    let raf = 0;
+    const t0 = performance.now();
+    const tick = (t: number) => {
+      const k = Math.min(1, (t - t0) / 1000);
+      el.textContent = formatSteps(steps * (1 - (1 - k) ** 3));
+      if (k < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [steps]);
+  return <span ref={ref}>{formatSteps(steps)}</span>;
+}
+
+const CONFETTI_COLOURS = ['#ef4444', '#facc15', '#22c55e', '#3b82f6', '#ec4899', '#f97316', '#a78bfa'];
+/** CSS confetti falling over the finish panel: a few more bits for gold. Hidden when motion is reduced. */
+function Confetti({ count }: { count: number }) {
+  const bits = useMemo(
+    () =>
+      Array.from({ length: count }, (_, i) => ({
+        left: Math.random() * 100,
+        delay: Math.random() * 1.6,
+        dur: 2.2 + Math.random() * 1.8,
+        drift: (Math.random() - 0.5) * 120,
+        spin: 360 + Math.random() * 540,
+        colour: CONFETTI_COLOURS[i % CONFETTI_COLOURS.length],
+        round: i % 4 === 0,
+      })),
+    [count],
+  );
+  return (
+    <div className="marble-confetti" aria-hidden="true">
+      {bits.map((b, i) => (
+        <i
+          key={i}
+          className={b.round ? 'marble-confetti__bit marble-confetti__bit--round' : 'marble-confetti__bit'}
+          style={{ left: `${b.left}%`, background: b.colour, animationDelay: `${b.delay}s`, animationDuration: `${b.dur}s`, '--drift': `${b.drift}px`, '--spin': `${b.spin}deg` } as React.CSSProperties}
+        />
+      ))}
+    </div>
+  );
+}
 
 const prefersReducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const isCoarse = () => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
@@ -114,6 +188,7 @@ export function RunScreen({
   soundRef.current = soundOn;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const popsRef = useRef<HTMLDivElement>(null);
   const timeRef = useRef<HTMLSpanElement>(null);
   const time2Ref = useRef<HTMLSpanElement>(null);
   const [phase, setPhase] = useState<Phase>('loading');
@@ -184,11 +259,17 @@ export function RunScreen({
     let lastRescueAt = -Infinity;
     let nearGate = -1;
     let nearTrail = -1;
+    const order = questionOrder(course);
+    const passedTrails = new Set<number>();
     const read = new Set<number>();
     let readTimer = 0;
     let wasGrounded = true;
     let reported = false;
     const reduced = prefersReducedMotion();
+    const pop = (text: string, kind: PopKind) => showPop(popsRef.current, text, kind);
+    // Air time and the no-fall streak, in physics steps (visual cheers only).
+    let airSteps = 0;
+    let streakFrom = 0;
 
     restartRef.current = () => {
       state = newRun(world);
@@ -208,10 +289,14 @@ export function RunScreen({
       lastChecks = 0;
       lastPits = 0;
       lastGems = 0;
+      airSteps = 0;
+      streakFrom = 0;
+      popsRef.current?.replaceChildren();
       rescuesAsked = 0;
       lastRescueAt = -Infinity;
       nearGate = -1;
       nearTrail = -1;
+      passedTrails.clear();
       setGuessResult(null);
       read.clear();
       window.clearTimeout(readTimer);
@@ -265,6 +350,7 @@ export function RunScreen({
     const finish = () => {
       if (reported) return;
       reported = true;
+      popsRef.current?.replaceChildren();
       const finished = state.outcome === 'finished';
       const steps = finished ? state.finishSteps : state.steps + state.penalty;
       const { isBest } = onDone({
@@ -302,6 +388,7 @@ export function RunScreen({
         prev = { ...state };
         stepRun(world, state, rescue ? REFUND : BONUS);
         const off = askOffRef.current.charAt(0).toUpperCase() + askOffRef.current.slice(1);
+        pop(rescue ? 'Right! No time lost' : `${pick(CHEERS)} ${askOffRef.current ? `−${askOffRef.current.replace(' seconds', 's').replace(' second', 's')}` : ''}`.trim(), 'nice');
         setToast(rescue ? 'Right! No time lost for that fall' : `Right! ${off} off your time`);
         beep('item');
         say(rescue ? 'Right! The fall cost you no time.' : `Right! ${off} off your time.`);
@@ -338,6 +425,20 @@ export function RunScreen({
           }
           acc -= DT;
           n++;
+          // Cheers: how long in the air, and how long since the last fall.
+          if (!state.grounded) airSteps++;
+          else {
+            if (airSteps * DT > BIG_AIR_SECONDS) pop(pick(AIR_WORDS), 'air');
+            airSteps = 0;
+          }
+          if (state.falls > lastFalls) {
+            airSteps = 0;
+            streakFrom = state.steps;
+            pop('Whoops! Back you go', 'oops');
+          } else if (state.steps - streakFrom >= STREAK_SECONDS / DT) {
+            streakFrom = state.steps;
+            pop('On a roll! 🔥', 'roll');
+          }
           if (state.falls > lastFalls) {
             lastFalls = state.falls;
             setFalls(lastFalls);
@@ -355,6 +456,7 @@ export function RunScreen({
             setCheckpoints(lastChecks);
             beep('item');
             say('Checkpoint!');
+            pop('CHECKPOINT!', 'check');
           }
           if (wasGrounded && !state.grounded && state.vz > 1) beep('hop');
           wasGrounded = state.grounded;
@@ -371,6 +473,7 @@ export function RunScreen({
           if (state.gemsTaken.length > lastGems) {
             lastGems = state.gemsTaken.length;
             beep('item');
+            pop('+1 💎', 'gem');
             if (lastGems <= MAX_GEM_BONUSES) {
               setToast('Gem! 1 second off');
               say('Right gem. One second off your time.');
@@ -381,21 +484,12 @@ export function RunScreen({
           }
         }
         if (n === 6) acc = 0;
-        // The nearest gate whose tunnel hasn't been chosen yet, if its sign is close: its question shows, and the game can wait to be read.
-        // (When no gate is near, a number-gem trail's question shows while the marble is among its gems.)
+        // The next question along the track, if the marble is near it: a gate's question only once every stop before it is done
+        // (questionOrder.ts), so the maths comes in the order the track meets it. A gate's question can wait to be read.
         if (setup.maths && !state2 && phaseRef.current === 'playing') {
-          let near = -1;
-          course.gates.forEach((gate, i) => {
-            if (near >= 0 || state.gateChoices[i] >= 0) return;
-            if ((gate.sign[0] + 0.5 - state.x) ** 2 + (gate.sign[1] + 0.5 - state.y) ** 2 < SIGN_RANGE * SIGN_RANGE) near = i;
-          });
-          let trail = -1;
-          if (near < 0) {
-            course.gems.forEach((t, i) => {
-              if (trail >= 0) return;
-              if (t.groups.some((g) => g.spots.some(([gx, gy]) => (gx - state.x) ** 2 + (gy - state.y) ** 2 < GEM_RANGE * GEM_RANGE) || (t.sign[0] + 0.5 - state.x) ** 2 + (t.sign[1] + 0.5 - state.y) ** 2 < SIGN_RANGE * SIGN_RANGE)) trail = i;
-            });
-          }
+          const next = questionToShow(course, order, state, passedTrails);
+          const near = next?.kind === 'gate' ? next.index : -1;
+          const trail = next?.kind === 'gems' ? next.index : -1;
           if (trail !== nearTrail) {
             nearTrail = trail;
             if (near < 0) setBanner(trail >= 0 && setup.gems[trail] ? { kind: 'gems', question: setup.gems[trail].question } : null);
@@ -564,9 +658,12 @@ export function RunScreen({
   const info = infoFor(course.def.id);
   const hard = mode === 'down';
   const playing = phase === 'playing';
+  // Keys press the Keep rolling / Roll again buttons; the run's own keys (arrows, Esc, Enter on Ready and Go) stay in charge otherwise.
+  const runRef = useRef<HTMLDivElement>(null);
+  useGameKeys(runRef, phase === 'paused' || phase === 'finished' || phase === 'timeout' || phase === 'broken');
 
   return (
-    <div className="marble-run">
+    <div className="marble-run" ref={runRef}>
       <div className="marble-hud">
         <div className="marble-hud__title">
           <strong>{info?.name ?? course.def.name}</strong>
@@ -598,6 +695,8 @@ export function RunScreen({
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
+        <div ref={popsRef} className="marble-pops" aria-hidden="true" />
+        {phase === 'finished' && result && result.winner === undefined && <div className="marble-flash" aria-hidden="true" />}
         <canvas ref={canvasRef} className="marble-canvas" role="img" aria-label={`The ${info?.name ?? course.def.name} course, seen from above and to the side. Your marble is the blue and white ball.`} />
 
         {setup.maths && banner && phase !== 'ready' && phase !== 'question' && (
@@ -634,7 +733,7 @@ export function RunScreen({
         {phase === 'broken' && (
           <div className="marble-overlay" role="alert">
             <p>This game needs 3D graphics, and this device couldn’t start them.</p>
-            <button type="button" className="button button--light" onClick={onExit}>Back to courses</button>
+            <button type="button" className="button button--light" data-key="enter" onClick={onExit}>Back to courses</button>
           </div>
         )}
         {phase === 'ready' && (
@@ -660,15 +759,17 @@ export function RunScreen({
           <div className="marble-overlay">
             <p className="marble-overlay__big">Paused</p>
             <div className="marble-overlay__buttons">
-              <button type="button" className="button button--play" onClick={() => goto('playing')}>Keep rolling</button>
+              <button type="button" className="button button--play" data-key="enter" onClick={() => goto('playing')}>Keep rolling</button>
               <button type="button" className="button button--light" onClick={() => restartRef.current()}>Start again</button>
               <button type="button" className="button button--light" onClick={onExit}>Courses</button>
             </div>
           </div>
         )}
         {(phase === 'finished' || phase === 'timeout') && result && (
-          <div className="marble-overlay" role="dialog" aria-label="Run finished">
-            <p className="marble-overlay__big">
+          <div className={`marble-overlay${phase === 'finished' ? ' marble-overlay--party' : ''}`} role="dialog" aria-label="Run finished">
+            {phase === 'finished' && <Confetti count={result.medal === 'gold' ? 90 : result.medal ? 55 : 36} />}
+            {phase === 'finished' && result.isBest && <Confetti count={30} />}
+            <p className={`marble-overlay__big${phase === 'finished' && result.winner === undefined ? ' marble-overlay__big--rainbow' : ''}`}>
               {result.winner !== undefined ? (result.winner === 0 ? 'A tie!' : `Player ${result.winner} wins!`) : phase === 'finished' ? 'Finished!' : 'Out of time'}
             </p>
             {result.winner !== undefined && (
@@ -679,14 +780,25 @@ export function RunScreen({
             )}
             {phase === 'finished' && result.winner === undefined && (
               <>
-                <p className="marble-overlay__time">{formatSteps(result.steps)}{hard && ' 🔥'}</p>
-                {result.medal && <p className="marble-overlay__medal">{MEDAL[result.medal]}</p>}
+                <p className="marble-stars" aria-label={`${starsFor(result.medal, result.falls)} of 3 stars`}>
+                  {[0, 1, 2].map((i) => (
+                    <span key={i} className={i < starsFor(result.medal, result.falls) ? 'marble-star marble-star--on' : 'marble-star'} style={{ animationDelay: `${0.5 + i * 0.35}s` }} aria-hidden="true">
+                      ★
+                    </span>
+                  ))}
+                </p>
+                <p className="marble-overlay__time"><CountUp steps={result.steps} />{hard && ' 🔥'}</p>
+                {result.medal && (
+                  <p className="marble-overlay__medal marble-medal" style={{ '--glow': MEDAL_GLOW[result.medal] } as React.CSSProperties}>
+                    <span className="marble-medal__stamp">{MEDAL[result.medal].split(' ')[0]}</span> {MEDAL[result.medal].split(' ')[1]}
+                  </p>
+                )}
                 {result.ghost && ghost && (
-                  <p className="marble-overlay__best">
+                  <p className={result.ghost === 'beat' ? 'marble-overlay__best marble-ghostwin' : 'marble-overlay__best'}>
                     {result.ghost === 'beat' ? `👻 You beat ${ghost.name}’s ghost!` : result.ghost === 'tie' ? `👻 A tie with ${ghost.name}!` : `👻 ${ghost.name}’s ghost was ${formatSteps(result.steps - ghost.steps)} faster. Try again!`}
                   </p>
                 )}
-                {result.isBest && <p className="marble-overlay__best">⭐ New personal best!</p>}
+                {result.isBest && <p className="marble-overlay__best marble-pb">⭐ New personal best!</p>}
                 {guessResult && (
                   <p className="marble-overlay__best">
                     {guessResult.star
@@ -700,7 +812,7 @@ export function RunScreen({
             )}
             {phase === 'timeout' && <p>The clock ran out. Nothing is lost: have another go.</p>}
             <div className="marble-overlay__buttons">
-              <button type="button" className="button button--play" onClick={onAgain}>Roll again</button>
+              <button type="button" className="button button--play" data-key="enter" onClick={onAgain}>Roll again</button>
               {phase === 'finished' && !hard && canTryHard && !twoPlayer && (
                 <button type="button" className="button button--light" onClick={onHard}>Try hard mode 🔥</button>
               )}

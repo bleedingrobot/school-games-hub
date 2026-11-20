@@ -9,7 +9,7 @@
  * Only looks live here. Nothing in this file is read by the rules, so a picture can never change a level.
  * Gems differ by shape as well as colour, so colour-blind pupils can tell them apart.
  */
-import { FIELD_H, FIELD_W, GROUND_Y, PIVOT, type GemId } from '../../../../shared/diamond/config';
+import { FIELD_H, FIELD_W, GROUND_Y, PIVOT, rareOf, type GemId, type RareId, type RareTier } from '../../../../shared/diamond/config';
 import { drawPainting, paintNow } from './paint';
 
 type Ctx = CanvasRenderingContext2D;
@@ -68,6 +68,22 @@ export const GEM_LOOK: Record<GemId, { fill: string; dark: string; light: string
   fireOpal: { fill: '#ff6b2c', dark: '#7d2300', light: '#ffd27a', shape: 'an oval with flame flecks' },
   starSapphire: { fill: '#2a3fa8', dark: '#0b1440', light: '#ffffff', shape: 'a dome with a six-pointed star' },
   heartDiamond: { fill: '#ffeef6', dark: '#b4417a', light: '#ffffff', shape: 'a big sparkling heart' },
+  // Rare gems (shared/diamond/config.ts RARE_GEMS): each has its own shape too.
+  moonstone: { fill: '#dfe9ff', dark: '#5a6aa6', light: '#ffffff', shape: 'a glowing crescent moon' },
+  sunstone: { fill: '#ffc93c', dark: '#a0520a', light: '#fff4b8', shape: 'a sun with pointed rays' },
+  frostCrystal: { fill: '#bff3ff', dark: '#2f7fa8', light: '#ffffff', shape: 'a six-armed snowflake' },
+  rainbowOpal: { fill: '#f2e9ff', dark: '#6d4fa3', light: '#ffffff', shape: 'an oval full of rainbow colours' },
+  dragonEye: { fill: '#3fd16b', dark: '#0e4a22', light: '#e8ff7a', shape: 'an eye with a slit' },
+  galaxyGem: { fill: '#3b1c8f', dark: '#120633', light: '#c9b6ff', shape: 'a round ball full of stars' },
+  phoenixGem: { fill: '#ff4f8b', dark: '#7a0f3a', light: '#ffe9a8', shape: 'a crystal rose' },
+};
+
+/** The glow colours of each rare tier: [main, bright]. */
+export const TIER_GLOW: Record<RareTier, [string, string]> = {
+  uncommon: ['#7dd3fc', '#e0f7ff'],
+  rare: ['#c084fc', '#f3e8ff'],
+  epic: ['#f472b6', '#ffe4f1'],
+  legendary: ['#fbbf24', '#fff7d1'],
 };
 
 /**
@@ -198,6 +214,84 @@ export function drawGem(ctx: Ctx, gem: GemId, x: number, y: number, r: number, o
       ctx.beginPath(); ctx.moveTo(x - r * 0.7, y - r * 0.35); ctx.lineTo(x, y + r * 0.9); ctx.lineTo(x + r * 0.7, y - r * 0.35); ctx.moveTo(x, y - r * 0.4); ctx.lineTo(x, y + r * 0.9); ctx.stroke();
       break;
     }
+    case 'moonstone': {
+      ctx.beginPath(); ctx.arc(x, y, r * 0.95, 0.55, Math.PI * 2 - 0.55); ctx.arc(x + r * 0.45, y, r * 0.7, Math.PI * 2 - 1.05, 1.05, true); ctx.closePath();
+      const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.1, x, y, r);
+      g.addColorStop(0, light); g.addColorStop(1, fill); ctx.fillStyle = g; ctx.fill(); ctx.stroke();
+      if (!opts.shadow) { ctx.fillStyle = 'rgba(147,197,253,0.6)'; circle(ctx, x - r * 0.5, y + r * 0.15, r * 0.14); ctx.fill(); circle(ctx, x - r * 0.25, y - r * 0.5, r * 0.09); ctx.fill(); }
+      break;
+    }
+    case 'sunstone': {
+      star(ctx, x, y, r, 12, 0.72, 0); ctx.fill(); ctx.stroke();
+      circle(ctx, x, y, r * 0.55); ctx.fillStyle = opts.shadow ? fill : '#ff9f1c'; ctx.fill(); ctx.stroke();
+      ctx.fillStyle = light; circle(ctx, x - r * 0.15, y - r * 0.15, r * 0.2); ctx.fill();
+      break;
+    }
+    case 'frostCrystal': {
+      ctx.lineCap = 'round';
+      for (let i = 0; i < 6; i++) {
+        const a = (i * Math.PI) / 3 - Math.PI / 2, cx = Math.cos(a), cy = Math.sin(a);
+        ctx.lineWidth = Math.max(2, r * 0.22); ctx.strokeStyle = dark;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + cx * r, y + cy * r); ctx.stroke();
+        ctx.lineWidth = Math.max(1.2, r * 0.12); ctx.strokeStyle = fill;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + cx * r * 0.95, y + cy * r * 0.95); ctx.stroke();
+        for (const k of [0.45, 0.7]) {
+          const bx = x + cx * r * k, by = y + cy * r * k;
+          for (const t of [-0.8, 0.8]) { ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + Math.cos(a + t) * r * 0.28, by + Math.sin(a + t) * r * 0.28); ctx.stroke(); }
+        }
+      }
+      ctx.fillStyle = light; star(ctx, x, y, r * 0.3, 6, 0.5); ctx.fill();
+      break;
+    }
+    case 'rainbowOpal': {
+      ctx.beginPath(); ctx.ellipse(x, y, r * 0.95, r * 0.72, 0, 0, Math.PI * 2);
+      if (opts.shadow) ctx.fill();
+      else { const g = ctx.createLinearGradient(x - r, y - r, x + r, y + r); ['#ff6b9a', '#ffd166', '#7ef29a', '#6bc8ff', '#b388ff'].forEach((c, i) => g.addColorStop(i / 4, c)); ctx.fillStyle = g; ctx.fill(); }
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.beginPath(); ctx.ellipse(x - r * 0.3, y - r * 0.3, r * 0.4, r * 0.16, -0.4, 0, Math.PI * 2); ctx.fill();
+      break;
+    }
+    case 'dragonEye': {
+      ctx.beginPath(); ctx.moveTo(x - r, y); ctx.quadraticCurveTo(x, y - r * 1.15, x + r, y); ctx.quadraticCurveTo(x, y + r * 1.15, x - r, y); ctx.closePath();
+      if (!opts.shadow) { const g = ctx.createRadialGradient(x, y, r * 0.1, x, y, r); g.addColorStop(0, light); g.addColorStop(0.55, fill); g.addColorStop(1, dark); ctx.fillStyle = g; }
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = opts.shadow ? light : '#0b1a0f'; ctx.beginPath(); ctx.ellipse(x, y, r * 0.13, r * 0.48, 0, 0, Math.PI * 2); ctx.fill();
+      break;
+    }
+    case 'galaxyGem': {
+      circle(ctx, x, y, r * 0.95);
+      if (!opts.shadow) { const g = ctx.createRadialGradient(x - r * 0.2, y - r * 0.2, r * 0.05, x, y, r); g.addColorStop(0, '#f0abfc'); g.addColorStop(0.4, '#6d28d9'); g.addColorStop(1, '#0f0630'); ctx.fillStyle = g; }
+      ctx.fill(); ctx.stroke();
+      if (!opts.shadow) {
+        const rnd = decoRandom(77);
+        ctx.fillStyle = '#ffffff';
+        for (let i = 0; i < 12; i++) { const a = rnd() * Math.PI * 2, d = rnd() * r * 0.8; star(ctx, x + Math.cos(a) * d, y + Math.sin(a) * d, r * (0.05 + rnd() * 0.08), 4, 0.35); ctx.fill(); }
+      }
+      break;
+    }
+    case 'phoenixGem': {
+      // The Fablet Rose (its id stays phoenixGem): a gold stem and two leaves, then rings of petals round a gem heart.
+      ctx.strokeStyle = opts.shadow ? fill : '#d9a520'; ctx.lineWidth = Math.max(1.5, r * 0.1);
+      ctx.beginPath(); ctx.moveTo(x, y + r * 0.4); ctx.lineTo(x, y + r * 1.05); ctx.stroke();
+      for (const side of [-1, 1]) {
+        ctx.beginPath(); ctx.ellipse(x + side * r * 0.32, y + r * 0.78, r * 0.3, r * 0.13, side * -0.5, 0, Math.PI * 2);
+        ctx.fillStyle = opts.shadow ? fill : '#2fbf6a'; ctx.fill();
+      }
+      ctx.strokeStyle = dark; ctx.lineWidth = Math.max(1, r * 0.06);
+      for (const [ring, size, petals, turn] of [[0.55, 0.42, 6, 0], [0.32, 0.34, 5, 0.6]] as const) {
+        for (let i = 0; i < petals; i++) {
+          const a = (i / petals) * Math.PI * 2 + turn;
+          const px = x + Math.cos(a) * r * ring, py = y - r * 0.05 + Math.sin(a) * r * ring * 0.85;
+          ctx.beginPath(); ctx.ellipse(px, py, r * size, r * size * 0.8, a, 0, Math.PI * 2);
+          if (!opts.shadow) { const g = ctx.createRadialGradient(x, y, r * 0.1, px, py, r * size); g.addColorStop(0, fill); g.addColorStop(0.7, '#d81b60'); g.addColorStop(1, '#ffd36b'); ctx.fillStyle = g; } else ctx.fillStyle = fill;
+          ctx.fill(); ctx.stroke();
+        }
+      }
+      ctx.beginPath(); ctx.arc(x, y - r * 0.05, r * 0.24, 0, Math.PI * 2);
+      ctx.fillStyle = opts.shadow ? fill : '#ff9ec4'; ctx.fill(); ctx.stroke();
+      ctx.fillStyle = light; ctx.beginPath(); ctx.ellipse(x - r * 0.07, y - r * 0.12, r * 0.08, r * 0.12, -0.4, 0, Math.PI * 2); ctx.fill();
+      break;
+    }
   }
   if (!opts.shadow) sparkleOn(ctx, x, y, r, opts.sparkle);
   ctx.restore();
@@ -211,6 +305,69 @@ function sparkleOn(ctx: Ctx, x: number, y: number, r: number, sparkle: number | 
   ctx.fill();
   ctx.globalAlpha = 1;
 }
+
+/**
+ * The light around a rare gem, drawn under it every frame so it can't be missed: a tier-coloured glow that breathes,
+ * turning light rays, and sparkles that circle it. `still` (reduced motion) keeps just a steady glow.
+ */
+export function drawRareAura(ctx: Ctx, gem: RareId, x: number, y: number, r: number, time: number, still = false) {
+  const tier = rareOf(gem).tier;
+  const [main, bright] = TIER_GLOW[tier];
+  const big = tier === 'legendary' ? 1.4 : tier === 'epic' ? 1.2 : 1;
+  const pulse = still ? 1 : 1 + Math.sin(time * 3) * 0.12;
+  ctx.save();
+  // Rays.
+  const rays = tier === 'legendary' ? 12 : 8;
+  const reach = r * 3.4 * big * pulse;
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = 0.35;
+  for (let i = 0; i < rays; i++) {
+    const a = (i / rays) * Math.PI * 2 + (still ? 0 : time * 0.6);
+    const w = 0.11;
+    const g = ctx.createRadialGradient(x, y, r * 0.4, x, y, reach);
+    g.addColorStop(0, bright); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, reach, a - w, a + w); ctx.closePath(); ctx.fill();
+  }
+  // Glow.
+  ctx.globalAlpha = 0.9;
+  const glow = ctx.createRadialGradient(x, y, r * 0.2, x, y, r * 2.2 * big * pulse);
+  glow.addColorStop(0, bright); glow.addColorStop(0.35, main); glow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow; circle(ctx, x, y, r * 2.2 * big * pulse); ctx.fill();
+  // A ring that keeps rippling out.
+  if (!still) {
+    const k = (time * 0.7) % 1;
+    ctx.globalAlpha = (1 - k) * 0.7; ctx.strokeStyle = bright; ctx.lineWidth = 2.5;
+    circle(ctx, x, y, r * (1.2 + k * 2.2 * big)); ctx.stroke();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  // Orbiting sparkles.
+  const n = tier === 'legendary' ? 7 : tier === 'epic' ? 5 : 4;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 + (still ? 0.4 : time * 1.4);
+    const d = r * (1.55 + 0.2 * Math.sin(time * 2 + i));
+    const tw = still ? 0.9 : 0.5 + 0.5 * Math.sin(time * 6 + i * 1.7);
+    ctx.globalAlpha = 0.4 + tw * 0.6; ctx.fillStyle = i % 2 ? '#ffffff' : bright;
+    star(ctx, x + Math.cos(a) * d, y + Math.sin(a) * d * 0.8, r * (0.16 + tw * 0.14), 4, 0.25, still ? 0 : time);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/** A big gleam across a rare gem now and then, drawn on top of it. */
+export function drawRareGleam(ctx: Ctx, x: number, y: number, r: number, time: number) {
+  const k = (time * 0.45) % 1;
+  if (k > 0.3) return;
+  const t = k / 0.3;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = Math.sin(t * Math.PI);
+  ctx.fillStyle = '#ffffff';
+  star(ctx, x + r * 0.45, y - r * 0.5, r * (0.5 + t * 0.6), 4, 0.12, t * 1.5);
+  ctx.fill();
+  ctx.restore();
+}
+
 
 // ——————————————————————————————————— Rocks, sacks, crabs ———————————————————————————————————
 
@@ -1045,7 +1202,7 @@ interface Particle { x: number; y: number; vx: number; vy: number; life: number;
 export class Effects {
   parts: Particle[] = [];
   /** Effects drawn as one shape for a while (disco ball, trumpet, the still glow), with when they end. */
-  shows: { kind: string; x: number; y: number; until: number; start: number }[] = [];
+  shows: { kind: string; x: number; y: number; until: number; start: number; gem?: RareId }[] = [];
 
   /** A gem came up at (x, y) with this catch effect worn (none: a small sparkle). */
   spawn(id: string | undefined, x: number, y: number, now: number, still: boolean, gem?: GemId) {
@@ -1070,6 +1227,22 @@ export class Effects {
       case 'happy-dance': this.shows.push({ kind: 'dance', x, y, start: now, until: now + 1.5 }); burst(8, 110, ['#fb7185', '#fda4af'], 'dot', 1.2); break;
       default: burst(12, 140, ['#fde047', '#ffffff'], 'star', 0.7);
     }
+  }
+
+  /** A rare gem came up: a much bigger show on top of the worn catch effect. */
+  rare(gem: RareId, x: number, y: number, now: number, still: boolean) {
+    const [main, bright] = TIER_GLOW[rareOf(gem).tier];
+    const legendary = rareOf(gem).tier === 'legendary';
+    this.shows.push({ kind: 'rare-ring', x, y, start: now, until: now + (still ? 1.2 : 1.6), gem });
+    if (still) return;
+    const rnd = decoRandom(Math.floor(now * 977));
+    const n = legendary ? 70 : 44;
+    for (let i = 0; i < n; i++) {
+      const a = rnd() * Math.PI * 2, v = 120 + rnd() * (legendary ? 360 : 260);
+      this.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 120, life: 1.6, max: 1.6, colour: [main, bright, '#ffffff'][i % 3], kind: i % 2 ? 'star' : 'dot', spin: rnd() * 6 });
+    }
+    // Tiny copies of the gem rain down across the field.
+    for (let i = 0; i < (legendary ? 18 : 10); i++) this.parts.push({ x: 60 + rnd() * (FIELD_W - 120), y: -20 - rnd() * 160, vx: 0, vy: 150 + rnd() * 120, life: 2.6, max: 2.6, colour: '#fff', kind: 'gem', gem, spin: 10 + rnd() * 5 });
   }
 
   /** Is Nugget's happy dance on now? */
@@ -1097,6 +1270,22 @@ export class Effects {
         const g = ctx.createRadialGradient(s.x, s.y, 4, s.x, s.y, 48);
         g.addColorStop(0, 'rgba(253,224,71,0.7)'); g.addColorStop(1, 'rgba(253,224,71,0)');
         ctx.fillStyle = g; circle(ctx, s.x, s.y, 48); ctx.fill();
+      } else if (s.kind === 'rare-ring' && s.gem) {
+        const [main, bright] = TIER_GLOW[rareOf(s.gem).tier];
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 3; i++) {
+          const kk = Math.min(1, k * 1.4 - i * 0.18);
+          if (kk <= 0) continue;
+          ctx.globalAlpha = (1 - kk) * 0.9; ctx.strokeStyle = i === 1 ? bright : main; ctx.lineWidth = 6 - i * 1.5;
+          circle(ctx, s.x, s.y, 20 + kk * 260); ctx.stroke();
+        }
+        const g = ctx.createRadialGradient(s.x, s.y, 4, s.x, s.y, 120);
+        g.addColorStop(0, bright); g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.globalAlpha = 1 - k; ctx.fillStyle = g; circle(ctx, s.x, s.y, 120); ctx.fill();
+        ctx.restore();
+        ctx.globalAlpha = 1;
+        drawGem(ctx, s.gem, s.x, s.y - 30 - k * 40, 30 + Math.sin(k * Math.PI) * 14);
       } else if (s.kind === 'disco') {
         ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(s.x, 0); ctx.lineTo(s.x, s.y - 18); ctx.stroke();
         ctx.fillStyle = '#d1d5db'; circle(ctx, s.x, s.y, 18); ctx.fill();

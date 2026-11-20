@@ -144,7 +144,7 @@ function PracticeClash({ hero, ask, act, back }: { hero: Hero; ask: Ask; act: (a
         setEnding({ title: 'You stepped out', line: 'Practice is over. Come back any time!' });
       }}
       buttons={<>
-        <button type="button" className="lord-btn lord-btn--hot lord-btn--big lord-end__go" autoFocus onClick={again}>Practise again</button>
+        <button type="button" className="lord-btn lord-btn--hot lord-btn--big lord-end__go" data-key="enter" autoFocus onClick={again}>Practise again</button>
         <button type="button" className="lord-btn lord-btn--glass lord-btn--big lord-end__go" onClick={back}>Back to the arena</button>
       </>}
     />
@@ -364,13 +364,19 @@ export function Warriors({ backend, back }: { backend: LordBackend; back: () => 
 
 // ---------------------------------------------------------------- the Hall of Heroes
 
-export function HallOfHeroes({ backend, back }: { backend: LordBackend; back: () => void }) {
+export function HallOfHeroes({ backend, back, ceremony }: {
+  backend: LordBackend;
+  back: () => void;
+  /** My last finished season, to watch its ceremony again. */
+  ceremony?: { season: number; watch: () => void };
+}) {
   const fetcher = useCallback(() => backend.fetchHall(), [backend]);
   const { rows, retry } = useList<HallRow>(fetcher);
   const seasons = new Map<number, HallRow[]>();
   if (Array.isArray(rows)) for (const r of rows) seasons.set(r.season, [...(seasons.get(r.season) ?? []), r]);
   return (
     <Page title="The Hall of Heroes" scene="hall" back={back}>
+      {ceremony && <button type="button" className="lord-btn lord-btn--glass lord-hall__ceremony" onClick={ceremony.watch}>🎺 Watch the Season {ceremony.season} ceremony</button>}
       {rows === null && <p className="lord-soft" role="status">Opening the Hall…</p>}
       {rows === 'failed' && <Failed retry={retry} />}
       {Array.isArray(rows) && rows.length === 0 && <p className="lord-board-card__empty">The Hall is empty. Will you be the first to beat the Red Dragon?</p>}
@@ -381,7 +387,7 @@ export function HallOfHeroes({ backend, back }: { backend: LordBackend; back: ()
             {list.map((r) => (
               <li key={`${season}-${r.display_name}`} className={r.is_me ? 'is-me' : undefined}>
                 <AvatarImage avatar={r.avatar} size={36} />
-                <span className="lord-board__name">{r.display_name}{r.is_me && <span className="lord-soft"> (you)</span>}</span>
+                <span className="lord-board__name">{r.kills >= 2 && <span title="Ultimate Dragon Slayer" aria-label="Ultimate Dragon Slayer">👑 </span>}{r.display_name}{r.is_me && <span className="lord-soft"> (you)</span>}</span>
                 <span>{r.kills === 1 ? 'beat the dragon' : `beat the dragon ${r.kills} times`}</span>
               </li>
             ))}

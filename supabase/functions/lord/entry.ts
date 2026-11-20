@@ -2,6 +2,7 @@
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
 import { userIdFromToken } from '../_shared/signIn';
+import { openCoinPouches } from '../_shared/coinPouch';
 import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { parseFocus } from '../../../shared/maths/focus';
 import type { MathsContext } from '../../../shared/maths/serverQuestions';
@@ -74,6 +75,7 @@ Deno.serve(
     },
     recordRefusal: (player, reason, action) => call('record_lord_refusal', { player, reason, action }),
     arenaCandidates: (player, season, level) => call<ArenaCandidate[]>('lord_arena_candidates', { player, season, lvl: level }),
+    openPouches: (player, version, perUnit) => openCoinPouches((name, args) => admin.rpc(name, args), player, 'dragon-maths', version, perUnit),
     dailyNews: (player, day, lines) => call('lord_daily_news', { player, news_day: day, lines }),
     // Live arena clashes (migration 20261117000200_lord_live_arena.sql).
     clashLoad: (clash) => call('lord_clash_load', { clash }),

@@ -16,8 +16,10 @@ import { QuestionModal } from '../../maths/QuestionModal';
 import { liveIsles } from '../../data/isles';
 import { keeperArt, pipArt, sceneArt, weatherArt } from './art';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import { IslesError, type IslandView, type IslesBackend, type PostShown, type PublicRace } from './backend';
 import { freePlaces } from './Decorations';
+import { HubButtons } from './HubButtons';
 import { HowToPlayBody } from './HowToPlay';
 import { ClassSky, VisitIsland } from './ClassSky';
 import { HallOfSkies } from './Hall';
@@ -31,6 +33,8 @@ import { buildChoices, upgradeChoice } from './canDo';
 import { BUILD_ALL_DONE, QUESTION_WORDS, REST_NO_RACE, STEP_PIP, Step, StepStrip, TurnStep, canStop, stepOf, type BuildView } from './TurnSteps';
 import { Say, cheerLine, nextTurnLine, useIslesVoice } from './voice';
 import { actionText, collectLines, n, plural, postLine, reportLines } from './words';
+import { useOpenFromHub } from '../../multiplayer/useAskFromHub';
+import { useIslesKeys } from './keys';
 import './isles.css';
 
 type Screen =
@@ -94,8 +98,21 @@ function Road({ island }: { island: Island }) {
   );
 }
 
-export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; level?: unknown }) {
+/** Sky Isles covers the whole window, over the hub's bar, like Star Trader (James, 18 Nov 2026; docs/FULL-WINDOW.md). */
+export function IslesPlay(props: { backend?: IslesBackend; level?: unknown }) {
+  const root = useRef<HTMLDivElement>(null);
+  useIslesKeys(root, true);
+  return (
+    <div className="si-window" ref={root}>
+      <IslesScreens {...props} />
+    </div>
+  );
+}
+
+function IslesScreens({ backend = liveIsles }: { backend?: IslesBackend; level?: unknown }) {
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
+  // From the Lobby's Sky race tile: straight to the race screen, once the island has loaded (and has its Sky Keeper).
+  useOpenFromHub(screen.kind === 'home', (what) => what === 'race' && setScreen({ kind: 'race', open: null }));
   const [view, setView] = useState<IslandView | null>(null);
   const [report, setReport] = useState<TurnReport | undefined>(undefined);
   /** Post opened on load, shown on My island until a turn starts (kept if a second load comes back without it). */
@@ -120,6 +137,8 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   const [grew, setGrew] = useState<{ from: number; to: number } | null>(null);
   /** The turn whose Last turn postcard was put away with OK (it comes back after the next turn). */
   const [reportShut, setReportShut] = useState<number | null>(null);
+  /** Coins from a quest's Game Coins pouch, opened as the island loaded. */
+  const [pouch, setPouch] = useState(0);
   const [busy, setBusy] = useState(false);
   const voice = useIslesVoice();
   const [problem, setProblem] = useState<string | null>(null);
@@ -129,6 +148,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
     setView(v);
     if (v.report) setReport(v.report);
     if (v.post?.length) setPost(v.post);
+    if (v.pouch && v.pouch.amount > 0) setPouch(v.pouch.amount);
   }, []);
 
   const load = useCallback(async () => {
@@ -291,7 +311,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   if (screen.kind === 'loading' || screen.kind === 'problem' || !view || !island || !shownIsland) {
     return (
       <div className="si">
-        <h2 ref={heading} tabIndex={-1}>Sky Isles</h2>
+        <header className="si-top"><HubButtons /><h2 ref={heading} tabIndex={-1}>Sky Isles</h2></header>
         {screen.kind === 'problem' ? (
           <div className="si-panel" role="alert">
             <p>{screen.message}</p>
@@ -307,6 +327,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   if (screen.kind === 'keeper') {
     return (
       <div className="si">
+        {screen.first && <header className="si-top"><HubButtons /></header>}
         <Keepers current={view.keeper} busy={busy} onChoose={(id) => void saveKeeper(id)} onBack={screen.first ? undefined : () => setScreen({ kind: 'home' })} />
         {problem && <p className="si-problem" role="alert">{problem}</p>}
       </div>
@@ -452,7 +473,9 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
     <div className={`si${screen.kind === 'howto' ? '' : ' si--play'}`}>
       <Say text={voiceLine} say={voice.say} />
       <TrophyWonLine games={['isles']} watch={view?.island.turn} off={backend.trial} />
+      <AchievementPop games={['isles']} watch={view?.island.turn} off={backend.trial} />
       <header className={`si-top${turnStep !== null ? ' si-top--turn' : ''}`}>
+        {turnStep === null && <HubButtons />}
         {screen.kind === 'turn' ? <h2>Your turn</h2> : (
           // A named island is called by its name at the top (James, 4 Nov 2026); until then it's "My island".
           <h2 ref={heading} tabIndex={-1}>
@@ -570,7 +593,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
                         </div>
                       </div>
                     ) : (
-                      <button type="button" className={`button button--play si-big${lit === 'play' || stepOf(lit) !== null ? ' si-lit' : ''}`} data-pip="play" onClick={startTurn}>
+                      <button type="button" className={`button button--play si-big${lit === 'play' || stepOf(lit) !== null ? ' si-lit' : ''}`} data-pip="play" aria-keyshortcuts="Enter" onClick={startTurn}>
                         Play a turn
                       </button>
                     )}
@@ -586,8 +609,8 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
                           Sky Race
                         </button>
                       )}
-                      <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'sky' })}>Class sky</button>
-                      <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'howto', back: { kind: 'home' } })}>How to play</button>
+                      <button type="button" className="button button--light" data-key="sky" aria-keyshortcuts="C" onClick={() => setScreen({ kind: 'sky' })}>Class sky</button>
+                      <button type="button" className="button button--light" data-key="howto" aria-keyshortcuts="H" onClick={() => setScreen({ kind: 'howto', back: { kind: 'home' } })}>How to play</button>
                     </div>
                     {problem && <p className="si-problem" role="alert">{problem}</p>}
                   </section>
@@ -614,6 +637,13 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
                     >
                       Got it
                     </button>
+                  </section>
+                )}
+
+                {screen.kind === 'home' && pouch > 0 && (
+                  <section className="si-panel si-post" aria-label="Quest pouch">
+                    <h3>💰 Quest pouch: +{pouch} coins!</h3>
+                    <button type="button" className="button button--light" onClick={() => setPouch(0)}>OK</button>
                   </section>
                 )}
 

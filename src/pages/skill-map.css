@@ -198,6 +198,12 @@
   color: var(--ink-soft);
   font-size: 0.72rem;
 }
+/* Real name beside the game name in a focus's "How they did" table. */
+.focus-results__real {
+  margin-left: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
 .skill-map tbody td.skill-map__place {
   padding: 0 6px;
 }
@@ -649,4 +655,46 @@ details.skill-cards__group ul {
 .skill-cards__kid[data-marked] {
   outline: 3px solid #e0a800;
   outline-offset: 1px;
+}
+.skill-map tr[data-marked] > th,
+.skill-map tr[data-marked] > .skill-map__place {
+  background: #fff3c4;
+  box-shadow: inset 4px 0 0 #e0a800;
+}
+.skill-cards__kid[data-marked] {
+  outline: 3px solid #e0a800;
+  outline-offset: 1px;
+}
+
+/* Focus results: percentage with the plain count under it, and who needs help. */
+.focus-results__count {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+.focus-results__help {
+  margin: 10px 0 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #eef6ee;
+}
+.focus-results__help--some {
+  background: #fdecec;
+  border: 2px solid #d9534f;
+}
+.focus-results__help h4 {
+  margin: 0 0 6px;
+}
+.focus-results__help ul {
+  margin: 0 0 6px;
+  padding-left: 20px;
+}
+.focus-results__help p {
+  margin: 4px 0;
+}
+.stats-table tr.focus-results__stuck th,
+.stats-table tr.focus-results__stuck td {
+  background: #fdecec;
+  color: #a61b1b;
 }

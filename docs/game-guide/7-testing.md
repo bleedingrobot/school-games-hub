@@ -4,10 +4,11 @@
 
 - **How many:** [docs/TESTING.md](../TESTING.md) "How many" is the rule (older and junior games differ). `scripts/test-budget.test.ts` enforces it: a new game id gets 8 unless it's added there (junior games: add the id to `JUNIOR`). The database test file and the "index.ts is up to date" check don't count.
 - **While you work:** `npx vitest run shared/<id> src/games/<id> supabase/functions/<id>`.
-- **Before the PR:** `npm run typecheck`, `npm run test:changed` and `npm run build`. Don't run `test:all` locally: the PR's Site checks run every test, split across 4 machines. A busy-machine timeout that passes alone with `--testTimeout=30000`: say so in the PR.
+- **Before the PR:** `npm run typecheck`, `npm run test:changed` (it also runs the test-budget check, the most common PR failure) and `npm run build`. Don't run `test:all` locally: the PR's Site checks run every test, split across 4 machines. A busy-machine timeout that passes alone with `--testTimeout=30000`: say so in the PR.
+- **A test still sees an old file list** (the home-card check in `src/games/art.test.ts` after moving a card into `src/assets/home/`): vitest keeps a module cache in `node_modules/.vitest-cache` that doesn't notice a file added to an `import.meta.glob` folder. Delete that folder and run again. CI starts fresh, so it never hits this.
 - **Date or time tests** ("Today", weekends, midnight) pin the clock.
 - **Server function:** logic in `handler.ts` with the database passed in, so `handler.test.ts` runs without Deno or a database. Rebuild only your `index.ts` (`npm run build:functions -- <id>`) and keep its "index.ts is up to date" test.
-- **Database:** `supabase/tests/database/<id>.test.sql` (pgTAP; copy `supabase/tests/database/weka.test.sql` or `toonflap.test.sql`). Check: pupils can't read the server-only tables (42501), can't call the server-only functions, see only their school, and a save sent twice counts once. A database test that counts points or achievements after inserting `scored_games` rows gives a different answer out of school hours (homework achievements): disable the trigger first, `alter table public.scored_games disable trigger homework_when_scored;` (as `progress_access.test.sql` does). Adding achievement types changes the count in `progress_access.test.sql`: update it. Run it on a throw-away copy: `scripts/scratch-db.sh <id>`, then `scripts/scratch-test.sh <id> supabase/tests/database/<id>.test.sql`, then drop the copy. The PR's Database checks run every file on a fresh copy.
+- **Database:** `supabase/tests/database/<id>.test.sql` (pgTAP; copy `supabase/tests/database/weka.test.sql` or `toonflap.test.sql`). Check: pupils can't read the server-only tables (42501), can't call the server-only functions, see only their school, and a save sent twice counts once. A database test that counts points or achievements after inserting `scored_games` rows gives a different answer out of school hours (homework achievements): disable the trigger first, `alter table public.scored_games disable trigger homework_when_scored;` (as `progress_access.test.sql` does). Adding achievement types changes the count in `progress_access.test.sql`: update it. Every new function granted to `authenticated` must be added to the allow-list in `security.test.sql` ("signed-in users can call only this list of functions"), or the Database checks fail. Run it on a throw-away copy: `scripts/scratch-db.sh <id>`, then `scripts/scratch-test.sh <id> supabase/tests/database/<id>.test.sql`, then drop the copy. The PR's Database checks run every file on a fresh copy.
 
 ## Trying it
 
@@ -17,7 +18,7 @@
 
 ## Screen checks: phone, iPad and laptop
 
-Screenshot every screen of the game (home, a go, right, wrong and show-why, help, guide, finish) at these sizes, look at each one yourself, and fix anything cut off, overlapping, too small to tap or off screen:
+Screenshot every screen of the game (home, a go, right, wrong and show-why, help, guide, finish) at these sizes, look at each one yourself, and fix anything cut off, overlapping, too small to tap or off screen. Every screen is full window ([3-files-and-clashes.md](3-files-and-clashes.md) "Full window"): no hub bar or red margin showing, paintings edge to edge, and nothing scrolls sideways (`scrollWidth <= clientWidth` on the layer):
 
 | Device | Size |
 |---|---|

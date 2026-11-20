@@ -9,6 +9,7 @@ import { AuthContext } from '../../src/auth/AuthContext';
 import { LordPlay } from '../../src/games/lord/LordPlay';
 import { nzDate } from '../../shared/lord/engine';
 import { createTrialBackend } from '../../src/games/lord/trialBackend';
+import type { LordBackend } from '../../src/data/lord';
 import { pretendClashApi } from '../../src/games/lord/pretendClashes';
 import '../../src/styles.css';
 
@@ -19,7 +20,28 @@ const seasonStart = dayParam >= 1 ? nzDate(new Date(Date.now() - (Math.min(35, d
 const ME = '00000000-0000-4000-8000-00000000000f';
 const clashParam = new URLSearchParams(window.location.search).get('clash');
 const trial = createTrialBackend('preview', seasonStart);
-const backend = clashParam ? { ...trial, clashes: pretendClashApi(ME, { askMe: clashParam === 'ask' }) } : trial;
+const withClashes = clashParam ? { ...trial, clashes: pretendClashApi(ME, { askMe: clashParam === 'ask' }) } : trial;
+// ?ceremony=1 pretends Season 1 has just ended, to try the end-of-season ceremony (it opens until it is watched).
+const ceremonyParam = new URLSearchParams(window.location.search).get('ceremony');
+let ceremonySeen = false;
+const backend: LordBackend = ceremonyParam
+  ? {
+      ...withClashes,
+      fetchSeasonSummary: async () => ({
+        season: 1, seen: ceremonySeen,
+        mine: { heroClass: 'mage', level: 11, masters: 10, forestWins: 214, arenaWins: 37, gold: 18250, weapon: 9, armour: 8, dragons: 1 },
+        trophies: ['dm-first-five', 'dm-slayer', 'dm-veteran'],
+        slayers: [
+          { name: 'Bubbly Bear 1', avatar: null, kills: 2, isMe: false },
+          { name: 'Brave Kiwi', avatar: null, kills: 1, isMe: true },
+          { name: 'Swift Tui 4', avatar: null, kills: 1, isMe: false },
+          { name: 'Clever Kea 2', avatar: null, kills: 1, isMe: false },
+        ],
+        kills: 5,
+      }),
+      markSeasonSeen: async () => { ceremonySeen = true; },
+    }
+  : withClashes;
 
 const fakeAuth = {
   status: 'signed-in',

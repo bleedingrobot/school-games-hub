@@ -37,6 +37,7 @@ import {
 import type { MathsSwitch } from '../../../shared/space/mathsSwitch';
 import { diceFrom, shuffled } from '../../../shared/space/random';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
+import { INVITE_GONE, inviteIdOf, type InviteServices } from '../_shared/invites';
 import { RateLimiter } from '../_shared/limits';
 
 /** One row of the space_games table. */
@@ -100,7 +101,7 @@ export interface StoredQuestion {
 export type QuestionKind = 'moment' | 'charge';
 
 /** Everything this needs from Supabase, passed in so the tests can stand in for it. */
-export interface Services {
+export interface Services extends InviteServices {
   /** Milliseconds since 1970, by the server's clock. */
   now(): number;
   /** Secure random numbers from 0 up to (not including) 1: the dice. */
@@ -161,6 +162,7 @@ type Problem =
   | 'maths-off'
   | 'reaction-wait'
   | 'reaction-limit'
+  | 'invite-gone'
   | 'failed';
 
 /** What students see. Friendly, and nothing technical. */
@@ -189,6 +191,7 @@ const MESSAGES: Record<Problem, [status: number, text: string]> = {
   'maths-off': [403, 'Your teacher has switched Mission Control maths off.'],
   'reaction-wait': [429, 'Wait a few seconds before sending another.'],
   'reaction-limit': [429, 'That’s all the reactions for this game.'],
+  'invite-gone': [410, INVITE_GONE],
   failed: [500, 'Something went wrong. Please try again.'],
 };
 
@@ -262,6 +265,7 @@ class WithGame {
 const ACTIONS: Record<string, (c: Context) => Promise<SpaceGameRow | WithGame>> = {
   create,
   join,
+  invite: acceptInvite,
   cancel: leave,
   leave,
   launch,
@@ -762,4 +766,32 @@ async function react({ services, me, body }: Context): Promise<SpaceGameRow> {
   if (result === 'not-playing') throw new Refused('over');
   if (result !== 'ok') throw new Refused('bad-request');
   return (await services.loadGame(game.id)) ?? game;
+}
+
+// ---------------------------------------------------------------------------
+// Invites by name (play anyone, stage 4)
+// ---------------------------------------------------------------------------
+
+/**
+ * Yes to an invite from the Lobby: claims it (the database checks every rule again), then makes a private game hosted
+ * by the inviter (seat 1) with their board and settings, as their teacher's maths switch allows, and takes a seat. The
+ * host launches it from the waiting room, as with a code game (and can add bots).
+ */
+async function acceptInvite({ services, me, body }: Context): Promise<SpaceGameRow> {
+  const invite = inviteIdOf(body.invite);
+  if (!invite) throw new Refused('bad-request');
+  const status = await mustBeAllowed(services, me, true);
+  const taken = await services.takeInvite(invite, me, 'space');
+  if (!taken) throw new Refused('invite-gone');
+  let made: SpaceGameRow | null = null;
+  try {
+    await mustBeSameSchool(services, status, taken.from);
+    const setup = parseLiveSetup(taken.setup);
+    if (!setup) throw new Refused('failed');
+    const waiting = await newWaitingGame(services, taken.from, withMathsSwitch(setup, await services.mathsSwitch(taken.from)), false);
+    made = await joinWaiting(services, me, waiting);
+  } finally {
+    await services.inviteMade(invite, made ? `/space-game/${made.id}` : null);
+  }
+  return made;
 }

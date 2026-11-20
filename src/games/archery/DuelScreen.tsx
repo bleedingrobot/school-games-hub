@@ -460,7 +460,7 @@ export function DuelScreen({ duel, me, serverNow, onShot, onTimesUp, onLeave, on
     if (duel.ending === 'left') return "No points this time, because the fight didn't finish.";
     if (duel.ending === 'timeouts') return `${duel.leaver === seat ? 'Your' : `${them}'s`} time ran out ${DUEL_MAX_TIMEOUTS} turns in a row. Nobody gets points.`;
     if (duel.ending === 'switched-off') return 'Your teacher switched Archery Challenge off. Nobody gets points.';
-    if (duel.ending === 'duels-off') return "Your teacher switched classmate fights off for now. Nobody gets points, and any arrows you didn't use are back in your bag.";
+    if (duel.ending === 'duels-off') return "Your teacher switched fights against friends off for now. Nobody gets points, and any arrows you didn't use are back in your bag.";
     if (duel.ending === 'idle') return 'Nobody shot for a long time. Nobody gets points.';
     return '';
   })();
@@ -557,7 +557,7 @@ export function DuelScreen({ duel, me, serverNow, onShot, onTimesUp, onLeave, on
           <div className="ar-panel">
             <h2 id="ar-duel-problem" ref={dialogHeading} tabIndex={-1}>The battlefield won't start</h2>
             <p>{problem}</p>
-            <button type="button" className="button button--play ar-btn" onClick={() => void leaveNow().then(onDone)}>Back</button>
+            <button type="button" className="button button--play ar-btn" data-key="enter" onClick={() => void leaveNow().then(onDone)}>Back</button>
           </div>
         </div>
       )}
@@ -570,7 +570,7 @@ export function DuelScreen({ duel, me, serverNow, onShot, onTimesUp, onLeave, on
             {endWords && <p>{endWords}</p>}
             <p className="ar-help">Any arrows and helpers you didn't use are back in your bag.</p>
             <div className="ar-row">
-              <button type="button" className="button button--play ar-btn" onClick={onDone}>Done</button>
+              <button type="button" className="button button--play ar-btn" data-key="enter" onClick={onDone}>Done</button>
             </div>
           </div>
         </div>

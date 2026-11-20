@@ -643,6 +643,7 @@
 .gk-trail li:nth-child(10) { grid-column: 1; }
 
 .gk-stop {
+  position: relative;
   display: grid;
   justify-items: center;
   gap: 4px;
@@ -1053,3 +1054,188 @@
   }
 }
 
+
+/* ---------- Full window ----------
+   James, 18 Nov 2026: like Star Trader, Gem Keep covers the whole window, over the hub's bar (docs/FULL-WINDOW.md).
+   The map or level painting shows blurred behind everything, and on wide screens the campaign painting itself
+   fills the window with the title bar, Hub and sound floating on it. */
+
+.gk-window {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  background: #0b0a1c;
+}
+.gk-window::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: var(--gk-backdrop, none) center / cover no-repeat;
+  filter: blur(24px) brightness(0.5);
+  transform: scale(1.08);
+  pointer-events: none;
+}
+.gk-window > .gk,
+.gk-window > .gk-campaign {
+  --gk-pad: 14px;
+  position: relative;
+  box-sizing: border-box;
+  max-width: 1600px;
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 12px var(--gk-pad);
+}
+/* Only the status rows and gaps sit round the board now: no hub bar. */
+.gk-window .gk {
+  --gk-chrome: 170px;
+}
+.gk-window .gk-title__name {
+  margin: 0;
+}
+
+/* The way back to the hub, and the sound switch. */
+.gk-hubbtns {
+  display: inline-flex;
+  gap: 8px;
+}
+.gk-glass {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 4px 14px;
+  border: 1px solid rgba(255, 210, 63, 0.45);
+  border-radius: 999px;
+  background: rgba(18, 16, 44, 0.72);
+  color: #ece9ff;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+.gk-glass:hover {
+  border-color: var(--gk-gold);
+}
+.gk-glass:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+.gk-campaign__side {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Wide screens: the campaign painting is the whole window. */
+.gk-window > .gk-campaign[data-world] {
+  display: block;
+  height: 100dvh;
+  min-height: 0;
+  max-width: none;
+  padding: 0;
+  overflow: hidden;
+  container-type: size;
+}
+.gk-campaign[data-world] .gk-world {
+  position: absolute;
+  inset: 0;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+/* The painting keeps its shape so every stop stays on its trail: it never cuts the sides, and on a wide window cuts a
+   little off the top and bottom (not so much that level 1 hides under the title bar), sitting low so what's cut is sky. */
+.gk-world__paper {
+  position: absolute;
+  inset: 0;
+  background: center / cover no-repeat;
+}
+.gk-campaign[data-world] .gk-world__paper {
+  inset: auto;
+  left: 50%;
+  top: 85%;
+  width: min(100cqw, 100cqh * 16 / 9 * 1.06);
+  aspect-ratio: 16 / 9;
+  transform: translate(-50%, -85%);
+  box-shadow: 0 0 60px 30px rgba(11, 10, 28, 0.55);
+}
+/* Standing up (an iPad): nothing is cut, so the map sits in the middle of the window. */
+@media (orientation: portrait) {
+  .gk-campaign[data-world] .gk-world__paper {
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+}
+.gk-campaign[data-world] .gk-campaign__head {
+  position: absolute;
+  z-index: 2;
+  top: 10px;
+  left: 14px;
+  right: 14px;
+  padding: 8px 16px;
+  background: rgba(18, 16, 44, 0.72);
+  backdrop-filter: blur(6px);
+}
+.gk-campaign[data-world] .gk-campaign__head h1 {
+  font-size: 1.6rem;
+}
+.gk-campaign[data-world] .gk-campaign__head p {
+  max-width: none;
+  margin-top: 2px;
+  font-size: 0.92rem;
+}
+.gk-campaign[data-world] .gk-campaign__focus {
+  position: absolute;
+  z-index: 2;
+  top: 96px;
+  left: 14px;
+  margin: 0;
+}
+.gk-campaign[data-world] .gk-campaign__note {
+  position: absolute;
+  z-index: 2;
+  right: 14px;
+  bottom: 14px;
+  background: rgba(18, 16, 44, 0.72);
+}
+.gk-campaign[data-world] .gk-world__card {
+  z-index: 2;
+  left: 14px;
+  bottom: 14px;
+  width: min(320px, 32%);
+}
+
+/* Tablets and small laptops: the panel goes under the map (the old rules), with less room taken above. */
+@media (max-width: 900px) {
+  .gk-window .gk {
+    --gk-chrome: 270px;
+  }
+}
+@media (max-width: 760px) {
+  .gk-window > .gk,
+  .gk-window > .gk-campaign {
+    --gk-pad: 10px;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .gk-window .gk {
+    --gk-chrome: 110px;
+  }
+}
+
+/* The Keeper's Tale (docs/plans/stories/PLAN.md, ST.4). */
+.gk-storybook { --story-bg: #0b0f1a; --story-ink: #eef2fa; --story-gold: #f2c45a; --story-frame: #24304a; --story-dim: #44506a; }
+.gk-title__tale { margin: 0; padding: 4px 12px; border-radius: 999px; background: var(--gk-surface); color: #eef2fa; border: 1px solid rgb(242 196 90 / 0.35); font-size: 0.9rem; }
+.gk-title__tale[data-won] { color: #f2c45a; }
+.gk-world__tale[data-won] { color: #f2c45a; }
+.gk-world__tale { margin: 0.4rem 0; font-size: 0.9rem; }
+.gk-stop__tale, .gk-gemstop__tale { font-size: 0.8rem; font-weight: normal; }
+.gk-tale-button { white-space: nowrap; }
+.gk-tale-shelf { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgb(0 0 0 / 0.7); padding: 1rem; overflow: auto; }
+.gk-tale-shelf__box { background: #121a2c; color: #eef2fa; border-radius: 16px; padding: 1.2rem; max-width: 1000px; width: 100%; max-height: 92vh; overflow: auto; }
+.gk-tale-shelf__box h2 { margin: 0 0 0.3rem; }

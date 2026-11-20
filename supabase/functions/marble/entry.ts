@@ -6,6 +6,7 @@ import { parseFocus } from '../../../shared/maths/focus';
 import type { FactAnswer } from '../../../shared/maths/leitner';
 import type { Question } from '../../../shared/maths/skillPack';
 import { parseMathsSwitch } from '../../../shared/space/mathsSwitch';
+import { isUnlimitedFor } from '../../../shared/unlimited';
 import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { userIdFromToken } from '../_shared/signIn';
 import { stamper } from '../_shared/stamp';
@@ -54,6 +55,19 @@ Deno.serve(
     stamp: stamper(key, 'marble-run'),
     // Checks the sign-in token on the spot (no trip to the sign-in service), like the other games.
     userIdFor: userIdFromToken(admin.auth),
+    async runsToday(player) {
+      // Finished runs saved today (New Zealand day), and the class's "Unlimited today" for Marble Rush.
+      const [count, settings] = await Promise.all([
+        admin.rpc('marble_runs_today', { player }),
+        admin.rpc('settings_of', { player }).maybeSingle(),
+      ]);
+      if (count.error || typeof count.data !== 'number') {
+        console.error(`marble: runs today failed (${count.error?.code ?? 'none'})`);
+        return null;
+      }
+      const days = (settings.data as { unlimited_days?: unknown } | null)?.unlimited_days;
+      return { runs: count.data, unlimited: isUnlimitedFor(days, 'marble') };
+    },
     async settings(player): Promise<MarbleSettings | null> {
       // The switches of this student's class (or their school's default if they have no class).
       const { data, error } = await admin.rpc('settings_of', { player }).maybeSingle();

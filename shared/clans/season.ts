@@ -114,3 +114,56 @@ export function seasonRoad(clock: SeasonClock, monster: { name: string; short: s
   const label = `Season ${clock.number}, day ${d} of ${length}. Now: ${stages[nowIndex].name}. Next: ${next.name} in ${plural(next.from - d)}.`;
   return { stages, headline, fill, label };
 }
+
+// ---------------------------------------------------------------------------
+// The end and start of a season (docs/plans/clans-season-end/PLAN.md, stage 1)
+// ---------------------------------------------------------------------------
+
+/** What a new season keeps and what starts again (newSeasonSave above and clan_nightly's fame reset). Shown before and after. */
+export const SEASON_KEEPS: readonly { emoji: string; text: string }[] = [
+  { emoji: '🛡️', text: 'Your clan’s name and your members’ names and looks' },
+  { emoji: '🏆', text: 'Your achievements' },
+  { emoji: '🦷', text: 'Your trophies: the Monster Tooth and Clan Banner' },
+  { emoji: '👑', text: 'Your quest rewards: titles and frames' },
+  { emoji: '🏛️', text: 'The Hall of Legends, for ever' },
+];
+export const SEASON_RESETS: readonly { emoji: string; text: string }[] = [
+  { emoji: '1️⃣', text: 'Every member goes back to level 1, with starting gear' },
+  { emoji: '🪙', text: 'Your gold and followers' },
+  { emoji: '⭐', text: 'Fame: every clan starts at 0' },
+  { emoji: '🏘️', text: 'Your buildings and village' },
+  { emoji: '🧙', text: 'Races and classes: pick new ones if you like' },
+];
+
+/** The last days of a season the banner shows on. */
+export const LAST_CHANCE_DAYS = 3;
+/** The first days of a new season the "has begun" banner shows on. */
+export const NEW_SEASON_DAYS = 3;
+
+/**
+ * A banner for the end and start of a season, or null on other days (and while the clock is off):
+ * - the last three days: "Season 1 ends in 3 days!", "… ends tomorrow night!", "Last day of Season 1!";
+ * - days 1 to 3 of season 2 and later: "Season 2 has begun!".
+ * `beaten`: this clan already beat this season's monster (the home page doesn't know, so it passes false).
+ */
+export function seasonBanner(clock: SeasonClock, monster: { short: string; name: string }, beaten = false): { kind: 'last' | 'new'; title: string; text: string } | null {
+  if (!clock.clockOn || clock.number <= 0 || clock.day <= 0) return null;
+  const left = S.length - clock.day;
+  if (left < LAST_CHANCE_DAYS) {
+    const title = left === 0 ? `Last day of Season ${clock.number}! It ends tonight.`
+      : left === 1 ? `Season ${clock.number} ends tomorrow night!`
+      : `Season ${clock.number} ends in ${left + 1} days!`;
+    const first = beaten ? `You beat ${monster.short}!` : `Last chance to beat ${monster.short}.`;
+    return {
+      kind: 'last', title,
+      text: `${first} Then every clan starts again at level 1, but your trophies, achievements and the Hall of Legends stay forever.`,
+    };
+  }
+  if (clock.number >= 2 && clock.day <= NEW_SEASON_DAYS) {
+    return {
+      kind: 'new', title: `Season ${clock.number} has begun!`,
+      text: `Every clan starts again at level 1. ${monster.name} comes in monster week. Build your clan back up!`,
+    };
+  }
+  return null;
+}

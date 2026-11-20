@@ -6,11 +6,13 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { ORDERUP } from '../../../shared/orderup/config';
 import type { BagEvent } from '../../../shared/orderup/play';
 import type { KeptSet } from '../../../shared/orderup/server';
+import { KeyBadge, useGameKeys } from '../../kit';
 import { speak, stopSpeaking, useReadAloud } from '../../speech';
 import { OrderUpError, type BagReply, type OrderUpBackend, type OrderUpState } from './backend';
 import { BagPlay, OrderCard } from './BagPlay';
 import { EXAMPLES, exampleLines } from './look';
 import { BADGES, LEVEL_NAMES, VOICE_FOLDER, WORDS } from './words';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import './orderup.css';
 
 type Screen =
@@ -75,6 +77,10 @@ export function OrderUpGame({ backend, onExit, extra }: Props) {
     }, fail);
   };
 
+  const rootRef = useRef<HTMLDivElement>(null);
+  // The bag has its own digit and Enter keys.
+  useGameKeys(rootRef, screen.kind !== 'bag');
+
   let body: ReactNode;
   if (failed) body = <p className="ou-message">{failed}</p>;
   else if (!state || screen.kind === 'loading') body = <p className="ou-message">…</p>;
@@ -95,10 +101,10 @@ export function OrderUpGame({ backend, onExit, extra }: Props) {
   } else body = <Result set={screen.set} reply={screen.reply} state={state} say={say} onAgain={() => start(screen.set.level)} onNext={start} onRoad={() => setScreen({ kind: 'road' })} />;
 
   return (
-    <div className="ou-root">
+    <div className="ou-root" ref={rootRef}>
       <div className="ou-bar">
         {onExit && (
-          <button type="button" className="ou-button" onClick={onExit}>
+          <button type="button" className="ou-button" data-key={screen.kind === 'road' ? 'esc' : undefined} onClick={onExit}>
             <span aria-hidden="true">←</span> {WORDS.home}
           </button>
         )}
@@ -137,7 +143,9 @@ function Road({ state, onStart, onShow }: { state: OrderUpState; onStart: (level
               </span>
               {open && (
                 <span className="ou-stop__buttons">
-                  <button type="button" className="ou-button ou-button--go" onClick={() => onStart(level)}>{passed ? WORDS.again : WORDS.start}</button>
+                  <button type="button" className="ou-button ou-button--go" data-key={String(level)} onClick={() => onStart(level)}>
+                    <KeyBadge k={String(level)} />{passed ? WORDS.again : WORDS.start}
+                  </button>
                   {EXAMPLES[level] && <button type="button" className="ou-button ou-button--quiet" onClick={() => onShow(level)}>{WORDS.showMe}</button>}
                 </span>
               )}
@@ -184,9 +192,9 @@ function Example({ level, say, onDone }: { level: number; say: (t: string) => vo
           ))}
         </ol>
         {shown < lines.length ? (
-          <button type="button" className="ou-button ou-button--go" onClick={() => setShown(shown + 1)}>{WORDS.workedNext}</button>
+          <button type="button" className="ou-button ou-button--go" data-key="enter" onClick={() => setShown(shown + 1)}>{WORDS.workedNext}</button>
         ) : (
-          <button type="button" className="ou-button ou-button--go" onClick={onDone}>{WORDS.workedGo}</button>
+          <button type="button" className="ou-button ou-button--go" data-key="enter" onClick={onDone}>{WORDS.workedGo}</button>
         )}
       </section>
     </div>
@@ -214,11 +222,12 @@ function Result({ set, reply, state, say, onAgain, onNext, onRoad }: {
       <h3>{title}</h3>
       <p>{WORDS.setDone(reply.good, set.bags.length)}</p>
       {reply.newLevel && <p className="ou-badge">{WORDS.newBadge(BADGES[set.level])}</p>}
+      <AchievementPop games={['orderup']} watch atOpen />
       {!reply.passedSet && <p>{WORDS.notYet}</p>}
       <p className="ou-result__buttons">
-        {canNext && <button type="button" className="ou-button ou-button--go" onClick={() => onNext(next)}>{WORDS.nextLevel}</button>}
-        <button type="button" className={canNext ? 'ou-button' : 'ou-button ou-button--go'} onClick={onAgain}>{WORDS.again}</button>
-        <button type="button" className="ou-button ou-button--quiet" onClick={onRoad}>{WORDS.backToRoad}</button>
+        {canNext && <button type="button" className="ou-button ou-button--go" data-key="enter" onClick={() => onNext(next)}>{WORDS.nextLevel}</button>}
+        <button type="button" className={canNext ? 'ou-button' : 'ou-button ou-button--go'} data-key={canNext ? undefined : 'enter'} onClick={onAgain}>{WORDS.again}</button>
+        <button type="button" className="ou-button ou-button--quiet" data-key="esc" onClick={onRoad}>{WORDS.backToRoad}</button>
       </p>
     </div>
   );

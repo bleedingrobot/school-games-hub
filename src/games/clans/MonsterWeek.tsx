@@ -112,7 +112,7 @@ export function MonsterWeek({ session, practice, ask, onTry, onFight, onBack }: 
     <section className="cq-monster" aria-label="The Monster">
       <div className="cq-place__head">
         <h2>The Monster</h2>
-        <button type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
+        <button data-key="esc" type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
       </div>
       {practice && <p className="cq-note" role="note"><strong>Practice.</strong> Nothing here counts: no fame, no trophy, no Hall. Teachers can try the monster any time.</p>}
       <div className="cq-monster-top">
@@ -145,8 +145,8 @@ export function MonsterWeek({ session, practice, ask, onTry, onFight, onBack }: 
       {triedToday && <p className="cq-note" role="status">You have had your try today. Come back tomorrow!</p>}
       {!awake && <p className="cq-note" role="status">Everyone is resting. They wake up tomorrow.</p>}
       <div className="cq-actions">
-        <button type="button" className="cq-btn cq-btn--hot" disabled={triedToday || !awake} onClick={fight}>Fight!</button>
-        <button type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
+        <button data-key="enter" type="button" className="cq-btn cq-btn--hot" disabled={triedToday || !awake} onClick={fight}>Fight!</button>
+        <button data-key="esc" type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
       </div>
     </section>
   );
@@ -193,7 +193,7 @@ function SiegeScene({ name, kind, go, at, skipped, onNext, onFight }: { name: st
         </>
       )}
       <div className="cq-actions">
-        {last ? <button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={onFight}>Into the fight!</button> : <button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={onNext}>Next round</button>}
+        {last ? <button data-key="enter" type="button" className="cq-btn cq-btn--hot" autoFocus onClick={onFight}>Into the fight!</button> : <button data-key="enter" type="button" className="cq-btn cq-btn--hot" autoFocus onClick={onNext}>Next round</button>}
       </div>
     </section>
   );

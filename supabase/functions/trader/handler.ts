@@ -111,6 +111,8 @@ export interface Services {
   seasonSystem(player: string): Promise<SeasonSystem | null | 'busy'>;
   /** Records the choice (once). A picture path (for 'fresh') adds the picture to the profile album. False if it could not be recorded. */
   chooseSeason(player: string, choice: 'keep' | 'fresh', picture: string | null, name: string): Promise<boolean>;
+  /** Opens waiting quest Game Coins pouches for a save at this version: the credits added and the new version, or null (nothing to open, or the save moved on). */
+  openPouches(player: string, version: number): Promise<{ amount: number; version: number } | null>;
   /** Saves; gives the new version, null if the saved game has moved on, 'busy' if the database could not be reached. */
   save(player: string, args: SaveArgs): Promise<number | null | 'busy'>;
   /** Adds answers to the pupil's maths records (counted once by `once`). The game goes on if this fails. */
@@ -348,10 +350,17 @@ export function makeHandler(services: Services) {
           // The game exists now, so the choice is never asked again; if this fails the row just stays pending, unseen.
           if (chosen && !(await services.chooseSeason(player, chosen.choice, picture, chosen.name))) console.error('trader: the season choice could not be recorded');
         }
+        // A quest's Game Coins pouch, opened now that the day and season are done and saved (the database adds the same credits).
+        const pouch = await services.openPouches(player, version);
+        if (pouch) {
+          game = { ...game, t: { ...game.t, credits: game.t.credits + pouch.amount } };
+          version = pouch.version;
+        }
         const day = await dayQuestions();
         if (day === 'busy') return reply(503, { error: "We couldn't load your game just now." });
         const questions: PublicQuestion[] = day ? day.questions.map((q, slot) => publicQuestion(q, slot)) : [];
         return reply(200, {
+          ...(pouch ? { pouch: { amount: pouch.amount } } : {}),
           galaxySeed: school.seed,
           season: school.season,
           game,

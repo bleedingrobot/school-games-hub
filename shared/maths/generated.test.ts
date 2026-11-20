@@ -10,7 +10,8 @@ const KEYS = FAMILIES.flatMap((f) => f.keys);
 /** The F.5 question types: read back from their parts by the old solver. F.6's and M.5's carry their numbers (fdp.test.ts). */
 const F6_SKILLS = ['fraction-bonds', 'decimal-bonds', 'unit-fraction-of', 'tenths', 'add-tenths', 'decimal-equivalents', 'percent-basic', 'fraction-of', 'times-decimals', 'equivalent-fractions', 'fdp-equivalents', 'percent-of', 'whole-from-fraction'] as const;
 const F6_KEYS = new Set(F6_SKILLS.flatMap((id) => GENERATED_SKILL_KEYS[id]));
-const F5_KEYS = KEYS.filter((k) => !F6_KEYS.has(k));
+// Picking a factor pair carries its numbers too, so fdp.test.ts checks it with the other pick-one types.
+const F5_KEYS = KEYS.filter((k) => !F6_KEYS.has(k) && k !== 'factor:pick');
 const pack = generatedPack();
 
 /** A number as the screen shows it: "12 500" → 12500. */

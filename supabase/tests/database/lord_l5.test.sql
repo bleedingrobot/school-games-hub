@@ -147,7 +147,7 @@ select is(pg_temp.c('a', '{}', 6, 1, '{"forestWins":60,"masterWins":5,"arenaWins
 select ok(pg_temp.has('a', 'dm-level-6') and pg_temp.has('a', 'dm-forest-50') and pg_temp.has('a', 'dm-arena-10') and pg_temp.has('a', 'dm-riddles-50'), 'level 6, 50 forest wins, 10 arena wins and 50 riddles');
 select ok(pg_temp.has('a', 'dm-dragon') and pg_temp.has('a', 'dm-dragon-2'), 'and the dragon, twice');
 select ok(not pg_temp.has('a', 'dm-level-12'), 'but not level 12');
-select is((select count(*)::integer from public.achievement_types where game = 'dragon-maths'), 8, 'there are eight in all');
+select is((select count(*)::integer from public.achievement_types where game = 'dragon-maths'), 9, 'there are nine in all (eight, then Ultimate Dragon Slayer)');
 select is((select count(*)::integer from public.achievements where player = pg_temp.id('a') and achievement like 'dm-%'), 7, 'a pupil has the seven they earned');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
 select ok(exists (select 1 from jsonb_array_elements(public.my_progress() -> 'achievements') x where x ->> 'id' = 'dm-dragon' and x ->> 'earnedAt' is not null), 'my_progress shows them');

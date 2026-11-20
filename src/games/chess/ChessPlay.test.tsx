@@ -12,6 +12,13 @@ vi.mock('../../data/botGames', () => ({
   saveAbandonedGame: vi.fn(),
   refreshSaveToken: vi.fn(async () => {}),
 }));
+vi.mock('./lookData', () => ({
+  fetchLooks: vi.fn(async () => {
+    throw new Error('offline');
+  }),
+  saveLook: vi.fn(),
+  markSeen: vi.fn(async () => {}),
+}));
 
 const auth: AuthState = {
   status: 'signed-in',

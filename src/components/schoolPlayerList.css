@@ -1,0 +1,104 @@
+/* "Who's here" lists in the live games (SchoolPlayerList.tsx). Colours come from the game around it. */
+.school-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.school-list__search {
+  width: 100%;
+  max-width: 22rem;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 1rem; /* 16px or more: phones don't zoom in on it */
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  border: 2px solid rgba(0, 0, 0, 0.25);
+  background: #fff;
+  color: #222;
+}
+
+.school-list__head {
+  margin: 0.5rem 0 0;
+  font-size: 0.95rem;
+  opacity: 0.85;
+}
+
+.school-list__class {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.75em;
+  font-weight: 600;
+  white-space: nowrap;
+  background: rgba(0, 0, 0, 0.12);
+  color: inherit;
+  vertical-align: middle;
+}
+
+.school-list__none {
+  margin: 0;
+  opacity: 0.85;
+}
+
+.school-list__more {
+  align-self: flex-start;
+  font: inherit;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* Stars (stage 8). The button is 44px so small fingers hit it. */
+.school-list__star {
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.school-list__star:hover,
+.school-list__star:focus-visible {
+  background: rgba(0, 0, 0, 0.08);
+}
+.school-list__star--on {
+  text-shadow: 0 0 6px rgba(255, 200, 0, 0.6);
+}
+
+.school-list__dot {
+  flex: none;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #2fb84f;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.school-list__item--away {
+  opacity: 0.6;
+}
+.school-list__away {
+  margin-top: 0;
+}
+.school-list__gone {
+  font-size: 0.85em;
+  font-style: italic;
+}
+
+.school-list__problem {
+  margin: 0;
+  font-weight: 600;
+}

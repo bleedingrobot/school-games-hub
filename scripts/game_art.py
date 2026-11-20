@@ -37,7 +37,13 @@ Config (all paths are relative to the repo unless they start with ~):
           "card"  a home page card, 1600 px and 800 px -> <home_dir>/<file>.webp and <file>-small.webp
           "icon"  kept whole with its painted background (a trophy, an earned picture), shrunk to `max` px, and to `small` px
                   too if given -> <art_dir>/<folder>/<file>.webp and <file>-small.webp
-    hollow true on a cut-out: it has a see-through middle (a picture ring), so the hole is cut out too, not filled in
+          "glow"  light painted on a pure black background (sparks, a burst): its brightness becomes see-through, so it glows
+                  over anything; trimmed, shrunk to `max` px -> <art_dir>/<folder>/<file>.webp (tints allowed)
+    hollow true on a cut-out: it has a see-through middle (a picture ring), so the hole is cut out too, not filled in, and
+           the ring is centred on a square
+    cut_by "white" on a cut-out: cut it out by how far each pixel is from white, not with rembg (for one rembg fades out)
+    biggest_only true on a cut-out: keep only its biggest shape (for a painting that keeps adding a second, small copy)
+    small  on an icon or a cut-out: also write a copy shrunk to this many px as <file>-small.webp
     tints  {tint name: file name}: also write a recoloured copy of a cut-out to <art_dir>/<folder>/<file name>.webp
 """
 from __future__ import annotations
@@ -51,8 +57,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_COMFY = 'http://100.97.96.115:8188'
-KINDS = ('cut', 'scene', 'card', 'texture', 'icon')
-QUALITY = {'cut': 82, 'scene': 72, 'scene_small': 70, 'card': 80, 'card_small': 78, 'icon': 86}
+KINDS = ('cut', 'scene', 'card', 'texture', 'icon', 'glow')
+QUALITY = {'glow': 76, 'cut': 82, 'scene': 72, 'scene_small': 70, 'card': 80, 'card_small': 78, 'icon': 86}
 GRAPH = {'steps': 8, 'cfg': 1.0, 'shift': 3.0, 'second_pass_scale': 1.5, 'second_pass_denoise': 0.4}
 
 
@@ -64,7 +70,7 @@ def load_config(arg: str) -> dict:
         path = (Path.cwd() / path) if (Path.cwd() / path).exists() else ROOT / path
     if not path.exists():
         sys.exit(f'No config at {path}')
-    config = json.loads(path.read_text())
+    config = json.loads(path.read_text(encoding="utf-8"))  # utf-8: Windows reads macrons wrong otherwise
     problems = check(config)
     if problems:
         sys.exit(f'{path}: {len(problems)} problem(s)\n  ' + '\n  '.join(problems))
@@ -109,13 +115,13 @@ def check(c: dict) -> list[str]:
         if 'file' not in p or (kind != 'card' and 'folder' not in p):
             bad.append(f'{label}: needs "file"' + ('' if kind == 'card' else ' and "folder"'))
             continue
-        if kind in ('cut', 'texture', 'icon') and not isinstance(p.get('max'), int):
+        if kind in ('cut', 'texture', 'icon', 'glow') and not isinstance(p.get('max'), int):
             bad.append(f'{label}: a cut-out needs a whole-number "max" size')
         if kind == 'card' and 'home_dir' not in c:
             bad.append(f'{label}: a card needs "home_dir" in the config')
         for tint, tint_file in p.get('tints', {}).items():
-            if kind != 'cut':
-                bad.append(f'{label}: only a cut-out can have tints')
+            if kind not in ('cut', 'glow'):
+                bad.append(f'{label}: only a cut-out or a glow can have tints')
             if tint not in c.get('tints', {}):
                 bad.append(f'{label}: tint "{tint}" is not in tints')
             spot = f'{p.get("folder")}/{tint_file}'
@@ -243,7 +249,8 @@ def destinations(c: dict, p: dict) -> list[Path]:
         return [folder / f'{p["file"]}.webp', folder / f'{p["file"]}-800.webp']
     if p['kind'] == 'icon':
         return [folder / f'{p["file"]}.webp'] + ([folder / f'{p["file"]}-small.webp'] if p.get('small') else [])
-    return [folder / f'{p["file"]}.webp'] + [folder / f'{f}.webp' for f in p.get('tints', {}).values()]
+    small = [folder / f'{p["file"]}-small.webp'] if p.get('small') else []
+    return [folder / f'{p["file"]}.webp'] + [folder / f'{f}.webp' for f in p.get('tints', {}).values()] + small
 
 
 def tint(img, colours: dict):
@@ -259,7 +266,7 @@ def tint(img, colours: dict):
 
 def tidy(c: dict, style: str, force: bool, dry: bool):
     picks_path = resolve(c, 'picks')
-    picks = json.loads(picks_path.read_text()) if picks_path.exists() else {}
+    picks = json.loads(picks_path.read_text(encoding="utf-8")) if picks_path.exists() else {}
     by_name = {p['name']: p for p in c['pictures']}
     stray = [n for n in picks if n not in by_name]
     if stray:
@@ -313,6 +320,24 @@ def tidy(c: dict, style: str, force: bool, dry: bool):
         px[areas == areas[cy, cx], 3] = 0
         return Image.fromarray(px, 'RGBA')
 
+    def biggest_only(cut):
+        # The painter keeps adding a second, smaller copy (a little ghost in the corner): keep only the biggest shape.
+        from scipy.ndimage import label
+        px = np.asarray(cut).copy()
+        areas, n = label(px[..., 3] > 40)
+        if n > 1:
+            sizes = np.bincount(areas.ravel())
+            sizes[0] = 0
+            px[(areas != sizes.argmax()) & (px[..., 3] > 0), 3] = 0
+        return Image.fromarray(px, 'RGBA')
+
+    def white_key(img):
+        # For a picture rembg cuts badly (a lacy ring of leaves): how far each pixel is from white becomes how solid it is.
+        rgb = np.asarray(img).astype(np.float32)
+        far = (255 - rgb).max(axis=2)
+        a = np.clip((far - 14) / 46, 0, 1)
+        return Image.fromarray(np.dstack([rgb, a * 255]).round().astype(np.uint8))
+
     def blend_tile(part):
         # Seamless without mirroring: the painting's own middle forms the tile's edges (a copy moved half a tile wraps
         # cleanly), faded into the untouched painting towards the centre.
@@ -324,12 +349,25 @@ def tidy(c: dict, style: str, force: bool, dry: bool):
         k = np.clip(np.minimum.outer(wy, wx) * 2.5, 0, 1)[..., None]
         return Image.fromarray((a * k + moved * (1 - k)).round().astype(np.uint8), 'RGB')
 
+    def unscreen(img):
+        # Black becomes see-through and bright stays solid; the colour is lifted back so a faint spark keeps its hue.
+        rgb = np.asarray(img.convert('RGB')).astype(np.float32) / 255
+        a = np.clip((rgb.max(axis=2, keepdims=True) - 0.08) / 0.92, 0, 1)
+        lifted = np.where(a > 0, rgb / np.maximum(a, 1e-3), 0).clip(0, 1)
+        return Image.fromarray((np.dstack([lifted, a]) * 255).round().astype(np.uint8), 'RGBA')
+
     for name, t in picks.items():
         p = by_name[name]
         outs = destinations(c, p)
         if outs[0].exists() and not force:
             continue
         img = Image.open(inbox / file_name(name, t))
+        if p['kind'] == 'glow':
+            glow = trim(unscreen(img), pad=8)
+            save(fit(glow, p['max']), outs[0], quality['glow'])
+            for (tint_name, _), out in zip(p.get('tints', {}).items(), outs[1:]):
+                save(fit(tint(glow, c['tints'][tint_name]), p['max']), out, quality['glow'])
+            continue
         if p['kind'] == 'card':
             img = img.convert('RGB')
             save(fit(img, 1600), outs[0], quality['card'])
@@ -362,11 +400,21 @@ def tidy(c: dict, style: str, force: bool, dry: bool):
                 from rembg import new_session
                 session = new_session('isnet-general-use')
             from rembg import remove
-            cut = remove(img.convert('RGB'), session=session, alpha_matting=True)
+            cut = white_key(img.convert('RGB')) if p.get('cut_by') == 'white' else remove(img.convert('RGB'), session=session, alpha_matting=True)
+            if p.get('biggest_only'):
+                cut = biggest_only(cut)
             cut = trim(punch_middle(cut, img.convert('RGB')) if p.get('hollow') else fill_holes(cut, img.convert('RGB')))
+            if p.get('hollow'):
+                # A ring is drawn into a square box, so centre it on a square, see-through canvas.
+                side = max(cut.size)
+                square = Image.new('RGBA', (side, side), (0, 0, 0, 0))
+                square.paste(cut, ((side - cut.width) // 2, (side - cut.height) // 2))
+                cut = square
             save(fit(cut, p['max']), outs[0], quality['cut'])
             for (tint_name, _), out in zip(p.get('tints', {}).items(), outs[1:]):
                 save(fit(tint(cut, c['tints'][tint_name]), p['max']), out, quality['cut'])
+            if p.get('small'):
+                save(fit(cut, p['small']), outs[-1], quality['cut'])
 
 
 def main(args: list[str]):

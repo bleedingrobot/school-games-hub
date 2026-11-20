@@ -75,14 +75,14 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
         </section>
         <section aria-labelledby="htp-raids">
           <h3 id="htp-raids">Village Raids</h3>
-          <p>Raid a classmate's village, from your very first day. You can raid <strong>{CONFIG.classRaids.perDay} villages a day</strong>, each a different one. Your teacher can switch raids on or off.</p>
+          <p>Raid another clan's village anywhere in your school, from your very first day. You can raid <strong>{CONFIG.classRaids.perDay} villages a day</strong>, each a different one. Your teacher can switch raids on or off.</p>
           <p>First your army storms their walls (one maths question makes it hit harder). Then your heroes fight a copy of their heroes, with a Battle Cry every round.</p>
           <p><strong>Nobody loses anything.</strong> No gold, heroes, troops or buildings are ever taken. A win earns gold and Banners; a loss still earns a little. When your own village holds off a raid, you earn gold and Banners too.</p>
           <p>Your village helps: the Forge and your army break their walls, Walls and Tower defend yours, and the Strongroom adds gold to every raid. Banners count for the week and start again every Monday.</p>
         </section>
         <section aria-labelledby="htp-duels">
           <h3 id="htp-duels">Live duels</h3>
-          <p>In the <strong>Duel Arena</strong> you can challenge a classmate's clan to a live duel. Each round you both pick an order in secret: <strong>Charge</strong> rides down <strong>Volley</strong>, <strong>Volley</strong> rains over <strong>Shield Wall</strong>, and <strong>Shield Wall</strong> stops <strong>Charge</strong>. Then a maths question powers your hit.</p>
+          <p>In the <strong>Duel Arena</strong> you can challenge any clan at school to a live duel. Each round you both pick an order in secret: <strong>Charge</strong> rides down <strong>Volley</strong>, <strong>Volley</strong> rains over <strong>Shield Wall</strong>, and <strong>Shield Wall</strong> stops <strong>Charge</strong>. Then a maths question powers your hit.</p>
           <p>Your Forge, Walls, Barracks, Tower and Church each help a little. <strong>Nobody loses anything</strong>: both clans earn gold and Banners for a finished duel. You can practise against computer clans any time.</p>
         </section>
         <section aria-labelledby="htp-season">
@@ -119,10 +119,10 @@ export function HowToPlay({ fightsPerDay, onBack }: { fightsPerDay?: number; onB
     <section className="cq-howtoplay" aria-label="How to play">
       <div className="cq-place__head">
         <h2>How to play</h2>
-        <button type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
+        <button data-key="esc" type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
       </div>
       <HowToPlayBody fightsPerDay={fightsPerDay} />
-      <div className="cq-actions"><button type="button" className="cq-btn" onClick={onBack}>Back to the clan</button></div>
+      <div className="cq-actions"><button data-key="esc" type="button" className="cq-btn" onClick={onBack}>Back to the clan</button></div>
     </section>
   );
 }

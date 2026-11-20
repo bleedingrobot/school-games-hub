@@ -107,7 +107,7 @@ Object.assign(settingsRow, {
 
 // ---- Student scenes use the home page's own fake -------------------------------------------------------------------------------
 const PROFILE_TEACHER = { id: 'me', display_name: 'Sneaky Dragon 28', role: 'teacher', school_admin: false, avatar: {} };
-const PROFILE_STUDENT = { id: 'me', display_name: 'Speedy Otter 27', role: 'student', school_admin: false, avatar: { kind: 'cat', bg: '#9b6bff' } };
+const PROFILE_STUDENT = { id: 'me', display_name: 'Speedy Otter 27', role: 'student', school_admin: false, avatar: { kind: 'cat', bg: '#9b6bff', ...(new URLSearchParams(location.search).get('quest') === 'won' ? { title: 'moon-walker', frame: 'vine' } : {}) } };
 const profile = SCENE === 'student' ? PROFILE_STUDENT : PROFILE_TEACHER;
 
 const world = SCENE === 'student' ? newPupil() : busyPupil();
@@ -128,9 +128,9 @@ let requests = [...warpRequests];
 const QUEST = new URLSearchParams(window.location.search).get('quest');
 const qToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
 const qDay = (n: number) => addDays(qToday, n);
-type FakeQuest = { id: string; kind: string; startsOn: string; endsOn: string; stoppedAt: string | null; won: number };
+type FakeQuest = { id: string; kind: string; startsOn: string; endsOn: string; stoppedAt: string | null; won: number; reward?: string };
 let classQuests: FakeQuest[] = [
-  { id: 'q1', kind: 'trader', startsOn: qDay(-3), endsOn: qDay(3), stoppedAt: null, won: 3 },
+  { id: 'q1', kind: 'trader', startsOn: qDay(-3), endsOn: qDay(3), stoppedAt: null, won: 3, reward: 'scroll' },
   { id: 'q0', kind: 'lord', startsOn: qDay(-12), endsOn: qDay(-6), stoppedAt: null, won: 11 },
 ];
 const questDays = (i: number, q: FakeQuest) =>
@@ -161,8 +161,8 @@ const myQuest = () => {
   const target = daily ? 5 : info.amount ?? 10;
   const count = won ? target : daily ? days.length : Math.max(1, Math.round(target * 0.6));
   return {
-    quest: { id: `preview-${info.id}-${won}`, kind: info.id, startsOn: qDay(won ? -4 : -3), endsOn: qDay(won ? 2 : 3), daysNeeded: 5, rule: info.rule },
-    today: qToday, days, count, target, won, classWon: 9, questsDone: won ? 5 : 2,
+    quest: { id: `preview-${info.id}-${won}`, kind: info.id, startsOn: qDay(won ? -4 : -3), endsOn: qDay(won ? 2 : 3), daysNeeded: 5, rule: info.rule, reward: 'scroll' },
+    today: qToday, days, count, target, won, myReward: won ? 'r1' : null, classWon: 9, questsDone: won ? 5 : 2,
   };
 };
 world.jobs.my_class_quest = myQuest();
@@ -171,7 +171,7 @@ const answers: Record<string, (a: Row) => unknown> = {
   my_class_quest: () => myQuest(),
   teacher_class_quests: (a) => teacherQuests(a.which ? String(a.which) : undefined),
   teacher_start_class_quest: (a) => {
-    classQuests = [{ id: `q${classQuests.length + 1}`, kind: String(a.which), startsOn: qToday, endsOn: qDay(6), stoppedAt: null, won: 0 }, ...classQuests];
+    classQuests = [{ id: `q${classQuests.length + 1}`, kind: String(a.which), startsOn: qToday, endsOn: qDay(6), stoppedAt: null, won: 0, reward: String(a.reward ?? 'scroll') }, ...classQuests];
     return classQuests[0].id;
   },
   teacher_stop_class_quest: () => {
@@ -191,7 +191,16 @@ const answers: Record<string, (a: Row) => unknown> = {
   teacher_student_card: (a) => studentCard(String(a.student)),
   teacher_students: () => people,
   teacher_student_detail: () => ({ points: 120, games: [], recent: [] }),
-  teacher_maths_focuses: () => [],
+  teacher_maths_focuses: () => [
+    { batch: 'f1', classId: CLASS_ID, className: 'Room 12', scope: 'class', targets: [], skills: ['facts-10'], onlyThese: true,
+      startsAt: ago(120), endsAt: new Date(Date.now() + 5 * 3600_000).toISOString(), createdAt: ago(120), status: 'running' },
+  ],
+  teacher_maths_focus_results: () => {
+    const done = [[35, 28, 16], [16, 7, 2], [22, 18, 12], [3, 1, 1], [0, 0, 0], [46, 36, 12], [27, 4, 1], [23, 11, 6], [1, 1, 0], [12, 10, 3]];
+    const students = PEOPLE.map(([id, name, real], i) => ({ id, name, realName: real, answers: done[i][0], correct: done[i][1], quick: done[i][2] }));
+    const sum = (k: 0 | 1 | 2) => done.reduce((t, d) => t + d[k], 0);
+    return { since: ago(60 * 24 * 30), students, total: { answers: sum(0), correct: sum(1), quick: sum(2) } };
+  },
   teacher_class_skill_map: () => skillMap,
   teacher_maths_focus_history: () => [],
   teacher_student_ladder: () => mapStudents[0].ladder,
@@ -238,6 +247,26 @@ const answers: Record<string, (a: Row) => unknown> = {
   warp_preview: (a) => (String(a.typed).toUpperCase() === 'KM4TP' ? { status: 'found', kind: 'class', name: 'Room 12', className: 'Room 12', leaving: null, alreadyIn: false, ask: true } : { status: 'nope' }),
   warp_join: (a) => (String(a.typed).toUpperCase() === 'KM4TP' ? { status: 'waiting', name: 'Room 12' } : { status: 'nope' }),
   my_class: () => ({ className: null, groupName: null, waitingFor: null }),
+  // Quest rewards (docs/QUEST-REWARDS-PLAN.md): one waiting Rename Scroll and one used, when ?quest=won.
+  my_quest_rewards: () =>
+    QUEST === 'won'
+      ? [
+          { id: 'r1', reward: 'scroll', kind: 'trader', gotAt: new Date().toISOString(), usedAt: null },
+          { id: 'r2', reward: 'title', kind: 'marble-total', gotAt: new Date().toISOString(), usedAt: null },
+          { id: 'r7', reward: 'frame', kind: 'archery-fights', gotAt: new Date().toISOString(), usedAt: null },
+          { id: 'r8', reward: 'frame', kind: 'clans', gotAt: qDay(-9), usedAt: qDay(-9), frame: 'vine' },
+          { id: 'r4', reward: 'turns', kind: 'diamond-daily', gotAt: new Date().toISOString(), usedAt: null },
+          { id: 'r5', reward: 'coins', kind: 'trader', gotAt: new Date().toISOString(), usedAt: null, game: 'trader' },
+          { id: 'r6', reward: 'coins', kind: 'lord', gotAt: qDay(-2), usedAt: qDay(-1), game: 'dragon-maths', amount: 340 },
+          { id: 'r0', reward: 'scroll', kind: 'lord', gotAt: qDay(-8), usedAt: qDay(-7) },
+          { id: 'r3', reward: 'title', kind: 'lord', gotAt: qDay(-15), usedAt: qDay(-15), title: 'moon-walker' },
+        ]
+      : [],
+  my_titles: () => ({ owned: QUEST === 'won' ? ['moon-walker'] : [], wearing: QUEST === 'won' ? 'moon-walker' : null }),
+  use_quest_reward: () => null,
+  set_my_title: () => null,
+  my_frames: () => ({ owned: QUEST === 'won' ? ['vine'] : [], wearing: QUEST === 'won' ? 'vine' : null }),
+  set_my_frame: () => null,
   my_maths_focus: () => AUTO,
   my_ladder: () => ({ facts: [], settings: {}, focus: AUTO }),
 };

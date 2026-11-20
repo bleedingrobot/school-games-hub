@@ -8,15 +8,21 @@ import type { DuelMove } from '../../shared/clans/duel';
 import type { DuelRow } from '../../shared/clans/duelServer';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { supabase } from '../lib/supabase';
+import { readClassBits } from '../components/SchoolPlayerList';
 import { fetchClockOffset, type LiveStatus } from './multiplayer';
 
 export type { DuelRow, LiveStatus };
 
-/** A classmate's clan with Clan Quest open. `id` is the clan's hidden public id; `name` is the clan name. */
+/** A clan at school with Clan Quest open. `id` is the clan's hidden public id; `name` is the clan name. */
 export interface DuelMate {
   id: string;
   name: string;
   busy: boolean;
+  /** In my class; otherwise className says which class they're in. */
+  sameClass: boolean;
+  className: string | null;
+  /** I starred them (stage 8: only I can see it). */
+  starred?: boolean;
 }
 
 export interface DuelAsk {
@@ -33,7 +39,7 @@ export async function sayDuelHere(): Promise<DuelHere | null> {
     if (error || !data || typeof data !== 'object') return null;
     const d = data as { off?: boolean; online?: DuelMate[]; asks?: DuelAsk[]; duel?: DuelRow | null };
     if (d.off) return { off: true };
-    return { off: false, online: Array.isArray(d.online) ? d.online : [], asks: Array.isArray(d.asks) ? d.asks : [], duel: d.duel ?? null };
+    return { off: false, online: Array.isArray(d.online) ? d.online.map((o) => ({ ...o, ...readClassBits(o as unknown as Record<string, unknown>) })) : [], asks: Array.isArray(d.asks) ? d.asks : [], duel: d.duel ?? null };
   } catch {
     return null;
   }

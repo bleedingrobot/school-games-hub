@@ -45,7 +45,8 @@ export const REEL_SPEED: Record<Weight, number> = {
 
 // ---- Gems ----
 export type GemId =
-  | 'quartz' | 'jade' | 'amethyst' | 'topaz' | 'emerald' | 'sapphire' | 'ruby' | 'fireOpal' | 'starSapphire' | 'heartDiamond';
+  | 'quartz' | 'jade' | 'amethyst' | 'topaz' | 'emerald' | 'sapphire' | 'ruby' | 'fireOpal' | 'starSapphire' | 'heartDiamond'
+  | RareId;
 
 export interface Gem {
   id: GemId;
@@ -75,7 +76,40 @@ export const GEMS: readonly Gem[] = [
   { id: 'heartDiamond', name: 'Heart Diamond', value: 0, weight: 'veryHeavy', slip: 1, r: 22, minY: 610 },
 ];
 export const GEM_IDS: readonly GemId[] = GEMS.map((g) => g.id);
-export const gemOf = (id: GemId): Gem => GEMS[GEM_IDS.indexOf(id)];
+export const gemOf = (id: GemId): Gem => GEMS[GEM_IDS.indexOf(id)] ?? RARE_GEMS.find((g) => g.id === id)!;
+
+// ---- Rare gems (a pupil's idea, 18 Nov 2026) ----
+/**
+ * At most one rare gem is buried on each go of any level, or none. Each `chance` is that gem's real chance on a go; together
+ * about 1 go in 4 has one (James, 19 Nov 2026: they used to stack, so about 7 goes in 10 had one, far too many).
+ * Kept for good in the Gem Book (`lifetime.rare`): New Season never clears them. Buried near the bottom (James, 18 Nov
+ * 2026), the rarest deepest (`minY`).
+ */
+export type RareId = 'moonstone' | 'sunstone' | 'frostCrystal' | 'rainbowOpal' | 'dragonEye' | 'galaxyGem' | 'phoenixGem';
+export type RareTier = 'uncommon' | 'rare' | 'epic' | 'legendary';
+export interface RareGem extends Gem {
+  id: RareId;
+  /** Chance (0 to 1) that this gem turns up on a go. All of them add up to the chance of any rare gem. */
+  chance: number;
+  tier: RareTier;
+  /** A line for its Gem Book page. */
+  about: string;
+}
+export const RARE_GEMS: readonly RareGem[] = [
+  { id: 'moonstone', name: 'Moonstone', chance: 0.08, tier: 'uncommon', value: 20, weight: 'light', slip: 0.3, r: 24, minY: 480, about: 'Glows softly, like the moon over the hills.' },
+  { id: 'sunstone', name: 'Sunstone', chance: 0.06, tier: 'uncommon', value: 25, weight: 'light', slip: 0.3, r: 24, minY: 490, about: 'Warm as a summer morning, full of golden sparkles.' },
+  { id: 'frostCrystal', name: 'Frost Crystal', chance: 0.04, tier: 'rare', value: 35, weight: 'light', slip: 0.35, r: 24, minY: 500, about: 'A snowflake that never melts.' },
+  { id: 'rainbowOpal', name: 'Rainbow Opal', chance: 0.03, tier: 'rare', value: 50, weight: 'medium', slip: 0.35, r: 24, minY: 510, about: 'Every colour of the rainbow, dancing inside.' },
+  { id: 'dragonEye', name: "Dragon's Eye", chance: 0.02, tier: 'epic', value: 75, weight: 'medium', slip: 0.4, r: 25, minY: 520, about: 'Some say it still watches the dragon’s treasure.' },
+  { id: 'galaxyGem', name: 'Galaxy Gem', chance: 0.015, tier: 'epic', value: 120, weight: 'medium', slip: 0.4, r: 25, minY: 540, about: 'A whole galaxy of stars, small enough to hold.' },
+  { id: 'phoenixGem', name: 'Fablet Rose', chance: 0.01, tier: 'legendary', value: 250, weight: 'medium', slip: 0.45, r: 26, minY: 560, about: 'A rose made of glowing crystal. Only the luckiest miners ever see one.' },
+];
+export const RARE_IDS: readonly RareId[] = RARE_GEMS.map((g) => g.id);
+export const isRare = (id: GemId | undefined | null): id is RareId => !!id && (RARE_IDS as readonly string[]).includes(id);
+export const rareOf = (id: RareId): RareGem => RARE_GEMS.find((g) => g.id === id)!;
+export const RARE_TIER_NAME: Record<RareTier, string> = { uncommon: 'Uncommon', rare: 'Rare', epic: 'Epic', legendary: 'Legendary' };
+/** The chance shown in the Gem Book, as a pupil reads it ("1.5% chance"). */
+export const chanceWords = (g: RareGem) => `${Math.round(g.chance * 1000) / 10}% chance`;
 
 /** The Heart Diamond's two slips happen at these shares of the way up (from the level's seed, inside each range). */
 export const DIAMOND_SLIPS: readonly [number, number][] = [[0.7, 0.85], [0.25, 0.45]];
@@ -202,6 +236,7 @@ export const SPECIAL_SHARE = 0.6;
 export const WEEK_ZERO = '2024-01-01';
 
 export type AchievementMeasure = 'diamond_found' | 'diamond_stars' | 'diamond_kinds' | 'diamond_grips';
+export type RareMeasure = 'diamond_rare_kinds' | 'diamond_rare_total' | 'diamond_phoenix';
 export interface WorkshopItem {
   id: string;
   name: string;
@@ -224,12 +259,20 @@ export const ACHIEVEMENT_NEEDS: Record<AchievementMeasure, number> = {
  */
 export const ACHIEVEMENTS = [
   { id: 'diamond-first-catch', name: 'First Catch', emoji: '💎', measure: 'diamond_gems', goal: 1, for: 'Catch your first gem' },
-  { id: 'diamond-firm-grip', name: 'Firm Grip', emoji: '✊', measure: 'diamond_grips', goal: 10, for: 'Hold on to 10 slipping gems' },
-  { id: 'diamond-halfway', name: 'Halfway Down', emoji: '⛏️', measure: 'diamond_level', goal: 5, for: 'Pass level 5' },
-  { id: 'diamond-collector', name: 'Gem Collector', emoji: '📖', measure: 'diamond_kinds', goal: 9, for: 'Catch every kind of gem' },
+  { id: 'diamond-firm-grip', name: 'Firm Grip: 10 slipping gems', emoji: '✊', measure: 'diamond_grips', goal: 10, for: 'Hold on to 10 slipping gems' },
+  { id: 'diamond-halfway', name: 'Halfway Down: pass level 5', emoji: '⛏️', measure: 'diamond_level', goal: 5, for: 'Pass level 5' },
+  { id: 'diamond-collector', name: 'Gem Collector: every kind of gem', emoji: '📖', measure: 'diamond_kinds', goal: 9, for: 'Catch every kind of gem' },
   { id: 'diamond-finder', name: 'Diamond Finder', emoji: '💖', measure: 'diamond_found', goal: 1, for: 'Catch the Heart Diamond' },
-  { id: 'diamond-star-miner', name: 'Star Miner', emoji: '⭐', measure: 'diamond_stars', goal: 30, for: '3 stars on every level' },
+  { id: 'diamond-star-miner', name: 'Star Miner: all 30 stars', emoji: '⭐', measure: 'diamond_stars', goal: 30, for: '3 stars on every level' },
+  // Rare gems (migration 20261118003400): kept for good, like the rest.
+  { id: 'diamond-lucky-find', name: 'Lucky Find: a rare gem', emoji: '🍀', measure: 'diamond_rare_kinds', goal: 1, for: 'Catch your first rare gem' },
+  { id: 'diamond-rare-hunter', name: 'Rare Hunter: 4 rare gems', emoji: '🔮', measure: 'diamond_rare_kinds', goal: 4, for: 'Catch 4 different rare gems' },
+  { id: 'diamond-rare-hoard', name: 'Rare Hoard: 25 rare gems', emoji: '👑', measure: 'diamond_rare_total', goal: 25, for: 'Catch 25 rare gems' },
+  { id: 'diamond-phoenix', name: 'Fablet Rose Finder', emoji: '🌹', measure: 'diamond_phoenix', goal: 1, for: 'Catch the Fablet Rose (1% chance!)' },
+  { id: 'diamond-full-book', name: 'Complete Collection: all 7 rare gems', emoji: '🏆', measure: 'diamond_rare_kinds', goal: 7, for: 'Catch all 7 rare gems' },
 ] as const;
+/** Gem Book trophy steps: different rare gems caught for bronze, silver and gold (the Rare Gem Cup). */
+export const RARE_CUP_STEPS = [3, 5, 7] as const;
 
 // ---- Points (rules_fn, Stage 4) ----
 export const POINTS = { firstPass: 2, newStar: 1, diamond: 5 };

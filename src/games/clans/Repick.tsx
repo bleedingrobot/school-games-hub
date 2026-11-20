@@ -41,7 +41,7 @@ export function Repick({ session, onChange }: { session: Session; onChange: Chan
         })}
       </div>
       <div className="cq-actions">
-        <button type="button" className="cq-btn cq-btn--hot" onClick={() => onChange(repickDone(session), { type: 'repickDone' })}>Keep going</button>
+        <button data-key="enter" type="button" className="cq-btn cq-btn--hot" onClick={() => onChange(repickDone(session), { type: 'repickDone' })}>Keep going</button>
       </div>
     </section>
   );

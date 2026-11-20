@@ -3,12 +3,20 @@
    corners, the moves in a row along the bottom, hits pop up as numbers, and a win bursts gold and experience over it.
    No title, season, stats or written log on this screen. Transform and opacity only, for slow Chromebooks; with
    reduced motion nothing moves, and every number is still on screen. */
-.lord { max-width: 1280px; }
-.lord--bare { padding: 6px; gap: 0; min-height: 0; }
+/* The whole game fills the window, over the hub's bar, like Star Trader (James, 18 Nov 2026). Screens that aren't a
+   painting keep a readable column in the middle. */
+.lord {
+  position: fixed; inset: 0; z-index: 40; max-width: none; margin: 0; min-height: 0;
+  overflow-y: auto; overscroll-behavior: contain; border: 0; border-radius: 0; box-shadow: none;
+  padding: 16px max(14px, calc((100% - 980px) / 2)) 24px;
+}
+.lord--bare { padding: 0; gap: 0; background: #0d0805; }
+.lord-hubbtns { display: inline-flex; gap: 6px; pointer-events: auto; }
+.lord-hubbtns .lord-btn { min-height: 40px; padding: 2px 12px; font-family: var(--lord-display); font-size: 1.05rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
 .lord-big {
-  --lord-big-h: clamp(380px, calc(100dvh - 96px), 860px);
+  --lord-big-h: 100dvh;
   position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;
-  height: var(--lord-big-h); border-radius: 6px; border: 2px solid var(--lord-line); background: #1b130c; container-type: size;
+  height: var(--lord-big-h); border-radius: 0; border: 0; background: #1b130c; container-type: size; flex: none;
 }
 .lord-big__pic, .lord-big__pic img { position: absolute; inset: 0; z-index: -3; width: 100%; height: 100%; object-fit: cover; object-position: center 60%; }
 .lord-big__shade { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(10, 6, 3, 0.55) 0, rgba(10, 6, 3, 0) 22%, rgba(10, 6, 3, 0) 66%, rgba(10, 6, 3, 0.8) 100%); box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.55); }
@@ -104,8 +112,7 @@
   @keyframes lord-coin { 0% { opacity: 0; transform: scale(0.4); } 15% { opacity: 1; } 55% { opacity: 1; transform: translate(var(--x), var(--y)) scale(1.2); } 100% { opacity: 0; transform: translate(calc(var(--x) * 1.15), 30vh) scale(0.8) rotate(540deg); } }
 }
 @media (max-width: 640px) {
-  .lord--bare { padding: 2px; }
-  .lord-big { --lord-big-h: calc(100dvh - 70px); }
+  .lord--bare { padding: 0; }
   .lord-big__floor { bottom: 110px; height: 60cqh; padding: 0 2%; }
   .lord-big__fig { width: 48%; }
   .lord-big__side { width: 47%; }
@@ -117,9 +124,21 @@
 /* ---------------------------------------------------------------- the village: the map is the menu (James, 17 Nov 2026)
    The map as big as the screen allows, every place a label on it, the purse on its top right, notes on its foot. On a
    phone the map keeps a readable size and scrolls sideways. These rules come after lord.css and replace its map rules. */
-.lord-map { position: relative; display: block; border-radius: 6px; border: 2px solid var(--lord-line); overflow: hidden; background: #1b130c; }
-.lord-map__scroll { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
-.lord-map__paper { position: relative; width: min(100%, calc((100dvh - 30px) * 16 / 9)); min-width: 100%; aspect-ratio: 16 / 9; margin: 0 auto; filter: none; }
+/* The map fills the window: never cut at the sides, and on a wide window at most about an eighth off the top and
+   bottom (sat low, so what's cut is mostly sky), so no place falls off. Any edge it doesn't reach shows the same
+   painting blurred. */
+.lord-map { position: relative; display: block; overflow: hidden; background: #1b130c; }
+.lord-map__scroll { position: relative; height: 100dvh; overflow: hidden; container-type: size; }
+.lord-map__blur { position: absolute; inset: -40px; width: calc(100% + 80px); height: calc(100% + 80px); object-fit: cover; filter: blur(24px) brightness(0.55) saturate(0.9); user-select: none; pointer-events: none; }
+.lord-map__paper {
+  position: absolute; left: 50%; top: 85%; transform: translate(-50%, -85%);
+  width: min(100cqw, 100cqh * 16 / 9 * 1.14); aspect-ratio: 16 / 9; margin: 0; filter: none;
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
+}
+.lord-map__title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.lord-map > .lord-map__notes { position: absolute; z-index: 5; top: 64px; left: 12px; width: min(440px, 42%); padding: 0; }
+/* The season road, under the map: scroll down to it. */
+.lord--bare .lord-village > .lord-panel { margin: 12px max(10px, calc((100% - 1100px) / 2)) 20px; }
 .lord-map__paper > picture, .lord-map__paper > picture img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; user-select: none; }
 .lord-map__spot {
   position: absolute; z-index: 2; transform: translate(-50%, -50%); width: auto; min-width: 0; aspect-ratio: auto; padding: 0;
@@ -172,7 +191,10 @@
   @keyframes lord-forest-glow { 50% { box-shadow: 0 0 30px rgba(160, 255, 100, 0.85), 0 3px 10px rgba(0, 0, 0, 0.7); } }
 }
 @media (max-width: 760px) {
-  .lord-map__paper { min-width: 760px; width: 760px; }
+  .lord-map__scroll { height: auto; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; container-type: normal; }
+  .lord-map__blur { display: none; }
+  .lord-map__paper { position: relative; left: auto; top: auto; transform: none; min-width: 760px; width: 760px; box-shadow: none; }
+  .lord-map > .lord-map__notes { position: static; width: auto; padding: 8px; }
   .lord-map__spot > span { font-size: 0.95rem; }
   .lord-map__top { padding: 6px 8px 24px; }
   .lord-map__corner { right: 8px; bottom: 8px; }
@@ -280,4 +302,95 @@
 .lord-map__hero .lord-art { height: clamp(130px, 40cqh, 360px) !important; }
 @media (max-width: 760px) {
   .lord-map__spot > span, .lord-map__hero > span { font-size: 0.85rem; }
+}
+
+/* The bank on its big painting (James, 18 Nov 2026): Mr Penny at his counter on the right, what you carry and what is
+   in the vault as two glowing piles, coins flying between them when gold moves. */
+.lord-bank > .lord-portrait { right: 2%; height: 84%; max-width: 34%; z-index: 1; bottom: 70px; }
+.lord-bank__middle { position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 14px; width: min(820px, 64%); margin: auto auto auto 3%; text-align: center; }
+.lord-bank__lead { margin: 0; padding: 6px 16px; border-radius: 8px; background: rgba(15, 9, 4, 0.72); color: #f6e9cc; font-size: clamp(1rem, 1.8vw, 1.25rem); text-shadow: 0 1px 2px #000; }
+.lord-bank__piles { position: relative; display: flex; align-items: center; justify-content: center; gap: clamp(8px, 2vw, 22px); width: 100%; }
+.lord-bank__pile { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; flex: 1 1 0; max-width: 300px; padding: 12px 14px 14px; border-radius: 14px; border: 2px solid var(--lord-gold); background: radial-gradient(circle at 50% 30%, rgba(90, 60, 15, 0.85), rgba(15, 9, 4, 0.9)); box-shadow: 0 0 26px rgba(255, 190, 60, 0.35), 0 6px 18px rgba(0, 0, 0, 0.7); }
+.lord-bank__pile--vault { border-color: #ffd36b; box-shadow: 0 0 34px rgba(255, 200, 70, 0.55), 0 6px 18px rgba(0, 0, 0, 0.7); }
+.lord-bank__label { font-family: var(--lord-display); font-size: clamp(1rem, 2vw, 1.4rem); color: #f6e9cc; text-shadow: 0 2px 0 #000; }
+.lord-bank__num { display: inline-flex; align-items: center; gap: 10px; font-family: var(--lord-display); font-size: clamp(2.4rem, 6vw, 4.4rem); line-height: 1; color: #ffd84a; text-shadow: 0 4px 0 #3a2203, 0 6px 0 #000, 0 0 30px rgba(255, 200, 70, 0.8); }
+.lord-bank__coin { width: 0.6em; height: 0.6em; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff6c8, #ffc540 55%, #b37a10); box-shadow: 0 0 14px #ffcf4a, inset 0 -3px 0 rgba(0, 0, 0, 0.3); }
+.lord-bank__lane { flex: 0 0 auto; }
+.lord-bank__arrow { font-size: clamp(1.6rem, 3.4vw, 2.6rem); color: #ffd36b; text-shadow: 0 2px 0 #000, 0 0 16px rgba(255, 200, 70, 0.8); }
+.lord-bank__flight { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+.lord-bank__flight span { position: absolute; left: 20%; top: 55%; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; opacity: 0; background: radial-gradient(circle at 35% 35%, #fff6c8, #ffc540 55%, #b37a10); box-shadow: 0 0 14px #ffcf4a, inset 0 -2px 0 rgba(0, 0, 0, 0.3); }
+.lord-bank__interest { margin: 0; max-width: 52ch; padding: 6px 14px; border-radius: 8px; background: rgba(15, 9, 4, 0.72); color: #e8d9b8; font-size: clamp(0.92rem, 1.5vw, 1.08rem); }
+.lord-bank__interest strong { color: #ffd36b; }
+.lord-big__note { margin: 0; padding: 8px 18px; border-radius: 999px; border: 1px solid #9dff7a; background: rgba(12, 30, 8, 0.85); color: #c9ff9a; font-weight: 700; font-size: clamp(1rem, 1.8vw, 1.2rem); box-shadow: 0 0 20px rgba(140, 255, 100, 0.35); }
+.lord-btn--gold { color: #2a1a05; background: linear-gradient(#ffe48a, #e0a52a); border-color: #fff0b0; box-shadow: 0 0 18px rgba(255, 200, 70, 0.6), 0 3px 0 #6b4508; }
+@media (prefers-reduced-motion: no-preference) {
+  .lord-bank__middle { animation: lord-rise 0.5s ease-out both; }
+  .lord-bank > .lord-portrait { animation: lord-rise 0.6s 0.1s ease-out both; }
+  .lord-bank__flight span { animation: lord-bank-fly 1s cubic-bezier(0.3, 0.6, 0.4, 1) calc(var(--i) * 0.035s) both; }
+  .is-to-pocket .lord-bank__flight span { animation-name: lord-bank-back; }
+  .is-to-vault .lord-bank__pile--vault, .is-to-pocket .lord-bank__pile--pocket { animation: lord-bank-thump 0.5s 0.85s ease-out both; }
+  .lord-big__note { animation: lord-pop 0.45s ease-out both; }
+  .lord-btn--gold:not(:disabled) { animation: lord-bank-shine 1.8s ease-in-out infinite; }
+  @keyframes lord-bank-fly { 0% { opacity: 0; left: 20%; top: 55%; transform: scale(0.5); } 12% { opacity: 1; } 50% { top: calc(5% - var(--i) * 3px); transform: scale(1.25) rotate(180deg); } 90% { opacity: 1; } 100% { opacity: 0; left: 80%; top: 55%; transform: scale(0.7) rotate(360deg); } }
+  @keyframes lord-bank-back { 0% { opacity: 0; left: 80%; top: 55%; transform: scale(0.5); } 12% { opacity: 1; } 50% { top: calc(5% - var(--i) * 3px); transform: scale(1.25) rotate(-180deg); } 90% { opacity: 1; } 100% { opacity: 0; left: 20%; top: 55%; transform: scale(0.7) rotate(-360deg); } }
+  @keyframes lord-bank-thump { 40% { transform: scale(1.12); box-shadow: 0 0 60px rgba(255, 210, 80, 1), 0 6px 18px rgba(0, 0, 0, 0.7); } }
+  @keyframes lord-bank-shine { 50% { box-shadow: 0 0 30px rgba(255, 220, 90, 0.95), 0 3px 0 #6b4508; } }
+}
+@media (max-width: 760px) {
+  .lord-bank > .lord-portrait { height: 34%; max-width: 38%; right: 0; bottom: auto; top: 96px; }
+  .lord-bank__middle { width: calc(100% - 20px); margin: auto 10px; }
+  .lord-bank__lead { align-self: flex-start; max-width: 60%; text-align: left; }
+}
+
+/* Every village place on its big painting (James, 18 Nov 2026): the person who works there (or a master, or your
+   hero) stands on the right, a parchment card with what to read sits on the left, the buttons along the bottom. */
+.lord-bigplace > .lord-portrait { right: 2%; bottom: 70px; height: 84%; max-width: 34%; z-index: 1; }
+.lord-bigplace__figure { position: absolute; right: 3%; bottom: 70px; z-index: 1; display: flex; align-items: flex-end; justify-content: center; width: 36%; height: 74cqh; pointer-events: none; }
+.lord-bigplace__middle { position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 12px; min-height: 0; width: min(860px, calc(100% - 24px)); margin: auto; }
+.lord-bigplace.has-figure .lord-bigplace__middle { width: min(720px, 60%); margin: auto auto auto 3%; }
+.lord-heropage .lord-bigplace__figure { right: auto; left: 3%; }
+.lord-heropage.has-figure .lord-bigplace__middle { margin: auto 3% auto auto; }
+.lord-bigplace__card { width: 100%; max-height: 62cqh; overflow-y: auto; scrollbar-color: var(--lord-line) transparent; box-shadow: inset 0 0 0 3px rgba(243, 229, 197, 0.9), inset 0 0 0 4px rgba(167, 123, 53, 0.55), 0 12px 34px rgba(0, 0, 0, 0.75); }
+.lord-bigplace__card > :first-child { margin-top: 0; }
+.lord-bigplace__card { overflow-x: hidden; }
+.lord-bigplace__card .lord-shop { margin-bottom: 0; }
+.lord-bigplace__card .lord-shop li { grid-template-columns: 56px minmax(0, 1fr) auto auto; gap: 2px 10px; }
+.lord-bigplace__card .lord-shop li > :first-child { grid-row: span 2; }
+.lord-bigplace__card .lord-shop li > :nth-child(n + 4) { grid-column: auto; }
+.lord-bigplace__card .lord-shop li > :nth-child(4) { grid-column: 2; grid-row: 2; }
+.lord-bigplace__card .lord-shop li > :nth-child(5) { grid-column: 3 / -1; grid-row: 2; justify-self: end; }
+.lord-bigplace .lord-big__heading { display: flex; align-items: center; gap: 10px; }
+.lord-bigplace .lord-big__heading .lord-sprite { background-color: #ffd36b !important; filter: drop-shadow(0 2px 0 #000); }
+.lord-classpick .lord-big__title p { max-width: 60ch; }
+.lord-classpick .lord-classes { width: 100%; margin: 0; }
+.lord-classpick .lord-class { background: linear-gradient(180deg, rgba(255, 250, 240, 0.94), rgba(241, 226, 191, 0.94)); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.7); }
+
+/* The healer: a big health bar, and a green burst when she mends you */
+.lord-healer__health { position: relative; margin: 4px 0 10px; }
+.lord-healer__health .lord-hp { height: 34px; }
+.lord-healer__health .lord-hp__text { font-size: 1.1rem; }
+.lord-healer__health .lord-float { top: -10px; }
+.lord-healer__sparkles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: inherit; }
+.lord-healer__sparkles span { position: absolute; bottom: -10px; left: calc(4% + var(--i) * 6.8%); width: 12px; height: 12px; border-radius: 50%; opacity: 0; background: radial-gradient(circle, #f4ffe0, #8dff5a 55%, transparent 70%); box-shadow: 0 0 12px #8dff5a; }
+@media (prefers-reduced-motion: no-preference) {
+  .lord-bigplace__card { animation: lord-rise 0.45s ease-out both; }
+  .lord-bigplace > .lord-portrait, .lord-bigplace__figure { animation: lord-rise 0.6s 0.1s ease-out both; }
+  .lord-healer__sparkles span { animation: lord-heal-rise 1.3s ease-out calc(var(--i) * 0.05s) both; }
+  .lord-healer.is-healing .lord-big__shade { animation: lord-heal-glow 1.4s ease-out both; }
+  @keyframes lord-heal-rise { 0% { opacity: 0; transform: translateY(0) scale(0.5); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-220px) scale(1.3); } }
+  @keyframes lord-heal-glow { 30% { box-shadow: inset 0 0 160px rgba(120, 255, 90, 0.75); } }
+}
+@media (max-width: 760px) {
+  .lord-bigplace > .lord-portrait, .lord-bigplace__figure { height: 34%; max-width: 38%; width: 38%; right: 0; left: auto; bottom: auto; top: 96px; }
+  .lord-heropage .lord-bigplace__figure { left: auto; right: 0; }
+  .lord-bigplace.has-figure .lord-bigplace__middle, .lord-heropage.has-figure .lord-bigplace__middle { width: calc(100% - 20px); margin: auto 10px; padding-top: 22vh; }
+  .lord-bigplace__card { max-height: 50cqh; padding: 10px 12px; }
+}
+@media (max-width: 760px) {
+  .lord-bigplace__card .lord-shop li { grid-template-columns: 48px minmax(0, 1fr) auto; }
+  .lord-bigplace__card .lord-shop li > :first-child { grid-row: span 3; }
+  .lord-bigplace__card .lord-shop li > :nth-child(2) { grid-column: 2 / -1; grid-row: 1; }
+  .lord-bigplace__card .lord-shop li > :nth-child(3) { grid-column: 2; grid-row: 2; }
+  .lord-bigplace__card .lord-shop li > :nth-child(4) { grid-column: 3; grid-row: 2; }
+  .lord-bigplace__card .lord-shop li > :nth-child(5) { grid-column: 2 / -1; grid-row: 3; justify-self: start; }
 }

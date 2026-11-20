@@ -1,0 +1,249 @@
+/* The new Lobby's parts (LobbyFriends.tsx): challenges, game tiles, who's here. */
+
+.lobby-asks {
+  outline: 3px solid var(--play);
+}
+.lobby-asks__buttons {
+  display: flex;
+  gap: 8px;
+}
+.lobby-asks__buttons .button {
+  width: auto;
+  margin: 0;
+}
+
+/* ---------- Pick a game ---------- */
+
+.lobby-tiles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+}
+.lobby-tile {
+  display: grid;
+}
+.lobby-tile__face {
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 4px;
+  min-height: 132px;
+  padding: 14px 10px;
+  border: 2px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  text-align: center;
+}
+button.lobby-tile__face {
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+button.lobby-tile__face:hover {
+  transform: translateY(-2px);
+  border-color: var(--focus);
+}
+.lobby-tile--picked .lobby-tile__face {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+.lobby-tile__emoji {
+  font-size: 2rem;
+  line-height: 1.1;
+}
+.lobby-tile__blurb,
+.lobby-tile__why {
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+  line-height: 1.25;
+}
+.lobby-tile--grey .lobby-tile__face {
+  background: var(--tint);
+  border-style: dashed;
+}
+.lobby-tile--grey .lobby-tile__emoji,
+.lobby-tile--grey strong {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+.lobby-tile__why {
+  font-weight: 700;
+}
+.lobby-tile__fix.button {
+  margin-top: 4px;
+  padding: 6px 12px;
+  font-size: 0.86rem;
+}
+
+/* ---------- Who's here ---------- */
+
+.lobby-here__focus {
+  margin: 0 0 10px;
+  font-weight: 700;
+}
+.lobby-here__all {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--focus);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.lobby-list__what .lobby-here__games,
+.lobby-recent__choices .lobby-here__games {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+  color: inherit;
+  font-size: 1rem;
+}
+.lobby-list__what .lobby-here__no,
+.lobby-recent__choices .lobby-here__no {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px dashed var(--line);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+}
+.lobby-here__list .button,
+.lobby-recent__choices .button {
+  width: auto;
+  flex: none;
+  margin: 0;
+  padding: 8px 14px;
+}
+
+/* ---------- Join with a code: smaller, at the bottom ---------- */
+
+.lobby-code {
+  max-width: 520px;
+}
+.lobby-code .code-form {
+  grid-template-columns: 1fr auto;
+  align-items: end;
+}
+.lobby-code .code-form label {
+  grid-column: 1 / -1;
+  font-weight: 600;
+}
+
+@media (max-width: 560px) {
+  .lobby-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .lobby-tile__face {
+    min-height: 118px;
+    padding: 10px 6px;
+  }
+  .lobby-list li:has(.lobby-asks__buttons),
+  .lobby-list li.lobby-invite-out {
+    flex-wrap: wrap;
+  }
+  /* On a phone the words get the row and the buttons go underneath, never a thin column of words. */
+  .lobby-list li:has(.lobby-asks__buttons) .lobby-list__what,
+  .lobby-list li.lobby-invite-out .lobby-list__what {
+    flex-basis: calc(100% - 60px);
+  }
+  .lobby-list li.lobby-invite-out .button {
+    margin-left: 56px;
+  }
+}
+
+/* My waiting invite (stage 4): its Call off button is only as wide as its words. */
+.lobby-invite-out .button {
+  width: auto;
+  margin: 0;
+}
+
+/* The start-a-game form, under the tiles. */
+.lobby-grid--one {
+  grid-template-columns: 1fr;
+}
+.lobby-start__which {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+}
+
+/* Stars (stage 8): the one-time hint, and Played recently. */
+.lobby-here__hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.8rem;
+  margin: 0 0 0.6rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 12px;
+  background: #fff6d6;
+  color: #4a3b00;
+  font-weight: 600;
+}
+
+.lobby-recent {
+  margin-top: 1rem;
+}
+.lobby-recent__title {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}
+.lobby-recent__row {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  gap: 0.5rem;
+}
+.lobby-recent__kid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.04);
+  min-width: 0;
+}
+.lobby-recent__kid--away {
+  opacity: 0.6;
+}
+.lobby-recent__name {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 1 1 0;
+  font-weight: 700;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.lobby-recent__kid .lobby-recent__play {
+  width: auto;
+  flex: none;
+}
+.lobby-recent__gone {
+  flex-basis: 100%;
+  font-weight: 400;
+  font-size: 0.85em;
+  font-style: italic;
+}
+.lobby-recent__kid .school-list__star {
+  margin-left: 0;
+}
+.lobby-recent__choices {
+  flex-basis: 100%;
+}
+.lobby-here__hint .button {
+  width: auto;
+  flex: none;
+}

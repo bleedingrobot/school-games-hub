@@ -22,6 +22,8 @@ function world() {
   const players = new Map<string, PlayerStatus>();
   const tokens = new Map<string, string>();
   let settingsOn = true;
+  // Invites by name: the database's claim-once step, as board_invite_take / board_invite_made do it.
+  const invites = new Map<number, { from: string; to: string; game: string; status: string; path?: string | null }>();
   // Lets a test hold every game load until `n` of them are waiting, so requests overlap.
   let gate: { n: number; waiting: (() => void)[] } | null = null;
 
@@ -88,6 +90,16 @@ function world() {
       games.set(game.id, game);
       return copy(game)!;
     },
+    takeInvite: async (invite, player, game) => {
+      const i = invites.get(invite);
+      if (!i || i.to !== player || i.game !== game || i.status !== 'asked') return null;
+      i.status = 'taking';
+      return { from: i.from, setup: null };
+    },
+    inviteMade: async (invite, path) => {
+      const i = invites.get(invite);
+      if (i?.status === 'taking') Object.assign(i, { status: path ? 'accepted' : 'cancelled', path });
+    },
     updateGame: async (id, version, patch) => {
       const g = games.get(id);
       if (!g || g.version !== version) return null;
@@ -128,6 +140,7 @@ function world() {
     services,
     games,
     players,
+    invites,
     ask,
     started,
     play,
@@ -237,6 +250,26 @@ describe('the multiplayer server function', () => {
     await w.play(second.id, ['e2e4']);
     const { game: done } = await w.ask('ben', { action: 'resign', gameId: second.id });
     expect(done).toMatchObject({ status: 'finished', winner: 'first', reason: 'resigned', counts_for_points: false });
+  });
+});
+
+describe('invites by name (play anyone, stage 4)', () => {
+  it('makes a private, started game for just the two of them on Yes, once, with the inviter first', async () => {
+    const { ask, invites, players } = world();
+    invites.set(1, { from: 'ana', to: 'ben', game: 'checkers', status: 'asked' });
+    // Only the kid it was sent to, and only for its own game.
+    expect((await ask('cat', { action: 'invite', invite: 1, game: 'checkers' })).problem).toBe('invite-gone');
+    expect((await ask('ben', { action: 'invite', invite: 1, game: 'chess' })).problem).toBe('invite-gone');
+    const yes = await ask('ben', { action: 'invite', invite: 1, game: 'checkers' });
+    expect(yes.game).toMatchObject({ game: 'checkers', status: 'playing', code: null, in_lobby: false, first_player: 'ana', second_player: 'ben' });
+    expect(invites.get(1)).toMatchObject({ status: 'accepted', path: `/play/${yes.game!.id}` });
+    // Yes twice makes nothing new.
+    expect((await ask('ben', { action: 'invite', invite: 1, game: 'checkers' })).problem).toBe('invite-gone');
+    // An inviter at another school by then: no game, and the inviter hears it's off.
+    invites.set(2, { from: 'cat', to: 'dan', game: 'chess', status: 'asked' });
+    players.set('cat', { ...players.get('cat')!, schoolId: 2 });
+    expect((await ask('dan', { action: 'invite', invite: 2, game: 'chess' })).problem).toBe('invite-gone');
+    expect(invites.get(2)).toMatchObject({ status: 'cancelled', path: null });
   });
 });
 

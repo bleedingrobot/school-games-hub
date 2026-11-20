@@ -808,7 +808,7 @@ function Bond({ go, gone, filled, wrongs, guided, wobble, last, onPick, onNext, 
       ) : first ? null : (
         <div className="wk-bond__done">
           <p className="wk-bond__said" aria-live="polite">{bondLine(go)}</p>
-          <button type="button" className="wk-button wk-next" onClick={onNext}>{last ? WORDS.finish : WORDS.next} <span aria-hidden="true">➜</span></button>
+          <button type="button" className="wk-button wk-next" data-key="enter" onClick={onNext}>{last ? WORDS.finish : WORDS.next} <span aria-hidden="true">➜</span></button>
         </div>
       )}
     </div>

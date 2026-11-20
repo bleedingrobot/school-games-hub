@@ -1,4 +1,5 @@
 import { pieceImage } from './Board';
+import { useLooks } from './looks';
 
 /** "Nf3" becomes "♘f3", which is easier to read for children. */
 export function figurine(san: string, colour: 'w' | 'b') {
@@ -8,11 +9,12 @@ export function figurine(san: string, colour: 'w' | 'b') {
 
 /** The little pictures of pieces a player has captured. */
 export function Captured({ pieces, who }: { pieces: { type: string; colour: string }[]; who: string }) {
+  const set = useLooks().data?.set;
   if (pieces.length === 0) return null;
   return (
     <span className="captured" aria-label={`${who} captured ${pieces.length} piece${pieces.length === 1 ? '' : 's'}`}>
       {pieces.map((p, i) => (
-        <img key={i} src={pieceImage(p.colour as 'w' | 'b', p.type)} alt="" />
+        <img key={i} src={pieceImage(p.colour as 'w' | 'b', p.type, set)} alt="" />
       ))}
     </span>
   );

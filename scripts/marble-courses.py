@@ -319,17 +319,17 @@ def crown_range():
             t.go(2)
         else:
             t.go(4)
-        t.turn('S', rails=False)
-        t.go(3, rails=False)
-        t.turn('W' if k % 2 == 0 else 'E', rails=False)
+        t.turn('S')        # rails round the hairpins now (18 Nov 2026: too many falls)
+        t.go(3)
+        t.turn('W' if k % 2 == 0 else 'E')
         t.go(1)
         t.gate(2)
         t.go(1)
         t.down(2)
         t.go(2)
-        t.turn('S', rails=False)
-        t.go(3, rails=False, stop=(0, 'k') if k == 2 else None)  # the third question stop, after the last gate
-        t.turn('E' if k % 2 == 0 else 'W', rails=False)
+        t.turn('S')
+        t.go(3, stop=(0, 'k') if k == 2 else None)  # the third question stop, after the last gate
+        t.turn('E' if k % 2 == 0 else 'W')
         if k == 2:
             break
     t.go(6)
@@ -345,9 +345,8 @@ def geyser_valley():
     t.down(2)
     t.go(3, ch='m')
     t.go(2)
-    t.go(1, ch='g', width=1)  # one geyser launches you over the first trench
-    t.gap(3)
-    t.go(3, ch='#')
+    t.go(1, ch='g')    # a row of geysers that puff you up for fun (James, 18 Nov 2026: no more timing geysers over trenches)
+    t.go(6)            # a solid bridge where the first trench was
     t.down(2)
     t.go(2, ch='c')
     t.go(3)          # (a turn paints over the two cells before it, so the checkpoint needs room)
@@ -356,16 +355,14 @@ def geyser_valley():
     t.down(2)
     t.go(2, stop=(0, 'k'))
     t.go(1, ch='g', width=3)
-    t.gap(3, width=5)
-    t.go(3)
+    t.go(6)            # a bridge, not a trench
     t.turn('E')
     t.go(1)
     t.gate(2)
     t.go(2, ch='m', stop=(1, 'h'))
     t.down(3)
     t.go(2, at={(0, 0): 'g'})
-    t.gap(2)
-    t.go(2)
+    t.go(4)            # a bridge, not a trench
     t.gate(3)
     t.go(1)
     t.down(2)
@@ -381,7 +378,7 @@ def glacier_run():
     t.down(3, ch=None)
     t.go(4, ch='i')
     t.go(1, ch='j', width=5)
-    t.gap(2)   # crevasse
+    t.gap(1)   # crevasse (one tile since 18 Nov 2026: slow marbles fell in)
     t.go(3, ch='i', stop=(0, 'k'))
     t.turn('S')
     t.go(1, ch='i')
@@ -392,7 +389,7 @@ def glacier_run():
     t.go(2, ch='c')
     t.go(2, ch='i')
     t.go(1, ch='j', width=5)
-    t.gap(2)
+    t.gap(1)   # one tile since 18 Nov 2026: slow marbles fell in
     t.go(3, ch='i')
     t.turn('E')
     t.go(3, ch='i', stop=(1, 'h'))
@@ -411,7 +408,7 @@ def glacier_run():
 
 
 def windy_welly():
-    t = Track(2, 2, 'E', width=4, level=18)
+    t = Track(2, 2, 'E', width=5, level=18)
     t.go(5)
     t.mark(-5, 0, 's')
     t.go(2, ch='e')           # the wharf: conveyor belts
@@ -459,45 +456,46 @@ def windy_welly():
 
 
 def alpine_crossing():
-    t = Track(2, 2, 'E', width=3, level=30)
+    # 18 Nov 2026 (James: too hard): five wide with rails all the way (was three wide, no rails), two crumbling tiles not four.
+    t = Track(2, 2, 'E', width=5, level=30)
     t.go(5)
     t.mark(-5, 0, 's')
-    t.go(6, rails=False)
+    t.go(6)
     t.gems(0)
     # the Devil's Staircase: steps down
     for _ in range(4):
-        t.down(1, rails=False)
-        t.go(2, rails=False)
-    t.go(2, ch='c', rails=False)
-    t.go(1, rails=False)
-    t.gate(2, rails=False)
-    t.go(1, rails=False)
-    t.go(1, ch='t', rails=False)       # crumbling scoria
-    t.go(2, rails=False, stop=(0, 'k'))
-    t.go(1, ch='t', rails=False)
-    t.go(2, rails=False)
+        t.down(1)
+        t.go(2)
+    t.go(2, ch='c')
+    t.go(1)
+    t.gate(2)
+    t.go(1)
+    t.go(1, ch='t')       # crumbling scoria
+    t.go(2, stop=(0, 'k'))
+    t.go(1)
+    t.go(2)
     t.gems(0)
-    t.go(1, rails=False)
-    t.turn('S', rails=False)
-    t.go(1, rails=False)
-    t.gate(3, rails=False)
-    t.go(2, rails=False)
-    t.down(2, rails=False)
-    t.go(2, rails=False)
-    t.go(1, ch='t', rails=False)
-    t.go(2, ch='c', rails=False)
-    t.go(2, rails=False)
-    t.turn('E', rails=False)
-    t.go(4, rails=False)
+    t.go(1)
+    t.turn('S')
+    t.go(1)
+    t.gate(3)
+    t.go(2)
+    t.down(2)
+    t.go(2)
+    t.go(1)
+    t.go(2, ch='c')
+    t.go(2)
+    t.turn('E')
+    t.go(4)
     t.gems(1)
-    t.go(1, rails=False)
+    t.go(1)
     for _ in range(3):
-        t.down(1, rails=False)
-        t.go(2, rails=False)
-    t.go(1, ch='t', rails=False)
-    t.go(3, rails=False, stop=(1, 'h'))
+        t.down(1)
+        t.go(2)
+    t.go(1, ch='t')
+    t.go(3, stop=(1, 'h'))
     t.gems(1)
-    t.down(2, rails=False)
+    t.down(2)
     t.go(1, width=5)
     t.gate(2)                     # the Emerald Lakes
     t.go(2, ch='f', width=5)
@@ -544,7 +542,7 @@ def gap_and_ice():
     t.down(2)
     t.go(3)
     t.go(1, ch='j', width=5)
-    t.gap(2)
+    t.gap(1)   # one tile since 18 Nov 2026: slow marbles fell in
     t.go(4, stop=(1, 'k'))
     t.turn('S')
     t.go(1)
@@ -572,8 +570,8 @@ COURSES = [
     ('crown-range', 'Crown Range Zig-Zag', crown_range, (0, 0, 0), 0, None),
     ('geyser-valley', 'Geyser Valley', geyser_valley, (0, 0, 0), 0, None),
     ('glacier-run', 'Glacier Run', glacier_run, (0, 0, 0), 0, None),
-    ('windy-welly', 'Windy Welly', windy_welly, (0, 0, 0), 0, (0, 1, 360, 70, 40, 8)),
-    ('alpine-crossing', 'Alpine Crossing', alpine_crossing, (0, 0, 0), 0, (1, 0, 420, 80, 40, 6)),
+    ('windy-welly', 'Windy Welly', windy_welly, (0, 0, 0), 0, (0, 1, 360, 60, 60, 4)),
+    ('alpine-crossing', 'Alpine Crossing', alpine_crossing, (0, 0, 0), 0, (1, 0, 420, 60, 60, 3)),
     ('wide-hill', 'Wide Hill', wide_hill, (0, 0, 0), 0, None),
     ('gap-and-ice', 'Gap and Ice', gap_and_ice, (0, 0, 0), 0, None),
 ]

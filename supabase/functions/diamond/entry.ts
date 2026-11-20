@@ -76,6 +76,8 @@ Deno.serve(
       // A pupil who has never played starts at level 1.
       return saved ?? unplayed();
     },
+    openPouches: (player, version) =>
+      call<{ amount: number; version: number } | null>('open_coin_pouches', { player, game: 'diamond', expected_version: version, per_unit: 1 }),
     start: (player, version, state, level) =>
       call<boolean>('diamond_start', {
         player, version, state, seed: level.seed, level: level.level, boosts: level.boosts, starter: level.starter, questions: level.questions,

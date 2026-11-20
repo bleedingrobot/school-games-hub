@@ -228,6 +228,8 @@ export const parseRounding: Parser = (parts) => {
 export const ROUNDING_SKILL_KEYS = {
   'round-10-100': Object.keys(ROUNDING_FAMILIES).filter((k) => /^round:(10|100):/.test(k)),
   'round-1000': Object.keys(ROUNDING_FAMILIES).filter((k) => k.startsWith('round:1000:')),
-  'round-big': Object.keys(ROUNDING_FAMILIES).filter((k) => /^round:(10000|100000):(5digit|6digit|halfway)$|^round:whole:|^round:tenth:/.test(k)),
+  // Decimals only (James, 19 Nov 2026): rounding 5- and 6-digit numbers was too slow for the games. Their types stay in the pack
+  // (old records and questions still read), but no skill asks them, and round-million is off the ladder.
+  'round-big': Object.keys(ROUNDING_FAMILIES).filter((k) => /^round:whole:|^round:tenth:/.test(k)),
   'round-million': Object.keys(ROUNDING_FAMILIES).filter((k) => /^round:1000000:|^round:100000:7digit$|^round:hundredth:/.test(k)),
 };

@@ -56,7 +56,12 @@ export function memoryServices(options: MemoryOptions = {}): ToonFlapServices & 
     maths: async (player): Promise<MathsContext> => ({ facts: copy(data.facts[player] ?? []), focus: null, settings: {} }),
     async runsToday(player, day) {
       const mine = data.runs.filter((r) => r.player === player);
-      return { started: mine.filter((r) => r.day === day).length, finished: mine.filter((r) => r.finishedDay === day).length };
+      return {
+        started: mine.filter((r) => r.day === day).length,
+        finished: mine.filter((r) => r.finishedDay === day).length,
+        wins: mine.filter((r) => r.finishedDay === day && r.run.level !== 'dash').length,
+        dashes: mine.filter((r) => r.day === day && r.run.level === 'dash').length,
+      };
     },
     async start(player, seed, run) {
       if (find(player, seed)) return false;

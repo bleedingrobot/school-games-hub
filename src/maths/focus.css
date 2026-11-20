@@ -63,7 +63,7 @@
   align-items: baseline;
   padding: 4px 0;
 }
-.skill-picker input[type='checkbox'] {
+.skill-picker input[type="checkbox"] {
   width: 20px;
   height: 20px;
   flex: none;
@@ -152,4 +152,8 @@
 }
 .placement-reset {
   margin: 12px 0;
+}
+.set-focus__done {
+  color: #1d7a3a;
+  font-weight: 700;
 }

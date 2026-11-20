@@ -33,11 +33,18 @@ export function createFx(scene: THREE.Object3D, settings: QualitySettings, reduc
         if (e.kind === 'land') {
           particles.dust(e.x, up(e.z), e.y, 0xe8d4a2, Math.min(2, e.speed / 5));
         } else if (e.kind === 'fall') particles.splash(e.x, up(e.z), e.y);
-        else if (e.kind === 'finish') particles.confetti(e.x, up(e.z), e.y);
+        else if (e.kind === 'finish') {
+          particles.confetti(e.x, up(e.z), e.y);
+          particles.burst(e.x, up(e.z), e.y, undefined, 1.4);
+        } else if (e.kind === 'checkpoint') particles.burst(e.x, up(e.z), e.y, [0xfde047, 0x67e8f9, 0xf9a8d4, 0xffffff], 1.2);
+        else if (e.kind === 'bigair') particles.burst(e.x, up(e.z), e.y, [0x67e8f9, 0xffffff, 0xa5f3fc], 0.9);
         else if (e.kind === 'respawn') particles.sparkle(e.x, up(e.z), e.y);
         else if (e.kind === 'gem') {
           const at = gemPos?.(e.id);
-          if (at) particles.sparkle(at.x, at.y, at.z);
+          if (at) {
+            particles.sparkle(at.x, at.y, at.z);
+            particles.burst(at.x, at.y, at.z, [0x22d3ee, 0xa78bfa, 0xf472b6, 0xfde047], 0.7);
+          }
         }
       }
     },

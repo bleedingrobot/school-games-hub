@@ -1,6 +1,6 @@
 /**
  * A round of maths questions in the game: one for the Gem Forge, three at the Wave Gate,
- * five for the Keep Shield, ten for the Level Key, up to ten at the Mana Well. Asks them
+ * five for the Keep Shield, five for the Level Key, up to three at the Mana Well. Asks them
  * one after another and reports how many were right and which facts were missed.
  */
 import { useCallback, useEffect, useState } from 'react';

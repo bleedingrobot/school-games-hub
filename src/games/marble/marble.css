@@ -30,6 +30,9 @@
 .marble-picker__bar p {
   margin: 0;
 }
+.marble-picker__runs {
+  font-weight: 800;
+}
 .marble-ghost {
   display: flex;
   flex-wrap: wrap;
@@ -514,3 +517,279 @@
     transform: none;
   }
 }
+
+/* ---- Full window (James, 18 Nov 2026: like Star Trader; docs/FULL-WINDOW.md) ----
+   The game is one layer over the whole window, the hub's bar included. The picker sits on a big course painting in a
+   centred column; a run's track fills the window, with the clock on top and the buttons along the foot. */
+.mr-window {
+  --mr-pad: 18px;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  background: #0b1220;
+}
+.mr-window::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(2, 6, 23, 0.25) 0%, rgba(2, 6, 23, 0.55) 55%, rgba(2, 6, 23, 0.8) 100%),
+    var(--mr-art, linear-gradient(160deg, #0e7490, #7c3aed)) center 60% / cover no-repeat;
+}
+.mr-window { isolation: isolate; }
+.mr-window > .marble-picker,
+.mr-window > .loading {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 14px var(--mr-pad) 32px;
+}
+.mr-window > .loading { color: #fff; }
+.marble-picker__top h2 {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.6);
+}
+.marble-picker__heading,
+.marble-howto-screen > h2 {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+.marble-picker__tools,
+.mr-hubbtns {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.mr-glass {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+.mr-glass:hover { background: rgba(15, 23, 42, 0.75); }
+.mr-glass:focus-visible { outline: 3px solid #fde047; outline-offset: 2px; }
+.marble-courses { grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+
+/* A run: the track is the whole window. */
+.mr-window > .marble-run {
+  --mr-top: 62px;
+  --mr-foot: 72px;
+  position: relative;
+  display: block;
+  max-width: none;
+  height: 100dvh;
+  margin: 0;
+}
+.mr-window .marble-stage {
+  position: absolute;
+  inset: 0;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+}
+.mr-window .marble-hud {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  width: min(100% - 16px, 1100px);
+  min-height: 46px;
+  box-sizing: border-box;
+  background: rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  pointer-events: none;
+}
+.mr-window .marble-hud__flame { color: #fca5a5; }
+.mr-window .marble-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  padding: 8px 12px;
+  background: linear-gradient(0deg, rgba(2, 6, 23, 0.7), rgba(2, 6, 23, 0));
+  pointer-events: none;
+}
+.mr-window .marble-bar > * { pointer-events: auto; }
+.mr-window .marble-bar__help { text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); }
+/* Things inside the stage clear the clock bar and the button row. */
+.mr-window .marble-gate { top: var(--mr-top); }
+.mr-window .marble-toast,
+.mr-window .marble-stick { bottom: calc(var(--mr-foot) + 10px); }
+.mr-window .marble-overlay { padding: var(--mr-top) 16px var(--mr-foot); }
+
+@media (max-width: 760px) {
+  .mr-window { --mr-pad: 10px; }
+  .mr-window > .marble-run { --mr-top: 96px; --mr-foot: 136px; }
+  .mr-window .marble-bar__help { display: none; }
+}
+
+/* ---- Celebrations (Nov 2026): pops while rolling, and a party on the finish panel. Visual only. ----
+   Nothing flashes faster than about twice a second, and prefers-reduced-motion turns the movement and colour cycling off. */
+.marble-pops {
+  position: absolute;
+  top: calc(var(--mr-top, 16px) + 8px);
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+.marble-pop {
+  padding: 6px 18px;
+  border-radius: 999px;
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: clamp(1.1rem, 3.4vw, 1.9rem);
+  color: #fff;
+  text-shadow: 0 2px 0 rgba(15, 23, 42, 0.45);
+  background: linear-gradient(90deg, #f97316, #ec4899);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.35);
+  pointer-events: none;
+  animation: marble-pop-in 1.15s ease-out forwards;
+}
+.marble-pop--check { background: linear-gradient(90deg, #facc15, #f97316); font-size: clamp(1.4rem, 4.6vw, 2.4rem); }
+.marble-pop--gem { background: linear-gradient(90deg, #06b6d4, #8b5cf6); }
+.marble-pop--nice { background: linear-gradient(90deg, #22c55e, #3b82f6, #a855f7); background-size: 200% 100%; animation: marble-pop-in 1.15s ease-out forwards, marble-rainbow-shift 1.1s linear 1; }
+.marble-pop--air { background: linear-gradient(90deg, #0ea5e9, #6366f1); }
+.marble-pop--roll { background: linear-gradient(90deg, #ef4444, #f59e0b); }
+.marble-pop--oops { background: rgba(71, 85, 105, 0.85); font-size: clamp(0.95rem, 2.6vw, 1.3rem); }
+@keyframes marble-pop-in {
+  0% { opacity: 0; transform: translateY(10px) scale(0.4); }
+  18% { opacity: 1; transform: translateY(0) scale(1.18); }
+  32% { transform: scale(0.96); }
+  45% { transform: scale(1); }
+  78% { opacity: 1; transform: translateY(-4px) scale(1); }
+  100% { opacity: 0; transform: translateY(-14px) scale(1); }
+}
+@keyframes marble-rainbow-shift {
+  from { background-position: 0 0; }
+  to { background-position: 200% 0; }
+}
+
+/* A soft one-off wash when the finish line is crossed: white, then rainbow, then gone (about 1.6 s, no strobe). */
+.marble-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.9), rgba(250, 204, 21, 0.5), rgba(236, 72, 153, 0.45), rgba(59, 130, 246, 0.45), rgba(34, 197, 94, 0.4));
+  background-size: 300% 300%;
+  opacity: 0;
+  animation: marble-flash 1.6s ease-out 1;
+}
+@keyframes marble-flash {
+  0% { opacity: 0.85; background-position: 0 0; }
+  100% { opacity: 0; background-position: 100% 100%; }
+}
+
+.marble-overlay--party { overflow: hidden; }
+.marble-overlay--party > *:not(.marble-confetti) { position: relative; z-index: 1; }
+.marble-confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.marble-confetti__bit {
+  position: absolute;
+  top: -16px;
+  width: 9px;
+  height: 14px;
+  opacity: 0;
+  animation: marble-confetti-fall 3s linear infinite;
+  animation-iteration-count: 2;
+}
+.marble-confetti__bit--round { width: 10px; height: 10px; border-radius: 50%; }
+@keyframes marble-confetti-fall {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0); }
+  100% { opacity: 1; transform: translate(var(--drift, 0), 110vh) rotate(var(--spin, 540deg)); }
+}
+
+.marble-overlay__big--rainbow {
+  animation: marble-title-in 0.8s cubic-bezier(0.2, 1.6, 0.4, 1) both, marble-title-colour 2.4s linear 0.8s infinite;
+}
+@keyframes marble-title-in {
+  0% { opacity: 0; transform: scale(0.2) rotate(-8deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+@keyframes marble-title-colour {
+  0% { color: #fff; text-shadow: 0 0 14px #f97316; }
+  25% { color: #fde047; text-shadow: 0 0 14px #ec4899; }
+  50% { color: #86efac; text-shadow: 0 0 14px #3b82f6; }
+  75% { color: #93c5fd; text-shadow: 0 0 14px #a855f7; }
+  100% { color: #fff; text-shadow: 0 0 14px #f97316; }
+}
+
+.marble-stars { display: flex; gap: 6px; justify-content: center; font-size: 2.4rem; line-height: 1; }
+.marble-star { color: rgba(255, 255, 255, 0.25); }
+.marble-star--on { color: #facc15; text-shadow: 0 0 12px rgba(250, 204, 21, 0.9); opacity: 0; animation: marble-star-pop 0.5s cubic-bezier(0.2, 1.8, 0.4, 1) forwards; }
+@keyframes marble-star-pop {
+  0% { opacity: 0; transform: scale(0) rotate(-90deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+.marble-medal { font-size: 1.6rem; }
+.marble-medal__stamp {
+  display: inline-block;
+  font-size: 3.4rem;
+  filter: drop-shadow(0 0 10px var(--glow, #facc15));
+  animation: marble-stamp 0.9s ease-out 0.3s both, marble-shine 1.8s ease-in-out 1.3s infinite;
+}
+@keyframes marble-stamp {
+  0% { opacity: 0; transform: scale(3) rotate(-12deg); }
+  50% { opacity: 1; transform: scale(0.9) rotate(5deg); }
+  70% { transform: scale(1.08) rotate(-4deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+@keyframes marble-shine {
+  0%, 100% { filter: drop-shadow(0 0 8px var(--glow, #facc15)); }
+  50% { filter: drop-shadow(0 0 22px var(--glow, #facc15)) brightness(1.2); }
+}
+
+.marble-pb, .marble-ghostwin { animation: marble-pulse 1.2s ease-in-out infinite; }
+.marble-pb { font-size: 1.25rem; text-shadow: 0 0 12px rgba(250, 204, 21, 0.8); }
+.marble-ghostwin { color: #a5f3fc; text-shadow: 0 0 12px rgba(103, 232, 249, 0.8); }
+@keyframes marble-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+
+/* Reduced motion: no bouncing, spinning, falling or colour cycling; things just fade in. */
+@media (prefers-reduced-motion: reduce) {
+  .marble-pop, .marble-pop--nice { animation: marble-fade-out 1.15s ease-out forwards; }
+  .marble-flash { display: none; }
+  .marble-confetti { display: none; }
+  .marble-overlay__big--rainbow, .marble-medal__stamp, .marble-pb, .marble-ghostwin { animation: none; }
+  .marble-star--on { animation: marble-fade-in 0.4s ease-out forwards; }
+}
+@keyframes marble-fade-out {
+  0% { opacity: 0; }
+  15%, 75% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes marble-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Key badges (docs/plans/game-keys/PLAN.md): the number badge sits in the button's corner. */
+.marble-course .marble-course__buttons .button--play { position: relative; }

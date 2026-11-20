@@ -172,7 +172,10 @@ export function stuckFlags(pupil: FlagInput, rules: FlagRules): Flag[] {
   const last = pupil.tracks.reduce<string | null>((a, t) => (t.lastDay && (!a || t.lastDay > a) ? t.lastDay : a), null);
   if (last && played >= rules.quietChallenges) {
     const quiet = schoolDaysSince(last, pupil.today);
-    if (quiet >= rules.quietSchoolDays) flags.push({ kind: 'quiet', reason: `Not played for ${quiet} school days`, quiet: true });
+    // Name the games: the pupil may be playing other maths every day, so a bare "Not played" would be wrong.
+    const names = pupil.tracks.filter((t) => t.lastDay).map((t) => t.label);
+    const games = names.length > 1 ? `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}` : names[0];
+    if (quiet >= rules.quietSchoolDays) flags.push({ kind: 'quiet', reason: `No ${games} for ${quiet} school days`, quiet: true });
   }
   return flags;
 }

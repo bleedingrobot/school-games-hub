@@ -15,6 +15,7 @@ import type { ClockMode } from '../../shared/marble/engine';
 import { doorsFromMask, type StartReply } from '../../shared/marble/maths';
 import type { MarbleRunReport } from '../../shared/marble/save';
 import type { Bests } from '../games/marble/bests';
+import { MARBLE_RUNS_A_DAY } from '../../shared/marble/config';
 
 const queueKey = (player: string) => `sgh-marble-queue:${player}`;
 /** The most runs waiting to be sent (the newest are kept). */
@@ -74,8 +75,10 @@ async function post(body: unknown, keepalive = false, timeoutMs = 0): Promise<Re
  * Starts a run: a stamped seed, and (if the teacher allows maths and the student wants it) the run's questions and open doors.
  * Null if the server can't be reached; the run can still be played without maths, it just won't be saved.
  */
-export async function startRun(course: string, mode: ClockMode, maths = false): Promise<StartReply | null> {
+export async function startRun(course: string, mode: ClockMode, maths = false): Promise<StartReply | 'done-today' | null> {
   const response = await post({ action: 'start', course, mode, maths }, false, START_TIMEOUT_MS);
+  // All the day's runs are used up (MARBLE_RUNS_A_DAY).
+  if (response?.status === 409) return 'done-today';
   if (!response?.ok) return null;
   try {
     const body = (await response.json()) as Partial<StartReply>;
@@ -91,9 +94,26 @@ export async function startRun(course: string, mode: ClockMode, maths = false): 
       rescues: Array.isArray(body.rescues) ? body.rescues : [],
       gems: Array.isArray(body.gems) ? body.gems : [],
       rightGems: Array.isArray(body.rightGems) ? body.rightGems.filter((d): d is number => Number.isInteger(d)) : [],
+      ...(body.runsLeft === null || typeof body.runsLeft === 'number' ? { runsLeft: body.runsLeft } : {}),
     };
   } catch {
     return null;
+  }
+}
+
+/**
+ * Runs left today (10 a day): a number, null on an "Unlimited today" day, or undefined if it can't be read (the server
+ * still checks at the start of every run).
+ */
+export async function fetchMarbleRunsLeft(): Promise<number | null | undefined> {
+  try {
+    const { data, error } = await supabase.rpc('my_moves_left');
+    const raw = data as { unlimited?: unknown; marble?: { runs?: unknown } } | null;
+    if (error || typeof raw?.marble?.runs !== 'number') return undefined;
+    if (Array.isArray(raw.unlimited) && raw.unlimited.includes('marble')) return null;
+    return Math.max(0, MARBLE_RUNS_A_DAY - raw.marble.runs);
+  } catch {
+    return undefined;
   }
 }
 

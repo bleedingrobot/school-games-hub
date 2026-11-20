@@ -32,6 +32,10 @@ export interface Achievement {
   game: string;
   name: string;
   emoji: string;
+  /** One plain sentence: how to earn it (achievement_types.how). Missing only while a new game's words are being written. */
+  how?: string | null;
+  /** 1 easy, 2 medium, 3 hard: the bronze, silver or gold frame. */
+  tier?: 1 | 2 | 3;
   measure: string;
   goal: number;
   progress: number;

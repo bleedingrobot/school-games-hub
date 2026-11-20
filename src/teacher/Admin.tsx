@@ -670,7 +670,7 @@ function TeacherRow({
 // ---------------------------------------------------------------- New class settings
 
 /** Every column the defaults tab shows, so "Copy to every class" copies exactly what is on the page. */
-const defaultColumns = () => [...ALL_SWITCH_COLUMNS, 'multiplayer_enabled', 'space_reactions_enabled', 'question_skips', ...(trainingOn() ? ['training_first'] : [])];
+const defaultColumns = () => [...ALL_SWITCH_COLUMNS, 'multiplayer_enabled', 'play_other_classes', 'space_reactions_enabled', 'question_skips', ...(trainingOn() ? ['training_first'] : [])];
 const NO_LINKS = new Map<string, HTMLAnchorElement>();
 
 /** The school's defaults row: the same Games table and Lesson controls, for the row a new class copies. */

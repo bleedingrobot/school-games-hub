@@ -599,9 +599,9 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
           ? done(state, { type: 'raidStart', resumed: true, right: state.fight.raid.right, breach: state.fight.raid.breach, tower: state.fight.raid.tower }, false)
           : refuse('fight-open', 'You are in the middle of a fight. Finish it first!');
       }
-      if (!ctx.raidsOn) return refuse('off', 'Your teacher has switched raids on classmates off.');
+      if (!ctx.raidsOn) return refuse('off', 'Your teacher has switched Village Raids off.');
       const target = ctx.target;
-      if (!target || target.id === ctx.self) return refuse('target', 'That clan is not in your class.');
+      if (!target || target.id === ctx.self) return refuse('target', "That clan can't be raided right now.");
       const e = empireOf(clan);
       if (raidsLeft(e) <= 0) return refuse('limit', `That's all ${CONFIG.classRaids.perDay} raids for today. Come back tomorrow!`);
       if (e.raidedToday.includes(target.id)) return refuse('same', 'You already raided that clan today. Pick another one!');

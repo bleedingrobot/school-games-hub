@@ -8,6 +8,7 @@ import type { Clan } from '../../../shared/clans/types';
 import type { Draft } from '../../../shared/clans/create';
 import { YEAR_BANDS, type YearBand } from '../../../shared/maths/practical';
 import { CONFIG } from '../../../shared/clans/config';
+import { useGameKeys } from '../../kit';
 import { Creator } from './Creator';
 import { Fight, type BestNote, type CryChecked } from './Fight';
 import { MemberCard } from './MemberCard';
@@ -22,6 +23,7 @@ import { VillageRaids, type RaidGo } from './VillageRaids';
 import { BannerRain } from './RaidStage';
 import { DuelArena, DuelAskBanner } from './Duels';
 import { useDuels } from './useDuels';
+import { useAskFromHub, useOpenFromHub } from '../../multiplayer/useAskFromHub';
 import { pretendDuelApi } from './pretendDuels';
 import type { DuelApi } from '../../data/clanDuel';
 import { News } from './News';
@@ -33,7 +35,9 @@ import { Training } from './Training';
 import { Scoreboard } from './Scoreboard';
 import type { HallRow } from '../../data/clans';
 import { HowToPlay } from './HowToPlay';
-import { Achievements, Celebration, VillageDone } from './Achievements';
+import { Achievements, VillageDone } from './Achievements';
+import { AchievementPop } from '../../achievements/AchievementPop';
+import { pretendNew } from '../../data/newAchievements';
 import { SeasonRoad } from './SeasonRoad';
 import { TownMap, hasTownMap, type TownPlace } from './TownMap';
 import { empireOf, villageComplete } from '../../../shared/clans/empire';
@@ -42,9 +46,15 @@ import { ACHIEVEMENTS, fameFor, type AchievementDef } from '../../../shared/clan
 import { earn, finishFight, newSession, skipDay, type FightSummary, type Session } from './session';
 import { sessionFrom, type ClanServer, type ServerReply } from './remote';
 import { bannerArt, questArt, sceneArt, type SceneId } from './art';
+import { HubButtons } from './HubButtons';
+import { StoryBook } from '../../kit/StoryBook';
+import { StoryShelf } from '../../kit/StoryShelf';
+import { useStories, useStoryOnce } from '../../kit/useStories';
+import { monsterOf } from '../../../shared/clans/monster';
+import { OPENING, arrivalStory, clanShelf } from './stories';
 import './clans.css';
 
-type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'myvillage' | 'raid' | 'quest' | 'news' | 'classraid' | 'duels' | 'scoreboard' | 'achievements' | 'howto' | 'monster';
+type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'myvillage' | 'raid' | 'quest' | 'news' | 'classraid' | 'duels' | 'scoreboard' | 'achievements' | 'howto' | 'monster' | 'stories';
 
 /** The painting across the top of each screen. Home has the town map instead (TownMap.tsx). The fight has none across the top (its mine zone is painted behind the
  * monsters, to keep the fight on one screen); its results get one from how it went (`afterFight`). */
@@ -120,6 +130,16 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const pretendDuels = useMemo(() => (server ? undefined : pretendDuelApi(() => sessionRef.current?.clan ?? null, { askMe: true })), [server]);
   const duels = useDuels(session ? duelApi ?? pretendDuels : undefined);
   const [screen, setScreen] = useState<Screen>('home');
+  // "Yes" on the hub's challenge banner: say yes here as the banner's Duel! would, and open the Duel Arena.
+  useAskFromHub(duels.asks.map((a) => a.duel), (id) => {
+    void duels.send({ action: 'duel-answer', duel: id, accept: true });
+    setScreen('duels');
+  });
+  // From the Lobby: the Duel Arena (after a challenge sent there, or "Carry on"), or the Village Raid screen.
+  useOpenFromHub(!!session, (what) => {
+    if (what === 'live') setScreen('duels');
+    else if (what === 'raid') setScreen('classraid');
+  });
   const [boss, setBoss] = useState(false);
   const [summary, setSummary] = useState<FightSummary | null>(null);
   const [loading, setLoading] = useState<'loading' | 'failed' | 'off' | null>(server ? 'loading' : null);
@@ -140,7 +160,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const outcome = useRef<FightSummary | null>(null);
   const [serverSeed, setServerSeed] = useState(seed);
   const [notice, setNotice] = useState('');
-  /** Achievements just earned, shown with a small celebration. The first clan the screen sees is not celebrated: those were earned before. */
+  /** Achievements just earned: a new list starts the shared AchievementPop. The first clan the screen sees is not celebrated: those were earned before. */
   const [celebrate, setCelebrate] = useState<AchievementDef[]>([]);
   const knownAchievements = useRef<string[] | null>(null);
   /** Was the village complete the last time we looked? (null until the first clan is seen: that one is not celebrated.) */
@@ -148,12 +168,22 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const [villageDone, setVillageDone] = useState(false);
   /** The reply said a new season has just begun. */
   const [newSeasonNotice, setNewSeasonNotice] = useState(false);
+  /** The gold in a quest's Game Coins pouch, opened when the clan loaded (shown once). */
+  const [pouchGold, setPouchGold] = useState(0);
+  // Stories (docs/plans/stories/PLAN.md): the opening first, then the season monster's arrival when its week comes.
+  const stories = useStories();
+  const opening = useStoryOnce(OPENING.id, loading === null);
+  const monsterKind = monsterOf(session?.clock && session.clock.number > 0 ? session.clock.number : (session?.season ?? 1));
+  const monsterHere = !!session && monsterWeek(session.clock);
+  const arrival = useStoryOnce(arrivalStory(monsterKind).id, !!server && monsterHere && !opening.open && screen === 'home');
   /** The fame the last fight earned (the server's word), for the results screen. */
   const fameEarned = useRef(0);
   /** The last fight's best hit, for the results screen. */
   const bestNote = useRef<BestNote | undefined>(undefined);
   /** When a new screen opens, focus its heading so a keyboard or screen-reader user starts at the top of it (not on a button that is gone). */
   const root = useRef<HTMLDivElement>(null);
+  // The Mines, the fight and the results page have their own keys (Enter, B, C, A, S, G...), so these stay off there.
+  useGameKeys(root, screen !== 'mines' && screen !== 'fight' && screen !== 'results');
   const firstScreen = useRef(true);
   useEffect(() => {
     if (firstScreen.current) {
@@ -202,6 +232,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const take = (reply: ServerReply) => {
     setServerSeed(reply.seed);
     if (reply.newSeason) setNewSeasonNotice(true);
+    if (reply.ok && reply.pouch) setPouchGold(reply.pouch.amount);
     if (waiting.current === 0) {
       setSession((previous) => (reply.state ? sessionFrom(reply.state, previous) : previous));
       // A fight is open on the server (this was opened after a refresh, or on another Chromebook): go straight back to it.
@@ -475,25 +506,38 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const onPicture = loading === null && screen !== 'fight' && (session && (screen === 'quest' || screen === 'results' || screen === 'myvillage' || screen === 'mines') ? true : session && screen === 'home' ? !repicking && hasTownMap() : !!scene && !!sceneArt(scene).wide);
   const top = (over: boolean) => (
     <header className={over ? 'cq-top cq-top--over' : 'cq-top'}>
-      <h1>Clan Quest</h1>
+      <div className="cq-top__title"><HubButtons /><h1>Clan Quest</h1></div>
       <span className="cq-soft">{session ? `${session.clan.gold} gold · ${session.clan.followers} followers · ${session.fame ?? 0} fame` : 'Test version: nothing is saved'}</span>
     </header>
   );
 
   return (
+    // The whole window, over the hub's bar, like Star Trader and Dragon Maths (James, 18 Nov 2026).
+    <div className="cq-window">
     <div className="cq" ref={root}>
       {backdrop && <div className="cq-backdrop" style={{ '--cq-backdrop': `url("${backdrop}")` } as React.CSSProperties} />}
       {/* In a fight the picture gets the room: no title, gold, followers or fame (the fight names itself for screen readers). */}
       {screen !== 'fight' && !onPicture && top(false)}
       {/* The quest is one painted stage of its own (Quest.tsx), so no painting across the top. */}
       {screen !== 'quest' && screen !== 'results' && scene && <Scene key={scene} name={scene} art={sceneArt(scene)} top={onPicture ? top(true) : undefined} />}
-      <Celebration fresh={celebrate} onClose={() => setCelebrate([])} />
+      {/* The shared earn moment: the server's new Clan Quest achievements (on the test page, the ones just seen here). */}
+      <AchievementPop games={['clan-quest']} watch={celebrate.length ? celebrate : null} off={!server} pretend={pretendNew('clan-quest', celebrate)} />
       {villageDone && <VillageDone onClose={() => setVillageDone(false)} />}
+      {opening.open && <StoryBook story={OPENING} blanks={{ clan: session?.clan.name ?? 'your clan' }} endLabel="Let's go!" onClose={opening.close} className="cq-storybook" />}
+      {!opening.open && arrival.open && session && (
+        <StoryBook story={arrivalStory(monsterKind)} blanks={{ clan: session.clan.name }} endLabel="To the walls!" onClose={arrival.close} className="cq-storybook" />
+      )}
       <TrophyWonLine games={['clan-quest']} watch={monsterDone ?? (villageDone ? 'village' : null)} off={!server} />
       {newSeasonNotice && (
         <div className="cq-celebrate" role="status">
           <p>A new season has begun! Your clan starts fresh. Your badges and the Hall of Legends stay forever.</p>
-          <button type="button" className="cq-btn" onClick={() => setNewSeasonNotice(false)}>OK</button>
+          <button data-key="enter" type="button" className="cq-btn" onClick={() => setNewSeasonNotice(false)}>OK</button>
+        </div>
+      )}
+      {pouchGold > 0 && (
+        <div className="cq-celebrate" role="status">
+          <p>💰 Quest pouch: +{pouchGold.toLocaleString()} gold!</p>
+          <button data-key="enter" type="button" className="cq-btn" onClick={() => setPouchGold(0)}>OK</button>
         </div>
       )}
       {notice && <p className="cq-note" role="alert">{notice}</p>}
@@ -502,7 +546,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
       ) : loading === 'failed' ? (
         <div className="cq-panel" role="alert">
           <p>We couldn't reach your clan just now.</p>
-          <button type="button" className="cq-btn cq-btn--hot" onClick={open}>Try again</button>
+          <button data-key="enter" type="button" className="cq-btn cq-btn--hot" onClick={open}>Try again</button>
         </div>
       ) : loading === 'off' ? (
         <p className="cq-panel" role="status">Clan Quest isn't switched on yet. Ask your teacher when it will be ready!</p>
@@ -549,7 +593,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
                 {/* The town map above is the way to every place; this list is only for when the map can't be shown. */}
                 {!hasTownMap() && (
                   <>
-                  <button type="button" className="cq-btn cq-btn--hot" onClick={() => setScreen('mines')}>Go to the Mines</button>
+                  <button data-key="enter" type="button" className="cq-btn cq-btn--hot" onClick={() => setScreen('mines')}>Go to the Mines</button>
                   {(monsterWeek(session.clock) || !server) && (
                     <button type="button" className="cq-btn cq-btn--hot" onClick={() => setScreen('monster')}>{monsterWeek(session.clock) ? 'The Monster' : 'The Monster (practice)'}</button>
                   )}
@@ -563,6 +607,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
                   </>
                 )}
                 <button type="button" className="cq-btn" onClick={() => setScreen('howto')}>How to play</button>
+                <button type="button" className="cq-btn" onClick={() => setScreen('stories')}>📖 Stories</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('achievements')}>Achievements ({(session.achievements ?? []).length} of {ACHIEVEMENTS.length})</button>
               </div>
             </section>
@@ -580,6 +625,13 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {screen === 'raid' && <Raid session={session} onChange={change} onBack={() => setScreen('myvillage')} />}
           {screen === 'news' && <News session={session} onBack={() => setScreen('home')} />}
           {screen === 'scoreboard' && <Scoreboard session={session} load={board} hall={hall} onBack={() => setScreen('home')} />}
+          {screen === 'stories' && (
+            <section className="cq-panel" aria-label="Stories">
+              <h2>📖 Stories</h2>
+              <StoryShelf stories={clanShelf(monsterKind, monsterHere, stories.hasSeen)} book={{ blanks: { clan: session.clan.name }, className: 'cq-storybook' }} />
+              <button data-key="esc" type="button" className="cq-btn" onClick={() => setScreen('home')}>Back</button>
+            </section>
+          )}
           {screen === 'howto' && <HowToPlay fightsPerDay={session.fightsPerDay} onBack={() => setScreen('home')} />}
           {screen === 'achievements' && <Achievements session={session} onBack={() => setScreen('home')} />}
           {screen === 'classraid' && <VillageRaids session={session} ask={ask} onStart={startRaid} onFight={enterMonsterFight} onBack={() => setScreen('myvillage')} onDuels={() => setScreen('duels')} />}
@@ -613,6 +665,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {!server && <SettingsStrip session={session} onChange={setSession} open={screen === 'home'} />}
         </>
       )}
+    </div>
     </div>
   );
 }

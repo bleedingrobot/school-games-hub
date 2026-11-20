@@ -1,0 +1,205 @@
+{
+  "game": "diamond-rare",
+  "filename_prefix": "diamond-rare/img",
+  "style": "jewel",
+  "seed_by": "name",
+  "styles": {
+    "jewel": "Highly detailed fantasy jewel illustration, intricate facets catching the light, brilliant sparkles and starry glints, rich saturated jewel colours, a magical inner glow, polished collectible game art, beautiful and precious, no text, no letters. "
+  },
+  "inbox": "~/dragon-art-inbox/diamond-rare",
+  "picks": "docs/diamond-rare-art/picks.json",
+  "art_dir": "src/games/diamond/art/paint",
+  "pictures": [
+    {
+      "name": "gem-moonstone",
+      "prompt": "A pearly crescent-moon shaped moonstone gem, milky silver-white with a soft blue shimmer glowing inside it, smooth polished curves, three tiny silver stars set along its inner edge. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around, suitable for children aged 8 to 12.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gems",
+      "file": "moonstone",
+      "max": 256
+    },
+    {
+      "name": "book-moonstone",
+      "prompt": "A pearly crescent-moon shaped moonstone gem, milky silver-white with a soft blue shimmer glowing inside it, smooth polished curves, three tiny silver stars set along its inner edge, large and glowing, resting on a deep crimson velvet cushion inside an ornate jewel-box niche framed with intricate gold filigree scrolls and tiny pearls, soft magical light behind it, sparkles drifting in the air, the whole gem in the middle.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "book",
+      "file": "moonstone",
+      "max": 320
+    },
+    {
+      "name": "gem-sunstone",
+      "prompt": "A golden-orange sunstone gem shaped like a little sun: a round faceted golden centre surrounded by twelve short pointed golden-orange crystal rays, glittering copper flecks inside. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around, suitable for children aged 8 to 12.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gems",
+      "file": "sunstone",
+      "max": 256
+    },
+    {
+      "name": "book-sunstone",
+      "prompt": "A golden-orange sunstone gem shaped like a little sun: a round faceted golden centre surrounded by twelve short pointed golden-orange crystal rays, glittering copper flecks inside, large and glowing, resting on a deep crimson velvet cushion inside an ornate jewel-box niche framed with intricate gold filigree scrolls and tiny pearls, soft magical light behind it, sparkles drifting in the air, the whole gem in the middle.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "book",
+      "file": "sunstone",
+      "max": 320
+    },
+    {
+      "name": "gem-frostCrystal",
+      "prompt": "An icy pale-blue crystal shaped like a six-pointed snowflake, clear glassy ice facets, delicate frost patterns etched inside each arm, tiny ice sparkles on its points. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around, suitable for children aged 8 to 12.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gems",
+      "file": "frostCrystal",
+      "max": 256
+    },
+    {
+      "name": "book-frostCrystal",
+      "prompt": "An icy pale-blue crystal shaped like a six-pointed snowflake, clear glassy ice facets, delicate frost patterns etched inside each arm, tiny ice sparkles on its points, large and glowing, resting on a deep crimson velvet cushion inside an ornate jewel-box niche framed with intricate gold filigree scrolls and tiny pearls, soft magical light behind it, sparkles drifting in the air, the whole gem in the middle.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "book",
+      "file": "frostCrystal",
+      "max": 320
+    },
+    {
+      "name": "gem-rainbowOpal",
+      "prompt": "A polished oval black opal bursting with bright flashes of every colour, red, orange, yellow, green, blue and violet patches swirling inside like coloured fire. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around, suitable for children aged 8 to 12.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gems",
+      "file": "rainbowOpal",
+      "max": 256
+    },
+    {
+      "name": "book-rainbowOpal",
+      "prompt": "A polished oval black opal bursting with bright flashes of every colour, red, orange, yellow, green, blue and violet patches swirling inside like coloured fire, large and glowing, resting on a deep crimson velvet cushion inside an ornate jewel-box niche framed with intricate gold filigree scrolls and tiny pearls, soft magical light behind it, sparkles drifting in the air, the whole gem in the middle.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "book",
+      "file": "rainbowOpal",
+      "max": 320
+    },
+    {
+      "name": "gem-dragonEye",
+      "prompt": "A glowing almond-shaped dragon eye gem, molten golden-amber with an emerald-green rim and a dark vertical slit pupil in the middle, tiny fiery veins, held in an ornate bronze mount of curling dragon scales. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around, suitable for children aged 8 to 12.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gems",
+      "file": "dragonEye",
+      "max": 256
+    },
+    {
+      "name": "book-dragonEye",
+      "prompt": "A glowing almond-shaped dragon eye gem, molten golden-amber with an emerald-green rim and a dark vertical slit pupil in the middle, tiny fiery veins, held in an ornate bronze mount of curling dragon scales, large and glowing, resting on a deep crimson velvet cushion inside an ornate jewel-box niche framed with intricate gold filigree scrolls and tiny pearls, soft magical light behind it, sparkles drifting in the air, the whole gem in the middle.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "book",
+      "file": "dragonEye",
+      "max": 320
+    },
+    {
+      "name": "gem-galaxyGem",
+      "prompt": "A perfect round crystal sphere gem holding a tiny galaxy inside: deep indigo and violet with a swirling pink and blue spiral nebula and hundreds of tiny white stars, glassy surface with a bright highlight. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around, suitable for children aged 8 to 12.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gems",
+      "file": "galaxyGem",
+      "max": 256
+    },
+    {
+      "name": "book-galaxyGem",
+      "prompt": "A perfect round crystal sphere gem holding a tiny galaxy inside: deep indigo and violet with a swirling pink and blue spiral nebula and hundreds of tiny white stars, glassy surface with a bright highlight, large and glowing, resting on a deep crimson velvet cushion inside an ornate jewel-box niche framed with intricate gold filigree scrolls and tiny pearls, soft magical light behind it, sparkles drifting in the air, the whole gem in the middle.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "book",
+      "file": "galaxyGem",
+      "max": 320
+    },
+    {
+      "name": "gem-phoenixGem",
+      "prompt": "A legendary rose gem: a single rose in full bloom carved from glowing crystal, layered translucent petals in deep rose-pink and ruby fading to soft gold at the tips, a faceted gem heart, a short gold stem with two small emerald crystal leaves, tiny pink and gold sparkles. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around, suitable for children aged 8 to 12.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gems",
+      "file": "phoenixGem",
+      "max": 256
+    },
+    {
+      "name": "book-phoenixGem",
+      "prompt": "A legendary rose gem: a single rose in full bloom carved from glowing crystal, layered translucent petals in deep rose-pink and ruby fading to soft gold at the tips, a faceted gem heart, a short gold stem with two small emerald crystal leaves, tiny pink and gold sparkles, large and glowing, resting on a deep crimson velvet cushion inside an ornate jewel-box niche framed with intricate gold filigree scrolls and tiny pearls, soft magical light behind it, sparkles drifting in the air, the whole gem in the middle.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "book",
+      "file": "phoenixGem",
+      "max": 320
+    },
+    {
+      "name": "cover",
+      "prompt": "An ornate closed magical treasure book seen from the front, thick deep purple leather cover covered in intricate raised gold filigree scrolls and swirls, gold corner guards, a large glowing faceted gem set in a golden starburst in the middle of the cover, smaller coloured gems around the edge, a golden clasp, glowing magical light. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around, suitable for children aged 8 to 12.",
+      "size": [
+        832,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "rare",
+      "file": "cover",
+      "max": 512
+    },
+    {
+      "name": "vault",
+      "prompt": "A magical underground treasure vault inside a sparkling crystal cave, glowing gems of every colour growing from the walls, ornate carved stone arches with gold filigree, soft beams of light, floating sparkles and glowing dust, warm golden and deep violet colours, the middle of the picture calm and darker so things can be shown on top, wide landscape.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "scene",
+      "folder": "rare",
+      "file": "vault"
+    }
+  ]
+}

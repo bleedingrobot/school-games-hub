@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { botRun } from '../../../shared/toonflap/bot';
-import { BREAK_AFTER_RUNS } from '../../../shared/toonflap/config';
+import { BREAK_AFTER_RUNS, DASHES_A_DAY, WINS_A_DAY } from '../../../shared/toonflap/config';
+import { nzDate } from '../../../shared/kit/dayArc';
 import { encodeFlaps } from '../../../shared/toonflap/engine';
 import { buildDashCourse, newDash, stepDash } from '../../../shared/toonflap/dash';
 import { emptyProgress } from '../../../shared/toonflap/collection';
@@ -112,6 +113,42 @@ it('follows the teacher’s switches, suggests a break after many runs, and only
 
   for (let i = 1; i < BREAK_AFTER_RUNS; i++) await send('pupil-a', { action: 'start', level: 'garden' });
   expect((await send('pupil-a', { action: 'start', level: 'garden' })).body.code).toBe('break');
+});
+
+it('allows 10 level wins and 2 Sky Dashes a day, and the teacher’s Unlimited today lifts both', async () => {
+  let settings: Settings = { enabled: true, maths: false, readTime: true };
+  const { send, services, wait } = setup({ settings: () => settings });
+  const had = emptyProgress();
+  had.levels.donut = { finishes: 1, best: null, bestPlain: null, medal: 'bronze' };
+  services.data.players['pupil-e'] = { progress: had, picks: { flyer: 'fantail', trail: null }, version: 1 };
+  expect((await send('pupil-e', { action: 'load' })).body).toMatchObject({ winsLeft: WINS_A_DAY, dashesLeft: DASHES_A_DAY });
+
+  // Nine wins today already (made up), then a real tenth.
+  const day = nzDate(new Date(services.now()));
+  for (let i = 0; i < WINS_A_DAY - 1; i++) {
+    services.data.runs.push({ player: 'pupil-e', seed: `90000${i}`, day, finishedDay: day, run: { level: 'garden', gentle: false, maths: false, questions: [], labels: [], marks: {}, open: false, startedAt: 0 } });
+  }
+  const tenth = (await send('pupil-e', { action: 'start', level: 'garden' })).body;
+  expect(tenth.winsLeft).toBe(1);
+  wait(40);
+  expect((await send('pupil-e', { action: 'finish', seed: tenth.seed, flaps: flight })).body.valid).toBe(true);
+  expect((await send('pupil-e', { action: 'start', level: 'garden' })).body.code).toBe('done-today');
+
+  // Sky Dash: two goes (started, finished or not), then no more today. Wins don't use up dashes.
+  expect((await send('pupil-e', { action: 'dash' })).body.dashesLeft).toBe(1);
+  expect((await send('pupil-e', { action: 'dash' })).body.dashesLeft).toBe(0);
+  expect((await send('pupil-e', { action: 'dash' })).body.code).toBe('done-today');
+  expect((await send('pupil-e', { action: 'load' })).body).toMatchObject({ winsLeft: 0, dashesLeft: 0 });
+
+  settings = { ...settings, unlimited: true };
+  expect((await send('pupil-e', { action: 'load' })).body).toMatchObject({ winsLeft: null, dashesLeft: null });
+  expect((await send('pupil-e', { action: 'start', level: 'garden' })).status).toBe(200);
+  expect((await send('pupil-e', { action: 'dash' })).status).toBe(200);
+
+  // Tomorrow is a normal day again.
+  settings = { ...settings, unlimited: false };
+  wait(24 * 60 * 60);
+  expect((await send('pupil-e', { action: 'load' })).body).toMatchObject({ winsLeft: WINS_A_DAY, dashesLeft: DASHES_A_DAY });
 });
 
 describe('the deployable file', () => {

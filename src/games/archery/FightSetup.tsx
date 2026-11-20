@@ -12,6 +12,7 @@ import { WORLD_IDS, type BowId, type ItemId, type PlayerSetup, type ShieldId, ty
 import type { ArmoryState } from '../../data/archery';
 import { ItemIcon } from './ItemIcon';
 import { LEVEL_NAMES, WORLD_HINTS, WORLD_NAMES } from './text';
+import { KeyBadge } from '../../kit';
 
 const LEVEL_HINTS: Record<BotLevel, string> = {
   easy: 'Guesses, then walks its shots towards you. Ignores the wind.',
@@ -43,18 +44,19 @@ export function PickScreen({ world, level, onWorld, onLevel, onNext, onBack, onC
     <section className="ar-page" aria-labelledby="ar-pick-title">
       <div className="ar-page__head">
         <h2 id="ar-pick-title" ref={heading} tabIndex={-1}>Pick your fight</h2>
-        <button type="button" className="button button--light ar-btn" onClick={onBack}>Back</button>
+        <button type="button" className="button button--light ar-btn" data-key="esc" onClick={onBack}>Back</button>
       </div>
       <h3>1. Where?</h3>
       <div className="ar-choices">
-        {WORLD_IDS.map((w) => (
-          <button key={w} type="button" className={`button button--light ar-btn ar-choice ar-choice--${w}`} aria-pressed={world === w} onClick={() => onWorld(w)}>
+        {WORLD_IDS.map((w, i) => (
+          <button key={w} type="button" className={`button button--light ar-btn ar-choice ar-choice--${w}`} data-key={String(i + 1)} aria-pressed={world === w} onClick={() => onWorld(w)}>
+            <KeyBadge k={String(i + 1)} />
             <b>{WORLD_NAMES[w]}</b>
             <span>{WORLD_HINTS[w]}</span>
           </button>
         ))}
       </div>
-      <h3>2. Against which bot?{onClassmate && ' Or a classmate?'}</h3>
+      <h3>2. Against which bot?{onClassmate && ' Or a friend?'}</h3>
       <div className="ar-choices ar-choices--three">
         {BOT_LEVELS.map((l) => (
           <button key={l} type="button" className="button button--light ar-btn ar-choice" aria-pressed={level === l} onClick={() => onLevel(l)}>
@@ -66,11 +68,11 @@ export function PickScreen({ world, level, onWorld, onLevel, onNext, onBack, onC
       </div>
       {onClassmate && (
         <p className="ar-page__alt">
-          <button type="button" className="button button--light ar-btn" onClick={onClassmate}>Against a classmate instead</button>
+          <button type="button" className="button button--light ar-btn" onClick={onClassmate}>Against a friend instead</button>
         </p>
       )}
       <p className="ar-page__go">
-        <button type="button" className="button button--play ar-btn ar-btn--big" onClick={onNext}>Next: pack your quiver</button>
+        <button type="button" className="button button--play ar-btn ar-btn--big" data-key="enter" onClick={onNext}>Next: pack your quiver</button>
       </p>
     </section>
   );
@@ -138,7 +140,7 @@ export function PackScreen({ state, world, level, vs, note, initial, busy, probl
     <section className="ar-page" aria-labelledby="ar-pack-title">
       <div className="ar-page__head">
         <h2 id="ar-pack-title" ref={heading} tabIndex={-1}>Pack your quiver</h2>
-        <button type="button" className="button button--light ar-btn" onClick={onBack}>{backLabel}</button>
+        <button type="button" className="button button--light ar-btn" data-key="esc" onClick={onBack}>{backLabel}</button>
       </div>
       <p>{WORLD_NAMES[world]}, against {vs ?? (level ? `${BOT_NAMES[level]} (${LEVEL_NAMES[level]})` : 'a bot')}. Plain Arrows are free and never run out. Anything you pack but don't use comes back after the fight.</p>
       {note && <p className="ar-help" role="status">{note}</p>}
@@ -176,7 +178,7 @@ export function PackScreen({ state, world, level, vs, note, initial, busy, probl
       </div>
       {problem && <p className="ar-problem" role="alert">{problem}</p>}
       <p className="ar-page__go">
-        <button type="button" className="button button--play ar-btn ar-btn--big" disabled={busy} onClick={() => onFight(pack)}>{busy ? 'Starting…' : 'Fight!'}</button>
+        <button type="button" className="button button--play ar-btn ar-btn--big" data-key="enter" disabled={busy} onClick={() => onFight(pack)}>{busy ? 'Starting…' : 'Fight!'}</button>
       </p>
     </section>
   );

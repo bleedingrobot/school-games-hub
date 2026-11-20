@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router';
 import { isDaily, questKind } from '../../shared/quests/kinds';
+import { questReward } from '../../shared/quests/rewards';
 import { questWeek, weekday } from '../../shared/quests/week';
 import type { MyQuest } from '../data/quests';
 import type { MovesByGame } from '../data/movesLeft';
@@ -85,6 +86,7 @@ export function QuestBar({ quest: mine, moves }: { quest: MyQuest | null | undef
   const fill = Math.min(1, count / target);
   // This win reached a new metal of the Questing Hero trophy (the server gives it at 5, 10 and 20 quests).
   const metal = TROPHY_AT[mine.questsDone];
+  const reward = questReward(mine.quest.reward);
   const trophy = metal ? paintedTrophy('quest-hero', metal) : undefined;
   let litOrder = 0;
   return (
@@ -106,6 +108,11 @@ export function QuestBar({ quest: mine, moves }: { quest: MyQuest | null | undef
         <h2 className="qbar__title">
           {kind.game}: <strong>{kind.name}</strong>
         </h2>
+        {reward && (
+          <span className="qbar__reward" title={reward.what}>
+            🎁 {reward.emoji} {reward.name}
+          </span>
+        )}
         {mine.classWon > 0 && (
           <span className="qbar__class" title="Classmates who have finished this quest">
             🏅 {plural(mine.classWon, 'hero', 'heroes')} finished
@@ -143,6 +150,11 @@ export function QuestBar({ quest: mine, moves }: { quest: MyQuest | null | undef
           {daily && week.outOfReach && !mine.won && ' · keep playing for next time!'}
         </p>
         <p className="qbar__today">{todayLine}</p>
+        {mine.won && reward && mine.myReward && (
+          <Link to="/profile#rewards" className="button button--primary qbar__go">
+            {reward.emoji} Use my {reward.name}
+          </Link>
+        )}
         {showPlay && (
           <Link to={`/${kind.card}`} className="button button--play qbar__go">
             <span aria-hidden="true">▶</span> Play {kind.game}
@@ -164,6 +176,11 @@ export function QuestBar({ quest: mine, moves }: { quest: MyQuest | null | undef
             {trophy && <img className="qbar__trophy" src={trophy} alt="" />}
             <span>Quest complete!</span>
             {trophy && <small>Questing Hero trophy: {TROPHY_AT[mine.questsDone]}!</small>}
+            {reward && mine.myReward && (
+              <small className="qbar__got">
+                You earned a {reward.emoji} {reward.name}!
+              </small>
+            )}
             <small>{plural(mine.questsDone, 'quest', 'quests')} done</small>
           </p>
         </div>
