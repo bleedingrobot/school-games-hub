@@ -113,6 +113,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
   const { ask, modal } = useAsk(sendRef);
   // The opening story, once per pupil, as soon as the village has loaded (docs/plans/stories/PLAN.md, ST.2). Skippable.
   const opening = useStoryOnce(OPENING.id, !!state);
+  const openingBook = opening.open && <StoryBook story={OPENING} onClose={opening.close} endLabel="Let's go!" className="lord-storybook" />;
   const clashes = useClashes(hero ? backend.clashes : undefined, player);
 
   // "Yes" on the hub's challenge banner: say yes here as the banner's Fight! would, and go to the arena.
@@ -341,6 +342,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
         </details>
         {!choosing && <button type="button" className="lord-btn" onClick={() => setScreen({ name: 'village' })}>Keep my class</button>}
         {busy && <p className="lord-soft" role="status">One moment…</p>}
+        {openingBook}
       </Frame>
     );
   }
@@ -626,7 +628,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
         }} />
       )}
       {modal}
-      {opening.open && <StoryBook story={OPENING} onClose={opening.close} endLabel="Let's go!" className="lord-storybook" />}
+      {openingBook}
     </Frame>
   );
 }

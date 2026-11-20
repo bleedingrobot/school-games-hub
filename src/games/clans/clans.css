@@ -1522,5 +1522,5 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 }
 
 /* Stories (the kit's StoryBook, docs/plans/stories/PLAN.md) in Clan Quest's colours */
-.cq-storybook { --story-ink: #f3e6c8; --story-gold: #ffd36b; --story-frame: #6a5233; --story-dim: #4a3d2a; }
+.cq-storybook { --story-bg: #060509; --story-ink: #f3e6c8; --story-gold: #ffd36b; --story-frame: #6a5233; --story-dim: #4a3d2a; }
 .cq-storybook .kit-story__words h2 { font-family: 'VT323', ui-monospace, monospace; font-weight: 400; letter-spacing: 0.03em; }
