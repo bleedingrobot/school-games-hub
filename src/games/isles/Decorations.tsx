@@ -133,7 +133,7 @@ export function PlacePicker({
         {moving && <button type="button" className="button button--light" onClick={() => onPlace(null)}>Back on the shelf</button>}
       </div>
       {!free.length && !moving && <p className="si-step__why">All your decoration places are full.</p>}
-      <button type="button" className="button button--light" onClick={onCancel}>Cancel</button>
+      <button type="button" className="button button--light" data-key="b esc" aria-keyshortcuts="B Escape" onClick={onCancel}>Cancel</button>
     </>
   );
 }
