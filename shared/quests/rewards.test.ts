@@ -14,8 +14,9 @@ describe('Game Coins', () => {
     expect(rewardFit('trader', 'coins')).toBeNull();
     expect(rewardFit('archery-fights', 'coins')).toBeNull();
     expect(rewardFit('monsters-battles', 'coins')).toMatch(/no coins/);
-    // Bonus Turns Day fits games with daily turns, Toon Flap and Goblin Storm included.
+    // Bonus Turns Day fits games with daily turns, Toon Flap, Goblin Storm and Marble Rush included.
     expect(rewardFit('toonflap-daily', 'turns')).toBeNull();
     expect(rewardFit('goblinstorm-total', 'turns')).toBeNull();
+    expect(rewardFit('marble-daily', 'turns')).toBeNull();
   });
 });

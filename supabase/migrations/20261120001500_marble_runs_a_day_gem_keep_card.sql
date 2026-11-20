@@ -7,6 +7,9 @@
 -- 3. my_moves_left() also sends 'marble' ({ runs } today) and 'gemKeep' ({ keys, keyToday }: Level Keys passed, and
 --    whether one was passed today), for the home cards (src/data/movesLeft.ts). An exact edit: if the text is not found
 --    exactly once, nothing changes.
+-- 4. A Marble Rush class quest can give a Bonus Turns Day (James, 20 Nov 2026). Marble Rush has no class switch column,
+--    so its quests are matched by id. The marble function reads unlimited_days through settings_of, which adds a pupil's
+--    bonus day, so nothing else changes.
 
 -- 1. Runs today
 create or replace function public.marble_runs_today(player uuid)
@@ -75,3 +78,31 @@ select pg_temp.edit_function('public.my_moves_left()', array[array[
   || E'                                                 = (now() at time zone ''Pacific/Auckland'')::date), false))\n'
   || E'                from public.gem_keep_progress g where g.player = me.id)\n'
 ]]);
+
+-- 4. Bonus Turns Day for Marble Rush (newest body: 20261120001400_toonflap_goblinstorm_turns.sql)
+create or replace function public.quest_turns_game(which text)
+returns text
+language sql
+stable
+set search_path = ''
+as $$
+  select case
+           when k.id in ('marble-daily', 'marble-total') then 'marble'
+           else case k.switch_column
+                  when 'trader_enabled' then 'trader'
+                  when 'lord_enabled' then 'dragon-maths'
+                  when 'clans_enabled' then 'clan-quest'
+                  when 'clan_raids_enabled' then 'clan-quest'
+                  when 'monsters_enabled' then 'monsters'
+                  when 'diamond_enabled' then 'diamond'
+                  when 'isles_enabled' then 'isles'
+                  when 'toonflap_enabled' then 'toonflap'
+                  when 'goblinstorm_enabled' then 'goblinstorm'
+                end
+         end
+  from public.quest_kinds k where k.id = which
+$$;
+
+alter table public.bonus_turns drop constraint bonus_turns_game_check;
+alter table public.bonus_turns add constraint bonus_turns_game_check
+  check (game in ('dragon-maths', 'clan-quest', 'monsters', 'diamond', 'trader', 'isles', 'toonflap', 'goblinstorm', 'marble'));
