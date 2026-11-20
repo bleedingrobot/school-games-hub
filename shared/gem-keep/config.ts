@@ -115,3 +115,6 @@ export const SPEEDS = [1, 2] as const;
 
 /** Right answers out of the Level Key's 5 a student needs, from the class's pass mark out of 10 (rounded up: 5 → 3, 8 → 4). */
 export const keyRightNeeded = (passMarkOutOf10: number): number => Math.ceil((passMarkOutOf10 * MATHS.key.questions) / 10);
+
+/** Levels in the campaign (shared/gem-keep/levels has the same number; a test checks). The home card reads this without loading the levels. */
+export const LEVEL_COUNT = 10;

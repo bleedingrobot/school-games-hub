@@ -16,6 +16,7 @@ export const UNLIMITED_GAMES = [
   { id: 'isles', name: 'Sky Isles', lifts: 'turns' },
   { id: 'goblinstorm', name: 'Goblin Storm', lifts: 'runs' },
   { id: 'toonflap', name: 'Toon Flap', lifts: 'level wins and Sky Dashes' },
+  { id: 'marble', name: 'Marble Rush', lifts: 'runs' },
 ] as const;
 
 export type UnlimitedGame = (typeof UNLIMITED_GAMES)[number]['id'];

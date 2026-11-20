@@ -100,3 +100,9 @@ export const TIMED = {
   /** A gate (a sweeping arm) is open for `open` steps out of every `period`, then shuts. */
   gate: { period: 210, open: 150, warn: 40 },
 } as const;
+
+/**
+ * Runs a day (James, 20 Nov 2026): finished, saved runs in a New Zealand day. The server won't start an 11th; the
+ * teacher's "Unlimited today" lifts it. The home card shows what's left (src/data/movesLeft.ts).
+ */
+export const MARBLE_RUNS_A_DAY = 10;

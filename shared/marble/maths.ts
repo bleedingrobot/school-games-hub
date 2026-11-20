@@ -256,6 +256,8 @@ export interface RunSetup {
 export interface StartReply extends RunSetup {
   seed: string;
   stamp: string;
+  /** Runs left today after this one (null on an "Unlimited today" day, missing if the count couldn't be read). */
+  runsLeft?: number | null;
 }
 
 /** The setup for a run. `questions` is the run's list (maths on) or null (maths off: arrows). */

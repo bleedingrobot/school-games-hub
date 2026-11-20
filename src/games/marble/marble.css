@@ -30,6 +30,9 @@
 .marble-picker__bar p {
   margin: 0;
 }
+.marble-picker__runs {
+  font-weight: 800;
+}
 .marble-ghost {
   display: flex;
   flex-wrap: wrap;

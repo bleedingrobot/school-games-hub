@@ -32,6 +32,7 @@ function services(over: Partial<Services> = {}) {
     userIdFor: vi.fn(async (token: string) => (token === 'good-token' ? 'student-1' : token === 'other-token' ? 'student-2' : null)),
     record: vi.fn(async () => ({ ok: true as const, value: 'best' as const })),
     random: () => 0.5,
+    runsToday: async () => ({ runs: 3, unlimited: false }),
     settings: async () => ({ maths: 'off' as const, rescue: true }),
     mathsContext: async () => null,
     storeRun: async () => true,
@@ -100,6 +101,15 @@ describe('the marble server function', () => {
     expect(started.body.stamp).toBe(`stamp(${marbleStampText('student-1', COURSE, 'down', started.body.seed)})`);
     expect((await send(services(), { action: 'start', course: 'nowhere', mode: 'up' })).status).toBe(400);
 
+    // 10 runs a day: the 11th won't start, unless the teacher has lifted it today; the reply says what's left.
+    expect(started.body.runsLeft).toBe(6);
+    const done = await send(services({ runsToday: async () => ({ runs: 10, unlimited: false }) }), { action: 'start', course: COURSE, mode: 'up' });
+    expect(done.status).toBe(409);
+    expect(done.body.code).toBe('done-today');
+    const lifted = await send(services({ runsToday: async () => ({ runs: 30, unlimited: true }) }), { action: 'start', course: COURSE, mode: 'up' });
+    expect(lifted.status).toBe(200);
+    expect(lifted.body.runsLeft).toBeNull();
+
     const s = services();
     const { status, body } = await send(s, await save({ steps: 1, time: 1, finishSteps: 1 }));
     expect(status).toBe(200);
@@ -122,6 +132,7 @@ function mathsServices(over: Partial<Services> = {}, settings = { maths: 'choose
   const recorded: { once: string; answers: { key: string; correct: boolean }[] }[] = [];
   const s = services({
     now: () => clock.now,
+    runsToday: async () => null,
     settings: async () => settings,
     mathsContext: async () => ({ facts: [], settings: {} }),
     storeRun: async (_p, seed, rescue, questions) => {
