@@ -428,3 +428,38 @@
   40% { box-shadow: 0 0 0 2px var(--lord-wood), 0 0 28px rgba(224, 178, 90, 1); }
   100% { box-shadow: 0 0 0 2px var(--lord-wood), 0 0 14px rgba(224, 178, 90, 0.95); }
 }
+
+/* The end-of-season ceremony (SeasonCeremony.tsx) */
+.lord-ceremony { display: flex; flex-direction: column; justify-content: space-between; }
+.lord-ceremony__card { position: relative; z-index: 1; margin: 24px auto 0; width: min(760px, calc(100% - 24px)); max-height: calc(100% - 120px); overflow: auto; padding: 18px 22px; border-radius: 10px; background: rgba(247, 235, 207, 0.94); border: 2px solid var(--lord-line); color: var(--lord-ink); text-align: center; animation: lord-ceremony-in 0.5s ease-out; }
+.lord-ceremony__kicker { margin: 0; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.85rem; color: #7a5a2e; }
+.lord .lord-ceremony__title { margin: 4px 0 10px; font-family: var(--lord-display); font-weight: 400; font-size: clamp(1.8rem, 4vw, 2.8rem); color: var(--lord-red); }
+.lord-ceremony__lead { margin: 6px 0; font-size: 1.1rem; }
+.lord-ceremony__big { margin: 14px 0 4px; font-size: 1.35rem; }
+.lord-ceremony__big strong { font-size: 2rem; color: var(--lord-red); }
+.lord-ceremony__sub { margin: 14px 0 6px; }
+.lord-ceremony__champion { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 6px auto 12px; padding: 10px 16px; max-width: 520px; border-radius: 10px; background: linear-gradient(135deg, #fff3c4, #f2c94c); border: 2px solid #b8860b; box-shadow: 0 0 24px rgba(242, 201, 76, 0.7); animation: lord-ceremony-glow 2s ease-in-out infinite alternate; text-align: left; }
+.lord-ceremony__champion strong { display: block; font-size: 1.3rem; }
+.lord-ceremony__crown { font-size: 2.4rem; }
+.lord-ceremony__slayers { list-style: none; margin: 0 auto; padding: 0; max-width: 520px; display: grid; gap: 6px; }
+.lord-ceremony__slayers li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 4px 10px; border-radius: 6px; background: rgba(255, 255, 255, 0.6); text-align: left; animation: lord-ceremony-in 0.4s ease-out both; }
+.lord-ceremony__slayers li.is-me { outline: 2px solid var(--lord-red); }
+.lord-ceremony__mine { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 16px; }
+.lord-ceremony__stats { display: grid; grid-template-columns: repeat(3, minmax(110px, 1fr)); gap: 6px; margin: 0; }
+.lord-ceremony__stats div { padding: 4px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.6); }
+.lord-ceremony__stats dt { font-size: 0.8rem; color: #7a5a2e; }
+.lord-ceremony__stats dd { margin: 0; font-weight: 700; }
+.lord-ceremony__trophies { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 0; padding: 0; }
+.lord-ceremony__trophies li { display: flex; flex-direction: column; align-items: center; width: 110px; animation: lord-ceremony-in 0.5s ease-out both; }
+.lord-ceremony__trophies li.is-new { animation: lord-ceremony-land 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+.lord-ceremony__trophies li.is-new span { color: #b8860b; font-weight: 700; }
+.lord-ceremony__trophy-emoji { font-size: 3.4rem; line-height: 72px; }
+.lord-ceremony__bar { position: relative; z-index: 1; align-items: center; }
+.lord-ceremony__dots { display: inline-flex; gap: 6px; margin-right: 8px; }
+.lord-ceremony__dots span { width: 10px; height: 10px; border-radius: 50%; background: rgba(255, 255, 255, 0.45); }
+.lord-ceremony__dots span.is-on { background: #f2c94c; }
+.lord-hall__ceremony { margin-bottom: 8px; }
+@keyframes lord-ceremony-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes lord-ceremony-land { 0% { opacity: 0; transform: translateY(-80px) scale(1.6) rotate(-10deg); } 100% { opacity: 1; transform: none; } }
+@keyframes lord-ceremony-glow { from { box-shadow: 0 0 12px rgba(242, 201, 76, 0.5); } to { box-shadow: 0 0 30px rgba(242, 201, 76, 0.95); } }
+@media (prefers-reduced-motion: reduce) { .lord-ceremony__card, .lord-ceremony__slayers li, .lord-ceremony__trophies li, .lord-ceremony__champion { animation: none; } }
