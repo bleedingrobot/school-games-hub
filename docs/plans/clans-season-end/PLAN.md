@@ -4,7 +4,7 @@ Asked for by James, 20 Nov 2026: "plan similar for clans", the same shape as the
 (`docs/plans/dragon-season-end/PLAN.md`, on branch `claude/dragon-season-end`). Branch `claude/clans-season-end`.
 Migration numbers from `20261120001900` (check again: Dragon Maths took `...001800`).
 
-**Status:** plan written 20 Nov 2026. Nothing built yet.
+**Status:** plan written 20 Nov 2026 (#659). Stage 1 built 20 Nov. Stage 2 next (before Sat night).
 
 ## When it happens
 
@@ -32,9 +32,9 @@ inside `clan_nightly`; the member levels, buildings and gold go on the pupil's f
 - So the honour roll can't only be "monster beaters": it would be empty of pupils. It is the **fame table** (below), with
   monster beaters and finished villages marked.
 
-## Questions for James (my picks, to confirm)
+## James's answers (20 Nov 2026)
 
-Same as his Dragon Maths answers unless he says otherwise:
+He chose the recommended answer each time, and to build stages 1 and 2 now. Holidays: "just push on" (no clock change).
 
 1. **Keepsake:** a **Clan Veteran** trophy for every clan that played the season, and a gold "Season 1 Clan" line on the
    profile. No effect on the game.

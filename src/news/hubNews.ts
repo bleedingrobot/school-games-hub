@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'clans-season-1-ends-2026-11-20',
+    date: '2026-11-20',
+    emoji: '🛡️',
+    title: 'Clan Quest Season 1 ends Saturday',
+    text: 'Last chance to beat Grimmor! Then clans start again, but trophies and the Hall stay.',
+    game: 'clan-quest',
+  },
+  {
     id: 'dragon-season-1-ends-2026-11-20',
     date: '2026-11-20',
     emoji: '⏳',
