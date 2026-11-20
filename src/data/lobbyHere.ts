@@ -37,6 +37,8 @@ export interface GoingFight {
 
 export interface LobbyHere {
   me: Record<MyGame, MyState>;
+  /** True for a teacher (or anyone who isn't a pupil): lobby_here() gives them no game states, and the tiles just open each game. */
+  teacher: boolean;
   going: GoingFight[];
   online: HerePlayer[];
 }
@@ -70,7 +72,7 @@ export function readLobbyHere(data: unknown): LobbyHere | null {
       ...readClassBits(o),
     }];
   });
-  return { me, going, online };
+  return { me, teacher: raw.me === null, going, online };
 }
 
 export async function fetchLobbyHere(): Promise<LobbyHere | null> {

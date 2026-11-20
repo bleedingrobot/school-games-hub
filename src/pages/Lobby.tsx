@@ -397,6 +397,11 @@ export function Lobby() {
 
   const myTile = (id: MyGame, name: string, emoji: string, blurb: string, onPick: () => void): Tile => {
     const state = here?.me[id];
+    if (here?.teacher) {
+      // Teachers can't be challenged or challenge anyone, so each tile simply opens its game.
+      const to = id === 'archery' ? '/archery' : id === 'isles' ? '/isles' : id === 'dragon-maths' ? '/dragon-maths' : '/clan-quest';
+      return { id, name, emoji, blurb: 'Open the game', why: null, picked: false, onPick: () => navigate(to) };
+    }
     return {
       id,
       name,

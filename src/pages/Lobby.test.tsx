@@ -94,6 +94,7 @@ describe('the lobby', () => {
     const off = { archery: 'off', 'dragon-maths': 'off', 'clan-quest': 'off', isles: 'off', raid: 'off' } as const;
     vi.mocked(here.fetchLobbyHere).mockResolvedValue({
       me: off,
+      teacher: false,
       going: [],
       online: [{ id: 'mia', name: 'Mia', avatar: null, clan: null, games: { chess: 'ok', checkers: 'ok' }, sameClass: true, className: null }],
     });
