@@ -1,0 +1,329 @@
+{
+  "_about": "Bond Match graphics upgrade (docs/plans/bond-match-look/PLAN.md). Check with: python3 scripts/game_art.py bond-match paint OUT --dry-run",
+  "game": "bond-match",
+  "filename_prefix": "bond-match/img",
+  "style": "s",
+  "styles": {
+    "s": "Bright flat storybook illustration, clean simple shapes, soft gentle shading, sunny cheerful colours, smooth and tidy like a modern children's picture book or a friendly mobile game, made for children aged 7 to 11. No text, no letters, no numbers, no writing anywhere. "
+  },
+  "inbox": "~/dragon-art-inbox/bond-match-art/set",
+  "picks": "docs/bond-match-art/picks.json",
+  "art_dir": "src/games/bond-match/art/paint",
+  "home_dir": "src/assets/home",
+  "tints": {
+    "bronze": {
+      "dark": [
+        70,
+        30,
+        12
+      ],
+      "mid": [
+        190,
+        112,
+        50
+      ],
+      "shine": [
+        255,
+        222,
+        180
+      ]
+    },
+    "silver": {
+      "dark": [
+        48,
+        54,
+        64
+      ],
+      "mid": [
+        168,
+        176,
+        188
+      ],
+      "shine": [
+        250,
+        252,
+        255
+      ]
+    },
+    "blue": {
+      "dark": [
+        20,
+        50,
+        120
+      ],
+      "mid": [
+        70,
+        130,
+        230
+      ],
+      "shine": [
+        215,
+        232,
+        255
+      ]
+    },
+    "violet": {
+      "dark": [
+        60,
+        25,
+        110
+      ],
+      "mid": [
+        150,
+        95,
+        225
+      ],
+      "shine": [
+        238,
+        225,
+        255
+      ]
+    }
+  },
+  "pictures": [
+    {
+      "name": "back-beach",
+      "prompt": "A sunny New Zealand beach seen from the dunes: soft golden sand across the bottom half with three wide shallow rock pools of clear turquoise water ringed by smooth grey rocks, spread evenly left, middle and right, calm blue sea and gentle white waves behind, a few round clouds in a bright blue sky, a little driftwood and pale shells near the edges. Empty background scenery for a children's game, no people, no animals, the middle calm and uncluttered so things placed on top stand out. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "beach"
+    },
+    {
+      "name": "back-pool-day",
+      "prompt": "Looking straight down into one big calm rock pool on a sunny day: clear light turquoise water filling almost the whole picture, a smooth pale sandy floor under the water with soft rippling sunlight patterns, a ring of rounded grey rocks, small pink seaweed and tiny shells only around the outside edges, the wide middle plain calm water. Empty background scenery for a children's game, no people, no animals, the middle calm and uncluttered so things placed on top stand out. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "pool-day"
+    },
+    {
+      "name": "back-pool-evening",
+      "prompt": "Looking straight down into one big calm rock pool in the warm golden evening: clear water with a soft orange and violet sunset glow on its surface, a smooth sandy floor, a ring of rounded dark rocks with a few starfish and shells only around the outside edges, the wide middle plain calm water. Empty background scenery for a children's game, no people, no animals, the middle calm and uncluttered so things placed on top stand out. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "pool-evening"
+    },
+    {
+      "name": "back-sunset",
+      "prompt": "The edge of a rock pool beach at sunset: smooth rocks and golden sand across the bottom, a calm sea glowing orange and pink, a big soft sun low on the horizon, warm peaceful sky, the middle of the picture open and calm. Empty background scenery for a children's game, no people, no animals, the middle calm and uncluttered so things placed on top stand out. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "sunset"
+    },
+    {
+      "name": "card-back",
+      "prompt": "A single square tile of smooth frosted sea glass with softly rounded corners, flat and seen straight on from above, pale glowing teal colour, gently textured surface with a soft inner light and one small pale spiral shell pressed into its centre, clean even edges. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "cards",
+      "file": "card-back",
+      "max": 512,
+      "tints": {
+        "blue": "card-back-blue",
+        "violet": "card-back-violet"
+      }
+    },
+    {
+      "name": "card-stone",
+      "prompt": "A single square smooth pale beach stone with softly rounded corners, flat and seen straight on from above, creamy off-white colour with a very faint speckle, completely plain and blank on top, soft gentle shading at the edges. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "cards",
+      "file": "card-stone",
+      "max": 512
+    },
+    {
+      "name": "ripple",
+      "prompt": "A single soft ring of glowing light ripples on water seen from above: two thin bright aqua circles spreading out evenly from the middle, tiny glittering sparkles along the rings, the middle and outside black.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "glow",
+      "folder": "fx",
+      "file": "ripple",
+      "max": 512
+    },
+    {
+      "name": "sparkle",
+      "prompt": "A small loose cluster of bright white and aqua sparkles: a few four-pointed star twinkles of different sizes and tiny glittering specks, soft glow around each.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "glow",
+      "folder": "fx",
+      "file": "sparkle",
+      "max": 512
+    },
+    {
+      "name": "starfish-gold",
+      "prompt": "One plump friendly five-armed starfish lying flat, seen straight on from above, every arm the same size, covered edge to edge in shining yellow gold, polished and gleaming with bright highlights, small round bumps along each arm. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "rewards",
+      "file": "starfish-gold",
+      "max": 512,
+      "tints": {
+        "silver": "starfish-silver",
+        "bronze": "starfish-bronze"
+      }
+    },
+    {
+      "name": "bucket",
+      "prompt": "A small bright red seaside bucket filled to the top with colourful shells and smooth pebbles, a little yellow spade leaning against it, three-quarter view. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "rewards",
+      "file": "bucket",
+      "max": 512
+    },
+    {
+      "name": "pip-wave",
+      "prompt": "Pip, a small cute round orange-red cartoon crab with big friendly eyes on stalks, rosy cheeks and a happy smile, waving one claw high in the air, the other claw down, standing on its legs, facing the viewer. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "pip",
+      "file": "pip-wave",
+      "max": 512
+    },
+    {
+      "name": "pip-cheer",
+      "prompt": "Pip, a small cute round orange-red cartoon crab with big friendly eyes on stalks, rosy cheeks and a huge happy open smile, both claws raised high in celebration, jumping a little, facing the viewer. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "pip",
+      "file": "pip-cheer",
+      "max": 512
+    },
+    {
+      "name": "pip-think",
+      "prompt": "Pip, a small cute round orange-red cartoon crab with big friendly eyes on stalks and rosy cheeks, one claw tapping its chin, eyes looking up thoughtfully, a small curious smile, facing the viewer. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "pip",
+      "file": "pip-think",
+      "max": 512
+    },
+    {
+      "name": "shell-pink",
+      "prompt": "One pretty pink scallop shell with soft ridges fanning out, seen straight on, gently glossy. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "folder": "players",
+      "file": "shell-pink",
+      "max": 256
+    },
+    {
+      "name": "shell-blue",
+      "prompt": "One pretty pale blue spiral sea snail shell, smooth and glossy, seen from the side. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "folder": "players",
+      "file": "shell-blue",
+      "max": 256
+    },
+    {
+      "name": "icon-timer",
+      "prompt": "One small round brass pocket watch with a plain blank white face, a little ring at the top, cheerful and simple. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "folder": "icons",
+      "file": "icon-timer",
+      "max": 256
+    },
+    {
+      "name": "icon-pictures",
+      "prompt": "One small wooden board with three chunky coloured blocks side by side, two filled orange and one plain, simple and cheerful. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "folder": "icons",
+      "file": "icon-pictures",
+      "max": 256
+    },
+    {
+      "name": "shelf-whole",
+      "prompt": "One smooth round blue pebble with a soft shine, simple and chunky. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "folder": "icons",
+      "file": "shelf-whole",
+      "max": 256
+    },
+    {
+      "name": "shelf-decimal",
+      "prompt": "One small piece of smooth teal sea glass with a soft shine, simple and chunky. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "folder": "icons",
+      "file": "shelf-decimal",
+      "max": 256
+    },
+    {
+      "name": "shelf-fraction",
+      "prompt": "One small violet clam shell slightly open, simple and chunky. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "folder": "icons",
+      "file": "shelf-fraction",
+      "max": 256
+    }
+  ]
+}
