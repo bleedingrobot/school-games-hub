@@ -24,6 +24,13 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'story-pictures-2026-11-21',
+    date: '2026-11-21',
+    emoji: '🎨',
+    title: 'Painted stories',
+    text: 'Stories in Gem Keep, Goblin Storm, Clans, Dragon Maths and Star Trader are painted!',
+  },
+  {
     id: 'key-labels-2026-11-21',
     date: '2026-11-21',
     emoji: '⌨️',
