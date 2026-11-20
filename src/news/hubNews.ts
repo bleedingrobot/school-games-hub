@@ -22,11 +22,18 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'gem-keep-card-2026-11-20',
+    date: '2026-11-20',
+    emoji: '🔑',
+    title: 'Gem Keep: new level ready?',
+    text: 'Its card now says when you can unlock a new level.',
+  },
+  {
     id: 'marble-ten-runs-2026-11-20',
     date: '2026-11-20',
     emoji: '🔵',
     title: 'Marble Rush: 10 runs a day',
-    text: 'Its card shows your runs left, and a class quest can win a Bonus Turns Day. The Gem Keep card says when a new level is ready.',
+    text: 'Its card shows runs left. Win Bonus Turns from a class quest!',
   },
   {
     id: 'bonus-turns-flap-storm-2026-11-20',
