@@ -1,4 +1,4 @@
--- A daily and a weekly class quest at the same time (migration 20261118003200_class_quests_two.sql): the teacher can run
+-- A daily and a weekly class quest at the same time (migration 20261121000200_class_quests_two.sql): the teacher can run
 -- one of each, not two of one; pupils see both (daily first) on the home page; stopping one leaves the other.
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;

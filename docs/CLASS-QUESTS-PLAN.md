@@ -195,4 +195,4 @@ own days and a class count. Teachers see their own class. Nothing about maths re
 
 James asked for one daily and one weekly quest at the same time. A class can now run one daily quest (turns or days rules)
 and one weekly quest (total or distinct rules) together, but never two of one kind. Pupils see both bars on the home page,
-daily first; the teacher sees a table for each and stops them one at a time. Migration 20261118003200_class_quests_two.sql.
+daily first; the teacher sees a table for each and stops them one at a time. Migration 20261121000200_class_quests_two.sql.
