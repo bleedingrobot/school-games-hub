@@ -43,6 +43,17 @@ export function FoundationalGrid({
     window.addEventListener('resize', checkEnds);
     return () => window.removeEventListener('resize', checkEnds);
   }, [checkEnds, rows]);
+  const arrows = (who: string) =>
+    (canLeft || canRight) && (
+      <span className="fg__nudge">
+        <button type="button" aria-label={`Scroll left (${who})`} title="Show the ideas to the left" disabled={!canLeft} onClick={() => nudge(-1)}>
+          ◀
+        </button>
+        <button type="button" aria-label={`Scroll right (${who})`} title="Show more ideas to the right" disabled={!canRight} onClick={() => nudge(1)}>
+          ▶
+        </button>
+      </span>
+    );
   /** Move about three idea columns at a time, so the teacher never loses their place. */
   const nudge = (dir: -1 | 1) => {
     const el = scrollRef.current;
@@ -72,19 +83,7 @@ export function FoundationalGrid({
           <thead>
             <tr>
               <th scope="col" className="fg__who">
-                <span className="fg__whohead">
-                  <span>Student</span>
-                  {(canLeft || canRight) && (
-                    <span className="fg__nudge">
-                      <button type="button" aria-label="Scroll left" title="Show the ideas to the left" disabled={!canLeft} onClick={() => nudge(-1)}>
-                        ◀
-                      </button>
-                      <button type="button" aria-label="Scroll right" title="Show more ideas to the right" disabled={!canRight} onClick={() => nudge(1)}>
-                        ▶
-                      </button>
-                    </span>
-                  )}
-                </span>
+                Student
               </th>
               {IDEAS.map((idea) => (
                 <th key={idea.id} scope="col" className="fg__idea" title={idea.note}>
@@ -97,7 +96,10 @@ export function FoundationalGrid({
             {rows.map((row) => (
               <tr key={row.id}>
                 <th scope="row" className="fg__who">
-                  <span className="fg__name">{row.name}</span>
+                  <span className="fg__whohead">
+                    <span className="fg__name">{row.name}</span>
+                    {arrows(row.name)}
+                  </span>
                   {row.realName && <span className="fg__real">{row.realName}</span>}
                   {row.flags.length > 0 && (
                     <button
