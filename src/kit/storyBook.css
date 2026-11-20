@@ -1,0 +1,101 @@
+/* The kit's story book and story shelf (StoryBook.tsx, StoryShelf.tsx). A game sets the variables on .kit-story / .kit-shelf. */
+.kit-story {
+  --story-bg: rgba(4, 3, 8, 0.95);
+  --story-ink: #f3e6c8;
+  --story-gold: #ffd36b;
+  --story-frame: #6a5233;
+  --story-dim: #4a3d2a;
+  --story-font: inherit;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  padding: max(10px, 1.5vh) 2vw 2vh;
+  background: var(--story-bg);
+  color: var(--story-ink);
+  font-family: var(--story-font);
+}
+.kit-story__top { display: flex; align-items: center; justify-content: flex-end; gap: 10px; min-height: 40px; }
+.kit-story__name { margin-right: auto; font-size: 0.85rem; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.75; }
+.kit-story__book {
+  width: min(1100px, 100%);
+  max-height: 100%;
+  margin: 0 auto;
+  align-self: center;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  gap: 10px;
+}
+.kit-story__pic {
+  position: relative;
+  overflow: hidden;
+  border: 3px solid var(--story-frame);
+  border-radius: 10px;
+  aspect-ratio: 16 / 9;
+  max-height: 62vh;
+  justify-self: center;
+  width: 100%;
+  box-shadow: 0 0 0 2px #000, 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+.kit-story__pic img, .kit-story__drawn { width: 100%; height: 100%; object-fit: cover; display: grid; place-items: center; }
+.kit-story__drawn span { font-size: clamp(4rem, 14vw, 10rem); filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6)); }
+.kit-story__glow { position: absolute; inset: 0; box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.65); pointer-events: none; }
+.kit-story__corner { position: absolute; left: 12px; bottom: 12px; }
+.kit-story__words { text-align: center; padding: 0 8px; }
+.kit-story__count { font-size: 0.8rem; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.7; }
+.kit-story__words h2 { margin: 2px 0 6px; color: var(--story-gold); font-size: clamp(1.4rem, 3.4vw, 2.3rem); text-shadow: 0 3px 0 #000; }
+.kit-story__words p { margin: 0 auto; max-width: 62ch; font-size: clamp(1.05rem, 2.2vw, 1.35rem); line-height: 1.45; }
+.kit-story__nav { display: flex; justify-content: center; align-items: center; gap: 16px; padding-bottom: 4px; }
+.kit-story__dots { display: flex; gap: 8px; }
+.kit-story__dots span { width: 10px; height: 10px; border-radius: 50%; background: var(--story-dim); }
+.kit-story__dots span.is-on { background: var(--story-gold); box-shadow: 0 0 8px var(--story-gold); }
+.kit-story__btn {
+  min-height: 44px;
+  min-width: 96px;
+  padding: 8px 18px;
+  border: 2px solid var(--story-frame);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--story-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.kit-story__btn:disabled { opacity: 0.35; cursor: default; }
+.kit-story__btn--go { background: var(--story-gold); border-color: var(--story-gold); color: #1d1405; }
+.kit-story__btn--quiet { min-width: 0; font-size: 0.95rem; }
+.kit-story__btn:focus-visible { outline: 3px solid var(--story-gold); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) {
+  .kit-story__pic img, .kit-story__drawn { animation: kit-story-zoom 14s ease-out both; }
+  .kit-story__pic { animation: kit-story-in 0.5s ease-out; }
+}
+@keyframes kit-story-zoom { from { transform: scale(1.1) translate(1.5%, 1%); } to { transform: scale(1) translate(0, 0); } }
+@keyframes kit-story-in { from { opacity: 0; } to { opacity: 1; } }
+@media (max-height: 520px) {
+  .kit-story__pic { max-height: 48vh; }
+  .kit-story__words p { font-size: 1rem; }
+}
+
+/* The story shelf */
+.kit-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.kit-shelf__item {
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 6px;
+  padding: 0;
+  border: 2px solid var(--story-frame, #6a5233);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.35);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.kit-shelf__item:disabled { cursor: default; opacity: 0.6; }
+.kit-shelf__thumb { aspect-ratio: 16 / 9; display: grid; place-items: center; font-size: 2.6rem; background-size: cover; background-position: center; }
+.kit-shelf__thumb--locked { background: #1d1a22; filter: grayscale(1); }
+.kit-shelf__label { padding: 0 10px 8px; font-weight: 700; }
+.kit-shelf__hint { display: block; font-weight: 400; font-size: 0.85rem; opacity: 0.8; }
+.kit-shelf__new { margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: var(--story-gold, #ffd36b); color: #1d1405; font-size: 0.75rem; }
