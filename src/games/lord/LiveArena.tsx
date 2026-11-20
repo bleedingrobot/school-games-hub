@@ -10,6 +10,7 @@ import type { ClashRow } from '../../../shared/lord/clashServer';
 import type { HeroClass, Hero } from '../../../shared/lord/types';
 import { AvatarImage } from '../../avatar/AvatarImage';
 import { ClassTag, SchoolPlayerList } from '../../components/SchoolPlayerList';
+import { starPlayer } from '../../data/lobbyStars';
 import type { Cheer } from '../../data/lordClash';
 import { ClashScreen, type ClashEnding } from './Clash';
 import { BigStage } from './Fight';
@@ -47,6 +48,7 @@ export function ClassmatesPanel({ clashes, onChallenge, busy }: { clashes: Clash
       {list && list.length > 0 && (
         <SchoolPlayerList
           people={list}
+          onStar={starPlayer}
           label="Players in Dragon Maths now"
           row={(m) => (
             <>
