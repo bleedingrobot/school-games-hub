@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'gem-keep-short-well-2026-11-20',
+    date: '2026-11-20',
+    emoji: '💧',
+    title: 'Gem Keep: a quicker Mana Well',
+    text: 'The Mana Well is just 3 questions now, and each right answer gives lots more mana!',
+    game: 'gem-keep',
+  },
+  {
     id: 'clan-raids-school-wide-2026-11-20',
     date: '2026-11-20',
     emoji: '🏰',
