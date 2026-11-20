@@ -13,3 +13,6 @@ export { useKindDemo, type DemoStep, type KindDemoOptions } from './useKindDemo'
 export { DemoBar, type DemoBarProps } from './DemoBar';
 export { useGameKeys, buttonForKey, keyWord, KEY_GAP_MS } from './useGameKeys';
 export { KeyBadge } from './KeyBadge';
+export { StoryBook, type StoryBookProps } from './StoryBook';
+export { StoryShelf, type StoryShelfProps } from './StoryShelf';
+export { useStories, useStoryOnce, markStorySeen } from './useStories';
