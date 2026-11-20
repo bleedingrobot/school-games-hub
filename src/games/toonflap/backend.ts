@@ -18,6 +18,9 @@ export interface Loaded {
   picks: Picks;
   /** The server's NZ day (YYYY-MM-DD): one new level opens a day. */
   today: string;
+  /** Level wins and Sky Dash goes left today (null: the teacher's Unlimited today is on; missing: an older server). */
+  winsLeft?: number | null;
+  dashesLeft?: number | null;
 }
 
 export interface CheckMark {

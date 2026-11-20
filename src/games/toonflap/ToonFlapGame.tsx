@@ -83,6 +83,7 @@ export function ToonFlapGame({ backend, extra, onServer = false }: { backend: To
       if (replayGuide) setGuideSkipped(false);
       setGuide(n === 1 && (replayGuide || (never && !guideSkipped())));
       setTip(showTip(help, finishes));
+      setLoaded((l) => (l ? { ...l, winsLeft: r.winsLeft, dashesLeft: r.dashesLeft } : l));
       setRun(r);
       setLevel(n);
       setScreen('play');
@@ -97,7 +98,9 @@ export function ToonFlapGame({ backend, extra, onServer = false }: { backend: To
     setBusy(true);
     setError(null);
     try {
-      setRun(await backend.dashStart());
+      const r = await backend.dashStart();
+      setLoaded((l) => (l ? { ...l, winsLeft: r.winsLeft, dashesLeft: r.dashesLeft } : l));
+      setRun(r);
       setScreen('dash');
     } catch (e) {
       setError(e instanceof ToonFlapError ? e.message : "Couldn't start Sky Dash. Please try again.");
@@ -139,7 +142,7 @@ export function ToonFlapGame({ backend, extra, onServer = false }: { backend: To
       {screen === 'map' && (
         <>
           <MapScreen
-            progress={loaded.progress} today={loaded.today ?? nzDate(new Date())} maths={loaded.maths} gentle={gentle} onGentle={chooseGentle} onPlay={(n) => void begin(n)} onDash={() => void beginDash()}
+            progress={loaded.progress} today={loaded.today ?? nzDate(new Date())} winsLeft={loaded.winsLeft} dashesLeft={loaded.dashesLeft} maths={loaded.maths} gentle={gentle} onGentle={chooseGentle} onPlay={(n) => void begin(n)} onDash={() => void beginDash()}
             onHangar={() => setScreen('hangar')} onHowTo={() => setScreen('howto')} busy={busy} error={error}
             help={help} onHelp={chooseHelp} onReplayGuide={() => void begin(1, true)} voice={voice} talk={talk}
           />
@@ -165,7 +168,8 @@ export function ToonFlapGame({ backend, extra, onServer = false }: { backend: To
           }}
           onFinished={(r) => {
             setReply(r);
-            if (r.valid) setLoaded((l) => (l ? { ...l, progress: r.progress } : l));
+            // A win uses one of today's wins (the start said how many were left before it).
+            if (r.valid) setLoaded((l) => (l ? { ...l, progress: r.progress, winsLeft: typeof l.winsLeft === 'number' ? Math.max(0, l.winsLeft - 1) : l.winsLeft } : l));
             setScreen('results');
           }}
         />
@@ -190,7 +194,7 @@ export function ToonFlapGame({ backend, extra, onServer = false }: { backend: To
         />
       )}
       {screen === 'dash-results' && (
-        <DashResults talk={talk} reply={dashReply} onAgain={() => void beginDash()} onMap={() => setScreen('map')} />
+        <DashResults talk={talk} reply={dashReply} onAgain={loaded.dashesLeft === 0 ? undefined : () => void beginDash()} onMap={() => setScreen('map')} />
       )}
       {screen === 'results' && reply && run && (
         <ResultsScreen talk={talk} today={loaded.today ?? nzDate(new Date())} reply={reply} level={level} gentle={run.gentle} maths={run.maths} onNext={(n) => void begin(n)} onAgain={() => void begin(level)} onMap={() => setScreen('map')} />

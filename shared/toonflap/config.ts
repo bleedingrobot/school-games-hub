@@ -85,6 +85,9 @@ export const SKY_DASH_AFTER = 5;
 export const POINTS = { finish: 2, firstFinish: 5, newGold: 3 } as const;
 export const POINT_RUNS_A_DAY = 10;
 export const BREAK_AFTER_RUNS = 30;
+/** Daily limits (James, 20 Nov 2026): levels finished, and Sky Dashes started. The teacher's "Unlimited today" lifts both. */
+export const WINS_A_DAY = 10;
+export const DASHES_A_DAY = 2;
 
 /** Medal times: how many bumps silver allows (each bump is 3 s plus flying back), on top of a perfect run. */
 export const SILVER_BUMPS = 2;
