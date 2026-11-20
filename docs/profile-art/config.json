@@ -390,6 +390,45 @@
       "small": 160
     },
     {
+      "name": "dragon-crown-bronze",
+      "prompt": "A fearsome hero's crown made of curved dragon horns and spiky dragon scales, with a dragon's head on the front breathing a little curl of flame, sitting on a small velvet cushion, the whole crown made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "dragon-crown-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "dragon-crown-silver",
+      "prompt": "A fearsome hero's crown made of curved dragon horns and spiky dragon scales, with a dragon's head on the front breathing a little curl of flame, sitting on a small velvet cushion, the whole crown made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "dragon-crown-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "dragon-crown-gold",
+      "prompt": "A fearsome hero's crown made of curved dragon horns and spiky dragon scales, with a dragon's head on the front breathing a little curl of flame, sitting on a small velvet cushion, the whole crown made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "dragon-crown-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
       "name": "monster-tooth-bronze",
       "prompt": "One huge curved ivory monster fang standing on a round trophy stand, clean and smooth, the cap, bands and stand made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
       "size": [
