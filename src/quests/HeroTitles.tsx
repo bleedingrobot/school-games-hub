@@ -106,6 +106,7 @@ export function TitlePicker({ rewardId, onDone, onClose }: { rewardId?: string; 
                 onClick={() => setPicked(t.id)}
               >
                 <span aria-hidden="true">{t.emoji}</span> {t.name}
+                {t.how && <small className="title-picker__how">{t.how}</small>}
                 {have && <small> (yours)</small>}
               </button>
             );

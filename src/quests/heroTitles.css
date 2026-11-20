@@ -33,5 +33,6 @@
 }
 .title-picker__chip.is-picked { border-color: #ffb800; background: #fff3c4; box-shadow: 0 0 0 3px rgb(255 184 0 / 0.35); }
 .title-picker__chip--special { border-color: #d4a017; background: linear-gradient(#fff8dc, #ffe9a8); }
+.title-picker__how { display: block; font-weight: 400; font-size: 0.8em; }
 .title-picker__chip:disabled { opacity: 0.5; cursor: default; }
 .title-picker__bar { display: flex; flex-wrap: wrap; gap: 0.5rem; }

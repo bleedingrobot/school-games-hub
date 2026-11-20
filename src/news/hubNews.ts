@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'ultimate-dragon-slayer-2026-11-20',
+    date: '2026-11-20',
+    emoji: '🐲',
+    title: 'Ultimate Dragon Slayer',
+    text: 'Slay the dragon twice in one season to win a crown trophy and a gold title!',
+    game: 'dragon-maths',
+  },
+  {
     id: 'gem-keep-card-2026-11-20',
     date: '2026-11-20',
     emoji: '🔑',
