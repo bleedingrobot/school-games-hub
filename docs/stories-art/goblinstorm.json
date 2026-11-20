@@ -1,0 +1,422 @@
+{
+  "_from": "docs/plans/stories/PLAN.md. Story paintings for Goblin Storm: one 1536x864 scene a page, filed as art/story/<story id>-<page>.webp. Matches docs/goblinstorm-art style a.",
+  "game": "stories-goblinstorm",
+  "filename_prefix": "stories/goblinstorm/img",
+  "style": "a",
+  "styles": {
+    "a": "Bright flat storybook fantasy illustration, clean shapes, soft light, cheerful saturated colours, friendly and inviting, a storybook picture for children aged 8 to 12, no blood, no gore, no scary faces, no romance, no text, no letters, no numbers. "
+  },
+  "inbox": "~/stories-art-inbox/goblinstorm",
+  "picks": "docs/stories-art/goblinstorm-picks.json",
+  "art_dir": "src/games/goblinstorm/art",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "goblinstorm-opening-1",
+      "prompt": "A strange swirling green storm cloud with a cheeky grinning face rolling over sunny green fields towards a small stone castle. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-opening-1"
+    },
+    {
+      "name": "goblinstorm-opening-2",
+      "prompt": "Hundreds of small cartoon green goblins falling from a green storm cloud like rain, with bats, bouncy slimes and one big troll, all running across fields towards a castle. Funny, not scary. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-opening-2"
+    },
+    {
+      "name": "goblinstorm-opening-3",
+      "prompt": "A big bronze bell ringing in a stone castle tower, swinging, with motion lines and birds flying off, green storm clouds behind. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-opening-3"
+    },
+    {
+      "name": "goblinstorm-opening-4",
+      "prompt": "A brave small hero standing in a glowing ring of sparkling gems in a green field, goblins coming from all sides, a grumpy goblin king with a club far in the distance. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-opening-4"
+    },
+    {
+      "name": "goblinstorm-hero-knight-1",
+      "prompt": "a small knight in shiny silver armour with a blue plume and cape standing alone at a castle gate with arms folded, while guards run away in the background, goblins approaching. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-knight-1"
+    },
+    {
+      "name": "goblinstorm-hero-knight-2",
+      "prompt": "A kind old grandmother knight in battered silver armour handing two shining swords to a small knight in shiny silver armour with a blue plume and cape, inside a cosy castle hall. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-knight-2"
+    },
+    {
+      "name": "goblinstorm-hero-knight-3",
+      "prompt": "a small knight in shiny silver armour with a blue plume and cape with two shining swords spinning in a circle of light around them, goblins bouncing off. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-knight-3"
+    },
+    {
+      "name": "goblinstorm-hero-ranger-1",
+      "prompt": "a small ranger in a green hood and brown leather with a bow walking through a giant dark forest with enormous tall trees, a few beams of sun far above. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-ranger-1"
+    },
+    {
+      "name": "goblinstorm-hero-ranger-2",
+      "prompt": "a small ranger in a green hood and brown leather with a bow in a forest with whirling green leaves, a diving hawk and a little swarm of friendly wasps helping against goblins. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-ranger-2"
+    },
+    {
+      "name": "goblinstorm-hero-ranger-3",
+      "prompt": "a small ranger in a green hood and brown leather with a bow drawing a bow on a hill, glowing gems flying towards them from far away, goblins in the distance. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-ranger-3"
+    },
+    {
+      "name": "goblinstorm-hero-wizard-1",
+      "prompt": "a small wizard in a purple robe and tall pointed hat with stars sneezing at a magic school library, a small funny puff of fire on a bookshelf, other students gasping. Cartoon, funny. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-wizard-1"
+    },
+    {
+      "name": "goblinstorm-hero-wizard-2",
+      "prompt": "a small wizard in a purple robe and tall pointed hat with stars practising fireballs at targets in a courtyard at sunset, many targets hit, one target a bit singed. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-wizard-2"
+    },
+    {
+      "name": "goblinstorm-hero-wizard-3",
+      "prompt": "a small wizard in a purple robe and tall pointed hat with stars casting a big bright fireball, goblins running away from the purple hat. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-wizard-3"
+    },
+    {
+      "name": "goblinstorm-hero-barbarian-1",
+      "prompt": "a big friendly barbarian with red hair and beard, fur vest and horned helmet laughing in a snowy mountain village, wrestling a friendly bear, people having a snowball fight. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-barbarian-1"
+    },
+    {
+      "name": "goblinstorm-hero-barbarian-2",
+      "prompt": "a big friendly barbarian with red hair and beard, fur vest and horned helmet looking cross with steam puffing from the ears, cartoon style, snowy background. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-barbarian-2"
+    },
+    {
+      "name": "goblinstorm-hero-barbarian-3",
+      "prompt": "a big friendly barbarian with red hair and beard, fur vest and horned helmet looking very cross at a group of goblins running off with a lunch basket and a big sandwich. Funny. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-barbarian-3"
+    },
+    {
+      "name": "goblinstorm-hero-cleric-1",
+      "prompt": "a small cleric in a white and gold robe with a glowing golden ring over the head polishing a bell in a little stone chapel next to an old peaceful graveyard, candles glowing. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-cleric-1"
+    },
+    {
+      "name": "goblinstorm-hero-cleric-2",
+      "prompt": "a small cleric in a white and gold robe with a glowing golden ring over the head gently bandaging the paw of a small fox at a chapel door, a bird with a bandaged wing nearby. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-cleric-2"
+    },
+    {
+      "name": "goblinstorm-hero-cleric-3",
+      "prompt": "a small cleric in a white and gold robe with a glowing golden ring over the head walking forward in a ring of warm golden holy light, goblins bouncing off the ring. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-cleric-3"
+    },
+    {
+      "name": "goblinstorm-hero-rogue-1",
+      "prompt": "a small quick rogue in a dark teal hood and scarf with two little daggers tiptoeing away at night from a goblin camp holding a golden crown, a sleeping goblin king wearing a saucepan on his head. Funny. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-rogue-1"
+    },
+    {
+      "name": "goblinstorm-hero-rogue-2",
+      "prompt": "A cross goblin king with a saucepan on his head shouting and pointing, a crowd of angry goblins behind. Funny, not scary. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-rogue-2"
+    },
+    {
+      "name": "goblinstorm-hero-rogue-3",
+      "prompt": "a small quick rogue in a dark teal hood and scarf with two little daggers dashing between goblins in a blur of teal shadows, goblins tumbling over. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-rogue-3"
+    },
+    {
+      "name": "goblinstorm-hero-witch-1",
+      "prompt": "a small frost witch in an icy blue dress and a snowflake hat, long pale hair, with a crystal wand on a snowy mountain top with a family of fluffy white snow owls sitting on the hat and shoulders. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-witch-1"
+    },
+    {
+      "name": "goblinstorm-hero-witch-2",
+      "prompt": "a small frost witch in an icy blue dress and a snowflake hat, long pale hair, with a crystal wand smiling while goblins near the witch shiver and turn frosty blue, icicles on their noses. Funny. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-witch-2"
+    },
+    {
+      "name": "goblinstorm-hero-witch-3",
+      "prompt": "a small frost witch in an icy blue dress and a snowflake hat, long pale hair, with a crystal wand sending glowing rings of frost out from the wand, snow owls flying happily around. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-witch-3"
+    },
+    {
+      "name": "goblinstorm-hero-dragonkid-1",
+      "prompt": "a small child in a red dragon onesie with little horns, a spiky tail and small wings standing proudly with fists on hips, other children giggling and pointing in the background, a castle courtyard. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-dragonkid-1"
+    },
+    {
+      "name": "goblinstorm-hero-dragonkid-2",
+      "prompt": "a small child in a red dragon onesie with little horns, a spiky tail and small wings looking at a big storybook showing a scary dragon, thinking hard, a little determined frown. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-dragonkid-2"
+    },
+    {
+      "name": "goblinstorm-hero-dragonkid-3",
+      "prompt": "a small child in a red dragon onesie with little horns, a spiky tail and small wings breathing a real fireball at goblins, goblins with surprised faces jumping away. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-hero-dragonkid-3"
+    },
+    {
+      "name": "goblinstorm-map-forest-1",
+      "prompt": "A dark magical forest with giant glowing mushrooms, angry little mushroom creatures, wolves, and a big shadowy forest ogre in the distance. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-map-forest-1"
+    },
+    {
+      "name": "goblinstorm-map-graveyard-1",
+      "prompt": "A misty haunted graveyard at night with friendly cartoon skeletons, little ghosts and a lich with a glowing staff in the distance. Spooky but cute, not scary. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-map-graveyard-1"
+    },
+    {
+      "name": "goblinstorm-map-peaks-1",
+      "prompt": "Snowy frozen mountain peaks, yetis throwing huge snowballs, an ice dragon spreading its wings in the sky far above. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-map-peaks-1"
+    },
+    {
+      "name": "goblinstorm-map-lava-1",
+      "prompt": "A glowing underground lava mine with rivers of orange lava, red hot rocks, fire sprites, and a big fire dragon in the distance. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-map-lava-1"
+    },
+    {
+      "name": "goblinstorm-boss-castle-1",
+      "prompt": "A grumpy goblin king wearing a saucepan as a crown running away across fields, dropping his club, a green storm cloud drifting towards a forest. Funny. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-boss-castle-1"
+    },
+    {
+      "name": "goblinstorm-boss-forest-1",
+      "prompt": "A big forest ogre sitting on the ground crying big cartoon tears, then stomping off into the trees. Funny, not sad. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-boss-forest-1"
+    },
+    {
+      "name": "goblinstorm-boss-graveyard-1",
+      "prompt": "A lich fading away into mist in a graveyard, candles flickering back on, a green storm cloud drifting up into the mountains. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-boss-graveyard-1"
+    },
+    {
+      "name": "goblinstorm-boss-peaks-1",
+      "prompt": "An ice dragon flying far away over mountains to sit sulking on a glacier, the green storm cloud sinking down into a mine below. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-boss-peaks-1"
+    },
+    {
+      "name": "goblinstorm-boss-lava-1",
+      "prompt": "A castle at sunset with a big rainbow where the green storm used to be, people cheering, the castle bell ringing, heroes waving. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-boss-lava-1"
+    }
+  ]
+}

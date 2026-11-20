@@ -7,7 +7,8 @@
  * hero by its own deed and each map by beating the boss before it. The server checks both again when a run starts.
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { KeyBadge, useGameKeys } from '../../kit';
+import { KeyBadge, StoryBook, StoryShelf, useGameKeys, useStories, useStoryOnce } from '../../kit';
+import type { Story } from '../../../shared/kit/stories';
 import { HEROES, MAPS, UNLOCK_WORDS, type HeroDef } from '../../../shared/goblinstorm/config';
 import { heroOpen, mapOpen, RUNS_A_DAY } from '../../../shared/goblinstorm/server';
 import { CODEX_SIZE } from '../../../shared/goblinstorm/shop';
@@ -22,13 +23,14 @@ import { Pic } from './Pic';
 import { PlayScreen, type RunEnd } from './PlayScreen';
 import { FirstTimeTip } from '../../kit';
 import { useSound } from '../../sound';
+import { OPENING, bossStory, goblinShelf, heroStory, mapStory } from './stories';
 import { nextStep, type ShowMe } from './nextStep';
 import { readQuality, saveQuality, setTipsSeen, tipsSeen, type Quality } from './quality';
 import { hush, say } from './voice';
 import { TIPS } from './voiceLines';
 import './goblinstorm.css';
 
-type Screen = 'hero' | 'map' | 'play' | 'end' | 'shop' | 'codex';
+type Screen = 'hero' | 'map' | 'play' | 'end' | 'shop' | 'codex' | 'stories';
 
 /** Speed and health as 1–5 dots, for the hero cards. */
 const dots = (v: number, lo: number, hi: number) => Math.max(1, Math.min(5, Math.round(1 + ((v - lo) / (hi - lo)) * 4)));
@@ -135,7 +137,18 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
 
   const windowRef = useRef<HTMLDivElement>(null);
   // Keys press the menu buttons (heroes and maps 1 to 9, Play again = Enter, Back = Esc); a run has its own keys (PlayScreen).
-  useGameKeys(windowRef, screen !== 'play');
+  // Stories (docs/plans/stories/PLAN.md, ST.3): the opening once the save loads, then a hero's story the first time they are
+  // picked, a page the first time a later map is played, and one the first time a boss is beaten. All skippable, once each.
+  const stories = useStories();
+  const opening = useStoryOnce(OPENING.id, screen === 'hero' && !!save);
+  const [book, setBook] = useState<{ story: Story; then?: () => void } | null>(null);
+  /** Shows `story` first if this pupil hasn't seen it, then does `then`. */
+  const storyFirst = (story: Story | null, then?: () => void) => {
+    if (story && stories.shouldShow(story.id)) setBook({ story, then });
+    else then?.();
+  };
+  const storyOpen = opening.open || book !== null;
+  useGameKeys(windowRef, screen !== 'play' && !storyOpen);
 
   const play = async (i: number, replayGuide = false) => {
     setBusy(true);
@@ -196,7 +209,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
                 <button
                   key={h.id} type="button" disabled={!open} data-key={i < 9 ? String(i + 1) : undefined}
                   className={`gs-pick${open ? '' : ' gs-pick--locked'}${hero.id === h.id && open ? ' gs-pick--chosen' : ''}`}
-                  onClick={() => { setHero(h); setScreen('map'); }}
+                  onClick={() => { setHero(h); storyFirst(heroStory(h.id), () => setScreen('map')); }}
                 >
                   {i < 9 && <KeyBadge k={String(i + 1)} />}
                   <span className="gs-pick__icon" aria-hidden="true">{secret ? '❔' : <Pic path={`portraits/${h.id}`} small fallback={HERO_ICON[h.id]} className="gs-pic--portrait" />}</span>
@@ -227,7 +240,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
               const open = save ? mapOpen(save, i) : i === 0;
               const beaten = save?.bosses.includes(i);
               return (
-                <button key={m.id} type="button" disabled={!open || busy || outToday} data-key={i < 9 ? String(i + 1) : undefined} className={`gs-pick gs-pick--map gs-pick--${m.id}${open ? '' : ' gs-pick--locked'}${shown?.kind === 'map' && shown.map === i ? ' gs-show' : ''}`} onClick={() => void play(i)}>
+                <button key={m.id} type="button" disabled={!open || busy || outToday} data-key={i < 9 ? String(i + 1) : undefined} className={`gs-pick gs-pick--map gs-pick--${m.id}${open ? '' : ' gs-pick--locked'}${shown?.kind === 'map' && shown.map === i ? ' gs-show' : ''}`} onClick={() => storyFirst(mapStory(i), () => void play(i))}>
                   {i < 9 && <KeyBadge k={String(i + 1)} />}
                   <span className="gs-pick__icon" aria-hidden="true">{MAP_ICON[m.id]}</span>
                   <span className="gs-pick__name">{m.name}</span>
@@ -264,6 +277,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
               <GoldLine save={save} />
               <button type="button" className={`gs-btn gs-btn--ghost${shown?.kind === 'shop' ? ' gs-show' : ''}`} onClick={() => setScreen('shop')}>🛒 Shop</button>
               <button type="button" className={`gs-btn gs-btn--ghost${shown?.kind === 'codex' ? ' gs-show' : ''}`} onClick={() => setScreen('codex')}>📖 Codex {codexOf(save)}/{CODEX_SIZE}</button>
+              <button type="button" className="gs-btn gs-btn--ghost" onClick={() => setScreen('stories')}>📜 Stories</button>
             </div>
           )}
           {save && (
@@ -297,6 +311,15 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
         </Menu>
       )}
 
+      {screen === 'stories' && save && (
+        <Menu title="Stories" back={() => setScreen('map')} extra={extra}>
+          <StoryShelf
+            stories={goblinShelf((id) => heroOpen(save, id), (i) => mapOpen(save, i), save.bosses)}
+            book={{ className: 'gs-storybook' }}
+          />
+        </Menu>
+      )}
+
       {screen === 'play' && run && (
         <PlayScreen
           key={run.seed}
@@ -309,6 +332,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
           onEnd={(e) => {
             const opened = e.reply?.valid && e.reply.summary.bossBeaten && !save?.bosses.includes(mapIndex) && mapIndex + 1 < MAPS.length;
             setNewMap(opened ? mapIndex + 1 : null);
+            if (e.reply?.valid && e.reply.summary.bossBeaten) storyFirst(bossStory(mapIndex));
             setEnd(e);
             setScreen('end');
             loadSave();
@@ -319,6 +343,15 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
       {screen === 'end' && end && (
         <EndScreen end={end} onAgain={() => void play(mapIndex)} onMenu={() => setScreen('hero')} onShop={() => setScreen('shop')} busy={busy} error={error} newMap={newMap}
           left={unlimited || left === null ? null : left} />
+      )}
+      {opening.open && <StoryBook story={OPENING} onClose={opening.close} endLabel="Let's go!" className="gs-storybook" />}
+      {book && (
+        <StoryBook
+          story={book.story}
+          endLabel={book.then ? "Let's go!" : 'The end'}
+          className="gs-storybook"
+          onClose={() => { const then = book.then; setBook(null); then?.(); }}
+        />
       )}
       {/* Mounted for the whole game, so the trophy line knows what the pupil had before the run ended. */}
       <TrophyWonLine games={['goblinstorm']} watch={end?.reply ?? null} off={!onServer} />

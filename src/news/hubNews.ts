@@ -24,6 +24,13 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'stories-goblinstorm-2026-11-21',
+    date: '2026-11-21',
+    emoji: '📜',
+    title: 'Goblin Storm stories',
+    text: 'Every Goblin Storm hero has a story now, and so does each boss. You can skip them.',
+  },
+  {
     id: 'stories-openings-2026-11-21',
     date: '2026-11-21',
     emoji: '📖',
