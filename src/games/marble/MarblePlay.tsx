@@ -9,9 +9,10 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { AvatarImage } from '../../avatar/AvatarImage';
 import { courseById } from '../../../shared/marble/courses';
 import { medalFor, type ClockMode } from '../../../shared/marble/engine';
+import { MARBLE_RUNS_A_DAY } from '../../../shared/marble/config';
 import { encodeInputs } from '../../../shared/marble/inputs';
 import { useAuth } from '../../auth/AuthContext';
-import { answerQuestion, enqueueRun, fetchMarbleSwitches, flushRuns, loadBoard, loadGhost, loadServerBests, startRun, type Board, type Ghost, type GhostKind } from '../../data/marble';
+import { answerQuestion, enqueueRun, fetchMarbleRunsLeft, fetchMarbleSwitches, flushRuns, loadBoard, loadGhost, loadServerBests, startRun, type Board, type Ghost, type GhostKind } from '../../data/marble';
 import { fetchMyFocus } from '../../data/focus';
 import { plainSetup, type RunSetup, type StartReply } from '../../../shared/marble/maths';
 import type { MathsFocus } from '../../../shared/maths/focus';
@@ -40,6 +41,7 @@ const GHOST_CHOICES: { value: GhostKind | 'none'; label: string; hint: string }[
 ];
 
 const MEDAL_ICON = { gold: '🥇', silver: '🥈', bronze: '🥉' } as const;
+const DONE_TODAY = `That's all ${MARBLE_RUNS_A_DAY} runs for today. See you tomorrow!`;
 
 /**
  * `localMaths` is for the stand-alone preview (nobody signed in, no server): the questions are made and marked in this
@@ -63,6 +65,9 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
   const [saves, setSaves] = useState(0);
   const wonLine = <><TrophyWonLine games={['marble']} watch={saves || null} off={localMaths || !player} /><AchievementPop games={['marble']} watch={saves || null} off={localMaths || !player} /></>;
   const [note, setNote] = useState('');
+  // Runs left today (10 a day): null on an "Unlimited today" day, undefined until it's known. Read again after each save.
+  const [runsLeft, setRunsLeft] = useState<number | null | undefined>(undefined);
+  const doneToday = runsLeft === 0;
   const runKey = pick ? `${pick.id}-${pick.mode}-${pick.round}` : '';
   const wantMaths = mathsSwitch !== 'off';
   const bests = wantMaths ? mathsBests : plainBests;
@@ -79,6 +84,15 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
       current = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!player || localMaths) return;
+    let current = true;
+    void fetchMarbleRunsLeft().then((left) => current && setRunsLeft(left));
+    return () => {
+      current = false;
+    };
+  }, [player, saves]);
 
   // Send anything still waiting from an earlier visit, then bring in the server's bests (with and without maths).
   useEffect(() => {
@@ -111,6 +125,8 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
   // Without the server (offline) or for two players the run is plain: arrows at the gates, and it only counts on this device.
   const begin = async (id: string, mode: ClockMode, round: number, two = false) => {
     setNote('');
+    // The picker says so already.
+    if (doneToday) return;
     setBusy(true);
     const course = courseById(id);
     // The preview makes its own questions (nothing to ask a server).
@@ -123,10 +139,17 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
       setPick({ id, mode, round, ghost: null, two, started: null, setup: runSetup(course, `local-${Math.floor(Math.random() * 1e9)}`, list, true) });
       return;
     }
-    const [started, loaded] = await Promise.all([
+    const [reply, loaded] = await Promise.all([
       player && !two ? startRun(id, mode, wantMaths) : Promise.resolve(null),
       !two && ghostChoice !== 'none' ? loadGhost(id, mode, ghostChoice, wantMaths) : Promise.resolve(null),
     ]);
+    if (reply === 'done-today') {
+      setBusy(false);
+      setRunsLeft(0);
+      setPick(null);
+      return;
+    }
+    const started = reply;
     // A ghost recorded before a course changed can't follow it any more: leave it out.
     const ghost = course ? checkGhost(course, mode, loaded) : null;
     setBusy(false);
@@ -199,8 +222,9 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
       hasFinished={hasFinished}
       ghostChoice={ghostChoice}
       onGhostChoice={setGhostChoice}
-      busy={busy}
+      busy={busy || doneToday}
       note={note}
+      runsLeft={runsLeft}
     />
     {wonLine}
     </>
@@ -244,7 +268,7 @@ function HowToPlay({ mathsAllowed, onBack }: { mathsAllowed: boolean; onBack: ()
 }
 
 function CoursePicker({
-  onHowTo, bests, mathsSwitch, focus, wantMaths, onPlay, hasFinished, ghostChoice, onGhostChoice, busy, note,
+  onHowTo, bests, mathsSwitch, focus, wantMaths, onPlay, hasFinished, ghostChoice, onGhostChoice, busy, note, runsLeft,
 }: {
   onHowTo: () => void;
   bests: Bests;
@@ -257,6 +281,7 @@ function CoursePicker({
   onGhostChoice: (c: GhostKind | 'none') => void;
   busy: boolean;
   note: string;
+  runsLeft: number | null | undefined;
 }) {
   const real = useMemo(() => COURSE_INFO.filter((c) => !c.practice), []);
   const practice = useMemo(() => COURSE_INFO.filter((c) => c.practice), []);
@@ -340,7 +365,12 @@ function CoursePicker({
             ))}
           </div>
         </div>
-        {busy && <p role="status">Setting up your run…</p>}
+        {runsLeft !== undefined && (
+          <p className="marble-picker__runs">
+            {runsLeft === null ? '🔵 Unlimited runs today' : runsLeft === 0 ? `🔵 ${DONE_TODAY}` : `🔵 ${runsLeft} of ${MARBLE_RUNS_A_DAY} runs left today`}
+          </p>
+        )}
+        {busy && runsLeft !== 0 && <p role="status">Setting up your run…</p>}
         {note && <p role="status">{note}</p>}
         {mathsSwitch !== 'off' && <FocusNote focus={focus} />}
       </div>

@@ -8200,6 +8200,23 @@ function parseMathsSwitch(value) {
 	return MATHS_SWITCHES.includes(value) ? value : "off";
 }
 //#endregion
+//#region shared/unlimited.ts
+/** Today's date in New Zealand, 'YYYY-MM-DD'. */
+const nzToday = (now = new Date()) => new Intl.DateTimeFormat("en-CA", {
+	timeZone: "Pacific/Auckland",
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit"
+}).format(now);
+/**
+* Is this game's switch on today? `days` is the settings row's `unlimited_days` ({ game id: NZ date }). Anything that
+* isn't today's date (missing, an old day, junk) is off.
+*/
+function isUnlimitedFor(days, game, now = new Date()) {
+	if (!days || typeof days !== "object") return false;
+	return days[game] === nzToday(now);
+}
+//#endregion
 //#region shared/maths/focusResults.ts
 /**
 * What the game servers tell the database about answers given while a maths focus ran (docs/MATHS-FOCUS-PLAN.md, "Stage F.8
@@ -11721,6 +11738,7 @@ var RateLimiter = class {
 	}
 };
 const TOO_MANY = "That's a lot of rolling today! Have a break and come back tomorrow.";
+const DONE_TODAY = `That's your 10 runs for today. See you tomorrow!`;
 /** How long a gate answer is said to have taken. The server can't time a roll through a tunnel, so it is slow enough not to count as quick. */
 const GATE_MS = 8e3;
 const MAX_ANSWER_MS = 6e4;
@@ -11760,6 +11778,12 @@ function makeHandler(services) {
 			const mode = body.mode;
 			const course = typeof body.course === "string" ? courseById(body.course) : void 0;
 			if (!course || mode !== "up" && mode !== "down") return reply(400, { error: "That course couldn't be found." });
+			const today = await services.runsToday(player);
+			if (today && !today.unlimited && today.runs >= 10) return reply(409, {
+				error: DONE_TODAY,
+				code: "done-today"
+			});
+			const runsLeft = !today ? void 0 : today.unlimited ? null : Math.max(0, 10 - today.runs - 1);
 			const seed = makeMarbleSeed(nowSeconds, services.randomHex(12));
 			const stamp = await services.stamp(marbleStampText(player, course.def.id, mode, seed));
 			if (!stamp) return reply(500, { error: "The run couldn't start." });
@@ -11780,7 +11804,8 @@ function makeHandler(services) {
 			return reply(200, {
 				seed,
 				stamp,
-				...runSetup(course, seed, questions, rescue)
+				...runSetup(course, seed, questions, rescue),
+				...runsLeft !== void 0 ? { runsLeft } : {}
 			});
 		}
 		if (body.action === "answer") {
@@ -11956,6 +11981,18 @@ Deno.serve(makeHandler({
 	randomHex: (bytes) => Array.from(crypto.getRandomValues(new Uint8Array(bytes)), (b) => b.toString(16).padStart(2, "0")).join(""),
 	stamp: stamper(key, "marble-run"),
 	userIdFor: userIdFromToken(admin.auth),
+	async runsToday(player) {
+		const [count, settings] = await Promise.all([admin.rpc("marble_runs_today", { player }), admin.rpc("settings_of", { player }).maybeSingle()]);
+		if (count.error || typeof count.data !== "number") {
+			console.error(`marble: runs today failed (${count.error?.code ?? "none"})`);
+			return null;
+		}
+		const days = settings.data?.unlimited_days;
+		return {
+			runs: count.data,
+			unlimited: isUnlimitedFor(days, "marble")
+		};
+	},
 	async settings(player) {
 		const { data, error } = await admin.rpc("settings_of", { player }).maybeSingle();
 		if (error || !data) {

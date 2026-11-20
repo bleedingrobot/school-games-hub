@@ -11,6 +11,7 @@
  * The tunnel chosen at each answer gate is read from the replay, never sent; bonuses and refunds in the inputs are only
  * allowed as far as right answers were marked.
  */
+import { MARBLE_RUNS_A_DAY } from '../../../shared/marble/config';
 import { courseById } from '../../../shared/marble/courses';
 import type { Course } from '../../../shared/marble/course';
 import { doorMask, doorsForSeed, gateLayout, rightGemsForSeed, runSetup, slotPlan, type GateLayout, type StartReply } from '../../../shared/marble/maths';
@@ -55,6 +56,8 @@ export interface Services {
   userIdFor(token: string): Promise<string | null>;
   /** Signs some text (null if the server has no secret). */
   stamp(text: string): Promise<string | null>;
+  /** Runs saved today (New Zealand day) and whether the class has "Unlimited today" for Marble Rush. Null if it can't be read. */
+  runsToday(player: string): Promise<{ runs: number; unlimited: boolean } | null>;
   /** The teacher's switches for this student (null if they can't be read: maths then stays off). */
   settings(player: string): Promise<MarbleSettings | null>;
   /** The student's records, the class's question settings and their focus (null if they can't be read). */
@@ -80,11 +83,12 @@ export interface Services {
 /** Requests one student may make a minute (a run is a start, a few answers and a save). */
 export const MAX_REQUESTS_PER_MINUTE = 60;
 const TOO_MANY = "That's a lot of rolling today! Have a break and come back tomorrow.";
+const DONE_TODAY = `That's your ${MARBLE_RUNS_A_DAY} runs for today. See you tomorrow!`;
 /** How long a gate answer is said to have taken. The server can't time a roll through a tunnel, so it is slow enough not to count as quick. */
 const GATE_MS = 8000;
 const MAX_ANSWER_MS = 60_000;
 
-export { MARBLE_RUNS_PER_DAY };
+export { MARBLE_RUNS_A_DAY, MARBLE_RUNS_PER_DAY };
 
 /** Maths happens when the teacher says "on", or says "students choose" and this student chose it. */
 export function mathsWanted(mode: MathsSwitch, chosen: unknown): boolean {
@@ -121,6 +125,10 @@ export function makeHandler(services: Services) {
       const mode = body.mode;
       const course = typeof body.course === 'string' ? courseById(body.course) : undefined;
       if (!course || (mode !== 'up' && mode !== 'down')) return reply(400, { error: "That course couldn't be found." });
+      // 10 runs a day (unless the teacher has lifted it today). If the count can't be read the run goes ahead.
+      const today = await services.runsToday(player);
+      if (today && !today.unlimited && today.runs >= MARBLE_RUNS_A_DAY) return reply(409, { error: DONE_TODAY, code: 'done-today' });
+      const runsLeft = !today ? undefined : today.unlimited ? null : Math.max(0, MARBLE_RUNS_A_DAY - today.runs - 1);
       const seed = makeMarbleSeed(nowSeconds, services.randomHex(12));
       const stamp = await services.stamp(marbleStampText(player, course.def.id, mode, seed));
       if (!stamp) return reply(500, { error: "The run couldn't start." });
@@ -140,7 +148,7 @@ export function makeHandler(services: Services) {
           }
         }
       }
-      const started: StartReply = { seed, stamp, ...runSetup(course, seed, questions, rescue) };
+      const started: StartReply = { seed, stamp, ...runSetup(course, seed, questions, rescue), ...(runsLeft !== undefined ? { runsLeft } : {}) };
       return reply(200, started);
     }
 

@@ -21,6 +21,7 @@ vi.mock('../../data/marble', () => ({
   loadServerBests: (maths?: boolean) => loadServerBests(maths),
   answerQuestion: (...a: unknown[]) => answerQuestion(...a),
   fetchMarbleSwitches: () => fetchMarbleSwitches(),
+  fetchMarbleRunsLeft: async () => 7,
 }));
 vi.mock('../../data/focus', () => ({ fetchMyFocus: async () => ({ source: 'auto', skills: [], onlyThese: false, endsAt: null, canChoose: true, own: null }) }));
 vi.mock('../../auth/AuthContext', () => ({ useAuth: () => ({ profile: { id: 'student-1' } }) }));
@@ -59,6 +60,8 @@ const open = () => render(<SoundProvider><MarblePlay /></SoundProvider>);
 describe('course picker', () => {
   it('asks the server for a stamped seed as a run opens, and sends the finished run to be replayed', async () => {
     open();
+    // 10 runs a day: the picker says what's left.
+    expect(await screen.findByText('🔵 7 of 10 runs left today')).toBeTruthy();
     const card = screen.getByRole('heading', { name: 'Boulder Beach' }).closest('li')!;
     fireEvent.click(within(card).getByRole('button', { name: 'Play Boulder Beach' }));
     await screen.findByText('Running boulder-beach in up');

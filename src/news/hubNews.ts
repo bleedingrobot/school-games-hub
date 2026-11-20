@@ -22,6 +22,13 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'marble-ten-runs-2026-11-20',
+    date: '2026-11-20',
+    emoji: '🔵',
+    title: 'Marble Rush: 10 runs a day',
+    text: 'Its card shows your runs left. The Gem Keep card says when a new level is ready.',
+  },
+  {
     id: 'bonus-turns-flap-storm-2026-11-20',
     date: '2026-11-20',
     emoji: '⏳',
