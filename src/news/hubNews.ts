@@ -18,9 +18,20 @@ export interface NewsItem {
   game?: string;
   /** Where "Have a look" goes. Defaults to the game's page when `game` is set. */
   to?: string;
+  /** The last day it shows, YYYY-MM-DD (NZ), for a line that stops being true (a "last chance" that has passed). */
+  until?: string;
 }
 
 export const HUB_NEWS: NewsItem[] = [
+  // Dated Sunday: newsToShow holds a line back until its date, so this one shows from Season 2 day 1.
+  {
+    id: 'dragon-season-2-begins-2026-11-22',
+    date: '2026-11-22',
+    emoji: '🌅',
+    title: 'Dragon Maths Season 2 has begun!',
+    text: 'Every hero starts again. See the Season 1 Hall of Heroes in Dragon Maths.',
+    game: 'dragon-maths',
+  },
   {
     id: 'dragon-season-1-ends-2026-11-20',
     date: '2026-11-20',
@@ -28,6 +39,7 @@ export const HUB_NEWS: NewsItem[] = [
     title: 'Dragon Maths Season 1 ends Saturday',
     text: 'Last chance to slay the Red Dragon! Then heroes start again, but stars and trophies stay.',
     game: 'dragon-maths',
+    until: '2026-11-21',
   },
   {
     id: 'ultimate-dragon-slayer-2026-11-20',
@@ -429,11 +441,11 @@ export const NEWS_DAYS = 14;
 /** How many lines the box shows before "More". */
 export const NEWS_SHOWN = 3;
 
-/** The lines to show today, newest first: recent, and for a game this class can see (or for everyone). */
+/** The lines to show today, newest first: recent (none before its date or after its `until`), and for a game this class can see (or for everyone). */
 export function newsToShow(today: string, canSee: (game: string) => boolean, news: NewsItem[] = HUB_NEWS): NewsItem[] {
   const oldest = new Date(`${today}T00:00:00Z`).getTime() - NEWS_DAYS * 86_400_000;
   return news
-    .filter((n) => new Date(`${n.date}T00:00:00Z`).getTime() >= oldest && n.date <= today)
+    .filter((n) => new Date(`${n.date}T00:00:00Z`).getTime() >= oldest && n.date <= today && (!n.until || today <= n.until))
     .filter((n) => !n.game || canSee(n.game))
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 }

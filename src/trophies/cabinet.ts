@@ -95,3 +95,19 @@ export function halfLitPairs(pairs: TrophyPair[], switchedOn: ReadonlySet<string
     return [{ ...p, hint: `You have ${held[0].name}. Win ${missing.name} in ${trophyPlace(missing.game)} ${when} to light it up!` }];
   });
 }
+
+/**
+ * The gold "Season 1 Hero" line on a Dragon Maths veteran's profile (docs/plans/dragon-season-end): one Season Veteran
+ * (`dm-veteran`) win per Dragon Maths season played. Null for anyone without one. No effect in the game.
+ */
+export function seasonHeroLine(trophies: readonly MyTrophy[] | undefined): string | null {
+  const veteran = trophies?.find((t) => t.id === 'dm-veteran');
+  const seasons = [
+    ...new Set(
+      (veteran?.wins ?? []).map((w) => Number(w.detail?.dragonSeason ?? w.season)).filter((n) => Number.isInteger(n) && n > 0),
+    ),
+  ].sort((a, b) => a - b);
+  if (seasons.length === 0) return null;
+  if (seasons.length === 1) return `Season ${seasons[0]} Hero`;
+  return `Seasons ${seasons.slice(0, -1).join(', ')} and ${seasons[seasons.length - 1]} Hero`;
+}

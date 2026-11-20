@@ -3,7 +3,12 @@
 Asked for by James, 20 Nov 2026: "it should be epic and tell them all the details about what is happening, what is staying,
 and what is resetting." Branch `claude/dragon-season-end`. Migration numbers from `20261120001800` (check again).
 
-**Status:** plan written 20 Nov 2026. Nothing built yet.
+**Status (20 Nov 2026):** stage 1 banner LIVE (#658). Stage 2 LIVE (#657): table, trigger, `lord_season_summary`,
+`lord_season_seen`, `lord_save_season` and the `dm-veteran` trophy checked on the live database 20 Nov. Stage 3 ceremony merged
+(#660). Profile "Season 1 Hero" line, a drawn medal stand-in for the Season Veteran trophy, and the Season 2 What's new line
+(held back until 22 Nov; the "ends Saturday" line stops after 21 Nov) in the follow-up PR. Still to do: check on Sun 22 Nov
+that results are filling up; stage 4 paintings (the medal stand-in is `src/avatar/art/trophies/season-veteran-*.webp`, so
+the painting replaces the same files).
 
 ## When it happens
 

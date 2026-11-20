@@ -36,3 +36,5 @@
 .title-picker__how { display: block; font-weight: 400; font-size: 0.8em; }
 .title-picker__chip:disabled { opacity: 0.5; cursor: default; }
 .title-picker__bar { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+/* The Dragon Maths "Season 1 Hero" line (Profile.tsx), under any worn title. */
+.profile-top__season-hero { font-size: 0.95rem; margin-top: 0.15rem; }

@@ -25,6 +25,7 @@ import type { MyTrophy } from '../data/trophies';
 import { gameLabel } from '../games/registry';
 import { useThemeTrial } from '../theme/hubTheme';
 import { TrophyCabinet, useMyTrophies } from '../trophies/TrophyCabinet';
+import { seasonHeroLine } from '../trophies/cabinet';
 import { HeroTitleLine, TitlePicker, useMyTitles } from '../quests/HeroTitles';
 import { FramePicker, useMyFrames } from '../quests/QuestFrames';
 import { MyRewards, useMyQuestRewards } from '../quests/MyRewards';
@@ -77,6 +78,7 @@ export function Profile() {
   const savedPic = pictureOf(profile?.avatar)?.id ?? null;
   const cabinet = useMyTrophies(profile?.id);
   const trophyCount = cabinet.data?.trophies.length;
+  const seasonHero = seasonHeroLine(cabinet.data?.trophies);
   const questRewards = useMyQuestRewards();
 
   const [editing, setEditing] = useState<'look' | 'name' | 'title' | 'frame' | null>(null);
@@ -144,6 +146,12 @@ export function Profile() {
         <div className="profile-top__who">
           <h2 className="profile-top__name">{profile?.display_name}</h2>
           <HeroTitleLine avatar={profile?.avatar} />
+          {seasonHero && (
+            <small className="hero-title hero-title--special profile-top__season-hero">
+              <span aria-hidden="true">🎖️ </span>
+              {seasonHero}
+            </small>
+          )}
           {!madeAvatar && <p className="profile-top__nudge">You haven’t made your avatar yet. Pick a face, hair and colours!</p>}
           <ScrollNote />
           <div className="profile-top__buttons">
