@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { SEASON_DAYS } from '../../../shared/lord/data';
 import { canFaceDragon } from '../../../shared/lord/engine';
-import { lordSeasonRoad, type LordStageId } from '../../../shared/lord/seasonRoad';
+import { SEASON_KEEPS, SEASON_RESETS, lordSeasonRoad, seasonBanner, type LordStageId } from '../../../shared/lord/seasonRoad';
 import type { Hero } from '../../../shared/lord/types';
 import type { FirstFive, LordBackend } from '../../data/lord';
 import { stageArt } from './art';
@@ -14,6 +14,7 @@ export function SeasonRoad({ season, hero, fetchFirstFive }: {
 }) {
   const [open, setOpen] = useState<LordStageId | null>(null);
   const [firstFive, setFirstFive] = useState<FirstFive | null>(null);
+  const [whatNext, setWhatNext] = useState(false);
   // Asked again after each dragon win, so the pupil sees their own place taken.
   useEffect(() => {
     if (!fetchFirstFive) return;
@@ -25,8 +26,18 @@ export function SeasonRoad({ season, hero, fetchFirstFive }: {
   const road = lordSeasonRoad({ number: season.number, day: season.dayOfSeason }, { level: hero.level, ready: canFaceDragon(hero) });
   const shown = road.stages.find((s) => s.id === open);
   const { before, strong, after } = road.headline;
+  const banner = seasonBanner({ number: season.number, day: season.dayOfSeason });
   return (
     <section className="lord-road" aria-label={road.label}>
+      {banner?.kind === 'last' && (
+        <div className="lord-road__banner" role="note">
+          <strong>⏳ {banner.title}</strong> {banner.text}{' '}
+          <button type="button" className="lord-road__next-btn" aria-expanded={whatNext} onClick={() => setWhatNext(!whatNext)}>
+            {whatNext ? 'Hide' : 'What happens next?'}
+          </button>
+          {whatNext && <SeasonChanges />}
+        </div>
+      )}
       <div className="lord-road__head">
         <h3>Season {season.number} · day {season.dayOfSeason} of {SEASON_DAYS}</h3>
         <p>{before}<strong>{strong}</strong>{after}</p>
@@ -62,4 +73,20 @@ export function SeasonRoad({ season, hero, fetchFirstFive }: {
 export function firstFiveLine(left: number): string {
   if (left <= 0) return 'First five: all 5 places are taken this season. Slay the dragon to win the Slayer’s Sword.';
   return `First five: ${left} of 5 places left this season. The first five to slay the dragon win its head!`;
+}
+
+/** What a new season keeps and what starts again, side by side (the last-chance banner and the new-season ceremony). */
+export function SeasonChanges() {
+  return (
+    <div className="lord-changes">
+      <div className="lord-changes__col lord-changes__col--keep">
+        <h4>Stays forever</h4>
+        <ul>{SEASON_KEEPS.map((k) => <li key={k.text}><span aria-hidden="true">{k.emoji}</span> {k.text}</li>)}</ul>
+      </div>
+      <div className="lord-changes__col lord-changes__col--reset">
+        <h4>Starts again</h4>
+        <ul>{SEASON_RESETS.map((k) => <li key={k.text}><span aria-hidden="true">{k.emoji}</span> {k.text}</li>)}</ul>
+      </div>
+    </div>
+  );
 }

@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'dragon-season-1-ends-2026-11-20',
+    date: '2026-11-20',
+    emoji: '⏳',
+    title: 'Dragon Maths Season 1 ends Saturday',
+    text: 'Last chance to slay the Red Dragon! Then heroes start again, but stars and trophies stay.',
+    game: 'dragon-maths',
+  },
+  {
     id: 'ultimate-dragon-slayer-2026-11-20',
     date: '2026-11-20',
     emoji: '🐲',
