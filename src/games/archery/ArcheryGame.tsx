@@ -7,7 +7,8 @@
  * classmates who are too, pops up challenges over any screen, and plays the fight one turn at a time through `api`.
  * While the teacher has classmate fights switched off (Stage 7), none of that shows.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useGameKeys } from '../../kit';
 import type { BotLevel } from '../../../shared/archery/bot';
 import { PACK_MS } from '../../../shared/archery/config';
 import { duelOpen, seatOf, type Classmate, type DuelRow } from '../../../shared/archery/duel';
@@ -63,6 +64,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
   onServer?: boolean;
 }) {
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
+  const rootRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<ArmoryState | null>(null);
   /** Coins from a quest's Game Coins pouch, opened as the game loaded (shown once on Home). */
   const [pouch, setPouch] = useState(0);
@@ -77,6 +79,8 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
   const [packProblem, setPackProblem] = useState('');
   // Maths over a bot fight: a restock between rounds, or the loot chest at the end.
   const [overFight, setOverFight] = useState<{ set: SetRequest; won?: boolean } | null>(null);
+  // Keys press the on-screen buttons. A fight's own keys (arrows, Space) have no data-key; off under the restock pop-up so it can't press the fight's buttons beneath it.
+  useGameKeys(rootRef, !overFight);
   const prefs = loadPrefs();
   const lessMotion = wantsLessMotion(prefs);
   const [mateWorld, setMateWorld] = useState<WorldId>(choices.world);
@@ -238,17 +242,17 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
     setScreen({ kind: 'home' });
   }
 
-  if (screen.kind === 'loading') return <div className="ar-shell"><p className="ar-wait" role="status">Opening the Armory…</p></div>;
+  if (screen.kind === 'loading') return <div className="ar-shell" ref={rootRef}><p className="ar-wait" role="status">Opening the Armory…</p></div>;
   if (screen.kind === 'off' || screen.kind === 'offline' || !state) {
     const message = screen.kind === 'off' || screen.kind === 'offline' ? screen.message : '';
     return (
-      <div className="ar-shell">
+      <div className="ar-shell" ref={rootRef}>
         <section className="ar-page" aria-labelledby="ar-closed-title">
           <h2 id="ar-closed-title">{screen.kind === 'off' ? 'Archery Challenge is closed' : "Archery Challenge can't open just now"}</h2>
           <p>{message}</p>
           <div className="ar-row">
-            {screen.kind !== 'off' && <button type="button" className="button button--play ar-btn" onClick={() => void load()}>Try again</button>}
-            {onExit && <button type="button" className="button button--light ar-btn" onClick={onExit}>Back</button>}
+            {screen.kind !== 'off' && <button type="button" className="button button--play ar-btn" data-key="enter" onClick={() => void load()}>Try again</button>}
+            {onExit && <button type="button" className="button button--light ar-btn" data-key="esc" onClick={onExit}>Back</button>}
           </div>
         </section>
       </div>
@@ -426,7 +430,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
   // fights are switched off.
   const ask = screen.kind !== 'duel' && matesOn ? duels.asks[0] : undefined;
   return (
-    <div className="ar-shell" data-screen={screen.kind}>
+    <div className="ar-shell" data-screen={screen.kind} ref={rootRef}>
       {body}
       <TrophyWonLine games={['archery']} watch={saves} off={!onServer} />
       <AchievementPop games={['archery']} watch={saves} off={!onServer} />

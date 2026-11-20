@@ -73,7 +73,7 @@ export function ClashAskBanner({ clashes, onYes }: { clashes: Clashes; onYes: (c
   return (
     <div className="lord-ask" role="alertdialog" aria-label={`${first.from} challenges you`}>
       <p>⚔️ {first.from} challenges you to an arena clash!<small>Hammer, Sword or Net. {left}s to answer.</small></p>
-      <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus onClick={() => onYes(first.clash)}>Fight!</button>
+      <button type="button" className="lord-btn lord-btn--hot lord-btn--big" data-key="enter" autoFocus onClick={() => onYes(first.clash)}>Fight!</button>
       <button type="button" className="lord-btn lord-btn--glass" onClick={() => {
         clashes.forget(first.clash);
         void clashes.send({ action: 'clash-answer', clash: first.clash, accept: false });

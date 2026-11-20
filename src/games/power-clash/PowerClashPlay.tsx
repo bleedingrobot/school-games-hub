@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { KeyBadge, useGameKeys } from '../../kit';
 import type { BotLevel } from '../../../shared/botGame';
 import type { PowerClashGameReport } from '../../../shared/power-clash/save';
 import {
@@ -115,6 +116,9 @@ export function PowerClashPlay({ level: levelProp = 'easy', onLevelChange, savin
   const [shoutText, setShoutText] = useState('');
   const [helpOpen, setHelpOpen] = useState(false);
   const helpButton = useRef<HTMLButtonElement>(null);
+  // The game screen's root (null on the set-up screen, which has its own below). Esc and ? stay with the keys here.
+  const gameRoot = useRef<HTMLElement>(null);
+  useGameKeys(gameRoot);
   const plays = useRef(0);
   const timers = useRef<number[]>([]);
   const botTimer = useRef<number | null>(null);
@@ -455,7 +459,7 @@ export function PowerClashPlay({ level: levelProp = 'easy', onLevelChange, savin
   };
 
   return (
-    <section className={`pc ${calm ? 'pc--calm' : ''} ${state.chaos ? 'pc--chaos' : ''}`} aria-label={TEXT.name}>
+    <section ref={gameRoot} className={`pc ${calm ? 'pc--calm' : ''} ${state.chaos ? 'pc--chaos' : ''}`} aria-label={TEXT.name}>
       <header className="pc__top">
         <h1>{TEXT.name}</h1>
         {helpBtn}
@@ -527,7 +531,7 @@ export function PowerClashPlay({ level: levelProp = 'easy', onLevelChange, savin
               </button>
             ) : null}
             {over && !match.winner ? (
-              <button type="button" className="button button--play" onClick={nextRoundClicked}>
+              <button data-key="enter" type="button" className="button button--play" onClick={nextRoundClicked}>
                 Next round
               </button>
             ) : null}
@@ -535,6 +539,7 @@ export function PowerClashPlay({ level: levelProp = 'easy', onLevelChange, savin
               <button
                 type="button"
                 className="button button--light"
+                data-key={match.winner ? 'enter' : undefined}
                 onClick={() => {
                   setFx(null);
                   setShoutText('');
@@ -665,6 +670,8 @@ function Setup({
   starting: boolean;
   saves: boolean;
 }) {
+  const setupRoot = useRef<HTMLElement>(null);
+  useGameKeys(setupRoot);
   const vsBot = mode === 'bot';
   const ready = vsBot ? validLoadout(mine) : validLoadout(loadouts.X) && validLoadout(loadouts.O);
   const players = useMemo<Player[]>(() => ['X', 'O'], []);
@@ -698,24 +705,28 @@ function Setup({
     </section>
   );
   return (
-    <section className="pc pc--setup" aria-label={TEXT.name}>
+    <section ref={setupRoot} className="pc pc--setup" aria-label={TEXT.name}>
       <h1>{TEXT.name}</h1>
       {helpButton}
       <fieldset className="pc__modes">
         <legend>How do you want to play?</legend>
-        <button type="button" className={`pc__mode ${!vsBot ? 'pc__mode--on' : ''}`} aria-pressed={!vsBot} onClick={() => onMode('pass')}>
+        <button data-key="1" type="button" className={`pc__mode ${!vsBot ? 'pc__mode--on' : ''}`} aria-pressed={!vsBot} onClick={() => onMode('pass')}>
+          <KeyBadge k="1" />
           Two players, one screen
         </button>
-        <button type="button" className={`pc__mode ${vsBot ? 'pc__mode--on' : ''}`} aria-pressed={vsBot} onClick={() => onMode('bot')}>
+        <button data-key="2" type="button" className={`pc__mode ${vsBot ? 'pc__mode--on' : ''}`} aria-pressed={vsBot} onClick={() => onMode('bot')}>
+          <KeyBadge k="2" />
           Play a bot
         </button>
       </fieldset>
       <fieldset className="pc__modes">
         <legend>Which rules?</legend>
-        <button type="button" className={`pc__mode ${!chaos ? 'pc__mode--on' : ''}`} aria-pressed={!chaos} onClick={() => onChaos(false)}>
+        <button data-key="3" type="button" className={`pc__mode ${!chaos ? 'pc__mode--on' : ''}`} aria-pressed={!chaos} onClick={() => onChaos(false)}>
+          <KeyBadge k="3" />
           Normal
         </button>
-        <button type="button" className={`pc__mode pc__mode--chaos ${chaos ? 'pc__mode--on' : ''}`} aria-pressed={chaos} onClick={() => onChaos(true)}>
+        <button data-key="4" type="button" className={`pc__mode pc__mode--chaos ${chaos ? 'pc__mode--on' : ''}`} aria-pressed={chaos} onClick={() => onChaos(true)}>
+          <KeyBadge k="4" />
           🌀 Chaos Mode
         </button>
       </fieldset>
@@ -752,7 +763,7 @@ function Setup({
           {players.map((player) => panel(player, `Player ${player}: pick ${LOADOUT_SIZE}`, `pc__panel--${player}`, loadouts[player], (id) => toggle(player, id)))}
         </div>
       )}
-      <button type="button" className="button button--play" disabled={!ready || starting} onClick={onStart}>
+      <button data-key="enter" type="button" className="button button--play" disabled={!ready || starting} onClick={onStart}>
         {starting ? 'Getting ready…' : 'Start the clash'}
       </button>
       {vsBot && !saves ? <p className="pc__lead">This is a practice copy: bot games aren’t saved here.</p> : null}

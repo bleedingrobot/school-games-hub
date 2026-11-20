@@ -7,6 +7,7 @@
  * run through `onDone`.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useGameKeys } from '../../kit';
 import { DT, MAX_GEM_BONUSES, RESCUE_GAP_STEPS } from '../../../shared/marble/config';
 import type { Course } from '../../../shared/marble/course';
 import { clockSteps, makeWorld, medalFor, newRun, stepRun, type ClockMode, type RunState } from '../../../shared/marble/engine';
@@ -657,9 +658,12 @@ export function RunScreen({
   const info = infoFor(course.def.id);
   const hard = mode === 'down';
   const playing = phase === 'playing';
+  // Keys press the Keep rolling / Roll again buttons; the run's own keys (arrows, Esc, Enter on Ready and Go) stay in charge otherwise.
+  const runRef = useRef<HTMLDivElement>(null);
+  useGameKeys(runRef, phase === 'paused' || phase === 'finished' || phase === 'timeout' || phase === 'broken');
 
   return (
-    <div className="marble-run">
+    <div className="marble-run" ref={runRef}>
       <div className="marble-hud">
         <div className="marble-hud__title">
           <strong>{info?.name ?? course.def.name}</strong>
@@ -729,7 +733,7 @@ export function RunScreen({
         {phase === 'broken' && (
           <div className="marble-overlay" role="alert">
             <p>This game needs 3D graphics, and this device couldn’t start them.</p>
-            <button type="button" className="button button--light" onClick={onExit}>Back to courses</button>
+            <button type="button" className="button button--light" data-key="enter" onClick={onExit}>Back to courses</button>
           </div>
         )}
         {phase === 'ready' && (
@@ -755,7 +759,7 @@ export function RunScreen({
           <div className="marble-overlay">
             <p className="marble-overlay__big">Paused</p>
             <div className="marble-overlay__buttons">
-              <button type="button" className="button button--play" onClick={() => goto('playing')}>Keep rolling</button>
+              <button type="button" className="button button--play" data-key="enter" onClick={() => goto('playing')}>Keep rolling</button>
               <button type="button" className="button button--light" onClick={() => restartRef.current()}>Start again</button>
               <button type="button" className="button button--light" onClick={onExit}>Courses</button>
             </div>
@@ -808,7 +812,7 @@ export function RunScreen({
             )}
             {phase === 'timeout' && <p>The clock ran out. Nothing is lost: have another go.</p>}
             <div className="marble-overlay__buttons">
-              <button type="button" className="button button--play" onClick={onAgain}>Roll again</button>
+              <button type="button" className="button button--play" data-key="enter" onClick={onAgain}>Roll again</button>
               {phase === 'finished' && !hard && canTryHard && !twoPlayer && (
                 <button type="button" className="button button--light" onClick={onHard}>Try hard mode 🔥</button>
               )}

@@ -46,7 +46,7 @@ export function LadderAsk({ kind, title, note, ask, onDone, onSkip }: { kind: As
     return (
       <div className="cq-panel" role="status">
         <p>{trouble}</p>
-        <button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={onSkip}>Carry on without it</button>
+        <button data-key="enter" type="button" className="cq-btn cq-btn--hot" autoFocus onClick={onSkip}>Carry on without it</button>
       </div>
     );
   }

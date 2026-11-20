@@ -56,7 +56,7 @@
 .rd-btn--hot:hover:not(:disabled) { color: #fff; background: linear-gradient(180deg, #c45a22, var(--rd-hot)); }
 .rd-btn--big { font-size: 1.18rem; padding: 8px 24px; }
 .rd-btn--quiet { background: rgba(255, 255, 255, 0.8); border-color: rgba(29, 50, 71, 0.2); box-shadow: none; font-size: 0.92rem; }
-.rd-btn--no, .rd-btn--yes { font-family: var(--rd-display); font-weight: 800; font-size: 1.1rem; flex: 1 1 0; max-width: 260px; color: #fff; border: 0; }
+.rd-btn--no, .rd-btn--yes { position: relative; font-family: var(--rd-display); font-weight: 800; font-size: 1.1rem; flex: 1 1 0; max-width: 260px; color: #fff; border: 0; }
 .rd-btn--no { background: linear-gradient(180deg, #2f6ea3, #1f5f94); box-shadow: 0 4px 0 #15466f; }
 .rd-btn--no:hover:not(:disabled) { color: #fff; background: #2a679b; }
 .rd-btn--yes { background: linear-gradient(180deg, #357f2b, #2b6a23); box-shadow: 0 4px 0 #1d4d17; }

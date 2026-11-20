@@ -61,7 +61,7 @@ export function MineBoard({
         <p className="mn-hint">Only pupils in your school are on this board. It shows names and avatars, nothing else.</p>
       </div>
       <div className="mn-row">
-        <button type="button" className="button button--play mn-btn" onClick={onBack}>Back to the mines</button>
+        <button type="button" className="button button--play mn-btn" data-key="enter esc" onClick={onBack}>Back to the mines</button>
       </div>
     </section>
   );

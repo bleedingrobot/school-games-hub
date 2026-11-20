@@ -12,6 +12,7 @@
  * practice game that isn't saved.
  */
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useGameKeys } from '../../kit';
 import { randomAvatar } from '../../avatar/avatarParts';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import { skipRule, spendSkip, useSkipRule } from '../../maths/questionLog';
@@ -503,6 +504,9 @@ export function SpaceSolo({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [game]);
+  // The game keeps its own keys while playing; the keys here only press "Play again" once it is over.
+  const gameRoot = useRef<HTMLDivElement>(null);
+  useGameKeys(gameRoot, view?.phase === 'over' && phase === 'over');
 
   // When a choice or a picker opens, put keyboard focus on its first button.
   const choiceKey = phase === 'student' && view ? `${view.turnsTaken}:${view.phase}:${view.pending?.kind ?? ''}:${picking?.item ?? ''}` : '';
@@ -612,6 +616,7 @@ export function SpaceSolo({
 
   return (
     <div
+      ref={gameRoot}
       className={`space-game${lessMotion ? ' is-calm' : ''}`}
       style={{ '--rows': view.board.size / 10 } as CSSProperties}
     >
@@ -658,7 +663,7 @@ export function SpaceSolo({
                 : undefined
             }
           >
-            <button type="button" className="button button--primary" onClick={() => void start()} autoFocus>
+            <button data-key="enter" type="button" className="button button--primary" onClick={() => void start()} autoFocus>
               Play again
             </button>
             <button type="button" className="button button--light" onClick={() => setShowPodium(false)}>
@@ -793,7 +798,7 @@ export function SpaceSolo({
         ) : (
           <div className="space-actions">
             {over ? (
-              <button type="button" className="space-action is-main" onClick={() => void start()} disabled={starting}>
+              <button type="button" className="space-action is-main" data-key="enter" onClick={() => void start()} disabled={starting}>
                 {starting ? 'Getting ready…' : 'Play again'}
               </button>
             ) : (

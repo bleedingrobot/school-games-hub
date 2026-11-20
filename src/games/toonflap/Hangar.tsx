@@ -73,7 +73,7 @@ export function Hangar({ progress, picks, onPick, onBack }: { progress: Progress
     <section className="tf-hangar" aria-labelledby="tf-hangar-h" style={paintedBackground(screenArt('hangar'))}>
       <header className="tf-map__top">
         <h2 id="tf-hangar-h" className="tf-h" tabIndex={-1} ref={heading}>Hangar</h2>
-        <button type="button" className="tf-btn" onClick={onBack}>Back to the map</button>
+        <button type="button" className="tf-btn" data-key="enter esc" onClick={onBack}>Back to the map</button>
       </header>
 
       <div className="tf-hangar__now">

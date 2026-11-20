@@ -24,6 +24,7 @@ import { HowToPlayBody } from './HowToPlay';
 import { COURSE_INFO } from './courseInfo';
 import { courseAccent, courseArt, courseGradient } from './courseArt';
 import { HubButtons } from './HubButtons';
+import { KeyBadge, useGameKeys } from '../../kit';
 import type { FinishedRun } from './RunScreen';
 import { checkGhost } from './ghostCheck';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
@@ -256,13 +257,15 @@ async function markHere(question: Question | undefined, answer: number): Promise
 function HowToPlay({ mathsAllowed, onBack }: { mathsAllowed: boolean; onBack: () => void }) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
+  const root = useRef<HTMLElement>(null);
+  useGameKeys(root);
   return (
-    <section className="marble-picker marble-howto-screen">
+    <section className="marble-picker marble-howto-screen" ref={root}>
       <h2 ref={heading} tabIndex={-1}>How to play Marble Rush</h2>
       <div className="marble-picker__panel">
         <HowToPlayBody mathsAllowed={mathsAllowed} />
       </div>
-      <button type="button" className="button button--play" onClick={onBack}>Back to the courses</button>
+      <button type="button" className="button button--play" data-key="enter esc" onClick={onBack}>Back to the courses</button>
     </section>
   );
 }
@@ -283,6 +286,8 @@ function CoursePicker({
   note: string;
   runsLeft: number | null | undefined;
 }) {
+  const root = useRef<HTMLElement>(null);
+  useGameKeys(root);
   const real = useMemo(() => COURSE_INFO.filter((c) => !c.practice), []);
   const practice = useMemo(() => COURSE_INFO.filter((c) => c.practice), []);
   const card = (c: (typeof COURSE_INFO)[number]) => {
@@ -290,6 +295,7 @@ function CoursePicker({
     const best = bests[c.id]?.up ?? (c.playable ? bests[c.playable]?.up : undefined);
     const bestHard = c.playable ? bests[c.playable]?.down : undefined;
     const medal = course && best !== undefined ? medalFor(course, best, wantMaths) : null;
+    const slot = [...real, ...practice].indexOf(c);
     const art = courseArt(c.id);
     const style = {
       '--course-grad': courseGradient(c.id),
@@ -326,7 +332,7 @@ function CoursePicker({
               {bestHard !== undefined && <span> · 🔥 {formatSteps(bestHard)}</span>}
             </div>
             <div className="marble-course__buttons">
-              <button type="button" className="button button--play" disabled={busy} onClick={() => onPlay(course.def.id, 'up')}>Play {c.name}</button>
+              <button type="button" className="button button--play" data-key={slot < 9 ? String(slot + 1) : undefined} disabled={busy} onClick={() => onPlay(course.def.id, 'up')}>{slot < 9 && <KeyBadge k={String(slot + 1)} />}Play {c.name}</button>
               {hasFinished(course.def.id) && (
                 <button type="button" className="button button--light" disabled={busy} onClick={() => onPlay(course.def.id, 'down')}>Hard mode 🔥</button>
               )}
@@ -343,7 +349,7 @@ function CoursePicker({
   };
 
   return (
-    <section className="marble-picker">
+    <section className="marble-picker" ref={root}>
       <div className="marble-picker__top">
         <h2>Marble Rush</h2>
         <span className="marble-picker__tools">

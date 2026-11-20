@@ -4,6 +4,7 @@
  * backend last sent it. Every rule is the shared one (shared/diamond/).
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useGameKeys } from '../../kit';
 import { type BoostId, type Slot } from '../../../shared/diamond/config';
 import { nextStep } from '../../../shared/diamond/nextStep';
 import { canStart, levelsOpen, newAchievements, type Player } from '../../../shared/diamond/progress';
@@ -51,6 +52,9 @@ export function DiamondGame({ backend, extra, onServer = false }: { backend: Dia
   const [pouch, setPouch] = useState(0);
   const still = wantsLessMotion(prefs);
   const glowTimer = useRef(0);
+  const rootRef = useRef<HTMLDivElement>(null);
+  // Keys press the on-screen buttons; off while playing (Space and Enter drop the claw).
+  useGameKeys(rootRef, screen !== 'play');
 
   const now = useCallback(() => new Date(clock.server + (Date.now() - clock.at)), [clock]);
 
@@ -138,7 +142,7 @@ export function DiamondGame({ backend, extra, onServer = false }: { backend: Dia
   const againLabel = ended && ended.result.passed && selected !== ended.result.level ? `Play level ${selected}` : `Play level ${ended?.result.level ?? selected} again`;
 
   return (
-    <div className={`dd-root${screen === 'play' ? ' dd-root--play' : screen === 'map' ? ' dd-root--map' : ''}${still ? ' dd-still' : ''}`}>
+    <div ref={rootRef} className={`dd-root${screen === 'play' ? ' dd-root--play' : screen === 'map' ? ' dd-root--map' : ''}${still ? ' dd-still' : ''}`}>
       {trouble && <p className="dd-trouble" role="alert">{trouble}</p>}
       {screen === 'map' && (
         <LevelMap

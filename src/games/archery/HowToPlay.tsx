@@ -19,7 +19,7 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
     <section className="ar-page ar-how" aria-labelledby="ar-how-title">
       <div className="ar-page__head">
         <h2 id="ar-how-title" ref={heading} tabIndex={-1}>How to play</h2>
-        <button type="button" className="button button--light ar-btn" onClick={onBack}>Back</button>
+        <button type="button" className="button button--light ar-btn" data-key="enter esc" onClick={onBack}>Back</button>
       </div>
       <h3>Fights</h3>
       <ul>

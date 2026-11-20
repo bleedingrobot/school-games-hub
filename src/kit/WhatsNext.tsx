@@ -46,7 +46,7 @@ export function WhatsNext({ prefix, title, spoken = title, note, buttonLabel, sa
       {children}
       {wearMe && <p className={`${prefix}-chip ${prefix}-wear-me`}>{WEAR_ME_LINE}</p>}
       {game && <AchievementPop games={[game]} watch atOpen />}
-      <button type="button" className={`button button--play ${prefix}-play-button`} onClick={onNext}>
+      <button type="button" className={`button button--play ${prefix}-play-button`} onClick={onNext} data-key="enter">
         {buttonLabel}
       </button>
     </div>

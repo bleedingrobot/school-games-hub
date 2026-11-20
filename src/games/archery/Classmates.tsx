@@ -10,6 +10,7 @@ import type { Ask, Classmate } from '../../../shared/archery/duel';
 import { SNOOZE_MS } from '../../../shared/archery/config';
 import { WORLD_IDS, type WorldId } from '../../../shared/archery/types';
 import { WORLD_HINTS, WORLD_NAMES } from './text';
+import { KeyBadge } from '../../kit';
 
 /** Seconds until an ISO time, by the server's clock (never below 0), ticking once a second. */
 function useSecondsUntil(deadline: string, serverNow: () => number): number {
@@ -42,13 +43,14 @@ export function ClassmatesScreen({ online, offline, world, sending, problem, onW
     <section className="ar-page" aria-labelledby="ar-mates-title">
       <div className="ar-page__head">
         <h2 id="ar-mates-title" ref={heading} tabIndex={-1}>Challenge a friend</h2>
-        <button type="button" className="button button--light ar-btn" onClick={onBack}>Back</button>
+        <button type="button" className="button button--light ar-btn" data-key="esc" onClick={onBack}>Back</button>
       </div>
       <p>One round, one turn each. Win the round to win the fight! You both bring whatever you've packed.</p>
       <h3>1. Where?</h3>
       <div className="ar-choices">
-        {WORLD_IDS.map((w) => (
-          <button key={w} type="button" className={`button button--light ar-btn ar-choice ar-choice--${w}`} aria-pressed={world === w} onClick={() => onWorld(w)}>
+        {WORLD_IDS.map((w, i) => (
+          <button key={w} type="button" className={`button button--light ar-btn ar-choice ar-choice--${w}`} data-key={String(i + 1)} aria-pressed={world === w} onClick={() => onWorld(w)}>
+            <KeyBadge k={String(i + 1)} />
             <b>{WORLD_NAMES[w]}</b>
             <span>{WORLD_HINTS[w]}</span>
           </button>
@@ -113,7 +115,7 @@ export function ChallengeAsk({ ask, serverNow, busy, problem, onAccept, onDeclin
         <p id="ar-ask-words">A fight in the {WORLD_NAMES[ask.world]}: one round, one turn each. Answer within {secs} seconds.</p>
         {problem && <p className="ar-problem" role="alert">{problem}</p>}
         <div className="ar-row">
-          <button type="button" className="button button--play ar-btn" disabled={busy} onClick={onAccept}>Accept</button>
+          <button type="button" className="button button--play ar-btn" data-key="enter" disabled={busy} onClick={onAccept}>Accept</button>
           <button type="button" className="button button--light ar-btn" disabled={busy} onClick={onDecline}>Say no</button>
           <button type="button" className="button button--light ar-btn" disabled={busy} onClick={onSnooze}>Snooze {ask.from} for {SNOOZE_MS / 60_000} min</button>
         </div>
@@ -149,7 +151,7 @@ export function DuelWait({ title, words, deadline, serverNow, onCancel, cancelLa
       <p>{words}</p>
       <p className="ar-help" role="timer" aria-label={`${secs} seconds left`}>{secs} seconds left</p>
       <p className="ar-page__go">
-        <button type="button" className="button button--light ar-btn" onClick={onCancel}>{cancelLabel}</button>
+        <button type="button" className="button button--light ar-btn" data-key="esc" onClick={onCancel}>{cancelLabel}</button>
       </p>
     </section>
   );
@@ -164,7 +166,7 @@ export function DuelNotStarted({ title, words, onBack }: { title: string; words:
       <h2 id="ar-nostart-title" ref={heading} tabIndex={-1}>{title}</h2>
       <p>{words}</p>
       <p className="ar-page__go">
-        <button type="button" className="button button--play ar-btn" onClick={onBack}>OK</button>
+        <button type="button" className="button button--play ar-btn" data-key="enter" onClick={onBack}>OK</button>
       </p>
     </section>
   );

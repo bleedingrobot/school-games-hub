@@ -23,6 +23,13 @@ export interface NewsItem {
 }
 
 export const HUB_NEWS: NewsItem[] = [
+  {
+    id: 'game-keys-2026-11-20',
+    date: '2026-11-20',
+    emoji: '⌨️',
+    title: 'Keyboard keys in every game',
+    text: 'On a computer? Press Enter to go on, 1 to 9 to pick, and Esc to go back.',
+  },
   // Dated Sunday: newsToShow holds a line back until its date, so this one shows from Season 2 day 1.
   {
     id: 'dragon-season-2-begins-2026-11-22',

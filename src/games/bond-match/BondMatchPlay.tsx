@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useGameKeys } from '../../kit';
 import type { BondSet } from '../../../shared/bond-match/bonds';
 import { MAX_SEED, type BoardSize } from '../../../shared/bond-match/deck';
 import type { BotLevel } from '../types';
@@ -52,6 +53,9 @@ type Screen =
 export function BondMatchPlay({ makeSeed = randomSeed, mismatchMs, finishMs, saver, makeRunId = newRunId, random, botMs, botAfterMismatchMs, suggested }: Props) {
   const [screen, setScreen] = useState<Screen>({ name: 'pick' });
   const [players, setPlayers] = useState<Players>({ mode: 'solo' });
+  const rootRef = useRef<HTMLDivElement>(null);
+  // Keys press the picker's and finish screen's buttons; the board keeps its own arrow keys, Enter and Space.
+  useGameKeys(rootRef);
   // The board size last played, so the picker opens on it again.
   const [lastSize, setLastSize] = useState<BoardSize>('medium');
   const [saved, setSaved] = useState<SaveState | undefined>();
@@ -92,7 +96,7 @@ export function BondMatchPlay({ makeSeed = randomSeed, mismatchMs, finishMs, sav
   }
 
   return (
-    <div className="bm">
+    <div className="bm" ref={rootRef}>
       <h1 className="bm-title">{TEXT.name}</h1>
       {screen.name === 'pick' && <BondPicker initialSize={lastSize} onPick={start} stars={saver ? stars : undefined} players={players} onPlayers={setPlayers} suggested={suggested} />}
       {screen.name === 'play' && (

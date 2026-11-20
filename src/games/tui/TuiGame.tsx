@@ -4,6 +4,7 @@
  * and a new friend gets a Ten Tree. The screens only show what the backend says. Copied from Weka's Stepping Stones.
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useGameKeys } from '../../kit';
 import { NextPartChip } from '../../components/NextPartChip';
 import { fetchWekaEnabled } from '../../data/weka';
 import type { Tap } from '../../../shared/tui/play';
@@ -75,6 +76,8 @@ export function TuiGame({ backend, onExit, onOpenWeka, extra }: Props) {
   const [failed, setFailed] = useState<string | null>(null);
   const fail = useCallback((e: unknown) => setFailed(e instanceof TuiError ? e.message : WORDS.wentWrong), []);
   const voice = useVoice();
+  const rootRef = useRef<HTMLDivElement>(null);
+  useGameKeys(rootRef);
   const { soundOn, setSoundOn } = useSound();
 
   const reload = useCallback(() => {
@@ -121,10 +124,10 @@ export function TuiGame({ backend, onExit, onOpenWeka, extra }: Props) {
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
-    <div className="tui-root tui-root--cover">
+    <div className="tui-root tui-root--cover" ref={rootRef}>
       <div className="tui-bar">
         {onExit && (
-          <button type="button" className="tui-button" onClick={onExit}>
+          <button type="button" className="tui-button" data-key={screen.kind === 'play' ? undefined : 'esc'} onClick={onExit}>
             <span aria-hidden="true">🏠</span> {WORDS.home}
           </button>
         )}
@@ -183,7 +186,7 @@ function Home({ state, say, onPlay }: { state: TuiState; say: (t: string) => voi
         <NextPartChip noun={WORDS.part} done={doneToday} onHear={say} />
         <p className="tui-chip">{WORDS.step(state.step)}</p>
         {doneToday && <p>{WORDS.doneToday}</p>}
-        <button type="button" className="button button--play tui-play-button" onClick={onPlay}>
+        <button type="button" className="button button--play tui-play-button" data-key="enter" onClick={onPlay}>
           {doneToday ? WORDS.playAgain : WORDS.play}
         </button>
         {tree.nests > 0 && (

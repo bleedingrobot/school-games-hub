@@ -8,6 +8,7 @@ import { fetchBeanstalkEnabled } from '../../data/beanstalk';
 import { finishBand } from '../../../shared/kit/finishBand';
 import { WhatsNext } from '../../kit/WhatsNext';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useGameKeys } from '../../kit';
 import type { Tap } from '../../../shared/pipi/play';
 import { beachAfter, DAYS_PER_PEARL, SHELLS } from '../../../shared/pipi/progress';
 import type { Round } from '../../../shared/pipi/round';
@@ -78,6 +79,8 @@ export function PipiGame({ backend, onExit, onOpenBeanstalk, extra }: Props) {
   const [failed, setFailed] = useState<string | null>(null);
   const fail = useCallback((e: unknown) => setFailed(e instanceof PipiError ? e.message : WORDS.wentWrong), []);
   const voice = useVoice();
+  const rootRef = useRef<HTMLDivElement>(null);
+  useGameKeys(rootRef);
   const { soundOn, setSoundOn } = useSound();
 
   const reload = useCallback(() => {
@@ -124,10 +127,10 @@ export function PipiGame({ backend, onExit, onOpenBeanstalk, extra }: Props) {
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
-    <div className="pp-root pp-root--cover">
+    <div className="pp-root pp-root--cover" ref={rootRef}>
       <div className="pp-bar">
         {onExit && (
-          <button type="button" className="pp-button" onClick={onExit}>
+          <button type="button" className="pp-button" data-key={screen.kind === 'play' ? undefined : 'esc'} onClick={onExit}>
             <span aria-hidden="true">🏠</span> {WORDS.home}
           </button>
         )}
@@ -169,7 +172,7 @@ function Home({ state, say, onPlay }: { state: PipiState; say: (t: string) => vo
         <NextPartChip noun={WORDS.part} done={doneToday} onHear={say} />
         <p className="pp-chip">{WORDS.level(state.level)}</p>
         {doneToday && <p>{WORDS.doneToday}</p>}
-        <button type="button" className="button button--play pp-play-button" onClick={onPlay}>
+        <button type="button" className="button button--play pp-play-button" data-key="enter" onClick={onPlay}>
           {doneToday ? WORDS.playAgain : WORDS.play}
         </button>
         {beach.pearls > 0 && (

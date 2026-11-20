@@ -69,7 +69,7 @@ export function Scoreboard({ session, load, hall, onBack }: { session: Session; 
       )}
       <div className="cq-actions">
         {hall && hallThere && <button type="button" className="cq-btn cq-btn--hot" onClick={() => setShowHall(true)}>Hall of Legends</button>}
-        <button type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
+        <button data-key="esc" type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
       </div>
     </section>
   );

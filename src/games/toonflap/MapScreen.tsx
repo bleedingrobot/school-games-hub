@@ -3,6 +3,7 @@ import { FLYERS, finishesToUnlock, levelOpen, nextStep, openedLevel, opensTomorr
 import { DASHES_A_DAY, WINS_A_DAY } from '../../../shared/toonflap/config';
 import { LEVELS } from '../../../shared/toonflap/levels';
 import { useEffect } from 'react';
+import { KeyBadge } from '../../kit';
 import { DASH_LINES, HELP_SETTINGS, type HelpSetting } from './guide';
 import { screenArt } from './art/art';
 import { HubButtons } from './HubButtons';
@@ -129,10 +130,12 @@ export function MapScreen({ progress, today, winsLeft, dashesLeft, maths, gentle
               <button
                 type="button"
                 className="tf-stop__btn"
+                data-key={[l.n <= 9 ? String(l.n) : '', isNext ? 'enter' : ''].filter(Boolean).join(' ') || undefined}
                 disabled={!open || busy || outOfWins}
                 onClick={() => onPlay(l.n)}
                 aria-label={`${l.name}${open ? '' : ', locked'}${rec?.medal ? `, ${MEDAL_WORD[rec.medal]} medal` : ''}`}
               >
+                {l.n <= 9 && <KeyBadge k={String(l.n)} />}
                 <span className="tf-stop__node" aria-hidden="true">
                   <span className="tf-stop__icon">{open ? look.icon : '🔒'}</span>
                 </span>
@@ -163,7 +166,8 @@ export function MapScreen({ progress, today, winsLeft, dashesLeft, maths, gentle
 
       {onDash && (
         <div className="tf-stop tf-dash" data-open={skyDashOpen(progress)} style={{ ['--tf-a' as string]: '#1D2340', ['--tf-b' as string]: '#7B5CFF' }}>
-          <button type="button" className="tf-stop__btn" disabled={!dashOpen || busy || outOfDashes} onClick={onDash} aria-label={`Sky Dash${skyDashOpen(progress) ? '' : ', locked'}`}>
+          <button type="button" className="tf-stop__btn" data-key={LEVELS.length < 9 ? String(LEVELS.length + 1) : undefined} disabled={!dashOpen || busy || outOfDashes} onClick={onDash} aria-label={`Sky Dash${skyDashOpen(progress) ? '' : ', locked'}`}>
+            {LEVELS.length < 9 && <KeyBadge k={String(LEVELS.length + 1)} />}
             <span className="tf-stop__node" aria-hidden="true"><span className="tf-stop__icon">{skyDashOpen(progress) ? '☄️' : '🔒'}</span></span>
             <span className="tf-stop__body">
               <span className="tf-stop__name">{DASH_LINES.name}</span>

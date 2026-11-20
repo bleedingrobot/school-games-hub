@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
+import { useGameKeys } from '../../kit';
 import type { BotLevel } from '../../../shared/botGame';
 import { BOT_LEVEL_NAMES } from './text';
 import type { Card101Prefs } from './prefs';
@@ -80,8 +81,10 @@ export function Card101Settings({
   saves?: boolean;
   onHelp: () => void;
 }) {
+  const rootRef = useRef<HTMLElement>(null);
+  useGameKeys(rootRef);
   return (
-    <section className="chess-setup c101-setup" aria-labelledby="c101-setup-title">
+    <section className="chess-setup c101-setup" aria-labelledby="c101-setup-title" ref={rootRef}>
       <h1 id="c101-setup-title" className="page-title">
         🃏 101
       </h1>
@@ -133,7 +136,7 @@ export function Card101Settings({
             : 'This is a practice copy: games aren’t saved.'}
         </p>
 
-        <button type="submit" className="button button--play c101-setup__start" disabled={starting}>
+        <button type="submit" className="button button--play c101-setup__start" data-key="enter" disabled={starting}>
           {starting ? 'Shuffling…' : '▶ Deal the cards'}
         </button>
         <button type="button" className="button button--light c101-setup__help" onClick={onHelp}>

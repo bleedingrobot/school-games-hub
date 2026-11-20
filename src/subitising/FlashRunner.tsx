@@ -266,7 +266,7 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
             <Friend happy={result?.correct ?? false} />
             <p className={result?.correct ? 'sb-good' : 'sb-calm'}>{feedback}</p>
           </div>
-          <button ref={nextButton} type="button" className="sb-btn sb-btn-primary sb-big" onClick={advance}>
+          <button ref={nextButton} type="button" className="sb-btn sb-btn-primary sb-big" data-key="enter" onClick={advance}>
             {index + 1 >= total || over?.() ? 'Finish' : 'Next'}
           </button>
         </>

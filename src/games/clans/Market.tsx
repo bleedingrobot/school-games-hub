@@ -130,7 +130,7 @@ export function Market({ session, ask, onChange, onBack }: { session: Session; a
     <section className="cq-place" aria-label="The Market">
       <div className="cq-place__head">
         <h2><PlaceSprite place="market" /> The Market</h2>
-        <button type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
+        <button data-key="esc" type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
       </div>
       <p className="cq-soft">
         You have <strong>{clan.gold} gold</strong>. The Smithy (level {smithy}) sells up to tier {top}. Answer the maths question when you buy for {CONFIG.shopDiscount}% off.

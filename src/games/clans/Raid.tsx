@@ -79,7 +79,7 @@ export function Raid({ session, onChange, onBack }: { session: Session; onChange
             </li>
           ))}
         </ol>
-        <div className="cq-actions"><button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={() => setPhase({ t: 'plan' })}>Carry on</button></div>
+        <div className="cq-actions"><button data-key="enter" type="button" className="cq-btn cq-btn--hot" autoFocus onClick={() => setPhase({ t: 'plan' })}>Carry on</button></div>
       </div>
     );
   } else {
@@ -120,7 +120,7 @@ export function Raid({ session, onChange, onBack }: { session: Session; onChange
     <section className="cq-place" aria-label="Raid a kingdom">
       <div className="cq-place__head">
         <h2>Raid a kingdom</h2>
-        <button type="button" className="cq-btn" onClick={onBack}>Back to My Village</button>
+        <button data-key="esc" type="button" className="cq-btn" onClick={onBack}>Back to My Village</button>
       </div>
       {body}
     </section>

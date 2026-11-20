@@ -302,7 +302,7 @@ export function ChessPlay({ level }: { level: BotLevel }) {
                 ))}
               </div>
             </fieldset>
-            <button type="button" className="button button--play chess-setup__start" onClick={start}>
+            <button type="button" className="button button--play chess-setup__start" data-key="enter" onClick={start}>
               <span aria-hidden="true">▶</span> Start game
             </button>
             <p className="chess-setup__help">
@@ -382,10 +382,10 @@ export function ChessPlay({ level }: { level: BotLevel }) {
                   )}
                 </p>
                 <div className="chess-result__buttons">
-                  <button type="button" className="button button--primary" onClick={start} autoFocus>
+                  <button type="button" className="button button--primary" data-key="enter" onClick={start} autoFocus>
                     Play again
                   </button>
-                  <button type="button" className="button button--light" onClick={() => setShowResult(false)}>
+                  <button type="button" className="button button--light" data-key="esc" onClick={() => setShowResult(false)}>
                     Look at the board
                   </button>
                   <button type="button" className="link-button" onClick={() => setGame(null)}>
@@ -427,7 +427,7 @@ export function ChessPlay({ level }: { level: BotLevel }) {
 
           {judged ? (
             <div className="chess-actions">
-              <button type="button" className="button button--primary" onClick={start}>
+              <button type="button" className="button button--primary" data-key="enter" onClick={start}>
                 Play again
               </button>
               {!showResult && (
@@ -451,7 +451,7 @@ export function ChessPlay({ level }: { level: BotLevel }) {
                 >
                   {confirming === 'resign' ? 'Yes, resign' : 'Yes, start again'}
                 </button>
-                <button type="button" className="button button--light" onClick={() => setConfirming(null)} autoFocus>
+                <button type="button" className="button button--light" data-key="esc" onClick={() => setConfirming(null)} autoFocus>
                   Keep playing
                 </button>
               </div>

@@ -643,6 +643,7 @@
 .gk-trail li:nth-child(10) { grid-column: 1; }
 
 .gk-stop {
+  position: relative;
   display: grid;
   justify-items: center;
   gap: 4px;

@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
+import { useGameKeys } from '../../kit';
 import type { BotLevel } from '../../../shared/botGame';
 import { BOT_NAMES } from '../../../shared/space/bot';
 import { DESIGNED_BOARDS, DESIGNED_BOARD_IDS, type DesignedBoardId } from '../../../shared/space/boards';
@@ -91,11 +92,13 @@ export function SpaceSettings({
 }) {
   const set = <K extends keyof SpacePrefs>(key: K, value: SpacePrefs[K]) => onChange({ ...prefs, [key]: value });
   const galaxyOk = prefs.board !== 'galaxy' || parseGalaxyCode(prefs.galaxy) !== null;
+  const rootRef = useRef<HTMLElement>(null);
+  useGameKeys(rootRef);
   const pass = prefs.who === 'pass';
   const setName = (i: number, name: string) => set('names', prefs.names.map((n, k) => (k === i ? name : n)));
 
   return (
-    <section className="chess-setup space-setup" aria-labelledby="space-setup-title">
+    <section className="chess-setup space-setup" aria-labelledby="space-setup-title" ref={rootRef}>
       <h1 id="space-setup-title" className="page-title">
         🚀 Wormholes &amp; Black Holes
       </h1>
@@ -364,7 +367,7 @@ export function SpaceSettings({
             {problem}
           </p>
         )}
-        <button type="submit" className="button button--play chess-setup__start" disabled={starting}>
+        <button type="submit" className="button button--play chess-setup__start" data-key="enter" disabled={starting}>
           <span aria-hidden="true">🚀</span> {starting ? 'Getting ready…' : 'Launch!'}
         </button>
         <div className="chess-setup__help">

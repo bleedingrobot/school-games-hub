@@ -20,7 +20,7 @@ export function Achievements({ session, onBack }: { session: Session; onBack: ()
           </li>
         ))}
       </ul>
-      <div className="cq-actions"><button type="button" className="cq-btn" onClick={onBack}>Back to the clan</button></div>
+      <div className="cq-actions"><button data-key="esc" type="button" className="cq-btn" onClick={onBack}>Back to the clan</button></div>
     </section>
   );
 }
@@ -33,7 +33,7 @@ export function VillageDone({ onClose }: { onClose: () => void }) {
         <span aria-hidden="true" className="cq-celebrate__spark">🏰</span>{' '}
         Your whole village is built! +{CONFIG.season.villageReward.fame} fame and the Master Builder badge.
       </p>
-      <button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={onClose}>OK</button>
+      <button data-key="enter" type="button" className="cq-btn cq-btn--hot" autoFocus onClick={onClose}>OK</button>
     </div>
   );
 }

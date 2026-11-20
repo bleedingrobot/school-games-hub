@@ -6,6 +6,7 @@
  */
 import { NextPartChip } from '../../components/NextPartChip';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useGameKeys } from '../../kit';
 import type { Tap } from '../../../shared/weka/play';
 import { DAYS_PER_BASKET, STONES, streamAfter } from '../../../shared/weka/progress';
 import type { Round } from '../../../shared/weka/round';
@@ -75,6 +76,8 @@ export function WekaGame({ backend, onExit, extra }: Props) {
   const [failed, setFailed] = useState<string | null>(null);
   const fail = useCallback((e: unknown) => setFailed(e instanceof WekaError ? e.message : WORDS.wentWrong), []);
   const voice = useVoice();
+  const rootRef = useRef<HTMLDivElement>(null);
+  useGameKeys(rootRef);
   const { soundOn, setSoundOn } = useSound();
 
   const reload = useCallback(() => {
@@ -120,10 +123,10 @@ export function WekaGame({ backend, onExit, extra }: Props) {
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
-    <div className="wk-root wk-root--cover">
+    <div className="wk-root wk-root--cover" ref={rootRef}>
       <div className="wk-bar">
         {onExit && (
-          <button type="button" className="wk-button" onClick={onExit}>
+          <button type="button" className="wk-button" data-key={screen.kind === 'play' ? undefined : 'esc'} onClick={onExit}>
             <span aria-hidden="true">🏠</span> {WORDS.home}
           </button>
         )}
@@ -164,7 +167,7 @@ function Home({ state, say, onPlay }: { state: WekaState; say: (t: string) => vo
         <NextPartChip noun={WORDS.part} done={doneToday} onHear={say} />
         <p className="wk-chip">{WORDS.level(state.level)}</p>
         {doneToday && <p>{WORDS.doneToday}</p>}
-        <button type="button" className="button button--play wk-play-button" onClick={onPlay}>
+        <button type="button" className="button button--play wk-play-button" data-key="enter" onClick={onPlay}>
           {doneToday ? WORDS.playAgain : WORDS.play}
         </button>
         {stream.baskets > 0 && (

@@ -213,7 +213,7 @@ export function Pebbles({ go, guided = false, sound, last, say, onFirstWrong, on
           {done ? `${go.big} + ${go.toTen} = 10, 10 + ${go.rest} = ${go.total}` : result || '.'}
         </p>
         {done ? (
-          <button type="button" className="wk-button wk-next" onClick={onNext}>
+          <button type="button" className="wk-button wk-next" data-key="enter" onClick={onNext}>
             {last ? WORDS.finish : WORDS.next} <span aria-hidden="true">➜</span>
           </button>
         ) : (

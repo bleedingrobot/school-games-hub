@@ -21,6 +21,7 @@ import { MEDALS, medalFor } from '../../../shared/mine/medals';
 import { loadBests, saveBests, showTouchControls, withFinish, wantsLessMotion, type MinePrefs } from './prefs';
 import type { MineView } from './renderer';
 import { MineSession, type MineEvent, type UseTarget } from './session';
+import { useGameKeys } from '../../kit';
 import { gateSum, layoutGate, panelTouched, type GateLayout } from './gate';
 import { TRIAL_NOTE, trialFact, trialQuestion } from './trialMaths';
 
@@ -630,6 +631,9 @@ export function MineRun({
     runHeading.current?.focus({ preventScroll: true });
   }
 
+  // Keys press the Resume / Fly again buttons; during the flight the run's own keys (arrows, Enter = Use, Esc = pause) stay in charge.
+  const keysRef = useRef<HTMLElement>(null);
+  useGameKeys(keysRef, paused || finished !== null || !!problem);
   const goal = hud.goal;
   const bar = (v: number, max: number) => `${Math.max(0, Math.min(100, (v / max) * 100))}%`;
   const escapeSeconds = Math.ceil(hud.escapeLeft * DT);
@@ -638,7 +642,7 @@ export function MineRun({
   const finishMedal = finished && finishedWell && !level.practice ? medalFor(level.id, finished.run.steps) : null;
 
   return (
-    <section className="mn-run" aria-label={`${level.name}: flying`} data-less-motion={lessMotion || undefined}>
+    <section className="mn-run" ref={keysRef} aria-label={`${level.name}: flying`} data-less-motion={lessMotion || undefined}>
       <h2 ref={runHeading} tabIndex={-1} className="mn-sr">{level.name}</h2>
       <div
         ref={stage}
@@ -745,7 +749,7 @@ export function MineRun({
           <div className="mn-panel">
             <h2 id="mn-problem-title" ref={heading} tabIndex={-1}>The 3D view won’t start</h2>
             <p>{problem}</p>
-            <button type="button" className="button button--play mn-btn" onClick={onExit}>Back to the mines</button>
+            <button type="button" className="button button--play mn-btn" data-key="enter" onClick={onExit}>Back to the mines</button>
           </div>
         </div>
       )}
@@ -755,7 +759,7 @@ export function MineRun({
           <div className="mn-panel mn-panel--wide mn-pause">
             <h2 id="mn-pause-title" ref={heading} tabIndex={-1}>Paused</h2>
             <div className="mn-row mn-pause__buttons">
-              <button type="button" className="button button--play mn-btn" onClick={resume}>Resume</button>
+              <button type="button" className="button button--play mn-btn" data-key="enter" onClick={resume}>Resume</button>
               <button type="button" className="button button--light mn-btn" disabled={busy} onClick={() => void go(onAgain)}>Start again</button>
               <button type="button" className="button button--light mn-btn" onClick={onExit}>Back to the mines</button>
             </div>
@@ -808,7 +812,7 @@ export function MineRun({
               {finished.run.wrongAnswers > 0 && <li>Wrong answers: {finished.run.wrongAnswers}</li>}
             </ul>
             <div className="mn-row">
-              <button type="button" className="button button--play mn-btn" disabled={busy} onClick={() => void go(onAgain)}>{finishedWell ? 'Fly it again' : 'Try again'}</button>
+              <button type="button" className="button button--play mn-btn" data-key="enter" disabled={busy} onClick={() => void go(onAgain)}>{finishedWell ? 'Fly it again' : 'Try again'}</button>
               {finishedWell && onNext && <button type="button" className="button button--light mn-btn" disabled={busy} onClick={() => void go(onNext)}>Next mine</button>}
               <button type="button" className="button button--light mn-btn" onClick={onExit}>Back to the mines</button>
             </div>

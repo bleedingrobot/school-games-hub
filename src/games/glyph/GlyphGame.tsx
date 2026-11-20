@@ -2,9 +2,10 @@
  * Glyph Gates: the map, the guide, the temple walls, the results and How to play (docs/GLYPH-PLAN.md). The game only talks to
  * the backend it is given: the trial one in the preview, the school's server in the hub.
  */
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { TEMPLES, WALLS_PER_TEMPLE } from '../../../shared/glyph/config';
 import type { TempleResult, WallPlay } from '../../../shared/glyph/play';
+import { useGameKeys } from '../../kit';
 import { GlyphError, type GlyphBackend, type Loaded, type StartReply } from './backend';
 import { guideWall } from './guide';
 import { HowToPlay } from './HowToPlay';
@@ -51,6 +52,8 @@ export function GlyphGame({ backend, extra, onExit }: { backend: GlyphBackend; e
   const [res, setRes] = useState<{ temple: number; result: TempleResult; points: number } | null>(null);
   const gwall = useMemo(guideWall, []);
   const voice = useGlyphVoice();
+  const rootRef = useRef<HTMLDivElement>(null);
+  useGameKeys(rootRef);
 
   const reload = useCallback(() => {
     setFailed(false);
@@ -130,7 +133,7 @@ export function GlyphGame({ backend, extra, onExit }: { backend: GlyphBackend; e
   }
 
   return (
-    <div className="gg-root" data-screen={screen}>
+    <div className="gg-root" data-screen={screen} ref={rootRef}>
       {voice.available && (
         <button type="button" className="gg-btn gg-voice" aria-label="Read aloud" aria-pressed={voice.on} onClick={() => voice.setOn(!voice.on)}>
           <span aria-hidden="true">{voice.on ? '🔊' : '🔇'}</span><span aria-hidden="true"> {voice.on ? 'Voice on' : 'Voice off'}</span>

@@ -38,7 +38,7 @@ export function StartScreen({ onStart }: { onStart: (picks: [TypeId, TypeId], te
       {/* Only once the painted looks are there; optional, and you can change it later in the Menu. */}
       {hasLooks() && <LookPicker value={look} onChange={setLook} />}
       <p>
-        <button type="button" className="button button--primary" onClick={() => onStart(picks, team, look)}>
+        <button type="button" className="button button--primary" data-key="enter" onClick={() => onStart(picks, team, look)}>
           Start walking
         </button>
       </p>

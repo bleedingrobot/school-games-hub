@@ -16,6 +16,7 @@ import type { DiamondBackend, Ended, HallRow } from './backend';
 
 import { ClawLooks } from './ClawLooks';
 import { Sprite } from './Sprite';
+import { KeyBadge } from '../../kit';
 
 function Page({ id, title, onBack, backLabel = 'Back to the map', children, coins }: { id: string; title: string; onBack: () => void; backLabel?: string; children: ReactNode; coins?: number }) {
   const heading = useRef<HTMLHeadingElement>(null);
@@ -23,7 +24,7 @@ function Page({ id, title, onBack, backLabel = 'Back to the map', children, coin
   return (
     <section className="dd-page" aria-labelledby={id}>
       <div className="dd-page__top">
-        <button type="button" className="button button--light-outline dd-btn" onClick={onBack}>{backLabel}</button>
+        <button type="button" className="button button--light-outline dd-btn" data-key={id === 'dd-shop-title' ? 'esc' : 'enter esc'} onClick={onBack}>{backLabel}</button>
         <h2 id={id} ref={heading} tabIndex={-1} className="dd-title">{title}</h2>
         {coins !== undefined && <span className="dd-chip"><span aria-hidden="true">🪙</span> {coins} coins</span>}
       </div>
@@ -102,9 +103,9 @@ export function LevelEnd({ ended, unlimited = false, onShop, onAgain, onMap, aga
         )}
       </div>
       <div className="dd-row">
-        <button type="button" className="button button--play dd-btn" onClick={onShop}>On to the shop</button>
+        <button type="button" className="button button--play dd-btn" data-key="enter" onClick={onShop}>On to the shop</button>
         <button type="button" className="button button--light dd-btn" onClick={onAgain}>{againLabel}</button>
-        <button type="button" className="button button--light-outline dd-btn" onClick={onMap}>Level map</button>
+        <button type="button" className="button button--light-outline dd-btn" data-key="esc" onClick={onMap}>Level map</button>
       </div>
     </section>
   );
@@ -138,8 +139,9 @@ export function Shop({ player, level, tab, onTab, basket, onToggle, onStart, can
   return (
     <Page id="dd-shop-title" title="Shop" onBack={onBack} coins={player.coins}>
       <div className="dd-shoptabs" role="tablist" aria-label="What to buy">
-        {(['boosts', 'looks'] as const).map((t) => (
-          <button key={t} type="button" role="tab" id={`dd-shoptab-${t}`} aria-selected={tab === t} aria-controls="dd-shoptab-panel" className={`dd-shoptab${tab === t ? ' is-on' : ''}`} onClick={() => onTab(t)}>
+        {(['boosts', 'looks'] as const).map((t, i) => (
+          <button key={t} type="button" role="tab" data-key={String(i + 1)} id={`dd-shoptab-${t}`} aria-selected={tab === t} aria-controls="dd-shoptab-panel" className={`dd-shoptab${tab === t ? ' is-on' : ''}`} onClick={() => onTab(t)}>
+            <KeyBadge k={String(i + 1)} />
             <span className="dd-shoptab__name">{t === 'boosts' ? `Boosts for level ${level}` : 'Claw looks'}</span>
             <span className="dd-shoptab__about">{t === 'boosts' ? 'Help on your next go' : 'Kept for good'}</span>
           </button>
@@ -175,7 +177,7 @@ export function Shop({ player, level, tab, onTab, basket, onToggle, onStart, can
               })}
             </ul>
             <div className="dd-row">
-              <button type="button" className="button button--play dd-btn dd-btn--big" onClick={onStart} disabled={!canStart}>
+              <button type="button" className="button button--play dd-btn dd-btn--big" data-key="enter" onClick={onStart} disabled={!canStart}>
                 Start level {level}{basket.length ? ` with ${basket.length} boost${basket.length > 1 ? 's' : ''}` : ''}
               </button>
             </div>

@@ -13,6 +13,7 @@ import { DECK, LOOKS, type Album, type Look, type PublicReign } from '../../../s
 import type { Choice } from '../../../shared/decree/types';
 import { liveDecree } from '../../data/decree';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
+import { KeyBadge, useGameKeys } from '../../kit';
 import { playSound } from '../sounds';
 import { personArt, rulerArt, rulerThumb, sceneArt, type SceneId } from './art';
 import type { AnswerReply, DecreeBackend, LoadReply, ReignReply } from './backend';
@@ -122,7 +123,7 @@ function Tip({ children, onClose }: { children: React.ReactNode; onClose: () => 
     <div className="rd-tip" role="status">
       {personArt('steward') && <img src={personArt('steward')} alt="" className="rd-tip__face" />}
       <p><strong>Hale:</strong> {children}</p>
-      <button type="button" className="rd-btn rd-btn--quiet" onClick={onClose}>Got it</button>
+      <button type="button" className="rd-btn rd-btn--quiet" data-key="enter" onClick={onClose}>Got it</button>
     </div>
   );
 }
@@ -136,7 +137,7 @@ function TourBubble({ step, onNext, onSkip }: { step: number; onNext: () => void
       {personArt('steward') && <img src={personArt('steward')} alt="" className="rd-tip__face" />}
       <p><span className="rd-tour__count">Tutorial {step + 1} of {TOUR.length}</span><strong>Hale:</strong> {s.text}</p>
       <span className="rd-tour__buttons">
-        {!s.yourTurn && <button key={step} type="button" className="rd-btn rd-btn--hot" autoFocus onClick={onNext}>{last ? 'Start ruling' : 'Next step'}</button>}
+        {!s.yourTurn && <button key={step} type="button" className="rd-btn rd-btn--hot" data-key="enter" autoFocus onClick={onNext}>{last ? 'Start ruling' : 'Next step'}</button>}
         {!last && <button type="button" className="rd-btn rd-btn--quiet" onClick={onSkip}>Skip the tutorial</button>}
       </span>
     </div>
@@ -191,11 +192,13 @@ function RequestCard({ who, text, no, yes, onChoose, onLean, locked = false, spo
         <p className="rd-card__text">{text}</p>
       </div>
       <div className={`rd-choices${spot === 'choices' ? ' rd-spot' : ''}`}>
-        <button type="button" className="rd-btn rd-btn--no" disabled={locked} onClick={() => onChoose('no')} onMouseEnter={() => onLean('no')} onMouseLeave={() => onLean(null)} onFocus={() => onLean('no')} onBlur={() => onLean(null)}>
+        <button type="button" className="rd-btn rd-btn--no" data-key="1" disabled={locked} onClick={() => onChoose('no')} onMouseEnter={() => onLean('no')} onMouseLeave={() => onLean(null)} onFocus={() => onLean('no')} onBlur={() => onLean(null)}>
+          <KeyBadge k="1" />
           <span className="rd-choice__label"><span aria-hidden="true">← </span>{no.label}</span>
           <Effects choice={no} />
         </button>
-        <button type="button" className="rd-btn rd-btn--yes" disabled={locked} onClick={() => onChoose('yes')} onMouseEnter={() => onLean('yes')} onMouseLeave={() => onLean(null)} onFocus={() => onLean('yes')} onBlur={() => onLean(null)}>
+        <button type="button" className="rd-btn rd-btn--yes" data-key="2" disabled={locked} onClick={() => onChoose('yes')} onMouseEnter={() => onLean('yes')} onMouseLeave={() => onLean(null)} onFocus={() => onLean('yes')} onBlur={() => onLean(null)}>
+          <KeyBadge k="2" />
           <span className="rd-choice__label">{yes.label}<span aria-hidden="true"> →</span></span>
           <Effects choice={yes} />
         </button>
@@ -242,6 +245,8 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
   const pending = useRef<Move[]>([]);
   const savedTurn = useRef(0);
   const heading = useRef<HTMLHeadingElement>(null);
+  const root = useRef<HTMLDivElement>(null);
+  useGameKeys(root);
   const firstReign = (album?.reigns ?? 0) === 0;
 
   useEffect(() => heading.current?.focus(), [screen]);
@@ -400,7 +405,7 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
    * painting fills the window behind the screen (the start, the throne room, the endings); text screens keep the sky.
    */
   const frame = (body: React.ReactNode, art?: string, play = false) => (
-    <div className={`rd${art ? ' rd--art' : ''}${play ? ' rd--play' : ''}`} style={art ? { backgroundImage: `url("${art}")` } : undefined}>
+    <div ref={root} className={`rd${art ? ' rd--art' : ''}${play ? ' rd--play' : ''}`} style={art ? { backgroundImage: `url("${art}")` } : undefined}>
       <header className="rd-head">
         <span className="rd-head__name"><HubButtons /><h1>Royal Decree</h1></span>
         {backend.trial && <span className="rd-trial">Trial: saved on this browser only, no points</span>}
@@ -417,7 +422,7 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
       <div className="rd-panel">
         <h2 ref={heading} tabIndex={-1}>Oh dear</h2>
         <p>{error}</p>
-        <button type="button" className="rd-btn rd-btn--hot" onClick={() => void load()}>Try again</button>
+        <button type="button" className="rd-btn rd-btn--hot" data-key="enter" onClick={() => void load()}>Try again</button>
       </div>,
     );
   }
@@ -427,7 +432,7 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
       <div className="rd-panel">
         <h2 ref={heading} tabIndex={-1}>How to play</h2>
         <HowToPlayBody />
-        <button type="button" className="rd-btn rd-btn--hot" onClick={() => setScreen('start')}>Back</button>
+        <button type="button" className="rd-btn rd-btn--hot" data-key="enter esc" onClick={() => setScreen('start')}>Back</button>
       </div>,
     );
   }
@@ -453,7 +458,7 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
             <li key={id} className={seen.has(id) ? 'is-seen' : ''}>{seen.has(id) ? ENDINGS[id].title : '? ? ?'}</li>
           ))}
         </ul>
-        <button type="button" className="rd-btn rd-btn--hot" onClick={() => setScreen('start')}>Back</button>
+        <button type="button" className="rd-btn rd-btn--hot" data-key="enter esc" onClick={() => setScreen('start')}>Back</button>
       </div>,
     );
   }
@@ -470,7 +475,7 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
           <p>Villagers will come to your throne, one at a time, asking for things. <strong>Say yes or no.</strong> Keep <strong>Food, Gold, Happiness and Safety</strong> above zero for {YEARS} years!</p>
           {open && (
             <p className="rd-actions">
-              <button type="button" className="rd-btn rd-btn--hot rd-btn--big" onClick={() => setScreen('play')}>Carry on your reign (year {yearOf(open.turn + 1)})</button>
+              <button type="button" className="rd-btn rd-btn--hot rd-btn--big" data-key="enter" onClick={() => setScreen('play')}>Carry on your reign (year {yearOf(open.turn + 1)})</button>
             </p>
           )}
           <h3>Choose your ruler</h3>
@@ -482,7 +487,7 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
             ))}
           </div>
           <p className="rd-actions">
-            <button type="button" className={`rd-btn ${open ? '' : 'rd-btn--hot rd-btn--big'}`} disabled={busy} onClick={() => void begin()}>{open ? 'Start a new reign' : 'Begin your reign'}</button>
+            <button type="button" className={`rd-btn ${open ? '' : 'rd-btn--hot rd-btn--big'}`} data-key={open ? undefined : 'enter'} disabled={busy} onClick={() => void begin()}>{open ? 'Start a new reign' : 'Begin your reign'}</button>
             <button type="button" className="rd-btn" onClick={() => setScreen('album')}>Royal Album{album ? ` (${album.met.length}/${CAST.length})` : ''}</button>
             <button type="button" className="rd-btn rd-btn--quiet" onClick={() => setScreen('howto')}>How to play</button>
           </p>
@@ -522,7 +527,7 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
             <p className="rd-warn">Your reign isn’t saved yet. <button type="button" className="rd-btn" onClick={() => void save(local)}>Try again</button></p>
           )}
           <p className="rd-actions">
-            <button type="button" className="rd-btn rd-btn--hot rd-btn--big" disabled={busy || saving === 'saving'} onClick={() => void load().then(() => begin())}>Rule again</button>
+            <button type="button" className="rd-btn rd-btn--hot rd-btn--big" data-key="enter" disabled={busy || saving === 'saving'} onClick={() => void load().then(() => begin())}>Rule again</button>
             <button type="button" className="rd-btn" disabled={saving === 'saving'} onClick={() => void load().then(() => setScreen('album'))}>Royal Album</button>
           </p>
         </div>
@@ -551,7 +556,7 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
           <div className="rd-after" role="status">
             <Portrait who={after.who} />
             <p className="rd-bubble">“{after.text}”</p>
-            <button type="button" className="rd-btn rd-btn--hot" autoFocus onClick={() => afterReply()}>Next</button>
+            <button type="button" className="rd-btn rd-btn--hot" data-key="enter" autoFocus onClick={() => afterReply()}>Next</button>
           </div>
         )}
 
@@ -560,7 +565,7 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
             <p className="rd-year">Year {after.year} begins!</p>
             <p>Everyone ate through the winter: Food −{WINTER_FOOD}.</p>
             {saving === 'failed' && <p className="rd-soft">Not saved yet: it will try again at the end of the year.</p>}
-            <button type="button" className="rd-btn rd-btn--hot" autoFocus onClick={() => { setAfter(null); setChanged(null); }}>On we go</button>
+            <button type="button" className="rd-btn rd-btn--hot" data-key="enter" autoFocus onClick={() => { setAfter(null); setChanged(null); }}>On we go</button>
           </div>
         )}
 
@@ -577,15 +582,15 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
               {q && <p className="rd-soft">A right answer: +{RIDDLE_BONUS} {METER_NAME[next.riddle.meter]}</p>}
             </div>
             <div className="rd-choices">
-              {q && !answered[String(next.slot)] && <button type="button" className="rd-btn rd-btn--hot" onClick={() => setAsking(true)}>Help {villager(next.riddle.who)?.name}</button>}
+              {q && !answered[String(next.slot)] && <button type="button" className="rd-btn rd-btn--hot" data-key="enter" onClick={() => setAsking(true)}>Help {villager(next.riddle.who)?.name}</button>}
               {q && answered[String(next.slot)] && (
-                <button type="button" className="rd-btn rd-btn--hot" onClick={() => {
+                <button type="button" className="rd-btn rd-btn--hot" data-key="enter" onClick={() => {
                   const right = answered[String(next.slot)].right;
                   moveOn('riddle', right, { kind: 'reply', who: next.riddle.who, text: right ? next.riddle.thanks : 'Never mind, thank you for trying!' });
                 }}>Next</button>
               )}
               {(!q || !answered[String(next.slot)]) && (
-                <button type="button" className="rd-btn" onClick={() => moveOn('riddle', false, { kind: 'reply', who: next.riddle.who, text: q ? 'Maybe next time!' : 'Thank you anyway, Your Majesty!' })}>
+                <button type="button" className="rd-btn" data-key={q ? 'esc' : 'enter'} onClick={() => moveOn('riddle', false, { kind: 'reply', who: next.riddle.who, text: q ? 'Maybe next time!' : 'Thank you anyway, Your Majesty!' })}>
                   {q ? 'Not now' : 'Next'}
                 </button>
               )}

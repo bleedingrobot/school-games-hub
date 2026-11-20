@@ -456,6 +456,7 @@ export function GemKeepGame({
             <button
               type="button"
               className="button button--play gk-start"
+              data-key="enter"
               onClick={startWave}
             >
               {isBossWave(level, nextWave) ? TEXT.bossWave(Math.min(nextWave, waves)) : TEXT.nextWave(Math.min(nextWave, waves))}
@@ -803,7 +804,7 @@ function EndCard({
           </div>
         )}
         <div className="gk-end__actions">
-          <button ref={first} type="button" className="button button--play" onClick={main.run}>
+          <button ref={first} type="button" className="button button--play" data-key="enter" onClick={main.run}>
             {main.label}
           </button>
           {main.run !== onAgain && (

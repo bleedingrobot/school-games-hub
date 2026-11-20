@@ -116,7 +116,7 @@ export function Scoring({
                 {iWon && winners.length === 1 ? '🏆 You win the round!' : `🏆 ${listNames(winners)} ${winners.length > 1 ? 'share' : 'wins'} the round!`}
                 {perfect && <span> A perfect zero! ✨</span>}
               </p>
-              <button ref={nextRef} type="button" className="button button--play" onClick={onNext}>
+              <button data-key="enter" ref={nextRef} type="button" className="button button--play" onClick={onNext}>
                 {gameOver ? '🏆 See who won' : 'Next round ▶'}
               </button>
             </>

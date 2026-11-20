@@ -13,6 +13,7 @@ import type { Round } from '../../../shared/parrot/round';
 import { FirstTimeTip } from '../../kit/FirstTimeTip';
 import { finishBand } from '../../../shared/kit/finishBand';
 import { WhatsNext } from '../../kit/WhatsNext';
+import { useGameKeys } from '../../kit';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { playSound } from '../sounds';
@@ -96,6 +97,9 @@ export function ParrotGame({ backend, onExit, extra }: Props) {
       if (soundOn) playSound(result.goldenBell ? 'win' : 'badge');
     }, fail);
 
+  const rootRef = useRef<HTMLDivElement>(null);
+  useGameKeys(rootRef, screen.kind !== 'play');
+
   let body: ReactNode;
   if (failed) body = <p className="pr-message">{failed}</p>;
   else if (!state || screen.kind === 'loading') body = <p className="pr-message">…</p>;
@@ -120,10 +124,10 @@ export function ParrotGame({ backend, onExit, extra }: Props) {
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
-    <div className="pr-root pr-root--cover">
+    <div className="pr-root pr-root--cover" ref={rootRef}>
       <div className="pr-bar">
         {onExit && (
-          <button type="button" className="pr-button" onClick={onExit}>
+          <button type="button" className="pr-button" data-key="esc" onClick={onExit}>
             <span aria-hidden="true">🏠</span> {WORDS.home}
           </button>
         )}
@@ -210,7 +214,7 @@ function Home({ state, say, onPlay }: { state: ParrotState; say: (t: string) => 
         <p className="pr-day">{WORDS.dayCount(Math.min(rope.day + 1, DAYS_PER_BELL))}</p>
         <NextPartChip noun={WORDS.part} done={doneToday} onHear={say} />
         <p className="pr-chip">{WORDS.step(state.step)}</p>
-        <button type="button" className="button button--play pr-play-button" onClick={onPlay}>
+        <button type="button" className="button button--play pr-play-button" data-key="enter" onClick={onPlay}>
           {doneToday ? WORDS.playAgain : WORDS.play}
         </button>
         <button type="button" className="pr-button pr-hear-home" onClick={() => say(homeLine(title, doneToday))}>

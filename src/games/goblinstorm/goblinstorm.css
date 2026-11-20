@@ -246,3 +246,6 @@
 .gs-done__title { margin: 0; font-size: clamp(1.3rem, 3.5vw, 1.9rem); font-weight: 900; color: #ffd23a; }
 .gs-done__line { margin: 0.3rem 0 0; font-size: 1.05rem; font-weight: 700; color: #f0eaff; }
 .gs-end .gs-done, .gs-end .gs-runs { justify-content: center; text-align: left; }
+
+/* Key badges (docs/plans/game-keys/PLAN.md): the number badge sits in the pick button's corner. */
+.gs-pick { position: relative; }

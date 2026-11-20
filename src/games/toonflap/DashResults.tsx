@@ -44,8 +44,8 @@ export function DashResults({ reply, onAgain, onMap, talk }: {
         <h2 id="tf-res-h" className="tf-h" tabIndex={-1} ref={heading}>Sky Dash</h2>
         <p className="tf-card-note">{RESULT_LINES.notChecked}</p>
         <div className="tf-row">
-          {onAgain && <button type="button" className="tf-btn tf-btn--big" onClick={onAgain}>Dash again</button>}
-          <button type="button" className="tf-btn tf-btn--ghost" onClick={onMap}>Map</button>
+          {onAgain && <button type="button" className="tf-btn tf-btn--big" data-key="enter" onClick={onAgain}>Dash again</button>}
+          <button type="button" className="tf-btn tf-btn--ghost" data-key={onAgain ? 'esc' : 'enter esc'} onClick={onMap}>Map</button>
         </div>
       </section>
     );
@@ -69,8 +69,8 @@ export function DashResults({ reply, onAgain, onMap, talk }: {
         </div>
       )}
       <div className="tf-row tf-row--end">
-        {onAgain && <button type="button" className="tf-btn tf-btn--big tf-btn--play" onClick={onAgain}>Dash again</button>}
-        <button type="button" className="tf-btn tf-btn--ghost" onClick={onMap}>Map</button>
+        {onAgain && <button type="button" className="tf-btn tf-btn--big tf-btn--play" data-key="enter" onClick={onAgain}>Dash again</button>}
+        <button type="button" className="tf-btn tf-btn--ghost" data-key={onAgain ? 'esc' : 'enter esc'} onClick={onMap}>Map</button>
       </div>
     </section>
   );

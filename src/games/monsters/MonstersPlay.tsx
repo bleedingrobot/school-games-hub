@@ -19,6 +19,7 @@ import { useAuth } from '../../auth/AuthContext';
 import {
   enqueueSave, flushQueue, loadMonsters, readTail, savingStopped, writeBattleCount, writeTail, type FlushResult, type MonstersData, type Tail,
 } from '../../data/monsters';
+import { useGameKeys } from '../../kit';
 import { HubButtons } from './HubButtons';
 import { StartScreen } from './StartScreen';
 import { loadWorldSettings, saveWorldSettings, type WorldSettings } from './world/settings';
@@ -216,7 +217,7 @@ export function MonstersPlay() {
         <Window hub>
           <div className="panel__empty" role="alert">
             <p>{WORDS.cantLoad}</p>
-            <button type="button" className="button button--primary" onClick={() => setTryAgain((n) => n + 1)}>
+            <button type="button" className="button button--primary" data-key="enter" onClick={() => setTryAgain((n) => n + 1)}>
               Try again
             </button>
           </div>
@@ -270,8 +271,11 @@ export function MonstersPlay() {
 
 /** The whole window, over the hub's bar, like Star Trader (James, 18 Nov 2026). Off the map, a Hub and sound bar on top. */
 function Window({ hub = false, children }: { hub?: boolean; children: ReactNode }) {
+  // The hub bar shows on the start and error screens only; on the map and in battles the game has its own keys.
+  const root = useRef<HTMLDivElement>(null);
+  useGameKeys(root, hub);
   return (
-    <div className="mp-window">
+    <div ref={root} className="mp-window">
       {hub && <div className="mp-window__top"><HubButtons /></div>}
       {children}
     </div>

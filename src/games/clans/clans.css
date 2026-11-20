@@ -1325,6 +1325,7 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 .cq-dcards.is-pick .cq-dcard { cursor: pointer; min-height: 44px; }
 .cq-dcards.is-pick .cq-dcard:focus-visible { outline: 3px solid #ffd36b; outline-offset: 3px; }
 .cq-dpractice { display: flex; flex-wrap: wrap; gap: 8px; }
+.cq-dpractice .cq-btn { position: relative; }
 .cq-dbonus { margin: 0; padding-left: 18px; }
 .cq-dwait { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; text-align: center; }
 .cq-dwait__banner { height: 90px; width: auto; filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.7)); }

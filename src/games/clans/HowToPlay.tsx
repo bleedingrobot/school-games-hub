@@ -119,10 +119,10 @@ export function HowToPlay({ fightsPerDay, onBack }: { fightsPerDay?: number; onB
     <section className="cq-howtoplay" aria-label="How to play">
       <div className="cq-place__head">
         <h2>How to play</h2>
-        <button type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
+        <button data-key="esc" type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
       </div>
       <HowToPlayBody fightsPerDay={fightsPerDay} />
-      <div className="cq-actions"><button type="button" className="cq-btn" onClick={onBack}>Back to the clan</button></div>
+      <div className="cq-actions"><button data-key="esc" type="button" className="cq-btn" onClick={onBack}>Back to the clan</button></div>
     </section>
   );
 }

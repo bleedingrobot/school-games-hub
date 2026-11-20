@@ -81,7 +81,7 @@ export function Quest({ session, ask, onChange, onBack, top }: { session: Sessio
         {phase.right !== null && <p className={`cq-qstage__badge ${phase.right ? 'is-win' : ''}`}>{phase.right ? 'Both right! You solved it.' : 'Not both right this time, but the story carries on.'}</p>}
         <p>{phase.text}</p>
         <p className="cq-qstage__prize">{prizeLine(phase.prize)}</p>
-        <div className="cq-qstage__row"><button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={onBack}>Carry on</button></div>
+        <div className="cq-qstage__row"><button data-key="enter" type="button" className="cq-btn cq-btn--hot" autoFocus onClick={onBack}>Carry on</button></div>
       </div>
     );
   } else if (phase.t === 'puzzle') {
@@ -104,7 +104,7 @@ export function Quest({ session, ask, onChange, onBack, top }: { session: Sessio
         </div>
         {shown < quest.story.length ? (
           <div className="cq-qstage__row">
-            <button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={() => setPhase({ t: 'story', shown: shown + 1 })}>Read on</button>
+            <button data-key="enter" type="button" className="cq-btn cq-btn--hot" autoFocus onClick={() => setPhase({ t: 'story', shown: shown + 1 })}>Read on</button>
           </div>
         ) : (
           <div role="group" aria-label="What will you do? Press the letter shown, or tap a choice" className="cq-quest-choices">
@@ -139,7 +139,7 @@ export function Quest({ session, ask, onChange, onBack, top }: { session: Sessio
       {top}
       <div className="cq-qstage__top">
         <h2>{quest && !used ? quest.title : 'Today’s quest'}</h2>
-        <button type="button" className="cq-btn" autoFocus={used || !quest} onClick={onBack}>Back to the clan</button>
+        <button data-key="esc" type="button" className="cq-btn" autoFocus={used || !quest} onClick={onBack}>Back to the clan</button>
       </div>
       {session.questPick && <p className="cq-soft cq-qstage__test">Test pick: quest number {session.questPick}.</p>}
       <div className="cq-qstage__box" key={phase.t}>{box}</div>
