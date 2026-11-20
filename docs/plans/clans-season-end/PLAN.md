@@ -4,7 +4,10 @@ Asked for by James, 20 Nov 2026: "plan similar for clans", the same shape as the
 (`docs/plans/dragon-season-end/PLAN.md`, on branch `claude/dragon-season-end`). Branch `claude/clans-season-end`.
 Migration numbers from `20261120001900` (check again: Dragon Maths took `...001800`).
 
-**Status:** plan written 20 Nov 2026 (#659). Stage 1 built 20 Nov. Stage 2 next (before Sat night).
+**Status:** plan written 20 Nov 2026 (#659). Stage 1 LIVE 20 Nov (#661). Stage 2 LIVE 20 Nov (#663), checked live: table, trigger and
+`clan-veteran` trophy are in. It also stamps season 1 on the 30 clans with no season in `extras`, so they reset on Sunday.
+Next: stage 3 (the ceremony) by Mon 23 Nov 8:45; `clan_season_summary()` and `clan_season_seen()` are ready for it.
+Stage 2 notes: no `fame_rank` column (the summary ranks when read); no new screen tests for stage 1 (Clan Quest budget 20 is full).
 
 ## When it happens
 
