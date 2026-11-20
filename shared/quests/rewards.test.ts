@@ -10,15 +10,11 @@ describe('Game Coins', () => {
     expect(inSql).toEqual(Object.fromEntries(Object.entries(COIN_POUCH).map(([game, p]) => [game, p.amount])));
   });
 
-  it('fits only games with money', () => {
+  it('fits coins only to games with money, and turns to games with daily turns', () => {
     expect(rewardFit('trader', 'coins')).toBeNull();
     expect(rewardFit('archery-fights', 'coins')).toBeNull();
     expect(rewardFit('monsters-battles', 'coins')).toMatch(/no coins/);
-  });
-});
-
-describe('Bonus Turns Day in Toon Flap and Goblin Storm', () => {
-  it('fits their quests', () => {
+    // Bonus Turns Day fits games with daily turns, Toon Flap and Goblin Storm included.
     expect(rewardFit('toonflap-daily', 'turns')).toBeNull();
     expect(rewardFit('goblinstorm-total', 'turns')).toBeNull();
   });
