@@ -5,6 +5,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { ClassTag, SchoolPlayerList } from '../../components/SchoolPlayerList';
+import { starPlayer } from '../../data/lobbyStars';
 import type { Ask, Classmate } from '../../../shared/archery/duel';
 import { SNOOZE_MS } from '../../../shared/archery/config';
 import { WORLD_IDS, type WorldId } from '../../../shared/archery/types';
@@ -62,6 +63,7 @@ export function ClassmatesScreen({ online, offline, world, sending, problem, onW
       ) : (
         <SchoolPlayerList
           people={online}
+          onStar={starPlayer}
           label="Players in Archery Challenge now"
           listClassName="ar-mates"
           itemClassName="ar-mate"

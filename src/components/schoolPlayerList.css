@@ -53,3 +53,52 @@
   color: inherit;
   cursor: pointer;
 }
+
+/* Stars (stage 8). The button is 44px so small fingers hit it. */
+.school-list__star {
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.school-list__star:hover,
+.school-list__star:focus-visible {
+  background: rgba(0, 0, 0, 0.08);
+}
+.school-list__star--on {
+  text-shadow: 0 0 6px rgba(255, 200, 0, 0.6);
+}
+
+.school-list__dot {
+  flex: none;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #2fb84f;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.school-list__item--away {
+  opacity: 0.6;
+}
+.school-list__away {
+  margin-top: 0;
+}
+.school-list__gone {
+  font-size: 0.85em;
+  font-style: italic;
+}
+
+.school-list__problem {
+  margin: 0;
+  font-weight: 600;
+}

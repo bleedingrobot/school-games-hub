@@ -11,6 +11,7 @@ import { CONFIG } from '../../../shared/clans/config';
 import { BUILDING_NAMES, empireOf } from '../../../shared/clans/empire';
 import { LIGHT_NAMES, type BoardRow, type Rival } from '../../../shared/clans/raids';
 import { ClassTag, SchoolPlayerList } from '../../components/SchoolPlayerList';
+import { starClan } from '../../data/lobbyStars';
 import { bannerArt } from './art';
 import { LadderAsk, type Asker } from './LadderAsk';
 import { pretendRaidList } from './places';
@@ -125,6 +126,7 @@ export function VillageRaids({ session, ask, onStart, onFight, onBack, onDuels }
                   <summary>More villages to raid ({others.length})</summary>
                   <SchoolPlayerList
                     people={others}
+                    onStar={starClan}
                     label="More villages to raid"
                     searchLabel="Find a clan or class"
                     listClassName="cq-rivals cq-rivals--small"

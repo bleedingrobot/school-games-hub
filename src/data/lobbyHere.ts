@@ -21,6 +21,8 @@ export type WithThem = 'ok' | 'none' | 'off' | 'busy';
 
 export interface HerePlayer extends SchoolPlayer {
   avatar: unknown;
+  /** Here now (always, in `online`; in Played recently, maybe not). */
+  here: boolean;
   /** Their clan's id for a duel (only when I have a clan myself). */
   clan: string | null;
   /** Only the games I can play myself: the live games, and the board games I can invite them to (stage 4). */
@@ -35,12 +37,21 @@ export interface GoingFight {
   with: string;
 }
 
+/** One of my stars who isn't here now (stage 8): only who they are. */
+export interface StarAway extends SchoolPlayer {
+  avatar: unknown;
+}
+
 export interface LobbyHere {
   me: Record<MyGame, MyState>;
   /** True for a teacher (or anyone who isn't a pupil): lobby_here() gives them no game states, and the tiles just open each game. */
   teacher: boolean;
   going: GoingFight[];
   online: HerePlayer[];
+  /** My stars I may play who aren't here now (stage 8). */
+  starsAway: StarAway[];
+  /** Up to 8 kids I finished a game with in the last 14 days, newest first (stage 8). */
+  recent: HerePlayer[];
 }
 
 const MY_GAMES: MyGame[] = [...LIVE_GAMES, 'isles', 'raid'];
@@ -50,7 +61,7 @@ const WITH: WithThem[] = ['ok', 'none', 'off', 'busy'];
 /** Reads lobby_here()'s reply, leaving out anything it can't read. Exported for the tests. */
 export function readLobbyHere(data: unknown): LobbyHere | null {
   if (!data || typeof data !== 'object') return null;
-  const raw = data as { me?: unknown; going?: unknown; online?: unknown };
+  const raw = data as { me?: unknown; going?: unknown; online?: unknown; stars_away?: unknown; recent?: unknown };
   const mine = (raw.me && typeof raw.me === 'object' ? raw.me : {}) as Record<string, unknown>;
   const me = Object.fromEntries(
     MY_GAMES.map((g) => [g, mine[g] === 'ready' || mine[g] === 'none' ? mine[g] : 'off']),
@@ -60,19 +71,25 @@ export function readLobbyHere(data: unknown): LobbyHere | null {
       ? [{ game: g.game, id: g.id as number, status: g.status as GoingFight['status'], with: g.with }]
       : [],
   );
-  const online: HerePlayer[] = (Array.isArray(raw.online) ? raw.online : []).flatMap((o: Record<string, unknown>) => {
+  const kids = (list: unknown, isHere: (o: Record<string, unknown>) => boolean): HerePlayer[] => (Array.isArray(list) ? list : []).flatMap((o: Record<string, unknown>) => {
     if (!o || typeof o.id !== 'string' || typeof o.name !== 'string') return [];
     const games = (o.games && typeof o.games === 'object' ? o.games : {}) as Record<string, unknown>;
     return [{
       id: o.id,
       name: o.name,
       avatar: o.avatar ?? null,
+      here: isHere(o),
       clan: typeof o.clan === 'string' ? o.clan : null,
       games: Object.fromEntries(ASK_GAMES.flatMap((g) => (WITH.includes(games[g] as WithThem) ? [[g, games[g]]] : []))),
       ...readClassBits(o),
     }];
   });
-  return { me, teacher: raw.me === null, going, online };
+  const online = kids(raw.online, () => true);
+  const recent = kids(raw.recent, (o) => o.here === true);
+  const starsAway: StarAway[] = (Array.isArray(raw.stars_away) ? raw.stars_away : []).flatMap((o: Record<string, unknown>) =>
+    o && typeof o.id === 'string' && typeof o.name === 'string' ? [{ id: o.id, name: o.name, avatar: o.avatar ?? null, ...readClassBits(o), starred: true }] : [],
+  );
+  return { me, teacher: raw.me === null, going, online, starsAway, recent };
 }
 
 export async function fetchLobbyHere(): Promise<LobbyHere | null> {

@@ -57,6 +57,8 @@ export interface RivalSketch {
   className?: string | null;
   /** May be raided (false when its class has raids paused: it still shows on the Banners board). Missing means yes. */
   canRaid?: boolean;
+  /** I starred this clan's pupil (stage 8: only I can see it). */
+  starred?: boolean;
 }
 
 export const sketchPower = (s: RivalSketch) => {
@@ -77,6 +79,8 @@ export interface Rival {
   suggested: boolean;
   /** Already raided today. */
   raided: boolean;
+  /** I starred them: shown in "Your stars" (order only). */
+  starred: boolean;
 }
 
 /**
@@ -92,6 +96,7 @@ export function rivalList(clan: Clan, raidedToday: readonly string[], sketches: 
   const rest = all.filter((x) => !close.includes(x)).sort((a, b) => a.s.name.localeCompare(b.s.name));
   return [...close.map((x) => ({ x, suggested: true })), ...rest.map((x) => ({ x, suggested: false }))].map(({ x, suggested }) => ({
     id: x.s.id, name: x.s.name, sameClass: x.same, className: x.same ? null : x.s.className ?? null, light: lightOf(mine, x.power), suggested, raided: x.raided,
+    starred: x.s.starred === true,
   }));
 }
 

@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'lobby-stars-2026-11-20',
+    date: '2026-11-20',
+    emoji: '⭐',
+    title: 'Star your friends',
+    text: 'Star your friends to keep them at the top of the Lobby.',
+    to: '/lobby',
+  },
+  {
     id: 'toonflap-daily-limits-2026-11-20',
     date: '2026-11-20',
     emoji: '🐦',

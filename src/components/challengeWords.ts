@@ -38,6 +38,10 @@ export const SPOKEN: Record<AskGame, string> = {
   'power-clash': 'A friend invites you to play Power Clash!',
 };
 
+/** The Lobby's one-time hint about stars (stage 8): what it shows, and what Bella says. */
+export const STAR_HINT = 'Tap ☆ to keep your friends at the top';
+export const STAR_HINT_SPOKEN = 'Tap the star to keep your friends at the top.';
+
 export function allVoiceLines(): string[] {
-  return Object.values(SPOKEN);
+  return [...Object.values(SPOKEN), STAR_HINT_SPOKEN];
 }
