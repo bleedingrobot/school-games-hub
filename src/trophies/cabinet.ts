@@ -101,13 +101,23 @@ export function halfLitPairs(pairs: TrophyPair[], switchedOn: ReadonlySet<string
  * (`dm-veteran`) win per Dragon Maths season played. Null for anyone without one. No effect in the game.
  */
 export function seasonHeroLine(trophies: readonly MyTrophy[] | undefined): string | null {
-  const veteran = trophies?.find((t) => t.id === 'dm-veteran');
+  return veteranLine(trophies, 'dm-veteran', 'dragonSeason', 'Hero');
+}
+
+/** The gold "Season 1 Clan" line on a Clan Quest veteran's profile (docs/plans/clans-season-end): one Clan Veteran win per season. */
+export function clanSeasonLine(trophies: readonly MyTrophy[] | undefined): string | null {
+  return veteranLine(trophies, 'clan-veteran', 'clanSeason', 'Clan');
+}
+
+/** "Season 1 <word>", or "Seasons 1, 2 and 3 <word>", from a season trophy's wins (the season number is in `detail[key]`). */
+function veteranLine(trophies: readonly MyTrophy[] | undefined, id: string, key: string, word: string): string | null {
+  const veteran = trophies?.find((t) => t.id === id);
   const seasons = [
     ...new Set(
-      (veteran?.wins ?? []).map((w) => Number(w.detail?.dragonSeason ?? w.season)).filter((n) => Number.isInteger(n) && n > 0),
+      (veteran?.wins ?? []).map((w) => Number(w.detail?.[key] ?? w.season)).filter((n) => Number.isInteger(n) && n > 0),
     ),
   ].sort((a, b) => a - b);
   if (seasons.length === 0) return null;
-  if (seasons.length === 1) return `Season ${seasons[0]} Hero`;
-  return `Seasons ${seasons.slice(0, -1).join(', ')} and ${seasons[seasons.length - 1]} Hero`;
+  if (seasons.length === 1) return `Season ${seasons[0]} ${word}`;
+  return `Seasons ${seasons.slice(0, -1).join(', ')} and ${seasons[seasons.length - 1]} ${word}`;
 }

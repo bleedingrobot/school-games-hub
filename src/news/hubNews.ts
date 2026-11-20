@@ -82,6 +82,14 @@ export const HUB_NEWS: NewsItem[] = [
     game: 'dragon-maths',
   },
   {
+    id: 'clans-season-2-begins-2026-11-22',
+    date: '2026-11-22',
+    emoji: '🌅',
+    title: 'Clan Quest Season 2 has begun!',
+    text: 'Every clan starts again. See which clans made the Season 1 Hall of Legends.',
+    game: 'clan-quest',
+  },
+  {
     id: 'goblinstorm-card-keys-2026-11-20',
     date: '2026-11-20',
     emoji: '⌨️',
@@ -96,6 +104,7 @@ export const HUB_NEWS: NewsItem[] = [
     title: 'Clan Quest Season 1 ends Saturday',
     text: 'Last chance to beat Grimmor! Then clans start again, but trophies and the Hall stay.',
     game: 'clan-quest',
+    until: '2026-11-21',
   },
   {
     id: 'dragon-season-1-ends-2026-11-20',
