@@ -96,7 +96,8 @@ describe('the lobby', () => {
       me: off,
       teacher: false,
       going: [],
-      online: [{ id: 'mia', name: 'Mia', avatar: null, clan: null, games: { chess: 'ok', checkers: 'ok' }, sameClass: true, className: null }],
+      online: [{ id: 'mia', name: 'Mia', avatar: null, clan: null, games: { chess: 'ok', checkers: 'ok' }, sameClass: true, className: null, here: true }],
+      starsAway: [], recent: [],
     });
     vi.mocked(invites.sendInvite).mockResolvedValue({ ok: true, id: 4, deadline: new Date(Date.now() + 60_000).toISOString() });
     let heard: (i: invites.SentInvite) => void = () => {};

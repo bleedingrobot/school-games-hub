@@ -14012,7 +14012,8 @@ function rivalList(clan, raidedToday, sketches) {
 		className: x.same ? null : x.s.className ?? null,
 		light: lightOf(mine, x.power),
 		suggested,
-		raided: x.raided
+		raided: x.raided,
+		starred: x.s.starred === true
 	}));
 }
 /** This week's Banners board for the whole school: the top clans with a Banner, and your own clan even with none. Most first. */

@@ -22,6 +22,8 @@ export interface ClashClassmate {
   /** In my class; otherwise className says which class they're in. */
   sameClass: boolean;
   className: string | null;
+  /** I starred them (stage 8: only I can see it). */
+  starred?: boolean;
 }
 
 export interface ClashAsk {

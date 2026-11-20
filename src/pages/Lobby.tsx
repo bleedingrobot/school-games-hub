@@ -892,6 +892,8 @@ export function Lobby() {
       {(liveGames.length > 0 || inviteGames.length > 0) && (
         <WhosHere
           online={here?.online ?? null}
+          starsAway={here?.starsAway}
+          recent={here?.recent}
           me={here?.me ?? null}
           games={liveGames}
           boards={inviteGames}

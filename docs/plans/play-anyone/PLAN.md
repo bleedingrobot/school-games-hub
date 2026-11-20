@@ -10,7 +10,7 @@
 - Star Forge is not in the Lobby.
 - Stage 8: stars, not a friends list. Starring someone is private and one-sided, with no requests and no counts.
 
-**Status:** stage 1 built 20 Nov 2026 (migration `20261120000300_play_other_classes.sql`); stage 2 built 20 Nov 2026 (migration `20261120000500_hub_here.sql`); stage 3 built 20 Nov 2026 (migration `20261120000700_lobby_here.sql`); stage 4 built 20 Nov 2026 (migration `20261120000800_name_invites.sql`); stage 5 built 20 Nov 2026 (migration `20261120000900_raids_school_wide.sql`); see the "Stage results" sections at the end. Stages 6, 7 and 8 not started.
+**Status:** stage 1 built 20 Nov 2026 (migration `20261120000300_play_other_classes.sql`); stage 2 built 20 Nov 2026 (migration `20261120000500_hub_here.sql`); stage 3 built 20 Nov 2026 (migration `20261120000700_lobby_here.sql`); stage 4 built 20 Nov 2026 (migration `20261120000800_name_invites.sql`); stage 5 built 20 Nov 2026 (migration `20261120000900_raids_school_wide.sql`); stage 8 built 20 Nov 2026 (migration `20261120001300_lobby_stars.sql`); see the "Stage results" sections at the end. Stages 6 and 7 are on their own branches.
 
 ## Where things are now
 
@@ -211,4 +211,15 @@ Built on branch `claude/play-anyone-5`, migration `20261120000900_raids_school_w
 - **Words kids see.** "Raid another clan's village anywhere in your school" (How to play), "When other clans raid you" (Walls), "Your teacher has switched Village Raids off."
 - **Lobby.** The Village Raid tile and Who's here read only my own raid state from `lobby_here`, so they work unchanged (lobby_here.test.sql passes).
 - **Tests.** New `supabase/tests/database/play_anyone_raids.test.sql` (23 checks: my class first then Room 2 with its class name, cross-class load + raid + held reward + Banners, other school never, hidden never, either class off stops it, defender's raids off keeps it on the board but refuses the raid). `clans_village_raids` and `clans_my_village` now switch "Play other classes" off so they still test one class. The clans server test checks a clan from another class comes with its class name. No new screen tests. Checked at phone, iPad and laptop sizes on the test page.
+
+## Stage 8 results (20 Nov 2026)
+
+Built on branch `claude/play-anyone-8`, migration `20261120001300_lobby_stars.sql`.
+
+- **Stars are private and one-sided.** New table `lobby_stars (player, star, created_at)`, no pupil access at all (RLS on, no policies, nothing granted). Only `lobby_star(other, starred)` writes it: a pupil, same school, not yourself, not a hidden pupil, at most 30. Taking a star off always works. Nobody can read who starred them: no counts, no notice, nothing on teachers' screens, and a test checks everything the starred kid can read is the same before and after.
+- **Lists only change order.** `lobby_here`, `archery_here`, `lord_here`, `clan_duel_here` and `clan_village_mates` add a `starred` flag; nothing changes who can play whom. Clan lists star by clan id (`lobby_star_clan`), so no pupil ids are shown there.
+- **Lobby.** `lobby_here` adds `stars_away` (my stars at school who aren't here, still checked against the stage 1 rules) and `recent` (up to 8 kids from the last 14 days, here or not, same fields and states as online). Screens: "⭐ Your stars" above Your class with a green "here now" dot, stars not here greyed with "Not here right now", a ☆/⭐ button (44px) on every row, a Played recently row, and a one-time hint read by Bella.
+- **Played recently: read from the games' own records, no `played_with` table.** `lobby_played_with` reads chess/checkers, 101, Wormholes, Power Clash, archery duels, Dragon Maths clashes and clan duels. Timed on made-up data (600 kids and many games each): about 5 to 15 ms, and the whole `lobby_here` with 150 kids here about 250 ms, most of that the game states that were already there.
+- **Same list everywhere.** `SchoolPlayerList` gives the stars group and star buttons to the Lobby, Archery classmates, the Dragon Maths arena, Clan duels and Village Raids. Sky Isles and Star Forge untouched.
+- **Tests.** New `lobby_stars.test.sql` (37 checks); `lobby_star` and `lobby_star_clan` in security.test.sql; keys updated in lobby_here and archery_classmates. Screen checks folded into the existing Who's here test (no new tests). Checked at phone, iPad and laptop sizes with 130 made-up kids and 10 stars.
 

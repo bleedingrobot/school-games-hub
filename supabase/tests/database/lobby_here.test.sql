@@ -115,7 +115,7 @@ select is(pg_temp.names(pg_temp.lobby('a')), array[pg_temp.id('b')::text, pg_tem
 select is((select o ->> 'className' from jsonb_array_elements(pg_temp.lobby('a') -> 'online') o where o ->> 'id' = pg_temp.id('c')::text), 'Room 2',
   'Cat shows her class name');
 select is((select array_agg(k order by k) from jsonb_array_elements(pg_temp.lobby('a') -> 'online') o, jsonb_object_keys(o) k where o ->> 'id' = pg_temp.id('c')::text),
-  array['avatar', 'clan', 'className', 'games', 'id', 'name', 'sameClass'], 'nothing else about Cat: no scores, no year, no maths');
+  array['avatar', 'clan', 'className', 'games', 'here', 'id', 'name', 'sameClass', 'starred'], 'nothing else about Cat: no scores, no year, no maths');
 select pg_temp.room(2, false);
 select is(pg_temp.names(pg_temp.lobby('a')), array[pg_temp.id('b')::text], 'with Room 2''s "Play other classes" off Ana sees only Ben');
 select is(pg_temp.names(pg_temp.lobby('c')), '{}'::text[], 'and Cat sees nobody from Room 1');

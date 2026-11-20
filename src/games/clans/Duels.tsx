@@ -16,6 +16,7 @@ import { duelOpen, type DuelClan, type DuelRow } from '../../../shared/clans/due
 import { BUILDING_NAMES, empireOf } from '../../../shared/clans/empire';
 import { LOOKS, isLook, lookOf } from '../../../shared/clans/looks';
 import { ClassTag, SchoolPlayerList } from '../../components/SchoolPlayerList';
+import { starClan } from '../../data/lobbyStars';
 import type { DuelCheer } from '../../data/clanDuel';
 import { bannerArt, duelArt, sceneArt } from './art';
 import { LadderAsk, type Asker } from './LadderAsk';
@@ -457,6 +458,7 @@ export function DuelArena({ session, duels, ask, onBack }: { session: Session; d
           ) : (
             <SchoolPlayerList
               people={duels.online}
+              onStar={starClan}
               label="Clans in Clan Quest now"
               searchLabel="Find a clan"
               listClassName="cq-rivals"

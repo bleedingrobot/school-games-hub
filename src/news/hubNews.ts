@@ -29,6 +29,14 @@ export const HUB_NEWS: NewsItem[] = [
     text: 'Win one from a class quest! Their cards now show your goes left today.',
   },
   {
+    id: 'lobby-stars-2026-11-20',
+    date: '2026-11-20',
+    emoji: '⭐',
+    title: 'Star your friends',
+    text: 'Star your friends to keep them at the top of the Lobby.',
+    to: '/lobby',
+  },
+  {
     id: 'toonflap-daily-limits-2026-11-20',
     date: '2026-11-20',
     emoji: '🐦',

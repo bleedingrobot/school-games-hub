@@ -4,13 +4,15 @@
  * challenges, and invites by name to the board games (stage 4).
  * Lobby.tsx puts them together with the start-a-game form, the open games and the code box.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { AvatarImage } from '../avatar/AvatarImage';
-import { ClassTag, SchoolPlayerList } from '../components/SchoolPlayerList';
-import { GAME_NAMES, askLine } from '../components/challengeWords';
+import { ClassTag, SchoolPlayerList, StarButton, useStars, type SchoolPlayer } from '../components/SchoolPlayerList';
+import { GAME_NAMES, STAR_HINT, STAR_HINT_SPOKEN, VOICE_FOLDER, askLine } from '../components/challengeWords';
+import { starPlayer } from '../data/lobbyStars';
+import { speak } from '../speech';
 import { isInviteGame, type AskGame, type HubAsk, type InviteGame, type LiveGame } from '../data/hubAsks';
-import type { HerePlayer, MyGame, MyState, WithThem } from '../data/lobbyHere';
+import type { HerePlayer, MyGame, MyState, StarAway, WithThem } from '../data/lobbyHere';
 import './lobbyFriends.css';
 
 /** The teacher has paused a game (or friends' games, or non-maths games in maths time). */
@@ -159,9 +161,45 @@ export function GameTiles({ tiles }: { tiles: Tile[] }) {
 // Who's here (D4)
 // ---------------------------------------------------------------------------
 
-export function WhosHere({ online, me, games, boards, focus, onClearFocus, sending, problem, onSend }: {
+/** Remembered on this device once the stars hint has shown. */
+export const STAR_HINT_KEY = 'lobby-star-hint-seen';
+
+/** The one-time hint "Tap ☆ to keep your friends at the top", read aloud by Bella the first time it shows. */
+function StarHint() {
+  const [show, setShow] = useState(() => {
+    try {
+      return !localStorage.getItem(STAR_HINT_KEY);
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    if (!show) return;
+    try {
+      localStorage.setItem(STAR_HINT_KEY, '1');
+    } catch {
+      /* private window: it may show again next time */
+    }
+    speak(STAR_HINT_SPOKEN, VOICE_FOLDER);
+  }, [show]);
+  if (!show) return null;
+  return (
+    <p className="lobby-here__hint" role="status">
+      <span>{STAR_HINT}</span>
+      <button type="button" className="button button--light" onClick={() => setShow(false)}>
+        Got it
+      </button>
+    </p>
+  );
+}
+
+export function WhosHere({ online, starsAway = [], recent = [], me, games, boards, focus, onClearFocus, sending, problem, onSend }: {
   /** null while loading. */
   online: HerePlayer[] | null;
+  /** My stars who aren't here (stage 8). */
+  starsAway?: StarAway[];
+  /** Played recently (stage 8). */
+  recent?: HerePlayer[];
   me: Record<MyGame, MyState> | null;
   /** The live games shown (their code switches are on). */
   games: LiveGame[];
@@ -175,6 +213,7 @@ export function WhosHere({ online, me, games, boards, focus, onClearFocus, sendi
   onSend: (game: AskGame, them: HerePlayer) => void;
 }) {
   const [openKid, setOpenKid] = useState<string | null>(null);
+  const played = useStars(recent, starPlayer);
   // A game I can't play myself shows only on its tile (with the reason and the fix), not on every kid.
   const shownGames: AskGame[] = focus ? [focus] : [...games.filter((g) => !me || me[g] === 'ready'), ...boards];
 
@@ -221,6 +260,33 @@ export function WhosHere({ online, me, games, boards, focus, onClearFocus, sendi
     </span>
   );
 
+  /** One kid here now: avatar, name and class, and what we can play together once opened. */
+  const kid = (p: HerePlayer) => {
+    const open = focus !== null || openKid === p.id;
+    return (
+      <>
+        <AvatarImage avatar={p.avatar} size={44} />
+        <span className="lobby-list__what">
+          <strong>
+            {p.name} <ClassTag player={p} />
+          </strong>
+          {open && choices(p)}
+        </span>
+        {!focus && (
+          <button
+            type="button"
+            className="button button--light"
+            aria-expanded={open}
+            onClick={() => setOpenKid(open ? null : p.id)}
+            aria-label={open ? `Close ${p.name}` : `Play with ${p.name}`}
+          >
+            {open ? 'Close' : 'Play'}
+          </button>
+        )}
+      </>
+    );
+  };
+
   return (
     <section className="panel lobby-here" aria-labelledby="here-title" id="whos-here">
       <h2 id="here-title" className="panel__title">
@@ -241,39 +307,61 @@ export function WhosHere({ online, me, games, boards, focus, onClearFocus, sendi
       )}
       {!online ? (
         <p className="panel__empty">Loading…</p>
-      ) : online.length === 0 ? (
-        <p className="panel__empty">Nobody else is here right now. Friends show up here when they open the Games Hub.</p>
       ) : (
-        <SchoolPlayerList
-          people={online}
-          label="Kids here now"
-          listClassName="lobby-list lobby-here__list"
-          row={(p) => {
-            const open = focus !== null || openKid === p.id;
-            return (
-              <>
-                <AvatarImage avatar={p.avatar} size={44} />
-                <span className="lobby-list__what">
-                  <strong>
-                    {p.name} <ClassTag player={p} />
-                  </strong>
-                  {open && choices(p)}
-                </span>
-                {!focus && (
-                  <button
-                    type="button"
-                    className="button button--light"
-                    aria-expanded={open}
-                    onClick={() => setOpenKid(open ? null : p.id)}
-                    aria-label={open ? `Close ${p.name}` : `Play with ${p.name}`}
-                  >
-                    {open ? 'Close' : 'Play'}
-                  </button>
-                )}
-              </>
-            );
-          }}
-        />
+        <>
+          {(online.length > 0 || starsAway.length > 0 || recent.length > 0) && <StarHint />}
+          {online.length === 0 && starsAway.length === 0 ? (
+            <p className="panel__empty">Nobody else is here right now. Friends show up here when they open the Games Hub.</p>
+          ) : (
+            <SchoolPlayerList
+              people={online}
+              label="Kids here now"
+              listClassName="lobby-list lobby-here__list"
+              onStar={starPlayer}
+              away={starsAway}
+              awayRow={(p: SchoolPlayer) => (
+                <>
+                  <AvatarImage avatar={(p as StarAway).avatar} size={44} />
+                  <span className="lobby-list__what">
+                    <strong>
+                      {p.name} <ClassTag player={p} />
+                    </strong>
+                  </span>
+                </>
+              )}
+              row={kid}
+            />
+          )}
+          {played.people.length > 0 && (
+            <div className="lobby-recent">
+              <h3 className="lobby-recent__title">Played recently</h3>
+              {played.problem && <p className="school-list__problem" role="alert">{played.problem}</p>}
+              <ul className="lobby-recent__row" aria-label="Played recently">
+                {played.people.map((p) => (
+                  <li key={p.id} className={`lobby-recent__kid${p.here ? '' : ' lobby-recent__kid--away'}`}>
+                    <AvatarImage avatar={p.avatar} size={44} />
+                    <span className="lobby-recent__name">
+                      {p.here && <span className="school-list__dot" role="img" aria-label="here now" title="Here now" />}
+                      {p.name}
+                      <ClassTag player={p} />
+                      {!p.here && <span className="lobby-recent__gone">Not here right now</span>}
+                    </span>
+                    {p.here && (
+                      !focus && (
+                        <button type="button" className="button button--light lobby-recent__play" aria-expanded={openKid === p.id}
+                          onClick={() => setOpenKid(openKid === p.id ? null : p.id)} aria-label={openKid === p.id ? `Close ${p.name}` : `Play with ${p.name}`}>
+                          {openKid === p.id ? 'Close' : 'Play'}
+                        </button>
+                      )
+                    )}
+                    <StarButton player={p} onToggle={() => played.toggle(p)} />
+                    {p.here && (focus !== null || openKid === p.id) && <div className="lobby-recent__choices">{choices(p)}</div>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
       )}
     </section>
   );
