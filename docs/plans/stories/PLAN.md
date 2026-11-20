@@ -2,7 +2,7 @@
 
 21 Nov 2026. James: "What other games could do with story pictures? Make a plan like Clans and Lord, draw all the art, and start adding. Make sure they are skippable: intro stories for each Goblin Storm hero, opening stories for Star Trader, Clans and Dragon Maths, a story-based challenge in games like Gem Keep. What other games could have stories that then progress as a playable narrative? Not the Foundational games."
 
-**Status:** plan written (ST.0). Next: ST.1, the shared story book.
+**Status:** ST.0–ST.4 done (#671–#674, 21 Nov 2026). Art not painted yet. Keeper's Tale trophy left out for now (needs a migration). Next: ST.5.
 
 ## 1. What we have now
 
@@ -133,11 +133,11 @@ Painting: `python3 scripts/game_art.py docs/stories-art/<game>.json paint ~/stor
 
 Each stage is its own PR, goes live switched on, and adds a "What's new" line.
 
-- [ ] **ST.0** This plan.
-- [ ] **ST.1** `StoryBook`, `StoryShelf`, `useStories`, the `story_seen` table and its two functions, tests.
-- [ ] **ST.2** Opening stories for Clans, Dragon Maths and Star Trader; Clans arrivals; Clans' win story onto `StoryBook`.
-- [ ] **ST.3** Goblin Storm: opening, 8 hero stories, maps, bosses.
-- [ ] **ST.4** Gem Keep: The Keeper's Tale, Tale challenges, ending, trophy.
+- [x] **ST.0** This plan.
+- [x] **ST.1** `StoryBook`, `StoryShelf`, `useStories`, the `story_seen` table and its two functions, tests.
+- [x] **ST.2** Opening stories for Clans, Dragon Maths and Star Trader; Clans arrivals; Clans' win story onto `StoryBook`.
+- [x] **ST.3** Goblin Storm: opening, 8 hero stories, maps, bosses.
+- [x] **ST.4** Gem Keep: The Keeper's Tale, Tale challenges, ending, trophy.
 - [ ] **ST.5** Dragon Maths: masters, lair, victory.
 - [ ] **ST.6** Maths Monsters: opening and quest pages.
 - [ ] **ST.7** Diamond Drop: Nugget's Journey.

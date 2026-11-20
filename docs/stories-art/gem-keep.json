@@ -1,0 +1,301 @@
+{
+  "_from": "docs/plans/stories/PLAN.md. Story paintings for Gem Keep (The Keeper's Tale): one 1536x864 scene a page, filed as art/story/<story id>-<page>.webp. Crystal Night look (docs/prompts/gem-keep-art.md).",
+  "game": "stories-gem-keep",
+  "filename_prefix": "stories/gem-keep/img",
+  "style": "a",
+  "styles": {
+    "a": "Crystal Night: twilight in an enchanted fantasy land where glowing magic gems are the light, painterly storybook illustration, deep blues and purples with warm gem glows, friendly and cosy, for children aged 8 to 12, no blood, no gore, no romance, no text, no letters, no numbers. "
+  },
+  "inbox": "~/stories-art-inbox/gem-keep",
+  "picks": "docs/stories-art/gem-keep-picks.json",
+  "art_dir": "src/games/gem-keep/art",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "gemkeep-opening-1",
+      "prompt": "a small stone castle keep on a hill with glowing magic gems in its windows at the top of a twilight crystal valley, the gems lighting the green valley below. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-opening-1"
+    },
+    {
+      "name": "gemkeep-opening-2",
+      "prompt": "a big grumpy grey-skinned goblin warlord with a muddy tusk, a dented iron crown and a tatty cape, funny not scary on a hilltop at dusk, rubbing his hands and looking towards a far valley that glows, his grey goblin horde gathering behind him. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-opening-2"
+    },
+    {
+      "name": "gemkeep-opening-3",
+      "prompt": "A kind old keeper with a long white beard handing a big iron key to a young hero at the door of a glowing gem keep, twilight. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-opening-3"
+    },
+    {
+      "name": "gemkeep-chapter-1-1",
+      "prompt": "small cartoon grey goblin soldiers of the Grey Horde, little sneaky scouts creeping up a twilight crystal valley with notebooks, counting towers. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-chapter-1-1"
+    },
+    {
+      "name": "gemkeep-chapter-2-1",
+      "prompt": "A sunny meadow at twilight with wooden barns full of dry golden hay, a nervous farmer watching a glowing red fire gem. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-chapter-2-1"
+    },
+    {
+      "name": "gemkeep-chapter-3-1",
+      "prompt": "An old wobbly wooden bridge over a winding river at twilight, creaking, a few planks missing. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-chapter-3-1"
+    },
+    {
+      "name": "gemkeep-chapter-4-1",
+      "prompt": "A rocky mountain pass at twilight, a pile of fallen rocks blocking a cave mouth that glows blue from inside. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-chapter-4-1"
+    },
+    {
+      "name": "gemkeep-chapter-5-1",
+      "prompt": "Families of villagers, grandparents, parents and children, hiding quietly behind trees in a twilight wood beside a long road. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-chapter-5-1"
+    },
+    {
+      "name": "gemkeep-chapter-6-1",
+      "prompt": "small cartoon grey goblin soldiers of the Grey Horde marching past a stone wall banging big drums, two rivers behind them, twilight. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-chapter-6-1"
+    },
+    {
+      "name": "gemkeep-chapter-7-1",
+      "prompt": "A frosty mountain ridge at twilight, big green spotted mushrooms frozen solid in blocks of ice. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-chapter-7-1"
+    },
+    {
+      "name": "gemkeep-chapter-8-1",
+      "prompt": "Two broken wooden castle gates side by side at twilight, gate-keepers with hammers looking at a small pile of wood. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-chapter-8-1"
+    },
+    {
+      "name": "gemkeep-chapter-9-1",
+      "prompt": "Stormy mountain peaks at night with lightning crackling between the clouds, glowing yellow gems sparking nervously. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-chapter-9-1"
+    },
+    {
+      "name": "gemkeep-chapter-10-1",
+      "prompt": "a big grumpy grey-skinned goblin warlord with a muddy tusk, a dented iron crown and a tatty cape, funny not scary leading his whole horde up to a small stone castle keep on a hill with glowing magic gems in its windows, the keep's old wall cracked, night. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-chapter-10-1"
+    },
+    {
+      "name": "gemkeep-tale-1-1",
+      "prompt": "a big grumpy grey-skinned goblin warlord with a muddy tusk, a dented iron crown and a tatty cape, funny not scary stamping his foot in a muddy camp, shouting at a blank notebook, cross goblin scouts with empty hands. Funny. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-tale-1-1"
+    },
+    {
+      "name": "gemkeep-tale-2-1",
+      "prompt": "Happy farmers giving a big basket of strawberries to a young hero beside a barn full of hay, a bell on a post, twilight. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-tale-2-1"
+    },
+    {
+      "name": "gemkeep-tale-3-1",
+      "prompt": "River otters fixing an old wooden bridge with sticks, goblin rafts stuck in the mud below, twilight. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-tale-3-1"
+    },
+    {
+      "name": "gemkeep-tale-4-1",
+      "prompt": "Miners digging out a cave glowing with blue frost crystals, one holding up a crumpled note, twilight. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-tale-4-1"
+    },
+    {
+      "name": "gemkeep-tale-5-1",
+      "prompt": "Families coming out of a twilight wood cheering, a grandad handing a young hero a curly horn. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-tale-5-1"
+    },
+    {
+      "name": "gemkeep-tale-6-1",
+      "prompt": "small cartoon grey goblin soldiers of the Grey Horde dropping their drums on the ground and walking away home, looking at each other sheepishly. Funny. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-tale-6-1"
+    },
+    {
+      "name": "gemkeep-tale-7-1",
+      "prompt": "Green spotted mushrooms waking up on a melting icy ridge and sneezing clouds of green dust at goblins running away. Funny. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-tale-7-1"
+    },
+    {
+      "name": "gemkeep-tale-8-1",
+      "prompt": "Gate-keepers proudly finishing two mended wooden gates at twilight, a single road winding off to a glowing keep. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-tale-8-1"
+    },
+    {
+      "name": "gemkeep-tale-9-1",
+      "prompt": "Two goblin bosses in tall metal helmets sliding down a snowy mountain on their shields, lightning above. Funny. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-tale-9-1"
+    },
+    {
+      "name": "gemkeep-tale-10-1",
+      "prompt": "a big grumpy grey-skinned goblin warlord with a muddy tusk, a dented iron crown and a tatty cape, funny not scary staring up at a small stone castle keep on a hill with glowing magic gems in its windows with a cracked but standing wall, the gems glowing bright, night. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-tale-10-1"
+    },
+    {
+      "name": "gemkeep-ending-1",
+      "prompt": "a big grumpy grey-skinned goblin warlord with a muddy tusk, a dented iron crown and a tatty cape, funny not scary sitting tired on a rock rubbing his sore feet, crown tipped sideways. Funny. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-ending-1"
+    },
+    {
+      "name": "gemkeep-ending-2",
+      "prompt": "small cartoon grey goblin soldiers of the Grey Horde trudging home over the hills at sunrise carrying their packs, a few waving goodbye. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-ending-2"
+    },
+    {
+      "name": "gemkeep-ending-3",
+      "prompt": "A happy party in a twilight valley around a small stone castle keep on a hill with glowing magic gems in its windows, lanterns, music, a huge old book of keepers open on a table, the gems glowing brighter than ever. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "gemkeep-ending-3"
+    }
+  ]
+}

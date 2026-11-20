@@ -6,11 +6,17 @@ import type { GameEngine } from './engine/GameEngine';
 import { loadProgress } from './progress';
 import { GemKeepCampaign } from './ui/GemKeepCampaign';
 import { FEEDBACK_MS } from '../../maths/QuestionModal';
+import { resetStoriesForTest } from '../../kit/useStories';
+import { ALL_STORIES } from './stories';
 
 // Each Level Key is 5 questions, and the right/wrong message stays up for most of a second after each one. These tests
 // are about which questions are asked and what is reported, not that pause (QuestionModal.test covers it), so skip it.
 const SHOWN = { ...FEEDBACK_MS };
-beforeAll(() => Object.assign(FEEDBACK_MS, { right: 0, wrong: 0 }));
+// The Keeper's Tale pages are seen already, so they don't stand in front of the map (the kit's tests cover stories).
+beforeAll(() => {
+  Object.assign(FEEDBACK_MS, { right: 0, wrong: 0 });
+  resetStoriesForTest(ALL_STORIES.map((s) => s.id));
+});
 afterAll(() => Object.assign(FEEDBACK_MS, SHOWN));
 
 /** The latest question the game's pack made, so a test can answer ones whose spoken text it can't read (rounding, order of operations). */

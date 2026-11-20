@@ -24,6 +24,13 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'gemkeep-tale-2026-11-21',
+    date: '2026-11-21',
+    emoji: '📜',
+    title: "The Keeper's Tale",
+    text: 'Gem Keep has a story now. Each level has a Tale challenge: win it to see what happens.',
+  },
+  {
     id: 'stories-goblinstorm-2026-11-21',
     date: '2026-11-21',
     emoji: '📜',

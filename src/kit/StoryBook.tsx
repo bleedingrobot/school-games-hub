@@ -58,6 +58,18 @@ export function StoryBook({ story, onClose, blanks = {}, clips, corner, endLabel
     e.stopPropagation();
   };
 
+  // Keys pressed with nothing focused (say, after a click on the backdrop) land on the page body, not the book.
+  const keysRef = useRef(keys);
+  keysRef.current = keys;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target !== document.body) return;
+      keysRef.current({ key: e.key, preventDefault: () => e.preventDefault(), stopPropagation: () => e.stopImmediatePropagation() } as React.KeyboardEvent);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const art = page.art;
   return (
     <div className={`kit-story${className ? ` ${className}` : ''}`} role="dialog" aria-modal="true" aria-label={story.title} onKeyDown={keys}>

@@ -68,6 +68,7 @@ export function GemKeepGame({
   keyWaits = false,
   onWin,
   onEnd,
+  tale,
   onKeyPassed,
   onKeyResult,
   onNext,
@@ -86,7 +87,10 @@ export function GemKeepGame({
   keyDone?: boolean;
   /** A Level Key was passed today already: this one opens tomorrow (one new level a day). */
   keyWaits?: boolean;
-  onWin?: (stars: number) => void;
+  /** Won: the stars, and the finished game (for the Tale challenge). */
+  onWin?: (stars: number, state: GameState) => void;
+  /** This level's Tale challenge, shown under the title (docs/plans/stories/PLAN.md, ST.4). */
+  tale?: { words: string; won: boolean };
   /** Every finish, won or lost. */
   onEnd?: (end: LevelEnd) => void;
   onKeyPassed?: () => void;
@@ -197,7 +201,7 @@ export function GemKeepGame({
     if (over && !reported.current) {
       reported.current = true;
       const won = state.phase === 'won';
-      if (won) onWin?.(state.stars);
+      if (won) onWin?.(state.stars, state);
       onEnd?.({ result: won ? 'won' : 'lost', stars: won ? state.stars : 0, waves: state.wave, gameSeconds: Math.round(state.time) });
     }
     if (!over) reported.current = false;
@@ -423,6 +427,11 @@ export function GemKeepGame({
           </button>
         )}
         <h1 className="gk-title__name">{TEXT.levelHeading(levelNumber, level.name)}</h1>
+        {tale && (
+          <p className="gk-title__tale" data-won={tale.won || undefined}>
+            <span aria-hidden="true">📜</span> Tale challenge: {tale.words}{tale.won ? ' ✓' : ''}
+          </p>
+        )}
       </div>
       <div className="gk-hud" role="group" aria-label="Game status">
         <div className="gk-stat gk-stat--keep">

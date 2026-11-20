@@ -6,7 +6,7 @@
  * level on its trail, joined by a glowing dotted route, and one card that tells about the level being
  * pointed at, focused or picked. Narrow screens (and no painting) get the list of stops.
  */
-import { useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { CAMPAIGN } from "../../../../shared/gem-keep/levels";
 import { campaignTables } from "../../../../shared/maths/selector";
 import { KeyBadge } from "../../../kit";
@@ -35,8 +35,17 @@ export function CampaignMap({
   note = TEXT.savedHere,
   focusNote = null,
   onPlay,
+  taleWon = [],
+  taleWords,
+  taleButton,
 }: {
   progress: CampaignProgress;
+  /** Which levels' Tale challenges are won (docs/plans/stories/PLAN.md, ST.4). */
+  taleWon?: boolean[];
+  /** A level's Tale challenge, in words. */
+  taleWords?: (index: number) => string;
+  /** The Keeper's Tale button, in the header. */
+  taleButton?: ReactNode;
   /** The line under the map, about saving. */
   note?: string;
   /** Why the maths isn't the level's tables: "Your teacher picked ×6 until Friday". Null when nothing changes them. */
@@ -67,6 +76,7 @@ export function CampaignMap({
           <span className="gk-campaign__total">
             ★ {TEXT.totalStars(totalStars(progress), CAMPAIGN.length * 3)}
           </span>
+          {taleButton}
           <HubButtons />
         </span>
       </header>
@@ -82,6 +92,8 @@ export function CampaignMap({
           open={open}
           next={next}
           onPlay={onPlay}
+          taleWon={taleWon}
+          taleWords={taleWords}
         />
       ) : (
         <ol
@@ -113,6 +125,7 @@ export function CampaignMap({
                   <span className="gk-stop__name">{level.name}</span>
                   <span className="gk-stop__tables">{TEXT.tables(tables)}</span>
                   <Stars stars={stars} className="gk-stop__stars" />
+                  {taleWon[i] && <span className="gk-stop__tale" title="Tale challenge won">📜</span>}
                   {!open[i] && (
                     <span className="gk-stop__lock">
                       <span aria-hidden="true">🔒</span> {TEXT.locked(i)}
@@ -150,12 +163,16 @@ function PaintedWorld({
   open,
   next,
   onPlay,
+  taleWon,
+  taleWords,
 }: {
   painting: string;
   progress: CampaignProgress;
   open: boolean[];
   next: number;
   onPlay: (index: number) => void;
+  taleWon: boolean[];
+  taleWords?: (index: number) => string;
 }) {
   // The card shows the level pointed at, otherwise the one focused or picked (the next level to start with).
   const [picked, setPicked] = useState(Math.max(0, next));
@@ -214,6 +231,7 @@ function PaintedWorld({
                   {[1, 2, 3].map((n) => (
                     <i key={n} data-on={n <= s || undefined} />
                   ))}
+                  {taleWon[i] && <b className="gk-gemstop__tale">📜</b>}
                 </span>
               </li>
             );
@@ -230,6 +248,11 @@ function PaintedWorld({
           </span>
           <Stars stars={stars} className="gk-world__stars" />
         </p>
+        {taleWords && open[shown] && (
+          <p className="gk-world__tale" data-won={taleWon[shown] || undefined}>
+            <span aria-hidden="true">📜</span> {taleWords(shown)}{taleWon[shown] ? ' ✓' : ''}
+          </p>
+        )}
         {open[shown] ? (
           <button
             type="button"
