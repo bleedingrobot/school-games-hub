@@ -27,7 +27,7 @@ export const CEREMONY_LINES = [
   'A new season begins! Everyone starts again, so anyone can be the next dragon slayer. Pick your hero!',
 ] as const;
 
-const SCENES: SceneId[] = ['lair', 'hall', 'village', 'news', 'map'];
+const SCENES: SceneId[] = ['lair-asleep', 'hall-banners', 'village', 'news', 'village-dawn'];
 
 const TROPHY_NAMES: Record<string, string> = {
   'dm-first-five': 'Dragon Head',
