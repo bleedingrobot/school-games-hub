@@ -19,11 +19,14 @@ function Screen({ onGo, onPick, pop }: { onGo: () => void; onPick: (n: number) =
 }
 
 describe('kit keys', () => {
-  it('a key presses its button, never a greyed-out one, not too fast, and not while a pop-up is open', () => {
+  it('a key presses its labelled button, never a greyed-out one, not too fast, and not while a pop-up is open', () => {
     vi.spyOn(performance, 'now').mockReturnValue(1000);
     const onGo = vi.fn();
     const onPick = vi.fn();
-    const { rerender } = render(<Screen onGo={onGo} onPick={onPick} />);
+    const { rerender, getByText } = render(<Screen onGo={onGo} onPick={onPick} />);
+    // Labels: "Enter" on the go-on button; a button with a number badge gets no second label.
+    expect(getByText('Next').getAttribute('data-key-label')).toBe('Enter');
+    expect(getByText('Second').getAttribute('data-key-label')).toBeNull();
     fireEvent.keyDown(window, { key: '1' });
     expect(onPick).not.toHaveBeenCalled();
     fireEvent.keyDown(window, { key: '2' });

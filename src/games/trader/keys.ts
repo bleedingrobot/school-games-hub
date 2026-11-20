@@ -4,6 +4,7 @@
  * so it can never do more than a tap could.
  */
 import { useEffect, type RefObject } from 'react';
+import { useKeyLabels } from '../../kit/keyLabels';
 
 /** What each key presses: the first matching button on screen that isn't disabled. */
 export const KEYS: Record<string, string> = {
@@ -51,6 +52,7 @@ function typing(el: EventTarget | null): el is HTMLElement {
 
 /** Listens for the shortcuts while `on`. Off while a maths question or other pop-up covers the game. */
 export function useTraderKeys(root: RefObject<HTMLElement | null>, on: boolean) {
+  useKeyLabels(root, KEYS, on);
   useEffect(() => {
     if (!on) return;
     const onKey = (e: KeyboardEvent) => {

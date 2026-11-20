@@ -24,6 +24,13 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'key-labels-2026-11-21',
+    date: '2026-11-21',
+    emoji: '⌨️',
+    title: 'Keys on the buttons',
+    text: 'On a computer, buttons show their key, like Enter or Esc. Press it instead of clicking!',
+  },
+  {
     id: 'stories-narrator-2026-11-21',
     date: '2026-11-21',
     emoji: '🔊',

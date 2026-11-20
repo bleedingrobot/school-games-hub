@@ -28,6 +28,7 @@ Rules:
 
 1. **K1: the helper** (`useGameKeys`, `KeyBadge`, one kit test). Done 20 Nov 2026.
 2. **K2: every game** marked up, in the same PR (table below). Done 20 Nov 2026.
+3. **K3: labels on the buttons.** `useKeyLabels` (`src/kit/keyLabels.ts`) puts a small yellow pill ("Enter", "Esc", "T") on every button with a key. `useGameKeys` does it for `data-key` buttons; Star Trader and Sky Isles pass their own key maps. Number keys keep the corner `KeyBadge`. Hidden on touch screens (iPads). Done 21 Nov 2026.
 3. **K3: How to play** lines in each game where there is room (later, as each game is next touched).
 
 ## Games
