@@ -11,3 +11,5 @@ export { FirstTimeTip } from './FirstTimeTip';
 export { useSeenKinds } from './useSeenKinds';
 export { useKindDemo, type DemoStep, type KindDemoOptions } from './useKindDemo';
 export { DemoBar, type DemoBarProps } from './DemoBar';
+export { useGameKeys, buttonForKey, keyWord, KEY_GAP_MS } from './useGameKeys';
+export { KeyBadge } from './KeyBadge';
