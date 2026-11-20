@@ -29,6 +29,9 @@ describe('teacher grid kit', () => {
     expect(stuckFlags(pupil(3, 5, 5), rules).map((f) => f.kind)).toEqual(['same-level', 'guessing', 'low-accuracy']);
     const gone = stuckFlags({ ...pupil(1, 0, 9), today: '2026-11-18' }, rules).find((f) => f.kind === 'quiet');
     expect(gone?.quiet).toBe(true);
-    expect(gone?.reason).toBe('Not played for 10 school days');
+    expect(gone?.reason).toBe('No Game for 10 school days');
+    const one = pupil(1, 0, 9);
+    const two = { ...one, tracks: [...one.tracks, { ...one.tracks[0], id: 'q', label: 'Quick looks', challenges: [] }] };
+    expect(stuckFlags({ ...two, today: '2026-11-18' }, rules).find((f) => f.kind === 'quiet')?.reason).toBe('No Game or Quick looks for 10 school days');
   });
 });
