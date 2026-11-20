@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import type { Session } from '@supabase/supabase-js';
 import { fetchMyProfile, FriendlyError, type Profile } from '../data/profile';
 import { forgetSettings } from '../data/settingsMemory';
+import { SIGNED_OUT_REPLY } from '../lib/signedOutReply';
 import { supabase } from '../lib/supabase';
 import { readSignInError } from './signInErrors';
 
@@ -95,6 +96,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setTimeout(() => void loadProfile(session), 0);
     });
     return () => data.subscription.unsubscribe();
+  }, [loadProfile]);
+
+  // On iPads, another Safari tab can sign out (or sign someone else in), or Back can bring back an old page, and this
+  // page never hears: it keeps showing the pupil while every request goes out signed out ("Class Warp isn't working").
+  // So whenever the page comes back into view, or the database says "not signed in", check who really is signed in.
+  useEffect(() => {
+    let checking = false;
+    const recheck = async () => {
+      if (checking || !userId.current || document.visibilityState === 'hidden') return;
+      checking = true;
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) return; // a Wi-Fi hiccup isn't a sign-out
+        const id = data.session?.user.id ?? null;
+        if (id === userId.current) return;
+        if (!id) setMessage('You were signed out. Please sign in again.');
+        await loadProfile(data.session);
+      } finally {
+        checking = false;
+      }
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === null || event.key.startsWith('sb-')) void recheck();
+    };
+    const onCheck = () => void recheck();
+    document.addEventListener('visibilitychange', onCheck);
+    window.addEventListener('pageshow', onCheck);
+    window.addEventListener('focus', onCheck);
+    window.addEventListener('storage', onStorage);
+    window.addEventListener(SIGNED_OUT_REPLY, onCheck);
+    return () => {
+      document.removeEventListener('visibilitychange', onCheck);
+      window.removeEventListener('pageshow', onCheck);
+      window.removeEventListener('focus', onCheck);
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener(SIGNED_OUT_REPLY, onCheck);
+    };
   }, [loadProfile]);
 
   // Clean the one-time sign-in code out of the address bar once it's been used.
