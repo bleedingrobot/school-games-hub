@@ -249,3 +249,6 @@
 
 /* Key badges (docs/plans/game-keys/PLAN.md): the number badge sits in the pick button's corner. */
 .gs-pick { position: relative; }
+
+/* Stories (docs/plans/stories/PLAN.md, ST.3): the kit's StoryBook in Goblin Storm's green and gold. */
+.gs-storybook { --story-bg: #0a120c; --story-ink: #eef6e6; --story-gold: #9be05a; --story-frame: #1e3a1c; --story-dim: #3e5a36; }

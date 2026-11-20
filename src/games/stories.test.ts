@@ -2,13 +2,14 @@
 import { describe, expect, it } from 'vitest';
 import { storyProblems } from '../../shared/kit/stories';
 import { ALL_STORIES as CLANS } from './clans/stories';
+import { ALL_STORIES as GOBLIN } from './goblinstorm/stories';
 import { ALL_STORIES as LORD } from './lord/stories';
 import { ALL_STORIES as TRADER } from './trader/stories';
 
 describe('game stories', () => {
   it('pass the story checks across every game together, and never mention maths, romance or orphans', () => {
-    expect(storyProblems([...CLANS, ...LORD, ...TRADER])).toEqual([]);
-    const words = [...CLANS, ...LORD, ...TRADER].flatMap((s) => s.pages.map((p) => `${p.title} ${p.text}`)).join(' ').toLowerCase();
+    expect(storyProblems([...CLANS, ...GOBLIN, ...LORD, ...TRADER])).toEqual([]);
+    const words = [...CLANS, ...GOBLIN, ...LORD, ...TRADER].flatMap((s) => s.pages.map((p) => `${p.title} ${p.text}`)).join(' ').toLowerCase();
     for (const bad of ['maths', 'math ', 'question', 'kiss', 'love', 'marry', 'orphan']) expect(words).not.toContain(bad);
   });
 });
