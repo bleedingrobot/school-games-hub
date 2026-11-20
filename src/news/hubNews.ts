@@ -22,6 +22,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'toonflap-daily-limits-2026-11-20',
+    date: '2026-11-20',
+    emoji: '🐦',
+    title: 'Toon Flap: 10 wins and 2 Sky Dashes a day',
+    text: 'Make every flight count! Your teacher can switch on Unlimited today for extra goes.',
+    game: 'toonflap',
+  },
+  {
     id: 'gem-keep-short-well-2026-11-20',
     date: '2026-11-20',
     emoji: '💧',

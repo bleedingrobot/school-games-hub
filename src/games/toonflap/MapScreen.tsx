@@ -1,5 +1,6 @@
 /** The map: a cartoon trail through the 10 worlds (docs/TOON-FLAP-PLAN.md, section 1). Tap a lit stop to fly it. */
 import { FLYERS, finishesToUnlock, levelOpen, nextStep, openedLevel, opensTomorrow, skyDashOpen, unlockRuns, type Progress } from '../../../shared/toonflap/collection';
+import { DASHES_A_DAY, WINS_A_DAY } from '../../../shared/toonflap/config';
 import { LEVELS } from '../../../shared/toonflap/levels';
 import { useEffect } from 'react';
 import { DASH_LINES, HELP_SETTINGS, type HelpSetting } from './guide';
@@ -35,12 +36,15 @@ export const MEDAL_WORD = { gold: 'Gold', silver: 'Silver', bronze: 'Bronze' } a
 
 export const fmtSeconds = (s: number | null): string => (s === null ? '' : `${s.toFixed(1)} s`);
 
-export function MapScreen({ progress, today, maths, gentle, onGentle, onPlay, onDash, onHangar, onHowTo, busy, error, help = 'lots', onHelp, onReplayGuide, voice, talk }: {
+export function MapScreen({ progress, today, winsLeft, dashesLeft, maths, gentle, onGentle, onPlay, onDash, onHangar, onHowTo, busy, error, help = 'lots', onHelp, onReplayGuide, voice, talk }: {
   progress: Progress;
   /** Sky Dash (open after level 5). */
   onDash?: () => void;
   /** The NZ day, for the one-new-level-a-day rule. */
   today: string;
+  /** Level wins and Sky Dash goes left today (null: Unlimited today; undefined: not known, so no count shown). */
+  winsLeft?: number | null;
+  dashesLeft?: number | null;
   maths: boolean;
   gentle: boolean;
   onGentle: (on: boolean) => void;
@@ -59,6 +63,9 @@ export function MapScreen({ progress, today, maths, gentle, onGentle, onPlay, on
   const step = nextStep(progress, today);
   // Bella says what to do next as the map opens.
   useEffect(() => talk?.(step), [step, talk]);
+  const outOfWins = winsLeft === 0;
+  const dashOpen = skyDashOpen(progress);
+  const outOfDashes = dashesLeft === 0;
   const next = LEVELS.find((l) => (progress.levels[l.id]?.finishes ?? 0) === 0 && levelOpen(progress, l.n, today));
   return (
     <section className="tf-map" aria-labelledby="tf-map-h" style={paintedBackground(screenArt('map'))}>
@@ -68,6 +75,13 @@ export function MapScreen({ progress, today, maths, gentle, onGentle, onPlay, on
           <p className="tf-next" role="status">{step}</p>
         </div>
         <div className="tf-map__buttons">
+          {winsLeft === null && dashesLeft === null ? (
+            <span className="tf-chip tf-chip--turns">♾️ Unlimited today</span>
+          ) : typeof winsLeft === 'number' && (
+            <span className="tf-chip tf-chip--turns" title="Wins and Sky Dash goes left today">
+              🏁 {winsLeft} {winsLeft === 1 ? 'win' : 'wins'} left{dashOpen && typeof dashesLeft === 'number' ? ` · ☄️ ${dashesLeft} ${dashesLeft === 1 ? 'dash' : 'dashes'}` : ''}
+            </span>
+          )}
           {progress.potions > 0 && <span className="tf-chip tf-chip--potion" title="Revive potions: each cancels one bump in a run"><PotionIcon /> × {progress.potions}</span>}
           <button type="button" className="tf-btn" onClick={onHangar}>Hangar</button>
           <button type="button" className="tf-btn tf-btn--ghost" onClick={onHowTo}>How to play</button>
@@ -99,6 +113,7 @@ export function MapScreen({ progress, today, maths, gentle, onGentle, onPlay, on
         </div>
       )}
       {error && <p className="tf-error" role="alert">{error}</p>}
+      {outOfWins && !error && <p className="tf-done-today" role="status">That’s {WINS_A_DAY} wins today. Great flying! New wins tomorrow.</p>}
 
       <ol className="tf-trail">
         {LEVELS.map((l) => {
@@ -114,7 +129,7 @@ export function MapScreen({ progress, today, maths, gentle, onGentle, onPlay, on
               <button
                 type="button"
                 className="tf-stop__btn"
-                disabled={!open || busy}
+                disabled={!open || busy || outOfWins}
                 onClick={() => onPlay(l.n)}
                 aria-label={`${l.name}${open ? '' : ', locked'}${rec?.medal ? `, ${MEDAL_WORD[rec.medal]} medal` : ''}`}
               >
@@ -148,12 +163,12 @@ export function MapScreen({ progress, today, maths, gentle, onGentle, onPlay, on
 
       {onDash && (
         <div className="tf-stop tf-dash" data-open={skyDashOpen(progress)} style={{ ['--tf-a' as string]: '#1D2340', ['--tf-b' as string]: '#7B5CFF' }}>
-          <button type="button" className="tf-stop__btn" disabled={!skyDashOpen(progress) || busy} onClick={onDash} aria-label={`Sky Dash${skyDashOpen(progress) ? '' : ', locked'}`}>
+          <button type="button" className="tf-stop__btn" disabled={!dashOpen || busy || outOfDashes} onClick={onDash} aria-label={`Sky Dash${skyDashOpen(progress) ? '' : ', locked'}`}>
             <span className="tf-stop__node" aria-hidden="true"><span className="tf-stop__icon">{skyDashOpen(progress) ? '☄️' : '🔒'}</span></span>
             <span className="tf-stop__body">
               <span className="tf-stop__name">{DASH_LINES.name}</span>
               {skyDashOpen(progress) ? (
-                <span className="tf-stop__line">One bump ends it. How far can you fly?{progress.dashBest ? <span className="tf-stop__best">Best {progress.dashBest} walls</span> : null}</span>
+                <span className="tf-stop__line">{outOfDashes ? `That’s your ${DASHES_A_DAY} dashes today. Back tomorrow!` : 'One bump ends it. How far can you fly?'}{progress.dashBest ? <span className="tf-stop__best">Best {progress.dashBest} walls</span> : null}</span>
               ) : (
                 <span className="tf-stop__line tf-dim">{DASH_LINES.locked}</span>
               )}

@@ -9519,6 +9519,16 @@ const unplayed = () => ({
 	},
 	version: 0
 });
+function turnsLeft(today, unlimited) {
+	if (unlimited) return {
+		winsLeft: null,
+		dashesLeft: null
+	};
+	return {
+		winsLeft: Math.max(0, 10 - today.wins),
+		dashesLeft: Math.max(0, 2 - today.dashes)
+	};
+}
 const MAX_ANSWER_MS = 12e4;
 const busy = () => ({
 	status: 503,
@@ -9600,8 +9610,13 @@ function keptPicks(saved) {
 async function handleToonFlap(services, player, body) {
 	const action = body.action;
 	if (action === "load") {
-		const [settings, saved] = await Promise.all([services.settings(player), services.load(player)]);
-		if (!settings || saved === "busy") return busy();
+		const day = nzDate(new Date(services.now()));
+		const [settings, saved, today] = await Promise.all([
+			services.settings(player),
+			services.load(player),
+			services.runsToday(player, day)
+		]);
+		if (!settings || saved === "busy" || today === "busy") return busy();
 		return {
 			status: 200,
 			body: {
@@ -9610,7 +9625,8 @@ async function handleToonFlap(services, player, body) {
 				readTime: settings.readTime,
 				progress: saved.progress,
 				picks: keptPicks(saved),
-				today: nzDate(new Date(services.now()))
+				today: day,
+				...turnsLeft(today, settings.unlimited === true)
 			}
 		};
 	}
@@ -9667,6 +9683,13 @@ async function handleToonFlap(services, player, body) {
 				code: "break"
 			}
 		};
+		if (!settings.unlimited && today.wins >= 10) return {
+			status: 429,
+			body: {
+				error: `That’s 10 wins today. Great flying! Come back tomorrow.`,
+				code: "done-today"
+			}
+		};
 		const course = buildCourse(def, gentle);
 		const seed = seedText(services.random);
 		let questions = [];
@@ -9713,7 +9736,8 @@ async function handleToonFlap(services, player, body) {
 						labels: labels[i]
 					};
 				}) : [],
-				readTime: settings.readTime && READ_TIME_LEVELS.includes(def.n)
+				readTime: settings.readTime && READ_TIME_LEVELS.includes(def.n),
+				...turnsLeft(today, settings.unlimited === true)
 			}
 		};
 	}
@@ -9779,6 +9803,13 @@ async function handleToonFlap(services, player, body) {
 				code: "break"
 			}
 		};
+		if (!settings.unlimited && today.dashes >= 2) return {
+			status: 429,
+			body: {
+				error: `That’s your 2 Sky Dashes for today. Come back tomorrow!`,
+				code: "done-today"
+			}
+		};
 		const seed = seedText(services.random);
 		const course = buildDashCourse(seed);
 		let questions = [];
@@ -9811,7 +9842,11 @@ async function handleToonFlap(services, player, body) {
 				maths: settings.maths,
 				checks: questions.map((q, slot) => publicQuestion(q, slot)),
 				signs: [],
-				readTime: false
+				readTime: false,
+				...turnsLeft({
+					...today,
+					dashes: today.dashes + 1
+				}, settings.unlimited === true)
 			}
 		};
 	}
@@ -10015,6 +10050,23 @@ async function handleToonFlap(services, player, body) {
 		};
 	}
 	return bad();
+}
+//#endregion
+//#region shared/unlimited.ts
+/** Today's date in New Zealand, 'YYYY-MM-DD'. */
+const nzToday = (now = new Date()) => new Intl.DateTimeFormat("en-CA", {
+	timeZone: "Pacific/Auckland",
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit"
+}).format(now);
+/**
+* Is this game's switch on today? `days` is the settings row's `unlimited_days` ({ game id: NZ date }). Anything that
+* isn't today's date (missing, an old day, junk) is off.
+*/
+function isUnlimitedFor(days, game, now = new Date()) {
+	if (!days || typeof days !== "object") return false;
+	return days[game] === nzToday(now);
 }
 //#endregion
 //#region shared/maths/focusResults.ts
@@ -10270,7 +10322,8 @@ Deno.serve(makeHandler({
 		return {
 			enabled: row.toonflap_enabled === true,
 			maths: parseMathsSwitch(row.toonflap_maths) !== "off",
-			readTime: row.toonflap_read_time !== false
+			readTime: row.toonflap_read_time !== false,
+			unlimited: isUnlimitedFor(row.unlimited_days, "toonflap")
 		};
 	},
 	async load(player) {
@@ -10292,10 +10345,19 @@ Deno.serve(makeHandler({
 			}
 		};
 	},
-	runsToday: (player, day) => call("toonflap_runs_today", {
-		player,
-		day
-	}),
+	async runsToday(player, day) {
+		const r = await call("toonflap_runs_today", {
+			player,
+			day
+		});
+		if (r === "busy") return "busy";
+		return {
+			started: Number(r?.started ?? 0),
+			finished: Number(r?.finished ?? 0),
+			wins: Number(r?.wins ?? 0),
+			dashes: Number(r?.dashes ?? 0)
+		};
+	},
 	start: (player, seed, run) => call("toonflap_start", {
 		player,
 		seed,
