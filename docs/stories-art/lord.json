@@ -79,7 +79,7 @@
     },
     {
       "name": "lord-master-pip-1",
-      "prompt": "Inside a dusty stone training hall with weapon racks and old banners, a small, very serious little sword-master (a short grown-up person with a stern face) holding a huge wooden staff three times taller than themselves, a young hero of about ten facing them with a wooden sword, seen from behind. Landscape, wide.",
+      "prompt": "Inside a dusty stone training hall with weapon racks and old banners, a very short little old sword-master, even shorter than the ten-year-old hero standing next to them, with a big grey moustache and a very serious frown, both little hands gripping an enormous wooden staff that rises far above their head to the ceiling, the young hero with a wooden sword looking down at the tiny master in surprise. Funny and charming. Landscape, wide.",
       "size": [
         1536,
         864
@@ -123,7 +123,7 @@
     },
     {
       "name": "lord-master-quill-1",
-      "prompt": "An elegant woman fencer with a thin rapier, feathered hat and fine coat, unrolling an enormously long scroll of rules that spills across the floor of a grand hall, a young hero of about ten staring at the scroll. Landscape, wide.",
+      "prompt": "An elegant woman fencer with a thin rapier, feathered hat and fine coat, unrolling an enormously long blank parchment scroll that spills across the floor of a grand hall, the parchment completely blank with no writing and no marks, a young hero of about ten staring at the long scroll. Landscape, wide.",
       "size": [
         1536,
         864
@@ -255,7 +255,7 @@
     },
     {
       "name": "lord-victory-4",
-      "prompt": "A joyful crowd of villagers in a lantern-lit village square at night cheering and throwing flowers, lifting a young hero of about ten up on their shoulders, a baker handing out warm loaves of bread. Landscape, wide.",
+      "prompt": "A joyful crowd of villagers in a lantern-lit village square at night cheering and throwing flowers, lifting a small child hero, a ten-year-old boy with a short cloak and a wooden sword, up on their shoulders, a baker handing out warm loaves of bread. Landscape, wide.",
       "size": [
         1536,
         864
@@ -266,7 +266,7 @@
     },
     {
       "name": "lord-victory-5",
-      "prompt": "A kind old grey-haired woman in green robes pinning a shining gold star badge onto the cloak of a proud young hero of about ten in a lantern-lit village square, friendly villagers smiling behind. Landscape, wide.",
+      "prompt": "A kind old grey-haired woman in green robes kneeling down to pin a shining gold star badge onto the cloak of a small proud child hero, a ten-year-old boy with no beard, in a lantern-lit village square, friendly villagers smiling behind. Landscape, wide.",
       "size": [
         1536,
         864

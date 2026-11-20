@@ -31,7 +31,7 @@ export const OPENING = story('lord-opening', 'The Night the Lights Went Out', [
 
 /** One page for meeting each master (levels 2 to 12): the master's one-line intro, turned into a scene. Keyed by name. */
 const MASTER_PAGES: Record<string, Words> = {
-  'Master Pip': { title: 'Master Pip', emoji: '🪵', sky: ['#1a1410', '#5a4a30'], text: 'In the training hall stands Master Pip: small, very serious, and holding a stick three times taller than Pip. "Lesson one," says Pip. "Never laugh at the stick."' },
+  'Master Pip': { title: 'Master Pip', emoji: '🪵', sky: ['#1a1410', '#5a4a30'], text: 'In the training hall stands Master Pip, with a bushy moustache, a very serious frown and a stick as tall as a tree. "Lesson one," says Pip. "Never laugh at the stick."' },
   'Dame Wren': { title: 'Dame Wren', emoji: '🗡️', sky: ['#1a1010', '#6a3a1a'], text: 'Dame Wren sits by the fire, sharpening her sword. "You\'re late," she says, "and your boots are muddy. Let\'s see if your sword arm is better than your manners."' },
   'Sir Tumble': { title: 'Sir Tumble', emoji: '🪣', sky: ['#2a3a4a', '#7a8a5a'], text: 'Sir Tumble trips over his own feet on the way to meet you. Then he trips over a bucket. But when he lifts his sword, he never, ever loses.' },
   'Old Marrow': { title: 'Old Marrow', emoji: '🍵', sky: ['#1a2a1a', '#5a6a3a'], text: 'Old Marrow is older than the oldest tree in the forest. Nobody knows how old. He sips his tea, picks up his staff and smiles. "Ready when you are."' },
