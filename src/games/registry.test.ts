@@ -54,11 +54,8 @@ describe('game registry', () => {
 });
 
 describe('bot levels', () => {
-  it('are Very Easy, Easy and Medium', () => {
+  it('are Very Easy, Easy and Medium, and unknown levels are rejected', () => {
     expect(BOT_LEVELS.map((l) => l.label)).toEqual(['Very Easy', 'Easy', 'Medium']);
-  });
-
-  it('rejects unknown levels', () => {
     expect(isBotLevel('easy')).toBe(true);
     expect(isBotLevel('impossible')).toBe(false);
     expect(isBotLevel(null)).toBe(false);

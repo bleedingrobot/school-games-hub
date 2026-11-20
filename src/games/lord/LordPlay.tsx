@@ -20,7 +20,8 @@ import { shortcutsOn } from './shortcuts';
 import { HowToPlay, HowToPlayBody } from './HowToPlay';
 import { Bank, ClassPick, Healer, HeroPage, Inn, LookPage, Shop, Training, type PlaceProps, type Reply } from './Places';
 import { Arena, HallOfHeroes, NewsPage, Warriors } from './Social';
-import { useGameKeys } from '../../kit';
+import { StoryBook, useGameKeys, useStoryOnce } from '../../kit';
+import { OPENING } from './stories';
 import { SeasonCeremony } from './SeasonCeremony';
 import { HeroSprite, MonsterSprite } from './Sprite';
 import { withArticle } from './text';
@@ -110,6 +111,8 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
   // The game's own request function, for the question boxes (set once `act` is made, below).
   const sendRef = useRef<Parameters<typeof useAsk>[0]['current']>(null);
   const { ask, modal } = useAsk(sendRef);
+  // The opening story, once per pupil, as soon as the village has loaded (docs/plans/stories/PLAN.md, ST.2). Skippable.
+  const opening = useStoryOnce(OPENING.id, !!state);
   const clashes = useClashes(hero ? backend.clashes : undefined, player);
 
   // "Yes" on the hub's challenge banner: say yes here as the banner's Fight! would, and go to the arena.
@@ -603,7 +606,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
       );
   }
 
-  const keysOn = screen.name === 'village';
+  const keysOn = screen.name === 'village' && !opening.open;
   return (
     <Frame backend={backend} state={state} hero={hero} bare={['fight', 'encounter', 'event', 'dragon', 'arena', 'news', 'warriors', 'hall', 'bank', 'shop', 'healer', 'inn', 'training', 'hero', 'look', 'howto'].includes(screen.name) || (screen.name === 'village' && hasMap())}>
       {/* A finished fight adds a deed: then any new Dragon Maths achievement pops up. */}
@@ -623,6 +626,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
         }} />
       )}
       {modal}
+      {opening.open && <StoryBook story={OPENING} onClose={opening.close} endLabel="Let's go!" className="lord-storybook" />}
     </Frame>
   );
 }

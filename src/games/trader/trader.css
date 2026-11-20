@@ -741,3 +741,7 @@
 .st-planet--pulse { border-color: #4ade80; box-shadow: 0 0 16px #4ade80; animation: st-planet-pulse 0.9s ease-in-out 4; }
 @keyframes st-planet-pulse { 50% { transform: translate(-50%, -50%) scale(1.35); box-shadow: 0 0 28px #4ade80; } }
 @media (prefers-reduced-motion: reduce) { .st-planet--pulse { animation: none; } }
+
+/* The opening story (kit StoryBook, docs/plans/stories/PLAN.md): deep space colours, the game's own display font. */
+.st-storybook { --story-bg: #04050c; --story-ink: #e8eefc; --story-gold: #fde047; --story-frame: #26305a; --story-dim: #3a4470; --story-font: var(--display, 'Trebuchet MS', Verdana, sans-serif); }
+.st-storybook .kit-story__corner .st-capface { border-radius: 50%; border: 3px solid #fde047; box-shadow: 0 0 14px rgba(253, 224, 71, 0.5); }

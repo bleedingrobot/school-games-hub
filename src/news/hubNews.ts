@@ -24,6 +24,13 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'stories-openings-2026-11-21',
+    date: '2026-11-21',
+    emoji: '📖',
+    title: 'New stories!',
+    text: 'Clan Quest, Dragon Maths and Star Trader now open with a story. You can skip it.',
+  },
+  {
     id: 'game-keys-2026-11-20',
     date: '2026-11-20',
     emoji: '⌨️',

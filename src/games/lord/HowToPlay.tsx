@@ -7,6 +7,8 @@ import { ARENA_FIGHTS_PER_DAY, MAX_LEVEL, FOREST_FIGHTS_PER_DAY, SKILL_USES_PER_
 import { useState } from 'react';
 import { Place } from './Places';
 import { setShortcuts, shortcutsOn } from './shortcuts';
+import { StoryShelf } from '../../kit';
+import { lordShelf } from './stories';
 
 /** A switch for the letter keys, for people who find them in the way. Esc, Tab and Enter always work. */
 function KeysSwitch() {
@@ -25,6 +27,7 @@ export function HowToPlayBody() {
     <div className="lord-howto">
       <h3>The story</h3>
       <p>The Red Dragon stole the village’s treasure, food and light. You are a hero, and you are going to get them back.</p>
+      <StoryShelf stories={lordShelf()} book={{ className: 'lord-storybook', endLabel: "Let's go!" }} />
 
       <h3>A day in the game</h3>
       <ul>

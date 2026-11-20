@@ -19,6 +19,8 @@ import { emptyDesign, type SystemDesign } from '../../../shared/trader/system';
 import { type ApiResult, type Loaded, type MoveReply, type TraderApi } from '../../data/trader';
 import { useAsk } from './Ask';
 import { CaptainFace, CaptainPicker } from './Captain';
+import { StoryBook, useStoryOnce } from '../../kit';
+import { OPENING } from './stories';
 import { DealPanel, FightPanel, JunkPanel, SummaryPanel } from './Encounter';
 import { laserPower } from '../../../shared/trader/fight';
 import { hasShipyard } from '../../../shared/trader/state';
@@ -108,6 +110,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   /** The "Choose your captain" picker is open. */
   const [picking, setPicking] = useState(false);
   const helpButton = useRef<HTMLButtonElement>(null);
+  /** The opening story: once per pupil on the title screen, and again from its "📖 The story" button. Skippable. */
+  const [storyAgain, setStoryAgain] = useState(false);
   const lock = useRef(false);
   const latest = useRef({ loaded, queue });
   latest.current = { loaded, queue };
@@ -610,7 +614,9 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   const marketAfter = marketRun?.ok ? marketRun.out.state : null;
   const playing = phase.k !== 'title';
   const panelBusy = busy || asking || phase.k === 'warp';
-  useTraderKeys(root, !asking && !picking && !problem);
+  const opening = useStoryOnce(OPENING.id, phase.k === 'title' && !!game && !loaded?.seasonChoice);
+  const storyOpen = opening.open || storyAgain;
+  useTraderKeys(root, !asking && !picking && !problem && !storyOpen);
   const tabs: [Tab, string][] = [['trade', 'Trade'], ['ship', 'Ship'], ['bank', 'Bank'], ['map', 'Star chart'], ...(forgeOn ? [['forge', '🌟 Forge'], ['gallery', '🌌 Gallery']] as [Tab, string][] : [])];
   const label = here && t && galaxy ? `${here.name}, a ${GOVERNMENTS[here.government].name.toLowerCase()} world. Your ${SHIPS[t.ship].name} is in orbit.` : 'Star Trader';
 
@@ -637,6 +643,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
           level={level}
           onLevel={(l) => remember((m) => ({ ...m, level: l }))}
           onExit={onExit}
+          onStory={() => setStoryAgain(true)}
         />
       ) : (
         <>
@@ -732,6 +739,15 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
           onAck={(id) => remember((m) => (id === 'profit' ? { ...m, flight: 'done', run: null } : m.run ? { ...m, run: { ...m.run, acks: [...m.run.acks, id] } } : m))}
           onShow={showMe}
           onSkip={() => remember((m) => ({ ...m, flight: 'skipped', run: null }))}
+        />
+      )}
+      {storyOpen && (
+        <StoryBook
+          story={OPENING}
+          onClose={() => { opening.close(); setStoryAgain(false); }}
+          endLabel="Let's fly!"
+          className="st-storybook"
+          corner={game?.captain ? <CaptainFace id={game.captain} size={72} /> : undefined}
         />
       )}
       {modal}
@@ -835,7 +851,7 @@ function MoonProgress({ t }: { t: Game['t'] }) {
   );
 }
 
-function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, level, onLevel, onExit }: {
+function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, level, onLevel, onExit, onStory }: {
   heading: React.RefObject<HTMLDivElement | null>;
   prefs: ReturnType<typeof loadPrefs>;
   lessMotion: boolean;
@@ -846,6 +862,7 @@ function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, level,
   level: HelpLevel;
   onLevel: (level: HelpLevel) => void;
   onExit?: () => void;
+  onStory: () => void;
 }) {
   return (
     <div className="st-title">
@@ -855,6 +872,7 @@ function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, level,
         <div className="st-actions st-actions--centre">
           <button type="button" className="st-btn st-btn--primary st-btn--big" onClick={onStart} data-key="go">Start trading</button>
           {onExit && <button type="button" className="st-btn st-btn--big" onClick={onExit}>Back to the hub</button>}
+          <button type="button" className="st-btn st-btn--big" onClick={onStory}>📖 The story</button>
         </div>
         {firstTime && <p className="st-soft">New here? {COACH_NAME}, your ship's robot, will fly with you on your first trip.</p>}
         <div className="st-title__opts">
