@@ -326,3 +326,6 @@ export type ShopLevels = Partial<Record<ShopId, number>>;
 
 /** Monster damage grows with the map's tier more gently than health: × (1 + (tier − 1) × this). */
 export const DAMAGE_PER_TIER = 0.25;
+
+/** Runs a day on normal turns (James, 19 Nov 2026). The teacher's "Unlimited today" (or a Bonus Turns Day) lifts it. */
+export const RUNS_A_DAY = 5;

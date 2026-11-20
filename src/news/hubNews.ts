@@ -22,6 +22,13 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'bonus-turns-flap-storm-2026-11-20',
+    date: '2026-11-20',
+    emoji: '⏳',
+    title: 'Bonus Turns Days for Toon Flap and Goblin Storm',
+    text: 'Win one from a class quest! Their cards now show your goes left today.',
+  },
+  {
     id: 'lobby-stars-2026-11-20',
     date: '2026-11-20',
     emoji: '⭐',

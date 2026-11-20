@@ -29,7 +29,7 @@ export const DEFAULT_REWARD: QuestReward = 'scroll';
 export const questReward = (id: string | null | undefined): QuestRewardInfo | undefined => QUEST_REWARDS.find((r) => r.id === id);
 
 /** Games whose daily turns a Bonus Turns Day can lift (the "Unlimited turns today" games). */
-const TURNS_GAMES = new Set(['Star Trader', 'Dragon Maths', 'Clan Quest', 'Maths Monsters', 'Diamond Drop', 'Sky Isles']);
+const TURNS_GAMES = new Set(['Star Trader', 'Dragon Maths', 'Clan Quest', 'Maths Monsters', 'Diamond Drop', 'Sky Isles', 'Toon Flap', 'Goblin Storm']);
 /** Games with money a pupil spends. */
 const COINS_GAMES = new Set(['Star Trader', 'Dragon Maths', 'Clan Quest', 'Archery Challenge', 'Diamond Drop', 'Sky Isles']);
 
