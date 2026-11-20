@@ -1227,3 +1227,15 @@
     --gk-chrome: 110px;
   }
 }
+
+/* The Keeper's Tale (docs/plans/stories/PLAN.md, ST.4). */
+.gk-storybook { --story-bg: #0b0f1a; --story-ink: #eef2fa; --story-gold: #f2c45a; --story-frame: #24304a; --story-dim: #44506a; }
+.gk-title__tale { margin: 0; padding: 4px 12px; border-radius: 999px; background: var(--gk-surface); color: #eef2fa; border: 1px solid rgb(242 196 90 / 0.35); font-size: 0.9rem; }
+.gk-title__tale[data-won] { color: #f2c45a; }
+.gk-world__tale[data-won] { color: #f2c45a; }
+.gk-world__tale { margin: 0.4rem 0; font-size: 0.9rem; }
+.gk-stop__tale, .gk-gemstop__tale { font-size: 0.8rem; font-weight: normal; }
+.gk-tale-button { white-space: nowrap; }
+.gk-tale-shelf { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgb(0 0 0 / 0.7); padding: 1rem; overflow: auto; }
+.gk-tale-shelf__box { background: #121a2c; color: #eef2fa; border-radius: 16px; padding: 1.2rem; max-width: 1000px; width: 100%; max-height: 92vh; overflow: auto; }
+.gk-tale-shelf__box h2 { margin: 0 0 0.3rem; }
