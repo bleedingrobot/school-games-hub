@@ -4,6 +4,7 @@
  * can only do what a tap could, and a greyed-out button stays greyed out.
  */
 import { useEffect, type RefObject } from 'react';
+import { useKeyLabels } from '../../kit/keyLabels';
 
 /** What each key presses: the first button on screen that matches and isn't disabled. */
 export const KEYS: Record<string, string> = {
@@ -50,7 +51,12 @@ function typing(el: EventTarget | null): boolean {
 }
 
 /** Listens for the shortcuts while `on` (off while the question is open or a pop-up is showing). */
+/** Every key with the buttons it presses, for the labels on the buttons. */
+const LABELLED: Record<string, string> = { ...KEYS,
+  ...Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => [String(n), `[data-pip="spot-${n - 1}"]`])), };
+
 export function useIslesKeys(root: RefObject<HTMLElement | null>, on: boolean) {
+  useKeyLabels(root, LABELLED, on);
   useEffect(() => {
     if (!on) return;
     const onKey = (e: KeyboardEvent) => {

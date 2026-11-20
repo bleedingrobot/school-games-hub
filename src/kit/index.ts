@@ -16,3 +16,4 @@ export { KeyBadge } from './KeyBadge';
 export { StoryBook, type StoryBookProps } from './StoryBook';
 export { StoryShelf, type StoryShelfProps } from './StoryShelf';
 export { useStories, useStoryOnce, markStorySeen } from './useStories';
+export { useKeyLabels, labelButtons, labelFor } from './keyLabels';

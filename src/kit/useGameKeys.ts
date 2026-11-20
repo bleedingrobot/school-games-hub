@@ -10,6 +10,7 @@
  * A button can take more than one (`data-key="enter 1"`). Letters are allowed (`data-key="s"`) where a game wants them.
  */
 import { useEffect, type RefObject } from 'react';
+import { useKeyLabels } from './keyLabels';
 
 /** Keys pressed this soon after the last one are ignored, so one press can't run through two screens. */
 export const KEY_GAP_MS = 350;
@@ -49,6 +50,7 @@ function typing(el: EventTarget | null): boolean {
 
 /** Listens for the keys while `on` (turn it off while the game's own keys are in charge, such as during play). */
 export function useGameKeys(root: RefObject<HTMLElement | null>, on = true) {
+  useKeyLabels(root, undefined, on);
   useEffect(() => {
     if (!on) return;
     let last = 0;

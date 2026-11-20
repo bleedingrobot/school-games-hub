@@ -3667,4 +3667,11 @@ main:focus {
   border-radius: 6px; display: grid; place-items: center; pointer-events: none;
   font: 800 0.8rem/1 system-ui, sans-serif; color: #1c1438; background: #ffe68a; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
 }
-@media (hover: none) and (pointer: coarse) { .kit-key { display: none; } }
+/* The key's name after a button's words ("Enter", "Esc", "T"): src/kit/keyLabels.ts. Only while the game's keys are on. */
+[data-keys-on] button[data-key-label]::after {
+  content: attr(data-key-label); content: attr(data-key-label) / ''; position: static; display: inline-block; margin: 0 0 0 0.45em; padding: 0.12em 0.35em;
+  border: 0; border-radius: 5px; vertical-align: middle; transform: none; opacity: 1; width: auto; height: auto;
+  font: 800 0.7rem/1.2 system-ui, sans-serif; letter-spacing: 0; text-transform: none; color: #1c1438; background: #ffe68a;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35); pointer-events: none;
+}
+@media (hover: none) and (pointer: coarse) { .kit-key, [data-keys-on] button[data-key-label]::after { display: none; } }
