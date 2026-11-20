@@ -6,6 +6,7 @@
  * Maths questions come from the pupil's own focus, in order, and the server marks each answer.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useTraderKeys } from './keys';
 import { ASK_EVERY, BIG_TRADE_CREDITS, GOVERNMENTS, MOON_PRICE, PIRATE_TIERS, SHIPS } from '../../../shared/trader/config';
 import type { FightAction } from '../../../shared/trader/fight';
 import { coordText, makeGalaxy, type Galaxy } from '../../../shared/trader/galaxy';
@@ -609,6 +610,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   const marketAfter = marketRun?.ok ? marketRun.out.state : null;
   const playing = phase.k !== 'title';
   const panelBusy = busy || asking || phase.k === 'warp';
+  useTraderKeys(root, !asking && !picking && !problem);
   const tabs: [Tab, string][] = [['trade', 'Trade'], ['ship', 'Ship'], ['bank', 'Bank'], ['map', 'Star chart'], ...(forgeOn ? [['forge', '🌟 Forge'], ['gallery', '🌌 Gallery']] as [Tab, string][] : [])];
   const label = here && t && galaxy ? `${here.name}, a ${GOVERNMENTS[here.government].name.toLowerCase()} world. Your ${SHIPS[t.ship].name} is in orbit.` : 'Star Trader';
 
@@ -851,7 +853,7 @@ function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, level,
         <h1 className="st-title__h">Star Trader</h1>
         <p className="st-title__p">Fly a small ship between the planets. Buy cargo where it is cheap and sell it where it is dear. Upgrade your ship, outsmart the pirates, and save up to buy a moon of your very own.</p>
         <div className="st-actions st-actions--centre">
-          <button type="button" className="st-btn st-btn--primary st-btn--big" onClick={onStart}>Start trading</button>
+          <button type="button" className="st-btn st-btn--primary st-btn--big" onClick={onStart} data-key="go">Start trading</button>
           {onExit && <button type="button" className="st-btn st-btn--big" onClick={onExit}>Back to the hub</button>}
         </div>
         {firstTime && <p className="st-soft">New here? {COACH_NAME}, your ship's robot, will fly with you on your first trip.</p>}

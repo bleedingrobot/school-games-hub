@@ -29,7 +29,7 @@ export function JunkPanel({ busy, onSteer }: { busy: boolean; onSteer: () => voi
       <h2 id="st-junk-h" className="st-h">Space junk ahead! 🪨</h2>
       <p className="st-sub">A field of rocks and old parts is drifting across your path. Steer round it with a quick maths check. If you bump it, you only lose a little hull.</p>
       <div className="st-actions">
-        <button type="button" className="st-btn st-btn--primary st-btn--big" disabled={busy} onClick={onSteer}>Steer through</button>
+        <button type="button" className="st-btn st-btn--primary st-btn--big" disabled={busy} onClick={onSteer} data-key="go">Steer through</button>
       </div>
     </section>
   );
@@ -43,7 +43,7 @@ export function SummaryPanel({ title, lines, button, onDone }: { title: string; 
         <p key={l} className="st-sub">{l}</p>
       ))}
       <div className="st-actions">
-        <button type="button" className="st-btn st-btn--primary st-btn--big" onClick={onDone}>{button}</button>
+        <button type="button" className="st-btn st-btn--primary st-btn--big" onClick={onDone} data-key="go">{button}</button>
       </div>
     </section>
   );
@@ -85,8 +85,8 @@ export function DealPanel({ offer, here, busy, hideVerdict = false, level = 'lot
         )}
       </div>}
       <div className="st-actions">
-        <button type="button" className="st-btn st-btn--primary" disabled={busy} onClick={onAccept}>Take the deal</button>
-        <button type="button" className="st-btn" disabled={busy} onClick={onDecline}>No thanks</button>
+        <button type="button" className="st-btn st-btn--primary" disabled={busy} onClick={onAccept} data-key="yes">Take the deal</button>
+        <button type="button" className="st-btn" disabled={busy} onClick={onDecline} data-key="no">No thanks</button>
       </div>
     </section>
   );

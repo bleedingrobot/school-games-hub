@@ -88,6 +88,18 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
     fireEvent.click((await screen.findAllByRole('button', { name: /Show on star chart/ }))[0]);
     await screen.findByRole('heading', { name: 'Star chart' });
     expect(document.querySelectorAll('.st-planet--pulse')).toHaveLength(1);
+
+    // Keyboard keys (20 Nov 2026): T and M switch screens; typing x and y then Enter jumps, which sends the trade.
+    fireEvent.keyDown(window, { key: 't' });
+    await market();
+    fireEvent.keyDown(window, { key: 'm' });
+    await screen.findByRole('heading', { name: 'Star chart' });
+    const near = screen.getAllByRole('button', { name: /, x -?\d+, y -?\d+\. Tap/ }).find((b) => !b.className.includes('st-planet--far') && !b.className.includes('--here'));
+    const [, x, y] = near?.getAttribute('aria-label')?.match(/, x (-?\d+), y (-?\d+)/) ?? [];
+    fireEvent.change(screen.getByLabelText('x (across)'), { target: { value: x } });
+    fireEvent.change(screen.getByLabelText('y (up)'), { target: { value: y } });
+    fireEvent.keyDown(screen.getByLabelText('y (up)'), { key: 'Enter' });
+    await waitFor(() => expect(sent.filter((b) => b.action === 'act').length).toBeGreaterThan(0), { timeout: 5000 });
   }, 20000);
 
 });

@@ -3,6 +3,7 @@
  * level. It sits beside the game and never traps focus: Escape or ✕ closes it and focus goes back to the Help button.
  */
 import { useEffect, useRef } from 'react';
+import { KEY_HELP } from '../keys';
 import { COACH_NAME } from '../text';
 import { BoltFace } from './CoachBar';
 import { HELP_LEVELS, type HelpLevel } from './level';
@@ -57,6 +58,15 @@ export function HelpPanel({ step, screen, jumpsPerDay, tips, level, picked, onLe
         <dl className="st-words">
           {wordList(jumpsPerDay).map(([word, means]) => (
             <div key={word}><dt>{word}</dt><dd>{means}</dd></div>
+          ))}
+        </dl>
+      </details>
+
+      <details className="st-help__more">
+        <summary>Keyboard keys</summary>
+        <dl className="st-words">
+          {KEY_HELP.map(([key, does]) => (
+            <div key={key}><dt>{key}</dt><dd>{does}</dd></div>
           ))}
         </dl>
       </details>
