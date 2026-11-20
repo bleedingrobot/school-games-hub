@@ -14,12 +14,13 @@ import { SIZE_IT_UP_GOLD, sizeItUpBonus } from '../../../shared/lord/maths';
 import type { LordAction, LordState } from '../../../shared/lord/server';
 import type { FightAction, FightState, Hero, HeroClass } from '../../../shared/lord/types';
 import { useAuth } from '../../auth/AuthContext';
-import { createServerBackend, type LordBackend, type LordLoad } from '../../data/lord';
+import { createServerBackend, type LordBackend, type LordLoad, type SeasonSummary } from '../../data/lord';
 import { BigStage, FightScreen, fightScene } from './Fight';
 import { shortcutsOn } from './shortcuts';
 import { HowToPlay, HowToPlayBody } from './HowToPlay';
 import { Bank, ClassPick, Healer, HeroPage, Inn, LookPage, Shop, Training, type PlaceProps, type Reply } from './Places';
 import { Arena, HallOfHeroes, NewsPage, Warriors } from './Social';
+import { SeasonCeremony } from './SeasonCeremony';
 import { HeroSprite, MonsterSprite } from './Sprite';
 import { withArticle } from './text';
 import { Stage } from './Stage';
@@ -101,6 +102,9 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
   const [busy, setBusy] = useState(false);
   const [waiting, setWaiting] = useState(0);
   const [deeds, setDeeds] = useState<string[]>([]);
+  // The end-of-season ceremony: my last finished season, and whether it is showing (by itself, or again from the Hall).
+  const [summary, setSummary] = useState<SeasonSummary | null>(null);
+  const [ceremony, setCeremony] = useState<'first' | 'again' | null>(null);
   const hero = state?.hero ?? null;
   // The game's own request function, for the question boxes (set once `act` is made, below).
   const sendRef = useRef<Parameters<typeof useAsk>[0]['current']>(null);
@@ -142,6 +146,12 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
       setState(result.state);
       const pouchNote = result.pouch ? `💰 Quest pouch: +${result.pouch.amount.toLocaleString()} gold!` : '';
       if (result.abandoned || pouchNote) setNote([result.abandoned ? ABANDONED[result.abandoned] : '', pouchNote].filter(Boolean).join(' '));
+      // A season has ended since I last played: the ceremony opens once. (The hero was saved when the season turned.)
+      const ended = await backend.fetchSeasonSummary?.();
+      if (ended) {
+        setSummary(ended);
+        if (!ended.seen) setCeremony('first');
+      }
     }
   }, [backend]);
 
@@ -287,6 +297,23 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
           {waiting > 0 && <p className="lord-note">Your last fight is saved on this Chromebook and will be sent as soon as you are back online.</p>}
           <button type="button" className="lord-btn lord-btn--hot" autoFocus onClick={() => void open()}>Try again</button>
         </section>
+      </Frame>
+    );
+  }
+
+  if (ceremony && summary) {
+    const first = ceremony === 'first';
+    return (
+      <Frame backend={backend} state={state} hero={hero ?? undefined} bare>
+        <SeasonCeremony
+          summary={summary} look={hero?.look} canPick={first && state.classOpen}
+          onDone={(next) => {
+            if (first) void backend.markSeasonSeen?.(summary.season);
+            setSummary({ ...summary, seen: true });
+            setCeremony(null);
+            setScreen(first && next === 'class' ? { name: 'class' } : first ? { name: 'village' } : { name: 'hall' });
+          }}
+        />
       </Frame>
     );
   }
@@ -469,7 +496,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     case 'news': body = <NewsPage backend={backend} deeds={deeds} today={today} back={toVillage} />; break;
     case 'warriors': body = <Warriors backend={backend} back={toVillage} />; break;
     case 'howto': body = <HowToPlay back={toVillage} />; break;
-    case 'hall': body = <HallOfHeroes backend={backend} back={toVillage} />; break;
+    case 'hall': body = <HallOfHeroes backend={backend} back={toVillage} ceremony={summary ? { season: summary.season, watch: () => setCeremony('again') } : undefined} />; break;
     case 'tools':
       body = backend.trial ? (
         <Suspense fallback={<p className="lord-soft">Loading…</p>}>
