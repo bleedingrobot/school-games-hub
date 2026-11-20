@@ -190,3 +190,9 @@ per game (emoji: 🏹 Archery, 💎 Diamond Drop, 🎈 Toon Flap, and so on). Th
 
 Stored: per pupil, which NZ days they used all of a game's turns, and which class quests they finished. Pupils see only their
 own days and a class count. Teachers see their own class. Nothing about maths results.
+
+## Daily and weekly together (18 Nov 2026)
+
+James asked for one daily and one weekly quest at the same time. A class can now run one daily quest (turns or days rules)
+and one weekly quest (total or distinct rules) together, but never two of one kind. Pupils see both bars on the home page,
+daily first; the teacher sees a table for each and stops them one at a time. Migration 20261121000200_class_quests_two.sql.

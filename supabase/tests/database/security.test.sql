@@ -77,7 +77,7 @@ $$, array[
   'teacher_archery_summary', 'teacher_set_archery', 'teacher_set_archery_duels', 'teacher_set_lord_live_arena', 'teacher_set_clan_live_duels', 'teacher_set_play_other_classes', 'teacher_set_bond_match', 'teacher_set_mine', 'teacher_set_mine_maths', 'teacher_set_monsters', 'teacher_set_multiplayer', 'teacher_set_non_maths_games', 'teacher_set_unlimited_today', 'teacher_set_discount_today', 'teacher_set_question_skips', 'teacher_set_role', 'teacher_set_space_maths', 'teacher_set_students_choose_focus', 'teacher_set_trader', 'teacher_reset_trader', 'teacher_set_trader_forge', 'teacher_set_trader_forge_typing', 'teacher_clear_trader_names', 'teacher_trader_class_systems',
   'diamond_hall', 'teacher_diamond_class', 'teacher_diamond_student', 'teacher_diamond_restart', 'teacher_set_diamond',
   'teacher_set_isles', 'my_isles', 'isles_sky', 'teacher_isles_class', 'teacher_isles_student', 'teacher_reset_isles', 'teacher_isles_halls',
-  'my_class_quest', 'teacher_class_quests', 'teacher_start_class_quest', 'teacher_stop_class_quest', 'my_quest_rewards', 'use_quest_reward', 'set_my_title', 'my_titles', 'set_my_frame', 'my_frames',
+  'my_class_quest', 'my_class_quests', 'teacher_class_quests', 'teacher_start_class_quest', 'teacher_stop_class_quest', 'my_quest_rewards', 'use_quest_reward', 'set_my_title', 'my_titles', 'set_my_frame', 'my_frames',
   'my_chess_looks', 'set_chess_look', 'mark_chess_looks_seen',
   'trophy_shelves', 'teacher_set_beanstalk', 'teacher_beanstalk_class', 'teacher_beanstalk_student',
   'teacher_set_hop', 'teacher_hop_class', 'teacher_hop_student',

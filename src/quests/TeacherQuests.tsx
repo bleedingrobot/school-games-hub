@@ -1,6 +1,6 @@
 /**
- * Quests (/teacher/:classId/quests): start a weekly class quest, watch every pupil's seven days, stop it, look back at past
- * quests (docs/CLASS-QUESTS-PLAN.md). The database checks every action; names come from the teacher's own pupil list.
+ * Quests (/teacher/:classId/quests): start a class quest (one daily and one weekly can run together, James 18 Nov 2026), watch
+ * every pupil's seven days, stop it, look back at past quests (docs/CLASS-QUESTS-PLAN.md). The database checks every action; names come from the teacher's own pupil list.
  */
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { DAYS_NEEDED, isDaily, QUEST_KINDS, questKind, type QuestGroup, type QuestKind, type QuestKindInfo } from '../../shared/quests/kinds';
@@ -17,7 +17,11 @@ const GROUPS: { id: QuestGroup; title: string }[] = [
   { id: 'complex', title: 'Complex maths' },
   { id: 'easy', title: 'Easy maths' },
 ];
-const gamesIn = (group: QuestGroup) => [...new Set(QUEST_KINDS.filter((k) => k.group === group).map((k) => k.game))];
+const gamesIn = (kinds: QuestKindInfo[], group: QuestGroup) => [...new Set(kinds.filter((k) => k.group === group).map((k) => k.game))];
+const dailyKind = (kind: QuestKind) => {
+  const k = questKind(kind);
+  return !k || isDaily(k.rule);
+};
 const ruleLine = (k: QuestKindInfo) => (isDaily(k.rule) ? `${k.goal}, ${DAYS_NEEDED} days out of 7` : `${k.goal} this week, any days`);
 
 const errorText = (error: unknown) => (error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.');
@@ -35,6 +39,8 @@ export function TeacherQuests() {
 
 function QuestsPage({ classId }: { classId: string }) {
   const [data, setData] = useState<Data | null>(null);
+  /** The other running quest's table, when two run and the teacher hasn't picked one from the list. */
+  const [other, setOther] = useState<Data | null>(null);
   const [people, setPeople] = useState<Map<string, Person>>(new Map());
   const [which, setWhich] = useState<string | undefined>();
   const [picked, setPicked] = useState<QuestKind | null>(null);
@@ -44,7 +50,10 @@ function QuestsPage({ classId }: { classId: string }) {
 
   const load = useCallback(async () => {
     try {
-      setData(await fetchTeacherQuests(classId, which));
+      const first = await fetchTeacherQuests(classId, which);
+      const second = which ? undefined : first.quests.find((q) => q.id !== first.shown && !q.stoppedAt && q.startsOn <= first.today && q.endsOn >= first.today);
+      setOther(second ? await fetchTeacherQuests(classId, second.id) : null);
+      setData(first);
       setError(null);
     } catch (e) {
       setError(errorText(e));
@@ -60,8 +69,12 @@ function QuestsPage({ classId }: { classId: string }) {
       .catch(() => setPeople(new Map()));
   }, []);
 
-  const running = data?.quests.find((q) => !q.stoppedAt && q.endsOn >= data.today && q.startsOn <= data.today);
-  const shown = data?.quests.find((q) => q.id === data.shown);
+  const running = data?.quests.filter((q) => !q.stoppedAt && q.endsOn >= data.today && q.startsOn <= data.today) ?? [];
+  const dailyOn = running.some((q) => dailyKind(q.kind));
+  const weeklyOn = running.some((q) => !dailyKind(q.kind));
+  // Only the kind of quest the class isn't running yet can start.
+  const startable = QUEST_KINDS.filter((k) => (isDaily(k.rule) ? !dailyOn : !weeklyOn));
+  const tables = [data, other].filter((d): d is Data => !!d?.quests.some((q) => q.id === d.shown));
 
   async function act(job: () => Promise<void>) {
     setBusy(true);
@@ -82,21 +95,25 @@ function QuestsPage({ classId }: { classId: string }) {
     <div className="tquests">
       {error && <p className="tquests__error" role="alert">{error}</p>}
 
-      {data && !running && (
+      {data && startable.length > 0 && (
         <section className="panel" aria-labelledby="tq-start">
-          <h2 id="tq-start" className="panel__title">Start a weekly quest</h2>
+          <h2 id="tq-start" className="panel__title">
+            {dailyOn ? 'Add a weekly quest' : weeklyOn ? 'Add a daily quest' : 'Start a quest'}
+          </h2>
           <p className="tquests__line">
-            Daily quests: a little play on {DAYS_NEEDED} of the next 7 days. Weekly quests: a total by the end of the week, on any days.
+            {dailyOn || weeklyOn
+              ? `Your class can run a daily and a weekly quest at the same time. Pick a ${dailyOn ? 'weekly' : 'daily'} quest to run alongside.`
+              : `Daily quests: a little play on ${DAYS_NEEDED} of the next 7 days. Weekly quests: a total by the end of the week, on any days. You can run one of each at the same time.`}{' '}
             Every quest starts today and ends by itself after 7 days. Pupils see it on their home page, and you can play along too.
           </p>
           {GROUPS.map((group) => (
             <div key={group.id} className="tquests__group">
               <h3 className="tquests__group-title">{group.title}</h3>
-              {gamesIn(group.id).map((game) => (
+              {gamesIn(startable, group.id).map((game) => (
                 <div key={game} className="tquests__game">
                   <h4 className="tquests__game-title">{game}</h4>
                   <div className="tquests__cards">
-                    {QUEST_KINDS.filter((k) => k.group === group.id && k.game === game).map((k) => {
+                    {startable.filter((k) => k.group === group.id && k.game === game).map((k) => {
                       const on = data.switches[k.id] !== false;
                       const art = questArt(k.id, true);
                       return (
@@ -154,23 +171,25 @@ function QuestsPage({ classId }: { classId: string }) {
               disabled={!picked || busy || rewardFit(picked, reward) !== null}
               onClick={() => picked && act(() => startQuest(classId, picked, reward))}
             >
-              Start this week&rsquo;s quest · Reward: {questReward(reward)?.name}
+              Start this quest · Reward: {questReward(reward)?.name}
             </button>
           </div>
         </section>
       )}
 
-      {data && shown && (
+      {tables.map((t) => (
         <QuestTable
-          data={data}
+          key={t.shown}
+          data={t}
           people={people}
-          isRunning={shown.id === running?.id}
+          isRunning={running.some((q) => q.id === t.shown)}
           busy={busy}
           onStop={() => {
-            if (window.confirm('Stop this quest? Pupils who already finished keep their win.')) void act(() => stopQuest(classId));
+            const id = t.shown;
+            if (id && window.confirm('Stop this quest? Pupils who already finished keep their win.')) void act(() => stopQuest(classId, id));
           }}
         />
-      )}
+      ))}
 
       {data && data.quests.length > 0 && (
         <section className="panel" aria-labelledby="tq-past">
@@ -180,7 +199,7 @@ function QuestsPage({ classId }: { classId: string }) {
               const k = questKind(q.kind);
               return (
                 <li key={q.id}>
-                  <button type="button" className={`tquests__past-row${q.id === data.shown ? ' is-shown' : ''}`} onClick={() => setWhich(q.id)}>
+                  <button type="button" className={`tquests__past-row${q.id === data.shown || q.id === other?.shown ? ' is-shown' : ''}`} onClick={() => setWhich(q.id)}>
                     <span>{niceDate(q.startsOn)} – {niceDate(q.endsOn)}</span>
                     <span>{k ? `${k.game}: ${k.name}` : q.kind}</span>
                     <span>🏅 {q.won} finished{q.reward ? ` · ${questReward(q.reward)?.emoji} ${questReward(q.reward)?.name}` : ''}{q.stoppedAt ? ' · stopped' : ''}</span>
@@ -192,7 +211,7 @@ function QuestsPage({ classId }: { classId: string }) {
         </section>
       )}
 
-      {data && data.quests.length === 0 && running === undefined && (
+      {data && data.quests.length === 0 && (
         <p className="tquests__line">No quests yet. Achievements come at 1, 5, 10, 15 and 20 quests finished, and the Questing Hero trophy at 5, 10 and 20.</p>
       )}
       {!data && !error && <p className="panel__empty">Loading…</p>}
@@ -220,7 +239,7 @@ function QuestTable({ data, people, isRunning, busy, onStop }: { data: Data; peo
     <section className="panel tquests__now" aria-labelledby="tq-now">
       <div className="tquests__head">
         <h2 id="tq-now" className="panel__title">
-          {k ? `${k.game}: ${k.name}` : quest.kind}
+          {k ? `${isDaily(k.rule) ? 'Daily' : 'Weekly'} quest · ${k.game}: ${k.name}` : quest.kind}
         </h2>
         <p className="tquests__line">
           {niceDate(quest.startsOn)} – {niceDate(quest.endsOn)} · <strong>{quest.won} of {data.pupils.length} finished</strong>

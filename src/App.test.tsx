@@ -95,6 +95,7 @@ vi.mock('./data/homePage', async (importOriginal) => ({
       powerStats: null,
       moves: {},
       parts: {},
+      classQuests: [],
     };
   }),
 }));

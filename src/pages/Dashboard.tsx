@@ -439,7 +439,7 @@ function DashboardPage() {
         {meId && <WhatsNew me={meId} today={nzDay(Date.now())} canSee={(game) => tiles.some((t) => t.id === game)} />}
 
         {/* Teachers see their class's quest too, so they can play along. */}
-        <QuestBar quest={answer?.classQuest} moves={answer?.moves} />
+        {answer?.classQuests.map((quest) => <QuestBar key={quest.quest.id} quest={quest} moves={answer.moves} />)}
 
         {answer?.recentTrophies && <RecentTrophies trophies={answer.recentTrophies} />}
 

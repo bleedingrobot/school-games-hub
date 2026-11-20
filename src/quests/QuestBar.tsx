@@ -104,7 +104,7 @@ export function QuestBar({ quest: mine, moves }: { quest: MyQuest | null | undef
       </div>
 
       <header className="qbar__top">
-        <span className="qbar__tag">⚔️ Class quest</span>
+        <span className="qbar__tag">⚔️ {daily ? 'Daily' : 'Weekly'} class quest</span>
         <h2 className="qbar__title">
           {kind.game}: <strong>{kind.name}</strong>
         </h2>

@@ -88,8 +88,9 @@ export async function startQuest(classId: string, kind: QuestKind, reward: Quest
   if (error) fail(error, 'We couldn’t start the quest.');
 }
 
-export async function stopQuest(classId: string): Promise<void> {
-  const { error } = await supabase.rpc('teacher_stop_class_quest', { target_class: classId });
+/** Stops one running quest (a class can run a daily and a weekly one together). */
+export async function stopQuest(classId: string, questId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_stop_class_quest', { target_class: classId, which: questId });
   if (error) fail(error, 'We couldn’t stop the quest.');
 }
 
