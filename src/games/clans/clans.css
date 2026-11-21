@@ -796,6 +796,16 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
   .cq-town__spot--hot .cq-town__label { animation: cq-town-glow 2s ease-in-out infinite; }
   @keyframes cq-town-glow { 50% { box-shadow: 0 0 0 1px #000, 0 0 20px rgba(255, 200, 100, 0.95); } }
 }
+/* The place's key (M, K, N...) as a pill on the sign's top-right corner, only while the game's keys are on; it replaces
+   the kit's after-the-words label, which would sit beside the sign rather than on it. */
+.cq-town__label { position: relative; }
+.cq .cq-town__key { display: none; }
+.cq[data-keys-on] .cq-town__key {
+  display: block; position: absolute; top: -0.7em; right: -0.7em; min-width: 1.35em; padding: 0.1em 0.3em; border: 0; border-radius: 5px;
+  font: 800 0.8rem/1.2 system-ui, sans-serif; font-style: normal; color: #1c1438; background: #ffe68a; box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45), 0 0 6px rgba(0, 0, 0, 0.5); text-align: center;
+}
+[data-keys-on] button.cq-town__spot[data-key-label]::after { display: none; }
+@media (hover: none) and (pointer: coarse) { .cq[data-keys-on] .cq-town__key { display: none; } }
 @media (max-width: 640px) {
   .cq-town__label { font-size: 0.75rem; padding: 1px 5px; }
   .cq-town__long { display: none; }

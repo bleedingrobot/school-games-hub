@@ -7,17 +7,19 @@ export type TownPlace = 'mines' | 'market' | 'myvillage' | 'training' | 'church'
  * Where each place is on the painted town (`scenes/town`, docs/clans-town-art), as a share of the picture's width and height.
  * The words in `drop` ("The", "My", "Herald's") are never shown, so the labels stay small over the painting (James,
  * 16 Nov 2026); screen readers still say the full name. On a phone the label also drops the words in `before`.
+ * `key` is the letter that goes there (James, 22 Nov 2026), shown as a small pill on the label's corner while the game's
+ * keys are on (never on touch screens); `useGameKeys` in ClanQuest presses it through `data-key`.
  */
-const SPOTS: { id: TownPlace; label: string; drop?: string; before?: string; x: number; y: number }[] = [
-  { id: 'mines', label: 'Mines', drop: 'The ', x: 12, y: 38 },
-  { id: 'market', label: 'Market', drop: 'The ', x: 22, y: 63 },
-  { id: 'news', label: 'News', drop: "Herald's ", x: 36, y: 41 },
-  { id: 'myvillage', label: 'Village', drop: 'My ', x: 54, y: 46 },
-  { id: 'training', label: 'Training', drop: 'The ', x: 47, y: 79 },
-  { id: 'monster', label: 'Monster', drop: 'The ', x: 56, y: 15 },
-  { id: 'scoreboard', label: 'Heroes', before: 'Hall of ', x: 76, y: 25 },
-  { id: 'church', label: 'Church', drop: 'The ', x: 84, y: 54 },
-  { id: 'quest', label: 'Quest', before: "Today's ", x: 87, y: 81 },
+const SPOTS: { id: TownPlace; label: string; key: string; drop?: string; before?: string; x: number; y: number }[] = [
+  { id: 'mines', label: 'Mines', key: 'm', drop: 'The ', x: 12, y: 38 },
+  { id: 'market', label: 'Market', key: 'k', drop: 'The ', x: 22, y: 63 },
+  { id: 'news', label: 'News', key: 'n', drop: "Herald's ", x: 36, y: 41 },
+  { id: 'myvillage', label: 'Village', key: 'v', drop: 'My ', x: 54, y: 46 },
+  { id: 'training', label: 'Training', key: 't', drop: 'The ', x: 47, y: 79 },
+  { id: 'monster', label: 'Monster', key: 'o', drop: 'The ', x: 56, y: 15 },
+  { id: 'scoreboard', label: 'Heroes', key: 'h', before: 'Hall of ', x: 76, y: 25 },
+  { id: 'church', label: 'Church', key: 'c', drop: 'The ', x: 84, y: 54 },
+  { id: 'quest', label: 'Quest', key: 'q', before: "Today's ", x: 87, y: 81 },
 ];
 
 export const hasTownMap = () => !!sceneArt('town').wide;
@@ -46,7 +48,7 @@ export function TownMap({ onGo, shown, off = [], hot = [], notes = {}, top }: {
       </picture>
       {SPOTS.filter((s) => shown.includes(s.id)).map((s) => (
         <button
-          key={s.id} type="button" data-place={s.id}
+          key={s.id} type="button" data-place={s.id} data-key={s.key}
           aria-label={`${s.drop ?? ''}${s.before ?? ''}${s.label}${s.id === 'scoreboard' ? ' (scoreboard)' : ''}${notes[s.id] ? `, ${notes[s.id]}` : ''}`}
           className={`cq-town__spot${hot.includes(s.id) ? ' cq-town__spot--hot' : ''}`}
           style={{ left: `${s.x}%`, top: `${s.y}%` }} disabled={off.includes(s.id)} onClick={() => onGo(s.id)}
@@ -54,6 +56,7 @@ export function TownMap({ onGo, shown, off = [], hot = [], notes = {}, top }: {
           <span className="cq-town__label">
             {s.before && <span className="cq-town__long">{s.before}</span>}{s.label}
             {notes[s.id] && <small>{notes[s.id]}</small>}
+            <kbd className="cq-town__key" aria-hidden="true">{s.key.toUpperCase()}</kbd>
           </span>
         </button>
       ))}
