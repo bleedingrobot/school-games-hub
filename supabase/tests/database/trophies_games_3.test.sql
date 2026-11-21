@@ -46,6 +46,8 @@ create function pg_temp.fight(who text, add jsonb) returns void language sql as 
 alter table public.scored_games drop constraint scored_games_check;
 -- Season 2 of the hub, 40 days in.
 update public.schools set hub_season_start = public.nz_day(now()) - 40, hub_season_days = 35, hub_paused_since = null where id = 1;
+-- Once the real hub season has moved on, the migrations' own season_crowns() call has already marked season 1 done: start clean.
+delete from public.season_crowns_done;
 
 select is((select count(*)::integer from public.trophy_types where id in ('chess-crown', 'chess-knight', 'checkers-crown',
   'checkers-king', '101-shark', 'pc-cup', 'space-wormhole', 'archery-feather', 'archery-bow')), 9, 'the nine trophies are there');
