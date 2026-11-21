@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MemberCard } from './MemberCard';
-import { renameMember, repickDone, repickMember } from './places';
+import { changeLook, renameMember, repickDone, repickMember } from './places';
 import { CLASS_NAMES, RACE_NAMES, type Change, type Session } from './session';
 import { MEMBER_NAMES, TYPED_NAME_MAX } from '../../../shared/clans/words';
 
@@ -30,13 +30,13 @@ export function Repick({ session, typedNames = false, onChange }: { session: Ses
   return (
     <section className="cq-repick" aria-label="A new season">
       <h2>A new season!</h2>
-      <p>Your clan starts fresh. Pick each member's name, race and class again, or keep them. Your trophies and badges stay forever.</p>
+      <p>Your clan starts fresh. Pick each member's name, look, race and class again, or keep them. Your trophies and badges stay forever.</p>
       <div className="cq-cards">
         {session.clan.members.map((m, i) => {
           const started = m.level !== 1 || m.xp !== 0;
           const own = typed[i];
           return (
-            <MemberCard key={`${i}-${m.race}-${m.cls}`} member={m} leader={i === 0}>
+            <MemberCard key={`${i}-${m.race}-${m.cls}`} member={m} leader={i === 0} onLook={(look) => { const next = changeLook(session, i, look); if (next) onChange(next, { type: 'look', member: i, look }); }}>
               <div className="cq-pickers">
                 {typedNames && own !== null ? (
                   <label>
