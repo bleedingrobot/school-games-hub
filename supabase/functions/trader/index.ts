@@ -11115,17 +11115,19 @@ function questReward(quest, small) {
 }
 /** Why a step can't be done right now, or null if it can. Shared by the server's moves and the screens. */
 function stepProblem(galaxy, t, q, index) {
-	const quest = q?.open ? questById(q.open) : void 0;
-	if (!q || !quest) return "Take a quest first.";
+	const open = openQuestOf(galaxy, q);
+	if (!q || !open) return "Take a quest first.";
+	const { quest } = open;
 	const step = quest.steps[index];
 	if (!step) return "That step could not be found.";
 	if (q.done.includes(index)) return "That step is done.";
 	const last = quest.steps.length - 1;
 	if (index === last && q.done.length < last) return "Do the other steps first.";
 	if (quest.ordered && quest.steps.some((_, i) => i < index && !q.done.includes(i))) return "Do the steps in order.";
-	const planet = galaxy.planets[questPlanets(galaxy)[QUESTS.indexOf(quest)][index]];
+	const planet = galaxy.planets[open.planets[index]];
 	if (t.location !== planet.id) return `Fly to ${planet.name} first.`;
-	if (step.kind === "pickup" && freeHolds(t) < 1) return "Make room: 1 free hold needed.";
+	const holds = step.holds ?? 1;
+	if (step.kind === "pickup" && freeHolds(t) < holds) return `Make room: ${holds} free hold${holds === 1 ? "" : "s"} needed.`;
 	if (step.kind === "buy-deliver") {
 		const want = stepQty(step, q.small);
 		const have = t.cargo[step.good ?? 0] ?? 0;
@@ -11137,7 +11139,7 @@ function stepProblem(galaxy, t, q, index) {
 const questPirateTier = (step) => step >= 2 ? 1 : 0;
 /** The open quest's pirate step waiting at the ship's planet, ready to fight (null: none). */
 function questFightHere(galaxy, t, q) {
-	const quest = q?.open ? questById(q.open) : void 0;
+	const quest = openQuestOf(galaxy, q)?.quest;
 	if (!quest) return null;
 	const i = quest.steps.findIndex((s, index) => s.kind === "pirate" && stepProblem(galaxy, t, q, index) === null);
 	return i < 0 ? null : i;
@@ -11146,6 +11148,141 @@ function questFightHere(galaxy, t, q) {
 const questFight = (t, step, seed) => startFight(t, questPirateTier(step), seed, { lent: NAVY_LASER.power });
 /** A ship small enough for Dr Nettle's smaller order. */
 const isSmallShip = (t) => holdsOf(t) < 15;
+/** A job's id when it is the open "quest": job-0, job-1. */
+const jobId = (i) => `job-${i}`;
+/** The job index in an open id, or null for a story quest (or nothing). */
+function jobIndex(id) {
+	const m = id ? /^job-(\d)$/.exec(id) : null;
+	return m ? Number(m[1]) : null;
+}
+/** All five story quests finished this season: daily jobs are on. */
+const allQuestsDone = (q) => !!q && QUESTS.every((c) => q.finished.includes(c.id));
+const roundUp5 = (n) => Math.ceil(n / 5) * 5;
+/**
+* Today's one or two jobs, made from a seed (school galaxy + pupil) and the day, so the same pupil always gets the same
+* jobs that day and the browser can't pick better ones. Short trips from where the ship is when they are made: the
+* pick-up is within one tank of fuel, the delivery `JOB_MIN_LEG` to two tanks further on (so 1 to 3 jumps in all). The
+* good is one the pick-up planet sells and the delivery planet buys, legal at both, and the pay is that trade's profit
+* plus a little.
+*/
+function makeJobs(galaxy, seed, day, t) {
+	const random = seededRandom(`trader-jobs:${seed}:${day}`);
+	const tank = SHIPS[t.ship].fuelTank;
+	const base = galaxy.planets[t.location];
+	const markets = new Map();
+	const market = (id) => {
+		let m = markets.get(id);
+		if (!m) markets.set(id, m = marketFor(galaxy, id, day));
+		return m;
+	};
+	const options = [];
+	for (const from of galaxy.planets) {
+		if (distance(base, from) > tank) continue;
+		for (const to of galaxy.planets) {
+			const leg = distance(from, to);
+			if (to.id === from.id || leg < 4 || leg > 2 * tank) continue;
+			for (let good = 0; good < GOODS.length; good++) {
+				if (isBanned(from, good) || isBanned(to, good)) continue;
+				const a = market(from.id)[good];
+				const b = market(to.id)[good];
+				if (!a || !b || a.buy <= 0 || b.sell <= 0) continue;
+				const profit = b.sell - a.buy;
+				if (profit > 0) options.push({
+					from: from.id,
+					to: to.id,
+					good,
+					profit
+				});
+			}
+		}
+	}
+	const count = random() < .5 ? 1 : 2;
+	const holds = holdsOf(t);
+	const jobs = [];
+	for (let k = 0; k < count && options.length; k++) {
+		const left = options.filter((o) => !jobs.some((j) => j.good === o.good || j.from === o.from && j.to === o.to));
+		if (!left.length) break;
+		const o = left[Math.floor(random() * left.length)];
+		const qty = Math.max(1, Math.min(holds, 2 + Math.floor(random() * 4)));
+		jobs.push({
+			good: o.good,
+			qty,
+			from: o.from,
+			to: o.to,
+			pay: roundUp5(qty * o.profit + 10 + 5 * qty)
+		});
+	}
+	return jobs;
+}
+/** A job as a two-step quest (pick up, deliver), so it shares the quest steps, gold rings, Bolt's next stop and hold boxes. */
+function jobQuest(galaxy, job, i) {
+	const good = GOODS[job.good];
+	const to = galaxy.planets[job.to]?.name ?? "the planet";
+	return {
+		id: jobId(i),
+		title: `Take ${job.qty} ${good} to ${to}`,
+		giver: "the Star Post",
+		reward: job.pay,
+		steps: [{
+			kind: "pickup",
+			what: `${job.qty} crate${job.qty === 1 ? "" : "s"} of ${good}`,
+			holds: job.qty,
+			cargo: `${good} crate`,
+			prefer: []
+		}, {
+			kind: "deliver",
+			what: to,
+			prefer: []
+		}]
+	};
+}
+/** The quest open now (a story quest or today's job) and its step planets. Null when nothing is open. */
+function openQuestOf(galaxy, q) {
+	if (!q?.open) return null;
+	const ji = jobIndex(q.open);
+	if (ji !== null) {
+		const job = q.jobs?.list[ji];
+		return job ? {
+			quest: jobQuest(galaxy, job, ji),
+			planets: [job.from, job.to],
+			job: ji
+		} : null;
+	}
+	const quest = questById(q.open);
+	return quest ? {
+		quest,
+		planets: questPlanets(galaxy)[QUESTS.indexOf(quest)]
+	} : null;
+}
+/**
+* The server's step at the start of each day (and after each move): once all five quests are done this season, make the
+* day's jobs if they aren't made yet. A job left undone goes at the end of the day, with its crates. Gives back the same
+* game when nothing changes. `seed` is the school's galaxy seed and the pupil.
+*/
+function withJobs(galaxy, game, seed) {
+	const q = game.quests;
+	if (!q || !allQuestsDone(q) || q.jobs?.day === game.t.day) return game;
+	const quests = {
+		...q,
+		jobs: {
+			day: game.t.day,
+			list: makeJobs(galaxy, seed, game.t.day, game.t),
+			done: []
+		}
+	};
+	let t = game.t;
+	if (jobIndex(q.open) !== null) {
+		quests.open = null;
+		quests.done = [];
+		t = { ...t };
+		delete t.questCargo;
+	}
+	return {
+		...game,
+		quests,
+		t
+	};
+}
 //#endregion
 //#region shared/trader/server.ts
 /**
@@ -11352,7 +11489,21 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 			return;
 		case "quest-take": {
 			const q = g.quests ?? emptyQuests();
-			if (q.open) refuse("Finish or drop the quest you have first.");
+			if (q.open) refuse(jobIndex(q.open) !== null ? "Finish or drop the job you have first." : "Finish or drop the quest you have first.");
+			const ji = jobIndex(action.id);
+			if (ji !== null) {
+				const jobs = q.jobs;
+				if (!allQuestsDone(q) || !jobs || jobs.day !== t.day || !jobs.list[ji]) return refuse("That job could not be found.");
+				if (jobs.done.includes(ji)) refuse("That job is done.");
+				const taken = {
+					...q,
+					open: action.id,
+					done: []
+				};
+				delete taken.small;
+				g.quests = taken;
+				return;
+			}
 			const next = nextQuest(q, t.day);
 			if (!next) return refuse(q.finished.length ? "The next quest opens tomorrow." : "There is no quest to take.");
 			if (next.id !== action.id) refuse("That quest is not open yet.");
@@ -11370,8 +11521,9 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 		case "quest-deliver": {
 			const q = g.quests;
 			const index = int(action.step, 0, 20);
-			const quest = q?.open ? questById(q.open) : void 0;
-			if (!q || !quest) return refuse("Take a quest first.");
+			const open = openQuestOf(galaxy, q);
+			if (!q || !open) return refuse("Take a quest first.");
+			const quest = open.quest;
 			const step = quest.steps[index] ?? refuse("That step could not be found.");
 			if ((step.kind === "buy-deliver" || step.kind === "deliver") !== (action.type === "quest-deliver")) refuse("That step could not be done that way.");
 			if (step.kind === "pirate") refuse("Chase off the pirate ship first.");
@@ -11381,19 +11533,38 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 				...t,
 				cargo: [...t.cargo]
 			};
-			if (step.kind === "pickup") next.questCargo = (t.questCargo ?? 0) + 1;
+			if (step.kind === "pickup") next.questCargo = (t.questCargo ?? 0) + (step.holds ?? 1);
 			if (step.kind === "buy-deliver") setCargo(next, step.good ?? 0, t.cargo[step.good ?? 0] - stepQty(step, q.small));
 			const done = [...q.done, index].sort((a, b) => a - b);
-			if (step.kind === "deliver") {
+			if (step.kind === "deliver" && open.job !== void 0 && q.jobs) {
+				next.questCargo = 0;
+				next.credits += quest.reward;
+				g.quests = {
+					...q,
+					open: null,
+					done: [],
+					jobs: {
+						...q.jobs,
+						done: [...q.jobs.done, open.job]
+					}
+				};
+				out.job = {
+					done: open.job,
+					reward: quest.reward
+				};
+			} else if (step.kind === "deliver") {
 				const reward = questReward(quest, q.small);
 				next.questCargo = 0;
 				next.credits += reward;
-				g.quests = {
+				const finished = {
+					...q,
 					open: null,
 					done: [],
 					finished: [...q.finished, quest.id],
 					lastDay: t.day
 				};
+				delete finished.small;
+				g.quests = finished;
 				out.quest = {
 					finished: quest.id,
 					reward,
@@ -11409,7 +11580,7 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 		}
 		case "quest-fight": {
 			const index = int(action.step, 0, 20);
-			const quest = g.quests?.open ? questById(g.quests.open) : void 0;
+			const quest = openQuestOf(galaxy, g.quests)?.quest;
 			if (!quest) return refuse("Take a quest first.");
 			if (quest.steps[index]?.kind !== "pirate") refuse("There is no pirate ship to fight.");
 			const problem = stepProblem(galaxy, t, g.quests, index);
@@ -11420,12 +11591,13 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 		case "quest-drop": {
 			const q = g.quests;
 			if (!q?.open) return refuse("There is no quest to drop.");
-			g.quests = {
+			const dropped = {
+				...q,
 				open: null,
-				done: [],
-				finished: q.finished,
-				lastDay: q.lastDay
+				done: []
 			};
+			delete dropped.small;
+			g.quests = dropped;
 			const next = { ...t };
 			delete next.questCargo;
 			g.t = next;
@@ -11999,7 +12171,7 @@ function makeHandler(services) {
 						};
 					} else game = newGame(galaxy, today, classSettings, pushes);
 				}
-				const rolled = rollDay(galaxy, game, today, classSettings, pushes);
+				const rolled = withJobs(galaxy, rollDay(galaxy, game, today, classSettings, pushes), `${school.seed}:${player}`);
 				let version = saved?.version ?? 0;
 				if (!saved || rolled !== game) {
 					game = rolled;
@@ -12156,6 +12328,10 @@ function makeHandler(services) {
 			game: saved.game,
 			version: saved.version
 		});
+		result = {
+			...result,
+			game: withJobs(galaxy, result.game, `${school.seed}:${player}`)
+		};
 		for (const a of result.answers) {
 			const m = marked.find((x) => x.slot === a.slot);
 			if (m) m.ms = a.ms;

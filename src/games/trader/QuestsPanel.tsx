@@ -2,9 +2,9 @@
  * The Quests tab (docs/plans/trader-quests/PLAN.md, Q.2): five quest cards with each giver's painted face, and the open
  * quest's steps as a checklist that says exactly where to go. The server decides everything; this only shows it.
  */
-import { SHIPS } from '../../../shared/trader/config';
-import type { Galaxy } from '../../../shared/trader/galaxy';
-import { isSmallShip, NAVY_LASER, nearestSellers, nextQuest, openQuestView, questReward, QUESTS, trailClue, type QuestConfig, type QuestState, type StepView } from '../../../shared/trader/quests';
+import { GOODS, SHIPS } from '../../../shared/trader/config';
+import { coordText, distance, type Galaxy } from '../../../shared/trader/galaxy';
+import { allQuestsDone, isSmallShip, jobId, jobIndex, NAVY_LASER, nearestSellers, nextQuest, openQuestView, questReward, QUESTS, trailClue, type QuestConfig, type QuestState, type StepView } from '../../../shared/trader/quests';
 import type { Action } from '../../../shared/trader/server';
 import type { Trader } from '../../../shared/trader/state';
 import { boardArt, giverArt, isHidden, isWaiting, KEEPSAKES, landingLine, MASTER_ART, stepWords, type Shown } from './questGuide';
@@ -24,6 +24,8 @@ export function questStatus(quest: QuestConfig, q: QuestState | undefined, day: 
 }
 
 export function GiverFace({ id, name, size = 72 }: { id: string; name: string; size?: number }) {
+  // A daily job (Q.6) has no giver painting: a crate instead.
+  if (jobIndex(id) !== null) return <span className="stq-face stq-face--job" style={{ width: size, height: size, fontSize: size * 0.5 }} aria-hidden="true">📦</span>;
   const art = giverArt(id);
   // The 160 px face for small sizes, the 512 px painting where it shows big (or on a sharp screen).
   return art
@@ -93,6 +95,7 @@ export function QuestsPanel({ galaxy, t, quests, keepsakes = [], busy, showXY = 
           );
         })}
       </ul>
+      {allQuestsDone(quests) && <Jobs galaxy={galaxy} t={t} quests={quests!} busy={busy} showXY={showXY} onQuest={onQuest} onShowMap={onShowMap} />}
       <QuestLog keepsakes={keepsakes} />
       {onStory && shelf.length > 0 && (
         <div className="stq-shelf" aria-labelledby="stq-shelf-h">
@@ -114,6 +117,64 @@ export function QuestsPanel({ galaxy, t, quests, keepsakes = [], busy, showXY = 
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * 📦 Today's jobs (Q.6): once all five quests are done this season, one or two small deliveries a day, made by the server.
+ * A job left undone just goes at the end of the day.
+ */
+function Jobs({ galaxy, t, quests, busy, showXY, onQuest, onShowMap }: { galaxy: Galaxy; t: Trader; quests: QuestState; busy: boolean; showXY: boolean; onQuest: (actions: Action[]) => void; onShowMap: (planet: number) => void }) {
+  const jobs = quests.jobs?.day === t.day ? quests.jobs : undefined;
+  const list = jobs?.list ?? [];
+  const allDone = list.length > 0 && list.every((_, i) => jobs?.done.includes(i));
+  const where = (id: number) => {
+    const p = galaxy.planets[id];
+    const fuel = distance(galaxy.planets[t.location], p);
+    return (
+      <>
+        <button type="button" className="stq-link" onClick={() => onShowMap(id)}>{p.name}{showXY ? ` ${coordText(p)}` : ''}</button>
+        <span className="st-soft"> · {fuel === 0 ? 'here' : `${fuel} fuel`}</span>
+      </>
+    );
+  };
+  return (
+    <div className="stq-jobs" aria-labelledby="stq-jobs-h">
+      <h3 id="stq-jobs-h" className="st-h3">📦 Today's jobs</h3>
+      <p className="st-soft stq-jobs__sub">Small deliveries for the Star Post. The crates are free to carry and pay a little more than a normal trade. Not done today? They just go.</p>
+      {allDone ? (
+        <p className="st-good-note stq-jobs__done">✓ All done for today. New jobs tomorrow!</p>
+      ) : list.length === 0 ? (
+        <p className="st-soft">No jobs today. New jobs tomorrow!</p>
+      ) : (
+        <ul className="stq-list">
+          {list.map((job, i) => {
+            const id = jobId(i);
+            const done = !!jobs?.done.includes(i);
+            const open = quests.open === id;
+            return (
+              <li key={id} className={`stq-card stq-card--${done ? 'done' : open ? 'open' : 'ready'}`}>
+                <GiverFace id={id} name="Star Post" size={56} />
+                <div className="stq-card__body">
+                  <h3 className="stq-card__h">Take {job.qty} {GOODS[job.good]} to {galaxy.planets[job.to].name}</h3>
+                  <p className="stq-card__meta">Pick up at {where(job.from)}, deliver to {where(job.to)} · <strong>pays {cr(job.pay)}</strong></p>
+                  <p className="stq-card__state">
+                    {done && <span className="stq-pill stq-pill--done">✓ Delivered</span>}
+                    {open && <span className="stq-pill stq-pill--open">📦 Your job now</span>}
+                  </p>
+                </div>
+                <div className="stq-card__act">
+                  {!done && !open && (
+                    <button type="button" className="st-btn st-btn--primary" disabled={busy || !!quests.open} onClick={() => onQuest([{ type: 'quest-take', id }])} data-coach={`job-take-${i}`}>Take job</button>
+                  )}
+                  {open && <button type="button" className="st-btn st-btn--small" disabled={busy} onClick={() => onQuest([{ type: 'quest-drop' }])}>Drop</button>}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -168,7 +229,7 @@ function Checklist({ galaxy, t, quest, reward, steps, busy, showXY, shown, onQue
         <GiverFace id={quest.id} name={quest.giver} size={56} />
         <div>
           <h3 id="stq-open-h" className="st-h3 stq-open__h">{quest.title}</h3>
-          <p className="st-soft stq-open__sub">{quest.ordered ? 'Follow the clues in order. Each one is a move on the star chart from where you are.' : 'Do the steps in any order. The last one waits for the rest. Gold rings on the star chart show where.'}</p>
+          <p className="st-soft stq-open__sub">{jobIndex(quest.id) !== null ? 'Pick up the crates, then take them to the gold planet. Gold rings on the star chart show where.' : quest.ordered ? 'Follow the clues in order. Each one is a move on the star chart from where you are.' : 'Do the steps in any order. The last one waits for the rest. Gold rings on the star chart show where.'}</p>
         </div>
       </div>
       {steps.some((s) => s.kind === 'pirate' && !s.done) && (
@@ -209,8 +270,8 @@ function Checklist({ galaxy, t, quest, reward, steps, busy, showXY, shown, onQue
                   <Goods galaxy={galaxy} t={t} good={step.good} what={s.what} qty={s.qty ?? 0} have={s.have ?? 0} pays={step.pays ?? 0} onShowMap={onShowMap} />
                 )}
                 {waiting && !s.done && !hidden && <p className="st-soft stq-step__note">{s.problem === 'Do the steps in order.' ? 'Do the step before first.' : 'Do the other steps first.'}</p>}
-                {!s.done && here && s.problem === 'Make room: 1 free hold needed.' && (
-                  <p className="st-warn">Make room: 1 free hold needed. <button type="button" className="stq-link" onClick={() => onTab('trade')}>Sell something on the Trade screen</button></p>
+                {!s.done && here && s.problem?.startsWith('Make room') && (
+                  <p className="st-warn">{s.problem} <button type="button" className="stq-link" onClick={() => onTab('trade')}>Sell something on the Trade screen</button></p>
                 )}
               </div>
               {!s.done && s.problem === null && (

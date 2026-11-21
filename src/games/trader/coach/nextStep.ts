@@ -7,7 +7,7 @@ import { GOODS, MOON_PRICE, SHIPS } from '../../../../shared/trader/config';
 import { coordText, type Galaxy } from '../../../../shared/trader/galaxy';
 import type { Pushes } from '../../../../shared/trader/schoolMarket';
 import { fuelCost, fuelNeeded, hasShipyard, holdsOf, usedHolds, type Trader } from '../../../../shared/trader/state';
-import { openQuestView, type QuestState } from '../../../../shared/trader/quests';
+import { jobIndex, openQuestView, type QuestState } from '../../../../shared/trader/quests';
 import { nextStop, stepWords, type Shown } from '../questGuide';
 import { allPrices, bannedCargo, cargoPlan, nearestPlanet, nearestShipyard, nextUpgrade, stopOnTheWay, tradeIdeas } from './advice';
 
@@ -83,17 +83,18 @@ export function nextStep(v: CoachView): NextStep {
   // An open quest (Q.2): a step to do right here, else (unless cargo should be sold here first) the next stop.
   const quest = openQuestView(galaxy, t, v.quests);
   if (quest) {
+    const kind = jobIndex(v.quests?.open) === null ? 'Quest' : 'Job';
     const now = quest.steps.find((s) => !s.done && s.problem === null && s.planet === t.location);
-    if (now) return { say: `Quest: ${stepWords(quest.quest, now).line} here, for ${quest.quest.giver}.`, target: tab === 'trade' ? 'quest-do' : tabTarget('quests', tab, 'quest-step'), tab: tab === 'trade' ? 'trade' : 'quests' };
+    if (now) return { say: `${kind}: ${stepWords(quest.quest, now).line} here, for ${quest.quest.giver}.`, target: tab === 'trade' ? 'quest-do' : tabTarget('quests', tab, 'quest-step'), tab: tab === 'trade' ? 'trade' : 'quests' };
     const stop = plan?.sellHere ? null : nextStop(galaxy, t, v.quests, v.shown ?? 'all');
     if (stop?.clue && stop.planet !== t.location) {
       const fill = stop.fuel <= tank && !stop.fuelOk ? ` You have ${t.fuel} fuel, so fill your tank first.` : '';
       return { say: `Ranger Kai's clue: “${stop.clue}” Count the squares on the star chart, or tap Show me.${fill}`, target: tab === 'trade' || tab === 'map' ? 'quest-showme' : 'tab-map', tab: tab === 'trade' ? 'trade' : 'map' };
     }
     if (stop && stop.planet !== t.location) {
-      if (stop.fuel <= tank && !stop.fuelOk) return { say: `Quest: next stop ${stop.name} ${stop.coords}, ${stop.fuel} fuel. You have ${t.fuel}, so fill your tank first.`, target: tabTarget('ship', tab, 'ship-fuel'), tab: 'ship' };
+      if (stop.fuel <= tank && !stop.fuelOk) return { say: `${kind}: next stop ${stop.name} ${stop.coords}, ${stop.fuel} fuel. You have ${t.fuel}, so fill your tank first.`, target: tabTarget('ship', tab, 'ship-fuel'), tab: 'ship' };
       const far = stop.fuel > tank ? ` That's further than one tank, so stop on the way.` : '';
-      return { say: `Quest: next stop ${stop.name} ${stop.coords}, ${stop.fuel} fuel. ${stop.doing} there.${far}`, target: tab === 'map' ? `planet-${stop.planet}` : 'tab-map', tab: 'map' };
+      return { say: `${kind}: next stop ${stop.name} ${stop.coords}, ${stop.fuel} fuel. ${stop.doing} there.${far}`, target: tab === 'map' ? `planet-${stop.planet}` : 'tab-map', tab: 'map' };
     }
   }
 

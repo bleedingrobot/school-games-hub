@@ -3,7 +3,7 @@
  * words and choices for showing: every rule comes from shared/trader/quests.ts, and the server checks every move.
  */
 import { coordText, distance, type Galaxy } from '../../../shared/trader/galaxy';
-import { nearestSellers, openQuestView, questById, questFightHere, trailClue, type QuestConfig, type QuestState, type StepView } from '../../../shared/trader/quests';
+import { jobIndex, nearestSellers, openQuestOf, openQuestView, questFightHere, trailClue, type QuestConfig, type QuestState, type StepView } from '../../../shared/trader/quests';
 import { applyBatch, type Action, type Game, type Settings } from '../../../shared/trader/server';
 import type { Trader } from '../../../shared/trader/state';
 
@@ -64,6 +64,7 @@ export function stepWords(quest: QuestConfig, s: Pick<StepView, 'kind' | 'what' 
       return { line: `Follow clue ${s.index + 1} of Lumi's trail`, button: 'Look for Lumi' };
     // (pirate steps have no tap: arriving starts the fight, and the button fights again after a loss)
     case 'deliver':
+      if (jobIndex(quest.id) !== null) return { line: `Take the crates to ${s.what}`, button: 'Deliver' };
       return DELIVER[quest.id] ?? { line: `Go to ${quest.giver}`, button: 'Hand over' };
   }
 }
@@ -190,8 +191,12 @@ export function questPlanetMarks(galaxy: Galaxy, t: Trader, q: QuestState | unde
 export const fuelFrom = (galaxy: Galaxy, t: Trader, planet: number): number => distance(galaxy.planets[t.location], galaxy.planets[planet]);
 
 /** The quest things on board now (picked up and not yet handed over), for the hold's gold boxes. */
-export function questCargoNames(q: QuestState | undefined, t: Trader): string[] {
-  const quest = q?.open ? questById(q.open) : undefined;
+export function questCargoNames(galaxy: Galaxy, q: QuestState | undefined, t: Trader): string[] {
+  const quest = openQuestOf(galaxy, q)?.quest;
   if (!quest || !t.questCargo) return [];
-  return quest.steps.filter((s, i) => s.kind === 'pickup' && q?.done.includes(i)).map((s) => s.what).slice(0, t.questCargo);
+  // A daily job's crates fill one hold each ("Games crate"); a story quest's things one each.
+  return quest.steps
+    .filter((s, i) => s.kind === 'pickup' && q?.done.includes(i))
+    .flatMap((s) => Array.from({ length: s.holds ?? 1 }, () => s.cargo ?? s.what))
+    .slice(0, t.questCargo);
 }

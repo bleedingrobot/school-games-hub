@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'trader-jobs-2026-11-21',
+    date: '2026-11-21',
+    emoji: '📦',
+    title: 'Star Trader daily jobs',
+    text: 'Finished all five Star Trader quests? Take small delivery jobs each day for extra credits!',
+    game: 'trader',
+  },
+  {
     id: 'trader-quest-log-2026-11-21',
     date: '2026-11-21',
     emoji: '🌟',

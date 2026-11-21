@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MEDICINE, SHIPS, WATER } from './config';
 import { chartPoint, distance, makeGalaxy } from './galaxy';
 import { marketFor } from './market';
-import { NAVY_LASER, QUESTS, QUEST_MAX_LEG, QUEST_POINTS, nearestSellers, nextQuest, openQuestView, questLegs, questPlanets, questReward, trailClue } from './quests';
+import { JOB_MIN_LEG, NAVY_LASER, QUESTS, makeJobs, withJobs, QUEST_MAX_LEG, QUEST_POINTS, nearestSellers, nextQuest, openQuestView, questLegs, questPlanets, questReward, trailClue } from './quests';
 import { DEFAULT_SETTINGS, applyBatch, applyFight, newGame, type Action, type Game, type Reply } from './server';
 
 import { freeHolds, setCargo, usedHolds } from './state';
@@ -246,6 +246,74 @@ describe('Star Trader quests', () => {
     }
     const there = at(g, planets[0][0]);
     expect(openQuestView(galaxy, there.t, there.quests)!.steps[0]).toMatchObject({ fuel: 0, problem: null });
+    }
+
+    // Q.6 daily jobs: none until all five quests are done this season; then one or two a day from the pupil's seed, the same on a
+    // reload, short trips, a crate per hold; take, pick up, deliver for a little more than a trade, no hub points; gone at day's end.
+    {
+      const pupil = `${SEED}:pupil-1`;
+      const some = fresh();
+      expect(withJobs(galaxy, some, pupil)).toBe(some);
+      const four = { ...some, quests: { open: null, done: [], finished: ['zuzu', 'sprocket', 'nettle', 'vex'], lastDay: 9 } };
+      expect(withJobs(galaxy, four, pupil)).toBe(four);
+      // Jobs are made on most galaxies and days, and always fit the rules.
+      let made = 0;
+      for (let k = 0; k < 40; k++) {
+        const gx = makeGalaxy(`jobs-${k}`);
+        const t = newGame(gx, 10 + k, DEFAULT_SETTINGS).t;
+        const jobs = makeJobs(gx, `jobs-${k}:p`, t.day, t);
+        expect(makeJobs(gx, `jobs-${k}:p`, t.day, t)).toEqual(jobs);
+        if (jobs.length) made++;
+        expect(jobs.length).toBeLessThanOrEqual(2);
+        for (const j of jobs) {
+          const tank = SHIPS[t.ship].fuelTank;
+          expect(distance(gx.planets[t.location], gx.planets[j.from])).toBeLessThanOrEqual(tank);
+          const leg = distance(gx.planets[j.from], gx.planets[j.to]);
+          expect(leg).toBeGreaterThanOrEqual(JOB_MIN_LEG);
+          expect(leg).toBeLessThanOrEqual(2 * tank);
+          expect(j.qty).toBeGreaterThanOrEqual(1);
+          expect(j.qty).toBeLessThanOrEqual(SHIPS[t.ship].holds);
+          const profit = marketFor(gx, j.to, t.day)[j.good].sell - marketFor(gx, j.from, t.day)[j.good].buy;
+          expect(j.pay).toBeGreaterThan(j.qty * profit);
+          expect(j.pay).toBeLessThanOrEqual(j.qty * profit + 50);
+        }
+      }
+      expect(made).toBeGreaterThanOrEqual(36);
+
+      const all: Game = { ...some, quests: { open: null, done: [], finished: QUESTS.map((q) => q.id), lastDay: 9 } };
+      const day = withJobs(galaxy, all, pupil);
+      const list = day.quests!.jobs!.list;
+      expect(list.length).toBeGreaterThan(0);
+      expect(withJobs(galaxy, day, pupil)).toBe(day);
+      expect(withJobs(galaxy, all, pupil).quests!.jobs).toEqual(day.quests!.jobs);
+      expect(refused(run(day, { type: 'quest-take', id: 'job-7' }))).toMatch(/could not be found/);
+      const taken = ok(run(day, { type: 'quest-take', id: 'job-0' }));
+      expect(refused(run(taken, { type: 'quest-take', id: 'job-1' }))).toMatch(/job you have first/);
+      const job = list[0];
+      const view = openQuestView(galaxy, taken.t, taken.quests)!;
+      expect(view.steps.map((s) => s.planet)).toEqual([job.from, job.to]);
+      expect(view.reward).toBe(job.pay);
+      // The crates need a hold each.
+      const full = structuredClone(at(taken, job.from));
+      setCargo(full.t, WATER, freeHolds(full.t) - job.qty + 1);
+      expect(refused(run(full, { type: 'quest-pickup', step: 0 }))).toMatch(/Make room: \d+ free hold/);
+      const got = ok(run(at(taken, job.from), { type: 'quest-pickup', step: 0 }));
+      expect(got.t.questCargo).toBe(job.qty);
+      expect(refused(run(got, { type: 'quest-deliver', step: 1 }))).toMatch(/Fly to/);
+      const r = run(at(got, job.to), { type: 'quest-deliver', step: 1 });
+      expect(r.ok && r.job).toEqual({ done: 0, reward: job.pay });
+      expect(r.ok && r.quest).toBeUndefined();
+      const paid = ok(r);
+      expect(paid.t.credits).toBe(got.t.credits + job.pay);
+      expect(paid.t.questCargo).toBeUndefined();
+      expect(paid.quests).toMatchObject({ open: null, finished: QUESTS.map((q) => q.id), jobs: { done: [0] } });
+      expect(refused(run(paid, { type: 'quest-take', id: 'job-0' }))).toMatch(/job is done/);
+      // An undone job goes at the end of the day, crates and all; the next day has new jobs.
+      const half = ok(run(at(day, job.from), { type: 'quest-take', id: 'job-0' }, { type: 'quest-pickup', step: 0 }));
+      const next = withJobs(galaxy, { ...half, t: { ...half.t, day: half.t.day + 1 } }, pupil);
+      expect(next.quests).toMatchObject({ open: null, jobs: { day: half.t.day + 1, done: [] } });
+      expect(next.t.questCargo).toBeUndefined();
+      expect(usedHolds(next.t)).toBe(0);
     }
   });
 });

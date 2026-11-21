@@ -58,7 +58,7 @@ const pos = (n: number): number => ((n + 1.5) / VIEW) * 100;
 
 export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuide = null, level = 'lots', unlimited = false, focus = null, quest = null, onAim, onJump, onRefuel }: {
   /** An open quest (Q.2): its planets (gold rings and step numbers) and the next stop. */
-  quest?: { marks: ReadonlyMap<number, { n: number[]; lines: string[] }>; stop: NextStop | null; onReveal?: (step: number) => void } | null;
+  quest?: { marks: ReadonlyMap<number, { n: number[]; lines: string[] }>; stop: NextStop | null; onReveal?: (step: number) => void; job?: boolean } | null;
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
@@ -215,7 +215,7 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuid
           )}
           {quest?.stop && !quest.stop.clue && quest.stop.planet !== t.location && (
             <p className="st-questline">
-              <span>⭐ Quest: next stop <strong>{quest.stop.name}{showXY && ` ${quest.stop.coords}`}</strong>, {quest.stop.fuel} fuel{quest.stop.fuelOk ? '' : ' ⛽'}. <span className="st-soft">{quest.stop.doing}.</span></span>
+              <span>{quest.job ? '📦 Job' : '⭐ Quest'}: next stop <strong>{quest.stop.name}{showXY && ` ${quest.stop.coords}`}</strong>, {quest.stop.fuel} fuel{quest.stop.fuelOk ? '' : ' ⛽'}. <span className="st-soft">{quest.stop.doing}.</span></span>
               <button
                 type="button"
                 className="st-btn st-btn--small st-questline__btn"
