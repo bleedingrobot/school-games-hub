@@ -592,7 +592,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
         <Creator seed={serverSeed} typedNames={typedNames} onDone={(clan, choices) => { create(clan, choices); setScreen('home'); }} />
       ) : (
         <>
-          {screen === 'home' && repicking && <Repick session={session} onChange={change} />}
+          {screen === 'home' && repicking && <Repick session={session} typedNames={typedNames} onChange={change} />}
           {screen === 'home' && !repicking && (
             <section aria-label="Your clan">
               {hasTownMap() && (

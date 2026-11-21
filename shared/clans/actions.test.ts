@@ -47,3 +47,24 @@ describe('what the browser sends', () => {
     expect(refused(rich(s), { type: 'buy', member: 0, item: itemAt(m.cls, 'weapon', 1)!.name }).why).toBe('shelf');
   });
 });
+
+describe('new names at the start of a season', () => {
+  const repicking = () => {
+    const s = created();
+    s.clan.season = 2;
+    s.clan.repick = 2;
+    return s;
+  };
+  it('renames a member from the list, or a made-up name with the teacher switch, and only before Keep going', () => {
+    const s = repicking();
+    const free = ['Aria', 'Bram', 'Cleo', 'Elin'].find((n) => !s.clan.members.some((m) => m.name === n))!;
+    const out = applyAction(s, { type: 'rename', member: 1, name: free }, ctx());
+    expect(out.ok && out.state!.clan.members[1].name).toBe(free);
+    expect(refused(s, { type: 'rename', member: 1, name: s.clan.members[0].name }).why).toBe('name');
+    expect(refused(s, { type: 'rename', member: 1, name: 'Zork' }).why).toBe('name');
+    const typed = applyAction(s, { type: 'rename', member: 2, name: 'te ahi' }, ctx({ typedNames: true }));
+    expect(typed.ok && typed.state!.clan.members[2].name).toBe('Te Ahi');
+    expect(refused(s, { type: 'rename', member: 2, name: 'poop' }, { typedNames: true }).why).toBe('name');
+    expect(refused(created(), { type: 'rename', member: 1, name: free }).why).toBe('rename');
+  });
+});

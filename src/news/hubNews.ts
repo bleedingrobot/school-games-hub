@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'clan-season-names-2026-11-22',
+    date: '2026-11-22',
+    emoji: '✏️',
+    title: 'New names for a new season',
+    text: 'When a new season starts, you can now give your clan members new names.',
+    game: 'clan-quest',
+  },
+  {
     id: 'clan-famous-2026-11-22',
     date: '2026-11-22',
     emoji: '🌟',

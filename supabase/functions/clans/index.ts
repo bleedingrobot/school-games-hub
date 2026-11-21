@@ -13134,6 +13134,23 @@ function clanFromChoices(seed, name, drafts, typedNames = false) {
 		clan: makeClan(name, built)
 	};
 }
+/**
+* A new name for one member on the new-season screen (James, 22 Nov 2026). The same rules as making a clan: a name from
+* the list, or a made-up one when the teacher's switch is on, and no two members may share a name.
+*/
+function renameCheck(clan, member, raw, typedNames) {
+	if (!clan.members[member]) return {
+		ok: false,
+		say: "Pick one of your clan."
+	};
+	const named = memberNameFrom(raw, typedNames);
+	if (!named.ok) return named;
+	if (clan.members.some((m, j) => j !== member && m.name.toLowerCase() === named.name.toLowerCase())) return {
+		ok: false,
+		say: "Another member has this name."
+	};
+	return named;
+}
 //#endregion
 //#region shared/clans/monster.ts
 /**
@@ -14417,6 +14434,11 @@ function parseAction(raw) {
 			cls: raw.cls
 		} : null;
 		case "repickDone": return { type: "repickDone" };
+		case "rename": return member !== null && typeof raw.name === "string" && raw.name.length <= 40 ? {
+			type: "rename",
+			member,
+			name: raw.name
+		} : null;
 		case "raidStart": return typeof raw.target === "string" && raw.target.length >= 1 && raw.target.length <= 40 ? {
 			type: "raidStart",
 			target: raw.target
@@ -14821,6 +14843,16 @@ function applyInner(saved, action, ctx, flags) {
 				...m.look ? { look: m.look } : {}
 			};
 			return done(state, { type: "repick" });
+		}
+		case "rename": {
+			if (clan.repick === void 0 || clan.repick !== clan.season) return refuse("rename", "Names can be changed at the start of a season.");
+			const named = renameCheck(clan, action.member, action.name, ctx.typedNames === true);
+			if (!named.ok) return refuse("name", named.say);
+			clan.members[action.member] = {
+				...clan.members[action.member],
+				name: named.name
+			};
+			return done(state, { type: "rename" });
 		}
 		case "repickDone":
 			if (clan.repick === void 0) return done(state, { type: "repickDone" }, rested || upgraded);
