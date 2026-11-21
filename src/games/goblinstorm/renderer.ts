@@ -479,7 +479,7 @@ export class View {
         this.startBoss(looks[ev.kind]?.name ?? 'Boss', ev.kind);
       } else if (ev.k === 'storm') {
         // Sky Citadel: the ring's lightning lands.
-        this.bolt(ev.x, ev.y, ev.r, '#e8f4ff');
+        startStrike(fx, this.bolts, 'plain', ev.x, ev.y, ev.r, { main: '#e8f4ff', glow: '#bfe6ff', evolved: '#e8f4ff' }, ev.x, ev.y);
         fx.ring(ev.x, ev.y, 0.3, ev.r * 1.4, 0.35, '#bfe6ff');
         this.addShake(0.2);
         this.cues.add('hit');
