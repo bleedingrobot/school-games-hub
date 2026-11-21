@@ -1,0 +1,369 @@
+{
+  "_from": "docs/plans/trader-quests-2/PLAN.md. Star Trader quests 6 to 10: 5 quest-giver portraits, 5 story pages a quest and the Star Quest Legend trophy.",
+  "game": "trader-quests-2",
+  "filename_prefix": "trader-quests-2/img",
+  "style": "a",
+  "styles": {
+    "a": "Painterly sci-fi storybook illustration, deep space blues and purples with glowing planets and warm light, cinematic, hopeful and friendly, suitable for children aged 8 to 12, no writing, no letters, no numbers, no logos anywhere. "
+  },
+  "inbox": "~/stories-art-inbox/trader-quests-2",
+  "picks": "docs/stories-art/trader-quests-2-picks.json",
+  "art_dir": "src/games/trader/art",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "giver-puddle",
+      "prompt": "a round cheerful frog-person mayor with smooth green skin, big golden eyes, a tiny black top hat and a gold mayor's chain over a blue waistcoat. Head and shoulders portrait, centred, plain soft starry background.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "quests",
+      "file": "giver-puddle",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "giver-gorbo",
+      "prompt": "a big round friendly orange alien chef shaped like a pear, with four small eyes on short wobbly stalks on top of his head, a long curly purple moustache, a tall white chef's hat, a white apron and two thin arms. Head and shoulders portrait, centred, plain soft starry background.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "quests",
+      "file": "giver-gorbo",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "giver-zip",
+      "prompt": "an excited young man race announcer with spiky orange hair, a shiny silver jacket covered in racing stripes and a microphone. Head and shoulders portrait, centred, plain soft starry background.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "quests",
+      "file": "giver-zip",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "giver-pippop",
+      "prompt": "two small alien twin children, a girl and a boy, with pale teal skin, big dark eyes and little round ear-fins, wearing matching yellow overalls. Head and shoulders portrait, centred, plain soft starry background.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "quests",
+      "file": "giver-pippop",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "giver-sable",
+      "prompt": "a kind grey-haired retired woman pirate captain with a black eye-patch, a long dark red coat and a battered tricorn hat, warm smile. Head and shoulders portrait, centred, plain soft starry background.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "quests",
+      "file": "giver-sable",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "puddle-1",
+      "prompt": "A round cheerful frog-person mayor with smooth green skin, big golden eyes, a tiny black top hat and a gold mayor's chain over a blue waistcoat, standing sadly beside a completely empty, bone-dry cracked mud hollow where a pond used to be, not a drop of water anywhere, grumpy frogs sitting on the dusty cracked mud. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "puddle-1"
+    },
+    {
+      "name": "puddle-2",
+      "prompt": "A round cheerful frog-person mayor with smooth green skin, big golden eyes, a tiny black top hat and a gold mayor's chain over a blue waistcoat pointing at a row of blue water crates, splitting them into three neat piles. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "puddle-2"
+    },
+    {
+      "name": "puddle-3",
+      "prompt": "A small scruffy cargo spaceship flying past three small dusty orange planets glowing with gold rings, a big blue water tank strapped on its back. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "puddle-3"
+    },
+    {
+      "name": "puddle-4",
+      "prompt": "Rain pouring onto a lush green pond planet, happy frogs singing on lily pads, a round cheerful frog-person mayor with smooth green skin, big golden eyes, a tiny black top hat and a gold mayor's chain over a blue waistcoat dancing with an umbrella. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "puddle-4"
+    },
+    {
+      "name": "puddle-5",
+      "prompt": "Close-up of a hand holding a glowing blue rain-drop shaped crystal, sparkling, a ringed green alien planet with rain clouds in the background. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "puddle-5"
+    },
+    {
+      "name": "gorbo-1",
+      "prompt": "A big round friendly orange alien chef shaped like a pear, with four small eyes on short wobbly stalks on top of his head, a long curly purple moustache, a tall white chef's hat, a white apron and two thin arms, in a huge busy space station kitchen full of empty pots and pans, looking worried but funny. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "gorbo-1"
+    },
+    {
+      "name": "gorbo-2",
+      "prompt": "A giant glowing purple moon-melon and a huge round wheel of blue cheese with little comet tails of stink, on a kitchen table under a starry window. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "gorbo-2"
+    },
+    {
+      "name": "gorbo-3",
+      "prompt": "A small scruffy cargo spaceship zooming away from a space station shaped like a giant cooking pot, steam puffing out. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "gorbo-3"
+    },
+    {
+      "name": "gorbo-4",
+      "prompt": "A long feast table in space full of happy alien travellers, a wobbly rainbow pudding, melon soup and melting cheese, a big round friendly orange alien chef shaped like a pear, with four small eyes on short wobbly stalks on top of his head, a long curly purple moustache, a tall white chef's hat, a white apron and two thin arms serving proudly. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "gorbo-4"
+    },
+    {
+      "name": "gorbo-5",
+      "prompt": "Close-up of a shining golden spoon on a velvet cloth, stars twinkling in a window behind. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "gorbo-5"
+    },
+    {
+      "name": "zip-1",
+      "prompt": "An excited young man race announcer with spiky orange hair, a shiny silver jacket covered in racing stripes and a microphone shouting happily on a floating stage in space, crowds of aliens cheering in floating stands, a row of colourful racing spaceships at a glowing starting line. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "zip-1"
+    },
+    {
+      "name": "zip-2",
+      "prompt": "Four planets in a curving line across space, each with a glowing checkered checkpoint ring around it, a comet streaking past. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "zip-2"
+    },
+    {
+      "name": "zip-3",
+      "prompt": "A small scruffy cargo spaceship waiting at a glowing starting line in space, engines glowing bright, a row of three big round lamps above it, red, yellow and green. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "zip-3"
+    },
+    {
+      "name": "zip-4",
+      "prompt": "A small scruffy cargo spaceship bursting through a glowing checkered finish ring in space, fireworks and cheering aliens in floating stands. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "zip-4"
+    },
+    {
+      "name": "zip-5",
+      "prompt": "A shining silver and gold trophy cup with a comet curling around it, on a podium, confetti and stars. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "zip-5"
+    },
+    {
+      "name": "pippop-1",
+      "prompt": "Two small alien twin children, a girl and a boy, with pale teal skin, big dark eyes and little round ear-fins, wearing matching yellow overalls looking shocked at an open glowing space gate in a garden on a little planet, pet bowls on the grass. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "pippop-1"
+    },
+    {
+      "name": "pippop-2",
+      "prompt": "Four cute cartoon alien pets running away across space: a fluffy white moon-bunny, a wobbly pink jelly-puppy, a sleek cat with a glowing comet tail, and a small spiky pirate ship holding a sparkly snail in a net. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "pippop-2"
+    },
+    {
+      "name": "pippop-3",
+      "prompt": "A small scruffy cargo spaceship flying over a colourful planet, a little cartoon pirate ship in the distance, a sparkly snail peeking out of its window. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "pippop-3"
+    },
+    {
+      "name": "pippop-4",
+      "prompt": "Two small alien twin children, a girl and a boy, with pale teal skin, big dark eyes and little round ear-fins, wearing matching yellow overalls laughing in a garden with a happy snuggle pile of cute alien pets: a fluffy white bunny, a pink jelly puppy, a cat with a glowing comet tail and a sparkly snail. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "pippop-4"
+    },
+    {
+      "name": "pippop-5",
+      "prompt": "Close-up of a small red pet collar with a shiny star-shaped tag, lying on soft grass with flowers under a starry sky. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "pippop-5"
+    },
+    {
+      "name": "sable-1",
+      "prompt": "A kind grey-haired retired woman pirate captain with a black eye-patch, a long dark red coat and a battered tricorn hat, warm smile in a sunny garden on a little planet full of glowing beehives and big friendly space bees. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "sable-1"
+    },
+    {
+      "name": "sable-2",
+      "prompt": "A grumpy rusty old pirate spaceship with a big rusty red beard-shaped front, lurking behind an asteroid, red eyes glowing in its windows. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "sable-2"
+    },
+    {
+      "name": "sable-3",
+      "prompt": "An old rolled-out parchment treasure map glowing softly on a spaceship dashboard, with little drawn planets, a dotted line and a big red cross, stars in the cockpit window. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "sable-3"
+    },
+    {
+      "name": "sable-4",
+      "prompt": "An open treasure chest on a rocky little planet, spilling gold coins and glowing star-gems, an old pirate hat on top, stars above. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "sable-4"
+    },
+    {
+      "name": "sable-5",
+      "prompt": "Close-up of a hand holding a single shining gold coin with a star on it, a treasure chest glowing softly behind. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "sable-5"
+    },
+    {
+      "name": "trophy-quest-legend",
+      "prompt": "A shining golden and purple trophy shaped like a big star with two tiny spaceships circling it and a ring of ten small glowing stars, on a soft starry background. Centred.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "quests",
+      "file": "trophy-quest-legend",
+      "max": 512,
+      "small": 160
+    }
+  ],
+  "comfy": "http://127.0.0.1:8188"
+}
