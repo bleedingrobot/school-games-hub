@@ -53,7 +53,7 @@ James's main ask. Five places say it:
 
 ## 5. Art and voices (done in this PR)
 
-- **32 paintings** (the Quest Master trophy too) from the gaming PC ([docs/stories-art/trader-quests.json](../../stories-art/trader-quests.json)): a quest board, 5 giver portraits and 25 story pages, 2 tries each, the better one picked. Same storybook style as the Star Trader opening story.
+- **32 paintings** (the Star Quest Master trophy too) from the gaming PC ([docs/stories-art/trader-quests.json](../../stories-art/trader-quests.json)): a quest board, 5 giver portraits and 25 story pages, 2 tries each, the better one picked. Same storybook style as the Star Trader opening story.
 - **Voices:** each giver has their own Kokoro voice (table in section 2). Built the same way as the stories narrator: one clip folder per giver, `public/voice/quest-<id>/`, and a `VOICE_FOR` line each in `scripts/voice-clips.py`. Samples are on the review page.
 
 ## 6. Stages
@@ -65,7 +65,7 @@ James's main ask. Five places say it:
 | **Q.2** | Quests tab, step checklist, gold map rings, jump-screen line, landing card, Bolt lines, key Q | Medium |
 | **Q.3** | Stories in StoryBook with each giver's voice, the 📖 shelf, paintings tidied into the game | Small |
 | **Q.4** | Commander Vex's pirate fights (Navy laser, gentle losses) and Lumi's clue trail | Medium |
-| **Q.5** | Quest Log keepsakes, Quest Master achievement and trophy (migration), What's new line, go live | Small |
+| **Q.5** | Quest Log keepsakes, Star Quest Master achievement and trophy (migration), What's new line, go live | Small |
 | **Q.6** | Daily jobs after all five: one or two computer-made deliveries a day, small rewards | Small |
 
 Each stage goes live on its own (switched on), like the other Star Trader stages.
@@ -81,5 +81,5 @@ Each stage goes live on its own (switched on), like the other Star Trader stages
 1. **Order:** one at a time, in order; the next opens when you finish the one before, at most one new quest a day.
 2. **Rewards:** keep 300 to 800 (Zuzu 300, Sprocket 400, Nettle about 300 profit, Vex 600, Lumi 800).
 3. **After all five:** small daily delivery jobs made by the computer, so the tab never runs dry (stage Q.6). More story quests added later.
-4. **All five done:** a "Quest Master" achievement and a painted trophy on the profile (migration in Q.5; trophy painting added to the art list).
+4. **All five done:** a "Star Quest Master" achievement (James renamed it, 21 Nov) and a painted trophy on the profile (migration in Q.5; trophy painting added to the art list).
 5. **Map:** stop the season reshuffle (Q.0).
