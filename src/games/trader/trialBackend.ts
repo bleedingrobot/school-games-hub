@@ -9,6 +9,8 @@ import { startFight } from '../../../shared/trader/fight';
 import type { MathsContext } from '../../../shared/trader/questions';
 import { SHIPS } from '../../../shared/trader/config';
 import { makeGalaxy } from '../../../shared/trader/galaxy';
+import { marketFor } from '../../../shared/trader/market';
+import { nextStop } from './questGuide';
 import { SchoolMarket } from '../../../shared/trader/schoolMarket';
 import { busyLunchtime } from '../../../shared/trader/sim';
 import { PICTURE_GAP_MINUTES, type StickerId } from '../../../shared/trader/gallery';
@@ -41,6 +43,10 @@ export interface Trial {
     setShip(ship: number): void;
     forcePirates(tier: number): void;
     nextDay(): void;
+    /** Put the ship on this planet (to try a quest stop without flying there). */
+    moveTo(planet: number): void;
+    /** Put the ship on the open quest's next stop (nothing if no quest is open). */
+    toQuestStop(): void;
     /** Pretend classmates trade all day on the school's market, so the news and moved prices can be seen. */
     busySchool(pupils?: number): void;
     restart(): void;
@@ -158,6 +164,12 @@ export function trialBackend(options: TrialOptions = {}): Trial {
     change(next.game);
     data.game = { ...next, version: next.version + 1 };
   };
+  const moveTo = (planet: number) =>
+    edit((g) => {
+      g.t.location = planet;
+      g.t.market = marketFor(makeGalaxy(seed), planet, g.t.day);
+      g.pending = null;
+    });
   return {
     transport,
     data,
@@ -179,6 +191,12 @@ export function trialBackend(options: TrialOptions = {}): Trial {
       forcePirates: (tier) => edit((g) => void (g.pending = { kind: 'fight', tier, fight: startFight(g.t, tier, `forced:${g.t.jumpNo}:${tier}`) })),
       nextDay: () => {
         data.skippedDays += 1;
+      },
+      moveTo,
+      toQuestStop: () => {
+        const g = data.game?.game;
+        const stop = g ? nextStop(makeGalaxy(seed), g.t, g.quests) : null;
+        if (stop) moveTo(stop.planet);
       },
       busySchool: (pupils = SCHOOL_SIZE) => {
         const day = data.game?.game.t.day;

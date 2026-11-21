@@ -110,12 +110,36 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
 
 describe('The Star Forge (S.4)', () => {
 
-  it('a locked sun is only a look; planning a sun is free; building it sends a forge action, shows the price first, and the card turns built', async () => {
+  it('quests (Q.2): the gold landing card picks up, the hold shows gold, Q ticks the step, the chart rings the rest. Then the Forge: a locked sun is only a look; planning a sun is free; building it sends a forge action, shows the price first, and the card turns built', async () => {
     const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
-    await traderApi(trial.transport).load();
+    const api = traderApi(trial.transport);
+    const first = await api.load();
+    if (!first.ok) throw new Error('no game');
+    expect((await api.act(first.value.version, [{ type: 'quest-take', id: 'zuzu' }])).ok).toBe(true);
     trial.tools.give(5000);
+    trial.tools.toQuestStop();
     const { sent } = play(trial);
     await market();
+
+    // Landing on a quest planet: one gold card, one tap, sent to the server at once.
+    expect(await screen.findByText(/for Grandma Zuzu$/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Pick up/ }));
+    await waitFor(() => expect(trial.data.game?.game.quests?.done).toHaveLength(1));
+    expect(JSON.stringify(sent)).toMatch(/"type":"quest-pickup"/);
+    expect((await screen.findAllByText(/Gold boxes are quest cargo/)).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/for Grandma Zuzu$/)).toBeNull();
+    // Q opens the Quests tab: the step is ticked and the next ones say where and how far.
+    fireEvent.keyDown(window, { key: 'q' });
+    await screen.findByRole('heading', { name: 'Quests' });
+    expect(document.querySelectorAll('.stq-step--done')).toHaveLength(1);
+    expect(screen.getAllByText(/fuel from here/).length).toBeGreaterThan(0);
+    // The star chart rings the quest planets and sets the jump to the next stop in one tap.
+    fireEvent.keyDown(window, { key: 'm' });
+    await screen.findByRole('heading', { name: 'Star chart' });
+    expect(document.querySelectorAll('.st-planet--quest').length).toBeGreaterThan(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Set jump' }));
+    expect((screen.getByLabelText('x (across)') as HTMLInputElement).value).not.toBe('');
+
     fireEvent.click(screen.getByRole('tab', { name: /Forge/ }));
     expect(await screen.findByRole('heading', { name: /Star Forge/ })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /^Sun: Choose a sun/ }));

@@ -4,7 +4,7 @@
  */
 import { LOAN_MAX, LOAN_WEEKLY_PCT, MOON_PRICE, POD_HOLDS, SHIPYARD_TECH } from '../../../../shared/trader/config';
 
-export type HelpScreen = 'trade' | 'ship' | 'bank' | 'map' | 'forge' | 'gallery' | 'fight' | 'deal' | 'junk' | 'other';
+export type HelpScreen = 'trade' | 'ship' | 'bank' | 'map' | 'quests' | 'forge' | 'gallery' | 'fight' | 'deal' | 'junk' | 'other';
 
 const n = (x: number): string => x.toLocaleString('en-NZ');
 
@@ -69,6 +69,17 @@ export function screenHelp(screen: HelpScreen): { title: string; points: string[
           'To jump, type its x (across) and y (up or down). Below the middle line, y is negative.',
           'The dotted shape shows how far your fuel takes you.',
           'Each jump uses one of your jumps for today.',
+        ],
+      };
+    case 'quests':
+      return {
+        title: 'Quests',
+        points: [
+          'Take one quest at a time. When you finish one, the next opens the day after.',
+          'Each step says where to go, its coordinates and how much fuel it takes from here.',
+          'Quest planets have a gold ring on the star chart. Land there and tap the gold card.',
+          'Quest cargo sits in your hold in gold boxes. It takes a hold but can\'t be sold.',
+          'You can drop a quest any time and take it again later.',
         ],
       };
     case 'fight':

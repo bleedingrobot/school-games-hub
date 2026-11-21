@@ -89,6 +89,8 @@ export interface MoveReply {
   fight?: { fight: Fight; tier: number; over: boolean };
   junk?: { steeredWell: boolean };
   deal?: { took: boolean };
+  /** A quest just finished: which one, the credits it paid and the leaderboard points. */
+  quest?: { finished: string; reward: number; points: number };
   /** After a jump: the school news and pushes, read as the ship landed. */
   news?: NewsItem[];
   prices?: [number, number, number][];

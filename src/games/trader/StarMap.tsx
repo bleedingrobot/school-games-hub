@@ -17,6 +17,7 @@ import { fuelCost, fuelNeeded, type Trader } from '../../../shared/trader/state'
 import { drawPlanet, loadSmallPlanetMaps, lookOf, planetPainted } from './art/planets';
 import { allPrices, chartIdeas, customsWarning, pirateWarning, tradeIdeas, type ChartIdea } from './coach/advice';
 import type { HelpLevel } from './coach/level';
+import type { NextStop } from './questGuide';
 import { COACH_NAME, GOVERNMENT_LINES, PLANET_FACTS, goodIcon } from './text';
 
 const icons = new Map<string, string>();
@@ -55,7 +56,9 @@ function usePaintedIcons(names: readonly string[]): void {
 const VIEW = GRID_SIZE - 1 + 3;
 const pos = (n: number): number => ((n + 1.5) / VIEW) * 100;
 
-export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuide = null, level = 'lots', unlimited = false, focus = null, onAim, onJump, onRefuel }: {
+export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuide = null, level = 'lots', unlimited = false, focus = null, quest = null, onAim, onJump, onRefuel }: {
+  /** An open quest (Q.2): its planets (gold rings and step numbers) and the next stop. */
+  quest?: { marks: ReadonlyMap<number, { n: number[]; lines: string[] }>; stop: NextStop | null } | null;
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
@@ -185,20 +188,42 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuid
               <button
                 key={p.id}
                 type="button"
-                className={`st-planet ${p.id === t.location ? 'st-planet--here' : ''} ${picked === p.id ? 'st-planet--picked' : ''} ${dest?.id === p.id ? 'st-planet--aimed' : ''} ${pulse === p.id ? 'st-planet--pulse' : ''} ${far ? 'st-planet--far' : ''}`}
+                className={`st-planet ${p.id === t.location ? 'st-planet--here' : ''} ${picked === p.id ? 'st-planet--picked' : ''} ${dest?.id === p.id ? 'st-planet--aimed' : ''} ${pulse === p.id ? 'st-planet--pulse' : ''} ${far ? 'st-planet--far' : ''} ${quest?.marks.has(p.id) ? 'st-planet--quest' : ''}`}
                 style={{ left: `${pos(p.x)}%`, top: `${pos(p.y)}%` }}
                 onClick={() => pick(p.id)}
                 data-coach={`planet-${p.id}`}
                 aria-pressed={picked === p.id}
-                aria-label={`${p.name}${showXY ? `, x ${chartPoint(p).x}, y ${chartPoint(p).y}` : ''}${p.id === t.location ? ', you are here' : ''}. Tap to read about it.`}
+                aria-label={`${p.name}${showXY ? `, x ${chartPoint(p).x}, y ${chartPoint(p).y}` : ''}${p.id === t.location ? ', you are here' : ''}${quest?.marks.has(p.id) ? `, quest step ${quest.marks.get(p.id)?.n.join(' and ')}` : ''}. Tap to read about it.`}
               >
                 <img src={planetIcon(p.name)} alt="" draggable={false} />
+                {quest?.marks.has(p.id) && <span className="st-planet__quest" aria-hidden="true">{quest.marks.get(p.id)?.n.join(',')}</span>}
                 <span className="st-planet__name">{p.name}{showXY && <span className="st-planet__xy">{coordText(p)}</span>}</span>
               </button>
             );
           })}
         </div>
         <div className="st-mapinfo">
+          {quest?.stop && quest.stop.planet !== t.location && (
+            <p className="st-questline">
+              <span>⭐ Quest: next stop <strong>{quest.stop.name}{showXY && ` ${quest.stop.coords}`}</strong>, {quest.stop.fuel} fuel{quest.stop.fuelOk ? '' : ' ⛽'}. <span className="st-soft">{quest.stop.doing}.</span></span>
+              <button
+                type="button"
+                className="st-btn st-btn--small st-questline__btn"
+                data-coach="quest-setjump"
+                onClick={() => {
+                  const stop = galaxy.planets[quest.stop!.planet];
+                  if (showXY) {
+                    setXs(String(chartPoint(stop).x));
+                    setYs(String(chartPoint(stop).y));
+                  }
+                  setPicked(stop.id);
+                  setPulse(stop.id);
+                }}
+              >
+                {showXY ? 'Set jump' : 'Show me'}
+              </button>
+            </p>
+          )}
           <JumpBox
             t={t}
             here={here}
@@ -225,7 +250,7 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuid
           />
           {ideas.length > 0 && <TripIdeas galaxy={galaxy} ideas={ideas} />}
           {pickedPlanet
-            ? <PlanetCard galaxy={galaxy} t={t} dest={pickedPlanet} news={newsAbout(news, pickedPlanet.id).filter((n) => n.kind !== 'event')} pushes={pushes} showXY={showXY} />
+            ? <PlanetCard galaxy={galaxy} t={t} dest={pickedPlanet} news={newsAbout(news, pickedPlanet.id).filter((n) => n.kind !== 'event')} pushes={pushes} showXY={showXY} quest={quest?.marks.get(pickedPlanet.id)?.lines} />
             : <p className="st-sub">{showXY ? 'Tap a planet to read about it and see its coordinates.' : 'Tap a planet to read about it. Read its x and y off the grid.'}</p>}
         </div>
       </div>
@@ -351,13 +376,14 @@ function TripIdeas({ galaxy, ideas }: { galaxy: Galaxy; ideas: readonly ChartIde
   );
 }
 
-function PlanetCard({ galaxy, t, dest, news, pushes, showXY }: { galaxy: Galaxy; t: Trader; dest: Planet; news: readonly NewsItem[]; pushes?: Pushes; showXY: boolean }) {
+function PlanetCard({ galaxy, t, dest, news, pushes, showXY, quest }: { galaxy: Galaxy; t: Trader; dest: Planet; news: readonly NewsItem[]; pushes?: Pushes; showXY: boolean; quest?: readonly string[] }) {
   const gov = GOVERNMENTS[dest.government];
   const eventText = eventLine(galaxy, dest.id, t.day);
   const banned = GOODS.filter((_, i) => isBanned(dest, i));
   return (
     <div className="st-card">
       <h3 className="st-h3">{dest.name}{showXY && <> <span className="st-xy">{coordText(dest)}</span></>}</h3>
+      {quest?.map((line) => <p key={line} className="st-questnote">⭐ {line}</p>)}
       <p className="st-soft">{PLANET_FACTS[dest.name]}</p>
       <ul className="st-stats st-stats--tight">
         <li><span className="st-soft">Government</span> <strong>{gov.name}</strong></li>

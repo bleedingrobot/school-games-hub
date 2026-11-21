@@ -26,10 +26,18 @@ export const HUB_NEWS: NewsItem[] = [
   {
     id: 'bond-match-finish-2026-11-21',
     date: '2026-11-21',
-    emoji: '⭐',
+    emoji: '🌅',
     title: 'Bond Match starfish',
     text: 'Finish Bond Match at sunset: win gold, silver or bronze starfish, or fill a shell bucket!',
     game: 'bond-match',
+  },
+  {
+    id: 'trader-quests-2026-11-21',
+    date: '2026-11-21',
+    emoji: '⭐',
+    title: 'Star Trader quests',
+    text: 'New Quests tab! Help Grandma Zuzu and friends. Follow the gold rings on the star chart.',
+    game: 'trader',
   },
   {
     id: 'bond-match-cards-2026-11-21',
