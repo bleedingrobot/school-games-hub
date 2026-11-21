@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { PICTURE_GAP_MINUTES, type StickerId } from '../../../shared/trader/gallery';
 import { makeGalaxy } from '../../../shared/trader/galaxy';
 import { emptyPlan } from '../../../shared/trader/plan';
+import { questPlanets } from '../../../shared/trader/quests';
 import { DEFAULT_SETTINGS, newGame, type Game } from '../../../shared/trader/server';
 import type { MathsContext } from '../../../shared/trader/questions';
 import { SchoolMarket } from '../../../shared/trader/schoolMarket';
@@ -150,7 +151,7 @@ function world(opts: { settings?: Partial<ClassSettings>; now?: () => number } =
 }
 
 describe('the Star Trader server function', () => {
-  it('refuses a missing or fake sign-in and anything that is not a POST, and pupils cannot touch each other\'s games', async () => {
+  it('refuses a missing or fake sign-in and anything that is not a POST, pupils cannot touch each other\'s games, and the deployable file is up to date', async () => {
     const { call } = world();
     expect((await call({ action: 'load' }, 'nope')).status).toBe(401);
     const handler = makeHandler(world().state as unknown as Services);
@@ -160,9 +161,14 @@ describe('the Star Trader server function', () => {
     await w.call({ action: 'load' }, 'good2');
     expect(w.state.games.has('ben')).toBe(true);
     expect(w.state.games.get('ben')!.game).not.toBe(w.state.games.get('ana')!.game);
+    // The deployable file is up to date with the code (run `npm run build:functions -- trader` if this fails).
+    // @ts-expect-error: plain JavaScript build script
+    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
+    const built: string = await buildFunction('trader');
+    expect(readFileSync(resolve('supabase/functions/trader/index.ts'), 'utf8')).toBe(built);
   });
 
-  it('applies a trade with the shared rules and a request sent twice counts once', async () => {
+  it('applies a trade with the shared rules, a request sent twice counts once, and quest moves go through the same rules', async () => {
     const w = world();
     const first = await w.call({ action: 'load' });
     const g = first.body.game as Game;
@@ -194,6 +200,22 @@ describe('the Star Trader server function', () => {
       expect(again.body.pouch).toBeUndefined();
       expect(again.body.game.t.credits).toBe(300);
       expect(again.body.version).toBe(2);
+    }
+    // Quests (Q.1): taken through the server; a step away from its planet, or a move it can't read, is refused.
+    {
+      const w = world();
+      const first = await w.call({ action: 'load' });
+      const take = await w.call({ action: 'act', requestId: w.id(), version: first.body.version, actions: [{ type: 'quest-take', id: 'zuzu' }] });
+      expect(take.status).toBe(200);
+      expect(take.body.game.quests).toEqual({ open: 'zuzu', done: [], finished: [], lastDay: null });
+      const g = take.body.game as Game;
+      const steps = questPlanets(galaxy)[0];
+      const away = [0, 1, 2].find((i) => steps[i] !== g.t.location)!;
+      const far = await w.call({ action: 'act', requestId: w.id(), version: take.body.version, actions: [{ type: 'quest-pickup', step: away }] });
+      expect(far.status).toBe(400);
+      expect(far.body.error).toMatch(/Fly to/);
+      const odd = await w.call({ action: 'act', requestId: w.id(), version: take.body.version, actions: [{ type: 'quest-take', id: 'x'.repeat(40) }] });
+      expect(odd.status).toBe(400);
     }
   });
 
@@ -279,14 +301,5 @@ describe('Sharing: gallery, stickers, pictures (S.8)', () => {
     // The other class's pupil never appears, and sees only their own class.
     expect(JSON.stringify(r.body)).not.toContain('cat');
     expect(((await w.call({ action: 'gallery' }, 'good3')).body.systems as any[]).map((s) => s.id)).toEqual(['cat']);
-  });
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions -- trader` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('trader');
-    expect(readFileSync(resolve('supabase/functions/trader/index.ts'), 'utf8')).toBe(built);
   });
 });

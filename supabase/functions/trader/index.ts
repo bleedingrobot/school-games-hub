@@ -10216,7 +10216,7 @@ function setCargo(t, good, qty, cost = 0) {
 	t.paid = paid;
 }
 const holdsOf = (t) => SHIPS[t.ship].holds + t.pods * 5;
-const usedHolds = (t) => t.cargo.reduce((a, b) => a + b, 0);
+const usedHolds = (t) => t.cargo.reduce((a, b) => a + b, 0) + (t.questCargo ?? 0);
 const freeHolds = (t) => holdsOf(t) - usedHolds(t);
 const fuelCost = (ship, units) => Math.ceil(units * SHIPS[ship].fuelTenths / 10);
 /** A new trader at the start of a season. `pushes` is the school's market today (none in the simulator's solo games). */
@@ -10740,6 +10740,374 @@ function runPlan(t, plan, sellBp = 0, buyBp = 0) {
 }
 /** The sharp-trader discount a right answer earns on a trade this big (in hundredths of a percent). */
 const discountFor = (worth) => worth >= 150 ? 200 : 100;
+/** Government indexes (config.ts GOVERNMENTS), by name, so the rules below read plainly. */
+const GOV = Object.fromEntries(GOVERNMENTS.map((g, i) => [g.name, i]));
+/** Resource indexes (config.ts RESOURCES). */
+const RES = {
+	minerals: 1,
+	poorMinerals: 2,
+	desert: 3,
+	water: 4,
+	animals: 5,
+	lifeless: 6,
+	poorSoil: 7,
+	richSoil: 8,
+	artistic: 9,
+	warlike: 10,
+	herbs: 12
+};
+const isGov = (...names) => (p) => names.some((n) => p.government === GOV[n]);
+const hasRes = (...res) => (p) => res.includes(p.resource);
+const techAtLeast = (n) => (p) => p.tech >= n;
+const techAtMost = (n) => (p) => p.tech <= n;
+const calm = (p) => GOVERNMENTS[p.government].pirates <= 2;
+/** Can sell (make) a good. */
+const makes = (good) => (p) => p.tech >= GOOD_RULES[good].makeTech;
+const both = (...w) => (p, g) => w.every((f) => f(p, g));
+const QUESTS = [
+	{
+		id: "zuzu",
+		title: "Grandma Zuzu's Big Party",
+		giver: "Grandma Zuzu",
+		reward: 300,
+		steps: [
+			{
+				kind: "pickup",
+				what: "Star-berries",
+				prefer: [
+					isGov("Farming co-op"),
+					hasRes(RES.richSoil),
+					techAtMost(3)
+				]
+			},
+			{
+				kind: "pickup",
+				what: "Sparkle Candles",
+				prefer: [
+					techAtLeast(7),
+					techAtLeast(6),
+					techAtLeast(5)
+				]
+			},
+			{
+				kind: "pickup",
+				what: "a Robot Band",
+				prefer: [
+					isGov("Robot council"),
+					makes(9),
+					techAtLeast(5)
+				]
+			},
+			{
+				kind: "deliver",
+				what: "Grandma Zuzu",
+				prefer: [isGov("Temple", "Peace garden"), calm]
+			}
+		]
+	},
+	{
+		id: "sprocket",
+		title: "Professor Sprocket's Runaway Robots",
+		giver: "Professor Sprocket",
+		reward: 400,
+		steps: [
+			{
+				kind: "pickup",
+				what: "Beep",
+				prefer: [
+					hasRes(RES.desert),
+					hasRes(RES.lifeless),
+					hasRes(RES.poorSoil)
+				]
+			},
+			{
+				kind: "pickup",
+				what: "Boop",
+				prefer: [hasRes(RES.water), isGov("Peace garden")]
+			},
+			{
+				kind: "pickup",
+				what: "Clank",
+				prefer: [
+					hasRes(RES.minerals),
+					hasRes(RES.poorMinerals),
+					isGov("Merchant guild")
+				]
+			},
+			{
+				kind: "pickup",
+				what: "Fizz",
+				prefer: [
+					hasRes(RES.warlike),
+					both(makes(5), (p) => GOVERNMENTS[p.government].fireworksOk),
+					(p) => GOVERNMENTS[p.government].fireworksOk
+				]
+			},
+			{
+				kind: "deliver",
+				what: "Professor Sprocket",
+				prefer: [
+					isGov("Scientists' council"),
+					techAtLeast(6),
+					techAtLeast(4)
+				]
+			}
+		]
+	},
+	{
+		id: "nettle",
+		title: "Dr Nettle and the Sneezles",
+		giver: "Dr Nettle",
+		reward: 0,
+		steps: [
+			{
+				kind: "buy-deliver",
+				what: "Medicine",
+				good: 6,
+				qty: 5,
+				smallQty: 3,
+				pays: 100,
+				prefer: [],
+				near: 2
+			},
+			{
+				kind: "buy-deliver",
+				what: "Water",
+				good: 0,
+				qty: 10,
+				smallQty: 7,
+				pays: 15,
+				prefer: [],
+				near: 2
+			},
+			{
+				kind: "deliver",
+				what: "Dr Nettle",
+				prefer: [
+					both(isGov("Temple", "Peace garden", "Farming co-op"), techAtMost(3)),
+					techAtMost(3),
+					(p) => p.tech < GOOD_RULES[6].makeTech + 1
+				]
+			}
+		]
+	},
+	{
+		id: "vex",
+		title: "Commander Vex and the Rust Raiders",
+		giver: "Commander Vex",
+		reward: 600,
+		steps: [
+			{
+				kind: "pirate",
+				what: "a pirate ship",
+				prefer: [isGov("Pirate haven"), (p) => GOVERNMENTS[p.government].pirates >= 5],
+				near: 3
+			},
+			{
+				kind: "pirate",
+				what: "a pirate ship",
+				prefer: [isGov("Pirate haven"), (p) => GOVERNMENTS[p.government].pirates >= 5],
+				near: 3
+			},
+			{
+				kind: "pirate",
+				what: "a pirate ship",
+				prefer: [isGov("Pirate haven"), (p) => GOVERNMENTS[p.government].pirates >= 5],
+				near: 3
+			},
+			{
+				kind: "deliver",
+				what: "Commander Vex",
+				prefer: [
+					isGov("Peace garden"),
+					isGov("Temple"),
+					calm
+				]
+			}
+		]
+	},
+	{
+		id: "kai",
+		title: "Lumi the Little Star Whale",
+		giver: "Ranger Kai",
+		reward: 800,
+		ordered: true,
+		steps: [
+			{
+				kind: "clue",
+				what: "a clue",
+				prefer: []
+			},
+			{
+				kind: "clue",
+				what: "a clue",
+				prefer: []
+			},
+			{
+				kind: "clue",
+				what: "a clue",
+				prefer: []
+			},
+			{
+				kind: "deliver",
+				what: "Lumi's family",
+				prefer: [
+					hasRes(RES.animals),
+					hasRes(RES.water),
+					hasRes(RES.artistic)
+				]
+			}
+		]
+	}
+];
+const questById = (id) => QUESTS.find((q) => q.id === id);
+/** A planet's rank for a step: 0 for its first wish, 1 for its second ..., `prefer.length` for none. */
+function rank(step, p, g) {
+	const i = step.prefer.findIndex((w) => w(p, g));
+	return i < 0 ? step.prefer.length : i;
+}
+/** Extra rules some steps have beyond their kind of planet. */
+function allowed(quest, i, p, g, chosen) {
+	if (quest.id === "nettle" && i === quest.steps.length - 1) return g.planets.some((o) => o.id !== p.id && makes(6)(o, g) && distance(o, p) <= 12);
+	const near = quest.steps[i].near;
+	const anchor = near === void 0 ? void 0 : chosen[near];
+	if (anchor !== void 0 && distance(g.planets[anchor], p) > 12) return false;
+	return true;
+}
+/**
+* The order the stops are visited in, as indexes into `steps`, and which steps have a planet of their own. Dr Nettle's
+* goods are bought anywhere and handed over at his planet; Vex's garden is picked first so the pirates can wait around it.
+*/
+function route(quest) {
+	const own = quest.steps.map((s, i) => s.kind === "buy-deliver" ? -1 : i).filter((i) => i >= 0);
+	if (quest.steps.some((s) => s.near !== void 0 && quest.steps[s.near].kind !== "buy-deliver")) {
+		const anchor = quest.steps.length - 1;
+		return [anchor, ...own.filter((i) => i !== anchor)];
+	}
+	return own;
+}
+/**
+* Picks one quest's planets: the best-scoring set (each step's rank, plus a little for short legs and for planets the
+* earlier quests or the start planet already use) where each stop is within `maxLeg` of the one before (and of its
+* `near` step) and no planet is used twice. A search with pruning, always in planet order, so it never varies.
+*/
+function pickFor(galaxy, quest, used, maxLeg) {
+	const order = route(quest);
+	const n = quest.steps.length;
+	const start = startPlanet(galaxy);
+	const steps = quest.steps;
+	const visit = steps.map((s, i) => s.kind === "buy-deliver" ? -1 : i).filter((i) => i >= 0);
+	const cost = (i, p) => rank(steps[i], p, galaxy) * 10 + (used.has(p.id) ? 4 : 0) + (p.id === start ? 3 : 0);
+	const candidates = order.map((i) => galaxy.planets.map((p) => ({
+		p,
+		c: cost(i, p)
+	})).sort((a, b) => a.c - b.c || a.p.id - b.p.id));
+	let best = null;
+	let bestScore = Infinity;
+	const chosen = new Array(n).fill(void 0);
+	let tries = 0;
+	const legOk = (i, p) => {
+		const at = visit.indexOf(i);
+		for (const j of [visit[at - 1], visit[at + 1]]) {
+			const other = j === void 0 ? void 0 : chosen[j];
+			if (other !== void 0 && distance(galaxy.planets[other], p) > maxLeg) return false;
+		}
+		return true;
+	};
+	const legPenalty = (i, p) => {
+		const at = visit.indexOf(i);
+		let pen = 0;
+		for (const j of [visit[at - 1], visit[at + 1]]) {
+			const other = j === void 0 ? void 0 : chosen[j];
+			if (other !== void 0 && distance(galaxy.planets[other], p) < 5) pen += 2;
+		}
+		return pen;
+	};
+	const search = (k, score) => {
+		if (++tries > 2e5 || score >= bestScore) return;
+		if (k === order.length) {
+			best = [...chosen];
+			bestScore = score;
+			return;
+		}
+		const i = order[k];
+		for (const { p, c } of candidates[k]) {
+			if (score + c >= bestScore) break;
+			if (chosen.includes(p.id) || !legOk(i, p) || !allowed(quest, i, p, galaxy, chosen)) continue;
+			chosen[i] = p.id;
+			search(k + 1, score + c + legPenalty(i, p));
+			chosen[i] = void 0;
+		}
+	};
+	search(0, 0);
+	const found = best;
+	if (!found) return null;
+	return steps.map((s, i) => found[s.kind === "buy-deliver" ? s.near ?? n - 1 : i]);
+}
+const picked = new WeakMap();
+/**
+* Every quest's planets for a galaxy, in QUESTS order: one planet id per step. Worked out in a set way, so the same galaxy
+* always gives the same planets. Stops are kept within QUEST_MAX_LEG of each other; a galaxy too spread out for that (none
+* found in testing) is allowed a little more, up to the smallest fuel tank.
+*/
+function questPlanets(galaxy) {
+	const known = picked.get(galaxy);
+	if (known) return known;
+	const used = new Set();
+	const all = QUESTS.map((q) => {
+		const set = pickFor(galaxy, q, used, 12) ?? pickFor(galaxy, q, used, 13) ?? pickFor(galaxy, q, used, 20);
+		if (!set) throw new Error(`No planets for quest ${q.id}`);
+		set.forEach((id) => used.add(id));
+		return set;
+	});
+	picked.set(galaxy, all);
+	return all;
+}
+const emptyQuests = () => ({
+	open: null,
+	done: [],
+	finished: [],
+	lastDay: null
+});
+/** The quest that can be taken next (null: all done, or the next one opens tomorrow, or one is open now). */
+function nextQuest(q, day) {
+	const s = q ?? emptyQuests();
+	if (s.open) return null;
+	const next = QUESTS.find((c) => !s.finished.includes(c.id));
+	if (!next) return null;
+	if (s.lastDay !== null && s.lastDay >= day) return null;
+	return next;
+}
+/** How many of a buy-deliver step's goods are wanted on this attempt. */
+const stepQty = (step, small) => small ? step.smallQty ?? step.qty ?? 0 : step.qty ?? 0;
+/** What a quest pays on finishing: its reward, or for Dr Nettle what he pays for the goods. */
+function questReward(quest, small) {
+	const goods = quest.steps.filter((s) => s.kind === "buy-deliver");
+	if (!goods.length) return quest.reward;
+	return goods.reduce((sum, s) => sum + stepQty(s, small) * (s.pays ?? 0), 0);
+}
+/** Why a step can't be done right now, or null if it can. Shared by the server's moves and the screens. */
+function stepProblem(galaxy, t, q, index) {
+	const quest = q?.open ? questById(q.open) : void 0;
+	if (!q || !quest) return "Take a quest first.";
+	const step = quest.steps[index];
+	if (!step) return "That step could not be found.";
+	if (q.done.includes(index)) return "That step is done.";
+	const last = quest.steps.length - 1;
+	if (index === last && q.done.length < last) return "Do the other steps first.";
+	if (quest.ordered && quest.steps.some((_, i) => i < index && !q.done.includes(i))) return "Do the steps in order.";
+	const planet = galaxy.planets[questPlanets(galaxy)[QUESTS.indexOf(quest)][index]];
+	if (t.location !== planet.id) return `Fly to ${planet.name} first.`;
+	if (step.kind === "pickup" && freeHolds(t) < 1) return "Make room: 1 free hold needed.";
+	if (step.kind === "buy-deliver") {
+		const want = stepQty(step, q.small);
+		const have = t.cargo[step.good ?? 0] ?? 0;
+		if (have < want) return `You need ${want} ${step.what} in your hold (you have ${have}).`;
+	}
+	return null;
+}
+/** A ship small enough for Dr Nettle's smaller order. */
+const isSmallShip = (t) => holdsOf(t) < 15;
 //#endregion
 //#region shared/trader/server.ts
 /**
@@ -10944,6 +11312,76 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 			if (!isCaptain(action.id)) refuse("That captain could not be found.");
 			g.captain = action.id;
 			return;
+		case "quest-take": {
+			const q = g.quests ?? emptyQuests();
+			if (q.open) refuse("Finish or drop the quest you have first.");
+			const next = nextQuest(q, t.day);
+			if (!next) return refuse(q.finished.length ? "The next quest opens tomorrow." : "There is no quest to take.");
+			if (next.id !== action.id) refuse("That quest is not open yet.");
+			const taken = {
+				...q,
+				open: next.id,
+				done: []
+			};
+			delete taken.small;
+			if (next.id === "nettle" && isSmallShip(t)) taken.small = true;
+			g.quests = taken;
+			return;
+		}
+		case "quest-pickup":
+		case "quest-deliver": {
+			const q = g.quests;
+			const index = int(action.step, 0, 20);
+			const quest = q?.open ? questById(q.open) : void 0;
+			if (!q || !quest) return refuse("Take a quest first.");
+			const step = quest.steps[index] ?? refuse("That step could not be found.");
+			if ((step.kind === "buy-deliver" || step.kind === "deliver") !== (action.type === "quest-deliver")) refuse("That step could not be done that way.");
+			const problem = stepProblem(galaxy, t, q, index);
+			if (problem) refuse(problem);
+			const next = {
+				...t,
+				cargo: [...t.cargo]
+			};
+			if (step.kind === "pickup") next.questCargo = (t.questCargo ?? 0) + 1;
+			if (step.kind === "buy-deliver") setCargo(next, step.good ?? 0, t.cargo[step.good ?? 0] - stepQty(step, q.small));
+			const done = [...q.done, index].sort((a, b) => a - b);
+			if (step.kind === "deliver") {
+				const reward = questReward(quest, q.small);
+				next.questCargo = 0;
+				next.credits += reward;
+				g.quests = {
+					open: null,
+					done: [],
+					finished: [...q.finished, quest.id],
+					lastDay: t.day
+				};
+				out.quest = {
+					finished: quest.id,
+					reward,
+					points: 2
+				};
+			} else g.quests = {
+				...q,
+				done
+			};
+			if (!next.questCargo) delete next.questCargo;
+			g.t = next;
+			return;
+		}
+		case "quest-drop": {
+			const q = g.quests;
+			if (!q?.open) return refuse("There is no quest to drop.");
+			g.quests = {
+				open: null,
+				done: [],
+				finished: q.finished,
+				lastDay: q.lastDay
+			};
+			const next = { ...t };
+			delete next.questCargo;
+			g.t = next;
+			return;
+		}
 		case "jump": {
 			const worthBefore = netWorth(galaxy, t);
 			const extra = settings.unlimited === true && t.jumpsLeft < 1;
@@ -11334,6 +11772,23 @@ function parseActions(raw) {
 					type: "captain",
 					id: a.id
 				});
+				break;
+			case "quest-take":
+				if (typeof a.id !== "string" || a.id.length > 16) return null;
+				out.push({
+					type: "quest-take",
+					id: a.id
+				});
+				break;
+			case "quest-pickup":
+			case "quest-deliver":
+				out.push({
+					type: a.type,
+					step: a.step
+				});
+				break;
+			case "quest-drop":
+				out.push({ type: "quest-drop" });
 				break;
 			default: return null;
 		}

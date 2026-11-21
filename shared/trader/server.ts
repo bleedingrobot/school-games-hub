@@ -26,12 +26,14 @@ import {
   refuel,
   repair,
   repay,
+  setCargo,
   startDay,
   travel,
   type Result,
   type Trader,
 } from './state';
 import { designProblem, emptyDesign, forgeCost, typedNames, type SystemDesign } from './system';
+import { QUEST_POINTS, emptyQuests, isSmallShip, nextQuest, questById, questReward, stepProblem, stepQty, type QuestState } from './quests';
 
 export type Deal = Extract<Encounter, { kind: 'trader' }>;
 
@@ -57,6 +59,8 @@ export interface Game {
   system?: SystemDesign;
   /** The captain the pupil picked (captains.ts), only a look. Missing until they pick one. */
   captain?: string;
+  /** Quests (quests.ts): the one open, its steps done, quests finished. Missing until the first quest is taken. */
+  quests?: QuestState;
 }
 
 /** The teacher's settings for the pupil's class, and whether maths is on for them. */
@@ -143,7 +147,11 @@ export type Action =
   | { type: 'moon' }
   | { type: 'forge'; design: SystemDesign }
   | { type: 'jump'; dest: number }
-  | { type: 'captain'; id: string };
+  | { type: 'captain'; id: string }
+  | { type: 'quest-take'; id: string }
+  | { type: 'quest-pickup'; step: number }
+  | { type: 'quest-deliver'; step: number }
+  | { type: 'quest-drop' };
 
 export interface Outcome {
   game: Game;
@@ -163,6 +171,8 @@ export interface Outcome {
   deal?: { took: boolean };
   /** What a Star Forge change came to (positive: paid). */
   forge?: { total: number; worth: number };
+  /** A quest finished in this request: its reward in credits and the hub points it earns (inside the daily cap). */
+  quest?: { finished: string; reward: number; points: number };
   /** What this request's trades do to the school's market (after the pupil's daily limit). Saved with the game, never sent to the pupil. */
   pushes?: MarketPush[];
 }
@@ -305,6 +315,54 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
       if (!isCaptain(action.id)) refuse('That captain could not be found.');
       g.captain = action.id;
       return;
+    case 'quest-take': {
+      const q = g.quests ?? emptyQuests();
+      if (q.open) refuse('Finish or drop the quest you have first.');
+      const next = nextQuest(q, t.day);
+      if (!next) return refuse(q.finished.length ? 'The next quest opens tomorrow.' : 'There is no quest to take.');
+      if (next.id !== action.id) refuse('That quest is not open yet.');
+      const taken: QuestState = { ...q, open: next.id, done: [] };
+      delete taken.small;
+      if (next.id === 'nettle' && isSmallShip(t)) taken.small = true;
+      g.quests = taken;
+      return;
+    }
+    case 'quest-pickup':
+    case 'quest-deliver': {
+      const q = g.quests;
+      const index = int(action.step, 0, 20);
+      const quest = q?.open ? questById(q.open) : undefined;
+      if (!q || !quest) return refuse('Take a quest first.');
+      const step = quest.steps[index] ?? refuse('That step could not be found.');
+      const delivering = step.kind === 'buy-deliver' || step.kind === 'deliver';
+      if (delivering !== (action.type === 'quest-deliver')) refuse('That step could not be done that way.');
+      const problem = stepProblem(galaxy, t, q, index);
+      if (problem) refuse(problem);
+      const next = { ...t, cargo: [...t.cargo] };
+      if (step.kind === 'pickup') next.questCargo = (t.questCargo ?? 0) + 1;
+      if (step.kind === 'buy-deliver') setCargo(next, step.good ?? 0, t.cargo[step.good ?? 0] - stepQty(step, q.small));
+      const done = [...q.done, index].sort((a, b) => a - b);
+      if (step.kind === 'deliver') {
+        // The last step: the quest cargo is handed over and the reward paid.
+        const reward = questReward(quest, q.small);
+        next.questCargo = 0;
+        next.credits += reward;
+        g.quests = { open: null, done: [], finished: [...q.finished, quest.id], lastDay: t.day };
+        out.quest = { finished: quest.id, reward, points: QUEST_POINTS };
+      } else g.quests = { ...q, done };
+      if (!next.questCargo) delete next.questCargo;
+      g.t = next;
+      return;
+    }
+    case 'quest-drop': {
+      const q = g.quests;
+      if (!q?.open) return refuse('There is no quest to drop.');
+      g.quests = { open: null, done: [], finished: q.finished, lastDay: q.lastDay };
+      const next = { ...t };
+      delete next.questCargo;
+      g.t = next;
+      return;
+    }
     case 'jump': {
       const worthBefore = netWorth(galaxy, t);
       // On an unlimited day a jump with none left goes through and the count stays at 0. (Star Trader gives no hub points.)

@@ -4,7 +4,7 @@ import { buildAll, designProblem, emptyDesign, forgeCost, newPlanet, planetPrice
 const withSun = (built: boolean): SystemDesign => ({ ...emptyDesign(), sun: { kind: 'yellow', name: [0, 0], built } });
 
 describe('the Star Forge', () => {
-  it('charges built pieces once, a repaint for new looks, half back for taking down, and nothing for plans', () => {
+  it('charges built pieces once, a repaint for new looks, half back for taking down, nothing for plans, and refuses anything a browser could make up', () => {
     const plan: SystemDesign = { ...withSun(false), planets: [{ ...newPlanet(1, 'ocean'), ring: { kind: 'icy', tilt: 1 } }] };
     expect(forgeCost(emptyDesign(), plan).total).toBe(0);
     const sun = { ...plan, sun: { ...plan.sun!, built: true } };
@@ -18,9 +18,8 @@ describe('the Star Forge', () => {
     expect(forgeCost(all, tinted).lines.map((l) => l.kind)).toEqual(['repaint']);
     const gone = { ...all, planets: [] };
     expect(forgeCost(all, gone).total).toBe(-Math.floor((planetPrice(all.planets[0]) + 1000) / 2));
-  });
 
-  it('refuses anything a browser could make up', () => {
+    // Anything a browser could make up is refused.
     const good = buildAll({ ...withSun(true), planets: [newPlanet(1)] });
     expect(designProblem(good)).toBeNull();
     for (const bad of [null, { ...good, v: 2 }, { ...good, sun: { kind: 'purple', name: [0, 0] } }, { ...good, planets: [newPlanet(1), newPlanet(1)] },
