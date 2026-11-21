@@ -113,6 +113,8 @@ export interface Services {
   chooseSeason(player: string, choice: 'keep' | 'fresh', picture: string | null, name: string): Promise<boolean>;
   /** Opens waiting quest Game Coins pouches for a save at this version: the credits added and the new version, or null (nothing to open, or the save moved on). */
   openPouches(player: string, version: number): Promise<{ amount: number; version: number } | null>;
+  /** The quests the pupil has ever finished (the Quest Log's keepsakes, kept through a New Season). Empty if it can't be read. */
+  questLog(player: string): Promise<string[]>;
   /** Saves; gives the new version, null if the saved game has moved on, 'busy' if the database could not be reached. */
   save(player: string, args: SaveArgs): Promise<number | null | 'busy'>;
   /** Adds answers to the pupil's maths records (counted once by `once`). The game goes on if this fails. */
@@ -372,7 +374,9 @@ export function makeHandler(services: Services) {
         const day = await dayQuestions();
         if (day === 'busy') return reply(503, { error: "We couldn't load your game just now." });
         const questions: PublicQuestion[] = day ? day.questions.map((q, slot) => publicQuestion(q, slot)) : [];
+        const questLog = await services.questLog(player);
         return reply(200, {
+          questLog,
           ...(pouch ? { pouch: { amount: pouch.amount } } : {}),
           galaxySeed: school.seed,
           season: school.season,

@@ -71,6 +71,7 @@ function world(opts: { settings?: Partial<ClassSettings>; now?: () => number } =
       state.marketReads++;
       return state.market.view(day);
     },
+    questLog: async () => [],
     openPouches: async (p, version) => {
       const cur = state.games.get(p);
       if (!state.pouch || !cur || cur.version !== version) return null;

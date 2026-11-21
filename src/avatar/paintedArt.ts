@@ -46,6 +46,7 @@ export const TROPHY_ART: Record<string, string> = {
   'archery-feather': 'hawk-feather',
   'decree-seal': 'royal-seal',
   'trader-ring': 'star-ring',
+  'trader-quest-master': 'star-quest-master',
   'isles-keeper': 'keepers-medal',
   'training-shield': 'times-tables-shield',
   'quick-looks-gate': 'garden-gate',

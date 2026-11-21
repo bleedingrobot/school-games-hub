@@ -25,6 +25,8 @@ vi.mock('./forge/loadViewer', () => ({ loadViewer: async () => null }));
 
 import { traderApi } from '../../data/trader';
 import { TraderGame } from './TraderGame';
+import { QuestLog } from './QuestsPanel';
+import { QUESTS } from '../../../shared/trader/quests';
 import { nameText } from '../../../shared/trader/system';
 import { trialBackend, type Trial } from './trialBackend';
 
@@ -194,10 +196,21 @@ describe('The Star Forge (S.4)', () => {
     fireEvent.click(within(end).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(end).getByRole('button', { name: 'My reward' }));
     expect(await screen.findByText('+300 credits')).toBeTruthy();
+    // Q.5: the keepsake goes into the Quest Log (the pretend database keeps it, as trader_save does). The try-out shows no hub points.
+    expect(screen.getByText(/New keepsake in your Quest Log/).textContent).toMatch(/Party balloon/);
+    expect(screen.queryByText(/hub points/)).toBeNull();
+    expect(trial.data.questLog).toEqual(['zuzu']);
     fireEvent.click(screen.getByRole('button', { name: 'Carry on' }));
     fireEvent.keyDown(window, { key: 'q' });
+    expect((await screen.findByText('🎈 Party balloon')).closest('.stq-keep--got')).toBeTruthy();
+    expect(screen.queryByText(/Star Quest Master/)).toBeNull();
     fireEvent.click(await screen.findByRole('button', { name: "Read Grandma Zuzu's Big Party again" }));
     expect(within(await screen.findByRole('dialog')).getByText('Page 1 of 5')).toBeTruthy();
+    cleanup();
+    // All five keepsakes: the Star Quest Master line with its trophy.
+    render(<QuestLog keepsakes={QUESTS.map((q) => q.id)} />);
+    expect(screen.getByText('🌟 Star Quest Master!')).toBeTruthy();
+    expect(document.querySelectorAll('.stq-keep--got')).toHaveLength(5);
     cleanup();
 
     // Lumi's trail (Q.4): Ranger Kai says the move from here, the chart doesn't ring the planet, and Show me lights it up.

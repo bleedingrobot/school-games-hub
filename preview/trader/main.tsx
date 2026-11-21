@@ -56,6 +56,7 @@ createRoot(document.getElementById('root') as HTMLElement).render(
           <button type="button" onClick={() => { trial.tools.nextDay(); h.reload(); }}>Pretend it is tomorrow</button>
           <button type="button" onClick={() => { trial.tools.toQuestStop(); h.reload(); }} title="Take a quest on the Quests tab first">Go to the next quest stop</button>
           <button type="button" onClick={() => { trial.tools.openQuest('vex'); h.reload(); }}>Open Vex's quest</button>
+          <button type="button" onClick={() => { trial.tools.finishAllQuests(); h.reload(); }}>Finish all quests</button>
           <button type="button" onClick={() => { trial.tools.openQuest('kai'); h.reload(); }}>Open Lumi's quest</button>
           <button type="button" onClick={() => { trial.tools.busySchool(); h.reload(); }} title="30 pretend classmates trade all day on the school market; jump somewhere to see the moved prices">Busy lunchtime (30 classmates)</button>
           {[0, 1, 2, 3, 4, 5].map((i) => (

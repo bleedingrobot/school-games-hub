@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'trader-quest-log-2026-11-21',
+    date: '2026-11-21',
+    emoji: '🌟',
+    title: 'Star Trader Quest Log',
+    text: 'Win a keepsake for each Star Trader quest. Finish all five for a Star Quest Master trophy!',
+    game: 'trader',
+  },
+  {
     id: 'bond-match-bella-2026-11-21',
     date: '2026-11-21',
     emoji: '🗣️',

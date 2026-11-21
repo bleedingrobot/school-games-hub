@@ -2,7 +2,7 @@
 
 21 Nov 2026. James: "I want to plan some in game quests for Star Trader. A quests tab; a character wants to plan a party and you have to pick up the things they need from different planets; a currency reward at the end. Others might be defending planets from pirates, gathering robots from different places. The quests should make it very clear where to go. Plan 5 different quests, use different voices and make stories for them with the gaming computer."
 
-**Status:** plan, stories and all 32 paintings done (#683), voices sampled (review page https://claude.ai/artifact/H1iYrYmdLjfDMqs4Ws8din). Q.0 done: no more reshuffle (migration 20261121000400_trader_keep_galaxy.sql). Q.1 done: the quest rules on the server (`shared/trader/quests.ts`, moves `quest-take`, `quest-pickup`, `quest-deliver`, `quest-drop`), no screens yet. Q.2 done: the Quests tab (key Q), step checklist, gold rings on the star chart, the jump line, the landing card, Bolt's next stop, gold quest boxes in the hold, Quest complete moment, and a What's new line. Q.3 done: each quest's story plays in the giver's own voice when you take it (pages 1–3) and when you finish it (pages 4–5), the 📖 Quest stories shelf, and the quest board painting on the Quests tab. Q.4 done: Commander Vex's pirates are real fights on arrival (Navy laser lent, gentle losses, a win ticks the step) and Lumi's trail is map clues ("From here, go 3 right and 2 down.") with Show me. Next: Q.5.
+**Status:** plan, stories and all 32 paintings done (#683), voices sampled (review page https://claude.ai/artifact/H1iYrYmdLjfDMqs4Ws8din). Q.0 done: no more reshuffle (migration 20261121000400_trader_keep_galaxy.sql). Q.1 done: the quest rules on the server (`shared/trader/quests.ts`, moves `quest-take`, `quest-pickup`, `quest-deliver`, `quest-drop`), no screens yet. Q.2 done: the Quests tab (key Q), step checklist, gold rings on the star chart, the jump line, the landing card, Bolt's next stop, gold quest boxes in the hold, Quest complete moment, and a What's new line. Q.3 done: each quest's story plays in the giver's own voice when you take it (pages 1–3) and when you finish it (pages 4–5), the 📖 Quest stories shelf, and the quest board painting on the Quests tab. Q.4 done: Commander Vex's pirates are real fights on arrival (Navy laser lent, gentle losses, a win ticks the step) and Lumi's trail is map clues ("From here, go 3 right and 2 down.") with Show me. Q.5 done: the 🎒 Quest Log keepsakes (kept through a New Season), 2 hub points per finished quest, the Star Quest Master achievement and season trophy (migration 20261121000500_trader_quest_log.sql), What's new line. Next: Q.6.
 
 ## 1. The short version
 
@@ -65,10 +65,21 @@ James's main ask. Five places say it:
 | **Q.2** ✅ | Quests tab, step checklist, gold map rings, jump-screen line, landing card, Bolt lines, key Q | Medium |
 | **Q.3** ✅ | Stories in StoryBook with each giver's voice, the 📖 shelf, paintings tidied into the game | Small |
 | **Q.4** ✅ | Commander Vex's pirate fights (Navy laser, gentle losses) and Lumi's clue trail | Medium |
-| **Q.5** | Quest Log keepsakes, Star Quest Master achievement and trophy (migration), What's new line, go live | Small |
+| **Q.5** ✅ | Quest Log keepsakes, Star Quest Master achievement and trophy (migration), What's new line, go live | Small |
 | **Q.6** | Daily jobs after all five: one or two computer-made deliveries a day, small rewards | Small |
 
 Each stage goes live on its own (switched on), like the other Star Trader stages.
+
+### What Q.5 built (21 Nov 2026)
+
+- **Quest Log table:** `trader_quest_log` (pupil, quest, season), server only. `trader_save` compares the old and new saved game: each quest newly in `quests.finished` calls `trader_quest_finished` (wrapped, so a problem there never loses the save). A New Season clears `trader_games` but never the log.
+- **Hub points:** 2 per finished quest through `add_game_points` (inside the shared daily cap, `once` per pupil, season and quest, so a repeated save earns once). Star Trader's only hub points. Point rules line "Finish a quest: 2 points."
+- **Star Quest Master:** achievement `trader-quest-master` (measure `trader_quests`, distinct quests ever, kept through New Season) and trophy `trader-quest-master` (`repeat 'season'`: all five in one Star Trader season; bronze, then silver, then gold on later seasons). Painting `star-quest-master-{bronze,silver,gold}` in `src/avatar/art/trophies` (bronze and silver recoloured from the gold painting).
+- **Back-award:** quests already finished went into the log with no points, with the achievement and trophy where all five were done.
+- **Keepsakes:** the 🎒 Quest Log on the Quests tab, one per giver (Party balloon, Lucky gear, Healing leaf, Navy badge, Star-scale), shown with the giver's last story painting; "Not yet" slots for the rest; the Star Quest Master line when all five are in. The load reply has `questLog` (from `trader_quest_log_of`), joined with this season's finished quests.
+- **Quest complete moment:** shows "+2 hub points" (real game only), the new keepsake and, for the fifth, the Star Quest Master line; the trophy line and achievement pop come from the server.
+- **Preview:** the try-out keeps a pretend Quest Log (kept through restart and New Season), and a "Finish all quests" tool.
+- **Tests:** folded into the Quests screen test; database checks in `supabase/tests/database/trader_quest_log.test.sql`.
 
 ### What Q.4 built (21 Nov 2026)
 

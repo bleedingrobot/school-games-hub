@@ -37,7 +37,9 @@ export interface Trial {
     /** Pretend classmates in the gallery (see tools.classmates), the stickers the pupil gave them, and the ones they gave the pupil. */
     classmates: PretendClassmate[]; given: Map<string, StickerId>; mine: Partial<Record<StickerId, number>>;
     /** Saved gallery pictures (as links), and when the pupil's was last saved. */
-    pictures: Map<string, string>; drawnAt: number | null };
+    pictures: Map<string, string>; drawnAt: number | null;
+    /** The Quest Log (the database's trader_quest_log): quests ever finished, kept through restart and New Season. */
+    questLog: string[] };
   /** Test tools for the preview (never in the real game). Each changes the pretend database; reload the game after. */
   tools: {
     give(credits: number): void;
@@ -50,6 +52,8 @@ export interface Trial {
     toQuestStop(): void;
     /** Open this quest as if the ones before it were finished (to try a later quest without playing the rest). */
     openQuest(id: string): void;
+    /** Finish every quest (as if all five were done), to see the Quest Log full and the Star Quest Master line. */
+    finishAllQuests(): void;
     /** Pretend classmates trade all day on the school's market, so the news and moved prices can be seen. */
     busySchool(pupils?: number): void;
     restart(): void;
@@ -80,6 +84,7 @@ export function trialBackend(options: TrialOptions = {}): Trial {
     mine: {},
     pictures: new Map(),
     drawnAt: null,
+    questLog: [],
   };
   /** The preview's pretend school: the pupil plus this many classmates (the market's depth). */
   const SCHOOL_SIZE = 30;
@@ -108,8 +113,11 @@ export function trialBackend(options: TrialOptions = {}): Trial {
     },
     market: async (_p, day) => data.market.view(day),
     openPouches: async () => null,
+    questLog: async () => [...data.questLog],
     save: async (_p, a: SaveArgs) => {
       if ((data.game?.version ?? 0) !== a.expectedVersion) return null;
+      // As trader_save does: a quest finished in this save goes into the Quest Log.
+      for (const id of a.game.quests?.finished ?? []) if (!data.questLog.includes(id)) data.questLog.push(id);
       const version = a.expectedVersion + 1;
       data.game = { game: structuredClone(a.game), version, season: a.season };
       const day = data.days.get(a.day);
@@ -206,6 +214,10 @@ export function trialBackend(options: TrialOptions = {}): Trial {
           const at = QUESTS.findIndex((q) => q.id === id);
           if (at >= 0) g.quests = { open: id, done: [], finished: QUESTS.slice(0, at).map((q) => q.id), lastDay: null };
         }),
+      finishAllQuests: () => {
+        edit((g) => void (g.quests = { open: null, done: [], finished: QUESTS.map((q) => q.id), lastDay: g.t.day }));
+        for (const q of QUESTS) if (!data.questLog.includes(q.id)) data.questLog.push(q.id);
+      },
       busySchool: (pupils = SCHOOL_SIZE) => {
         const day = data.game?.game.t.day;
         if (day !== undefined) busyLunchtime(makeGalaxy(seed), data.market, day, pupils, `busy-${data.skippedDays}`);
