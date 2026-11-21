@@ -59,7 +59,8 @@ Deno.serve(
         maths: parseMathsSwitch(row.trader_maths) !== 'off',
         forge: row.trader_forge === true,
         forgeTyping: row.trader_forge_typing !== false,
-        unlimited: isUnlimitedFor(row.unlimited_days, 'trader'),
+        // A teacher's own game never runs out of jumps, for trying things out (Star Trader gives no hub points).
+        unlimited: isUnlimitedFor(row.unlimited_days, 'trader') || (who.data as { role?: string } | null)?.role === 'teacher',
         // A teacher's own game can take every quest to try them out (if the role can't be read, it's a pupil's game).
         allQuests: (who.data as { role?: string } | null)?.role === 'teacher',
       };
