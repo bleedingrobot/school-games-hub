@@ -408,6 +408,22 @@
   border-radius: 50%;
   background: var(--shelf);
 }
+/* The pool's painted picture (pebble, sea glass, clam shell) takes the place of the coloured dot once it's painted. */
+.bm-shelf__name:has(.bm-shelf__pic__img)::before { display: none; }
+.bm-shelf__pic:not(:has(img)) { display: none; }
+.bm-shelf__pic {
+  display: block;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  margin: -10px -2px -10px -10px;
+}
+.bm-shelf__pic__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 1px rgba(8, 47, 73, 0.3));
+}
 .bm-shelf__sets {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
@@ -559,6 +575,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  justify-content: center;
+  min-width: 44px;
   min-height: 44px;
   padding: 6px 14px;
   border: 0;
@@ -661,6 +679,44 @@
 .bm-icon-btn[aria-pressed='true'] {
   background: #ccfbf1;
   border-color: #0e7490;
+}
+/* The painted toggle icons. "Off" is the same picture faded with a line through it; the label says which. */
+.bm-icon-btn { position: relative; }
+.bm-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  line-height: 1;
+}
+.bm-icon__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 0 rgba(40, 22, 8, 0.35));
+}
+/* With a painted icon, on and off look the same way for both toggles (pressed means "hide" for one and "show" for the
+   other): the plain picture is on, the faded crossed-out one is off. */
+.bm-icon-btn:has(.bm-icon__img)[aria-pressed] {
+  background: var(--bm-sand);
+  border-color: transparent;
+}
+.bm-icon-btn.bm-icon-btn--off:has(.bm-icon__img) { border-color: #8a6a44; }
+.bm-icon-btn[aria-pressed]:has(.bm-icon__img):hover { border-color: #5eead4; }
+.bm-icon-btn--off .bm-icon__img { opacity: 0.45; filter: grayscale(0.6); }
+.bm-icon-btn.bm-icon-btn--off:has(.bm-icon__img)::after {
+  content: '';
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  top: 50%;
+  height: 4px;
+  margin-top: -2px;
+  border-radius: 2px;
+  background: #7f1d1d;
+  box-shadow: 0 0 0 1.5px #fff;
+  transform: rotate(-45deg);
+  pointer-events: none;
 }
 
 /* The board's box: all the height that's left. The cards size themselves to fit it (container units), never under 64px. */
@@ -1553,6 +1609,10 @@
   .bm-card__splash { display: none; }
 }
 .bm-board--still .bm-card__splash { display: none; }
+/* The page asked for less movement: the line under the board and the picker's stones keep still too. */
+.bm-game:has(.bm-board--still) .bm-line__pill { animation: none; }
+.bm-picker--still .bm-bond { transition: none; }
+.bm-picker--still .bm-bond:hover { transform: none; }
 .bm-board--still .bm-card--wobble { animation: none; }
 .bm-board--still .bm-card__inner {
   transition: none;
@@ -1600,6 +1660,8 @@
   .bm-seg__label { font-size: 0.85rem; }
   .bm-shelf { margin: 10px 8px 14px; padding: 10px 10px 12px; }
   .bm-shelf__sets { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .bm-shelf__pic { width: 30px; height: 30px; margin: -6px -2px -6px -8px; }
+  .bm-icon { width: 26px; height: 26px; }
   .bm-bond { flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 12px; }
   .bm-bond__target { min-width: 44px; height: 44px; font-size: 1.15rem; }
   .bm-bond__target--long { font-size: 1rem; }
