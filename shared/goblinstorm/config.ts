@@ -239,6 +239,16 @@ export interface MonsterDef {
   gems: number;
 }
 
+/**
+ * The Storm Lands' twists (maps 6–10, docs/GOBLINSTORM-STORM-LANDS-PLAN.md), one per map:
+ *   current    the sea pushes the hero, a new way every 30 s
+ *   lightning  glowing rings on the ground, then a strike that hurts the hero and monsters in it
+ *   split      tough monsters break into small ones when beaten
+ *   fog        the hero only sees close by (drawing only: the rules are the same)
+ *   rage       the boss calls a swarm and charges twice as often once it's down to half health
+ */
+export type StormTwist = 'current' | 'lightning' | 'split' | 'fog' | 'rage';
+
 /** Each map's monsters: [common, fast, tough, mini-boss, boss]. */
 export interface MapDef {
   id: string;
@@ -246,6 +256,8 @@ export interface MapDef {
   /** Monster health and damage are multiplied by this. */
   tier: number;
   monsters: [MonsterDef, MonsterDef, MonsterDef, MonsterDef, MonsterDef];
+  /** Storm Lands maps only: the map's twist. Legendary upgrades work only on these maps. */
+  storm?: StormTwist;
 }
 
 const m = (id: string, name: string, health: number, speed: number, damage: number, radius: number, gems: number): MonsterDef => ({ id, name, health, speed, damage, radius, gems });
@@ -256,7 +268,36 @@ export const MAPS: MapDef[] = [
   { id: 'graveyard', name: 'Haunted Graveyard', tier: 1.8, monsters: [m('skeleton', 'Skeleton', 8, 1.9, 6, 0.4, 1), m('ghost', 'Ghost', 5, 3.0, 5, 0.4, 1), m('zombie', 'Zombie', 34, 1.1, 11, 0.6, 3), m('boneknight', 'Bone Knight', 350, 1.6, 18, 1.1, 40), m('lich', 'Lich', 750, 1.4, 24, 1.3, 0)] },
   { id: 'peaks', name: 'Frozen Peaks', tier: 2.3, monsters: [m('imp', 'Ice Imp', 8, 2.0, 6, 0.4, 1), m('frostwolf', 'Frost Wolf', 6, 3.3, 5, 0.4, 1), m('yeti', 'Yeti', 34, 1.2, 12, 0.7, 3), m('yetichief', 'Yeti Chief', 350, 1.6, 18, 1.2, 40), m('icedragon', 'Ice Dragon', 750, 1.5, 26, 1.6, 0)] },
   { id: 'lava', name: 'Lava Mines', tier: 2.8, monsters: [m('sprite', 'Fire Sprite', 8, 2.1, 7, 0.35, 1), m('slug', 'Lava Slug', 6, 2.8, 6, 0.4, 1), m('magma', 'Magma Golem', 36, 1.1, 13, 0.7, 3), m('golem', 'Golem', 350, 1.5, 20, 1.3, 40), m('firedragon', 'Fire Dragon', 750, 1.5, 28, 1.7, 0)] },
+  // The Storm Lands (James, 22 Nov 2026): open once the whole shop is bought and the Fire Dragon is beaten.
+  { id: 'sunken', name: 'Sunken Kingdom', tier: 2.4, storm: 'current', monsters: [m('raider', 'Sea Raider', 8, 2.0, 7, 0.4, 1), m('jelly', 'Jellyfish', 6, 2.9, 6, 0.4, 1), m('crabknight', 'Crab Knight', 38, 1.1, 13, 0.7, 3), m('giantcrab', 'Giant Crab', 380, 1.5, 20, 1.3, 40), m('kraken', 'Kraken', 820, 1.4, 28, 1.8, 0)] },
+  { id: 'sky', name: 'Sky Citadel', tier: 2.8, storm: 'lightning', monsters: [m('harpy', 'Storm Harpy', 8, 2.1, 7, 0.4, 1), m('gargoyle', 'Gargoyle', 7, 3.0, 6, 0.4, 1), m('cloudgolem', 'Cloud Golem', 38, 1.2, 13, 0.7, 3), m('roc', 'Thunder Roc', 380, 1.7, 20, 1.3, 40), m('stormgiant', 'Storm Giant', 820, 1.4, 29, 1.8, 0)] },
+  { id: 'crystal', name: 'Crystal Caverns', tier: 3.1, storm: 'split', monsters: [m('beetle', 'Crystal Beetle', 8, 2.0, 7, 0.4, 1), m('shardbat', 'Shard Bat', 6, 3.1, 6, 0.35, 1), m('gemgolem', 'Gem Golem', 40, 1.1, 14, 0.7, 3), m('crystalqueen', 'Crystal Queen', 400, 1.6, 21, 1.3, 40), m('wyrm', 'Crystal Wyrm', 860, 1.5, 30, 1.8, 0)] },
+  { id: 'swamp', name: 'Shadow Swamp', tier: 3.4, storm: 'fog', monsters: [m('bogimp', 'Bog Imp', 8, 2.1, 7, 0.4, 1), m('wisp', 'Will-o’-Wisp', 6, 3.2, 6, 0.35, 1), m('hulk', 'Swamp Hulk', 40, 1.1, 14, 0.75, 3), m('hag', 'Hag of the Mire', 400, 1.6, 22, 1.2, 40), m('hydra', 'Shadow Hydra', 880, 1.5, 31, 1.9, 0)] },
+  { id: 'citadel', name: 'Storm King’s Citadel', tier: 4, storm: 'rage', monsters: [m('stormgoblin', 'Storm Goblin', 8, 2.2, 7, 0.4, 1), m('crow', 'Storm Crow', 6, 3.3, 6, 0.35, 1), m('giant', 'Goblin Giant', 42, 1.2, 15, 0.75, 3), m('stormknight', 'Storm Knight', 420, 1.7, 22, 1.2, 40), m('stormking', 'Storm King', 950, 1.5, 32, 1.9, 0)] },
 ];
+/** The first Storm Lands map's index (Sunken Kingdom). Maps before it are the first five. */
+export const STORM_FIRST = 5;
+/**
+ * The Storm Lands are in the game but not open to pupils yet (stage 1 of docs/GOBLINSTORM-STORM-LANDS-PLAN.md): the
+ * database still allows maps 0–4 only. The go-live stage turns this on with the migration. The preview's ?storm=1 shows them.
+ */
+export const STORM_LANDS_ON = false;
+
+/** The twists' numbers (see StormTwist). Each uses its own seeded numbers, so the first five maps play exactly as before. */
+export const STORM = {
+  /** The sea's push, units a second (Swift Boots and the shop's Speed still beat it); a new way every this many steps. */
+  current: { speed: 1.5, every: 30 * STEPS_PER_SECOND },
+  /** Every `every` steps, `count` rings appear: one on the hero, the rest within `spread`. They strike `warn` steps later. */
+  lightning: { every: 200, warn: 100, count: 2, spread: 6, radius: 1.5, damage: 12, monsterDamage: 60 },
+  /** Small monsters a tough one breaks into. */
+  split: { pieces: 2 },
+  /** How far the hero sees in the fog (world units), and how much further each Storm Lantern level sees. */
+  fog: { see: 6.5, lantern: 2.25 },
+  /** From half health the boss charges this many times as often, and a swarm of this many comes once. */
+  rage: { chargeEvery: 2, swarm: 36 },
+  /** Gold from a Storm Lands run is this many times a run on the first five maps. */
+  gold: 1.5,
+} as const;
 export function mapByIndex(i: number): MapDef | undefined {
   return MAPS[i];
 }
@@ -322,7 +363,24 @@ export const SHOP_IDS = Object.keys(SHOP) as ShopId[];
 export const SHOP_LEVELS = 5;
 export const SHOP_ARMOUR_MAX = 3;
 export const SHOP_COSTS = [200, 400, 700, 1100, 1600];
-export type ShopLevels = Partial<Record<ShopId, number>>;
+
+/**
+ * Legendary upgrades (James, 22 Nov 2026): a second row of the shop that opens with the Storm Lands. They only work on
+ * Storm Lands maps, so the first five maps, their boards and the class quests stay as they were. Prices are the sim's.
+ */
+export type LegendaryId = 'fifth' | 'secondwind' | 'stormmight' | 'surge' | 'anchor' | 'lantern';
+export const LEGENDARY: Record<LegendaryId, { name: string; blurb: string; costs: readonly number[]; step: number }> = {
+  fifth: { name: 'Fifth Weapon', blurb: 'Hold 5 weapons, not 4.', costs: [4000], step: 1 },
+  secondwind: { name: 'Second Wind', blurb: 'Once a run, get back up with half your health.', costs: [3500], step: 0.5 },
+  stormmight: { name: 'Storm Might', blurb: '+15% damage', costs: [1500, 2500, 3500], step: 0.15 },
+  surge: { name: 'Storm Surge', blurb: 'Evolution blasts come 15% sooner', costs: [1500, 2500, 3500], step: 0.15 },
+  anchor: { name: 'Anchor Boots', blurb: 'The sea pushes you 35% less', costs: [1200, 2000], step: 0.35 },
+  lantern: { name: 'Storm Lantern', blurb: 'See further in the fog', costs: [1200, 2000], step: 1 },
+};
+export const LEGENDARY_IDS = Object.keys(LEGENDARY) as LegendaryId[];
+
+/** Levels bought, by shop item and Legendary upgrade (both live in the save's `shop`). */
+export type ShopLevels = Partial<Record<ShopId | LegendaryId, number>>;
 
 /** Monster damage grows with the map's tier more gently than health: × (1 + (tier − 1) × this). */
 export const DAMAGE_PER_TIER = 0.25;

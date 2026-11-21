@@ -2,7 +2,7 @@
  * A simple Goblin Storm player for the tests and the balance sim: it runs away from the monsters close by and always
  * takes the first card (evolutions come first). Not clever, so a run it survives is one a pupil can survive.
  */
-import { CHOICES, WEAPONS, questionSlot } from './config';
+import { CHOICES, STORM, WEAPONS, questionSlot } from './config';
 import { applyPick, makeOffer, newRun, stepRun, waiting, type RunSetup, type RunState, type Upgrade } from './engine';
 import { DIR_X, DIR_Y, DIRECTIONS, STILL } from './trig';
 
@@ -48,6 +48,20 @@ export function sensibleDirection(s: RunState): number {
     const w = (e.kind >= 3 ? 3 : 1) / (d2 * Math.sqrt(d2));
     ax += dx * w;
     ay += dy * w;
+  }
+  // Sky Citadel: step out of a lightning ring before it strikes (a pupil can see it glowing).
+  const ring = STORM.lightning.radius + 1;
+  for (const k of s.storm.strikes) {
+    const dx = h.x - k.x;
+    const dy = h.y - k.y;
+    const d2 = dx * dx + dy * dy;
+    if (d2 > ring * ring) continue;
+    close = true;
+    const d = Math.sqrt(d2) || 0.01;
+    const w = 40 / d;
+    // Standing right in the middle: any way out will do.
+    ax += (d2 < 1e-4 ? 1 : dx / d) * w;
+    ay += (d2 < 1e-4 ? 0 : dy / d) * w;
   }
   if (!close) {
     let best = 100;

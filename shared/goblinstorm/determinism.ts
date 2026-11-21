@@ -48,7 +48,7 @@ export function determinismReport(): string {
     for (const hero of HEROES) {
       const seed = 1000 + MAPS.indexOf(map) * 17 + HEROES.indexOf(hero) * 131;
       const next = lcg(seed);
-      const s = newRun({ seed, hero, map, shop: { might: seed % 6, armour: (seed >> 2) % 6, magnet: seed % 4 } });
+      const s = newRun({ seed, hero, map, shop: { might: seed % 6, armour: (seed >> 2) % 6, magnet: seed % 4, fifth: seed % 2, secondwind: (seed >> 1) % 2, stormmight: seed % 4, surge: (seed >> 3) % 4, anchor: seed % 3 } });
       let dir: number = STILL;
       let steps = 0;
       while (s.outcome === 'running' && steps < 10800) {

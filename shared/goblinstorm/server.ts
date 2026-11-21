@@ -18,7 +18,8 @@ import { quickMsForPack } from '../maths/config';
 import { packIdOfKey } from '../maths/ladder';
 import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
-import { CHOICES, HEROES, MAPS, QUESTIONS_PER_RUN, RUNS_A_DAY, STEPS_PER_SECOND, type HeroId, type ShopLevels, type UnlockId, UNLOCK_AT } from './config';
+import { CHOICES, HEROES, MAPS, QUESTIONS_PER_RUN, RUNS_A_DAY, STEPS_PER_SECOND, STORM_FIRST, STORM_LANDS_ON, type HeroId, type ShopLevels, type UnlockId, UNLOCK_AT } from './config';
+import { allBought } from './shop';
 import type { RunSummary } from './engine';
 import { choicesFor, decodeSteering, replayRun } from './replay';
 
@@ -142,8 +143,20 @@ export function factText(parts: readonly string[], answer: number): string {
 export const heroOpen = (save: Save, hero: HeroId): boolean =>
   HEROES.some((h) => h.id === hero && (h.unlock === 'free' || save.heroes.includes(hero)));
 
-/** Is this map open? The first always; each next one once the boss before it is beaten. */
-export const mapOpen = (save: Save, map: number): boolean => map === 0 || save.bosses.includes(map - 1);
+/**
+ * The Storm Gate (docs/GOBLINSTORM-STORM-LANDS-PLAN.md): the whole shop bought and the Fire Dragon beaten. It opens the
+ * Storm Lands and the shop's Legendary row.
+ */
+export const stormGateOpen = (save: Pick<Save, 'shop' | 'bosses'>): boolean => allBought(save.shop) && save.bosses.includes(STORM_FIRST - 1);
+
+/**
+ * Is this map open? The first always; each next one once the boss before it is beaten. The Storm Lands also need the
+ * Storm Gate, and only once they're switched on (`stormLands`: STORM_LANDS_ON, or the preview's ?storm=1).
+ */
+export const mapOpen = (save: Save, map: number, stormLands: boolean = STORM_LANDS_ON): boolean => {
+  if (map < STORM_FIRST) return map === 0 || save.bosses.includes(map - 1);
+  return stormLands && map < MAPS.length && stormGateOpen(save) && (map === STORM_FIRST || save.bosses.includes(map - 1));
+};
 
 /** The map whose boss opens the Cleric (the Goblin King) and the Frost Witch (the Ice Dragon). */
 export const UNLOCK_BOSS_MAP = { boss1: 0, boss4: 3 } as const;
