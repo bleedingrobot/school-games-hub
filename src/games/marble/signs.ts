@@ -6,6 +6,8 @@ import type { Course } from '../../../shared/marble/course';
 import type { RunSetup } from '../../../shared/marble/maths';
 
 export interface GateSign {
+  /** The gate it belongs to (its number in `course.gates`). */
+  gate: number;
   /** Where it hangs, in tile coordinates. */
   x: number;
   y: number;
@@ -27,6 +29,8 @@ export function arrowFor(dx: number, dy: number): string {
 export interface GemSprite {
   /** Its number in `course.gemList` (the engine's `gemsTaken` lists these). */
   id: number;
+  /** The trail it belongs to (its number in `course.gems`). */
+  trail: number;
   x: number;
   y: number;
   tx: number;
@@ -38,7 +42,7 @@ export interface GemSprite {
 export function gemSprites(course: Course, setup: RunSetup): GemSprite[] {
   return course.gemList.flatMap((gem, id) => {
     const text = setup.gems[gem.trail]?.groups[gem.group]?.labels[gem.spot];
-    return text === undefined ? [] : [{ id, x: gem.x, y: gem.y, tx: Math.floor(gem.x), ty: Math.floor(gem.y), text }];
+    return text === undefined ? [] : [{ id, trail: gem.trail, x: gem.x, y: gem.y, tx: Math.floor(gem.x), ty: Math.floor(gem.y), text }];
   });
 }
 
@@ -52,7 +56,7 @@ export function gateSigns(course: Course, setup: RunSetup): GateSign[] {
       const label = info?.labels?.[t];
       const arrow = info?.arrow === t;
       if (label === undefined && !arrow) return;
-      out.push({ x, y, tx: Math.floor(x), ty: Math.floor(y), text: label ?? arrowFor(ex - x, ey - y), arrow });
+      out.push({ gate: g, x, y, tx: Math.floor(x), ty: Math.floor(y), text: label ?? arrowFor(ex - x, ey - y), arrow });
     });
   });
   return out;
