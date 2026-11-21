@@ -215,6 +215,18 @@ export function parseActions(raw: unknown): Action[] | null {
         if (typeof a.id !== 'string' || a.id.length > 8) return null;
         out.push({ type: 'captain', id: a.id });
         break;
+      case 'quest-take':
+        if (typeof a.id !== 'string' || a.id.length > 16) return null;
+        out.push({ type: 'quest-take', id: a.id });
+        break;
+      case 'quest-pickup':
+      case 'quest-deliver':
+        // The rules check the step number (a whole number, a real step, at the right planet).
+        out.push({ type: a.type, step: a.step as number });
+        break;
+      case 'quest-drop':
+        out.push({ type: 'quest-drop' });
+        break;
       default:
         return null;
     }

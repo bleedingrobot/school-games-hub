@@ -58,6 +58,11 @@ export interface Trader {
   /** Counts jumps ever, so every jump has its own seed. */
   jumpNo: number;
   moon: boolean;
+  /**
+   * Holds taken by quest cargo (berries, robots ... see quests.ts): one each, free, and kept apart from `cargo`, so it can't
+   * be sold, dumped, fined or taken by pirates. Missing in games saved before quests.
+   */
+  questCargo?: number;
   /** The market on this planet today, with stock going down as you buy. */
   market: MarketLine[];
 }
@@ -91,7 +96,7 @@ export function setCargo(t: Trader, good: number, qty: number, cost = 0): void {
 }
 
 export const holdsOf = (t: Trader): number => SHIPS[t.ship].holds + t.pods * POD_HOLDS;
-export const usedHolds = (t: Trader): number => t.cargo.reduce((a, b) => a + b, 0);
+export const usedHolds = (t: Trader): number => t.cargo.reduce((a, b) => a + b, 0) + (t.questCargo ?? 0);
 export const freeHolds = (t: Trader): number => holdsOf(t) - usedHolds(t);
 export const fuelCost = (ship: number, units: number): number => Math.ceil((units * SHIPS[ship].fuelTenths) / 10);
 

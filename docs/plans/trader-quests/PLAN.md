@@ -2,7 +2,7 @@
 
 21 Nov 2026. James: "I want to plan some in game quests for Star Trader. A quests tab; a character wants to plan a party and you have to pick up the things they need from different planets; a currency reward at the end. Others might be defending planets from pirates, gathering robots from different places. The quests should make it very clear where to go. Plan 5 different quests, use different voices and make stories for them with the gaming computer."
 
-**Status:** plan, stories and all 32 paintings done (#683), voices sampled (review page https://claude.ai/artifact/H1iYrYmdLjfDMqs4Ws8din). Q.0 done: no more reshuffle (migration 20261121000400_trader_keep_galaxy.sql). Next: Q.1.
+**Status:** plan, stories and all 32 paintings done (#683), voices sampled (review page https://claude.ai/artifact/H1iYrYmdLjfDMqs4Ws8din). Q.0 done: no more reshuffle (migration 20261121000400_trader_keep_galaxy.sql). Q.1 done: the quest rules on the server (`shared/trader/quests.ts`, moves `quest-take`, `quest-pickup`, `quest-deliver`, `quest-drop`), no screens yet. Next: Q.2.
 
 ## 1. The short version
 
@@ -61,7 +61,7 @@ James's main ask. Five places say it:
 | Stage | What | Size |
 |---|---|---|
 | **Q.0** ✅ | Stop the season reshuffle: keep this season's map for good (New Season keeps the planets, resets ships and prices as now) | Small |
-| **Q.1** | Rules and server: quest list in `shared/trader/quests.ts` (one config entry per quest, so more can be added later), each quest's fixed planets, quest state in the saved game, moves `quest-take`, `quest-pickup`, `quest-deliver`, `quest-drop`; tests | Medium |
+| **Q.1** ✅ | Rules and server: quest list in `shared/trader/quests.ts` (one config entry per quest, so more can be added later), each quest's fixed planets, quest state in the saved game, moves `quest-take`, `quest-pickup`, `quest-deliver`, `quest-drop`; tests | Medium |
 | **Q.2** | Quests tab, step checklist, gold map rings, jump-screen line, landing card, Bolt lines, key Q | Medium |
 | **Q.3** | Stories in StoryBook with each giver's voice, the 📖 shelf, paintings tidied into the game | Small |
 | **Q.4** | Commander Vex's pirate fights (Navy laser, gentle losses) and Lumi's clue trail | Medium |
@@ -69,6 +69,15 @@ James's main ask. Five places say it:
 | **Q.6** | Daily jobs after all five: one or two computer-made deliveries a day, small rewards | Small |
 
 Each stage goes live on its own (switched on), like the other Star Trader stages.
+
+### What Q.1 built (21 Nov 2026)
+
+- **Planets from the galaxy.** Each step says what kind of planet it wants, best first (berries: Farming co-op, then rich soil, then low tech). `questPlanets(galaxy)` picks the best set where every stop is within 12 fuel of the one before and no planet is used twice in a quest (planets used by an earlier quest count a little against). Same galaxy, same planets. On 300 test galaxies every stop is within 12 fuel, and most steps get their first wish.
+- **Trip length.** With every stop at most 12 fuel apart, each stop is one jump for any ship, so a quest is 3 to 5 stops (15 to 46 fuel in all), plus the flight to the first stop and back to refuel. That fits easily in one day's 10 jumps; the "6 to 10 jumps" in rule 3 was a guess before the 12-fuel rule.
+- **Vex:** the garden (Peace garden first) is picked first and the 3 pirate planets all wait within 12 fuel of it; you report to Vex at the garden. **Dr Nettle:** his planet can't make Medicine itself but has a Medicine market within 12 fuel. **Lumi:** the trail goes in order (the only quest that does); for now each clue is "arrive and tap" (Q.4 adds the clues and fights).
+- **Quest cargo** is kept as its own count on the ship (`questCargo`): it fills holds but isn't in the market goods, so it can't be sold, dumped, fined or taken.
+- **Dr Nettle** pays 100 for each Medicine and 15 for each Water: 650 for 5 + 10 (about 300 more than they cost), or 405 for 3 + 7 on a ship with under 15 holds (decided when the quest is taken).
+- **Hub points:** Star Trader has never given hub points, so there is nowhere to add them yet. The reply says `points: 2` with the finished quest; Q.5's migration adds them to the shared cap.
 
 ## 7. Later, if pupils like it
 
