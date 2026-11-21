@@ -27,3 +27,9 @@ export const cardBack = (glass: Glass): string | undefined =>
 export const cardStone = (): string | undefined => paint('cards/card-stone');
 /** The glow pictures for a match (light on see-through, painted on black and unscreened by tidy). */
 export const fx = (name: 'ripple' | 'sparkle'): string | undefined => paint(`fx/${name}`);
+
+/** The finish starfish: gold painted, silver and bronze tinted from it by tidy. */
+export type Medal = 'gold' | 'silver' | 'bronze';
+export const starfish = (medal: Medal): string | undefined => paint(`rewards/starfish-${medal}`);
+/** A player's shell bucket on the versus finish. */
+export const bucket = (): string | undefined => paint('rewards/bucket');
