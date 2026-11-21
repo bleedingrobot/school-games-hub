@@ -43,13 +43,16 @@ import { loadPrefs, savePrefs, wantsLessMotion } from './prefs';
 import type { Scene, SpaceView } from './renderer';
 import { SpaceCanvas } from './SpaceCanvas';
 import { MapPanel } from './StarMap';
+import { QuestDone, QuestLanding, QuestsPanel } from './QuestsPanel';
+import { doableHere, leftBehind, nextStop, questCargoNames, questPlanetMarks } from './questGuide';
+import { QUESTS, questById } from '../../../shared/trader/quests';
 import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 import { COACH_NAME } from './text';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import './trader.css';
 
 type Tab = CoachTab;
-type Phase = { k: 'title' } | { k: 'planet' } | { k: 'warp' } | { k: 'after'; title: string; lines: string[]; tip?: 'customs' | 'wrecked' | 'robbed' } | { k: 'moon' };
+type Phase = { k: 'title' } | { k: 'planet' } | { k: 'warp' } | { k: 'after'; title: string; lines: string[]; tip?: 'customs' | 'wrecked' | 'robbed' } | { k: 'moon' } | { k: 'quest'; id: string; reward: number };
 
 const cr = (n: number): string => `${n.toLocaleString('en-NZ')} cr`;
 const nebulaOf = (planetId: number): number => (planetId * 5 + 2) % 6;
@@ -174,8 +177,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   const design = draft ?? savedSystem;
   // Bolt's next step, worked out fresh from the game each time it changes.
   const step = useMemo(
-    () => (galaxy && t ? (tab === 'forge' ? forgeStep(design, t.credits, t.moon) : nextStep({ galaxy, t: loaded?.settings.unlimited && t.jumpsLeft < 1 ? { ...t, jumpsLeft: 1 } : t, pushes, tab, aimed: tab === 'map' ? aimed : null, loans: loaded?.settings.loans, forge: forgeOn })) : null),
-    [galaxy, t, pushes, tab, aimed, loaded?.settings.loans, forgeOn, design],
+    () => (galaxy && t ? (tab === 'forge' ? forgeStep(design, t.credits, t.moon) : nextStep({ galaxy, t: loaded?.settings.unlimited && t.jumpsLeft < 1 ? { ...t, jumpsLeft: 1 } : t, pushes, tab, aimed: tab === 'map' ? aimed : null, loans: loaded?.settings.loans, forge: forgeOn, quests: game?.quests })) : null),
+    [galaxy, t, pushes, tab, aimed, loaded?.settings.loans, forgeOn, design, game?.quests],
   );
   const here = galaxy && t ? galaxy.planets[t.location] : null;
   const pending = game?.pending ?? null;
@@ -398,6 +401,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
     setBusy(true);
     setNote('');
     setPhase({ k: 'warp' });
+    const skipped = openQuest && questHere.steps.length ? { quest: openQuest, step: questHere.steps[0], planet: here?.name ?? '' } : null;
     const [r] = await Promise.all([flush([{ type: 'jump', dest }]), view.current?.warp(1500) ?? Promise.resolve()]);
     setTab('trade');
     if (!r.ok) {
@@ -408,6 +412,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
     } else {
       setPhase({ k: 'planet' });
       if (r.value.fight) setFightLog(['They are coming right at you!']);
+      if (skipped) setNote(leftBehind(skipped.quest, skipped.step, skipped.planet));
     }
     setBusy(false);
     lock.current = false;
@@ -540,6 +545,30 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
     lock.current = false;
   }
 
+  /** Quest moves go to the server at once (they can pay a reward), with any quiet moves waiting. */
+  async function questMove(actions: Action[]) {
+    if (lock.current || !actions.length) return;
+    lock.current = true;
+    setBusy(true);
+    const r = await flush(actions);
+    if (!r.ok) setNote(r.message);
+    else if (r.value.quest) setPhase({ k: 'quest', id: r.value.quest.finished, reward: r.value.quest.reward });
+    else {
+      const a = actions[actions.length - 1];
+      setNote(a.type === 'quest-take' ? 'Quest taken! Gold rings on the star chart show where to go.' : a.type === 'quest-drop' ? 'Quest dropped. You can take it again any time.' : 'Done! ✓ Ticked off on the Quests screen.');
+    }
+    setBusy(false);
+    lock.current = false;
+  }
+
+  // Quest steps that can be done right here (the landing card), checked with the server's own rules.
+  const questHere = useMemo(
+    () => (galaxy && game && settings && loaded && game.quests?.open && !game.pending ? doableHere(galaxy, loaded.galaxySeed, game, settings) : { actions: [], steps: [] }),
+    [galaxy, game], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const questMap = useMemo(() => (galaxy && t && game?.quests?.open ? { marks: questPlanetMarks(galaxy, t, game.quests), stop: nextStop(galaxy, t, game.quests) } : null), [galaxy, t, game?.quests]);
+  const openQuest = game?.quests?.open ? questById(game.quests.open) ?? null : null;
+
   const showFlight = !!flight && bolt && phase.k === 'planet' && !pending && !asking;
 
   // First-time tips (section 4): the first one that fits now and hasn't been seen shows, and is remembered at once, so it
@@ -617,7 +646,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   const opening = useStoryOnce(OPENING.id, phase.k === 'title' && !!game && !loaded?.seasonChoice);
   const storyOpen = opening.open || storyAgain;
   useTraderKeys(root, !asking && !picking && !problem && !storyOpen);
-  const tabs: [Tab, string][] = [['trade', 'Trade'], ['ship', 'Ship'], ['bank', 'Bank'], ['map', 'Star chart'], ...(forgeOn ? [['forge', '🌟 Forge'], ['gallery', '🌌 Gallery']] as [Tab, string][] : [])];
+  const tabs: [Tab, string][] = [['trade', 'Trade'], ['ship', 'Ship'], ['bank', 'Bank'], ['map', 'Star chart'], ['quests', openQuest ? '⭐ Quests' : 'Quests'], ...(forgeOn ? [['forge', '🌟 Forge'], ['gallery', '🌌 Gallery']] as [Tab, string][] : [])];
   const label = here && t && galaxy ? `${here.name}, a ${GOVERNMENTS[here.government].name.toLowerCase()} world. Your ${SHIPS[t.ship].name} is in orbit.` : 'Star Trader';
 
   return (
@@ -651,7 +680,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
           {phase.k === 'planet' && !pending && tab === 'trade' && (
             // On a wide screen the hold sits over the planet, on the right (the market's own copy is hidden by CSS).
             <div className="st-holdside">
-              <HoldView t={t} after={marketAfter} galaxy={galaxy} pushes={pushes} onShowMap={showOnMap} want={marketWant} />
+              <HoldView t={t} after={marketAfter} galaxy={galaxy} pushes={pushes} onShowMap={showOnMap} want={marketWant} quest={questCargoNames(game.quests, t)} />
             </div>
           )}
           <div className={`st-main ${phase.k === 'planet' && !pending && (tab === 'map' || tab === 'forge' || tab === 'gallery') ? 'st-main--wide' : ''} ${phase.k === 'planet' && !pending && tab === 'forge' ? 'st-main--forge' : ''}`}>
@@ -666,7 +695,9 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
                 </div>
                 {tipCard ?? (step && !flight && bolt && <CoachBar step={step} onShow={showMe} />)}
                 <div className="st-focus" ref={heading} tabIndex={-1} aria-label={`${tabs.find((x) => x[0] === tab)?.[1]} screen`} />
-                {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} want={marketWant} level={level} onTrade={doTrade} onPlan={setMarketPlan} onShowMap={showOnMap} />}
+                {tab === 'trade' && openQuest && questHere.steps.length > 0 && <QuestLanding quest={openQuest} steps={questHere.steps} busy={panelBusy} onDo={() => void questMove(questHere.actions)} />}
+                {tab === 'quests' && <QuestsPanel galaxy={galaxy} t={t} quests={game.quests} busy={panelBusy} showXY={level !== 'off'} onQuest={(a) => void questMove(a)} onTab={setTab} onShowMap={showOnMap} />}
+                {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} want={marketWant} level={level} quest={questCargoNames(game.quests, t)} onTrade={doTrade} onPlan={setMarketPlan} onShowMap={showOnMap} />}
                 {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} suggest={suggest} askFirst={level === 'some'} forge={forgeOn} onForge={() => setTab('forge')} onAct={act} onMoon={() => void buyMoon()} captain={game?.captain} onCaptain={() => setPicking(true)} />}
                 {tab === 'forge' && forgeOn && <Forge saved={savedSystem} draft={design} credits={t.credits} ownsMoon={t.moon} busy={panelBusy} lessMotion={lessMotion} level={level} typing={loaded.settings.forgeTyping !== false} onDraft={setDraft} onPlan={planForge} onApply={applyForge} onPicture={savePicture} />}
                 {tab === 'gallery' && forgeOn && <Gallery api={api} lessMotion={lessMotion} />}
@@ -682,7 +713,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
                     bolt={bolt && loanNotNeeded(t, trips) ? "You can already fill your hold with the best buy here. You don't need a loan right now." : null}
                   />
                 )}
-                {tab === 'map' && <MapPanel galaxy={galaxy} t={t} busy={panelBusy} focus={mapFocus} news={news} pushes={pushes} guide={showFlight ? flight?.guide ?? null : null} level={level} unlimited={settings.unlimited} onAim={setAimed} onJump={(d) => void jump(d)} onRefuel={(units) => act({ type: 'refuel', units }, 'Fuel bought.')} />}
+                {tab === 'map' && <MapPanel galaxy={galaxy} t={t} busy={panelBusy} focus={mapFocus} news={news} pushes={pushes} guide={showFlight ? flight?.guide ?? null : null} level={level} unlimited={settings.unlimited} quest={questMap} onAim={setAimed} onJump={(d) => void jump(d)} onRefuel={(units) => act({ type: 'refuel', units }, 'Fuel bought.')} />}
                 {note && <p className="st-note st-note--float" role="status">{note}</p>}
                 {t.jumpsLeft < 1 && !settings.unlimited && <p className="st-note st-note--float">That is all your jumps for today. You can still trade here. Come back tomorrow!</p>}
               </>
@@ -693,6 +724,9 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
             {phase.k === 'planet' && pending?.kind === 'deal' && <DealPanel key={`${t.jumpNo}`} offer={pending.offer} here={t} busy={panelBusy} level={level} hideVerdict={coach.deals >= 3 || level === 'some'} onAccept={() => void deal(true)} onDecline={() => void deal(false)} />}
             {phase.k === 'planet' && pending?.kind === 'fight' && <FightPanel t={t} fight={pending.fight} tier={pending.tier} advice={bolt ? fightAdvice(t, pending.fight) : null} askFirst={level === 'some'} log={fightLog.length ? fightLog : ['They are coming right at you!']} busy={fightBusy || asking} onAct={(m) => void fightAct(m)} />}
             {phase.k === 'after' && <SummaryPanel title={phase.title} lines={phase.lines} button="Carry on" onDone={() => { setTab('trade'); setPhase({ k: 'planet' }); }} />}
+            {phase.k === 'quest' && questById(phase.id) && (
+              <QuestDone quest={questById(phase.id)!} reward={phase.reward} next={QUESTS.find((c) => !game.quests?.finished.includes(c.id)) ?? null} onDone={() => setPhase({ k: 'planet' })} />
+            )}
             {phase.k === 'moon' && (
               <SummaryPanel
                 title="You own a moon! 🌙"

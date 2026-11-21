@@ -7,9 +7,11 @@ import { GOODS, MOON_PRICE, SHIPS } from '../../../../shared/trader/config';
 import { coordText, type Galaxy } from '../../../../shared/trader/galaxy';
 import type { Pushes } from '../../../../shared/trader/schoolMarket';
 import { fuelCost, fuelNeeded, hasShipyard, holdsOf, usedHolds, type Trader } from '../../../../shared/trader/state';
+import { openQuestView, type QuestState } from '../../../../shared/trader/quests';
+import { nextStop, stepWords } from '../questGuide';
 import { allPrices, bannedCargo, cargoPlan, nearestPlanet, nearestShipyard, nextUpgrade, stopOnTheWay, tradeIdeas } from './advice';
 
-export type CoachTab = 'trade' | 'ship' | 'bank' | 'map' | 'forge' | 'gallery';
+export type CoachTab = 'trade' | 'ship' | 'bank' | 'map' | 'quests' | 'forge' | 'gallery';
 
 export interface CoachView {
   galaxy: Galaxy;
@@ -22,6 +24,8 @@ export interface CoachView {
   loans?: boolean;
   /** The Star Forge is open, so the goal is the pupil's system and not the moon. */
   forge?: boolean;
+  /** The pupil's quests (an open quest gives Bolt its next stop). */
+  quests?: QuestState;
 }
 
 export interface NextStep {
@@ -72,6 +76,19 @@ export function nextStep(v: CoachView): NextStep {
       return { say: `${dest.name} needs ${need} fuel and you have ${t.fuel}. Buy ${short} more fuel (${cr(fuelCost(t.ship, short))}) first.`, target: 'jump-fuel' };
     }
     return { say: `${dest.name} needs ${need} fuel and you have ${t.fuel}. Press Jump!`, target: 'jump-go' };
+  }
+
+  // An open quest (Q.2): a step to do right here, else (unless cargo should be sold here first) the next stop.
+  const quest = openQuestView(galaxy, t, v.quests);
+  if (quest) {
+    const now = quest.steps.find((s) => !s.done && s.problem === null && s.planet === t.location);
+    if (now) return { say: `Quest: ${stepWords(quest.quest, now).line} here, for ${quest.quest.giver}.`, target: tab === 'trade' ? 'quest-do' : tabTarget('quests', tab, 'quest-step'), tab: tab === 'trade' ? 'trade' : 'quests' };
+    const stop = plan?.sellHere ? null : nextStop(galaxy, t, v.quests);
+    if (stop && stop.planet !== t.location) {
+      if (stop.fuel <= tank && !stop.fuelOk) return { say: `Quest: next stop ${stop.name} ${stop.coords}, ${stop.fuel} fuel. You have ${t.fuel}, so fill your tank first.`, target: tabTarget('ship', tab, 'ship-fuel'), tab: 'ship' };
+      const far = stop.fuel > tank ? ` That's further than one tank, so stop on the way.` : '';
+      return { say: `Quest: next stop ${stop.name} ${stop.coords}, ${stop.fuel} fuel. ${stop.doing} there.${far}`, target: tab === 'map' ? `planet-${stop.planet}` : 'tab-map', tab: 'map' };
+    }
   }
 
   // Cargo in the hold: sell it here, or fly it somewhere that pays more.

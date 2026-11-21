@@ -745,3 +745,65 @@
 /* The opening story (kit StoryBook, docs/plans/stories/PLAN.md): deep space colours, the game's own display font. */
 .st-storybook { --story-bg: #04050c; --story-ink: #e8eefc; --story-gold: #fde047; --story-frame: #26305a; --story-dim: #3a4470; --story-font: var(--display, 'Trebuchet MS', Verdana, sans-serif); }
 .st-storybook .kit-story__corner .st-capface { border-radius: 50%; border: 3px solid #fde047; box-shadow: 0 0 14px rgba(253, 224, 71, 0.5); }
+
+/* ——— Quests (docs/plans/trader-quests/PLAN.md, Q.2): gold means "quest" everywhere ——— */
+.stq-face { flex: none; border-radius: 50%; object-fit: cover; border: 2px solid var(--st-gold); background: #1b2650; }
+.stq-face--stand { display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.6rem; color: var(--st-gold); }
+.stq-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.stq-card { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 14px; background: rgba(27, 38, 80, 0.55); border: 2px solid transparent; min-width: 0; }
+.stq-card__body { flex: 1; min-width: 0; }
+.stq-card__h { margin: 0; font-size: 1.05rem; }
+.stq-card__meta, .stq-card__state { margin: 2px 0 0; font-size: 0.9rem; }
+.stq-card__act { flex: none; }
+.stq-card--open { border-color: var(--st-gold); box-shadow: 0 0 12px rgba(253, 224, 71, 0.35); }
+.stq-card--ready { border-color: rgba(253, 224, 71, 0.55); }
+.stq-card--locked .stq-face { filter: grayscale(1) brightness(0.45); }
+.stq-card--locked .stq-card__h, .stq-card--locked .stq-card__meta { color: #a9b6e8; }
+.stq-card--done { opacity: 0.85; }
+.stq-pill { display: inline-block; padding: 1px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); font-size: 0.82rem; font-weight: 700; }
+.stq-pill--done { background: rgba(74, 222, 128, 0.2); color: #86efac; }
+.stq-pill--open { background: rgba(253, 224, 71, 0.18); color: var(--st-gold); }
+.stq-open { margin-top: 10px; padding: 10px 12px; border-radius: 14px; border: 2px solid var(--st-gold); background: rgba(60, 48, 8, 0.35); }
+.stq-open__head { display: flex; gap: 10px; align-items: center; }
+.stq-open__h { margin: 0; color: var(--st-gold); }
+.stq-open__sub { margin: 2px 0 0; }
+.stq-steps { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.stq-step { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; padding: 8px 10px; border-radius: 12px; background: rgba(11, 18, 48, 0.6); }
+.stq-step__tick { flex: none; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; border: 2px solid var(--st-gold); color: var(--st-gold); }
+.stq-step--done .stq-step__tick { background: #16a34a; border-color: #4ade80; color: #fff; }
+.stq-step--done .stq-step__what { color: #a9b6e8; text-decoration: line-through; }
+.stq-step--wait { opacity: 0.75; }
+.stq-step__body { flex: 1 1 200px; min-width: 0; }
+.stq-step__body p { margin: 2px 0; }
+.stq-step__btn { margin-left: auto; align-self: center; }
+.stq-here { color: #86efac; }
+.stq-link { font: inherit; padding: 0; background: none; border: 0; color: var(--st-gold); text-decoration: underline; cursor: pointer; font-weight: 700; }
+.stq-goods { margin-top: 6px; padding: 6px 8px; border-radius: 10px; background: rgba(27, 38, 80, 0.55); }
+.stq-goods__list { margin: 2px 0; padding-left: 20px; }
+.stq-reward { margin: 10px 0 0; font-size: 1.05rem; }
+.stq-land { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; padding: 10px 12px; border-radius: 14px; border: 2px solid var(--st-gold); background: rgba(60, 48, 8, 0.75); box-shadow: 0 0 16px rgba(253, 224, 71, 0.35); }
+.stq-land__body { flex: 1 1 180px; min-width: 0; }
+.stq-land__tag { margin: 0; font-size: 0.82rem; font-weight: 800; color: var(--st-gold); text-transform: uppercase; letter-spacing: 0.04em; }
+.stq-land__line { margin: 2px 0 0; font-size: 1.05rem; }
+.stq-land__btn { margin-left: auto; }
+.stq-done { text-align: center; }
+.stq-done .stq-face { margin: 0 auto; display: block; }
+.stq-done__h { color: var(--st-gold); }
+.stq-done__pay { margin: 4px 0; font-size: 2rem; font-weight: 900; color: var(--st-gold); }
+.stq-done .st-actions { justify-content: center; }
+.st-planet--quest { border-color: var(--st-gold); box-shadow: 0 0 0 3px rgba(253, 224, 71, 0.35), 0 0 16px var(--st-gold); }
+.st-planet__quest {
+  position: absolute; top: -8px; right: -10px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px;
+  background: var(--st-gold); color: #1b1300; font-size: 0.72rem; font-weight: 900; line-height: 20px; pointer-events: none;
+}
+.st-questline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 10px; padding: 8px 10px; border-radius: 12px; border: 2px solid var(--st-gold); background: rgba(60, 48, 8, 0.55); color: #fef3c7; }
+.st-questline > span { flex: 1 1 180px; min-width: 0; }
+.st-questnote { margin: 4px 0; color: var(--st-gold); font-weight: 700; }
+.st-hold__quest rect { fill: rgba(253, 224, 71, 0.3); stroke: var(--st-gold); stroke-width: 4; }
+.st-hold__questnote { margin: 4px 0 0; font-size: 0.82rem; color: var(--st-gold); }
+.st-hold__tile--quest .st-hold__questtile { display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 10px; border: 2px solid var(--st-gold); background: rgba(253, 224, 71, 0.15); }
+@media (max-width: 560px) {
+  .stq-card { gap: 8px; padding: 6px 8px; }
+  .stq-card .stq-face { width: 52px; height: 52px; }
+  .stq-step__btn { margin-left: 0; width: 100%; }
+}
