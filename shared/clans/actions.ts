@@ -33,7 +33,7 @@ import { empireNewDay, empireOf, needsUpgrade, PUSHES, syncVillage, upgrade, upg
 import { bossAt, newFight, type FightState, type Order } from './fight';
 import { buySupply, monsterOf, monsterSave, newMonsterFight, playSiege, SUPPLY_KINDS, type MonsterSetup, type Siege, type SupplyKind } from './monster';
 import { classByName, raceByName, refreshGear, rollMember } from './character';
-import { slotSeed } from './create';
+import { renameCheck, slotSeed } from './create';
 import { ITEMS } from './gamedata';
 import { isLook, setLook, type Look } from './looks';
 import { earnedOrNone, recordBossWin, type Earned } from './rewards';
@@ -183,7 +183,8 @@ export type Action =
   | { type: 'buySupply'; kind: SupplyKind; count: number }
   /** A new season: pick a member's race and class again (only before the clan has played the season), or keep them all. */
   | { type: 'repick'; member: number; race: string; cls: string }
-  | { type: 'repickDone' };
+  | { type: 'repickDone' }
+  | { type: 'rename'; member: number; name: string };
 
 export type ActionType = Action['type'];
 
@@ -404,6 +405,7 @@ export function parseAction(raw: unknown): Action | null {
     case 'repick':
       return member !== null && typeof raw.race === 'string' && raw.race.length <= 40 && typeof raw.cls === 'string' && raw.cls.length <= 40 ? { type: 'repick', member, race: raw.race, cls: raw.cls } : null;
     case 'repickDone': return { type: 'repickDone' };
+    case 'rename': return member !== null && typeof raw.name === 'string' && raw.name.length <= 40 ? { type: 'rename', member, name: raw.name } : null;
     case 'raidStart': return typeof raw.target === 'string' && raw.target.length >= 1 && raw.target.length <= 40 ? { type: 'raidStart', target: raw.target } : null;
     default: return null;
   }
@@ -674,6 +676,14 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
       const fresh = rollMember({ rng: Math.imul(slotSeed(state.seed, action.member) | 0, 2654435761) + (clan.season ?? 0) * 7919 }, m.name, action.race, action.cls, action.member === 0);
       clan.members[action.member] = { ...fresh, ...(m.look ? { look: m.look } : {}) };
       return done(state, { type: 'repick' });
+    }
+    case 'rename': {
+      // Only on the new-season screen, before "Keep going". A name changes nothing else, so started members may be renamed too.
+      if (clan.repick === undefined || clan.repick !== clan.season) return refuse('rename', 'Names can be changed at the start of a season.');
+      const named = renameCheck(clan, action.member, action.name, ctx.typedNames === true);
+      if (!named.ok) return refuse('name', named.say);
+      clan.members[action.member] = { ...clan.members[action.member], name: named.name };
+      return done(state, { type: 'rename' });
     }
     case 'repickDone': {
       if (clan.repick === undefined) return done(state, { type: 'repickDone' }, rested || upgraded);

@@ -80,3 +80,15 @@ export function clanFromChoices(seed: number, name: unknown, drafts: unknown, ty
   }
   return { ok: true, clan: makeClan(name, built) };
 }
+
+/**
+ * A new name for one member on the new-season screen (James, 22 Nov 2026). The same rules as making a clan: a name from
+ * the list, or a made-up one when the teacher's switch is on, and no two members may share a name.
+ */
+export function renameCheck(clan: Clan, member: number, raw: unknown, typedNames: boolean): { ok: true; name: string } | { ok: false; say: string } {
+  if (!clan.members[member]) return { ok: false, say: 'Pick one of your clan.' };
+  const named = memberNameFrom(raw, typedNames);
+  if (!named.ok) return named;
+  if (clan.members.some((m, j) => j !== member && m.name.toLowerCase() === named.name.toLowerCase())) return { ok: false, say: 'Another member has this name.' };
+  return named;
+}

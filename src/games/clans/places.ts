@@ -15,7 +15,7 @@ import { STATS, TROOP_KINDS, type Clan, type Empire, type ItemDef, type Member, 
 import { finishQuest, puzzleFor, questById, questDoneToday, todaysQuest, type PuzzleSpec, type QuestDef, type QuestDone } from '../../../shared/clans/quests';
 import { earn, type Session } from './session';
 import { classByName, raceByName, rollMember } from '../../../shared/clans/character';
-import { slotSeed } from '../../../shared/clans/create';
+import { renameCheck, slotSeed } from '../../../shared/clans/create';
 import { buySupply, monsterSave, type SupplyKind } from '../../../shared/clans/monster';
 import { setLook, type Look } from '../../../shared/clans/looks';
 
@@ -308,6 +308,15 @@ export function repickMember(s: Session, memberIndex: number, race: string, cls:
   const fresh = rollMember({ rng: Math.imul(slotSeed(s.baseSeed, memberIndex) | 0, 2654435761) + (clan.season ?? 0) * 7919 }, m.name, race, cls, memberIndex === 0);
   clan.members[memberIndex] = { ...fresh, ...(m.look ? { look: m.look } : {}) };
   return { ...s, clan };
+}
+
+/** A new name for one member on the re-pick screen, or why it can't be used. */
+export function renameMember(s: Session, memberIndex: number, name: string, typedNames: boolean): { ok: true; session: Session; name: string } | { ok: false; say: string } {
+  const named = renameCheck(s.clan, memberIndex, name, typedNames);
+  if (!named.ok) return named;
+  const clan = structuredClone(s.clan);
+  clan.members[memberIndex] = { ...clan.members[memberIndex], name: named.name };
+  return { ok: true, session: { ...s, clan }, name: named.name };
 }
 
 /** "Keep going" on the re-pick screen. */

@@ -45,5 +45,18 @@ describe('what the browser sends', () => {
     expect(refused(rich(s), { type: 'buy', member: 0, item: other.name }).why).toBe('shelf');
     expect(refused(rich(s), { type: 'buy', member: 0, item: itemAt(m.cls, 'weapon', 3)!.name }).why).toBe('shelf'); // Smithy level 0 sells up to tier 2
     expect(refused(rich(s), { type: 'buy', member: 0, item: itemAt(m.cls, 'weapon', 1)!.name }).why).toBe('shelf');
+    // New names on the new-season screen: from the list, or made up with the teacher switch; only before Keep going.
+    const r = structuredClone(created());
+    r.clan.season = 2;
+    r.clan.repick = 2;
+    const free = ['Aria', 'Bram', 'Cleo', 'Elin'].find((n) => !r.clan.members.some((m) => m.name === n))!;
+    const out = applyAction(r, { type: 'rename', member: 1, name: free }, ctx());
+    expect(out.ok && out.state!.clan.members[1].name).toBe(free);
+    expect(refused(r, { type: 'rename', member: 1, name: r.clan.members[0].name }).why).toBe('name');
+    expect(refused(r, { type: 'rename', member: 1, name: 'Zork' }).why).toBe('name');
+    const typed = applyAction(r, { type: 'rename', member: 2, name: 'te ahi' }, ctx({ typedNames: true }));
+    expect(typed.ok && typed.state!.clan.members[2].name).toBe('Te Ahi');
+    expect(refused(r, { type: 'rename', member: 2, name: 'poop' }, { typedNames: true }).why).toBe('name');
+    expect(refused(created(), { type: 'rename', member: 1, name: free }).why).toBe('rename');
   });
 });
