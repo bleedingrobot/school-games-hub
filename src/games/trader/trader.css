@@ -803,6 +803,19 @@
 .stq-shelf__thumb { flex: none; width: 64px; height: 36px; border-radius: 6px; object-fit: cover; }
 .stq-shelf__label { display: flex; flex-direction: column; min-width: 0; font-weight: 700; font-size: 0.92rem; }
 .stq-shelf__label .st-soft { font-weight: 400; font-size: 0.8rem; }
+.stq-log { margin-top: 14px; }
+.stq-log__sub { margin: 2px 0 0; }
+.stq-log__list { list-style: none; margin: 6px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.stq-keep { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 12px; border: 2px dashed rgba(148, 163, 184, 0.4); background: rgba(27, 38, 80, 0.35); min-width: 0; }
+.stq-keep--got { border: 2px solid rgba(253, 224, 71, 0.6); background: rgba(27, 38, 80, 0.6); }
+.stq-keep__pic { flex: none; width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid var(--st-gold); }
+.stq-keep__pic--empty { display: grid; place-items: center; border: 2px dashed rgba(148, 163, 184, 0.5); color: rgba(226, 232, 240, 0.6); font-weight: 900; font-size: 1.2rem; }
+.stq-keep__name { display: flex; flex-direction: column; min-width: 0; font-weight: 700; font-size: 0.9rem; overflow-wrap: anywhere; }
+.stq-keep__name .st-soft { font-weight: 400; font-size: 0.78rem; }
+.stq-master { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 10px 0 0; padding: 8px 10px; border-radius: 12px; background: rgba(253, 224, 71, 0.14); border: 2px solid var(--st-gold); text-align: left; }
+.stq-master__pic { flex: none; border-radius: 10px; }
+.stq-done__points { font-size: 1.1rem; font-weight: 800; }
+.stq-done__keep { margin: 4px 0; }
 .stq-done { text-align: center; }
 .stq-done .stq-face { margin: 0 auto; display: block; }
 .stq-done__h { color: var(--st-gold); }

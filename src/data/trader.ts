@@ -65,6 +65,8 @@ export interface Loaded {
   news?: NewsItem[];
   /** The school's pushes on prices right now: [planet, good, push]. */
   prices?: [number, number, number][];
+  /** The Quest Log: quests ever finished (keepsakes kept through a New Season). Missing from an older server. */
+  questLog?: string[];
   /** A quest's Game Coins pouch, opened as the game loaded: the credits it added (already in `game`). */
   pouch?: { amount: number };
 }

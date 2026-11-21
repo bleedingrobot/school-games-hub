@@ -7,7 +7,7 @@ import type { Galaxy } from '../../../shared/trader/galaxy';
 import { isSmallShip, NAVY_LASER, nearestSellers, nextQuest, openQuestView, questReward, QUESTS, trailClue, type QuestConfig, type QuestState, type StepView } from '../../../shared/trader/quests';
 import type { Action } from '../../../shared/trader/server';
 import type { Trader } from '../../../shared/trader/state';
-import { boardArt, giverArt, isHidden, isWaiting, landingLine, stepWords, type Shown } from './questGuide';
+import { boardArt, giverArt, isHidden, isWaiting, KEEPSAKES, landingLine, MASTER_ART, stepWords, type Shown } from './questGuide';
 import { QUEST_STORIES } from './stories';
 
 const cr = (n: number): string => `${n.toLocaleString('en-NZ')} cr`;
@@ -31,8 +31,10 @@ export function GiverFace({ id, name, size = 72 }: { id: string; name: string; s
     : <span className="stq-face stq-face--stand" style={{ width: size, height: size }} aria-hidden="true">{name.slice(0, 1)}</span>;
 }
 
-export function QuestsPanel({ galaxy, t, quests, busy, showXY = true, shown = 'all', onQuest, onTab, onShowMap, onReveal, onStory }: {
+export function QuestsPanel({ galaxy, t, quests, keepsakes = [], busy, showXY = true, shown = 'all', onQuest, onTab, onShowMap, onReveal, onStory }: {
   galaxy: Galaxy;
+  /** Quests ever finished (the Quest Log, kept through a New Season). */
+  keepsakes?: string[];
   /** Lumi's trail steps shown with Show me ('all' when coordinates are hidden). */
   shown?: Shown;
   /** Show me: light up a trail step's planet on the star chart. */
@@ -91,6 +93,7 @@ export function QuestsPanel({ galaxy, t, quests, busy, showXY = true, shown = 'a
           );
         })}
       </ul>
+      <QuestLog keepsakes={keepsakes} />
       {onStory && shelf.length > 0 && (
         <div className="stq-shelf" aria-labelledby="stq-shelf-h">
           <h3 id="stq-shelf-h" className="st-h3">📖 Quest stories</h3>
@@ -111,6 +114,36 @@ export function QuestsPanel({ galaxy, t, quests, busy, showXY = true, shown = 'a
         </div>
       )}
     </section>
+  );
+}
+
+/** The Quest Log: a keepsake for each quest ever finished (kept through a New Season), and the Star Quest Master line. */
+export function QuestLog({ keepsakes }: { keepsakes: string[] }) {
+  const all = QUESTS.every((q) => keepsakes.includes(q.id));
+  return (
+    <div className="stq-log" aria-labelledby="stq-log-h">
+      <h3 id="stq-log-h" className="st-h3">🎒 Quest Log</h3>
+      <p className="st-soft stq-log__sub">A keepsake for each quest you finish. You keep them, even after a New Season.</p>
+      <ul className="stq-log__list">
+        {QUESTS.map((q) => {
+          const got = keepsakes.includes(q.id);
+          const k = KEEPSAKES[q.id];
+          const art = QUEST_STORIES[q.id]?.pages[4]?.art?.small;
+          return (
+            <li key={q.id} className={`stq-keep ${got ? 'stq-keep--got' : ''}`}>
+              {got && art ? <img className="stq-keep__pic" src={art} alt="" draggable={false} /> : <span className="stq-keep__pic stq-keep__pic--empty" aria-hidden="true">{got ? k.emoji : '?'}</span>}
+              <span className="stq-keep__name">{got ? `${k.emoji} ${k.name}` : 'Not yet'}<span className="st-soft">{q.giver}</span></span>
+            </li>
+          );
+        })}
+      </ul>
+      {all && (
+        <p className="stq-master">
+          {MASTER_ART && <img className="stq-master__pic" src={MASTER_ART} alt="" width={64} height={64} draggable={false} />}
+          <span><strong>🌟 Star Quest Master!</strong> You finished all five quests. Your trophy is on your profile.</span>
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -267,12 +300,15 @@ export function QuestClue({ quest, text, onReveal }: { quest: QuestConfig; text:
 }
 
 /** The short "Quest complete!" moment. */
-export function QuestDone({ quest, reward, next, onDone }: { quest: QuestConfig; reward: number; next: QuestConfig | null; onDone: () => void }) {
+export function QuestDone({ quest, reward, points = 0, master = false, next, onDone }: { quest: QuestConfig; reward: number; points?: number; master?: boolean; next: QuestConfig | null; onDone: () => void }) {
+  const k = KEEPSAKES[quest.id];
   return (
     <section className="st-panel st-panel--small stq-done" aria-labelledby="stq-done-h">
       <GiverFace id={quest.id} name={quest.giver} size={112} />
       <h2 id="stq-done-h" className="st-h stq-done__h">Quest complete! 🎉</h2>
-      <p className="stq-done__pay">+{reward.toLocaleString('en-NZ')} credits</p>
+      <p className="stq-done__pay">+{reward.toLocaleString('en-NZ')} credits{points > 0 && <span className="stq-done__points"> · +{points} hub points</span>}</p>
+      {k && <p className="stq-done__keep">{k.emoji} New keepsake in your Quest Log: <strong>{k.name}</strong></p>}
+      {master && <p className="stq-master"><strong>🌟 Star Quest Master!</strong> All five quests done. Your trophy is on your profile.</p>}
       <p className="st-sub">{quest.giver} says thank you, Captain!</p>
       <p className="st-soft">{next ? `Next quest: ${next.title}. It opens tomorrow.` : 'That was the last quest. You helped everyone in the galaxy!'}</p>
       <div className="st-actions">

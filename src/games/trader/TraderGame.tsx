@@ -49,10 +49,11 @@ import { openQuestView, QUESTS, questById } from '../../../shared/trader/quests'
 import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 import { COACH_NAME } from './text';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import './trader.css';
 
 type Tab = CoachTab;
-type Phase = { k: 'title' } | { k: 'planet' } | { k: 'warp' } | { k: 'after'; title: string; lines: string[]; tip?: 'customs' | 'wrecked' | 'robbed' } | { k: 'moon' } | { k: 'quest'; id: string; reward: number };
+type Phase = { k: 'title' } | { k: 'planet' } | { k: 'warp' } | { k: 'after'; title: string; lines: string[]; tip?: 'customs' | 'wrecked' | 'robbed' } | { k: 'moon' } | { k: 'quest'; id: string; reward: number; points?: number };
 
 const cr = (n: number): string => `${n.toLocaleString('en-NZ')} cr`;
 const nebulaOf = (planetId: number): number => (planetId * 5 + 2) % 6;
@@ -116,7 +117,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   /** The opening story: once per pupil on the title screen, and again from its "📖 The story" button. Skippable. */
   const [storyAgain, setStoryAgain] = useState(false);
   /** A quest story playing: its first pages on taking the quest, its last two on finishing (then the reward), or all again from the shelf. */
-  const [questStory, setQuestStory] = useState<{ id: string; part: 'start' | 'end' | 'all'; reward?: number } | null>(null);
+  const [questStory, setQuestStory] = useState<{ id: string; part: 'start' | 'end' | 'all'; reward?: number; points?: number } | null>(null);
   /** Lumi's trail steps the pupil asked to see with Show me (Q.4). Only in the browser: clues are never marked or recorded. */
   const [revealed, setRevealed] = useState<{ quest: string | null; steps: number[] }>({ quest: null, steps: [] });
   const lock = useRef(false);
@@ -175,6 +176,9 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
     const r = applyBatch(galaxy, loaded.galaxySeed, loaded.game, queue, settings, noMark);
     return r.ok ? r.game : loaded.game;
   }, [loaded, galaxy, queue]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The Quest Log: quests ever finished (from the load, kept through a New Season) and any finished since.
+  const keepsakes = useMemo(() => [...new Set([...(loaded?.questLog ?? []), ...(game?.quests?.finished ?? [])])], [loaded?.questLog, game?.quests?.finished]);
 
   const t = game?.t;
   const savedSystem = useMemo(() => game?.system ?? emptyDesign(), [game?.system]);
@@ -567,9 +571,11 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
     if (!r.ok) setNote(r.message);
     // The reward is the server's: the last two pages play, then the Quest complete moment shows what it paid.
     else if (r.value.quest) {
-      const { finished: id, reward } = r.value.quest;
-      if (questStoryPart(id, 'end')) setQuestStory({ id, part: 'end', reward });
-      else setPhase({ k: 'quest', id, reward });
+      const { finished: id, reward, points } = r.value.quest;
+      // Points only count in the real game (the try-out has no hub).
+      const shownPoints = onServer ? points : 0;
+      if (questStoryPart(id, 'end')) setQuestStory({ id, part: 'end', reward, points: shownPoints });
+      else setPhase({ k: 'quest', id, reward, points: shownPoints });
     }
     else if (a.type === 'quest-fight') setFightLog(['They are coming right at you!']);
     else {
@@ -734,7 +740,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
                 {tab === 'trade' && openQuest && questHere.steps.length > 0 && <QuestLanding quest={openQuest} steps={questHere.steps} busy={panelBusy} onDo={() => void questMove(questHere.actions)} />}
                 {tab === 'trade' && openQuest && questPirate && <QuestPirate quest={openQuest} busy={panelBusy} onFight={() => void questMove([{ type: 'quest-fight', step: questPirate.index }])} />}
                 {tab === 'trade' && openQuest && questClue && !questHere.steps.length && questClue.step.planet !== t.location && <QuestClue quest={openQuest} text={questClue.text} onReveal={() => reveal(questClue.step.index)} />}
-                {tab === 'quests' && <QuestsPanel galaxy={galaxy} t={t} quests={game.quests} busy={panelBusy} showXY={level !== 'off'} shown={trailShown} onReveal={reveal} onQuest={(a) => void questMove(a)} onTab={setTab} onShowMap={showOnMap} onStory={(id, part) => setQuestStory({ id, part })} />}
+                {tab === 'quests' && <QuestsPanel galaxy={galaxy} t={t} quests={game.quests} keepsakes={keepsakes} busy={panelBusy} showXY={level !== 'off'} shown={trailShown} onReveal={reveal} onQuest={(a) => void questMove(a)} onTab={setTab} onShowMap={showOnMap} onStory={(id, part) => setQuestStory({ id, part })} />}
                 {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} want={marketWant} level={level} quest={questCargoNames(game.quests, t)} onTrade={doTrade} onPlan={setMarketPlan} onShowMap={showOnMap} />}
                 {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} suggest={suggest} askFirst={level === 'some'} forge={forgeOn} onForge={() => setTab('forge')} onAct={act} onMoon={() => void buyMoon()} captain={game?.captain} onCaptain={() => setPicking(true)} />}
                 {tab === 'forge' && forgeOn && <Forge saved={savedSystem} draft={design} credits={t.credits} ownsMoon={t.moon} busy={panelBusy} lessMotion={lessMotion} level={level} typing={loaded.settings.forgeTyping !== false} onDraft={setDraft} onPlan={planForge} onApply={applyForge} onPicture={savePicture} />}
@@ -763,7 +769,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
             {phase.k === 'planet' && pending?.kind === 'fight' && <FightPanel t={t} fight={pending.fight} tier={pending.tier} advice={bolt ? fightAdvice(t, pending.fight) : null} askFirst={level === 'some'} log={fightLog.length ? fightLog : ['They are coming right at you!']} busy={fightBusy || asking} onAct={(m) => void fightAct(m)} />}
             {phase.k === 'after' && <SummaryPanel title={phase.title} lines={phase.lines} button="Carry on" onDone={() => { setTab('trade'); setPhase({ k: 'planet' }); }} />}
             {phase.k === 'quest' && questById(phase.id) && (
-              <QuestDone quest={questById(phase.id)!} reward={phase.reward} next={QUESTS.find((c) => !game.quests?.finished.includes(c.id)) ?? null} onDone={() => setPhase({ k: 'planet' })} />
+              <QuestDone quest={questById(phase.id)!} reward={phase.reward} points={phase.points} master={QUESTS.every((c) => keepsakes.includes(c.id)) && !(loaded?.questLog ?? []).includes(phase.id)} next={QUESTS.find((c) => !game.quests?.finished.includes(c.id)) ?? null} onDone={() => setPhase({ k: 'planet' })} />
             )}
             {phase.k === 'moon' && (
               <SummaryPanel
@@ -821,7 +827,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
           onClose={() => {
             const done = questStory;
             setQuestStory(null);
-            if (done.reward !== undefined) setPhase({ k: 'quest', id: done.id, reward: done.reward });
+            if (done.reward !== undefined) setPhase({ k: 'quest', id: done.id, reward: done.reward, points: done.points });
             else if (done.part === 'start') setTab('quests');
           }}
           endLabel={questStory.part === 'start' ? "Let's go!" : questStory.reward !== undefined ? 'My reward' : 'The end'}
@@ -839,7 +845,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
         />
       )}
       {modal}
-      <TrophyWonLine games={['trader']} watch={trophyPieces(loaded?.game?.system)} off={!onServer} />
+      <TrophyWonLine games={['trader']} watch={`${trophyPieces(loaded?.game?.system)}|${keepsakes.length}`} off={!onServer} />
+      <AchievementPop games={['trader']} watch={keepsakes.length} off={!onServer} />
     </div>
   );
 }

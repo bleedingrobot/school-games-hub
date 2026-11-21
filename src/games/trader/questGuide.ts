@@ -16,6 +16,22 @@ export function giverArt(id: string): { small: string; big?: string } | undefine
 }
 
 /** The quest board painting, the Quests tab's header picture (1600 px and its 800 px copy for phones). */
+/**
+ * The Quest Log's keepsakes (PLAN rule 10): one per giver, kept through a New Season. The picture is the giver's last
+ * story page, cut to a round badge.
+ */
+export const KEEPSAKES: Record<string, { name: string; emoji: string }> = {
+  zuzu: { name: 'Party balloon', emoji: '🎈' },
+  sprocket: { name: 'Lucky gear', emoji: '⚙️' },
+  nettle: { name: 'Healing leaf', emoji: '🍃' },
+  vex: { name: 'Navy badge', emoji: '🎖️' },
+  kai: { name: 'Star-scale', emoji: '✨' },
+};
+
+/** The Star Quest Master trophy painting (also on the profile as trader-quest-master). */
+const MASTER = import.meta.glob('./art/quests/trophy-quest-master-small.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+export const MASTER_ART: string | undefined = Object.values(MASTER)[0];
+
 export function boardArt(): { wide: string; small: string } | undefined {
   const wide = FILES['./art/quests/quest-board.webp'];
   return wide ? { wide, small: FILES['./art/quests/quest-board-800.webp'] ?? wide } : undefined;

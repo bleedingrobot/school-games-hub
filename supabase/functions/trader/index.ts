@@ -12034,6 +12034,7 @@ function makeHandler(services) {
 				if (day === "busy") return reply(503, { error: "We couldn't load your game just now." });
 				const questions = day ? day.questions.map((q, slot) => publicQuestion(q, slot)) : [];
 				return reply(200, {
+					questLog: await services.questLog(player),
 					...pouch ? { pouch: { amount: pouch.amount } } : {},
 					galaxySeed: school.seed,
 					season: school.season,
@@ -12364,6 +12365,14 @@ Deno.serve(makeHandler({
 		};
 	},
 	openPouches: (player, version) => openCoinPouches((name, args) => admin.rpc(name, args), player, "trader", version),
+	async questLog(player) {
+		const { data, error } = await admin.rpc("trader_quest_log_of", { player });
+		if (error) {
+			fail("trader_quest_log_of", error.code);
+			return [];
+		}
+		return Array.isArray(data) ? data.filter((q) => typeof q === "string") : [];
+	},
 	async save(player, a) {
 		const { data, error } = await admin.rpc("trader_save", {
 			player,

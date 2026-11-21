@@ -147,6 +147,14 @@ Deno.serve(
       return { pushes: Array.isArray(row.pushes) ? row.pushes : [], news: Array.isArray(row.news) ? row.news : [] };
     },
     openPouches: (player, version) => openCoinPouches((name, args) => admin.rpc(name, args), player, 'trader', version),
+    async questLog(player) {
+      const { data, error } = await admin.rpc('trader_quest_log_of', { player });
+      if (error) {
+        fail('trader_quest_log_of', error.code);
+        return [];
+      }
+      return Array.isArray(data) ? data.filter((q): q is string => typeof q === 'string') : [];
+    },
     async save(player, a) {
       const { data, error } = await admin.rpc('trader_save', {
         player,
