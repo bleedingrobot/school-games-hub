@@ -23,7 +23,7 @@ import { StoryBook, useStoryOnce } from '../../kit';
 import { OPENING, questClips, questStoryPart } from './stories';
 import { DealPanel, FightPanel, JunkPanel, SummaryPanel } from './Encounter';
 import { fightPower, laserPower } from '../../../shared/trader/fight';
-import { hasShipyard } from '../../../shared/trader/state';
+import { hasShipyard, holdsOf, usedHolds } from '../../../shared/trader/state';
 import { allPrices, borrowSure, fightAdvice, loanNotNeeded, nextUpgrade, starterTrade, tradeIdeas, tripSummary, upgradeGain } from './coach/advice';
 import { BoltFace, CoachBar, lightUp } from './coach/CoachBar';
 import { flightStep } from './coach/flight';
@@ -723,7 +723,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
         />
       ) : (
         <>
-          <Hud goal={forgeOn ? goalOf(design, t.credits, t.moon) : null} t={t} jumpsPerDay={loaded.settings.jumpsPerDay} unlimited={loaded.settings.unlimited === true} planet={`${here.name} ${coordText(here)}`} government={GOVERNMENTS[here.government].name} onExit={onExit} help={helpButton} helpOpen={helpOpen} onHelp={() => (helpOpen ? closeHelp() : setHelpOpen(true))} captain={game?.captain} onCaptain={phase.k === 'planet' && !pending ? () => setPicking(true) : undefined} />
+          <Hud goal={forgeOn ? goalOf(design, t.credits, t.moon) : null} t={t} holdAfter={tab === 'trade' && marketAfter ? usedHolds(marketAfter) : null} jumpsPerDay={loaded.settings.jumpsPerDay} unlimited={loaded.settings.unlimited === true} planet={`${here.name} ${coordText(here)}`} government={GOVERNMENTS[here.government].name} onExit={onExit} help={helpButton} helpOpen={helpOpen} onHelp={() => (helpOpen ? closeHelp() : setHelpOpen(true))} captain={game?.captain} onCaptain={phase.k === 'planet' && !pending ? () => setPicking(true) : undefined} />
           {phase.k === 'planet' && !pending && tab === 'trade' && (
             // On a wide screen the hold sits over the planet, on the right (the market's own copy is hidden by CSS).
             <div className="st-holdside">
@@ -871,10 +871,12 @@ function Problem({ problem, onRetry, onExit }: { problem: { kind: string; messag
   );
 }
 
-function Hud({ goal, t, jumpsPerDay, unlimited, planet, government, onExit, help, helpOpen, onHelp, captain, onCaptain }: {
+function Hud({ goal, t, holdAfter, jumpsPerDay, unlimited, planet, government, onExit, help, helpOpen, onHelp, captain, onCaptain }: {
   /** The Forge goal (replaces the moon bar when the Forge is open). */
   goal: Goal | null;
   t: Game['t'];
+  /** Holds full after the trade being picked on the market, when it changes them. */
+  holdAfter?: number | null;
   jumpsPerDay: number;
   unlimited: boolean;
   planet: string;
@@ -902,6 +904,12 @@ function Hud({ goal, t, jumpsPerDay, unlimited, planet, government, onExit, help
       <div className="st-hud__item" title="Your credits" data-coach="hud-credits"><span aria-hidden="true">💰</span><strong>{t.credits.toLocaleString('en-NZ')}</strong><span className="st-sr">credits</span></div>
       <div className="st-hud__item" title="Fuel: each square you fly uses 1"><span aria-hidden="true">⛽</span><strong>{t.fuel}/{ship.fuelTank}</strong><span className="st-sr">fuel</span></div>
       <div className="st-hud__item" title="Hull: your ship's health"><span aria-hidden="true">🛠️</span><strong>{t.hull}/{ship.hull}</strong><span className="st-sr">hull</span></div>
+      <div className="st-hud__item" title="Your hold: holds full of all your holds" data-coach="hud-hold">
+        <span aria-hidden="true">📦</span>
+        <strong>{usedHolds(t)}/{holdsOf(t)}</strong>
+        {holdAfter != null && holdAfter !== usedHolds(t) && <span className="st-soft">→ {holdAfter} after trade</span>}
+        <span className="st-sr">holds full</span>
+      </div>
       <div className="st-hud__item" title="Jumps left today" data-coach="hud-jumps">
         <span aria-hidden="true">🚀</span>
         <span className="st-dots" aria-label={unlimited && t.jumpsLeft < 1 ? UNLIMITED_LABEL : `${t.jumpsLeft} of ${jumpsPerDay} jumps left today`}>
