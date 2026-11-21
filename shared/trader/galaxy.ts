@@ -56,7 +56,7 @@ function tryBuild(seed: string, attempt: number): Galaxy {
     const spot = { x: pick(random, GRID_SIZE), y: pick(random, GRID_SIZE) };
     if (spots.every((o) => distance(o, spot) >= MIN_PLANET_GAP)) spots.push(spot);
   }
-  // Names go to planets in a seeded shuffle, so a galaxy's layout isn't the same every season.
+  // Names go to planets in a seeded shuffle, so each school's galaxy has its own layout. (A school keeps its galaxy for good: New Season no longer changes the seed.)
   const names = PLANET_NAMES.map((n) => n);
   for (let i = names.length - 1; i > 0; i--) {
     const j = pick(random, i + 1);

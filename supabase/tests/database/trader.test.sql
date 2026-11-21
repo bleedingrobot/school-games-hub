@@ -5,7 +5,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(35);
+select plan(36);
 
 select setval(pg_get_serial_sequence('public.schools', 'id'), 1);
 insert into public.schools (name) values ('Other School');
@@ -90,9 +90,11 @@ select is((select count(*)::integer from public.trader_moons where player = pg_t
 select pg_temp.save('0b', 1, '{"b":2}', 5, 'request-bbbb-2', '{}', true, 1);
 select is((select count(*)::integer from public.trader_moons where player = pg_temp.id('0b')), 1, '... once');
 select pg_temp.reset();
+select set_config('test.seed', (select seed from public.trader_schools where school_id = 1), true);
 select public.trader_season(array[pg_temp.id('0a'), pg_temp.id('0b')]);
 select is((select count(*)::integer from public.trader_games), 0, 'a New Season clears the games');
 select is((select season from public.trader_schools where school_id = 1), 2, '... and starts season 2 for the school');
+select is((select seed from public.trader_schools where school_id = 1), current_setting('test.seed'), '... and keeps the same galaxy (no reshuffle)');
 select is((select count(*)::integer from public.trader_moons where player = pg_temp.id('0b')), 1, '... but the Moon Owners list stays');
 
 -- ---- Teachers ----
