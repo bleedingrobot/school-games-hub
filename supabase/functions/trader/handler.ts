@@ -291,7 +291,7 @@ export function makeHandler(services: Services) {
     const school = await services.schoolSeed(player);
     if (!school) return reply(503, { error: "We couldn't load Star Trader just now." });
     const galaxy = galaxyFor(school.seed);
-    const classSettings: Settings = { jumpsPerDay: settings.jumpsPerDay, loans: settings.loans, maths: settings.maths, forge: settings.forge === true, forgeTyping: settings.forgeTyping !== false, unlimited: settings.unlimited === true };
+    const classSettings: Settings = { jumpsPerDay: settings.jumpsPerDay, loans: settings.loans, maths: settings.maths, forge: settings.forge === true, forgeTyping: settings.forgeTyping !== false, unlimited: settings.unlimited === true, allQuests: settings.allQuests === true };
     /** The school's market today. If it can't be read, prices are normal and there is no news (the game goes on). */
     const readMarket = async (): Promise<SchoolView> => (await services.market(player, today)) ?? EMPTY_VIEW;
     const news = (view: SchoolView): NewsItem[] => newsFor(galaxy, today, view);
@@ -338,7 +338,7 @@ export function makeHandler(services: Services) {
                 season: school.season,
                 day: today,
                 seasonChoice: seasonChoiceOf(waiting),
-                settings: { jumpsPerDay: settings.jumpsPerDay, loans: settings.loans, maths: settings.maths, forge: settings.forge === true, forgeTyping: settings.forgeTyping !== false, unlimited: settings.unlimited === true },
+                settings: { jumpsPerDay: settings.jumpsPerDay, loans: settings.loans, maths: settings.maths, forge: settings.forge === true, forgeTyping: settings.forgeTyping !== false, unlimited: settings.unlimited === true, allQuests: settings.allQuests === true },
               });
             }
             game = seasonGame(galaxy, today, classSettings, choice, waiting, pushes);
@@ -386,7 +386,7 @@ export function makeHandler(services: Services) {
           version,
           day: today,
           questions,
-          settings: { jumpsPerDay: settings.jumpsPerDay, loans: settings.loans, maths: settings.maths, forge: settings.forge === true, forgeTyping: settings.forgeTyping !== false, unlimited: settings.unlimited === true },
+          settings: { jumpsPerDay: settings.jumpsPerDay, loans: settings.loans, maths: settings.maths, forge: settings.forge === true, forgeTyping: settings.forgeTyping !== false, unlimited: settings.unlimited === true, allQuests: settings.allQuests === true },
           news: news(view),
           prices: prices(view),
         });

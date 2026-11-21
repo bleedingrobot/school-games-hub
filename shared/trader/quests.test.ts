@@ -109,6 +109,13 @@ describe('Star Trader quests', () => {
       expect(ok(run(tomorrow, { type: 'quest-take', id: 'sprocket' })).quests?.open).toBe('sprocket');
       // A finished quest can't be taken again.
       expect(refused(run(tomorrow, { type: 'quest-take', id: 'zuzu' }))).toMatch(/not open/);
+
+      // A teacher's game opens every quest, in any order, any day (but still not a finished one).
+      const teacher = (g: Game, id: string): Reply => applyBatch(galaxy, SEED, g, [{ type: 'quest-take', id }], { ...DEFAULT_SETTINGS, allQuests: true }, noMark);
+      expect(ok(teacher(g0, 'sprocket')).quests?.open).toBe('sprocket');
+      expect(ok(teacher(g1, 'kai')).quests?.open).toBe('kai');
+      expect(refused(teacher(g1, 'zuzu'))).toMatch(/already finished/);
+      expect(nextQuest(g1.quests, 10, 'kai')?.id).toBe('kai');
     }
 
     // checks each step: the right planet, the last step after the rest, Lumi's trail in order, and refuses moves the rules don't allow.

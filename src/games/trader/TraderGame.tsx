@@ -167,7 +167,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
 
   const galaxy: Galaxy | null = useMemo(() => (loaded ? makeGalaxy(loaded.galaxySeed) : null), [loaded?.galaxySeed]); // eslint-disable-line react-hooks/exhaustive-deps
   const forgeOn = loaded?.settings.forge === true;
-  const settings: Settings | null = loaded ? { jumpsPerDay: loaded.settings.jumpsPerDay, loans: loaded.settings.loans, maths: loaded.settings.maths, forge: forgeOn, forgeTyping: loaded.settings.forgeTyping !== false, unlimited: loaded.settings.unlimited === true } : null;
+  const settings: Settings | null = loaded ? { jumpsPerDay: loaded.settings.jumpsPerDay, loans: loaded.settings.loans, maths: loaded.settings.maths, forge: forgeOn, forgeTyping: loaded.settings.forgeTyping !== false, unlimited: loaded.settings.unlimited === true, allQuests: loaded.settings.allQuests === true } : null;
 
   /** The game as the screen shows it: the server's game with the queued quiet moves applied on top. */
   const game: Game | null = useMemo(() => {
@@ -747,7 +747,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
                 {tab === 'trade' && openQuest && questWaiting.length > 0 && <QuestWaiting quest={openQuest} items={questWaiting} onNext={questMap?.stop && questMap.stop.planet !== t.location ? () => showOnMap(questMap.stop!.planet) : undefined} />}
                 {tab === 'trade' && openQuest && questPirate && <QuestPirate quest={openQuest} busy={panelBusy} onFight={() => void questMove([{ type: 'quest-fight', step: questPirate.index }])} />}
                 {tab === 'trade' && openQuest && questClue && !questHere.steps.length && questClue.step.planet !== t.location && <QuestClue quest={openQuest} text={questClue.text} onReveal={() => reveal(questClue.step.index)} />}
-                {tab === 'quests' && <QuestsPanel galaxy={galaxy} t={t} quests={game.quests} keepsakes={keepsakes} busy={panelBusy} showXY={level !== 'off'} shown={trailShown} onReveal={reveal} onQuest={(a) => void questMove(a)} onTab={setTab} onShowMap={showOnMap} onStory={(id, part) => setQuestStory({ id, part })} />}
+                {tab === 'quests' && <QuestsPanel galaxy={galaxy} t={t} quests={game.quests} keepsakes={keepsakes} allQuests={settings.allQuests === true} busy={panelBusy} showXY={level !== 'off'} shown={trailShown} onReveal={reveal} onQuest={(a) => void questMove(a)} onTab={setTab} onShowMap={showOnMap} onStory={(id, part) => setQuestStory({ id, part })} />}
                 {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} want={marketWant} level={level} quest={questCargoNames(galaxy, game.quests, t)} onTrade={doTrade} onPlan={setMarketPlan} onShowMap={showOnMap} />}
                 {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} suggest={suggest} askFirst={level === 'some'} forge={forgeOn} onForge={() => setTab('forge')} onAct={act} onMoon={() => void buyMoon()} captain={game?.captain} onCaptain={() => setPicking(true)} />}
                 {tab === 'forge' && forgeOn && <Forge saved={savedSystem} draft={design} credits={t.credits} ownsMoon={t.moon} busy={panelBusy} lessMotion={lessMotion} level={level} typing={loaded.settings.forgeTyping !== false} onDraft={setDraft} onPlan={planForge} onApply={applyForge} onPicture={savePicture} />}

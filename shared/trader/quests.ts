@@ -301,10 +301,17 @@ export interface QuestState {
 
 export const emptyQuests = (): QuestState => ({ open: null, done: [], finished: [], lastDay: null });
 
-/** The quest that can be taken next (null: all done, or the next one opens tomorrow, or one is open now). */
-export function nextQuest(q: QuestState | undefined, day: number): QuestConfig | null {
+/**
+ * The quest that can be taken next (null: all done, or the next one opens tomorrow, or one is open now). With `pick` (a
+ * teacher trying the game), that quest if it isn't finished: any order, any day.
+ */
+export function nextQuest(q: QuestState | undefined, day: number, pick?: string): QuestConfig | null {
   const s = q ?? emptyQuests();
   if (s.open) return null;
+  if (pick !== undefined) {
+    const chosen = questById(pick);
+    return chosen && !s.finished.includes(chosen.id) ? chosen : null;
+  }
   const next = QUESTS.find((c) => !s.finished.includes(c.id));
   if (!next) return null;
   if (s.lastDay !== null && s.lastDay >= day) return null;

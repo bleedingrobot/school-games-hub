@@ -76,6 +76,8 @@ export interface Settings {
   forgeTyping?: boolean;
   /** Unlimited jumps today (the teacher's switch): a jump past 0 is allowed and the count stays at 0. */
   unlimited?: boolean;
+  /** A teacher's own game: every quest can be taken, in any order, any day, to try them out. Never for pupils. */
+  allQuests?: boolean;
 }
 
 /** What a pupil ended a season with, kept for the pupil who chooses to start a new system (docs/TRADER-SYSTEM-PLAN.md, 1.2). */
@@ -333,7 +335,8 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
         g.quests = taken;
         return;
       }
-      const next = nextQuest(q, t.day);
+      const next = nextQuest(q, t.day, settings.allQuests ? action.id : undefined);
+      if (!next && settings.allQuests) return refuse('That quest is already finished.');
       if (!next) return refuse(q.finished.length ? 'The next quest opens tomorrow.' : 'There is no quest to take.');
       if (next.id !== action.id) refuse('That quest is not open yet.');
       const taken: QuestState = { ...q, open: next.id, done: [] };
