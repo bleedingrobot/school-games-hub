@@ -1,0 +1,379 @@
+{
+  "_from": "docs/plans/trader-quests/PLAN.md. Star Trader quests: 5 quest-giver portraits, a quest board and 5 story pages a quest.",
+  "game": "trader-quests",
+  "filename_prefix": "trader-quests/img",
+  "style": "a",
+  "styles": {
+    "a": "Painterly sci-fi storybook illustration, deep space blues and purples with glowing planets and warm light, cinematic, hopeful and friendly, suitable for children aged 8 to 12, no writing, no letters, no numbers, no logos anywhere. "
+  },
+  "inbox": "~/stories-art-inbox/trader-quests",
+  "picks": "docs/stories-art/trader-quests-picks.json",
+  "art_dir": "src/games/trader/art",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "quest-board",
+      "prompt": "A friendly busy space station hall with a big glowing hologram noticeboard covered in little picture cards and planets, cheerful alien characters waiting nearby. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "quest-board"
+    },
+    {
+      "name": "giver-zuzu",
+      "prompt": "a cheerful plump elderly woman with soft lavender skin, a human face, two small curly antennae, four arms, round glasses, a grey hair bun and a flowery apron, smiling warmly. Head and shoulders portrait, centred, plain soft starry background.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "quests",
+      "file": "giver-zuzu",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "giver-vex",
+      "prompt": "a tall kind but serious male starship commander with a short grey beard and a smart navy-blue uniform, calm and brave. Head and shoulders portrait, centred, plain soft starry background.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "quests",
+      "file": "giver-vex",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "giver-sprocket",
+      "prompt": "a small elderly female inventor with wild white hair, big brass goggles on her forehead and an oil-stained lab coat, excited grin. Head and shoulders portrait, centred, plain soft starry background.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "quests",
+      "file": "giver-sprocket",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "giver-nettle",
+      "prompt": "a tall gentle male plant-person doctor with green skin, leafy hair with one small flower, and a doctor's bag, kind smile. Head and shoulders portrait, centred, plain soft starry background.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "quests",
+      "file": "giver-nettle",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "giver-kai",
+      "prompt": "a friendly young woman space ranger with a green ranger jacket and short dark hair, smiling, a glowing baby space whale peeking over her shoulder. Head and shoulders portrait, centred, plain soft starry background.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "quests",
+      "file": "giver-kai",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "zuzu-1",
+      "prompt": "A cheerful plump elderly woman with soft lavender skin, a human face, two small curly antennae, four arms, round glasses, a grey hair bun and a flowery apron waving happily from the doorway of her cosy round house on a farm planet, party bunting. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "zuzu-1"
+    },
+    {
+      "name": "zuzu-2",
+      "prompt": "A cheerful plump elderly woman with soft lavender skin, a human face, two small curly antennae, four arms, round glasses, a grey hair bun and a flowery apron in a cosy kitchen surrounded by empty mixing bowls, looking flustered but funny, flour everywhere. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "zuzu-2"
+    },
+    {
+      "name": "zuzu-3",
+      "prompt": "A small scruffy cargo spaceship zooming off from a green farm planet, balloons and streamers trailing behind it. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "zuzu-3"
+    },
+    {
+      "name": "zuzu-4",
+      "prompt": "A joyful alien birthday party in a garden, a small boy with soft lavender skin, a human face and tiny curly antennae, holding a big purple cake and fizzing sparkle candles, little robots playing drums and guitars. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "zuzu-4"
+    },
+    {
+      "name": "zuzu-5",
+      "prompt": "A cheerful plump elderly woman with soft lavender skin, a human face, two small curly antennae, four arms, round glasses, a grey hair bun and a flowery apron at the ramp of a small spaceship handing over a bag of coins and a slice of purple cake. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "zuzu-5"
+    },
+    {
+      "name": "vex-1",
+      "prompt": "A tall kind but serious male starship commander with a short grey beard and a smart navy-blue uniform on a starship bridge looking at a glowing hologram of a green flower planet with small rusty pirate ships circling it. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "vex-1"
+    },
+    {
+      "name": "vex-2",
+      "prompt": "A small scruffy trader spaceship in a navy hangar having a shiny blue laser cannon fitted by friendly robot arms. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "vex-2"
+    },
+    {
+      "name": "vex-3",
+      "prompt": "A small brave spaceship facing three rusty patched pirate ships in a colourful nebula. Exciting, not scary. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "vex-3"
+    },
+    {
+      "name": "vex-4",
+      "prompt": "Happy flower-covered villagers on a garden planet throwing flower petals into the sky as a small spaceship lands in a meadow. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "vex-4"
+    },
+    {
+      "name": "vex-5",
+      "prompt": "A tall kind but serious male starship commander with a short grey beard and a smart navy-blue uniform saluting proudly in a meadow of flowers, a small spaceship behind him. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "vex-5"
+    },
+    {
+      "name": "sprocket-1",
+      "prompt": "A small elderly female inventor with wild white hair, big brass goggles on her forehead and an oil-stained lab coat in a messy workshop full of gadgets, pointing in shock at four empty robot charging pods. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "sprocket-1"
+    },
+    {
+      "name": "sprocket-2",
+      "prompt": "Four cute little different robots tiptoeing out of a workshop door at night carrying tiny suitcases and a beach ball. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "sprocket-2"
+    },
+    {
+      "name": "sprocket-3",
+      "prompt": "A cute little round robot peeking out of a cargo crate in a spaceship hold, looking a bit green and travel sick, funny. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "sprocket-3"
+    },
+    {
+      "name": "sprocket-4",
+      "prompt": "A small elderly female inventor with wild white hair, big brass goggles on her forehead and an oil-stained lab coat hugging four cute little robots in her workshop, one dripping wet, one wearing sunglasses, one lying down, one covered in glitter. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "sprocket-4"
+    },
+    {
+      "name": "sprocket-5",
+      "prompt": "A cute little robot proudly holding up a messy crayon drawing of a spaceship, in a cosy workshop. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "sprocket-5"
+    },
+    {
+      "name": "nettle-1",
+      "prompt": "A funny alien town where everyone is sneezing big shiny soap bubbles, bubbles floating everywhere. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "nettle-1"
+    },
+    {
+      "name": "nettle-2",
+      "prompt": "A tall gentle male plant-person doctor with green skin, leafy hair with one small flower, and a doctor's bag in a little clinic with empty shelves, holding up an empty medicine bottle and looking hopeful. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "nettle-2"
+    },
+    {
+      "name": "nettle-3",
+      "prompt": "A cosy clinic waiting room packed with hundreds of big shiny soap bubbles piled right up to the ceiling, chairs and a reception desk half hidden behind the bubbles, a few friendly aliens peeking out, funny. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "nettle-3"
+    },
+    {
+      "name": "nettle-4",
+      "prompt": "A happy alien town square, everyone well again and cheering, one round alien mayor in a sash with one tiny bubble on his nose. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "nettle-4"
+    },
+    {
+      "name": "nettle-5",
+      "prompt": "A tall gentle male plant-person doctor with green skin, leafy hair with one small flower, and a doctor's bag handing a bag of coins to a captain at the door of a sunny clinic, flowers around the door. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "nettle-5"
+    },
+    {
+      "name": "kai-1",
+      "prompt": "A cute glowing baby space whale with starry blue skin swimming right beside the round window of a small spaceship, looking lost, stars all around. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "kai-1"
+    },
+    {
+      "name": "kai-2",
+      "prompt": "A long trail of glowing stardust winding across space between colourful planets. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "kai-2"
+    },
+    {
+      "name": "kai-3",
+      "prompt": "A friendly young woman space ranger with a green ranger jacket and short dark hair in a cosy cockpit pointing at a glowing hologram star map, a cute glowing baby space whale with starry blue skin watching through the window. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "kai-3"
+    },
+    {
+      "name": "kai-4",
+      "prompt": "A family of huge glowing space whales singing in a nebula, a cute glowing baby space whale with starry blue skin swimming into a giant hug with its mother. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "kai-4"
+    },
+    {
+      "name": "kai-5",
+      "prompt": "Close-up of an open hand holding a tiny glowing whale made of shimmering starlight, space whales swimming away into a colourful nebula in the background. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "quests",
+      "file": "kai-5"
+    },
+    {
+      "name": "trophy-quest-master",
+      "prompt": "A shining golden trophy shaped like a small star with a tiny spaceship circling it, on a soft starry background. Centred.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "quests",
+      "file": "trophy-quest-master",
+      "max": 512,
+      "small": 160
+    }
+  ]
+}
