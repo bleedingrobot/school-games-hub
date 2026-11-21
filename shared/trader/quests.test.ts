@@ -260,6 +260,27 @@ describe('Star Trader quests', () => {
     expect(waiting(at(berries, planets[0][3]))).toEqual([{ line: 'Grandma Zuzu is here.', why: 'First get the Sparkle Candles and a Robot Band, then come back here.' }]);
     expect(waiting(at(berries, planets[0][2]))).toEqual([]);
     expect(waiting(at({ ...berries, t: { ...berries.t, questCargo: 999 } }, planets[0][1]))[0].why).toMatch(/^Make room: 1 free hold needed\. Sell something first/);
+    // Dr Nettle: his planet says what to buy and where (said once); other markets say buy here, or keep what's in the hold.
+    const nettle: Game = { ...fresh(), quests: { open: 'nettle', done: [], finished: ['zuzu', 'sprocket'], lastDay: 9 } };
+    const doc = planets[2][2];
+    const atDoc = waiting(at(nettle, doc));
+    expect(atDoc).toHaveLength(1);
+    expect(atDoc[0].why).toMatch(/^First get 5 Medicine and 10 Water, then come back here\. The nearest Medicine is on .+ \(\d+ fuel\)\./);
+    const market = galaxy.planets.find((p) => p.id !== doc && p.tech >= 5)!.id;
+    expect(waiting(at(nettle, market))).toEqual([expect.objectContaining({ line: 'Dr Nettle needs these.', shop: true, why: expect.stringMatching(/^Buy 5 Medicine \(\d+ cr each\) and 10 Water .* here\. Then take them to /) })]);
+    const water = at(nettle, market);
+    setCargo(water.t, WATER, 10);
+    expect(waiting(water)[0].why).toMatch(/Keep your 10 Water: don't sell them\./);
+    const waterAtDoc = at(nettle, doc);
+    setCargo(waterAtDoc.t, WATER, 10);
+    expect(waiting(waterAtDoc)[0].why).toMatch(/^First get 5 Medicine, then/);
+    // Lumi's family planet stays secret until the trail gets there (Bolt Off shows it, with the right words).
+    const kai: Game = at({ ...fresh(), quests: { open: 'kai', done: [], finished: [], lastDay: 9 } }, planets[4][3]);
+    expect(waitingHere(galaxy, kai.t, kai.quests, [], [])).toEqual([]);
+    expect(waitingHere(galaxy, kai.t, kai.quests, [], 'all')).toEqual([{ line: "Lumi's family is here.", why: "First follow Lumi's trail, then come back here." }]);
+    // Vex's garden before the pirates.
+    const vex: Game = at({ ...fresh(), quests: { open: 'vex', done: [], finished: [], lastDay: 9 } }, planets[3][3]);
+    expect(waiting(vex)).toEqual([{ line: 'Commander Vex is here.', why: 'First chase off 3 more pirate ships, then come back here.' }]);
     }
 
     // Q.6 daily jobs: none until all five quests are done this season; then one or two a day from the pupil's seed, the same on a

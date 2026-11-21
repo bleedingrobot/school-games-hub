@@ -174,39 +174,86 @@ export function doableHere(galaxy: Galaxy, seed: string, game: Game, settings: S
 /** "a, b and c". */
 const andList = (items: string[]): string => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`);
 
-/** What is still to do before a quest's last stop, in a few words: "the Sparkle Candles and a Robot Band". */
+/** What is still to do before a quest's last stop, in a few words: "get the Sparkle Candles and a Robot Band". */
 function stillToDo(quest: QuestConfig, steps: readonly StepView[]): string {
   const left = steps.filter((s) => !s.done && s.index < quest.steps.length - 1);
   const pirates = left.filter((s) => s.kind === 'pirate').length;
-  const words = left.flatMap((s): string[] => {
+  const things = left.flatMap((s): string[] => {
     if (s.kind === 'pickup') return [the(s.what)];
-    if (s.kind === 'buy-deliver') return [`${s.qty ?? ''} ${s.what}`.trim()];
+    // Dr Nettle's goods already in the hold are handed over here, so only what is still to buy.
+    if (s.kind === 'buy-deliver') return (s.have ?? 0) < (s.qty ?? 0) ? [`${(s.qty ?? 0) - (s.have ?? 0)} ${s.what}`] : [];
     return [];
   });
+  const words = things.length ? [`${quest.id === 'sprocket' ? 'find' : 'get'} ${andList(things)}`] : [];
   if (pirates) words.push(`chase off ${pirates} more pirate ship${pirates === 1 ? '' : 's'}`);
-  if (left.some((s) => s.kind === 'clue')) words.push('find Lumi');
+  if (left.some((s) => s.kind === 'clue')) words.push("follow Lumi's trail");
   return andList(words);
+}
+
+/** Where to buy what Dr Nettle still needs: "Water is sold right here (4 cr each). The nearest Medicine is on Zorb (3 fuel)." */
+function buyWhere(galaxy: Galaxy, t: Trader, quest: QuestConfig, steps: readonly StepView[]): string {
+  return steps
+    .filter((s) => !s.done && s.kind === 'buy-deliver' && (s.have ?? 0) < (s.qty ?? 0))
+    .flatMap((s) => {
+      const seller = nearestSellers(galaxy, t, quest.steps[s.index].good ?? 0, 1)[0];
+      if (!seller) return [];
+      return [seller.planet === t.location ? `${s.what} is sold right here (${seller.price} cr each).` : `The nearest ${s.what} is on ${seller.name} (${seller.fuel} fuel).`];
+    })
+    .join(' ');
+}
+
+export interface QuestHint {
+  line: string;
+  why: string;
+  /** A hint at a market rather than at one of the quest's own stops (Dr Nettle's shopping). */
+  shop?: boolean;
 }
 
 /**
  * Quest steps on this planet that can't be done yet, so a quest planet never looks empty: the last stop before the rest
  * are done ("Grandma Zuzu is here. First get the Sparkle Candles and a Robot Band, then come back here."), or a pick-up
- * with a full hold. Lumi's later trail stops stay secret. Steps in `doable` are left out (they have the landing card).
+ * with a full hold. Dr Nettle's quest also says where to buy his goods, and at a market selling them, to buy (or keep)
+ * them here. Lumi's trail stops, her family's planet included, stay secret. Steps in `doable` are left out (they have the
+ * landing card).
  */
-export function waitingHere(galaxy: Galaxy, t: Trader, q: QuestState | undefined, doable: readonly StepView[], shown: Shown = 'all'): { line: string; why: string }[] {
+export function waitingHere(galaxy: Galaxy, t: Trader, q: QuestState | undefined, doable: readonly StepView[], shown: Shown = 'all'): QuestHint[] {
   const view = openQuestView(galaxy, t, q);
   if (!view) return [];
   const { quest } = view;
   const last = quest.steps.length - 1;
-  const out: { line: string; why: string }[] = [];
+  const lastStep = view.steps[last];
+  const out: QuestHint[] = [];
+  const lastWaitsHere = !!lastStep && !lastStep.done && lastStep.planet === t.location && lastStep.problem === 'Do the other steps first.';
   for (const s of view.steps) {
     if (s.done || s.planet !== t.location || s.kind === 'pirate' || doable.some((d) => d.index === s.index) || !s.problem) continue;
-    if (s.kind === 'clue' && (s.problem === 'Do the steps in order.' || isHidden(quest, s, shown))) continue;
+    if (quest.ordered && (s.problem === 'Do the steps in order.' || isHidden(quest, s, shown))) continue;
     if (s.index === last && s.problem === 'Do the other steps first.') {
       const who = jobIndex(quest.id) !== null ? 'This is where the crates go.' : quest.id === 'kai' ? "Lumi's family is here." : `${quest.giver} is here.`;
-      out.push({ line: who, why: `First ${quest.id === 'sprocket' ? 'find' : 'get'} ${stillToDo(quest, view.steps)}, then come back here.` });
+      const shop = buyWhere(galaxy, t, quest, view.steps);
+      out.push({ line: who, why: `First ${stillToDo(quest, view.steps) || 'do the other steps'}, then come back here.${shop ? ` ${shop}` : ''}` });
+    } else if (s.kind === 'buy-deliver') {
+      // Said once, in the giver's line, when that is waiting here too.
+      if (lastWaitsHere) continue;
+      const shop = buyWhere(galaxy, t, quest, [s]);
+      out.push({ line: `${landingLine(quest, s)}.`, why: `${s.problem}${shop ? ` ${shop}` : ''}` });
     } else {
       out.push({ line: `${landingLine(quest, s)}.`, why: s.problem.startsWith('Make room') ? `${s.problem} Sell something first, then pick it up.` : s.problem });
+    }
+  }
+  // Dr Nettle's shopping at any other market: buy what he still needs here, and keep what is already in the hold.
+  const goods = view.steps.filter((s) => !s.done && s.kind === 'buy-deliver');
+  if (goods.length && lastStep && lastStep.planet !== t.location) {
+    const buy: string[] = [];
+    const keep: string[] = [];
+    for (const s of goods) {
+      const line = t.market[quest.steps[s.index].good ?? 0];
+      const need = (s.qty ?? 0) - (s.have ?? 0);
+      if (need > 0 && line && line.buy > 0 && line.stock > 0) buy.push(`${need} ${s.what} (${line.buy} cr each)`);
+      else if (need <= 0 && line && line.sell > 0) keep.push(`${s.qty} ${s.what}`);
+    }
+    if (buy.length || keep.length) {
+      const parts = [buy.length ? `Buy ${andList(buy)} here.` : '', keep.length ? `Keep your ${andList(keep)}: don't sell them.` : '', `Then take them to ${lastStep.name}.`];
+      out.push({ line: `${quest.giver} needs these.`, why: parts.filter(Boolean).join(' '), shop: true });
     }
   }
   return out;
