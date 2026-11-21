@@ -112,6 +112,17 @@
   gap: 16px 24px;
 }
 
+/* Game switches on Today: one small heading per game, then its switches. */
+.game-switches__game + .game-switches__game {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line, rgba(0, 0, 0, 0.1));
+}
+.game-switches__name {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+}
+
 .this-week__focuses {
   list-style: none;
   padding: 0;
