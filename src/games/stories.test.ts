@@ -5,7 +5,10 @@ import { ALL_STORIES as CLANS } from './clans/stories';
 import { ALL_STORIES as GEMKEEP } from './gem-keep/stories';
 import { ALL_STORIES as GOBLIN } from './goblinstorm/stories';
 import { ALL_STORIES as LORD, LAIR, MASTER_STORIES, VICTORY, lordShelf } from './lord/stories';
-import { ALL_STORIES as TRADER } from './trader/stories';
+import { ALL_STORIES as TRADER_MAIN, QUEST_STORIES } from './trader/stories';
+
+// Star Trader's quest stories (Q.3) are read by each giver, not the narrator, so they sit apart from ALL_STORIES.
+const TRADER = [...TRADER_MAIN, ...Object.values(QUEST_STORIES)];
 
 describe('game stories', () => {
   it('pass the story checks across every game together, and never mention maths, romance or orphans', () => {

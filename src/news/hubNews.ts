@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'trader-quest-stories-2026-11-21',
+    date: '2026-11-21',
+    emoji: '📖',
+    title: 'Star Trader quest stories',
+    text: 'Each quest now has a story, read aloud by the quest giver. Read them on the Quests tab.',
+    game: 'trader',
+  },
+  {
     id: 'bond-match-finish-2026-11-21',
     date: '2026-11-21',
     emoji: '🌅',

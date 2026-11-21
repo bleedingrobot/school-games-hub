@@ -2,7 +2,7 @@
 
 21 Nov 2026. James: "I want to plan some in game quests for Star Trader. A quests tab; a character wants to plan a party and you have to pick up the things they need from different planets; a currency reward at the end. Others might be defending planets from pirates, gathering robots from different places. The quests should make it very clear where to go. Plan 5 different quests, use different voices and make stories for them with the gaming computer."
 
-**Status:** plan, stories and all 32 paintings done (#683), voices sampled (review page https://claude.ai/artifact/H1iYrYmdLjfDMqs4Ws8din). Q.0 done: no more reshuffle (migration 20261121000400_trader_keep_galaxy.sql). Q.1 done: the quest rules on the server (`shared/trader/quests.ts`, moves `quest-take`, `quest-pickup`, `quest-deliver`, `quest-drop`), no screens yet. Q.2 done: the Quests tab (key Q), step checklist, gold rings on the star chart, the jump line, the landing card, Bolt's next stop, gold quest boxes in the hold, Quest complete moment, and a What's new line. Next: Q.3.
+**Status:** plan, stories and all 32 paintings done (#683), voices sampled (review page https://claude.ai/artifact/H1iYrYmdLjfDMqs4Ws8din). Q.0 done: no more reshuffle (migration 20261121000400_trader_keep_galaxy.sql). Q.1 done: the quest rules on the server (`shared/trader/quests.ts`, moves `quest-take`, `quest-pickup`, `quest-deliver`, `quest-drop`), no screens yet. Q.2 done: the Quests tab (key Q), step checklist, gold rings on the star chart, the jump line, the landing card, Bolt's next stop, gold quest boxes in the hold, Quest complete moment, and a What's new line. Q.3 done: each quest's story plays in the giver's own voice when you take it (pages 1–3) and when you finish it (pages 4–5), the 📖 Quest stories shelf, and the quest board painting on the Quests tab. Next: Q.4.
 
 ## 1. The short version
 
@@ -63,12 +63,22 @@ James's main ask. Five places say it:
 | **Q.0** ✅ | Stop the season reshuffle: keep this season's map for good (New Season keeps the planets, resets ships and prices as now) | Small |
 | **Q.1** ✅ | Rules and server: quest list in `shared/trader/quests.ts` (one config entry per quest, so more can be added later), each quest's fixed planets, quest state in the saved game, moves `quest-take`, `quest-pickup`, `quest-deliver`, `quest-drop`; tests | Medium |
 | **Q.2** ✅ | Quests tab, step checklist, gold map rings, jump-screen line, landing card, Bolt lines, key Q | Medium |
-| **Q.3** | Stories in StoryBook with each giver's voice, the 📖 shelf, paintings tidied into the game | Small |
+| **Q.3** ✅ | Stories in StoryBook with each giver's voice, the 📖 shelf, paintings tidied into the game | Small |
 | **Q.4** | Commander Vex's pirate fights (Navy laser, gentle losses) and Lumi's clue trail | Medium |
 | **Q.5** | Quest Log keepsakes, Star Quest Master achievement and trophy (migration), What's new line, go live | Small |
 | **Q.6** | Daily jobs after all five: one or two computer-made deliveries a day, small rewards | Small |
 
 Each stage goes live on its own (switched on), like the other Star Trader stages.
+
+### What Q.3 built (21 Nov 2026)
+
+- **Voices:** each giver has their own Kokoro clip folder `public/voice/quest-<id>/` (Zuzu bf_isabella, Sprocket bf_lily, Nettle am_puck, Vex bm_george, Kai af_sky), five `VOICE_FOR` lines in `scripts/voice-clips.py`, checked by `src/games/trader/voiceLines.test.ts` (voice tests are outside the budget).
+- **Stories:** `QUEST_STORIES` and `questStoryPart(id, 'start' | 'end' | 'all')` in `src/games/trader/stories.ts`. They are kept out of `ALL_STORIES` (that list is narrated by am_michael) but go through the words checks in `src/games/stories.test.ts`.
+- **Taking a quest** opens the kit StoryBook on pages 1–3, with the giver's face in the corner. Esc or Skip closes it, and then you land on the Quests tab.
+- **Finishing a quest** plays pages 4–5, then the Quest complete moment. The reward still comes from the server's reply.
+- **📖 Quest stories shelf** at the bottom of the Quests tab: "The story so far" (pages 1–3) for an open quest, "The whole story" (all 5) for a finished one. Locked quests show nothing.
+- **Paintings:** the quest board is now the Quests tab header; giver faces and story pages use the -800 sizes on phones (srcSet). Nothing was removed: every painting is used except `trophy-quest-master`, which Q.5 needs.
+- **Tests:** folded into the existing Quests screen test in `TraderGame.test.tsx` (budget still 12). The first trade test ("a trade is sent with the next jump") flakes now and then on the credits timing; it does on main too.
 
 ### What Q.2 built (21 Nov 2026)
 

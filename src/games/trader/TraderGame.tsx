@@ -20,7 +20,7 @@ import { type ApiResult, type Loaded, type MoveReply, type TraderApi } from '../
 import { useAsk } from './Ask';
 import { CaptainFace, CaptainPicker } from './Captain';
 import { StoryBook, useStoryOnce } from '../../kit';
-import { OPENING } from './stories';
+import { OPENING, questClips, questStoryPart } from './stories';
 import { DealPanel, FightPanel, JunkPanel, SummaryPanel } from './Encounter';
 import { laserPower } from '../../../shared/trader/fight';
 import { hasShipyard } from '../../../shared/trader/state';
@@ -43,7 +43,7 @@ import { loadPrefs, savePrefs, wantsLessMotion } from './prefs';
 import type { Scene, SpaceView } from './renderer';
 import { SpaceCanvas } from './SpaceCanvas';
 import { MapPanel } from './StarMap';
-import { QuestDone, QuestLanding, QuestsPanel } from './QuestsPanel';
+import { GiverFace, QuestDone, QuestLanding, QuestsPanel } from './QuestsPanel';
 import { doableHere, leftBehind, nextStop, questCargoNames, questPlanetMarks } from './questGuide';
 import { QUESTS, questById } from '../../../shared/trader/quests';
 import { UNLIMITED_LABEL } from '../../../shared/unlimited';
@@ -115,6 +115,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   const helpButton = useRef<HTMLButtonElement>(null);
   /** The opening story: once per pupil on the title screen, and again from its "📖 The story" button. Skippable. */
   const [storyAgain, setStoryAgain] = useState(false);
+  /** A quest story playing: its first pages on taking the quest, its last two on finishing (then the reward), or all again from the shelf. */
+  const [questStory, setQuestStory] = useState<{ id: string; part: 'start' | 'end' | 'all'; reward?: number } | null>(null);
   const lock = useRef(false);
   const latest = useRef({ loaded, queue });
   latest.current = { loaded, queue };
@@ -551,10 +553,16 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
     lock.current = true;
     setBusy(true);
     const r = await flush(actions);
+    const a = actions[actions.length - 1];
     if (!r.ok) setNote(r.message);
-    else if (r.value.quest) setPhase({ k: 'quest', id: r.value.quest.finished, reward: r.value.quest.reward });
+    // The reward is the server's: the last two pages play, then the Quest complete moment shows what it paid.
+    else if (r.value.quest) {
+      const { finished: id, reward } = r.value.quest;
+      if (questStoryPart(id, 'end')) setQuestStory({ id, part: 'end', reward });
+      else setPhase({ k: 'quest', id, reward });
+    }
     else {
-      const a = actions[actions.length - 1];
+      if (a.type === 'quest-take') setQuestStory({ id: a.id, part: 'start' });
       setNote(a.type === 'quest-take' ? 'Quest taken! Gold rings on the star chart show where to go.' : a.type === 'quest-drop' ? 'Quest dropped. You can take it again any time.' : 'Done! ✓ Ticked off on the Quests screen.');
     }
     setBusy(false);
@@ -644,7 +652,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   const playing = phase.k !== 'title';
   const panelBusy = busy || asking || phase.k === 'warp';
   const opening = useStoryOnce(OPENING.id, phase.k === 'title' && !!game && !loaded?.seasonChoice);
-  const storyOpen = opening.open || storyAgain;
+  const storyOpen = opening.open || storyAgain || !!questStory;
+  const questBook = questStory ? questStoryPart(questStory.id, questStory.part) : null;
   useTraderKeys(root, !asking && !picking && !problem && !storyOpen);
   const tabs: [Tab, string][] = [['trade', 'Trade'], ['ship', 'Ship'], ['bank', 'Bank'], ['map', 'Star chart'], ['quests', openQuest ? '⭐ Quests' : 'Quests'], ...(forgeOn ? [['forge', '🌟 Forge'], ['gallery', '🌌 Gallery']] as [Tab, string][] : [])];
   const label = here && t && galaxy ? `${here.name}, a ${GOVERNMENTS[here.government].name.toLowerCase()} world. Your ${SHIPS[t.ship].name} is in orbit.` : 'Star Trader';
@@ -696,7 +705,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
                 {tipCard ?? (step && !flight && bolt && <CoachBar step={step} onShow={showMe} />)}
                 <div className="st-focus" ref={heading} tabIndex={-1} aria-label={`${tabs.find((x) => x[0] === tab)?.[1]} screen`} />
                 {tab === 'trade' && openQuest && questHere.steps.length > 0 && <QuestLanding quest={openQuest} steps={questHere.steps} busy={panelBusy} onDo={() => void questMove(questHere.actions)} />}
-                {tab === 'quests' && <QuestsPanel galaxy={galaxy} t={t} quests={game.quests} busy={panelBusy} showXY={level !== 'off'} onQuest={(a) => void questMove(a)} onTab={setTab} onShowMap={showOnMap} />}
+                {tab === 'quests' && <QuestsPanel galaxy={galaxy} t={t} quests={game.quests} busy={panelBusy} showXY={level !== 'off'} onQuest={(a) => void questMove(a)} onTab={setTab} onShowMap={showOnMap} onStory={(id, part) => setQuestStory({ id, part })} />}
                 {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} want={marketWant} level={level} quest={questCargoNames(game.quests, t)} onTrade={doTrade} onPlan={setMarketPlan} onShowMap={showOnMap} />}
                 {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} suggest={suggest} askFirst={level === 'some'} forge={forgeOn} onForge={() => setTab('forge')} onAct={act} onMoon={() => void buyMoon()} captain={game?.captain} onCaptain={() => setPicking(true)} />}
                 {tab === 'forge' && forgeOn && <Forge saved={savedSystem} draft={design} credits={t.credits} ownsMoon={t.moon} busy={panelBusy} lessMotion={lessMotion} level={level} typing={loaded.settings.forgeTyping !== false} onDraft={setDraft} onPlan={planForge} onApply={applyForge} onPicture={savePicture} />}
@@ -775,7 +784,23 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
           onSkip={() => remember((m) => ({ ...m, flight: 'skipped', run: null }))}
         />
       )}
-      {storyOpen && (
+      {questStory && questBook && (
+        <StoryBook
+          key={`${questStory.id}-${questStory.part}`}
+          story={questBook}
+          clips={questClips(questStory.id)}
+          onClose={() => {
+            const done = questStory;
+            setQuestStory(null);
+            if (done.reward !== undefined) setPhase({ k: 'quest', id: done.id, reward: done.reward });
+            else if (done.part === 'start') setTab('quests');
+          }}
+          endLabel={questStory.part === 'start' ? "Let's go!" : questStory.reward !== undefined ? 'My reward' : 'The end'}
+          className="st-storybook"
+          corner={<GiverFace id={questStory.id} name={questBook.title} size={72} />}
+        />
+      )}
+      {storyOpen && !questStory && (
         <StoryBook
           story={OPENING}
           onClose={() => { opening.close(); setStoryAgain(false); }}

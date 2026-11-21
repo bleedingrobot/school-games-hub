@@ -786,6 +786,15 @@
 .stq-land__tag { margin: 0; font-size: 0.82rem; font-weight: 800; color: var(--st-gold); text-transform: uppercase; letter-spacing: 0.04em; }
 .stq-land__line { margin: 2px 0 0; font-size: 1.05rem; }
 .stq-land__btn { margin-left: auto; }
+/* Q.3: the quest board painting heads the tab; the 📖 shelf of stories started. */
+.stq-board { display: block; width: calc(100% + 32px); max-width: none; margin: -14px -16px 10px; aspect-ratio: 16 / 9; max-height: 200px; object-fit: cover; border-radius: 16px 16px 0 0; }
+.stq-shelf { margin-top: 14px; }
+.stq-shelf__list { list-style: none; margin: 6px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.stq-shelf__item { width: 100%; display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 12px; border: 2px solid rgba(253, 224, 71, 0.45); background: rgba(27, 38, 80, 0.55); color: inherit; font: inherit; text-align: left; cursor: pointer; min-height: 48px; }
+.stq-shelf__item:hover, .stq-shelf__item:focus-visible { border-color: var(--st-gold); }
+.stq-shelf__thumb { flex: none; width: 64px; height: 36px; border-radius: 6px; object-fit: cover; }
+.stq-shelf__label { display: flex; flex-direction: column; min-width: 0; font-weight: 700; font-size: 0.92rem; }
+.stq-shelf__label .st-soft { font-weight: 400; font-size: 0.8rem; }
 .stq-done { text-align: center; }
 .stq-done .stq-face { margin: 0 auto; display: block; }
 .stq-done__h { color: var(--st-gold); }
@@ -806,4 +815,5 @@
   .stq-card { gap: 8px; padding: 6px 8px; }
   .stq-card .stq-face { width: 52px; height: 52px; }
   .stq-step__btn { margin-left: 0; width: 100%; }
+  .stq-board { width: calc(100% + 24px); margin: -10px -12px 8px; max-height: 120px; }
 }

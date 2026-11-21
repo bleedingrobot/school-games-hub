@@ -7,10 +7,19 @@ import { nearestSellers, openQuestView, QUESTS, type QuestConfig, type QuestStat
 import { applyBatch, type Action, type Game, type Settings } from '../../../shared/trader/server';
 import type { Trader } from '../../../shared/trader/state';
 
-const FILES = import.meta.glob('./art/quests/giver-*-small.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+const FILES = import.meta.glob(['./art/quests/giver-*.webp', './art/quests/quest-board*.webp'], { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
-/** A quest giver's painted face (small), or undefined until it exists. */
-export const giverArt = (id: string): string | undefined => FILES[`./art/quests/giver-${id}-small.webp`];
+/** A quest giver's painted face (160 px, and the 512 px painting), or undefined until it exists. */
+export function giverArt(id: string): { small: string; big?: string } | undefined {
+  const small = FILES[`./art/quests/giver-${id}-small.webp`];
+  return small ? { small, big: FILES[`./art/quests/giver-${id}.webp`] } : undefined;
+}
+
+/** The quest board painting, the Quests tab's header picture (1600 px and its 800 px copy for phones). */
+export function boardArt(): { wide: string; small: string } | undefined {
+  const wide = FILES['./art/quests/quest-board.webp'];
+  return wide ? { wide, small: FILES['./art/quests/quest-board-800.webp'] ?? wide } : undefined;
+}
 
 /** Problems that mean "not yet" rather than "go there": these steps wait for others. */
 const WAITING = new Set(['Do the other steps first.', 'Do the steps in order.']);
