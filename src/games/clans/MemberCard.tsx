@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { fightStats } from '../../../shared/clans/character';
+import { LEADER_HP_BONUS, LEADER_STAT_BONUS, fightStats } from '../../../shared/clans/character';
 import { offhandWord } from '../../../shared/clans/items';
 import { SPELLS } from '../../../shared/clans/spells';
 import type { Member } from '../../../shared/clans/types';
@@ -75,6 +75,7 @@ export function MemberCard({ member, leader = false, onLook, portrait = 4, hero 
           </div>
         </header>
       )}
+      {leader && <p className="cq-leaderperk">👑 Clan leader: +{LEADER_STAT_BONUS} to every stat except armour, and +{LEADER_HP_BONUS} health.</p>}
       {onLook && hero && <LookPicker race={member.race} cls={member.cls} value={look} onPick={onLook} />}
       <dl className="cq-headline">
         <div title={CARD_HELP.hp}><dt>HP</dt><dd>{h.hp}</dd></div>
