@@ -30,6 +30,7 @@ import { PUPILS_SEE_IT, SettingChoice, SettingToggle, useSetting } from './Setti
 import type { SettingsTarget } from './Games';
 import { useTeacherClass } from './TeacherClass';
 import { GameSets } from './GameSets';
+import { GameSwitches } from './GameSwitches';
 import { NeedsYou } from './WaitingToJoin';
 import { NewTrophiesThisWeek } from '../trophies/TeacherTrophies';
 import { percentRight, useHardest } from './Hardest';
@@ -48,6 +49,7 @@ export function Today() {
       <ClassNeedsYou key={`needs-${classId}`} classId={classId} />
       <GameSets key={`sets-${classId}`} classId={classId} name={current.name} onChanged={() => setSetsUsed((n) => n + 1)} />
       <LessonControls key={`controls-${classId}-${setsUsed}`} target={{ kind: 'class', classId }} name={current.name} />
+      <GameSwitches key={`switches-${classId}`} classId={classId} />
       <UnlimitedTurns key={`unlimited-${classId}`} classId={classId} />
       <DiscountDay key={`discount-${classId}`} classId={classId} />
       <ThisWeek key={`week-${classId}`} classId={classId} name={current.name} members={current.members} />
