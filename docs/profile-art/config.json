@@ -429,6 +429,45 @@
       "small": 160
     },
     {
+      "name": "fame-star-bronze",
+      "prompt": "A big shining five-pointed star standing on a round trophy stand, wrapped in a laurel wreath, with a little curved fanfare trumpet on each side of the stand, the whole trophy made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "fame-star-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "fame-star-silver",
+      "prompt": "A big shining five-pointed star standing on a round trophy stand, wrapped in a laurel wreath, with a little curved fanfare trumpet on each side of the stand, the whole trophy made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "fame-star-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "fame-star-gold",
+      "prompt": "A big shining five-pointed star standing on a round trophy stand, wrapped in a laurel wreath, with a little curved fanfare trumpet on each side of the stand, the whole trophy made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "fame-star-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
       "name": "monster-tooth-bronze",
       "prompt": "One huge curved ivory monster fang standing on a round trophy stand, clean and smooth, the cap, bands and stand made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
       "size": [

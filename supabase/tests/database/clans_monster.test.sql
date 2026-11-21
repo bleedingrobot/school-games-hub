@@ -82,7 +82,7 @@ select ok((select counts_fn = 'public.clan_quest_counts(uuid)'::regprocedure fro
 -- ---- The clans ----
 select is(pg_temp.save('a', 1, 'Red Banner') ->> 'status', 'saved', 'ana''s clan is saved');
 select pg_temp.save('b', 2, 'Blue Fox');
-select is(public.clan_quest_counts(pg_temp.id('a')), '{"clan_monster":0}'::jsonb, 'nobody has beaten the monster yet');
+select is(public.clan_quest_counts(pg_temp.id('a')), '{"clan_famous":0,"clan_monster":0}'::jsonb, 'nobody has beaten the monster yet');
 select is(pg_temp.hall_rows('a'), 0, 'nothing is in the Hall yet');
 
 -- ---- A result with no monster does nothing ----
@@ -116,7 +116,7 @@ select is(pg_temp.tries('a', 3), 4, '... and the tries');
 select is(pg_temp.news('Red Banner beat Grimmor the Storm Giant!'), 1, '... the school is told in the news');
 select is((select school_id from public.clan_news where text = 'Red Banner beat Grimmor the Storm Giant!'), 1, '... in the clan''s school');
 select ok(pg_temp.slayer('a'), '... and Giant Slayer is earned in the same save');
-select is(public.clan_quest_counts(pg_temp.id('a')), '{"clan_monster":1}'::jsonb, '... counted by clan_quest_counts');
+select is(public.clan_quest_counts(pg_temp.id('a')), '{"clan_famous":0,"clan_monster":1}'::jsonb, '... counted by clan_quest_counts');
 select ok(not exists (select 1 from public.achievements where player = pg_temp.id('a') and achievement = 'cq-master-builder'), '... and nothing else was handed out');
 
 -- ---- ... and nothing more for the same season ----

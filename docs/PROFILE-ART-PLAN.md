@@ -103,6 +103,7 @@ The two placed pictures are made by `scripts/game_art.py`'s sister step in secti
 | Slayer's Sword | Dragon Maths | `trophies/slayers-sword` | a hero's sword, point down, dragon-wing crossguard |
 | Season Veteran | Dragon Maths (play a whole season) | `trophies/season-veteran` | a medal on a ribbon with a big star, dragon-scale rim |
 | Dragon Slayer's Crown | Dragon Maths (slay it twice in one season) | `trophies/dragon-crown` | a crown of dragon horns and scales, a dragon's head on the front, on a cushion |
+| Hall of Fame Star | Clan Quest (top 5 for fame in a season) | `trophies/fame-star` | a five-pointed star in a laurel wreath on a stand, a fanfare trumpet each side |
 | Monster Tooth | Clan Quest | `trophies/monster-tooth` | one big ivory fang on a metal stand |
 | Champion's Knight | Chess | `trophies/champions-knight` | a chess knight |
 | Champion's King | Checkers | `trophies/champions-king` | two stacked checkers with a crown |
