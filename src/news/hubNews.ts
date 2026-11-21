@@ -32,6 +32,14 @@ export const HUB_NEWS: NewsItem[] = [
     game: 'trader',
   },
   {
+    id: 'bond-match-cards-2026-11-21',
+    date: '2026-11-21',
+    emoji: '🐚',
+    title: 'Bond Match sea glass',
+    text: 'Bond Match cards are now sea glass and beach stones in a rock pool. Matches make a ripple!',
+    game: 'bond-match',
+  },
+  {
     id: 'bond-match-beach-2026-11-21',
     date: '2026-11-21',
     emoji: '🏖️',
