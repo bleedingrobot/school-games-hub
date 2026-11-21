@@ -1,0 +1,152 @@
+[
+ {
+  "id": "zuzu",
+  "title": "Grandma Zuzu's Big Party",
+  "giver": "Grandma Zuzu",
+  "voice": "bf_isabella",
+  "lang": "en-gb",
+  "kind": "Collect",
+  "pages": [
+   [
+    "A party to plan",
+    "Hello, captain! I'm Grandma Zuzu. My grandson Bix turns ten tomorrow, and I'm throwing him the biggest party this side of the galaxy!"
+   ],
+   [
+    "Oh dear, oh dear",
+    "But I have nothing ready! I need star-berries for the cake, sparkle candles that fizz, and a robot band that can really boogie."
+   ],
+   [
+    "Off you zoom",
+    "It's all paid for. Just fly to each planet and pick it up. I've marked them on your star map. Off you zoom, dear!"
+   ],
+   [
+    "Party time!",
+    "You did it! Look at Bix's face! The cake is purple, the candles are fizzing, and the robot band won't stop dancing."
+   ],
+   [
+    "Thank you, dear",
+    "Here's your reward, captain, and a slice of cake for the trip. You're welcome at my table any time!"
+   ]
+  ]
+ },
+ {
+  "id": "vex",
+  "title": "Commander Vex and the Rust Raiders",
+  "giver": "Commander Vex",
+  "voice": "bm_george",
+  "lang": "en-gb",
+  "kind": "Defend",
+  "pages": [
+   [
+    "Trouble in the garden",
+    "Captain, Commander Vex of the Star Navy. Pirates called the Rust Raiders are circling a peaceful garden planet. The people there grow flowers, not lasers."
+   ],
+   [
+    "A brave trader",
+    "My fleet is stuck on the far side of the galaxy. I need you to chase off three pirate ships. I'll lend you a Navy laser for the job."
+   ],
+   [
+    "Stand your ground",
+    "I've marked where each pirate ship is waiting. If they win a fight, don't worry. Mend your ship, come back and try again."
+   ],
+   [
+    "Petals in the sky",
+    "The Rust Raiders have fled! The garden planet is safe, and everyone is throwing flower petals into the sky for you."
+   ],
+   [
+    "The Navy thanks you",
+    "Please accept the Navy's thanks and this reward. The laser goes back to the Navy, but your courage stays with you."
+   ]
+  ]
+ },
+ {
+  "id": "sprocket",
+  "title": "Professor Sprocket's Runaway Robots",
+  "giver": "Professor Sprocket",
+  "voice": "bf_lily",
+  "lang": "en-gb",
+  "kind": "Gather",
+  "pages": [
+   [
+    "Gone without asking",
+    "Oh, thank goodness, a captain! I'm Professor Sprocket. My four helper robots, Beep, Boop, Clank and Fizz, have run away on holiday. Without asking!"
+   ],
+   [
+    "Where did they go?",
+    "Beep went sunbathing on a desert planet. Boop is splashing on a water world. Clank is exploring a mine. And Fizz went to see the fireworks, of course."
+   ],
+   [
+    "Handle with care",
+    "Each robot needs one hold in your ship. Pick them all up and bring them home. Be gentle with Clank. He gets space sick."
+   ],
+   [
+    "Home sweet home",
+    "All four home, safe and sound! Beep has a tan, Boop is dripping, Clank needs a lie down, and Fizz won't stop talking about sparkles."
+   ],
+   [
+    "A present for you",
+    "Here's your reward, captain. And Beep made you this. It's a drawing of you. Well, Beep thinks it's you."
+   ]
+  ]
+ },
+ {
+  "id": "nettle",
+  "title": "Dr Nettle and the Sneezles",
+  "giver": "Dr Nettle",
+  "voice": "am_puck",
+  "lang": "en-us",
+  "kind": "Trade",
+  "pages": [
+   [
+    "Achoo!",
+    "Achoo! Excuse me, captain. I'm Dr Nettle. The Sneezles has spread all over my planet, and everyone is sneezing bubbles. Even the mayor!"
+   ],
+   [
+    "Empty shelves",
+    "I need Medicine and fresh Water, and I've run right out. You'll have to buy them at a market, but I'll pay much more than you spend."
+   ],
+   [
+    "Bubbles to the roof",
+    "Your quest list shows where to buy them and today's prices. Please hurry back, before the bubbles reach the roof!"
+   ],
+   [
+    "Bless you, captain",
+    "The sneezing has stopped! Well, nearly. The mayor still does a tiny bubble now and then. He says it makes him feel fancy."
+   ],
+   [
+    "A tidy profit",
+    "Here's what I promised, captain, and a little extra. You saved the day, and you made a tidy profit too!"
+   ]
+  ]
+ },
+ {
+  "id": "kai",
+  "title": "Lumi the Little Star Whale",
+  "giver": "Ranger Kai",
+  "voice": "af_sky",
+  "lang": "en-us",
+  "kind": "Trail",
+  "pages": [
+   [
+    "Look out the window!",
+    "Captain, look out your window! That's Lumi, a baby star whale. She swam off chasing comets and can't find her family. I'm Ranger Kai. Can you help?"
+   ],
+   [
+    "A trail of stardust",
+    "Star whales leave trails of glowing stardust. Lumi's family left clues on planets across the galaxy. Each clue says where to go next."
+   ],
+   [
+    "Follow the clues",
+    "Read the clue, find the planet on your star map, and Lumi will follow your ship. Stuck? Tap Show me, and I'll light it up."
+   ],
+   [
+    "Together again",
+    "There they are! Lumi's whole family, singing so deep the planets hum. Lumi zooms straight into a giant hug with her mum."
+   ],
+   [
+    "A glowing gift",
+    "The star whales left you a gift, a tiny whale made of starlight that shimmers when you're near. And here's a reward from the Ranger Service. Well done!"
+   ]
+  ]
+ }
+]
