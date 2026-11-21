@@ -1,8 +1,33 @@
 /** Names come from word lists (the hub's rule: nobody types a name). */
-export const MEMBER_NAMES = [
-  'Aria', 'Bram', 'Cleo', 'Dax', 'Elin', 'Finn', 'Gwen', 'Hugo', 'Isla', 'Jory', 'Kira', 'Leif', 'Mira', 'Nico', 'Orla', 'Pip',
-  'Quill', 'Rowan', 'Sage', 'Tam', 'Una', 'Vik', 'Wren', 'Xara', 'Yuri', 'Zed', 'Ember', 'Moss', 'Tilly', 'Bodhi', 'Kiri', 'Hemi',
+/** The names in groups, for the pickers. The first group is the original 32 (new clans' default names come from all of them). */
+export const MEMBER_NAME_GROUPS: { label: string; names: string[] }[] = [
+  {
+    label: 'Adventurers',
+    names: [
+      'Aria', 'Bram', 'Cleo', 'Dax', 'Elin', 'Finn', 'Gwen', 'Hugo', 'Isla', 'Jory', 'Kira', 'Leif', 'Mira', 'Nico', 'Orla', 'Pip',
+      'Quill', 'Rowan', 'Sage', 'Tam', 'Una', 'Vik', 'Wren', 'Xara', 'Yuri', 'Zed', 'Ember', 'Moss', 'Tilly', 'Bodhi', 'Kiri', 'Hemi',
+    ],
+  },
+  {
+    // James, 22 Nov 2026: "very girly and beautiful".
+    label: 'Pretty',
+    names: [
+      'Seraphina', 'Arabella', 'Primrose', 'Celestine', 'Isadora', 'Evangeline', 'Rosalind', 'Lilybell', 'Marigold', 'Clementine',
+      'Delphine', 'Aurora', 'Juniper', 'Amethyst', 'Rosabel', 'Snowdrop', 'Lavender', 'Ophelia', 'Bluebell', 'Honeysuckle',
+      'Starla', 'Pearl', 'Twinkle', 'Fairybell', 'Rosepetal', 'Sparkle', 'Glimmer', 'Opaline',
+    ],
+  },
+  {
+    // James, 22 Nov 2026: "so much ugly and masculine".
+    label: 'Tough',
+    names: [
+      'Grimbold', 'Thorgrim', 'Gorrak', 'Brakk', 'Krug', 'Mudrick', 'Ironjaw', 'Grimtooth', 'Ulfgar', 'Gorm', 'Rugnar', 'Grunt',
+      'Thud', 'Boulderfist', 'Knuckles', 'Snorri', 'Hagar', 'Wartface', 'Gristle', 'Bonecrush', 'Skullbash', 'Grubnose',
+      'Mugwort', 'Stinkbeard', 'Hairyknees', 'Rocksnout', 'Burpgut', 'Toenail',
+    ],
+  },
 ];
+export const MEMBER_NAMES = MEMBER_NAME_GROUPS.flatMap((g) => g.names);
 export const CLAN_ADJECTIVES = ['Red', 'Silver', 'Brave', 'Golden', 'Swift', 'Jolly', 'Mighty', 'Clever', 'Misty', 'Bold', 'Lucky', 'Iron'];
 export const CLAN_NOUNS = ['Banner', 'Foxes', 'Lanterns', 'Wolves', 'Shields', 'Owls', 'Pennants', 'Bears', 'Falcons', 'Hammers', 'Stars', 'Rangers'];
 

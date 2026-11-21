@@ -6,7 +6,10 @@
 import { CONFIG } from './config';
 import { raceByName, classByName, rollMember } from './character';
 import { newEmpire } from './empire';
-import { CLAN_ADJECTIVES, CLAN_NOUNS, MEMBER_NAMES, memberNameFrom } from './words';
+import { CLAN_ADJECTIVES, CLAN_NOUNS, MEMBER_NAME_GROUPS, memberNameFrom } from './words';
+
+// New clans start with names from the first group only (the same names as before the Pretty and Tough lists came in).
+const DEFAULT_NAMES = MEMBER_NAME_GROUPS[0].names;
 import { isLook, lookFromName, type Look } from './looks';
 import type { Clan, Member } from './types';
 
@@ -36,9 +39,9 @@ export const slotSeed = (seed: number, slot: number) => seed + slot * 1013;
 
 /** Four starting slots with different races, classes and names. */
 export function startingDrafts(seed: number): Draft[] {
-  const first = Math.abs(seed) % MEMBER_NAMES.length;
+  const first = Math.abs(seed) % DEFAULT_NAMES.length;
   const picks: [string, string][] = [['Human', 'Warrior'], ['Elf', 'Healer'], ['Dwarf', 'Knight'], ['Halfling', 'Wizard']];
-  return picks.map(([race, cls], i) => ({ race, cls, name: MEMBER_NAMES[(first + i * 7) % MEMBER_NAMES.length], rolls: 0, seed: slotSeed(seed, i) }));
+  return picks.map(([race, cls], i) => ({ race, cls, name: DEFAULT_NAMES[(first + i * 7) % DEFAULT_NAMES.length], rolls: 0, seed: slotSeed(seed, i) }));
 }
 
 export const rollAgain = (d: Draft): Draft => (d.rolls < MAX_ROLLS ? { ...d, rolls: d.rolls + 1 } : d);

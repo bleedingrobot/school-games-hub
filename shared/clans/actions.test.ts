@@ -58,5 +58,11 @@ describe('what the browser sends', () => {
     expect(typed.ok && typed.state!.clan.members[2].name).toBe('Te Ahi');
     expect(refused(r, { type: 'rename', member: 2, name: 'poop' }, { typedNames: true }).why).toBe('name');
     expect(refused(created(), { type: 'rename', member: 1, name: free }).why).toBe('rename');
+    expect(applyAction(r, { type: 'rename', member: 3, name: r.clan.members.some((m) => m.name === 'Grimtooth') ? 'Seraphina' : 'Grimtooth' }, ctx()).ok).toBe(true);
+    // The clan name (and so its banner) too, from the lists only.
+    const renamed = applyAction(r, { type: 'clanName', name: 'Misty Owls' }, ctx());
+    expect(renamed.ok && renamed.state!.clan.name).toBe('Misty Owls');
+    expect(refused(r, { type: 'clanName', name: 'Stinky Owls' }).why).toBe('name');
+    expect(refused(created(), { type: 'clanName', name: 'Misty Owls' }).why).toBe('rename');
   });
 });

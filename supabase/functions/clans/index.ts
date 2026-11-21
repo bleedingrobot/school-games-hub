@@ -12816,40 +12816,113 @@ function makeRunQuestions(context, count, random) {
 //#endregion
 //#region shared/clans/words.ts
 /** Names come from word lists (the hub's rule: nobody types a name). */
-const MEMBER_NAMES = [
-	"Aria",
-	"Bram",
-	"Cleo",
-	"Dax",
-	"Elin",
-	"Finn",
-	"Gwen",
-	"Hugo",
-	"Isla",
-	"Jory",
-	"Kira",
-	"Leif",
-	"Mira",
-	"Nico",
-	"Orla",
-	"Pip",
-	"Quill",
-	"Rowan",
-	"Sage",
-	"Tam",
-	"Una",
-	"Vik",
-	"Wren",
-	"Xara",
-	"Yuri",
-	"Zed",
-	"Ember",
-	"Moss",
-	"Tilly",
-	"Bodhi",
-	"Kiri",
-	"Hemi"
+/** The names in groups, for the pickers. The first group is the original 32 (new clans' default names come from all of them). */
+const MEMBER_NAME_GROUPS = [
+	{
+		label: "Adventurers",
+		names: [
+			"Aria",
+			"Bram",
+			"Cleo",
+			"Dax",
+			"Elin",
+			"Finn",
+			"Gwen",
+			"Hugo",
+			"Isla",
+			"Jory",
+			"Kira",
+			"Leif",
+			"Mira",
+			"Nico",
+			"Orla",
+			"Pip",
+			"Quill",
+			"Rowan",
+			"Sage",
+			"Tam",
+			"Una",
+			"Vik",
+			"Wren",
+			"Xara",
+			"Yuri",
+			"Zed",
+			"Ember",
+			"Moss",
+			"Tilly",
+			"Bodhi",
+			"Kiri",
+			"Hemi"
+		]
+	},
+	{
+		label: "Pretty",
+		names: [
+			"Seraphina",
+			"Arabella",
+			"Primrose",
+			"Celestine",
+			"Isadora",
+			"Evangeline",
+			"Rosalind",
+			"Lilybell",
+			"Marigold",
+			"Clementine",
+			"Delphine",
+			"Aurora",
+			"Juniper",
+			"Amethyst",
+			"Rosabel",
+			"Snowdrop",
+			"Lavender",
+			"Ophelia",
+			"Bluebell",
+			"Honeysuckle",
+			"Starla",
+			"Pearl",
+			"Twinkle",
+			"Fairybell",
+			"Rosepetal",
+			"Sparkle",
+			"Glimmer",
+			"Opaline"
+		]
+	},
+	{
+		label: "Tough",
+		names: [
+			"Grimbold",
+			"Thorgrim",
+			"Gorrak",
+			"Brakk",
+			"Krug",
+			"Mudrick",
+			"Ironjaw",
+			"Grimtooth",
+			"Ulfgar",
+			"Gorm",
+			"Rugnar",
+			"Grunt",
+			"Thud",
+			"Boulderfist",
+			"Knuckles",
+			"Snorri",
+			"Hagar",
+			"Wartface",
+			"Gristle",
+			"Bonecrush",
+			"Skullbash",
+			"Grubnose",
+			"Mugwort",
+			"Stinkbeard",
+			"Hairyknees",
+			"Rocksnout",
+			"Burpgut",
+			"Toenail"
+		]
+	}
 ];
+const MEMBER_NAMES = MEMBER_NAME_GROUPS.flatMap((g) => g.names);
 const CLAN_ADJECTIVES = [
 	"Red",
 	"Silver",
@@ -13047,6 +13120,7 @@ function setLook(clan, memberIndex, look) {
 	m.look = look;
 	return { ok: true };
 }
+MEMBER_NAME_GROUPS[0].names;
 /** The member a draft shows right now. Slot 0 is the clan leader. */
 function draftMember(d, slot) {
 	return {
@@ -14434,6 +14508,10 @@ function parseAction(raw) {
 			cls: raw.cls
 		} : null;
 		case "repickDone": return { type: "repickDone" };
+		case "clanName": return typeof raw.name === "string" && raw.name.length <= 40 ? {
+			type: "clanName",
+			name: raw.name
+		} : null;
 		case "rename": return member !== null && typeof raw.name === "string" && raw.name.length <= 40 ? {
 			type: "rename",
 			member,
@@ -14854,6 +14932,11 @@ function applyInner(saved, action, ctx, flags) {
 			};
 			return done(state, { type: "rename" });
 		}
+		case "clanName":
+			if (clan.repick === void 0 || clan.repick !== clan.season) return refuse("rename", "The clan name can be changed at the start of a season.");
+			if (!isClanName(action.name)) return refuse("name", "Pick a clan name from the lists.");
+			clan.name = action.name;
+			return done(state, { type: "clanName" });
 		case "repickDone":
 			if (clan.repick === void 0) return done(state, { type: "repickDone" }, rested || upgraded);
 			delete clan.repick;
