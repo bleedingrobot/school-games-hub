@@ -112,7 +112,7 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
 
 describe('The Star Forge (S.4)', () => {
 
-  it('quests (Q.2, Q.3, Q.4): taking one plays its first 3 pages in the giver\'s voice, the gold landing card picks up, the hold shows gold, Q ticks the step, the chart rings the rest, finishing plays the last 2 pages then the reward, and the 📖 shelf reads them again; Lumi\'s clue + Show me and Vex\'s pirate fight with the Navy laser. Then the Forge: a locked sun is only a look; planning a sun is free; building it sends a forge action, shows the price first, and the card turns built', async () => {
+  it('quests (Q.2, Q.3, Q.4): taking one plays its first 3 pages in the giver\'s voice, the gold landing card picks up, the hold shows gold, Q ticks the step, the chart rings the rest, finishing plays the last 2 pages then the reward, and the 📖 shelf reads them again; Lumi\'s clue + Show me and Vex\'s pirate fight with the Navy laser; Q.6 daily jobs taken, picked up and delivered. Then the Forge: a locked sun is only a look; planning a sun is free; building it sends a forge action, shows the price first, and the card turns built', async () => {
     const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
     const api = traderApi(trial.transport);
     expect((await api.load()).ok).toBe(true);
@@ -234,6 +234,37 @@ describe('The Star Forge (S.4)', () => {
     await waitFor(() => expect(trial.data.game?.game.pending?.kind).toBe('fight'));
     expect((await screen.findByText(/One of the Rust Raiders/)).textContent).toMatch(/Commander Vex's Navy laser is fitted/);
     expect(JSON.stringify(vex.sent)).toMatch(/"type":"quest-fight"/);
+    cleanup();
+
+    // Q.6 daily jobs: after all five quests, 📦 Today's jobs on the Quests tab; take one (no story), pick up the crates at the
+    // gold stop, deliver for the pay, and the card says delivered.
+    trial.tools.moveTo(trial.data.game!.game.t.location);
+    trial.tools.finishAllQuests();
+    play(trial);
+    await market();
+    fireEvent.keyDown(window, { key: 'q' });
+    expect(await screen.findByText("📦 Today's jobs")).toBeTruthy();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Take job' })[0]);
+    await waitFor(() => expect(trial.data.game?.game.quests?.open).toBe('job-0'));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    const job = trial.data.game!.game.quests!.jobs!.list[0];
+    cleanup();
+    trial.tools.toQuestStop();
+    play(trial);
+    await market();
+    expect(await screen.findByText(/crates? of .* for the Star Post$/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Pick up/ }));
+    await waitFor(() => expect(trial.data.game?.game.t.questCargo).toBe(job.qty));
+    cleanup();
+    trial.tools.toQuestStop();
+    play(trial);
+    await market();
+    const credits = trial.data.game!.game.t.credits;
+    fireEvent.click(await screen.findByRole('button', { name: 'Deliver' }));
+    expect(await screen.findByText(/Job done! \+[\d,]+ credits/)).toBeTruthy();
+    expect(trial.data.game!.game.t.credits).toBe(credits + job.pay);
+    fireEvent.keyDown(window, { key: 'q' });
+    expect(await screen.findByText('✓ Delivered')).toBeTruthy();
     void nameText;
   }, 30000);
 });

@@ -48,6 +48,7 @@ import {
   type Settings,
 } from '../../../shared/trader/server';
 import type { FightAction } from '../../../shared/trader/fight';
+import { withJobs } from '../../../shared/trader/quests';
 import { newsFor, type NewsItem } from '../../../shared/trader/news';
 import { EMPTY_VIEW, pushesFrom, type MarketPush, type SchoolView } from '../../../shared/trader/schoolMarket';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
@@ -344,7 +345,8 @@ export function makeHandler(services: Services) {
             chosen = { choice, name: `The ${nameText(waiting.design.name)} System` };
           } else game = newGame(galaxy, today, classSettings, pushes);
         }
-        const rolled = rollDay(galaxy, game, today, classSettings, pushes);
+        // A new day, then (once all five quests are done this season) the day's delivery jobs, made here from the pupil's seed.
+        const rolled = withJobs(galaxy, rollDay(galaxy, game, today, classSettings, pushes), `${school.seed}:${player}`);
         let version = saved?.version ?? 0;
         if (!saved || rolled !== game) {
           game = rolled;
@@ -478,6 +480,8 @@ export function makeHandler(services: Services) {
       result = applyDeal(saved.game, body.take === true);
     }
     if (!result.ok) return reply(400, { error: result.reason, game: saved.game, version: saved.version });
+    // Finishing the fifth quest opens the daily jobs straight away (Q.6).
+    result = { ...result, game: withJobs(galaxy, result.game, `${school.seed}:${player}`) };
 
     // The browser may say how long an answer took; it is only used for the quick-answer record, capped, and never trusted for anything else.
     for (const a of result.answers) {

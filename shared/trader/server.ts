@@ -33,7 +33,7 @@ import {
   type Trader,
 } from './state';
 import { designProblem, emptyDesign, forgeCost, typedNames, type SystemDesign } from './system';
-import { QUEST_POINTS, emptyQuests, isSmallShip, nextQuest, questById, questFight, questFightHere, questReward, stepProblem, stepQty, type QuestState } from './quests';
+import { QUEST_POINTS, allQuestsDone, emptyQuests, isSmallShip, jobIndex, nextQuest, openQuestOf, questFight, questFightHere, questReward, stepProblem, stepQty, type QuestState } from './quests';
 
 export type Deal = Extract<Encounter, { kind: 'trader' }>;
 
@@ -175,6 +175,8 @@ export interface Outcome {
   forge?: { total: number; worth: number };
   /** A quest finished in this request: its reward in credits and the hub points it earns (inside the daily cap). */
   quest?: { finished: string; reward: number; points: number };
+  /** A daily job delivered in this request (Q.6): which one and what it paid. No hub points. */
+  job?: { done: number; reward: number };
   /** What this request's trades do to the school's market (after the pupil's daily limit). Saved with the game, never sent to the pupil. */
   pushes?: MarketPush[];
 }
@@ -319,7 +321,18 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
       return;
     case 'quest-take': {
       const q = g.quests ?? emptyQuests();
-      if (q.open) refuse('Finish or drop the quest you have first.');
+      if (q.open) refuse(jobIndex(q.open) !== null ? 'Finish or drop the job you have first.' : 'Finish or drop the quest you have first.');
+      const ji = jobIndex(action.id);
+      if (ji !== null) {
+        // A daily job (Q.6): one of today's, not done yet, once all five quests are done this season.
+        const jobs = q.jobs;
+        if (!allQuestsDone(q) || !jobs || jobs.day !== t.day || !jobs.list[ji]) return refuse('That job could not be found.');
+        if (jobs.done.includes(ji)) refuse('That job is done.');
+        const taken: QuestState = { ...q, open: action.id, done: [] };
+        delete taken.small;
+        g.quests = taken;
+        return;
+      }
       const next = nextQuest(q, t.day);
       if (!next) return refuse(q.finished.length ? 'The next quest opens tomorrow.' : 'There is no quest to take.');
       if (next.id !== action.id) refuse('That quest is not open yet.');
@@ -333,8 +346,9 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
     case 'quest-deliver': {
       const q = g.quests;
       const index = int(action.step, 0, 20);
-      const quest = q?.open ? questById(q.open) : undefined;
-      if (!q || !quest) return refuse('Take a quest first.');
+      const open = openQuestOf(galaxy, q);
+      if (!q || !open) return refuse('Take a quest first.');
+      const quest = open.quest;
       const step = quest.steps[index] ?? refuse('That step could not be found.');
       const delivering = step.kind === 'buy-deliver' || step.kind === 'deliver';
       if (delivering !== (action.type === 'quest-deliver')) refuse('That step could not be done that way.');
@@ -342,15 +356,23 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
       const problem = stepProblem(galaxy, t, q, index);
       if (problem) refuse(problem);
       const next = { ...t, cargo: [...t.cargo] };
-      if (step.kind === 'pickup') next.questCargo = (t.questCargo ?? 0) + 1;
+      if (step.kind === 'pickup') next.questCargo = (t.questCargo ?? 0) + (step.holds ?? 1);
       if (step.kind === 'buy-deliver') setCargo(next, step.good ?? 0, t.cargo[step.good ?? 0] - stepQty(step, q.small));
       const done = [...q.done, index].sort((a, b) => a - b);
-      if (step.kind === 'deliver') {
+      if (step.kind === 'deliver' && open.job !== undefined && q.jobs) {
+        // A daily job's delivery: the crates go and the pay comes. No hub points, keepsake or trophy (rule 11).
+        next.questCargo = 0;
+        next.credits += quest.reward;
+        g.quests = { ...q, open: null, done: [], jobs: { ...q.jobs, done: [...q.jobs.done, open.job] } };
+        out.job = { done: open.job, reward: quest.reward };
+      } else if (step.kind === 'deliver') {
         // The last step: the quest cargo is handed over and the reward paid.
         const reward = questReward(quest, q.small);
         next.questCargo = 0;
         next.credits += reward;
-        g.quests = { open: null, done: [], finished: [...q.finished, quest.id], lastDay: t.day };
+        const finished: QuestState = { ...q, open: null, done: [], finished: [...q.finished, quest.id], lastDay: t.day };
+        delete finished.small;
+        g.quests = finished;
         out.quest = { finished: quest.id, reward, points: QUEST_POINTS };
       } else g.quests = { ...q, done };
       if (!next.questCargo) delete next.questCargo;
@@ -360,7 +382,7 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
     case 'quest-fight': {
       // Fight a quest pirate again where one waits (after a loss or getting away). Winning is what ticks the step.
       const index = int(action.step, 0, 20);
-      const quest = g.quests?.open ? questById(g.quests.open) : undefined;
+      const quest = openQuestOf(galaxy, g.quests)?.quest;
       if (!quest) return refuse('Take a quest first.');
       if (quest.steps[index]?.kind !== 'pirate') refuse('There is no pirate ship to fight.');
       const problem = stepProblem(galaxy, t, g.quests, index);
@@ -371,7 +393,9 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
     case 'quest-drop': {
       const q = g.quests;
       if (!q?.open) return refuse('There is no quest to drop.');
-      g.quests = { open: null, done: [], finished: q.finished, lastDay: q.lastDay };
+      const dropped: QuestState = { ...q, open: null, done: [] };
+      delete dropped.small;
+      g.quests = dropped;
       const next = { ...t };
       delete next.questCargo;
       g.t = next;

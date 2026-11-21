@@ -45,7 +45,7 @@ import { SpaceCanvas } from './SpaceCanvas';
 import { MapPanel } from './StarMap';
 import { GiverFace, QuestClue, QuestDone, QuestLanding, QuestPirate, QuestsPanel } from './QuestsPanel';
 import { clueNow, doableHere, leftBehind, nextStop, pirateHere, questCargoNames, questPlanetMarks, type Shown } from './questGuide';
-import { openQuestView, QUESTS, questById } from '../../../shared/trader/quests';
+import { jobIndex, openQuestOf, openQuestView, QUESTS, questById } from '../../../shared/trader/quests';
 import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 import { COACH_NAME } from './text';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
@@ -566,6 +566,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
     if (lock.current || !actions.length) return;
     lock.current = true;
     setBusy(true);
+    const wasJob = jobIndex(game?.quests?.open) !== null;
     const r = await flush(actions);
     const a = actions[actions.length - 1];
     if (!r.ok) setNote(r.message);
@@ -577,10 +578,14 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
       if (questStoryPart(id, 'end')) setQuestStory({ id, part: 'end', reward, points: shownPoints });
       else setPhase({ k: 'quest', id, reward, points: shownPoints });
     }
+    // A daily job (Q.6): a short thank-you line with the pay, no story or moment.
+    else if (r.value.job) setNote(`📦 Job done! +${r.value.job.reward.toLocaleString('en-NZ')} credits from the Star Post.`);
     else if (a.type === 'quest-fight') setFightLog(['They are coming right at you!']);
     else {
-      if (a.type === 'quest-take') setQuestStory({ id: a.id, part: 'start' });
-      setNote(a.type === 'quest-take' ? 'Quest taken! Gold rings on the star chart show where to go.' : a.type === 'quest-drop' ? 'Quest dropped. You can take it again any time.' : 'Done! ✓ Ticked off on the Quests screen.');
+      const job = a.type === 'quest-take' ? jobIndex(a.id) !== null : wasJob;
+      if (a.type === 'quest-take' && !job) setQuestStory({ id: a.id, part: 'start' });
+      const what = job ? 'Job' : 'Quest';
+      setNote(a.type === 'quest-take' ? `${what} taken! Gold rings on the star chart show where to go.` : a.type === 'quest-drop' ? `${what} dropped. You can take it again any time${job ? ' today' : ''}.` : 'Done! ✓ Ticked off on the Quests screen.');
     }
     setBusy(false);
     lock.current = false;
@@ -602,12 +607,12 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
     [galaxy, t, openId, game?.quests, showOnMap],
   );
   const questMap = useMemo(
-    () => (galaxy && t && game?.quests?.open ? { marks: questPlanetMarks(galaxy, t, game.quests, trailShown), stop: nextStop(galaxy, t, game.quests, trailShown), onReveal: reveal } : null),
+    () => (galaxy && t && game?.quests?.open ? { marks: questPlanetMarks(galaxy, t, game.quests, trailShown), stop: nextStop(galaxy, t, game.quests, trailShown), onReveal: reveal, job: jobIndex(game.quests.open) !== null } : null),
     [galaxy, t, game?.quests, trailShown, reveal],
   );
   const questPirate = galaxy && game ? pirateHere(galaxy, game) : null;
   const questClue = galaxy && t && game?.quests?.open ? clueNow(galaxy, t, game.quests) : null;
-  const openQuest = game?.quests?.open ? questById(game.quests.open) ?? null : null;
+  const openQuest = galaxy && game?.quests?.open ? openQuestOf(galaxy, game.quests)?.quest ?? null : null;
 
   const showFlight = !!flight && bolt && phase.k === 'planet' && !pending && !asking;
 
@@ -722,7 +727,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
           {phase.k === 'planet' && !pending && tab === 'trade' && (
             // On a wide screen the hold sits over the planet, on the right (the market's own copy is hidden by CSS).
             <div className="st-holdside">
-              <HoldView t={t} after={marketAfter} galaxy={galaxy} pushes={pushes} onShowMap={showOnMap} want={marketWant} quest={questCargoNames(game.quests, t)} />
+              <HoldView t={t} after={marketAfter} galaxy={galaxy} pushes={pushes} onShowMap={showOnMap} want={marketWant} quest={questCargoNames(galaxy, game.quests, t)} />
             </div>
           )}
           <div className={`st-main ${phase.k === 'planet' && !pending && (tab === 'map' || tab === 'forge' || tab === 'gallery') ? 'st-main--wide' : ''} ${phase.k === 'planet' && !pending && tab === 'forge' ? 'st-main--forge' : ''}`}>
@@ -741,7 +746,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
                 {tab === 'trade' && openQuest && questPirate && <QuestPirate quest={openQuest} busy={panelBusy} onFight={() => void questMove([{ type: 'quest-fight', step: questPirate.index }])} />}
                 {tab === 'trade' && openQuest && questClue && !questHere.steps.length && questClue.step.planet !== t.location && <QuestClue quest={openQuest} text={questClue.text} onReveal={() => reveal(questClue.step.index)} />}
                 {tab === 'quests' && <QuestsPanel galaxy={galaxy} t={t} quests={game.quests} keepsakes={keepsakes} busy={panelBusy} showXY={level !== 'off'} shown={trailShown} onReveal={reveal} onQuest={(a) => void questMove(a)} onTab={setTab} onShowMap={showOnMap} onStory={(id, part) => setQuestStory({ id, part })} />}
-                {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} want={marketWant} level={level} quest={questCargoNames(game.quests, t)} onTrade={doTrade} onPlan={setMarketPlan} onShowMap={showOnMap} />}
+                {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} want={marketWant} level={level} quest={questCargoNames(galaxy, game.quests, t)} onTrade={doTrade} onPlan={setMarketPlan} onShowMap={showOnMap} />}
                 {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} suggest={suggest} askFirst={level === 'some'} forge={forgeOn} onForge={() => setTab('forge')} onAct={act} onMoon={() => void buyMoon()} captain={game?.captain} onCaptain={() => setPicking(true)} />}
                 {tab === 'forge' && forgeOn && <Forge saved={savedSystem} draft={design} credits={t.credits} ownsMoon={t.moon} busy={panelBusy} lessMotion={lessMotion} level={level} typing={loaded.settings.forgeTyping !== false} onDraft={setDraft} onPlan={planForge} onApply={applyForge} onPicture={savePicture} />}
                 {tab === 'gallery' && forgeOn && <Gallery api={api} lessMotion={lessMotion} />}

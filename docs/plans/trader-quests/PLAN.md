@@ -2,7 +2,7 @@
 
 21 Nov 2026. James: "I want to plan some in game quests for Star Trader. A quests tab; a character wants to plan a party and you have to pick up the things they need from different planets; a currency reward at the end. Others might be defending planets from pirates, gathering robots from different places. The quests should make it very clear where to go. Plan 5 different quests, use different voices and make stories for them with the gaming computer."
 
-**Status:** plan, stories and all 32 paintings done (#683), voices sampled (review page https://claude.ai/artifact/H1iYrYmdLjfDMqs4Ws8din). Q.0 done: no more reshuffle (migration 20261121000400_trader_keep_galaxy.sql). Q.1 done: the quest rules on the server (`shared/trader/quests.ts`, moves `quest-take`, `quest-pickup`, `quest-deliver`, `quest-drop`), no screens yet. Q.2 done: the Quests tab (key Q), step checklist, gold rings on the star chart, the jump line, the landing card, Bolt's next stop, gold quest boxes in the hold, Quest complete moment, and a What's new line. Q.3 done: each quest's story plays in the giver's own voice when you take it (pages 1–3) and when you finish it (pages 4–5), the 📖 Quest stories shelf, and the quest board painting on the Quests tab. Q.4 done: Commander Vex's pirates are real fights on arrival (Navy laser lent, gentle losses, a win ticks the step) and Lumi's trail is map clues ("From here, go 3 right and 2 down.") with Show me. Q.5 done: the 🎒 Quest Log keepsakes (kept through a New Season), 2 hub points per finished quest, the Star Quest Master achievement and season trophy (migration 20261121000500_trader_quest_log.sql), What's new line. Next: Q.6.
+**Status:** plan, stories and all 32 paintings done (#683), voices sampled (review page https://claude.ai/artifact/H1iYrYmdLjfDMqs4Ws8din). Q.0 done: no more reshuffle (migration 20261121000400_trader_keep_galaxy.sql). Q.1 done: the quest rules on the server (`shared/trader/quests.ts`, moves `quest-take`, `quest-pickup`, `quest-deliver`, `quest-drop`), no screens yet. Q.2 done: the Quests tab (key Q), step checklist, gold rings on the star chart, the jump line, the landing card, Bolt's next stop, gold quest boxes in the hold, Quest complete moment, and a What's new line. Q.3 done: each quest's story plays in the giver's own voice when you take it (pages 1–3) and when you finish it (pages 4–5), the 📖 Quest stories shelf, and the quest board painting on the Quests tab. Q.4 done: Commander Vex's pirates are real fights on arrival (Navy laser lent, gentle losses, a win ticks the step) and Lumi's trail is map clues ("From here, go 3 right and 2 down.") with Show me. Q.5 done: the 🎒 Quest Log keepsakes (kept through a New Season), 2 hub points per finished quest, the Star Quest Master achievement and season trophy (migration 20261121000500_trader_quest_log.sql), What's new line. Q.6 done: 📦 Today's jobs, one or two small delivery jobs a day once all five quests are finished. **The quest plan is finished.** More story quests can be added later.
 
 ## 1. The short version
 
@@ -66,9 +66,17 @@ James's main ask. Five places say it:
 | **Q.3** ✅ | Stories in StoryBook with each giver's voice, the 📖 shelf, paintings tidied into the game | Small |
 | **Q.4** ✅ | Commander Vex's pirate fights (Navy laser, gentle losses) and Lumi's clue trail | Medium |
 | **Q.5** ✅ | Quest Log keepsakes, Star Quest Master achievement and trophy (migration), What's new line, go live | Small |
-| **Q.6** | Daily jobs after all five: one or two computer-made deliveries a day, small rewards | Small |
+| **Q.6** ✅ | Daily jobs after all five: one or two computer-made deliveries a day, small rewards | Small |
 
 Each stage goes live on its own (switched on), like the other Star Trader stages.
+
+### What Q.6 built (21 Nov 2026)
+
+- **Jobs from a seed:** `makeJobs` in `shared/trader/quests.ts` makes 1–2 jobs from the pupil and the Star Trader day, so a reload gives the same jobs. The pick-up is within one tank of the ship; the delivery is 4 to two tanks further on (short trips, 1–3 jumps). Real goods, legal at both planets, sold at the pick-up and bought at the delivery planet; 2–5 crates, never more than the ship's holds.
+- **Made on the server:** `withJobs` runs in the trader function's load path (after the new day) and after every move, so jobs appear as soon as the fifth quest is done. Saved in `quests.jobs` (day, list, done). No migration. A New Season clears the quests, so jobs stop until all five are done again.
+- **Reuses the quest steps:** a job is a two-step quest (`job-0`, `job-1`): pick up free crates (gold boxes in the hold, can't be sold), then deliver. The checklist, gold rings, Bolt's next stop and landing card all work as for story quests. One quest or job at a time.
+- **Small pay:** a little more than trading the same goods yourself (the price gap, plus 10 cr and 5 cr a crate). No hub points, keepsakes or trophy. An undone job just goes at the end of the day, with its crates, and no penalty.
+- **Quests tab:** "📦 Today's jobs" below the finished quests, with Take job / Drop, pick-up and delivery links, and "All done for today. New jobs tomorrow!" Note "📦 Job done! +N credits from the Star Post." What's new line.
 
 ### What Q.5 built (21 Nov 2026)
 

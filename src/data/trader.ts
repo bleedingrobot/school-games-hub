@@ -93,6 +93,8 @@ export interface MoveReply {
   deal?: { took: boolean };
   /** A quest just finished: which one, the credits it paid and the leaderboard points. */
   quest?: { finished: string; reward: number; points: number };
+  /** A daily job just delivered (Q.6): which one and what it paid. */
+  job?: { done: number; reward: number };
   /** After a jump: the school news and pushes, read as the ship landed. */
   news?: NewsItem[];
   prices?: [number, number, number][];

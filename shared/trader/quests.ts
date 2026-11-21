@@ -7,9 +7,10 @@
  * and `questPlanets` picks them from the galaxy in a set way. The same galaxy always gives the same planets, so a quest is
  * the same for every pupil in a school and they can help each other.
  */
-import { GOVERNMENTS, MEDICINE, WATER, GOOD_RULES } from './config';
+import { GOODS, GOVERNMENTS, MEDICINE, SHIPS, WATER, GOOD_RULES } from './config';
+import { seededRandom } from '../maths/serverQuestions';
 import { chartPoint, coordText, distance, startPlanet, type Galaxy, type Planet } from './galaxy';
-import { marketFor } from './market';
+import { isBanned, marketFor, type MarketLine } from './market';
 import { freeHolds, holdsOf, type Trader } from './state';
 import { startFight, type Fight } from './fight';
 
@@ -52,6 +53,10 @@ export interface QuestStep {
   qty?: number;
   smallQty?: number;
   pays?: number;
+  /** pickup: how many holds it fills (a daily job's crates). Missing: 1. */
+  holds?: number;
+  /** pickup: the name of one box in the hold, when it isn't `what` ("Games crate"). */
+  cargo?: string;
 }
 
 export interface QuestConfig {
@@ -290,6 +295,8 @@ export interface QuestState {
   finished: string[];
   /** The NZ day the last quest was finished (null: none yet). At most one new quest opens a day. */
   lastDay: number | null;
+  /** Today's delivery jobs (Q.6), once all five quests are finished this season. */
+  jobs?: JobsToday;
 }
 
 export const emptyQuests = (): QuestState => ({ open: null, done: [], finished: [], lastDay: null });
@@ -316,17 +323,19 @@ export function questReward(quest: QuestConfig, small?: boolean): number {
 
 /** Why a step can't be done right now, or null if it can. Shared by the server's moves and the screens. */
 export function stepProblem(galaxy: Galaxy, t: Trader, q: QuestState | undefined, index: number): string | null {
-  const quest = q?.open ? questById(q.open) : undefined;
-  if (!q || !quest) return 'Take a quest first.';
+  const open = openQuestOf(galaxy, q);
+  if (!q || !open) return 'Take a quest first.';
+  const { quest } = open;
   const step = quest.steps[index];
   if (!step) return 'That step could not be found.';
   if (q.done.includes(index)) return 'That step is done.';
   const last = quest.steps.length - 1;
   if (index === last && q.done.length < last) return 'Do the other steps first.';
   if (quest.ordered && quest.steps.some((_, i) => i < index && !q.done.includes(i))) return 'Do the steps in order.';
-  const planet = galaxy.planets[questPlanets(galaxy)[QUESTS.indexOf(quest)][index]];
+  const planet = galaxy.planets[open.planets[index]];
   if (t.location !== planet.id) return `Fly to ${planet.name} first.`;
-  if (step.kind === 'pickup' && freeHolds(t) < 1) return 'Make room: 1 free hold needed.';
+  const holds = step.holds ?? 1;
+  if (step.kind === 'pickup' && freeHolds(t) < holds) return `Make room: ${holds} free hold${holds === 1 ? '' : 's'} needed.`;
   if (step.kind === 'buy-deliver') {
     const want = stepQty(step, q.small);
     const have = t.cargo[step.good ?? 0] ?? 0;
@@ -344,7 +353,7 @@ export const questPirateTier = (step: number): number => (step >= 2 ? 1 : 0);
 
 /** The open quest's pirate step waiting at the ship's planet, ready to fight (null: none). */
 export function questFightHere(galaxy: Galaxy, t: Trader, q: QuestState | undefined): number | null {
-  const quest = q?.open ? questById(q.open) : undefined;
+  const quest = openQuestOf(galaxy, q)?.quest;
   if (!quest) return null;
   const i = quest.steps.findIndex((s, index) => s.kind === 'pirate' && stepProblem(galaxy, t, q, index) === null);
   return i < 0 ? null : i;
@@ -395,9 +404,9 @@ export interface StepView {
 
 /** The open quest's steps with their planets, coordinates and distances from the ship. Null if no quest is open. */
 export function openQuestView(galaxy: Galaxy, t: Trader, q: QuestState | undefined): { quest: QuestConfig; reward: number; steps: StepView[] } | null {
-  const quest = q?.open ? questById(q.open) : undefined;
-  if (!q || !quest) return null;
-  const planets = questPlanets(galaxy)[QUESTS.indexOf(quest)];
+  const open = openQuestOf(galaxy, q);
+  if (!q || !open) return null;
+  const { quest, planets } = open;
   const here = galaxy.planets[t.location];
   const steps = quest.steps.map((step, index): StepView => {
     const p = galaxy.planets[planets[index]];
@@ -433,3 +442,139 @@ export function nearestSellers(galaxy: Galaxy, t: Trader, good: number, count = 
 
 /** A ship small enough for Dr Nettle's smaller order. */
 export const isSmallShip = (t: Trader): boolean => holdsOf(t) < NETTLE_FULL_HOLDS;
+
+// ---------------------------------------------------------------------------------------------
+// Daily delivery jobs, after all five quests (Q.6)
+// ---------------------------------------------------------------------------------------------
+
+/** A computer-made delivery: pick up `qty` crates of a good at `from`, take them to `to`, get `pay` credits. */
+export interface Job {
+  good: number;
+  qty: number;
+  from: number;
+  to: number;
+  pay: number;
+}
+
+/** Today's jobs: made on the server for one Star Trader day, kept in the saved game so a reload shows the same ones. */
+export interface JobsToday {
+  day: number;
+  list: Job[];
+  /** Indexes into `list` delivered today. */
+  done: number[];
+}
+
+/** A job's id when it is the open "quest": job-0, job-1. */
+export const jobId = (i: number): string => `job-${i}`;
+/** The job index in an open id, or null for a story quest (or nothing). */
+export function jobIndex(id: string | null | undefined): number | null {
+  const m = id ? /^job-(\d)$/.exec(id) : null;
+  return m ? Number(m[1]) : null;
+}
+
+/** All five story quests finished this season: daily jobs are on. */
+export const allQuestsDone = (q: QuestState | undefined): boolean => !!q && QUESTS.every((c) => q.finished.includes(c.id));
+
+/** A crate job pays what a normal trade of the same goods would make, plus this, plus JOB_BONUS_EACH a crate. */
+export const JOB_BONUS = 10;
+export const JOB_BONUS_EACH = 5;
+/** Crates in a job: 2 to 5, never more than the ship's holds. */
+export const JOB_MIN_QTY = 2;
+export const JOB_MAX_QTY = 5;
+/** The delivery is at least this far (fuel) from the pick-up, so it's a real trip. */
+export const JOB_MIN_LEG = 4;
+
+const roundUp5 = (n: number): number => Math.ceil(n / 5) * 5;
+
+/**
+ * Today's one or two jobs, made from a seed (school galaxy + pupil) and the day, so the same pupil always gets the same
+ * jobs that day and the browser can't pick better ones. Short trips from where the ship is when they are made: the
+ * pick-up is within one tank of fuel, the delivery `JOB_MIN_LEG` to two tanks further on (so 1 to 3 jumps in all). The
+ * good is one the pick-up planet sells and the delivery planet buys, legal at both, and the pay is that trade's profit
+ * plus a little.
+ */
+export function makeJobs(galaxy: Galaxy, seed: string, day: number, t: Trader): Job[] {
+  const random = seededRandom(`trader-jobs:${seed}:${day}`);
+  const tank = SHIPS[t.ship].fuelTank;
+  const base = galaxy.planets[t.location];
+  const markets = new Map<number, MarketLine[]>();
+  const market = (id: number): MarketLine[] => {
+    let m = markets.get(id);
+    if (!m) markets.set(id, (m = marketFor(galaxy, id, day)));
+    return m;
+  };
+  const options: { from: number; to: number; good: number; profit: number }[] = [];
+  for (const from of galaxy.planets) {
+    if (distance(base, from) > tank) continue;
+    for (const to of galaxy.planets) {
+      const leg = distance(from, to);
+      if (to.id === from.id || leg < JOB_MIN_LEG || leg > 2 * tank) continue;
+      for (let good = 0; good < GOODS.length; good++) {
+        if (isBanned(from, good) || isBanned(to, good)) continue;
+        const a = market(from.id)[good];
+        const b = market(to.id)[good];
+        if (!a || !b || a.buy <= 0 || b.sell <= 0) continue;
+        const profit = b.sell - a.buy;
+        if (profit > 0) options.push({ from: from.id, to: to.id, good, profit });
+      }
+    }
+  }
+  const count = random() < 0.5 ? 1 : 2;
+  const holds = holdsOf(t);
+  const jobs: Job[] = [];
+  for (let k = 0; k < count && options.length; k++) {
+    const left = options.filter((o) => !jobs.some((j) => j.good === o.good || (j.from === o.from && j.to === o.to)));
+    if (!left.length) break;
+    const o = left[Math.floor(random() * left.length)];
+    const qty = Math.max(1, Math.min(holds, JOB_MIN_QTY + Math.floor(random() * (JOB_MAX_QTY - JOB_MIN_QTY + 1))));
+    jobs.push({ good: o.good, qty, from: o.from, to: o.to, pay: roundUp5(qty * o.profit + JOB_BONUS + JOB_BONUS_EACH * qty) });
+  }
+  return jobs;
+}
+
+/** A job as a two-step quest (pick up, deliver), so it shares the quest steps, gold rings, Bolt's next stop and hold boxes. */
+export function jobQuest(galaxy: Galaxy, job: Job, i: number): QuestConfig {
+  const good = GOODS[job.good];
+  const to = galaxy.planets[job.to]?.name ?? 'the planet';
+  return {
+    id: jobId(i),
+    title: `Take ${job.qty} ${good} to ${to}`,
+    giver: 'the Star Post',
+    reward: job.pay,
+    steps: [
+      { kind: 'pickup', what: `${job.qty} crate${job.qty === 1 ? '' : 's'} of ${good}`, holds: job.qty, cargo: `${good} crate`, prefer: [] },
+      { kind: 'deliver', what: to, prefer: [] },
+    ],
+  };
+}
+
+/** The quest open now (a story quest or today's job) and its step planets. Null when nothing is open. */
+export function openQuestOf(galaxy: Galaxy, q: QuestState | undefined): { quest: QuestConfig; planets: number[]; job?: number } | null {
+  if (!q?.open) return null;
+  const ji = jobIndex(q.open);
+  if (ji !== null) {
+    const job = q.jobs?.list[ji];
+    return job ? { quest: jobQuest(galaxy, job, ji), planets: [job.from, job.to], job: ji } : null;
+  }
+  const quest = questById(q.open);
+  return quest ? { quest, planets: questPlanets(galaxy)[QUESTS.indexOf(quest)] } : null;
+}
+
+/**
+ * The server's step at the start of each day (and after each move): once all five quests are done this season, make the
+ * day's jobs if they aren't made yet. A job left undone goes at the end of the day, with its crates. Gives back the same
+ * game when nothing changes. `seed` is the school's galaxy seed and the pupil.
+ */
+export function withJobs<G extends { t: Trader; quests?: QuestState }>(galaxy: Galaxy, game: G, seed: string): G {
+  const q = game.quests;
+  if (!q || !allQuestsDone(q) || q.jobs?.day === game.t.day) return game;
+  const quests: QuestState = { ...q, jobs: { day: game.t.day, list: makeJobs(galaxy, seed, game.t.day, game.t), done: [] } };
+  let t = game.t;
+  if (jobIndex(q.open) !== null) {
+    quests.open = null;
+    quests.done = [];
+    t = { ...t };
+    delete t.questCargo;
+  }
+  return { ...game, quests, t };
+}
