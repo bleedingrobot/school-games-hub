@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'bond-match-pip-2026-11-21',
+    date: '2026-11-21',
+    emoji: '🦀',
+    title: 'Pip the crab',
+    text: 'Meet Pip the crab in Bond Match! Play against Pip, and Pip cheers when you find a pair.',
+    game: 'bond-match',
+  },
+  {
     id: 'trader-quest-stories-2026-11-21',
     date: '2026-11-21',
     emoji: '📖',

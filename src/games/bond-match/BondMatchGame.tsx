@@ -14,6 +14,7 @@ import { clock, playerName, TEXT, type Players } from './strings';
 import { useReducedMotion } from './useReducedMotion';
 import { Value } from './Value';
 import { HubButtons } from './HubButtons';
+import { Pip, ShellBadge } from './Pip';
 
 /** A mismatch turns back by itself after this long, so nobody gets stuck waiting to flip. */
 export const MISMATCH_MS = 4000;
@@ -23,6 +24,8 @@ export const FINISH_MS = 1200;
 export const BOT_MS = 900;
 /** ...and before its first card after a child's mismatch, so the "3 + 4 = 7" line can be read first. */
 export const BOT_AFTER_MISMATCH_MS = 2200;
+/** Pip cheers this long after a match, then sits back down. */
+export const PIP_CHEER_MS = 1400;
 
 export interface FinishedGame {
   state: GameState;
@@ -74,6 +77,9 @@ export function BondMatchGame({
   const twoPlayers = players.mode !== 'solo';
   const botTurn = players.mode === 'bot' && vs.turn === 1 && !game.finished;
   const [line, setLine] = useState<Line | null>(null);
+  // Counts the matches so Pip can cheer for a moment after each one (a new number starts the cheer again).
+  const [cheer, setCheer] = useState(0);
+  const [cheering, setCheering] = useState(false);
   const [hideStats, setHideStats] = useState(loadHideStats);
   const [pictures, setPictures] = useState(loadShowPictures);
   const startedAt = useRef<number | null>(null);
@@ -94,6 +100,13 @@ export function BondMatchGame({
     const timer = setTimeout(() => setLine(null), mismatchMs);
     return () => clearTimeout(timer);
   }, [line, mismatchMs]);
+
+  useEffect(() => {
+    if (cheer === 0) return;
+    setCheering(true);
+    const timer = setTimeout(() => setCheering(false), PIP_CHEER_MS);
+    return () => clearTimeout(timer);
+  }, [cheer]);
 
   useEffect(() => {
     if (!game.finished) return;
@@ -137,7 +150,7 @@ export function BondMatchGame({
     let next: Line | null = null;
     for (const event of result.events) {
       if (event.type === 'first') play('flick');
-      if (event.type === 'match') { next = event; play('item'); }
+      if (event.type === 'match') { next = event; play('item'); setCheer((n) => n + 1); }
       if (event.type === 'mismatch') { next = event; play('tap'); }
       if (event.type === 'finish') { finishedAt.current = at; play('win'); }
     }
@@ -198,7 +211,9 @@ export function BondMatchGame({
         <div className="bm-turn" data-testid="turn">
           {([0, 1] as const).map((p) => (
             <div key={p} className={`bm-player bm-player--${p}${vs.turn === p && !game.finished ? ' bm-player--now' : ''}`}>
-              <span className="bm-player__icon" aria-hidden="true">{players.mode === 'bot' && p === 1 ? '🤖' : p === 0 ? '🙂' : '😃'}</span>
+              {players.mode === 'bot' && p === 1
+                ? <Pip pose={botTurn ? 'think' : 'wave'} className="bm-player__icon" still />
+                : <ShellBadge colour={p === 0 ? 'pink' : 'blue'} fallback={p === 0 ? '🙂' : '😃'} className="bm-player__icon" />}
               <span className="bm-player__name">{playerName(players, p)}</span>
               <span className="bm-player__pairs">{TEXT.pairs(vs.pairs[p])}</span>
             </div>
@@ -212,6 +227,10 @@ export function BondMatchGame({
       <div className="bm-board-wrap">
         <Board cards={game.deck.cards} matched={game.matched} pairedWith={game.pairedWith} matchNo={game.matchNo} shown={shown} reducedMotion={reducedMotion} setLabel={set.label} pictures={hasFractions && pictures} onFlip={onFlip} />
       </div>
+      {/* Pip sits in the corner under the board: thinking while the computer chooses, cheering for a moment after a match.
+          Pip is only decoration and never shows which card to pick; the line beside says what happened. */}
+      <div className="bm-line-row">
+      <Pip pose={cheering ? 'cheer' : botTurn ? 'think' : 'wave'} className="bm-game__pip" still={reducedMotion} />
       <div className="bm-line" role="status" aria-live="polite">
         {line?.type === 'mismatch' && (
           <div className="bm-line__pill bm-line__pill--miss">
@@ -224,6 +243,7 @@ export function BondMatchGame({
             <p className="bm-line__sum bm-line__sum--match"><Sum texts={line.texts} sum={line.sumText} /> ✓<span className="sr-only"> {TEXT.match}</span></p>
           </div>
         )}
+      </div>
       </div>
     </section>
   );

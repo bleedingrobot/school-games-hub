@@ -13,9 +13,9 @@ export type Players = { mode: 'solo' } | { mode: 'pass' } | { mode: 'bot'; level
 
 export const BOT_LEVEL_NAMES: Record<BotLevel, string> = { 'very-easy': 'Very Easy', easy: 'Easy', medium: 'Medium' };
 
-/** "Player 1", "Player 2", or "You" and "The computer". */
+/** "Player 1", "Player 2", or "You" and "Pip" (Pip the crab is the computer). */
 export function playerName(players: Players, p: Player): string {
-  if (players.mode === 'bot') return p === 0 ? 'You' : 'Computer';
+  if (players.mode === 'bot') return p === 0 ? 'You' : 'Pip';
   return `Player ${p + 1}`;
 }
 
@@ -106,16 +106,16 @@ export const TEXT = {
   playersTitle: 'Who’s playing?',
   playersSolo: 'Just me',
   playersPass: 'Two players',
-  playersBot: 'Me vs the computer',
+  playersBot: 'Me vs Pip',
   playersPassHelp: 'Take turns on this device. Find a pair and you go again. Most pairs wins!',
-  playersBotHelp: 'Take turns with the computer. It remembers some cards, but not all of them!',
-  levelTitle: 'How good is the computer?',
+  playersBotHelp: 'Take turns with Pip the crab, the computer. Pip remembers some cards, but not all of them!',
+  levelTitle: 'How good is Pip?',
   turn: (players: Players, p: Player) =>
-    players.mode === 'bot' ? (p === 0 ? 'Your turn' : 'The computer’s turn…') : `Player ${p + 1}’s turn`,
+    players.mode === 'bot' ? (p === 0 ? 'Your turn' : 'Pip’s turn…') : `Player ${p + 1}’s turn`,
   allPairsFound: 'All pairs found!',
   winner: (players: Players, winner: Player | 'tie') =>
     winner === 'tie' ? 'It’s a tie!'
-      : players.mode === 'bot' ? (winner === 0 ? 'You win!' : 'The computer wins this time!')
+      : players.mode === 'bot' ? (winner === 0 ? 'You win!' : 'Pip wins this time!')
       : `Player ${winner + 1} wins!`,
   winnerRibbon: 'Winner',
   pairWord: 'pair',
