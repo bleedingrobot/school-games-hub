@@ -168,9 +168,13 @@ function IslesScreens({ backend = liveIsles }: { backend?: IslesBackend; level?:
     void load();
   }, [load]);
 
-  // Each new screen (and each step of a turn, and each change within a step) moves focus to its heading.
+  // Each new screen (and each step of a turn, and each change within a step) moves focus to its heading. Not while the
+  // sky pilot's question is up: that box takes focus itself, so the pupil can type the answer straight away.
   const focusKey = screen.kind === 'turn' ? `turn-${screen.step}-${again}-${JSON.stringify(build)}-${picks.length}` : screen.kind;
+  const askingNow = useRef(asking);
+  askingNow.current = asking;
   useEffect(() => {
+    if (askingNow.current) return;
     heading.current?.focus();
   }, [focusKey]);
 
