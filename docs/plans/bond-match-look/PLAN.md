@@ -1,6 +1,6 @@
 # Bond Match: graphics upgrade plan
 
-Written 21 Nov 2026 for James. **Status: L.1 done 21 Nov 2026 (full window, painted beach, rock-pool picker). L.2 done 21 Nov 2026 (cards in the painted pool: sea-glass backs tinted per shelf, beach-stone faces, pair glow rings, ripple and sparkle on a match, wobble on a mismatch). L.3 done 21 Nov 2026 (the finish on the painted sunset edge: gold, silver and bronze starfish that pop in one by one, a sparkle burst for a new best, shell buckets with each player's pairs on the versus finish). Next is L.4 (Pip the crab).** Art list ready to paint: `docs/bond-match-art/config.json`.
+Written 21 Nov 2026 for James. **Status: L.1 done 21 Nov 2026 (full window, painted beach, rock-pool picker). L.2 done 21 Nov 2026 (cards in the painted pool: sea-glass backs tinted per shelf, beach-stone faces, pair glow rings, ripple and sparkle on a match, wobble on a mismatch). L.3 done 21 Nov 2026 (the finish on the painted sunset edge: gold, silver and bronze starfish that pop in one by one, a sparkle burst for a new best, shell buckets with each player's pairs on the versus finish). L.4 done 21 Nov 2026 (Pip the crab waves on the picker, sits under the board thinking on the computer's go and cheering after a match, holds the finish; Pip is the computer player; painted shell badges for the players). Next is L.5 (icons and polish).** Art list ready to paint: `docs/bond-match-art/config.json`.
 
 ## Where it is now
 

@@ -6,6 +6,8 @@ import { sideText } from '../../../shared/bond-match/exact';
 import { BOT_LEVEL_IDS } from '../../../shared/botGame';
 import { BOT_LEVEL_NAMES, SHELVES, SIZE_NAMES, TEXT, type Players } from './strings';
 import { Value } from './Value';
+import { Pip, ShellBadge } from './Pip';
+import { useReducedMotion } from './useReducedMotion';
 import type { BondSuggestion } from './suggest';
 
 /** Best stars the student has on each bond set and board size: { 'whole-10': { small: 3 } }. */
@@ -43,14 +45,27 @@ function GridIcon({ size }: { size: BoardSize }) {
 }
 
 const PLAYER_CHOICES = [
-  { mode: 'solo', icon: '🙂', label: TEXT.playersSolo },
-  { mode: 'pass', icon: '👫', label: TEXT.playersPass },
-  { mode: 'bot', icon: '🤖', label: TEXT.playersBot },
+  { mode: 'solo', label: TEXT.playersSolo },
+  { mode: 'pass', label: TEXT.playersPass },
+  { mode: 'bot', label: TEXT.playersBot },
 ] as const;
+
+/** The picture on each "Who's playing?" choice: your pink shell, both shells, or Pip the crab (the computer). */
+function PlayersIcon({ mode }: { mode: Players['mode'] }) {
+  if (mode === 'bot') return <Pip pose="wave" className="bm-seg__icon bm-seg__pip" still />;
+  if (mode === 'solo') return <ShellBadge colour="pink" fallback="🙂" className="bm-seg__icon" />;
+  return (
+    <span className="bm-seg__icon bm-seg__shells" aria-hidden="true">
+      <ShellBadge colour="pink" fallback="🙂" />
+      <ShellBadge colour="blue" fallback="😃" />
+    </span>
+  );
+}
 
 /** "What are you practising?": who's playing and the board size, then the bond sets on three shelves. Picking a bond starts the game. */
 export function BondPicker({ onPick, initialSize = 'medium', stars, players, onPlayers, suggested }: Props) {
   const [size, setSize] = useState<BoardSize>(initialSize);
+  const still = useReducedMotion();
   // The sets take keys 1 to 9 in the order they show (the suggested one first on its shelf).
   const keyOf = new Map<string, number>();
   for (const shelf of SHELVES) {
@@ -72,6 +87,7 @@ export function BondPicker({ onPick, initialSize = 'medium', stars, players, onP
           <span className="bm-hero__plus">=</span>
           <span className="bm-hero__card bm-hero__card--t">10</span>
         </div>
+        <Pip pose="wave" className="bm-hero__pip" still={still} />
       </header>
 
       <div className="bm-setup">
@@ -88,7 +104,7 @@ export function BondPicker({ onPick, initialSize = 'medium', stars, players, onP
                   aria-label={c.label}
                   onClick={() => onPlayers(c.mode === 'bot' ? { mode: 'bot', level: players.mode === 'bot' ? players.level : 'easy' } : { mode: c.mode })}
                 >
-                  <span className="bm-seg__icon" aria-hidden="true">{c.icon}</span>
+                  <PlayersIcon mode={c.mode} />
                   <span className="bm-seg__label">{c.label}</span>
                 </button>
               ))}

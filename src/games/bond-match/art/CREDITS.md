@@ -15,4 +15,6 @@ word in code.
 - The repo does not record the licence terms of the Z-Image Turbo model or of rembg, so they are not stated here.
 - The ripple and sparkle (in `fx/`) were painted on black; `tidy` turns their brightness into see-through glow.
 - The finish (sunset edge, starfish, shell bucket) is in `back/` and `rewards/`.
+- Pip the crab (waving, cheering, thinking) is in `pip/`; the players' pink and blue shell badges are in `players/`. The 🦀 and
+  the old 🙂 😃 emoji show if a picture is missing or fails to load.
 - Painted on 21 Nov 2026.

@@ -33,3 +33,9 @@ export type Medal = 'gold' | 'silver' | 'bronze';
 export const starfish = (medal: Medal): string | undefined => paint(`rewards/starfish-${medal}`);
 /** A player's shell bucket on the versus finish. */
 export const bucket = (): string | undefined => paint('rewards/bucket');
+
+/** Pip the crab, the helper and the computer player: waving, cheering or thinking. */
+export type PipPose = 'wave' | 'cheer' | 'think';
+export const pip = (pose: PipPose): string | undefined => paint(`pip/pip-${pose}`);
+/** A player's shell badge: pink for player 1 (or you), blue for player 2. */
+export const shell = (colour: 'pink' | 'blue'): string | undefined => paint(`players/shell-${colour}`);

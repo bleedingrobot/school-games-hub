@@ -5,6 +5,7 @@ import type { Player } from '../../../shared/bond-match/versus';
 import { clock, playerName, STAR_NAMES, TEXT, type Players } from './strings';
 import { bucket, fx, starfish, type Medal } from './art';
 import { useReducedMotion } from './useReducedMotion';
+import { Pip } from './Pip';
 
 /** Where the save to the server is up to. Undefined when nothing is saved (the preview with no server). */
 export type SaveState = { status: 'saving' } | { status: 'saved'; points: number | null } | { status: 'later' };
@@ -31,6 +32,8 @@ export function Finish({ save, setLabel, score, recorded, onAgain, onAnother }: 
           {(recorded.newFlips || recorded.newTime) && <Burst />}
           <span className="bm-stars__row" aria-hidden="true">
             {[1, 2, 3].map((n) => <Starfish key={n} on={n <= score.stars} medal={MEDALS[score.stars]} />)}
+            {/* Pip holds the finish: cheering beside the starfish. */}
+            <Pip pose="cheer" className="bm-finish__pip" still={still} />
           </span>
           <span className="bm-stars__name" aria-hidden="true">{STAR_NAMES[score.stars]}</span>
         </div>
@@ -85,10 +88,12 @@ export function VersusFinish({ save, setLabel, players, pairs, winner, onAgain, 
         <h2 id="bm-finish-title" className="bm-finish__title" data-testid="winner">{TEXT.winner(players, winner)}</h2>
         <p className="bm-finish__set">{setLabel}</p>
         {/* Each player's shell bucket with their pairs. The sentence below says the same for screen readers. */}
-        <div className="bm-buckets" aria-hidden="true">
+        <div className={`bm-buckets bm-buckets--${winner === 'tie' ? 'tie' : `won${winner}`}`} aria-hidden="true">
           {([0, 1] as const).map((p) => (
             <Bucket key={p} name={playerName(players, p)} pairs={pairs[p]} won={winner === p} player={p} />
           ))}
+          {/* Pip cheers beside the winner's bucket (between the two for a tie). */}
+          <Pip pose="cheer" className="bm-finish__pip bm-buckets__pip" still={still} />
         </div>
       </div>
       <p className="bm-finish__pairs bm-sr" data-testid="pairs-score">{TEXT.pairsScore(players, pairs)}</p>
