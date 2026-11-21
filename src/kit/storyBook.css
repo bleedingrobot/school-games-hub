@@ -45,7 +45,8 @@
 .kit-story__words { text-align: center; padding: 0 8px; }
 .kit-story__count { font-size: 0.8rem; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.7; }
 .kit-story__words h2 { margin: 2px 0 6px; color: var(--story-gold); font-size: clamp(1.4rem, 3.4vw, 2.3rem); text-shadow: 0 3px 0 #000; }
-.kit-story__words p { margin: 0 auto; max-width: 62ch; font-size: clamp(1.05rem, 2.2vw, 1.35rem); line-height: 1.45; }
+/* .kit-story in front so a game's own `.game p { margin }` can't pull the words to the left. */
+.kit-story .kit-story__words p { margin: 0 auto; max-width: 62ch; font-size: clamp(1.05rem, 2.2vw, 1.35rem); line-height: 1.45; }
 .kit-story__nav { display: flex; justify-content: center; align-items: center; gap: 16px; padding-bottom: 4px; }
 .kit-story__dots { display: flex; gap: 8px; }
 .kit-story__dots span { width: 10px; height: 10px; border-radius: 50%; background: var(--story-dim); }
@@ -74,7 +75,7 @@
 @keyframes kit-story-in { from { opacity: 0; } to { opacity: 1; } }
 @media (max-height: 520px) {
   .kit-story__pic { max-height: 48vh; }
-  .kit-story__words p { font-size: 1rem; }
+  .kit-story .kit-story__words p { font-size: 1rem; }
 }
 
 /* The story shelf */

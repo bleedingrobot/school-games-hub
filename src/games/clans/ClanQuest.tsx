@@ -174,14 +174,18 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   /** My last finished season (null until read, or none), and whether its ceremony is showing: by itself once, or again from the Hall. */
   const [past, setPast] = useState<ClanSeasonSummary | null>(null);
   const [ceremony, setCeremony] = useState<'first' | 'again' | null>(null);
+  /** The last season has been looked up (or there is none to look up), so the stories know whether the ceremony comes first. */
+  const [pastChecked, setPastChecked] = useState(!pastSeason);
   useEffect(() => {
     if (!pastSeason) return;
     let current = true;
     pastSeason.load().then((s) => {
-      if (!current || !s) return;
+      if (!current) return;
+      setPastChecked(true);
+      if (!s) return;
       setPast(s);
       if (!s.seen) setCeremony('first');
-    }, () => undefined);
+    }, () => current && setPastChecked(true));
     return () => {
       current = false;
     };
@@ -190,10 +194,11 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const [pouchGold, setPouchGold] = useState(0);
   // Stories (docs/plans/stories/PLAN.md): the opening first, then the season monster's arrival when its week comes.
   const stories = useStories();
-  const opening = useStoryOnce(OPENING.id, loading === null);
+  // Never on top of the new-season ceremony: it shows first, then the story (both at once hid the ceremony and cut off the narrator).
+  const opening = useStoryOnce(OPENING.id, loading === null && pastChecked && !ceremony);
   const monsterKind = monsterOf(session?.clock && session.clock.number > 0 ? session.clock.number : (session?.season ?? 1));
   const monsterHere = !!session && monsterWeek(session.clock);
-  const arrival = useStoryOnce(arrivalStory(monsterKind).id, !!server && monsterHere && !opening.open && screen === 'home');
+  const arrival = useStoryOnce(arrivalStory(monsterKind).id, !!server && monsterHere && !opening.open && pastChecked && !ceremony && screen === 'home');
   /** The fame the last fight earned (the server's word), for the results screen. */
   const fameEarned = useRef(0);
   /** The last fight's best hit, for the results screen. */
