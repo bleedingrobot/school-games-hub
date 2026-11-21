@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'clan-famous-2026-11-22',
+    date: '2026-11-22',
+    emoji: '🌟',
+    title: 'The Famous',
+    text: 'Top 5 for fame in a Clan Quest season wins a star trophy and the gold title The Famous!',
+    game: 'clan-quest',
+  },
+  {
     id: 'trader-jobs-2026-11-21',
     date: '2026-11-21',
     emoji: '📦',

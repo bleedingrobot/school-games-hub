@@ -33,15 +33,16 @@ const TROPHY_NAMES: Record<string, string> = {
   'clan-tooth': 'Monster Tooth',
   'clan-banner': 'Clan Banner',
   'clan-veteran': 'Clan Veteran',
+  'clan-famous': 'Hall of Fame Star',
 };
 
 /** The Clan Veteran's metal: bronze for a first season, silver for a second, gold after (as the database gives it). */
 const tierOf = (season: number) => (season <= 1 ? 'bronze' : season === 2 ? 'silver' : 'gold');
 
 function TrophyPicture({ id, season }: { id: string; season: number }) {
-  const src = paintedTrophy(id, id === 'clan-veteran' ? tierOf(season) : 'gold', true);
+  const src = paintedTrophy(id, id === 'clan-veteran' ? tierOf(season) : id === 'clan-famous' ? 'bronze' : 'gold', true);
   if (src) return <img src={src} alt="" width={72} height={72} />;
-  return <span className="cq-ceremony__trophy-emoji" aria-hidden="true">{id === 'clan-veteran' ? '🎖️' : id === 'clan-banner' ? '🚩' : '🦷'}</span>;
+  return <span className="cq-ceremony__trophy-emoji" aria-hidden="true">{id === 'clan-veteran' ? '🎖️' : id === 'clan-famous' ? '🌟' : id === 'clan-banner' ? '🚩' : '🦷'}</span>;
 }
 
 function Banner({ clanName, size }: { clanName: string; size: number }) {
@@ -198,6 +199,7 @@ export function SeasonCeremony({ summary, canRepick, onDone }: {
                 ))}
               </ul>
               {summary.trophies.includes('clan-veteran') && <p className="cq-ceremony__lead">Your clan played the season, so it is a <strong>Season {n} Clan</strong>. The Clan Veteran trophy is on your shelf for good.</p>}
+              {summary.trophies.includes('clan-famous') && <p className="cq-ceremony__lead">Your clan was in the top 5 for fame! The Hall of Fame Star and the gold title <strong>The Famous</strong> are yours for good.</p>}
             </>
           )}
         </>
