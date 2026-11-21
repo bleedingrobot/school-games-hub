@@ -1,0 +1,122 @@
+[
+ {
+  "slug": "a-match",
+  "text": "A match!"
+ },
+ {
+  "slug": "all-matched",
+  "text": "All matched!"
+ },
+ {
+  "slug": "make-10",
+  "text": "Make 10"
+ },
+ {
+  "slug": "you-need-10-keep-going",
+  "text": "You need 10. Keep going!"
+ },
+ {
+  "slug": "make-20",
+  "text": "Make 20"
+ },
+ {
+  "slug": "you-need-20-keep-going",
+  "text": "You need 20. Keep going!"
+ },
+ {
+  "slug": "make-100",
+  "text": "Make 100"
+ },
+ {
+  "slug": "you-need-100-keep-going",
+  "text": "You need 100. Keep going!"
+ },
+ {
+  "slug": "make-1000",
+  "text": "Make 1000"
+ },
+ {
+  "slug": "you-need-1000-keep-going",
+  "text": "You need 1000. Keep going!"
+ },
+ {
+  "slug": "make-1-0",
+  "text": "Make 1.0"
+ },
+ {
+  "slug": "you-need-1-0-keep-going",
+  "text": "You need 1.0. Keep going!"
+ },
+ {
+  "slug": "make-1-00",
+  "text": "Make 1.00"
+ },
+ {
+  "slug": "you-need-1-00-keep-going",
+  "text": "You need 1.00. Keep going!"
+ },
+ {
+  "slug": "make-10-0",
+  "text": "Make 10.0"
+ },
+ {
+  "slug": "you-need-10-0-keep-going",
+  "text": "You need 10.0. Keep going!"
+ },
+ {
+  "slug": "make-1",
+  "text": "Make 1"
+ },
+ {
+  "slug": "you-need-1-keep-going",
+  "text": "You need 1. Keep going!"
+ },
+ {
+  "slug": "gold-3-stars",
+  "text": "Gold: 3 stars"
+ },
+ {
+  "slug": "silver-2-stars",
+  "text": "Silver: 2 stars"
+ },
+ {
+  "slug": "bronze-1-star",
+  "text": "Bronze: 1 star"
+ },
+ {
+  "slug": "player-1-s-turn",
+  "text": "Player 1’s turn"
+ },
+ {
+  "slug": "player-2-s-turn",
+  "text": "Player 2’s turn"
+ },
+ {
+  "slug": "player-1-wins",
+  "text": "Player 1 wins!"
+ },
+ {
+  "slug": "player-2-wins",
+  "text": "Player 2 wins!"
+ },
+ {
+  "slug": "it-s-a-tie",
+  "text": "It’s a tie!"
+ },
+ {
+  "slug": "your-turn",
+  "text": "Your turn"
+ },
+ {
+  "slug": "pip-s-turn",
+  "text": "Pip’s turn…"
+ },
+ {
+  "slug": "you-win",
+  "text": "You win!"
+ },
+ {
+  "slug": "pip-wins-this-time",
+  "text": "Pip wins this time!"
+ }
+]

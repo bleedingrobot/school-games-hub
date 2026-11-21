@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { STAR_CONFIG, type Score, type Stars } from '../../../shared/bond-match/score';
 import type { RecordedGame } from './bests';
 import type { Player } from '../../../shared/bond-match/versus';
@@ -6,6 +6,8 @@ import { clock, playerName, STAR_NAMES, TEXT, type Players } from './strings';
 import { bucket, fx, starfish, type Medal } from './art';
 import { useReducedMotion } from './useReducedMotion';
 import { Pip } from './Pip';
+import { useBella } from './voice';
+import { finishLines, versusFinishLines } from './voiceLines';
 
 /** Where the save to the server is up to. Undefined when nothing is saved (the preview with no server). */
 export type SaveState = { status: 'saving' } | { status: 'saved'; points: number | null } | { status: 'later' };
@@ -23,6 +25,10 @@ interface Props {
 export function Finish({ save, setLabel, score, recorded, onAgain, onAnother }: Props) {
   const { best } = recorded;
   const still = useReducedMotion();
+  const say = useBella();
+  // Bella reads the title and the stars once; the buttons are not read.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- once, when the finish shows
+  useEffect(() => say(finishLines(score.stars)), []);
   return (
     <section className={`bm-finish bm-finish--${score.stars}${still ? ' bm-finish--still' : ''}`} aria-labelledby="bm-finish-title">
       <div className="bm-finish__top">
@@ -82,6 +88,10 @@ interface VersusProps {
 /** The end of a two-player or computer game: who won and the pairs each found. No stars: those are for solo games. */
 export function VersusFinish({ save, setLabel, players, pairs, winner, onAgain, onAnother }: VersusProps) {
   const still = useReducedMotion();
+  const say = useBella();
+  // Bella reads who won, once.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- once, when the finish shows
+  useEffect(() => say(versusFinishLines(players, winner)), []);
   return (
     <section className={`bm-finish bm-finish--versus${winner === 'tie' ? ' bm-finish--tie' : ` bm-finish--won${winner}`}${still ? ' bm-finish--still' : ''}`} aria-labelledby="bm-finish-title">
       <div className="bm-finish__top">

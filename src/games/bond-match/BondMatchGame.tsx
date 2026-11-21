@@ -16,6 +16,8 @@ import { Value } from './Value';
 import { HubButtons } from './HubButtons';
 import { Painted, Pip, ShellBadge } from './Pip';
 import { icon } from './art';
+import { useBella } from './voice';
+import { flipLines, startLines } from './voiceLines';
 
 /** A mismatch turns back by itself after this long, so nobody gets stuck waiting to flip. */
 export const MISMATCH_MS = 4000;
@@ -70,6 +72,7 @@ export function BondMatchGame({
   botMs = BOT_MS, botAfterMismatchMs = BOT_AFTER_MISMATCH_MS, random = Math.random,
 }: Props) {
   const { soundOn } = useSound();
+  const say = useBella();
   const reducedMotion = useReducedMotion();
   // Solo games use the same two-player state and simply ignore whose turn it is.
   const [vs, setVs] = useState<VersusState>(() => newVersus(buildDeck(set, size, seed)));
@@ -120,6 +123,12 @@ export function BondMatchGame({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once, when the game finishes
   }, [game.finished]);
 
+  // Bella reads the goal once when the board starts (and whose go it is, in a game for two).
+  useEffect(() => {
+    say(startLines(sumText(set.pairs[0]), players));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, when the board starts
+  }, []);
+
   const play = (sound: Parameters<typeof playSound>[0]) => { if (soundOn) playSound(sound); };
 
   // The computer's turn: one card at a time, slowly enough to watch. It sees only what is face up (shared/bond-match/bot.ts).
@@ -149,13 +158,19 @@ export function BondMatchGame({
     setVs(result.state);
     // Every accepted flip starts by clearing the line; a mismatch or a match then puts a new one up.
     let next: Line | null = null;
+    let finished = false;
     for (const event of result.events) {
       if (event.type === 'first') play('flick');
       if (event.type === 'match') { next = event; play('item'); setCheer((n) => n + 1); }
       if (event.type === 'mismatch') { next = event; play('tap'); }
-      if (event.type === 'finish') { finishedAt.current = at; play('win'); }
+      if (event.type === 'finish') { finishedAt.current = at; play('win'); finished = true; }
     }
     setLine(next);
+    // Bella says what happened (never the cards or the sum), then whose turn it is if it has passed. The finish screen reads the end.
+    if (next && !finished) {
+      const turnNow = result.state.turn !== vs.turn ? result.state.turn : null;
+      say(flipLines(next.type, sumText(set.pairs[0]), players, turnNow));
+    }
   }
 
   const mismatch = line?.type === 'mismatch' ? line : null;
