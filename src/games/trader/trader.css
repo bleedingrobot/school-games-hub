@@ -663,11 +663,6 @@
 
 /* The hold view at the top of the market (docs/plans/trader-hold/PLAN.md) */
 .st-hold { margin: 4px 0 12px; }
-.st-hold__head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-bottom: 4px; }
-.st-hold__title { font-size: 1.05rem; }
-.st-hold__count { font-size: 0.92rem; color: #cbd5f5; }
-.st-hold__bar { flex: 1 1 140px; max-width: 280px; height: 12px; border-radius: 6px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
-.st-hold__barfill { display: block; height: 100%; border-radius: 6px; background: #ffb03c; transition: width 0.3s; }
 .st-hold__ship { display: block; width: 100%; max-height: 240px; margin: 0 auto; overflow: visible; }
 .st-hold__stand path, rect.st-hold__stand { fill: #d9d4c7; stroke: #c26a1c; stroke-width: 8; }
 .st-hold__deck { fill: #3b4150; }
@@ -694,7 +689,6 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .st-hold__item { animation: none; }
-  .st-hold__barfill { transition: none; }
 }
 
 /* H.2: tap or hover a good for where it sells best. */
@@ -728,7 +722,6 @@
   }
   .st-holdside .st-hold { pointer-events: auto; background: none; border: 0; padding: 0; position: relative; }
   .st-holdside .st-hold__card { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: min(420px, 100%); }
-  .st-holdside .st-hold__head { background: var(--st-panel); border: 1px solid var(--st-line); border-radius: 12px; padding: 6px 12px; }
   .st-holdside .st-hold__ship { max-height: min(64vh, calc(100vh - 340px)); filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.6)); }
 }
 

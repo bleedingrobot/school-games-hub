@@ -153,8 +153,8 @@ export function HoldView({ t, after, galaxy, pushes, onShowMap, want, quest = []
   const pod = podArt();
   const pods = podPlaces(t.ship, t.pods);
   const big = capacity > STRIP_OVER;
-  const afterUsed = after ? usedHolds(after) : used;
   const held = t.cargo.flatMap((q, good) => (q > 0 ? [`${q} ${GOODS[good]}`] : []));
+  const afterUsed = after ? usedHolds(after) : used;
   const questBoxes = t.questCargo ?? 0;
   const questNames = Array.from({ length: questBoxes }, (_, i) => quest[i] ?? 'Quest cargo');
   if (questBoxes) held.push(`quest cargo: ${questNames.join(', ')}`);
@@ -162,15 +162,6 @@ export function HoldView({ t, after, galaxy, pushes, onShowMap, want, quest = []
 
   return (
     <div className={`st-hold ${big ? 'st-hold--big' : ''}`}>
-      <div className="st-hold__head">
-        <strong className="st-hold__title">Your hold</strong>
-        <span className="st-hold__count">
-          <strong>{used} of {capacity}</strong> full{afterUsed !== used && <> → <strong>{afterUsed}</strong> after trade</>}
-        </span>
-        <span className="st-hold__bar" aria-hidden="true">
-          <span className="st-hold__barfill" style={{ width: `${(100 * used) / capacity}%` }} />
-        </span>
-      </div>
       <svg className="st-hold__ship" viewBox={`${vx} ${vy} ${vw} ${vh}`} role="img" aria-label={label}>
         {pods.map((p, i) => {
           const clampTop = i === 0 ? p.y + POD.body[1] * p.scale - 10 : SHIP_HOLDS[t.ship].hull[1] - 10;
