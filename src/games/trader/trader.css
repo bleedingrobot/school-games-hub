@@ -783,6 +783,7 @@
 .stq-land--pirate { border-color: #f87171; background: rgba(69, 16, 16, 0.75); box-shadow: 0 0 16px rgba(248, 113, 113, 0.35); }
 .stq-land--clue { border-color: #7dd3fc; background: rgba(8, 40, 64, 0.75); box-shadow: 0 0 16px rgba(125, 211, 252, 0.35); }
 .stq-land--clue .stq-land__tag { color: #7dd3fc; }
+.stq-land--waiting { box-shadow: none; border-style: dashed; }
 .stq-clue { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 4px 0 0; padding: 6px 10px; border-radius: 10px; border: 1px solid #7dd3fc; background: rgba(8, 40, 64, 0.6); color: #e0f2fe; }
 .stq-clue > span { flex: 1 1 160px; min-width: 0; }
 .stq-lent { margin: 6px 0 8px; padding: 6px 10px; border-radius: 10px; background: rgba(69, 16, 16, 0.55); border: 1px solid #f87171; color: #fee2e2; }

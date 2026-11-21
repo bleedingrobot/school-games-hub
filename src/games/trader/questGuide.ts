@@ -171,6 +171,47 @@ export function doableHere(galaxy: Galaxy, seed: string, game: Game, settings: S
   return { actions, steps };
 }
 
+/** "a, b and c". */
+const andList = (items: string[]): string => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`);
+
+/** What is still to do before a quest's last stop, in a few words: "the Sparkle Candles and a Robot Band". */
+function stillToDo(quest: QuestConfig, steps: readonly StepView[]): string {
+  const left = steps.filter((s) => !s.done && s.index < quest.steps.length - 1);
+  const pirates = left.filter((s) => s.kind === 'pirate').length;
+  const words = left.flatMap((s): string[] => {
+    if (s.kind === 'pickup') return [the(s.what)];
+    if (s.kind === 'buy-deliver') return [`${s.qty ?? ''} ${s.what}`.trim()];
+    return [];
+  });
+  if (pirates) words.push(`chase off ${pirates} more pirate ship${pirates === 1 ? '' : 's'}`);
+  if (left.some((s) => s.kind === 'clue')) words.push('find Lumi');
+  return andList(words);
+}
+
+/**
+ * Quest steps on this planet that can't be done yet, so a quest planet never looks empty: the last stop before the rest
+ * are done ("Grandma Zuzu is here. First get the Sparkle Candles and a Robot Band, then come back here."), or a pick-up
+ * with a full hold. Lumi's later trail stops stay secret. Steps in `doable` are left out (they have the landing card).
+ */
+export function waitingHere(galaxy: Galaxy, t: Trader, q: QuestState | undefined, doable: readonly StepView[], shown: Shown = 'all'): { line: string; why: string }[] {
+  const view = openQuestView(galaxy, t, q);
+  if (!view) return [];
+  const { quest } = view;
+  const last = quest.steps.length - 1;
+  const out: { line: string; why: string }[] = [];
+  for (const s of view.steps) {
+    if (s.done || s.planet !== t.location || s.kind === 'pirate' || doable.some((d) => d.index === s.index) || !s.problem) continue;
+    if (s.kind === 'clue' && (s.problem === 'Do the steps in order.' || isHidden(quest, s, shown))) continue;
+    if (s.index === last && s.problem === 'Do the other steps first.') {
+      const who = jobIndex(quest.id) !== null ? 'This is where the crates go.' : quest.id === 'kai' ? "Lumi's family is here." : `${quest.giver} is here.`;
+      out.push({ line: who, why: `First ${quest.id === 'sprocket' ? 'find' : 'get'} ${stillToDo(quest, view.steps)}, then come back here.` });
+    } else {
+      out.push({ line: `${landingLine(quest, s)}.`, why: s.problem.startsWith('Make room') ? `${s.problem} Sell something first, then pick it up.` : s.problem });
+    }
+  }
+  return out;
+}
+
 /** Quest planets for the star chart: planet id → the step numbers (1-based) still to do there, and their words. */
 export function questPlanetMarks(galaxy: Galaxy, t: Trader, q: QuestState | undefined, shown: Shown = 'all'): Map<number, { n: number[]; lines: string[] }> {
   const marks = new Map<number, { n: number[]; lines: string[] }>();

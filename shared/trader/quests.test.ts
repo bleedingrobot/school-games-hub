@@ -7,6 +7,7 @@ import { DEFAULT_SETTINGS, applyBatch, applyFight, newGame, type Action, type Ga
 
 import { freeHolds, setCargo, usedHolds } from './state';
 import { settleCustoms } from './encounter';
+import { doableHere, waitingHere } from '../../src/games/trader/questGuide';
 
 const SEED = 'quest-test';
 const galaxy = makeGalaxy(SEED);
@@ -246,6 +247,12 @@ describe('Star Trader quests', () => {
     }
     const there = at(g, planets[0][0]);
     expect(openQuestView(galaxy, there.t, there.quests)!.steps[0]).toMatchObject({ fuel: 0, problem: null });
+    // A stop that has to wait says why: the last stop too early says what to bring; a full hold says make room.
+    const waiting = (w: Game) => waitingHere(galaxy, w.t, w.quests, doableHere(galaxy, SEED, w, DEFAULT_SETTINGS).steps);
+    const berries = ok(run(there, { type: 'quest-pickup', step: 0 }));
+    expect(waiting(at(berries, planets[0][3]))).toEqual([{ line: 'Grandma Zuzu is here.', why: 'First get the Sparkle Candles and a Robot Band, then come back here.' }]);
+    expect(waiting(at(berries, planets[0][2]))).toEqual([]);
+    expect(waiting(at({ ...berries, t: { ...berries.t, questCargo: 999 } }, planets[0][1]))[0].why).toMatch(/^Make room: 1 free hold needed\. Sell something first/);
     }
 
     // Q.6 daily jobs: none until all five quests are done this season; then one or two a day from the pupil's seed, the same on a

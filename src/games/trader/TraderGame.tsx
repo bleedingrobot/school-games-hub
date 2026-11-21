@@ -43,8 +43,8 @@ import { loadPrefs, savePrefs, wantsLessMotion } from './prefs';
 import type { Scene, SpaceView } from './renderer';
 import { SpaceCanvas } from './SpaceCanvas';
 import { MapPanel } from './StarMap';
-import { GiverFace, QuestClue, QuestDone, QuestLanding, QuestPirate, QuestsPanel } from './QuestsPanel';
-import { clueNow, doableHere, leftBehind, nextStop, pirateHere, questCargoNames, questPlanetMarks, type Shown } from './questGuide';
+import { GiverFace, QuestClue, QuestDone, QuestLanding, QuestPirate, QuestsPanel, QuestWaiting } from './QuestsPanel';
+import { clueNow, doableHere, leftBehind, nextStop, pirateHere, questCargoNames, questPlanetMarks, waitingHere, type Shown } from './questGuide';
 import { jobIndex, openQuestOf, openQuestView, QUESTS, questById } from '../../../shared/trader/quests';
 import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 import { COACH_NAME } from './text';
@@ -611,6 +611,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
     [galaxy, t, game?.quests, trailShown, reveal],
   );
   const questPirate = galaxy && game ? pirateHere(galaxy, game) : null;
+  const questWaiting = galaxy && t && game?.quests?.open && !game.pending ? waitingHere(galaxy, t, game.quests, questHere.steps, trailShown) : [];
   const questClue = galaxy && t && game?.quests?.open ? clueNow(galaxy, t, game.quests) : null;
   const openQuest = galaxy && game?.quests?.open ? openQuestOf(galaxy, game.quests)?.quest ?? null : null;
 
@@ -743,6 +744,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
                 {tipCard ?? (step && !flight && bolt && <CoachBar step={step} onShow={showMe} />)}
                 <div className="st-focus" ref={heading} tabIndex={-1} aria-label={`${tabs.find((x) => x[0] === tab)?.[1]} screen`} />
                 {tab === 'trade' && openQuest && questHere.steps.length > 0 && <QuestLanding quest={openQuest} steps={questHere.steps} busy={panelBusy} onDo={() => void questMove(questHere.actions)} />}
+                {tab === 'trade' && openQuest && questWaiting.length > 0 && <QuestWaiting quest={openQuest} items={questWaiting} onNext={questMap?.stop && questMap.stop.planet !== t.location ? () => showOnMap(questMap.stop!.planet) : undefined} />}
                 {tab === 'trade' && openQuest && questPirate && <QuestPirate quest={openQuest} busy={panelBusy} onFight={() => void questMove([{ type: 'quest-fight', step: questPirate.index }])} />}
                 {tab === 'trade' && openQuest && questClue && !questHere.steps.length && questClue.step.planet !== t.location && <QuestClue quest={openQuest} text={questClue.text} onReveal={() => reveal(questClue.step.index)} />}
                 {tab === 'quests' && <QuestsPanel galaxy={galaxy} t={t} quests={game.quests} keepsakes={keepsakes} busy={panelBusy} showXY={level !== 'off'} shown={trailShown} onReveal={reveal} onQuest={(a) => void questMove(a)} onTab={setTab} onShowMap={showOnMap} onStory={(id, part) => setQuestStory({ id, part })} />}
