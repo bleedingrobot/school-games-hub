@@ -7,6 +7,8 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTraderKeys } from './keys';
+import { useSound } from '../../sound';
+import { playSound } from '../sounds';
 import { ASK_EVERY, BIG_TRADE_CREDITS, GOVERNMENTS, MOON_PRICE, PIRATE_TIERS, SHIPS } from '../../../shared/trader/config';
 import type { FightAction } from '../../../shared/trader/fight';
 import { coordText, makeGalaxy, type Galaxy } from '../../../shared/trader/galaxy';
@@ -89,6 +91,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   }, [tab]);
   const [prefs, setPrefs] = useState(loadPrefs);
   const [note, setNote] = useState('');
+  const { soundOn } = useSound();
   const [busy, setBusy] = useState(false);
   /** The pupil's working copy of their solar system in the Forge (null: just what the game has saved). */
   const [draft, setDraft] = useState<SystemDesign | null>(null);
@@ -415,6 +418,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
     setBusy(true);
     setNote('');
     setPhase({ k: 'warp' });
+    if (soundOn) playSound('warp');
     const skipped = openQuest && questHere.steps.length ? { quest: openQuest, step: questHere.steps[0], planet: here?.name ?? '' } : null;
     const [r] = await Promise.all([flush([{ type: 'jump', dest }]), view.current?.warp(1500) ?? Promise.resolve()]);
     setTab('trade');
@@ -892,9 +896,16 @@ function Hud({ goal, t, holdAfter, jumpsPerDay, unlimited, planet, government, o
   onCaptain?: () => void;
 }) {
   const ship = SHIPS[t.ship];
+  const { soundOn, setSoundOn } = useSound();
   return (
     <header className="st-hud" data-coach="hud">
       {onExit && <button type="button" className="st-btn st-btn--small" onClick={onExit}>← Hub</button>}
+      <button
+        type="button" className="st-btn st-btn--small" aria-pressed={soundOn} onClick={() => setSoundOn(!soundOn)}
+        title={soundOn ? 'Sound is on: click to mute' : 'Sound is off: click to turn on'}
+      >
+        <span aria-hidden="true">{soundOn ? '🔊' : '🔇'}</span><span className="st-sr">Sound</span>
+      </button>
       {captain ? (
         <button type="button" className="st-hud__cap" onClick={onCaptain} disabled={!onCaptain} aria-label="Your captain: change captain">
           <CaptainFace id={captain} size={40} />
