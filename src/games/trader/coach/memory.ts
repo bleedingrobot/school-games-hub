@@ -3,7 +3,7 @@
  * in try/catch like prefs.ts, so a locked-down browser just forgets.
  *
  * First Flight and the pupil's help level are kept for good. Everything else belongs to one season (`season`): a New
- * Season is a new galaxy and a new game, so the tips, the deal count, the buy prices and the last day played start again.
+ * Season is a new game (the galaxy stays the same), so the tips, the deal count, the buy prices and the last day played start again.
  */
 import { isLevel, type HelpLevel } from './level';
 
