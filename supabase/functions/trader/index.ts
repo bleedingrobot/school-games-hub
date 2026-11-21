@@ -12428,7 +12428,7 @@ Deno.serve(makeHandler({
 			maths: parseMathsSwitch(row.trader_maths) !== "off",
 			forge: row.trader_forge === true,
 			forgeTyping: row.trader_forge_typing !== false,
-			unlimited: isUnlimitedFor(row.unlimited_days, "trader"),
+			unlimited: isUnlimitedFor(row.unlimited_days, "trader") || who.data?.role === "teacher",
 			allQuests: who.data?.role === "teacher"
 		};
 	},
