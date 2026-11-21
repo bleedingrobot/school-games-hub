@@ -100,7 +100,7 @@ export function BondMatchPlay({ makeSeed = randomSeed, mismatchMs, finishMs, sav
   return (
     // One full-window layer over the hub's bar (game guide "Full window"): the beach fills it edge to edge.
     <div className={`bm-window bm-window--${screen.name}`}>
-      <Beach place={screen.name === 'play' ? 'pool-day' : 'beach'} />
+      <Beach place={screen.name === 'play' ? 'pool-day' : screen.name === 'done' ? 'sunset' : 'beach'} />
       <div className="bm" ref={rootRef}>
       <header className={screen.name === 'play' ? 'bm-top bm-top--play' : 'bm-top'}>
         <h1 className="bm-title">{TEXT.name}</h1>
@@ -156,10 +156,11 @@ export function BondMatchPlay({ makeSeed = randomSeed, mismatchMs, finishMs, sav
 }
 
 /**
- * The painted place behind every screen: the beach, or looking down into the rock pool while playing. Until it's painted
+ * The painted place behind every screen: the beach, looking down into the rock pool while playing, or the pool's edge
+ * at sunset on the finish. Until it's painted
  * (or if it doesn't load) the CSS sky and sand show, and the board keeps its own CSS pool.
  */
-function Beach({ place }: { place: 'beach' | 'pool-day' }) {
+function Beach({ place }: { place: 'beach' | 'pool-day' | 'sunset' }) {
   const art = scene(place);
   const [failed, setFailed] = useState<string[]>([]);
   const painted = art && !failed.includes(place);

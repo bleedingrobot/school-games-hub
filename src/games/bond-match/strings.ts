@@ -117,6 +117,9 @@ export const TEXT = {
     winner === 'tie' ? 'It’s a tie!'
       : players.mode === 'bot' ? (winner === 0 ? 'You win!' : 'The computer wins this time!')
       : `Player ${winner + 1} wins!`,
+  winnerRibbon: 'Winner',
+  pairWord: 'pair',
+  pairsWord: 'pairs',
   pairsScore: (players: Players, pairs: readonly [number, number]) =>
     `${playerName(players, 0)}: ${pairs[0] === 1 ? '1 pair' : `${pairs[0]} pairs`}. ${playerName(players, 1)}: ${pairs[1] === 1 ? '1 pair' : `${pairs[1]} pairs`}.`,
   versusNote: 'Stars and bests are for games on your own.',
