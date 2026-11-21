@@ -110,13 +110,29 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
 
 describe('The Star Forge (S.4)', () => {
 
-  it('quests (Q.2): the gold landing card picks up, the hold shows gold, Q ticks the step, the chart rings the rest. Then the Forge: a locked sun is only a look; planning a sun is free; building it sends a forge action, shows the price first, and the card turns built', async () => {
+  it('quests (Q.2, Q.3): taking one plays its first 3 pages in the giver\'s voice, the gold landing card picks up, the hold shows gold, Q ticks the step, the chart rings the rest, finishing plays the last 2 pages then the reward, and the 📖 shelf reads them again. Then the Forge: a locked sun is only a look; planning a sun is free; building it sends a forge action, shows the price first, and the card turns built', async () => {
     const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
     const api = traderApi(trial.transport);
-    const first = await api.load();
-    if (!first.ok) throw new Error('no game');
-    expect((await api.act(first.value.version, [{ type: 'quest-take', id: 'zuzu' }])).ok).toBe(true);
+    expect((await api.load()).ok).toBe(true);
     trial.tools.give(5000);
+
+    // Taking a quest (Q.3): pages 1 to 3 of Grandma Zuzu's story, skippable with Esc, then the Quests tab and its 📖 shelf.
+    play(trial);
+    await market();
+    fireEvent.keyDown(window, { key: 'q' });
+    await screen.findByRole('heading', { name: 'Quests' });
+    expect(document.querySelector('.stq-board')).toBeTruthy();
+    expect(screen.queryByText('📖 Quest stories')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Take quest' }));
+    const book = await screen.findByRole('dialog', { name: "Grandma Zuzu's Big Party" });
+    expect(within(book).getByText('Page 1 of 3')).toBeTruthy();
+    expect(within(book).getByRole('heading', { name: 'A party to plan' })).toBeTruthy();
+    fireEvent.keyDown(book, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(trial.data.game?.game.quests?.open).toBe('zuzu');
+    expect(screen.getByRole('button', { name: "Read Grandma Zuzu's Big Party again" }).textContent).toMatch(/The story so far/);
+    cleanup();
+
     trial.tools.toQuestStop();
     const { sent } = play(trial);
     await market();
@@ -157,7 +173,32 @@ describe('The Star Forge (S.4)', () => {
     fireEvent.click(within(screen.getByRole('group', { name: /Build Yellow star/ })).getByRole('button', { name: 'Build it' }));
     await waitFor(() => expect(screen.getByRole('button', { name: /^Sun: Yellow star, built/ })).toBeTruthy());
     expect(JSON.stringify(sent)).toMatch(/"type":"forge"/);
+    cleanup();
+
+    // Finishing (Q.3): the other two pick-ups (whichever is the next stop), then handing over at Zuzu's plays pages 4 and 5, then the server's reward.
+    for (let n = 0; n < 2; n++) {
+      trial.tools.toQuestStop();
+      const loaded = await api.load();
+      if (!loaded.ok) throw new Error('no game');
+      const done = trial.data.game?.game.quests?.done.length;
+      for (const step of [0, 1, 2]) if ((await api.act(loaded.value.version, [{ type: 'quest-pickup', step }])).ok) break;
+      expect(trial.data.game?.game.quests?.done.length).toBe((done ?? 0) + 1);
+    }
+    trial.tools.toQuestStop();
+    play(trial);
+    await market();
+    fireEvent.click(await screen.findByRole('button', { name: 'Hand them over' }));
+    const end = await screen.findByRole('dialog', { name: "Grandma Zuzu's Big Party" });
+    expect(within(end).getByText('Page 1 of 2')).toBeTruthy();
+    expect(within(end).getByRole('heading', { name: 'Party time!' })).toBeTruthy();
+    fireEvent.click(within(end).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(end).getByRole('button', { name: 'My reward' }));
+    expect(await screen.findByText('+300 credits')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Carry on' }));
+    fireEvent.keyDown(window, { key: 'q' });
+    fireEvent.click(await screen.findByRole('button', { name: "Read Grandma Zuzu's Big Party again" }));
+    expect(within(await screen.findByRole('dialog')).getByText('Page 1 of 5')).toBeTruthy();
     void nameText;
-  });
+  }, 30000);
 });
 

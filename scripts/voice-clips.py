@@ -24,6 +24,11 @@ LANG = 'en-us'
 SPEED = 0.9
 # Folders with their own voice: (voice, speed). The stories' narrator is am_michael, a little slow (James, 21 Nov 2026).
 VOICE_FOR = {'stories': ('am_michael', 0.85)}
+VOICE_FOR['quest-zuzu'] = ('bf_isabella', 0.9)  # Star Trader quest givers, each in their own voice (James, 21 Nov 2026)
+VOICE_FOR['quest-sprocket'] = ('bf_lily', 0.9)
+VOICE_FOR['quest-nettle'] = ('am_puck', 0.9)
+VOICE_FOR['quest-vex'] = ('bm_george', 0.9)
+VOICE_FOR['quest-kai'] = ('af_sky', 0.9)
 KOKORO = os.path.expanduser(os.environ.get('KOKORO_DIR', '~/kokoro'))
 VOICES = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'public', 'voice')
 

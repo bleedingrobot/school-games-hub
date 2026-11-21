@@ -7,7 +7,8 @@ import type { Galaxy } from '../../../shared/trader/galaxy';
 import { isSmallShip, nearestSellers, nextQuest, openQuestView, questReward, QUESTS, type QuestConfig, type QuestState, type StepView } from '../../../shared/trader/quests';
 import type { Action } from '../../../shared/trader/server';
 import type { Trader } from '../../../shared/trader/state';
-import { giverArt, isWaiting, landingLine, stepWords } from './questGuide';
+import { boardArt, giverArt, isWaiting, landingLine, stepWords } from './questGuide';
+import { QUEST_STORIES } from './stories';
 
 const cr = (n: number): string => `${n.toLocaleString('en-NZ')} cr`;
 
@@ -24,12 +25,13 @@ export function questStatus(quest: QuestConfig, q: QuestState | undefined, day: 
 
 export function GiverFace({ id, name, size = 72 }: { id: string; name: string; size?: number }) {
   const art = giverArt(id);
+  // The 160 px face for small sizes, the 512 px painting where it shows big (or on a sharp screen).
   return art
-    ? <img className="stq-face" src={art} alt="" width={size} height={size} draggable={false} />
+    ? <img className="stq-face" src={art.small} srcSet={art.big ? `${art.small} 160w, ${art.big} 512w` : undefined} sizes={`${size}px`} alt="" width={size} height={size} draggable={false} />
     : <span className="stq-face stq-face--stand" style={{ width: size, height: size }} aria-hidden="true">{name.slice(0, 1)}</span>;
 }
 
-export function QuestsPanel({ galaxy, t, quests, busy, showXY = true, onQuest, onTab, onShowMap }: {
+export function QuestsPanel({ galaxy, t, quests, busy, showXY = true, onQuest, onTab, onShowMap, onStory }: {
   galaxy: Galaxy;
   /** Coordinates on show (Bolt's help is not Off). */
   showXY?: boolean;
@@ -40,11 +42,17 @@ export function QuestsPanel({ galaxy, t, quests, busy, showXY = true, onQuest, o
   onQuest: (actions: Action[]) => void;
   onTab: (tab: 'trade' | 'ship') => void;
   onShowMap: (planet: number) => void;
+  /** Read a quest's story again: the first three pages once taken, all five once done. */
+  onStory?: (id: string, part: 'start' | 'all') => void;
 }) {
   const view = openQuestView(galaxy, t, quests);
   const done = quests?.finished.length ?? 0;
+  const board = boardArt();
+  // The 📖 shelf: stories started (the quest now) or finished, in quest order. Locked quests show nothing.
+  const shelf = QUESTS.filter((c) => QUEST_STORIES[c.id] && (quests?.finished.includes(c.id) || quests?.open === c.id));
   return (
     <section className="st-panel stq" aria-labelledby="stq-h">
+      {board && <img className="stq-board" src={board.wide} srcSet={`${board.small} 800w, ${board.wide} 1600w`} sizes="(max-width: 900px) 100vw, 900px" alt="" draggable={false} />}
       <h2 id="stq-h" className="st-h">Quests</h2>
       <p className="st-sub">Help the people of the galaxy and earn credits. One quest at a time; a new one opens each day after you finish one. {done > 0 && <strong>{done} of {QUESTS.length} done.</strong>}</p>
       {view && <Checklist galaxy={galaxy} t={t} quest={view.quest} reward={view.reward} steps={view.steps} busy={busy} showXY={showXY} onQuest={onQuest} onTab={onTab} onShowMap={onShowMap} />}
@@ -79,6 +87,25 @@ export function QuestsPanel({ galaxy, t, quests, busy, showXY = true, onQuest, o
           );
         })}
       </ul>
+      {onStory && shelf.length > 0 && (
+        <div className="stq-shelf" aria-labelledby="stq-shelf-h">
+          <h3 id="stq-shelf-h" className="st-h3">📖 Quest stories</h3>
+          <ul className="stq-shelf__list">
+            {shelf.map((c) => {
+              const whole = !!quests?.finished.includes(c.id);
+              const first = QUEST_STORIES[c.id].pages[0].art;
+              return (
+                <li key={c.id}>
+                  <button type="button" className="stq-shelf__item" onClick={() => onStory(c.id, whole ? 'all' : 'start')} aria-label={`Read ${c.title} again`}>
+                    {first?.small ? <img className="stq-shelf__thumb" src={first.small} alt="" draggable={false} /> : <GiverFace id={c.id} name={c.giver} size={48} />}
+                    <span className="stq-shelf__label">{c.title}<span className="st-soft">{whole ? 'The whole story' : 'The story so far'}</span></span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </section>
   );
 }
