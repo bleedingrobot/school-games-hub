@@ -7,7 +7,8 @@
  * Each new round plays out in two beats: both orders' painted cards slam in from the sides and clash (the winner glows,
  * the loser cracks), then both clans swing and the hits pop. James, 17 Nov 2026: flashy and immersive.
  */
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { AuthContext } from '../../auth/AuthContext';
 import {
   DUEL_MOVES, DUEL_MOVE_INFO, DUEL_ROUNDS, computerDuelPick, duelLine, replayDuel, villageOf,
   type DuelMove, type DuelPick, type DuelSide, type DuelVillage,
@@ -430,6 +431,8 @@ export function DuelArena({ session, duels, ask, onBack }: { session: Session; d
   const [problem, setProblem] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const d = duels.duel;
+  // The server keeps live duels for pupils, so a teacher always hears "off": say why instead of blaming the class switch.
+  const teacher = useContext(AuthContext)?.profile?.role === 'teacher';
   if (practice) return <PracticeDuel session={session} rival={practice} ask={ask} onBack={() => setPractice(null)} />;
   if (d && (d.status === 'playing' || (d.status === 'done' && d.ending))) return <LiveDuel duel={d} duels={duels} ask={ask} onBack={() => void duels.refresh()} />;
 
@@ -453,7 +456,7 @@ export function DuelArena({ session, duels, ask, onBack }: { session: Session; d
         <div className="cq-panel">
           <h3>Live duels with friends</h3>
           {d && d.status === 'asked' && duelOpen(d) && d.seat_a === duels.me ? <DuelWait duel={d} duels={duels} /> : !duels.on ? (
-            <p>Live duels are switched off for your class right now. You can still practise below!</p>
+            <p>{teacher ? 'Live duels are for pupils, so they don’t open on a teacher account. Sign in as a pupil to try one. You can still practise below!' : 'Live duels are switched off for your class right now. You can still practise below!'}</p>
           ) : duels.online === null ? <p role="status">Looking for clans…</p> : duels.online.length === 0 ? (
             <p>No other clans are playing right now. Try a practice duel!</p>
           ) : (
