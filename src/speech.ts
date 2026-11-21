@@ -101,7 +101,24 @@ export function speak(text: string, clipFolder?: string, onEnd?: () => void): vo
     audio.addEventListener('ended', finished);
     audio.addEventListener('error', fallBack);
     const playing = audio.play();
-    if (playing && typeof playing.catch === 'function') playing.catch(fallBack);
+    if (playing && typeof playing.catch === 'function') {
+      playing.catch((err: unknown) => {
+        // The browser won't play sound until the page is touched (a story that opens by itself): play it on the first
+        // tap or key instead of going quiet. If that tap says something newer, this line is no longer current and stays quiet.
+        if ((err as { name?: string } | null)?.name === 'NotAllowedError' && typeof window !== 'undefined') {
+          const retry = () => {
+            window.removeEventListener('pointerdown', retry, true);
+            window.removeEventListener('keydown', retry, true);
+            if (clip !== audio) return;
+            audio.play()?.catch?.(fallBack);
+          };
+          window.addEventListener('pointerdown', retry, true);
+          window.addEventListener('keydown', retry, true);
+          return;
+        }
+        fallBack();
+      });
+    }
   } catch {
     browserVoice(text, finished);
   }
