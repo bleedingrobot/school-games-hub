@@ -36,5 +36,10 @@ describe('Sky Isles keys', () => {
     fireEvent.keyDown(window, { key: 'Enter', repeat: true });
     fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
     expect(onNext).toHaveBeenCalledTimes(1);
+
+    // Sky Race buttons ("Set sail!", "Back to my turn") carry data-key="enter".
+    const race = document.createElement('div');
+    race.innerHTML = '<button type="button" data-key="enter">Set sail!</button>';
+    expect(buttonFor(race, 'Enter')?.textContent).toBe('Set sail!');
   });
 });

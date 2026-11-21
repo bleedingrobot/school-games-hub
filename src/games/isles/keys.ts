@@ -8,8 +8,8 @@ import { useKeyLabels } from '../../kit/keyLabels';
 
 /** What each key presses: the first button on screen that matches and isn't disabled. */
 export const KEYS: Record<string, string> = {
-  // Play a turn, Next, Done building, End turn.
-  enter: '[data-pip="play"], [data-pip="next"], [data-pip="end-turn"]',
+  // Play a turn, Next, Done building, End turn; Set sail / Sail on / Back in a Sky Race.
+  enter: '[data-pip="play"], [data-pip="next"], [data-pip="end-turn"], [data-key~="enter"]',
   b: '[data-key~="b"]',
   escape: '[data-key~="esc"]',
   u: '[data-pip="upgrade"]',
@@ -24,7 +24,7 @@ export const KEYS: Record<string, string> = {
 
 /** The shortcuts in words, for How to play. */
 export const KEY_HELP: [string, string][] = [
-  ['Enter', 'Play a turn, Next, Done building or End turn'],
+  ['Enter', 'Play a turn, Next, Done building, End turn, Set sail or Back from a race'],
   ['B', 'Go to building (or back to the island while building)'],
   ['1 to 9', 'Pick a building spot while building'],
   ['U, A, D, L', 'Upgrade, Anchor land, Decorate, Lighthouse'],

@@ -183,7 +183,7 @@ export function Race({ backend, open, keeper, rival, onDone, onProblem, backLabe
           <Art src={pipArt(said?.startsWith('Whoosh') ? 'cheer' : 'think')} className="si-pip" fallback={<span className="si-pip si-pip--drawn" aria-hidden="true" />} />
           <p>{pipLine}</p>
           {race && !sailing && (
-            <button type="button" className="button button--primary si-race__go" onClick={() => setSailing(true)}>
+            <button type="button" className="button button--primary si-race__go" data-key="enter" onClick={() => setSailing(true)}>
               {point === 0 ? 'Set sail!' : 'Sail on!'}
             </button>
           )}
@@ -216,7 +216,7 @@ export function Race({ backend, open, keeper, rival, onDone, onProblem, backLabe
                 : `${them.faster} You still get ${plural(WELL_RACED_COINS, 'coin')} for racing well.`}
               {rivalName.current && ` ${rivalName.current}'s island gets ${plural(WELL_RACED_COINS, 'coin')} for racing well too.`}
             </p>
-            <button type="button" className="button button--primary si-race__go" onClick={() => onDone(island)}>{backLabel}</button>
+            <button type="button" className="button button--primary si-race__go" data-key="enter" onClick={() => onDone(island)}>{backLabel}</button>
           </div>
           <Working who="Your boat" speed={result.you} boats={race?.you.boats ?? 0} home={false} />
           <Working who={them.who} speed={result.them} boats={race?.them.boats ?? 0} home />
