@@ -114,8 +114,10 @@ function byGood(fills: readonly Filled[]): { good: number; at: number[] }[] {
   return out;
 }
 
-export function HoldView({ t, after, galaxy, pushes, onShowMap, want }: {
+export function HoldView({ t, after, galaxy, pushes, onShowMap, want, quest = [] }: {
   t: Trader;
+  /** Quest cargo (Q.2): the names of the quest things on board. Each takes a hold, shown as a gold box, and can't be sold. */
+  quest?: readonly string[];
   after?: Trader | null;
   galaxy?: Galaxy;
   pushes?: Pushes;
@@ -153,6 +155,9 @@ export function HoldView({ t, after, galaxy, pushes, onShowMap, want }: {
   const big = capacity > STRIP_OVER;
   const afterUsed = after ? usedHolds(after) : used;
   const held = t.cargo.flatMap((q, good) => (q > 0 ? [`${q} ${GOODS[good]}`] : []));
+  const questBoxes = t.questCargo ?? 0;
+  const questNames = Array.from({ length: questBoxes }, (_, i) => quest[i] ?? 'Quest cargo');
+  if (questBoxes) held.push(`quest cargo: ${questNames.join(', ')}`);
   const label = `Your hold: ${held.length ? held.join(', ') : 'empty'}. ${used} of ${capacity} holds full.`;
 
   return (
@@ -208,6 +213,18 @@ export function HoldView({ t, after, galaxy, pushes, onShowMap, want }: {
             </g>
           );
         })}
+        {questNames.map((name, i) => {
+          const b = boxes[fills.length + i];
+          if (!b) return null;
+          const size = Math.min(b.w, b.h);
+          return (
+            <g key={`q${i}`} className="st-hold__quest" data-coach="hold-quest">
+              <title>{`${name} (quest cargo, can't be sold)`}</title>
+              <rect x={b.x} y={b.y} width={b.w} height={b.h} rx={size * 0.16} />
+              <text x={b.x + b.w / 2} y={b.y + b.h / 2} fontSize={size * 0.55} textAnchor="middle" dominantBaseline="central">⭐</text>
+            </g>
+          );
+        })}
       </svg>
       {big && (
         <ul className="st-hold__strip">
@@ -225,9 +242,13 @@ export function HoldView({ t, after, galaxy, pushes, onShowMap, want }: {
               </li>
             );
           })}
+          {questNames.map((name, i) => (
+            <li key={`q${i}`} className="st-hold__tile--quest"><span className="st-hold__questtile">⭐ <span>{name}</span><strong>quest</strong></span></li>
+          ))}
           {used === 0 && afterUsed === 0 && <li className="st-soft">Empty</li>}
         </ul>
       )}
+      {questBoxes > 0 && <p className="st-hold__questnote">⭐ Gold boxes are quest cargo: {questNames.join(', ')}. You can't sell them.</p>}
       {galaxy && tops && shown !== null && <GoodCard galaxy={galaxy} t={t} good={shown} tops={tops[shown] ?? []} onClose={() => { setPinned(null); setHover(null); }} onShowMap={onShowMap} />}
     </div>
   );

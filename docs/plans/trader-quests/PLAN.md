@@ -2,7 +2,7 @@
 
 21 Nov 2026. James: "I want to plan some in game quests for Star Trader. A quests tab; a character wants to plan a party and you have to pick up the things they need from different planets; a currency reward at the end. Others might be defending planets from pirates, gathering robots from different places. The quests should make it very clear where to go. Plan 5 different quests, use different voices and make stories for them with the gaming computer."
 
-**Status:** plan, stories and all 32 paintings done (#683), voices sampled (review page https://claude.ai/artifact/H1iYrYmdLjfDMqs4Ws8din). Q.0 done: no more reshuffle (migration 20261121000400_trader_keep_galaxy.sql). Q.1 done: the quest rules on the server (`shared/trader/quests.ts`, moves `quest-take`, `quest-pickup`, `quest-deliver`, `quest-drop`), no screens yet. Next: Q.2.
+**Status:** plan, stories and all 32 paintings done (#683), voices sampled (review page https://claude.ai/artifact/H1iYrYmdLjfDMqs4Ws8din). Q.0 done: no more reshuffle (migration 20261121000400_trader_keep_galaxy.sql). Q.1 done: the quest rules on the server (`shared/trader/quests.ts`, moves `quest-take`, `quest-pickup`, `quest-deliver`, `quest-drop`), no screens yet. Q.2 done: the Quests tab (key Q), step checklist, gold rings on the star chart, the jump line, the landing card, Bolt's next stop, gold quest boxes in the hold, Quest complete moment, and a What's new line. Next: Q.3.
 
 ## 1. The short version
 
@@ -62,13 +62,24 @@ James's main ask. Five places say it:
 |---|---|---|
 | **Q.0** ✅ | Stop the season reshuffle: keep this season's map for good (New Season keeps the planets, resets ships and prices as now) | Small |
 | **Q.1** ✅ | Rules and server: quest list in `shared/trader/quests.ts` (one config entry per quest, so more can be added later), each quest's fixed planets, quest state in the saved game, moves `quest-take`, `quest-pickup`, `quest-deliver`, `quest-drop`; tests | Medium |
-| **Q.2** | Quests tab, step checklist, gold map rings, jump-screen line, landing card, Bolt lines, key Q | Medium |
+| **Q.2** ✅ | Quests tab, step checklist, gold map rings, jump-screen line, landing card, Bolt lines, key Q | Medium |
 | **Q.3** | Stories in StoryBook with each giver's voice, the 📖 shelf, paintings tidied into the game | Small |
 | **Q.4** | Commander Vex's pirate fights (Navy laser, gentle losses) and Lumi's clue trail | Medium |
 | **Q.5** | Quest Log keepsakes, Star Quest Master achievement and trophy (migration), What's new line, go live | Small |
 | **Q.6** | Daily jobs after all five: one or two computer-made deliveries a day, small rewards | Small |
 
 Each stage goes live on its own (switched on), like the other Star Trader stages.
+
+### What Q.2 built (21 Nov 2026)
+
+- **Quests tab** (`QuestsPanel.tsx`, key Q): five cards with each giver's face, each done, your quest now, ready (Take quest), opens tomorrow or locked. The open quest's steps as a checklist: what, where, coordinates (hidden when Bolt is Off), fuel from here, a ⛽ line when the tank is short, ticks when done. Dr Nettle's steps show how many are in the hold, the three nearest sellers with today's price, and what he pays, so the profit is plain.
+- **Words and choices** live in `questGuide.ts`: step lines and buttons, the landing line, the gentle "you left it behind" line, the next stop (for Dr Nettle's goods, the nearest market selling them), and `doableHere`, which builds every step that can be done here with the server's own `applyBatch`, so the gold card only offers what the server will take.
+- **Star chart:** quest planets get a gold ring and their step numbers; a tapped one shows its steps. The jump line "Quest: next stop …, 5 fuel" sets x and y in one tap (with Bolt Off it shows the planet instead).
+- **Landing:** a gold card on the Trade screen does every step here in one tap, sent to the server at once. Flying off without it gives a gentle note.
+- **Bolt** says the step to do here, or the next stop (fill the tank first if short), unless cargo should be sold here first.
+- **Hold:** quest cargo shows as gold ⭐ boxes after the goods, with a line saying it can't be sold.
+- **Quest complete!** moment with the giver's face and the credits; says the next quest opens tomorrow.
+- **Try-out:** `trialBackend` has `moveTo(planet)` and `toQuestStop()`; the preview has a "Go to the next quest stop" button.
 
 ### What Q.1 built (21 Nov 2026)
 
