@@ -14,10 +14,10 @@ const cr = (n: number): string => `${n.toLocaleString('en-NZ')} cr`;
 
 export type QuestStatus = 'done' | 'open' | 'ready' | 'tomorrow' | 'locked';
 
-export function questStatus(quest: QuestConfig, q: QuestState | undefined, day: number): QuestStatus {
+export function questStatus(quest: QuestConfig, q: QuestState | undefined, day: number, all = false): QuestStatus {
   if (q?.finished.includes(quest.id)) return 'done';
   if (q?.open === quest.id) return 'open';
-  if (nextQuest(q, day)?.id === quest.id) return 'ready';
+  if (nextQuest(q, day, all ? quest.id : undefined)?.id === quest.id) return 'ready';
   const first = QUESTS.find((c) => !q?.finished.includes(c.id));
   if (first?.id === quest.id && !q?.open && q?.lastDay != null && q.lastDay >= day) return 'tomorrow';
   return 'locked';
@@ -33,10 +33,12 @@ export function GiverFace({ id, name, size = 72 }: { id: string; name: string; s
     : <span className="stq-face stq-face--stand" style={{ width: size, height: size }} aria-hidden="true">{name.slice(0, 1)}</span>;
 }
 
-export function QuestsPanel({ galaxy, t, quests, keepsakes = [], busy, showXY = true, shown = 'all', onQuest, onTab, onShowMap, onReveal, onStory }: {
+export function QuestsPanel({ galaxy, t, quests, keepsakes = [], allQuests = false, busy, showXY = true, shown = 'all', onQuest, onTab, onShowMap, onReveal, onStory }: {
   galaxy: Galaxy;
   /** Quests ever finished (the Quest Log, kept through a New Season). */
   keepsakes?: string[];
+  /** A teacher's own game: every quest not done can be taken, in any order, any day. */
+  allQuests?: boolean;
   /** Lumi's trail steps shown with Show me ('all' when coordinates are hidden). */
   shown?: Shown;
   /** Show me: light up a trail step's planet on the star chart. */
@@ -62,11 +64,11 @@ export function QuestsPanel({ galaxy, t, quests, keepsakes = [], busy, showXY = 
     <section className="st-panel stq" aria-labelledby="stq-h">
       {board && <img className="stq-board" src={board.wide} srcSet={`${board.small} 800w, ${board.wide} 1600w`} sizes="(max-width: 900px) 100vw, 900px" alt="" draggable={false} />}
       <h2 id="stq-h" className="st-h">Quests</h2>
-      <p className="st-sub">Help the people of the galaxy and earn credits. One quest at a time; a new one opens each day after you finish one. {done > 0 && <strong>{done} of {QUESTS.length} done.</strong>}</p>
+      <p className="st-sub">Help the people of the galaxy and earn credits. {allQuests ? <strong>Teacher: every quest is open to try, in any order.</strong> : "One quest at a time; a new one opens each day after you finish one."} {done > 0 && <strong>{done} of {QUESTS.length} done.</strong>}</p>
       {view && <Checklist galaxy={galaxy} t={t} quest={view.quest} reward={view.reward} steps={view.steps} busy={busy} showXY={showXY} shown={shown} onQuest={onQuest} onTab={onTab} onShowMap={onShowMap} onReveal={onReveal} />}
       <ul className="stq-list">
         {QUESTS.map((quest, i) => {
-          const status = questStatus(quest, quests, t.day);
+          const status = questStatus(quest, quests, t.day, allQuests);
           const reward = status === 'open' && view ? view.reward : questReward(quest, quest.id === 'nettle' ? isSmallShip(t) : undefined);
           return (
             <li key={quest.id} className={`stq-card stq-card--${status}`}>

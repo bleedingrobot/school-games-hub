@@ -45,7 +45,7 @@ Deno.serve(
     randomHex: (bytes) => Array.from(crypto.getRandomValues(new Uint8Array(bytes)), (b) => b.toString(16).padStart(2, '0')).join(''),
     userIdFor: userIdFromToken(admin.auth),
     async settings(player): Promise<ClassSettings | null> {
-      const { data, error } = await admin.rpc('settings_of', { player }).maybeSingle();
+      const [{ data, error }, who] = await Promise.all([admin.rpc('settings_of', { player }).maybeSingle(), admin.from('profiles').select('role').eq('id', player).maybeSingle()]);
       if (error || !data) {
         fail('settings', error?.code);
         return null;
@@ -60,6 +60,8 @@ Deno.serve(
         forge: row.trader_forge === true,
         forgeTyping: row.trader_forge_typing !== false,
         unlimited: isUnlimitedFor(row.unlimited_days, 'trader'),
+        // A teacher's own game can take every quest to try them out (if the role can't be read, it's a pupil's game).
+        allQuests: (who.data as { role?: string } | null)?.role === 'teacher',
       };
     },
     async schoolSeed(player) {

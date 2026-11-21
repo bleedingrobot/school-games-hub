@@ -60,7 +60,7 @@ export interface Loaded {
   seasonChoice?: SeasonChoice;
   /** Today's questions, in the order they are used, without their answers. */
   questions: PublicQuestion[];
-  settings: { jumpsPerDay: number; loans: boolean; maths: boolean; /** The Star Forge is open for this class. */ forge?: boolean; /** Pupils may type names in the Forge (missing: yes). */ forgeTyping?: boolean; /** The teacher's switch: unlimited jumps today. */ unlimited?: boolean };
+  settings: { jumpsPerDay: number; loans: boolean; maths: boolean; /** The Star Forge is open for this class. */ forge?: boolean; /** Pupils may type names in the Forge (missing: yes). */ forgeTyping?: boolean; /** The teacher's switch: unlimited jumps today. */ unlimited?: boolean; /** A teacher's own game: every quest open to try. */ allQuests?: boolean };
   /** The school news today (biggest first). */
   news?: NewsItem[];
   /** The school's pushes on prices right now: [planet, good, push]. */

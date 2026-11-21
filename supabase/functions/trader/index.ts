@@ -11096,10 +11096,17 @@ const emptyQuests = () => ({
 	finished: [],
 	lastDay: null
 });
-/** The quest that can be taken next (null: all done, or the next one opens tomorrow, or one is open now). */
-function nextQuest(q, day) {
+/**
+* The quest that can be taken next (null: all done, or the next one opens tomorrow, or one is open now). With `pick` (a
+* teacher trying the game), that quest if it isn't finished: any order, any day.
+*/
+function nextQuest(q, day, pick) {
 	const s = q ?? emptyQuests();
 	if (s.open) return null;
+	if (pick !== void 0) {
+		const chosen = questById(pick);
+		return chosen && !s.finished.includes(chosen.id) ? chosen : null;
+	}
 	const next = QUESTS.find((c) => !s.finished.includes(c.id));
 	if (!next) return null;
 	if (s.lastDay !== null && s.lastDay >= day) return null;
@@ -11504,7 +11511,8 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 				g.quests = taken;
 				return;
 			}
-			const next = nextQuest(q, t.day);
+			const next = nextQuest(q, t.day, settings.allQuests ? action.id : void 0);
+			if (!next && settings.allQuests) return refuse("That quest is already finished.");
 			if (!next) return refuse(q.finished.length ? "The next quest opens tomorrow." : "There is no quest to take.");
 			if (next.id !== action.id) refuse("That quest is not open yet.");
 			const taken = {
@@ -12108,7 +12116,8 @@ function makeHandler(services) {
 			maths: settings.maths,
 			forge: settings.forge === true,
 			forgeTyping: settings.forgeTyping !== false,
-			unlimited: settings.unlimited === true
+			unlimited: settings.unlimited === true,
+			allQuests: settings.allQuests === true
 		};
 		/** The school's market today. If it can't be read, prices are normal and there is no news (the game goes on). */
 		const readMarket = async () => await services.market(player, today) ?? EMPTY_VIEW;
@@ -12161,7 +12170,8 @@ function makeHandler(services) {
 								maths: settings.maths,
 								forge: settings.forge === true,
 								forgeTyping: settings.forgeTyping !== false,
-								unlimited: settings.unlimited === true
+								unlimited: settings.unlimited === true,
+								allQuests: settings.allQuests === true
 							}
 						});
 						game = seasonGame(galaxy, today, classSettings, choice, waiting, pushes);
@@ -12220,7 +12230,8 @@ function makeHandler(services) {
 						maths: settings.maths,
 						forge: settings.forge === true,
 						forgeTyping: settings.forgeTyping !== false,
-						unlimited: settings.unlimited === true
+						unlimited: settings.unlimited === true,
+						allQuests: settings.allQuests === true
 					},
 					news: news(view),
 					prices: prices(view)
@@ -12404,7 +12415,7 @@ Deno.serve(makeHandler({
 	randomHex: (bytes) => Array.from(crypto.getRandomValues(new Uint8Array(bytes)), (b) => b.toString(16).padStart(2, "0")).join(""),
 	userIdFor: userIdFromToken(admin.auth),
 	async settings(player) {
-		const { data, error } = await admin.rpc("settings_of", { player }).maybeSingle();
+		const [{ data, error }, who] = await Promise.all([admin.rpc("settings_of", { player }).maybeSingle(), admin.from("profiles").select("role").eq("id", player).maybeSingle()]);
 		if (error || !data) {
 			fail("settings", error?.code);
 			return null;
@@ -12417,7 +12428,8 @@ Deno.serve(makeHandler({
 			maths: parseMathsSwitch(row.trader_maths) !== "off",
 			forge: row.trader_forge === true,
 			forgeTyping: row.trader_forge_typing !== false,
-			unlimited: isUnlimitedFor(row.unlimited_days, "trader")
+			unlimited: isUnlimitedFor(row.unlimited_days, "trader"),
+			allQuests: who.data?.role === "teacher"
 		};
 	},
 	async schoolSeed(player) {
