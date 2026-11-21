@@ -10589,9 +10589,11 @@ function acceptDeal(t, e) {
 */
 const laserPower = (t) => t.weapons.reduce((a, w) => a + WEAPONS[w].power, 0);
 const shieldPower = (t) => t.shields.reduce((a, s) => a + SHIELDS[s].power, 0);
-function startFight(t, tier, seed) {
+/** The lasers in this fight: the ship's own plus any lent for it. */
+const fightPower = (t, fight) => laserPower(t) + (fight.lent ?? 0);
+function startFight(t, tier, seed, quest) {
 	const pirate = PIRATE_TIERS[tier];
-	return {
+	const fight = {
 		seed,
 		tier,
 		round: 0,
@@ -10602,6 +10604,11 @@ function startFight(t, tier, seed) {
 		outcome: "going",
 		log: []
 	};
+	return quest ? {
+		...fight,
+		lent: quest.lent,
+		gentle: true
+	} : fight;
 }
 /** Play one round. `right` says whether the maths check for a laser round was answered correctly. */
 function fightRound(t, fight, action, right) {
@@ -10622,7 +10629,7 @@ function fightRound(t, fight, action, right) {
 		next.log.push("They cut you off.");
 	}
 	if (action === "charge") {
-		const power = laserPower(t);
+		const power = fightPower(t, fight);
 		if (power <= 0) next.log.push("Your ship has no lasers.");
 		else {
 			const full = power * 3;
@@ -10646,19 +10653,31 @@ function fightRound(t, fight, action, right) {
 	next.shield -= soaked;
 	next.hull -= hit - soaked;
 	next.log.push(`They hit you for ${hit}.`);
+	if (next.hull <= 0 && fight.gentle) {
+		next.hull = 0;
+		next.outcome = "knocked";
+		next.log.push("They knocked your ship about, but they took nothing. The pirate ship is still there.");
+		return next;
+	}
 	if (next.hull <= 0) {
 		next.hull = 0;
 		next.outcome = "destroyed";
 		next.log.push("Your ship is wrecked. The escape pod works!");
 		return next;
 	}
-	if (next.round >= 6) {
+	if (next.round >= 6 && fight.gentle) {
+		next.outcome = "knocked";
+		next.log.push("The pirate ship dodged away. It is still there, so you can try again.");
+	} else if (next.round >= 6) {
 		next.outcome = "robbed";
 		next.log.push("The pirates grab some cargo and go.");
 	}
 	return next;
 }
-/** After a fight: bounty for a win, cargo lost for a robbery, a new Flea after a wreck (money kept, nothing lost forever). */
+/**
+* After a fight: bounty for a win, cargo lost for a robbery, a new Flea after a wreck (money kept, nothing lost forever).
+* A gentle quest loss ('knocked') only leaves the hull knocked about.
+*/
 function settleFight(t, fight) {
 	const state = {
 		...t,
@@ -10740,6 +10759,14 @@ function runPlan(t, plan, sellBp = 0, buyBp = 0) {
 }
 /** The sharp-trader discount a right answer earns on a trade this big (in hundredths of a percent). */
 const discountFor = (worth) => worth >= 150 ? 200 : 100;
+/**
+* Commander Vex lends this laser for the quest's pirate fights, so even a Flea (no weapon slots) can fight. It is not a
+* real weapon: never in the shop or the hold, and it goes when the fight ends (plan section 3, rule 7).
+*/
+const NAVY_LASER = {
+	name: "Navy laser",
+	power: 25
+};
 /** Government indexes (config.ts GOVERNMENTS), by name, so the rules below read plainly. */
 const GOV = Object.fromEntries(GOVERNMENTS.map((g, i) => [g.name, i]));
 /** Resource indexes (config.ts RESOURCES). */
@@ -11106,6 +11133,17 @@ function stepProblem(galaxy, t, q, index) {
 	}
 	return null;
 }
+/** Vex's pirates: Scrappy pirates for the first two, a Raider for the third, never a Captain (PIRATE_TIERS indexes). */
+const questPirateTier = (step) => step >= 2 ? 1 : 0;
+/** The open quest's pirate step waiting at the ship's planet, ready to fight (null: none). */
+function questFightHere(galaxy, t, q) {
+	const quest = q?.open ? questById(q.open) : void 0;
+	if (!quest) return null;
+	const i = quest.steps.findIndex((s, index) => s.kind === "pirate" && stepProblem(galaxy, t, q, index) === null);
+	return i < 0 ? null : i;
+}
+/** A quest fight against the pirate ship of step `step`, with Vex's Navy laser lent and a gentle loss. */
+const questFight = (t, step, seed) => startFight(t, questPirateTier(step), seed, { lent: NAVY_LASER.power });
 /** A ship small enough for Dr Nettle's smaller order. */
 const isSmallShip = (t) => holdsOf(t) < 15;
 //#endregion
@@ -11336,6 +11374,7 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 			if (!q || !quest) return refuse("Take a quest first.");
 			const step = quest.steps[index] ?? refuse("That step could not be found.");
 			if ((step.kind === "buy-deliver" || step.kind === "deliver") !== (action.type === "quest-deliver")) refuse("That step could not be done that way.");
+			if (step.kind === "pirate") refuse("Chase off the pirate ship first.");
 			const problem = stepProblem(galaxy, t, q, index);
 			if (problem) refuse(problem);
 			const next = {
@@ -11368,6 +11407,16 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 			g.t = next;
 			return;
 		}
+		case "quest-fight": {
+			const index = int(action.step, 0, 20);
+			const quest = g.quests?.open ? questById(g.quests.open) : void 0;
+			if (!quest) return refuse("Take a quest first.");
+			if (quest.steps[index]?.kind !== "pirate") refuse("There is no pirate ship to fight.");
+			const problem = stepProblem(galaxy, t, g.quests, index);
+			if (problem) refuse(problem);
+			startQuestFight(g, index, seed);
+			return;
+		}
 		case "quest-drop": {
 			const q = g.quests;
 			if (!q?.open) return refuse("There is no quest to drop.");
@@ -11390,6 +11439,15 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 				jumpsLeft: 1
 			} : t, int(action.dest, 0, galaxy.planets.length - 1), pushes));
 			g.stats.jumps += 1;
+			const pirate = questFightHere(galaxy, g.t, g.quests);
+			if (pirate !== null) {
+				out.encounter = {
+					kind: "pirates",
+					tier: startQuestFight(g, pirate, seed).tier
+				};
+				if (netWorth(galaxy, g.t) > worthBefore) g.stats.profitableJumps += 1;
+				return;
+			}
 			const e = encounterFor(galaxy, g.t, seed);
 			out.encounter = e;
 			if (e.kind === "junk") g.pending = { kind: "junk" };
@@ -11415,14 +11473,25 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 		default: refuse("That could not be read.");
 	}
 }
+/** Starts the fight with a quest pirate (step `index`). The seed changes with each try, so a retry is a new fight. */
+function startQuestFight(g, index, seed) {
+	const fight = questFight(g.t, index, `${seed}:vex:${g.t.jumpNo}:${index}:${g.t.hull}:${g.asked}:${g.stats.piratesBeaten}`);
+	g.pending = {
+		kind: "fight",
+		tier: fight.tier,
+		fight,
+		quest: index
+	};
+	return fight;
+}
 /** One round of the pirate fight in progress. Charging the lasers is the only round with a maths check. */
 function applyFight(game, action, ask, settings, mark) {
 	try {
 		const g = copy(game);
 		if (g.pending?.kind !== "fight") refuse("There is no fight.");
-		const { tier, fight } = g.pending;
+		const { tier, fight, quest } = g.pending;
 		if (action !== "charge" && action !== "shield" && action !== "flee") refuse("That could not be read.");
-		if (action === "charge" && laserPower(g.t) <= 0) refuse("Your ship has no lasers.");
+		if (action === "charge" && fightPower(g.t, fight) <= 0) refuse("Your ship has no lasers.");
 		const answers = [];
 		let right = action === "charge" && !settings.maths;
 		if (action === "charge" && settings.maths) right = takeAsk(g, ask, settings, mark, answers)?.right === true;
@@ -11433,10 +11502,16 @@ function applyFight(game, action, ask, settings, mark) {
 			if (next.outcome === "destroyed") g.stats.wrecks += 1;
 			g.t = settleFight(g.t, next);
 			g.pending = null;
+			const q = g.quests;
+			if (next.outcome === "won" && quest !== void 0 && q?.open === "vex" && !q.done.includes(quest)) g.quests = {
+				...q,
+				done: [...q.done, quest].sort((a, b) => a - b)
+			};
 		} else g.pending = {
 			kind: "fight",
 			tier,
-			fight: next
+			fight: next,
+			...quest !== void 0 ? { quest } : {}
 		};
 		return {
 			ok: true,
@@ -11782,6 +11857,7 @@ function parseActions(raw) {
 				break;
 			case "quest-pickup":
 			case "quest-deliver":
+			case "quest-fight":
 				out.push({
 					type: a.type,
 					step: a.step

@@ -9,7 +9,7 @@
  */
 import { BIG_TRADE_CREDITS, CARRY_MAX_CREDITS, GOODS, JUMPS_PER_DAY, MAX_PODS, SHIELDS, SHIPS, WEAPONS } from './config';
 import { acceptDeal, encounterFor, settleCustoms, settleJunk, type Encounter } from './encounter';
-import { fightRound, laserPower, settleFight, startFight, type Fight, type FightAction } from './fight';
+import { fightPower, fightRound, settleFight, startFight, type Fight, type FightAction } from './fight';
 import type { Galaxy } from './galaxy';
 import { isCaptain } from './captains';
 import { discountFor, runPlan } from './plan';
@@ -33,11 +33,12 @@ import {
   type Trader,
 } from './state';
 import { designProblem, emptyDesign, forgeCost, typedNames, type SystemDesign } from './system';
-import { QUEST_POINTS, emptyQuests, isSmallShip, nextQuest, questById, questReward, stepProblem, stepQty, type QuestState } from './quests';
+import { QUEST_POINTS, emptyQuests, isSmallShip, nextQuest, questById, questFight, questFightHere, questReward, stepProblem, stepQty, type QuestState } from './quests';
 
 export type Deal = Extract<Encounter, { kind: 'trader' }>;
 
-export type Pending = { kind: 'junk' } | { kind: 'deal'; offer: Deal } | { kind: 'fight'; tier: number; fight: Fight };
+/** A fight's `quest` is the step of Commander Vex's quest it is for: winning it ticks that step. */
+export type Pending = { kind: 'junk' } | { kind: 'deal'; offer: Deal } | { kind: 'fight'; tier: number; fight: Fight; quest?: number };
 
 /** Counts kept for points, achievements and the board (T.5). */
 export interface Stats {
@@ -151,6 +152,7 @@ export type Action =
   | { type: 'quest-take'; id: string }
   | { type: 'quest-pickup'; step: number }
   | { type: 'quest-deliver'; step: number }
+  | { type: 'quest-fight'; step: number }
   | { type: 'quest-drop' };
 
 export interface Outcome {
@@ -336,6 +338,7 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
       const step = quest.steps[index] ?? refuse('That step could not be found.');
       const delivering = step.kind === 'buy-deliver' || step.kind === 'deliver';
       if (delivering !== (action.type === 'quest-deliver')) refuse('That step could not be done that way.');
+      if (step.kind === 'pirate') refuse('Chase off the pirate ship first.');
       const problem = stepProblem(galaxy, t, q, index);
       if (problem) refuse(problem);
       const next = { ...t, cargo: [...t.cargo] };
@@ -354,6 +357,17 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
       g.t = next;
       return;
     }
+    case 'quest-fight': {
+      // Fight a quest pirate again where one waits (after a loss or getting away). Winning is what ticks the step.
+      const index = int(action.step, 0, 20);
+      const quest = g.quests?.open ? questById(g.quests.open) : undefined;
+      if (!quest) return refuse('Take a quest first.');
+      if (quest.steps[index]?.kind !== 'pirate') refuse('There is no pirate ship to fight.');
+      const problem = stepProblem(galaxy, t, g.quests, index);
+      if (problem) refuse(problem);
+      startQuestFight(g, index, seed);
+      return;
+    }
     case 'quest-drop': {
       const q = g.quests;
       if (!q?.open) return refuse('There is no quest to drop.');
@@ -369,6 +383,14 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
       const extra = settings.unlimited === true && t.jumpsLeft < 1;
       g.t = must(travel(galaxy, extra ? { ...t, jumpsLeft: 1 } : t, int(action.dest, 0, galaxy.planets.length - 1), pushes));
       g.stats.jumps += 1;
+      // Commander Vex's pirates wait at their planets: a fight on arrival, instead of what the jump might have met.
+      const pirate = questFightHere(galaxy, g.t, g.quests);
+      if (pirate !== null) {
+        const fight = startQuestFight(g, pirate, seed);
+        out.encounter = { kind: 'pirates', tier: fight.tier };
+        if (netWorth(galaxy, g.t) > worthBefore) g.stats.profitableJumps += 1;
+        return;
+      }
       const e = encounterFor(galaxy, g.t, seed);
       out.encounter = e;
       if (e.kind === 'junk') g.pending = { kind: 'junk' };
@@ -386,14 +408,21 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
   }
 }
 
+/** Starts the fight with a quest pirate (step `index`). The seed changes with each try, so a retry is a new fight. */
+function startQuestFight(g: Game, index: number, seed: string): Fight {
+  const fight = questFight(g.t, index, `${seed}:vex:${g.t.jumpNo}:${index}:${g.t.hull}:${g.asked}:${g.stats.piratesBeaten}`);
+  g.pending = { kind: 'fight', tier: fight.tier, fight, quest: index };
+  return fight;
+}
+
 /** One round of the pirate fight in progress. Charging the lasers is the only round with a maths check. */
 export function applyFight(game: Game, action: FightAction, ask: Ask | undefined, settings: Settings, mark: Mark): Reply {
   try {
     const g = copy(game);
     if (g.pending?.kind !== 'fight') refuse('There is no fight.');
-    const { tier, fight } = g.pending as Extract<Pending, { kind: 'fight' }>;
+    const { tier, fight, quest } = g.pending as Extract<Pending, { kind: 'fight' }>;
     if (action !== 'charge' && action !== 'shield' && action !== 'flee') refuse('That could not be read.');
-    if (action === 'charge' && laserPower(g.t) <= 0) refuse('Your ship has no lasers.');
+    if (action === 'charge' && fightPower(g.t, fight) <= 0) refuse('Your ship has no lasers.');
     const answers: Marked[] = [];
     // Maths off: the lasers are always fully charged. A skipped question: half power.
     let right = action === 'charge' && !settings.maths;
@@ -405,7 +434,10 @@ export function applyFight(game: Game, action: FightAction, ask: Ask | undefined
       if (next.outcome === 'destroyed') g.stats.wrecks += 1;
       g.t = settleFight(g.t, next);
       g.pending = null;
-    } else g.pending = { kind: 'fight', tier, fight: next };
+      // Beating one of Commander Vex's pirates ticks its step. Losing or getting away leaves it there to try again.
+      const q = g.quests;
+      if (next.outcome === 'won' && quest !== undefined && q?.open === 'vex' && !q.done.includes(quest)) g.quests = { ...q, done: [...q.done, quest].sort((a, b) => a - b) };
+    } else g.pending = { kind: 'fight', tier, fight: next, ...(quest !== undefined ? { quest } : {}) };
     return { ok: true, game: g, answers, fight: { fight: next, tier, over } };
   } catch (e) {
     if (e instanceof Refused) return { ok: false, reason: e.message };

@@ -3,7 +3,7 @@
  * words and choices for showing: every rule comes from shared/trader/quests.ts, and the server checks every move.
  */
 import { coordText, distance, type Galaxy } from '../../../shared/trader/galaxy';
-import { nearestSellers, openQuestView, QUESTS, type QuestConfig, type QuestState, type StepView } from '../../../shared/trader/quests';
+import { nearestSellers, openQuestView, questById, questFightHere, trailClue, type QuestConfig, type QuestState, type StepView } from '../../../shared/trader/quests';
 import { applyBatch, type Action, type Game, type Settings } from '../../../shared/trader/server';
 import type { Trader } from '../../../shared/trader/state';
 
@@ -43,9 +43,10 @@ export function stepWords(quest: QuestConfig, s: Pick<StepView, 'kind' | 'what' 
     case 'buy-deliver':
       return { line: `Bring ${s.qty ?? ''} ${s.what}`.replace('  ', ' '), button: `Hand over the ${s.what}` };
     case 'pirate':
-      return { line: 'Chase off a pirate ship', button: 'Chase them off' };
+      return { line: 'Chase off a pirate ship', button: '⚔️ Fight them' };
     case 'clue':
       return { line: `Follow clue ${s.index + 1} of Lumi's trail`, button: 'Look for Lumi' };
+    // (pirate steps have no tap: arriving starts the fight, and the button fights again after a loss)
     case 'deliver':
       return DELIVER[quest.id] ?? { line: `Go to ${quest.giver}`, button: 'Hand over' };
   }
@@ -63,6 +64,32 @@ export function leftBehind(quest: QuestConfig, s: StepView, planet: string): str
   return `You flew past ${quest.giver}'s stop on ${planet}. You can go back any time.`;
 }
 
+/**
+ * Lumi's trail (Q.4): which steps the pupil has asked to see with **Show me**. 'all' shows every planet (Bolt Off hides
+ * coordinates, so the planet is shown straight away). Kept in the browser only: the clue is never marked or recorded.
+ */
+export type Shown = readonly number[] | 'all';
+
+/** A trail step whose planet is kept back behind its clue until Show me. */
+export const isHidden = (quest: QuestConfig, s: Pick<StepView, 'index' | 'done'>, shown: Shown): boolean =>
+  !!quest.ordered && !s.done && shown !== 'all' && !shown.includes(s.index);
+
+/** The clue for the trail's next stop, from where the ship is now ("From here, go 3 right and 2 down."), or null. */
+export function clueNow(galaxy: Galaxy, t: Trader, q: QuestState | undefined): { step: StepView; text: string } | null {
+  const view = openQuestView(galaxy, t, q);
+  if (!view?.quest.ordered) return null;
+  const step = view.steps.find((s) => !s.done);
+  return step ? { step, text: trailClue(galaxy, t.location, step.planet).text } : null;
+}
+
+/** Commander Vex's pirate ship waiting right here (after a loss or getting away), to fight again. Null: none. */
+export function pirateHere(galaxy: Galaxy, game: Game): StepView | null {
+  if (game.pending) return null;
+  const index = questFightHere(galaxy, game.t, game.quests);
+  const view = index === null ? null : openQuestView(galaxy, game.t, game.quests);
+  return view?.steps[index ?? -1] ?? null;
+}
+
 export interface NextStop {
   planet: number;
   name: string;
@@ -73,15 +100,18 @@ export interface NextStop {
   doing: string;
   /** The step it is for (a step's own planet, or for Dr Nettle's goods a market that sells them). */
   step: StepView;
+  /** Lumi's trail before Show me: the clue to follow instead of the planet (name and coordinates are not to be shown). */
+  clue?: string;
 }
 
 /**
  * The quest's next stop: the nearest place with something to do, whether it is the step's own planet or (for Dr Nettle's
  * goods not yet in the hold) the nearest market selling them today. Null when no quest is open.
  */
-export function nextStop(galaxy: Galaxy, t: Trader, q: QuestState | undefined): NextStop | null {
+export function nextStop(galaxy: Galaxy, t: Trader, q: QuestState | undefined, shown: Shown = 'all'): NextStop | null {
   const view = openQuestView(galaxy, t, q);
   if (!view) return null;
+  const clue = clueNow(galaxy, t, q);
   const options: NextStop[] = [];
   for (const s of view.steps) {
     if (s.done || isWaiting(s)) continue;
@@ -93,7 +123,8 @@ export function nextStop(galaxy: Galaxy, t: Trader, q: QuestState | undefined): 
       options.push({ planet: p.id, name: p.name, coords: coordText(p), fuel: seller.fuel, fuelOk: seller.fuel <= t.fuel, doing: `Buy ${(s.qty ?? 0) - (s.have ?? 0)} ${s.what} (${seller.price} cr each)`, step: s });
       continue;
     }
-    options.push({ planet: s.planet, name: s.name, coords: s.coords, fuel: s.fuel, fuelOk: s.fuelOk, doing: stepWords(view.quest, s).line, step: s });
+    const hidden = clue?.step.index === s.index && isHidden(view.quest, s, shown);
+    options.push({ planet: s.planet, name: s.name, coords: s.coords, fuel: s.fuel, fuelOk: s.fuelOk, doing: stepWords(view.quest, s).line, step: s, ...(hidden ? { clue: clue.text } : {}) });
   }
   options.sort((a, b) => a.fuel - b.fuel || a.step.index - b.step.index);
   return options[0] ?? null;
@@ -124,12 +155,13 @@ export function doableHere(galaxy: Galaxy, seed: string, game: Game, settings: S
 }
 
 /** Quest planets for the star chart: planet id → the step numbers (1-based) still to do there, and their words. */
-export function questPlanetMarks(galaxy: Galaxy, t: Trader, q: QuestState | undefined): Map<number, { n: number[]; lines: string[] }> {
+export function questPlanetMarks(galaxy: Galaxy, t: Trader, q: QuestState | undefined, shown: Shown = 'all'): Map<number, { n: number[]; lines: string[] }> {
   const marks = new Map<number, { n: number[]; lines: string[] }>();
   const view = openQuestView(galaxy, t, q);
   if (!view) return marks;
   for (const s of view.steps) {
-    if (s.done) continue;
+    // Lumi's trail planets get their gold ring only once shown (Show me): finding them is the puzzle.
+    if (s.done || isHidden(view.quest, s, shown)) continue;
     const m = marks.get(s.planet) ?? { n: [], lines: [] };
     m.n.push(s.index + 1);
     m.lines.push(`Step ${s.index + 1}: ${stepWords(view.quest, s).line}${isWaiting(s) ? ' (after the other steps)' : ''}`);
@@ -143,7 +175,7 @@ export const fuelFrom = (galaxy: Galaxy, t: Trader, planet: number): number => d
 
 /** The quest things on board now (picked up and not yet handed over), for the hold's gold boxes. */
 export function questCargoNames(q: QuestState | undefined, t: Trader): string[] {
-  const quest = q?.open ? QUESTS.find((c) => c.id === q.open) : undefined;
+  const quest = q?.open ? questById(q.open) : undefined;
   if (!quest || !t.questCargo) return [];
   return quest.steps.filter((s, i) => s.kind === 'pickup' && q?.done.includes(i)).map((s) => s.what).slice(0, t.questCargo);
 }

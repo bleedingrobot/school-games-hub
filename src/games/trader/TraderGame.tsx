@@ -22,7 +22,7 @@ import { CaptainFace, CaptainPicker } from './Captain';
 import { StoryBook, useStoryOnce } from '../../kit';
 import { OPENING, questClips, questStoryPart } from './stories';
 import { DealPanel, FightPanel, JunkPanel, SummaryPanel } from './Encounter';
-import { laserPower } from '../../../shared/trader/fight';
+import { fightPower, laserPower } from '../../../shared/trader/fight';
 import { hasShipyard } from '../../../shared/trader/state';
 import { allPrices, borrowSure, fightAdvice, loanNotNeeded, nextUpgrade, starterTrade, tradeIdeas, tripSummary, upgradeGain } from './coach/advice';
 import { BoltFace, CoachBar, lightUp } from './coach/CoachBar';
@@ -43,9 +43,9 @@ import { loadPrefs, savePrefs, wantsLessMotion } from './prefs';
 import type { Scene, SpaceView } from './renderer';
 import { SpaceCanvas } from './SpaceCanvas';
 import { MapPanel } from './StarMap';
-import { GiverFace, QuestDone, QuestLanding, QuestsPanel } from './QuestsPanel';
-import { doableHere, leftBehind, nextStop, questCargoNames, questPlanetMarks } from './questGuide';
-import { QUESTS, questById } from '../../../shared/trader/quests';
+import { GiverFace, QuestClue, QuestDone, QuestLanding, QuestPirate, QuestsPanel } from './QuestsPanel';
+import { clueNow, doableHere, leftBehind, nextStop, pirateHere, questCargoNames, questPlanetMarks, type Shown } from './questGuide';
+import { openQuestView, QUESTS, questById } from '../../../shared/trader/quests';
 import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 import { COACH_NAME } from './text';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
@@ -117,6 +117,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   const [storyAgain, setStoryAgain] = useState(false);
   /** A quest story playing: its first pages on taking the quest, its last two on finishing (then the reward), or all again from the shelf. */
   const [questStory, setQuestStory] = useState<{ id: string; part: 'start' | 'end' | 'all'; reward?: number } | null>(null);
+  /** Lumi's trail steps the pupil asked to see with Show me (Q.4). Only in the browser: clues are never marked or recorded. */
+  const [revealed, setRevealed] = useState<{ quest: string | null; steps: number[] }>({ quest: null, steps: [] });
   const lock = useRef(false);
   const latest = useRef({ loaded, queue });
   latest.current = { loaded, queue };
@@ -177,10 +179,16 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   const t = game?.t;
   const savedSystem = useMemo(() => game?.system ?? emptyDesign(), [game?.system]);
   const design = draft ?? savedSystem;
+  const openId = game?.quests?.open ?? null;
+  // With Bolt Off the coordinates are hidden, so Lumi's trail planets are shown straight away.
+  const trailShown: Shown = useMemo(
+    () => (helpLevel(coach.level, game?.stats.jumps ?? 0) === 'off' ? 'all' : revealed.quest === openId ? revealed.steps : []),
+    [coach.level, game?.stats.jumps, revealed, openId],
+  );
   // Bolt's next step, worked out fresh from the game each time it changes.
   const step = useMemo(
-    () => (galaxy && t ? (tab === 'forge' ? forgeStep(design, t.credits, t.moon) : nextStep({ galaxy, t: loaded?.settings.unlimited && t.jumpsLeft < 1 ? { ...t, jumpsLeft: 1 } : t, pushes, tab, aimed: tab === 'map' ? aimed : null, loans: loaded?.settings.loans, forge: forgeOn, quests: game?.quests })) : null),
-    [galaxy, t, pushes, tab, aimed, loaded?.settings.loans, forgeOn, design, game?.quests],
+    () => (galaxy && t ? (tab === 'forge' ? forgeStep(design, t.credits, t.moon) : nextStep({ galaxy, t: loaded?.settings.unlimited && t.jumpsLeft < 1 ? { ...t, jumpsLeft: 1 } : t, pushes, tab, aimed: tab === 'map' ? aimed : null, loans: loaded?.settings.loans, forge: forgeOn, quests: game?.quests, shown: trailShown })) : null),
+    [galaxy, t, pushes, tab, aimed, loaded?.settings.loans, forgeOn, design, game?.quests, trailShown],
   );
   const here = galaxy && t ? galaxy.planets[t.location] : null;
   const pending = game?.pending ?? null;
@@ -507,10 +515,12 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
       if (next.outcome === 'won') lines.push(`You earned a bounty of ${cr(PIRATE_TIERS[tier].bounty)}.`);
       if (next.outcome === 'robbed') lines.push('Some of your cargo is gone, but you still have your ship and your credits.');
       if (next.outcome === 'destroyed') lines.push('You lost your cargo and your ship, but you kept your credits. A free Flea is waiting for you.');
+      if (next.outcome === 'knocked') lines.push('Fix your hull at a shipyard if you need to, then fight them again from the Trade screen.');
+      if (next.outcome === 'won' && before.quest !== undefined) lines.push(`✓ Ticked off for Commander Vex on the Quests screen.`);
       setPhase({
         k: 'after',
         ...(next.outcome === 'destroyed' ? { tip: 'wrecked' as const } : next.outcome === 'robbed' ? { tip: 'robbed' as const } : {}),
-        title: next.outcome === 'won' ? 'You beat the pirates! 🎉' : next.outcome === 'fled' ? 'You got away! 💨' : next.outcome === 'destroyed' ? 'Escape pod! 🛟' : 'The pirates took some cargo',
+        title: next.outcome === 'won' ? 'You beat the pirates! 🎉' : next.outcome === 'fled' ? 'You got away! 💨' : next.outcome === 'destroyed' ? 'Escape pod! 🛟' : next.outcome === 'knocked' ? 'Knocked about, but nothing taken' : 'The pirates took some cargo',
         lines,
       });
     }
@@ -561,6 +571,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
       if (questStoryPart(id, 'end')) setQuestStory({ id, part: 'end', reward });
       else setPhase({ k: 'quest', id, reward });
     }
+    else if (a.type === 'quest-fight') setFightLog(['They are coming right at you!']);
     else {
       if (a.type === 'quest-take') setQuestStory({ id: a.id, part: 'start' });
       setNote(a.type === 'quest-take' ? 'Quest taken! Gold rings on the star chart show where to go.' : a.type === 'quest-drop' ? 'Quest dropped. You can take it again any time.' : 'Done! ✓ Ticked off on the Quests screen.');
@@ -574,7 +585,22 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
     () => (galaxy && game && settings && loaded && game.quests?.open && !game.pending ? doableHere(galaxy, loaded.galaxySeed, game, settings) : { actions: [], steps: [] }),
     [galaxy, game], // eslint-disable-line react-hooks/exhaustive-deps
   );
-  const questMap = useMemo(() => (galaxy && t && game?.quests?.open ? { marks: questPlanetMarks(galaxy, t, game.quests), stop: nextStop(galaxy, t, game.quests) } : null), [galaxy, t, game?.quests]);
+  /** Show me on Lumi's trail: the step's planet is shown (gold ring and name) and lit up on the star chart. */
+  const reveal = useCallback(
+    (index: number) => {
+      if (!galaxy || !t || !openId) return;
+      setRevealed((r) => ({ quest: openId, steps: [...new Set([...(r.quest === openId ? r.steps : []), index])] }));
+      const planet = openQuestView(galaxy, t, game?.quests)?.steps[index]?.planet;
+      if (planet !== undefined) showOnMap(planet);
+    },
+    [galaxy, t, openId, game?.quests, showOnMap],
+  );
+  const questMap = useMemo(
+    () => (galaxy && t && game?.quests?.open ? { marks: questPlanetMarks(galaxy, t, game.quests, trailShown), stop: nextStop(galaxy, t, game.quests, trailShown), onReveal: reveal } : null),
+    [galaxy, t, game?.quests, trailShown, reveal],
+  );
+  const questPirate = galaxy && game ? pirateHere(galaxy, game) : null;
+  const questClue = galaxy && t && game?.quests?.open ? clueNow(galaxy, t, game.quests) : null;
   const openQuest = game?.quests?.open ? questById(game.quests.open) ?? null : null;
 
   const showFlight = !!flight && bolt && phase.k === 'planet' && !pending && !asking;
@@ -582,8 +608,9 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   // First-time tips (section 4): the first one that fits now and hasn't been seen shows, and is remembered at once, so it
   // shows only once. It stays until closed or until the moment passes. On the planet they wait for First Flight's bubble.
   const moment: TipMoment = {
-    pending: phase.k === 'planet' && pending ? (pending.kind === 'deal' ? 'deal' : pending.kind) : null,
-    armed: t ? laserPower(t) > 0 : false,
+    // Vex's quest fights (gentle) skip the pirate tip: it says they take cargo, which they don't. The fight says so itself.
+    pending: phase.k === 'planet' && pending && !(pending.kind === 'fight' && pending.fight.gentle) ? (pending.kind === 'deal' ? 'deal' : pending.kind) : null,
+    armed: t ? (pending?.kind === 'fight' ? fightPower(t, pending.fight) : laserPower(t)) > 0 : false,
     after: phase.k === 'after' ? phase.tip ?? null : null,
     planet: phase.k === 'planet' && !pending && !flight,
     tab,
@@ -705,7 +732,9 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
                 {tipCard ?? (step && !flight && bolt && <CoachBar step={step} onShow={showMe} />)}
                 <div className="st-focus" ref={heading} tabIndex={-1} aria-label={`${tabs.find((x) => x[0] === tab)?.[1]} screen`} />
                 {tab === 'trade' && openQuest && questHere.steps.length > 0 && <QuestLanding quest={openQuest} steps={questHere.steps} busy={panelBusy} onDo={() => void questMove(questHere.actions)} />}
-                {tab === 'quests' && <QuestsPanel galaxy={galaxy} t={t} quests={game.quests} busy={panelBusy} showXY={level !== 'off'} onQuest={(a) => void questMove(a)} onTab={setTab} onShowMap={showOnMap} onStory={(id, part) => setQuestStory({ id, part })} />}
+                {tab === 'trade' && openQuest && questPirate && <QuestPirate quest={openQuest} busy={panelBusy} onFight={() => void questMove([{ type: 'quest-fight', step: questPirate.index }])} />}
+                {tab === 'trade' && openQuest && questClue && !questHere.steps.length && questClue.step.planet !== t.location && <QuestClue quest={openQuest} text={questClue.text} onReveal={() => reveal(questClue.step.index)} />}
+                {tab === 'quests' && <QuestsPanel galaxy={galaxy} t={t} quests={game.quests} busy={panelBusy} showXY={level !== 'off'} shown={trailShown} onReveal={reveal} onQuest={(a) => void questMove(a)} onTab={setTab} onShowMap={showOnMap} onStory={(id, part) => setQuestStory({ id, part })} />}
                 {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} want={marketWant} level={level} quest={questCargoNames(game.quests, t)} onTrade={doTrade} onPlan={setMarketPlan} onShowMap={showOnMap} />}
                 {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} suggest={suggest} askFirst={level === 'some'} forge={forgeOn} onForge={() => setTab('forge')} onAct={act} onMoon={() => void buyMoon()} captain={game?.captain} onCaptain={() => setPicking(true)} />}
                 {tab === 'forge' && forgeOn && <Forge saved={savedSystem} draft={design} credits={t.credits} ownsMoon={t.moon} busy={panelBusy} lessMotion={lessMotion} level={level} typing={loaded.settings.forgeTyping !== false} onDraft={setDraft} onPlan={planForge} onApply={applyForge} onPicture={savePicture} />}

@@ -786,6 +786,14 @@
 .stq-land__tag { margin: 0; font-size: 0.82rem; font-weight: 800; color: var(--st-gold); text-transform: uppercase; letter-spacing: 0.04em; }
 .stq-land__line { margin: 2px 0 0; font-size: 1.05rem; }
 .stq-land__btn { margin-left: auto; }
+/* Q.4: Commander Vex's pirate still waiting, Lumi's clue, the lent laser. */
+.stq-land--pirate { border-color: #f87171; background: rgba(69, 16, 16, 0.75); box-shadow: 0 0 16px rgba(248, 113, 113, 0.35); }
+.stq-land--clue { border-color: #7dd3fc; background: rgba(8, 40, 64, 0.75); box-shadow: 0 0 16px rgba(125, 211, 252, 0.35); }
+.stq-land--clue .stq-land__tag { color: #7dd3fc; }
+.stq-clue { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 4px 0 0; padding: 6px 10px; border-radius: 10px; border: 1px solid #7dd3fc; background: rgba(8, 40, 64, 0.6); color: #e0f2fe; }
+.stq-clue > span { flex: 1 1 160px; min-width: 0; }
+.stq-lent { margin: 6px 0 8px; padding: 6px 10px; border-radius: 10px; background: rgba(69, 16, 16, 0.55); border: 1px solid #f87171; color: #fee2e2; }
+.stq-fight { color: #fde68a; }
 /* Q.3: the quest board painting heads the tab; the 📖 shelf of stories started. */
 .stq-board { display: block; width: calc(100% + 32px); max-width: none; margin: -14px -16px 10px; aspect-ratio: 16 / 9; max-height: 200px; object-fit: cover; border-radius: 16px 16px 0 0; }
 .stq-shelf { margin-top: 14px; }

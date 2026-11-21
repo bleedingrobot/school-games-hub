@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'trader-vex-lumi-2026-11-21',
+    date: '2026-11-21',
+    emoji: '⚔️',
+    title: "Vex's pirates and Lumi's trail",
+    text: "Fight Commander Vex's pirates with a Navy laser, and follow Ranger Kai's clues to Lumi.",
+    game: 'trader',
+  },
+  {
     id: 'bond-match-pip-2026-11-21',
     date: '2026-11-21',
     emoji: '🦀',
