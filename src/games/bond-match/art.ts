@@ -39,3 +39,7 @@ export type PipPose = 'wave' | 'cheer' | 'think';
 export const pip = (pose: PipPose): string | undefined => paint(`pip/pip-${pose}`);
 /** A player's shell badge: pink for player 1 (or you), blue for player 2. */
 export const shell = (colour: 'pink' | 'blue'): string | undefined => paint(`players/shell-${colour}`);
+/** The game bar's toggle icons: the pocket watch (flips and time) and the blocks (fraction pictures). */
+export const icon = (name: 'timer' | 'pictures'): string | undefined => paint(`icons/icon-${name}`);
+/** The little picture beside each shelf's name: a blue pebble, a piece of teal sea glass, a violet clam shell. */
+export const shelfIcon = (shelf: 'whole' | 'decimal' | 'fraction'): string | undefined => paint(`icons/shelf-${shelf}`);

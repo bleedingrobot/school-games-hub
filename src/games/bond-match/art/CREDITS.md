@@ -17,4 +17,6 @@ word in code.
 - The finish (sunset edge, starfish, shell bucket) is in `back/` and `rewards/`.
 - Pip the crab (waving, cheering, thinking) is in `pip/`; the players' pink and blue shell badges are in `players/`. The 🦀 and
   the old 🙂 😃 emoji show if a picture is missing or fails to load.
+- The game bar's pocket watch and blocks (the timer and fraction-picture toggles) and the shelves' pebble, sea glass and
+  clam shell are in `icons/`; the old ⏱️ 🙈 📊 🔢 emoji and the coloured dots show if a picture is missing or fails to load.
 - Painted on 21 Nov 2026.

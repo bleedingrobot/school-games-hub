@@ -6,7 +6,8 @@ import { sideText } from '../../../shared/bond-match/exact';
 import { BOT_LEVEL_IDS } from '../../../shared/botGame';
 import { BOT_LEVEL_NAMES, SHELVES, SIZE_NAMES, TEXT, type Players } from './strings';
 import { Value } from './Value';
-import { Pip, ShellBadge } from './Pip';
+import { Painted, Pip, ShellBadge } from './Pip';
+import { shelfIcon } from './art';
 import { useReducedMotion } from './useReducedMotion';
 import type { BondSuggestion } from './suggest';
 
@@ -74,7 +75,7 @@ export function BondPicker({ onPick, initialSize = 'medium', stars, players, onP
   }
 
   return (
-    <section className="bm-picker" aria-labelledby="bm-pick-title">
+    <section className={`bm-picker${still ? ' bm-picker--still' : ''}`} aria-labelledby="bm-pick-title">
       <header className="bm-hero">
         <div className="bm-hero__text">
           <h2 id="bm-pick-title" className="bm-hero__title">{TEXT.pickTitle}</h2>
@@ -147,7 +148,7 @@ export function BondPicker({ onPick, initialSize = 'medium', stars, players, onP
         if (sets.length === 0) return null;
         return (
           <div key={shelf.id} className={`bm-shelf bm-shelf--${shelf.id}`} role="group" aria-label={shelf.name}>
-            <h3 className="bm-shelf__name">{shelf.name}</h3>
+            <h3 className="bm-shelf__name"><Painted src={shelfIcon(shelf.id)} fallback="" className="bm-shelf__pic" />{shelf.name}</h3>
             <div className="bm-shelf__sets">
               {sets.map((set) => {
                 const mine = stars?.[set.id];

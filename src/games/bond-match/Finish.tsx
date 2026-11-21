@@ -57,8 +57,8 @@ export function Finish({ save, setLabel, score, recorded, onAgain, onAnother }: 
         </p>
       )}
       <div className="bm-finish__buttons">
-        <button type="button" className="button button--primary" onClick={onAgain}>{TEXT.again}</button>
-        <button type="button" className="button button--light" onClick={onAnother}>{TEXT.another}</button>
+        <button type="button" className="button button--primary" data-key="enter" onClick={onAgain}>{TEXT.again}</button>
+        <button type="button" className="button button--light" data-key="esc" onClick={onAnother}>{TEXT.another}</button>
       </div>
       <details className="bm-finish__how">
         <summary>{TEXT.howStars}</summary>
@@ -105,8 +105,8 @@ export function VersusFinish({ save, setLabel, players, pairs, winner, onAgain, 
         </p>
       )}
       <div className="bm-finish__buttons">
-        <button type="button" className="button button--primary" onClick={onAgain}>{TEXT.again}</button>
-        <button type="button" className="button button--light" onClick={onAnother}>{TEXT.another}</button>
+        <button type="button" className="button button--primary" data-key="enter" onClick={onAgain}>{TEXT.again}</button>
+        <button type="button" className="button button--light" data-key="esc" onClick={onAnother}>{TEXT.another}</button>
       </div>
       <p className="bm-finish__soft">{TEXT.versusNote}</p>
     </section>

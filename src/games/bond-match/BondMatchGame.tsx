@@ -14,7 +14,8 @@ import { clock, playerName, TEXT, type Players } from './strings';
 import { useReducedMotion } from './useReducedMotion';
 import { Value } from './Value';
 import { HubButtons } from './HubButtons';
-import { Pip, ShellBadge } from './Pip';
+import { Painted, Pip, ShellBadge } from './Pip';
+import { icon } from './art';
 
 /** A mismatch turns back by itself after this long, so nobody gets stuck waiting to flip. */
 export const MISMATCH_MS = 4000;
@@ -178,7 +179,7 @@ export function BondMatchGame({
   return (
     <section className={twoPlayers ? 'bm-game bm-game--two' : 'bm-game'} aria-label={TEXT.name}>
       <div className="bm-bar">
-        <button type="button" className="bm-back" aria-label={TEXT.quit} onClick={onQuit}>
+        <button type="button" className="bm-back" aria-label={TEXT.quit} data-key="esc" onClick={onQuit}>
           <span aria-hidden="true">←</span>
           <span className="bm-back__text" aria-hidden="true">{TEXT.back}</span>
         </button>
@@ -196,12 +197,13 @@ export function BondMatchGame({
               <span className="bm-stat"><span className="bm-stat__name">{TEXT.time}</span> <strong data-testid="time">{clock(elapsed)}</strong></span>
             </span>
           )}
-          <button type="button" className="bm-icon-btn" aria-pressed={hideStats} aria-label={hideStats ? TEXT.showStats : TEXT.hideStats} title={hideStats ? TEXT.showStats : TEXT.hideStats} onClick={toggleStats}>
-            <span aria-hidden="true">{hideStats ? '🙈' : '⏱️'}</span>
+          {/* The painted watch, faded with a line through it while the flips and time are hidden (the label says which). */}
+          <button type="button" className={`bm-icon-btn${hideStats ? ' bm-icon-btn--off' : ''}`} aria-pressed={hideStats} aria-label={hideStats ? TEXT.showStats : TEXT.hideStats} title={hideStats ? TEXT.showStats : TEXT.hideStats} onClick={toggleStats}>
+            <Painted src={icon('timer')} fallback={hideStats ? '🙈' : '⏱️'} className="bm-icon" />
           </button>
           {hasFractions && (
-            <button type="button" className="bm-icon-btn" aria-pressed={pictures} aria-label={pictures ? TEXT.hidePictures : TEXT.showPictures} title={pictures ? TEXT.hidePictures : TEXT.showPictures} onClick={togglePictures}>
-              <span aria-hidden="true">{pictures ? '📊' : '🔢'}</span>
+            <button type="button" className={`bm-icon-btn${pictures ? '' : ' bm-icon-btn--off'}`} aria-pressed={pictures} aria-label={pictures ? TEXT.hidePictures : TEXT.showPictures} title={pictures ? TEXT.hidePictures : TEXT.showPictures} onClick={togglePictures}>
+              <Painted src={icon('pictures')} fallback={pictures ? '📊' : '🔢'} className="bm-icon" />
             </button>
           )}
           <HubButtons hub={false} />

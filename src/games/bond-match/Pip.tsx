@@ -30,3 +30,18 @@ export function ShellBadge({ colour, fallback, className = '' }: { colour: 'pink
     </span>
   );
 }
+
+/**
+ * A small painted picture that is only decoration (a toggle's icon, a shelf's picture), or its emoji until it's painted
+ * or if it fails to load. The words or the button's label carry the meaning.
+ */
+export function Painted({ src, fallback, className }: { src: string | undefined; fallback: string; className: string }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <span className={className} aria-hidden="true">
+      {src && !failed
+        ? <img className={`${className}__img`} src={src} alt="" draggable={false} onError={() => setFailed(true)} />
+        : <span className={`${className}__emoji`}>{fallback}</span>}
+    </span>
+  );
+}
