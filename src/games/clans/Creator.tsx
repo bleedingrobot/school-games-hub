@@ -3,7 +3,7 @@ import { CLASS_NAMES, draftMember, MAX_ROLLS, RACE_NAMES, rollAgain, startingDra
 import { LookPicker, MemberCard } from './MemberCard';
 import { lookOf } from '../../../shared/clans/looks';
 import { HowToPlayBody } from './HowToPlay';
-import { CLAN_ADJECTIVES, CLAN_NOUNS, MEMBER_NAMES, TYPED_NAME_MAX, checkTypedName, clanNameFrom } from './words';
+import { CLAN_ADJECTIVES, CLAN_NOUNS, MEMBER_NAME_GROUPS, TYPED_NAME_MAX, checkTypedName, clanNameFrom } from './words';
 import type { Clan } from '../../../shared/clans/types';
 
 /**
@@ -73,7 +73,11 @@ export function Creator({ seed, typedNames = false, onDone }: { seed: number; ty
                 <label>
                   Name
                   <select value={drafts[i].name} onChange={(e) => set(i, { name: e.target.value })}>
-                    {MEMBER_NAMES.map((n) => <option key={n} disabled={sameAs(i, n)}>{n}</option>)}
+                    {MEMBER_NAME_GROUPS.map((g) => (
+                      <optgroup key={g.label} label={g.label}>
+                        {g.names.map((n) => <option key={n} disabled={sameAs(i, n)}>{n}</option>)}
+                      </optgroup>
+                    ))}
                   </select>
                 </label>
               )}

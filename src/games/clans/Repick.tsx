@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { MemberCard } from './MemberCard';
-import { changeLook, renameMember, repickDone, repickMember } from './places';
+import { changeLook, renameClan, renameMember, repickDone, repickMember } from './places';
 import { CLASS_NAMES, RACE_NAMES, type Change, type Session } from './session';
-import { MEMBER_NAMES, TYPED_NAME_MAX } from '../../../shared/clans/words';
+import { CLAN_ADJECTIVES, CLAN_NOUNS, MEMBER_NAMES, MEMBER_NAME_GROUPS, TYPED_NAME_MAX } from '../../../shared/clans/words';
 import { bannerArt } from './art';
 
 /**
  * A new season: the clan starts fresh, and each member's race and class may be picked again before they have played
  * (the server refuses it once they have). Names may be changed too (James, 22 Nov 2026): from the list, or made up when
- * the teacher's switch is on. Or keep them all with one tap. The server does the same sums, so what is shown here is what it keeps.
+ * the teacher's switch is on. The clan's name and banner may change too (the banner goes with the name's second word).
+ * Or keep them all with one tap. The server does the same sums, so what is shown here is what it keeps.
  */
 export function Repick({ session, typedNames = false, onChange }: { session: Session; typedNames?: boolean; onChange: Change }) {
   // What each member's "make up my own" box holds, or null while they use the list.
@@ -26,6 +27,11 @@ export function Repick({ session, typedNames = false, onChange }: { session: Ses
     if (out.ok && out.name !== session.clan.members[i].name) onChange(out.session, { type: 'rename', member: i, name: out.name });
     return out.ok;
   };
+  const [adjective, noun] = session.clan.name.split(' ');
+  const nameClan = (name: string) => {
+    const next = renameClan(session, name);
+    if (next) onChange(next, { type: 'clanName', name });
+  };
   const taken = (i: number, name: string) => session.clan.members.some((m, j) => j !== i && m.name.toLowerCase() === name.toLowerCase());
 
   return (
@@ -35,9 +41,31 @@ export function Repick({ session, typedNames = false, onChange }: { session: Ses
         <div>
           <p className="cq-repick__kicker">{session.clan.season ? `Season ${session.clan.season} begins` : 'A new season begins'}</p>
           <h2>{session.clan.name}</h2>
-          <p>Your clan starts fresh. Pick each member's name, look, race and class again, or keep them. Your trophies and badges stay forever.</p>
+          <p>Your clan starts fresh. Pick a new clan name and banner, and each member's name, look, race and class, or keep them. Your trophies and badges stay forever.</p>
+          <label className="cq-repick__clanname">
+            Clan name
+            <select value={CLAN_ADJECTIVES.includes(adjective) ? adjective : ''} onChange={(e) => nameClan(`${e.target.value} ${noun}`)}>
+              {CLAN_ADJECTIVES.map((a) => <option key={a}>{a}</option>)}
+            </select>
+            <span>{noun}</span>
+          </label>
         </div>
       </header>
+      <fieldset className="cq-repick__banners">
+        <legend>Pick your banner</legend>
+        {CLAN_NOUNS.map((n) => (
+          <button
+            key={n}
+            type="button"
+            className="cq-repick__bannerpick"
+            aria-pressed={n === noun}
+            onClick={() => nameClan(`${adjective} ${n}`)}
+          >
+            {bannerArt(n) && <img src={bannerArt(n)} alt="" />}
+            <span>{n}</span>
+          </button>
+        ))}
+      </fieldset>
       <div className="cq-cards cq-cards--heroes">
         {session.clan.members.map((m, i) => {
           const started = m.level !== 1 || m.xp !== 0;
@@ -66,7 +94,11 @@ export function Repick({ session, typedNames = false, onChange }: { session: Ses
                     Name
                     <select value={MEMBER_NAMES.includes(m.name) ? m.name : ''} onChange={(e) => rename(i, e.target.value)}>
                       {!MEMBER_NAMES.includes(m.name) && <option value="">{m.name}</option>}
-                      {MEMBER_NAMES.map((n) => <option key={n} disabled={taken(i, n)}>{n}</option>)}
+                      {MEMBER_NAME_GROUPS.map((g) => (
+                        <optgroup key={g.label} label={g.label}>
+                          {g.names.map((n) => <option key={n} disabled={taken(i, n)}>{n}</option>)}
+                        </optgroup>
+                      ))}
                     </select>
                   </label>
                 )}

@@ -15,7 +15,7 @@ import { STATS, TROOP_KINDS, type Clan, type Empire, type ItemDef, type Member, 
 import { finishQuest, puzzleFor, questById, questDoneToday, todaysQuest, type PuzzleSpec, type QuestDef, type QuestDone } from '../../../shared/clans/quests';
 import { earn, type Session } from './session';
 import { classByName, raceByName, rollMember } from '../../../shared/clans/character';
-import { renameCheck, slotSeed } from '../../../shared/clans/create';
+import { isClanName, renameCheck, slotSeed } from '../../../shared/clans/create';
 import { buySupply, monsterSave, type SupplyKind } from '../../../shared/clans/monster';
 import { setLook, type Look } from '../../../shared/clans/looks';
 
@@ -317,6 +317,12 @@ export function renameMember(s: Session, memberIndex: number, name: string, type
   const clan = structuredClone(s.clan);
   clan.members[memberIndex] = { ...clan.members[memberIndex], name: named.name };
   return { ok: true, session: { ...s, clan }, name: named.name };
+}
+
+/** A new clan name on the re-pick screen (the banner goes with the second word). Null if it isn't a name from the lists. */
+export function renameClan(s: Session, name: string): Session | null {
+  if (!isClanName(name) || name === s.clan.name) return null;
+  return { ...s, clan: { ...structuredClone(s.clan), name } };
 }
 
 /** "Keep going" on the re-pick screen. */

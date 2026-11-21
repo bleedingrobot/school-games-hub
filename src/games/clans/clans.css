@@ -1587,6 +1587,15 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 .cq-repick__head p { margin: 2px 0 0; max-width: 70ch; }
 .cq-repick__kicker { font-size: 0.85rem; letter-spacing: 0.2em; text-transform: uppercase; color: #c9a86a; }
 .cq-repick__banner { flex: none; width: clamp(56px, 8vw, 96px); height: auto; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.8)); animation: cq-banner-sway 4s ease-in-out infinite alternate; transform-origin: top center; }
+.cq-repick__clanname { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; font-weight: 700; color: #c9a86a; }
+.cq-repick__clanname select, .cq-repick__clanname span { font-size: 1.05rem; font-weight: 700; color: #ffd36b; }
+.cq-repick__banners { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; margin: 0 0 16px; padding: 10px 12px 12px; border: 2px solid #6a5233; border-radius: 10px; background: rgba(20, 14, 8, 0.7); }
+.cq-repick__banners legend { padding: 0 6px; font-weight: 700; color: #ffd36b; }
+.cq-repick__bannerpick { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px; border: 2px solid transparent; border-radius: 8px; background: rgba(0, 0, 0, 0.35); color: #e8dcc2; font: inherit; font-size: 0.85rem; cursor: pointer; transition: transform 0.15s, border-color 0.15s; }
+.cq-repick__bannerpick img { width: 100%; max-width: 64px; height: 72px; object-fit: contain; filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.8)); }
+.cq-repick__bannerpick:hover { transform: translateY(-2px); border-color: #8a6a3e; }
+.cq-repick__bannerpick[aria-pressed='true'] { border-color: #ffd36b; background: rgba(120, 80, 20, 0.45); box-shadow: 0 0 14px rgba(255, 200, 90, 0.45); color: #ffd36b; font-weight: 700; }
+.cq-repick__bannerpick:focus-visible { outline: 3px solid #ffd36b; outline-offset: 2px; }
 
 .cq-cards--heroes { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: clamp(10px, 1.4vw, 18px); }
 .cq-card--hero { position: relative; padding: 0 12px 12px; gap: 8px; overflow: hidden; border: 2px solid #4d4130; border-radius: 10px; background: linear-gradient(rgba(30, 24, 18, 0.95), rgba(18, 16, 14, 0.97)); box-shadow: 0 0 0 2px #000, 0 10px 28px rgba(0, 0, 0, 0.65); animation: cq-hero-in 0.5s ease-out both; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
@@ -1625,6 +1634,6 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
   .cq-repick__head { align-items: flex-start; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cq-card--hero, .cq-hero__art, .cq-repick__banner { animation: none; transition: none; }
+  .cq-card--hero, .cq-hero__art, .cq-repick__banner, .cq-repick__bannerpick { animation: none; transition: none; }
   .cq-card--hero:hover, .cq-card--hero:hover .cq-hero__art { transform: none; }
 }
