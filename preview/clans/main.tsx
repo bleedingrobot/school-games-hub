@@ -6,6 +6,16 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ClanQuest } from '../../src/games/clans';
 import type { ClanSeasonSummary } from '../../src/data/clans';
+import { clanFromChoices, startingDrafts } from '../../shared/clans/create';
+import { newSession } from '../../src/games/clans/session';
+
+// ?repick=1 opens on the new-season screen (pick names, looks, races and classes again).
+function repickStart() {
+  if (!new URLSearchParams(window.location.search).get('repick')) return null;
+  const made = clanFromChoices(42, 'Bold Foxes', startingDrafts(42));
+  if (!made.ok) return null;
+  return newSession({ ...made.clan, season: 2, repick: 2 }, 42);
+}
 
 // ?ceremony=1 pretends Season 1 has just ended, to try the new-season ceremony (it opens until it is watched; the Hall can show it again).
 let ceremonySeen = false;
@@ -38,6 +48,6 @@ const pastSeason = new URLSearchParams(window.location.search).get('ceremony')
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ClanQuest typedNames pastSeason={pastSeason} />
+    <ClanQuest typedNames pastSeason={pastSeason} initial={repickStart()} />
   </StrictMode>,
 );

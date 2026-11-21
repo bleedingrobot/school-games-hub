@@ -9,7 +9,7 @@ import { ItemSprite, Portrait } from './Sprite';
 import { headline } from './session';
 import { CARD_HELP, CLASS_TEXT, RACE_TEXT, TRAIN_HELP } from './text';
 import { LOOKS, lookOf, type Look } from '../../../shared/clans/looks';
-import { memberThumb } from './art';
+import { memberArt, memberThumb } from './art';
 
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
@@ -34,29 +34,48 @@ export function LookPicker({ race, cls, value, onPick }: { race: string; cls: st
 /**
  * A member: portrait, name, and by default only HP, attack, defence and one star. "More details" shows the rest.
  * With `onLook`, a "Change look" button opens the four paintings to pick from.
+ * `hero` (the new-season screen): the full painting fills the top of the card with the name on it, and the four looks
+ * are always showing underneath, so the art is the star (James, 22 Nov 2026).
  */
-export function MemberCard({ member, leader = false, onLook, portrait = 4, children }: { member: Member; leader?: boolean; onLook?: (look: Look) => void; portrait?: number; children?: React.ReactNode }) {
+export function MemberCard({ member, leader = false, onLook, portrait = 4, hero = false, children }: { member: Member; leader?: boolean; onLook?: (look: Look) => void; portrait?: number; hero?: boolean; children?: React.ReactNode }) {
   const [more, setMore] = useState(false);
   const [picking, setPicking] = useState(false);
   const h = headline(member);
   const spells = member.spells.map((id) => SPELLS[id]).filter((s) => s && !s.notYet);
   const caster = { level: member.level, wisdom: fightStats(member).wisdom };
+  const look = lookOf(member);
+  const big = hero ? memberArt(member.race, member.cls, look) ?? memberThumb(member.race, member.cls, look) : undefined;
   return (
-    <article className="cq-card" aria-label={member.name}>
-      <header className="cq-card__head">
-        <Portrait race={member.race} cls={member.cls} look={lookOf(member)} scale={portrait} />
-        <div>
-          <h3>
-            {member.name}
-            {leader && <span className="cq-tag"> leader</span>}
-            {member.knockedOut && <span className="cq-tag cq-tag--out"> knocked out</span>}
-            {member.points > 0 && <span className="cq-tag cq-tag--up"> {member.points} points to spend</span>}
-          </h3>
-          <p className="cq-soft">
-            {member.race} {member.cls} · level {member.level}
-          </p>
-        </div>
-      </header>
+    <article className={hero ? `cq-card cq-card--hero${leader ? ' cq-card--leader' : ''}` : 'cq-card'} aria-label={member.name}>
+      {hero ? (
+        <header className="cq-hero">
+          {/* Keyed on the look so a new pick fades in. */}
+          {big ? <img key={look} className="cq-hero__art" src={big} alt="" /> : <Portrait race={member.race} cls={member.cls} look={look} scale={10} />}
+          <div className="cq-hero__plate">
+            <h3>
+              {member.name}
+              {leader && <span className="cq-tag"> leader</span>}
+            </h3>
+            <p>{member.race} {member.cls} · level {member.level}</p>
+          </div>
+        </header>
+      ) : (
+        <header className="cq-card__head">
+          <Portrait race={member.race} cls={member.cls} look={lookOf(member)} scale={portrait} />
+          <div>
+            <h3>
+              {member.name}
+              {leader && <span className="cq-tag"> leader</span>}
+              {member.knockedOut && <span className="cq-tag cq-tag--out"> knocked out</span>}
+              {member.points > 0 && <span className="cq-tag cq-tag--up"> {member.points} points to spend</span>}
+            </h3>
+            <p className="cq-soft">
+              {member.race} {member.cls} · level {member.level}
+            </p>
+          </div>
+        </header>
+      )}
+      {onLook && hero && <LookPicker race={member.race} cls={member.cls} value={look} onPick={onLook} />}
       <dl className="cq-headline">
         <div title={CARD_HELP.hp}><dt>HP</dt><dd>{h.hp}</dd></div>
         <div title={CARD_HELP.attack}><dt>Attack</dt><dd>{h.attack}</dd></div>
@@ -69,7 +88,7 @@ export function MemberCard({ member, leader = false, onLook, portrait = 4, child
         ))}
       </p>
       {children}
-      {onLook && (
+      {onLook && !hero && (
         <>
           <button type="button" className="cq-link" aria-expanded={picking} onClick={() => setPicking(!picking)}>
             {picking ? 'Done' : 'Change look'}

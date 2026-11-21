@@ -3,6 +3,7 @@ import { MemberCard } from './MemberCard';
 import { changeLook, renameMember, repickDone, repickMember } from './places';
 import { CLASS_NAMES, RACE_NAMES, type Change, type Session } from './session';
 import { MEMBER_NAMES, TYPED_NAME_MAX } from '../../../shared/clans/words';
+import { bannerArt } from './art';
 
 /**
  * A new season: the clan starts fresh, and each member's race and class may be picked again before they have played
@@ -29,14 +30,20 @@ export function Repick({ session, typedNames = false, onChange }: { session: Ses
 
   return (
     <section className="cq-repick" aria-label="A new season">
-      <h2>A new season!</h2>
-      <p>Your clan starts fresh. Pick each member's name, look, race and class again, or keep them. Your trophies and badges stay forever.</p>
-      <div className="cq-cards">
+      <header className="cq-repick__head">
+        {bannerArt(session.clan.name) && <img className="cq-repick__banner" src={bannerArt(session.clan.name)} alt="" />}
+        <div>
+          <p className="cq-repick__kicker">{session.clan.season ? `Season ${session.clan.season} begins` : 'A new season begins'}</p>
+          <h2>{session.clan.name}</h2>
+          <p>Your clan starts fresh. Pick each member's name, look, race and class again, or keep them. Your trophies and badges stay forever.</p>
+        </div>
+      </header>
+      <div className="cq-cards cq-cards--heroes">
         {session.clan.members.map((m, i) => {
           const started = m.level !== 1 || m.xp !== 0;
           const own = typed[i];
           return (
-            <MemberCard key={`${i}-${m.race}-${m.cls}`} member={m} leader={i === 0} onLook={(look) => { const next = changeLook(session, i, look); if (next) onChange(next, { type: 'look', member: i, look }); }}>
+            <MemberCard key={`${i}-${m.race}-${m.cls}`} member={m} leader={i === 0} hero onLook={(look) => { const next = changeLook(session, i, look); if (next) onChange(next, { type: 'look', member: i, look }); }}>
               <div className="cq-pickers">
                 {typedNames && own !== null ? (
                   <label>
