@@ -19,3 +19,11 @@ export function scene(name: 'beach' | 'pool-day' | 'pool-evening' | 'sunset'): S
   const small = paint(`back/${name}-800`);
   return { src: big, srcSet: small ? `${small} 800w, ${big} 1600w` : undefined };
 }
+
+/** The sea-glass back for a board: teal for whole numbers, blue for decimals, violet for fractions (tinted by tidy). */
+export type Glass = 'teal' | 'blue' | 'violet';
+export const cardBack = (glass: Glass): string | undefined =>
+  paint(glass === 'teal' ? 'cards/card-back' : `cards/card-back-${glass}`);
+export const cardStone = (): string | undefined => paint('cards/card-stone');
+/** The glow pictures for a match (light on see-through, painted on black and unscreened by tidy). */
+export const fx = (name: 'ripple' | 'sparkle'): string | undefined => paint(`fx/${name}`);

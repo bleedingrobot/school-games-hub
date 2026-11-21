@@ -100,7 +100,7 @@ export function BondMatchPlay({ makeSeed = randomSeed, mismatchMs, finishMs, sav
   return (
     // One full-window layer over the hub's bar (game guide "Full window"): the beach fills it edge to edge.
     <div className={`bm-window bm-window--${screen.name}`}>
-      <Beach />
+      <Beach place={screen.name === 'play' ? 'pool-day' : 'beach'} />
       <div className="bm" ref={rootRef}>
       <header className={screen.name === 'play' ? 'bm-top bm-top--play' : 'bm-top'}>
         <h1 className="bm-title">{TEXT.name}</h1>
@@ -155,14 +155,17 @@ export function BondMatchPlay({ makeSeed = randomSeed, mismatchMs, finishMs, sav
   );
 }
 
-/** The painted beach behind every screen, or a CSS sky and sand until it's painted (and if it doesn't load). */
-function Beach() {
-  const art = scene('beach');
-  const [failed, setFailed] = useState(false);
-  const painted = art && !failed;
+/**
+ * The painted place behind every screen: the beach, or looking down into the rock pool while playing. Until it's painted
+ * (or if it doesn't load) the CSS sky and sand show, and the board keeps its own CSS pool.
+ */
+function Beach({ place }: { place: 'beach' | 'pool-day' }) {
+  const art = scene(place);
+  const [failed, setFailed] = useState<string[]>([]);
+  const painted = art && !failed.includes(place);
   return (
-    <div className={painted ? 'bm-beach bm-beach--painted' : 'bm-beach'} aria-hidden="true" data-testid="bm-beach">
-      {painted && <img className="bm-beach__img" src={art.src} srcSet={art.srcSet} sizes="100vw" alt="" onError={() => setFailed(true)} />}
+    <div className={`bm-beach bm-beach--${place}${painted ? ' bm-beach--painted' : ''}`} aria-hidden="true" data-testid="bm-beach">
+      {painted && <img key={place} className="bm-beach__img" src={art.src} srcSet={art.srcSet} sizes="100vw" alt="" onError={() => setFailed((was) => [...was, place])} />}
     </div>
   );
 }

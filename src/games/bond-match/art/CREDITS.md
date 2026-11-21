@@ -12,4 +12,5 @@ word in code.
 - Not painted: the rock pools, stones, driftwood strips and target pebbles on the picker are drawn in CSS
   (`src/games/bond-match/bond-match.css`); the CSS sky and sand also show if a picture fails to load.
 - The repo does not record the licence terms of the Z-Image Turbo model or of rembg, so they are not stated here.
+- The ripple and sparkle (in `fx/`) were painted on black; `tidy` turns their brightness into see-through glow.
 - Painted on 21 Nov 2026.
