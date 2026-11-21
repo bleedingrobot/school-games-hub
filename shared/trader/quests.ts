@@ -11,6 +11,7 @@ import { GOVERNMENTS, MEDICINE, WATER, GOOD_RULES } from './config';
 import { chartPoint, coordText, distance, startPlanet, type Galaxy, type Planet } from './galaxy';
 import { marketFor } from './market';
 import { freeHolds, holdsOf, type Trader } from './state';
+import { startFight, type Fight } from './fight';
 
 /** Every stop is at most this far (fuel) from the one before, so any ship (the smallest tank is 13) does it in one jump. */
 export const QUEST_MAX_LEG = 12;
@@ -18,6 +19,12 @@ export const QUEST_MAX_LEG = 12;
 export const QUEST_SHORT_LEG = 5;
 /** Hub points for a finished quest, inside the shared daily cap, as for a delivered contract (plan section 3 rule 11). */
 export const QUEST_POINTS = 2;
+
+/**
+ * Commander Vex lends this laser for the quest's pirate fights, so even a Flea (no weapon slots) can fight. It is not a
+ * real weapon: never in the shop or the hold, and it goes when the fight ends (plan section 3, rule 7).
+ */
+export const NAVY_LASER = { name: 'Navy laser', power: 25 } as const;
 
 /** Government indexes (config.ts GOVERNMENTS), by name, so the rules below read plainly. */
 const GOV = Object.fromEntries(GOVERNMENTS.map((g, i) => [g.name, i])) as Record<string, number>;
@@ -326,6 +333,38 @@ export function stepProblem(galaxy: Galaxy, t: Trader, q: QuestState | undefined
     if (have < want) return `You need ${want} ${step.what} in your hold (you have ${have}).`;
   }
   return null;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Commander Vex's pirates and Lumi's clues (Q.4)
+// ---------------------------------------------------------------------------------------------
+
+/** Vex's pirates: Scrappy pirates for the first two, a Raider for the third, never a Captain (PIRATE_TIERS indexes). */
+export const questPirateTier = (step: number): number => (step >= 2 ? 1 : 0);
+
+/** The open quest's pirate step waiting at the ship's planet, ready to fight (null: none). */
+export function questFightHere(galaxy: Galaxy, t: Trader, q: QuestState | undefined): number | null {
+  const quest = q?.open ? questById(q.open) : undefined;
+  if (!quest) return null;
+  const i = quest.steps.findIndex((s, index) => s.kind === 'pirate' && stepProblem(galaxy, t, q, index) === null);
+  return i < 0 ? null : i;
+}
+
+/** A quest fight against the pirate ship of step `step`, with Vex's Navy laser lent and a gentle loss. */
+export const questFight = (t: Trader, step: number, seed: string): Fight => startFight(t, questPirateTier(step), seed, { lent: NAVY_LASER.power });
+
+/**
+ * Lumi's clue: the move on the star chart from one planet to another, "From here, go 3 right and 2 down." Only shown,
+ * never marked or recorded; arriving at the right planet is what counts.
+ */
+export function trailClue(galaxy: Galaxy, from: number, to: number): { dx: number; dy: number; text: string } {
+  const a = chartPoint(galaxy.planets[from]);
+  const b = chartPoint(galaxy.planets[to]);
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const parts = [dx > 0 ? `${dx} right` : dx < 0 ? `${-dx} left` : '', dy > 0 ? `${dy} up` : dy < 0 ? `${-dy} down` : ''].filter(Boolean);
+  const text = parts.length ? `From here, go ${parts.join(' and ')}.` : 'Lumi is right here!';
+  return { dx, dy, text };
 }
 
 // ---------------------------------------------------------------------------------------------

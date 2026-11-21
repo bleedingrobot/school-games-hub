@@ -4,10 +4,10 @@
  */
 import { SHIPS } from '../../../shared/trader/config';
 import type { Galaxy } from '../../../shared/trader/galaxy';
-import { isSmallShip, nearestSellers, nextQuest, openQuestView, questReward, QUESTS, type QuestConfig, type QuestState, type StepView } from '../../../shared/trader/quests';
+import { isSmallShip, NAVY_LASER, nearestSellers, nextQuest, openQuestView, questReward, QUESTS, trailClue, type QuestConfig, type QuestState, type StepView } from '../../../shared/trader/quests';
 import type { Action } from '../../../shared/trader/server';
 import type { Trader } from '../../../shared/trader/state';
-import { boardArt, giverArt, isWaiting, landingLine, stepWords } from './questGuide';
+import { boardArt, giverArt, isHidden, isWaiting, landingLine, stepWords, type Shown } from './questGuide';
 import { QUEST_STORIES } from './stories';
 
 const cr = (n: number): string => `${n.toLocaleString('en-NZ')} cr`;
@@ -31,8 +31,12 @@ export function GiverFace({ id, name, size = 72 }: { id: string; name: string; s
     : <span className="stq-face stq-face--stand" style={{ width: size, height: size }} aria-hidden="true">{name.slice(0, 1)}</span>;
 }
 
-export function QuestsPanel({ galaxy, t, quests, busy, showXY = true, onQuest, onTab, onShowMap, onStory }: {
+export function QuestsPanel({ galaxy, t, quests, busy, showXY = true, shown = 'all', onQuest, onTab, onShowMap, onReveal, onStory }: {
   galaxy: Galaxy;
+  /** Lumi's trail steps shown with Show me ('all' when coordinates are hidden). */
+  shown?: Shown;
+  /** Show me: light up a trail step's planet on the star chart. */
+  onReveal?: (step: number) => void;
   /** Coordinates on show (Bolt's help is not Off). */
   showXY?: boolean;
   t: Trader;
@@ -55,7 +59,7 @@ export function QuestsPanel({ galaxy, t, quests, busy, showXY = true, onQuest, o
       {board && <img className="stq-board" src={board.wide} srcSet={`${board.small} 800w, ${board.wide} 1600w`} sizes="(max-width: 900px) 100vw, 900px" alt="" draggable={false} />}
       <h2 id="stq-h" className="st-h">Quests</h2>
       <p className="st-sub">Help the people of the galaxy and earn credits. One quest at a time; a new one opens each day after you finish one. {done > 0 && <strong>{done} of {QUESTS.length} done.</strong>}</p>
-      {view && <Checklist galaxy={galaxy} t={t} quest={view.quest} reward={view.reward} steps={view.steps} busy={busy} showXY={showXY} onQuest={onQuest} onTab={onTab} onShowMap={onShowMap} />}
+      {view && <Checklist galaxy={galaxy} t={t} quest={view.quest} reward={view.reward} steps={view.steps} busy={busy} showXY={showXY} shown={shown} onQuest={onQuest} onTab={onTab} onShowMap={onShowMap} onReveal={onReveal} />}
       <ul className="stq-list">
         {QUESTS.map((quest, i) => {
           const status = questStatus(quest, quests, t.day);
@@ -110,9 +114,11 @@ export function QuestsPanel({ galaxy, t, quests, busy, showXY = true, onQuest, o
   );
 }
 
-function Checklist({ galaxy, t, quest, reward, steps, busy, showXY, onQuest, onTab, onShowMap }: {
+function Checklist({ galaxy, t, quest, reward, steps, busy, showXY, shown, onQuest, onTab, onShowMap, onReveal }: {
   galaxy: Galaxy;
   showXY: boolean;
+  shown: Shown;
+  onReveal?: (step: number) => void;
   t: Trader;
   quest: QuestConfig;
   reward: number;
@@ -129,21 +135,34 @@ function Checklist({ galaxy, t, quest, reward, steps, busy, showXY, onQuest, onT
         <GiverFace id={quest.id} name={quest.giver} size={56} />
         <div>
           <h3 id="stq-open-h" className="st-h3 stq-open__h">{quest.title}</h3>
-          <p className="st-soft stq-open__sub">{quest.ordered ? 'Do the steps in order.' : 'Do the steps in any order. The last one waits for the rest.'} Gold rings on the star chart show where.</p>
+          <p className="st-soft stq-open__sub">{quest.ordered ? 'Follow the clues in order. Each one is a move on the star chart from where you are.' : 'Do the steps in any order. The last one waits for the rest. Gold rings on the star chart show where.'}</p>
         </div>
       </div>
+      {steps.some((s) => s.kind === 'pirate' && !s.done) && (
+        <p className="stq-lent">🔫 {quest.giver} has lent you a <strong>{NAVY_LASER.name}</strong> for these fights. If you lose, the pirates take nothing: fix your hull and try again.</p>
+      )}
       <ol className="stq-steps">
         {steps.map((s) => {
           const words = stepWords(quest, s);
           const waiting = isWaiting(s);
           const here = s.fuel === 0;
           const step = quest.steps[s.index];
+          const hidden = isHidden(quest, s, shown);
+          // Lumi's next clue, from where the ship is now (the first trail step not done). Later ones wait.
+          const clueStep = hidden && !waiting;
           return (
             <li key={s.index} className={`stq-step ${s.done ? 'stq-step--done' : ''} ${waiting ? 'stq-step--wait' : ''}`}>
               <span className="stq-step__tick" aria-hidden="true">{s.done ? '✓' : s.index + 1}</span>
               <div className="stq-step__body">
                 <p className="stq-step__what"><strong>{words.line}</strong>{s.done && <span className="st-sr"> (done)</span>}</p>
-                {!s.done && (
+                {clueStep && !here && (
+                  <p className="stq-clue">
+                    <span><strong>Ranger Kai:</strong> “{trailClue(galaxy, t.location, s.planet).text}”</span>
+                    {onReveal && <button type="button" className="st-btn st-btn--small" onClick={() => onReveal(s.index)} data-coach="quest-showme">Show me</button>}
+                  </p>
+                )}
+                {hidden && waiting && <p className="st-soft stq-step__note">Its clue comes when you reach the stop before.</p>}
+                {!s.done && (!hidden || here) && (
                   <p className="stq-step__where">
                     {s.kind === 'buy-deliver' ? 'Hand over at ' : 'at '}
                     <button type="button" className="stq-link" onClick={() => onShowMap(s.planet)}>{s.name}{showXY ? ` ${s.coords}` : ''}</button>
@@ -156,13 +175,13 @@ function Checklist({ galaxy, t, quest, reward, steps, busy, showXY, onQuest, onT
                 {!s.done && s.kind === 'buy-deliver' && step.good !== undefined && (
                   <Goods galaxy={galaxy} t={t} good={step.good} what={s.what} qty={s.qty ?? 0} have={s.have ?? 0} pays={step.pays ?? 0} onShowMap={onShowMap} />
                 )}
-                {waiting && !s.done && <p className="st-soft stq-step__note">{s.problem === 'Do the steps in order.' ? 'Do the step before first.' : 'Do the other steps first.'}</p>}
+                {waiting && !s.done && !hidden && <p className="st-soft stq-step__note">{s.problem === 'Do the steps in order.' ? 'Do the step before first.' : 'Do the other steps first.'}</p>}
                 {!s.done && here && s.problem === 'Make room: 1 free hold needed.' && (
                   <p className="st-warn">Make room: 1 free hold needed. <button type="button" className="stq-link" onClick={() => onTab('trade')}>Sell something on the Trade screen</button></p>
                 )}
               </div>
               {!s.done && s.problem === null && (
-                <button type="button" className="st-btn st-btn--primary stq-step__btn" disabled={busy} data-coach="quest-step" onClick={() => onQuest([s.kind === 'buy-deliver' || s.kind === 'deliver' ? { type: 'quest-deliver', step: s.index } : { type: 'quest-pickup', step: s.index }])}>
+                <button type="button" className="st-btn st-btn--primary stq-step__btn" disabled={busy} data-coach="quest-step" onClick={() => onQuest([s.kind === 'pirate' ? { type: 'quest-fight', step: s.index } : s.kind === 'buy-deliver' || s.kind === 'deliver' ? { type: 'quest-deliver', step: s.index } : { type: 'quest-pickup', step: s.index }])}>
                   {words.button}
                 </button>
               )}
@@ -215,6 +234,34 @@ export function QuestLanding({ quest, steps, busy, onDo }: { quest: QuestConfig;
         {steps.map((s) => <p key={s.index} className="stq-land__line"><strong>{landingLine(quest, s)}</strong></p>)}
       </div>
       <button type="button" className="st-btn st-btn--primary stq-land__btn" disabled={busy} onClick={onDo} data-coach="quest-do">{button}</button>
+    </div>
+  );
+}
+
+/** Commander Vex's pirate ship still waiting here (after a loss or getting away): fight it again. */
+export function QuestPirate({ quest, busy, onFight }: { quest: QuestConfig; busy: boolean; onFight: () => void }) {
+  return (
+    <div className="stq-land stq-land--pirate" role="status">
+      <GiverFace id={quest.id} name={quest.giver} size={52} />
+      <div className="stq-land__body">
+        <p className="stq-land__tag">⭐ Quest stop</p>
+        <p className="stq-land__line"><strong>A Rust Raider ship is still here.</strong> Fix your hull if you need to, then chase it off for {quest.giver}.</p>
+      </div>
+      <button type="button" className="st-btn st-btn--primary stq-land__btn" disabled={busy} onClick={onFight} data-coach="quest-do">⚔️ Fight them</button>
+    </div>
+  );
+}
+
+/** Lumi's next clue on the Trade screen: Ranger Kai says the move from here, and Show me lights up the planet. */
+export function QuestClue({ quest, text, onReveal }: { quest: QuestConfig; text: string; onReveal: () => void }) {
+  return (
+    <div className="stq-land stq-land--clue" role="status">
+      <GiverFace id={quest.id} name={quest.giver} size={52} />
+      <div className="stq-land__body">
+        <p className="stq-land__tag">⭐ Lumi's trail</p>
+        <p className="stq-land__line"><strong>{quest.giver}:</strong> “{text}”</p>
+      </div>
+      <button type="button" className="st-btn stq-land__btn" onClick={onReveal} data-coach="quest-showme">Show me</button>
     </div>
   );
 }

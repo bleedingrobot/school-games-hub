@@ -110,7 +110,7 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
 
 describe('The Star Forge (S.4)', () => {
 
-  it('quests (Q.2, Q.3): taking one plays its first 3 pages in the giver\'s voice, the gold landing card picks up, the hold shows gold, Q ticks the step, the chart rings the rest, finishing plays the last 2 pages then the reward, and the 📖 shelf reads them again. Then the Forge: a locked sun is only a look; planning a sun is free; building it sends a forge action, shows the price first, and the card turns built', async () => {
+  it('quests (Q.2, Q.3, Q.4): taking one plays its first 3 pages in the giver\'s voice, the gold landing card picks up, the hold shows gold, Q ticks the step, the chart rings the rest, finishing plays the last 2 pages then the reward, and the 📖 shelf reads them again; Lumi\'s clue + Show me and Vex\'s pirate fight with the Navy laser. Then the Forge: a locked sun is only a look; planning a sun is free; building it sends a forge action, shows the price first, and the card turns built', async () => {
     const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
     const api = traderApi(trial.transport);
     expect((await api.load()).ok).toBe(true);
@@ -198,6 +198,29 @@ describe('The Star Forge (S.4)', () => {
     fireEvent.keyDown(window, { key: 'q' });
     fireEvent.click(await screen.findByRole('button', { name: "Read Grandma Zuzu's Big Party again" }));
     expect(within(await screen.findByRole('dialog')).getByText('Page 1 of 5')).toBeTruthy();
+    cleanup();
+
+    // Lumi's trail (Q.4): Ranger Kai says the move from here, the chart doesn't ring the planet, and Show me lights it up.
+    const saved = trial.data.game!;
+    saved.game.quests = { open: 'kai', done: [], finished: ['zuzu', 'sprocket', 'nettle', 'vex'], lastDay: 1 };
+    play(trial);
+    await market();
+    const clue = (await screen.findByText("⭐ Lumi's trail")).closest('.stq-land') as HTMLElement;
+    expect(clue.textContent).toMatch(/Ranger Kai: “(From here, go \d+ (right|left|up|down).*|Lumi is right here!)”/);
+    fireEvent.click(within(clue).getByRole('button', { name: 'Show me' }));
+    await screen.findByRole('heading', { name: 'Star chart' });
+    expect(document.querySelectorAll('.st-planet--quest').length).toBeGreaterThan(0);
+    cleanup();
+
+    // Commander Vex's pirates (Q.4): at a pirate stop the card says fight, and the fight has Vex's Navy laser and a gentle loss.
+    saved.game.quests = { open: 'vex', done: [], finished: ['zuzu', 'sprocket', 'nettle'], lastDay: 1 };
+    trial.tools.toQuestStop();
+    const vex = play(trial);
+    await market();
+    fireEvent.click(await screen.findByRole('button', { name: '⚔️ Fight them' }));
+    await waitFor(() => expect(trial.data.game?.game.pending?.kind).toBe('fight'));
+    expect((await screen.findByText(/One of the Rust Raiders/)).textContent).toMatch(/Commander Vex's Navy laser is fitted/);
+    expect(JSON.stringify(vex.sent)).toMatch(/"type":"quest-fight"/);
     void nameText;
   }, 30000);
 });

@@ -2,7 +2,7 @@
 
 21 Nov 2026. James: "I want to plan some in game quests for Star Trader. A quests tab; a character wants to plan a party and you have to pick up the things they need from different planets; a currency reward at the end. Others might be defending planets from pirates, gathering robots from different places. The quests should make it very clear where to go. Plan 5 different quests, use different voices and make stories for them with the gaming computer."
 
-**Status:** plan, stories and all 32 paintings done (#683), voices sampled (review page https://claude.ai/artifact/H1iYrYmdLjfDMqs4Ws8din). Q.0 done: no more reshuffle (migration 20261121000400_trader_keep_galaxy.sql). Q.1 done: the quest rules on the server (`shared/trader/quests.ts`, moves `quest-take`, `quest-pickup`, `quest-deliver`, `quest-drop`), no screens yet. Q.2 done: the Quests tab (key Q), step checklist, gold rings on the star chart, the jump line, the landing card, Bolt's next stop, gold quest boxes in the hold, Quest complete moment, and a What's new line. Q.3 done: each quest's story plays in the giver's own voice when you take it (pages 1–3) and when you finish it (pages 4–5), the 📖 Quest stories shelf, and the quest board painting on the Quests tab. Next: Q.4.
+**Status:** plan, stories and all 32 paintings done (#683), voices sampled (review page https://claude.ai/artifact/H1iYrYmdLjfDMqs4Ws8din). Q.0 done: no more reshuffle (migration 20261121000400_trader_keep_galaxy.sql). Q.1 done: the quest rules on the server (`shared/trader/quests.ts`, moves `quest-take`, `quest-pickup`, `quest-deliver`, `quest-drop`), no screens yet. Q.2 done: the Quests tab (key Q), step checklist, gold rings on the star chart, the jump line, the landing card, Bolt's next stop, gold quest boxes in the hold, Quest complete moment, and a What's new line. Q.3 done: each quest's story plays in the giver's own voice when you take it (pages 1–3) and when you finish it (pages 4–5), the 📖 Quest stories shelf, and the quest board painting on the Quests tab. Q.4 done: Commander Vex's pirates are real fights on arrival (Navy laser lent, gentle losses, a win ticks the step) and Lumi's trail is map clues ("From here, go 3 right and 2 down.") with Show me. Next: Q.5.
 
 ## 1. The short version
 
@@ -64,11 +64,21 @@ James's main ask. Five places say it:
 | **Q.1** ✅ | Rules and server: quest list in `shared/trader/quests.ts` (one config entry per quest, so more can be added later), each quest's fixed planets, quest state in the saved game, moves `quest-take`, `quest-pickup`, `quest-deliver`, `quest-drop`; tests | Medium |
 | **Q.2** ✅ | Quests tab, step checklist, gold map rings, jump-screen line, landing card, Bolt lines, key Q | Medium |
 | **Q.3** ✅ | Stories in StoryBook with each giver's voice, the 📖 shelf, paintings tidied into the game | Small |
-| **Q.4** | Commander Vex's pirate fights (Navy laser, gentle losses) and Lumi's clue trail | Medium |
+| **Q.4** ✅ | Commander Vex's pirate fights (Navy laser, gentle losses) and Lumi's clue trail | Medium |
 | **Q.5** | Quest Log keepsakes, Star Quest Master achievement and trophy (migration), What's new line, go live | Small |
 | **Q.6** | Daily jobs after all five: one or two computer-made deliveries a day, small rewards | Small |
 
 Each stage goes live on its own (switched on), like the other Star Trader stages.
+
+### What Q.4 built (21 Nov 2026)
+
+- **Vex's pirates are fights.** Arriving at a pirate step's planet starts a fight there instead of the jump's random encounter (server `jump`). The first two are Scrappy pirates, the third a Raider, never a Captain (`questPirateTier`). The step can't be tapped any more ("Chase off the pirate ship first."); only a win ticks it, and the server decides (`applyFight`, `pending.quest`).
+- **Navy laser:** `NAVY_LASER` (power 25) is lent for each quest fight only (`Fight.lent`, `fightPower`), so even a Flea can fire. It is never in the ship's weapons and goes when the fight ends.
+- **Gentle losses:** new fight outcome `'knocked'` (`Fight.gentle`): if the hull runs out or the pirate dodges till the last round, nothing is taken, the hull stays at least 1 and the pirate stays. Fleeing doesn't count either. Try again with the new move `quest-fight` (the red "⚔️ Fight them" card on the Trade screen, or the checklist button); each try is a new seeded fight. The first-time pirate tip is skipped in quest fights (it talks about losing cargo).
+- **Lumi's clues:** `trailClue(galaxy, from, to)` gives the move on the real chart from where the ship is: "From here, go 6 right and 6 up." Ranger Kai's clue shows on the Trade screen (blue card), the Quests tab checklist and the star chart's quest line, and Bolt says it. The planet stays hidden (no ring, no name) until **Show me**, which rings it and opens it on the chart. With help Off (coordinates hidden) every step is shown straight away. What was revealed is kept in the browser only: clues are never marked or recorded. Arriving still ticks the step as before.
+- **Server input:** `quest-fight` added to the trader function's action check (`handler.ts`, function rebuilt). No migration.
+- **Preview tools:** "Open Vex's quest" and "Open Lumi's quest" (`tools.openQuest`) to try them without finishing the earlier quests.
+- **Tests:** folded into the server quest test and the Quests screen test (budget still 12).
 
 ### What Q.3 built (21 Nov 2026)
 

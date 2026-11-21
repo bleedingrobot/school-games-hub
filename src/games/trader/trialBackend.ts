@@ -11,6 +11,7 @@ import { SHIPS } from '../../../shared/trader/config';
 import { makeGalaxy } from '../../../shared/trader/galaxy';
 import { marketFor } from '../../../shared/trader/market';
 import { nextStop } from './questGuide';
+import { QUESTS } from '../../../shared/trader/quests';
 import { SchoolMarket } from '../../../shared/trader/schoolMarket';
 import { busyLunchtime } from '../../../shared/trader/sim';
 import { PICTURE_GAP_MINUTES, type StickerId } from '../../../shared/trader/gallery';
@@ -47,6 +48,8 @@ export interface Trial {
     moveTo(planet: number): void;
     /** Put the ship on the open quest's next stop (nothing if no quest is open). */
     toQuestStop(): void;
+    /** Open this quest as if the ones before it were finished (to try a later quest without playing the rest). */
+    openQuest(id: string): void;
     /** Pretend classmates trade all day on the school's market, so the news and moved prices can be seen. */
     busySchool(pupils?: number): void;
     restart(): void;
@@ -198,6 +201,11 @@ export function trialBackend(options: TrialOptions = {}): Trial {
         const stop = g ? nextStop(makeGalaxy(seed), g.t, g.quests) : null;
         if (stop) moveTo(stop.planet);
       },
+      openQuest: (id) =>
+        edit((g) => {
+          const at = QUESTS.findIndex((q) => q.id === id);
+          if (at >= 0) g.quests = { open: id, done: [], finished: QUESTS.slice(0, at).map((q) => q.id), lastDay: null };
+        }),
       busySchool: (pupils = SCHOOL_SIZE) => {
         const day = data.game?.game.t.day;
         if (day !== undefined) busyLunchtime(makeGalaxy(seed), data.market, day, pupils, `busy-${data.skippedDays}`);

@@ -8,7 +8,7 @@ import { coordText, type Galaxy } from '../../../../shared/trader/galaxy';
 import type { Pushes } from '../../../../shared/trader/schoolMarket';
 import { fuelCost, fuelNeeded, hasShipyard, holdsOf, usedHolds, type Trader } from '../../../../shared/trader/state';
 import { openQuestView, type QuestState } from '../../../../shared/trader/quests';
-import { nextStop, stepWords } from '../questGuide';
+import { nextStop, stepWords, type Shown } from '../questGuide';
 import { allPrices, bannedCargo, cargoPlan, nearestPlanet, nearestShipyard, nextUpgrade, stopOnTheWay, tradeIdeas } from './advice';
 
 export type CoachTab = 'trade' | 'ship' | 'bank' | 'map' | 'quests' | 'forge' | 'gallery';
@@ -26,6 +26,8 @@ export interface CoachView {
   forge?: boolean;
   /** The pupil's quests (an open quest gives Bolt its next stop). */
   quests?: QuestState;
+  /** Lumi's trail steps shown with Show me (the rest are clues: Bolt says the clue, not the planet). */
+  shown?: Shown;
 }
 
 export interface NextStep {
@@ -83,7 +85,11 @@ export function nextStep(v: CoachView): NextStep {
   if (quest) {
     const now = quest.steps.find((s) => !s.done && s.problem === null && s.planet === t.location);
     if (now) return { say: `Quest: ${stepWords(quest.quest, now).line} here, for ${quest.quest.giver}.`, target: tab === 'trade' ? 'quest-do' : tabTarget('quests', tab, 'quest-step'), tab: tab === 'trade' ? 'trade' : 'quests' };
-    const stop = plan?.sellHere ? null : nextStop(galaxy, t, v.quests);
+    const stop = plan?.sellHere ? null : nextStop(galaxy, t, v.quests, v.shown ?? 'all');
+    if (stop?.clue && stop.planet !== t.location) {
+      const fill = stop.fuel <= tank && !stop.fuelOk ? ` You have ${t.fuel} fuel, so fill your tank first.` : '';
+      return { say: `Ranger Kai's clue: “${stop.clue}” Count the squares on the star chart, or tap Show me.${fill}`, target: tab === 'trade' || tab === 'map' ? 'quest-showme' : 'tab-map', tab: tab === 'trade' ? 'trade' : 'map' };
+    }
     if (stop && stop.planet !== t.location) {
       if (stop.fuel <= tank && !stop.fuelOk) return { say: `Quest: next stop ${stop.name} ${stop.coords}, ${stop.fuel} fuel. You have ${t.fuel}, so fill your tank first.`, target: tabTarget('ship', tab, 'ship-fuel'), tab: 'ship' };
       const far = stop.fuel > tank ? ` That's further than one tank, so stop on the way.` : '';

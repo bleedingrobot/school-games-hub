@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { GOODS, PIRATE_TIERS, SHIPS } from '../../../shared/trader/config';
 import type { Encounter } from '../../../shared/trader/encounter';
 import type { Fight } from '../../../shared/trader/fight';
-import { laserPower, shieldPower } from '../../../shared/trader/fight';
+import { fightPower, shieldPower } from '../../../shared/trader/fight';
+import { NAVY_LASER } from '../../../shared/trader/quests';
 import type { Trader } from '../../../shared/trader/state';
 import { dealAdvice, type FightAdvice } from './coach/advice';
 import { BoltFace } from './coach/CoachBar';
@@ -105,7 +106,7 @@ export function FightPanel({ t, fight, tier, log, busy, advice: suggestion, askF
   onAct: (action: 'charge' | 'shield' | 'flee') => void;
 }) {
   const pirate = PIRATE_TIERS[tier];
-  const armed = laserPower(t) > 0;
+  const armed = fightPower(t, fight) > 0;
   const ship = SHIPS[t.ship];
   const shieldMax = shieldPower(t);
   const [asked, setAsked] = useState(false);
@@ -113,6 +114,7 @@ export function FightPanel({ t, fight, tier, log, busy, advice: suggestion, askF
   return (
     <section className="st-panel st-panel--fight" aria-labelledby="st-fight-h">
       <h2 id="st-fight-h" className="st-h">{PIRATE_NAMES[tier]} attack! ☠️</h2>
+      {fight.gentle && <p className="st-sub stq-fight">⭐ One of the Rust Raiders! Commander Vex's {NAVY_LASER.name} is fitted for this fight. If you lose, they take nothing.</p>}
       <div className="st-meters">
         <Meter label="Your hull" value={fight.hull} max={ship.hull} tone="hull" />
         {shieldMax > 0 && <Meter label="Your shields" value={fight.shield} max={shieldMax} tone="shield" />}

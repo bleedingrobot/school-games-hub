@@ -21,7 +21,8 @@ import {
 import { setCargo, type Trader } from './state';
 
 export type FightAction = 'charge' | 'shield' | 'flee';
-export type FightOutcome = 'going' | 'won' | 'fled' | 'robbed' | 'destroyed';
+/** 'knocked': a gentle loss in a quest fight (Commander Vex's pirates): the ship is knocked about, nothing is taken. */
+export type FightOutcome = 'going' | 'won' | 'fled' | 'robbed' | 'destroyed' | 'knocked';
 
 export interface Fight {
   seed: string;
@@ -35,14 +36,22 @@ export interface Fight {
   outcome: FightOutcome;
   /** What happened in the last round, for the log. */
   log: string[];
+  /** Laser power lent for this fight (Commander Vex's Navy laser). It is not a real weapon: it goes when the fight ends. */
+  lent?: number;
+  /** A quest fight: losing takes nothing and never wrecks the ship (outcome 'knocked'). */
+  gentle?: boolean;
 }
 
 export const laserPower = (t: Trader): number => t.weapons.reduce((a, w) => a + WEAPONS[w].power, 0);
 export const shieldPower = (t: Trader): number => t.shields.reduce((a, s) => a + SHIELDS[s].power, 0);
 
-export function startFight(t: Trader, tier: number, seed: string): Fight {
+/** The lasers in this fight: the ship's own plus any lent for it. */
+export const fightPower = (t: Trader, fight: Pick<Fight, 'lent'>): number => laserPower(t) + (fight.lent ?? 0);
+
+export function startFight(t: Trader, tier: number, seed: string, quest?: { lent: number }): Fight {
   const pirate = PIRATE_TIERS[tier];
-  return { seed, tier, round: 0, pirateHull: pirate.hull, pirateShield: pirate.shield, hull: t.hull, shield: shieldPower(t), outcome: 'going', log: [] };
+  const fight: Fight = { seed, tier, round: 0, pirateHull: pirate.hull, pirateShield: pirate.shield, hull: t.hull, shield: shieldPower(t), outcome: 'going', log: [] };
+  return quest ? { ...fight, lent: quest.lent, gentle: true } : fight;
 }
 
 /** Play one round. `right` says whether the maths check for a laser round was answered correctly. */
@@ -62,7 +71,7 @@ export function fightRound(t: Trader, fight: Fight, action: FightAction, right: 
   }
 
   if (action === 'charge') {
-    const power = laserPower(t);
+    const power = fightPower(t, fight);
     if (power <= 0) {
       next.log.push('Your ship has no lasers.');
     } else {
@@ -90,20 +99,32 @@ export function fightRound(t: Trader, fight: Fight, action: FightAction, right: 
   next.shield -= soaked;
   next.hull -= hit - soaked;
   next.log.push(`They hit you for ${hit}.`);
+  if (next.hull <= 0 && fight.gentle) {
+    next.hull = 0;
+    next.outcome = 'knocked';
+    next.log.push('They knocked your ship about, but they took nothing. The pirate ship is still there.');
+    return next;
+  }
   if (next.hull <= 0) {
     next.hull = 0;
     next.outcome = 'destroyed';
     next.log.push('Your ship is wrecked. The escape pod works!');
     return next;
   }
-  if (next.round >= FIGHT_ROUNDS) {
+  if (next.round >= FIGHT_ROUNDS && fight.gentle) {
+    next.outcome = 'knocked';
+    next.log.push('The pirate ship dodged away. It is still there, so you can try again.');
+  } else if (next.round >= FIGHT_ROUNDS) {
     next.outcome = 'robbed';
     next.log.push('The pirates grab some cargo and go.');
   }
   return next;
 }
 
-/** After a fight: bounty for a win, cargo lost for a robbery, a new Flea after a wreck (money kept, nothing lost forever). */
+/**
+ * After a fight: bounty for a win, cargo lost for a robbery, a new Flea after a wreck (money kept, nothing lost forever).
+ * A gentle quest loss ('knocked') only leaves the hull knocked about.
+ */
 export function settleFight(t: Trader, fight: Fight): Trader {
   const state: Trader = { ...t, cargo: [...t.cargo], weapons: [...t.weapons], shields: [...t.shields], hull: Math.max(1, fight.hull) };
   switch (fight.outcome) {

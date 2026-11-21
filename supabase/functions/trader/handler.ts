@@ -221,6 +221,7 @@ export function parseActions(raw: unknown): Action[] | null {
         break;
       case 'quest-pickup':
       case 'quest-deliver':
+      case 'quest-fight':
         // The rules check the step number (a whole number, a real step, at the right planet).
         out.push({ type: a.type, step: a.step as number });
         break;

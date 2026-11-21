@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { MEDICINE, SHIPS, WATER } from './config';
-import { distance, makeGalaxy } from './galaxy';
+import { chartPoint, distance, makeGalaxy } from './galaxy';
 import { marketFor } from './market';
-import { QUESTS, QUEST_MAX_LEG, QUEST_POINTS, nearestSellers, nextQuest, openQuestView, questLegs, questPlanets, questReward } from './quests';
-import { DEFAULT_SETTINGS, applyBatch, newGame, type Action, type Game, type Reply } from './server';
+import { NAVY_LASER, QUESTS, QUEST_MAX_LEG, QUEST_POINTS, nearestSellers, nextQuest, openQuestView, questLegs, questPlanets, questReward, trailClue } from './quests';
+import { DEFAULT_SETTINGS, applyBatch, applyFight, newGame, type Action, type Game, type Reply } from './server';
+
 import { freeHolds, setCargo, usedHolds } from './state';
 import { settleCustoms } from './encounter';
 
@@ -20,6 +21,12 @@ const refused = (r: Reply): string => (r.ok ? 'not refused' : r.reason);
 /** The ship parked at a planet (as if it had flown there). */
 const at = (g: Game, planet: number): Game => ({ ...g, t: { ...g.t, location: planet, market: marketFor(galaxy, planet, g.t.day) } });
 const fresh = (day = 10): Game => newGame(galaxy, day, DEFAULT_SETTINGS);
+/** Fights Commander Vex's pirate (already started) with full laser shots until it is over. */
+function fightOut(g: Game): Reply {
+  let r: Reply = { ok: true, game: g, answers: [] };
+  for (let i = 0; i < 20 && r.ok && r.game.pending?.kind === 'fight'; i++) r = applyFight(r.game, 'charge', undefined, { ...DEFAULT_SETTINGS, maths: false }, noMark);
+  return r;
+}
 /** Does every step of the open quest, the last one last. */
 function finish(g: Game, quest: number): Reply {
   const q = QUESTS[quest];
@@ -28,6 +35,14 @@ function finish(g: Game, quest: number): Reply {
     const step = q.steps[i];
     game = at(game, planets[quest][i]);
     if (step.kind === 'buy-deliver') setCargo(game.t, step.good!, game.t.cargo[step.good!] + 20);
+    if (step.kind === 'pirate') {
+      // Vex's pirates are fought, not tapped: a full hull each time (as if mended at a shipyard), until it is won.
+      for (let tries = 0; !game.quests?.done.includes(i); tries++) {
+        if (tries > 10) throw new Error('could not beat the pirate');
+        game = ok(fightOut(ok(run({ ...game, t: { ...game.t, hull: SHIPS[game.t.ship].hull } }, { type: 'quest-fight', step: i }))));
+      }
+      continue;
+    }
     const r = run(game, { type: step.kind === 'deliver' || step.kind === 'buy-deliver' ? 'quest-deliver' : 'quest-pickup', step: i });
     if (i === q.steps.length - 1) return r;
     game = ok(r);
@@ -118,8 +133,41 @@ describe('Star Trader quests', () => {
       expect(refused(run(at(kai, planets[4][1]), { type: 'quest-pickup', step: 1 }))).toMatch(/in order/);
       const k1 = ok(run(at(kai, planets[4][0]), { type: 'quest-pickup', step: 0 }));
       expect(ok(run(at(k1, planets[4][1]), { type: 'quest-pickup', step: 1 })).quests?.done).toEqual([0, 1]);
-      // Vex's pirates are "arrive and tap" for now (Q.4 adds the fights), and the quest pays 600.
+      // Lumi's clue (Q.4) is a move on the real map from where the ship is: across and up, as on the star chart.
+      const clue = trailClue(galaxy, planets[4][0], planets[4][1]);
+      const [a, b] = [chartPoint(galaxy.planets[planets[4][0]]), chartPoint(galaxy.planets[planets[4][1]])];
+      expect([clue.dx, clue.dy]).toEqual([b.x - a.x, b.y - a.y]);
+      expect(clue.text).toMatch(/^From here, go \d+ (right|left)( and \d+ (up|down))?\.$|^From here, go \d+ (up|down)\.$/);
+      expect(trailClue(galaxy, 3, 3).text).toBe('Lumi is right here!');
+
+      // Commander Vex's pirates (Q.4) are fights, not taps. Arriving starts one: a Scrappy pirate or a Raider, never a
+      // Captain, with Vex's Navy laser lent (even a Flea with no lasers can fight).
       const vex: Game = { ...fresh(), quests: { open: 'vex', done: [], finished: ['zuzu', 'sprocket', 'nettle'], lastDay: 5 } };
+      expect(refused(run(at(vex, planets[3][0]), { type: 'quest-pickup', step: 0 }))).toMatch(/Chase off the pirate/);
+      const near = galaxy.planets.find((p) => p.id !== planets[3][0] && distance(p, galaxy.planets[planets[3][0]]) <= 5)!;
+      const arrived = run(at(vex, near.id), { type: 'jump', dest: planets[3][0] });
+      expect(arrived.ok && arrived.encounter).toEqual({ kind: 'pirates', tier: 0 });
+      const fight = ok(arrived).pending;
+      expect(fight?.kind === 'fight' && [fight.quest, fight.fight.lent, fight.fight.gentle]).toEqual([0, NAVY_LASER.power, true]);
+      expect(vex.t.weapons).toEqual([]);
+      for (const step of [0, 1, 2]) {
+        const f = ok(run(at(vex, planets[3][step]), { type: 'quest-fight', step })).pending;
+        expect(f?.kind === 'fight' && f.tier).toBe(step === 2 ? 1 : 0);
+      }
+      expect(refused(run(at(vex, planets[3][3]), { type: 'quest-fight', step: 3 }))).toMatch(/no pirate ship/);
+      expect(refused(run(at(vex, near.id === planets[3][1] ? planets[3][2] : near.id), { type: 'quest-fight', step: 1 }))).toMatch(/Fly to/);
+      // A gentle loss: nothing taken, the ship knocked about (never wrecked), the step not ticked, and the pirate still there.
+      const weak = at(vex, planets[3][2]);
+      setCargo(weak.t, WATER, 5, 50);
+      const lost = fightOut(ok(run({ ...weak, t: { ...weak.t, hull: 1 } }, { type: 'quest-fight', step: 2 })));
+      expect(lost.ok && lost.fight?.fight.outcome).toBe('knocked');
+      expect(ok(lost).t.cargo[WATER]).toBe(5);
+      expect(ok(lost).t.credits).toBe(weak.t.credits);
+      expect(ok(lost).t.hull).toBeGreaterThanOrEqual(1);
+      expect(ok(lost).quests?.done).toEqual([]);
+      // Fleeing doesn't count either; a win ticks the step (the server decides), and it can try again straight away.
+      const fled = applyFight(ok(run(at(vex, planets[3][0]), { type: 'quest-fight', step: 0 })), 'flee', undefined, DEFAULT_SETTINGS, noMark);
+      expect(ok(fled).quests?.done).toEqual([]);
       const won = finish(vex, 3);
       expect(won.ok && won.quest?.reward).toBe(600);
       const kaiDone = finish(kai, 4);

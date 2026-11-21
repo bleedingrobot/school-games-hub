@@ -5,7 +5,7 @@
 import { GOODS, GOVERNMENTS, LOAN_WEEKLY_PCT, MAX_PODS, POD_MIN_TECH, POD_PRICE, SHIELDS, SHIPS, START_CREDITS, WEAPONS } from '../../../../shared/trader/config';
 import type { Encounter } from '../../../../shared/trader/encounter';
 import { isGoodDeal } from '../../../../shared/trader/encounter';
-import { laserPower, shieldPower, type Fight, type FightAction } from '../../../../shared/trader/fight';
+import { fightPower, laserPower, shieldPower, type Fight, type FightAction } from '../../../../shared/trader/fight';
 import { distance, type Galaxy, type Planet } from '../../../../shared/trader/galaxy';
 import { isBanned, type MarketLine } from '../../../../shared/trader/market';
 import { bestSales, pricesAt, type BestSale } from '../../../../shared/trader/priceGuide';
@@ -355,7 +355,7 @@ export const timesInTen = (pct: number): string => `${pct % 10 === 0 ? '' : 'abo
  */
 export function fightAdvice(t: Trader, fight: Fight, pirateHull = fight.pirateHull): FightAdvice {
   const ship = SHIPS[t.ship];
-  const power = laserPower(t);
+  const power = fightPower(t, fight);
   if (power <= 0) return { move: 'flee', why: `No lasers. Fleeing works ${timesInTen(ship.fleePct)}.` };
   if (fight.hull * 4 <= ship.hull) return { move: 'flee', why: 'Your hull is very low. Get away and mend it.' };
   if (fight.hull * 2 > ship.hull) return { move: 'charge', why: 'Your lasers can win this. A right answer fires at full power.' };
