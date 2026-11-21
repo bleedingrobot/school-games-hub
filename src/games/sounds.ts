@@ -25,6 +25,62 @@ function tone(frequency: number, duration: number, volume: number, type: Oscilla
 }
 
 /**
+ * Star Trader's warp jump (about 1.6 s, the length of the warp picture): a rushing whoosh of noise that sweeps up,
+ * an engine note climbing under it, then a bright shimmer as the ship drops out at the new planet.
+ */
+function warp() {
+  try {
+    context ??= new AudioContext();
+    const ctx = context;
+    const now = ctx.currentTime;
+    const len = 1.5;
+    // The rush: white noise through a band-pass filter that sweeps from low to high.
+    const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * len), ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.Q.value = 2.5;
+    filter.frequency.setValueAtTime(200, now);
+    filter.frequency.exponentialRampToValueAtTime(4000, now + len * 0.85);
+    const rush = ctx.createGain();
+    rush.gain.setValueAtTime(0.001, now);
+    rush.gain.exponentialRampToValueAtTime(0.35, now + len * 0.7);
+    rush.gain.exponentialRampToValueAtTime(0.001, now + len);
+    noise.connect(filter).connect(rush).connect(ctx.destination);
+    noise.start(now);
+    noise.stop(now + len);
+    // The engine: a low note climbing up and up, with a fast wobble.
+    const engine = ctx.createOscillator();
+    engine.type = 'sawtooth';
+    engine.frequency.setValueAtTime(70, now);
+    engine.frequency.exponentialRampToValueAtTime(900, now + len * 0.9);
+    const wobble = ctx.createOscillator();
+    wobble.frequency.setValueAtTime(6, now);
+    wobble.frequency.linearRampToValueAtTime(30, now + len);
+    const depth = ctx.createGain();
+    depth.gain.value = 25;
+    wobble.connect(depth).connect(engine.frequency);
+    const hum = ctx.createGain();
+    hum.gain.setValueAtTime(0.001, now);
+    hum.gain.exponentialRampToValueAtTime(0.09, now + len * 0.5);
+    hum.gain.exponentialRampToValueAtTime(0.001, now + len * 0.95);
+    engine.connect(hum).connect(ctx.destination);
+    engine.start(now);
+    wobble.start(now);
+    engine.stop(now + len);
+    wobble.stop(now + len);
+  } catch {
+    // No sound available on this device. That's fine.
+  }
+  // Out of warp: a quick shimmer.
+  [1568, 2093, 2637, 3136].forEach((f, i) => setTimeout(() => tone(f, 0.25, 0.07, 'sine', 0.98), 1350 + i * 45));
+}
+
+/**
+ * 'warp' is Star Trader's jump between planets.
  * 'alert' is check in chess, and a new king in checkers. 'dice' to 'cosmic' are for
  * Wormholes & Black Holes; 'flick', 'tap' and 'knock' are for 101. 'door' to 'chest' are for
  * the Maths Monsters map: a door, a talk blip, the wild-battle flash, the healing jingle,
@@ -61,7 +117,8 @@ export type GameSound =
   | 'rewind'
   | 'chaos'
   | 'draw'
-  | 'medal';
+  | 'medal'
+  | 'warp';
 
 export function playSound(sound: GameSound) {
   switch (sound) {
@@ -160,6 +217,8 @@ export function playSound(sound: GameSound) {
       return setTimeout(() => tone(988, 0.2, 0.12, 'triangle', 1), 300);
     case 'draw':
       return tone(392, 0.4, 0.14, 'sine', 0.8);
+    case 'warp':
+      return warp();
     case 'medal':
       // A bright chime: a quick sparkle up, then a ringing top note.
       [1047, 1319, 1568].forEach((f, i) => setTimeout(() => tone(f, 0.12, 0.12, 'triangle', 1), i * 70));
