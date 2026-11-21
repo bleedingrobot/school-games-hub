@@ -1579,3 +1579,52 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 @media (prefers-reduced-motion: reduce) {
   .cq-ceremony__card, .cq-ceremony__scroll li, .cq-ceremony__champion, .cq-ceremony__trophies li { animation: none; }
 }
+
+/* The new-season screen (Repick.tsx): the clan's banner and name, then each member's full painting as the star of their
+   card, the four looks always under it, then the pickers (James, 22 Nov 2026). */
+.cq-repick__head { display: flex; align-items: center; gap: clamp(10px, 2vw, 20px); margin: 0 0 14px; padding: 12px clamp(12px, 2vw, 20px); border: 2px solid #6a5233; border-radius: 10px; background: linear-gradient(90deg, rgba(36, 26, 14, 0.92), rgba(20, 14, 8, 0.75)); box-shadow: 0 0 0 2px #000, 0 8px 30px rgba(0, 0, 0, 0.6); }
+.cq-repick__head h2 { margin: 0; color: #ffd36b; font-size: clamp(1.6rem, 3.6vw, 2.5rem); text-shadow: 0 3px 0 #000, 0 0 18px rgba(255, 190, 80, 0.35); }
+.cq-repick__head p { margin: 2px 0 0; max-width: 70ch; }
+.cq-repick__kicker { font-size: 0.85rem; letter-spacing: 0.2em; text-transform: uppercase; color: #c9a86a; }
+.cq-repick__banner { flex: none; width: clamp(56px, 8vw, 96px); height: auto; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.8)); animation: cq-banner-sway 4s ease-in-out infinite alternate; transform-origin: top center; }
+
+.cq-cards--heroes { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: clamp(10px, 1.4vw, 18px); }
+.cq-card--hero { position: relative; padding: 0 12px 12px; gap: 8px; overflow: hidden; border: 2px solid #4d4130; border-radius: 10px; background: linear-gradient(rgba(30, 24, 18, 0.95), rgba(18, 16, 14, 0.97)); box-shadow: 0 0 0 2px #000, 0 10px 28px rgba(0, 0, 0, 0.65); animation: cq-hero-in 0.5s ease-out both; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
+.cq-cards--heroes > :nth-child(2) { animation-delay: 0.08s; }
+.cq-cards--heroes > :nth-child(3) { animation-delay: 0.16s; }
+.cq-cards--heroes > :nth-child(4) { animation-delay: 0.24s; }
+.cq-cards--heroes > :nth-child(n + 5) { animation-delay: 0.32s; }
+.cq-card--hero:hover, .cq-card--hero:focus-within { transform: translateY(-3px); border-color: #8a6a3a; box-shadow: 0 0 0 2px #000, 0 14px 34px rgba(0, 0, 0, 0.75), 0 0 22px rgba(255, 190, 90, 0.18); }
+.cq-card--leader { border-color: #d6a93a; box-shadow: 0 0 0 2px #000, 0 10px 28px rgba(0, 0, 0, 0.65), 0 0 26px rgba(214, 169, 58, 0.28); }
+
+/* The painting: a glowing stage with the figure standing in it, and the name on a plate across its feet. */
+.cq-hero { position: relative; display: grid; place-items: end center; margin: 0 -12px; height: clamp(300px, 46vh, 470px); overflow: hidden; background: radial-gradient(55% 45% at 50% 62%, rgba(255, 205, 130, 0.30), transparent 72%), radial-gradient(120% 60% at 50% 100%, rgba(120, 80, 40, 0.35), transparent 70%), linear-gradient(#17140f, #0c0b09); border-bottom: 2px solid #4d4130; }
+.cq-card--leader .cq-hero { background: radial-gradient(55% 45% at 50% 62%, rgba(255, 215, 110, 0.42), transparent 72%), radial-gradient(120% 60% at 50% 100%, rgba(150, 105, 30, 0.45), transparent 70%), linear-gradient(#1b160c, #0c0b09); }
+.cq-hero::after { content: ''; position: absolute; inset: auto 0 0; height: 42%; background: linear-gradient(transparent, rgba(8, 6, 4, 0.92)); pointer-events: none; }
+.cq-hero__art { position: relative; z-index: 0; display: block; height: 96%; width: auto; max-width: 100%; object-fit: contain; filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.85)); animation: cq-hero-art 0.45s ease-out; transition: transform 0.3s ease; transform-origin: bottom center; }
+.cq-card--hero:hover .cq-hero__art { transform: scale(1.04); }
+.cq-hero .cq-portrait { margin-bottom: 20%; }
+.cq-hero__plate { position: absolute; z-index: 1; inset: auto 0 0; padding: 10px 12px 10px; text-align: center; }
+.cq .cq-hero__plate h3 { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 2px 8px; margin: 0; color: #ffe6a6; font-size: clamp(1.5rem, 2.4vw, 2rem); text-shadow: 0 2px 0 #000, 0 0 14px rgba(0, 0, 0, 0.9); }
+.cq-hero__plate .cq-tag { border-color: #d6a93a; color: #ffd36b; background: rgba(0, 0, 0, 0.55); font-size: 0.7rem; }
+.cq-hero__plate p { margin: 0; color: #e6d3a8; font-size: 0.95rem; text-shadow: 0 1px 0 #000; }
+
+/* The four looks, always showing: tap one to change the big painting. */
+.cq-card--hero .cq-looks { gap: 6px; }
+.cq-card--hero .cq-look { height: clamp(70px, 9vh, 96px); border-radius: 6px; background: radial-gradient(60% 55% at 50% 70%, rgba(255, 210, 140, 0.14), transparent 72%), var(--f-deep); transition: transform 0.15s ease, border-color 0.15s ease; }
+.cq-card--hero .cq-look img { max-height: calc(clamp(70px, 9vh, 96px) - 6px); }
+.cq-card--hero .cq-look:hover { transform: translateY(-2px); border-color: #8a6a3a; }
+.cq .cq-card--hero .cq-look[aria-pressed='true'] { border: 2px solid #ffd36b; box-shadow: 0 0 12px rgba(255, 200, 90, 0.55); }
+.cq-card--hero .cq-gear { font-size: 0.8rem; }
+
+@keyframes cq-hero-in { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes cq-hero-art { from { opacity: 0; transform: translateY(8px) scale(0.96); filter: brightness(1.8) drop-shadow(0 0 18px rgba(255, 210, 120, 0.9)); } to { opacity: 1; transform: none; } }
+@keyframes cq-banner-sway { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
+@media (max-width: 600px) {
+  .cq-hero { height: clamp(280px, 52vh, 420px); }
+  .cq-repick__head { align-items: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cq-card--hero, .cq-hero__art, .cq-repick__banner { animation: none; transition: none; }
+  .cq-card--hero:hover, .cq-card--hero:hover .cq-hero__art { transform: none; }
+}
