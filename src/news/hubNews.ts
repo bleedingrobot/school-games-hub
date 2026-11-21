@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'bond-match-beach-2026-11-21',
+    date: '2026-11-21',
+    emoji: '🏖️',
+    title: 'Bond Match at the beach',
+    text: 'Bond Match is now a sunny beach: pick your bond from three rock pools!',
+    game: 'bond-match',
+  },
+  {
     id: 'lord-stories-2026-11-21',
     date: '2026-11-21',
     emoji: '🐉',

@@ -12,6 +12,8 @@ import { AchievementPop } from '../../achievements/AchievementPop';
 import { Finish, VersusFinish, type SaveState } from './Finish';
 import { TEXT, type Players } from './strings';
 import type { BondSuggestion } from './suggest';
+import { HubButtons } from './HubButtons';
+import { scene } from './art';
 import './bond-match.css';
 
 /** A new seed for each game. It is picked here, in the screen: the engine in shared/ never picks one. */
@@ -96,8 +98,14 @@ export function BondMatchPlay({ makeSeed = randomSeed, mismatchMs, finishMs, sav
   }
 
   return (
-    <div className="bm" ref={rootRef}>
-      <h1 className="bm-title">{TEXT.name}</h1>
+    // One full-window layer over the hub's bar (game guide "Full window"): the beach fills it edge to edge.
+    <div className={`bm-window bm-window--${screen.name}`}>
+      <Beach />
+      <div className="bm" ref={rootRef}>
+      <header className={screen.name === 'play' ? 'bm-top bm-top--play' : 'bm-top'}>
+        <h1 className="bm-title">{TEXT.name}</h1>
+        {screen.name !== 'play' && <HubButtons />}
+      </header>
       {screen.name === 'pick' && <BondPicker initialSize={lastSize} onPick={start} stars={saver ? stars : undefined} players={players} onPlayers={setPlayers} suggested={suggested} />}
       {screen.name === 'play' && (
         <BondMatchGame
@@ -142,6 +150,19 @@ export function BondMatchPlay({ makeSeed = randomSeed, mismatchMs, finishMs, sav
       )}
       <TrophyWonLine games={['bond-match']} watch={saves || null} off={!saver} />
       <AchievementPop games={['bond-match']} watch={saves || null} off={!saver} />
+      </div>
+    </div>
+  );
+}
+
+/** The painted beach behind every screen, or a CSS sky and sand until it's painted (and if it doesn't load). */
+function Beach() {
+  const art = scene('beach');
+  const [failed, setFailed] = useState(false);
+  const painted = art && !failed;
+  return (
+    <div className={painted ? 'bm-beach bm-beach--painted' : 'bm-beach'} aria-hidden="true" data-testid="bm-beach">
+      {painted && <img className="bm-beach__img" src={art.src} srcSet={art.srcSet} sizes="100vw" alt="" onError={() => setFailed(true)} />}
     </div>
   );
 }

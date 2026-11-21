@@ -13,6 +13,7 @@ import { loadHideStats, loadShowPictures, saveHideStats, saveShowPictures } from
 import { clock, playerName, TEXT, type Players } from './strings';
 import { useReducedMotion } from './useReducedMotion';
 import { Value } from './Value';
+import { HubButtons } from './HubButtons';
 
 /** A mismatch turns back by itself after this long, so nobody gets stuck waiting to flip. */
 export const MISMATCH_MS = 4000;
@@ -162,7 +163,7 @@ export function BondMatchGame({
   }
 
   return (
-    <section className="bm-game" aria-label={TEXT.name}>
+    <section className={twoPlayers ? 'bm-game bm-game--two' : 'bm-game'} aria-label={TEXT.name}>
       <div className="bm-bar">
         <button type="button" className="bm-back" aria-label={TEXT.quit} onClick={onQuit}>
           <span aria-hidden="true">←</span>
@@ -190,6 +191,7 @@ export function BondMatchGame({
               <span aria-hidden="true">{pictures ? '📊' : '🔢'}</span>
             </button>
           )}
+          <HubButtons hub={false} />
         </div>
       </div>
       {twoPlayers && (
@@ -206,7 +208,10 @@ export function BondMatchGame({
           </p>
         </div>
       )}
-      <Board cards={game.deck.cards} matched={game.matched} pairedWith={game.pairedWith} matchNo={game.matchNo} shown={shown} reducedMotion={reducedMotion} setLabel={set.label} pictures={hasFractions && pictures} onFlip={onFlip} />
+      {/* The board takes whatever height is left in the window, and its cards size themselves to it (bond-match.css). */}
+      <div className="bm-board-wrap">
+        <Board cards={game.deck.cards} matched={game.matched} pairedWith={game.pairedWith} matchNo={game.matchNo} shown={shown} reducedMotion={reducedMotion} setLabel={set.label} pictures={hasFractions && pictures} onFlip={onFlip} />
+      </div>
       <div className="bm-line" role="status" aria-live="polite">
         {line?.type === 'mismatch' && (
           <div className="bm-line__pill bm-line__pill--miss">

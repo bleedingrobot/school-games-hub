@@ -1,6 +1,6 @@
 # Bond Match: graphics upgrade plan
 
-Written 21 Nov 2026 for James. **Status: plan agreed 21 Nov 2026, nothing built yet; next is L.1.** Art list ready to paint: `docs/bond-match-art/config.json`.
+Written 21 Nov 2026 for James. **Status: L.1 done 21 Nov 2026 (full window, painted beach, rock-pool picker). Also painted ahead for L.2: both pool backs, card-back (+ blue/violet tints) and card-stone. Next is L.2 (the cards).** Art list ready to paint: `docs/bond-match-art/config.json`.
 
 ## Where it is now
 
