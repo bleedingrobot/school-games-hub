@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'bond-match-bella-2026-11-21',
+    date: '2026-11-21',
+    emoji: '🗣️',
+    title: 'Bella reads Bond Match',
+    text: 'Bella now reads Bond Match aloud.',
+    game: 'bond-match',
+  },
+  {
     id: 'trader-vex-lumi-2026-11-21',
     date: '2026-11-21',
     emoji: '⚔️',

@@ -84,6 +84,8 @@ def spoken(text: str) -> str:
     for word, say in SAY_AS.items():
         text = text.replace(word, say)
     text = re.sub(r'(\d+)/(\d+)', r'\1 over \2', text)  # a fraction, 1/2, as "one over two" (Glyph Gates)
+    # A decimal, 1.0, as "one point zero": each digit after the point on its own (Bond Match).
+    text = re.sub(r'(\d+)\.(\d+)', lambda m: m.group(1) + ' point ' + ' '.join(ONES[int(d)] for d in m.group(2)), text)
     text = re.sub(r'\d+', lambda m: number(int(m.group(0))), text)
     return re.sub(r'(^|[.!?] )([a-z])', lambda m: m.group(1) + m.group(2).upper(), text)
 

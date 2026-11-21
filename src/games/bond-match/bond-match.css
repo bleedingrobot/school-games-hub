@@ -149,6 +149,24 @@
 .bm-hubbtn:hover {
   background: rgba(8, 47, 73, 0.95);
 }
+/* Bella's speaker: faded with a line through it while read-aloud (or the sound) is off. */
+.bm-voicebtn {
+  position: relative;
+}
+.bm-voicebtn--off span {
+  opacity: 0.45;
+}
+.bm-voicebtn--off::after {
+  content: '';
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  top: 50%;
+  height: 3px;
+  border-radius: 2px;
+  background: #fde68a;
+  transform: rotate(-35deg);
+}
 
 .bm-finish,
 .bm-game {
@@ -632,7 +650,7 @@
   gap: 8px;
 }
 .bm-bar .bm-hubbtns {
-  gap: 0;
+  gap: 6px;
 }
 .bm-stats {
   display: inline-flex;
