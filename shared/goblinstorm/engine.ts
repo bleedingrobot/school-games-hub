@@ -9,12 +9,12 @@
 import {
   BASE_MAGNET, BOSS_AT, DAMAGE_PER_TIER, BOSS_CHARGE, BOSS_WIPE_SHARE, CELL, DT, FAR_AWAY, GEM_PICKUP, GEM_PULL_SPEED, GOLD, GRID, healthGrowth,
   HERO_RADIUS, HURT_GAP, MAX_ENEMIES, MAX_GEMS, MAX_PASSIVES, MAX_SHOTS, MAX_WEAPONS, MINIBOSS_AT, PASSIVE_IDS, PASSIVE_LEVELS,
-  PASSIVE_STEP, RUN_STEPS, SEPARATE_CHECKS, SHOP, SHOP_ARMOUR_MAX, SPAWN_RING, STEPS_PER_SECOND, SWARM_SIZE, SWARMS, WAVES,
-  WARM_UP_DAMAGE, WARM_UP_SECONDS, WEAPON_IDS, WEAPON_LEVELS, WEAPONS, WIPE_RADIUS, gemsToNext,
-  type HeroDef, type MapDef, type PassiveId, type ShopLevels, type WeaponId, type WeaponLevel,
+  PASSIVE_STEP, RUN_STEPS, SEPARATE_CHECKS, SHOP, SHOP_ARMOUR_MAX, SPAWN_RING, STEPS_PER_SECOND, STORM, SWARM_SIZE, SWARMS, WAVES,
+  WARM_UP_DAMAGE, WARM_UP_SECONDS, WEAPON_IDS, WEAPON_LEVELS, WEAPONS, WIPE_RADIUS, gemsToNext, LEGENDARY,
+  type HeroDef, type LegendaryId, type MapDef, type PassiveId, type ShopLevels, type WeaponId, type WeaponLevel,
 } from './config';
 import { makeRandom, mixSeed, type Random } from './random';
-import { COS, DIR_X, DIR_Y, SIN, STILL, TURN } from './trig';
+import { COS, DIR_X, DIR_Y, DIRECTIONS, SIN, STILL, TURN } from './trig';
 
 export interface Enemy {
   alive: boolean;
@@ -84,7 +84,12 @@ export type GameEvent =
   | { k: 'nova'; r: number; weapon: WeaponId }
   | { k: 'levelup' }
   | { k: 'boss'; kind: number }
-  | { k: 'gem' };
+  | { k: 'gem' }
+  // Storm Lands: a lightning ring struck, the sea turned, the hero got back up, the last boss raged.
+  | { k: 'storm'; x: number; y: number; r: number }
+  | { k: 'current'; dir: number }
+  | { k: 'revive' }
+  | { k: 'rage' };
 
 export type Outcome = 'running' | 'won' | 'survived' | 'lost' | 'quit';
 
@@ -96,6 +101,23 @@ export interface Hero {
   /** Last direction moved (0–15), for arrows. */
   facing: number;
   hurtUntil: number;
+}
+
+/** A Sky Citadel lightning ring: where, and the step it strikes. */
+export interface StormStrike { x: number; y: number; at: number }
+
+/**
+ * The Storm Lands' part of a run. It has its own seeded numbers, so nothing here changes a run on the first five maps.
+ */
+export interface StormState {
+  rng: Random;
+  /** The way the sea pushes (0-15). */
+  current: number;
+  strikes: StormStrike[];
+  /** Second Wind has been used. */
+  revived: boolean;
+  /** The Storm King is down to half health. */
+  raging: boolean;
 }
 
 export interface RunSetup {
@@ -139,7 +161,11 @@ export interface RunState {
   cellNext: Int32Array;
   gridX: number;
   gridY: number;
+  storm: StormState;
 }
+
+/** The Storm Lands' own stream of seeded numbers (kept apart from the run's, so the first five maps don't change). */
+const STORM_STREAM = 0x5707;
 
 // ---------------------------------------------------------------- stats
 
@@ -151,11 +177,30 @@ function shopLevel(s: RunState, id: keyof typeof SHOP): number {
   const n = s.setup.shop[id] ?? 0;
   return n < 0 ? 0 : n > 5 ? 5 : n;
 }
+/** A Legendary upgrade's level: 0 off the Storm Lands (they only work there). */
+export function legendLevel(s: Pick<RunState, 'setup'>, id: LegendaryId): number {
+  if (!s.setup.map.storm) return 0;
+  const n = Math.floor(s.setup.shop[id] ?? 0);
+  const top = LEGENDARY[id].costs.length;
+  return n < 0 || !Number.isFinite(n) ? 0 : n > top ? top : n;
+}
+/** Weapons a hero can hold: 4, or 5 with Fifth Weapon on the Storm Lands. */
+export function maxWeapons(s: Pick<RunState, 'setup'>): number {
+  return MAX_WEAPONS + legendLevel(s, 'fifth');
+}
+/** Steps between an evolved weapon's blasts (Storm Surge makes them sooner). */
+function wipeEvery(s: RunState, id: WeaponId): number {
+  const every = WEAPONS[id].evolved.wipeEvery;
+  const surge = legendLevel(s, 'surge');
+  return surge > 0 ? Math.round(every * (1 - surge * LEGENDARY.surge.step)) : every;
+}
 
 export function might(s: RunState): number {
   const h = s.setup.hero;
   let m = h.might * (1 + passiveLevel(s, 'gauntlets') * PASSIVE_STEP.gauntlets) * (1 + shopLevel(s, 'might') * SHOP.might.step);
   if (h.rage > 0) m *= 1 + h.rage * (1 - s.hero.hp / s.hero.maxHp);
+  const storm = legendLevel(s, 'stormmight');
+  if (storm > 0) m *= 1 + storm * LEGENDARY.stormmight.step;
   return m;
 }
 export function area(s: RunState): number {
@@ -213,9 +258,10 @@ export function newRun(setup: RunSetup): RunState {
     cellNext: new Int32Array(MAX_ENEMIES),
     gridX: 0,
     gridY: 0,
+    storm: { rng: makeRandom(mixSeed(setup.seed, STORM_STREAM)), current: 0, strikes: [], revived: false, raging: false },
   };
   for (let i = 0; i < MAX_ENEMIES; i++) {
-    s.enemies.push({ alive: false, id: 0, kind: 0, x: 0, y: 0, hp: 0, maxHp: 0, speed: 0, damage: 0, radius: 0, gems: 0, slowUntil: 0, hitUntil: [0, 0, 0, 0], spikeUntil: 0, born: 0 });
+    s.enemies.push({ alive: false, id: 0, kind: 0, x: 0, y: 0, hp: 0, maxHp: 0, speed: 0, damage: 0, radius: 0, gems: 0, slowUntil: 0, hitUntil: [0, 0, 0, 0, 0], spikeUntil: 0, born: 0 });
   }
   for (let i = 0; i < MAX_SHOTS; i++) s.shots.push({ alive: false, slot: 0, weapon: 'fireball', x: 0, y: 0, vx: 0, vy: 0, life: 0, damage: 0, radius: 0, pierce: 0, hits: [], burst: 0, gravity: 0 });
   for (let i = 0; i < MAX_GEMS; i++) s.gems.push({ alive: false, x: 0, y: 0, value: 0, pulled: false });
@@ -249,7 +295,7 @@ function spawn(s: RunState, kind: number, x: number, y: number): Enemy | null {
   e.radius = def.radius;
   e.gems = def.gems;
   e.slowUntil = 0;
-  e.hitUntil[0] = e.hitUntil[1] = e.hitUntil[2] = e.hitUntil[3] = 0;
+  e.hitUntil[0] = e.hitUntil[1] = e.hitUntil[2] = e.hitUntil[3] = e.hitUntil[4] = 0;
   e.spikeUntil = 0;
   e.born = s.t;
   return e;
@@ -339,7 +385,10 @@ function moveEnemies(s: RunState): void {
     const d = Math.sqrt(d2);
     if (d < 1e-6) continue;
     let speed = e.speed * chill * (e.slowUntil > s.t ? 0.5 : 1);
-    if (e.kind >= 3 && (s.t - e.born) % BOSS_CHARGE.every < BOSS_CHARGE.lasts) speed *= BOSS_CHARGE.speed;
+    if (e.kind >= 3) {
+      const every = e.kind === 4 && s.storm.raging ? BOSS_CHARGE.every / STORM.rage.chargeEvery : BOSS_CHARGE.every;
+      if ((s.t - e.born) % every < BOSS_CHARGE.lasts) speed *= BOSS_CHARGE.speed;
+    }
     dx /= d;
     dy /= d;
     e.x += dx * speed * DT;
@@ -374,6 +423,15 @@ function damageEnemy(s: RunState, e: Enemy, base: number, slot: number): void {
   e.hp -= dmg;
   if (slot >= 0) s.events.push({ k: 'hit', x: e.x, y: e.y, damage: dmg, crit });
   if (e.hp <= 0) kill(s, e);
+  else if (e.kind === 4 && !s.storm.raging && s.setup.map.storm === 'rage' && e.hp <= e.maxHp / 2) rage(s);
+}
+
+/** The Storm King at half health: charges twice as often and calls a ring of storm goblins, once. */
+function rage(s: RunState): void {
+  s.storm.raging = true;
+  s.events.push({ k: 'rage' });
+  const start = s.storm.rng.int(TURN);
+  for (let i = 0; i < STORM.rage.swarm; i++) spawnOnRing(s, 0, start + ((i * TURN) / STORM.rage.swarm | 0));
 }
 
 function kill(s: RunState, e: Enemy): void {
@@ -386,6 +444,10 @@ function kill(s: RunState, e: Enemy): void {
     s.outcome = 'won';
   }
   if (e.gems > 0) dropGem(s, e.x, e.y, e.gems);
+  // Crystal Caverns: a tough one breaks into small ones where it stood.
+  if (e.kind === 2 && s.setup.map.storm === 'split') {
+    for (let i = 0; i < STORM.split.pieces; i++) spawn(s, 0, e.x + (i % 2 ? 0.55 : -0.55), e.y + (i < 2 ? 0 : 0.55));
+  }
 }
 
 function dropGem(s: RunState, x: number, y: number, value: number): void {
@@ -450,7 +512,7 @@ function useWeapons(s: RunState): void {
   for (let slot = 0; slot < s.weapons.length; slot++) {
     const w = s.weapons[slot];
     const st = stats(w);
-    if (w.evolved && ++w.wipe >= WEAPONS[w.id].evolved.wipeEvery) { w.wipe = 0; wipe(s, w); }
+    if (w.evolved && ++w.wipe >= wipeEvery(s, w.id)) { w.wipe = 0; wipe(s, w); }
 
     if (w.id === 'blades') {
       // Blades turn every step and cut whatever they touch (each monster once per `cooldown`).
@@ -585,12 +647,77 @@ function hurtHero(s: RunState): void {
       return;
     }
     const warm = s.t < WARM_UP_SECONDS * STEPS_PER_SECOND ? WARM_UP_DAMAGE : 1;
-    const dmg = Math.max(1, e.damage * warm - armour(s));
-    h.hp -= dmg;
-    s.sinceHit = 0;
-    s.events.push({ k: 'hurt', damage: dmg });
-    if (h.hp <= 0) { h.hp = 0; s.outcome = 'lost'; }
+    takeHit(s, Math.max(1, e.damage * warm - armour(s)));
   });
+}
+
+/** The hero loses `dmg` health: they fall at 0, unless Second Wind gets them back up (once a run). */
+function takeHit(s: RunState, dmg: number): void {
+  const h = s.hero;
+  h.hp -= dmg;
+  s.sinceHit = 0;
+  s.events.push({ k: 'hurt', damage: dmg });
+  if (h.hp > 0) return;
+  if (legendLevel(s, 'secondwind') > 0 && !s.storm.revived) {
+    s.storm.revived = true;
+    h.hp = h.maxHp * LEGENDARY.secondwind.step;
+    h.hurtUntil = s.t + 2 * STEPS_PER_SECOND;
+    s.events.push({ k: 'revive' });
+    return;
+  }
+  h.hp = 0;
+  s.outcome = 'lost';
+}
+
+// ---------------------------------------------------------------- the Storm Lands' twists
+
+/** Sunken Kingdom: the sea pushes the hero, a new way every 30 s (Anchor Boots push back). */
+function seaCurrent(s: RunState): void {
+  if (s.t % STORM.current.every === 0) {
+    s.storm.current = s.storm.rng.int(DIRECTIONS);
+    s.events.push({ k: 'current', dir: s.storm.current });
+  }
+  const push = STORM.current.speed * (1 - legendLevel(s, 'anchor') * LEGENDARY.anchor.step) * DT;
+  s.hero.x += DIR_X[s.storm.current] * push;
+  s.hero.y += DIR_Y[s.storm.current] * push;
+}
+
+/** Sky Citadel: glowing rings on the ground (one under the hero), then lightning hits everything in them. */
+function stormLightning(s: RunState): void {
+  const L = STORM.lightning;
+  const h = s.hero;
+  const st = s.storm;
+  if (s.t >= WARM_UP_SECONDS * STEPS_PER_SECOND && s.t % L.every === 0) {
+    for (let i = 0; i < L.count; i++) {
+      const x = i === 0 ? h.x : h.x + st.rng.between(-L.spread, L.spread);
+      const y = i === 0 ? h.y : h.y + st.rng.between(-L.spread, L.spread);
+      st.strikes.push({ x, y, at: s.t + L.warn });
+    }
+  }
+  if (st.strikes.length === 0 || st.strikes[0].at > s.t) return;
+  const now = st.strikes.filter((k) => k.at === s.t);
+  st.strikes = st.strikes.filter((k) => k.at > s.t);
+  for (const k of now) {
+    s.events.push({ k: 'storm', x: k.x, y: k.y, r: L.radius });
+    near(s, k.x, k.y, L.radius, (e) => {
+      if (!touches(e, k.x, k.y, L.radius)) return;
+      e.hp -= L.monsterDamage * s.setup.map.tier * (e.kind >= 3 ? BOSS_WIPE_SHARE : 1);
+      if (e.hp <= 0) kill(s, e);
+    });
+    const dx = h.x - k.x;
+    const dy = h.y - k.y;
+    const rr = L.radius + HERO_RADIUS;
+    if (s.outcome !== 'running' || dx * dx + dy * dy > rr * rr) continue;
+    const bubble = s.weapons.find((w) => w.id === 'bubble' && w.charges > 0);
+    if (bubble) {
+      bubble.charges--;
+      if (bubble.charges === 0 || bubble.cooldown <= 0) bubble.cooldown = stats(bubble).cooldown;
+      s.events.push({ k: 'block' });
+      continue;
+    }
+    h.hurtUntil = s.t + HURT_GAP;
+    takeHit(s, Math.max(1, L.damage * (1 + (s.setup.map.tier - 1) * DAMAGE_PER_TIER) - armour(s)));
+  }
 }
 
 function collectGems(s: RunState): void {
@@ -638,6 +765,7 @@ export function stepRun(s: RunState, dir: number): void {
   h.x += DIR_X[d] * v;
   h.y += DIR_Y[d] * v;
   if (d !== STILL) h.facing = d;
+  if (s.setup.map.storm === 'current') seaCurrent(s);
 
   spawnWaves(s);
   buildGrid(s);
@@ -646,6 +774,7 @@ export function stepRun(s: RunState, dir: number): void {
   useWeapons(s);
   moveShots(s);
   hurtHero(s);
+  if (s.setup.map.storm === 'lightning' && s.outcome === 'running') stormLightning(s);
   collectGems(s);
 
   const regen = s.setup.hero.regen + passiveLevel(s, 'holywater') * PASSIVE_STEP.holywater;
@@ -673,7 +802,7 @@ function candidates(s: RunState): { evolve: Upgrade[]; rest: Upgrade[] } {
       if (passiveLevel(s, WEAPONS[w.id].evolvesWith) > 0) evolve.push({ kind: 'evolve', id: w.id });
     } else rest.push({ kind: 'weapon', id: w.id, level: w.level + 1 });
   }
-  if (s.weapons.length < MAX_WEAPONS) {
+  if (s.weapons.length < maxWeapons(s)) {
     for (const id of WEAPON_IDS) if (!s.weapons.some((w) => w.id === id)) rest.push({ kind: 'weapon', id, level: 1 });
   }
   for (const p of s.passives) if (p.level < PASSIVE_LEVELS) rest.push({ kind: 'passive', id: p.id, level: p.level + 1 });
@@ -725,7 +854,7 @@ export function applyPick(s: RunState, index: number): boolean {
     const w = s.weapons.find((x) => x.id === u.id);
     if (w) {
       w.evolved = true;
-      w.wipe = WEAPONS[w.id].evolved.wipeEvery - 30;
+      w.wipe = wipeEvery(s, w.id) - 30;
       if (!s.evolved.includes(w.id)) s.evolved.push(w.id);
     }
   } else if (u.kind === 'heal') {
@@ -759,7 +888,7 @@ export function goldFor(s: RunState): number {
   const shop = 1 + shopLevel(s, 'gold') * SHOP.gold.step;
   const base = Math.floor(s.kills / 8) * GOLD.per8Kills + (s.miniBeaten ? GOLD.miniBoss : 0) + (s.bossBeaten ? GOLD.boss : 0)
     + (s.outcome === 'won' || s.outcome === 'survived' ? GOLD.survived : 0) + s.bonusGold;
-  return Math.floor(base * shop);
+  return Math.floor(base * shop * (s.setup.map.storm ? STORM.gold : 1));
 }
 
 export function summary(s: RunState): RunSummary {

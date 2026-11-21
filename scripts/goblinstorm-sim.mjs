@@ -1,12 +1,14 @@
 // Goblin Storm's balance sim (docs/GOBLINSTORM-PLAN.md, "Stage 4 results"). Bot runs live here, never in the tests.
-// Run from the project folder: node scripts/goblinstorm-sim.mjs [--seeds 6] [--only grid|still|journey]
+// Run from the project folder: node scripts/goblinstorm-sim.mjs [--seeds 6] [--only grid|still|journey|storm]
 //
 // 1. still:   a hero who never moves on Castle Fields (how harsh are the first seconds?).
 // 2. grid:    every hero on every map, with no shop, half the shop and the whole shop, steering like a pupil
 //             (keeps away from monsters, walks to gems) and mostly right answers.
 // 3. journey: a steady player, 5 runs a school day, spending gold on the cheapest shop level (with the real shop's
 //             rules, shared/goblinstorm/shop.ts), playing the best open
-//             hero on the first map whose boss isn't beaten yet. How many days to each boss and hero?
+//             hero on the first map whose boss isn't beaten yet. How many days to each boss and hero? It goes on
+//             into the Storm Lands (as if they were on): the Storm Gate, then Legendary upgrades, cheapest first.
+// 4. storm:   every hero on the 5 Storm Lands maps with the whole shop, and no, some or all Legendary upgrades.
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { availableParallelism, tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -29,8 +31,8 @@ async function buildBundle() {
     `export * from ${JSON.stringify(join(root, 'shared/goblinstorm/bot.ts'))};`,
     `export * from ${JSON.stringify(join(root, 'shared/goblinstorm/config.ts'))};`,
     `export { summary } from ${JSON.stringify(join(root, 'shared/goblinstorm/engine.ts'))};`,
-    `export { heroOpen, mapOpen, newUnlocks, freshSave } from ${JSON.stringify(join(root, 'shared/goblinstorm/server.ts'))};`,
-    `export { buy, nextCost, allBought as shopAllBought } from ${JSON.stringify(join(root, 'shared/goblinstorm/shop.ts'))};`,
+    `export { heroOpen, mapOpen, newUnlocks, freshSave, stormGateOpen } from ${JSON.stringify(join(root, 'shared/goblinstorm/server.ts'))};`,
+    `export { buy, nextCost, allBought as shopAllBought, buyLegend, nextLegendCost } from ${JSON.stringify(join(root, 'shared/goblinstorm/shop.ts'))};`,
   ].join('\n'));
   const bundle = await rolldown({ input: join(dir, 'entry.ts'), logLevel: 'silent', platform: 'node' });
   await bundle.write({ file: join(dir, 'sim.mjs'), format: 'esm' });
@@ -40,7 +42,7 @@ async function buildBundle() {
 
 const bundlePath = isMainThread ? await buildBundle() : workerData.bundlePath;
 const G = await import(pathToFileURL(bundlePath).href);
-const { botRun, sensibleDirection, sensiblePick, HEROES, MAPS, SHOP_IDS, SHOP_LEVELS, SHOP_ARMOUR_MAX, summary, STEPS_PER_SECOND } = G;
+const { botRun, sensibleDirection, sensiblePick, HEROES, MAPS, SHOP_IDS, SHOP_LEVELS, SHOP_ARMOUR_MAX, summary, STEPS_PER_SECOND, STORM_FIRST, LEGENDARY, LEGENDARY_IDS } = G;
 
 const STYLES = { pupil: { steer: sensibleDirection, pick: sensiblePick }, still: { steer: () => 16, pick: sensiblePick }, simple: {} };
 /** Mostly right: 65% right, 20% quick, 15% wrong, fixed by the seed and slot. */
@@ -49,6 +51,8 @@ const answers = (seed) => (slot) => {
   return r < 15 ? 2 : r < 35 ? 4 : 3;
 };
 const fullShop = (n) => Object.fromEntries(SHOP_IDS.map((id) => [id, id === 'armour' ? Math.min(n, SHOP_ARMOUR_MAX) : n]));
+/** The whole shop plus every Legendary upgrade at level n (each stops at its own top). */
+const legendShop = (n) => ({ ...fullShop(SHOP_LEVELS), ...Object.fromEntries(LEGENDARY_IDS.map((id) => [id, Math.min(n, LEGENDARY[id].costs.length)])) });
 const clock = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 const avg = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 const pct = (n, d) => `${Math.round((100 * n) / d)}%`.padStart(4);
@@ -67,13 +71,17 @@ function journey(p) {
   let day = 0;
   let runNo = 0;
   let allBought = null;
-  // Keeps going until every boss, every hero and the whole shop are done (or 40 days).
-  while (day < 40 && (save.bosses.length < MAPS.length || save.heroes.length < HEROES.length - 2 || allBought === null)) {
+  let gate = null;
+  let legendAll = null;
+  // Keeps going until every boss (Storm Lands too), every hero, the whole shop and every Legendary are done (or 160 days).
+  while (day < 160 && (save.bosses.length < MAPS.length || save.heroes.length < HEROES.length - 2 || legendAll === null)) {
     day++;
     for (let r = 0; r < 5; r++) {
       runNo++;
-      const map = MAPS.findIndex((_, i) => G.mapOpen(save, i) && !save.bosses.includes(i));
-      const mapIndex = map < 0 ? p % MAPS.length : map;
+      if (gate === null && G.stormGateOpen(save)) { gate = day; events.push(`d${day} STORM GATE`); }
+      const map = MAPS.findIndex((_, i) => G.mapOpen(save, i, true) && !save.bosses.includes(i));
+      // Nothing new to beat yet (waiting on the shop for the Storm Gate): the hardest open map, for gold.
+      const mapIndex = map >= 0 ? map : MAPS.reduce((best, _, i) => (G.mapOpen(save, i, true) ? i : best), 0);
       const open = HEROES.filter((h) => G.heroOpen(save, h.id)).sort((a, b) => STRENGTH[b.id] - STRENGTH[a.id]);
       const hero = open[runNo % 3 === 0 ? Math.min(1, open.length - 1) : 0];
       const s = playNow(HEROES.indexOf(hero), mapIndex, save.shop, 50000 + p * 1000 + runNo);
@@ -83,7 +91,18 @@ function journey(p) {
       if (s.bossBeaten && !save.bosses.includes(mapIndex)) { save.bosses.push(mapIndex); events.push(`d${day} ${MAPS[mapIndex].monsters[4].name}`); }
       for (const u of unlocked) { save.heroes.push(u); events.push(`d${day} +${HEROES.find((h) => h.id === u).name}`); }
       for (;;) {
-        if (G.shopAllBought(save.shop)) { allBought ??= day; break; }
+        if (G.shopAllBought(save.shop)) {
+          allBought ??= day;
+          const legend = LEGENDARY_IDS.filter((id) => G.nextLegendCost(save.shop, id) !== null)
+            .sort((a, b) => G.nextLegendCost(save.shop, a) - G.nextLegendCost(save.shop, b))[0];
+          if (!legend) { legendAll ??= day; break; }
+          const done = G.buyLegend(save, legend);
+          if (typeof done === 'string') break;
+          spent += save.gold - done.gold;
+          save.gold = done.gold;
+          save.shop = done.shop;
+          continue;
+        }
         const next = SHOP_IDS.filter((id) => G.nextCost(save.shop, id) !== null)
           .sort((a, b) => G.nextCost(save.shop, a) - G.nextCost(save.shop, b))[0];
         const done = G.buy(save, next);
@@ -94,7 +113,7 @@ function journey(p) {
       }
     }
   }
-  return { day, events, spent, gold: save.gold, allBought };
+  return { day, events, spent, gold: save.gold, allBought, gate, legendAll };
 }
 
 if (!isMainThread) {
@@ -165,7 +184,32 @@ async function main() {
   if (ONLY === 'all' || ONLY === 'journey') {
     console.log('\n== A steady player: 5 runs a school day, cheapest shop level first, best open hero, first unbeaten map ==');
     const js = await Promise.all(Array.from({ length: Math.max(4, SEEDS) }, (_, p) => run({ kind: 'journey', p })));
-    js.forEach((j, p) => console.log(`player ${p + 1}: ${j.day} days; shop all bought day ${j.allBought ?? '–'}; ${j.spent} gold spent, ${j.gold} left. ${j.events.join(', ')}`));
+    js.forEach((j, p) => console.log(`player ${p + 1}: ${j.day} days; shop all bought day ${j.allBought ?? '–'}; Storm Gate day ${j.gate ?? '–'}; Legendary all bought day ${j.legendAll ?? '–'}; ${j.spent} gold spent, ${j.gold} left. ${j.events.join(', ')}`));
+  }
+
+  if (ONLY === 'all' || ONLY === 'storm') {
+    const storm = MAPS.map((_, i) => i).filter((i) => i >= STORM_FIRST);
+    for (const [label, shop] of [['whole shop, no Legendary', legendShop(0)], ['Legendary level 1', legendShop(1)], ['Legendary level 2', legendShop(2)], ['every Legendary', legendShop(9)]]) {
+      console.log(`
+== The Storm Lands, ${label}, ${SEEDS} seeds: won/survived/fell (avg fall), level-ups, gold ==`);
+      console.log(`${''.padEnd(12)}${storm.map((i) => MAPS[i].name.padEnd(26)).join('')}`);
+      const cells = await Promise.all(HEROES.map((_, h) => Promise.all(storm.map((mi) =>
+        Promise.all(Array.from({ length: SEEDS }, (_, k) => play(h, mi, shop, 3000 + k * 31 + mi)))))));
+      const totals = storm.map(() => ({ won: 0, n: 0, gold: [] }));
+      HEROES.forEach((hero, h) => {
+        let line = hero.name.padEnd(12);
+        storm.forEach((_, j) => {
+          const runs = cells[h][j];
+          const won = runs.filter((r) => r.outcome === 'won').length;
+          const surv = runs.filter((r) => r.outcome === 'survived').length;
+          const fell = runs.filter((r) => r.outcome === 'lost');
+          totals[j].won += won; totals[j].n += runs.length; totals[j].gold.push(...runs.map((r) => r.gold));
+          line += `${won}/${surv}/${fell.length}${fell.length ? ` (${clock(Math.round(avg(fell.map((r) => r.seconds))))})` : ''} L${Math.round(avg(runs.map((r) => r.levelUps)))} 🪙${Math.round(avg(runs.map((r) => r.gold)))}`.padEnd(26);
+        });
+        console.log(line);
+      });
+      console.log(`${'all heroes'.padEnd(12)}${totals.map((t) => `won${pct(t.won, t.n)} 🪙${Math.round(avg(t.gold))}`.padEnd(26)).join('')}`);
+    }
   }
 
   for (const w of workers) await w.terminate();

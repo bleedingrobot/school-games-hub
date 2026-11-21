@@ -5,8 +5,8 @@
  * Speed: every monster kind is drawn once into a small picture (both ways round) and stamped with drawImage, the ground
  * is one repeating pattern, and glows are one stretched picture each, so 300+ monsters stay smooth.
  */
-import { MAX_ENEMIES, WIPE_RADIUS, type HeroId, type MapDef, type WeaponId } from '../../../shared/goblinstorm/config';
-import { area, stats, type GameEvent, type RunState } from '../../../shared/goblinstorm/engine';
+import { LEGENDARY, MAX_ENEMIES, STORM, WIPE_RADIUS, type HeroId, type MapDef, type WeaponId } from '../../../shared/goblinstorm/config';
+import { area, legendLevel, stats, type GameEvent, type RunState } from '../../../shared/goblinstorm/engine';
 import { COS, SIN, TURN } from '../../../shared/goblinstorm/trig';
 import { groundArt, heroArt, monsterArt, paintedCount, paintedImage } from './art';
 import { Fx, glowSprite } from './fx';
@@ -473,6 +473,28 @@ export class View {
         gems++;
       } else if (ev.k === 'boss') {
         this.startBoss(looks[ev.kind]?.name ?? 'Boss', ev.kind);
+      } else if (ev.k === 'storm') {
+        // Sky Citadel: the ring's lightning lands.
+        this.bolt(ev.x, ev.y, ev.r, '#e8f4ff');
+        fx.ring(ev.x, ev.y, 0.3, ev.r * 1.4, 0.35, '#bfe6ff');
+        this.addShake(0.2);
+        this.cues.add('hit');
+      } else if (ev.k === 'current') {
+        if (s.t > 0) fx.word('The tide turns!', s.hero.x, s.hero.y - 1.8, '#8ad8d0', 0.6, 1.4);
+      } else if (ev.k === 'revive') {
+        fx.ring(s.hero.x, s.hero.y, 0.4, 4, 0.7, '#fff3b0');
+        fx.glow(s.hero.x, s.hero.y, 1, 6, 0.6, '#ffe68a');
+        fx.sparks(s.hero.x, s.hero.y, 30, '#ffe68a', 8, 0.12);
+        fx.word('SECOND WIND!', s.hero.x, s.hero.y - 1.8, '#ffe68a', 0.9, 1.6);
+        this.flash = Math.max(this.flash, 0.5);
+        this.flashColour = '#fff3b0';
+        this.cues.add('levelup');
+      } else if (ev.k === 'rage') {
+        fx.word(`${looks[4]?.name ?? 'The boss'} rages!`.toUpperCase(), s.hero.x, s.hero.y - 2.2, '#ff8a5a', 1, 1.8);
+        this.addShake(0.8);
+        this.flash = Math.max(this.flash, 0.45);
+        this.flashColour = '#ff2a2a';
+        this.cues.add('boss');
       }
     }
     if (gems) {
@@ -597,6 +619,8 @@ export class View {
     const halfH = h / 2 / scale + 2;
     const onScreen = (x: number, y: number) => Math.abs(x - camX) < halfW && Math.abs(y - camY) < halfH;
 
+    this.drawCurrent(ctx, s, time, halfW, halfH, camX, camY);
+    this.drawStrikeRings(ctx, s, time);
     this.drawAura(ctx, s, time);
     this.drawGems(ctx, s, time, onScreen);
     this.drawEnemies(ctx, s, time, onScreen);
@@ -612,6 +636,7 @@ export class View {
 
     // screen px
     const toScreen = (x: number, y: number): [number, number] => [(x - camX) * scale + w / 2, (y - camY) * scale + h / 2];
+    if (map.storm === 'fog') this.drawFog(ctx, s, w, h, scale);
     this.drawBossArrows(ctx, s, w, h, toScreen);
     this.fx.drawWords(ctx, toScreen, scale);
     this.drawVignette(ctx, map.id, w, h);
@@ -1086,6 +1111,69 @@ export class View {
       ctx.fill();
       ctx.restore();
     }
+  }
+
+  /** Sky Citadel: each lightning ring glows brighter and fills in as its strike comes. */
+  private drawStrikeRings(ctx: CanvasRenderingContext2D, s: RunState, time: number): void {
+    if (s.setup.map.storm !== 'lightning') return;
+    const L = STORM.lightning;
+    for (const k of s.storm.strikes) {
+      const left = Math.max(0, (k.at - s.t) / L.warn);
+      const soon = 1 - left;
+      ctx.globalAlpha = 0.25 + soon * 0.45;
+      ctx.fillStyle = '#bfe6ff';
+      ctx.beginPath();
+      ctx.arc(k.x, k.y, L.radius * soon, 0, TAU);
+      ctx.fill();
+      ctx.globalAlpha = 0.6 + Math.sin(time * (8 + soon * 18)) * 0.3;
+      ctx.strokeStyle = soon > 0.7 ? '#ffffff' : '#8ad0ff';
+      ctx.lineWidth = 0.08 + soon * 0.06;
+      ctx.beginPath();
+      ctx.arc(k.x, k.y, L.radius, 0, TAU);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Sunken Kingdom: streaks of water drift the way the sea is pushing. */
+  private drawCurrent(ctx: CanvasRenderingContext2D, s: RunState, time: number, halfW: number, halfH: number, camX: number, camY: number): void {
+    if (s.setup.map.storm !== 'current') return;
+    const dx = Math.cos((s.storm.current / 16) * TAU);
+    const dy = Math.sin((s.storm.current / 16) * TAU);
+    const n = this.low ? 14 : 34;
+    const spanX = halfW * 2;
+    const spanY = halfH * 2;
+    ctx.strokeStyle = '#bff4ee';
+    ctx.lineWidth = 0.07;
+    ctx.lineCap = 'round';
+    for (let i = 0; i < n; i++) {
+      // Fixed spots that slide with time, wrapped onto the screen.
+      const travel = time * 3 + i * 7.3;
+      const px = camX - halfW + ((((i * 37.1 + travel * dx) % spanX) + spanX) % spanX);
+      const py = camY - halfH + ((((i * 19.7 + travel * dy) % spanY) + spanY) % spanY);
+      ctx.globalAlpha = 0.18 + (i % 3) * 0.06;
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(px + dx * 1.2, py + dy * 1.2);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Shadow Swamp: dark fog everywhere but close round the hero (further with the Storm Lantern). */
+  private fogFor: { key: string; g: CanvasGradient } | null = null;
+  private drawFog(ctx: CanvasRenderingContext2D, s: RunState, w: number, h: number, scale: number): void {
+    const see = (STORM.fog.see + legendLevel(s, 'lantern') * STORM.fog.lantern * LEGENDARY.lantern.step) * scale;
+    const key = `${w}x${h}:${Math.round(see)}`;
+    if (!this.fogFor || this.fogFor.key !== key) {
+      const g = ctx.createRadialGradient(w / 2, h / 2, see * 0.55, w / 2, h / 2, see);
+      g.addColorStop(0, 'rgba(8,14,10,0)');
+      g.addColorStop(0.6, 'rgba(8,14,10,0.7)');
+      g.addColorStop(1, 'rgba(8,14,10,0.94)');
+      this.fogFor = { key, g };
+    }
+    ctx.fillStyle = this.fogFor.g;
+    ctx.fillRect(0, 0, w, h);
   }
 
   private vignetteFor: { key: string; g: CanvasGradient } | null = null;
