@@ -3,5 +3,7 @@
   "back-pool-day": 2,
   "back-pool-evening": 2,
   "card-back": 1,
-  "card-stone": 2
+  "card-stone": 2,
+  "ripple": 1,
+  "sparkle": 2
 }

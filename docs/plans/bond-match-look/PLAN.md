@@ -1,6 +1,6 @@
 # Bond Match: graphics upgrade plan
 
-Written 21 Nov 2026 for James. **Status: L.1 done 21 Nov 2026 (full window, painted beach, rock-pool picker). Also painted ahead for L.2: both pool backs, card-back (+ blue/violet tints) and card-stone. Next is L.2 (the cards).** Art list ready to paint: `docs/bond-match-art/config.json`.
+Written 21 Nov 2026 for James. **Status: L.1 done 21 Nov 2026 (full window, painted beach, rock-pool picker). L.2 done 21 Nov 2026 (cards in the painted pool: sea-glass backs tinted per shelf, beach-stone faces, pair glow rings, ripple and sparkle on a match, wobble on a mismatch). Next is L.3 (the finish).** Art list ready to paint: `docs/bond-match-art/config.json`.
 
 ## Where it is now
 

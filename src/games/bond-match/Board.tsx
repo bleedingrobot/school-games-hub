@@ -1,6 +1,7 @@
 import { useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import type { Card as DeckCard } from '../../../shared/bond-match/deck';
-import { Card } from './Card';
+import { Card, type CardArt } from './Card';
+import { cardBack, cardStone, fx, type Glass } from './art';
 import { TEXT } from './strings';
 
 /** Four cards across (two for a board of four), so Small is 3 rows, Medium 4 and Large 5, and a card stays big on a phone. */
@@ -28,6 +29,20 @@ const MOVES: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight
  * One card is in the tab order; the arrow keys move between cards and Enter or Space flips.
  */
 export function Board({ cards, matched, pairedWith, matchNo, shown, reducedMotion, setLabel, pictures, onFlip }: Props) {
+  // The shelf's sea-glass tint comes from the cards themselves: fractions violet, decimals blue, whole numbers teal.
+  const glass: Glass = cards.some((c) => c.side.kind === 'fraction') ? 'violet' : cards.some((c) => c.side.kind === 'decimal') ? 'blue' : 'teal';
+  // A picture that fails to load drops back to the CSS look for the whole board, so the cards always match.
+  const [broken, setBroken] = useState<string[]>([]);
+  const ok = (src: string | undefined) => (src && !broken.includes(src) ? src : undefined);
+  const art: CardArt = {
+    back: ok(cardBack(glass)),
+    stone: ok(cardStone()),
+    ripple: ok(fx('ripple')),
+    sparkle: ok(fx('sparkle')),
+    onError: (src) => setBroken((was) => (was.includes(src) ? was : [...was, src])),
+  };
+  // Two cards up that aren't a pair: the mismatch on show. They give a little wobble.
+  const missing = shown.length === 2;
   const cols = columnsFor(cards.length);
   const rows = Math.ceil(cards.length / cols);
   const [focus, setFocus] = useState(0);
@@ -48,7 +63,7 @@ export function Board({ cards, matched, pairedWith, matchNo, shown, reducedMotio
 
   return (
     <div
-      className={`bm-board${reducedMotion ? ' bm-board--still' : ''}`}
+      className={`bm-board bm-board--${glass}${art.back ? ' bm-board--glass' : ''}${art.stone ? ' bm-board--stone' : ''}${reducedMotion ? ' bm-board--still' : ''}`}
       role="group"
       aria-label={TEXT.board(setLabel)}
       style={{ '--bm-cols': cols, '--bm-rows': rows } as CSSProperties}
@@ -64,6 +79,8 @@ export function Board({ cards, matched, pairedWith, matchNo, shown, reducedMotio
           partner={matched[i] && pairedWith[i] >= 0 ? pairedWith[i] : undefined}
           matchNo={matchNo[i]}
           pictures={pictures}
+          art={art}
+          wobble={missing && shown.includes(i) && !matched[i]}
           tabIndex={i === focus ? 0 : -1}
           onFlip={(index) => { setFocus(index); onFlip(index); }}
         />
