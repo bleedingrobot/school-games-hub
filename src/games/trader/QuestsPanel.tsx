@@ -335,12 +335,12 @@ export function QuestLanding({ quest, steps, busy, onDo }: { quest: QuestConfig;
 }
 
 /** A quest stop here that can't be done yet (the last stop too early, or a full hold): says what to do first. */
-export function QuestWaiting({ quest, items, onNext }: { quest: QuestConfig; items: { line: string; why: string }[]; onNext?: () => void }) {
+export function QuestWaiting({ quest, items, onNext }: { quest: QuestConfig; items: { line: string; why: string; shop?: boolean }[]; onNext?: () => void }) {
   return (
     <div className="stq-land stq-land--waiting" role="status">
       <GiverFace id={quest.id} name={quest.giver} size={52} />
       <div className="stq-land__body">
-        <p className="stq-land__tag">⭐ Quest stop</p>
+        <p className="stq-land__tag">{items.every((w) => w.shop) ? '⭐ For your quest' : '⭐ Quest stop'}</p>
         {items.map((w) => (
           <p key={w.line} className="stq-land__line">
             <strong>{w.line}</strong> {w.why}
