@@ -20,6 +20,10 @@ const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n
  * The clan leader gets +2 on every stat but armour and +4 HP. Same dice state, same roll.
  * Every member starts wearing tier 1 of their class's line in each slot.
  */
+/** What the clan leader (the first member) gets on top: on every stat but armour, and on health. */
+export const LEADER_STAT_BONUS = 2;
+export const LEADER_HP_BONUS = 4;
+
 export function rollMember(dice: HasRng, name: string, race: string, cls: string, leader = false): Member {
   const r = raceByName(race);
   const c = classByName(cls);
@@ -27,9 +31,9 @@ export function rollMember(dice: HasRng, name: string, race: string, cls: string
   const stats = emptyStats();
   for (const s of STATS) {
     const wobble = s === 'armor' ? 0 : roll(dice, 3) - 1;
-    stats[s] = clamp(r.stats[s] + c.stats[s] + wobble + (leader && s !== 'armor' ? 2 : 0), 0, CONFIG.statCap);
+    stats[s] = clamp(r.stats[s] + c.stats[s] + wobble + (leader && s !== 'armor' ? LEADER_STAT_BONUS : 0), 0, CONFIG.statCap);
   }
-  const maxHp = Math.max(5, r.hp + c.hp + roll(dice, 5) - 2 + (leader ? 4 : 0));
+  const maxHp = Math.max(5, r.hp + c.hp + roll(dice, 5) - 2 + (leader ? LEADER_HP_BONUS : 0));
   const maxSp = Math.max(0, r.sp + c.sp + roll(dice, 5) - 2);
   const spells = [...new Set([...r.spells, ...c.spells])];
   const m: Member = { name, race, cls, level: 1, xp: 0, hp: maxHp, maxHp, sp: maxSp, maxSp, stats, spells, gear: {}, points: 0, knockedOut: false };

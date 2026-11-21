@@ -1,0 +1,303 @@
+{
+ "_from": "docs/game-guide/templates/art-config.json. More Clan Quest banners, one per new clan name word (shared/clans/words.ts CLAN_NOUNS), matching src/games/clans/art/banners.",
+ "game": "clans-banners",
+ "filename_prefix": "clans-banners/img",
+ "style": "a",
+ "styles": {
+  "a": ""
+ },
+ "inbox": "~/dragon-art-inbox/clans-banners",
+ "picks": "docs/clans-banners-art/picks.json",
+ "art_dir": "src/games/clans/art",
+ "home_dir": "src/assets/home",
+ "pictures": [
+  {
+   "name": "dragons",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: a fierce red dragon rearing up with wings spread. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "dragons",
+   "max": 240
+  },
+  {
+   "name": "unicorns",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: a graceful white unicorn rearing up with a golden spiral horn and flowing mane. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "unicorns",
+   "max": 240
+  },
+  {
+   "name": "roses",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: a beautiful red rose in full bloom with green leaves and a thorny stem. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "roses",
+   "max": 240
+  },
+  {
+   "name": "butterflies",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: a beautiful butterfly with large blue and purple patterned wings. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "butterflies",
+   "max": 240
+  },
+  {
+   "name": "swans",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: an elegant white swan with a gracefully curved neck and a gold crown. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "swans",
+   "max": 240
+  },
+  {
+   "name": "phoenixes",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: a glorious phoenix firebird with flaming orange and gold wings spread wide. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "phoenixes",
+   "max": 240
+  },
+  {
+   "name": "trolls",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: the head of an ugly grumpy cave troll with a huge warty nose, tusks and shaggy hair. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "trolls",
+   "max": 240
+  },
+  {
+   "name": "ogres",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: the head of a big ugly green ogre with small tusks, a lumpy bald head and a scowl. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "ogres",
+   "max": 240
+  },
+  {
+   "name": "boars",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: the head of a fierce wild boar with big curved tusks and bristly dark fur. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "boars",
+   "max": 240
+  },
+  {
+   "name": "krakens",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: a giant dark green kraken squid with long curling tentacles. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "krakens",
+   "max": 240
+  },
+  {
+   "name": "skulls",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: a cartoonish old horned skull, not scary, simple heraldic design. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "skulls",
+   "max": 240
+  },
+  {
+   "name": "goblins",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: the head of a sneaky green goblin with big pointed ears and a cheeky toothy grin. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "goblins",
+   "max": 240
+  },
+  {
+   "name": "kittens",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: a cute fluffy kitten sitting with big sparkling eyes and a pink bow. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "kittens",
+   "max": 240
+  },
+  {
+   "name": "fairies",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: a pretty little fairy with shimmering butterfly wings holding a glowing wand. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "fairies",
+   "max": 240
+  },
+  {
+   "name": "mermaids",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: a beautiful mermaid with long flowing hair and a shimmering teal fish tail sitting on a rock. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "mermaids",
+   "max": 240
+  },
+  {
+   "name": "peacocks",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: a proud peacock with its magnificent blue and green tail feathers fanned out. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "peacocks",
+   "max": 240
+  },
+  {
+   "name": "lilies",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: three elegant white lilies with gold centres and long green leaves. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "lilies",
+   "max": 240
+  },
+  {
+   "name": "hearts",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: a big glossy red heart with a golden crown on top. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "hearts",
+   "max": 240
+  },
+  {
+   "name": "sharks",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: a fierce great white shark with an open toothy mouth, leaping. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "sharks",
+   "max": 240
+  },
+  {
+   "name": "bulls",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: the head of an angry charging bull with big curved horns and a ring in its nose. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "bulls",
+   "max": 240
+  },
+  {
+   "name": "gorillas",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: a huge silverback gorilla beating its chest. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "gorillas",
+   "max": 240
+  },
+  {
+   "name": "rhinos",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: a big armoured rhino charging with its great horn forward. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "rhinos",
+   "max": 240
+  },
+  {
+   "name": "vikings",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: a fierce bearded viking warrior head wearing a horned iron helmet. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "vikings",
+   "max": 240
+  },
+  {
+   "name": "kiwis",
+   "prompt": "Painterly medieval fantasy game art, hand-painted oil texture, suitable for children aged 8 to 12. A single old weathered cream linen clan banner hanging from a dark wooden crossbar with iron finial ends and a small hanging loop, the cloth tied on with fabric tabs, a swallowtail pointed bottom edge with slightly frayed and burnt torn edges, a large bold painted emblem in the middle of the cloth: a New Zealand kiwi bird: a round chubby fluffy brown flightless bird shaped like a ball, no wings, no tail, short thick legs, a very long thin curved pale beak pointing down to the ground, seen from the side. Front view, the whole banner visible and centred with space all around, on a plain pure white background, clean empty white all around. No text, no letters.",
+   "size": [
+    832,
+    1216
+   ],
+   "kind": "cut",
+   "folder": "banners",
+   "file": "kiwis",
+   "max": 240
+  }
+ ]
+}

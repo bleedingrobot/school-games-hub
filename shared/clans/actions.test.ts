@@ -63,6 +63,7 @@ describe('what the browser sends', () => {
     const renamed = applyAction(r, { type: 'clanName', name: 'Misty Owls' }, ctx());
     expect(renamed.ok && renamed.state!.clan.name).toBe('Misty Owls');
     expect(refused(r, { type: 'clanName', name: 'Stinky Owls' }).why).toBe('name');
+    expect(applyAction(r, { type: 'clanName', name: 'Warty Unicorns' }, ctx()).ok).toBe(true);
     expect(refused(created(), { type: 'clanName', name: 'Misty Owls' }).why).toBe('rename');
   });
 });

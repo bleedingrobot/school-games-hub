@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'clan-more-banners-2026-11-22',
+    date: '2026-11-22',
+    emoji: '🐉',
+    title: '12 new clan banners',
+    text: 'Clan Quest has 12 new banners, like dragons, unicorns and trolls, and new clan name words.',
+    game: 'clan-quest',
+  },
+  {
     id: 'clan-names-banners-2026-11-22',
     date: '2026-11-22',
     emoji: '🚩',

@@ -3447,11 +3447,6 @@ const emptyStats = () => ({
 	charisma: 0
 });
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
-/**
-* Race + class, then a small roll (-1 to +1 on each stat, -2 to +2 on HP and SP) for "Roll again".
-* The clan leader gets +2 on every stat but armour and +4 HP. Same dice state, same roll.
-* Every member starts wearing tier 1 of their class's line in each slot.
-*/
 function rollMember(dice, name, race, cls, leader = false) {
 	const r = raceByName(race);
 	const c = classByName(cls);
@@ -12935,7 +12930,23 @@ const CLAN_ADJECTIVES = [
 	"Misty",
 	"Bold",
 	"Lucky",
-	"Iron"
+	"Iron",
+	"Sparkly",
+	"Velvet",
+	"Rosy",
+	"Twinkling",
+	"Pearly",
+	"Dainty",
+	"Crystal",
+	"Lovely",
+	"Grumpy",
+	"Smelly",
+	"Hairy",
+	"Savage",
+	"Rusty",
+	"Muddy",
+	"Warty",
+	"Grim"
 ];
 const CLAN_NOUNS = [
 	"Banner",
@@ -12949,7 +12960,31 @@ const CLAN_NOUNS = [
 	"Falcons",
 	"Hammers",
 	"Stars",
-	"Rangers"
+	"Rangers",
+	"Unicorns",
+	"Roses",
+	"Butterflies",
+	"Swans",
+	"Phoenixes",
+	"Dragons",
+	"Trolls",
+	"Ogres",
+	"Boars",
+	"Krakens",
+	"Skulls",
+	"Goblins",
+	"Kittens",
+	"Fairies",
+	"Mermaids",
+	"Peacocks",
+	"Lilies",
+	"Hearts",
+	"Sharks",
+	"Bulls",
+	"Gorillas",
+	"Rhinos",
+	"Vikings",
+	"Kiwis"
 ];
 /** Letters, with at most one space, hyphen or apostrophe between two parts ("Te Ahi", "Jo-Jo", "O'Neil"). No numbers. */
 const NAME_SHAPE = /^[A-Za-z]+(?:[ '-][A-Za-z]+)?$/;

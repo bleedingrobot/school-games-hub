@@ -28,8 +28,20 @@ export const MEMBER_NAME_GROUPS: { label: string; names: string[] }[] = [
   },
 ];
 export const MEMBER_NAMES = MEMBER_NAME_GROUPS.flatMap((g) => g.names);
-export const CLAN_ADJECTIVES = ['Red', 'Silver', 'Brave', 'Golden', 'Swift', 'Jolly', 'Mighty', 'Clever', 'Misty', 'Bold', 'Lucky', 'Iron'];
-export const CLAN_NOUNS = ['Banner', 'Foxes', 'Lanterns', 'Wolves', 'Shields', 'Owls', 'Pennants', 'Bears', 'Falcons', 'Hammers', 'Stars', 'Rangers'];
+// Pretty and tough words added 22 Nov 2026 (James). Only add to the end: a clan's name must stay on the lists.
+export const CLAN_ADJECTIVES = [
+  'Red', 'Silver', 'Brave', 'Golden', 'Swift', 'Jolly', 'Mighty', 'Clever', 'Misty', 'Bold', 'Lucky', 'Iron',
+  'Sparkly', 'Velvet', 'Rosy', 'Twinkling', 'Pearly', 'Dainty', 'Crystal', 'Lovely',
+  'Grumpy', 'Smelly', 'Hairy', 'Savage', 'Rusty', 'Muddy', 'Warty', 'Grim',
+];
+// Each one has a painted banner (src/games/clans/art/banners/<word>.webp; the new ones from docs/clans-banners-art).
+export const CLAN_NOUNS = [
+  'Banner', 'Foxes', 'Lanterns', 'Wolves', 'Shields', 'Owls', 'Pennants', 'Bears', 'Falcons', 'Hammers', 'Stars', 'Rangers',
+  'Unicorns', 'Roses', 'Butterflies', 'Swans', 'Phoenixes', 'Dragons',
+  'Trolls', 'Ogres', 'Boars', 'Krakens', 'Skulls', 'Goblins',
+  'Kittens', 'Fairies', 'Mermaids', 'Peacocks', 'Lilies', 'Hearts',
+  'Sharks', 'Bulls', 'Gorillas', 'Rhinos', 'Vikings', 'Kiwis',
+];
 
 export const clanNameFrom = (adjective: number, noun: number) =>
   `${CLAN_ADJECTIVES[((adjective % CLAN_ADJECTIVES.length) + CLAN_ADJECTIVES.length) % CLAN_ADJECTIVES.length]} ${CLAN_NOUNS[((noun % CLAN_NOUNS.length) + CLAN_NOUNS.length) % CLAN_NOUNS.length]}`;

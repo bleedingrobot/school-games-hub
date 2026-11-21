@@ -1637,3 +1637,6 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
   .cq-card--hero, .cq-hero__art, .cq-repick__banner, .cq-repick__bannerpick { animation: none; transition: none; }
   .cq-card--hero:hover, .cq-card--hero:hover .cq-hero__art { transform: none; }
 }
+
+/* The leader's extra (James, 22 Nov 2026: pupils didn't know the first slot matters). */
+.cq-leaderperk { margin: 6px 0; padding: 4px 8px; border: 1px solid #8a6a3e; border-radius: 6px; background: rgba(120, 80, 20, 0.35); color: #ffd36b; font-size: 0.85rem; font-weight: 700; }
