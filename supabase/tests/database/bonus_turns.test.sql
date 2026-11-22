@@ -126,6 +126,8 @@ select pg_temp.reset();
 insert into public.classes (id, school_id, name, school_year, warp_code, created_at) values
   ('11111111-1111-4111-8111-000000000000', 1, 'Room 0', 2026, 'CDFGJ', now() - interval '1 year');
 insert into public.class_teachers (class_id, teacher_id) values ('11111111-1111-4111-8111-000000000000', pg_temp.id('f'));
+insert into public.app_settings (school_id, class_id) values
+  (1, '11111111-1111-4111-8111-000000000000'), (1, '11111111-1111-4111-8111-111111111111') on conflict do nothing;
 update public.app_settings set unlimited_days = jsonb_build_object('monsters', pg_temp.today(), 'diamond', '2020-01-01')
   where class_id = '11111111-1111-4111-8111-111111111111';
 select is((select s.class_id from public.settings_of(pg_temp.id('f')) s), '11111111-1111-4111-8111-000000000000'::uuid,
