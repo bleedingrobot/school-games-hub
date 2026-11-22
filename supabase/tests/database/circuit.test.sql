@@ -1,11 +1,11 @@
--- Circuit Racer (migrations 20261122001300_circuit.sql, 20261123000100_circuit_maths.sql and 20261123000200_circuit_worlds.sql,
--- id circuit): progress, runs, the switch, the hub row, the 5 finished roads a day, the maths (the switch and the kept
--- questions), worlds opening at 4 of 6 and hard finishes. Pupils can't read or change any of it directly; the server
+-- Circuit Racer (migrations 20261122001300_circuit.sql, 20261123000100_circuit_maths.sql, 20261123000200_circuit_worlds.sql and
+-- 20261123000400_circuit_racers.sql, id circuit): progress, runs, the switch, the hub row, the 5 finished roads a day, the maths
+-- (the switch and the kept questions), worlds opening at 4 of 6, hard finishes and each pupil's racer. Pupils can't read or change any of it directly; the server
 -- function does everything.
 -- Run on a throw-away copy: scripts/scratch-db.sh circuit, then scripts/scratch-test.sh circuit supabase/tests/database/circuit.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(44);
+select plan(47);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -57,6 +57,7 @@ select throws_ok($$ select * from public.circuit_questions $$, '42501', null, 'a
 select throws_ok($$ select public.circuit_load_questions(auth.uid(), 'c1-0000000000-x') $$, '42501', null, '... or load them');
 select throws_ok($$ select public.circuit_claim_answer(auth.uid(), 'c1-0000000000-x', 0, 1, true) $$, '42501', null, '... or mark an answer');
 select throws_ok($$ select public.teacher_set_circuit_maths('off') $$, null, null, '... or switch the maths off');
+select throws_ok($$ select public.circuit_set_racer(auth.uid(), 'quark') $$, '42501', null, '... or save a racer');
 select pg_temp.reset();
 set local role anon;
 select throws_ok($$ select * from public.circuit_progress $$, '42501', null, 'signed out: no progress');
@@ -101,6 +102,9 @@ select is(pg_temp.finish('0a', 'first-charge', 'clock-speed', 's9', 800, 'bronze
 select is(pg_temp.finish('0a', 'power-on', null, 's12', 610, 'silver', true, true), 'saved', 'a hard finish is a finish');
 select is((public.circuit_load(pg_temp.id('0a')) -> 'roads' -> 'power-on') - 'best' - 'medal' - 'clean' - 'charged',
   '{"finishes": 4, "hardFinishes": 1, "hardBest": 610}'::jsonb, '... kept apart with its own best time');
+-- ---- Each pupil's racer ----
+select is(public.circuit_set_racer(pg_temp.id('0a'), 'pixel'), true, 'the server saves a racer');
+select is(public.circuit_load(pg_temp.id('0a')) ->> 'racer', 'pixel', '... and load gives it back');
 -- ---- The kept questions: a slot is marked once ----
 select lives_ok($$ select public.circuit_store_questions(pg_temp.id('0a'), 'c1-0000000001-q', '[{"parts":["2","+","2","=","?"],"answer":4}]') $$,
   'the server keeps a go''s questions');

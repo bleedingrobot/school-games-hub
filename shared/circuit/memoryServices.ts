@@ -10,7 +10,7 @@ import type { FactAnswer } from '../maths/leitner';
 import { seededRandom, type MathsContext } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
 import type { MathsSwitch } from '../space/mathsSwitch';
-import { FINISH_POINTS, FINISHES_A_DAY, GOLD_POINTS, MEDAL_RANK, nzDay, type RoadProgress } from './game';
+import { FINISH_POINTS, FINISHES_A_DAY, GOLD_POINTS, MEDAL_RANK, nzDay, type RacerId, type RoadProgress } from './game';
 
 /** The pretend pupil's focus: tables, fractions, decimals and percentages, so every kind of sign shows in the preview. */
 export const PRETEND_FOCUS = {
@@ -44,6 +44,7 @@ export function memoryServices(opts: MemoryOptions = {}) {
   const random = seededRandom('pretend-circuit');
   const questions: Record<string, { questions: Question[]; answered: Record<string, { value: number; right: boolean }> }> = {};
   const answers: { player: string; once: string; answers: FactAnswer[] }[] = [];
+  const racers: Record<string, RacerId> = {};
 
   const mine = (player: string) => (roads[player] ??= structuredClone(opts.roads ?? {}));
   const todayOf = (player: string) => {
@@ -95,8 +96,13 @@ export function memoryServices(opts: MemoryOptions = {}) {
     async settings(_player: string) {
       return { ...switches };
     },
+    racers,
     async load(player: string) {
-      return { roads: structuredClone(mine(player)), today: todayOf(player).n };
+      return { roads: structuredClone(mine(player)), today: todayOf(player).n, ...(racers[player] ? { racer: racers[player] } : {}) };
+    },
+    async setRacer(player: string, racer: RacerId) {
+      racers[player] = racer;
+      return true;
     },
     async record(player: string, f: { road: string; needs: { roads: string[]; count: number } | null; seed: string; steps: number; medal: RoadProgress['medal']; clean: boolean; charged: boolean; unlimited: boolean; hard: boolean }) {
       const t = todayOf(player);

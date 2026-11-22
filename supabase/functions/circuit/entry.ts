@@ -1,7 +1,7 @@
 // Connects the circuit handler to Supabase. Edit handler.ts (or shared/circuit/game.ts) for the logic, then run
 // `npm run build:functions -- circuit` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
-import type { RoadProgress } from '../../../shared/circuit/game';
+import { racerById, type RoadProgress } from '../../../shared/circuit/game';
 import { parseFocus } from '../../../shared/maths/focus';
 import type { MathsContext } from '../../../shared/maths/serverQuestions';
 import type { Question } from '../../../shared/maths/skillPack';
@@ -101,9 +101,14 @@ Deno.serve(
       await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'circuit');
     },
     async load(player) {
-      const saved = await call<{ roads: Record<string, RoadProgress> | null; today: number } | null>('circuit_load', { player });
+      const saved = await call<{ roads: Record<string, RoadProgress> | null; today: number; racer?: string | null } | null>('circuit_load', { player });
       if (saved === 'busy') return 'busy';
-      return { roads: saved?.roads ?? {}, today: saved?.today ?? 0 };
+      const racer = racerById(saved?.racer)?.id;
+      return { roads: saved?.roads ?? {}, today: saved?.today ?? 0, ...(racer ? { racer } : {}) };
+    },
+    async setRacer(player, racer) {
+      const done = await call<boolean>('circuit_set_racer', { player, racer });
+      return done === 'busy' ? 'busy' : done === true;
     },
     async record(player, f) {
       const saved = await call<{ status: SaveStatus; today: number }>('record_circuit_finish', {
