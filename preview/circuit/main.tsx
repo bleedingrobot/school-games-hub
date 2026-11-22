@@ -21,7 +21,8 @@ const roads: Record<string, RoadProgress> = openAll
   : {};
 // ?maths=off (or choose): the teacher's maths switch. ?mc=1: multiple-choice questions. ?test=1: a test road with a port and two data gates.
 const maths = params.get('maths') === 'off' ? 'off' : params.get('maths') === 'choose' ? 'choose' : 'on';
-if (params.get('test') === '1') allowTestRoad(TEST_ROAD);
+// The built demo (James's trial page, where a link can't carry ?test=1) always has it; ?test=0 hides it.
+if (params.get('test') === '1' || (import.meta.env.PROD && params.get('test') !== '0')) allowTestRoad(TEST_ROAD);
 const backend = pretendCircuit({ today, roads, unlimited: params.get('unlimited') === '1', maths, multipleChoice: params.get('mc') === '1' });
 
 createRoot(document.getElementById('root') as HTMLElement).render(
