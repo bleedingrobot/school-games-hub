@@ -15,7 +15,7 @@ import { FriendlyError } from '../data/profile';
 import { fetchPeople, type Person } from '../data/teacher';
 import { fetchStudentYears, setStudentYear, TEACHER_YEARS, yearName, type StudentYear } from '../data/years';
 import { ALL_GAMES } from '../games/registry';
-import { share } from '../pages/TeacherQuestionSkips';
+import { gameName, share } from '../pages/TeacherQuestionSkips';
 import { isTeacherFocus, skillList, skillShortLabel, type MathsFocus } from '../../shared/maths/focus';
 import { useTeacherClass } from './TeacherClass';
 import '../pages/teacher-page.css';
@@ -138,10 +138,12 @@ export function TeacherStudents() {
 
 // ---------------------------------------------------------------- the class roster
 
-type SortKey = 'name' | 'real' | 'year' | 'active' | 'shown' | 'skipped' | 'ladder' | 'focus';
-const SORT_KEYS: readonly SortKey[] = ['name', 'real', 'year', 'active', 'shown', 'skipped', 'ladder', 'focus'];
+type SortKey = 'name' | 'real' | 'year' | 'active' | 'today' | 'shown' | 'skipped' | 'ladder' | 'focus';
+const SORT_KEYS: readonly SortKey[] = ['name', 'real', 'year', 'active', 'today', 'shown', 'skipped', 'ladder', 'focus'];
 type Years = Record<string, StudentYear>;
 
+/** Questions shown today, across every game. */
+export const todayTotal = (s: RosterStudent) => s.today.reduce((sum, g) => sum + g.shown, 0);
 const skipShare = (s: RosterStudent) => (s.shown > 0 ? s.skipped / s.shown : -1);
 const byText = (a: string, b: string) => a.localeCompare(b, 'en-NZ', { sensitivity: 'base', numeric: true });
 
@@ -157,6 +159,8 @@ function compare(key: SortKey, a: RosterStudent, b: RosterStudent, years: Years)
     case 'active':
       // Never played sorts as the oldest.
       return Date.parse(a.lastActive ?? '1970-01-01') - Date.parse(b.lastActive ?? '1970-01-01');
+    case 'today':
+      return todayTotal(a) - todayTotal(b);
     case 'shown':
       return a.shown - b.shown;
     case 'skipped':
@@ -169,7 +173,7 @@ function compare(key: SortKey, a: RosterStudent, b: RosterStudent, years: Years)
 }
 
 /** Numbers and dates start with the biggest (newest) first; words start at A. */
-const firstWay = (key: SortKey): 'ascending' | 'descending' => (['active', 'shown', 'skipped'].includes(key) ? 'descending' : 'ascending');
+const firstWay = (key: SortKey): 'ascending' | 'descending' => (['active', 'today', 'shown', 'skipped'].includes(key) ? 'descending' : 'ascending');
 
 function ClassRoster({ classId, name, hideReal }: { classId: string; name: string; hideReal: boolean }) {
   const [students, setStudents] = useState<RosterStudent[] | null>(null);
@@ -278,13 +282,14 @@ function ClassRoster({ classId, name, hideReal }: { classId: string; name: strin
           </p>
           <div className="roster__scroll">
           <table className="stats-table roster">
-            <caption className="sr-only">Students in {name}. Questions and skips are for the last 7 days.</caption>
+            <caption className="sr-only">Students in {name}. Today shows each game they played today and its questions. Questions and skips are for the last 7 days.</caption>
             <thead>
               <tr>
                 {head('name', 'Student')}
                 {!hideReal && head('real', 'Real name')}
                 {head('year', 'Year')}
                 {head('active', 'Last active')}
+                {head('today', 'Today: games (questions)')}
                 {head('shown', 'Questions (7 days)')}
                 {head('skipped', 'Skipped')}
                 {head('ladder', 'Maths ladder')}
@@ -296,7 +301,7 @@ function ClassRoster({ classId, name, hideReal }: { classId: string; name: strin
                 <tr key={s.id} className={s.hidden ? 'is-hidden' : undefined}>
                   <th scope="row">
                     <Link to={s.id} className="roster__student">
-                      <AvatarImage avatar={s.avatar} size={32} />
+                      <AvatarImage avatar={s.avatar} size={26} />
                       <span>{s.name}</span>
                     </Link>
                     {s.hidden && <span className="tag tag--hidden">Hidden</span>}
@@ -320,7 +325,20 @@ function ClassRoster({ classId, name, hideReal }: { classId: string; name: strin
                       )}
                     </select>
                   </td>
-                  <td>{s.lastActive ? whenPlayed(s.lastActive) : 'Not yet'}</td>
+                  <td className="roster__nowrap">{s.lastActive ? whenPlayed(s.lastActive) : 'Not yet'}</td>
+                  <td className="roster__today">
+                    {s.today.length === 0 ? (
+                      <span className="roster__none">–</span>
+                    ) : (
+                      <ul aria-label={`${todayTotal(s)} questions today`}>
+                        {s.today.map((g) => (
+                          <li key={g.game}>
+                            {gameName(g.game)} <b>{g.shown}</b>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </td>
                   <td>{s.shown}</td>
                   <td>{share(s.skipped, s.shown)}</td>
                   <td>
@@ -332,7 +350,7 @@ function ClassRoster({ classId, name, hideReal }: { classId: string; name: strin
                       ladderText(s.focus)
                     )}
                   </td>
-                  <td>{focusText(s.focus)}</td>
+                  <td className="roster__focus">{focusText(s.focus)}</td>
                 </tr>
               ))}
             </tbody>
