@@ -240,6 +240,10 @@
   "text": "How long can you last? Pick up gems to grow stronger. Choose your powers. The Goblin King is coming at the end. How long can you last?"
  },
  {
+  "slug": "the-storm-gate-opens-up-in-the-clouds-a-great-stone-gate-creaks-open-behind-it-the-storm-is-still-swirling-over-five-strange-lands-nobody-has-ever-seen-the-bell-rings-again-heroes-come-quickly",
+  "text": "The Storm Gate opens. Up in the clouds, a great stone gate creaks open. Behind it the storm is still swirling, over five strange lands nobody has ever seen. The bell rings again. Heroes, come quickly!"
+ },
+ {
   "slug": "the-last-guard-when-the-goblins-came-every-guard-ran-away-except-one-the-knight-just-stood-at-the-gate-folded-their-arms-and-said-no",
   "text": "The last guard. When the goblins came, every guard ran away except one. The Knight just stood at the gate, folded their arms, and said, \"No.\""
  },
@@ -352,6 +356,26 @@
   "text": "The Lava Mines. Deep under the mountain, the rocks glow red hot. The last of the storm is here, and so is the biggest boss of all: the Fire Dragon."
  },
  {
+  "slug": "the-sunken-kingdom-under-the-waves-lies-a-kingdom-of-coral-castles-sea-raiders-guard-it-jellyfish-glow-in-the-dark-and-somewhere-deep-below-the-kraken-is-tapping-all-eight-feet",
+  "text": "The Sunken Kingdom. Under the waves lies a kingdom of coral castles. Sea raiders guard it, jellyfish glow in the dark, and somewhere deep below, the Kraken is tapping all eight feet."
+ },
+ {
+  "slug": "the-sky-citadel-a-castle-floats-on-the-clouds-and-the-floor-fizzes-with-lightning-when-a-ring-starts-to-glow-under-your-feet-move-the-storm-giant-is-waiting-above",
+  "text": "The Sky Citadel. A castle floats on the clouds, and the floor fizzes with lightning. When a ring starts to glow under your feet, move! The Storm Giant is waiting above."
+ },
+ {
+  "slug": "the-crystal-caverns-everything-in-this-cave-sparkles-even-the-monsters-break-a-big-one-and-it-shatters-into-little-ones-the-crystal-wyrm-is-coiled-in-the-deepest-cave",
+  "text": "The Crystal Caverns. Everything in this cave sparkles, even the monsters. Break a big one and it shatters into little ones. The Crystal Wyrm is coiled in the deepest cave."
+ },
+ {
+  "slug": "the-shadow-swamp-the-fog-here-is-so-thick-you-can-barely-see-your-own-boots-wisps-giggle-in-the-dark-and-three-pairs-of-glowing-eyes-watch-from-the-water",
+  "text": "The Shadow Swamp. The fog here is so thick you can barely see your own boots. Wisps giggle in the dark, and three pairs of glowing eyes watch from the water."
+ },
+ {
+  "slug": "the-storm-king-s-citadel-at-last-the-castle-at-the-heart-of-the-storm-the-goblin-storm-was-never-just-a-storm-it-was-the-storm-king-and-he-is-very-very-grumpy",
+  "text": "The Storm King’s Citadel. At last: the castle at the heart of the storm. The Goblin Storm was never just a storm. It was the Storm King, and he is very, very grumpy."
+ },
+ {
   "slug": "the-goblin-king-runs-the-goblin-king-drops-his-club-grabs-his-saucepan-crown-and-runs-off-with-his-tail-between-his-legs-the-storm-blows-on-towards-the-forest",
   "text": "The Goblin King runs! The Goblin King drops his club, grabs his saucepan crown, and runs off with his tail between his legs. The storm blows on towards the forest."
  },
@@ -370,6 +394,26 @@
  {
   "slug": "the-storm-is-over-the-fire-dragon-dives-into-the-lava-and-is-gone-the-green-storm-fizzles-into-a-rainbow-the-castle-bell-rings-and-this-time-it-rings-for-you",
   "text": "The storm is over! The Fire Dragon dives into the lava and is gone. The green storm fizzles into a rainbow. The castle bell rings, and this time it rings for you!"
+ },
+ {
+  "slug": "the-kraken-lets-go-the-kraken-lets-go-of-the-sunken-ship-blows-a-huffy-cloud-of-bubbles-and-swims-off-into-the-deep-the-fish-cheer-the-storm-rises-up-into-the-sky",
+  "text": "The Kraken lets go. The Kraken lets go of the sunken ship, blows a huffy cloud of bubbles, and swims off into the deep. The fish cheer. The storm rises up into the sky."
+ },
+ {
+  "slug": "the-giant-sits-down-with-a-bump-on-his-head-and-his-club-snapped-in-two-the-storm-giant-sits-down-on-a-cloud-for-a-little-sulk-blue-sky-peeks-through-the-storm-sinks-into-the-caves",
+  "text": "The Giant sits down. With a bump on his head and his club snapped in two, the Storm Giant sits down on a cloud for a little sulk. Blue sky peeks through. The storm sinks into the caves."
+ },
+ {
+  "slug": "the-wyrm-sleeps-the-crystal-wyrm-curls-up-in-a-glittering-heap-and-starts-to-snore-every-snore-makes-the-crystals-ring-like-bells-the-storm-creeps-off-into-the-swamp",
+  "text": "The Wyrm sleeps. The Crystal Wyrm curls up in a glittering heap and starts to snore. Every snore makes the crystals ring like bells. The storm creeps off into the swamp."
+ },
+ {
+  "slug": "the-fog-lifts-the-shadow-hydra-slides-under-the-water-with-three-sulky-splashes-the-sun-comes-out-the-fog-melts-away-and-the-frogs-sing-only-one-castle-is-left",
+  "text": "The fog lifts. The Shadow Hydra slides under the water with three sulky splashes. The sun comes out, the fog melts away, and the frogs sing. Only one castle is left."
+ },
+ {
+  "slug": "the-storm-king-is-beaten-the-storm-king-bursts-into-the-biggest-rainbow-anyone-has-ever-seen-the-goblins-throw-their-hats-in-the-air-for-the-first-time-in-forever-the-sky-is-clear-storm-breaker",
+  "text": "The Storm King is beaten! The Storm King bursts into the biggest rainbow anyone has ever seen. The goblins throw their hats in the air. For the first time in forever, the sky is clear. Storm Breaker!"
  },
  {
   "slug": "the-village-of-lanterns-hollowbrook-was-a-happy-village-every-night-a-hundred-lanterns-glowed-along-its-streets-and-the-bakery-smelled-of-warm-bread",
