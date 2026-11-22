@@ -57,7 +57,7 @@ Same shape as section 1, our own code, numbers in plain units (1 lane = 1.0 wide
 | Crash | explode above a speed limit when hitting a wall face | limit raised from 1/3 to **1/2 of top speed**; slower hits just stop you with a "bonk" |
 | Wall nudge | push sideways when clipping a corner | push a bit further so it reads clearly |
 | Ledge slip | slide off half-landed edges | none (it's what makes landings feel real) |
-| Bounce | half-speed bounce on hard landings | none |
+| Bounce | half-speed bounce on hard landings | **off** (James, 23 Nov 2026: "it feels strange"): every landing sticks; `BOUNCE_ON` in config.ts |
 | Auto-Pilot | jump helper tries ±10% … ±60% | same, shown as a dashboard light; off in hard mode |
 | Battery | drains with speed | tuned so a careful first run never runs out |
 | Signal | drains with time | tuned so dawdling, not careful driving, runs it out |
