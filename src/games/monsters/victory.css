@@ -111,6 +111,35 @@
 .mv-gain { font-size: 1.3rem; font-weight: 900; color: #a5f3fc; text-shadow: 0 0 10px #22d3ee; font-variant-numeric: tabular-nums; }
 .mv-evo { font-weight: 900; color: #f0abfc; animation: mv-pop 0.5s ease-out both; }
 
+/* Prizes: gold tickets that bounce in one after another, with a sweep of light across them. */
+.mv-loot { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: min(92vw, 900px); }
+.mv-prize {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 18px 8px 10px;
+  border: 3px solid #fde047;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #fef3c7, #fbbf24);
+  color: #422006;
+  font-size: 1.2rem;
+  font-weight: 900;
+  box-shadow: 0 4px 0 #92400e, 0 0 22px rgba(253, 224, 71, 0.75);
+  animation: mv-prize 0.6s cubic-bezier(0.2, 1.6, 0.4, 1) var(--d, 0ms) both;
+}
+.mv-prize::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.85) 50%, transparent 65%) -150% 0 / 250% 100% no-repeat;
+  animation: mv-sweep 2.4s ease-in-out calc(var(--d, 0ms) + 0.5s) infinite;
+}
+.mv-prize__icon { font-size: 1.7rem; line-height: 1; animation: mv-bob 1.4s ease-in-out calc(var(--d, 0ms) + 0.6s) infinite; }
+@keyframes mv-prize { 0% { scale: 0.2; opacity: 0; rotate: -8deg; } 70% { scale: 1.12; opacity: 1; rotate: 2deg; } 100% { scale: 1; rotate: 0deg; } }
+@keyframes mv-sweep { 0%, 55% { background-position: 150% 0; } 100% { background-position: -150% 0; } }
+
 .mv-questions { margin: 0; font-size: 1.1rem; font-weight: 800; color: #fef9c3; animation: mv-pop 0.5s ease-out 0.9s both; }
 .mv-questions span { color: #fde047; }
 .mv-go { min-width: 220px; animation: mv-pop 0.4s ease-out 0.6s both; }
@@ -145,6 +174,8 @@
   .mv-card { padding: 6px 8px 8px; }
   .mv-card__art { height: 70px; }
   .mv-card__art .mon-art { width: 70px !important; height: 70px !important; }
+  .mv-prize { font-size: 1rem; padding: 4px 12px 4px 8px; }
+  .mv-prize__icon { font-size: 1.3rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   .mv, .mv::before, .mv *, .mv *::before { animation: none !important; transition: none !important; }

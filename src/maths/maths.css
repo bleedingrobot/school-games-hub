@@ -224,6 +224,25 @@
   font-weight: 900;
   cursor: pointer;
 }
+.question__choice:has(.question__choice-key) {
+  position: relative;
+}
+/* The key that picks this choice (games that turn choiceKeys on). */
+.question__choice-key {
+  position: absolute;
+  left: 8px;
+  top: 6px;
+  min-width: 1.5em;
+  padding: 1px 5px;
+  border: 2px solid var(--q-key-edge);
+  border-radius: 7px;
+  background: #f1f5f9;
+  color: #475569;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
 .question__choice:hover:not(:disabled) {
   border-color: var(--q-ink);
 }

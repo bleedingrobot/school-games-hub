@@ -391,11 +391,29 @@ export function WorldGame({
     ctrl.current!.tap(tx, ty);
   };
 
+  /** The map after a battle, and what it earned. Pure, so the Victory page can show the prizes before they are given. */
+  const settle = (result: BattleResult) => {
+    const trainer = scene.kind === 'battle' ? scene.trainer : undefined;
+    const giant = scene.kind === 'battle' ? scene.giant : undefined;
+    const foes = scene.kind === 'battle' ? scene.setup.foes : [];
+    return finishBattle(ctrl.current!.state, { ...result, foes: foes.map((f) => f.species), ...(result.outcome === 'caught' ? { caught: foes[0] } : {}), ...(giant ? { giant } : {}) }, trainer, opts);
+  };
+  /** The prize lines for the Victory page: a trainer's items, a badge, then bits and quest news. */
+  const prizeFor = (result: BattleResult): string[] => {
+    if (result.outcome === 'lost' || result.outcome === 'ran') return [];
+    const trainer = scene.kind === 'battle' ? scene.trainer : undefined;
+    const { prize } = settle(result);
+    return [
+      ...(prize.loot && trainer ? [`${trainer.name} gave you ${describeLoot(prize.loot)}.`] : []),
+      ...(prize.badge ? [`You earned the ${badgeName(prize.badge)}!`] : []),
+      ...(prize.lines ?? []),
+    ];
+  };
+
   const onBattleDone = (result: BattleResult) => {
     const c = ctrl.current!;
     const trainer = scene.kind === 'battle' ? scene.trainer : undefined;
     const giant = scene.kind === 'battle' ? scene.giant : undefined;
-    const foes = scene.kind === 'battle' ? scene.setup.foes : [];
     if (scene.kind === 'battle') {
       live.current.onBattle?.(
         {
@@ -405,28 +423,17 @@ export function WorldGame({
         trainer,
       );
     }
-    const { state: next, prize } = finishBattle(c.state, { ...result, foes: foes.map((f) => f.species), ...(result.outcome === 'caught' ? { caught: foes[0] } : {}), ...(giant ? { giant } : {}) }, trainer, opts);
+    const { state: next } = settle(result);
     c.jump(next);
     setScene({ kind: 'walk' });
     if (result.outcome === 'lost') {
       showTalk({ speaker: undefined, pages: ['Your team is tired, so you hurried back to your last healing spot. Everyone is rested and nothing was lost!'] });
       return;
     }
-    const questNews = prize.lines?.length ? () => showTalk({ pages: prize.lines! }) : undefined;
-    // A trainer you have beaten says so, then pays: items the first time, and a badge for a Tower trainer.
+    // The prizes were shown on the Victory page; a beaten trainer still has their say.
     if (result.outcome === 'won' && trainer) {
-      const prizeLines = [
-        ...(prize.loot ? [`${trainer.name} gave you ${describeLoot(prize.loot)}.`] : []),
-        ...(prize.badge ? [`You earned the ${badgeName(prize.badge)}!`] : []),
-      ];
-      const afterWords = prizeLines.length
-        ? () => {
-            cue(prize.badge ? 'badge' : 'chest');
-            showTalk({ pages: prizeLines, after: questNews });
-          }
-        : questNews;
-      showTalk({ speaker: trainer.name, pages: trainer.winPages?.length ? trainer.winPages : ['Well battled!'], after: afterWords });
-    } else questNews?.();
+      showTalk({ speaker: trainer.name, pages: trainer.winPages?.length ? trainer.winPages : ['Well battled!'] });
+    }
   };
 
   const map = maps[world.map];
@@ -465,6 +472,7 @@ export function WorldGame({
           settings={settings}
           onSettingsChange={(s) => onSettingsChange({ ...settings, ...s })}
           onFinish={onBattleDone}
+          prizeFor={prizeFor}
           random={random}
           packFor={packFor}
           timeScale={timeScale}
