@@ -4,7 +4,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh goblinstorm, then scripts/scratch-test.sh goblinstorm supabase/tests/database/goblinstorm.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(84);
+select plan(86);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -99,7 +99,7 @@ select is((select bosses from public.goblinstorm_saves where player = pg_temp.id
 
 -- A pupil who has started but never finished a run.
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz');
-select is(public.my_goblinstorm() - 'today', '{"gold": 0, "shop": {}, "heroes": [], "bosses": [], "codex": [], "weapons": [], "runs": 0, "kills": 0, "guideSeen": false, "bestGold": 0}'::jsonb,
+select is(public.my_goblinstorm() - 'today' - 'unlimited', '{"gold": 0, "shop": {}, "heroes": [], "bosses": [], "codex": [], "weapons": [], "runs": 0, "kills": 0, "guideSeen": false, "bestGold": 0}'::jsonb,
   'a pupil with no finished run gets an empty save, never anyone else''s');
 select pg_temp.reset();
 
@@ -173,7 +173,7 @@ select pg_temp.reset();
 -- ---- my_goblinstorm: the caller's own save only ----
 select pg_temp.reset();
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
-select is(public.my_goblinstorm() - 'today', '{"gold": 45, "shop": {}, "heroes": ["cleric", "wizard", "barbarian", "rogue", "dragonkid"], "bosses": [0, 1], "codex": ["arrows", "blades", "fireball"], "weapons": ["arrows", "axes", "blades", "fireball"], "runs": 3, "kills": 20280, "guideSeen": false, "bestGold": 30}'::jsonb,
+select is(public.my_goblinstorm() - 'today' - 'unlimited', '{"gold": 45, "shop": {}, "heroes": ["cleric", "wizard", "barbarian", "rogue", "dragonkid"], "bosses": [0, 1], "codex": ["arrows", "blades", "fireball"], "weapons": ["arrows", "axes", "blades", "fireball"], "runs": 3, "kills": 20280, "guideSeen": false, "bestGold": 30}'::jsonb,
   'a pupil reads their own save');
 select pg_temp.reset();
 select set_config('role', 'anon', true);
@@ -190,9 +190,18 @@ select is((select guide_seen from public.goblinstorm_saves where player = pg_tem
 insert into auth.users (id, email) values ('00000000-0000-0000-0000-00000000000c', 'cat@douglaspark.school.nz');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'cat@douglaspark.school.nz');
 select public.goblinstorm_guide_seen();
-select is(public.my_goblinstorm() - 'today', '{"gold": 0, "shop": {}, "heroes": [], "bosses": [], "codex": [], "weapons": [], "runs": 0, "kills": 0, "guideSeen": true, "bestGold": 0}'::jsonb,
+select is(public.my_goblinstorm() - 'today' - 'unlimited', '{"gold": 0, "shop": {}, "heroes": [], "bosses": [], "codex": [], "weapons": [], "runs": 0, "kills": 0, "guideSeen": true, "bestGold": 0}'::jsonb,
   'a brand-new pupil can note the guide before any run: an empty save that remembers it');
 select pg_temp.reset();
+-- Unlimited today in the save (migration 20261122001100): the class switch or the pupil's own Bonus Turns Day.
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'cat@douglaspark.school.nz');
+select is(public.my_goblinstorm() -> 'unlimited', 'false'::jsonb, 'the save says runs are not unlimited on a normal day');
+select pg_temp.reset();
+insert into public.bonus_turns (player, game, day) values (pg_temp.id('0c'), 'goblinstorm', (now() at time zone 'Pacific/Auckland')::date);
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'cat@douglaspark.school.nz');
+select is(public.my_goblinstorm() -> 'unlimited', 'true'::jsonb, '... and that they are on the pupil''s own Bonus Turns Day');
+select pg_temp.reset();
+delete from public.bonus_turns where player = pg_temp.id('0c');
 
 -- ---- The Storm Lands (migration 20261122000400): maps 5 to 9, the Legendary row, Storm Gate, Storm Breaker ----
 select pg_temp.act_as_server();
