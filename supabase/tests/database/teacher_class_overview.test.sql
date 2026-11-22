@@ -70,6 +70,12 @@ insert into public.question_log (player, game, spot, skipped, shown_ms, at) valu
   (pg_temp.id('10'), 'mine', 'door', true, 4000, now() - interval '1 hour'),
   (pg_temp.id('10'), 'mine', 'door', true, 4000, now() - interval '1 hour'),
   (pg_temp.id('10'), 'mine', 'door', true, 4000, now() - interval '1 hour');
+-- Cat's games today, worked out here (the teacher can't read question_log), so the check holds just after midnight too.
+select set_config('test.cat_today', (
+  select coalesce(jsonb_agg(jsonb_build_object('game', t.game, 'shown', t.n) order by t.game), '[]')::text
+  from (select q.game, count(*)::integer as n from public.question_log q
+        where q.player = pg_temp.id('0c') and (q.at at time zone 'Pacific/Auckland')::date = (now() at time zone 'Pacific/Auckland')::date
+        group by q.game) t), true);
 
 -- ---- Who can call them ----
 select pg_temp.ana();
@@ -111,10 +117,7 @@ select is(pg_temp.row_of(pg_temp.overview(), pg_temp.id('0c')) ->> 'realName', '
 select is(pg_temp.row_of(pg_temp.overview(), pg_temp.id('0c')) -> 'focus' ->> 'source', 'auto', '... and her maths focus');
 select ok(pg_temp.row_of(pg_temp.overview(), pg_temp.id('0c')) -> 'focus' ? 'ladder', '... with her ladder place');
 select is((select coalesce(jsonb_agg(g order by g ->> 'game'), '[]') from jsonb_array_elements(pg_temp.row_of(pg_temp.overview(), pg_temp.id('0c')) -> 'today') g),
-  (select coalesce(jsonb_agg(jsonb_build_object('game', t.game, 'shown', t.n) order by t.game), '[]')
-   from (select q.game, count(*)::integer as n from public.question_log q
-         where q.player = pg_temp.id('0c') and (q.at at time zone 'Pacific/Auckland')::date = (now() at time zone 'Pacific/Auckland')::date
-         group by q.game) t),
+  current_setting('test.cat_today')::jsonb,
   '... and her games today, with the questions in each (the school''s day)');
 select is((pg_temp.row_of(pg_temp.overview(), pg_temp.id('0d')) ->> 'shown')::integer, 0, 'Dan was shown none');
 select is(pg_temp.row_of(pg_temp.overview(), pg_temp.id('0d')) -> 'today', '[]'::jsonb, '... and played no games today');
