@@ -1,7 +1,8 @@
 /**
  * Draws a Circuit Racer road with three.js and bloom (docs/CIRCUIT-PLAN.md, sections 3 and 6): glowing circuit-board tiles
  * from the road grid, chips for blocks, half-pipe data cables for tunnels, a giant port at the finish, a dark computer
- * cosmos behind, and the glowing 3D racer with a spark trail. Loaded only when a race opens (RaceScreen imports it lazily).
+ * cosmos behind, and the glowing 3D racer with a spark trail. Data gates (Stage 3) get an answer sign over each lane, and
+ * after the split the right lane lights up with overclock arrows. Loaded only when a race opens (RaceScreen imports it lazily).
  * It never changes the race: it reads two physics states and draws `alpha` of the way between them.
  *
  * The physics' x is across (lanes 0 to 7), y up and z along the road. The picture uses x − 3.5 across, y up and −z
@@ -14,6 +15,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { BLOCK_HEIGHTS, FLOOR_THICKNESS, LANES, TOP_SPEED, TUNNEL_ROOF } from '../../../shared/circuit/config';
 import type { RaceEvent, RaceState } from '../../../shared/circuit/physics';
+import { signText } from '../../../shared/circuit/maths';
 import { cellAt, type Road } from '../../../shared/circuit/road';
 import { chipTexture, tileTextures, type TileKind } from './textures';
 
@@ -24,6 +26,8 @@ export interface RaceView {
   events(events: readonly RaceEvent[], at: RaceState): void;
   /** A fresh go: the trail and sparks are cleared and the camera jumps back. */
   restart(): void;
+  /** The racer crossed gate `gate`'s split: the right lane's sign glows green and its lane shows overclock arrows. */
+  gateResult(gate: number, rightLane: number): void;
   resize(width: number, height: number): void;
   /** Drop to the lighter look (no bloom, fewer pixels) on a slow device. False if already there. */
   lower(): boolean;
@@ -35,7 +39,11 @@ const X = (x: number) => x - HALF;
 const CELL_KIND: Record<string, TileKind> = { '-': 'trace', '>': 'overclock', r: 'resistor', x: 'short', g: 'gel', '+': 'recharge', t: 'tunnel', '?': 'trace' };
 const CHIP_COLOURS = { '1': '#22d3ee', '2': '#e879f9', '3': '#facc15' } as const;
 
-export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduced: boolean; low?: boolean }): RaceView {
+/**
+ * `gates`: with maths on, what each gate lane's sign shows (as `road.gates[g].lanes`; null: no sign); gate lanes then look like
+ * plain trace until the split. Null with maths off: every gate lane is overclock and looks it.
+ */
+export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduced: boolean; low?: boolean; gates?: readonly (readonly (string | null)[])[] | null }): RaceView {
   const disposables: { dispose(): void }[] = [];
   const own = <T extends { dispose(): void }>(thing: T): T => (disposables.push(thing), thing);
   let low = opts.low ?? false;
@@ -76,6 +84,7 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
       const c = cellAt(road, lane, row);
       if (c === '.') continue;
       if (c === '1' || c === '2' || c === '3') blocks[c].push([lane, row]);
+      else if (c === '?') cells[opts.gates ? 'trace' : 'overclock'].push([lane, row]);
       else cells[CELL_KIND[c]].push([lane, row]);
       if (c === 't') cables.push([lane, row]);
       if (c === '+' && cellAt(road, lane, row - 1) !== '+') rings.push([lane, row]);
@@ -123,6 +132,65 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
   // Recharge rings: an upright blue ring at the start of each port.
   const ringMat = own(new THREE.MeshBasicMaterial({ color: new THREE.Color('#38bdf8').multiplyScalar(1.8) }));
   instanced(own(new THREE.TorusGeometry(0.42, 0.05, 8, 24)), ringMat, rings, (lane, row) => m.makeTranslation(X(lane + 0.5), 0.5, -(row + 0.1)));
+
+  // Data gates: an arch over the split with an answer sign above each lane (readable at speed: big, dark plate, bright text),
+  // and overclock arrows on the right lane, shown once the racer has crossed the split.
+  const gateSigns: { lane: number; mat: THREE.MeshBasicMaterial }[][] = [];
+  const gateArrows: THREE.Object3D[][] = [];
+  if (opts.gates) {
+    const signGeo = own(new THREE.PlaneGeometry(0.94, 0.62));
+    const arrowGeo = own(new THREE.PlaneGeometry(0.96, 1));
+    const arrowMat = own(new THREE.MeshBasicMaterial({ map: textures.overclock, color: new THREE.Color('#ffffff').multiplyScalar(1.3), transparent: true, depthWrite: false }));
+    const archMat = own(new THREE.MeshBasicMaterial({ color: new THREE.Color('#a78bfa').multiplyScalar(1.6) }));
+    const barGeo = own(new THREE.BoxGeometry(1, 1, 1));
+    road.gates.forEach((gate, g) => {
+      const labels = opts.gates?.[g] ?? [];
+      const z = -(gate.first - 0.6);
+      const left = Math.min(...gate.lanes);
+      const right = Math.max(...gate.lanes) + 1;
+      const arch = new THREE.Group();
+      for (const [w, h, x, y] of [[right - left + 0.2, 0.08, (X(left) + X(right)) / 2, 1.82], [0.08, 1.82, X(left) - 0.05, 0.91], [0.08, 1.82, X(right) + 0.05, 0.91]] as const) {
+        const bar = new THREE.Mesh(barGeo, archMat);
+        bar.scale.set(w, h, 0.08);
+        bar.position.set(x, y, z);
+        arch.add(bar);
+      }
+      scene.add(arch);
+      const signs: { lane: number; mat: THREE.MeshBasicMaterial }[] = [];
+      gate.lanes.forEach((lane, i) => {
+        const label = labels[i];
+        if (label === null || label === undefined) return;
+        const tex = own(signTexture(label));
+        const mat = own(new THREE.MeshBasicMaterial({ map: tex, transparent: true, toneMapped: false }));
+        const sign = new THREE.Mesh(signGeo, mat);
+        sign.position.set(X(lane + 0.5), 1.35, z);
+        scene.add(sign);
+        // The same answer painted on the lane's floor at the split, for a racer looking down.
+        const floor = new THREE.Mesh(signGeo, mat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.set(X(lane + 0.5), 0.01, -(gate.first + 1.2));
+        scene.add(floor);
+        signs.push({ lane, mat });
+      });
+      gateSigns.push(signs);
+      const arrows: THREE.Object3D[] = [];
+      for (const lane of gate.lanes) {
+        const group = new THREE.Group();
+        for (let row = gate.first; row <= gate.last; row++) {
+          if (cellAt(road, lane, row) !== '?') continue;
+          const a = new THREE.Mesh(arrowGeo, arrowMat);
+          a.rotation.x = -Math.PI / 2;
+          a.position.set(X(lane + 0.5), 0.005, -(row + 0.5));
+          group.add(a);
+        }
+        group.visible = false;
+        group.userData.lane = lane;
+        scene.add(group);
+        arrows.push(group);
+      }
+      gateArrows.push(arrows);
+    });
+  }
 
   // The finish: a giant glowing port to dive into.
   const port = new THREE.Group();
@@ -347,7 +415,13 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
         else if (e === 'autopilot') burst(at, 14, '#f0abfc', 2);
       }
     },
+    gateResult(gate, rightLane) {
+      for (const sign of gateSigns[gate] ?? []) sign.mat.color.set(sign.lane === rightLane ? '#86efac' : '#475569');
+      for (const a of gateArrows[gate] ?? []) a.visible = a.userData.lane === rightLane;
+    },
     restart() {
+      for (const signs of gateSigns) for (const sign of signs) sign.mat.color.set('#ffffff');
+      for (const arrows of gateArrows) for (const a of arrows) a.visible = false;
       history.length = 0;
       sparkLife.fill(0);
       sparkCol.fill(0);
@@ -378,6 +452,50 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
       renderer.dispose();
     },
   };
+}
+
+/** A gate sign: a dark plate with a glowing rim and the answer in big bright text (fractions stacked). */
+function signTexture(label: string): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 384;
+  c.height = 252;
+  const g = c.getContext('2d');
+  if (g) {
+    g.fillStyle = 'rgba(6, 10, 30, 0.92)';
+    g.strokeStyle = '#c4b5fd';
+    g.lineWidth = 12;
+    g.beginPath();
+    g.roundRect(8, 8, c.width - 16, c.height - 16, 28);
+    g.fill();
+    g.stroke();
+    g.fillStyle = '#f8fafc';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    const t = signText(label);
+    const fit = (text: string, size: number, max: number) => {
+      let s = size;
+      g.font = `800 ${s}px system-ui, sans-serif`;
+      while (s > 30 && g.measureText(text).width > max) g.font = `800 ${(s -= 6)}px system-ui, sans-serif`;
+    };
+    if (t.kind === 'text') {
+      fit(t.text, 150, c.width - 50);
+      g.fillText(t.text, c.width / 2, c.height / 2 + 6);
+    } else {
+      const cx = t.whole ? c.width / 2 + 50 : c.width / 2;
+      if (t.whole) {
+        fit(t.whole, 140, 120);
+        g.fillText(t.whole, c.width / 2 - 70, c.height / 2 + 6);
+      }
+      fit(`${t.top}`, 92, 160);
+      g.fillText(t.top, cx, c.height / 2 - 52);
+      g.fillText(t.bottom, cx, c.height / 2 + 62);
+      g.fillRect(cx - 70, c.height / 2 + 2, 140, 10);
+    }
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
 }
 
 /** A dark navy sky fading to violet at the horizon. */

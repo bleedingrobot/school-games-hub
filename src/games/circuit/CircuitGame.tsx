@@ -4,7 +4,8 @@
  * The server (`backend`) hands out every go and saves every finish; the screens only show what it says.
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { FINISHES_A_DAY, MEDAL_SECONDS, msToNzMidnight, roadById, roadOpen, ROADS, timeText, type CircuitSave, type Medal } from '../../../shared/circuit/game';
+import { extraRoads, FINISHES_A_DAY, MEDAL_SECONDS, msToNzMidnight, roadById, roadOpen, ROADS, timeText, type CircuitSave, type Medal } from '../../../shared/circuit/game';
+import type { RunMaths } from '../../../shared/circuit/maths';
 import type { RaceState } from '../../../shared/circuit/physics';
 import { useSound } from '../../sound';
 import { CircuitError, type CircuitBackend, type FinishReply } from './backend';
@@ -14,7 +15,7 @@ import './circuit.css';
 
 type Screen =
   | { kind: 'roads' }
-  | { kind: 'race'; road: string; seed: string; stamp: string; go: number }
+  | { kind: 'race'; road: string; seed: string; stamp: string; go: number; maths: RunMaths | null }
   | { kind: 'saving'; road: string }
   | { kind: 'finish'; road: string; reply: FinishReply; was: number | null }
   | { kind: 'done' }
@@ -31,6 +32,8 @@ export function CircuitGame({ backend, extra }: { backend: CircuitBackend; extra
   const [screen, setScreen] = useState<Screen>({ kind: 'roads' });
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // "Pupils choose" maths: this pupil's pick (on to start).
+  const [wantMaths, setWantMaths] = useState(true);
   const goCount = useRef(0);
 
   const fail = useCallback((e: unknown) => {
@@ -51,15 +54,15 @@ export function CircuitGame({ backend, extra }: { backend: CircuitBackend; extra
     setBusy(true);
     setProblem(null);
     try {
-      const go = await backend.start(road);
+      const go = await backend.start(road, save?.maths === 'choose' ? wantMaths : undefined);
       setSave((s) => (s ? { ...s, left: go.left } : s));
-      setScreen({ kind: 'race', road, seed: go.seed, stamp: go.stamp, go: ++goCount.current });
+      setScreen({ kind: 'race', road, seed: go.seed, stamp: go.stamp, go: ++goCount.current, maths: go.maths ?? null });
     } catch (e) {
       fail(e);
     } finally {
       setBusy(false);
     }
-  }, [backend, busy, fail]);
+  }, [backend, busy, fail, save?.maths, wantMaths]);
 
   const finished = useCallback(async (road: string, seed: string, stamp: string, inputs: string, crashes: number, _state: RaceState) => {
     setScreen({ kind: 'saving', road });
@@ -105,6 +108,8 @@ export function CircuitGame({ backend, extra }: { backend: CircuitBackend; extra
         road={road}
         number={ROADS.findIndex((r) => r.id === screen.road) + 1}
         sound={soundOn}
+        maths={screen.maths}
+        onAnswer={(slot, answer, ms) => backend.answer({ road: screen.road, seed: screen.seed, stamp: screen.stamp, slot, answer, ms })}
         onFinish={(inputs, crashes, state) => finished(screen.road, screen.seed, screen.stamp, inputs, crashes, state)}
         onQuit={() => setScreen({ kind: 'roads' })}
       />
@@ -118,7 +123,7 @@ export function CircuitGame({ backend, extra }: { backend: CircuitBackend; extra
   } else if (screen.kind === 'off') {
     body = <Centre><HubButtons /><h2 className="cr-title" tabIndex={-1}>Circuit Racer is switched off</h2><p className="cr-sub">Your teacher has switched it off for your class for now.</p></Centre>;
   } else {
-    body = <RoadPicker save={save} busy={busy} onPick={start} problem={problem} extra={extra} />;
+    body = <RoadPicker save={save} busy={busy} onPick={start} problem={problem} extra={extra} wantMaths={wantMaths} onWantMaths={setWantMaths} />;
   }
 
   return <div className="cr-window">{body}</div>;
@@ -141,7 +146,9 @@ function Stars({ clean, charged }: { clean: boolean; charged: boolean }) {
   );
 }
 
-function RoadPicker({ save, busy, onPick, problem, extra }: { save: CircuitSave | null; busy: boolean; onPick: (road: string) => void; problem: string | null; extra?: ReactNode }) {
+function RoadPicker({ save, busy, onPick, problem, extra, wantMaths, onWantMaths }: {
+  save: CircuitSave | null; busy: boolean; onPick: (road: string) => void; problem: string | null; extra?: ReactNode; wantMaths: boolean; onWantMaths: (on: boolean) => void;
+}) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
   // 1 to 6 pick a road.
@@ -188,6 +195,19 @@ function RoadPicker({ save, busy, onPick, problem, extra }: { save: CircuitSave 
             );
           })}
         </ol>
+      )}
+      {save && extraRoads().length > 0 && (
+        <div className="cr-testroads">
+          {extraRoads().map((r) => (
+            <button key={r.id} type="button" className="cr-btn" disabled={busy} onClick={() => onPick(r.id)}>{r.name}</button>
+          ))}
+        </div>
+      )}
+      {save?.maths === 'choose' && (
+        <label className="cr-mathspick">
+          <input type="checkbox" checked={wantMaths} onChange={(e) => onWantMaths(e.target.checked)} />
+          Maths at recharge ports and data gates
+        </label>
       )}
       <p className="cr-keys">Arrows or W A S D: steer and speed · Space: jump · Enter: go · Esc: back</p>
       {extra}

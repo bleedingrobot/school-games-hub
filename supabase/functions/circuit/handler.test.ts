@@ -1,14 +1,20 @@
 /**
- * The circuit function on the pretend database (shared/circuit/memoryServices.ts). Server tests 1 and 2 of the game's 8
- * (Stage 1 used 3).
+ * The circuit function on the pretend database (shared/circuit/memoryServices.ts). Server tests 1 to 3 of the game's 8
+ * (Stage 1 used 3; Stage 3's other test is shared/circuit/maths.test.ts).
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { botRun } from '../../../shared/circuit/bot';
-import { FINISHES_A_DAY, roadById, stampText } from '../../../shared/circuit/game';
-import { encodeLog } from '../../../shared/circuit/inputs';
+import { HALF_REFILL, TOP_SPEED } from '../../../shared/circuit/config';
+import { allowTestRoad, FINISHES_A_DAY, roadById, stampText } from '../../../shared/circuit/game';
+import { encodeLog, inputCode, makeRecorder } from '../../../shared/circuit/inputs';
+import type { RunMaths } from '../../../shared/circuit/maths';
 import { memoryServices, type MemoryOptions } from '../../../shared/circuit/memoryServices';
+import { newRace, replay, step, type RaceOptions } from '../../../shared/circuit/physics';
+import type { Road } from '../../../shared/circuit/road';
+import { TEST_ROAD } from '../../../shared/circuit/roads/test';
+import { markQuestion } from '../../../shared/maths/serverQuestions';
 import { makeHandler } from './handler';
 
 const NOW = 1_792_000_000_000;
@@ -79,6 +85,71 @@ it('refuses a 6th finish in a New Zealand day unless the class has Unlimited tod
   expect((await send({ action: 'load' })).body.left).toBeNull();
   expect((await send({ action: 'finish', ...late, inputs: INPUTS, crashes: 0 })).body).toMatchObject({ result: 'saved', left: null });
   expect(db.points).toHaveLength(1);
+});
+
+/** Drives the test road at a steady speed, in lane 3 past the port, then into `lanes[g]` for gate g. */
+function driveGates(road: Road, lanes: number[], opts: RaceOptions) {
+  const rec = makeRecorder();
+  let s = newRace(road, opts);
+  while (s.outcome === 'racing' && s.steps < 5000) {
+    const row = Math.floor(s.z);
+    const inGate = road.gateAt[row] ?? -1;
+    const target = row < 20 ? 3 : inGate >= 0 ? lanes[inGate] : (lanes[s.gatesPassed] ?? 3);
+    const turn = s.x < target + 0.4 ? 1 : s.x > target + 0.6 ? -1 : 0;
+    const input = { turn, accel: s.vz < TOP_SPEED * 0.6 ? 1 : 0, jump: false } as const;
+    rec.record(s, inputCode(input));
+    s = step(s, input, road).state;
+  }
+  return { state: s, log: rec.log };
+}
+
+it('marks a port answer once and replays its refill, gives no shortcut for a wrong gate lane, and asks nothing with maths off', async () => {
+  allowTestRoad(TEST_ROAD);
+  const road = roadById(TEST_ROAD.id)!;
+  let clock = NOW;
+  const db = memoryServices({ now: () => clock });
+  const handler = makeHandler(db);
+  const send = async (body: object) => {
+    const r = await handler(new Request('http://x/circuit', { method: 'POST', headers: { Authorization: 'Bearer pupil:ana' }, body: JSON.stringify(body) }));
+    return { status: r.status, body: (await r.json()) as Record<string, unknown> };
+  };
+  const go = await send({ action: 'start', road: road.def.id });
+  const { seed, stamp } = go.body as { seed: string; stamp: string };
+  const maths = go.body.maths as RunMaths;
+  expect([maths.ports.length, maths.gates.length]).toEqual([1, 2]);
+  expect(JSON.stringify(maths)).not.toMatch(/"answer"|factKey/);
+
+  // The port: marked once (the first answer stays), recorded once; a gate can't be answered here.
+  const right = markQuestion(db.questions[`ana:${seed}`].questions[0])!.answer;
+  expect((await send({ action: 'answer', road: road.def.id, seed, stamp, slot: 0, answer: right + 1, ms: 4000 })).body).toEqual({ right: false, answer: right });
+  expect((await send({ action: 'answer', road: road.def.id, seed, stamp, slot: 0, answer: right, ms: 4000 })).status).toBe(400);
+  expect((await send({ action: 'answer', road: road.def.id, seed, stamp, slot: 1, answer: right, ms: 4000 })).status).toBe(400);
+  expect(db.answers.map((a) => a.answers.map((x) => x.correct))).toEqual([[false]]);
+
+  // The right lane at gate 1 is an overclock shortcut; a wrong lane is the normal road, no faster.
+  const gateRight = maths.gates.map((g) => g.rightLane);
+  const wrongLane = road.gates[0].lanes.find((l) => l !== gateRight[0])!;
+  const opts = { refills: [HALF_REFILL], gateRight };
+  const wrongRun = driveGates(road, [wrongLane, gateRight[1]], opts);
+  const rightRun = driveGates(road, gateRight, opts);
+  expect([wrongRun.state.outcome, rightRun.state.outcome]).toEqual(['finished', 'finished']);
+  expect(rightRun.state.steps).toBeLessThan(wrongRun.state.steps);
+
+  // The finish replays with the port's marked refill (half, not full) and marks the lanes: gate 1 wrong, gate 2 right.
+  clock += 200_000;
+  const done = await send({ action: 'finish', road: road.def.id, seed, stamp, inputs: encodeLog(wrongRun.log), crashes: 0 });
+  expect(done.body).toMatchObject({ steps: wrongRun.state.steps, battery: wrongRun.state.battery });
+  expect(replay(road, wrongRun.log, { refills: [1], gateRight }).battery).not.toBe(wrongRun.state.battery);
+  expect(db.answers.map((a) => a.answers.map((x) => x.correct))).toEqual([[false], [false, true]]);
+  await send({ action: 'finish', road: road.def.id, seed, stamp, inputs: encodeLog(wrongRun.log), crashes: 0 });
+  expect(db.answers).toHaveLength(2);
+
+  // Maths off: no questions are made or kept, and ports can't be answered.
+  db.switches.maths = 'off';
+  const plain = await send({ action: 'start', road: road.def.id });
+  expect(plain.body.maths).toBeNull();
+  expect(Object.keys(db.questions)).toHaveLength(1);
+  expect((await send({ action: 'answer', road: road.def.id, seed: plain.body.seed, stamp: plain.body.stamp, slot: 0, answer: 1, ms: 1 })).status).toBe(400);
 });
 
 it('is up to date with the code (run `npm run build:functions -- circuit` if this fails)', async () => {

@@ -1,7 +1,7 @@
 import { lazy } from 'react';
-import { saveCircuitEnabled } from '../../data/circuit';
+import { saveCircuitEnabled, saveCircuitMaths } from '../../data/circuit';
 import type { GameDefinition } from '../types';
-import { CIRCUIT_ABOUT, useCircuitClassSwitch } from './teacher';
+import { CIRCUIT_ABOUT, CIRCUIT_MATHS_ABOUT, useCircuitClassSwitch, useCircuitMaths } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick (three.js loads later still, when a race opens).
 const CircuitPlay = lazy(() => import('./CircuitPlay').then((m) => ({ default: m.CircuitPlay })));
@@ -38,5 +38,6 @@ export const circuitRacer: GameDefinition = {
   teacherSwitch: true,
   teacher: {
     switch: { useValue: useCircuitClassSwitch, save: saveCircuitEnabled, about: CIRCUIT_ABOUT },
+    maths: { useValue: useCircuitMaths, save: (mode, classId) => saveCircuitMaths(mode, classId), about: CIRCUIT_MATHS_ABOUT },
   },
 };
