@@ -30,6 +30,8 @@ export interface RosterStudent {
   /** Questions shown and skipped in the last 7 days. */
   shown: number;
   skipped: number;
+  /** The games they were shown questions in today (school day), most questions first. */
+  today: { game: string; shown: number }[];
   /** Their maths focus now, with their ladder place. */
   focus: MathsFocus;
 }
@@ -56,6 +58,10 @@ export function parseOverview(raw: unknown): RosterStudent[] {
       lastActive: time(s.lastActive),
       shown: count(s.shown),
       skipped: count(s.skipped),
+      today: (Array.isArray(s.today) ? s.today : [])
+        .filter((g): g is { game: string; shown: unknown } => !!g && typeof g === 'object' && typeof (g as { game?: unknown }).game === 'string')
+        .map((g) => ({ game: g.game, shown: count(g.shown) }))
+        .filter((g) => g.shown > 0),
       focus: s.focus ? parseFocus(s.focus) : AUTO_FOCUS,
     }));
 }

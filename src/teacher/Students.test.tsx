@@ -81,6 +81,7 @@ const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString
 const room12 = [
   {
     id: 's1', name: 'Brave Kiwi 7', realName: 'jane.smith', lastActive: daysAgo(0), shown: 20, skipped: 2,
+    today: [{ game: 'dragon-maths', shown: 12 }, { game: 'clan-quest', shown: 3 }, { game: 'bad', shown: 0 }, 'junk'],
     focus: { source: 'teacher-class', skills: ['facts-10'], ladder: { on: true, placed: 'done', placement: 'tables-6-9', furthest: 'tables-6-9' } },
   },
   {
@@ -167,12 +168,12 @@ describe('the class roster', () => {
     expect(order(table)).toEqual(['Brave Kiwi 7', 'Calm Fox 9', 'Lucky Tui 12']);
     expect(screen.queryByText('Zippy Meerkat 79')).not.toBeInTheDocument();
     expect(within(table).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[▲▼]/g, '').trim())).toEqual([
-      'Student', 'Real name', 'Year', 'Last active', 'Questions (7 days)', 'Skipped', 'Maths ladder', 'Focus',
+      'Student', 'Real name', 'Year', 'Last active', 'Today: games (questions)', 'Questions (7 days)', 'Skipped', 'Maths ladder', 'Focus',
     ]);
-    expect(cells(table, 'Brave Kiwi 7')).toEqual(['jane.smith', 'Year 4', 'Today', '20', '10%', '×6', 'Class: Number facts to 10']);
-    expect(cells(table, 'Calm Fox 9')).toEqual(['–', 'Not set', 'Not yet', '5', '100%', 'No warm-up yet', 'None']);
+    expect(cells(table, 'Brave Kiwi 7')).toEqual(['jane.smith', 'Year 4', 'Today', 'Dragon Maths 12Clan Quest 3', '20', '10%', '×6', 'Class: Number facts to 10']);
+    expect(cells(table, 'Calm Fox 9')).toEqual(['–', 'Not set', 'Not yet', '–', '5', '100%', 'No warm-up yet', 'None']);
     const tui = cells(table, 'Lucky Tui 12');
-    expect(tui.slice(3)).toEqual(['0', '–', 'Warm-up skipped', 'Own: Number facts to 10']);
+    expect(tui.slice(4)).toEqual(['0', '–', 'Warm-up skipped', 'Own: Number facts to 10']);
     expect(within(table).getByRole('row', { name: /Lucky Tui 12/ })).toHaveTextContent('Hidden');
     expect(within(table).getByRole('link', { name: /Brave Kiwi 7/ })).toHaveAttribute('href', '/teacher/c12/students/s1');
     expect(within(table).getByRole('link', { name: '×6' })).toHaveAttribute('href', '/teacher/c12/maths/skills?pupil=s1');
