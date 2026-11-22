@@ -1,6 +1,6 @@
 # Circuit Racer: plan
 
-**Status: Stage 3 done, live but switched off (code switch OFF): the maths. Recharge ports pause the race for one question (right = full battery and signal, wrong or skipped = half, part of the server's replay); data gates (from world 2) sign 2 to 4 lanes with answers, the lane at the split is the answer and the right lane is an overclock shortcut; the teacher's maths switch (`circuit_maths`, on by default) and Circuit Racer in the Skill map. Migration `20261123000100_circuit_maths.sql`. Plan PR #733, choices #734, Stage 1 #738, Stage 2 #739, world 1 redrawn #740, no bounce #741, Stage 3 (23 Nov 2026). Next: Stage 4, worlds 2 to 5 (prompt in `docs/prompts/circuit-s4.md`).** James picked the theme "Circuit Racer" from six new-theme ideas (deep sea, lava, sweets, aurora, circuit, ghost train) on 22 Nov 2026. Game id `circuit`. Next free migration number when written: `20261122000800` on 22 Nov (check again before Stage 2: `node scripts/migration-numbers.mjs`).
+**Status: Stage 4 done, live but switched off (code switch OFF): worlds 2 to 5 (24 new roads: Graphics Card, Memory Lanes, The Cloud, Quantum Core), worlds opening at 4 of 6, checkpoints on roads over a minute, hard mode (no Auto-Pilot, a count-down clock, 🔥), medal times for all 30 roads from the simulator, and the world map on the painted map with each world's painting behind its roads. Migration `20261123000200_circuit_worlds.sql`. Plan PR #733, choices #734, Stage 1 #738, Stage 2 #739, world 1 redrawn #740, no bounce #741, Stage 3 #742, art #743, Stage 4 (23 Nov 2026). Next: Stage 5, the rest of the painted art and sounds (prompt in `docs/prompts/circuit-s5.md`).** James picked the theme "Circuit Racer" from six new-theme ideas (deep sea, lava, sweets, aurora, circuit, ghost train) on 22 Nov 2026. Game id `circuit`. Next free migration number when written: `20261122000800` on 22 Nov (check again before Stage 2: `node scripts/migration-numbers.mjs`).
 
 **Circuit Racer** is a neon racing game. You are a spark of data racing along circuit-board roads that float inside a giant computer. Steer between 7 lanes, speed up and slow down, jump the gaps, and dive into the port at the end of each road before your **battery** or **signal** runs out.
 
@@ -225,6 +225,51 @@ Careful and average bots finish every road on the first go; the flat-out bot now
 - **Teacher:** Maths column on the Games table (off / pupils choose / on), `teacher_set_circuit_maths`; "pupils choose" shows a maths tick box on the road picker. Circuit Racer is in the Skill map's list of ladder games.
 - **Preview:** a fixed pretend focus (7 times table, equivalent fractions, decimal equivalents, percentages), never the pupil's; `?maths=off` or `?maths=choose`, `?mc=1`, and `?test=1` adds a test road (`shared/circuit/roads/test.ts`) with a port, a 3-lane gate and a 4-lane gate.
 - **Tests:** 8 of 8 used: a server test (port marked once, replay refills by the mark, a wrong lane gets no shortcut, maths off asks nothing) and every ladder skill through the gate signs and marking (`shared/circuit/maths.test.ts`). World 1 is unchanged (no gates; `npm run circuit:sim` gives the same table).
+
+## Stage 4 results (23 Nov 2026)
+
+- **24 new roads** (`shared/circuit/roads/graphics.ts`, `memory.ts`, `cloud.ts`, `quantum.ts`; our own layouts), made hard the way James asked (23 Nov): one-lane bridges, zig-zags right across the board, sideways stepping stones, hop rhythms, chips to climb, red one-lane paths, gel before gaps, cables. **Never by tightening the battery or signal.** Each world plays to its gravity: the Graphics Card climbs chips up to `2` and jumps 3 to 4 rows; Memory Lanes is heavy (gaps of 1 or 2 rows, only `1` chips, lots of narrow lanes, gel and cables); The Cloud floats over 4 to 6 row gaps; the Quantum Core leaps up to 7 rows and the tallest stairs. Every world-2 to 5 road has 1 to 3 data gates and recharge ports.
+- **Worlds open at 4 of 6** (`roadNeeds` / `roadOpen` in game.ts): inside a world roads open in order; a world's first road needs 4 of the world before's 6. `record_circuit_finish` now takes `needs` (the roads) and `need` (how many) instead of one road before; `memoryServices.ts` follows it.
+- **Checkpoints** (` @` at the end of a road row; `road.checkpoints`): passing one keeps the battery and signal; after a crash, fall or flat battery the **physics itself** restarts the racer there after the 1.5 s pause (standing on the plain trace nearest the middle, time still counting), so the run stays one recording from the start. Each restart is a new "life": input slots move on by a whole road's worth (`slotOf`), so recorded slots only ever go up and the server's `replay` plays through the restarts exactly. Ports after the checkpoint can be used again (a known answer is not asked again); gates after it are crossed again (the last crossing is the answer). Every world's last road runs over a minute for a careful driver and has checkpoints; several shorter roads have them too.
+- **Hard mode** (🔥 Hard on a finished road): Auto-Pilot off and a count-down clock of 1.3 × the silver time (`hardSeconds`); when it runs out the road starts again from the start, nothing lost. The finish says `hard: true`; the server replays with Auto-Pilot off and the clock (`timeLimit`, outcome `outOfTime`), so a run over the clock is no finish. A hard finish is a normal finish too (best time, medal, one of the 5 a day); the database keeps `hard_finishes` and `hard_best` per road and `circuit_runs.hard`, and only counts it as hard on a road finished before (for Firewall Free in Stage 6).
+- **Screens:** the world map is the painted map (`art/paint/map`) with a glowing button on each world's spot (dots for roads finished), the chosen world's six roads below in its colours, ← → to change world, 1 to 6 to pick a road, and the next step in a child's words ("Finish 2 more Motherboard roads to open the Graphics Card!"). In the race each world's painting (`art/paint/worlds/*-800.webp`) is the sky, cropped to cover the screen, with the world's board colours, neon rims, fog and grid; checkpoints are gold arches and flash when passed; "Back to the checkpoint!" after a restart. Hard mode shows the 🔥 clock (red for the last 10 s) and "Auto-Pilot off". The finish screen shows 🔥 and "New world open".
+- **Tests:** still 8 of 8. `roads.test.ts` checks every road of every world is finished by the average bot on its first go and replays exactly, world 1 has no gates and worlds 2 to 5 do, and the 4-of-6 rule. `physics.test.ts` adds a fall after a checkpoint, the restart there and an exact replay, and the hard clock. The database test checks 4 of 6 and hard finishes.
+- **Simulator** (`npm run circuit:sim`, also `-- --world cloud`, `-- --road the-core`): now every world, plus a careful run with every port answered wrong (half charges), and it fails if a careful driver dips to half battery, a road over a minute has no checkpoint, or a careful or average bot needs a second go. Times are seconds; lowest battery / signal:
+
+| Road | Rows | Ports / gates / checkpoints | Careful (time, lowest battery / signal) | Half charges (careful) | Average | Wild | Gold | Silver |
+|---|---|---|---|---|---|---|---|---|
+| Power On | 192 | 0 / 0 / 0 | 27.8s, 82% / 60% | - | 20.9s, 78% / 70% | 16.9s (2 goes), 74% / 76% | 19s | 25s |
+| Clock Speed | 208 | 0 / 0 / 0 | 28.4s, 79% / 63% | - | 21.5s, 75% / 72% | 18.2s, 72% / 76% | 21s | 25s |
+| First Charge | 186 | 1 / 0 / 0 | 24.9s, 70% / 72% | 44% / 46% | 20.3s, 66% / 77% | 16.3s, 59% / 82% | 18s | 24s |
+| Data Bus | 241 | 2 / 0 / 0 | 35.2s, 74% / 74% | 38% / 37% | 26.1s, 68% / 81% | 21.1s, 62% / 85% | 24s | 31s |
+| Bridge Chips | 217 | 3 / 0 / 0 | 32.6s, 82% / 75% | 43% / 34% | 25.9s, 78% / 80% | 19.3s, 72% / 86% | 22s | 30s |
+| Kernel Run | 329 | 3 / 0 / 0 | 45.6s, 74% / 78% | 25% / 27% | 38.1s, 69% / 81% | 28.6s, 63% / 86% | 32s | 44s |
+| Hot Wire | 187 | 1 / 1 / 0 | 25.4s, 72% / 72% | 57% / 58% | 19.5s, 66% / 79% | 16.4s, 62% / 82% | 19s | 23s |
+| Fan Alley | 208 | 1 / 1 / 0 | 28.9s, 68% / 70% | 52% / 55% | 21.5s, 62% / 78% | 18.2s, 57% / 81% | 21s | 25s |
+| Pixel Pipeline | 249 | 2 / 2 / 0 | 33s, 75% / 79% | 41% / 48% | 25.8s, 70% / 83% | 21.6s, 66% / 86% | 24s | 30s |
+| Render Farm | 229 | 2 / 1 / 0 | 31.6s, 77% / 80% | 47% / 52% | 24.7s, 74% / 84% | 19.9s, 69% / 88% | 22s | 29s |
+| Shader Storm | 276 | 2 / 2 / 2 | 39.3s, 74% / 78% | 37% / 41% | 29.3s, 69% / 84% | 23.9s, 65% / 86% | 27s | 34s |
+| Overclock Peak | 484 | 4 / 3 / 4 | 65.8s, 76% / 77% | 31% / 29% | 51.5s, 72% / 82% | 41.7s, 68% / 85% | 46s | 60s |
+| RAM Stick | 171 | 1 / 1 / 0 | 25s, 75% / 76% | 62% / 61% | 19.3s, 70% / 82% | 15.3s, 66% / 84% | 17s | 23s |
+| Cache Hit | 197 | 1 / 1 / 0 | 28.7s, 73% / 76% | 56% / 55% | 21.2s, 67% / 82% | 17.3s, 63% / 85% | 20s | 25s |
+| Cold Storage | 206 | 2 / 1 / 0 | 29.4s, 79% / 81% | 54% / 56% | 22.7s, 75% / 85% | 18.1s, 71% / 88% | 20s | 27s |
+| Tunnel Bus | 216 | 2 / 1 / 0 | 29.9s, 78% / 81% | 51% / 55% | 22.5s, 74% / 86% | 18.9s, 70% / 88% | 21s | 26s |
+| Bit Flip | 266 | 2 / 2 / 2 | 36.4s, 76% / 79% | 39% / 45% | 28.9s, 71% / 84% | 23.2s, 67% / 87% | 26s | 34s |
+| Stack Overflow | 459 | 5 / 3 / 4 | 64.2s, 79% / 80% | 29% / 29% | 51.7s, 75% / 84% | 39.3s, 72% / 87% | 44s | 60s |
+| Upload | 162 | 1 / 1 / 0 | 23s, 78% / 80% | 63% / 64% | 17.7s, 74% / 84% | 14.5s, 71% / 86% | 16s | 21s |
+| Sky Server | 177 | 1 / 1 / 0 | 26.2s, 76% / 76% | 61% / 59% | 20.7s, 71% / 81% | 18.6s (2 goes), 66% / 85% | 21s | 24s |
+| Cloud Hop | 176 | 2 / 1 / 0 | 24.5s, 79% / 83% | 60% / 62% | 18.8s, 75% / 87% | 15.5s, 58% / 81% | 18s | 22s |
+| Stream Jump | 244 | 2 / 2 / 2 | 33.2s, 76% / 81% | 43% / 50% | 25.4s, 71% / 85% | 21.3s, 68% / 87% | 24s | 30s |
+| Data Drift | 248 | 2 / 2 / 2 | 34.5s, 71% / 74% | 43% / 48% | 26.4s, 65% / 80% | 21.8s, 61% / 84% | 24s | 31s |
+| Storm Cell | 475 | 5 / 3 / 4 | 64.7s, 74% / 76% | 24% / 25% | 49.3s, 69% / 81% | 40.7s, 65% / 84% | 45s | 57s |
+| Qubit | 145 | 1 / 1 / 0 | 21.7s, 79% / 80% | 68% / 66% | 16s, 61% / 75% | 13s, 72% / 87% | 15s | 19s |
+| Superposition | 153 | 1 / 1 / 0 | 20.7s, 76% / 80% | 64% / 68% | 16s, 71% / 85% | 13.6s (2 goes), 52% / 79% | 15s | 19s |
+| Entangled | 200 | 2 / 1 / 0 | 28s, 82% / 82% | 55% / 56% | 22.2s, 79% / 85% | 18.3s, 76% / 88% | 21s | 26s |
+| Wave Bridge | 236 | 2 / 2 / 2 | 32.8s, 76% / 80% | 46% / 50% | 24.9s, 64% / 78% | 20.7s, 68% / 87% | 23s | 29s |
+| Quantum Leap | 286 | 3 / 2 / 3 | 38.7s, 78% / 78% | 34% / 41% | 30.1s, 63% / 77% | 25.4s, 69% / 86% | 28s | 35s |
+| The Core | 513 | 6 / 3 / 6 | 68.8s, 82% / 81% | 33% / 31% | 52.8s, 59% / 75% | 44.8s, 65% / 82% | 50s | 61s |
+
+Careful drivers never drop below 68% battery on any road; with every port answered wrong they still finish every road (lowest 24%). The medal times in `MEDAL_SECONDS` are the Gold and Silver columns (bronze is any finish).
 
 ## 9. Stages
 

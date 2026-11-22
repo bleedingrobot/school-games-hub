@@ -45,6 +45,8 @@ World ids: `motherboard`, `gpu`, `memory`, `cloud`, `quantum` (in world order).
 
 ## Wiring left for Stage 5 proper
 
+Stage 4 already wired two of these: the world map (`map/map.webp` and `map-800`, item 2) under the world buttons, and the five world backdrops (`worlds/*-800.webp`) as the race's sky in `renderer.ts` (cropped to cover; the code-drawn sky until it loads). Stage 5 can swap in the full-size backdrops on big screens and add the slow parallax.
+
 Not done in the art PR, because the Stage 3 session owned these files:
 
 1. `renderer.ts`: world backdrop as a far plane or CSS layer behind the canvas (blurred, slow parallax, `-800` on small screens); tile textures mixed into the code-drawn tile materials (keep the neon rims and bloom; fall back to `textures.ts` if a picture is missing).

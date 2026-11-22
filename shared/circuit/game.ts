@@ -6,11 +6,15 @@
  * Nothing the browser says is trusted: the server replays the inputs (`judgeFinish`) and works out the time, medal and
  * battery star itself, and refuses a time faster than the real time since the run's seed was handed out.
  */
-import { FULL, STEPS_PER_SECOND } from './config';
+import { FULL, STEPS_PER_SECOND, type World } from './config';
 import { decodeLog } from './inputs';
 import { replay, type RaceOptions } from './physics';
 import { parseRoad, type Road, type RoadDef } from './road';
+import { CLOUD_ROADS } from './roads/cloud';
+import { GRAPHICS_ROADS } from './roads/graphics';
+import { MEMORY_ROADS } from './roads/memory';
 import { MOTHERBOARD_ROADS } from './roads/motherboard';
+import { QUANTUM_ROADS } from './roads/quantum';
 
 /** Finished roads a day (James, 22 Nov 2026). Only a finish uses one; crashes, restarts and quitting are free. */
 export const FINISHES_A_DAY = 5;
@@ -19,8 +23,20 @@ export const FINISH_POINTS = 3;
 /** And this many more the first time a road is finished with gold. */
 export const GOLD_POINTS = 2;
 
-/** Every road pupils can play, in the order they open (world 1 only until Stage 4). */
-export const ROADS: readonly RoadDef[] = MOTHERBOARD_ROADS;
+/** The five worlds inside the computer (docs/CIRCUIT-PLAN.md, section 3), 6 roads each. */
+export const WORLDS: readonly { id: World; name: string; roads: readonly RoadDef[] }[] = [
+  { id: 'motherboard', name: 'The Motherboard', roads: MOTHERBOARD_ROADS },
+  { id: 'graphics', name: 'Graphics Card', roads: GRAPHICS_ROADS },
+  { id: 'memory', name: 'Memory Lanes', roads: MEMORY_ROADS },
+  { id: 'cloud', name: 'The Cloud', roads: CLOUD_ROADS },
+  { id: 'quantum', name: 'Quantum Core', roads: QUANTUM_ROADS },
+];
+
+/** Every road pupils can play, world by world, in the order they open. */
+export const ROADS: readonly RoadDef[] = WORLDS.flatMap((w) => w.roads);
+
+/** A world opens when this many of the roads of the world before it are finished (James, 22 Nov 2026: "4 of 6"). */
+export const WORLD_OPENS_AT = 4;
 
 /** Roads only the preview and the tests add (`allowTestRoad`): open from the start, never in the live function. */
 const testRoads: RoadDef[] = [];
@@ -39,15 +55,31 @@ export function roadById(id: string): Road | undefined {
   return road;
 }
 
-/** The road a road needs finished first (null for the first road). Roads open in order. */
-export function roadBefore(id: string): string | null {
-  const i = ROADS.findIndex((r) => r.id === id);
-  return i > 0 ? ROADS[i - 1].id : null;
+/** Which world a road is in (0 to 4) and its number in it (0 to 5), or null. */
+export function roadPlace(id: string): { world: number; index: number } | null {
+  for (let world = 0; world < WORLDS.length; world++) {
+    const index = WORLDS[world].roads.findIndex((r) => r.id === id);
+    if (index >= 0) return { world, index };
+  }
+  return null;
 }
 
 /**
- * Medal times in seconds, from the simulator's suggestions for the redrawn roads (`npm run circuit:sim`, 23 Nov 2026): gold is 10%
- * slower than the wild bot, silver 15% slower than the average bot, bronze is any finish. Stage 4 sets them for real.
+ * What a road needs finished first: `count` of `roads`. Inside a world, roads open in order (the road before); a world's
+ * first road opens when WORLD_OPENS_AT of the world before's roads are finished, so one stuck road never blocks anyone.
+ * Null for the very first road. The database checks the same (`record_circuit_finish`'s needs and need).
+ */
+export function roadNeeds(id: string): { roads: string[]; count: number } | null {
+  const at = roadPlace(id);
+  if (!at || (at.world === 0 && at.index === 0)) return null;
+  if (at.index > 0) return { roads: [WORLDS[at.world].roads[at.index - 1].id], count: 1 };
+  return { roads: WORLDS[at.world - 1].roads.map((r) => r.id), count: WORLD_OPENS_AT };
+}
+
+/**
+ * Medal times in seconds for every road, from `npm run circuit:sim` (Stage 4, 23 Nov 2026): gold is 10% slower than the
+ * wild bot, silver 15% slower than the average bot (and at least 3 s after gold), bronze is any finish. Re-run the
+ * simulator and copy its MEDAL_SECONDS line here after changing a road.
  */
 export const MEDAL_SECONDS: Record<string, { gold: number; silver: number }> = {
   'power-on': { gold: 19, silver: 25 },
@@ -56,6 +88,30 @@ export const MEDAL_SECONDS: Record<string, { gold: number; silver: number }> = {
   'data-bus': { gold: 24, silver: 31 },
   'bridge-chips': { gold: 22, silver: 30 },
   'kernel-run': { gold: 32, silver: 44 },
+  'hot-wire': { gold: 19, silver: 23 },
+  'fan-alley': { gold: 21, silver: 25 },
+  'pixel-pipeline': { gold: 24, silver: 30 },
+  'render-farm': { gold: 22, silver: 29 },
+  'shader-storm': { gold: 27, silver: 34 },
+  'overclock-peak': { gold: 46, silver: 60 },
+  'ram-stick': { gold: 17, silver: 23 },
+  'cache-hit': { gold: 20, silver: 25 },
+  'cold-storage': { gold: 20, silver: 27 },
+  'tunnel-bus': { gold: 21, silver: 26 },
+  'bit-flip': { gold: 26, silver: 34 },
+  'stack-overflow': { gold: 44, silver: 60 },
+  'upload': { gold: 16, silver: 21 },
+  'sky-server': { gold: 21, silver: 24 },
+  'cloud-hop': { gold: 18, silver: 22 },
+  'stream-jump': { gold: 24, silver: 30 },
+  'data-drift': { gold: 24, silver: 31 },
+  'storm-cell': { gold: 45, silver: 57 },
+  'qubit': { gold: 15, silver: 19 },
+  'superposition': { gold: 15, silver: 19 },
+  'entangled': { gold: 21, silver: 26 },
+  'wave-bridge': { gold: 23, silver: 29 },
+  'quantum-leap': { gold: 28, silver: 35 },
+  'the-core': { gold: 50, silver: 61 },
 };
 
 export type Medal = 'bronze' | 'silver' | 'gold';
@@ -94,6 +150,9 @@ export interface RoadProgress {
   clean: boolean;
   charged: boolean;
   finishes: number;
+  /** Hard mode (Stage 4): finishes and best time with Auto-Pilot off inside the count-down clock (🔥). Missing: none. */
+  hardFinishes?: number;
+  hardBest?: number | null;
 }
 
 /** What the server sends when the game opens. `left` is null on an Unlimited day. */
@@ -106,12 +165,20 @@ export interface CircuitSave {
   maths?: 'off' | 'choose' | 'on';
 }
 
-/** Is a road open? The first is; each next one when the one before has been finished. */
+/** Is a road open? See roadNeeds. */
 export function roadOpen(roads: Record<string, RoadProgress>, id: string): boolean {
-  const before = roadBefore(id);
   if (testRoads.some((r) => r.id === id)) return true;
-  return ROADS.some((r) => r.id === id) && (before === null || (roads[before]?.finishes ?? 0) > 0);
+  if (!ROADS.some((r) => r.id === id)) return false;
+  const needs = roadNeeds(id);
+  return needs === null || needs.roads.filter((r) => (roads[r]?.finishes ?? 0) > 0).length >= needs.count;
 }
+
+/** Is a world open (its first road open)? */
+export const worldOpen = (roads: Record<string, RoadProgress>, world: number): boolean => roadOpen(roads, WORLDS[world].roads[0].id);
+
+/** Hard mode's count-down clock for a road, in seconds: this share of the silver time (no Auto-Pilot, crashes cost time). */
+export const HARD_CLOCK_SHARE = 1.3;
+export const hardSeconds = (roadId: string): number => Math.ceil((MEDAL_SECONDS[roadId]?.silver ?? 90) * HARD_CLOCK_SHARE);
 
 export const finishesLeft = (today: number, unlimited: boolean): number | null => (unlimited ? null : Math.max(0, FINISHES_A_DAY - today));
 
@@ -160,6 +227,8 @@ export interface FinishReport {
    * isn't sent, but quitting and opening the road again is free anyway, so this is no easier to fake than a fresh start.
    */
   crashes: number;
+  /** Hard mode: replayed with Auto-Pilot off and the count-down clock, and saved as a hard finish. */
+  hard: boolean;
 }
 
 export function parseFinish(input: unknown): FinishReport | null {
@@ -169,7 +238,7 @@ export function parseFinish(input: unknown): FinishReport | null {
   if (typeof r.seed !== 'string' || r.seed.length > 80 || typeof r.stamp !== 'string' || r.stamp.length > 200) return null;
   if (typeof r.inputs !== 'string' || r.inputs.length > MAX_INPUTS_TEXT) return null;
   const crashes = Number.isInteger(r.crashes) && (r.crashes as number) >= 0 ? Math.min(r.crashes as number, MAX_CRASHES) : 0;
-  return { road: r.road, seed: r.seed, stamp: r.stamp, inputs: r.inputs, crashes };
+  return { road: r.road, seed: r.seed, stamp: r.stamp, inputs: r.inputs, crashes, hard: r.hard === true };
 }
 
 /** A finish the server has replayed itself. */
@@ -180,6 +249,8 @@ export interface JudgedFinish {
   charged: boolean;
   /** Battery left at the finish, 0 to 100. */
   battery: number;
+  /** Finished in hard mode (Auto-Pilot off, inside the clock). */
+  hard: boolean;
 }
 
 /** `choices`: the lane the racer was in at each data gate's split row (-1: never crossed), read from the replay. */
@@ -194,14 +265,17 @@ export function judgeFinish(report: FinishReport, nowSeconds: number, maths: Rac
   if (!road) return { ok: false, problem: 'unknown road' };
   const log = decodeLog(report.inputs);
   if (!log) return { ok: false, problem: 'inputs not readable' };
-  const end = replay(road, log, { refills: maths.refills ?? null, gateRight: maths.gateRight ?? null });
+  // Hard mode replays with Auto-Pilot off and the clock: past the clock is no finish at all.
+  const end = replay(road, log, {
+    refills: maths.refills ?? null, gateRight: maths.gateRight ?? null, autoPilot: !report.hard, timeLimit: report.hard ? hardSeconds(report.road) * STEPS_PER_SECOND : 0,
+  });
   if (end.outcome !== 'finished') return { ok: false, problem: 'no finish' };
   const made = seedTime(report.seed);
   if (made === null) return { ok: false, problem: 'not a server seed' };
   if (nowSeconds - made + 1 + REAL_TIME_SLACK_SECONDS < end.steps / STEPS_PER_SECOND) return { ok: false, problem: 'faster than real time' };
   return {
     ok: true,
-    run: { steps: end.steps, medal: medalFor(report.road, end.steps), clean: report.crashes === 0, charged: end.battery > FULL / 2, battery: end.battery },
+    run: { steps: end.steps, medal: medalFor(report.road, end.steps), clean: report.crashes === 0, charged: end.battery > FULL / 2, battery: end.battery, hard: report.hard },
     choices: end.choices,
   };
 }

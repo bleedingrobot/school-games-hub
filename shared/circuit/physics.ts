@@ -21,15 +21,18 @@ import {
   SUBSTEPS, TOP_SPEED, TUNNEL_ROOF, TUNNEL_ROOF_THICKNESS, TURN_AT_REST, TURN_RATE, WALL_NUDGE,
 } from './config';
 import { decodeInput, inputPlayer, type Input, type InputLog } from './inputs';
-import { cellAt, topOf, type Road } from './road';
+import { cellAt, restartLane, topOf, type Road } from './road';
 
-export type Outcome = 'racing' | 'finished' | 'crashed' | 'fell' | 'outOfBattery' | 'outOfSignal';
+/** 'outOfTime': hard mode's count-down clock ran out (the whole road starts again; no checkpoint). */
+export type Outcome = 'racing' | 'finished' | 'crashed' | 'fell' | 'outOfBattery' | 'outOfSignal' | 'outOfTime';
 export type RaceEvent =
   | 'jump' | 'land' | 'bounce' | 'bonk' | 'nudge' | 'scrape' | 'crash' | 'fall' | 'recharge' | 'finish' | 'outOfBattery' | 'outOfSignal' | 'autopilot'
   /** Maths on: the racer has just reached a recharge port (the screen pauses for its question before the next step). */
   | 'port'
   /** The racer has just crossed a data gate's split row (its lane is in `choices`). */
-  | 'gate';
+  | 'gate'
+  /** The racer has just passed a checkpoint (Stage 4), or has just restarted at one. */
+  | 'checkpoint' | 'respawn' | 'outOfTime';
 
 export interface RaceState {
   x: number;
@@ -86,6 +89,18 @@ export interface RaceState {
   choices: readonly number[];
   /** The gate whose right lane the racer took at the split (its lane is overclock), or -1. */
   boostGate: number;
+  /**
+   * Checkpoints (Stage 4): the last one passed (-1: none) and the battery and signal when it was passed. After a crash, a
+   * fall or running flat, the physics itself restarts the racer there once RESTART_DELAY_STEPS have passed (the time keeps
+   * counting), so a run with checkpoint restarts is still one recording from the start, replayed exactly by the server.
+   */
+  checkpoint: number;
+  checkpointBattery: number;
+  checkpointSignal: number;
+  /** Restarts at a checkpoint so far. Each one moves the input slots on (slotOf), so recorded slots only ever go up. */
+  lives: number;
+  /** Hard mode's clock: the run ends 'outOfTime' at this many steps (0: no clock). */
+  timeLimit: number;
 }
 
 export interface RaceOptions {
@@ -94,7 +109,14 @@ export interface RaceOptions {
   /** Maths on: see RaceState.refills and RaceState.gateRight. */
   refills?: readonly number[] | null;
   gateRight?: readonly number[] | null;
+  /** Hard mode's count-down clock, in steps (0 or missing: none). */
+  timeLimit?: number;
 }
+
+/** Input slots one life (one go from the start or a checkpoint) can use: a whole road's worth, so lives never overlap. */
+const lifeSlots = (road: Road): number => (road.length + 2) * SLOTS_PER_ROW;
+/** The input slot for a place on the road in a life (inputs.ts). */
+export const slotOf = (road: Road, z: number, lives: number): number => Math.floor(z * SLOTS_PER_ROW) + lives * lifeSlots(road);
 
 const EPS = 1e-6;
 
@@ -106,6 +128,7 @@ export function newRace(road: Road, opts: RaceOptions = {}): RaceState {
     slot: Math.floor(START_Z * SLOTS_PER_ROW), slotSteps: 0, lastPortRow: -2, ports: 0,
     refills: opts.refills ?? null, gateRight: opts.gateRight ?? null, portsUsed: 0, pendingPort: -1,
     gatesPassed: 0, choices: road.gates.map(() => -1), boostGate: -1,
+    checkpoint: -1, checkpointBattery: FULL, checkpointSignal: FULL, lives: 0, timeLimit: opts.timeLimit ?? 0,
   };
 }
 
@@ -126,8 +149,33 @@ function pieceAt(road: Road, x: number, y: number, z: number): { top: number; bo
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
+/** True when the whole road must start again (no checkpoint passed, or the hard-mode clock ran out). */
 export function readyToRestart(s: RaceState): boolean {
-  return s.outcome !== 'racing' && s.outcome !== 'finished' && s.deadSteps >= RESTART_DELAY_STEPS;
+  return s.outcome !== 'racing' && s.outcome !== 'finished' && s.deadSteps >= RESTART_DELAY_STEPS && (s.checkpoint < 0 || s.outcome === 'outOfTime');
+}
+
+/** Can this ended run go on (a checkpoint restart still to come)? */
+export const willRespawn = (s: RaceState): boolean =>
+  s.outcome !== 'racing' && s.outcome !== 'finished' && s.outcome !== 'outOfTime' && s.checkpoint >= 0;
+
+/**
+ * Restarts at the last checkpoint passed: standing still on its plain trace nearest the middle, with the battery and signal
+ * it had there. Ports after the checkpoint can be used again (a known answer refills without asking), gates after it are
+ * crossed again. The time includes the 1.5 s pause.
+ */
+function respawn(s: RaceState, road: Road): void {
+  const row = road.checkpoints[s.checkpoint];
+  Object.assign(s, {
+    x: restartLane(road, row) + 0.5, y: 0, z: row + 0.5, vy: 0, vz: 0, steer: 0, steerScale: 1, slide: 0, grounded: true, jumping: false, airSteps: 0,
+    autoPilotChecked: false, autoPilotOn: false, autoPilotGiveBack: 0, battery: s.checkpointBattery, signal: s.checkpointSignal,
+    outcome: 'racing', deadSteps: 0, lives: s.lives + 1, slotSteps: 0, lastPortRow: -2, pendingPort: -1, boostGate: -1,
+  } satisfies Partial<RaceState>);
+  s.slot = slotOf(road, s.z, s.lives);
+  road.ports.forEach((p, i) => {
+    if (p.first >= row) s.portsUsed &= ~(1 << i);
+  });
+  s.gatesPassed = road.gates.filter((g) => g.first < row).length;
+  s.steps += RESTART_DELAY_STEPS;
 }
 
 /** One step of the race. Pure: `prev` is not changed. */
@@ -136,6 +184,10 @@ export function step(prev: RaceState, input: Input, road: Road): { state: RaceSt
   const events: RaceEvent[] = [];
   if (s.outcome !== 'racing') {
     if (s.outcome !== 'finished') s.deadSteps++;
+    if (s.deadSteps >= RESTART_DELAY_STEPS && willRespawn(s)) {
+      respawn(s, road);
+      events.push('respawn');
+    }
     return { state: s, events };
   }
   const g = road.def.gravity;
@@ -259,8 +311,16 @@ export function step(prev: RaceState, input: Input, road: Road): { state: RaceSt
     events.push('gate');
   }
 
+  // Passing a checkpoint keeps the battery and signal it had there for a restart.
+  while (s.checkpoint + 1 < road.checkpoints.length && s.z >= road.checkpoints[s.checkpoint + 1]) {
+    s.checkpoint++;
+    s.checkpointBattery = s.battery;
+    s.checkpointSignal = s.signal;
+    events.push('checkpoint');
+  }
+
   s.steps++;
-  const slot = Math.floor(s.z * SLOTS_PER_ROW);
+  const slot = slotOf(road, s.z, s.lives);
   if (slot !== s.slot) {
     s.slot = slot;
     s.slotSteps = 0;
@@ -281,6 +341,7 @@ export function step(prev: RaceState, input: Input, road: Road): { state: RaceSt
     s.signal = 0;
     return end(s, events, 'outOfSignal', 'outOfSignal');
   }
+  if (s.timeLimit > 0 && s.steps >= s.timeLimit) return end(s, events, 'outOfTime', 'outOfTime');
   return { state: s, events };
 }
 
@@ -399,7 +460,8 @@ function runAutoPilot(s: RaceState, input: Input, road: Road): boolean {
 export function replay(road: Road, log: InputLog, opts: RaceOptions = {}): RaceState {
   const play = inputPlayer(log);
   let s = newRace(road, opts);
-  while (s.outcome === 'racing' && s.steps < MAX_RUN_STEPS) s = step(s, decodeInput(play(s)), road).state;
+  // Through checkpoint restarts too: the pauses read no inputs that matter (nothing is recorded while the racer is down).
+  while ((s.outcome === 'racing' || willRespawn(s)) && s.steps < MAX_RUN_STEPS) s = step(s, decodeInput(play(s)), road).state;
   return s;
 }
 

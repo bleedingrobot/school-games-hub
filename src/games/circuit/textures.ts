@@ -39,9 +39,18 @@ function board(g: CanvasRenderingContext2D, base: string, line: string) {
   g.strokeRect(1.5, -2, SIZE - 3, SIZE + 4);
 }
 
-export function tileTextures(): Record<TileKind, THREE.CanvasTexture> {
+/** Each world's plain trace: board colour and its traces (Stage 4). */
+export const BOARDS = {
+  motherboard: ['#0b3b2c', '#d8b24a'],
+  graphics: ['#3a0f0a', '#ff8a3d'],
+  memory: ['#0c2442', '#c7d7ea'],
+  cloud: ['#15385c', '#9ff3ff'],
+  quantum: ['#26093f', '#f5c542'],
+} as const;
+
+export function tileTextures(world: keyof typeof BOARDS = 'motherboard'): Record<TileKind, THREE.CanvasTexture> {
   return {
-    trace: canvas((g) => board(g, '#0b3b2c', '#d8b24a')),
+    trace: canvas((g) => board(g, BOARDS[world][0], BOARDS[world][1])),
     overclock: canvas((g) => {
       board(g, '#06402a', '#2bd36b');
       g.fillStyle = '#7dffa8';

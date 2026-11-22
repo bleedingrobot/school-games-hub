@@ -11,16 +11,20 @@
  * will. Before a data gate the question shows over the road, the race slows to a third for about 4 seconds, and the lane
  * the racer is in at the split is its answer; the right lane is an overclock shortcut. A known answer is never asked again
  * after a crash.
+ *
+ * Stage 4: on roads with checkpoints a crash or fall after one restarts there: the physics does it itself after the 1.5 s
+ * pause, so the screen just keeps stepping (recording nothing while the racer is down) and the run stays one recording.
+ * Hard mode turns Auto-Pilot off and shows a count-down clock; when it runs out the road starts again (nothing lost).
  */
 import { useEffect, useRef, useState } from 'react';
-import { DT, FULL, HALF_REFILL, TOP_SPEED } from '../../../shared/circuit/config';
+import { DT, FULL, HALF_REFILL, STEPS_PER_SECOND, TOP_SPEED } from '../../../shared/circuit/config';
 import type { RunMaths } from '../../../shared/circuit/maths';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import type { AnswerReply } from './backend';
-import { timeText } from '../../../shared/circuit/game';
+import { hardSeconds, timeText } from '../../../shared/circuit/game';
 import { encodeLog, inputCode, makeRecorder } from '../../../shared/circuit/inputs';
-import { newRace, readyToRestart, step, type RaceEvent, type RaceOptions, type RaceState } from '../../../shared/circuit/physics';
+import { newRace, readyToRestart, step, willRespawn, type RaceEvent, type RaceOptions, type RaceState } from '../../../shared/circuit/physics';
 import type { Road } from '../../../shared/circuit/road';
 import { playSound, type GameSound } from '../sounds';
 import { Controls } from './controls';
@@ -35,12 +39,14 @@ const SLOW_MOTION = 0.35;
 const SLOW_ROWS = Math.round(TOP_SPEED * 4 * SLOW_MOTION);
 const SOUNDS: Partial<Record<RaceEvent, GameSound>> = {
   jump: 'hop', crash: 'boom', bonk: 'knock', recharge: 'heal', finish: 'win', fall: 'end', outOfBattery: 'end', outOfSignal: 'end', autopilot: 'zap',
+  checkpoint: 'zap', outOfTime: 'end',
 };
 const WHY: Record<string, string> = {
   crashed: 'Crash! Hit walls slower than half speed.',
   fell: 'Off the road! Jump the gaps with Space.',
   outOfBattery: 'Flat battery! Drive a bit slower, or find a blue port.',
   outOfSignal: 'Signal lost! Keep moving to the port.',
+  outOfTime: 'Time’s up! Hard mode starts again. Nothing lost.',
 };
 
 interface Props {
@@ -50,6 +56,8 @@ interface Props {
   sound: boolean;
   /** The go's questions, or null with maths off. */
   maths?: RunMaths | null;
+  /** Hard mode: no Auto-Pilot, a count-down clock. */
+  hard?: boolean;
   /** Sends a recharge port's answer to the server to be marked. */
   onAnswer?(slot: number, answer: number, ms: number): Promise<AnswerReply>;
   /** The finishing go's inputs and the crashes before it. */
@@ -68,6 +76,8 @@ interface Dash {
   /** The data gate whose question is showing (-1: none), and whether the race is in its slow motion. */
   gate: number;
   slow: boolean;
+  /** Down, and about to restart at a checkpoint. */
+  respawning: boolean;
 }
 
 /** Rows to the next data gate's split, or Infinity. */
@@ -81,7 +91,7 @@ const dashOf = (s: RaceState, road: Road, maths: boolean): Dash => {
   return {
     speed: s.vz / TOP_SPEED, battery: s.battery / FULL, signal: s.signal / FULL, progress: Math.min(1, s.z / road.length),
     autoPilot: s.autoPilotOn, time: s.steps, outcome: s.outcome,
-    gate: maths && ahead <= SHOW_ROWS ? s.gatesPassed : -1, slow: maths && ahead <= SLOW_ROWS,
+    gate: maths && ahead <= SHOW_ROWS ? s.gatesPassed : -1, slow: maths && ahead <= SLOW_ROWS, respawning: willRespawn(s),
   };
 };
 
@@ -113,7 +123,7 @@ function QuestionLine({ q }: { q: PublicQuestion }) {
   );
 }
 
-export function RaceScreen({ road, number, sound, maths = null, onAnswer, onFinish, onQuit }: Props) {
+export function RaceScreen({ road, number, sound, maths = null, hard = false, onAnswer, onFinish, onQuit }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const controls = useRef(new Controls());
@@ -122,7 +132,11 @@ export function RaceScreen({ road, number, sound, maths = null, onAnswer, onFini
   // Each port's refill, filled in as the server marks answers (the physics reads it on the step after the port).
   const refills = useRef<number[]>(maths ? maths.ports.map(() => HALF_REFILL) : []);
   const answered = useRef(new Set<number>());
-  const raceOpts = useRef<RaceOptions>(maths ? { refills: refills.current, gateRight: maths.gates.map((g) => g.rightLane) } : {});
+  const clock = hard ? hardSeconds(road.def.id) * STEPS_PER_SECOND : 0;
+  const raceOpts = useRef<RaceOptions>({
+    ...(maths ? { refills: refills.current, gateRight: maths.gates.map((g) => g.rightLane) } : {}),
+    autoPilot: !hard, timeLimit: clock,
+  });
   const paused = useRef(false);
   const [ask, setAsk] = useState<{ port: number; question: PublicQuestion } | null>(null);
   const askRef = useRef(ask);
@@ -221,7 +235,7 @@ export function RaceScreen({ road, number, sound, maths = null, onAnswer, onFini
     import('./renderer').then(({ createView }) => {
       if (stopped || !canvas.current) return;
       try {
-        view = createView(canvas.current, road, { reduced, gates: maths ? maths.gates.map((g) => g.labels) : null });
+        view = createView(canvas.current, road, { reduced, gates: maths ? maths.gates.map((g) => g.labels) : null, hard });
         fit();
       } catch {
         showTip('This device can’t draw the 3D road. Try another browser.', 60_000);
@@ -254,6 +268,7 @@ export function RaceScreen({ road, number, sound, maths = null, onAnswer, onFini
                 }
               }
               if (r.events.includes('autopilot')) showTip('Auto-Pilot saved that jump!', 1600);
+              if (r.events.includes('checkpoint')) showTip('Checkpoint! Crash now and you restart here.', 1800);
               if (r.events.includes('recharge')) {
                 const full = !maths || (refills.current[lastPort] ?? HALF_REFILL) >= 1;
                 showTip(full ? 'Recharged! Full battery and signal.' : 'Half charge. Keep going!', 1600);
@@ -294,9 +309,17 @@ export function RaceScreen({ road, number, sound, maths = null, onAnswer, onFini
               setTimeout(() => finishRef.current(inputs, lost, at), 900);
             }
           } else {
-            // Crashed, fell or ran flat: the road restarts after 1.5 s, with a fresh recording.
+            // Crashed, fell or ran flat: after 1.5 s the physics restarts at the last checkpoint (same recording), or the
+            // road starts again with a fresh recording.
             prev = cur;
-            cur = step(cur, { turn: 0, accel: 0, jump: false }, road).state;
+            const r = step(cur, { turn: 0, accel: 0, jump: false }, road);
+            cur = r.state;
+            if (r.events.includes('respawn')) {
+              prev = cur;
+              controls.current.clear();
+              view?.respawned(cur);
+              showTip('Back to the checkpoint!', 1400);
+            }
             if (readyToRestart(cur)) {
               cur = newRace(road, opts);
               prev = cur;
@@ -326,7 +349,7 @@ export function RaceScreen({ road, number, sound, maths = null, onAnswer, onFini
       if (tipTimer) clearTimeout(tipTimer);
       view?.dispose();
     };
-  }, [road, maths]);
+  }, [road, maths, hard]);
 
   /** Marks a port answer on the server; the port's refill follows the mark. */
   const markPort = async (value: number, ms: number): Promise<MarkedAnswer> => {
@@ -369,7 +392,13 @@ export function RaceScreen({ road, number, sound, maths = null, onAnswer, onFini
         <div className="cr-dash__top">
           <button type="button" className="cr-glass" onClick={onQuit} aria-label="Back to the roads (Escape)">← Roads</button>
           <span className="cr-dash__name">{number > 0 ? `${number}. ` : ''}{road.def.name}</span>
-          <span className="cr-dash__time" aria-label="Time">{timeText(dash.time)}</span>
+          {hard ? (
+            <span className={`cr-dash__time cr-dash__time--hard${clock - dash.time < 10 * STEPS_PER_SECOND ? ' cr-dash__time--low' : ''}`} aria-label="Time left">
+              🔥 {timeText(Math.max(0, clock - dash.time))}
+            </span>
+          ) : (
+            <span className="cr-dash__time" aria-label="Time">{timeText(dash.time)}</span>
+          )}
         </div>
         <div className="cr-dash__progress" aria-label={`Road ${Math.round(dash.progress * 100)}% done`}>
           <span style={{ width: `${dash.progress * 100}%` }} />
@@ -378,18 +407,24 @@ export function RaceScreen({ road, number, sound, maths = null, onAnswer, onFini
           <Meter label="Speed" value={dash.speed} colour="#22d3ee" />
           <Meter label="Battery" value={dash.battery} colour={dash.battery < 0.25 ? '#f87171' : '#4ade80'} flash={dash.battery < 0.25} />
           <Meter label="Signal" value={dash.signal} colour={dash.signal < 0.25 ? '#f87171' : '#c084fc'} flash={dash.signal < 0.25} />
-          <span className={`cr-light${dash.autoPilot ? ' cr-light--on' : ''}`} title="Auto-Pilot quietly saves near-miss jumps">
-            <span aria-hidden="true" className="cr-light__dot" /> Auto-Pilot
-          </span>
+          {hard ? (
+            <span className="cr-light cr-light--off" title="Hard mode: no Auto-Pilot">
+              <span aria-hidden="true" className="cr-light__dot" /> Auto-Pilot off
+            </span>
+          ) : (
+            <span className={`cr-light${dash.autoPilot ? ' cr-light--on' : ''}`} title="Auto-Pilot quietly saves near-miss jumps">
+              <span aria-hidden="true" className="cr-light__dot" /> Auto-Pilot
+            </span>
+          )}
           {crashes > 0 && <span className="cr-dash__crashes">Crashes: {crashes}</span>}
         </div>
       </div>
       <Volt
-        line={tip ?? (!started ? 'Arrows steer and speed up. Space jumps. Reach the big port!' : null)}
+        line={tip ?? (!started ? (hard ? `Hard mode: no Auto-Pilot, beat the clock (${hardSeconds(road.def.id)}s)!` : 'Arrows steer and speed up. Space jumps. Reach the big port!') : null)}
       />
       {!started && (
         <div className="cr-ready">
-          <h2 className="cr-ready__title">{number > 0 ? `${number}. ` : ''}{road.def.name}</h2>
+          <h2 className="cr-ready__title">{number > 0 ? `${number}. ` : ''}{road.def.name}{hard && <span className="cr-fire"> 🔥 Hard</span>}</h2>
           <button type="button" className="cr-btn cr-btn--go" onClick={go} autoFocus>GO <small>(Enter)</small></button>
         </div>
       )}
@@ -430,7 +465,7 @@ export function RaceScreen({ road, number, sound, maths = null, onAnswer, onFini
           </div>
         </div>
       </div>
-      {dash.outcome !== 'racing' && dash.outcome !== 'finished' && <p className="cr-sr" role="status">{WHY[dash.outcome]}</p>}
+      {dash.outcome !== 'racing' && dash.outcome !== 'finished' && <p className="cr-sr" role="status">{WHY[dash.outcome]}{dash.respawning ? ' Back to the checkpoint.' : ''}</p>}
     </div>
   );
 }

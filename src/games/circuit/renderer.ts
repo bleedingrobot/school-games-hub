@@ -17,7 +17,25 @@ import { BLOCK_HEIGHTS, FLOOR_THICKNESS, LANES, TOP_SPEED, TUNNEL_ROOF } from '.
 import type { RaceEvent, RaceState } from '../../../shared/circuit/physics';
 import { signText } from '../../../shared/circuit/maths';
 import { cellAt, type Road } from '../../../shared/circuit/road';
+import type { World } from '../../../shared/circuit/config';
+import cloudSky from './art/paint/worlds/cloud-800.webp';
+import gpuSky from './art/paint/worlds/gpu-800.webp';
+import memorySky from './art/paint/worlds/memory-800.webp';
+import motherboardSky from './art/paint/worlds/motherboard-800.webp';
+import quantumSky from './art/paint/worlds/quantum-800.webp';
 import { chipTexture, tileTextures, type TileKind } from './textures';
+
+/**
+ * Each world's look (Stage 4): its painted backdrop far behind the road (Stage 5's paintings, the 800-wide copies: it is
+ * blurred by distance and fog anyway), the fog it fades into, the neon rims and the checkpoint arches.
+ */
+const LOOKS: Record<World, { sky: string; fog: string; rim: string; grid: [string, string] }> = {
+  motherboard: { sky: motherboardSky, fog: '#050616', rim: '#22e3ff', grid: ['#7c3aed', '#312e81'] },
+  graphics: { sky: gpuSky, fog: '#14070a', rim: '#ff7a3d', grid: ['#f97316', '#7c2d12'] },
+  memory: { sky: memorySky, fog: '#06101f', rim: '#7dd3fc', grid: ['#38bdf8', '#1e3a8a'] },
+  cloud: { sky: cloudSky, fog: '#0c2238', rim: '#a5f3fc', grid: ['#67e8f9', '#155e75'] },
+  quantum: { sky: quantumSky, fog: '#12061f', rim: '#c084fc', grid: ['#e879f9', '#581c87'] },
+};
 
 export interface RaceView {
   /** Draws the race `alpha` of the way from `prev` to `cur`; `seconds` since the last draw. */
@@ -26,6 +44,8 @@ export interface RaceView {
   events(events: readonly RaceEvent[], at: RaceState): void;
   /** A fresh go: the trail and sparks are cleared and the camera jumps back. */
   restart(): void;
+  /** Restarted at a checkpoint: the trail is cleared, the camera jumps there with a burst of light. */
+  respawned(at: RaceState): void;
   /** The racer crossed gate `gate`'s split: the right lane's sign glows green and its lane shows overclock arrows. */
   gateResult(gate: number, rightLane: number): void;
   resize(width: number, height: number): void;
@@ -43,7 +63,7 @@ const CHIP_COLOURS = { '1': '#22d3ee', '2': '#e879f9', '3': '#facc15' } as const
  * `gates`: with maths on, what each gate lane's sign shows (as `road.gates[g].lanes`; null: no sign); gate lanes then look like
  * plain trace until the split. Null with maths off: every gate lane is overclock and looks it.
  */
-export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduced: boolean; low?: boolean; gates?: readonly (readonly (string | null)[])[] | null }): RaceView {
+export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduced: boolean; low?: boolean; gates?: readonly (readonly (string | null)[])[] | null; hard?: boolean }): RaceView {
   const disposables: { dispose(): void }[] = [];
   const own = <T extends { dispose(): void }>(thing: T): T => (disposables.push(thing), thing);
   let low = opts.low ?? false;
@@ -53,9 +73,34 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
   const scene = new THREE.Scene();
-  const fogColour = new THREE.Color('#050616');
+  const look = LOOKS[road.def.world] ?? LOOKS.motherboard;
+  const fogColour = new THREE.Color(look.fog);
   scene.fog = new THREE.Fog(fogColour, 18, 60);
   scene.background = own(skyTexture());
+  // The world's painting as the sky, cropped to cover the screen (the code-drawn sky until it loads, or if it can't).
+  let skyArt: THREE.Texture | null = null;
+  new THREE.TextureLoader().load(look.sky, (t) => {
+    if (disposed) {
+      t.dispose();
+      return;
+    }
+    t.colorSpace = THREE.SRGBColorSpace;
+    skyArt = own(t);
+    scene.background = t;
+    stars.visible = false;
+    coverSky();
+  });
+  const coverSky = () => {
+    const img = skyArt?.image as { width: number; height: number } | undefined;
+    if (!skyArt || !img) return;
+    const screen = width / height;
+    const art = img.width / img.height;
+    // Cover: show the middle of the painting, cropped on the long side.
+    if (screen > art) skyArt.repeat.set(1, art / screen);
+    else skyArt.repeat.set(screen / art, 1);
+    skyArt.offset.set((1 - skyArt.repeat.x) / 2, (1 - skyArt.repeat.y) / 2);
+  };
+  let disposed = false;
   const camera = new THREE.PerspectiveCamera(62, 16 / 9, 0.1, 200);
 
   scene.add(new THREE.AmbientLight('#8aa0ff', 0.9));
@@ -64,7 +109,7 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
   scene.add(sun);
 
   // ——— The road: one instanced box per cell kind, top textured, sides dark ———
-  const textures = tileTextures();
+  const textures = tileTextures(road.def.world);
   Object.values(textures).forEach((t) => own(t));
   textures.overclock.wrapS = textures.overclock.wrapT = THREE.RepeatWrapping;
   const sideMat = own(new THREE.MeshLambertMaterial({ color: '#0a1020', emissive: '#0b2a3a', emissiveIntensity: 0.6 }));
@@ -109,7 +154,22 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
   }
 
   // Neon rims along the road's outside edges.
-  const rimMat = own(new THREE.MeshBasicMaterial({ color: new THREE.Color('#22e3ff').multiplyScalar(1.6) }));
+  const rimMat = own(new THREE.MeshBasicMaterial({ color: new THREE.Color(look.rim).multiplyScalar(1.6) }));
+
+  // Checkpoints (Stage 4): a gold arch over the road with a glowing line across it.
+  const cpMat = own(new THREE.MeshBasicMaterial({ color: new THREE.Color('#facc15').multiplyScalar(0.9) }));
+  const cpBar = own(new THREE.BoxGeometry(1, 1, 1));
+  for (const row of road.checkpoints) {
+    const arch = new THREE.Group();
+    for (const [w, h, x, y, d] of [[LANES + 0.6, 0.1, 0, 2.6, 0.1], [0.1, 2.6, -(LANES / 2 + 0.3), 1.3, 0.1], [0.1, 2.6, LANES / 2 + 0.3, 1.3, 0.1], [LANES, 0.02, 0, 0.01, 0.12]] as const) {
+      const bar = new THREE.Mesh(cpBar, cpMat);
+      bar.scale.set(w, h, d);
+      bar.position.set(x, y, 0);
+      arch.add(bar);
+    }
+    arch.position.set(0, 0, -row);
+    scene.add(arch);
+  }
   instanced(own(new THREE.BoxGeometry(0.05, 0.07, 1)), rimMat, edges, (x, row) => m.makeTranslation(X(x), 0.01, -(row + 0.5)));
 
   // Chips, capacitors and heat-sinks: dark bodies with a glowing top.
@@ -234,7 +294,7 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
   starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
   const stars = new THREE.Points(starGeo, own(new THREE.PointsMaterial({ color: '#a5b4fc', size: 0.35, fog: false })));
   scene.add(stars);
-  const grid = new THREE.GridHelper(160, 64, '#7c3aed', '#312e81');
+  const grid = new THREE.GridHelper(160, 64, look.grid[0], look.grid[1]);
   own(grid.geometry);
   (grid.material as THREE.Material).transparent = true;
   (grid.material as THREE.Material).opacity = 0.55;
@@ -420,6 +480,7 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
         else if (e === 'finish') burst(at, 90, '#4ade80', 6);
         else if (e === 'land') burst(at, 4, '#67e8f9', 1.5, 0.4);
         else if (e === 'autopilot') burst(at, 14, '#f0abfc', 2);
+        else if (e === 'checkpoint') { burst(at, 70, '#fde047', 5); burst(at, 30, '#ffffff', 3); }
       }
     },
     gateResult(gate, rightLane) {
@@ -435,6 +496,12 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
       cameraSet = false;
       shake = 0;
     },
+    respawned(at) {
+      history.length = 0;
+      cameraSet = false;
+      shake = 0;
+      burst(new THREE.Vector3(X(at.x), at.y + RIDE, -at.z), 60, '#fde047', 4);
+    },
     resize(w, h) {
       width = Math.max(1, w);
       height = Math.max(1, h);
@@ -444,6 +511,7 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
       camera.aspect = width / height;
       camera.fov = width / height < 1 ? 78 : 62;
       camera.updateProjectionMatrix();
+      coverSky();
     },
     lower() {
       if (low) return false;
@@ -454,6 +522,7 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
       return true;
     },
     dispose() {
+      disposed = true;
       disposables.forEach((d) => d.dispose());
       composer.dispose();
       renderer.dispose();
