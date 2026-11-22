@@ -62,6 +62,9 @@ export function stepWords(quest: QuestConfig, s: Pick<StepView, 'kind' | 'what' 
       return { line: 'Chase off a pirate ship', button: '⚔️ Fight them' };
     case 'clue':
       return { line: `Follow clue ${s.index + 1} of Lumi's trail`, button: 'Look for Lumi' };
+    case 'checkpoint':
+      // The Comet Cup (quest 8). Its full words and the fuel sum come with its screens (R.2).
+      return { line: `Fly to ${s.what}`, button: s.index === 0 ? 'Start the race' : 'Through!' };
     // (pirate steps have no tap: arriving starts the fight, and the button fights again after a loss)
     case 'deliver':
       if (jobIndex(quest.id) !== null) return { line: `Take the crates to ${s.what}`, button: 'Deliver' };

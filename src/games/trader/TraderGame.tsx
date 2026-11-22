@@ -47,7 +47,7 @@ import { SpaceCanvas } from './SpaceCanvas';
 import { MapPanel } from './StarMap';
 import { GiverFace, QuestClue, QuestDone, QuestLanding, QuestPirate, QuestsPanel, QuestWaiting } from './QuestsPanel';
 import { clueNow, doableHere, leftBehind, nextStop, pirateHere, questCargoNames, questPlanetMarks, waitingHere, type Shown } from './questGuide';
-import { jobIndex, openQuestOf, openQuestView, QUESTS, questById } from '../../../shared/trader/quests';
+import { jobIndex, openQuestOf, openQuestView, FIRST_QUESTS, questById } from '../../../shared/trader/quests';
 import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 import { COACH_NAME } from './text';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
@@ -780,7 +780,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
             {phase.k === 'planet' && pending?.kind === 'fight' && <FightPanel t={t} fight={pending.fight} tier={pending.tier} advice={bolt ? fightAdvice(t, pending.fight) : null} askFirst={level === 'some'} log={fightLog.length ? fightLog : ['They are coming right at you!']} busy={fightBusy || asking} onAct={(m) => void fightAct(m)} />}
             {phase.k === 'after' && <SummaryPanel title={phase.title} lines={phase.lines} button="Carry on" onDone={() => { setTab('trade'); setPhase({ k: 'planet' }); }} />}
             {phase.k === 'quest' && questById(phase.id) && (
-              <QuestDone quest={questById(phase.id)!} reward={phase.reward} points={phase.points} master={QUESTS.every((c) => keepsakes.includes(c.id)) && !(loaded?.questLog ?? []).includes(phase.id)} next={QUESTS.find((c) => !game.quests?.finished.includes(c.id)) ?? null} onDone={() => setPhase({ k: 'planet' })} />
+              <QuestDone quest={questById(phase.id)!} reward={phase.reward} points={phase.points} master={FIRST_QUESTS.every((c) => keepsakes.includes(c.id)) && !(loaded?.questLog ?? []).includes(phase.id)} next={FIRST_QUESTS.find((c) => !game.quests?.finished.includes(c.id)) ?? null} onDone={() => setPhase({ k: 'planet' })} />
             )}
             {phase.k === 'moon' && (
               <SummaryPanel

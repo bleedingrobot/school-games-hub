@@ -4,7 +4,7 @@
  */
 import { GOODS, SHIPS } from '../../../shared/trader/config';
 import { coordText, distance, type Galaxy } from '../../../shared/trader/galaxy';
-import { allQuestsDone, isSmallShip, jobId, jobIndex, NAVY_LASER, nearestSellers, nextQuest, openQuestView, questReward, QUESTS, trailClue, type QuestConfig, type QuestState, type StepView } from '../../../shared/trader/quests';
+import { allQuestsDone, isSmallShip, jobId, jobIndex, NAVY_LASER, nearestSellers, nextQuest, openQuestView, questReward, FIRST_QUESTS, trailClue, type QuestConfig, type QuestState, type StepView } from '../../../shared/trader/quests';
 import type { Action } from '../../../shared/trader/server';
 import type { Trader } from '../../../shared/trader/state';
 import { boardArt, giverArt, isHidden, isWaiting, KEEPSAKES, landingLine, MASTER_ART, stepWords, type Shown } from './questGuide';
@@ -18,7 +18,7 @@ export function questStatus(quest: QuestConfig, q: QuestState | undefined, day: 
   if (q?.finished.includes(quest.id)) return 'done';
   if (q?.open === quest.id) return 'open';
   if (nextQuest(q, day, all ? quest.id : undefined)?.id === quest.id) return 'ready';
-  const first = QUESTS.find((c) => !q?.finished.includes(c.id));
+  const first = FIRST_QUESTS.find((c) => !q?.finished.includes(c.id));
   if (first?.id === quest.id && !q?.open && q?.lastDay != null && q.lastDay >= day) return 'tomorrow';
   return 'locked';
 }
@@ -59,15 +59,15 @@ export function QuestsPanel({ galaxy, t, quests, keepsakes = [], allQuests = fal
   const done = quests?.finished.length ?? 0;
   const board = boardArt();
   // The 📖 shelf: stories started (the quest now) or finished, in quest order. Locked quests show nothing.
-  const shelf = QUESTS.filter((c) => QUEST_STORIES[c.id] && (quests?.finished.includes(c.id) || quests?.open === c.id));
+  const shelf = FIRST_QUESTS.filter((c) => QUEST_STORIES[c.id] && (quests?.finished.includes(c.id) || quests?.open === c.id));
   return (
     <section className="st-panel stq" aria-labelledby="stq-h">
       {board && <img className="stq-board" src={board.wide} srcSet={`${board.small} 800w, ${board.wide} 1600w`} sizes="(max-width: 900px) 100vw, 900px" alt="" draggable={false} />}
       <h2 id="stq-h" className="st-h">Quests</h2>
-      <p className="st-sub">Help the people of the galaxy and earn credits. {allQuests ? <strong>Teacher: every quest is open to try, in any order.</strong> : "One quest at a time; a new one opens each day after you finish one."} {done > 0 && <strong>{done} of {QUESTS.length} done.</strong>}</p>
+      <p className="st-sub">Help the people of the galaxy and earn credits. {allQuests ? <strong>Teacher: every quest is open to try, in any order.</strong> : "One quest at a time; a new one opens each day after you finish one."} {done > 0 && <strong>{done} of {FIRST_QUESTS.length} done.</strong>}</p>
       {view && <Checklist galaxy={galaxy} t={t} quest={view.quest} reward={view.reward} steps={view.steps} busy={busy} showXY={showXY} shown={shown} onQuest={onQuest} onTab={onTab} onShowMap={onShowMap} onReveal={onReveal} />}
       <ul className="stq-list">
-        {QUESTS.map((quest, i) => {
+        {FIRST_QUESTS.map((quest, i) => {
           const status = questStatus(quest, quests, t.day, allQuests);
           const reward = status === 'open' && view ? view.reward : questReward(quest, quest.id === 'nettle' ? isSmallShip(t) : undefined);
           return (
@@ -182,13 +182,13 @@ function Jobs({ galaxy, t, quests, busy, showXY, onQuest, onShowMap }: { galaxy:
 
 /** The Quest Log: a keepsake for each quest ever finished (kept through a New Season), and the Star Quest Master line. */
 export function QuestLog({ keepsakes }: { keepsakes: string[] }) {
-  const all = QUESTS.every((q) => keepsakes.includes(q.id));
+  const all = FIRST_QUESTS.every((q) => keepsakes.includes(q.id));
   return (
     <div className="stq-log" aria-labelledby="stq-log-h">
       <h3 id="stq-log-h" className="st-h3">🎒 Quest Log</h3>
       <p className="st-soft stq-log__sub">A keepsake for each quest you finish. You keep them, even after a New Season.</p>
       <ul className="stq-log__list">
-        {QUESTS.map((q) => {
+        {FIRST_QUESTS.map((q) => {
           const got = keepsakes.includes(q.id);
           const k = KEEPSAKES[q.id];
           const art = QUEST_STORIES[q.id]?.pages[4]?.art?.small;

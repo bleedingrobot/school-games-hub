@@ -10791,6 +10791,14 @@ const calm = (p) => GOVERNMENTS[p.government].pirates <= 2;
 /** Can sell (make) a good. */
 const makes = (good) => (p) => p.tech >= GOOD_RULES[good].makeTech;
 const both = (...w) => (p, g) => w.every((f) => f(p, g));
+/** Mayor Puddle's dry planets: desert first, then lifeless, then poor soil. */
+const DRY = [
+	hasRes(RES.desert),
+	hasRes(RES.lifeless),
+	hasRes(RES.poorSoil)
+];
+/** Where quest pirates wait. */
+const PIRATEY = [isGov("Pirate haven"), (p) => GOVERNMENTS[p.government].pirates >= 5];
 const QUESTS = [
 	{
 		id: "zuzu",
@@ -10985,9 +10993,211 @@ const QUESTS = [
 				]
 			}
 		]
+	},
+	{
+		id: "puddle",
+		title: "Mayor Puddle and the Big Dry",
+		giver: "Mayor Puddle",
+		reward: 900,
+		steps: [
+			{
+				kind: "buy-deliver",
+				what: "Water",
+				good: 0,
+				qty: 4,
+				smallQty: 3,
+				hands: true,
+				prefer: DRY
+			},
+			{
+				kind: "buy-deliver",
+				what: "Water",
+				good: 0,
+				qty: 4,
+				smallQty: 3,
+				hands: true,
+				prefer: DRY
+			},
+			{
+				kind: "buy-deliver",
+				what: "Water",
+				good: 0,
+				qty: 4,
+				smallQty: 3,
+				hands: true,
+				prefer: DRY,
+				near: 0
+			},
+			{
+				kind: "deliver",
+				what: "Mayor Puddle",
+				same: 2,
+				prefer: []
+			}
+		]
+	},
+	{
+		id: "gorbo",
+		title: "Chef Gorbo's Galaxy Feast",
+		giver: "Chef Gorbo",
+		reward: 400,
+		steps: [
+			{
+				kind: "pickup",
+				what: "a Moon-melon",
+				prefer: [
+					hasRes(RES.richSoil),
+					isGov("Farming co-op"),
+					techAtMost(3)
+				]
+			},
+			{
+				kind: "pickup",
+				what: "Comet Cheese",
+				prefer: [isGov("Pirate haven", "Farming co-op"), (p) => GOVERNMENTS[p.government].pirates >= 5]
+			},
+			{
+				kind: "buy-deliver",
+				what: "Food",
+				good: 2,
+				qty: 5,
+				smallQty: 4,
+				pays: 120,
+				prefer: [],
+				near: 4
+			},
+			{
+				kind: "buy-deliver",
+				what: "Lollies",
+				good: 8,
+				qty: 3,
+				smallQty: 2,
+				pays: 300,
+				prefer: [],
+				near: 4
+			},
+			{
+				kind: "deliver",
+				what: "Chef Gorbo",
+				prefer: [isGov("Merchant guild", "Class vote"), calm]
+			}
+		]
+	},
+	{
+		id: "zip",
+		title: "The Comet Cup",
+		giver: "Zip Zoomer",
+		reward: 1100,
+		ordered: true,
+		race: {
+			min: 2,
+			max: 5,
+			total: 13
+		},
+		steps: [
+			{
+				kind: "checkpoint",
+				what: "the start line",
+				fullTank: true,
+				prefer: []
+			},
+			{
+				kind: "checkpoint",
+				what: "the checkpoint",
+				prefer: []
+			},
+			{
+				kind: "deliver",
+				what: "Zip Zoomer at the finish line",
+				prefer: []
+			}
+		]
+	},
+	{
+		id: "pippop",
+		title: "Pip and Pop's Runaway Pets",
+		giver: "Pip and Pop",
+		reward: 1200,
+		steps: [
+			{
+				kind: "pickup",
+				what: "Fluff",
+				prefer: [hasRes(RES.animals), isGov("Farming co-op")]
+			},
+			{
+				kind: "pickup",
+				what: "Splodge",
+				prefer: [hasRes(RES.water), isGov("Peace garden")]
+			},
+			{
+				kind: "pickup",
+				what: "Zoom",
+				prefer: [hasRes(RES.richSoil), techAtMost(3)]
+			},
+			{
+				kind: "pirate",
+				what: "the pirate with Wiggles",
+				tier: 1,
+				prefer: PIRATEY
+			},
+			{
+				kind: "deliver",
+				what: "Pip and Pop",
+				prefer: [isGov("Peace garden", "Temple"), calm]
+			}
+		]
+	},
+	{
+		id: "sable",
+		title: "Captain Sable's Lost Treasure",
+		giver: "Captain Sable",
+		reward: 1500,
+		ordered: true,
+		steps: [
+			{
+				kind: "clue",
+				what: "a map mark",
+				prefer: []
+			},
+			{
+				kind: "clue",
+				what: "a map mark",
+				prefer: []
+			},
+			{
+				kind: "clue",
+				what: "a map mark",
+				prefer: []
+			},
+			{
+				kind: "pirate",
+				what: "Rust-Beard",
+				tier: 2,
+				prefer: PIRATEY
+			},
+			{
+				kind: "deliver",
+				what: "Captain Sable's treasure",
+				same: 3,
+				prefer: []
+			}
+		]
 	}
 ];
+/** The first five quests: today's jobs come on and Star Quest Master is earned when these are done (not all ten). */
+const FIRST_SET = [
+	"zuzu",
+	"sprocket",
+	"nettle",
+	"vex",
+	"kai"
+];
+QUESTS.filter((q) => FIRST_SET.includes(q.id));
 const questById = (id) => QUESTS.find((q) => q.id === id);
+/** A step with no planet of its own: goods handed over at another step's planet, or a step at the `same` planet. */
+const sharesPlanet = (s) => s.kind === "buy-deliver" && !s.hands || s.same !== void 0;
+/** The step whose planet a sharing step uses. */
+const sharedWith = (s, n) => s.same ?? s.near ?? n - 1;
 /** A planet's rank for a step: 0 for its first wish, 1 for its second ..., `prefer.length` for none. */
 function rank(step, p, g) {
 	const i = step.prefer.findIndex((w) => w(p, g));
@@ -10999,18 +11209,19 @@ function allowed(quest, i, p, g, chosen) {
 	const near = quest.steps[i].near;
 	const anchor = near === void 0 ? void 0 : chosen[near];
 	if (anchor !== void 0 && distance(g.planets[anchor], p) > 12) return false;
-	return true;
+	const n = quest.steps.length;
+	return quest.steps.filter((s, j) => s.kind === "buy-deliver" && (s.hands ? j === i : sharedWith(s, n) === i)).every((s) => !isBanned(p, s.good ?? 0));
 }
+/** The steps with a planet of their own, in the order they are listed (the order the stops are visited in). */
+const ownStops = (quest) => quest.steps.map((s, i) => sharesPlanet(s) ? -1 : i).filter((i) => i >= 0);
 /**
-* The order the stops are visited in, as indexes into `steps`, and which steps have a planet of their own. Dr Nettle's
-* goods are bought anywhere and handed over at his planet; Vex's garden is picked first so the pirates can wait around it.
+* The order the stops' planets are picked in, as indexes into `steps`. Vex's garden is picked first so the pirates can
+* wait around it; otherwise the listed order.
 */
 function route(quest) {
-	const own = quest.steps.map((s, i) => s.kind === "buy-deliver" ? -1 : i).filter((i) => i >= 0);
-	if (quest.steps.some((s) => s.near !== void 0 && quest.steps[s.near].kind !== "buy-deliver")) {
-		const anchor = quest.steps.length - 1;
-		return [anchor, ...own.filter((i) => i !== anchor)];
-	}
+	const own = ownStops(quest);
+	const anchor = quest.steps.length - 1;
+	if (quest.steps.some((s) => !sharesPlanet(s) && s.near === anchor)) return [anchor, ...own.filter((i) => i !== anchor)];
 	return own;
 }
 /**
@@ -11023,7 +11234,8 @@ function pickFor(galaxy, quest, used, maxLeg) {
 	const n = quest.steps.length;
 	const start = startPlanet(galaxy);
 	const steps = quest.steps;
-	const visit = steps.map((s, i) => s.kind === "buy-deliver" ? -1 : i).filter((i) => i >= 0);
+	const visit = ownStops(quest);
+	const race = quest.race;
 	const cost = (i, p) => rank(steps[i], p, galaxy) * 10 + (used.has(p.id) ? 4 : 0) + (p.id === start ? 3 : 0);
 	const candidates = order.map((i) => galaxy.planets.map((p) => ({
 		p,
@@ -11037,11 +11249,21 @@ function pickFor(galaxy, quest, used, maxLeg) {
 		const at = visit.indexOf(i);
 		for (const j of [visit[at - 1], visit[at + 1]]) {
 			const other = j === void 0 ? void 0 : chosen[j];
-			if (other !== void 0 && distance(galaxy.planets[other], p) > maxLeg) return false;
+			if (other === void 0) continue;
+			const leg = distance(galaxy.planets[other], p);
+			if (race ? leg < race.min || leg > race.max : leg > maxLeg) return false;
 		}
-		return true;
+		if (!race) return true;
+		let total = 0;
+		for (let k = 1; k < visit.length; k++) {
+			const a = visit[k - 1] === i ? p.id : chosen[visit[k - 1]];
+			const b = visit[k] === i ? p.id : chosen[visit[k]];
+			if (a !== void 0 && b !== void 0) total += distance(galaxy.planets[a], galaxy.planets[b]);
+		}
+		return total <= race.total;
 	};
 	const legPenalty = (i, p) => {
+		if (race) return 0;
 		const at = visit.indexOf(i);
 		let pen = 0;
 		for (const j of [visit[at - 1], visit[at + 1]]) {
@@ -11069,7 +11291,7 @@ function pickFor(galaxy, quest, used, maxLeg) {
 	search(0, 0);
 	const found = best;
 	if (!found) return null;
-	return steps.map((s, i) => found[s.kind === "buy-deliver" ? s.near ?? n - 1 : i]);
+	return steps.map((s, i) => found[sharesPlanet(s) ? sharedWith(s, n) : i]);
 }
 const picked = new WeakMap();
 /**
@@ -11082,7 +11304,17 @@ function questPlanets(galaxy) {
 	if (known) return known;
 	const used = new Set();
 	const all = QUESTS.map((q) => {
-		const set = pickFor(galaxy, q, used, 12) ?? pickFor(galaxy, q, used, 13) ?? pickFor(galaxy, q, used, 20);
+		const set = q.race ? [
+			q.race.max,
+			7,
+			13
+		].reduce((found, max) => found ?? pickFor(galaxy, {
+			...q,
+			race: {
+				...q.race,
+				max
+			}
+		}, used, 12), null) : pickFor(galaxy, q, used, 12) ?? pickFor(galaxy, q, used, 13) ?? pickFor(galaxy, q, used, 20);
 		if (!set) throw new Error(`No planets for quest ${q.id}`);
 		set.forEach((id) => used.add(id));
 		return set;
@@ -11114,12 +11346,12 @@ function nextQuest(q, day, pick) {
 }
 /** How many of a buy-deliver step's goods are wanted on this attempt. */
 const stepQty = (step, small) => small ? step.smallQty ?? step.qty ?? 0 : step.qty ?? 0;
-/** What a quest pays on finishing: its reward, or for Dr Nettle what he pays for the goods. */
+/** What a quest pays on finishing: its reward plus what the giver pays for the goods (Dr Nettle: the goods only; Chef Gorbo: 400 plus the goods). */
 function questReward(quest, small) {
-	const goods = quest.steps.filter((s) => s.kind === "buy-deliver");
-	if (!goods.length) return quest.reward;
-	return goods.reduce((sum, s) => sum + stepQty(s, small) * (s.pays ?? 0), 0);
+	return quest.steps.reduce((sum, s) => sum + (s.kind === "buy-deliver" ? stepQty(s, small) * (s.pays ?? 0) : 0), quest.reward);
 }
+/** The quest has a smaller order for small ships (goods to buy), so a ship under NETTLE_FULL_HOLDS gets it when taking it. */
+const hasSmallOrder = (quest) => quest.steps.some((s) => s.kind === "buy-deliver" && s.smallQty !== void 0);
 /** Why a step can't be done right now, or null if it can. Shared by the server's moves and the screens. */
 function stepProblem(galaxy, t, q, index) {
 	const open = openQuestOf(galaxy, q);
@@ -11133,6 +11365,7 @@ function stepProblem(galaxy, t, q, index) {
 	if (quest.ordered && quest.steps.some((_, i) => i < index && !q.done.includes(i))) return "Do the steps in order.";
 	const planet = galaxy.planets[open.planets[index]];
 	if (t.location !== planet.id) return `Fly to ${planet.name} first.`;
+	if (step.fullTank && t.fuel < SHIPS[t.ship].fuelTank) return `Fill your tank to the top first (${t.fuel} of ${SHIPS[t.ship].fuelTank}).`;
 	const holds = step.holds ?? 1;
 	if (step.kind === "pickup" && freeHolds(t) < holds) return `Make room: ${holds} free hold${holds === 1 ? "" : "s"} needed.`;
 	if (step.kind === "buy-deliver") {
@@ -11142,8 +11375,11 @@ function stepProblem(galaxy, t, q, index) {
 	}
 	return null;
 }
-/** Vex's pirates: Scrappy pirates for the first two, a Raider for the third, never a Captain (PIRATE_TIERS indexes). */
-const questPirateTier = (step) => step >= 2 ? 1 : 0;
+/**
+* A quest pirate's tier (PIRATE_TIERS index): the step's own (Pip and Pop's Raider, Rust-Beard the Captain), else Vex's
+* rule, Scrappy pirates for the first two and a Raider for the third.
+*/
+const questPirateTier = (quest, step) => quest.steps[step]?.tier ?? (step >= 2 ? 1 : 0);
 /** The open quest's pirate step waiting at the ship's planet, ready to fight (null: none). */
 function questFightHere(galaxy, t, q) {
 	const quest = openQuestOf(galaxy, q)?.quest;
@@ -11151,8 +11387,8 @@ function questFightHere(galaxy, t, q) {
 	const i = quest.steps.findIndex((s, index) => s.kind === "pirate" && stepProblem(galaxy, t, q, index) === null);
 	return i < 0 ? null : i;
 }
-/** A quest fight against the pirate ship of step `step`, with Vex's Navy laser lent and a gentle loss. */
-const questFight = (t, step, seed) => startFight(t, questPirateTier(step), seed, { lent: NAVY_LASER.power });
+/** A quest fight against the pirate ship of step `step`, with the Navy laser lent and a gentle loss. */
+const questFight = (t, quest, step, seed) => startFight(t, questPirateTier(quest, step), seed, { lent: NAVY_LASER.power });
 /** A ship small enough for Dr Nettle's smaller order. */
 const isSmallShip = (t) => holdsOf(t) < 15;
 /** A job's id when it is the open "quest": job-0, job-1. */
@@ -11162,8 +11398,8 @@ function jobIndex(id) {
 	const m = id ? /^job-(\d)$/.exec(id) : null;
 	return m ? Number(m[1]) : null;
 }
-/** All five story quests finished this season: daily jobs are on. */
-const allQuestsDone = (q) => !!q && QUESTS.every((c) => q.finished.includes(c.id));
+/** The first five story quests finished this season: daily jobs are on (whether or not quests 6 to 10 are done). */
+const allQuestsDone = (q) => !!q && FIRST_SET.every((id) => q.finished.includes(id));
 const roundUp5 = (n) => Math.ceil(n / 5) * 5;
 /**
 * Today's one or two jobs, made from a seed (school galaxy + pupil) and the day, so the same pupil always gets the same
@@ -11392,7 +11628,9 @@ function applyBatch(galaxy, galaxySeed, game, actions, settings, mark, pushes) {
 		const market = [];
 		for (const action of actions) {
 			if (g.pending) refuse("Finish what is happening first.");
+			const fuel = g.t.fuel;
 			step(galaxy, galaxySeed, g, action, settings, mark, out, market, pushes);
+			if (g.t.fuel > fuel && raceBackToStart(g)) out.raceReset = true;
 		}
 		if (market.length) out.pushes = tidyPushes(market);
 		return {
@@ -11406,6 +11644,22 @@ function applyBatch(galaxy, galaxySeed, game, actions, settings, mark, pushes) {
 		};
 		throw e;
 	}
+}
+/**
+* The Comet Cup is flown on one tank: fuel bought after the start line sends the race back to it (the steps done are
+* cleared, so the start line is next again). True if it did. Nothing is lost but the race so far.
+*/
+function raceBackToStart(g) {
+	const q = g.quests;
+	const quest = q?.open ? questById(q.open) : void 0;
+	if (!q || !quest?.race || q.fuelAtStart === void 0) return false;
+	const back = {
+		...q,
+		done: []
+	};
+	delete back.fuelAtStart;
+	g.quests = back;
+	return true;
 }
 /** A trade moves the school's prices at this planet: selling pushes down, buying pushes up, within the pupil's daily limit. */
 function recordPushes(g, plan, market) {
@@ -11508,6 +11762,7 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 					done: []
 				};
 				delete taken.small;
+				delete taken.fuelAtStart;
 				g.quests = taken;
 				return;
 			}
@@ -11521,7 +11776,8 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 				done: []
 			};
 			delete taken.small;
-			if (next.id === "nettle" && isSmallShip(t)) taken.small = true;
+			delete taken.fuelAtStart;
+			if (hasSmallOrder(next) && isSmallShip(t)) taken.small = true;
 			g.quests = taken;
 			return;
 		}
@@ -11572,6 +11828,7 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 					lastDay: t.day
 				};
 				delete finished.small;
+				delete finished.fuelAtStart;
 				g.quests = finished;
 				out.quest = {
 					finished: quest.id,
@@ -11580,7 +11837,8 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 				};
 			} else g.quests = {
 				...q,
-				done
+				done,
+				...step.fullTank ? { fuelAtStart: t.fuel } : {}
 			};
 			if (!next.questCargo) delete next.questCargo;
 			g.t = next;
@@ -11593,7 +11851,7 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 			if (quest.steps[index]?.kind !== "pirate") refuse("There is no pirate ship to fight.");
 			const problem = stepProblem(galaxy, t, g.quests, index);
 			if (problem) refuse(problem);
-			startQuestFight(g, index, seed);
+			startQuestFight(g, quest, index, seed);
 			return;
 		}
 		case "quest-drop": {
@@ -11605,6 +11863,7 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 				done: []
 			};
 			delete dropped.small;
+			delete dropped.fuelAtStart;
 			g.quests = dropped;
 			const next = { ...t };
 			delete next.questCargo;
@@ -11620,10 +11879,11 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 			} : t, int(action.dest, 0, galaxy.planets.length - 1), pushes));
 			g.stats.jumps += 1;
 			const pirate = questFightHere(galaxy, g.t, g.quests);
-			if (pirate !== null) {
+			const pirateQuest = openQuestOf(galaxy, g.quests)?.quest;
+			if (pirate !== null && pirateQuest) {
 				out.encounter = {
 					kind: "pirates",
-					tier: startQuestFight(g, pirate, seed).tier
+					tier: startQuestFight(g, pirateQuest, pirate, seed).tier
 				};
 				if (netWorth(galaxy, g.t) > worthBefore) g.stats.profitableJumps += 1;
 				return;
@@ -11654,8 +11914,8 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 	}
 }
 /** Starts the fight with a quest pirate (step `index`). The seed changes with each try, so a retry is a new fight. */
-function startQuestFight(g, index, seed) {
-	const fight = questFight(g.t, index, `${seed}:vex:${g.t.jumpNo}:${index}:${g.t.hull}:${g.asked}:${g.stats.piratesBeaten}`);
+function startQuestFight(g, quest, index, seed) {
+	const fight = questFight(g.t, quest, index, `${seed}:vex:${g.t.jumpNo}:${index}:${g.t.hull}:${g.asked}:${g.stats.piratesBeaten}`);
 	g.pending = {
 		kind: "fight",
 		tier: fight.tier,
@@ -11683,7 +11943,8 @@ function applyFight(game, action, ask, settings, mark) {
 			g.t = settleFight(g.t, next);
 			g.pending = null;
 			const q = g.quests;
-			if (next.outcome === "won" && quest !== void 0 && q?.open === "vex" && !q.done.includes(quest)) g.quests = {
+			const pirateStep = q?.open ? questById(q.open)?.steps[quest ?? -1] : void 0;
+			if (next.outcome === "won" && quest !== void 0 && q && pirateStep?.kind === "pirate" && !q.done.includes(quest)) g.quests = {
 				...q,
 				done: [...q.done, quest].sort((a, b) => a - b)
 			};

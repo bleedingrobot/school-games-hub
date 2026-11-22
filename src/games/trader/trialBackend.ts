@@ -11,7 +11,7 @@ import { SHIPS } from '../../../shared/trader/config';
 import { makeGalaxy } from '../../../shared/trader/galaxy';
 import { marketFor } from '../../../shared/trader/market';
 import { nextStop } from './questGuide';
-import { QUESTS } from '../../../shared/trader/quests';
+import { FIRST_QUESTS, QUESTS } from '../../../shared/trader/quests';
 import { SchoolMarket } from '../../../shared/trader/schoolMarket';
 import { busyLunchtime } from '../../../shared/trader/sim';
 import { PICTURE_GAP_MINUTES, type StickerId } from '../../../shared/trader/gallery';
@@ -215,8 +215,8 @@ export function trialBackend(options: TrialOptions = {}): Trial {
           if (at >= 0) g.quests = { open: id, done: [], finished: QUESTS.slice(0, at).map((q) => q.id), lastDay: null };
         }),
       finishAllQuests: () => {
-        edit((g) => void (g.quests = { open: null, done: [], finished: QUESTS.map((q) => q.id), lastDay: g.t.day }));
-        for (const q of QUESTS) if (!data.questLog.includes(q.id)) data.questLog.push(q.id);
+        edit((g) => void (g.quests = { open: null, done: [], finished: FIRST_QUESTS.map((q) => q.id), lastDay: g.t.day }));
+        for (const q of FIRST_QUESTS) if (!data.questLog.includes(q.id)) data.questLog.push(q.id);
       },
       busySchool: (pupils = SCHOOL_SIZE) => {
         const day = data.game?.game.t.day;

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { MEDICINE, SHIPS, WATER } from './config';
+import { FOOD, LOLLIES, MEDICINE, SHIPS, WATER } from './config';
 import { chartPoint, distance, makeGalaxy } from './galaxy';
-import { marketFor } from './market';
-import { JOB_MIN_LEG, NAVY_LASER, QUESTS, makeJobs, withJobs, QUEST_MAX_LEG, QUEST_POINTS, nearestSellers, nextQuest, openQuestView, questLegs, questPlanets, questReward, trailClue } from './quests';
+import { isBanned, marketFor } from './market';
+import { FIRST_SET, JOB_MIN_LEG, NAVY_LASER, QUESTS, allQuestsDone, sharesPlanet, makeJobs, withJobs, QUEST_MAX_LEG, QUEST_POINTS, nearestSellers, nextQuest, openQuestView, questLegs, questPlanets, questReward, trailClue } from './quests';
 import { DEFAULT_SETTINGS, applyBatch, applyFight, newGame, type Action, type Game, type Reply } from './server';
 
 import { freeHolds, setCargo, usedHolds } from './state';
@@ -56,17 +56,33 @@ describe('Star Trader quests', () => {
     // Each quest's planets come from the galaxy: the same planets for the same galaxy, the right kinds where they exist, every stop within a jump of the last, on many galaxies.
     {
       expect(questPlanets(makeGalaxy(SEED))).toEqual(planets);
-      expect(QUESTS.map((q) => q.id)).toEqual(['zuzu', 'sprocket', 'nettle', 'vex', 'kai']);
+      expect(QUESTS.map((q) => q.id)).toEqual(['zuzu', 'sprocket', 'nettle', 'vex', 'kai', 'puddle', 'gorbo', 'zip', 'pippop', 'sable']);
+      expect(FIRST_SET).toEqual(QUESTS.slice(0, 5).map((q) => q.id));
+      // Quests 6 to 10 never move the first five's planets (taken on main before they were added, 22 Nov 2026).
+      expect(planets.slice(0, 5)).toEqual([[16, 13, 15, 0], [14, 2, 22, 4, 3], [9, 9, 9], [15, 16, 5, 0], [7, 10, 20, 6]]);
+      let firstFive = 0;
       let firstChoice = 0;
       let steps = 0;
       for (let i = 0; i < 300; i++) {
         const g = makeGalaxy(`sim-${i}`);
         const all = questPlanets(g);
+        for (const id of all.slice(0, 5).flat()) firstFive = (firstFive * 31 + id + 1) % 1_000_000_007;
+        // Mayor Puddle: three dry planets within a jump of each other, and he waits at the last. Chef Gorbo's planet allows
+        // Lollies. The Comet Cup: legs of 2 to 5 fuel, 13 at most in all (the smallest tank). Sable's chest is at Rust-Beard's.
+        const [puddle, gorbo, zip, , sable] = all.slice(5);
+        for (const [a, b] of [[0, 1], [1, 2], [0, 2]]) expect(distance(g.planets[puddle[a]], g.planets[puddle[b]])).toBeLessThanOrEqual(QUEST_MAX_LEG);
+        expect(puddle[3]).toBe(puddle[2]);
+        expect(isBanned(g.planets[gorbo[4]], LOLLIES)).toBe(false);
+        const race = questLegs(g, zip);
+        expect(race).toHaveLength(2);
+        for (const leg of race) expect(leg >= 2 && leg <= 5).toBe(true);
+        expect(race.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(13);
+        expect(sable[4]).toBe(sable[3]);
         QUESTS.forEach((q, qi) => {
           const set = all[qi];
           expect(set).toHaveLength(q.steps.length);
-          // Stops are different planets (Dr Nettle's goods are handed over at his planet).
-          const stops = q.steps.map((s, si) => (s.kind === 'buy-deliver' ? -1 : set[si])).filter((id) => id >= 0);
+          // Stops are different planets (Dr Nettle's goods are handed over at his planet, Mayor Puddle waits at a dry planet).
+          const stops = q.steps.map((s, si) => (sharesPlanet(s) ? -1 : set[si])).filter((id) => id >= 0);
           expect(new Set(stops).size).toBe(stops.length);
           const legs = questLegs(g, set);
           for (const leg of legs) expect(leg).toBeLessThanOrEqual(QUEST_MAX_LEG);
@@ -86,6 +102,7 @@ describe('Star Trader quests', () => {
       }
       // Most steps get their first wish (a Farming co-op for the berries ...); the rest a sensible fallback.
       expect(firstChoice / steps).toBeGreaterThan(0.6);
+      expect(firstFive).toBe(477336869);
     }
 
     // opens quests one at a time, in order, at most one new one a day, and an old save without quests still loads.
@@ -180,7 +197,7 @@ describe('Star Trader quests', () => {
       expect(won.ok && won.quest?.reward).toBe(600);
       const kaiDone = finish(kai, 4);
       expect(kaiDone.ok && kaiDone.quest?.reward).toBe(800);
-      expect(nextQuest(ok(kaiDone).quests, 99)).toBeNull();
+      expect(nextQuest(ok(kaiDone).quests, 99)?.id).toBe('puddle');
     }
 
     // quest cargo is free, takes a hold each, needs room, can't be sold or taken, and goes when the quest is handed in or dropped.
@@ -349,6 +366,88 @@ describe('Star Trader quests', () => {
       expect(next.quests).toMatchObject({ open: null, jobs: { day: half.t.day + 1, done: [] } });
       expect(next.t.questCargo).toBeUndefined();
       expect(usedHolds(next.t)).toBe(0);
+    }
+    // Quests 6 to 10 (trader-quests-2 R.1): they open after the first five, one a day, in order, while today's jobs carry on.
+    {
+      const five: Game = { ...fresh(), quests: { open: null, done: [], finished: [...FIRST_SET], lastDay: 9 } };
+      expect(allQuestsDone(five.quests)).toBe(true);
+      expect(withJobs(galaxy, five, `${SEED}:p`).quests?.jobs?.list.length).toBeGreaterThan(0);
+      expect(nextQuest(five.quests, 10)?.id).toBe('puddle');
+      expect(nextQuest({ ...five.quests!, lastDay: 10 }, 10)).toBeNull();
+      expect(refused(run(five, { type: 'quest-take', id: 'gorbo' }))).toMatch(/not open/);
+      const order = QUESTS.slice(5).map((_, k) => nextQuest({ ...five.quests!, finished: [...FIRST_SET, ...QUESTS.slice(5, 5 + k).map((c) => c.id)] }, 10)?.id);
+      expect(order).toEqual(['puddle', 'gorbo', 'zip', 'pippop', 'sable']);
+      const after = (...more: string[]): Game => ({ ...fresh(), quests: { open: null, done: [], finished: [...FIRST_SET, ...more], lastDay: 9 } });
+      const take = (g: Game, id: string): Game => ok(run(g, { type: 'quest-take', id }));
+
+      // Mayor Puddle: 4 Water handed over at each dry planet (3 on a small ship), then he pays a set 900 at the last.
+      const pud = take(after(), 'puddle');
+      expect(pud.quests?.small).toBe(true);
+      const big = take({ ...after(), t: { ...after().t, ship: 1 } }, 'puddle');
+      expect(big.quests?.small).toBeUndefined();
+      expect(questReward(QUESTS[5], true)).toBe(900);
+      const dry = at(big, planets[5][0]);
+      setCargo(dry.t, WATER, 12, 60);
+      expect(refused(run(at(dry, planets[5][1]), { type: 'quest-deliver', step: 0 }))).toMatch(/Fly to/);
+      const d1 = ok(run(dry, { type: 'quest-deliver', step: 0 }));
+      expect(d1.t.cargo[WATER]).toBe(8);
+      expect(refused(run(at(d1, planets[5][2]), { type: 'quest-deliver', step: 3 }))).toMatch(/other steps first/);
+      const pr = finish(big, 5);
+      expect(pr.ok && pr.quest).toEqual({ finished: 'puddle', reward: 900, points: QUEST_POINTS });
+
+      // Chef Gorbo: two pick-ups (quest cargo) and real Food and Lollies; 400 plus 120 a Food and 300 a Lolly (James, 22 Nov: Lollies cost about 210 to 330).
+      expect(questReward(QUESTS[6])).toBe(400 + 5 * 120 + 3 * 300);
+      expect(questReward(QUESTS[6], true)).toBe(400 + 4 * 120 + 2 * 300);
+      const gor = take({ ...after('puddle'), t: { ...after().t, ship: 1 } }, 'gorbo');
+      const gr = finish(gor, 6);
+      expect(gr.ok && gr.quest?.reward).toBe(1900);
+      expect(ok(gr).t.cargo[FOOD]).toBe(15);
+      expect(ok(gr).t.cargo[LOLLIES]).toBe(17);
+      expect(ok(gr).t.questCargo).toBeUndefined();
+
+      // The Comet Cup: in order, from a start line ticked only with a full tank. Fuel bought after it goes back to the start.
+      const zip = take(after('puddle', 'gorbo'), 'zip');
+      const start = at(zip, planets[7][0]);
+      expect(refused(run(at(zip, planets[7][1]), { type: 'quest-pickup', step: 1 }))).toMatch(/in order/);
+      expect(refused(run({ ...start, t: { ...start.t, fuel: 3 } }, { type: 'quest-pickup', step: 0 }))).toMatch(/Fill your tank to the top first \(3 of 20\)/);
+      const z0 = ok(run(start, { type: 'quest-pickup', step: 0 }));
+      expect(z0.quests).toMatchObject({ done: [0], fuelAtStart: SHIPS[0].fuelTank });
+      const z1 = ok(run(z0, { type: 'jump', dest: planets[7][1] }));
+      expect(z1.t.fuel).toBe(SHIPS[0].fuelTank - questLegs(galaxy, planets[7]).at(0)!);
+      const z2 = ok(run({ ...z1, pending: null }, { type: 'quest-pickup', step: 1 }));
+      expect(z2.quests?.done).toEqual([0, 1]);
+      const refuelled = run(z2, { type: 'refuel', units: 2 });
+      expect(refuelled.ok && refuelled.raceReset).toBe(true);
+      expect(ok(refuelled).quests).toMatchObject({ open: 'zip', done: [] });
+      expect(ok(refuelled).quests?.fuelAtStart).toBeUndefined();
+      expect(ok(run(z0, { type: 'quest-drop' })).quests?.fuelAtStart).toBeUndefined();
+      const zr = finish(zip, 7);
+      expect(zr.ok && zr.quest?.reward).toBe(1100);
+
+      // Pip and Pop: three pets, and a Raider (never a Captain) with Wiggles; a gentle fight with the Navy laser lent.
+      const pip = take(after('puddle', 'gorbo', 'zip'), 'pippop');
+      const pf = ok(run(at(pip, planets[8][3]), { type: 'quest-fight', step: 3 })).pending;
+      expect(pf?.kind === 'fight' && [pf.tier, pf.fight.lent, pf.fight.gentle]).toEqual([1, NAVY_LASER.power, true]);
+      const ppr = finish(pip, 8);
+      expect(ppr.ok && ppr.quest?.reward).toBe(1200);
+
+      // Captain Sable: three map marks in order, then Rust-Beard (a Captain) at the treasure planet, who stays till beaten.
+      const sab = take({ ...after('puddle', 'gorbo', 'zip', 'pippop'), t: { ...fresh().t, ship: 1, hull: SHIPS[1].hull } }, 'sable');
+      expect(refused(run(at(sab, planets[9][3]), { type: 'quest-fight', step: 3 }))).toMatch(/in order/);
+      expect(trailClue(galaxy, planets[9][2], planets[9][3]).text).toMatch(/^From here, go /);
+      const marks = ok(run(at(ok(run(at(ok(run(at(sab, planets[9][0]), { type: 'quest-pickup', step: 0 })), planets[9][1]), { type: 'quest-pickup', step: 1 })), planets[9][2]), { type: 'quest-pickup', step: 2 }));
+      const near = galaxy.planets.find((p) => p.id !== planets[9][3] && distance(p, galaxy.planets[planets[9][3]]) <= 8)!;
+      const boss = run(at(marks, near.id), { type: 'jump', dest: planets[9][3] });
+      expect(boss.ok && boss.encounter).toEqual({ kind: 'pirates', tier: 2 });
+      const lost = fightOut(ok(run({ ...at(marks, planets[9][3]), t: { ...at(marks, planets[9][3]).t, hull: 1 } }, { type: 'quest-fight', step: 3 })));
+      expect(lost.ok && lost.fight?.fight.outcome).toBe('knocked');
+      expect(ok(lost).quests?.done).toEqual([0, 1, 2]);
+      expect(refused(run(ok(lost), { type: 'quest-deliver', step: 4 }))).toMatch(/other steps first/);
+      const sr = finish(sab, 9);
+      expect(sr.ok && sr.quest?.reward).toBe(1500);
+      expect(nextQuest(ok(sr).quests, 99)).toBeNull();
+      // Jobs still come with all ten done.
+      expect(allQuestsDone(ok(sr).quests)).toBe(true);
     }
   });
 });
