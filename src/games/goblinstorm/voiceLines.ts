@@ -32,9 +32,26 @@ export const TIPS = [
   'Beat a map’s boss to open the next map.',
 ] as const;
 
+/**
+ * The Storm Lands (docs/GOBLINSTORM-STORM-LANDS-PLAN.md, stage 4): what Bella says about each map's twist. The map's
+ * own line once, just after a run starts; the rest when the twist happens (stormVoice.ts says when).
+ */
+export const STORM_LINES = {
+  sunken: 'The sea is pushing you! Swim against it, and watch which way it turns.',
+  sky: 'Watch the floor! When a ring glows under you, move out before the lightning hits.',
+  crystal: 'Big crystal monsters break into little ones. Keep moving!',
+  swamp: 'The fog is thick! Monsters can sneak up on you, so keep moving.',
+  citadel: 'This is the Storm King’s castle. Beat him to break the storm!',
+  tide: 'The tide turns!',
+  ring: 'A ring is glowing under you. Move!',
+  rage: 'The Storm King is raging! Here comes a swarm!',
+  revive: 'Second Wind! You’re back on your feet!',
+} as const;
+export type StormLine = keyof typeof STORM_LINES;
+
 /** Lines that may be said whole. */
 export function fixedLines(): string[] {
-  return [...Object.values(GUIDE), ...TIPS];
+  return [...Object.values(GUIDE), ...TIPS, ...Object.values(STORM_LINES)];
 }
 
 /** Every clip: the fixed lines, the question word pieces and the numbers. */

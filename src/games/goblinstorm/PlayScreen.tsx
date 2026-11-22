@@ -21,7 +21,8 @@ import { useSound } from '../../sound';
 import { playSounds, type StormSound } from './sfx';
 import type { Quality } from './quality';
 import { hush, say, sayQuestion } from './voice';
-import { GUIDE } from './voiceLines';
+import { GUIDE, STORM_LINES, type StormLine } from './voiceLines';
+import { stormLine } from './stormVoice';
 
 const STEP_MS = 1000 / STEPS_PER_SECOND;
 const MAX_STEPS_A_FRAME = 4;
@@ -281,6 +282,9 @@ export function PlayScreen({ backend, start, hero, map, onEnd, guided = false, q
     };
 
     let raf = 0;
+    let talk: StormLine | null = null;
+    let lastTalk = -99;
+    const stormSaid = new Map<StormLine, number>();
     let last = performance.now();
     let acc = 0;
     let slow = 0;
@@ -308,8 +312,15 @@ export function PlayScreen({ backend, start, hero, map, onEnd, guided = false, q
           g.steering.push(d);
           stepRun(s, d);
           g.view.take(s, s.events);
+          talk = stormLine(s, stormSaid) ?? talk;
         }
         if (steps >= MAX_STEPS_A_FRAME) acc = 0;
+        // Bella on the Storm Lands' twists: never over a level-up question, the guide or another line just said.
+        if (talk && soundRef.current && !waiting(s) && g.time - lastTalk > 3.5) {
+          say(STORM_LINES[talk]);
+          lastTalk = g.time;
+        }
+        talk = null;
         warnings();
       } else acc = 0;
       if (s.outcome !== 'running' && g.stage !== 'end' && g.stage !== 'leave') {

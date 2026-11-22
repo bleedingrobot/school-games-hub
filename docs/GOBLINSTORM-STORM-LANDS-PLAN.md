@@ -2,7 +2,7 @@
 
 *James, 22 Nov 2026: plan 5 more levels. First idea was "beat every map 3 times with every hero" (120 wins); too hard. Then once with each hero (40 wins). Then James chose: **unlock them by buying the whole shop**, and add **Legendary upgrades** to the shop that help on the new maps, working **on the new maps only**.*
 
-**Status: LIVE 22 Nov 2026 for every class (stage 3, migration `20261122000400`, `STORM_LANDS_ON = true`). Stage 1 rules #718, stage 2 art #723 (Kraken scenes repainted as an octopus). Next: stage 4, Bella's lines for each twist.**
+**Status: LIVE 22 Nov 2026 for every class (stage 3, migration `20261122000400`, `STORM_LANDS_ON = true`). Stage 1 rules #718, stage 2 art #723 (Kraken scenes repainted as an octopus). Stage 4, Bella's lines for each twist, done 22 Nov (`STORM_LINES`, `stormVoice.ts`).**
 
 ## The Storm Gate
 - **Opens with:** the whole shop bought (all 28 levels, 21,300 gold) **and** the Fire Dragon beaten once. The Fire Dragon keeps the maps in order; the shop is the long part.
@@ -67,3 +67,8 @@ Goblin Storm is at its 8. The Storm Lands checks are one rule test (Legendary do
 - Migration `20261122000400`: runs on maps 0–9; `buy_goblinstorm` sells the Legendary row once the whole shop is bought (`'locked'` before; new helper `goblinstorm_shop_full`, not callable by pupils); `goblinstorm_gate` measure; achievements Storm Gate 🌀 and Storm Breaker 🌈 (all 10 bosses); trophy Storm King's Crown (`goblinstorm-stormcrown`, map 9's boss). `record_goblinstorm_run` unchanged.
 - Screens: the Shop's ⚡ Legendary row (gold frames, shine, greyed and 🔒 until the whole shop is bought; painted icons); gold shows as Best haul only once the Legendary row is all bought too; the next-step line points at the cheapest Legendary; the Storm Gate story page once, the first time the map screen shows with the gate open; the Lava boss page now ends "something still rumbles…"; a What's new line.
 - `goblinstorm.test.sql` has 84 checks (11 new: map 9 allowed and 10 not, Legendary locked then bought at its price and its top, the gate measure, the Storm King's Crown, the two achievements).
+
+## Stage 4 results (Bella, 22 Nov 2026)
+- `STORM_LINES` in voiceLines.ts, 9 Kokoro af_bella clips: each map's own line 1.5 s into a run, "The tide turns!" each time the sea turns, the first two lightning rings of a run, the Storm King's rage, Second Wind.
+- `stormVoice.ts` decides from the run and the step's events only (it can't change a run). PlayScreen says at most one line every 3.5 s, never while a level-up is waiting, and only with the game's sound on.
+- Checked in voiceLines.test.ts (not counted): Sky Citadel says its line then two ring warnings; Sunken Kingdom its line then the tide; Lava Mines says nothing.
