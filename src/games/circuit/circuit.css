@@ -250,3 +250,99 @@
 @media (prefers-reduced-motion: reduce) {
   .cr-map__art, .cr-pin--on, .cr-dash__time--low { animation: none; }
 }
+
+/* ——— Stage 5: the painted art ——— */
+
+/* The painted dashboard: battery and signal in its two round gauges, time and speed on its middle screen. The frame is
+   4 : 1; the gauges sit on its rings (centres 19.4% and 80.5% across) and the screen at 35.5% to 65%. */
+.cr-panel {
+  position: relative; align-self: center; width: min(100%, 600px); aspect-ratio: 4 / 1; margin-top: -0.1rem;
+  background: var(--cr-dash-small) center / 100% 100% no-repeat;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.6));
+}
+@media (min-width: 700px) { .cr-panel { background-image: var(--cr-dash); } }
+.cr-ring {
+  position: absolute; top: 51%; width: 14.2%; aspect-ratio: 1; transform: translate(-50%, -50%);
+  display: grid; place-items: center; align-content: center;
+}
+.cr-ring--left { left: 19.4%; }
+.cr-ring--right { left: 80.5%; }
+.cr-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.cr-ring__track { fill: rgba(2, 6, 18, 0.65); stroke: rgba(255, 255, 255, 0.08); stroke-width: 9; }
+.cr-ring__arc { fill: none; stroke-width: 9; stroke-linecap: round; filter: drop-shadow(0 0 4px currentColor); transition: stroke-dasharray 0.15s linear; }
+.cr-ring__num { position: relative; font: 900 clamp(0.8rem, 2.6vw, 1.35rem)/1 ui-monospace, monospace; text-shadow: 0 0 8px currentColor; }
+.cr-ring__label { position: relative; font-size: clamp(0.42rem, 1.3vw, 0.62rem); font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #cbd5e1; }
+.cr-ring--flash { animation: cr-flash 0.6s steps(2) infinite; }
+.cr-panel__screen {
+  position: absolute; left: 36.5%; width: 27.5%; top: 27%; height: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem;
+}
+.cr-panel__screen .cr-dash__time { font-size: clamp(0.95rem, 3.6vw, 1.7rem); }
+.cr-panel__screen .cr-meter { width: 90%; gap: 0.25rem; }
+.cr-panel__screen .cr-meter__label { font-size: clamp(0.45rem, 1.3vw, 0.65rem); text-transform: uppercase; letter-spacing: 0.06em; color: #a5f3fc; }
+.cr-panel__screen .cr-meter__bar { flex: 1; width: auto; height: clamp(5px, 1.2vw, 9px); }
+.cr-light__word { display: inline; }
+@media (max-width: 480px) { .cr-light__word { display: none; } .cr-dash__top { gap: 0.4rem; } }
+
+/* Volt, painted. */
+.cr-volt__face--art { object-fit: contain; filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.55)); animation: cr-volt-bob 2.4s ease-in-out infinite; }
+.cr-volt--talking .cr-volt__face--art { animation-duration: 0.9s; }
+@keyframes cr-volt-bob { 50% { transform: translateY(-4px) rotate(-3deg); } }
+
+/* The racer picker on the world map. */
+.cr-racers { width: 100%; max-width: 980px; margin: 1.2rem 0 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.8rem 1.2rem; }
+.cr-racers__volt { display: flex; align-items: flex-end; gap: 0.4rem; max-width: 20rem; }
+.cr-racers__line {
+  margin: 0 0 0.4rem; padding: 0.45rem 0.75rem; border-radius: 14px 14px 14px 4px; font-weight: 700; font-size: 0.92rem;
+  background: rgba(8, 20, 40, 0.88); border: 1px solid rgba(103, 232, 249, 0.6);
+}
+.cr-racers__list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; }
+.cr-racer {
+  position: relative; width: 104px; padding: 0.35rem 0.35rem 0.45rem; border-radius: 18px; cursor: pointer; font: inherit; color: #fff;
+  display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
+  background: rgba(4, 8, 22, 0.8); border: 2px solid color-mix(in srgb, var(--cr-racer) 55%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--cr-racer) 30%, transparent); transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.cr-racer img { width: 88px; height: 88px; border-radius: 14px; display: block; }
+.cr-racer:hover { transform: translateY(-3px); }
+.cr-racer--on { border-color: var(--cr-racer); box-shadow: 0 0 22px var(--cr-racer), 0 0 44px color-mix(in srgb, var(--cr-racer) 45%, transparent); transform: translateY(-4px) scale(1.05); }
+.cr-racer--locked img { filter: grayscale(0.85) brightness(0.45); }
+.cr-racer__name { font-weight: 800; font-size: 0.9rem; }
+.cr-racer__point { position: absolute; right: -0.6rem; top: 30%; font-size: 1.3rem; animation: cr-point 1s ease-in-out infinite; }
+@keyframes cr-point { 50% { transform: translateX(5px); } }
+
+/* The finish: the world's painting full window, the medal dropping in with a burst of sparks, the time counting up. */
+.cr-finish { position: relative; overflow: hidden; align-items: flex-end; padding-bottom: 1.5rem; background: #04050f; }
+.cr-finish__art { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: cr-finish-zoom 9s ease-out both; }
+@keyframes cr-finish-zoom { from { transform: scale(1.12); filter: brightness(1.6); } 30% { filter: brightness(1); } to { transform: scale(1); } }
+.cr-finish::before { content: ''; position: fixed; inset: 0; background: linear-gradient(rgba(4, 5, 15, 0) 25%, rgba(4, 5, 15, 0.55) 60%, rgba(4, 5, 15, 0.85)); pointer-events: none; }
+.cr-finish__card {
+  position: relative; background: rgba(6, 14, 30, 0.72); backdrop-filter: blur(6px);
+  animation: cr-card-in 0.5s cubic-bezier(0.2, 1.4, 0.5, 1) both;
+}
+@keyframes cr-card-in { from { opacity: 0; transform: translateY(40px) scale(0.95); } }
+.cr-finish__medal { margin: 0.2rem 0 0; font-size: clamp(3.4rem, 12vw, 5.5rem); line-height: 1; filter: drop-shadow(0 0 18px rgba(253, 224, 71, 0.8)); animation: cr-medal-drop 0.9s cubic-bezier(0.3, 1.6, 0.5, 1) 0.25s both; }
+@keyframes cr-medal-drop { from { opacity: 0; transform: translateY(-160px) rotate(-30deg) scale(1.6); } 70% { transform: translateY(6px) rotate(6deg) scale(1); } }
+.cr-finish__sparks { position: fixed; left: 50%; top: 42%; width: 0; height: 0; pointer-events: none; z-index: 1; }
+.cr-finish__sparks span {
+  position: absolute; width: 8px; height: 8px; margin: -4px; border-radius: 50%; opacity: 0;
+  background: #fef08a; box-shadow: 0 0 10px #fde047, 0 0 20px #f59e0b;
+  animation: cr-spark 0.9s ease-out both;
+}
+.cr-finish--graphics .cr-finish__sparks span { background: #fdba74; box-shadow: 0 0 10px #fb923c, 0 0 20px #ea580c; }
+.cr-finish--memory .cr-finish__sparks span, .cr-finish--cloud .cr-finish__sparks span { background: #bae6fd; box-shadow: 0 0 10px #7dd3fc, 0 0 20px #0ea5e9; }
+.cr-finish--quantum .cr-finish__sparks span { background: #f5d0fe; box-shadow: 0 0 10px #e879f9, 0 0 20px #a855f7; }
+@keyframes cr-spark {
+  0% { opacity: 1; transform: rotate(var(--a)) translateX(0) scale(1.4); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--d)) scale(0.3); }
+}
+.cr-finish--hard .cr-finish__card { border-color: rgba(251, 146, 60, 0.8); box-shadow: 0 0 40px rgba(251, 146, 60, 0.35); }
+
+@media (prefers-reduced-motion: reduce) {
+  .cr-volt__face--art, .cr-racer__point, .cr-finish__art, .cr-finish__card, .cr-finish__medal, .cr-ring--flash { animation: none; }
+  .cr-finish__sparks { display: none; }
+}
+.cr-finish__art { z-index: 0; }
+.cr-finish::before { z-index: 1; }
+.cr-finish__sparks { z-index: 2; }
+.cr-finish__card { z-index: 3; }

@@ -19,24 +19,31 @@ import { signText } from '../../../shared/circuit/maths';
 import { cellAt, type Road } from '../../../shared/circuit/road';
 import type { World } from '../../../shared/circuit/config';
 import cloudSky from './art/paint/worlds/cloud-800.webp';
+import cloudBig from './art/paint/worlds/cloud.webp';
 import gpuSky from './art/paint/worlds/gpu-800.webp';
+import gpuBig from './art/paint/worlds/gpu.webp';
 import memorySky from './art/paint/worlds/memory-800.webp';
+import memoryBig from './art/paint/worlds/memory.webp';
 import motherboardSky from './art/paint/worlds/motherboard-800.webp';
+import motherboardBig from './art/paint/worlds/motherboard.webp';
 import quantumSky from './art/paint/worlds/quantum-800.webp';
+import quantumBig from './art/paint/worlds/quantum.webp';
 import { createRacer, racerEnvironment } from './racer';
 import { chipTexture, tileTextures, type TileKind } from './textures';
 
 /**
- * Each world's look (Stage 4): its painted backdrop far behind the road (Stage 5's paintings, the 800-wide copies: it is
- * blurred by distance and fog anyway), the fog it fades into, the neon rims and the checkpoint arches.
+ * Each world's look (Stage 4): its painted backdrop far behind the road (the 800-wide copy on small screens, the full one on
+ * big screens: Stage 5), the fog it fades into, the neon rims and the checkpoint arches.
  */
-const LOOKS: Record<World, { sky: string; fog: string; rim: string; grid: [string, string] }> = {
-  motherboard: { sky: motherboardSky, fog: '#050616', rim: '#22e3ff', grid: ['#7c3aed', '#312e81'] },
-  graphics: { sky: gpuSky, fog: '#14070a', rim: '#ff7a3d', grid: ['#f97316', '#7c2d12'] },
-  memory: { sky: memorySky, fog: '#06101f', rim: '#7dd3fc', grid: ['#38bdf8', '#1e3a8a'] },
-  cloud: { sky: cloudSky, fog: '#0c2238', rim: '#a5f3fc', grid: ['#67e8f9', '#155e75'] },
-  quantum: { sky: quantumSky, fog: '#12061f', rim: '#c084fc', grid: ['#e879f9', '#581c87'] },
+const LOOKS: Record<World, { sky: string; big: string; fog: string; rim: string; grid: [string, string] }> = {
+  motherboard: { sky: motherboardSky, big: motherboardBig, fog: '#050616', rim: '#22e3ff', grid: ['#7c3aed', '#312e81'] },
+  graphics: { sky: gpuSky, big: gpuBig, fog: '#14070a', rim: '#ff7a3d', grid: ['#f97316', '#7c2d12'] },
+  memory: { sky: memorySky, big: memoryBig, fog: '#06101f', rim: '#7dd3fc', grid: ['#38bdf8', '#1e3a8a'] },
+  cloud: { sky: cloudSky, big: cloudBig, fog: '#0c2238', rim: '#a5f3fc', grid: ['#67e8f9', '#155e75'] },
+  quantum: { sky: quantumSky, big: quantumBig, fog: '#12061f', rim: '#c084fc', grid: ['#e879f9', '#581c87'] },
 };
+/** The sky painting is shown this much bigger than "cover", so it has room to drift (the parallax). */
+const SKY_ZOOM = 1.08;
 
 export interface RaceView {
   /** Draws the race `alpha` of the way from `prev` to `cur`; `seconds` since the last draw. */
@@ -64,7 +71,7 @@ const CHIP_COLOURS = { '1': '#22d3ee', '2': '#e879f9', '3': '#facc15' } as const
  * `gates`: with maths on, what each gate lane's sign shows (as `road.gates[g].lanes`; null: no sign); gate lanes then look like
  * plain trace until the split. Null with maths off: every gate lane is overclock and looks it.
  */
-export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduced: boolean; low?: boolean; gates?: readonly (readonly (string | null)[])[] | null; hard?: boolean }): RaceView {
+export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduced: boolean; low?: boolean; gates?: readonly (readonly (string | null)[])[] | null; hard?: boolean; colour?: string }): RaceView {
   const disposables: { dispose(): void }[] = [];
   const own = <T extends { dispose(): void }>(thing: T): T => (disposables.push(thing), thing);
   let low = opts.low ?? false;
@@ -80,7 +87,8 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
   scene.background = own(skyTexture());
   // The world's painting as the sky, cropped to cover the screen (the code-drawn sky until it loads, or if it can't).
   let skyArt: THREE.Texture | null = null;
-  new THREE.TextureLoader().load(look.sky, (t) => {
+  const bigScreen = typeof window !== 'undefined' && window.innerWidth * (window.devicePixelRatio || 1) > 1000 && !low;
+  new THREE.TextureLoader().load(bigScreen ? look.big : look.sky, (t) => {
     if (disposed) {
       t.dispose();
       return;
@@ -96,10 +104,17 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
     if (!skyArt || !img) return;
     const screen = width / height;
     const art = img.width / img.height;
-    // Cover: show the middle of the painting, cropped on the long side.
-    if (screen > art) skyArt.repeat.set(1, art / screen);
-    else skyArt.repeat.set(screen / art, 1);
+    // Cover: show the middle of the painting, cropped on the long side, a little zoomed for the parallax.
+    if (screen > art) skyArt.repeat.set(1 / SKY_ZOOM, art / screen / SKY_ZOOM);
+    else skyArt.repeat.set(screen / art / SKY_ZOOM, 1 / SKY_ZOOM);
     skyArt.offset.set((1 - skyArt.repeat.x) / 2, (1 - skyArt.repeat.y) / 2);
+  };
+  /** The slow parallax: the painting drifts against the racer's side-to-side move and rises slowly along the road. */
+  const driftSky = (across: number, along: number) => {
+    if (!skyArt || opts.reduced) return;
+    const roomX = 1 - skyArt.repeat.x;
+    const roomY = 1 - skyArt.repeat.y;
+    skyArt.offset.set(roomX * (0.5 + across * 0.35), roomY * (0.15 + along * 0.7));
   };
   let disposed = false;
   const camera = new THREE.PerspectiveCamera(62, 16 / 9, 0.1, 200);
@@ -304,7 +319,8 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
 
   // ——— The racer: a sleek hover-racer in shiny metal (racer.ts), lit by a soft studio light ———
   scene.environment = own(racerEnvironment(renderer));
-  const ship = createRacer('#22e3ff', own);
+  const racerColour = new THREE.Color(opts.colour ?? '#22e3ff');
+  const ship = createRacer(opts.colour ?? '#22e3ff', own);
   const racer = ship.group;
   scene.add(racer);
   const RIDE = 0.12;
@@ -398,7 +414,8 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
         const w = 0.07 * (1 - i / TRAIL);
         trailPos.set([p.x - w, p.y, p.z, p.x + w, p.y, p.z], i * 6);
         const f = (1 - i / TRAIL) * (0.15 + speedShare * 0.45) * (gone ? 0 : 1);
-        trailCol.set([0.2 * f, 0.9 * f, 1.2 * f, 0.2 * f, 0.9 * f, 1.2 * f], i * 6);
+        const [r, g, b] = [racerColour.r * 1.2 * f, racerColour.g * 1.2 * f, racerColour.b * 1.2 * f];
+        trailCol.set([r, g, b, r, g, b], i * 6);
       }
       trailGeo.attributes.position.needsUpdate = true;
       trailGeo.attributes.color.needsUpdate = true;
@@ -447,6 +464,7 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
         shake = Math.max(0, shake - seconds * 1.5);
       }
       camera.lookAt(camLook);
+      driftSky(Math.max(-1, Math.min(1, camPos.x / HALF)), Math.min(1, Math.max(0, z / road.length)));
       stars.position.set(camPos.x, 0, camPos.z);
       grid.position.z = Math.round(camPos.z / 2.5) * 2.5;
       composer.render(seconds);
