@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppRoutes } from '../App';
 import { AuthContext, type AuthState } from '../auth/AuthContext';
-import { saveMyAvatar } from '../data/profile';
+import { resetMyTurns, saveMyAvatar } from '../data/profile';
 import { SoundProvider } from '../sound';
 
 const ach = (id: string, game: string, progress: number, earnedAt: string | null = null) => ({
@@ -48,6 +48,7 @@ vi.mock('../data/profile', async (importOriginal) => ({
   saveMyAvatar: vi.fn(async () => {}),
   fetchNameWords: vi.fn(async () => ({ adjectives: ['Brave'], animals: ['Kiwi'] })),
   chooseMyName: vi.fn(async () => 'Brave Kiwi 7'),
+  resetMyTurns: vi.fn(async () => ['Clan Quest', 'Sky Isles']),
 }));
 
 function auth(avatar: object = {}, extra: Partial<AuthState> = {}): AuthState {
@@ -99,9 +100,17 @@ describe('my profile', () => {
     expect(state.signOut).toHaveBeenCalled();
   });
 
-  it('has no achievements fold (they live in the Achievement Hall now)', async () => {
-    await renderAt('/profile', auth());
+  it('shows teachers a button that resets their turns in every game, and pupils never see it', async () => {
+    const user = userEvent.setup();
+    const pupil = await renderAt('/profile', auth());
+    expect(screen.queryByRole('button', { name: /Reset my turns/ })).not.toBeInTheDocument();
+    // No achievements fold either: they live in the Achievement Hall now.
     expect(screen.queryByRole('button', { name: /My achievements/ })).not.toBeInTheDocument();
+    pupil.unmount();
+    await renderAt('/profile', auth({}, { profile: { id: 't1', display_name: 'Mr Riley', avatar: {}, role: 'teacher' } }));
+    await user.click(screen.getByRole('button', { name: /Reset my turns in every game/ }));
+    expect(resetMyTurns).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText('Done! Fresh turns in Clan Quest, Sky Isles.')).toBeInTheDocument();
   });
 
   it('saves a new look together with the theme, and a new theme together with the look', async () => {

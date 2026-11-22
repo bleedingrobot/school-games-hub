@@ -17,7 +17,7 @@ import {
 import { RecentList, recentGamesFrom, SpaceStatsLine, StatsTable, statsFrom, type MyStats, type RecentGame } from '../components/MyGames';
 import { RankBadge } from '../components/Progress';
 import { fetchMyHomePage } from '../data/homePage';
-import { chooseMyName, fetchNameWords, FriendlyError, saveMyAvatar, type NameWords } from '../data/profile';
+import { chooseMyName, fetchNameWords, FriendlyError, resetMyTurns, saveMyAvatar, type NameWords } from '../data/profile';
 import { OwnNamePanel, ScrollNote } from '../profile/OwnName';
 import { nextRankText, type MyProgress } from '../data/progress';
 import { pictureOf } from '../avatar/earnedPictures';
@@ -211,6 +211,7 @@ export function Profile() {
             Sign out
           </button>
           <p>On a shared computer? Sign out when you’re finished.</p>
+          {profile?.role === 'teacher' && <ResetTurns />}
         </div>
       </section>
 
@@ -319,6 +320,32 @@ export function Profile() {
 }
 
 /** One fold: a heading that is a button, and its body only while open. */
+/** Teachers only: one button that gives back today's turns in every game, for trying things out. */
+function ResetTurns() {
+  const [status, setStatus] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  async function reset() {
+    setBusy(true);
+    setStatus('Resetting…');
+    try {
+      const games = await resetMyTurns();
+      setStatus(games.length ? `Done! Fresh turns in ${games.join(', ')}.` : 'Done! You had no turns to reset yet.');
+    } catch (error) {
+      setStatus(errorText(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="profile-top__reset">
+      <button type="button" className="button button--light-outline" disabled={busy} onClick={() => void reset()}>
+        🔄 Reset my turns in every game
+      </button>
+      {status && <p role="status">{status}</p>}
+    </div>
+  );
+}
+
 function Fold({
   id,
   title,

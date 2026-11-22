@@ -48,9 +48,9 @@ export const STEADY_PITCH_LIMIT = 0.97;
 // ——— Easy flying (docs/plans/mine-flight/PLAN.md, M2): only for runs in the 'easy' flight mode ———
 /** Easy turns half as fast again as classic, so a corner never feels like a fight. */
 export const EASY_TURN_UNIT = 0.018;
-/** The ship cruises forward by itself at this top speed (classic tops out at MAX_SPEED). */
+/** Holding Go flies the ship forward at up to this speed (classic tops out at MAX_SPEED). */
 export const EASY_MAX_SPEED = 7.5;
-/** Braking: no cruise push and this much more speed lost each step. */
+/** Not holding Go: no push and this much more speed lost each step, so the ship comes to a stop. */
 export const EASY_BRAKE_DRAG = 0.2;
 /** Walls closer than this (in blocks, along each way) push the ship gently back towards the middle. */
 export const WALL_ASSIST_RANGE = 1.5;

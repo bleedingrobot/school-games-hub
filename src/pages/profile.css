@@ -111,3 +111,11 @@
     padding: 4px 16px 16px;
   }
 }
+
+/* Teachers' "Reset my turns" button, under Sign out. */
+.profile-top__reset {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  margin-top: 8px;
+}

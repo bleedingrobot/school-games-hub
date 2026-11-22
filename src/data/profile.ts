@@ -55,3 +55,13 @@ export async function saveMyAvatar(avatar: object): Promise<void> {
   const { error } = await supabase.rpc('save_my_avatar', { avatar });
   if (error) friendly(error, "We couldn't save your avatar. Please try again.");
 }
+
+/**
+ * Teachers only: gives back today's turns, fights, runs and jumps in every game with a daily limit, for the teacher's own
+ * account (migration 20261123000300_teacher_reset_my_turns.sql). Returns the names of the games that were reset.
+ */
+export async function resetMyTurns(): Promise<string[]> {
+  const { data, error } = await supabase.rpc('teacher_reset_my_turns');
+  if (error) friendly(error, "We couldn't reset your turns. Please try again.");
+  return (data as string[] | null) ?? [];
+}

@@ -324,13 +324,13 @@ function Framed({ frame, size, label, children }: { frame: QuestFrame; size: num
 /**
  * Draws an avatar from its saved codes: the built avatar, or the earned picture the pupil is wearing (`pic`), in their
  * Quest Frame if they wear one. An earned picture keeps its metal ring at small sizes, where a frame round it would be too
- * busy; from 120 px the frame replaces the ring.
+ * busy; from 64 px (profile, dashboard, the frame picker) the frame replaces the ring.
  */
 export function AvatarImage(props: { avatar: unknown; size?: number; label?: string }) {
   const size = props.size ?? 96;
   const picture = pictureOf(props.avatar);
   const frame = frameOf(props.avatar);
-  if (frame && (!picture || size >= 120)) {
+  if (frame && (!picture || size >= 64)) {
     return (
       <Framed frame={frame} size={size} label={props.label}>
         {picture ? <EarnedPicture picture={picture} size={size} nested /> : <BuiltAvatar avatar={props.avatar} size={size} nested />}

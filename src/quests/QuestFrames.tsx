@@ -82,7 +82,7 @@ export function FramePicker({ avatar, rewardId, onDone, onClose }: { avatar: unk
         <div className="frame-picker__grid" role="radiogroup" aria-label="Frames">
           {!choosing && (
             <button type="button" role="radio" aria-checked={picked === null} className={`frame-picker__choice${picked === null ? ' is-picked' : ''}`} onClick={() => setPicked(null)}>
-              <AvatarImage avatar={wearing(avatar, null)} size={72} />
+              <AvatarImage avatar={wearing(avatar, null)} size={88} />
               <span>No frame</span>
             </button>
           )}
@@ -98,7 +98,7 @@ export function FramePicker({ avatar, rewardId, onDone, onClose }: { avatar: unk
                 className={`frame-picker__choice${picked === f.id ? ' is-picked' : ''}`}
                 onClick={() => setPicked(f.id)}
               >
-                <AvatarImage avatar={wearing(avatar, f.id)} size={72} />
+                <AvatarImage avatar={wearing(avatar, f.id)} size={88} />
                 <span>
                   {f.name}
                   {have && <small> (yours)</small>}

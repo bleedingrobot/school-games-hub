@@ -29,8 +29,8 @@ export interface World {
    */
   maths: boolean;
   /**
-   * Easy flying (docs/plans/mine-flight/PLAN.md, M2): always steady, the ship cruises forward by itself (pulling back
-   * brakes), turns faster, walls push it gently back to the middle, and shots bend to a robot near the nose. Old runs
+   * Easy flying (docs/plans/mine-flight/PLAN.md, M2): always steady, the ship goes forward only while Go is held
+   * (tz +1) and slows to a stop when it is let go (it used to cruise by itself, which kids found too hard), turns faster, walls push it gently back to the middle, and shots bend to a robot near the nose. Old runs
    * (steady and free) never set it, so they replay exactly as before.
    */
   easy: boolean;
@@ -550,8 +550,8 @@ export function stepRun(w: World, s: RunState, code: number): void {
 
   // Turn, then push.
   turnShip(w, s, input.yaw, input.pitch, input.roll);
-  // Easy flying cruises forward by itself; pulling back (tz −1) brakes instead of reversing.
-  const braking = w.easy && input.tz < 0;
+  // Easy flying goes forward only while Go is held (tz +1). Otherwise it brakes to a stop, so it never runs into walls on its own.
+  const braking = w.easy && input.tz <= 0;
   const tz = w.easy ? (braking ? 0 : 1) : input.tz;
   let ax = s.rx * input.tx + s.ux * input.ty + s.fx * tz;
   let ay = s.ry * input.tx + s.uy * input.ty + s.fy * tz;
