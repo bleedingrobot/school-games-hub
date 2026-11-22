@@ -19,5 +19,8 @@ We use **none** of SkyRoads' (1993) roads, art, music, sounds or name, and nothi
 
 ## Art
 
-Stage 2: everything is drawn in code (three.js tiles, chips, cables, the racer, sparks; Volt as an SVG stand-in). The
-painted art (world backdrops, map, dashboard frame, Volt, home card) comes in Stage 5 from ComfyUI on the school's gaming PC.
+The road, racer, chips, cables, sparks and gates are drawn in code (three.js, `textures.ts`; Volt as an SVG stand-in), and
+stay as the fallback. The paintings in `paint/` (5 world backdrops, the world map, 5 finish paintings, the dashboard frame,
+6 tile textures, 4 racer portraits and Volt) and the home card in `card/` were painted for School Games Hub on 23 Nov 2026
+with ComfyUI on the school's gaming PC (Z-Image Turbo), from the words in `docs/circuit-art/config.json`
+(`docs/CIRCUIT-ART-PLAN.md`). Our own look; nothing from SkyRoads or OpenRoads.

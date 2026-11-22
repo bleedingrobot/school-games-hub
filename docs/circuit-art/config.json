@@ -1,0 +1,347 @@
+{
+ "_from": "docs/game-guide/templates/art-config.json. Circuit Racer (docs/CIRCUIT-ART-PLAN.md). Check with: python3 scripts/game_art.py circuit paint OUT --dry-run. The road, racer, chips, cables, sparks and gates stay drawn in three.js; these paintings set the mood. The home card waits in src/games/circuit/art/card/ until the code switch PR (Stage 6) moves it to src/assets/home.",
+ "game": "circuit",
+ "filename_prefix": "circuit/img",
+ "style": "neon",
+ "styles": {
+  "neon": "Glowing neon circuit-board world inside a giant computer, deep navy and black darkness, electric cyan, bright green and warm gold light, glowing circuit traces, soft bloom and light glow, clean shapes, cinematic, painterly digital art, rich vivid colour, no people, no text, no letters, no numbers, no logos. ",
+  "tile": "Flat top-down seamless tiling texture seen straight from above, completely flat surface filling the whole picture, even all over, no perspective, no horizon, no border, glowing neon light, painterly digital art, no text, no letters, no numbers. ",
+  "portrait": "Glowing neon game character portrait, one cute friendly character centred, three-quarter front view, big and clear, on a plain dark navy background with a soft cyan glow behind it, clean shapes, painterly digital art, vivid neon colours, no text, no letters, no numbers. ",
+  "cutout": "Cute friendly game character, painterly digital art with clean rounded shapes and soft shading, bright cheerful colours, single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around, no shadow, no text, no letters, no numbers. ",
+  "dash": "Front view of a wide futuristic racing dashboard panel, straight on, no perspective, dark navy and black metal with glowing cyan, green and gold neon trim lines and tiny circuit traces, painterly digital art, clean shapes, no text, no letters, no numbers. ",
+  "card": "Wide cinematic game title picture, glowing neon circuit-board world, deep navy sky at the top, electric cyan, bright green and warm gold light, soft bloom, painterly digital art, lively and exciting, no text, no letters, no numbers, no logos. "
+ },
+ "inbox": "~/dragon-art-inbox/circuit-art",
+ "picks": "docs/circuit-art/picks.json",
+ "art_dir": "src/games/circuit/art/paint",
+ "home_dir": "src/games/circuit/art/card",
+ "pictures": [
+  {
+   "name": "world-motherboard",
+   "prompt": "Wide distant backdrop for the Motherboard world: a vast deep green circuit board stretching to the horizon, glowing gold traces running in long straight lines and right angles, little black chips with gold pins, tiny glowing capacitors like towers, cyan sparks of data racing along the traces. A calm darker band across the middle and bottom so a glowing road placed on top stands out, the brightest light in the far distance, deep and huge. Wide landscape.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "style": "neon",
+   "folder": "worlds",
+   "file": "motherboard"
+  },
+  {
+   "name": "world-gpu",
+   "prompt": "Wide distant backdrop for the Graphics Card world: a huge graphics card world in hot red and orange light, giant spinning cooling fans glowing at the edges, rows of copper heat-sink fins like tall cliffs, rainbow RGB light strips glowing magenta, orange and cyan, sparks of heat drifting up. A calm darker band across the middle and bottom so a glowing road placed on top stands out, the brightest light in the far distance, deep and huge. Wide landscape.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "style": "neon",
+   "folder": "worlds",
+   "file": "gpu"
+  },
+  {
+   "name": "world-memory",
+   "prompt": "Wide distant backdrop for the Memory Lanes world: long straight rows of enormous RAM memory sticks standing like tall blue and silver skyscrapers, lined with glowing blue chips, narrow canyons of cool blue light between them, silver and gold pins along the bottom, a cool blue glow. A calm darker band across the middle and bottom so a glowing road placed on top stands out, the brightest light in the far distance, deep and huge. Wide landscape.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "style": "neon",
+   "folder": "worlds",
+   "file": "memory"
+  },
+  {
+   "name": "world-cloud",
+   "prompt": "Wide distant backdrop for the The Cloud world: a bright open sky of white and cyan glowing data clouds, floating platforms of circuit board drifting among the clouds, streams of glowing cyan data flowing between them like waterfalls of light, soft sunrise gold at the horizon, airy and light. A calm darker band across the middle and bottom so a glowing road placed on top stands out, the brightest light in the far distance, deep and huge. Wide landscape.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "style": "neon",
+   "folder": "worlds",
+   "file": "cloud"
+  },
+  {
+   "name": "world-quantum",
+   "prompt": "Wide distant backdrop for the Quantum Core world: a shimmering purple and gold quantum core, a giant glowing golden sphere of light in the distance with rings of light orbiting it, floating crystal chips, glitchy flickering purple pixels, twisting ribbons of violet and gold energy, mysterious and magical. A calm darker band across the middle and bottom so a glowing road placed on top stands out, the brightest light in the far distance, deep and huge. Wide landscape.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "style": "neon",
+   "folder": "worlds",
+   "file": "quantum"
+  },
+  {
+   "name": "map",
+   "prompt": "A giant computer world seen from high above at a slant, like a treasure map made of light: five glowing regions joined by one long winding glowing cyan path with small round glowing stops along it. Bottom left a green circuit board with gold traces and little chips, then a hot red and orange graphics card with spinning fans, then long rows of blue and silver RAM memory sticks, then white and cyan glowing data clouds, and at the top right a shimmering purple and gold quantum core sphere of light. Clear open spaces along the path, deep navy darkness between the regions, wide landscape.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "style": "neon",
+   "folder": "map",
+   "file": "map"
+  },
+  {
+   "name": "finish-motherboard",
+   "prompt": "Victory moment in the Motherboard world: a small glowing cyan spark racer, a sleek little hover-pod trailing a long streak of light, bursting out through a giant glowing green ring-shaped port, a huge celebration of fireworks made of sparks and light bursting all around in cyan, green and gold, set in a vast deep green circuit board stretching to the horizon, glowing gold traces running in long straight lines and right angles, little black chips with gold pins, tiny glowing capacitors like towers, cyan sparks of data racing along the traces. Exciting and joyful, the racer and port in the middle, wide landscape.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "style": "neon",
+   "folder": "finish",
+   "file": "motherboard"
+  },
+  {
+   "name": "finish-gpu",
+   "prompt": "Victory moment in the Graphics Card world: a small glowing cyan spark racer, a sleek little hover-pod trailing a long streak of light, bursting out through a giant glowing green ring-shaped port, a huge celebration of fireworks made of sparks and light bursting all around in cyan, green and gold, set in a huge graphics card world in hot red and orange light, giant spinning cooling fans glowing at the edges, rows of copper heat-sink fins like tall cliffs, rainbow RGB light strips glowing magenta, orange and cyan, sparks of heat drifting up. Exciting and joyful, the racer and port in the middle, wide landscape.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "style": "neon",
+   "folder": "finish",
+   "file": "gpu"
+  },
+  {
+   "name": "finish-memory",
+   "prompt": "Victory moment in the Memory Lanes world: a small glowing cyan spark racer, a sleek little hover-pod trailing a long streak of light, bursting out through a giant glowing green ring-shaped port, a huge celebration of fireworks made of sparks and light bursting all around in cyan, green and gold, set in long straight rows of enormous RAM memory sticks standing like tall blue and silver skyscrapers, lined with glowing blue chips, narrow canyons of cool blue light between them, silver and gold pins along the bottom, a cool blue glow. Exciting and joyful, the racer and port in the middle, wide landscape.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "style": "neon",
+   "folder": "finish",
+   "file": "memory"
+  },
+  {
+   "name": "finish-cloud",
+   "prompt": "Victory moment in the The Cloud world: a small glowing cyan spark racer, a sleek little hover-pod trailing a long streak of light, bursting out through a giant glowing green ring-shaped port, a huge celebration of fireworks made of sparks and light bursting all around in cyan, green and gold, set in a bright open sky of white and cyan glowing data clouds, floating platforms of circuit board drifting among the clouds, streams of glowing cyan data flowing between them like waterfalls of light, soft sunrise gold at the horizon, airy and light. Exciting and joyful, the racer and port in the middle, wide landscape.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "style": "neon",
+   "folder": "finish",
+   "file": "cloud"
+  },
+  {
+   "name": "finish-quantum",
+   "prompt": "Victory moment in the Quantum Core world: a small glowing cyan spark racer, a sleek little hover-pod trailing a long streak of light, bursting out through a giant glowing green ring-shaped port, a huge celebration of fireworks made of sparks and light bursting all around in cyan, green and gold, set in a shimmering purple and gold quantum core, a giant glowing golden sphere of light in the distance with rings of light orbiting it, floating crystal chips, glitchy flickering purple pixels, twisting ribbons of violet and gold energy, mysterious and magical. Exciting and joyful, the racer and port in the middle, wide landscape.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "style": "neon",
+   "folder": "finish",
+   "file": "quantum"
+  },
+  {
+   "name": "dashboard",
+   "prompt": "A long low racing dashboard panel filling the whole picture edge to edge, with three big empty dark round recesses evenly spaced along it for gauges, a wide empty dark screen in the middle, glowing neon rims around each recess, small glowing studs and vents, polished and sleek. Very wide and short.",
+   "size": [
+    1536,
+    384
+   ],
+   "kind": "icon",
+   "style": "dash",
+   "folder": "dash",
+   "file": "frame",
+   "max": 1536,
+   "small": 768
+  },
+  {
+   "name": "tile-trace",
+   "prompt": "Seamless tile: a dark navy circuit-board road surface with thin glowing cyan and gold circuit traces running in straight lines and right-angle turns, tiny round solder pads, faint grid. Even all over, the same pattern repeating.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "texture",
+   "style": "tile",
+   "folder": "tiles",
+   "file": "trace",
+   "max": 512,
+   "blend": true
+  },
+  {
+   "name": "tile-overclock",
+   "prompt": "Seamless tile: a dark road surface covered in rows of bright glowing green chevron arrows, every arrow pointing straight up towards the top of the picture, pulsing green neon light, energetic. Even all over, the same pattern repeating.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "texture",
+   "style": "tile",
+   "folder": "tiles",
+   "file": "overclock",
+   "max": 512,
+   "region": [
+    0.25,
+    0.25,
+    0.81738,
+    0.89421
+   ]
+  },
+  {
+   "name": "tile-resistor",
+   "prompt": "Seamless tile: a dark road surface with bold glowing amber and orange diagonal warning stripes, warm brown and amber resistor bands, slow heavy feel. Even all over, the same pattern repeating.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "texture",
+   "style": "tile",
+   "folder": "tiles",
+   "file": "resistor",
+   "max": 512,
+   "mirror": true,
+   "region": [
+    0.25,
+    0.25,
+    0.6,
+    0.6
+   ]
+  },
+  {
+   "name": "tile-short",
+   "prompt": "Seamless tile: a dark road surface crackling with bright red electric sparks and jagged red lightning cracks, glowing red danger glow, crackling energy. Even all over, the same pattern repeating.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "texture",
+   "style": "tile",
+   "folder": "tiles",
+   "file": "short",
+   "max": 512,
+   "blend": true
+  },
+  {
+   "name": "tile-gel",
+   "prompt": "Seamless tile: a smooth shiny icy blue cooling gel surface, glossy pale blue and white swirls, frosty highlights, slippery and wet looking. Even all over, the same pattern repeating.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "texture",
+   "style": "tile",
+   "folder": "tiles",
+   "file": "gel",
+   "max": 512,
+   "blend": true
+  },
+  {
+   "name": "tile-recharge",
+   "prompt": "Seamless tile: a dark navy surface with glowing electric blue rings and plug sockets, soft blue charging glow, little lightning bolt shapes of light. Even all over, the same pattern repeating.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "texture",
+   "style": "tile",
+   "folder": "tiles",
+   "file": "recharge",
+   "max": 512,
+   "region": [
+    0.25,
+    0.25,
+    0.66309,
+    0.65592
+   ]
+  },
+  {
+   "name": "racer-spark",
+   "prompt": "Spark, a sleek little hover racer pod glowing electric cyan, a smooth rounded body with a bright white-blue light core, two big friendly glowing eyes on the front window, cyan light trails flowing behind. Racing pose, leaning forward, a little motion blur of light behind.",
+   "size": [
+    768,
+    768
+   ],
+   "kind": "icon",
+   "style": "portrait",
+   "folder": "racers",
+   "file": "spark",
+   "max": 768,
+   "small": 256
+  },
+  {
+   "name": "racer-pixel",
+   "prompt": "Pixel, a chunky little hover racer made of glowing green blocks like pixels, square friendly glowing eyes, bright green neon edges, a cheeky grin. Racing pose, leaning forward, a little motion blur of light behind.",
+   "size": [
+    768,
+    768
+   ],
+   "kind": "icon",
+   "style": "portrait",
+   "folder": "racers",
+   "file": "pixel",
+   "max": 768,
+   "small": 256
+  },
+  {
+   "name": "racer-byte",
+   "prompt": "Byte, a sporty little hover racer in shining gold with glowing gold fins, a warm golden light core, determined friendly glowing eyes, gold sparks. Racing pose, leaning forward, a little motion blur of light behind.",
+   "size": [
+    768,
+    768
+   ],
+   "kind": "icon",
+   "style": "portrait",
+   "folder": "racers",
+   "file": "byte",
+   "max": 768,
+   "small": 256
+  },
+  {
+   "name": "racer-quark",
+   "prompt": "Quark, a mysterious little hover racer that shimmers purple and gold, a glowing round violet orb body with orbiting rings of light, starry sparkles, kind glowing eyes. Racing pose, leaning forward, a little motion blur of light behind.",
+   "size": [
+    768,
+    768
+   ],
+   "kind": "icon",
+   "style": "portrait",
+   "folder": "racers",
+   "file": "quark",
+   "max": 768,
+   "small": 256
+  },
+  {
+   "name": "volt",
+   "prompt": "Volt, a cute friendly little robot shaped like an electric plug: a rounded cyan and white plug body, two shiny gold prongs on top of its head like antennae, a round glowing blue screen face with big happy eyes and a smile, little round arms waving hello, short stubby legs, a coiled cable tail, glowing cyan edges.",
+   "size": [
+    768,
+    768
+   ],
+   "kind": "cut",
+   "style": "cutout",
+   "folder": "volt",
+   "file": "volt",
+   "max": 512,
+   "biggest_only": true
+  },
+  {
+   "name": "card",
+   "prompt": "A small glowing cyan spark racer, a sleek rounded hover-pod with no wheels and a bright light core, leaping high through the air over a gap between two glowing neon circuit-board roads that float in the dark, leaving a long bright curving streak of cyan light and a shower of gold sparks, the roads lined with neon cyan edges and glowing gold traces, little green chips along them, a huge glowing gold and green computer world of chips and light far behind under a deep navy sky. No signs, no screens, no writing anywhere. The racer clear and exciting in the middle, wide landscape.",
+   "size": [
+    1216,
+    688
+   ],
+   "kind": "card",
+   "style": "card",
+   "file": "circuit"
+  }
+ ]
+}
