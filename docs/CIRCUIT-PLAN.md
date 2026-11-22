@@ -1,6 +1,6 @@
 # Circuit Racer: plan
 
-**Status: plan only, nothing built (22 Nov 2026).** James picked the theme "Circuit Racer" from six new-theme ideas (deep sea, lava, sweets, aurora, circuit, ghost train) on 22 Nov 2026. Game id `circuit`. Next free migration number when written: `20261122000600` (check again before Stage 2).
+**Status: plan only, nothing built. Plan merged in PR #733; James's choices added 22 Nov 2026.** James picked the theme "Circuit Racer" from six new-theme ideas (deep sea, lava, sweets, aurora, circuit, ghost train) on 22 Nov 2026. Game id `circuit`. Next free migration number when written: `20261122000600` (check again before Stage 2).
 
 **Circuit Racer** is a neon racing game. You are a spark of data racing along circuit-board roads that float inside a giant computer. Steer between 7 lanes, speed up and slow down, jump the gaps, and dive into the port at the end of each road before your **battery** or **signal** runs out.
 
@@ -19,13 +19,15 @@
 | Question | Recommendation | James chose |
 |---|---|---|
 | Name | **Circuit Racer** | Circuit Racer (22 Nov) |
-| Card group | `complex-maths` (focus questions, like Marble Rush) | |
-| Play a day | **No limit** (practice game); points stop at 40 a day as everywhere | |
-| How new roads open | **A world opens when you finish 4 of the 6 roads before it**, so one stuck road never blocks anyone | |
-| Ship look | **3D low-poly racer drawn in code, with glow** (crisp at every size); painted portraits on the racer picker. Not a flat sprite like OpenRoads | |
-| Jump helper | **On**, called **Auto-Pilot** with a dashboard light (it quietly fixes near-miss jumps). Hard mode turns it off | |
-| Data gates in the first world | **No:** world 1 teaches driving only; recharge ports from road 3, data gates from world 2 | |
-| Classmate ghosts | **Yes, later stage** (copy Marble Rush's ghosts) | |
+| Card group | `complex-maths` (focus questions, like Marble Rush) | follows from the maths choice |
+| Play a day | No limit (practice game) | **5 finished roads a day, then the game fully stops** ("All done for today. See you tomorrow!"). Crashes and retries don't use one up. Teacher's Unlimited today lifts it |
+| How new roads open | **A world opens when you finish 4 of the 6 roads before it**, so one stuck road never blocks anyone | 4 of 6 |
+| Ship look | **3D low-poly racer drawn in code, with glow** (crisp at every size); painted portraits on the racer picker. Not a flat sprite like OpenRoads | 3D glowing racer |
+| Jump helper | **On**, called **Auto-Pilot** with a dashboard light (it quietly fixes near-miss jumps). Hard mode turns it off | on, off in hard mode |
+| Maths | recharge ports + data gates | ports + gates |
+| Data gates in the first world | **No:** world 1 teaches driving only; recharge ports from road 3, data gates from world 2 | from world 2 |
+| Classmate ghosts | Yes, later stage (copy Marble Rush's ghosts) | **no ghosts** |
+| Crashes | kind: explode only above half speed, restart in 1.5 s, checkpoints on long roads | kind |
 
 ## 1. What we read (OpenRoads, github.com/praveenscience/OpenRoads-SkyRoads-Clone)
 
@@ -40,7 +42,7 @@ TypeScript + WebGL, about 8,500 lines, MIT. It decodes SkyRoads' own data files 
 - **Jump helper:** near the top of a jump it plays the jump forward. If you would miss, it tries nudging sideways speed and forward speed by 10% to 60% until you would land, and gives the speed back when you touch down.
 - **Fuel** burns faster the faster you go; **oxygen** drains with time. Each road has its own gravity, fuel and oxygen. Very high gravity means no jumping.
 - **Win:** reach the last rows inside the end tunnel. After a crash it waits about 3.5 seconds, then restarts the road.
-- **Demo replay:** inputs indexed by distance along the road, not time (a neat trick we reuse for ghosts and the server replay).
+- **Demo replay:** inputs indexed by distance along the road, not time (a neat trick we reuse for the server replay).
 
 ## 2. Our physics (`shared/circuit/physics.ts`)
 
@@ -98,9 +100,9 @@ World map → pick a road (medal and stars shown) → short fly-in → race → 
 
 ## 5. Design (docs/game-guide/1-design.md)
 
-1. **Big goal:** reach the Quantum Core and finish all 30 roads (about 3 to 4 weeks at 3 lessons a week); after that, gold medals, all stars and hard mode.
+1. **Big goal:** reach the Quantum Core and finish all 30 roads (at least 6 days at 5 a day; about 3 to 4 weeks for most pupils, with retries and medal runs); after that, gold medals, all stars and hard mode.
 2. **Season game?** No. Nothing piles up that late joiners can't catch.
-3. **Play a day:** no limit (see Decisions). Not added to `UNLIMITED_GAMES`.
+3. **Play a day:** **5 finished roads a day** (James). Only a finish uses one; crashes, restarts and quitting mid-road are free. Replaying a finished road (for a medal or stars) also uses one. When all 5 are used the game fully stops with "All done for today. See you tomorrow!" and a countdown to NZ midnight. The server counts and refuses (`nzDate`), never the browser. The world map shows "3 races left today". Added to `UNLIMITED_GAMES` and `teacher_set_unlimited_today()`; extra races on an Unlimited day earn game rewards but no hub points. At 5 a day the 30 roads take at least 6 school days, about 2 to 3 weeks at 3 lessons a week.
 4. **Progress bars:** world map path with a dot per road; a road progress bar on the dashboard; `LevelBar` for roads finished.
 5. **Achievements:**
 
@@ -130,7 +132,7 @@ World map → pick a road (medal and stars shown) → short fly-in → race → 
    Next-step line on the world map ("Finish Fan Alley to open Memory Lanes"), first-time tips, "Replay the guide".
 8. **Learning design:** maths is a side part here (it helps, never decides): a wrong answer still shows the right one with a reason (the `QuestionModal` show-why). Pit stops pause the clock, so slow thinkers aren't punished; data gates give a 4-second slow-motion zone and the question stays on screen until the split. Questions only from the focus pack; one question on screen at a time (lesson from Marble, 22 Nov); at least 8 rows between questions (`QUESTION_GAP`).
 
-Also: **lesson fit:** road 1 to 3 in the first 5 minutes; a road is 1 to 3 minutes, so a 10 to 15 minute sitting is 5 to 8 roads and saves after each. **Solo.** **Teacher:** switch, maths on/off (`parseMathsSwitch`), an Other games column "Roads finished", reset progress for a pupil.
+Also: **lesson fit:** road 1 to 3 in the first 5 minutes; a road is 1 to 3 minutes, so the day's 5 finishes plus retries fill about 10 to 15 minutes, saving after each. **Solo.** **Teacher:** switch, maths on/off (`parseMathsSwitch`), an Other games column "Roads finished", reset progress for a pupil.
 
 ## 6. Art (painted on the gaming PC; drawn stand-ins first)
 
@@ -159,16 +161,16 @@ The racer, chips, cables, sparks and gates are drawn in three.js with bloom, so 
 
 ## 8. Server, data and cost
 
-Function `circuit` (`start`, `finish`). Tables: `circuit_progress` (best time, medal, stars per road per pupil), `circuit_runs` (recent finished runs with inputs, for ghosts later), `circuit_questions`. Migration `20261122000600_circuit.sql` (re-check). Points through `add_game_points` on each finished road. About 2 calls a road: a class of 28 playing 15 minutes is roughly 300 calls a lesson.
+Function `circuit` (`start`, `finish`). Tables: `circuit_progress` (best time, medal, stars per road per pupil, finishes today and their NZ date), `circuit_runs` (recent finished runs with inputs, for checking), `circuit_questions`. `finish` refuses a 6th finish on the same NZ day unless the teacher's Unlimited today is on. Migration `20261122000600_circuit.sql` (re-check). Points through `add_game_points` on each finished road. About 2 calls a road: a class of 28 playing 15 minutes is roughly 300 calls a lesson.
 
 ## 9. Stages
 
 | Stage | What | Live? |
 |---|---|---|
 | 1 | Physics engine + config + road format + 6 Motherboard roads + bot test + simulator (all in `shared/circuit/`) | no (no screens yet) |
-| 2 | First playable: three.js roads with bloom, racer, dashboard, keys and touch, world 1, full window, code art, preview page; server replay, saving, migration, switch (off) | yes, switched off |
+| 2 | First playable: three.js roads with bloom, racer, dashboard, keys and touch, world 1, full window, code art, preview page; server replay, saving, 5-a-day limit, migration, switch (off) | yes, switched off |
 | 3 | Maths: recharge ports and data gates, way A, teacher maths switch | yes |
 | 4 | Worlds 2 to 5 (24 more roads), checkpoints, hard mode, medals from the simulator | yes |
 | 5 | Painted art (art plan, config, ComfyUI on the gaming PC), sounds | yes |
 | 6 | Volt's guided first go, voice clips (Bella), achievements, teacher column; **switch on** | yes, on for all |
-| 7 | Classmate ghosts; later a road editor for pupils | later |
+| 7 | A road editor for pupils (no ghosts: James, 22 Nov) | later |
