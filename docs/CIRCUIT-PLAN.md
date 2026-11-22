@@ -1,6 +1,6 @@
 # Circuit Racer: plan
 
-**Status: Stage 1 done (the physics engine, config, road format, 6 Motherboard roads, tests and simulator in `shared/circuit/`; no screens yet, nothing for pupils to see). Plan PR #733, choices #734, Stage 1 PR #735 (22 Nov 2026). Next: Stage 2, first playable (prompt in `docs/prompts/circuit-s2.md`).** James picked the theme "Circuit Racer" from six new-theme ideas (deep sea, lava, sweets, aurora, circuit, ghost train) on 22 Nov 2026. Game id `circuit`. Next free migration number when written: `20261122000800` on 22 Nov (check again before Stage 2: `node scripts/migration-numbers.mjs`).
+**Status: Stage 1 done (the physics engine, config, road format, 6 Motherboard roads, tests and simulator in `shared/circuit/`; no screens yet, nothing for pupils to see). Plan PR #733, choices #734, Stage 1 PR #738 (22 Nov 2026). Next: Stage 2, first playable (prompt in `docs/prompts/circuit-s2.md`).** James picked the theme "Circuit Racer" from six new-theme ideas (deep sea, lava, sweets, aurora, circuit, ghost train) on 22 Nov 2026. Game id `circuit`. Next free migration number when written: `20261122000800` on 22 Nov (check again before Stage 2: `node scripts/migration-numbers.mjs`).
 
 **Circuit Racer** is a neon racing game. You are a spark of data racing along circuit-board roads that float inside a giant computer. Steer between 7 lanes, speed up and slow down, jump the gaps, and dive into the port at the end of each road before your **battery** or **signal** runs out.
 
