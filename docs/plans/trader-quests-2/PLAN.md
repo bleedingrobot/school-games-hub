@@ -2,7 +2,7 @@
 
 22 Nov 2026. James: "can we plan another set of 5 quests for star traders please, should unlock after the first 5 are completed." He agreed to the plan below as drafted ("Yes, go ahead"), with the picks in section 7.
 
-**Status:** plan, stories and all 31 paintings done (this PR), voices sampled (review page https://claude.ai/artifact/8fQgUpWKwJ4CKNKFQ6caAn). R.1 done: the rules and server for all five (`shared/trader/quests.ts`). R.2 done: the Quests tab shows all ten (quests 6 to 10 under "More quests"), with their step lines, Bolt lines, the Comet Cup's fuel sum and painted moments, and Rust-Beard's entrance; no stories yet. R.3 and R.4 below.
+**Status:** plan, stories and all 31 paintings done (this PR), voices sampled (review page https://claude.ai/artifact/8fQgUpWKwJ4CKNKFQ6caAn). R.1 done: the rules and server for all five (`shared/trader/quests.ts`). R.2 done: the Quests tab shows all ten (quests 6 to 10 under "More quests"), with their step lines, Bolt lines, the Comet Cup's fuel sum and painted moments, and Rust-Beard's entrance. R.3 done: the five stories with their givers' voices (Pip and Pop a page each). R.4 below.
 
 The first five quests are in [../trader-quests/PLAN.md](../trader-quests/PLAN.md). Everything there still holds (fixed planets, one quest at a time, gold rings, Bolt's next stop, gentle fights, drop any time); this plan only says what is new.
 
@@ -49,7 +49,7 @@ The stories (5 pages each, under 30 words a page) are in [stories.json](stories.
 |---|---|---|
 | **R.1** ✅ | Rules and server: five config entries, `FIRST_SET` for jobs and Star Quest Master, `hands` buy-deliver steps, the race (`checkpoint`, `fuelAtStart`, reset on refuel), the boss tier; tests (fold into the quest test, the budget is full) | Medium |
 | **R.2** ✅ | Quests tab: "More quests" heading, the new step lines (water per planet, race fuel sum, Rust-Beard card), Bolt lines, preview tools to open each new quest | Medium |
-| **R.3** | Stories with each giver's voice (twins two voices), the 📖 shelf, paintings into the game | Small |
+| **R.3** ✅ | Stories with each giver's voice (twins two voices), the 📖 shelf, paintings into the game | Small |
 | **R.4** | Five more Quest Log keepsakes (Rain-drop, Golden spoon, Comet Cup, Pet collar, Treasure coin), 2 hub points each, Star Quest Legend achievement and season trophy (migration), What's new line, go live | Small |
 
 Each stage goes live on its own, like the first five.
@@ -88,7 +88,19 @@ Each stage goes live on its own, like the first five.
 - **First-time pirate tip:** already skipped for every gentle quest fight, Rust-Beard included (checked).
 - **Tests:** folded into the Quests screen test in `TraderGame.test.tsx` (More quests and Quest 10 locked; Puddle's water lines and pay; the Comet Cup's lamps, fuel sum, Gorbo's card and the refuel note; Rust-Beard's card, heading and entrance). Budget unchanged.
 
-### Left for R.3
+### What R.3 built (22 Nov 2026)
+
+- **Stories:** `QUEST_STORIES` entries for puddle, gorbo, zip, pippop and sable in `src/games/trader/stories.ts`, words from [stories.json](stories.json), paintings `<id>-1` to `-5` (the -800 sizes on phones). Taking quests 6 to 10 now plays pages 1 to 3 with the giver's face in the corner, then the Quests tab; finishing plays pages 4 and 5, then Quest complete. The 📖 shelf reads them too. Kept out of `ALL_STORIES`, checked by `src/games/stories.test.ts`.
+- **Voices:** 25 Kokoro clips in `public/voice/quest-<id>/`: Puddle `am_eric`, Gorbo `am_onyx`, Zip `am_fenrir`, Sable `bf_emma` (spoken `en-gb`, `LANG_FOR` in `scripts/voice-clips.py`, as stories.json says). Pip and Pop share one folder: `LINE_VOICES` in the script records Pip (`af_nicole`) on pages 1, 3 and 5 and Pop (`af_bella`) on 2 and 4; `PAGE_READERS` in `stories.ts` says the same and `voiceLines.test.ts` checks the two lists (and every `VOICE_FOR` line) match. Checked how Kokoro says Gorbo, Rust-Beard, Splodge, moon-melon, Pip, Pop and the pets (all as written). Pip's voice reads slowly (about 13 seconds a page, Pop about 9).
+- **Twins' turn tag:** on Pip and Pop's pages a "Pip reads" (blue) or "Pop reads" (pink) tag pops in beside their face. The kit StoryBook's `corner` can now be made for each page.
+- **No clashes:** the Comet Cup's finish-line moment (chequered flags on `zip-4`) plays first, and Zip's last two pages (page 4 is `zip-4` too) wait till it's gone, then the reward. The start lamps (`zip-3`) only play on "Start the race!", well after the opening pages; Rust-Beard's banner (`sable-2`) only on his fight, and the last pages on the treasure hand-over after it.
+- **Tests:** folded into the Quests screen test in `TraderGame.test.tsx` (the twins' tags on pages 1 and 2; the finish moment before Zip's pages). Budget unchanged.
+
+### Left for R.4
+
+- Five more Quest Log keepsakes (Rain-drop, Golden spoon, Comet Cup, Pet collar, Treasure coin), 2 hub points each, the Star Quest Legend achievement and gold-and-purple season trophy (migration, painting `trophy-quest-legend` is in the game folder), a What's new line, go live.
+
+### Left for R.3 (done above)
 
 - **Stories:** `QUEST_STORIES` entries for puddle, gorbo, zip, pippop, sable from [stories.json](stories.json), with the paintings (`<id>-1` to `-5` are already in `src/games/trader/art/quests`); pages 1 to 3 on taking, 4 and 5 on finishing (`questMove` already plays them once `questStoryPart` finds them), and the 📖 shelf (already reads `QUESTS`).
 - **Voices:** Kokoro clips in `public/voice/quest-<id>/` and `VOICE_FOR` lines in `scripts/voice-clips.py`: Puddle `am_eric`, Gorbo `am_onyx`, Zip `am_fenrir`, Sable `bf_emma`; Pip and Pop take turns (Pip `af_nicole` pages 1, 3 and 5, Pop `af_bella` pages 2 and 4), which `questClips` and the voice test don't do yet (one voice per quest today).

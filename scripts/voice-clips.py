@@ -29,6 +29,16 @@ VOICE_FOR['quest-sprocket'] = ('bf_lily', 0.9)
 VOICE_FOR['quest-nettle'] = ('am_puck', 0.9)
 VOICE_FOR['quest-vex'] = ('bm_george', 0.9)
 VOICE_FOR['quest-kai'] = ('af_sky', 0.9)
+VOICE_FOR['quest-puddle'] = ('am_eric', 0.9)  # quests 6 to 10 (James, 22 Nov 2026)
+VOICE_FOR['quest-gorbo'] = ('am_onyx', 0.9)
+VOICE_FOR['quest-zip'] = ('am_fenrir', 0.9)
+VOICE_FOR['quest-pippop'] = ('af_nicole', 0.9)
+VOICE_FOR['quest-sable'] = ('bf_emma', 0.9)
+# Folders read by more than one voice, line by line in lines.json order: Pip (af_nicole) reads pages 1, 3 and 5 of the
+# twins' story, Pop (af_bella) pages 2 and 4. Same list as PAGE_READERS in src/games/trader/stories.ts (the voice test checks).
+LINE_VOICES = {'quest-pippop': ['af_nicole', 'af_bella', 'af_nicole', 'af_bella', 'af_nicole']}
+# Folders spoken with British sounds (a bf_ voice reading en-us says some words the American way).
+LANG_FOR = {'quest-sable': 'en-gb'}
 KOKORO = os.path.expanduser(os.environ.get('KOKORO_DIR', '~/kokoro'))
 VOICES = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'public', 'voice')
 
@@ -121,14 +131,17 @@ def main() -> None:
         lines = json.load(f)
     todo = [l for l in lines if redo or not os.path.exists(os.path.join(folder, l['slug'] + '.mp3'))]
     voice, speed = VOICE_FOR.get(games[0], (VOICE, SPEED))
-    print(f'{games[0]}: {len(todo)} of {len(lines)} lines to record with {voice}')
+    by_line = LINE_VOICES.get(games[0])
+    lang = LANG_FOR.get(games[0], LANG)
+    print(f'{games[0]}: {len(todo)} of {len(lines)} lines to record with {" and ".join(sorted(set(by_line))) if by_line else voice}')
     if not todo:
         return
     import soundfile as sf
     from kokoro_onnx import Kokoro
     kokoro = Kokoro(os.path.join(KOKORO, 'kokoro-v1.0.onnx'), os.path.join(KOKORO, 'voices-v1.0.bin'))
     for i, line in enumerate(todo, 1):
-        audio, sr = kokoro.create(spoken(line['text']), voice=voice, speed=speed, lang=LANG)
+        who = by_line[lines.index(line)] if by_line else voice
+        audio, sr = kokoro.create(spoken(line['text']), voice=who, speed=speed, lang=lang)
         sf.write(os.path.join(folder, line['slug'] + '.mp3'), trimmed(audio, sr), sr, format='MP3', compression_level=0.7)
         if i % 25 == 0 or i == len(todo):
             print(f'  {i}/{len(todo)}')

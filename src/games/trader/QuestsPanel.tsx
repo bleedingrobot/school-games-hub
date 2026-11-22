@@ -8,7 +8,8 @@ import { allQuestsDone, FIRST_SET, hasSmallOrder, isSmallShip, jobId, jobIndex, 
 import type { Action } from '../../../shared/trader/server';
 import type { Trader } from '../../../shared/trader/state';
 import { boardArt, doneOf, giverArt, isHidden, isTrail, isWaiting, KEEPSAKES, landingLine, MASTER_ART, pirateWords, raceFuel, stepWords, trailName, type Shown } from './questGuide';
-import { QUEST_STORIES } from './stories';
+import type { StoryPage } from '../../../shared/kit/stories';
+import { pageReader, QUEST_STORIES } from './stories';
 
 const cr = (n: number): string => `${n.toLocaleString('en-NZ')} cr`;
 
@@ -34,6 +35,19 @@ export function GiverFace({ id, name, size = 72 }: { id: string; name: string; s
   return art
     ? <img className="stq-face" src={art.small} srcSet={art.big ? `${art.small} 160w, ${art.big} 512w` : undefined} sizes={`${size}px`} alt="" width={size} height={size} draggable={false} />
     : <span className="stq-face stq-face--stand" style={{ width: size, height: size }} aria-hidden="true">{name.slice(0, 1)}</span>;
+}
+
+/** The giver's face in a quest story's corner. Pip and Pop take turns reading, so their pages say who is reading now
+ *  (a name tag that pops in, with the reader's own colour). */
+export function QuestCorner({ id, title, page }: { id: string; title: string; page: StoryPage }) {
+  const at = QUEST_STORIES[id]?.pages.indexOf(page) ?? -1;
+  const reader = at >= 0 ? pageReader(id, at).name : undefined;
+  return (
+    <span className="stq-corner">
+      <GiverFace id={id} name={title} size={72} />
+      {reader && <span key={reader + at} className={`stq-reader stq-reader--${reader.toLowerCase()}`}>{reader} reads</span>}
+    </span>
+  );
 }
 
 export function QuestsPanel({ galaxy, t, quests, keepsakes = [], allQuests = false, busy, showXY = true, shown = 'all', onQuest, onTab, onShowMap, onReveal, onStory }: {

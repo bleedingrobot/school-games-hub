@@ -45,7 +45,7 @@ import { loadPrefs, savePrefs, wantsLessMotion } from './prefs';
 import type { Scene, SpaceView } from './renderer';
 import { SpaceCanvas } from './SpaceCanvas';
 import { MapPanel } from './StarMap';
-import { GiverFace, QuestClue, QuestDone, QuestLanding, QuestPirate, QuestsPanel, QuestWaiting } from './QuestsPanel';
+import { QuestClue, QuestCorner, QuestDone, QuestLanding, QuestPirate, QuestsPanel, QuestWaiting } from './QuestsPanel';
 import { clueNow, doableHere, leftBehind, nextStop, pirateHere, questCargoNames, questFightWords, questPlanetMarks, RACE_RESET_NOTE, trailName, waitingHere, type Shown } from './questGuide';
 import { BossBanner, RaceMoment, type RaceMomentKind } from './QuestFx';
 import { FIRST_SET, jobIndex, openQuestOf, openQuestView, QUESTS, questById } from '../../../shared/trader/quests';
@@ -601,7 +601,6 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
     else if (a.type === 'quest-fight') setFightLog(['They are coming right at you!']);
     else {
       const job = a.type === 'quest-take' ? jobIndex(a.id) !== null : wasJob;
-      // Quests 6 to 10 have no story pages until R.3: straight to the Quests tab.
       if (a.type === 'quest-take' && !job && questStoryPart(a.id, 'start')) setQuestStory({ id: a.id, part: 'start' });
       const what = job ? 'Job' : 'Quest';
       setNote(a.type === 'quest-take' ? `${what} taken! Gold rings on the star chart show where to go.` : a.type === 'quest-drop' ? `${what} dropped. You can take it again any time${job ? ' today' : ''}.` : 'Done! ✓ Ticked off on the Quests screen.');
@@ -847,7 +846,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
         />
       )}
       {raceFx && <RaceMoment kind={raceFx} still={lessMotion} onDone={() => setRaceFx(null)} />}
-      {questStory && questBook && (
+      {/* The Comet Cup's finish line plays first; its last two pages follow once it has gone (they share a painting). */}
+      {questStory && questBook && !raceFx && (
         <StoryBook
           key={`${questStory.id}-${questStory.part}`}
           story={questBook}
@@ -860,7 +860,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
           }}
           endLabel={questStory.part === 'start' ? "Let's go!" : questStory.reward !== undefined ? 'My reward' : 'The end'}
           className="st-storybook"
-          corner={<GiverFace id={questStory.id} name={questBook.title} size={72} />}
+          corner={(page) => <QuestCorner id={questStory.id} title={questBook.title} page={page} />}
         />
       )}
       {storyOpen && !questStory && (

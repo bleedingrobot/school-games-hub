@@ -30,9 +30,9 @@ export const OPENING = story('trader-opening', 'A Moon of Your Own', [
 export const ALL_STORIES: Story[] = [OPENING];
 
 // ---------------------------------------------------------------------------------------------
-// Quest stories (docs/plans/trader-quests/PLAN.md, Q.3): five pages each, read in the quest giver's own voice
-// (public/voice/quest-<id>/). Pages 1 to 3 play when the quest is taken, 4 and 5 when it is finished. Words from
-// docs/plans/trader-quests/stories.json; paintings art/quests/<id>-<page>.webp (and -800 copies).
+// Quest stories (docs/plans/trader-quests/PLAN.md, Q.3, and trader-quests-2/PLAN.md, R.3): five pages each, read in the
+// quest giver's own voice (public/voice/quest-<id>/). Pages 1 to 3 play when the quest is taken, 4 and 5 when it is
+// finished. Words from each plan's stories.json; paintings art/quests/<id>-<page>.webp (and -800 copies).
 // ---------------------------------------------------------------------------------------------
 
 const QUEST_FILES = import.meta.glob('./art/quests/*-[1-5]*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
@@ -48,7 +48,20 @@ function questStory(id: string, title: string, sky: [string, string], pages: Que
 }
 
 /** Each giver's Kokoro voice (James's picks, 21 Nov 2026); the clips' folder is `voice/quest-<id>/`. */
-export const QUEST_VOICES: Record<string, string> = { zuzu: 'bf_isabella', sprocket: 'bf_lily', nettle: 'am_puck', vex: 'bm_george', kai: 'af_sky' };
+export const QUEST_VOICES: Record<string, string> = {
+  zuzu: 'bf_isabella', sprocket: 'bf_lily', nettle: 'am_puck', vex: 'bm_george', kai: 'af_sky',
+  // Quests 6 to 10 (James's picks, 22 Nov 2026). Pip and Pop take turns: see PAGE_READERS.
+  puddle: 'am_eric', gorbo: 'am_onyx', zip: 'am_fenrir', pippop: 'af_nicole', sable: 'bf_emma',
+};
+/** Quests read by more than one voice, page by page (all in the quest's one clip folder): the twins, Pip (af_nicole) on
+ *  pages 1, 3 and 5 and Pop (af_bella) on 2 and 4. scripts/voice-clips.py has the same list (LINE_VOICES), checked by the voice test. */
+export const PAGE_READERS: Record<string, readonly { name: string; voice: string }[]> = {
+  pippop: [0, 1, 2, 3, 4].map((i) => (i % 2 ? { name: 'Pop', voice: 'af_bella' } : { name: 'Pip', voice: 'af_nicole' })),
+};
+/** Who reads a quest story's page (its number in the whole story, from 0): a name only when the readers take turns. */
+export function pageReader(id: string, page: number): { name?: string; voice: string } {
+  return PAGE_READERS[id]?.[page] ?? { voice: QUEST_VOICES[id] };
+}
 export const questClips = (id: string): string => `voice/quest-${id}/`;
 
 export const QUEST_STORIES: Record<string, Story> = {
@@ -86,6 +99,42 @@ export const QUEST_STORIES: Record<string, Story> = {
     { title: 'Follow the clues', emoji: '🗺️', text: 'Read the clue, find the planet on your star map, and Lumi will follow your ship. Stuck? Tap Show me, and I\'ll light it up.' },
     { title: 'Together again', emoji: '💙', text: "There they are! Lumi's whole family, singing so deep the planets hum. Lumi zooms straight into a giant hug with her mum." },
     { title: 'A glowing gift', emoji: '🌟', text: "The star whales left you a gift, a tiny whale made of starlight that shimmers when you're near. And here's a reward from the Ranger Service. Well done!" },
+  ]),
+  // Quests 6 to 10 (docs/plans/trader-quests-2/PLAN.md, R.3): words from docs/plans/trader-quests-2/stories.json.
+  puddle: questStory('puddle', 'Mayor Puddle and the Big Dry', ['#0a1a14', '#2a5a4a'], [
+    { title: 'The Big Dry', emoji: '🐸', text: "Hello, captain! I'm Mayor Puddle. Not one drop of rain has fallen on our three little planets for weeks. The ponds are dry and the frogs are grumpy!" },
+    { title: 'Water, please!', emoji: '💧', text: 'We need twelve crates of water. Buy them at any market you like, then share them out: four crates for each planet. Fair is fair!' },
+    { title: 'Splash to it', emoji: '🗺️', text: "I've marked the three thirsty planets in gold on your star map. Please hurry, captain. My tadpoles are counting on you!" },
+    { title: 'Rain at last', emoji: '🌧️', text: 'Splish! Splash! The ponds are full, the gardens are green, and the frogs are singing again. Listen to that croaking choir!' },
+    { title: 'A soggy thank you', emoji: '☂️', text: "Here's your reward, captain, and a lucky rain-drop to keep. Come back any time. Just bring an umbrella!" },
+  ]),
+  gorbo: questStory('gorbo', "Chef Gorbo's Galaxy Feast", ['#1a0e05', '#6a3a1a'], [
+    { title: 'The Galaxy Feast', emoji: '🍲', text: 'Hello, hello, captain! I am Chef Gorbo. Tonight I cook the Galaxy Feast for a hundred hungry space travellers. One chef, four pans, and no ingredients!' },
+    { title: 'The shopping list', emoji: '🧀', text: 'I need a giant moon-melon, a wheel of stinky comet cheese, five crates of food and three of lollies for pudding. The cheese is near pirates, so take care!' },
+    { title: 'Quick, quick!', emoji: '🔥', text: 'The melon and cheese are paid for. The food and lollies you buy at any market, and I pay you well. Quick, the ovens are hot!' },
+    { title: 'Dinner is served', emoji: '🍮', text: 'Magnificent! The melon soup bubbles, the cheese is melting, and the lolly pudding wobbles. A hundred happy tummies, all thanks to you!' },
+    { title: 'Compliments to the captain', emoji: '🥄', text: 'Here is your pay, captain, and my golden spoon. Every great cook needs a great delivery captain!' },
+  ]),
+  zip: questStory('zip', 'The Comet Cup', ['#0a0a1e', '#3a2a6a'], [
+    { title: 'The Comet Cup', emoji: '🏆', text: "Welcome, race fans! I'm Zip Zoomer, and this is the Comet Cup, the fastest race in the galaxy! And you, captain, are on the starting line!" },
+    { title: 'The rules', emoji: '⛽', text: 'Fly from the start line, past the checkpoint, to the finish line on one tank of fuel. Refuel and you go back to the start. Plan your jumps!' },
+    { title: 'Three, two, one', emoji: '🚦', text: 'Fill your tank right to the top, captain. Engines roaring, crowd cheering. Three, two, one... go, go, go!' },
+    { title: 'Across the line!', emoji: '🏁', text: "And they're over the finish line! What a race! What a pilot! The whole crowd is on its feet, captain!" },
+    { title: 'Champion', emoji: '🥇', text: 'The Comet Cup is yours, champion! Polish it every day, and come back next season to defend your title!' },
+  ]),
+  pippop: questStory('pippop', "Pip and Pop's Runaway Pets", ['#140a1e', '#5a3a6a'], [
+    { title: 'Oh no!', emoji: '🐰', text: "Hi, captain! I'm Pip! And I'm Pop! We're twins! We were feeding our pets, and somebody left the space gate open. Whoops!" },
+    { title: 'Lost pets', emoji: '🐌', text: 'Fluff the moon-bunny, Splodge the jelly-pup and Zoom the comet-cat ran away. And a pirate grabbed Wiggles the star-snail!' },
+    { title: 'Bring them home', emoji: '🗺️', text: "Their planets are marked on your map. For Wiggles, you'll have to chase that pirate away. Please hurry, captain. Pets get hungry!" },
+    { title: 'All home!', emoji: '🐾', text: "Fluff! Splodge! Zoom! Wiggles! You found them all! Look, they're having a big snuggle pile. Even Wiggles, and he's very slow." },
+    { title: 'Best captain ever', emoji: '🏷️', text: "Here's your reward, captain, and a pet collar with your name on it. We'll keep the gate shut from now on. Promise!" },
+  ]),
+  sable: questStory('sable', "Captain Sable's Lost Treasure", ['#0a0a14', '#4a3a1a'], [
+    { title: "An old pirate's secret", emoji: '🏴‍☠️', text: "Ahoy, captain. I'm Captain Sable. I was a pirate queen once, but now I'm retired and I keep space bees. Long ago, I hid a treasure." },
+    { title: 'Rust-Beard', emoji: '🧔', text: 'But my old shipmate Rust-Beard has heard about it, the greedy old bucket. Follow my map clues and get there first!' },
+    { title: 'The map', emoji: '🗺️', text: 'Each clue says how far to go from where you are. Find all three marks, then the treasure. And watch out for Rust-Beard!' },
+    { title: 'Treasure!', emoji: '💰', text: "You beat Rust-Beard and found my chest! Gold coins, star-gems, and my old pirate hat. I'd forgotten how shiny it all was." },
+    { title: 'Shared treasure', emoji: '🪙', text: "Treasure is better shared, captain. Take your half, and this lucky coin. You'd have made a fine pirate. Luckily, you're an even better trader!" },
   ]),
 };
 
