@@ -80,6 +80,12 @@ const MAP_WORDS: Record<string, Words> = {
   graveyard: { title: 'The Haunted Graveyard', emoji: '👻', sky: ['#0c0c14', '#3a3a5a'], text: 'Mist creeps between the old stones. Skeletons rattle, ghosts go "Wooo," and the Lich is waving its glowing staff.' },
   peaks: { title: 'The Frozen Peaks', emoji: '🏔️', sky: ['#102030', '#7a9aba'], text: 'Up where the snow never melts, yetis are throwing snowballs the size of sheep. High above, an Ice Dragon spreads its wings.' },
   lava: { title: 'The Lava Mines', emoji: '🌋', sky: ['#1a0804', '#8a2a0a'], text: 'Deep under the mountain, the rocks glow red hot. The last of the storm is here, and so is the biggest boss of all: the Fire Dragon.' },
+  // The Storm Lands (docs/GOBLINSTORM-STORM-LANDS-PLAN.md)
+  sunken: { title: 'The Sunken Kingdom', emoji: '🌊', sky: ['#04141c', '#1f6a7a'], text: 'Under the waves lies a kingdom of coral castles. Sea raiders guard it, jellyfish glow in the dark, and somewhere deep below, the Kraken is tapping all eight feet.' },
+  sky: { title: 'The Sky Citadel', emoji: '⛈️', sky: ['#141a2a', '#6f86ad'], text: 'A castle floats on the clouds, and the floor fizzes with lightning. When a ring starts to glow under your feet, move! The Storm Giant is waiting above.' },
+  crystal: { title: 'The Crystal Caverns', emoji: '💎', sky: ['#100a1c', '#4a3d78'], text: 'Everything in this cave sparkles, even the monsters. Break a big one and it shatters into little ones. The Crystal Wyrm is coiled in the deepest cave.' },
+  swamp: { title: 'The Shadow Swamp', emoji: '🌫️', sky: ['#060c06', '#2c3a2a'], text: 'The fog here is so thick you can barely see your own boots. Wisps giggle in the dark, and three pairs of glowing eyes watch from the water.' },
+  citadel: { title: 'The Storm King’s Citadel', emoji: '🌪️', sky: ['#0c0a1c', '#3a3a5a'], text: 'At last: the castle at the heart of the storm. The Goblin Storm was never just a storm. It was the Storm King, and he is very, very grumpy.' },
 };
 export const mapStoryId = (i: number) => `goblinstorm-map-${MAPS[i].id}`;
 export function mapStory(i: number): Story | null {
@@ -94,6 +100,11 @@ const BOSS_WORDS: Record<string, Words> = {
   graveyard: { title: 'The Lich fades', emoji: '🕯️', sky: ['#0c0c14', '#5a5a7a'], text: 'With a long, sulky "Wooooo," the Lich fades into the mist. The candles flicker back on. The storm creeps up into the mountains.' },
   peaks: { title: 'The Ice Dragon flies away', emoji: '🐉', sky: ['#102030', '#8aaaca'], text: 'The Ice Dragon shakes the snow off its wings and flies far away to sulk on a glacier. The storm sinks down into the mines.' },
   lava: { title: 'The storm is over!', emoji: '🌈', sky: ['#1a1408', '#8a6a2a'], text: 'The Fire Dragon dives into the lava and is gone. The green storm fizzles into a rainbow. The castle bell rings, and this time it rings for you!' },
+  sunken: { title: 'The Kraken lets go', emoji: '🐙', sky: ['#04141c', '#2a8a9a'], text: 'The Kraken lets go of the sunken ship, blows a huffy cloud of bubbles, and swims off into the deep. The fish cheer. The storm rises up into the sky.' },
+  sky: { title: 'The Giant sits down', emoji: '☁️', sky: ['#1a2a4a', '#8ab0e0'], text: 'With a bump on his head and his club snapped in two, the Storm Giant sits down on a cloud for a little sulk. Blue sky peeks through. The storm sinks into the caves.' },
+  crystal: { title: 'The Wyrm sleeps', emoji: '😴', sky: ['#100a1c', '#6a4ab0'], text: 'The Crystal Wyrm curls up in a glittering heap and starts to snore. Every snore makes the crystals ring like bells. The storm creeps off into the swamp.' },
+  swamp: { title: 'The fog lifts', emoji: '🐸', sky: ['#0c1a0c', '#6a8a3a'], text: 'The Shadow Hydra slides under the water with three sulky splashes. The sun comes out, the fog melts away, and the frogs sing. Only one castle is left.' },
+  citadel: { title: 'The Storm King is beaten!', emoji: '🌈', sky: ['#1a1408', '#c89a3a'], text: 'The Storm King bursts into the biggest rainbow anyone has ever seen. The goblins throw their hats in the air. For the first time in forever, the sky is clear. Storm Breaker!' },
 };
 export const bossStoryId = (i: number) => `goblinstorm-boss-${MAPS[i].id}`;
 export function bossStory(i: number): Story | null {
@@ -101,9 +112,15 @@ export function bossStory(i: number): Story | null {
   return w ? story(bossStoryId(i), w.title, [w]) : null;
 }
 
+/** The Storm Gate opening (the whole shop bought and the Fire Dragon beaten): shown when the Storm Lands open. */
+export const STORM_GATE = story('goblinstorm-gate', 'The Storm Gate', [
+  { title: 'The Storm Gate opens', emoji: '🌀', sky: ['#0c0a1c', '#4a3a8a'], text: 'Up in the clouds, a great stone gate creaks open. Behind it the storm is still swirling, over five strange lands nobody has ever seen. The bell rings again. Heroes, come quickly!' },
+]);
+
 /** Every Goblin Storm story, for the checks in src/games/stories.test.ts. */
 export const ALL_STORIES: Story[] = [
   OPENING,
+  STORM_GATE,
   ...HEROES.map((h) => heroStory(h.id)),
   ...MAPS.map((_, i) => mapStory(i)).filter((s): s is Story => !!s),
   ...MAPS.map((_, i) => bossStory(i)).filter((s): s is Story => !!s),

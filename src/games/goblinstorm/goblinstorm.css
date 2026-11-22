@@ -59,6 +59,11 @@
 .gs-pick--graveyard { background: linear-gradient(160deg, #4a4a5c, #23232e); }
 .gs-pick--peaks { background: linear-gradient(160deg, #6f8fb0, #34506e); }
 .gs-pick--lava { background: linear-gradient(160deg, #7a2e1a, #2a120c); }
+.gs-pick--sunken { background: linear-gradient(160deg, #1f6a7a, #0c2a34); }
+.gs-pick--sky { background: linear-gradient(160deg, #6f86ad, #2a3a5a); }
+.gs-pick--crystal { background: linear-gradient(160deg, #5a3d9a, #1c1238); }
+.gs-pick--swamp { background: linear-gradient(160deg, #3e5a32, #141e12); }
+.gs-pick--citadel { background: linear-gradient(160deg, #3a4a7a, #141428); }
 .gs-dots { display: inline-flex; align-items: center; gap: 3px; }
 .gs-dots__label { width: 3.6rem; color: #cfc4ef; }
 .gs-dots i, .gs-pips i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.2); display: inline-block; }

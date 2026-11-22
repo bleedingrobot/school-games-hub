@@ -417,6 +417,127 @@
       "kind": "scene",
       "folder": "story",
       "file": "goblinstorm-boss-lava-1"
+    },
+    {
+      "name": "goblinstorm-map-sunken-1",
+      "prompt": "An underwater kingdom of sunken coral castles and swaying seaweed, cheeky fish-people sea raiders with tridents, glowing pink jellyfish, and a giant purple kraken wearing a little crown in the deep blue distance. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-map-sunken-1"
+    },
+    {
+      "name": "goblinstorm-map-sky-1",
+      "prompt": "A stone castle floating on clouds high in a stormy sky, stone gargoyles and bird-people flying around it, glowing rings on the castle floor, a huge blue storm giant with a lightning-bolt club among the clouds in the distance. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-map-sky-1"
+    },
+    {
+      "name": "goblinstorm-map-crystal-1",
+      "prompt": "A glittering cave full of giant purple, pink and cyan crystals, little crystal beetles and crystal bats, a long shining crystal dragon coiled up in the distance. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-map-crystal-1"
+    },
+    {
+      "name": "goblinstorm-map-swamp-1",
+      "prompt": "A foggy green swamp at dusk, glowing green will-o'-the-wisps, lily pads and twisted trees, the shape of a three-headed serpent half hidden in the fog in the distance. Spooky but cute, not scary. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-map-swamp-1"
+    },
+    {
+      "name": "goblinstorm-map-citadel-1",
+      "prompt": "A huge dark castle on a mountain top inside a swirling green and blue storm, lightning flashing, blue storm goblins marching up the path, a goblin king made of storm clouds on the highest tower. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-map-citadel-1"
+    },
+    {
+      "name": "goblinstorm-boss-sunken-1",
+      "prompt": "A purple kraken with a little crown swimming away sulkily into the deep sea, letting go of a sunken ship, bubbles everywhere, fish cheering. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-boss-sunken-1"
+    },
+    {
+      "name": "goblinstorm-boss-sky-1",
+      "prompt": "A big blue storm giant sitting on a cloud rubbing a bump on his head, his lightning-bolt club snapped in two, the storm clouds parting to show bright blue sky. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-boss-sky-1"
+    },
+    {
+      "name": "goblinstorm-boss-crystal-1",
+      "prompt": "A long crystal dragon curled up fast asleep in a glittering crystal cave, snoring little bubbles, the crystals glowing softly. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-boss-crystal-1"
+    },
+    {
+      "name": "goblinstorm-boss-swamp-1",
+      "prompt": "The fog lifting off a green swamp in warm morning sun, a three-headed serpent sliding away under the water, frogs cheering on lily pads. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-boss-swamp-1"
+    },
+    {
+      "name": "goblinstorm-boss-citadel-1",
+      "prompt": "A goblin king made of storm clouds bursting into a huge bright rainbow above a castle on a mountain top, goblins throwing their hats in the air, the sky clearing to gold. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-boss-citadel-1"
+    },
+    {
+      "name": "goblinstorm-gate-1",
+      "prompt": "A giant glowing stone gate standing in the clouds swinging open, swirling storm light behind it, a path of floating islands leading away to five strange lands: a sunken sea kingdom, a castle in the sky, a crystal cave, a foggy swamp and a dark storm castle. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "story",
+      "file": "goblinstorm-gate-1"
     }
   ]
 }
