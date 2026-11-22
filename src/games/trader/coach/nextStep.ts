@@ -8,7 +8,7 @@ import { coordText, type Galaxy } from '../../../../shared/trader/galaxy';
 import type { Pushes } from '../../../../shared/trader/schoolMarket';
 import { fuelCost, fuelNeeded, hasShipyard, holdsOf, usedHolds, type Trader } from '../../../../shared/trader/state';
 import { jobIndex, openQuestView, type QuestState } from '../../../../shared/trader/quests';
-import { nextStop, stepWords, type Shown } from '../questGuide';
+import { nextStop, raceFuel, stepWords, trailName, type Shown } from '../questGuide';
 import { allPrices, bannedCargo, cargoPlan, nearestPlanet, nearestShipyard, nextUpgrade, stopOnTheWay, tradeIdeas } from './advice';
 
 export type CoachTab = 'trade' | 'ship' | 'bank' | 'map' | 'quests' | 'forge' | 'gallery';
@@ -85,11 +85,23 @@ export function nextStep(v: CoachView): NextStep {
   if (quest) {
     const kind = jobIndex(v.quests?.open) === null ? 'Quest' : 'Job';
     const now = quest.steps.find((s) => !s.done && s.problem === null && s.planet === t.location);
+    // The Comet Cup: fill up at the start line first; once racing, the fuel sum (never "buy fuel", which starts it again).
+    const race = raceFuel(galaxy, t, quest.quest, quest.steps);
+    const line0 = quest.steps[0];
+    if (race && !race.started && line0.planet === t.location && t.fuel < tank) return { say: `Comet Cup: this is the start line. Fill your tank to the top (${t.fuel} of ${tank}), then start the race. The race is ${race.total} fuel, so one tank gets you round.`, target: tabTarget('ship', tab, 'ship-fuel'), tab: 'ship' };
+    if (race?.started && !now) {
+      const next = quest.steps.find((s) => !s.done);
+      if (next && next.planet !== t.location) {
+        const sum = `Fuel left: ${race.left}. Still to fly: ${race.toFly}${race.legs.length > 1 ? ` (${race.legs.join(' + ')})` : ''}.`;
+        const what = race.left >= race.toFly ? `Fly to ${next.name} ${next.coords}, ${next.fuel} fuel. No more fuel till the finish!` : 'That is not enough to finish. Buying fuel sends you back to the start line, so go back and start again with a full tank.';
+        return { say: `Comet Cup: ${sum} ${what}`, target: tab === 'map' ? `planet-${next.planet}` : 'tab-map', tab: 'map' };
+      }
+    }
     if (now) return { say: `${kind}: ${stepWords(quest.quest, now).line} here, for ${quest.quest.giver}.`, target: tab === 'trade' ? 'quest-do' : tabTarget('quests', tab, 'quest-step'), tab: tab === 'trade' ? 'trade' : 'quests' };
     const stop = plan?.sellHere ? null : nextStop(galaxy, t, v.quests, v.shown ?? 'all');
     if (stop?.clue && stop.planet !== t.location) {
       const fill = stop.fuel <= tank && !stop.fuelOk ? ` You have ${t.fuel} fuel, so fill your tank first.` : '';
-      return { say: `Ranger Kai's clue: “${stop.clue}” Count the squares on the star chart, or tap Show me.${fill}`, target: tab === 'trade' || tab === 'map' ? 'quest-showme' : 'tab-map', tab: tab === 'trade' ? 'trade' : 'map' };
+      return { say: `${trailName(quest.quest).who}'s ${quest.quest.id === 'sable' ? 'map' : 'clue'}: “${stop.clue}” Count the squares on the star chart, or tap Show me.${fill}`, target: tab === 'trade' || tab === 'map' ? 'quest-showme' : 'tab-map', tab: tab === 'trade' ? 'trade' : 'map' };
     }
     if (stop && stop.planet !== t.location) {
       if (stop.fuel <= tank && !stop.fuelOk) return { say: `${kind}: next stop ${stop.name} ${stop.coords}, ${stop.fuel} fuel. You have ${t.fuel}, so fill your tank first.`, target: tabTarget('ship', tab, 'ship-fuel'), tab: 'ship' };

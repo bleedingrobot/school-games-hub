@@ -837,3 +837,67 @@
   .stq-step__btn { margin-left: 0; width: 100%; }
   .stq-board { width: calc(100% + 24px); margin: -10px -12px 8px; max-height: 120px; }
 }
+
+/* ----- Quests 6 to 10 (R.2): More quests, the Comet Cup's fuel sum, big painted moments ----- */
+.stq-more { margin-top: 14px; padding-top: 10px; border-top: 2px dashed rgba(253, 224, 71, 0.4); }
+.stq-more__h { margin: 0; color: var(--st-gold); text-shadow: 0 0 12px rgba(253, 224, 71, 0.6); }
+.stq-more__sub { margin: 2px 0 8px; }
+.stq-tank { color: #fde68a; }
+.stq-race { margin: 6px 0 10px; padding: 8px 12px; border-radius: 12px; border: 2px solid #38bdf8; background: linear-gradient(90deg, rgba(8, 40, 64, 0.8), rgba(30, 20, 70, 0.8)); }
+.stq-race p { margin: 2px 0; }
+.stq-race__tag { font-weight: 900; color: #7dd3fc; letter-spacing: 0.04em; }
+.stq-race__sum { font-size: 1.25rem; }
+.stq-race__sum strong { color: var(--st-gold); font-size: 1.4rem; }
+.stq-race--on { animation: stq-race-glow 1.6s ease-in-out infinite alternate; }
+.stq-race--short { border-color: #f87171; }
+.stq-race__gauge { position: relative; height: 14px; margin: 6px 0; border-radius: 7px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+.stq-race__gauge span { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 7px; transition: width 0.6s ease; }
+.stq-race__left { background: linear-gradient(90deg, #22c55e, #a3e635); }
+.stq-race__need { background: repeating-linear-gradient(135deg, rgba(253, 224, 71, 0.85) 0 6px, rgba(30, 20, 70, 0.85) 6px 12px); height: 6px; top: 4px !important; bottom: auto !important; }
+@keyframes stq-race-glow { from { box-shadow: 0 0 6px rgba(56, 189, 248, 0.3); } to { box-shadow: 0 0 18px rgba(56, 189, 248, 0.7); } }
+.st-planet--quest2 { box-shadow: 0 0 0 3px rgba(253, 224, 71, 0.45), 0 0 0 7px rgba(253, 224, 71, 0.25), 0 0 22px var(--st-gold); }
+
+/* The race moments: a painting fills the window, comet streaks fly past, then the big word slams in. */
+.stq-fx { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; align-content: center; gap: 6px; overflow: hidden; cursor: pointer; background: #050314; animation: stq-fx-in 0.3s ease-out both; }
+.stq-fx__art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.85; animation: stq-fx-zoom 3.4s ease-out both; }
+.stq-fx__big { position: relative; margin: 0; font-size: clamp(3rem, 14vw, 9rem); font-weight: 900; color: #fff; text-shadow: 0 0 24px #38bdf8, 0 6px 0 #1e3a8a; animation: stq-fx-slam 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+.stq-fx__small { position: relative; margin: 0 16px; padding: 6px 14px; border-radius: 12px; background: rgba(5, 3, 20, 0.7); font-size: 1.2rem; font-weight: 700; color: #fef9c3; text-align: center; animation: stq-fx-in 0.4s 0.3s ease-out both; }
+.stq-fx--start .stq-fx__big { animation-delay: 1.8s; color: #4ade80; text-shadow: 0 0 30px #22c55e, 0 6px 0 #14532d; }
+.stq-fx--start .stq-fx__small { animation-delay: 2s; }
+.stq-fx--finish .stq-fx__big { color: var(--st-gold); text-shadow: 0 0 30px #f59e0b, 0 6px 0 #78350f; }
+.stq-fx__lamps { position: relative; display: flex; gap: 18px; padding: 12px 20px; border-radius: 40px; background: rgba(5, 3, 20, 0.85); border: 3px solid #475569; }
+.stq-fx__lamp { width: clamp(42px, 10vw, 72px); aspect-ratio: 1; border-radius: 50%; background: #1f2937; }
+.stq-fx__lamp--red { animation: stq-lamp-red 0.6s 0.2s both; }
+.stq-fx__lamp--amber { animation: stq-lamp-amber 0.6s 0.8s both; }
+.stq-fx__lamp--green { animation: stq-lamp-green 0.6s 1.4s both; }
+@keyframes stq-lamp-red { to { background: #ef4444; box-shadow: 0 0 30px #ef4444; } }
+@keyframes stq-lamp-amber { to { background: #f59e0b; box-shadow: 0 0 30px #f59e0b; } }
+@keyframes stq-lamp-green { to { background: #22c55e; box-shadow: 0 0 40px #22c55e, 0 0 80px #22c55e; } }
+.stq-fx__streaks span { position: absolute; left: -30%; top: calc(8% + var(--i) * 10%); width: 30%; height: 3px; border-radius: 3px; background: linear-gradient(90deg, transparent, #e0f2fe, #fff); opacity: 0; animation: stq-streak 0.9s calc(var(--i) * 0.13s + 0.2s) ease-in infinite; }
+.stq-fx--start .stq-fx__streaks span { animation-delay: calc(var(--i) * 0.11s + 1.8s); }
+.stq-fx__flags { position: relative; display: flex; gap: 40vw; font-size: clamp(3rem, 10vw, 6rem); }
+.stq-fx__flags span { animation: stq-flag 0.5s ease-in-out infinite alternate; transform-origin: bottom left; }
+.stq-fx__flags span + span { transform: scaleX(-1); animation-name: stq-flag-r; }
+@keyframes stq-fx-in { from { opacity: 0; } }
+@keyframes stq-fx-zoom { from { transform: scale(1.18); } to { transform: scale(1); } }
+@keyframes stq-fx-slam { from { opacity: 0; transform: scale(3) rotate(-6deg); } }
+@keyframes stq-streak { 0% { opacity: 0; transform: translateX(0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateX(480%); } }
+@keyframes stq-flag { from { transform: rotate(-12deg); } to { transform: rotate(12deg); } }
+@keyframes stq-flag-r { from { transform: scaleX(-1) rotate(-12deg); } to { transform: scaleX(-1) rotate(12deg); } }
+
+/* Rust-Beard sails in above his fight. */
+.stq-boss { position: relative; overflow: hidden; margin-bottom: 10px; min-height: 120px; padding: 12px 14px; border-radius: 14px; border: 2px solid #f87171; background: #1c0606; animation: stq-boss-shake 0.5s 0.6s ease-in-out both; }
+.stq-boss__art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.7; animation: stq-boss-sail 1s ease-out both; }
+.stq-boss__name { position: relative; margin: 0; font-size: clamp(1.8rem, 6vw, 2.8rem); font-weight: 900; color: #fecaca; text-shadow: 0 0 18px #ef4444, 0 4px 0 #450a0a; animation: stq-fx-slam 0.45s 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+.stq-boss__sub { position: relative; margin: 4px 0 0; max-width: 34em; padding: 4px 8px; border-radius: 8px; background: rgba(28, 6, 6, 0.75); color: #fee2e2; }
+@keyframes stq-boss-sail { from { transform: translateX(40%) scale(1.2); opacity: 0; } }
+@keyframes stq-boss-shake { 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
+
+.stq-fx--still *, .stq-fx--still, .stq-boss--still, .stq-boss--still *, .st-root--still .stq-race--on { animation: none !important; }
+.stq-fx--still .stq-fx__lamp--green { background: #22c55e; box-shadow: 0 0 40px #22c55e; }
+.stq-fx--still .stq-fx__streaks { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .stq-fx, .stq-fx *, .stq-boss, .stq-boss *, .stq-race--on { animation: none !important; }
+  .stq-fx__lamp--green { background: #22c55e; }
+  .stq-fx__streaks { display: none; }
+}

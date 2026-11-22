@@ -58,6 +58,12 @@ createRoot(document.getElementById('root') as HTMLElement).render(
           <button type="button" onClick={() => { trial.tools.openQuest('vex'); h.reload(); }}>Open Vex's quest</button>
           <button type="button" onClick={() => { trial.tools.finishAllQuests(); h.reload(); }}>Finish all quests</button>
           <button type="button" onClick={() => { trial.tools.openQuest('kai'); h.reload(); }}>Open Lumi's quest</button>
+          {/* Quests 6 to 10 (R.2): open each one without finishing the ones before. */}
+          <button type="button" onClick={() => { trial.tools.openQuest('puddle'); h.reload(); }}>Open Puddle's quest</button>
+          <button type="button" onClick={() => { trial.tools.openQuest('gorbo'); h.reload(); }}>Open Gorbo's quest</button>
+          <button type="button" onClick={() => { trial.tools.openQuest('zip'); h.reload(); }}>Open the Comet Cup</button>
+          <button type="button" onClick={() => { trial.tools.openQuest('pippop'); h.reload(); }}>Open Pip and Pop's quest</button>
+          <button type="button" onClick={() => { trial.tools.openQuest('sable'); h.reload(); }}>Open Sable's quest</button>
           <button type="button" onClick={() => { trial.tools.busySchool(); h.reload(); }} title="30 pretend classmates trade all day on the school market; jump somewhere to see the moved prices">Busy lunchtime (30 classmates)</button>
           {[0, 1, 2, 3, 4, 5].map((i) => (
             <button key={i} type="button" onClick={() => { trial.tools.setShip(i); h.reload(); }}>Ship {i + 1}</button>

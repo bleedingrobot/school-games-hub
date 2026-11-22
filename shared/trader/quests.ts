@@ -255,7 +255,7 @@ export const QUESTS: readonly QuestConfig[] = [
 
 /** The first five quests: today's jobs come on and Star Quest Master is earned when these are done (not all ten). */
 export const FIRST_SET: readonly string[] = ['zuzu', 'sprocket', 'nettle', 'vex', 'kai'];
-/** The first five quests' configs, in order. The Quests tab shows only these until quests 6 to 10 have their screens (R.2). */
+/** The first five quests' configs, in order: the Quest Log and Star Quest Master (quests 6 to 10 are under "More quests"). */
 export const FIRST_QUESTS: readonly QuestConfig[] = QUESTS.filter((q) => FIRST_SET.includes(q.id));
 
 export const questById = (id: string): QuestConfig | undefined => QUESTS.find((q) => q.id === id);

@@ -3,6 +3,7 @@
  * words and choices for showing: every rule comes from shared/trader/quests.ts, and the server checks every move.
  */
 import { coordText, distance, type Galaxy } from '../../../shared/trader/galaxy';
+import { SHIPS } from '../../../shared/trader/config';
 import { jobIndex, nearestSellers, openQuestOf, openQuestView, questFightHere, trailClue, type QuestConfig, type QuestState, type StepView } from '../../../shared/trader/quests';
 import { applyBatch, type Action, type Game, type Settings } from '../../../shared/trader/server';
 import type { Trader } from '../../../shared/trader/state';
@@ -28,6 +29,13 @@ export const KEEPSAKES: Record<string, { name: string; emoji: string }> = {
   kai: { name: 'Star-scale', emoji: '✨' },
 };
 
+/** Story paintings used for the quest moments (the race lamps, the finish ring, Rust-Beard's ship), wide and phone sizes. */
+const MOMENTS = import.meta.glob(['./art/quests/zip-3*.webp', './art/quests/zip-4*.webp', './art/quests/sable-2*.webp'], { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+export function momentArt(name: 'zip-3' | 'zip-4' | 'sable-2'): { wide: string; small: string } | undefined {
+  const wide = MOMENTS[`./art/quests/${name}.webp`];
+  return wide ? { wide, small: MOMENTS[`./art/quests/${name}-800.webp`] ?? wide } : undefined;
+}
+
 /** The Star Quest Master trophy painting (also on the profile as trader-quest-master). */
 const MASTER = import.meta.glob('./art/quests/trophy-quest-master-small.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 export const MASTER_ART: string | undefined = Object.values(MASTER)[0];
@@ -49,22 +57,62 @@ const DELIVER: Record<string, { line: string; button: string }> = {
   nettle: { line: 'Give Dr Nettle the medicine and water', button: 'Hand it over' },
   vex: { line: 'Report to Commander Vex', button: 'Report' },
   kai: { line: "Bring Lumi home to her family", button: 'Bring Lumi home' },
+  puddle: { line: 'Tell Mayor Puddle the water is shared out', button: 'Tell the Mayor' },
+  gorbo: { line: 'Take the feast things to Chef Gorbo', button: 'Hand them over' },
+  zip: { line: 'Cross the finish line for Zip Zoomer', button: '🏁 Cross the line!' },
+  pippop: { line: 'Bring the pets home to Pip and Pop', button: 'Bring them home' },
+  sable: { line: "Dig up Captain Sable's treasure", button: '💰 Dig it up' },
 };
 
+/** Who waits at a quest's last stop, for "X is here. First ..." (Lumi's family, not Ranger Kai; the race's finish line). */
+const WHO_HERE: Record<string, string> = {
+  kai: "Lumi's family is here.",
+  zip: 'This is the finish line.',
+  sable: "Captain Sable's treasure is here.",
+};
+
+/** The quest pirates' own words: Pip and Pop's Wiggles, and Rust-Beard (a Captain, not "a pirate ship"). */
+const PIRATE: Record<string, { line: string; still: string; todo: string }> = {
+  pippop: { line: 'Win Wiggles back from the pirate', still: 'The pirate with Wiggles is still here.', todo: 'win Wiggles back' },
+  sable: { line: 'Beat Rust-Beard, the pirate Captain', still: "Rust-Beard's ship is still here.", todo: 'beat Rust-Beard' },
+};
+export const pirateWords = (quest: QuestConfig): { line: string; still: string; todo: string } =>
+  PIRATE[quest.id] ?? { line: 'Chase off a pirate ship', still: 'A Rust Raider ship is still here.', todo: '' };
+
+/** A quest fight's heading and line on the fight screen (Commander Vex's Rust Raiders, the pirate with Wiggles, Rust-Beard). */
+export function questFightWords(quest: QuestConfig): { title: string; line: string } {
+  if (quest.id === 'sable') return { title: 'Rust-Beard attacks! ☠️', line: `⭐ Rust-Beard, a pirate Captain! Captain Sable's ${NAVY_LASER_NAME} is fitted for this fight. If you lose, he takes nothing.` };
+  if (quest.id === 'pippop') return { title: 'The pirate with Wiggles! ☠️', line: `⭐ Win Wiggles back for Pip and Pop! Their ${NAVY_LASER_NAME} is fitted for this fight. If you lose, the pirate takes nothing.` };
+  return { title: '', line: `⭐ One of the Rust Raiders! ${quest.giver}'s ${NAVY_LASER_NAME} is fitted for this fight. If you lose, they take nothing.` };
+}
+const NAVY_LASER_NAME = 'Navy laser';
+
+/** A clue trail (Lumi's, Captain Sable's map): its planets wait behind clues until Show me. The Comet Cup is in order but not hidden. */
+export const isTrail = (quest: QuestConfig): boolean => quest.steps.some((s) => s.kind === 'clue');
+/** Whose clue it is and what the trail is called: "Ranger Kai", "Lumi's trail". */
+export const trailName = (quest: QuestConfig): { who: string; trail: string } =>
+  quest.id === 'sable' ? { who: 'Captain Sable', trail: "Captain Sable's map" } : { who: quest.giver, trail: "Lumi's trail" };
+
+/** The gentle note when fuel bought after the start line sends the Comet Cup back to it (the reply's `raceReset`). */
+export const RACE_RESET_NOTE = "You refuelled, so it's back to the start line. The Comet Cup is flown on one tank: fill up at the start line, then no more fuel till the finish.";
+
 /** What a step asks, in a few words, and its button. */
-export function stepWords(quest: QuestConfig, s: Pick<StepView, 'kind' | 'what' | 'index' | 'qty'>): { line: string; button: string } {
+export function stepWords(quest: QuestConfig, s: Pick<StepView, 'kind' | 'what' | 'index' | 'qty'> & { have?: number }): { line: string; button: string } {
   switch (s.kind) {
     case 'pickup':
+      if (quest.id === 'pippop') return { line: `Find ${s.what}`, button: `Scoop up ${s.what}` };
       return quest.id === 'sprocket' ? { line: `Find ${s.what}`, button: `Collect ${s.what}` } : { line: `Pick up ${the(s.what)}`, button: 'Pick up' };
     case 'buy-deliver':
+      // Mayor Puddle's water is handed out at each dry planet: "4 Water here (you have 12)".
+      if (quest.steps[s.index]?.hands) return { line: `${s.qty ?? ''} ${s.what} here (you have ${s.have ?? 0})`, button: `💧 Hand out ${s.qty ?? ''} ${s.what}`.replace('  ', ' ') };
       return { line: `Bring ${s.qty ?? ''} ${s.what}`.replace('  ', ' '), button: `Hand over the ${s.what}` };
     case 'pirate':
-      return { line: 'Chase off a pirate ship', button: '⚔️ Fight them' };
+      return { line: pirateWords(quest).line, button: '⚔️ Fight them' };
     case 'clue':
-      return { line: `Follow clue ${s.index + 1} of Lumi's trail`, button: 'Look for Lumi' };
+      return quest.id === 'sable' ? { line: `Follow mark ${s.index + 1} of Captain Sable's map`, button: 'Find the mark' } : { line: `Follow clue ${s.index + 1} of Lumi's trail`, button: 'Look for Lumi' };
     case 'checkpoint':
-      // The Comet Cup (quest 8). Its full words and the fuel sum come with its screens (R.2).
-      return { line: `Fly to ${s.what}`, button: s.index === 0 ? 'Start the race' : 'Through!' };
+      // The Comet Cup: the start line wants a full tank; the checkpoint is next.
+      return s.index === 0 ? { line: 'Go to the start line with a full tank', button: '🚦 Start the race!' } : { line: `Fly through ${s.what}`, button: '💨 Through!' };
     // (pirate steps have no tap: arriving starts the fight, and the button fights again after a loss)
     case 'deliver':
       if (jobIndex(quest.id) !== null) return { line: `Take the crates to ${s.what}`, button: 'Deliver' };
@@ -75,12 +123,13 @@ export function stepWords(quest: QuestConfig, s: Pick<StepView, 'kind' | 'what' 
 /** The landing card's words: "Pick up the Star-berries for Grandma Zuzu". */
 export function landingLine(quest: QuestConfig, s: StepView): string {
   const { line } = stepWords(quest, s);
+  if (s.kind === 'buy-deliver' && quest.steps[s.index]?.hands) return `Hand out ${s.qty} ${s.what} here for ${quest.giver} (you have ${s.have ?? 0})`;
   return s.kind === 'pickup' || s.kind === 'pirate' ? `${line} for ${quest.giver}` : line;
 }
 
 /** The gentle line for leaving a quest planet without picking up. */
 export function leftBehind(quest: QuestConfig, s: StepView, planet: string): string {
-  if (s.kind === 'pickup') return `You left ${the(s.what)} behind on ${planet}. You can go back for ${quest.id === 'sprocket' ? 'them' : 'it'} any time.`;
+  if (s.kind === 'pickup') return `You left ${the(s.what)} behind on ${planet}. You can go back for ${quest.id === 'sprocket' || quest.id === 'pippop' ? 'them' : 'it'} any time.`;
   return `You flew past ${quest.giver}'s stop on ${planet}. You can go back any time.`;
 }
 
@@ -90,16 +139,44 @@ export function leftBehind(quest: QuestConfig, s: StepView, planet: string): str
  */
 export type Shown = readonly number[] | 'all';
 
-/** A trail step whose planet is kept back behind its clue until Show me. */
-export const isHidden = (quest: QuestConfig, s: Pick<StepView, 'index' | 'done'>, shown: Shown): boolean =>
-  !!quest.ordered && !s.done && shown !== 'all' && !shown.includes(s.index);
+/**
+ * A trail step whose planet is kept back behind its clue until Show me. A step at the same planet as another (Captain
+ * Sable's treasure, where Rust-Beard waits) is shown with that one, or once that one is done (you've been there).
+ */
+export function isHidden(quest: QuestConfig, s: Pick<StepView, 'index' | 'done'>, shown: Shown, done: readonly number[] = []): boolean {
+  if (!isTrail(quest) || s.done || shown === 'all' || shown.includes(s.index)) return false;
+  const same = quest.steps[s.index]?.same;
+  if (same !== undefined) return !done.includes(same) && isHidden(quest, { index: same, done: false }, shown, done);
+  return true;
+}
+/** The indexes of the steps done. */
+export const doneOf = (steps: readonly StepView[]): number[] => steps.filter((s) => s.done).map((s) => s.index);
+
+/**
+ * The Comet Cup's fuel sum, so the adding up is in plain sight: the legs still to fly from here (to the next line, then on
+ * to the finish) against the fuel in the tank; before the start, the whole race against the tank. Null for other quests.
+ */
+export function raceFuel(galaxy: Galaxy, t: Trader, quest: QuestConfig, steps: readonly StepView[]): { started: boolean; legs: number[]; toFly: number; left: number; tank: number; total: number } | null {
+  if (!quest.race || !steps.length) return null;
+  const tank = SHIPS[t.ship].fuelTank;
+  const at = (s: StepView) => galaxy.planets[s.planet];
+  const race = steps.slice(1).map((s, i) => distance(at(steps[i]), at(s)));
+  const total = race.reduce((a, b) => a + b, 0);
+  const started = steps[0].done;
+  const left = steps.filter((s) => !s.done);
+  if (!started || !left.length) return { started, legs: race, toFly: total, left: t.fuel, tank, total };
+  const legs = left.map((s, i) => (i === 0 ? s.fuel : distance(at(left[i - 1]), at(s))));
+  return { started, legs, toFly: legs.reduce((a, b) => a + b, 0), left: t.fuel, tank, total };
+}
 
 /** The clue for the trail's next stop, from where the ship is now ("From here, go 3 right and 2 down."), or null. */
 export function clueNow(galaxy: Galaxy, t: Trader, q: QuestState | undefined): { step: StepView; text: string } | null {
   const view = openQuestView(galaxy, t, q);
-  if (!view?.quest.ordered) return null;
+  if (!view || !isTrail(view.quest)) return null;
   const step = view.steps.find((s) => !s.done);
-  return step ? { step, text: trailClue(galaxy, t.location, step.planet).text } : null;
+  // Captain Sable's treasure is where Rust-Beard was: no clue needed once you're there.
+  if (!step || (step.planet === t.location && view.quest.steps[step.index]?.same !== undefined)) return null;
+  return { step, text: trailClue(galaxy, t.location, step.planet).text };
 }
 
 /** Commander Vex's pirate ship waiting right here (after a loss or getting away), to fight again. Null: none. */
@@ -140,10 +217,10 @@ export function nextStop(galaxy: Galaxy, t: Trader, q: QuestState | undefined, s
       const seller = nearestSellers(galaxy, t, good, 1)[0];
       if (!seller) continue;
       const p = galaxy.planets[seller.planet];
-      options.push({ planet: p.id, name: p.name, coords: coordText(p), fuel: seller.fuel, fuelOk: seller.fuel <= t.fuel, doing: `Buy ${(s.qty ?? 0) - (s.have ?? 0)} ${s.what} (${seller.price} cr each)`, step: s });
+      options.push({ planet: p.id, name: p.name, coords: coordText(p), fuel: seller.fuel, fuelOk: seller.fuel <= t.fuel, doing: `Buy ${stillToBuy(view.quest, view.steps, s)} ${s.what} (${seller.price} cr each)`, step: s });
       continue;
     }
-    const hidden = clue?.step.index === s.index && isHidden(view.quest, s, shown);
+    const hidden = clue?.step.index === s.index && isHidden(view.quest, s, shown, doneOf(view.steps));
     options.push({ planet: s.planet, name: s.name, coords: s.coords, fuel: s.fuel, fuelOk: s.fuelOk, doing: stepWords(view.quest, s).line, step: s, ...(hidden ? { clue: clue.text } : {}) });
   }
   options.sort((a, b) => a.fuel - b.fuel || a.step.index - b.step.index);
@@ -174,6 +251,20 @@ export function doableHere(galaxy: Galaxy, seed: string, game: Game, settings: S
   return { actions, steps };
 }
 
+/**
+ * How many of a step's goods are still to buy: every undone step wanting that good, less what is in the hold (Mayor
+ * Puddle's three lots of 4 Water are one shop of 12).
+ */
+export function stillToBuy(quest: QuestConfig, steps: readonly StepView[], s: StepView): number {
+  const good = quest.steps[s.index]?.good;
+  const want = steps.filter((o) => !o.done && o.kind === 'buy-deliver' && quest.steps[o.index]?.good === good).reduce((n, o) => n + (o.qty ?? 0), 0);
+  return Math.max(0, want - (s.have ?? 0));
+}
+
+/** The first undone goods step for each good (Mayor Puddle's three lots of Water are one shopping line). */
+const firstOfEachGood = (quest: QuestConfig, steps: readonly StepView[]): StepView[] =>
+  steps.filter((s, i, all) => !s.done && s.kind === 'buy-deliver' && all.findIndex((o) => !o.done && o.kind === 'buy-deliver' && quest.steps[o.index].good === quest.steps[s.index].good) === i);
+
 /** "a, b and c". */
 const andList = (items: string[]): string => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`);
 
@@ -183,20 +274,23 @@ function stillToDo(quest: QuestConfig, steps: readonly StepView[]): string {
   const pirates = left.filter((s) => s.kind === 'pirate').length;
   const things = left.flatMap((s): string[] => {
     if (s.kind === 'pickup') return [the(s.what)];
+    // Mayor Puddle's water is handed out at the dry planets (said once, below).
+    if (s.kind !== 'buy-deliver' || quest.steps[s.index].hands) return [];
     // Dr Nettle's goods already in the hold are handed over here, so only what is still to buy.
-    if (s.kind === 'buy-deliver') return (s.have ?? 0) < (s.qty ?? 0) ? [`${(s.qty ?? 0) - (s.have ?? 0)} ${s.what}`] : [];
-    return [];
+    return (s.have ?? 0) < (s.qty ?? 0) ? [`${(s.qty ?? 0) - (s.have ?? 0)} ${s.what}`] : [];
   });
-  const words = things.length ? [`${quest.id === 'sprocket' ? 'find' : 'get'} ${andList(things)}`] : [];
-  if (pirates) words.push(`chase off ${pirates} more pirate ship${pirates === 1 ? '' : 's'}`);
-  if (left.some((s) => s.kind === 'clue')) words.push("follow Lumi's trail");
+  const words = things.length ? [`${quest.id === 'sprocket' || quest.id === 'pippop' ? 'find' : 'get'} ${andList(things)}`] : [];
+  const handing = left.filter((s) => quest.steps[s.index].hands);
+  if (handing.length) words.push(`hand out the ${handing[0].what} at ${handing.length === 1 ? 'the last dry planet' : `${handing.length} dry planets`}`);
+  if (pirates) words.push(pirateWords(quest).todo || `chase off ${pirates} more pirate ship${pirates === 1 ? '' : 's'}`);
+  if (left.some((s) => s.kind === 'clue')) words.push(`follow ${trailName(quest).trail}`);
   return andList(words);
 }
 
 /** Where to buy what Dr Nettle still needs: "Water is sold right here (4 cr each). The nearest Medicine is on Zorb (3 fuel)." */
 function buyWhere(galaxy: Galaxy, t: Trader, quest: QuestConfig, steps: readonly StepView[]): string {
-  return steps
-    .filter((s) => !s.done && s.kind === 'buy-deliver' && (s.have ?? 0) < (s.qty ?? 0))
+  return firstOfEachGood(quest, steps)
+    .filter((s) => stillToBuy(quest, steps, s) > 0)
     .flatMap((s) => {
       const seller = nearestSellers(galaxy, t, quest.steps[s.index].good ?? 0, 1)[0];
       if (!seller) return [];
@@ -229,9 +323,9 @@ export function waitingHere(galaxy: Galaxy, t: Trader, q: QuestState | undefined
   const lastWaitsHere = !!lastStep && !lastStep.done && lastStep.planet === t.location && lastStep.problem === 'Do the other steps first.';
   for (const s of view.steps) {
     if (s.done || s.planet !== t.location || s.kind === 'pirate' || doable.some((d) => d.index === s.index) || !s.problem) continue;
-    if (quest.ordered && (s.problem === 'Do the steps in order.' || isHidden(quest, s, shown))) continue;
+    if (quest.ordered && (s.problem === 'Do the steps in order.' || isHidden(quest, s, shown, doneOf(view.steps)))) continue;
     if (s.index === last && s.problem === 'Do the other steps first.') {
-      const who = jobIndex(quest.id) !== null ? 'This is where the crates go.' : quest.id === 'kai' ? "Lumi's family is here." : `${quest.giver} is here.`;
+      const who = jobIndex(quest.id) !== null ? 'This is where the crates go.' : WHO_HERE[quest.id] ?? `${quest.giver} is here.`;
       const shop = buyWhere(galaxy, t, quest, view.steps);
       out.push({ line: who, why: `First ${stillToDo(quest, view.steps) || 'do the other steps'}, then come back here.${shop ? ` ${shop}` : ''}` });
     } else if (s.kind === 'buy-deliver') {
@@ -244,18 +338,21 @@ export function waitingHere(galaxy: Galaxy, t: Trader, q: QuestState | undefined
     }
   }
   // Dr Nettle's shopping at any other market: buy what he still needs here, and keep what is already in the hold.
-  const goods = view.steps.filter((s) => !s.done && s.kind === 'buy-deliver');
-  if (goods.length && lastStep && lastStep.planet !== t.location) {
+  // One line per good (Mayor Puddle's three lots of Water are one shop), and not where the water is handed out now.
+  const goods = firstOfEachGood(quest, view.steps);
+  const handsHere = view.steps.some((s) => !s.done && quest.steps[s.index].hands && s.planet === t.location);
+  if (goods.length && lastStep && lastStep.planet !== t.location && !handsHere) {
     const buy: string[] = [];
     const keep: string[] = [];
     for (const s of goods) {
       const line = t.market[quest.steps[s.index].good ?? 0];
-      const need = (s.qty ?? 0) - (s.have ?? 0);
+      const need = stillToBuy(quest, view.steps, s);
       if (need > 0 && line && line.buy > 0 && line.stock > 0) buy.push(`${need} ${s.what} (${line.buy} cr each)`);
-      else if (need <= 0 && line && line.sell > 0) keep.push(`${s.qty} ${s.what}`);
+      else if (need <= 0 && line && line.sell > 0) keep.push(`${s.have ?? 0} ${s.what}`);
     }
     if (buy.length || keep.length) {
-      const parts = [buy.length ? `Buy ${andList(buy)} here.` : '', keep.length ? `Keep your ${andList(keep)}: don't sell them.` : '', `Then take them to ${lastStep.name}.`];
+      const hands = goods.some((s) => quest.steps[s.index].hands);
+      const parts = [buy.length ? `Buy ${andList(buy)} here.` : '', keep.length ? `Keep your ${andList(keep)}: don't sell them.` : '', hands ? 'Then hand them out at the dry planets (gold rings on the star chart).' : `Then take them to ${lastStep.name}.`];
       out.push({ line: `${quest.giver} needs these.`, why: parts.filter(Boolean).join(' '), shop: true });
     }
   }
@@ -269,7 +366,7 @@ export function questPlanetMarks(galaxy: Galaxy, t: Trader, q: QuestState | unde
   if (!view) return marks;
   for (const s of view.steps) {
     // Lumi's trail planets get their gold ring only once shown (Show me): finding them is the puzzle.
-    if (s.done || isHidden(view.quest, s, shown)) continue;
+    if (s.done || isHidden(view.quest, s, shown, doneOf(view.steps))) continue;
     const m = marks.get(s.planet) ?? { n: [], lines: [] };
     m.n.push(s.index + 1);
     m.lines.push(`Step ${s.index + 1}: ${stepWords(view.quest, s).line}${isWaiting(s) ? ' (after the other steps)' : ''}`);

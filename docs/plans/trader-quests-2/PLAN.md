@@ -2,7 +2,7 @@
 
 22 Nov 2026. James: "can we plan another set of 5 quests for star traders please, should unlock after the first 5 are completed." He agreed to the plan below as drafted ("Yes, go ahead"), with the picks in section 7.
 
-**Status:** plan, stories and all 31 paintings done (this PR), voices sampled (review page https://claude.ai/artifact/8fQgUpWKwJ4CKNKFQ6caAn). R.1 done: the rules and server for all five (`shared/trader/quests.ts`), no screens yet; the Quests tab still shows only the first five. R.2 to R.4 below.
+**Status:** plan, stories and all 31 paintings done (this PR), voices sampled (review page https://claude.ai/artifact/8fQgUpWKwJ4CKNKFQ6caAn). R.1 done: the rules and server for all five (`shared/trader/quests.ts`). R.2 done: the Quests tab shows all ten (quests 6 to 10 under "More quests"), with their step lines, Bolt lines, the Comet Cup's fuel sum and painted moments, and Rust-Beard's entrance; no stories yet. R.3 and R.4 below.
 
 The first five quests are in [../trader-quests/PLAN.md](../trader-quests/PLAN.md). Everything there still holds (fixed planets, one quest at a time, gold rings, Bolt's next stop, gentle fights, drop any time); this plan only says what is new.
 
@@ -48,7 +48,7 @@ The stories (5 pages each, under 30 words a page) are in [stories.json](stories.
 | Stage | What | Size |
 |---|---|---|
 | **R.1** ✅ | Rules and server: five config entries, `FIRST_SET` for jobs and Star Quest Master, `hands` buy-deliver steps, the race (`checkpoint`, `fuelAtStart`, reset on refuel), the boss tier; tests (fold into the quest test, the budget is full) | Medium |
-| **R.2** | Quests tab: "More quests" heading, the new step lines (water per planet, race fuel sum, Rust-Beard card), Bolt lines, preview tools to open each new quest | Medium |
+| **R.2** ✅ | Quests tab: "More quests" heading, the new step lines (water per planet, race fuel sum, Rust-Beard card), Bolt lines, preview tools to open each new quest | Medium |
 | **R.3** | Stories with each giver's voice (twins two voices), the 📖 shelf, paintings into the game | Small |
 | **R.4** | Five more Quest Log keepsakes (Rain-drop, Golden spoon, Comet Cup, Pet collar, Treasure coin), 2 hub points each, Star Quest Legend achievement and season trophy (migration), What's new line, go live | Small |
 
@@ -69,7 +69,32 @@ Each stage goes live on its own, like the first five.
 - **First five unchanged:** the test checks the first five quests' planets for the test galaxy against the ones taken on main before this change, and a checksum of them on 300 galaxies.
 - **Tests:** folded into the existing quest test (`shared/trader/quests.test.ts`), budget still 12.
 
-### Left for R.2
+### What R.2 built (22 Nov 2026)
+
+- **Quests tab:** the first five cards, then a **✨ More quests** heading with cards 6 to 10 (`QUESTS`, not `FIRST_QUESTS`, in `QuestsPanel.tsx`, the Quest complete moment's "Next quest" and the try-out's "Finish all quests", which now finishes all ten). Quest 6's locked card says "Finish the first five quests to open this one." The count says "N of 10 done". Giver faces come from the R.0 paintings already in the game folder. Chef Gorbo's card says "400 cr + what he pays for the goods (1,500 cr)" (1,080 on a small ship), his checklist reward "(400 cr, plus what Chef Gorbo pays for the goods)". Star Quest Master, the Quest Log and its keepsakes stay on the first five (`FIRST_SET`); the master line on Quest complete only shows for one of the first five.
+- **Taking quests 6 to 10** goes straight to the Quests tab (their story pages come with R.3).
+- **Step lines** (`questGuide.ts`):
+  - **Mayor Puddle:** "4 Water here (you have 12)" at each dry planet, button "💧 Hand out 4 Water". The three lots of Water are one shop: the Goods box shows once ("0 of 12 Water"), "Mayor Puddle pays 900 cr when it's all handed out" and what you make after buying; "Buy 12 Water here", and "Then hand them out at the dry planets" at other markets. Landing card: "Hand out 4 Water here for Mayor Puddle (you have 12)". (`stillToBuy` adds up every undone step wanting a good, so Dr Nettle's and Gorbo's lines are unchanged.)
+  - **The Comet Cup:** a blue race box on the checklist. Before the start: "The race is 4 + 5 = 9 fuel. Your tank holds 20, so one full tank gets you round." Once racing: "Fuel left: 20. Still to fly: 9 (4 + 5)" with a gauge, and "✓ Enough to finish, with 11 to spare" or "⛽ Not enough to finish. Buying fuel now sends you back to the start line." The start line's step has the full-tank hint ("Arrive with a full tank: you have 10 of 20", Buy fuel link). Buttons "🚦 Start the race!", "💨 Through!", "🏁 Cross the line!". The "too far, buy fuel" line is not shown mid-race.
+  - **`raceReset`:** a refuel move that sends the race back gives the gentle note "You refuelled, so it's back to the start line. The Comet Cup is flown on one tank: fill up at the start line, then no more fuel till the finish." (checked with the shared rules as the move is made, as every quiet move is).
+  - **Rust-Beard:** "Beat Rust-Beard, the pirate Captain" (not "a pirate ship"); his waiting card says "Rust-Beard's ship is still here."; the fight screen's heading is "Rust-Beard attacks! ☠️" with "Captain Sable's Navy laser is fitted ... If you lose, he takes nothing"; a win says "You beat Rust-Beard! 🏴‍☠️🎉" and "Ticked off for Captain Sable".
+  - **Captain Sable's map:** her marks work like Lumi's clues ("Follow mark 1 of Captain Sable's map", "Captain Sable: From here, go ...", Show me), and so does Rust-Beard's planet (the clue to the treasure planet). The treasure (`same` as Rust-Beard's step) is hidden with his planet and shown once he's beaten (`isHidden` takes the steps done). Which quests hide their planets is now "has clue steps" (`isTrail`), not `ordered`, so the Comet Cup's lines are always shown.
+  - **Pip and Pop:** "Find Fluff" / "Scoop up Fluff"; "Win Wiggles back from the pirate" and the fight line "Win Wiggles back for Pip and Pop! Their Navy laser ...".
+  - **Hand-over words** (`DELIVER`) for all five and **"who is here"** lines (`WHO_HERE`: Lumi's family, "This is the finish line.", "Captain Sable's treasure is here."; the others "X is here."). "Still to do" lines say "hand out the Water at 2 dry planets", "win Wiggles back", "beat Rust-Beard", "follow Captain Sable's map".
+- **Bolt:** at the start line with a part tank, "Comet Cup: this is the start line. Fill your tank to the top (10 of 20) ..."; once racing, "Comet Cup: Fuel left: 16. Still to fly: 5. Fly to ... No more fuel till the finish!" (never "fill your tank first" mid-race). Captain Sable's map marks: "Captain Sable's map: ...". The star chart's quest line names the trail and who gives the clue.
+- **Gold rings:** a planet with two steps (Puddle's last dry planet and the Mayor, Rust-Beard and the treasure) gets a double gold ring (`st-planet--quest2`) and both step numbers.
+- **Painted moments** (`QuestFx.tsx`, using R.0 story paintings already in the game): the start line fills the window with the starting-lights painting, the three lamps light red, amber, green, then GO! slams in with comet streaks; the checkpoint and the finish use the finish-ring painting, the finish with waving chequered flags. Tap or any key skips. Rust-Beard's rusty ship sails in above his fight with a shake and his name slamming down. Less motion: still pictures, no shaking.
+- **Preview tools:** "Open Puddle's quest", "Open Gorbo's quest", "Open the Comet Cup", "Open Pip and Pop's quest", "Open Sable's quest".
+- **First-time pirate tip:** already skipped for every gentle quest fight, Rust-Beard included (checked).
+- **Tests:** folded into the Quests screen test in `TraderGame.test.tsx` (More quests and Quest 10 locked; Puddle's water lines and pay; the Comet Cup's lamps, fuel sum, Gorbo's card and the refuel note; Rust-Beard's card, heading and entrance). Budget unchanged.
+
+### Left for R.3
+
+- **Stories:** `QUEST_STORIES` entries for puddle, gorbo, zip, pippop, sable from [stories.json](stories.json), with the paintings (`<id>-1` to `-5` are already in `src/games/trader/art/quests`); pages 1 to 3 on taking, 4 and 5 on finishing (`questMove` already plays them once `questStoryPart` finds them), and the 📖 shelf (already reads `QUESTS`).
+- **Voices:** Kokoro clips in `public/voice/quest-<id>/` and `VOICE_FOR` lines in `scripts/voice-clips.py`: Puddle `am_eric`, Gorbo `am_onyx`, Zip `am_fenrir`, Sable `bf_emma`; Pip and Pop take turns (Pip `af_nicole` pages 1, 3 and 5, Pop `af_bella` pages 2 and 4), which `questClips` and the voice test don't do yet (one voice per quest today).
+- The race and Rust-Beard moments reuse `zip-3`, `zip-4` and `sable-2`; the stories will show them again as pages, which is fine.
+
+### Left for R.2 (done above)
 
 - **Quests tab:** a "More quests" heading with cards 6 to 10 (switch `FIRST_QUESTS` back to `QUESTS` in `QuestsPanel.tsx`, `TraderGame.tsx` and the try-out's "Finish all quests", keeping Star Quest Master to `FIRST_SET`). Rewards on the cards: Gorbo's "400 + what he pays for the goods" like Dr Nettle's.
 - **Step lines** (`questGuide.ts`): "4 Water here (you have 12)" for each dry planet; the race's "Fuel left: 9. Still to fly: 7", the full-tank hint on the start line and the gentle "You refuelled, so it's back to the start line" note from `raceReset`; Rust-Beard's card (Captain, not "a pirate ship"); Sable's marks as clues ("Follow mark 1 of Captain Sable's map", Show me), including the clue to the treasure planet; the twins' Wiggles fight line; delivery words for each giver (`DELIVER`), and the "who is here" lines (Lumi's is special-cased by id).
