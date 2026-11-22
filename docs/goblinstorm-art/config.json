@@ -1,5 +1,5 @@
 {
-  "_from": "docs/game-guide/templates/art-config.json. Goblin Storm (docs/GOBLINSTORM-ART-PLAN.md). Check with: python3 scripts/game_art.py goblinstorm paint OUT --dry-run. Attacks and effects are drawn in code, not painted.",
+  "_from": "docs/game-guide/templates/art-config.json. Goblin Storm (docs/GOBLINSTORM-ART-PLAN.md). Check with: python3 scripts/game_art.py goblinstorm paint OUT --dry-run. Attacks are drawn in code (powerFx.ts) using the painted fx/ sprites where they exist.",
   "game": "goblinstorm",
   "filename_prefix": "goblinstorm/img",
   "style": "sprite",
@@ -8,7 +8,8 @@
     "sprite": "Bright flat storybook fantasy game sprite high-angle three-quarter top-down view, camera far above and slightly in front, looking down on the character, big head, tiny foreshortened legs, character looking up at the camera, chunky rounded friendly shapes, thin dark outline, soft shading, cheerful colours, cute not scary, no blood, no gore, no text, no letters. ",
     "icon": "Bright flat storybook fantasy game icon, one bold object centred on a soft plain pale background, thick friendly shapes, thin dark outline, glowing magical light, cheerful colours, no text, no letters, no numbers. ",
     "portrait": "Bright flat storybook fantasy character portrait, head and shoulders, front view, friendly smile, thin dark outline, soft light, plain soft coloured background, cheerful colours, no blood, no text, no letters. ",
-    "ground": "Flat top-down tiling ground texture for a children's fantasy game, calm soft colours with low contrast so small things on top stand out, even all over, no big features, no shadows from the side, no text. "
+    "ground": "Flat top-down tiling ground texture for a children's fantasy game, calm soft colours with low contrast so small things on top stand out, even all over, no big features, no shadows from the side, no text. ",
+    "fx": "Bright flat storybook fantasy game sprite seen from directly above, one small object lying flat, thick friendly chunky shapes, thin dark outline, soft shading, cheerful saturated colours, cute, no text, no letters, no numbers. "
   },
   "inbox": "~/dragon-art-inbox/goblinstorm-art",
   "picks": "docs/goblinstorm-art/picks.json",
@@ -2505,6 +2506,435 @@
       "file": "bubble",
       "max": 256,
       "small": 128
+    },
+    {
+      "name": "fx-sword",
+      "prompt": "A shiny silver sword with a gold cross guard and brown handle Lying flat and horizontal, pointing to the right.. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "sword",
+      "max": 160
+    },
+    {
+      "name": "fx-leaf",
+      "prompt": "One bright green leaf with a pale vein down the middle, its tip pointing to the right, lying flat. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "leaf",
+      "max": 160
+    },
+    {
+      "name": "fx-rune",
+      "prompt": "One round glowing purple magic rune stone disc with a simple glowing triangle symbol carved on it. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "rune",
+      "max": 160
+    },
+    {
+      "name": "fx-flail",
+      "prompt": "One round iron spiked ball, chunky grey metal studded with short spikes. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "flail",
+      "max": 160
+    },
+    {
+      "name": "fx-hammer",
+      "prompt": "A small holy war hammer with a shining golden head and a brown wooden handle Lying flat and horizontal, pointing to the right.. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "hammer",
+      "max": 160
+    },
+    {
+      "name": "fx-dagger",
+      "prompt": "A small dagger with a dark steel blade with a purple edge and a black handle Lying flat and horizontal, pointing to the right.. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "dagger",
+      "max": 160
+    },
+    {
+      "name": "fx-icicle",
+      "prompt": "One long pointed pale blue icicle, clear ice with white shine Lying flat and horizontal, pointing to the right.. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "icicle",
+      "max": 160
+    },
+    {
+      "name": "fx-hawk",
+      "prompt": "A brown hunting hawk flying with wings spread wide, seen from directly above, its head and beak pointing to the right. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "hawk",
+      "max": 160
+    },
+    {
+      "name": "fx-boulder",
+      "prompt": "One round grey boulder rock, chunky, cracked. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "boulder",
+      "max": 160
+    },
+    {
+      "name": "fx-orb",
+      "prompt": "One glowing golden holy orb with a soft white light and a small cross shape of light inside. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "orb",
+      "max": 160
+    },
+    {
+      "name": "fx-bomb",
+      "prompt": "One round black cartoon smoke bomb with a short lit fuse with a spark on top. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "bomb",
+      "max": 160
+    },
+    {
+      "name": "fx-icebolt",
+      "prompt": "One sharp pale blue ice crystal bolt, a long diamond shape with a frosty white trail Lying flat and horizontal, pointing to the right.. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "icebolt",
+      "max": 160
+    },
+    {
+      "name": "fx-axe",
+      "prompt": "A throwing axe with a silver blade and short wooden handle Lying flat and horizontal, pointing to the right.. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "axe",
+      "max": 160
+    },
+    {
+      "name": "fx-boomerang",
+      "prompt": "One wooden boomerang, curved V shape, light brown with green painted stripes. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "boomerang",
+      "max": 160
+    },
+    {
+      "name": "fx-book",
+      "prompt": "One flying open purple magic spellbook with gold corners and glowing pages. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "book",
+      "max": 160
+    },
+    {
+      "name": "fx-mace",
+      "prompt": "A holy mace with a golden spiked round head and a brown handle Lying flat and horizontal, pointing to the right.. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "mace",
+      "max": 160
+    },
+    {
+      "name": "fx-star",
+      "prompt": "One grey steel ninja shuriken throwing star, flat metal with four sharp curved blade points and a round hole in the middle, shiny silver metal, not a yellow star. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "star",
+      "max": 160
+    },
+    {
+      "name": "fx-snowball",
+      "prompt": "One round white snowball with soft blue shading and a little sparkle. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "snowball",
+      "max": 160
+    },
+    {
+      "name": "fx-lavarock",
+      "prompt": "One round dark volcanic lava rock with glowing orange cracks. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "lavarock",
+      "max": 160
+    },
+    {
+      "name": "fx-spear",
+      "prompt": "A long throwing spear with a wooden shaft and a sharp iron point Lying flat and horizontal, pointing to the right.. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "spear",
+      "max": 160
+    },
+    {
+      "name": "fx-knife",
+      "prompt": "A small silver throwing knife with a black handle Lying flat and horizontal, pointing to the right.. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "knife",
+      "max": 160
+    },
+    {
+      "name": "fx-shard",
+      "prompt": "One sharp pale blue ice shard, a long pointed crystal Lying flat and horizontal, pointing to the right.. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "shard",
+      "max": 160
+    },
+    {
+      "name": "fx-wasp",
+      "prompt": "One cute cartoon yellow and black striped wasp flying with see-through wings spread, seen from directly above, its head pointing to the right. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "wasp",
+      "max": 160
+    },
+    {
+      "name": "fx-thorn",
+      "prompt": "One sharp curved brown bramble thorn on a little green twig with a leaf Lying flat and horizontal, pointing to the right.. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "thorn",
+      "max": 160
+    },
+    {
+      "name": "fx-caltrop",
+      "prompt": "One small grey iron caltrop with four sharp spikes. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "caltrop",
+      "max": 160
+    },
+    {
+      "name": "fx-snowflake",
+      "prompt": "One big sparkling white and pale blue snowflake with six arms. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "snowflake",
+      "max": 160
+    },
+    {
+      "name": "fx-note",
+      "prompt": "One shining golden musical note. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "note",
+      "max": 160
+    },
+    {
+      "name": "fx-bell",
+      "prompt": "One shining golden holy bell with a little clapper. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "bell",
+      "max": 160
+    },
+    {
+      "name": "fx-icespike",
+      "prompt": "One tall sharp pale blue ice spike crystal standing upright, bursting up from the ground, pointing straight up. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "icespike",
+      "max": 160
+    },
+    {
+      "name": "fx-lavablob",
+      "prompt": "One glowing blob of bright orange molten lava with yellow hot centre. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "lavablob",
+      "max": 160
+    },
+    {
+      "name": "fx-scale",
+      "prompt": "One shiny red dragon scale with a golden edge, rounded shape. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "scale",
+      "max": 160
+    },
+    {
+      "name": "fx-shield",
+      "prompt": "One round wooden viking shield with iron rim and iron boss in the middle, seen from the front. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "shield",
+      "max": 160
+    },
+    {
+      "name": "fx-feather",
+      "prompt": "One soft white angel feather with a golden shine Lying flat and horizontal, pointing to the right.. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        640,
+        640
+      ],
+      "kind": "cut",
+      "style": "fx",
+      "folder": "fx",
+      "file": "feather",
+      "max": 160
     }
   ]
 }

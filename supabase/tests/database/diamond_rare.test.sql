@@ -3,7 +3,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(11);
+select plan(15);
 
 insert into auth.users (id, email) values ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
 
@@ -35,8 +35,14 @@ select is(public.diamond_counts('00000000-0000-0000-0000-00000000000a') -> 'diam
 
 update public.diamond_players set state = pg_temp.rare('moonstone', 'sunstone', 'frostCrystal', 'rainbowOpal', 'dragonEye', 'galaxyGem', 'phoenixGem') where player = '00000000-0000-0000-0000-00000000000a';
 select is(pg_temp.cup(), 3, 'all seven: gold');
+select is((select count(*)::integer from public.owned_titles t where t.player = '00000000-0000-0000-0000-00000000000a' and t.title = 'the-gem-lord'), 1, '... and the gold title The Gem Lord');
+select is((select p.avatar ->> 'title' from public.profiles p where p.id = '00000000-0000-0000-0000-00000000000a'), 'the-gem-lord', '... worn straight away');
 update public.diamond_players set version = version + 1, state = state where player = '00000000-0000-0000-0000-00000000000a';
 select is(pg_temp.has('diamond-phoenix'), 1, 'saving again gives no second Fablet Rose picture');
+update public.profiles set avatar = coalesce(avatar, '{}') || '{"title": "the-brave"}' where id = '00000000-0000-0000-0000-00000000000a';
+update public.diamond_players set version = version + 1, state = state where player = '00000000-0000-0000-0000-00000000000a';
+select is((select p.avatar ->> 'title' from public.profiles p where p.id = '00000000-0000-0000-0000-00000000000a'), 'the-brave', 'saving again leaves a title the pupil picked');
+select is((select count(*)::integer from public.owned_titles t where t.player = '00000000-0000-0000-0000-00000000000a' and t.title = 'the-gem-lord'), 1, '... and owns The Gem Lord once');
 
 -- A gem page with a broken count is not counted.
 select is(public.diamond_rare_kinds('{"lifetime": {"rare": {"moonstone": {"count": "lots"}, "sunstone": {"count": 0}}}}'), 0, 'broken or empty pages count as nothing');

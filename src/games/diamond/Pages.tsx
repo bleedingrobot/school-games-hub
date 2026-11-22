@@ -56,6 +56,8 @@ export function LevelEnd({ ended, unlimited = false, onShop, onAgain, onMap, aga
   const caught = GEMS.filter((g) => (r.caught[g.id] ?? 0) > 0);
   const rareCaught = RARE_GEMS.filter((g) => (r.caught[g.id] ?? 0) > 0);
   const newRare = new Set(ended.newRare ?? []);
+  // The last rare gem just went in the book: the gold title The Gem Lord is won (the server gives it with the save).
+  const bookDone = newRare.size > 0 && RARE_GEMS.every((g) => ended.player.lifetime.rare?.[g.id]);
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
   const title = r.level === LAST_LEVEL && r.diamond ? 'You found the Heart Diamond!' : r.passed ? `Level ${r.level} passed!` : 'So close!';
@@ -63,6 +65,7 @@ export function LevelEnd({ ended, unlimited = false, onShop, onAgain, onMap, aga
     <section className="dd-page dd-end" aria-labelledby="dd-end-title">
       <h2 id="dd-end-title" ref={heading} tabIndex={-1} className="dd-title">{title}</h2>
       <p className="dd-soft">Level {r.level} · {spec.place}</p>
+      {bookDone && <GemLordWon />}
       {r.passed ? <Stars n={r.stars} /> : <p>{r.level === LAST_LEVEL ? 'The Heart Diamond is still down there. Try again!' : `You banked ${r.banked} of ${spec.target}. Try again!`}</p>}
       {rareCaught.map((g) => (
         <div key={g.id} className={`dd-rare-won is-${g.tier}`} role="status">
@@ -108,6 +111,20 @@ export function LevelEnd({ ended, unlimited = false, onShop, onAgain, onMap, aga
         <button type="button" className="button button--light-outline dd-btn" data-key="esc" onClick={onMap}>Level map</button>
       </div>
     </section>
+  );
+}
+
+/** The big gold moment when the Rare Gem Collection is finished: a crown, rays, glitter and the title. */
+function GemLordWon() {
+  return (
+    <div className="dd-gemlord" role="status">
+      <span className="dd-gemlord__rays" aria-hidden="true" />
+      <span className="dd-gemlord__glitter" aria-hidden="true">{Array.from({ length: 14 }, (_, i) => <i key={i} style={{ ['--i' as string]: i }} />)}</span>
+      <span className="dd-gemlord__crown" aria-hidden="true">👑</span>
+      <p className="dd-gemlord__kicker">Gem Book complete! Gold title won</p>
+      <p className="dd-gemlord__name">The Gem Lord</p>
+      <p className="dd-gemlord__note">It shows under your name now. Change it any time in My titles.</p>
+    </div>
   );
 }
 
@@ -214,7 +231,11 @@ export function GemBook({ player, onBack }: { player: Player; onBack: () => void
             </div>
           </div>
         </div>
-        {rareFound === RARE_GEMS.length && <p className="dd-rarebook__done" role="status">🏆 Complete Collection! You have found every rare gem! 🏆</p>}
+        {rareFound === RARE_GEMS.length ? (
+          <p className="dd-rarebook__done" role="status">🏆 Complete Collection! You are <span className="dd-gemlord__name">👑 The Gem Lord</span> 🏆</p>
+        ) : (
+          <p className="dd-rarebook__goal">Find all {RARE_GEMS.length} to win the gold title <strong>👑 The Gem Lord</strong></p>
+        )}
         <ul className="dd-rarebook__grid">
           {RARE_GEMS.map((g, i) => <RarePage key={g.id} gem={g} page={rare[g.id]} index={i} />)}
         </ul>
@@ -346,7 +367,7 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
         <ul>
           {RARE_GEMS.map((g) => <li key={g.id}><strong>{g.name}</strong> ({RARE_TIER_NAME[g.tier]}): {chanceWords(g)}.</li>)}
         </ul>
-        <p>Catch one and it goes in your Gem Book for good, even after a new season. Collect them all for a trophy!</p>
+        <p>Catch one and it goes in your Gem Book for good, even after a new season. Collect them all for a trophy and the gold title The Gem Lord!</p>
         <h3 className="dd-h3">One new level a day</h3>
         <p>You can try today’s new level as many times as you like. Once you pass it, the next level opens tomorrow. Levels you’ve passed are always open to replay. Some days your teacher may give unlimited new levels.</p>
         <h3 className="dd-h3">Stars and coins</h3>

@@ -5,12 +5,13 @@
  * Speed: every monster kind is drawn once into a small picture (both ways round) and stamped with drawImage, the ground
  * is one repeating pattern, and glows are one stretched picture each, so 300+ monsters stay smooth.
  */
-import { MAX_ENEMIES, WIPE_RADIUS, type HeroId, type MapDef, type WeaponId } from '../../../shared/goblinstorm/config';
-import { area, stats, type GameEvent, type RunState } from '../../../shared/goblinstorm/engine';
+import { LEGENDARY, MAX_ENEMIES, STORM, WIPE_RADIUS, type HeroId, type MapDef, type WeaponId } from '../../../shared/goblinstorm/config';
+import { area, legendLevel, stats, type GameEvent, type RunState } from '../../../shared/goblinstorm/engine';
 import { COS, SIN, TURN } from '../../../shared/goblinstorm/trig';
 import { groundArt, heroArt, monsterArt, paintedCount, paintedImage } from './art';
 import { Fx, glowSprite } from './fx';
 import { powerColour, powerWords } from './heroPowers';
+import { burst, drawAuraStyle, drawShieldStyle, drawShotToken, drawStrikes, drawToken, drawWaves, startStrike, startWave, styleOf, tokenOf, type Strike, type Wave } from './powerFx';
 import { HERO_LOOKS, MAP_LOOKS, MONSTER_LOOKS, type MonsterLook } from './look';
 
 const TAU = Math.PI * 2;
@@ -366,7 +367,6 @@ function buildGround(mapId: string, scale: number): Canvas {
 
 // ---------------------------------------------------------------- the view's own state
 
-interface Bolt { x: number; y: number; r: number; age: number; life: number; c: string; pts: number[] }
 interface WipeShow { weapon: WeaponId; age: number; life: number; streaks: { x: number; y: number; vx: number; vy: number; s: number }[] }
 
 /** A sound the run asked for this frame; the play screen decides which to play (at most a couple a frame). */
@@ -376,7 +376,9 @@ interface BossShow { kind: number; name: string; age: number; life: number }
 
 export class View {
   fx = new Fx();
-  bolts: Bolt[] = [];
+  /** Strike pictures (lightning and each hero's own version of it), and nova rings. */
+  bolts: Strike[] = [];
+  waves: Wave[] = [];
   wipeShow: WipeShow | null = null;
   shake = 0;
   flash = 0;
@@ -431,14 +433,16 @@ export class View {
         if (ev.crit) fx.word(String(Math.round(ev.damage)), ev.x, ev.y - 0.5, '#ffe04a', 0.45, 0.6);
       } else if (ev.k === 'strike') {
         const c = this.colour(ev.weapon);
-        if (ev.weapon === 'lightning') this.bolt(ev.x, ev.y, ev.r, c.main);
-        else {
+        const style = styleOf(this.hero, ev.weapon);
+        if (ev.weapon === 'lightning') startStrike(fx, this.bolts, style, ev.x, ev.y, ev.r, c, s.hero.x, s.hero.y);
+        else if (!burst(fx, style, ev.x, ev.y, ev.r, c)) {
           fx.glow(ev.x, ev.y, ev.r * 0.6, ev.r * 2.5, 0.3, c.glow);
           fx.sparks(ev.x, ev.y, 10, c.main, 7);
           fx.ring(ev.x, ev.y, ev.r * 0.3, ev.r * 1.1, 0.3, c.main);
         }
       } else if (ev.k === 'nova') {
         const c = this.colour(ev.weapon);
+        if (ev.weapon === 'nova' && startWave(fx, this.waves, styleOf(this.hero, ev.weapon), s.hero.x, s.hero.y, ev.r, c)) continue;
         fx.ring(s.hero.x, s.hero.y, 0.4, ev.r, 0.45, c.main);
         fx.ring(s.hero.x, s.hero.y, 0.2, ev.r * 0.8, 0.5, c.glow);
         fx.glow(s.hero.x, s.hero.y, ev.r * 0.4, ev.r * 1.5, 0.35, c.glow);
@@ -473,6 +477,28 @@ export class View {
         gems++;
       } else if (ev.k === 'boss') {
         this.startBoss(looks[ev.kind]?.name ?? 'Boss', ev.kind);
+      } else if (ev.k === 'storm') {
+        // Sky Citadel: the ring's lightning lands.
+        startStrike(fx, this.bolts, 'plain', ev.x, ev.y, ev.r, { main: '#e8f4ff', glow: '#bfe6ff', evolved: '#e8f4ff' }, ev.x, ev.y);
+        fx.ring(ev.x, ev.y, 0.3, ev.r * 1.4, 0.35, '#bfe6ff');
+        this.addShake(0.2);
+        this.cues.add('hit');
+      } else if (ev.k === 'current') {
+        if (s.t > 0) fx.word('The tide turns!', s.hero.x, s.hero.y - 1.8, '#8ad8d0', 0.6, 1.4);
+      } else if (ev.k === 'revive') {
+        fx.ring(s.hero.x, s.hero.y, 0.4, 4, 0.7, '#fff3b0');
+        fx.glow(s.hero.x, s.hero.y, 1, 6, 0.6, '#ffe68a');
+        fx.sparks(s.hero.x, s.hero.y, 30, '#ffe68a', 8, 0.12);
+        fx.word('SECOND WIND!', s.hero.x, s.hero.y - 1.8, '#ffe68a', 0.9, 1.6);
+        this.flash = Math.max(this.flash, 0.5);
+        this.flashColour = '#fff3b0';
+        this.cues.add('levelup');
+      } else if (ev.k === 'rage') {
+        fx.word(`${looks[4]?.name ?? 'The boss'} rages!`.toUpperCase(), s.hero.x, s.hero.y - 2.2, '#ff8a5a', 1, 1.8);
+        this.addShake(0.8);
+        this.flash = Math.max(this.flash, 0.45);
+        this.flashColour = '#ff2a2a';
+        this.cues.add('boss');
       }
     }
     if (gems) {
@@ -492,22 +518,6 @@ export class View {
 
   addShake(n: number): void {
     if (!this.reduced) this.shake = Math.min(1, Math.max(this.shake, n));
-  }
-
-  private bolt(x: number, y: number, r: number, c: string): void {
-    const pts: number[] = [];
-    let px = x + (Math.random() - 0.5) * 2;
-    let py = y - 9;
-    pts.push(px, py);
-    for (let i = 1; i <= 8; i++) {
-      px = x + (Math.random() - 0.5) * (1.6 - i * 0.18) * 1.6;
-      py = y - 9 + (i * 9) / 8;
-      pts.push(i === 8 ? x : px, i === 8 ? y : py);
-    }
-    this.bolts.push({ x, y, r, age: 0, life: 0.22, c, pts });
-    this.fx.glow(x, y, r * 0.8, r * 2.5, 0.25, '#bfe6ff');
-    this.fx.sparks(x, y, 10, '#fff9b0', 8);
-    if (this.bolts.length > 40) this.bolts.shift();
   }
 
   /** An evolution's screen-wipe: a big flash in the weapon's colour, streaks across the screen and shake. */
@@ -553,7 +563,9 @@ export class View {
       if (this.bossShow.age >= this.bossShow.life) this.bossShow = null;
     }
     for (const b of this.bolts) b.age += dt;
-    while (this.bolts.length && this.bolts[0].age >= this.bolts[0].life) this.bolts.shift();
+    this.bolts = this.bolts.filter((b) => b.age < b.life);
+    for (const v of this.waves) v.age += dt;
+    while (this.waves.length && this.waves[0].age >= this.waves[0].life) this.waves.shift();
     if (this.wipeShow) {
       const w = this.wipeShow;
       w.age += dt;
@@ -597,6 +609,8 @@ export class View {
     const halfH = h / 2 / scale + 2;
     const onScreen = (x: number, y: number) => Math.abs(x - camX) < halfW && Math.abs(y - camY) < halfH;
 
+    this.drawCurrent(ctx, s, time, halfW, halfH, camX, camY);
+    this.drawStrikeRings(ctx, s, time);
     this.drawAura(ctx, s, time);
     this.drawGems(ctx, s, time, onScreen);
     this.drawEnemies(ctx, s, time, onScreen);
@@ -605,13 +619,15 @@ export class View {
     this.drawBlades(ctx, s, time);
     this.drawBubble(ctx, s, time);
     this.drawShots(ctx, s, time);
-    this.drawBolts(ctx);
+    drawStrikes(ctx, this.bolts, time);
+    drawWaves(ctx, this.waves, time);
     this.fx.draw(ctx, scale);
     this.drawWipe(ctx, time);
     ctx.restore();
 
     // screen px
     const toScreen = (x: number, y: number): [number, number] => [(x - camX) * scale + w / 2, (y - camY) * scale + h / 2];
+    if (map.storm === 'fog') this.drawFog(ctx, s, w, h, scale);
     this.drawBossArrows(ctx, s, w, h, toScreen);
     this.fx.drawWords(ctx, toScreen, scale);
     this.drawVignette(ctx, map.id, w, h);
@@ -632,6 +648,7 @@ export class View {
       if (wpn.id !== 'aura') continue;
       const r = stats(wpn).area * area(s);
       const c = this.colour('aura');
+      if (drawAuraStyle(ctx, this.fx, styleOf(this.hero, 'aura'), s.hero.x, s.hero.y, r, c, wpn.evolved, time)) continue;
       const pulse = 1 + Math.sin(time * 5) * 0.04;
       ctx.globalCompositeOperation = 'lighter';
       ctx.globalAlpha = 0.35;
@@ -813,6 +830,25 @@ export class View {
         const ang = (a / TURN) * TAU + Math.PI / 2;
         ctx.drawImage(glowSprite(wpn.evolved ? c.evolved : c.glow) as CanvasImageSource, bx - 0.6, by - 0.6, 1.2, 1.2);
         ctx.globalCompositeOperation = 'source-over';
+        const tok = tokenOf(this.hero, 'blades');
+        if (tok !== 'sword') {
+          if (tok === 'flail') {
+            // A chain back to the hero.
+            ctx.strokeStyle = 'rgba(90,90,100,0.9)';
+            ctx.lineWidth = 0.05;
+            ctx.setLineDash([0.12, 0.08]);
+            ctx.beginPath(); ctx.moveTo(s.hero.x, s.hero.y); ctx.lineTo(bx, by); ctx.stroke();
+            ctx.setLineDash([]);
+          }
+          ctx.save();
+          ctx.translate(bx, by);
+          ctx.rotate(ang + (tok === 'rune' || tok === 'ember' ? 0 : wpn.evolved ? time * 10 : 0));
+          drawToken(ctx, tok, wpn.evolved ? 0.5 : 0.42, col, time + b);
+          ctx.restore();
+          ctx.globalCompositeOperation = 'lighter';
+          if (tok === 'ember' && !this.fx.low && Math.random() < 0.3) this.fx.add('spark', bx, by, { vy: -2, life: 0.4, size: 0.07, c: '#ffb02e', add: true });
+          continue;
+        }
         ctx.save();
         ctx.translate(bx, by);
         ctx.rotate(ang + (wpn.evolved ? time * 10 : 0));
@@ -843,6 +879,7 @@ export class View {
     if (!wpn || wpn.charges <= 0) return;
     const c = this.colour('bubble');
     const r = 0.85 + Math.sin(time * 3) * 0.03;
+    if (drawShieldStyle(ctx, styleOf(this.hero, 'bubble'), s.hero.x, s.hero.y, r, wpn.charges, c, wpn.evolved, time)) return;
     ctx.globalAlpha = 0.25;
     ctx.fillStyle = wpn.evolved ? c.evolved : c.glow;
     ctx.beginPath();
@@ -879,6 +916,13 @@ export class View {
     for (const p of s.shots) {
       if (!p.alive) continue;
       const c = this.colour(p.weapon);
+      if (styleOf(this.hero, p.weapon) !== 'plain') {
+        const tok = tokenOf(this.hero, p.weapon);
+        const ev = evolved(p.weapon);
+        const size = p.weapon === 'axes' ? p.radius * 0.9 : p.weapon === 'fireball' ? (ev ? 0.55 : 0.4) : 0.34;
+        drawShotToken(ctx, this.fx, tok, p.x, p.y, p.vx, p.vy, size * (ev && p.weapon !== 'fireball' ? 1.2 : 1), ev ? c.evolved : c.main, time, p.slot * 7 + (p.life % 97));
+        continue;
+      }
       if (p.weapon === 'fireball') {
         const big = evolved('fireball') ? 1.5 : 1;
         ctx.globalCompositeOperation = 'lighter';
@@ -935,25 +979,6 @@ export class View {
         ctx.fill();
       }
     }
-  }
-
-  private drawBolts(ctx: CanvasRenderingContext2D): void {
-    if (!this.bolts.length) return;
-    ctx.globalCompositeOperation = 'lighter';
-    for (const b of this.bolts) {
-      const a = 1 - b.age / b.life;
-      for (const [width, col] of [[0.35, '#7fbfff'], [0.12, '#ffffff']] as const) {
-        ctx.globalAlpha = a;
-        ctx.strokeStyle = col;
-        ctx.lineWidth = width;
-        ctx.beginPath();
-        ctx.moveTo(b.pts[0], b.pts[1]);
-        for (let i = 2; i < b.pts.length; i += 2) ctx.lineTo(b.pts[i], b.pts[i + 1]);
-        ctx.stroke();
-      }
-    }
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = 'source-over';
   }
 
   /** The level-up column of light: a tall soft beam over the hero that fades in about 0.7 s. */
@@ -1047,7 +1072,16 @@ export class View {
       ctx.moveTo(st.x, st.y);
       ctx.lineTo(st.x - st.vx * 0.08, st.y - st.vy * 0.08);
       ctx.stroke();
-      if (w.weapon === 'blades' || w.weapon === 'axes') {
+      const tok = tokenOf(this.hero, w.weapon);
+      if (styleOf(this.hero, w.weapon) !== 'plain' && tok !== 'none') {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.save();
+        ctx.translate(st.x, st.y);
+        ctx.rotate(Math.atan2(st.vy, st.vx));
+        drawToken(ctx, tok, st.s * 1.1, c.evolved, time);
+        ctx.restore();
+        ctx.globalCompositeOperation = 'lighter';
+      } else if (w.weapon === 'blades' || w.weapon === 'axes') {
         ctx.save();
         ctx.translate(st.x, st.y);
         ctx.rotate(time * 20);
@@ -1086,6 +1120,69 @@ export class View {
       ctx.fill();
       ctx.restore();
     }
+  }
+
+  /** Sky Citadel: each lightning ring glows brighter and fills in as its strike comes. */
+  private drawStrikeRings(ctx: CanvasRenderingContext2D, s: RunState, time: number): void {
+    if (s.setup.map.storm !== 'lightning') return;
+    const L = STORM.lightning;
+    for (const k of s.storm.strikes) {
+      const left = Math.max(0, (k.at - s.t) / L.warn);
+      const soon = 1 - left;
+      ctx.globalAlpha = 0.25 + soon * 0.45;
+      ctx.fillStyle = '#bfe6ff';
+      ctx.beginPath();
+      ctx.arc(k.x, k.y, L.radius * soon, 0, TAU);
+      ctx.fill();
+      ctx.globalAlpha = 0.6 + Math.sin(time * (8 + soon * 18)) * 0.3;
+      ctx.strokeStyle = soon > 0.7 ? '#ffffff' : '#8ad0ff';
+      ctx.lineWidth = 0.08 + soon * 0.06;
+      ctx.beginPath();
+      ctx.arc(k.x, k.y, L.radius, 0, TAU);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Sunken Kingdom: streaks of water drift the way the sea is pushing. */
+  private drawCurrent(ctx: CanvasRenderingContext2D, s: RunState, time: number, halfW: number, halfH: number, camX: number, camY: number): void {
+    if (s.setup.map.storm !== 'current') return;
+    const dx = Math.cos((s.storm.current / 16) * TAU);
+    const dy = Math.sin((s.storm.current / 16) * TAU);
+    const n = this.low ? 14 : 34;
+    const spanX = halfW * 2;
+    const spanY = halfH * 2;
+    ctx.strokeStyle = '#bff4ee';
+    ctx.lineWidth = 0.07;
+    ctx.lineCap = 'round';
+    for (let i = 0; i < n; i++) {
+      // Fixed spots that slide with time, wrapped onto the screen.
+      const travel = time * 3 + i * 7.3;
+      const px = camX - halfW + ((((i * 37.1 + travel * dx) % spanX) + spanX) % spanX);
+      const py = camY - halfH + ((((i * 19.7 + travel * dy) % spanY) + spanY) % spanY);
+      ctx.globalAlpha = 0.18 + (i % 3) * 0.06;
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(px + dx * 1.2, py + dy * 1.2);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Shadow Swamp: dark fog everywhere but close round the hero (further with the Storm Lantern). */
+  private fogFor: { key: string; g: CanvasGradient } | null = null;
+  private drawFog(ctx: CanvasRenderingContext2D, s: RunState, w: number, h: number, scale: number): void {
+    const see = (STORM.fog.see + legendLevel(s, 'lantern') * STORM.fog.lantern * LEGENDARY.lantern.step) * scale;
+    const key = `${w}x${h}:${Math.round(see)}`;
+    if (!this.fogFor || this.fogFor.key !== key) {
+      const g = ctx.createRadialGradient(w / 2, h / 2, see * 0.55, w / 2, h / 2, see);
+      g.addColorStop(0, 'rgba(8,14,10,0)');
+      g.addColorStop(0.6, 'rgba(8,14,10,0.7)');
+      g.addColorStop(1, 'rgba(8,14,10,0.94)');
+      this.fogFor = { key, g };
+    }
+    ctx.fillStyle = this.fogFor.g;
+    ctx.fillRect(0, 0, w, h);
   }
 
   private vignetteFor: { key: string; g: CanvasGradient } | null = null;

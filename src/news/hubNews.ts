@@ -32,6 +32,14 @@ export const HUB_NEWS: NewsItem[] = [
     game: 'marble',
   },
   {
+    id: 'diamond-gem-lord-2026-11-22',
+    date: '2026-11-22',
+    emoji: '👑',
+    title: 'The Gem Lord',
+    text: 'Find all 7 rare gems for your Diamond Drop Gem Book to win the gold title The Gem Lord!',
+    game: 'diamond',
+  },
+  {
     id: 'clan-more-banners-2026-11-22',
     date: '2026-11-22',
     emoji: '🐉',

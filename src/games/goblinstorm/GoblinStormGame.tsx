@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { KeyBadge, StoryBook, StoryShelf, useGameKeys, useStories, useStoryOnce } from '../../kit';
 import type { Story } from '../../../shared/kit/stories';
-import { HEROES, MAPS, UNLOCK_WORDS, type HeroDef } from '../../../shared/goblinstorm/config';
+import { HEROES, MAPS, STORM_FIRST, STORM_LANDS_ON, UNLOCK_WORDS, type HeroDef } from '../../../shared/goblinstorm/config';
 import { heroOpen, mapOpen, RUNS_A_DAY } from '../../../shared/goblinstorm/server';
 import { CODEX_SIZE } from '../../../shared/goblinstorm/shop';
 import { AchievementPop } from '../../achievements/AchievementPop';
@@ -50,6 +50,11 @@ const MAP_LOCK: Record<string, string> = {
   graveyard: 'Beat the Forest Ogre to open',
   peaks: 'Beat the Lich to open',
   lava: 'Beat the Ice Dragon to open',
+  sunken: 'Buy the whole Shop and beat the Fire Dragon to open',
+  sky: 'Beat the Kraken to open',
+  crystal: 'Beat the Storm Giant to open',
+  swamp: 'Beat the Crystal Wyrm to open',
+  citadel: 'Beat the Shadow Hydra to open',
 };
 
 /**
@@ -82,8 +87,10 @@ function DoneToday() {
   );
 }
 
-export function GoblinStormGame({ backend, extra, onServer = false, unlimitedToday }: {
+export function GoblinStormGame({ backend, extra, onServer = false, unlimitedToday, stormLands = STORM_LANDS_ON }: {
   backend: GoblinStormBackend;
+  /** Show the Storm Lands (maps 6–10): STORM_LANDS_ON live, or the preview's ?storm=1. */
+  stormLands?: boolean;
   extra?: ReactNode;
   /** Whether the class has Unlimited today on for Goblin Storm (live only; the preview has the normal 5). */
   unlimitedToday?: () => Promise<boolean>;
@@ -91,6 +98,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
   onServer?: boolean;
 }) {
   const [screen, setScreen] = useState<Screen>('hero');
+  const mapCount = stormLands ? MAPS.length : STORM_FIRST;
   const [hero, setHero] = useState<HeroDef>(HEROES[0]);
   const [mapIndex, setMapIndex] = useState(0);
   const [run, setRun] = useState<StartReply | null>(null);
@@ -192,7 +200,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
           {left !== null && !outToday && <RunsToday left={left} unlimited={unlimited} />}
           {save && (
             <p className="gs-menu__sub gs-progress">
-              🦸 Heroes {HEROES.filter((h) => heroOpen(save, h.id)).length}/{HEROES.length} · 👑 Bosses beaten {save.bosses.length}/{MAPS.length}
+              🦸 Heroes {HEROES.filter((h) => heroOpen(save, h.id)).length}/{HEROES.length} · 👑 Bosses beaten {save.bosses.filter((b) => b < mapCount).length}/{mapCount}
             </p>
           )}
           {!save && !saveError && <p className="gs-menu__sub" role="status">Loading your save…</p>}
@@ -236,8 +244,8 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
           {left !== null && !outToday && <RunsToday left={left} unlimited={unlimited} />}
           <p className="gs-menu__sub">Playing as {HERO_ICON[hero.id]} {hero.name}. Survive 3 minutes. A mini-boss comes at 1:30 and the boss at 2:30: beat the boss to win!</p>
           <div className="gs-grid gs-grid--maps">
-            {MAPS.map((m, i) => {
-              const open = save ? mapOpen(save, i) : i === 0;
+            {MAPS.slice(0, mapCount).map((m, i) => {
+              const open = save ? mapOpen(save, i, stormLands) : i === 0;
               const beaten = save?.bosses.includes(i);
               return (
                 <button key={m.id} type="button" disabled={!open || busy || outToday} data-key={i < 9 ? String(i + 1) : undefined} className={`gs-pick gs-pick--map gs-pick--${m.id}${open ? '' : ' gs-pick--locked'}${shown?.kind === 'map' && shown.map === i ? ' gs-show' : ''}`} onClick={() => storyFirst(mapStory(i), () => void play(i))}>
@@ -261,7 +269,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
             />
           )}
           {save && !outToday && (() => {
-            const next = nextStep(save);
+            const next = nextStep(save, stormLands);
             return (
               <p className="gs-next">
                 <span>👉 {next.text}</span>
@@ -330,7 +338,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
           guided={guided}
           quality={quality}
           onEnd={(e) => {
-            const opened = e.reply?.valid && e.reply.summary.bossBeaten && !save?.bosses.includes(mapIndex) && mapIndex + 1 < MAPS.length;
+            const opened = e.reply?.valid && e.reply.summary.bossBeaten && !save?.bosses.includes(mapIndex) && mapIndex + 1 < mapCount;
             setNewMap(opened ? mapIndex + 1 : null);
             if (e.reply?.valid && e.reply.summary.bossBeaten) storyFirst(bossStory(mapIndex));
             setEnd(e);

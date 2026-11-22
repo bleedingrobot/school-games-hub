@@ -1,0 +1,78 @@
+[
+ {
+  "id": "puddle",
+  "title": "Mayor Puddle and the Big Dry",
+  "giver": "Mayor Puddle",
+  "voice": "am_eric",
+  "lang": "en-us",
+  "kind": "Relief",
+  "pages": [
+   ["The Big Dry", "Hello, captain! I'm Mayor Puddle. Not one drop of rain has fallen on our three little planets for weeks. The ponds are dry and the frogs are grumpy!"],
+   ["Water, please!", "We need twelve crates of water. Buy them at any market you like, then share them out: four crates for each planet. Fair is fair!"],
+   ["Splash to it", "I've marked the three thirsty planets in gold on your star map. Please hurry, captain. My tadpoles are counting on you!"],
+   ["Rain at last", "Splish! Splash! The ponds are full, the gardens are green, and the frogs are singing again. Listen to that croaking choir!"],
+   ["A soggy thank you", "Here's your reward, captain, and a lucky rain-drop to keep. Come back any time. Just bring an umbrella!"]
+  ]
+ },
+ {
+  "id": "gorbo",
+  "title": "Chef Gorbo's Galaxy Feast",
+  "giver": "Chef Gorbo",
+  "voice": "am_onyx",
+  "lang": "en-us",
+  "kind": "Collect and trade",
+  "pages": [
+   ["The Galaxy Feast", "Hello, hello, captain! I am Chef Gorbo. Tonight I cook the Galaxy Feast for a hundred hungry space travellers. One chef, four pans, and no ingredients!"],
+   ["The shopping list", "I need a giant moon-melon, a wheel of stinky comet cheese, five crates of food and three of lollies for pudding. The cheese is near pirates, so take care!"],
+   ["Quick, quick!", "The melon and cheese are paid for. The food and lollies you buy at any market, and I pay you well. Quick, the ovens are hot!"],
+   ["Dinner is served", "Magnificent! The melon soup bubbles, the cheese is melting, and the lolly pudding wobbles. A hundred happy tummies, all thanks to you!"],
+   ["Compliments to the captain", "Here is your pay, captain, and my golden spoon. Every great cook needs a great delivery captain!"]
+  ]
+ },
+ {
+  "id": "zip",
+  "title": "The Comet Cup",
+  "giver": "Zip Zoomer",
+  "voice": "am_fenrir",
+  "lang": "en-us",
+  "kind": "Race",
+  "pages": [
+   ["The Comet Cup", "Welcome, race fans! I'm Zip Zoomer, and this is the Comet Cup, the fastest race in the galaxy! And you, captain, are on the starting line!"],
+   ["The rules", "Fly through four checkpoint planets, in order, on one tank of fuel. Stop to refuel and you go back to the start line. Plan your jumps!"],
+   ["Three, two, one", "Fill your tank right to the top, captain. Engines roaring, crowd cheering. Three, two, one... go, go, go!"],
+   ["Across the line!", "And they're over the finish line! What a race! What a pilot! The whole crowd is on its feet, captain!"],
+   ["Champion", "The Comet Cup is yours, champion! Polish it every day, and come back next season to defend your title!"]
+  ]
+ },
+ {
+  "id": "pippop",
+  "title": "Pip and Pop's Runaway Pets",
+  "giver": "Pip and Pop",
+  "voice": "af_nicole",
+  "voice2": "af_bella",
+  "lang": "en-us",
+  "kind": "Gather and defend",
+  "pages": [
+   ["Oh no!", "Hi, captain! I'm Pip! And I'm Pop! We're twins! We were feeding our pets, and somebody left the space gate open. Whoops!"],
+   ["Lost pets", "Fluff the moon-bunny, Splodge the jelly-pup and Zoom the comet-cat ran away. And a pirate grabbed Wiggles the star-snail!"],
+   ["Bring them home", "Their planets are marked on your map. For Wiggles, you'll have to chase that pirate away. Please hurry, captain. Pets get hungry!"],
+   ["All home!", "Fluff! Splodge! Zoom! Wiggles! You found them all! Look, they're having a big snuggle pile. Even Wiggles, and he's very slow."],
+   ["Best captain ever", "Here's your reward, captain, and a pet collar with your name on it. We'll keep the gate shut from now on. Promise!"]
+  ]
+ },
+ {
+  "id": "sable",
+  "title": "Captain Sable's Lost Treasure",
+  "giver": "Captain Sable",
+  "voice": "bf_emma",
+  "lang": "en-gb",
+  "kind": "Trail and boss",
+  "pages": [
+   ["An old pirate's secret", "Ahoy, captain. I'm Captain Sable. I was a pirate queen once, but now I'm retired and I keep space bees. Long ago, I hid a treasure."],
+   ["Rust-Beard", "But my old shipmate Rust-Beard has heard about it, the greedy old bucket. Follow my map clues and get there first!"],
+   ["The map", "Each clue says how far to go from where you are. Find all three marks, then the treasure. And watch out for Rust-Beard!"],
+   ["Treasure!", "You beat Rust-Beard and found my chest! Gold coins, star-gems, and my old pirate hat. I'd forgotten how shiny it all was."],
+   ["Shared treasure", "Treasure is better shared, captain. Take your half, and this lucky coin. You'd have made a fine pirate. Luckily, you're an even better trader!"]
+  ]
+ }
+]
