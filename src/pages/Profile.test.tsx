@@ -104,16 +104,13 @@ describe('my profile', () => {
     const user = userEvent.setup();
     const pupil = await renderAt('/profile', auth());
     expect(screen.queryByRole('button', { name: /Reset my turns/ })).not.toBeInTheDocument();
+    // No achievements fold either: they live in the Achievement Hall now.
+    expect(screen.queryByRole('button', { name: /My achievements/ })).not.toBeInTheDocument();
     pupil.unmount();
     await renderAt('/profile', auth({}, { profile: { id: 't1', display_name: 'Mr Riley', avatar: {}, role: 'teacher' } }));
     await user.click(screen.getByRole('button', { name: /Reset my turns in every game/ }));
     expect(resetMyTurns).toHaveBeenCalledTimes(1);
     expect(await screen.findByText('Done! Fresh turns in Clan Quest, Sky Isles.')).toBeInTheDocument();
-  });
-
-  it('has no achievements fold (they live in the Achievement Hall now)', async () => {
-    await renderAt('/profile', auth());
-    expect(screen.queryByRole('button', { name: /My achievements/ })).not.toBeInTheDocument();
   });
 
   it('saves a new look together with the theme, and a new theme together with the look', async () => {
