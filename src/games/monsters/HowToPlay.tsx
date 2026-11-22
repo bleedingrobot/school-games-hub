@@ -38,8 +38,9 @@ export function HowToPlayBody() {
       <section aria-labelledby="mht-battle">
         <h3 id="mht-battle">Battles</h3>
         <p>
-          A wild monster might jump out when you walk in <strong>long grass</strong>. Trainers battle you when they see you. In a battle choose <strong>Fight</strong>, <strong>Team</strong>, <strong>Bag</strong> or{' '}
-          <strong>Run</strong> (you can’t run from a trainer). The keys <kbd>1</kbd> to <kbd>4</kbd> pick from the list, and <kbd>Esc</kbd> goes back.
+          A wild monster might jump out when you walk in <strong>long grass</strong>. Trainers battle you when they see you. In a battle pick one of your monster’s attacks, or <strong>Team</strong>, <strong>Bag</strong> or{' '}
+          <strong>Run</strong> (you can’t run from a trainer). <kbd>Enter</kbd> picks the best choice for you (the glowing attack), <kbd>1</kbd> to <kbd>4</kbd> pick an attack,
+          <kbd>T</kbd> <kbd>B</kbd> <kbd>R</kbd> open Team, Bag and Run, and <kbd>Esc</kbd> goes back. What happens plays by itself; tap or press <kbd>Enter</kbd> to hurry it.
         </p>
         <p>
           <strong>Wild monsters:</strong> the first time you pick an attack, a <strong>Power up</strong> maths question pops up. Get it right and every attack hits harder for the

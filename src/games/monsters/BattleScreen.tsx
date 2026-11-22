@@ -1,10 +1,12 @@
 /**
  * One Maths Monsters battle, as a normal web page (not canvas). The rules come from the
  * N.2 engine (`play`); this screen asks the maths question, plays the engine's events one
- * at a time with short animations and a message box, and waits for the student to tap.
+ * at a time with short animations, big flashing callouts and a message box. The events play on
+ * by themselves (a tap, Enter or Skip hurries them along), so the student only chooses things.
  *
- * Flow: menu (Fight / Team / Bag / Run) → question → events play (tap to go on, or Skip) →
- * back to the menu, a forced "choose your next monster", or the results sheet.
+ * Flow: menu (the moves, plus Team / Bag / Run) → question → events play → back to the menu,
+ * a forced "choose your next monster", or the Victory celebration. Enter always picks the best
+ * choice: the strongest move, the healthiest monster, the most hurt one to heal, Continue.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Question, SkillPack } from '../../../shared/maths/skillPack';
@@ -19,7 +21,7 @@ import type { BattleStep } from '../../../shared/monsters/save/check';
 import type { QuestionReport } from '../../../shared/monsters/save/verify';
 import { effectiveTopic } from '../../../shared/monsters/topics';
 import { maxHpOf, type AnswerResult, type Monster } from '../../../shared/monsters/rules';
-import { TYPE_LABEL } from '../../../shared/monsters/types';
+import { TYPE_LABEL, typeMultiplier, type TypeId } from '../../../shared/monsters/types';
 import { areaInfo } from '../../../shared/monsters/world/areas';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import { useSound } from '../../sound';
@@ -31,6 +33,7 @@ import { loadMonsterSettings, saveMonsterSettings, type MonsterSettings } from '
 import { beatsFor, ITEM_LABEL, nameOf, type Beat } from './text';
 import { TypeChart } from './TypeChart';
 import { BagList, NameCard, Sheet, summarise, TeamList } from './ui';
+import { Victory } from './Victory';
 import './art/monster-art.css';
 import './monsters.css';
 
@@ -72,7 +75,54 @@ export interface BattleScreenProps {
   owned?: readonly string[];
 }
 
-type Mode = 'playing' | 'menu' | 'fight' | 'team' | 'replace' | 'bag' | 'target' | 'question' | 'end';
+type Mode = 'playing' | 'menu' | 'team' | 'replace' | 'bag' | 'target' | 'question' | 'end';
+
+/** How long a message stays before the next one plays by itself: long enough to read, longer for a wrong answer's fact. */
+export function beatMs(beat: Beat): number {
+  const base = beat.sub === 'evolving' ? 1800 : beat.event.kind === 'attack' ? 1500 : 1200;
+  return Math.min(4200, Math.max(base, 700 + beat.text.length * 40));
+}
+
+/** The big word that flashes over the battle for a beat, if it earns one. */
+export function calloutFor(beat: Beat | undefined): { text: string; tone: string } | null {
+  const e = beat?.event;
+  if (!e) return null;
+  switch (e.kind) {
+    case 'attack':
+      if (e.side === 'you' && e.answer === 'quick-right') return { text: 'Critical hit!', tone: 'crit' };
+      if (e.effect === 'strong') return { text: 'Super effective!', tone: 'strong' };
+      if (e.side === 'you' && e.answer === 'wrong') return { text: 'Small hit', tone: 'weak' };
+      return { text: 'Hit!', tone: 'hit' };
+    case 'power-up':
+      return e.answer === 'wrong' ? null : { text: e.answer === 'quick-right' ? 'Super power up!' : 'Power up!', tone: 'power' };
+    case 'faint':
+      return e.side === 'foe' ? { text: 'Beaten!', tone: 'ko' } : { text: 'Tired out!', tone: 'weak' };
+    case 'catch-try':
+      return e.success ? { text: 'Gotcha!', tone: 'power' } : { text: 'Broke free!', tone: 'weak' };
+    case 'caught':
+      return { text: 'Caught!', tone: 'win' };
+    case 'level-up':
+      return { text: 'Level up!', tone: 'power' };
+    case 'evolved':
+      return beat?.sub === 'evolving' ? { text: 'Evolving…', tone: 'evo' } : { text: 'Evolved!', tone: 'evo' };
+    case 'won':
+      return { text: 'Victory!', tone: 'win' };
+    case 'switch':
+      return { text: 'Go!', tone: 'hit' };
+    default:
+      return null;
+  }
+}
+
+/** Enter's move: the hardest hit on this foe (power × strong/weak). */
+export function bestAttack(attacks: readonly { power: number; anim: string }[], foeType: TypeId): number {
+  let best = 0;
+  attacks.forEach((a, i) => {
+    const score = (x: { power: number; anim: string }) => x.power * typeMultiplier(x.anim.split('-')[0] as TypeId, foeType);
+    if (score(a) > score(attacks[best])) best = i;
+  });
+  return best;
+}
 type Side = 'you' | 'foe';
 type FoeLook = MonsterState | 'gone';
 
@@ -364,7 +414,10 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
     setAsking(null);
     setPendingItem(null);
     setShown(shownFrom(before));
-    startBeats(beatsFor(events, before.kind, fact));
+    let list = beatsFor(events, before.kind, fact);
+    // A win's exp and levels are shown on the Victory celebration, not read out one by one first.
+    if (next.phase === 'won' || next.phase === 'caught') list = list.filter((b) => b.event.kind !== 'exp' && b.event.kind !== 'level-up');
+    startBeats(list);
   }
 
   /** The attack a power up was asked for, played straight after it. */
@@ -406,24 +459,52 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
   const mine = shown.team[shown.active];
   const foe = shown.foes[shown.foeActive];
   const foeIsTrainer = battle.kind === 'trainer';
-  const message = mode === 'playing' ? beats[beatIdx]?.text ?? '' : mode === 'menu' ? `What will ${nameOf(mine.species)} do?` : mode === 'fight' ? 'Choose a move.' : mode === 'replace' ? 'Choose your next monster.' : '';
+  const message = mode === 'playing' ? beats[beatIdx]?.text ?? '' : mode === 'menu' ? `What will ${nameOf(mine.species)} do?` : mode === 'replace' ? 'Choose your next monster.' : '';
   const popsFor = (side: Side) => pops.filter((p) => p.side === side);
+  const beat = mode === 'playing' ? beats[beatIdx] : undefined;
+  const callout = calloutFor(beat);
 
   // Keep the Next button ready for the Enter or Space key.
   useEffect(() => {
-    if (mode === 'playing') nextButton.current?.focus();
+    if (mode === 'playing') nextButton.current?.focus({ preventScroll: true });
   }, [mode, beatIdx]);
 
-  // Number keys 1-4 for the menu and the moves; Escape goes back.
+  // The messages play on by themselves (tests, with timeScale 0, tap through instead).
+  const advanceRef = useRef(advance);
+  advanceRef.current = advance;
+  useEffect(() => {
+    if (mode !== 'playing' || timeScale === 0 || !beat) return;
+    const t = window.setTimeout(() => advanceRef.current(), beatMs(beat) * timeScale);
+    return () => window.clearTimeout(t);
+  }, [mode, beatIdx, beats, beat, timeScale]);
+
+  // Team, Bag and Run sit under the moves; letters and number keys pick them, Escape goes back.
   const menuItems = useMemo(
     () => [
-      { id: 'fight', label: 'Fight' },
-      { id: 'team', label: 'Team' },
-      { id: 'bag', label: 'Bag' },
-      ...(foeIsTrainer ? [] : [{ id: 'run', label: 'Run' }]),
+      { id: 'team', label: 'Team', key: 't' },
+      { id: 'bag', label: 'Bag', key: 'b' },
+      ...(foeIsTrainer ? [] : [{ id: 'run', label: 'Run', key: 'r' }]),
     ],
     [foeIsTrainer],
   );
+  const attacks = speciesOf(activeMonster(battle).species).attacks;
+  const best = bestAttack(attacks, speciesOf(activeFoe(battle).species).type);
+  /** Enter's monster to send out: the healthiest one still standing. */
+  const healthiest = () => {
+    let pick = -1;
+    battle.team.forEach((m, i) => {
+      if (m.hp > 0 && i !== battle.active && (pick < 0 || m.hp / maxHpOf(m) > battle.team[pick].hp / maxHpOf(battle.team[pick]))) pick = i;
+    });
+    return pick;
+  };
+  /** Enter's monster to heal: the most hurt one still standing. */
+  const mostHurt = () => {
+    let pick = -1;
+    battle.team.forEach((m, i) => {
+      if (m.hp > 0 && m.hp < maxHpOf(m) && (pick < 0 || m.hp / maxHpOf(m) < battle.team[pick].hp / maxHpOf(battle.team[pick]))) pick = i;
+    });
+    return pick;
+  };
   const keyHandler = useRef<(e: KeyboardEvent) => void>(() => {});
   keyHandler.current = (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -435,15 +516,36 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
       return;
     }
     const n = Number(e.key);
-    if (mode === 'menu' && n >= 1 && n <= menuItems.length) {
-      e.preventDefault();
-      pickMenu(menuItems[n - 1].id);
-    } else if (mode === 'fight') {
-      const attacks = speciesOf(activeMonster(battle).species).attacks;
+    const enter = e.key === 'Enter';
+    // Enter on a focused button presses that button (the browser does it); otherwise it takes the best choice.
+    const onButton = enter && (e.target as HTMLElement | null)?.tagName === 'BUTTON';
+    if (mode === 'menu') {
+      const item = menuItems.find((m) => m.key === e.key.toLowerCase());
       if (n >= 1 && n <= attacks.length) {
         e.preventDefault();
-        ask({ kind: 'fight', attack: n - 1 }, 'fight');
-      } else if (e.key === 'Escape') setMode('menu');
+        ask({ kind: 'fight', attack: n - 1 }, 'menu');
+      } else if (item) {
+        e.preventDefault();
+        pickMenu(item.id);
+      } else if (enter && !onButton) {
+        e.preventDefault();
+        ask({ kind: 'fight', attack: best }, 'menu');
+      }
+    } else if (mode === 'replace' && enter && !onButton) {
+      const pick = healthiest();
+      if (pick >= 0) {
+        e.preventDefault();
+        run({ kind: 'switch', to: pick });
+      }
+    } else if (mode === 'target' && enter && !onButton && pendingItem) {
+      const pick = mostHurt();
+      if (pick >= 0) {
+        e.preventDefault();
+        run({ kind: 'item', item: pendingItem, target: pick });
+      }
+    } else if (mode === 'end' && enter && !onButton) {
+      e.preventDefault();
+      finish();
     } else if ((mode === 'team' || mode === 'bag' || mode === 'target') && e.key === 'Escape') {
       setMode(mode === 'target' ? 'bag' : 'menu');
     }
@@ -455,8 +557,7 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
   }, []);
 
   function pickMenu(id: string) {
-    if (id === 'fight') setMode('fight');
-    else if (id === 'team') setMode('team');
+    if (id === 'team') setMode('team');
     else if (id === 'bag') setMode('bag');
     else if (id === 'run') run({ kind: 'run' });
   }
@@ -482,7 +583,12 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
     });
   }
 
-  const attacks = speciesOf(activeMonster(battle).species).attacks;
+  // Running away needs no results page: straight back to the map.
+  useEffect(() => {
+    if (mode === 'end' && battle.phase === 'ran') finish();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
   const sum = mode === 'end' ? summarise(log.current) : null;
   const bagCount = (battle.bag.potion ?? 0) + (battle.bag['super-potion'] ?? 0) + (battle.bag.ball ?? 0) + (battle.bag['great-ball'] ?? 0);
   // The painted landscape of the place or Tower, over the colour wash (which stays as the fallback). Decoration only, so a CSS background.
@@ -491,7 +597,19 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
 
   return (
     <section className={`mb mb--area${battle.area}`} aria-label="Battle">
-      <div className={`mb-arena${scene.wide ? ' has-art' : ''}`} style={sceneStyle}>
+      {/* A tap on the battle hurries the messages along (the Next button does the same for keyboards). */}
+      <div
+        className={`mb-arena${scene.wide ? ' has-art' : ''}${callout && (callout.tone === 'crit' || callout.tone === 'strong' || callout.tone === 'ko') ? ' is-shaking' : ''}`}
+        style={sceneStyle}
+        onClick={(e) => {
+          if (mode === 'playing' && !(e.target as HTMLElement).closest('button, .mb-settings')) advance();
+        }}
+      >
+        {callout && (
+          <div key={`${beatIdx}-${beats.length}-${callout.text}`} className={`mb-callout mb-callout--${callout.tone}`} aria-hidden="true">
+            <span>{callout.text}</span>
+          </div>
+        )}
         {!intro && (
           <div className="mb-foe-card">
             <NameCard monster={foe} side="foe" caught={owned?.includes(foe.species)} />
@@ -540,8 +658,10 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
         </p>
         {mode === 'playing' && (
           <div className="mb-actions mb-actions--next">
-            <button ref={nextButton} type="button" className="mb-btn mb-btn--primary" onClick={advance}>
-              Next ▸
+            {/* The bar runs down while the message plays on by itself; pressing it goes on now. */}
+            <button ref={nextButton} type="button" className="mb-btn mb-btn--primary mb-next" onClick={advance}>
+              {beat && timeScale > 0 && <span key={`${beatIdx}-${beats.length}`} className="mb-next__timer" style={{ animationDuration: `${beatMs(beat) * timeScale}ms` }} aria-hidden="true" />}
+              <span className="mb-next__label">Next ▸</span>
             </button>
             {beats.length - beatIdx > 1 && (
               <button type="button" className="mb-btn mb-btn--small" onClick={skip}>
@@ -551,21 +671,20 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
           </div>
         )}
         {mode === 'menu' && (
-          <div className="mb-actions mb-actions--menu" role="group" aria-label="Choose what to do">
-            {menuItems.map((item, i) => (
-              <button key={item.id} type="button" className={`mb-btn mb-btn--${item.id}`} onClick={() => pickMenu(item.id)} aria-keyshortcuts={String(i + 1)}>
-                <kbd aria-hidden="true">{i + 1}</kbd> {item.label}
-              </button>
-            ))}
-          </div>
-        )}
-        {mode === 'fight' && (
           <div className="mb-actions mb-actions--moves" role="group" aria-label="Choose a move">
             {attacks.map((a, i) => {
               const type = a.anim.split('-')[0];
               return (
-                <button key={a.name} type="button" className={`mb-btn mb-move mb-move--${type}`} onClick={() => ask({ kind: 'fight', attack: i }, 'fight')} aria-keyshortcuts={String(i + 1)}>
+                <button
+                  key={a.name}
+                  type="button"
+                  className={`mb-btn mb-move mb-move--${type}${i === best ? ' is-best' : ''}`}
+                  onClick={() => ask({ kind: 'fight', attack: i }, 'menu')}
+                  aria-keyshortcuts={i === best ? `${i + 1} Enter` : String(i + 1)}
+                  data-best={i === best || undefined}
+                >
                   <kbd aria-hidden="true">{i + 1}</kbd>
+                  {i === best && <span className="mb-move__enter" aria-hidden="true">Enter</span>}
                   <span className="mb-move__name">{a.name}</span>
                   <span className="mb-move__power">
                     {TYPE_LABEL[type as keyof typeof TYPE_LABEL]} · power {a.power}
@@ -573,9 +692,13 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
                 </button>
               );
             })}
-            <button type="button" className="mb-btn mb-btn--small mb-back" onClick={() => setMode('menu')}>
-              Back
-            </button>
+            <div className="mb-actions--menu mb-menu-row" role="group" aria-label="More">
+              {menuItems.map((item) => (
+                <button key={item.id} type="button" className={`mb-btn mb-btn--small mb-btn--${item.id}`} onClick={() => pickMenu(item.id)} aria-keyshortcuts={item.key.toUpperCase()}>
+                  <kbd aria-hidden="true">{item.key.toUpperCase()}</kbd> {item.label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -606,45 +729,17 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
           />
         </Sheet>
       )}
-      {mode === 'end' && sum && (
-        <Sheet title={battle.phase === 'won' ? 'You won!' : battle.phase === 'caught' ? 'Caught!' : battle.phase === 'ran' ? 'Got away!' : 'Your team is tired'}>
-          <div className="mb-end">
-            {battle.phase === 'lost' && <p>Your monsters are all tired, so you hurry back to rest. They’re healed, and you keep everything.</p>}
-            {battle.phase === 'ran' && <p>You got away safely.</p>}
-            {sum.caught && (
-              <p className="mb-end__caught">
-                <MonsterArt species={sum.caught} size={84} still /> {nameOf(sum.caught)} is yours!
-              </p>
-            )}
-            {sum.exp.length > 0 && (
-              <ul>
-                {sum.exp.map(([id, amount]) => (
-                  <li key={id}>
-                    {nameOf(id)} gained {amount} exp.
-                  </li>
-                ))}
-              </ul>
-            )}
-            {sum.levels.length > 0 && (
-              <ul>
-                {sum.levels.map((l) => (
-                  <li key={l}>{l}!</li>
-                ))}
-              </ul>
-            )}
-            {sum.evolved.map((e) => (
-              <p key={e.to} className="mb-end__evo">
-                <MonsterArt species={e.from} size={64} still /> → <MonsterArt species={e.to} size={84} still /> {nameOf(e.from)} grew into {nameOf(e.to)}!
-              </p>
-            ))}
-            <p>
-              You answered {battle.questions} question{battle.questions === 1 ? '' : 's'}.
-            </p>
-            <button type="button" className="mb-btn mb-btn--primary" onClick={finish} autoFocus>
-              Continue
-            </button>
-          </div>
-        </Sheet>
+      {mode === 'end' && sum && battle.phase !== 'ran' && (
+        <Victory
+          phase={battle.phase as 'won' | 'caught' | 'lost'}
+          before={start.state.team}
+          after={battle.team}
+          caught={sum.caught}
+          questions={battle.questions}
+          timeScale={timeScale}
+          onLevelUp={() => play_('item')}
+          onContinue={finish}
+        />
       )}
 
       {mode === 'question' && asking && (

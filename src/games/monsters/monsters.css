@@ -378,3 +378,97 @@
   .mb-ball { animation: none; }
   .mb-me.is-evolving .mon-art__pic { animation: none !important; filter: brightness(1.4); }
 }
+
+/* ---------- Fewer taps: callouts, the self-playing Next bar, the best move ---------- */
+/* The big word that flashes over the battle for each beat ("Super effective!", "Beaten!", "Level up!"). */
+.mb-callout {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  z-index: 9;
+  translate: -50% -50%;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.mb-callout span {
+  display: block;
+  padding: 0.1em 0.5em;
+  font: 900 clamp(1.8rem, 7.5vh, 3.6rem) / 1 'Segoe UI Black', 'Arial Black', system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--co-fill, #fff);
+  -webkit-text-stroke: 3px var(--co-edge, #0f172a);
+  paint-order: stroke fill;
+  text-shadow: 0 5px 0 var(--co-edge, #0f172a), 0 0 26px var(--co-glow, rgba(255, 255, 255, 0.7));
+  animation: mb-callout 1.25s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+.mb-callout::before {
+  content: '';
+  position: absolute;
+  inset: -60% -20%;
+  z-index: -1;
+  background: radial-gradient(closest-side, var(--co-glow, rgba(255, 255, 255, 0.6)), transparent);
+  animation: mb-callout-burst 0.7s ease-out both;
+}
+.mb-callout--hit { --co-fill: #fff; --co-edge: #1e293b; --co-glow: rgba(255, 255, 255, 0.55); }
+.mb-callout--hit span { font-size: clamp(1.4rem, 5.5vh, 2.6rem); }
+.mb-callout--strong { --co-fill: #fde047; --co-edge: #b91c1c; --co-glow: rgba(250, 204, 21, 0.85); }
+.mb-callout--crit { --co-fill: #fb923c; --co-edge: #7c2d12; --co-glow: rgba(251, 146, 60, 0.95); }
+.mb-callout--crit span, .mb-callout--strong span { animation: mb-callout 1.25s cubic-bezier(0.2, 1.5, 0.4, 1) both, mb-flash 0.18s steps(2) 0.2s 4; }
+.mb-callout--weak { --co-fill: #cbd5e1; --co-edge: #334155; --co-glow: rgba(148, 163, 184, 0.5); }
+.mb-callout--weak span { font-size: clamp(1.3rem, 5vh, 2.4rem); }
+.mb-callout--ko { --co-fill: #f87171; --co-edge: #450a0a; --co-glow: rgba(248, 113, 113, 0.9); }
+.mb-callout--power { --co-fill: #a5f3fc; --co-edge: #155e75; --co-glow: rgba(34, 211, 238, 0.9); }
+.mb-callout--evo { --co-fill: #f5d0fe; --co-edge: #701a75; --co-glow: rgba(232, 121, 249, 0.95); }
+.mb-callout--win { --co-fill: #fde047; --co-edge: #7c2d12; --co-glow: rgba(253, 224, 71, 1); }
+.mb-callout--win span { font-size: clamp(2.4rem, 10vh, 4.6rem); }
+@keyframes mb-callout {
+  0% { scale: 2.6; opacity: 0; rotate: -8deg; }
+  22% { scale: 0.92; opacity: 1; rotate: -3deg; }
+  32% { scale: 1.06; }
+  80% { scale: 1; opacity: 1; rotate: -3deg; }
+  100% { scale: 1.12; opacity: 0; translate: 0 -24px; rotate: -3deg; }
+}
+@keyframes mb-callout-burst { from { scale: 0.2; opacity: 1; } to { scale: 1.6; opacity: 0; } }
+@keyframes mb-flash { 50% { filter: brightness(1.8) saturate(1.6); } }
+
+/* A big hit shakes the whole battle. */
+.mb-arena.is-shaking { animation: mb-quake 0.45s ease-out 0.3s; }
+@keyframes mb-quake {
+  15% { translate: -9px 4px; } 30% { translate: 8px -5px; } 45% { translate: -6px 3px; }
+  60% { translate: 5px -2px; } 80% { translate: -2px 1px; } 100% { translate: 0 0; }
+}
+
+/* Next: the bar drains while the message plays on by itself. */
+.mb-next { position: relative; overflow: hidden; }
+.mb-next__label { position: relative; }
+.mb-next__timer {
+  position: absolute;
+  inset: 0;
+  background: rgba(161, 98, 7, 0.28);
+  transform-origin: left;
+  animation: mb-timer linear both;
+}
+@keyframes mb-timer { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+/* The moves are on the first menu, with Team / Bag / Run in a slim row under them. */
+.mb-menu-row { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 8px; }
+.mb-menu-row > .mb-btn { min-height: 38px; grid-column: auto !important; }
+/* Enter's move: it glows and says so. */
+.mb-move.is-best { outline: 3px solid #fde047; outline-offset: 1px; animation: mb-best 1.2s ease-in-out infinite alternate; }
+.mb-move__enter {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #fde047;
+  color: #713f12;
+  font: 900 0.68rem 'Segoe UI', sans-serif;
+  text-transform: uppercase;
+}
+@keyframes mb-best { to { box-shadow: 0 4px 0 rgba(15, 23, 42, 0.45), 0 0 18px rgba(253, 224, 71, 0.85); } }
+@media (pointer: coarse) { .mb-move__enter { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .mb-callout span, .mb-callout::before, .mb-arena.is-shaking, .mb-move.is-best, .mb-next__timer { animation: none !important; }
+}

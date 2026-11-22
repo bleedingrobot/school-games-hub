@@ -65,8 +65,8 @@ describe('the battle screen', () => {
   it('asks the attacker’s topic at the area’s band, and a right answer attacks', async () => {
     const { user, asked } = setup(wild({ area: 4, far: true }));
     await passMessages(user);
-    await user.click(screen.getByRole('button', { name: 'Fight' }));
-    // Plusplash's moves are listed with their power and type.
+    // Plusplash's moves are on the first menu with their power and type; one glows as Enter's best move.
+    expect(screen.getAllByRole('button').filter((b) => b.dataset.best)).toHaveLength(1);
     expect(screen.getByRole('button', { name: /Splash Add/ })).toHaveTextContent('Water · power 35');
     await user.click(screen.getByRole('button', { name: /Plus Puddle/ }));
     await answer(user, true);
