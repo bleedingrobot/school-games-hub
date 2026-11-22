@@ -1,6 +1,6 @@
 # Circuit Racer: plan
 
-**Status: plan only, nothing built. Plan merged in PR #733; James's choices added 22 Nov 2026.** James picked the theme "Circuit Racer" from six new-theme ideas (deep sea, lava, sweets, aurora, circuit, ghost train) on 22 Nov 2026. Game id `circuit`. Next free migration number when written: `20261122000600` (check again before Stage 2).
+**Status: Stage 1 done (the physics engine, config, road format, 6 Motherboard roads, tests and simulator in `shared/circuit/`; no screens yet, nothing for pupils to see). Plan PR #733, choices #734, Stage 1 PR #735 (22 Nov 2026). Next: Stage 2, first playable (prompt in `docs/prompts/circuit-s2.md`).** James picked the theme "Circuit Racer" from six new-theme ideas (deep sea, lava, sweets, aurora, circuit, ghost train) on 22 Nov 2026. Game id `circuit`. Next free migration number when written: `20261122000800` on 22 Nov (check again before Stage 2: `node scripts/migration-numbers.mjs`).
 
 **Circuit Racer** is a neon racing game. You are a spark of data racing along circuit-board roads that float inside a giant computer. Steer between 7 lanes, speed up and slow down, jump the gaps, and dive into the port at the end of each road before your **battery** or **signal** runs out.
 
@@ -162,6 +162,33 @@ The racer, chips, cables, sparks and gates are drawn in three.js with bloom, so 
 ## 8. Server, data and cost
 
 Function `circuit` (`start`, `finish`). Tables: `circuit_progress` (best time, medal, stars per road per pupil, finishes today and their NZ date), `circuit_runs` (recent finished runs with inputs, for checking), `circuit_questions`. `finish` refuses a 6th finish on the same NZ day unless the teacher's Unlimited today is on. Migration `20261122000600_circuit.sql` (re-check). Points through `add_game_points` on each finished road. About 2 calls a road: a class of 28 playing 15 minutes is roughly 300 calls a lesson.
+
+## Stage 1 results (22 Nov 2026)
+
+`npm run circuit:sim` drives every road with three look-ahead bots (they play each choice forward with the real physics, every few steps): **careful** at 60% of top speed, **average** at 80%, **wild** flat out and looking only half a second ahead. Times are seconds; the two percentages are the lowest battery and signal on the run. Every run is replayed from its recorded inputs and gives exactly the same time.
+
+| Road | Rows | Ports | Careful | Average | Wild | Gold (suggested) | Silver (suggested) |
+|---|---|---|---|---|---|---|---|
+| 1 Power On | 182 | 0 | 26.4s, 83% / 59% | 19.7s, 79% / 70% | 16.1s, 75% / 75% | 18s | 23s |
+| 2 Clock Speed | 213 | 0 | 28.8s, 79% / 60% | 21.8s, 74% / 70% | 18.6s, 71% / 74% | 21s | 26s |
+| 3 First Charge | 232 | 1 | 32.3s, 54% / 56% | 26.4s, 49% / 61% | 20.5s, 39% / 71% | 23s | 31s |
+| 4 Data Bus | 361 | 2 | 51.8s, 55% / 55% | 39.7s, 44% / 67% | 31.7s, 34% / 73% | 35s | 46s |
+| 5 Bridge Chips | 301 | 3 | 40.8s, 62% / 59% | 32.7s, 24% / 44% | 26.9s, 49% / 72% | 30s | 38s |
+| 6 Kernel Run | 362 | 3 | 52.7s, 57% / 56% | 43s, 48% / 67% | 32.1s, 39% / 73% | 36s | 50s |
+
+What this shows:
+- **Every road is finishable on the first go** by the careful and average bots, and the wild bot finishes them too. `roads.test.ts` checks the average bot on every road (under a second for all six).
+- **Battery:** a careful driver never drops below half, so a careful first run never runs out. Flat out on roads 3 to 6 the battery dips to a third or a quarter, so the recharge ports matter for fast drivers (the 24% on Bridge Chips is the average bot skipping a port).
+- **Signal:** a careful driver uses under half on every road (the ports refill it on roads 3 to 6), so it only runs out for a racer going at a quarter of the careful speed or stopping a lot: dawdling, not careful driving.
+- **Lengths:** roads 1 to 3 take a careful driver about half a minute (the plan's "roads 1 to 3 in the first 5 minutes"); roads 4 to 6 just under a minute. With hesitation and retries a child takes 1 to 3 minutes.
+- **Medals:** suggested gold is 10% slower than the wild bot, silver 15% slower than the average bot. Stage 4 sets them for real from this script; bronze is any finish.
+
+Choices made while building (all in `shared/circuit/config.ts`):
+- Units are lanes, rows and seconds: top speed 12 rows/s, steering 3.6 lanes/s at top speed (40% of that when stopped, so a stopped racer can edge sideways), jump 6 up, Motherboard gravity 16 (apex 1.1, so the tallest block, 1.0, can just be jumped onto).
+- Battery drains by `0.25 × speed share + 0.75 × speed share²`, so driving slower really does stretch it; each road's `battery` is the seconds it lasts flat out and `signal` the seconds it lasts at all.
+- Tunnels are a floor with a roof at 1.2 for now (jump inside on a light world and you bump your head); Stage 2 draws them as half-pipes and may curve the sides.
+- Inputs are stored as changes, each at a distance slot (8 a row) plus the steps already spent in that slot, so a replay is exact even when the racer stops, and pit-stop pauses (Stage 3) never need recording.
+- Data gates (`?`) parse but drive as plain trace until Stage 3.
 
 ## 9. Stages
 

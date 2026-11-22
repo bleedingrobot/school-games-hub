@@ -88,3 +88,7 @@ The `save-bot-game` server function runs exactly this code before saving a resul
   words inside; never changed from a game branch.
 - `quests/`: weekly class quests (docs/CLASS-QUESTS-PLAN.md). `kinds.ts` lists the quest kinds (each matches a
   `quest_kinds` row and a watcher on its game's table), `week.ts` works out a quest's seven days the same way as the database.
+- `circuit/`: Circuit Racer (Stage 1, the engine only). `physics.ts` is the physics as one pure step function (30
+  steps a second, ideas from OpenRoads, MIT), `inputs.ts` the inputs recorded by distance for the server's replay,
+  `road.ts` the text road format, `roads/` the roads, `config.ts` every tuning number and `bot.ts` the look-ahead bots
+  (`npm run circuit:sim`). See `docs/CIRCUIT-PLAN.md`.
