@@ -375,7 +375,7 @@ describe('Star Trader quests', () => {
       expect(nextQuest(five.quests, 10)?.id).toBe('puddle');
       expect(nextQuest({ ...five.quests!, lastDay: 10 }, 10)).toBeNull();
       expect(refused(run(five, { type: 'quest-take', id: 'gorbo' }))).toMatch(/not open/);
-      const order = QUESTS.slice(5).map((q, k) => nextQuest({ ...five.quests!, finished: [...FIRST_SET, ...QUESTS.slice(5, 5 + k).map((c) => c.id)] }, 10)?.id);
+      const order = QUESTS.slice(5).map((_, k) => nextQuest({ ...five.quests!, finished: [...FIRST_SET, ...QUESTS.slice(5, 5 + k).map((c) => c.id)] }, 10)?.id);
       expect(order).toEqual(['puddle', 'gorbo', 'zip', 'pippop', 'sable']);
       const after = (...more: string[]): Game => ({ ...fresh(), quests: { open: null, done: [], finished: [...FIRST_SET, ...more], lastDay: 9 } });
       const take = (g: Game, id: string): Game => ok(run(g, { type: 'quest-take', id }));
