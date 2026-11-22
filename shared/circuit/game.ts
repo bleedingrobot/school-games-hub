@@ -39,16 +39,16 @@ export function roadBefore(id: string): string | null {
 }
 
 /**
- * Medal times in seconds, from the Stage 1 simulator's suggestions (docs/CIRCUIT-PLAN.md, "Stage 1 results"): gold is 10%
+ * Medal times in seconds, from the simulator's suggestions for the redrawn roads (`npm run circuit:sim`, 23 Nov 2026): gold is 10%
  * slower than the wild bot, silver 15% slower than the average bot, bronze is any finish. Stage 4 sets them for real.
  */
 export const MEDAL_SECONDS: Record<string, { gold: number; silver: number }> = {
-  'power-on': { gold: 18, silver: 23 },
-  'clock-speed': { gold: 21, silver: 26 },
-  'first-charge': { gold: 23, silver: 31 },
-  'data-bus': { gold: 35, silver: 46 },
-  'bridge-chips': { gold: 30, silver: 38 },
-  'kernel-run': { gold: 36, silver: 50 },
+  'power-on': { gold: 19, silver: 25 },
+  'clock-speed': { gold: 21, silver: 25 },
+  'first-charge': { gold: 19, silver: 25 },
+  'data-bus': { gold: 24, silver: 31 },
+  'bridge-chips': { gold: 26, silver: 33 },
+  'kernel-run': { gold: 32, silver: 47 },
 };
 
 export type Medal = 'bronze' | 'silver' | 'gold';
