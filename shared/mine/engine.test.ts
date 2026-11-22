@@ -65,7 +65,7 @@ describe('the mine rules a pupil would notice', () => {
 });
 
 describe('easy flying (docs/plans/mine-flight/PLAN.md, M2)', () => {
-  it('is always steady, cruises forward under its top speed, brakes, and walls push it back to the middle', () => {
+  it('is always steady, stays still until Go is held, flies under its top speed, stops when Go is let go, and walls push it back to the middle', () => {
     expect(makeWorld(level3, { easy: true, steady: false }).steady).toBe(true);
     expect(makeWorld(level3, { steady: true }).easy).toBe(false);
     const w = makeWorld(level3, { easy: true });
@@ -73,18 +73,21 @@ describe('easy flying (docs/plans/mine-flight/PLAN.md, M2)', () => {
     const room = level3.rooms[level3.start];
     placeAt(s, room.cx + 0.5, room.cy + 0.5, room.cz + 0.5);
     s.fx = 0; s.fy = 1; s.fz = 0; s.ux = 0; s.uy = 0; s.uz = 1; s.rx = 1; s.ry = 0; s.rz = 0;
-    for (let i = 0; i < 6; i++) stepRun(w, s, IDLE);
     const speed = () => Math.sqrt(s.vx * s.vx + s.vy * s.vy + s.vz * s.vz);
+    // No auto-flying: with nothing held the ship stays where it is.
+    for (let i = 0; i < 30; i++) stepRun(w, s, IDLE);
+    expect(speed()).toBeLessThan(1e-6);
+    const go = packInput({ ...NO_INPUT, tz: 1 });
+    for (let i = 0; i < 6; i++) stepRun(w, s, go);
     expect(s.vy).toBeGreaterThan(1);
     expect(speed()).toBeLessThanOrEqual(EASY_MAX_SPEED + 1e-9);
     const before = speed();
-    const brake = packInput({ ...NO_INPUT, tz: -1 });
-    for (let i = 0; i < 6; i++) stepRun(w, s, brake);
+    for (let i = 0; i < 6; i++) stepRun(w, s, IDLE);
     expect(speed()).toBeLessThan(before / 2);
-    // Just above the room's floor, braking so the cruise doesn't move it: the floor pushes it up.
+    // Just above the room's floor, holding nothing: the floor pushes it up.
     const floor = room.cz - room.hz;
     placeAt(s, room.cx + 0.5, room.cy + 0.5, floor + 0.5);
-    for (let i = 0; i < 10; i++) stepRun(w, s, brake);
+    for (let i = 0; i < 10; i++) stepRun(w, s, IDLE);
     expect(s.pz).toBeGreaterThan(floor + 0.5);
   });
 });
