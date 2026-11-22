@@ -82,7 +82,8 @@
     "toonflap:sim": "node scripts/toonflap-sim.mjs",
     "toonflap:preview": "TOONFLAP_INLINE=1 vite build --config vite.toonflap-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-toonflap toon-flap-test-page.html",
     "test:budget": "vitest run --project logic scripts/test-budget.test.ts",
-    "circuit:sim": "node scripts/circuit-sim.mjs"
+    "circuit:sim": "node scripts/circuit-sim.mjs",
+    "circuit:preview": "vite build --config vite.circuit-preview.config.ts"
   },
   "engines": {
     "node": ">=22"
