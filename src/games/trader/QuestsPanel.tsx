@@ -4,13 +4,16 @@
  */
 import { GOODS, SHIPS } from '../../../shared/trader/config';
 import { coordText, distance, type Galaxy } from '../../../shared/trader/galaxy';
-import { allQuestsDone, isSmallShip, jobId, jobIndex, NAVY_LASER, nearestSellers, nextQuest, openQuestView, questReward, FIRST_QUESTS, trailClue, type QuestConfig, type QuestState, type StepView } from '../../../shared/trader/quests';
+import { allQuestsDone, FIRST_SET, hasSmallOrder, isSmallShip, jobId, jobIndex, NAVY_LASER, nearestSellers, nextQuest, openQuestView, questReward, FIRST_QUESTS, QUESTS, trailClue, type QuestConfig, type QuestState, type StepView } from '../../../shared/trader/quests';
 import type { Action } from '../../../shared/trader/server';
 import type { Trader } from '../../../shared/trader/state';
-import { boardArt, giverArt, isHidden, isWaiting, KEEPSAKES, landingLine, MASTER_ART, stepWords, type Shown } from './questGuide';
+import { boardArt, doneOf, giverArt, isHidden, isTrail, isWaiting, KEEPSAKES, landingLine, MASTER_ART, pirateWords, raceFuel, stepWords, trailName, type Shown } from './questGuide';
 import { QUEST_STORIES } from './stories';
 
 const cr = (n: number): string => `${n.toLocaleString('en-NZ')} cr`;
+
+/** Quests 6 to 10, under "More quests" (docs/plans/trader-quests-2/PLAN.md). */
+const MORE_QUESTS: readonly QuestConfig[] = QUESTS.filter((q) => !FIRST_SET.includes(q.id));
 
 export type QuestStatus = 'done' | 'open' | 'ready' | 'tomorrow' | 'locked';
 
@@ -18,7 +21,7 @@ export function questStatus(quest: QuestConfig, q: QuestState | undefined, day: 
   if (q?.finished.includes(quest.id)) return 'done';
   if (q?.open === quest.id) return 'open';
   if (nextQuest(q, day, all ? quest.id : undefined)?.id === quest.id) return 'ready';
-  const first = FIRST_QUESTS.find((c) => !q?.finished.includes(c.id));
+  const first = QUESTS.find((c) => !q?.finished.includes(c.id));
   if (first?.id === quest.id && !q?.open && q?.lastDay != null && q.lastDay >= day) return 'tomorrow';
   return 'locked';
 }
@@ -59,44 +62,51 @@ export function QuestsPanel({ galaxy, t, quests, keepsakes = [], allQuests = fal
   const done = quests?.finished.length ?? 0;
   const board = boardArt();
   // The 📖 shelf: stories started (the quest now) or finished, in quest order. Locked quests show nothing.
-  const shelf = FIRST_QUESTS.filter((c) => QUEST_STORIES[c.id] && (quests?.finished.includes(c.id) || quests?.open === c.id));
+  const shelf = QUESTS.filter((c) => QUEST_STORIES[c.id] && (quests?.finished.includes(c.id) || quests?.open === c.id));
+  const firstDone = FIRST_SET.every((id) => quests?.finished.includes(id));
+  const card = (quest: QuestConfig, n: number) => {
+    const status = questStatus(quest, quests, t.day, allQuests);
+    const reward = status === 'open' && view ? view.reward : questReward(quest, hasSmallOrder(quest) ? isSmallShip(t) : undefined);
+    // Chef Gorbo pays a set 400 on top of what he pays for the goods; Dr Nettle pays for the goods only.
+    const pay = quest.id === 'nettle' ? `pays ${cr(reward)} for the goods` : quest.reward > 0 && reward > quest.reward ? `${cr(quest.reward)} + what he pays for the goods (${cr(reward - quest.reward)})` : `${cr(reward)} reward`;
+    return (
+      <li key={quest.id} className={`stq-card stq-card--${status}`}>
+        <GiverFace id={quest.id} name={quest.giver} />
+        <div className="stq-card__body">
+          <h3 className="stq-card__h">{status === 'locked' ? `Quest ${n}` : quest.title}</h3>
+          <p className="stq-card__meta">
+            {status === 'locked' ? (n === 6 && !firstDone ? 'Finish the first five quests to open this one.' : 'Finish the quest before to open this one.') : <>{quest.giver} · <strong>{pay}</strong></>}
+          </p>
+          <p className="stq-card__state">
+            {status === 'done' && <span className="stq-pill stq-pill--done">✓ Done</span>}
+            {status === 'open' && <span className="stq-pill stq-pill--open">⭐ Your quest now</span>}
+            {status === 'tomorrow' && <span className="stq-pill">🌙 Opens tomorrow</span>}
+            {status === 'locked' && <span className="stq-pill">🔒 Locked</span>}
+          </p>
+        </div>
+        <div className="stq-card__act">
+          {status === 'ready' && (
+            <button type="button" className="st-btn st-btn--primary" disabled={busy} onClick={() => onQuest([{ type: 'quest-take', id: quest.id }])} data-coach={`quest-take-${quest.id}`}>Take quest</button>
+          )}
+          {status === 'open' && (
+            <button type="button" className="st-btn st-btn--small" disabled={busy} onClick={() => onQuest([{ type: 'quest-drop' }])}>Drop</button>
+          )}
+        </div>
+      </li>
+    );
+  };
   return (
     <section className="st-panel stq" aria-labelledby="stq-h">
       {board && <img className="stq-board" src={board.wide} srcSet={`${board.small} 800w, ${board.wide} 1600w`} sizes="(max-width: 900px) 100vw, 900px" alt="" draggable={false} />}
       <h2 id="stq-h" className="st-h">Quests</h2>
-      <p className="st-sub">Help the people of the galaxy and earn credits. {allQuests ? <strong>Teacher: every quest is open to try, in any order.</strong> : "One quest at a time; a new one opens each day after you finish one."} {done > 0 && <strong>{done} of {FIRST_QUESTS.length} done.</strong>}</p>
+      <p className="st-sub">Help the people of the galaxy and earn credits. {allQuests ? <strong>Teacher: every quest is open to try, in any order.</strong> : "One quest at a time; a new one opens each day after you finish one."} {done > 0 && <strong>{done} of {QUESTS.length} done.</strong>}</p>
       {view && <Checklist galaxy={galaxy} t={t} quest={view.quest} reward={view.reward} steps={view.steps} busy={busy} showXY={showXY} shown={shown} onQuest={onQuest} onTab={onTab} onShowMap={onShowMap} onReveal={onReveal} />}
-      <ul className="stq-list">
-        {FIRST_QUESTS.map((quest, i) => {
-          const status = questStatus(quest, quests, t.day, allQuests);
-          const reward = status === 'open' && view ? view.reward : questReward(quest, quest.id === 'nettle' ? isSmallShip(t) : undefined);
-          return (
-            <li key={quest.id} className={`stq-card stq-card--${status}`}>
-              <GiverFace id={quest.id} name={quest.giver} />
-              <div className="stq-card__body">
-                <h3 className="stq-card__h">{status === 'locked' ? `Quest ${i + 1}` : quest.title}</h3>
-                <p className="stq-card__meta">
-                  {status === 'locked' ? 'Finish the quest before to open this one.' : <>{quest.giver} · <strong>{quest.id === 'nettle' ? `pays ${cr(reward)} for the goods` : `${cr(reward)} reward`}</strong></>}
-                </p>
-                <p className="stq-card__state">
-                  {status === 'done' && <span className="stq-pill stq-pill--done">✓ Done</span>}
-                  {status === 'open' && <span className="stq-pill stq-pill--open">⭐ Your quest now</span>}
-                  {status === 'tomorrow' && <span className="stq-pill">🌙 Opens tomorrow</span>}
-                  {status === 'locked' && <span className="stq-pill">🔒 Locked</span>}
-                </p>
-              </div>
-              <div className="stq-card__act">
-                {status === 'ready' && (
-                  <button type="button" className="st-btn st-btn--primary" disabled={busy} onClick={() => onQuest([{ type: 'quest-take', id: quest.id }])} data-coach={`quest-take-${quest.id}`}>Take quest</button>
-                )}
-                {status === 'open' && (
-                  <button type="button" className="st-btn st-btn--small" disabled={busy} onClick={() => onQuest([{ type: 'quest-drop' }])}>Drop</button>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+      <ul className="stq-list">{FIRST_QUESTS.map((quest, i) => card(quest, i + 1))}</ul>
+      <div className="stq-more" aria-labelledby="stq-more-h">
+        <h3 id="stq-more-h" className="st-h3 stq-more__h">✨ More quests</h3>
+        <p className="st-soft stq-more__sub">Bigger adventures for bigger rewards. They open one a day after the first five.</p>
+        <ul className="stq-list">{MORE_QUESTS.map((quest, i) => card(quest, FIRST_QUESTS.length + i + 1))}</ul>
+      </div>
       {allQuestsDone(quests) && <Jobs galaxy={galaxy} t={t} quests={quests!} busy={busy} showXY={showXY} onQuest={onQuest} onShowMap={onShowMap} />}
       <QuestLog keepsakes={keepsakes} />
       {onStory && shelf.length > 0 && (
@@ -225,25 +235,36 @@ function Checklist({ galaxy, t, quest, reward, steps, busy, showXY, shown, onQue
   onShowMap: (planet: number) => void;
 }) {
   const tank = SHIPS[t.ship].fuelTank;
+  const race = raceFuel(galaxy, t, quest, steps);
+  const trail = isTrail(quest) ? trailName(quest) : null;
+  const done = doneOf(steps);
+  const sub = jobIndex(quest.id) !== null
+    ? 'Pick up the crates, then take them to the gold planet. Gold rings on the star chart show where.'
+    : race ? 'A race on one tank! Start line, checkpoint, finish line, in that order. Fill up at the start line: fuel bought after that sends you back to it.'
+    : trail ? `Follow the ${quest.id === 'sable' ? 'map marks' : 'clues'} in order. Each one is a move on the star chart from where you are.`
+    : 'Do the steps in any order. The last one waits for the rest. Gold rings on the star chart show where.';
+  // Goods wanted at more than one planet (Mayor Puddle's Water) are shopped for once, on the first of those steps.
+  const shopOn = new Set(steps.filter((s, i, all) => !s.done && s.kind === 'buy-deliver' && all.findIndex((o) => !o.done && o.kind === 'buy-deliver' && quest.steps[o.index].good === quest.steps[s.index].good) === i).map((s) => s.index));
   return (
-    <div className="stq-open" aria-labelledby="stq-open-h">
+    <div className={`stq-open ${race ? 'stq-open--race' : ''}`} aria-labelledby="stq-open-h">
       <div className="stq-open__head">
         <GiverFace id={quest.id} name={quest.giver} size={56} />
         <div>
           <h3 id="stq-open-h" className="st-h3 stq-open__h">{quest.title}</h3>
-          <p className="st-soft stq-open__sub">{jobIndex(quest.id) !== null ? 'Pick up the crates, then take them to the gold planet. Gold rings on the star chart show where.' : quest.ordered ? 'Follow the clues in order. Each one is a move on the star chart from where you are.' : 'Do the steps in any order. The last one waits for the rest. Gold rings on the star chart show where.'}</p>
+          <p className="st-soft stq-open__sub">{sub}</p>
         </div>
       </div>
       {steps.some((s) => s.kind === 'pirate' && !s.done) && (
-        <p className="stq-lent">🔫 {quest.giver} has lent you a <strong>{NAVY_LASER.name}</strong> for these fights. If you lose, the pirates take nothing: fix your hull and try again.</p>
+        <p className="stq-lent">🔫 {quest.giver} {quest.giver === 'Pip and Pop' ? 'have' : 'has'} lent you a <strong>{NAVY_LASER.name}</strong> for {steps.filter((s) => s.kind === 'pirate').length === 1 ? 'this fight' : 'these fights'}. If you lose, {quest.id === 'sable' ? 'Rust-Beard takes' : 'the pirates take'} nothing: fix your hull and try again.</p>
       )}
+      {race && <RaceFuel race={race} />}
       <ol className="stq-steps">
         {steps.map((s) => {
           const words = stepWords(quest, s);
           const waiting = isWaiting(s);
           const here = s.fuel === 0;
           const step = quest.steps[s.index];
-          const hidden = isHidden(quest, s, shown);
+          const hidden = isHidden(quest, s, shown, done);
           // Lumi's next clue, from where the ship is now (the first trail step not done). Later ones wait.
           const clueStep = hidden && !waiting;
           return (
@@ -253,23 +274,29 @@ function Checklist({ galaxy, t, quest, reward, steps, busy, showXY, shown, onQue
                 <p className="stq-step__what"><strong>{words.line}</strong>{s.done && <span className="st-sr"> (done)</span>}</p>
                 {clueStep && !here && (
                   <p className="stq-clue">
-                    <span><strong>Ranger Kai:</strong> “{trailClue(galaxy, t.location, s.planet).text}”</span>
+                    <span><strong>{trail?.who ?? quest.giver}:</strong> “{trailClue(galaxy, t.location, s.planet).text}”</span>
                     {onReveal && <button type="button" className="st-btn st-btn--small" onClick={() => onReveal(s.index)} data-coach="quest-showme">Show me</button>}
                   </p>
                 )}
                 {hidden && waiting && <p className="st-soft stq-step__note">Its clue comes when you reach the stop before.</p>}
                 {!s.done && (!hidden || here) && (
                   <p className="stq-step__where">
-                    {s.kind === 'buy-deliver' ? 'Hand over at ' : 'at '}
+                    {s.kind === 'buy-deliver' && !step.hands ? 'Hand over at ' : 'at '}
                     <button type="button" className="stq-link" onClick={() => onShowMap(s.planet)}>{s.name}{showXY ? ` ${s.coords}` : ''}</button>
                     {here ? <strong className="stq-here"> · You are here!</strong> : <> · {s.fuel} fuel from here</>}
                   </p>
                 )}
-                {!s.done && !here && !waiting && !s.fuelOk && (
+                {!s.done && race && s.index === 0 && (
+                  <p className={t.fuel >= tank ? 'st-good-note stq-step__note' : 'stq-step__note stq-tank'}>
+                    {t.fuel >= tank ? `⛽ Full tank (${t.fuel} of ${tank}). Ready to race!` : `⛽ Arrive with a full tank: you have ${t.fuel} of ${tank}. Fill up at the start line or before.`}
+                    {t.fuel < tank && <> <button type="button" className="stq-link" onClick={() => onTab('ship')}>Buy fuel</button></>}
+                  </p>
+                )}
+                {!s.done && !here && !waiting && !s.fuelOk && !race?.started && (
                   <p className="st-warn stq-fuel">⛽ {s.fuel > tank ? `Too far for one jump (your tank holds ${tank}). Stop on the way.` : `You need ${s.fuel} fuel and have ${t.fuel}.`} {s.fuel <= tank && <button type="button" className="stq-link" onClick={() => onTab('ship')}>Buy fuel</button>}</p>
                 )}
-                {!s.done && s.kind === 'buy-deliver' && step.good !== undefined && (
-                  <Goods galaxy={galaxy} t={t} good={step.good} what={s.what} qty={s.qty ?? 0} have={s.have ?? 0} pays={step.pays ?? 0} onShowMap={onShowMap} />
+                {!s.done && s.kind === 'buy-deliver' && step.good !== undefined && shopOn.has(s.index) && (
+                  <Goods galaxy={galaxy} t={t} good={step.good} what={s.what} qty={steps.filter((o) => !o.done && o.kind === 'buy-deliver' && quest.steps[o.index].good === step.good).reduce((n, o) => n + (o.qty ?? 0), 0)} have={s.have ?? 0} pays={step.pays ?? 0} giver={quest.giver} reward={reward} onShowMap={onShowMap} />
                 )}
                 {waiting && !s.done && !hidden && <p className="st-soft stq-step__note">{s.problem === 'Do the steps in order.' ? 'Do the step before first.' : 'Do the other steps first.'}</p>}
                 {!s.done && here && s.problem?.startsWith('Make room') && (
@@ -285,13 +312,42 @@ function Checklist({ galaxy, t, quest, reward, steps, busy, showXY, shown, onQue
           );
         })}
       </ol>
-      <p className="stq-reward">🏆 Reward: <strong>{cr(reward)}</strong>{quest.id === 'nettle' ? ' (what Dr Nettle pays for the goods)' : ''}</p>
+      <p className="stq-reward">🏆 Reward: <strong>{cr(reward)}</strong>{quest.id === 'nettle' ? ' (what Dr Nettle pays for the goods)' : quest.reward > 0 && reward > quest.reward ? ` (${cr(quest.reward)}, plus what ${quest.giver} pays for the goods)` : ''}</p>
     </div>
   );
 }
 
-/** Dr Nettle's goods: how many are in the hold, the three nearest markets selling them today, and what he pays. */
-function Goods({ galaxy, t, good, what, qty, have, pays, onShowMap }: { galaxy: Galaxy; t: Trader; good: number; what: string; qty: number; have: number; pays: number; onShowMap: (planet: number) => void }) {
+/**
+ * The Comet Cup's fuel sum: before the start, the whole race against the tank; once racing, "Fuel left: 9. Still to fly:
+ * 7", with a gauge, so the adding up is in plain sight.
+ */
+function RaceFuel({ race }: { race: NonNullable<ReturnType<typeof raceFuel>> }) {
+  const { started, legs, toFly, left, tank, total } = race;
+  const sum = legs.length > 1 ? `${legs.join(' + ')} = ${toFly}` : `${toFly}`;
+  if (!started) {
+    return (
+      <div className="stq-race">
+        <p className="stq-race__tag">🏁 The Comet Cup</p>
+        <p>The race is <strong>{legs.join(' + ')} = {total} fuel</strong>. Your tank holds <strong>{tank}</strong>{total <= tank ? ', so one full tank gets you round.' : '.'}</p>
+      </div>
+    );
+  }
+  const enough = left >= toFly;
+  return (
+    <div className={`stq-race stq-race--on ${enough ? '' : 'stq-race--short'}`} role="status">
+      <p className="stq-race__tag">🏁 Racing!</p>
+      <p className="stq-race__sum">Fuel left: <strong>{left}</strong>. Still to fly: <strong>{toFly}</strong>{legs.length > 1 && <span className="st-soft"> ({sum})</span>}</p>
+      <div className="stq-race__gauge" aria-hidden="true">
+        <span className="stq-race__left" style={{ width: `${Math.min(100, (left / tank) * 100)}%` }} />
+        <span className="stq-race__need" style={{ width: `${Math.min(100, (toFly / tank) * 100)}%` }} />
+      </div>
+      <p className={enough ? 'st-good-note' : 'st-warn'}>{enough ? `✓ Enough to finish, with ${left - toFly} to spare. No more fuel till the finish line!` : '⛽ Not enough to finish. Buying fuel now sends you back to the start line.'}</p>
+    </div>
+  );
+}
+
+/** Goods for a giver (Dr Nettle, Chef Gorbo, Mayor Puddle): how many are in the hold, the three nearest markets selling them today, and what they pay. */
+function Goods({ galaxy, t, good, what, qty, have, pays, giver, reward, onShowMap }: { galaxy: Galaxy; t: Trader; good: number; what: string; qty: number; have: number; pays: number; giver: string; reward: number; onShowMap: (planet: number) => void }) {
   const sellers = have >= qty ? [] : nearestSellers(galaxy, t, good, 3);
   const cheapest = sellers.length ? Math.min(...sellers.map((s) => s.price)) : 0;
   const need = Math.max(0, qty - have);
@@ -310,10 +366,17 @@ function Goods({ galaxy, t, good, what, qty, have, pays, onShowMap }: { galaxy: 
           </ul>
         </>
       )}
-      <p className="stq-goods__pay">
-        Dr Nettle pays <strong>{pays} cr</strong> each: <strong>{cr(pays * qty)}</strong> for {qty}.
-        {need > 0 && cheapest > 0 && <> Buying {need} costs about {cr(cheapest * need)}, so you make about <strong>{cr(pays * need - cheapest * need)}</strong>.</>}
-      </p>
+      {pays > 0 ? (
+        <p className="stq-goods__pay">
+          {giver} pays <strong>{pays} cr</strong> each: <strong>{cr(pays * qty)}</strong> for {qty}.
+          {need > 0 && cheapest > 0 && <> Buying {need} costs about {cr(cheapest * need)}, so you make about <strong>{cr(pays * need - cheapest * need)}</strong>.</>}
+        </p>
+      ) : (
+        <p className="stq-goods__pay">
+          {giver} pays <strong>{cr(reward)}</strong> when it's all handed out.
+          {need > 0 && cheapest > 0 && <> Buying {need} costs about {cr(cheapest * need)}, so you make about <strong>{cr(reward - cheapest * need)}</strong>.</>}
+        </p>
+      )}
     </div>
   );
 }
@@ -359,7 +422,7 @@ export function QuestPirate({ quest, busy, onFight }: { quest: QuestConfig; busy
       <GiverFace id={quest.id} name={quest.giver} size={52} />
       <div className="stq-land__body">
         <p className="stq-land__tag">⭐ Quest stop</p>
-        <p className="stq-land__line"><strong>A Rust Raider ship is still here.</strong> Fix your hull if you need to, then chase it off for {quest.giver}.</p>
+        <p className="stq-land__line"><strong>{pirateWords(quest).still}</strong> Fix your hull if you need to, then {quest.id === 'sable' ? 'take him on' : 'chase it off'} for {quest.giver}.</p>
       </div>
       <button type="button" className="st-btn st-btn--primary stq-land__btn" disabled={busy} onClick={onFight} data-coach="quest-do">⚔️ Fight them</button>
     </div>
@@ -368,12 +431,13 @@ export function QuestPirate({ quest, busy, onFight }: { quest: QuestConfig; busy
 
 /** Lumi's next clue on the Trade screen: Ranger Kai says the move from here, and Show me lights up the planet. */
 export function QuestClue({ quest, text, onReveal }: { quest: QuestConfig; text: string; onReveal: () => void }) {
+  const trail = trailName(quest);
   return (
     <div className="stq-land stq-land--clue" role="status">
       <GiverFace id={quest.id} name={quest.giver} size={52} />
       <div className="stq-land__body">
-        <p className="stq-land__tag">⭐ Lumi's trail</p>
-        <p className="stq-land__line"><strong>{quest.giver}:</strong> “{text}”</p>
+        <p className="stq-land__tag">⭐ {trail.trail}</p>
+        <p className="stq-land__line"><strong>{trail.who}:</strong> “{text}”</p>
       </div>
       <button type="button" className="st-btn stq-land__btn" onClick={onReveal} data-coach="quest-showme">Show me</button>
     </div>

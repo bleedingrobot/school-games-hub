@@ -26,7 +26,8 @@ vi.mock('./forge/loadViewer', () => ({ loadViewer: async () => null }));
 import { traderApi } from '../../data/trader';
 import { TraderGame } from './TraderGame';
 import { QuestLog } from './QuestsPanel';
-import { QUESTS } from '../../../shared/trader/quests';
+import { FIRST_SET, QUESTS } from '../../../shared/trader/quests';
+import { SHIPS, WATER } from '../../../shared/trader/config';
 import { nameText } from '../../../shared/trader/system';
 import { trialBackend, type Trial } from './trialBackend';
 
@@ -112,7 +113,7 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
 
 describe('The Star Forge (S.4)', () => {
 
-  it('quests (Q.2, Q.3, Q.4): taking one plays its first 3 pages in the giver\'s voice, the gold landing card picks up, the hold shows gold, Q ticks the step, the chart rings the rest, finishing plays the last 2 pages then the reward, and the 📖 shelf reads them again; Lumi\'s clue + Show me and Vex\'s pirate fight with the Navy laser; Q.6 daily jobs taken, picked up and delivered. Then the Forge: a locked sun is only a look; planning a sun is free; building it sends a forge action, shows the price first, and the card turns built', async () => {
+  it('quests (Q.2, Q.3, Q.4, R.2): taking one plays its first 3 pages in the giver\'s voice, the gold landing card picks up, the hold shows gold, Q ticks the step, the chart rings the rest, finishing plays the last 2 pages then the reward, and the 📖 shelf reads them again; Lumi\'s clue + Show me and Vex\'s pirate fight with the Navy laser; Q.6 daily jobs taken, picked up and delivered; R.2: quests 6-10 under More quests, water per dry planet for Mayor Puddle, the Comet Cup lamps, fuel sum and refuel reset, the Gorbo card, Rust-Beard. Then the Forge: a locked sun is only a look; planning a sun is free; building it sends a forge action, shows the price first, and the card turns built', async () => {
     const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
     const api = traderApi(trial.transport);
     expect((await api.load()).ok).toBe(true);
@@ -125,6 +126,10 @@ describe('The Star Forge (S.4)', () => {
     await screen.findByRole('heading', { name: 'Quests' });
     expect(document.querySelector('.stq-board')).toBeTruthy();
     expect(screen.queryByText('📖 Quest stories')).toBeNull();
+    // R.2: quests 6 to 10 wait under "More quests" till the first five are done.
+    expect(screen.getByText('✨ More quests')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Quest 10' })).toBeTruthy();
+    expect(screen.getByText('Finish the first five quests to open this one.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Take quest' }));
     const book = await screen.findByRole('dialog', { name: "Grandma Zuzu's Big Party" });
     expect(within(book).getByText('Page 1 of 3')).toBeTruthy();
@@ -235,6 +240,59 @@ describe('The Star Forge (S.4)', () => {
     expect((await screen.findByText(/One of the Rust Raiders/)).textContent).toMatch(/Commander Vex's Navy laser is fitted/);
     expect(JSON.stringify(vex.sent)).toMatch(/"type":"quest-fight"/);
     cleanup();
+
+    // R.2, Mayor Puddle: the water is handed out at each dry planet, "3 Water here (you have 9)" (a Flea's smaller order).
+    // The saved game is replaced on each save, so always edit the latest one.
+    const g = () => trial.data.game!.game;
+    g().pending = null;
+    g().quests = { open: 'puddle', done: [], small: true, finished: [...FIRST_SET], lastDay: 1 };
+    g().t.cargo[WATER] = 9;
+    trial.tools.toQuestStop();
+    play(trial);
+    await market();
+    expect(await screen.findByText('Hand out 3 Water here for Mayor Puddle (you have 9)')).toBeTruthy();
+    fireEvent.click(screen.getByRole('tab', { name: '⭐ Quests' }));
+    expect((await screen.findAllByText('3 Water here (you have 9)')).length).toBe(3);
+    expect(screen.getByText(/Mayor Puddle pays/).textContent).toMatch(/900 cr when it's all handed out/);
+    cleanup();
+
+    // R.2, the Comet Cup: the race sum, the lamps and GO! at the start line, "Fuel left / Still to fly", and buying fuel
+    // after the start sends it back to the start line, gently. Chef Gorbo's card says 400 + what he pays for the goods.
+    g().quests = { open: 'zip', done: [], finished: [...FIRST_SET, 'puddle', 'gorbo'], lastDay: 1 };
+    g().t.cargo[WATER] = 0;
+    const tank = SHIPS[g().t.ship].fuelTank;
+    g().t.fuel = tank;
+    trial.tools.toQuestStop();
+    play(trial);
+    await market();
+    fireEvent.click(await screen.findByRole('button', { name: '🚦 Start the race!' }));
+    expect((await screen.findByRole('status', { name: /^GO!/ })).dataset.fx).toBe('start');
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(trial.data.game?.game.quests?.fuelAtStart).toBe(tank);
+    fireEvent.click(screen.getByRole('tab', { name: '⭐ Quests' }));
+    expect((await screen.findByText(/^Fuel left:/)).textContent).toMatch(new RegExp(`^Fuel left: ${tank}\\. Still to fly: \\d+`));
+    expect(screen.getByText(/what he pays for the goods/).textContent).toMatch(/400 cr \+ what he pays for the goods \(1,[\d,]+ cr\)/);
+    cleanup();
+    trial.data.game!.game.t.fuel -= 4;
+    play(trial);
+    await market();
+    fireEvent.click(screen.getByRole('tab', { name: 'Ship' }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Fill the tank/ }));
+    expect(await screen.findByText(/You refuelled, so it's back to the start line/)).toBeTruthy();
+    cleanup();
+
+    // R.2, Captain Sable: after the three map marks, Rust-Beard's card and his painted entrance before the fight.
+    trial.data.game!.game.quests = { open: 'sable', done: [0, 1, 2], finished: [...FIRST_SET, 'puddle', 'gorbo', 'zip', 'pippop'], lastDay: 1 };
+    trial.tools.toQuestStop();
+    play(trial);
+    await market();
+    expect(await screen.findByText("Rust-Beard's ship is still here.")).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '⚔️ Fight them' }));
+    expect(await screen.findByRole('heading', { name: 'Rust-Beard attacks! ☠️' })).toBeTruthy();
+    expect(screen.getByText('🏴‍☠️ Rust-Beard!')).toBeTruthy();
+    expect(trial.data.game?.game.pending).toMatchObject({ kind: 'fight', tier: 2, quest: 3 });
+    cleanup();
+    trial.data.game!.game.pending = null;
 
     // Q.6 daily jobs: after all five quests, 📦 Today's jobs on the Quests tab; take one (no story), pick up the crates at the
     // gold stop, deliver for the pay, and the card says delivered.

@@ -93,8 +93,10 @@ export function DealPanel({ offer, here, busy, hideVerdict = false, level = 'lot
   );
 }
 
-export function FightPanel({ t, fight, tier, log, busy, advice: suggestion, askFirst = false, onAct }: {
+export function FightPanel({ t, fight, tier, log, busy, advice: suggestion, askFirst = false, quest, onAct }: {
   t: Trader;
+  /** A quest fight's own heading (Rust-Beard) and line, from questFightWords. */
+  quest?: { title: string; line: string };
   fight: Fight;
   tier: number;
   log: string[];
@@ -113,8 +115,8 @@ export function FightPanel({ t, fight, tier, log, busy, advice: suggestion, askF
   const advice = suggestion && (!askFirst || asked) ? suggestion : null;
   return (
     <section className="st-panel st-panel--fight" aria-labelledby="st-fight-h">
-      <h2 id="st-fight-h" className="st-h">{PIRATE_NAMES[tier]} attack! ☠️</h2>
-      {fight.gentle && <p className="st-sub stq-fight">⭐ One of the Rust Raiders! Commander Vex's {NAVY_LASER.name} is fitted for this fight. If you lose, they take nothing.</p>}
+      <h2 id="st-fight-h" className="st-h">{quest?.title || `${PIRATE_NAMES[tier]} attack! ☠️`}</h2>
+      {fight.gentle && <p className="st-sub stq-fight">{quest?.line ?? `⭐ One of the Rust Raiders! Commander Vex's ${NAVY_LASER.name} is fitted for this fight. If you lose, they take nothing.`}</p>}
       <div className="st-meters">
         <Meter label="Your hull" value={fight.hull} max={ship.hull} tone="hull" />
         {shieldMax > 0 && <Meter label="Your shields" value={fight.shield} max={shieldMax} tone="shield" />}

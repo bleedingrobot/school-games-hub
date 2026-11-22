@@ -46,8 +46,9 @@ import type { Scene, SpaceView } from './renderer';
 import { SpaceCanvas } from './SpaceCanvas';
 import { MapPanel } from './StarMap';
 import { GiverFace, QuestClue, QuestDone, QuestLanding, QuestPirate, QuestsPanel, QuestWaiting } from './QuestsPanel';
-import { clueNow, doableHere, leftBehind, nextStop, pirateHere, questCargoNames, questPlanetMarks, waitingHere, type Shown } from './questGuide';
-import { jobIndex, openQuestOf, openQuestView, FIRST_QUESTS, questById } from '../../../shared/trader/quests';
+import { clueNow, doableHere, leftBehind, nextStop, pirateHere, questCargoNames, questFightWords, questPlanetMarks, RACE_RESET_NOTE, trailName, waitingHere, type Shown } from './questGuide';
+import { BossBanner, RaceMoment, type RaceMomentKind } from './QuestFx';
+import { FIRST_SET, jobIndex, openQuestOf, openQuestView, QUESTS, questById } from '../../../shared/trader/quests';
 import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 import { COACH_NAME } from './text';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
@@ -123,6 +124,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   const [questStory, setQuestStory] = useState<{ id: string; part: 'start' | 'end' | 'all'; reward?: number; points?: number } | null>(null);
   /** Lumi's trail steps the pupil asked to see with Show me (Q.4). Only in the browser: clues are never marked or recorded. */
   const [revealed, setRevealed] = useState<{ quest: string | null; steps: number[] }>({ quest: null, steps: [] });
+  /** The Comet Cup's big painted moment playing (start lamps, checkpoint, finish line), or null. */
+  const [raceFx, setRaceFx] = useState<RaceMomentKind | null>(null);
   const lock = useRef(false);
   const latest = useRef({ loaded, queue });
   latest.current = { loaded, queue };
@@ -318,7 +321,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
       return;
     }
     setQueue((q) => [...q, action]);
-    setNote(done);
+    // The Comet Cup is flown on one tank: fuel bought after the start line sends it back there (gently).
+    setNote(r.raceReset ? RACE_RESET_NOTE : done);
   }
 
   /** A free change to the pupil's system plan: checked now, shown at once and sent with the next request (a newer plan replaces an older one waiting). */
@@ -524,11 +528,12 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
       if (next.outcome === 'robbed') lines.push('Some of your cargo is gone, but you still have your ship and your credits.');
       if (next.outcome === 'destroyed') lines.push('You lost your cargo and your ship, but you kept your credits. A free Flea is waiting for you.');
       if (next.outcome === 'knocked') lines.push('Fix your hull at a shipyard if you need to, then fight them again from the Trade screen.');
-      if (next.outcome === 'won' && before.quest !== undefined) lines.push(`✓ Ticked off for Commander Vex on the Quests screen.`);
+      const questWho = before.quest !== undefined && game.quests?.open ? questById(game.quests.open)?.giver : undefined;
+      if (next.outcome === 'won' && questWho) lines.push(`✓ Ticked off for ${questWho} on the Quests screen.`);
       setPhase({
         k: 'after',
         ...(next.outcome === 'destroyed' ? { tip: 'wrecked' as const } : next.outcome === 'robbed' ? { tip: 'robbed' as const } : {}),
-        title: next.outcome === 'won' ? 'You beat the pirates! 🎉' : next.outcome === 'fled' ? 'You got away! 💨' : next.outcome === 'destroyed' ? 'Escape pod! 🛟' : next.outcome === 'knocked' ? 'Knocked about, but nothing taken' : 'The pirates took some cargo',
+        title: next.outcome === 'won' ? (before.quest !== undefined && tier === 2 && game.quests?.open === 'sable' ? 'You beat Rust-Beard! 🏴‍☠️🎉' : 'You beat the pirates! 🎉') : next.outcome === 'fled' ? 'You got away! 💨' : next.outcome === 'destroyed' ? 'Escape pod! 🛟' : next.outcome === 'knocked' ? 'Knocked about, but nothing taken' : 'The pirates took some cargo',
         lines,
       });
     }
@@ -571,8 +576,17 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
     lock.current = true;
     setBusy(true);
     const wasJob = jobIndex(game?.quests?.open) !== null;
+    const raceBefore = game?.quests?.open === 'zip' ? game.quests.done : null;
     const r = await flush(actions);
     const a = actions[actions.length - 1];
+    // The Comet Cup's painted moments: the start lamps, the checkpoint whoosh, the finish line.
+    if (r.ok && raceBefore) {
+      const after = r.value.game.quests;
+      const ticked = (i: number) => !raceBefore.includes(i) && after?.open === 'zip' && after.done.includes(i);
+      if (r.value.quest?.finished === 'zip') setRaceFx('finish');
+      else if (ticked(1)) setRaceFx('checkpoint');
+      else if (ticked(0)) setRaceFx('start');
+    }
     if (!r.ok) setNote(r.message);
     // The reward is the server's: the last two pages play, then the Quest complete moment shows what it paid.
     else if (r.value.quest) {
@@ -587,7 +601,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
     else if (a.type === 'quest-fight') setFightLog(['They are coming right at you!']);
     else {
       const job = a.type === 'quest-take' ? jobIndex(a.id) !== null : wasJob;
-      if (a.type === 'quest-take' && !job) setQuestStory({ id: a.id, part: 'start' });
+      // Quests 6 to 10 have no story pages until R.3: straight to the Quests tab.
+      if (a.type === 'quest-take' && !job && questStoryPart(a.id, 'start')) setQuestStory({ id: a.id, part: 'start' });
       const what = job ? 'Job' : 'Quest';
       setNote(a.type === 'quest-take' ? `${what} taken! Gold rings on the star chart show where to go.` : a.type === 'quest-drop' ? `${what} dropped. You can take it again any time${job ? ' today' : ''}.` : 'Done! ✓ Ticked off on the Quests screen.');
     }
@@ -611,7 +626,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
     [galaxy, t, openId, game?.quests, showOnMap],
   );
   const questMap = useMemo(
-    () => (galaxy && t && game?.quests?.open ? { marks: questPlanetMarks(galaxy, t, game.quests, trailShown), stop: nextStop(galaxy, t, game.quests, trailShown), onReveal: reveal, job: jobIndex(game.quests.open) !== null } : null),
+    () => (galaxy && t && game?.quests?.open ? { marks: questPlanetMarks(galaxy, t, game.quests, trailShown), stop: nextStop(galaxy, t, game.quests, trailShown), onReveal: reveal, job: jobIndex(game.quests.open) !== null, trail: openQuestOf(galaxy, game.quests) ? trailName(openQuestOf(galaxy, game.quests)!.quest) : undefined } : null),
     [galaxy, t, game?.quests, trailShown, reveal],
   );
   const questPirate = galaxy && game ? pirateHere(galaxy, game) : null;
@@ -777,10 +792,11 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
             {(phase.k === 'after' || (phase.k === 'planet' && pending)) && tipCard}
             {phase.k === 'planet' && pending?.kind === 'junk' && <JunkPanel busy={panelBusy} onSteer={() => void steer()} />}
             {phase.k === 'planet' && pending?.kind === 'deal' && <DealPanel key={`${t.jumpNo}`} offer={pending.offer} here={t} busy={panelBusy} level={level} hideVerdict={coach.deals >= 3 || level === 'some'} onAccept={() => void deal(true)} onDecline={() => void deal(false)} />}
-            {phase.k === 'planet' && pending?.kind === 'fight' && <FightPanel t={t} fight={pending.fight} tier={pending.tier} advice={bolt ? fightAdvice(t, pending.fight) : null} askFirst={level === 'some'} log={fightLog.length ? fightLog : ['They are coming right at you!']} busy={fightBusy || asking} onAct={(m) => void fightAct(m)} />}
+            {phase.k === 'planet' && pending?.kind === 'fight' && pending.quest !== undefined && openQuest?.steps[pending.quest]?.tier === 2 && <BossBanner still={lessMotion} />}
+            {phase.k === 'planet' && pending?.kind === 'fight' && <FightPanel t={t} fight={pending.fight} tier={pending.tier} quest={pending.quest !== undefined && openQuest ? questFightWords(openQuest) : undefined} advice={bolt ? fightAdvice(t, pending.fight) : null} askFirst={level === 'some'} log={fightLog.length ? fightLog : ['They are coming right at you!']} busy={fightBusy || asking} onAct={(m) => void fightAct(m)} />}
             {phase.k === 'after' && <SummaryPanel title={phase.title} lines={phase.lines} button="Carry on" onDone={() => { setTab('trade'); setPhase({ k: 'planet' }); }} />}
             {phase.k === 'quest' && questById(phase.id) && (
-              <QuestDone quest={questById(phase.id)!} reward={phase.reward} points={phase.points} master={FIRST_QUESTS.every((c) => keepsakes.includes(c.id)) && !(loaded?.questLog ?? []).includes(phase.id)} next={FIRST_QUESTS.find((c) => !game.quests?.finished.includes(c.id)) ?? null} onDone={() => setPhase({ k: 'planet' })} />
+              <QuestDone quest={questById(phase.id)!} reward={phase.reward} points={phase.points} master={FIRST_SET.includes(phase.id) && FIRST_SET.every((id) => keepsakes.includes(id)) && !(loaded?.questLog ?? []).includes(phase.id)} next={QUESTS.find((c) => !game.quests?.finished.includes(c.id)) ?? null} onDone={() => setPhase({ k: 'planet' })} />
             )}
             {phase.k === 'moon' && (
               <SummaryPanel
@@ -830,6 +846,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
           onSkip={() => remember((m) => ({ ...m, flight: 'skipped', run: null }))}
         />
       )}
+      {raceFx && <RaceMoment kind={raceFx} still={lessMotion} onDone={() => setRaceFx(null)} />}
       {questStory && questBook && (
         <StoryBook
           key={`${questStory.id}-${questStory.part}`}

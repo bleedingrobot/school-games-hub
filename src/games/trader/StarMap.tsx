@@ -58,7 +58,7 @@ const pos = (n: number): number => ((n + 1.5) / VIEW) * 100;
 
 export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuide = null, level = 'lots', unlimited = false, focus = null, quest = null, onAim, onJump, onRefuel }: {
   /** An open quest (Q.2): its planets (gold rings and step numbers) and the next stop. */
-  quest?: { marks: ReadonlyMap<number, { n: number[]; lines: string[] }>; stop: NextStop | null; onReveal?: (step: number) => void; job?: boolean } | null;
+  quest?: { marks: ReadonlyMap<number, { n: number[]; lines: string[] }>; stop: NextStop | null; onReveal?: (step: number) => void; job?: boolean; trail?: { who: string; trail: string } } | null;
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
@@ -188,7 +188,7 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuid
               <button
                 key={p.id}
                 type="button"
-                className={`st-planet ${p.id === t.location ? 'st-planet--here' : ''} ${picked === p.id ? 'st-planet--picked' : ''} ${dest?.id === p.id ? 'st-planet--aimed' : ''} ${pulse === p.id ? 'st-planet--pulse' : ''} ${far ? 'st-planet--far' : ''} ${quest?.marks.has(p.id) ? 'st-planet--quest' : ''}`}
+                className={`st-planet ${p.id === t.location ? 'st-planet--here' : ''} ${picked === p.id ? 'st-planet--picked' : ''} ${dest?.id === p.id ? 'st-planet--aimed' : ''} ${pulse === p.id ? 'st-planet--pulse' : ''} ${far ? 'st-planet--far' : ''} ${quest?.marks.has(p.id) ? 'st-planet--quest' : ''} ${(quest?.marks.get(p.id)?.n.length ?? 0) > 1 ? 'st-planet--quest2' : ''}`}
                 style={{ left: `${pos(p.x)}%`, top: `${pos(p.y)}%` }}
                 onClick={() => pick(p.id)}
                 data-coach={`planet-${p.id}`}
@@ -205,7 +205,7 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuid
         <div className="st-mapinfo">
           {quest?.stop?.clue && quest.stop.planet !== t.location && (
             <p className="st-questline">
-              <span>⭐ Lumi's trail. <strong>Ranger Kai:</strong> “{quest.stop.clue}”</span>
+              <span>⭐ {quest.trail?.trail ?? "Lumi's trail"}. <strong>{quest.trail?.who ?? 'Ranger Kai'}:</strong> “{quest.stop.clue}”</span>
               {quest.onReveal && (
                 <button type="button" className="st-btn st-btn--small st-questline__btn" data-coach="quest-showme" onClick={() => quest.onReveal?.(quest.stop!.step.index)}>
                   Show me
