@@ -2,7 +2,7 @@
 -- a reward that lifts that game's turn limit for one pupil for one NZ day, through settings_of.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(29);
+select plan(31);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -120,6 +120,18 @@ grant select on t_reward3 to authenticated;
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'bea@douglaspark.school.nz');
 select lives_ok($$ select public.use_quest_reward((select id from t_reward3), '{"title":"the-kind"}') $$, 'a Hero Title can still be used');
 select pg_temp.reset();
+
+-- ---- Unlimited today reaches the class's teachers (migration 20261122000700) ----
+-- Fox also teaches an older class, so Fox's own settings row is that one's; a switch in Room 1 still reaches Fox.
+insert into public.classes (id, school_id, name, school_year, warp_code, created_at) values
+  ('11111111-1111-4111-8111-000000000000', 1, 'Room 0', 2026, 'CDFGJ', now() - interval '1 year');
+insert into public.class_teachers (class_id, teacher_id) values ('11111111-1111-4111-8111-000000000000', pg_temp.id('f'));
+update public.app_settings set unlimited_days = jsonb_build_object('monsters', pg_temp.today(), 'diamond', '2020-01-01')
+  where class_id = '11111111-1111-4111-8111-111111111111';
+select is((select s.class_id from public.settings_of(pg_temp.id('f')) s), '11111111-1111-4111-8111-000000000000'::uuid,
+  'a teacher of two classes reads the older class''s settings');
+select is((select s.unlimited_days from public.settings_of(pg_temp.id('f')) s), jsonb_build_object('monsters', pg_temp.today()),
+  '... but gets Unlimited today switched on in another class they teach (today''s switches only)');
 
 select * from finish();
 rollback;
