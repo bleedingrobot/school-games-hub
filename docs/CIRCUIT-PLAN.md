@@ -200,6 +200,21 @@ Choices made while building (all in `shared/circuit/config.ts`):
 - **Preview:** `preview/circuit/` runs the real handler on `shared/circuit/memoryServices.ts` (`?runs=4`, `?open=all`, `?unlimited=1`).
 - Not yet: achievements, teacher column (Stage 6); the Today page already lists Circuit Racer under Unlimited today.
 
+## World 1 redrawn (23 Nov 2026)
+
+James played Stage 2: "the jumping feels fine, the levels feel very easy, you pretty much have to go straight, there are not many narrow parts... focus more on jumping to make it fun" and **don't tighten the battery** ("that won't be fun for kids"). The six Motherboard roads were redrawn (our own layouts): one- and two-lane traces that zig-zag across the board, single-lane bridges, hop rhythms of short gaps, stepping stones that step sideways, chip bridges to climb onto, a one-lane data cable. Batteries and signals were made a little roomier. `npm run circuit:sim` after the redraw (seconds; lowest battery / signal):
+
+| Road | Rows | Careful | Average | Wild | Gold | Silver |
+|---|---|---|---|---|---|---|
+| 1 Power On | 192 | 28.1s, 82% / 60% | 20.9s | 16.9s | 19s | 25s |
+| 2 Clock Speed | 208 | 28.8s, 79% / 62% | 21.7s | 18.2s | 21s | 25s |
+| 3 First Charge | 186 | 24.9s, 70% / 72% | 21.5s | 16.4s | 19s | 25s |
+| 4 Data Bus | 241 | 34.9s, 74% / 74% | 26.3s | 21.8s | 24s | 31s |
+| 5 Bridge Chips | 217 | 33s, 82% / 75% | 28s | 22.9s (fell once) | 26s | 33s |
+| 6 Kernel Run | 329 | 47.3s, 75% / 77% | 40.6s | 29s | 32s | 47s |
+
+Careful and average bots finish every road on the first go; the flat-out bot now falls off Bridge Chips' stepping stones once. Rule kept for later worlds: the challenge comes from jumps and narrow traces, never a tight battery.
+
 ## 9. Stages
 
 | Stage | What | Live? |
