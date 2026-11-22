@@ -4,7 +4,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh goblinstorm, then scripts/scratch-test.sh goblinstorm supabase/tests/database/goblinstorm.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(73);
+select plan(84);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -193,6 +193,29 @@ select public.goblinstorm_guide_seen();
 select is(public.my_goblinstorm() - 'today', '{"gold": 0, "shop": {}, "heroes": [], "bosses": [], "codex": [], "weapons": [], "runs": 0, "kills": 0, "guideSeen": true, "bestGold": 0}'::jsonb,
   'a brand-new pupil can note the guide before any run: an empty save that remembers it');
 select pg_temp.reset();
+
+-- ---- The Storm Lands (migration 20261122000400): maps 5 to 9, the Legendary row, Storm Gate, Storm Breaker ----
+select pg_temp.act_as_server();
+select ok(public.goblinstorm_store_questions(pg_temp.id('0c'), 900, 'knight', 9, '2026-11-22', false, '[]', '{}'), 'a run can be on the Storm King''s Citadel (map 9)');
+select pg_temp.reset();
+select throws_ok($$ insert into public.goblinstorm_runs (player, seed, hero, map, day) values ('00000000-0000-0000-0000-00000000000c', 901, 'knight', 10, '2026-11-22') $$,
+  '23514', null, '... but there is no map 10');
+update public.goblinstorm_saves set gold = 20000, shop = '{"might": 5, "armour": 3, "speed": 5, "health": 5, "magnet": 4, "gold": 5}' where player = pg_temp.id('0c');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'cat@douglaspark.school.nz');
+select is(public.buy_goblinstorm('fifth') ->> 'reason', 'locked', 'Legendary upgrades stay locked until the whole shop is bought');
+select is(public.buy_goblinstorm('magnet') -> 'bought', 'true'::jsonb, '... (the last Magnet level)');
+select is(public.buy_goblinstorm('fifth') - 'shop', '{"bought": true, "reason": null, "gold": 14400}'::jsonb, '... then Fifth Weapon costs 4,000');
+select is(public.buy_goblinstorm('fifth') ->> 'reason', 'top', '... and has one level');
+select is(public.buy_goblinstorm('stormmight') -> 'gold', '12900'::jsonb, 'Storm Might level 1 costs 1,500');
+select pg_temp.reset();
+select is(public.goblinstorm_counts(pg_temp.id('0c')) -> 'goblinstorm_gate', '0'::jsonb, 'the whole shop alone does not open the Storm Gate');
+update public.goblinstorm_saves set bosses = '{0,1,2,3,4}' where player = pg_temp.id('0c');
+select is(public.goblinstorm_counts(pg_temp.id('0c')) -> 'goblinstorm_gate', '1'::jsonb, '... the Fire Dragon as well does');
+update public.goblinstorm_saves set bosses = '{0,1,2,3,4,5,6,7,8,9}' where player = pg_temp.id('0c');
+select is((select count(*)::integer from public.trophies t where t.player = pg_temp.id('0c') and t.trophy = 'goblinstorm-stormcrown'), 1,
+  'beating the Storm King wins the Storm King''s Crown');
+select is((select array_agg(id order by sort) from public.achievement_types where id in ('goblinstorm-gate', 'goblinstorm-breaker')),
+  array['goblinstorm-gate', 'goblinstorm-breaker'], 'Storm Gate and Storm Breaker are achievements');
 
 select * from finish();
 rollback;

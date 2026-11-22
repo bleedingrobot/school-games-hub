@@ -6,8 +6,8 @@
  * each weapon once picked up, each evolution once made, and the passive that evolves it.
  */
 import { useState } from 'react';
-import { HEROES, PASSIVES, SHOP, SHOP_IDS, WEAPON_IDS, WEAPONS, type HeroDef, type ShopId } from '../../../shared/goblinstorm/config';
-import { CODEX_SIZE, allBought, codexCount, nextCost, shopLevelOf, shopTop } from '../../../shared/goblinstorm/shop';
+import { HEROES, LEGENDARY, LEGENDARY_IDS, PASSIVES, SHOP, SHOP_IDS, WEAPON_IDS, WEAPONS, type HeroDef, type LegendaryId, type ShopId } from '../../../shared/goblinstorm/config';
+import { CODEX_SIZE, allBought, codexCount, legendAllBought, legendLevelOf, nextCost, nextLegendCost, shopLevelOf, shopTop } from '../../../shared/goblinstorm/shop';
 import { GoblinStormError, type GoblinStormBackend, type MySave } from './backend';
 import { heroOpen } from '../../../shared/goblinstorm/server';
 import { powerPic, powerWords } from './heroPowers';
@@ -15,10 +15,12 @@ import { HERO_ICON, PASSIVE_ICON, WEAPON_ICON } from './look';
 import { Pic } from './Pic';
 
 const SHOP_ICON: Record<ShopId, string> = { might: '💪', armour: '🛡️', speed: '👟', health: '❤️', magnet: '🧲', gold: '🪙' };
+/** Stand-ins until a Legendary icon (art/paint/legendary/<id>) loads. */
+const LEGEND_ICON: Record<LegendaryId, string> = { fifth: '⚔️', secondwind: '🪶', stormmight: '👊', surge: '💥', anchor: '⚓', lantern: '🏮' };
 
-/** "🪙 120 gold", or once everything is bought, only the best haul from one run. */
+/** "🪙 120 gold", or once everything (the Legendary row too) is bought, only the best haul from one run. */
 export function GoldLine({ save }: { save: MySave }) {
-  return allBought(save.shop)
+  return allBought(save.shop) && legendAllBought(save.shop)
     ? <span className="gs-gold">🏆 Best haul {save.bestGold} gold</span>
     : <span className="gs-gold">🪙 {save.gold} gold</span>;
 }
@@ -26,18 +28,21 @@ export function GoldLine({ save }: { save: MySave }) {
 export const codexOf = (save: MySave) => codexCount(save.weapons, save.codex);
 
 export function ShopScreen({ backend, save, onSave }: { backend: GoblinStormBackend; save: MySave; onSave: (s: MySave) => void }) {
-  const [busy, setBusy] = useState<ShopId | null>(null);
+  const [busy, setBusy] = useState<ShopId | LegendaryId | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const done = allBought(save.shop);
 
-  const buy = async (id: ShopId) => {
+  const buy = async (id: ShopId | LegendaryId) => {
     setBusy(id);
     setNote(null);
+    const legend = id in LEGENDARY;
+    const name = legend ? LEGENDARY[id as LegendaryId].name : SHOP[id as ShopId].name;
     try {
       const r = await backend.buy(id);
       onSave({ ...save, gold: r.gold, shop: r.shop });
-      if (r.bought) setNote(`${SHOP[id].name} is now level ${shopLevelOf(r.shop, id)}!`);
-      else setNote(r.reason === 'top' ? `${SHOP[id].name} is already at the top.` : r.reason === 'none' ? 'Finish a run to start saving gold.' : 'Not enough gold yet. Play another run!');
+      if (r.bought) setNote(`${name} is now level ${legend ? legendLevelOf(r.shop, id as LegendaryId) : shopLevelOf(r.shop, id as ShopId)}!`);
+      else setNote(r.reason === 'top' ? `${name} is already at the top.` : r.reason === 'none' ? 'Finish a run to start saving gold.'
+        : r.reason === 'locked' ? 'Buy the whole shop first to open the Legendary upgrades.' : 'Not enough gold yet. Play another run!');
     } catch (e) {
       setNote(e instanceof GoblinStormError ? e.message : 'That couldn’t be bought. Try again.');
     } finally {
@@ -49,7 +54,7 @@ export function ShopScreen({ backend, save, onSave }: { backend: GoblinStormBack
     <>
       <p className="gs-menu__sub gs-progress"><GoldLine save={save} /></p>
       <p className="gs-menu__sub">
-        {done ? 'You have bought everything! Every run now starts at full power.' : 'Spend gold from your runs. Upgrades last for every run, on every hero.'}
+        {done ? 'You have bought the whole shop! Now the Legendary upgrades are open.' : 'Spend gold from your runs. Upgrades last for every run, on every hero.'}
       </p>
       <div className="gs-grid">
         {SHOP_IDS.map((id) => {
@@ -71,6 +76,36 @@ export function ShopScreen({ backend, save, onSave }: { backend: GoblinStormBack
                     Buy level {level + 1} · 🪙 {cost}
                   </button>
                 )}
+            </div>
+          );
+        })}
+      </div>
+      <h2 className="gs-legend__title">⚡ Legendary upgrades</h2>
+      <p className="gs-menu__sub">
+        {done ? 'They only work in the Storm Lands. Buy them to take on the Storm King!' : '🔒 Buy the whole shop to open these. They only work in the Storm Lands.'}
+      </p>
+      <div className={`gs-grid gs-legend${done ? '' : ' gs-legend--locked'}`}>
+        {LEGENDARY_IDS.map((id) => {
+          const level = legendLevelOf(save.shop, id);
+          const cost = nextLegendCost(save.shop, id);
+          const top = LEGENDARY[id].costs.length;
+          return (
+            <div key={id} className="gs-pick gs-shop gs-shop--legend">
+              <span className="gs-pick__icon" aria-hidden="true"><Pic path={`legendary/${id}`} small fallback={LEGEND_ICON[id]} className="gs-pic--legend" /></span>
+              <span className="gs-pick__name">{LEGENDARY[id].name}</span>
+              <span className="gs-pick__blurb">{LEGENDARY[id].blurb}{top > 1 ? ' each level' : ''}</span>
+              <span className="gs-dots" aria-label={`Level ${level} of ${top}`}>
+                {Array.from({ length: top }, (_, i) => <i key={i} className={i < level ? 'on' : ''} />)}
+              </span>
+              {!done
+                ? <span className="gs-pick__lock">🔒 {LEGENDARY[id].costs[0].toLocaleString('en-NZ')} gold</span>
+                : cost === null
+                  ? <span className="gs-pick__weapon">✔ All bought</span>
+                  : (
+                    <button type="button" className="gs-btn gs-btn--legend" disabled={busy !== null || save.gold < cost} onClick={() => void buy(id)}>
+                      Buy{top > 1 ? ` level ${level + 1}` : ''} · 🪙 {cost.toLocaleString('en-NZ')}
+                    </button>
+                  )}
             </div>
           );
         })}

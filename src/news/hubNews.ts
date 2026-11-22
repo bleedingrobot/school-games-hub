@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'goblinstorm-storm-lands-2026-11-22',
+    date: '2026-11-22',
+    emoji: '🌀',
+    title: 'The Storm Lands',
+    text: 'Buy the whole Goblin Storm shop and beat the Fire Dragon to open 5 new lands!',
+    game: 'goblinstorm',
+  },
+  {
     id: 'marble-maths-space-2026-11-22',
     date: '2026-11-22',
     emoji: '💎',

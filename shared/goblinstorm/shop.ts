@@ -58,6 +58,10 @@ export function buyLegend(save: { gold: number; shop: ShopLevels }, id: Legendar
   return { gold: save.gold - cost, shop: { ...save.shop, [id]: legendLevelOf(save.shop, id) + 1 } };
 }
 
+/** Is every Legendary upgrade at its top? (With the whole shop, everything is bought: gold is then the best haul only.) */
+export const legendAllBought = (shop: ShopLevels): boolean =>
+  (Object.keys(LEGENDARY) as LegendaryId[]).every((id) => legendLevelOf(shop, id) >= LEGENDARY[id].costs.length);
+
 /** Every level of every Legendary upgrade. */
 export const LEGENDARY_TOTAL = (Object.values(LEGENDARY) as { costs: readonly number[] }[]).reduce((sum, l) => sum + l.costs.reduce((a, b) => a + b, 0), 0);
 
