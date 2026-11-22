@@ -121,7 +121,7 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'bea@douglaspark.s
 select lives_ok($$ select public.use_quest_reward((select id from t_reward3), '{"title":"the-kind"}') $$, 'a Hero Title can still be used');
 select pg_temp.reset();
 
--- ---- Unlimited today reaches the class's teachers (migration 20261122000700) ----
+-- ---- Unlimited today reaches the class's teachers (migration 20261122001200) ----
 -- Fox also teaches an older class, so Fox's own settings row is that one's; a switch in Room 1 still reaches Fox.
 insert into public.classes (id, school_id, name, school_year, warp_code, created_at) values
   ('11111111-1111-4111-8111-000000000000', 1, 'Room 0', 2026, 'CDFGJ', now() - interval '1 year');
