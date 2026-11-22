@@ -910,3 +910,28 @@
   .stq-fx__lamp--green { background: #22c55e; }
   .stq-fx__streaks { display: none; }
 }
+
+/* Quest Log: the second row, and the Star Quest Legend line (R.4). */
+.stq-log__more { margin: 12px 0 0; font-size: 0.95rem; color: #e9d5ff; }
+.stq-legend { background: linear-gradient(90deg, rgba(168, 85, 247, 0.28), rgba(253, 224, 71, 0.18)); border-color: #c084fc; box-shadow: 0 0 16px rgba(192, 132, 252, 0.45); }
+.stq-legend strong { color: #f5d0fe; }
+
+/* The Star Quest Legend moment. */
+.stq-legend-fx { background: radial-gradient(circle at 50% 42%, #4c1d95 0%, #1e0b3d 55%, #050314 100%); }
+.stq-legend-fx__rays { position: absolute; inset: -50%; background: repeating-conic-gradient(from 0deg, rgba(253, 224, 71, 0.22) 0deg 9deg, rgba(168, 85, 247, 0.16) 9deg 18deg); animation: stq-legend-spin 14s linear infinite, stq-fx-in 0.8s ease-out both; mask-image: radial-gradient(circle, #000 15%, transparent 60%); }
+.stq-legend-fx__stage { position: relative; width: min(64vmin, 440px); aspect-ratio: 1; display: grid; place-items: center; }
+.stq-legend-fx__trophy { width: 56%; border-radius: 50%; border: 5px solid var(--st-gold); box-shadow: 0 0 40px #facc15, 0 0 90px #a855f7; animation: stq-legend-pop 0.9s cubic-bezier(0.2, 1.6, 0.4, 1) both, stq-legend-float 2.4s 0.9s ease-in-out infinite alternate; }
+.stq-legend-fx__ring { position: absolute; inset: 0; animation: stq-legend-spin 18s linear infinite; }
+.stq-legend-fx__face { position: absolute; left: 50%; top: 50%; width: 15%; aspect-ratio: 1; margin: -7.5% 0 0 -7.5%; border-radius: 50%; overflow: hidden; border: 3px solid #c084fc; background: #1e0b3d; box-shadow: 0 0 12px #a855f7; transform: rotate(calc(var(--i) * 36deg)) translateY(-300%) rotate(calc(var(--i) * -36deg)); animation: stq-legend-face 0.5s calc(0.8s + var(--i) * 0.12s) ease-out both; }
+.stq-legend-fx__face img { width: 100%; height: 100%; object-fit: cover; }
+.stq-legend-fx__burst span { position: absolute; left: 50%; top: 45%; font-size: clamp(1.2rem, 4vw, 2.2rem); color: #fde047; text-shadow: 0 0 12px #a855f7; opacity: 0; animation: stq-legend-star 1.6s calc(0.6s + var(--i) * 0.05s) ease-out both; }
+.stq-legend-fx__burst span:nth-child(odd) { color: #e9d5ff; }
+.stq-legend-fx__big { font-size: clamp(2.2rem, 9vw, 5.5rem); color: var(--st-gold); text-shadow: 0 0 26px #a855f7, 0 6px 0 #4c1d95; animation-delay: 1.9s; text-align: center; }
+.stq-legend-fx .stq-fx__small { animation-delay: 2.3s; }
+@keyframes stq-legend-spin { to { transform: rotate(360deg); } }
+@keyframes stq-legend-pop { from { opacity: 0; transform: scale(0.1) rotate(-200deg); } }
+@keyframes stq-legend-float { to { transform: translateY(-10px) scale(1.03); } }
+@keyframes stq-legend-face { from { opacity: 0; scale: 0.2; } }
+@keyframes stq-legend-star { 0% { opacity: 1; transform: translate(-50%, -50%) rotate(calc(var(--i) * 22.5deg)) translateY(0) scale(0.4); } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--i) * 22.5deg)) translateY(-44vmin) scale(1.2); } }
+.stq-fx--still .stq-legend-fx__burst { display: none; }
+@media (prefers-reduced-motion: reduce) { .stq-legend-fx__burst { display: none; } }

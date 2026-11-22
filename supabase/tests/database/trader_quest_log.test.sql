@@ -1,11 +1,12 @@
 -- Star Trader quests Q.5: the Quest Log, hub points, the Star Quest Master achievement and trophy
 -- (supabase/migrations/20261121000500_trader_quest_log.sql). Pupils can't reach the log; a save that finishes a quest
 -- logs it once with 2 hub points (a save sent twice, or the same game saved again, earns once); a New Season clears the
--- game but keeps the log; all five in one season gives the trophy and the achievement.
+-- game but keeps the log; all five in one season gives the trophy and the achievement. R.4 (20261122000600): quests 6 to
+-- 10 log with points too, five of any ten is not Master, and all ten in a season is Star Quest Legend.
 -- Run on a throw-away copy: scripts/scratch-test.sh <name> supabase/tests/database/trader_quest_log.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(16);
+select plan(22);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -62,6 +63,21 @@ select is((select count(*)::integer from public.trophies t where t.player = pg_t
   'all five in a season: the Star Quest Master trophy');
 select ok(exists (select 1 from public.achievements a where a.player = pg_temp.id('0b') and a.achievement = 'trader-quest-master'),
   '... and the Star Quest Master achievement');
+
+-- ---- R.4: quests 6 to 10, Star Quest Legend (20261122000600) ----
+select pg_temp.save('0a', 0, '["zuzu","puddle","gorbo","zip","pippop"]', 'req-c1-xxxx', 2);
+select is(pg_temp.points('0a'), 12, 'quests 6 to 10 go in the Quest Log with 2 points each');
+select is((select count(*)::integer from public.trophies t where t.player = pg_temp.id('0a') and t.trophy = 'trader-quest-master' and t.season = 2), 0,
+  'five quests that are not the first five: no Star Quest Master');
+select pg_temp.save('0b', 2, '["zuzu","sprocket","nettle","vex","kai","puddle","gorbo","zip","pippop"]', 'req-b3-xxxx', 3);
+select is((select count(*)::integer from public.trophies t where t.player = pg_temp.id('0b') and t.trophy = 'trader-quest-legend'), 0,
+  'nine quests: no Star Quest Legend yet');
+select pg_temp.save('0b', 3, '["zuzu","sprocket","nettle","vex","kai","puddle","gorbo","zip","pippop","sable"]', 'req-b4-xxxx', 3);
+select is((select count(*)::integer from public.trophies t where t.player = pg_temp.id('0b') and t.trophy = 'trader-quest-legend' and t.season = 3), 1,
+  'all ten in a season: the Star Quest Legend trophy');
+select ok(exists (select 1 from public.achievements a where a.player = pg_temp.id('0b') and a.achievement = 'trader-quest-legend'),
+  '... and the Star Quest Legend achievement');
+select is(public.trader_counts(pg_temp.id('0b')), '{"trader_quests": 5, "trader_quests_all": 10}'::jsonb, 'Master counts the first five, Legend all ten');
 
 select * from finish();
 rollback;

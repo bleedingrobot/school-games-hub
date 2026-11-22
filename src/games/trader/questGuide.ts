@@ -21,12 +21,18 @@ export function giverArt(id: string): { small: string; big?: string } | undefine
  * The Quest Log's keepsakes (PLAN rule 10): one per giver, kept through a New Season. The picture is the giver's last
  * story page, cut to a round badge.
  */
-export const KEEPSAKES: Record<string, { name: string; emoji: string }> = {
+export const KEEPSAKES: Record<string, { name: string; emoji: string; focus?: string }> = {
   zuzu: { name: 'Party balloon', emoji: '🎈' },
   sprocket: { name: 'Lucky gear', emoji: '⚙️' },
   nettle: { name: 'Healing leaf', emoji: '🍃' },
   vex: { name: 'Navy badge', emoji: '🎖️' },
   kai: { name: 'Star-scale', emoji: '✨' },
+  // Quests 6 to 10 (R.4). `focus` is where the keepsake sits in the wide painting, so the round badge shows it.
+  puddle: { name: 'Rain-drop', emoji: '💧', focus: '60% 50%' },
+  gorbo: { name: 'Golden spoon', emoji: '🥄', focus: '78% 50%' },
+  zip: { name: 'Comet Cup', emoji: '🏆', focus: '50% 50%' },
+  pippop: { name: 'Pet collar', emoji: '🐾', focus: '42% 50%' },
+  sable: { name: 'Treasure coin', emoji: '🪙', focus: '58% 50%' },
 };
 
 /** Story paintings used for the quest moments (the race lamps, the finish ring, Rust-Beard's ship), wide and phone sizes. */
@@ -39,6 +45,10 @@ export function momentArt(name: 'zip-3' | 'zip-4' | 'sable-2'): { wide: string; 
 /** The Star Quest Master trophy painting (also on the profile as trader-quest-master). */
 const MASTER = import.meta.glob('./art/quests/trophy-quest-master-small.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 export const MASTER_ART: string | undefined = Object.values(MASTER)[0];
+
+/** The Star Quest Legend trophy painting, gold and purple (also on the profile as trader-quest-legend): small and 512 px. */
+const LEGEND = import.meta.glob('./art/quests/trophy-quest-legend*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+export const LEGEND_ART: { small?: string; big?: string } = { small: LEGEND['./art/quests/trophy-quest-legend-small.webp'], big: LEGEND['./art/quests/trophy-quest-legend.webp'] };
 
 export function boardArt(): { wide: string; small: string } | undefined {
   const wide = FILES['./art/quests/quest-board.webp'];

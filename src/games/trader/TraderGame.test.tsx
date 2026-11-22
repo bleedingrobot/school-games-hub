@@ -25,7 +25,7 @@ vi.mock('./forge/loadViewer', () => ({ loadViewer: async () => null }));
 
 import { traderApi } from '../../data/trader';
 import { TraderGame } from './TraderGame';
-import { QuestLog } from './QuestsPanel';
+import { QuestDone, QuestLog } from './QuestsPanel';
 import { FIRST_SET, QUESTS } from '../../../shared/trader/quests';
 import { SHIPS, WATER } from '../../../shared/trader/config';
 import { nameText } from '../../../shared/trader/system';
@@ -113,7 +113,7 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
 
 describe('The Star Forge (S.4)', () => {
 
-  it('quests (Q.2, Q.3, Q.4, R.2, R.3): taking one plays its first 3 pages in the giver\'s voice, the gold landing card picks up, the hold shows gold, Q ticks the step, the chart rings the rest, finishing plays the last 2 pages then the reward, and the 📖 shelf reads them again; Lumi\'s clue + Show me and Vex\'s pirate fight with the Navy laser; Q.6 daily jobs taken, picked up and delivered; R.2: quests 6-10 under More quests, water per dry planet for Mayor Puddle, the Comet Cup lamps, fuel sum and refuel reset, the Gorbo card, Rust-Beard; R.3: Pip and Pop take turns reading, the Comet Cup finish plays before its last pages. Then the Forge: a locked sun is only a look; planning a sun is free; building it sends a forge action, shows the price first, and the card turns built', async () => {
+  it('quests (Q.2, Q.3, Q.4, R.2, R.3): taking one plays its first 3 pages in the giver\'s voice, the gold landing card picks up, the hold shows gold, Q ticks the step, the chart rings the rest, finishing plays the last 2 pages then the reward, and the 📖 shelf reads them again; Lumi\'s clue + Show me and Vex\'s pirate fight with the Navy laser; Q.6 daily jobs taken, picked up and delivered; R.2: quests 6-10 under More quests, water per dry planet for Mayor Puddle, the Comet Cup lamps, fuel sum and refuel reset, the Gorbo card, Rust-Beard; R.3: Pip and Pop take turns reading, the Comet Cup finish plays before its last pages; R.4: ten keepsakes and the Star Quest Legend line and moment. Then the Forge: a locked sun is only a look; planning a sun is free; building it sends a forge action, shows the price first, and the card turns built', async () => {
     const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
     const api = traderApi(trial.transport);
     expect((await api.load()).ok).toBe(true);
@@ -212,10 +212,28 @@ describe('The Star Forge (S.4)', () => {
     fireEvent.click(await screen.findByRole('button', { name: "Read Grandma Zuzu's Big Party again" }));
     expect(within(await screen.findByRole('dialog')).getByText('Page 1 of 5')).toBeTruthy();
     cleanup();
-    // All five keepsakes: the Star Quest Master line with its trophy.
-    render(<QuestLog keepsakes={QUESTS.map((q) => q.id)} />);
+    // All five keepsakes: the Star Quest Master line with its trophy; quests 6 to 10 wait under More quests (R.4).
+    render(<QuestLog keepsakes={[...FIRST_SET]} />);
     expect(screen.getByText('🌟 Star Quest Master!')).toBeTruthy();
     expect(document.querySelectorAll('.stq-keep--got')).toHaveLength(5);
+    expect(screen.getAllByText('Not yet')).toHaveLength(5);
+    expect(screen.queryByText(/Star Quest Legend/)).toBeNull();
+    cleanup();
+    // R.4: all ten keepsakes (the Rain-drop to the Treasure coin) and the Star Quest Legend line.
+    render(<QuestLog keepsakes={QUESTS.map((q) => q.id)} />);
+    expect(document.querySelectorAll('.stq-keep--got')).toHaveLength(10);
+    for (const k of ['💧 Rain-drop', '🥄 Golden spoon', '🏆 Comet Cup', '🐾 Pet collar', '🪙 Treasure coin']) expect(screen.getByText(k)).toBeTruthy();
+    expect(screen.getByText('💜 Star Quest Legend!')).toBeTruthy();
+    cleanup();
+    // R.4: the tenth quest's Quest complete: the Legend moment plays first; a key skips it without pressing Carry on.
+    const carryOn = vi.fn();
+    render(<QuestDone quest={QUESTS[9]} reward={1500} points={2} master={false} legend next={null} onDone={carryOn} />);
+    expect(document.querySelector('[data-fx="legend"]')).toBeTruthy();
+    expect(screen.getByText(/New keepsake in your Quest Log/).textContent).toMatch(/Treasure coin/);
+    fireEvent.keyDown(window, { key: 'Enter' });
+    expect(document.querySelector('[data-fx="legend"]')).toBeNull();
+    expect(carryOn).not.toHaveBeenCalled();
+    expect(screen.getByText('💜 Star Quest Legend!')).toBeTruthy();
     cleanup();
 
     // Lumi's trail (Q.4): Ranger Kai says the move from here, the chart doesn't ring the planet, and Show me lights it up.
