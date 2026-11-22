@@ -10,7 +10,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { KeyBadge, StoryBook, StoryShelf, useGameKeys, useStories, useStoryOnce } from '../../kit';
 import type { Story } from '../../../shared/kit/stories';
 import { HEROES, MAPS, STORM_FIRST, STORM_LANDS_ON, UNLOCK_WORDS, type HeroDef } from '../../../shared/goblinstorm/config';
-import { heroOpen, mapOpen, RUNS_A_DAY } from '../../../shared/goblinstorm/server';
+import { heroOpen, mapOpen, RUNS_A_DAY, stormGateOpen } from '../../../shared/goblinstorm/server';
 import { CODEX_SIZE } from '../../../shared/goblinstorm/shop';
 import { AchievementPop } from '../../achievements/AchievementPop';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
@@ -23,7 +23,7 @@ import { Pic } from './Pic';
 import { PlayScreen, type RunEnd } from './PlayScreen';
 import { FirstTimeTip } from '../../kit';
 import { useSound } from '../../sound';
-import { OPENING, bossStory, goblinShelf, heroStory, mapStory } from './stories';
+import { OPENING, STORM_GATE, bossStory, goblinShelf, heroStory, mapStory } from './stories';
 import { nextStep, type ShowMe } from './nextStep';
 import { readQuality, saveQuality, setTipsSeen, tipsSeen, type Quality } from './quality';
 import { hush, say } from './voice';
@@ -149,13 +149,15 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
   // picked, a page the first time a later map is played, and one the first time a boss is beaten. All skippable, once each.
   const stories = useStories();
   const opening = useStoryOnce(OPENING.id, screen === 'hero' && !!save);
+  // The Storm Gate page, once, the first time the map screen shows with the gate open.
+  const gate = useStoryOnce(STORM_GATE.id, screen === 'map' && !!save && stormLands && stormGateOpen(save) && !opening.open);
   const [book, setBook] = useState<{ story: Story; then?: () => void } | null>(null);
   /** Shows `story` first if this pupil hasn't seen it, then does `then`. */
   const storyFirst = (story: Story | null, then?: () => void) => {
     if (story && stories.shouldShow(story.id)) setBook({ story, then });
     else then?.();
   };
-  const storyOpen = opening.open || book !== null;
+  const storyOpen = opening.open || gate.open || book !== null;
   useGameKeys(windowRef, screen !== 'play' && !storyOpen);
 
   const play = async (i: number, replayGuide = false) => {
@@ -353,6 +355,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
           left={unlimited || left === null ? null : left} />
       )}
       {opening.open && <StoryBook story={OPENING} onClose={opening.close} endLabel="Let's go!" className="gs-storybook" />}
+      {gate.open && <StoryBook story={STORM_GATE} onClose={gate.close} endLabel="Into the storm!" className="gs-storybook" />}
       {book && (
         <StoryBook
           story={book.story}

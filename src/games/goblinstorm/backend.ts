@@ -3,8 +3,8 @@
  * `goblinstorm` function (liveBackend.ts), which makes and marks the questions (way A) and replays the run itself. The
  * stand-in below is for the preview: it lives in the browser, uses a fixed pretend focus and never calls the live site.
  */
-import { CHOICES, HEROES, MAPS, QUESTIONS_PER_RUN, type HeroId, type ShopId, type ShopLevels } from '../../../shared/goblinstorm/config';
-import { buy as buyLevel } from '../../../shared/goblinstorm/shop';
+import { CHOICES, HEROES, LEGENDARY, MAPS, QUESTIONS_PER_RUN, type HeroId, type LegendaryId, type ShopId, type ShopLevels } from '../../../shared/goblinstorm/config';
+import { buy as buyLevel, buyLegend } from '../../../shared/goblinstorm/shop';
 import { replayRun, choicesFor, decodeSteering } from '../../../shared/goblinstorm/replay';
 import type { RunSummary } from '../../../shared/goblinstorm/engine';
 import { AUTO_FOCUS, type MathsFocus } from '../../../shared/maths/focus';
@@ -49,7 +49,8 @@ export interface StartReply {
 /** The answer to a shop purchase: the gold and shop now, and why not if it wasn't bought. */
 export interface BuyReply {
   bought: boolean;
-  reason: null | 'gold' | 'top' | 'none';
+  /** 'locked': a Legendary upgrade before the whole shop is bought. */
+  reason: null | 'gold' | 'top' | 'none' | 'locked';
   gold: number;
   shop: ShopLevels;
 }
@@ -70,7 +71,7 @@ export interface GoblinStormBackend {
   answer(seed: number, slot: number, value: number, ms: number): Promise<AnswerReply>;
   finish(seed: number, steering: string, picks: number[]): Promise<FinishReply>;
   /** Buys the next level of one shop item with the pupil's own gold (live: the `buy_goblinstorm()` database function). */
-  buy(item: ShopId): Promise<BuyReply>;
+  buy(item: ShopId | LegendaryId): Promise<BuyReply>;
   /** Notes that the pupil has had the guided first go (live: the `goblinstorm_guide_seen()` database function). */
   guideSeen(): Promise<void>;
 }
@@ -135,7 +136,7 @@ export function standInBackend(focus: MathsFocus = PREVIEW_FOCUS, multipleChoice
       return { valid: true, summary: r.summary, unlocked };
     },
     async buy(item) {
-      const done = buyLevel(save, item);
+      const done = item in LEGENDARY ? buyLegend(save, item as LegendaryId) : buyLevel(save, item as ShopId);
       if (typeof done === 'string') return { bought: false, reason: done, gold: save.gold, shop: { ...save.shop } };
       save.gold = done.gold;
       save.shop = done.shop;
@@ -162,7 +163,7 @@ type Send = (body: Record<string, unknown>) => Promise<{ status: number; body: R
  * (live: `buy_goblinstorm()`, which needs no replay, so it isn't a server action). `guideSeen` notes the guided first
  * go (live: `goblinstorm_guide_seen()`).
  */
-export function fromServer(send: Send, loadSave: () => Promise<Partial<MySave>>, buy: (item: ShopId) => Promise<BuyReply>, guideSeen: () => Promise<void>): GoblinStormBackend {
+export function fromServer(send: Send, loadSave: () => Promise<Partial<MySave>>, buy: (item: ShopId | LegendaryId) => Promise<BuyReply>, guideSeen: () => Promise<void>): GoblinStormBackend {
   async function ask(body: Record<string, unknown>): Promise<Record<string, unknown>> {
     const r = await send(body);
     if (r.status === 200) return r.body;

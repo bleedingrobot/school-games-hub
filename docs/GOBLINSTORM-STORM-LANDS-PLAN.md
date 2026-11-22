@@ -2,7 +2,7 @@
 
 *James, 22 Nov 2026: plan 5 more levels. First idea was "beat every map 3 times with every hero" (120 wins); too hard. Then once with each hero (40 wins). Then James chose: **unlock them by buying the whole shop**, and add **Legendary upgrades** to the shop that help on the new maps, working **on the new maps only**.*
 
-**Status: stage 1 (rules, twists, Legendary effects, sim) live but switched off (#718). Stage 2, the art, done 22 Nov: 5 grounds, 25 monsters, 6 Legendary icons (`art/paint/legendary/`, for stage 3's Shop row), 11 story scenes with words (5 maps, 5 boss wins, the Storm Gate page `STORM_GATE`, for stage 3 to show when the gate opens), map card colours. The two Sunken Kingdom scenes were repainted (James asked) so the Kraken is an octopus, not a whale. Next: stage 3, go live.**
+**Status: LIVE 22 Nov 2026 for every class (stage 3, migration `20261122000400`, `STORM_LANDS_ON = true`). Stage 1 rules #718, stage 2 art #723 (Kraken scenes repainted as an octopus). Next: stage 4, Bella's lines for each twist.**
 
 ## The Storm Gate
 - **Opens with:** the whole shop bought (all 28 levels, 21,300 gold) **and** the Fire Dragon beaten once. The Fire Dragon keeps the maps in order; the shop is the long part.
@@ -62,3 +62,8 @@ The bot doesn't mind fog, so Shadow Swamp will be harder for pupils than the tab
 
 ## Tests
 Goblin Storm is at its 8. The Storm Lands checks are one rule test (Legendary does nothing off the Storm Lands; the gate; each twist; Second Wind); the health-growth checks moved into the first rule test to make room.
+
+## Stage 3 results (go live, 22 Nov 2026)
+- Migration `20261122000400`: runs on maps 0–9; `buy_goblinstorm` sells the Legendary row once the whole shop is bought (`'locked'` before; new helper `goblinstorm_shop_full`, not callable by pupils); `goblinstorm_gate` measure; achievements Storm Gate 🌀 and Storm Breaker 🌈 (all 10 bosses); trophy Storm King's Crown (`goblinstorm-stormcrown`, map 9's boss). `record_goblinstorm_run` unchanged.
+- Screens: the Shop's ⚡ Legendary row (gold frames, shine, greyed and 🔒 until the whole shop is bought; painted icons); gold shows as Best haul only once the Legendary row is all bought too; the next-step line points at the cheapest Legendary; the Storm Gate story page once, the first time the map screen shows with the gate open; the Lava boss page now ends "something still rumbles…"; a What's new line.
+- `goblinstorm.test.sql` has 84 checks (11 new: map 9 allowed and 10 not, Legendary locked then bought at its price and its top, the gate measure, the Storm King's Crown, the two achievements).

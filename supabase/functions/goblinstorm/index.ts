@@ -10169,7 +10169,7 @@ const stormGateOpen = (save) => allBought(save.shop) && save.bosses.includes(4);
 * Is this map open? The first always; each next one once the boss before it is beaten. The Storm Lands also need the
 * Storm Gate, and only once they're switched on (`stormLands`: STORM_LANDS_ON, or the preview's ?storm=1).
 */
-const mapOpen = (save, map, stormLands = false) => {
+const mapOpen = (save, map, stormLands = true) => {
 	if (map < 5) return map === 0 || save.bosses.includes(map - 1);
 	return stormLands && map < MAPS.length && stormGateOpen(save) && (map === 5 || save.bosses.includes(map - 1));
 };

@@ -278,10 +278,10 @@ export const MAPS: MapDef[] = [
 /** The first Storm Lands map's index (Sunken Kingdom). Maps before it are the first five. */
 export const STORM_FIRST = 5;
 /**
- * The Storm Lands are in the game but not open to pupils yet (stage 1 of docs/GOBLINSTORM-STORM-LANDS-PLAN.md): the
- * database still allows maps 0–4 only. The go-live stage turns this on with the migration. The preview's ?storm=1 shows them.
+ * The Storm Lands are open (stage 3 of docs/GOBLINSTORM-STORM-LANDS-PLAN.md, 22 Nov 2026; migration 20261122000400 lets
+ * runs be on maps 0–9). The preview's ?storm=1 still opens the Storm Gate at once.
  */
-export const STORM_LANDS_ON = false;
+export const STORM_LANDS_ON = true;
 
 /** The twists' numbers (see StormTwist). Each uses its own seeded numbers, so the first five maps play exactly as before. */
 export const STORM = {
