@@ -23,6 +23,7 @@ import gpuSky from './art/paint/worlds/gpu-800.webp';
 import memorySky from './art/paint/worlds/memory-800.webp';
 import motherboardSky from './art/paint/worlds/motherboard-800.webp';
 import quantumSky from './art/paint/worlds/quantum-800.webp';
+import { createRacer, racerEnvironment } from './racer';
 import { chipTexture, tileTextures, type TileKind } from './textures';
 
 /**
@@ -115,7 +116,7 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
   const sideMat = own(new THREE.MeshLambertMaterial({ color: '#0a1020', emissive: '#0b2a3a', emissiveIntensity: 0.6 }));
   const tileMats = {} as Record<TileKind, THREE.MeshLambertMaterial>;
   for (const kind of Object.keys(textures) as TileKind[]) {
-    const glow = kind === 'short' ? 1.2 : kind === 'recharge' || kind === 'overclock' ? 0.9 : kind === 'gel' ? 0.35 : 0.55;
+    const glow = kind === 'short' ? 1.0 : kind === 'recharge' || kind === 'overclock' ? 0.75 : kind === 'gel' ? 0.3 : 0.42;
     tileMats[kind] = own(new THREE.MeshLambertMaterial({ map: textures[kind], emissive: '#ffffff', emissiveMap: textures[kind], emissiveIntensity: glow }));
   }
   const slab = own(new THREE.BoxGeometry(1, FLOOR_THICKNESS, 1));
@@ -154,7 +155,7 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
   }
 
   // Neon rims along the road's outside edges.
-  const rimMat = own(new THREE.MeshBasicMaterial({ color: new THREE.Color(look.rim).multiplyScalar(1.6) }));
+  const rimMat = own(new THREE.MeshBasicMaterial({ color: new THREE.Color(look.rim).multiplyScalar(1.25) }));
 
   // Checkpoints (Stage 4): a gold arch over the road with a glowing line across it.
   const cpMat = own(new THREE.MeshBasicMaterial({ color: new THREE.Color('#facc15').multiplyScalar(0.9) }));
@@ -301,29 +302,10 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
   grid.position.y = -7;
   scene.add(grid);
 
-  // ——— The racer: a low-poly glowing dart ———
-  const racer = new THREE.Group();
-  const hullMat = own(new THREE.MeshLambertMaterial({ color: '#1e293b', emissive: '#0ea5e9', emissiveIntensity: 0.35, flatShading: true }));
-  const glowMat = own(new THREE.MeshBasicMaterial({ color: new THREE.Color('#67e8f9').multiplyScalar(2.2) }));
-  const canopyMat = own(new THREE.MeshBasicMaterial({ color: new THREE.Color('#f0abfc').multiplyScalar(1.1) }));
-  const hull = new THREE.Mesh(own(new THREE.ConeGeometry(0.3, 0.95, 4)), hullMat);
-  hull.rotation.set(-Math.PI / 2, Math.PI / 4, 0, 'YXZ');
-  hull.scale.set(1, 1, 0.42);
-  racer.add(hull);
-  const canopy = new THREE.Mesh(own(new THREE.SphereGeometry(0.11, 10, 6)), canopyMat);
-  canopy.scale.set(1, 0.7, 1.8);
-  canopy.position.set(0, 0.1, 0.02);
-  racer.add(canopy);
-  const finGeo = own(new THREE.BoxGeometry(0.34, 0.03, 0.22));
-  for (const side of [-1, 1]) {
-    const fin = new THREE.Mesh(finGeo, glowMat);
-    fin.position.set(side * 0.3, -0.02, 0.24);
-    fin.rotation.z = side * -0.25;
-    racer.add(fin);
-  }
-  const engine = new THREE.Mesh(own(new THREE.SphereGeometry(0.1, 10, 8)), glowMat);
-  engine.position.set(0, 0, 0.47);
-  racer.add(engine);
+  // ——— The racer: a sleek hover-racer in shiny metal (racer.ts), lit by a soft studio light ———
+  scene.environment = own(racerEnvironment(renderer));
+  const ship = createRacer('#22e3ff', own);
+  const racer = ship.group;
   scene.add(racer);
   const RIDE = 0.12;
 
@@ -372,7 +354,8 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
   // ——— Bloom: everything bright glows. Dropped on a slow device ———
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.85, 0.5, 0.6);
+  // Softer than Stage 2's 0.85 / 0.5 / 0.6 (James, 23 Nov 2026: "the glow is a bit intense"): weaker, tighter, brightest parts only.
+  const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.5, 0.35, 0.72);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
   bloom.enabled = !low;
@@ -402,7 +385,7 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
       const sideways = cur.x - prev.x;
       racer.rotation.z += ((-sideways * 9) - racer.rotation.z) * 0.25;
       racer.rotation.x += ((cur.vy * 0.05) - racer.rotation.x) * 0.25;
-      glowMat.color.setScalar(1).set('#67e8f9').multiplyScalar(1.1 + (cur.vz / TOP_SPEED) * 0.9);
+      ship.update(cur.vz / TOP_SPEED, Math.max(0, y), time, opts.reduced);
 
       // Trail: newest first, thinning and fading.
       if (!gone) {
@@ -412,9 +395,9 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
       const speedShare = cur.vz / TOP_SPEED;
       for (let i = 0; i < TRAIL; i++) {
         const p = history[Math.min(i, history.length - 1)] ?? at;
-        const w = 0.13 * (1 - i / TRAIL);
+        const w = 0.07 * (1 - i / TRAIL);
         trailPos.set([p.x - w, p.y, p.z, p.x + w, p.y, p.z], i * 6);
-        const f = (1 - i / TRAIL) * (0.3 + speedShare) * (gone ? 0 : 1);
+        const f = (1 - i / TRAIL) * (0.15 + speedShare * 0.45) * (gone ? 0 : 1);
         trailCol.set([0.2 * f, 0.9 * f, 1.2 * f, 0.2 * f, 0.9 * f, 1.2 * f], i * 6);
       }
       trailGeo.attributes.position.needsUpdate = true;
