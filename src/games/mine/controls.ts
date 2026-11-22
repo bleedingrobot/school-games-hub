@@ -55,13 +55,13 @@ export interface ControlSettings {
   /** The mouse is captured, so moving it looks around and the buttons fire. */
   lock: boolean;
   /**
-   * Easy flying (docs/plans/mine-flight/PLAN.md, M2): the ship cruises by itself. Arrows or WASD steer, Shift brakes,
-   * X fires a missile, and the mouse steers by where it points (the further from the middle, the faster the turn).
+   * Easy flying (docs/plans/mine-flight/PLAN.md, M2): the ship moves only while Go is held (W, Shift or the Go button)
+   * and stops when it is let go. Arrows (or A and D) steer, X fires a missile, and the mouse steers by where it points (the further from the middle, the faster the turn).
    */
   easy?: boolean;
 }
 
-export type TouchButton = 'up' | 'down' | 'fire' | 'missile' | 'brake';
+export type TouchButton = 'up' | 'down' | 'fire' | 'missile' | 'go';
 
 /** Easy pointing: the middle of the picture this wide (a share of half the picture) does not turn the ship. */
 export const POINT_DEADZONE = 0.1;
@@ -156,7 +156,7 @@ export class Controls {
     return this.settings.easy ? this.sampleEasy() : this.sampleClassic();
   }
 
-  /** Easy flying: one way to steer (stick, keys or pointing), fire, missile and brake. The ship pushes forward by itself. */
+  /** Easy flying: one way to steer (stick, keys or pointing), fire, missile and Go. The ship moves only while Go is held. */
   private sampleEasy(): PilotInput {
     if (this.count % AIM_EVERY === 0) {
       const m = this.mouse.take();
@@ -165,15 +165,16 @@ export class Controls {
       const curve = (v: number, dead: number) => (Math.abs(v) < dead ? 0 : Math.sign(v) * ((Math.abs(v) - dead) / (1 - dead)) ** 1.5);
       const stickYaw = curve(this.look.x, STICK_DEADZONE) * TURN_MAX * sens;
       const stickPitch = curve(-this.look.y, STICK_DEADZONE) * TURN_MAX * sens * flip;
-      const steeringByKey = this.key('ArrowRight', 'KeyD', 'ArrowLeft', 'KeyA', 'ArrowUp', 'KeyW', 'ArrowDown', 'KeyS');
+      const steeringByKey = this.key('ArrowRight', 'KeyD', 'ArrowLeft', 'KeyA', 'ArrowUp', 'ArrowDown');
       // Keys win over pointing, so a mouse left resting to one side can't fight a pupil who is using the keys.
       const p = this.point && !this.settings.lock && !steeringByKey ? this.point : { x: 0, y: 0 };
       const pointYaw = curve(p.x, POINT_DEADZONE) * TURN_MAX * sens * 0.75;
       const pointPitch = curve(-p.y, POINT_DEADZONE) * TURN_MAX * sens * 0.75 * flip;
       const right = this.key('ArrowRight', 'KeyD') ? 1 : 0;
       const left = this.key('ArrowLeft', 'KeyA') ? 1 : 0;
-      const up = this.key('ArrowUp', 'KeyW') ? 1 : 0;
-      const down = this.key('ArrowDown', 'KeyS') ? 1 : 0;
+      // W is Go in easy flying, so only the arrows look up and down.
+      const up = this.key('ArrowUp') ? 1 : 0;
+      const down = this.key('ArrowDown') ? 1 : 0;
       const keyYaw = (right - left) * (KEY_TURN + 1);
       const keyPitch = (up - down) * (KEY_TURN + 1) * flip;
       this.held = {
@@ -184,11 +185,11 @@ export class Controls {
     this.count++;
     const fire = this.key('Space') || this.mouseFire || this.buttons.has('fire') || this.tapFire > 0;
     if (this.tapFire > 0) this.tapFire--;
-    const brake = this.key('ShiftLeft', 'ShiftRight', 'KeyB') || this.buttons.has('brake');
+    const go = this.key('KeyW', 'ShiftLeft', 'ShiftRight') || this.buttons.has('go');
     return {
       tx: 0,
       ty: 0,
-      tz: brake ? -1 : 0,
+      tz: go ? 1 : 0,
       yaw: this.held.yaw,
       pitch: this.held.pitch,
       roll: 0,

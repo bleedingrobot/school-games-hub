@@ -6,7 +6,7 @@ export interface MinePrefs {
   hand: 'right' | 'left';
   /** Show the on-screen thumb sticks: by itself on a touch screen, or always, or never. */
   touch: 'auto' | 'on' | 'off';
-  /** Easy: the ship flies forward by itself and you point to steer (docs/plans/mine-flight/PLAN.md, M2). Classic: all six ways by hand. */
+  /** Easy: hold Go to fly forward (let go to stop) and point to steer (docs/plans/mine-flight/PLAN.md, M2). Classic: all six ways by hand. */
   scheme: 'easy' | 'classic';
   /** Classic only. Steady flight keeps the ship level (up is always up). Free flight lets it roll. */
   steady: boolean;

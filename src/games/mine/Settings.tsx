@@ -16,7 +16,7 @@ export function SettingsPanel({
       <label className="mn-field">
         <span>Controls {inRun ? <small>(changes the next time you start a mine)</small> : null}</span>
         <select value={prefs.scheme} onChange={(e) => set('scheme', e.target.value as MinePrefs['scheme'])}>
-          <option value="easy">Easy: your ship flies by itself, you steer</option>
+          <option value="easy">Easy: hold Go to fly, let go to stop, you steer</option>
           <option value="classic">Classic: move every way yourself</option>
         </select>
       </label>
@@ -81,17 +81,17 @@ export function ControlsHelp({ easy = true }: { easy?: boolean }) {
     return (
       <div className="mn-controls">
         <h3>Controls (Easy)</h3>
-        <p>Your ship flies forward by itself. You just steer, and shoot.</p>
+        <p>Hold Go to fly forward. Let go and your ship stops. Steer, and shoot.</p>
         <dl className="mn-keys-list">
           <div><dt>Mouse</dt><dd>Point where you want to go: the ship turns towards it. Click to fire.</dd></div>
-          <div><dt>Arrow keys or W A S D</dt><dd>Steer</dd></div>
+          <div><dt>W or Shift</dt><dd>Go (hold it to fly forward, let go to stop)</dd></div>
+          <div><dt>Arrow keys, or A and D</dt><dd>Steer</dd></div>
           <div><dt>Space</dt><dd>Fire the laser (it bends towards a robot near the middle)</dd></div>
-          <div><dt>Shift or B</dt><dd>Brake</dd></div>
-          <div><dt>X or right-click</dt><dd>Launch a missile</dd></div>
+                    <div><dt>X or right-click</dt><dd>Launch a missile</dd></div>
           <div><dt>Enter</dt><dd>Use a question door, pad or the reactor lock</dd></div>
           <div><dt>M</dt><dd>Map</dd></div>
           <div><dt>Esc or P</dt><dd>Pause</dd></div>
-          <div><dt>Touch</dt><dd>The stick steers, big buttons fire and brake</dd></div>
+          <div><dt>Touch</dt><dd>The stick steers, hold GO to fly, the big red button fires</dd></div>
         </dl>
         <p><small>Want to move every way yourself? Pick Classic controls in Settings.</small></p>
       </div>
@@ -143,7 +143,7 @@ export function HowToPlayBody({ questions }: { questions: boolean }) {
         Your best time on each mine goes on your school’s board (names and avatars only). Finish a mine for the first time for {MINE_POINTS_FIRST} points, and beat your own best for {MINE_POINTS_BEST}{' '}
         point (once a day for each mine). Right answers earn no points, so there is no need to rush them.
       </p>
-      <p>Feeling dizzy? Turn on Less motion in Settings, and brake to slow down.</p>
+      <p>Feeling dizzy? Turn on Less motion in Settings, and slow down (in Easy, just let go of Go).</p>
     </div>
   );
 }
