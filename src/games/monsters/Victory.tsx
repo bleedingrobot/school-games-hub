@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { expForLevel, type Monster } from '../../../shared/monsters/rules';
 import { MonsterArt } from './art/MonsterArt';
+import { scenePic } from './art/painted';
 import { nameOf } from './text';
 import './victory.css';
 
@@ -112,8 +113,12 @@ export function Victory({ phase, before, after, caught, questions, timeScale, on
   const button = useRef<HTMLButtonElement>(null);
   useEffect(() => button.current?.focus({ preventScroll: true }), []);
 
+  // The painted celebration field (a trophy on a hilltop, bunting and fireworks) behind a win. Decoration only.
+  const pic = scenePic('victory');
+  const picStyle = (happy && pic.wide ? { '--mv-wide': `url("${pic.wide}")`, '--mv-small': `url("${pic.small}")` } : undefined) as CSSProperties | undefined;
+
   return (
-    <div className={`mv${happy ? ' mv--happy' : ' mv--calm'}`} role="dialog" aria-modal="true" aria-label={title}>
+    <div className={`mv${happy ? ' mv--happy' : ' mv--calm'}${picStyle ? ' has-art' : ''}`} style={picStyle} role="dialog" aria-modal="true" aria-label={title}>
       {happy && <div className="mv-rays" aria-hidden="true" />}
       {happy && (
         <div className="mv-confetti" aria-hidden="true">

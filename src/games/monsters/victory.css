@@ -18,6 +18,7 @@
 }
 .mv--calm { background: radial-gradient(ellipse at 50% 35%, rgba(30, 41, 59, 0.7), rgba(2, 6, 23, 0.94)); }
 .mv > :not(.mv-rays):not(.mv-confetti) { position: relative; z-index: 1; }
+.mv-rays, .mv-confetti { z-index: 0; }
 
 .mv-rays {
   position: absolute;
@@ -115,6 +116,19 @@
 .mv-go { min-width: 220px; animation: mv-pop 0.4s ease-out 0.6s both; }
 .mv-go kbd { width: auto; padding: 0 6px; }
 
+/* A win sits on the painted celebration field: it drifts in slowly, lightly shaded so the cards stand out. */
+.mv.has-art { background: none; backdrop-filter: none; }
+.mv.has-art::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(15, 23, 42, 0.15), rgba(15, 23, 42, 0) 35%, rgba(15, 23, 42, 0.45)), var(--mv-wide) center 60% / cover no-repeat;
+  animation: mv-drift 9s ease-out both;
+}
+.mv.has-art .mv-rays { top: 52%; mix-blend-mode: screen; }
+@media (max-width: 900px) { .mv.has-art::before { background-image: linear-gradient(rgba(15, 23, 42, 0.15), rgba(15, 23, 42, 0) 35%, rgba(15, 23, 42, 0.45)), var(--mv-small); } }
+@keyframes mv-drift { from { scale: 1.12; filter: brightness(1.5); } to { scale: 1; filter: none; } }
+
 @keyframes mv-in { from { opacity: 0; } }
 @keyframes mv-spin { to { rotate: 360deg; } }
 @keyframes mv-fall { to { transform: translateY(110vh) rotate(720deg); } }
@@ -133,6 +147,6 @@
   .mv-card__art .mon-art { width: 70px !important; height: 70px !important; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .mv, .mv *, .mv *::before { animation: none !important; transition: none !important; }
+  .mv, .mv::before, .mv *, .mv *::before { animation: none !important; transition: none !important; }
   .mv-confetti, .mv-rays { display: none; }
 }

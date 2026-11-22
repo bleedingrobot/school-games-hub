@@ -1,0 +1,26 @@
+{
+  "game": "monsters-victory",
+  "filename_prefix": "monsters-victory/img",
+  "comfy": "http://127.0.0.1:8188",
+  "style": "a",
+  "styles": {
+    "a": "Bright painterly digital illustration for a children's adventure game, soft rich colours, warm glowing light, storybook fantasy style, highly detailed, no text, no writing, no letters. "
+  },
+  "inbox": "~/dragon-art-inbox/monsters-victory",
+  "picks": "docs/monsters-victory-art/picks.json",
+  "art_dir": "src/games/monsters/art/painted",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "victory",
+      "prompt": "An empty celebration field on a sunny grassy hilltop above a New Zealand coast at golden hour: a golden trophy on a carved stone podium in the centre distance, glowing golden light beams fanning out from behind it into the sky, colourful bunting flags strung across the top, streamers and confetti drifting in the air, fireworks bursting in a warm pink and gold sky, sparkles, rolling green hills and the sea far behind. The whole foreground is open empty grass with scattered confetti and flowers. A quiet empty landscape, only grass, sky, flags and the podium. Wide landscape, joyful and triumphant.",
+      "size": [
+        2016,
+        1152
+      ],
+      "kind": "scene",
+      "folder": "scenes",
+      "file": "victory"
+    }
+  ]
+}
