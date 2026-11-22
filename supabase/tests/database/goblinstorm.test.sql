@@ -193,7 +193,7 @@ select public.goblinstorm_guide_seen();
 select is(public.my_goblinstorm() - 'today' - 'unlimited', '{"gold": 0, "shop": {}, "heroes": [], "bosses": [], "codex": [], "weapons": [], "runs": 0, "kills": 0, "guideSeen": true, "bestGold": 0}'::jsonb,
   'a brand-new pupil can note the guide before any run: an empty save that remembers it');
 select pg_temp.reset();
--- Unlimited today in the save (migration 20261122000600): the class switch or the pupil's own Bonus Turns Day.
+-- Unlimited today in the save (migration 20261122001100): the class switch or the pupil's own Bonus Turns Day.
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'cat@douglaspark.school.nz');
 select is(public.my_goblinstorm() -> 'unlimited', 'false'::jsonb, 'the save says runs are not unlimited on a normal day');
 select pg_temp.reset();
