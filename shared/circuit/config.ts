@@ -67,7 +67,11 @@ export const SCRAPE_SLOW = 0.4;
 export const HALF_WIDTH = 0.3;
 /** Half-over an edge, the racer slides off it, faster each second (lanes a second, each second). */
 export const LEDGE_SLIP = 6;
-/** Land faster than this and the racer bounces back up at BOUNCE of the speed. */
+/**
+ * Bouncing on hard landings is OFF (James, 23 Nov 2026: "I don't really like the bounce after the jump, it feels strange"):
+ * every landing sticks. With it on, landing faster than BOUNCE_MIN bounces back up at BOUNCE of the speed.
+ */
+export const BOUNCE_ON = false;
 export const BOUNCE_MIN = 4.5;
 export const BOUNCE = 0.5;
 /** Below this height the racer has fallen off the road. */

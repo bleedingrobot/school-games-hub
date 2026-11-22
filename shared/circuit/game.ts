@@ -45,10 +45,10 @@ export function roadBefore(id: string): string | null {
 export const MEDAL_SECONDS: Record<string, { gold: number; silver: number }> = {
   'power-on': { gold: 19, silver: 25 },
   'clock-speed': { gold: 21, silver: 25 },
-  'first-charge': { gold: 19, silver: 25 },
+  'first-charge': { gold: 18, silver: 24 },
   'data-bus': { gold: 24, silver: 31 },
-  'bridge-chips': { gold: 26, silver: 33 },
-  'kernel-run': { gold: 32, silver: 47 },
+  'bridge-chips': { gold: 22, silver: 30 },
+  'kernel-run': { gold: 32, silver: 44 },
 };
 
 export type Medal = 'bronze' | 'silver' | 'gold';

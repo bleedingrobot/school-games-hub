@@ -101,7 +101,6 @@ const WALL_NUDGE = .25;
 const SCRAPE_SLOW = .4;
 /** Half the racer's width: it checks for floor this far either side, for the ledge slip. */
 const HALF_WIDTH = .3;
-const BOUNCE = .5;
 /**
 * Battery drain by speed. A road's `battery` is how many seconds it lasts at top speed; slower driving drains it
 * by this mix of the speed share and its square, so a careful racer goes further on one charge.
@@ -336,16 +335,10 @@ function step(prev, input, road) {
 	}
 	if (hit === "land") {
 		if (s.y === 0 && cellAt(road, Math.floor(s.x), Math.floor(s.z)) === "x") return end(s, events, "crashed", "crash");
-		const fall = -s.vy;
-		if (fall > 4.5) {
-			s.vy = fall * BOUNCE;
-			s.grounded = false;
-			events.push("bounce");
-		} else {
-			s.vy = 0;
-			s.grounded = true;
-			if (!wasGrounded) events.push("land");
-		}
+		-s.vy;
+		s.vy = 0;
+		s.grounded = true;
+		if (!wasGrounded) events.push("land");
 		if (s.jumping) {
 			s.jumping = false;
 			s.vz = clamp(s.vz + s.autoPilotGiveBack, 0, 12);
@@ -825,20 +818,20 @@ const MEDAL_SECONDS = {
 		silver: 25
 	},
 	"first-charge": {
-		gold: 19,
-		silver: 25
+		gold: 18,
+		silver: 24
 	},
 	"data-bus": {
 		gold: 24,
 		silver: 31
 	},
 	"bridge-chips": {
-		gold: 26,
-		silver: 33
+		gold: 22,
+		silver: 30
 	},
 	"kernel-run": {
 		gold: 32,
-		silver: 47
+		silver: 44
 	}
 };
 function medalFor(roadId, steps) {

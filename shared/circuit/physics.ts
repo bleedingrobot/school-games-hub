@@ -15,7 +15,7 @@
  * to r+1). The racer is a point for hitting things, HALF_WIDTH wide for the ledge slip.
  */
 import {
-  ACCEL, AIR_STEER_STEPS, AUTO_PILOT_AT, AUTO_PILOT_LOOK, AUTO_PILOT_TRIES, BATTERY_LINEAR, BATTERY_SQUARED, BOUNCE, BOUNCE_MIN, BRAKE,
+  ACCEL, AIR_STEER_STEPS, AUTO_PILOT_AT, AUTO_PILOT_LOOK, AUTO_PILOT_TRIES, BATTERY_LINEAR, BATTERY_SQUARED, BOUNCE, BOUNCE_MIN, BOUNCE_ON, BRAKE,
   CRASH_SPEED, DT, FALL_LIMIT, FLOOR_THICKNESS, FULL, HALF_WIDTH, JUMP_SPEED, LEDGE_SLIP, LOW_BRAKE_SHARE, LOW_SPEED, MAX_FALL_SPEED,
   MAX_RUN_STEPS, NO_JUMP_GRAVITY, OVERCLOCK_ACCEL, RESISTOR_DRAG, RESTART_DELAY_STEPS, SCRAPE_SLOW, SLOTS_PER_ROW, START_X, START_Z,
   SUBSTEPS, TOP_SPEED, TUNNEL_ROOF, TUNNEL_ROOF_THICKNESS, TURN_AT_REST, TURN_RATE, WALL_NUDGE,
@@ -174,7 +174,7 @@ export function step(prev: RaceState, input: Input, road: Road): { state: RaceSt
   if (hit === 'land') {
     if (s.y === 0 && cellAt(road, Math.floor(s.x), Math.floor(s.z)) === 'x') return end(s, events, 'crashed', 'crash');
     const fall = -s.vy;
-    if (fall > BOUNCE_MIN) {
+    if (BOUNCE_ON && fall > BOUNCE_MIN) {
       s.vy = fall * BOUNCE;
       s.grounded = false;
       events.push('bounce');

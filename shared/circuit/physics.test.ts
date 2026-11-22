@@ -21,11 +21,11 @@ function run(r: ReturnType<typeof road>, s0: RaceState, n: number, input: (s: Ra
   return { s, events };
 }
 
-it('lands, bounces, slips off ledges and nudges off clipped corners', () => {
+it('lands without bouncing, slips off ledges and nudges off clipped corners', () => {
   const flat = road(['------- x40']);
-  // A jump on the spot comes down hard enough to bounce once at half speed, then settles.
+  // A jump on the spot comes straight down and sticks (no bounce: James, 23 Nov 2026).
   const hop = run(flat, newRace(flat), 60, (_, i) => ({ ...none, jump: i === 0 }));
-  expect(hop.events).toEqual(['jump', 'bounce', 'land']);
+  expect(hop.events).toEqual(['jump', 'land']);
   expect(hop.s).toMatchObject({ y: 0, grounded: true, outcome: 'racing' });
   // A short drop just lands.
   expect(run(flat, { ...newRace(flat), y: 0.3, grounded: false }, 20).events).toEqual(['land']);
