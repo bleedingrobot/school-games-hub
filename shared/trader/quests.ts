@@ -202,7 +202,7 @@ export const QUESTS: readonly QuestConfig[] = [
       { kind: 'pickup', what: 'Comet Cheese', prefer: [isGov('Pirate haven', 'Farming co-op'), (p) => GOVERNMENTS[p.government].pirates >= 5] },
       // Bought at any market and handed over at Gorbo's planet, as for Dr Nettle: 400 for the pick-ups plus these.
       { kind: 'buy-deliver', what: 'Food', good: FOOD, qty: 5, smallQty: 4, pays: 120, prefer: [], near: 4 },
-      { kind: 'buy-deliver', what: 'Lollies', good: LOLLIES, qty: 3, smallQty: 2, pays: 60, prefer: [], near: 4 },
+      { kind: 'buy-deliver', what: 'Lollies', good: LOLLIES, qty: 3, smallQty: 2, pays: 300, prefer: [], near: 4 },
       { kind: 'deliver', what: 'Chef Gorbo', prefer: [isGov('Merchant guild', 'Class vote'), calm] },
     ],
   },

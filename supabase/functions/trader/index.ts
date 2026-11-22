@@ -11072,7 +11072,7 @@ const QUESTS = [
 				good: 8,
 				qty: 3,
 				smallQty: 2,
-				pays: 60,
+				pays: 300,
 				prefer: [],
 				near: 4
 			},

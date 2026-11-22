@@ -395,12 +395,12 @@ describe('Star Trader quests', () => {
       const pr = finish(big, 5);
       expect(pr.ok && pr.quest).toEqual({ finished: 'puddle', reward: 900, points: QUEST_POINTS });
 
-      // Chef Gorbo: two pick-ups (quest cargo) and real Food and Lollies; 400 plus 120 a Food and 60 a Lolly.
-      expect(questReward(QUESTS[6])).toBe(400 + 5 * 120 + 3 * 60);
-      expect(questReward(QUESTS[6], true)).toBe(400 + 4 * 120 + 2 * 60);
+      // Chef Gorbo: two pick-ups (quest cargo) and real Food and Lollies; 400 plus 120 a Food and 300 a Lolly (James, 22 Nov: Lollies cost about 210 to 330).
+      expect(questReward(QUESTS[6])).toBe(400 + 5 * 120 + 3 * 300);
+      expect(questReward(QUESTS[6], true)).toBe(400 + 4 * 120 + 2 * 300);
       const gor = take({ ...after('puddle'), t: { ...after().t, ship: 1 } }, 'gorbo');
       const gr = finish(gor, 6);
-      expect(gr.ok && gr.quest?.reward).toBe(1180);
+      expect(gr.ok && gr.quest?.reward).toBe(1900);
       expect(ok(gr).t.cargo[FOOD]).toBe(15);
       expect(ok(gr).t.cargo[LOLLIES]).toBe(17);
       expect(ok(gr).t.questCargo).toBeUndefined();
