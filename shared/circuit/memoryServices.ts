@@ -1,9 +1,21 @@
 /**
  * A pretend database for the `circuit` server function, kept in memory: the preview page runs the real handler on it (so
  * the preview never calls the live site), and handler.test.ts uses it too. `record` follows `record_circuit_finish` in the
- * migration (20261122001300_circuit.sql): change them together.
+ * migration (20261122001300_circuit.sql); the questions follow `circuit_store_questions` and `circuit_claim_answer`
+ * (20261123000100_circuit_maths.sql): change them together. The maths uses a fixed pretend focus and records, never a
+ * pupil's real ones.
  */
+import { parseFocus } from '../maths/focus';
+import type { FactAnswer } from '../maths/leitner';
+import { seededRandom, type MathsContext } from '../maths/serverQuestions';
+import type { Question } from '../maths/skillPack';
+import type { MathsSwitch } from '../space/mathsSwitch';
 import { FINISH_POINTS, FINISHES_A_DAY, GOLD_POINTS, MEDAL_RANK, nzDay, type RoadProgress } from './game';
+
+/** The pretend pupil's focus: tables, fractions, decimals and percentages, so every kind of sign shows in the preview. */
+export const PRETEND_FOCUS = {
+  source: 'teacher-class', skills: ['tables-7', 'equivalent-fractions', 'decimal-equivalents', 'percent-of'], onlyThese: true, endsAt: null, canChoose: false, own: null,
+};
 
 export interface MemoryOptions {
   enabled?: boolean;
@@ -12,6 +24,12 @@ export interface MemoryOptions {
   today?: number;
   roads?: Record<string, RoadProgress>;
   now?: () => number;
+  /** The teacher's maths switch (default 'on', as the migration). */
+  maths?: MathsSwitch;
+  /** The class's multiple-choice switch (preview `?mc=1`). */
+  multipleChoice?: boolean;
+  /** The maths records can't be read (the go then has no maths). */
+  noContext?: boolean;
 }
 
 /** Shaped like the function's `Services` (supabase/functions/circuit/handler.ts), with what was saved to look at. */
@@ -21,8 +39,11 @@ export function memoryServices(opts: MemoryOptions = {}) {
   const today: Record<string, { day: string; n: number }> = {};
   const seeds = new Set<string>();
   const points: { player: string; points: number; once: string }[] = [];
-  const switches = { enabled: opts.enabled ?? true, unlimited: opts.unlimited ?? false };
+  const switches = { enabled: opts.enabled ?? true, unlimited: opts.unlimited ?? false, maths: opts.maths ?? ('on' as MathsSwitch) };
   let counter = 0;
+  const random = seededRandom('pretend-circuit');
+  const questions: Record<string, { questions: Question[]; answered: Record<string, { value: number; right: boolean }> }> = {};
+  const answers: { player: string; once: string; answers: FactAnswer[] }[] = [];
 
   const mine = (player: string) => (roads[player] ??= structuredClone(opts.roads ?? {}));
   const todayOf = (player: string) => {
@@ -36,6 +57,30 @@ export function memoryServices(opts: MemoryOptions = {}) {
     switches,
     points,
     roads,
+    questions,
+    answers,
+    random,
+    async mathsContext(_player: string): Promise<MathsContext | null> {
+      if (opts.noContext) return null;
+      return { facts: [], focus: parseFocus(PRETEND_FOCUS), settings: { multipleChoice: opts.multipleChoice ?? false } };
+    },
+    async storeQuestions(player: string, seed: string, list: Question[]) {
+      questions[`${player}:${seed}`] ??= { questions: structuredClone(list), answered: {} };
+      return true;
+    },
+    async loadQuestions(player: string, seed: string) {
+      const go = questions[`${player}:${seed}`];
+      return go ? structuredClone(go) : null;
+    },
+    async claimAnswer(player: string, seed: string, slot: number, value: number, right: boolean) {
+      const go = questions[`${player}:${seed}`];
+      if (!go || String(slot) in go.answered) return false;
+      go.answered[String(slot)] = { value, right };
+      return true;
+    },
+    async recordAnswers(player: string, once: string, list: FactAnswer[]) {
+      if (!answers.some((a) => a.player === player && a.once === once)) answers.push({ player, once, answers: list });
+    },
     async userIdFor(token: string) {
       return token.startsWith('pupil:') ? token.slice(6) : null;
     },

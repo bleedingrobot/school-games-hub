@@ -102,3 +102,14 @@ export const MAX_RUN_STEPS = 10 * 60 * STEPS_PER_SECOND;
 export const SLOTS_PER_ROW = 8;
 /** The most input changes a recorded run may have. */
 export const MAX_INPUT_CHANGES = 6000;
+
+// ——— Maths (docs/CIRCUIT-PLAN.md, section 7; Stage 3) ———
+
+/** At least this many rows between two questions on a road (recharge ports and data gates): one question at a time. */
+export const QUESTION_GAP = 8;
+/** No short-circuit tile this many rows before a data gate, or inside it (a racer reading a sign must never die for it). */
+export const GATE_CLEAR_ROWS = 24;
+/** A data gate has this many signed lanes. */
+export const GATE_LANES = { min: 2, max: 4 } as const;
+/** A port answered wrong (or not answered) refills to this share of FULL; a right answer to all of it. */
+export const HALF_REFILL = 0.5;

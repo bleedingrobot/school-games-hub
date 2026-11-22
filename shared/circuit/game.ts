@@ -8,7 +8,7 @@
  */
 import { FULL, STEPS_PER_SECOND } from './config';
 import { decodeLog } from './inputs';
-import { replay } from './physics';
+import { replay, type RaceOptions } from './physics';
 import { parseRoad, type Road, type RoadDef } from './road';
 import { MOTHERBOARD_ROADS } from './roads/motherboard';
 
@@ -22,10 +22,17 @@ export const GOLD_POINTS = 2;
 /** Every road pupils can play, in the order they open (world 1 only until Stage 4). */
 export const ROADS: readonly RoadDef[] = MOTHERBOARD_ROADS;
 
+/** Roads only the preview and the tests add (`allowTestRoad`): open from the start, never in the live function. */
+const testRoads: RoadDef[] = [];
+export function allowTestRoad(def: RoadDef): void {
+  if (!testRoads.some((r) => r.id === def.id)) testRoads.push(def);
+}
+export const extraRoads = (): readonly RoadDef[] => testRoads;
+
 const parsed = new Map<string, Road>();
 /** A road by id, read once. */
 export function roadById(id: string): Road | undefined {
-  const def = ROADS.find((r) => r.id === id);
+  const def = ROADS.find((r) => r.id === id) ?? testRoads.find((r) => r.id === id);
   if (!def) return undefined;
   let road = parsed.get(id);
   if (!road) parsed.set(id, (road = parseRoad(def)));
@@ -95,11 +102,14 @@ export interface CircuitSave {
   /** Finishes counted today (NZ day). */
   today: number;
   left: number | null;
+  /** The teacher's maths switch ('choose': the pupil picks maths on or off for each go). Missing from an old reply: on. */
+  maths?: 'off' | 'choose' | 'on';
 }
 
 /** Is a road open? The first is; each next one when the one before has been finished. */
 export function roadOpen(roads: Record<string, RoadProgress>, id: string): boolean {
   const before = roadBefore(id);
+  if (testRoads.some((r) => r.id === id)) return true;
   return ROADS.some((r) => r.id === id) && (before === null || (roads[before]?.finishes ?? 0) > 0);
 }
 
@@ -172,15 +182,19 @@ export interface JudgedFinish {
   battery: number;
 }
 
-export type Judgement = { ok: true; run: JudgedFinish } | { ok: false; problem: string };
+/** `choices`: the lane the racer was in at each data gate's split row (-1: never crossed), read from the replay. */
+export type Judgement = { ok: true; run: JudgedFinish; choices: readonly number[] } | { ok: false; problem: string };
 
-/** Replays the inputs from the start of the road. Only a real finish, no faster than real time, is accepted. */
-export function judgeFinish(report: FinishReport, nowSeconds: number): Judgement {
+/**
+ * Replays the inputs from the start of the road. Only a real finish, no faster than real time, is accepted. `maths` is what
+ * the server's marks say (each port's refill, each gate's right lane), so the replay's battery is the one the pupil earned.
+ */
+export function judgeFinish(report: FinishReport, nowSeconds: number, maths: RaceOptions = {}): Judgement {
   const road = roadById(report.road);
   if (!road) return { ok: false, problem: 'unknown road' };
   const log = decodeLog(report.inputs);
   if (!log) return { ok: false, problem: 'inputs not readable' };
-  const end = replay(road, log);
+  const end = replay(road, log, { refills: maths.refills ?? null, gateRight: maths.gateRight ?? null });
   if (end.outcome !== 'finished') return { ok: false, problem: 'no finish' };
   const made = seedTime(report.seed);
   if (made === null) return { ok: false, problem: 'not a server seed' };
@@ -188,5 +202,6 @@ export function judgeFinish(report: FinishReport, nowSeconds: number): Judgement
   return {
     ok: true,
     run: { steps: end.steps, medal: medalFor(report.road, end.steps), clean: report.crashes === 0, charged: end.battery > FULL / 2, battery: end.battery },
+    choices: end.choices,
   };
 }
