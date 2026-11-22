@@ -33,7 +33,7 @@ import {
   type Trader,
 } from './state';
 import { designProblem, emptyDesign, forgeCost, typedNames, type SystemDesign } from './system';
-import { QUEST_POINTS, allQuestsDone, emptyQuests, isSmallShip, jobIndex, nextQuest, openQuestOf, questFight, questFightHere, questReward, stepProblem, stepQty, type QuestState } from './quests';
+import { QUEST_POINTS, allQuestsDone, emptyQuests, hasSmallOrder, isSmallShip, jobIndex, nextQuest, openQuestOf, questById, questFight, questFightHere, questReward, stepProblem, stepQty, type QuestConfig, type QuestState } from './quests';
 
 export type Deal = Extract<Encounter, { kind: 'trader' }>;
 
@@ -177,6 +177,8 @@ export interface Outcome {
   forge?: { total: number; worth: number };
   /** A quest finished in this request: its reward in credits and the hub points it earns (inside the daily cap). */
   quest?: { finished: string; reward: number; points: number };
+  /** The Comet Cup went back to the start line in this request (fuel was bought after the start), for a gentle note. */
+  raceReset?: true;
   /** A daily job delivered in this request (Q.6): which one and what it paid. No hub points. */
   job?: { done: number; reward: number };
   /** What this request's trades do to the school's market (after the pupil's daily limit). Saved with the game, never sent to the pupil. */
@@ -236,7 +238,9 @@ export function applyBatch(galaxy: Galaxy, galaxySeed: string, game: Game, actio
     const market: MarketPush[] = [];
     for (const action of actions) {
       if (g.pending) refuse('Finish what is happening first.');
+      const fuel = g.t.fuel;
       step(galaxy, galaxySeed, g, action, settings, mark, out, market, pushes);
+      if (g.t.fuel > fuel && raceBackToStart(g)) out.raceReset = true;
     }
     if (market.length) out.pushes = tidyPushes(market);
     return { ok: true, ...out };
@@ -244,6 +248,20 @@ export function applyBatch(galaxy: Galaxy, galaxySeed: string, game: Game, actio
     if (e instanceof Refused) return { ok: false, reason: e.message };
     throw e;
   }
+}
+
+/**
+ * The Comet Cup is flown on one tank: fuel bought after the start line sends the race back to it (the steps done are
+ * cleared, so the start line is next again). True if it did. Nothing is lost but the race so far.
+ */
+function raceBackToStart(g: Game): boolean {
+  const q = g.quests;
+  const quest = q?.open ? questById(q.open) : undefined;
+  if (!q || !quest?.race || q.fuelAtStart === undefined) return false;
+  const back: QuestState = { ...q, done: [] };
+  delete back.fuelAtStart;
+  g.quests = back;
+  return true;
 }
 
 /** A trade moves the school's prices at this planet: selling pushes down, buying pushes up, within the pupil's daily limit. */
@@ -332,6 +350,7 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
         if (jobs.done.includes(ji)) refuse('That job is done.');
         const taken: QuestState = { ...q, open: action.id, done: [] };
         delete taken.small;
+        delete taken.fuelAtStart;
         g.quests = taken;
         return;
       }
@@ -341,7 +360,8 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
       if (next.id !== action.id) refuse('That quest is not open yet.');
       const taken: QuestState = { ...q, open: next.id, done: [] };
       delete taken.small;
-      if (next.id === 'nettle' && isSmallShip(t)) taken.small = true;
+      delete taken.fuelAtStart;
+      if (hasSmallOrder(next) && isSmallShip(t)) taken.small = true;
       g.quests = taken;
       return;
     }
@@ -375,9 +395,10 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
         next.credits += reward;
         const finished: QuestState = { ...q, open: null, done: [], finished: [...q.finished, quest.id], lastDay: t.day };
         delete finished.small;
+        delete finished.fuelAtStart;
         g.quests = finished;
         out.quest = { finished: quest.id, reward, points: QUEST_POINTS };
-      } else g.quests = { ...q, done };
+      } else g.quests = { ...q, done, ...(step.fullTank ? { fuelAtStart: t.fuel } : {}) };
       if (!next.questCargo) delete next.questCargo;
       g.t = next;
       return;
@@ -390,7 +411,7 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
       if (quest.steps[index]?.kind !== 'pirate') refuse('There is no pirate ship to fight.');
       const problem = stepProblem(galaxy, t, g.quests, index);
       if (problem) refuse(problem);
-      startQuestFight(g, index, seed);
+      startQuestFight(g, quest, index, seed);
       return;
     }
     case 'quest-drop': {
@@ -398,6 +419,7 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
       if (!q?.open) return refuse('There is no quest to drop.');
       const dropped: QuestState = { ...q, open: null, done: [] };
       delete dropped.small;
+      delete dropped.fuelAtStart;
       g.quests = dropped;
       const next = { ...t };
       delete next.questCargo;
@@ -412,8 +434,9 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
       g.stats.jumps += 1;
       // Commander Vex's pirates wait at their planets: a fight on arrival, instead of what the jump might have met.
       const pirate = questFightHere(galaxy, g.t, g.quests);
-      if (pirate !== null) {
-        const fight = startQuestFight(g, pirate, seed);
+      const pirateQuest = openQuestOf(galaxy, g.quests)?.quest;
+      if (pirate !== null && pirateQuest) {
+        const fight = startQuestFight(g, pirateQuest, pirate, seed);
         out.encounter = { kind: 'pirates', tier: fight.tier };
         if (netWorth(galaxy, g.t) > worthBefore) g.stats.profitableJumps += 1;
         return;
@@ -436,8 +459,8 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
 }
 
 /** Starts the fight with a quest pirate (step `index`). The seed changes with each try, so a retry is a new fight. */
-function startQuestFight(g: Game, index: number, seed: string): Fight {
-  const fight = questFight(g.t, index, `${seed}:vex:${g.t.jumpNo}:${index}:${g.t.hull}:${g.asked}:${g.stats.piratesBeaten}`);
+function startQuestFight(g: Game, quest: QuestConfig, index: number, seed: string): Fight {
+  const fight = questFight(g.t, quest, index, `${seed}:vex:${g.t.jumpNo}:${index}:${g.t.hull}:${g.asked}:${g.stats.piratesBeaten}`);
   g.pending = { kind: 'fight', tier: fight.tier, fight, quest: index };
   return fight;
 }
@@ -461,9 +484,10 @@ export function applyFight(game: Game, action: FightAction, ask: Ask | undefined
       if (next.outcome === 'destroyed') g.stats.wrecks += 1;
       g.t = settleFight(g.t, next);
       g.pending = null;
-      // Beating one of Commander Vex's pirates ticks its step. Losing or getting away leaves it there to try again.
+      // Beating a quest pirate (Vex's, Pip and Pop's, Rust-Beard) ticks its step. Losing or getting away leaves it there.
       const q = g.quests;
-      if (next.outcome === 'won' && quest !== undefined && q?.open === 'vex' && !q.done.includes(quest)) g.quests = { ...q, done: [...q.done, quest].sort((a, b) => a - b) };
+      const pirateStep = q?.open ? questById(q.open)?.steps[quest ?? -1] : undefined;
+      if (next.outcome === 'won' && quest !== undefined && q && pirateStep?.kind === 'pirate' && !q.done.includes(quest)) g.quests = { ...q, done: [...q.done, quest].sort((a, b) => a - b) };
     } else g.pending = { kind: 'fight', tier, fight: next, ...(quest !== undefined ? { quest } : {}) };
     return { ok: true, game: g, answers, fight: { fight: next, tier, over } };
   } catch (e) {

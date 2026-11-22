@@ -7,7 +7,7 @@
  * and `questPlanets` picks them from the galaxy in a set way. The same galaxy always gives the same planets, so a quest is
  * the same for every pupil in a school and they can help each other.
  */
-import { GOODS, GOVERNMENTS, MEDICINE, SHIPS, WATER, GOOD_RULES } from './config';
+import { FOOD, GOODS, GOVERNMENTS, LOLLIES, MEDICINE, SHIPS, WATER, GOOD_RULES } from './config';
 import { seededRandom } from '../maths/serverQuestions';
 import { chartPoint, coordText, distance, startPlanet, type Galaxy, type Planet } from './galaxy';
 import { isBanned, marketFor, type MarketLine } from './market';
@@ -32,7 +32,7 @@ const GOV = Object.fromEntries(GOVERNMENTS.map((g, i) => [g.name, i])) as Record
 /** Resource indexes (config.ts RESOURCES). */
 const RES = { minerals: 1, poorMinerals: 2, desert: 3, water: 4, animals: 5, lifeless: 6, poorSoil: 7, richSoil: 8, artistic: 9, warlike: 10, herbs: 12 } as const;
 
-export type StepKind = 'pickup' | 'buy-deliver' | 'pirate' | 'clue' | 'deliver';
+export type StepKind = 'pickup' | 'buy-deliver' | 'pirate' | 'clue' | 'checkpoint' | 'deliver';
 
 /** A test on a planet: the kind of planet a step wants. */
 type Want = (p: Planet, g: Galaxy) => boolean;
@@ -57,16 +57,36 @@ export interface QuestStep {
   holds?: number;
   /** pickup: the name of one box in the hold, when it isn't `what` ("Games crate"). */
   cargo?: string;
+  /**
+   * buy-deliver: handed over at a planet of its own (Mayor Puddle's Water at each dry planet), not at the giver's. Without
+   * it the goods are handed over at the `near` step's planet (Dr Nettle's).
+   */
+  hands?: boolean;
+  /** At the same planet as this step (Mayor Puddle waits at the last dry planet; Sable's chest is where Rust-Beard is). */
+  same?: number;
+  /** pirate: the pirate's tier (PIRATE_TIERS index). Missing: questPirateTier's Scrappy-then-Raider rule. */
+  tier?: number;
+  /** checkpoint: ticks only with a full tank (the Comet Cup's start line); the quest keeps the fuel then (`fuelAtStart`). */
+  fullTank?: boolean;
+}
+
+/** The Comet Cup's legs: each from `min` to `max` fuel, `total` at most for the whole race (the smallest tank is 13). */
+export interface RaceLegs {
+  min: number;
+  max: number;
+  total: number;
 }
 
 export interface QuestConfig {
   id: string;
   title: string;
   giver: string;
-  /** Credits paid on finishing. Dr Nettle's is worked out from what he pays for the goods (`questReward`). */
+  /** Credits paid on finishing, plus what the giver pays for any goods (`questReward`: Dr Nettle's is goods only). */
   reward: number;
   /** Steps must be done in the order listed (Lumi's trail). Otherwise any order, except the last, which waits for the rest. */
   ordered?: boolean;
+  /** A race (the Comet Cup): the stops' legs must fit these, and refuelling after the start line sends you back to it. */
+  race?: RaceLegs;
   steps: readonly QuestStep[];
 }
 
@@ -79,8 +99,12 @@ const calm: Want = (p) => GOVERNMENTS[p.government].pirates <= 2;
 const makes = (good: number): Want => (p) => p.tech >= GOOD_RULES[good].makeTech;
 const both = (...w: Want[]): Want => (p, g) => w.every((f) => f(p, g));
 
-/** A ship with fewer holds than this gets Dr Nettle's smaller order. */
+/** A ship with fewer holds than this gets the smaller order (Dr Nettle, Mayor Puddle, Chef Gorbo). */
 export const NETTLE_FULL_HOLDS = 15;
+/** Mayor Puddle's dry planets: desert first, then lifeless, then poor soil. */
+const DRY: readonly Want[] = [hasRes(RES.desert), hasRes(RES.lifeless), hasRes(RES.poorSoil)];
+/** Where quest pirates wait. */
+const PIRATEY: readonly Want[] = [isGov('Pirate haven'), (p) => GOVERNMENTS[p.government].pirates >= 5];
 
 export const QUESTS: readonly QuestConfig[] = [
   {
@@ -151,9 +175,95 @@ export const QUESTS: readonly QuestConfig[] = [
       { kind: 'deliver', what: "Lumi's family", prefer: [hasRes(RES.animals), hasRes(RES.water), hasRes(RES.artistic)] },
     ],
   },
+  // ----- Quests 6 to 10 (docs/plans/trader-quests-2/PLAN.md), opening one a day, in order, after the first five. -----
+  {
+    id: 'puddle',
+    title: 'Mayor Puddle and the Big Dry',
+    giver: 'Mayor Puddle',
+    reward: 900,
+    steps: [
+      // Water bought at any market, 4 crates handed over at each dry planet (3 on a ship under 15 holds). The three dry
+      // planets are within one jump of each other: one to two and two to three by the leg rule, three to one by `near`.
+      { kind: 'buy-deliver', what: 'Water', good: WATER, qty: 4, smallQty: 3, hands: true, prefer: DRY },
+      { kind: 'buy-deliver', what: 'Water', good: WATER, qty: 4, smallQty: 3, hands: true, prefer: DRY },
+      { kind: 'buy-deliver', what: 'Water', good: WATER, qty: 4, smallQty: 3, hands: true, prefer: DRY, near: 0 },
+      // Mayor Puddle waits at the last dry planet. He pays a set 900, so buying the water is part of the cost.
+      { kind: 'deliver', what: 'Mayor Puddle', same: 2, prefer: [] },
+    ],
+  },
+  {
+    id: 'gorbo',
+    title: "Chef Gorbo's Galaxy Feast",
+    giver: 'Chef Gorbo',
+    reward: 400,
+    steps: [
+      { kind: 'pickup', what: 'a Moon-melon', prefer: [hasRes(RES.richSoil), isGov('Farming co-op'), techAtMost(3)] },
+      // The cheese is near pirates (it's quest cargo, so they can't take it).
+      { kind: 'pickup', what: 'Comet Cheese', prefer: [isGov('Pirate haven', 'Farming co-op'), (p) => GOVERNMENTS[p.government].pirates >= 5] },
+      // Bought at any market and handed over at Gorbo's planet, as for Dr Nettle: 400 for the pick-ups plus these.
+      { kind: 'buy-deliver', what: 'Food', good: FOOD, qty: 5, smallQty: 4, pays: 120, prefer: [], near: 4 },
+      { kind: 'buy-deliver', what: 'Lollies', good: LOLLIES, qty: 3, smallQty: 2, pays: 60, prefer: [], near: 4 },
+      { kind: 'deliver', what: 'Chef Gorbo', prefer: [isGov('Merchant guild', 'Class vote'), calm] },
+    ],
+  },
+  {
+    id: 'zip',
+    title: 'The Comet Cup',
+    giver: 'Zip Zoomer',
+    reward: 1100,
+    ordered: true,
+    // The whole race fits the smallest tank (13), every leg 2 to 5 fuel, so a pupil has to add up the legs.
+    race: { min: 2, max: 5, total: 13 },
+    // Three planets in order: the start line, the checkpoint and the finish line, where Zip waits. Planets are 3 to 5 apart,
+    // so only about half the galaxies have four planets in a row within 13 fuel; every galaxy has three (two legs, 6 to 10).
+    steps: [
+      { kind: 'checkpoint', what: 'the start line', fullTank: true, prefer: [] },
+      { kind: 'checkpoint', what: 'the checkpoint', prefer: [] },
+      { kind: 'deliver', what: 'Zip Zoomer at the finish line', prefer: [] },
+    ],
+  },
+  {
+    id: 'pippop',
+    title: "Pip and Pop's Runaway Pets",
+    giver: 'Pip and Pop',
+    reward: 1200,
+    steps: [
+      { kind: 'pickup', what: 'Fluff', prefer: [hasRes(RES.animals), isGov('Farming co-op')] },
+      { kind: 'pickup', what: 'Splodge', prefer: [hasRes(RES.water), isGov('Peace garden')] },
+      { kind: 'pickup', what: 'Zoom', prefer: [hasRes(RES.richSoil), techAtMost(3)] },
+      // A Raider has Wiggles: a fight on arrival, Navy laser lent, gentle loss, as for Commander Vex.
+      { kind: 'pirate', what: 'the pirate with Wiggles', tier: 1, prefer: PIRATEY },
+      { kind: 'deliver', what: 'Pip and Pop', prefer: [isGov('Peace garden', 'Temple'), calm] },
+    ],
+  },
+  {
+    id: 'sable',
+    title: "Captain Sable's Lost Treasure",
+    giver: 'Captain Sable',
+    reward: 1500,
+    ordered: true,
+    steps: [
+      { kind: 'clue', what: 'a map mark', prefer: [] },
+      { kind: 'clue', what: 'a map mark', prefer: [] },
+      { kind: 'clue', what: 'a map mark', prefer: [] },
+      // Rust-Beard, a Captain, guards the treasure planet. Navy laser lent, gentle loss; he stays till he's beaten.
+      { kind: 'pirate', what: 'Rust-Beard', tier: 2, prefer: PIRATEY },
+      { kind: 'deliver', what: "Captain Sable's treasure", same: 3, prefer: [] },
+    ],
+  },
 ];
 
+/** The first five quests: today's jobs come on and Star Quest Master is earned when these are done (not all ten). */
+export const FIRST_SET: readonly string[] = ['zuzu', 'sprocket', 'nettle', 'vex', 'kai'];
+/** The first five quests' configs, in order. The Quests tab shows only these until quests 6 to 10 have their screens (R.2). */
+export const FIRST_QUESTS: readonly QuestConfig[] = QUESTS.filter((q) => FIRST_SET.includes(q.id));
+
 export const questById = (id: string): QuestConfig | undefined => QUESTS.find((q) => q.id === id);
+
+/** A step with no planet of its own: goods handed over at another step's planet, or a step at the `same` planet. */
+export const sharesPlanet = (s: QuestStep): boolean => (s.kind === 'buy-deliver' && !s.hands) || s.same !== undefined;
+/** The step whose planet a sharing step uses. */
+const sharedWith = (s: QuestStep, n: number): number => s.same ?? s.near ?? n - 1;
 
 // ---------------------------------------------------------------------------------------------
 // Choosing the planets
@@ -174,19 +284,23 @@ function allowed(quest: QuestConfig, i: number, p: Planet, g: Galaxy, chosen: re
   const near = quest.steps[i].near;
   const anchor = near === undefined ? undefined : chosen[near];
   if (anchor !== undefined && distance(g.planets[anchor], p) > QUEST_MAX_LEG) return false;
-  return true;
+  // Goods handed over here must be allowed here (Chef Gorbo's Lollies), or customs would take them on landing.
+  const n = quest.steps.length;
+  const handed = quest.steps.filter((s, j) => s.kind === 'buy-deliver' && (s.hands ? j === i : sharedWith(s, n) === i));
+  return handed.every((s) => !isBanned(p, s.good ?? 0));
 }
 
+/** The steps with a planet of their own, in the order they are listed (the order the stops are visited in). */
+const ownStops = (quest: QuestConfig): number[] => quest.steps.map((s, i) => (sharesPlanet(s) ? -1 : i)).filter((i) => i >= 0);
+
 /**
- * The order the stops are visited in, as indexes into `steps`, and which steps have a planet of their own. Dr Nettle's
- * goods are bought anywhere and handed over at his planet; Vex's garden is picked first so the pirates can wait around it.
+ * The order the stops' planets are picked in, as indexes into `steps`. Vex's garden is picked first so the pirates can
+ * wait around it; otherwise the listed order.
  */
 function route(quest: QuestConfig): number[] {
-  const own = quest.steps.map((s, i) => (s.kind === 'buy-deliver' ? -1 : i)).filter((i) => i >= 0);
-  if (quest.steps.some((s) => s.near !== undefined && quest.steps[s.near].kind !== 'buy-deliver')) {
-    const anchor = quest.steps.length - 1;
-    return [anchor, ...own.filter((i) => i !== anchor)];
-  }
+  const own = ownStops(quest);
+  const anchor = quest.steps.length - 1;
+  if (quest.steps.some((s) => !sharesPlanet(s) && s.near === anchor)) return [anchor, ...own.filter((i) => i !== anchor)];
   return own;
 }
 
@@ -207,7 +321,8 @@ function pickFor(galaxy: Galaxy, quest: QuestConfig, used: ReadonlySet<number>, 
   const start = startPlanet(galaxy);
   const steps = quest.steps;
   // The order the steps are visited in for the leg rule: the listed order of the steps with planets of their own.
-  const visit = steps.map((s, i) => (s.kind === 'buy-deliver' ? -1 : i)).filter((i) => i >= 0);
+  const visit = ownStops(quest);
+  const race = quest.race;
   const cost = (i: number, p: Planet): number => rank(steps[i], p, galaxy) * 10 + (used.has(p.id) ? 4 : 0) + (p.id === start ? 3 : 0);
   const candidates = order.map((i) =>
     galaxy.planets
@@ -223,11 +338,22 @@ function pickFor(galaxy: Galaxy, quest: QuestConfig, used: ReadonlySet<number>, 
     const at = visit.indexOf(i);
     for (const j of [visit[at - 1], visit[at + 1]]) {
       const other = j === undefined ? undefined : chosen[j];
-      if (other !== undefined && distance(galaxy.planets[other], p) > maxLeg) return false;
+      if (other === undefined) continue;
+      const leg = distance(galaxy.planets[other], p);
+      if (race ? leg < race.min || leg > race.max : leg > maxLeg) return false;
     }
-    return true;
+    if (!race) return true;
+    // The Comet Cup: the legs picked so far, with this stop, fit in one small tank.
+    let total = 0;
+    for (let k = 1; k < visit.length; k++) {
+      const a = visit[k - 1] === i ? p.id : chosen[visit[k - 1]];
+      const b = visit[k] === i ? p.id : chosen[visit[k]];
+      if (a !== undefined && b !== undefined) total += distance(galaxy.planets[a], galaxy.planets[b]);
+    }
+    return total <= race.total;
   };
   const legPenalty = (i: number, p: Planet): number => {
+    if (race) return 0;
     const at = visit.indexOf(i);
     let pen = 0;
     for (const j of [visit[at - 1], visit[at + 1]]) {
@@ -255,8 +381,8 @@ function pickFor(galaxy: Galaxy, quest: QuestConfig, used: ReadonlySet<number>, 
   search(0, 0);
   const found: (number | undefined)[] | null = best;
   if (!found) return null;
-  // Steps without a planet of their own (Dr Nettle's goods) are handed over at the delivery planet.
-  return steps.map((s, i) => found[s.kind === 'buy-deliver' ? s.near ?? n - 1 : i] as number);
+  // Steps without a planet of their own (Dr Nettle's goods, Mayor Puddle) use another step's planet.
+  return steps.map((s, i) => found[sharesPlanet(s) ? sharedWith(s, n) : i] as number);
 }
 
 const picked = new WeakMap<Galaxy, number[][]>();
@@ -271,7 +397,10 @@ export function questPlanets(galaxy: Galaxy): number[][] {
   if (known) return known;
   const used = new Set<number>();
   const all = QUESTS.map((q) => {
-    const set = pickFor(galaxy, q, used, QUEST_MAX_LEG) ?? pickFor(galaxy, q, used, 13) ?? pickFor(galaxy, q, used, 20);
+    // The Comet Cup always fits the smallest tank; a galaxy with no tight cluster gets longer legs (none found in testing).
+    const set = q.race
+      ? [q.race.max, 7, 13].reduce<number[] | null>((found, max) => found ?? pickFor(galaxy, { ...q, race: { ...q.race!, max } }, used, QUEST_MAX_LEG), null)
+      : pickFor(galaxy, q, used, QUEST_MAX_LEG) ?? pickFor(galaxy, q, used, 13) ?? pickFor(galaxy, q, used, 20);
     if (!set) throw new Error(`No planets for quest ${q.id}`);
     set.forEach((id) => used.add(id));
     return set;
@@ -289,8 +418,10 @@ export interface QuestState {
   open: string | null;
   /** Indexes of its steps done. */
   done: number[];
-  /** Dr Nettle's smaller order (a ship under NETTLE_FULL_HOLDS holds when the quest was taken). */
+  /** The smaller order (Dr Nettle, Mayor Puddle, Chef Gorbo): a ship under NETTLE_FULL_HOLDS holds when the quest was taken. */
   small?: boolean;
+  /** The Comet Cup: the fuel in the tank at the start line. Refuelling after that sends the race back to the start line. */
+  fuelAtStart?: number;
   /** Quests finished, in the order finished. */
   finished: string[];
   /** The NZ day the last quest was finished (null: none yet). At most one new quest opens a day. */
@@ -321,12 +452,13 @@ export function nextQuest(q: QuestState | undefined, day: number, pick?: string)
 /** How many of a buy-deliver step's goods are wanted on this attempt. */
 export const stepQty = (step: QuestStep, small: boolean | undefined): number => (small ? step.smallQty ?? step.qty ?? 0 : step.qty ?? 0);
 
-/** What a quest pays on finishing: its reward, or for Dr Nettle what he pays for the goods. */
+/** What a quest pays on finishing: its reward plus what the giver pays for the goods (Dr Nettle: the goods only; Chef Gorbo: 400 plus the goods). */
 export function questReward(quest: QuestConfig, small?: boolean): number {
-  const goods = quest.steps.filter((s) => s.kind === 'buy-deliver');
-  if (!goods.length) return quest.reward;
-  return goods.reduce((sum, s) => sum + stepQty(s, small) * (s.pays ?? 0), 0);
+  return quest.steps.reduce((sum, s) => sum + (s.kind === 'buy-deliver' ? stepQty(s, small) * (s.pays ?? 0) : 0), quest.reward);
 }
+
+/** The quest has a smaller order for small ships (goods to buy), so a ship under NETTLE_FULL_HOLDS gets it when taking it. */
+export const hasSmallOrder = (quest: QuestConfig): boolean => quest.steps.some((s) => s.kind === 'buy-deliver' && s.smallQty !== undefined);
 
 /** Why a step can't be done right now, or null if it can. Shared by the server's moves and the screens. */
 export function stepProblem(galaxy: Galaxy, t: Trader, q: QuestState | undefined, index: number): string | null {
@@ -341,6 +473,7 @@ export function stepProblem(galaxy: Galaxy, t: Trader, q: QuestState | undefined
   if (quest.ordered && quest.steps.some((_, i) => i < index && !q.done.includes(i))) return 'Do the steps in order.';
   const planet = galaxy.planets[open.planets[index]];
   if (t.location !== planet.id) return `Fly to ${planet.name} first.`;
+  if (step.fullTank && t.fuel < SHIPS[t.ship].fuelTank) return `Fill your tank to the top first (${t.fuel} of ${SHIPS[t.ship].fuelTank}).`;
   const holds = step.holds ?? 1;
   if (step.kind === 'pickup' && freeHolds(t) < holds) return `Make room: ${holds} free hold${holds === 1 ? '' : 's'} needed.`;
   if (step.kind === 'buy-deliver') {
@@ -355,8 +488,11 @@ export function stepProblem(galaxy: Galaxy, t: Trader, q: QuestState | undefined
 // Commander Vex's pirates and Lumi's clues (Q.4)
 // ---------------------------------------------------------------------------------------------
 
-/** Vex's pirates: Scrappy pirates for the first two, a Raider for the third, never a Captain (PIRATE_TIERS indexes). */
-export const questPirateTier = (step: number): number => (step >= 2 ? 1 : 0);
+/**
+ * A quest pirate's tier (PIRATE_TIERS index): the step's own (Pip and Pop's Raider, Rust-Beard the Captain), else Vex's
+ * rule, Scrappy pirates for the first two and a Raider for the third.
+ */
+export const questPirateTier = (quest: QuestConfig, step: number): number => quest.steps[step]?.tier ?? (step >= 2 ? 1 : 0);
 
 /** The open quest's pirate step waiting at the ship's planet, ready to fight (null: none). */
 export function questFightHere(galaxy: Galaxy, t: Trader, q: QuestState | undefined): number | null {
@@ -366,8 +502,8 @@ export function questFightHere(galaxy: Galaxy, t: Trader, q: QuestState | undefi
   return i < 0 ? null : i;
 }
 
-/** A quest fight against the pirate ship of step `step`, with Vex's Navy laser lent and a gentle loss. */
-export const questFight = (t: Trader, step: number, seed: string): Fight => startFight(t, questPirateTier(step), seed, { lent: NAVY_LASER.power });
+/** A quest fight against the pirate ship of step `step`, with the Navy laser lent and a gentle loss. */
+export const questFight = (t: Trader, quest: QuestConfig, step: number, seed: string): Fight => startFight(t, questPirateTier(quest, step), seed, { lent: NAVY_LASER.power });
 
 /**
  * Lumi's clue: the move on the star chart from one planet to another, "From here, go 3 right and 2 down." Only shown,
@@ -479,8 +615,8 @@ export function jobIndex(id: string | null | undefined): number | null {
   return m ? Number(m[1]) : null;
 }
 
-/** All five story quests finished this season: daily jobs are on. */
-export const allQuestsDone = (q: QuestState | undefined): boolean => !!q && QUESTS.every((c) => q.finished.includes(c.id));
+/** The first five story quests finished this season: daily jobs are on (whether or not quests 6 to 10 are done). */
+export const allQuestsDone = (q: QuestState | undefined): boolean => !!q && FIRST_SET.every((id) => q.finished.includes(id));
 
 /** A crate job pays what a normal trade of the same goods would make, plus this, plus JOB_BONUS_EACH a crate. */
 export const JOB_BONUS = 10;

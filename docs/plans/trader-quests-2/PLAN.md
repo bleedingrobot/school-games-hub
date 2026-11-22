@@ -2,7 +2,7 @@
 
 22 Nov 2026. James: "can we plan another set of 5 quests for star traders please, should unlock after the first 5 are completed." He agreed to the plan below as drafted ("Yes, go ahead"), with the picks in section 7.
 
-**Status:** plan, stories and all 31 paintings done (this PR), voices sampled (review page https://claude.ai/artifact/8fQgUpWKwJ4CKNKFQ6caAn). Nothing in the game yet: stages R.1 to R.4 below.
+**Status:** plan, stories and all 31 paintings done (this PR), voices sampled (review page https://claude.ai/artifact/8fQgUpWKwJ4CKNKFQ6caAn). R.1 done: the rules and server for all five (`shared/trader/quests.ts`), no screens yet; the Quests tab still shows only the first five. R.2 to R.4 below.
 
 The first five quests are in [../trader-quests/PLAN.md](../trader-quests/PLAN.md). Everything there still holds (fixed planets, one quest at a time, gold rings, Bolt's next stop, gentle fights, drop any time); this plan only says what is new.
 
@@ -21,7 +21,7 @@ The first five quests are in [../trader-quests/PLAN.md](../trader-quests/PLAN.md
 |---|---|---|---|---|---|
 | 6 | Mayor Puddle and the Big Dry | Mayor Puddle, frog-person mayor (Kokoro `am_eric`) | Relief | Buy 12 Water anywhere, then hand 4 to each of 3 dry planets (3 each on a ship under 15 holds) | 900 |
 | 7 | Chef Gorbo's Galaxy Feast | Chef Gorbo, pear-shaped orange space chef (`am_onyx`) | Collect + trade | Pick up a Moon-melon and Comet Cheese (the cheese on a pirate-ish planet), buy 5 Food and 3 Lollies, take it all to Gorbo's planet | about 1,000 |
-| 8 | The Comet Cup | Zip Zoomer, race announcer (`am_fenrir`) | Race | From the start line, fly through 4 checkpoints in order **on one tank**: buying fuel after the start line puts you back to the start | 1,100 |
+| 8 | The Comet Cup | Zip Zoomer, race announcer (`am_fenrir`) | Race | From the start line, past the checkpoint, to the finish line, in order, **on one tank**: buying fuel after the start line puts you back to the start (R.1: three planets, not five; see "What R.1 built") | 1,100 |
 | 9 | Pip and Pop's Runaway Pets | Pip and Pop, alien twins (`af_nicole` and `af_bella`, a page each) | Gather + defend | Pick up Fluff, Splodge and Zoom from animal-ish planets; win Wiggles back from a pirate (a fight, like Vex's), then home to the twins | 1,200 |
 | 10 | Captain Sable's Lost Treasure | Captain Sable, retired pirate queen (`bf_emma`) | Trail + boss | Follow 3 map clues like Lumi's (Show me if stuck), then beat Rust-Beard (a Captain pirate, gentle loss) at the treasure planet | 1,500 |
 
@@ -47,12 +47,35 @@ The stories (5 pages each, under 30 words a page) are in [stories.json](stories.
 
 | Stage | What | Size |
 |---|---|---|
-| **R.1** | Rules and server: five config entries, `FIRST_SET` for jobs and Star Quest Master, `hands` buy-deliver steps, the race (`checkpoint`, `fuelAtStart`, reset on refuel), the boss tier; tests (fold into the quest test, the budget is full) | Medium |
+| **R.1** ✅ | Rules and server: five config entries, `FIRST_SET` for jobs and Star Quest Master, `hands` buy-deliver steps, the race (`checkpoint`, `fuelAtStart`, reset on refuel), the boss tier; tests (fold into the quest test, the budget is full) | Medium |
 | **R.2** | Quests tab: "More quests" heading, the new step lines (water per planet, race fuel sum, Rust-Beard card), Bolt lines, preview tools to open each new quest | Medium |
 | **R.3** | Stories with each giver's voice (twins two voices), the 📖 shelf, paintings into the game | Small |
 | **R.4** | Five more Quest Log keepsakes (Rain-drop, Golden spoon, Comet Cup, Pet collar, Treasure coin), 2 hub points each, Star Quest Legend achievement and season trophy (migration), What's new line, go live | Small |
 
 Each stage goes live on its own, like the first five.
+
+### What R.1 built (22 Nov 2026)
+
+- **Five config entries** after Lumi in `QUESTS`: `puddle`, `gorbo`, `zip`, `pippop`, `sable` (900, 400 + goods, 1,100, 1,200, 1,500). `nextQuest` opens them one a day, in order, after Lumi; a teacher can still take any quest in any order.
+- **`FIRST_SET`** (the first five ids): `allQuestsDone` means the first five, so today's jobs come on after Lumi and stay on while quests 6 to 10 are played (a job and a quest are still never open together). Star Quest Master is unchanged: the database log and trophy only know the first five (R.4 adds Star Quest Legend). `FIRST_QUESTS` keeps the Quests tab, Quest Log and Quest complete moment on the first five until R.2 shows the rest.
+- **New step fields:** `hands` (a buy-deliver step handed over at its own planet), `same` (a step at another step's planet), `tier` (a quest pirate's tier), `fullTank` (a step that ticks only with a full tank), and a quest's `race` legs. New step kind `checkpoint` (done with the `quest-pickup` move, like a clue). No new moves, so the trader function's action check is unchanged; the function is rebuilt.
+- **Mayor Puddle:** 4 Water at each of 3 dry planets (desert, then lifeless, then poor soil), 3 each on a ship under 15 holds (`small`, now for any quest with a smaller order). The three are within 12 fuel of each other; he waits at the third. He pays a set 900.
+- **Chef Gorbo:** Moon-melon (rich soil) and Comet Cheese (Pirate haven or Farming co-op) pick-ups, and 5 Food and 3 Lollies bought anywhere (4 and 2 on a small ship), handed over at his planet. `questReward` is now the reward plus the goods: 400 + 120 a Food + 60 a Lolly = 1,180 (1,000 small). A planet where goods are handed over never bans them (so Gorbo's planet always allows Lollies).
+- **The Comet Cup:** ordered steps: the start line (`checkpoint`, `fullTank`), the checkpoint, and the finish line where Zip waits. Ticking the start line keeps `fuelAtStart`. Any move that adds fuel after that (`applyBatch` compares the fuel before and after each move) clears the steps done, so the start line is next again, and the reply says `raceReset: true` for a gentle note. Drop, finish or a new quest clear `fuelAtStart`.
+  - **Change from the plan:** planets are 3 to 5 apart, so only about half of all galaxies have four planets in a row within 13 fuel (measured on 300 galaxies). The race is three planets (two legs of 2 to 5 fuel, 13 at most in all, checked on 300 galaxies), so it fits every ship's tank in every school. Zip's page 2 in [stories.json](stories.json) now says "past the checkpoint". A longer race would need either fewer schools or a bigger fuel limit than the Termite's 13.
+- **Pip and Pop:** Fluff (rich animals), Splodge (lots of water), Zoom (rich soil), then the Raider with Wiggles (`tier: 1`, on a pirate-ish planet), then home to the twins (Peace garden or Temple). A fight on arrival, Navy laser lent, gentle loss, as for Vex.
+- **Captain Sable:** three map marks in order (`clue`, as for Lumi), then Rust-Beard (`tier: 2`, a Pirate captain) at the treasure planet, then the treasure at the same planet. Navy laser lent, gentle loss; he stays till beaten. A Captain is hard on a Flea (hull 25), easy on a Gnat or better.
+- **Quest pirates in general:** a win ticks any open quest's pirate step (was Vex only); `questPirateTier` takes the step's `tier` first.
+- **First five unchanged:** the test checks the first five quests' planets for the test galaxy against the ones taken on main before this change, and a checksum of them on 300 galaxies.
+- **Tests:** folded into the existing quest test (`shared/trader/quests.test.ts`), budget still 12.
+
+### Left for R.2
+
+- **Quests tab:** a "More quests" heading with cards 6 to 10 (switch `FIRST_QUESTS` back to `QUESTS` in `QuestsPanel.tsx`, `TraderGame.tsx` and the try-out's "Finish all quests", keeping Star Quest Master to `FIRST_SET`). Rewards on the cards: Gorbo's "400 + what he pays for the goods" like Dr Nettle's.
+- **Step lines** (`questGuide.ts`): "4 Water here (you have 12)" for each dry planet; the race's "Fuel left: 9. Still to fly: 7", the full-tank hint on the start line and the gentle "You refuelled, so it's back to the start line" note from `raceReset`; Rust-Beard's card (Captain, not "a pirate ship"); Sable's marks as clues ("Follow mark 1 of Captain Sable's map", Show me), including the clue to the treasure planet; the twins' Wiggles fight line; delivery words for each giver (`DELIVER`), and the "who is here" lines (Lumi's is special-cased by id).
+- **Landing card and Bolt** for the new kinds (checkpoint, hands water), and the gold rings for planets shared by two steps (Puddle, Sable).
+- **Preview tools** to open each new quest (`tools.openQuest` already takes any id).
+- The first-time pirate tip is skipped in quest fights already; check it for the Captain.
 
 ## 6. Later, if pupils like it
 
