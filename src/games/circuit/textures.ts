@@ -43,8 +43,8 @@ function board(g: CanvasRenderingContext2D, base: string, line: string) {
 export const BOARDS = {
   motherboard: ['#0b3b2c', '#d8b24a'],
   graphics: ['#3a0f0a', '#ff8a3d'],
-  memory: ['#0c2442', '#c7d7ea'],
-  cloud: ['#15385c', '#9ff3ff'],
+  memory: ['#0a1d38', '#7fa3cf'],
+  cloud: ['#123150', '#67cfe3'],
   quantum: ['#26093f', '#f5c542'],
 } as const;
 
