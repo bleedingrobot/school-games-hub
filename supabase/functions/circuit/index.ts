@@ -8458,7 +8458,7 @@ function inputPlayer(log) {
 		return current;
 	};
 }
-const CHANGE = /^(\d{1,6})\.(\d{1,5})\.(\d{1,2})$/;
+const CHANGE = /^(\d{1,7})\.(\d{1,5})\.(\d{1,2})$/;
 /** Null if the text isn't a well-made log (in order, codes in range, not too long). */
 function decodeLog(text) {
 	if (text === "") return [];
@@ -8499,15 +8499,23 @@ function decodeLog(text) {
 * Maths spots (Stage 3): a run of rows with `+` is one recharge port; a run of rows with `?` is one data gate, and the
 * lanes with `?` in its first row (the split row) are its signed lanes, left to right (2 to 4). Every port and gate asks
 * one question, so they are at least QUESTION_GAP rows apart, and no short-circuit tile sits near a gate.
+*
+* Checkpoints (Stage 4): a row ending with ` @` puts a checkpoint on its first row. Roads over a minute have them: crash or
+* fall after one and the racer restarts there (physics.ts), on the plain trace nearest the middle.
 */
 const CELLS = ".->rxg+123t?";
-const ROW = /^([.\->rxg+123t?]{7})(?: x([1-9]\d{0,3}))?$/;
+const ROW = /^([.\->rxg+123t?]{7})(?: x([1-9]\d{0,3}))?( @)?$/;
 /** Reads a road, or throws with the row that is wrong. */
 function parseRoad(def) {
 	let cells = "";
+	const checkpoints = [];
 	def.rows.forEach((text, i) => {
 		const m = ROW.exec(text);
-		if (!m) throw new Error(`${def.id}: row ${i + 1} "${text}" is not 7 road letters (${CELLS}), with an optional " xN"`);
+		if (!m) throw new Error(`${def.id}: row ${i + 1} "${text}" is not 7 road letters (${CELLS}), with an optional " xN" and " @"`);
+		if (m[3]) {
+			if (!m[1].includes("-")) throw new Error(`${def.id}: the checkpoint on row ${i + 1} needs a plain trace to restart on`);
+			checkpoints.push(cells.length / 7);
+		}
 		cells += m[1].repeat(m[2] ? Number(m[2]) : 1);
 	});
 	if (cells.length === 0) throw new Error(`${def.id}: no rows`);
@@ -8543,7 +8551,8 @@ function parseRoad(def) {
 		ports: p.list,
 		gates,
 		portAt: p.at,
-		gateAt: g.at
+		gateAt: g.at,
+		checkpoints
 	};
 	checkMathsSpots(road);
 	return road;
@@ -8557,6 +8566,19 @@ function checkMathsSpots(road) {
 		if (gate.lanes.length < GATE_LANES.min || gate.lanes.length > GATE_LANES.max) throw new Error(`${id}: the gate at row ${gate.first + 1} needs ${GATE_LANES.min} to ${GATE_LANES.max} lanes`);
 		for (let row = Math.max(0, gate.first - 24); row <= gate.last; row++) if (road.cells.slice(row * 7, row * 7 + 7).includes("x")) throw new Error(`${id}: a short circuit at row ${row + 1} is too near the gate at row ${gate.first + 1}`);
 	}
+}
+/** Where a racer restarts at a checkpoint row: the plain-trace lane nearest the middle (left first). */
+function restartLane(road, row) {
+	for (const d of [
+		0,
+		-1,
+		1,
+		-2,
+		2,
+		-3,
+		3
+	]) if (cellAt(road, 3 + d, row) === "-") return 3 + d;
+	return 3;
 }
 /** The cell in a lane and row. Outside the road (either side, before the start, after the end) is a gap. */
 function cellAt(road, lane, row) {
@@ -8587,6 +8609,10 @@ function topOf(cell) {
 * Space: x across the road (lane i is x from i to i+1), y up (floor tops at 0), z along the road (row r is z from r
 * to r+1). The racer is a point for hitting things, HALF_WIDTH wide for the ledge slip.
 */
+/** Input slots one life (one go from the start or a checkpoint) can use: a whole road's worth, so lives never overlap. */
+const lifeSlots = (road) => (road.length + 2) * 8;
+/** The input slot for a place on the road in a life (inputs.ts). */
+const slotOf = (road, z, lives) => Math.floor(z * 8) + lives * lifeSlots(road);
 const EPS = 1e-6;
 function newRace(road, opts = {}) {
 	return {
@@ -8620,7 +8646,12 @@ function newRace(road, opts = {}) {
 		pendingPort: -1,
 		gatesPassed: 0,
 		choices: road.gates.map(() => -1),
-		boostGate: -1
+		boostGate: -1,
+		checkpoint: -1,
+		checkpointBattery: 100,
+		checkpointSignal: 100,
+		lives: 0,
+		timeLimit: opts.timeLimit ?? 0
 	};
 }
 /** True if the point is inside something solid. */
@@ -8646,12 +8677,57 @@ function pieceAt(road, x, y, z) {
 	};
 }
 const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
+/** Can this ended run go on (a checkpoint restart still to come)? */
+const willRespawn = (s) => s.outcome !== "racing" && s.outcome !== "finished" && s.outcome !== "outOfTime" && s.checkpoint >= 0;
+/**
+* Restarts at the last checkpoint passed: standing still on its plain trace nearest the middle, with the battery and signal
+* it had there. Ports after the checkpoint can be used again (a known answer refills without asking), gates after it are
+* crossed again. The time includes the 1.5 s pause.
+*/
+function respawn(s, road) {
+	const row = road.checkpoints[s.checkpoint];
+	Object.assign(s, {
+		x: restartLane(road, row) + .5,
+		y: 0,
+		z: row + .5,
+		vy: 0,
+		vz: 0,
+		steer: 0,
+		steerScale: 1,
+		slide: 0,
+		grounded: true,
+		jumping: false,
+		airSteps: 0,
+		autoPilotChecked: false,
+		autoPilotOn: false,
+		autoPilotGiveBack: 0,
+		battery: s.checkpointBattery,
+		signal: s.checkpointSignal,
+		outcome: "racing",
+		deadSteps: 0,
+		lives: s.lives + 1,
+		slotSteps: 0,
+		lastPortRow: -2,
+		pendingPort: -1,
+		boostGate: -1
+	});
+	s.slot = slotOf(road, s.z, s.lives);
+	road.ports.forEach((p, i) => {
+		if (p.first >= row) s.portsUsed &= ~(1 << i);
+	});
+	s.gatesPassed = road.gates.filter((g) => g.first < row).length;
+	s.steps += 45;
+}
 /** One step of the race. Pure: `prev` is not changed. */
 function step(prev, input, road) {
 	const s = { ...prev };
 	const events = [];
 	if (s.outcome !== "racing") {
 		if (s.outcome !== "finished") s.deadSteps++;
+		if (s.deadSteps >= 45 && willRespawn(s)) {
+			respawn(s, road);
+			events.push("respawn");
+		}
 		return {
 			state: s,
 			events
@@ -8747,8 +8823,14 @@ function step(prev, input, road) {
 		s.boostGate = s.gateRight !== null && s.gateRight[g] === lane ? g : -1;
 		events.push("gate");
 	}
+	while (s.checkpoint + 1 < road.checkpoints.length && s.z >= road.checkpoints[s.checkpoint + 1]) {
+		s.checkpoint++;
+		s.checkpointBattery = s.battery;
+		s.checkpointSignal = s.signal;
+		events.push("checkpoint");
+	}
 	s.steps++;
-	const slot = Math.floor(s.z * 8);
+	const slot = slotOf(road, s.z, s.lives);
 	if (slot !== s.slot) {
 		s.slot = slot;
 		s.slotSteps = 0;
@@ -8766,6 +8848,7 @@ function step(prev, input, road) {
 		s.signal = 0;
 		return end(s, events, "outOfSignal", "outOfSignal");
 	}
+	if (s.timeLimit > 0 && s.steps >= s.timeLimit) return end(s, events, "outOfTime", "outOfTime");
 	return {
 		state: s,
 		events
@@ -8895,9 +8978,909 @@ function runAutoPilot(s, input, road) {
 function replay(road, log, opts = {}) {
 	const play = inputPlayer(log);
 	let s = newRace(road, opts);
-	while (s.outcome === "racing" && s.steps < 18e3) s = step(s, decodeInput(play(s)), road).state;
+	while ((s.outcome === "racing" || willRespawn(s)) && s.steps < 18e3) s = step(s, decodeInput(play(s)), road).state;
 	return s;
 }
+//#endregion
+//#region shared/circuit/roads/cloud.ts
+/**
+* World 4, The Cloud (docs/CIRCUIT-PLAN.md, section 3): white and cyan data clouds in a bright sky. Lighter gravity, floaty
+* jumps (apex 1.64: every chip can be climbed; gaps of 4 to 6 rows), so the roads are long gaps, sideways stepping stones
+* high in the sky and tall chip towers. Our own layouts. Letters in road.ts.
+*/
+const world$4 = "cloud";
+const gravity$4 = GRAVITY.cloud;
+const CLOUD_ROADS = [
+	{
+		id: "upload",
+		name: "Upload",
+		world: world$4,
+		gravity: gravity$4,
+		battery: 26,
+		signal: 64,
+		rows: [
+			"------- x16",
+			"..---.. x8",
+			"....... x4",
+			"..---.. x8",
+			"...-... x8",
+			"....... x4",
+			"...-... x8",
+			"..---.. x6",
+			"------- x12",
+			".?.?.?. x12",
+			"------- x8",
+			"..+++.. x3",
+			"..---.. x8",
+			".--.--. x6",
+			"....... x5",
+			".--.--. x6",
+			"..---.. x6",
+			"..333.. x6",
+			"....... x4",
+			"..---.. x8",
+			"------- x16"
+		]
+	},
+	{
+		id: "sky-server",
+		name: "Sky Server",
+		world: world$4,
+		gravity: gravity$4,
+		battery: 26,
+		signal: 64,
+		rows: [
+			"------- x16",
+			"..---.. x6",
+			"....... x4",
+			".--.... x6",
+			"....... x4",
+			"..--... x6",
+			"....... x4",
+			"...--.. x6",
+			"....... x4",
+			"....--. x6",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6",
+			"------- x12",
+			"?.?.?.? x12",
+			"------- x8",
+			"...-... x10",
+			"....... x5",
+			"...-... x8",
+			"..---.. x6",
+			"..222.. x6",
+			"..333.. x6",
+			"....... x5",
+			"..---.. x6",
+			"------- x16"
+		]
+	},
+	{
+		id: "cloud-hop",
+		name: "Cloud Hop",
+		world: world$4,
+		gravity: gravity$4,
+		battery: 26,
+		signal: 64,
+		rows: [
+			"------- x16",
+			"..---.. x6",
+			"....... x3",
+			"..---.. x4",
+			"....... x3",
+			"..---.. x4",
+			"....... x3",
+			"..---.. x4",
+			"..+++.. x3",
+			"..---.. x6",
+			"..>>>.. x6",
+			"....... x6",
+			"..---.. x8",
+			"------- x12",
+			".??.??. x12",
+			"------- x8",
+			".-...-. x8",
+			"....... x4",
+			".-...-. x6",
+			".--.--. x6",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6",
+			"...-... x6",
+			"....... x5",
+			"...-... x6",
+			"------- x16"
+		]
+	},
+	{
+		id: "stream-jump",
+		name: "Stream Jump",
+		world: world$4,
+		gravity: gravity$4,
+		battery: 26,
+		signal: 66,
+		rows: [
+			"------- x16",
+			"..---.. x6",
+			"..333.. x8",
+			"....... x4",
+			"..333.. x8",
+			"....... x4",
+			"..---.. x8",
+			"..+++.. x3",
+			"..---.. x6 @",
+			".--.... x6",
+			"....... x4",
+			"..--... x6",
+			"....... x4",
+			"...--.. x6",
+			"....... x4",
+			"....--. x6",
+			"...--.. x4",
+			"..---.. x6",
+			"------- x12",
+			".?.?.?. x12",
+			"------- x8",
+			"..+++.. x3",
+			"..---.. x6 @",
+			"...-... x8",
+			"....... x5",
+			"...-... x6",
+			"....... x5",
+			"...-... x6",
+			"..---.. x6",
+			"..>>>.. x6",
+			"....... x6",
+			"..---.. x6",
+			"------- x12",
+			"?.?.?.? x12",
+			"------- x16"
+		]
+	},
+	{
+		id: "data-drift",
+		name: "Data Drift",
+		world: world$4,
+		gravity: gravity$4,
+		battery: 26,
+		signal: 66,
+		rows: [
+			"------- x16",
+			"..ggg.. x8",
+			"....... x4",
+			"..---.. x6",
+			"..rrr.. x3",
+			"..---.. x6",
+			"....... x3",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6 @",
+			".--.--. x6",
+			".-...-. x6",
+			"....... x5",
+			".-...-. x6",
+			".--.--. x4",
+			"------- x12",
+			".?.?.?. x12",
+			"------- x8",
+			"..+++.. x3",
+			"..---.. x6",
+			"..222.. x6",
+			"..2.2.. x6",
+			"..222.. x4",
+			"....... x5",
+			"..---.. x6 @",
+			"...t... x14",
+			"..---.. x6",
+			"...-... x6",
+			"....... x4",
+			"...-... x6",
+			"....... x4",
+			"...-... x6",
+			"..---.. x6",
+			"------- x12",
+			".??.??. x12",
+			"------- x16"
+		]
+	},
+	{
+		id: "storm-cell",
+		name: "Storm Cell",
+		world: world$4,
+		gravity: gravity$4,
+		battery: 30,
+		signal: 66,
+		rows: [
+			"------- x16",
+			"xx---xx x6",
+			"xxx-xxx x10",
+			"xx---xx x4",
+			"..---.. x6",
+			"....... x5",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6 @",
+			"..333.. x6",
+			"...3... x8",
+			"....... x5",
+			"...-... x6",
+			"..---.. x6",
+			"------- x12",
+			"?.?.?.? x12",
+			"------- x8",
+			".-.-.-. x6",
+			"....... x4",
+			".-.-.-. x6",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6 @",
+			".--.... x6",
+			"....... x4",
+			"..--... x6",
+			"....... x4",
+			"...--.. x6",
+			"....... x4",
+			"....--. x6",
+			"..---.. x6",
+			"..>>>.. x6",
+			"....... x6",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6",
+			"------- x12",
+			".?.?.?. x12",
+			"------- x8",
+			"..---.. x4",
+			"....... x5",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6 @",
+			"..333.. x6",
+			"....... x5",
+			"..333.. x6",
+			"....... x5",
+			"..---.. x6",
+			".-.-.-. x6",
+			"....... x5",
+			".-.-.-. x6",
+			"..---.. x6",
+			"..ggg.. x6",
+			"....... x4",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6 @",
+			"...-... x8",
+			"....... x6",
+			"...-... x6",
+			"..>>>.. x6",
+			"....... x6",
+			"..---.. x6",
+			"------- x12",
+			"?.?.?.? x12",
+			"------- x8",
+			".--.... x6",
+			"....... x4",
+			"..--... x6",
+			"....... x4",
+			"...--.. x6",
+			"..---.. x6",
+			"------- x16"
+		]
+	}
+];
+//#endregion
+//#region shared/circuit/roads/graphics.ts
+/**
+* World 2, the Graphics Card (docs/CIRCUIT-PLAN.md, section 3): hot reds and orange, overclock strips and resistors, and
+* the first data gates. Normal gravity (apex 1.0: chips up to `2` can be climbed; gaps up to 3 or 4 rows).
+* Our own layouts, hard through jumps and narrow traces, never a tight battery (James, 23 Nov 2026). Letters in road.ts.
+*/
+const world$3 = "graphics";
+const gravity$3 = GRAVITY.graphics;
+const GRAPHICS_ROADS = [
+	{
+		id: "hot-wire",
+		name: "Hot Wire",
+		world: world$3,
+		gravity: gravity$3,
+		battery: 26,
+		signal: 60,
+		rows: [
+			"------- x16",
+			"..>>>.. x6",
+			"..---.. x6",
+			"..rrr.. x4",
+			"..---.. x6",
+			"...-... x10",
+			"....... x2",
+			"...-... x6",
+			"..---.. x6",
+			"------- x12",
+			".?.?.?. x12",
+			"------- x8",
+			".--.--. x6",
+			".-...-. x8",
+			".--.--. x4",
+			"....... x3",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6",
+			"..--... x6",
+			"...--.. x6",
+			"....--. x6",
+			"...--.. x6",
+			"..>>>.. x6",
+			"....... x3",
+			"..---.. x8",
+			"------- x16"
+		]
+	},
+	{
+		id: "fan-alley",
+		name: "Fan Alley",
+		world: world$3,
+		gravity: gravity$3,
+		battery: 26,
+		signal: 64,
+		rows: [
+			"------- x16",
+			".--.--. x8",
+			".rr.>>. x10",
+			".--.--. x4",
+			"....... x3",
+			"..---.. x8",
+			"..1.1.. x6",
+			"..---.. x6",
+			"------- x12",
+			".?...?. x12",
+			"------- x8",
+			"...-... x8",
+			"..---.. x8",
+			".--.... x6",
+			".-..... x6",
+			"....... x2",
+			".-..... x5",
+			".--.... x4",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6",
+			"....--. x6",
+			".....-. x6",
+			"....... x3",
+			".....-. x5",
+			"....--. x5",
+			"...--.. x5",
+			"..>>>.. x6",
+			"....... x3",
+			"..---.. x6",
+			"------- x16"
+		]
+	},
+	{
+		id: "pixel-pipeline",
+		name: "Pixel Pipeline",
+		world: world$3,
+		gravity: gravity$3,
+		battery: 26,
+		signal: 64,
+		rows: [
+			"------- x16",
+			"..>>>.. x8",
+			"....... x3",
+			"..---.. x6",
+			"------- x12",
+			"?.?.?.? x12",
+			"------- x8",
+			"..rrr.. x4",
+			"..---.. x4",
+			"..+++.. x3",
+			"..---.. x6",
+			".--.--. x6",
+			"..2.2.. x8",
+			"..---.. x6",
+			"...-... x10",
+			"....... x3",
+			"...-... x6",
+			"..>>>.. x6",
+			"------- x12",
+			".?.?.?. x12",
+			"------- x8",
+			".-.-.-. x8",
+			"....... x3",
+			".-.-.-. x6",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6",
+			"..--... x6",
+			".--.... x6",
+			"..--... x6",
+			"...--.. x6",
+			"....--. x6",
+			"...--.. x6",
+			"..---.. x6",
+			"------- x16"
+		]
+	},
+	{
+		id: "render-farm",
+		name: "Render Farm",
+		world: world$3,
+		gravity: gravity$3,
+		battery: 26,
+		signal: 66,
+		rows: [
+			"------- x16",
+			"..---.. x6",
+			"xx---xx x6",
+			"xxx-xxx x10",
+			"xx---xx x4",
+			"..---.. x6",
+			"..>>>.. x6",
+			"....... x4",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6",
+			".--.--. x8",
+			".-...-. x8",
+			".--.--. x6",
+			"..---.. x6",
+			"------- x12",
+			".??.??. x12",
+			"------- x8",
+			"..---.. x6",
+			"..222.. x6",
+			"..2.2.. x6",
+			"..222.. x4",
+			"....... x3",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6",
+			"x-----x x6",
+			"xx-.-xx x8",
+			"xx---xx x4",
+			"..---.. x6",
+			"..>>>.. x6",
+			"....... x4",
+			"..---.. x6",
+			"------- x16"
+		]
+	},
+	{
+		id: "shader-storm",
+		name: "Shader Storm",
+		world: world$3,
+		gravity: gravity$3,
+		battery: 26,
+		signal: 66,
+		rows: [
+			"------- x16",
+			"----... x6",
+			".--.... x6",
+			".-..... x8",
+			".--.... x4",
+			"..--... x4",
+			"...--.. x4",
+			"....--. x4",
+			".....-- x6",
+			".....-. x8",
+			"....... x3",
+			".....-. x5",
+			"....--. x4",
+			"...--.. x4",
+			"..--... x4",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6",
+			"------- x12 @",
+			"?.?.?.? x12",
+			"------- x8",
+			"..rrr.. x3",
+			".11.11. x8",
+			".1...1. x8",
+			"....... x3",
+			"..---.. x8",
+			"..+++.. x3",
+			"..---.. x6",
+			"...-... x10",
+			"....... x3",
+			"...-... x6",
+			"..>>>.. x6",
+			"....... x4",
+			"..---.. x6",
+			"------- x12 @",
+			".?.?.?. x12",
+			"------- x6",
+			".-.-.-. x8",
+			"....... x3",
+			".-.-.-. x6",
+			"..---.. x6",
+			"------- x16"
+		]
+	},
+	{
+		id: "overclock-peak",
+		name: "Overclock Peak",
+		world: world$3,
+		gravity: gravity$3,
+		battery: 30,
+		signal: 66,
+		rows: [
+			"------- x16",
+			"..>>>.. x6",
+			"....... x4",
+			"..---.. x6",
+			"..111.. x6",
+			"..222.. x8",
+			"...2... x8",
+			"....... x3",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6",
+			"xx---xx x6",
+			"xxx-xxx x8",
+			"xx---xx x4",
+			"..---.. x8 @",
+			"..>>>.. x6",
+			"....... x4",
+			"..---.. x8",
+			"------- x16",
+			"?.?.?.? x12",
+			"------- x8",
+			".--.... x6",
+			".-..... x6",
+			"....... x3",
+			".-..... x5",
+			".--.... x4",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6 @",
+			"...--.. x6",
+			"....--. x6",
+			".....-. x6",
+			"....... x3",
+			".....-. x5",
+			"....--. x5",
+			"..---.. x6",
+			"..>>>.. x6",
+			"....... x4",
+			"..---.. x6",
+			"------- x12",
+			".??.??. x12",
+			"------- x8",
+			"..222.. x6",
+			"..2.2.. x8",
+			"....... x3",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6 @",
+			"xx-.-xx x8",
+			"xx---xx x4",
+			"..---.. x6",
+			".--.--. x6",
+			".-...-. x8",
+			"....... x3",
+			".-...-. x5",
+			".--.--. x4",
+			"..---.. x6",
+			"..rrr.. x3",
+			"..---.. x4",
+			"..111.. x6",
+			"..222.. x6",
+			"...2... x8",
+			"....... x3",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6 @",
+			"...-... x10",
+			"....... x3",
+			"...-... x6",
+			"..>>>.. x6",
+			"....... x4",
+			"..---.. x6",
+			"------- x12",
+			".?.?.?. x12",
+			"------- x6",
+			"------- x16"
+		]
+	}
+];
+//#endregion
+//#region shared/circuit/roads/memory.ts
+/**
+* World 3, Memory Lanes (docs/CIRCUIT-PLAN.md, section 3): blue and silver rows of RAM, narrow lanes, cooling gel and data
+* cables. Heavier gravity: short, snappy jumps (apex 0.69: only `1` chips can be climbed; gaps of 1 or 2 rows), so the
+* challenge is narrow one-lane traces, sideways steps and gel that won't let you steer. Our own layouts. Letters in road.ts.
+*/
+const world$2 = "memory";
+const gravity$2 = GRAVITY.memory;
+const MEMORY_ROADS = [
+	{
+		id: "ram-stick",
+		name: "RAM Stick",
+		world: world$2,
+		gravity: gravity$2,
+		battery: 26,
+		signal: 64,
+		rows: [
+			"------- x16",
+			"..---.. x8",
+			"..ggg.. x6",
+			"..---.. x6",
+			"...t... x14",
+			"..---.. x6",
+			"...-... x8",
+			"....... x2",
+			"...-... x6",
+			"..---.. x6",
+			"------- x12",
+			".?.?.?. x12",
+			"------- x8",
+			"..+++.. x3",
+			"..---.. x6",
+			".--.--. x6",
+			".-...-. x8",
+			".--.--. x4",
+			"..---.. x6",
+			"..111.. x6",
+			"..---.. x6",
+			"------- x16"
+		]
+	},
+	{
+		id: "cache-hit",
+		name: "Cache Hit",
+		world: world$2,
+		gravity: gravity$2,
+		battery: 26,
+		signal: 64,
+		rows: [
+			"------- x16",
+			"..---.. x6",
+			"..--... x6",
+			".--.... x6",
+			".-..... x6",
+			".--.... x4",
+			"..--... x4",
+			"...--.. x4",
+			"....--. x4",
+			".....-. x8",
+			"....--. x4",
+			"...--.. x4",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6",
+			"..ggg.. x8",
+			"..---.. x6",
+			"------- x12",
+			"?.?.?.? x12",
+			"------- x8",
+			"...t... x16",
+			"..---.. x6",
+			"...-... x6",
+			"....... x2",
+			"...-... x4",
+			"....... x2",
+			"...-... x6",
+			"..---.. x6",
+			"------- x16"
+		]
+	},
+	{
+		id: "cold-storage",
+		name: "Cold Storage",
+		world: world$2,
+		gravity: gravity$2,
+		battery: 26,
+		signal: 66,
+		rows: [
+			"------- x16",
+			"..ggg.. x10",
+			"..---.. x6",
+			".ggggg. x10",
+			"..---.. x6",
+			"...g... x8",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6",
+			"..111.. x6",
+			"..1.1.. x6",
+			"..---.. x6",
+			"------- x12",
+			".?.?.?. x12",
+			"------- x8",
+			"..ggg.. x8",
+			"...-... x6",
+			"....... x2",
+			"...-... x6",
+			"..ggg.. x8",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6",
+			".--.--. x6",
+			".g...g. x8",
+			".--.--. x4",
+			"..---.. x6",
+			"------- x16"
+		]
+	},
+	{
+		id: "tunnel-bus",
+		name: "Tunnel Bus",
+		world: world$2,
+		gravity: gravity$2,
+		battery: 26,
+		signal: 66,
+		rows: [
+			"------- x16",
+			"..ttt.. x12",
+			"..---.. x6",
+			"...t... x16",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6",
+			".-----. x6",
+			".t...t. x14",
+			".-----. x6",
+			"------- x12",
+			".??.??. x12",
+			"------- x8",
+			"..---.. x6",
+			"...-... x6",
+			"....... x2",
+			"...-... x4",
+			"....... x2",
+			"...-... x4",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6",
+			"..t.t.. x12",
+			"..---.. x6",
+			"...t... x14",
+			"..---.. x6",
+			"------- x16"
+		]
+	},
+	{
+		id: "bit-flip",
+		name: "Bit Flip",
+		world: world$2,
+		gravity: gravity$2,
+		battery: 26,
+		signal: 66,
+		rows: [
+			"------- x16",
+			"..---.. x6",
+			"..--... x4",
+			"....... x2",
+			".--.... x4",
+			"....... x2",
+			"..--... x4",
+			"....... x2",
+			"...--.. x4",
+			"....... x2",
+			"....--. x4",
+			"....... x2",
+			"...--.. x4",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6",
+			"------- x12 @",
+			".?.?.?. x12",
+			"------- x8",
+			"...t... x14",
+			"..---.. x6",
+			"..ggg.. x8",
+			"..---.. x4",
+			"..111.. x6",
+			"...1... x8",
+			"..111.. x4",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x8 @",
+			".--.--. x6",
+			".-...-. x8",
+			"....... x2",
+			".-...-. x6",
+			".--.--. x4",
+			"------- x12",
+			"?.?.?.? x12",
+			"------- x8",
+			"...-... x8",
+			"....... x2",
+			"...-... x6",
+			"..---.. x6",
+			"------- x16"
+		]
+	},
+	{
+		id: "stack-overflow",
+		name: "Stack Overflow",
+		world: world$2,
+		gravity: gravity$2,
+		battery: 30,
+		signal: 66,
+		rows: [
+			"------- x16",
+			"..111.. x6",
+			"..---.. x4",
+			"..111.. x6",
+			"...1... x8",
+			"....... x2",
+			"...1... x6",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6",
+			"xx---xx x6",
+			"xxx-xxx x8",
+			"xx---xx x4",
+			"..---.. x6 @",
+			"...t... x16",
+			"..---.. x8",
+			"------- x12",
+			".?.?.?. x12",
+			"------- x8",
+			"..ggg.. x6",
+			"..---.. x4",
+			"..+++.. x3",
+			"..---.. x6 @",
+			".--.... x6",
+			".-..... x6",
+			"....... x2",
+			".-..... x4",
+			".--.... x4",
+			"..--... x4",
+			"...--.. x4",
+			"....--. x4",
+			".....-. x6",
+			"....... x2",
+			".....-. x4",
+			"....--. x4",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6",
+			"------- x12",
+			".??.??. x12",
+			"------- x8",
+			"..111.. x6",
+			"..1.1.. x6",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6 @",
+			"..--... x4",
+			"....... x2",
+			".--.... x4",
+			"....... x2",
+			"..--... x4",
+			"....... x2",
+			"...--.. x4",
+			"....... x2",
+			"....--. x4",
+			"....... x2",
+			"...--.. x4",
+			"..---.. x6",
+			"..ggg.. x8",
+			"...t... x14",
+			"..---.. x6",
+			"..+++.. x3",
+			"..---.. x6 @",
+			".--.--. x6",
+			".-...-. x8",
+			"....... x2",
+			".-...-. x6",
+			".--.--. x4",
+			"------- x12",
+			".?.?.?. x12",
+			"------- x8",
+			"...-... x8",
+			"....... x2",
+			"...-... x6",
+			"..---.. x6",
+			"------- x16"
+		]
+	}
+];
 //#endregion
 //#region shared/circuit/roads/motherboard.ts
 /**
@@ -8908,15 +9891,14 @@ function replay(road, log, opts = {}) {
 * No data gates in this world; recharge ports from road 3. Each row is the road from left lane to right lane,
 * start first (letters in road.ts).
 */
-const world = "motherboard";
-const gravity = GRAVITY.motherboard;
-/** Every road pupils can play, in the order they open (world 1 only until Stage 4). */
-const ROADS = [
+const world$1 = "motherboard";
+const gravity$1 = GRAVITY.motherboard;
+const MOTHERBOARD_ROADS = [
 	{
 		id: "power-on",
 		name: "Power On",
-		world,
-		gravity,
+		world: world$1,
+		gravity: gravity$1,
 		battery: 60,
 		signal: 70,
 		rows: [
@@ -8950,8 +9932,8 @@ const ROADS = [
 	{
 		id: "clock-speed",
 		name: "Clock Speed",
-		world,
-		gravity,
+		world: world$1,
+		gravity: gravity$1,
 		battery: 60,
 		signal: 76,
 		rows: [
@@ -8991,8 +9973,8 @@ const ROADS = [
 	{
 		id: "first-charge",
 		name: "First Charge",
-		world,
-		gravity,
+		world: world$1,
+		gravity: gravity$1,
 		battery: 20,
 		signal: 46,
 		rows: [
@@ -9032,8 +10014,8 @@ const ROADS = [
 	{
 		id: "data-bus",
 		name: "Data Bus",
-		world,
-		gravity,
+		world: world$1,
+		gravity: gravity$1,
 		battery: 22,
 		signal: 56,
 		rows: [
@@ -9078,8 +10060,8 @@ const ROADS = [
 	{
 		id: "bridge-chips",
 		name: "Bridge Chips",
-		world,
-		gravity,
+		world: world$1,
+		gravity: gravity$1,
 		battery: 20,
 		signal: 44,
 		rows: [
@@ -9123,8 +10105,8 @@ const ROADS = [
 	{
 		id: "kernel-run",
 		name: "Kernel Run",
-		world,
-		gravity,
+		world: world$1,
+		gravity: gravity$1,
 		battery: 20,
 		signal: 54,
 		rows: [
@@ -9183,6 +10165,320 @@ const ROADS = [
 		]
 	}
 ];
+//#endregion
+//#region shared/circuit/roads/quantum.ts
+/**
+* World 5, the Quantum Core (docs/CIRCUIT-PLAN.md, section 3): purple and gold, shimmering, everything at once. Very light
+* gravity: huge floaty jumps (apex 2.0; gaps up to 7 rows), so the roads are the longest gaps, the tallest chip stairs and
+* one-lane bridges far apart. Our own layouts. Letters in road.ts.
+*/
+const world = "quantum";
+const gravity = GRAVITY.quantum;
+/** The five worlds inside the computer (docs/CIRCUIT-PLAN.md, section 3), 6 roads each. */
+const WORLDS = [
+	{
+		id: "motherboard",
+		name: "The Motherboard",
+		roads: MOTHERBOARD_ROADS
+	},
+	{
+		id: "graphics",
+		name: "Graphics Card",
+		roads: GRAPHICS_ROADS
+	},
+	{
+		id: "memory",
+		name: "Memory Lanes",
+		roads: MEMORY_ROADS
+	},
+	{
+		id: "cloud",
+		name: "The Cloud",
+		roads: CLOUD_ROADS
+	},
+	{
+		id: "quantum",
+		name: "Quantum Core",
+		roads: [
+			{
+				id: "qubit",
+				name: "Qubit",
+				world,
+				gravity,
+				battery: 26,
+				signal: 64,
+				rows: [
+					"------- x16",
+					"..---.. x8",
+					"....... x5",
+					"..---.. x6",
+					"...-... x8",
+					"....... x5",
+					"...-... x6",
+					"..---.. x6",
+					"------- x12",
+					".?.?.?. x12",
+					"------- x8",
+					"..+++.. x3",
+					"..---.. x6",
+					"..111.. x4",
+					"..222.. x4",
+					"..333.. x6",
+					"....... x6",
+					"..---.. x8",
+					"------- x16"
+				]
+			},
+			{
+				id: "superposition",
+				name: "Superposition",
+				world,
+				gravity,
+				battery: 26,
+				signal: 64,
+				rows: [
+					"------- x16",
+					".-...-. x12",
+					"....... x4",
+					".-...-. x8",
+					".--.--. x4",
+					"..---.. x6",
+					"..+++.. x3",
+					"..---.. x6",
+					"------- x12",
+					"?.?.?.? x12",
+					"------- x8",
+					"..>>>.. x6",
+					"....... x7",
+					"..---.. x6",
+					"..-.-.. x8",
+					"....... x5",
+					"..-.-.. x8",
+					"..---.. x6",
+					"------- x16"
+				]
+			},
+			{
+				id: "entangled",
+				name: "Entangled",
+				world,
+				gravity,
+				battery: 26,
+				signal: 64,
+				rows: [
+					"------- x16",
+					"..---.. x6",
+					".--.... x6",
+					"....... x4",
+					"..--... x6",
+					"....... x4",
+					"...--.. x6",
+					"....... x4",
+					"....--. x6",
+					"....... x4",
+					"...--.. x6",
+					"..---.. x6",
+					"..+++.. x3",
+					"..---.. x6",
+					"------- x12",
+					".??.??. x12",
+					"------- x8",
+					"..333.. x8",
+					"...3... x8",
+					"....... x6",
+					"...-... x8",
+					"..---.. x6",
+					"..+++.. x3",
+					"..---.. x6",
+					"xx---xx x6",
+					"xxx-xxx x8",
+					"xx---xx x4",
+					"..---.. x6",
+					"------- x16"
+				]
+			},
+			{
+				id: "wave-bridge",
+				name: "Wave Bridge",
+				world,
+				gravity,
+				battery: 26,
+				signal: 66,
+				rows: [
+					"------- x16",
+					"...-... x12",
+					"....... x6",
+					"...-... x10",
+					"....... x6",
+					"...-... x8",
+					"..---.. x6",
+					"..+++.. x3",
+					"..---.. x6 @",
+					"..111.. x4",
+					"..222.. x4",
+					"..333.. x8",
+					"....... x6",
+					"..---.. x6",
+					"------- x12",
+					".?.?.?. x12",
+					"------- x8",
+					"..+++.. x3",
+					"..---.. x6 @",
+					".--.--. x4",
+					".-...-. x8",
+					"....... x5",
+					".-...-. x8",
+					".--.--. x4",
+					"..---.. x6",
+					"..>>>.. x6",
+					"....... x7",
+					"..---.. x6",
+					"------- x12",
+					"?.?.?.? x12",
+					"------- x16"
+				]
+			},
+			{
+				id: "quantum-leap",
+				name: "Quantum Leap",
+				world,
+				gravity,
+				battery: 26,
+				signal: 66,
+				rows: [
+					"------- x16",
+					"..>>>.. x6",
+					"....... x7",
+					"..---.. x6",
+					"..+++.. x3",
+					"..---.. x6 @",
+					"..333.. x6",
+					"..3.3.. x8",
+					"....... x5",
+					"..---.. x6",
+					"xx---xx x6",
+					"xxx-xxx x8",
+					"xx---xx x4",
+					"..---.. x6 @",
+					".--.... x6",
+					"....... x5",
+					"..--... x6",
+					"....... x5",
+					"...--.. x6",
+					"....... x5",
+					"....--. x6",
+					"..---.. x6",
+					"..+++.. x3",
+					"..---.. x6",
+					"------- x12",
+					".?.?.?. x12",
+					"------- x8",
+					"...t... x14",
+					"..---.. x6",
+					"..+++.. x3",
+					"..---.. x6 @",
+					"...-... x8",
+					"....... x6",
+					"...-... x6",
+					"....... x6",
+					"...-... x6",
+					"..---.. x6",
+					"------- x12",
+					".??.??. x12",
+					"------- x16"
+				]
+			},
+			{
+				id: "the-core",
+				name: "The Core",
+				world,
+				gravity,
+				battery: 30,
+				signal: 66,
+				rows: [
+					"------- x16",
+					"..---.. x6",
+					"..111.. x4",
+					"..222.. x4",
+					"..333.. x6",
+					"...3... x8",
+					"....... x6",
+					"..---.. x6",
+					"..+++.. x3",
+					"..---.. x6 @",
+					".-.-.-. x6",
+					"....... x5",
+					".-.-.-. x6",
+					"..---.. x6",
+					"------- x12",
+					"?.?.?.? x12",
+					"------- x8",
+					"..ggg.. x6",
+					"..---.. x4",
+					"..+++.. x3",
+					"..---.. x6 @",
+					"xx---xx x6",
+					"xxx-xxx x10",
+					"xx---xx x4",
+					"..---.. x6",
+					"..>>>.. x6",
+					"....... x7",
+					"..---.. x6",
+					"..+++.. x3",
+					"..---.. x6 @",
+					".--.... x6",
+					"....... x5",
+					"..--... x6",
+					"....... x5",
+					"...--.. x6",
+					"....... x5",
+					"....--. x6",
+					"...--.. x4",
+					"..---.. x6",
+					"------- x12",
+					".?.?.?. x12",
+					"------- x8",
+					"..+++.. x3",
+					"..---.. x6 @",
+					"...t... x14",
+					"..---.. x6",
+					"..>>>.. x6",
+					"....... x7",
+					"..---.. x6",
+					"------- x12",
+					".??.??. x12",
+					"------- x8",
+					"..+++.. x3",
+					"..---.. x6 @",
+					"..333.. x6",
+					"..3.3.. x8",
+					"....... x6",
+					"..---.. x6",
+					".--.--. x4",
+					".-...-. x8",
+					"....... x6",
+					".-...-. x8",
+					".--.--. x4",
+					"..---.. x6",
+					"..>>>.. x6",
+					"....... x7",
+					"..---.. x6",
+					"..+++.. x3",
+					"..---.. x6 @",
+					"...-... x10",
+					"....... x6",
+					"...-... x8",
+					"....... x6",
+					"...-... x8",
+					"..---.. x6",
+					"------- x16"
+				]
+			}
+		]
+	}
+];
+/** Every road pupils can play, world by world, in the order they open. */
+const ROADS = WORLDS.flatMap((w) => w.roads);
 /** Roads only the preview and the tests add (`allowTestRoad`): open from the start, never in the live function. */
 const testRoads = [];
 const parsed = new Map();
@@ -9194,14 +10490,38 @@ function roadById(id) {
 	if (!road) parsed.set(id, road = parseRoad(def));
 	return road;
 }
-/** The road a road needs finished first (null for the first road). Roads open in order. */
-function roadBefore(id) {
-	const i = ROADS.findIndex((r) => r.id === id);
-	return i > 0 ? ROADS[i - 1].id : null;
+/** Which world a road is in (0 to 4) and its number in it (0 to 5), or null. */
+function roadPlace(id) {
+	for (let world = 0; world < WORLDS.length; world++) {
+		const index = WORLDS[world].roads.findIndex((r) => r.id === id);
+		if (index >= 0) return {
+			world,
+			index
+		};
+	}
+	return null;
 }
 /**
-* Medal times in seconds, from the simulator's suggestions for the redrawn roads (`npm run circuit:sim`, 23 Nov 2026): gold is 10%
-* slower than the wild bot, silver 15% slower than the average bot, bronze is any finish. Stage 4 sets them for real.
+* What a road needs finished first: `count` of `roads`. Inside a world, roads open in order (the road before); a world's
+* first road opens when WORLD_OPENS_AT of the world before's roads are finished, so one stuck road never blocks anyone.
+* Null for the very first road. The database checks the same (`record_circuit_finish`'s needs and need).
+*/
+function roadNeeds(id) {
+	const at = roadPlace(id);
+	if (!at || at.world === 0 && at.index === 0) return null;
+	if (at.index > 0) return {
+		roads: [WORLDS[at.world].roads[at.index - 1].id],
+		count: 1
+	};
+	return {
+		roads: WORLDS[at.world - 1].roads.map((r) => r.id),
+		count: 4
+	};
+}
+/**
+* Medal times in seconds for every road, from `npm run circuit:sim` (Stage 4, 23 Nov 2026): gold is 10% slower than the
+* wild bot, silver 15% slower than the average bot (and at least 3 s after gold), bronze is any finish. Re-run the
+* simulator and copy its MEDAL_SECONDS line here after changing a road.
 */
 const MEDAL_SECONDS = {
 	"power-on": {
@@ -9227,6 +10547,102 @@ const MEDAL_SECONDS = {
 	"kernel-run": {
 		gold: 32,
 		silver: 44
+	},
+	"hot-wire": {
+		gold: 19,
+		silver: 23
+	},
+	"fan-alley": {
+		gold: 21,
+		silver: 25
+	},
+	"pixel-pipeline": {
+		gold: 24,
+		silver: 30
+	},
+	"render-farm": {
+		gold: 22,
+		silver: 29
+	},
+	"shader-storm": {
+		gold: 27,
+		silver: 34
+	},
+	"overclock-peak": {
+		gold: 46,
+		silver: 60
+	},
+	"ram-stick": {
+		gold: 17,
+		silver: 23
+	},
+	"cache-hit": {
+		gold: 20,
+		silver: 25
+	},
+	"cold-storage": {
+		gold: 20,
+		silver: 27
+	},
+	"tunnel-bus": {
+		gold: 21,
+		silver: 26
+	},
+	"bit-flip": {
+		gold: 26,
+		silver: 34
+	},
+	"stack-overflow": {
+		gold: 44,
+		silver: 60
+	},
+	"upload": {
+		gold: 16,
+		silver: 21
+	},
+	"sky-server": {
+		gold: 21,
+		silver: 24
+	},
+	"cloud-hop": {
+		gold: 18,
+		silver: 22
+	},
+	"stream-jump": {
+		gold: 24,
+		silver: 30
+	},
+	"data-drift": {
+		gold: 24,
+		silver: 31
+	},
+	"storm-cell": {
+		gold: 45,
+		silver: 57
+	},
+	"qubit": {
+		gold: 15,
+		silver: 19
+	},
+	"superposition": {
+		gold: 15,
+		silver: 19
+	},
+	"entangled": {
+		gold: 21,
+		silver: 26
+	},
+	"wave-bridge": {
+		gold: 23,
+		silver: 29
+	},
+	"quantum-leap": {
+		gold: 28,
+		silver: 35
+	},
+	"the-core": {
+		gold: 50,
+		silver: 61
 	}
 };
 function medalFor(roadId, steps) {
@@ -9236,12 +10652,16 @@ function medalFor(roadId, steps) {
 	if (m && seconds <= m.silver) return "silver";
 	return "bronze";
 }
-/** Is a road open? The first is; each next one when the one before has been finished. */
+/** Is a road open? See roadNeeds. */
 function roadOpen(roads, id) {
-	const before = roadBefore(id);
 	if (testRoads.some((r) => r.id === id)) return true;
-	return ROADS.some((r) => r.id === id) && (before === null || (roads[before]?.finishes ?? 0) > 0);
+	if (!ROADS.some((r) => r.id === id)) return false;
+	const needs = roadNeeds(id);
+	return needs === null || needs.roads.filter((r) => (roads[r]?.finishes ?? 0) > 0).length >= needs.count;
 }
+/** Hard mode's count-down clock for a road, in seconds: this share of the silver time (no Auto-Pilot, crashes cost time). */
+const HARD_CLOCK_SHARE = 1.3;
+const hardSeconds = (roadId) => Math.ceil((MEDAL_SECONDS[roadId]?.silver ?? 90) * HARD_CLOCK_SHARE);
 const finishesLeft = (today, unlimited) => unlimited ? null : Math.max(0, 5 - today);
 const SEED_PATTERN = /^c1-(\d{10})-[0-9a-f]{24}$/;
 const ROAD_ID = /^[a-z0-9-]{1,40}$/;
@@ -9272,7 +10692,8 @@ function parseFinish(input) {
 		seed: r.seed,
 		stamp: r.stamp,
 		inputs: r.inputs,
-		crashes
+		crashes,
+		hard: r.hard === true
 	};
 }
 /**
@@ -9292,7 +10713,9 @@ function judgeFinish(report, nowSeconds, maths = {}) {
 	};
 	const end = replay(road, log, {
 		refills: maths.refills ?? null,
-		gateRight: maths.gateRight ?? null
+		gateRight: maths.gateRight ?? null,
+		autoPilot: !report.hard,
+		timeLimit: report.hard ? hardSeconds(report.road) * 30 : 0
 	});
 	if (end.outcome !== "finished") return {
 		ok: false,
@@ -9314,7 +10737,8 @@ function judgeFinish(report, nowSeconds, maths = {}) {
 			medal: medalFor(report.road, end.steps),
 			clean: report.crashes === 0,
 			charged: end.battery > 50,
-			battery: end.battery
+			battery: end.battery,
+			hard: report.hard
 		},
 		choices: end.choices
 	};
@@ -9668,7 +11092,7 @@ function makeHandler(services) {
 			const saved = await services.load(player);
 			if (saved === "busy") return reply(503, { error: "We couldn't start the road just now." });
 			if (!roadOpen(saved.roads, roadId)) return reply(409, {
-				error: "Finish the road before to open this one.",
+				error: "That road isn’t open yet.",
 				code: "locked"
 			});
 			const left = finishesLeft(saved.today, settings.unlimited);
@@ -9756,7 +11180,7 @@ function makeHandler(services) {
 			}
 			const saved = await services.record(player, {
 				road: report.road,
-				before: roadBefore(report.road),
+				needs: roadNeeds(report.road),
 				seed: report.seed,
 				inputs: report.inputs,
 				unlimited: settings.unlimited,
@@ -9768,11 +11192,11 @@ function makeHandler(services) {
 				code: "done-today"
 			});
 			if (saved.status === "locked") return reply(409, {
-				error: "Finish the road before to open this one.",
+				error: "That road isn’t open yet.",
 				code: "locked"
 			});
 			if (road && stored && saved.status !== "duplicate") await recordGates(services, player, road, report.seed, stored, layout, judged.choices);
-			const { steps, medal, clean, charged, battery } = judged.run;
+			const { steps, medal, clean, charged, battery, hard } = judged.run;
 			return reply(200, {
 				result: saved.status,
 				steps,
@@ -9780,6 +11204,7 @@ function makeHandler(services) {
 				clean,
 				charged,
 				battery,
+				hard,
 				left: finishesLeft(saved.today, settings.unlimited)
 			});
 		}
@@ -9935,14 +11360,16 @@ Deno.serve(makeHandler({
 		return await call("record_circuit_finish", {
 			player,
 			road: f.road,
-			before_road: f.before,
+			needs: f.needs?.roads ?? null,
+			need: f.needs?.count ?? 0,
 			seed: f.seed,
 			steps: f.steps,
 			medal: f.medal,
 			clean: f.clean,
 			charged: f.charged,
 			inputs: f.inputs,
-			unlimited: f.unlimited
+			unlimited: f.unlimited,
+			hard: f.hard
 		});
 	}
 }));

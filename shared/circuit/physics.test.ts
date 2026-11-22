@@ -107,4 +107,37 @@ it('crashes or bonks by speed, Auto-Pilot saves a near miss, battery and signal 
   expect(stateKey(replay(course, sent!))).toBe(stateKey(s));
   expect(decodeLog('5.0.3,4.0.3')).toBeNull();
   expect(decodeLog('5.0.30')).toBeNull();
+
+  // Checkpoints: a fall after one restarts there (with the battery it had there) and the run goes on as one recording,
+  // which replays exactly. Hard mode's clock ends the run for good, back to the start.
+  const cp = road(['------- x10', '------- x6 @', '------- x6', '...-... x10', '------- x20']);
+  expect(cp.checkpoints).toEqual([10]);
+  const cpRec = makeRecorder();
+  let c = newRace(cp);
+  let fell = false;
+  const seen: RaceEvent[] = [];
+  while (c.outcome !== 'finished' && c.steps < 2000) {
+    if (c.outcome === 'racing') {
+      // First go: steer off the one-lane bridge. After the restart: straight down the middle.
+      const code = inputCode({ turn: !fell && c.z > 20 ? 1 : 0, accel: c.vz < 6 ? 1 : 0, jump: false });
+      cpRec.record(c, code);
+      const out = step(c, decodeInput(code), cp);
+      c = out.state;
+      seen.push(...out.events);
+      if (c.outcome === 'fell') fell = true;
+    } else {
+      expect(readyToRestart(c)).toBe(false);
+      const out = step(c, none, cp);
+      c = out.state;
+      seen.push(...out.events);
+    }
+  }
+  expect(seen.filter((e) => ['checkpoint', 'fall', 'respawn', 'finish'].includes(e))).toEqual(['checkpoint', 'fall', 'respawn', 'finish']);
+  expect(c).toMatchObject({ outcome: 'finished', lives: 1 });
+  expect(stateKey(replay(cp, decodeLog(encodeLog(cpRec.log))!))).toBe(stateKey(c));
+  const late = run(cp, newRace(cp, { timeLimit: 30 }), 200, () => ({ ...none, accel: 1 }));
+  expect(late.s.outcome).toBe('outOfTime');
+  let out = late.s;
+  for (let i = 0; i < RESTART_DELAY_STEPS; i++) out = step(out, none, cp).state;
+  expect(readyToRestart(out)).toBe(true);
 });

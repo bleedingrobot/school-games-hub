@@ -28,6 +28,8 @@ export interface FinishReply {
   clean: boolean;
   charged: boolean;
   battery: number;
+  /** Finished in hard mode (missing from an old reply: no). */
+  hard?: boolean;
   left: number | null;
 }
 
@@ -43,7 +45,7 @@ export interface CircuitBackend {
   /** `maths`: the pupil's own choice, used only when the teacher lets pupils choose. */
   start(road: string, maths?: boolean): Promise<StartReply>;
   answer(a: { road: string; seed: string; stamp: string; slot: number; answer: number; ms: number }): Promise<AnswerReply>;
-  finish(run: { road: string; seed: string; stamp: string; inputs: string; crashes: number }): Promise<FinishReply>;
+  finish(run: { road: string; seed: string; stamp: string; inputs: string; crashes: number; hard: boolean }): Promise<FinishReply>;
 }
 
 type Post = (body: object) => Promise<{ status: number; body: Record<string, unknown> }>;
