@@ -6,7 +6,7 @@
  * (--story-bg, --story-ink, --story-gold, --story-frame, --story-font) set by the game; the defaults suit a dark game.
  */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { fillStory, STORY_VOICE_FOLDER, storyVoiceLine, type Story } from '../../shared/kit/stories';
+import { fillStory, STORY_VOICE_FOLDER, storyVoiceLine, type Story, type StoryPage } from '../../shared/kit/stories';
 import { speak, stopSpeaking, useReadAloud } from '../speech';
 import { markStorySeen } from './useStories';
 import './storyBook.css';
@@ -18,8 +18,8 @@ export interface StoryBookProps {
   blanks?: Record<string, string>;
   /** Folder of narrator clips (default the shared stories folder). A line with no clip falls back to the browser's voice. */
   clips?: string;
-  /** Something drawn in the picture's bottom-left corner on every page (a captain's face). */
-  corner?: ReactNode;
+  /** Something drawn in the picture's bottom-left corner on every page (a captain's face), or made for each page. */
+  corner?: ReactNode | ((page: StoryPage) => ReactNode);
   /** Words on the last page's button (default "The end"; "Let's go!" for an opening). */
   endLabel?: string;
   /** Extra class on the outside, for a game's own colours. */
@@ -99,7 +99,7 @@ export function StoryBook({ story, onClose, blanks = {}, clips = STORY_VOICE_FOL
             </div>
           )}
           <span className="kit-story__glow" aria-hidden="true" />
-          {corner && <div className="kit-story__corner">{corner}</div>}
+          {corner && <div className="kit-story__corner">{typeof corner === 'function' ? corner(page) : corner}</div>}
         </div>
         <div className="kit-story__words" aria-live="polite">
           {pages.length > 1 && <span className="kit-story__count">Page {at + 1} of {pages.length}</span>}

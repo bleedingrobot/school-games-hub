@@ -737,6 +737,15 @@
 
 /* The opening story (kit StoryBook, docs/plans/stories/PLAN.md): deep space colours, the game's own display font. */
 .st-storybook { --story-bg: #04050c; --story-ink: #e8eefc; --story-gold: #fde047; --story-frame: #26305a; --story-dim: #3a4470; --story-font: var(--display, 'Trebuchet MS', Verdana, sans-serif); }
+/* Quest stories (R.3): the giver's face, and for Pip and Pop a tag saying whose turn it is to read. */
+.st-storybook .stq-corner { display: flex; align-items: flex-end; gap: 8px; }
+.st-storybook .stq-corner .stq-face { border-width: 3px; box-shadow: 0 0 14px rgba(253, 224, 71, 0.5); }
+.stq-reader { white-space: nowrap; padding: 4px 12px; border-radius: 999px; font-weight: 800; font-size: 0.95rem; color: #1a0a24; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.45); animation: stq-reader-pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+.stq-reader--pip { background: linear-gradient(#a5f3fc, #22d3ee); }
+.stq-reader--pop { background: linear-gradient(#fbcfe8, #f472b6); }
+@keyframes stq-reader-pop { from { transform: scale(0.2) rotate(-12deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.st-root--still .stq-reader { animation: none; }
+@media (prefers-reduced-motion: reduce) { .stq-reader { animation: none; } }
 .st-storybook .kit-story__corner .st-capface { border-radius: 50%; border: 3px solid #fde047; box-shadow: 0 0 14px rgba(253, 224, 71, 0.5); }
 
 /* ——— Quests (docs/plans/trader-quests/PLAN.md, Q.2): gold means "quest" everywhere ——— */

@@ -113,7 +113,7 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
 
 describe('The Star Forge (S.4)', () => {
 
-  it('quests (Q.2, Q.3, Q.4, R.2): taking one plays its first 3 pages in the giver\'s voice, the gold landing card picks up, the hold shows gold, Q ticks the step, the chart rings the rest, finishing plays the last 2 pages then the reward, and the 📖 shelf reads them again; Lumi\'s clue + Show me and Vex\'s pirate fight with the Navy laser; Q.6 daily jobs taken, picked up and delivered; R.2: quests 6-10 under More quests, water per dry planet for Mayor Puddle, the Comet Cup lamps, fuel sum and refuel reset, the Gorbo card, Rust-Beard. Then the Forge: a locked sun is only a look; planning a sun is free; building it sends a forge action, shows the price first, and the card turns built', async () => {
+  it('quests (Q.2, Q.3, Q.4, R.2, R.3): taking one plays its first 3 pages in the giver\'s voice, the gold landing card picks up, the hold shows gold, Q ticks the step, the chart rings the rest, finishing plays the last 2 pages then the reward, and the 📖 shelf reads them again; Lumi\'s clue + Show me and Vex\'s pirate fight with the Navy laser; Q.6 daily jobs taken, picked up and delivered; R.2: quests 6-10 under More quests, water per dry planet for Mayor Puddle, the Comet Cup lamps, fuel sum and refuel reset, the Gorbo card, Rust-Beard; R.3: Pip and Pop take turns reading, the Comet Cup finish plays before its last pages. Then the Forge: a locked sun is only a look; planning a sun is free; building it sends a forge action, shows the price first, and the card turns built', async () => {
     const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
     const api = traderApi(trial.transport);
     expect((await api.load()).ok).toBe(true);
@@ -293,6 +293,35 @@ describe('The Star Forge (S.4)', () => {
     expect(trial.data.game?.game.pending).toMatchObject({ kind: 'fight', tier: 2, quest: 3 });
     cleanup();
     trial.data.game!.game.pending = null;
+
+    // R.3, Pip and Pop's story: taking it plays pages 1 to 3, the twins taking turns to read (a tag says whose turn).
+    trial.data.game!.game.quests = { open: null, done: [], finished: [...FIRST_SET, 'puddle', 'gorbo', 'zip'], lastDay: null };
+    play(trial);
+    await market();
+    fireEvent.click(screen.getByRole('tab', { name: 'Quests' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Take quest' }));
+    const twins = await screen.findByRole('dialog', { name: "Pip and Pop's Runaway Pets" });
+    expect([within(twins).getByText('Page 1 of 3'), within(twins).getByText('Pip reads')]).toBeTruthy();
+    fireEvent.click(within(twins).getByRole('button', { name: 'Next' }));
+    expect(within(twins).getByRole('heading', { name: 'Lost pets' })).toBeTruthy();
+    expect(within(twins).getByText('Pop reads')).toBeTruthy();
+    fireEvent.keyDown(twins, { key: 'Escape' });
+    await waitFor(() => expect(trial.data.game?.game.quests?.open).toBe('pippop'));
+    cleanup();
+
+    // R.3, the Comet Cup's finish: the chequered-flag moment plays first, then Zip's last two pages (same painting), then the reward.
+    trial.data.game!.game.quests = { open: 'zip', done: [0, 1], fuelAtStart: tank, finished: [...FIRST_SET, 'puddle', 'gorbo'], lastDay: 1 };
+    trial.tools.toQuestStop();
+    play(trial);
+    await market();
+    fireEvent.click(await screen.findByRole('button', { name: '🏁 Cross the line!' }));
+    await waitFor(() => expect(document.querySelector('[data-fx="finish"]')).toBeTruthy());
+    expect(trial.data.game?.game.quests?.finished).toContain('zip');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    const cup = await screen.findByRole('dialog', { name: 'The Comet Cup' });
+    expect(within(cup).getByRole('heading', { name: 'Across the line!' })).toBeTruthy();
+    cleanup();
 
     // Q.6 daily jobs: after all five quests, 📦 Today's jobs on the Quests tab; take one (no story), pick up the crates at the
     // gold stop, deliver for the pay, and the card says delivered.
