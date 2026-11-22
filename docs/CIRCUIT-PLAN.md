@@ -1,6 +1,6 @@
 # Circuit Racer: plan
 
-**Status: Stage 1 done (the physics engine, config, road format, 6 Motherboard roads, tests and simulator in `shared/circuit/`; no screens yet, nothing for pupils to see). Plan PR #733, choices #734, Stage 1 PR #738 (22 Nov 2026). Next: Stage 2, first playable (prompt in `docs/prompts/circuit-s2.md`).** James picked the theme "Circuit Racer" from six new-theme ideas (deep sea, lava, sweets, aurora, circuit, ghost train) on 22 Nov 2026. Game id `circuit`. Next free migration number when written: `20261122000800` on 22 Nov (check again before Stage 2: `node scripts/migration-numbers.mjs`).
+**Status: Stage 2 done, live but switched off (code switch OFF): the first playable (three.js + bloom roads, 3D glowing racer, dashboard, keys and touch, full window), the `circuit` server function that replays every finish, the 5-finished-roads-a-day limit, migration `20261122001300_circuit.sql` and the teacher switch. Plan PR #733, choices #734, Stage 1 #738, Stage 2 #739 (23 Nov 2026). Next: Stage 3, maths (prompt in `docs/prompts/circuit-s3.md`).** James picked the theme "Circuit Racer" from six new-theme ideas (deep sea, lava, sweets, aurora, circuit, ghost train) on 22 Nov 2026. Game id `circuit`. Next free migration number when written: `20261122000800` on 22 Nov (check again before Stage 2: `node scripts/migration-numbers.mjs`).
 
 **Circuit Racer** is a neon racing game. You are a spark of data racing along circuit-board roads that float inside a giant computer. Steer between 7 lanes, speed up and slow down, jump the gaps, and dive into the port at the end of each road before your **battery** or **signal** runs out.
 
@@ -189,6 +189,16 @@ Choices made while building (all in `shared/circuit/config.ts`):
 - Tunnels are a floor with a roof at 1.2 for now (jump inside on a light world and you bump your head); Stage 2 draws them as half-pipes and may curve the sides.
 - Inputs are stored as changes, each at a distance slot (8 a row) plus the steps already spent in that slot, so a replay is exact even when the racer stops, and pit-stop pauses (Stage 3) never need recording.
 - Data gates (`?`) parse but drive as plain trace until Stage 3.
+
+## Stage 2 results (23 Nov 2026)
+
+- **Screens** (`src/games/circuit/`): road picker, race, finish, "All done for today" (countdown to NZ midnight), switched-off screen. Full window from the first screen.
+- **Picture** (`renderer.ts`, lazy loaded): instanced tiles per kind with code-drawn textures (`textures.ts`), neon rims on outside edges, chips with glowing tops, see-through half-pipe cables, upright blue recharge rings, a giant green port, stars and a violet grid far below, bloom. Drops bloom and pixels once if frames run slower than 24 a second.
+- **Loop** (`RaceScreen.tsx`): fixed 30 steps a second, at most 3 steps caught up a frame, picture drawn between steps; a crash restarts after 1.5 s with a fresh recording, and only the finishing go is sent.
+- **Stars:** "no crash" counts crashes since the road was opened (sent by the browser; it gives no points, and quitting to reopen is free anyway); "battery over half" comes from the server's replay. Medals use the Stage 1 suggested times (`MEDAL_SECONDS` in `shared/circuit/game.ts`).
+- **Server:** `start` hands out a stamped seed (per pupil and road), `finish` replays it and `record_circuit_finish` counts the NZ day under a per-pupil lock. Points: 3 a finish, 2 more for a road's first gold, none past 5 on an Unlimited day.
+- **Preview:** `preview/circuit/` runs the real handler on `shared/circuit/memoryServices.ts` (`?runs=4`, `?open=all`, `?unlimited=1`).
+- Not yet: achievements, teacher column (Stage 6); the Today page already lists Circuit Racer under Unlimited today.
 
 ## 9. Stages
 
