@@ -8199,7 +8199,7 @@ const TURN_UNIT = .012;
 const ROLL_UNIT = .03;
 /** Easy turns half as fast again as classic, so a corner never feels like a fight. */
 const EASY_TURN_UNIT = .018;
-/** The ship cruises forward by itself at this top speed (classic tops out at MAX_SPEED). */
+/** Holding Go flies the ship forward at up to this speed (classic tops out at MAX_SPEED). */
 const EASY_MAX_SPEED = 7.5;
 /** Walls closer than this (in blocks, along each way) push the ship gently back towards the middle. */
 const WALL_ASSIST_RANGE = 1.5;
@@ -9479,7 +9479,7 @@ function stepRun(w, s, code) {
 	const L = w.level;
 	const input = unpackInput(code);
 	turnShip(w, s, input.yaw, input.pitch, input.roll);
-	const braking = w.easy && input.tz < 0;
+	const braking = w.easy && input.tz <= 0;
 	const tz = w.easy ? braking ? 0 : 1 : input.tz;
 	let ax = s.rx * input.tx + s.ux * input.ty + s.fx * tz;
 	let ay = s.ry * input.tx + s.uy * input.ty + s.fy * tz;

@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'mine-easy-hold-go-2026-11-23',
+    date: '2026-11-23',
+    emoji: '🚀',
+    title: 'Mine Runner is easier to fly',
+    text: 'In Easy controls your ship now waits for you. Hold GO (or W) to fly, and let go to stop.',
+    game: 'mine',
+  },
+  {
     id: 'trader-quests-2-2026-11-22',
     date: '2026-11-22',
     emoji: '💜',
