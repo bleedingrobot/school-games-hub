@@ -420,7 +420,7 @@
     },
     {
       "name": "goblinstorm-map-sunken-1",
-      "prompt": "An underwater kingdom of sunken coral castles and swaying seaweed, cheeky fish-people sea raiders with tridents, glowing pink jellyfish, and a giant purple kraken wearing a little crown in the deep blue distance. Landscape, wide.",
+      "prompt": "An underwater kingdom of sunken coral castles and swaying seaweed, cheeky fish-people sea raiders with tridents, glowing pink jellyfish, and far away in the deep blue a giant purple octopus with eight long curling tentacles and a little golden crown. Not a whale, an octopus. Landscape, wide.",
       "size": [
         1536,
         864
@@ -475,7 +475,7 @@
     },
     {
       "name": "goblinstorm-boss-sunken-1",
-      "prompt": "A purple kraken with a little crown swimming away sulkily into the deep sea, letting go of a sunken ship, bubbles everywhere, fish cheering. Landscape, wide.",
+      "prompt": "A giant purple octopus with eight long curling tentacles and a little golden crown swimming away sulkily into the deep sea, letting go of a sunken ship with its tentacles, bubbles everywhere, small fish cheering. Not a whale, an octopus. Landscape, wide.",
       "size": [
         1536,
         864
