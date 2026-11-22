@@ -1,9 +1,10 @@
--- Circuit Racer (migration 20261122001300_circuit.sql, id circuit): progress, runs, the switch, the hub row and the 5
--- finished roads a day. Pupils can't read or change any of it directly; the server function does everything.
+-- Circuit Racer (migrations 20261122001300_circuit.sql and 20261123000100_circuit_maths.sql, id circuit): progress, runs,
+-- the switch, the hub row, the 5 finished roads a day, and the maths (the switch and the kept questions). Pupils can't read
+-- or change any of it directly; the server function does everything.
 -- Run on a throw-away copy: scripts/scratch-db.sh circuit, then scripts/scratch-test.sh circuit supabase/tests/database/circuit.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(27);
+select plan(40);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -43,10 +44,15 @@ select throws_ok($$ select public.circuit_load(auth.uid()) $$, '42501', null, '.
 select throws_ok($$ select public.record_circuit_finish(auth.uid(), 'power-on', null, 'c1-x', 1, 'gold', true, true, '', true) $$, '42501', null,
   '... or save a finish with any time');
 select throws_ok($$ select public.teacher_set_circuit(false) $$, null, null, 'a pupil cannot switch the game off');
+select throws_ok($$ select * from public.circuit_questions $$, '42501', null, 'a pupil cannot read the kept questions');
+select throws_ok($$ select public.circuit_load_questions(auth.uid(), 'c1-0000000000-x') $$, '42501', null, '... or load them');
+select throws_ok($$ select public.circuit_claim_answer(auth.uid(), 'c1-0000000000-x', 0, 1, true) $$, '42501', null, '... or mark an answer');
+select throws_ok($$ select public.teacher_set_circuit_maths('off') $$, null, null, '... or switch the maths off');
 select pg_temp.reset();
 set local role anon;
 select throws_ok($$ select * from public.circuit_progress $$, '42501', null, 'signed out: no progress');
 select throws_ok($$ select public.circuit_load('00000000-0000-0000-0000-00000000000a') $$, '42501', null, '... and no server functions');
+select throws_ok($$ select * from public.circuit_questions $$, '42501', null, '... and no questions');
 reset role;
 
 -- ---- The teacher's switch and Unlimited today ----
@@ -54,9 +60,14 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.s
 select lives_ok($$ select public.teacher_set_circuit(false, current_setting('test.cls')::uuid) $$, 'a teacher can switch it off for the class');
 select throws_ok($$ select public.teacher_set_circuit(null, current_setting('test.cls')::uuid) $$, '22023', null, 'a setting must be given');
 select lives_ok($$ select public.teacher_set_unlimited_today('circuit', true, current_setting('test.cls')::uuid) $$, 'Unlimited today takes circuit');
+select lives_ok($$ select public.teacher_set_circuit_maths('choose', current_setting('test.cls')::uuid) $$, 'a teacher can set the maths to pupils choose');
+select throws_ok($$ select public.teacher_set_circuit_maths('sometimes', current_setting('test.cls')::uuid) $$, '22023', null, '... but not to anything else');
 select pg_temp.reset();
 select is((select circuit_enabled from public.app_settings where id = public.settings_id_of(pg_temp.id('0e'))), false, '... the switch stays off');
 select ok((select unlimited_days ? 'circuit' from public.app_settings where id = public.settings_id_of(pg_temp.id('0e'))), '... and the class has Unlimited today');
+select is((select circuit_maths from public.app_settings where id = public.settings_id_of(pg_temp.id('0e'))), 'choose', '... and pupils choose the maths');
+select is((select count(*)::integer from public.app_settings where circuit_maths <> 'on' and id <> public.settings_id_of(pg_temp.id('0e'))), 0,
+  'the maths is on everywhere else to start');
 
 -- ---- Finishes: roads in order, a seed once, the best kept, 5 a day ----
 select pg_temp.act_as_server();
@@ -73,6 +84,12 @@ select is(pg_temp.finish('0a', 'clock-speed', 'power-on', 's4', 800, 'bronze') |
   'bestsaved', 'road 2 opens; that is 5 finishes today');
 select is(pg_temp.finish('0a', 'clock-speed', 'power-on', 's6', 800, 'bronze'), 'done-today', 'the 6th finish today is refused');
 select is(pg_temp.finish('0a', 'clock-speed', 'power-on', 's7', 800, 'bronze', true), 'saved', '... unless the class has Unlimited today');
+-- ---- The kept questions: a slot is marked once ----
+select lives_ok($$ select public.circuit_store_questions(pg_temp.id('0a'), 'c1-0000000001-q', '[{"parts":["2","+","2","=","?"],"answer":4}]') $$,
+  'the server keeps a go''s questions');
+select is(public.circuit_claim_answer(pg_temp.id('0a'), 'c1-0000000001-q', 0, 4, true), true, 'an answer is marked');
+select is(public.circuit_claim_answer(pg_temp.id('0a'), 'c1-0000000001-q', 0, 5, false), false, '... once');
+select is(public.circuit_load_questions(pg_temp.id('0a'), 'c1-0000000001-q') -> 'answered', '{"0": {"right": true, "value": 4}}'::jsonb, '... and the first mark stays');
 select pg_temp.reset();
 select is((select count(*)::integer from public.circuit_runs where player = pg_temp.id('0a') and extra), 1, 'the extra finish is marked extra');
 select is((select sum(points_raw)::integer from public.game_points where player = pg_temp.id('0a') and game = 'circuit'), 3 * 5 + 2,

@@ -74,6 +74,7 @@ const LADDER_GAMES = [
   'Diamond Drop',
   'Sky Isles',
   'Wormholes & Black Holes',
+  'Circuit Racer',
 ];
 
 /** The Maths tab's Skill map page, for the class in the teacher header (src/teacher/TeacherShell.tsx). */

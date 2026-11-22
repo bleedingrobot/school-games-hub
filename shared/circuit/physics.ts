@@ -16,7 +16,7 @@
  */
 import {
   ACCEL, AIR_STEER_STEPS, AUTO_PILOT_AT, AUTO_PILOT_LOOK, AUTO_PILOT_TRIES, BATTERY_LINEAR, BATTERY_SQUARED, BOUNCE, BOUNCE_MIN, BOUNCE_ON, BRAKE,
-  CRASH_SPEED, DT, FALL_LIMIT, FLOOR_THICKNESS, FULL, HALF_WIDTH, JUMP_SPEED, LEDGE_SLIP, LOW_BRAKE_SHARE, LOW_SPEED, MAX_FALL_SPEED,
+  CRASH_SPEED, DT, FALL_LIMIT, FLOOR_THICKNESS, FULL, HALF_REFILL, HALF_WIDTH, JUMP_SPEED, LEDGE_SLIP, LOW_BRAKE_SHARE, LOW_SPEED, MAX_FALL_SPEED,
   MAX_RUN_STEPS, NO_JUMP_GRAVITY, OVERCLOCK_ACCEL, RESISTOR_DRAG, RESTART_DELAY_STEPS, SCRAPE_SLOW, SLOTS_PER_ROW, START_X, START_Z,
   SUBSTEPS, TOP_SPEED, TUNNEL_ROOF, TUNNEL_ROOF_THICKNESS, TURN_AT_REST, TURN_RATE, WALL_NUDGE,
 } from './config';
@@ -25,7 +25,11 @@ import { cellAt, topOf, type Road } from './road';
 
 export type Outcome = 'racing' | 'finished' | 'crashed' | 'fell' | 'outOfBattery' | 'outOfSignal';
 export type RaceEvent =
-  | 'jump' | 'land' | 'bounce' | 'bonk' | 'nudge' | 'scrape' | 'crash' | 'fall' | 'recharge' | 'finish' | 'outOfBattery' | 'outOfSignal' | 'autopilot';
+  | 'jump' | 'land' | 'bounce' | 'bonk' | 'nudge' | 'scrape' | 'crash' | 'fall' | 'recharge' | 'finish' | 'outOfBattery' | 'outOfSignal' | 'autopilot'
+  /** Maths on: the racer has just reached a recharge port (the screen pauses for its question before the next step). */
+  | 'port'
+  /** The racer has just crossed a data gate's split row (its lane is in `choices`). */
+  | 'gate';
 
 export interface RaceState {
   x: number;
@@ -65,21 +69,43 @@ export interface RaceState {
   /** The row of the last recharge port touched, and how many ports were used. */
   lastPortRow: number;
   ports: number;
+  /**
+   * Maths on: what each recharge port refills to, a share of FULL (1 for a right answer, HALF_REFILL otherwise), from the
+   * server's marks. Null with maths off: ports refill fully, as in Stage 2. The screen fills this list in as answers are
+   * marked (a port's share is only read on the step after it is reached, while the race waits for the answer).
+   */
+  refills: readonly number[] | null;
+  /** Maths on: each data gate's right lane (from the seed). Null with maths off: every gate lane is overclock. */
+  gateRight: readonly number[] | null;
+  /** Ports already used (bit p for port p), with maths on: each refills once a go. */
+  portsUsed: number;
+  /** A port reached on the last step, waiting to refill (-1 if none). */
+  pendingPort: number;
+  /** Gates crossed so far, and the lane the racer was in at each split row (-1: not crossed). */
+  gatesPassed: number;
+  choices: readonly number[];
+  /** The gate whose right lane the racer took at the split (its lane is overclock), or -1. */
+  boostGate: number;
 }
 
 export interface RaceOptions {
   /** False in hard mode. */
   autoPilot?: boolean;
+  /** Maths on: see RaceState.refills and RaceState.gateRight. */
+  refills?: readonly number[] | null;
+  gateRight?: readonly number[] | null;
 }
 
 const EPS = 1e-6;
 
-export function newRace(_road: Road, opts: RaceOptions = {}): RaceState {
+export function newRace(road: Road, opts: RaceOptions = {}): RaceState {
   return {
     x: START_X, y: 0, z: START_Z, vy: 0, vz: 0, steer: 0, steerScale: 1, slide: 0, grounded: true, jumping: false, airSteps: 0,
     autoPilot: opts.autoPilot ?? true, autoPilotChecked: false, autoPilotOn: false, autoPilotGiveBack: 0,
     battery: FULL, signal: FULL, outcome: 'racing', steps: 0, deadSteps: 0,
     slot: Math.floor(START_Z * SLOTS_PER_ROW), slotSteps: 0, lastPortRow: -2, ports: 0,
+    refills: opts.refills ?? null, gateRight: opts.gateRight ?? null, portsUsed: 0, pendingPort: -1,
+    gatesPassed: 0, choices: road.gates.map(() => -1), boostGate: -1,
   };
 }
 
@@ -120,14 +146,33 @@ export function step(prev: RaceState, input: Input, road: Road): { state: RaceSt
     if (runAutoPilot(s, input, road)) events.push('autopilot');
   }
 
+  // A port reached last step refills now, by its answer (the screen waited for it in between).
+  if (s.pendingPort >= 0) {
+    const level = FULL * Math.min(1, Math.max(HALF_REFILL, s.refills?.[s.pendingPort] ?? HALF_REFILL));
+    s.battery = Math.max(s.battery, level);
+    s.signal = Math.max(s.signal, level);
+    s.pendingPort = -1;
+    events.push('recharge');
+  }
+
   // What the racer is touching.
   const row = Math.floor(s.z);
   const onTile = s.grounded && s.y < EPS * 10 && s.y > -EPS * 10;
   const under = onTile ? cellAt(road, Math.floor(s.x), row) : '.';
-  if (under === '>') s.vz += OVERCLOCK_ACCEL * DT;
+  // A gate lane is overclock with maths off, and with maths on only the right lane, for a racer who took it at the split.
+  const boosted = under === '?' && (s.gateRight === null || (s.boostGate === road.gateAt[row] && Math.floor(s.x) === s.gateRight[s.boostGate]));
+  if (under === '>' || boosted) s.vz += OVERCLOCK_ACCEL * DT;
   else if (under === 'r') s.vz -= RESISTOR_DRAG * DT;
   else if (under === 'x') return end(s, events, 'crashed', 'crash');
-  else if (under === '+') {
+  else if (under === '+' && s.refills) {
+    const p = road.portAt[row];
+    if (p >= 0 && p < 30 && !(s.portsUsed & (1 << p))) {
+      s.portsUsed |= 1 << p;
+      s.pendingPort = p;
+      s.ports++;
+      events.push('port');
+    }
+  } else if (under === '+') {
     s.battery = FULL;
     s.signal = FULL;
     if (row > s.lastPortRow + 1) {
@@ -201,6 +246,17 @@ export function step(prev: RaceState, input: Input, road: Road): { state: RaceSt
     if (left && right) s.slide = 0;
     else if (!left && right) s.slide -= LEDGE_SLIP * DT;
     else if (left && !right) s.slide += LEDGE_SLIP * DT;
+  }
+
+  // Crossing a gate's split row: the lane the racer is in is its answer.
+  while (s.gatesPassed < road.gates.length && s.z >= road.gates[s.gatesPassed].first) {
+    const g = s.gatesPassed++;
+    const lane = Math.floor(s.x);
+    const choices = [...s.choices];
+    choices[g] = lane;
+    s.choices = choices;
+    s.boostGate = s.gateRight !== null && s.gateRight[g] === lane ? g : -1;
+    events.push('gate');
   }
 
   s.steps++;

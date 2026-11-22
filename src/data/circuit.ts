@@ -1,4 +1,5 @@
-/** Circuit Racer's teacher switch (docs/CIRCUIT-PLAN.md): read through the class settings, saved by teacher_set_circuit. */
+/** Circuit Racer's teacher switches (docs/CIRCUIT-PLAN.md): on/off and the maths, read through the class settings. */
+import { parseMathsSwitch, type MathsSwitch } from '../../shared/space/mathsSwitch';
 import { supabase } from '../lib/supabase';
 import { readSettings } from './classSettings';
 import { FriendlyError } from './profile';
@@ -12,6 +13,19 @@ export async function fetchCircuitEnabled(classId?: string | null): Promise<bool
 
 export async function saveCircuitEnabled(enabled: boolean, classId: string): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_circuit', { enabled, target_class: classId });
+  forgetSettings();
+  if (error) throw new FriendlyError('We couldn’t change that.');
+}
+
+/** The class's Circuit Racer maths ('off' | 'choose' | 'on'). A teacher reading a class is told when it fails. */
+export async function fetchCircuitMaths(classId?: string | null): Promise<MathsSwitch> {
+  const row = await readSettings(['circuit_maths'], classId);
+  if (!row && classId) throw new FriendlyError('We couldn’t load this setting.');
+  return parseMathsSwitch(row?.circuit_maths);
+}
+
+export async function saveCircuitMaths(mode: MathsSwitch, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_circuit_maths', { mode, target_class: classId });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');
 }

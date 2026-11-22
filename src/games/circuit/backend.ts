@@ -4,12 +4,21 @@
  * a pretend database (`pretendCircuit` in pretend.ts), so it never calls the live site.
  */
 import type { CircuitSave, Medal } from '../../../shared/circuit/game';
+import type { RunMaths } from '../../../shared/circuit/maths';
 
 export interface StartReply {
   seed: string;
   stamp: string;
   /** Finishes left today, this one included; null on an Unlimited day. */
   left: number | null;
+  /** The go's questions (ports and gates), or null with maths off (or if they couldn't be made). */
+  maths?: RunMaths | null;
+}
+
+/** A recharge port's answer, marked by the server. */
+export interface AnswerReply {
+  right: boolean;
+  answer: number;
 }
 
 export interface FinishReply {
@@ -31,7 +40,9 @@ export class CircuitError extends Error {
 
 export interface CircuitBackend {
   load(): Promise<CircuitSave>;
-  start(road: string): Promise<StartReply>;
+  /** `maths`: the pupil's own choice, used only when the teacher lets pupils choose. */
+  start(road: string, maths?: boolean): Promise<StartReply>;
+  answer(a: { road: string; seed: string; stamp: string; slot: number; answer: number; ms: number }): Promise<AnswerReply>;
   finish(run: { road: string; seed: string; stamp: string; inputs: string; crashes: number }): Promise<FinishReply>;
 }
 
@@ -46,7 +57,8 @@ export function fromPost(post: Post): CircuitBackend {
   };
   return {
     load: () => ask({ action: 'load' }),
-    start: (road) => ask({ action: 'start', road }),
+    start: (road, maths) => ask({ action: 'start', road, ...(maths === undefined ? {} : { maths }) }),
+    answer: (a) => ask({ action: 'answer', ...a }),
     finish: (run) => ask({ action: 'finish', ...run }),
   };
 }

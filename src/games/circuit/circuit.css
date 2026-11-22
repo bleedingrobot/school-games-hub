@@ -159,3 +159,29 @@
 @media (prefers-reduced-motion: reduce) {
   .cr-meter--flash .cr-meter__bar { animation: none; }
 }
+
+/* Maths (Stage 3): a data gate's question over the road until the split, and the pupil's maths pick on the road picker. */
+.cr-gate {
+  position: absolute; left: 50%; top: clamp(5.2rem, 16vh, 8rem); transform: translateX(-50%); z-index: 3;
+  width: min(36rem, calc(100% - 2rem)); padding: 0.6rem 1rem 0.7rem; border-radius: 16px; text-align: center;
+  background: rgba(10, 8, 34, 0.82); border: 2px solid #a78bfa; box-shadow: 0 0 22px rgba(167, 139, 250, 0.55);
+  pointer-events: none;
+}
+.cr-gate--slow { border-color: #fde047; box-shadow: 0 0 26px rgba(253, 224, 71, 0.55); }
+.cr-gate__label { margin: 0; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.8rem; color: #c4b5fd; }
+.cr-gate__question { margin: 0.2rem 0; font: 800 clamp(1.5rem, 5vw, 2.4rem)/1.2 system-ui, sans-serif; color: #fff; }
+.cr-gate__hint { margin: 0; font-size: 0.9rem; color: #cbd5e1; }
+.cr-q { display: inline-flex; flex-direction: column; align-items: center; gap: 0.1rem; }
+.cr-q__prompt { font-size: 0.55em; font-weight: 700; color: #cbd5e1; }
+.cr-q__parts { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.3em; }
+.cr-q__word { font-size: 0.7em; }
+.cr-q__blank { display: inline-block; width: 1.4em; height: 1em; vertical-align: middle; border: 3px dashed #fde047; border-radius: 6px; }
+.cr-frac { display: inline-flex; align-items: center; gap: 0.15em; }
+.cr-frac__stack { display: inline-flex; flex-direction: column; align-items: center; font-size: 0.75em; line-height: 1.05; }
+.cr-frac__stack > span:first-child { border-bottom: 3px solid currentColor; padding: 0 0.15em; }
+.cr-testroads { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin: 1rem 0 0; }
+.cr-mathspick { display: inline-flex; align-items: center; gap: 0.5rem; margin: 1rem 0 0; font-weight: 700; color: #a5f3fc; cursor: pointer; }
+.cr-mathspick input { width: 1.4rem; height: 1.4rem; accent-color: #22d3ee; }
+.cr-gate__lanes { display: flex; justify-content: center; gap: 0.5rem; margin: 0.3rem 0; }
+.cr-gate__lane { min-width: 3rem; padding: 0.2rem 0.6rem; border-radius: 10px; border: 2px solid #c4b5fd; font: 800 1.2rem/1.2 system-ui, sans-serif; color: #fff; background: rgba(6, 10, 30, 0.9); }
+@media (max-height: 520px) { .cr-gate { top: 3.6rem; padding: 0.3rem 0.8rem; } .cr-gate__hint { display: none; } .cr-gate__question { font-size: 1.4rem; } }
