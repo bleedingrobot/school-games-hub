@@ -128,6 +128,8 @@ export function RaceScreen({ road, number, sound, maths = null, onAnswer, onFini
   const askRef = useRef(ask);
   askRef.current = ask;
   const resume = useRef(() => {});
+  /** When the last port question closed: the Escape that skipped it must not also leave the race. */
+  const closedAt = useRef(-1e9);
   const [dash, setDash] = useState<Dash>(() => dashOf(newRace(road, raceOpts.current), road, !!maths));
   const [crashes, setCrashes] = useState(0);
   const [tip, setTip] = useState<string | null>(null);
@@ -152,8 +154,8 @@ export function RaceScreen({ road, number, sound, maths = null, onAnswer, onFini
   // Keys: the race keys, Enter to start, Escape back to the roads.
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      // A port question is open: its box has the keys (Escape skips it there).
-      if (askRef.current) return;
+      // A port question is open (or has only just closed): its box has the keys (Escape skips it there).
+      if (askRef.current || performance.now() - closedAt.current < 400) return;
       if (e.code === 'Escape') {
         quitRef.current();
         return;
@@ -341,6 +343,8 @@ export function RaceScreen({ road, number, sound, maths = null, onAnswer, onFini
     const open = askRef.current;
     // Skipped (or never marked): the server counts it unanswered, which is a half charge.
     if (open) answered.current.add(open.port);
+    closedAt.current = performance.now();
+    askRef.current = null;
     setAsk(null);
     resume.current();
     box.current?.focus();
@@ -364,7 +368,7 @@ export function RaceScreen({ road, number, sound, maths = null, onAnswer, onFini
       <div className="cr-dash" role="group" aria-label="Dashboard">
         <div className="cr-dash__top">
           <button type="button" className="cr-glass" onClick={onQuit} aria-label="Back to the roads (Escape)">← Roads</button>
-          <span className="cr-dash__name">{number}. {road.def.name}</span>
+          <span className="cr-dash__name">{number > 0 ? `${number}. ` : ''}{road.def.name}</span>
           <span className="cr-dash__time" aria-label="Time">{timeText(dash.time)}</span>
         </div>
         <div className="cr-dash__progress" aria-label={`Road ${Math.round(dash.progress * 100)}% done`}>
@@ -385,7 +389,7 @@ export function RaceScreen({ road, number, sound, maths = null, onAnswer, onFini
       />
       {!started && (
         <div className="cr-ready">
-          <h2 className="cr-ready__title">{number}. {road.def.name}</h2>
+          <h2 className="cr-ready__title">{number > 0 ? `${number}. ` : ''}{road.def.name}</h2>
           <button type="button" className="cr-btn cr-btn--go" onClick={go} autoFocus>GO <small>(Enter)</small></button>
         </div>
       )}
@@ -394,6 +398,9 @@ export function RaceScreen({ road, number, sound, maths = null, onAnswer, onFini
         <div className={`cr-gate${dash.slow ? ' cr-gate--slow' : ''}`} role="status">
           <p className="cr-gate__label">Data gate</p>
           <p className="cr-gate__question"><QuestionLine q={gateShown.question} /></p>
+          <p className="cr-gate__lanes" aria-label={`Lanes, left to right: ${gateShown.labels.filter((l) => l !== null).join(', ')}`}>
+            {gateShown.labels.map((l, i) => (l === null ? null : <span key={i} className="cr-gate__lane">{l}</span>))}
+          </p>
           <p className="cr-gate__hint">Steer into the lane with the answer. The right lane is an overclock shortcut!</p>
         </div>
       )}

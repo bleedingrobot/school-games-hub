@@ -138,7 +138,6 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
   const gateSigns: { lane: number; mat: THREE.MeshBasicMaterial }[][] = [];
   const gateArrows: THREE.Object3D[][] = [];
   if (opts.gates) {
-    const signGeo = own(new THREE.PlaneGeometry(0.94, 0.62));
     const arrowGeo = own(new THREE.PlaneGeometry(0.96, 1));
     const arrowMat = own(new THREE.MeshBasicMaterial({ map: textures.overclock, color: new THREE.Color('#ffffff').multiplyScalar(1.3), transparent: true, depthWrite: false }));
     const archMat = own(new THREE.MeshBasicMaterial({ color: new THREE.Color('#a78bfa').multiplyScalar(1.6) }));
@@ -146,10 +145,17 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
     road.gates.forEach((gate, g) => {
       const labels = opts.gates?.[g] ?? [];
       const z = -(gate.first - 0.6);
-      const left = Math.min(...gate.lanes);
-      const right = Math.max(...gate.lanes) + 1;
+      const left = Math.min(...gate.lanes) - 0.3;
+      const right = Math.max(...gate.lanes) + 1.3;
+      // Signs as wide as the space between lanes allows (up to 1.9), so they read from far down the road.
+      const spacing = Math.min(2, ...gate.lanes.slice(1).map((l, i) => l - gate.lanes[i]));
+      const signW = Math.min(1.9, spacing * 0.96);
+      const signH = signW * 0.66;
+      const signY = 1.15 + signH / 2;
+      const top = signY + signH / 2 + 0.12;
+      const signGeo = own(new THREE.PlaneGeometry(signW, signH));
       const arch = new THREE.Group();
-      for (const [w, h, x, y] of [[right - left + 0.2, 0.08, (X(left) + X(right)) / 2, 1.82], [0.08, 1.82, X(left) - 0.05, 0.91], [0.08, 1.82, X(right) + 0.05, 0.91]] as const) {
+      for (const [w, h, x, y] of [[right - left + 0.1, 0.1, (X(left) + X(right)) / 2, top], [0.1, top, X(left), top / 2], [0.1, top, X(right), top / 2]] as const) {
         const bar = new THREE.Mesh(barGeo, archMat);
         bar.scale.set(w, h, 0.08);
         bar.position.set(x, y, z);
@@ -163,10 +169,11 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
         const tex = own(signTexture(label));
         const mat = own(new THREE.MeshBasicMaterial({ map: tex, transparent: true, toneMapped: false }));
         const sign = new THREE.Mesh(signGeo, mat);
-        sign.position.set(X(lane + 0.5), 1.35, z);
+        sign.position.set(X(lane + 0.5), signY, z);
         scene.add(sign);
         // The same answer painted on the lane's floor at the split, for a racer looking down.
         const floor = new THREE.Mesh(signGeo, mat);
+        floor.scale.setScalar(Math.min(1, 0.96 / signW));
         floor.rotation.x = -Math.PI / 2;
         floor.position.set(X(lane + 0.5), 0.01, -(gate.first + 1.2));
         scene.add(floor);

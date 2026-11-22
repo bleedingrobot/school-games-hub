@@ -182,3 +182,6 @@
 .cr-testroads { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin: 1rem 0 0; }
 .cr-mathspick { display: inline-flex; align-items: center; gap: 0.5rem; margin: 1rem 0 0; font-weight: 700; color: #a5f3fc; cursor: pointer; }
 .cr-mathspick input { width: 1.4rem; height: 1.4rem; accent-color: #22d3ee; }
+.cr-gate__lanes { display: flex; justify-content: center; gap: 0.5rem; margin: 0.3rem 0; }
+.cr-gate__lane { min-width: 3rem; padding: 0.2rem 0.6rem; border-radius: 10px; border: 2px solid #c4b5fd; font: 800 1.2rem/1.2 system-ui, sans-serif; color: #fff; background: rgba(6, 10, 30, 0.9); }
+@media (max-height: 520px) { .cr-gate { top: 3.6rem; padding: 0.3rem 0.8rem; } .cr-gate__hint { display: none; } .cr-gate__question { font-size: 1.4rem; } }
