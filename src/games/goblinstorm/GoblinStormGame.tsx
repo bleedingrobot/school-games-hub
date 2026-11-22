@@ -116,10 +116,12 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
   const [shown, setShown] = useState<ShowMe | null>(null);
   const [tip, setTip] = useState<number | null>(null);
   const { soundOn } = useSound();
-  const [unlimited, setUnlimited] = useState(false);
+  const [unlimitedSwitch, setUnlimited] = useState(false);
   useEffect(() => {
     unlimitedToday?.().then(setUnlimited, () => undefined);
   }, [unlimitedToday]);
+  // The save also says so, and it counts a pupil's own Bonus Turns Day, which the class row doesn't show.
+  const unlimited = unlimitedSwitch || save?.unlimited === true;
   /** Runs left today, or null before the save loads. */
   const left = save ? Math.max(0, RUNS_A_DAY - save.today) : null;
   const outToday = left === 0 && !unlimited;
@@ -184,7 +186,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
       if (e instanceof GoblinStormError && e.code === 'done-today') {
         // Out of runs (perhaps on another device): show the big card rather than a small line.
         setUnlimited(false);
-        setSave((s) => (s ? { ...s, today: Math.max(s.today, RUNS_A_DAY) } : s));
+        setSave((s) => (s ? { ...s, today: Math.max(s.today, RUNS_A_DAY), unlimited: false } : s));
         setScreen((now) => (now === 'end' ? 'map' : now));
       } else {
         setError(e instanceof GoblinStormError ? e.message : "Couldn't start a run. Try again.");

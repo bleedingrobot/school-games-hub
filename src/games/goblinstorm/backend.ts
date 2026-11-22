@@ -29,6 +29,8 @@ export interface MySave extends Save {
   today: number;
   /** Has had the guided first go (or skipped it), on any device. */
   guideSeen: boolean;
+  /** Runs are unlimited today: the class's switch or the pupil's own Bonus Turns Day (live only). */
+  unlimited?: boolean;
 }
 
 export const emptySave = (): MySave => ({ ...freshSave(), codex: [], weapons: [], runs: 0, today: 0, bestGold: 0, guideSeen: false });
