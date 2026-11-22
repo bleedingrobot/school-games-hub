@@ -2,7 +2,7 @@
 
 22 Nov 2026. James: "can we plan another set of 5 quests for star traders please, should unlock after the first 5 are completed." He agreed to the plan below as drafted ("Yes, go ahead"), with the picks in section 7.
 
-**Status:** plan, stories and all 31 paintings done (this PR), voices sampled (review page https://claude.ai/artifact/8fQgUpWKwJ4CKNKFQ6caAn). R.1 done: the rules and server for all five (`shared/trader/quests.ts`). R.2 done: the Quests tab shows all ten (quests 6 to 10 under "More quests"), with their step lines, Bolt lines, the Comet Cup's fuel sum and painted moments, and Rust-Beard's entrance. R.3 done: the five stories with their givers' voices (Pip and Pop a page each). R.4 below.
+**Status:** plan, stories and all 31 paintings done (this PR), voices sampled (review page https://claude.ai/artifact/8fQgUpWKwJ4CKNKFQ6caAn). R.1 done: the rules and server for all five (`shared/trader/quests.ts`). R.2 done: the Quests tab shows all ten (quests 6 to 10 under "More quests"), with their step lines, Bolt lines, the Comet Cup's fuel sum and painted moments, and Rust-Beard's entrance. R.3 done: the five stories with their givers' voices (Pip and Pop a page each). R.4 done: keepsakes, hub points, Star Quest Legend and the What's new line. **All stages done.**
 
 The first five quests are in [../trader-quests/PLAN.md](../trader-quests/PLAN.md). Everything there still holds (fixed planets, one quest at a time, gold rings, Bolt's next stop, gentle fights, drop any time); this plan only says what is new.
 
@@ -50,7 +50,7 @@ The stories (5 pages each, under 30 words a page) are in [stories.json](stories.
 | **R.1** ✅ | Rules and server: five config entries, `FIRST_SET` for jobs and Star Quest Master, `hands` buy-deliver steps, the race (`checkpoint`, `fuelAtStart`, reset on refuel), the boss tier; tests (fold into the quest test, the budget is full) | Medium |
 | **R.2** ✅ | Quests tab: "More quests" heading, the new step lines (water per planet, race fuel sum, Rust-Beard card), Bolt lines, preview tools to open each new quest | Medium |
 | **R.3** ✅ | Stories with each giver's voice (twins two voices), the 📖 shelf, paintings into the game | Small |
-| **R.4** | Five more Quest Log keepsakes (Rain-drop, Golden spoon, Comet Cup, Pet collar, Treasure coin), 2 hub points each, Star Quest Legend achievement and season trophy (migration), What's new line, go live | Small |
+| **R.4** ✅ | Five more Quest Log keepsakes (Rain-drop, Golden spoon, Comet Cup, Pet collar, Treasure coin), 2 hub points each, Star Quest Legend achievement and season trophy (migration), What's new line, go live | Small |
 
 Each stage goes live on its own, like the first five.
 
@@ -96,7 +96,18 @@ Each stage goes live on its own, like the first five.
 - **No clashes:** the Comet Cup's finish-line moment (chequered flags on `zip-4`) plays first, and Zip's last two pages (page 4 is `zip-4` too) wait till it's gone, then the reward. The start lamps (`zip-3`) only play on "Start the race!", well after the opening pages; Rust-Beard's banner (`sable-2`) only on his fight, and the last pages on the treasure hand-over after it.
 - **Tests:** folded into the Quests screen test in `TraderGame.test.tsx` (the twins' tags on pages 1 and 2; the finish moment before Zip's pages). Budget unchanged.
 
-### Left for R.4
+### What R.4 built (22 Nov 2026)
+
+- **Keepsakes:** Rain-drop (Puddle), Golden spoon (Gorbo), Comet Cup (Zip), Pet collar (Pip and Pop), Treasure coin (Sable) in `KEEPSAKES` (`questGuide.ts`). No new paintings were needed: each giver's last story page (`<id>-5`) already shows the keepsake on its own, so the round badge uses it like the first five (a `focus` per keepsake moves the crop onto it). Quest complete says "New keepsake in your Quest Log"; the 🎒 Quest Log has the first five, the Star Quest Master line, then a **More quests** row with the five new ones and the Star Quest Legend line.
+- **Hub points:** 2 a quest. The server already said `points: 2`; the database now logs quests 6 to 10 (`trader_save` and the Quest Log's check take all ten ids), so `trader_quest_finished` gives the points as for the first five.
+- **Star Quest Legend** (migration `20261122000600_trader_quest_legend.sql`): achievement `trader-quest-legend` (new measure `trader_quests_all`, all ten ever, kept through a New Season) and season trophy `trader-quest-legend` (all ten in one Star Trader season; bronze, silver, gold on later seasons). Painting `star-quest-legend-{gold,silver,bronze}` in `src/avatar/art/trophies`: gold is the R.0 `trophy-quest-legend` painting (gold star, purple stand), silver and bronze recoloured from it, the purple kept.
+- **Star Quest Master stays the first five:** `trader_quests` and the Master trophy now count only the first five ids (they could only ever be those before), so five of any ten is never Master.
+- **The Legend moment:** finishing the tenth quest (new to the log) plays a full-window moment over Quest complete: spinning gold and purple rays, the trophy spins in and floats, the ten givers' faces pop in round it, stars burst out and "Star Quest Legend!" slams down (about 5 seconds; tap or any key skips, and the key never presses Carry on). Less motion: one still picture, gone sooner. Then the Legend line on Quest complete.
+- **Back-award:** quests 6 to 10 already finished go into the log with their 2 points (the Quest complete screen already promised them). None were finished when this was written.
+- **What's new:** "Five more Star Trader quests".
+- **Tests:** folded into the Quests screen test in `TraderGame.test.tsx` (ten keepsakes, Master without Legend, the Legend line, the moment and its key skip); database checks added to `trader_quest_log.test.sql`; the achievement count in `progress_access.test.sql` is 247. Budget unchanged.
+
+### Left for R.4 (done above)
 
 - Five more Quest Log keepsakes (Rain-drop, Golden spoon, Comet Cup, Pet collar, Treasure coin), 2 hub points each, the Star Quest Legend achievement and gold-and-purple season trophy (migration, painting `trophy-quest-legend` is in the game folder), a What's new line, go live.
 

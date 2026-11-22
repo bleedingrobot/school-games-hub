@@ -2,14 +2,16 @@
  * The Quests tab (docs/plans/trader-quests/PLAN.md, Q.2): five quest cards with each giver's painted face, and the open
  * quest's steps as a checklist that says exactly where to go. The server decides everything; this only shows it.
  */
+import { useState } from 'react';
 import { GOODS, SHIPS } from '../../../shared/trader/config';
 import { coordText, distance, type Galaxy } from '../../../shared/trader/galaxy';
 import { allQuestsDone, FIRST_SET, hasSmallOrder, isSmallShip, jobId, jobIndex, NAVY_LASER, nearestSellers, nextQuest, openQuestView, questReward, FIRST_QUESTS, QUESTS, trailClue, type QuestConfig, type QuestState, type StepView } from '../../../shared/trader/quests';
 import type { Action } from '../../../shared/trader/server';
 import type { Trader } from '../../../shared/trader/state';
-import { boardArt, doneOf, giverArt, isHidden, isTrail, isWaiting, KEEPSAKES, landingLine, MASTER_ART, pirateWords, raceFuel, stepWords, trailName, type Shown } from './questGuide';
+import { boardArt, doneOf, giverArt, isHidden, isTrail, isWaiting, KEEPSAKES, landingLine, LEGEND_ART, MASTER_ART, pirateWords, raceFuel, stepWords, trailName, type Shown } from './questGuide';
 import type { StoryPage } from '../../../shared/kit/stories';
 import { pageReader, QUEST_STORIES } from './stories';
+import { LegendMoment } from './QuestFx';
 
 const cr = (n: number): string => `${n.toLocaleString('en-NZ')} cr`;
 
@@ -204,30 +206,43 @@ function Jobs({ galaxy, t, quests, busy, showXY, onQuest, onShowMap }: { galaxy:
   );
 }
 
-/** The Quest Log: a keepsake for each quest ever finished (kept through a New Season), and the Star Quest Master line. */
+/** The Quest Log: a keepsake for each quest ever finished (kept through a New Season), the Star Quest Master line for
+ * the first five and the Star Quest Legend line for all ten. */
 export function QuestLog({ keepsakes }: { keepsakes: string[] }) {
-  const all = FIRST_QUESTS.every((q) => keepsakes.includes(q.id));
+  const master = FIRST_QUESTS.every((q) => keepsakes.includes(q.id));
+  const legend = QUESTS.every((q) => keepsakes.includes(q.id));
+  const row = (list: readonly QuestConfig[]) => (
+    <ul className="stq-log__list">
+      {list.map((q) => {
+        const got = keepsakes.includes(q.id);
+        const k = KEEPSAKES[q.id];
+        const art = QUEST_STORIES[q.id]?.pages[4]?.art?.small;
+        return (
+          <li key={q.id} className={`stq-keep ${got ? 'stq-keep--got' : ''}`} data-keep={q.id}>
+            {got && art ? <img className="stq-keep__pic" src={art} alt="" draggable={false} style={k.focus ? { objectPosition: k.focus } : undefined} /> : <span className="stq-keep__pic stq-keep__pic--empty" aria-hidden="true">{got ? k.emoji : '?'}</span>}
+            <span className="stq-keep__name">{got ? `${k.emoji} ${k.name}` : 'Not yet'}<span className="st-soft">{q.giver}</span></span>
+          </li>
+        );
+      })}
+    </ul>
+  );
   return (
     <div className="stq-log" aria-labelledby="stq-log-h">
       <h3 id="stq-log-h" className="st-h3">🎒 Quest Log</h3>
       <p className="st-soft stq-log__sub">A keepsake for each quest you finish. You keep them, even after a New Season.</p>
-      <ul className="stq-log__list">
-        {FIRST_QUESTS.map((q) => {
-          const got = keepsakes.includes(q.id);
-          const k = KEEPSAKES[q.id];
-          const art = QUEST_STORIES[q.id]?.pages[4]?.art?.small;
-          return (
-            <li key={q.id} className={`stq-keep ${got ? 'stq-keep--got' : ''}`}>
-              {got && art ? <img className="stq-keep__pic" src={art} alt="" draggable={false} /> : <span className="stq-keep__pic stq-keep__pic--empty" aria-hidden="true">{got ? k.emoji : '?'}</span>}
-              <span className="stq-keep__name">{got ? `${k.emoji} ${k.name}` : 'Not yet'}<span className="st-soft">{q.giver}</span></span>
-            </li>
-          );
-        })}
-      </ul>
-      {all && (
+      {row(FIRST_QUESTS)}
+      {master && (
         <p className="stq-master">
           {MASTER_ART && <img className="stq-master__pic" src={MASTER_ART} alt="" width={64} height={64} draggable={false} />}
           <span><strong>🌟 Star Quest Master!</strong> You finished all five quests. Your trophy is on your profile.</span>
+        </p>
+      )}
+      <h4 className="stq-log__more">More quests</h4>
+      {row(MORE_QUESTS)}
+      {legend && (
+        <p className="stq-master stq-legend">
+          {LEGEND_ART.small && <img className="stq-master__pic" src={LEGEND_ART.small} alt="" width={64} height={64} draggable={false} />}
+          <span><strong>💜 Star Quest Legend!</strong> You finished all ten quests. Your trophy is on your profile.</span>
         </p>
       )}
     </div>
@@ -458,16 +473,24 @@ export function QuestClue({ quest, text, onReveal }: { quest: QuestConfig; text:
   );
 }
 
-/** The short "Quest complete!" moment. */
-export function QuestDone({ quest, reward, points = 0, master = false, next, onDone }: { quest: QuestConfig; reward: number; points?: number; master?: boolean; next: QuestConfig | null; onDone: () => void }) {
+/** The short "Quest complete!" moment. For the tenth quest, the Star Quest Legend moment plays first. */
+export function QuestDone({ quest, reward, points = 0, master = false, legend = false, still = false, next, onDone }: { quest: QuestConfig; reward: number; points?: number; master?: boolean; legend?: boolean; still?: boolean; next: QuestConfig | null; onDone: () => void }) {
   const k = KEEPSAKES[quest.id];
+  const [fx, setFx] = useState(legend);
   return (
     <section className="st-panel st-panel--small stq-done" aria-labelledby="stq-done-h">
+      {fx && <LegendMoment still={still} onDone={() => setFx(false)} />}
       <GiverFace id={quest.id} name={quest.giver} size={112} />
       <h2 id="stq-done-h" className="st-h stq-done__h">Quest complete! 🎉</h2>
       <p className="stq-done__pay">+{reward.toLocaleString('en-NZ')} credits{points > 0 && <span className="stq-done__points"> · +{points} hub points</span>}</p>
       {k && <p className="stq-done__keep">{k.emoji} New keepsake in your Quest Log: <strong>{k.name}</strong></p>}
       {master && <p className="stq-master"><strong>🌟 Star Quest Master!</strong> All five quests done. Your trophy is on your profile.</p>}
+      {legend && (
+        <p className="stq-master stq-legend">
+          {LEGEND_ART.small && <img className="stq-master__pic" src={LEGEND_ART.small} alt="" width={56} height={56} draggable={false} />}
+          <span><strong>💜 Star Quest Legend!</strong> All ten quests done. Your trophy is on your profile.</span>
+        </p>
+      )}
       <p className="st-sub">{quest.giver} says thank you, Captain!</p>
       <p className="st-soft">{next ? `Next quest: ${next.title}. It opens tomorrow.` : 'That was the last quest. You helped everyone in the galaxy!'}</p>
       <div className="st-actions">

@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'trader-quests-2-2026-11-22',
+    date: '2026-11-22',
+    emoji: '💜',
+    title: 'Five more Star Trader quests',
+    text: 'Five new quests, a keepsake each, and a Star Quest Legend trophy for all ten!',
+    game: 'trader',
+  },
+  {
     id: 'goblinstorm-storm-lands-2026-11-22',
     date: '2026-11-22',
     emoji: '🌀',

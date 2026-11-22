@@ -795,7 +795,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
             {phase.k === 'planet' && pending?.kind === 'fight' && <FightPanel t={t} fight={pending.fight} tier={pending.tier} quest={pending.quest !== undefined && openQuest ? questFightWords(openQuest) : undefined} advice={bolt ? fightAdvice(t, pending.fight) : null} askFirst={level === 'some'} log={fightLog.length ? fightLog : ['They are coming right at you!']} busy={fightBusy || asking} onAct={(m) => void fightAct(m)} />}
             {phase.k === 'after' && <SummaryPanel title={phase.title} lines={phase.lines} button="Carry on" onDone={() => { setTab('trade'); setPhase({ k: 'planet' }); }} />}
             {phase.k === 'quest' && questById(phase.id) && (
-              <QuestDone quest={questById(phase.id)!} reward={phase.reward} points={phase.points} master={FIRST_SET.includes(phase.id) && FIRST_SET.every((id) => keepsakes.includes(id)) && !(loaded?.questLog ?? []).includes(phase.id)} next={QUESTS.find((c) => !game.quests?.finished.includes(c.id)) ?? null} onDone={() => setPhase({ k: 'planet' })} />
+              <QuestDone quest={questById(phase.id)!} reward={phase.reward} points={phase.points} master={FIRST_SET.includes(phase.id) && FIRST_SET.every((id) => keepsakes.includes(id)) && !(loaded?.questLog ?? []).includes(phase.id)} legend={QUESTS.every((c) => keepsakes.includes(c.id)) && !(loaded?.questLog ?? []).includes(phase.id)} still={lessMotion} next={QUESTS.find((c) => !game.quests?.finished.includes(c.id)) ?? null} onDone={() => setPhase({ k: 'planet' })} />
             )}
             {phase.k === 'moon' && (
               <SummaryPanel
