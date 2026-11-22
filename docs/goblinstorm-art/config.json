@@ -2935,6 +2935,489 @@
       "folder": "fx",
       "file": "feather",
       "max": 160
+    },
+    {
+      "name": "ground-sunken",
+      "prompt": "Top-down ground for the Sunken Kingdom map: flat sandy sea floor seen straight from above, pale teal-blue sand with soft rippled underwater light patterns, a few tiny shells and pebbles, calm and low contrast. Seamless, even, wide.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "texture",
+      "style": "ground",
+      "folder": "ground",
+      "file": "sunken",
+      "max": 512,
+      "blend": true
+    },
+    {
+      "name": "ground-sky",
+      "prompt": "Top-down ground for the Sky Citadel map: flat pale grey-white stone floor of a castle in the clouds seen straight from above, soft white flagstones with thin wisps of cloud drifting over them, a light blue tint, calm and low contrast. Seamless, even, wide.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "texture",
+      "style": "ground",
+      "folder": "ground",
+      "file": "sky",
+      "max": 512,
+      "blend": true
+    },
+    {
+      "name": "ground-crystal",
+      "prompt": "Top-down ground for the Crystal Caverns map: flat dark purple cave floor seen straight from above, smooth stone with tiny glinting cyan and pink crystals here and there, calm and low contrast. Seamless, even, wide.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "texture",
+      "style": "ground",
+      "folder": "ground",
+      "file": "crystal",
+      "max": 512,
+      "blend": true
+    },
+    {
+      "name": "ground-swamp",
+      "prompt": "Top-down ground for the Shadow Swamp map: flat dark green muddy swamp ground seen straight from above, soft moss patches, tiny lily pads and small puddles, calm and low contrast. Seamless, even, wide.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "texture",
+      "style": "ground",
+      "folder": "ground",
+      "file": "swamp",
+      "max": 512,
+      "blend": true
+    },
+    {
+      "name": "ground-citadel",
+      "prompt": "Top-down ground for the Storm King’s Citadel map: flat dark blue-grey stone castle floor tiles seen straight from above, slightly worn, a few very thin faint glowing blue cracks, calm and low contrast. Seamless, even, wide.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "texture",
+      "style": "ground",
+      "folder": "ground",
+      "file": "citadel",
+      "max": 512,
+      "blend": true
+    },
+    {
+      "name": "monster-raider",
+      "prompt": "a small Sea Raider: a cheeky blue-green fish-person with fins, a seashell helmet and a tiny trident, seen from above, top-down, cute and friendly-scary, for the Sunken Kingdom map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/sunken",
+      "file": "raider",
+      "max": 200
+    },
+    {
+      "name": "monster-jelly",
+      "prompt": "a small glowing pink jellyfish with a round bell and wiggly tentacles, floating, seen from above, top-down, cute and friendly-scary, for the Sunken Kingdom map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/sunken",
+      "file": "jelly",
+      "max": 200
+    },
+    {
+      "name": "monster-crabknight",
+      "prompt": "a Crab Knight: a chunky red crab wearing a tiny silver knight's helmet, big claws raised, seen from above, top-down, cute and friendly-scary, for the Sunken Kingdom map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/sunken",
+      "file": "crabknight",
+      "max": 256
+    },
+    {
+      "name": "monster-giantcrab",
+      "prompt": "a big Giant Crab: one huge orange crab with a barnacle-covered shell and seaweed on its back, giant claws raised, only this one crab and nothing else, seen from above, top-down, cute and friendly-scary, for the Sunken Kingdom map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/sunken",
+      "file": "giantcrab",
+      "max": 448,
+      "biggest_only": true
+    },
+    {
+      "name": "monster-kraken",
+      "prompt": "the Kraken: a big purple octopus sea monster with a little golden crown, big round eyes, curling tentacles spread wide all around, seen from above, top-down, cute and friendly-scary, for the Sunken Kingdom map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/sunken",
+      "file": "kraken",
+      "max": 512
+    },
+    {
+      "name": "monster-harpy",
+      "prompt": "a small Storm Harpy: a cheeky bird-person with grey-blue feathers, wings spread, a tiny lightning bolt on its chest, seen from above, top-down, cute and friendly-scary, for the Sky Citadel map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/sky",
+      "file": "harpy",
+      "max": 200
+    },
+    {
+      "name": "monster-gargoyle",
+      "prompt": "a small grey stone gargoyle with bat wings and little horns, flying, seen from above, top-down, cute and friendly-scary, for the Sky Citadel map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/sky",
+      "file": "gargoyle",
+      "max": 200
+    },
+    {
+      "name": "monster-cloudgolem",
+      "prompt": "a Cloud Golem: a chunky round fluffy white cloud creature with stubby cloud arms and glowing blue eyes, seen from above, top-down, cute and friendly-scary, for the Sky Citadel map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/sky",
+      "file": "cloudgolem",
+      "max": 256
+    },
+    {
+      "name": "monster-roc",
+      "prompt": "the Thunder Roc: one huge golden eagle with crackling blue lightning along its feathers, wings spread wide, only this one bird and nothing else, seen from above, top-down, cute and friendly-scary, for the Sky Citadel map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/sky",
+      "file": "roc",
+      "max": 448,
+      "biggest_only": true
+    },
+    {
+      "name": "monster-stormgiant",
+      "prompt": "the Storm Giant: a huge blue-skinned giant with a bushy stormy grey beard, a small crown and a big club shaped like a lightning bolt, seen from above, top-down, cute and friendly-scary, for the Sky Citadel map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/sky",
+      "file": "stormgiant",
+      "max": 512
+    },
+    {
+      "name": "monster-beetle",
+      "prompt": "a small turquoise Crystal Beetle with a shiny faceted gem shell and little legs, seen from above, top-down, cute and friendly-scary, for the Crystal Caverns map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/crystal",
+      "file": "beetle",
+      "max": 200
+    },
+    {
+      "name": "monster-shardbat",
+      "prompt": "a small purple bat made of sharp glowing crystal shards, wings spread, seen from above, top-down, cute and friendly-scary, for the Crystal Caverns map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/crystal",
+      "file": "shardbat",
+      "max": 200
+    },
+    {
+      "name": "monster-gemgolem",
+      "prompt": "a Gem Golem: a chunky purple rock creature covered in shiny pink and blue gems, seen from above, top-down, cute and friendly-scary, for the Crystal Caverns map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/crystal",
+      "file": "gemgolem",
+      "max": 256
+    },
+    {
+      "name": "monster-crystalqueen",
+      "prompt": "the Crystal Queen: a glowing lilac crystal fairy queen with a gem crown, floating crystal shards around her, seen from above, top-down, cute and friendly-scary, for the Crystal Caverns map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/crystal",
+      "file": "crystalqueen",
+      "max": 448
+    },
+    {
+      "name": "monster-wyrm",
+      "prompt": "the Crystal Wyrm: one big purple dragon made of shining crystal with a dragon head, glowing cyan eyes and crystal spikes along its back, curled around itself, only this one dragon and nothing else, seen from above, top-down, cute and friendly-scary, for the Crystal Caverns map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/crystal",
+      "file": "wyrm",
+      "max": 512,
+      "biggest_only": true
+    },
+    {
+      "name": "monster-bogimp",
+      "prompt": "a small muddy green Bog Imp with stubby horns and a lily pad for a hat, seen from above, top-down, cute and friendly-scary, for the Shadow Swamp map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/swamp",
+      "file": "bogimp",
+      "max": 200
+    },
+    {
+      "name": "monster-wisp",
+      "prompt": "a small floating will-o'-the-wisp: one glowing ball of pale green light with a cheeky face and a wispy tail, no speech bubble, only this one creature and nothing else, seen from above, top-down, cute and friendly-scary, for the Shadow Swamp map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/swamp",
+      "file": "wisp",
+      "max": 200,
+      "biggest_only": true
+    },
+    {
+      "name": "monster-hulk",
+      "prompt": "a Swamp Hulk: a big lumpy moss-covered swamp creature with reeds sticking out and mud dripping, seen from above, top-down, cute and friendly-scary, for the Shadow Swamp map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/swamp",
+      "file": "hulk",
+      "max": 256
+    },
+    {
+      "name": "monster-hag",
+      "prompt": "the Hag of the Mire: a grumpy old swamp witch with mossy green hair, a crooked staff with a glowing green lantern, floating, seen from above, top-down, cute and friendly-scary, for the Shadow Swamp map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/swamp",
+      "file": "hag",
+      "max": 448
+    },
+    {
+      "name": "monster-hydra",
+      "prompt": "the Shadow Hydra: a big dark green three-headed swamp serpent with glowing lime eyes, all three heads raised, grumpy, seen from above, top-down, cute and friendly-scary, for the Shadow Swamp map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/swamp",
+      "file": "hydra",
+      "max": 512
+    },
+    {
+      "name": "monster-stormgoblin",
+      "prompt": "a small blue Storm Goblin with pointy ears, a tiny lightning-bolt spear and crackling blue sparks, seen from above, top-down, cute and friendly-scary, for the Storm King’s Citadel map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/citadel",
+      "file": "stormgoblin",
+      "max": 200
+    },
+    {
+      "name": "monster-crow",
+      "prompt": "a small dark Storm Crow with glowing blue eyes and lightning-tipped feathers, wings spread, seen from above, top-down, cute and friendly-scary, for the Storm King’s Citadel map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/citadel",
+      "file": "crow",
+      "max": 200
+    },
+    {
+      "name": "monster-giant",
+      "prompt": "a Goblin Giant: a huge chunky green goblin with tusks, a spiked wooden club and a leather belt, seen from above, top-down, cute and friendly-scary, for the Storm King’s Citadel map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/citadel",
+      "file": "giant",
+      "max": 256
+    },
+    {
+      "name": "monster-stormknight",
+      "prompt": "the Storm Knight: a knight in dark blue-grey armour with glowing blue eyes in the helmet, a lightning sword and a stormy cape, seen from above, top-down, cute and friendly-scary, for the Storm King’s Citadel map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/citadel",
+      "file": "stormknight",
+      "max": 448
+    },
+    {
+      "name": "monster-stormking",
+      "prompt": "the Storm King: a big goblin king made of swirling green and blue storm clouds, a golden crown with lightning bolts, a glowing storm sceptre, cheeky grin, seen from above, top-down, cute and friendly-scary, for the Storm King’s Citadel map, the whole creature. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 8 to 11.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "style": "sprite",
+      "folder": "monsters/citadel",
+      "file": "stormking",
+      "max": 512
+    },
+    {
+      "name": "legendary-fifth",
+      "prompt": "Icon for the Legendary upgrade Fifth Weapon: five glowing magical weapons, a sword, an axe, a bow, a staff and a hammer, fanned out in a circle, with a rich golden legendary glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "legendary",
+      "file": "fifth",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "legendary-secondwind",
+      "prompt": "Icon for the Legendary upgrade Second Wind: a golden phoenix feather glowing in a swirl of warm wind, with a rich golden legendary glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "legendary",
+      "file": "secondwind",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "legendary-stormmight",
+      "prompt": "Icon for the Legendary upgrade Storm Might: a glowing fist wrapped in crackling blue lightning, with a rich golden legendary glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "legendary",
+      "file": "stormmight",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "legendary-surge",
+      "prompt": "Icon for the Legendary upgrade Storm Surge: a big burst of purple and gold storm energy bursting outwards in a ring, with a rich golden legendary glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "legendary",
+      "file": "surge",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "legendary-anchor",
+      "prompt": "Icon for the Legendary upgrade Anchor Boots: a pair of heavy iron boots with a small golden anchor on each, with a rich golden legendary glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "legendary",
+      "file": "anchor",
+      "max": 256,
+      "small": 128
+    },
+    {
+      "name": "legendary-lantern",
+      "prompt": "Icon for the Legendary upgrade Storm Lantern: a brass lantern shining bright golden light, swirling mist around it, with a rich golden legendary glow around the edge. Suitable for children aged 8 to 11.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "icon",
+      "style": "icon",
+      "folder": "legendary",
+      "file": "lantern",
+      "max": 256,
+      "small": 128
     }
   ]
 }
