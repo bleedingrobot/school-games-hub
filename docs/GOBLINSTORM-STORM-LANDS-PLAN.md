@@ -2,7 +2,7 @@
 
 *James, 22 Nov 2026: plan 5 more levels. First idea was "beat every map 3 times with every hero" (120 wins); too hard. Then once with each hero (40 wins). Then James chose: **unlock them by buying the whole shop**, and add **Legendary upgrades** to the shop that help on the new maps, working **on the new maps only**.*
 
-**Status: stage 1 (rules, twists, Legendary effects, sim) built; not open to pupils (`STORM_LANDS_ON = false`, and the database still allows maps 0–4 only). Next: stage 2, the art.**
+**Status: stage 1 (rules, twists, Legendary effects, sim) live but switched off (#718). Stage 2, the art, done 22 Nov: 5 grounds, 25 monsters, 6 Legendary icons (`art/paint/legendary/`, for stage 3's Shop row), 11 story scenes with words (5 maps, 5 boss wins, the Storm Gate page `STORM_GATE`, for stage 3 to show when the gate opens), map card colours. Both Sunken Kingdom scenes drew the Kraken as a crowned whale; repaint if James wants. Next: stage 3, go live.**
 
 ## The Storm Gate
 - **Opens with:** the whole shop bought (all 28 levels, 21,300 gold) **and** the Fire Dragon beaten once. The Fire Dragon keeps the maps in order; the shop is the long part.
