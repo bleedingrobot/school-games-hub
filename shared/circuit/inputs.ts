@@ -66,7 +66,7 @@ export function encodeLog(log: InputLog): string {
   return log.map(([slot, wait, code]) => `${slot}.${wait}.${code}`).join(',');
 }
 
-const CHANGE = /^(\d{1,6})\.(\d{1,5})\.(\d{1,2})$/;
+const CHANGE = /^(\d{1,7})\.(\d{1,5})\.(\d{1,2})$/;
 
 /** Null if the text isn't a well-made log (in order, codes in range, not too long). */
 export function decodeLog(text: string): InputChange[] | null {

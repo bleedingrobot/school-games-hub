@@ -15,6 +15,9 @@
  * Maths spots (Stage 3): a run of rows with `+` is one recharge port; a run of rows with `?` is one data gate, and the
  * lanes with `?` in its first row (the split row) are its signed lanes, left to right (2 to 4). Every port and gate asks
  * one question, so they are at least QUESTION_GAP rows apart, and no short-circuit tile sits near a gate.
+ *
+ * Checkpoints (Stage 4): a row ending with ` @` puts a checkpoint on its first row. Roads over a minute have them: crash or
+ * fall after one and the racer restarts there (physics.ts), on the plain trace nearest the middle.
  */
 import { BLOCK_HEIGHTS, GATE_CLEAR_ROWS, GATE_LANES, LANES, QUESTION_GAP, type World } from './config';
 
@@ -56,16 +59,23 @@ export interface Road {
   /** For each row: the port or gate it belongs to, or -1. */
   portAt: number[];
   gateAt: number[];
+  /** Checkpoint rows, in road order (rows marked ` @`). */
+  checkpoints: number[];
 }
 
-const ROW = /^([.\->rxg+123t?]{7})(?: x([1-9]\d{0,3}))?$/;
+const ROW = /^([.\->rxg+123t?]{7})(?: x([1-9]\d{0,3}))?( @)?$/;
 
 /** Reads a road, or throws with the row that is wrong. */
 export function parseRoad(def: RoadDef): Road {
   let cells = '';
+  const checkpoints: number[] = [];
   def.rows.forEach((text, i) => {
     const m = ROW.exec(text);
-    if (!m) throw new Error(`${def.id}: row ${i + 1} "${text}" is not 7 road letters (${CELLS}), with an optional " xN"`);
+    if (!m) throw new Error(`${def.id}: row ${i + 1} "${text}" is not 7 road letters (${CELLS}), with an optional " xN" and " @"`);
+    if (m[3]) {
+      if (!m[1].includes('-')) throw new Error(`${def.id}: the checkpoint on row ${i + 1} needs a plain trace to restart on`);
+      checkpoints.push(cells.length / LANES);
+    }
     cells += m[1].repeat(m[2] ? Number(m[2]) : 1);
   });
   if (cells.length === 0) throw new Error(`${def.id}: no rows`);
@@ -87,7 +97,7 @@ export function parseRoad(def: RoadDef): Road {
   const p = spots('+');
   const g = spots('?');
   const gates: GateSpot[] = g.list.map((spot) => ({ ...spot, lanes: [...Array(LANES).keys()].filter((lane) => cells[spot.first * LANES + lane] === '?') }));
-  const road: Road = { def, length, cells, ports: p.list, gates, portAt: p.at, gateAt: g.at };
+  const road: Road = { def, length, cells, ports: p.list, gates, portAt: p.at, gateAt: g.at, checkpoints };
   checkMathsSpots(road);
   return road;
 }
@@ -105,6 +115,12 @@ function checkMathsSpots(road: Road): void {
       if (road.cells.slice(row * LANES, row * LANES + LANES).includes('x')) throw new Error(`${id}: a short circuit at row ${row + 1} is too near the gate at row ${gate.first + 1}`);
     }
   }
+}
+
+/** Where a racer restarts at a checkpoint row: the plain-trace lane nearest the middle (left first). */
+export function restartLane(road: Road, row: number): number {
+  for (const d of [0, -1, 1, -2, 2, -3, 3]) if (cellAt(road, 3 + d, row) === '-') return 3 + d;
+  return 3;
 }
 
 /** The cell in a lane and row. Outside the road (either side, before the start, after the end) is a gap. */

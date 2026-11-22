@@ -107,8 +107,8 @@ Deno.serve(
     },
     async record(player, f) {
       const saved = await call<{ status: SaveStatus; today: number }>('record_circuit_finish', {
-        player, road: f.road, before_road: f.before, seed: f.seed, steps: f.steps, medal: f.medal, clean: f.clean, charged: f.charged,
-        inputs: f.inputs, unlimited: f.unlimited,
+        player, road: f.road, needs: f.needs?.roads ?? null, need: f.needs?.count ?? 0, seed: f.seed, steps: f.steps, medal: f.medal,
+        clean: f.clean, charged: f.charged, inputs: f.inputs, unlimited: f.unlimited, hard: f.hard,
       });
       return saved;
     },

@@ -9,14 +9,15 @@
  *   answer  marks a recharge port's answer against the kept question, once, and records it (`recordMathsAnswers`);
  *   finish  checks the stamp, replays the recorded inputs itself (shared/circuit/game.ts `judgeFinish`) with each port's
  *           refill from the marked answers (unanswered = half) and each gate's right lane, and saves only what the replay
- *           says: the time, medal and battery star. The lane taken at each data gate is read from the replay, marked and
+ *           says: the time, medal and battery star. A hard-mode finish is replayed with Auto-Pilot off and the count-down
+ *           clock, and kept apart as a hard finish (Stage 4). The lane taken at each data gate is read from the replay, marked and
  *           recorded once. The 6th finish of a New Zealand day is refused unless the class has "Unlimited today" (the
  *           database counts and refuses, so two tabs can't sneak one in).
  *
  * Every job checks sign-in and the teacher's switch (`settings_of`): while it is off, nothing is handed out or saved.
  * Logic only, with the database passed in (`Services`), so handler.test.ts and the preview run it without Deno.
  */
-import { finishesLeft, judgeFinish, makeSeed, parseFinish, roadBefore, roadById, roadOpen, seedProblem, stampText, type CircuitSave, type JudgedFinish, type RoadProgress } from '../../../shared/circuit/game';
+import { finishesLeft, judgeFinish, makeSeed, parseFinish, roadById, roadNeeds, roadOpen, seedProblem, stampText, type CircuitSave, type JudgedFinish, type RoadProgress } from '../../../shared/circuit/game';
 import { GATE_MS, gateLayout, gateValue, refillsFor, runMaths, slotPlan, type RunMaths } from '../../../shared/circuit/maths';
 import type { Road } from '../../../shared/circuit/road';
 import type { FactAnswer } from '../../../shared/maths/leitner';
@@ -50,10 +51,11 @@ export interface Services {
   /** The pupil's roads and finishes today (NZ day). */
   load(player: string): Promise<{ roads: Record<string, RoadProgress>; today: number } | 'busy'>;
   /**
-   * Saves a replayed finish in one locked step: refuses a 6th finish today unless `unlimited`, refuses a road whose road
-   * before isn't finished, counts a seed once, keeps the best, and gives the hub points.
+   * Saves a replayed finish in one locked step: refuses a 6th finish today unless `unlimited`, refuses a road that isn't open
+   * (`needs`: `count` of these roads finished, from roadNeeds), counts a seed once, keeps the best and the hard finishes, and
+   * gives the hub points.
    */
-  record(player: string, finish: { road: string; before: string | null; seed: string; inputs: string; unlimited: boolean } & JudgedFinish): Promise<{ status: SaveStatus; today: number } | 'busy'>;
+  record(player: string, finish: { road: string; needs: { roads: string[]; count: number } | null; seed: string; inputs: string; unlimited: boolean } & JudgedFinish): Promise<{ status: SaveStatus; today: number } | 'busy'>;
   now(): number;
   randomHex(bytes: number): string;
 }
@@ -111,7 +113,7 @@ export function makeHandler(services: Services) {
       if (!roadById(roadId)) return reply(400, { error: "That road couldn't be found." });
       const saved = await services.load(player);
       if (saved === 'busy') return reply(503, { error: "We couldn't start the road just now." });
-      if (!roadOpen(saved.roads, roadId)) return reply(409, { error: 'Finish the road before to open this one.', code: 'locked' });
+      if (!roadOpen(saved.roads, roadId)) return reply(409, { error: 'That road isn’t open yet.', code: 'locked' });
       const left = finishesLeft(saved.today, settings.unlimited);
       if (left === 0) return reply(409, { error: DONE_TODAY, code: 'done-today' });
       const seed = makeSeed(nowSeconds, services.randomHex(12));
@@ -179,13 +181,13 @@ export function makeHandler(services: Services) {
         console.warn(`circuit: refused a finish (${judged.problem})`);
         return reply(400, { error: "That run couldn't be saved." });
       }
-      const saved = await services.record(player, { road: report.road, before: roadBefore(report.road), seed: report.seed, inputs: report.inputs, unlimited: settings.unlimited, ...judged.run });
+      const saved = await services.record(player, { road: report.road, needs: roadNeeds(report.road), seed: report.seed, inputs: report.inputs, unlimited: settings.unlimited, ...judged.run });
       if (saved === 'busy') return reply(503, { error: "We couldn't save your run just now." });
       if (saved.status === 'done-today') return reply(409, { error: DONE_TODAY, code: 'done-today' });
-      if (saved.status === 'locked') return reply(409, { error: 'Finish the road before to open this one.', code: 'locked' });
+      if (saved.status === 'locked') return reply(409, { error: 'That road isn’t open yet.', code: 'locked' });
       if (road && stored && saved.status !== 'duplicate') await recordGates(services, player, road, report.seed, stored, layout, judged.choices);
-      const { steps, medal, clean, charged, battery } = judged.run;
-      return reply(200, { result: saved.status, steps, medal, clean, charged, battery, left: finishesLeft(saved.today, settings.unlimited) });
+      const { steps, medal, clean, charged, battery, hard } = judged.run;
+      return reply(200, { result: saved.status, steps, medal, clean, charged, battery, hard, left: finishesLeft(saved.today, settings.unlimited) });
     }
 
     return reply(400, { error: "That couldn't be read." });

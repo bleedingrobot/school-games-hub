@@ -1,10 +1,11 @@
--- Circuit Racer (migrations 20261122001300_circuit.sql and 20261123000100_circuit_maths.sql, id circuit): progress, runs,
--- the switch, the hub row, the 5 finished roads a day, and the maths (the switch and the kept questions). Pupils can't read
--- or change any of it directly; the server function does everything.
+-- Circuit Racer (migrations 20261122001300_circuit.sql, 20261123000100_circuit_maths.sql and 20261123000200_circuit_worlds.sql,
+-- id circuit): progress, runs, the switch, the hub row, the 5 finished roads a day, the maths (the switch and the kept
+-- questions), worlds opening at 4 of 6 and hard finishes. Pupils can't read or change any of it directly; the server
+-- function does everything.
 -- Run on a throw-away copy: scripts/scratch-db.sh circuit, then scripts/scratch-test.sh circuit supabase/tests/database/circuit.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(40);
+select plan(44);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -25,10 +26,18 @@ create function pg_temp.reset() returns void language sql as $$
   select set_config('role', 'postgres', true), set_config('request.jwt.claims', '', true);
 $$;
 create function pg_temp.id(who text) returns uuid language sql as $$ select ('00000000-0000-0000-0000-0000000000' || who)::uuid $$;
--- One finish: road, the road before it, seed, steps, medal, unlimited.
-create function pg_temp.finish(who text, road text, before_road text, seed text, steps integer, medal text, unlimited boolean default false)
+-- One finish: road, the road before it, seed, steps, medal, unlimited, hard.
+create function pg_temp.finish(who text, road text, before_road text, seed text, steps integer, medal text, unlimited boolean default false,
+  hard boolean default false)
 returns text language sql as $$
-  select public.record_circuit_finish(pg_temp.id(who), road, before_road, seed, steps, medal, true, false, '0.0.4', unlimited) ->> 'status'
+  select public.record_circuit_finish(pg_temp.id(who), road, case when before_road is null then null else array[before_road] end,
+    case when before_road is null then 0 else 1 end, seed, steps, medal, true, false, '0.0.4', unlimited, hard) ->> 'status'
+$$;
+-- A world's first road: needs 4 of the world before's 6 roads.
+create function pg_temp.world_finish(who text, road text, seed text) returns text language sql as $$
+  select public.record_circuit_finish(pg_temp.id(who), road,
+    array['power-on', 'clock-speed', 'first-charge', 'data-bus', 'bridge-chips', 'kernel-run'], 4, seed, 900, 'bronze', true, false, '0.0.4', true, false)
+    ->> 'status'
 $$;
 
 -- ---- On for every class, and in the hub's list ----
@@ -41,7 +50,7 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.s
 select throws_ok($$ select * from public.circuit_progress $$, '42501', null, 'a pupil cannot read anyone''s progress');
 select throws_ok($$ select * from public.circuit_runs $$, '42501', null, '... or the runs');
 select throws_ok($$ select public.circuit_load(auth.uid()) $$, '42501', null, '... or load through the server function');
-select throws_ok($$ select public.record_circuit_finish(auth.uid(), 'power-on', null, 'c1-x', 1, 'gold', true, true, '', true) $$, '42501', null,
+select throws_ok($$ select public.record_circuit_finish(auth.uid(), 'power-on', null, 0, 'c1-x', 1, 'gold', true, true, '', true, false) $$, '42501', null,
   '... or save a finish with any time');
 select throws_ok($$ select public.teacher_set_circuit(false) $$, null, null, 'a pupil cannot switch the game off');
 select throws_ok($$ select * from public.circuit_questions $$, '42501', null, 'a pupil cannot read the kept questions');
@@ -79,11 +88,19 @@ select is(pg_temp.finish('0a', 'power-on', null, 's1', 500, 'gold'), 'duplicate'
 select is(pg_temp.finish('0a', 'power-on', null, 's2', 520, 'gold'), 'best', 'a faster time is the best');
 select is(pg_temp.finish('0a', 'power-on', null, 's3', 600, 'silver'), 'saved', 'a slower one is saved, not best');
 select is(public.circuit_load(pg_temp.id('0a')) -> 'roads' -> 'power-on',
-  '{"best": 520, "medal": "gold", "clean": true, "charged": false, "finishes": 3}'::jsonb, 'the best time and medal are kept');
+  '{"best": 520, "medal": "gold", "clean": true, "charged": false, "finishes": 3, "hardFinishes": 0, "hardBest": null}'::jsonb,
+  'the best time and medal are kept');
 select is(pg_temp.finish('0a', 'clock-speed', 'power-on', 's4', 800, 'bronze') || pg_temp.finish('0a', 'clock-speed', 'power-on', 's5', 800, 'bronze'),
   'bestsaved', 'road 2 opens; that is 5 finishes today');
 select is(pg_temp.finish('0a', 'clock-speed', 'power-on', 's6', 800, 'bronze'), 'done-today', 'the 6th finish today is refused');
 select is(pg_temp.finish('0a', 'clock-speed', 'power-on', 's7', 800, 'bronze', true), 'saved', '... unless the class has Unlimited today');
+-- ---- Worlds open at 4 of the 6 roads before; hard finishes are kept apart ----
+select is(pg_temp.world_finish('0a', 'hot-wire', 's8'), 'locked', 'the Graphics Card is locked with 2 Motherboard roads finished');
+select is(pg_temp.finish('0a', 'first-charge', 'clock-speed', 's9', 800, 'bronze', true) || pg_temp.finish('0a', 'data-bus', 'first-charge', 's10', 800, 'bronze', true)
+  || pg_temp.world_finish('0a', 'hot-wire', 's11'), 'bestbestbest', '... and opens at 4');
+select is(pg_temp.finish('0a', 'power-on', null, 's12', 610, 'silver', true, true), 'saved', 'a hard finish is a finish');
+select is((public.circuit_load(pg_temp.id('0a')) -> 'roads' -> 'power-on') - 'best' - 'medal' - 'clean' - 'charged',
+  '{"finishes": 4, "hardFinishes": 1, "hardBest": 610}'::jsonb, '... kept apart with its own best time');
 -- ---- The kept questions: a slot is marked once ----
 select lives_ok($$ select public.circuit_store_questions(pg_temp.id('0a'), 'c1-0000000001-q', '[{"parts":["2","+","2","=","?"],"answer":4}]') $$,
   'the server keeps a go''s questions');
@@ -91,7 +108,7 @@ select is(public.circuit_claim_answer(pg_temp.id('0a'), 'c1-0000000001-q', 0, 4,
 select is(public.circuit_claim_answer(pg_temp.id('0a'), 'c1-0000000001-q', 0, 5, false), false, '... once');
 select is(public.circuit_load_questions(pg_temp.id('0a'), 'c1-0000000001-q') -> 'answered', '{"0": {"right": true, "value": 4}}'::jsonb, '... and the first mark stays');
 select pg_temp.reset();
-select is((select count(*)::integer from public.circuit_runs where player = pg_temp.id('0a') and extra), 1, 'the extra finish is marked extra');
+select is((select count(*)::integer from public.circuit_runs where player = pg_temp.id('0a') and extra), 5, 'the extra finishes are marked extra');
 select is((select sum(points_raw)::integer from public.game_points where player = pg_temp.id('0a') and game = 'circuit'), 3 * 5 + 2,
   'points for the 5 normal finishes (3 each) and the first gold (2 more), none for the extra one');
 

@@ -1,7 +1,7 @@
 /**
  * A pretend database for the `circuit` server function, kept in memory: the preview page runs the real handler on it (so
  * the preview never calls the live site), and handler.test.ts uses it too. `record` follows `record_circuit_finish` in the
- * migration (20261122001300_circuit.sql); the questions follow `circuit_store_questions` and `circuit_claim_answer`
+ * migrations (20261122001300_circuit.sql, 20261123000200_circuit_worlds.sql); the questions follow `circuit_store_questions` and `circuit_claim_answer`
  * (20261123000100_circuit_maths.sql): change them together. The maths uses a fixed pretend focus and records, never a
  * pupil's real ones.
  */
@@ -98,11 +98,11 @@ export function memoryServices(opts: MemoryOptions = {}) {
     async load(player: string) {
       return { roads: structuredClone(mine(player)), today: todayOf(player).n };
     },
-    async record(player: string, f: { road: string; before: string | null; seed: string; steps: number; medal: RoadProgress['medal']; clean: boolean; charged: boolean; unlimited: boolean }) {
+    async record(player: string, f: { road: string; needs: { roads: string[]; count: number } | null; seed: string; steps: number; medal: RoadProgress['medal']; clean: boolean; charged: boolean; unlimited: boolean; hard: boolean }) {
       const t = todayOf(player);
       const mineRoads = mine(player);
       if (seeds.has(`${player}:${f.seed}`)) return { status: 'duplicate' as const, today: t.n };
-      if (f.before && !(mineRoads[f.before]?.finishes > 0)) return { status: 'locked' as const, today: t.n };
+      if (f.needs && f.needs.roads.filter((r) => mineRoads[r]?.finishes > 0).length < f.needs.count) return { status: 'locked' as const, today: t.n };
       if (t.n >= FINISHES_A_DAY && !f.unlimited) return { status: 'done-today' as const, today: t.n };
       seeds.add(`${player}:${f.seed}`);
       const extra = t.n >= FINISHES_A_DAY;
@@ -116,6 +116,9 @@ export function memoryServices(opts: MemoryOptions = {}) {
         clean: (had?.clean ?? false) || f.clean,
         charged: (had?.charged ?? false) || f.charged,
         finishes: (had?.finishes ?? 0) + 1,
+        // Hard mode only counts on a road finished before (as the migration).
+        hardFinishes: (had?.hardFinishes ?? 0) + (f.hard && had ? 1 : 0),
+        hardBest: f.hard && had ? Math.min(had.hardBest ?? f.steps, f.steps) : (had?.hardBest ?? null),
       };
       if (!extra) points.push({ player, points: FINISH_POINTS + (firstGold ? GOLD_POINTS : 0), once: f.seed });
       return { status: best ? ('best' as const) : ('saved' as const), today: t.n };
