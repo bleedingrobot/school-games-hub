@@ -2,6 +2,7 @@
  * The end of a battle, as a celebration over the battle painting: a big "Victory!" slams in, light rays turn,
  * confetti falls, and each monster that earned experience gets its own card where the exp counts up, the bar
  * fills (wrapping round with a "Level up!" stamp for every level gained) and any new form flashes in.
+ * Anything the battle earned (bits, a trainer's items, a badge, quest news) pops in as gold prizes after the cards.
  * Enter (or the button) carries on. A tired team gets a calm version with no confetti.
  */
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
@@ -20,6 +21,10 @@ export interface VictoryProps {
   after: readonly Monster[];
   caught: string | null;
   questions: number;
+  /** What the battle earned, one line each ("You collected 1 shell."). */
+  loot?: readonly string[];
+  /** Called as the first prize pops in, for a sound. */
+  onLoot?: () => void;
   /** 0 in tests: everything shows at once. */
   timeScale: number;
   onLevelUp?: () => void;
@@ -101,10 +106,14 @@ function ExpCard({ before, after, delay, timeScale, onLevelUp }: { before: Monst
   );
 }
 
+/** A picture for a prize line. */
+const lootIcon = (line: string) =>
+  /badge/i.test(line) ? '🏅' : /egg/i.test(line) ? '🥚' : /quest complete/i.test(line) ? '🏆' : /job/i.test(line) ? '📜' : /gave you/i.test(line) ? '🎁' : '🎒';
+
 const CONFETTI = Array.from({ length: 36 }, (_, i) => i);
 const COLOURS = ['#fde047', '#f472b6', '#60a5fa', '#4ade80', '#fb923c', '#c084fc'];
 
-export function Victory({ phase, before, after, caught, questions, timeScale, onLevelUp, onContinue }: VictoryProps) {
+export function Victory({ phase, before, after, caught, questions, loot = [], onLoot, timeScale, onLevelUp, onContinue }: VictoryProps) {
   const happy = phase === 'won' || phase === 'caught';
   const title = phase === 'won' ? 'Victory!' : phase === 'caught' ? 'Caught!' : phase === 'ran' ? 'Got away!' : 'Time to rest';
   const earners = before
@@ -112,6 +121,15 @@ export function Victory({ phase, before, after, caught, questions, timeScale, on
     .filter(({ b, a }) => a && a.exp > b.exp);
   const button = useRef<HTMLButtonElement>(null);
   useEffect(() => button.current?.focus({ preventScroll: true }), []);
+  // The prizes come after the exp cards have started filling.
+  const lootFrom = 700 + earners.length * 350;
+  const lootSound = useRef(onLoot);
+  lootSound.current = onLoot;
+  useEffect(() => {
+    if (!loot.length) return;
+    const t = window.setTimeout(() => lootSound.current?.(), lootFrom * timeScale);
+    return () => window.clearTimeout(t);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // The painted celebration field (a trophy on a hilltop, bunting and fireworks) behind a win. Decoration only.
   const pic = scenePic('victory');
@@ -139,6 +157,16 @@ export function Victory({ phase, before, after, caught, questions, timeScale, on
         <ul className="mv-cards">
           {earners.map(({ b, a }, i) => (
             <ExpCard key={i} before={b} after={a} delay={500 + i * 350} timeScale={timeScale} onLevelUp={onLevelUp} />
+          ))}
+        </ul>
+      )}
+      {loot.length > 0 && (
+        <ul className="mv-loot" aria-label="You won">
+          {loot.map((line, i) => (
+            <li key={i} className="mv-prize" style={{ '--d': `${(lootFrom + i * 250) * timeScale}ms` } as CSSProperties}>
+              <span className="mv-prize__icon" aria-hidden="true">{lootIcon(line)}</span>
+              {line}
+            </li>
           ))}
         </ul>
       )}

@@ -94,6 +94,7 @@ export function QuestionModal({
   scribble = true,
   spot,
   closeIsSkip = true,
+  choiceKeys = false,
 }: {
   question: ShownQuestion;
   /** What the question is for, e.g. "Mana Well". */
@@ -127,6 +128,8 @@ export function QuestionModal({
    * "Skip button" switch then leaves it alone.
    */
   closeIsSkip?: boolean;
+  /** Pick-one questions: the 1, 2, 3 and 4 keys pick the choices (each button shows its number). Off unless given. */
+  choiceKeys?: boolean;
 }) {
   const [typed, setTyped] = useState('');
   const [result, setResult] = useState<MarkedAnswer | null>(null);
@@ -277,6 +280,25 @@ export function QuestionModal({
     event.preventDefault();
   }
 
+  // The number keys pick a choice wherever the keyboard is (the scribble pad too), but not while typing in a box.
+  const pickKey = useRef<(e: KeyboardEvent) => void>(() => {});
+  pickKey.current = (e) => {
+    if (!choiceKeys || !question.choices || result || checking) return;
+    if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+    const tag = (e.target as HTMLElement | null)?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    const choice = /^[1-9]$/.test(e.key) ? question.choices[Number(e.key) - 1] : undefined;
+    if (choice === undefined || hint?.remove.includes(choice)) return;
+    e.preventDefault();
+    submit(choice);
+  };
+  useEffect(() => {
+    if (!choiceKeys) return;
+    const on = (e: KeyboardEvent) => pickKey.current(e);
+    window.addEventListener('keydown', on);
+    return () => window.removeEventListener('keydown', on);
+  }, [choiceKeys]);
+
   const showPad = scribble && !inline;
   const setPad = (open: boolean) => {
     setPadOpen(open);
@@ -365,7 +387,9 @@ export function QuestionModal({
                 disabled={!!result || checking || hint?.remove.includes(choice)}
                 data-answer={result && choice === (result.answer ?? question.answer) ? true : undefined}
                 onClick={() => submit(choice)}
+                aria-keyshortcuts={choiceKeys && i < 9 ? String(i + 1) : undefined}
               >
+                {choiceKeys && i < 9 && <kbd className="question__choice-key" aria-hidden="true">{i + 1}</kbd>}
                 {question.choiceLabels ? choiceText(question.choiceLabels[i]) : choice}
               </button>
             ))}

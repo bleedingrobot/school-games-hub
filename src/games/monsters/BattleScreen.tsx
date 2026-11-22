@@ -71,6 +71,8 @@ export interface BattleScreenProps {
   powerUp?: boolean;
   /** The player's chosen look, shown opposite the trainer while they say hello. */
   look?: string;
+  /** What a finished battle earns (bits, a trainer's items, a badge, quest news), shown on the Victory page. Leave out for none. */
+  prizeFor?: (result: BattleResult) => string[];
   /** Monsters already in the book as owned: the foe's card says whether you have caught one yet. Leave out to say nothing. */
   owned?: readonly string[];
 }
@@ -154,7 +156,7 @@ interface Pop {
 const clone = <T,>(v: T): T => structuredClone(v);
 const shownFrom = (s: BattleState): Shown => ({ team: clone(s.team), foes: clone(s.foes), active: s.active, foeActive: s.foeActive });
 
-export function BattleScreen({ setup, settings: given, onSettingsChange, onFinish, random = Math.random, packFor, timeScale = 1, enabledTopics, place, trainer, look, owned, powerUp = false }: BattleScreenProps) {
+export function BattleScreen({ setup, settings: given, onSettingsChange, onFinish, random = Math.random, packFor, timeScale = 1, enabledTopics, place, trainer, look, owned, powerUp = false, prizeFor }: BattleScreenProps) {
   const { soundOn } = useSound();
   const [ownSettings, setOwnSettings] = useState(loadMonsterSettings);
   const settings = given ?? ownSettings;
@@ -570,9 +572,9 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
     }
   }
 
-  function finish() {
+  const resultOf = (): BattleResult => {
     const outcome = battle.phase as BattleResult['outcome'];
-    onFinish({
+    return {
       outcome,
       state: battle,
       team: outcome === 'lost' ? healTeam(battle.team) : battle.team,
@@ -580,7 +582,10 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
       bag: battle.bag,
       questions: battle.questions,
       steps: steps.current,
-    });
+    };
+  };
+  function finish() {
+    onFinish(resultOf());
   }
 
   // Running away needs no results page: straight back to the map.
@@ -590,6 +595,8 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
   }, [mode]);
 
   const sum = mode === 'end' ? summarise(log.current) : null;
+  // Worked out once when the battle ends, so the Victory page can show the prizes (the map then gives them).
+  const loot = useMemo(() => (mode === 'end' && prizeFor && battle.phase !== 'ran' && battle.phase !== 'lost' ? prizeFor(resultOf()) : []), [mode]); // eslint-disable-line react-hooks/exhaustive-deps
   const bagCount = (battle.bag.potion ?? 0) + (battle.bag['super-potion'] ?? 0) + (battle.bag.ball ?? 0) + (battle.bag['great-ball'] ?? 0);
   // The painted landscape of the place or Tower, over the colour wash (which stays as the fallback). Decoration only, so a CSS background.
   const scene = scenePic(place ?? areaInfo(battle.area)?.map ?? '');
@@ -736,6 +743,8 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
           after={battle.team}
           caught={sum.caught}
           questions={battle.questions}
+          loot={loot}
+          onLoot={() => play_('item')}
           timeScale={timeScale}
           onLevelUp={() => play_('item')}
           onContinue={finish}
@@ -756,6 +765,7 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
           closeLabel="Back"
           // Back goes to choosing another move and no turn passes, so the skip switch leaves it alone (James).
           closeIsSkip={false}
+          choiceKeys
           onSubmit={(answer, ms): MarkedAnswer => {
             const marked = packOf(asking.topic).recordAnswer(asking.question, answer, ms);
             answered.current = {

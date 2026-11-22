@@ -117,7 +117,8 @@ export function PlaygroundPage({ onBattling }: { onBattling?: (on: boolean) => v
       <div className="pg-battle">
         <h1 className="sr-only">Maths Monsters battle</h1>
         <button type="button" className="pg-leave" onClick={() => { setSetup(null); setResult(null); }}>← Leave the battle</button>
-        <BattleScreen key={round} setup={setup} onFinish={setResult} />
+        {/* Sample prizes, so the Victory page shows how loot looks (the real game works them out from the map). */}
+        <BattleScreen key={round} setup={setup} onFinish={setResult} prizeFor={() => ["You collected 2 shells and 1 leaf.", "Quest complete: Lost Shells!"]} />
       </div>
     );
   }
