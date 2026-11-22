@@ -163,9 +163,10 @@ class Track:
         self.gates.append({'sign': sign, 'after': after, 'tunnels': out})
         return self
 
-    def gems(self, trail, offsets=(-1, 0, 1)):
+    def gems(self, trail, offsets=(-2, 0, 2)):
         """A group of number gems across the track at the cell just painted (call it right after a go()). Groups with the same
-        `trail` number share one question; the first group of a trail also puts the trail's sign five cells back."""
+        `trail` number share one question; the first group of a trail also puts the trail's sign five cells back. The gems are two
+        cells apart (James, 22 Nov 2026: one apart, their answers overlapped)."""
         px, py = self._perp()
         dx, dy = HEAD[self.h]
         cx, cy = self.x - dx, self.y - dy  # the cell just painted
@@ -376,10 +377,10 @@ def glacier_run():
     t.mark(-5, 0, 's')
     t.go(4, ch='i')
     t.down(3, ch=None)
-    t.go(4, ch='i')
+    t.go(4, ch='i', stop=(0, 'k'))   # before the crevasse, not after: it was 7 tiles from the first gate (22 Nov 2026)
     t.go(1, ch='j', width=5)
     t.gap(1)   # crevasse (one tile since 18 Nov 2026: slow marbles fell in)
-    t.go(3, ch='i', stop=(0, 'k'))
+    t.go(3, ch='i')
     t.turn('S')
     t.go(1, ch='i')
     t.gate(2)
@@ -392,7 +393,7 @@ def glacier_run():
     t.gap(1)   # one tile since 18 Nov 2026: slow marbles fell in
     t.go(3, ch='i')
     t.turn('E')
-    t.go(3, ch='i', stop=(1, 'h'))
+    t.go(3, ch='i')
     t.down(2)
     t.go(1, ch='m')
     t.gate(3)
@@ -417,15 +418,14 @@ def windy_welly():
     t.gate(2)
     t.go(1)
     t.go(1, ch='q')           # a crane arm sweeps across
-    t.go(3)
-    t.gems(0)
+    t.go(3)                   # (no gems here since 22 Nov 2026: their question came 4 tiles before the checkpoint's)
     t.down(2)
     t.go(2, ch='c')
     t.go(2)
     t.turn('S')
     t.go(2, ch='o')
-    t.go(5, ch='o')
-    t.go(2, stop=(0, 'k'))
+    t.go(5, ch='o', stop=(2, 'k'))
+    t.go(2)
     t.go(1, ch='q')
     t.go(3)
     t.gems(0)
@@ -438,14 +438,14 @@ def windy_welly():
     t.go(1)
     t.go(1, ch='q')
     t.go(3)
-    t.gems(1)
     t.down(2)
     t.go(2, ch='c')
     t.go(2)
     t.turn('S')
     t.go(3)
+    t.gems(1)                 # after the checkpoint, not 4 tiles before it; no half-second stop after it (22 Nov 2026)
     t.go(1, ch='q')
-    t.go(5, ch='o', stop=(2, 'h'))
+    t.go(5, ch='o')
     t.turn('E')
     t.go(1)
     t.gate(2)
@@ -460,21 +460,22 @@ def alpine_crossing():
     t = Track(2, 2, 'E', width=5, level=30)
     t.go(5)
     t.mark(-5, 0, 's')
-    t.go(6)
-    t.gems(0)
-    # the Devil's Staircase: steps down
-    for _ in range(4):
+    t.go(5)
+    t.gems(0)                     # a tile earlier since 22 Nov 2026, to keep 8 tiles before the checkpoint's question
+    t.go(1)
+    # the Devil's Staircase: steps down, with the checkpoint half way (22 Nov 2026: at the bottom it was 2 tiles from the gate)
+    for step in range(4):
         t.down(1)
         t.go(2)
-    t.go(2, ch='c')
+        if step == 1:
+            t.go(2, ch='c')
     t.go(1)
     t.gate(2)
     t.go(1)
     t.go(1, ch='t')       # crumbling scoria
     t.go(2, stop=(0, 'k'))
     t.go(1)
-    t.go(2)
-    t.gems(0)
+    t.go(2)                       # (no second gems here since 22 Nov 2026: 4 tiles after the stop, 6 before the gate)
     t.go(1)
     t.turn('S')
     t.go(1)
@@ -493,8 +494,7 @@ def alpine_crossing():
         t.down(1)
         t.go(2)
     t.go(1, ch='t')
-    t.go(3, stop=(1, 'h'))
-    t.gems(1)
+    t.go(3)                       # (no half-second stop or second gems here since 22 Nov 2026: all three were within 5 tiles of the gate)
     t.down(2)
     t.go(1, width=5)
     t.gate(2)                     # the Emerald Lakes
@@ -540,10 +540,10 @@ def gap_and_ice():
     t.mark(-5, 0, 's')
     t.go(3)
     t.down(2)
-    t.go(3)
+    t.go(3, stop=(0, 'k'))   # before the jump, not after: it was 7 tiles from the gate (22 Nov 2026)
     t.go(1, ch='j', width=5)
     t.gap(1)   # one tile since 18 Nov 2026: slow marbles fell in
-    t.go(4, stop=(1, 'k'))
+    t.go(4)
     t.turn('S')
     t.go(1)
     t.gate(2)

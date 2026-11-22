@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'marble-maths-space-2026-11-22',
+    date: '2026-11-22',
+    emoji: '💎',
+    title: 'Easier to read maths in Marble Rush',
+    text: 'Number gems are spread out, questions are further apart, and you see one at a time.',
+    game: 'marble',
+  },
+  {
     id: 'diamond-gem-lord-2026-11-22',
     date: '2026-11-22',
     emoji: '👑',

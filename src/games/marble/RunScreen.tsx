@@ -259,6 +259,9 @@ export function RunScreen({
     let lastRescueAt = -Infinity;
     let nearGate = -1;
     let nearTrail = -1;
+    // One question at a time: only the question on screen shows its answers on the course (one player, maths on).
+    const oneAtATime = setup.maths && !twoPlayer;
+    let focusKey = '';
     const order = questionOrder(course);
     const passedTrails = new Set<number>();
     const read = new Set<number>();
@@ -296,6 +299,8 @@ export function RunScreen({
       lastRescueAt = -Infinity;
       nearGate = -1;
       nearTrail = -1;
+      focusKey = '';
+      if (oneAtATime) view?.focus(null);
       passedTrails.clear();
       setGuessResult(null);
       read.clear();
@@ -505,6 +510,11 @@ export function RunScreen({
               readTimer = window.setTimeout(() => phaseRef.current === 'reading' && goto('playing'), READ_TIME_MS);
             }
           }
+          const key = near >= 0 ? `gate${near}` : trail >= 0 ? `gems${trail}` : '';
+          if (key !== focusKey) {
+            focusKey = key;
+            view.focus(near >= 0 ? { kind: 'gate', index: near } : trail >= 0 ? { kind: 'gems', index: trail } : null);
+          }
         }
         if (state2) {
           if (state.outcome !== 'running' || state2.outcome !== 'running') finishTwo();
@@ -553,6 +563,7 @@ export function RunScreen({
       .then(({ createView }) => {
         if (disposed) return;
         view = createView(canvas, course, world, paletteFor(course.def.id), reduced, kinds, gateSigns(course, setup), gemSprites(course, setup), setup.maths, quality);
+        if (oneAtATime) view.focus(null);
         fit();
         goto('ready');
         raf = requestAnimationFrame((t) => {

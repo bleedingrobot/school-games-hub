@@ -11,11 +11,16 @@ export type OrderStep = { kind: 'stop' | 'gate' | 'gems'; index: number; pos: nu
 export const SIGN_RANGE = 7;
 /** How close to a number gem trail's gems its question shows. */
 export const GEM_RANGE = 8;
+/**
+ * The fewest tiles along the route between two questions (stops, gates and rows of number gems). James, 22 Nov 2026: on Glacier
+ * Run, Windy Welly and Alpine Crossing some came 1 to 5 tiles apart, so the next popped up before the last was done.
+ */
+export const QUESTION_GAP = 8;
 /** How close to a trail's last gems counts as having rolled past the trail. */
 const PASSED_RANGE = 1.5;
 
 /** How far along the route (in tiles) a point is: where it lands on the nearest stretch of the route. */
-function along(route: ReadonlyArray<readonly [number, number]>, x: number, y: number): number {
+export function along(route: ReadonlyArray<readonly [number, number]>, x: number, y: number): number {
   let best = Infinity;
   let pos = 0;
   let run = 0;

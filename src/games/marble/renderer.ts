@@ -159,7 +159,28 @@ export interface MarbleView {
   setLowQuality(low: boolean): void;
   /** Simple, Normal or Best: pixel ratio and (on the diorama look) shadows. */
   setQuality(q: Quality): void;
+  /**
+   * One question at a time (James, 22 Nov 2026: the maths looked crammed together): once this is called, only the question on
+   * screen shows its answers, popping in; every other gate's answer signs and trail's gem numbers wait. Never called: all show.
+   */
+  focus(on: MathsFocus | null): void;
   dispose(): void;
+}
+
+/** The question on screen: a gate's or a gem trail's. */
+export interface MathsFocus {
+  kind: 'gate' | 'gems';
+  index: number;
+}
+
+/** How long an answer takes to pop in, in seconds. */
+const POP_IN = 0.35;
+/** A pop with a little overshoot: 0 to 1, peaking just over 1. */
+function popScale(t: number): number {
+  if (t >= 1) return 1;
+  const c = 1.9;
+  const u = t - 1;
+  return 1 + (c + 1) * u * u * u + c * u * u;
 }
 
 export function createView(canvas: HTMLCanvasElement, course: Course, world: World, palette: Palette, reducedMotion: boolean, otherKinds: OtherKind[] = [], signs: GateSign[] = [], gems: GemSprite[] = [], stopSigns = false, startQuality: Quality = 'normal'): MarbleView {
@@ -874,6 +895,10 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
     scene.add(sprite);
     return sprite;
   });
+  // One question at a time: null until focus() is first called (then every answer sign waits for its question).
+  let focusOn: MathsFocus | null | undefined;
+  /** How far each answer has popped in (0 to 1): gate signs, then gem labels. */
+  const signPop = signs.map(() => 1);
 
   // ---- question stops (maths on): a sign over each, saying what a right answer takes off ----
   const stopSprites: THREE.Sprite[] = [];
@@ -908,8 +933,12 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
     label.scale.set(1.2, 0.6, 1);
     label.renderOrder = 10;
     scene.add(mesh, label);
-    return { id: gem.id, mesh, label };
+    return { id: gem.id, trail: gem.trail, mesh, label, pop: 1 };
   });
+  /** Whether an answer shows now: always, unless one question at a time is on and it isn't this one's. */
+  const answerShows = (kind: 'gate' | 'gems', index: number) => focusOn === undefined || (focusOn?.kind === kind && focusOn.index === index);
+  /** Grows a popping answer: `t` is how far it has popped (reset to 0 when hidden). */
+  const popOn = (t: number, dt: number) => (reducedMotion ? 1 : Math.min(1, t + Math.min(dt, 0.1) / POP_IN));
 
   // With the diorama look, the sun lights the marble and the track casts and catches shadows.
   if (dio) {
@@ -946,6 +975,9 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
 
   return {
     resize,
+    focus(on) {
+      focusOn = on;
+    },
     setQuality(q) {
       setQuality(q);
       scenery?.setQuality(q);
@@ -1025,9 +1057,21 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
       for (const g of gemObjects) {
         const taken = now.gemsTaken.includes(g.id);
         g.mesh.visible = !taken;
-        g.label.visible = !taken;
+        const shows = !taken && answerShows('gems', g.trail);
+        g.pop = shows ? popOn(g.pop, dt) : 0;
+        g.label.visible = shows;
+        const k = popScale(g.pop);
+        g.label.scale.set(1.2 * k, 0.6 * k, 1);
         if (!reducedMotion) g.mesh.rotation.y = clock * 0.04;
       }
+      signs.forEach((sign, i) => {
+        if (sign.arrow) return;
+        const shows = answerShows('gate', sign.gate);
+        signPop[i] = shows ? popOn(signPop[i], dt) : 0;
+        signSprites[i].visible = shows;
+        const k = popScale(signPop[i]);
+        signSprites[i].scale.set(1.9 * k, 0.95 * k, 1);
+      });
       for (const d of trapdoors) {
         const solidNow = trapdoorSolid(clock, d.tx);
         const warning = solidNow && !trapdoorSolid(clock + TIMED.trapdoor.warn, d.tx);
