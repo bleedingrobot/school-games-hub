@@ -72,13 +72,20 @@ describe('Goblin Storm level-up', () => {
 
       const offer = await screen.findByRole('dialog', { name: /pick/i }, { timeout: 4000 });
       expect(screen.queryByRole('dialog', { name: /level up/i })).toBeNull();
-      const buttons = within(offer).getAllByRole('button');
+      const buttons = [...offer.querySelectorAll<HTMLElement>('[data-card]')];
       expect(buttons).toHaveLength(cards + 1);
       expect(buttons[cards].textContent).toContain('Gold');
 
       // A number key picks that card (after a short pause, so a held Enter from the question doesn't).
       if (mark === 'right') {
         await new Promise((r) => setTimeout(r, 450));
+        // C opens the Weapon Codex over the cards; the cards' keys wait until it closes (C again).
+        await userEvent.keyboard('c');
+        expect(screen.getByRole('dialog', { name: 'Weapon Codex' })).toBeTruthy();
+        await userEvent.keyboard('2');
+        expect(screen.getByRole('dialog', { name: /pick/i })).toBeTruthy();
+        await userEvent.keyboard('c');
+        expect(screen.queryByRole('dialog', { name: 'Weapon Codex' })).toBeNull();
         await userEvent.keyboard('2');
         expect(screen.queryByRole('dialog', { name: /pick/i })).toBeNull();
       }

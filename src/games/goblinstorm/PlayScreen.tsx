@@ -13,6 +13,7 @@ import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../math
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import type { FinishReply, GoblinStormBackend, Mark, StartReply } from './backend';
 import { HubButtons } from './HubButtons';
+import { CodexScreen, type Found } from './BetweenRuns';
 import { powerColour, powerPic, powerWords } from './heroPowers';
 import { PASSIVE_ICON, WEAPON_ICON } from './look';
 import { Pic } from './Pic';
@@ -37,7 +38,7 @@ export function dragDirection(dx: number, dy: number, deadZone: number): number 
 
 const shown = (q: PublicQuestion): ShownQuestion => ({ id: q.slot, parts: q.parts, spoken: q.spoken, prompt: q.prompt, choices: q.choices, choiceLabels: q.choiceLabels, maxLength: q.maxLength, input: q.input });
 
-type Stage = 'play' | 'ask' | 'cards' | 'leave' | 'end';
+type Stage = 'play' | 'ask' | 'cards' | 'codex' | 'leave' | 'end';
 
 interface Game {
   s: RunState;
@@ -56,7 +57,7 @@ export interface RunEnd { reply: FinishReply | null; hero: HeroDef; map: MapDef 
 
 type GuideLine = keyof typeof GUIDE;
 
-export function PlayScreen({ backend, start, hero, map, onEnd, guided = false, quality = 'high' }: {
+export function PlayScreen({ backend, start, hero, map, onEnd, guided = false, quality = 'high', save = null }: {
   backend: GoblinStormBackend;
   start: StartReply;
   hero: HeroDef;
@@ -66,6 +67,8 @@ export function PlayScreen({ backend, start, hero, map, onEnd, guided = false, q
   guided?: boolean;
   /** The effects setting; slow frames drop to low by themselves. */
   quality?: Quality;
+  /** The pupil's save, for the Codex opened mid-run (what they found before this run). */
+  save?: Found | null;
 }) {
   const { soundOn } = useSound();
   const soundRef = useRef(soundOn);
@@ -94,6 +97,8 @@ export function PlayScreen({ backend, start, hero, map, onEnd, guided = false, q
   const [cards, setCards] = useState<{ offer: Upgrade[]; mark: Mark | null } | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
+  /** The Weapon Codex, open over the run (paused) or over the level-up cards. */
+  const [codex, setCodex] = useState(false);
   const [saving, setSaving] = useState(false);
   const [hint, setHint] = useState(true);
   useEffect(() => {
@@ -406,6 +411,46 @@ export function PlayScreen({ backend, start, hero, map, onEnd, guided = false, q
     if (g.stick && g.stick.id === e.pointerId) g.stick = null;
   };
 
+  // The Codex pauses the run; over the level-up cards it just sits on top (the cards wait anyway).
+  const codexFrom = useRef<Stage>('play');
+  const openCodex = () => {
+    const g = G.current as Game;
+    if (g.stage !== 'play' && g.stage !== 'cards') return;
+    codexFrom.current = g.stage;
+    g.stage = 'codex';
+    g.stick = null;
+    const k = g.keys;
+    k.up = k.down = k.left = k.right = false;
+    setCodex(true);
+  };
+  const closeCodex = () => {
+    const g = G.current as Game;
+    if (g.stage === 'codex') g.stage = codexFrom.current;
+    setCodex(false);
+  };
+  const codexKeys = useRef({ openCodex, closeCodex });
+  codexKeys.current = { openCodex, closeCodex };
+  useEffect(() => {
+    // C opens the Codex; C or Esc closes it.
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (e.repeat || (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      const key = e.key.toLowerCase();
+      const stage = (G.current as Game).stage;
+      if (stage === 'codex' && (key === 'c' || key === 'escape')) {
+        e.preventDefault();
+        e.stopPropagation();
+        codexKeys.current.closeCodex();
+      } else if (key === 'c' && (stage === 'play' || stage === 'cards')) {
+        e.preventDefault();
+        e.stopPropagation();
+        codexKeys.current.openCodex();
+      }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, []);
+
   const askLeave = () => {
     const g = G.current as Game;
     if (g.stage !== 'play') return;
@@ -439,6 +484,7 @@ export function PlayScreen({ backend, start, hero, map, onEnd, guided = false, q
         </div>
         <div className="gs-hud__right">
           <HubButtons />
+          <button type="button" className="gs-btn gs-btn--glass" onClick={openCodex} aria-keyshortcuts="C" title="Weapon Codex (C)">📖 Codex</button>
           <button type="button" className="gs-btn gs-btn--glass" onClick={askLeave}>Leave</button>
         </div>
       </div>
@@ -474,7 +520,7 @@ export function PlayScreen({ backend, start, hero, map, onEnd, guided = false, q
           />
         </div>
       )}
-      {cards && <LevelUpCards s={(G.current as Game).s} offer={cards.offer} mark={cards.mark} onPick={pick} coach={coach === 'cards' ? <Coach line="cards" onSkip={skipGuide} /> : null} />}
+      {cards && <LevelUpCards s={(G.current as Game).s} offer={cards.offer} mark={cards.mark} onPick={pick} paused={codex} onCodex={openCodex} coach={coach === 'cards' ? <Coach line="cards" onSkip={skipGuide} /> : null} />}
       {coach && coach !== 'cards' && coach !== 'levelUp' && !question && !cards && <Coach line={coach} onSkip={skipGuide} />}
       {confirm && (
         <div className="gs-dim" role="alertdialog" aria-label="Leave this run?" data-nostick>
@@ -488,6 +534,7 @@ export function PlayScreen({ backend, start, hero, map, onEnd, guided = false, q
           </div>
         </div>
       )}
+      {codex && <RunCodex s={(G.current as Game).s} save={save} hero={hero} onClose={closeCodex} />}
       {saving && <div className="gs-saving" role="status">Counting up your run…</div>}
       <p className="gs-sr" aria-live="polite">{announce}</p>
     </div>
@@ -579,18 +626,42 @@ function Coach({ line, onSkip }: { line: GuideLine; onSkip: () => void }) {
   );
 }
 
-function LevelUpCards({ s, offer, mark, onPick, coach }: { s: RunState; offer: Upgrade[]; mark: Mark | null; onPick: (i: number) => void; coach?: ReactNode }) {
+/** The Weapon Codex over a paused run: what the pupil had found, plus this run's finds, with what they hold now marked. */
+function RunCodex({ s, save, hero, onClose }: { s: RunState; save: Found | null; hero: HeroDef; onClose: () => void }) {
+  const weapons = [...new Set([...(save?.weapons ?? []), ...s.weapons.map((w) => w.id)])];
+  const evolved = [...new Set([...(save?.codex ?? []), ...s.weapons.filter((w) => w.evolved).map((w) => w.id)])];
+  return (
+    <div className="gs-dim gs-dim--codex" role="dialog" aria-label="Weapon Codex" data-nostick>
+      <div className="gs-runcodex">
+        <div className="gs-runcodex__top">
+          <h2 className="gs-cards__title">📖 Weapon Codex <small>· paused</small></h2>
+          <button type="button" className="gs-btn" onClick={onClose} autoFocus>▶ Back to the run <span className="gs-cards__keys">(C)</span></button>
+        </div>
+        <CodexScreen found={{ weapons, codex: evolved }} hero={hero} holding={{ weapons: s.weapons, passives: s.passives }} />
+      </div>
+    </div>
+  );
+}
+
+function LevelUpCards({ s, offer, mark, onPick, coach, paused = false, onCodex }: {
+  s: RunState; offer: Upgrade[]; mark: Mark | null; onPick: (i: number) => void; coach?: ReactNode;
+  /** The Codex is open on top: the cards' keys wait. */
+  paused?: boolean;
+  onCodex?: () => void;
+}) {
   // Keys: 1 to 5 pick that card; ← → (or A D) move the yellow ring; Enter or Space picks the ringed card.
   const [sel, setSel] = useState(0);
   const selRef = useRef(0);
   selRef.current = sel;
   const pickRef = useRef(onPick);
   pickRef.current = onPick;
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
   useEffect(() => {
     // A held-down Enter from answering the question mustn't pick a card straight away.
     const openedAt = performance.now();
     const onKey = (e: KeyboardEvent) => {
-      if (e.repeat || performance.now() - openedAt < 400) return;
+      if (e.repeat || pausedRef.current || performance.now() - openedAt < 400) return;
       const t = e.target as HTMLElement | null;
       if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
       const n = offer.length;
@@ -632,8 +703,9 @@ function LevelUpCards({ s, offer, mark, onPick, coach }: { s: RunState; offer: U
         <div className="gs-cards__row">
           {offer.map((u, i) => <Card key={i} s={s} u={u} index={i} onPick={onPick} chosen={i === sel} />)}
         </div>
-        <p className="gs-cards__keys">Keys: 1 to {offer.length} to pick · ← → then Enter</p>
+        <p className="gs-cards__keys">Keys: 1 to {offer.length} to pick · ← → then Enter · C for the Codex</p>
         <Held s={s} />
+        {onCodex && <button type="button" className="gs-btn gs-btn--glass gs-btn--small gs-cards__codex" onClick={onCodex}>📖 Codex: what evolves with what?</button>}
       </div>
     </div>
   );
