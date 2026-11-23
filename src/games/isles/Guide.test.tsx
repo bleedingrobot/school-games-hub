@@ -7,8 +7,16 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { seededRandom } from '../../../shared/maths/serverQuestions';
+import { newIsland, type Island } from '../../../shared/isles/engine';
 import { IslesPlay } from './IslesPlay';
 import { createTrialBackend } from './trialBackend';
+import { goalWords } from './words';
+
+const grand = (extra: Partial<Island>): Island => ({
+  ...newIsland(),
+  spots: Array.from({ length: 16 }, () => ({ kind: 'farm' as const, level: 1 })),
+  ...extra,
+});
 
 const guide = () => document.querySelector('.si-guide p')?.textContent ?? null;
 const litButton = () => document.querySelector<HTMLElement>('.si-lit');
@@ -56,6 +64,24 @@ describe("Pip's guided first go", () => {
     render(<IslesPlay backend={backend} />);
     await waitFor(() => expect(screen.getByRole('heading', { name: 'My island', level: 2 })).toHaveFocus());
     expect(guide()).toBeNull();
+
+    // After the guide, the goal box on My island says what to do next, with the numbers, up to the lit Lighthouse
+    // (James, 24 Nov 2026). Checked here, not in a test of its own, to stay within Sky Isles' test budget.
+    expect(screen.getByText(/^Next: /)).toBeTruthy();
+    expect(goalWords({ ...newIsland(), driftLeft: 0 }).next).toBe('Next: more land drifts by tomorrow. Save 300 coins to anchor it.');
+    expect(goalWords({ ...newIsland(), driftLeft: 1, coins: 100 })).toEqual({
+      label: 'Road to Grand Isle: 6 of 16 building spots',
+      next: 'Next: save 300 coins to anchor the land drifting by. You have 100.',
+    });
+    expect(goalWords({ ...newIsland(), driftLeft: 1, coins: 300 }).next).toBe('Next: land is drifting by! Anchor it on your turn for 300 coins.');
+    // A full island with land still in the drift talks about the Lighthouse, not land.
+    expect(goalWords(grand({ lighthouse: 2, coins: 500, crystals: 30.75, driftLeft: 2 }))).toEqual({
+      label: 'Grand Isle! Sky Lighthouse: 2 of 4 stages',
+      next: 'Next: Lighthouse stage 3 costs 900 coins and 20 sky crystals. You need 400 more coins.',
+    });
+    expect(goalWords(grand({ lighthouse: 0, coins: 600, crystals: 9.75 })).next).toContain('You need 1 more sky crystal.');
+    expect(goalWords(grand({ lighthouse: 3, coins: 2000, crystals: 68 })).next).toContain('You have enough: build it on your turn!');
+    expect(goalWords(grand({ lighthouse: 4 })).label).toBe('Sky Lighthouse lit!');
   }, 30_000);
 
 });
