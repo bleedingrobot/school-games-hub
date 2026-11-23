@@ -6,7 +6,7 @@
  * Words are kept plain, for a 9-year-old reading on their own.
  */
 import { BUILD_COINS, COINS, DECORATIONS, FIRST_WIN_PRIZE, HOUSE_ROOM, LIGHTHOUSE, WORKSHOP_CRYSTALS, type PlotKind } from './config';
-import { chunkPrice, count, isGrandIsle, owns, placeCount, raisePrice, room, wholeCrystals, type Island } from './engine';
+import { chunkPrice, count, isGrandIsle, landCanCome, owns, placeCount, raisePrice, room, wholeCrystals, type Island } from './engine';
 import { GULL_RIDERS, raceProblem } from './race';
 
 export interface NextStep {
@@ -108,7 +108,8 @@ export function nextStep(island: Island, racesOn = true): NextStep {
 
   // A chunk of land drifting by.
   const chunk = chunkPrice(island);
-  if (island.driftLeft > 0 && island.coins >= chunk) {
+  const drifting = island.driftLeft > 0 && landCanCome(island);
+  if (drifting && island.coins >= chunk) {
     return { say: `A chunk of land is drifting by: anchor it for ${coins(chunk)} to get a new spot.`, target: 'drift' };
   }
 
@@ -119,7 +120,7 @@ export function nextStep(island: Island, racesOn = true): NextStep {
   }
 
   // A building worth raising (never spending what the next chunk or Lighthouse stage needs).
-  const saveFor = stage ? stage.coins : island.driftLeft > 0 ? chunk : 0;
+  const saveFor = stage ? stage.coins : drifting ? chunk : 0;
   const raise = bestRaise(island);
   if (raise && (saveFor === 0 || island.coins - raise.coins >= saveFor / 2)) {
     const here = island.spots[raise.spot];
@@ -152,7 +153,7 @@ export function nextStep(island: Island, racesOn = true): NextStep {
     const what = kind ? `a ${KIND_NAME[kind]}` : 'something';
     return { say: `Save up ${coins(buildPrice(kind))} to build ${what} on ${emptyWords(island)} (you have ${coins(island.coins)}).`, target: 'end-turn' };
   }
-  if (island.driftLeft > 0) {
+  if (drifting) {
     return { say: `A chunk of land is drifting by. Save up ${coins(chunk)} to anchor it (you have ${coins(island.coins)}).`, target: 'end-turn' };
   }
   return { say: END_TURN_LINE, target: 'end-turn' };
