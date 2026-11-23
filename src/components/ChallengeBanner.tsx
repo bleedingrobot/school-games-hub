@@ -87,7 +87,7 @@ export function ChallengeBanner({ link, me, page, inGame }: { link: HubAskLink; 
   const yes = () => {
     if (classGame) {
       drop(shown);
-      navigate(`/showdown?room=${shown.id}`);
+      navigate(`/${shown.game}?room=${shown.id}`);
       return;
     }
     if (!invite) {
@@ -115,7 +115,7 @@ export function ChallengeBanner({ link, me, page, inGame }: { link: HubAskLink; 
     <div className={`hub-ask${inGame ? ' hub-ask--in-game' : ''}${open ? ' hub-ask--open' : ''}`} role="alertdialog" aria-label={line}>
       {inGame && (
         <button type="button" className="hub-ask__tab" aria-expanded={open} onClick={() => setOpen(true)}>
-          {classGame ? '⚔️ Showdown!' : invite ? '🎲 Invite!' : '⚔️ Challenge!'}{!classGame && <> <span className="hub-ask__secs">{left}s</span></>}
+          {classGame ? (shown.game === 'classlive' ? '🌟 Class Live!' : '⚔️ Showdown!') : invite ? '🎲 Invite!' : '⚔️ Challenge!'}{!classGame && <> <span className="hub-ask__secs">{left}s</span></>}
         </button>
       )}
       <div className="hub-ask__card">

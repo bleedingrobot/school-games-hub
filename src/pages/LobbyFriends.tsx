@@ -48,6 +48,7 @@ export const EMOJI: Record<AskGame, string> = {
   space: '🚀',
   'power-clash': '⚡',
   showdown: '⚔️',
+  classlive: '🌟',
 };
 
 /** Can I play this game with them, and if not, why (in words for the pupil). Board games are always 'ready' for me here. */
