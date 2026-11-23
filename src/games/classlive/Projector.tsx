@@ -6,12 +6,14 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ARMS, ARM_GOAL, ARM_NAMES, SUPERNOVA, type Arm, type Star, type StarsGame } from '../../../shared/classlive/stars';
+import { PICTURES, type MuralGame } from '../../../shared/classlive/mural';
 import { BODY, SERPENT_LEVELS, SERPENT_LEVEL_ABOUT, SERPENT_LEVEL_NAMES, stepText, wakeAt, type SerpentGame, type SerpentLevel } from '../../../shared/classlive/serpent';
 import { ACTIVITY_NAMES, type Activity, type Event, type ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
 import { ARM_COLOURS } from './arms';
 import type { ClassLiveLink, Reply } from './link';
 import { NightBackdrop, PLAYER_COLOURS, StarSky } from './StarSky';
+import { MuralCloth, MuralScene, NO_MURAL_FX, type MuralFx } from './MuralScene';
 import { CoiledSerpent, JungleBackdrop, NO_SERPENT_FX, SerpentScene, type SerpentFx } from './SerpentScene';
 import './projector.css';
 
@@ -57,8 +59,9 @@ interface Fx {
   swim: boolean;
   nova: number;
   serpent: SerpentFx;
+  mural: MuralFx;
 }
-const NO_FX: Fx = { arriving: new Set(), fresh: {}, pulsing: new Set(), drawing: new Set(), swim: false, nova: 0, serpent: NO_SERPENT_FX };
+const NO_FX: Fx = { arriving: new Set(), fresh: {}, pulsing: new Set(), drawing: new Set(), swim: false, nova: 0, serpent: NO_SERPENT_FX, mural: NO_MURAL_FX };
 
 export function Projector({ link, classId, className, sound }: { link: ClassLiveLink; classId: string; className?: string; sound: ClassLiveSound }) {
   const [room, setRoom] = useState<number | null>(null);
@@ -100,6 +103,12 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
         const key = ++bannerKey.current;
         sx((f) => ({ ...f, banner: { text, key } }));
         later(() => sx((f) => (f.banner?.key === key ? { ...f, banner: null } : f)), ms);
+      };
+      const mx = (change: (f: MuralFx) => MuralFx) => setFx((f) => ({ ...f, mural: change(f.mural) }));
+      const mbanner = (text: string, ms: number) => {
+        const key = ++bannerKey.current;
+        mx((f) => ({ ...f, banner: { text, key } }));
+        later(() => mx((f) => (f.banner?.key === key ? { ...f, banner: null } : f)), ms);
       };
       if (e.type === 'join') sound.play('twinkle');
       else if (e.type === 'start') sound.play('drum');
@@ -145,7 +154,30 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
         setFx((f) => ({ ...f, nova: f.nova + 1 }));
         later(() => setFx((f) => ({ ...f, nova: 0 })), 4200);
         sound.play('fanfare');
-      } else if (e.type === 'over') sound.play('swell');
+      } else if (e.type === 'flip') {
+        const p = s.people.find((x) => x.id === e.pupil);
+        const tile = e.tile;
+        mx((f) => ({ ...f, fresh: { ...f.fresh, [tile]: { name: p?.name ?? null, colour: p?.colour ?? 0 } } }));
+        later(() => mx((f) => { const n = { ...f.fresh }; delete n[tile]; return { ...f, fresh: n }; }), 3800);
+        sound.play('flip');
+      } else if (e.type === 'guess_open') {
+        mbanner('Guessing is open!', 3200);
+        sound.play('chime');
+      } else if (e.type === 'guessed') {
+        const who = nameOf(e.pupil);
+        mbanner(e.place === 1 ? `${who ?? 'Someone'} got it first!` : `${who ?? 'Someone else'} got it too!`, 2600);
+        sound.play('twinkle');
+      } else if (e.type === 'reveal') {
+        mx((f) => ({ ...f, revealing: true }));
+        later(() => mx((f) => ({ ...f, revealing: false })), 9000);
+        sound.play('reveal');
+      } else if (e.type === 'over') {
+        if (s.game.kind === 'mural' && !s.game.revealed) {
+          mx((f) => ({ ...f, revealing: true }));
+          later(() => mx((f) => ({ ...f, revealing: false })), 9000);
+          sound.play('reveal');
+        } else sound.play('swell');
+      }
     }
   }, [flag, later, sound]);
 
@@ -250,12 +282,13 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
   const state = screen?.state ?? null;
   const game = screen?.game ?? null;
   const serpent = game?.kind === 'serpent' ? game : null;
+  const mural = game?.kind === 'mural' ? game : null;
   useEffect(() => {
     if (state !== 'over') { setRevealed(false); setHideResults(false); }
   }, [state]);
 
   return (
-    <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''}`}>
+    <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''} ${mural ? 'cl-p--mural' : ''}`}>
       {serpent ? <JungleBackdrop /> : <NightBackdrop />}
       <div className={`cl-bar ${barOpen ? 'cl-bar--open' : ''}`}>
         <button type="button" className="cl-bar__tab" onClick={() => setBarOpen(!barOpen)} aria-expanded={barOpen} aria-label={barOpen ? 'Hide the teacher bar' : 'Show the teacher bar'}>{barOpen ? '▲' : '☰'}</button>
@@ -293,6 +326,23 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
           {state === 'over' && revealed && (hideResults
             ? <button type="button" className="cl-btn cl-results-tab" onClick={() => setHideResults(false)}>🐍 Show the results</button>
             : <SerpentFinish screen={screen} game={serpent} onAgain={forget} onSky={() => setHideResults(true)} />)}
+        </>
+      )}
+
+      {screen && mural && (state === 'live' || state === 'over') && (
+        <>
+          <MuralScene
+            game={mural}
+            people={screen.people}
+            state={state}
+            fx={fx.mural}
+            showReveal={state === 'live' && !!room}
+            onReveal={() => void act({ action: 'reveal', room })}
+            onRevealed={() => setRevealed(true)}
+          />
+          {state === 'over' && revealed && (hideResults
+            ? <button type="button" className="cl-btn cl-results-tab" onClick={() => setHideResults(false)}>🎨 Show the results</button>
+            : <MuralFinish screen={screen} game={mural} onAgain={forget} onSky={() => setHideResults(true)} />)}
         </>
       )}
 
@@ -339,6 +389,7 @@ function Setup({ busy, problem, onOpen }: { busy: boolean; problem: string; onOp
   const [level, setLevel] = useState<LevelPick>('middle');
   const [sLevel, setSLevel] = useState<SerpentLevel>('gold');
   const [sLength, setSLength] = useState(0);
+  const [mLength, setMLength] = useState(0);
   const [x, setX] = useState('6');
   const [y, setY] = useState('7');
   const [length, setLength] = useState(0);
@@ -392,10 +443,11 @@ function Setup({ busy, problem, onOpen }: { busy: boolean; problem: string; onOp
           <TimerChips length={sLength} setLength={setSLength} />
           <button type="button" className="cl-btn cl-btn--go" disabled={busy} onClick={() => onOpen('serpent', { level: sLevel, length: sLength })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
-        <section className="cl-card cl-card--soon" aria-label="Mystery Mural, coming soon" aria-disabled="true">
+<section className="cl-card cl-card--active cl-card--mural" aria-label="Mystery Mural">
           <h2 className="cl-card__name">🎨 Mystery Mural</h2>
-          <p className="cl-card__blurb">Your maths uncovers a hidden painting.</p>
-          <span className="cl-soon">Coming soon</span>
+          <p className="cl-card__blurb">Your maths uncovers a hidden painting. Guess what it is!</p>
+          <TimerChips length={mLength} setLength={setMLength} />
+          <button type="button" className="cl-btn cl-btn--go" disabled={busy} onClick={() => onOpen('mural', { length: mLength })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
       </div>
     </div>
@@ -416,12 +468,12 @@ function Chip({ p, i }: { p: ScreenView['people'][number]; i: number }) {
 
 function Lobby({ screen, game, className, onStart }: { screen: ScreenView; game: ScreenView['game']; className?: string; onStart: () => void }) {
   const n = screen.people.length;
-  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : null;
+  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : <MuralLobbyHead />;
   return (
     <div className={`cl-lobby ${game.kind === 'serpent' ? 'cl-lobby--serpent' : ''}`}>
       {head}
       <div className="cl-lobby__join">Join now!{className ? <span className="cl-lobby__class"> {className}</span> : null}</div>
-      <div className="cl-lobby__count" aria-live="polite">{n === 0 ? (screen.game.kind === 'serpent' ? 'Waiting for the first pupil…' : 'Waiting for the first star…') : `${n} ${n === 1 ? 'pupil' : 'pupils'} joined`}</div>
+      <div className="cl-lobby__count" aria-live="polite">{n === 0 ? (screen.game.kind === 'stars' ? 'Waiting for the first star…' : 'Waiting for the first pupil…') : `${n} ${n === 1 ? 'pupil' : 'pupils'} joined`}</div>
       <div className="cl-crowd" style={{ ['--k' as string]: Math.max(1.9, Math.min(3.6, 4 - n * 0.06)) }}>
         {screen.people.map((pp, i) => <Chip key={pp.id} p={pp} i={i} />)}
       </div>
@@ -440,6 +492,16 @@ function StarsLobbyHead({ game }: { game: StarsGame }) {
         {Array.from({ length: x * y }, (_, i) => <i key={i} className="cl-array__dot" style={{ animationDelay: `${(i % 12) * 0.12}s` }} />)}
       </div>
       <p className="cl-lobby__ask">What else can we find from this one fact?</p>
+    </>
+  );
+}
+
+function MuralLobbyHead() {
+  return (
+    <>
+      <h1 className="cl-lobby__title">Mystery Mural</h1>
+      <MuralCloth />
+      <p className="cl-lobby__ask">Answer maths to flip tiles. Can you guess the hidden picture?</p>
     </>
   );
 }
@@ -545,6 +607,43 @@ function Finish({ screen, game, onAgain, onSky }: { screen: ScreenView; game: St
       <div className="cl-finish__row">
         <button type="button" className="cl-btn cl-btn--go cl-btn--big" onClick={onAgain}>Again?</button>
         <button type="button" className="cl-btn" onClick={onSky}>See the sky</button>
+      </div>
+    </div>
+  );
+}
+
+/** The mural's shout-outs: only when names are shown, and only for things that are true. */
+export function muralShouts(screen: ScreenView, game: MuralGame): string[] {
+  if (!screen.showNames) return [];
+  const name = (id: string) => screen.people.find((p) => p.id === id)?.name ?? null;
+  const out: string[] = [];
+  if (game.solvers[0] && name(game.solvers[0])) out.push(`🥇 First to guess it: ${name(game.solvers[0])}`);
+  let top: { id: string; v: number } | null = null;
+  for (const p of screen.people) {
+    const v = game.mine[p.id]?.tiles ?? 0;
+    if (v > 0 && p.name && (!top || v > top.v)) top = { id: p.id, v };
+  }
+  if (top) out.push(`🎨 Most tiles flipped: ${name(top.id)} (${top.v})`);
+  if (game.solvers.length > 1) out.push(`🌟 ${game.solvers.length} pupils guessed it`);
+  return out;
+}
+
+function MuralFinish({ screen, game, onAgain, onSky }: { screen: ScreenView; game: MuralGame; onAgain: () => void; onSky: () => void }) {
+  const shouts = useMemo(() => muralShouts(screen, game), [screen, game]);
+  const flipped = game.tiles.filter(Boolean).length;
+  return (
+    <div className="cl-finish" role="dialog" aria-label="Finish">
+      <h2 className="cl-finish__title">It was {PICTURES[game.picture].toLowerCase()}!</h2>
+      <p className="cl-finish__count"><b>{flipped}</b> {flipped === 1 ? 'tile' : 'tiles'} flipped</p>
+      <p className="cl-finish__sub">{game.solvers.length === 0 ? 'Nobody guessed it this time.' : `${game.solvers.length} ${game.solvers.length === 1 ? 'pupil' : 'pupils'} guessed it`}</p>
+      {shouts.length > 0 && (
+        <ul className="cl-shouts" aria-label="Shout-outs">
+          {shouts.map((s, i) => <li key={i} style={{ animationDelay: `${0.3 + i * 0.25}s` }}>{s}</li>)}
+        </ul>
+      )}
+      <div className="cl-finish__row">
+        <button type="button" className="cl-btn cl-btn--go cl-btn--big" onClick={onAgain}>Again?</button>
+        <button type="button" className="cl-btn" onClick={onSky}>See the mural</button>
       </div>
     </div>
   );

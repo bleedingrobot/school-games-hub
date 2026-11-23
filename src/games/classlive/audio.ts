@@ -3,7 +3,7 @@
  * AudioContext is made on the first sound (browsers need a tap first), repeats are rate-limited, and every call is wrapped
  * so a browser without audio just stays quiet.
  */
-export type SoundName = 'twinkle' | 'whoosh' | 'chime' | 'glow' | 'swell' | 'fanfare' | 'drum' | 'roar' | 'hop';
+export type SoundName = 'twinkle' | 'whoosh' | 'chime' | 'glow' | 'swell' | 'fanfare' | 'drum' | 'roar' | 'hop' | 'flip' | 'reveal';
 
 export interface ClassLiveSound {
   play(name: SoundName): void;
@@ -12,7 +12,7 @@ export interface ClassLiveSound {
 }
 
 const KEY = 'classlive-muted';
-const BIG: SoundName[] = ['swell', 'fanfare', 'drum', 'roar'];
+const BIG: SoundName[] = ['swell', 'fanfare', 'drum', 'roar', 'reveal'];
 
 function readMuted(): boolean {
   try {
@@ -100,6 +100,19 @@ function voice(ctx: Ctx, out: AudioNode, name: SoundName) {
       break;
     case 'hop':
       tone(ctx, out, 520, t, 0.14, 'triangle', 0.18, 880);
+      break;
+    case 'flip':
+      tone(ctx, out, 420, t, 0.12, 'triangle', 0.18, 840);
+      tone(ctx, out, 1760, t + 0.1, 0.25, 'sine', 0.1);
+      break;
+    case 'reveal':
+      // A rising shimmer while the tiles flip in a wave, then the fanfare.
+      noise(ctx, out, t, 1.8, 400, 5000, 0.3);
+      [392, 494, 587, 784].forEach((f, i) => tone(ctx, out, f, t + i * 0.28, 0.9, 'triangle', 0.14));
+      [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => {
+        tone(ctx, out, f, t + 1.8 + i * 0.13, i === 6 ? 1.4 : 0.3, 'square', 0.1);
+        tone(ctx, out, f / 2, t + 1.8 + i * 0.13, i === 6 ? 1.4 : 0.3, 'triangle', 0.14);
+      });
       break;
     case 'drum':
       tone(ctx, out, 140, t, 0.5, 'sine', 0.6, 40);

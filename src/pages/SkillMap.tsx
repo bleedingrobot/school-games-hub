@@ -76,6 +76,7 @@ const LADDER_GAMES = [
   'Wormholes & Black Holes',
   'Circuit Racer',
   'Class Showdown',
+  'Class Live (Mystery Mural)',
 ];
 
 /** The Maths tab's Skill map page, for the class in the teacher header (src/teacher/TeacherShell.tsx). */

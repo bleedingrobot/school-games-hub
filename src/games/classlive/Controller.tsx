@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PlayerView, RoomView } from '../../../shared/classlive/server';
 import { ARM_NAMES, type StarsReply } from '../../../shared/classlive/stars';
 import { ARM_COLOURS, ARM_HINTS } from './arms';
+import { MuralPad } from './MuralPad';
 import { SerpentPad } from './SerpentPad';
 import type { ClassLiveLink } from './link';
 import './controller.css';
@@ -34,7 +35,7 @@ function Dots({ x, y, small }: { x: number; y: number; small?: boolean }) {
 
 const sym = (s: string) => s.replace(/\s+/g, '');
 
-export function Sky({ children, tint }: { children: React.ReactNode; tint?: 'serpent' }) {
+export function Sky({ children, tint }: { children: React.ReactNode; tint?: 'serpent' | 'mural' }) {
   return (
     <div className={`cl-c${tint ? ` cl-c--${tint}` : ''}`}>
       <div className="cl-c-twinkle" aria-hidden="true">
@@ -131,6 +132,13 @@ export function Controller({ link, me, room: roomProp }: { link: ClassLiveLink; 
     return (
       <Sky tint="serpent">
         <SerpentPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} />
+      </Sky>
+    );
+  }
+  if (view.game.kind === 'mural') {
+    return (
+      <Sky tint="mural">
+        <MuralPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} />
       </Sky>
     );
   }
