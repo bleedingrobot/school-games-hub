@@ -26,7 +26,10 @@ import { hardSeconds, timeText } from '../../../shared/circuit/game';
 import { encodeLog, inputCode, makeRecorder } from '../../../shared/circuit/inputs';
 import { newRace, readyToRestart, step, willRespawn, type RaceEvent, type RaceOptions, type RaceState } from '../../../shared/circuit/physics';
 import type { Road } from '../../../shared/circuit/road';
-import { playSound, type GameSound } from '../sounds';
+import { cellAt } from '../../../shared/circuit/road';
+import { circuitSound, makeEngine, type CircuitSound } from './audio';
+import dashFrame from './art/paint/dash/frame.webp';
+import dashSmall from './art/paint/dash/frame-small.webp';
 import { Controls } from './controls';
 import type { RaceView } from './renderer';
 import { Volt } from './Volt';
@@ -37,10 +40,12 @@ const MAX_CATCH_UP = 3;
 const SHOW_ROWS = 48;
 const SLOW_MOTION = 0.35;
 const SLOW_ROWS = Math.round(TOP_SPEED * 4 * SLOW_MOTION);
-const SOUNDS: Partial<Record<RaceEvent, GameSound>> = {
-  jump: 'hop', crash: 'boom', bonk: 'knock', recharge: 'heal', finish: 'win', fall: 'end', outOfBattery: 'end', outOfSignal: 'end', autopilot: 'zap',
-  checkpoint: 'zap', outOfTime: 'end',
+const SOUNDS: Partial<Record<RaceEvent, CircuitSound>> = {
+  jump: 'jump', land: 'land', crash: 'crash', bonk: 'bonk', recharge: 'recharge', finish: 'finish', fall: 'fall', outOfBattery: 'flat',
+  outOfSignal: 'flat', autopilot: 'autopilot', checkpoint: 'checkpoint', outOfTime: 'flat',
 };
+/** Tiles with their own sound as the racer drives onto them ('?' only when it boosts). */
+const SURFACE: Record<string, CircuitSound> = { '>': 'boost', r: 'resistor', g: 'gel' };
 const WHY: Record<string, string> = {
   crashed: 'Crash! Hit walls slower than half speed.',
   fell: 'Off the road! Jump the gaps with Space.',
@@ -58,6 +63,8 @@ interface Props {
   maths?: RunMaths | null;
   /** Hard mode: no Auto-Pilot, a count-down clock. */
   hard?: boolean;
+  /** The pupil's racer colour (RACERS). */
+  colour?: string;
   /** Sends a recharge port's answer to the server to be marked. */
   onAnswer?(slot: number, answer: number, ms: number): Promise<AnswerReply>;
   /** The finishing go's inputs and the crashes before it. */
@@ -123,7 +130,7 @@ function QuestionLine({ q }: { q: PublicQuestion }) {
   );
 }
 
-export function RaceScreen({ road, number, sound, maths = null, hard = false, onAnswer, onFinish, onQuit }: Props) {
+export function RaceScreen({ road, number, sound, maths = null, hard = false, colour, onAnswer, onFinish, onQuit }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const controls = useRef(new Controls());
@@ -159,6 +166,7 @@ export function RaceScreen({ road, number, sound, maths = null, hard = false, on
     if (startedRef.current) return;
     startedRef.current = true;
     setStarted(true);
+    if (soundRef.current) circuitSound('go');
   };
 
   useEffect(() => {
@@ -211,6 +219,9 @@ export function RaceScreen({ road, number, sound, maths = null, hard = false, on
     let frames = 0;
     let sentFinish = false;
     let tipTimer: ReturnType<typeof setTimeout> | null = null;
+    const engine = makeEngine();
+    let lastSurface = '.';
+    let lastTick = -1;
     const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     const showTip = (text: string, ms = 2500) => {
       setTip(text);
@@ -235,7 +246,7 @@ export function RaceScreen({ road, number, sound, maths = null, hard = false, on
     import('./renderer').then(({ createView }) => {
       if (stopped || !canvas.current) return;
       try {
-        view = createView(canvas.current, road, { reduced, gates: maths ? maths.gates.map((g) => g.labels) : null, hard });
+        view = createView(canvas.current, road, { reduced, gates: maths ? maths.gates.map((g) => g.labels) : null, hard, colour });
         fit();
       } catch {
         showTip('This device can’t draw the 3D road. Try another browser.', 60_000);
@@ -264,7 +275,7 @@ export function RaceScreen({ road, number, sound, maths = null, hard = false, on
               if (soundRef.current) {
                 for (const e of r.events) {
                   const s = SOUNDS[e];
-                  if (s) playSound(s);
+                  if (s) circuitSound(s);
                 }
               }
               if (r.events.includes('autopilot')) showTip('Auto-Pilot saved that jump!', 1600);
@@ -290,10 +301,24 @@ export function RaceScreen({ road, number, sound, maths = null, hard = false, on
                   const label = gate.labels[road.gates[g].lanes.indexOf(gate.rightLane)] ?? '';
                   const right = cur.choices[g] === gate.rightLane;
                   view?.gateResult(g, gate.rightLane);
-                  if (soundRef.current && right) playSound('zap');
+                  if (soundRef.current) circuitSound(right ? 'gateRight' : 'gateWrong');
                   showTip(right ? `Right lane: ${label}! Overclock!` : `The answer was ${label}.`, 2600);
                 }
               }
+            }
+            // Driving onto a boost, resistor or gel tile has its sound; the hard-mode clock ticks in its last 10 seconds.
+            const row = Math.floor(cur.z);
+            const surface = cur.grounded && cur.outcome === 'racing' ? cellAt(road, Math.floor(cur.x), row) : '.';
+            if (surface !== lastSurface && soundRef.current) {
+              const boostedGate = surface === '?' && (!maths || cur.boostGate === road.gateAt[row]);
+              const s = boostedGate ? 'boost' : SURFACE[surface];
+              if (s && SURFACE[lastSurface] !== s) circuitSound(s);
+            }
+            lastSurface = surface;
+            if (clock > 0 && cur.outcome === 'racing') {
+              const left = Math.ceil((clock - cur.steps) / STEPS_PER_SECOND);
+              if (left <= 10 && left > 0 && left !== lastTick && soundRef.current) circuitSound('tick');
+              lastTick = left;
             }
             if (cur.outcome !== 'racing' && cur.outcome !== 'finished') {
               lost++;
@@ -332,6 +357,7 @@ export function RaceScreen({ road, number, sound, maths = null, hard = false, on
         }
         if (cur.battery < FULL * 0.25 && cur.outcome === 'racing' && dashSteps % 90 === 0) showTip('Battery low! Find a blue port, or ease off the speed.');
       }
+      engine.set(cur.vz / TOP_SPEED, soundRef.current && startedRef.current && !paused.current && cur.outcome === 'racing');
       view?.draw(prev, cur, startedRef.current && !paused.current ? acc / DT : 1, seconds);
       // Too slow for 30 steps a second (a busy iPad)? Drop the bloom and pixels once.
       frames++;
@@ -347,9 +373,10 @@ export function RaceScreen({ road, number, sound, maths = null, hard = false, on
       cancelAnimationFrame(frame);
       observer?.disconnect();
       if (tipTimer) clearTimeout(tipTimer);
+      engine.stop();
       view?.dispose();
     };
-  }, [road, maths, hard]);
+  }, [road, maths, hard, colour, clock]);
 
   /** Marks a port answer on the server; the port's refill follows the mark. */
   const markPort = async (value: number, ms: number): Promise<MarkedAnswer> => {
@@ -392,31 +419,34 @@ export function RaceScreen({ road, number, sound, maths = null, hard = false, on
         <div className="cr-dash__top">
           <button type="button" className="cr-glass" onClick={onQuit} aria-label="Back to the roads (Escape)">← Roads</button>
           <span className="cr-dash__name">{number > 0 ? `${number}. ` : ''}{road.def.name}</span>
+          {crashes > 0 && <span className="cr-dash__crashes">Crashes: {crashes}</span>}
           {hard ? (
-            <span className={`cr-dash__time cr-dash__time--hard${clock - dash.time < 10 * STEPS_PER_SECOND ? ' cr-dash__time--low' : ''}`} aria-label="Time left">
-              🔥 {timeText(Math.max(0, clock - dash.time))}
+            <span className="cr-light cr-light--off" title="Hard mode: no Auto-Pilot">
+              <span aria-hidden="true" className="cr-light__dot" /> <span className="cr-light__word">Auto-Pilot</span> off
             </span>
           ) : (
-            <span className="cr-dash__time" aria-label="Time">{timeText(dash.time)}</span>
+            <span className={`cr-light${dash.autoPilot ? ' cr-light--on' : ''}`} title="Auto-Pilot quietly saves near-miss jumps">
+              <span aria-hidden="true" className="cr-light__dot" /> <span className="cr-light__word">Auto-Pilot</span>
+            </span>
           )}
         </div>
         <div className="cr-dash__progress" aria-label={`Road ${Math.round(dash.progress * 100)}% done`}>
           <span style={{ width: `${dash.progress * 100}%` }} />
         </div>
-        <div className="cr-dash__meters">
-          <Meter label="Speed" value={dash.speed} colour="#22d3ee" />
-          <Meter label="Battery" value={dash.battery} colour={dash.battery < 0.25 ? '#f87171' : '#4ade80'} flash={dash.battery < 0.25} />
-          <Meter label="Signal" value={dash.signal} colour={dash.signal < 0.25 ? '#f87171' : '#c084fc'} flash={dash.signal < 0.25} />
-          {hard ? (
-            <span className="cr-light cr-light--off" title="Hard mode: no Auto-Pilot">
-              <span aria-hidden="true" className="cr-light__dot" /> Auto-Pilot off
-            </span>
-          ) : (
-            <span className={`cr-light${dash.autoPilot ? ' cr-light--on' : ''}`} title="Auto-Pilot quietly saves near-miss jumps">
-              <span aria-hidden="true" className="cr-light__dot" /> Auto-Pilot
-            </span>
-          )}
-          {crashes > 0 && <span className="cr-dash__crashes">Crashes: {crashes}</span>}
+        {/* The painted dashboard (Stage 5): battery and signal in its two round gauges, the time and speed on its screen. */}
+        <div className="cr-panel" style={{ ['--cr-dash' as string]: `url(${dashFrame})`, ['--cr-dash-small' as string]: `url(${dashSmall})` }}>
+          <Ring side="left" label="Battery" value={dash.battery} colour={dash.battery < 0.25 ? '#f87171' : '#4ade80'} flash={dash.battery < 0.25} />
+          <div className="cr-panel__screen">
+            {hard ? (
+              <span className={`cr-dash__time cr-dash__time--hard${clock - dash.time < 10 * STEPS_PER_SECOND ? ' cr-dash__time--low' : ''}`} aria-label="Time left">
+                🔥 {timeText(Math.max(0, clock - dash.time))}
+              </span>
+            ) : (
+              <span className="cr-dash__time" aria-label="Time">{timeText(dash.time)}</span>
+            )}
+            <Meter label="Speed" value={dash.speed} colour="#22d3ee" />
+          </div>
+          <Ring side="right" label="Signal" value={dash.signal} colour={dash.signal < 0.25 ? '#f87171' : '#c084fc'} flash={dash.signal < 0.25} />
         </div>
       </div>
       <Volt
@@ -476,6 +506,22 @@ function Meter({ label, value, colour, flash = false }: { label: string; value: 
     <span className={`cr-meter${flash ? ' cr-meter--flash' : ''}`} role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
       <span className="cr-meter__label">{label}</span>
       <span className="cr-meter__bar"><span style={{ width: `${pct}%`, background: colour }} /></span>
+    </span>
+  );
+}
+
+/** A round gauge in one of the painted dashboard's two rings: a glowing arc and the percent in the middle. */
+function Ring({ side, label, value, colour, flash = false }: { side: 'left' | 'right'; label: string; value: number; colour: string; flash?: boolean }) {
+  const pct = Math.round(Math.max(0, Math.min(1, value)) * 100);
+  const C = 2 * Math.PI * 42;
+  return (
+    <span className={`cr-ring cr-ring--${side}${flash ? ' cr-ring--flash' : ''}`} role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="42" className="cr-ring__track" />
+        <circle cx="50" cy="50" r="42" className="cr-ring__arc" style={{ stroke: colour, strokeDasharray: `${(C * pct) / 100} ${C}` }} />
+      </svg>
+      <span className="cr-ring__num" style={{ color: colour }}>{pct}</span>
+      <span className="cr-ring__label">{label}</span>
     </span>
   );
 }

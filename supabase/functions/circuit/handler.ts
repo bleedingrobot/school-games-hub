@@ -1,7 +1,9 @@
 /**
- * The Circuit Racer server function (docs/CIRCUIT-PLAN.md, sections 7 and 8). Four jobs:
+ * The Circuit Racer server function (docs/CIRCUIT-PLAN.md, sections 7 and 8). Five jobs:
  *
- *   load    the pupil's own roads (best time, medal, stars), how many of today's 5 finishes are left, and the maths switch;
+ *   load    the pupil's own roads (best time, medal, stars), how many of today's 5 finishes are left, the maths switch and
+ *           their racer (Spark if the saved one isn't unlocked);
+ *   racer   saves the pupil's racer, if its world is open (Stage 5);
  *   start   hands out a seed with a stamp (made for this pupil and road) for one go at an open road, unless today's 5
  *           finishes are used up. With maths on (the teacher's `circuit_maths`), it makes one question per recharge port
  *           and data gate from the pupil's focus (way A), keeps them where pupils can't read them, and sends only what to
@@ -17,7 +19,10 @@
  * Every job checks sign-in and the teacher's switch (`settings_of`): while it is off, nothing is handed out or saved.
  * Logic only, with the database passed in (`Services`), so handler.test.ts and the preview run it without Deno.
  */
-import { finishesLeft, judgeFinish, makeSeed, parseFinish, roadById, roadNeeds, roadOpen, seedProblem, stampText, type CircuitSave, type JudgedFinish, type RoadProgress } from '../../../shared/circuit/game';
+import {
+  finishesLeft, judgeFinish, makeSeed, parseFinish, racerById, racerOpen, roadById, roadNeeds, roadOpen, seedProblem, stampText,
+  type CircuitSave, type JudgedFinish, type RacerId, type RoadProgress,
+} from '../../../shared/circuit/game';
 import { GATE_MS, gateLayout, gateValue, refillsFor, runMaths, slotPlan, type RunMaths } from '../../../shared/circuit/maths';
 import type { Road } from '../../../shared/circuit/road';
 import type { FactAnswer } from '../../../shared/maths/leitner';
@@ -49,7 +54,9 @@ export interface Services {
   /** A random number from 0 up to 1 (the question pack). */
   random(): number;
   /** The pupil's roads and finishes today (NZ day). */
-  load(player: string): Promise<{ roads: Record<string, RoadProgress>; today: number } | 'busy'>;
+  load(player: string): Promise<{ roads: Record<string, RoadProgress>; today: number; racer?: RacerId } | 'busy'>;
+  /** Saves the pupil's racer (Stage 5). The handler has checked it is unlocked. */
+  setRacer(player: string, racer: RacerId): Promise<boolean | 'busy'>;
   /**
    * Saves a replayed finish in one locked step: refuses a 6th finish today unless `unlimited`, refuses a road that isn't open
    * (`needs`: `count` of these roads finished, from roadNeeds), counts a seed once, keeps the best and the hard finishes, and
@@ -104,8 +111,20 @@ export function makeHandler(services: Services) {
     if (body.action === 'load') {
       const saved = await services.load(player);
       if (saved === 'busy') return reply(503, { error: "We couldn't load your roads just now." });
-      const save: CircuitSave = { ...saved, left: finishesLeft(saved.today, settings.unlimited), maths: settings.maths };
+      const racer = racerOpen(saved.roads, saved.racer) ? saved.racer : 'spark';
+      const save: CircuitSave = { ...saved, left: finishesLeft(saved.today, settings.unlimited), maths: settings.maths, racer };
       return reply(200, save);
+    }
+
+    if (body.action === 'racer') {
+      const racer = racerById(body.racer);
+      if (!racer) return reply(400, { error: "That racer couldn't be found." });
+      const saved = await services.load(player);
+      if (saved === 'busy') return reply(503, { error: "We couldn't change your racer just now." });
+      if (!racerOpen(saved.roads, racer.id)) return reply(409, { error: `${racer.name} comes with world ${racer.world + 1}.`, code: 'locked' });
+      const done = await services.setRacer(player, racer.id);
+      if (done !== true) return reply(503, { error: "We couldn't change your racer just now." });
+      return reply(200, { racer: racer.id });
     }
 
     if (body.action === 'start') {

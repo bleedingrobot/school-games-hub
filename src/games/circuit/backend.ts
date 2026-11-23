@@ -3,7 +3,7 @@
  * one posts to the school's server (`liveCircuit` in liveBackend.ts); the preview runs the very same handler in the page on
  * a pretend database (`pretendCircuit` in pretend.ts), so it never calls the live site.
  */
-import type { CircuitSave, Medal } from '../../../shared/circuit/game';
+import type { CircuitSave, Medal, RacerId } from '../../../shared/circuit/game';
 import type { RunMaths } from '../../../shared/circuit/maths';
 
 export interface StartReply {
@@ -46,6 +46,8 @@ export interface CircuitBackend {
   start(road: string, maths?: boolean): Promise<StartReply>;
   answer(a: { road: string; seed: string; stamp: string; slot: number; answer: number; ms: number }): Promise<AnswerReply>;
   finish(run: { road: string; seed: string; stamp: string; inputs: string; crashes: number; hard: boolean }): Promise<FinishReply>;
+  /** Saves the pupil's racer (Stage 5); refused ('locked') until its world is open. */
+  racer(racer: RacerId): Promise<{ racer: RacerId }>;
 }
 
 type Post = (body: object) => Promise<{ status: number; body: Record<string, unknown> }>;
@@ -62,5 +64,6 @@ export function fromPost(post: Post): CircuitBackend {
     start: (road, maths) => ask({ action: 'start', road, ...(maths === undefined ? {} : { maths }) }),
     answer: (a) => ask({ action: 'answer', ...a }),
     finish: (run) => ask({ action: 'finish', ...run }),
+    racer: (racer) => ask({ action: 'racer', racer }),
   };
 }

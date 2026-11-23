@@ -7,7 +7,7 @@ import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { botRun } from '../../../shared/circuit/bot';
 import { HALF_REFILL, TOP_SPEED } from '../../../shared/circuit/config';
-import { allowTestRoad, FINISHES_A_DAY, roadById, stampText } from '../../../shared/circuit/game';
+import { allowTestRoad, FINISHES_A_DAY, roadById, stampText, WORLDS } from '../../../shared/circuit/game';
 import { encodeLog, inputCode, makeRecorder } from '../../../shared/circuit/inputs';
 import type { RunMaths } from '../../../shared/circuit/maths';
 import { memoryServices, type MemoryOptions } from '../../../shared/circuit/memoryServices';
@@ -39,7 +39,7 @@ function setup(opts: MemoryOptions = {}) {
   return { db, send, go };
 }
 
-it('replays a finish and keeps only what the replay says; refuses another pupil’s run, a switched-off class and no sign-in', async () => {
+it('replays a finish and keeps only what the replay says; saves an unlocked racer; refuses another pupil’s run, a switched-off class and no sign-in', async () => {
   const { db, send, go } = setup();
   expect((await send({ action: 'load' }, null)).status).toBe(401);
 
@@ -65,8 +65,16 @@ it('replays a finish and keeps only what the replay says; refuses another pupil�
   expect((await send({ action: 'finish', ...(await go()), stamp: 'nope', inputs: INPUTS, crashes: 0 })).status).toBe(400);
   expect((await send({ action: 'finish', ...(await go('ben')), inputs: INPUTS, crashes: 0 }, 'ana')).status).toBe(400);
 
+  // Racers (Stage 5): Spark to start; Pixel waits for the Graphics Card; the pick is saved.
+  expect((await send({ action: 'load' })).body.racer).toBe('spark');
+  expect((await send({ action: 'racer', racer: 'pixel' })).body.code).toBe('locked');
+  expect((await send({ action: 'racer', racer: 'nope' })).status).toBe(400);
+  db.roads.ana = { ...db.roads.ana, ...Object.fromEntries(WORLDS[0].roads.map((r) => [r.id, { ...db.roads.ana[ROAD] }])) };
+  expect((await send({ action: 'racer', racer: 'pixel' })).status).toBe(200);
+  expect((await send({ action: 'load' })).body.racer).toBe('pixel');
+
   db.switches.enabled = false;
-  for (const body of [{ action: 'load' }, { action: 'start', road: ROAD }, { action: 'finish', ...(await go()), inputs: INPUTS, crashes: 0 }]) {
+  for (const body of [{ action: 'load' }, { action: 'racer', racer: 'spark' }, { action: 'start', road: ROAD }, { action: 'finish', ...(await go()), inputs: INPUTS, crashes: 0 }]) {
     const r = await send(body);
     expect([r.status, r.body.code]).toEqual([403, 'off']);
   }

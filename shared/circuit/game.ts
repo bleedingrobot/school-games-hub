@@ -163,7 +163,27 @@ export interface CircuitSave {
   left: number | null;
   /** The teacher's maths switch ('choose': the pupil picks maths on or off for each go). Missing from an old reply: on. */
   maths?: 'off' | 'choose' | 'on';
+  /** The pupil's racer (Stage 5; RACERS). Missing from an old reply: Spark. */
+  racer?: RacerId;
 }
+
+/**
+ * The racers (Stage 5): Spark from the start, and one more each time a world opens. `colour` tints the 3D racer and its
+ * trail. Change the list together with circuit_set_racer in 20261123000400_circuit_racers.sql.
+ */
+export const RACERS = [
+  { id: 'spark', name: 'Spark', colour: '#22e3ff', world: 0 },
+  { id: 'pixel', name: 'Pixel', colour: '#4ade80', world: 1 },
+  { id: 'byte', name: 'Byte', colour: '#f472b6', world: 2 },
+  { id: 'quark', name: 'Quark', colour: '#c084fc', world: 3 },
+] as const;
+export type RacerId = (typeof RACERS)[number]['id'];
+export const racerById = (id: unknown) => RACERS.find((r) => r.id === id);
+/** Is a racer unlocked? It comes with its world. */
+export const racerOpen = (roads: Record<string, RoadProgress>, id: unknown): boolean => {
+  const r = racerById(id);
+  return !!r && worldOpen(roads, r.world);
+};
 
 /** Is a road open? See roadNeeds. */
 export function roadOpen(roads: Record<string, RoadProgress>, id: string): boolean {

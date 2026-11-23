@@ -6,14 +6,31 @@
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
-  extraRoads, FINISHES_A_DAY, hardSeconds, MEDAL_SECONDS, msToNzMidnight, roadById, roadOpen, roadPlace, ROADS, timeText, WORLD_OPENS_AT, worldOpen, WORLDS,
-  type CircuitSave, type Medal,
+  extraRoads, FINISHES_A_DAY, hardSeconds, MEDAL_SECONDS, msToNzMidnight, racerById, racerOpen, RACERS, roadById, roadOpen, roadPlace, ROADS, timeText,
+  WORLD_OPENS_AT, worldOpen, WORLDS, type CircuitSave, type Medal, type RacerId,
 } from '../../../shared/circuit/game';
+import type { World } from '../../../shared/circuit/config';
 import type { RunMaths } from '../../../shared/circuit/maths';
 import type { RaceState } from '../../../shared/circuit/physics';
 import { useSound } from '../../sound';
 import mapArt from './art/paint/map/map.webp';
 import mapSmall from './art/paint/map/map-800.webp';
+import finishCloud from './art/paint/finish/cloud.webp';
+import finishCloudSmall from './art/paint/finish/cloud-800.webp';
+import finishGpu from './art/paint/finish/gpu.webp';
+import finishGpuSmall from './art/paint/finish/gpu-800.webp';
+import finishMemory from './art/paint/finish/memory.webp';
+import finishMemorySmall from './art/paint/finish/memory-800.webp';
+import finishBoard from './art/paint/finish/motherboard.webp';
+import finishBoardSmall from './art/paint/finish/motherboard-800.webp';
+import finishQuantum from './art/paint/finish/quantum.webp';
+import finishQuantumSmall from './art/paint/finish/quantum-800.webp';
+import byteArt from './art/paint/racers/byte-small.webp';
+import pixelArt from './art/paint/racers/pixel-small.webp';
+import quarkArt from './art/paint/racers/quark-small.webp';
+import sparkArt from './art/paint/racers/spark-small.webp';
+import { circuitSound } from './audio';
+import { VoltFace } from './Volt';
 import { CircuitError, type CircuitBackend, type FinishReply } from './backend';
 import { HubButtons } from './HubButtons';
 import { RaceScreen } from './RaceScreen';
@@ -27,6 +44,12 @@ type Screen =
   | { kind: 'done' }
   | { kind: 'off' };
 
+/** Each world's finish painting: [full size, 800 wide]. */
+const FINISH_ART: Record<World, [string, string]> = {
+  motherboard: [finishBoard, finishBoardSmall], graphics: [finishGpu, finishGpuSmall], memory: [finishMemory, finishMemorySmall],
+  cloud: [finishCloud, finishCloudSmall], quantum: [finishQuantum, finishQuantumSmall],
+};
+const RACER_ART: Record<RacerId, string> = { spark: sparkArt, pixel: pixelArt, byte: byteArt, quark: quarkArt };
 const MEDAL_ICON: Record<Medal, string> = { bronze: '🥉', silver: '🥈', gold: '🥇' };
 const MEDAL_WORD: Record<Medal, string> = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold' };
 /** Where each world sits on the painted map (percent across and down), and its glow. */
@@ -122,6 +145,19 @@ export function CircuitGame({ backend, extra }: { backend: CircuitBackend; extra
     }
   }, [backend, fail, save]);
 
+  // The racer picker (Stage 5): shown at once, saved on the server; put back if the server says no.
+  const pickRacer = useCallback(async (racer: RacerId) => {
+    const was = save?.racer;
+    if (!save || was === racer) return;
+    setSave((s) => (s ? { ...s, racer } : s));
+    try {
+      await backend.racer(racer);
+    } catch (e) {
+      setSave((s) => (s ? { ...s, racer: was } : s));
+      setProblem(e instanceof Error ? e.message : 'Your racer couldn’t be changed.');
+    }
+  }, [backend, save]);
+
   let body: ReactNode;
   if (screen.kind === 'race') {
     const road = roadById(screen.road)!;
@@ -133,6 +169,7 @@ export function CircuitGame({ backend, extra }: { backend: CircuitBackend; extra
         sound={soundOn}
         maths={screen.maths}
         hard={screen.hard}
+        colour={(racerById(save?.racer) ?? RACERS[0]).colour}
         onAnswer={(slot, answer, ms) => backend.answer({ road: screen.road, seed: screen.seed, stamp: screen.stamp, slot, answer, ms })}
         onFinish={(inputs, crashes, state) => finished(screen.road, screen.seed, screen.stamp, inputs, crashes, screen.hard, state)}
         onQuit={() => setScreen({ kind: 'roads' })}
@@ -141,13 +178,18 @@ export function CircuitGame({ backend, extra }: { backend: CircuitBackend; extra
   } else if (screen.kind === 'saving') {
     body = <Centre><h2 className="cr-title" tabIndex={-1}>Plugging in…</h2><p className="cr-sub">Checking your run.</p></Centre>;
   } else if (screen.kind === 'finish' && save) {
-    body = <FinishScreen save={save} road={screen.road} reply={screen.reply} was={screen.was} onAgain={() => start(screen.road, !!screen.reply.hard)} onNext={(r) => start(r)} onRoads={() => setScreen({ kind: 'roads' })} onDone={() => setScreen({ kind: 'done' })} />;
+    body = <FinishScreen sound={soundOn} save={save} road={screen.road} reply={screen.reply} was={screen.was} onAgain={() => start(screen.road, !!screen.reply.hard)} onNext={(r) => start(r)} onRoads={() => setScreen({ kind: 'roads' })} onDone={() => setScreen({ kind: 'done' })} />;
   } else if (screen.kind === 'done') {
     body = <DoneToday />;
   } else if (screen.kind === 'off') {
     body = <Centre><HubButtons /><h2 className="cr-title" tabIndex={-1}>Circuit Racer is switched off</h2><p className="cr-sub">Your teacher has switched it off for your class for now.</p></Centre>;
   } else {
-    body = <WorldMap save={save} busy={busy} onPick={start} problem={problem} extra={extra} wantMaths={wantMaths} onWantMaths={setWantMaths} world={world} onWorld={setWorld} />;
+    body = (
+      <WorldMap
+        save={save} busy={busy} onPick={start} problem={problem} extra={extra} wantMaths={wantMaths} onWantMaths={setWantMaths} world={world} onWorld={setWorld}
+        onRacer={pickRacer}
+      />
+    );
   }
 
   return <div className="cr-window">{body}</div>;
@@ -188,9 +230,9 @@ function nextStep(save: CircuitSave): string | null {
   return null;
 }
 
-function WorldMap({ save, busy, onPick, problem, extra, wantMaths, onWantMaths, world, onWorld }: {
+function WorldMap({ save, busy, onPick, problem, extra, wantMaths, onWantMaths, world, onWorld, onRacer }: {
   save: CircuitSave | null; busy: boolean; onPick: (road: string, hard?: boolean) => void; problem: string | null; extra?: ReactNode;
-  wantMaths: boolean; onWantMaths: (on: boolean) => void; world: number | null; onWorld: (w: number) => void;
+  wantMaths: boolean; onWantMaths: (on: boolean) => void; world: number | null; onWorld: (w: number) => void; onRacer: (racer: RacerId) => void;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
@@ -276,6 +318,7 @@ function WorldMap({ save, busy, onPick, problem, extra, wantMaths, onWantMaths, 
           })}
         </ol>
       )}
+      {save && <RacerPicker save={save} onRacer={onRacer} />}
       {save && extraRoads().length > 0 && (
         <div className="cr-testroads">
           {extraRoads().map((r) => (
@@ -295,8 +338,73 @@ function WorldMap({ save, busy, onPick, problem, extra, wantMaths, onWantMaths, 
   );
 }
 
-function FinishScreen({ save, road, reply, was, onAgain, onNext, onRoads, onDone }: {
-  save: CircuitSave; road: string; reply: FinishReply; was: number | null;
+/** The racers (Stage 5): Spark from the start, one more with each new world. Volt points at the locked ones. */
+function RacerPicker({ save, onRacer }: { save: CircuitSave; onRacer: (racer: RacerId) => void }) {
+  const mine = racerById(save.racer)?.id ?? 'spark';
+  const [said, setSaid] = useState<string | null>(null);
+  const locked = RACERS.filter((r) => !racerOpen(save.roads, r.id));
+  const line = said ?? (locked.length ? `${locked[0].name} joins when ${WORLDS[locked[0].world].name} opens!` : 'Every racer is yours. Pick one!');
+  return (
+    <section className="cr-racers" aria-label="Your racer">
+      <div className="cr-racers__volt">
+        <VoltFace size={52} />
+        <p className="cr-racers__line" role="status">{line}</p>
+      </div>
+      <ul className="cr-racers__list">
+        {RACERS.map((r) => {
+          const open = racerOpen(save.roads, r.id);
+          const on = r.id === mine;
+          const pick = () => {
+            if (!open) return setSaid(`Open ${WORLDS[r.world].name} to race as ${r.name}!`);
+            onRacer(r.id);
+            setSaid(`${r.name} is ready to race!`);
+          };
+          return (
+            <li key={r.id}>
+              <button
+                type="button" aria-pressed={on} aria-label={open ? `Race as ${r.name}` : `${r.name}: comes with ${WORLDS[r.world].name}`}
+                className={`cr-racer${on ? ' cr-racer--on' : ''}${open ? '' : ' cr-racer--locked'}`} style={{ ['--cr-racer' as string]: r.colour }}
+                onClick={pick}
+              >
+                <img src={RACER_ART[r.id]} alt="" width={96} height={96} />
+                <span className="cr-racer__name">{open ? r.name : `🔒 ${r.name}`}</span>
+                {!open && <span className="cr-racer__point" aria-hidden="true">👈</span>}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/** Counts up to `to` over about a second (straight there with reduced motion). */
+function useCountUp(to: number): number {
+  const [shown, setShown] = useState(() => (reducedMotion() || typeof requestAnimationFrame !== 'function' ? to : 0));
+  useEffect(() => {
+    if (reducedMotion() || typeof requestAnimationFrame !== 'function') {
+      setShown(to);
+      return;
+    }
+    let frame = 0;
+    const began = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, Math.max(0, (now - began) / 1100));
+      setShown(Math.round(to * (1 - (1 - t) ** 3)));
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [to]);
+  return shown;
+}
+
+const SPARKS = Array.from({ length: 22 }, (_, i) => ({ angle: (i / 22) * 360 + (i % 3) * 7, far: 90 + ((i * 37) % 80), delay: (i % 5) * 40 }));
+
+function FinishScreen({ sound, save, road, reply, was, onAgain, onNext, onRoads, onDone }: {
+  sound: boolean; save: CircuitSave; road: string; reply: FinishReply; was: number | null;
   onAgain: () => void; onNext: (road: string) => void; onRoads: () => void; onDone: () => void;
 }) {
   const i = ROADS.findIndex((r) => r.id === road);
@@ -317,17 +425,32 @@ function FinishScreen({ save, road, reply, was, onAgain, onNext, onRoads, onDone
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
   }, [main, out, onAgain, onRoads]);
+  // The medal lands with a chime as the time finishes counting.
+  useEffect(() => {
+    if (!sound) return;
+    const t = setTimeout(() => circuitSound('checkpoint'), 650);
+    return () => clearTimeout(t);
+  }, [sound]);
   const best = reply.result === 'best' && was !== null;
   const newWorld = next && nextOpen && place && roadPlace(next.id)?.world !== place.world;
+  const [big, small] = FINISH_ART[def.world] ?? FINISH_ART.motherboard;
+  const steps = useCountUp(reply.steps);
 
   return (
-    <div className={`cr-finish cr-finish--${def.world}`}>
+    <div className={`cr-finish cr-finish--${def.world}${reply.hard ? ' cr-finish--hard' : ''}`}>
+      <img className="cr-finish__art" src={small} srcSet={`${small} 800w, ${big} 1600w`} sizes="100vw" alt="" />
+      <div className="cr-finish__sparks" aria-hidden="true">
+        {SPARKS.map((p, k) => (
+          <span key={k} style={{ ['--a' as string]: `${p.angle}deg`, ['--d' as string]: `${p.far}px`, animationDelay: `${450 + p.delay}ms` }} />
+        ))}
+      </div>
       <div className="cr-finish__card">
         <p className="cr-finish__road">{place ? `World ${place.world + 1} · ${place.index + 1}. ` : ''}{def.name}</p>
+        <p className="cr-finish__medal" aria-hidden="true">{MEDAL_ICON[reply.medal]}</p>
         <h2 className="cr-finish__title" ref={heading} tabIndex={-1}>
-          <span aria-hidden="true">{MEDAL_ICON[reply.medal]}</span> {MEDAL_WORD[reply.medal]}!{reply.hard && <span className="cr-fire" aria-label=" in hard mode"> 🔥</span>}
+          {MEDAL_WORD[reply.medal]}!{reply.hard && <span className="cr-fire" aria-label=" in hard mode"> 🔥</span>}
         </h2>
-        <p className="cr-finish__time">{timeText(reply.steps)}{best && <span className="cr-new"> New best!</span>}</p>
+        <p className="cr-finish__time" aria-label={timeText(reply.steps)}>{timeText(steps)}{best && <span className="cr-new"> New best!</span>}</p>
         {reply.hard && <p className="cr-hardwin">Hard mode beaten: no Auto-Pilot, inside the clock!</p>}
         <ul className="cr-finish__stars">
           <li className={reply.clean ? 'cr-on' : ''}><span aria-hidden="true">★</span> No crash{reply.clean ? '' : ' (not this time)'}</li>

@@ -1,6 +1,6 @@
 # Circuit Racer: plan
 
-**Status: Stage 4 done, live but switched off (code switch OFF): worlds 2 to 5 (24 new roads: Graphics Card, Memory Lanes, The Cloud, Quantum Core), worlds opening at 4 of 6, checkpoints on roads over a minute, hard mode (no Auto-Pilot, a count-down clock, 🔥), medal times for all 30 roads from the simulator, and the world map on the painted map with each world's painting behind its roads. Migration `20261123000200_circuit_worlds.sql`. Plan PR #733, choices #734, Stage 1 #738, Stage 2 #739, world 1 redrawn #740, no bounce #741, Stage 3 #742, art #743, Stage 4 (23 Nov 2026). Next: Stage 5, the rest of the painted art and sounds (prompt in `docs/prompts/circuit-s5.md`).** James picked the theme "Circuit Racer" from six new-theme ideas (deep sea, lava, sweets, aurora, circuit, ghost train) on 22 Nov 2026. Game id `circuit`. Next free migration number when written: `20261122000800` on 22 Nov (check again before Stage 2: `node scripts/migration-numbers.mjs`).
+**Status: Stage 5 done, live but switched off (code switch OFF): the paintings wired in everywhere (finish screens, dashboard frame, painted tiles tinted per world, full-size world skies with a slow parallax, a drifting world map, painted Volt), a racer picker (Spark, Pixel, Byte, Quark, saved per pupil, the 3D racer and its trail tinted to match) and the game's sounds. Migration `20261123000400_circuit_racers.sql`. Plan PR #733, choices #734, Stage 1 #738, Stage 2 #739, world 1 redrawn #740, no bounce #741, Stage 3 #742, art #743, Stage 4 #748, softer glow #749, dark void #750, Stage 5 (23 Nov 2026). Next: Stage 6, Volt's guided first go, voices, achievements, teacher column and switch on (prompt in `docs/prompts/circuit-s6.md`).** James picked the theme "Circuit Racer" from six new-theme ideas (deep sea, lava, sweets, aurora, circuit, ghost train) on 22 Nov 2026. Game id `circuit`. Next free migration number when written: `20261122000800` on 22 Nov (check again before Stage 2: `node scripts/migration-numbers.mjs`).
 
 **Circuit Racer** is a neon racing game. You are a spark of data racing along circuit-board roads that float inside a giant computer. Steer between 7 lanes, speed up and slow down, jump the gaps, and dive into the port at the end of each road before your **battery** or **signal** runs out.
 
@@ -270,6 +270,17 @@ Careful and average bots finish every road on the first go; the flat-out bot now
 | The Core | 513 | 6 / 3 / 6 | 68.8s, 82% / 81% | 33% / 31% | 52.8s, 59% / 75% | 44.8s, 65% / 82% | 50s | 61s |
 
 Careful drivers never drop below 68% battery on any road; with every port answered wrong they still finish every road (lowest 24%). The medal times in `MEDAL_SECONDS` are the Gold and Silver columns (bronze is any finish).
+
+## Stage 5 results (23 Nov 2026)
+
+- **Finish screen:** the world's painting (`finish/<world>.webp`, `-800` on small screens) fills the window; the card slides up, the medal drops in, sparks burst, the time counts up, and a chime lands with the medal. 🔥 for hard mode as before.
+- **Dashboard:** the painted `dash/frame.webp` with round battery and signal gauges in its side recesses and the time and speed in its middle screen; the hard-mode 🔥 clock sits there too. Name, crashes and the Auto-Pilot light are in the slim top row. Checked readable at phone width.
+- **Tiles** (`textures.ts`): the six painted tiles are drawn over the code-drawn ones once loaded (a picture that can't load leaves the drawn tile), the plain road tinted per world, the tunnel darker teal; the neon rims and bloom are unchanged (glow kept at bloom 0.5 / 0.35 / 0.72).
+- **Sky:** full-size world paintings on big screens (`-800` on small screens or the lighter look), zoomed 8% so they drift slowly against the racer's side-to-side move and rise along the road (none with reduced motion), keeping #750's dark void under the track. The world map drifts gently.
+- **Racers:** `RACERS` in game.ts (Spark from the start; Pixel, Byte and Quark with worlds 2, 3 and 4). A picker under the roads with the paintings; Volt says when a locked one joins. Saved per pupil (`circuit_racers`, `circuit_set_racer`; `circuit_load` gives it back; the server refuses a locked racer with `locked`). The code-drawn racer (`racer.ts`) and its trail take the racer's colour.
+- **Volt:** the painting, with the drawn face as a fallback.
+- **Sounds** (`src/games/circuit/audio.ts`, made in the browser, behind the sound switch): an engine hum that rises with speed, jump, land, boost on overclock, resistor drag, gel slide, recharge, data gate right and wrong, checkpoint chime, crash, fall, flat battery, finish fanfare, a GO count and hard-mode clock ticks in the last 10 seconds. Shared sounds where they fit.
+- **Tests:** still 8 of 8 (the handler test also checks the racer; the database test checks saving and loading it).
 
 ## 9. Stages
 
