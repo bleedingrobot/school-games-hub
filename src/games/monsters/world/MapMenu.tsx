@@ -165,6 +165,9 @@ function TeamPage({ world, apply }: { world: WorldState; apply: (r: MenuResult) 
       <p className="mm-help mm-help--box">
         To change who is in your team, go to the <strong>Monster box in Harbour Town</strong>. Move a monster into the box, then move another one into your team. Your team holds up to 6.
         {world.box.length > 0 && ` You have ${world.box.length} waiting in the box.`}
+        {world.map !== 'harbour-town' && (
+          <> Far away? Open the <strong>World map</strong> in the Menu, pick Harbour Town and tap Travel to fly straight back.</>
+        )}
       </p>
       <TeamList
         team={world.team}
