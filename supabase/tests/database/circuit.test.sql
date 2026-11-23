@@ -5,7 +5,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh circuit, then scripts/scratch-test.sh circuit supabase/tests/database/circuit.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(47);
+select plan(49);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -81,7 +81,10 @@ select is((select count(*)::integer from public.app_settings where circuit_maths
 
 -- ---- Finishes: roads in order, a seed once, the best kept, 5 a day ----
 select pg_temp.act_as_server();
-select is(public.circuit_load(pg_temp.id('0a')), '{"roads": {}, "today": 0}'::jsonb, 'a new pupil has no roads');
+select is(public.circuit_load(pg_temp.id('0a')), '{"roads": {}, "today": 0, "seen": []}'::jsonb, 'a new pupil has no roads and has seen none of Volt''s tips');
+select ok(public.circuit_mark_seen(pg_temp.id('0a'), array['guide', 'crash']) and public.circuit_mark_seen(pg_temp.id('0a'), array['crash']),
+  'Volt''s tips are saved as seen (twice is fine)');
+select is(public.circuit_load(pg_temp.id('0a')) -> 'seen', '["crash", "guide"]'::jsonb, '...each once');
 select throws_ok($$ select public.circuit_load('00000000-0000-0000-0000-000000000099') $$, '22023', null, 'nobody who is not a pupil');
 select is(pg_temp.finish('0a', 'clock-speed', 'power-on', 's0', 700, 'bronze'), 'locked', 'road 2 is locked until road 1 is finished');
 select is(pg_temp.finish('0a', 'power-on', null, 's1', 700, 'bronze'), 'best', 'road 1 is finished');
