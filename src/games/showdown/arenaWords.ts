@@ -162,6 +162,16 @@ const ISLAND: ArenaWords = {
 
 const WORDS: Record<Arena, ArenaWords> = { boss: BOSS, goldrush: GOLD_RUSH, skyclimb: SKY_CLIMB, island: ISLAND };
 
+/** The roles a group (the class, or a team) is short of: Guards when fewer than 1 in 5 guard, a Healer when there's none. */
+export function rolesNeeded(counts: Record<Role, number> | undefined): Role[] {
+  if (!counts) return [];
+  const size = counts.striker + counts.guard + counts.healer;
+  const out: Role[] = [];
+  if (size >= 4 && counts.guard * 5 < size) out.push('guard');
+  if (size >= 6 && counts.healer === 0) out.push('healer');
+  return out;
+}
+
 export const arenaWords = (arena: Arena | null | undefined): ArenaWords => WORDS[arena ?? 'boss'] ?? BOSS;
 /** The arenas in the teacher's picker, in order. */
 export const ARENA_CHOICES = (Object.keys(WORDS) as Arena[]).map((id) => ({ id, name: WORDS[id].name }));

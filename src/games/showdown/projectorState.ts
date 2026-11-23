@@ -15,7 +15,8 @@ import { ANNOUNCER } from './voiceLines';
 /** What the projector needs from the announcer and sound (src/games/showdown/audio.ts implements it). */
 export interface ShowdownSound {
   play(name: 'roar' | 'hit' | 'bighit' | 'clang' | 'crack' | 'chime' | 'drum' | 'cheer' | 'fanfare' | 'countdown' | 'whoosh'): void;
-  say(line: string): void;
+  /** `urgent` lines (the end of the round, the start) never wait for the gap after the last line. */
+  say(line: string, urgent?: boolean): void;
   muted: boolean;
   setMuted(b: boolean): void;
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { FeedEvent } from '../../../shared/showdown/server';
 import { initialState, projectorReduce } from './projectorState';
+import { sayAllowed } from './audio';
 
 describe('projectorReduce', () => {
   it('follows joins, hits, a wind-up that breaks, a revive, a phase change and the recap', () => {
@@ -33,5 +34,14 @@ describe('projectorReduce', () => {
     expect(s.phaseAt).toBe(19000);
     expect(s.recap?.result).toBe('time');
     expect(s.ended && s.timeUp).toBe(true);
+    // The announcer never talks over itself or repeats a line straight away (solo: 19 shields held at once said it 19 times).
+    const said = new Map<string, number>();
+    expect(sayAllowed(10000, 'Shield held!', 0, said)).toBe(true);
+    said.set('Shield held!', 10000);
+    expect(sayAllowed(10100, 'Shield held!', 10000, said)).toBe(false);
+    expect(sayAllowed(10100, 'Boss beaten!', 10000, said)).toBe(false);
+    expect(sayAllowed(10100, 'Boss beaten!', -Infinity, said)).toBe(true);
+    expect(sayAllowed(12000, 'Shield held!', 10000, said)).toBe(false);
+    expect(sayAllowed(18500, 'Shield held!', 10000, said)).toBe(true);
   });
 });
