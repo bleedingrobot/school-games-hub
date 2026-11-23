@@ -23,6 +23,15 @@ const { teacher, pupil, classId, db } = pretendLink({ size, mode, me: { id: ME, 
 // ?beaten=N pretends the class has already beaten the first N bosses (in order), to try the roster and the boss picker.
 const beatenN = Math.max(0, Math.min(4, Math.floor(Number(params.get('beaten') ?? 0)) || 0));
 if (beatenN) db.roster.set(classId, Object.fromEntries(['river-titan', 'storm-kraken', 'clockwork-colossus', 'comet-wyrm'].slice(0, beatenN).map((b, i) => [b, 95000 + i * 31000])));
+// ?health=N gives the boss (or the mountain) N health, so a test run can reach the win and seams run dry quickly.
+const health = Math.max(0, Math.floor(Number(params.get('health') ?? 0)) || 0);
+if (health) {
+  const set = db.rooms.set.bind(db.rooms);
+  db.rooms.set = (id, row) => {
+    if (row.round.state === 'lobby') row.round.bossOverride = health;
+    return set(id, row);
+  };
+}
 
 function Page() {
   const [view, setView] = useState(params.get('view') === 'ipad' ? 'ipad' : 'big');
