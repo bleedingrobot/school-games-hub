@@ -96,6 +96,7 @@
 .mm-main__btn--look { grid-column: 1 / -1; background: #fed7aa; }
 .mm-main__go { grid-column: 1 / -1; justify-self: center; min-width: 260px; }
 .mm-help { margin: 0 0 8px; font-weight: 600; }
+.mm-help--box { font-weight: 500; padding: 8px 12px; border-radius: 10px; background: #eef4ff; border: 1px solid #c9d8f5; }
 .mm-msg { margin: 8px 0 0; font-weight: 700; color: #1d4ed8; }
 .mm-msg:empty { margin: 0; }
 .mm .mb-sheet__body { display: flex; flex-direction: column; }
