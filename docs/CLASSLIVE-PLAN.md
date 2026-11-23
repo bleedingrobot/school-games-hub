@@ -1,6 +1,6 @@
 # Class Live: plan
 
-**Status: stage 1 (the shared live room and Star Web) built 24 Nov 2026 NZ, code switch off until checked live. Next: stage 2 (Serpent Chain; rules already in `shared/classlive/serpent.ts`) and stage 3 (Mystery Mural; rules in `mural.ts`).** James asked (23 Nov 2026) for more creative whole-class games beyond Class Showdown: the projector is the show, every pupil's device is a controller, played live together. Game id `classlive`, migration `20261124000100` (check again: `node scripts/migration-numbers.mjs`).
+**Status: stage 1 (live room + Star Web, PR #771) merged 24 Nov 2026 NZ; stage 2 (Serpent Chain) built. Code switch off until checked live. Next: stage 3 (Mystery Mural; rules in `shared/classlive/mural.ts`).** James asked (23 Nov 2026) for more creative whole-class games beyond Class Showdown: the projector is the show, every pupil's device is a controller, played live together. Game id `classlive`, migration `20261124000100` (check again: `node scripts/migration-numbers.mjs`).
 
 ## The short version
 
@@ -102,3 +102,9 @@
 - **Screens**: `Projector.tsx` + `StarSky.tsx` (setup, lobby with names flying in, the sky with seven arms, shooting stars, lit-arm lines, sky whale, supernova, spotlight with "how we know", finish with shout-outs), `Controller.tsx` (keypad and keyboard typing, feedback with the link and a nudge to the emptiest arm). Sounds are Web Audio (`audio.ts`), projector only.
 - **Test page**: `npx vite --config vite.classlive-preview.config.ts` (`?pretend=30`).
 - Tests: 4 (budget 8), plus `supabase/tests/database/classlive.test.sql`.
+
+## Stage 2 results (24 Nov 2026 NZ)
+
+- **Rules** `shared/classlive/serpent.ts`: chains made from the seed (Green: + and − to 200; Gold: all four, × ÷ by 2, 5, 10, to 500; Fire: all four, × ÷ to 12, to 1000), never the same kind twice in a row or a step that undoes the last, every running answer whole. Two tries, then the working; the tail grows 4 boxes ahead of the furthest pupil (48 boxes at most); 60% of the class's 12 boxes wakes the serpent.
+- **Screens**: `SerpentScene.tsx` (jungle-temple serpent winding in rows, operations on its scales, pupils' gems below each operation, glowing passed scales, bonus tail, wake bar; numbers hidden until the end, when they light up box by box and the head roars the answer) and `SerpentPad.tsx` (the box as a sum, number pad and keyboard, two tries, calm "the answer was" card).
+- Tests: 5 (budget 8).

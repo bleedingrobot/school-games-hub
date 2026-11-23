@@ -6,12 +6,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PlayerView, RoomView } from '../../../shared/classlive/server';
 import { ARM_NAMES, type StarsReply } from '../../../shared/classlive/stars';
 import { ARM_COLOURS, ARM_HINTS } from './arms';
+import { SerpentPad } from './SerpentPad';
 import type { ClassLiveLink } from './link';
 import './controller.css';
 
 const MAX_LEN = 30;
 type Phase = 'joining' | 'none' | 'error' | 'playing';
-type Anchor = Extract<RoomView['game'], { kind: 'stars' }>['anchor'];
+type StarsRoom = RoomView & { game: Extract<RoomView['game'], { kind: 'stars' }> };
+type Anchor = StarsRoom['game']['anchor'];
+type StarsMe = Extract<PlayerView['game'], { kind: 'stars' }>;
 type Feedback = { n: number; reply: StarsReply } | { n: number; gentle: string };
 
 const KEYS: { k: string; label: string; aria: string; cls?: string }[] = [
@@ -31,9 +34,9 @@ function Dots({ x, y, small }: { x: number; y: number; small?: boolean }) {
 
 const sym = (s: string) => s.replace(/\s+/g, '');
 
-function Sky({ children }: { children: React.ReactNode }) {
+export function Sky({ children, tint }: { children: React.ReactNode; tint?: 'serpent' }) {
   return (
-    <div className="cl-c">
+    <div className={`cl-c${tint ? ` cl-c--${tint}` : ''}`}>
       <div className="cl-c-twinkle" aria-hidden="true">
         {Array.from({ length: 14 }, (_, i) => <i key={i} style={{ left: `${(i * 37 + 11) % 100}%`, top: `${(i * 53 + 7) % 100}%`, animationDelay: `${(i % 5) * 0.7}s` }} />)}
       </div>
@@ -44,8 +47,8 @@ function Sky({ children }: { children: React.ReactNode }) {
 }
 
 function Mine({ me }: { me: PlayerView | null }) {
-  if (!me) return null;
-  const { found, glows, mine } = me.game;
+  if (!me || me.game.kind !== 'stars') return null;
+  const { found, glows, mine }: StarsMe = me.game;
   return (
     <section className="cl-c-mine" aria-label="My stars">
       <p className="cl-c-mine__count"><b>⭐ {found}</b> new {found === 1 ? 'star' : 'stars'}{glows > 0 && <> · <b>✨ {glows}</b> {glows === 1 ? 'glow' : 'glows'}</>}</p>
@@ -60,16 +63,7 @@ export function Controller({ link, me, room: roomProp }: { link: ClassLiveLink; 
   const [room, setRoom] = useState<number | null>(roomProp ?? null);
   const [view, setView] = useState<RoomView | null>(null);
   const [mine, setMine] = useState<PlayerView | null>(null);
-  const [text, setText] = useState('');
-  const [fb, setFb] = useState<Feedback | null>(null);
-  const [busy, setBusy] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const textRef = useRef(text);
-  textRef.current = text;
-  const busyRef = useRef(false);
-  const fbN = useRef(0);
-  const roomRef = useRef<number | null>(null);
-  roomRef.current = room;
 
   // Join (and retry while nothing is on, or the network drops).
   useEffect(() => {
@@ -110,6 +104,50 @@ export function Controller({ link, me, room: roomProp }: { link: ClassLiveLink; 
     return () => { a(); b(); };
   }, [link, me, room, phase]);
 
+  if (phase === 'joining') return <Sky><div className="cl-c-center"><p className="cl-c-say">Joining…</p></div></Sky>;
+  if (phase === 'none') {
+    return (
+      <Sky>
+        <div className="cl-c-center">
+          <div className="cl-c-bigstar" aria-hidden="true">🌙</div>
+          <h1 className="cl-c-title">Nothing is on in your class right now.</h1>
+          <p className="cl-c-say">Your teacher will start it.</p>
+        </div>
+      </Sky>
+    );
+  }
+  if (phase === 'error' || !view) {
+    return (
+      <Sky>
+        <div className="cl-c-center">
+          <p className="cl-c-say" role="alert">{error}</p>
+          <button type="button" className="cl-c-send" onClick={() => setAttempt((a) => a + 1)}>Try again</button>
+        </div>
+      </Sky>
+    );
+  }
+
+  if (view.game.kind === 'serpent') {
+    return (
+      <Sky tint="serpent">
+        <SerpentPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} />
+      </Sky>
+    );
+  }
+  return <StarsPlay link={link} room={room} view={view as StarsRoom} mine={mine} setMine={setMine} setView={setView} />;
+}
+
+function StarsPlay({ link, room, view, mine, setMine, setView }: { link: ClassLiveLink; room: number | null; view: StarsRoom; mine: PlayerView | null; setMine: (m: PlayerView) => void; setView: React.Dispatch<React.SetStateAction<RoomView | null>> }) {
+  const [text, setText] = useState('');
+  const [fb, setFb] = useState<Feedback | null>(null);
+  const [busy, setBusy] = useState(false);
+  const textRef = useRef(text);
+  textRef.current = text;
+  const busyRef = useRef(false);
+  const fbN = useRef(0);
+  const roomRef = useRef<number | null>(null);
+  roomRef.current = room;
+
   const add = useCallback((k: string) => setText((t) => (t.length >= MAX_LEN ? t : t + k)), []);
   const back = useCallback(() => setText((t) => t.slice(0, -1)), []);
   const clear = useCallback(() => setText(''), []);
@@ -147,7 +185,7 @@ export function Controller({ link, me, room: roomProp }: { link: ClassLiveLink; 
   }, [link]);
 
   // A real keyboard works too.
-  const live = phase === 'playing' && view?.state === 'live';
+  const live = view.state === 'live';
   useEffect(() => {
     if (!live) return;
     const onKey = (e: KeyboardEvent) => {
@@ -168,35 +206,13 @@ export function Controller({ link, me, room: roomProp }: { link: ClassLiveLink; 
     return () => window.removeEventListener('keydown', onKey);
   }, [live, add, back, clear, send]);
 
-  if (phase === 'joining') return <Sky><div className="cl-c-center"><p className="cl-c-say">Joining…</p></div></Sky>;
-  if (phase === 'none') {
-    return (
-      <Sky>
-        <div className="cl-c-center">
-          <div className="cl-c-bigstar" aria-hidden="true">🌙</div>
-          <h1 className="cl-c-title">Nothing is on in your class right now.</h1>
-          <p className="cl-c-say">Your teacher will start it.</p>
-        </div>
-      </Sky>
-    );
-  }
-  if (phase === 'error' || !view) {
-    return (
-      <Sky>
-        <div className="cl-c-center">
-          <p className="cl-c-say" role="alert">{error}</p>
-          <button type="button" className="cl-c-send" onClick={() => setAttempt((a) => a + 1)}>Try again</button>
-        </div>
-      </Sky>
-    );
-  }
-
   const anchor: Anchor = view.game.anchor;
   const known = `${anchor.x} × ${anchor.y} = ${anchor.p}`;
 
   if (view.state === 'over') {
-    const found = mine?.game.found ?? 0;
-    const glows = mine?.game.glows ?? 0;
+    const mg = mine?.game.kind === 'stars' ? mine.game : null;
+    const found = mg?.found ?? 0;
+    const glows = mg?.glows ?? 0;
     return (
       <Sky>
         <div className="cl-c-center">

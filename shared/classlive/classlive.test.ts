@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { classLiveStep } from './server';
-import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock } from './pretendClass';
+import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock, rng } from './pretendClass';
+import { answerBox, apply, BODY, makeChain, newSerpent, SERPENT_LEVELS } from './serpent';
 import { ARMS, isTrue, linkOf, newStars, readFact, tryFact, type Anchor } from './stars';
 
 const k: Anchor = { x: 6, y: 7, p: 42 };
@@ -54,6 +55,34 @@ describe('Star Web rules', () => {
   });
 });
 
+describe('Serpent Chain rules', () => {
+  it('makes whole-number chains in range, gives two tries then the working, and grows the tail and wakes the serpent', () => {
+    for (const level of SERPENT_LEVELS) {
+      for (let seed = 1; seed < 300; seed++) {
+        const c = makeChain(level, rng(seed));
+        c.steps.forEach((st, i) => expect(apply(c.values[i], st)).toBe(c.values[i + 1]));
+        expect(c.values.every((v) => Number.isInteger(v) && v >= 0 && v <= 1000)).toBe(true);
+      }
+    }
+    const g = newSerpent('gold', rng(3));
+    const want = (i: number) => g.chain.values[i + 1];
+    let t = 0;
+    expect(answerBox(g, 'a', 0, want(0) + 1, (t += 1000), 1)).toMatchObject({ ok: true, reply: { result: 'again' } });
+    expect(answerBox(g, 'a', 0, want(0) + 2, (t += 1000), 1)).toMatchObject({ reply: { result: 'shown', working: `${g.chain.values[0]} ${g.chain.steps[0].op === '-' ? '−' : g.chain.steps[0].op} ${g.chain.steps[0].by} = ${want(0)}` } });
+    expect(answerBox(g, 'a', 0, want(0), t + 900, 1)).toEqual({ ok: false, reason: 'stale' });
+    expect(answerBox(g, 'a', 1, want(1), t + 100, 1)).toEqual({ ok: false, reason: 'too_soon' });
+    const types: string[] = [];
+    for (let i = 1; i <= BODY; i++) {
+      const out = answerBox(g, 'a', i, want(i), (t += 1000), 1);
+      if (out.ok) types.push(...out.events.map((e) => e.type));
+    }
+    expect(types).toContain('awake');
+    expect(types).toContain('head');
+    expect(types).toContain('tail');
+    expect(g.tail).toBe(4);
+  });
+});
+
 describe('Class Live server', () => {
   it('a pretend class of 30 joins, plays a whole Star Web and nobody else can run it', async () => {
     const clock = pretendClock();
@@ -70,7 +99,7 @@ describe('Class Live server', () => {
     pc.play(room);
     await clock.run(clock.now() + 4 * 60_000);
     const live = pc.db.rooms.get(room)!;
-    expect(live.session.game.stars.length).toBeGreaterThan(15);
+    expect(live.session.game.kind === 'stars' && live.session.game.stars.length).toBeGreaterThan(15);
     expect(live.screen.people.find((p) => p.id === pc.ids[0])?.name).toBe('Aroha');
     expect(live.screen.events.length).toBeGreaterThan(5);
     // The clock ends it by itself at 5 minutes.

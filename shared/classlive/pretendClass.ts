@@ -4,6 +4,7 @@
  */
 import { memoryDb, memoryServices, type MemoryDb } from './memoryServices';
 import { classLiveStep, type Change, type ClassLiveServices } from './server';
+import { pretendAnswer } from './serpent';
 import { pretendFacts } from './stars';
 
 export const PRETEND_TEACHER = '00000000-0000-4000-8000-00000000feed';
@@ -41,12 +42,19 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
   const rand = rng(opts.seed ^ 0x9e37);
   const services = memoryServices(db, { now: opts.clock.now, random: rand }, opts.onChange);
 
-  const loop = (room: number, id: string, speed: number) => {
+  const loop = (room: number, id: string, speed: number, skill: number) => {
     const go = async () => {
       const row = db.rooms.get(room);
       if (!row || row.session.state === 'over') return;
       if (row.session.state === 'lobby') return opts.later(go, 1000);
-      const list = pretendFacts(row.session.game.anchor);
+      const g = row.session.game;
+      if (g.kind === 'serpent') {
+        const move = pretendAnswer(g, id, rand, skill);
+        if (!move) return;
+        await classLiveStep(services, id, { action: 'play', room, ...move });
+        return opts.later(go, (speed / 2) * (0.6 + rand() * 0.8));
+      }
+      const list = pretendFacts(g.anchor);
       const fact = list[Math.floor(rand() * list.length)];
       await classLiveStep(services, id, { action: 'play', room, fact });
       opts.later(go, speed * (0.6 + rand() * 0.8));
@@ -62,7 +70,7 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
       for (const id of ids) await classLiveStep(services, id, { action: 'join' });
     },
     play(room) {
-      for (const id of ids) loop(room, id, 6000 + rand() * 14000);
+      for (const id of ids) loop(room, id, 6000 + rand() * 14000, 0.6 + rand() * 0.35);
     },
   };
 }
