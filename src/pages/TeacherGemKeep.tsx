@@ -17,7 +17,7 @@ import {
   type StudentGemKeep,
 } from '../data/gemKeep';
 import { FriendlyError } from '../data/profile';
-import { SettingChips, SettingChoice, SettingNumber, SettingToggle, useSetting, type Choice } from '../teacher/Settings';
+import { SettingChips, SettingChoice, SettingNumber, useSetting, type Choice } from '../teacher/Settings';
 import type { GemKeepSettings } from '../games/gem-keep/settings';
 import type { HardestRow } from '../games/types';
 import { shortCache } from '../teacher/shortCache';
@@ -135,7 +135,6 @@ function GemKeepSettingsPanel({ classId }: { classId: string }) {
         loadFailed={failed}
         save={(m) => saver('missingFactor')(fromMissing(m))}
       />
-      <SettingToggle label="Division questions" about="Questions like 56 ÷ 8." value={s?.division ?? null} loadFailed={failed} save={saver('division')} />
       <SettingChoice
         label="How students answer"
         options={ANSWERS}
