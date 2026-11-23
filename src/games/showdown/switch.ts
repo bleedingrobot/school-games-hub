@@ -1,6 +1,6 @@
 /**
- * Class Showdown's code switch (docs/SHOWDOWN-PLAN.md section 9): off until stage 4, so no pupil or teacher sees it yet.
- * The server, tables and join pop-up are live behind it; the test page is the preview (`npm run showdown:preview`).
+ * Class Showdown's code switch (docs/SHOWDOWN-PLAN.md section 9): on since stage 4. Which classes see it is the database's
+ * showdown_enabled setting (James's class only in stage 4, every class from stage 5).
  */
-export const SHOWDOWN_ON = false;
+export const SHOWDOWN_ON = true;
 export const showdownOn = () => SHOWDOWN_ON;

@@ -23,6 +23,8 @@ import type { FactAnswer } from '../maths/leitner';
 import { markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext, type PublicQuestion } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
 import { makeSpacePack, pickSpaceQuestion } from '../space/mathsQuestion';
+import { isUntimed } from '../maths/untimed';
+import { TimesTables } from '../maths/skillPacks/timesTables';
 
 export const MODES: readonly Mode[] = ['class', 'teams2', 'teams4', 'solo'];
 export const ROLES: readonly Role[] = ['striker', 'guard', 'healer'];
@@ -73,6 +75,8 @@ export interface PlayerView {
   revives: number;
   nextAt: number;
   dazedUntil: number;
+  /** Solo only: true while this pupil is in the top 10 (the only place a pupil is ever told). */
+  topTen: boolean;
 }
 
 /** A feed row for the projector: the engine's event, plus the first names of every pupil it mentions. */
@@ -167,8 +171,15 @@ export function roomView(row: Pick<RoomRow, 'arena' | 'startedAt' | 'pausedAt' |
   };
 }
 
-export function playerView(p: Player): PlayerView {
+/** Solo: the ids of the top 10 by score (pupils with no points yet never count). */
+function topTenOf(r: Round): Set<string> {
+  if (r.mode !== 'solo') return new Set();
+  return new Set(r.order.map((k) => r.players[k]).filter((p) => p.score > 0).sort((a, b) => b.score - a.score).slice(0, 10).map((p) => p.id));
+}
+
+export function playerView(p: Player, top: Set<string> = new Set()): PlayerView {
   return {
+    topTen: top.has(p.id),
     player: p.id, name: p.name, team: p.team, role: p.role, score: p.score, streak: p.streak, bestStreak: p.bestStreak, correct: p.correct,
     wrong: p.wrong, shields: p.shields, revives: p.revives, nextAt: p.nextAt, dazedUntil: p.dazedUntil,
   };
@@ -199,10 +210,14 @@ export function feedOf(r: Round, events: ShowdownEvent[], wasOver: boolean): Fee
 
 /** The players whose own rows changed in this step. */
 function changedPlayers(before: Record<string, string>, r: Round): PlayerView[] {
-  return r.order.map((id) => playerView(r.players[id])).filter((v) => before[v.player] !== JSON.stringify(v));
+  const top = topTenOf(r);
+  return r.order.map((id) => playerView(r.players[id], top)).filter((v) => before[v.player] !== JSON.stringify(v));
 }
 
-const snapshot = (r: Round) => Object.fromEntries(r.order.map((id) => [id, JSON.stringify(playerView(r.players[id]))]));
+const snapshot = (r: Round) => {
+  const top = topTenOf(r);
+  return Object.fromEntries(r.order.map((id) => [id, JSON.stringify(playerView(r.players[id], top))]));
+};
 
 /** Ladder place (count of secure skills), only to mix teams fairly. Never shown. */
 function ladderOf(context: MathsContext | null): number {
@@ -215,8 +230,13 @@ function ladderOf(context: MathsContext | null): number {
 }
 
 /** The pupil's next question from their own focus pack (way A), or the golden one from their easiest skill. */
+/**
+ * A question for one pupil. Whole-class games leave out the ladder's untimed skills (James, 23 Nov 2026): rounding, order of
+ * operations, number lines and the like take working out, and a live round is quick recall. A pupil whose skill is all
+ * untimed still gets their review facts, and times tables if nothing else comes.
+ */
 export function makeQuestion(context: MathsContext, seed: string, golden: boolean): Question | null {
-  for (let attempt = 0; attempt < 6; attempt++) {
+  for (let attempt = 0; attempt < 16; attempt++) {
     const random = seededRandom(`${seed}:${attempt}`);
     const pack = makeSpacePack(context.facts, context.focus, context.settings, random);
     let q: Question | null = null;
@@ -227,9 +247,10 @@ export function makeQuestion(context: MathsContext, seed: string, golden: boolea
       }) ?? null;
     }
     q ??= pickSpaceQuestion(pack, context.settings);
-    if (q && markQuestion(q)) return q;
+    if (q && !isUntimed(q.factKey) && markQuestion(q)) return q;
   }
-  return null;
+  const q = new TimesTables([], seededRandom(`${seed}:tt`)).nextQuestion({ level: 1 });
+  return q && markQuestion(q) ? q : null;
 }
 
 type Mutation<T> = (r: Round, t: number, row: RoomRow) => { reply: T; events: ShowdownEvent[]; startedAt?: number | null; pausedAt?: number | null; claim?: Change['claim']; extra?: FeedEvent[] } | { refuse: StepReply };
@@ -312,7 +333,7 @@ export async function showdownStep(s: ShowdownServices, who: string, body: Recor
       const r = done.row.round;
       return ok({
         room, view: roomView(done.row, r), now: s.now(), version: done.row.version,
-        players: r.order.map((id) => playerView(r.players[id])),
+        players: r.order.map((id) => playerView(r.players[id], topTenOf(r))),
         ...(r.state === 'over' ? { recap: recap(r) } : {}),
       });
     }
@@ -401,7 +422,7 @@ export async function showdownStep(s: ShowdownServices, who: string, body: Recor
       const r = done.row.round;
       const question = r.state === 'live' ? await nextQuestion(s, done.row, who, context) : null;
       if (question === 'busy') return busy();
-      return ok({ room, view: roomView(done.row, r), me: playerView(r.players[who]), now: s.now(), ...(question ? { question } : {}) });
+      return ok({ room, view: roomView(done.row, r), me: playerView(r.players[who], topTenOf(r)), now: s.now(), ...(question ? { question } : {}) });
     }
 
     if (!cur.round.players[who]) return no(409, 'Join the showdown first.', 'not-playing');
@@ -415,7 +436,7 @@ export async function showdownStep(s: ShowdownServices, who: string, body: Recor
         return { reply: null, events: out.events };
       });
       if ('refuse' in done) return done.refuse;
-      return ok({ room, me: playerView(done.row.round.players[who]), now: s.now() });
+      return ok({ room, me: playerView(done.row.round.players[who], topTenOf(done.row.round)), now: s.now() });
     }
 
     if (action === 'ask') {
@@ -462,7 +483,7 @@ export async function showdownStep(s: ShowdownServices, who: string, body: Recor
     const mine = (done.reply ?? []).filter((e) => ('pupil' in e && e.pupil === who) || e.type === 'shield_broke' || e.type === 'revive');
     const question = r.state === 'live' ? await nextQuestion(s, done.row, who, null) : null;
     return ok({
-      room, right, answer: marked.answer, me: playerView(r.players[who]), events: mine, view: roomView(done.row, r), now: s.now(),
+      room, right, answer: marked.answer, me: playerView(r.players[who], topTenOf(r)), events: mine, view: roomView(done.row, r), now: s.now(),
       ...(question && question !== 'busy' ? { question } : {}),
     });
   }

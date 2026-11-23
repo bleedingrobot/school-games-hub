@@ -1,6 +1,6 @@
 # Class Showdown: plan
 
-**Status: Stage 1 (rules and simulator) and Stage 2 (server, tables, live updates, join pop-up, `?pretend=30` test page) merged 23 Nov 2026; the code switch is off, so no pupil or teacher sees it. Stage 3 (the real projector and controller screens, sounds and announcer) merged 23 Nov 2026, with the River Titan painted. Next: Stage 4 (teams and solo, switched on for James's class), prompt in `docs/prompts/showdown-s4.md`.** James liked the "live class boss" idea from the list of missing game types (23 Nov 2026) and asked for one game where everyone in the room plays at once: the whole class against a boss, 2 teams, 4 teams, or everyone for themselves. Working name **Class Showdown**, game id `showdown`. Next free migration number when written: `20261123000900` on 23 Nov (check again: `node scripts/migration-numbers.mjs`).
+**Status: Stage 1 (rules and simulator) and Stage 2 (server, tables, live updates, join pop-up, `?pretend=30` test page) merged 23 Nov 2026; the code switch is off, so no pupil or teacher sees it. Stage 3 (the real projector and controller screens, sounds and announcer) merged 23 Nov 2026, with the River Titan painted. Stage 4 (2 teams, 4 teams, solo, team picker, the real pages) merged 23 Nov 2026 and switched on for James's class only. Next: Stage 5 (rewards, the other bosses, on for every class), prompt in `docs/prompts/showdown-s5.md`.** James liked the "live class boss" idea from the list of missing game types (23 Nov 2026) and asked for one game where everyone in the room plays at once: the whole class against a boss, 2 teams, 4 teams, or everyone for themselves. Working name **Class Showdown**, game id `showdown`. Next free migration number when written: `20261123000900` on 23 Nov (check again: `node scripts/migration-numbers.mjs`).
 
 **Class Showdown** is a live game for the whole room. The **teacher's screen goes on the projector** and shows the big painted battle, the scores and the drama, with all the sound. **Every pupil's iPad is their controller**: their own maths question at their own level, their choices, and their own score. A round lasts 5, 10 or 15 minutes. The teacher picks **how** the class plays (the mode) and **what** they play (the arena).
 
@@ -237,6 +237,18 @@ The rules are in `shared/showdown/` (see `shared/README.md`), with 4 tests (budg
 - **Sound** `audio.ts`: every sound made with Web Audio (no files), hits rate-limited; announcer lines in `voiceLines.ts` (spoken by the browser voice until Bella clips are made; the voice-lines test comes with the clips).
 - **Test page:** `npx vite --config vite.showdown-preview.config.ts`; the yellow button swaps between the big screen and "your" iPad; `?view=test` keeps the bare stage 2 screens.
 - Tests: 10 of 12 used.
+
+## Stage 4 results (23 Nov 2026)
+
+- **Projector, team modes** (`Projector.tsx`, `projectorState.ts`, `projector.css`): waving team banners with damage or points and a bar (painted `banners/banner-<team>` when there), the 2-team bridge with the boss slid along by `view.tug` and shaking on each `tug`, "RED is pushing!", the 4-team boss turn (tilt, eyes, roar rings, "The boss turns on GOLD!", the faced team's flag pulsing), one shield dome per team in wind-ups, the team recap with confetti in the winner's colour.
+- **Solo:** a live top 10 whose rows slide as places change, "Noah jumps to 5th!" for a climb of 3 or more into the top 10, bounties (most damage, last hit, longest streak), the podium recap. Names follow the names switch ("Hero" when off).
+- **Team picker:** team columns in the lobby; tap a name then a team, or drag it (`teams` with `pupil` + `team`); Reshuffle as before.
+- **Controller:** team colour on the edge glow, ring and clock; solo shows "You're in the top 10!" only (`PlayerView.topTen`, worked out on the server; a pupil is never told a place).
+- **Questions:** the ladder's untimed skills (`shared/maths/untimed.ts`: rounding, order of operations, number lines, arrays...) are left out of every Showdown question (James, 23 Nov 2026), so a round is quick recall; a pupil whose focus is only untimed skills gets times tables.
+- **Pages:** `src/games/showdown/index.tsx` (group complex-maths, teacher switch, settings drawer with the names switch), `ShowdownPage.tsx` (the controller at `/#/showdown?room=`), `src/pages/TeacherShowdown.tsx` (the projector at `/teacher/<class>/showdown`, a "Class Showdown" tab in the teacher header), `src/data/showdown.ts`.
+- **Switched on:** `SHOWDOWN_ON = true`; migration `20261123001000_showdown_riley_only.sql` turns `showdown_enabled` off for every class and the school defaults except James's class (Riley). Teachers can still switch it on from the Games tab.
+- **Left for later:** the "best comeback" bounty (needs a place history); the home card picture (painted, comes with the art); iPad-size screen check of the team screens.
+- Tests: 12 of 12 used (team picker + solo top 10; untimed skills left out).
 
 ## 10. Risks
 

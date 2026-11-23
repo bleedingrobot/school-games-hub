@@ -18,7 +18,7 @@ export interface ShowdownSound {
 
 export interface RosterEntry { id: string; name: string; team: TeamId | null; role: Role; score: number }
 export interface HitBurst { id: number; pupil: string; name: string; points: number; times: number; weakSpot: boolean; golden: boolean; team: TeamId | null; t: number }
-export interface Banner { text: string; kind: 'wind' | 'good' | 'bad' | 'info' | 'phase' | 'golden' | 'final'; until: number }
+export interface Banner { text: string; kind: 'wind' | 'good' | 'bad' | 'info' | 'phase' | 'golden' | 'final' | 'turn'; until: number }
 export interface Shield {
   needed: number;
   got: number;
@@ -28,8 +28,12 @@ export interface Shield {
   /** Round time it was held or broke. */
   resolvedAt: number;
   enraged: boolean;
-  groups: Record<string, { needed: number; got: number }>;
+  groups: Record<string, ShieldGroup>;
 }
+/** One shield group (the class, a team, or one pupil in solo) with its own held/broke moment. */
+export interface ShieldGroup { needed: number; got: number; state?: 'held' | 'broke' | null; resolvedAt?: number }
+/** A leaderboard climb worth a pop-up (solo). */
+export interface BigMove { id: number; pupil: string; name: string; from: number; to: number; t: number }
 export interface Heal { id: number; text: string; t: number }
 
 export interface ProjectorState {
@@ -66,6 +70,17 @@ export interface ProjectorState {
   paused: boolean;
   ended: boolean;
   recap: Recap | null;
+  /** 2 teams: counts the tug events (the bridge shakes on each) and who led at the last one. */
+  tugSeq: number;
+  tugAt: number;
+  /** 4 teams: the boss turned on this team at this round time (roar), counted by `turnSeq`. */
+  turn: { team: TeamId; at: number } | null;
+  turnSeq: number;
+  /** Solo: big climbs, bounty trackers (damage per pupil, last hit, longest streak so far). */
+  moves: BigMove[];
+  damage: Record<string, number>;
+  lastHitter: string | null;
+  bestStreak: { pupil: string; streak: number } | null;
   /** Round time of the latest event. */
   t: number;
   seq: number;
@@ -97,7 +112,7 @@ export function initialState(reply?: { view?: RoomView; players?: PlayerView[]; 
     const done = gs.length > 0 && gs.every((g) => g.done) ? (gs.some((g) => g.done === 'broke') ? 'broke' : 'held') : null;
     shield = {
       needed: sum(gs.map((g) => g.needed)), got: sum(gs.map((g) => g.got)), state: done, endsAt: view.windUp.endsAt, resolvedAt: done ? view.t : 0, enraged: view.windUp.enraged,
-      groups: Object.fromEntries(Object.entries(view.windUp.groups).map(([k, g]) => [k, { needed: g.needed, got: g.got }])),
+      groups: Object.fromEntries(Object.entries(view.windUp.groups).map(([k, g]) => [k, { needed: g.needed, got: g.got, state: g.done, resolvedAt: g.done ? view.t : 0 }])),
     };
   }
   return {
@@ -106,11 +121,26 @@ export function initialState(reply?: { view?: RoomView; players?: PlayerView[]; 
     weakUntil: view?.weakSpotUntil ?? 0, goldenUntil: view?.goldenUntil ?? 0, goldenSeq: 0, enrageUntil: view?.enrageUntil ?? 0,
     final: view?.finalStarted ?? false, finalUntil: 0, startSeq: 0, hitSeq: 0, bigHitSeq: 0, healAt: 0,
     beaten: view?.result === 'beaten', timeUp: view?.result === 'time', paused: view?.pausedAt != null, ended: view?.state === 'over',
-    recap: reply?.recap ?? null, t: view?.t ?? 0, seq: 0,
+    recap: reply?.recap ?? null, tugSeq: 0, tugAt: 0, turn: null, turnSeq: 0, moves: [], damage: {}, lastHitter: null, bestStreak: null, t: view?.t ?? 0, seq: 0,
   };
 }
 
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
+const TEAM_NAME: Record<TeamId, string> = { red: 'RED', blue: 'BLUE', gold: 'GOLD', green: 'GREEN' };
+const teamName = (g: string): string | null => (g in TEAM_NAME ? TEAM_NAME[g as TeamId] : null);
+
+/** A pupil's place (1 = top) by score, ties broken by who joined first; 0 if unknown. */
+export function rankOf(s: Pick<ProjectorState, 'roster' | 'order'>, id: string): number {
+  const me = s.roster[id];
+  if (!me) return 0;
+  let r = 1;
+  for (const k of s.order) {
+    const o = s.roster[k];
+    if (k !== id && (o.score > me.score || (o.score === me.score && s.order.indexOf(k) < s.order.indexOf(id)))) r++;
+  }
+  return r;
+}
+export const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
 
 /** A name for an id: the feed's own names first, then everyone we have met. */
 export function nameOf(s: ProjectorState, id: string | null | undefined, e?: FeedEvent): string {
@@ -140,9 +170,17 @@ export function projectorReduce(s: ProjectorState, event: FeedEvent): ProjectorS
     case 'hit': {
       const burst: HitBurst = { id: n.seq + 1, pupil: event.pupil, name: nm(event.pupil), points: event.points, times: event.times, weakSpot: event.weakSpot, golden: event.golden, team: event.team, t: event.t };
       const old = n.roster[event.pupil];
+      const before = rankOf(n, event.pupil);
       const withScore = rosterWith(event.pupil, { score: (old?.score ?? 0) + event.points, role: event.role, team: event.team ?? old?.team ?? null });
+      const after = rankOf(withScore, event.pupil);
+      const climbed = n.view?.mode === 'solo' && before > 0 && before - after >= 3 && after <= 10;
+      const best = n.bestStreak;
       return {
-        ...withScore, seq: n.seq + 1, bursts: [...n.bursts, burst].slice(-MAX_BURSTS), hitSeq: n.hitSeq + 1, bigHitSeq: n.bigHitSeq + (event.times >= 2 ? 1 : 0),
+        ...withScore, seq: n.seq + 1,
+        moves: climbed ? [...n.moves, { id: n.seq + 1, pupil: event.pupil, name: nm(event.pupil), from: before, to: after, t: event.t }].slice(-4) : n.moves,
+        damage: { ...n.damage, [event.pupil]: (n.damage[event.pupil] ?? 0) + event.damage },
+        lastHitter: event.pupil,
+        bestStreak: !best || event.streak > best.streak ? { pupil: event.pupil, streak: event.streak } : best, bursts: [...n.bursts, burst].slice(-MAX_BURSTS), hitSeq: n.hitSeq + 1, bigHitSeq: n.bigHitSeq + (event.times >= 2 ? 1 : 0),
       };
     }
     case 'streak':
@@ -162,19 +200,25 @@ export function projectorReduce(s: ProjectorState, event: FeedEvent): ProjectorS
     }
     case 'shield_progress': {
       if (!n.shield) return n;
-      const groups = { ...n.shield.groups, [event.group]: { needed: event.needed, got: event.got } };
+      const groups = { ...n.shield.groups, [event.group]: { ...n.shield.groups[event.group], needed: event.needed, got: event.got } };
       return { ...n, shield: { ...n.shield, groups, needed: sum(Object.values(groups).map((g) => g.needed)), got: sum(Object.values(groups).map((g) => g.got)) } };
     }
     case 'shield_held': {
       const sh = n.shield ?? { needed: 0, got: 0, endsAt: event.t, enraged: false, groups: {}, state: null, resolvedAt: 0 };
       const helped = event.guards.length ? ` ${event.guards.length === 1 ? nm(event.guards[0]) : 'The Guards'} led the way!` : '';
-      return { ...n, shield: { ...sh, got: Math.max(sh.got, sh.needed), state: 'held', resolvedAt: event.t }, banner: { text: `Shield held!${helped}`, kind: 'good', until: event.t + BANNER_MS } };
+      const tm = teamName(event.group);
+      const g = sh.groups[event.group] ?? { needed: 0, got: 0 };
+      const groups = { ...sh.groups, [event.group]: { ...g, got: Math.max(g.got, g.needed), state: 'held' as const, resolvedAt: event.t } };
+      return { ...n, shield: { ...sh, groups, got: Math.max(sh.got, sh.needed), state: 'held', resolvedAt: event.t }, banner: { text: `${tm ? `${tm} shield` : 'Shield'} held!${helped}`, kind: 'good', until: event.t + BANNER_MS } };
     }
     case 'shield_broke': {
       const sh = n.shield ?? { needed: 0, got: 0, endsAt: event.t, enraged: false, groups: {}, state: null, resolvedAt: 0 };
       const dazed = { ...n.dazed };
       for (const id of event.dazed) dazed[id] = event.dazedUntil;
-      return { ...n, dazed, shield: { ...sh, state: 'broke', resolvedAt: event.t }, banner: { text: 'The shield broke!', kind: 'bad', until: event.t + BANNER_MS } };
+      const tm = teamName(event.group);
+      const g = sh.groups[event.group] ?? { needed: 0, got: 0 };
+      const groups = { ...sh.groups, [event.group]: { ...g, state: 'broke' as const, resolvedAt: event.t } };
+      return { ...n, dazed, shield: { ...sh, groups, state: 'broke', resolvedAt: event.t }, banner: { text: tm ? `${tm} shield broke!` : 'The shield broke!', kind: 'bad', until: event.t + BANNER_MS } };
     }
     case 'boss_heals':
       return { ...n, healAt: event.t };
@@ -194,8 +238,10 @@ export function projectorReduce(s: ProjectorState, event: FeedEvent): ProjectorS
       return { ...banner('The boss is ENRAGED!', 'wind', 2800), enrageUntil: event.endsAt };
     case 'enrage_end':
       return { ...n, enrageUntil: 0 };
+    case 'tug':
+      return { ...n, tugSeq: n.tugSeq + 1, tugAt: event.t };
     case 'boss_turns':
-      return banner('The boss turns!', 'info', 2200);
+      return { ...n, turn: { team: event.team, at: event.t }, turnSeq: n.turnSeq + 1, banner: { text: `The boss turns on ${TEAM_NAME[event.team]}!`, kind: 'turn', until: event.t + 2600 } };
     case 'boss_beaten':
       return { ...n, beaten: true, shield: null, banner: { text: 'THE BOSS IS BEATEN!', kind: 'good', until: event.t + 6000 } };
     case 'time_up':
@@ -237,6 +283,7 @@ export function soundFor(e: FeedEvent): { play?: Parameters<ShowdownSound['play'
     case 'weak_spot': return { play: 'whoosh', say: 'Weak spot!' };
     case 'golden': return { play: 'chime', say: 'Golden question!' };
     case 'phase': return { play: 'roar', say: 'The boss is changing!' };
+    case 'boss_turns': return { play: 'roar' };
     case 'enrage': return { play: 'roar' };
     case 'final': return { play: 'drum', say: 'Thirty seconds!' };
     case 'boss_beaten': return { play: 'cheer', say: 'The boss is beaten!' };

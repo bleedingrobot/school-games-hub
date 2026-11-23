@@ -203,6 +203,7 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
           <div><dt>Best streak</dt><dd>{mine.bestStreak}</dd></div>
           <div><dt>Your score</dt><dd>{mine.score}</dd></div>
         </dl>
+        {view.mode === 'solo' && mine.topTen && <p className="sd-c-topten">🏆 You finished in the top 10!</p>}
         <p className="sd-c-look">Look at the big screen!</p>
       </div>
     );
@@ -210,6 +211,7 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
     body = (
       <>
         {view.state === 'lobby' && <h1 className="sd-c-title">Get ready!</h1>}
+        {view.mode === 'solo' && view.state === 'live' && mine.topTen && <p className="sd-c-topten" role="status">🏆 You're in the top 10!</p>}
         {myRole && !(canSwap && rolesOpen) && (
           canSwap ? (
             <button type="button" className="sd-c-rolechip" onClick={() => setRolesOpen(true)}>Role: {myRole.emoji} {myRole.name} <u>(change)</u></button>

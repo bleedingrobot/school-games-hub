@@ -4,6 +4,7 @@ import { AuthProvider } from './auth/AuthContext';
 import { RequireAuth } from './auth/RequireAuth';
 import { Layout } from './components/Layout';
 import { CLAN_QUEST_ON, DRAGON_MATHS_ON, GAMES, POWER_CLASH_ON } from './games/registry';
+import { showdownOn } from './games/showdown/switch';
 import { Dashboard } from './pages/Dashboard';
 import { GamePage } from './pages/GamePage';
 import { NotFound } from './pages/NotFound';
@@ -37,6 +38,7 @@ const TeacherStudents = lazy(() => import('./teacher/Students').then((m) => ({ d
 const StudentPage = lazy(() => import('./teacher/StudentPage').then((m) => ({ default: m.StudentPage })));
 const BadgeSheet = lazy(() => import('./teacher/BadgeSheet').then((m) => ({ default: m.BadgeSheet })));
 const HardestQuestions = lazy(() => import('./teacher/Hardest').then((m) => ({ default: m.HardestQuestions })));
+const TeacherShowdown = lazy(() => import('./pages/TeacherShowdown').then((m) => ({ default: m.TeacherShowdown })));
 const TeacherQuests = lazy(() => import('./quests/TeacherQuests').then((m) => ({ default: m.TeacherQuests })));
 const TeacherGames = lazy(() => import('./teacher/Games').then((m) => ({ default: m.TeacherGames })));
 const AdminYear = lazy(() => import('./teacher/AdminYear').then((m) => ({ default: m.AdminYear })));
@@ -76,6 +78,7 @@ export function teacherRoutes() {
       <Route path="classes" element={<TeacherEntry section="setup" />} />
       <Route path="focus" element={<TeacherEntry section="maths" />} />
       <Route path="skills" element={<TeacherEntry section="maths/skills" />} />
+      {showdownOn() && <Route path="teacher/showdown" element={<TeacherEntry section="showdown" />} />}
       <Route path="teacher/admin" element={<TeacherShell />}>
         <Route element={<TeacherAdmin />}>
           <Route index element={<AdminOverview />} />
@@ -104,6 +107,7 @@ export function teacherRoutes() {
           <Route path=":gameId" element={null} />
         </Route>
         <Route path="quests" element={<TeacherQuests />} />
+        {showdownOn() && <Route path="showdown" element={<Suspense fallback={loading}><TeacherShowdown /></Suspense>} />}
         <Route path="setup" element={<ClassSetup />} />
         <Route path="*" element={<Navigate to=".." relative="path" replace />} />
       </Route>
