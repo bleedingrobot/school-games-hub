@@ -86,6 +86,17 @@ describe('the ladder', () => {
         expect(() => (auto as unknown as { ownerOf(k: string): unknown }).ownerOf(key)).not.toThrow();
       }
     }
+    // Review gives each skill a fair turn: with the whole ladder secure, skip counting (78 facts) comes up about as often as
+    // order of operations (7 facts), not ten times as often.
+    const done = new AutoPack(built.flatMap((s) => secure(s.keys)), randomFromSeed(7));
+    const asked = new Map<string, number>();
+    for (let i = 0; i < 4000; i++) {
+      const key = done.nextQuestion()!.factKey;
+      const skill = built.find((s) => s.keys.includes(key))!.id;
+      asked.set(skill, (asked.get(skill) ?? 0) + 1);
+    }
+    const skip = ['skip-10', 'skip-5', 'skip-2'].reduce((n, id) => n + (asked.get(id) ?? 0), 0) / 3;
+    expect(skip / (asked.get('bedmas') ?? 1)).toBeLessThan(2);
   });
 });
 

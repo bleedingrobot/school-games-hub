@@ -24,6 +24,9 @@ describe('saving marked maths answers', () => {
     expect(result.saved).toBe(0);
     expect(again.mock.calls[0][1].batch_id).toBe(first.mock.calls[0][1].batch_id);
     expect(again.mock.calls.some(([name]) => name === 'add_maths_focus_results')).toBe(false);
+    // Saved answers also move the student's place on the ladder (it reads their records first); a save that took nothing new doesn't.
+    expect(first.mock.calls.some(([name]) => name === 'space_maths_context')).toBe(true);
+    expect(again.mock.calls.some(([name]) => name === 'space_maths_context')).toBe(false);
   });
 
 });

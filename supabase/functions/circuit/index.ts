@@ -10236,6 +10236,21 @@ function autoPools(progress, opts = {}) {
 		stretch: live[at + 1]?.keys ?? []
 	};
 }
+/**
+* For each review key, how many review keys its skill has, so review can pick a skill first and then a fact from it.
+* A key that belongs to more than one skill counts with the first (easiest) one.
+*/
+function reviewSkillSizes(review, opts = {}) {
+	const enabled = opts.enabledTables ?? TABLES;
+	const inReview = new Set(review);
+	const sizes = new Map();
+	for (const skill of LADDER) {
+		if (!skill.built) continue;
+		const keys = activeKeys(skill, enabled, opts.division !== false).filter((k) => inReview.has(k) && !sizes.has(k));
+		for (const k of keys) sizes.set(k, keys.length);
+	}
+	return sizes;
+}
 /** The built ladder skills a focus really names, in ladder order. Unknown or not-yet-built names are ignored. */
 function focusSkills(spec) {
 	const wanted = new Set(currentSkillIds(spec.skills));
@@ -10359,7 +10374,8 @@ var AutoPack = class {
 			const div = /^div:\d+\/(\d+)$/.exec(key);
 			return !!div && HARD_TABLES.includes(Number(div[1]));
 		};
-		const weight = (key) => !focus.has(key) && hardTable(key) ? HARD_TABLE_WEIGHT : 1;
+		const skillSize = reviewSkillSizes(pools.review, this.opts);
+		const weight = (key) => focus.has(key) ? 1 : (hardTable(key) ? HARD_TABLE_WEIGHT : 1) / (skillSize.get(key) ?? 1);
 		const picked = pickFromPools(pools, ctx, new Map(this.stats().map((s) => [s.key, s])), this.memory, this.random, weight);
 		if (!picked) return null;
 		const pack = this.ownerOf(picked.key);
@@ -10410,11 +10426,27 @@ function parseLadderInfo(raw) {
 		furthest: skillId(r.furthest)
 	};
 }
+const builtSkills = () => LADDER.filter((s) => s.built);
 const indexOfSkill = (id) => id ? LADDER.findIndex((s) => s.id === id) : -1;
 /** The floor under a student's place: an index into `LADDER`. */
 function floorRank(info) {
 	const start = info.placed === "done" ? indexOfSkill(info.placement) : -1;
 	return Math.max(0, start, indexOfSkill(info.furthest));
+}
+/** The student's place on the ladder, with the floor applied. */
+function placeProgress(stats, info, opts = {}) {
+	return ladderProgress(stats, {
+		...opts,
+		floor: floorRank(info)
+	});
+}
+/** The furthest place to keep: where they are now, or the last built skill once all of them are secure. */
+function placeToStore(stats, info, opts = {}) {
+	const skill = placeProgress(stats, info, opts).current ?? builtSkills().at(-1) ?? null;
+	return skill ? {
+		skill: skill.id,
+		rank: LADDER.indexOf(skill)
+	} : null;
 }
 //#endregion
 //#region shared/maths/focus.ts
@@ -10689,6 +10721,51 @@ function isUnlimitedFor(days, game, now = new Date()) {
 	return days[game] === nzToday(now);
 }
 //#endregion
+//#region shared/maths/placeContext.ts
+/**
+* Reads what the database sends about a student's ladder (`space_maths_context`: records, question settings and focus) into the
+* pieces the ladder code wants.
+*/
+function ladderOfContext(context) {
+	return {
+		facts: Array.isArray(context.facts) ? context.facts : [],
+		info: ladderOf(parseFocus(context.focus)),
+		opts: {
+			enabledTables: context.settings?.enabledTables,
+			division: context.settings?.division
+		}
+	};
+}
+//#endregion
+//#region shared/maths/syncPlace.ts
+/**
+* The server side of a student's place on the ladder (docs/MATHS-FOCUS-PLAN.md section 5). The functions that save answers call
+* `makePlaceSyncer` after saving, which works the place out from the student's records and hands it to the database, which only
+* ever moves it forward. `savePlacement` checks a placement check before storing where to start. Both take their database calls
+* as ports, so the tests (and each function's entry file) can stand in for Supabase.
+*/
+/** Looks at a student's records and keeps their furthest place up to date. Never throws: a late or missing update is harmless. */
+function makePlaceSyncer(ports, now = Date.now, minGapMs = 3e4) {
+	const last = new Map();
+	return async function syncPlace(player) {
+		const at = now();
+		const before = last.get(player);
+		if (before !== void 0 && at - before < minGapMs) return;
+		last.set(player, at);
+		if (last.size > 5e3) last.clear();
+		try {
+			const context = await ports.loadContext(player);
+			if (!context) return;
+			const { facts, info, opts } = ladderOfContext(context);
+			if (!info.on) return;
+			const place = placeToStore(facts, info, opts);
+			if (place) await ports.savePlace(player, place.skill, place.rank);
+		} catch {
+			console.error("place: not updated");
+		}
+	};
+}
+//#endregion
 //#region shared/maths/focusResults.ts
 /**
 * What the game servers tell the database about answers given while a maths focus ran (docs/MATHS-FOCUS-PLAN.md, "Stage F.8
@@ -10797,7 +10874,39 @@ async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o
 		result.failed++;
 		console.error(`${from}: record answers failed`);
 	}
+	if (result.saved > 0) await syncLadderPlace(rpc, player);
 	return result;
+}
+/** When each student's place was last worked out, so a busy game reads their records at most every 30 seconds. */
+const placeSyncedAt = new Map();
+/**
+* Moves a student's furthest place on the ladder forward after their answers are saved (shared/maths/syncPlace.ts), so every
+* game that saves answers keeps the place up to date, not only Gem Keep, Monsters and Space. It never throws; the database
+* only ever moves the place forward.
+*/
+async function syncLadderPlace(rpc, player, now = Date.now()) {
+	const before = placeSyncedAt.get(player);
+	if (before !== void 0 && now - before < 3e4) return;
+	if (placeSyncedAt.size > 5e3) placeSyncedAt.clear();
+	placeSyncedAt.set(player, now);
+	await makePlaceSyncer({
+		async loadContext(id) {
+			const { data, error } = await rpc("space_maths_context", { player: id });
+			if (error) throw new Error(error.code ?? "unknown");
+			return data ?? null;
+		},
+		async savePlace(id, skill, rank) {
+			const { error } = await rpc("record_ladder_place", {
+				player: id,
+				skill,
+				rank
+			});
+			if (error) throw new Error(error.code ?? "unknown");
+		},
+		async savePlacementRow() {
+			return false;
+		}
+	}, () => now, 0)(player);
 }
 //#endregion
 //#region supabase/functions/_shared/signIn.ts

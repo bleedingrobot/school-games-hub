@@ -1,6 +1,7 @@
 import { FLUENT_DAYS, TOP_BOX, keptMs, quickMsForPack } from '../../../shared/maths/config';
 import { groupByPack } from '../../../shared/maths/focus';
 import type { FactAnswer } from '../../../shared/maths/leitner';
+import { makePlaceSyncer } from '../../../shared/maths/syncPlace';
 import { countForFocuses } from './focusResults';
 
 /** The one thing of the database client this needs, so a test can stand in for it. */
@@ -76,5 +77,40 @@ export async function recordMathsAnswers(
       console.error(`${from}: record answers failed`);
     }
   }
+  if (result.saved > 0) await syncLadderPlace(rpc, player);
   return result;
+}
+
+/** When each student's place was last worked out, so a busy game reads their records at most every 30 seconds. */
+const placeSyncedAt = new Map<string, number>();
+
+/**
+ * Moves a student's furthest place on the ladder forward after their answers are saved (shared/maths/syncPlace.ts), so every
+ * game that saves answers keeps the place up to date, not only Gem Keep, Monsters and Space. It never throws; the database
+ * only ever moves the place forward.
+ */
+export async function syncLadderPlace(rpc: RpcWithData, player: string, now = Date.now()): Promise<void> {
+  const before = placeSyncedAt.get(player);
+  if (before !== undefined && now - before < 30_000) return;
+  if (placeSyncedAt.size > 5000) placeSyncedAt.clear();
+  placeSyncedAt.set(player, now);
+  const sync = makePlaceSyncer(
+    {
+      async loadContext(id) {
+        const { data, error } = await rpc('space_maths_context', { player: id });
+        if (error) throw new Error(error.code ?? 'unknown');
+        return (data as never) ?? null;
+      },
+      async savePlace(id, skill, rank) {
+        const { error } = await rpc('record_ladder_place', { player: id, skill, rank });
+        if (error) throw new Error(error.code ?? 'unknown');
+      },
+      async savePlacementRow() {
+        return false;
+      },
+    },
+    () => now,
+    0,
+  );
+  await sync(player);
 }

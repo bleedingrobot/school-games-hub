@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { studentTyping } from '../../../shared/training/save';
 import { CHECK_FACTS, scoreCheck, thinkMsOf } from '../../../shared/training/check';
+import { syncLadderPlace } from '../_shared/recordAnswers';
 import { userIdFromToken } from '../_shared/signIn';
 import { makeHandler, SAVE_LIMITS, SESSION_MIN_ANSWERS, type Outcome } from './handler';
 
@@ -38,15 +39,19 @@ Deno.serve(
   makeHandler({
     now: () => Date.now(),
     userIdFor: userIdFromToken(admin.auth),
-    recordAnswers: (player, item) =>
-      call('record_training_answers', {
+    recordAnswers: async (player, item) => {
+      const saved = await call<number>('record_training_answers', {
         player,
         batch_id: item.batchId,
         seed: item.seed,
         answers: item.answers,
         keep_per_fact: SAVE_LIMITS.keepPerFact,
         daily_limit: SAVE_LIMITS.dailyLimit,
-      }),
+      });
+      // Training answers move the student's place on the ladder forward too.
+      if (saved.ok) await syncLadderPlace((name, args) => admin.rpc(name, args), player);
+      return saved;
+    },
     recordStudent: (player, item) =>
       call('record_training_student', {
         player,
