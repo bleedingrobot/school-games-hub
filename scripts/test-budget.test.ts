@@ -58,7 +58,7 @@ const BUDGET: Record<string, number> = {
   kit: 14, // shared/kit: the junior games' shared rules
   badge: 8,
   training: 10, // 8, plus 2 for the basic facts check (15 Nov 2026)
-  showdown: 15, // live whole-class game, 4 modes: 4 rules, 4 server, 4 screens (stage 1, 23 Nov 2026); +1 rewards and roster (stage 5); +1 Gold Rush rules (stage 6); +1 Sky Climb rules (stage 7)
+  showdown: 16, // live whole-class game, 4 modes: 4 rules, 4 server, 4 screens (stage 1, 23 Nov 2026); +1 rewards and roster (stage 5); +1 Gold Rush rules (stage 6); +1 Sky Climb rules, +1 Shrinking Island rules (stage 7)
 };
 
 function testFiles(dir: string): string[] {

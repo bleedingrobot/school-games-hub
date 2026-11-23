@@ -21,6 +21,7 @@ import { SHOWDOWN } from './config';
 import { advance, answer, chooseRole, enrage, goldenNext, join, moveToTeam, newRound, roundMs, start } from './engine';
 import { reshuffle } from './teams';
 import { chooseSeam, diggersAt, openSeamsOf } from './goldrush';
+import { shoreAt, spotOf } from './island';
 import { pickBoss, rewardFor, roster, type BossId, type ChestGame, type Reward, type RosterRow } from './bosses';
 import type { Arena, Mode, Player, Role, Round, ShowdownEvent, TeamId } from './types';
 import { ladderProgress } from '../maths/ladder';
@@ -33,8 +34,8 @@ import { TimesTables } from '../maths/skillPacks/timesTables';
 
 export const MODES: readonly Mode[] = ['class', 'teams2', 'teams4', 'solo'];
 export const ROLES: readonly Role[] = ['striker', 'guard', 'healer'];
-/** Arenas a room can be opened as (each arena's rules: goldrush.ts, skyclimb.ts). */
-export const ARENAS = ['boss', 'goldrush', 'skyclimb'] as const satisfies readonly Arena[];
+/** Arenas a room can be opened as (each arena's rules: goldrush.ts, skyclimb.ts, island.ts). */
+export const ARENAS = ['boss', 'goldrush', 'skyclimb', 'island'] as const satisfies readonly Arena[];
 
 /** What pupils (their class's room row) and the projector see of a room: no names, no maths. */
 export interface RoomView {
@@ -45,6 +46,9 @@ export interface RoomView {
   bossId: BossId;
   /** Gold Rush: the open seams, with how many pupils are digging at each (no names). Empty in Boss Bounty. */
   seams: { id: number; kind: 'gold' | 'gem' | 'rich'; x: number; y: number; left: number; size: number; diggers: number }[];
+  /** Shrinking Island: the shoreline now (1 = where it started) and where each pupil stands, by id: [degrees round, distance
+   *  from the middle, 0 on the island or 1 + swim strokes so far on a rock]. No names. Null in the other arenas. */
+  island: { shore: number; spots: Record<string, [number, number, number]> } | null;
   lengthMin: number;
   /** Server time (ms since 1970) the round started, or null in the lobby. Times below are ms from that. */
   startedAt: number | null;
@@ -201,7 +205,17 @@ export function roomView(row: Pick<RoomRow, 'arena' | 'startedAt' | 'pausedAt' |
       ? { endsAt: r.windUp.endsAt, enraged: r.windUp.enraged, groups: Object.fromEntries(Object.entries(r.windUp.groups).map(([k, g]) => [k, { needed: g.needed, got: g.got, done: g.done }])) }
       : null,
     result: r.result, showNames: row.showNames,
+    island: r.arena === 'island' ? islandView(r) : null,
   };
+}
+
+function islandView(r: Round): NonNullable<RoomView['island']> {
+  const spots: Record<string, [number, number, number]> = {};
+  for (const id of r.order) {
+    const s = spotOf(r, r.players[id]);
+    spots[id] = [s.a, Math.round(s.d * 1000) / 1000, s.rock ? 1 + s.swim : 0];
+  }
+  return { shore: Math.round(shoreAt(r) * 1000) / 1000, spots };
 }
 
 /** Solo: the ids of the top 10 by score (pupils with no points yet never count). */

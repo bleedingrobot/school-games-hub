@@ -21,9 +21,11 @@ export function noticesFor(view: RoomView, t: number, team: TeamId | null, me: s
   const out: Notice[] = [];
   if (view.pausedAt) out.push({ key: 'pause', text: '⏸ Paused. Look at the teacher.', tone: 'info' });
   if (view.state === 'lobby') {
-    out.push({ key: 'lobby', text: view.arena === 'goldrush' ? '⛏ Grab your pickaxe! Waiting for the teacher…' : view.arena === 'skyclimb' ? '🧗 Rope on! Waiting for the teacher…' : `${bossInfo(view.bossId).roar} Waiting for the teacher…`, tone: 'info' });
+    out.push({ key: 'lobby', text: view.arena === 'goldrush' ? '⛏ Grab your pickaxe! Waiting for the teacher…' : view.arena === 'skyclimb' ? '🧗 Rope on! Waiting for the teacher…' : view.arena === 'island' ? '🏝️ Find a spot on the island! Waiting for the teacher…' : `${bossInfo(view.bossId).roar} Waiting for the teacher…`, tone: 'info' });
     return out;
   }
+  const mySpot = view.island?.spots[me];
+  if (view.state === 'live' && mySpot && mySpot[2] > 0) out.push({ key: 'rock', text: `🪨 You're on a rock! Right answers swim you back (${mySpot[2] - 1}/2)`, tone: 'alarm' });
   const w = view.windUp;
   if (w && t < w.endsAt) {
     const g = w.groups[team ?? ''] ?? w.groups.all ?? w.groups[me];
@@ -50,8 +52,9 @@ export function ControllerStage({ view, t, hit, team, me, streak = 0 }: { view: 
   const W = arenaWords(view.arena);
   const gr = view.arena === 'goldrush';
   const sky = view.arena === 'skyclimb';
-  const back = gr ? art('back', 'gold-rush') : sky ? art('back', 'sky-climb') : art('back', boss.backdrop);
-  const bossImg = gr || sky ? null : art('bosses', `${view.bossId}-${view.boss.phase}`);
+  const isle = view.arena === 'island';
+  const back = gr ? art('back', 'gold-rush') : sky ? art('back', 'sky-climb') : isle ? art('back', 'shrinking-island') : art('back', boss.backdrop);
+  const bossImg = gr || sky || isle ? null : art('bosses', `${view.bossId}-${view.boss.phase}`);
   const left = Math.max(0, Math.min(100, (view.boss.hp / Math.max(1, view.boss.max)) * 100));
   const pct = W.fills ? 100 - left : left;
   const name = W.goal ?? boss.name;
@@ -60,7 +63,7 @@ export function ControllerStage({ view, t, hit, team, me, streak = 0 }: { view: 
   const wind = !!view.windUp && t < view.windUp.endsAt;
   const jumped = sky && hit > 0 && streak > 0 && streak % 3 === 0;
   return (
-    <aside className={`sd-cs${gr ? ' sd-cs--gr' : ''}${sky ? ' sd-cs--sky' : ''}${weak ? ' sd-cs--weak' : ''}${wind ? ' sd-cs--wind' : ''}`} aria-label={gr ? 'The mine' : sky ? 'The climb' : 'The boss'}>
+    <aside className={`sd-cs${gr ? ' sd-cs--gr' : ''}${sky ? ' sd-cs--sky' : ''}${isle ? ' sd-cs--isle' : ''}${weak ? ' sd-cs--weak' : ''}${wind ? ' sd-cs--wind' : ''}`} aria-label={gr ? 'The mine' : sky ? 'The climb' : isle ? 'The island' : 'The boss'}>
       <div className="sd-cs__scene">
         {back && <img className="sd-cs__back" src={back} alt="" aria-hidden="true" />}
         {gr ? (
@@ -77,10 +80,12 @@ export function ControllerStage({ view, t, hit, team, me, streak = 0 }: { view: 
           </div>
         ) : sky ? (
           <SkyMini pct={pct} hit={hit} jumped={jumped} team={team} wind={wind} weak={weak} />
+        ) : isle && view.island ? (
+          <IsleMini island={view.island} me={me} hit={hit} pct={pct} wind={wind} weak={weak} team={team} />
         ) : bossImg ? (
           <img key={`b${hit}`} className={`sd-cs__boss${hit ? ' sd-cs__boss--hit' : ''}`} src={bossImg} alt="" aria-hidden="true" />
         ) : null}
-        {hit > 0 && !sky && <span key={`h${hit}`} className="sd-cs__pow" aria-hidden="true">{gr ? '🪙' : '💥'}</span>}
+        {hit > 0 && !sky && !isle && <span key={`h${hit}`} className="sd-cs__pow" aria-hidden="true">{gr ? '🪙' : '💥'}</span>}
       </div>
       <div className="sd-cs__bar" role="progressbar" aria-label={W.fills ? name : `${name} health`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
         <span className="sd-cs__name">{name}</span>
@@ -111,6 +116,32 @@ function SkyMini({ pct, hit, jumped, team, wind, weak }: { pct: number; hit: num
       {hit > 0 && !jumped && <span key={`u${hit}`} className="sd-cs__up" style={{ top: `${y}%` }}>⬆</span>}
       {weak && <span className="sd-cs__updraft"><i /><i /><i /><i /></span>}
       {wind && <span className="sd-cs__storm"><i /><i /><i /><i /><i /><i /><i /><i /></span>}
+    </div>
+  );
+}
+
+/** Shrinking Island on the iPad: the island (smaller as the round goes on), everyone as a dot, me as the big one, the raft. */
+function IsleMini({ island, me, hit, pct, wind, weak, team }: { island: NonNullable<RoomView['island']>; me: string; hit: number; pct: number; wind: boolean; weak: boolean; team: TeamId | null }) {
+  const mine = island.spots[me];
+  const at = (s: [number, number, number]) => {
+    const rad = (s[0] * Math.PI) / 180;
+    const d = s[2] > 0 ? Math.max(s[1], island.shore + 0.12) : s[1];
+    return { left: `${50 + Math.cos(rad) * d * 40}%`, top: `${50 + Math.sin(rad) * d * 34}%` };
+  };
+  return (
+    <div className={`sd-cs__isle${team ? ` sd-cs__sky--${team}` : ''}`} aria-hidden="true">
+      <span className="sd-cs__sea" />
+      <span className="sd-cs__land" style={{ width: `${island.shore * 80}%`, height: `${island.shore * 68}%` }}><i>🌴</i></span>
+      {Object.entries(island.spots).filter(([id]) => id !== me).map(([id, s]) => <span key={id} className={`sd-cs__dot${s[2] > 0 ? ' sd-cs__dot--rock' : ''}`} style={at(s)} />)}
+      {mine && (
+        <span key={`m${hit}`} className={`sd-cs__me${mine[2] > 0 ? ' sd-cs__me--rock' : ''}${hit ? ' sd-cs__me--step' : ''}`} style={at(mine)}>
+          {mine[2] > 0 && <i className="sd-cs__rock">🪨</i>}<b>⭐</b>
+        </span>
+      )}
+      <span className="sd-cs__raft" style={{ '--built': pct / 100 } as React.CSSProperties}><i /><b>⛵</b></span>
+      {hit > 0 && <span key={`p${hit}`} className="sd-cs__plank" style={mine ? at(mine) : undefined}>🪵</span>}
+      {weak && <span className="sd-cs__crate">📦</span>}
+      {wind && <span className="sd-cs__wave" />}
     </div>
   );
 }

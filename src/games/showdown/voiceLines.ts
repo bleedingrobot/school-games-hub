@@ -45,4 +45,16 @@ export const SKY_CLIMB_LINES = {
   done: 'You reached the summit!',
 } as const;
 
-export const allVoiceLines = (): string[] => [...Object.values(ANNOUNCER), ...Object.values(GOLD_RUSH_LINES), ...Object.values(SKY_CLIMB_LINES), ...BOSSES.map((b) => b.roar)];
+/** Shrinking Island says these in place of the boss lines. */
+export const ISLAND_LINES = {
+  joinNow: 'Shrinking Island! Join now!',
+  start: 'Build the raft before the island sinks!',
+  wave: 'Big wave coming! Hold it back!',
+  held: 'We held back the wave!',
+  broke: 'Sploosh! The wave crashed over the beach!',
+  crate: 'A crate washed ashore! Double planks!',
+  phase: 'The tide is rising!',
+  done: 'The raft is ready! Sail away!',
+} as const;
+
+export const allVoiceLines = (): string[] => [...Object.values(ANNOUNCER), ...Object.values(GOLD_RUSH_LINES), ...Object.values(SKY_CLIMB_LINES), ...Object.values(ISLAND_LINES), ...BOSSES.map((b) => b.roar)];

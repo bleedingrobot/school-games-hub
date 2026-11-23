@@ -712,3 +712,95 @@
   .sd-p-back--sky, .sd-p-clouds i, .sd-p-sky__flag, .sd-p-climber__body, .sd-p-storm__bolt, .sd-p-storm__rain, .sd-p-storm__gust, .sd-p-sky__updraft i, .sd-p-sky-entrance__peak, .sd-p-sky-entrance__flag, .sd-p-summitflag__peak, .sd-p-summitflag__flag { animation: none !important; }
   .sd-p-climber { transition: none; }
 }
+
+/* ---- Shrinking Island (stage 7): the sea, the shrinking island, castaways, rocks, the raft, the crate and the big wave. ---- */
+.sd-p-back--isle { background: linear-gradient(180deg, #7fd3f2 0%, #39a9d8 30%, #137fb4 60%, #0a5a88 100%) center / cover no-repeat; }
+.sd-p-back--isle.sd-p-back--plain::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(170deg, rgba(255,255,255,0.08) 0 2px, transparent 2px 40px), repeating-linear-gradient(10deg, rgba(255,255,255,0.06) 0 2px, transparent 2px 56px); animation: sd-p-sea 6s linear infinite; }
+.sd-p-back--isle::after { background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(2,30,50,0.5) 100%); }
+.sd-p--bigwave .sd-p-back--isle { filter: brightness(0.7) saturate(0.8); transition: filter 0.6s; }
+.sd-p--p2 .sd-p-back--isle, .sd-p--p3 .sd-p-back--isle { filter: none; }
+.sd-p--isle .sd-p-crew { display: none; }
+.sd-p--isle .sd-p-health { border-color: #fff1c9; background: #08283a; box-shadow: 0 0 28px rgba(255,200,120,0.5); }
+.sd-p--isle .sd-p-health__fill { background: linear-gradient(180deg, #ffe0a0, #c98a43 50%, #7a4a1c); }
+.sd-p--isle .sd-p-health__ghost { background: #fff6dd; }
+.sd-p--isle .sd-p-health__label { color: #fff; text-shadow: 0 2px 0 #5a3410, 0 0 8px #2a1700, 0 0 14px #2a1700; mix-blend-mode: normal; z-index: 2; }
+.sd-p--isle .sd-p-dome__shell { border-color: rgba(170,235,255,0.95); background: rgba(80,190,240,0.12); box-shadow: 0 0 40px rgba(80,200,255,0.7), inset 0 0 50px rgba(80,190,240,0.35); }
+.sd-p--isle .sd-p-dome__label { color: #e0f8ff; }
+
+.sd-p-isle { position: absolute; left: 3vw; right: 3vw; top: calc(var(--bar-h, 50px) + 11vh); bottom: 7vh; z-index: 2; }
+.sd-p-isle__swell { position: absolute; inset: -4%; border-radius: 50%; background: radial-gradient(ellipse, rgba(120,220,255,0.35) 30%, transparent 70%); animation: sd-p-swell 4s ease-in-out infinite alternate; }
+.sd-p-isle__land { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); border-radius: 48% 52% 50% 50% / 52% 48% 52% 48%; background: radial-gradient(ellipse at 48% 44%, #7ed957 0 30%, #4fae3c 42%, #e3c47e 54%, #f4dfa6 66%, #f8e8bb 74%); box-shadow: 0 0 0 0.8vh rgba(255,255,255,0.55), 0 0 4vh rgba(200,250,255,0.6), inset 0 -1vh 3vh rgba(120,80,20,0.35); transition: width 1.6s ease, height 1.6s ease; }
+.sd-p-isle__foam { position: absolute; inset: -1.4vh; border-radius: inherit; border: 0.5vh solid rgba(255,255,255,0.6); animation: sd-p-foam 2.4s ease-in-out infinite alternate; }
+.sd-p-palms { position: absolute; inset: 0; pointer-events: none; }
+.sd-p-palms i { position: absolute; transform: translate(-50%, -80%) scale(var(--s)); font-style: normal; font-size: clamp(1.6rem, 7vh, 5rem); transform-origin: 50% 100%; animation: sd-p-palm 3s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -0.7s); }
+.sd-p-palms i img { height: clamp(40px, 12vh, 140px); }
+.sd-p-castaway { position: absolute; width: var(--size); transform: translate(-50%, -50%); transition: left 0.9s cubic-bezier(.2,1.25,.4,1), top 0.9s cubic-bezier(.2,1.25,.4,1); display: flex; flex-direction: column; align-items: center; z-index: 2; }
+.sd-p-castaway__body { display: grid; place-items: center; width: 100%; aspect-ratio: 1; border-radius: 50%; overflow: hidden; background: color-mix(in srgb, var(--tc, #ffd23f) 40%, #0b2238); border: 0.3vw solid var(--tc, #fff); box-shadow: 0 0 1vw color-mix(in srgb, var(--tc, #fff) 70%, transparent), 0 0.6vh 1vh rgba(0,0,0,0.5); }
+.sd-p-castaway__body img { width: 100%; height: 100%; object-fit: cover; }
+.sd-p-castaway__body b { font-size: calc(var(--size) * 0.6); }
+.sd-p-castaway__name { margin-top: 1px; max-width: 9vw; font-size: clamp(0.55rem, 1.5vh, 0.95rem); font-weight: 900; color: #fff; text-shadow: 0 1px 3px #000, 0 0 6px #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sd-p-castaway--step .sd-p-castaway__body { animation: sd-p-climbstep 0.5s ease-out; }
+.sd-p-castaway--rock { animation: sd-p-bob 1.6s ease-in-out infinite alternate; }
+.sd-p-castaway--rock .sd-p-castaway__body { filter: saturate(0.6); }
+.sd-p-castaway__rock { position: absolute; top: 55%; left: 50%; width: 170%; aspect-ratio: 2; transform: translateX(-50%); z-index: -1; }
+.sd-p-castaway__rock img { width: 100%; height: 100%; object-fit: contain; }
+.sd-p-castaway__rock i { position: absolute; inset: 0; border-radius: 45% 55% 40% 50%; background: linear-gradient(160deg, #a9b1ba, #5d6670 70%); box-shadow: 0 0 0 0.4vh rgba(255,255,255,0.6), 0 0 0 1.2vh rgba(255,255,255,0.18); }
+.sd-p-castaway__swim { position: absolute; top: 112%; white-space: nowrap; font-size: clamp(0.55rem, 1.5vh, 0.9rem); font-weight: 900; color: #fff; text-shadow: 0 1px 3px #000; }
+.sd-p-castaway--brace .sd-p-castaway__body { animation: sd-p-sway 0.4s ease-in-out infinite alternate; }
+.sd-p-castaway--dazed .sd-p-castaway__body { filter: grayscale(0.8) brightness(0.7); }
+.sd-p-castaway__plank { position: absolute; left: 50%; top: 0; pointer-events: none; z-index: 4; }
+.sd-p-castaway__plank i { position: absolute; font-style: normal; font-size: clamp(1rem, 3.6vh, 2.4rem); animation: sd-p-plankfly 1.1s cubic-bezier(.4,0,.6,1) both; }
+.sd-p-castaway__plank em { position: absolute; transform: translate(-50%, -100%); font-style: normal; font-weight: 1000; font-size: clamp(1rem, 3.2vh, 2rem); color: #fff; -webkit-text-stroke: 2px #5a3410; paint-order: stroke fill; animation: sd-p-climbpop 1.3s ease-out both; white-space: nowrap; }
+.sd-p-castaway__splash { position: absolute; left: 50%; top: 50%; pointer-events: none; z-index: 5; }
+.sd-p-castaway__splash b { position: absolute; transform: translate(-50%, -160%); font-size: clamp(1rem, 3.6vh, 2.4rem); font-weight: 1000; color: #e8fbff; -webkit-text-stroke: 2px #0a5a88; paint-order: stroke fill; animation: sd-p-jumpword 1.5s ease-out both; white-space: nowrap; }
+.sd-p-castaway__splash i { position: absolute; width: 1.2vh; height: 1.8vh; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: #bfefff; animation: sd-p-drop 0.9s ease-out both; --a: calc(var(--i) * 60deg); }
+.sd-p-castaway__home { position: absolute; bottom: 110%; white-space: nowrap; font-weight: 1000; font-size: clamp(0.9rem, 2.8vh, 1.8rem); color: #b9ffcf; -webkit-text-stroke: 1.5px #0a5a3a; paint-order: stroke fill; animation: sd-p-climbpop 1.8s ease-out both; }
+.sd-p-isle__sweep { position: absolute; inset: -5% -10%; background: linear-gradient(90deg, transparent, rgba(200,245,255,0.85) 40%, rgba(80,190,240,0.75) 55%, transparent); animation: sd-p-sweep 2.2s ease-in-out both; pointer-events: none; z-index: 6; }
+.sd-p-isle__crate { position: absolute; left: 4%; bottom: 6%; display: flex; flex-direction: column; align-items: center; z-index: 3; animation: sd-p-crate 2.4s cubic-bezier(.2,1,.3,1) both, sd-p-bob 1.1s ease-in-out 2.4s infinite alternate; }
+.sd-p-isle__crate b { font-size: clamp(2rem, 9vh, 6rem); filter: drop-shadow(0 0 2vh #ffd34d); }
+.sd-p-isle__crate span { font-weight: 1000; font-size: clamp(0.9rem, 3vh, 2rem); color: #ffe27a; -webkit-text-stroke: 1.5px #8a4f00; paint-order: stroke fill; text-shadow: 0 0 16px #ffd23f; white-space: nowrap; }
+.sd-p-raft { position: absolute; right: 1%; bottom: 2%; width: min(22vw, 300px); height: 9vh; z-index: 3; transition: transform 3s ease-in; }
+.sd-p-raft__planks { position: absolute; inset: 0; display: flex; gap: 2px; transform: perspective(400px) rotateX(40deg); }
+.sd-p-raft__planks i { flex: 1; border-radius: 4px; background: rgba(255,255,255,0.15); border: 2px dashed rgba(255,255,255,0.5); }
+.sd-p-raft__planks i.on { background: linear-gradient(90deg, #c88a48, #8a5222); border: 2px solid #4a2a0a; animation: sd-p-plank 0.5s cubic-bezier(.2,1.6,.4,1) both; box-shadow: 0 0.5vh 0 #3a1f05; }
+.sd-p-raft__mast { position: absolute; left: 48%; bottom: 55%; width: 0.6vh; height: 16vh; }
+.sd-p-raft__mast i { position: absolute; inset: 0; background: #6b3f17; transform-origin: bottom; transition: transform 0.6s; }
+.sd-p-raft__mast i::after { content: ''; position: absolute; left: 100%; top: 6%; width: 9vh; height: 11vh; background: linear-gradient(135deg, #fffdf2, #f0e2c0); clip-path: polygon(0 0, 100% 60%, 0 100%); animation: sd-p-flap 1.4s ease-in-out infinite alternate; transform-origin: left; }
+.sd-p-raft__pct { position: absolute; left: 50%; top: 105%; transform: translateX(-50%); font-weight: 1000; font-size: clamp(0.9rem, 2.6vh, 1.6rem); color: #fff; text-shadow: 0 2px 0 #5a3410, 0 0 8px #000; }
+.sd-p-raft--sail { transform: translate(40vw, -4vh) rotate(-4deg); }
+.sd-p-bigwave { position: absolute; inset: 0; z-index: 7; pointer-events: none; overflow: hidden; }
+.sd-p-bigwave__wall { position: absolute; left: -10%; right: -10%; bottom: -12vh; height: 40vh; border-radius: 50% 50% 0 0 / 30% 30% 0 0; background: linear-gradient(180deg, #a8ecff 0%, #3cc0ea 22%, #127eb3 60%, #0a4f78 100%); box-shadow: 0 -2vh 6vh rgba(160,230,255,0.6); animation: sd-p-wallrise 1.2s ease-out both, sd-p-wallheave 1.1s ease-in-out 1.2s infinite alternate; opacity: 0.92; }
+.sd-p-bigwave--heavy .sd-p-bigwave__wall { height: 52vh; }
+.sd-p-bigwave__crest { position: absolute; left: -10%; right: -10%; bottom: 25vh; height: 5vh; background: repeating-radial-gradient(circle at 50% 100%, #fff 0 1.4vh, rgba(255,255,255,0) 1.6vh 3vh); background-size: 6vh 5vh; animation: sd-p-wallrise 1.2s ease-out both, sd-p-crest 0.9s linear 1.2s infinite; }
+.sd-p-bigwave--heavy .sd-p-bigwave__crest { bottom: 37vh; }
+.sd-p-bigwave__spray { position: absolute; bottom: 26vh; width: 1.2vh; height: 1.2vh; border-radius: 50%; background: #e8fbff; animation: sd-p-spray 1.2s ease-out infinite; animation-delay: calc(var(--i) * -0.13s); }
+.sd-p-isle-entrance { position: absolute; left: 0; right: 0; bottom: 0; height: min(52%, 52vh); z-index: 0; pointer-events: none; }
+.sd-p-isle-entrance__land { position: absolute; left: 50%; bottom: 4%; width: min(70vw, 900px); height: 70%; translate: -50% 0; border-radius: 50%; background: radial-gradient(ellipse at 48% 44%, #7ed957 0 30%, #4fae3c 42%, #e3c47e 54%, #f4dfa6 66%, #f8e8bb 74%); box-shadow: 0 0 0 1vh rgba(255,255,255,0.55); animation: sd-p-gr-rise 1.8s cubic-bezier(.2,1,.3,1) both; }
+.sd-p-isle-entrance__raft { position: absolute; right: 16%; bottom: 6%; font-size: clamp(2rem, 8vh, 5rem); animation: sd-p-bob 1.3s ease-in-out infinite alternate; }
+.sd-p-roar--isle { color: #fff3d6; text-shadow: 0 5px 0 #5a3410, 0 0 50px #ffcf7a; }
+.sd-p--isle .sd-p-lobby__join { color: #fff3d6; text-shadow: 0 6px 0 #0a5a88, 0 0 50px rgba(120,220,255,0.85); }
+.sd-p-raftsail { position: absolute; left: 0; right: 0; bottom: 0; height: 46vh; z-index: 1; pointer-events: none; }
+.sd-p-raftsail__sea { position: absolute; left: 0; right: 0; bottom: 0; height: 40%; background: repeating-linear-gradient(175deg, rgba(255,255,255,0.25) 0 3px, transparent 3px 26px), linear-gradient(180deg, #3cc0ea, #0a5a88); animation: sd-p-sea 3s linear infinite; }
+.sd-p-raftsail__boat { position: absolute; left: 14%; bottom: 24%; font-size: clamp(4rem, 22vh, 14rem); animation: sd-p-bob 1.2s ease-in-out infinite alternate; }
+.sd-p-raftsail--go .sd-p-raftsail__boat { animation: sd-p-sailaway 4s ease-in 0.6s both, sd-p-bob 1.2s ease-in-out infinite alternate; }
+.sd-p-raftsail__pct { position: absolute; left: 50%; bottom: 50%; translate: -50% 0; font-size: clamp(1.2rem, 4vh, 2.6rem); font-weight: 1000; color: #fff; text-shadow: 0 3px 0 #0a5a88, 0 0 20px #4fc3ff; white-space: nowrap; animation: sd-p-fadein 0.8s ease-out 1.2s both; }
+@keyframes sd-p-sea { from { background-position: 0 0, 0 0; } to { background-position: 0 40px, 0 56px; } }
+@keyframes sd-p-swell { from { transform: scale(0.98); } to { transform: scale(1.03); } }
+@keyframes sd-p-foam { from { transform: scale(1); opacity: 0.9; } to { transform: scale(1.03); opacity: 0.35; } }
+@keyframes sd-p-palm { from { transform: translate(-50%, -80%) scale(var(--s)) rotate(-3deg); } to { transform: translate(-50%, -80%) scale(var(--s)) rotate(4deg); } }
+@keyframes sd-p-bob { from { translate: 0 -0.5vh; } to { translate: 0 0.5vh; } }
+@keyframes sd-p-plankfly { 0% { transform: translate(-50%, -50%) scale(1) rotate(0); opacity: 1; } 85% { opacity: 1; } 100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.6) rotate(540deg); opacity: 0; } }
+@keyframes sd-p-drop { from { transform: rotate(var(--a)) translateY(0); opacity: 1; } to { transform: rotate(var(--a)) translateY(-6vh); opacity: 0; } }
+@keyframes sd-p-sweep { from { transform: translateX(-110%); } to { transform: translateX(110%); } }
+@keyframes sd-p-crate { from { transform: translate(-30vw, 6vh) rotate(-30deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes sd-p-plank { from { transform: translateY(-120%) rotate(-20deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes sd-p-wallrise { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes sd-p-wallheave { from { transform: translateY(0) scaleY(1); } to { transform: translateY(-3vh) scaleY(1.06); } }
+@keyframes sd-p-crest { from { background-position: 0 0; } to { background-position: 6vh 0; } }
+@keyframes sd-p-spray { 0% { transform: translate(0, 0); opacity: 1; } 100% { transform: translate(-4vh, -14vh); opacity: 0; } }
+@keyframes sd-p-sailaway { from { transform: translateX(0); } to { transform: translateX(80vw) rotate(-6deg); } }
+@media (max-width: 900px) { .sd-p-castaway__name { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .sd-p-back--isle::before, .sd-p-isle__swell, .sd-p-isle__foam, .sd-p-palms i, .sd-p-castaway, .sd-p-castaway__body, .sd-p-isle__crate, .sd-p-bigwave__wall, .sd-p-bigwave__crest, .sd-p-bigwave__spray, .sd-p-raftsail__boat, .sd-p-raftsail__sea, .sd-p-isle__sweep { animation: none !important; }
+  .sd-p-castaway, .sd-p-raft { transition: none; }
+}
