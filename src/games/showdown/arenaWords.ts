@@ -4,7 +4,7 @@
  * The big screen, the iPad and the announcer all read them from here, so a new arena is one entry.
  */
 import type { Arena, Role } from '../../../shared/showdown/types';
-import { ANNOUNCER, GOLD_RUSH_LINES, ISLAND_LINES, SKY_CLIMB_LINES } from './voiceLines';
+import { ANNOUNCER, GOLD_RUSH_LINES, HILL_LINES, ISLAND_LINES, SKY_CLIMB_LINES } from './voiceLines';
 
 export interface ArenaWords {
   /** The arena's name in the teacher's picker. */
@@ -160,7 +160,36 @@ const ISLAND: ArenaWords = {
   lines: { joinNow: ISLAND_LINES.joinNow, start: ISLAND_LINES.start, windUp: ISLAND_LINES.wave, held: ISLAND_LINES.held, broke: ISLAND_LINES.broke, weak: ISLAND_LINES.crate, phase: ISLAND_LINES.phase, done: ISLAND_LINES.done },
 };
 
-const WORDS: Record<Arena, ArenaWords> = { boss: BOSS, goldrush: GOLD_RUSH, skyclimb: SKY_CLIMB, island: ISLAND };
+const HILL: ArenaWords = {
+  ...BOSS,
+  name: 'King of the Hill', goal: 'Build the hilltop castle', fills: true,
+  roles: {
+    striker: { name: 'Mason', line: 'Build the castle', emoji: '🧱' },
+    guard: { name: 'Defender', line: 'Hold off challengers', emoji: '🛡️' },
+    healer: { name: 'Medic', line: 'Wake dazed friends', emoji: '💖' },
+  },
+  titles: { striker: 'Build the castle!', guard: 'Hold off the charge!', healer: 'Wake a friend!' },
+  lobbyCry: 'Who will wear the crown?', lobbyHint: 'Open Class Showdown on your iPad. Score fast to take the crown!',
+  shieldUp: 'HOLD OFF THE CHARGE!', shieldTeam: 'WALL', held: 'HELD!', broke: 'CRASH!', needGuards: 'Need more Defenders!',
+  windBanner: 'A CHALLENGER CHARGES THE HILL!',
+  heldBanner: (tm) => `${tm ? `${tm} held` : 'We held'} the hill!`,
+  brokeBanner: (tm) => `The challenger broke through${tm ? ` ${tm}` : ''}! The crown is up for grabs!`,
+  weakBanner: 'DOUBLE CROWN! Double stones, double crown points!',
+  phaseBanner: (p) => (p === 2 ? 'THE WALLS ARE RISING!' : 'THE TOWERS GO UP!'),
+  enrageBanner: 'Challengers STORM the hill!', enrageButton: 'Charge', beatenBanner: 'THE CASTLE IS BUILT!',
+  notices: {
+    wind: '⚔️ A challenger charges! Answer to hold the hill!', heldNote: '🛡️ We held the hill!', enrage: '🐎 Challengers storm the hill!', weak: '👑 Double crown! Double everything!',
+    phase: (p) => (p === 3 ? '🏰 The towers go up! Finish the castle!' : '🧱 The walls are rising!'), calm: '👑 Score fast to take the crown!',
+  },
+  teamUnit: null, mostDamage: 'Most stones',
+  awards: { most_damage: 'Master mason', last_hit: 'Last stone', shield_wall: 'Hill defender' },
+  recapTitle: (won) => (won ? 'CASTLE BUILT!' : 'So close!'),
+  recapHead: (won, pct) => (won ? 'The castle is built! Long live the king!' : `So close! The castle is ${pct}% built!`),
+  overLine: (won) => (won ? '🏰 The class built the castle on the hill!' : '🧱 So close! The castle was nearly built.'),
+  lines: { joinNow: HILL_LINES.joinNow, start: HILL_LINES.start, windUp: HILL_LINES.charge, held: HILL_LINES.held, broke: HILL_LINES.broke, weak: HILL_LINES.double, phase: HILL_LINES.phase, done: HILL_LINES.done },
+};
+
+const WORDS: Record<Arena, ArenaWords> = { boss: BOSS, goldrush: GOLD_RUSH, skyclimb: SKY_CLIMB, island: ISLAND, hill: HILL };
 
 export const arenaWords = (arena: Arena | null | undefined): ArenaWords => WORDS[arena ?? 'boss'] ?? BOSS;
 /** The arenas in the teacher's picker, in order. */

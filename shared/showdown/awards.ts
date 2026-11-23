@@ -102,7 +102,7 @@ export interface Recap {
 export function recap(r: Round): Recap {
   const teams = r.teams
     .map((team) => ({ team, points: r.teamPoints[team] ?? 0, damage: Math.round(r.teamDamage[team] ?? 0) }))
-    .sort((a, b) => (r.mode === 'teams2' ? b.damage - a.damage : 0) || b.points - a.points);
+    .sort((a, b) => (r.mode === 'teams2' && r.arena !== 'hill' ? b.damage - a.damage : 0) || b.points - a.points);
   const top = r.order
     .map((k) => r.players[k])
     .sort((a, b) => b.score - a.score)

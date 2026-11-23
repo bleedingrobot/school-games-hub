@@ -8,6 +8,7 @@ import { makeSchedule } from './schedule';
 import { playRound } from './sim';
 import { SKYCLIMB } from './skyclimb';
 import { ISLAND, shoreAt } from './island';
+import { HILL } from './hill';
 import { balanceTeams } from './teams';
 import type { Mode, Round, ShowdownEvent } from './types';
 
@@ -388,6 +389,30 @@ describe('Class Showdown rules', () => {
     expect(of(evs, 'wave')[0].pupils).toContain('p3');
     expect(r.players.p3.isle!.rock).toBe(true);
     const won = Array.from({ length: 24 }, (_, i) => playRound({ seed: 500 + i, size: 24, lengthMin: 10, mode: 'class', arena: 'island' }).beaten).filter(Boolean).length;
+    expect(won).toBeGreaterThanOrEqual(14);
+    expect(won).toBeLessThanOrEqual(23);
+  });
+  it('king of the hill: the crown goes to the most points in the last 30 seconds, pays its holder, swings, is knocked off by a broken charge, about 80% won', () => {
+    const r = newRound({ seed: 9, mode: 'solo', lengthMin: 10, bossHealth: 100000 });
+    r.arena = 'hill';
+    for (const p of ids(3)) join(r, p);
+    start(r);
+    r.schedule = [];
+    for (const t of [0, 4000]) answer(r, 'p1', true, t);
+    expect(of(advance(r, HILL.everyMs), 'crown')[0]).toMatchObject({ holder: 'p1', from: null });
+    const before = r.players.p1.score;
+    expect(of(advance(r, HILL.everyMs * 2), 'crown_paid')[0]).toMatchObject({ holder: 'p1', points: HILL.crownPoints });
+    expect(r.players.p1.score).toBe(before + HILL.crownPoints);
+    // p2 has a burst while p1 stops: after p1's points fall out of the 30 seconds, p2 takes it.
+    const evs: ShowdownEvent[] = [];
+    for (let t = 12000; t <= 40000; t += 4000) evs.push(...answer(r, 'p2', true, t).events);
+    const swing = of([...evs, ...advance(r, 45000)], 'crown');
+    expect(swing[swing.length - 1]).toMatchObject({ holder: 'p2', from: 'p1' });
+    // A charge nobody holds back knocks the crown off.
+    r.schedule = [{ at: 50000, kind: 'wind_up' }];
+    const knocked = of(advance(r, 80000), 'crown').find((e) => e.holder === null);
+    expect(knocked?.from).toBe('p2');
+    const won = Array.from({ length: 24 }, (_, i) => playRound({ seed: 500 + i, size: 24, lengthMin: 10, mode: 'class', arena: 'hill' }).beaten).filter(Boolean).length;
     expect(won).toBeGreaterThanOrEqual(14);
     expect(won).toBeLessThanOrEqual(23);
   });

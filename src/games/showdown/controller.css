@@ -298,6 +298,31 @@ button.sd-c-rolechip { cursor: pointer; } .sd-c-rolechip u { opacity: 0.8; } .sd
 @keyframes sd-cs-bob { from { margin-top: -3px; } to { margin-top: 3px; } }
 @keyframes sd-cs-plank { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(200%, 120%) scale(0.5) rotate(160deg); } }
 @keyframes sd-cs-wave { from { transform: translateY(20%) scaleY(0.9); } to { transform: translateY(0) scaleY(1.05); } }
+/* King of the Hill on the iPad: the hill, the castle going up, the throne, the crown (bright and bouncing when it's mine). */
+.sd-cs--hill .sd-cs__track { border-color: #ffe6a0; background: #2a1d0a; }
+.sd-cs--hill .sd-cs__track i { background: linear-gradient(180deg, #e8e2d4, #a89d86 55%, #6b604c); }
+.sd-cs__hill { position: absolute; inset: 0; --tc: #ffd23f; }
+.sd-cs--hill .sd-cs__scene:not(:has(.sd-cs__back)) .sd-cs__hill { background: radial-gradient(circle at 78% 18%, #fff6c8 0 6%, transparent 14%), linear-gradient(180deg, #5ab4ef, #a9dcf7 70%); }
+.sd-cs__mound { position: absolute; left: -10%; right: -10%; bottom: -30%; height: 62%; border-radius: 50% 50% 0 0; background: radial-gradient(ellipse at 50% 20%, #8fd36a, #4f9a3a 55%, #2f6624); box-shadow: inset 0 8px 0 rgba(255,255,255,0.15); }
+.sd-cs__castle { position: absolute; left: 50%; bottom: 30%; width: 46%; height: 34%; transform: translateX(-50%); }
+.sd-cs__castle i { position: absolute; inset: 0; transform-origin: bottom; transform: scaleY(var(--built)); transition: transform 0.6s cubic-bezier(.2,1.3,.4,1); background: repeating-linear-gradient(0deg, #b8ad96 0 9px, #8b8170 9px 11px), #b8ad96; -webkit-mask: linear-gradient(#000, #000) bottom / 100% 82% no-repeat, repeating-linear-gradient(90deg, #000 0 14%, transparent 14% 25%) top / 100% 18% no-repeat; mask: linear-gradient(#000, #000) bottom / 100% 82% no-repeat, repeating-linear-gradient(90deg, #000 0 14%, transparent 14% 25%) top / 100% 18% no-repeat; }
+.sd-cs__throne { position: absolute; left: 50%; bottom: 26%; transform: translateX(-50%); width: 22%; font-size: 1.8rem; text-align: center; z-index: 2; }
+.sd-cs__throne img { width: 100%; filter: drop-shadow(0 3px 4px rgba(0,0,0,0.5)); }
+.sd-cs__crown { position: absolute; left: 50%; top: 10%; width: 24%; font-size: 2.2rem; text-align: center; transform: translateX(-50%); z-index: 3; animation: sd-cs-crowndrop 0.7s cubic-bezier(.2,1.4,.4,1) both, sd-cs-crownfloat 1.8s 0.7s ease-in-out infinite alternate; filter: drop-shadow(0 0 10px rgba(255,210,63,0.8)); }
+.sd-cs__crown img { width: 100%; }
+.sd-cs__crown--free { animation: sd-cs-crownspin 2.4s linear infinite; opacity: 0.85; }
+.sd-cs__crown--mine { filter: drop-shadow(0 0 16px var(--tc)) drop-shadow(0 0 30px #ffd23f); }
+.sd-cs__hill--king::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 22%, rgba(255,226,120,0.5), transparent 55%); animation: sd-cs-twinkle 1.2s ease-in-out infinite alternate; pointer-events: none; }
+.sd-cs__race { position: absolute; left: 10%; right: 10%; bottom: 7%; height: 8px; border-radius: 4px; background: rgba(0,0,0,0.45); overflow: hidden; z-index: 3; }
+.sd-cs__race i { position: absolute; inset: 0; background: linear-gradient(90deg, var(--tc), #ffd23f); transform-origin: left; transition: transform 0.5s; }
+.sd-cs__stone { position: absolute; left: 50%; top: 0; font-size: 1.4rem; animation: sd-cs-stone 0.8s ease-in both; pointer-events: none; z-index: 4; }
+.sd-cs__double { position: absolute; right: 8%; top: 8%; font: 900 1.6rem/1 system-ui, sans-serif; color: #ffd23f; text-shadow: 0 2px 0 #7a4a00, 0 0 12px #ffb000; animation: sd-cs-twinkle 0.5s ease-in-out infinite alternate; }
+.sd-cs__charger { position: absolute; bottom: 22%; font-size: 2rem; animation: sd-cs-charge 1.6s ease-in infinite; z-index: 4; }
+@keyframes sd-cs-crowndrop { from { transform: translate(-50%, -140%) rotate(-30deg) scale(0.4); opacity: 0; } to { transform: translate(-50%, 0) rotate(0) scale(1); opacity: 1; } }
+@keyframes sd-cs-crownfloat { from { margin-top: -3px; } to { margin-top: 4px; } }
+@keyframes sd-cs-crownspin { from { transform: translateX(-50%) rotateY(0); } to { transform: translateX(-50%) rotateY(360deg); } }
+@keyframes sd-cs-stone { 0% { opacity: 1; transform: translate(-50%, 0) scale(1.2); } 100% { opacity: 0; transform: translate(-50%, 260%) scale(0.6) rotate(90deg); } }
+@keyframes sd-cs-charge { 0% { left: -20%; transform: scaleX(-1); } 100% { left: 70%; transform: scaleX(-1); } }
 @media (max-width: 760px) {
   .sd-c-body--split { flex-direction: column; align-items: stretch; gap: 10px; }
   .sd-cs { order: -1; position: static; flex: none; display: grid; grid-template-columns: 112px 1fr; gap: 8px; align-items: center; }
@@ -307,6 +332,7 @@ button.sd-c-rolechip { cursor: pointer; } .sd-c-rolechip u { opacity: 0.8; } .sd
   .sd-cs__notices { gap: 4px; } .sd-cs__notice { padding: 6px 10px; font-size: 0.85rem; }
   .sd-cs__notice:nth-child(n+3) { display: none; }
   .sd-cs__seam { width: 26%; } .sd-cs__seam i { height: 3px; }
+  .sd-cs__crown { font-size: 1.6rem; } .sd-cs__throne { font-size: 1.3rem; }
   .sd-cs__climber { width: 34%; } .sd-cs__climber b { font-size: 1.6rem; } .sd-cs__flag { font-size: 1.2rem; width: 26%; } .sd-cs__jump { font-size: 1rem; }
 }
-@media (prefers-reduced-motion: reduce) { .sd-cs__sea, .sd-cs__me, .sd-cs__me b, .sd-cs__crate, .sd-cs__wave, .sd-cs__plank, .sd-cs__climber, .sd-cs__flag, .sd-cs__storm, .sd-cs__storm i, .sd-cs__updraft i, .sd-cs__back, .sd-cs__boss, .sd-cs__seam, .sd-cs__notice, .sd-cs__scene, .sd-cs__pow { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .sd-cs__crown, .sd-cs__stone, .sd-cs__charger, .sd-cs__double, .sd-cs__hill--king::after, .sd-cs__sea, .sd-cs__me, .sd-cs__me b, .sd-cs__crate, .sd-cs__wave, .sd-cs__plank, .sd-cs__climber, .sd-cs__flag, .sd-cs__storm, .sd-cs__storm i, .sd-cs__updraft i, .sd-cs__back, .sd-cs__boss, .sd-cs__seam, .sd-cs__notice, .sd-cs__scene, .sd-cs__pow { animation: none !important; } }

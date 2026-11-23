@@ -10,7 +10,7 @@ import type { FeedEvent, PlayerView, RoomView } from '../../../shared/showdown/s
 import type { Role, TeamId } from '../../../shared/showdown/types';
 import type { Arena } from '../../../shared/showdown/types';
 import { arenaWords } from './arenaWords';
-import { ANNOUNCER } from './voiceLines';
+import { ANNOUNCER, HILL_LINES } from './voiceLines';
 
 /** What the projector needs from the announcer and sound (src/games/showdown/audio.ts implements it). */
 export interface ShowdownSound {
@@ -102,6 +102,11 @@ export interface ProjectorState {
   splashes: { id: number; pupil: string; t: number }[];
   swims: { id: number; pupil: string; t: number }[];
   waveAt: number;
+  /** King of the Hill: the latest crown change (from whom, when), counted, and the crown's latest payments. */
+  crownSeq: number;
+  crownAt: number;
+  crownFrom: string | null;
+  crownPays: { id: number; holder: string; points: number; t: number }[];
   /** Round time of the latest event. */
   t: number;
   seq: number;
@@ -142,7 +147,7 @@ export function initialState(reply?: { view?: RoomView; players?: PlayerView[]; 
     weakUntil: view?.weakSpotUntil ?? 0, goldenUntil: view?.goldenUntil ?? 0, goldenSeq: 0, enrageUntil: view?.enrageUntil ?? 0,
     final: view?.finalStarted ?? false, finalUntil: 0, startSeq: 0, hitSeq: 0, bigHitSeq: 0, healAt: 0,
     beaten: view?.result === 'beaten', timeUp: view?.result === 'time', paused: view?.pausedAt != null, ended: view?.state === 'over',
-    recap: reply?.recap ?? null, tugSeq: 0, tugAt: 0, turn: null, turnSeq: 0, moves: [], damage: {}, lastHitter: null, bestStreak: null, worstRank: {}, againSeq: 0, seamInfo: seamsOf(view), dry: [], jumps: [], blown: null, splashes: [], swims: [], waveAt: 0, t: view?.t ?? 0, seq: 0,
+    recap: reply?.recap ?? null, tugSeq: 0, tugAt: 0, turn: null, turnSeq: 0, moves: [], damage: {}, lastHitter: null, bestStreak: null, worstRank: {}, againSeq: 0, seamInfo: seamsOf(view), dry: [], jumps: [], blown: null, splashes: [], swims: [], waveAt: 0, crownSeq: 0, crownAt: 0, crownFrom: null, crownPays: [], t: view?.t ?? 0, seq: 0,
   };
 }
 
@@ -325,6 +330,15 @@ export function projectorReduce(s: ProjectorState, event: FeedEvent): ProjectorS
       return { ...n, seq: n.seq + 1, swims: [...n.swims, { id: n.seq + 1, pupil: event.pupil, t: event.t }].slice(-8) };
     case 'wave':
       return { ...n, waveAt: event.t };
+    case 'crown': {
+      const who = event.holder ? (event.team ? `${TEAM_NAME[event.holder as TeamId]} TEAM` : n.view?.showNames ? nm(event.holder) : 'A NEW KING') : null;
+      return {
+        ...n, crownSeq: n.crownSeq + 1, crownAt: event.t, crownFrom: event.from,
+        banner: who ? { text: `👑 ${who} TAKES THE CROWN!`, kind: 'golden', until: event.t + 2600 } : n.banner,
+      };
+    }
+    case 'crown_paid':
+      return { ...n, seq: n.seq + 1, crownPays: [...n.crownPays, { id: n.seq + 1, holder: event.holder, points: event.points, t: event.t }].slice(-4) };
     case 'again':
       return afterAgain(n);
     case 'pause':
@@ -370,6 +384,7 @@ export function soundFor(e: FeedEvent, arena: Arena | null | undefined = 'boss')
       case 'washed_up': return { play: 'whoosh' };
       case 'swam_back': return { play: 'chime' };
       case 'wave': return { play: 'crack' };
+      case 'crown': return e.holder ? { play: 'fanfare', say: e.team ? HILL_LINES[e.holder as TeamId] : HILL_LINES.newKing } : { play: 'crack' };
       default: break;
     }
   }

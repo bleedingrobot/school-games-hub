@@ -6,7 +6,7 @@ export type Mode = 'class' | 'teams2' | 'teams4' | 'solo';
 export type Role = 'striker' | 'guard' | 'healer';
 export type TeamId = 'red' | 'blue' | 'gold' | 'green';
 /** The arenas a room can be (docs/SHOWDOWN-PLAN.md section 4). */
-export type Arena = 'boss' | 'goldrush' | 'skyclimb' | 'island';
+export type Arena = 'boss' | 'goldrush' | 'skyclimb' | 'island' | 'hill';
 
 export interface Player {
   id: string;
@@ -61,10 +61,12 @@ export interface Round {
   /** The time the round was last brought up to (ms from the start). */
   t: number;
   boss: { max: number; hp: number; phase: 1 | 2 | 3 };
-  /** Which arena: Boss Bounty (missing = 'boss'), Gold Rush (goldrush.ts), Sky Climb (skyclimb.ts) or Shrinking Island (island.ts). */
+  /** Which arena: Boss Bounty (missing = 'boss'), Gold Rush (goldrush.ts), Sky Climb (skyclimb.ts), Shrinking Island (island.ts) or King of the Hill (hill.ts). */
   arena?: Arena;
   /** Gold Rush: every seam opened so far (dry ones keep their dryAt). */
   seams?: import('./goldrush').Seam[];
+  /** King of the Hill: the crown (hill.ts). */
+  crown?: import('./hill').Crown;
   /** Which boss of the roster (shared/showdown/bosses.ts). Missing in rounds from before Stage 5: the River Titan. */
   bossId?: import('./bosses').BossId;
   players: Record<string, Player>;
@@ -154,7 +156,10 @@ export type ShowdownEvent =
   /** Shrinking Island: the water reached these pupils (now on rocks), one swam back, the big wave pushed these outwards. */
   | { type: 'washed_up'; t: number; pupils: string[] }
   | { type: 'swam_back'; t: number; pupil: string }
-  | { type: 'wave'; t: number; pupils: string[] };
+  | { type: 'wave'; t: number; pupils: string[] }
+  /** King of the Hill: the crown changed hands (holder null = knocked off), or paid its holder. Holder/from are pupil ids, or teams. */
+  | { type: 'crown'; t: number; holder: string | null; from: string | null; team: boolean }
+  | { type: 'crown_paid'; t: number; holder: string; points: number };
 
 export type Refusal = 'not_live' | 'not_playing' | 'too_soon' | 'dazed' | 'not_now' | 'no_such_team' | 'cooldown';
 export type Outcome = { ok: true; events: ShowdownEvent[] } | { ok: false; reason: Refusal; events: ShowdownEvent[] };

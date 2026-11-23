@@ -9205,6 +9205,113 @@ function wave(r, events, broke = () => false) {
 	tide(r, events);
 }
 //#endregion
+//#region shared/showdown/hill.ts
+const HILL = {
+	/** The castle needs this much more than the boss has health (tuned with the simulator to about 80% won). */
+	castle: {
+		class: 1.05,
+		teams2: 1.01,
+		teams4: 1.03,
+		solo: 1.02
+	},
+	/** The crown goes to the most points in this long. */
+	windowMs: 3e4,
+	/** How often the crown is checked (and pays). */
+	everyMs: 5e3,
+	/** What the crown pays its holder each check (doubled during the weak spot). */
+	crownPoints: 5,
+	/** A pupil must have at least this many recent points to take the crown. */
+	minPoints: 10
+};
+/** Who a point counts for: the pupil, or their team in team modes. */
+const whoOf = (r, p) => r.teams.length && p.team ? p.team : p.id;
+/** At the start: the castle is set and the crown is up for grabs. */
+function setHill(r) {
+	r.boss.max = Math.round(r.boss.max * HILL.castle[r.mode]);
+	r.boss.hp = r.boss.max;
+	r.crown = {
+		holder: null,
+		team: r.teams.length > 0,
+		since: 0,
+		nextAt: HILL.everyMs,
+		recent: [],
+		held: {}
+	};
+}
+/** A right answer's points count towards the crown. */
+function notePoints(r, p, points) {
+	if (!r.crown || points <= 0) return;
+	r.crown.recent.push([
+		r.t,
+		whoOf(r, p),
+		points
+	]);
+}
+/** The points each pupil (or team) scored in the last 30 seconds, most first. */
+function contenders(r, t = r.t) {
+	const c = r.crown;
+	if (!c) return [];
+	const sums = new Map();
+	for (const [at, who, pts] of c.recent) if (t - at <= HILL.windowMs) sums.set(who, (sums.get(who) ?? 0) + pts);
+	return [...sums.entries()].sort((a, b) => b[1] - a[1]);
+}
+function pay(r, holder, amount) {
+	if (r.crown?.team) {
+		const team = holder;
+		r.teamPoints[team] = (r.teamPoints[team] ?? 0) + amount;
+		const members = r.order.filter((id) => r.players[id].team === team);
+		members.forEach((id, i) => {
+			r.players[id].score += Math.floor(amount / members.length) + (i < amount % members.length ? 1 : 0);
+		});
+	} else if (r.players[holder]) r.players[holder].score += amount;
+}
+/** Every 5 seconds: the crown pays whoever wears it, then goes to whoever scored most in the last 30 seconds. */
+function crownTick(r, events) {
+	const c = r.crown;
+	if (!c) return;
+	c.recent = c.recent.filter(([at]) => r.t - at <= HILL.windowMs);
+	if (c.holder) {
+		const amount = HILL.crownPoints * (r.t < r.weakSpotUntil ? 2 : 1);
+		pay(r, c.holder, amount);
+		c.held[c.holder] = (c.held[c.holder] ?? 0) + HILL.everyMs;
+		events.push({
+			type: "crown_paid",
+			t: r.t,
+			holder: c.holder,
+			points: amount
+		});
+	}
+	const [best, second] = contenders(r);
+	const top = best && best[1] >= HILL.minPoints && (!second || best[1] > second[1]) ? best[0] : null;
+	if (top && top !== c.holder) {
+		events.push({
+			type: "crown",
+			t: r.t,
+			holder: top,
+			from: c.holder,
+			team: c.team
+		});
+		c.holder = top;
+		c.since = r.t;
+	}
+	c.nextAt += HILL.everyMs;
+}
+/** The challenger broke through: the crown is knocked off and up for grabs again. */
+function knockCrown(r, events) {
+	const c = r.crown;
+	if (!c || !c.holder) return;
+	events.push({
+		type: "crown",
+		t: r.t,
+		holder: null,
+		from: c.holder,
+		team: c.team
+	});
+	c.holder = null;
+	c.since = r.t;
+	c.recent = [];
+}
+//#endregion
 //#region shared/showdown/engine.ts
 /**
 * Class Showdown's rules as plain functions on one plain-JSON round (docs/SHOWDOWN-PLAN.md). The server holds the
@@ -9332,6 +9439,7 @@ function start(r) {
 	if (r.arena === "goldrush") openSeams(r);
 	if (r.arena === "skyclimb") setSummit(r);
 	if (r.arena === "island") setRaft(r);
+	if (r.arena === "hill") setHill(r);
 	return {
 		ok: true,
 		events: [{
@@ -9514,6 +9622,7 @@ function answer(r, id, correct, t, opts = {}) {
 		golden,
 		...seam !== void 0 ? { seam } : {}
 	});
+	if (r.arena === "hill") notePoints(r, p, points);
 	if (p.streak === 3 || p.streak % 5 === 0) events.push({
 		type: "streak",
 		t: r.t,
@@ -9633,6 +9742,10 @@ function advance(r, t) {
 				t: r.t
 			});
 		}]);
+		if (r.arena === "hill" && r.crown) {
+			const c = r.crown;
+			due.push([c.nextAt, () => crownTick(r, events)]);
+		}
 		if (planned) due.push([planned.at, () => {
 			r.nextPlanned++;
 			runPlanned(r, planned.kind, events);
@@ -9766,6 +9879,7 @@ function finishWindUp(r, events) {
 	const enraged = w.enraged;
 	r.windUp = null;
 	if (r.arena === "skyclimb") blowBack(r, events);
+	if (r.arena === "hill" && Object.values(w.groups).some((g) => g.done === "broke")) knockCrown(r, events);
 	if (r.arena === "island") {
 		const broke = new Set(Object.keys(w.groups).filter((k) => w.groups[k].done === "broke"));
 		wave(r, events, (p) => broke.has(groupOf(r, p) ?? ""));
@@ -9976,7 +10090,7 @@ function recap(r) {
 		team,
 		points: r.teamPoints[team] ?? 0,
 		damage: Math.round(r.teamDamage[team] ?? 0)
-	})).sort((a, b) => (r.mode === "teams2" ? b.damage - a.damage : 0) || b.points - a.points);
+	})).sort((a, b) => (r.mode === "teams2" && r.arena !== "hill" ? b.damage - a.damage : 0) || b.points - a.points);
 	const top = r.order.map((k) => r.players[k]).sort((a, b) => b.score - a.score).slice(0, 10).map((p) => ({
 		pupil: p.id,
 		score: p.score
@@ -10170,12 +10284,13 @@ const ROLES = [
 	"guard",
 	"healer"
 ];
-/** Arenas a room can be opened as (each arena's rules: goldrush.ts, skyclimb.ts, island.ts). */
+/** Arenas a room can be opened as (each arena's rules: goldrush.ts, skyclimb.ts, island.ts, hill.ts). */
 const ARENAS = [
 	"boss",
 	"goldrush",
 	"skyclimb",
-	"island"
+	"island",
+	"hill"
 ];
 const MAX_TRIES = 8;
 const MAX_ANSWER_MS = 6e4;
@@ -10240,7 +10355,15 @@ function roomView(row, r) {
 		} : null,
 		result: r.result,
 		showNames: row.showNames,
-		island: r.arena === "island" ? islandView(r) : null
+		island: r.arena === "island" ? islandView(r) : null,
+		crown: r.arena === "hill" && r.crown ? {
+			holder: r.crown.holder,
+			team: r.crown.team,
+			since: r.crown.since,
+			nextAt: r.crown.nextAt,
+			contenders: contenders(r).slice(0, 3),
+			held: { ...r.crown.held }
+		} : null
 	};
 }
 function islandView(r) {

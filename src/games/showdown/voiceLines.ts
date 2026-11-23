@@ -57,4 +57,21 @@ export const ISLAND_LINES = {
   done: 'The raft is ready! Sail away!',
 } as const;
 
-export const allVoiceLines = (): string[] => [...Object.values(ANNOUNCER), ...Object.values(GOLD_RUSH_LINES), ...Object.values(SKY_CLIMB_LINES), ...Object.values(ISLAND_LINES), ...BOSSES.map((b) => b.roar)];
+/** King of the Hill says these in place of the boss lines, and who takes the crown. */
+export const HILL_LINES = {
+  joinNow: 'King of the Hill! Join now!',
+  start: 'Score fast to take the crown!',
+  charge: 'A challenger charges the hill!',
+  held: 'We held the hill!',
+  broke: 'Crash! The crown is up for grabs!',
+  double: 'Double crown!',
+  phase: 'The walls are rising!',
+  done: 'The castle is built!',
+  newKing: 'A new king of the hill!',
+  red: 'Red team takes the crown!',
+  blue: 'Blue team takes the crown!',
+  gold: 'Gold team takes the crown!',
+  green: 'Green team takes the crown!',
+} as const;
+
+export const allVoiceLines = (): string[] => [...Object.values(HILL_LINES), ...Object.values(ANNOUNCER), ...Object.values(GOLD_RUSH_LINES), ...Object.values(SKY_CLIMB_LINES), ...Object.values(ISLAND_LINES), ...BOSSES.map((b) => b.roar)];
