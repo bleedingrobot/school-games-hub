@@ -8549,7 +8549,7 @@ const PASSIVE_STEP = {
 	boots: .08,
 	tome: .08,
 	crown: .1,
-	holywater: .3,
+	holywater: .4,
 	snow: .08,
 	gauntlets: .1,
 	magnet: .25,
@@ -8626,7 +8626,7 @@ const HEROES = [
 		speed: 3.1,
 		health: 100,
 		weapon: "aura",
-		regen: 1,
+		regen: 1.5,
 		unlock: "boss1"
 	}),
 	hero({
