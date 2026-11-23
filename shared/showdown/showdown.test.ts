@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { recap } from './awards';
 import { advance, answer, behind, chooseRole, enrage, goldenNext, join, moveToTeam, newRound, start } from './engine';
+import { chooseSeam, GOLDRUSH, openSeamsOf } from './goldrush';
 import { makeSchedule } from './schedule';
 import { playRound } from './sim';
 import { balanceTeams } from './teams';
@@ -293,5 +294,39 @@ describe('Class Showdown rules', () => {
     expect(small.awards.length).toBeLessThanOrEqual(8);
     expect(new Set(small.awards.map((x) => x.kind)).size).toBe(small.awards.length);
     expect(new Set(small.awards.map((x) => x.pupil)).size).toBeLessThanOrEqual(3);
+  });
+  it('gold rush: seams pay by how rich they are, a crowded seam splits, dry seams reopen, and it plays to about 80% won', () => {
+    const r = newRound({ seed: 9, mode: 'solo', lengthMin: 10, bossHealth: 100000 });
+    r.arena = 'goldrush';
+    for (const p of ids(12)) join(r, p);
+    start(r);
+    r.schedule = [];
+    expect(openSeamsOf(r)).toHaveLength(GOLDRUSH.open);
+    const gold = openSeamsOf(r).find((x) => x.kind === 'gold')!;
+    const rich = openSeamsOf(r).find((x) => x.kind === 'rich') ?? openSeamsOf(r).find((x) => x.kind === 'gem')!;
+    // One pupil alone on each: the richer seam pays more.
+    chooseSeam(r, 'p1', gold.id);
+    chooseSeam(r, 'p2', rich.id);
+    const a = hit(answer(r, 'p1', true, 1000).events);
+    const b = hit(answer(r, 'p2', true, 1000).events);
+    expect(b.damage).toBeGreaterThan(a.damage);
+    expect(b.points).toBeGreaterThan(a.points);
+    expect(a.seam).toBe(gold.id);
+    // Everyone piles onto the rich seam: past its room, each dig there is worth less.
+    for (let i = 3; i <= 12; i++) { chooseSeam(r, `p${i}`, rich.id); answer(r, `p${i}`, true, 1500); }
+    expect(hit(answer(r, 'p2', true, 6000).events).damage).toBeLessThan(b.damage);
+    // Dig a seam dry: it closes and a new one opens, and its diggers move on by themselves.
+    const target = openSeamsOf(r).find((x) => x.id === gold.id)!;
+    target.left = 1;
+    const evs = answer(r, 'p1', true, 9000).events;
+    expect(of(evs, 'seam_dry')[0].seam).toBe(gold.id);
+    expect(of(evs, 'seam_new')).toHaveLength(1);
+    expect(openSeamsOf(r)).toHaveLength(GOLDRUSH.open);
+    expect(chooseSeam(r, 'p1', gold.id)).toBe(false);
+    expect(hit(answer(r, 'p1', true, 14000).events).seam).not.toBe(gold.id);
+    // Tuned with the simulator like the bosses: typical classes win most rounds but not all.
+    const won = Array.from({ length: 24 }, (_, i) => playRound({ seed: 500 + i, size: 24, lengthMin: 10, mode: 'class', arena: 'goldrush' }).beaten).filter(Boolean).length;
+    expect(won).toBeGreaterThanOrEqual(14);
+    expect(won).toBeLessThanOrEqual(23);
   });
 });

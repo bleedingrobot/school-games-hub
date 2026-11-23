@@ -8,6 +8,7 @@ import { SHOWDOWN } from './config';
 import { bossHealth } from './bossHealth';
 import { makeSchedule, hashSeed } from './schedule';
 import { reshuffle, teamForLateJoiner } from './teams';
+import { dig, openSeams } from './goldrush';
 import type { Mode, Outcome, Player, Role, Round, ShowdownEvent, TeamId } from './types';
 
 export function newRound(opts: { seed: number; mode: Mode; lengthMin?: number; bossHealth?: number }): Round {
@@ -87,6 +88,7 @@ export function start(r: Round): Outcome {
   r.boss.max = r.bossOverride ?? bossHealth(r.mode, r.lengthMin, r.order.length);
   r.boss.hp = r.boss.max;
   r.roleSwapUntil = SHOWDOWN.roleSwapMs;
+  if (r.arena === 'goldrush') openSeams(r);
   return { ok: true, events: [{ type: 'start', t: 0, bossMax: r.boss.max }] };
 }
 
@@ -163,7 +165,7 @@ export function answer(r: Round, id: string, correct: boolean, t: number, opts: 
     streakTimes(p.streak) *
     (weakSpot ? (isBehind && r.teams.length ? SHOWDOWN.weakSpot.catchUpTimes : SHOWDOWN.weakSpot.times) : 1) *
     (golden ? SHOWDOWN.golden.times : 1);
-  const points = Math.round(SHOWDOWN.pointsPerCorrect * times);
+  let points = Math.round(SHOWDOWN.pointsPerCorrect * times);
 
   // What the role does with it.
   let damage = SHOWDOWN.damage[p.role] * times;
@@ -174,6 +176,15 @@ export function answer(r: Round, id: string, correct: boolean, t: number, opts: 
       p.revives++;
       events.push({ type: 'revive', t: r.t, pupil: id, woke });
     }
+  }
+  // Gold Rush: what the dig is worth depends on the seam (rich pays more, a crowded one splits).
+  let seam: number | undefined;
+  if (r.arena === 'goldrush' && damage > 0) {
+    const before = damage;
+    damage = dig(r, p, damage, events);
+    seam = p.seam ?? undefined;
+    // Gold is the score in Gold Rush too, so picking a good seam counts in every mode.
+    points = Math.max(1, Math.round(points * (damage / before)));
   }
   const group = groupOf(r, p);
   if (r.windUp && group && r.windUp.groups[group] && !r.windUp.groups[group].done) {
@@ -193,7 +204,7 @@ export function answer(r: Round, id: string, correct: boolean, t: number, opts: 
     r.teamPoints[p.team] = (r.teamPoints[p.team] ?? 0) + points;
     r.teamDamage[p.team] = (r.teamDamage[p.team] ?? 0) + damage;
   }
-  events.push({ type: 'hit', t: r.t, pupil: id, team: p.team, role: p.role, points, damage, streak: p.streak, times, weakSpot, golden });
+  events.push({ type: 'hit', t: r.t, pupil: id, team: p.team, role: p.role, points, damage, streak: p.streak, times, weakSpot, golden, ...(seam !== undefined ? { seam } : {}) });
   if (p.streak === 3 || p.streak % 5 === 0) events.push({ type: 'streak', t: r.t, pupil: id, streak: p.streak });
 
   // Catch-up: a lucky chest now and then for pupils (or a team) at the back.
