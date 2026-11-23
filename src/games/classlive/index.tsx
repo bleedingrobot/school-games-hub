@@ -37,6 +37,7 @@ export const classLive: GameDefinition = {
   Play: ClassLivePage,
   ranked: false,
   noBots: true,
+  group: 'complex-maths',
   teacherSwitch: true,
   teacher: {
     switch: { useValue: useClassLiveClassSwitch, save: saveClassLiveEnabled, about: CLASSLIVE_ABOUT },
