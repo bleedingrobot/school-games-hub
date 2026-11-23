@@ -130,7 +130,7 @@
 .sd-p-tug i { position: absolute; left: 50%; top: -5px; width: 24px; height: 24px; margin-left: -12px; border-radius: 50%; background: #fff; box-shadow: 0 0 12px #fff; transition: transform 0.4s; }
 
 /* Crew, dome, banners */
-.sd-p-crewzone { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; padding: 0 2vw 1vh; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.sd-p-crewzone { position: absolute; left: 0; right: 0; bottom: 0; z-index: 8; /* above the cave-in dust (7) so names stay readable */ padding: 0 2vw 1vh; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .sd-p-crew { position: relative; list-style: none; margin: 0; padding: 0.9em 0 0; width: 100%; max-height: 21vh; overflow: hidden; display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 0.35em 0.45em; max-width: 1500px; font-size: 16px; }
 .sd-p-chip { position: relative; display: flex; align-items: center; gap: 6px; padding: 0.15em 0.7em 0.15em 0.2em; border-radius: 999px; background: rgba(5,14,22,0.75); border: 0.15em solid var(--tc, rgba(255,255,255,0.45)); font-weight: 800; font-size: 1em; line-height: 1.2; white-space: nowrap; }
 .sd-p-chip__role { display: grid; place-items: center; width: 1.8em; height: 1.8em; border-radius: 50%; font-weight: 900; overflow: hidden; background: #355; }
@@ -310,11 +310,11 @@
 .sd-p-lb__row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sd-p-lb__up { animation: sd-p-lbup 1.4s ease-out; }
 @keyframes sd-p-lbup { 0% { background-color: rgba(125,255,176,0.9); box-shadow: 0 0 24px #7dffb0; } 100% { box-shadow: 0 0 0 transparent; } }
-.sd-p-moves { position: absolute; right: calc(100% + 1.2vw); top: 6%; display: grid; gap: 1vh; justify-items: end; pointer-events: none; }
+.sd-p-moves { position: absolute; left: 0; right: 0; bottom: 1vh; justify-items: center !important; /* over the foot of the top 10, off the map and the names */ display: grid; gap: 1vh; justify-items: end; pointer-events: none; }
 .sd-p-bigmove { display: grid; justify-items: end; padding: 1vh 1.6vw; border-radius: 16px; background: linear-gradient(90deg, #1f9d55, #7dffb0); color: #052a14; box-shadow: 0 0 36px #7dffb0; white-space: nowrap; animation: sd-p-bigmove 3.8s ease-out both; }
-.sd-p-bigmove strong { font-size: clamp(1.2rem, 4vh, 2.6rem); font-weight: 900; }
+.sd-p-bigmove strong { font-size: clamp(1rem, 3vh, 1.9rem); font-weight: 900; }
 .sd-p-bigmove small { font-size: clamp(0.8rem, 2vh, 1.2rem); font-weight: 800; }
-@keyframes sd-p-bigmove { 0% { opacity: 0; transform: translateX(14vw) scale(0.6); } 8% { opacity: 1; transform: translateX(0) scale(1.15); } 14% { transform: scale(1); } 85% { opacity: 1; } 100% { opacity: 0; transform: translateX(-3vw); } }
+@keyframes sd-p-bigmove { 0% { opacity: 0; transform: scale(0.6); } 8% { opacity: 1; transform: scale(1.15); } 14% { transform: scale(1); } 85% { opacity: 1; } 100% { opacity: 0; transform: translateY(-1vh); } }
 .sd-p-bounty { position: absolute; left: 2vw; top: calc(var(--bar-h, 50px) + 9.5vh); width: min(23vw, 340px); z-index: 4; background: rgba(5,14,22,0.7); border: 3px solid rgba(255,210,63,0.6); border-radius: 18px; padding: 10px 14px; display: grid; gap: 1vh; }
 .sd-p-bounty h2 { margin: 0; font-size: clamp(1.1rem, 2.6vh, 1.7rem); color: var(--sd-gold); }
 .sd-p-bounty__row { display: grid; gap: 0; padding: 0.6vh 10px; border-radius: 10px; background: rgba(255,255,255,0.08); }
@@ -605,3 +605,8 @@
   .sd-p--gr .sd-p-flag__cloth small { display: none; }
   .sd-p--gr .sd-p-flag .sd-p-pile { height: 6vh; }
 }
+
+/* The open teacher bar sits over the top of the recap: push the recap down while it's open. */
+.sd-p:has(.sd-p-bar--open) .sd-p-recap { padding-top: 128px; }
+/* Gold Rush's win title is longer than VICTORY!: keep it on one line, clear of the gold heap. */
+.sd-p-recap--gold .sd-p-recap__title { font-size: clamp(2.8rem, 10vw, 9rem); white-space: nowrap; align-self: start; margin-top: 8vh; }
