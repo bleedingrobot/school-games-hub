@@ -652,6 +652,262 @@
       "kind": "card",
       "file": "showdown",
       "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "back-sky-climb",
+      "prompt": "A tall majestic mountain cliff face seen from below rising into a bright blue sky, the snowy summit peak at the top centre, wisps of white cloud around its middle, rocky ledges and a few pine trees at the base, open sky on both sides, no characters, no people. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "sky-climb",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "sc-climber",
+      "prompt": "A cheerful young adventurer climber in a red helmet and harness with a coil of rope, climbing pose, cute storybook style, three-quarter view, full body. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "skyclimb",
+      "file": "climber",
+      "max": 360,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "sc-summit-flag",
+      "prompt": "A bright red triangular flag on a short wooden pole, waving in the wind. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "skyclimb",
+      "file": "summit-flag",
+      "max": 400,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "sc-summit",
+      "prompt": "A single snowy mountain peak, rocky grey sides and a white snow cap, glowing in warm sunlight, wide base. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "skyclimb",
+      "file": "summit",
+      "max": 900,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "sc-cloud",
+      "prompt": "A single fluffy white storybook cloud, soft and puffy. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "skyclimb",
+      "file": "cloud",
+      "max": 500,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "back-shrinking-island",
+      "prompt": "A top-down bird's-eye view of a bright turquoise tropical sea with gentle waves and sparkles, coral and shells under clear water near the edges, a few tiny rocks at the edges, open empty water in the middle, no island, no land in the centre, no boats, no characters. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "shrinking-island",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "is-palm",
+      "prompt": "A single tropical palm tree with green fronds and coconuts, storybook style. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "island",
+      "file": "palm",
+      "max": 400,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "is-rock",
+      "prompt": "A single small grey sea rock with a little green seaweed, seen slightly from above. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "island",
+      "file": "rock",
+      "max": 400,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "back-king-hill",
+      "prompt": "A grassy round hill rising in the middle of a sunny flower meadow under a bright blue sky, a flat top with a ring of standing stones, colourful pennant flags in the distance, no characters, no people. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "king-hill",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "kh-crown",
+      "prompt": "A shining golden royal crown with red and blue jewels, sparkling. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "hill",
+      "file": "crown",
+      "max": 400,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "kh-throne",
+      "prompt": "A small carved stone throne with a red velvet cushion on a little grassy mound. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "hill",
+      "file": "throne",
+      "max": 500,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "back-auction-house",
+      "prompt": "A grand storybook auction hall interior, a stage with red velvet curtains and a wooden podium, golden lamps, rows of empty seats, a bright spotlight on an empty marble pedestal, no characters, no people. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "auction-house",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "ah-gavel",
+      "prompt": "A polished wooden auctioneer's gavel with a gold band. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "auction",
+      "file": "gavel",
+      "max": 400,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "ah-goblet",
+      "prompt": "A golden jewelled goblet, treasure, sparkling. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "auction",
+      "file": "goblet",
+      "max": 400,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "ah-egg",
+      "prompt": "A ornate jewelled golden egg on a little stand, treasure, sparkling. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "auction",
+      "file": "egg",
+      "max": 400,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "ah-map",
+      "prompt": "A rolled-up ancient treasure map with a red wax seal, slightly unrolled. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "auction",
+      "file": "map",
+      "max": 400,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "ah-dragon",
+      "prompt": "A small golden dragon statue on a stone base, treasure, friendly. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "auction",
+      "file": "dragon",
+      "max": 400,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "ah-orb",
+      "prompt": "A glowing purple crystal orb on a golden stand, magical, treasure. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "auction",
+      "file": "orb",
+      "max": 400,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "ah-lamp",
+      "prompt": "A shiny golden magic oil lamp with swirls of sparkle, treasure. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "auction",
+      "file": "lamp",
+      "max": 400,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "ah-coins",
+      "prompt": "A neat pile of shiny gold coins, storybook style. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "auction",
+      "file": "coins",
+      "max": 400,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
     }
   ],
   "_cutouts": "Paint cut-outs (kind cut) with style c on plain white, then rembg in tidy; scenes and the card with style s."
