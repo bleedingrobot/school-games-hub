@@ -271,7 +271,7 @@ select is(jsonb_array_length(public.my_moves_left() -> 'monsters' -> 'eggs'), 1,
 select is(public.my_moves_left() -> 'monsters' -> 'lastDay', '"2026-11-03"'::jsonb, '... and the last battle day');
 select pg_temp.reset();
 select is(public.monster_counts_for_cap('{"map": "fire-mountain", "giant": "snorumble", "steps": [{"q": {}}]}'), false,
-  'a sleeping giant''s battle does not count towards the 12 a day');
+  'a sleeping giant''s battle does not count towards the 20 a day');
 select is(public.monster_counts_for_cap('{"map": "fire-mountain", "steps": [{"q": {}}]}'), true, '... but a wild battle there does');
 
 select * from finish();
