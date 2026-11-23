@@ -1,4 +1,4 @@
--- Class Live (migrations 20261124000100_classlive.sql and 20261124000600_classlive_mural.sql, id classlive): rooms, the hidden session, the projector's screen
+-- Class Live (migrations 20261124000100_classlive.sql and 20261124000700_classlive_mural.sql, id classlive): rooms, the hidden session, the projector's screen
 -- (teachers only), each pupil's own row, the compare-and-swap save, the switch, and the join pop-up in hub_here().
 -- Run on a throw-away copy: scripts/scratch-db.sh classlive, then scripts/scratch-test.sh classlive supabase/tests/database/classlive.test.sql
 begin;

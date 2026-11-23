@@ -1,6 +1,6 @@
 # Class Live: plan
 
-**Status: stages 1 and 2 merged (PRs #771, #772) and switched on for every class (PR #773), 24 Nov 2026 NZ. Stage 3 (Mystery Mural) built: server, `classlive_questions` (migration `20261124000600`), screens. Next: stage 4 (rewards, voice, art plan).** James asked (23 Nov 2026) for more creative whole-class games beyond Class Showdown: the projector is the show, every pupil's device is a controller, played live together. Game id `classlive`, migration `20261124000100` (check again: `node scripts/migration-numbers.mjs`).
+**Status: stages 1 and 2 merged (PRs #771, #772) and switched on for every class (PR #773), 24 Nov 2026 NZ. Stage 3 (Mystery Mural) built: server, `classlive_questions` (migration `20261124000700`), screens. Next: stage 4 (rewards, voice, art plan).** James asked (23 Nov 2026) for more creative whole-class games beyond Class Showdown: the projector is the show, every pupil's device is a controller, played live together. Game id `classlive`, migration `20261124000100` (check again: `node scripts/migration-numbers.mjs`).
 
 ## The short version
 
@@ -113,6 +113,6 @@
 
 - Server: `ask` keeps the pupil's next way-A question (`makeQuestion` skips `isUntimed` skills), `answer` marks it on the server, claims it once inside the room's save (`classlive_save(..., claim)`, 'answered' if already claimed) and records it with `recordMathsAnswers(..., 'classlive')` (once key `classlive:<room>:<seed>:<slot>`). A right answer earns a flip (at most 3 saved up). `play {tile}` flips, `play {guess}` guesses; teacher `reveal`.
 - Pupils' room view never has the picture until it's revealed (only the tile pattern and the choices).
-- Database: `20261124000600_classlive_mural.sql` adds `classlive_questions` (no pupil or teacher access) and the open / load / keep question functions; the save gained `claim` (old 7-argument save dropped, same calls still work).
+- Database: `20261124000700_classlive_mural.sql` adds `classlive_questions` (no pupil or teacher access) and the open / load / keep question functions; the save gained `claim` (old 7-argument save dropped, same calls still work).
 - Tests: one server test with a pretend class of 30 (flips, claim once, guesses, reveal); 6 of 8 in the budget. Database tests 28.
 
