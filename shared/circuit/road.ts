@@ -147,3 +147,54 @@ export function countRuns(road: Road, cell: Cell): number {
   }
   return n;
 }
+
+// ——— Volt's guided first go (Stage 6): no gaps until the first jump ———
+
+/** True if a whole row is gap (the gaps a guided go bridges; a gap beside a trace is just the road's edge). */
+export const gapRow = (road: Road, row: number): boolean => row >= 0 && row < road.length && road.cells.slice(row * LANES, row * LANES + LANES) === '.'.repeat(LANES);
+
+/** The gap runs (first and last row of each run of whole-gap rows), in road order. */
+export function gapRuns(road: Road): Spot[] {
+  const runs: Spot[] = [];
+  for (let row = 0; row < road.length; row++) {
+    if (!gapRow(road, row)) continue;
+    if (gapRow(road, row - 1)) runs[runs.length - 1].last = row;
+    else runs.push({ first: row, last: row });
+  }
+  return runs;
+}
+
+const bridged = new WeakMap<Road, Map<number, Road>>();
+
+/**
+ * The road with every whole-gap row before `upTo` bridged with plain trace, in the lanes of the last real row before the
+ * gap (so the bridge carries on the road's shape). Read once per road and `upTo`.
+ */
+export function bridgedRoad(road: Road, upTo: number): Road {
+  let byEnd = bridged.get(road);
+  if (!byEnd) bridged.set(road, (byEnd = new Map()));
+  let out = byEnd.get(upTo);
+  if (out) return out;
+  const cells = road.cells.split('');
+  let shape = '-'.repeat(LANES);
+  for (let row = 0; row < Math.min(upTo, road.length); row++) {
+    const text = road.cells.slice(row * LANES, row * LANES + LANES);
+    if (!gapRow(road, row)) {
+      shape = text;
+      continue;
+    }
+    for (let lane = 0; lane < LANES; lane++) if (shape[lane] !== '.') cells[row * LANES + lane] = '-';
+  }
+  out = { ...road, cells: cells.join('') };
+  byEnd.set(upTo, out);
+  return out;
+}
+
+/**
+ * After the guided go's first jump at `row`: the bridges left (rows before the returned row). A bridge the racer is on stays
+ * (the rest of its run too); every gap after it is real.
+ */
+export function bridgesAfterJump(road: Road, row: number): number {
+  const run = gapRuns(road).find((r) => row >= r.first && row <= r.last);
+  return run ? run.last + 1 : Math.max(1, row + 1);
+}

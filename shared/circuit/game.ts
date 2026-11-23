@@ -165,7 +165,56 @@ export interface CircuitSave {
   maths?: 'off' | 'choose' | 'on';
   /** The pupil's racer (Stage 5; RACERS). Missing from an old reply: Spark. */
   racer?: RacerId;
+  /** Volt's tips the pupil has seen (Stage 6; TIPS). Missing from an old reply: none. */
+  seen?: TipId[];
 }
+
+// ——— Volt's guide for new players (Stage 6, docs/CIRCUIT-PLAN.md section 5.7) ———
+
+/** The road Volt guides: the first one. Only it can be played as a guided go (no gaps until the first jump). */
+export const GUIDE_ROAD = 'power-on';
+/**
+ * Volt's once-only tips, saved per pupil (circuit_seen; change the list with circuit_mark_seen's check in
+ * 20261123000500_circuit_guide.sql): the guided first go on road 1, the first short-circuit tiles, the first low battery,
+ * the first crash and the first data gate.
+ */
+export const TIPS = ['guide', 'short', 'battery', 'crash', 'gate'] as const;
+export type TipId = (typeof TIPS)[number];
+
+// ——— Achievements (Stage 6, docs/CIRCUIT-PLAN.md section 5.5) ———
+
+/** The achievement measures, worked out from a pupil's roads: the same as circuit_counts() in the migration. */
+export function circuitCounts(roads: Record<string, RoadProgress>): Record<string, number> {
+  const done = (id: string) => (roads[id]?.finishes ?? 0) > 0;
+  const mine = ROADS.filter((r) => done(r.id));
+  return {
+    circuit_roads: mine.length,
+    circuit_clean: mine.filter((r) => roads[r.id].clean).length,
+    circuit_golds: mine.filter((r) => roads[r.id].medal === 'gold').length,
+    circuit_worlds_open: WORLDS.filter((_, w) => worldOpen(roads, w)).length,
+    circuit_core_roads: WORLDS[WORLDS.length - 1].roads.filter((r) => done(r.id)).length,
+    circuit_hard: mine.reduce((n, r) => n + (roads[r.id].hardFinishes ?? 0), 0),
+  };
+}
+
+/** The achievements (the same rows as the migration's achievement_types; ids, names and goals change together). */
+export const ACHIEVEMENTS = [
+  { id: 'circuit-first-boot', name: 'First Boot', emoji: '🔌', measure: 'circuit_roads', goal: 1, how: 'Finish your first Circuit Racer road.', tier: 1 },
+  { id: 'circuit-clean-run', name: 'Clean Run', emoji: '✨', measure: 'circuit_clean', goal: 1, how: 'Finish a Circuit Racer road without crashing.', tier: 1 },
+  { id: 'circuit-overclocked', name: 'Overclocked', emoji: '⚡', measure: 'circuit_roads', goal: 10, how: 'Finish 10 Circuit Racer roads.', tier: 2 },
+  { id: 'circuit-gold', name: 'Gold Circuit', emoji: '🥇', measure: 'circuit_golds', goal: 1, how: 'Win a gold medal on a Circuit Racer road.', tier: 2 },
+  { id: 'circuit-world-hopper', name: 'World Hopper', emoji: '🌐', measure: 'circuit_worlds_open', goal: 2, how: 'Open the Graphics Card in Circuit Racer.', tier: 1 },
+  { id: 'circuit-cloud-rider', name: 'Cloud Rider', emoji: '☁️', measure: 'circuit_worlds_open', goal: 4, how: 'Open The Cloud in Circuit Racer.', tier: 2 },
+  { id: 'circuit-core', name: 'Core Complete', emoji: '💠', measure: 'circuit_core_roads', goal: 6, how: 'Finish all 6 Quantum Core roads in Circuit Racer.', tier: 3 },
+  { id: 'circuit-golden-board', name: 'Golden Board', emoji: '🏆', measure: 'circuit_golds', goal: 30, how: 'Win gold on all 30 Circuit Racer roads.', tier: 3 },
+  { id: 'circuit-firewall', name: 'Firewall Free', emoji: '🔥', measure: 'circuit_hard', goal: 1, how: 'Finish a Circuit Racer road in hard mode.', tier: 2 },
+] as const;
+
+/** The achievements a pupil has reached with these roads (the preview's pretend earn moment). */
+export const achievementsReached = (roads: Record<string, RoadProgress>): string[] => {
+  const counts = circuitCounts(roads);
+  return ACHIEVEMENTS.filter((a) => (counts[a.measure] ?? 0) >= a.goal).map((a) => a.id);
+};
 
 /**
  * The racers (Stage 5): Spark from the start, and one more each time a world opens. `colour` tints the 3D racer and its
@@ -249,6 +298,8 @@ export interface FinishReport {
   crashes: number;
   /** Hard mode: replayed with Auto-Pilot off and the count-down clock, and saved as a hard finish. */
   hard: boolean;
+  /** Volt's guided go (GUIDE_ROAD only, never hard): replayed with the gaps bridged until the first jump. */
+  guide: boolean;
 }
 
 export function parseFinish(input: unknown): FinishReport | null {
@@ -258,7 +309,8 @@ export function parseFinish(input: unknown): FinishReport | null {
   if (typeof r.seed !== 'string' || r.seed.length > 80 || typeof r.stamp !== 'string' || r.stamp.length > 200) return null;
   if (typeof r.inputs !== 'string' || r.inputs.length > MAX_INPUTS_TEXT) return null;
   const crashes = Number.isInteger(r.crashes) && (r.crashes as number) >= 0 ? Math.min(r.crashes as number, MAX_CRASHES) : 0;
-  return { road: r.road, seed: r.seed, stamp: r.stamp, inputs: r.inputs, crashes, hard: r.hard === true };
+  const hard = r.hard === true;
+  return { road: r.road, seed: r.seed, stamp: r.stamp, inputs: r.inputs, crashes, hard, guide: r.guide === true && r.road === GUIDE_ROAD && !hard };
 }
 
 /** A finish the server has replayed itself. */
@@ -287,7 +339,7 @@ export function judgeFinish(report: FinishReport, nowSeconds: number, maths: Rac
   if (!log) return { ok: false, problem: 'inputs not readable' };
   // Hard mode replays with Auto-Pilot off and the clock: past the clock is no finish at all.
   const end = replay(road, log, {
-    refills: maths.refills ?? null, gateRight: maths.gateRight ?? null, autoPilot: !report.hard, timeLimit: report.hard ? hardSeconds(report.road) * STEPS_PER_SECOND : 0,
+    refills: maths.refills ?? null, gateRight: maths.gateRight ?? null, autoPilot: !report.hard, timeLimit: report.hard ? hardSeconds(report.road) * STEPS_PER_SECOND : 0, guide: report.guide,
   });
   if (end.outcome !== 'finished') return { ok: false, problem: 'no finish' };
   const made = seedTime(report.seed);

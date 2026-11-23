@@ -4,6 +4,7 @@
  *   load    the pupil's own roads (best time, medal, stars), how many of today's 5 finishes are left, the maths switch and
  *           their racer (Spark if the saved one isn't unlocked);
  *   racer   saves the pupil's racer, if its world is open (Stage 5);
+ *   seen    saves which of Volt's once-only tips the pupil has seen (Stage 6; TIPS), so each shows once;
  *   start   hands out a seed with a stamp (made for this pupil and road) for one go at an open road, unless today's 5
  *           finishes are used up. With maths on (the teacher's `circuit_maths`), it makes one question per recharge port
  *           and data gate from the pupil's focus (way A), keeps them where pupils can't read them, and sends only what to
@@ -20,8 +21,8 @@
  * Logic only, with the database passed in (`Services`), so handler.test.ts and the preview run it without Deno.
  */
 import {
-  finishesLeft, judgeFinish, makeSeed, parseFinish, racerById, racerOpen, roadById, roadNeeds, roadOpen, seedProblem, stampText,
-  type CircuitSave, type JudgedFinish, type RacerId, type RoadProgress,
+  finishesLeft, judgeFinish, makeSeed, parseFinish, racerById, racerOpen, roadById, roadNeeds, roadOpen, seedProblem, stampText, TIPS,
+  type CircuitSave, type JudgedFinish, type RacerId, type RoadProgress, type TipId,
 } from '../../../shared/circuit/game';
 import { GATE_MS, gateLayout, gateValue, refillsFor, runMaths, slotPlan, type RunMaths } from '../../../shared/circuit/maths';
 import type { Road } from '../../../shared/circuit/road';
@@ -29,6 +30,7 @@ import type { FactAnswer } from '../../../shared/maths/leitner';
 import { makeRunQuestions, markQuestion, sameAnswer, type MathsContext } from '../../../shared/maths/serverQuestions';
 import type { Question } from '../../../shared/maths/skillPack';
 import type { MathsSwitch } from '../../../shared/space/mathsSwitch';
+import { readKinds } from '../../../shared/kit/seen';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
 import { RateLimiter } from '../_shared/limits';
 
@@ -54,7 +56,9 @@ export interface Services {
   /** A random number from 0 up to 1 (the question pack). */
   random(): number;
   /** The pupil's roads and finishes today (NZ day). */
-  load(player: string): Promise<{ roads: Record<string, RoadProgress>; today: number; racer?: RacerId } | 'busy'>;
+  load(player: string): Promise<{ roads: Record<string, RoadProgress>; today: number; racer?: RacerId; seen?: TipId[] } | 'busy'>;
+  /** Adds tips to the ones the pupil has seen (Stage 6). */
+  markSeen(player: string, tips: TipId[]): Promise<boolean | 'busy'>;
   /** Saves the pupil's racer (Stage 5). The handler has checked it is unlocked. */
   setRacer(player: string, racer: RacerId): Promise<boolean | 'busy'>;
   /**
@@ -112,8 +116,17 @@ export function makeHandler(services: Services) {
       const saved = await services.load(player);
       if (saved === 'busy') return reply(503, { error: "We couldn't load your roads just now." });
       const racer = racerOpen(saved.roads, saved.racer) ? saved.racer : 'spark';
-      const save: CircuitSave = { ...saved, left: finishesLeft(saved.today, settings.unlimited), maths: settings.maths, racer };
+      const seen = (saved.seen ?? []).filter((t) => (TIPS as readonly string[]).includes(t));
+      const save: CircuitSave = { ...saved, left: finishesLeft(saved.today, settings.unlimited), maths: settings.maths, racer, seen };
       return reply(200, save);
+    }
+
+    if (body.action === 'seen') {
+      const tips = readKinds(body.tips, TIPS, TIPS.length) as TipId[] | null;
+      if (!tips || tips.length === 0) return reply(400, { error: "That couldn't be read." });
+      const done = await services.markSeen(player, tips);
+      if (done !== true) return reply(503, { error: "We couldn't save that just now." });
+      return reply(200, { seen: tips });
     }
 
     if (body.action === 'racer') {

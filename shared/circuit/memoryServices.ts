@@ -10,7 +10,7 @@ import type { FactAnswer } from '../maths/leitner';
 import { seededRandom, type MathsContext } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
 import type { MathsSwitch } from '../space/mathsSwitch';
-import { FINISH_POINTS, FINISHES_A_DAY, GOLD_POINTS, MEDAL_RANK, nzDay, type RacerId, type RoadProgress } from './game';
+import { FINISH_POINTS, FINISHES_A_DAY, GOLD_POINTS, MEDAL_RANK, nzDay, type RacerId, type RoadProgress, type TipId } from './game';
 
 /** The pretend pupil's focus: tables, fractions, decimals and percentages, so every kind of sign shows in the preview. */
 export const PRETEND_FOCUS = {
@@ -30,6 +30,8 @@ export interface MemoryOptions {
   multipleChoice?: boolean;
   /** The maths records can't be read (the go then has no maths). */
   noContext?: boolean;
+  /** Volt's tips already seen (Stage 6). */
+  seen?: TipId[];
 }
 
 /** Shaped like the function's `Services` (supabase/functions/circuit/handler.ts), with what was saved to look at. */
@@ -45,6 +47,8 @@ export function memoryServices(opts: MemoryOptions = {}) {
   const questions: Record<string, { questions: Question[]; answered: Record<string, { value: number; right: boolean }> }> = {};
   const answers: { player: string; once: string; answers: FactAnswer[] }[] = [];
   const racers: Record<string, RacerId> = {};
+  const seen: Record<string, TipId[]> = {};
+  const seenOf = (player: string) => (seen[player] ??= [...(opts.seen ?? [])]);
 
   const mine = (player: string) => (roads[player] ??= structuredClone(opts.roads ?? {}));
   const todayOf = (player: string) => {
@@ -98,7 +102,13 @@ export function memoryServices(opts: MemoryOptions = {}) {
     },
     racers,
     async load(player: string) {
-      return { roads: structuredClone(mine(player)), today: todayOf(player).n, ...(racers[player] ? { racer: racers[player] } : {}) };
+      return { roads: structuredClone(mine(player)), today: todayOf(player).n, ...(racers[player] ? { racer: racers[player] } : {}), seen: [...seenOf(player)] };
+    },
+    seen,
+    async markSeen(player: string, tips: TipId[]) {
+      const list = seenOf(player);
+      for (const t of tips) if (!list.includes(t)) list.push(t);
+      return true;
     },
     async setRacer(player: string, racer: RacerId) {
       racers[player] = racer;
