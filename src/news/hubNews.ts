@@ -28,7 +28,7 @@ export const HUB_NEWS: NewsItem[] = [
     date: '2026-11-23',
     emoji: '⚡',
     title: 'New game: Circuit Racer!',
-    text: 'Race a spark along glowing roads inside a giant computer. Jump the gaps, find blue ports and open five worlds. Volt the robot plug shows you how!',
+    text: 'Race a spark along glowing roads inside a computer. Volt the robot plug shows you how!',
     game: 'circuit',
   },
   {
