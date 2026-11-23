@@ -1,6 +1,6 @@
 # Class Showdown: plan
 
-**Status: plan only (23 Nov 2026). Nothing built yet. Decisions marked "waits for James" are open.** James liked the "live class boss" idea from the list of missing game types (23 Nov 2026) and asked for one game where everyone in the room plays at once: the whole class against a boss, 2 teams, 4 teams, or everyone for themselves. Working name **Class Showdown**, game id `showdown`. Next free migration number when written: `20261123000900` on 23 Nov (check again: `node scripts/migration-numbers.mjs`).
+**Status: plan merged (PR #763) and every decision answered by James (23 Nov 2026). Nothing built yet; James said wait before Stage 1.** James liked the "live class boss" idea from the list of missing game types (23 Nov 2026) and asked for one game where everyone in the room plays at once: the whole class against a boss, 2 teams, 4 teams, or everyone for themselves. Working name **Class Showdown**, game id `showdown`. Next free migration number when written: `20261123000900` on 23 Nov (check again: `node scripts/migration-numbers.mjs`).
 
 **Class Showdown** is a live game for the whole room. The **teacher's screen goes on the projector** and shows the big painted battle, the scores and the drama, with all the sound. **Every pupil's iPad is their controller**: their own maths question at their own level, their choices, and their own score. A round lasts 5, 10 or 15 minutes. The teacher picks **how** the class plays (the mode) and **what** they play (the arena).
 
@@ -19,19 +19,19 @@
 
 | Question | Recommendation | James chose |
 |---|---|---|
-| Name | **Class Showdown** (others: Boss Rush, Titan Day, Clash of the Class) | waits for James |
-| Who starts a round | **Only the teacher**, from their screen. Pupils can't start one themselves | waits for James |
-| How pupils join | A pop-up on every pupil's screen, anywhere in the hub: "Class Showdown is starting! Join". One tap. No codes (they're already signed in to the class) | waits for James |
-| First arena | **Boss Bounty** (works in all four modes, great projector picture) | waits for James |
-| Round length | teacher picks **5, 10 or 15 minutes** (default 10) | waits for James |
-| Names on the projector | **First names** on hits and the leaderboard; a teacher switch to hide names (shows avatars only) | waits for James |
-| Answer pace | **one marked answer every 4 seconds per pupil** at most (a ring fills on the iPad); same hit for every correct answer | waits for James |
-| Wrong answers | shows the right answer with the reason (QuestionModal's show-why), a 2-second wait, no damage taken, no points lost | waits for James |
-| Rewards | **hub points like any maths game**, plus a small "Showdown chest" of gold or gems to the pupil's own favourite game. Capped at 2 paid rounds a day | waits for James |
-| Daily limit | **none for the teacher**; rewards cap after 2 rounds, play stays unlimited | waits for James |
-| Boss roster | **4 bosses** to start, each with 3 painted phases: the **River Titan** (Riverstone), the **Storm Kraken**, the **Clockwork Colossus**, the **Comet Wyrm**. Our own creatures, painted new | waits for James |
-| Teams | **auto-mixed by ladder place**, teacher can drag a pupil to another team or reshuffle with one tap; team colours red, blue, gold, green | waits for James |
-| Without a projector | the teacher screen works on any laptop; if there's none, a pupil iPad can show a **mini scoreboard** (later stage) | waits for James |
+| Name | **Class Showdown** (others: Boss Rush, Titan Day, Clash of the Class) | Class Showdown |
+| Who starts a round | **Only the teacher**, from their screen. Pupils can't start one themselves | only the teacher |
+| How pupils join | A pop-up on every pupil's screen, anywhere in the hub: "Class Showdown is starting! Join". One tap. No codes (they're already signed in to the class) | pop-up anywhere |
+| First arena | **Boss Bounty** (works in all four modes, great projector picture) | Boss Bounty |
+| Round length | teacher picks **5, 10 or 15 minutes** (default 10) | teacher picks 5, 10 or 15 |
+| Names on the projector | **First names** on hits and the leaderboard; a teacher switch to hide names (shows avatars only) | first names + hide switch |
+| Answer pace | **one marked answer every 4 seconds per pupil** at most (a ring fills on the iPad); same hit for every correct answer | one every 4 seconds |
+| Wrong answers | shows the right answer with the reason (QuestionModal's show-why), a 2-second wait, no damage taken, no points lost | show answer, 2-second wait |
+| Rewards | **hub points like any maths game**, plus a small "Showdown chest" of gold or gems to the pupil's own favourite game. Every round pays | hub points + Showdown chest, **no daily cap** (every round pays) |
+| Daily limit | **none for the teacher**; rewards cap after 2 rounds, play stays unlimited | none (and no reward cap) |
+| Boss roster | **4 bosses** to start, each with 3 painted phases: the **River Titan** (Riverstone), the **Storm Kraken**, the **Clockwork Colossus**, the **Comet Wyrm**. Our own creatures, painted new | the 4 recommended |
+| Teams | **auto-mixed by ladder place**, teacher can drag a pupil to another team or reshuffle with one tap; team colours red, blue, gold, green | auto-mixed, teacher can move |
+| Without a projector | the teacher screen works on any laptop; if there's none, a pupil iPad can show a **mini scoreboard** (later stage) | **a laptop is fine; no iPad scoreboard** (stage 8 dropped) |
 
 ## 1. A round, start to finish
 
@@ -167,7 +167,7 @@ Painted on the gaming PC with ComfyUI. Style: *bold storybook fantasy, rich colo
 
 1. **Big goal:** beat all 4 bosses as a class; every boss beaten unlocks the next in the roster; later, "hard mode" bosses.
 2. **Season game?** No.
-3. **Play a day:** teacher-run, no limit; rewards for 2 rounds a day.
+3. **Play a day:** teacher-run, no limit; every round gives rewards (James: no cap).
 4. **Progress:** class boss roster on the teacher screen (bosses beaten, best time).
 5. **Achievements:**
 
@@ -200,7 +200,7 @@ Each stage is its own PR, carried to live, with the teacher switch **off** until
 | **5. Rewards and the roster** | hub points, Showdown chest, achievements, remaining 3 bosses painted, boss roster, "Again?" | live for every class |
 | **6. Gold Rush** | arena 2 with its map, seams, cave-ins | live |
 | **7. More arenas** | Sky Climb, Shrinking Island, King of the Hill, Auction House, one PR each | live, one by one |
-| **8. No projector** | mini scoreboard on a pupil iPad, for rooms with no big screen | if James wants it |
+| ~~8. No projector~~ | dropped: James said any laptop is fine as the big screen | - |
 
 ## 10. Risks
 
