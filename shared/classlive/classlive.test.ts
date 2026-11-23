@@ -3,7 +3,8 @@ import { markQuestion } from '../maths/serverQuestions';
 import { classLiveStep } from './server';
 import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock, rng } from './pretendClass';
 import { answerBox, apply, BODY, makeChain, newSerpent, SERPENT_LEVELS } from './serpent';
-import { ARMS, isTrue, linkOf, newStars, readFact, tryFact, type Anchor } from './stars';
+import { ARMS, armCounts, isTrue, laggingArm, linkOf, newStars, readFact, tryFact, type Anchor } from './stars';
+import { lagHint } from '../../src/games/classlive/arms';
 
 const k: Anchor = { x: 6, y: 7, p: 42 };
 const arm = (text: string) => {
@@ -53,6 +54,13 @@ describe('Star Web rules', () => {
     expect(g.creature).toBe(false); // wild has 2
     expect((go('d', '84÷2=42') as { events: { type: string }[] }).events.map((e) => e.type)).toEqual(['star', 'arm_lit', 'creature']);
     expect(ARMS.every((a) => g.stars.some((s) => s.arm === a))).toBe(true);
+    // An arm lagging well behind the rest gets a hint on how, never the fact itself.
+    expect(laggingArm(armCounts(g), g.stars.length)).toBeNull();
+    const lagging = { turn: 1, divide: 3, double: 3, halve: 0, tens: 2, near: 3, wild: 2 };
+    expect(laggingArm(lagging, 14)).toBe('halve');
+    expect(laggingArm(lagging, 4)).toBeNull();
+    expect(laggingArm({ ...lagging, halve: 2 }, 16)).toBeNull();
+    for (const a of ARMS) expect(lagHint(a, k)).not.toMatch(/=|\b(21|84|420|48|36|3 ×|12 ×)\b/);
   });
 });
 

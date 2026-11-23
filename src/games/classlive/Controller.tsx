@@ -4,8 +4,8 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PlayerView, RoomView } from '../../../shared/classlive/server';
-import { ARM_NAMES, type StarsReply } from '../../../shared/classlive/stars';
-import { ARM_COLOURS, ARM_HINTS } from './arms';
+import { ARM_NAMES, laggingArm, type StarsReply } from '../../../shared/classlive/stars';
+import { ARM_COLOURS, ARM_HINTS, lagHint } from './arms';
 import { MuralPad } from './MuralPad';
 import { SerpentPad } from './SerpentPad';
 import type { ClassLiveLink } from './link';
@@ -249,6 +249,8 @@ function StarsPlay({ link, room, view, mine, setMine, setView }: { link: ClassLi
 
   const reply = fb && 'reply' in fb ? fb.reply : null;
   const nudge = reply?.nudge ?? null;
+  // A gentle hint when one arm of the class's web lags well behind (the same rule as the big screen).
+  const lag = view.state === 'live' ? laggingArm(view.game.arms, view.game.total) : null;
   const col = reply && (reply.result === 'new' || reply.result === 'again') ? ARM_COLOURS[reply.star.arm] : undefined;
 
   return (
@@ -260,6 +262,11 @@ function StarsPlay({ link, room, view, mine, setMine, setView }: { link: ClassLi
         </div>
         <Dots x={anchor.x} y={anchor.y} small />
       </header>
+      {lag && lag !== nudge && (
+        <p className="cl-c-lag" key={lag} style={{ '--arm': ARM_COLOURS[lag] } as React.CSSProperties}>
+          <b>💡 {ARM_NAMES[lag]} needs help.</b> {lagHint(lag, anchor)}
+        </p>
+      )}
 
       <div className="cl-c-display" role="status" aria-label="Your fact">
         {text ? <span>{text}</span> : <span className="cl-c-display__hint">12 × 7 = 84</span>}
