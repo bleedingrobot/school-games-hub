@@ -187,10 +187,13 @@ stable
 security definer
 set search_path = ''
 as $$
-  select jsonb_build_object('enabled', s.showdown_enabled, 'show_names', s.showdown_names)
+  -- The class's own settings, or (a class with no settings row yet) the school's defaults.
+  select jsonb_build_object('enabled', coalesce(s.showdown_enabled, d.showdown_enabled, true),
+    'show_names', coalesce(s.showdown_names, d.showdown_names, true))
   from public.class_teachers t
   join public.classes c on c.id = t.class_id and not c.archived
-  join public.app_settings s on s.class_id = t.class_id
+  left join public.app_settings s on s.class_id = t.class_id
+  left join public.app_settings d on d.school_id = c.school_id and d.class_id is null
   where t.teacher_id = showdown_teacher_class.teacher and t.class_id = target_class
   limit 1
 $$;
