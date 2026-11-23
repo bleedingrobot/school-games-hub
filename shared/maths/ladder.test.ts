@@ -97,6 +97,22 @@ describe('the ladder', () => {
     }
     const skip = ['skip-10', 'skip-5', 'skip-2'].reduce((n, id) => n + (asked.get(id) ?? 0), 0) / 3;
     expect(skip / (asked.get('bedmas') ?? 1)).toBeLessThan(2);
+
+    // Checking off: a skill behind the student that was only asked once (box 1) comes up far more than secure ones, and a right
+    // answer brings that fact back a few questions on, so two right and quick make it secure in the same session.
+    const skip2 = built.find((s) => s.id === 'skip-2')!.keys;
+    const once = built.flatMap((s) => (s.id === 'skip-2' ? skip2.map((k) => rec(k, 1)) : secure(s.keys)));
+    const check = new AutoPack(once, randomFromSeed('check-off'), Date.now, { floor: LADDER.length });
+    const order: string[] = [];
+    for (let i = 0; i < 300; i++) {
+      const q = check.nextQuestion()!;
+      order.push(q.factKey);
+      check.recordAnswer(q, q.answer, 1000);
+    }
+    const back = order.findIndex((k, i) => skip2.includes(k) && order.indexOf(k) < i);
+    expect(back).toBeGreaterThan(-1);
+    expect(order.filter((k) => skip2.includes(k)).length).toBeGreaterThan(order.filter((k) => k.startsWith('bedmas:')).length * 4);
+    expect(ladderProgress(check.stats(), { floor: LADDER.length }).skills.find((p) => p.skill.id === 'skip-2')!.passedOver).toBe(false);
   });
 });
 

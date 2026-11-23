@@ -29,6 +29,13 @@ export const CAMPAIGN_STEPS: { levels: number[]; add: number[]; upTo?: number }[
 export const HARD_TABLES: readonly number[] = [6, 7, 8, 9, 12];
 /** How much likelier a fact using a hard table is to be picked, on top of its box. */
 export const HARD_TABLE_WEIGHT = 1.5;
+/**
+ * Checking off skills behind the student (James, 23 Nov 2026): a skill below their place that isn't secure in their records yet
+ * (asked once, right, but not twice) is this many times likelier to come up in review than a skill that's already secure...
+ */
+export const CHECK_OFF_WEIGHT = 4;
+/** ...and inside it, a fact one right answer away from secure (box 1) is this much likelier, so the skill turns S sooner. */
+export const CHECK_OFF_NEAR_WEIGHT = 2;
 
 /** Share of questions from the current focus tables, review of earlier tables, and stretch (next table up). */
 export const MIX = { focus: 0.6, review: 0.3, stretch: 0.1 };
