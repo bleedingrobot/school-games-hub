@@ -10,6 +10,15 @@
 
 /* ---------- backdrop ---------- */
 .cl-back { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+/* A painted backdrop (docs/CLASSLIVE-ART-PLAN.md) over the drawn one, darkened so the drawn game stays readable. */
+.cl-painted {
+  position: absolute; inset: 0; pointer-events: none; background-size: cover; background-position: center;
+  animation: cl-painted-in 1.2s ease-out both;
+}
+.cl-painted::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, rgba(4, 4, 26, 0.35) 0%, rgba(4, 4, 26, 0.62) 70%, rgba(4, 4, 26, 0.8) 100%); }
+@keyframes cl-painted-in { from { opacity: 0; } to { opacity: 1; } }
+.cl-p--painted .sp-temple { display: none; }
+@media (prefers-reduced-motion: reduce) { .cl-painted { animation: none; } }
 .cl-back__glow {
   position: absolute; inset: -10%;
   background: radial-gradient(circle at 20% 80%, rgba(255, 90, 170, 0.18), transparent 40%), radial-gradient(circle at 85% 20%, rgba(80, 160, 255, 0.2), transparent 45%);

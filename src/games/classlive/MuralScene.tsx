@@ -142,7 +142,7 @@ export function MuralScene({ game, people, state, fx, showReveal, onReveal, onRe
           <ul className={`mu-choices${open || shown ? ' is-open' : ''}`} aria-label="What could it be?">
             {game.choices.map((c) => (
               <li key={c} className={`mu-choice${shown && c === game.picture ? ' is-right' : ''}${shown && c !== game.picture ? ' is-not' : ''}`}>
-                <span className="mu-choice__pic"><MuralPicture id={c} /></span>
+                <span className="mu-choice__pic"><MuralPicture id={c} small /></span>
                 <span className="mu-choice__name">{PICTURES[c]}</span>
               </li>
             ))}

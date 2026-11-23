@@ -6,6 +6,7 @@
  */
 import type { ReactNode } from 'react';
 import type { Picture } from '../../../shared/classlive/mural';
+import { painted } from './paintedArt';
 
 const Sea = ({ y = 100, c = '#1b6fb5' }: { y?: number; c?: string }) => <rect x="0" y={y} width="240" height={160 - y} fill={c} />;
 const Wave = ({ x, y, c = '#ffffff' }: { x: number; y: number; c?: string }) => (
@@ -187,8 +188,15 @@ const ART: Record<Picture, () => ReactNode> = {
 };
 
 /** One picture (fills its box: give it a 3:2 box, or it is cropped to fit). Hidden from screen readers unless `label` is given. */
-export function MuralPicture({ id, label, className }: { id: Picture; label?: string; className?: string }) {
+export function MuralPicture({ id, label, className, small }: { id: Picture; label?: string; className?: string; small?: boolean }) {
   const draw = ART[id];
+  const src = painted('mural', id, small);
+  if (src) {
+    return (
+      <img className={className} src={src} alt={label ?? ''} aria-hidden={label ? undefined : true} draggable={false}
+        style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }} />
+    );
+  }
   return (
     <svg className={className} viewBox="0 0 240 160" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" role={label ? 'img' : undefined} aria-label={label} aria-hidden={label ? undefined : true} style={{ display: 'block' }}>
       {draw()}

@@ -16,6 +16,7 @@ import { NightBackdrop, PLAYER_COLOURS, StarSky } from './StarSky';
 import { MuralCloth, MuralScene, NO_MURAL_FX, type MuralFx } from './MuralScene';
 import { CoiledSerpent, JungleBackdrop, NO_SERPENT_FX, SerpentScene, type SerpentFx } from './SerpentScene';
 import './projector.css';
+import { painted } from './paintedArt';
 
 const ROOM_KEY = 'classlive-room';
 type Ev = Event & { seq: number };
@@ -283,13 +284,15 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
   const game = screen?.game ?? null;
   const serpent = game?.kind === 'serpent' ? game : null;
   const mural = game?.kind === 'mural' ? game : null;
+  const backPic = painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky');
   useEffect(() => {
     if (state !== 'over') { setRevealed(false); setHideResults(false); }
   }, [state]);
 
   return (
-    <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''} ${mural ? 'cl-p--mural' : ''}`}>
+    <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''} ${mural ? 'cl-p--mural' : ''} ${backPic ? 'cl-p--painted' : ''}`}>
       {serpent ? <JungleBackdrop /> : <NightBackdrop />}
+      {backPic && <div className="cl-painted" style={{ backgroundImage: `url(${backPic})` }} aria-hidden="true" />}
       <div className={`cl-bar ${barOpen ? 'cl-bar--open' : ''}`}>
         <button type="button" className="cl-bar__tab" onClick={() => setBarOpen(!barOpen)} aria-expanded={barOpen} aria-label={barOpen ? 'Hide the teacher bar' : 'Show the teacher bar'}>{barOpen ? '▲' : '☰'}</button>
         {barOpen && (
