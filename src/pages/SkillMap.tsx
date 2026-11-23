@@ -356,12 +356,6 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
           {look ? `${students.length} of ${everyone.length}` : everyone.length} student{everyone.length === 1 ? '' : 's'}
         </span>
       </h2>
-      {!data.auto && (
-        <p className="class-panel__hint" role="note">
-          Auto is off for this class, so the games ask the times tables and don’t follow the ladder. The map still shows what each student
-          has practised. Turn auto on from <Link to={`/teacher/${classId}/maths`}>Maths focus</Link>.
-        </p>
-      )}
       {everyone.length === 0 ? (
         <p className="panel__empty">
           No students in this class yet. <Link to={`/teacher/${classId}/setup`}>Add some on Class set-up.</Link>

@@ -46,10 +46,10 @@ select pg_temp.as(202);
 select public.teacher_add_to_class(pg_temp.klass('B'), array[pg_temp.uid(103)]);
 select pg_temp.reset();
 
--- ---- The switch is off by default, and nothing changes while it is off ----
-select is((select maths_auto from public.app_settings where class_id = pg_temp.klass('A')), false, 'a new class has auto off');
-select is((select maths_auto from public.app_settings where school_id = 2 and class_id is null), false, 'so does the school default');
-select is(pg_temp.ladder(101) ->> 'on', 'false', 'a student in it is told auto is off');
+-- ---- The ladder is always on (23 Nov 2026) ----
+select is((select maths_auto from public.app_settings where class_id = pg_temp.klass('A')), true, 'a new class has auto on');
+select is((select maths_auto from public.app_settings where school_id = 2 and class_id is null), true, 'so does the school default');
+select is(pg_temp.ladder(101) ->> 'on', 'true', 'a student in it is told the ladder is on');
 select is(public.maths_focus_of(pg_temp.uid(101)) ->> 'source', 'auto', 'their focus is still plain auto');
 select is(public.maths_focus_of(pg_temp.uid(101)) -> 'skills', '[]'::jsonb, 'with no skills named');
 select is(pg_temp.ladder(101) -> 'yearLevel', '5'::jsonb, 'the class''s year level is passed on');
@@ -58,19 +58,20 @@ select is(pg_temp.ladder(104) -> 'yearLevel', 'null'::jsonb, 'a student with no 
 select is(pg_temp.ladder(101) -> 'placed', 'null'::jsonb, 'nobody has done the placement yet');
 select is(pg_temp.ladder(101) -> 'furthest', 'null'::jsonb, 'or reached a place');
 
--- ---- Who may turn it on ----
+-- ---- The old switch: still checks who asks, but cannot turn it off ----
 select pg_temp.as(202);
 select throws_ok(format('select public.teacher_set_maths_auto(true, %L)', pg_temp.klass('A')), '42501', null, 'a teacher cannot change another teacher''s class');
 select pg_temp.as(101);
 select throws_ok($$ select public.teacher_set_maths_auto(true) $$, '42501', null, 'a student cannot turn it on');
 select pg_temp.as(201);
-select lives_ok(format('select public.teacher_set_maths_auto(true, %L)', pg_temp.klass('A')), 'a teacher turns auto on for their class');
+select lives_ok(format('select public.teacher_set_maths_auto(false, %L)', pg_temp.klass('A')), 'an old page turning it off does not error');
 select pg_temp.reset();
-select is(pg_temp.ladder(101) ->> 'on', 'true', 'students in it are told');
+select is(pg_temp.ladder(101) ->> 'on', 'true', 'but students in it are still on the ladder');
 select is(pg_temp.ladder(102) ->> 'on', 'true', 'all of them');
-select is(pg_temp.ladder(103) ->> 'on', 'false', 'another class is untouched');
-select is(pg_temp.ladder(104) ->> 'on', 'false', 'so is a student with no class (the school default)');
-select is((select maths_auto from public.app_settings where school_id = 2 and class_id is null), false, 'and the school default');
+update public.app_settings set maths_auto = false where class_id = pg_temp.klass('B');
+select is(pg_temp.ladder(103) ->> 'on', 'true', 'even a direct update keeps it on');
+select is(pg_temp.ladder(104) ->> 'on', 'true', 'a student with no class follows the school default, also on');
+select is((select maths_auto from public.app_settings where school_id = 2 and class_id is null), true, 'and the school default stays on');
 select pg_temp.as(11);
 select throws_ok(format('select public.teacher_set_maths_auto(true, %L)', pg_temp.klass('A')), '42501', null, 'a teacher at another school cannot reach it');
 select pg_temp.as(201);
@@ -143,7 +144,7 @@ select is((select public.my_ladder() #>> '{focus,ladder,furthest}'), null, 'anot
 select pg_temp.reset();
 select is((select public.my_ladder()), null, 'someone not signed in sees nothing');
 select pg_temp.as(1);
-select is((select public.my_ladder() #>> '{focus,ladder,on}'), 'false', 'a student at another school has their own class settings');
+select is((select public.my_ladder() #>> '{focus,ladder,on}'), 'true', 'a student at another school has their own class settings, also on');
 select pg_temp.reset();
 
 -- ---- Moving class keeps the place; leaving the school's data deletes it ----
@@ -151,7 +152,7 @@ select pg_temp.as(201);
 select public.teacher_remove_from_class(pg_temp.uid(101));
 select pg_temp.reset();
 select is(pg_temp.ladder(101) ->> 'furthest', 'tables-3-4-8', 'a student who leaves a class keeps their place');
-select is(pg_temp.ladder(101) ->> 'on', 'false', 'and then follows the school default');
+select is(pg_temp.ladder(101) ->> 'on', 'true', 'and then follows the school default, which is on');
 delete from public.profiles where id = pg_temp.uid(102);
 select is((select count(*)::int from public.ladder_placements where student_id = pg_temp.uid(102)), 0, 'a deleted student''s placement goes with them');
 

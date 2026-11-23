@@ -24,8 +24,10 @@ import type { Question } from "./skillPack";
 
 /** What the database tells a game about a student's ladder. Anything odd counts as "auto is off". */
 export interface LadderInfo {
-  /** The class has "Games pick the maths (auto)" switched on. */
+  /** The games follow the ladder (always, since 23 Nov 2026; false only when the focus couldn't be read). */
   on: boolean;
+  /** The class's year level, when the teacher set one (only used to leave juniors out of the warm-up). */
+  yearLevel?: number | null;
   /** Placement: 'done' (with `placement` saying where to start), 'skipped', or not yet. */
   placed: "done" | "skipped" | null;
   placement: string | null;
@@ -58,11 +60,16 @@ export function parseLadderInfo(raw: unknown): LadderInfo {
       : r.placed === "done" && placement
         ? "done"
         : null;
+  const yearLevel =
+    typeof r.yearLevel === "number" && Number.isInteger(r.yearLevel)
+      ? r.yearLevel
+      : null;
   return {
     on: r.on === true,
     placed,
     placement: placed === "done" ? placement : null,
     furthest: skillId(r.furthest),
+    ...(yearLevel !== null ? { yearLevel } : {}),
   };
 }
 

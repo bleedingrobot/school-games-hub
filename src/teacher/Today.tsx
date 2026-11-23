@@ -287,7 +287,7 @@ function ThisWeek({ classId, name, members }: { classId: string; name: string; m
         <p className="panel__empty">Loading…</p>
       ) : batches.length === 0 ? (
         <p className="this-week__line">
-          No focus running: students follow their own choice, or auto. <Link to={maths}>Set a focus</Link>
+          No focus running: students follow their own choice, or the ladder. <Link to={maths}>Set a focus</Link>
         </p>
       ) : (
         <ul className="this-week__focuses">
@@ -362,7 +362,7 @@ function RunningLine({ batch, onDone, onError }: { batch: FocusBatch; onDone: (m
   async function end() {
     try {
       await endFocus(batch.batch);
-      onDone('Ended. Those students go back to their own choice, or auto.');
+      onDone('Ended. Those students go back to their own choice, or the ladder.');
     } catch (error) {
       onError(error);
     }

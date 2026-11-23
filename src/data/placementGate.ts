@@ -1,17 +1,13 @@
 /**
- * The maths warm-up comes first (James, 22 Oct 2026): in a class whose games pick the maths (auto), a student does the warm-up
- * once before any game opens, so the games and Training start in the right place. This asks whether it is still to do.
- *
- * Cheap on purpose: the class's settings row is already remembered for the game switches, so a class without auto costs nothing
- * more; only a student in an auto class asks for their ladder, and once the warm-up is done that is remembered on the device.
+ * The maths warm-up comes first (James, 22 Oct 2026): a student does the warm-up once before any game opens, so the games and
+ * Training start in the right place. Juniors (a class set to Years 1-3) never do it (23 Nov 2026). This asks whether it is still
+ * to do; once it is done that is remembered on the device.
  */
 import { useEffect, useState } from 'react';
-import type { LadderInfo } from '../../shared/maths/place';
+import { needsPlacement } from '../../shared/maths/warmUp';
 import { useAuth } from '../auth/AuthContext';
 import { readSettings } from './classSettings';
 
-/** The class wants the warm-up and this student hasn't done it yet (the same rule as shared/training/start's needsPlacement). */
-const needsPlacement = (info: LadderInfo, role: string): boolean => info.on && info.placed === null && role !== 'teacher';
 
 const placedKey = (player: string) => `sgh-placed:${player}`;
 
@@ -38,7 +34,7 @@ export async function placementNeeded(player: string, role: string): Promise<boo
   try {
     const settings = await readSettings(['maths_auto']);
     if (!settings || (settings as { maths_auto?: unknown }).maths_auto !== true) return false;
-    // The ladder code is big, so it loads only for a student in an auto class (dashboard plan D7).
+    // The ladder code is big, so it loads only once the settings say the ladder is on (dashboard plan D7).
     const { fetchMyLadder } = await import('./ladder');
     const ladder = (await fetchMyLadder()).focus.ladder;
     if (!ladder) return false;

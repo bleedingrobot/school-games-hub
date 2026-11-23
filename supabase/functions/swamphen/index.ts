@@ -7917,11 +7917,13 @@ function parseLadderInfo(raw) {
 	const r = raw;
 	const placement = skillId(r.placement);
 	const placed = r.placed === "skipped" ? "skipped" : r.placed === "done" && placement ? "done" : null;
+	const yearLevel = typeof r.yearLevel === "number" && Number.isInteger(r.yearLevel) ? r.yearLevel : null;
 	return {
 		on: r.on === true,
 		placed,
 		placement: placed === "done" ? placement : null,
-		furthest: skillId(r.furthest)
+		furthest: skillId(r.furthest),
+		...yearLevel !== null ? { yearLevel } : {}
 	};
 }
 const builtSkills = () => LADDER.filter((s) => s.built);

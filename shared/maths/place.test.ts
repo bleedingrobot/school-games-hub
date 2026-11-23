@@ -10,9 +10,11 @@ import {
   NO_LADDER,
   placementNext,
   placementQuestion,
+  parseLadderInfo,
   type LadderInfo,
   type PlacementStep,
 } from './place';
+import { needsPlacement } from './warmUp';
 import { checkPlacement, type PlacementAnswer } from './placementCheck';
 import { savePlacement, type PlacePorts } from './syncPlace';
 
@@ -27,6 +29,12 @@ describe('the floor under a student', () => {
 
   it('is the placement once it is done', () => {
     expect(floorRank(info({ placed: 'done', placement: 'dbl-half-10' }))).toBe(rankOf('dbl-half-10'));
+    // Until it is done the warm-up comes first, except for juniors (Years 1-3, 23 Nov 2026), who start at the bottom.
+    const ladder = (yearLevel: unknown) => parseLadderInfo({ on: true, placed: null, yearLevel });
+    expect([null, 4, 6, 2.5].map((y) => needsPlacement(ladder(y), 'student'))).toEqual([true, true, true, true]);
+    expect([1, 2, 3].map((y) => needsPlacement(ladder(y), 'student'))).toEqual([false, false, false]);
+    expect(needsPlacement(ladder(5), 'teacher')).toBe(false);
+    expect(floorRank(ladder(2))).toBe(0);
   });
 });
 
