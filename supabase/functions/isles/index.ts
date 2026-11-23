@@ -8885,6 +8885,10 @@ function levels(island, kind) {
 function count(island, kind) {
 	return island.spots.filter((spot) => spot.kind === kind).length;
 }
+/** Can land still be anchored? Only until Grand Isle: the biggest painted island has GRAND_ISLE spots. */
+function landCanCome(island) {
+	return spotCount(island) < 16;
+}
 function isGrandIsle(island) {
 	return spotCount(island) >= 16;
 }
@@ -9009,6 +9013,7 @@ const goodPlace = (island, place) => Number.isInteger(place) && place >= 0 && pl
 function problemWith(island, action) {
 	switch (action.kind) {
 		case "anchor":
+			if (!landCanCome(island)) return "island-full";
 			if (island.driftLeft < 1) return "no-drift";
 			return island.coins < chunkPrice(island) ? "not-enough-coins" : null;
 		case "build": {
@@ -9509,6 +9514,7 @@ const PROBLEM_TEXT = {
 	"not-enough-coins": "You don't have enough coins for that.",
 	"not-enough-crystals": "You don't have enough sky crystals for that.",
 	"no-drift": "There is no land left in the drift today.",
+	"island-full": `Your island is a Grand Isle: it has all 16 building spots it can hold.`,
 	"no-such-spot": "That building spot isn't on your island.",
 	"same-plot": "That spot already has that building.",
 	"nothing-to-raise": "Build something on that spot first.",
