@@ -223,6 +223,7 @@ export const PROBLEM_TEXT: Record<Problem | RaceProblem, string> = {
   'not-enough-coins': "You don't have enough coins for that.",
   'not-enough-crystals': "You don't have enough sky crystals for that.",
   'no-drift': 'There is no land left in the drift today.',
+  'island-full': `Your island is a Grand Isle: it has all ${GRAND_ISLE} building spots it can hold.`,
   'no-such-spot': "That building spot isn't on your island.",
   'same-plot': 'That spot already has that building.',
   'nothing-to-raise': 'Build something on that spot first.',

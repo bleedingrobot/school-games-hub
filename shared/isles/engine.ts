@@ -81,6 +81,7 @@ export type Problem =
   | 'not-enough-coins'
   | 'not-enough-crystals'
   | 'no-drift'
+  | 'island-full'
   | 'no-such-spot'
   | 'same-plot'
   | 'nothing-to-raise'
@@ -114,6 +115,11 @@ export function levels(island: Island, kind: PlotKind): number {
 /** How many buildings of this kind (or empty spots) there are, whatever their levels. */
 export function count(island: Island, kind: PlotOrEmpty): number {
   return island.spots.filter((spot) => spot.kind === kind).length;
+}
+
+/** Can land still be anchored? Only until Grand Isle: the biggest painted island has GRAND_ISLE spots. */
+export function landCanCome(island: Island): boolean {
+  return spotCount(island) < GRAND_ISLE;
 }
 
 export function isGrandIsle(island: Island): boolean {
@@ -243,6 +249,8 @@ const goodPlace = (island: Island, place: unknown): place is number =>
 export function problemWith(island: Island, action: Action): Problem | null {
   switch (action.kind) {
     case 'anchor':
+      // A Grand Isle is as big as the painted islands go: no more land after that (James, 24 Nov 2026).
+      if (!landCanCome(island)) return 'island-full';
       if (island.driftLeft < 1) return 'no-drift';
       return island.coins < chunkPrice(island) ? 'not-enough-coins' : null;
     case 'build': {

@@ -32,7 +32,7 @@ import { Race } from './Race';
 import { buildChoices, upgradeChoice } from './canDo';
 import { BUILD_ALL_DONE, QUESTION_WORDS, REST_NO_RACE, STEP_PIP, Step, StepStrip, TurnStep, canStop, stepOf, type BuildView } from './TurnSteps';
 import { Say, cheerLine, nextTurnLine, useIslesVoice } from './voice';
-import { actionText, collectLines, n, plural, postLine, reportLines } from './words';
+import { actionText, collectLines, goalWords, n, plural, postLine, reportLines } from './words';
 import { useOpenFromHub } from '../../multiplayer/useAskFromHub';
 import { useIslesKeys } from './keys';
 import './isles.css';
@@ -80,20 +80,21 @@ function TurnPips({ left, unlimited = false }: { left: number; unlimited?: boole
   );
 }
 
-/** The road to Grand Isle: spots from START up to GRAND_ISLE, then the Lighthouse's stages. */
+/** The road to Grand Isle: spots from START up to GRAND_ISLE, then the Lighthouse's stages, and what to do next. */
 function Road({ island }: { island: Island }) {
   const spots = island.spots.length;
   const stops = Array.from({ length: GRAND_ISLE - START.spots.length + 1 }, (_, i) => START.spots.length + i);
-  const label = spots < GRAND_ISLE
-    ? `Road to Grand Isle: ${spots} of ${GRAND_ISLE} building spots`
-    : `Grand Isle! Sky Lighthouse: ${island.lighthouse} of ${LIGHTHOUSE.length} stages`;
+  const { label, next } = goalWords(island);
   return (
-    <div className="si-road" role="img" aria-label={label}>
-      <span className="si-road__label" aria-hidden="true">{label}</span>
-      <div className="si-road__track" aria-hidden="true">
-        {stops.map((s) => <span key={s} className={`si-road__stop${s <= spots ? ' si-road__stop--on' : ''}${(BASES as readonly number[]).includes(s) ? ' si-road__stop--big' : ''}`} />)}
-        {LIGHTHOUSE.map((_, i) => <span key={`l${i}`} className={`si-road__light${i < island.lighthouse ? ' si-road__light--on' : ''}`} />)}
+    <div className="si-road">
+      <div role="img" aria-label={label}>
+        <span className="si-road__label" aria-hidden="true">{label}</span>
+        <div className="si-road__track" aria-hidden="true">
+          {stops.map((s) => <span key={s} className={`si-road__stop${s <= spots ? ' si-road__stop--on' : ''}${(BASES as readonly number[]).includes(s) ? ' si-road__stop--big' : ''}`} />)}
+          {LIGHTHOUSE.map((_, i) => <span key={`l${i}`} className={`si-road__light${i < island.lighthouse ? ' si-road__light--on' : ''}`} />)}
+        </div>
       </div>
+      <p className="si-road__next">{next}</p>
     </div>
   );
 }
@@ -572,16 +573,19 @@ function IslesScreens({ backend = liveIsles }: { backend?: IslesBackend; level?:
             >
               {/* What the island has, and the road to Grand Isle, sit on the painting in the sky beside the island. */}
               <div className="si-over si-over--top"><Resources island={shownIsland} /></div>
-              {turnStep === null && <div className="si-over si-over--road"><Road island={shownIsland} /></div>}
-              {/* Last turn: a little postcard in the sky on the right, with OK to put it away (James, 17 Nov 2026). */}
-              {lastTurn.length > 0 && reportShut !== island.turn && (
-                <section className="si-over si-over--report si-panel si-report" aria-label="Last turn">
-                  {report?.weather && <Card art={weatherArt(report.weather)} />}
-                  <h3>Last turn</h3>
-                  <ul className="si-sums">{lastTurn.map((line) => <li key={line}>{line}</li>)}</ul>
-                  <button type="button" className="button button--light si-close" onClick={() => setReportShut(island.turn)}>OK</button>
-                </section>
-              )}
+              {/* The goal box, and under it last turn's postcard with OK to put it away (James, 17 and 24 Nov 2026), in one
+                  column on the right so the postcard never covers the goal. */}
+              <div className="si-over si-over--right">
+                {turnStep === null && <Road island={shownIsland} />}
+                {lastTurn.length > 0 && reportShut !== island.turn && (
+                  <section className="si-panel si-report si-report--side" aria-label="Last turn">
+                    {report?.weather && <Card art={weatherArt(report.weather)} />}
+                    <h3>Last turn</h3>
+                    <ul className="si-sums">{lastTurn.map((line) => <li key={line}>{line}</li>)}</ul>
+                    <button type="button" className="button button--light si-close" onClick={() => setReportShut(island.turn)}>OK</button>
+                  </section>
+                )}
+              </div>
               {/* Pip, the step and the buttons sit along the bottom of the painting (James, 17 Nov 2026). */}
               <div className="si-over si-over--dock si-dock">
                 {/* While a spot, the shelf or a place is open, its choices get the whole row (unless Pip is guiding). */}

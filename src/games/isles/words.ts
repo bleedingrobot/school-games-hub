@@ -8,7 +8,7 @@ import {
   type GiftId, type PlotKind,
 } from '../../../shared/isles/config';
 import {
-  beforeBuilding, chunkPrice, decoration, raisePrice, wholeCrystals, type Action, type Island, type Problem, type TurnReport,
+  beforeBuilding, chunkPrice, decoration, landCanCome, raisePrice, wholeCrystals, type Action, type Island, type Problem, type TurnReport,
 } from '../../../shared/isles/engine';
 import { KIND_NAME } from '../../../shared/isles/nextStep';
 import type { RaceProblem } from '../../../shared/isles/race';
@@ -183,3 +183,29 @@ export function newsLine(item: NewsItem): string {
 
 /** "today", "yesterday" or "3 days ago". */
 export const daysAgo = (day: number, today: number) => (today - day <= 0 ? 'today' : today - day === 1 ? 'yesterday' : `${today - day} days ago`);
+
+/**
+ * The goal on My island (James, 24 Nov 2026: "it's not clear how the game progresses"): where the island is on the
+ * road (Grand Isle, then the Lighthouse's stages) and what to do next, with the numbers. Shown even when the next step
+ * can't be paid for yet, so there is always a target.
+ */
+export function goalWords(island: Island): { label: string; next: string } {
+  const spots = island.spots.length;
+  if (landCanCome(island)) {
+    const chunk = chunkPrice(island);
+    const label = `Road to Grand Isle: ${spots} of ${GRAND_ISLE} building spots`;
+    if (island.driftLeft < 1) return { label, next: `Next: more land drifts by tomorrow. Save ${n(chunk)} coins to anchor it.` };
+    if (island.coins >= chunk) return { label, next: `Next: land is drifting by! Anchor it on your turn for ${n(chunk)} coins.` };
+    return { label, next: `Next: save ${n(chunk)} coins to anchor the land drifting by. You have ${n(island.coins)}.` };
+  }
+  const stage = LIGHTHOUSE[island.lighthouse];
+  if (!stage) return { label: 'Sky Lighthouse lit!', next: 'Fill your sky garden with decorations, race and send gifts.' };
+  const label = `Grand Isle! Sky Lighthouse: ${island.lighthouse} of ${LIGHTHOUSE.length} stages`;
+  const crystals = wholeCrystals(island);
+  const cost = `Next: Lighthouse stage ${island.lighthouse + 1} costs ${n(stage.coins)} coins and ${n(stage.crystals)} sky crystals.`;
+  const need = [
+    island.coins < stage.coins ? plural(stage.coins - island.coins, 'more coin') : '',
+    crystals < stage.crystals ? plural(stage.crystals - crystals, 'more sky crystal') : '',
+  ].filter(Boolean);
+  return { label, next: need.length ? `${cost} You need ${need.join(' and ')}.` : `${cost} You have enough: build it on your turn!` };
+}
