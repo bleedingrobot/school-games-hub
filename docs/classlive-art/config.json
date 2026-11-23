@@ -1,0 +1,184 @@
+{
+  "_from": "docs/showdown-art/config.json layout. Check with: python3 scripts/game_art.py classlive paint OUT --dry-run",
+  "game": "classlive",
+  "filename_prefix": "classlive/img",
+  "style": "s",
+  "styles": {
+    "s": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. "
+  },
+  "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly",
+  "negative_cut": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped",
+  "inbox": "~/dragon-art-inbox/classlive-art/set",
+  "picks": "docs/classlive-art/picks.json",
+  "art_dir": "src/games/classlive/art/paint",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "mural-whale",
+      "prompt": "A huge friendly blue whale leaping out of a sparkling turquoise sea, a big splash, spray and a rainbow, seabirds, sunny sky with fluffy clouds. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "whale",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "mural-volcano",
+      "prompt": "A tall cone volcano erupting with glowing orange lava and a big plume of grey smoke, lava rivers running down its sides, green jungle and palm trees at its foot, a blue sea in front, dramatic sunset sky. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "volcano",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "mural-castle",
+      "prompt": "A grand fairytale castle of pale stone with tall towers, blue pointed roofs and fluttering flags, on a green hill, a drawbridge over a moat, bright blue sky. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "castle",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "mural-rocket",
+      "prompt": "A shiny red and white space rocket blasting off from a launch pad, a huge cloud of flame and smoke below, into a deep starry sky with a ringed planet and the moon. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "rocket",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "mural-kiwi",
+      "prompt": "A round brown New Zealand kiwi bird with a long thin beak standing in a lush native forest at night, big silver fern fronds, a full moon, glowing fungi on a mossy log. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "kiwi",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "mural-dragon",
+      "prompt": "A friendly original green dragon with big golden wings, curled on a pile of shining treasure in a rocky mountain cave, warm golden light, gems and coins. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "dragon",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "mural-lighthouse",
+      "prompt": "A tall red and white striped lighthouse on rocky cliffs by the sea, a bright beam of light across a stormy twilight sky, crashing waves, a small boat. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "lighthouse",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "mural-octopus",
+      "prompt": "A big friendly purple octopus with curling tentacles on a colourful coral reef under the sea, bubbles, sunbeams, little tropical fish and seaweed. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "octopus",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "mural-treehouse",
+      "prompt": "A cosy wooden treehouse built in a giant old tree, a rope ladder, round windows glowing warmly, bunting, a swing on a branch, a summer meadow and blue sky. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "treehouse",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "mural-pirate",
+      "prompt": "An old wooden pirate ship with billowing white sails and a skull-free plain black flag, sailing on big blue waves near a small desert island with palm trees, gulls, sunny sky. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "pirate",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "back-star-sky",
+      "prompt": "Empty background scenery: a deep magical night sky over a quiet hilltop, a swirling purple and blue nebula, thousands of tiny stars, a soft milky way, distant hills as dark silhouettes at the very bottom, dark and calm in the middle so bright stars and glowing lines drawn on top stand out, no characters, no creatures. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "star-sky",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "back-jungle-temple",
+      "prompt": "Empty background scenery: an ancient jungle temple at dusk, mossy stone steps and carved pillars, hanging vines, glowing green lanterns, misty jungle trees on both sides, dark and calm in the middle so a long glowing serpent drawn on top stands out, no characters, no creatures, no snakes. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "jungle-temple",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "back-gallery",
+      "prompt": "Empty background scenery: a grand magical art gallery hall at night, tall arched windows with moonlight, velvet purple curtains, golden picture frames on the walls, soft spotlights, a polished floor, dark and calm in the middle so a big picture placed on top stands out, no characters. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "gallery",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "card",
+      "prompt": "A magical whole-class game scene: a giant glowing star constellation shaped like a whale in a purple night sky, a huge friendly green serpent winding around an ancient jungle temple below, and a big mysterious picture made of flipping tiles on an easel, tiny cheering children holding glowing tablets on a hilltop, bright storybook landscape, calm sky at the top, wide landscape picture for a game title card, no text.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "card",
+      "file": "classlive",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    }
+  ]
+}
