@@ -27,6 +27,8 @@
 .sd-p-btn:hover { background: #1d4b68; }
 .sd-p-btn--go { background: #1f9d55; border-color: #5de59a; }
 .sd-p-btn--danger { background: #9b2b3a; border-color: #ff8a97; }
+.sd-p-btn--hub { display: inline-flex; align-items: center; text-decoration: none; margin-right: 4px; }
+.sd-p-btn--hub:focus-visible { outline: 3px solid #ffd23f; outline-offset: 2px; }
 .sd-p-btn:focus-visible, .sd-p-bar__tab:focus-visible, .sd-p-bar select:focus-visible { outline: 3px solid #ffd23f; outline-offset: 2px; }
 .sd-p-bar__problem { margin: 4px 12px; color: #ffb4bd; font-weight: 700; }
 

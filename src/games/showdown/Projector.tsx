@@ -293,6 +293,7 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
         <button type="button" className="sd-p-bar__tab" aria-expanded={barOpen} onClick={() => setBarOpen((o) => !o)}>{barOpen ? 'Hide controls' : 'Teacher controls'}</button>
         {barOpen && (
           <div className="sd-p-bar__row">
+            <a className="sd-p-btn sd-p-btn--hub" href="#/">⌂ Back to hub</a>
             <label>Mode <select value={mode} disabled={!!room} onChange={(e) => setMode(e.target.value as Mode)}>
               <option value="class">Whole class</option><option value="teams2">2 teams</option><option value="teams4">4 teams</option><option value="solo">Everyone for themselves</option>
             </select></label>
