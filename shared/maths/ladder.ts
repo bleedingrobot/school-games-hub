@@ -334,6 +334,22 @@ export function autoPools(progress: LadderProgress, opts: LadderOptions = {}): P
   return { focus: live[at].keys, review: live.slice(0, at).flatMap((p) => p.keys), stretch: live[at + 1]?.keys ?? [] };
 }
 
+/**
+ * For each review key, how many review keys its skill has, so review can pick a skill first and then a fact from it.
+ * A key that belongs to more than one skill counts with the first (easiest) one.
+ */
+export function reviewSkillSizes(review: readonly string[], opts: LadderOptions = {}): Map<string, number> {
+  const enabled = opts.enabledTables ?? TABLES;
+  const inReview = new Set(review);
+  const sizes = new Map<string, number>();
+  for (const skill of LADDER) {
+    if (!skill.built) continue;
+    const keys = activeKeys(skill, enabled, opts.division !== false).filter((k) => inReview.has(k) && !sizes.has(k));
+    for (const k of keys) sizes.set(k, keys.length);
+  }
+  return sizes;
+}
+
 /** The built ladder skills a focus really names, in ladder order. Unknown or not-yet-built names are ignored. */
 export function focusSkills(spec: FocusSpec): LadderSkill[] {
   const wanted = new Set(currentSkillIds(spec.skills));
@@ -476,7 +492,10 @@ export class AutoPack implements SkillPack {
       const div = /^div:\d+\/(\d+)$/.exec(key);
       return !!div && HARD_TABLES.includes(Number(div[1]));
     };
-    const weight = (key: string) => (!focus.has(key) && hardTable(key) ? HARD_TABLE_WEIGHT : 1);
+    // Review gives each skill a fair turn (James, 23 Nov 2026): a key counts as one share of its skill, so skip counting's 78
+    // facts come up no more often than order of operations' 7. Within a skill, weaker facts still come up more.
+    const skillSize = reviewSkillSizes(pools.review, this.opts);
+    const weight = (key: string) => (focus.has(key) ? 1 : (hardTable(key) ? HARD_TABLE_WEIGHT : 1) / (skillSize.get(key) ?? 1));
     const byKey = new Map(this.stats().map((s) => [s.key, s]));
     const picked = pickFromPools(pools, ctx, byKey, this.memory, this.random, weight);
     if (!picked) return null;

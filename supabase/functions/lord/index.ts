@@ -142,6 +142,18 @@ const QUICK_MS = 5e3;
 const QUICK_MS_BY_PACK = { generated: 8e3 };
 /** The quick time for the records of a pack ("times-tables", "generated"...). */
 const quickMsForPack = (pack) => pack && Object.hasOwn(QUICK_MS_BY_PACK, pack) ? QUICK_MS_BY_PACK[pack] : QUICK_MS;
+/**
+* Packs that are not timed at all (shared/maths/untimed.ts says why): any right answer is quick. Kept here, not there, so a game
+* that only needs a pack's quick time doesn't load the whole ladder.
+*/
+const UNTIMED_PACK_IDS = [
+	"place-value",
+	"fractions",
+	"decimals",
+	"money",
+	"patterns",
+	"clan-quest"
+];
 /** Mastery boxes 0–4 (Leitner). How likely each box is to be picked: lower boxes come up more. */
 const BOX_WEIGHTS = [
 	6,
@@ -7808,6 +7820,21 @@ function autoPools(progress, opts = {}) {
 		stretch: live[at + 1]?.keys ?? []
 	};
 }
+/**
+* For each review key, how many review keys its skill has, so review can pick a skill first and then a fact from it.
+* A key that belongs to more than one skill counts with the first (easiest) one.
+*/
+function reviewSkillSizes(review, opts = {}) {
+	const enabled = opts.enabledTables ?? TABLES;
+	const inReview = new Set(review);
+	const sizes = new Map();
+	for (const skill of LADDER) {
+		if (!skill.built) continue;
+		const keys = activeKeys(skill, enabled, opts.division !== false).filter((k) => inReview.has(k) && !sizes.has(k));
+		for (const k of keys) sizes.set(k, keys.length);
+	}
+	return sizes;
+}
 /** The built ladder skills a focus really names, in ladder order. Unknown or not-yet-built names are ignored. */
 function focusSkills(spec) {
 	const wanted = new Set(currentSkillIds(spec.skills));
@@ -7931,7 +7958,8 @@ var AutoPack = class {
 			const div = /^div:\d+\/(\d+)$/.exec(key);
 			return !!div && HARD_TABLES.includes(Number(div[1]));
 		};
-		const weight = (key) => !focus.has(key) && hardTable(key) ? HARD_TABLE_WEIGHT : 1;
+		const skillSize = reviewSkillSizes(pools.review, this.opts);
+		const weight = (key) => focus.has(key) ? 1 : (hardTable(key) ? HARD_TABLE_WEIGHT : 1) / (skillSize.get(key) ?? 1);
 		const picked = pickFromPools(pools, ctx, new Map(this.stats().map((s) => [s.key, s])), this.memory, this.random, weight);
 		if (!picked) return null;
 		const pack = this.ownerOf(picked.key);
@@ -7982,11 +8010,27 @@ function parseLadderInfo(raw) {
 		furthest: skillId(r.furthest)
 	};
 }
+const builtSkills = () => LADDER.filter((s) => s.built);
 const indexOfSkill = (id) => id ? LADDER.findIndex((s) => s.id === id) : -1;
 /** The floor under a student's place: an index into `LADDER`. */
 function floorRank(info) {
 	const start = info.placed === "done" ? indexOfSkill(info.placement) : -1;
 	return Math.max(0, start, indexOfSkill(info.furthest));
+}
+/** The student's place on the ladder, with the floor applied. */
+function placeProgress(stats, info, opts = {}) {
+	return ladderProgress(stats, {
+		...opts,
+		floor: floorRank(info)
+	});
+}
+/** The furthest place to keep: where they are now, or the last built skill once all of them are secure. */
+function placeToStore(stats, info, opts = {}) {
+	const skill = placeProgress(stats, info, opts).current ?? builtSkills().at(-1) ?? null;
+	return skill ? {
+		skill: skill.id,
+		rank: LADDER.indexOf(skill)
+	} : null;
 }
 //#endregion
 //#region shared/maths/focus.ts
@@ -8233,6 +8277,97 @@ function solveParts(parts) {
 	} : null;
 }
 //#endregion
+//#region shared/maths/placeContext.ts
+/**
+* Reads what the database sends about a student's ladder (`space_maths_context`: records, question settings and focus) into the
+* pieces the ladder code wants.
+*/
+function ladderOfContext(context) {
+	return {
+		facts: Array.isArray(context.facts) ? context.facts : [],
+		info: ladderOf(parseFocus(context.focus)),
+		opts: {
+			enabledTables: context.settings?.enabledTables,
+			division: context.settings?.division
+		}
+	};
+}
+//#endregion
+//#region shared/maths/syncPlace.ts
+/**
+* The server side of a student's place on the ladder (docs/MATHS-FOCUS-PLAN.md section 5). The functions that save answers call
+* `makePlaceSyncer` after saving, which works the place out from the student's records and hands it to the database, which only
+* ever moves it forward. `savePlacement` checks a placement check before storing where to start. Both take their database calls
+* as ports, so the tests (and each function's entry file) can stand in for Supabase.
+*/
+/** Looks at a student's records and keeps their furthest place up to date. Never throws: a late or missing update is harmless. */
+function makePlaceSyncer(ports, now = Date.now, minGapMs = 3e4) {
+	const last = new Map();
+	return async function syncPlace(player) {
+		const at = now();
+		const before = last.get(player);
+		if (before !== void 0 && at - before < minGapMs) return;
+		last.set(player, at);
+		if (last.size > 5e3) last.clear();
+		try {
+			const context = await ports.loadContext(player);
+			if (!context) return;
+			const { facts, info, opts } = ladderOfContext(context);
+			if (!info.on) return;
+			const place = placeToStore(facts, info, opts);
+			if (place) await ports.savePlace(player, place.skill, place.rank);
+		} catch {
+			console.error("place: not updated");
+		}
+	};
+}
+//#endregion
+//#region shared/maths/untimed.ts
+/**
+* Skills that are not timed (James, 23 Nov 2026): a right answer marks the fact off however long it took. These are questions
+* a student works out rather than recalls (rounding, order of operations, a percentage of an amount), and the hands-on junior
+* games where the answer is dragged or built (number lines, bundles, arrays). Facts to recall (number facts, doubles, skip
+* counting, times tables, bonds) stay timed: quick recall is the point of them.
+*
+* To time a skill again, take its id out of the list.
+*/
+const UNTIMED_SKILLS = [
+	"round-10-100",
+	"round-1000",
+	"round-big",
+	"factor-pairs",
+	"fraction-of",
+	"percent-of",
+	"whole-from-fraction",
+	"bedmas",
+	"number-line-100",
+	"number-line-1000",
+	"balance-10",
+	"balance-20",
+	"true-false",
+	"bundles-50",
+	"place-value-100",
+	"regroup-100",
+	"ten-more-less-100",
+	"place-value-1000",
+	"equal-rows",
+	"arrays-turn",
+	"sharing-rows",
+	"cut-arrays",
+	"count-out-10",
+	"count-out-20"
+];
+/**
+* Whole packs that are not timed: the topic packs of Maths Monsters and Dragon Maths (word problems with money, patterns,
+* place value, fractions and decimals) and Clans' quests. Their questions take reading.
+*/
+const UNTIMED_PACKS = UNTIMED_PACK_IDS;
+/** The quick time that makes any kept answer quick: every answer time is kept as at most this. */
+const UNTIMED_MS = LONGEST_ANSWER_MS;
+const untimedKeys = new Set(LADDER.filter((s) => UNTIMED_SKILLS.includes(s.id)).flatMap((s) => s.keys));
+/** True when a right answer to this key marks it off however long it took. */
+const isUntimed = (key, pack) => !!pack && UNTIMED_PACKS.includes(pack) || untimedKeys.has(key);
+//#endregion
 //#region shared/maths/focusResults.ts
 /**
 * What the game servers tell the database about answers given while a maths focus ran (docs/MATHS-FOCUS-PLAN.md, "Stage F.8
@@ -8315,33 +8450,72 @@ async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o
 		saved: 0,
 		failed: 0
 	};
-	for (const [pack, group] of groupByPack(answers)) try {
-		const { data, error } = await rpc("record_fact_answers", {
-			player,
-			pack,
-			batch_id: await batchId(once, pack),
-			answers: group.map((a) => ({
-				...cleanGiven(a),
-				ms: keptMs(a.ms)
-			})),
-			quick_ms: quickMs ?? quickMsForPack(pack),
-			fluent_days: 2,
-			top_box: 4,
-			min_ms: minMs ?? 0
-		});
-		if (error) {
-			result.failed++;
-			console.error(`${from}: record answers failed (${error.code ?? "unknown"})`);
-			continue;
+	for (const [pack, all] of groupByPack(answers)) {
+		const untimed = all.filter((a) => isUntimed(a.key, pack));
+		const timed = all.filter((a) => !isUntimed(a.key, pack));
+		for (const [group, untimedGroup] of [[timed, false], [untimed, true]]) {
+			if (group.length === 0) continue;
+			try {
+				const { data, error } = await rpc("record_fact_answers", {
+					player,
+					pack,
+					batch_id: untimedGroup ? await batchIdFor$1(`${from}:${once}:${pack}:untimed`) : await batchId(once, pack),
+					answers: group.map((a) => ({
+						...cleanGiven(a),
+						ms: keptMs(a.ms)
+					})),
+					quick_ms: untimedGroup ? UNTIMED_MS : quickMs ?? quickMsForPack(pack),
+					fluent_days: 2,
+					top_box: 4,
+					min_ms: minMs ?? 0
+				});
+				if (error) {
+					result.failed++;
+					console.error(`${from}: record answers failed (${error.code ?? "unknown"})`);
+					continue;
+				}
+				const saved = typeof data === "number" ? data : 0;
+				result.saved += saved;
+				if (saved > 0) await countForFocuses(rpc, player, pack, group, from);
+			} catch {
+				result.failed++;
+				console.error(`${from}: record answers failed`);
+			}
 		}
-		const saved = typeof data === "number" ? data : 0;
-		result.saved += saved;
-		if (saved > 0) await countForFocuses(rpc, player, pack, group, from);
-	} catch {
-		result.failed++;
-		console.error(`${from}: record answers failed`);
 	}
+	if (result.saved > 0) await syncLadderPlace(rpc, player);
 	return result;
+}
+/** When each student's place was last worked out, so a busy game reads their records at most every 30 seconds. */
+const placeSyncedAt = new Map();
+/**
+* Moves a student's furthest place on the ladder forward after their answers are saved (shared/maths/syncPlace.ts), so every
+* game that saves answers keeps the place up to date, not only Gem Keep, Monsters and Space. It never throws; the database
+* only ever moves the place forward.
+*/
+async function syncLadderPlace(rpc, player, now = Date.now()) {
+	const before = placeSyncedAt.get(player);
+	if (before !== void 0 && now - before < 3e4) return;
+	if (placeSyncedAt.size > 5e3) placeSyncedAt.clear();
+	placeSyncedAt.set(player, now);
+	await makePlaceSyncer({
+		async loadContext(id) {
+			const { data, error } = await rpc("space_maths_context", { player: id });
+			if (error) throw new Error(error.code ?? "unknown");
+			return data ?? null;
+		},
+		async savePlace(id, skill, rank) {
+			const { error } = await rpc("record_ladder_place", {
+				player: id,
+				skill,
+				rank
+			});
+			if (error) throw new Error(error.code ?? "unknown");
+		},
+		async savePlacementRow() {
+			return false;
+		}
+	}, () => now, 0)(player);
 }
 //#endregion
 //#region shared/space/mathsQuestion.ts

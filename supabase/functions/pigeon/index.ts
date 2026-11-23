@@ -105,6 +105,18 @@ const QUICK_MS = 5e3;
 const QUICK_MS_BY_PACK = { generated: 8e3 };
 /** The quick time for the records of a pack ("times-tables", "generated"...). */
 const quickMsForPack = (pack) => pack && Object.hasOwn(QUICK_MS_BY_PACK, pack) ? QUICK_MS_BY_PACK[pack] : QUICK_MS;
+/**
+* Packs that are not timed at all (shared/maths/untimed.ts says why): any right answer is quick. Kept here, not there, so a game
+* that only needs a pack's quick time doesn't load the whole ladder.
+*/
+const UNTIMED_PACK_IDS = [
+	"place-value",
+	"fractions",
+	"decimals",
+	"money",
+	"patterns",
+	"clan-quest"
+];
 new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" });
 //#endregion
 //#region shared/juniorQuick.ts
@@ -143,6 +155,10 @@ function factsIn(tables) {
 	for (const t of tables) for (const key of tableFacts(t)) keys.add(key);
 	return keys;
 }
+//#endregion
+//#region shared/maths/selector.ts
+/** A step's tables count as secure when this share of their facts are in box 2 or higher. */
+const STEP_SECURE_SHARE = .7;
 //#endregion
 //#region shared/maths/banded.ts
 /** A whole number from lo to hi (both included). */
@@ -2345,8 +2361,30 @@ async function handlePigeon(services, player, body) {
 }
 //#endregion
 //#region shared/maths/skillPacks/bondPairs.ts
+/**
+* One record per pair for the bonds to 100 and 1000 (Beanstalk, S34): `bond100:30+70` and `bond1000:300+700`, the smaller number
+* first, like `bond10:3+7`. They belong to the same ladder skills as the older one-key-for-all records `bond100:tens` and
+* `bond1000:hundreds` (which are still kept and still count). A skill is secure when either the old key or the pair keys say so.
+*/
 /** `bond100:30+70` or `bond1000:300+700`: whole tens (or hundreds) that make the total, the smaller first. */
 const PAIR = /^bond(100|1000):(\d{1,3})\+(\d{1,3})$/;
+const BOND_PAIR_TOTALS = [100, 1e3];
+/** The old record of each total, which the pair records add to. */
+const OLD_BOND_KEY = {
+	100: "bond100:tens",
+	1e3: "bond1000:hundreds"
+};
+/** The pairs Beanstalk practises: 10 + 90 to 50 + 50 (100 + 900 to 500 + 500). */
+const bondPairKeys = (total) => {
+	const step = total / 10;
+	return [
+		1,
+		2,
+		3,
+		4,
+		5
+	].map((n) => `bond${total}:${n * step}+${total - n * step}`);
+};
 /** True for a pair key that could have been made: the numbers add to the total, the smaller first, in whole tens (hundreds). */
 function isBondPairKey(key) {
 	const m = PAIR.exec(key);
@@ -2356,6 +2394,37 @@ function isBondPairKey(key) {
 	const hi = Number(m[3]);
 	const step = total / 10;
 	return lo >= step && lo <= hi && lo + hi === total && lo % step === 0 && m[2] === String(lo) && m[3] === String(hi);
+}
+/**
+* The records with one stand-in for each old key: where the pair records say a total is secure (70 percent of its pairs in box 2
+* or more, or in the top box), the old key counts as at least that. The old record is never made smaller and nothing is saved.
+*/
+function foldBondPairs(stats) {
+	const list = [...stats];
+	const byKey = new Map(list.map((s) => [s.key, s]));
+	const out = [...list];
+	for (const total of BOND_PAIR_TOTALS) {
+		const pairs = bondPairKeys(total).map((k) => byKey.get(k)).filter((s) => !!s && s.attempts > 0);
+		if (pairs.length === 0) continue;
+		const share = (box) => pairs.filter((p) => p.box >= box).length / bondPairKeys(total).length;
+		const fromPairs = share(4) >= .7 ? 4 : share(2) >= .7 ? 2 : 0;
+		const key = OLD_BOND_KEY[total];
+		const old = byKey.get(key);
+		const attempts = (old?.attempts ?? 0) + pairs.reduce((n, p) => n + p.attempts, 0);
+		const merged = {
+			key,
+			attempts,
+			correct: (old?.correct ?? 0) + pairs.reduce((n, p) => n + p.correct, 0),
+			avgMs: attempts ? ((old?.avgMs ?? 0) * (old?.attempts ?? 0) + pairs.reduce((n, p) => n + p.avgMs * p.attempts, 0)) / attempts : 0,
+			box: Math.max(old?.box ?? 0, fromPairs),
+			lastSeen: Math.max(old?.lastSeen ?? 0, ...pairs.map((p) => p.lastSeen)),
+			quickDays: [...new Set([...old?.quickDays ?? [], ...pairs.flatMap((p) => p.quickDays)])].sort().slice(-2)
+		};
+		const at = out.findIndex((s) => s.key === key);
+		if (at >= 0) out[at] = merged;
+		else out.push(merged);
+	}
+	return out;
 }
 //#endregion
 //#region shared/maths/skillPacks/addSub.ts
@@ -7517,9 +7586,115 @@ const FORMER_SKILLS = {
 		now: []
 	}
 };
+/** Skill ids as they are now: an old id becomes the skills it was split into. Order kept, no repeats. */
+function currentSkillIds(ids) {
+	return [...new Set(ids.flatMap((id) => Object.hasOwn(FORMER_SKILLS, id) ? FORMER_SKILLS[id].now : [id]))];
+}
+/**
+* A saved place (placement or furthest) as a skill id now: the first table an old step was split into, or for a dropped skill
+* the one that came after it, so nobody's place moves back.
+*/
+function currentPlaceId(id) {
+	if (id === "round-million") return "fdp-equivalents";
+	return Object.hasOwn(FORMER_SKILLS, id) ? FORMER_SKILLS[id].now[0] : id;
+}
 /** The old ids a skill used to be part of ('tables-6' → ['tables-6-9']), so answers still count for a focus saved with them. */
 function formerIdsOf(id) {
 	return Object.entries(FORMER_SKILLS).filter(([, f]) => f.now.includes(id)).map(([old]) => old);
+}
+/** The skill's keys once switched-off tables are taken out. */
+function activeKeys(skill, enabledTables, division = true) {
+	const on = new Set(enabledTables);
+	return skill.keys.filter((k) => {
+		const mul = parseFactKey(k);
+		if (mul) return on.has(mul.a) || on.has(mul.b);
+		const div = /^div:\d+\/(\d+)$/.exec(k);
+		return div ? division && on.has(Number(div[1])) : true;
+	});
+}
+/**
+* Jumping ahead (James, 22 Oct 2026): a student whose records show a times-table skill secure (70% of its times facts in box 2
+* or higher) is past every easier skill below it, even ones they have never been asked: someone who knows ×3, ×4 and ×8 isn't
+* kept on bonds to 10. Only times-table skills count, as they are big (30 to 60 facts) so a lucky run can't do it, and only their
+* times facts, so a class with division off (or a student who hasn't met it yet) jumps all the same. Returns the index just
+* after the highest such skill, or 0.
+*/
+function tablesJumpFloor(byKey, enabled = TABLES) {
+	let jump = 0;
+	CAMPAIGN_STEPS.forEach((_, step) => {
+		const skills = LADDER.filter((s) => s.built && s.tablesStep === step);
+		const times = skills.flatMap((s) => activeKeys(s, enabled, false)).filter((k) => k.startsWith("mul:"));
+		if (times.length === 0) return;
+		if (times.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / times.length >= .7) jump = Math.max(jump, ...skills.map((s) => LADDER.indexOf(s) + 1));
+	});
+	return jump;
+}
+/**
+* Where a student is on the ladder, worked out from their records: the first built skill that
+* isn't secure yet (70% of its facts in box 2 or higher, the same rule as the times-table
+* campaign) is the one they're on. A skill with all its tables switched off is left out: it never becomes the
+* current skill and doesn't count towards progress (it shows as 'upcoming' with a share of 1). With a `floor` (placement or the furthest place reached, see place.ts) the
+* built skills before it are behind the student (passed over, and secure only if their records say so), so forgetting a fact brings more review but never
+* drops the student's place below the floor.
+*/
+function ladderProgress(stats, opts = {}) {
+	const byKey = new Map(foldBondPairs(stats).map((s) => [s.key, s]));
+	const enabled = opts.enabledTables ?? TABLES;
+	let current = null;
+	let secureCount = 0;
+	let builtCount = 0;
+	const floor = Math.max(opts.floor ?? 0, tablesJumpFloor(byKey, enabled));
+	return {
+		skills: LADDER.map((skill, index) => {
+			if (!skill.built) return {
+				skill,
+				status: "later",
+				share: 0
+			};
+			const keys = activeKeys(skill, enabled, opts.division !== false);
+			if (keys.length === 0) return {
+				skill,
+				status: "upcoming",
+				share: 1
+			};
+			const share = keys.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / keys.length;
+			if (skill.inAuto === false) return {
+				skill,
+				status: "secure",
+				share,
+				passedOver: share < STEP_SECURE_SHARE
+			};
+			builtCount++;
+			if (index < floor) {
+				const real = share >= STEP_SECURE_SHARE;
+				if (real) secureCount++;
+				return {
+					skill,
+					status: "secure",
+					share,
+					passedOver: !real
+				};
+			}
+			if (current === null && share < .7) {
+				current = skill;
+				return {
+					skill,
+					status: "current",
+					share
+				};
+			}
+			if (current === null) secureCount++;
+			return {
+				skill,
+				status: current === null ? "secure" : "upcoming",
+				share
+			};
+		}),
+		current,
+		secureCount,
+		builtCount,
+		percent: builtCount ? Math.round(100 * secureCount / builtCount) : 0
+	};
 }
 /** Which skill pack records a mastery key ("mul:7x8" → "times-tables"), or null if it isn't a ladder key. */
 function packIdOfKey(key) {
@@ -7546,7 +7721,99 @@ function ladderKeyPacks() {
 	return out;
 }
 //#endregion
+//#region shared/maths/place.ts
+const NO_LADDER = {
+	on: false,
+	placed: null,
+	placement: null,
+	furthest: null
+};
+const ID = /^[a-z0-9-]{1,40}$/;
+/** A saved skill id, read as it is now (a place saved on "tables-6-9" is on "tables-6"). Null if it isn't a built skill. */
+const skillId = (v) => {
+	if (typeof v !== "string" || !ID.test(v)) return null;
+	const id = currentPlaceId(v);
+	return LADDER.some((s) => s.id === id && s.built) ? id : null;
+};
+function parseLadderInfo(raw) {
+	if (!raw || typeof raw !== "object") return NO_LADDER;
+	const r = raw;
+	const placement = skillId(r.placement);
+	const placed = r.placed === "skipped" ? "skipped" : r.placed === "done" && placement ? "done" : null;
+	return {
+		on: r.on === true,
+		placed,
+		placement: placed === "done" ? placement : null,
+		furthest: skillId(r.furthest)
+	};
+}
+const builtSkills = () => LADDER.filter((s) => s.built);
+const indexOfSkill = (id) => id ? LADDER.findIndex((s) => s.id === id) : -1;
+/** The floor under a student's place: an index into `LADDER`. */
+function floorRank(info) {
+	const start = info.placed === "done" ? indexOfSkill(info.placement) : -1;
+	return Math.max(0, start, indexOfSkill(info.furthest));
+}
+/** The student's place on the ladder, with the floor applied. */
+function placeProgress(stats, info, opts = {}) {
+	return ladderProgress(stats, {
+		...opts,
+		floor: floorRank(info)
+	});
+}
+/** The furthest place to keep: where they are now, or the last built skill once all of them are secure. */
+function placeToStore(stats, info, opts = {}) {
+	const skill = placeProgress(stats, info, opts).current ?? builtSkills().at(-1) ?? null;
+	return skill ? {
+		skill: skill.id,
+		rank: LADDER.indexOf(skill)
+	} : null;
+}
+//#endregion
 //#region shared/maths/focus.ts
+const AUTO_FOCUS = {
+	source: "auto",
+	skills: [],
+	onlyThese: false,
+	endsAt: null,
+	canChoose: true,
+	own: null,
+	ladder: NO_LADDER
+};
+const SOURCES = [
+	"teacher-student",
+	"teacher-group",
+	"teacher-class",
+	"student",
+	"auto"
+];
+const SKILL_ID = /^[a-z0-9-]{1,40}$/;
+/** A focus's skills, with ids saved before a skill was split read as the skills it became ("tables-6-9" → ×6 and ×9). */
+const cleanSkills = (raw) => Array.isArray(raw) ? currentSkillIds(raw.filter((s) => typeof s === "string" && SKILL_ID.test(s))).slice(0, 12) : [];
+/** Reads what the server sent. Anything odd counts as auto: nobody gets a strange focus by accident. */
+function parseFocus(raw) {
+	if (!raw || typeof raw !== "object") return AUTO_FOCUS;
+	const r = raw;
+	const source = SOURCES.find((s) => s === r.source) ?? "auto";
+	const skills = cleanSkills(r.skills);
+	const own = r.own && typeof r.own === "object" ? r.own : null;
+	const ownSkills = own ? cleanSkills(own.skills) : [];
+	const ends = typeof r.endsAt === "string" && !Number.isNaN(Date.parse(r.endsAt)) ? r.endsAt : null;
+	return {
+		source: source !== "auto" && skills.length === 0 ? "auto" : source,
+		skills: source === "auto" ? [] : skills,
+		onlyThese: r.onlyThese === true,
+		endsAt: source.startsWith("teacher") ? ends : null,
+		canChoose: r.canChoose !== false,
+		own: ownSkills.length ? {
+			skills: ownSkills,
+			onlyThese: own.onlyThese === true
+		} : null,
+		ladder: parseLadderInfo(r.ladder)
+	};
+}
+/** The ladder facts of a focus (auto off, nothing known, when it has none). */
+const ladderOf = (focus) => focus?.ladder ?? NO_LADDER;
 /** Splits answers by the pack that keeps their record (times tables, early facts, adding, division, generated skills). */
 function groupByPack(answers) {
 	const out = new Map();
@@ -7559,6 +7826,97 @@ function groupByPack(answers) {
 }
 const ladderKeys = ladderKeyPacks();
 for (let a = 1; a <= 12; a++) for (let b = a; b <= 12; b++) ladderKeys.set(`mul:${a}x${b}`, "times-tables");
+//#endregion
+//#region shared/maths/placeContext.ts
+/**
+* Reads what the database sends about a student's ladder (`space_maths_context`: records, question settings and focus) into the
+* pieces the ladder code wants.
+*/
+function ladderOfContext(context) {
+	return {
+		facts: Array.isArray(context.facts) ? context.facts : [],
+		info: ladderOf(parseFocus(context.focus)),
+		opts: {
+			enabledTables: context.settings?.enabledTables,
+			division: context.settings?.division
+		}
+	};
+}
+//#endregion
+//#region shared/maths/syncPlace.ts
+/**
+* The server side of a student's place on the ladder (docs/MATHS-FOCUS-PLAN.md section 5). The functions that save answers call
+* `makePlaceSyncer` after saving, which works the place out from the student's records and hands it to the database, which only
+* ever moves it forward. `savePlacement` checks a placement check before storing where to start. Both take their database calls
+* as ports, so the tests (and each function's entry file) can stand in for Supabase.
+*/
+/** Looks at a student's records and keeps their furthest place up to date. Never throws: a late or missing update is harmless. */
+function makePlaceSyncer(ports, now = Date.now, minGapMs = 3e4) {
+	const last = new Map();
+	return async function syncPlace(player) {
+		const at = now();
+		const before = last.get(player);
+		if (before !== void 0 && at - before < minGapMs) return;
+		last.set(player, at);
+		if (last.size > 5e3) last.clear();
+		try {
+			const context = await ports.loadContext(player);
+			if (!context) return;
+			const { facts, info, opts } = ladderOfContext(context);
+			if (!info.on) return;
+			const place = placeToStore(facts, info, opts);
+			if (place) await ports.savePlace(player, place.skill, place.rank);
+		} catch {
+			console.error("place: not updated");
+		}
+	};
+}
+//#endregion
+//#region shared/maths/untimed.ts
+/**
+* Skills that are not timed (James, 23 Nov 2026): a right answer marks the fact off however long it took. These are questions
+* a student works out rather than recalls (rounding, order of operations, a percentage of an amount), and the hands-on junior
+* games where the answer is dragged or built (number lines, bundles, arrays). Facts to recall (number facts, doubles, skip
+* counting, times tables, bonds) stay timed: quick recall is the point of them.
+*
+* To time a skill again, take its id out of the list.
+*/
+const UNTIMED_SKILLS = [
+	"round-10-100",
+	"round-1000",
+	"round-big",
+	"factor-pairs",
+	"fraction-of",
+	"percent-of",
+	"whole-from-fraction",
+	"bedmas",
+	"number-line-100",
+	"number-line-1000",
+	"balance-10",
+	"balance-20",
+	"true-false",
+	"bundles-50",
+	"place-value-100",
+	"regroup-100",
+	"ten-more-less-100",
+	"place-value-1000",
+	"equal-rows",
+	"arrays-turn",
+	"sharing-rows",
+	"cut-arrays",
+	"count-out-10",
+	"count-out-20"
+];
+/**
+* Whole packs that are not timed: the topic packs of Maths Monsters and Dragon Maths (word problems with money, patterns,
+* place value, fractions and decimals) and Clans' quests. Their questions take reading.
+*/
+const UNTIMED_PACKS = UNTIMED_PACK_IDS;
+/** The quick time that makes any kept answer quick: every answer time is kept as at most this. */
+const UNTIMED_MS = LONGEST_ANSWER_MS;
+const untimedKeys = new Set(LADDER.filter((s) => UNTIMED_SKILLS.includes(s.id)).flatMap((s) => s.keys));
+/** True when a right answer to this key marks it off however long it took. */
+const isUntimed = (key, pack) => !!pack && UNTIMED_PACKS.includes(pack) || untimedKeys.has(key);
 //#endregion
 //#region shared/maths/focusResults.ts
 /**
@@ -7642,33 +8000,72 @@ async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o
 		saved: 0,
 		failed: 0
 	};
-	for (const [pack, group] of groupByPack(answers)) try {
-		const { data, error } = await rpc("record_fact_answers", {
-			player,
-			pack,
-			batch_id: await batchId(once, pack),
-			answers: group.map((a) => ({
-				...cleanGiven(a),
-				ms: keptMs(a.ms)
-			})),
-			quick_ms: quickMs ?? quickMsForPack(pack),
-			fluent_days: 2,
-			top_box: 4,
-			min_ms: minMs ?? 0
-		});
-		if (error) {
-			result.failed++;
-			console.error(`${from}: record answers failed (${error.code ?? "unknown"})`);
-			continue;
+	for (const [pack, all] of groupByPack(answers)) {
+		const untimed = all.filter((a) => isUntimed(a.key, pack));
+		const timed = all.filter((a) => !isUntimed(a.key, pack));
+		for (const [group, untimedGroup] of [[timed, false], [untimed, true]]) {
+			if (group.length === 0) continue;
+			try {
+				const { data, error } = await rpc("record_fact_answers", {
+					player,
+					pack,
+					batch_id: untimedGroup ? await batchIdFor(`${from}:${once}:${pack}:untimed`) : await batchId(once, pack),
+					answers: group.map((a) => ({
+						...cleanGiven(a),
+						ms: keptMs(a.ms)
+					})),
+					quick_ms: untimedGroup ? UNTIMED_MS : quickMs ?? quickMsForPack(pack),
+					fluent_days: 2,
+					top_box: 4,
+					min_ms: minMs ?? 0
+				});
+				if (error) {
+					result.failed++;
+					console.error(`${from}: record answers failed (${error.code ?? "unknown"})`);
+					continue;
+				}
+				const saved = typeof data === "number" ? data : 0;
+				result.saved += saved;
+				if (saved > 0) await countForFocuses(rpc, player, pack, group, from);
+			} catch {
+				result.failed++;
+				console.error(`${from}: record answers failed`);
+			}
 		}
-		const saved = typeof data === "number" ? data : 0;
-		result.saved += saved;
-		if (saved > 0) await countForFocuses(rpc, player, pack, group, from);
-	} catch {
-		result.failed++;
-		console.error(`${from}: record answers failed`);
 	}
+	if (result.saved > 0) await syncLadderPlace(rpc, player);
 	return result;
+}
+/** When each student's place was last worked out, so a busy game reads their records at most every 30 seconds. */
+const placeSyncedAt = new Map();
+/**
+* Moves a student's furthest place on the ladder forward after their answers are saved (shared/maths/syncPlace.ts), so every
+* game that saves answers keeps the place up to date, not only Gem Keep, Monsters and Space. It never throws; the database
+* only ever moves the place forward.
+*/
+async function syncLadderPlace(rpc, player, now = Date.now()) {
+	const before = placeSyncedAt.get(player);
+	if (before !== void 0 && now - before < 3e4) return;
+	if (placeSyncedAt.size > 5e3) placeSyncedAt.clear();
+	placeSyncedAt.set(player, now);
+	await makePlaceSyncer({
+		async loadContext(id) {
+			const { data, error } = await rpc("space_maths_context", { player: id });
+			if (error) throw new Error(error.code ?? "unknown");
+			return data ?? null;
+		},
+		async savePlace(id, skill, rank) {
+			const { error } = await rpc("record_ladder_place", {
+				player: id,
+				skill,
+				rank
+			});
+			if (error) throw new Error(error.code ?? "unknown");
+		},
+		async savePlacementRow() {
+			return false;
+		}
+	}, () => now, 0)(player);
 }
 //#endregion
 //#region supabase/functions/_shared/signIn.ts

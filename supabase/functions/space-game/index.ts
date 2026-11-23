@@ -7820,6 +7820,21 @@ function autoPools(progress, opts = {}) {
 		stretch: live[at + 1]?.keys ?? []
 	};
 }
+/**
+* For each review key, how many review keys its skill has, so review can pick a skill first and then a fact from it.
+* A key that belongs to more than one skill counts with the first (easiest) one.
+*/
+function reviewSkillSizes(review, opts = {}) {
+	const enabled = opts.enabledTables ?? TABLES;
+	const inReview = new Set(review);
+	const sizes = new Map();
+	for (const skill of LADDER) {
+		if (!skill.built) continue;
+		const keys = activeKeys(skill, enabled, opts.division !== false).filter((k) => inReview.has(k) && !sizes.has(k));
+		for (const k of keys) sizes.set(k, keys.length);
+	}
+	return sizes;
+}
 /** The built ladder skills a focus really names, in ladder order. Unknown or not-yet-built names are ignored. */
 function focusSkills(spec) {
 	const wanted = new Set(currentSkillIds(spec.skills));
@@ -7943,7 +7958,8 @@ var AutoPack = class {
 			const div = /^div:\d+\/(\d+)$/.exec(key);
 			return !!div && HARD_TABLES.includes(Number(div[1]));
 		};
-		const weight = (key) => !focus.has(key) && hardTable(key) ? HARD_TABLE_WEIGHT : 1;
+		const skillSize = reviewSkillSizes(pools.review, this.opts);
+		const weight = (key) => focus.has(key) ? 1 : (hardTable(key) ? HARD_TABLE_WEIGHT : 1) / (skillSize.get(key) ?? 1);
 		const picked = pickFromPools(pools, ctx, new Map(this.stats().map((s) => [s.key, s])), this.memory, this.random, weight);
 		if (!picked) return null;
 		const pack = this.ownerOf(picked.key);

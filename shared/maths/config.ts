@@ -59,6 +59,13 @@ export const QUICK_MS = 5000;
 export const QUICK_MS_BY_PACK: Readonly<Record<string, number>> = { generated: 8000 };
 /** The quick time for the records of a pack ("times-tables", "generated"...). */
 export const quickMsForPack = (pack: string | null | undefined): number => (pack && Object.hasOwn(QUICK_MS_BY_PACK, pack) ? QUICK_MS_BY_PACK[pack] : QUICK_MS);
+/**
+ * Packs that are not timed at all (shared/maths/untimed.ts says why): any right answer is quick. Kept here, not there, so a game
+ * that only needs a pack's quick time doesn't load the whole ladder.
+ */
+export const UNTIMED_PACK_IDS: readonly string[] = ['place-value', 'fractions', 'decimals', 'money', 'patterns', 'clan-quest'];
+/** A pack's quick time, with untimed packs never slow. */
+export const quickMsForSave = (pack: string | null | undefined): number => (pack && UNTIMED_PACK_IDS.includes(pack) ? LONGEST_ANSWER_MS : quickMsForPack(pack));
 
 /** Mastery boxes 0–4 (Leitner). How likely each box is to be picked: lower boxes come up more. */
 export const BOX_WEIGHTS = [6, 5, 3, 2, 1];
