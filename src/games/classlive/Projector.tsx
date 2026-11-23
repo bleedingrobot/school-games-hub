@@ -10,7 +10,7 @@ import { PICTURES, type MuralGame } from '../../../shared/classlive/mural';
 import { BODY, SERPENT_LEVELS, SERPENT_LEVEL_ABOUT, SERPENT_LEVEL_NAMES, stepText, wakeAt, type SerpentGame, type SerpentLevel } from '../../../shared/classlive/serpent';
 import { ACTIVITY_NAMES, type Activity, type Event, type ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
-import { ARM_COLOURS, lagHint } from './arms';
+import { ARM_COLOURS, lagHint, useHeldLag } from './arms';
 import type { ClassLiveLink, Reply } from './link';
 import { NightBackdrop, PLAYER_COLOURS, StarSky } from './StarSky';
 import { MuralCloth, MuralScene, NO_MURAL_FX, type MuralFx } from './MuralScene';
@@ -550,20 +550,10 @@ function SerpentLobbyHead({ game }: { game: SerpentGame }) {
 
 /* ---------------- live: counters, hints, spotlight ---------------- */
 
-/** Wait this long (ms) with the same arm lagging before its hint shows, so a hint never flickers in and out. */
-const LAG_SHOW_MS = 12_000;
-
 /** A gentle hint, above the counter, on how to find facts for an arm lagging well behind the rest. Never the answer. */
 function LagHint({ game }: { game: StarsGame }) {
-  const arm = laggingArm(armCounts(game), game.stars.length);
-  const [shown, setShown] = useState<Arm | null>(null);
-  useEffect(() => {
-    if (arm === null) { setShown(null); return; }
-    if (shown === arm) return;
-    const id = window.setTimeout(() => setShown(arm), LAG_SHOW_MS);
-    return () => window.clearTimeout(id);
-  }, [arm, shown]);
-  if (shown === null || shown !== arm) return null;
+  const shown = useHeldLag(laggingArm(armCounts(game), game.stars.length));
+  if (shown === null) return null;
   return (
     <div className="cl-lag" key={shown} role="status" style={{ '--arm': ARM_COLOURS[shown] } as React.CSSProperties}>
       <span className="cl-lag__tag">💡 {ARM_NAMES[shown]}</span>

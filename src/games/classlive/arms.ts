@@ -1,4 +1,5 @@
 /** Star Web's arms on screen: a colour and a hint for each (docs/CLASSLIVE-PLAN.md section 2). */
+import { useEffect, useState } from 'react';
 import type { Anchor, Arm } from '../../../shared/classlive/stars';
 
 export const ARM_COLOURS: Record<Arm, string> = {
@@ -30,4 +31,19 @@ export function lagHint(arm: Arm, { x, y, p }: Anchor): string {
     case 'near': return `${x} × ${y} is ${x} groups of ${y}. One more group adds ${y}; one less group takes ${y} away.`;
     case 'wild': return `Can you make ${p} another way, with + or −, or with different numbers?`;
   }
+}
+
+/** Wait this long (ms) with the same arm lagging before its hint shows, so a hint never flickers in and out. */
+export const LAG_SHOW_MS = 12_000;
+
+/** The lagging arm once it has lagged for LAG_SHOW_MS (the big screen and the pupils' screens both use it). */
+export function useHeldLag(arm: Arm | null): Arm | null {
+  const [shown, setShown] = useState<Arm | null>(null);
+  useEffect(() => {
+    if (arm === null) { setShown(null); return; }
+    if (shown === arm) return;
+    const id = window.setTimeout(() => setShown(arm), LAG_SHOW_MS);
+    return () => window.clearTimeout(id);
+  }, [arm, shown]);
+  return shown !== null && shown === arm ? shown : null;
 }

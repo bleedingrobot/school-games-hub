@@ -5,13 +5,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PlayerView, RoomView } from '../../../shared/classlive/server';
 import { ARM_NAMES, laggingArm, type StarsReply } from '../../../shared/classlive/stars';
-import { ARM_COLOURS, ARM_HINTS, lagHint } from './arms';
+import { ARM_COLOURS, ARM_HINTS, lagHint, useHeldLag } from './arms';
 import { MuralPad } from './MuralPad';
 import { SerpentPad } from './SerpentPad';
 import type { ClassLiveLink } from './link';
 import './controller.css';
 
 const MAX_LEN = 30;
+/** How often a device asks for the room (ms). */
+export const LOOK_MS = 2000;
 type Phase = 'joining' | 'none' | 'error' | 'playing';
 type StarsRoom = RoomView & { game: Extract<RoomView['game'], { kind: 'stars' }> };
 type Anchor = StarsRoom['game']['anchor'];
@@ -97,13 +99,27 @@ export function Controller({ link, me, room: roomProp }: { link: ClassLiveLink; 
     return () => { dead = true; if (timer) clearTimeout(timer); };
   }, [link, roomProp, attempt]);
 
-  // Live updates.
+  // Live updates. The room comes from every reply and a look every 2 seconds (every 6 once it's over): each device
+  // listening to every change of the room row went over Realtime's messages-per-second limit with a class of devices,
+  // and changes were dropped (Class Showdown hung in a real class, 24 Nov 2026). The pupil's own row is still live (one
+  // message per change, to one device).
+  const over = view?.state === 'over';
   useEffect(() => {
     if (phase !== 'playing' || room === null) return;
-    const a = link.watchRoom(room, setView);
     const b = link.watchMe(room, me, setMine);
-    return () => { a(); b(); };
-  }, [link, me, room, phase]);
+    let stop = false;
+    const look = () =>
+      link.send({ action: 'look', room }).then(
+        (out) => {
+          if (stop || out.status !== 200) return;
+          if (out.body.view) setView(out.body.view as RoomView);
+          if (out.body.me) setMine(out.body.me as PlayerView);
+        },
+        () => undefined,
+      );
+    const timer = window.setInterval(() => void look(), over ? 6000 : LOOK_MS);
+    return () => { stop = true; window.clearInterval(timer); b(); };
+  }, [link, me, room, phase, over]);
 
   if (phase === 'joining') return <Sky><div className="cl-c-center"><p className="cl-c-say">Joining…</p></div></Sky>;
   if (phase === 'none') {
@@ -217,6 +233,8 @@ function StarsPlay({ link, room, view, mine, setMine, setView }: { link: ClassLi
   const anchor: Anchor = view.game.anchor;
   const known = `${anchor.x} × ${anchor.y} = ${anchor.p}`;
 
+  // A gentle hint when one arm of the class's web lags well behind (the same rule as the big screen).
+  const lag = useHeldLag(view.state === 'live' ? laggingArm(view.game.arms, view.game.total) : null);
   if (view.state === 'over') {
     const mg = mine?.game.kind === 'stars' ? mine.game : null;
     const found = mg?.found ?? 0;
@@ -249,8 +267,6 @@ function StarsPlay({ link, room, view, mine, setMine, setView }: { link: ClassLi
 
   const reply = fb && 'reply' in fb ? fb.reply : null;
   const nudge = reply?.nudge ?? null;
-  // A gentle hint when one arm of the class's web lags well behind (the same rule as the big screen).
-  const lag = view.state === 'live' ? laggingArm(view.game.arms, view.game.total) : null;
   const col = reply && (reply.result === 'new' || reply.result === 'again') ? ARM_COLOURS[reply.star.arm] : undefined;
 
   return (
