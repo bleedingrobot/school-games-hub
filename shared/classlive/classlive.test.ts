@@ -109,6 +109,13 @@ describe('Class Live server', () => {
     expect(late.status).toBe(409);
     expect(pc.db.rooms.get(room)!.session.state).toBe('over');
     expect(pc.db.rooms.get(room)!.screen.events.at(-1)).toMatchObject({ type: 'over', why: 'time' });
+    // Paid once when it ended: everyone who played gets 3 points (5 with the sky creature), and more calls change nothing.
+    const paid = [...pc.db.paid.values()];
+    expect(paid).toHaveLength(1);
+    expect(paid[0].players).toHaveLength(30);
+    expect(paid[0].players.every((p) => p.points >= 3 && p.points <= 10)).toBe(true);
+    await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'view', room });
+    expect(pc.db.paid.size).toBe(1);
   });
 
   it('Mystery Mural: right answers earn flips, a question counts once, guesses open later and the teacher reveals it', async () => {

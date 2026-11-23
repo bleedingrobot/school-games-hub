@@ -110,6 +110,10 @@ Deno.serve(
       const raw = await call<StoredQuestion>('classlive_keep_question', { target: room, player, question });
       return raw === 'busy' ? 'busy' : (questionOf(raw) as StoredQuestion);
     },
+    async finishSession(room, done) {
+      const out = await call<string>('classlive_finish', { target: room, done });
+      if (out === 'busy') throw new Error('classlive_finish failed');
+    },
     async recordAnswers(player, once, answers) {
       await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'classlive');
     },
