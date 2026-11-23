@@ -211,7 +211,7 @@ const answers: Record<string, (a: Row) => unknown> = {
     recent: [{ d: day(i % 3), m: (i + k) % 3, t: 8, l: 1 + ((i + k) % 4), f: 6, ms: 2400 }], moves: [],
   }]).filter((_, k) => (i + k) % 5 !== 4))])),
   teacher_quick_looks_class: () => Object.fromEntries(PEOPLE.slice(0, 7).map(([id], i) => [id, { q: { f: 2 + (i % 5), p: 1, g: 1 }, sessions: 4 + i, recent: { answered: 30 + i * 4, correct: 24 + i * 3 }, last30: 8 + i, lastDay: day(i % 4) }])),
-  teacher_progress_other_games: () => PEOPLE.flatMap(([id], i) => ['isles', 'diamond', 'archery'].map((game, k) => ({ student: id, game, value: 3 + i + k, at: ago(60 * (i + k)) }))),
+  teacher_progress_other_games: () => PEOPLE.flatMap(([id], i) => ['isles', 'diamond', 'archery', 'circuit'].map((game, k) => ({ student: id, game, value: 3 + i + k, at: ago(60 * (i + k)) }))),
   teacher_name_requests: () => [],
   teacher_new_trophies: () => [],
   teacher_question_skips: () => [],

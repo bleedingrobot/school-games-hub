@@ -3,7 +3,7 @@
  * one posts to the school's server (`liveCircuit` in liveBackend.ts); the preview runs the very same handler in the page on
  * a pretend database (`pretendCircuit` in pretend.ts), so it never calls the live site.
  */
-import type { CircuitSave, Medal, RacerId } from '../../../shared/circuit/game';
+import type { CircuitSave, Medal, RacerId, TipId } from '../../../shared/circuit/game';
 import type { RunMaths } from '../../../shared/circuit/maths';
 
 export interface StartReply {
@@ -45,9 +45,12 @@ export interface CircuitBackend {
   /** `maths`: the pupil's own choice, used only when the teacher lets pupils choose. */
   start(road: string, maths?: boolean): Promise<StartReply>;
   answer(a: { road: string; seed: string; stamp: string; slot: number; answer: number; ms: number }): Promise<AnswerReply>;
-  finish(run: { road: string; seed: string; stamp: string; inputs: string; crashes: number; hard: boolean }): Promise<FinishReply>;
+  /** `guide`: Volt's guided go on road 1 (replayed with its gaps bridged until the first jump). */
+  finish(run: { road: string; seed: string; stamp: string; inputs: string; crashes: number; hard: boolean; guide?: boolean }): Promise<FinishReply>;
   /** Saves the pupil's racer (Stage 5); refused ('locked') until its world is open. */
   racer(racer: RacerId): Promise<{ racer: RacerId }>;
+  /** Saves Volt's tips as seen (Stage 6), so each shows once. */
+  seen(tips: TipId[]): Promise<{ seen: TipId[] }>;
 }
 
 type Post = (body: object) => Promise<{ status: number; body: Record<string, unknown> }>;
@@ -65,5 +68,6 @@ export function fromPost(post: Post): CircuitBackend {
     answer: (a) => ask({ action: 'answer', ...a }),
     finish: (run) => ask({ action: 'finish', ...run }),
     racer: (racer) => ask({ action: 'racer', racer }),
+    seen: (tips) => ask({ action: 'seen', tips }),
   };
 }

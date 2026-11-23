@@ -21,7 +21,7 @@ import {
   SUBSTEPS, TOP_SPEED, TUNNEL_ROOF, TUNNEL_ROOF_THICKNESS, TURN_AT_REST, TURN_RATE, WALL_NUDGE,
 } from './config';
 import { decodeInput, inputPlayer, type Input, type InputLog } from './inputs';
-import { cellAt, restartLane, topOf, type Road } from './road';
+import { bridgedRoad, bridgesAfterJump, cellAt, restartLane, topOf, type Road } from './road';
 
 /** 'outOfTime': hard mode's count-down clock ran out (the whole road starts again; no checkpoint). */
 export type Outcome = 'racing' | 'finished' | 'crashed' | 'fell' | 'outOfBattery' | 'outOfSignal' | 'outOfTime';
@@ -101,6 +101,11 @@ export interface RaceState {
   lives: number;
   /** Hard mode's clock: the run ends 'outOfTime' at this many steps (0: no clock). */
   timeLimit: number;
+  /**
+   * Volt's guided first go (Stage 6): gap rows before this row are bridged (0: none). A guided go starts with every gap
+   * bridged; the first jump leaves only the bridges already reached (bridgesAfterJump), so the gaps ahead are real.
+   */
+  bridges: number;
 }
 
 export interface RaceOptions {
@@ -111,6 +116,8 @@ export interface RaceOptions {
   gateRight?: readonly number[] | null;
   /** Hard mode's count-down clock, in steps (0 or missing: none). */
   timeLimit?: number;
+  /** Volt's guided first go: no gaps until the first jump (RaceState.bridges). */
+  guide?: boolean;
 }
 
 /** Input slots one life (one go from the start or a checkpoint) can use: a whole road's worth, so lives never overlap. */
@@ -129,6 +136,7 @@ export function newRace(road: Road, opts: RaceOptions = {}): RaceState {
     refills: opts.refills ?? null, gateRight: opts.gateRight ?? null, portsUsed: 0, pendingPort: -1,
     gatesPassed: 0, choices: road.gates.map(() => -1), boostGate: -1,
     checkpoint: -1, checkpointBattery: FULL, checkpointSignal: FULL, lives: 0, timeLimit: opts.timeLimit ?? 0,
+    bridges: opts.guide ? road.length : 0,
   };
 }
 
@@ -179,8 +187,10 @@ function respawn(s: RaceState, road: Road): void {
 }
 
 /** One step of the race. Pure: `prev` is not changed. */
-export function step(prev: RaceState, input: Input, road: Road): { state: RaceState; events: RaceEvent[] } {
+export function step(prev: RaceState, input: Input, plainRoad: Road): { state: RaceState; events: RaceEvent[] } {
   const s: RaceState = { ...prev };
+  // A guided go plays on the road with its gaps bridged (up to s.bridges).
+  const road = s.bridges > 0 ? bridgedRoad(plainRoad, s.bridges) : plainRoad;
   const events: RaceEvent[] = [];
   if (s.outcome !== 'racing') {
     if (s.outcome !== 'finished') s.deadSteps++;
@@ -195,7 +205,7 @@ export function step(prev: RaceState, input: Input, road: Road): { state: RaceSt
   // Auto-Pilot: near the top of a jump, check it lands; if not, try small changes until it would.
   if (s.autoPilot && s.jumping && !s.autoPilotChecked && s.vy <= JUMP_SPEED * AUTO_PILOT_AT) {
     s.autoPilotChecked = true;
-    if (runAutoPilot(s, input, road)) events.push('autopilot');
+    if (runAutoPilot(s, input, plainRoad)) events.push('autopilot');
   }
 
   // A port reached last step refills now, by its answer (the screen waited for it in between).
@@ -252,6 +262,8 @@ export function step(prev: RaceState, input: Input, road: Road): { state: RaceSt
     s.jumping = true;
     s.airSteps = 0;
     s.autoPilotChecked = false;
+    // The guided go's first jump: the gaps ahead are real from now on.
+    if (s.bridges >= plainRoad.length) s.bridges = bridgesAfterJump(plainRoad, row);
     events.push('jump');
   }
 
@@ -467,5 +479,5 @@ export function replay(road: Road, log: InputLog, opts: RaceOptions = {}): RaceS
 
 /** A short text of the whole state, to compare runs exactly. */
 export function stateKey(s: RaceState): string {
-  return [s.x, s.y, s.z, s.vy, s.vz, s.steer, s.steerScale, s.slide, s.battery, s.signal, s.steps, s.outcome].join('|');
+  return [s.x, s.y, s.z, s.vy, s.vz, s.steer, s.steerScale, s.slide, s.battery, s.signal, s.steps, s.outcome, s.bridges].join('|');
 }

@@ -215,6 +215,56 @@ function topOf(cell) {
 	if (cell === "1" || cell === "2" || cell === "3") return BLOCK_HEIGHTS[cell];
 	return 0;
 }
+/** True if a whole row is gap (the gaps a guided go bridges; a gap beside a trace is just the road's edge). */
+const gapRow = (road, row) => row >= 0 && row < road.length && road.cells.slice(row * 7, row * 7 + 7) === ".".repeat(7);
+/** The gap runs (first and last row of each run of whole-gap rows), in road order. */
+function gapRuns(road) {
+	const runs = [];
+	for (let row = 0; row < road.length; row++) {
+		if (!gapRow(road, row)) continue;
+		if (gapRow(road, row - 1)) runs[runs.length - 1].last = row;
+		else runs.push({
+			first: row,
+			last: row
+		});
+	}
+	return runs;
+}
+const bridged = new WeakMap();
+/**
+* The road with every whole-gap row before `upTo` bridged with plain trace, in the lanes of the last real row before the
+* gap (so the bridge carries on the road's shape). Read once per road and `upTo`.
+*/
+function bridgedRoad(road, upTo) {
+	let byEnd = bridged.get(road);
+	if (!byEnd) bridged.set(road, byEnd = new Map());
+	let out = byEnd.get(upTo);
+	if (out) return out;
+	const cells = road.cells.split("");
+	let shape = "-".repeat(7);
+	for (let row = 0; row < Math.min(upTo, road.length); row++) {
+		const text = road.cells.slice(row * 7, row * 7 + 7);
+		if (!gapRow(road, row)) {
+			shape = text;
+			continue;
+		}
+		for (let lane = 0; lane < 7; lane++) if (shape[lane] !== ".") cells[row * 7 + lane] = "-";
+	}
+	out = {
+		...road,
+		cells: cells.join("")
+	};
+	byEnd.set(upTo, out);
+	return out;
+}
+/**
+* After the guided go's first jump at `row`: the bridges left (rows before the returned row). A bridge the racer is on stays
+* (the rest of its run too); every gap after it is real.
+*/
+function bridgesAfterJump(road, row) {
+	const run = gapRuns(road).find((r) => row >= r.first && row <= r.last);
+	return run ? run.last + 1 : Math.max(1, row + 1);
+}
 //#endregion
 //#region shared/circuit/physics.ts
 /**
@@ -275,7 +325,8 @@ function newRace(road, opts = {}) {
 		checkpointBattery: 100,
 		checkpointSignal: 100,
 		lives: 0,
-		timeLimit: opts.timeLimit ?? 0
+		timeLimit: opts.timeLimit ?? 0,
+		bridges: opts.guide ? road.length : 0
 	};
 }
 /** True if the point is inside something solid. */
@@ -343,8 +394,9 @@ function respawn(s, road) {
 	s.steps += 45;
 }
 /** One step of the race. Pure: `prev` is not changed. */
-function step(prev, input, road) {
+function step(prev, input, plainRoad) {
 	const s = { ...prev };
+	const road = s.bridges > 0 ? bridgedRoad(plainRoad, s.bridges) : plainRoad;
 	const events = [];
 	if (s.outcome !== "racing") {
 		if (s.outcome !== "finished") s.deadSteps++;
@@ -360,7 +412,7 @@ function step(prev, input, road) {
 	const g = road.def.gravity;
 	if (s.autoPilot && s.jumping && !s.autoPilotChecked && s.vy <= 6 * .4) {
 		s.autoPilotChecked = true;
-		if (runAutoPilot(s, input, road)) events.push("autopilot");
+		if (runAutoPilot(s, input, plainRoad)) events.push("autopilot");
 	}
 	if (s.pendingPort >= 0) {
 		const level = 100 * Math.min(1, Math.max(HALF_REFILL, s.refills?.[s.pendingPort] ?? .5));
@@ -405,6 +457,7 @@ function step(prev, input, road) {
 		s.jumping = true;
 		s.airSteps = 0;
 		s.autoPilotChecked = false;
+		if (s.bridges >= plainRoad.length) s.bridges = bridgesAfterJump(plainRoad, row);
 		events.push("jump");
 	}
 	s.vy = Math.max(s.vy - g * DT, -14);
@@ -2277,6 +2330,18 @@ function medalFor(roadId, steps) {
 	return "bronze";
 }
 /**
+* Volt's once-only tips, saved per pupil (circuit_seen; change the list with circuit_mark_seen's check in
+* 20261123000500_circuit_guide.sql): the guided first go on road 1, the first short-circuit tiles, the first low battery,
+* the first crash and the first data gate.
+*/
+const TIPS = [
+	"guide",
+	"short",
+	"battery",
+	"crash",
+	"gate"
+];
+/**
 * The racers (Stage 5): Spark from the start, and one more each time a world opens. `colour` tints the 3D racer and its
 * trail. Change the list together with circuit_set_racer in 20261123000400_circuit_racers.sql.
 */
@@ -2349,13 +2414,15 @@ function parseFinish(input) {
 	if (typeof r.seed !== "string" || r.seed.length > 80 || typeof r.stamp !== "string" || r.stamp.length > 200) return null;
 	if (typeof r.inputs !== "string" || r.inputs.length > 6e4) return null;
 	const crashes = Number.isInteger(r.crashes) && r.crashes >= 0 ? Math.min(r.crashes, 999) : 0;
+	const hard = r.hard === true;
 	return {
 		road: r.road,
 		seed: r.seed,
 		stamp: r.stamp,
 		inputs: r.inputs,
 		crashes,
-		hard: r.hard === true
+		hard,
+		guide: r.guide === true && r.road === "power-on" && !hard
 	};
 }
 /**
@@ -2377,7 +2444,8 @@ function judgeFinish(report, nowSeconds, maths = {}) {
 		refills: maths.refills ?? null,
 		gateRight: maths.gateRight ?? null,
 		autoPilot: !report.hard,
-		timeLimit: report.hard ? hardSeconds(report.road) * 30 : 0
+		timeLimit: report.hard ? hardSeconds(report.road) * 30 : 0,
+		guide: report.guide
 	});
 	if (end.outcome !== "finished") return {
 		ok: false,
@@ -11021,6 +11089,19 @@ function runMaths(road, seed, questions) {
 	};
 }
 //#endregion
+//#region shared/kit/seen.ts
+/** Which kinds of go a child has seen (S11). No game words in here; the game names its own kinds. See src/kit/README.md. */
+/** A body field that names known kinds: an array, no repeats, at most `max`. Anything else is `null` (the server says "unreadable"). */
+function readKinds(value, allowed, max = 8) {
+	if (!Array.isArray(value) || value.length > max) return null;
+	const out = [];
+	for (const k of value) {
+		if (typeof k !== "string" || !allowed.includes(k) || out.includes(k)) return null;
+		out.push(k);
+	}
+	return out;
+}
+//#endregion
 //#region supabase/functions/_shared/http.ts
 /** Websites allowed to call the server functions from a browser. */
 const ALLOWED_ORIGINS = [
@@ -11120,12 +11201,20 @@ function makeHandler(services) {
 			const saved = await services.load(player);
 			if (saved === "busy") return reply(503, { error: "We couldn't load your roads just now." });
 			const racer = racerOpen(saved.roads, saved.racer) ? saved.racer : "spark";
+			const seen = (saved.seen ?? []).filter((t) => TIPS.includes(t));
 			return reply(200, {
 				...saved,
 				left: finishesLeft(saved.today, settings.unlimited),
 				maths: settings.maths,
-				racer
+				racer,
+				seen
 			});
+		}
+		if (body.action === "seen") {
+			const tips = readKinds(body.tips, TIPS, TIPS.length);
+			if (!tips || tips.length === 0) return reply(400, { error: "That couldn't be read." });
+			if (await services.markSeen(player, tips) !== true) return reply(503, { error: "We couldn't save that just now." });
+			return reply(200, { seen: tips });
 		}
 		if (body.action === "racer") {
 			const racer = racerById(body.racer);
@@ -11405,11 +11494,20 @@ Deno.serve(makeHandler({
 		const saved = await call("circuit_load", { player });
 		if (saved === "busy") return "busy";
 		const racer = racerById(saved?.racer)?.id;
+		const seen = (Array.isArray(saved?.seen) ? saved.seen : []).filter((t) => TIPS.includes(t));
 		return {
 			roads: saved?.roads ?? {},
 			today: saved?.today ?? 0,
-			...racer ? { racer } : {}
+			...racer ? { racer } : {},
+			seen
 		};
+	},
+	async markSeen(player, tips) {
+		const done = await call("circuit_mark_seen", {
+			player,
+			tips
+		});
+		return done === "busy" ? "busy" : done === true;
 	},
 	async setRacer(player, racer) {
 		const done = await call("circuit_set_racer", {

@@ -15,6 +15,11 @@
  * Stage 4: on roads with checkpoints a crash or fall after one restarts there: the physics does it itself after the 1.5 s
  * pause, so the screen just keeps stepping (recording nothing while the racer is down) and the run stays one recording.
  * Hard mode turns Auto-Pilot off and shows a count-down clock; when it runs out the road starts again (nothing lost).
+ *
+ * Stage 6, Volt's guide (plan 5.7): a guided go on road 1 teaches one key at a time (steer, then speed, then jump), the key
+ * lit on screen; the keys not taught yet do nothing (the recorded inputs are what the physics used, so the replay matches),
+ * and the physics bridges every gap until the first jump (RaceOptions.guide, replayed the same on the server). Volt's
+ * once-only tips (the first short-circuit tiles, low battery, the first crash, the first data gate) show once a pupil.
  */
 import { useEffect, useRef, useState } from 'react';
 import { DT, FULL, HALF_REFILL, STEPS_PER_SECOND, TOP_SPEED } from '../../../shared/circuit/config';
@@ -27,6 +32,8 @@ import { encodeLog, inputCode, makeRecorder } from '../../../shared/circuit/inpu
 import { newRace, readyToRestart, step, willRespawn, type RaceEvent, type RaceOptions, type RaceState } from '../../../shared/circuit/physics';
 import type { Road } from '../../../shared/circuit/road';
 import { cellAt } from '../../../shared/circuit/road';
+import type { TipId } from '../../../shared/circuit/game';
+import { GUIDE, TIP_LINES, voltSays, type GuideStep } from './voiceLines';
 import { circuitSound, makeEngine, type CircuitSound } from './audio';
 import dashFrame from './art/paint/dash/frame.webp';
 import dashSmall from './art/paint/dash/frame-small.webp';
@@ -65,6 +72,11 @@ interface Props {
   hard?: boolean;
   /** The pupil's racer colour (RACERS). */
   colour?: string;
+  /** Volt's guided go (road 1): one key at a time, the gaps bridged until the first jump. */
+  guide?: boolean;
+  /** Volt's tips the pupil has seen, and how to save one as seen. */
+  seen?: readonly TipId[];
+  onSeen?(tip: TipId): void;
   /** Sends a recharge port's answer to the server to be marked. */
   onAnswer?(slot: number, answer: number, ms: number): Promise<AnswerReply>;
   /** The finishing go's inputs and the crashes before it. */
@@ -130,7 +142,20 @@ function QuestionLine({ q }: { q: PublicQuestion }) {
   );
 }
 
-export function RaceScreen({ road, number, sound, maths = null, hard = false, colour, onAnswer, onFinish, onQuit }: Props) {
+/** Rows before the first short-circuit tile where Volt points at it. */
+const SHORT_WARN_ROWS = 28;
+/** Steps of steering before the guide moves on to speed. */
+const STEER_STEPS = 20;
+/** Is the battery low enough for Volt's "Find a blue port!" (once a pupil). */
+const BATTERY_TIP = 0.35;
+
+/** The first row with a short-circuit tile, or -1. */
+const firstShort = (road: Road): number => {
+  const i = road.cells.indexOf('x');
+  return i < 0 ? -1 : Math.floor(i / 7);
+};
+
+export function RaceScreen({ road, number, sound, maths = null, hard = false, colour, guide = false, seen = [], onSeen, onAnswer, onFinish, onQuit }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const controls = useRef(new Controls());
@@ -142,8 +167,16 @@ export function RaceScreen({ road, number, sound, maths = null, hard = false, co
   const clock = hard ? hardSeconds(road.def.id) * STEPS_PER_SECOND : 0;
   const raceOpts = useRef<RaceOptions>({
     ...(maths ? { refills: refills.current, gateRight: maths.gates.map((g) => g.rightLane) } : {}),
-    autoPilot: !hard, timeLimit: clock,
+    autoPilot: !hard, timeLimit: clock, guide,
   });
+  // The guided go's step (null: not guided, or done) and the tips seen (this go adds to them at once).
+  const [teach, setTeach] = useState<GuideStep | null>(guide ? 'steer' : null);
+  const teachRef = useRef(teach);
+  teachRef.current = teach;
+  const seenRef = useRef(new Set<TipId>(seen));
+  const onSeenRef = useRef(onSeen);
+  onSeenRef.current = onSeen;
+  const [voltLine, setVoltLine] = useState<{ text: string; point: boolean } | null>(null);
   const paused = useRef(false);
   const [ask, setAsk] = useState<{ port: number; question: PublicQuestion } | null>(null);
   const askRef = useRef(ask);
@@ -172,6 +205,16 @@ export function RaceScreen({ road, number, sound, maths = null, hard = false, co
   useEffect(() => {
     box.current?.focus();
   }, []);
+
+  // Volt says each guide step as it comes (with the sound on); the last one fades after a few seconds.
+  useEffect(() => {
+    if (!teach) return;
+    voltSays(GUIDE[teach], soundRef.current);
+    if (teach === 'go') {
+      const t = setTimeout(() => setTeach(null), 5000);
+      return () => clearTimeout(t);
+    }
+  }, [teach]);
 
   // Keys: the race keys, Enter to start, Escape back to the roads.
   useEffect(() => {
@@ -228,6 +271,20 @@ export function RaceScreen({ road, number, sound, maths = null, hard = false, co
       if (tipTimer) clearTimeout(tipTimer);
       tipTimer = setTimeout(() => setTip(null), ms);
     };
+    // Volt's once-only tips: said once a pupil, saved as seen at once.
+    let voltTimer: ReturnType<typeof setTimeout> | null = null;
+    const once = (id: Exclude<TipId, 'guide'>, point = false): boolean => {
+      if (seenRef.current.has(id)) return false;
+      seenRef.current.add(id);
+      onSeenRef.current?.(id);
+      setVoltLine({ text: TIP_LINES[id], point });
+      voltSays(TIP_LINES[id], soundRef.current);
+      if (voltTimer) clearTimeout(voltTimer);
+      voltTimer = setTimeout(() => setVoltLine(null), 5500);
+      return true;
+    };
+    const shortRow = firstShort(road);
+    let steered = 0;
 
     resume.current = () => {
       paused.current = false;
@@ -246,7 +303,7 @@ export function RaceScreen({ road, number, sound, maths = null, hard = false, co
     import('./renderer').then(({ createView }) => {
       if (stopped || !canvas.current) return;
       try {
-        view = createView(canvas.current, road, { reduced, gates: maths ? maths.gates.map((g) => g.labels) : null, hard, colour });
+        view = createView(canvas.current, road, { reduced, gates: maths ? maths.gates.map((g) => g.labels) : null, hard, colour, guide });
         fit();
       } catch {
         showTip('This device can’t draw the 3D road. Try another browser.', 60_000);
@@ -265,11 +322,20 @@ export function RaceScreen({ road, number, sound, maths = null, hard = false, co
         while (acc >= DT && !paused.current) {
           acc -= DT;
           if (cur.outcome === 'racing') {
-            const input = controls.current.input(cur.vz);
+            const raw = controls.current.input(cur.vz);
+            // The guided go: keys not taught yet do nothing (what's recorded is what the physics used).
+            const now = teachRef.current;
+            const input = now === 'steer' ? { ...raw, accel: 0 as const, jump: false } : now === 'speed' ? { ...raw, jump: false } : raw;
+            if (now === 'steer' && input.turn !== 0 && ++steered === STEER_STEPS) setTeach((t) => (t === 'steer' ? 'speed' : t));
+            else if (now === 'speed' && cur.vz >= TOP_SPEED * 0.5) setTeach((t) => (t === 'speed' ? 'jump' : t));
             recorder.record(cur, inputCode(input));
             prev = cur;
             const r = step(cur, input, road);
             cur = r.state;
+            if (guide && r.events.includes('jump')) {
+              if (teachRef.current === 'jump') setTeach('go');
+              view?.bridgesTo(cur.bridges);
+            }
             if (r.events.length) {
               view?.events(r.events, cur);
               if (soundRef.current) {
@@ -323,7 +389,12 @@ export function RaceScreen({ road, number, sound, maths = null, hard = false, co
             if (cur.outcome !== 'racing' && cur.outcome !== 'finished') {
               lost++;
               setCrashes(lost);
-              showTip(WHY[cur.outcome] ?? 'Try again!', 1500);
+              // The first crash ever: Volt's kind tip, once. After that the short reason.
+              if (!once('crash')) showTip(WHY[cur.outcome] ?? 'Try again!', 1500);
+            } else if (cur.outcome === 'racing') {
+              if (shortRow >= 0 && cur.z >= shortRow - SHORT_WARN_ROWS && cur.z < shortRow) once('short', true);
+              if (cur.battery < FULL * BATTERY_TIP) once('battery');
+              if (maths && cur.gatesPassed < road.gates.length && road.gates[cur.gatesPassed].first - cur.z <= SHOW_ROWS) once('gate', true);
             }
           } else if (cur.outcome === 'finished') {
             prev = cur;
@@ -351,6 +422,7 @@ export function RaceScreen({ road, number, sound, maths = null, hard = false, co
               recorder = makeRecorder();
               controls.current.clear();
               view?.restart();
+              if (guide) view?.bridgesTo(cur.bridges);
             }
           }
           if (++dashSteps % 3 === 0) setDash(dashOf(cur, road, maths !== null));
@@ -373,10 +445,11 @@ export function RaceScreen({ road, number, sound, maths = null, hard = false, co
       cancelAnimationFrame(frame);
       observer?.disconnect();
       if (tipTimer) clearTimeout(tipTimer);
+      if (voltTimer) clearTimeout(voltTimer);
       engine.stop();
       view?.dispose();
     };
-  }, [road, maths, hard, colour, clock]);
+  }, [road, maths, hard, colour, clock, guide]);
 
   /** Marks a port answer on the server; the port's refill follows the mark. */
   const markPort = async (value: number, ms: number): Promise<MarkedAnswer> => {
@@ -450,8 +523,10 @@ export function RaceScreen({ road, number, sound, maths = null, hard = false, co
         </div>
       </div>
       <Volt
-        line={tip ?? (!started ? (hard ? `Hard mode: no Auto-Pilot, beat the clock (${hardSeconds(road.def.id)}s)!` : 'Arrows steer and speed up. Space jumps. Reach the big port!') : null)}
+        point={!!voltLine?.point}
+        line={voltLine?.text ?? (teach ? GUIDE[teach] : null) ?? tip ?? (!started ? (hard ? `Hard mode: no Auto-Pilot, beat the clock (${hardSeconds(road.def.id)}s)!` : 'Arrows steer and speed up. Space jumps. Reach the big port!') : null)}
       />
+      {teach && teach !== 'go' && <TeachKeys step={teach} />}
       {!started && (
         <div className="cr-ready">
           <h2 className="cr-ready__title">{number > 0 ? `${number}. ` : ''}{road.def.name}{hard && <span className="cr-fire"> 🔥 Hard</span>}</h2>
@@ -484,18 +559,32 @@ export function RaceScreen({ road, number, sound, maths = null, hard = false, co
       )}
       <div className="cr-touch" aria-hidden="true">
         <div className="cr-touch__pads">
-          <button type="button" tabIndex={-1} className="cr-pad" onPointerDown={hold('left', true)} onPointerUp={hold('left', false)} onPointerLeave={hold('left', false)} onPointerCancel={hold('left', false)}>◀</button>
-          <button type="button" tabIndex={-1} className="cr-pad" onPointerDown={hold('right', true)} onPointerUp={hold('right', false)} onPointerLeave={hold('right', false)} onPointerCancel={hold('right', false)}>▶</button>
+          <button type="button" tabIndex={-1} className={`cr-pad${teach === 'steer' ? ' cr-pad--lit' : ''}`} onPointerDown={hold('left', true)} onPointerUp={hold('left', false)} onPointerLeave={hold('left', false)} onPointerCancel={hold('left', false)}>◀</button>
+          <button type="button" tabIndex={-1} className={`cr-pad${teach === 'steer' ? ' cr-pad--lit' : ''}`} onPointerDown={hold('right', true)} onPointerUp={hold('right', false)} onPointerLeave={hold('right', false)} onPointerCancel={hold('right', false)}>▶</button>
         </div>
         <div className="cr-touch__right">
-          <button type="button" tabIndex={-1} className="cr-pad cr-pad--jump" onPointerDown={hold('jump', true)} onPointerUp={hold('jump', false)} onPointerLeave={hold('jump', false)} onPointerCancel={hold('jump', false)}>JUMP</button>
-          <div className="cr-lever" onPointerDown={(e) => { e.currentTarget.setPointerCapture?.(e.pointerId); lever(e); }} onPointerMove={(e) => { if (e.buttons) lever(e); }}>
+          <button type="button" tabIndex={-1} className={`cr-pad cr-pad--jump${teach === 'jump' ? ' cr-pad--lit' : ''}`} onPointerDown={hold('jump', true)} onPointerUp={hold('jump', false)} onPointerLeave={hold('jump', false)} onPointerCancel={hold('jump', false)}>JUMP</button>
+          <div className={`cr-lever${teach === 'speed' ? ' cr-lever--lit' : ''}`} onPointerDown={(e) => { e.currentTarget.setPointerCapture?.(e.pointerId); lever(e); }} onPointerMove={(e) => { if (e.buttons) lever(e); }}>
             <span className="cr-lever__label">SPEED</span>
             <span className="cr-lever__thumb" style={{ bottom: `${(leverShown ?? dash.speed) * 100}%` }} />
           </div>
         </div>
       </div>
       {dash.outcome !== 'racing' && dash.outcome !== 'finished' && <p className="cr-sr" role="status">{WHY[dash.outcome]}{dash.respawning ? ' Back to the checkpoint.' : ''}</p>}
+    </div>
+  );
+}
+
+/** The guided go's key, lit on screen: the arrows to steer, then for speed, then Space to jump. */
+function TeachKeys({ step }: { step: Exclude<GuideStep, 'go'> }) {
+  const keys = step === 'steer' ? ['←', '→'] : step === 'speed' ? ['↑', '↓'] : ['Space'];
+  const word = step === 'steer' ? 'Steer' : step === 'speed' ? 'Speed' : 'Jump';
+  return (
+    <div className={`cr-teach cr-teach--${step}`} aria-hidden="true">
+      <span className="cr-teach__word">{word}</span>
+      <span className="cr-teach__keys">
+        {keys.map((k) => <kbd key={k} className={`cr-key${k === 'Space' ? ' cr-key--wide' : ''}`}>{k}</kbd>)}
+      </span>
     </div>
   );
 }

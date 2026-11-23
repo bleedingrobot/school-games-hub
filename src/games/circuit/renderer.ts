@@ -16,7 +16,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { BLOCK_HEIGHTS, FLOOR_THICKNESS, LANES, TOP_SPEED, TUNNEL_ROOF } from '../../../shared/circuit/config';
 import type { RaceEvent, RaceState } from '../../../shared/circuit/physics';
 import { signText } from '../../../shared/circuit/maths';
-import { cellAt, type Road } from '../../../shared/circuit/road';
+import { bridgedRoad, cellAt, gapRuns, type Road } from '../../../shared/circuit/road';
 import type { World } from '../../../shared/circuit/config';
 import cloudSky from './art/paint/worlds/cloud-800.webp';
 import cloudBig from './art/paint/worlds/cloud.webp';
@@ -54,6 +54,8 @@ export interface RaceView {
   restart(): void;
   /** Restarted at a checkpoint: the trail is cleared, the camera jumps there with a burst of light. */
   respawned(at: RaceState): void;
+  /** Volt's guided go: only the glowing bridges over gap rows before `row` stay (the rest fade out). */
+  bridgesTo(row: number): void;
   /** The racer crossed gate `gate`'s split: the right lane's sign glows green and its lane shows overclock arrows. */
   gateResult(gate: number, rightLane: number): void;
   resize(width: number, height: number): void;
@@ -71,7 +73,7 @@ const CHIP_COLOURS = { '1': '#22d3ee', '2': '#e879f9', '3': '#facc15' } as const
  * `gates`: with maths on, what each gate lane's sign shows (as `road.gates[g].lanes`; null: no sign); gate lanes then look like
  * plain trace until the split. Null with maths off: every gate lane is overclock and looks it.
  */
-export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduced: boolean; low?: boolean; gates?: readonly (readonly (string | null)[])[] | null; hard?: boolean; colour?: string }): RaceView {
+export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduced: boolean; low?: boolean; gates?: readonly (readonly (string | null)[])[] | null; hard?: boolean; colour?: string; guide?: boolean }): RaceView {
   const disposables: { dispose(): void }[] = [];
   const own = <T extends { dispose(): void }>(thing: T): T => (disposables.push(thing), thing);
   let low = opts.low ?? false;
@@ -170,6 +172,21 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
     // Box faces: +x, −x, top, bottom, +z, −z.
     const mats = [sideMat, sideMat, tileMats[kind], sideMat, sideMat, sideMat];
     instanced(slab, mats, cells[kind], (lane, row) => m.makeTranslation(X(lane + 0.5), -FLOOR_THICKNESS / 2, -(row + 0.5)));
+  }
+
+  // Volt's guided go (Stage 6): see-through glowing bridges over the gaps until the first jump. Each gap run is its own
+  // mesh, so the ones ahead can fade out after the jump.
+  const bridgeRuns: { first: number; mesh: THREE.InstancedMesh }[] = [];
+  if (opts.guide) {
+    const filled = bridgedRoad(road, road.length);
+    const bridgeMat = own(new THREE.MeshBasicMaterial({ color: new THREE.Color('#67e8f9').multiplyScalar(0.9), transparent: true, opacity: 0.38, depthWrite: false }));
+    const bridgeGeo = own(new THREE.BoxGeometry(0.94, 0.04, 1));
+    for (const run of gapRuns(road)) {
+      const at: [number, number][] = [];
+      for (let row = run.first; row <= run.last; row++) for (let lane = 0; lane < LANES; lane++) if (cellAt(filled, lane, row) !== '.') at.push([lane, row]);
+      const mesh = instanced(bridgeGeo, bridgeMat, at, (lane, row) => m.makeTranslation(X(lane + 0.5), -0.02, -(row + 0.5)));
+      if (mesh) bridgeRuns.push({ first: run.first, mesh });
+    }
   }
 
   // Neon rims along the road's outside edges.
@@ -485,6 +502,14 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
         else if (e === 'land') burst(at, 4, '#67e8f9', 1.5, 0.4);
         else if (e === 'autopilot') burst(at, 14, '#f0abfc', 2);
         else if (e === 'checkpoint') { burst(at, 70, '#fde047', 5); burst(at, 30, '#ffffff', 3); }
+      }
+    },
+    bridgesTo(row) {
+      for (const b of bridgeRuns) {
+        const keep = b.first < row;
+        // A bridge that goes melts away in a shower of cyan sparks.
+        if (b.mesh.visible && !keep) burst(new THREE.Vector3(0, 0.1, -b.first - 0.5), 40, '#67e8f9', 3);
+        b.mesh.visible = keep;
       }
     },
     gateResult(gate, rightLane) {
