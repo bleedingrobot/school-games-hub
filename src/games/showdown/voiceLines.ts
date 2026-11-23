@@ -74,4 +74,88 @@ export const HILL_LINES = {
   green: 'Green team takes the crown!',
 } as const;
 
-export const allVoiceLines = (): string[] => [...Object.values(HILL_LINES), ...Object.values(ANNOUNCER), ...Object.values(GOLD_RUSH_LINES), ...Object.values(SKY_CLIMB_LINES), ...Object.values(ISLAND_LINES), ...BOSSES.map((b) => b.roar)];
+/** Auction House (auction.ts): the class fills the royal treasury and bids for treasures. */
+export const AUCTION_LINES = {
+  joinNow: 'The Auction House is open! Join now!',
+  start: 'Earn coins, then bid for treasure!',
+  thieves: 'Thieves! Guard the treasure!',
+  held: 'The thieves are caught!',
+  broke: 'Oh no! The thieves got away with it!',
+  golden: 'Golden hour! Double coins!',
+  phase: 'The treasury is filling up!',
+  done: 'The royal treasury is full!',
+  lot: 'A new treasure! Start your bids!',
+  mystery: 'A mystery box! What could be inside?',
+  dragon: 'The golden dragon! The last treasure of the day!',
+  sold: 'Going, going, gone! Sold!',
+  unsold: 'No bids! It goes back in the vault.',
+} as const;
+
+/**
+ * More narration (James, 24 Nov 2026: "more narration with Bella during the game, like more guards needed"). The big screen
+ * says these when the moment comes, never on top of another line (audio.ts spaces them).
+ */
+export const NARRATION = {
+  halfway: 'Halfway there! Keep going!',
+  nearly: 'Nearly there! One last push!',
+  oneMinute: 'One minute left!',
+  fiveRow: 'Five in a row! On fire!',
+  tenRow: 'Ten in a row! Unstoppable!',
+  luckyChest: 'A lucky chest!',
+  revive: 'A Healer to the rescue!',
+  paused: 'Paused. Eyes on the teacher.',
+  resumed: "And we're back! Go, go, go!",
+  newLeader: 'We have a new leader!',
+  shieldClose: 'Nearly there! Keep answering!',
+  goldenEnd: 'Golden question time is over!',
+  redPush: 'Red team is pushing!',
+  bluePush: 'Blue team is pushing!',
+  turnRed: 'The boss turns on Red team!',
+  turnBlue: 'The boss turns on Blue team!',
+  turnGold: 'The boss turns on Gold team!',
+  turnGreen: 'The boss turns on Green team!',
+} as const;
+
+/** Per arena: the call for more Guards (in its own word for them), for a Healer, and the teacher's angry button. */
+export const ARENA_CALLS: Record<'boss' | 'goldrush' | 'skyclimb' | 'island' | 'hill' | 'auction', { guards: string; healer: string; enrage: string }> = {
+  boss: { guards: 'We need more Guards!', healer: 'We need a Healer!', enrage: 'The boss is enraged!' },
+  goldrush: { guards: 'We need more Prop-holders!', healer: 'We need a Medic!', enrage: 'The mountain roars!' },
+  skyclimb: { guards: 'We need more Anchors!', healer: 'We need a Medic!', enrage: 'The wind is howling!' },
+  island: { guards: 'We need more Wave-breakers!', healer: 'We need a Medic!', enrage: 'The sea is angry!' },
+  hill: { guards: 'We need more Defenders!', healer: 'We need a Medic!', enrage: 'Challengers storm the hill!' },
+  auction: { guards: 'We need more Watchmen!', healer: 'We need a Medic!', enrage: 'A gang of thieves!' },
+};
+
+/**
+ * Other takes of the lines heard most, so they don't sound the same every time (James, 24 Nov 2026: "more variety"). The
+ * announcer picks one at random each time, never the one it said last.
+ */
+export const TAKES: Record<string, readonly string[]> = {
+  [ANNOUNCER.held]: ['Blocked! Great teamwork!', 'The shield holds! Nice one!'],
+  [ANNOUNCER.broke]: ['Crack! The shield is down!', 'Oof! It got through!'],
+  [ANNOUNCER.windUp]: ['Here it comes! Shields up!', 'Get ready! Shield up now!'],
+  [ANNOUNCER.weakSpot]: ['Weak spot! Hit it hard!', 'Double damage! Go, go, go!'],
+  [ANNOUNCER.golden]: ['Golden question! Triple points!'],
+  [ANNOUNCER.beaten]: ['Victory! The boss is down!'],
+  [GOLD_RUSH_LINES.held]: ['Phew! The roof is safe!'],
+  [SKY_CLIMB_LINES.held]: ['Hold on tight! You made it through!'],
+  [ISLAND_LINES.held]: ['The wave is gone! Great teamwork!'],
+  [HILL_LINES.held]: ['Charge stopped! The hill is ours!'],
+  [AUCTION_LINES.held]: ['Gotcha! No stealing today!'],
+  [AUCTION_LINES.sold]: ['Sold, to the lucky bidder!', 'Bang goes the hammer! Sold!'],
+  [AUCTION_LINES.lot]: ['Next up, a shiny treasure!', 'Fresh treasure on the stage! Who will bid?'],
+  [HILL_LINES.newKing]: ['The crown has a new owner!', 'Long live the new king!'],
+  [NARRATION.fiveRow]: ['Five in a row! Brilliant!', 'Five right in a row! Amazing!'],
+  [NARRATION.luckyChest]: ['Ooh, a lucky chest!'],
+  [NARRATION.revive]: ['Wakey wakey! A Healer helped a friend!'],
+  [ARENA_CALLS.boss.guards]: ['Guards needed! Who can help?'],
+  [ARENA_CALLS.boss.healer]: ['Calling all Healers!'],
+};
+
+/** One of a line's takes: any but `last`. */
+export function pickTake(line: string, last: string | null, random = Math.random): string {
+  const all = [line, ...(TAKES[line] ?? [])].filter((x) => x !== last);
+  return all[Math.floor(random() * all.length)] ?? line;
+}
+
+export const allVoiceLines = (): string[] => [...Object.values(NARRATION), ...new Set(Object.values(ARENA_CALLS).flatMap((c) => [c.guards, c.healer, c.enrage])), ...Object.values(TAKES).flat(), ...Object.values(AUCTION_LINES), ...Object.values(HILL_LINES), ...Object.values(ANNOUNCER), ...Object.values(GOLD_RUSH_LINES), ...Object.values(SKY_CLIMB_LINES), ...Object.values(ISLAND_LINES), ...BOSSES.map((b) => b.roar)];

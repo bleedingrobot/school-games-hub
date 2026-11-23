@@ -6,7 +6,7 @@ export type Mode = 'class' | 'teams2' | 'teams4' | 'solo';
 export type Role = 'striker' | 'guard' | 'healer';
 export type TeamId = 'red' | 'blue' | 'gold' | 'green';
 /** The arenas a room can be (docs/SHOWDOWN-PLAN.md section 4). */
-export type Arena = 'boss' | 'goldrush' | 'skyclimb' | 'island' | 'hill';
+export type Arena = 'boss' | 'goldrush' | 'skyclimb' | 'island' | 'hill' | 'auction';
 
 export interface Player {
   id: string;
@@ -36,6 +36,8 @@ export interface Player {
   seam?: number | null;
   /** Shrinking Island: where this pupil stands (or which rock they're on). */
   isle?: import('./island').IsleSpot;
+  /** Auction House: what the treasures this pupil has bought are worth (their score minus this is coins to spend). */
+  vault?: number;
   /** What the pupil got when the round ended (set once, by the server). */
   reward?: import('./bosses').Reward | null;
   /** When this pupil got the golden question right, for the "golden moment" award. */
@@ -61,12 +63,14 @@ export interface Round {
   /** The time the round was last brought up to (ms from the start). */
   t: number;
   boss: { max: number; hp: number; phase: 1 | 2 | 3 };
-  /** Which arena: Boss Bounty (missing = 'boss'), Gold Rush (goldrush.ts), Sky Climb (skyclimb.ts), Shrinking Island (island.ts) or King of the Hill (hill.ts). */
+  /** Which arena: Boss Bounty (missing = 'boss'), Gold Rush (goldrush.ts), Sky Climb (skyclimb.ts), Shrinking Island (island.ts), King of the Hill (hill.ts) or Auction House (auction.ts). */
   arena?: Arena;
   /** Gold Rush: every seam opened so far (dry ones keep their dryAt). */
   seams?: import('./goldrush').Seam[];
   /** King of the Hill: the crown (hill.ts). */
   crown?: import('./hill').Crown;
+  /** Auction House: the treasures put up for sale (auction.ts). */
+  auction?: import('./auction').AuctionState;
   /** Which boss of the roster (shared/showdown/bosses.ts). Missing in rounds from before Stage 5: the River Titan. */
   bossId?: import('./bosses').BossId;
   players: Record<string, Player>;
@@ -159,7 +163,12 @@ export type ShowdownEvent =
   | { type: 'wave'; t: number; pupils: string[] }
   /** King of the Hill: the crown changed hands (holder null = knocked off), or paid its holder. Holder/from are pupil ids, or teams. */
   | { type: 'crown'; t: number; holder: string | null; from: string | null; team: boolean }
-  | { type: 'crown_paid'; t: number; holder: string; points: number };
+  | { type: 'crown_paid'; t: number; holder: string; points: number }
+  /** Auction House: a treasure goes up (value null for a mystery box), a bid, the hammer falls (sold, or unsold/stolen). */
+  | { type: 'lot_open'; t: number; lot: number; kind: import('./auction').TreasureKind; value: number | null; min: number; endsAt: number }
+  | { type: 'bid'; t: number; lot: number; pupil: string; team: TeamId | null; amount: number }
+  | { type: 'lot_sold'; t: number; lot: number; kind: import('./auction').TreasureKind; pupil: string; team: TeamId | null; bid: number; value: number }
+  | { type: 'lot_unsold'; t: number; lot: number; stolen: boolean };
 
 export type Refusal = 'not_live' | 'not_playing' | 'too_soon' | 'dazed' | 'not_now' | 'no_such_team' | 'cooldown';
 export type Outcome = { ok: true; events: ShowdownEvent[] } | { ok: false; reason: Refusal; events: ShowdownEvent[] };

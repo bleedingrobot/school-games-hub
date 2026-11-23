@@ -323,6 +323,40 @@ button.sd-c-rolechip { cursor: pointer; } .sd-c-rolechip u { opacity: 0.8; } .sd
 @keyframes sd-cs-crownspin { from { transform: translateX(-50%) rotateY(0); } to { transform: translateX(-50%) rotateY(360deg); } }
 @keyframes sd-cs-stone { 0% { opacity: 1; transform: translate(-50%, 0) scale(1.2); } 100% { opacity: 0; transform: translate(-50%, 260%) scale(0.6) rotate(90deg); } }
 @keyframes sd-cs-charge { 0% { left: -20%; transform: scaleX(-1); } 100% { left: 70%; transform: scaleX(-1); } }
+/* Auction House on the iPad: the spotlit treasure, the leading bid, the hammer's timer, and the bid buttons. */
+.sd-cs--auc .sd-cs__track { border-color: #ffe6a0; background: #2a0610; }
+.sd-cs--auc .sd-cs__track i { background: linear-gradient(180deg, #fff3a0, #ffc933 55%, #b8730a); }
+.sd-cs__auc { position: absolute; inset: 0; --tc: #ffd23f; }
+.sd-cs--auc .sd-cs__scene:not(:has(.sd-cs__back)) .sd-cs__auc { background: radial-gradient(ellipse at 50% 30%, #7a1a2a, #3a0812 70%); }
+.sd-cs__aucspot { position: absolute; left: 50%; top: 0; bottom: 18%; width: 70%; translate: -50% 0; clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%); background: linear-gradient(180deg, rgba(255,248,215,0.05), rgba(255,248,215,0.45)); }
+.sd-cs__aucplinth { position: absolute; left: 50%; bottom: 8%; width: 44%; height: 14%; translate: -50% 0; border-radius: 6px 6px 3px 3px; background: linear-gradient(180deg, #f4ead2 0 20%, #c9b98f 22%, #e8dcbc 45%, #a89870); box-shadow: 0 6px 10px rgba(0,0,0,0.5); }
+.sd-cs__lot { position: absolute; left: 50%; bottom: 20%; width: 56%; height: 56%; translate: -50% 0; display: grid; place-items: center; font-size: 3rem; filter: drop-shadow(0 0 12px rgba(255,230,140,0.9)); animation: sd-cs-lotin 0.9s cubic-bezier(.2,1.4,.4,1) both, sd-cs-crownfloat 1.8s 0.9s ease-in-out infinite alternate; }
+.sd-cs__lot img { width: 100%; height: 100%; object-fit: contain; }
+.sd-cs__lot b { display: grid; place-items: center; width: 70%; aspect-ratio: 1; border-radius: 12%; background: linear-gradient(90deg, transparent 42%, #ffd23f 42% 58%, transparent 58%), linear-gradient(180deg, transparent 42%, #ffd23f 42% 58%, transparent 58%), linear-gradient(135deg, #7a3dd6, #3b1580); border: 3px solid #ffd23f; color: #fff; font-size: 2rem; font-weight: 1000; }
+.sd-cs__lotwait { position: absolute; left: 8%; right: 8%; top: 36%; text-align: center; font-weight: 900; color: #ffe27a; text-shadow: 0 2px 3px #000; font-size: 1rem; }
+.sd-cs__lottop { position: absolute; right: 6%; top: 8%; padding: 3px 10px; border-radius: 999px; background: rgba(20,4,8,0.85); border: 2px solid #ffd23f; font-weight: 1000; color: #fff; font-size: 1.1rem; animation: sd-cs-bump 0.4s cubic-bezier(.2,1.8,.4,1); }
+.sd-cs__auc--mine .sd-cs__lottop { background: #ffd23f; color: #3a1a00; box-shadow: 0 0 14px #ffd23f; }
+.sd-cs__auc--mine::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 45%, rgba(255,226,120,0.45), transparent 60%); animation: sd-cs-twinkle 1s ease-in-out infinite alternate; pointer-events: none; }
+.sd-cs__lottime { position: absolute; left: 8%; right: 8%; bottom: 3%; height: 6px; border-radius: 3px; background: rgba(0,0,0,0.5); overflow: hidden; }
+.sd-cs__lottime i { position: absolute; inset: 0; transform-origin: left; background: linear-gradient(90deg, #ff6b3d, #ffd23f); transition: transform 0.4s linear; }
+.sd-cs__coin { position: absolute; left: 50%; top: 40%; font-size: 1.6rem; animation: sd-cs-coinup 0.9s ease-out both; pointer-events: none; }
+.sd-cs__thief { position: absolute; bottom: 20%; font-size: 2rem; filter: brightness(0.35) drop-shadow(0 0 6px #ff4d5e); animation: sd-cs-charge 2.4s linear infinite; }
+.sd-cs__bid { display: grid; gap: 6px; padding: 8px 10px; border-radius: 14px; background: rgba(30,6,12,0.88); border: 2px solid #ffd23f; color: #fff; }
+.sd-cs__purse { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.sd-cs__purse b { font-size: 1.3rem; font-weight: 1000; color: #ffe27a; }
+.sd-cs__purse span { font-size: 0.85rem; font-weight: 800; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sd-cs__bidbtns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.sd-cs__bidbtn { min-height: 44px; border: 0; border-radius: 12px; background: linear-gradient(180deg, #ffe27a, #e0a210); color: #3a1a00; font: 1000 1rem/1 system-ui, sans-serif; box-shadow: 0 4px 0 #8a5a00; cursor: pointer; animation: sd-cs-lotin 0.4s ease-out both; }
+.sd-cs__bidbtn:active { transform: translateY(3px); box-shadow: 0 1px 0 #8a5a00; }
+.sd-cs__bidbtn:disabled { background: #5a4a3a; color: #bba; box-shadow: none; cursor: not-allowed; }
+.sd-cs__bidwait { margin: 0; text-align: center; font-weight: 800; font-size: 0.9rem; color: #ffe27a; }
+.sd-cs__bidsaid { margin: 0; text-align: center; font-weight: 800; font-size: 0.85rem; color: #ffb3b3; animation: sd-cs-lotin 0.3s ease-out both; }
+.sd-cs__bidsaid--good { color: #b6ffb0; }
+@keyframes sd-cs-lotin { from { transform: translateY(-30%) scale(0.4); opacity: 0; } to { transform: none; opacity: 1; } }
+.sd-cs__bidbtn, .sd-cs__bidsaid { animation-name: sd-cs-pop; }
+@keyframes sd-cs-pop { from { transform: scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes sd-cs-bump { from { transform: scale(1.5); } to { transform: none; } }
+@keyframes sd-cs-coinup { 0% { opacity: 1; transform: translate(-50%, 0) scale(1.2); } 100% { opacity: 0; transform: translate(-50%, -160%) scale(0.7) rotate(200deg); } }
 @media (max-width: 760px) {
   .sd-c-body--split { flex-direction: column; align-items: stretch; gap: 10px; }
   .sd-cs { order: -1; position: static; flex: none; display: grid; grid-template-columns: 112px 1fr; gap: 8px; align-items: center; }
@@ -332,7 +366,8 @@ button.sd-c-rolechip { cursor: pointer; } .sd-c-rolechip u { opacity: 0.8; } .sd
   .sd-cs__notices { gap: 4px; } .sd-cs__notice { padding: 6px 10px; font-size: 0.85rem; }
   .sd-cs__notice:nth-child(n+3) { display: none; }
   .sd-cs__seam { width: 26%; } .sd-cs__seam i { height: 3px; }
+  .sd-cs__bid { grid-column: 1 / -1; } .sd-cs__lot { font-size: 2rem; } .sd-cs__lottop { font-size: 0.8rem; } .sd-cs__lotwait { font-size: 0.75rem; top: 30%; }
   .sd-cs__crown { font-size: 1.6rem; } .sd-cs__throne { font-size: 1.3rem; }
   .sd-cs__climber { width: 34%; } .sd-cs__climber b { font-size: 1.6rem; } .sd-cs__flag { font-size: 1.2rem; width: 26%; } .sd-cs__jump { font-size: 1rem; }
 }
-@media (prefers-reduced-motion: reduce) { .sd-cs__crown, .sd-cs__stone, .sd-cs__charger, .sd-cs__double, .sd-cs__hill--king::after, .sd-cs__sea, .sd-cs__me, .sd-cs__me b, .sd-cs__crate, .sd-cs__wave, .sd-cs__plank, .sd-cs__climber, .sd-cs__flag, .sd-cs__storm, .sd-cs__storm i, .sd-cs__updraft i, .sd-cs__back, .sd-cs__boss, .sd-cs__seam, .sd-cs__notice, .sd-cs__scene, .sd-cs__pow { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .sd-cs__lot, .sd-cs__lottop, .sd-cs__coin, .sd-cs__thief, .sd-cs__bidbtn, .sd-cs__bidsaid, .sd-cs__auc--mine::after, .sd-cs__crown, .sd-cs__stone, .sd-cs__charger, .sd-cs__double, .sd-cs__hill--king::after, .sd-cs__sea, .sd-cs__me, .sd-cs__me b, .sd-cs__crate, .sd-cs__wave, .sd-cs__plank, .sd-cs__climber, .sd-cs__flag, .sd-cs__storm, .sd-cs__storm i, .sd-cs__updraft i, .sd-cs__back, .sd-cs__boss, .sd-cs__seam, .sd-cs__notice, .sd-cs__scene, .sd-cs__pow { animation: none !important; } }

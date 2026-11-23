@@ -4,9 +4,10 @@
  * upright it is a short strip above the question. It only reads the room's view, so it never shows anyone's results.
  */
 import { bossInfo } from '../../../shared/showdown/bosses';
-import { arenaWords } from './arenaWords';
+import { arenaWords, rolesNeeded } from './arenaWords';
 import type { RoomView } from '../../../shared/showdown/server';
-import type { TeamId } from '../../../shared/showdown/types';
+import type { Role, TeamId } from '../../../shared/showdown/types';
+import { TREASURE } from './treasures';
 
 const paintings = import.meta.glob('./art/paint/**/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
 const art = (folder: string, name: string) => paintings[`./art/paint/${folder}/${name}.webp`] ?? paintings[`./art/paint/${folder}/${name}-800.webp`];
@@ -15,13 +16,23 @@ const TEAM: Record<TeamId, string> = { red: 'Red', blue: 'Blue', gold: 'Gold', g
 type Notice = { key: string; text: string; tone: 'alarm' | 'good' | 'gold' | 'info' };
 
 /** What is happening right now, most urgent first, in the arena's own words. */
-export function noticesFor(view: RoomView, t: number, team: TeamId | null, me: string): Notice[] {
+export function noticesFor(view: RoomView, t: number, team: TeamId | null, me: string, myRole: Role | null = null): Notice[] {
   const W = arenaWords(view.arena);
   const N = W.notices;
   const out: Notice[] = [];
   if (view.pausedAt) out.push({ key: 'pause', text: '⏸ Paused. Look at the teacher.', tone: 'info' });
+  // The roles the class (or my team) is short of, the same call as the big screen's, so pupils see it on their own iPad.
+  if (view.mode !== 'solo' && view.state !== 'over') {
+    const canSwap = view.state === 'lobby' || view.roleSwapUntil > t;
+    const who = team && view.mode !== 'class' ? `${TEAM[team]} needs` : 'We need';
+    for (const role of rolesNeeded(view.roles?.[team && view.mode !== 'class' ? team : 'all'])) {
+      if (myRole === role) continue;
+      const name = W.roles[role].name;
+      out.push({ key: `need-${role}`, text: `${W.roles[role].emoji} ${who} ${role === 'guard' ? `more ${name}s` : `a ${name}`}!${canSwap ? ` Tap your role to be one.` : ''}`, tone: 'alarm' });
+    }
+  }
   if (view.state === 'lobby') {
-    out.push({ key: 'lobby', text: view.arena === 'goldrush' ? '⛏ Grab your pickaxe! Waiting for the teacher…' : view.arena === 'skyclimb' ? '🧗 Rope on! Waiting for the teacher…' : view.arena === 'island' ? '🏝️ Find a spot on the island! Waiting for the teacher…' : view.arena === 'hill' ? '👑 Up the hill! Waiting for the teacher…' : `${bossInfo(view.bossId).roar} Waiting for the teacher…`, tone: 'info' });
+    out.push({ key: 'lobby', text: view.arena === 'goldrush' ? '⛏ Grab your pickaxe! Waiting for the teacher…' : view.arena === 'skyclimb' ? '🧗 Rope on! Waiting for the teacher…' : view.arena === 'island' ? '🏝️ Find a spot on the island! Waiting for the teacher…' : view.arena === 'hill' ? '👑 Up the hill! Waiting for the teacher…' : view.arena === 'auction' ? '🪙 The auction is about to open! Waiting for the teacher…' : `${bossInfo(view.bossId).roar} Waiting for the teacher…`, tone: 'info' });
     return out;
   }
   const mySpot = view.island?.spots[me];
@@ -31,6 +42,12 @@ export function noticesFor(view: RoomView, t: number, team: TeamId | null, me: s
     const mine = c.holder !== null && (c.team ? c.holder === team : c.holder === me);
     if (mine) out.push({ key: 'crown', text: c.team ? `👑 ${TEAM[c.holder as TeamId]} wears the crown! Keep answering to keep it` : '👑 You wear the crown! Keep answering to keep it', tone: 'gold' });
     else if (c.holder === null && view.boss.hp < view.boss.max) out.push({ key: 'crown', text: '👑 The crown is up for grabs! Answer fast to take it', tone: 'gold' });
+  }
+  const lot = view.state === 'live' ? view.auction?.lot : null;
+  if (lot && t < lot.endsAt) {
+    const mine = lot.topBy === me;
+    const ours = !mine && !!team && lot.topTeam === team;
+    out.push({ key: 'lot', text: mine ? `🔨 You're the top bid! (${lot.top})` : ours ? `🔨 ${TEAM[team!]} leads the bidding!` : `🔔 ${TREASURE[lot.kind].name} for sale! Bid below`, tone: mine || ours ? 'good' : 'gold' });
   }
   const w = view.windUp;
   if (w && t < w.endsAt) {
@@ -43,34 +60,38 @@ export function noticesFor(view: RoomView, t: number, team: TeamId | null, me: s
   if (view.weakSpotUntil > t) out.push({ key: 'weak', text: N.weak, tone: 'gold' });
   if (view.goldenFrom !== null && t >= view.goldenFrom && t < view.goldenUntil) out.push({ key: 'golden', text: '⭐ Golden question time!', tone: 'gold' });
   if (view.finalStarted) out.push({ key: 'final', text: '⏱️ Final 30 seconds! Go go go!', tone: 'alarm' });
-  if (view.mode === 'teams4' && team && view.facing === team && view.arena !== 'skyclimb' && view.arena !== 'hill') out.push({ key: 'facing', text: `👀 The boss is facing ${TEAM[team]}!`, tone: 'alarm' });
+  if (view.mode === 'teams4' && team && view.facing === team && view.arena !== 'skyclimb' && view.arena !== 'hill' && view.arena !== 'auction') out.push({ key: 'facing', text: `👀 The boss is facing ${TEAM[team]}!`, tone: 'alarm' });
   if (view.mode === 'teams2' && team && Math.abs(view.tug) > 0.1 && (view.arena ?? 'boss') === 'boss') {
     const winning = (view.tug < 0 && team === 'red') || (view.tug > 0 && team === 'blue');
     out.push({ key: 'tug', text: winning ? `💪 ${TEAM[team]} is pushing the boss back!` : '⚠️ The boss is coming your way! Push!', tone: winning ? 'good' : 'alarm' });
   }
   if (view.boss.phase > 1 && !out.length) out.push({ key: 'phase', text: N.phase(view.boss.phase === 3 ? 3 : 2), tone: 'info' });
   if (!out.length) out.push({ key: 'calm', text: N.calm, tone: 'info' });
+  // A shield check is the most urgent thing on the screen: first after a pause.
+  const wi = out.findIndex((n) => n.key === 'wind');
+  if (wi > 0) out.splice(view.pausedAt ? 1 : 0, 0, ...out.splice(wi, 1));
   return out;
 }
 
-export function ControllerStage({ view, t, hit, team, me, streak = 0 }: { view: RoomView; t: number; hit: number; team: TeamId | null; me: string; streak?: number }) {
+export function ControllerStage({ view, t, hit, team, me, role = null, streak = 0, coins = 0, vault = 0, onBid, bidSaid = null }: { view: RoomView; t: number; hit: number; team: TeamId | null; me: string; role?: Role | null; streak?: number; coins?: number; vault?: number; onBid?: (amount: number) => void; bidSaid?: { text: string; good: boolean } | null }) {
   const boss = bossInfo(view.bossId);
   const W = arenaWords(view.arena);
   const gr = view.arena === 'goldrush';
   const sky = view.arena === 'skyclimb';
   const isle = view.arena === 'island';
   const hill = view.arena === 'hill';
-  const back = gr ? art('back', 'gold-rush') : sky ? art('back', 'sky-climb') : isle ? art('back', 'shrinking-island') : hill ? art('back', 'king-hill') : art('back', boss.backdrop);
-  const bossImg = gr || sky || isle || hill ? null : art('bosses', `${view.bossId}-${view.boss.phase}`);
+  const auc = view.arena === 'auction';
+  const back = gr ? art('back', 'gold-rush') : sky ? art('back', 'sky-climb') : isle ? art('back', 'shrinking-island') : hill ? art('back', 'king-hill') : auc ? art('back', 'auction-house') : art('back', boss.backdrop);
+  const bossImg = gr || sky || isle || hill || auc ? null : art('bosses', `${view.bossId}-${view.boss.phase}`);
   const left = Math.max(0, Math.min(100, (view.boss.hp / Math.max(1, view.boss.max)) * 100));
   const pct = W.fills ? 100 - left : left;
   const name = W.goal ?? boss.name;
-  const notices = noticesFor(view, t, team, me);
+  const notices = noticesFor(view, t, team, me, role);
   const weak = view.weakSpotUntil > t;
   const wind = !!view.windUp && t < view.windUp.endsAt;
   const jumped = sky && hit > 0 && streak > 0 && streak % 3 === 0;
   return (
-    <aside className={`sd-cs${gr ? ' sd-cs--gr' : ''}${sky ? ' sd-cs--sky' : ''}${isle ? ' sd-cs--isle' : ''}${hill ? ' sd-cs--hill' : ''}${weak ? ' sd-cs--weak' : ''}${wind ? ' sd-cs--wind' : ''}`} aria-label={gr ? 'The mine' : sky ? 'The climb' : isle ? 'The island' : hill ? 'The hill' : 'The boss'}>
+    <aside className={`sd-cs${gr ? ' sd-cs--gr' : ''}${sky ? ' sd-cs--sky' : ''}${isle ? ' sd-cs--isle' : ''}${hill ? ' sd-cs--hill' : ''}${auc ? ' sd-cs--auc' : ''}${weak ? ' sd-cs--weak' : ''}${wind ? ' sd-cs--wind' : ''}`} aria-label={gr ? 'The mine' : sky ? 'The climb' : isle ? 'The island' : hill ? 'The hill' : auc ? 'The auction' : 'The boss'}>
       <div className="sd-cs__scene">
         {back && <img className="sd-cs__back" src={back} alt="" aria-hidden="true" />}
         {gr ? (
@@ -91,16 +112,19 @@ export function ControllerStage({ view, t, hit, team, me, streak = 0 }: { view: 
           <IsleMini island={view.island} me={me} hit={hit} pct={pct} wind={wind} weak={weak} team={team} />
         ) : hill && view.crown ? (
           <HillMini crown={view.crown} me={me} team={team} hit={hit} pct={pct} wind={wind} weak={weak} />
+        ) : auc && view.auction ? (
+          <AuctionMini auction={view.auction} me={me} team={team} hit={hit} t={t} wind={wind} weak={weak} />
         ) : bossImg ? (
           <img key={`b${hit}`} className={`sd-cs__boss${hit ? ' sd-cs__boss--hit' : ''}`} src={bossImg} alt="" aria-hidden="true" />
         ) : null}
-        {hit > 0 && !sky && !isle && !hill && <span key={`h${hit}`} className="sd-cs__pow" aria-hidden="true">{gr ? '🪙' : '💥'}</span>}
+        {hit > 0 && !sky && !isle && !hill && !auc && <span key={`h${hit}`} className="sd-cs__pow" aria-hidden="true">{gr ? '🪙' : '💥'}</span>}
       </div>
       <div className="sd-cs__bar" role="progressbar" aria-label={W.fills ? name : `${name} health`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
         <span className="sd-cs__name">{name}</span>
         <span className="sd-cs__track"><i style={{ transform: `scaleX(${pct / 100})` }} /></span>
         <span className="sd-cs__pct">{W.fills ? Math.floor(pct) : Math.ceil(pct)}%</span>
       </div>
+      {auc && view.state === 'live' && <BidPanel view={view} t={t} me={me} team={team} coins={coins} vault={vault} onBid={onBid} said={bidSaid} />}
       <ul className="sd-cs__notices" aria-live="polite">
         {notices.map((n) => <li key={n.key} className={`sd-cs__notice sd-cs__notice--${n.tone}`}>{n.text}</li>)}
       </ul>
@@ -174,6 +198,52 @@ function HillMini({ crown, me, team, hit, pct, wind, weak }: { crown: NonNullabl
       {hit > 0 && <span key={`s${hit}`} className="sd-cs__stone">🧱</span>}
       {weak && <span className="sd-cs__double">×2</span>}
       {wind && <span className="sd-cs__charger">🏇</span>}
+    </div>
+  );
+}
+
+/** Auction House on the iPad: the treasure on sale under the spotlight, the leading bid, and the hammer's timer. */
+function AuctionMini({ auction, me, team, hit, t, wind, weak }: { auction: NonNullable<RoomView['auction']>; me: string; team: TeamId | null; hit: number; t: number; wind: boolean; weak: boolean }) {
+  const lot = auction.lot;
+  const img = lot && lot.kind !== 'mystery' ? art('auction', lot.kind) : undefined;
+  const mine = !!lot && lot.topBy === me;
+  const left = lot ? Math.max(0, lot.endsAt - t) : 0;
+  return (
+    <div className={`sd-cs__auc${team ? ` sd-cs__sky--${team}` : ''}${mine ? ' sd-cs__auc--mine' : ''}`} aria-hidden="true">
+      <span className="sd-cs__aucspot" />
+      <span className="sd-cs__aucplinth" />
+      {lot ? (
+        <span key={`l${lot.id}`} className={`sd-cs__lot sd-cs__lot--${lot.kind}`}>{img ? <img src={img} alt="" /> : lot.kind === 'mystery' ? <b>?</b> : TREASURE[lot.kind].emoji}</span>
+      ) : (
+        <span className="sd-cs__lotwait">{auction.nextAt !== null ? `Next treasure in ${Math.max(0, Math.ceil((auction.nextAt - t) / 1000))}s` : 'Fill the treasury!'}</span>
+      )}
+      {lot && <span key={`b${lot.top}`} className="sd-cs__lottop">{lot.top ? `${lot.top} 🪙` : `from ${lot.min} 🪙`}</span>}
+      {lot && <span className="sd-cs__lottime"><i style={{ transform: `scaleX(${left / 20000})` }} /></span>}
+      {hit > 0 && <span key={`c${hit}`} className="sd-cs__coin">🪙</span>}
+      {weak && <span className="sd-cs__double">×2</span>}
+      {wind && <span className="sd-cs__thief">🦹</span>}
+    </div>
+  );
+}
+
+/** The bid buttons: raise the leading bid by 10, 25 or 50 coins (or open the bidding), with my coins and treasure. */
+function BidPanel({ view, t, me, team, coins, vault, onBid, said }: { view: RoomView; t: number; me: string; team: TeamId | null; coins: number; vault: number; onBid?: (amount: number) => void; said: { text: string; good: boolean } | null }) {
+  const a = view.auction;
+  const lot = a?.lot && t < a.lot.endsAt ? a.lot : null;
+  const mine = (a?.sold ?? []).filter((x) => x.by === me);
+  const blocked = !lot ? 'No treasure on sale right now' : lot.topBy === me ? "You're the top bid!" : team && lot.topTeam === team ? 'Your team is winning this one' : null;
+  const amounts = lot ? [...new Set((a?.steps ?? [10, 25, 50]).map((st) => (lot.top ? lot.top + st : lot.min + st - 10)))] : [];
+  return (
+    <div className="sd-cs__bid">
+      <div className="sd-cs__purse"><b>🪙 {coins}</b><span>{mine.length ? `${mine.map((x) => TREASURE[x.kind].emoji).join('')} worth ${vault}` : 'No treasure yet'}</span></div>
+      {lot && !blocked ? (
+        <div className="sd-cs__bidbtns">
+          {amounts.map((n) => <button key={n} type="button" className="sd-cs__bidbtn" disabled={n > coins} onClick={() => onBid?.(n)}>Bid {n}</button>)}
+        </div>
+      ) : (
+        <p className="sd-cs__bidwait">{blocked}</p>
+      )}
+      {said && lot && <p key={said.text} className={`sd-cs__bidsaid${said.good ? ' sd-cs__bidsaid--good' : ''}`}>{said.text}</p>}
     </div>
   );
 }

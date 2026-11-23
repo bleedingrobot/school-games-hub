@@ -9,6 +9,7 @@ import { playRound } from './sim';
 import { SKYCLIMB } from './skyclimb';
 import { ISLAND, shoreAt } from './island';
 import { HILL } from './hill';
+import { AUCTION, bid, coinsOf } from './auction';
 import { balanceTeams } from './teams';
 import type { Mode, Round, ShowdownEvent } from './types';
 
@@ -413,6 +414,46 @@ describe('Class Showdown rules', () => {
     const knocked = of(advance(r, 80000), 'crown').find((e) => e.holder === null);
     expect(knocked?.from).toBe('p2');
     const won = Array.from({ length: 24 }, (_, i) => playRound({ seed: 500 + i, size: 24, lengthMin: 10, mode: 'class', arena: 'hill' }).beaten).filter(Boolean).length;
+    expect(won).toBeGreaterThanOrEqual(14);
+    expect(won).toBeLessThanOrEqual(23);
+  });
+  it('auction house: right answers earn coins, a treasure goes up every minute, the top bid buys it, fortune = coins + treasure, no bidding against your own team, thieves steal, about 80% won', () => {
+    const r = newRound({ seed: 9, mode: 'teams2', lengthMin: 5, bossHealth: 100000 });
+    r.arena = 'auction';
+    for (const p of ids(4)) join(r, p);
+    start(r);
+    r.schedule = [];
+    for (let t = 0; t <= 24000; t += 4000) for (const k of ['p1', 'p2', 'p3', 'p4']) answer(r, k, true, t + 100);
+    const up = of(advance(r, AUCTION.firstMs), 'lot_open')[0];
+    expect(up).toMatchObject({ lot: 0, endsAt: AUCTION.firstMs + AUCTION.openMs });
+    const lot = r.auction!.lots[0];
+    const [a, b] = r.order.filter((k) => r.players[k].team === r.players.p1.team);
+    const other = r.order.find((k) => r.players[k].team !== r.players[a].team)!;
+    const coins = coinsOf(r.players[a]);
+    const evs: ShowdownEvent[] = [];
+    expect(bid(r, a, lot.min - 5, evs)).toBe('too_low');
+    expect(bid(r, a, coins + 10, evs)).toBe('too_poor');
+    expect(bid(r, a, lot.min, evs)).toBeNull();
+    expect(bid(r, b, lot.min + 10, evs)).toBe('own_team');
+    expect(bid(r, other, lot.min, evs)).toBe('too_low');
+    expect(bid(r, other, lot.min + 10, evs)).toBeNull();
+    expect(bid(r, a, lot.min + 20, evs)).toBeNull();
+    const before = r.players[a].score;
+    const sold = of(advance(r, AUCTION.firstMs + AUCTION.openMs), 'lot_sold')[0];
+    expect(sold).toMatchObject({ pupil: a, bid: lot.min + 20, value: lot.value });
+    expect(r.players[a].score).toBe(before + lot.value - (lot.min + 20));
+    expect(coinsOf(r.players[a])).toBe(coins - (lot.min + 20));
+    // Thieves nobody stops steal the next treasure, and nobody pays.
+    for (const k of r.order) answer(r, k, true, 85000);
+    r.schedule = [{ at: AUCTION.firstMs + AUCTION.everyMs + 1000, kind: 'wind_up' }];
+    const stolen = of(advance(r, AUCTION.firstMs + AUCTION.everyMs + 19000), 'lot_unsold')[0];
+    expect(stolen).toMatchObject({ lot: 1, stolen: true });
+    // The last treasure is always the golden dragon, and none goes up too late to close before the end.
+    advance(r, 5 * 60000 - 1);
+    const lots = r.auction!.lots;
+    expect(lots[lots.length - 1].kind).toBe('dragon');
+    expect(lots.every((l) => l.endsAt <= 5 * 60000 - AUCTION.endGapMs)).toBe(true);
+    const won = Array.from({ length: 24 }, (_, i) => playRound({ seed: 500 + i, size: 24, lengthMin: 10, mode: 'class', arena: 'auction' }).beaten).filter(Boolean).length;
     expect(won).toBeGreaterThanOrEqual(14);
     expect(won).toBeLessThanOrEqual(23);
   });

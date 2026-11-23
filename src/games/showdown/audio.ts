@@ -1,12 +1,15 @@
 /** Class Showdown projector sound, all synthesised with the Web Audio API (no files). iPads stay silent. */
 import { speak, canSpeak } from '../../speech';
-import { VOICE_FOLDER } from './voiceLines';
+import { pickTake, VOICE_FOLDER } from './voiceLines';
 
 export type SoundName = 'roar' | 'hit' | 'bighit' | 'clang' | 'crack' | 'chime' | 'drum' | 'cheer' | 'fanfare' | 'countdown' | 'whoosh';
 
 export interface ShowdownSound {
   play(name: SoundName): void;
-  say(line: string): void;
+  /** `urgent` lines (the end of the round, the start) never wait for the gap after the last line. */
+  say(line: string, urgent?: boolean): void;
+  /** The arena, for its own touch on the hit sound. */
+  setArena?(arena: string | null | undefined): void;
   muted: boolean;
   setMuted(b: boolean): void;
 }
@@ -28,11 +31,29 @@ export function silentSound(): ShowdownSound {
 
 type Ctx = AudioContext;
 
+/** The same (non-hit) sound plays at most once in this long. */
+export const SOUND_GAP_MS = 400;
+/** The announcer waits this long after a line before the next, and doesn't repeat a line within `LINE_REPEAT_MS`. */
+export const SAY_GAP_MS = 1800;
+export const LINE_REPEAT_MS = 8000;
+
+/** Whether the announcer may say `line` now. */
+export function sayAllowed(now: number, line: string, lastSaid: number, lastLine: Map<string, number>): boolean {
+  if (now - lastSaid < SAY_GAP_MS) return false;
+  return now - (lastLine.get(line) ?? -Infinity) >= LINE_REPEAT_MS;
+}
+
 export function makeShowdownSound(): ShowdownSound {
   let ctx: Ctx | null = null;
   let master: GainNode | null = null;
   let noiseBuf: AudioBuffer | null = null;
   let hitTimes: number[] = [];
+  const lastSound = new Map<string, number>();
+  const lastLine = new Map<string, number>();
+  let lastSaid = 0;
+  let lastTake: string | null = null;
+  let vary = 0;
+  let arena = 'boss';
 
   const api: ShowdownSound = {
     muted: readMuted(),
@@ -43,29 +64,49 @@ export function makeShowdownSound(): ShowdownSound {
     },
     play(name) {
       if (api.muted) return;
+      vary = (Math.random() - 0.5) * 260;
       try {
         if (name === 'hit' || name === 'bighit') {
           const now = Date.now();
           hitTimes = hitTimes.filter((t) => now - t < 1000);
-          if (hitTimes.length >= 8) return;
+          if (hitTimes.length >= 5) return;
           hitTimes.push(now);
+        } else {
+          // The same sound fired by many pupils at once (every pupil's shield in solo) plays once.
+          const now = Date.now();
+          if (now - (lastSound.get(name) ?? 0) < SOUND_GAP_MS) return;
+          lastSound.set(name, now);
         }
         const c = ensure();
         if (!c || !master) return;
         if (c.state === 'suspended') void c.resume().catch(() => {});
         SOUNDS[name](c, master, c.currentTime);
+        // Each arena's own touch on a hit: a pickaxe ping, a splash, a coin, a stone thud, a gust.
+        if ((name === 'hit' || name === 'bighit') && arena !== 'boss') ARENA_HIT[arena]?.(c, master, c.currentTime);
       } catch {
         // Sound is never worth a crash.
       }
     },
-    say(line) {
+    setArena(a) {
+      arena = a ?? 'boss';
+    },
+    say(line, urgent = false) {
       if (api.muted || !line) return;
+      // Never two lines on top of each other, and never the same line again straight away: in solo each pupil's shield
+      // held or broke on its own, and the announcer said it once per pupil (24 Nov 2026).
+      const now = Date.now();
+      if (!sayAllowed(now, line, urgent ? -Infinity : lastSaid, lastLine)) return;
+      lastSaid = now;
+      lastLine.set(line, now);
+      // One of the line's takes, so the same moment doesn't always sound the same.
+      const take = pickTake(line, lastTake);
+      lastTake = take;
       try {
-        speak(line, VOICE_FOLDER);
+        speak(take, VOICE_FOLDER);
       } catch {
         if (canSpeak()) {
           try {
-            const u = new SpeechSynthesisUtterance(line);
+            const u = new SpeechSynthesisUtterance(take);
             u.pitch = 0.5; u.rate = 0.8;
             window.speechSynthesis.speak(u);
           } catch { /* nothing to do */ }
@@ -103,7 +144,8 @@ export function makeShowdownSound(): ShowdownSound {
   function tone(c: Ctx, out: AudioNode, t: number, type: OscillatorType, f0: number, f1: number, peak: number, attack: number, dur: number, detune = 0): void {
     const o = c.createOscillator();
     o.type = type;
-    o.detune.value = detune;
+    // Every play is a little different in pitch, so repeats don't sound copied (James, 24 Nov 2026: more variety).
+    o.detune.value = detune + vary;
     o.frequency.setValueAtTime(f0, t);
     if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
     o.connect(env(c, out, t, peak, attack, dur));
@@ -123,6 +165,14 @@ export function makeShowdownSound(): ShowdownSound {
     s.start(t);
     s.stop(t + dur + 0.05);
   }
+
+  const ARENA_HIT: Record<string, (c: Ctx, out: AudioNode, t: number) => void> = {
+    goldrush(c, o, t) { tone(c, o, t + 0.01, 'triangle', 2400, 2200, 0.12, 0.001, 0.25); },
+    island(c, o, t) { noise(c, o, t, 'lowpass', 900, 300, 0.25, 0.02, 0.35); },
+    auction(c, o, t) { tone(c, o, t, 'sine', 1975, 1975, 0.12, 0.002, 0.3); tone(c, o, t + 0.06, 'sine', 2637, 2637, 0.1, 0.002, 0.35); },
+    hill(c, o, t) { tone(c, o, t, 'sine', 90, 50, 0.35, 0.002, 0.2); noise(c, o, t, 'lowpass', 600, 200, 0.2, 0.002, 0.12); },
+    skyclimb(c, o, t) { noise(c, o, t, 'bandpass', 600, 2400, 0.18, 0.05, 0.3); },
+  };
 
   const SOUNDS: Record<SoundName, (c: Ctx, out: AudioNode, t: number) => void> = {
     roar(c, o, t) {

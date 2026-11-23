@@ -4,6 +4,7 @@
  * in memory. The tests drive it with a pretend clock; the preview page drives it with real timers.
  */
 import { botClass, type BotPupil } from './bots';
+import { AUCTION, coinsOf, openLot } from './auction';
 import { markQuestion } from '../maths/serverQuestions';
 import { memoryDb, memoryServices, type MemoryDb } from './memoryServices';
 import { rng } from './schedule';
@@ -53,6 +54,14 @@ export function pretendClass(opts: { size: number; mode: Mode; seed: number; clo
       const out = await showdownStep(services, b.id, { action: 'answer', room, slot: q.slot, answer: correct ? right : wrongValue, ms: Math.round(think(b)) });
       const me = db.rooms.get(room);
       if (!me || me.round.state === 'over') return;
+      // Auction House: now and then a pretend pupil bids for the treasure on sale, never past about what it's worth.
+      const lot = me.round.arena === 'auction' ? openLot(me.round) : null;
+      const mine = me.round.players[b.id];
+      if (lot && lot.topBy !== b.id && rand() < 0.35) {
+        const amount = Math.max(lot.min, lot.top + AUCTION.steps[Math.floor(rand() * 2)]);
+        const worth = lot.kind === 'mystery' ? lot.min * 5 : lot.value * (0.6 + rand() * 0.45);
+        if (amount <= worth && amount <= coinsOf(mine)) await showdownStep(services, b.id, { action: 'choose', room, bid: amount });
+      }
       // Refused (ring not full, dazed, paused): try again when it's allowed.
       const p = me.round.players[b.id];
       const t = me.startedAt === null ? 0 : (me.pausedAt ?? opts.clock.now()) - me.startedAt;
