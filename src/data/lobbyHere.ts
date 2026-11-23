@@ -10,7 +10,7 @@
  */
 import { supabase } from '../lib/supabase';
 import { readClassBits, type SchoolPlayer } from '../components/SchoolPlayerList';
-import { ASK_GAMES, LIVE_GAMES, type AskGame, type LiveGame } from './hubAsks';
+import { ASK_GAMES, isClassGame, LIVE_GAMES, type LobbyGame, type LiveGame } from './hubAsks';
 
 /** What I can do in a game from the Lobby: ready, nothing made yet (archer, hero, clan or island), or paused by the teacher. */
 export type MyState = 'ready' | 'none' | 'off';
@@ -26,11 +26,11 @@ export interface HerePlayer extends SchoolPlayer {
   /** Their clan's id for a duel (only when I have a clan myself). */
   clan: string | null;
   /** Only the games I can play myself: the live games, and the board games I can invite them to (stage 4). */
-  games: Partial<Record<AskGame, WithThem>>;
+  games: Partial<Record<LobbyGame, WithThem>>;
 }
 
 export interface GoingFight {
-  game: AskGame;
+  game: LobbyGame;
   id: number;
   /** 'asked' is my own challenge or invite, waiting for a yes. Board game invites are only ever 'asked' here. */
   status: 'asked' | 'packing' | 'playing';
@@ -55,7 +55,7 @@ export interface LobbyHere {
 }
 
 const MY_GAMES: MyGame[] = [...LIVE_GAMES, 'isles', 'raid'];
-const isAskGame = (g: unknown): g is AskGame => typeof g === 'string' && (ASK_GAMES as readonly string[]).includes(g);
+const isLobbyGame = (g: unknown): g is LobbyGame => typeof g === 'string' && (ASK_GAMES.filter((a) => !isClassGame(a)) as readonly string[]).includes(g);
 const WITH: WithThem[] = ['ok', 'none', 'off', 'busy'];
 
 /** Reads lobby_here()'s reply, leaving out anything it can't read. Exported for the tests. */
@@ -67,7 +67,7 @@ export function readLobbyHere(data: unknown): LobbyHere | null {
     MY_GAMES.map((g) => [g, mine[g] === 'ready' || mine[g] === 'none' ? mine[g] : 'off']),
   ) as Record<MyGame, MyState>;
   const going: GoingFight[] = (Array.isArray(raw.going) ? raw.going : []).flatMap((g: Record<string, unknown>) =>
-    g && isAskGame(g.game) && Number.isSafeInteger(g.id) && typeof g.with === 'string' && ['asked', 'packing', 'playing'].includes(g.status as string)
+    g && isLobbyGame(g.game) && Number.isSafeInteger(g.id) && typeof g.with === 'string' && ['asked', 'packing', 'playing'].includes(g.status as string)
       ? [{ game: g.game, id: g.id as number, status: g.status as GoingFight['status'], with: g.with }]
       : [],
   );
@@ -80,7 +80,7 @@ export function readLobbyHere(data: unknown): LobbyHere | null {
       avatar: o.avatar ?? null,
       here: isHere(o),
       clan: typeof o.clan === 'string' ? o.clan : null,
-      games: Object.fromEntries(ASK_GAMES.flatMap((g) => (WITH.includes(games[g] as WithThem) ? [[g, games[g]]] : []))),
+      games: Object.fromEntries(ASK_GAMES.filter((a): a is LobbyGame => !isClassGame(a)).flatMap((g) => (WITH.includes(games[g] as WithThem) ? [[g, games[g]]] : []))),
       ...readClassBits(o),
     }];
   });

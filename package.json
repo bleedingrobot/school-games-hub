@@ -84,7 +84,8 @@
     "test:budget": "vitest run --project logic scripts/test-budget.test.ts",
     "circuit:sim": "node scripts/circuit-sim.mjs",
     "showdown:sim": "node scripts/showdown-sim.mjs",
-    "circuit:preview": "vite build --config vite.circuit-preview.config.ts"
+    "circuit:preview": "vite build --config vite.circuit-preview.config.ts",
+    "showdown:preview": "vite build --config vite.showdown-preview.config.ts"
   },
   "engines": {
     "node": ">=22"

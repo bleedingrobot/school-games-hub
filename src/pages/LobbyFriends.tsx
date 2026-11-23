@@ -11,7 +11,7 @@ import { ClassTag, SchoolPlayerList, StarButton, useStars, type SchoolPlayer } f
 import { GAME_NAMES, STAR_HINT, STAR_HINT_SPOKEN, VOICE_FOLDER, askLine } from '../components/challengeWords';
 import { starPlayer } from '../data/lobbyStars';
 import { speak } from '../speech';
-import { isInviteGame, type AskGame, type HubAsk, type InviteGame, type LiveGame } from '../data/hubAsks';
+import { isInviteGame, type AskGame, type LobbyGame, type HubAsk, type InviteGame, type LiveGame } from '../data/hubAsks';
 import type { HerePlayer, MyGame, MyState, StarAway, WithThem } from '../data/lobbyHere';
 import './lobbyFriends.css';
 
@@ -28,7 +28,7 @@ export const FIRST: Record<MyGame, { why: string; fix: string; to: string }> = {
 };
 
 /** The one-word button for each game. */
-const SEND: Record<AskGame, string> = {
+const SEND: Record<LobbyGame, string> = {
   archery: 'Archery fight',
   'dragon-maths': 'Dragon Maths clash',
   'clan-quest': 'Clan duel',
@@ -47,10 +47,11 @@ export const EMOJI: Record<AskGame, string> = {
   '101': '🃏',
   space: '🚀',
   'power-clash': '⚡',
+  showdown: '⚔️',
 };
 
 /** Can I play this game with them, and if not, why (in words for the pupil). Board games are always 'ready' for me here. */
-export function withThemWords(game: AskGame, mine: MyState, them: HerePlayer): { ok: boolean; text: string } {
+export function withThemWords(game: LobbyGame, mine: MyState, them: HerePlayer): { ok: boolean; text: string } {
   if (mine === 'off') return { ok: false, text: PAUSED };
   if (mine === 'none' && !isInviteGame(game)) return { ok: false, text: FIRST[game].why };
   const state: WithThem | undefined = them.games[game];
@@ -210,12 +211,12 @@ export function WhosHere({ online, starsAway = [], recent = [], me, games, board
   onClearFocus: () => void;
   sending: boolean;
   problem: string;
-  onSend: (game: AskGame, them: HerePlayer) => void;
+  onSend: (game: LobbyGame, them: HerePlayer) => void;
 }) {
   const [openKid, setOpenKid] = useState<string | null>(null);
   const played = useStars(recent, starPlayer);
   // A game I can't play myself shows only on its tile (with the reason and the fix), not on every kid.
-  const shownGames: AskGame[] = focus ? [focus] : [...games.filter((g) => !me || me[g] === 'ready'), ...boards];
+  const shownGames: LobbyGame[] = focus ? [focus] : [...games.filter((g) => !me || me[g] === 'ready'), ...boards];
 
   /** The board games that can't be played with them, one line per reason (not five "has paused" lines). */
   const boardsNot = (p: HerePlayer) => {

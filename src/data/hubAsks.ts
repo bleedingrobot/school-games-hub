@@ -21,10 +21,18 @@ export type LiveGame = (typeof LIVE_GAMES)[number];
 export const INVITE_GAMES = ['chess', 'checkers', '101', 'space', 'power-clash'] as const;
 export type InviteGame = (typeof INVITE_GAMES)[number];
 /** Everything that can ask a kid to play: the live games' challenges and the board games' invites. */
-export const ASK_GAMES = [...LIVE_GAMES, ...INVITE_GAMES] as const;
-export type AskGame = LiveGame | InviteGame;
+/** Class-wide games (not duel tables): a teacher opens one and the whole class is asked to join. */
+export const CLASS_GAMES = ['showdown'] as const;
+export type ClassGame = (typeof CLASS_GAMES)[number];
+export const ASK_GAMES = [...LIVE_GAMES, ...INVITE_GAMES, ...CLASS_GAMES] as const;
+export type AskGame = LiveGame | InviteGame | ClassGame;
+
+/** The games the Lobby can ask about: everything but the class-wide ones. */
+export type LobbyGame = Exclude<AskGame, ClassGame>;
 
 export const isInviteGame = (g: unknown): g is InviteGame => typeof g === 'string' && (INVITE_GAMES as readonly string[]).includes(g);
+
+export const isClassGame = (g: unknown): g is ClassGame => typeof g === 'string' && (CLASS_GAMES as readonly string[]).includes(g);
 
 export interface HubAsk {
   game: AskGame;
@@ -93,6 +101,15 @@ export const serverHubAskLink: HubAskLink = {
         return heard && 'ask' in heard ? [heard.ask] : [];
       });
     }
+    if (isClassGame(game)) {
+      const { data, error } = await supabase.rpc('showdown_here');
+      if (error || !Array.isArray(data)) return null;
+      return data.flatMap((r: { room?: unknown; class?: unknown; until?: unknown }) =>
+        Number.isSafeInteger(Number(r?.room)) && typeof r.until === 'string'
+          ? [{ game, id: Number(r.room), from: typeof r.class === 'string' ? r.class : 'your class', deadline: r.until }]
+          : [],
+      );
+    }
     if (game === 'archery') {
       const { serverDuelLink } = await import('./archery');
       const r = await serverDuelLink.here();
@@ -111,6 +128,7 @@ export const serverHubAskLink: HubAskLink = {
     return r.off ? [] : r.asks.map((a) => ({ game, id: a.duel, from: a.from, deadline: a.deadline }));
   },
   async decline(ask) {
+    if (isClassGame(ask.game)) return; // nothing to tell the server: it just hides
     if (isInviteGame(ask.game)) {
       await supabase.rpc('board_invite_decline', { invite: ask.id });
     } else if (ask.game === 'archery') {
@@ -136,6 +154,14 @@ export const serverHubAskLink: HubAskLink = {
       const game = (payload.new as { game?: unknown } | undefined)?.game;
       const heard = isInviteGame(game) ? heardFrom(game, payload.new) : null;
       if (heard) onHeard(heard);
+    });
+    // Class Showdown rooms in my class (the table's rule limits which rows reach me).
+    channel = channel.on('postgres_changes', { event: '*', schema: 'public', table: 'showdown_rooms' }, (payload: { new?: unknown }) => {
+      const r = payload.new as { id?: unknown; state?: unknown } | undefined;
+      const id = Number(r?.id);
+      if (!r || !Number.isSafeInteger(id)) return;
+      if (r.state === 'lobby' || r.state === 'live') onHeard({ ask: { game: 'showdown', id, from: 'your class', deadline: new Date(Date.now() + 3 * 3600_000).toISOString() } });
+      else onHeard({ gone: { game: 'showdown', id } });
     });
     for (const game of LIVE_GAMES) {
       // Only challenges sent to me (Realtime checks each table's rule too, so only my own rows arrive).
