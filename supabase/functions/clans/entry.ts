@@ -6,7 +6,7 @@ import type { Result, ServerState } from '../../../shared/clans/actions';
 import type { RivalSketch } from '../../../shared/clans/raids';
 import type { DuelRow } from '../../../shared/clans/duelServer';
 import { FACT_PACK } from '../../../shared/clans/battleCry';
-import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
+import { FLUENT_DAYS, quickMsForSave, TOP_BOX } from '../../../shared/maths/config';
 import { parseFocus } from '../../../shared/maths/focus';
 import type { MathsContext } from '../../../shared/maths/serverQuestions';
 import { openCoinPouches } from '../_shared/coinPouch';
@@ -47,7 +47,7 @@ Deno.serve(
     extras: (player) => call<Extras>('clan_extras', { player }),
     async recordAnswers(player, batchKey, answers) {
       return call<number>('record_fact_answers', {
-        player, pack: FACT_PACK, batch_id: await batchIdFor(batchKey), answers, quick_ms: QUICK_MS, fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
+        player, pack: FACT_PACK, batch_id: await batchIdFor(batchKey), answers, quick_ms: quickMsForSave(FACT_PACK), fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
       });
     },
     async mathsContext(player): Promise<MathsContext | null> {

@@ -2,6 +2,7 @@ import { FLUENT_DAYS, TOP_BOX, keptMs, quickMsForPack } from '../../../shared/ma
 import { groupByPack } from '../../../shared/maths/focus';
 import type { FactAnswer } from '../../../shared/maths/leitner';
 import { makePlaceSyncer } from '../../../shared/maths/syncPlace';
+import { isUntimed, UNTIMED_MS } from '../../../shared/maths/untimed';
 import { countForFocuses } from './focusResults';
 
 /** The one thing of the database client this needs, so a test can stand in for it. */
@@ -51,30 +52,38 @@ export async function recordMathsAnswers(
   minMs?: number,
 ): Promise<Recorded> {
   const result: Recorded = { saved: 0, failed: 0 };
-  for (const [pack, group] of groupByPack(answers)) {
-    try {
-      const { data, error } = await rpc('record_fact_answers', {
-        player,
-        pack,
-        batch_id: await batchId(once, pack),
-        // Times as they are kept: at most two minutes (a pupil who wandered off isn't slow at the fact).
-        answers: group.map((a) => ({ ...cleanGiven(a), ms: keptMs(a.ms) })),
-        quick_ms: quickMs ?? quickMsForPack(pack),
-        fluent_days: FLUENT_DAYS,
-        top_box: TOP_BOX,
-        min_ms: minMs ?? 0,
-      });
-      if (error) {
+  for (const [pack, all] of groupByPack(answers)) {
+    // Untimed skills (shared/maths/untimed.ts) go in their own batch, where any right answer is quick.
+    const untimed = all.filter((a) => isUntimed(a.key, pack));
+    const timed = all.filter((a) => !isUntimed(a.key, pack));
+    for (const [group, untimedGroup] of [[timed, false], [untimed, true]] as const) {
+      if (group.length === 0) continue;
+      try {
+        const { data, error } = await rpc('record_fact_answers', {
+          player,
+          pack,
+          // The timed batch keeps the id it always had, so a save sent again after this change still counts once. The untimed
+          // batch always gets its own id (a game's own batch ids may not name the pack).
+          batch_id: untimedGroup ? await batchIdFor(`${from}:${once}:${pack}:untimed`) : await batchId(once, pack),
+          // Times as they are kept: at most two minutes (a pupil who wandered off isn't slow at the fact).
+          answers: group.map((a) => ({ ...cleanGiven(a), ms: keptMs(a.ms) })),
+          quick_ms: untimedGroup ? UNTIMED_MS : (quickMs ?? quickMsForPack(pack)),
+          fluent_days: FLUENT_DAYS,
+          top_box: TOP_BOX,
+          min_ms: minMs ?? 0,
+        });
+        if (error) {
+          result.failed++;
+          console.error(`${from}: record answers failed (${error.code ?? 'unknown'})`);
+          continue;
+        }
+        const saved = typeof data === 'number' ? data : 0;
+        result.saved += saved;
+        if (saved > 0) await countForFocuses(rpc, player, pack, group, from);
+      } catch {
         result.failed++;
-        console.error(`${from}: record answers failed (${error.code ?? 'unknown'})`);
-        continue;
+        console.error(`${from}: record answers failed`);
       }
-      const saved = typeof data === 'number' ? data : 0;
-      result.saved += saved;
-      if (saved > 0) await countForFocuses(rpc, player, pack, group, from);
-    } catch {
-      result.failed++;
-      console.error(`${from}: record answers failed`);
     }
   }
   if (result.saved > 0) await syncLadderPlace(rpc, player);

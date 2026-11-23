@@ -7784,6 +7784,35 @@ function makePlaceSyncer(ports, now = Date.now, minGapMs = 3e4) {
 	};
 }
 //#endregion
+//#region shared/maths/untimed.ts
+const UNTIMED_SKILLS = [
+	"round-10-100",
+	"round-1000",
+	"round-big",
+	"factor-pairs",
+	"fraction-of",
+	"percent-of",
+	"whole-from-fraction",
+	"bedmas",
+	"number-line-100",
+	"number-line-1000",
+	"balance-10",
+	"balance-20",
+	"true-false",
+	"bundles-50",
+	"place-value-100",
+	"regroup-100",
+	"ten-more-less-100",
+	"place-value-1000",
+	"equal-rows",
+	"arrays-turn",
+	"sharing-rows",
+	"cut-arrays",
+	"count-out-10",
+	"count-out-20"
+];
+new Set(LADDER.filter((s) => UNTIMED_SKILLS.includes(s.id)).flatMap((s) => s.keys));
+//#endregion
 //#region supabase/functions/_shared/recordAnswers.ts
 /** When each student's place was last worked out, so a busy game reads their records at most every 30 seconds. */
 const placeSyncedAt = new Map();

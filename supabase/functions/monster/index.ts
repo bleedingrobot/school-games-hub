@@ -111,6 +111,20 @@ const QUICK_MS = 5e3;
 const QUICK_MS_BY_PACK = { generated: 8e3 };
 /** The quick time for the records of a pack ("times-tables", "generated"...). */
 const quickMsForPack = (pack) => pack && Object.hasOwn(QUICK_MS_BY_PACK, pack) ? QUICK_MS_BY_PACK[pack] : QUICK_MS;
+/**
+* Packs that are not timed at all (shared/maths/untimed.ts says why): any right answer is quick. Kept here, not there, so a game
+* that only needs a pack's quick time doesn't load the whole ladder.
+*/
+const UNTIMED_PACK_IDS = [
+	"place-value",
+	"fractions",
+	"decimals",
+	"money",
+	"patterns",
+	"clan-quest"
+];
+/** A pack's quick time, with untimed packs never slow. */
+const quickMsForSave = (pack) => pack && UNTIMED_PACK_IDS.includes(pack) ? LONGEST_ANSWER_MS : quickMsForPack(pack);
 /** Mastery boxes 0–4 (Leitner). How likely each box is to be picked: lower boxes come up more. */
 const BOX_WEIGHTS = [
 	6,
@@ -37445,7 +37459,7 @@ Deno.serve(makeHandler({
 			pack,
 			batch_id: batchId,
 			answers,
-			quick_ms: QUICK_MS,
+			quick_ms: quickMsForSave(pack),
 			fluent_days: 2,
 			top_box: 4
 		});

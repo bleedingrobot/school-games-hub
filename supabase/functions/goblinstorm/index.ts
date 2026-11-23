@@ -98,6 +98,18 @@ const QUICK_MS = 5e3;
 const QUICK_MS_BY_PACK = { generated: 8e3 };
 /** The quick time for the records of a pack ("times-tables", "generated"...). */
 const quickMsForPack = (pack) => pack && Object.hasOwn(QUICK_MS_BY_PACK, pack) ? QUICK_MS_BY_PACK[pack] : QUICK_MS;
+/**
+* Packs that are not timed at all (shared/maths/untimed.ts says why): any right answer is quick. Kept here, not there, so a game
+* that only needs a pack's quick time doesn't load the whole ladder.
+*/
+const UNTIMED_PACK_IDS = [
+	"place-value",
+	"fractions",
+	"decimals",
+	"money",
+	"patterns",
+	"clan-quest"
+];
 /** Mastery boxes 0–4 (Leitner). How likely each box is to be picked: lower boxes come up more. */
 const BOX_WEIGHTS = [
 	6,
@@ -10429,6 +10441,52 @@ function makePlaceSyncer(ports, now = Date.now, minGapMs = 3e4) {
 	};
 }
 //#endregion
+//#region shared/maths/untimed.ts
+/**
+* Skills that are not timed (James, 23 Nov 2026): a right answer marks the fact off however long it took. These are questions
+* a student works out rather than recalls (rounding, order of operations, a percentage of an amount), and the hands-on junior
+* games where the answer is dragged or built (number lines, bundles, arrays). Facts to recall (number facts, doubles, skip
+* counting, times tables, bonds) stay timed: quick recall is the point of them.
+*
+* To time a skill again, take its id out of the list.
+*/
+const UNTIMED_SKILLS = [
+	"round-10-100",
+	"round-1000",
+	"round-big",
+	"factor-pairs",
+	"fraction-of",
+	"percent-of",
+	"whole-from-fraction",
+	"bedmas",
+	"number-line-100",
+	"number-line-1000",
+	"balance-10",
+	"balance-20",
+	"true-false",
+	"bundles-50",
+	"place-value-100",
+	"regroup-100",
+	"ten-more-less-100",
+	"place-value-1000",
+	"equal-rows",
+	"arrays-turn",
+	"sharing-rows",
+	"cut-arrays",
+	"count-out-10",
+	"count-out-20"
+];
+/**
+* Whole packs that are not timed: the topic packs of Maths Monsters and Dragon Maths (word problems with money, patterns,
+* place value, fractions and decimals) and Clans' quests. Their questions take reading.
+*/
+const UNTIMED_PACKS = UNTIMED_PACK_IDS;
+/** The quick time that makes any kept answer quick: every answer time is kept as at most this. */
+const UNTIMED_MS = LONGEST_ANSWER_MS;
+const untimedKeys = new Set(LADDER.filter((s) => UNTIMED_SKILLS.includes(s.id)).flatMap((s) => s.keys));
+/** True when a right answer to this key marks it off however long it took. */
+const isUntimed = (key, pack) => !!pack && UNTIMED_PACKS.includes(pack) || untimedKeys.has(key);
+//#endregion
 //#region shared/maths/focusResults.ts
 /**
 * What the game servers tell the database about answers given while a maths focus ran (docs/MATHS-FOCUS-PLAN.md, "Stage F.8
@@ -10511,31 +10569,38 @@ async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o
 		saved: 0,
 		failed: 0
 	};
-	for (const [pack, group] of groupByPack(answers)) try {
-		const { data, error } = await rpc("record_fact_answers", {
-			player,
-			pack,
-			batch_id: await batchId(once, pack),
-			answers: group.map((a) => ({
-				...cleanGiven(a),
-				ms: keptMs(a.ms)
-			})),
-			quick_ms: quickMs ?? quickMsForPack(pack),
-			fluent_days: 2,
-			top_box: 4,
-			min_ms: minMs ?? 0
-		});
-		if (error) {
-			result.failed++;
-			console.error(`${from}: record answers failed (${error.code ?? "unknown"})`);
-			continue;
+	for (const [pack, all] of groupByPack(answers)) {
+		const untimed = all.filter((a) => isUntimed(a.key, pack));
+		const timed = all.filter((a) => !isUntimed(a.key, pack));
+		for (const [group, untimedGroup] of [[timed, false], [untimed, true]]) {
+			if (group.length === 0) continue;
+			try {
+				const { data, error } = await rpc("record_fact_answers", {
+					player,
+					pack,
+					batch_id: untimedGroup ? await batchIdFor(`${from}:${once}:${pack}:untimed`) : await batchId(once, pack),
+					answers: group.map((a) => ({
+						...cleanGiven(a),
+						ms: keptMs(a.ms)
+					})),
+					quick_ms: untimedGroup ? UNTIMED_MS : quickMs ?? quickMsForPack(pack),
+					fluent_days: 2,
+					top_box: 4,
+					min_ms: minMs ?? 0
+				});
+				if (error) {
+					result.failed++;
+					console.error(`${from}: record answers failed (${error.code ?? "unknown"})`);
+					continue;
+				}
+				const saved = typeof data === "number" ? data : 0;
+				result.saved += saved;
+				if (saved > 0) await countForFocuses(rpc, player, pack, group, from);
+			} catch {
+				result.failed++;
+				console.error(`${from}: record answers failed`);
+			}
 		}
-		const saved = typeof data === "number" ? data : 0;
-		result.saved += saved;
-		if (saved > 0) await countForFocuses(rpc, player, pack, group, from);
-	} catch {
-		result.failed++;
-		console.error(`${from}: record answers failed`);
 	}
 	if (result.saved > 0) await syncLadderPlace(rpc, player);
 	return result;
