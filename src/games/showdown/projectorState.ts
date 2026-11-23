@@ -5,6 +5,7 @@
  * It never holds a question or a wrong answer (the feed has none).
  */
 import type { Recap } from '../../../shared/showdown/awards';
+import { bossInfo } from '../../../shared/showdown/bosses';
 import type { FeedEvent, PlayerView, RoomView } from '../../../shared/showdown/server';
 import type { Role, TeamId } from '../../../shared/showdown/types';
 
@@ -81,6 +82,10 @@ export interface ProjectorState {
   damage: Record<string, number>;
   lastHitter: string | null;
   bestStreak: { pupil: string; streak: number } | null;
+  /** Each pupil's lowest place so far (a bigger number is lower): "best comeback" is how far they climbed from it. */
+  worstRank: Record<string, number>;
+  /** Counts "again" resets (the lobby plays the new boss's entrance), and which boss it brought. */
+  againSeq: number;
   /** Round time of the latest event. */
   t: number;
   seq: number;
@@ -121,7 +126,7 @@ export function initialState(reply?: { view?: RoomView; players?: PlayerView[]; 
     weakUntil: view?.weakSpotUntil ?? 0, goldenUntil: view?.goldenUntil ?? 0, goldenSeq: 0, enrageUntil: view?.enrageUntil ?? 0,
     final: view?.finalStarted ?? false, finalUntil: 0, startSeq: 0, hitSeq: 0, bigHitSeq: 0, healAt: 0,
     beaten: view?.result === 'beaten', timeUp: view?.result === 'time', paused: view?.pausedAt != null, ended: view?.state === 'over',
-    recap: reply?.recap ?? null, tugSeq: 0, tugAt: 0, turn: null, turnSeq: 0, moves: [], damage: {}, lastHitter: null, bestStreak: null, t: view?.t ?? 0, seq: 0,
+    recap: reply?.recap ?? null, tugSeq: 0, tugAt: 0, turn: null, turnSeq: 0, moves: [], damage: {}, lastHitter: null, bestStreak: null, worstRank: {}, againSeq: 0, t: view?.t ?? 0, seq: 0,
   };
 }
 
@@ -140,6 +145,30 @@ export function rankOf(s: Pick<ProjectorState, 'roster' | 'order'>, id: string):
   }
   return r;
 }
+/** Notes everyone's current place as a possible lowest place. */
+function noteRanks(s: ProjectorState): Record<string, number> {
+  const worst = { ...s.worstRank };
+  for (const id of s.order) worst[id] = Math.max(worst[id] ?? 0, rankOf(s, id));
+  return worst;
+}
+
+/** The pupil who climbed the most places over the round (at least 2), worked out from the places seen so far. */
+export function bestComeback(s: Pick<ProjectorState, 'roster' | 'order' | 'worstRank'>): { pupil: string; places: number } | null {
+  let best: { pupil: string; places: number } | null = null;
+  for (const id of s.order) {
+    const places = (s.worstRank[id] ?? 0) - rankOf(s, id);
+    if (places >= 2 && (!best || places > best.places)) best = { pupil: id, places };
+  }
+  return best;
+}
+
+/** The same room and pupils, ready for the next boss: scores and the round's drawing state are cleared. */
+function afterAgain(s: ProjectorState): ProjectorState {
+  const fresh = initialState();
+  const roster = Object.fromEntries(Object.entries(s.roster).map(([k, r]) => [k, { ...r, score: 0 }]));
+  return { ...fresh, view: s.view, names: s.names, roster, order: s.order, startSeq: s.startSeq, againSeq: s.againSeq + 1 };
+}
+
 export const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
 
 /** A name for an id: the feed's own names first, then everyone we have met. */
@@ -170,13 +199,15 @@ export function projectorReduce(s: ProjectorState, event: FeedEvent): ProjectorS
     case 'hit': {
       const burst: HitBurst = { id: n.seq + 1, pupil: event.pupil, name: nm(event.pupil), points: event.points, times: event.times, weakSpot: event.weakSpot, golden: event.golden, team: event.team, t: event.t };
       const old = n.roster[event.pupil];
+      const worstBefore = noteRanks(n);
       const before = rankOf(n, event.pupil);
       const withScore = rosterWith(event.pupil, { score: (old?.score ?? 0) + event.points, role: event.role, team: event.team ?? old?.team ?? null });
       const after = rankOf(withScore, event.pupil);
+      const worstRank = noteRanks({ ...withScore, worstRank: worstBefore });
       const climbed = n.view?.mode === 'solo' && before > 0 && before - after >= 3 && after <= 10;
       const best = n.bestStreak;
       return {
-        ...withScore, seq: n.seq + 1,
+        ...withScore, seq: n.seq + 1, worstRank,
         moves: climbed ? [...n.moves, { id: n.seq + 1, pupil: event.pupil, name: nm(event.pupil), from: before, to: after, t: event.t }].slice(-4) : n.moves,
         damage: { ...n.damage, [event.pupil]: (n.damage[event.pupil] ?? 0) + event.damage },
         lastHitter: event.pupil,
@@ -248,6 +279,8 @@ export function projectorReduce(s: ProjectorState, event: FeedEvent): ProjectorS
       return { ...n, timeUp: true, shield: null, banner: { text: "TIME'S UP!", kind: 'bad', until: event.t + 6000 } };
     case 'recap':
       return { ...n, recap: event.recap, ended: true, beaten: event.recap.result === 'beaten', timeUp: event.recap.result === 'time' };
+    case 'again':
+      return afterAgain(n);
     case 'pause':
       return { ...n, paused: true };
     case 'resume':
@@ -264,6 +297,8 @@ export function projectorAct(s: ProjectorState, a: ProjectorAction): ProjectorSt
   if (a.kind === 'feed') return projectorReduce(s, a.event);
   if (a.kind === 'reset') return initialState(a.reply);
   const v = a.view;
+  // A second screen that sees the room go back to a lobby after a recap starts over too.
+  if (s.ended && v.state === 'lobby') return { ...afterAgain(s), view: v };
   return {
     ...s, view: v, phase: v.boss.phase, weakUntil: v.weakSpotUntil, goldenUntil: v.goldenUntil, enrageUntil: v.enrageUntil,
     final: s.final || v.finalStarted, paused: v.pausedAt != null, ended: s.ended || v.state === 'over',
@@ -288,6 +323,7 @@ export function soundFor(e: FeedEvent): { play?: Parameters<ShowdownSound['play'
     case 'final': return { play: 'drum', say: 'Thirty seconds!' };
     case 'boss_beaten': return { play: 'cheer', say: 'The boss is beaten!' };
     case 'time_up': return { say: "Time's up!" };
+    case 'again': return { play: 'roar', say: bossInfo(e.boss).roar };
     case 'recap': return e.recap.result === 'beaten' ? { play: 'fanfare' } : { say: 'So close!' };
     default: return {};
   }

@@ -4,6 +4,7 @@
  * iPads are silent, so there is no sound button. It never shows other pupils' results.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { bossInfo, CHEST_GAMES, type Reward } from '../../../shared/showdown/bosses';
 import { SHOWDOWN } from '../../../shared/showdown/config';
 import type { PlayerView, RoomView } from '../../../shared/showdown/server';
 import type { Role, TeamId } from '../../../shared/showdown/types';
@@ -33,7 +34,6 @@ function factOf(q: Q, answer: number): string {
 
 /** The painted frame round the controller, if it has been painted. */
 const frameArt = Object.entries(paintings).find(([path]) => /controller-frame/i.test(path))?.[1];
-const BOSS_NAME = 'River Titan';
 const TITLE_BY_ROLE: Record<Role, string> = { striker: 'Hit the boss!', guard: 'Hold the shield!', healer: 'Wake a friend!' };
 const mmss = (ms: number) => {
   const s = Math.max(0, Math.ceil(ms / 1000));
@@ -52,6 +52,7 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
   const [askTries, setAskTries] = useState(0);
   const [burst, setBurst] = useState(0);
   const [rolesOpen, setRolesOpen] = useState(true);
+  const state = view?.state;
   const [, tick] = useState(0);
   const offset = useRef(0);
   const pending = useRef<{ question: Q | null; me?: PlayerView; view?: RoomView } | null>(null);
@@ -102,8 +103,17 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
     if (wantsJoin && room === null) void join();
   }, [wantsJoin, room, joinTries]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // The teacher pressed "Again?": the room is a lobby again, so the old question goes and a new one is asked once it is live.
+  useEffect(() => {
+    if (state !== 'lobby') return;
+    pending.current = null;
+    setQuestion(null);
+    setAskTries(0);
+    setRolesOpen(true);
+    setSaid(null);
+  }, [state]);
+
   // Live and no question (first time, or after a dropped connection): ask, with backoff.
-  const state = view?.state;
   useEffect(() => {
     if (room === null || state !== 'live' || question) return;
     let stop = false;
@@ -204,13 +214,14 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
           <div><dt>Your score</dt><dd>{mine.score}</dd></div>
         </dl>
         {view.mode === 'solo' && mine.topTen && <p className="sd-c-topten">🏆 You finished in the top 10!</p>}
+        {mine.reward && <ChestReveal key={`${mine.reward.chest.game}${mine.reward.chest.amount}${mine.reward.points}`} reward={mine.reward} />}
         <p className="sd-c-look">Look at the big screen!</p>
       </div>
     );
   } else {
     body = (
       <>
-        {view.state === 'lobby' && <h1 className="sd-c-title">Get ready!</h1>}
+        {view.state === 'lobby' && <><h1 className="sd-c-title">Get ready!</h1><p className="sd-c-roar">{bossInfo(view.bossId).roar}</p></>}
         {view.mode === 'solo' && view.state === 'live' && mine.topTen && <p className="sd-c-topten" role="status">🏆 You're in the top 10!</p>}
         {myRole && !(canSwap && rolesOpen) && (
           canSwap ? (
@@ -269,6 +280,7 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
     );
   }
 
+  const bossName = bossInfo(view?.bossId).name;
   return (
     <div className={`sd-c${windUp ? ' sd-c--windup' : ''}${golden && live && !dazed ? ' sd-c--golden' : ''}${team ? ` sd-c--team-${team}` : ''}`} role="region" aria-label="Class Showdown controller">
       {frameArt && <img className="sd-c-frame" src={frameArt} alt="" aria-hidden="true" />}
@@ -276,8 +288,8 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
         <a className="sd-c-hub" href="#/"><span aria-hidden="true">⌂</span><span className="sd-c-hub__word"> Hub</span></a>
         {view && view.state !== 'over' ? (
           <>
-            <div className="sd-c-boss" role="progressbar" aria-label={`${BOSS_NAME} health`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(bossPct)}>
-              <span className="sd-c-boss__name">{BOSS_NAME}</span>
+            <div className="sd-c-boss" role="progressbar" aria-label={`${bossName} health`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(bossPct)}>
+              <span className="sd-c-boss__name">{bossName}</span>
               <span className="sd-c-boss__bar"><i style={{ transform: `scaleX(${bossPct / 100})` }} /></span>
             </div>
             {team && <span className="sd-c-teamtag">{TEAM_NAME[team]}</span>}
@@ -286,6 +298,43 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
         ) : <span className="sd-c-boss__name sd-c-top__title">Class Showdown</span>}
       </div>
       <div className="sd-c-body">{body}</div>
+    </div>
+  );
+}
+
+/** The end-of-round chest: it shakes, bursts open, coins fly out, then says what is in it. */
+function ChestReveal({ reward }: { reward: Reward }) {
+  const calm = typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const [step, setStep] = useState<0 | 1 | 2>(calm ? 2 : 0);
+  useEffect(() => {
+    if (calm) return;
+    const a = setTimeout(() => setStep(1), 1500);
+    const b = setTimeout(() => setStep(2), 2300);
+    return () => [a, b].forEach(clearTimeout);
+  }, [calm]);
+  const game = CHEST_GAMES[reward.chest.game];
+  const open = step >= 1;
+  return (
+    <div className={`sd-c-chest sd-c-chest--${step}`} aria-label="Your chest">
+      <button type="button" className="sd-c-chest__box" onClick={() => setStep((n) => (n === 0 ? 1 : n))} aria-label={open ? 'Chest open' : 'Open the chest'}>
+        <svg viewBox="0 0 120 100" aria-hidden="true">
+          <g className="sd-c-chest__glow"><circle cx="60" cy="52" r="46" /></g>
+          <rect x="12" y="48" width="96" height="46" rx="8" fill="#9a5a1c" stroke="#4a2808" strokeWidth="4" />
+          <rect x="12" y="62" width="96" height="8" fill="#ffc83d" />
+          <g className="sd-c-chest__lid">
+            <path d="M10 50 Q10 14 60 14 Q110 14 110 50 Z" fill="#b8721f" stroke="#4a2808" strokeWidth="4" />
+            <rect x="10" y="40" width="100" height="10" fill="#ffc83d" />
+          </g>
+          <rect x="52" y="52" width="16" height="20" rx="4" fill="#ffd95a" stroke="#4a2808" strokeWidth="3" />
+        </svg>
+        {open && <span className="sd-c-chest__coins" aria-hidden="true">{Array.from({ length: 14 }, (_, i) => <i key={i} style={{ '--a': `${(i / 14) * 360}deg`, '--r': `${90 + (i % 4) * 26}px`, '--d': `${(i % 5) * 0.05}s` } as React.CSSProperties}>🪙</i>)}</span>}
+      </button>
+      {step === 2 && (
+        <div className="sd-c-chest__prize" role="status">
+          <strong>+{reward.chest.amount} {game.coin} for {game.name}</strong>
+          <span>+{reward.points} hub {reward.points === 1 ? 'point' : 'points'}</span>
+        </div>
+      )}
     </div>
   );
 }

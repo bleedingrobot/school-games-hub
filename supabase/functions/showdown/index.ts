@@ -9613,6 +9613,78 @@ function recap(r) {
 		awards: pickAwards(r)
 	};
 }
+const BOSS_IDS = [
+	{
+		id: "river-titan",
+		name: "River Titan",
+		backdrop: "river-valley",
+		roar: "The River Titan rises!"
+	},
+	{
+		id: "storm-kraken",
+		name: "Storm Kraken",
+		backdrop: "stormy-sea",
+		roar: "The Storm Kraken surfaces!"
+	},
+	{
+		id: "clockwork-colossus",
+		name: "Clockwork Colossus",
+		backdrop: "clock-tower",
+		roar: "The Clockwork Colossus winds up!"
+	},
+	{
+		id: "comet-wyrm",
+		name: "Comet Wyrm",
+		backdrop: "night-sky",
+		roar: "The Comet Wyrm streaks in!"
+	}
+].map((b) => b.id);
+const isBossId = (v) => typeof v === "string" && BOSS_IDS.includes(v);
+/** The roster from the bosses a class has beaten (with best times). */
+function roster(beaten) {
+	const firstNew = BOSS_IDS.find((id) => beaten[id] === void 0);
+	return BOSS_IDS.map((id) => ({
+		boss: id,
+		beaten: beaten[id] !== void 0,
+		bestMs: beaten[id] ?? null,
+		open: beaten[id] !== void 0 || id === firstNew
+	}));
+}
+/** The boss a new round fights: the one asked for if it's open, else the first not beaten, else the next after `last`. */
+function pickBoss(beaten, asked, last) {
+	const rows = roster(beaten);
+	if (isBossId(asked) && rows.find((r) => r.boss === asked)?.open) return asked;
+	const firstNew = rows.find((r) => !r.beaten);
+	if (firstNew) return firstNew.boss;
+	const i = last ? BOSS_IDS.indexOf(last) : -1;
+	return BOSS_IDS[(i + 1) % BOSS_IDS.length];
+}
+/** Games a Showdown chest can pay into, with what it pays. */
+const CHEST_GAMES = {
+	archery: {
+		name: "Archery Challenge",
+		coin: "coins",
+		base: 5,
+		beaten: 3
+	},
+	goblinstorm: {
+		name: "Goblin Storm",
+		coin: "gold",
+		base: 20,
+		beaten: 10
+	}
+};
+/** A round's reward: every round pays (no cap on the chest); beating the boss pays a little more. */
+function rewardFor(game, beaten, correct) {
+	const c = CHEST_GAMES[game];
+	return {
+		points: correct > 0 ? beaten ? 5 : 3 : 1,
+		chest: {
+			game,
+			amount: c.base + (beaten ? c.beaten : 0)
+		}
+	};
+}
 //#endregion
 //#region shared/space/mathsQuestion.ts
 /**
@@ -9703,7 +9775,10 @@ const sameAnswer = (typed, answer) => Math.abs(typed - answer) < 1e-9;
 * Every event the engine returns goes to the projector's feed straight away, in the same save, with the names it needs
 * (no batching, so hits never arrive in clumps). Wrong answers are never in the feed: only the pupil's own reply has them.
 *
-* Teacher steps: open, view, teams, start, tick, enrage, pause, end. Pupil steps: join, choose, ask, answer.
+* Teacher steps: open, view, teams, start, tick, enrage, pause, end, again. Pupil steps: join, choose, ask, answer.
+*
+* When a round ends, every pupil's reward (hub points and a Showdown chest, shared/showdown/bosses.ts) is put on their row in
+* the same save, and `finishRound` pays it out and records the class's roster (once per round, however often it's called).
 */
 const MODES = [
 	"class",
@@ -9741,6 +9816,7 @@ function roomView(row, r) {
 		state: r.state,
 		mode: r.mode,
 		arena: row.arena,
+		bossId: r.bossId ?? "river-titan",
 		lengthMin: r.lengthMin,
 		startedAt: row.startedAt,
 		pausedAt: row.pausedAt,
@@ -9779,6 +9855,7 @@ function topTenOf(r) {
 function playerView(p, top = new Set()) {
 	return {
 		topTen: top.has(p.id),
+		reward: p.reward ?? null,
 		player: p.id,
 		name: p.name,
 		team: p.team,
@@ -9885,6 +9962,7 @@ async function mutate(s, room, step, opts = {}) {
 		const before = snapshot(r);
 		const out = step(r, roundTime(row, s.now()), row);
 		if ("refuse" in out) return out;
+		if (!wasOver && r.state === "over") await giveRewards(s, r);
 		const startedAt = out.startedAt !== void 0 ? out.startedAt : row.startedAt;
 		const pausedAt = out.pausedAt !== void 0 ? out.pausedAt : row.pausedAt;
 		const events = [...feedOf(r, out.events, wasOver), ...out.extra ?? []];
@@ -9910,18 +9988,65 @@ async function mutate(s, room, step, opts = {}) {
 		});
 		if (saved === "busy") return { refuse: busy() };
 		if (saved === "answered") return { refuse: no(409, "You've already answered that one.", "answered") };
-		if (saved === "ok") return {
-			reply: out.reply,
-			row: {
+		if (saved === "ok") {
+			const savedRow = {
 				...next,
 				version: row.version + 1,
 				round: r
-			},
-			saved: true
-		};
+			};
+			if (!wasOver && r.state === "over") await finish(s, savedRow);
+			return {
+				reply: out.reply,
+				row: savedRow,
+				saved: true
+			};
+		}
 		await new Promise((done) => setTimeout(done, 5 + Math.floor(s.random() * 25 * (tries + 1))));
 	}
 	return { refuse: no(503, "The showdown is very busy. Try again!", "busy") };
+}
+/** Sets every pupil's reward for the round just ended (their favourite game's chest, points). */
+async function giveRewards(s, r) {
+	const games = r.order.length ? await s.chestGames(r.order).catch(() => ({})) : {};
+	for (const id of r.order) {
+		const p = r.players[id];
+		p.reward = rewardFor(games[id] ?? "archery", r.result === "beaten", p.correct);
+	}
+}
+/** Pays out a finished round. A failure is only logged: the round is saved, and `view` tries again (once per round). */
+async function finish(s, row) {
+	const r = row.round;
+	if (r.state !== "over") return;
+	const beaten = r.result === "beaten";
+	const done = {
+		classId: row.classId,
+		seed: r.seed,
+		boss: r.bossId ?? "river-titan",
+		beaten,
+		ms: Math.round(r.t),
+		players: r.order.map((id) => r.players[id]).filter((p) => p.reward).map((p) => ({
+			player: p.id,
+			points: p.reward.points,
+			game: p.reward.chest.game,
+			amount: p.reward.chest.amount,
+			beaten,
+			lastHit: r.lastHit === p.id,
+			shields: p.shields,
+			revives: p.revives,
+			bestStreak: p.bestStreak,
+			correct: p.correct
+		}))
+	};
+	try {
+		await s.finishRound(row.id, done);
+	} catch (e) {
+		console.error("showdown finishRound failed", row.id, e);
+	}
+}
+/** The class's roster for the projector. */
+async function rosterOf(s, classId) {
+	const beaten = await s.classRoster(classId);
+	return beaten === "busy" ? null : roster(beaten);
 }
 const readRoom = (v) => Number.isSafeInteger(v) && v > 0 ? v : null;
 /** One request from a signed-in person (`who`). */
@@ -9936,11 +10061,14 @@ async function showdownStep(s, who, body) {
 		if (teach === "busy") return busy();
 		if (!teach) return no(403, "That isn't one of your classes.", "not-yours");
 		if (!teach.enabled) return no(403, OFF, "off");
+		const beaten = await s.classRoster(classId);
+		if (beaten === "busy") return busy();
 		const round = newRound({
 			seed: Math.floor(s.random() * 2 ** 31),
 			mode,
 			lengthMin: length
 		});
+		round.bossId = pickBoss(beaten, body.boss);
 		const view = roomView({
 			arena: "boss",
 			startedAt: null,
@@ -9951,10 +10079,11 @@ async function showdownStep(s, who, body) {
 		if (id === "busy") return busy();
 		return ok({
 			room: id,
-			view
+			view,
+			roster: roster(beaten)
 		});
 	}
-	if (action === "view" || action === "tick" || action === "teams" || action === "start" || action === "enrage" || action === "pause" || action === "end") {
+	if (action === "view" || action === "tick" || action === "teams" || action === "start" || action === "enrage" || action === "pause" || action === "end" || action === "again") {
 		const room = readRoom(body.room);
 		if (!room) return no(400, "That showdown couldn't be found.");
 		const row = await s.loadRoom(room);
@@ -9971,13 +10100,65 @@ async function showdownStep(s, who, body) {
 			}));
 			if ("refuse" in done) return done.refuse;
 			const r = done.row.round;
+			if (r.state === "over" && !done.saved) await finish(s, done.row);
+			const rosterRows = await rosterOf(s, row.classId);
 			return ok({
 				room,
 				view: roomView(done.row, r),
 				now: s.now(),
 				version: done.row.version,
 				players: r.order.map((id) => playerView(r.players[id], topTenOf(r))),
-				...r.state === "over" ? { recap: recap(r) } : {}
+				...r.state === "over" ? { recap: recap(r) } : {},
+				...rosterRows ? { roster: rosterRows } : {}
+			});
+		}
+		if (action === "again") {
+			const beaten = await s.classRoster(row.classId);
+			if (beaten === "busy") return busy();
+			const done = await mutate(s, room, (r) => {
+				if (r.state !== "over") return { refuse: no(409, "Finish this round first.", "not-now") };
+				const fresh = newRound({
+					seed: Math.floor(s.random() * 2 ** 31),
+					mode: r.mode,
+					lengthMin: r.lengthMin
+				});
+				fresh.bossId = pickBoss(beaten, body.boss, r.bossId ?? "river-titan");
+				const events = [];
+				for (const id of r.order) {
+					const old = r.players[id];
+					const out = join(fresh, {
+						id,
+						name: old.name,
+						ladder: old.ladder
+					}, 0);
+					if (!out.ok) continue;
+					events.push(...out.events);
+					if (old.team && fresh.teams.includes(old.team)) moveToTeam(fresh, id, old.team);
+					fresh.players[id].role = old.role;
+				}
+				fresh.teamsByHand = r.teamsByHand;
+				for (const k of Object.keys(r)) delete r[k];
+				Object.assign(r, fresh);
+				return {
+					reply: null,
+					events,
+					startedAt: null,
+					pausedAt: null,
+					extra: [{
+						type: "again",
+						t: 0,
+						boss: fresh.bossId
+					}]
+				};
+			});
+			if ("refuse" in done) return done.refuse;
+			const r = done.row.round;
+			return ok({
+				room,
+				view: roomView(done.row, r),
+				now: s.now(),
+				players: r.order.map((id) => playerView(r.players[id], topTenOf(r))),
+				roster: roster(beaten)
 			});
 		}
 		const done = await mutate(s, room, (r, t, cur) => {
@@ -10478,6 +10659,20 @@ Deno.serve(makeHandler({
 	async roomPlayers(room) {
 		const list = await call("showdown_room_players", { target: room });
 		return list === "busy" ? "busy" : Array.isArray(list) ? list : [];
+	},
+	async classRoster(classId) {
+		const out = await call("showdown_class_roster", { target_class: classId });
+		return out === "busy" ? "busy" : out ?? {};
+	},
+	async chestGames(players) {
+		const out = await call("showdown_chest_games", { players });
+		return out === "busy" || !out ? {} : out;
+	},
+	async finishRound(room, done) {
+		if (await call("showdown_finish", {
+			target: room,
+			done
+		}) === "busy") throw new Error("showdown_finish failed");
 	},
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "showdown");

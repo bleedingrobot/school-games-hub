@@ -180,3 +180,44 @@ it('leaves out the untimed ladder skills, even for a pupil whose focus is only u
     expect(isUntimed(q.factKey)).toBe(false);
   }
 });
+
+it('a beaten boss pays every pupil once, unlocks the next boss, and "Again?" starts it with the same pupils', async () => {
+  const s = setup();
+  const opened = await s.send({ action: 'open', classId: ROOM4, mode: 'class', length: 5 }, 'miss');
+  expect((opened.body.view as { bossId: string }).bossId).toBe('river-titan');
+  // A boss not unlocked yet can't be picked.
+  expect(((await s.send({ action: 'open', classId: ROOM4, mode: 'class', length: 5, boss: 'comet-wyrm' }, 'miss')).body.view as { bossId: string }).bossId).toBe('river-titan');
+  const room = (await s.send({ action: 'open', classId: ROOM4, mode: 'class', length: 5 }, 'miss')).body.room as number;
+  await s.send({ action: 'join' }, 'ana');
+  await s.send({ action: 'join' }, 'ben');
+  await s.send({ action: 'start', room }, 'miss');
+  // Ana answers until the boss falls.
+  for (let i = 0; i < 400 && s.db.rooms.get(room)!.round.state !== 'over'; i++) {
+    s.clock.t += 4_100;
+    const q = (await s.send({ action: 'ask', room }, 'ana')).body.question as { slot: number } | undefined;
+    if (q) await s.send({ action: 'answer', room, slot: q.slot, answer: s.rightFor(room, 'ana', q.slot), ms: 2000 }, 'ana');
+    await s.send({ action: 'tick', room }, 'miss');
+  }
+  const round = s.db.rooms.get(room)!.round;
+  expect(round.state).toBe('over');
+  const beaten = round.result === 'beaten';
+  expect(s.db.players.get(`${room}:ana`)!.reward).toMatchObject({ points: beaten ? 5 : 3, chest: { game: 'archery' } });
+  expect(s.db.players.get(`${room}:ben`)!.reward).toMatchObject({ points: 1 });
+  // Paid once, however often the projector looks.
+  await s.send({ action: 'view', room }, 'miss');
+  await s.send({ action: 'view', room }, 'miss');
+  expect(s.db.finished.size).toBe(1);
+  expect([...s.db.finished.values()][0].players).toHaveLength(2);
+  expect(beaten).toBe(true);
+  const view = await s.send({ action: 'view', room }, 'miss');
+  expect((view.body.roster as { boss: string; beaten: boolean; open: boolean }[]).slice(0, 3).map((r) => [r.boss, r.beaten, r.open]))
+    .toEqual([['river-titan', true, true], ['storm-kraken', false, true], ['clockwork-colossus', false, false]]);
+
+  // Again?: only the teacher, only when it's over; same room and pupils, the next boss, fresh scores.
+  expect((await s.send({ action: 'again', room }, 'ana')).status).toBe(403);
+  const again = await s.send({ action: 'again', room }, 'miss');
+  expect(again.status).toBe(200);
+  expect(again.body.view).toMatchObject({ state: 'lobby', bossId: 'storm-kraken', players: 2 });
+  expect(s.db.players.get(`${room}:ana`)).toMatchObject({ score: 0, reward: null });
+  expect((await s.send({ action: 'again', room }, 'miss')).status).toBe(409);
+});

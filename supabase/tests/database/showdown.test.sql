@@ -3,7 +3,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh showdown, then scripts/scratch-test.sh showdown supabase/tests/database/showdown.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(31);
+select plan(35);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -35,10 +35,7 @@ $$;
 create function pg_temp.id(who text) returns uuid language sql as $$ select ('00000000-0000-0000-0000-0000000000' || who)::uuid $$;
 
 -- ---- On for every class, and in the hub's list ----
-select is((select count(*)::int from public.app_settings where showdown_enabled and class_id is distinct from '0de592f6-ec7b-47a2-96b4-6141f6b83cdf'),
-  0, 'stage 4: off for every class but James''s, and off in the school defaults');
--- The rest of this file tests a class with it on, as Stage 5 will be for every class.
-update public.app_settings set showdown_enabled = true where class_id is null;
+select is((select bool_and(showdown_enabled) from public.app_settings), true, 'stage 5: on for every class and in the school defaults');
 select ok(exists (select 1 from public.hub_games where id = 'showdown' and switch_column = 'showdown_enabled'), 'it is in hub_games with its switch');
 
 -- ---- The server opens a room for Eve's class and keeps a question ----
@@ -96,6 +93,15 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.s
 select is((select count(*)::int from public.showdown_feed), 2, 'Eve sees her room''s feed');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000f', 'fay@douglaspark.school.nz');
 select is((select count(*)::int from public.showdown_feed), 0, 'Fay, who teaches another class, does not');
+
+-- ---- Stage 5: a finished round pays once, and the roster records the boss ----
+select pg_temp.act_as_server();
+select is(public.showdown_finish(current_setting('test.room')::bigint, jsonb_build_object('seed', 7, 'boss', 'river-titan', 'beaten', true, 'ms', 250000,
+  'players', jsonb_build_array(jsonb_build_object('player', pg_temp.id('0a'), 'points', 5, 'game', 'goblinstorm', 'amount', 30, 'lastHit', true)))),
+  'ok', 'a finished round is paid');
+select is(public.showdown_finish(current_setting('test.room')::bigint, jsonb_build_object('seed', 7, 'players', '[]'::jsonb)), 'paid', '... once');
+select is(public.showdown_class_roster(current_setting('test.cls')::uuid), '{"river-titan": 250000}'::jsonb, 'the class roster has the boss and its time');
+select is((select gold from public.goblinstorm_saves where player = pg_temp.id('0a')), 30, 'Ana''s chest went to Goblin Storm');
 
 select * from finish();
 rollback;

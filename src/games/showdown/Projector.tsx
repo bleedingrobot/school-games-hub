@@ -5,11 +5,12 @@
  */
 import { useEffect, useLayoutEffect, useReducer, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { SHOWDOWN } from '../../../shared/showdown/config';
+import { BOSSES, bossInfo, pickBoss, type BossId, type RosterRow } from '../../../shared/showdown/bosses';
 import type { FeedEvent, RoomView } from '../../../shared/showdown/server';
 import type { Mode, Role, TeamId } from '../../../shared/showdown/types';
 import { BossStandIn } from './BossStandIn';
 import type { ShowdownLink } from './link';
-import { AWARD_WORDS, TEAM_WORDS, initialState, ordinal, projectorAct, soundFor, type HitBurst, type ProjectorState, type ShowdownSound } from './projectorState';
+import { AWARD_WORDS, TEAM_WORDS, bestComeback, initialState, ordinal, projectorAct, soundFor, type HitBurst, type ProjectorState, type ShowdownSound } from './projectorState';
 import './projector.css';
 
 const ART = import.meta.glob('./art/paint/**/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
@@ -97,6 +98,8 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
   const [shaking, setShaking] = useState(false);
   const [flinch, setFlinch] = useState(false);
   const [recapStage, setRecapStage] = useState<0 | 1>(0);
+  const [rosterRows, setRosterRows] = useState<RosterRow[] | null>(null);
+  const [pick, setPick] = useState<BossId | ''>('');
   const soundRef = useRef(sound);
   soundRef.current = sound;
   const lastHitSound = useRef(0);
@@ -149,6 +152,7 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
     void link.send({ action: 'view', room }).then((out) => {
       if (out.status === 200 && out.body.view) {
         dispatch({ kind: 'reset', reply: out.body as never });
+        if (Array.isArray(out.body.roster)) setRosterRows(out.body.roster as RosterRow[]);
         seenStart.current = 0;
       } else if (out.status === 403 || out.status === 400) {
         keepRoom(null);
@@ -201,6 +205,14 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
     return () => clearTimeout(t);
   }, [over, ps.recap]);
 
+  // When a round ends the class's roster changes (a boss beaten): ask for it again.
+  const overNow = ps.view?.state === 'over';
+  useEffect(() => {
+    if (!room || !overNow) return;
+    const t = setTimeout(() => void link.send({ action: 'view', room }).then((out) => { if (out.status === 200 && Array.isArray(out.body.roster)) setRosterRows(out.body.roster as RosterRow[]); }), 1200);
+    return () => clearTimeout(t);
+  }, [link, room, overNow]);
+
   const send = async (body: Record<string, unknown>) => {
     const out = await link.send(body);
     if (out.status !== 200) setProblem(String(out.body.error ?? 'That didn’t work.'));
@@ -208,19 +220,37 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
     return out;
   };
   const open = async () => {
-    const out = await send({ action: 'open', classId, mode, length });
+    const out = await send({ action: 'open', classId, mode, length, ...(pick ? { boss: pick } : {}) });
     if (out.status === 200 && typeof out.body.room === 'number') {
       dispatch({ kind: 'reset', reply: { view: out.body.view as RoomView } });
+      if (Array.isArray(out.body.roster)) setRosterRows(out.body.roster as RosterRow[]);
+      setPick('');
       seenStart.current = 0;
       keepRoom(out.body.room);
       setRoom(out.body.room);
       soundRef.current?.say('Join now!');
     }
   };
+  const again = async () => {
+    const out = await send({ action: 'again', room, ...(pick ? { boss: pick } : {}) });
+    if (out.status === 200 && out.body.view) {
+      dispatch({ kind: 'reset', reply: out.body as never });
+      if (Array.isArray(out.body.roster)) setRosterRows(out.body.roster as RosterRow[]);
+      seenStart.current = 0;
+      setPick('');
+      setRecapStage(0);
+      setCount(null);
+      setBarOpen(true);
+      const boss = (out.body.view as RoomView).bossId;
+      soundRef.current?.play('roar');
+      soundRef.current?.say(bossInfo(boss).roar);
+    }
+  };
   const newRound = () => {
     keepRoom(null);
     setRoom(null);
     dispatch({ kind: 'reset', reply: undefined as never });
+    setPick('');
     setRecapStage(0);
     setBarOpen(true);
   };
@@ -240,9 +270,9 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
   return (
     <div ref={stageRef} className={stageClass} data-state={state ?? 'idle'}>
       <h1 className="sd-p__sr">Class Showdown{state ? ` ${state}` : ''}</h1>
-      <Backdrop state={state} />
+      <Backdrop state={state} boss={view?.bossId} />
       {state === 'live' || state === 'over' ? <Battle ps={ps} roundNow={roundNow} flinch={flinch} /> : null}
-      {state === 'lobby' && <Lobby ps={ps} className={className} onMove={(pupil, team) => void send({ action: 'teams', room, pupil, team })} />}
+      {state === 'lobby' && <Lobby ps={ps} className={className} roster={rosterRows} onMove={(pupil, team) => void send({ action: 'teams', room, pupil, team })} />}
       {!state && <div className="sd-p-idle"><h2>Class Showdown</h2><p>Pick how long, then press Open to bring in the class.</p></div>}
 
       {live && ps.banner && roundNow < ps.banner.until && <div key={`${ps.banner.text}${ps.banner.until}`} className={`sd-p-banner sd-p-banner--${ps.banner.kind}`} role="status">{ps.banner.text}</div>}
@@ -251,7 +281,7 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
       {final && <div className="sd-p-drum" aria-hidden="true" />}
       {paused && live && <div className="sd-p-paused">Paused</div>}
       {count !== null && <div key={count} className="sd-p-count" aria-live="assertive">{count === 0 ? 'FIGHT!' : count}</div>}
-      {over && <Recap ps={ps} stage={recapStage} />}
+      {over && <Recap ps={ps} stage={recapStage} onAgain={() => void again()} />}
 
       <div ref={barRef} className={`sd-p-bar${barOpen ? ' sd-p-bar--open' : ''}`}>
         <button type="button" className="sd-p-bar__tab" aria-expanded={barOpen} onClick={() => setBarOpen((o) => !o)}>{barOpen ? 'Hide controls' : 'Teacher controls'}</button>
@@ -263,6 +293,7 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
             <label>Minutes <select value={length} disabled={!!room} onChange={(e) => setLength(Number(e.target.value))}>
               {SHOWDOWN.lengths.map((l) => <option key={l} value={l}>{l}</option>)}
             </select></label>
+            {(!room || state === 'over') && rosterRows && <BossPicker rows={rosterRows} value={pick} onChange={setPick} />}
             {!room && <button type="button" className="sd-p-btn sd-p-btn--go" onClick={() => void open()}>Open</button>}
             {room && state === 'lobby' && <button type="button" className="sd-p-btn" onClick={() => void send({ action: 'teams', room, reshuffle: true })}>Reshuffle</button>}
             {room && state === 'lobby' && <button type="button" className="sd-p-btn sd-p-btn--go" onClick={() => void send({ action: 'start', room })}>Start</button>}
@@ -272,7 +303,8 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
             {room && state !== 'over' && (
               <button type="button" className="sd-p-btn sd-p-btn--danger" onClick={() => { if (armEnd) { setArmEnd(false); void send({ action: 'end', room }); } else { setArmEnd(true); setTimeout(() => setArmEnd(false), 3000); } }}>{armEnd ? 'Sure? End now' : 'End'}</button>
             )}
-            {room && state === 'over' && <button type="button" className="sd-p-btn sd-p-btn--go" onClick={newRound}>New round</button>}
+            {room && state === 'over' && <button type="button" className="sd-p-btn sd-p-btn--go" onClick={() => void again()}>Again?</button>}
+            {room && state === 'over' && <button type="button" className="sd-p-btn" onClick={newRound}>New class or mode</button>}
           </div>
         )}
         {problem && <p className="sd-p-bar__problem" role="alert">{problem}</p>}
@@ -281,12 +313,67 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
   );
 }
 
-function Backdrop({ state }: { state: string | undefined }) {
-  const img = state === 'lobby' || !state ? art('back', 'lobby') : art('back', 'river-valley');
+function Backdrop({ state, boss }: { state: string | undefined; boss: BossId | undefined }) {
+  const img = state === 'lobby' || !state ? art('back', 'lobby') : art('back', bossInfo(boss).backdrop) ?? art('back', 'river-valley');
   return <div className="sd-p-back" style={img ? ({ backgroundImage: `url(${img})` } as CSSProperties) : undefined} aria-hidden="true" />;
 }
 
-function Lobby({ ps, className, onMove }: { ps: ProjectorState; className?: string; onMove: (pupil: string, team: TeamId) => void }) {
+/** Boss choice before opening (and for "Again?"): only the bosses the class has open. "" = the next one in order. */
+function BossPicker({ rows, value, onChange }: { rows: RosterRow[]; value: BossId | ''; onChange: (b: BossId | '') => void }) {
+  const beaten = Object.fromEntries(rows.filter((r) => r.beaten).map((r) => [r.boss, r.bestMs ?? 0]));
+  const next = bossInfo(pickBoss(beaten));
+  return (
+    <label>Boss <select value={value} onChange={(e) => onChange(e.target.value as BossId | '')}>
+      <option value="">Next: {next.name}</option>
+      {rows.filter((r) => r.open && r.boss !== next.id).map((r) => <option key={r.boss} value={r.boss}>{bossInfo(r.boss).name}{r.beaten ? ' (beaten)' : ''}</option>)}
+    </select></label>
+  );
+}
+
+const bestTime = (ms: number | null) => (ms === null ? '' : mmss(ms));
+
+/** The four bosses: beaten ones with a gold tick and the class's best time, this round's glowing, the rest dark with a padlock. */
+function RosterStrip({ rows, current }: { rows: RosterRow[]; current: BossId }) {
+  return (
+    <ol className="sd-p-roster" aria-label="Bosses">
+      {BOSSES.map((b) => {
+        const row = rows.find((r) => r.boss === b.id);
+        const locked = !!row && !row.open;
+        const now = b.id === current;
+        const img = art('bosses', `${b.id}-1`);
+        return (
+          <li key={b.id} className={`sd-p-rost${row?.beaten ? ' sd-p-rost--beaten' : ''}${now ? ' sd-p-rost--now' : ''}${locked ? ' sd-p-rost--locked' : ''}`}>
+            <span className="sd-p-rost__pic" aria-hidden="true">
+              {img ? <img src={img} alt="" /> : <i className="sd-p-rost__blob" />}
+              {row?.beaten && <b className="sd-p-rost__tick">✓</b>}
+              {locked && <b className="sd-p-rost__lock">🔒</b>}
+            </span>
+            <span className="sd-p-rost__name">{locked ? '???' : b.name}</span>
+            {row?.beaten && row.bestMs !== null && <small>Best {bestTime(row.bestMs)}</small>}
+            {now && <small>Today’s boss</small>}
+            {locked && <small>Locked</small>}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/** The boss's entrance in the lobby: the painting rises out of the dark with its roar. */
+function Entrance({ boss, seq }: { boss: BossId; seq: number }) {
+  const info = bossInfo(boss);
+  const img = art('bosses', `${boss}-1`);
+  return (
+    <>
+      <div key={`e${boss}${seq}`} className="sd-p-entrance" aria-hidden="true">
+        {img ? <img src={img} alt="" /> : <BossStandIn phase={1} flinch={false} weak={false} angry={false} look={0} />}
+      </div>
+      <div key={`r${boss}${seq}`} className="sd-p-roar" role="status">{info.roar}</div>
+    </>
+  );
+}
+
+function Lobby({ ps, className, roster, onMove }: { ps: ProjectorState; className?: string; roster: RosterRow[] | null; onMove: (pupil: string, team: TeamId) => void }) {
   const show = ps.view?.showNames ?? false;
   const teamMode = ps.view && isTeamMode(ps.view) ? ps.view.teams : null;
   const [sel, setSel] = useState<string | null>(null);
@@ -302,6 +389,7 @@ function Lobby({ ps, className, onMove }: { ps: ProjectorState; className?: stri
   };
   return (
     <div className="sd-p-lobby" ref={lobbyRef}>
+      {ps.view && <Entrance boss={ps.view.bossId} seq={ps.againSeq} />}
       <div className="sd-p-lobby__join">Join now!</div>
       {className && <div className="sd-p-lobby__class">{className}</div>}
       <p className="sd-p-lobby__hint">{teamMode ? 'Tap a name, then tap a team (or drag it) to move it' : 'Open Class Showdown on your iPad'}</p>
@@ -341,6 +429,7 @@ function Lobby({ ps, className, onMove }: { ps: ProjectorState; className?: stri
           })}
         </ul>
       )}
+      {roster && ps.view && <RosterStrip rows={roster} current={ps.view.bossId} />}
     </div>
   );
 }
@@ -378,7 +467,8 @@ function Battle({ ps, roundNow, flinch }: { ps: ProjectorState; roundNow: number
   const left = Math.max(0, view.lengthMin * 60000 - roundNow);
   const weak = ps.weakUntil > roundNow;
   const angry = ps.enrageUntil > roundNow || ps.phase >= 2;
-  const bossImg = art('bosses', `river-titan-${ps.phase}`);
+  const bossImg = art('bosses', `${view.bossId}-${ps.phase}`);
+  const bossName = bossInfo(view.bossId).name;
   const over = view.state === 'over';
   const roster = ps.order.map((id) => ps.roster[id]);
   const counts: Record<Role, number> = { striker: 0, guard: 0, healer: 0 };
@@ -404,7 +494,7 @@ function Battle({ ps, roundNow, flinch }: { ps: ProjectorState; roundNow: number
           <div className="sd-p-health__ghost" style={{ transform: `scaleX(${pct / 100})` }} />
           <div className="sd-p-health__fill" style={{ transform: `scaleX(${pct / 100})` }} />
           <span className="sd-p-health__tick" style={{ left: '66%' }} /><span className="sd-p-health__tick" style={{ left: '33%' }} />
-          <span className="sd-p-health__label">River Titan</span>
+          <span className="sd-p-health__label">{bossName}</span>
         </div>
         <div className={`sd-p-clock${left <= 30000 && !over ? ' sd-p-clock--low' : ''}`}>{mmss(left)}</div>
       </header>
@@ -419,7 +509,7 @@ function Battle({ ps, roundNow, flinch }: { ps: ProjectorState; roundNow: number
         <div className={`sd-p-bossroar${roaring ? ' sd-p-bossroar--go' : ''}`}>
           <div className="sd-p-bossturn" style={turnT ? { transform: turnT } : undefined}>
             <div className={`sd-p-boss${flinch ? ' sd-p-flinch' : ''}${angry ? ' sd-p-boss--angry' : ''}`}>
-              {bossImg ? <img className="sd-p-boss__img" src={bossImg} alt="The River Titan" /> : <BossStandIn phase={ps.phase} flinch={false} weak={weak} angry={angry} look={slot ? slot.side : 0} />}
+              {bossImg ? <img className="sd-p-boss__img" src={bossImg} alt={`The ${bossName}`} /> : <BossStandIn phase={ps.phase} flinch={false} weak={weak} angry={angry} look={slot ? slot.side : 0} />}
               {weak && <div className="sd-p-weakglow" aria-hidden="true" />}
               {ps.phase >= 2 && <div className="sd-p-eyes" aria-hidden="true" />}
             </div>
@@ -633,6 +723,8 @@ function Bounties({ ps }: { ps: ProjectorState }) {
   if (topDmg) rows.push({ kind: 'dmg', label: 'Most damage', who: who(topDmg[0]), val: `${Math.round(topDmg[1] * 10)}` });
   if (ps.lastHitter) rows.push({ kind: 'last', label: 'Last hit', who: who(ps.lastHitter), val: '' });
   if (ps.bestStreak && ps.bestStreak.streak >= 2) rows.push({ kind: 'streak', label: 'Longest streak', who: who(ps.bestStreak.pupil), val: `${ps.bestStreak.streak} in a row` });
+  const comeback = bestComeback(ps);
+  if (comeback) rows.push({ kind: 'comeback', label: 'Best comeback', who: who(comeback.pupil), val: `up ${comeback.places} places` });
   if (!rows.length) return null;
   return (
     <aside className="sd-p-bounty" aria-label="Bounties">
@@ -663,7 +755,7 @@ function Confetti({ team }: { team?: TeamId | null }) {
   );
 }
 
-function Recap({ ps, stage }: { ps: ProjectorState; stage: 0 | 1 }) {
+function Recap({ ps, stage, onAgain }: { ps: ProjectorState; stage: 0 | 1; onAgain: () => void }) {
   const rc = ps.recap;
   const beaten = ps.beaten || rc?.result === 'beaten';
   const names = ps.view?.showNames ?? false;
@@ -680,7 +772,7 @@ function Recap({ ps, stage }: { ps: ProjectorState; stage: 0 | 1 }) {
       {stage === 0 && <div className="sd-p-recap__title" role="status">{beaten ? 'VICTORY!' : 'So close!'}</div>}
       {stage === 1 && rc && (
         <div className="sd-p-recap__cards">
-          <h2 className="sd-p-recap__head">{beaten ? 'You beat the River Titan!' : 'So close! Next time!'}</h2>
+          <h2 className="sd-p-recap__head">{beaten ? `You beat the ${bossInfo(ps.view?.bossId).name}!` : 'So close! Next time!'}</h2>
           {winTeam && (
             <div className={`sd-p-bigflag sd-p-team--${winTeam}`}>
               <Cloth team={winTeam} className="sd-p-bigflag__cloth"><b>{TEAM_SHORT[winTeam]}</b><strong>WINS!</strong></Cloth>
@@ -704,6 +796,7 @@ function Recap({ ps, stage }: { ps: ProjectorState; stage: 0 | 1 }) {
               </li>
             ))}
           </ul>
+          <button type="button" className="sd-p-again" onClick={onAgain}>Again?</button>
         </div>
       )}
     </div>

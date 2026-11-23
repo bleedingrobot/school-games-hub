@@ -11,12 +11,16 @@
  * Every event the engine returns goes to the projector's feed straight away, in the same save, with the names it needs
  * (no batching, so hits never arrive in clumps). Wrong answers are never in the feed: only the pupil's own reply has them.
  *
- * Teacher steps: open, view, teams, start, tick, enrage, pause, end. Pupil steps: join, choose, ask, answer.
+ * Teacher steps: open, view, teams, start, tick, enrage, pause, end, again. Pupil steps: join, choose, ask, answer.
+ *
+ * When a round ends, every pupil's reward (hub points and a Showdown chest, shared/showdown/bosses.ts) is put on their row in
+ * the same save, and `finishRound` pays it out and records the class's roster (once per round, however often it's called).
  */
 import { recap, type Recap } from './awards';
 import { SHOWDOWN } from './config';
 import { advance, answer, chooseRole, enrage, goldenNext, join, moveToTeam, newRound, roundMs, start } from './engine';
 import { reshuffle } from './teams';
+import { pickBoss, rewardFor, roster, type BossId, type ChestGame, type Reward, type RosterRow } from './bosses';
 import type { Mode, Player, Role, Round, ShowdownEvent, TeamId } from './types';
 import { ladderProgress } from '../maths/ladder';
 import type { FactAnswer } from '../maths/leitner';
@@ -36,6 +40,8 @@ export interface RoomView {
   state: Round['state'];
   mode: Mode;
   arena: Arena;
+  /** The boss of the roster this round fights. */
+  bossId: BossId;
   lengthMin: number;
   /** Server time (ms since 1970) the round started, or null in the lobby. Times below are ms from that. */
   startedAt: number | null;
@@ -77,10 +83,12 @@ export interface PlayerView {
   dazedUntil: number;
   /** Solo only: true while this pupil is in the top 10 (the only place a pupil is ever told). */
   topTen: boolean;
+  /** Set when the round is over: what this pupil got (hub points and the Showdown chest). */
+  reward: Reward | null;
 }
 
 /** A feed row for the projector: the engine's event, plus the first names of every pupil it mentions. */
-export type FeedEvent = (ShowdownEvent | { type: 'recap'; t: number; recap: Recap } | { type: 'pause' | 'resume' | 'ended'; t: number }) & {
+export type FeedEvent = (ShowdownEvent | { type: 'recap'; t: number; recap: Recap } | { type: 'pause' | 'resume' | 'ended'; t: number } | { type: 'again'; t: number; boss: BossId }) & {
   names?: Record<string, string>;
 };
 
@@ -140,6 +148,23 @@ export interface ShowdownServices {
   recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
   /** All the pupils' rows of a room, for the projector after a refresh. */
   roomPlayers?(room: number): Promise<PlayerView[] | Busy>;
+  /** The bosses this class has beaten, with its best time (ms) for each. */
+  classRoster(classId: string): Promise<Partial<Record<BossId, number>> | Busy>;
+  /** Each pupil's own favourite game that a Showdown chest can pay into. */
+  chestGames(players: string[]): Promise<Record<string, ChestGame>>;
+  /** Pays out a finished round (points, chests, achievement counts) and records the roster. Once per round (room + seed). */
+  finishRound(room: number, done: FinishedRound): Promise<void>;
+}
+
+/** A finished round, for `finishRound`. */
+export interface FinishedRound {
+  classId: string;
+  seed: number;
+  boss: BossId;
+  beaten: boolean;
+  /** How long the round took (ms). */
+  ms: number;
+  players: { player: string; points: number; game: ChestGame; amount: number; beaten: boolean; lastHit: boolean; shields: number; revives: number; bestStreak: number; correct: number }[];
 }
 
 export type StepReply = { status: number; body: Record<string, unknown> };
@@ -159,7 +184,7 @@ export function roundTime(row: Pick<RoomRow, 'startedAt' | 'pausedAt'>, now: num
 
 export function roomView(row: Pick<RoomRow, 'arena' | 'startedAt' | 'pausedAt' | 'showNames'>, r: Round): RoomView {
   return {
-    state: r.state, mode: r.mode, arena: row.arena, lengthMin: r.lengthMin, startedAt: row.startedAt, pausedAt: row.pausedAt, t: r.t,
+    state: r.state, mode: r.mode, arena: row.arena, bossId: r.bossId ?? 'river-titan', lengthMin: r.lengthMin, startedAt: row.startedAt, pausedAt: row.pausedAt, t: r.t,
     players: r.order.length, boss: { ...r.boss }, teams: [...r.teams], teamPoints: { ...r.teamPoints },
     teamDamage: Object.fromEntries(Object.entries(r.teamDamage).map(([k, v]) => [k, Math.round((v ?? 0) * 10) / 10])),
     tug: Math.round(r.tug * 1000) / 1000, facing: r.facing, weakSpotUntil: r.weakSpotUntil, goldenFrom: r.goldenFrom, goldenUntil: r.goldenUntil,
@@ -180,6 +205,7 @@ function topTenOf(r: Round): Set<string> {
 export function playerView(p: Player, top: Set<string> = new Set()): PlayerView {
   return {
     topTen: top.has(p.id),
+    reward: p.reward ?? null,
     player: p.id, name: p.name, team: p.team, role: p.role, score: p.score, streak: p.streak, bestStreak: p.bestStreak, correct: p.correct,
     wrong: p.wrong, shields: p.shields, revives: p.revives, nextAt: p.nextAt, dazedUntil: p.dazedUntil,
   };
@@ -270,6 +296,8 @@ async function mutate<T>(s: ShowdownServices, room: number, step: Mutation<T>, o
     const t = roundTime(row, s.now());
     const out = step(r, t, row);
     if ('refuse' in out) return out;
+    // The round has just ended: put each pupil's reward on their row, in this same save.
+    if (!wasOver && r.state === 'over') await giveRewards(s, r);
     const startedAt = out.startedAt !== undefined ? out.startedAt : row.startedAt;
     const pausedAt = out.pausedAt !== undefined ? out.pausedAt : row.pausedAt;
     const events = [...feedOf(r, out.events, wasOver), ...(out.extra ?? [])];
@@ -282,11 +310,49 @@ async function mutate<T>(s: ShowdownServices, room: number, step: Mutation<T>, o
     const saved = await s.save(room, row.version, { round: r, view: roomView(next, r), startedAt, pausedAt, players, events, claim: out.claim });
     if (saved === 'busy') return { refuse: busy() };
     if (saved === 'answered') return { refuse: no(409, "You've already answered that one.", 'answered') };
-    if (saved === 'ok') return { reply: out.reply, row: { ...next, version: row.version + 1, round: r }, saved: true };
+    if (saved === 'ok') {
+      const savedRow = { ...next, version: row.version + 1, round: r };
+      if (!wasOver && r.state === 'over') await finish(s, savedRow);
+      return { reply: out.reply, row: savedRow, saved: true };
+    }
     // 'stale': someone else saved first. Wait a moment (a little random, so iPads don't collide again) and run again.
     await new Promise((done) => setTimeout(done, 5 + Math.floor(s.random() * 25 * (tries + 1))));
   }
   return { refuse: no(503, 'The showdown is very busy. Try again!', 'busy') };
+}
+
+/** Sets every pupil's reward for the round just ended (their favourite game's chest, points). */
+async function giveRewards(s: ShowdownServices, r: Round) {
+  const games = r.order.length ? await s.chestGames(r.order).catch(() => ({}) as Record<string, ChestGame>) : {};
+  for (const id of r.order) {
+    const p = r.players[id];
+    p.reward = rewardFor(games[id] ?? 'archery', r.result === 'beaten', p.correct);
+  }
+}
+
+/** Pays out a finished round. A failure is only logged: the round is saved, and `view` tries again (once per round). */
+async function finish(s: ShowdownServices, row: RoomRow) {
+  const r = row.round;
+  if (r.state !== 'over') return;
+  const beaten = r.result === 'beaten';
+  const done: FinishedRound = {
+    classId: row.classId, seed: r.seed, boss: r.bossId ?? 'river-titan', beaten, ms: Math.round(r.t),
+    players: r.order.map((id) => r.players[id]).filter((p) => p.reward).map((p) => ({
+      player: p.id, points: p.reward!.points, game: p.reward!.chest.game, amount: p.reward!.chest.amount, beaten,
+      lastHit: r.lastHit === p.id, shields: p.shields, revives: p.revives, bestStreak: p.bestStreak, correct: p.correct,
+    })),
+  };
+  try {
+    await s.finishRound(row.id, done);
+  } catch (e) {
+    console.error('showdown finishRound failed', row.id, e);
+  }
+}
+
+/** The class's roster for the projector. */
+async function rosterOf(s: ShowdownServices, classId: string): Promise<RosterRow[] | null> {
+  const beaten = await s.classRoster(classId);
+  return beaten === 'busy' ? null : roster(beaten);
 }
 
 const readRoom = (v: unknown): number | null => (Number.isSafeInteger(v) && (v as number) > 0 ? (v as number) : null);
@@ -305,14 +371,17 @@ export async function showdownStep(s: ShowdownServices, who: string, body: Recor
     if (teach === 'busy') return busy();
     if (!teach) return no(403, "That isn't one of your classes.", 'not-yours');
     if (!teach.enabled) return no(403, OFF, 'off');
+    const beaten = await s.classRoster(classId);
+    if (beaten === 'busy') return busy();
     const round = newRound({ seed: Math.floor(s.random() * 2 ** 31), mode, lengthMin: length });
+    round.bossId = pickBoss(beaten, body.boss);
     const view = roomView({ arena: 'boss', startedAt: null, pausedAt: null, showNames: teach.showNames }, round);
     const id = await s.openRoom(classId, who, 'boss', round, view);
     if (id === 'busy') return busy();
-    return ok({ room: id, view });
+    return ok({ room: id, view, roster: roster(beaten) });
   }
 
-  if (action === 'view' || action === 'tick' || action === 'teams' || action === 'start' || action === 'enrage' || action === 'pause' || action === 'end') {
+  if (action === 'view' || action === 'tick' || action === 'teams' || action === 'start' || action === 'enrage' || action === 'pause' || action === 'end' || action === 'again') {
     const room = readRoom(body.room);
     if (!room) return no(400, "That showdown couldn't be found.");
     const row = await s.loadRoom(room);
@@ -331,11 +400,42 @@ export async function showdownStep(s: ShowdownServices, who: string, body: Recor
       const done = await mutate(s, room, (r, t) => ({ reply: null, events: row.pausedAt === null ? advance(r, t) : [] }));
       if ('refuse' in done) return done.refuse;
       const r = done.row.round;
+      // A round that ended without being paid out (the server stopped in between) is paid now: finishRound runs once per round.
+      if (r.state === 'over' && !done.saved) await finish(s, done.row);
+      const rosterRows = await rosterOf(s, row.classId);
       return ok({
         room, view: roomView(done.row, r), now: s.now(), version: done.row.version,
         players: r.order.map((id) => playerView(r.players[id], topTenOf(r))),
         ...(r.state === 'over' ? { recap: recap(r) } : {}),
+        ...(rosterRows ? { roster: rosterRows } : {}),
       });
+    }
+
+    if (action === 'again') {
+      // "Again?": the same room, mode, length and teams, the next boss (or the one asked for). Pupils stay in.
+      const beaten = await s.classRoster(row.classId);
+      if (beaten === 'busy') return busy();
+      const done = await mutate(s, room, (r) => {
+        if (r.state !== 'over') return { refuse: no(409, 'Finish this round first.', 'not-now') };
+        const fresh = newRound({ seed: Math.floor(s.random() * 2 ** 31), mode: r.mode, lengthMin: r.lengthMin });
+        fresh.bossId = pickBoss(beaten, body.boss, r.bossId ?? 'river-titan');
+        const events: ShowdownEvent[] = [];
+        for (const id of r.order) {
+          const old = r.players[id];
+          const out = join(fresh, { id, name: old.name, ladder: old.ladder }, 0);
+          if (!out.ok) continue;
+          events.push(...out.events);
+          if (old.team && fresh.teams.includes(old.team)) moveToTeam(fresh, id, old.team);
+          fresh.players[id].role = old.role;
+        }
+        fresh.teamsByHand = r.teamsByHand;
+        for (const k of Object.keys(r) as (keyof Round)[]) delete r[k];
+        Object.assign(r, fresh);
+        return { reply: null, events, startedAt: null, pausedAt: null, extra: [{ type: 'again', t: 0, boss: fresh.bossId }] as FeedEvent[] };
+      });
+      if ('refuse' in done) return done.refuse;
+      const r = done.row.round;
+      return ok({ room, view: roomView(done.row, r), now: s.now(), players: r.order.map((id) => playerView(r.players[id], topTenOf(r))), roster: roster(beaten) });
     }
 
     const done = await mutate(s, room, (r, t, cur) => {

@@ -19,7 +19,10 @@ const params = new URLSearchParams(location.search);
 const size = Math.max(0, Math.floor(Number(params.get('pretend') ?? 30)) || 0);
 const m = params.get('mode');
 const mode = m === 'teams2' || m === 'teams4' || m === 'solo' ? m : 'class';
-const { teacher, pupil, classId } = pretendLink({ size, mode, me: { id: ME, name: 'You' } });
+const { teacher, pupil, classId, db } = pretendLink({ size, mode, me: { id: ME, name: 'You' } });
+// ?beaten=N pretends the class has already beaten the first N bosses (in order), to try the roster and the boss picker.
+const beatenN = Math.max(0, Math.min(4, Math.floor(Number(params.get('beaten') ?? 0)) || 0));
+if (beatenN) db.roster.set(classId, Object.fromEntries(['river-titan', 'storm-kraken', 'clockwork-colossus', 'comet-wyrm'].slice(0, beatenN).map((b, i) => [b, 95000 + i * 31000])));
 
 function Page() {
   const [view, setView] = useState(params.get('view') === 'ipad' ? 'ipad' : 'big');
