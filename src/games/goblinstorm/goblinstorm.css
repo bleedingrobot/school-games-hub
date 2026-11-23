@@ -199,6 +199,7 @@
 
 /* between runs: gold, the shop and the Weapon Codex (stage 5) */
 .gs-between { justify-content: flex-start; align-items: center; margin: 1rem 0 0.5rem; }
+.gs-between--top { margin: 0 0 0.8rem; }
 .gs-gold { font-weight: 900; color: #ffe68a; font-size: 1.05rem; }
 .gs-shop .gs-btn { margin-top: auto; align-self: stretch; }
 .gs-shop .gs-dots i { width: 14px; height: 14px; }
@@ -221,6 +222,18 @@
 .gs-codex__heroes { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem; margin: 0 0 0.8rem; }
 .gs-codex__hero--on { background: rgba(255,210,58,0.28); border-color: #ffd23a; }
 .gs-codex__plus { font-weight: 800; color: #cfc4ef; font-size: 0.95rem; }
+/* The Codex mid-run: a book that flips open over the paused run; what the hero holds now glows gold. */
+.gs-dim--codex { z-index: 7; place-items: start center; background: rgba(8,4,20,0.78); backdrop-filter: blur(3px); }
+.gs-runcodex { width: min(100%, 1080px); padding: 1rem 1.2rem 1.4rem; border-radius: 18px; border: 3px solid #ffd23a; background: linear-gradient(170deg, #2e2060, #160d30); box-shadow: 0 0 40px rgba(255, 210, 58, 0.35); transform-origin: 50% 0; animation: gs-book-open 0.38s cubic-bezier(.2,1.4,.4,1) both; }
+.gs-runcodex__top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.4rem; }
+.gs-runcodex__top small { font-size: 0.8rem; color: #cfc4ef; font-weight: 600; }
+.gs-codex__pair { position: relative; }
+.gs-codex__pair--held { border: 2px solid #ffd23a; box-shadow: 0 0 16px rgba(255, 210, 58, 0.45); animation: gs-held-glow 1.8s ease-in-out infinite; }
+.gs-codex__have { align-self: flex-start; padding: 0.15rem 0.6rem; border-radius: 999px; background: #ffd23a; color: #2a1a00; font-weight: 800; font-size: 0.85rem; }
+.gs-cards__codex { margin-top: 0.2rem; }
+@keyframes gs-book-open { from { opacity: 0; transform: perspective(900px) rotateX(-28deg) scale(0.9); } to { opacity: 1; transform: none; } }
+@keyframes gs-held-glow { 50% { box-shadow: 0 0 28px rgba(255, 210, 58, 0.75); } }
+@media (prefers-reduced-motion: reduce) { .gs-runcodex, .gs-codex__pair--held { animation: none; } }
 
 /* ---- Stage 6: Bella's guide, first-time tips, "Show me", the effects setting ---- */
 .gs-btn--small { font-size: 0.85rem; padding: 0.35rem 0.75rem; }

@@ -98,6 +98,12 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
   onServer?: boolean;
 }) {
   const [screen, setScreen] = useState<Screen>('hero');
+  /** Where Back goes from the Shop, the Codex and the Stories: the hero or the map screen they were opened from. */
+  const [backTo, setBackTo] = useState<Screen>('map');
+  const openExtra = (to: 'shop' | 'codex' | 'stories') => {
+    setBackTo(screen === 'hero' ? 'hero' : 'map');
+    setScreen(to);
+  };
   const mapCount = stormLands ? MAPS.length : STORM_FIRST;
   const [hero, setHero] = useState<HeroDef>(HEROES[0]);
   const [mapIndex, setMapIndex] = useState(0);
@@ -207,6 +213,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
               🦸 Heroes {HEROES.filter((h) => heroOpen(save, h.id)).length}/{HEROES.length} · 👑 Bosses beaten {save.bosses.filter((b) => b < mapCount).length}/{mapCount}
             </p>
           )}
+          {save && <ExtrasRow save={save} shown={shown} open={openExtra} top />}
           {!save && !saveError && <p className="gs-menu__sub" role="status">Loading your save…</p>}
           {saveError && (
             <p className="gs-menu__error" role="alert">
@@ -285,12 +292,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
             );
           })()}
           {save && (
-            <div className="gs-row gs-between">
-              <GoldLine save={save} />
-              <button type="button" className={`gs-btn gs-btn--ghost${shown?.kind === 'shop' ? ' gs-show' : ''}`} onClick={() => setScreen('shop')}>🛒 Shop</button>
-              <button type="button" className={`gs-btn gs-btn--ghost${shown?.kind === 'codex' ? ' gs-show' : ''}`} onClick={() => setScreen('codex')}>📖 Codex {codexOf(save)}/{CODEX_SIZE}</button>
-              <button type="button" className="gs-btn gs-btn--ghost" onClick={() => setScreen('stories')}>📜 Stories</button>
-            </div>
+            <ExtrasRow save={save} shown={shown} open={openExtra} />
           )}
           {save && (
             <div className="gs-row gs-between gs-settings">
@@ -312,19 +314,19 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
       )}
 
       {screen === 'shop' && save && (
-        <Menu title="Gold shop" back={() => setScreen('map')} extra={extra}>
+        <Menu title="Gold shop" back={() => setScreen(backTo)} extra={extra}>
           <ShopScreen backend={backend} save={save} onSave={setSave} />
         </Menu>
       )}
 
       {screen === 'codex' && save && (
-        <Menu title="Weapon Codex" back={() => setScreen('map')} extra={extra}>
-          <CodexScreen save={save} hero={hero} onHero={setHero} />
+        <Menu title="Weapon Codex" back={() => setScreen(backTo)} extra={extra}>
+          <CodexScreen found={save} hero={hero} heroes={HEROES.filter((h) => heroOpen(save, h.id))} onHero={setHero} />
         </Menu>
       )}
 
       {screen === 'stories' && save && (
-        <Menu title="Stories" back={() => setScreen('map')} extra={extra}>
+        <Menu title="Stories" back={() => setScreen(backTo)} extra={extra}>
           <StoryShelf
             stories={goblinShelf((id) => heroOpen(save, id), (i) => mapOpen(save, i), save.bosses)}
             book={{ className: 'gs-storybook' }}
@@ -341,6 +343,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
           map={MAPS[mapIndex]}
           guided={guided}
           quality={quality}
+          save={save}
           onEnd={(e) => {
             const opened = e.reply?.valid && e.reply.summary.bossBeaten && !save?.bosses.includes(mapIndex) && mapIndex + 1 < mapCount;
             setNewMap(opened ? mapIndex + 1 : null);
@@ -353,7 +356,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
       )}
 
       {screen === 'end' && end && (
-        <EndScreen end={end} onAgain={() => void play(mapIndex)} onMenu={() => setScreen('hero')} onShop={() => setScreen('shop')} busy={busy} error={error} newMap={newMap}
+        <EndScreen end={end} onAgain={() => void play(mapIndex)} onMenu={() => setScreen('hero')} onShop={() => { setBackTo('map'); setScreen('shop'); }} busy={busy} error={error} newMap={newMap}
           left={unlimited || left === null ? null : left} />
       )}
       {opening.open && <StoryBook story={OPENING} onClose={opening.close} endLabel="Let's go!" className="gs-storybook" />}
@@ -369,6 +372,18 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
       {/* Mounted for the whole game, so the trophy line knows what the pupil had before the run ended. */}
       <TrophyWonLine games={['goblinstorm']} watch={end?.reply ?? null} off={!onServer} />
       <AchievementPop games={['goblinstorm']} watch={end?.reply ?? null} off={!onServer} />
+    </div>
+  );
+}
+
+/** Gold, then the Shop, the Codex and the Stories: on the hero screen and the map screen. */
+function ExtrasRow({ save, shown, open, top = false }: { save: MySave; shown: ShowMe | null; open: (to: 'shop' | 'codex' | 'stories') => void; top?: boolean }) {
+  return (
+    <div className={`gs-row gs-between${top ? ' gs-between--top' : ''}`}>
+      <GoldLine save={save} />
+      <button type="button" className={`gs-btn gs-btn--ghost${shown?.kind === 'shop' ? ' gs-show' : ''}`} onClick={() => open('shop')}>🛒 Shop</button>
+      <button type="button" className={`gs-btn gs-btn--ghost${shown?.kind === 'codex' ? ' gs-show' : ''}`} onClick={() => open('codex')}>📖 Codex {codexOf(save)}/{CODEX_SIZE}</button>
+      <button type="button" className="gs-btn gs-btn--ghost" onClick={() => open('stories')}>📜 Stories</button>
     </div>
   );
 }

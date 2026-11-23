@@ -6,10 +6,9 @@
  * each weapon once picked up, each evolution once made, and the passive that evolves it.
  */
 import { useState } from 'react';
-import { HEROES, LEGENDARY, LEGENDARY_IDS, PASSIVES, SHOP, SHOP_IDS, WEAPON_IDS, WEAPONS, type HeroDef, type LegendaryId, type ShopId } from '../../../shared/goblinstorm/config';
+import { LEGENDARY, LEGENDARY_IDS, PASSIVES, SHOP, SHOP_IDS, WEAPON_IDS, WEAPONS, type HeroDef, type LegendaryId, type PassiveId, type ShopId, type WeaponId } from '../../../shared/goblinstorm/config';
 import { CODEX_SIZE, allBought, codexCount, legendAllBought, legendLevelOf, nextCost, nextLegendCost, shopLevelOf, shopTop } from '../../../shared/goblinstorm/shop';
 import { GoblinStormError, type GoblinStormBackend, type MySave } from './backend';
-import { heroOpen } from '../../../shared/goblinstorm/server';
 import { powerPic, powerWords } from './heroPowers';
 import { HERO_ICON, PASSIVE_ICON, WEAPON_ICON } from './look';
 import { Pic } from './Pic';
@@ -25,7 +24,7 @@ export function GoldLine({ save }: { save: MySave }) {
     : <span className="gs-gold">🪙 {save.gold} gold</span>;
 }
 
-export const codexOf = (save: MySave) => codexCount(save.weapons, save.codex);
+export const codexOf = (save: Found) => codexCount(save.weapons, save.codex);
 
 export function ShopScreen({ backend, save, onSave }: { backend: GoblinStormBackend; save: MySave; onSave: (s: MySave) => void }) {
   const [busy, setBusy] = useState<ShopId | LegendaryId | null>(null);
@@ -115,34 +114,52 @@ export function ShopScreen({ backend, save, onSave }: { backend: GoblinStormBack
   );
 }
 
-export function CodexScreen({ save, hero, onHero }: { save: MySave; hero: HeroDef; onHero: (h: HeroDef) => void }) {
+/** What the Codex reads: weapons found and evolutions made (from the save, plus the run so far when opened mid-run). */
+export type Found = Pick<MySave, 'weapons' | 'codex'>;
+
+/**
+ * The Weapon Codex. Between runs it can switch whose weapons it shows (`heroes` + `onHero`); opened during a run it
+ * shows the run's hero and marks what they hold now (`holding`).
+ */
+export function CodexScreen({ found, hero, heroes, onHero, holding }: {
+  found: Found;
+  hero: HeroDef;
+  heroes?: HeroDef[];
+  onHero?: (h: HeroDef) => void;
+  holding?: { weapons: { id: WeaponId; level: number; evolved: boolean }[]; passives: { id: PassiveId; level: number }[] };
+}) {
   return (
     <>
-      <p className="gs-menu__sub gs-progress">📖 Codex {codexOf(save)}/{CODEX_SIZE}</p>
+      <p className="gs-menu__sub gs-progress">📖 Codex {codexCount(found.weapons, found.codex)}/{CODEX_SIZE}</p>
       <p className="gs-menu__sub">Pick up a weapon to add it. Get it to level 5 with its partner to evolve it!</p>
-      <div className="gs-codex__heroes" role="group" aria-label="Whose weapons to show">
-        {HEROES.filter((h) => heroOpen(save, h.id)).map((h) => (
-          <button key={h.id} type="button" className={`gs-btn gs-btn--ghost${h.id === hero.id ? ' gs-codex__hero--on' : ''}`} aria-pressed={h.id === hero.id} onClick={() => onHero(h)}>
-            <Pic path={`portraits/${h.id}`} small fallback={HERO_ICON[h.id]} className="gs-pic--inline" /> {h.name}
-          </button>
-        ))}
-      </div>
+      {heroes && onHero && (
+        <div className="gs-codex__heroes" role="group" aria-label="Whose weapons to show">
+          {heroes.map((h) => (
+            <button key={h.id} type="button" className={`gs-btn gs-btn--ghost${h.id === hero.id ? ' gs-codex__hero--on' : ''}`} aria-pressed={h.id === hero.id} onClick={() => onHero(h)}>
+              <Pic path={`portraits/${h.id}`} small fallback={HERO_ICON[h.id]} className="gs-pic--inline" /> {h.name}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="gs-grid gs-codex">
         {WEAPON_IDS.map((id) => {
           const w = WEAPONS[id];
           const own = powerWords(hero.id, id);
-          const seen = save.weapons.includes(id);
-          const evolved = save.codex.includes(id);
+          const seen = found.weapons.includes(id);
+          const evolved = found.codex.includes(id);
           const partner = PASSIVES[w.evolvesWith];
+          const held = holding?.weapons.find((x) => x.id === id);
+          const partnerHeld = holding?.passives.find((x) => x.id === partner.id);
           return (
-            <div key={id} className="gs-pick gs-codex__pair">
+            <div key={id} className={`gs-pick gs-codex__pair${held ? ' gs-codex__pair--held' : ''}`}>
+              {held && <span className="gs-codex__have">{held.evolved ? '★ Evolved!' : `✋ You have it · Lv ${held.level}/5`}</span>}
               <div className={`gs-codex__page${seen ? '' : ' gs-codex__page--unseen'}`}>
                 <span className="gs-pick__icon" aria-hidden="true">{seen ? <Pic path={powerPic(hero.id, id)} small fallback={WEAPON_ICON[id]} className="gs-pic--inline" /> : '❔'}</span>
                 <span className="gs-pick__name">{seen ? own.name : 'Not found yet'}</span>
                 {seen && <span className="gs-pick__blurb">{own.blurb}</span>}
               </div>
               <span className="gs-codex__plus">
-                + <Pic path={`passives/${partner.id}`} small fallback={PASSIVE_ICON[partner.id]} className="gs-pic--inline" /> {partner.name} =
+                + <Pic path={`passives/${partner.id}`} small fallback={PASSIVE_ICON[partner.id]} className="gs-pic--inline" /> {partner.name}{partnerHeld ? ` (you have it · Lv ${partnerHeld.level})` : ''} =
               </span>
               <div className={`gs-codex__page gs-codex__page--evolved${evolved ? '' : ' gs-codex__page--unseen'}`}>
                 <span className="gs-pick__icon" aria-hidden="true">{evolved ? <Pic path={powerPic(hero.id, id, true)} small fallback="✨" className="gs-pic--inline" /> : '❔'}</span>
