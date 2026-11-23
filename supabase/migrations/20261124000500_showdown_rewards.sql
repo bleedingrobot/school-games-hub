@@ -215,6 +215,7 @@ insert into public.achievement_types (id, game, name, emoji, measure, goal, sort
 -- 6. Server key only; on for every class
 -- ---------------------------------------------------------------------------
 
+revoke all on public.showdown_roster, public.showdown_stats, public.showdown_finished from public, anon, authenticated;
 revoke execute on function public.showdown_class_roster(uuid), public.showdown_chest_games(uuid[]), public.showdown_finish(bigint, jsonb)
   from public, anon, authenticated;
 grant execute on function public.showdown_class_roster(uuid), public.showdown_chest_games(uuid[]), public.showdown_finish(bigint, jsonb)
