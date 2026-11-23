@@ -9855,7 +9855,10 @@ function topTenOf(r) {
 function playerView(p, top = new Set()) {
 	return {
 		topTen: top.has(p.id),
+<<<<<<< HEAD
 		reward: p.reward ?? null,
+=======
+>>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c
 		player: p.id,
 		name: p.name,
 		team: p.team,
@@ -10108,6 +10111,7 @@ async function showdownStep(s, who, body) {
 				now: s.now(),
 				version: done.row.version,
 				players: r.order.map((id) => playerView(r.players[id], topTenOf(r))),
+<<<<<<< HEAD
 				...r.state === "over" ? { recap: recap(r) } : {},
 				...rosterRows ? { roster: rosterRows } : {}
 			});
@@ -10159,6 +10163,9 @@ async function showdownStep(s, who, body) {
 				now: s.now(),
 				players: r.order.map((id) => playerView(r.players[id], topTenOf(r))),
 				roster: roster(beaten)
+=======
+				...r.state === "over" ? { recap: recap(r) } : {}
+>>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c
 			});
 		}
 		const done = await mutate(s, room, (r, t, cur) => {

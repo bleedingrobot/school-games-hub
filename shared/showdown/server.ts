@@ -83,8 +83,11 @@ export interface PlayerView {
   dazedUntil: number;
   /** Solo only: true while this pupil is in the top 10 (the only place a pupil is ever told). */
   topTen: boolean;
+<<<<<<< HEAD
   /** Set when the round is over: what this pupil got (hub points and the Showdown chest). */
   reward: Reward | null;
+=======
+>>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c
 }
 
 /** A feed row for the projector: the engine's event, plus the first names of every pupil it mentions. */
@@ -205,7 +208,10 @@ function topTenOf(r: Round): Set<string> {
 export function playerView(p: Player, top: Set<string> = new Set()): PlayerView {
   return {
     topTen: top.has(p.id),
+<<<<<<< HEAD
     reward: p.reward ?? null,
+=======
+>>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c
     player: p.id, name: p.name, team: p.team, role: p.role, score: p.score, streak: p.streak, bestStreak: p.bestStreak, correct: p.correct,
     wrong: p.wrong, shields: p.shields, revives: p.revives, nextAt: p.nextAt, dazedUntil: p.dazedUntil,
   };
