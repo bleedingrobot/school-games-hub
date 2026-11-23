@@ -10,24 +10,14 @@ import type { PlayerView, RoomView } from '../../../shared/showdown/server';
 import type { Role, TeamId } from '../../../shared/showdown/types';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import type { ShowdownLink } from './link';
+import { arenaWords } from './arenaWords';
 import { ControllerStage } from './ControllerStage';
 import { PayMeter, SEAM_NAME, SeamPicker, seamPay, seamRoom } from './SeamPicker';
 import './controller.css';
 
 type Q = { slot: number; parts: string[]; spoken: string; prompt?: string; choices?: number[]; choiceLabels?: string[]; input?: 'whole' | 'decimal'; maxLength?: number; golden: boolean };
 
-const ROLES: { role: Role; name: string; line: string; emoji: string }[] = [
-  { role: 'striker', name: 'Striker', line: 'Hit the boss', emoji: '⚔️' },
-  { role: 'guard', name: 'Guard', line: 'Hold the shield', emoji: '🛡️' },
-  { role: 'healer', name: 'Healer', line: 'Wake up dazed friends', emoji: '💖' },
-];
-/** Gold Rush's words for the roles: the same jobs, with a pickaxe. */
-const GR_ROLES: Record<Role, { name: string; line: string; emoji: string }> = {
-  striker: { name: 'Digger', line: 'Dig the gold', emoji: '⛏️' },
-  guard: { name: 'Prop-holder', line: 'Hold up the roof', emoji: '🛡️' },
-  healer: { name: 'Medic', line: 'Wake dazed friends', emoji: '💖' },
-};
-const GR_TITLE: Record<Role, string> = { striker: 'Dig for gold!', guard: 'Prop up the roof!', healer: 'Wake a friend!' };
+const ROLE_ORDER: Role[] = ['striker', 'guard', 'healer'];
 const TEAM_NAME: Record<TeamId, string> = { red: 'Red team', blue: 'Blue team', gold: 'Gold team', green: 'Green team' };
 
 const paintings = import.meta.glob('./art/paint/**/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
@@ -43,7 +33,6 @@ function factOf(q: Q, answer: number): string {
 
 /** The painted frame round the controller, if it has been painted. */
 const frameArt = Object.entries(paintings).find(([path]) => /controller-frame/i.test(path))?.[1];
-const TITLE_BY_ROLE: Record<Role, string> = { striker: 'Hit the boss!', guard: 'Hold the shield!', healer: 'Wake a friend!' };
 const mmss = (ms: number) => {
   const s = Math.max(0, Math.ceil(ms / 1000));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -182,6 +171,8 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
   const team = mine?.team ?? null;
   const live = view?.state === 'live';
   const gr = view?.arena === 'goldrush';
+  const W = arenaWords(view?.arena);
+  const ROLES = ROLE_ORDER.map((role) => ({ role, ...W.roles[role] }));
 
   const onSubmit = async (value: number, ms: number): Promise<MarkedAnswer> => {
     const q = question as Q;
@@ -222,15 +213,16 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
   const windUp = !!view?.windUp && live;
   const golden = !!question?.golden;
   const streak = mine?.streak ?? 0;
-  const myRole = ROLES.map((r) => (gr ? { ...r, ...GR_ROLES[r.role] } : r)).find((r) => r.role === mine?.role);
+  const myRole = ROLES.find((r) => r.role === mine?.role);
   const canSwap = !!view && !!mine && view.mode !== 'solo' && view.state !== 'over' && (view.state === 'lobby' || view.roleSwapUntil > t);
 
   useEffect(() => {
     if (!canSwap) setRolesOpen(false);
   }, [canSwap]);
-  const bossPct = view ? Math.max(0, Math.min(100, (view.boss.hp / Math.max(1, view.boss.max)) * 100)) : 100;
+  const healthPct = view ? Math.max(0, Math.min(100, (view.boss.hp / Math.max(1, view.boss.max)) * 100)) : 100;
+  const bossPct = W.fills ? 100 - healthPct : healthPct;
   const left = view ? Math.max(0, view.lengthMin * 60000 - (live || view.state === 'over' ? t : 0)) : 0;
-  const questionTitle = golden ? 'Golden question!' : (gr ? GR_TITLE : TITLE_BY_ROLE)[mine?.role ?? 'striker'];
+  const questionTitle = golden ? 'Golden question!' : W.titles[mine?.role ?? 'striker'];
   const mySeamRow = gr && view ? view.seams.find((x) => x.id === mine?.seam) ?? null : null;
 
   let body;
@@ -246,7 +238,7 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
     body = (
       <div className="sd-c-center">
         <h1 className="sd-c-title">Well played, {mine.name}!</h1>
-        {gr && <p className="sd-c-gold">{view.result === 'beaten' ? '⛏ The class dug out the whole mountain!' : '⛏ So close! Some gold is left.'}</p>}
+        {W.overLine && <p className="sd-c-gold">{W.overLine(view.result === 'beaten')}</p>}
         <dl className="sd-c-results" aria-label="Your results">
           <div><dt>Right answers</dt><dd>{mine.correct}</dd></div>
           <div><dt>Best streak</dt><dd>{mine.bestStreak}</dd></div>
@@ -260,7 +252,7 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
   } else {
     body = (
       <>
-        {view.state === 'lobby' && <><h1 className="sd-c-title">Get ready!</h1><p className="sd-c-roar">{gr ? 'Grab your pickaxe! Pick a seam when we start.' : bossInfo(view.bossId).roar}</p></>}
+        {view.state === 'lobby' && <><h1 className="sd-c-title">Get ready!</h1><p className="sd-c-roar">{gr ? 'Grab your pickaxe! Pick a seam when we start.' : view.arena === 'skyclimb' ? 'Rope on! Every right answer is a step up.' : bossInfo(view.bossId).roar}</p></>}
         {view.mode === 'solo' && view.state === 'live' && mine.topTen && <p className="sd-c-topten" role="status">🏆 You're in the top 10!</p>}
         {myRole && !(canSwap && rolesOpen) && (
           canSwap ? (
@@ -271,8 +263,7 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
         )}
         {canSwap && rolesOpen && (
           <div className={`sd-c-roles${live ? ' sd-c-roles--compact' : ''}`} role="group" aria-label={live ? 'Change your role now' : 'Pick your role'}>
-            {ROLES.map((r0) => {
-              const r = gr ? { ...r0, ...GR_ROLES[r0.role] } : r0;
+            {ROLES.map((r) => {
               const img = portrait(r.role);
               return (
                 <button key={r.role} type="button" className="sd-c-role" aria-pressed={mine.role === r.role} onClick={() => void choose(r.role)}>
@@ -323,13 +314,13 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
             {said && <p className="sd-c-say" role="alert">{said}</p>}
           </div>
         )}
-        {burst > 0 && <div key={burst} className={`sd-c-flash${team ? ` sd-c-flash--${team}` : ''}${gr ? ' sd-c-flash--gold' : ''}`} aria-hidden="true"><span className="sd-c-burst">{gr ? '⛏' : '✨'}</span>{gr && <span className="sd-c-dig">{Array.from({ length: 10 }, (_, i) => <i key={i} style={{ '--a': `${(i / 10) * 360}deg`, '--r': `${70 + (i % 3) * 34}px`, '--d': `${(i % 4) * 0.04}s` } as React.CSSProperties}>🪙</i>)}</span>}</div>}
+        {burst > 0 && <div key={burst} className={`sd-c-flash${team ? ` sd-c-flash--${team}` : ''}${gr ? ' sd-c-flash--gold' : ''}`} aria-hidden="true"><span className="sd-c-burst">{gr ? '⛏' : view?.arena === 'skyclimb' ? '🧗' : '✨'}</span>{gr && <span className="sd-c-dig">{Array.from({ length: 10 }, (_, i) => <i key={i} style={{ '--a': `${(i / 10) * 360}deg`, '--r': `${70 + (i % 3) * 34}px`, '--d': `${(i % 4) * 0.04}s` } as React.CSSProperties}>🪙</i>)}</span>}</div>}
         {gr && windUp && <div className="sd-c-cave" aria-hidden="true">{[0, 1, 2].map((i) => <span key={i} style={{ left: `${i * 34 - 4}%`, '--i': i } as React.CSSProperties}>{dust ? <img src={dust} alt="" /> : null}</span>)}</div>}
       </>
     );
   }
 
-  const bossName = gr ? 'Gold left in the mountain' : bossInfo(view?.bossId).name;
+  const bossName = W.goal ?? bossInfo(view?.bossId).name;
   // Questions on the left, the boss with its health and what's happening on the right (James, 24 Nov 2026).
   const split = room !== null && !!view && !!mine && view.state !== 'over';
   return (
@@ -351,7 +342,7 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
       {split && view && mine ? (
         <div className="sd-c-body sd-c-body--split">
           <div className="sd-c-main">{body}</div>
-          <ControllerStage view={view} t={t} gr={gr} hit={burst} team={team} me={mine.player} />
+          <ControllerStage view={view} t={t} hit={burst} team={team} me={mine.player} streak={mine.streak} />
         </div>
       ) : <div className="sd-c-body">{body}</div>}
       {gr && live && seamsOpen && view && <SeamPicker view={view} mySeam={mine?.seam ?? null} onPick={(id) => void pickSeam(id)} onClose={() => setSeamsOpen(false)} said={seamSaid} />}

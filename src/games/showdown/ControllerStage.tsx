@@ -4,6 +4,7 @@
  * upright it is a short strip above the question. It only reads the room's view, so it never shows anyone's results.
  */
 import { bossInfo } from '../../../shared/showdown/bosses';
+import { arenaWords } from './arenaWords';
 import type { RoomView } from '../../../shared/showdown/server';
 import type { TeamId } from '../../../shared/showdown/types';
 
@@ -13,12 +14,14 @@ const TEAM: Record<TeamId, string> = { red: 'Red', blue: 'Blue', gold: 'Gold', g
 
 type Notice = { key: string; text: string; tone: 'alarm' | 'good' | 'gold' | 'info' };
 
-/** What is happening right now, most urgent first. */
-export function noticesFor(view: RoomView, t: number, gr: boolean, team: TeamId | null, me: string): Notice[] {
+/** What is happening right now, most urgent first, in the arena's own words. */
+export function noticesFor(view: RoomView, t: number, team: TeamId | null, me: string): Notice[] {
+  const W = arenaWords(view.arena);
+  const N = W.notices;
   const out: Notice[] = [];
   if (view.pausedAt) out.push({ key: 'pause', text: '⏸ Paused. Look at the teacher.', tone: 'info' });
   if (view.state === 'lobby') {
-    out.push({ key: 'lobby', text: gr ? '⛏ Grab your pickaxe! Waiting for the teacher…' : `${bossInfo(view.bossId).roar} Waiting for the teacher…`, tone: 'info' });
+    out.push({ key: 'lobby', text: view.arena === 'goldrush' ? '⛏ Grab your pickaxe! Waiting for the teacher…' : view.arena === 'skyclimb' ? '🧗 Rope on! Waiting for the teacher…' : `${bossInfo(view.bossId).roar} Waiting for the teacher…`, tone: 'info' });
     return out;
   }
   const w = view.windUp;
@@ -26,37 +29,38 @@ export function noticesFor(view: RoomView, t: number, gr: boolean, team: TeamId 
     const g = w.groups[team ?? ''] ?? w.groups.all ?? w.groups[me];
     const secs = Math.max(0, Math.ceil((w.endsAt - t) / 1000));
     const held = g?.done === 'held';
-    out.push({
-      key: 'wind',
-      text: held ? (gr ? '🛡️ The roof holds!' : '🛡️ Shield held!') : `${gr ? '⚠️ Cave-in! Prop up the roof!' : '🛡️ The boss is winding up! Shield up!'} ${secs}s${g ? ` · ${Math.min(g.got, g.needed)}/${g.needed}` : ''}`,
-      tone: held ? 'good' : 'alarm',
-    });
+    out.push({ key: 'wind', text: held ? N.heldNote : `${N.wind} ${secs}s${g ? ` · ${Math.min(g.got, g.needed)}/${g.needed}` : ''}`, tone: held ? 'good' : 'alarm' });
   }
-  if (view.enrageUntil > t) out.push({ key: 'enrage', text: gr ? '🌋 The mountain rumbles!' : '😡 The boss is enraged!', tone: 'alarm' });
-  if (view.weakSpotUntil > t) out.push({ key: 'weak', text: gr ? '💰 Mother lode! Double gold!' : '🎯 Weak spot! Double damage!', tone: 'gold' });
+  if (view.enrageUntil > t) out.push({ key: 'enrage', text: N.enrage, tone: 'alarm' });
+  if (view.weakSpotUntil > t) out.push({ key: 'weak', text: N.weak, tone: 'gold' });
   if (view.goldenFrom !== null && t >= view.goldenFrom && t < view.goldenUntil) out.push({ key: 'golden', text: '⭐ Golden question time!', tone: 'gold' });
   if (view.finalStarted) out.push({ key: 'final', text: '⏱️ Final 30 seconds! Go go go!', tone: 'alarm' });
-  if (view.mode === 'teams4' && team && view.facing === team) out.push({ key: 'facing', text: `👀 The boss is facing ${TEAM[team]}!`, tone: 'alarm' });
-  if (view.mode === 'teams2' && team && Math.abs(view.tug) > 0.1) {
+  if (view.mode === 'teams4' && team && view.facing === team && view.arena !== 'skyclimb') out.push({ key: 'facing', text: `👀 The boss is facing ${TEAM[team]}!`, tone: 'alarm' });
+  if (view.mode === 'teams2' && team && Math.abs(view.tug) > 0.1 && (view.arena ?? 'boss') === 'boss') {
     const winning = (view.tug < 0 && team === 'red') || (view.tug > 0 && team === 'blue');
     out.push({ key: 'tug', text: winning ? `💪 ${TEAM[team]} is pushing the boss back!` : '⚠️ The boss is coming your way! Push!', tone: winning ? 'good' : 'alarm' });
   }
-  if (!gr && view.boss.phase > 1 && !out.length) out.push({ key: 'phase', text: view.boss.phase === 3 ? '🔥 Last phase! Finish it!' : '💢 The boss is getting angry!', tone: 'info' });
-  if (!out.length) out.push({ key: 'calm', text: gr ? '⛏ Keep digging!' : '⚔️ Keep hitting the boss!', tone: 'info' });
+  if (view.boss.phase > 1 && !out.length) out.push({ key: 'phase', text: N.phase(view.boss.phase === 3 ? 3 : 2), tone: 'info' });
+  if (!out.length) out.push({ key: 'calm', text: N.calm, tone: 'info' });
   return out;
 }
 
-export function ControllerStage({ view, t, gr, hit, team, me }: { view: RoomView; t: number; gr: boolean; hit: number; team: TeamId | null; me: string }) {
+export function ControllerStage({ view, t, hit, team, me, streak = 0 }: { view: RoomView; t: number; hit: number; team: TeamId | null; me: string; streak?: number }) {
   const boss = bossInfo(view.bossId);
-  const back = gr ? art('back', 'gold-rush') : art('back', boss.backdrop);
-  const bossImg = gr ? null : art('bosses', `${view.bossId}-${view.boss.phase}`);
-  const pct = Math.max(0, Math.min(100, (view.boss.hp / Math.max(1, view.boss.max)) * 100));
-  const name = gr ? 'Gold left in the mountain' : boss.name;
-  const notices = noticesFor(view, t, gr, team, me);
+  const W = arenaWords(view.arena);
+  const gr = view.arena === 'goldrush';
+  const sky = view.arena === 'skyclimb';
+  const back = gr ? art('back', 'gold-rush') : sky ? art('back', 'sky-climb') : art('back', boss.backdrop);
+  const bossImg = gr || sky ? null : art('bosses', `${view.bossId}-${view.boss.phase}`);
+  const left = Math.max(0, Math.min(100, (view.boss.hp / Math.max(1, view.boss.max)) * 100));
+  const pct = W.fills ? 100 - left : left;
+  const name = W.goal ?? boss.name;
+  const notices = noticesFor(view, t, team, me);
   const weak = view.weakSpotUntil > t;
   const wind = !!view.windUp && t < view.windUp.endsAt;
+  const jumped = sky && hit > 0 && streak > 0 && streak % 3 === 0;
   return (
-    <aside className={`sd-cs${gr ? ' sd-cs--gr' : ''}${weak ? ' sd-cs--weak' : ''}${wind ? ' sd-cs--wind' : ''}`} aria-label={gr ? 'The mine' : 'The boss'}>
+    <aside className={`sd-cs${gr ? ' sd-cs--gr' : ''}${sky ? ' sd-cs--sky' : ''}${weak ? ' sd-cs--weak' : ''}${wind ? ' sd-cs--wind' : ''}`} aria-label={gr ? 'The mine' : sky ? 'The climb' : 'The boss'}>
       <div className="sd-cs__scene">
         {back && <img className="sd-cs__back" src={back} alt="" aria-hidden="true" />}
         {gr ? (
@@ -71,19 +75,42 @@ export function ControllerStage({ view, t, gr, hit, team, me }: { view: RoomView
               );
             })}
           </div>
+        ) : sky ? (
+          <SkyMini pct={pct} hit={hit} jumped={jumped} team={team} wind={wind} weak={weak} />
         ) : bossImg ? (
           <img key={`b${hit}`} className={`sd-cs__boss${hit ? ' sd-cs__boss--hit' : ''}`} src={bossImg} alt="" aria-hidden="true" />
         ) : null}
-        {hit > 0 && <span key={`h${hit}`} className="sd-cs__pow" aria-hidden="true">{gr ? '🪙' : '💥'}</span>}
+        {hit > 0 && !sky && <span key={`h${hit}`} className="sd-cs__pow" aria-hidden="true">{gr ? '🪙' : '💥'}</span>}
       </div>
-      <div className="sd-cs__bar" role="progressbar" aria-label={`${name} health`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
+      <div className="sd-cs__bar" role="progressbar" aria-label={W.fills ? name : `${name} health`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
         <span className="sd-cs__name">{name}</span>
         <span className="sd-cs__track"><i style={{ transform: `scaleX(${pct / 100})` }} /></span>
-        <span className="sd-cs__pct">{Math.ceil(pct)}%</span>
+        <span className="sd-cs__pct">{W.fills ? Math.floor(pct) : Math.ceil(pct)}%</span>
       </div>
       <ul className="sd-cs__notices" aria-live="polite">
         {notices.map((n) => <li key={n.key} className={`sd-cs__notice sd-cs__notice--${n.tone}`}>{n.text}</li>)}
       </ul>
     </aside>
+  );
+}
+
+/** Sky Climb on the iPad: the cliff, the summit flag, and the pupil's climber on the rope at the class's height. */
+function SkyMini({ pct, hit, jumped, team, wind, weak }: { pct: number; hit: number; jumped: boolean; team: TeamId | null; wind: boolean; weak: boolean }) {
+  const climber = art('skyclimb', 'climber');
+  const flag = art('skyclimb', 'summit-flag');
+  // Like the big screen: height grows with the square root of the climb, so early steps show.
+  const y = 88 - Math.sqrt(Math.max(0, pct) / 100) * 74;
+  return (
+    <div className={`sd-cs__sky${team ? ` sd-cs__sky--${team}` : ''}`} aria-hidden="true">
+      <span className="sd-cs__rope" />
+      <span className="sd-cs__flag">{flag ? <img src={flag} alt="" /> : '🚩'}</span>
+      <span key={`c${hit}`} className={`sd-cs__climber${hit ? ' sd-cs__climber--step' : ''}${jumped ? ' sd-cs__climber--jump' : ''}`} style={{ top: `${y}%` }}>
+        {climber ? <img src={climber} alt="" /> : <b>🧗</b>}
+      </span>
+      {jumped && <span key={`j${hit}`} className="sd-cs__jump" style={{ top: `${y}%` }}>JUMP!</span>}
+      {hit > 0 && !jumped && <span key={`u${hit}`} className="sd-cs__up" style={{ top: `${y}%` }}>⬆</span>}
+      {weak && <span className="sd-cs__updraft"><i /><i /><i /><i /></span>}
+      {wind && <span className="sd-cs__storm"><i /><i /><i /><i /><i /><i /><i /><i /></span>}
+    </div>
   );
 }

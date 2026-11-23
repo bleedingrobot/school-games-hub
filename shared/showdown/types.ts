@@ -5,6 +5,8 @@ import type { Planned } from './schedule';
 export type Mode = 'class' | 'teams2' | 'teams4' | 'solo';
 export type Role = 'striker' | 'guard' | 'healer';
 export type TeamId = 'red' | 'blue' | 'gold' | 'green';
+/** The arenas a room can be (docs/SHOWDOWN-PLAN.md section 4). */
+export type Arena = 'boss' | 'goldrush' | 'skyclimb';
 
 export interface Player {
   id: string;
@@ -57,8 +59,8 @@ export interface Round {
   /** The time the round was last brought up to (ms from the start). */
   t: number;
   boss: { max: number; hp: number; phase: 1 | 2 | 3 };
-  /** Which arena: Boss Bounty (missing = 'boss') or Gold Rush (shared/showdown/goldrush.ts). */
-  arena?: 'boss' | 'goldrush';
+  /** Which arena: Boss Bounty (missing = 'boss'), Gold Rush (goldrush.ts) or Sky Climb (skyclimb.ts). */
+  arena?: Arena;
   /** Gold Rush: every seam opened so far (dry ones keep their dryAt). */
   seams?: import('./goldrush').Seam[];
   /** Which boss of the roster (shared/showdown/bosses.ts). Missing in rounds from before Stage 5: the River Titan. */
@@ -143,7 +145,10 @@ export type ShowdownEvent =
   | { type: 'time_up'; t: number }
   | { type: 'seam_dry'; t: number; seam: number }
   | { type: 'seam_new'; t: number; seam: number; kind: 'gold' | 'gem' | 'rich'; x: number; y: number; size: number }
-  | { type: 'seam_pick'; t: number; pupil: string; seam: number };
+  | { type: 'seam_pick'; t: number; pupil: string; seam: number }
+  /** Sky Climb: a 3rd right answer in a row jumps (extra height); a storm blows idle climbers back down. */
+  | { type: 'jump'; t: number; pupil: string; extra: number }
+  | { type: 'blown_back'; t: number; pupils: string[]; amount: number; hp: number };
 
 export type Refusal = 'not_live' | 'not_playing' | 'too_soon' | 'dazed' | 'not_now' | 'no_such_team' | 'cooldown';
 export type Outcome = { ok: true; events: ShowdownEvent[] } | { ok: false; reason: Refusal; events: ShowdownEvent[] };
