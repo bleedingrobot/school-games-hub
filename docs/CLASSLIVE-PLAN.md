@@ -1,6 +1,6 @@
 # Class Live: plan
 
-**Status: plan written 23 Nov 2026. Next: stage 1 (the shared live room and Star Web).** James asked (23 Nov 2026) for more creative whole-class games beyond Class Showdown: the projector is the show, every pupil's device is a controller, played live together. Game id `classlive`, migration `20261123001000` (check again: `node scripts/migration-numbers.mjs`).
+**Status: plan written 23 Nov 2026. Next: stage 1 (the shared live room and Star Web).** James asked (23 Nov 2026) for more creative whole-class games beyond Class Showdown: the projector is the show, every pupil's device is a controller, played live together. Game id `classlive`, migration `20261123001100` (check again: `node scripts/migration-numbers.mjs`).
 
 ## The short version
 
@@ -72,7 +72,7 @@
 
 - **Rules** `shared/classlive/`: `stars.ts`, `serpent.ts`, `mural.ts` (pure), `server.ts` (the steps, shared by the edge function, tests and the preview, Showdown's pattern), `memoryServices.ts`, `pretendClass.ts`.
 - **Function** `supabase/functions/classlive/`: teacher `open`, `view`, `start`, `spotlight`, `reveal`, `end`, `names`; pupil `join`, `play` (one activity step: a fact, a box answer, a tile, a guess), `ask` and `answer` (Mural).
-- **Tables** (`20261123001000_classlive.sql`): `classlive_rooms` (the class reads the public view), `classlive_state` (hidden), `classlive_players` (own row; the teacher the room's), `classlive_questions` (hidden), `classlive_feed` (teacher only, names pupils). Saves are compare-and-swap on the room's version. Switch `classlive_enabled`, names `classlive_names`, saved by `teacher_set_classlive()`.
+- **Tables** (`20261123001100_classlive.sql`): `classlive_rooms` (the class reads the public view), `classlive_state` (hidden), `classlive_players` (own row; the teacher the room's), `classlive_questions` (hidden), `classlive_feed` (teacher only, names pupils). Saves are compare-and-swap on the room's version. Switch `classlive_enabled`, names `classlive_names`, saved by `teacher_set_classlive()`.
 - **Cost**: about 30 pupils, one step every 4 to 10 seconds: under 10 writes a second for one class.
 
 ## 6. Design checklist
