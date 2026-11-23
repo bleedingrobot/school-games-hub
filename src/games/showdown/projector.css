@@ -27,6 +27,8 @@
 .sd-p-btn:hover { background: #1d4b68; }
 .sd-p-btn--go { background: #1f9d55; border-color: #5de59a; }
 .sd-p-btn--danger { background: #9b2b3a; border-color: #ff8a97; }
+.sd-p-btn--hub { display: inline-flex; align-items: center; text-decoration: none; margin-right: 4px; }
+.sd-p-btn--hub:focus-visible { outline: 3px solid #ffd23f; outline-offset: 2px; }
 .sd-p-btn:focus-visible, .sd-p-bar__tab:focus-visible, .sd-p-bar select:focus-visible { outline: 3px solid #ffd23f; outline-offset: 2px; }
 .sd-p-bar__problem { margin: 4px 12px; color: #ffb4bd; font-weight: 700; }
 
@@ -168,7 +170,7 @@
 @keyframes sd-p-sparkle { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(-5vh) scale(0.2); } }
 
 .sd-p-banner { position: absolute; left: 0; right: 0; top: 34vh; z-index: 12; text-align: center; padding: 1.2vh 2vw; font-size: clamp(2rem, 8vh, 6rem); font-weight: 900; letter-spacing: 0.04em; text-shadow: 0 5px 0 rgba(0,0,0,0.55), 0 0 30px currentColor; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.65) 80%, transparent); animation: sd-p-banner 0.5s cubic-bezier(.2,1.4,.4,1) both; pointer-events: none; }
-.sd-p-banner--wind { color: #ff6a6a; animation: sd-p-banner 0.5s cubic-bezier(.2,1.4,.4,1) both, sd-p-redflash 0.7s ease-in-out 0.5s infinite alternate; }
+.sd-p-banner--wind { top: 15vh; color: #ff6a6a; animation: sd-p-banner 0.5s cubic-bezier(.2,1.4,.4,1) both, sd-p-redflash 0.7s ease-in-out 0.5s infinite alternate; }
 .sd-p-banner--good { color: #7dffb0; } .sd-p-banner--bad { color: #ff9a6a; } .sd-p-banner--info { color: #cfe6f5; }
 .sd-p-banner--phase { color: #ff9a3d; font-size: clamp(2.4rem, 10vh, 7rem); } .sd-p-banner--golden { color: var(--sd-gold); } .sd-p-banner--final { color: #ff6a6a; }
 @keyframes sd-p-banner { from { opacity: 0; transform: scale(2.2); } to { opacity: 1; transform: scale(1); } }

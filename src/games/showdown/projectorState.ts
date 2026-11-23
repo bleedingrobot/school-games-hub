@@ -8,6 +8,7 @@ import type { Recap } from '../../../shared/showdown/awards';
 import { bossInfo } from '../../../shared/showdown/bosses';
 import type { FeedEvent, PlayerView, RoomView } from '../../../shared/showdown/server';
 import type { Role, TeamId } from '../../../shared/showdown/types';
+import { ANNOUNCER, GOLD_RUSH_LINES } from './voiceLines';
 
 /** What the projector needs from the announcer and sound (src/games/showdown/audio.ts implements it). */
 export interface ShowdownSound {
@@ -330,36 +331,36 @@ export function projectorAct(s: ProjectorState, a: ProjectorAction): ProjectorSt
 export function soundFor(e: FeedEvent, goldRush = false): { play?: Parameters<ShowdownSound['play']>[0]; say?: string } {
   if (goldRush) {
     switch (e.type) {
-      case 'wind_up': return { play: 'drum', say: 'Cave-in! Prop up the roof!' };
-      case 'shield_held': return { play: 'clang', say: 'The roof holds!' };
-      case 'shield_broke': return { play: 'crack', say: 'Cave-in!' };
-      case 'weak_spot': return { play: 'whoosh', say: 'Mother lode! Double gold!' };
-      case 'phase': return { play: 'roar', say: 'The mountain rumbles!' };
-      case 'boss_beaten': return { play: 'cheer', say: 'You dug it all out!' };
-      case 'again': return { play: 'roar', say: 'Dig, dig, dig!' };
+      case 'wind_up': return { play: 'drum', say: GOLD_RUSH_LINES.caveIn };
+      case 'shield_held': return { play: 'clang', say: GOLD_RUSH_LINES.held };
+      case 'shield_broke': return { play: 'crack', say: GOLD_RUSH_LINES.broke };
+      case 'weak_spot': return { play: 'whoosh', say: GOLD_RUSH_LINES.lode };
+      case 'phase': return { play: 'roar', say: GOLD_RUSH_LINES.phase };
+      case 'boss_beaten': return { play: 'cheer', say: GOLD_RUSH_LINES.done };
+      case 'again': return { play: 'roar', say: GOLD_RUSH_LINES.start };
       case 'hit': return { play: e.times >= 2 || e.golden ? 'bighit' : 'hit' };
       default: break;
     }
   }
   switch (e.type) {
-    case 'start': return { play: 'countdown', say: 'Three, two, one, fight!' };
+    case 'start': return { play: 'countdown', say: ANNOUNCER.fight };
     case 'hit': return { play: e.times >= 2 || e.golden ? 'bighit' : 'hit' };
-    case 'wind_up': return { play: 'drum', say: 'The boss is winding up! Shield up!' };
+    case 'wind_up': return { play: 'drum', say: ANNOUNCER.windUp };
     case 'seam_dry': return { play: 'crack' };
     case 'seam_new': return { play: 'chime' };
-    case 'shield_held': return { play: 'clang', say: 'Shield held!' };
-    case 'shield_broke': return { play: 'crack', say: 'The shield broke!' };
+    case 'shield_held': return { play: 'clang', say: ANNOUNCER.held };
+    case 'shield_broke': return { play: 'crack', say: ANNOUNCER.broke };
     case 'revive': return { play: 'chime' };
-    case 'weak_spot': return { play: 'whoosh', say: 'Weak spot!' };
-    case 'golden': return { play: 'chime', say: 'Golden question!' };
-    case 'phase': return { play: 'roar', say: 'The boss is changing!' };
+    case 'weak_spot': return { play: 'whoosh', say: ANNOUNCER.weakSpot };
+    case 'golden': return { play: 'chime', say: ANNOUNCER.golden };
+    case 'phase': return { play: 'roar', say: ANNOUNCER.phase };
     case 'boss_turns': return { play: 'roar' };
     case 'enrage': return { play: 'roar' };
-    case 'final': return { play: 'drum', say: 'Thirty seconds!' };
-    case 'boss_beaten': return { play: 'cheer', say: 'The boss is beaten!' };
-    case 'time_up': return { say: "Time's up!" };
+    case 'final': return { play: 'drum', say: ANNOUNCER.thirty };
+    case 'boss_beaten': return { play: 'cheer', say: ANNOUNCER.beaten };
+    case 'time_up': return { say: ANNOUNCER.timeUp };
     case 'again': return { play: 'roar', say: bossInfo(e.boss).roar };
-    case 'recap': return e.recap.result === 'beaten' ? { play: 'fanfare' } : { say: 'So close!' };
+    case 'recap': return e.recap.result === 'beaten' ? { play: 'fanfare' } : { say: ANNOUNCER.soClose };
     default: return {};
   }
 }

@@ -40,6 +40,8 @@ export const SPOKEN: Partial<Record<AskGame, string>> = {
   '101': 'A friend invites you to play 101!',
   space: 'A friend invites you to play Wormholes and Black Holes!',
   'power-clash': 'A friend invites you to play Power Clash!',
+  showdown: 'Class Showdown is starting! Join in!',
+  classlive: 'Class Live is starting! Join in!',
 };
 
 /** The Lobby's one-time hint about stars (stage 8): what it shows, and what Bella says. */

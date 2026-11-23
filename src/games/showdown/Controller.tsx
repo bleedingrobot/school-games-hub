@@ -49,6 +49,8 @@ const mmss = (ms: number) => {
 };
 
 const RING = 2 * Math.PI * 28;
+const chestShut = Object.entries(paintings).find(([path]) => path.includes('chest-shut'))?.[1];
+const chestOpen = Object.entries(paintings).find(([path]) => path.includes('chest-open'))?.[1];
 const dust = Object.entries(paintings).find(([path]) => path.includes('cave-in'))?.[1];
 
 export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; me: string; room?: number }) {
@@ -367,16 +369,24 @@ function ChestReveal({ reward }: { reward: Reward }) {
   return (
     <div className={`sd-c-chest sd-c-chest--${step}`} aria-label="Your chest">
       <button type="button" className="sd-c-chest__box" onClick={() => setStep((n) => (n === 0 ? 1 : n))} aria-label={open ? 'Chest open' : 'Open the chest'}>
-        <svg viewBox="0 0 120 100" aria-hidden="true">
-          <g className="sd-c-chest__glow"><circle cx="60" cy="52" r="46" /></g>
-          <rect x="12" y="48" width="96" height="46" rx="8" fill="#9a5a1c" stroke="#4a2808" strokeWidth="4" />
-          <rect x="12" y="62" width="96" height="8" fill="#ffc83d" />
-          <g className="sd-c-chest__lid">
-            <path d="M10 50 Q10 14 60 14 Q110 14 110 50 Z" fill="#b8721f" stroke="#4a2808" strokeWidth="4" />
-            <rect x="10" y="40" width="100" height="10" fill="#ffc83d" />
-          </g>
-          <rect x="52" y="52" width="16" height="20" rx="4" fill="#ffd95a" stroke="#4a2808" strokeWidth="3" />
-        </svg>
+        {chestShut && chestOpen ? (
+          <span className="sd-c-chest__art" aria-hidden="true">
+            <span className="sd-c-chest__glow sd-c-chest__glow--art" />
+            <img className="sd-c-chest__shut" src={chestShut} alt="" draggable={false} />
+            <img className="sd-c-chest__open" src={chestOpen} alt="" draggable={false} />
+          </span>
+        ) : (
+          <svg viewBox="0 0 120 100" aria-hidden="true">
+            <g className="sd-c-chest__glow"><circle cx="60" cy="52" r="46" /></g>
+            <rect x="12" y="48" width="96" height="46" rx="8" fill="#9a5a1c" stroke="#4a2808" strokeWidth="4" />
+            <rect x="12" y="62" width="96" height="8" fill="#ffc83d" />
+            <g className="sd-c-chest__lid">
+              <path d="M10 50 Q10 14 60 14 Q110 14 110 50 Z" fill="#b8721f" stroke="#4a2808" strokeWidth="4" />
+              <rect x="10" y="40" width="100" height="10" fill="#ffc83d" />
+            </g>
+            <rect x="52" y="52" width="16" height="20" rx="4" fill="#ffd95a" stroke="#4a2808" strokeWidth="3" />
+          </svg>
+        )}
         {open && <span className="sd-c-chest__coins" aria-hidden="true">{Array.from({ length: 14 }, (_, i) => <i key={i} style={{ '--a': `${(i / 14) * 360}deg`, '--r': `${90 + (i % 4) * 26}px`, '--d': `${(i % 5) * 0.05}s` } as React.CSSProperties}>🪙</i>)}</span>}
       </button>
       {step === 2 && (
