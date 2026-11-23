@@ -132,7 +132,7 @@ export function memoryServices(db: MemoryDb, clock: { now(): number; random?(): 
       const key = `${room}:${done.seed}`;
       if (db.finished.has(key)) return;
       db.finished.set(key, copy(done));
-      if (done.beaten) {
+      if (done.beaten && done.roster !== false) {
         const r = db.roster.get(done.classId) ?? {};
         r[done.boss] = Math.min(r[done.boss] ?? Infinity, done.ms);
         db.roster.set(done.classId, r);

@@ -10,6 +10,7 @@ import type { PlayerView, RoomView } from '../../../shared/showdown/server';
 import type { Role, TeamId } from '../../../shared/showdown/types';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import type { ShowdownLink } from './link';
+import { PayMeter, SEAM_NAME, SeamPicker, seamPay, seamRoom } from './SeamPicker';
 import './controller.css';
 
 type Q = { slot: number; parts: string[]; spoken: string; prompt?: string; choices?: number[]; choiceLabels?: string[]; input?: 'whole' | 'decimal'; maxLength?: number; golden: boolean };
@@ -19,6 +20,13 @@ const ROLES: { role: Role; name: string; line: string; emoji: string }[] = [
   { role: 'guard', name: 'Guard', line: 'Hold the shield', emoji: '🛡️' },
   { role: 'healer', name: 'Healer', line: 'Wake up dazed friends', emoji: '💖' },
 ];
+/** Gold Rush's words for the roles: the same jobs, with a pickaxe. */
+const GR_ROLES: Record<Role, { name: string; line: string; emoji: string }> = {
+  striker: { name: 'Digger', line: 'Dig the gold', emoji: '⛏️' },
+  guard: { name: 'Prop-holder', line: 'Hold up the roof', emoji: '🛡️' },
+  healer: { name: 'Medic', line: 'Wake dazed friends', emoji: '💖' },
+};
+const GR_TITLE: Record<Role, string> = { striker: 'Dig for gold!', guard: 'Prop up the roof!', healer: 'Wake a friend!' };
 const TEAM_NAME: Record<TeamId, string> = { red: 'Red team', blue: 'Blue team', gold: 'Gold team', green: 'Green team' };
 
 const paintings = import.meta.glob('./art/paint/**/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
@@ -41,6 +49,7 @@ const mmss = (ms: number) => {
 };
 
 const RING = 2 * Math.PI * 28;
+const dust = Object.entries(paintings).find(([path]) => path.includes('cave-in'))?.[1];
 
 export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; me: string; room?: number }) {
   const [room, setRoom] = useState<number | null>(null);
@@ -52,6 +61,9 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
   const [askTries, setAskTries] = useState(0);
   const [burst, setBurst] = useState(0);
   const [rolesOpen, setRolesOpen] = useState(true);
+  const [seamsOpen, setSeamsOpen] = useState(false);
+  const [seamSaid, setSeamSaid] = useState<string | null>(null);
+  const askedSeam = useRef(false);
   const state = view?.state;
   const [, tick] = useState(0);
   const offset = useRef(0);
@@ -111,7 +123,18 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
     setAskTries(0);
     setRolesOpen(true);
     setSaid(null);
+    setSeamsOpen(false);
+    setSeamSaid(null);
+    askedSeam.current = false;
   }, [state]);
+
+  // Gold Rush: the seam picker opens by itself once, when the dig starts (pupils who skip it get the roomiest seam).
+  useEffect(() => {
+    if (state === 'live' && view?.arena === 'goldrush' && !askedSeam.current) {
+      askedSeam.current = true;
+      setSeamsOpen(true);
+    }
+  }, [state, view?.arena]);
 
   // Live and no question (first time, or after a dropped connection): ask, with backoff.
   useEffect(() => {
@@ -141,10 +164,21 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
     if (out.status === 200) setRolesOpen(false);
   };
 
+  const pickSeam = async (seam: number) => {
+    const out = await link.send({ action: 'choose', room, seam });
+    if (out.body.me) setMine(out.body.me as PlayerView);
+    if (out.body.view) setView(out.body.view as RoomView);
+    if (out.status === 200) {
+      setSeamSaid(null);
+      setSeamsOpen(false);
+    } else setSeamSaid(out.body.code === 'dry' ? 'That seam just ran dry! Pick another.' : String(out.body.error ?? 'That didn’t work.'));
+  };
+
   const t = view?.startedAt ? (view.pausedAt ?? Date.now() + offset.current) - view.startedAt : 0;
   const dazed = !!mine && mine.dazedUntil > t;
   const team = mine?.team ?? null;
   const live = view?.state === 'live';
+  const gr = view?.arena === 'goldrush';
 
   const onSubmit = async (value: number, ms: number): Promise<MarkedAnswer> => {
     const q = question as Q;
@@ -185,7 +219,7 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
   const windUp = !!view?.windUp && live;
   const golden = !!question?.golden;
   const streak = mine?.streak ?? 0;
-  const myRole = ROLES.find((r) => r.role === mine?.role);
+  const myRole = ROLES.map((r) => (gr ? { ...r, ...GR_ROLES[r.role] } : r)).find((r) => r.role === mine?.role);
   const canSwap = !!view && !!mine && view.mode !== 'solo' && view.state !== 'over' && (view.state === 'lobby' || view.roleSwapUntil > t);
 
   useEffect(() => {
@@ -193,7 +227,8 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
   }, [canSwap]);
   const bossPct = view ? Math.max(0, Math.min(100, (view.boss.hp / Math.max(1, view.boss.max)) * 100)) : 100;
   const left = view ? Math.max(0, view.lengthMin * 60000 - (live || view.state === 'over' ? t : 0)) : 0;
-  const questionTitle = golden ? 'Golden question!' : TITLE_BY_ROLE[mine?.role ?? 'striker'];
+  const questionTitle = golden ? 'Golden question!' : (gr ? GR_TITLE : TITLE_BY_ROLE)[mine?.role ?? 'striker'];
+  const mySeamRow = gr && view ? view.seams.find((x) => x.id === mine?.seam) ?? null : null;
 
   let body;
   if (room === null || !view || !mine) {
@@ -208,6 +243,7 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
     body = (
       <div className="sd-c-center">
         <h1 className="sd-c-title">Well played, {mine.name}!</h1>
+        {gr && <p className="sd-c-gold">{view.result === 'beaten' ? '⛏ The class dug out the whole mountain!' : '⛏ So close! Some gold is left.'}</p>}
         <dl className="sd-c-results" aria-label="Your results">
           <div><dt>Right answers</dt><dd>{mine.correct}</dd></div>
           <div><dt>Best streak</dt><dd>{mine.bestStreak}</dd></div>
@@ -221,7 +257,7 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
   } else {
     body = (
       <>
-        {view.state === 'lobby' && <><h1 className="sd-c-title">Get ready!</h1><p className="sd-c-roar">{bossInfo(view.bossId).roar}</p></>}
+        {view.state === 'lobby' && <><h1 className="sd-c-title">Get ready!</h1><p className="sd-c-roar">{gr ? 'Grab your pickaxe! Pick a seam when we start.' : bossInfo(view.bossId).roar}</p></>}
         {view.mode === 'solo' && view.state === 'live' && mine.topTen && <p className="sd-c-topten" role="status">🏆 You're in the top 10!</p>}
         {myRole && !(canSwap && rolesOpen) && (
           canSwap ? (
@@ -232,7 +268,8 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
         )}
         {canSwap && rolesOpen && (
           <div className={`sd-c-roles${live ? ' sd-c-roles--compact' : ''}`} role="group" aria-label={live ? 'Change your role now' : 'Pick your role'}>
-            {ROLES.map((r) => {
+            {ROLES.map((r0) => {
+              const r = gr ? { ...r0, ...GR_ROLES[r0.role] } : r0;
               const img = portrait(r.role);
               return (
                 <button key={r.role} type="button" className="sd-c-role" aria-pressed={mine.role === r.role} onClick={() => void choose(r.role)}>
@@ -246,7 +283,18 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
         )}
         {live && (
           <div className={`sd-c-play${golden ? ' sd-c-play--gold' : ''}`}>
-            {windUp && <p className="sd-c-alert" role="alert">Shield up! Answer fast!</p>}
+            {windUp && <p className="sd-c-alert" role="alert">{gr ? 'Cave-in! Answer fast to prop up the roof!' : 'Shield up! Answer fast!'}</p>}
+            {gr && view && (
+              <button type="button" className={`sd-c-myseam${mySeamRow ? ` sd-c-myseam--${mySeamRow.kind}` : ' sd-c-myseam--none'}`} onClick={() => { setSeamSaid(null); setSeamsOpen(true); }}>
+                {mySeamRow ? (
+                  <>
+                    <span className="sd-c-myseam__what">⛏ {SEAM_NAME[mySeamRow.kind]}</span>
+                    <PayMeter pay={seamPay(view, mySeamRow, mySeamRow.diggers)} crowded={mySeamRow.diggers > seamRoom(view, mySeamRow.kind)} />
+                  </>
+                ) : <span className="sd-c-myseam__what">{mine.seam === null ? '⛏ Pick a seam' : '⛏ Your seam ran dry!'}</span>}
+                <u>Move seam</u>
+              </button>
+            )}
             {streak >= 3 && <p className="sd-c-streak">{streak} in a row!</p>}
             {dazed ? (
               <div className="sd-c-dazed" role="status">
@@ -275,14 +323,15 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
         )}
         {view.state === 'lobby' && <p className="sd-c-say" role="status">Waiting for the teacher to start…</p>}
         {view.pausedAt && <p className="sd-c-alert" role="status">Paused. Look at the teacher.</p>}
-        {burst > 0 && <div key={burst} className={`sd-c-flash${team ? ` sd-c-flash--${team}` : ''}`} aria-hidden="true"><span className="sd-c-burst">✨</span></div>}
+        {burst > 0 && <div key={burst} className={`sd-c-flash${team ? ` sd-c-flash--${team}` : ''}${gr ? ' sd-c-flash--gold' : ''}`} aria-hidden="true"><span className="sd-c-burst">{gr ? '⛏' : '✨'}</span>{gr && <span className="sd-c-dig">{Array.from({ length: 10 }, (_, i) => <i key={i} style={{ '--a': `${(i / 10) * 360}deg`, '--r': `${70 + (i % 3) * 34}px`, '--d': `${(i % 4) * 0.04}s` } as React.CSSProperties}>🪙</i>)}</span>}</div>}
+        {gr && windUp && <div className="sd-c-cave" aria-hidden="true">{[0, 1, 2].map((i) => <span key={i} style={{ left: `${i * 34 - 4}%`, '--i': i } as React.CSSProperties}>{dust ? <img src={dust} alt="" /> : null}</span>)}</div>}
       </>
     );
   }
 
-  const bossName = bossInfo(view?.bossId).name;
+  const bossName = gr ? 'Gold left in the mountain' : bossInfo(view?.bossId).name;
   return (
-    <div className={`sd-c${windUp ? ' sd-c--windup' : ''}${golden && live && !dazed ? ' sd-c--golden' : ''}${team ? ` sd-c--team-${team}` : ''}`} role="region" aria-label="Class Showdown controller">
+    <div className={`sd-c${gr ? ' sd-c--gr' : ''}${windUp ? ' sd-c--windup' : ''}${gr && windUp ? ' sd-c--cavein' : ''}${golden && live && !dazed ? ' sd-c--golden' : ''}${team ? ` sd-c--team-${team}` : ''}`} role="region" aria-label="Class Showdown controller">
       {frameArt && <img className="sd-c-frame" src={frameArt} alt="" aria-hidden="true" />}
       <div className="sd-c-top">
         <a className="sd-c-hub" href="#/"><span aria-hidden="true">⌂</span><span className="sd-c-hub__word"> Hub</span></a>
@@ -298,6 +347,7 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
         ) : <span className="sd-c-boss__name sd-c-top__title">Class Showdown</span>}
       </div>
       <div className="sd-c-body">{body}</div>
+      {gr && live && seamsOpen && view && <SeamPicker view={view} mySeam={mine?.seam ?? null} onPick={(id) => void pickSeam(id)} onClose={() => setSeamsOpen(false)} said={seamSaid} />}
     </div>
   );
 }

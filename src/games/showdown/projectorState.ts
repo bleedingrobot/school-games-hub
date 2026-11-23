@@ -18,7 +18,7 @@ export interface ShowdownSound {
 }
 
 export interface RosterEntry { id: string; name: string; team: TeamId | null; role: Role; score: number }
-export interface HitBurst { id: number; pupil: string; name: string; points: number; times: number; weakSpot: boolean; golden: boolean; team: TeamId | null; t: number }
+export interface HitBurst { id: number; pupil: string; name: string; points: number; times: number; weakSpot: boolean; golden: boolean; team: TeamId | null; t: number; /** Gold Rush: the seam dug. */ seam?: number }
 export interface Banner { text: string; kind: 'wind' | 'good' | 'bad' | 'info' | 'phase' | 'golden' | 'final' | 'turn'; until: number }
 export interface Shield {
   needed: number;
@@ -35,6 +35,9 @@ export interface Shield {
 export interface ShieldGroup { needed: number; got: number; state?: 'held' | 'broke' | null; resolvedAt?: number }
 /** A leaderboard climb worth a pop-up (solo). */
 export interface BigMove { id: number; pupil: string; name: string; from: number; to: number; t: number }
+/** Gold Rush: where a seam is and what it is (kept after it runs dry, so the crack-and-fade can play there). */
+export interface SeamInfo { id: number; kind: 'gold' | 'gem' | 'rich'; x: number; y: number; size: number }
+export interface DrySeam extends SeamInfo { t: number }
 export interface Heal { id: number; text: string; t: number }
 
 export interface ProjectorState {
@@ -86,6 +89,9 @@ export interface ProjectorState {
   worstRank: Record<string, number>;
   /** Counts "again" resets (the lobby plays the new boss's entrance), and which boss it brought. */
   againSeq: number;
+  /** Gold Rush: every seam seen so far, and the ones that ran dry (with when). */
+  seamInfo: Record<number, SeamInfo>;
+  dry: DrySeam[];
   /** Round time of the latest event. */
   t: number;
   seq: number;
@@ -126,9 +132,16 @@ export function initialState(reply?: { view?: RoomView; players?: PlayerView[]; 
     weakUntil: view?.weakSpotUntil ?? 0, goldenUntil: view?.goldenUntil ?? 0, goldenSeq: 0, enrageUntil: view?.enrageUntil ?? 0,
     final: view?.finalStarted ?? false, finalUntil: 0, startSeq: 0, hitSeq: 0, bigHitSeq: 0, healAt: 0,
     beaten: view?.result === 'beaten', timeUp: view?.result === 'time', paused: view?.pausedAt != null, ended: view?.state === 'over',
-    recap: reply?.recap ?? null, tugSeq: 0, tugAt: 0, turn: null, turnSeq: 0, moves: [], damage: {}, lastHitter: null, bestStreak: null, worstRank: {}, againSeq: 0, t: view?.t ?? 0, seq: 0,
+    recap: reply?.recap ?? null, tugSeq: 0, tugAt: 0, turn: null, turnSeq: 0, moves: [], damage: {}, lastHitter: null, bestStreak: null, worstRank: {}, againSeq: 0, seamInfo: seamsOf(view), dry: [], t: view?.t ?? 0, seq: 0,
   };
 }
+
+function seamsOf(view: RoomView | null | undefined, into: Record<number, SeamInfo> = {}): Record<number, SeamInfo> {
+  const out = { ...into };
+  for (const x of view?.seams ?? []) out[x.id] = { id: x.id, kind: x.kind, x: x.x, y: x.y, size: x.size };
+  return out;
+}
+export const isGoldRush = (v: Pick<RoomView, 'arena'> | null | undefined) => v?.arena === 'goldrush';
 
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 const TEAM_NAME: Record<TeamId, string> = { red: 'RED', blue: 'BLUE', gold: 'GOLD', green: 'GREEN' };
@@ -182,6 +195,7 @@ export function projectorReduce(s: ProjectorState, event: FeedEvent): ProjectorS
   let n: ProjectorState = { ...s, names, t: Math.max(s.t, event.t) };
   const nm = (id: string | null | undefined) => nameOf(n, id, event);
   const banner = (text: string, kind: Banner['kind'], ms = BANNER_MS): ProjectorState => ({ ...n, banner: { text, kind, until: event.t + ms } });
+  const gr = isGoldRush(n.view);
   const rosterWith = (id: string, patch: Partial<RosterEntry>): ProjectorState => {
     const old = n.roster[id] ?? { id, name: nm(id), team: null, role: 'striker' as Role, score: 0 };
     return { ...n, roster: { ...n.roster, [id]: { ...old, ...patch } }, order: n.order.includes(id) ? n.order : [...n.order, id] };
@@ -197,7 +211,7 @@ export function projectorReduce(s: ProjectorState, event: FeedEvent): ProjectorS
     case 'start':
       return { ...n, startSeq: n.startSeq + 1, ended: false };
     case 'hit': {
-      const burst: HitBurst = { id: n.seq + 1, pupil: event.pupil, name: nm(event.pupil), points: event.points, times: event.times, weakSpot: event.weakSpot, golden: event.golden, team: event.team, t: event.t };
+      const burst: HitBurst = { id: n.seq + 1, pupil: event.pupil, name: nm(event.pupil), points: event.points, times: event.times, weakSpot: event.weakSpot, golden: event.golden, team: event.team, t: event.t, seam: event.seam };
       const old = n.roster[event.pupil];
       const worstBefore = noteRanks(n);
       const before = rankOf(n, event.pupil);
@@ -227,7 +241,7 @@ export function projectorReduce(s: ProjectorState, event: FeedEvent): ProjectorS
     case 'wind_up': {
       const groups = Object.fromEntries(event.groups.map((g) => [g.group, { needed: g.needed, got: 0 }]));
       const shield: Shield = { needed: sum(event.groups.map((g) => g.needed)), got: 0, state: null, endsAt: event.endsAt, resolvedAt: 0, enraged: event.enraged, groups };
-      return { ...n, shield, banner: { text: 'BOSS IS WINDING UP!', kind: 'wind', until: event.endsAt } };
+      return { ...n, shield, banner: { text: gr ? 'CAVE-IN! Prop up the roof!' : 'BOSS IS WINDING UP!', kind: 'wind', until: event.endsAt } };
     }
     case 'shield_progress': {
       if (!n.shield) return n;
@@ -240,7 +254,7 @@ export function projectorReduce(s: ProjectorState, event: FeedEvent): ProjectorS
       const tm = teamName(event.group);
       const g = sh.groups[event.group] ?? { needed: 0, got: 0 };
       const groups = { ...sh.groups, [event.group]: { ...g, got: Math.max(g.got, g.needed), state: 'held' as const, resolvedAt: event.t } };
-      return { ...n, shield: { ...sh, groups, got: Math.max(sh.got, sh.needed), state: 'held', resolvedAt: event.t }, banner: { text: `${tm ? `${tm} shield` : 'Shield'} held!${helped}`, kind: 'good', until: event.t + BANNER_MS } };
+      return { ...n, shield: { ...sh, groups, got: Math.max(sh.got, sh.needed), state: 'held', resolvedAt: event.t }, banner: { text: gr ? `${tm ? `${tm} roof` : 'The roof'} holds!${helped}` : `${tm ? `${tm} shield` : 'Shield'} held!${helped}`, kind: 'good', until: event.t + BANNER_MS } };
     }
     case 'shield_broke': {
       const sh = n.shield ?? { needed: 0, got: 0, endsAt: event.t, enraged: false, groups: {}, state: null, resolvedAt: 0 };
@@ -249,16 +263,16 @@ export function projectorReduce(s: ProjectorState, event: FeedEvent): ProjectorS
       const tm = teamName(event.group);
       const g = sh.groups[event.group] ?? { needed: 0, got: 0 };
       const groups = { ...sh.groups, [event.group]: { ...g, state: 'broke' as const, resolvedAt: event.t } };
-      return { ...n, dazed, shield: { ...sh, groups, state: 'broke', resolvedAt: event.t }, banner: { text: tm ? `${tm} shield broke!` : 'The shield broke!', kind: 'bad', until: event.t + BANNER_MS } };
+      return { ...n, dazed, shield: { ...sh, groups, state: 'broke', resolvedAt: event.t }, banner: { text: gr ? (tm ? `${tm} cave-in!` : 'The roof caved in!') : tm ? `${tm} shield broke!` : 'The shield broke!', kind: 'bad', until: event.t + BANNER_MS } };
     }
     case 'boss_heals':
       return { ...n, healAt: event.t };
     case 'weak_spot':
-      return { ...banner('WEAK SPOT! Hit it now!', 'good', 2600), weakUntil: event.endsAt };
+      return { ...banner(gr ? 'MOTHER LODE! Double gold!' : 'WEAK SPOT! Hit it now!', 'good', 2600), weakUntil: event.endsAt };
     case 'weak_spot_end':
       return { ...n, weakUntil: 0 };
     case 'phase':
-      return { ...n, phase: event.phase, phaseAt: event.t, banner: { text: event.phase === 2 ? 'THE BOSS IS CHANGING!' : 'THE BOSS IS FURIOUS!', kind: 'phase', until: event.t + 3600 } };
+      return { ...n, phase: event.phase, phaseAt: event.t, banner: { text: gr ? (event.phase === 2 ? 'THE MOUNTAIN RUMBLES!' : 'THE MOUNTAIN SHAKES!') : event.phase === 2 ? 'THE BOSS IS CHANGING!' : 'THE BOSS IS FURIOUS!', kind: 'phase', until: event.t + 3600 } };
     case 'golden':
       return { ...n, goldenUntil: event.endsAt, goldenSeq: n.goldenSeq + 1, banner: { text: 'GOLDEN QUESTION! Triple points!', kind: 'golden', until: event.t + 3600 } };
     case 'golden_end':
@@ -266,7 +280,7 @@ export function projectorReduce(s: ProjectorState, event: FeedEvent): ProjectorS
     case 'final':
       return { ...n, final: true, finalUntil: event.endsAt, banner: { text: 'THIRTY SECONDS!', kind: 'final', until: event.t + 3000 } };
     case 'enrage':
-      return { ...banner('The boss is ENRAGED!', 'wind', 2800), enrageUntil: event.endsAt };
+      return { ...banner(gr ? 'The mountain ROARS!' : 'The boss is ENRAGED!', 'wind', 2800), enrageUntil: event.endsAt };
     case 'enrage_end':
       return { ...n, enrageUntil: 0 };
     case 'tug':
@@ -274,11 +288,17 @@ export function projectorReduce(s: ProjectorState, event: FeedEvent): ProjectorS
     case 'boss_turns':
       return { ...n, turn: { team: event.team, at: event.t }, turnSeq: n.turnSeq + 1, banner: { text: `The boss turns on ${TEAM_NAME[event.team]}!`, kind: 'turn', until: event.t + 2600 } };
     case 'boss_beaten':
-      return { ...n, beaten: true, shield: null, banner: { text: 'THE BOSS IS BEATEN!', kind: 'good', until: event.t + 6000 } };
+      return { ...n, beaten: true, shield: null, banner: { text: gr ? 'YOU DUG IT ALL OUT!' : 'THE BOSS IS BEATEN!', kind: 'good', until: event.t + 6000 } };
     case 'time_up':
       return { ...n, timeUp: true, shield: null, banner: { text: "TIME'S UP!", kind: 'bad', until: event.t + 6000 } };
     case 'recap':
       return { ...n, recap: event.recap, ended: true, beaten: event.recap.result === 'beaten', timeUp: event.recap.result === 'time' };
+    case 'seam_new':
+      return { ...n, seamInfo: { ...n.seamInfo, [event.seam]: { id: event.seam, kind: event.kind, x: event.x, y: event.y, size: event.size } } };
+    case 'seam_dry': {
+      const info = n.seamInfo[event.seam];
+      return info ? { ...n, dry: [...n.dry, { ...info, t: event.t }].slice(-6) } : n;
+    }
     case 'again':
       return afterAgain(n);
     case 'pause':
@@ -300,18 +320,33 @@ export function projectorAct(s: ProjectorState, a: ProjectorAction): ProjectorSt
   // A second screen that sees the room go back to a lobby after a recap starts over too.
   if (s.ended && v.state === 'lobby') return { ...afterAgain(s), view: v };
   return {
-    ...s, view: v, phase: v.boss.phase, weakUntil: v.weakSpotUntil, goldenUntil: v.goldenUntil, enrageUntil: v.enrageUntil,
+    ...s, view: v, seamInfo: seamsOf(v, s.seamInfo), phase: v.boss.phase, weakUntil: v.weakSpotUntil, goldenUntil: v.goldenUntil, enrageUntil: v.enrageUntil,
     final: s.final || v.finalStarted, paused: v.pausedAt != null, ended: s.ended || v.state === 'over',
     beaten: s.beaten || v.result === 'beaten', timeUp: s.timeUp || v.result === 'time',
   };
 }
 
 /** What the announcer and sound do for an event (the screen throttles hit sounds). */
-export function soundFor(e: FeedEvent): { play?: Parameters<ShowdownSound['play']>[0]; say?: string } {
+export function soundFor(e: FeedEvent, goldRush = false): { play?: Parameters<ShowdownSound['play']>[0]; say?: string } {
+  if (goldRush) {
+    switch (e.type) {
+      case 'wind_up': return { play: 'drum', say: 'Cave-in! Prop up the roof!' };
+      case 'shield_held': return { play: 'clang', say: 'The roof holds!' };
+      case 'shield_broke': return { play: 'crack', say: 'Cave-in!' };
+      case 'weak_spot': return { play: 'whoosh', say: 'Mother lode! Double gold!' };
+      case 'phase': return { play: 'roar', say: 'The mountain rumbles!' };
+      case 'boss_beaten': return { play: 'cheer', say: 'You dug it all out!' };
+      case 'again': return { play: 'roar', say: 'Dig, dig, dig!' };
+      case 'hit': return { play: e.times >= 2 || e.golden ? 'bighit' : 'hit' };
+      default: break;
+    }
+  }
   switch (e.type) {
     case 'start': return { play: 'countdown', say: 'Three, two, one, fight!' };
     case 'hit': return { play: e.times >= 2 || e.golden ? 'bighit' : 'hit' };
     case 'wind_up': return { play: 'drum', say: 'The boss is winding up! Shield up!' };
+    case 'seam_dry': return { play: 'crack' };
+    case 'seam_new': return { play: 'chime' };
     case 'shield_held': return { play: 'clang', say: 'Shield held!' };
     case 'shield_broke': return { play: 'crack', say: 'The shield broke!' };
     case 'revive': return { play: 'chime' };
