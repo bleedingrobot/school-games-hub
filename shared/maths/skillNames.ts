@@ -55,7 +55,12 @@ const TINY: Record<string, string> = {
   'whole-from-fraction': 'Whole from fraction',
 };
 
-/** "Facts to 10", "×6 ×9": the shortest name for a skill. */
+/**
+ * "Facts to 10", "×3 ÷3": the shortest name for a skill. A times-table rung holds that table's division facts too, so its
+ * name says so (James, 23 Nov 2026: teachers couldn't see division on the Skill map).
+ */
 export function skillTinyLabel(id: string): string {
+  const table = /^tables-(\d+)$/.exec(id);
+  if (table) return `×${table[1]} ÷${table[1]}`;
   return TINY[id] ?? skillShortLabel(id).replace(/^Number facts/, 'Facts').replace(/^Counting in /, 'Count in ');
 }
