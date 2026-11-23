@@ -11,6 +11,8 @@ import { reshuffle, teamForLateJoiner } from './teams';
 import { dig, openSeams } from './goldrush';
 import { blowBack, jump, setSummit } from './skyclimb';
 import { setRaft, tide, wade, wave } from './island';
+import { crownTick, knockCrown, notePoints, setHill } from './hill';
+import { auctionDue, auctionTick, setAuction, thieves } from './auction';
 import type { Mode, Outcome, Player, Role, Round, ShowdownEvent, TeamId } from './types';
 
 export function newRound(opts: { seed: number; mode: Mode; lengthMin?: number; bossHealth?: number }): Round {
@@ -93,6 +95,8 @@ export function start(r: Round): Outcome {
   if (r.arena === 'goldrush') openSeams(r);
   if (r.arena === 'skyclimb') setSummit(r);
   if (r.arena === 'island') setRaft(r);
+  if (r.arena === 'hill') setHill(r);
+  if (r.arena === 'auction') setAuction(r);
   return { ok: true, events: [{ type: 'start', t: 0, bossMax: r.boss.max }] };
 }
 
@@ -217,6 +221,8 @@ export function answer(r: Round, id: string, correct: boolean, t: number, opts: 
     r.teamDamage[p.team] = (r.teamDamage[p.team] ?? 0) + damage;
   }
   events.push({ type: 'hit', t: r.t, pupil: id, team: p.team, role: p.role, points, damage, streak: p.streak, times, weakSpot, golden, ...(seam !== undefined ? { seam } : {}) });
+  // King of the Hill: these points count towards the crown.
+  if (r.arena === 'hill') notePoints(r, p, points);
   if (p.streak === 3 || p.streak % 5 === 0) events.push({ type: 'streak', t: r.t, pupil: id, streak: p.streak });
 
   // Catch-up: a lucky chest now and then for pupils (or a team) at the back.
@@ -272,6 +278,8 @@ export function advance(r: Round, t: number): ShowdownEvent[] {
     if (r.weakSpotUntil && r.weakSpotUntil <= target) due.push([r.weakSpotUntil, () => { r.weakSpotUntil = 0; events.push({ type: 'weak_spot_end', t: r.t }); }]);
     if (r.goldenUntil && r.goldenUntil <= target) due.push([r.goldenUntil, () => { r.goldenUntil = 0; events.push({ type: 'golden_end', t: r.t }); }]);
     if (r.enrageUntil && r.enrageUntil <= target) due.push([r.enrageUntil, () => { r.enrageUntil = 0; events.push({ type: 'enrage_end', t: r.t }); }]);
+    if (r.arena === 'hill' && r.crown) { const c = r.crown; due.push([c.nextAt, () => crownTick(r, events)]); }
+    if (r.arena === 'auction' && r.auction) due.push([auctionDue(r), () => auctionTick(r, events)]);
     if (planned) due.push([planned.at, () => { r.nextPlanned++; runPlanned(r, planned.kind, events); }]);
     if (!r.finalStarted) due.push([end - SHOWDOWN.finalMs, () => { r.finalStarted = true; events.push({ type: 'final', t: r.t, endsAt: end }); }]);
     due.push([r.nextRankAt, () => { snapshotRanks(r); r.nextRankAt += SHOWDOWN.rankEveryMs; }]);
@@ -371,6 +379,15 @@ function finishWindUp(r: Round, events: ShowdownEvent[]) {
   // Sky Climb: the storm has passed; anyone who wasn't answering slips back down.
   if (r.arena === 'skyclimb') blowBack(r, events);
   // Shrinking Island: the big wave pushes anyone who wasn't answering back towards the water.
+  // King of the Hill: a challenger who breaks through knocks the crown off.
+  if (r.arena === 'hill' && Object.values(w.groups).some((g) => g.done === 'broke')) knockCrown(r, events);
+  // Auction House: thieves who get past the guards steal the treasure on sale (any team letting them in; in solo, when
+  // fewer than 60% held their own, the same rule as the boss healing).
+  if (r.arena === 'auction') {
+    const gs = Object.values(w.groups);
+    const broke = gs.filter((g) => g.done === 'broke').length;
+    if (r.mode === 'solo' ? gs.length > 0 && (gs.length - broke) / gs.length < SHOWDOWN.windUp.soloHealShare : broke > 0) thieves(r, events);
+  }
   if (r.arena === 'island') {
     const broke = new Set(Object.keys(w.groups).filter((k) => w.groups[k].done === 'broke'));
     wave(r, events, (p) => broke.has(groupOf(r, p) ?? ''));

@@ -185,6 +185,14 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
     } else setSeamSaid(out.body.code === 'dry' ? 'That seam just ran dry! Pick another.' : String(out.body.error ?? 'That didn’t work.'));
   };
 
+  const [bidSaid, setBidSaid] = useState<{ text: string; good: boolean } | null>(null);
+  const placeBid = async (amount: number) => {
+    const out = await link.send({ action: 'choose', room, bid: amount });
+    if (out.body.me) setMine(out.body.me as PlayerView);
+    if (out.body.view) setView(out.body.view as RoomView);
+    setBidSaid(out.status === 200 ? { text: `🔨 You bid ${amount}!`, good: true } : { text: String(out.body.error ?? 'That bid didn’t work.'), good: false });
+  };
+
   const t = view?.startedAt ? (view.pausedAt ?? Date.now() + offset.current) - view.startedAt : 0;
   const dazed = !!mine && mine.dazedUntil > t;
   const team = mine?.team ?? null;
@@ -272,7 +280,7 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
   } else {
     body = (
       <>
-        {view.state === 'lobby' && <><h1 className="sd-c-title">Get ready!</h1><p className="sd-c-roar">{gr ? 'Grab your pickaxe! Pick a seam when we start.' : view.arena === 'skyclimb' ? 'Rope on! Every right answer is a step up.' : view.arena === 'island' ? 'Right answers move you inland, away from the water!' : bossInfo(view.bossId).roar}</p></>}
+        {view.state === 'lobby' && <><h1 className="sd-c-title">Get ready!</h1><p className="sd-c-roar">{gr ? 'Grab your pickaxe! Pick a seam when we start.' : view.arena === 'skyclimb' ? 'Rope on! Every right answer is a step up.' : view.arena === 'island' ? 'Right answers move you inland, away from the water!' : view.arena === 'hill' ? 'Score the most in 30 seconds to wear the crown!' : view.arena === 'auction' ? 'Earn coins, save up, and bid for treasure!' : bossInfo(view.bossId).roar}</p></>}
         {view.mode === 'solo' && view.state === 'live' && mine.topTen && <p className="sd-c-topten" role="status">🏆 You're in the top 10!</p>}
         {myRole && !(canSwap && rolesOpen) && (
           canSwap ? (
@@ -334,7 +342,7 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
             {said && <p className="sd-c-say" role="alert">{said}</p>}
           </div>
         )}
-        {burst > 0 && <div key={burst} className={`sd-c-flash${team ? ` sd-c-flash--${team}` : ''}${gr ? ' sd-c-flash--gold' : ''}`} aria-hidden="true"><span className="sd-c-burst">{gr ? '⛏' : view?.arena === 'skyclimb' ? '🧗' : view?.arena === 'island' ? '🔨' : '✨'}</span>{gr && <span className="sd-c-dig">{Array.from({ length: 10 }, (_, i) => <i key={i} style={{ '--a': `${(i / 10) * 360}deg`, '--r': `${70 + (i % 3) * 34}px`, '--d': `${(i % 4) * 0.04}s` } as React.CSSProperties}>🪙</i>)}</span>}</div>}
+        {burst > 0 && <div key={burst} className={`sd-c-flash${team ? ` sd-c-flash--${team}` : ''}${gr ? ' sd-c-flash--gold' : ''}`} aria-hidden="true"><span className="sd-c-burst">{gr ? '⛏' : view?.arena === 'skyclimb' ? '🧗' : view?.arena === 'island' ? '🔨' : view?.arena === 'hill' ? '🧱' : view?.arena === 'auction' ? '🪙' : '✨'}</span>{gr && <span className="sd-c-dig">{Array.from({ length: 10 }, (_, i) => <i key={i} style={{ '--a': `${(i / 10) * 360}deg`, '--r': `${70 + (i % 3) * 34}px`, '--d': `${(i % 4) * 0.04}s` } as React.CSSProperties}>🪙</i>)}</span>}</div>}
         {gr && windUp && <div className="sd-c-cave" aria-hidden="true">{[0, 1, 2].map((i) => <span key={i} style={{ left: `${i * 34 - 4}%`, '--i': i } as React.CSSProperties}>{dust ? <img src={dust} alt="" /> : null}</span>)}</div>}
       </>
     );
@@ -362,7 +370,7 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
       {split && view && mine ? (
         <div className="sd-c-body sd-c-body--split">
           <div className="sd-c-main">{body}</div>
-          <ControllerStage view={view} t={t} hit={burst} team={team} me={mine.player} role={mine.role} streak={mine.streak} />
+          <ControllerStage view={view} t={t} hit={burst} team={team} me={mine.player} role={mine.role} streak={mine.streak} coins={mine.coins ?? 0} vault={mine.vault ?? 0} onBid={(n) => void placeBid(n)} bidSaid={bidSaid} />
         </div>
       ) : <div className="sd-c-body">{body}</div>}
       {gr && live && seamsOpen && view && <SeamPicker view={view} mySeam={mine?.seam ?? null} onPick={(id) => void pickSeam(id)} onClose={() => setSeamsOpen(false)} said={seamSaid} />}

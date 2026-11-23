@@ -4,7 +4,7 @@
  * The big screen, the iPad and the announcer all read them from here, so a new arena is one entry.
  */
 import type { Arena, Role } from '../../../shared/showdown/types';
-import { ANNOUNCER, GOLD_RUSH_LINES, ISLAND_LINES, SKY_CLIMB_LINES } from './voiceLines';
+import { ANNOUNCER, AUCTION_LINES, GOLD_RUSH_LINES, HILL_LINES, ISLAND_LINES, SKY_CLIMB_LINES } from './voiceLines';
 
 export interface ArenaWords {
   /** The arena's name in the teacher's picker. */
@@ -160,7 +160,65 @@ const ISLAND: ArenaWords = {
   lines: { joinNow: ISLAND_LINES.joinNow, start: ISLAND_LINES.start, windUp: ISLAND_LINES.wave, held: ISLAND_LINES.held, broke: ISLAND_LINES.broke, weak: ISLAND_LINES.crate, phase: ISLAND_LINES.phase, done: ISLAND_LINES.done },
 };
 
-const WORDS: Record<Arena, ArenaWords> = { boss: BOSS, goldrush: GOLD_RUSH, skyclimb: SKY_CLIMB, island: ISLAND };
+const HILL: ArenaWords = {
+  ...BOSS,
+  name: 'King of the Hill', goal: 'Build the hilltop castle', fills: true,
+  roles: {
+    striker: { name: 'Mason', line: 'Build the castle', emoji: '🧱' },
+    guard: { name: 'Defender', line: 'Hold off challengers', emoji: '🛡️' },
+    healer: { name: 'Medic', line: 'Wake dazed friends', emoji: '💖' },
+  },
+  titles: { striker: 'Build the castle!', guard: 'Hold off the charge!', healer: 'Wake a friend!' },
+  lobbyCry: 'Who will wear the crown?', lobbyHint: 'Open Class Showdown on your iPad. Score fast to take the crown!',
+  shieldUp: 'HOLD OFF THE CHARGE!', shieldTeam: 'WALL', held: 'HELD!', broke: 'CRASH!', needGuards: 'Need more Defenders!',
+  windBanner: 'A CHALLENGER CHARGES THE HILL!',
+  heldBanner: (tm) => `${tm ? `${tm} held` : 'We held'} the hill!`,
+  brokeBanner: (tm) => `The challenger broke through${tm ? ` ${tm}` : ''}! The crown is up for grabs!`,
+  weakBanner: 'DOUBLE CROWN! Double stones, double crown points!',
+  phaseBanner: (p) => (p === 2 ? 'THE WALLS ARE RISING!' : 'THE TOWERS GO UP!'),
+  enrageBanner: 'Challengers STORM the hill!', enrageButton: 'Charge', beatenBanner: 'THE CASTLE IS BUILT!',
+  notices: {
+    wind: '⚔️ A challenger charges! Answer to hold the hill!', heldNote: '🛡️ We held the hill!', enrage: '🐎 Challengers storm the hill!', weak: '👑 Double crown! Double everything!',
+    phase: (p) => (p === 3 ? '🏰 The towers go up! Finish the castle!' : '🧱 The walls are rising!'), calm: '👑 Score fast to take the crown!',
+  },
+  teamUnit: null, mostDamage: 'Most stones',
+  awards: { most_damage: 'Master mason', last_hit: 'Last stone', shield_wall: 'Hill defender' },
+  recapTitle: (won) => (won ? 'CASTLE BUILT!' : 'So close!'),
+  recapHead: (won, pct) => (won ? 'The castle is built! Long live the king!' : `So close! The castle is ${pct}% built!`),
+  overLine: (won) => (won ? '🏰 The class built the castle on the hill!' : '🧱 So close! The castle was nearly built.'),
+  lines: { joinNow: HILL_LINES.joinNow, start: HILL_LINES.start, windUp: HILL_LINES.charge, held: HILL_LINES.held, broke: HILL_LINES.broke, weak: HILL_LINES.double, phase: HILL_LINES.phase, done: HILL_LINES.done },
+};
+
+const AUCTION: ArenaWords = {
+  ...BOSS,
+  name: 'Auction House', goal: 'Fill the royal treasury', fills: true,
+  roles: {
+    striker: { name: 'Merchant', line: 'Earn coins', emoji: '🪙' },
+    guard: { name: 'Watchman', line: 'Catch the thieves', emoji: '🛡️' },
+    healer: { name: 'Medic', line: 'Wake dazed friends', emoji: '💖' },
+  },
+  titles: { striker: 'Earn coins!', guard: 'Catch the thieves!', healer: 'Wake a friend!' },
+  lobbyCry: 'Treasure for sale!', lobbyHint: 'Open Class Showdown on your iPad. Earn coins, then bid for treasure!',
+  shieldUp: 'GUARD THE TREASURE!', shieldTeam: 'GUARD', held: 'CAUGHT!', broke: 'STOLEN!', needGuards: 'Need more Watchmen!',
+  windBanner: 'THIEVES IN THE AUCTION HOUSE!',
+  heldBanner: (tm) => `${tm ? `${tm} caught` : 'We caught'} the thieves!`,
+  brokeBanner: (tm) => `The thieves got past${tm ? ` ${tm}` : ''}! The treasure is stolen!`,
+  weakBanner: 'GOLDEN HOUR! Double coins!',
+  phaseBanner: (p) => (p === 2 ? 'THE TREASURY IS FILLING UP!' : 'THE TREASURY IS NEARLY FULL!'),
+  enrageBanner: 'A GANG of thieves!', enrageButton: 'Thieves', beatenBanner: 'THE TREASURY IS FULL!',
+  notices: {
+    wind: '🦹 Thieves! Answer to guard the treasure!', heldNote: '🛡️ We caught the thieves!', enrage: '🦹 A gang of thieves is sneaking in!', weak: '✨ Golden hour! Double coins!',
+    phase: (p) => (p === 3 ? '💰 The treasury is nearly full!' : '🪙 The treasury is filling up!'), calm: '🪙 Earn coins, save up, bid for treasure!',
+  },
+  teamUnit: null, mostDamage: 'Most coins earned',
+  awards: { most_damage: 'Top merchant', last_hit: 'Last coin', shield_wall: 'Thief catcher' },
+  recapTitle: (won) => (won ? 'TREASURY FULL!' : 'So close!'),
+  recapHead: (won, pct) => (won ? 'The royal treasury is full! Who has the biggest fortune?' : `So close! The treasury is ${pct}% full!`),
+  overLine: (won) => (won ? '💰 The class filled the royal treasury!' : '🪙 So close! The treasury was nearly full.'),
+  lines: { joinNow: AUCTION_LINES.joinNow, start: AUCTION_LINES.start, windUp: AUCTION_LINES.thieves, held: AUCTION_LINES.held, broke: AUCTION_LINES.broke, weak: AUCTION_LINES.golden, phase: AUCTION_LINES.phase, done: AUCTION_LINES.done },
+};
+
+const WORDS: Record<Arena, ArenaWords> = { boss: BOSS, goldrush: GOLD_RUSH, skyclimb: SKY_CLIMB, island: ISLAND, hill: HILL, auction: AUCTION };
 
 /** The roles a group (the class, or a team) is short of: Guards when fewer than 1 in 5 guard, a Healer when there's none. */
 export function rolesNeeded(counts: Record<Role, number> | undefined): Role[] {

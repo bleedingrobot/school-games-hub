@@ -22,6 +22,8 @@ import { advance, answer, chooseRole, enrage, goldenNext, join, moveToTeam, newR
 import { reshuffle } from './teams';
 import { chooseSeam, diggersAt, openSeamsOf } from './goldrush';
 import { shoreAt, spotOf } from './island';
+import { contenders } from './hill';
+import { AUCTION, bid, coinsOf, openLot, vaultOf, type BidRefusal, type TreasureKind } from './auction';
 import { pickBoss, rewardFor, roster, type BossId, type ChestGame, type Reward, type RosterRow } from './bosses';
 import type { Arena, Mode, Player, Role, Round, ShowdownEvent, TeamId } from './types';
 import { ladderProgress } from '../maths/ladder';
@@ -34,8 +36,8 @@ import { TimesTables } from '../maths/skillPacks/timesTables';
 
 export const MODES: readonly Mode[] = ['class', 'teams2', 'teams4', 'solo'];
 export const ROLES: readonly Role[] = ['striker', 'guard', 'healer'];
-/** Arenas a room can be opened as (each arena's rules: goldrush.ts, skyclimb.ts, island.ts). */
-export const ARENAS = ['boss', 'goldrush', 'skyclimb', 'island'] as const satisfies readonly Arena[];
+/** Arenas a room can be opened as (each arena's rules: goldrush.ts, skyclimb.ts, island.ts, hill.ts, auction.ts). */
+export const ARENAS = ['boss', 'goldrush', 'skyclimb', 'island', 'hill', 'auction'] as const satisfies readonly Arena[];
 
 /** What pupils (their class's room row) and the projector see of a room: no names, no maths. */
 export interface RoomView {
@@ -49,6 +51,18 @@ export interface RoomView {
   /** Shrinking Island: the shoreline now (1 = where it started) and where each pupil stands, by id: [degrees round, distance
    *  from the middle, 0 on the island or 1 + swim strokes so far on a rock]. No names. Null in the other arenas. */
   island: { shore: number; spots: Record<string, [number, number, number]> } | null;
+  /** King of the Hill: who wears the crown (a pupil id, or a team; null = up for grabs) since when, the top 3 by points in
+   *  the last 30 seconds, and how long each holder has worn it (ms). No names. Null in the other arenas. */
+  crown: { holder: string | null; team: boolean; since: number; nextAt: number; contenders: [string, number][]; held: Record<string, number> } | null;
+  /** Auction House: the treasure on sale (its value null while a mystery box is on sale; the leading bidder by id), when
+   *  the next goes up, every treasure sold so far (who bought it, by id) and the top 5 fortunes by id. Null in the other arenas. */
+  auction: {
+    lot: { id: number; kind: TreasureKind; value: number | null; min: number; endsAt: number; top: number; topBy: string | null; topTeam: TeamId | null; bids: number } | null;
+    nextAt: number | null;
+    sold: { id: number; kind: TreasureKind; value: number; bid: number; by: string; team: TeamId | null }[];
+    rich: { id: string; fortune: number; vault: number }[];
+    steps: readonly number[];
+  } | null;
   /** How many pupils have each role, in the whole class ('all') and in each team, so every screen can call for more Guards. */
   roles: Record<string, Record<Role, number>>;
   lengthMin: number;
@@ -96,6 +110,9 @@ export interface PlayerView {
   reward: Reward | null;
   /** Gold Rush: the seam this pupil digs at. */
   seam: number | null;
+  /** Auction House: coins to spend, and what this pupil's treasures are worth (score = the two together). */
+  coins: number;
+  vault: number;
 }
 
 /** A feed row for the projector: the engine's event, plus the first names of every pupil it mentions. */
@@ -209,6 +226,8 @@ export function roomView(row: Pick<RoomRow, 'arena' | 'startedAt' | 'pausedAt' |
     result: r.result, showNames: row.showNames,
     island: r.arena === 'island' ? islandView(r) : null,
     roles: roleCounts(r),
+    auction: r.arena === 'auction' && r.auction ? auctionView(r) : null,
+    crown: r.arena === 'hill' && r.crown ? { holder: r.crown.holder, team: r.crown.team, since: r.crown.since, nextAt: r.crown.nextAt, contenders: contenders(r).slice(0, 3), held: { ...r.crown.held } } : null,
   };
 }
 
@@ -220,6 +239,17 @@ function roleCounts(r: Round): RoomView['roles'] {
     if (p.team) (out[p.team] ??= { striker: 0, guard: 0, healer: 0 })[p.role]++;
   }
   return out;
+}
+
+function auctionView(r: Round): NonNullable<RoomView['auction']> {
+  const a = r.auction!;
+  const lot = openLot(r);
+  const sold = a.lots.filter((l) => l.end === 'sold' && l.topBy).map((l) => ({ id: l.id, kind: l.kind, value: l.value, bid: l.top, by: l.topBy!, team: r.players[l.topBy!]?.team ?? null }));
+  const rich = r.order.map((id) => r.players[id]).filter((p) => p.score > 0).sort((x, y) => y.score - x.score).slice(0, 5).map((p) => ({ id: p.id, fortune: p.score, vault: vaultOf(p) }));
+  return {
+    lot: lot ? { id: lot.id, kind: lot.kind, value: lot.kind === 'mystery' ? null : lot.value, min: lot.min, endsAt: lot.endsAt, top: lot.top, topBy: lot.topBy, topTeam: lot.topBy ? r.players[lot.topBy]?.team ?? null : null, bids: lot.bids } : null,
+    nextAt: a.nextAt, sold, rich, steps: AUCTION.steps,
+  };
 }
 
 function islandView(r: Round): NonNullable<RoomView['island']> {
@@ -242,6 +272,7 @@ export function playerView(p: Player, top: Set<string> = new Set()): PlayerView 
     topTen: top.has(p.id),
     reward: p.reward ?? null,
     seam: p.seam ?? null,
+    coins: coinsOf(p), vault: vaultOf(p),
     player: p.id, name: p.name, team: p.team, role: p.role, score: p.score, streak: p.streak, bestStreak: p.bestStreak, correct: p.correct,
     wrong: p.wrong, shields: p.shields, revives: p.revives, nextAt: p.nextAt, dazedUntil: p.dazedUntil,
   };
@@ -583,6 +614,27 @@ export async function showdownStep(s: ShowdownServices, who: string, body: Recor
         // Picking counts as digging, so the seam's count of diggers shows it straight away.
         r.players[who].lastActive = r.t;
         return { reply: null, events: [...events, { type: 'seam_pick' as const, t: r.t, pupil: who, seam }] };
+      });
+      if ('refuse' in done) return done.refuse;
+      return ok({ room, me: playerView(done.row.round.players[who], topTenOf(done.row.round)), view: roomView(done.row, done.row.round), now: s.now() });
+    }
+
+    if (action === 'choose' && typeof body.bid === 'number') {
+      const amount = body.bid;
+      const said: Record<BidRefusal, string> = {
+        no_lot: 'Bidding has closed. Wait for the next treasure!',
+        too_low: 'Someone bid more! Try a higher bid.',
+        too_poor: "You haven't got that many coins. Answer more to earn them!",
+        own_team: 'Your team is already winning this one!',
+        already_top: "You're already the top bid!",
+      };
+      const done = await mutate(s, room, (r, t, row) => {
+        if (r.arena !== 'auction' || r.state !== 'live') return { refuse: no(409, 'Bid once the auction starts.', 'not-now') };
+        const events = row.pausedAt === null ? advance(r, t) : [];
+        if (row.pausedAt !== null) return { refuse: no(409, 'Paused. Look at the teacher.', 'paused') };
+        const refused = bid(r, who, amount, events);
+        if (refused) return { refuse: no(409, said[refused], refused) };
+        return { reply: null, events };
       });
       if ('refuse' in done) return done.refuse;
       return ok({ room, me: playerView(done.row.round.players[who], topTenOf(done.row.round)), view: roomView(done.row, done.row.round), now: s.now() });

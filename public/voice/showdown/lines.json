@@ -1,5 +1,345 @@
 [
  {
+  "slug": "halfway-there-keep-going",
+  "text": "Halfway there! Keep going!"
+ },
+ {
+  "slug": "nearly-there-one-last-push",
+  "text": "Nearly there! One last push!"
+ },
+ {
+  "slug": "one-minute-left",
+  "text": "One minute left!"
+ },
+ {
+  "slug": "five-in-a-row-on-fire",
+  "text": "Five in a row! On fire!"
+ },
+ {
+  "slug": "ten-in-a-row-unstoppable",
+  "text": "Ten in a row! Unstoppable!"
+ },
+ {
+  "slug": "a-lucky-chest",
+  "text": "A lucky chest!"
+ },
+ {
+  "slug": "a-healer-to-the-rescue",
+  "text": "A Healer to the rescue!"
+ },
+ {
+  "slug": "paused-eyes-on-the-teacher",
+  "text": "Paused. Eyes on the teacher."
+ },
+ {
+  "slug": "and-we-re-back-go-go-go",
+  "text": "And we're back! Go, go, go!"
+ },
+ {
+  "slug": "we-have-a-new-leader",
+  "text": "We have a new leader!"
+ },
+ {
+  "slug": "nearly-there-keep-answering",
+  "text": "Nearly there! Keep answering!"
+ },
+ {
+  "slug": "golden-question-time-is-over",
+  "text": "Golden question time is over!"
+ },
+ {
+  "slug": "red-team-is-pushing",
+  "text": "Red team is pushing!"
+ },
+ {
+  "slug": "blue-team-is-pushing",
+  "text": "Blue team is pushing!"
+ },
+ {
+  "slug": "the-boss-turns-on-red-team",
+  "text": "The boss turns on Red team!"
+ },
+ {
+  "slug": "the-boss-turns-on-blue-team",
+  "text": "The boss turns on Blue team!"
+ },
+ {
+  "slug": "the-boss-turns-on-gold-team",
+  "text": "The boss turns on Gold team!"
+ },
+ {
+  "slug": "the-boss-turns-on-green-team",
+  "text": "The boss turns on Green team!"
+ },
+ {
+  "slug": "we-need-more-guards",
+  "text": "We need more Guards!"
+ },
+ {
+  "slug": "we-need-a-healer",
+  "text": "We need a Healer!"
+ },
+ {
+  "slug": "the-boss-is-enraged",
+  "text": "The boss is enraged!"
+ },
+ {
+  "slug": "we-need-more-prop-holders",
+  "text": "We need more Prop-holders!"
+ },
+ {
+  "slug": "we-need-a-medic",
+  "text": "We need a Medic!"
+ },
+ {
+  "slug": "the-mountain-roars",
+  "text": "The mountain roars!"
+ },
+ {
+  "slug": "we-need-more-anchors",
+  "text": "We need more Anchors!"
+ },
+ {
+  "slug": "the-wind-is-howling",
+  "text": "The wind is howling!"
+ },
+ {
+  "slug": "we-need-more-wave-breakers",
+  "text": "We need more Wave-breakers!"
+ },
+ {
+  "slug": "the-sea-is-angry",
+  "text": "The sea is angry!"
+ },
+ {
+  "slug": "we-need-more-defenders",
+  "text": "We need more Defenders!"
+ },
+ {
+  "slug": "challengers-storm-the-hill",
+  "text": "Challengers storm the hill!"
+ },
+ {
+  "slug": "we-need-more-watchmen",
+  "text": "We need more Watchmen!"
+ },
+ {
+  "slug": "a-gang-of-thieves",
+  "text": "A gang of thieves!"
+ },
+ {
+  "slug": "blocked-great-teamwork",
+  "text": "Blocked! Great teamwork!"
+ },
+ {
+  "slug": "the-shield-holds-nice-one",
+  "text": "The shield holds! Nice one!"
+ },
+ {
+  "slug": "crack-the-shield-is-down",
+  "text": "Crack! The shield is down!"
+ },
+ {
+  "slug": "oof-it-got-through",
+  "text": "Oof! It got through!"
+ },
+ {
+  "slug": "here-it-comes-shields-up",
+  "text": "Here it comes! Shields up!"
+ },
+ {
+  "slug": "get-ready-shield-up-now",
+  "text": "Get ready! Shield up now!"
+ },
+ {
+  "slug": "weak-spot-hit-it-hard",
+  "text": "Weak spot! Hit it hard!"
+ },
+ {
+  "slug": "double-damage-go-go-go",
+  "text": "Double damage! Go, go, go!"
+ },
+ {
+  "slug": "golden-question-triple-points",
+  "text": "Golden question! Triple points!"
+ },
+ {
+  "slug": "victory-the-boss-is-down",
+  "text": "Victory! The boss is down!"
+ },
+ {
+  "slug": "phew-the-roof-is-safe",
+  "text": "Phew! The roof is safe!"
+ },
+ {
+  "slug": "hold-on-tight-you-made-it-through",
+  "text": "Hold on tight! You made it through!"
+ },
+ {
+  "slug": "the-wave-is-gone-great-teamwork",
+  "text": "The wave is gone! Great teamwork!"
+ },
+ {
+  "slug": "charge-stopped-the-hill-is-ours",
+  "text": "Charge stopped! The hill is ours!"
+ },
+ {
+  "slug": "gotcha-no-stealing-today",
+  "text": "Gotcha! No stealing today!"
+ },
+ {
+  "slug": "sold-to-the-lucky-bidder",
+  "text": "Sold, to the lucky bidder!"
+ },
+ {
+  "slug": "bang-goes-the-hammer-sold",
+  "text": "Bang goes the hammer! Sold!"
+ },
+ {
+  "slug": "next-up-a-shiny-treasure",
+  "text": "Next up, a shiny treasure!"
+ },
+ {
+  "slug": "fresh-treasure-on-the-stage-who-will-bid",
+  "text": "Fresh treasure on the stage! Who will bid?"
+ },
+ {
+  "slug": "the-crown-has-a-new-owner",
+  "text": "The crown has a new owner!"
+ },
+ {
+  "slug": "long-live-the-new-king",
+  "text": "Long live the new king!"
+ },
+ {
+  "slug": "five-in-a-row-brilliant",
+  "text": "Five in a row! Brilliant!"
+ },
+ {
+  "slug": "five-right-in-a-row-amazing",
+  "text": "Five right in a row! Amazing!"
+ },
+ {
+  "slug": "ooh-a-lucky-chest",
+  "text": "Ooh, a lucky chest!"
+ },
+ {
+  "slug": "wakey-wakey-a-healer-helped-a-friend",
+  "text": "Wakey wakey! A Healer helped a friend!"
+ },
+ {
+  "slug": "guards-needed-who-can-help",
+  "text": "Guards needed! Who can help?"
+ },
+ {
+  "slug": "calling-all-healers",
+  "text": "Calling all Healers!"
+ },
+ {
+  "slug": "the-auction-house-is-open-join-now",
+  "text": "The Auction House is open! Join now!"
+ },
+ {
+  "slug": "earn-coins-then-bid-for-treasure",
+  "text": "Earn coins, then bid for treasure!"
+ },
+ {
+  "slug": "thieves-guard-the-treasure",
+  "text": "Thieves! Guard the treasure!"
+ },
+ {
+  "slug": "the-thieves-are-caught",
+  "text": "The thieves are caught!"
+ },
+ {
+  "slug": "oh-no-the-thieves-got-away-with-it",
+  "text": "Oh no! The thieves got away with it!"
+ },
+ {
+  "slug": "golden-hour-double-coins",
+  "text": "Golden hour! Double coins!"
+ },
+ {
+  "slug": "the-treasury-is-filling-up",
+  "text": "The treasury is filling up!"
+ },
+ {
+  "slug": "the-royal-treasury-is-full",
+  "text": "The royal treasury is full!"
+ },
+ {
+  "slug": "a-new-treasure-start-your-bids",
+  "text": "A new treasure! Start your bids!"
+ },
+ {
+  "slug": "a-mystery-box-what-could-be-inside",
+  "text": "A mystery box! What could be inside?"
+ },
+ {
+  "slug": "the-golden-dragon-the-last-treasure-of-the-day",
+  "text": "The golden dragon! The last treasure of the day!"
+ },
+ {
+  "slug": "going-going-gone-sold",
+  "text": "Going, going, gone! Sold!"
+ },
+ {
+  "slug": "no-bids-it-goes-back-in-the-vault",
+  "text": "No bids! It goes back in the vault."
+ },
+ {
+  "slug": "king-of-the-hill-join-now",
+  "text": "King of the Hill! Join now!"
+ },
+ {
+  "slug": "score-fast-to-take-the-crown",
+  "text": "Score fast to take the crown!"
+ },
+ {
+  "slug": "a-challenger-charges-the-hill",
+  "text": "A challenger charges the hill!"
+ },
+ {
+  "slug": "we-held-the-hill",
+  "text": "We held the hill!"
+ },
+ {
+  "slug": "crash-the-crown-is-up-for-grabs",
+  "text": "Crash! The crown is up for grabs!"
+ },
+ {
+  "slug": "double-crown",
+  "text": "Double crown!"
+ },
+ {
+  "slug": "the-walls-are-rising",
+  "text": "The walls are rising!"
+ },
+ {
+  "slug": "the-castle-is-built",
+  "text": "The castle is built!"
+ },
+ {
+  "slug": "a-new-king-of-the-hill",
+  "text": "A new king of the hill!"
+ },
+ {
+  "slug": "red-team-takes-the-crown",
+  "text": "Red team takes the crown!"
+ },
+ {
+  "slug": "blue-team-takes-the-crown",
+  "text": "Blue team takes the crown!"
+ },
+ {
+  "slug": "gold-team-takes-the-crown",
+  "text": "Gold team takes the crown!"
+ },
+ {
+  "slug": "green-team-takes-the-crown",
+  "text": "Green team takes the crown!"
+ },
+ {
   "slug": "join-now",
   "text": "Join now!"
  },
