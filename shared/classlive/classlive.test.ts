@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { markQuestion } from '../maths/serverQuestions';
 import { classLiveStep } from './server';
 import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock, rng } from './pretendClass';
 import { answerBox, apply, BODY, makeChain, newSerpent, SERPENT_LEVELS } from './serpent';
@@ -108,5 +109,37 @@ describe('Class Live server', () => {
     expect(late.status).toBe(409);
     expect(pc.db.rooms.get(room)!.session.state).toBe('over');
     expect(pc.db.rooms.get(room)!.screen.events.at(-1)).toMatchObject({ type: 'over', why: 'time' });
+  });
+
+  it('Mystery Mural: right answers earn flips, a question counts once, guesses open later and the teacher reveals it', async () => {
+    const clock = pretendClock();
+    const pc = pretendClass({ size: 30, seed: 11, clock, later: clock.later });
+    const room = (await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'open', classId: PRETEND_CLASS, activity: 'mural' })).body.room as number;
+    await pc.joinAll();
+    await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'start', room });
+    // Pupils never see the picture (only the choices) before the reveal.
+    expect(pc.db.rooms.get(room)!.view.game).toMatchObject({ kind: 'mural', picture: null });
+    const a = pc.ids[0];
+    expect((await classLiveStep(pc.services, a, { action: 'play', room, tile: 0 })).body.reason).toBe('no_flips');
+    clock.later(() => {}, 5000);
+    await clock.run(clock.now() + 5000);
+    const q = (await classLiveStep(pc.services, a, { action: 'ask', room })).body.question as { slot: number };
+    const kept = pc.db.questions.get(`${room}:${a}`)!.find((k) => k.slot === q.slot)!;
+    const answer = markQuestion(kept.question)!.answer;
+    const first = await classLiveStep(pc.services, a, { action: 'answer', room, slot: q.slot, answer, ms: 2000 });
+    expect(first.body).toMatchObject({ right: true, me: { game: { flips: 1 } } });
+    expect((await classLiveStep(pc.services, a, { action: 'answer', room, slot: q.slot, answer, ms: 2000 })).status).toBe(409);
+    expect(pc.db.answers.filter((x) => x.player === a)).toHaveLength(1);
+    expect((await classLiveStep(pc.services, a, { action: 'play', room, tile: 0 })).status).toBe(200);
+    pc.play(room);
+    await clock.run(clock.now() + 4 * 60_000);
+    const g = pc.db.rooms.get(room)!.session.game;
+    if (g.kind !== 'mural') throw new Error('not a mural');
+    expect(g.tiles.filter(Boolean).length).toBeGreaterThan(20);
+    expect(g.solvers.length).toBeGreaterThan(0);
+    expect((await classLiveStep(pc.services, pc.ids[2], { action: 'play', room, reveal: true })).status).not.toBe(200);
+    expect((await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'reveal', room })).status).toBe(200);
+    const view = pc.db.rooms.get(room)!.view.game;
+    expect(view.kind === 'mural' && view.picture).toBe(g.picture);
   });
 });

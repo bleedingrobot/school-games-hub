@@ -4,6 +4,8 @@
  */
 import { memoryDb, memoryServices, type MemoryDb } from './memoryServices';
 import { classLiveStep, type Change, type ClassLiveServices } from './server';
+import { markQuestion } from '../maths/serverQuestions';
+import { ANSWER_GAP_MS, canGuess, pretendTile } from './mural';
 import { pretendAnswer } from './serpent';
 import { pretendFacts } from './stars';
 
@@ -48,6 +50,30 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
       if (!row || row.session.state === 'over') return;
       if (row.session.state === 'lobby') return opts.later(go, 1000);
       const g = row.session.game;
+      if (g.kind === 'mural') {
+        if (g.revealed) return;
+        // Guess when the picture is fairly clear (better pupils guess sooner), else flip any flips, else answer.
+        const share = g.tiles.filter(Boolean).length / g.tiles.length;
+        if (canGuess(g, id) && rand() < share * (0.6 + skill)) {
+          const pick = rand() < Math.min(0.95, share * 2 * skill) ? g.picture : g.choices[Math.floor(rand() * g.choices.length)];
+          await classLiveStep(services, id, { action: 'play', room, guess: pick });
+          return opts.later(go, speed / 3);
+        }
+        if ((g.mine[id]?.flips ?? 0) > 0) {
+          const tile = pretendTile(g, rand);
+          if (tile !== null) await classLiveStep(services, id, { action: 'play', room, tile });
+          return opts.later(go, 700 + rand() * 1500);
+        }
+        const asked = await classLiveStep(services, id, { action: 'ask', room });
+        const q = asked.body.question as { slot: number } | undefined;
+        if (!q) return opts.later(go, 1500);
+        // A pretend pupil "knows" the answer by peeking at the kept question (pretend only), and is right at its own rate.
+        const kept = db.questions.get(`${room}:${id}`)?.find((k) => k.slot === q.slot);
+        const right = markQuestion(kept?.question)?.answer ?? 0;
+        const answer = rand() < skill ? right : right + 1 + Math.floor(rand() * 3);
+        await classLiveStep(services, id, { action: 'answer', room, slot: q.slot, answer, ms: 3000 });
+        return opts.later(go, Math.max(ANSWER_GAP_MS + 200, (speed / 3) * (0.6 + rand() * 0.8)));
+      }
       if (g.kind === 'serpent') {
         const move = pretendAnswer(g, id, rand, skill);
         if (!move) return;

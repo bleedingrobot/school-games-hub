@@ -3,11 +3,17 @@
  * (`server.ts`) with no school server. Same rules as the migration: a save lands only at the version it was loaded at,
  * a class has one open room, and pupils' rows are written only by saves.
  */
-import type { Change, ClassLiveServices, PlayerView, RoomRow, RoomView, ScreenView } from './server';
+import type { FactAnswer } from '../maths/leitner';
+import type { MathsContext } from '../maths/serverQuestions';
+import type { Change, ClassLiveServices, PlayerView, RoomRow, RoomView, ScreenView, StoredQuestion } from './server';
 
 export interface MemoryDb {
   rooms: Map<number, RoomRow & { view: RoomView; screen: ScreenView; openedAt: number }>;
   players: Map<string, PlayerView>;
+  /** Mystery Mural's kept questions, by `${room}:${player}`. */
+  questions: Map<string, StoredQuestion[]>;
+  answers: { player: string; once: string; answers: FactAnswer[] }[];
+  maths: MathsContext;
   pupils: Map<string, { id: string; name: string; classId: string }>;
   teachers: Map<string, string[]>;
   enabled: boolean;
@@ -16,7 +22,7 @@ export interface MemoryDb {
 
 export function memoryDb(opts: { pupils?: { id: string; name: string; classId: string }[]; teachers?: Record<string, string[]> } = {}): MemoryDb {
   return {
-    rooms: new Map(), players: new Map(),
+    rooms: new Map(), players: new Map(), questions: new Map(), answers: [], maths: { facts: [], settings: {} },
     pupils: new Map((opts.pupils ?? []).map((p) => [p.id, p])),
     teachers: new Map(Object.entries(opts.teachers ?? {})),
     enabled: true, showNames: true,
@@ -59,6 +65,11 @@ export function memoryServices(db: MemoryDb, clock: { now(): number; random?(): 
       const r = db.rooms.get(room);
       if (!r) return 'busy';
       if (r.version !== version) return 'stale';
+      if (change.claim) {
+        const q = db.questions.get(`${room}:${change.claim.player}`)?.find((x) => x.slot === change.claim!.slot);
+        if (!q || q.answered) return 'answered';
+        q.answered = true;
+      }
       r.version++;
       r.session = copy(change.session);
       r.view = copy(change.view);
@@ -69,6 +80,29 @@ export function memoryServices(db: MemoryDb, clock: { now(): number; random?(): 
       for (const p of change.players) db.players.set(`${room}:${p.player}`, copy(p));
       onChange?.(room, change);
       return 'ok';
+    },
+    async mathsContext() {
+      return copy(db.maths);
+    },
+    async openQuestion(room, player) {
+      const open = (db.questions.get(`${room}:${player}`) ?? []).filter((q) => !q.answered).sort((a, b) => b.slot - a.slot)[0];
+      return open ? copy(open) : null;
+    },
+    async loadQuestion(room, player, slot) {
+      const q = db.questions.get(`${room}:${player}`)?.find((x) => x.slot === slot);
+      return q ? copy(q) : null;
+    },
+    async keepQuestion(room, player, question) {
+      const list = db.questions.get(`${room}:${player}`) ?? [];
+      db.questions.set(`${room}:${player}`, list);
+      const open = list.find((q) => !q.answered);
+      if (open) return copy(open);
+      const kept: StoredQuestion = { slot: list.length, question: copy(question), answered: false };
+      list.push(kept);
+      return copy(kept);
+    },
+    async recordAnswers(player, once, answers) {
+      if (!db.answers.some((a) => a.player === player && a.once === once)) db.answers.push({ player, once, answers: copy(answers) });
     },
   };
 }

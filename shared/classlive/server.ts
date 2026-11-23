@@ -14,12 +14,18 @@
  */
 import { ARMS, anchorOf, armCount, newStars, pickAnchor, spotlight, tryFact, type Arm, type Star, type StarLevel, type StarsEvent, type StarsGame, type StarsReply } from './stars';
 import { LEVELS } from './stars';
+import { answered, canGuess, flip, flipped, guess, guessOpen, newMural, reveal, TILES, ANSWER_GAP_MS, type MuralEvent, type MuralGame, type Picture } from './mural';
+import type { FactAnswer } from '../maths/leitner';
+import { markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext, type PublicQuestion } from '../maths/serverQuestions';
+import type { Question } from '../maths/skillPack';
+import { isUntimed } from '../maths/untimed';
+import { makeSpacePack, pickSpaceQuestion } from '../space/mathsQuestion';
 import { answerBox, boxOf, newSerpent, SERPENT_LEVELS, wakeAt, type SerpentBox, type SerpentEvent, type SerpentGame, type SerpentLevel, type SerpentReply } from './serpent';
 
-export const ACTIVITIES = ['stars', 'serpent'] as const;
+export const ACTIVITIES = ['stars', 'serpent', 'mural'] as const;
 export type Activity = (typeof ACTIVITIES)[number];
 export const LENGTHS = [0, 5, 10, 15] as const;
-export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain' };
+export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural' };
 
 export interface LivePlayer {
   id: string;
@@ -29,8 +35,8 @@ export interface LivePlayer {
   colour: number;
 }
 
-export type Game = StarsGame | SerpentGame;
-export type GameEvent = StarsEvent | SerpentEvent;
+export type Game = StarsGame | SerpentGame | MuralGame;
+export type GameEvent = StarsEvent | SerpentEvent | MuralEvent;
 
 export interface Session {
   seed: number;
@@ -61,7 +67,9 @@ export interface RoomView {
 
 export type PublicGame =
   | { kind: 'stars'; anchor: StarsGame['anchor']; arms: Record<Arm, number>; total: number; creature: boolean; supernova: boolean }
-  | { kind: 'serpent'; level: SerpentLevel; energy: number; wakeAt: number; awake: boolean; heads: number; tail: number };
+  | { kind: 'serpent'; level: SerpentLevel; energy: number; wakeAt: number; awake: boolean; heads: number; tail: number }
+  /** `tiles`: one character a tile, '1' flipped, '0' not. Never the picture itself (until it is revealed). */
+  | { kind: 'mural'; tiles: string; flipped: number; guessOpen: boolean; choices: Picture[]; solvers: number; revealed: boolean; picture: Picture | null };
 
 /** What the projector draws: the whole game, names (when allowed) and the newest events (each with a number). */
 export interface ScreenView extends Omit<RoomView, 'game'> {
@@ -79,7 +87,8 @@ export interface PlayerView {
   colour: number;
   game:
     | { kind: 'stars'; found: number; glows: number; tries: number; mine: string[] }
-    | { kind: 'serpent'; box: SerpentBox | null; at: number; right: number; shown: number };
+    | { kind: 'serpent'; box: SerpentBox | null; at: number; right: number; shown: number }
+    | { kind: 'mural'; flips: number; right: number; answered: number; tiles: number; canGuess: boolean; guesses: number; gotIt: number; nextAt: number };
 }
 
 export interface RoomRow {
@@ -101,6 +110,15 @@ export interface Change {
   screen: ScreenView;
   startedAt: number | null;
   players: PlayerView[];
+  /** Marks this question answered in the same save (refused as 'answered' if it already was). */
+  claim?: { player: string; slot: number; value: number; right: boolean };
+}
+
+/** A pupil's kept Mystery Mural question (pupils can't read these). */
+export interface StoredQuestion {
+  slot: number;
+  question: Question;
+  answered: boolean;
 }
 
 export type Busy = 'busy';
@@ -118,7 +136,15 @@ export interface ClassLiveServices {
   /** The class's newest room opened in the last 3 hours, or null. */
   classRoom(classId: string): Promise<RoomRow | null | Busy>;
   /** Saves a step if the room is still at `version`. */
-  save(room: number, version: number, change: Change): Promise<'ok' | 'stale' | Busy>;
+  save(room: number, version: number, change: Change): Promise<'ok' | 'stale' | 'answered' | Busy>;
+  /** Mystery Mural's way-A maths: the pupil's facts, focus and class settings. */
+  mathsContext(player: string): Promise<MathsContext | null>;
+  /** The pupil's question not yet answered (the newest), or null. */
+  openQuestion(room: number, player: string): Promise<StoredQuestion | null | Busy>;
+  loadQuestion(room: number, player: string, slot: number): Promise<StoredQuestion | null | Busy>;
+  /** Keeps a new question at the pupil's next slot, unless one is still open: then that one comes back. */
+  keepQuestion(room: number, player: string, question: Question): Promise<StoredQuestion | Busy>;
+  recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
 }
 
 export type StepReply = { status: number; body: Record<string, unknown> };
@@ -135,6 +161,12 @@ export const MAX_PLAYERS = 40;
 const firstName = (name: string) => name.trim().split(/\s+/)[0]?.slice(0, 20) || 'A player';
 
 export function publicGame(g: Game, players: number): PublicGame {
+  if (g.kind === 'mural') {
+    return {
+      kind: 'mural', tiles: g.tiles.map((x) => (x ? '1' : '0')).join(''), flipped: flipped(g), guessOpen: guessOpen(g), choices: g.choices,
+      solvers: g.solvers.length, revealed: g.revealed, picture: g.revealed ? g.picture : null,
+    };
+  }
   if (g.kind === 'serpent') {
     return { kind: 'serpent', level: g.chain.level, energy: g.energy, wakeAt: wakeAt(players), awake: g.awake, heads: g.heads.length, tail: g.tail };
   }
@@ -160,6 +192,16 @@ function screenView(row: Pick<RoomRow, 'showNames' | 'seq' | 'events'>, s: Sessi
 
 export function playerView(s: Session, id: string): PlayerView {
   const p = s.players[id];
+  if (s.game.kind === 'mural') {
+    const m = s.game.mine[id];
+    return {
+      player: id, name: firstName(p.name), colour: p.colour,
+      game: {
+        kind: 'mural', flips: m?.flips ?? 0, right: m?.right ?? 0, answered: m?.answered ?? 0, tiles: m?.tiles ?? 0,
+        canGuess: canGuess(s.game, id), guesses: m?.guesses ?? 0, gotIt: m?.gotIt ?? 0, nextAt: m ? m.lastAt + ANSWER_GAP_MS : 0,
+      },
+    };
+  }
   if (s.game.kind === 'serpent') {
     const m = s.game.mine[id];
     return {
@@ -185,7 +227,7 @@ const timeOf = (row: Pick<RoomRow, 'startedAt'>, now: number) => (row.startedAt 
 /** Is a timed session past its end? */
 const timeUp = (s: Session, row: Pick<RoomRow, 'startedAt'>, now: number) => s.state === 'live' && s.lengthMin > 0 && timeOf(row, now) >= s.lengthMin * 60_000;
 
-type Step<T> = (s: Session, t: number, row: RoomRow) => { reply: T; events: Event[]; startedAt?: number | null; players?: string[] } | { refuse: StepReply };
+type Step<T> = (s: Session, t: number, row: RoomRow) => { reply: T; events: Event[]; startedAt?: number | null; players?: string[]; claim?: Change['claim'] } | { refuse: StepReply };
 
 /** Loads the room, applies one step and saves it if nobody else saved first (else runs it again on the newer session). */
 async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<T>): Promise<{ reply: T; row: RoomRow; session: Session } | { refuse: StepReply }> {
@@ -209,7 +251,8 @@ async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<T>): Pr
     } else events.push(...out.events);
     const startedAt = 'refuse' in out || out.startedAt === undefined ? row.startedAt : out.startedAt;
     const changed = new Set<string>('refuse' in out ? [] : (out.players ?? []));
-    if (!events.length && !changed.size && ('refuse' in out || out.startedAt === undefined)) {
+    const claim = 'refuse' in out ? undefined : out.claim;
+    if (!events.length && !changed.size && !claim && ('refuse' in out || out.startedAt === undefined)) {
       return 'refuse' in out ? out : { reply: out.reply, row, session: s };
     }
     let seq = row.seq;
@@ -217,8 +260,9 @@ async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<T>): Pr
     const next: RoomRow = { ...row, startedAt, seq, events: [...row.events, ...numbered].slice(-KEEP_EVENTS), session: s };
     for (const e of events) if ('pupil' in e && typeof e.pupil === 'string') changed.add(e.pupil);
     const players = [...changed].filter((id) => s.players[id]).map((id) => playerView(s, id));
-    const saved = await sv.save(room, row.version, { session: s, view: roomView(s, startedAt), screen: screenView(next, s, startedAt), startedAt, players });
+    const saved = await sv.save(room, row.version, { session: s, view: roomView(s, startedAt), screen: screenView(next, s, startedAt), startedAt, players, ...(claim ? { claim } : {}) });
     if (saved === 'busy') return { refuse: busy() };
+    if (saved === 'answered') return { refuse: no(409, "You've already answered that one.", 'answered') };
     if (saved === 'ok') return 'refuse' in out ? out : { reply: out.reply, row: { ...next, version: row.version + 1 }, session: s };
     await new Promise((done) => setTimeout(done, 5 + Math.floor(sv.random() * 25 * (tries + 1))));
   }
@@ -237,10 +281,10 @@ export function newSession(body: Record<string, unknown>, seed: number, random: 
     const level = (Object.keys(LEVELS) as StarLevel[]).find((l) => l === body.level) ?? 'middle';
     if ((body.x !== undefined || body.y !== undefined) && !own) return 'Pick two different numbers from 2 to 12.';
     game = newStars(own ?? pickAnchor(level, random), own ? 'own' : level);
-  } else {
+  } else if (activity === 'serpent') {
     const level = SERPENT_LEVELS.find((l) => l === body.level) ?? 'gold';
     game = newSerpent(level, random);
-  }
+  } else game = newMural(random);
   return { seed, activity, state: 'lobby', lengthMin, players: {}, order: [], game };
 }
 
@@ -265,7 +309,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     return ok({ room: id, screen: change.screen, now: sv.now() });
   }
 
-  if (action === 'view' || action === 'start' || action === 'end' || action === 'spotlight') {
+  if (action === 'view' || action === 'start' || action === 'end' || action === 'spotlight' || action === 'reveal') {
     const room = readRoom(body.room);
     if (!room) return no(400, "That room couldn't be found.");
     const row = await sv.loadRoom(room);
@@ -284,6 +328,10 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         s.state = 'live';
         return { reply: null, events: [{ type: 'start', t: 0 }], startedAt: sv.now() };
       }
+      if (action === 'reveal') {
+        if (s.game.kind !== 'mural') return { refuse: no(400, 'Only a mural can be revealed.') };
+        return { reply: null, events: reveal(s.game, t) };
+      }
       if (action === 'spotlight') {
         const id = body.id === null ? null : Number.isInteger(body.id) ? (body.id as number) : undefined;
         if (id === undefined || s.game.kind !== 'stars') return { refuse: no(400, 'Pick a star.') };
@@ -299,7 +347,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
   }
 
   // ---- Pupil steps ----
-  if (action === 'join' || action === 'play') {
+  if (action === 'join' || action === 'play' || action === 'ask' || action === 'answer') {
     const me = await sv.pupil(who);
     if (me === 'busy') return busy();
     if (!me) return no(403, 'Class Live is for pupils in a class.', 'no-class');
@@ -330,8 +378,22 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     }
 
     if (!cur.session.players[who]) return no(409, 'Join first.', 'not-playing');
-    const done = await mutate<StarsReply | SerpentReply>(sv, room, (s, t) => {
+    if (action === 'ask' || action === 'answer') return muralMaths(sv, cur, who, body);
+    const done = await mutate<StarsReply | SerpentReply | MuralReply>(sv, room, (s, t) => {
       if (s.state !== 'live') return { refuse: no(409, s.state === 'lobby' ? 'Wait for the start!' : 'This one has finished.', s.state) };
+      if (s.game.kind === 'mural') {
+        if (body.tile !== undefined) {
+          const out = flip(s.game, who, body.tile, t);
+          if (!out.ok) {
+            const words = { no_flips: 'Answer a question to earn a flip!', taken: 'That tile is already flipped. Pick another!', bad_tile: 'Pick a tile.', revealed: 'The picture is showing!' };
+            return { refuse: no(409, words[out.reason], out.reason) };
+          }
+          return { reply: { result: 'flipped' as const, tile: body.tile as number }, events: out.events, players: [who] };
+        }
+        const out = guess(s.game, who, body.guess, t);
+        if (!out.ok) return { refuse: no(409, out.reason === 'not_now' ? 'Not yet! Wait for more tiles.' : 'Pick a picture.', out.reason) };
+        return { reply: { result: out.right ? ('guessed' as const) : ('not_it' as const) }, events: out.events, players: [who] };
+      }
       if (s.game.kind === 'serpent') {
         const out = answerBox(s.game, who, body.box, body.value, t, s.order.length);
         if (!out.ok) {
@@ -351,4 +413,78 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
   return no(400, "That couldn't be read.");
 }
 
+export type MuralReply = { result: 'flipped'; tile: number } | { result: 'guessed' | 'not_it' };
+
+/** Longest answer time kept (ms), as Class Showdown. */
+const MAX_ANSWER_MS = 120_000;
+
+/** The pupil's next question from their own focus pack (way A), never an untimed (worked-out) skill in a live game. */
+export function makeQuestion(context: MathsContext, seed: string): Question | null {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const pack = makeSpacePack(context.facts, context.focus, context.settings, seededRandom(`${seed}:${attempt}`));
+    const q = pickSpaceQuestion(pack, context.settings);
+    if (q && !isUntimed(q.factKey) && markQuestion(q)) return q;
+  }
+  return null;
+}
+
+async function nextQuestion(sv: ClassLiveServices, row: RoomRow, who: string): Promise<PublicQuestion | null | Busy> {
+  const open = await sv.openQuestion(row.id, who);
+  if (open === 'busy') return 'busy';
+  if (open) return publicQuestion(open.question, open.slot);
+  const ctx = await sv.mathsContext(who);
+  if (!ctx) return null;
+  const g = row.session.game;
+  const m = g.kind === 'mural' ? g.mine[who] : undefined;
+  const q = makeQuestion(ctx, `${row.session.seed}:${who}:${m?.answered ?? 0}`);
+  if (!q) return null;
+  const kept = await sv.keepQuestion(row.id, who, q);
+  if (kept === 'busy') return 'busy';
+  return publicQuestion(kept.question, kept.slot);
+}
+
+/** Mystery Mural's maths: `ask` (the open question or a new one) and `answer` (marked here, claimed once, recorded). */
+async function muralMaths(sv: ClassLiveServices, cur: RoomRow, who: string, body: Record<string, unknown>): Promise<StepReply> {
+  const room = cur.id;
+  if (cur.session.game.kind !== 'mural') return no(400, 'This game has no questions.');
+  if (cur.session.state !== 'live') return no(409, cur.session.state === 'lobby' ? 'Wait for the start!' : 'This one has finished.', cur.session.state);
+  if (body.action === 'ask') {
+    const question = await nextQuestion(sv, cur, who);
+    if (question === 'busy') return busy();
+    if (!question) return no(503, "We couldn't make a question just now.");
+    return ok({ room, question, now: sv.now() });
+  }
+  const slot = body.slot;
+  const value = body.answer;
+  if (!Number.isInteger(slot) || typeof value !== 'number' || !Number.isFinite(value) || Math.abs(value) > 1_000_000) return no(400, "That answer couldn't be read.");
+  const kept = await sv.loadQuestion(room, who, slot as number);
+  if (kept === 'busy') return busy();
+  const marked = kept ? markQuestion(kept.question) : null;
+  if (!kept || !marked) return no(400, "That answer couldn't be marked.");
+  if (kept.answered) return no(409, "You've already answered that one.", 'answered');
+  const right = sameAnswer(value, marked.answer);
+  const done = await mutate(sv, room, (s, t) => {
+    if (s.state !== 'live' || s.game.kind !== 'mural') return { refuse: no(409, 'This one has finished.', 'over') };
+    const out = answered(s.game, who, right, t);
+    if (!out.ok) return { refuse: no(409, 'Wait for the ring to fill!', out.reason) };
+    return { reply: null, events: [], players: [who], claim: { player: who, slot: slot as number, value, right } };
+  });
+  if ('refuse' in done) {
+    const g = cur.session.game;
+    return { ...done.refuse, body: { ...done.refuse.body, nextAt: (g.mine[who]?.lastAt ?? 0) + ANSWER_GAP_MS, now: sv.now() } };
+  }
+  const ms = Math.round(Math.min(typeof body.ms === 'number' && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS, MAX_ANSWER_MS));
+  try {
+    await sv.recordAnswers(who, `classlive:${room}:${cur.session.seed}:${slot}`, [{ key: marked.key, correct: right, ms, at: sv.now(), given: value }]);
+  } catch {
+    // The maths records are a bonus: the flip still counts.
+  }
+  const next = done.session.state === 'live' ? await nextQuestion(sv, { ...done.row, session: done.session }, who) : null;
+  return ok({
+    room, right, answer: marked.answer, me: playerView(done.session, who), view: roomView(done.session, done.row.startedAt), now: sv.now(),
+    ...(next && next !== 'busy' ? { question: next } : {}),
+  });
+}
+
+export { TILES };
 export type { Star, Arm };
