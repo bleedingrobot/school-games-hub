@@ -180,7 +180,6 @@ it('leaves out the untimed ladder skills, even for a pupil whose focus is only u
     expect(isUntimed(q.factKey)).toBe(false);
   }
 });
-<<<<<<< HEAD
 
 it('a beaten boss pays every pupil once, unlocks the next boss, and "Again?" starts it with the same pupils', async () => {
   const s = setup();
@@ -222,5 +221,3 @@ it('a beaten boss pays every pupil once, unlocks the next boss, and "Again?" sta
   expect(s.db.players.get(`${room}:ana`)).toMatchObject({ score: 0, reward: null });
   expect((await s.send({ action: 'again', room }, 'miss')).status).toBe(409);
 });
-=======
->>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c

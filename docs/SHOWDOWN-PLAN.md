@@ -1,10 +1,6 @@
 # Class Showdown: plan
 
-<<<<<<< HEAD
 **Status: Stage 1 (rules and simulator) and Stage 2 (server, tables, live updates, join pop-up, `?pretend=30` test page) merged 23 Nov 2026; the code switch is off, so no pupil or teacher sees it. Stage 3 (the real projector and controller screens, sounds and announcer) merged 23 Nov 2026, with the River Titan painted. Stage 4 (2 teams, 4 teams, solo, team picker, the real pages) merged 23 Nov 2026. Stage 5 (rewards, achievements, the 4-boss roster, "Again?") merged 24 Nov 2026 and **on for every class**. Next: Stage 6 (Gold Rush), prompt in `docs/prompts/showdown-s6.md`.** James liked the "live class boss" idea from the list of missing game types (23 Nov 2026) and asked for one game where everyone in the room plays at once: the whole class against a boss, 2 teams, 4 teams, or everyone for themselves. Working name **Class Showdown**, game id `showdown`. Next free migration number when written: `20261123000900` on 23 Nov (check again: `node scripts/migration-numbers.mjs`).
-=======
-**Status: Stage 1 (rules and simulator) and Stage 2 (server, tables, live updates, join pop-up, `?pretend=30` test page) merged 23 Nov 2026; the code switch is off, so no pupil or teacher sees it. Stage 3 (the real projector and controller screens, sounds and announcer) merged 23 Nov 2026, with the River Titan painted. Stage 4 (2 teams, 4 teams, solo, team picker, the real pages) merged 23 Nov 2026 and switched on for James's class only. Next: Stage 5 (rewards, the other bosses, on for every class), prompt in `docs/prompts/showdown-s5.md`.** James liked the "live class boss" idea from the list of missing game types (23 Nov 2026) and asked for one game where everyone in the room plays at once: the whole class against a boss, 2 teams, 4 teams, or everyone for themselves. Working name **Class Showdown**, game id `showdown`. Next free migration number when written: `20261123000900` on 23 Nov (check again: `node scripts/migration-numbers.mjs`).
->>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c
 
 **Class Showdown** is a live game for the whole room. The **teacher's screen goes on the projector** and shows the big painted battle, the scores and the drama, with all the sound. **Every pupil's iPad is their controller**: their own maths question at their own level, their choices, and their own score. A round lasts 5, 10 or 15 minutes. The teacher picks **how** the class plays (the mode) and **what** they play (the arena).
 
@@ -254,7 +250,6 @@ The rules are in `shared/showdown/` (see `shared/README.md`), with 4 tests (budg
 - **Left for later:** the "best comeback" bounty (needs a place history); the home card picture (painted, comes with the art); iPad-size screen check of the team screens.
 - Tests: 12 of 12 used (team picker + solo top 10; untimed skills left out).
 
-<<<<<<< HEAD
 ## Stage 5 results (24 Nov 2026)
 
 - **Rewards:** when a round ends, every pupil's row gets a `reward` in the same save (`shared/showdown/bosses.ts` `rewardFor`): hub points (1 for playing, 3 with a right answer, 5 when the boss is beaten; inside the shared daily cap) and a **Showdown chest** for their own favourite game that has coins: Goblin Storm gold (20, 30 if beaten) or Archery coins (5, 8), whichever they played last and is on for them (`showdown_chest_games`). The server then calls `showdown_finish(room, done)` (migration `20261124000500_showdown_rewards.sql`), which pays once per round (`showdown_finished`, room + seed), even if the projector's `view` asks again.
@@ -264,8 +259,6 @@ The rules are in `shared/showdown/` (see `shared/README.md`), with 4 tests (budg
 - **On for every class:** the migration sets `showdown_enabled = true` everywhere.
 - Tests: 13 (budget raised by 1 for rewards and the roster).
 
-=======
->>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c
 ## 10. Risks
 
 - **School wi-fi with 30 iPads at once.** Tiny messages only (a hit is a few bytes); the iPad never waits on the projector. Try it in a real class in stage 4 before switching on for everyone.

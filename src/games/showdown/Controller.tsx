@@ -214,21 +214,14 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
           <div><dt>Your score</dt><dd>{mine.score}</dd></div>
         </dl>
         {view.mode === 'solo' && mine.topTen && <p className="sd-c-topten">🏆 You finished in the top 10!</p>}
-<<<<<<< HEAD
         {mine.reward && <ChestReveal key={`${mine.reward.chest.game}${mine.reward.chest.amount}${mine.reward.points}`} reward={mine.reward} />}
-=======
->>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c
         <p className="sd-c-look">Look at the big screen!</p>
       </div>
     );
   } else {
     body = (
       <>
-<<<<<<< HEAD
         {view.state === 'lobby' && <><h1 className="sd-c-title">Get ready!</h1><p className="sd-c-roar">{bossInfo(view.bossId).roar}</p></>}
-=======
-        {view.state === 'lobby' && <h1 className="sd-c-title">Get ready!</h1>}
->>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c
         {view.mode === 'solo' && view.state === 'live' && mine.topTen && <p className="sd-c-topten" role="status">🏆 You're in the top 10!</p>}
         {myRole && !(canSwap && rolesOpen) && (
           canSwap ? (

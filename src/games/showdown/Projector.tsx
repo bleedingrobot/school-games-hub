@@ -10,11 +10,7 @@ import type { FeedEvent, RoomView } from '../../../shared/showdown/server';
 import type { Mode, Role, TeamId } from '../../../shared/showdown/types';
 import { BossStandIn } from './BossStandIn';
 import type { ShowdownLink } from './link';
-<<<<<<< HEAD
 import { AWARD_WORDS, TEAM_WORDS, bestComeback, initialState, ordinal, projectorAct, soundFor, type HitBurst, type ProjectorState, type ShowdownSound } from './projectorState';
-=======
-import { AWARD_WORDS, TEAM_WORDS, initialState, ordinal, projectorAct, soundFor, type HitBurst, type ProjectorState, type ShowdownSound } from './projectorState';
->>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c
 import './projector.css';
 
 const ART = import.meta.glob('./art/paint/**/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
@@ -276,11 +272,7 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
       <h1 className="sd-p__sr">Class Showdown{state ? ` ${state}` : ''}</h1>
       <Backdrop state={state} boss={view?.bossId} />
       {state === 'live' || state === 'over' ? <Battle ps={ps} roundNow={roundNow} flinch={flinch} /> : null}
-<<<<<<< HEAD
       {state === 'lobby' && <Lobby ps={ps} className={className} roster={rosterRows} onMove={(pupil, team) => void send({ action: 'teams', room, pupil, team })} />}
-=======
-      {state === 'lobby' && <Lobby ps={ps} className={className} onMove={(pupil, team) => void send({ action: 'teams', room, pupil, team })} />}
->>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c
       {!state && <div className="sd-p-idle"><h2>Class Showdown</h2><p>Pick how long, then press Open to bring in the class.</p></div>}
 
       {live && ps.banner && roundNow < ps.banner.until && <div key={`${ps.banner.text}${ps.banner.until}`} className={`sd-p-banner sd-p-banner--${ps.banner.kind}`} role="status">{ps.banner.text}</div>}
@@ -326,7 +318,6 @@ function Backdrop({ state, boss }: { state: string | undefined; boss: BossId | u
   return <div className="sd-p-back" style={img ? ({ backgroundImage: `url(${img})` } as CSSProperties) : undefined} aria-hidden="true" />;
 }
 
-<<<<<<< HEAD
 /** Boss choice before opening (and for "Again?"): only the bosses the class has open. "" = the next one in order. */
 function BossPicker({ rows, value, onChange }: { rows: RosterRow[]; value: BossId | ''; onChange: (b: BossId | '') => void }) {
   const beaten = Object.fromEntries(rows.filter((r) => r.beaten).map((r) => [r.boss, r.bestMs ?? 0]));
@@ -383,9 +374,6 @@ function Entrance({ boss, seq }: { boss: BossId; seq: number }) {
 }
 
 function Lobby({ ps, className, roster, onMove }: { ps: ProjectorState; className?: string; roster: RosterRow[] | null; onMove: (pupil: string, team: TeamId) => void }) {
-=======
-function Lobby({ ps, className, onMove }: { ps: ProjectorState; className?: string; onMove: (pupil: string, team: TeamId) => void }) {
->>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c
   const show = ps.view?.showNames ?? false;
   const teamMode = ps.view && isTeamMode(ps.view) ? ps.view.teams : null;
   const [sel, setSel] = useState<string | null>(null);
@@ -441,10 +429,7 @@ function Lobby({ ps, className, onMove }: { ps: ProjectorState; className?: stri
           })}
         </ul>
       )}
-<<<<<<< HEAD
       {roster && ps.view && <RosterStrip rows={roster} current={ps.view.bossId} />}
-=======
->>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c
     </div>
   );
 }
@@ -524,11 +509,7 @@ function Battle({ ps, roundNow, flinch }: { ps: ProjectorState; roundNow: number
         <div className={`sd-p-bossroar${roaring ? ' sd-p-bossroar--go' : ''}`}>
           <div className="sd-p-bossturn" style={turnT ? { transform: turnT } : undefined}>
             <div className={`sd-p-boss${flinch ? ' sd-p-flinch' : ''}${angry ? ' sd-p-boss--angry' : ''}`}>
-<<<<<<< HEAD
               {bossImg ? <img className="sd-p-boss__img" src={bossImg} alt={`The ${bossName}`} /> : <BossStandIn phase={ps.phase} flinch={false} weak={weak} angry={angry} look={slot ? slot.side : 0} />}
-=======
-              {bossImg ? <img className="sd-p-boss__img" src={bossImg} alt="The River Titan" /> : <BossStandIn phase={ps.phase} flinch={false} weak={weak} angry={angry} look={slot ? slot.side : 0} />}
->>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c
               {weak && <div className="sd-p-weakglow" aria-hidden="true" />}
               {ps.phase >= 2 && <div className="sd-p-eyes" aria-hidden="true" />}
             </div>
@@ -742,11 +723,8 @@ function Bounties({ ps }: { ps: ProjectorState }) {
   if (topDmg) rows.push({ kind: 'dmg', label: 'Most damage', who: who(topDmg[0]), val: `${Math.round(topDmg[1] * 10)}` });
   if (ps.lastHitter) rows.push({ kind: 'last', label: 'Last hit', who: who(ps.lastHitter), val: '' });
   if (ps.bestStreak && ps.bestStreak.streak >= 2) rows.push({ kind: 'streak', label: 'Longest streak', who: who(ps.bestStreak.pupil), val: `${ps.bestStreak.streak} in a row` });
-<<<<<<< HEAD
   const comeback = bestComeback(ps);
   if (comeback) rows.push({ kind: 'comeback', label: 'Best comeback', who: who(comeback.pupil), val: `up ${comeback.places} places` });
-=======
->>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c
   if (!rows.length) return null;
   return (
     <aside className="sd-p-bounty" aria-label="Bounties">
@@ -794,11 +772,7 @@ function Recap({ ps, stage, onAgain }: { ps: ProjectorState; stage: 0 | 1; onAga
       {stage === 0 && <div className="sd-p-recap__title" role="status">{beaten ? 'VICTORY!' : 'So close!'}</div>}
       {stage === 1 && rc && (
         <div className="sd-p-recap__cards">
-<<<<<<< HEAD
           <h2 className="sd-p-recap__head">{beaten ? `You beat the ${bossInfo(ps.view?.bossId).name}!` : 'So close! Next time!'}</h2>
-=======
-          <h2 className="sd-p-recap__head">{beaten ? 'You beat the River Titan!' : 'So close! Next time!'}</h2>
->>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c
           {winTeam && (
             <div className={`sd-p-bigflag sd-p-team--${winTeam}`}>
               <Cloth team={winTeam} className="sd-p-bigflag__cloth"><b>{TEAM_SHORT[winTeam]}</b><strong>WINS!</strong></Cloth>

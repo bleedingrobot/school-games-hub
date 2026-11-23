@@ -82,13 +82,10 @@ export interface ProjectorState {
   damage: Record<string, number>;
   lastHitter: string | null;
   bestStreak: { pupil: string; streak: number } | null;
-<<<<<<< HEAD
   /** Each pupil's lowest place so far (a bigger number is lower): "best comeback" is how far they climbed from it. */
   worstRank: Record<string, number>;
   /** Counts "again" resets (the lobby plays the new boss's entrance), and which boss it brought. */
   againSeq: number;
-=======
->>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c
   /** Round time of the latest event. */
   t: number;
   seq: number;
@@ -129,11 +126,7 @@ export function initialState(reply?: { view?: RoomView; players?: PlayerView[]; 
     weakUntil: view?.weakSpotUntil ?? 0, goldenUntil: view?.goldenUntil ?? 0, goldenSeq: 0, enrageUntil: view?.enrageUntil ?? 0,
     final: view?.finalStarted ?? false, finalUntil: 0, startSeq: 0, hitSeq: 0, bigHitSeq: 0, healAt: 0,
     beaten: view?.result === 'beaten', timeUp: view?.result === 'time', paused: view?.pausedAt != null, ended: view?.state === 'over',
-<<<<<<< HEAD
     recap: reply?.recap ?? null, tugSeq: 0, tugAt: 0, turn: null, turnSeq: 0, moves: [], damage: {}, lastHitter: null, bestStreak: null, worstRank: {}, againSeq: 0, t: view?.t ?? 0, seq: 0,
-=======
-    recap: reply?.recap ?? null, tugSeq: 0, tugAt: 0, turn: null, turnSeq: 0, moves: [], damage: {}, lastHitter: null, bestStreak: null, t: view?.t ?? 0, seq: 0,
->>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c
   };
 }
 
@@ -152,7 +145,6 @@ export function rankOf(s: Pick<ProjectorState, 'roster' | 'order'>, id: string):
   }
   return r;
 }
-<<<<<<< HEAD
 /** Notes everyone's current place as a possible lowest place. */
 function noteRanks(s: ProjectorState): Record<string, number> {
   const worst = { ...s.worstRank };
@@ -177,8 +169,6 @@ function afterAgain(s: ProjectorState): ProjectorState {
   return { ...fresh, view: s.view, names: s.names, roster, order: s.order, startSeq: s.startSeq, againSeq: s.againSeq + 1 };
 }
 
-=======
->>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c
 export const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
 
 /** A name for an id: the feed's own names first, then everyone we have met. */
@@ -209,7 +199,6 @@ export function projectorReduce(s: ProjectorState, event: FeedEvent): ProjectorS
     case 'hit': {
       const burst: HitBurst = { id: n.seq + 1, pupil: event.pupil, name: nm(event.pupil), points: event.points, times: event.times, weakSpot: event.weakSpot, golden: event.golden, team: event.team, t: event.t };
       const old = n.roster[event.pupil];
-<<<<<<< HEAD
       const worstBefore = noteRanks(n);
       const before = rankOf(n, event.pupil);
       const withScore = rosterWith(event.pupil, { score: (old?.score ?? 0) + event.points, role: event.role, team: event.team ?? old?.team ?? null });
@@ -219,15 +208,6 @@ export function projectorReduce(s: ProjectorState, event: FeedEvent): ProjectorS
       const best = n.bestStreak;
       return {
         ...withScore, seq: n.seq + 1, worstRank,
-=======
-      const before = rankOf(n, event.pupil);
-      const withScore = rosterWith(event.pupil, { score: (old?.score ?? 0) + event.points, role: event.role, team: event.team ?? old?.team ?? null });
-      const after = rankOf(withScore, event.pupil);
-      const climbed = n.view?.mode === 'solo' && before > 0 && before - after >= 3 && after <= 10;
-      const best = n.bestStreak;
-      return {
-        ...withScore, seq: n.seq + 1,
->>>>>>> 4ac40a7bf41a269a04ba336f3ba5379fb374d58c
         moves: climbed ? [...n.moves, { id: n.seq + 1, pupil: event.pupil, name: nm(event.pupil), from: before, to: after, t: event.t }].slice(-4) : n.moves,
         damage: { ...n.damage, [event.pupil]: (n.damage[event.pupil] ?? 0) + event.damage },
         lastHitter: event.pupil,
