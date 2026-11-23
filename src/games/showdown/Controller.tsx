@@ -10,6 +10,7 @@ import type { PlayerView, RoomView } from '../../../shared/showdown/server';
 import type { Role, TeamId } from '../../../shared/showdown/types';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import type { ShowdownLink } from './link';
+import { ControllerStage } from './ControllerStage';
 import { PayMeter, SEAM_NAME, SeamPicker, seamPay, seamRoom } from './SeamPicker';
 import './controller.css';
 
@@ -285,7 +286,6 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
         )}
         {live && (
           <div className={`sd-c-play${golden ? ' sd-c-play--gold' : ''}`}>
-            {windUp && <p className="sd-c-alert" role="alert">{gr ? 'Cave-in! Answer fast to prop up the roof!' : 'Shield up! Answer fast!'}</p>}
             {gr && view && (
               <button type="button" className={`sd-c-myseam${mySeamRow ? ` sd-c-myseam--${mySeamRow.kind}` : ' sd-c-myseam--none'}`} onClick={() => { setSeamSaid(null); setSeamsOpen(true); }}>
                 {mySeamRow ? (
@@ -323,8 +323,6 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
             {said && <p className="sd-c-say" role="alert">{said}</p>}
           </div>
         )}
-        {view.state === 'lobby' && <p className="sd-c-say" role="status">Waiting for the teacher to start…</p>}
-        {view.pausedAt && <p className="sd-c-alert" role="status">Paused. Look at the teacher.</p>}
         {burst > 0 && <div key={burst} className={`sd-c-flash${team ? ` sd-c-flash--${team}` : ''}${gr ? ' sd-c-flash--gold' : ''}`} aria-hidden="true"><span className="sd-c-burst">{gr ? '⛏' : '✨'}</span>{gr && <span className="sd-c-dig">{Array.from({ length: 10 }, (_, i) => <i key={i} style={{ '--a': `${(i / 10) * 360}deg`, '--r': `${70 + (i % 3) * 34}px`, '--d': `${(i % 4) * 0.04}s` } as React.CSSProperties}>🪙</i>)}</span>}</div>}
         {gr && windUp && <div className="sd-c-cave" aria-hidden="true">{[0, 1, 2].map((i) => <span key={i} style={{ left: `${i * 34 - 4}%`, '--i': i } as React.CSSProperties}>{dust ? <img src={dust} alt="" /> : null}</span>)}</div>}
       </>
@@ -332,8 +330,10 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
   }
 
   const bossName = gr ? 'Gold left in the mountain' : bossInfo(view?.bossId).name;
+  // Questions on the left, the boss with its health and what's happening on the right (James, 24 Nov 2026).
+  const split = room !== null && !!view && !!mine && view.state !== 'over';
   return (
-    <div className={`sd-c${gr ? ' sd-c--gr' : ''}${windUp ? ' sd-c--windup' : ''}${gr && windUp ? ' sd-c--cavein' : ''}${golden && live && !dazed ? ' sd-c--golden' : ''}${team ? ` sd-c--team-${team}` : ''}`} role="region" aria-label="Class Showdown controller">
+    <div className={`sd-c${split ? ' sd-c--split' : ''}${gr ? ' sd-c--gr' : ''}${windUp ? ' sd-c--windup' : ''}${gr && windUp ? ' sd-c--cavein' : ''}${golden && live && !dazed ? ' sd-c--golden' : ''}${team ? ` sd-c--team-${team}` : ''}`} role="region" aria-label="Class Showdown controller">
       {frameArt && <img className="sd-c-frame" src={frameArt} alt="" aria-hidden="true" />}
       <div className="sd-c-top">
         <a className="sd-c-hub" href="#/"><span aria-hidden="true">⌂</span><span className="sd-c-hub__word"> Hub</span></a>
@@ -348,7 +348,12 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
           </>
         ) : <span className="sd-c-boss__name sd-c-top__title">Class Showdown</span>}
       </div>
-      <div className="sd-c-body">{body}</div>
+      {split && view && mine ? (
+        <div className="sd-c-body sd-c-body--split">
+          <div className="sd-c-main">{body}</div>
+          <ControllerStage view={view} t={t} gr={gr} hit={burst} team={team} me={mine.player} />
+        </div>
+      ) : <div className="sd-c-body">{body}</div>}
       {gr && live && seamsOpen && view && <SeamPicker view={view} mySeam={mine?.seam ?? null} onPick={(id) => void pickSeam(id)} onClose={() => setSeamsOpen(false)} said={seamSaid} />}
     </div>
   );
