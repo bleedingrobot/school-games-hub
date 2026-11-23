@@ -4,9 +4,9 @@
  * upright it is a short strip above the question. It only reads the room's view, so it never shows anyone's results.
  */
 import { bossInfo } from '../../../shared/showdown/bosses';
-import { arenaWords } from './arenaWords';
+import { arenaWords, rolesNeeded } from './arenaWords';
 import type { RoomView } from '../../../shared/showdown/server';
-import type { TeamId } from '../../../shared/showdown/types';
+import type { Role, TeamId } from '../../../shared/showdown/types';
 
 const paintings = import.meta.glob('./art/paint/**/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
 const art = (folder: string, name: string) => paintings[`./art/paint/${folder}/${name}.webp`] ?? paintings[`./art/paint/${folder}/${name}-800.webp`];
@@ -15,11 +15,21 @@ const TEAM: Record<TeamId, string> = { red: 'Red', blue: 'Blue', gold: 'Gold', g
 type Notice = { key: string; text: string; tone: 'alarm' | 'good' | 'gold' | 'info' };
 
 /** What is happening right now, most urgent first, in the arena's own words. */
-export function noticesFor(view: RoomView, t: number, team: TeamId | null, me: string): Notice[] {
+export function noticesFor(view: RoomView, t: number, team: TeamId | null, me: string, myRole: Role | null = null): Notice[] {
   const W = arenaWords(view.arena);
   const N = W.notices;
   const out: Notice[] = [];
   if (view.pausedAt) out.push({ key: 'pause', text: '⏸ Paused. Look at the teacher.', tone: 'info' });
+  // The roles the class (or my team) is short of, the same call as the big screen's, so pupils see it on their own iPad.
+  if (view.mode !== 'solo' && view.state !== 'over') {
+    const canSwap = view.state === 'lobby' || view.roleSwapUntil > t;
+    const who = team && view.mode !== 'class' ? `${TEAM[team]} needs` : 'We need';
+    for (const role of rolesNeeded(view.roles?.[team && view.mode !== 'class' ? team : 'all'])) {
+      if (myRole === role) continue;
+      const name = W.roles[role].name;
+      out.push({ key: `need-${role}`, text: `${W.roles[role].emoji} ${who} ${role === 'guard' ? `more ${name}s` : `a ${name}`}!${canSwap ? ` Tap your role to be one.` : ''}`, tone: 'alarm' });
+    }
+  }
   if (view.state === 'lobby') {
     out.push({ key: 'lobby', text: view.arena === 'goldrush' ? '⛏ Grab your pickaxe! Waiting for the teacher…' : view.arena === 'skyclimb' ? '🧗 Rope on! Waiting for the teacher…' : view.arena === 'island' ? '🏝️ Find a spot on the island! Waiting for the teacher…' : `${bossInfo(view.bossId).roar} Waiting for the teacher…`, tone: 'info' });
     return out;
@@ -44,10 +54,13 @@ export function noticesFor(view: RoomView, t: number, team: TeamId | null, me: s
   }
   if (view.boss.phase > 1 && !out.length) out.push({ key: 'phase', text: N.phase(view.boss.phase === 3 ? 3 : 2), tone: 'info' });
   if (!out.length) out.push({ key: 'calm', text: N.calm, tone: 'info' });
+  // A shield check is the most urgent thing on the screen: first after a pause.
+  const wi = out.findIndex((n) => n.key === 'wind');
+  if (wi > 0) out.splice(view.pausedAt ? 1 : 0, 0, ...out.splice(wi, 1));
   return out;
 }
 
-export function ControllerStage({ view, t, hit, team, me, streak = 0 }: { view: RoomView; t: number; hit: number; team: TeamId | null; me: string; streak?: number }) {
+export function ControllerStage({ view, t, hit, team, me, role = null, streak = 0 }: { view: RoomView; t: number; hit: number; team: TeamId | null; me: string; role?: Role | null; streak?: number }) {
   const boss = bossInfo(view.bossId);
   const W = arenaWords(view.arena);
   const gr = view.arena === 'goldrush';
@@ -58,7 +71,7 @@ export function ControllerStage({ view, t, hit, team, me, streak = 0 }: { view: 
   const left = Math.max(0, Math.min(100, (view.boss.hp / Math.max(1, view.boss.max)) * 100));
   const pct = W.fills ? 100 - left : left;
   const name = W.goal ?? boss.name;
-  const notices = noticesFor(view, t, team, me);
+  const notices = noticesFor(view, t, team, me, role);
   const weak = view.weakSpotUntil > t;
   const wind = !!view.windUp && t < view.windUp.endsAt;
   const jumped = sky && hit > 0 && streak > 0 && streak % 3 === 0;

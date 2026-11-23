@@ -10240,8 +10240,26 @@ function roomView(row, r) {
 		} : null,
 		result: r.result,
 		showNames: row.showNames,
-		island: r.arena === "island" ? islandView(r) : null
+		island: r.arena === "island" ? islandView(r) : null,
+		roles: roleCounts(r)
 	};
+}
+function roleCounts(r) {
+	const out = { all: {
+		striker: 0,
+		guard: 0,
+		healer: 0
+	} };
+	for (const id of r.order) {
+		const p = r.players[id];
+		out.all[p.role]++;
+		if (p.team) (out[p.team] ??= {
+			striker: 0,
+			guard: 0,
+			healer: 0
+		})[p.role]++;
+	}
+	return out;
 }
 function islandView(r) {
 	const spots = {};
@@ -10689,7 +10707,7 @@ async function showdownStep(s, who, body) {
 			...r.state === "over" ? { recap: recap(r) } : {}
 		});
 	}
-	if (action === "join" || action === "choose" || action === "ask" || action === "answer") {
+	if (action === "join" || action === "choose" || action === "ask" || action === "answer" || action === "look") {
 		const me = await s.pupil(who);
 		if (me === "busy") return busy();
 		if (!me) return no(403, "Class Showdown is for pupils in a class.", "no-class");
@@ -10733,6 +10751,12 @@ async function showdownStep(s, who, body) {
 			});
 		}
 		if (!cur.round.players[who]) return no(409, "Join the showdown first.", "not-playing");
+		if (action === "look") return ok({
+			room,
+			view: roomView(cur, cur.round),
+			me: playerView(cur.round.players[who], topTenOf(cur.round)),
+			now: s.now()
+		});
 		if (action === "choose" && typeof body.seam === "number") {
 			const seam = body.seam;
 			const done = await mutate(s, room, (r, t, row) => {
@@ -10781,7 +10805,17 @@ async function showdownStep(s, who, body) {
 			});
 		}
 		if (action === "ask") {
-			if (cur.round.state !== "live") return no(409, cur.round.state === "lobby" ? "Wait for the start!" : "This showdown has finished.", cur.round.state === "lobby" ? "lobby" : "over");
+			if (cur.round.state !== "live") {
+				const refuse = no(409, cur.round.state === "lobby" ? "Wait for the start!" : "This showdown has finished.", cur.round.state === "lobby" ? "lobby" : "over");
+				return {
+					...refuse,
+					body: {
+						...refuse.body,
+						view: roomView(cur, cur.round),
+						me: playerView(cur.round.players[who], topTenOf(cur.round))
+					}
+				};
+			}
 			const question = await nextQuestion(s, cur, who, null);
 			if (question === "busy") return busy();
 			if (!question) return no(503, "We couldn't make a question just now.");
@@ -10803,11 +10837,21 @@ async function showdownStep(s, who, body) {
 		const done = await mutate(s, room, (r, t, row) => {
 			if (row.pausedAt !== null) return { refuse: no(409, "The teacher has paused the showdown.", "paused") };
 			const out = answer(r, who, right, t, { golden: kept.golden });
-			if (!out.ok) return { refuse: no(409, {
-				too_soon: "Wait for the ring to fill!",
-				dazed: "You're dazed! Wait for the stars to stop.",
-				not_live: "This showdown has finished."
-			}[out.reason] ?? "Not now.", out.reason) };
+			if (!out.ok) {
+				const refuse = no(409, {
+					too_soon: "Wait for the ring to fill!",
+					dazed: "You're dazed! Wait for the stars to stop.",
+					not_live: "This showdown has finished."
+				}[out.reason] ?? "Not now.", out.reason);
+				return { refuse: out.reason === "not_live" ? {
+					...refuse,
+					body: {
+						...refuse.body,
+						view: roomView(row, r),
+						me: playerView(r.players[who], topTenOf(r))
+					}
+				} : refuse };
+			}
 			return {
 				reply: out.events,
 				events: out.events,

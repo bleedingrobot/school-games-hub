@@ -8,7 +8,7 @@ import { SHOWDOWN } from '../../../shared/showdown/config';
 import { BOSSES, bossInfo, pickBoss, type BossId, type RosterRow } from '../../../shared/showdown/bosses';
 import type { FeedEvent, RoomView } from '../../../shared/showdown/server';
 import type { Arena, Mode, Role, TeamId } from '../../../shared/showdown/types';
-import { ARENA_CHOICES, arenaWords } from './arenaWords';
+import { ARENA_CHOICES, arenaWords, rolesNeeded } from './arenaWords';
 import { BossStandIn } from './BossStandIn';
 import type { ShowdownLink } from './link';
 import { AWARD_WORDS, TEAM_WORDS, bestComeback, initialState, isGoldRush, ordinal, projectorAct, soundFor, type DrySeam, type HitBurst, type ProjectorState, type ShowdownSound } from './projectorState';
@@ -90,6 +90,8 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
   const [mode, setMode] = useState<Mode>('class');
   const [length, setLength] = useState<number>(SHOWDOWN.defaultLength);
   const [ps, dispatch] = useReducer(projectorAct, undefined, () => initialState());
+  const psRef = useRef(ps);
+  psRef.current = ps;
   const [problem, setProblem] = useState<string | null>(null);
   const [barOpen, setBarOpen] = useState(true);
   const [muted, setMutedState] = useState(sound?.muted ?? false);
@@ -152,7 +154,7 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
         lastHitSound.current = at;
       }
       if (sfx.play) snd.play(sfx.play);
-      if (sfx.say) snd.say(sfx.say);
+      if (sfx.say) snd.say(sfx.say, e.type === 'boss_beaten' || e.type === 'time_up' || e.type === 'start' || e.type === 'recap' || e.type === 'again');
     });
     void link.send({ action: 'view', room }).then((out) => {
       if (out.status === 200 && out.body.view) {
@@ -164,7 +166,21 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
         setRoom(null);
       }
     });
-    const tick = setInterval(() => void link.send({ action: 'tick', room }), 1000);
+    // The tick's reply carries the room (and the recap once it's over), so a change Realtime dropped is caught up within a
+    // second: the boss still falls and the recap still comes even if those feed rows never arrived (24 Nov 2026).
+    const tick = setInterval(() => {
+      void link.send({ action: 'tick', room }).then((out) => {
+        if (out.status !== 200 || !out.body.view) return;
+        const v = out.body.view as RoomView;
+        dispatch({ kind: 'view', view: v });
+        const now = psRef.current;
+        if (v.state === 'over' && v.result === 'beaten' && !now.beaten) {
+          dispatch({ kind: 'feed', event: { type: 'boss_beaten', t: v.t, lastHit: null } });
+          soundRef.current?.play('cheer');
+        }
+        if (v.state === 'over' && out.body.recap && !now.recap) dispatch({ kind: 'feed', event: { type: 'recap', t: v.t, recap: out.body.recap as never } });
+      }, () => undefined);
+    }, 1000);
     return () => {
       stopRoom();
       stopFeed();
@@ -521,7 +537,7 @@ function Battle({ ps, roundNow, flinch }: { ps: ProjectorState; roundNow: number
   const roster = ps.order.map((id) => ps.roster[id]);
   const counts: Record<Role, number> = { striker: 0, guard: 0, healer: 0 };
   for (const r of roster) counts[r.role]++;
-  const needGuards = !over && roster.length >= 4 && counts.guard * 5 < roster.length;
+  const needs = over || view.mode === 'solo' ? [] : rolesNeeded(counts);
   const showNames = view.showNames;
   const teamMode = isTeamMode(view);
   const t2 = view.mode === 'teams2';
@@ -575,7 +591,7 @@ function Battle({ ps, roundNow, flinch }: { ps: ProjectorState; roundNow: number
       <SidePanel ps={ps} roundNow={roundNow} />
 
       <div className="sd-p-crewzone">
-        {needGuards && !ps.shield && <div className="sd-p-need">{W.needGuards}</div>}
+        {needs.length > 0 && !ps.shield && <div className="sd-p-need">{needs.map((k) => (k === 'guard' ? W.needGuards : `Need a ${W.roles.healer.name}!`)).join(' ')}</div>}
         <Dome ps={ps} roundNow={roundNow} />
         <div className="sd-p-heals" aria-hidden="true">{heals.map((h) => <div key={h.id} className="sd-p-heal">{showNames ? h.text : 'A Healer woke a friend!'}<i /><i /><i /><i /><i /></div>)}</div>
         <ul ref={crewRef} className="sd-p-crew">
