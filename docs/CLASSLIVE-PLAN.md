@@ -1,0 +1,96 @@
+# Class Live: plan
+
+**Status: plan written 23 Nov 2026. Next: stage 1 (the shared live room and Star Web).** James asked (23 Nov 2026) for more creative whole-class games beyond Class Showdown: the projector is the show, every pupil's device is a controller, played live together. Game id `classlive`, migration `20261123001000` (check again: `node scripts/migration-numbers.mjs`).
+
+## The short version
+
+- **One live room, three games.** Class Live is a set of whole-class games that share one server, one join pop-up and one projector shell: **Star Web** (what else do we know from one fact?), **Serpent Chain** (snake maths: a chain of operations), and **Mystery Mural** (your own maths uncovers a hidden painting). The teacher picks the game; pupils join from the pop-up anywhere in the hub (the same pop-up Class Showdown uses).
+- **Different from Showdown on purpose.** Showdown is a boss fight (and its later arenas are races and digs). Class Live games are about **thinking together**: building a web of facts, a long chain of steps, a picture nobody can see yet. No boss, no knockouts, no ranking by maths.
+- **Star Web** is open-ended: one known fact (6 × 7 = 42) glows in the night sky; pupils type facts they can work out from it (7 × 6, 42 ÷ 6, 12 × 7, 60 × 7, 3.5 × 6...). The server checks each one is true and works out **how** it links (turn around, divide, double, halve, × 10, near fact, other link). Each new fact shoots a star into its constellation arm. Fill every arm and a sky creature draws itself across the stars. The teacher taps any star to put it big on the screen: "How do we know this?"
+- **Serpent Chain** is a mental arithmetic chain: start at 7, then + 11, ÷ 6, × 2, ÷ 10, − 23, + 34... The projector shows a giant serpent winding over a jungle temple with the operations on its scales; every pupil works along it on their own device (their own pace), and their token climbs the serpent. Numbers stay hidden on the big screen until the end, when the serpent wakes and the answers light up scale by scale. Early finishers grow a bonus tail, so nobody waits.
+- **Mystery Mural** uses each pupil's **own maths focus** (way A, like Showdown): every right answer lets the pupil flip one tile of a hidden painting on the projector. As the picture appears, pupils guess what it is (picture choices). Class goal: reveal it and guess it.
+- **Fair and kind.** Mural questions come from each pupil's own focus pack (untimed ladder skills left out of live questions, James via the coordinator, 23 Nov 2026), one marked answer every 4 seconds, no speed bonus. Star Web and Serpent Chain are the same task for everyone but open-ended or self-paced, with three levels the teacher picks. Wrong answers are never on the projector. Names (first names) only appear for good things, and the teacher can hide them.
+- **Flashy.** Night sky with parallax stars and shooting-star trails; a coiled serpent that breathes and wakes with a roar; tiles flipping with sparkles and a painted reveal. Sound only from the projector (Web Audio, like Showdown), announcer lines for Bella later.
+
+## Decisions (made by Claude; James said not to wait, 23 Nov 2026)
+
+| Question | Call |
+|---|---|
+| One game or three | **One game id (`classlive`) with three activities**: one switch, one server function, one set of tables, one teacher page. Each activity has its own title screen. |
+| Who starts | Only the teacher, from the Games table drawer ("Open the big screen") or `/classlive` signed in as a teacher. |
+| How pupils join | The class pop-up (`src/data/hubAsks.ts` `CLASS_GAMES`), one tap. |
+| Star Web anchors | The teacher picks one of 3 levels (× facts up to 5, up to 10, up to 12) and a fact, or "surprise me". |
+| Star Web check | The server parses `a op b = c` (one of + − × ÷, whole numbers or decimals to 2 places) and checks it exactly; then classifies the link (section 2). True but unlinked facts get "True! How does it link to 6 × 7?" and no star. |
+| Serpent levels | Green (+ and − within 100), Gold (all four, × and ÷ by 2, 5, 10), Fire (all four, × and ÷ up to 12, numbers to 1000). 12 boxes, every running answer a whole number from 0 to 1000. |
+| Serpent wrong answer | Two tries; then the right answer with its working ("18 + 11 = 29") and on to the next box. |
+| Mural pace | One marked answer every 4 seconds, like Showdown. |
+| Points | **Hub points like any maths game** for Mural answers (they're ladder questions); Star Web and Serpent Chain give a small fixed reward for taking part (stage 4). |
+| Ladder | Mural answers are recorded with `recordMathsAnswers(…, 'classlive')`. Star Web and Serpent Chain aren't ladder questions and aren't recorded. |
+
+## 1. A session, start to finish
+
+1. **Teacher opens it.** The projector goes full window: a lobby painting for the chosen game, the class name, "Join now!". A slim teacher bar (game, level, Start, names on/off, end) folds away.
+2. **Pupils join** from the pop-up; names fly onto the screen.
+3. **Start.** A short "how to play" on the projector and each device, then go.
+4. **Play** (sections 2 to 4). No clock by default; the teacher ends it (a 5, 10 or 15 minute timer is optional).
+5. **Finish.** A big finish on the projector (the creature, the serpent waking, the painting revealed) and shout-outs; each device shows the pupil's own results.
+6. **Again?** Same game, new fact / chain / painting.
+
+## 2. Star Web
+
+- **The anchor**: `a × b = c` with a dot array under it. Arms (each its own colour and constellation shape):
+
+  | Arm | Counts when | Example from 6 × 7 = 42 |
+  |---|---|---|
+  | Turn around | `b × a = c` | 7 × 6 = 42 |
+  | Divide | `c ÷ a = b`, `c ÷ b = a`, or a scaled one (`2c ÷ a = 2b`) | 42 ÷ 6 = 7, 84 ÷ 6 = 14 |
+  | Double | a factor or the answer doubled (or 4 times) | 12 × 7 = 84 |
+  | Halve | a factor halved (decimals welcome) | 3 × 7 = 21, 6 × 3.5 = 21 |
+  | Tens | a factor × or ÷ 10, 100, 1000 | 60 × 7 = 420, 0.6 × 7 = 4.2 |
+  | Near | one group more or less (a ± 1 or b ± 1), or c ± a, c ± b | 6 × 8 = 48, 42 + 6 = 48 |
+  | Wild | any other true fact using a, b or c, or a multiple of c | 21 × 2 = 42, 168 ÷ 4 = 42 |
+
+- Each new fact is a star with the finder's name (if names are on); the same fact again makes its star glow brighter ("Someone found that one: it shines brighter! Can you find a new one?").
+- **Goals**: 3 stars in every arm draws the sky creature; 30 stars is a supernova. The iPad nudges towards the emptiest arm ("Nobody has halved yet!").
+- **Spotlight**: the teacher taps a star; it zooms to the middle with the link drawn ("6 → 12 is double, so 42 → 84 is double").
+
+## 3. Serpent Chain
+
+- **The chain**: start number and 12 operations, made on the server from the seed and level; every running answer a whole number 0 to 1000.
+- **Each pupil** sees one box at a time ("18 + 11 = ?"); the server only makes steps that work out exactly. The previous answer is carried for them, so a mistake doesn't spoil the rest: after two tries the right answer is shown with its working and they go on from there.
+- **The projector**: the serpent coils over the temple with the operations on its scales; every pupil's token (a coloured gem with their first name) moves along; scales glow when anyone passes them; a "serpent stirs" bar fills with right answers.
+- **Bonus tail**: a pupil who reaches the head gets 4 more boxes at a time, so fast workers keep going and the serpent grows longer on the big screen.
+- **Finish**: the serpent wakes, the answers light up scale by scale, and the head roars the final number.
+
+## 4. Mystery Mural
+
+- **The picture**: a painting under a 12 × 8 grid of tiles. Each right answer (own focus, way A) lets the pupil flip a tile: they tap one on their device (tiles already flipped are greyed). It flips on the projector with a sparkle.
+- **Guessing**: after 15% of tiles, each pupil may guess once per 20 tiles (6 picture choices). The projector shows how many have guessed, never what.
+- **Finish**: all tiles flipped, or the teacher taps Reveal: the rest flip in a wave and the answer pops with the pupils who guessed it earliest.
+
+## 5. Server and data
+
+- **Rules** `shared/classlive/`: `stars.ts`, `serpent.ts`, `mural.ts` (pure), `server.ts` (the steps, shared by the edge function, tests and the preview, Showdown's pattern), `memoryServices.ts`, `pretendClass.ts`.
+- **Function** `supabase/functions/classlive/`: teacher `open`, `view`, `start`, `spotlight`, `reveal`, `end`, `names`; pupil `join`, `play` (one activity step: a fact, a box answer, a tile, a guess), `ask` and `answer` (Mural).
+- **Tables** (`20261123001000_classlive.sql`): `classlive_rooms` (the class reads the public view), `classlive_state` (hidden), `classlive_players` (own row; the teacher the room's), `classlive_questions` (hidden), `classlive_feed` (teacher only, names pupils). Saves are compare-and-swap on the room's version. Switch `classlive_enabled`, names `classlive_names`, saved by `teacher_set_classlive()`.
+- **Cost**: about 30 pupils, one step every 4 to 10 seconds: under 10 writes a second for one class.
+
+## 6. Design checklist
+
+1. **Big goal**: draw every sky creature (one per level), wake all three serpents, reveal every mural.
+2. **Season game?** No.
+3. **Play a day**: teacher-run, no limit.
+4. **Progress**: the teacher's Settings drawer lists sessions played.
+5. **Achievements** (stage 4): Star Finder (find 10 new facts), Serpent Rider (finish a chain), Sharp Eye (guess a mural first).
+6. **Home card**: none (pupils join from the pop-up); a card for the Activities-style listing later.
+7. **Guide**: the 20-second "how to play" at the start of each game, on both screens.
+8. **Learning design**: Star Web shows **how** each fact links (the reasoning is the point); Serpent shows the working after two tries; Mural shows the right answer with the reason.
+
+## Stages
+
+| Stage | What | Live? |
+|---|---|---|
+| **1. The live room + Star Web** | migration, function, shared steps, projector shell, controller, join pop-up, Star Web rules and screens, pretend class test page, teacher "Open the big screen" | |
+| **2. Serpent Chain** | chain maker, screens, waking finale | |
+| **3. Mystery Mural** | way A questions, tile flips, guessing, reveal, stand-in paintings | |
+| **4. Rewards and art** | points, achievements, painted lobby, sky creature, serpent and murals (ComfyUI), Bella lines | |
