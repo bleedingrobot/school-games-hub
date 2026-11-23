@@ -88,17 +88,20 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
   // The world's painting as the sky, cropped to cover the screen (the code-drawn sky until it loads, or if it can't).
   let skyArt: THREE.Texture | null = null;
   const bigScreen = typeof window !== 'undefined' && window.innerWidth * (window.devicePixelRatio || 1) > 1000 && !low;
-  new THREE.TextureLoader().load(bigScreen ? look.big : look.sky, (t) => {
-    if (disposed) {
-      t.dispose();
-      return;
-    }
+  // The paintings have their own glowing road down the middle; seen through a gap in the track it looked like more track
+  // (James, 23 Nov 2026: "hard to see the gaps and holes... not right in the middle under the track"). So the lower middle
+  // fades to a dark void (the world's fog colour): the glowing sides and sky stay, every gap reads as a black hole.
+  const skyImage = new Image();
+  skyImage.onload = () => {
+    if (disposed) return;
+    const t = own(new THREE.CanvasTexture(voidBelow(skyImage, look.fog)));
     t.colorSpace = THREE.SRGBColorSpace;
-    skyArt = own(t);
+    skyArt = t;
     scene.background = t;
     stars.visible = false;
     coverSky();
-  });
+  };
+  skyImage.src = bigScreen ? look.big : look.sky;
   const coverSky = () => {
     const img = skyArt?.image as { width: number; height: number } | undefined;
     if (!skyArt || !img) return;
@@ -313,7 +316,7 @@ export function createView(canvas: HTMLCanvasElement, road: Road, opts: { reduce
   const grid = new THREE.GridHelper(160, 64, look.grid[0], look.grid[1]);
   own(grid.geometry);
   (grid.material as THREE.Material).transparent = true;
-  (grid.material as THREE.Material).opacity = 0.55;
+  (grid.material as THREE.Material).opacity = 0.22; // faint: gaps in the track must read as holes
   grid.position.y = -7;
   scene.add(grid);
 
@@ -573,6 +576,38 @@ function signTexture(label: string): THREE.CanvasTexture {
   t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 4;
   return t;
+}
+
+/**
+ * A world painting with its lower half faded into a dark void: fully dark from just below the horizon down the middle,
+ * where the track's gaps look through, while the left and right edges keep a little of the painting's glow.
+ */
+function voidBelow(img: HTMLImageElement, fog: string): HTMLCanvasElement {
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth || img.width;
+  c.height = img.naturalHeight || img.height;
+  const g = c.getContext('2d');
+  if (!g) return c;
+  const { width: w, height: h } = c;
+  g.drawImage(img, 0, 0, w, h);
+  const col = new THREE.Color(fog);
+  const rgba = (a: number) => `rgba(${Math.round(col.r * 255)},${Math.round(col.g * 255)},${Math.round(col.b * 255)},${a})`;
+  // Down from the horizon: the whole width darkens...
+  const down = g.createLinearGradient(0, h * 0.4, 0, h);
+  down.addColorStop(0, rgba(0));
+  down.addColorStop(0.2, rgba(0.55));
+  down.addColorStop(0.45, rgba(0.88));
+  down.addColorStop(1, rgba(0.97));
+  g.fillStyle = down;
+  g.fillRect(0, h * 0.4, w, h * 0.6);
+  // ...and the middle (under the track) goes fully dark.
+  const middle = g.createRadialGradient(w / 2, h, 0, w / 2, h, h * 0.75);
+  middle.addColorStop(0, rgba(1));
+  middle.addColorStop(0.6, rgba(0.9));
+  middle.addColorStop(1, rgba(0));
+  g.fillStyle = middle;
+  g.fillRect(0, h * 0.4, w, h * 0.6);
+  return c;
 }
 
 /** A dark navy sky fading to violet at the horizon. */
