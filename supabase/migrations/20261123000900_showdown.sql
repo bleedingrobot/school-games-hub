@@ -83,6 +83,11 @@ alter table public.showdown_feed enable row level security;
 revoke all on public.showdown_rooms, public.showdown_state, public.showdown_players, public.showdown_questions, public.showdown_feed
   from anon, authenticated;
 
+-- The switch and the names switch (section 4 has the save).
+alter table public.app_settings add column showdown_enabled boolean not null default true;
+-- First names on the projector (off: avatars only).
+alter table public.app_settings add column showdown_names boolean not null default true;
+
 -- ---------------------------------------------------------------------------
 -- 2. Who may read (and hear live) what. Nobody writes except the server function.
 -- ---------------------------------------------------------------------------
@@ -338,9 +343,7 @@ $$;
 -- 4. The switch and the names switch
 -- ---------------------------------------------------------------------------
 
-alter table public.app_settings add column showdown_enabled boolean not null default true;
--- First names on the projector (off: avatars only).
-alter table public.app_settings add column showdown_names boolean not null default true;
+-- (The two columns are added in section 1, before the functions that read them.)
 
 create function public.teacher_set_showdown(enabled boolean default null, names boolean default null, target_class uuid default null)
 returns void
