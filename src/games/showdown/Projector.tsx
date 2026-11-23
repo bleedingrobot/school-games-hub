@@ -360,9 +360,9 @@ function TeamColumn({ team, count, over, armed, onTap, onOver, onDrop, children 
   );
 }
 
-/** A waving team banner: the painted one (art/paint/banners/banner-<team>.webp) when it exists, else a cloth drawn in CSS. */
+/** A waving team banner: the painted one (art/paint/banners/<team>.webp) when it exists, else a cloth drawn in CSS. */
 function Cloth({ team, className = '', children }: { team: TeamId; className?: string; children: React.ReactNode }) {
-  const img = art('banners', `banner-${team}`);
+  const img = art('banners', team);
   return (
     <div className={`sd-p-cloth sd-p-team--${team}${img ? ' sd-p-cloth--painted' : ''} ${className}`} style={img ? ({ '--cloth': `url(${img})` } as CSSProperties) : undefined}>
       <span className="sd-p-cloth__slices" aria-hidden="true">{Array.from({ length: 8 }, (_, i) => <i key={i} style={{ '--n': i } as CSSProperties} />)}</span>
