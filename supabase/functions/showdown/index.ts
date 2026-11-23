@@ -4838,7 +4838,7 @@ const tenthFamilies = [
 ];
 const ADD_TAGS = ["MS.Y4.NUM.RN.P10"];
 const ones = (t) => Math.floor(t / 10);
-const dig = (t) => t % 10;
+const dig$1 = (t) => t % 10;
 /** A pair of tenth counts for "a + b" or "a − b", made by `make`; the type checks which kind of pair it is. */
 function twoTenths(key, label, ok, sign, named, aLo, aHi) {
 	const pool = range$4(aLo, aHi).flatMap((a) => range$4(1, aHi).filter((b) => ok(a, b)).map((b) => [a, b]));
@@ -4865,22 +4865,22 @@ function twoTenths(key, label, ok, sign, named, aLo, aHi) {
 	});
 }
 const addFamilies = [
-	twoTenths("addten:add", "Adding tenths (1.3 + 0.2)", (a, b) => dig(a) > 0 && dig(b) > 0 && dig(a) + dig(b) < 10 && a + b <= 49, "+", (a, b) => ({
+	twoTenths("addten:add", "Adding tenths (1.3 + 0.2)", (a, b) => dig$1(a) > 0 && dig$1(b) > 0 && dig$1(a) + dig$1(b) < 10 && a + b <= 49, "+", (a, b) => ({
 		"forgot the point": a + b,
 		"put the point in the hundredths place": (a + b) / 100
 	}), 1, 49),
-	twoTenths("addten:carry", "Adding tenths that make a whole (0.7 + 0.5)", (a, b) => dig(a) > 0 && dig(b) > 0 && dig(a) + dig(b) >= 10 && a + b <= 59, "+", (a, b) => ({
-		"wrote the tenths total after the point": Number(`${ones(a) + ones(b)}.${dig(a) + dig(b)}`),
-		"forgot to carry the ten tenths": ones(a) + ones(b) + (dig(a) + dig(b) - 10) / 10,
-		"carried to the wrong place": ones(a) + ones(b) + (dig(a) + dig(b)) / 10,
+	twoTenths("addten:carry", "Adding tenths that make a whole (0.7 + 0.5)", (a, b) => dig$1(a) > 0 && dig$1(b) > 0 && dig$1(a) + dig$1(b) >= 10 && a + b <= 59, "+", (a, b) => ({
+		"wrote the tenths total after the point": Number(`${ones(a) + ones(b)}.${dig$1(a) + dig$1(b)}`),
+		"forgot to carry the ten tenths": ones(a) + ones(b) + (dig$1(a) + dig$1(b) - 10) / 10,
+		"carried to the wrong place": ones(a) + ones(b) + (dig$1(a) + dig$1(b)) / 10,
 		"forgot the point": a + b
 	}), 1, 49),
-	twoTenths("addten:take", "Taking away tenths (1.5 − 0.2)", (a, b) => a > b && dig(b) > 0 && dig(b) <= dig(a) && a - b >= 1, "−", (a, b) => ({
+	twoTenths("addten:take", "Taking away tenths (1.5 − 0.2)", (a, b) => a > b && dig$1(b) > 0 && dig$1(b) <= dig$1(a) && a - b >= 1, "−", (a, b) => ({
 		"added instead": (a + b) / 10,
 		"forgot the point": a - b
 	}), 2, 49),
-	twoTenths("addten:borrow", "Taking away tenths across a whole (1.2 − 0.5)", (a, b) => a > b && dig(b) > dig(a) && a - b >= 1 && a <= 49, "−", (a, b) => ({
-		"took the smaller tenths digit from the bigger": ones(a) - ones(b) + Math.abs(dig(a) - dig(b)) / 10,
+	twoTenths("addten:borrow", "Taking away tenths across a whole (1.2 − 0.5)", (a, b) => a > b && dig$1(b) > dig$1(a) && a - b >= 1 && a <= 49, "−", (a, b) => ({
+		"took the smaller tenths digit from the bigger": ones(a) - ones(b) + Math.abs(dig$1(a) - dig$1(b)) / 10,
 		"did not take one off the whole after borrowing": (a - b) / 10 + 1,
 		"added instead": (a + b) / 10,
 		"forgot the point": a - b
@@ -8850,6 +8850,165 @@ function reshuffle(r, seed) {
 	return true;
 }
 //#endregion
+//#region shared/showdown/goldrush.ts
+/**
+* Gold Rush, Class Showdown's second arena (docs/SHOWDOWN-PLAN.md section 4.2). Same round, modes, roles and big events
+* as Boss Bounty (the engine), with the boss's health standing in for the mountain's gold: every right answer digs.
+*
+* What's different: each pupil digs at a seam they pick on their iPad. A seam pays by how rich it is (gold 1x, gems 1.5x,
+* rich vein 2.5x), but it only has room for a few diggers: past that, its gold is split among everyone digging there, so
+* a crowded rich vein pays no better than a quiet gold seam. Seams run dry and new ones glitter elsewhere on the map.
+* The wind-up is the cave-in (a shield check) and the weak spot is the mother lode (double gold), both from the engine.
+*/
+const GOLDRUSH = {
+	/** How much each kind pays per dig, and how many diggers it has room for (per 12 pupils playing). */
+	kinds: {
+		gold: {
+			times: 1,
+			room: 4,
+			share: .45
+		},
+		gem: {
+			times: 1.5,
+			room: 3,
+			share: .35
+		},
+		rich: {
+			times: 2.5,
+			room: 2,
+			share: .2
+		}
+	},
+	/** The mountain holds this much more gold than the boss has health (good seam picks pay more than 1x), tuned with the
+	*  simulator to about the same 80% of rounds won as Boss Bounty. */
+	mountain: {
+		class: 1.2,
+		teams2: 1.2,
+		teams4: 1.17,
+		solo: 1.23
+	},
+	/** Seams open at once. */
+	open: 5,
+	/** A seam holds this share of the mountain's gold (times its kind's share of seams), so seams run dry a few times a round. */
+	seamShare: .12,
+	/** A pupil who hasn't answered for this long isn't counted as digging. */
+	activeMs: 15e3,
+	/** A crowded seam never pays less than this. */
+	minTimes: .4,
+	/** Spots on the map seams can be (a seam never opens where another is). */
+	spots: [
+		[.14, .3],
+		[.32, .22],
+		[.52, .28],
+		[.72, .2],
+		[.88, .32],
+		[.2, .55],
+		[.4, .5],
+		[.6, .56],
+		[.8, .52],
+		[.12, .78],
+		[.3, .75],
+		[.5, .8],
+		[.7, .76],
+		[.9, .8]
+	]
+};
+const KIND_ORDER = [
+	"gold",
+	"gem",
+	"gold",
+	"rich",
+	"gem",
+	"gold",
+	"rich",
+	"gold",
+	"gem"
+];
+/** Opens one new seam (picked from the seed, at a spot no open seam is using). */
+function openSeam(r) {
+	const seams = r.seams ?? (r.seams = []);
+	const id = seams.length;
+	const kind = KIND_ORDER[(id + hashSeed$1(r.seed, `kind${id}`)) % KIND_ORDER.length];
+	const used = new Set(seams.filter((s) => s.dryAt === null).map((s) => `${s.x},${s.y}`));
+	const free = GOLDRUSH.spots.filter(([x, y]) => !used.has(`${x},${y}`));
+	const [x, y] = free[hashSeed$1(r.seed, `spot${id}`) % free.length];
+	const size = Math.max(10, Math.round((r.boss.max || 300) * GOLDRUSH.seamShare * (GOLDRUSH.kinds[kind].times > 2 ? .7 : 1)));
+	const seam = {
+		id,
+		kind,
+		x,
+		y,
+		left: size,
+		size,
+		dryAt: null
+	};
+	seams.push(seam);
+	return seam;
+}
+/** At the start: the first seams open. */
+function openSeams(r) {
+	r.boss.max = Math.round(r.boss.max * GOLDRUSH.mountain[r.mode]);
+	r.boss.hp = r.boss.max;
+	r.seams = [];
+	for (let i = 0; i < GOLDRUSH.open; i++) openSeam(r);
+}
+const openSeamsOf = (r) => (r.seams ?? []).filter((s) => s.dryAt === null);
+/** Pupils digging at a seam right now (answered lately). */
+function diggersAt(r, seam) {
+	return r.order.filter((id) => r.players[id].seam === seam && r.t - r.players[id].lastActive <= GOLDRUSH.activeMs);
+}
+/** A pupil picks a seam (any open one). */
+function chooseSeam(r, id, seam) {
+	const p = r.players[id];
+	if (!p || !openSeamsOf(r).some((s) => s.id === seam)) return false;
+	p.seam = seam;
+	return true;
+}
+/** The open seam with the most room per digger: where a pupil who hasn't picked (or whose seam ran dry) digs. */
+function bestSeam(r) {
+	const scale = Math.max(1, Math.ceil(r.order.length / 12));
+	return openSeamsOf(r).map((s) => ({
+		s,
+		free: GOLDRUSH.kinds[s.kind].room * scale - diggersAt(r, s.id).length
+	})).sort((a, b) => b.free - a.free || a.s.id - b.s.id)[0]?.s;
+}
+/**
+* One right answer digs: how many times the usual gold it's worth at this pupil's seam (rich seams more, crowded ones
+* split). Takes the gold out of the seam; a seam that runs dry closes and a new one opens.
+*/
+function dig(r, p, gold, events) {
+	let seam = openSeamsOf(r).find((s) => s.id === p.seam);
+	if (!seam) {
+		seam = bestSeam(r);
+		if (!seam) return gold;
+		p.seam = seam.id;
+	}
+	const kind = GOLDRUSH.kinds[seam.kind];
+	const scale = Math.max(1, Math.ceil(r.order.length / 12));
+	const diggers = Math.max(1, diggersAt(r, seam.id).length);
+	const got = gold * Math.max(GOLDRUSH.minTimes, kind.times * Math.min(1, kind.room * scale / diggers));
+	seam.left = Math.max(0, seam.left - got);
+	if (seam.left <= 0) {
+		seam.dryAt = r.t;
+		events.push({
+			type: "seam_dry",
+			t: r.t,
+			seam: seam.id
+		});
+		const fresh = openSeam(r);
+		events.push({
+			type: "seam_new",
+			t: r.t,
+			seam: fresh.id,
+			kind: fresh.kind,
+			x: fresh.x,
+			y: fresh.y,
+			size: fresh.size
+		});
+	}
+	return got;
+}
+//#endregion
 //#region shared/showdown/engine.ts
 /**
 * Class Showdown's rules as plain functions on one plain-JSON round (docs/SHOWDOWN-PLAN.md). The server holds the
@@ -8974,6 +9133,7 @@ function start(r) {
 	r.boss.max = r.bossOverride ?? bossHealth(r.mode, r.lengthMin, r.order.length);
 	r.boss.hp = r.boss.max;
 	r.roleSwapUntil = SHOWDOWN.roleSwapMs;
+	if (r.arena === "goldrush") openSeams(r);
 	return {
 		ok: true,
 		events: [{
@@ -9091,7 +9251,7 @@ function answer(r, id, correct, t, opts = {}) {
 	const isBehind = behind(r, id);
 	const weakSpot = r.t < r.weakSpotUntil;
 	const times = streakTimes(p.streak) * (weakSpot ? isBehind && r.teams.length ? SHOWDOWN.weakSpot.catchUpTimes : SHOWDOWN.weakSpot.times : 1) * (golden ? SHOWDOWN.golden.times : 1);
-	const points = Math.round(SHOWDOWN.pointsPerCorrect * times);
+	let points = Math.round(SHOWDOWN.pointsPerCorrect * times);
 	let damage = SHOWDOWN.damage[p.role] * times;
 	if (p.role === "healer") {
 		const woke = wakeOne(r, p);
@@ -9105,6 +9265,13 @@ function answer(r, id, correct, t, opts = {}) {
 				woke
 			});
 		}
+	}
+	let seam;
+	if (r.arena === "goldrush" && damage > 0) {
+		const before = damage;
+		damage = dig(r, p, damage, events);
+		seam = p.seam ?? void 0;
+		points = Math.max(1, Math.round(points * (damage / before)));
 	}
 	const group = groupOf(r, p);
 	if (r.windUp && group && r.windUp.groups[group] && !r.windUp.groups[group].done) {
@@ -9140,7 +9307,8 @@ function answer(r, id, correct, t, opts = {}) {
 		streak: p.streak,
 		times,
 		weakSpot,
-		golden
+		golden,
+		...seam !== void 0 ? { seam } : {}
 	});
 	if (p.streak === 3 || p.streak % 5 === 0) events.push({
 		type: "streak",
@@ -9791,6 +9959,7 @@ const ROLES = [
 	"guard",
 	"healer"
 ];
+const ARENAS = ["boss", "goldrush"];
 const MAX_TRIES = 8;
 const MAX_ANSWER_MS = 6e4;
 const OFF = "Class Showdown is switched off for your class.";
@@ -9817,6 +9986,15 @@ function roomView(row, r) {
 		mode: r.mode,
 		arena: row.arena,
 		bossId: r.bossId ?? "river-titan",
+		seams: openSeamsOf(r).map((x) => ({
+			id: x.id,
+			kind: x.kind,
+			x: x.x,
+			y: x.y,
+			left: Math.round(x.left),
+			size: x.size,
+			diggers: diggersAt(r, x.id).length
+		})),
 		lengthMin: r.lengthMin,
 		startedAt: row.startedAt,
 		pausedAt: row.pausedAt,
@@ -9856,6 +10034,7 @@ function playerView(p, top = new Set()) {
 	return {
 		topTen: top.has(p.id),
 		reward: p.reward ?? null,
+		seam: p.seam ?? null,
 		player: p.id,
 		name: p.name,
 		team: p.team,
@@ -10023,6 +10202,7 @@ async function finish(s, row) {
 		seed: r.seed,
 		boss: r.bossId ?? "river-titan",
 		beaten,
+		roster: r.arena !== "goldrush",
 		ms: Math.round(r.t),
 		players: r.order.map((id) => r.players[id]).filter((p) => p.reward).map((p) => ({
 			player: p.id,
@@ -10063,19 +10243,21 @@ async function showdownStep(s, who, body) {
 		if (!teach.enabled) return no(403, OFF, "off");
 		const beaten = await s.classRoster(classId);
 		if (beaten === "busy") return busy();
+		const arena = ARENAS.find((a) => a === body.arena) ?? "boss";
 		const round = newRound({
 			seed: Math.floor(s.random() * 2 ** 31),
 			mode,
 			lengthMin: length
 		});
 		round.bossId = pickBoss(beaten, body.boss);
+		if (arena === "goldrush") round.arena = "goldrush";
 		const view = roomView({
-			arena: "boss",
+			arena,
 			startedAt: null,
 			pausedAt: null,
 			showNames: teach.showNames
 		}, round);
-		const id = await s.openRoom(classId, who, "boss", round, view);
+		const id = await s.openRoom(classId, who, arena, round, view);
 		if (id === "busy") return busy();
 		return ok({
 			room: id,
@@ -10122,7 +10304,8 @@ async function showdownStep(s, who, body) {
 					mode: r.mode,
 					lengthMin: r.lengthMin
 				});
-				fresh.bossId = pickBoss(beaten, body.boss, r.bossId ?? "river-titan");
+				fresh.bossId = r.arena === "goldrush" ? r.bossId : pickBoss(beaten, body.boss, r.bossId ?? "river-titan");
+				if (r.arena === "goldrush") fresh.arena = "goldrush";
 				const events = [];
 				for (const id of r.order) {
 					const old = r.players[id];
@@ -10312,6 +10495,35 @@ async function showdownStep(s, who, body) {
 			});
 		}
 		if (!cur.round.players[who]) return no(409, "Join the showdown first.", "not-playing");
+		if (action === "choose" && typeof body.seam === "number") {
+			const seam = body.seam;
+			const done = await mutate(s, room, (r, t, row) => {
+				if (r.arena !== "goldrush" || r.state !== "live") return { refuse: no(409, "Pick a seam once the Gold Rush starts.", "not-now") };
+				const events = row.pausedAt === null ? advance(r, t) : [];
+				if (r.players[who]?.seam === seam) return {
+					reply: null,
+					events
+				};
+				if (!chooseSeam(r, who, seam)) return { refuse: no(409, "That seam has run dry. Pick another!", "dry") };
+				r.players[who].lastActive = r.t;
+				return {
+					reply: null,
+					events: [...events, {
+						type: "seam_pick",
+						t: r.t,
+						pupil: who,
+						seam
+					}]
+				};
+			});
+			if ("refuse" in done) return done.refuse;
+			return ok({
+				room,
+				me: playerView(done.row.round.players[who], topTenOf(done.row.round)),
+				view: roomView(done.row, done.row.round),
+				now: s.now()
+			});
+		}
 		if (action === "choose") {
 			const role = ROLES.find((k) => k === body.role);
 			if (!role) return no(400, "Pick Striker, Guard or Healer.");

@@ -10,13 +10,14 @@ import type { FeedEvent, RoomView } from '../../../shared/showdown/server';
 import type { Mode, Role, TeamId } from '../../../shared/showdown/types';
 import { BossStandIn } from './BossStandIn';
 import type { ShowdownLink } from './link';
-import { AWARD_WORDS, TEAM_WORDS, bestComeback, initialState, ordinal, projectorAct, soundFor, type HitBurst, type ProjectorState, type ShowdownSound } from './projectorState';
+import { AWARD_WORDS, TEAM_WORDS, bestComeback, initialState, isGoldRush, ordinal, projectorAct, soundFor, type DrySeam, type HitBurst, type ProjectorState, type ShowdownSound } from './projectorState';
 import './projector.css';
 
 const ART = import.meta.glob('./art/paint/**/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
 const art = (folder: string, file: string): string | undefined => ART[`./art/paint/${folder}/${file}.webp`];
 
 const ROOM_KEY = 'showdown-room';
+const SEAM_WORD = { gold: 'Gold seam', gem: 'Gem seam', rich: 'Rich vein' } as const;
 const ROLE_LETTER: Record<Role, string> = { striker: 'S', guard: 'G', healer: 'H' };
 const ROLE_WORD: Record<Role, string> = { striker: 'Strikers', guard: 'Guards', healer: 'Healers' };
 const TEAM_HEX: Record<TeamId, string> = { red: '#ff4d5e', blue: '#4da3ff', gold: '#ffd23f', green: '#4dd97a' };
@@ -100,14 +101,17 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
   const [recapStage, setRecapStage] = useState<0 | 1>(0);
   const [rosterRows, setRosterRows] = useState<RosterRow[] | null>(null);
   const [pick, setPick] = useState<BossId | ''>('');
+  const [arena, setArena] = useState<'boss' | 'goldrush'>('boss');
   const soundRef = useRef(sound);
   soundRef.current = sound;
   const lastHitSound = useRef(0);
+  const grRef = useRef(false);
   const seenStart = useRef(0);
   const stageRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
 
   const view = ps.view;
+  grRef.current = isGoldRush(view);
   const roundNow = view && view.startedAt !== null ? Math.max(0, (view.pausedAt ?? now + offset) - view.startedAt) : 0;
 
   useEffect(() => {
@@ -138,7 +142,7 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
     const stopRoom = link.watchRoom(room, (v) => dispatch({ kind: 'view', view: v }));
     const stopFeed = link.watchFeed(room, (e: FeedEvent) => {
       dispatch({ kind: 'feed', event: e });
-      const sfx = soundFor(e);
+      const sfx = soundFor(e, grRef.current);
       const snd = soundRef.current;
       if (!snd) return;
       if (sfx.play === 'hit' || sfx.play === 'bighit') {
@@ -220,7 +224,7 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
     return out;
   };
   const open = async () => {
-    const out = await send({ action: 'open', classId, mode, length, ...(pick ? { boss: pick } : {}) });
+    const out = await send({ action: 'open', classId, mode, length, arena, ...(arena === 'boss' && pick ? { boss: pick } : {}) });
     if (out.status === 200 && typeof out.body.room === 'number') {
       dispatch({ kind: 'reset', reply: { view: out.body.view as RoomView } });
       if (Array.isArray(out.body.roster)) setRosterRows(out.body.roster as RosterRow[]);
@@ -228,7 +232,7 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
       seenStart.current = 0;
       keepRoom(out.body.room);
       setRoom(out.body.room);
-      soundRef.current?.say('Join now!');
+      soundRef.current?.say(arena === 'goldrush' ? 'Grab your pickaxe! Join now!' : 'Join now!');
     }
   };
   const again = async () => {
@@ -241,9 +245,9 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
       setRecapStage(0);
       setCount(null);
       setBarOpen(true);
-      const boss = (out.body.view as RoomView).bossId;
+      const nv = out.body.view as RoomView;
       soundRef.current?.play('roar');
-      soundRef.current?.say(bossInfo(boss).roar);
+      soundRef.current?.say(isGoldRush(nv) ? 'Dig, dig, dig!' : bossInfo(nv.bossId).roar);
     }
   };
   const newRound = () => {
@@ -262,17 +266,19 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
   };
 
   const state = view?.state;
+  const gr = room && view ? isGoldRush(view) : arena === 'goldrush';
+  const caving = gr && !!ps.shield && ps.shield.state === null && roundNow < ps.shield.endsAt && view?.state === 'live';
   const paused = !!view?.pausedAt;
   const live = state === 'live';
   const final = ps.final && live;
-  const stageClass = ['sd-p', `sd-p--p${ps.phase}`, shaking ? 'sd-p--shake' : '', final ? 'sd-p--final' : '', roundNow - ps.phaseAt < 3200 && ps.phaseAt > 0 && live ? 'sd-p--transform' : ''].filter(Boolean).join(' ');
+  const stageClass = ['sd-p', `sd-p--p${ps.phase}`, gr ? 'sd-p--gr' : '', caving ? 'sd-p--cavein' : '', gr && ps.weakUntil > roundNow && live ? 'sd-p--lode' : '', shaking ? 'sd-p--shake' : '', final ? 'sd-p--final' : '', roundNow - ps.phaseAt < 3200 && ps.phaseAt > 0 && live ? 'sd-p--transform' : ''].filter(Boolean).join(' ');
 
   return (
     <div ref={stageRef} className={stageClass} data-state={state ?? 'idle'}>
       <h1 className="sd-p__sr">Class Showdown{state ? ` ${state}` : ''}</h1>
-      <Backdrop state={state} boss={view?.bossId} />
+      <Backdrop state={state} boss={view?.bossId} gold={gr} />
       {state === 'live' || state === 'over' ? <Battle ps={ps} roundNow={roundNow} flinch={flinch} /> : null}
-      {state === 'lobby' && <Lobby ps={ps} className={className} roster={rosterRows} onMove={(pupil, team) => void send({ action: 'teams', room, pupil, team })} />}
+      {state === 'lobby' && <Lobby ps={ps} className={className} roster={gr ? null : rosterRows} onMove={(pupil, team) => void send({ action: 'teams', room, pupil, team })} />}
       {!state && <div className="sd-p-idle"><h2>Class Showdown</h2><p>Pick how long, then press Open to bring in the class.</p></div>}
 
       {live && ps.banner && roundNow < ps.banner.until && <div key={`${ps.banner.text}${ps.banner.until}`} className={`sd-p-banner sd-p-banner--${ps.banner.kind}`} role="status">{ps.banner.text}</div>}
@@ -293,11 +299,14 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
             <label>Minutes <select value={length} disabled={!!room} onChange={(e) => setLength(Number(e.target.value))}>
               {SHOWDOWN.lengths.map((l) => <option key={l} value={l}>{l}</option>)}
             </select></label>
-            {(!room || state === 'over') && rosterRows && <BossPicker rows={rosterRows} value={pick} onChange={setPick} />}
+            <label>Arena <select value={room && view ? view.arena : arena} disabled={!!room} onChange={(e) => setArena(e.target.value === 'goldrush' ? 'goldrush' : 'boss')}>
+              <option value="boss">Boss Bounty</option><option value="goldrush">Gold Rush</option>
+            </select></label>
+            {(!room || state === 'over') && !gr && rosterRows && <BossPicker rows={rosterRows} value={pick} onChange={setPick} />}
             {!room && <button type="button" className="sd-p-btn sd-p-btn--go" onClick={() => void open()}>Open</button>}
             {room && state === 'lobby' && <button type="button" className="sd-p-btn" onClick={() => void send({ action: 'teams', room, reshuffle: true })}>Reshuffle</button>}
             {room && state === 'lobby' && <button type="button" className="sd-p-btn sd-p-btn--go" onClick={() => void send({ action: 'start', room })}>Start</button>}
-            {room && live && <button type="button" className="sd-p-btn" onClick={() => void send({ action: 'enrage', room })}>Enrage</button>}
+            {room && live && <button type="button" className="sd-p-btn" onClick={() => void send({ action: 'enrage', room })}>{gr ? 'Rumble' : 'Enrage'}</button>}
             {room && live && <button type="button" className="sd-p-btn" onClick={() => void send({ action: 'pause', room, resume: paused })}>{paused ? 'Resume' : 'Pause'}</button>}
             <button type="button" className="sd-p-btn" aria-pressed={muted} onClick={toggleMute}>{muted ? 'Unmute' : 'Mute'}</button>
             {room && state !== 'over' && (
@@ -313,9 +322,9 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
   );
 }
 
-function Backdrop({ state, boss }: { state: string | undefined; boss: BossId | undefined }) {
-  const img = state === 'lobby' || !state ? art('back', 'lobby') : art('back', bossInfo(boss).backdrop) ?? art('back', 'river-valley');
-  return <div className="sd-p-back" style={img ? ({ backgroundImage: `url(${img})` } as CSSProperties) : undefined} aria-hidden="true" />;
+function Backdrop({ state, boss, gold }: { state: string | undefined; boss: BossId | undefined; gold: boolean }) {
+  const img = gold ? art('back', 'gold-rush') : state === 'lobby' || !state ? art('back', 'lobby') : art('back', bossInfo(boss).backdrop) ?? art('back', 'river-valley');
+  return <div className={`sd-p-back${gold ? ' sd-p-back--gold' : ''}`} style={img ? ({ backgroundImage: `url(${img})` } as CSSProperties) : undefined} aria-hidden="true" />;
 }
 
 /** Boss choice before opening (and for "Again?"): only the bosses the class has open. "" = the next one in order. */
@@ -359,6 +368,32 @@ function RosterStrip({ rows, current }: { rows: RosterRow[]; current: BossId }) 
   );
 }
 
+/** Gold Rush lobby: the three kinds of seam rise out of the dark, glittering, with the rallying cry. */
+function GoldEntrance({ seq }: { seq: number }) {
+  const kinds = ['gem', 'rich', 'gold'] as const;
+  return (
+    <>
+      <div key={`ge${seq}`} className="sd-p-gr-entrance" aria-hidden="true">
+        {kinds.map((k, i) => {
+          const img = art('goldrush', `seam-${k}`);
+          return (
+            <span key={k} className={`sd-p-gr-entrance__seam sd-p-gr-entrance__seam--${k}`} style={{ '--i': i } as CSSProperties}>
+              {img ? <img src={img} alt="" /> : <b>💎</b>}
+              <Sparkles />
+            </span>
+          );
+        })}
+      </div>
+      <div key={`gr${seq}`} className="sd-p-roar sd-p-roar--gold" role="status">Dig, dig, dig!</div>
+    </>
+  );
+}
+
+/** Glitter: little stars that twinkle at different times around whatever they sit in. */
+function Sparkles({ n = 6 }: { n?: number }) {
+  return <span className="sd-p-sparkles" aria-hidden="true">{Array.from({ length: n }, (_, i) => <i key={i} style={{ '--i': i, '--x': `${8 + ((i * 47) % 84)}%`, '--y': `${6 + ((i * 29) % 80)}%` } as CSSProperties} />)}</span>;
+}
+
 /** The boss's entrance in the lobby: the painting rises out of the dark with its roar. */
 function Entrance({ boss, seq }: { boss: BossId; seq: number }) {
   const info = bossInfo(boss);
@@ -389,10 +424,10 @@ function Lobby({ ps, className, roster, onMove }: { ps: ProjectorState; classNam
   };
   return (
     <div className="sd-p-lobby" ref={lobbyRef}>
-      {ps.view && <Entrance boss={ps.view.bossId} seq={ps.againSeq} />}
+      {ps.view && (isGoldRush(ps.view) ? <GoldEntrance seq={ps.againSeq} /> : <Entrance boss={ps.view.bossId} seq={ps.againSeq} />)}
       <div className="sd-p-lobby__join">Join now!</div>
       {className && <div className="sd-p-lobby__class">{className}</div>}
-      <p className="sd-p-lobby__hint">{teamMode ? 'Tap a name, then tap a team (or drag it) to move it' : 'Open Class Showdown on your iPad'}</p>
+      <p className="sd-p-lobby__hint">{teamMode ? 'Tap a name, then tap a team (or drag it) to move it' : isGoldRush(ps.view) ? 'Open Class Showdown on your iPad, then pick a seam to dig!' : 'Open Class Showdown on your iPad'}</p>
       <div className="sd-p-lobby__count">{ps.order.length} {ps.order.length === 1 ? 'hero' : 'heroes'} ready</div>
       {teamMode ? (
         <div className={`sd-p-picker sd-p-picker--${teamMode.length}`} aria-label="Team picker">
@@ -463,6 +498,7 @@ function Cloth({ team, className = '', children }: { team: TeamId; className?: s
 function Battle({ ps, roundNow, flinch }: { ps: ProjectorState; roundNow: number; flinch: boolean }) {
   const view = ps.view as RoomView;
   const { boss } = view;
+  const gr = isGoldRush(view);
   const pct = Math.max(0, Math.min(100, (boss.hp / Math.max(1, boss.max)) * 100));
   const left = Math.max(0, view.lengthMin * 60000 - roundNow);
   const weak = ps.weakUntil > roundNow;
@@ -477,7 +513,7 @@ function Battle({ ps, roundNow, flinch }: { ps: ProjectorState; roundNow: number
   const showNames = view.showNames;
   const teamMode = isTeamMode(view);
   const t2 = view.mode === 'teams2';
-  const facing = view.mode === 'teams4' ? (view.facing ?? ps.turn?.team ?? null) : null;
+  const facing = view.mode === 'teams4' && !gr ? (view.facing ?? ps.turn?.team ?? null) : null;
   const slot = facing ? SLOT[facing] : null;
   const roaring = !!ps.turn && view.mode === 'teams4' && roundNow - ps.turn.at < 1600 && roundNow >= ps.turn.at;
   const turnT = slot ? `perspective(900px) rotateY(${slot.side * 32}deg) rotate(${slot.side * 3}deg) translate(${slot.side * 8}%, ${slot.low ? 3 : -1}%)` : undefined;
@@ -485,25 +521,28 @@ function Battle({ ps, roundNow, flinch }: { ps: ProjectorState; roundNow: number
   const bursts = ps.bursts.filter((b) => roundNow - b.t < 2500 && roundNow >= b.t - 500);
   const heals = ps.heals.filter((h) => roundNow - h.t < 2800);
   const crewRef = useRef<HTMLUListElement>(null);
+  const dug = new Set(gr ? ps.bursts.filter((b) => roundNow - b.t < 1300 && roundNow >= b.t).map((b) => b.pupil) : []);
   useFit(crewRef, null, `${roster.length}${showNames}${roster.map((r) => r.name.length).join()}`, () => Math.max(12, Math.min(window.innerWidth * 0.016, window.innerHeight * 0.03, 22)), 8);
 
   return (
     <>
       <header className="sd-p-hud">
-        <div className={`sd-p-health${weak ? ' sd-p-health--weak' : ''}${healing ? ' sd-p-health--heal' : ''}`} role="progressbar" aria-label="Boss health" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
+        <div className={`sd-p-health${gr ? ' sd-p-health--gold' : ''}${weak ? ' sd-p-health--weak' : ''}${healing ? ' sd-p-health--heal' : ''}`} role="progressbar" aria-label={gr ? 'Gold left in the mountain' : 'Boss health'} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
           <div className="sd-p-health__ghost" style={{ transform: `scaleX(${pct / 100})` }} />
           <div className="sd-p-health__fill" style={{ transform: `scaleX(${pct / 100})` }} />
           <span className="sd-p-health__tick" style={{ left: '66%' }} /><span className="sd-p-health__tick" style={{ left: '33%' }} />
-          <span className="sd-p-health__label">{bossName}</span>
+          <span className="sd-p-health__label">{gr ? 'Gold left in the mountain' : bossName}</span>
+          {gr && <Sparkles n={10} />}
         </div>
         <div className={`sd-p-clock${left <= 30000 && !over ? ' sd-p-clock--low' : ''}`}>{mmss(left)}</div>
       </header>
 
-      {t2 && <Bridge shakeKey={ps.tugSeq} />}
+      {t2 && !gr && <Bridge shakeKey={ps.tugSeq} />}
       {teamMode && <TeamFlags ps={ps} facing={facing} />}
-      {t2 && Math.abs(view.tug) > 0.04 && !over && <div key={view.tug > 0 ? 'r' : 'b'} className={`sd-p-pushing sd-p-team--${view.tug > 0 ? 'red' : 'blue'}`} role="status">{view.tug > 0 ? 'RED' : 'BLUE'} is pushing!</div>}
+      {t2 && !gr && Math.abs(view.tug) > 0.04 && !over && <div key={view.tug > 0 ? 'r' : 'b'} className={`sd-p-pushing sd-p-team--${view.tug > 0 ? 'red' : 'blue'}`} role="status">{view.tug > 0 ? 'RED' : 'BLUE'} is pushing!</div>}
 
-      <div className={`sd-p-bosswrap${teamMode ? ' sd-p-bosswrap--teams' : ''}${over && ps.beaten ? ' sd-p-bosswrap--beaten' : ''}`} style={t2 ? ({ left: `calc(50% + ${Math.max(-1, Math.min(1, view.tug)) * 16}vw)` } as CSSProperties) : undefined}>
+      {gr && <Mine ps={ps} roundNow={roundNow} weak={weak} over={over} />}
+      {!gr && <div className={`sd-p-bosswrap${teamMode ? ' sd-p-bosswrap--teams' : ''}${over && ps.beaten ? ' sd-p-bosswrap--beaten' : ''}`} style={t2 ? ({ left: `calc(50% + ${Math.max(-1, Math.min(1, view.tug)) * 16}vw)` } as CSSProperties) : undefined}>
         {facing && <div key={`gz${ps.turnSeq}`} className={`sd-p-gaze sd-p-team--${facing}`} aria-hidden="true" />}
         {roaring && ps.turn && <div key={`rw${ps.turnSeq}`} className={`sd-p-roarwave sd-p-team--${ps.turn.team}`} aria-hidden="true"><i /><i /><i /></div>}
         <div className={`sd-p-bossroar${roaring ? ' sd-p-bossroar--go' : ''}`}>
@@ -517,20 +556,20 @@ function Battle({ ps, roundNow, flinch }: { ps: ProjectorState; roundNow: number
         </div>
         <div className="sd-p-bursts" aria-hidden="true">{bursts.map((b) => <Burst key={b.id} b={b} showNames={showNames} />)}</div>
         {over && ps.beaten && <Explosion />}
-      </div>
+      </div>}
 
       <SidePanel ps={ps} roundNow={roundNow} />
 
       <div className="sd-p-crewzone">
-        {needGuards && !ps.shield && <div className="sd-p-need">Need more Guards!</div>}
-        <Dome ps={ps} roundNow={roundNow} />
+        {needGuards && !ps.shield && <div className="sd-p-need">{gr ? 'Need more roof-holders!' : 'Need more Guards!'}</div>}
+        <Dome ps={ps} roundNow={roundNow} gr={gr} />
         <div className="sd-p-heals" aria-hidden="true">{heals.map((h) => <div key={h.id} className="sd-p-heal">{showNames ? h.text : 'A Healer woke a friend!'}<i /><i /><i /><i /><i /></div>)}</div>
         <ul ref={crewRef} className="sd-p-crew">
           {roster.map((r) => {
             const dazed = (ps.dazed[r.id] ?? 0) > roundNow;
             const portrait = art('roles', r.role);
             return (
-              <li key={r.id} className={`sd-p-chip${r.team ? ` sd-p-team--${r.team}` : ''}${dazed ? ' sd-p-chip--dazed' : ''}`}>
+              <li key={r.id} data-pid={r.id} className={`sd-p-chip${r.team ? ` sd-p-team--${r.team}` : ''}${dazed ? ' sd-p-chip--dazed' : ''}${dug.has(r.id) ? ' sd-p-chip--got' : ''}`}>
                 <span className={`sd-p-chip__role sd-p-role--${r.role}`} title={ROLE_WORD[r.role]}>{portrait ? <img src={portrait} alt="" /> : ROLE_LETTER[r.role]}</span>
                 {showNames && <span className="sd-p-chip__name">{r.name}</span>}
                 {dazed && <span className="sd-p-daze" aria-hidden="true"><b>★</b><b>★</b><b>★</b></span>}
@@ -560,7 +599,7 @@ function Burst({ b, showNames }: { b: HitBurst; showNames: boolean }) {
   );
 }
 
-function Dome({ ps, roundNow }: { ps: ProjectorState; roundNow: number }) {
+function Dome({ ps, roundNow, gr = false }: { ps: ProjectorState; roundNow: number; gr?: boolean }) {
   const sh = ps.shield;
   const view = ps.view as RoomView;
   if (!sh) return null;
@@ -588,9 +627,9 @@ function Dome({ ps, roundNow }: { ps: ProjectorState; roundNow: number }) {
                 {d.state === 'broke' && <svg className="sd-p-dome__crack" viewBox="0 0 100 60"><path d="M50 0 L44 14 L56 24 L40 38 L52 60 M44 14 L24 22 M56 24 L78 30 M40 38 L18 48" /></svg>}
               </div>
               {d.live && <div className="sd-p-dome__count">{secs}</div>}
-              <div className="sd-p-dome__label sd-p-dome__label--team">{TEAM_SHORT[k]} SHIELD</div>
-              {d.state === 'held' && <div className="sd-p-dome__clang">CLANG!</div>}
-              {d.state === 'broke' && <div className="sd-p-dome__clang sd-p-dome__clang--broke">CRACK!</div>}
+              <div className="sd-p-dome__label sd-p-dome__label--team">{TEAM_SHORT[k]} {gr ? 'ROOF' : 'SHIELD'}</div>
+              {d.state === 'held' && <div className="sd-p-dome__clang">{gr ? 'HOLDS!' : 'CLANG!'}</div>}
+              {d.state === 'broke' && <div className="sd-p-dome__clang sd-p-dome__clang--broke">{gr ? 'CAVE-IN!' : 'CRACK!'}</div>}
               {d.state === 'broke' && <div className="sd-p-dome__shards">{Array.from({ length: 6 }, (_, i) => <i key={i} style={{ '--i': i } as CSSProperties} />)}</div>}
             </div>
           );
@@ -610,9 +649,9 @@ function Dome({ ps, roundNow }: { ps: ProjectorState; roundNow: number }) {
         {sh.state === 'broke' && <svg className="sd-p-dome__crack" viewBox="0 0 100 60"><path d="M50 0 L44 14 L56 24 L40 38 L52 60 M44 14 L24 22 M56 24 L78 30 M40 38 L18 48" /></svg>}
       </div>
       {winding && <div className="sd-p-dome__count">{secs}</div>}
-      {winding && <div className="sd-p-dome__label">SHIELD UP!</div>}
-      {sh.state === 'held' && <div className="sd-p-dome__clang">CLANG!</div>}
-      {sh.state === 'broke' && <div className="sd-p-dome__clang sd-p-dome__clang--broke">CRACK!</div>}
+      {winding && <div className="sd-p-dome__label">{gr ? 'PROP UP THE ROOF!' : 'SHIELD UP!'}</div>}
+      {sh.state === 'held' && <div className="sd-p-dome__clang">{gr ? 'HOLDS!' : 'CLANG!'}</div>}
+      {sh.state === 'broke' && <div className="sd-p-dome__clang sd-p-dome__clang--broke">{gr ? 'CAVE-IN!' : 'CRACK!'}</div>}
       {sh.state === 'broke' && <div className="sd-p-dome__shards">{Array.from({ length: 10 }, (_, i) => <i key={i} style={{ '--i': i } as CSSProperties} />)}</div>}
     </div>
   );
@@ -635,7 +674,8 @@ function Bridge({ shakeKey }: { shakeKey: number }) {
 function TeamFlags({ ps, facing }: { ps: ProjectorState; facing: TeamId | null }) {
   const view = ps.view as RoomView;
   const t2 = view.mode === 'teams2';
-  const val = (k: TeamId) => Math.round((t2 ? view.teamDamage[k] : view.teamPoints[k]) ?? 0);
+  const gr = isGoldRush(view);
+  const val = (k: TeamId) => Math.round((t2 || gr ? view.teamDamage[k] : view.teamPoints[k]) ?? 0);
   const max = Math.max(1, ...view.teams.map(val));
   return (
     <div className="sd-p-flags" aria-label="Teams">
@@ -643,14 +683,14 @@ function TeamFlags({ ps, facing }: { ps: ProjectorState; facing: TeamId | null }
         const sl = SLOT[k];
         const leading = t2 ? (view.tug > 0.04 ? 'red' : view.tug < -0.04 ? 'blue' : null) === k : false;
         return (
-          <div key={k} className={`sd-p-flag sd-p-flag--${sl.side < 0 ? 'l' : 'r'}${sl.low && !t2 ? ' sd-p-flag--low' : ''} sd-p-team--${k}${facing === k ? ' sd-p-flag--facing' : ''}${leading ? ' sd-p-flag--lead' : ''}`} style={{ '--k': i, '--n': view.teams.length } as CSSProperties}>
+          <div key={k} data-flag={k} className={`sd-p-flag sd-p-flag--${sl.side < 0 ? 'l' : 'r'}${sl.low && !t2 ? ' sd-p-flag--low' : ''} sd-p-team--${k}${facing === k ? ' sd-p-flag--facing' : ''}${leading ? ' sd-p-flag--lead' : ''}`} style={{ '--k': i, '--n': view.teams.length } as CSSProperties}>
             <span className="sd-p-flag__pole" />
             <Cloth team={k} className="sd-p-flag__cloth">
               <b>{TEAM_SHORT[k]}</b>
               <strong>{val(k)}</strong>
-              <small>{t2 ? 'damage' : 'points'}</small>
+              <small>{gr ? 'gold dug' : t2 ? 'damage' : 'points'}</small>
             </Cloth>
-            <div className="sd-p-flag__bar"><i style={{ transform: `scaleX(${val(k) / max})` }} /></div>
+            {gr ? <GoldPile share={val(k) / max} amount={val(k)} team={k} /> : <div className="sd-p-flag__bar"><i style={{ transform: `scaleX(${val(k) / max})` }} /></div>}
             {facing === k && <div className="sd-p-flag__faces">BOSS FACES YOU</div>}
           </div>
         );
@@ -720,7 +760,7 @@ function Bounties({ ps }: { ps: ProjectorState }) {
   const who = (id: string) => (names ? ps.names[id] ?? ps.roster[id]?.name ?? 'A hero' : 'A hero');
   const topDmg = Object.entries(ps.damage).sort((a, b) => b[1] - a[1])[0];
   const rows: { kind: string; label: string; who: string; val: string }[] = [];
-  if (topDmg) rows.push({ kind: 'dmg', label: 'Most damage', who: who(topDmg[0]), val: `${Math.round(topDmg[1] * 10)}` });
+  if (topDmg) rows.push({ kind: 'dmg', label: isGoldRush(ps.view) ? 'Most gold' : 'Most damage', who: who(topDmg[0]), val: `${Math.round(topDmg[1] * 10)}` });
   if (ps.lastHitter) rows.push({ kind: 'last', label: 'Last hit', who: who(ps.lastHitter), val: '' });
   if (ps.bestStreak && ps.bestStreak.streak >= 2) rows.push({ kind: 'streak', label: 'Longest streak', who: who(ps.bestStreak.pupil), val: `${ps.bestStreak.streak} in a row` });
   const comeback = bestComeback(ps);
@@ -740,12 +780,135 @@ function Bounties({ ps }: { ps: ProjectorState }) {
   );
 }
 
+/** Gold Rush: the painted map with every open seam on it, the gold flying out of them, the cave-in and the mother lode. */
+function Mine({ ps, roundNow, weak, over }: { ps: ProjectorState; roundNow: number; weak: boolean; over: boolean }) {
+  const view = ps.view as RoomView;
+  const teamMode = isTeamMode(view);
+  const sh = ps.shield;
+  const caving = !!sh && sh.state === null && roundNow < sh.endsAt && !over;
+  const caved = !!sh && sh.state === 'broke' && roundNow - sh.resolvedAt < 2600;
+  const dry = ps.dry.filter((d) => roundNow - d.t < 1900 && roundNow >= d.t);
+  const flights = ps.bursts.filter((b) => b.seam !== undefined && roundNow - b.t < 1300 && roundNow >= b.t - 300);
+  const toTeam = teamMode;
+  return (
+    <>
+      <div className={`sd-p-map${teamMode ? ' sd-p-map--teams' : ''}${view.mode === 'solo' ? ' sd-p-map--solo' : ''}`}>
+        {weak && !over && <div className="sd-p-lode" aria-hidden="true"><i /><b /></div>}
+        {!over && view.seams.map((x) => <Seam key={x.id} s={x} lode={weak} />)}
+        {dry.map((d) => <DrySeamView key={`d${d.id}`} d={d} />)}
+      </div>
+      <div className="sd-p-nuggets" aria-hidden="true">{flights.map((b) => <NuggetFlight key={b.id} b={b} toTeam={toTeam} showNames={view.showNames} />)}</div>
+      {(caving || caved) && <CaveIn heavy={caved} />}
+    </>
+  );
+}
+
+function Seam({ s, lode }: { s: RoomView['seams'][number]; lode: boolean }) {
+  const pct = Math.max(0, Math.min(1, s.left / Math.max(1, s.size)));
+  const img = art('goldrush', `seam-${s.kind}`);
+  return (
+    <div className={`sd-p-seam sd-p-seam--${s.kind}${lode ? ' sd-p-seam--lode' : ''}${pct < 0.25 ? ' sd-p-seam--low' : ''}`} data-seam={s.id} style={{ left: `${s.x * 100}%`, top: `${s.y * 100}%` }}>
+      <div className="sd-p-seam__pop">
+        <span className="sd-p-seam__glow" />
+        {img ? <img className="sd-p-seam__img" src={img} alt={SEAM_WORD[s.kind]} /> : <span className="sd-p-seam__img sd-p-seam__img--blob" />}
+        <Sparkles n={s.kind === 'rich' ? 8 : 5} />
+        <span className="sd-p-seam__diggers" aria-label={`${s.diggers} digging`}>⛏ {s.diggers}</span>
+        {(s.kind !== 'gold' || lode) && <span className="sd-p-seam__tag">{lode ? 'DOUBLE!' : s.kind === 'rich' ? 'RICH' : 'GEMS'}</span>}
+      </div>
+      <div className="sd-p-seam__gauge" role="progressbar" aria-label="Gold left in this seam" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct * 100)}><i style={{ transform: `scaleX(${pct})` }} /></div>
+    </div>
+  );
+}
+
+/** A seam that ran dry: it cracks, shakes, and crumbles away in a puff of dust. */
+function DrySeamView({ d }: { d: DrySeam }) {
+  const img = art('goldrush', `seam-${d.kind}`);
+  return (
+    <div className={`sd-p-seam sd-p-seam--${d.kind} sd-p-seam--dry`} style={{ left: `${d.x * 100}%`, top: `${d.y * 100}%` }}>
+      <div className="sd-p-seam__pop">
+        {img ? <img className="sd-p-seam__img" src={img} alt="" /> : <span className="sd-p-seam__img sd-p-seam__img--blob" />}
+        <svg className="sd-p-seam__crack" viewBox="0 0 100 100"><path d="M52 0 L44 22 L58 38 L40 58 L54 78 L46 100 M44 22 L24 30 M58 38 L80 44 M40 58 L18 70 M54 78 L74 88" /></svg>
+        <span className="sd-p-seam__dust">{Array.from({ length: 6 }, (_, i) => <i key={i} style={{ '--i': i } as CSSProperties} />)}</span>
+        <span className="sd-p-seam__dry">DRY!</span>
+      </div>
+    </div>
+  );
+}
+
+/** Gold nuggets arcing from the seam that was dug to the pupil's name (or their team's banner), with the +N at the seam. */
+function NuggetFlight({ b, toTeam, showNames }: { b: HitBurst; toTeam: boolean; showNames: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [g, setG] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
+  useLayoutEffect(() => {
+    const host = ref.current?.parentElement;
+    if (!host) return;
+    const hr = host.getBoundingClientRect();
+    const centre = (sel: string) => {
+      const el = document.querySelector(sel);
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2 - hr.left, y: r.top + r.height / 2 - hr.top };
+    };
+    const from = centre(`[data-seam="${b.seam}"] .sd-p-seam__img`) ?? { x: hr.width / 2, y: hr.height * 0.4 };
+    let to = (toTeam && b.team ? centre(`[data-flag="${b.team}"] .sd-p-pile, [data-flag="${b.team}"] .sd-p-cloth`) : null) ?? centre(`[data-pid="${b.pupil}"]`) ?? { x: hr.width / 2, y: hr.height * 0.92 };
+    to = { x: Math.max(0, Math.min(hr.width, to.x)), y: Math.max(0, Math.min(hr.height, to.y)) };
+    setG({ x0: from.x, y0: from.y, x1: to.x, y1: to.y });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const tier = b.times >= 3 ? 3 : b.times >= 2 ? 2 : 1;
+  return (
+    <div ref={ref} className={`sd-p-flight${b.team ? ` sd-p-team--${b.team}` : ''}`}>
+      {g && (
+        <>
+          <span className={`sd-p-pop sd-p-pop--t${tier}${b.weakSpot ? ' sd-p-pop--lode' : ''}${b.golden ? ' sd-p-pop--golden' : ''}`} style={{ left: g.x0, top: g.y0 }}>
+            +{b.points}{showNames && <small>{b.name}</small>}
+          </span>
+          {Array.from({ length: tier + 3 }, (_, i) => (
+            <span key={i} className="sd-p-nug" style={{ left: g.x0, top: g.y0, '--x': `${g.x1 - g.x0}px`, '--y': `${g.y1 - g.y0}px`, '--d': `${0.12 + i * 0.07}s`, '--up': `${-9 - (i % 3) * 4}vh`, '--sx': `${(i - 2) * 1.2}vw` } as CSSProperties}><i /></span>
+          ))}
+          <span className="sd-p-catch" style={{ left: g.x1, top: g.y1 }} />
+        </>
+      )}
+    </div>
+  );
+}
+
+/** The cave-in: dust and stones tumbling down the screen while the class props up the roof, and a heavy slump if it fails. */
+function CaveIn({ heavy }: { heavy: boolean }) {
+  const dust = art('goldrush', 'cave-in');
+  return (
+    <div className={`sd-p-cave${heavy ? ' sd-p-cave--heavy' : ''}`} aria-hidden="true">
+      <div className="sd-p-cave__dark" />
+      {Array.from({ length: heavy ? 5 : 4 }, (_, i) => (
+        <span key={i} className="sd-p-cave__dust" style={{ left: `${6 + i * (heavy ? 20 : 24)}%`, '--i': i } as CSSProperties}>{dust ? <img src={dust} alt="" /> : <b />}</span>
+      ))}
+      {Array.from({ length: 14 }, (_, i) => <i key={i} className="sd-p-cave__rock" style={{ left: `${(i * 37) % 96}%`, '--i': i } as CSSProperties} />)}
+    </div>
+  );
+}
+
+/** A heap of gold that grows with the team's share: a team's banner grows one, and the recap shows big ones. */
+function GoldPile({ share, amount, team, big = false }: { share: number; amount: number; team?: TeamId; big?: boolean }) {
+  const s = 0.4 + 0.6 * Math.max(0, Math.min(1, share));
+  return (
+    <div className={`sd-p-pile${big ? ' sd-p-pile--big' : ''}${team ? ` sd-p-team--${team}` : ''}`} style={{ '--s': s } as CSSProperties} aria-label={`${amount} gold`}>
+      <span className="sd-p-pile__ring" />
+      <svg key={amount} className="sd-p-pile__heap" viewBox="0 0 120 76" aria-hidden="true">
+        <defs><linearGradient id={`pg${team ?? 'x'}${big ? 'b' : 's'}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff3a0" /><stop offset="0.5" stopColor="#ffc933" /><stop offset="1" stopColor="#b8730a" /></linearGradient></defs>
+        <path d="M4 72 Q10 58 26 54 Q34 36 54 32 Q60 8 78 24 Q96 26 100 46 Q114 52 116 72 Z" fill={`url(#pg${team ?? 'x'}${big ? 'b' : 's'})`} stroke="#6b3f00" strokeWidth="3" strokeLinejoin="round" />
+        {[[30, 62], [52, 52], [74, 58], [92, 64], [62, 36], [42, 66], [82, 44]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r={5 + (i % 3)} fill="#ffe27a" stroke="#a86a00" strokeWidth="2" />)}
+      </svg>
+      <Sparkles n={big ? 9 : 4} />
+      <b className="sd-p-pile__n">{amount}</b>
+    </div>
+  );
+}
+
 function Explosion() {
   return <div className="sd-p-explosion" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /><i /></div>;
 }
 
-function Confetti({ team }: { team?: TeamId | null }) {
-  const colours = team ? [TEAM_HEX[team], TEAM_HEX[team], '#ffffff', TEAM_HEX[team], '#ffffffcc'] : ['#ff4d4d', '#4da3ff', '#ffd23f', '#4dd97a', '#ff8ad8', '#ffffff'];
+function Confetti({ team, gold = false }: { team?: TeamId | null; gold?: boolean }) {
+  const colours = gold && !team ? ['#ffd23f', '#ffe27a', '#ffb300', '#fff3b0', '#ffc933', '#ffffff'] : team ? [TEAM_HEX[team], TEAM_HEX[team], '#ffffff', TEAM_HEX[team], '#ffffffcc'] : ['#ff4d4d', '#4da3ff', '#ffd23f', '#4dd97a', '#ff8ad8', '#ffffff'];
   return (
     <div className="sd-p-confetti" aria-hidden="true">
       {Array.from({ length: 56 }, (_, i) => (
@@ -759,20 +922,27 @@ function Recap({ ps, stage, onAgain }: { ps: ProjectorState; stage: 0 | 1; onAga
   const rc = ps.recap;
   const beaten = ps.beaten || rc?.result === 'beaten';
   const names = ps.view?.showNames ?? false;
-  const scene = art('back', beaten ? 'victory' : 'so-close');
+  const gr = isGoldRush(ps.view);
+  const scene = gr ? art('back', 'gold-rush') : art('back', beaten ? 'victory' : 'so-close');
+  const words = gr ? { ...AWARD_WORDS, most_damage: 'Biggest digger', last_hit: 'Last dig', shield_wall: 'Roof holder' } : AWARD_WORDS;
+  const mountain = ps.view?.boss;
+  const dugPct = mountain ? Math.round(Math.max(0, Math.min(1, 1 - mountain.hp / Math.max(1, mountain.max))) * 100) : 0;
+  const bestTeam = Math.max(1, ...(rc?.teams ?? []).map((t) => t.damage));
   const who = (id: string) => (names ? ps.names[id] ?? ps.roster[id]?.name ?? 'A hero' : 'A hero');
   const awards = rc?.awards ?? [];
   const winTeam = rc?.winner && 'team' in rc.winner ? rc.winner.team : null;
   const t2 = ps.view?.mode === 'teams2';
   const solo = rc?.winner && 'pupil' in rc.winner;
   return (
-    <div className={`sd-p-recap${beaten ? ' sd-p-recap--win' : ' sd-p-recap--close'}`}>
+    <div className={`sd-p-recap${beaten ? ' sd-p-recap--win' : ' sd-p-recap--close'}${gr ? ' sd-p-recap--gold' : ''}`}>
       {scene && <div className="sd-p-recap__scene" style={{ backgroundImage: `url(${scene})` }} aria-hidden="true" />}
-      {(beaten || winTeam) && <Confetti team={winTeam} />}
-      {stage === 0 && <div className="sd-p-recap__title" role="status">{beaten ? 'VICTORY!' : 'So close!'}</div>}
+      {(beaten || winTeam) && <Confetti team={winTeam} gold={gr} />}
+      {stage === 0 && <div className="sd-p-recap__title" role="status">{gr ? (beaten ? 'YOU DUG IT ALL!' : 'So close!') : beaten ? 'VICTORY!' : 'So close!'}</div>}
+      {stage === 0 && gr && mountain && <div className="sd-p-recap__heap"><GoldPile big share={dugPct / 100} amount={Math.round(mountain.max - mountain.hp)} /></div>}
       {stage === 1 && rc && (
         <div className="sd-p-recap__cards">
-          <h2 className="sd-p-recap__head">{beaten ? `You beat the ${bossInfo(ps.view?.bossId).name}!` : 'So close! Next time!'}</h2>
+          <h2 className="sd-p-recap__head">{gr ? (beaten ? 'You dug out the mountain!' : `So close! You dug out ${dugPct}% of it!`) : beaten ? `You beat the ${bossInfo(ps.view?.bossId).name}!` : 'So close! Next time!'}</h2>
+          {gr && !rc.teams.length && mountain && <div className="sd-p-recap__heap sd-p-recap__heap--cards"><GoldPile big share={dugPct / 100} amount={Math.round(mountain.max - mountain.hp)} /></div>}
           {winTeam && (
             <div className={`sd-p-bigflag sd-p-team--${winTeam}`}>
               <Cloth team={winTeam} className="sd-p-bigflag__cloth"><b>{TEAM_SHORT[winTeam]}</b><strong>WINS!</strong></Cloth>
@@ -781,7 +951,12 @@ function Recap({ ps, stage, onAgain }: { ps: ProjectorState; stage: 0 | 1; onAga
           )}
           {rc.teams.length > 0 && (
             <div className="sd-p-recap__teams">
-              {rc.teams.map((t, i) => <div key={t.team} className={`sd-p-teamcard sd-p-team--${t.team}${i === 0 ? ' sd-p-teamcard--first' : ''}`}><b>{TEAM_WORDS[t.team]}</b><span>{t2 ? `${t.damage} damage` : `${t.points} points`}</span>{t2 && <small>{t.points} points</small>}</div>)}
+              {rc.teams.map((t, i) => (
+                <div key={t.team} className={`sd-p-teamcard sd-p-team--${t.team}${i === 0 ? ' sd-p-teamcard--first' : ''}${gr ? ' sd-p-teamcard--gold' : ''}`}>
+                  {gr && <GoldPile big team={t.team} share={t.damage / bestTeam} amount={t.damage} />}
+                  <b>{TEAM_WORDS[t.team]}</b><span>{gr ? `${t.damage} gold` : t2 ? `${t.damage} damage` : `${t.points} points`}</span>{(t2 || gr) && <small>{t.points} points</small>}
+                </div>
+              ))}
             </div>
           )}
           {solo && rc.top.length > 0 && <Podium top={rc.top.slice(0, 3)} who={who} />}
@@ -790,7 +965,7 @@ function Recap({ ps, stage, onAgain }: { ps: ProjectorState; stage: 0 | 1; onAga
             {awards.map((a, i) => (
               <li key={`${a.kind}${a.pupil}`} className="sd-p-award" style={{ '--i': i } as CSSProperties}>
                 <span className="sd-p-award__badge" aria-hidden="true">{art('badges', a.kind.replace(/_/g, '-')) ? <img src={art('badges', a.kind.replace(/_/g, '-'))} alt="" /> : '★'}</span>
-                <span className="sd-p-award__kind">{AWARD_WORDS[a.kind] ?? a.kind}</span>
+                <span className="sd-p-award__kind">{words[a.kind] ?? a.kind}</span>
                 <span className="sd-p-award__who">{who(a.pupil)}</span>
                 <span className="sd-p-award__val">{awardValue(a.kind, a.value)}</span>
               </li>

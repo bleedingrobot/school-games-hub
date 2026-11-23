@@ -30,6 +30,8 @@ export interface Player {
   revives: number;
   chests: number;
   goldenUsed: boolean;
+  /** Gold Rush: the seam this pupil digs at (null until they pick, or after it runs dry). */
+  seam?: number | null;
   /** What the pupil got when the round ended (set once, by the server). */
   reward?: import('./bosses').Reward | null;
   /** When this pupil got the golden question right, for the "golden moment" award. */
@@ -55,6 +57,10 @@ export interface Round {
   /** The time the round was last brought up to (ms from the start). */
   t: number;
   boss: { max: number; hp: number; phase: 1 | 2 | 3 };
+  /** Which arena: Boss Bounty (missing = 'boss') or Gold Rush (shared/showdown/goldrush.ts). */
+  arena?: 'boss' | 'goldrush';
+  /** Gold Rush: every seam opened so far (dry ones keep their dryAt). */
+  seams?: import('./goldrush').Seam[];
   /** Which boss of the roster (shared/showdown/bosses.ts). Missing in rounds from before Stage 5: the River Titan. */
   bossId?: import('./bosses').BossId;
   players: Record<string, Player>;
@@ -110,6 +116,8 @@ export type ShowdownEvent =
       times: number;
       weakSpot: boolean;
       golden: boolean;
+      /** Gold Rush: the seam dug. */
+      seam?: number;
     }
   /** iPad only: a wrong answer is never shown on the projector. */
   | { type: 'wrong'; t: number; pupil: string; waitUntil: number }
@@ -132,7 +140,10 @@ export type ShowdownEvent =
   | { type: 'tug'; t: number; position: number; leading: TeamId | null }
   | { type: 'boss_turns'; t: number; team: TeamId }
   | { type: 'boss_beaten'; t: number; lastHit: string | null }
-  | { type: 'time_up'; t: number };
+  | { type: 'time_up'; t: number }
+  | { type: 'seam_dry'; t: number; seam: number }
+  | { type: 'seam_new'; t: number; seam: number; kind: 'gold' | 'gem' | 'rich'; x: number; y: number; size: number }
+  | { type: 'seam_pick'; t: number; pupil: string; seam: number };
 
 export type Refusal = 'not_live' | 'not_playing' | 'too_soon' | 'dazed' | 'not_now' | 'no_such_team' | 'cooldown';
 export type Outcome = { ok: true; events: ShowdownEvent[] } | { ok: false; reason: Refusal; events: ShowdownEvent[] };

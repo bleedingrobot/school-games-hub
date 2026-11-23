@@ -20,6 +20,7 @@ import { recap, type Recap } from './awards';
 import { SHOWDOWN } from './config';
 import { advance, answer, chooseRole, enrage, goldenNext, join, moveToTeam, newRound, roundMs, start } from './engine';
 import { reshuffle } from './teams';
+import { chooseSeam, diggersAt, openSeamsOf } from './goldrush';
 import { pickBoss, rewardFor, roster, type BossId, type ChestGame, type Reward, type RosterRow } from './bosses';
 import type { Mode, Player, Role, Round, ShowdownEvent, TeamId } from './types';
 import { ladderProgress } from '../maths/ladder';
@@ -32,7 +33,7 @@ import { TimesTables } from '../maths/skillPacks/timesTables';
 
 export const MODES: readonly Mode[] = ['class', 'teams2', 'teams4', 'solo'];
 export const ROLES: readonly Role[] = ['striker', 'guard', 'healer'];
-export const ARENAS = ['boss'] as const;
+export const ARENAS = ['boss', 'goldrush'] as const;
 export type Arena = (typeof ARENAS)[number];
 
 /** What pupils (their class's room row) and the projector see of a room: no names, no maths. */
@@ -42,6 +43,8 @@ export interface RoomView {
   arena: Arena;
   /** The boss of the roster this round fights. */
   bossId: BossId;
+  /** Gold Rush: the open seams, with how many pupils are digging at each (no names). Empty in Boss Bounty. */
+  seams: { id: number; kind: 'gold' | 'gem' | 'rich'; x: number; y: number; left: number; size: number; diggers: number }[];
   lengthMin: number;
   /** Server time (ms since 1970) the round started, or null in the lobby. Times below are ms from that. */
   startedAt: number | null;
@@ -85,6 +88,8 @@ export interface PlayerView {
   topTen: boolean;
   /** Set when the round is over: what this pupil got (hub points and the Showdown chest). */
   reward: Reward | null;
+  /** Gold Rush: the seam this pupil digs at. */
+  seam: number | null;
 }
 
 /** A feed row for the projector: the engine's event, plus the first names of every pupil it mentions. */
@@ -162,6 +167,8 @@ export interface FinishedRound {
   seed: number;
   boss: BossId;
   beaten: boolean;
+  /** False in Gold Rush: a win there doesn't beat a boss. */
+  roster: boolean;
   /** How long the round took (ms). */
   ms: number;
   players: { player: string; points: number; game: ChestGame; amount: number; beaten: boolean; lastHit: boolean; shields: number; revives: number; bestStreak: number; correct: number }[];
@@ -184,7 +191,8 @@ export function roundTime(row: Pick<RoomRow, 'startedAt' | 'pausedAt'>, now: num
 
 export function roomView(row: Pick<RoomRow, 'arena' | 'startedAt' | 'pausedAt' | 'showNames'>, r: Round): RoomView {
   return {
-    state: r.state, mode: r.mode, arena: row.arena, bossId: r.bossId ?? 'river-titan', lengthMin: r.lengthMin, startedAt: row.startedAt, pausedAt: row.pausedAt, t: r.t,
+    state: r.state, mode: r.mode, arena: row.arena, bossId: r.bossId ?? 'river-titan',
+    seams: openSeamsOf(r).map((x) => ({ id: x.id, kind: x.kind, x: x.x, y: x.y, left: Math.round(x.left), size: x.size, diggers: diggersAt(r, x.id).length })), lengthMin: r.lengthMin, startedAt: row.startedAt, pausedAt: row.pausedAt, t: r.t,
     players: r.order.length, boss: { ...r.boss }, teams: [...r.teams], teamPoints: { ...r.teamPoints },
     teamDamage: Object.fromEntries(Object.entries(r.teamDamage).map(([k, v]) => [k, Math.round((v ?? 0) * 10) / 10])),
     tug: Math.round(r.tug * 1000) / 1000, facing: r.facing, weakSpotUntil: r.weakSpotUntil, goldenFrom: r.goldenFrom, goldenUntil: r.goldenUntil,
@@ -206,6 +214,7 @@ export function playerView(p: Player, top: Set<string> = new Set()): PlayerView 
   return {
     topTen: top.has(p.id),
     reward: p.reward ?? null,
+    seam: p.seam ?? null,
     player: p.id, name: p.name, team: p.team, role: p.role, score: p.score, streak: p.streak, bestStreak: p.bestStreak, correct: p.correct,
     wrong: p.wrong, shields: p.shields, revives: p.revives, nextAt: p.nextAt, dazedUntil: p.dazedUntil,
   };
@@ -336,7 +345,8 @@ async function finish(s: ShowdownServices, row: RoomRow) {
   if (r.state !== 'over') return;
   const beaten = r.result === 'beaten';
   const done: FinishedRound = {
-    classId: row.classId, seed: r.seed, boss: r.bossId ?? 'river-titan', beaten, ms: Math.round(r.t),
+    // Gold Rush pays the same, but only a beaten boss goes on the roster.
+    classId: row.classId, seed: r.seed, boss: r.bossId ?? 'river-titan', beaten, roster: r.arena !== 'goldrush', ms: Math.round(r.t),
     players: r.order.map((id) => r.players[id]).filter((p) => p.reward).map((p) => ({
       player: p.id, points: p.reward!.points, game: p.reward!.chest.game, amount: p.reward!.chest.amount, beaten,
       lastHit: r.lastHit === p.id, shields: p.shields, revives: p.revives, bestStreak: p.bestStreak, correct: p.correct,
@@ -373,10 +383,12 @@ export async function showdownStep(s: ShowdownServices, who: string, body: Recor
     if (!teach.enabled) return no(403, OFF, 'off');
     const beaten = await s.classRoster(classId);
     if (beaten === 'busy') return busy();
+    const arena: Arena = ARENAS.find((a) => a === body.arena) ?? 'boss';
     const round = newRound({ seed: Math.floor(s.random() * 2 ** 31), mode, lengthMin: length });
     round.bossId = pickBoss(beaten, body.boss);
-    const view = roomView({ arena: 'boss', startedAt: null, pausedAt: null, showNames: teach.showNames }, round);
-    const id = await s.openRoom(classId, who, 'boss', round, view);
+    if (arena === 'goldrush') round.arena = 'goldrush';
+    const view = roomView({ arena, startedAt: null, pausedAt: null, showNames: teach.showNames }, round);
+    const id = await s.openRoom(classId, who, arena, round, view);
     if (id === 'busy') return busy();
     return ok({ room: id, view, roster: roster(beaten) });
   }
@@ -418,7 +430,8 @@ export async function showdownStep(s: ShowdownServices, who: string, body: Recor
       const done = await mutate(s, room, (r) => {
         if (r.state !== 'over') return { refuse: no(409, 'Finish this round first.', 'not-now') };
         const fresh = newRound({ seed: Math.floor(s.random() * 2 ** 31), mode: r.mode, lengthMin: r.lengthMin });
-        fresh.bossId = pickBoss(beaten, body.boss, r.bossId ?? 'river-titan');
+        fresh.bossId = r.arena === 'goldrush' ? r.bossId : pickBoss(beaten, body.boss, r.bossId ?? 'river-titan');
+        if (r.arena === 'goldrush') fresh.arena = 'goldrush';
         const events: ShowdownEvent[] = [];
         for (const id of r.order) {
           const old = r.players[id];
@@ -526,6 +539,21 @@ export async function showdownStep(s: ShowdownServices, who: string, body: Recor
     }
 
     if (!cur.round.players[who]) return no(409, 'Join the showdown first.', 'not-playing');
+
+    if (action === 'choose' && typeof body.seam === 'number') {
+      const seam = body.seam;
+      const done = await mutate(s, room, (r, t, row) => {
+        if (r.arena !== 'goldrush' || r.state !== 'live') return { refuse: no(409, 'Pick a seam once the Gold Rush starts.', 'not-now') };
+        const events = row.pausedAt === null ? advance(r, t) : [];
+        if (r.players[who]?.seam === seam) return { reply: null, events };
+        if (!chooseSeam(r, who, seam)) return { refuse: no(409, 'That seam has run dry. Pick another!', 'dry') };
+        // Picking counts as digging, so the seam's count of diggers shows it straight away.
+        r.players[who].lastActive = r.t;
+        return { reply: null, events: [...events, { type: 'seam_pick' as const, t: r.t, pupil: who, seam }] };
+      });
+      if ('refuse' in done) return done.refuse;
+      return ok({ room, me: playerView(done.row.round.players[who], topTenOf(done.row.round)), view: roomView(done.row, done.row.round), now: s.now() });
+    }
 
     if (action === 'choose') {
       const role = ROLES.find((k) => k === body.role);

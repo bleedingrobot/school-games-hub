@@ -117,3 +117,73 @@ button.sd-c-rolechip { cursor: pointer; } .sd-c-rolechip u { opacity: 0.8; } .sd
   flex: 0 1 auto; align-self: center; margin: auto; padding: 24px 20px; border-radius: 24px; max-width: min(640px, 92%);
   background: rgba(14, 22, 40, 0.82); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45); backdrop-filter: blur(4px);
 }
+
+/* ======================= Stage 6: Gold Rush ======================= */
+.sd-c--gr { background: radial-gradient(ellipse 90% 60% at 50% 0%, #7a4a0a 0%, rgba(122,74,10,0) 70%), radial-gradient(ellipse 80% 50% at 50% 100%, #5a3206 0%, rgba(90,50,6,0) 70%), linear-gradient(180deg, #2a1805 0%, #190e04 55%, #120a03 100%); --tc: #ffc933; }
+.sd-c--gr.sd-c--golden { background: radial-gradient(ellipse 90% 60% at 50% 0%, #a8780c 0%, rgba(168,120,12,0) 70%), linear-gradient(180deg, #3a2a08 0%, #1a1204 100%); }
+.sd-c--gr .sd-c-boss__bar { border-color: #ffe9a0; background: #1e1204; }
+.sd-c--gr .sd-c-boss__bar i { background: linear-gradient(180deg, #fff3a0, #ffc933 55%, #c27a0a); }
+.sd-c--gr .sd-c-boss__name { color: #ffe9a0; }
+.sd-c--gr .sd-c-ring__fg { stroke: #ffc933; }
+.sd-c--gr .sd-c-alert { background: #b8470a; box-shadow: 0 0 22px rgba(255,140,30,0.7); }
+.sd-c-gold { margin: 0; padding: 6px 16px; border-radius: 14px; background: rgba(8,20,32,0.82); border: 2px solid #ffc933; color: #ffe27a; font-weight: 800; font-size: 1.15rem; text-align: center; }
+.sd-c-flash--gold { background: rgba(255,200,60,0.4); }
+.sd-c-dig { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.sd-c-dig i { position: absolute; left: -0.6em; top: -0.6em; font-size: 1.9rem; font-style: normal; opacity: 0; animation: sd-c-coin 0.9s ease-out var(--d) both; }
+
+/* Which seam I dig at, always by the question */
+.sd-c-myseam { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; max-width: 560px; min-height: 48px; padding: 4px 16px; border-radius: 24px; border: 3px solid #ffc933; background: linear-gradient(180deg, rgba(60,36,6,0.9), rgba(30,18,3,0.9)); color: #fff; font: inherit; font-weight: 800; cursor: pointer; box-shadow: 0 0 14px rgba(255,200,60,0.35); }
+.sd-c-myseam--gem { border-color: #8aa4ff; box-shadow: 0 0 14px rgba(120,150,255,0.45); }
+.sd-c-myseam--none { animation: sd-c-pop 0.5s ease-out, sd-c-seampulse 1s ease-in-out infinite alternate; border-color: #ff9a3d; }
+.sd-c-myseam u { margin-left: auto; color: #ffe27a; font-size: 0.95rem; }
+.sd-c-myseam__what { white-space: nowrap; }
+@keyframes sd-c-seampulse { to { box-shadow: 0 0 24px 4px rgba(255,150,40,0.85); } }
+
+.sd-c-pay { display: inline-flex; align-items: center; gap: 8px; }
+.sd-c-pay__bar { display: block; width: 84px; height: 12px; border-radius: 6px; background: rgba(0,0,0,0.55); border: 2px solid #ffe9a0; overflow: hidden; }
+.sd-c-pay__bar i { display: block; height: 100%; transform-origin: left; transition: transform 0.3s ease-out; background: linear-gradient(180deg, #fff3a0, #ffc933 55%, #c27a0a); }
+.sd-c-pay--crowded .sd-c-pay__bar i { background: linear-gradient(180deg, #ffb0a0, #ff5a3a 55%, #a0200a); }
+.sd-c-pay b { font-variant-numeric: tabular-nums; color: #ffe27a; font-size: 1.05rem; }
+.sd-c-pay--crowded b { color: #ff9a80; }
+
+/* The seam picker: a sheet over the page, painted with the map, never taking the keyboard's focus */
+.sd-c-seams { position: fixed; left: 0; right: 0; top: 52px; bottom: 0; z-index: 6; overflow-y: auto; overflow-x: hidden; padding: 14px 14px 24px; box-sizing: border-box; background: linear-gradient(180deg, rgba(14,7,0,0.78), rgba(14,7,0,0.92)), var(--seam-back, none) center / cover no-repeat, #140a02; animation: sd-c-sheet 0.32s cubic-bezier(.2,1.1,.4,1) both; }
+@keyframes sd-c-sheet { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+.sd-c-seams__head { display: flex; align-items: center; gap: 10px; max-width: 900px; margin: 0 auto; }
+.sd-c-seams__head h2 { flex: 1; margin: 0; font-size: clamp(1.3rem, 4.4vw, 2rem); color: #ffe27a; text-shadow: 0 2px 0 #000, 0 0 14px rgba(255,190,40,0.6); }
+.sd-c-seams__close { flex: none; min-height: 44px; padding: 0 18px; border-radius: 22px; border: 2px solid #ffe9a0; background: #6b4505; color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
+.sd-c-seams__hint { max-width: 900px; margin: 6px auto 10px; font-size: 1rem; color: #f4dcae; text-shadow: 0 1px 0 #000; }
+.sd-c-seams__say { max-width: 900px; margin: 0 auto 8px; padding: 6px 12px; border-radius: 12px; background: #b8470a; font-weight: 800; }
+.sd-c-seams__list { list-style: none; margin: 0 auto; padding: 0; max-width: 900px; display: grid; gap: 10px; grid-template-columns: 1fr; }
+@media (min-width: 560px) { .sd-c-seams__list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 980px) { .sd-c-seams__list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.sd-c-seam { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 88px; padding: 8px 12px; border-radius: 18px; border: 3px solid rgba(255,226,122,0.55); background: linear-gradient(160deg, rgba(70,42,8,0.92), rgba(28,16,3,0.92)); color: #fff; font: inherit; text-align: left; cursor: pointer; transition: transform 0.15s; }
+.sd-c-seam:active { transform: scale(0.97); }
+.sd-c-seam--gem { border-color: rgba(150,170,255,0.7); background: linear-gradient(160deg, rgba(34,36,86,0.92), rgba(16,14,40,0.92)); }
+.sd-c-seam--rich { border-color: #ffe27a; box-shadow: 0 0 18px rgba(255,210,60,0.45); }
+.sd-c-seam--mine { border-color: #7dffb0; background: linear-gradient(160deg, rgba(14,80,44,0.92), rgba(6,36,22,0.92)); box-shadow: 0 0 22px rgba(125,255,176,0.6); }
+.sd-c-seam--crowded:not(.sd-c-seam--mine) { opacity: 0.85; }
+.sd-c-seam__pic { position: relative; flex: none; display: grid; place-items: center; width: 72px; height: 64px; font-size: 2rem; }
+.sd-c-seam__pic img { max-width: 100%; max-height: 100%; width: auto; height: auto; filter: drop-shadow(0 0 10px rgba(255,200,60,0.7)); animation: sd-c-seambob 3s ease-in-out infinite; }
+@keyframes sd-c-seambob { 50% { transform: translateY(-4px) scale(1.04); } }
+.sd-c-seam__info { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.sd-c-seam__info strong { font-size: 1.15rem; line-height: 1.1; }
+.sd-c-seam__info strong em { font-style: normal; font-weight: 700; font-size: 0.8rem; color: #7dffb0; }
+.sd-c-seam__info strong em.sd-c-seam__best { color: #ffe27a; }
+.sd-c-seam__who { font-size: 0.95rem; color: #f4dcae; }
+.sd-c-seam__left { display: block; height: 7px; border-radius: 4px; background: rgba(0,0,0,0.5); overflow: hidden; }
+.sd-c-seam__left i { display: block; height: 100%; transform-origin: left; background: linear-gradient(90deg, #ffe27a, #c27a0a); }
+.sd-c-seam--gem .sd-c-seam__left i { background: linear-gradient(90deg, #cfe0ff, #5a3ad0); }
+
+/* Cave-in warning: dust drifts down and the page rumbles */
+.sd-c--cavein .sd-c-body { animation: sd-c-rumble 0.25s linear infinite; }
+@keyframes sd-c-rumble { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-2px, 1px); } 50% { transform: translate(2px, -1px); } 75% { transform: translate(-1px, -2px); } }
+.sd-c-cave { position: fixed; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
+.sd-c-cave span { position: absolute; top: -20vh; width: 52vw; max-width: 380px; opacity: 0; animation: sd-c-dust 2.6s linear infinite; animation-delay: calc(var(--i) * -0.9s); }
+.sd-c-cave img { width: 100%; height: auto; filter: drop-shadow(0 8px 14px rgba(0,0,0,0.7)); }
+@keyframes sd-c-dust { 0% { opacity: 0; transform: translateY(0) rotate(-5deg); } 15% { opacity: 0.9; } 100% { opacity: 0; transform: translateY(130vh) rotate(7deg); } }
+@media (prefers-reduced-motion: reduce) { .sd-c--cavein .sd-c-body, .sd-c-cave span, .sd-c-seam__pic img, .sd-c-myseam--none, .sd-c-seams, .sd-c-dig i { animation: none !important; } .sd-c-cave { display: none; } }
+@media (min-width: 900px) and (max-height: 860px) { .sd-c-myseam { min-height: 40px; } }
+.sd-c-myseam u { white-space: nowrap; }
+@media (max-width: 520px) { .sd-c-myseam { gap: 8px; padding: 4px 12px; } .sd-c-pay__bar { width: 52px; } .sd-c-seam__who { font-size: 0.9rem; } }
+.sd-c-seam__who { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
