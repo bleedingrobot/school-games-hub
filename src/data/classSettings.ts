@@ -44,15 +44,3 @@ export async function saveStudentsChooseFocus(enabled: boolean, classId: string)
   forgetSettings();
   if (error) throw new Error(error.message);
 }
-
-/** Whether the games pick the maths from the whole ladder (auto) for students with no focus. Off unless the teacher turned it on. */
-export async function fetchMathsAuto(classId?: string | null): Promise<boolean> {
-  const row = await readSettings(['maths_auto'], classId);
-  return row?.maths_auto === true;
-}
-
-export async function saveMathsAuto(enabled: boolean, classId: string): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_maths_auto', { enabled, target_class: classId });
-  forgetSettings();
-  if (error) throw new Error(error.message);
-}

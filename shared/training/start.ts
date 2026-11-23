@@ -15,7 +15,4 @@ export function trainingPassedSteps(info: LadderInfo): number {
   return CAMPAIGN_STEPS.filter((_, step) => LADDER.every((skill, index) => skill.tablesStep !== step || index < floor)).length;
 }
 
-/** The class wants the warm-up and this student hasn't done it yet (teachers never have to). */
-export function needsPlacement(info: LadderInfo, role: string | null | undefined): boolean {
-  return info.on && info.placed === null && role !== 'teacher';
-}
+export { needsPlacement } from '../maths/warmUp';

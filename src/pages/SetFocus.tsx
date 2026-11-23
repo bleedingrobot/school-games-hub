@@ -12,9 +12,7 @@ import {
   type ClassSummary,
 } from "../data/classes";
 import {
-  fetchMathsAuto,
   fetchStudentsChooseFocus,
-  saveMathsAuto,
   saveStudentsChooseFocus,
 } from "../data/classSettings";
 import {
@@ -114,7 +112,6 @@ function ClassFocus({
   const [detail, setDetail] = useState<ClassDetail | null>(null);
   const [batches, setBatches] = useState<FocusBatch[] | null>(null);
   const [choose, setChoose] = useState<boolean | null>(null);
-  const [auto, setAuto] = useState<boolean | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
 
@@ -134,9 +131,6 @@ function ClassFocus({
     fetchStudentsChooseFocus(classId)
       .then(setChoose)
       .catch(() => setChoose(true));
-    fetchMathsAuto(classId)
-      .then(setAuto)
-      .catch(() => setAuto(false));
     void refresh();
   }, [classId, refresh]);
 
@@ -156,22 +150,7 @@ function ClassFocus({
       setStatus(
         on
           ? "Students can choose their own focus."
-          : "Students can’t choose their own focus. The games use your focus, or auto.",
-      );
-    } catch (error) {
-      setStatus(errorText(error));
-    }
-  }
-
-  async function changeAuto(on: boolean) {
-    setStatus("Saving…");
-    try {
-      await saveMathsAuto(on, classId);
-      setAuto(on);
-      setStatus(
-        on
-          ? "The games now pick the maths for students with no focus. It starts with their next level or game."
-          : "The games ask the times tables for students with no focus, as before.",
+          : "Students can’t choose their own focus. The games use your focus, or the ladder.",
       );
     } catch (error) {
       setStatus(errorText(error));
@@ -196,31 +175,8 @@ function ClassFocus({
         )}
         <p className="class-panel__hint">
           On: a student can pick their own skills on their home page, unless a
-          focus from you is running. Off: they get your focus, or auto. What a
+          focus from you is running. Off: they get your focus, or the ladder. What a
           student picked is kept, and comes back if you turn this back on.
-        </p>
-      </section>
-
-      <section className="panel" aria-labelledby="auto-title">
-        <h2 id="auto-title" className="panel__title">
-          Auto
-        </h2>
-        {auto !== null && (
-          <label className="classes__check">
-            <input
-              type="checkbox"
-              checked={auto}
-              onChange={(e) => void changeAuto(e.target.checked)}
-            />{" "}
-            Games pick the maths (auto) when there is no focus
-          </label>
-        )}
-        <p className="class-panel__hint">
-          On: a student with no focus is walked up the ladder, from number facts
-          to the times tables and beyond, starting where they are ready (they
-          can do a short warm-up to find it). Their place never goes backwards.
-          Your focus, or one a student picked, always comes first. Off: the
-          games ask the times tables, as they always have.
         </p>
       </section>
 
@@ -233,7 +189,7 @@ function ClassFocus({
           <p className="panel__empty">Loading…</p>
         ) : batches.length === 0 ? (
           <p className="panel__empty">
-            None running. Students follow their own choice, or auto.
+            None running. Students follow their own choice, or the ladder.
           </p>
         ) : (
           <ul className="class-panel__list">
@@ -306,7 +262,7 @@ function Running({
   async function end() {
     try {
       await endFocus(batch.batch);
-      onDone(`Ended: ${whoFor(batch)} go back to their own choice, or auto.`);
+      onDone(`Ended: ${whoFor(batch)} go back to their own choice, or the ladder.`);
     } catch (error) {
       onError(error);
     }

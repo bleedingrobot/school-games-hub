@@ -63,7 +63,6 @@ export function PlacementReset({ student, name }: { student: string; name: strin
         {name}: {where}
         {info.furthest && <>. Furthest place: {skillShortLabel(info.furthest)}</>}.
       </p>
-      {!info.on && <p className="focus-card__small">Auto is off for their class, so the warm-up isn’t offered.</p>}
       {info.placed !== null && !confirming && (
         <button type="button" className="button button--light-outline" onClick={() => setConfirming(true)}>
           Offer the warm-up again

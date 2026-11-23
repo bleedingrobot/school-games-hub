@@ -68,7 +68,7 @@ insert into public.gem_keep_facts (player, pack, fact_key, attempts, correct, av
 select pg_temp.as(201);
 select is(public.teacher_class_skill_map(pg_temp.klass('A')) #>> '{class,name}', 'Room 12', 'a teacher gets the class they teach');
 select is(public.teacher_class_skill_map(pg_temp.klass('A')) #>> '{class,yearLevel}', '5', 'with its year level');
-select is(public.teacher_class_skill_map(pg_temp.klass('A')) #>> '{class,auto}', 'false', 'and whether auto is on (off to begin with)');
+select is(public.teacher_class_skill_map(pg_temp.klass('A')) #>> '{class,auto}', 'true', 'and whether auto is on (always, from 23 Nov 2026)');
 select is(pg_temp.ids(public.teacher_class_skill_map(pg_temp.klass('A'))), array['Kea Fern 1', 'Kea Fern 2'], 'the students are the ones in that class, not another class or nobody''s');
 select is(public.teacher_class_skill_map(pg_temp.klass('A')) #>> '{students,0,realName}', 's101', 'a teacher sees the part of the school email before the @, as elsewhere');
 select is(jsonb_array_length(public.teacher_class_skill_map(pg_temp.klass('A')) #> '{students,0,facts}'), 4, 'a student''s records are the four ladder ones (times tables, early facts, generated), not Maths Monsters'' own');
@@ -76,9 +76,9 @@ select is((select count(*)::integer from jsonb_array_elements(public.teacher_cla
 select is((public.teacher_class_skill_map(pg_temp.klass('A')) #> '{students,0,facts}') @> '[{"key":"mul:6x7","attempts":5,"correct":4,"box":3}]', true, 'with the numbers the games keep');
 select is((public.teacher_class_skill_map(pg_temp.klass('A')) #>> '{students,0,settings,division}')::boolean, (select gem_keep_division from public.app_settings where class_id = pg_temp.klass('A')), 'the class settings come with each student');
 select is(jsonb_typeof(public.teacher_class_skill_map(pg_temp.klass('A')) #> '{students,0,ladder}'), 'object', 'and where they are on the ladder');
-select is(public.teacher_class_skill_map(pg_temp.klass('A')) #>> '{students,0,ladder,on}', 'false', 'which says auto is off');
-select lives_ok(format('select public.teacher_set_maths_auto(true, %L)', pg_temp.klass('A')), 'a teacher turns auto on');
-select is(public.teacher_class_skill_map(pg_temp.klass('A')) #>> '{class,auto}', 'true', 'the map then says so');
+select is(public.teacher_class_skill_map(pg_temp.klass('A')) #>> '{students,0,ladder,on}', 'true', 'which says the ladder is on');
+select lives_ok(format('select public.teacher_set_maths_auto(true, %L)', pg_temp.klass('A')), 'an old page calling the switch does not error');
+select is(public.teacher_class_skill_map(pg_temp.klass('A')) #>> '{class,auto}', 'true', 'the map still says so');
 select is(public.teacher_class_skill_map(pg_temp.klass('A')) #>> '{students,1,ladder,on}', 'true', 'for each student');
 select is(jsonb_array_length(public.teacher_class_skill_map(pg_temp.klass('A')) #> '{students,1,facts}'), 1, 'a student with one record gets one');
 
