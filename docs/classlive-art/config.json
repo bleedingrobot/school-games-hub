@@ -123,7 +123,7 @@
     },
     {
       "name": "mural-pirate",
-      "prompt": "An old wooden pirate ship with billowing white sails and a skull-free plain black flag, sailing on big blue waves near a small desert island with palm trees, gulls, sunny sky. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "prompt": "An old wooden pirate ship with billowing white sails and plain red flags, sailing on big blue waves near a small desert island with palm trees, gulls, sunny sky. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
       "size": [
         1536,
         1024
@@ -147,7 +147,7 @@
     },
     {
       "name": "back-jungle-temple",
-      "prompt": "Empty background scenery: an ancient jungle temple at dusk, mossy stone steps and carved pillars, hanging vines, glowing green lanterns, misty jungle trees on both sides, dark and calm in the middle so a long glowing serpent drawn on top stands out, no characters, no creatures, no snakes. Wide landscape.",
+      "prompt": "Empty background scenery: an ancient jungle temple at dusk, mossy stone steps and carved pillars, hanging vines, glowing green lanterns, misty jungle trees on both sides, dark and calm in the middle, an empty open space, no characters, no creatures, no animals. Wide landscape.",
       "size": [
         1536,
         864
@@ -171,7 +171,7 @@
     },
     {
       "name": "card",
-      "prompt": "A magical whole-class game scene: a giant glowing star constellation shaped like a whale in a purple night sky, a huge friendly green serpent winding around an ancient jungle temple below, and a big mysterious picture made of flipping tiles on an easel, tiny cheering children holding glowing tablets on a hilltop, bright storybook landscape, calm sky at the top, wide landscape picture for a game title card, no text.",
+      "prompt": "A magical whole-class game scene: a giant glowing star constellation shaped like a whale in a purple night sky, a huge friendly green serpent winding around an ancient jungle temple below, and a big painting on an easel half covered by coloured square tiles, tiny cheering children holding glowing tablets on a hilltop, bright storybook landscape, calm sky at the top, wide landscape picture for a game title card, no text.",
       "size": [
         1216,
         688

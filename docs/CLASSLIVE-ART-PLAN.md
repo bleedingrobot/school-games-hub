@@ -1,6 +1,6 @@
 # Class Live: art plan
 
-Style: *bold storybook illustration, rich colour, warm light, painterly digital art, no text*. Every prompt is in `docs/classlive-art/config.json`. Painted on the gaming PC with ComfyUI: `python3 scripts/game_art.py classlive paint ~/dragon-art-inbox/classlive-art/set --tries 3`. Picks go in `docs/classlive-art/picks.json`; `tidy` writes the `.webp` files into `src/games/classlive/art/paint/` (scenes also get an 800 px copy) and the home card into `src/assets/home/classlive.webp` + `classlive-small.webp`. The code finds pictures by file name (`src/games/classlive/paintedArt.ts`), so a picture not painted yet falls back to the drawn stand-in.
+**Painted 24 Nov 2026 NZ (all 14, picks in picks.json).** Style: *bold storybook illustration, rich colour, warm light, painterly digital art, no text*. Every prompt is in `docs/classlive-art/config.json`. Painted on the gaming PC with ComfyUI: `python3 scripts/game_art.py classlive paint ~/dragon-art-inbox/classlive-art/set --tries 3`. Picks go in `docs/classlive-art/picks.json`; `tidy` writes the `.webp` files into `src/games/classlive/art/paint/` (scenes also get an 800 px copy) and the home card into `src/assets/home/classlive.webp` + `classlive-small.webp`. The code finds pictures by file name (`src/games/classlive/paintedArt.ts`), so a picture not painted yet falls back to the drawn stand-in.
 
 | Picture | Kind | Size | Used for |
 |---|---|---|---|
