@@ -1,12 +1,13 @@
 /**
  * The showdown function on the pretend database (shared/showdown/memoryServices.ts). Server tests 1 to 4 of the game's 12
- * (Stage 1 used 4 rules tests).
+ * (Stage 1 used 4 rules tests), and Stage 4's two (tests 11 and 12).
  */
 import { expect, it } from 'vitest';
 import { markQuestion } from '../../../shared/maths/serverQuestions';
 import { memoryDb, memoryServices, type MemoryDb } from '../../../shared/showdown/memoryServices';
 import { pretendClass, pretendClock, PRETEND_CLASS, PRETEND_TEACHER } from '../../../shared/showdown/pretendClass';
-import type { FeedEvent } from '../../../shared/showdown/server';
+import { makeQuestion, type FeedEvent } from '../../../shared/showdown/server';
+import { isUntimed } from '../../../shared/maths/untimed';
 import { makeHandler } from './handler';
 
 const T0 = 1_800_000_000_000;
@@ -142,4 +143,40 @@ it('a pretend class of 30 plays a whole round through the server to a recap', as
   const marked = [...pc.db.questions.values()].flat().filter((q) => q.answered).length;
   expect(pc.db.answers).toHaveLength(marked);
   expect(marked).toBeGreaterThan(300);
+});
+
+it('the team picker moves a pupil, and in solo a pupil is only ever told "top 10", never a place', async () => {
+  const s = setup();
+  const opened = await s.send({ action: 'open', classId: ROOM4, mode: 'teams2', length: 5 }, 'miss');
+  const room = opened.body.room as number;
+  await s.send({ action: 'join' }, 'ana');
+  await s.send({ action: 'join' }, 'ben');
+  const from = s.db.players.get(`${room}:ana`)!.team;
+  const to = from === 'red' ? 'blue' : 'red';
+  expect((await s.send({ action: 'teams', room, pupil: 'ana', team: to }, 'miss')).status).toBe(200);
+  expect(s.db.players.get(`${room}:ana`)!.team).toBe(to);
+  expect((await s.send({ action: 'teams', room, pupil: 'ana', team: to }, 'ana')).status).toBe(403);
+
+  await s.send({ action: 'end', room }, 'miss');
+  const solo = (await s.send({ action: 'open', classId: ROOM4, mode: 'solo', length: 5 }, 'miss')).body.room as number;
+  await s.send({ action: 'join' }, 'ana');
+  await s.send({ action: 'join' }, 'ben');
+  await s.send({ action: 'start', room: solo }, 'miss');
+  const q = (await s.send({ action: 'ask', room: solo }, 'ana')).body.question as { slot: number };
+  const before = (await s.send({ action: 'ask', room: solo }, 'ben')).body;
+  expect(JSON.stringify(before)).not.toMatch(/rank|place/);
+  const hit = await s.send({ action: 'answer', room: solo, slot: q.slot, answer: s.rightFor(solo, 'ana', q.slot), ms: 2000 }, 'ana');
+  expect(hit.body.me).toMatchObject({ topTen: true });
+  expect(JSON.stringify(hit.body.me)).not.toMatch(/rank|place/);
+  // Ben has no points yet, so he isn't in the top 10.
+  expect(s.db.players.get(`${solo}:ben`)).toMatchObject({ topTen: false });
+});
+
+it('leaves out the untimed ladder skills, even for a pupil whose focus is only untimed skills', () => {
+  const focus = { source: 'teacher-class' as const, skills: ['bedmas', 'round-10-100'], onlyThese: true, endsAt: null, canChoose: false, own: null };
+  for (let i = 0; i < 40; i++) {
+    const q = makeQuestion({ facts: [], settings: {}, focus }, `seed-${i}`, i % 5 === 0)!;
+    expect(q).not.toBeNull();
+    expect(isUntimed(q.factKey)).toBe(false);
+  }
 });

@@ -35,7 +35,10 @@ $$;
 create function pg_temp.id(who text) returns uuid language sql as $$ select ('00000000-0000-0000-0000-0000000000' || who)::uuid $$;
 
 -- ---- On for every class, and in the hub's list ----
-select is((select bool_and(showdown_enabled and showdown_names) from public.app_settings), true, 'on everywhere, names shown (the code switch holds it back)');
+select is((select count(*)::int from public.app_settings where showdown_enabled and class_id is distinct from '0de592f6-ec7b-47a2-96b4-6141f6b83cdf'),
+  0, 'stage 4: off for every class but James''s, and off in the school defaults');
+-- The rest of this file tests a class with it on, as Stage 5 will be for every class.
+update public.app_settings set showdown_enabled = true where class_id is null;
 select ok(exists (select 1 from public.hub_games where id = 'showdown' and switch_column = 'showdown_enabled'), 'it is in hub_games with its switch');
 
 -- ---- The server opens a room for Eve's class and keeps a question ----

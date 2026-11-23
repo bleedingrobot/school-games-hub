@@ -6,10 +6,10 @@
 import { useEffect, useLayoutEffect, useReducer, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { SHOWDOWN } from '../../../shared/showdown/config';
 import type { FeedEvent, RoomView } from '../../../shared/showdown/server';
-import type { Mode, Role } from '../../../shared/showdown/types';
+import type { Mode, Role, TeamId } from '../../../shared/showdown/types';
 import { BossStandIn } from './BossStandIn';
 import type { ShowdownLink } from './link';
-import { AWARD_WORDS, TEAM_WORDS, initialState, projectorAct, soundFor, type HitBurst, type ProjectorState, type ShowdownSound } from './projectorState';
+import { AWARD_WORDS, TEAM_WORDS, initialState, ordinal, projectorAct, soundFor, type HitBurst, type ProjectorState, type ShowdownSound } from './projectorState';
 import './projector.css';
 
 const ART = import.meta.glob('./art/paint/**/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
@@ -18,6 +18,11 @@ const art = (folder: string, file: string): string | undefined => ART[`./art/pai
 const ROOM_KEY = 'showdown-room';
 const ROLE_LETTER: Record<Role, string> = { striker: 'S', guard: 'G', healer: 'H' };
 const ROLE_WORD: Record<Role, string> = { striker: 'Strikers', guard: 'Guards', healer: 'Healers' };
+const TEAM_HEX: Record<TeamId, string> = { red: '#ff4d5e', blue: '#4da3ff', gold: '#ffd23f', green: '#4dd97a' };
+const TEAM_SHORT: Record<TeamId, string> = { red: 'RED', blue: 'BLUE', gold: 'GOLD', green: 'GREEN' };
+/** Which side of the screen each team's corner is on, and whether it is the lower one (4 teams). */
+const SLOT: Record<TeamId, { side: -1 | 1; low: boolean }> = { red: { side: -1, low: false }, blue: { side: 1, low: false }, green: { side: -1, low: true }, gold: { side: 1, low: true } };
+const isTeamMode = (v: RoomView) => v.teams.length > 0 && (v.mode === 'teams2' || v.mode === 'teams4');
 
 function roomFromUrl(): number | null {
   try {
@@ -237,7 +242,7 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
       <h1 className="sd-p__sr">Class Showdown{state ? ` ${state}` : ''}</h1>
       <Backdrop state={state} />
       {state === 'live' || state === 'over' ? <Battle ps={ps} roundNow={roundNow} flinch={flinch} /> : null}
-      {state === 'lobby' && <Lobby ps={ps} className={className} />}
+      {state === 'lobby' && <Lobby ps={ps} className={className} onMove={(pupil, team) => void send({ action: 'teams', room, pupil, team })} />}
       {!state && <div className="sd-p-idle"><h2>Class Showdown</h2><p>Pick how long, then press Open to bring in the class.</p></div>}
 
       {live && ps.banner && roundNow < ps.banner.until && <div key={`${ps.banner.text}${ps.banner.until}`} className={`sd-p-banner sd-p-banner--${ps.banner.kind}`} role="status">{ps.banner.text}</div>}
@@ -281,29 +286,87 @@ function Backdrop({ state }: { state: string | undefined }) {
   return <div className="sd-p-back" style={img ? ({ backgroundImage: `url(${img})` } as CSSProperties) : undefined} aria-hidden="true" />;
 }
 
-function Lobby({ ps, className }: { ps: ProjectorState; className?: string }) {
+function Lobby({ ps, className, onMove }: { ps: ProjectorState; className?: string; onMove: (pupil: string, team: TeamId) => void }) {
   const show = ps.view?.showNames ?? false;
-  const teamMode = ps.view?.teams.length ? ps.view.teams : null;
+  const teamMode = ps.view && isTeamMode(ps.view) ? ps.view.teams : null;
+  const [sel, setSel] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState<TeamId | null>(null);
   const lobbyRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   useFit(listRef, lobbyRef, `${ps.order.length}${show}${ps.order.map((id) => ps.roster[id]?.name.length).join()}`, () => Math.max(16, Math.min(window.innerWidth * 0.028, window.innerHeight * 0.05, 38)), 9);
+  const label = (id: string) => (show ? ps.roster[id].name : `Hero ${ps.order.indexOf(id) + 1}`);
+  const moveTo = (team: TeamId, pupil: string | null) => {
+    setSel(null);
+    setDragOver(null);
+    if (pupil && ps.roster[pupil] && ps.roster[pupil].team !== team) onMove(pupil, team);
+  };
   return (
     <div className="sd-p-lobby" ref={lobbyRef}>
       <div className="sd-p-lobby__join">Join now!</div>
       {className && <div className="sd-p-lobby__class">{className}</div>}
-      <p className="sd-p-lobby__hint">Open Class Showdown on your iPad</p>
+      <p className="sd-p-lobby__hint">{teamMode ? 'Tap a name, then tap a team (or drag it) to move it' : 'Open Class Showdown on your iPad'}</p>
       <div className="sd-p-lobby__count">{ps.order.length} {ps.order.length === 1 ? 'hero' : 'heroes'} ready</div>
-      <ul ref={listRef} className={`sd-p-lobby__names${teamMode ? ' sd-p-lobby__names--teams' : ''}`}>
-        {ps.order.map((id) => {
-          const r = ps.roster[id];
-          const fx = (hash(id) % 200) - 100;
-          return (
-            <li key={id} className={`sd-p-fly${r.team ? ` sd-p-team--${r.team}` : ''}`} style={{ '--fx': `${fx}vw`, '--fy': `${(hash(id + 'y') % 60) - 30}vh` } as CSSProperties}>
-              {show ? r.name : 'Hero'}
-            </li>
-          );
-        })}
-      </ul>
+      {teamMode ? (
+        <div className={`sd-p-picker sd-p-picker--${teamMode.length}`} aria-label="Team picker">
+          {teamMode.map((k) => {
+            const members = ps.order.filter((id) => ps.roster[id].team === k);
+            return (
+              <TeamColumn key={k} team={k} count={members.length} over={dragOver === k} armed={sel !== null && ps.roster[sel]?.team !== k}
+                onTap={() => moveTo(k, sel)} onOver={(on) => setDragOver((d) => (on ? k : d === k ? null : d))} onDrop={(id) => moveTo(k, id)}>
+                {members.map((id) => (
+                  <li key={id}>
+                    <button type="button" draggable className={`sd-p-pick sd-p-fly${sel === id ? ' sd-p-pick--sel' : ''}`} aria-pressed={sel === id}
+                      style={{ '--fx': `${(hash(id) % 200) - 100}vw`, '--fy': `${(hash(id + 'y') % 60) - 30}vh` } as CSSProperties}
+                      onClick={(e) => { e.stopPropagation(); setSel((c) => (c === id ? null : id)); }}
+                      onDragStart={(e) => { e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed = 'move'; setSel(id); }}
+                      onDragEnd={() => setDragOver(null)}>
+                      {label(id)}
+                    </button>
+                  </li>
+                ))}
+              </TeamColumn>
+            );
+          })}
+        </div>
+      ) : (
+        <ul ref={listRef} className="sd-p-lobby__names">
+          {ps.order.map((id) => {
+            const r = ps.roster[id];
+            const fx = (hash(id) % 200) - 100;
+            return (
+              <li key={id} className={`sd-p-fly${r.team ? ` sd-p-team--${r.team}` : ''}`} style={{ '--fx': `${fx}vw`, '--fy': `${(hash(id + 'y') % 60) - 30}vh` } as CSSProperties}>
+                {show ? r.name : 'Hero'}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function TeamColumn({ team, count, over, armed, onTap, onOver, onDrop, children }: { team: TeamId; count: number; over: boolean; armed: boolean; onTap: () => void; onOver: (on: boolean) => void; onDrop: (id: string | null) => void; children: React.ReactNode }) {
+  const colRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const kids = Array.isArray(children) ? children.length : 0;
+  useFit(listRef, colRef, `${kids}${count}`, () => Math.max(14, Math.min(window.innerWidth * 0.022, window.innerHeight * 0.04, 30)), 8);
+  return (
+    <div ref={colRef} className={`sd-p-col sd-p-team--${team}${over ? ' sd-p-col--over' : ''}${armed ? ' sd-p-col--armed' : ''}`} onClick={onTap}
+      onDragOver={(e) => { e.preventDefault(); onOver(true); }} onDragLeave={() => onOver(false)}
+      onDrop={(e) => { e.preventDefault(); onDrop(e.dataTransfer.getData('text/plain') || null); }}>
+      <Cloth team={team} className="sd-p-col__head"><b>{TEAM_SHORT[team]}</b><strong>{count}</strong></Cloth>
+      <ul ref={listRef} className="sd-p-col__list">{children}</ul>
+    </div>
+  );
+}
+
+/** A waving team banner: the painted one (art/paint/banners/<team>.webp) when it exists, else a cloth drawn in CSS. */
+function Cloth({ team, className = '', children }: { team: TeamId; className?: string; children: React.ReactNode }) {
+  const img = art('banners', team);
+  return (
+    <div className={`sd-p-cloth sd-p-team--${team}${img ? ' sd-p-cloth--painted' : ''} ${className}`} style={img ? ({ '--cloth': `url(${img})` } as CSSProperties) : undefined}>
+      <span className="sd-p-cloth__slices" aria-hidden="true">{Array.from({ length: 8 }, (_, i) => <i key={i} style={{ '--n': i } as CSSProperties} />)}</span>
+      <div className="sd-p-cloth__text">{children}</div>
     </div>
   );
 }
@@ -322,6 +385,12 @@ function Battle({ ps, roundNow, flinch }: { ps: ProjectorState; roundNow: number
   for (const r of roster) counts[r.role]++;
   const needGuards = !over && roster.length >= 4 && counts.guard * 5 < roster.length;
   const showNames = view.showNames;
+  const teamMode = isTeamMode(view);
+  const t2 = view.mode === 'teams2';
+  const facing = view.mode === 'teams4' ? (view.facing ?? ps.turn?.team ?? null) : null;
+  const slot = facing ? SLOT[facing] : null;
+  const roaring = !!ps.turn && view.mode === 'teams4' && roundNow - ps.turn.at < 1600 && roundNow >= ps.turn.at;
+  const turnT = slot ? `perspective(900px) rotateY(${slot.side * 32}deg) rotate(${slot.side * 3}deg) translate(${slot.side * 8}%, ${slot.low ? 3 : -1}%)` : undefined;
   const healing = ps.healAt > 0 && roundNow - ps.healAt < 1500;
   const bursts = ps.bursts.filter((b) => roundNow - b.t < 2500 && roundNow >= b.t - 500);
   const heals = ps.heals.filter((h) => roundNow - h.t < 2800);
@@ -340,17 +409,27 @@ function Battle({ ps, roundNow, flinch }: { ps: ProjectorState; roundNow: number
         <div className={`sd-p-clock${left <= 30000 && !over ? ' sd-p-clock--low' : ''}`}>{mmss(left)}</div>
       </header>
 
-      <div className={`sd-p-bosswrap${over && ps.beaten ? ' sd-p-bosswrap--beaten' : ''}`}>
-        <div className={`sd-p-boss${flinch ? ' sd-p-flinch' : ''}${angry ? ' sd-p-boss--angry' : ''}`}>
-          {bossImg ? <img className="sd-p-boss__img" src={bossImg} alt="The River Titan" /> : <BossStandIn phase={ps.phase} flinch={false} weak={weak} angry={angry} />}
-          {weak && <div className="sd-p-weakglow" aria-hidden="true" />}
-          {ps.phase >= 2 && <div className="sd-p-eyes" aria-hidden="true" />}
+      {t2 && <Bridge shakeKey={ps.tugSeq} />}
+      {teamMode && <TeamFlags ps={ps} facing={facing} />}
+      {t2 && Math.abs(view.tug) > 0.04 && !over && <div key={view.tug > 0 ? 'r' : 'b'} className={`sd-p-pushing sd-p-team--${view.tug > 0 ? 'red' : 'blue'}`} role="status">{view.tug > 0 ? 'RED' : 'BLUE'} is pushing!</div>}
+
+      <div className={`sd-p-bosswrap${teamMode ? ' sd-p-bosswrap--teams' : ''}${over && ps.beaten ? ' sd-p-bosswrap--beaten' : ''}`} style={t2 ? ({ left: `calc(50% + ${Math.max(-1, Math.min(1, view.tug)) * 16}vw)` } as CSSProperties) : undefined}>
+        {facing && <div key={`gz${ps.turnSeq}`} className={`sd-p-gaze sd-p-team--${facing}`} aria-hidden="true" />}
+        {roaring && ps.turn && <div key={`rw${ps.turnSeq}`} className={`sd-p-roarwave sd-p-team--${ps.turn.team}`} aria-hidden="true"><i /><i /><i /></div>}
+        <div className={`sd-p-bossroar${roaring ? ' sd-p-bossroar--go' : ''}`}>
+          <div className="sd-p-bossturn" style={turnT ? { transform: turnT } : undefined}>
+            <div className={`sd-p-boss${flinch ? ' sd-p-flinch' : ''}${angry ? ' sd-p-boss--angry' : ''}`}>
+              {bossImg ? <img className="sd-p-boss__img" src={bossImg} alt="The River Titan" /> : <BossStandIn phase={ps.phase} flinch={false} weak={weak} angry={angry} look={slot ? slot.side : 0} />}
+              {weak && <div className="sd-p-weakglow" aria-hidden="true" />}
+              {ps.phase >= 2 && <div className="sd-p-eyes" aria-hidden="true" />}
+            </div>
+          </div>
         </div>
         <div className="sd-p-bursts" aria-hidden="true">{bursts.map((b) => <Burst key={b.id} b={b} showNames={showNames} />)}</div>
         {over && ps.beaten && <Explosion />}
       </div>
 
-      <SidePanel ps={ps} />
+      <SidePanel ps={ps} roundNow={roundNow} />
 
       <div className="sd-p-crewzone">
         {needGuards && !ps.shield && <div className="sd-p-need">Need more Guards!</div>}
@@ -393,7 +472,42 @@ function Burst({ b, showNames }: { b: HitBurst; showNames: boolean }) {
 
 function Dome({ ps, roundNow }: { ps: ProjectorState; roundNow: number }) {
   const sh = ps.shield;
+  const view = ps.view as RoomView;
   if (!sh) return null;
+  if (isTeamMode(view)) {
+    const winding = roundNow < sh.endsAt;
+    const items = view.teams.filter((k) => sh.groups[k]).map((k) => {
+      const g = sh.groups[k];
+      const state = g.state ?? null;
+      const live = state === null && winding;
+      const resolved = state !== null && roundNow - (g.resolvedAt ?? 0) < 3200;
+      return { k, g, state, live, resolved };
+    }).filter((d) => d.live || d.resolved);
+    if (!items.length) return null;
+    const secs = Math.max(0, Math.ceil((sh.endsAt - roundNow) / 1000));
+    return (
+      <div className="sd-p-domes" aria-hidden="true">
+        {view.teams.map((k) => {
+          const d = items.find((i) => i.k === k);
+          if (!d) return <div key={k} className="sd-p-domes__gap" />;
+          const fill = Math.max(0, Math.min(1, d.g.needed ? d.g.got / d.g.needed : 0));
+          return (
+            <div key={k} className={`sd-p-dome sd-p-dome--team sd-p-team--${k}${d.live ? ' sd-p-dome--winding' : ''}${d.state ? ` sd-p-dome--${d.state}` : ''}`}>
+              <div className="sd-p-dome__shell">
+                <div className="sd-p-dome__fill" style={{ transform: `scaleY(${fill})` }} />
+                {d.state === 'broke' && <svg className="sd-p-dome__crack" viewBox="0 0 100 60"><path d="M50 0 L44 14 L56 24 L40 38 L52 60 M44 14 L24 22 M56 24 L78 30 M40 38 L18 48" /></svg>}
+              </div>
+              {d.live && <div className="sd-p-dome__count">{secs}</div>}
+              <div className="sd-p-dome__label sd-p-dome__label--team">{TEAM_SHORT[k]} SHIELD</div>
+              {d.state === 'held' && <div className="sd-p-dome__clang">CLANG!</div>}
+              {d.state === 'broke' && <div className="sd-p-dome__clang sd-p-dome__clang--broke">CRACK!</div>}
+              {d.state === 'broke' && <div className="sd-p-dome__shards">{Array.from({ length: 6 }, (_, i) => <i key={i} style={{ '--i': i } as CSSProperties} />)}</div>}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
   const winding = sh.state === null && roundNow < sh.endsAt;
   const resolved = sh.state !== null && roundNow - sh.resolvedAt < 3200;
   if (!winding && !resolved) return null;
@@ -414,42 +528,132 @@ function Dome({ ps, roundNow }: { ps: ProjectorState; roundNow: number }) {
   );
 }
 
-function SidePanel({ ps }: { ps: ProjectorState }) {
+/** 2 teams: the bridge the boss stands on. It shakes (remounts its animation) on every tug event. */
+function Bridge({ shakeKey }: { shakeKey: number }) {
+  return (
+    <div className="sd-p-bridgewrap" aria-hidden="true">
+      <div key={shakeKey} className={`sd-p-bridge${shakeKey > 0 ? ' sd-p-bridge--shake' : ''}`}>
+        <span className="sd-p-bridge__rail sd-p-bridge__rail--back" /><span className="sd-p-bridge__deck" /><span className="sd-p-bridge__rail" />
+        <span className="sd-p-bridge__post sd-p-bridge__post--l" /><span className="sd-p-bridge__post sd-p-bridge__post--m" /><span className="sd-p-bridge__post sd-p-bridge__post--r" />
+        <span className="sd-p-bridge__end sd-p-bridge__end--red" /><span className="sd-p-bridge__end sd-p-bridge__end--blue" />
+      </div>
+    </div>
+  );
+}
+
+/** Big waving team banners in the corners with the team's bar (points in 4 teams, damage in 2). */
+function TeamFlags({ ps, facing }: { ps: ProjectorState; facing: TeamId | null }) {
+  const view = ps.view as RoomView;
+  const t2 = view.mode === 'teams2';
+  const val = (k: TeamId) => Math.round((t2 ? view.teamDamage[k] : view.teamPoints[k]) ?? 0);
+  const max = Math.max(1, ...view.teams.map(val));
+  return (
+    <div className="sd-p-flags" aria-label="Teams">
+      {view.teams.map((k, i) => {
+        const sl = SLOT[k];
+        const leading = t2 ? (view.tug > 0.04 ? 'red' : view.tug < -0.04 ? 'blue' : null) === k : false;
+        return (
+          <div key={k} className={`sd-p-flag sd-p-flag--${sl.side < 0 ? 'l' : 'r'}${sl.low && !t2 ? ' sd-p-flag--low' : ''} sd-p-team--${k}${facing === k ? ' sd-p-flag--facing' : ''}${leading ? ' sd-p-flag--lead' : ''}`} style={{ '--k': i, '--n': view.teams.length } as CSSProperties}>
+            <span className="sd-p-flag__pole" />
+            <Cloth team={k} className="sd-p-flag__cloth">
+              <b>{TEAM_SHORT[k]}</b>
+              <strong>{val(k)}</strong>
+              <small>{t2 ? 'damage' : 'points'}</small>
+            </Cloth>
+            <div className="sd-p-flag__bar"><i style={{ transform: `scaleX(${val(k) / max})` }} /></div>
+            {facing === k && <div className="sd-p-flag__faces">BOSS FACES YOU</div>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SidePanel({ ps, roundNow }: { ps: ProjectorState; roundNow: number }) {
+  const view = ps.view as RoomView;
+  if (view.mode !== 'solo') return null;
+  return (
+    <>
+      <Leaderboard ps={ps} roundNow={roundNow} />
+      <Bounties ps={ps} />
+    </>
+  );
+}
+
+function Leaderboard({ ps, roundNow }: { ps: ProjectorState; roundNow: number }) {
   const view = ps.view as RoomView;
   const names = view.showNames;
-  if (view.mode === 'solo') {
-    const top = [...ps.order].map((id) => ps.roster[id]).sort((a, b) => b.score - a.score).slice(0, 10);
-    return (
-      <aside className="sd-p-side" aria-label="Top ten">
-        <h2>Top 10</h2>
-        <ol>{top.map((r, i) => <li key={r.id}><b>{i + 1}</b><span>{names ? r.name : 'Hero'}</span><em>{r.score}</em></li>)}</ol>
-      </aside>
-    );
-  }
-  if (view.teams.length) {
-    const max = Math.max(1, ...view.teams.map((k) => view.teamPoints[k] ?? 0));
-    return (
-      <aside className="sd-p-side sd-p-side--teams" aria-label="Teams">
-        {view.teams.map((k) => (
-          <div key={k} className={`sd-p-team-bar sd-p-team--${k}${view.facing === k ? ' sd-p-team-bar--facing' : ''}`}>
-            <span>{TEAM_WORDS[k]}</span>
-            <div><i style={{ transform: `scaleX(${(view.teamPoints[k] ?? 0) / max})` }} /></div>
-            <em>{view.teamPoints[k] ?? 0}</em>
-          </div>
-        ))}
-        {view.mode === 'teams2' && <div className="sd-p-tug" aria-label="Tug of war"><i style={{ transform: `translateX(${view.tug * 50}%)` }} /></div>}
-      </aside>
-    );
-  }
-  return null;
+  const top = ps.order.map((id) => ps.roster[id]).sort((a, b) => b.score - a.score).slice(0, 10);
+  const listRef = useRef<HTMLOListElement>(null);
+  const prev = useRef(new Map<string, { top: number; rank: number }>());
+  // FLIP: remember where each row was, and when a place changes slide it from the old spot to the new one.
+  useLayoutEffect(() => {
+    const ol = listRef.current;
+    if (!ol) return;
+    const next = new Map<string, { top: number; rank: number }>();
+    (Array.from(ol.children) as HTMLElement[]).forEach((el, i) => {
+      const id = el.dataset.id ?? '';
+      const t = el.offsetTop;
+      const old = prev.current.get(id);
+      next.set(id, { top: t, rank: i + 1 });
+      if (old && old.top !== t) {
+        el.style.transition = 'none';
+        el.style.transform = `translateY(${old.top - t}px)`;
+        void el.offsetWidth;
+        el.style.transition = 'transform 0.75s cubic-bezier(.2,.9,.3,1.1)';
+        el.style.transform = '';
+        if (old.rank > i + 1) {
+          el.classList.remove('sd-p-lb__up');
+          void el.offsetWidth;
+          el.classList.add('sd-p-lb__up');
+        }
+      }
+    });
+    prev.current = next;
+  });
+  const moves = ps.moves.filter((m) => roundNow - m.t < 3800 && roundNow >= m.t).slice(-2);
+  return (
+    <aside className="sd-p-side sd-p-lb" aria-label="Top ten">
+      <h2>Top 10</h2>
+      <ol ref={listRef}>
+        {top.map((r, i) => <li key={r.id} data-id={r.id} className={`sd-p-lb__row sd-p-lb__row--${i + 1}`}><b>{i + 1}</b><span>{names ? r.name : 'Hero'}</span><em>{r.score}</em></li>)}
+      </ol>
+      <div className="sd-p-moves" aria-live="polite">
+        {moves.map((m) => <div key={m.id} className="sd-p-bigmove"><strong>{names ? m.name : 'A hero'} jumps to {ordinal(m.to)}!</strong><small>up {m.from - m.to} places</small></div>)}
+      </div>
+    </aside>
+  );
+}
+
+function Bounties({ ps }: { ps: ProjectorState }) {
+  const names = ps.view?.showNames ?? false;
+  const who = (id: string) => (names ? ps.names[id] ?? ps.roster[id]?.name ?? 'A hero' : 'A hero');
+  const topDmg = Object.entries(ps.damage).sort((a, b) => b[1] - a[1])[0];
+  const rows: { kind: string; label: string; who: string; val: string }[] = [];
+  if (topDmg) rows.push({ kind: 'dmg', label: 'Most damage', who: who(topDmg[0]), val: `${Math.round(topDmg[1] * 10)}` });
+  if (ps.lastHitter) rows.push({ kind: 'last', label: 'Last hit', who: who(ps.lastHitter), val: '' });
+  if (ps.bestStreak && ps.bestStreak.streak >= 2) rows.push({ kind: 'streak', label: 'Longest streak', who: who(ps.bestStreak.pupil), val: `${ps.bestStreak.streak} in a row` });
+  if (!rows.length) return null;
+  return (
+    <aside className="sd-p-bounty" aria-label="Bounties">
+      <h2>Bounties</h2>
+      {rows.map((r) => (
+        <div key={r.kind} className={`sd-p-bounty__row sd-p-bounty__row--${r.kind}`}>
+          <small>{r.label}</small>
+          <strong key={r.who} className="sd-p-bounty__who">{r.who}</strong>
+          {r.val && <em>{r.val}</em>}
+        </div>
+      ))}
+    </aside>
+  );
 }
 
 function Explosion() {
   return <div className="sd-p-explosion" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /><i /></div>;
 }
 
-function Confetti() {
-  const colours = ['#ff4d4d', '#4da3ff', '#ffd23f', '#4dd97a', '#ff8ad8', '#ffffff'];
+function Confetti({ team }: { team?: TeamId | null }) {
+  const colours = team ? [TEAM_HEX[team], TEAM_HEX[team], '#ffffff', TEAM_HEX[team], '#ffffffcc'] : ['#ff4d4d', '#4da3ff', '#ffd23f', '#4dd97a', '#ff8ad8', '#ffffff'];
   return (
     <div className="sd-p-confetti" aria-hidden="true">
       {Array.from({ length: 56 }, (_, i) => (
@@ -466,22 +670,30 @@ function Recap({ ps, stage }: { ps: ProjectorState; stage: 0 | 1 }) {
   const scene = art('back', beaten ? 'victory' : 'so-close');
   const who = (id: string) => (names ? ps.names[id] ?? ps.roster[id]?.name ?? 'A hero' : 'A hero');
   const awards = rc?.awards ?? [];
+  const winTeam = rc?.winner && 'team' in rc.winner ? rc.winner.team : null;
+  const t2 = ps.view?.mode === 'teams2';
+  const solo = rc?.winner && 'pupil' in rc.winner;
   return (
     <div className={`sd-p-recap${beaten ? ' sd-p-recap--win' : ' sd-p-recap--close'}`}>
       {scene && <div className="sd-p-recap__scene" style={{ backgroundImage: `url(${scene})` }} aria-hidden="true" />}
-      {beaten && <Confetti />}
+      {(beaten || winTeam) && <Confetti team={winTeam} />}
       {stage === 0 && <div className="sd-p-recap__title" role="status">{beaten ? 'VICTORY!' : 'So close!'}</div>}
       {stage === 1 && rc && (
         <div className="sd-p-recap__cards">
           <h2 className="sd-p-recap__head">{beaten ? 'You beat the River Titan!' : 'So close! Next time!'}</h2>
-          {rc.winner && 'team' in rc.winner && <div className={`sd-p-winner sd-p-team--${rc.winner.team}`}>{TEAM_WORDS[rc.winner.team]} wins!</div>}
-          {rc.winner && 'pupil' in rc.winner && <div className="sd-p-winner sd-p-team--gold">{who(rc.winner.pupil)} wins!</div>}
-          {rc.teams.length > 0 && (
-            <div className="sd-p-recap__teams">
-              {rc.teams.map((t) => <div key={t.team} className={`sd-p-teamcard sd-p-team--${t.team}`}><b>{TEAM_WORDS[t.team]}</b><span>{t.points} points</span></div>)}
+          {winTeam && (
+            <div className={`sd-p-bigflag sd-p-team--${winTeam}`}>
+              <Cloth team={winTeam} className="sd-p-bigflag__cloth"><b>{TEAM_SHORT[winTeam]}</b><strong>WINS!</strong></Cloth>
+              <span className="sd-p-bigflag__pole" aria-hidden="true" />
             </div>
           )}
-          {rc.top.length > 0 && <ol className="sd-p-recap__top">{rc.top.map((t, i) => <li key={t.pupil}><b>{i + 1}</b>{who(t.pupil)}<em>{t.score}</em></li>)}</ol>}
+          {rc.teams.length > 0 && (
+            <div className="sd-p-recap__teams">
+              {rc.teams.map((t, i) => <div key={t.team} className={`sd-p-teamcard sd-p-team--${t.team}${i === 0 ? ' sd-p-teamcard--first' : ''}`}><b>{TEAM_WORDS[t.team]}</b><span>{t2 ? `${t.damage} damage` : `${t.points} points`}</span>{t2 && <small>{t.points} points</small>}</div>)}
+            </div>
+          )}
+          {solo && rc.top.length > 0 && <Podium top={rc.top.slice(0, 3)} who={who} />}
+          {solo && rc.top.length > 3 && <ol className="sd-p-recap__top" start={4}>{rc.top.slice(3).map((t, i) => <li key={t.pupil}><b>{i + 4}</b>{who(t.pupil)}<em>{t.score}</em></li>)}</ol>}
           <ul className="sd-p-awards">
             {awards.map((a, i) => (
               <li key={`${a.kind}${a.pupil}`} className="sd-p-award" style={{ '--i': i } as CSSProperties}>
@@ -495,6 +707,22 @@ function Recap({ ps, stage }: { ps: ProjectorState; stage: 0 | 1 }) {
         </div>
       )}
     </div>
+  );
+}
+
+/** Solo recap: top three on a podium (2nd, 1st, 3rd), each block rising in turn. */
+function Podium({ top, who }: { top: { pupil: string; score: number }[]; who: (id: string) => string }) {
+  const order = [1, 0, 2].filter((i) => top[i]);
+  return (
+    <ol className="sd-p-podium" aria-label="Podium">
+      {order.map((i) => (
+        <li key={top[i].pupil} className={`sd-p-podium__col sd-p-podium__col--${i + 1}`} style={{ '--d': `${(2 - i) * 0.7}s` } as CSSProperties}>
+          <span className="sd-p-podium__who">{who(top[i].pupil)}</span>
+          <span className="sd-p-podium__score">{top[i].score}</span>
+          <span className="sd-p-podium__block"><b>{i + 1}</b></span>
+        </li>
+      ))}
+    </ol>
   );
 }
 

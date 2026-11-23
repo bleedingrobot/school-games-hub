@@ -9771,8 +9771,14 @@ function roomView(row, r) {
 		showNames: row.showNames
 	};
 }
-function playerView(p) {
+/** Solo: the ids of the top 10 by score (pupils with no points yet never count). */
+function topTenOf(r) {
+	if (r.mode !== "solo") return new Set();
+	return new Set(r.order.map((k) => r.players[k]).filter((p) => p.score > 0).sort((a, b) => b.score - a.score).slice(0, 10).map((p) => p.id));
+}
+function playerView(p, top = new Set()) {
 	return {
+		topTen: top.has(p.id),
 		player: p.id,
 		name: p.name,
 		team: p.team,
@@ -9822,9 +9828,13 @@ function feedOf(r, events, wasOver) {
 }
 /** The players whose own rows changed in this step. */
 function changedPlayers(before, r) {
-	return r.order.map((id) => playerView(r.players[id])).filter((v) => before[v.player] !== JSON.stringify(v));
+	const top = topTenOf(r);
+	return r.order.map((id) => playerView(r.players[id], top)).filter((v) => before[v.player] !== JSON.stringify(v));
 }
-const snapshot = (r) => Object.fromEntries(r.order.map((id) => [id, JSON.stringify(playerView(r.players[id]))]));
+const snapshot = (r) => {
+	const top = topTenOf(r);
+	return Object.fromEntries(r.order.map((id) => [id, JSON.stringify(playerView(r.players[id], top))]));
+};
 /** Ladder place (count of secure skills), only to mix teams fairly. Never shown. */
 function ladderOf(context) {
 	if (!context) return 0;
@@ -9838,8 +9848,13 @@ function ladderOf(context) {
 	}
 }
 /** The pupil's next question from their own focus pack (way A), or the golden one from their easiest skill. */
+/**
+* A question for one pupil. Whole-class games leave out the ladder's untimed skills (James, 23 Nov 2026): rounding, order of
+* operations, number lines and the like take working out, and a live round is quick recall. A pupil whose skill is all
+* untimed still gets their review facts, and times tables if nothing else comes.
+*/
 function makeQuestion(context, seed, golden) {
-	for (let attempt = 0; attempt < 6; attempt++) {
+	for (let attempt = 0; attempt < 16; attempt++) {
 		const random = seededRandom(`${seed}:${attempt}`);
 		const pack = makeSpacePack(context.facts, context.focus, context.settings, random);
 		let q = null;
@@ -9851,9 +9866,10 @@ function makeQuestion(context, seed, golden) {
 			boxes: [...SHOWDOWN.golden.boxes]
 		}) ?? null;
 		q ??= pickSpaceQuestion(pack, context.settings);
-		if (q && markQuestion(q)) return q;
+		if (q && !isUntimed(q.factKey) && markQuestion(q)) return q;
 	}
-	return null;
+	const q = new TimesTables([], seededRandom(`${seed}:tt`)).nextQuestion({ level: 1 });
+	return q && markQuestion(q) ? q : null;
 }
 /**
 * Loads the room, applies one step, saves it if nobody else saved first (else runs again on the newer round). Returns
@@ -9960,7 +9976,7 @@ async function showdownStep(s, who, body) {
 				view: roomView(done.row, r),
 				now: s.now(),
 				version: done.row.version,
-				players: r.order.map((id) => playerView(r.players[id])),
+				players: r.order.map((id) => playerView(r.players[id], topTenOf(r))),
 				...r.state === "over" ? { recap: recap(r) } : {}
 			});
 		}
@@ -10109,7 +10125,7 @@ async function showdownStep(s, who, body) {
 			return ok({
 				room,
 				view: roomView(done.row, r),
-				me: playerView(r.players[who]),
+				me: playerView(r.players[who], topTenOf(r)),
 				now: s.now(),
 				...question ? { question } : {}
 			});
@@ -10129,7 +10145,7 @@ async function showdownStep(s, who, body) {
 			if ("refuse" in done) return done.refuse;
 			return ok({
 				room,
-				me: playerView(done.row.round.players[who]),
+				me: playerView(done.row.round.players[who], topTenOf(done.row.round)),
 				now: s.now()
 			});
 		}
@@ -10201,7 +10217,7 @@ async function showdownStep(s, who, body) {
 			room,
 			right,
 			answer: marked.answer,
-			me: playerView(r.players[who]),
+			me: playerView(r.players[who], topTenOf(r)),
 			events: mine,
 			view: roomView(done.row, r),
 			now: s.now(),

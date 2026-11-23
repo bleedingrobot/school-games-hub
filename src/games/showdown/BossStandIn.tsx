@@ -1,5 +1,5 @@
 /** An original drawn River Titan for the projector until the painted one lands: a giant of river boulders and moss with glowing water eyes. */
-export function BossStandIn({ phase, flinch = false, weak = false, angry = false }: { phase: 1 | 2 | 3; flinch?: boolean; weak?: boolean; angry?: boolean }) {
+export function BossStandIn({ phase, flinch = false, weak = false, angry = false, look = 0 }: { phase: 1 | 2 | 3; flinch?: boolean; weak?: boolean; angry?: boolean; look?: -1 | 0 | 1 }) {
   const eye = phase === 1 ? '#7fe3ff' : phase === 2 ? '#ffb347' : '#ff6a5c';
   const cracks = phase >= 2;
   const broken = phase === 3;
@@ -67,11 +67,13 @@ export function BossStandIn({ phase, flinch = false, weak = false, angry = false
         {/* brow */}
         <path d={angry || phase >= 2 ? 'M148 118 L190 134 M252 118 L210 134' : 'M148 124 L190 128 M252 124 L210 128'} stroke="#2c373d" strokeWidth="9" strokeLinecap="round" />
         {/* water eyes */}
+        <g style={{ transform: `translateX(${look * 9}px)`, transition: 'transform 0.6s ease-out' }}>
         <g className="sd-p-standin__eyes" filter="url(#sdp-glow)">
           <ellipse cx="170" cy="144" rx="15" ry={phase >= 2 ? 10 : 13} fill={eye} />
           <ellipse cx="230" cy="144" rx="15" ry={phase >= 2 ? 10 : 13} fill={eye} />
         </g>
         <circle cx="170" cy="144" r="4" fill="#06202e" /><circle cx="230" cy="144" r="4" fill="#06202e" />
+        </g>
         {/* mouth */}
         {phase === 1 && <path d="M170 176 Q200 190 230 176" stroke="#2c373d" strokeWidth="7" fill="none" strokeLinecap="round" />}
         {phase >= 2 && <path className="sd-p-standin__mouth" d="M166 172 Q200 206 234 172 Q200 184 166 172 Z" fill="#14232c" stroke="#2c373d" strokeWidth="4" />}
