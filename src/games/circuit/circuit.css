@@ -346,3 +346,28 @@
 .cr-finish::before { z-index: 1; }
 .cr-finish__sparks { z-index: 2; }
 .cr-finish__card { z-index: 3; }
+
+/* ——— Stage 6: Volt's guided first go and tips ——— */
+.cr-volt--point .cr-volt__face--art { animation: cr-volt-lean 0.7s ease-in-out infinite alternate; }
+@keyframes cr-volt-lean { from { transform: rotate(-4deg) translateY(0); } to { transform: rotate(8deg) translateY(-6px); } }
+.cr-volt__point { position: absolute; left: 3.2rem; bottom: 4.6rem; font-size: 1.9rem; filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.8)); animation: cr-point 0.6s ease-in-out infinite alternate; }
+@keyframes cr-point { to { transform: translate(6px, -10px) scale(1.12); } }
+.cr-volt--talking .cr-volt__line { animation: cr-line-in 0.35s cubic-bezier(0.2, 1.4, 0.4, 1); }
+@keyframes cr-line-in { from { opacity: 0; transform: translateY(10px) scale(0.92); } }
+.cr-teach { position: absolute; left: 50%; bottom: 7.2rem; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 0.35rem; pointer-events: none; animation: cr-line-in 0.4s ease-out; }
+.cr-teach__word { font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #fde68a; text-shadow: 0 0 10px rgba(250, 204, 21, 0.8); }
+.cr-teach__keys { display: flex; gap: 0.6rem; }
+.cr-key {
+  min-width: 3.4rem; height: 3.4rem; display: inline-flex; align-items: center; justify-content: center; padding: 0 0.6rem;
+  font: 800 1.6rem/1 system-ui, sans-serif; color: #0b1120; background: linear-gradient(#a5f3fc, #22d3ee); border-radius: 0.7rem;
+  border-bottom: 5px solid #0e7490; box-shadow: 0 0 22px rgba(34, 211, 238, 0.85), 0 0 4px #fff inset; animation: cr-key-glow 0.9s ease-in-out infinite;
+}
+.cr-key--wide { min-width: 9rem; font-size: 1.2rem; }
+@keyframes cr-key-glow { 50% { transform: translateY(3px); box-shadow: 0 0 34px rgba(34, 211, 238, 1), 0 0 4px #fff inset; border-bottom-width: 2px; } }
+.cr-pad--lit, .cr-lever--lit { box-shadow: 0 0 26px #facc15, 0 0 6px #fff inset !important; border-color: #facc15 !important; animation: cr-key-glow 0.9s ease-in-out infinite; }
+@media (pointer: coarse) { .cr-teach { bottom: 12rem; } .cr-key { min-width: 2.8rem; height: 2.8rem; font-size: 1.3rem; } }
+@media (max-height: 520px) { .cr-teach { bottom: 5rem; } .cr-key { min-width: 2.6rem; height: 2.6rem; font-size: 1.2rem; } }
+.cr-guide-again { margin-top: 0.4rem; }
+@media (prefers-reduced-motion: reduce) {
+  .cr-volt--point .cr-volt__face--art, .cr-volt__point, .cr-key, .cr-pad--lit, .cr-lever--lit, .cr-teach, .cr-volt--talking .cr-volt__line { animation: none; }
+}

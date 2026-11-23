@@ -29,3 +29,9 @@ export async function saveCircuitMaths(mode: MathsSwitch, classId: string): Prom
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');
 }
+
+/** Starts a pupil's Circuit Racer again: roads, racer and Volt's tips (teacher_reset_circuit). Points and achievements stay. */
+export async function resetCircuitStudent(student: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_reset_circuit', { student });
+  if (error) throw new FriendlyError('We couldn’t start them again. Please try again.');
+}

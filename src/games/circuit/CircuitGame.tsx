@@ -3,12 +3,17 @@
  * (the five worlds on the painted map, the chosen world's six roads below), the race, the finish (time, medal, stars, 🔥 for
  * hard mode) and "All done for today" once the day's 5 finishes are used. The server (`backend`) hands out every go and
  * saves every finish; the screens only show what it says.
+ *
+ * Stage 6: a pupil's first go at road 1 is Volt's guided go (and "Replay the guide" on the map plays it again); Volt's
+ * once-only tips are saved as seen on the server; new achievements pop on the finish screen.
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
-  extraRoads, FINISHES_A_DAY, hardSeconds, MEDAL_SECONDS, msToNzMidnight, racerById, racerOpen, RACERS, roadById, roadOpen, roadPlace, ROADS, timeText,
-  WORLD_OPENS_AT, worldOpen, WORLDS, type CircuitSave, type Medal, type RacerId,
+  achievementsReached, ACHIEVEMENTS, extraRoads, FINISHES_A_DAY, GUIDE_ROAD, hardSeconds, MEDAL_SECONDS, msToNzMidnight, racerById, racerOpen, RACERS, roadById, roadOpen, roadPlace, ROADS, timeText,
+  WORLD_OPENS_AT, worldOpen, WORLDS, type CircuitSave, type Medal, type RacerId, type RoadProgress, type TipId,
 } from '../../../shared/circuit/game';
+import { AchievementPop } from '../../achievements/AchievementPop';
+import type { NewAchievement } from '../../data/newAchievements';
 import type { World } from '../../../shared/circuit/config';
 import type { RunMaths } from '../../../shared/circuit/maths';
 import type { RaceState } from '../../../shared/circuit/physics';
@@ -38,7 +43,7 @@ import './circuit.css';
 
 type Screen =
   | { kind: 'roads' }
-  | { kind: 'race'; road: string; seed: string; stamp: string; go: number; maths: RunMaths | null; hard: boolean }
+  | { kind: 'race'; road: string; seed: string; stamp: string; go: number; maths: RunMaths | null; hard: boolean; guide: boolean }
   | { kind: 'saving'; road: string }
   | { kind: 'finish'; road: string; reply: FinishReply; was: number | null }
   | { kind: 'done' }
@@ -61,11 +66,24 @@ const PINS = [
   { x: 82, y: 25, colour: '#c084fc' },
 ] as const;
 
+const MEDAL_RANK_OF: Record<Medal, number> = { bronze: 1, silver: 2, gold: 3 };
 const leftText = (left: number | null) => (left === null ? 'Unlimited today' : `${left} race${left === 1 ? '' : 's'} left today`);
 /** "World 2 · 3. Fan Alley" style label parts: road number inside its world. */
 const numberOf = (id: string) => (roadPlace(id)?.index ?? -1) + 1;
 
-export function CircuitGame({ backend, extra }: { backend: CircuitBackend; extra?: ReactNode }) {
+/**
+ * The achievements newly reached by a finish, for the preview's pretend earn moment (`trial`): live, the server decides
+ * them and AchievementPop reads them.
+ */
+function pretendEarned(before: Record<string, RoadProgress>, after: Record<string, RoadProgress>): NewAchievement[] {
+  const had = new Set(achievementsReached(before));
+  return ACHIEVEMENTS.filter((a) => !had.has(a.id) && achievementsReached(after).includes(a.id)).map((a) => ({
+    id: a.id, game: 'circuit', name: a.name, emoji: a.emoji, how: a.how, tier: a.tier, earnedAt: new Date().toISOString(),
+  }));
+}
+
+/** `trial`: the preview (no school server), so the earn moment shows pretend achievements worked out here. */
+export function CircuitGame({ backend, extra, trial = false }: { backend: CircuitBackend; extra?: ReactNode; trial?: boolean }) {
   const { soundOn } = useSound();
   const [save, setSave] = useState<CircuitSave | null>(null);
   const [screen, setScreen] = useState<Screen>({ kind: 'roads' });
@@ -76,6 +94,15 @@ export function CircuitGame({ backend, extra }: { backend: CircuitBackend; extra
   // The world shown on the map (null: the furthest open world, worked out when the save arrives).
   const [world, setWorld] = useState<number | null>(null);
   const goCount = useRef(0);
+  // A finish saved (for the earn moment), and what the preview pretends was earned by it.
+  const [saves, setSaves] = useState(0);
+  const [pretend, setPretend] = useState<NewAchievement[]>([]);
+
+  /** Saves one of Volt's tips as seen: at once on screen, then on the server (a failure only means it may show again). */
+  const markSeen = useCallback((tip: TipId) => {
+    setSave((s) => (s && !(s.seen ?? []).includes(tip) ? { ...s, seen: [...(s.seen ?? []), tip] } : s));
+    backend.seen([tip]).catch(() => undefined);
+  }, [backend]);
 
   const fail = useCallback((e: unknown) => {
     if (e instanceof CircuitError && e.code === 'done-today') setScreen({ kind: 'done' });
@@ -90,7 +117,7 @@ export function CircuitGame({ backend, extra }: { backend: CircuitBackend; extra
     }, fail);
   }, [backend, fail]);
 
-  const start = useCallback(async (road: string, hard = false) => {
+  const start = useCallback(async (road: string, hard = false, replayGuide = false) => {
     if (busy) return;
     setBusy(true);
     setProblem(null);
@@ -99,19 +126,22 @@ export function CircuitGame({ backend, extra }: { backend: CircuitBackend; extra
       setSave((s) => (s ? { ...s, left: go.left } : s));
       const place = roadPlace(road);
       if (place) setWorld(place.world);
-      setScreen({ kind: 'race', road, seed: go.seed, stamp: go.stamp, go: ++goCount.current, maths: go.maths ?? null, hard });
+      // Volt guides road 1 until the pupil has finished it once guided (or when asked to replay the guide).
+      const guide = road === GUIDE_ROAD && !hard && (replayGuide || !(save?.seen ?? []).includes('guide'));
+      setScreen({ kind: 'race', road, seed: go.seed, stamp: go.stamp, go: ++goCount.current, maths: go.maths ?? null, hard, guide });
     } catch (e) {
       fail(e);
     } finally {
       setBusy(false);
     }
-  }, [backend, busy, fail, save?.maths, wantMaths]);
+  }, [backend, busy, fail, save?.maths, save?.seen, wantMaths]);
 
-  const finished = useCallback(async (road: string, seed: string, stamp: string, inputs: string, crashes: number, hard: boolean, _state: RaceState) => {
+  const finished = useCallback(async (road: string, seed: string, stamp: string, inputs: string, crashes: number, hard: boolean, guide: boolean, _state: RaceState) => {
     setScreen({ kind: 'saving', road });
     const was = save?.roads[road]?.best ?? null;
     try {
-      const reply = await backend.finish({ road, seed, stamp, inputs, crashes, hard });
+      const reply = await backend.finish({ road, seed, stamp, inputs, crashes, hard, guide });
+      if (guide) markSeen('guide');
       setSave((s) => {
         if (!s) return s;
         const had = s.roads[road];
@@ -135,6 +165,12 @@ export function CircuitGame({ backend, extra }: { backend: CircuitBackend; extra
           },
         };
       });
+      if (trial && save) {
+        const had = save.roads[road];
+        const after = { ...save.roads, [road]: { ...(had ?? { best: reply.steps, clean: false, charged: false, hardFinishes: 0 }), finishes: (had?.finishes ?? 0) + 1, medal: had && MEDAL_RANK_OF[had.medal] >= MEDAL_RANK_OF[reply.medal] ? had.medal : reply.medal, clean: (had?.clean ?? false) || reply.clean, hardFinishes: (had?.hardFinishes ?? 0) + (reply.hard && had ? 1 : 0) } };
+        setPretend(pretendEarned(save.roads, after));
+      }
+      setSaves((n) => n + 1);
       setScreen({ kind: 'finish', road, reply, was });
     } catch (e) {
       if (e instanceof CircuitError && (e.code === 'done-today' || e.code === 'off')) fail(e);
@@ -143,7 +179,7 @@ export function CircuitGame({ backend, extra }: { backend: CircuitBackend; extra
         setProblem(e instanceof Error ? `${e.message} That finish wasn’t saved.` : 'That finish wasn’t saved.');
       }
     }
-  }, [backend, fail, save]);
+  }, [backend, fail, save, markSeen, trial]);
 
   // The racer picker (Stage 5): shown at once, saved on the server; put back if the server says no.
   const pickRacer = useCallback(async (racer: RacerId) => {
@@ -170,8 +206,11 @@ export function CircuitGame({ backend, extra }: { backend: CircuitBackend; extra
         maths={screen.maths}
         hard={screen.hard}
         colour={(racerById(save?.racer) ?? RACERS[0]).colour}
+        guide={screen.guide}
+        seen={save?.seen ?? []}
+        onSeen={markSeen}
         onAnswer={(slot, answer, ms) => backend.answer({ road: screen.road, seed: screen.seed, stamp: screen.stamp, slot, answer, ms })}
-        onFinish={(inputs, crashes, state) => finished(screen.road, screen.seed, screen.stamp, inputs, crashes, screen.hard, state)}
+        onFinish={(inputs, crashes, state) => finished(screen.road, screen.seed, screen.stamp, inputs, crashes, screen.hard, screen.guide, state)}
         onQuit={() => setScreen({ kind: 'roads' })}
       />
     );
@@ -187,12 +226,17 @@ export function CircuitGame({ backend, extra }: { backend: CircuitBackend; extra
     body = (
       <WorldMap
         save={save} busy={busy} onPick={start} problem={problem} extra={extra} wantMaths={wantMaths} onWantMaths={setWantMaths} world={world} onWorld={setWorld}
-        onRacer={pickRacer}
+        onRacer={pickRacer} onGuide={() => start(GUIDE_ROAD, false, true)}
       />
     );
   }
 
-  return <div className="cr-window">{body}</div>;
+  return (
+    <div className="cr-window">
+      {body}
+      <AchievementPop games={['circuit']} watch={saves || null} off={trial} pretend={pretend} />
+    </div>
+  );
 }
 
 function Centre({ children }: { children: ReactNode }) {
@@ -230,9 +274,10 @@ function nextStep(save: CircuitSave): string | null {
   return null;
 }
 
-function WorldMap({ save, busy, onPick, problem, extra, wantMaths, onWantMaths, world, onWorld, onRacer }: {
+function WorldMap({ save, busy, onPick, problem, extra, wantMaths, onWantMaths, world, onWorld, onRacer, onGuide }: {
   save: CircuitSave | null; busy: boolean; onPick: (road: string, hard?: boolean) => void; problem: string | null; extra?: ReactNode;
   wantMaths: boolean; onWantMaths: (on: boolean) => void; world: number | null; onWorld: (w: number) => void; onRacer: (racer: RacerId) => void;
+  onGuide: () => void;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
@@ -259,6 +304,11 @@ function WorldMap({ save, busy, onPick, problem, extra, wantMaths, onWantMaths, 
       <div className="cr-picker__bar">
         <HubButtons />
         {save && <span className="cr-chip">{leftText(save.left)}</span>}
+        {save && (save.seen ?? []).includes('guide') && (
+          <button type="button" className="cr-glass cr-guide-again" disabled={busy} onClick={onGuide} title="Volt shows you the keys again on road 1">
+            <span aria-hidden="true">🔌</span> Replay the guide
+          </button>
+        )}
       </div>
       <h1 className="cr-picker__title" ref={heading} tabIndex={-1}>Circuit Racer</h1>
       <div className="cr-map">

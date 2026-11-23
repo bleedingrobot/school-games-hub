@@ -1,6 +1,7 @@
 /**
  * Volt, the friendly little robot plug who talks on the dashboard (docs/CIRCUIT-PLAN.md, section 5.7): the painting
- * (Stage 5), with the drawn face as a fallback if it can't load. The guided first go comes in Stage 6.
+ * (Stage 5), with the drawn face as a fallback if it can't load. Stage 6: `point` for a tip about the road ahead (he
+ * leans and points up the road).
  */
 import { useState } from 'react';
 import voltArt from './art/paint/volt/volt.webp';
@@ -21,10 +22,11 @@ export function VoltFace({ size = 56 }: { size?: number }) {
   );
 }
 
-export function Volt({ line }: { line: string | null }) {
+export function Volt({ line, point = false }: { line: string | null; point?: boolean }) {
   return (
-    <div className={`cr-volt${line ? ' cr-volt--talking' : ''}`}>
+    <div className={`cr-volt${line ? ' cr-volt--talking' : ''}${point && line ? ' cr-volt--point' : ''}`}>
       <VoltFace size={64} />
+      {point && line && <span className="cr-volt__point" aria-hidden="true">👆</span>}
       {line && <p className="cr-volt__line" role="status">{line}</p>}
     </div>
   );

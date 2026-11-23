@@ -1,9 +1,10 @@
 import { lazy } from 'react';
 import { saveCircuitEnabled, saveCircuitMaths } from '../../data/circuit';
 import type { GameDefinition } from '../types';
-import { CIRCUIT_ABOUT, CIRCUIT_MATHS_ABOUT, useCircuitClassSwitch, useCircuitMaths } from './teacher';
+import { CIRCUIT_ABOUT, CIRCUIT_MATHS_ABOUT, useCircuitCells, useCircuitClassSwitch, useCircuitMaths } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick (three.js loads later still, when a race opens).
+const CircuitStudentPanel = lazy(() => import('../../pages/TeacherCircuit').then((m) => ({ default: m.CircuitStudentPanel })));
 const CircuitPlay = lazy(() => import('./CircuitPlay').then((m) => ({ default: m.CircuitPlay })));
 
 /** A glowing road running to a port, with a spark on it. */
@@ -39,5 +40,7 @@ export const circuitRacer: GameDefinition = {
   teacher: {
     switch: { useValue: useCircuitClassSwitch, save: saveCircuitEnabled, about: CIRCUIT_ABOUT },
     maths: { useValue: useCircuitMaths, save: (mode, classId) => saveCircuitMaths(mode, classId), about: CIRCUIT_MATHS_ABOUT },
+    progressColumns: { note: 'roads finished', useCells: useCircuitCells },
+    StudentPanel: CircuitStudentPanel,
   },
 };

@@ -10,7 +10,7 @@ import { CircuitGame } from './CircuitGame';
 import { pretendCircuit } from './pretend';
 
 vi.mock('./renderer', () => ({
-  createView: () => ({ draw() {}, events() {}, restart() {}, resize() {}, lower: () => false, dispose() {} }),
+  createView: () => ({ draw() {}, events() {}, restart() {}, bridgesTo() {}, resize() {}, lower: () => false, dispose() {} }),
 }));
 
 let frames: FrameRequestCallback[] = [];
@@ -32,7 +32,7 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
-it('opens a road, Enter starts the race, Space jumps, and Escape goes back to the roads', async () => {
+it('a new pupil’s first road is Volt’s guided go, one key at a time; Enter starts, Escape goes back to the roads', async () => {
   const user = userEvent.setup();
   render(<SoundProvider><CircuitGame backend={pretendCircuit({ today: 3 })} /></SoundProvider>);
   expect(await screen.findByText('2 races left today')).toBeTruthy();
@@ -44,12 +44,23 @@ it('opens a road, Enter starts the race, Space jumps, and Escape goes back to th
   await user.keyboard('{Enter}');
   expect(screen.queryByRole('button', { name: /GO/ })).toBeNull();
 
+  // Volt teaches steering first: speeding up does nothing yet.
+  expect(screen.getByText(/Steer left and right with the arrow keys/)).toBeTruthy();
+  const speed = () => Number(screen.getByRole('meter', { name: 'Speed' }).getAttribute('aria-valuenow'));
+  await user.keyboard('{ArrowUp>}');
+  runFrames(12);
+  await user.keyboard('{/ArrowUp}');
+  expect(speed()).toBe(0);
+  await user.keyboard('{ArrowLeft>}');
+  runFrames(24);
+  await user.keyboard('{/ArrowLeft}');
+  // Then speed.
+  expect(screen.getByText(/hold the up arrow to speed up/)).toBeTruthy();
   await user.keyboard('{ArrowUp>}');
   runFrames(20);
-  await user.keyboard('{/ArrowUp}{ }');
-  runFrames(10);
-  const speed = screen.getByRole('meter', { name: 'Speed' });
-  expect(Number(speed.getAttribute('aria-valuenow'))).toBeGreaterThan(0);
+  await user.keyboard('{/ArrowUp}');
+  runFrames(3);
+  expect(speed()).toBeGreaterThan(0);
   expect(screen.getByLabelText('Time').textContent).not.toBe('0.0s');
 
   await user.keyboard('{Escape}');

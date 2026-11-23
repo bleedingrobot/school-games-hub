@@ -30,6 +30,7 @@ createRoot(document.getElementById('root') as HTMLElement).render(
     <SoundProvider>
       <CircuitGame
         backend={backend}
+        trial
         extra={<p className="cr-keys">Preview only: nothing is saved to the school. Add ?runs=4 to start with one race left today, ?open=all to open every road, ?unlimited=1 for Unlimited today, ?maths=off (or choose) for the teacher's maths switch, ?mc=1 for multiple-choice questions, ?test=1 for a test road with data gates. The maths uses a pretend focus (7 times table, fractions, decimals, percentages).</p>}
       />
     </SoundProvider>

@@ -39,7 +39,7 @@ function setup(opts: MemoryOptions = {}) {
   return { db, send, go };
 }
 
-it('replays a finish and keeps only what the replay says; saves an unlocked racer; refuses another pupil’s run, a switched-off class and no sign-in', async () => {
+it('replays a finish and keeps only what the replay says; saves an unlocked racer and Volt’s tips; replays a guided go; refuses another pupil’s run, a switched-off class and no sign-in', async () => {
   const { db, send, go } = setup();
   expect((await send({ action: 'load' }, null)).status).toBe(401);
 
@@ -72,6 +72,18 @@ it('replays a finish and keeps only what the replay says; saves an unlocked race
   db.roads.ana = { ...db.roads.ana, ...Object.fromEntries(WORLDS[0].roads.map((r) => [r.id, { ...db.roads.ana[ROAD] }])) };
   expect((await send({ action: 'racer', racer: 'pixel' })).status).toBe(200);
   expect((await send({ action: 'load' })).body.racer).toBe('pixel');
+
+  // Volt's tips (Stage 6): none seen to start, saved once each, only known ones.
+  expect((await send({ action: 'load' })).body.seen).toEqual([]);
+  expect((await send({ action: 'seen', tips: ['guide', 'crash'] })).status).toBe(200);
+  expect((await send({ action: 'seen', tips: ['crash'] })).status).toBe(200);
+  expect((await send({ action: 'seen', tips: ['nope'] })).status).toBe(400);
+  expect((await send({ action: 'load' })).body.seen).toEqual(['guide', 'crash']);
+  // A guided go on road 1 replays with its gaps bridged until the first jump; the flag means nothing on another road.
+  const guided = botRun(roadById(ROAD)!, 'careful', { guide: true }, 1);
+  const seed = `c1-${Math.floor(NOW / 1000) - 199}-${'cd'.repeat(12)}`;
+  const gone = { road: ROAD, seed, stamp: (await db.stamp(stampText('ana', ROAD, seed)))!, inputs: encodeLog(guided.log), crashes: 0 };
+  expect((await send({ action: 'finish', ...gone, guide: true })).body).toMatchObject({ result: 'saved', steps: guided.state.steps });
 
   db.switches.enabled = false;
   for (const body of [{ action: 'load' }, { action: 'racer', racer: 'spark' }, { action: 'start', road: ROAD }, { action: 'finish', ...(await go()), inputs: INPUTS, crashes: 0 }]) {
