@@ -3,7 +3,7 @@
  * AudioContext is made on the first sound (browsers need a tap first), repeats are rate-limited, and every call is wrapped
  * so a browser without audio just stays quiet.
  */
-export type SoundName = 'twinkle' | 'whoosh' | 'chime' | 'glow' | 'swell' | 'fanfare' | 'drum';
+export type SoundName = 'twinkle' | 'whoosh' | 'chime' | 'glow' | 'swell' | 'fanfare' | 'drum' | 'roar' | 'hop';
 
 export interface ClassLiveSound {
   play(name: SoundName): void;
@@ -12,7 +12,7 @@ export interface ClassLiveSound {
 }
 
 const KEY = 'classlive-muted';
-const BIG: SoundName[] = ['swell', 'fanfare', 'drum'];
+const BIG: SoundName[] = ['swell', 'fanfare', 'drum', 'roar'];
 
 function readMuted(): boolean {
   try {
@@ -91,6 +91,15 @@ function voice(ctx: Ctx, out: AudioNode, name: SoundName) {
         tone(ctx, out, f / 2, t + i * 0.13, i === 6 ? 1.2 : 0.3, 'triangle', 0.14);
       });
       noise(ctx, out, t + 0.9, 1.0, 4000, 800, 0.12);
+      break;
+    case 'roar':
+      tone(ctx, out, 90, t, 1.6, 'sawtooth', 0.22, 45);
+      tone(ctx, out, 135, t + 0.05, 1.5, 'square', 0.08, 60);
+      tone(ctx, out, 60, t, 1.8, 'sine', 0.35, 38);
+      noise(ctx, out, t, 1.4, 700, 150, 0.3);
+      break;
+    case 'hop':
+      tone(ctx, out, 520, t, 0.14, 'triangle', 0.18, 880);
       break;
     case 'drum':
       tone(ctx, out, 140, t, 0.5, 'sine', 0.6, 40);

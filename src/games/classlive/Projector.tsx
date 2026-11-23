@@ -5,12 +5,14 @@
  * ever draws good things: there are no wrong answers in the screen data.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ARMS, ARM_GOAL, ARM_NAMES, SUPERNOVA, type Arm, type Star } from '../../../shared/classlive/stars';
-import type { Event, ScreenView } from '../../../shared/classlive/server';
+import { ARMS, ARM_GOAL, ARM_NAMES, SUPERNOVA, type Arm, type Star, type StarsGame } from '../../../shared/classlive/stars';
+import { BODY, SERPENT_LEVELS, SERPENT_LEVEL_ABOUT, SERPENT_LEVEL_NAMES, stepText, wakeAt, type SerpentGame, type SerpentLevel } from '../../../shared/classlive/serpent';
+import { ACTIVITY_NAMES, type Activity, type Event, type ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
 import { ARM_COLOURS } from './arms';
 import type { ClassLiveLink, Reply } from './link';
 import { NightBackdrop, PLAYER_COLOURS, StarSky } from './StarSky';
+import { CoiledSerpent, JungleBackdrop, NO_SERPENT_FX, SerpentScene, type SerpentFx } from './SerpentScene';
 import './projector.css';
 
 const ROOM_KEY = 'classlive-room';
@@ -54,8 +56,9 @@ interface Fx {
   drawing: Set<Arm>;
   swim: boolean;
   nova: number;
+  serpent: SerpentFx;
 }
-const NO_FX: Fx = { arriving: new Set(), fresh: {}, pulsing: new Set(), drawing: new Set(), swim: false, nova: 0 };
+const NO_FX: Fx = { arriving: new Set(), fresh: {}, pulsing: new Set(), drawing: new Set(), swim: false, nova: 0, serpent: NO_SERPENT_FX };
 
 export function Projector({ link, classId, className, sound }: { link: ClassLiveLink; classId: string; className?: string; sound: ClassLiveSound }) {
   const [room, setRoom] = useState<number | null>(null);
@@ -68,6 +71,8 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
   const [fx, setFx] = useState<Fx>(NO_FX);
   const [now, setNow] = useState(() => Date.now());
   const [hideResults, setHideResults] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const bannerKey = useRef(0);
   const offset = useRef(0);
   const screenRef = useRef<ScreenView | null>(null);
   const seen = useRef<number | null>(null);
@@ -90,9 +95,33 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
   const animate = useCallback((s: ScreenView, events: Ev[]) => {
     const nameOf = (id: string) => s.people.find((p) => p.id === id)?.name ?? null;
     for (const e of events) {
+      const sx = (change: (f: SerpentFx) => SerpentFx) => setFx((f) => ({ ...f, serpent: change(f.serpent) }));
+      const banner = (text: string, ms: number) => {
+        const key = ++bannerKey.current;
+        sx((f) => ({ ...f, banner: { text, key } }));
+        later(() => sx((f) => (f.banner?.key === key ? { ...f, banner: null } : f)), ms);
+      };
       if (e.type === 'join') sound.play('twinkle');
       else if (e.type === 'start') sound.play('drum');
-      else if (e.type === 'star') {
+      else if (e.type === 'climb') {
+        const id = e.pupil;
+        sx((f) => ({ ...f, hopping: new Set([...f.hopping, id]) }));
+        later(() => sx((f) => { const h = new Set(f.hopping); h.delete(id); return { ...f, hopping: h }; }), 750);
+        sound.play('twinkle');
+      } else if (e.type === 'head') {
+        const who = nameOf(e.pupil);
+        banner(e.place === 1 ? `${who ?? 'Someone'} reached the head!` : `${who ?? 'Someone else'} reached the head too!`, 2600);
+        sound.play('chime');
+      } else if (e.type === 'tail') {
+        sx((f) => ({ ...f, tailPulse: f.tailPulse + 1 }));
+        later(() => sx((f) => ({ ...f, tailPulse: 0 })), 1800);
+        sound.play('whoosh');
+      } else if (e.type === 'awake') {
+        sx((f) => ({ ...f, shake: true }));
+        later(() => sx((f) => ({ ...f, shake: false })), 1500);
+        banner('The serpent wakes!', 2600);
+        sound.play('roar');
+      } else if (e.type === 'star') {
         const id = e.star.id;
         flag('arriving', id, 1300);
         sound.play('whoosh');
@@ -151,6 +180,7 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
     setScreenState(null);
     setFx(NO_FX);
     setHideResults(false);
+    setRevealed(false);
   }, []);
 
   // Pick a kept room back up.
@@ -201,10 +231,10 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
     return r;
   }, [link, take]);
 
-  const open = async (body: Record<string, unknown>) => {
+  const open = async (activity: Activity, body: Record<string, unknown>) => {
     setBusy(true);
     setProblem('');
-    const r = await act({ action: 'open', classId, activity: 'stars', ...body });
+    const r = await act({ action: 'open', classId, activity, ...body });
     setBusy(false);
     if (r.status === 200 && typeof r.body.room === 'number') {
       keepRoom(r.body.room);
@@ -219,17 +249,21 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
 
   const state = screen?.state ?? null;
   const game = screen?.game ?? null;
+  const serpent = game?.kind === 'serpent' ? game : null;
+  useEffect(() => {
+    if (state !== 'over') { setRevealed(false); setHideResults(false); }
+  }, [state]);
 
   return (
-    <div className={`cl-p cl-p--${state ?? 'setup'}`}>
-      <NightBackdrop />
+    <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''}`}>
+      {serpent ? <JungleBackdrop /> : <NightBackdrop />}
       <div className={`cl-bar ${barOpen ? 'cl-bar--open' : ''}`}>
         <button type="button" className="cl-bar__tab" onClick={() => setBarOpen(!barOpen)} aria-expanded={barOpen} aria-label={barOpen ? 'Hide the teacher bar' : 'Show the teacher bar'}>{barOpen ? '▲' : '☰'}</button>
         {barOpen && (
           <div className="cl-bar__row">
             <a className="cl-btn cl-btn--small" href="#/">⌂ Hub</a>
             <button type="button" className="cl-btn cl-btn--small" onClick={toggleSound} aria-pressed={!muted}>{muted ? '🔇 Sound off' : '🔊 Sound on'}</button>
-            {screen && <span className="cl-bar__name">Star Web</span>}
+            {screen && <span className="cl-bar__name">{ACTIVITY_NAMES[screen.activity]}</span>}
             {leftMs !== null && <span className={`cl-bar__time ${leftMs < 30_000 ? 'cl-bar__time--low' : ''}`} role="timer">{mmss(leftMs)}</span>}
             {screen && screen.state !== 'over' && room && (
               <button type="button" className="cl-btn cl-btn--small cl-btn--danger" onClick={() => void act({ action: 'end', room })}>End</button>
@@ -241,10 +275,28 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
       {!screen && (resuming ? <div className="cl-center"><p className="cl-center__word">Finding your room…</p></div> : <Setup busy={busy} problem={problem} onOpen={open} />)}
 
       {screen && game && state === 'lobby' && room && (
-        <Lobby screen={screen} className={className} onStart={() => void act({ action: 'start', room })} />
+        <Lobby screen={screen} game={game} className={className} onStart={() => void act({ action: 'start', room })} />
       )}
 
-      {screen && game && (state === 'live' || state === 'over') && (
+      {screen && serpent && (state === 'live' || state === 'over') && (
+        <>
+          <SerpentScene
+            game={serpent}
+            people={screen.people}
+            players={screen.players}
+            wakeAt={wakeAt(screen.players)}
+            over={state === 'over'}
+            fx={fx.serpent}
+            sound={sound}
+            onRevealed={() => setRevealed(true)}
+          />
+          {state === 'over' && revealed && (hideResults
+            ? <button type="button" className="cl-btn cl-results-tab" onClick={() => setHideResults(false)}>🐍 Show the results</button>
+            : <SerpentFinish screen={screen} game={serpent} onAgain={forget} onSky={() => setHideResults(true)} />)}
+        </>
+      )}
+
+      {screen && game?.kind === 'stars' && (state === 'live' || state === 'over') && (
         <>
           <StarSky
             game={game}
@@ -257,11 +309,11 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
             nova={fx.nova}
             onPick={state === 'live' && room ? (id) => void act({ action: 'spotlight', room, id }) : undefined}
           />
-          <Hud screen={screen} />
-          {state === 'live' && game.spotlight !== null && room && <Spotlight screen={screen} onBack={() => void act({ action: 'spotlight', room, id: null })} />}
+          <Hud game={game} />
+          {state === 'live' && game.spotlight !== null && room && <Spotlight screen={screen} game={game} onBack={() => void act({ action: 'spotlight', room, id: null })} />}
           {state === 'over' && (hideResults
             ? <button type="button" className="cl-btn cl-results-tab" onClick={() => setHideResults(false)}>★ Show the results</button>
-            : <Finish screen={screen} onAgain={forget} onSky={() => setHideResults(true)} />)}
+            : <Finish screen={screen} game={game} onAgain={forget} onSky={() => setHideResults(true)} />)}
         </>
       )}
     </div>
@@ -270,8 +322,23 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
 
 /* ---------------- setup ---------------- */
 
-function Setup({ busy, problem, onOpen }: { busy: boolean; problem: string; onOpen: (body: Record<string, unknown>) => void }) {
+function TimerChips({ length, setLength }: { length: number; setLength: (m: number) => void }) {
+  return (
+    <div className="cl-opt">
+      <span className="cl-opt__label">Timer</span>
+      <div className="cl-chips" role="group" aria-label="Timer">
+        {TIMERS.map((m) => (
+          <button key={m} type="button" className={`cl-choice ${length === m ? 'cl-choice--on' : ''}`} aria-pressed={length === m} onClick={() => setLength(m)}>{m === 0 ? 'No timer' : `${m} min`}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Setup({ busy, problem, onOpen }: { busy: boolean; problem: string; onOpen: (activity: Activity, body: Record<string, unknown>) => void }) {
   const [level, setLevel] = useState<LevelPick>('middle');
+  const [sLevel, setSLevel] = useState<SerpentLevel>('gold');
+  const [sLength, setSLength] = useState(0);
   const [x, setX] = useState('6');
   const [y, setY] = useState('7');
   const [length, setLength] = useState(0);
@@ -304,21 +371,26 @@ function Setup({ busy, problem, onOpen }: { busy: boolean; problem: string; onOp
               </div>
             )}
           </div>
+          <TimerChips length={length} setLength={setLength} />
+          {problem && <p className="cl-problem" role="alert">{problem}</p>}
+          <button type="button" className="cl-btn cl-btn--go" disabled={!canOpen} onClick={() => onOpen('stars', { level: own ? 'middle' : level, length, ...(own ? { x: xi, y: yi } : {}) })}>{busy ? 'Opening…' : 'Open the room'}</button>
+        </section>
+        <section className="cl-card cl-card--active cl-card--serpent" aria-label="Serpent Chain">
+          <h2 className="cl-card__name">🐍 Serpent Chain</h2>
+          <p className="cl-card__blurb">A chain of sums winds up the temple. Wake the serpent!</p>
           <div className="cl-opt">
-            <span className="cl-opt__label">Timer</span>
-            <div className="cl-chips" role="group" aria-label="Timer">
-              {TIMERS.map((m) => (
-                <button key={m} type="button" className={`cl-choice ${length === m ? 'cl-choice--on' : ''}`} aria-pressed={length === m} onClick={() => setLength(m)}>{m === 0 ? 'No timer' : `${m} min`}</button>
+            <span className="cl-opt__label">Which serpent?</span>
+            <div className="cl-levels" role="group" aria-label="Serpent level">
+              {SERPENT_LEVELS.map((l) => (
+                <button key={l} type="button" className={`cl-choice cl-lvl cl-lvl--${l} ${sLevel === l ? 'cl-choice--on' : ''}`} aria-pressed={sLevel === l} onClick={() => setSLevel(l)}>
+                  <b>{SERPENT_LEVEL_NAMES[l].replace(' serpent', '')}</b>
+                  <small>{SERPENT_LEVEL_ABOUT[l]}</small>
+                </button>
               ))}
             </div>
           </div>
-          {problem && <p className="cl-problem" role="alert">{problem}</p>}
-          <button type="button" className="cl-btn cl-btn--go" disabled={!canOpen} onClick={() => onOpen({ level: own ? 'middle' : level, length, ...(own ? { x: xi, y: yi } : {}) })}>{busy ? 'Opening…' : 'Open the room'}</button>
-        </section>
-        <section className="cl-card cl-card--soon" aria-label="Serpent Chain, coming soon" aria-disabled="true">
-          <h2 className="cl-card__name">🐍 Serpent Chain</h2>
-          <p className="cl-card__blurb">A chain of sums winds up the temple.</p>
-          <span className="cl-soon">Coming soon</span>
+          <TimerChips length={sLength} setLength={setSLength} />
+          <button type="button" className="cl-btn cl-btn--go" disabled={busy} onClick={() => onOpen('serpent', { level: sLevel, length: sLength })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
         <section className="cl-card cl-card--soon" aria-label="Mystery Mural, coming soon" aria-disabled="true">
           <h2 className="cl-card__name">🎨 Mystery Mural</h2>
@@ -342,19 +414,14 @@ function Chip({ p, i }: { p: ScreenView['people'][number]; i: number }) {
   );
 }
 
-function Lobby({ screen, className, onStart }: { screen: ScreenView; className?: string; onStart: () => void }) {
-  const { x, y, p } = screen.game.anchor;
+function Lobby({ screen, game, className, onStart }: { screen: ScreenView; game: ScreenView['game']; className?: string; onStart: () => void }) {
   const n = screen.people.length;
+  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : <StarsLobbyHead game={game} />;
   return (
-    <div className="cl-lobby">
-      <h1 className="cl-lobby__title">Star Web</h1>
-      <div className="cl-lobby__fact">{x} × {y} = {p}</div>
-      <div className="cl-array" style={{ ['--rows' as string]: x, ['--cols' as string]: y, gridTemplateColumns: `repeat(${y}, var(--d))` }} aria-label={`${x} rows of ${y} dots`}>
-        {Array.from({ length: x * y }, (_, i) => <i key={i} className="cl-array__dot" style={{ animationDelay: `${(i % 12) * 0.12}s` }} />)}
-      </div>
-      <p className="cl-lobby__ask">What else can we find from this one fact?</p>
+    <div className={`cl-lobby ${game.kind === 'serpent' ? 'cl-lobby--serpent' : ''}`}>
+      {head}
       <div className="cl-lobby__join">Join now!{className ? <span className="cl-lobby__class"> {className}</span> : null}</div>
-      <div className="cl-lobby__count" aria-live="polite">{n === 0 ? 'Waiting for the first star…' : `${n} ${n === 1 ? 'pupil' : 'pupils'} joined`}</div>
+      <div className="cl-lobby__count" aria-live="polite">{n === 0 ? (screen.game.kind === 'serpent' ? 'Waiting for the first pupil…' : 'Waiting for the first star…') : `${n} ${n === 1 ? 'pupil' : 'pupils'} joined`}</div>
       <div className="cl-crowd" style={{ ['--k' as string]: Math.max(1.9, Math.min(3.6, 4 - n * 0.06)) }}>
         {screen.people.map((pp, i) => <Chip key={pp.id} p={pp} i={i} />)}
       </div>
@@ -363,10 +430,39 @@ function Lobby({ screen, className, onStart }: { screen: ScreenView; className?:
   );
 }
 
+function StarsLobbyHead({ game }: { game: StarsGame }) {
+  const { x, y, p } = game.anchor;
+  return (
+    <>
+      <h1 className="cl-lobby__title">Star Web</h1>
+      <div className="cl-lobby__fact">{x} × {y} = {p}</div>
+      <div className="cl-array" style={{ ['--rows' as string]: x, ['--cols' as string]: y, gridTemplateColumns: `repeat(${y}, var(--d))` }} aria-label={`${x} rows of ${y} dots`}>
+        {Array.from({ length: x * y }, (_, i) => <i key={i} className="cl-array__dot" style={{ animationDelay: `${(i % 12) * 0.12}s` }} />)}
+      </div>
+      <p className="cl-lobby__ask">What else can we find from this one fact?</p>
+    </>
+  );
+}
+
+function SerpentLobbyHead({ game }: { game: SerpentGame }) {
+  const first = game.chain.steps.slice(0, 4);
+  return (
+    <>
+      <h1 className="cl-lobby__title cl-lobby__title--serpent">Serpent Chain</h1>
+      <CoiledSerpent />
+      <div className="cl-lobby__fact cl-lobby__fact--serpent">Start at {game.chain.start}</div>
+      <ul className="cl-lobby__ops" aria-label="The first operations">
+        {first.map((s, i) => <li key={i} style={{ animationDelay: `${i * 0.15}s` }}>{stepText(s)}</li>)}
+        <li className="cl-lobby__more">…</li>
+      </ul>
+    </>
+  );
+}
+
 /* ---------------- live: counters, spotlight ---------------- */
 
-function Hud({ screen }: { screen: ScreenView }) {
-  const total = screen.game.stars.length;
+function Hud({ game }: { game: StarsGame }) {
+  const total = game.stars.length;
   const pct = Math.min(100, (total / SUPERNOVA) * 100);
   return (
     <div className="cl-hud">
@@ -374,13 +470,13 @@ function Hud({ screen }: { screen: ScreenView }) {
       <span className="cl-hud__nova" role="progressbar" aria-valuemin={0} aria-valuemax={SUPERNOVA} aria-valuenow={Math.min(total, SUPERNOVA)} aria-label="Supernova progress">
         <span className="cl-hud__fill" style={{ transform: `scaleX(${pct / 100})` }} />
       </span>
-      <span className="cl-hud__goal">{screen.game.supernova ? '💥 Supernova!' : `Supernova at ${SUPERNOVA}`}</span>
+      <span className="cl-hud__goal">{game.supernova ? '💥 Supernova!' : `Supernova at ${SUPERNOVA}`}</span>
     </div>
   );
 }
 
-function Spotlight({ screen, onBack }: { screen: ScreenView; onBack: () => void }) {
-  const star = screen.game.stars.find((s) => s.id === screen.game.spotlight);
+function Spotlight({ screen, game, onBack }: { screen: ScreenView; game: StarsGame; onBack: () => void }) {
+  const star = game.stars.find((s) => s.id === game.spotlight);
   if (!star) return null;
   const by = screen.people.find((p) => p.id === star.by)?.name ?? null;
   const colour = ARM_COLOURS[star.arm];
@@ -398,7 +494,7 @@ function Spotlight({ screen, onBack }: { screen: ScreenView; onBack: () => void 
 /* ---------------- over ---------------- */
 
 export function shoutOuts(screen: ScreenView): string[] {
-  if (!screen.showNames) return [];
+  if (!screen.showNames || screen.game.kind !== 'stars') return [];
   const { stars, mine } = screen.game;
   const name = (id: string) => screen.people.find((p) => p.id === id)?.name ?? null;
   const out: string[] = [];
@@ -428,8 +524,8 @@ export function shoutOuts(screen: ScreenView): string[] {
   return out.slice(0, 6);
 }
 
-function Finish({ screen, onAgain, onSky }: { screen: ScreenView; onAgain: () => void; onSky: () => void }) {
-  const g = screen.game;
+function Finish({ screen, game, onAgain, onSky }: { screen: ScreenView; game: StarsGame; onAgain: () => void; onSky: () => void }) {
+  const g = game;
   const lit = ARMS.filter((a) => g.stars.filter((s) => s.arm === a).length >= ARM_GOAL[a]);
   const shouts = useMemo(() => shoutOuts(screen), [screen]);
   return (
@@ -449,6 +545,52 @@ function Finish({ screen, onAgain, onSky }: { screen: ScreenView; onAgain: () =>
       <div className="cl-finish__row">
         <button type="button" className="cl-btn cl-btn--go cl-btn--big" onClick={onAgain}>Again?</button>
         <button type="button" className="cl-btn" onClick={onSky}>See the sky</button>
+      </div>
+    </div>
+  );
+}
+
+/** The serpent's shout-outs: only when names are shown, and only for things that are true. */
+export function serpentShouts(screen: ScreenView, game: SerpentGame): string[] {
+  if (!screen.showNames) return [];
+  const name = (id: string) => screen.people.find((p) => p.id === id)?.name ?? null;
+  const out: string[] = [];
+  const best = (score: (id: string) => number, skip?: string): { id: string; v: number } | null => {
+    let top: { id: string; v: number } | null = null;
+    for (const p of screen.people) {
+      const v = score(p.id);
+      if (v > 0 && p.id !== skip && p.name && (!top || v > top.v)) top = { id: p.id, v };
+    }
+    return top;
+  };
+  const first = game.heads[0];
+  if (first && name(first)) out.push(`🥇 First to the head: ${name(first)}`);
+  const right = best((id) => game.mine[id]?.right ?? 0);
+  if (right) out.push(`🎯 Most right answers: ${name(right.id)} (${right.v})`);
+  const far = best((id) => game.mine[id]?.at ?? 0);
+  if (far) out.push(`🐍 Furthest along: ${name(far.id)} (${far.v >= BODY ? `${far.v - BODY + 1} into the bonus tail` : `box ${far.v + 1} of ${BODY}`})`);
+  const steady = best((id) => (game.mine[id]?.shown === 0 && (game.mine[id]?.right ?? 0) >= 3 ? game.mine[id].right : 0), right?.id) ?? best((id) => (game.mine[id]?.shown === 0 && (game.mine[id]?.right ?? 0) >= 3 ? game.mine[id].right : 0));
+  if (steady) out.push(`💪 Steady worker: ${name(steady.id)} (${steady.v} boxes, no answers shown)`);
+  if (game.heads.length > 1) out.push(`🌟 ${game.heads.length} pupils reached the head`);
+  return out;
+}
+
+function SerpentFinish({ screen, game, onAgain, onSky }: { screen: ScreenView; game: SerpentGame; onAgain: () => void; onSky: () => void }) {
+  const shouts = useMemo(() => serpentShouts(screen, game), [screen, game]);
+  const gems = screen.people.length;
+  return (
+    <div className="cl-finish cl-finish--serpent" role="dialog" aria-label="Finish">
+      <h2 className="cl-finish__title">{game.awake ? 'The serpent is awake!' : 'The serpent stirs…'}</h2>
+      <p className="cl-finish__count">The head roars <b>{game.chain.values[BODY]}</b></p>
+      <p className="cl-finish__sub">{gems} {gems === 1 ? 'pupil' : 'pupils'} climbed{game.tail > 0 ? `, and the tail grew to ${BODY + game.tail} scales` : ''}</p>
+      {shouts.length > 0 && (
+        <ul className="cl-shouts" aria-label="Shout-outs">
+          {shouts.map((s, i) => <li key={i} style={{ animationDelay: `${0.3 + i * 0.25}s` }}>{s}</li>)}
+        </ul>
+      )}
+      <div className="cl-finish__row">
+        <button type="button" className="cl-btn cl-btn--go cl-btn--big" onClick={onAgain}>Again?</button>
+        <button type="button" className="cl-btn" onClick={onSky}>See the serpent</button>
       </div>
     </div>
   );

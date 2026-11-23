@@ -14,11 +14,12 @@
  */
 import { ARMS, anchorOf, armCount, newStars, pickAnchor, spotlight, tryFact, type Arm, type Star, type StarLevel, type StarsEvent, type StarsGame, type StarsReply } from './stars';
 import { LEVELS } from './stars';
+import { answerBox, boxOf, newSerpent, SERPENT_LEVELS, wakeAt, type SerpentBox, type SerpentEvent, type SerpentGame, type SerpentLevel, type SerpentReply } from './serpent';
 
-export const ACTIVITIES = ['stars'] as const;
+export const ACTIVITIES = ['stars', 'serpent'] as const;
 export type Activity = (typeof ACTIVITIES)[number];
 export const LENGTHS = [0, 5, 10, 15] as const;
-export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web' };
+export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain' };
 
 export interface LivePlayer {
   id: string;
@@ -28,8 +29,8 @@ export interface LivePlayer {
   colour: number;
 }
 
-export type Game = StarsGame;
-export type GameEvent = StarsEvent;
+export type Game = StarsGame | SerpentGame;
+export type GameEvent = StarsEvent | SerpentEvent;
 
 export interface Session {
   seed: number;
@@ -58,7 +59,9 @@ export interface RoomView {
   game: PublicGame;
 }
 
-export type PublicGame = { kind: 'stars'; anchor: StarsGame['anchor']; arms: Record<Arm, number>; total: number; creature: boolean; supernova: boolean };
+export type PublicGame =
+  | { kind: 'stars'; anchor: StarsGame['anchor']; arms: Record<Arm, number>; total: number; creature: boolean; supernova: boolean }
+  | { kind: 'serpent'; level: SerpentLevel; energy: number; wakeAt: number; awake: boolean; heads: number; tail: number };
 
 /** What the projector draws: the whole game, names (when allowed) and the newest events (each with a number). */
 export interface ScreenView extends Omit<RoomView, 'game'> {
@@ -74,7 +77,9 @@ export interface PlayerView {
   player: string;
   name: string;
   colour: number;
-  game: { kind: 'stars'; found: number; glows: number; tries: number; mine: string[] };
+  game:
+    | { kind: 'stars'; found: number; glows: number; tries: number; mine: string[] }
+    | { kind: 'serpent'; box: SerpentBox | null; at: number; right: number; shown: number };
 }
 
 export interface RoomRow {
@@ -129,13 +134,16 @@ export const MAX_PLAYERS = 40;
 
 const firstName = (name: string) => name.trim().split(/\s+/)[0]?.slice(0, 20) || 'A player';
 
-export function publicGame(g: Game): PublicGame {
+export function publicGame(g: Game, players: number): PublicGame {
+  if (g.kind === 'serpent') {
+    return { kind: 'serpent', level: g.chain.level, energy: g.energy, wakeAt: wakeAt(players), awake: g.awake, heads: g.heads.length, tail: g.tail };
+  }
   const arms = Object.fromEntries(ARMS.map((a) => [a, armCount(g, a)])) as Record<Arm, number>;
   return { kind: 'stars', anchor: g.anchor, arms, total: g.stars.length, creature: g.creature, supernova: g.supernova };
 }
 
 export function roomView(s: Session, startedAt: number | null): RoomView {
-  return { activity: s.activity, state: s.state, lengthMin: s.lengthMin, startedAt, players: s.order.length, game: publicGame(s.game) };
+  return { activity: s.activity, state: s.state, lengthMin: s.lengthMin, startedAt, players: s.order.length, game: publicGame(s.game, s.order.length) };
 }
 
 function screenView(row: Pick<RoomRow, 'showNames' | 'seq' | 'events'>, s: Session, startedAt: number | null): ScreenView {
@@ -152,6 +160,13 @@ function screenView(row: Pick<RoomRow, 'showNames' | 'seq' | 'events'>, s: Sessi
 
 export function playerView(s: Session, id: string): PlayerView {
   const p = s.players[id];
+  if (s.game.kind === 'serpent') {
+    const m = s.game.mine[id];
+    return {
+      player: id, name: firstName(p.name), colour: p.colour,
+      game: { kind: 'serpent', box: boxOf(s.game, id), at: m?.at ?? 0, right: m?.right ?? 0, shown: m?.shown ?? 0 },
+    };
+  }
   const mine = s.game.mine[id];
   return {
     player: id,
@@ -222,7 +237,10 @@ export function newSession(body: Record<string, unknown>, seed: number, random: 
     const level = (Object.keys(LEVELS) as StarLevel[]).find((l) => l === body.level) ?? 'middle';
     if ((body.x !== undefined || body.y !== undefined) && !own) return 'Pick two different numbers from 2 to 12.';
     game = newStars(own ?? pickAnchor(level, random), own ? 'own' : level);
-  } else return 'Pick a game.';
+  } else {
+    const level = SERPENT_LEVELS.find((l) => l === body.level) ?? 'gold';
+    game = newSerpent(level, random);
+  }
   return { seed, activity, state: 'lobby', lengthMin, players: {}, order: [], game };
 }
 
@@ -268,7 +286,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
       }
       if (action === 'spotlight') {
         const id = body.id === null ? null : Number.isInteger(body.id) ? (body.id as number) : undefined;
-        if (id === undefined) return { refuse: no(400, 'Pick a star.') };
+        if (id === undefined || s.game.kind !== 'stars') return { refuse: no(400, 'Pick a star.') };
         return { reply: null, events: spotlight(s.game, id, t) };
       }
       // end
@@ -312,8 +330,16 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     }
 
     if (!cur.session.players[who]) return no(409, 'Join first.', 'not-playing');
-    const done = await mutate<StarsReply>(sv, room, (s, t) => {
+    const done = await mutate<StarsReply | SerpentReply>(sv, room, (s, t) => {
       if (s.state !== 'live') return { refuse: no(409, s.state === 'lobby' ? 'Wait for the start!' : 'This one has finished.', s.state) };
+      if (s.game.kind === 'serpent') {
+        const out = answerBox(s.game, who, body.box, body.value, t, s.order.length);
+        if (!out.ok) {
+          const words = { too_soon: 'One at a time!', stale: 'That box is done. Here is your next one.', done: 'You have finished the whole chain!', unreadable: "That answer couldn't be read." };
+          return { refuse: { status: 409, body: { error: words[out.reason], reason: out.reason, box: boxOf(s.game, who) } } };
+        }
+        return { reply: out.reply, events: out.events, players: [who] };
+      }
       const out = tryFact(s.game, who, body.fact, t);
       if (!out.ok) return { refuse: no(409, 'One at a time!', out.reason) };
       return { reply: out.reply, events: out.events, players: [who] };
