@@ -160,7 +160,7 @@ export const PASSIVES: Record<PassiveId, PassiveDef> = {
 export const PASSIVE_IDS = Object.keys(PASSIVES) as PassiveId[];
 /** What one level of each passive adds. */
 export const PASSIVE_STEP = {
-  armour: 1, spiky: 6, boots: 0.08, tome: 0.08, crown: 0.1, holywater: 0.3, snow: 0.08, gauntlets: 0.1, magnet: 0.25, heart: 20,
+  armour: 1, spiky: 6, boots: 0.08, tome: 0.08, crown: 0.1, holywater: 0.4, snow: 0.08, gauntlets: 0.1, magnet: 0.25, heart: 20,
 } as const;
 
 // ---------------------------------------------------------------- heroes
@@ -217,7 +217,7 @@ export const HEROES: HeroDef[] = [
   hero({ id: 'ranger', name: 'Ranger', blurb: 'Quick, with a long gem pull.', speed: 4.2, health: 80, weapon: 'arrows', magnet: 1.3, unlock: 'free' }),
   hero({ id: 'wizard', name: 'Wizard', blurb: 'Bigger spells.', speed: 3.5, health: 80, weapon: 'fireball', area: 1.2, unlock: 'level' }),
   hero({ id: 'barbarian', name: 'Barbarian', blurb: 'Hits harder when hurt.', speed: 3.5, health: 120, weapon: 'axes', rage: 0.5, unlock: 'kills' }),
-  hero({ id: 'cleric', name: 'Cleric', blurb: 'Heals as they go.', speed: 3.1, health: 100, weapon: 'aura', regen: 1, unlock: 'boss1' }),
+  hero({ id: 'cleric', name: 'Cleric', blurb: 'Heals as they go.', speed: 3.1, health: 100, weapon: 'aura', regen: 1.5, unlock: 'boss1' }),
   hero({ id: 'rogue', name: 'Rogue', blurb: 'The fastest, with lucky hits.', speed: 4.6, health: 75, weapon: 'lightning', crit: 0.2, unlock: 'nohit' }),
   hero({ id: 'witch', name: 'Frost Witch', blurb: 'Monsters near her slow down.', speed: 3.5, health: 95, weapon: 'nova', chill: 0.15, unlock: 'boss4' }),
   hero({ id: 'dragonkid', name: 'Dragon Kid', blurb: 'Tough scales, hot breath.', speed: 3.6, health: 100, weapon: 'fireball', armour: 1, might: 1.1, unlock: 'evolve3', secret: true }),
