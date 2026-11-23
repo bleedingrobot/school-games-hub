@@ -32,6 +32,14 @@
   "text": "A friend invites you to play Power Clash!"
  },
  {
+  "slug": "class-showdown-is-starting-join-in",
+  "text": "Class Showdown is starting! Join in!"
+ },
+ {
+  "slug": "class-live-is-starting-join-in",
+  "text": "Class Live is starting! Join in!"
+ },
+ {
   "slug": "tap-the-star-to-keep-your-friends-at-the-top",
   "text": "Tap the star to keep your friends at the top."
  }
