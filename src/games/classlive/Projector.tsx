@@ -16,6 +16,9 @@ import { NightBackdrop, PLAYER_COLOURS, StarSky } from './StarSky';
 import { MuralCloth, MuralScene, NO_MURAL_FX, type MuralFx } from './MuralScene';
 import { CoiledSerpent, JungleBackdrop, NO_SERPENT_FX, SerpentScene, type SerpentFx } from './SerpentScene';
 import './projector.css';
+import { painted } from './paintedArt';
+import { speak } from '../../speech';
+import { LINES, VOICE_FOLDER } from './voiceLines';
 
 const ROOM_KEY = 'classlive-room';
 type Ev = Event & { seq: number };
@@ -95,6 +98,11 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
     later(() => setFx((f) => { const s = new Set(f[key] as Set<unknown>); s.delete(value); return { ...f, [key]: s }; }), ms);
   }, [later]);
 
+  /** Bella says a line (after the sound effect), unless the sound is off. */
+  const say = useCallback((text: string, delay = 0) => {
+    later(() => { if (!sound.muted()) speak(text, VOICE_FOLDER); }, delay);
+  }, [later, sound]);
+
   const animate = useCallback((s: ScreenView, events: Ev[]) => {
     const nameOf = (id: string) => s.people.find((p) => p.id === id)?.name ?? null;
     for (const e of events) {
@@ -111,7 +119,10 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
         later(() => mx((f) => (f.banner?.key === key ? { ...f, banner: null } : f)), ms);
       };
       if (e.type === 'join') sound.play('twinkle');
-      else if (e.type === 'start') sound.play('drum');
+      else if (e.type === 'start') {
+        sound.play('drum');
+        say(s.game.kind === 'serpent' ? LINES.startSerpent : s.game.kind === 'mural' ? LINES.startMural : LINES.startStars, 900);
+      }
       else if (e.type === 'climb') {
         const id = e.pupil;
         sx((f) => ({ ...f, hopping: new Set([...f.hopping, id]) }));
@@ -121,6 +132,7 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
         const who = nameOf(e.pupil);
         banner(e.place === 1 ? `${who ?? 'Someone'} reached the head!` : `${who ?? 'Someone else'} reached the head too!`, 2600);
         sound.play('chime');
+        if (e.place === 1) say(LINES.head, 600);
       } else if (e.type === 'tail') {
         sx((f) => ({ ...f, tailPulse: f.tailPulse + 1 }));
         later(() => sx((f) => ({ ...f, tailPulse: 0 })), 1800);
@@ -130,6 +142,7 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
         later(() => sx((f) => ({ ...f, shake: false })), 1500);
         banner('The serpent wakes!', 2600);
         sound.play('roar');
+        say(LINES.awake, 1600);
       } else if (e.type === 'star') {
         const id = e.star.id;
         flag('arriving', id, 1300);
@@ -146,14 +159,17 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
       } else if (e.type === 'arm_lit') {
         flag('drawing', e.arm, 2600);
         sound.play('chime');
+        say(LINES.armLit, 700);
       } else if (e.type === 'creature') {
         setFx((f) => ({ ...f, swim: true }));
         later(() => setFx((f) => ({ ...f, swim: false })), 26000);
         sound.play('swell');
+        say(LINES.creature, 1200);
       } else if (e.type === 'supernova') {
         setFx((f) => ({ ...f, nova: f.nova + 1 }));
         later(() => setFx((f) => ({ ...f, nova: 0 })), 4200);
         sound.play('fanfare');
+        say(LINES.supernova, 1500);
       } else if (e.type === 'flip') {
         const p = s.people.find((x) => x.id === e.pupil);
         const tile = e.tile;
@@ -163,23 +179,27 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
       } else if (e.type === 'guess_open') {
         mbanner('Guessing is open!', 3200);
         sound.play('chime');
+        say(LINES.guessOpen, 600);
       } else if (e.type === 'guessed') {
         const who = nameOf(e.pupil);
         mbanner(e.place === 1 ? `${who ?? 'Someone'} got it first!` : `${who ?? 'Someone else'} got it too!`, 2600);
         sound.play('twinkle');
+        if (e.place === 1) say(LINES.guessed, 500);
       } else if (e.type === 'reveal') {
         mx((f) => ({ ...f, revealing: true }));
         later(() => mx((f) => ({ ...f, revealing: false })), 9000);
         sound.play('reveal');
+        say(LINES.reveal, 1200);
       } else if (e.type === 'over') {
         if (s.game.kind === 'mural' && !s.game.revealed) {
           mx((f) => ({ ...f, revealing: true }));
           later(() => mx((f) => ({ ...f, revealing: false })), 9000);
           sound.play('reveal');
         } else sound.play('swell');
+        say(e.why === 'time' ? LINES.timeUp : LINES.finished, 1500);
       }
     }
-  }, [flag, later, sound]);
+  }, [flag, later, say, sound]);
 
   const applyScreen = useCallback((next: ScreenView) => {
     const cur = screenRef.current;
@@ -283,13 +303,19 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
   const game = screen?.game ?? null;
   const serpent = game?.kind === 'serpent' ? game : null;
   const mural = game?.kind === 'mural' ? game : null;
+  const backPic = painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky');
+  const lobbyOpen = state === 'lobby' && room !== null;
+  useEffect(() => {
+    if (lobbyOpen) say(LINES.joinNow, 400);
+  }, [lobbyOpen, room, say]);
   useEffect(() => {
     if (state !== 'over') { setRevealed(false); setHideResults(false); }
   }, [state]);
 
   return (
-    <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''} ${mural ? 'cl-p--mural' : ''}`}>
+    <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''} ${mural ? 'cl-p--mural' : ''} ${backPic ? 'cl-p--painted' : ''}`}>
       {serpent ? <JungleBackdrop /> : <NightBackdrop />}
+      {backPic && <div className="cl-painted" style={{ backgroundImage: `url(${backPic})` }} aria-hidden="true" />}
       <div className={`cl-bar ${barOpen ? 'cl-bar--open' : ''}`}>
         <button type="button" className="cl-bar__tab" onClick={() => setBarOpen(!barOpen)} aria-expanded={barOpen} aria-label={barOpen ? 'Hide the teacher bar' : 'Show the teacher bar'}>{barOpen ? '▲' : '☰'}</button>
         {barOpen && (

@@ -14,7 +14,7 @@ const walk = (dir: string): string[] =>
 
 // Home page cards that are not registry games, and games whose card is still a band of colours.
 const OTHER_CARDS = ['quick-looks', 'training'];
-const NOT_PAINTED_YET: string[] = ['classlive'];
+const NOT_PAINTED_YET: string[] = [];
 
 describe('the junior games\' painted pictures', () => {
   it('are small .webp files, and each art folder has a CREDITS.md; every home card has its picture and there are no spares', () => {
