@@ -1,6 +1,6 @@
 # Class Live: plan
 
-**Status: plan written 23 Nov 2026. Next: stage 1 (the shared live room and Star Web).** James asked (23 Nov 2026) for more creative whole-class games beyond Class Showdown: the projector is the show, every pupil's device is a controller, played live together. Game id `classlive`, migration `20261123001100` (check again: `node scripts/migration-numbers.mjs`).
+**Status: stage 1 (the shared live room and Star Web) built 24 Nov 2026 NZ, code switch off until checked live. Next: stage 2 (Serpent Chain; rules already in `shared/classlive/serpent.ts`) and stage 3 (Mystery Mural; rules in `mural.ts`).** James asked (23 Nov 2026) for more creative whole-class games beyond Class Showdown: the projector is the show, every pupil's device is a controller, played live together. Game id `classlive`, migration `20261124000100` (check again: `node scripts/migration-numbers.mjs`).
 
 ## The short version
 
@@ -72,7 +72,7 @@
 
 - **Rules** `shared/classlive/`: `stars.ts`, `serpent.ts`, `mural.ts` (pure), `server.ts` (the steps, shared by the edge function, tests and the preview, Showdown's pattern), `memoryServices.ts`, `pretendClass.ts`.
 - **Function** `supabase/functions/classlive/`: teacher `open`, `view`, `start`, `spotlight`, `reveal`, `end`, `names`; pupil `join`, `play` (one activity step: a fact, a box answer, a tile, a guess), `ask` and `answer` (Mural).
-- **Tables** (`20261123001100_classlive.sql`): `classlive_rooms` (the class reads the public view), `classlive_state` (hidden), `classlive_players` (own row; the teacher the room's), `classlive_questions` (hidden), `classlive_feed` (teacher only, names pupils). Saves are compare-and-swap on the room's version. Switch `classlive_enabled`, names `classlive_names`, saved by `teacher_set_classlive()`.
+- **Tables** (`20261124000100_classlive.sql`): `classlive_rooms` (the class reads the public view), `classlive_state` (hidden), `classlive_screens` (the projector's whole picture with first names and the newest numbered events: teachers only), `classlive_players` (own row; the teacher the room's). Stage 3 adds `classlive_questions` (hidden). Saves are compare-and-swap on the room's version. Switch `classlive_enabled`, names `classlive_names`, saved by `teacher_set_classlive()`.
 - **Cost**: about 30 pupils, one step every 4 to 10 seconds: under 10 writes a second for one class.
 
 ## 6. Design checklist
@@ -94,3 +94,11 @@
 | **2. Serpent Chain** | chain maker, screens, waking finale | |
 | **3. Mystery Mural** | way A questions, tile flips, guessing, reveal, stand-in paintings | |
 | **4. Rewards and art** | points, achievements, painted lobby, sky creature, serpent and murals (ComfyUI), Bella lines | |
+
+## Stage 1 results (24 Nov 2026 NZ)
+
+- **Rules** `shared/classlive/stars.ts`: facts are read in many forms (`12 x 7 = 84`, `84 = 12×7`, decimals to 2 places), checked exactly in hundredths, and linked to the known fact: turn around, divide (any division whose multiplication links), double / halve (factors × or ÷ 2, 4, 8; "double one, halve the other" goes on Halve), tens (any × or ÷ 10, 100, 1000), near (a factor ± 1 or 2, or the answer ± one group), wild (any other true fact using the answer, or 2×, ½×, 10× it; not by adding 0 or × 1). Duplicates count as the same fact either way round (12 × 7 and 7 × 12), and make the star glow. One try per pupil every 1.5 s; 120 stars at most.
+- **Server** `shared/classlive/server.ts` (`classLiveStep`), Showdown's compare-and-swap pattern. Instead of a feed table, the projector listens to **one screen row** holding the whole picture and the last 40 numbered events, so a refresh never replays or loses anything. A timed session ends itself on the first step after time.
+- **Screens**: `Projector.tsx` + `StarSky.tsx` (setup, lobby with names flying in, the sky with seven arms, shooting stars, lit-arm lines, sky whale, supernova, spotlight with "how we know", finish with shout-outs), `Controller.tsx` (keypad and keyboard typing, feedback with the link and a nudge to the emptiest arm). Sounds are Web Audio (`audio.ts`), projector only.
+- **Test page**: `npx vite --config vite.classlive-preview.config.ts` (`?pretend=30`).
+- Tests: 4 (budget 8), plus `supabase/tests/database/classlive.test.sql`.

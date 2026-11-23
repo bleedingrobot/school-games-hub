@@ -17,11 +17,13 @@ export const GAME_NAMES: Record<AskGame, string> = {
   space: 'Wormholes & Black Holes',
   'power-clash': 'Power Clash',
   showdown: 'Class Showdown',
+  classlive: 'Class Live',
 };
 
 /** What the banner says: who, and which game. */
 export function askLine(game: AskGame, from: string): string {
   if (game === 'showdown') return 'Class Showdown is starting! Join in!';
+  if (game === 'classlive') return 'Class Live is starting! Join in!';
   if (game === 'clan-quest') return `The ${from} clan challenges you to a Clan Quest duel!`;
   if (game === 'dragon-maths') return `${from} challenges you to a Dragon Maths arena clash!`;
   if (game !== 'archery') return `${from} invites you to play ${GAME_NAMES[game]}!`;

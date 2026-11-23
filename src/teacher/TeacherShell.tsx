@@ -21,6 +21,7 @@ import { fetchClasses, type ClassSummary } from '../data/classes';
 import { MyClasses } from '../pages/MyClasses';
 import { prettyCode } from '../../shared/multiplayer';
 import { showdownOn } from '../games/showdown/switch';
+import { classliveOn } from '../games/classlive/switch';
 import { mineFirst, rememberedClass, TeacherClassPicker, TeacherClassProvider, useTeacherClass } from './TeacherClass';
 import './teacher-shell.css';
 
@@ -104,6 +105,7 @@ function TeacherHeader({ isAdmin }: { isAdmin: boolean }) {
     { to: pathFor(classId, 'games'), label: 'Games' },
     { to: pathFor(classId, 'quests'), label: 'Quests' },
     ...(showdownOn() ? [{ to: pathFor(classId, 'showdown'), label: 'Class Showdown' }] : []),
+    ...(classliveOn() ? [{ to: pathFor(classId, 'classlive'), label: 'Class Live' }] : []),
     { to: pathFor(classId, 'setup'), label: 'Class set-up' },
   ];
   return (
