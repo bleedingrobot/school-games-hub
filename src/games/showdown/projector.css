@@ -985,6 +985,17 @@
 @keyframes sd-p-alarm { from { rotate: -40deg; } 50% { rotate: 40deg; } to { rotate: -40deg; } }
 @keyframes sd-p-curtainl { from { transform: none; } to { transform: translateX(-92%); } }
 @keyframes sd-p-curtainr { from { transform: none; } to { transform: translateX(92%); } }
+/* Team modes: the flags hold the corners (and show each team's fortune), so the card and treasury move in beside them. */
+@media (min-width: 901px) {
+  .sd-p--aucteams .sd-p-race--auc { display: none; }
+  .sd-p--aucteams .sd-p-auc__card { right: 23vw; width: min(19vw, 300px); }
+  /* Solo: the bounties and the top 10 hold the sides, so everything else keeps to the middle. */
+  .sd-p--solo.sd-p--auc .sd-p-race--auc { display: none; }
+  .sd-p--solo .sd-p-auc__card { right: 27vw; width: 17vw; }
+  .sd-p--solo .sd-p-auc__treasury { left: 27vw; width: 13vw; }
+  .sd-p--solo.sd-p--hill .sd-p-race { right: auto; left: 50%; translate: -50% 0; width: min(30vw, 400px); }
+  .sd-p--aucteams .sd-p-auc__treasury { left: 23vw; width: min(14vw, 220px); top: calc(var(--bar-h, 50px) + 5vh); }
+}
 @media (max-width: 900px) { .sd-p-auc__card { right: auto; left: 50%; translate: -50% 0; top: auto; bottom: 30vh; width: 70vw; } .sd-p-race--auc { display: none; } .sd-p-auc__stage { left: 50%; bottom: 52vh; height: 30vh; } .sd-p-auc__treasury { left: 2vw; width: 26vw; } .sd-p-auc__shelf { display: none; } }
 @media (prefers-reduced-motion: reduce) {
   .sd-p-auc__goldenhour, .sd-p-auc__spot, .sd-p-treasure--onsale, .sd-p-treasure--sold, .sd-p-auc__gavel, .sd-p-auc__sold b, .sd-p-auc__sold i, .sd-p-auc__stolen b, .sd-p-auc__stolen em, .sd-p-auc__card--last, .sd-p-thieves__alarm, .sd-p-thieves__thief, .sd-p-auc-entrance__curtain, .sd-p-auc-entrance__gavel, .sd-p-aucrecap__row li, .sd-p-auc__top strong { animation: none !important; }
