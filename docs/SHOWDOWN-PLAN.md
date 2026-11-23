@@ -1,6 +1,6 @@
 # Class Showdown: plan
 
-**Status: plan merged (PR #763) and every decision answered by James (23 Nov 2026). Nothing built yet; James said wait before Stage 1.** James liked the "live class boss" idea from the list of missing game types (23 Nov 2026) and asked for one game where everyone in the room plays at once: the whole class against a boss, 2 teams, 4 teams, or everyone for themselves. Working name **Class Showdown**, game id `showdown`. Next free migration number when written: `20261123000900` on 23 Nov (check again: `node scripts/migration-numbers.mjs`).
+**Status: Stage 1 (rules and simulator) merged 23 Nov 2026; nothing switched on, no screens or server yet. Next: Stage 2, prompt in `docs/prompts/showdown-s2.md`.** James liked the "live class boss" idea from the list of missing game types (23 Nov 2026) and asked for one game where everyone in the room plays at once: the whole class against a boss, 2 teams, 4 teams, or everyone for themselves. Working name **Class Showdown**, game id `showdown`. Next free migration number when written: `20261123000900` on 23 Nov (check again: `node scripts/migration-numbers.mjs`).
 
 **Class Showdown** is a live game for the whole room. The **teacher's screen goes on the projector** and shows the big painted battle, the scores and the drama, with all the sound. **Every pupil's iPad is their controller**: their own maths question at their own level, their choices, and their own score. A round lasts 5, 10 or 15 minutes. The teacher picks **how** the class plays (the mode) and **what** they play (the arena).
 
@@ -201,6 +201,23 @@ Each stage is its own PR, carried to live, with the teacher switch **off** until
 | **6. Gold Rush** | arena 2 with its map, seams, cave-ins | live |
 | **7. More arenas** | Sky Climb, Shrinking Island, King of the Hill, Auction House, one PR each | live, one by one |
 | ~~8. No projector~~ | dropped: James said any laptop is fine as the big screen | - |
+
+## Stage 1 results (23 Nov 2026)
+
+The rules are in `shared/showdown/` (see `shared/README.md`), with 4 tests (budget 12) and the simulator `npm run showdown:sim` (`-- --write` re-tunes `bossHealth.ts`).
+
+- **Every call returns events to animate** (`ShowdownEvent` in `types.ts`): `join`, `team_move`, `role`, `start`, `boss_grows`, `hit` (points, damage, streak, multiplier, weak spot, golden), `wrong` (iPad only), `streak` (3, 5, 10...), `lucky_chest`, `revive`, `wind_up`, `shield_progress`, `shield_held`, `shield_broke`, `boss_heals`, `weak_spot`(`_end`), `phase`, `golden`(`_end`), `final`, `enrage`(`_end`), `tug`, `boss_turns`, `boss_beaten`, `time_up`. Stage 3 animates these; James wants flashy, immersive graphics and animation (23 Nov 2026).
+- **Boss health** is tuned per mode, length (5, 10, 15 min) and class size (8 to 32) with typical classes of pretend pupils (25% fast, 40% steady, 20% slow, 15% wobbly, a new mix each round): about 80% of rounds are won in every mode (cells 73% to 87%, average 80%). A late joiner makes the boss bigger by their share of the time left.
+- **Calls made while building (James can change any):**
+  - Shield check counts **right answers, not pupils**: 2 per pupil playing within the 15 seconds (a Guard's counts 2). "60% of pupils" was held almost every time in the simulator. Now a typical class holds about 2 in 3 (team modes a little less, big classes more).
+  - **Healers aren't dazed** when a shield breaks, so they can wake everyone. With nobody to wake, a Healer's answer hits at half strength, like a Guard's.
+  - **Guards** bank a little shield between wind-ups (at most 10% of the next target).
+  - **Enrage**: a 10-second wind-up straight away, then a 15-second weak spot; once a minute at most, not in the last 30 seconds.
+  - **4 teams**: the boss turns only to a team 20+ points in front, at most every 15 seconds (it was flicking about 60 times a round). Its wind-ups hit only that team.
+  - **Catch-up**: the trailing team gets 2.5x in weak spots instead of 2x; the trailing team (or the bottom quarter in whole class and solo) gets a lucky chest (+10) on about 1 right answer in 6.
+  - **2 teams** are won on damage (the tug of war); 4 teams and solo on points.
+  - **Golden question**: worth 3x, one per pupil, in a 20-second window.
+  - **Shout-outs** (in this order, up to 8, different pupils first): top score, last hit, longest streak, most damage, best comeback, shield wall, best healer, golden moment, most careful, hard worker. A class of 30 gets 8 different pupils.
 
 ## 10. Risks
 
