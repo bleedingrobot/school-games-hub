@@ -49,6 +49,8 @@ export interface RoomView {
   /** Shrinking Island: the shoreline now (1 = where it started) and where each pupil stands, by id: [degrees round, distance
    *  from the middle, 0 on the island or 1 + swim strokes so far on a rock]. No names. Null in the other arenas. */
   island: { shore: number; spots: Record<string, [number, number, number]> } | null;
+  /** How many pupils have each role, in the whole class ('all') and in each team, so every screen can call for more Guards. */
+  roles: Record<string, Record<Role, number>>;
   lengthMin: number;
   /** Server time (ms since 1970) the round started, or null in the lobby. Times below are ms from that. */
   startedAt: number | null;
@@ -206,7 +208,18 @@ export function roomView(row: Pick<RoomRow, 'arena' | 'startedAt' | 'pausedAt' |
       : null,
     result: r.result, showNames: row.showNames,
     island: r.arena === 'island' ? islandView(r) : null,
+    roles: roleCounts(r),
   };
+}
+
+function roleCounts(r: Round): RoomView['roles'] {
+  const out: RoomView['roles'] = { all: { striker: 0, guard: 0, healer: 0 } };
+  for (const id of r.order) {
+    const p = r.players[id];
+    out.all[p.role]++;
+    if (p.team) (out[p.team] ??= { striker: 0, guard: 0, healer: 0 })[p.role]++;
+  }
+  return out;
 }
 
 function islandView(r: Round): NonNullable<RoomView['island']> {
@@ -521,7 +534,7 @@ export async function showdownStep(s: ShowdownServices, who: string, body: Recor
   }
 
   // ---- Pupil steps ----
-  if (action === 'join' || action === 'choose' || action === 'ask' || action === 'answer') {
+  if (action === 'join' || action === 'choose' || action === 'ask' || action === 'answer' || action === 'look') {
     const me = await s.pupil(who);
     if (me === 'busy') return busy();
     if (!me) return no(403, 'Class Showdown is for pupils in a class.', 'no-class');
@@ -555,6 +568,11 @@ export async function showdownStep(s: ShowdownServices, who: string, body: Recor
 
     if (!cur.round.players[who]) return no(409, 'Join the showdown first.', 'not-playing');
 
+    // look: the room and this pupil, read only. The iPads ask every couple of seconds rather than each listening to every
+    // change of the room row: with a class of iPads that fan-out went over Realtime's messages-per-second limit, changes
+    // were dropped, and pupils never saw the round end (24 Nov 2026).
+    if (action === 'look') return ok({ room, view: roomView(cur, cur.round), me: playerView(cur.round.players[who], topTenOf(cur.round)), now: s.now() });
+
     if (action === 'choose' && typeof body.seam === 'number') {
       const seam = body.seam;
       const done = await mutate(s, room, (r, t, row) => {
@@ -583,7 +601,11 @@ export async function showdownStep(s: ShowdownServices, who: string, body: Recor
     }
 
     if (action === 'ask') {
-      if (cur.round.state !== 'live') return no(409, cur.round.state === 'lobby' ? 'Wait for the start!' : 'This showdown has finished.', cur.round.state === 'lobby' ? 'lobby' : 'over');
+      if (cur.round.state !== 'live') {
+        // With the room as it is, so the iPad moves on to the finish screen (or the lobby) straight away.
+        const refuse = no(409, cur.round.state === 'lobby' ? 'Wait for the start!' : 'This showdown has finished.', cur.round.state === 'lobby' ? 'lobby' : 'over');
+        return { ...refuse, body: { ...refuse.body, view: roomView(cur, cur.round), me: playerView(cur.round.players[who], topTenOf(cur.round)) } };
+      }
       const question = await nextQuestion(s, cur, who, null);
       if (question === 'busy') return busy();
       if (!question) return no(503, "We couldn't make a question just now.");
@@ -607,7 +629,9 @@ export async function showdownStep(s: ShowdownServices, who: string, body: Recor
       const out = answer(r, who, right, t, { golden: kept.golden });
       if (!out.ok) {
         const words: Record<string, string> = { too_soon: 'Wait for the ring to fill!', dazed: "You're dazed! Wait for the stars to stop.", not_live: 'This showdown has finished.' };
-        return { refuse: no(409, words[out.reason] ?? 'Not now.', out.reason) };
+        const refuse = no(409, words[out.reason] ?? 'Not now.', out.reason);
+        // A round that has just ended: the room comes back too, so the iPad shows the finish screen at once.
+        return { refuse: out.reason === 'not_live' ? { ...refuse, body: { ...refuse.body, view: roomView(row, r), me: playerView(r.players[who], topTenOf(r)) } } : refuse };
       }
       return { reply: out.events, events: out.events, claim: { player: who, slot: slot as number, value, right } };
     });
