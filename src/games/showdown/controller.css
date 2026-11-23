@@ -83,3 +83,37 @@ button.sd-c-rolechip { cursor: pointer; } .sd-c-rolechip u { opacity: 0.8; } .sd
 }
 @keyframes sd-c-topten-glow { from { box-shadow: 0 0 8px rgba(255, 200, 60, 0.4); } to { box-shadow: 0 0 22px rgba(255, 200, 60, 0.85); } }
 @media (prefers-reduced-motion: reduce) { .sd-c-topten { animation: none; } }
+
+/* Chest reveal at the end of a round, and the boss's roar in the lobby (stage 5) */
+.sd-c-roar { margin: 0; font-size: 1.3rem; font-weight: 800; color: #ffd34d; text-shadow: 0 0 18px rgba(255,80,80,0.7); animation: sd-c-pop 0.6s cubic-bezier(.2,1.5,.4,1) both; text-align: center; }
+.sd-c-chest { display: flex; flex-direction: column; align-items: center; gap: 10px; min-height: 190px; }
+.sd-c-chest__box { position: relative; width: 150px; height: 125px; padding: 0; border: 0; background: none; cursor: pointer; }
+.sd-c-chest__box svg { width: 100%; height: 100%; overflow: visible; }
+.sd-c-chest__glow { opacity: 0; fill: rgba(255,214,90,0.55); }
+.sd-c-chest__lid { transform-box: fill-box; transform-origin: 8% 100%; }
+.sd-c-chest--0 .sd-c-chest__box { animation: sd-c-chestshake 0.5s ease-in-out infinite; }
+.sd-c-chest--1 .sd-c-chest__lid, .sd-c-chest--2 .sd-c-chest__lid { animation: sd-c-lid 0.5s cubic-bezier(.2,1.6,.4,1) both; }
+.sd-c-chest--1 .sd-c-chest__glow, .sd-c-chest--2 .sd-c-chest__glow { animation: sd-c-glow 0.9s ease-out both; opacity: 1; }
+.sd-c-chest--2 .sd-c-chest__lid { transform: rotate(-62deg); animation: none; }
+.sd-c-chest--2 .sd-c-chest__glow { opacity: 0.7; animation: none; }
+.sd-c-chest__coins { position: absolute; left: 50%; top: 35%; width: 0; height: 0; pointer-events: none; }
+.sd-c-chest__coins i { position: absolute; left: -0.6em; top: -0.6em; font-size: 1.5rem; font-style: normal; opacity: 0; animation: sd-c-coin 1.5s ease-out var(--d) both; }
+.sd-c-chest__prize { display: grid; gap: 4px; text-align: center; animation: sd-c-pop 0.5s cubic-bezier(.2,1.5,.4,1) both; }
+.sd-c-chest__prize strong { font-size: 1.6rem; color: #ffd34d; text-shadow: 0 0 16px rgba(255,200,60,0.6); }
+.sd-c-chest__prize span { font-size: 1.25rem; font-weight: 800; }
+@keyframes sd-c-chestshake { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-6deg) translateY(-2px); } 75% { transform: rotate(6deg) translateY(-2px); } }
+@keyframes sd-c-lid { from { transform: rotate(0); } to { transform: rotate(-62deg); } }
+@keyframes sd-c-glow { 0% { transform: scale(0.3); opacity: 1; } 100% { transform: scale(1.6); opacity: 0.7; } }
+@keyframes sd-c-coin { 0% { opacity: 1; transform: rotate(var(--a)) translateY(0) rotate(calc(var(--a) * -1)); } 60% { opacity: 1; } 100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--r) * -1)) rotate(calc(var(--a) * -1)) translateY(30px); } }
+@media (prefers-reduced-motion: reduce) { .sd-c-chest__box, .sd-c-chest__lid, .sd-c-chest__glow, .sd-c-chest__prize, .sd-c-roar { animation: none !important; } .sd-c-chest__coins { display: none; } .sd-c-chest--2 .sd-c-chest__lid { transform: rotate(-62deg); } }
+/* The painted frame's middle is light parchment: give result text a dark backing so it reads. */
+.sd-c-center > .sd-c-title, .sd-c-center > .sd-c-look { text-shadow: 0 2px 0 #000, 0 0 10px rgba(0,0,0,0.9), 0 0 3px #000; }
+.sd-c-results div { background: rgba(8,20,32,0.72); }
+.sd-c-chest__prize { padding: 10px 18px; border-radius: 18px; background: rgba(8,20,32,0.82); border: 2px solid #ffc83d; }
+.sd-c-title, .sd-c-say, .sd-c-small, .sd-c-look, .sd-c-roar { text-shadow: 0 2px 0 #000, 0 0 8px rgba(0,0,0,0.9); }
+
+/* The results sit on a dark glass panel, so white and gold text read clearly on the painted parchment frame. */
+.sd-c-center:has(.sd-c-results) {
+  flex: 0 1 auto; align-self: center; margin: auto; padding: 24px 20px; border-radius: 24px; max-width: min(640px, 92%);
+  background: rgba(14, 22, 40, 0.82); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45); backdrop-filter: blur(4px);
+}

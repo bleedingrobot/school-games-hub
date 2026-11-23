@@ -30,6 +30,8 @@ export interface Player {
   revives: number;
   chests: number;
   goldenUsed: boolean;
+  /** What the pupil got when the round ended (set once, by the server). */
+  reward?: import('./bosses').Reward | null;
   /** When this pupil got the golden question right, for the "golden moment" award. */
   goldenRightAt: number | null;
   /** Worst place held after the first minute, for "best comeback" (1 = top). */
@@ -53,6 +55,8 @@ export interface Round {
   /** The time the round was last brought up to (ms from the start). */
   t: number;
   boss: { max: number; hp: number; phase: 1 | 2 | 3 };
+  /** Which boss of the roster (shared/showdown/bosses.ts). Missing in rounds from before Stage 5: the River Titan. */
+  bossId?: import('./bosses').BossId;
   players: Record<string, Player>;
   /** Pupil ids in the order they joined. */
   order: string[];

@@ -6,7 +6,8 @@
  */
 import type { FactAnswer } from '../maths/leitner';
 import type { MathsContext } from '../maths/serverQuestions';
-import type { Change, FeedEvent, PlayerView, RoomRow, ShowdownServices, StoredQuestion } from './server';
+import type { BossId } from './bosses';
+import type { Change, FeedEvent, FinishedRound, PlayerView, RoomRow, ShowdownServices, StoredQuestion } from './server';
 
 export interface MemoryPupil {
   id: string;
@@ -25,6 +26,10 @@ export interface MemoryDb {
   enabled: boolean;
   showNames: boolean;
   maths: MathsContext;
+  /** Bosses beaten per class, with the best time (ms). */
+  roster: Map<string, Partial<Record<BossId, number>>>;
+  /** Rounds paid out (room:seed), with what was paid. */
+  finished: Map<string, FinishedRound>;
 }
 
 export function memoryDb(opts: { pupils?: MemoryPupil[]; teachers?: Record<string, string[]>; enabled?: boolean; maths?: MathsContext } = {}): MemoryDb {
@@ -35,6 +40,7 @@ export function memoryDb(opts: { pupils?: MemoryPupil[]; teachers?: Record<strin
     enabled: opts.enabled ?? true,
     showNames: true,
     maths: opts.maths ?? { facts: [], settings: {} },
+    roster: new Map(), finished: new Map(),
   };
 }
 
@@ -115,6 +121,22 @@ export function memoryServices(db: MemoryDb, clock: { now(): number; random?(): 
     },
     async roomPlayers(room) {
       return [...db.players.entries()].filter(([k]) => k.startsWith(`${room}:`)).map(([, v]) => copy(v));
+    },
+    async classRoster(classId) {
+      return copy(db.roster.get(classId) ?? {});
+    },
+    async chestGames(players) {
+      return Object.fromEntries(players.map((p) => [p, 'archery' as const]));
+    },
+    async finishRound(room, done) {
+      const key = `${room}:${done.seed}`;
+      if (db.finished.has(key)) return;
+      db.finished.set(key, copy(done));
+      if (done.beaten) {
+        const r = db.roster.get(done.classId) ?? {};
+        r[done.boss] = Math.min(r[done.boss] ?? Infinity, done.ms);
+        db.roster.set(done.classId, r);
+      }
     },
   };
 }

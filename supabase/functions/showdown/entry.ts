@@ -112,6 +112,18 @@ Deno.serve(
       const list = await call<PlayerView[]>('showdown_room_players', { target: room });
       return list === 'busy' ? 'busy' : Array.isArray(list) ? list : [];
     },
+    async classRoster(classId) {
+      const out = await call<Record<string, number> | null>('showdown_class_roster', { target_class: classId });
+      return out === 'busy' ? 'busy' : (out ?? {});
+    },
+    async chestGames(players) {
+      const out = await call<Record<string, 'archery' | 'goblinstorm'> | null>('showdown_chest_games', { players });
+      return out === 'busy' || !out ? {} : out;
+    },
+    async finishRound(room, done) {
+      const out = await call<string>('showdown_finish', { target: room, done });
+      if (out === 'busy') throw new Error('showdown_finish failed');
+    },
     async recordAnswers(player, once, answers) {
       await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'showdown');
     },
