@@ -87,7 +87,7 @@ button.sd-c-rolechip { cursor: pointer; } .sd-c-rolechip u { opacity: 0.8; } .sd
 /* Chest reveal at the end of a round, and the boss's roar in the lobby (stage 5) */
 .sd-c-roar { margin: 0; font-size: 1.3rem; font-weight: 800; color: #ffd34d; text-shadow: 0 0 18px rgba(255,80,80,0.7); animation: sd-c-pop 0.6s cubic-bezier(.2,1.5,.4,1) both; text-align: center; }
 .sd-c-chest { display: flex; flex-direction: column; align-items: center; gap: 10px; min-height: 190px; }
-.sd-c-chest__box { position: relative; width: 150px; height: 125px; padding: 0; border: 0; background: none; cursor: pointer; }
+.sd-c-chest__box { position: relative; width: 170px; height: 160px; padding: 0; border: 0; background: none; cursor: pointer; }
 .sd-c-chest__box svg { width: 100%; height: 100%; overflow: visible; }
 .sd-c-chest__glow { opacity: 0; fill: rgba(255,214,90,0.55); }
 .sd-c-chest__lid { transform-box: fill-box; transform-origin: 8% 100%; }
@@ -105,7 +105,20 @@ button.sd-c-rolechip { cursor: pointer; } .sd-c-rolechip u { opacity: 0.8; } .sd
 @keyframes sd-c-lid { from { transform: rotate(0); } to { transform: rotate(-62deg); } }
 @keyframes sd-c-glow { 0% { transform: scale(0.3); opacity: 1; } 100% { transform: scale(1.6); opacity: 0.7; } }
 @keyframes sd-c-coin { 0% { opacity: 1; transform: rotate(var(--a)) translateY(0) rotate(calc(var(--a) * -1)); } 60% { opacity: 1; } 100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--r) * -1)) rotate(calc(var(--a) * -1)) translateY(30px); } }
-@media (prefers-reduced-motion: reduce) { .sd-c-chest__box, .sd-c-chest__lid, .sd-c-chest__glow, .sd-c-chest__prize, .sd-c-roar { animation: none !important; } .sd-c-chest__coins { display: none; } .sd-c-chest--2 .sd-c-chest__lid { transform: rotate(-62deg); } }
+/* The painted chest: shut and shaking, then it bursts open (a flash, the open chest pops up, coins fly). */
+.sd-c-chest__art { position: absolute; inset: 0; display: block; }
+.sd-c-chest__art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 8px 14px rgba(0,0,0,0.55)); }
+.sd-c-chest__glow--art { position: absolute; left: 50%; top: 45%; width: 190px; height: 190px; margin: -95px 0 0 -95px; border-radius: 50%; background: radial-gradient(circle, rgba(255,226,120,0.95) 0%, rgba(255,190,60,0.55) 35%, rgba(255,170,40,0) 70%); opacity: 0; }
+.sd-c-chest__open { opacity: 0; transform: scale(0.85); }
+.sd-c-chest--1 .sd-c-chest__shut, .sd-c-chest--2 .sd-c-chest__shut { opacity: 0; transition: opacity 0.15s; }
+.sd-c-chest--1 .sd-c-chest__open { animation: sd-c-chestpop 0.55s cubic-bezier(.2,1.6,.4,1) both; }
+.sd-c-chest--2 .sd-c-chest__open { opacity: 1; transform: scale(1); }
+.sd-c-chest--1 .sd-c-chest__glow--art { animation: sd-c-chestflash 0.9s ease-out both; }
+.sd-c-chest--2 .sd-c-chest__glow--art { opacity: 0.6; animation: sd-c-chestglow 2.4s ease-in-out infinite; }
+@keyframes sd-c-chestpop { 0% { opacity: 0; transform: scale(0.7) translateY(10px); } 60% { opacity: 1; transform: scale(1.15) translateY(-6px); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes sd-c-chestflash { 0% { opacity: 0; transform: scale(0.3); } 30% { opacity: 1; transform: scale(1.4); } 100% { opacity: 0.6; transform: scale(1); } }
+@keyframes sd-c-chestglow { 0%, 100% { opacity: 0.45; transform: scale(0.95); } 50% { opacity: 0.75; transform: scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { .sd-c-chest__box, .sd-c-chest__lid, .sd-c-chest__glow, .sd-c-chest__prize, .sd-c-roar { animation: none !important; } .sd-c-chest__coins { display: none; } .sd-c-chest--2 .sd-c-chest__lid { transform: rotate(-62deg); } .sd-c-chest__open, .sd-c-chest__glow--art { animation: none !important; } }
 /* The painted frame's middle is light parchment: give result text a dark backing so it reads. */
 .sd-c-center > .sd-c-title, .sd-c-center > .sd-c-look { text-shadow: 0 2px 0 #000, 0 0 10px rgba(0,0,0,0.9), 0 0 3px #000; }
 .sd-c-results div { background: rgba(8,20,32,0.72); }
