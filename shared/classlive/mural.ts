@@ -76,7 +76,7 @@ export function newMural(random: () => number, avoid: readonly string[] = []): M
 }
 
 const mineOf = (g: MuralGame, pupil: string): MuralMine =>
-  (g.mine[pupil] ??= { flips: 0, right: 0, answered: 0, lastAt: -Infinity, guessedAt: -1, guesses: 0, gotIt: 0, tiles: 0 });
+  (g.mine[pupil] ??= { flips: 0, right: 0, answered: 0, lastAt: -1e12, guessedAt: -1, guesses: 0, gotIt: 0, tiles: 0 });
 
 export const flipped = (g: MuralGame) => g.tiles.filter(Boolean).length;
 export const guessOpen = (g: MuralGame) => flipped(g) >= Math.ceil(TILES * GUESS_FROM);

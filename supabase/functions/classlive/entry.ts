@@ -1,7 +1,10 @@
 // Connects the Class Live handler to Supabase. Edit handler.ts or shared/classlive/server.ts for the logic, then run
 // `npm run build:functions -- classlive` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
-import type { RoomRow } from '../../../shared/classlive/server';
+import type { RoomRow, StoredQuestion } from '../../../shared/classlive/server';
+import { parseFocus } from '../../../shared/maths/focus';
+import type { MathsContext } from '../../../shared/maths/serverQuestions';
+import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { userIdFromToken } from '../_shared/signIn';
 import { makeHandler } from './handler';
 
@@ -41,6 +44,8 @@ const rowOf = (raw: RawRow | null): RoomRow | null =>
     seq: Number(raw.seq) || 0, events: Array.isArray(raw.events) ? raw.events : [],
   };
 
+const questionOf = (raw: StoredQuestion | null) => raw && { slot: raw.slot, question: raw.question, answered: raw.answered === true };
+
 Deno.serve(
   makeHandler({
     now: () => Date.now(),
@@ -71,9 +76,42 @@ Deno.serve(
     async save(room, version, c) {
       const out = await call<string>('classlive_save', {
         target: room, seen_version: version, session: c.session, view: c.view, screen: c.screen,
-        started_ms: c.startedAt === null ? null : Math.round(c.startedAt), players: c.players,
+        started_ms: c.startedAt === null ? null : Math.round(c.startedAt), players: c.players, claim: c.claim ?? null,
       });
-      return out === 'ok' || out === 'stale' ? out : 'busy';
+      return out === 'ok' || out === 'stale' || out === 'answered' ? out : 'busy';
+    },
+    async mathsContext(player): Promise<MathsContext | null> {
+      const { data, error } = await admin.rpc('space_maths_context', { player });
+      if (error || !data) {
+        console.error(`classlive: maths records failed (${error?.code ?? 'none'})`);
+        return null;
+      }
+      const context = data as {
+        facts: MathsContext['facts'];
+        settings: { enabledTables?: number[]; division?: boolean; missingFactor?: boolean | null; multipleChoice?: boolean };
+        focus?: unknown;
+      };
+      const { enabledTables, division, missingFactor, multipleChoice } = context.settings ?? {};
+      return {
+        facts: context.facts ?? [],
+        focus: parseFocus(context.focus),
+        settings: { enabledTables, division, multipleChoice, ...(typeof missingFactor === 'boolean' ? { missingFactor } : {}) },
+      };
+    },
+    async openQuestion(room, player) {
+      const raw = await call<StoredQuestion | null>('classlive_open_question', { target: room, player });
+      return raw === 'busy' ? 'busy' : questionOf(raw);
+    },
+    async loadQuestion(room, player, slot) {
+      const raw = await call<StoredQuestion | null>('classlive_load_question', { target: room, player, slot });
+      return raw === 'busy' ? 'busy' : questionOf(raw);
+    },
+    async keepQuestion(room, player, question) {
+      const raw = await call<StoredQuestion>('classlive_keep_question', { target: room, player, question });
+      return raw === 'busy' ? 'busy' : (questionOf(raw) as StoredQuestion);
+    },
+    async recordAnswers(player, once, answers) {
+      await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'classlive');
     },
   }),
 );

@@ -1,9 +1,9 @@
--- Class Live (migration 20261124000100_classlive.sql, id classlive): rooms, the hidden session, the projector's screen
+-- Class Live (migrations 20261124000100_classlive.sql and 20261124000700_classlive_mural.sql, id classlive): rooms, the hidden session, the projector's screen
 -- (teachers only), each pupil's own row, the compare-and-swap save, the switch, and the join pop-up in hub_here().
 -- Run on a throw-away copy: scripts/scratch-db.sh classlive, then scripts/scratch-test.sh classlive supabase/tests/database/classlive.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(22);
+select plan(28);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -55,6 +55,17 @@ select is(public.classlive_save(current_setting('test.room')::bigint, 1, '{"stat
   'a save at an old version is refused');
 select is((public.classlive_load(current_setting('test.room')::bigint) ->> 'seq')::int, 2, '... and the screen keeps its events');
 
+-- ---- Mystery Mural's kept questions: claimed once ----
+select is(public.classlive_keep_question(current_setting('test.room')::bigint, pg_temp.id('0a'), '{"parts":["2","+","2","=","?"],"answer":4}') ->> 'slot', '0',
+  'the first question is slot 0');
+select is(public.classlive_keep_question(current_setting('test.room')::bigint, pg_temp.id('0a'), '{"parts":["3","+","3","=","?"],"answer":6}') -> 'question' ->> 'answer', '4',
+  'asking again while one is open gives the open one back');
+select is(public.classlive_save(current_setting('test.room')::bigint, 2, '{"state":"live"}', '{"state":"live"}', '{"seq":2}', 1000, '[]',
+  '{"player":"00000000-0000-0000-0000-00000000000a","slot":0,"value":4,"right":true}'), 'ok', 'a save with a claim lands');
+select is(public.classlive_save(current_setting('test.room')::bigint, 3, '{"state":"live"}', '{"state":"live"}', '{"seq":2}', 1000, '[]',
+  '{"player":"00000000-0000-0000-0000-00000000000a","slot":0,"value":4,"right":true}'), 'answered', 'the same question claimed again is refused');
+select is(public.classlive_open_question(current_setting('test.room')::bigint, pg_temp.id('0a')), null, '... and none is open after the answer');
+
 -- ---- Pupils: their class's room (no session, no names), their own row, never the screen or session ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
 select is((select count(*)::int from public.classlive_rooms), 1, 'Ana sees her class''s room');
@@ -63,6 +74,7 @@ select is((select view ->> 'found' from public.classlive_players), '1', 'Ana see
 select is((select count(*)::int from public.classlive_screens), 0, 'pupils never see the screen (it names pupils)');
 select throws_ok($$ select * from public.classlive_state $$, '42501', null, 'a pupil cannot read the session');
 select throws_ok($$ select public.classlive_save(1, 1, '{}', '{}', '{}', null, '[]') $$, '42501', null, '... or save a room');
+select throws_ok($$ select * from public.classlive_questions $$, '42501', null, '... or read the kept questions');
 select is(public.hub_here() -> 'waiting' ? 'classlive', false, 'Ana has joined, so no pop-up');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz');
 select is((select count(*)::int from public.classlive_rooms), 0, 'Ben (Room Two) sees no room of another class');
