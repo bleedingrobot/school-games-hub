@@ -216,7 +216,8 @@ insert into public.achievement_types (id, game, name, emoji, measure, goal, sort
 -- ---------------------------------------------------------------------------
 
 revoke all on public.showdown_roster, public.showdown_stats, public.showdown_finished from public, anon, authenticated;
-revoke execute on function public.showdown_class_roster(uuid), public.showdown_chest_games(uuid[]), public.showdown_finish(bigint, jsonb)
+revoke execute on function public.showdown_class_roster(uuid), public.showdown_chest_games(uuid[]), public.showdown_finish(bigint, jsonb),
+  public.showdown_counts(uuid), public.showdown_rules(), public.showdown_players()
   from public, anon, authenticated;
 grant execute on function public.showdown_class_roster(uuid), public.showdown_chest_games(uuid[]), public.showdown_finish(bigint, jsonb)
   to service_role;
