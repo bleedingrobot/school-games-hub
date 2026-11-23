@@ -12154,20 +12154,25 @@ function autoPools(progress, opts = {}) {
 	};
 }
 /**
-* For each review key, how many review keys its skill has, so review can pick a skill first and then a fact from it.
+* For each review key, its skill and how many review keys that skill has, so review can pick a skill first and then a fact from it.
 * A key that belongs to more than one skill counts with the first (easiest) one.
 */
-function reviewSkillSizes(review, opts = {}) {
+function reviewSkillsOf(review, opts = {}) {
 	const enabled = opts.enabledTables ?? TABLES;
 	const inReview = new Set(review);
-	const sizes = new Map();
+	const of = new Map();
 	for (const skill of LADDER) {
 		if (!skill.built) continue;
-		const keys = activeKeys(skill, enabled, opts.division !== false).filter((k) => inReview.has(k) && !sizes.has(k));
-		for (const k of keys) sizes.set(k, keys.length);
+		const keys = activeKeys(skill, enabled, opts.division !== false).filter((k) => inReview.has(k) && !of.has(k));
+		for (const k of keys) of.set(k, {
+			skill: skill.id,
+			size: keys.length
+		});
 	}
-	return sizes;
+	return of;
 }
+/** The skills behind the student that aren't secure in their records yet: review checks these off first. */
+const uncheckedSkills = (progress) => new Set(progress.skills.filter((p) => p.status === "secure" && p.passedOver && p.skill.inAuto !== false).map((p) => p.skill.id));
 /** The built ladder skills a focus really names, in ladder order. Unknown or not-yet-built names are ignored. */
 function focusSkills(spec) {
 	const wanted = new Set(currentSkillIds(spec.skills));
@@ -12240,6 +12245,10 @@ var AutoPack = class {
 	/** Each pack numbers its own questions, so the ladder numbers them again: a question box tells questions apart by this. */
 	asked = 0;
 	listeners = new Set();
+	/** Review keys of skills still to check off (see `uncheckedSkills`), as of the last question. */
+	checking = new Set();
+	/** Keys already given a check-off repeat this session, so each gets one extra go, not a loop. */
+	checkRepeated = new Set();
 	constructor(saved = [], random = Math.random, now = Date.now, opts = {}) {
 		this.random = random;
 		this.opts = opts;
@@ -12291,9 +12300,17 @@ var AutoPack = class {
 			const div = /^div:\d+\/(\d+)$/.exec(key);
 			return !!div && HARD_TABLES.includes(Number(div[1]));
 		};
-		const skillSize = reviewSkillSizes(pools.review, this.opts);
-		const weight = (key) => focus.has(key) ? 1 : (hardTable(key) ? HARD_TABLE_WEIGHT : 1) / (skillSize.get(key) ?? 1);
-		const picked = pickFromPools(pools, ctx, new Map(this.stats().map((s) => [s.key, s])), this.memory, this.random, weight);
+		const byKey = new Map(this.stats().map((s) => [s.key, s]));
+		const reviewSkill = reviewSkillsOf(pools.review, this.opts);
+		const unchecked = focusSpec ? new Set() : uncheckedSkills(progress);
+		this.checking = new Set([...reviewSkill].filter(([, r]) => unchecked.has(r.skill)).map(([k]) => k));
+		const weight = (key) => {
+			if (focus.has(key)) return 1;
+			const fair = (hardTable(key) ? HARD_TABLE_WEIGHT : 1) / (reviewSkill.get(key)?.size ?? 1);
+			if (!this.checking.has(key)) return fair;
+			return fair * 4 * (byKey.get(key)?.box === 1 ? 2 : 1);
+		};
+		const picked = pickFromPools(pools, ctx, byKey, this.memory, this.random, weight);
 		if (!picked) return null;
 		const pack = this.ownerOf(picked.key);
 		let firstTables = -1;
@@ -12313,6 +12330,10 @@ var AutoPack = class {
 	recordAnswer(q, answer, ms) {
 		const result = this.ownerOf(q.factKey).recordAnswer(q, answer, ms);
 		if (!result.correct) scheduleRepeat(this.memory, q.factKey, this.random);
+		else if (result.boxAfter < 2 && this.checking.has(q.factKey) && !this.checkRepeated.has(q.factKey)) {
+			this.checkRepeated.add(q.factKey);
+			scheduleRepeat(this.memory, q.factKey, this.random);
+		}
 		return result;
 	}
 };

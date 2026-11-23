@@ -8,7 +8,7 @@
  * that owns those keys. Skills with `built: true` are stubs for the later stages: they hold
  * their place in the list, but auto skips them and they don't count towards progress yet.
  */
-import { CAMPAIGN_STEPS, HARD_TABLES, HARD_TABLE_WEIGHT, TABLES } from './config';
+import { CAMPAIGN_STEPS, CHECK_OFF_NEAR_WEIGHT, CHECK_OFF_WEIGHT, HARD_TABLES, HARD_TABLE_WEIGHT, TABLES } from './config';
 import { factsIn, parseFactKey } from './facts';
 import type { FactStats } from './leitner';
 import { newMemory, pickFromPools, scheduleRepeat, STEP_SECURE_SHARE, type Pools, type QuestionContext, type SessionMemory } from './selector';
@@ -335,20 +335,24 @@ export function autoPools(progress: LadderProgress, opts: LadderOptions = {}): P
 }
 
 /**
- * For each review key, how many review keys its skill has, so review can pick a skill first and then a fact from it.
+ * For each review key, its skill and how many review keys that skill has, so review can pick a skill first and then a fact from it.
  * A key that belongs to more than one skill counts with the first (easiest) one.
  */
-export function reviewSkillSizes(review: readonly string[], opts: LadderOptions = {}): Map<string, number> {
+export function reviewSkillsOf(review: readonly string[], opts: LadderOptions = {}): Map<string, { skill: string; size: number }> {
   const enabled = opts.enabledTables ?? TABLES;
   const inReview = new Set(review);
-  const sizes = new Map<string, number>();
+  const of = new Map<string, { skill: string; size: number }>();
   for (const skill of LADDER) {
     if (!skill.built) continue;
-    const keys = activeKeys(skill, enabled, opts.division !== false).filter((k) => inReview.has(k) && !sizes.has(k));
-    for (const k of keys) sizes.set(k, keys.length);
+    const keys = activeKeys(skill, enabled, opts.division !== false).filter((k) => inReview.has(k) && !of.has(k));
+    for (const k of keys) of.set(k, { skill: skill.id, size: keys.length });
   }
-  return sizes;
+  return of;
 }
+
+/** The skills behind the student that aren't secure in their records yet: review checks these off first. */
+export const uncheckedSkills = (progress: LadderProgress): Set<string> =>
+  new Set(progress.skills.filter((p) => p.status === 'secure' && p.passedOver && p.skill.inAuto !== false).map((p) => p.skill.id));
 
 /** The built ladder skills a focus really names, in ladder order. Unknown or not-yet-built names are ignored. */
 export function focusSkills(spec: FocusSpec): LadderSkill[] {
@@ -437,6 +441,10 @@ export class AutoPack implements SkillPack {
   /** Each pack numbers its own questions, so the ladder numbers them again: a question box tells questions apart by this. */
   private asked = 0;
   private listeners = new Set<(answer: FactAnswer) => void>();
+  /** Review keys of skills still to check off (see `uncheckedSkills`), as of the last question. */
+  private checking = new Set<string>();
+  /** Keys already given a check-off repeat this session, so each gets one extra go, not a loop. */
+  private checkRepeated = new Set<string>();
 
   constructor(
     saved: FactStats[] = [],
@@ -494,9 +502,18 @@ export class AutoPack implements SkillPack {
     };
     // Review gives each skill a fair turn (James, 23 Nov 2026): a key counts as one share of its skill, so skip counting's 78
     // facts come up no more often than order of operations' 7. Within a skill, weaker facts still come up more.
-    const skillSize = reviewSkillSizes(pools.review, this.opts);
-    const weight = (key: string) => (focus.has(key) ? 1 : (hardTable(key) ? HARD_TABLE_WEIGHT : 1) / (skillSize.get(key) ?? 1));
+    // Skills behind the student that aren't secure yet come up CHECK_OFF_WEIGHT times as often, nearly-secure facts first, so a
+    // strong student's L cells are checked off quickly instead of waiting their turn among skills already secure.
     const byKey = new Map(this.stats().map((s) => [s.key, s]));
+    const reviewSkill = reviewSkillsOf(pools.review, this.opts);
+    const unchecked = focusSpec ? new Set<string>() : uncheckedSkills(progress);
+    this.checking = new Set([...reviewSkill].filter(([, r]) => unchecked.has(r.skill)).map(([k]) => k));
+    const weight = (key: string) => {
+      if (focus.has(key)) return 1;
+      const fair = (hardTable(key) ? HARD_TABLE_WEIGHT : 1) / (reviewSkill.get(key)?.size ?? 1);
+      if (!this.checking.has(key)) return fair;
+      return fair * CHECK_OFF_WEIGHT * (byKey.get(key)?.box === 1 ? CHECK_OFF_NEAR_WEIGHT : 1);
+    };
     const picked = pickFromPools(pools, ctx, byKey, this.memory, this.random, weight);
     if (!picked) return null;
     const pack = this.ownerOf(picked.key);
@@ -514,6 +531,11 @@ export class AutoPack implements SkillPack {
   recordAnswer(q: Question, answer: number, ms: number): AnswerResult {
     const result = this.ownerOf(q.factKey).recordAnswer(q, answer, ms);
     if (!result.correct) scheduleRepeat(this.memory, q.factKey, this.random);
+    // Checking off: right once but not secure yet, so ask it again a few questions on. Two right and quick makes it secure today.
+    else if (result.boxAfter < 2 && this.checking.has(q.factKey) && !this.checkRepeated.has(q.factKey)) {
+      this.checkRepeated.add(q.factKey);
+      scheduleRepeat(this.memory, q.factKey, this.random);
+    }
     return result;
   }
 }
