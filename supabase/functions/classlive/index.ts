@@ -9366,6 +9366,53 @@ function answerBox(g, pupil, box, value, t, players) {
 	};
 }
 //#endregion
+//#region shared/classlive/rewards.ts
+/** Points: 1 for taking part, 3 for doing some of the maths, +2 for the class goal, +2 for guessing the picture. At most 10. */
+const POINTS = {
+	joined: 1,
+	played: 3,
+	goal: 2,
+	guessed: 2,
+	max: 10
+};
+function rewardsOf(s) {
+	const g = s.game;
+	const goal = g.kind === "stars" ? g.creature : g.kind === "serpent" ? g.awake : g.solvers.length > 0;
+	const players = s.order.map((id) => {
+		let did = false;
+		const r = {
+			player: id,
+			points: 0,
+			stars: 0,
+			boxes: 0,
+			head: false,
+			tiles: 0,
+			guessed: false
+		};
+		if (g.kind === "stars") {
+			r.stars = g.mine[id]?.found ?? 0;
+			did = r.stars + (g.mine[id]?.glows ?? 0) > 0;
+		} else if (g.kind === "serpent") {
+			r.boxes = g.mine[id]?.right ?? 0;
+			r.head = g.heads.includes(id);
+			did = r.boxes > 0;
+		} else {
+			r.tiles = g.mine[id]?.tiles ?? 0;
+			r.guessed = (g.mine[id]?.gotIt ?? 0) > 0;
+			did = (g.mine[id]?.right ?? 0) > 0;
+		}
+		const points = (did ? POINTS.played : POINTS.joined) + (goal && did ? POINTS.goal : 0) + (r.guessed ? POINTS.guessed : 0);
+		r.points = Math.min(POINTS.max, points);
+		return r;
+	});
+	return {
+		seed: s.seed,
+		activity: s.activity,
+		goal,
+		players
+	};
+}
+//#endregion
 //#region shared/classlive/server.ts
 /**
 * Class Live's server steps (docs/CLASSLIVE-PLAN.md section 5), with the database passed in (`ClassLiveServices`), so the
@@ -9516,6 +9563,14 @@ function playerView(s, id) {
 const timeOf = (row, now) => row.startedAt === null ? 0 : Math.max(0, now - row.startedAt);
 /** Is a timed session past its end? */
 const timeUp = (s, row, now) => s.state === "live" && s.lengthMin > 0 && timeOf(row, now) >= s.lengthMin * 6e4;
+/** Pays out a finished session. A failure is only logged: the teacher's next view tries again (it pays once). */
+async function payOut(sv, room, s) {
+	try {
+		await sv.finishSession(room, rewardsOf(s));
+	} catch {
+		console.error(`classlive: finishing room ${room} failed`);
+	}
+}
 /** Loads the room, applies one step and saves it if nobody else saved first (else runs it again on the newer session). */
 async function mutate(sv, room, step) {
 	for (let tries = 0; tries < MAX_TRIES; tries++) {
@@ -9570,14 +9625,17 @@ async function mutate(sv, room, step) {
 		});
 		if (saved === "busy") return { refuse: busy() };
 		if (saved === "answered") return { refuse: no(409, "You've already answered that one.", "answered") };
-		if (saved === "ok") return "refuse" in out ? out : {
-			reply: out.reply,
-			row: {
-				...next,
-				version: row.version + 1
-			},
-			session: s
-		};
+		if (saved === "ok") {
+			if (s.state === "over" && events.some((e) => e.type === "over")) await payOut(sv, room, s);
+			return "refuse" in out ? out : {
+				reply: out.reply,
+				row: {
+					...next,
+					version: row.version + 1
+				},
+				session: s
+			};
+		}
 		await new Promise((done) => setTimeout(done, 5 + Math.floor(sv.random() * 25 * (tries + 1))));
 	}
 	return { refuse: busy() };
@@ -9694,6 +9752,7 @@ async function classLiveStep(sv, who, body) {
 			};
 		});
 		if ("refuse" in done) return done.refuse;
+		if (done.session.state === "over" && (action === "view" || action === "end")) await payOut(sv, room, done.session);
 		return ok({
 			room,
 			screen: screenView(done.row, done.session, done.row.startedAt),
@@ -10142,6 +10201,12 @@ Deno.serve(makeHandler({
 			question
 		});
 		return raw === "busy" ? "busy" : questionOf(raw);
+	},
+	async finishSession(room, done) {
+		if (await call("classlive_finish", {
+			target: room,
+			done
+		}) === "busy") throw new Error("classlive_finish failed");
 	},
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "classlive");

@@ -1,9 +1,9 @@
--- Class Live (migrations 20261124000100_classlive.sql and 20261124000700_classlive_mural.sql, id classlive): rooms, the hidden session, the projector's screen
+-- Class Live (migrations 20261124000100_classlive.sql, 20261124000700_classlive_mural.sql and 20261124000800_classlive_rewards.sql, id classlive): rooms, the hidden session, the projector's screen
 -- (teachers only), each pupil's own row, the compare-and-swap save, the switch, and the join pop-up in hub_here().
 -- Run on a throw-away copy: scripts/scratch-db.sh classlive, then scripts/scratch-test.sh classlive supabase/tests/database/classlive.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(28);
+select plan(33);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -91,6 +91,17 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.s
 select is((select (screen ->> 'seq')::int from public.classlive_screens), 2, 'Eve sees her room''s screen');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000f', 'fay@douglaspark.school.nz');
 select is((select count(*)::int from public.classlive_screens), 0, 'Fay, who teaches another class, does not');
+
+-- ---- Stage 4: a finished session pays once, with points and trophies ----
+select pg_temp.act_as_server();
+select is(public.classlive_finish(current_setting('test.room')::bigint, jsonb_build_object('seed', 7, 'activity', 'stars', 'goal', true,
+  'players', jsonb_build_array(jsonb_build_object('player', pg_temp.id('0a'), 'points', 5, 'stars', 12),
+    jsonb_build_object('player', pg_temp.id('0e'), 'points', 5)))), 'ok', 'a finished session is paid');
+select is(public.classlive_finish(current_setting('test.room')::bigint, jsonb_build_object('seed', 7, 'players', '[]'::jsonb)), 'paid', '... once');
+select is((select count(*)::int from public.game_points where game = 'classlive' and player = pg_temp.id('0a')), 1, 'Ana got her points');
+select is((select count(*)::int from public.game_points where game = 'classlive' and player = pg_temp.id('0e')), 0, '... a teacher (not in the class) gets none');
+select ok(exists (select 1 from public.achievements where player = pg_temp.id('0a') and achievement = 'classlive-stargazer'),
+  'and Ana has the Stargazer trophy');
 
 select * from finish();
 rollback;

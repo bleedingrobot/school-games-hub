@@ -5,6 +5,7 @@
  */
 import type { FactAnswer } from '../maths/leitner';
 import type { MathsContext } from '../maths/serverQuestions';
+import type { FinishedSession } from './rewards';
 import type { Change, ClassLiveServices, PlayerView, RoomRow, RoomView, ScreenView, StoredQuestion } from './server';
 
 export interface MemoryDb {
@@ -14,6 +15,8 @@ export interface MemoryDb {
   questions: Map<string, StoredQuestion[]>;
   answers: { player: string; once: string; answers: FactAnswer[] }[];
   maths: MathsContext;
+  /** Sessions paid, by `${room}:${seed}`. */
+  paid: Map<string, FinishedSession>;
   pupils: Map<string, { id: string; name: string; classId: string }>;
   teachers: Map<string, string[]>;
   enabled: boolean;
@@ -22,7 +25,7 @@ export interface MemoryDb {
 
 export function memoryDb(opts: { pupils?: { id: string; name: string; classId: string }[]; teachers?: Record<string, string[]> } = {}): MemoryDb {
   return {
-    rooms: new Map(), players: new Map(), questions: new Map(), answers: [], maths: { facts: [], settings: {} },
+    rooms: new Map(), players: new Map(), questions: new Map(), answers: [], maths: { facts: [], settings: {} }, paid: new Map(),
     pupils: new Map((opts.pupils ?? []).map((p) => [p.id, p])),
     teachers: new Map(Object.entries(opts.teachers ?? {})),
     enabled: true, showNames: true,
@@ -100,6 +103,10 @@ export function memoryServices(db: MemoryDb, clock: { now(): number; random?(): 
       const kept: StoredQuestion = { slot: list.length, question: copy(question), answered: false };
       list.push(kept);
       return copy(kept);
+    },
+    async finishSession(room, done) {
+      const key = `${room}:${done.seed}`;
+      if (!db.paid.has(key)) db.paid.set(key, copy(done));
     },
     async recordAnswers(player, once, answers) {
       if (!db.answers.some((a) => a.player === player && a.once === once)) db.answers.push({ player, once, answers: copy(answers) });

@@ -21,6 +21,7 @@ import type { Question } from '../maths/skillPack';
 import { isUntimed } from '../maths/untimed';
 import { makeSpacePack, pickSpaceQuestion } from '../space/mathsQuestion';
 import { answerBox, boxOf, newSerpent, SERPENT_LEVELS, wakeAt, type SerpentBox, type SerpentEvent, type SerpentGame, type SerpentLevel, type SerpentReply } from './serpent';
+import { rewardsOf, type FinishedSession } from './rewards';
 
 export const ACTIVITIES = ['stars', 'serpent', 'mural'] as const;
 export type Activity = (typeof ACTIVITIES)[number];
@@ -145,6 +146,8 @@ export interface ClassLiveServices {
   /** Keeps a new question at the pupil's next slot, unless one is still open: then that one comes back. */
   keepQuestion(room: number, player: string, question: Question): Promise<StoredQuestion | Busy>;
   recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
+  /** Pays a finished session's points and trophies, once per room and session (later calls change nothing). */
+  finishSession(room: number, done: FinishedSession): Promise<void>;
 }
 
 export type StepReply = { status: number; body: Record<string, unknown> };
@@ -229,6 +232,15 @@ const timeUp = (s: Session, row: Pick<RoomRow, 'startedAt'>, now: number) => s.s
 
 type Step<T> = (s: Session, t: number, row: RoomRow) => { reply: T; events: Event[]; startedAt?: number | null; players?: string[]; claim?: Change['claim'] } | { refuse: StepReply };
 
+/** Pays out a finished session. A failure is only logged: the teacher's next view tries again (it pays once). */
+async function payOut(sv: ClassLiveServices, room: number, s: Session) {
+  try {
+    await sv.finishSession(room, rewardsOf(s));
+  } catch {
+    console.error(`classlive: finishing room ${room} failed`);
+  }
+}
+
 /** Loads the room, applies one step and saves it if nobody else saved first (else runs it again on the newer session). */
 async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<T>): Promise<{ reply: T; row: RoomRow; session: Session } | { refuse: StepReply }> {
   for (let tries = 0; tries < MAX_TRIES; tries++) {
@@ -263,7 +275,10 @@ async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<T>): Pr
     const saved = await sv.save(room, row.version, { session: s, view: roomView(s, startedAt), screen: screenView(next, s, startedAt), startedAt, players, ...(claim ? { claim } : {}) });
     if (saved === 'busy') return { refuse: busy() };
     if (saved === 'answered') return { refuse: no(409, "You've already answered that one.", 'answered') };
-    if (saved === 'ok') return 'refuse' in out ? out : { reply: out.reply, row: { ...next, version: row.version + 1 }, session: s };
+    if (saved === 'ok') {
+      if (s.state === 'over' && events.some((e) => e.type === 'over')) await payOut(sv, room, s);
+      return 'refuse' in out ? out : { reply: out.reply, row: { ...next, version: row.version + 1 }, session: s };
+    }
     await new Promise((done) => setTimeout(done, 5 + Math.floor(sv.random() * 25 * (tries + 1))));
   }
   return { refuse: busy() };
@@ -343,6 +358,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
       return { reply: null, events: [{ type: 'over', t, why: 'teacher' }] };
     });
     if ('refuse' in done) return done.refuse;
+    if (done.session.state === 'over' && (action === 'view' || action === 'end')) await payOut(sv, room, done.session);
     return ok({ room, screen: screenView(done.row, done.session, done.row.startedAt), now: sv.now() });
   }
 

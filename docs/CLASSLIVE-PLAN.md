@@ -116,3 +116,9 @@
 - Database: `20261124000700_classlive_mural.sql` adds `classlive_questions` (no pupil or teacher access) and the open / load / keep question functions; the save gained `claim` (old 7-argument save dropped, same calls still work).
 - Tests: one server test with a pretend class of 30 (flips, claim once, guesses, reveal); 6 of 8 in the budget. Database tests 28.
 
+## Stage 4 results (24 Nov 2026 NZ)
+
+- Rewards (`shared/classlive/rewards.ts`): when a session ends (time up or the teacher ends it) the server pays each pupil once: 1 point for joining, 3 for doing some maths (a star, a box right, a question right), +2 when the class reaches the goal (sky creature, serpent awake, picture guessed), +2 for guessing the picture; at most 10. `classlive_finish(room, done)` (migration `20261124000800`) pays once per room and session and keeps each pupil's totals in `classlive_stats`; the teacher's next view retries a failed payout.
+- 8 trophies: Live on Stage, Stargazer, Head of the Serpent, Chain Master, Sharp Eye, Tile Flipper, Team Player, Class Live Star.
+- Art (14 paintings) and Bella's 14 projector lines went live in PR #779.
+
