@@ -5,7 +5,7 @@ import { botClass, type BotPupil } from './bots';
 import { advance, answer, chooseRole, enrage, goldenNext, join, newRound, start } from './engine';
 import { rng } from './schedule';
 import { chooseSeam, diggersAt, GOLDRUSH, openSeamsOf } from './goldrush';
-import type { Mode, Round, ShowdownEvent } from './types';
+import type { Arena, Mode, Round, ShowdownEvent } from './types';
 
 export interface SimResult {
   round: Round;
@@ -18,9 +18,9 @@ export interface SimResult {
 }
 
 /** Play one round. `bossHealth` fixes the boss; leave it out to use the tuned table. `teacherEnrage` presses it once. */
-export function playRound(opts: { seed: number; size: number; lengthMin: number; mode: Mode; bossHealth?: number; teacherEnrage?: boolean; bots?: BotPupil[]; arena?: 'boss' | 'goldrush' }): SimResult {
+export function playRound(opts: { seed: number; size: number; lengthMin: number; mode: Mode; bossHealth?: number; teacherEnrage?: boolean; bots?: BotPupil[]; arena?: Arena }): SimResult {
   const r = newRound({ seed: opts.seed, mode: opts.mode, lengthMin: opts.lengthMin, bossHealth: opts.bossHealth });
-  if (opts.arena === 'goldrush') r.arena = 'goldrush';
+  if (opts.arena && opts.arena !== 'boss') r.arena = opts.arena;
   const bots = opts.bots ?? botClass(opts.seed, opts.size, opts.mode);
   const rand = rng(opts.seed ^ 0xb075);
   const counts: Record<string, number> = {};

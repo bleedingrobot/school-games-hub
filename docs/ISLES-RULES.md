@@ -18,6 +18,7 @@
   - Unused chunks wait, up to 3.
   - The Star telescope adds one a day and lets 4 wait.
   - An island under 0.7 of its class's middle size gets one extra.
+  - **No more land after Grand Isle** (James, 24 Nov 2026): once an island has 16 spots, anchoring is refused ("island-full"), because the biggest painted island holds 16. Islands that anchored past 16 before this keep their extra spots.
 - Days start at New Zealand midnight.
 
 ## A turn: 4 steps
@@ -97,6 +98,7 @@ A Sky Race (if one is left today), or End turn. Then the end of the turn:
 
 - **Grand Isle:** 16 building spots.
 - **Then the Sky Lighthouse:** 4 stages (costs above). Lighting it brings the sky garden.
+- **The goal box** on My island (24 Nov 2026): the road to Grand Isle and the Lighthouse's stages, with one "Next:" line saying what to do and what it costs, even when it can't be paid for yet (the buttons still only show what can be done now).
 - **Island worth,** for the Hall of the Skies: 10 a spot, 5 a building level, 1 for every 5 islanders, a tenth of each decoration's coin price, 50 a Lighthouse stage. Never anything about maths.
 - **The Hall of the Skies** (stage S.6): at each New Season, each class's top 3 islands by island worth, and every island that lit its Sky Lighthouse, go in the class's Hall for good (only islands that played a turn that season). Pupils see their own class's Hall, and who is ahead this season, from the Class sky; teachers see it in the Sky Isles drawer and under "Seasons and end of year".
 - **Island names** (stage S.6): picked from made-up names (a first word and a place word, `shared/isles/names.ts`), six at a time with "Show other names"; never typed. Kept through New Season, like the Sky Keeper.

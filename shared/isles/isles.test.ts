@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { seededRandom } from '../maths/serverQuestions';
 import { CHUNK_PRICE } from './config';
 import { coinsCollected, collect, newIsland, playTurn, room, type Action, type Island } from './engine';
+import { nextStep } from './nextStep';
 import { GULL_RIDERS, gullRiders, racerOf, raceProblem, runRace, type Racer } from './race';
 
 describe('Sky Isles rules', () => {
@@ -46,6 +47,12 @@ describe('Sky Isles rules', () => {
     const after = (actions: Action[]) => playTurn(rich, false, actions, seededRandom('x'));
     const anchored = after([{ kind: 'anchor' }, { kind: 'anchor' }]);
     expect(anchored.ok && rich.coins + coinsCollected(collect(rich, false)) - anchored.island.coins).toBe(2 * CHUNK_PRICE);
+    // No more land once the island is a Grand Isle: 15 spots takes one more chunk, then the second is refused.
+    const nearlyGrand: Island = { ...rich, spots: [...rich.spots, ...Array.from({ length: 9 }, () => ({ kind: 'empty' as const, level: 0 }))] };
+    expect(nearlyGrand.spots).toHaveLength(15);
+    expect(playTurn(nearlyGrand, false, [{ kind: 'anchor' }], seededRandom('x')).ok).toBe(true);
+    expect(playTurn(nearlyGrand, false, [{ kind: 'anchor' }, { kind: 'anchor' }], seededRandom('x'))).toMatchObject({ ok: false, problem: 'island-full', at: 1 });
+    expect(nextStep({ ...nearlyGrand, spots: [...nearlyGrand.spots.map((s) => (s.kind === 'empty' ? { kind: 'farm' as const, level: 3 } : s)), { kind: 'farm', level: 3 }] }).target).not.toBe('drift');
     expect(after([{ kind: 'decorate', id: 'bench', place: 0 }, { kind: 'decorate', id: 'lantern', place: 0 }])).toMatchObject({ ok: false, problem: 'place-taken', at: 1 });
     expect(after([{ kind: 'decorate', id: 'bench', place: 4 }])).toMatchObject({ ok: false, problem: 'no-such-place' });
     expect(after([{ kind: 'decorate', id: 'flags', place: 0 }, { kind: 'decorate', id: 'flags', place: 1 }])).toMatchObject({ ok: false, problem: 'already-have' });

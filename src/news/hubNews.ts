@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'isles-goal-2026-11-24',
+    date: '2026-11-24',
+    emoji: '🗼',
+    title: 'Sky Isles: see your next goal',
+    text: 'Your island now shows what to do next to light the Lighthouse. How to play is easier too.',
+    game: 'isles',
+  },
+  {
     id: 'circuit-racer-2026-11-23',
     date: '2026-11-23',
     emoji: '⚡',
