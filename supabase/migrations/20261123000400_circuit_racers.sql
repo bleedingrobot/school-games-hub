@@ -50,7 +50,7 @@ begin
     raise exception 'That racer is not right.' using errcode = '22023';
   end if;
   insert into public.circuit_racers as c (player, racer) values (circuit_set_racer.player, circuit_set_racer.racer)
-  on conflict (player) do update set racer = excluded.racer, updated_at = now();
+  on conflict on constraint circuit_racers_pkey do update set racer = excluded.racer, updated_at = now();
   return true;
 end;
 $$;
