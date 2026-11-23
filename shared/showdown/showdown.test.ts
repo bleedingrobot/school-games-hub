@@ -6,6 +6,7 @@ import { advance, answer, behind, chooseRole, enrage, goldenNext, join, moveToTe
 import { chooseSeam, GOLDRUSH, openSeamsOf } from './goldrush';
 import { makeSchedule } from './schedule';
 import { playRound } from './sim';
+import { SKYCLIMB } from './skyclimb';
 import { balanceTeams } from './teams';
 import type { Mode, Round, ShowdownEvent } from './types';
 
@@ -326,6 +327,33 @@ describe('Class Showdown rules', () => {
     expect(hit(answer(r, 'p1', true, 14000).events).seam).not.toBe(gold.id);
     // Tuned with the simulator like the bosses: typical classes win most rounds but not all.
     const won = Array.from({ length: 24 }, (_, i) => playRound({ seed: 500 + i, size: 24, lengthMin: 10, mode: 'class', arena: 'goldrush' }).beaten).filter(Boolean).length;
+    expect(won).toBeGreaterThanOrEqual(14);
+    expect(won).toBeLessThanOrEqual(23);
+  });
+  it('sky climb: the summit is higher, every 3rd right answer in a row jumps, a storm blows idle climbers back, about 80% won', () => {
+    const r = newRound({ seed: 9, mode: 'class', lengthMin: 10, bossHealth: 1000 });
+    r.arena = 'skyclimb';
+    for (const p of ids(4)) join(r, p);
+    start(r);
+    r.schedule = [{ at: 30000, kind: 'wind_up' }];
+    expect(r.boss.max).toBe(Math.round(1000 * SKYCLIMB.summit.class));
+    const steps = [0, 4000, 8000].map((t) => answer(r, 'p1', true, t).events);
+    expect(of(steps[0], 'jump')).toHaveLength(0);
+    expect(of(steps[2], 'jump')[0].pupil).toBe('p1');
+    expect(hit(steps[2]).damage).toBeGreaterThan(hit(steps[1]).damage * 1.5);
+    // p2 climbs, then stops answering; p1 keeps answering through the storm. When it passes, only p2 slips back down.
+    answer(r, 'p2', true, 9000);
+    for (let t = 12000; t < 30000; t += 4000) answer(r, 'p1', true, t);
+    const before = r.players.p2.damage;
+    const evs: ShowdownEvent[] = [];
+    for (let t = 30000; t < 60000; t += 4000) evs.push(...answer(r, 'p1', true, t).events);
+    evs.push(...advance(r, 60000));
+    const blown = of(evs, 'blown_back')[0];
+    expect(blown.pupils).toContain('p2');
+    expect(blown.pupils).not.toContain('p1');
+    expect(r.players.p2.damage).toBe(0);
+    expect(blown.amount).toBeGreaterThanOrEqual(before);
+    const won = Array.from({ length: 24 }, (_, i) => playRound({ seed: 500 + i, size: 24, lengthMin: 10, mode: 'class', arena: 'skyclimb' }).beaten).filter(Boolean).length;
     expect(won).toBeGreaterThanOrEqual(14);
     expect(won).toBeLessThanOrEqual(23);
   });

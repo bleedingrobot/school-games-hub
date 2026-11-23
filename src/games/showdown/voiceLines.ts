@@ -33,4 +33,16 @@ export const GOLD_RUSH_LINES = {
   done: 'You dug it all out!',
 } as const;
 
-export const allVoiceLines = (): string[] => [...Object.values(ANNOUNCER), ...Object.values(GOLD_RUSH_LINES), ...BOSSES.map((b) => b.roar)];
+/** Sky Climb says these in place of the boss lines. */
+export const SKY_CLIMB_LINES = {
+  joinNow: 'Sky Climb! Join now, and get ready to climb!',
+  start: 'Climb to the summit! Three in a row is a jump!',
+  storm: 'A storm is coming! Keep answering to hold on!',
+  held: 'You held on! The storm has passed!',
+  blown: 'Whoosh! The wind blew some climbers back down!',
+  updraft: 'Updraft! Double height!',
+  phase: 'Above the clouds! Keep climbing!',
+  done: 'You reached the summit!',
+} as const;
+
+export const allVoiceLines = (): string[] => [...Object.values(ANNOUNCER), ...Object.values(GOLD_RUSH_LINES), ...Object.values(SKY_CLIMB_LINES), ...BOSSES.map((b) => b.roar)];

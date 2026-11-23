@@ -9,6 +9,7 @@ import { bossHealth } from './bossHealth';
 import { makeSchedule, hashSeed } from './schedule';
 import { reshuffle, teamForLateJoiner } from './teams';
 import { dig, openSeams } from './goldrush';
+import { blowBack, jump, setSummit } from './skyclimb';
 import type { Mode, Outcome, Player, Role, Round, ShowdownEvent, TeamId } from './types';
 
 export function newRound(opts: { seed: number; mode: Mode; lengthMin?: number; bossHealth?: number }): Round {
@@ -89,6 +90,7 @@ export function start(r: Round): Outcome {
   r.boss.hp = r.boss.max;
   r.roleSwapUntil = SHOWDOWN.roleSwapMs;
   if (r.arena === 'goldrush') openSeams(r);
+  if (r.arena === 'skyclimb') setSummit(r);
   return { ok: true, events: [{ type: 'start', t: 0, bossMax: r.boss.max }] };
 }
 
@@ -186,6 +188,8 @@ export function answer(r: Round, id: string, correct: boolean, t: number, opts: 
     // Gold is the score in Gold Rush too, so picking a good seam counts in every mode.
     points = Math.max(1, Math.round(points * (damage / before)));
   }
+  // Sky Climb: every 3rd right answer in a row is a jump.
+  if (r.arena === 'skyclimb') damage += jump(r, p, damage, events);
   const group = groupOf(r, p);
   if (r.windUp && group && r.windUp.groups[group] && !r.windUp.groups[group].done) {
     const g = r.windUp.groups[group];
@@ -353,6 +357,8 @@ function endWindUp(r: Round, events: ShowdownEvent[]) {
 function finishWindUp(r: Round, events: ShowdownEvent[]) {
   const enraged = r.windUp!.enraged;
   r.windUp = null;
+  // Sky Climb: the storm has passed; anyone who wasn't answering slips back down.
+  if (r.arena === 'skyclimb') blowBack(r, events);
   if (enraged) openWeakSpot(r, SHOWDOWN.enrage.weakSpotMs, events);
 }
 

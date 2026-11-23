@@ -22,7 +22,7 @@ import { advance, answer, chooseRole, enrage, goldenNext, join, moveToTeam, newR
 import { reshuffle } from './teams';
 import { chooseSeam, diggersAt, openSeamsOf } from './goldrush';
 import { pickBoss, rewardFor, roster, type BossId, type ChestGame, type Reward, type RosterRow } from './bosses';
-import type { Mode, Player, Role, Round, ShowdownEvent, TeamId } from './types';
+import type { Arena, Mode, Player, Role, Round, ShowdownEvent, TeamId } from './types';
 import { ladderProgress } from '../maths/ladder';
 import type { FactAnswer } from '../maths/leitner';
 import { markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext, type PublicQuestion } from '../maths/serverQuestions';
@@ -33,8 +33,8 @@ import { TimesTables } from '../maths/skillPacks/timesTables';
 
 export const MODES: readonly Mode[] = ['class', 'teams2', 'teams4', 'solo'];
 export const ROLES: readonly Role[] = ['striker', 'guard', 'healer'];
-export const ARENAS = ['boss', 'goldrush'] as const;
-export type Arena = (typeof ARENAS)[number];
+/** Arenas a room can be opened as (each arena's rules: goldrush.ts, skyclimb.ts). */
+export const ARENAS = ['boss', 'goldrush', 'skyclimb'] as const satisfies readonly Arena[];
 
 /** What pupils (their class's room row) and the projector see of a room: no names, no maths. */
 export interface RoomView {
@@ -225,7 +225,7 @@ function pupilsIn(e: FeedEvent): string[] {
   const out: string[] = [];
   const x = e as Record<string, unknown>;
   for (const k of ['pupil', 'woke', 'lastHit']) if (typeof x[k] === 'string') out.push(x[k] as string);
-  for (const k of ['guards', 'dazed']) if (Array.isArray(x[k])) out.push(...(x[k] as string[]));
+  for (const k of ['guards', 'dazed', 'pupils']) if (Array.isArray(x[k])) out.push(...(x[k] as string[]));
   if (e.type === 'recap') {
     out.push(...e.recap.awards.map((a) => a.pupil), ...e.recap.top.map((t) => t.pupil));
     if (e.recap.winner && 'pupil' in e.recap.winner) out.push(e.recap.winner.pupil);
@@ -345,8 +345,8 @@ async function finish(s: ShowdownServices, row: RoomRow) {
   if (r.state !== 'over') return;
   const beaten = r.result === 'beaten';
   const done: FinishedRound = {
-    // Gold Rush pays the same, but only a beaten boss goes on the roster.
-    classId: row.classId, seed: r.seed, boss: r.bossId ?? 'river-titan', beaten, roster: r.arena !== 'goldrush', ms: Math.round(r.t),
+    // The other arenas pay the same, but only a beaten boss goes on the roster.
+    classId: row.classId, seed: r.seed, boss: r.bossId ?? 'river-titan', beaten, roster: (r.arena ?? 'boss') === 'boss', ms: Math.round(r.t),
     players: r.order.map((id) => r.players[id]).filter((p) => p.reward).map((p) => ({
       player: p.id, points: p.reward!.points, game: p.reward!.chest.game, amount: p.reward!.chest.amount, beaten,
       lastHit: r.lastHit === p.id, shields: p.shields, revives: p.revives, bestStreak: p.bestStreak, correct: p.correct,
@@ -386,7 +386,7 @@ export async function showdownStep(s: ShowdownServices, who: string, body: Recor
     const arena: Arena = ARENAS.find((a) => a === body.arena) ?? 'boss';
     const round = newRound({ seed: Math.floor(s.random() * 2 ** 31), mode, lengthMin: length });
     round.bossId = pickBoss(beaten, body.boss);
-    if (arena === 'goldrush') round.arena = 'goldrush';
+    if (arena !== 'boss') round.arena = arena;
     const view = roomView({ arena, startedAt: null, pausedAt: null, showNames: teach.showNames }, round);
     const id = await s.openRoom(classId, who, arena, round, view);
     if (id === 'busy') return busy();
@@ -430,8 +430,9 @@ export async function showdownStep(s: ShowdownServices, who: string, body: Recor
       const done = await mutate(s, room, (r) => {
         if (r.state !== 'over') return { refuse: no(409, 'Finish this round first.', 'not-now') };
         const fresh = newRound({ seed: Math.floor(s.random() * 2 ** 31), mode: r.mode, lengthMin: r.lengthMin });
-        fresh.bossId = r.arena === 'goldrush' ? r.bossId : pickBoss(beaten, body.boss, r.bossId ?? 'river-titan');
-        if (r.arena === 'goldrush') fresh.arena = 'goldrush';
+        const bossRound = (r.arena ?? 'boss') === 'boss';
+        fresh.bossId = bossRound ? pickBoss(beaten, body.boss, r.bossId ?? 'river-titan') : r.bossId;
+        if (!bossRound) fresh.arena = r.arena;
         const events: ShowdownEvent[] = [];
         for (const id of r.order) {
           const old = r.players[id];

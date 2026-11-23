@@ -610,3 +610,105 @@
 .sd-p:has(.sd-p-bar--open) .sd-p-recap { padding-top: 128px; }
 /* Gold Rush's win title is longer than VICTORY!: keep it on one line, clear of the gold heap. */
 .sd-p-recap--gold .sd-p-recap__title { font-size: clamp(2.8rem, 10vw, 9rem); white-space: nowrap; align-self: start; margin-top: 8vh; }
+
+/* ---- Sky Climb (stage 7): the cliff, the climbers side by side, jumps, the storm and the updraft. ---- */
+.sd-p--sky { --sky-hi: #e8f7ff; --sky: #4fc3ff; --sky-lo: #1f6fc0; }
+.sd-p-back--sky { background: linear-gradient(180deg, #1f5fa8 0%, #4fa8ec 38%, #a9dcff 70%, #e6f5ff 100%) center / cover no-repeat; animation: sd-p-sky-drift 30s ease-in-out infinite alternate; }
+.sd-p-back--sky::after { background: radial-gradient(ellipse at 50% 20%, rgba(255,255,255,0.15) 10%, transparent 40%, rgba(4,20,40,0.45) 100%); }
+.sd-p-back--sky.sd-p-back--plain::before { content: ''; position: absolute; left: -5%; right: -5%; bottom: 0; height: 88%; background: linear-gradient(180deg, #f4fbff 0%, #c9d6e2 9%, #7d8ea0 26%, #56657a 60%, #3b475a 100%); clip-path: polygon(0 100%, 6% 62%, 14% 70%, 24% 40%, 32% 52%, 42% 18%, 50% 2%, 58% 20%, 66% 10%, 74% 38%, 84% 30%, 92% 58%, 100% 48%, 100% 100%); }
+.sd-p--storm .sd-p-back--sky { filter: brightness(0.55) saturate(0.6); transition: filter 0.8s; }
+.sd-p--p2 .sd-p-back--sky, .sd-p--p3 .sd-p-back--sky { filter: none; }
+.sd-p-health--sky { border-color: #e8f7ff; background: #0b2238; box-shadow: 0 0 28px rgba(79,195,255,0.6); }
+.sd-p-health--sky .sd-p-health__fill { background: linear-gradient(180deg, #e8f7ff, #4fc3ff 45%, #1f6fc0); }
+.sd-p-health--sky .sd-p-health__ghost { background: #ffffff; }
+.sd-p-health--sky .sd-p-health__label { color: #fff; -webkit-text-stroke: 0; text-shadow: 0 2px 0 #0b4a8a, 0 0 8px #06223d, 0 0 14px #06223d; mix-blend-mode: normal; z-index: 2; }
+.sd-p-health--sky .sd-p-sparkles { z-index: 1; }
+.sd-p-health--sky.sd-p-health--weak { animation: sd-p-glowbar 0.5s ease-in-out infinite alternate; }
+
+.sd-p-clouds { position: absolute; inset: 0; overflow: hidden; pointer-events: none; transform: translateY(calc(var(--climb, 0) * 22vh)); transition: transform 1.2s ease-out; }
+.sd-p-clouds i { position: absolute; top: var(--y); left: -30vw; width: calc(24vw * var(--s)); aspect-ratio: 2.4; animation: sd-p-cloud var(--d) linear infinite; animation-delay: calc(var(--i) * -9s); opacity: 0.85; }
+.sd-p-clouds i:empty { border-radius: 50%; background: radial-gradient(ellipse at 40% 60%, #ffffff 0 34%, rgba(255,255,255,0.85) 45%, rgba(255,255,255,0) 70%); filter: blur(1px); }
+.sd-p-clouds i img { width: 100%; height: 100%; object-fit: contain; }
+
+.sd-p-sky { position: absolute; left: 0; right: 0; top: calc(var(--bar-h, 50px) + 12vh); bottom: 9vh; z-index: 2; }
+.sd-p--sky .sd-p-crew { display: none; }
+.sd-p-climber--dazed .sd-p-climber__body { filter: grayscale(0.8) brightness(0.7); }
+.sd-p-sky__summit { position: absolute; left: 50%; top: -4vh; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; z-index: 1; }
+.sd-p-sky__summit b { font-size: clamp(0.9rem, 2.4vh, 1.6rem); font-weight: 1000; letter-spacing: 0.2em; color: #fff; text-shadow: 0 2px 0 #0b4a8a, 0 0 18px #7fd8ff; }
+.sd-p-sky__flag { display: block; width: clamp(40px, 7vh, 90px); font-size: clamp(2rem, 6vh, 4.6rem); line-height: 1; transform-origin: 10% 100%; animation: sd-p-flap 1.1s ease-in-out infinite alternate; filter: drop-shadow(0 0 14px rgba(255,255,255,0.9)); }
+.sd-p-sky__flag img { width: 100%; }
+.sd-p-sky__scale { position: absolute; left: 1.2vw; top: 0; bottom: 0; width: 10px; border-radius: 6px; background: rgba(6,24,44,0.55); border: 2px solid rgba(255,255,255,0.8); }
+.sd-p-sky__scale i { position: absolute; inset: 0; border-radius: 4px; background: linear-gradient(0deg, #1f6fc0, #4fc3ff 60%, #e8f7ff); transform-origin: bottom; transition: transform 0.8s cubic-bezier(.2,1.2,.4,1); box-shadow: 0 0 12px #4fc3ff; }
+.sd-p-sky__scale span { position: absolute; left: 16px; transform: translateY(50%); font-size: clamp(0.65rem, 1.6vh, 1rem); font-weight: 900; color: #fff; text-shadow: 0 1px 3px #000; white-space: nowrap; }
+.sd-p-sky__wall { position: absolute; left: 4vw; right: 2vw; top: 6vh; bottom: 0; }
+.sd-p-climber { position: absolute; width: var(--size); transform: translateX(-50%); transition: bottom 0.9s cubic-bezier(.2,1.25,.4,1); display: flex; flex-direction: column; align-items: center; }
+.sd-p-climber__rope { position: absolute; bottom: 60%; left: 50%; width: 2px; height: 22vh; margin-left: -1px; background: linear-gradient(0deg, rgba(232,194,122,0.7), rgba(232,194,122,0)); pointer-events: none; }
+.sd-p-climber__body { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--tc, #fff) 55%, #ffffff) 0, color-mix(in srgb, var(--tc, #fff) 40%, #0b2238) 70%); border: 0.3vw solid var(--tc, #fff); box-shadow: 0 0 1.2vw color-mix(in srgb, var(--tc, #fff) 70%, transparent), 0 0.6vh 1vh rgba(0,0,0,0.5); }
+.sd-p-climber__body b { font-size: calc(var(--size) * 0.62); line-height: 1; }
+.sd-p-climber__body img { width: 115%; height: 115%; object-fit: contain; }
+.sd-p-climber__name { margin-top: 2px; max-width: 9vw; font-size: clamp(0.55rem, 1.5vh, 0.95rem); font-weight: 900; color: #fff; text-shadow: 0 1px 3px #000, 0 0 6px #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sd-p-climber--step .sd-p-climber__body { animation: sd-p-climbstep 0.5s ease-out; }
+.sd-p-climber--jump .sd-p-climber__body { animation: sd-p-climbleap 0.9s cubic-bezier(.2,1.2,.4,1); }
+.sd-p-climber--blown { transition-duration: 1.6s; transition-timing-function: cubic-bezier(.5,0,.6,1); }
+.sd-p-climber--blown .sd-p-climber__body { animation: sd-p-blown 1.6s ease-in-out; }
+.sd-p-climber--storm .sd-p-climber__body { animation: sd-p-sway 0.45s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -0.07s); }
+.sd-p-climber__pop { position: absolute; bottom: 100%; left: 50%; font-size: clamp(1rem, 3.4vh, 2.2rem); font-weight: 1000; color: #fff; -webkit-text-stroke: 2px #0b4a8a; paint-order: stroke fill; animation: sd-p-climbpop 1.3s ease-out both; white-space: nowrap; pointer-events: none; }
+.sd-p-climber__pop--up { color: #e8fbff; -webkit-text-stroke-color: #00a2ff; text-shadow: 0 0 16px #7fd8ff; font-size: clamp(1.3rem, 4.4vh, 2.8rem); }
+.sd-p-climber__pop--golden { color: #ffe27a; -webkit-text-stroke-color: #8a4f00; text-shadow: 0 0 20px #ffd23f; }
+.sd-p-climber__jump { position: absolute; bottom: 140%; left: 50%; font-size: clamp(1.1rem, 4vh, 2.6rem); font-weight: 1000; letter-spacing: 0.05em; color: #fff; -webkit-text-stroke: 2px #0b4a8a; paint-order: stroke fill; text-shadow: 0 0 22px #7fd8ff; animation: sd-p-jumpword 1.3s ease-out both; white-space: nowrap; pointer-events: none; z-index: 3; }
+.sd-p-climber__jump i { position: absolute; top: 120%; left: 50%; width: 2.4vh; height: 2.4vh; border-radius: 50%; background: radial-gradient(circle, #fff, rgba(255,255,255,0)); animation: sd-p-puff 0.9s ease-out both; }
+.sd-p-climber__jump i:nth-child(1) { --px: -4vh; } .sd-p-climber__jump i:nth-child(2) { --px: 0vh; animation-delay: 0.05s; } .sd-p-climber__jump i:nth-child(3) { --px: 4vh; animation-delay: 0.1s; }
+.sd-p-climber__whoosh { position: absolute; top: 0; right: -60%; font-size: calc(var(--size) * 0.8); animation: sd-p-whoosh 1.6s ease-out both; pointer-events: none; }
+.sd-p-sky__updraft { position: absolute; inset: 0; pointer-events: none; }
+.sd-p-sky__updraft i { position: absolute; bottom: -10%; width: 4vw; height: 30vh; border-radius: 50%; background: linear-gradient(0deg, rgba(255,255,255,0), rgba(255,255,255,0.75) 50%, rgba(255,255,255,0)); filter: blur(4px); animation: sd-p-draft 1.4s linear infinite; animation-delay: calc(var(--i) * -0.33s); }
+.sd-p-sky__updraft i::after { content: '⬆'; position: absolute; left: 50%; top: 30%; transform: translateX(-50%); color: #fff; font-size: 4vh; filter: none; text-shadow: 0 0 14px #4fc3ff; }
+
+.sd-p-storm { position: absolute; inset: 0; z-index: 7; pointer-events: none; overflow: hidden; }
+.sd-p-storm__dark { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,18,40,0.82) 0%, rgba(30,40,70,0.55) 45%, rgba(20,30,50,0.25) 100%); animation: sd-p-fadein 0.8s ease-out both; }
+.sd-p-storm__bolt { position: absolute; inset: 0; background: rgba(235,245,255,0.75); opacity: 0; animation: sd-p-lightning 3.2s steps(1) infinite; }
+.sd-p-storm--heavy .sd-p-storm__bolt { animation-duration: 1.7s; }
+.sd-p-storm__bolt::after { content: ''; position: absolute; left: 62%; top: 0; width: 7vw; height: 46vh; background: #fffbe0; clip-path: polygon(45% 0, 70% 0, 52% 38%, 78% 38%, 30% 100%, 44% 52%, 20% 52%); filter: drop-shadow(0 0 20px #fff); }
+.sd-p-storm__rain { position: absolute; top: -20vh; width: 2px; height: 14vh; background: linear-gradient(180deg, rgba(200,225,255,0), rgba(200,225,255,0.85)); transform: rotate(16deg); animation: sd-p-rain 0.6s linear infinite; animation-delay: calc(var(--i) * -0.047s); }
+.sd-p-storm__gust { position: absolute; left: -40vw; width: 34vw; height: 0.6vh; border-radius: 1vh; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.7), rgba(255,255,255,0)); animation: sd-p-gust 1.5s ease-in infinite; animation-delay: calc(var(--i) * -0.4s); }
+.sd-p--storm .sd-p-dome__shell { border-color: rgba(190,220,255,0.95); background: rgba(120,170,255,0.1); box-shadow: 0 0 40px rgba(120,190,255,0.7), inset 0 0 50px rgba(120,170,255,0.35); }
+.sd-p--sky .sd-p-dome__label { color: #e8f7ff; }
+
+.sd-p-sky-entrance { position: absolute; left: 0; right: 0; bottom: 0; height: min(60%, 60vh); z-index: 0; pointer-events: none; }
+.sd-p-sky-entrance__peak { position: absolute; left: 50%; bottom: 0; width: min(70vw, 900px); height: 100%; translate: -50% 0; animation: sd-p-gr-rise 1.8s cubic-bezier(.2,1,.3,1) both; }
+.sd-p-sky-entrance__peak img { width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
+.sd-p-sky-entrance__peak i { position: absolute; inset: 0; background: linear-gradient(180deg, #ffffff 0%, #dbe6f0 14%, #8696a8 34%, #4b586c 100%); clip-path: polygon(0 100%, 22% 52%, 34% 60%, 50% 0, 64% 40%, 74% 30%, 100% 100%); filter: drop-shadow(0 0 30px rgba(255,255,255,0.4)); }
+.sd-p-sky-entrance__flag { position: absolute; left: 50%; bottom: 96%; width: clamp(40px, 8vh, 100px); font-size: clamp(2rem, 7vh, 5rem); line-height: 1; transform-origin: 10% 100%; animation: sd-p-flagup 1.2s cubic-bezier(.2,1.4,.4,1) 1.4s both, sd-p-flap 1.1s ease-in-out 2.6s infinite alternate; }
+.sd-p-sky-entrance__flag img { width: 100%; }
+.sd-p-roar--sky { color: #ffffff; text-shadow: 0 5px 0 #0b4a8a, 0 0 50px #4fc3ff; }
+.sd-p--sky .sd-p-lobby__join { color: #e8f7ff; text-shadow: 0 6px 0 #0b4a8a, 0 0 50px rgba(79,195,255,0.85); }
+
+.sd-p-summitflag { position: absolute; left: 50%; bottom: 0; translate: -50% 0; width: min(70vw, 820px); height: 56vh; z-index: 1; pointer-events: none; }
+.sd-p-summitflag__peak { position: absolute; inset: 0; animation: sd-p-gr-rise 1.4s cubic-bezier(.2,1.1,.3,1) 0.2s both; }
+.sd-p-summitflag__peak img { width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
+.sd-p-summitflag__peak i { position: absolute; inset: 0; background: linear-gradient(180deg, #ffffff 0%, #dbe6f0 14%, #8696a8 34%, #4b586c 100%); clip-path: polygon(0 100%, 22% 52%, 34% 60%, 50% 0, 64% 40%, 74% 30%, 100% 100%); }
+.sd-p-summitflag__flag { position: absolute; left: 50%; bottom: 99%; width: clamp(60px, 12vh, 150px); font-size: clamp(3rem, 11vh, 8rem); line-height: 1; transform-origin: 10% 100%; animation: sd-p-flagup 1.1s cubic-bezier(.2,1.6,.4,1) 1.3s both, sd-p-flap 1s ease-in-out 2.4s infinite alternate; filter: drop-shadow(0 0 24px #fff); }
+.sd-p-summitflag:not(.sd-p-summitflag--planted) .sd-p-summitflag__flag { bottom: 70%; left: 40%; animation: sd-p-fadein 0.8s ease-out 1.2s both, sd-p-flap 1.4s ease-in-out 2s infinite alternate; filter: grayscale(0.4); }
+.sd-p-summitflag__flag img { width: 100%; }
+.sd-p-summitflag__pct { position: absolute; left: 50%; bottom: 40%; translate: -50% 0; font-size: clamp(1.2rem, 4vh, 2.6rem); font-weight: 1000; color: #fff; text-shadow: 0 3px 0 #0b4a8a, 0 0 20px #4fc3ff; white-space: nowrap; animation: sd-p-fadein 0.8s ease-out 1.6s both; }
+
+@keyframes sd-p-sky-drift { from { background-position: 50% 40%; } to { background-position: 50% 60%; } }
+@keyframes sd-p-cloud { from { transform: translateX(0); } to { transform: translateX(160vw); } }
+@keyframes sd-p-flap { from { transform: skewY(-5deg) scaleX(1); } to { transform: skewY(6deg) scaleX(0.9); } }
+@keyframes sd-p-flagup { from { transform: translateY(40%) scaleY(0); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes sd-p-climbstep { 0% { transform: translateY(0) scale(1); } 40% { transform: translateY(-30%) scale(1.15); filter: brightness(1.5); } 100% { transform: none; } }
+@keyframes sd-p-climbleap { 0% { transform: none; } 30% { transform: translateY(-120%) scale(1.45) rotate(-18deg); filter: brightness(1.8) drop-shadow(0 0 2vh #fff); } 60% { transform: translateY(-20%) scale(1.05) rotate(8deg); } 100% { transform: none; } }
+@keyframes sd-p-blown { 0% { transform: none; } 30% { transform: rotate(-200deg) scale(0.85); filter: hue-rotate(160deg) brightness(0.8); } 70% { transform: rotate(-360deg) scale(0.9); } 100% { transform: rotate(-360deg); } }
+@keyframes sd-p-sway { from { transform: translateX(-12%) rotate(-6deg); } to { transform: translateX(12%) rotate(6deg); } }
+@keyframes sd-p-climbpop { 0% { opacity: 0; transform: translate(-50%, 20%) scale(0.5); } 20% { opacity: 1; transform: translate(-50%, -30%) scale(1.25); } 100% { opacity: 0; transform: translate(-50%, -170%) scale(1); } }
+@keyframes sd-p-jumpword { 0% { opacity: 0; transform: translate(-50%, 40%) scale(0.3) rotate(-8deg); } 25% { opacity: 1; transform: translate(-50%, -20%) scale(1.35) rotate(4deg); } 100% { opacity: 0; transform: translate(-50%, -120%) scale(1); } }
+@keyframes sd-p-puff { from { opacity: 1; transform: translate(-50%, 0) scale(0.4); } to { opacity: 0; transform: translate(calc(-50% + var(--px)), 3vh) scale(2.2); } }
+@keyframes sd-p-whoosh { 0% { opacity: 0; transform: translateX(-60%) scale(0.5); } 30% { opacity: 1; transform: translateX(0) scale(1.2); } 100% { opacity: 0; transform: translateX(120%) scale(1); } }
+@keyframes sd-p-draft { from { transform: translateY(0); opacity: 0; } 25% { opacity: 1; } to { transform: translateY(-80vh); opacity: 0; } }
+@keyframes sd-p-lightning { 0%, 100% { opacity: 0; } 44% { opacity: 0.9; } 46% { opacity: 0; } 49% { opacity: 0.6; } 51% { opacity: 0; } }
+@keyframes sd-p-rain { from { transform: translate(0, 0) rotate(16deg); } to { transform: translate(-18vh, 130vh) rotate(16deg); } }
+@keyframes sd-p-gust { from { transform: translateX(0); opacity: 0; } 20% { opacity: 1; } to { transform: translateX(180vw); opacity: 0; } }
+@media (max-width: 900px) { .sd-p-sky__scale span { display: none; } .sd-p-climber__name { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .sd-p-back--sky, .sd-p-clouds i, .sd-p-sky__flag, .sd-p-climber__body, .sd-p-storm__bolt, .sd-p-storm__rain, .sd-p-storm__gust, .sd-p-sky__updraft i, .sd-p-sky-entrance__peak, .sd-p-sky-entrance__flag, .sd-p-summitflag__peak, .sd-p-summitflag__flag { animation: none !important; }
+  .sd-p-climber { transition: none; }
+}

@@ -9009,6 +9009,77 @@ function dig(r, p, gold, events) {
 	return got;
 }
 //#endregion
+//#region shared/showdown/skyclimb.ts
+/**
+* Sky Climb, Class Showdown's third arena (docs/SHOWDOWN-PLAN.md section 4.3). Same round, modes, roles and big events
+* as Boss Bounty (the engine), with the boss's health standing in for the climb to the summit: every right answer is a
+* step up. Each pupil (or team) has their own climber on the projector, side by side; the class reaches the summit
+* together.
+*
+* What's different: every 3rd right answer in a row is a jump (extra height). The wind-up is a storm (a shield check);
+* when it passes, anyone who hasn't answered lately is blown back down a little, so the climb loses that height. The
+* weak spot is an updraft (double height), from the engine.
+*/
+const SKYCLIMB = {
+	/** The summit is this much higher than the boss has health (jumps add height), tuned with the simulator to about
+	*  the same 80% of rounds won as Boss Bounty. */
+	summit: {
+		class: 1.33,
+		teams2: 1.31,
+		teams4: 1.32,
+		solo: 1.31
+	},
+	/** Every this many right answers in a row is a jump. */
+	jumpEvery: 3,
+	/** A jump adds this many times the step's height on top. */
+	jumpTimes: 1,
+	/** A pupil who hasn't answered for this long when a storm passes is blown back down. */
+	idleMs: 15e3,
+	/** How far: this many Striker steps (never below the ground). */
+	blownSteps: 3
+};
+/** At the start: the summit is set. */
+function setSummit(r) {
+	r.boss.max = Math.round(r.boss.max * SKYCLIMB.summit[r.mode]);
+	r.boss.hp = r.boss.max;
+}
+/** A right answer's extra height when it lands a jump (every 3rd in a row), with its event. */
+function jump(r, p, step, events) {
+	if (step <= 0 || p.streak % SKYCLIMB.jumpEvery !== 0) return 0;
+	const extra = step * SKYCLIMB.jumpTimes;
+	events.push({
+		type: "jump",
+		t: r.t,
+		pupil: p.id,
+		extra
+	});
+	return extra;
+}
+/** A storm has passed: everyone who hasn't answered lately slips back down, and the climb loses that height. */
+function blowBack(r, events) {
+	const drop = SHOWDOWN.damage.striker * SKYCLIMB.blownSteps;
+	const pupils = [];
+	let total = 0;
+	for (const id of r.order) {
+		const p = r.players[id];
+		if (r.t - p.lastActive <= SKYCLIMB.idleMs || p.damage <= 0) continue;
+		const amount = Math.min(p.damage, drop);
+		p.damage -= amount;
+		if (p.team) r.teamDamage[p.team] = Math.max(0, (r.teamDamage[p.team] ?? 0) - amount);
+		total += amount;
+		pupils.push(id);
+	}
+	if (!pupils.length) return;
+	r.boss.hp = Math.min(r.boss.max, r.boss.hp + total);
+	events.push({
+		type: "blown_back",
+		t: r.t,
+		pupils,
+		amount: drop,
+		hp: r.boss.hp
+	});
+}
+//#endregion
 //#region shared/showdown/engine.ts
 /**
 * Class Showdown's rules as plain functions on one plain-JSON round (docs/SHOWDOWN-PLAN.md). The server holds the
@@ -9134,6 +9205,7 @@ function start(r) {
 	r.boss.hp = r.boss.max;
 	r.roleSwapUntil = SHOWDOWN.roleSwapMs;
 	if (r.arena === "goldrush") openSeams(r);
+	if (r.arena === "skyclimb") setSummit(r);
 	return {
 		ok: true,
 		events: [{
@@ -9273,6 +9345,7 @@ function answer(r, id, correct, t, opts = {}) {
 		seam = p.seam ?? void 0;
 		points = Math.max(1, Math.round(points * (damage / before)));
 	}
+	if (r.arena === "skyclimb") damage += jump(r, p, damage, events);
 	const group = groupOf(r, p);
 	if (r.windUp && group && r.windUp.groups[group] && !r.windUp.groups[group].done) {
 		const g = r.windUp.groups[group];
@@ -9559,6 +9632,7 @@ function endWindUp(r, events) {
 function finishWindUp(r, events) {
 	const enraged = r.windUp.enraged;
 	r.windUp = null;
+	if (r.arena === "skyclimb") blowBack(r, events);
 	if (enraged) openWeakSpot(r, SHOWDOWN.enrage.weakSpotMs, events);
 }
 function openWeakSpot(r, ms, events) {
@@ -9959,7 +10033,12 @@ const ROLES = [
 	"guard",
 	"healer"
 ];
-const ARENAS = ["boss", "goldrush"];
+/** Arenas a room can be opened as (each arena's rules: goldrush.ts, skyclimb.ts). */
+const ARENAS = [
+	"boss",
+	"goldrush",
+	"skyclimb"
+];
 const MAX_TRIES = 8;
 const MAX_ANSWER_MS = 6e4;
 const OFF = "Class Showdown is switched off for your class.";
@@ -10059,7 +10138,11 @@ function pupilsIn(e) {
 		"woke",
 		"lastHit"
 	]) if (typeof x[k] === "string") out.push(x[k]);
-	for (const k of ["guards", "dazed"]) if (Array.isArray(x[k])) out.push(...x[k]);
+	for (const k of [
+		"guards",
+		"dazed",
+		"pupils"
+	]) if (Array.isArray(x[k])) out.push(...x[k]);
 	if (e.type === "recap") {
 		out.push(...e.recap.awards.map((a) => a.pupil), ...e.recap.top.map((t) => t.pupil));
 		if (e.recap.winner && "pupil" in e.recap.winner) out.push(e.recap.winner.pupil);
@@ -10202,7 +10285,7 @@ async function finish(s, row) {
 		seed: r.seed,
 		boss: r.bossId ?? "river-titan",
 		beaten,
-		roster: r.arena !== "goldrush",
+		roster: (r.arena ?? "boss") === "boss",
 		ms: Math.round(r.t),
 		players: r.order.map((id) => r.players[id]).filter((p) => p.reward).map((p) => ({
 			player: p.id,
@@ -10250,7 +10333,7 @@ async function showdownStep(s, who, body) {
 			lengthMin: length
 		});
 		round.bossId = pickBoss(beaten, body.boss);
-		if (arena === "goldrush") round.arena = "goldrush";
+		if (arena !== "boss") round.arena = arena;
 		const view = roomView({
 			arena,
 			startedAt: null,
@@ -10304,8 +10387,9 @@ async function showdownStep(s, who, body) {
 					mode: r.mode,
 					lengthMin: r.lengthMin
 				});
-				fresh.bossId = r.arena === "goldrush" ? r.bossId : pickBoss(beaten, body.boss, r.bossId ?? "river-titan");
-				if (r.arena === "goldrush") fresh.arena = "goldrush";
+				const bossRound = (r.arena ?? "boss") === "boss";
+				fresh.bossId = bossRound ? pickBoss(beaten, body.boss, r.bossId ?? "river-titan") : r.bossId;
+				if (!bossRound) fresh.arena = r.arena;
 				const events = [];
 				for (const id of r.order) {
 					const old = r.players[id];
