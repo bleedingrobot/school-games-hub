@@ -44,6 +44,7 @@ export const GAME_SWITCH_COLUMNS: Readonly<Record<string, string>> = {
   orderup: 'orderup_enabled',
   goblinstorm: 'goblinstorm_enabled',
   circuit: 'circuit_enabled',
+  showdown: 'showdown_enabled',
 };
 
 /**

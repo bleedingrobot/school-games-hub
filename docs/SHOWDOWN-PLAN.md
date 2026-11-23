@@ -1,6 +1,6 @@
 # Class Showdown: plan
 
-**Status: Stage 1 (rules and simulator) merged 23 Nov 2026; nothing switched on, no screens or server yet. Next: Stage 2, prompt in `docs/prompts/showdown-s2.md`.** James liked the "live class boss" idea from the list of missing game types (23 Nov 2026) and asked for one game where everyone in the room plays at once: the whole class against a boss, 2 teams, 4 teams, or everyone for themselves. Working name **Class Showdown**, game id `showdown`. Next free migration number when written: `20261123000900` on 23 Nov (check again: `node scripts/migration-numbers.mjs`).
+**Status: Stage 1 (rules and simulator) and Stage 2 (server, tables, live updates, join pop-up, `?pretend=30` test page) merged 23 Nov 2026; the code switch is off, so no pupil or teacher sees it. Next: Stage 3 (painted Boss Bounty screens), prompt in `docs/prompts/showdown-s3.md`.** James liked the "live class boss" idea from the list of missing game types (23 Nov 2026) and asked for one game where everyone in the room plays at once: the whole class against a boss, 2 teams, 4 teams, or everyone for themselves. Working name **Class Showdown**, game id `showdown`. Next free migration number when written: `20261123000900` on 23 Nov (check again: `node scripts/migration-numbers.mjs`).
 
 **Class Showdown** is a live game for the whole room. The **teacher's screen goes on the projector** and shows the big painted battle, the scores and the drama, with all the sound. **Every pupil's iPad is their controller**: their own maths question at their own level, their choices, and their own score. A round lasts 5, 10 or 15 minutes. The teacher picks **how** the class plays (the mode) and **what** they play (the arena).
 
@@ -218,6 +218,17 @@ The rules are in `shared/showdown/` (see `shared/README.md`), with 4 tests (budg
   - **2 teams** are won on damage (the tug of war); 4 teams and solo on points.
   - **Golden question**: worth 3x, one per pupil, in a 20-second window.
   - **Shout-outs** (in this order, up to 8, different pupils first): top score, last hit, longest streak, most damage, best comeback, shield wall, best healer, golden moment, most careful, hard worker. A class of 30 gets 8 different pupils.
+
+## Stage 2 results (23 Nov 2026)
+
+- **Server steps in `shared/showdown/server.ts`** (`showdownStep`), shared by the edge function (`supabase/functions/showdown/`), its tests and the test page. Teacher: `open`, `view`, `teams` (move one / `reshuffle`), `start`, `tick`, `enrage`, `pause` (`resume: true` carries the clock on), `end`. Pupil: `join` (finds the class's open room), `choose`, `ask`, `answer` (marks it, applies the hit and returns the next question in one reply).
+- **Locking:** Supabase's API can't hold `select ... for update` across calls, so every save is a **compare-and-swap** on the room's `version` (`showdown_save`), with the answer's claim in the same transaction; a refused save re-runs the step on the newer round (up to 8 tries, with a small random wait).
+- **Tables** (`20261123000900_showdown.sql`): `showdown_rooms` (the class's pupils and teachers read it: `view` = `RoomView`, no names or maths), `showdown_state` (the whole round, hidden), `showdown_players` (`view` = `PlayerView`: a pupil reads only their own; the teacher the room's), `showdown_questions` (hidden), `showdown_feed` (teachers of the class only, since it names pupils; cleared after 1 hour, questions after 1 day). All three readable tables are in Realtime.
+- **Feed:** every engine event the moment it's saved, with `names` for every pupil it mentions, plus `recap` (when the round ends), `pause`, `resume` and `ended`. Wrong answers are never in the feed (only the pupil's own reply has them).
+- **Switches:** `showdown_enabled` (on for every class, held back by the code switch `src/games/showdown/switch.ts`) and `showdown_names` (first names on the projector), saved by `teacher_set_showdown()`.
+- **Join pop-up:** `hub_here()` lists `showdown` while a room in the pupil's class is open and they haven't joined (`showdown_waiting`); `showdown_here()` gives the room; the hub banner says "Class Showdown is starting! Join in!" and opens `/showdown?room=…` (no Bella clip yet: on the art and voice list).
+- **Pretend class:** `shared/showdown/pretendClass.ts` (30 pupils from `bots.ts` at real speeds through the real steps on `memoryServices.ts`). Test page: `npx vite --config vite.showdown-preview.config.ts` (`?pretend=30&mode=teams2`), with bare projector and controller screens (`src/games/showdown/TestScreens.tsx`).
+- **Calls made:** the pretend class runs in the page on the real server code (as Clan Duels' and Circuit's test pages do), not as 30 sign-ins on the live server; ladder place for team mixing is the pupil's count of secure ladder skills; the request limit is 120 a minute per person (the projector ticks every second).
 
 ## 10. Risks
 

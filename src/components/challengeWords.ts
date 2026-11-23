@@ -16,10 +16,12 @@ export const GAME_NAMES: Record<AskGame, string> = {
   '101': '101',
   space: 'Wormholes & Black Holes',
   'power-clash': 'Power Clash',
+  showdown: 'Class Showdown',
 };
 
 /** What the banner says: who, and which game. */
 export function askLine(game: AskGame, from: string): string {
+  if (game === 'showdown') return 'Class Showdown is starting! Join in!';
   if (game === 'clan-quest') return `The ${from} clan challenges you to a Clan Quest duel!`;
   if (game === 'dragon-maths') return `${from} challenges you to a Dragon Maths arena clash!`;
   if (game !== 'archery') return `${from} invites you to play ${GAME_NAMES[game]}!`;
@@ -27,7 +29,7 @@ export function askLine(game: AskGame, from: string): string {
 }
 
 /** What Bella says (no names, so every line has a clip). */
-export const SPOKEN: Record<AskGame, string> = {
+export const SPOKEN: Partial<Record<AskGame, string>> = {
   archery: 'A friend challenges you to an archery fight!',
   'dragon-maths': 'A friend challenges you to a Dragon Maths clash!',
   'clan-quest': 'Another clan challenges you to a duel!',
@@ -43,5 +45,5 @@ export const STAR_HINT = 'Tap ☆ to keep your friends at the top';
 export const STAR_HINT_SPOKEN = 'Tap the star to keep your friends at the top.';
 
 export function allVoiceLines(): string[] {
-  return [...Object.values(SPOKEN), STAR_HINT_SPOKEN];
+  return [...Object.values(SPOKEN).filter((s): s is string => !!s), STAR_HINT_SPOKEN];
 }

@@ -1,0 +1,35 @@
+/* Class Showdown test screens (TestScreens.tsx). */
+.sd-test {
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 16px;
+  min-width: 0;
+}
+.sd-test__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 8px 0;
+}
+.sd-test__nums {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 4px 12px;
+  margin: 8px 0;
+}
+.sd-test__feed {
+  max-height: 50vh;
+  overflow-y: auto;
+  margin: 8px 0 0;
+  padding: 0 0 0 1.5em;
+  border-top: 1px solid var(--line);
+  font-size: 0.9rem;
+}
+.sd-test__q {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 8px 0;
+}

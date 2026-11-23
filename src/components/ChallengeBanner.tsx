@@ -10,7 +10,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
-import { isInviteGame, serverHubAskLink, type HubAsk, type HubAskLink } from '../data/hubAsks';
+import { isClassGame, isInviteGame, serverHubAskLink, type HubAsk, type HubAskLink } from '../data/hubAsks';
 import { ALL_GAMES } from '../games/registry';
 import { useHubAsks } from '../multiplayer/useHubAsks';
 import { readSaved, speak } from '../speech';
@@ -59,7 +59,8 @@ export function ChallengeBanner({ link, me, page, inGame }: { link: HubAskLink; 
     setOpen(false);
     if (!shown || said.current === shownKey) return;
     said.current = shownKey;
-    if (readSaved()) speak(SPOKEN[shown.game], VOICE_FOLDER);
+    const words = SPOKEN[shown.game];
+    if (words && readSaved()) speak(words, VOICE_FOLDER);
     // Only when a different challenge shows.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shownKey]);
@@ -80,9 +81,15 @@ export function ChallengeBanner({ link, me, page, inGame }: { link: HubAskLink; 
   const left = Math.max(0, Math.ceil((Date.parse(shown.deadline) - serverNow()) / 1000));
   const line = askLine(shown.game, shown.from);
   const invite = isInviteGame(shown.game);
+  const classGame = isClassGame(shown.game);
   const busy = taking?.key === shownKey && !taking.problem;
 
   const yes = () => {
+    if (classGame) {
+      drop(shown);
+      navigate(`/showdown?room=${shown.id}`);
+      return;
+    }
     if (!invite) {
       drop(shown);
       navigate(`/${shown.game}?ask=${shown.id}`);
@@ -100,7 +107,7 @@ export function ChallengeBanner({ link, me, page, inGame }: { link: HubAskLink; 
   };
   const no = () => {
     drop(shown);
-    void link.decline(shown);
+    if (!classGame) void link.decline(shown);
   };
   const notNow = () => setHidden(new Set([...hidden, ...asks.map(keyOf)]));
 
@@ -108,14 +115,14 @@ export function ChallengeBanner({ link, me, page, inGame }: { link: HubAskLink; 
     <div className={`hub-ask${inGame ? ' hub-ask--in-game' : ''}${open ? ' hub-ask--open' : ''}`} role="alertdialog" aria-label={line}>
       {inGame && (
         <button type="button" className="hub-ask__tab" aria-expanded={open} onClick={() => setOpen(true)}>
-          {invite ? '🎲 Invite!' : '⚔️ Challenge!'} <span className="hub-ask__secs">{left}s</span>
+          {classGame ? '⚔️ Showdown!' : invite ? '🎲 Invite!' : '⚔️ Challenge!'}{!classGame && <> <span className="hub-ask__secs">{left}s</span></>}
         </button>
       )}
       <div className="hub-ask__card">
         <p className="hub-ask__line">
           <span aria-hidden="true">{invite ? '🎲 ' : '⚔️ '}</span>
           {line}
-          <small>{GAME_NAMES[shown.game]} · {left}s to answer</small>
+          <small>{GAME_NAMES[shown.game]} · {classGame ? 'join any time' : `${left}s to answer`}</small>
         </p>
         <div className="hub-ask__buttons">
           <button type="button" className="hub-ask__yes" onClick={yes} disabled={busy}>{busy ? 'Opening…' : 'Yes!'}</button>

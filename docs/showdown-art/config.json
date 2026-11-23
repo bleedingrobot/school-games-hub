@@ -1,0 +1,658 @@
+{
+  "_from": "docs/game-guide/templates/art-config.json, layout as docs/glyph-art/config.json. Check with: python3 scripts/game_art.py showdown paint OUT --dry-run",
+  "game": "showdown",
+  "filename_prefix": "showdown/img",
+  "style": "s",
+  "styles": {
+    "s": "Bold storybook fantasy, rich colour, dramatic light, painterly digital art, no text. ",
+    "c": "Bold storybook fantasy, rich colour, dramatic light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. "
+  },
+  "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly",
+  "negative_cut": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges",
+  "inbox": "~/dragon-art-inbox/showdown-art/set",
+  "picks": "docs/showdown-art/picks.json",
+  "art_dir": "src/games/showdown/art/paint",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "river-titan-1",
+      "prompt": "A a colossal original river giant, a huge hulking body of mossy grey river boulders and rushing water, a crown of reeds and driftwood, glowing blue eyes, waterfall pouring from its shoulders, heavy stone fists, calm and proud, standing tall, a stern face, water flowing smoothly, menacing but storybook-friendly, not gory, not scary for children, facing front, three-quarter pose, full body. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "cut",
+      "folder": "bosses",
+      "file": "river-titan-1",
+      "max": 1100,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "river-titan-2",
+      "prompt": "A a colossal original river giant, a huge hulking body of mossy grey river boulders and rushing water, a crown of reeds and driftwood, glowing blue eyes, waterfall pouring from its shoulders, heavy stone fists, angry, glaring and snarling, cracks glowing in its stone body, waves churning, fists raised, menacing but storybook-friendly, not gory, not scary for children, facing front, three-quarter pose, full body. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "cut",
+      "folder": "bosses",
+      "file": "river-titan-2",
+      "max": 1100,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "river-titan-3",
+      "prompt": "A a colossal original river giant, a huge hulking body of mossy grey river boulders and rushing water, a crown of reeds and driftwood, glowing blue eyes, waterfall pouring from its shoulders, heavy stone fists, furious and broken, big stone chunks missing, glowing cracks, water bursting out, wild roaring mouth, one arm half crumbled, menacing but storybook-friendly, not gory, not scary for children, facing front, three-quarter pose, full body. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "cut",
+      "folder": "bosses",
+      "file": "river-titan-3",
+      "max": 1100,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "storm-kraken-1",
+      "prompt": "A a colossal original sea monster, a huge dark teal storm-cloud-headed kraken with eight thick tentacles, glowing yellow eyes, barnacles, lightning crackling between its tentacles, calm and menacing, tentacles coiled, a small storm cloud above, sly grin, menacing but storybook-friendly, not gory, not scary for children, facing front, three-quarter pose, full body. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "cut",
+      "folder": "bosses",
+      "file": "storm-kraken-1",
+      "max": 1100,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "storm-kraken-2",
+      "prompt": "A a colossal original sea monster, a huge dark teal storm-cloud-headed kraken with eight thick tentacles, glowing yellow eyes, barnacles, lightning crackling between its tentacles, angry, tentacles thrashing, lightning flashing, glaring eyes, mouth open, menacing but storybook-friendly, not gory, not scary for children, facing front, three-quarter pose, full body. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "cut",
+      "folder": "bosses",
+      "file": "storm-kraken-2",
+      "max": 1100,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "storm-kraken-3",
+      "prompt": "A a colossal original sea monster, a huge dark teal storm-cloud-headed kraken with eight thick tentacles, glowing yellow eyes, barnacles, lightning crackling between its tentacles, furious and battered, torn tentacles, cracked barnacle armour, a huge lightning storm, roaring wildly, menacing but storybook-friendly, not gory, not scary for children, facing front, three-quarter pose, full body. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "cut",
+      "folder": "bosses",
+      "file": "storm-kraken-3",
+      "max": 1100,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "clockwork-colossus-1",
+      "prompt": "A a colossal original clockwork giant, a tall brass and copper robot with a big round clock face for a chest, visible gears, steam pipes, glowing amber eyes, heavy riveted fists, calm and stately, standing still, polished brass, steady glowing eyes, menacing but storybook-friendly, not gory, not scary for children, facing front, three-quarter pose, full body. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "cut",
+      "folder": "bosses",
+      "file": "clockwork-colossus-1",
+      "max": 1100,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "clockwork-colossus-2",
+      "prompt": "A a colossal original clockwork giant, a tall brass and copper robot with a big round clock face for a chest, visible gears, steam pipes, glowing amber eyes, heavy riveted fists, angry, steam blasting from pipes, gears spinning, glowing red eyes, fists raised, menacing but storybook-friendly, not gory, not scary for children, facing front, three-quarter pose, full body. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "cut",
+      "folder": "bosses",
+      "file": "clockwork-colossus-2",
+      "max": 1100,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "clockwork-colossus-3",
+      "prompt": "A a colossal original clockwork giant, a tall brass and copper robot with a big round clock face for a chest, visible gears, steam pipes, glowing amber eyes, heavy riveted fists, furious and falling apart, dented and cracked, gears and springs flying loose, sparks, one arm hanging, red eyes blazing, menacing but storybook-friendly, not gory, not scary for children, facing front, three-quarter pose, full body. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "cut",
+      "folder": "bosses",
+      "file": "clockwork-colossus-3",
+      "max": 1100,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "comet-wyrm-1",
+      "prompt": "A a colossal original cosmic dragon-serpent, a long glittering purple and midnight-blue body with star-dust scales, a blazing comet tail, small horns, glowing silver eyes, wide wings of starlight, calm and majestic, coiled, a gentle glow, watchful eyes, menacing but storybook-friendly, not gory, not scary for children, facing front, three-quarter pose, full body. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "cut",
+      "folder": "bosses",
+      "file": "comet-wyrm-1",
+      "max": 1100,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "comet-wyrm-2",
+      "prompt": "A a colossal original cosmic dragon-serpent, a long glittering purple and midnight-blue body with star-dust scales, a blazing comet tail, small horns, glowing silver eyes, wide wings of starlight, angry, rearing up, fiery comet tail blazing, bared teeth, glowing eyes, menacing but storybook-friendly, not gory, not scary for children, facing front, three-quarter pose, full body. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "cut",
+      "folder": "bosses",
+      "file": "comet-wyrm-2",
+      "max": 1100,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "comet-wyrm-3",
+      "prompt": "A a colossal original cosmic dragon-serpent, a long glittering purple and midnight-blue body with star-dust scales, a blazing comet tail, small horns, glowing silver eyes, wide wings of starlight, furious and wounded, cracked scales leaking bright light, torn wings, a blazing white-hot tail, roaring wildly, menacing but storybook-friendly, not gory, not scary for children, facing front, three-quarter pose, full body. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "cut",
+      "folder": "bosses",
+      "file": "comet-wyrm-3",
+      "max": 1100,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "back-river-valley",
+      "prompt": "Empty background scenery for a boss battle: a wide misty river valley at golden sunrise, a winding river between mossy cliffs and tall pines, a stone bridge, a flat open riverbank in the middle foreground, calm and uncluttered in the middle so a huge boss placed on top stands out, no characters, no creatures. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "river-valley",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "back-stormy-sea",
+      "prompt": "Empty background scenery for a boss battle: a wild stormy sea at dusk, dark rolling waves, lightning in heavy clouds, a broken ship mast and rocks, a calm flat dark water area in the middle foreground, calm and uncluttered in the middle so a huge boss placed on top stands out, no characters, no creatures. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "stormy-sea",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "back-clock-tower",
+      "prompt": "Empty background scenery for a boss battle: the inside of a vast clock tower, giant brass gears and chains, shafts of golden light through round windows, a flat stone floor in the middle foreground, calm and uncluttered in the middle so a huge boss placed on top stands out, no characters, no creatures. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "clock-tower",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "back-night-sky",
+      "prompt": "Empty background scenery for a boss battle: a high mountain plateau under a glittering night sky, a huge swirling galaxy, shooting comets, floating star rocks, a flat rocky ground in the middle foreground, calm and uncluttered in the middle so a huge boss placed on top stands out, no characters, no creatures. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "night-sky",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "lobby",
+      "prompt": "A cheerful gathering place at the foot of four huge distant monster silhouettes, a grand glowing arena gate, banners in red, blue, gold and green, a big empty glowing circle of ground in the middle where heroes will gather, lanterns, warm excited mood, no characters in front. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "lobby",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "victory",
+      "prompt": "a joyous victory scene, a defeated giant boulder-creature sitting dazed and smiling among stars, a sunburst of golden light, confetti, flags and a glowing golden trophy, hundreds of tiny cheering heroes, wide landscape, no text.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "victory",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "so-close",
+      "prompt": "a hopeful 'so close' scene, a huge friendly-faced battered giant standing with a single glowing crack, a rising sunrise, heroes' banners standing proud on a hill, warm hopeful light, a little sparkle of determination, not sad, wide landscape, no text.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "so-close",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "role-striker",
+      "prompt": "A a brave cartoon hero child warrior in light armour raising a glowing sword with a lightning-bright blade, bold pose, determined smile, no real person likeness, upper body portrait, front view. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "roles",
+      "file": "striker",
+      "max": 500,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "role-guard",
+      "prompt": "A a sturdy cartoon hero child knight holding a huge round glowing shield with both arms, braced pose, kind determined face, upper body portrait, front view. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "roles",
+      "file": "guard",
+      "max": 500,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "role-healer",
+      "prompt": "A a gentle cartoon hero child healer holding a glowing green-gold staff with a heart-shaped light and sparkles, warm smile, soft robes, upper body portrait, front view. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "roles",
+      "file": "healer",
+      "max": 500,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "banner-red",
+      "prompt": "A tall hanging cloth war banner in red, a bold fiery red, a big bold emblem of a fierce fox stitched in the middle (picture only, no letters), a swallowtail bottom, gold trim, a wooden pole with a carved top, tassels, front view. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        768,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "banners",
+      "file": "red",
+      "max": 600,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "banner-blue",
+      "prompt": "A tall hanging cloth war banner in blue, a deep ocean blue, a big bold emblem of a leaping dolphin stitched in the middle (picture only, no letters), a swallowtail bottom, gold trim, a wooden pole with a carved top, tassels, front view. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        768,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "banners",
+      "file": "blue",
+      "max": 600,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "banner-gold",
+      "prompt": "A tall hanging cloth war banner in gold, a shiny sunny gold, a big bold emblem of a proud lion stitched in the middle (picture only, no letters), a swallowtail bottom, gold trim, a wooden pole with a carved top, tassels, front view. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        768,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "banners",
+      "file": "gold",
+      "max": 600,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "banner-green",
+      "prompt": "A tall hanging cloth war banner in green, a rich forest green, a big bold emblem of a bold bear stitched in the middle (picture only, no letters), a swallowtail bottom, gold trim, a wooden pole with a carved top, tassels, front view. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        768,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "banners",
+      "file": "green",
+      "max": 600,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "badge-top-score",
+      "prompt": "A round award medal badge, a gleaming gold trophy cup with a star on it, chunky gold rim, ribbon at the bottom, bold clean shapes, centred emblem only (no letters). Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "badges",
+      "file": "top-score",
+      "max": 300,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "badge-last-hit",
+      "prompt": "A round award medal badge, a bold lightning-bright sword striking down through a target with a shiny starburst, chunky gold rim, ribbon at the bottom, bold clean shapes, centred emblem only (no letters). Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "badges",
+      "file": "last-hit",
+      "max": 300,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "badge-longest-streak",
+      "prompt": "A round award medal badge, a blazing flame shaped like a hot streak with three stacked fire rings, chunky gold rim, ribbon at the bottom, bold clean shapes, centred emblem only (no letters). Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "badges",
+      "file": "longest-streak",
+      "max": 300,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "badge-most-damage",
+      "prompt": "A round award medal badge, a big fiery impact fist with an explosion burst, chunky gold rim, ribbon at the bottom, bold clean shapes, centred emblem only (no letters). Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "badges",
+      "file": "most-damage",
+      "max": 300,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "badge-best-comeback",
+      "prompt": "A round award medal badge, a rising phoenix feather with an upward golden arrow of light, chunky gold rim, ribbon at the bottom, bold clean shapes, centred emblem only (no letters). Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "badges",
+      "file": "best-comeback",
+      "max": 300,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "badge-shield-wall",
+      "prompt": "A round award medal badge, a large steel shield with a gold rim and a brick-wall pattern, chunky gold rim, ribbon at the bottom, bold clean shapes, centred emblem only (no letters). Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "badges",
+      "file": "shield-wall",
+      "max": 300,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "badge-best-healer",
+      "prompt": "A round award medal badge, a glowing green heart with a golden cross-shaped sparkle and tiny leaves, chunky gold rim, ribbon at the bottom, bold clean shapes, centred emblem only (no letters). Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "badges",
+      "file": "best-healer",
+      "max": 300,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "badge-golden-moment",
+      "prompt": "A round award medal badge, a shining golden star with a halo of sparkles and a sunburst, chunky gold rim, ribbon at the bottom, bold clean shapes, centred emblem only (no letters). Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "badges",
+      "file": "golden-moment",
+      "max": 300,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "badge-most-careful",
+      "prompt": "A round award medal badge, a big round magnifying glass with a gleaming blue lens and a tick mark in it, chunky gold rim, ribbon at the bottom, bold clean shapes, centred emblem only (no letters). Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "badges",
+      "file": "most-careful",
+      "max": 300,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "badge-hard-worker",
+      "prompt": "A round award medal badge, a sturdy golden hammer crossed with a pickaxe on a round laurel wreath, chunky gold rim, ribbon at the bottom, bold clean shapes, centred emblem only (no letters). Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "badges",
+      "file": "hard-worker",
+      "max": 300,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "fx-hit-burst",
+      "prompt": "A game effect sprite: a bright cartoon impact burst, a yellow-white starburst with orange spiky edges and tiny sparks, bold clean painted shapes, glowing, symmetrical. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "fx",
+      "file": "hit-burst",
+      "max": 250,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "fx-shield-dome",
+      "prompt": "A game effect sprite: a glowing translucent blue half-dome energy shield with hexagon glints and a bright rim, bold clean painted shapes, glowing, symmetrical. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "fx",
+      "file": "shield-dome",
+      "max": 250,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "fx-shield-crack",
+      "prompt": "A game effect sprite: a big bright jagged crack of white and blue light with flying shards, shattering shield, bold clean painted shapes, glowing, symmetrical. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "fx",
+      "file": "shield-crack",
+      "max": 250,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "fx-heal-sparkles",
+      "prompt": "A game effect sprite: a cluster of glowing green and gold sparkles and little plus-shaped lights floating upward, bold clean painted shapes, glowing, symmetrical. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "fx",
+      "file": "heal-sparkles",
+      "max": 250,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "fx-weak-spot",
+      "prompt": "A game effect sprite: a pulsing glowing red-orange target ring with a bright star centre and rays, bold clean painted shapes, glowing, symmetrical. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "fx",
+      "file": "weak-spot",
+      "max": 250,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "fx-daze-stars",
+      "prompt": "A game effect sprite: a ring of three yellow cartoon stars and tiny swirls circling, dazed, bold clean painted shapes, glowing, symmetrical. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "fx",
+      "file": "daze-stars",
+      "max": 250,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "fx-golden-flash",
+      "prompt": "A game effect sprite: a big brilliant golden flash, a sunburst with long soft rays and glittering gold sparkles, bold clean painted shapes, glowing, symmetrical. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "fx",
+      "file": "golden-flash",
+      "max": 250,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "controller-frame",
+      "prompt": "A tall ornate painted tablet frame border in carved wood and brass with gem corners and little dragons' claws, a calm plain flat pale parchment area filling the whole middle, empty so a question can be placed on top, front view. Portrait.",
+      "size": [
+        1024,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "ui",
+      "file": "controller-frame",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "back-gold-rush",
+      "prompt": "A wide side-on cutaway of a rich underground gold mine, wooden-braced tunnels crossing at junctions, glowing gold seams in the rock, mine carts and lanterns, crystals, an open flat central cavern, no characters. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "gold-rush",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "gr-seam-gold",
+      "prompt": "A a chunk of rock rich with glowing gold veins and nuggets, chunky game tile shape. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "goldrush",
+      "file": "seam-gold",
+      "max": 400,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "gr-seam-gem",
+      "prompt": "A a chunk of rock with glowing blue and purple gems, chunky game tile shape. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "goldrush",
+      "file": "seam-gem",
+      "max": 400,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "gr-seam-rich",
+      "prompt": "A a big dazzling mound of gold nuggets and gems heaped on rock, chunky game tile shape. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "goldrush",
+      "file": "seam-rich",
+      "max": 500,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "gr-cave-in",
+      "prompt": "A a pile of fallen grey rocks and dust with a broken wooden beam, chunky game tile shape. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "goldrush",
+      "file": "cave-in",
+      "max": 500,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, ground shadow, cropped, cut off edges"
+    },
+    {
+      "name": "card",
+      "prompt": "A heroic class showdown scene: four gigantic original monsters looming in the sky, a river giant of boulders, a storm sea kraken, a brass clockwork giant, and a starry comet dragon, over a crowd of tiny cheering children heroes holding red, blue, gold and green team banners on a hilltop at sunrise, bright dramatic light, wide landscape picture for a game title card, no text.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "card",
+      "file": "showdown",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    }
+  ],
+  "_cutouts": "Paint cut-outs (kind cut) with style c on plain white, then rembg in tidy; scenes and the card with style s."
+}
