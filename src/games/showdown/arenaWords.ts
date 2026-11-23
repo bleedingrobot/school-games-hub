@@ -4,7 +4,7 @@
  * The big screen, the iPad and the announcer all read them from here, so a new arena is one entry.
  */
 import type { Arena, Role } from '../../../shared/showdown/types';
-import { ANNOUNCER, GOLD_RUSH_LINES, SKY_CLIMB_LINES } from './voiceLines';
+import { ANNOUNCER, GOLD_RUSH_LINES, ISLAND_LINES, SKY_CLIMB_LINES } from './voiceLines';
 
 export interface ArenaWords {
   /** The arena's name in the teacher's picker. */
@@ -131,7 +131,36 @@ const SKY_CLIMB: ArenaWords = {
   lines: { joinNow: SKY_CLIMB_LINES.joinNow, start: SKY_CLIMB_LINES.start, windUp: SKY_CLIMB_LINES.storm, held: SKY_CLIMB_LINES.held, broke: SKY_CLIMB_LINES.blown, weak: SKY_CLIMB_LINES.updraft, phase: SKY_CLIMB_LINES.phase, done: SKY_CLIMB_LINES.done },
 };
 
-const WORDS: Record<Arena, ArenaWords> = { boss: BOSS, goldrush: GOLD_RUSH, skyclimb: SKY_CLIMB };
+const ISLAND: ArenaWords = {
+  ...BOSS,
+  name: 'Shrinking Island', goal: 'Build the rescue raft', fills: true,
+  roles: {
+    striker: { name: 'Builder', line: 'Build the raft', emoji: '🔨' },
+    guard: { name: 'Wave-breaker', line: 'Hold back the big waves', emoji: '🌊' },
+    healer: { name: 'Medic', line: 'Wake dazed friends', emoji: '💖' },
+  },
+  titles: { striker: 'Build the raft!', guard: 'Hold back the wave!', healer: 'Wake a friend!' },
+  lobbyCry: 'Build the raft!', lobbyHint: 'Open Class Showdown on your iPad. Right answers move you inland, away from the water!',
+  shieldUp: 'HOLD BACK THE WAVE!', shieldTeam: 'SEA WALL', held: 'HELD!', broke: 'SPLOOSH!', needGuards: 'Need more Wave-breakers!',
+  windBanner: 'BIG WAVE COMING! Answer to hold it back!',
+  heldBanner: (tm) => `${tm ? `${tm} held` : 'We held'} back the wave!`,
+  brokeBanner: (tm) => (tm ? `The wave hit ${tm}!` : 'The wave crashed over the beach!'),
+  weakBanner: 'A CRATE WASHED ASHORE! Double planks!',
+  phaseBanner: (p) => (p === 2 ? 'THE TIDE IS RISING!' : 'THE ISLAND IS SINKING!'),
+  enrageBanner: 'The sea is ANGRY!', enrageButton: 'Storm', beatenBanner: 'THE RAFT IS READY! Sail away!',
+  notices: {
+    wind: '🌊 Big wave! Answer to hold it back!', heldNote: '🛡️ We held back the wave!', enrage: '🌪️ The sea is angry!', weak: '📦 Crate ashore! Double planks!',
+    phase: (p) => (p === 3 ? '🏝️ The island is sinking! Finish the raft!' : '🌊 The tide is rising!'), calm: '🔨 Keep building! Right answers move you inland.',
+  },
+  teamUnit: 'planks', mostDamage: 'Most planks',
+  awards: { most_damage: 'Master builder', last_hit: 'Last plank', shield_wall: 'Wave-breaker' },
+  recapTitle: (won) => (won ? 'SAIL AWAY!' : 'So close!'),
+  recapHead: (won, pct) => (won ? 'The raft is built! Everyone sails away!' : `So close! The raft is ${pct}% built!`),
+  overLine: (won) => (won ? '⛵ The class built the raft and sailed away!' : '🏝️ So close! The raft was nearly built.'),
+  lines: { joinNow: ISLAND_LINES.joinNow, start: ISLAND_LINES.start, windUp: ISLAND_LINES.wave, held: ISLAND_LINES.held, broke: ISLAND_LINES.broke, weak: ISLAND_LINES.crate, phase: ISLAND_LINES.phase, done: ISLAND_LINES.done },
+};
+
+const WORDS: Record<Arena, ArenaWords> = { boss: BOSS, goldrush: GOLD_RUSH, skyclimb: SKY_CLIMB, island: ISLAND };
 
 export const arenaWords = (arena: Arena | null | undefined): ArenaWords => WORDS[arena ?? 'boss'] ?? BOSS;
 /** The arenas in the teacher's picker, in order. */

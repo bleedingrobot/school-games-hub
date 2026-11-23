@@ -6,7 +6,7 @@ export type Mode = 'class' | 'teams2' | 'teams4' | 'solo';
 export type Role = 'striker' | 'guard' | 'healer';
 export type TeamId = 'red' | 'blue' | 'gold' | 'green';
 /** The arenas a room can be (docs/SHOWDOWN-PLAN.md section 4). */
-export type Arena = 'boss' | 'goldrush' | 'skyclimb';
+export type Arena = 'boss' | 'goldrush' | 'skyclimb' | 'island';
 
 export interface Player {
   id: string;
@@ -34,6 +34,8 @@ export interface Player {
   goldenUsed: boolean;
   /** Gold Rush: the seam this pupil digs at (null until they pick, or after it runs dry). */
   seam?: number | null;
+  /** Shrinking Island: where this pupil stands (or which rock they're on). */
+  isle?: import('./island').IsleSpot;
   /** What the pupil got when the round ended (set once, by the server). */
   reward?: import('./bosses').Reward | null;
   /** When this pupil got the golden question right, for the "golden moment" award. */
@@ -59,7 +61,7 @@ export interface Round {
   /** The time the round was last brought up to (ms from the start). */
   t: number;
   boss: { max: number; hp: number; phase: 1 | 2 | 3 };
-  /** Which arena: Boss Bounty (missing = 'boss'), Gold Rush (goldrush.ts) or Sky Climb (skyclimb.ts). */
+  /** Which arena: Boss Bounty (missing = 'boss'), Gold Rush (goldrush.ts), Sky Climb (skyclimb.ts) or Shrinking Island (island.ts). */
   arena?: Arena;
   /** Gold Rush: every seam opened so far (dry ones keep their dryAt). */
   seams?: import('./goldrush').Seam[];
@@ -148,7 +150,11 @@ export type ShowdownEvent =
   | { type: 'seam_pick'; t: number; pupil: string; seam: number }
   /** Sky Climb: a 3rd right answer in a row jumps (extra height); a storm blows idle climbers back down. */
   | { type: 'jump'; t: number; pupil: string; extra: number }
-  | { type: 'blown_back'; t: number; pupils: string[]; amount: number; hp: number };
+  | { type: 'blown_back'; t: number; pupils: string[]; amount: number; hp: number }
+  /** Shrinking Island: the water reached these pupils (now on rocks), one swam back, the big wave pushed these outwards. */
+  | { type: 'washed_up'; t: number; pupils: string[] }
+  | { type: 'swam_back'; t: number; pupil: string }
+  | { type: 'wave'; t: number; pupils: string[] };
 
 export type Refusal = 'not_live' | 'not_playing' | 'too_soon' | 'dazed' | 'not_now' | 'no_such_team' | 'cooldown';
 export type Outcome = { ok: true; events: ShowdownEvent[] } | { ok: false; reason: Refusal; events: ShowdownEvent[] };

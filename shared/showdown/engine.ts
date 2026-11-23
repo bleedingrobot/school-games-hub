@@ -10,6 +10,7 @@ import { makeSchedule, hashSeed } from './schedule';
 import { reshuffle, teamForLateJoiner } from './teams';
 import { dig, openSeams } from './goldrush';
 import { blowBack, jump, setSummit } from './skyclimb';
+import { setRaft, tide, wade, wave } from './island';
 import type { Mode, Outcome, Player, Role, Round, ShowdownEvent, TeamId } from './types';
 
 export function newRound(opts: { seed: number; mode: Mode; lengthMin?: number; bossHealth?: number }): Round {
@@ -91,6 +92,7 @@ export function start(r: Round): Outcome {
   r.roleSwapUntil = SHOWDOWN.roleSwapMs;
   if (r.arena === 'goldrush') openSeams(r);
   if (r.arena === 'skyclimb') setSummit(r);
+  if (r.arena === 'island') setRaft(r);
   return { ok: true, events: [{ type: 'start', t: 0, bossMax: r.boss.max }] };
 }
 
@@ -188,6 +190,12 @@ export function answer(r: Round, id: string, correct: boolean, t: number, opts: 
     // Gold is the score in Gold Rush too, so picking a good seam counts in every mode.
     points = Math.max(1, Math.round(points * (damage / before)));
   }
+  // Shrinking Island: a step towards the middle, or half planks from a rock while swimming back.
+  if (r.arena === 'island' && damage > 0) {
+    const k = wade(r, p, events);
+    damage *= k;
+    points = Math.max(1, Math.round(points * k));
+  }
   // Sky Climb: every 3rd right answer in a row is a jump.
   if (r.arena === 'skyclimb') damage += jump(r, p, damage, events);
   const group = groupOf(r, p);
@@ -274,6 +282,8 @@ export function advance(r: Round, t: number): ShowdownEvent[] {
     next[1]();
   }
   r.t = target;
+  // Shrinking Island: the water rises with the clock.
+  if (r.arena === 'island' && r.state === 'live') tide(r, events);
   return events;
 }
 
@@ -355,10 +365,16 @@ function endWindUp(r: Round, events: ShowdownEvent[]) {
 }
 
 function finishWindUp(r: Round, events: ShowdownEvent[]) {
-  const enraged = r.windUp!.enraged;
+  const w = r.windUp!;
+  const enraged = w.enraged;
   r.windUp = null;
   // Sky Climb: the storm has passed; anyone who wasn't answering slips back down.
   if (r.arena === 'skyclimb') blowBack(r, events);
+  // Shrinking Island: the big wave pushes anyone who wasn't answering back towards the water.
+  if (r.arena === 'island') {
+    const broke = new Set(Object.keys(w.groups).filter((k) => w.groups[k].done === 'broke'));
+    wave(r, events, (p) => broke.has(groupOf(r, p) ?? ''));
+  }
   if (enraged) openWeakSpot(r, SHOWDOWN.enrage.weakSpotMs, events);
 }
 

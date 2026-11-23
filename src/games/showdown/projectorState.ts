@@ -98,6 +98,10 @@ export interface ProjectorState {
   /** Sky Climb: the latest jumps (a climber leaps), and the last storm's blow-back (who slid down, and when). */
   jumps: { id: number; pupil: string; t: number }[];
   blown: { pupils: string[]; t: number } | null;
+  /** Shrinking Island: splashes (the water reached someone), swims back, and when the last wave swept the beach. */
+  splashes: { id: number; pupil: string; t: number }[];
+  swims: { id: number; pupil: string; t: number }[];
+  waveAt: number;
   /** Round time of the latest event. */
   t: number;
   seq: number;
@@ -138,7 +142,7 @@ export function initialState(reply?: { view?: RoomView; players?: PlayerView[]; 
     weakUntil: view?.weakSpotUntil ?? 0, goldenUntil: view?.goldenUntil ?? 0, goldenSeq: 0, enrageUntil: view?.enrageUntil ?? 0,
     final: view?.finalStarted ?? false, finalUntil: 0, startSeq: 0, hitSeq: 0, bigHitSeq: 0, healAt: 0,
     beaten: view?.result === 'beaten', timeUp: view?.result === 'time', paused: view?.pausedAt != null, ended: view?.state === 'over',
-    recap: reply?.recap ?? null, tugSeq: 0, tugAt: 0, turn: null, turnSeq: 0, moves: [], damage: {}, lastHitter: null, bestStreak: null, worstRank: {}, againSeq: 0, seamInfo: seamsOf(view), dry: [], jumps: [], blown: null, t: view?.t ?? 0, seq: 0,
+    recap: reply?.recap ?? null, tugSeq: 0, tugAt: 0, turn: null, turnSeq: 0, moves: [], damage: {}, lastHitter: null, bestStreak: null, worstRank: {}, againSeq: 0, seamInfo: seamsOf(view), dry: [], jumps: [], blown: null, splashes: [], swims: [], waveAt: 0, t: view?.t ?? 0, seq: 0,
   };
 }
 
@@ -312,6 +316,15 @@ export function projectorReduce(s: ProjectorState, event: FeedEvent): ProjectorS
       for (const id of event.pupils) damage[id] = Math.max(0, (damage[id] ?? 0) - event.amount);
       return { ...n, damage, blown: { pupils: event.pupils, t: event.t }, banner: { text: `WHOOSH! ${event.pupils.length === 1 ? 'A climber was' : `${event.pupils.length} climbers were`} blown back down!`, kind: 'bad', until: event.t + BANNER_MS } };
     }
+    case 'washed_up':
+      return {
+        ...n, seq: n.seq + event.pupils.length, splashes: [...n.splashes, ...event.pupils.map((pupil, i) => ({ id: n.seq + 1 + i, pupil, t: event.t }))].slice(-16),
+        banner: { text: `SPLASH! ${event.pupils.length === 1 ? 'Someone is' : `${event.pupils.length} are`} on the rocks. Answer to swim back!`, kind: 'info', until: event.t + BANNER_MS },
+      };
+    case 'swam_back':
+      return { ...n, seq: n.seq + 1, swims: [...n.swims, { id: n.seq + 1, pupil: event.pupil, t: event.t }].slice(-8) };
+    case 'wave':
+      return { ...n, waveAt: event.t };
     case 'again':
       return afterAgain(n);
     case 'pause':
@@ -354,6 +367,9 @@ export function soundFor(e: FeedEvent, arena: Arena | null | undefined = 'boss')
       case 'hit': return { play: e.times >= 2 || e.golden ? 'bighit' : 'hit' };
       case 'jump': return { play: 'whoosh' };
       case 'blown_back': return { play: 'whoosh' };
+      case 'washed_up': return { play: 'whoosh' };
+      case 'swam_back': return { play: 'chime' };
+      case 'wave': return { play: 'crack' };
       default: break;
     }
   }

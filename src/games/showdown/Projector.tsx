@@ -271,12 +271,13 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
   const W = arenaWords(arenaNow);
   const gr = arenaNow === 'goldrush';
   const sky = arenaNow === 'skyclimb';
+  const isle = arenaNow === 'island';
   const winding = !!ps.shield && ps.shield.state === null && roundNow < ps.shield.endsAt && view?.state === 'live';
   const caving = gr && winding;
   const paused = !!view?.pausedAt;
   const live = state === 'live';
   const final = ps.final && live;
-  const stageClass = ['sd-p', `sd-p--p${ps.phase}`, gr ? 'sd-p--gr' : '', caving ? 'sd-p--cavein' : '', gr && ps.weakUntil > roundNow && live ? 'sd-p--lode' : '', sky ? 'sd-p--sky' : '', sky && winding ? 'sd-p--storm' : '', sky && ps.weakUntil > roundNow && live ? 'sd-p--updraft' : '', shaking ? 'sd-p--shake' : '', final ? 'sd-p--final' : '', roundNow - ps.phaseAt < 3200 && ps.phaseAt > 0 && live ? 'sd-p--transform' : ''].filter(Boolean).join(' ');
+  const stageClass = ['sd-p', `sd-p--p${ps.phase}`, gr ? 'sd-p--gr' : '', caving ? 'sd-p--cavein' : '', gr && ps.weakUntil > roundNow && live ? 'sd-p--lode' : '', sky ? 'sd-p--sky' : '', sky && winding ? 'sd-p--storm' : '', sky && ps.weakUntil > roundNow && live ? 'sd-p--updraft' : '', isle ? 'sd-p--isle' : '', isle && winding ? 'sd-p--bigwave' : '', shaking ? 'sd-p--shake' : '', final ? 'sd-p--final' : '', roundNow - ps.phaseAt < 3200 && ps.phaseAt > 0 && live ? 'sd-p--transform' : ''].filter(Boolean).join(' ');
 
   return (
     <div ref={stageRef} className={stageClass} data-state={state ?? 'idle'}>
@@ -330,8 +331,8 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
 
 function Backdrop({ state, boss, arena }: { state: string | undefined; boss: BossId | undefined; arena: Arena }) {
   const gold = arena === 'goldrush';
-  const img = gold ? art('back', 'gold-rush') : arena === 'skyclimb' ? art('back', 'sky-climb') : state === 'lobby' || !state ? art('back', 'lobby') : art('back', bossInfo(boss).backdrop) ?? art('back', 'river-valley');
-  return <div className={`sd-p-back${gold ? ' sd-p-back--gold' : ''}${arena === 'skyclimb' ? ' sd-p-back--sky' : ''}${img ? '' : ' sd-p-back--plain'}`} style={img ? ({ backgroundImage: `url(${img})` } as CSSProperties) : undefined} aria-hidden="true" />;
+  const img = gold ? art('back', 'gold-rush') : arena === 'skyclimb' ? art('back', 'sky-climb') : arena === 'island' ? art('back', 'shrinking-island') : state === 'lobby' || !state ? art('back', 'lobby') : art('back', bossInfo(boss).backdrop) ?? art('back', 'river-valley');
+  return <div className={`sd-p-back${gold ? ' sd-p-back--gold' : ''}${arena === 'skyclimb' ? ' sd-p-back--sky' : ''}${arena === 'island' ? ' sd-p-back--isle' : ''}${img ? '' : ' sd-p-back--plain'}`} style={img ? ({ backgroundImage: `url(${img})` } as CSSProperties) : undefined} aria-hidden="true" />;
 }
 
 /** Boss choice before opening (and for "Again?"): only the bosses the class has open. "" = the next one in order. */
@@ -431,7 +432,7 @@ function Lobby({ ps, className, roster, onMove }: { ps: ProjectorState; classNam
   };
   return (
     <div className="sd-p-lobby" ref={lobbyRef}>
-      {ps.view && (isGoldRush(ps.view) ? <GoldEntrance seq={ps.againSeq} /> : ps.view.arena === 'skyclimb' ? <SkyEntrance seq={ps.againSeq} /> : <Entrance boss={ps.view.bossId} seq={ps.againSeq} />)}
+      {ps.view && (isGoldRush(ps.view) ? <GoldEntrance seq={ps.againSeq} /> : ps.view.arena === 'skyclimb' ? <SkyEntrance seq={ps.againSeq} /> : ps.view.arena === 'island' ? <IsleEntrance seq={ps.againSeq} /> : <Entrance boss={ps.view.bossId} seq={ps.againSeq} />)}
       <div className="sd-p-lobby__join">Join now!</div>
       {className && <div className="sd-p-lobby__class">{className}</div>}
       <p className="sd-p-lobby__hint">{teamMode ? 'Tap a name, then tap a team (or drag it) to move it' : arenaWords(ps.view?.arena).lobbyHint ?? 'Open Class Showdown on your iPad'}</p>
@@ -532,7 +533,7 @@ function Battle({ ps, roundNow, flinch }: { ps: ProjectorState; roundNow: number
   const bursts = ps.bursts.filter((b) => roundNow - b.t < 2500 && roundNow >= b.t - 500);
   const heals = ps.heals.filter((h) => roundNow - h.t < 2800);
   const crewRef = useRef<HTMLUListElement>(null);
-  const dug = new Set(gr || sky ? ps.bursts.filter((b) => roundNow - b.t < 1300 && roundNow >= b.t).map((b) => b.pupil) : []);
+  const dug = new Set(gr || sky || view.arena === 'island' ? ps.bursts.filter((b) => roundNow - b.t < 1300 && roundNow >= b.t).map((b) => b.pupil) : []);
   useFit(crewRef, null, `${roster.length}${showNames}${roster.map((r) => r.name.length).join()}`, () => Math.max(12, Math.min(window.innerWidth * 0.016, window.innerHeight * 0.03, 22)), 8);
 
   return (
@@ -554,6 +555,7 @@ function Battle({ ps, roundNow, flinch }: { ps: ProjectorState; roundNow: number
 
       {gr && <Mine ps={ps} roundNow={roundNow} weak={weak} over={over} />}
       {sky && <Climb ps={ps} roundNow={roundNow} pct={pct} weak={weak} over={over} />}
+      {view.arena === 'island' && <Isle ps={ps} roundNow={roundNow} pct={pct} weak={weak} over={over} />}
       {bossArena && <div className={`sd-p-bosswrap${teamMode ? ' sd-p-bosswrap--teams' : ''}${over && ps.beaten ? ' sd-p-bosswrap--beaten' : ''}`} style={t2 ? ({ left: `calc(50% + ${Math.max(-1, Math.min(1, view.tug)) * 16}vw)` } as CSSProperties) : undefined}>
         {facing && <div key={`gz${ps.turnSeq}`} className={`sd-p-gaze sd-p-team--${facing}`} aria-hidden="true" />}
         {roaring && ps.turn && <div key={`rw${ps.turnSeq}`} className={`sd-p-roarwave sd-p-team--${ps.turn.team}`} aria-hidden="true"><i /><i /><i /></div>}
@@ -1014,6 +1016,126 @@ function SummitFlag({ planted, pct }: { planted: boolean; pct: number }) {
   );
 }
 
+/** Shrinking Island lobby: the island rises out of the sea with its palms, the raft frame on the beach, and the cry. */
+function IsleEntrance({ seq }: { seq: number }) {
+  return (
+    <>
+      <div key={`ie${seq}`} className="sd-p-isle-entrance" aria-hidden="true">
+        <span className="sd-p-isle-entrance__land"><Palms /></span>
+        <span className="sd-p-isle-entrance__raft">🛶</span>
+      </div>
+      <div key={`ir${seq}`} className="sd-p-roar sd-p-roar--isle" role="status">Build the raft!</div>
+    </>
+  );
+}
+
+function Palms() {
+  const palm = art('island', 'palm');
+  return (
+    <span className="sd-p-palms" aria-hidden="true">
+      {[[30, 34, 1], [62, 28, 1.2], [46, 58, 0.9], [72, 60, 0.8]].map(([x, y, s], i) => (
+        <i key={i} style={{ left: `${x}%`, top: `${y}%`, '--s': s, '--i': i } as CSSProperties}>{palm ? <img src={palm} alt="" /> : '🌴'}</i>
+      ))}
+    </span>
+  );
+}
+
+/**
+ * Shrinking Island: the sea, the island shrinking with the clock, every pupil standing on it (team colours, role
+ * portraits), the rocks out in the water for anyone the tide reached, planks flying to the raft on the beach, the crate
+ * washing ashore (double planks), and the big wave: a wall of water rising, then sweeping the beach when it breaks.
+ */
+function Isle({ ps, roundNow, pct, weak, over }: { ps: ProjectorState; roundNow: number; pct: number; weak: boolean; over: boolean }) {
+  const view = ps.view as RoomView;
+  const island = view.island ?? { shore: 1, spots: {} };
+  const names = view.showNames;
+  const sh = ps.shield;
+  const waving = !!sh && sh.state === null && roundNow < sh.endsAt && !over;
+  const swept = ps.waveAt > 0 && roundNow - ps.waveAt < 2200 && roundNow >= ps.waveAt;
+  const stepped = new Map(ps.bursts.filter((b) => roundNow - b.t < 1300 && roundNow >= b.t).map((b) => [b.pupil, b]));
+  const splashed = new Set(ps.splashes.filter((x) => roundNow - x.t < 1800 && roundNow >= x.t).map((x) => x.pupil));
+  const swam = new Set(ps.swims.filter((x) => roundNow - x.t < 1800 && roundNow >= x.t).map((x) => x.pupil));
+  const n = ps.order.length;
+  const size = Math.max(2.2, Math.min(4.6, 70 / Math.max(1, n)));
+  const place = (s: [number, number, number]) => {
+    const rad = (s[0] * Math.PI) / 180;
+    const d = s[2] > 0 ? Math.max(s[1], island.shore + 0.1) : s[1];
+    return { x: 50 + Math.cos(rad) * d * 44, y: 50 + Math.sin(rad) * d * 42 };
+  };
+  return (
+    <>
+      <div className="sd-p-isle" style={{ '--size': `${size}vw` } as CSSProperties} aria-hidden="true">
+        <span className="sd-p-isle__swell" />
+        <div className="sd-p-isle__land" style={{ width: `${island.shore * 88}%`, height: `${island.shore * 84}%` }}>
+          <span className="sd-p-isle__foam" />
+          <Palms />
+        </div>
+        <Raft pct={pct} sailing={over && ps.beaten} />
+        {weak && !over && <div className="sd-p-isle__crate"><b>📦</b><span>DOUBLE PLANKS!</span></div>}
+        {ps.order.map((id) => {
+          const s = island.spots[id];
+          if (!s) return null;
+          const at = place(s);
+          const r = ps.roster[id];
+          const b = stepped.get(id);
+          const rock = s[2] > 0;
+          const portrait = art('roles', r?.role ?? 'striker');
+          const dazed = (ps.dazed[id] ?? 0) > roundNow;
+          return (
+            <div key={id} className={`sd-p-castaway${r?.team ? ` sd-p-team--${r.team}` : ''}${rock ? ' sd-p-castaway--rock' : ''}${b ? ' sd-p-castaway--step' : ''}${dazed ? ' sd-p-castaway--dazed' : ''}${waving ? ' sd-p-castaway--brace' : ''}`} style={{ left: `${at.x}%`, top: `${at.y}%` }}>
+              {rock && <span className="sd-p-castaway__rock">{art('island', 'rock') ? <img src={art('island', 'rock')} alt="" /> : <i />}</span>}
+              <span key={b ? `s${b.id}` : 'idle'} className="sd-p-castaway__body">{portrait ? <img src={portrait} alt="" /> : <b>🙂</b>}</span>
+              {names && <span className="sd-p-castaway__name">{r?.name}</span>}
+              {rock && <span className="sd-p-castaway__swim">{'🏊'.repeat(1)} {s[2] - 1}/2</span>}
+              {b && <span key={`p${b.id}`} className="sd-p-castaway__plank" style={{ '--dx': `${(88 - at.x) * 0.9}vw`, '--dy': `${(86 - at.y) * 0.6}vh` } as CSSProperties}><i>🪵</i><em>+{b.points}</em></span>}
+              {splashed.has(id) && <span className="sd-p-castaway__splash"><b>SPLASH!</b>{Array.from({ length: 6 }, (_, i) => <i key={i} style={{ '--i': i } as CSSProperties} />)}</span>}
+              {swam.has(id) && <span className="sd-p-castaway__home">Swam back!</span>}
+              {dazed && <span className="sd-p-daze"><b>★</b><b>★</b><b>★</b></span>}
+            </div>
+          );
+        })}
+        {swept && <div key={`sw${ps.waveAt}`} className="sd-p-isle__sweep" />}
+      </div>
+      {waving && <BigWave heavy={!!sh?.enraged} />}
+    </>
+  );
+}
+
+/** The raft on the beach: planks laid one by one as the class builds it, the mast and sail going up near the end. */
+function Raft({ pct, sailing }: { pct: number; sailing: boolean }) {
+  const planks = 10;
+  const laid = Math.floor((pct / 100) * planks + 0.0001);
+  return (
+    <div className={`sd-p-raft${sailing ? ' sd-p-raft--sail' : ''}`}>
+      <span className="sd-p-raft__planks">{Array.from({ length: planks }, (_, i) => <i key={i} className={i < laid ? 'on' : ''} style={{ '--i': i } as CSSProperties} />)}</span>
+      {pct >= 60 && <span className="sd-p-raft__mast"><i style={{ transform: `scaleY(${Math.min(1, (pct - 60) / 40)})` }} /></span>}
+      <b className="sd-p-raft__pct">{Math.floor(pct)}%</b>
+    </div>
+  );
+}
+
+/** The big wave: a wall of water rising at the bottom of the screen, foam on its crest, spray flying. */
+function BigWave({ heavy }: { heavy: boolean }) {
+  return (
+    <div className={`sd-p-bigwave${heavy ? ' sd-p-bigwave--heavy' : ''}`} aria-hidden="true">
+      <span className="sd-p-bigwave__wall" />
+      <span className="sd-p-bigwave__crest" />
+      {Array.from({ length: 14 }, (_, i) => <i key={i} className="sd-p-bigwave__spray" style={{ left: `${(i * 23) % 100}%`, '--i': i } as CSSProperties} />)}
+    </div>
+  );
+}
+
+/** The Shrinking Island recap scene: the finished raft sailing off over the waves (or nearly built on the beach). */
+function RaftSail({ sailed, pct }: { sailed: boolean; pct: number }) {
+  return (
+    <div className={`sd-p-raftsail${sailed ? ' sd-p-raftsail--go' : ''}`} aria-hidden="true">
+      <span className="sd-p-raftsail__sea" />
+      <span className="sd-p-raftsail__boat"><b>⛵</b></span>
+      {!sailed && <b className="sd-p-raftsail__pct">The raft is {pct}% built!</b>}
+    </div>
+  );
+}
+
 /** A heap of gold that grows with the team's share: a team's banner grows one, and the recap shows big ones. */
 function GoldPile({ share, amount, team, big = false }: { share: number; amount: number; team?: TeamId; big?: boolean }) {
   const s = 0.4 + 0.6 * Math.max(0, Math.min(1, share));
@@ -1052,8 +1174,9 @@ function Recap({ ps, stage, onAgain }: { ps: ProjectorState; stage: 0 | 1; onAga
   const names = ps.view?.showNames ?? false;
   const gr = isGoldRush(ps.view);
   const sky = ps.view?.arena === 'skyclimb';
+  const isle = ps.view?.arena === 'island';
   const W = arenaWords(ps.view?.arena);
-  const scene = gr ? art('back', 'gold-rush') : sky ? art('back', 'sky-climb') : art('back', beaten ? 'victory' : 'so-close');
+  const scene = gr ? art('back', 'gold-rush') : sky ? art('back', 'sky-climb') : isle ? art('back', 'shrinking-island') : art('back', beaten ? 'victory' : 'so-close');
   const words = { ...AWARD_WORDS, ...W.awards };
   const mountain = ps.view?.boss;
   const dugPct = mountain ? Math.round(Math.max(0, Math.min(1, 1 - mountain.hp / Math.max(1, mountain.max))) * 100) : 0;
@@ -1064,12 +1187,13 @@ function Recap({ ps, stage, onAgain }: { ps: ProjectorState; stage: 0 | 1; onAga
   const t2 = ps.view?.mode === 'teams2';
   const solo = rc?.winner && 'pupil' in rc.winner;
   return (
-    <div className={`sd-p-recap${beaten ? ' sd-p-recap--win' : ' sd-p-recap--close'}${gr ? ' sd-p-recap--gold' : ''}${sky ? ' sd-p-recap--sky' : ''}`}>
+    <div className={`sd-p-recap${beaten ? ' sd-p-recap--win' : ' sd-p-recap--close'}${gr ? ' sd-p-recap--gold' : ''}${sky ? ' sd-p-recap--sky' : ''}${isle ? ' sd-p-recap--isle' : ''}`}>
       {scene && <div className="sd-p-recap__scene" style={{ backgroundImage: `url(${scene})` }} aria-hidden="true" />}
       {(beaten || winTeam) && <Confetti team={winTeam} gold={gr} />}
       {stage === 0 && <div className="sd-p-recap__title" role="status">{W.recapTitle(beaten)}</div>}
       {stage === 0 && gr && mountain && <div className="sd-p-recap__heap"><GoldPile big share={dugPct / 100} amount={Math.round(mountain.max - mountain.hp)} /></div>}
       {stage === 0 && sky && <SummitFlag planted={beaten} pct={dugPct} />}
+      {stage === 0 && isle && <RaftSail sailed={beaten} pct={dugPct} />}
       {stage === 1 && rc && (
         <div className="sd-p-recap__cards">
           <h2 className="sd-p-recap__head">{W.recapHead(beaten, dugPct, bossInfo(ps.view?.bossId).name)}</h2>
@@ -1085,7 +1209,7 @@ function Recap({ ps, stage, onAgain }: { ps: ProjectorState; stage: 0 | 1; onAga
               {rc.teams.map((t, i) => (
                 <div key={t.team} className={`sd-p-teamcard sd-p-team--${t.team}${i === 0 ? ' sd-p-teamcard--first' : ''}${gr ? ' sd-p-teamcard--gold' : ''}`}>
                   {gr && <GoldPile big team={t.team} share={t.damage / bestTeam} amount={t.damage} />}
-                  <b>{TEAM_WORDS[t.team]}</b><span>{gr ? `${t.damage} gold` : sky ? `${t.damage * 10} m climbed` : t2 ? `${t.damage} damage` : `${t.points} points`}</span>{(t2 || gr || sky) && <small>{t.points} points</small>}
+                  <b>{TEAM_WORDS[t.team]}</b><span>{gr ? `${t.damage} gold` : sky ? `${t.damage * 10} m climbed` : isle ? `${t.damage} planks` : t2 ? `${t.damage} damage` : `${t.points} points`}</span>{(t2 || gr || sky || isle) && <small>{t.points} points</small>}
                 </div>
               ))}
             </div>

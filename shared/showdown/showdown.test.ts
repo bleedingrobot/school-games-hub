@@ -7,6 +7,7 @@ import { chooseSeam, GOLDRUSH, openSeamsOf } from './goldrush';
 import { makeSchedule } from './schedule';
 import { playRound } from './sim';
 import { SKYCLIMB } from './skyclimb';
+import { ISLAND, shoreAt } from './island';
 import { balanceTeams } from './teams';
 import type { Mode, Round, ShowdownEvent } from './types';
 
@@ -354,6 +355,39 @@ describe('Class Showdown rules', () => {
     expect(r.players.p2.damage).toBe(0);
     expect(blown.amount).toBeGreaterThanOrEqual(before);
     const won = Array.from({ length: 24 }, (_, i) => playRound({ seed: 500 + i, size: 24, lengthMin: 10, mode: 'class', arena: 'skyclimb' }).beaten).filter(Boolean).length;
+    expect(won).toBeGreaterThanOrEqual(14);
+    expect(won).toBeLessThanOrEqual(23);
+  });
+  it('shrinking island: answers step inwards, the water puts you on a rock at half pace until you swim back, a broken wave sweeps the beach, about 80% won', () => {
+    const r = newRound({ seed: 9, mode: 'class', lengthMin: 10, bossHealth: 1000 });
+    r.arena = 'island';
+    for (const p of ids(4)) join(r, p);
+    start(r);
+    r.schedule = [];
+    expect(r.boss.max).toBe(Math.round(1000 * ISLAND.raft.class));
+    const p1 = r.players.p1;
+    const d0 = p1.isle!.d;
+    const full = hit(answer(r, 'p1', true, 1000).events).damage;
+    expect(p1.isle!.d).toBeCloseTo(Math.max(ISLAND.middle, d0 - ISLAND.step));
+    // The water reaches p2 (out on the edge): a rock, half planks, and 2 right answers swim back.
+    r.players.p2.isle!.d = 0.99;
+    const washed = of(advance(r, 300000), 'washed_up')[0];
+    expect(washed.pupils).toContain('p2');
+    expect(shoreAt(r)).toBeLessThan(0.99);
+    const half = answer(r, 'p2', true, 300000).events;
+    expect(hit(half).damage).toBeCloseTo(full * ISLAND.rockTimes);
+    expect(of(answer(r, 'p2', true, 304000).events, 'swam_back')[0].pupil).toBe('p2');
+    expect(r.players.p2.isle!.rock).toBe(false);
+    expect(r.players.p2.isle!.d).toBeLessThan(shoreAt(r));
+    // A broken shield's wave sweeps everyone on the beach back towards the water.
+    r.players.p3.isle = { ...r.players.p3.isle!, rock: false, d: shoreAt(r) * 0.9 };
+    r.players.p3.lastActive = 320000;
+    r.schedule = [{ at: 310000, kind: 'wind_up' }];
+    const evs = [...advance(r, 330000)];
+    expect(of(evs, 'shield_broke')).toHaveLength(1);
+    expect(of(evs, 'wave')[0].pupils).toContain('p3');
+    expect(r.players.p3.isle!.rock).toBe(true);
+    const won = Array.from({ length: 24 }, (_, i) => playRound({ seed: 500 + i, size: 24, lengthMin: 10, mode: 'class', arena: 'island' }).beaten).filter(Boolean).length;
     expect(won).toBeGreaterThanOrEqual(14);
     expect(won).toBeLessThanOrEqual(23);
   });
