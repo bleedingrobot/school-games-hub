@@ -363,7 +363,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
   }
 
   // ---- Pupil steps ----
-  if (action === 'join' || action === 'play' || action === 'ask' || action === 'answer') {
+  if (action === 'join' || action === 'play' || action === 'ask' || action === 'answer' || action === 'look') {
     const me = await sv.pupil(who);
     if (me === 'busy') return busy();
     if (!me) return no(403, 'Class Live is for pupils in a class.', 'no-class');
@@ -394,7 +394,16 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     }
 
     if (!cur.session.players[who]) return no(409, 'Join first.', 'not-playing');
-    if (action === 'ask' || action === 'answer') return muralMaths(sv, cur, who, body);
+    // The room as it is now, for this pupil. Each device asks every couple of seconds instead of listening to every change
+    // of the room row: a class of devices each sent every change goes over Realtime's messages-per-second limit, and
+    // changes are dropped (Class Showdown hung in a real class, 24 Nov 2026).
+    const withRoom = (r: StepReply): StepReply =>
+      r.status === 200 ? r : { ...r, body: { ...r.body, view: roomView(cur.session, cur.startedAt), me: playerView(cur.session, who) } };
+    if (action === 'look') return ok({ room, view: roomView(cur.session, cur.startedAt), me: playerView(cur.session, who), now: sv.now() });
+    if (action === 'ask' || action === 'answer') {
+      const out = await muralMaths(sv, cur, who, body);
+      return cur.session.state === 'live' ? out : withRoom(out);
+    }
     const done = await mutate<StarsReply | SerpentReply | MuralReply>(sv, room, (s, t) => {
       if (s.state !== 'live') return { refuse: no(409, s.state === 'lobby' ? 'Wait for the start!' : 'This one has finished.', s.state) };
       if (s.game.kind === 'mural') {
@@ -422,7 +431,14 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
       if (!out.ok) return { refuse: no(409, 'One at a time!', out.reason) };
       return { reply: out.reply, events: out.events, players: [who] };
     });
-    if ('refuse' in done) return done.refuse;
+    if ('refuse' in done) {
+      // A refused step on a room that has moved on (ended, or not started) brings the room back, so the device catches up.
+      const st = (done.refuse.body as { reason?: unknown }).reason;
+      if (st !== 'over' && st !== 'lobby') return done.refuse;
+      const now = await sv.loadRoom(room);
+      if (!now || now === 'busy') return withRoom(done.refuse);
+      return { ...done.refuse, body: { ...done.refuse.body, view: roomView(now.session, now.startedAt), me: playerView(now.session, who) } };
+    }
     return ok({ room, reply: done.reply, view: roomView(done.session, done.row.startedAt), me: playerView(done.session, who), now: sv.now() });
   }
 

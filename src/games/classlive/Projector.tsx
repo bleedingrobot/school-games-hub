@@ -5,12 +5,12 @@
  * ever draws good things: there are no wrong answers in the screen data.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ARMS, ARM_GOAL, ARM_NAMES, SUPERNOVA, type Arm, type Star, type StarsGame } from '../../../shared/classlive/stars';
+import { ARMS, ARM_GOAL, ARM_NAMES, SUPERNOVA, armCounts, laggingArm, type Arm, type Star, type StarsGame } from '../../../shared/classlive/stars';
 import { PICTURES, type MuralGame } from '../../../shared/classlive/mural';
 import { BODY, SERPENT_LEVELS, SERPENT_LEVEL_ABOUT, SERPENT_LEVEL_NAMES, stepText, wakeAt, type SerpentGame, type SerpentLevel } from '../../../shared/classlive/serpent';
 import { ACTIVITY_NAMES, type Activity, type Event, type ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
-import { ARM_COLOURS } from './arms';
+import { ARM_COLOURS, lagHint, useHeldLag } from './arms';
 import type { ClassLiveLink, Reply } from './link';
 import { NightBackdrop, PLAYER_COLOURS, StarSky } from './StarSky';
 import { MuralCloth, MuralScene, NO_MURAL_FX, type MuralFx } from './MuralScene';
@@ -386,6 +386,7 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
             onPick={state === 'live' && room ? (id) => void act({ action: 'spotlight', room, id }) : undefined}
           />
           <Hud game={game} />
+          {state === 'live' && game.spotlight === null && <LagHint game={game} />}
           {state === 'live' && game.spotlight !== null && room && <Spotlight screen={screen} game={game} onBack={() => void act({ action: 'spotlight', room, id: null })} />}
           {state === 'over' && (hideResults
             ? <button type="button" className="cl-btn cl-results-tab" onClick={() => setHideResults(false)}>★ Show the results</button>
@@ -547,7 +548,19 @@ function SerpentLobbyHead({ game }: { game: SerpentGame }) {
   );
 }
 
-/* ---------------- live: counters, spotlight ---------------- */
+/* ---------------- live: counters, hints, spotlight ---------------- */
+
+/** A gentle hint, above the counter, on how to find facts for an arm lagging well behind the rest. Never the answer. */
+function LagHint({ game }: { game: StarsGame }) {
+  const shown = useHeldLag(laggingArm(armCounts(game), game.stars.length));
+  if (shown === null) return null;
+  return (
+    <div className="cl-lag" key={shown} role="status" style={{ '--arm': ARM_COLOURS[shown] } as React.CSSProperties}>
+      <span className="cl-lag__tag">💡 {ARM_NAMES[shown]}</span>
+      <span className="cl-lag__text">{lagHint(shown, game.anchor)}</span>
+    </div>
+  );
+}
 
 function Hud({ game }: { game: StarsGame }) {
   const total = game.stars.length;

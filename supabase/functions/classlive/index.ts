@@ -9759,7 +9759,7 @@ async function classLiveStep(sv, who, body) {
 			now: sv.now()
 		});
 	}
-	if (action === "join" || action === "play" || action === "ask" || action === "answer") {
+	if (action === "join" || action === "play" || action === "ask" || action === "answer" || action === "look") {
 		const me = await sv.pupil(who);
 		if (me === "busy") return busy();
 		if (!me) return no(403, "Class Live is for pupils in a class.", "no-class");
@@ -9809,7 +9809,24 @@ async function classLiveStep(sv, who, body) {
 			});
 		}
 		if (!cur.session.players[who]) return no(409, "Join first.", "not-playing");
-		if (action === "ask" || action === "answer") return muralMaths(sv, cur, who, body);
+		const withRoom = (r) => r.status === 200 ? r : {
+			...r,
+			body: {
+				...r.body,
+				view: roomView(cur.session, cur.startedAt),
+				me: playerView(cur.session, who)
+			}
+		};
+		if (action === "look") return ok({
+			room,
+			view: roomView(cur.session, cur.startedAt),
+			me: playerView(cur.session, who),
+			now: sv.now()
+		});
+		if (action === "ask" || action === "answer") {
+			const out = await muralMaths(sv, cur, who, body);
+			return cur.session.state === "live" ? out : withRoom(out);
+		}
 		const done = await mutate(sv, room, (s, t) => {
 			if (s.state !== "live") return { refuse: no(409, s.state === "lobby" ? "Wait for the start!" : "This one has finished.", s.state) };
 			if (s.game.kind === "mural") {
@@ -9867,7 +9884,20 @@ async function classLiveStep(sv, who, body) {
 				players: [who]
 			};
 		});
-		if ("refuse" in done) return done.refuse;
+		if ("refuse" in done) {
+			const st = done.refuse.body.reason;
+			if (st !== "over" && st !== "lobby") return done.refuse;
+			const now = await sv.loadRoom(room);
+			if (!now || now === "busy") return withRoom(done.refuse);
+			return {
+				...done.refuse,
+				body: {
+					...done.refuse.body,
+					view: roomView(now.session, now.startedAt),
+					me: playerView(now.session, who)
+				}
+			};
+		}
 		return ok({
 			room,
 			reply: done.reply,

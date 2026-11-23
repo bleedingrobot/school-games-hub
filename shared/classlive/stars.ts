@@ -268,6 +268,30 @@ export function nudgeOf(g: StarsGame): Arm | null {
   return best;
 }
 
+/** Fewest stars in the sky before an arm can count as lagging behind. */
+export const LAG_FROM = 6;
+
+/**
+ * The arm lagging well behind the rest (for a gentle hint on how to find its facts), or null. Works from the counts
+ * alone, so the pupils' screens (RoomView arms) and the projector agree. An arm lags when it is not lit and its share of
+ * its goal is at least 0.45 below the average of the other arms (each capped at lit).
+ */
+export function laggingArm(arms: Record<Arm, number>, total: number): Arm | null {
+  if (total < LAG_FROM) return null;
+  const share = (a: Arm) => Math.min(1, arms[a] / ARM_GOAL[a]);
+  let worst: Arm | null = null;
+  for (const arm of ARMS) {
+    if (share(arm) >= 1) continue;
+    if (worst === null || share(arm) < share(worst)) worst = arm;
+  }
+  if (worst === null) return null;
+  const others = ARMS.filter((a) => a !== worst);
+  const avg = others.reduce((n, a) => n + share(a), 0) / others.length;
+  return avg - share(worst) >= 0.45 ? worst : null;
+}
+
+export const armCounts = (g: StarsGame) => Object.fromEntries(ARMS.map((a) => [a, armCount(g, a)])) as Record<Arm, number>;
+
 /** A pupil's try at a fact. */
 export function tryFact(g: StarsGame, pupil: string, text: unknown, t: number): { ok: true; reply: StarsReply; events: StarsEvent[] } | { ok: false; reason: 'too_soon' } {
   const mine = (g.mine[pupil] ??= { found: 0, glows: 0, tries: 0, lastAt: -Infinity });

@@ -3,7 +3,8 @@ import { markQuestion } from '../maths/serverQuestions';
 import { classLiveStep } from './server';
 import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock, rng } from './pretendClass';
 import { answerBox, apply, BODY, makeChain, newSerpent, SERPENT_LEVELS } from './serpent';
-import { ARMS, isTrue, linkOf, newStars, readFact, tryFact, type Anchor } from './stars';
+import { ARMS, armCounts, isTrue, laggingArm, linkOf, newStars, readFact, tryFact, type Anchor } from './stars';
+import { lagHint } from '../../src/games/classlive/arms';
 
 const k: Anchor = { x: 6, y: 7, p: 42 };
 const arm = (text: string) => {
@@ -53,6 +54,13 @@ describe('Star Web rules', () => {
     expect(g.creature).toBe(false); // wild has 2
     expect((go('d', '84÷2=42') as { events: { type: string }[] }).events.map((e) => e.type)).toEqual(['star', 'arm_lit', 'creature']);
     expect(ARMS.every((a) => g.stars.some((s) => s.arm === a))).toBe(true);
+    // An arm lagging well behind the rest gets a hint on how, never the fact itself.
+    expect(laggingArm(armCounts(g), g.stars.length)).toBeNull();
+    const lagging = { turn: 1, divide: 3, double: 3, halve: 0, tens: 2, near: 3, wild: 2 };
+    expect(laggingArm(lagging, 14)).toBe('halve');
+    expect(laggingArm(lagging, 4)).toBeNull();
+    expect(laggingArm({ ...lagging, halve: 2 }, 16)).toBeNull();
+    for (const a of ARMS) expect(lagHint(a, k)).not.toMatch(/=|\b(21|84|420|48|36|3 ×|12 ×)\b/);
   });
 });
 
@@ -103,11 +111,21 @@ describe('Class Live server', () => {
     expect(live.session.game.kind === 'stars' && live.session.game.stars.length).toBeGreaterThan(15);
     expect(live.screen.people.find((p) => p.id === pc.ids[0])?.name).toBe('Aroha');
     expect(live.screen.events.length).toBeGreaterThan(5);
+    // Every device looks at the room at once (they ask every 2 s instead of each listening to every room change, which
+    // went over Realtime's limit with a class): all 30 see the game, and no names.
+    const looks = await Promise.all(pc.ids.map((id) => classLiveStep(pc.services, id, { action: 'look', room })));
+    expect(looks.every((l) => l.status === 200 && (l.body.view as { state: string; players: number }).state === 'live')).toBe(true);
+    expect(JSON.stringify(looks.map((l) => l.body.view))).not.toContain('Aroha');
+    expect((looks[0].body.me as { player: string }).player).toBe(pc.ids[0]);
+    expect((await classLiveStep(pc.services, 'stranger', { action: 'look', room })).status).toBe(403);
     // The clock ends it by itself at 5 minutes.
     await clock.run(clock.now() + 70_000);
     const late = await classLiveStep(pc.services, pc.ids[1], { action: 'play', room, fact: '7×6=42' });
     expect(late.status).toBe(409);
+    expect((late.body.view as { state: string }).state).toBe('over'); // the refusal brings the finished room back
     expect(pc.db.rooms.get(room)!.session.state).toBe('over');
+    const after = await Promise.all(pc.ids.map((id) => classLiveStep(pc.services, id, { action: 'look', room })));
+    expect(after.every((l) => (l.body.view as { state: string }).state === 'over')).toBe(true);
     expect(pc.db.rooms.get(room)!.screen.events.at(-1)).toMatchObject({ type: 'over', why: 'time' });
     // Paid once when it ended: everyone who played gets 3 points (5 with the sky creature), and more calls change nothing.
     const paid = [...pc.db.paid.values()];
