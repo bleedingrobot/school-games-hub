@@ -11,6 +11,7 @@ import type { Mode, Role, TeamId } from '../../../shared/showdown/types';
 import { BossStandIn } from './BossStandIn';
 import type { ShowdownLink } from './link';
 import { AWARD_WORDS, TEAM_WORDS, bestComeback, initialState, isGoldRush, ordinal, projectorAct, soundFor, type DrySeam, type HitBurst, type ProjectorState, type ShowdownSound } from './projectorState';
+import { ANNOUNCER, GOLD_RUSH_LINES } from './voiceLines';
 import './projector.css';
 
 const ART = import.meta.glob('./art/paint/**/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
@@ -232,7 +233,7 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
       seenStart.current = 0;
       keepRoom(out.body.room);
       setRoom(out.body.room);
-      soundRef.current?.say(arena === 'goldrush' ? 'Grab your pickaxe! Join now!' : 'Join now!');
+      soundRef.current?.say(arena === 'goldrush' ? GOLD_RUSH_LINES.joinNow : ANNOUNCER.joinNow);
     }
   };
   const again = async () => {
@@ -247,7 +248,7 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
       setBarOpen(true);
       const nv = out.body.view as RoomView;
       soundRef.current?.play('roar');
-      soundRef.current?.say(isGoldRush(nv) ? 'Dig, dig, dig!' : bossInfo(nv.bossId).roar);
+      soundRef.current?.say(isGoldRush(nv) ? GOLD_RUSH_LINES.start : bossInfo(nv.bossId).roar);
     }
   };
   const newRound = () => {
