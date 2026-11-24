@@ -3,6 +3,8 @@
  * teacher puts on the board. It listens to the room row and the feed, draws every event with its own moment (all in
  * projector.css, transform/opacity only), ticks the server once a second and never shows a question or a wrong answer.
  */
+import { useMusic } from '../classlive/music';
+import { MusicControl } from '../classlive/MusicControl';
 import { useEffect, useLayoutEffect, useReducer, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { SHOWDOWN } from '../../../shared/showdown/config';
 import { BOSSES, bossInfo, pickBoss, type BossId, type RosterRow } from '../../../shared/showdown/bosses';
@@ -357,6 +359,8 @@ export function Projector({ link, classId, className, sound, onMute, start, onLe
 
   const state = view?.state;
   const arenaNow: Arena = room && view ? view.arena : arena;
+  // Background music, one track per arena (James, 25 Nov 2026 NZ).
+  useMusic(arenaNow, !muted);
   const W = arenaWords(arenaNow);
   const gr = arenaNow === 'goldrush';
   const sky = arenaNow === 'skyclimb';
@@ -409,6 +413,7 @@ export function Projector({ link, classId, className, sound, onMute, start, onLe
             {room && live && <button type="button" className="sd-p-btn" onClick={() => void send({ action: 'enrage', room })}>{W.enrageButton}</button>}
             {room && live && <button type="button" className="sd-p-btn" onClick={() => void send({ action: 'pause', room, resume: paused })}>{paused ? 'Resume' : 'Pause'}</button>}
             <button type="button" className="sd-p-btn" aria-pressed={muted} onClick={toggleMute}>{muted ? 'Unmute' : 'Mute'}</button>
+            <MusicControl className="sd-p-btn" />
             {room && state !== 'over' && (
               <button type="button" className="sd-p-btn sd-p-btn--danger" onClick={() => { if (armEnd) { setArmEnd(false); void send({ action: 'end', room }); } else { setArmEnd(true); setTimeout(() => setArmEnd(false), 3000); } }}>{armEnd ? 'Sure? End now' : 'End'}</button>
             )}
