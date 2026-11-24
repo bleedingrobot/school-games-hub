@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { } from '../../shared/maths/banded';
@@ -30,7 +30,7 @@ function setup(q = question(), timeScale = 0) {
 
 describe('question box', () => {
 
-  it('works by tapping the number pad', async () => {
+  it('works by tapping the number pad or the keyboard', async () => {
     const user = userEvent.setup();
     const { onSubmit, onDone } = setup();
     expect(screen.getByRole('button', { name: 'Check my answer' })).toBeDisabled();
@@ -42,6 +42,22 @@ describe('question box', () => {
     expect(onSubmit).toHaveBeenCalledWith(56, expect.any(Number));
     expect(screen.getByRole('status')).toHaveTextContent('Correct!');
     await vi.waitFor(() => expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: true })));
+
+    // The keyboard works as soon as a box opens, wherever the focus is, and the game behind doesn't hear it; 1 to 4 pick a choice.
+    cleanup();
+    const game = vi.fn();
+    window.addEventListener('keydown', game);
+    const typed = setup(question({ id: 3 }));
+    expect(screen.getByRole('dialog')).toHaveFocus();
+    (document.activeElement as HTMLElement).blur();
+    await user.keyboard('56{Enter}');
+    expect(typed.onSubmit).toHaveBeenCalledWith(56, expect.any(Number));
+    expect(game).not.toHaveBeenCalled();
+    window.removeEventListener('keydown', game);
+    cleanup();
+    const picked = setup(question({ id: 2, choices: [54, 56, 58, 64] }));
+    expect(screen.getByRole('button', { name: /56/ })).toHaveAttribute('aria-keyshortcuts', '2');
+    await user.keyboard('2');
+    expect(picked.onSubmit).toHaveBeenCalledWith(56, expect.any(Number));
   });
 });
-

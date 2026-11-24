@@ -5,6 +5,7 @@
  * Each moment has a few takes, said in turn (`next`), so nothing is said the same way twice running (James, 24 Nov 2026:
  * more variety in the sounds).
  */
+import { CLUES } from '../../../shared/classlive/mural';
 export const VOICE_FOLDER = 'voice/classlive/';
 
 export const LINES = {
@@ -40,8 +41,13 @@ export const HOWTO = {
     'Right answers from the whole class wake the serpent. Reach the head, then keep going on the bonus tail!',
   ],
   serpentLevel: {
+    sprout: 'Today it is the sprout serpent: adding and taking away small numbers.',
+    leaf: 'Today it is the leaf serpent: adding and taking away, numbers up to one hundred.',
     green: 'Today it is the green serpent: adding and taking away.',
+    jade: 'Today it is the jade serpent: adding and taking away, with times and share by two and ten.',
     gold: 'Today it is the gold serpent: all four, with times and share by two, five and ten.',
+    amber: 'Today it is the amber serpent: all four, with times and share by two, three, four, five and ten.',
+    ruby: 'Today it is the ruby serpent: all four, with times tables up to six, and numbers up to one thousand.',
     fire: 'Today it is the fire serpent: all four, with times tables up to twelve.',
   },
   mural: [
@@ -51,6 +57,9 @@ export const HOWTO = {
     'When guessing opens, guess what the picture is!',
   ],
 } as const;
+
+/** Bella reads the mural's riddle once guessing opens. */
+export const clueLine = (clue: string) => `Here is a clue. ${clue}`;
 
 export type LineKey = keyof typeof LINES;
 
@@ -66,4 +75,5 @@ export function next(key: LineKey): string {
 export const allVoiceLines = (): string[] => [
   ...Object.values(LINES).flat(),
   ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural,
+  ...Object.values(CLUES).map(clueLine),
 ];

@@ -78,7 +78,7 @@ A game with an on/off switch for teachers adds exactly these. Nothing else needs
 ## Reuse, don't copy
 
 - `useAuth()` (`src/auth/AuthContext`): `profile.id`, `profile.display_name`, `profile.role`.
-- `QuestionModal` (`src/maths/QuestionModal.tsx`) for every focus maths question: typed answers, choices, decimal key, fractions, screen-reader text.
+- `QuestionModal` (`src/maths/QuestionModal.tsx`) for every maths question pop-up (`PracticalAsk` for a practical one): typed answers, choices, decimal key, fractions, screen-reader text. It takes the keyboard the moment it opens, wherever the focus is (digits, Backspace, Enter; 1 to 4 pick a choice; Esc closes when allowed) and keeps those keys from the game behind (`src/maths/questionKeys.ts`). Never build your own question box, add your own key handling for it, or ask pupils to click it first; pause the game's own keys while it is open.
 - `readSettings()` (`src/data/classSettings.ts`) for switches; `fetchMyFocus()` (`src/data/focus.ts`) only if the browser needs the focus.
 - `AvatarImage` (`src/avatar/`), `useSound()` / `playSound()` (`src/sound.tsx`, `src/games/sounds.ts`), `MuteButton`.
 - `speak(text, clipFolder, onEnd)` (`src/speech.ts`): start the answer clock in `onEnd`. `JUNIOR_QUICK_MS` (`shared/juniorQuick.ts`) for ages 5 to 8.

@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ARMS, ARM_GOAL, ARM_NAMES, SUPERNOVA, armCounts, laggingArm, type Arm, type Star, type StarsGame } from '../../../shared/classlive/stars';
-import { PICTURES, type MuralGame } from '../../../shared/classlive/mural';
+import { CLUES, PICTURES, type MuralGame } from '../../../shared/classlive/mural';
 import { BODY, SERPENT_LEVELS, SERPENT_LEVEL_ABOUT, SERPENT_LEVEL_NAMES, stepText, wakeAt, type SerpentGame, type SerpentLevel } from '../../../shared/classlive/serpent';
 import { ACTIVITY_NAMES, type Activity, type Event, type ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
@@ -19,7 +19,7 @@ import './projector.css';
 import { painted } from './paintedArt';
 import { HowTo } from './HowTo';
 import { speak } from '../../speech';
-import { next, VOICE_FOLDER } from './voiceLines';
+import { clueLine, next, VOICE_FOLDER } from './voiceLines';
 
 const ROOM_KEY = 'classlive-room';
 type Ev = Event & { seq: number };
@@ -184,6 +184,7 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
         mbanner('Guessing is open!', 3200);
         sound.play('chime');
         say(next('guessOpen'), 600);
+        if (s.game.kind === 'mural') say(clueLine(CLUES[s.game.picture]), 4200);
       } else if (e.type === 'guessed') {
         const who = nameOf(e.pupil);
         mbanner(e.place === 1 ? `${who ?? 'Someone'} got it first!` : `${who ?? 'Someone else'} got it too!`, 2600);
@@ -308,7 +309,8 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
   const game = screen?.game ?? null;
   const serpent = game?.kind === 'serpent' ? game : null;
   const mural = game?.kind === 'mural' ? game : null;
-  const backPic = painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky');
+  const hall = !screen && !resuming ? painted('pick', 'hall') : null;
+  const backPic = hall ?? painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky');
   const lobbyOpen = state === 'lobby' && room !== null;
   useEffect(() => {
     if (lobbyOpen) say(next('joinNow'), 400);
@@ -321,7 +323,7 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
   return (
     <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''} ${mural ? 'cl-p--mural' : ''} ${backPic ? 'cl-p--painted' : ''}`}>
       {serpent ? <JungleBackdrop /> : <NightBackdrop />}
-      {backPic && <div className={`cl-painted ${serpent ? 'cl-painted--serpent' : ''}`} style={{ backgroundImage: `url(${backPic})` }} aria-hidden="true" />}
+      {backPic && <div className={`cl-painted ${serpent ? 'cl-painted--serpent' : ''} ${hall ? 'cl-painted--hall' : ''}`} style={{ backgroundImage: `url(${backPic})` }} aria-hidden="true" />}
       {serpent && <SerpentAmbience awake={serpent.awake || state === 'over'} />}
       <div className={`cl-bar ${barOpen ? 'cl-bar--open' : ''}`}>
         <button type="button" className="cl-bar__tab" onClick={() => setBarOpen(!barOpen)} aria-expanded={barOpen} aria-label={barOpen ? 'Hide the teacher bar' : 'Show the teacher bar'}>{barOpen ? '▲' : '☰'}</button>
@@ -421,6 +423,18 @@ function TimerChips({ length, setLength }: { length: number; setLength: (m: numb
   );
 }
 
+/** Glowing motes drifting up the picker page: left %, delay s, duration s, size. */
+const MOTES: [number, number, number, number][] = Array.from({ length: 22 }, (_, i) => [(i * 37 + 7) % 100, -((i * 1.7) % 14), 11 + ((i * 5) % 9), 0.6 + ((i * 3) % 5) * 0.2]);
+
+/** The painted picture across the top of a game card (a drawn glow when none is painted). */
+function CardArt({ pic }: { pic: string | null }) {
+  return (
+    <div className="cl-card__art" aria-hidden="true">
+      {pic ? <img src={pic} alt="" loading="eager" /> : null}
+    </div>
+  );
+}
+
 function Setup({ busy, problem, onOpen }: { busy: boolean; problem: string; onOpen: (activity: Activity, body: Record<string, unknown>) => void }) {
   const [level, setLevel] = useState<LevelPick>('middle');
   const [sLevel, setSLevel] = useState<SerpentLevel>('gold');
@@ -436,10 +450,12 @@ function Setup({ busy, problem, onOpen }: { busy: boolean; problem: string; onOp
   const canOpen = !busy && (!own || okPick);
   return (
     <div className="cl-setup">
+      <div className="cl-motes" aria-hidden="true">{MOTES.map((m, i) => <i key={i} style={{ left: `${m[0]}%`, animationDelay: `${m[1]}s`, animationDuration: `${m[2]}s`, ['--s' as string]: m[3] }} />)}</div>
       <h1 className="cl-setup__title">Class Live</h1>
       <p className="cl-setup__sub">Pick a game for the big screen</p>
       <div className="cl-cards">
         <section className="cl-card cl-card--active" aria-label="Star Web">
+          <CardArt pic={painted('pick', 'stars', true) ?? painted('back', 'star-sky', true)} />
           <h2 className="cl-card__name">★ Star Web</h2>
           <p className="cl-card__blurb">One fact glows in the sky. What else can we work out from it?</p>
           <div className="cl-opt">
@@ -463,23 +479,26 @@ function Setup({ busy, problem, onOpen }: { busy: boolean; problem: string; onOp
           <button type="button" className="cl-btn cl-btn--go" disabled={!canOpen} onClick={() => onOpen('stars', { level: own ? 'middle' : level, length, ...(own ? { x: xi, y: yi } : {}) })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
         <section className="cl-card cl-card--active cl-card--serpent" aria-label="Serpent Chain">
+          <CardArt pic={painted('pick', 'serpent', true) ?? painted('back', 'jungle-temple', true)} />
           <h2 className="cl-card__name">🐍 Serpent Chain</h2>
           <p className="cl-card__blurb">A chain of sums winds up the temple. Wake the serpent!</p>
           <div className="cl-opt">
             <span className="cl-opt__label">Which serpent?</span>
             <div className="cl-levels" role="group" aria-label="Serpent level">
-              {SERPENT_LEVELS.map((l) => (
-                <button key={l} type="button" className={`cl-choice cl-lvl cl-lvl--${l} ${sLevel === l ? 'cl-choice--on' : ''}`} aria-pressed={sLevel === l} onClick={() => setSLevel(l)}>
+              {SERPENT_LEVELS.map((l, i) => (
+                <button key={l} type="button" className={`cl-choice cl-lvl cl-lvl--${l} ${sLevel === l ? 'cl-choice--on' : ''}`} aria-pressed={sLevel === l} title={SERPENT_LEVEL_ABOUT[l]} onClick={() => setSLevel(l)}>
+                  <i className="cl-lvl__n">{i + 1}</i>
                   <b>{SERPENT_LEVEL_NAMES[l].replace(' serpent', '')}</b>
-                  <small>{SERPENT_LEVEL_ABOUT[l]}</small>
                 </button>
               ))}
             </div>
+            <p className="cl-lvl__about" aria-live="polite"><b className={`cl-lvl--${sLevel}`}>{SERPENT_LEVEL_NAMES[sLevel]}</b> {SERPENT_LEVEL_ABOUT[sLevel]}</p>
           </div>
           <TimerChips length={sLength} setLength={setSLength} />
           <button type="button" className="cl-btn cl-btn--go" disabled={busy} onClick={() => onOpen('serpent', { level: sLevel, length: sLength })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
-<section className="cl-card cl-card--active cl-card--mural" aria-label="Mystery Mural">
+        <section className="cl-card cl-card--active cl-card--mural" aria-label="Mystery Mural">
+          <CardArt pic={painted('pick', 'mural', true) ?? painted('back', 'gallery', true)} />
           <h2 className="cl-card__name">🎨 Mystery Mural</h2>
           <p className="cl-card__blurb">Your maths uncovers a hidden painting. Guess what it is!</p>
           <TimerChips length={mLength} setLength={setMLength} />
