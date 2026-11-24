@@ -4,6 +4,7 @@
  * dropped in without touching game code.
  */
 import type { FactAnswer, FactStats } from './leitner';
+import type { Figure } from './figure';
 import type { Band, QuestionContext } from './selector';
 
 export type { QuestionContext };
@@ -40,6 +41,11 @@ export interface Question {
   input?: 'whole' | 'decimal';
   /** Longest answer that can be typed, in characters. Default 3. */
   maxLength?: number;
+  /**
+   * A small picture shown above the sum (angle and shape questions: shared/maths/figure.ts). Only ever extra: `parts` and
+   * `spoken` still say everything needed to answer, so a game that doesn't draw it still works.
+   */
+  figure?: Figure;
   /** The numbers the question was made from, so the server can make it again and check it. */
   params?: number[];
   band: Band;

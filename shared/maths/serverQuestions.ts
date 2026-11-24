@@ -9,6 +9,7 @@
  * `seededRandom` gives exactly the same numbers as Marble Rush's own copy (shared/marble/maths.ts on its branch), so
  * Marble can switch to this one without any run changing.
  */
+import type { Figure } from './figure';
 import { makeSpacePack, pickSpaceQuestion, type MathsQuestionSettings } from '../space/mathsQuestion';
 import { isFocusKey, solveParts, type MathsFocus } from './focus';
 import type { FactStats } from './leitner';
@@ -45,6 +46,7 @@ export interface PublicQuestion {
   choiceLabels?: string[];
   input?: 'whole' | 'decimal';
   maxLength?: number;
+  figure?: Figure;
 }
 
 export function publicQuestion(q: Question, slot: number): PublicQuestion {
@@ -57,6 +59,7 @@ export function publicQuestion(q: Question, slot: number): PublicQuestion {
     ...(q.choiceLabels ? { choiceLabels: q.choiceLabels } : {}),
     ...(q.input ? { input: q.input } : {}),
     ...(q.maxLength ? { maxLength: q.maxLength } : {}),
+    ...(q.figure ? { figure: q.figure } : {}),
   };
 }
 

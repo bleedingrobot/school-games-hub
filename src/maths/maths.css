@@ -620,3 +620,29 @@
     display: none;
   }
 }
+
+/* A question's small picture (Figure.tsx): angle and shape questions. */
+.question__figure {
+  display: block;
+  width: min(100%, 260px);
+  height: auto;
+  margin: 6px auto 0;
+}
+.fig__shape {
+  fill: color-mix(in srgb, currentColor 8%, transparent);
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+.fig__shape--top { fill: color-mix(in srgb, currentColor 14%, transparent); }
+.fig__shape--side { fill: color-mix(in srgb, currentColor 20%, transparent); }
+.fig__line { stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; fill: none; }
+.fig__dash { stroke: currentColor; stroke-width: 1.8; stroke-dasharray: 5 4; fill: none; opacity: 0.75; }
+.fig__arc { stroke: currentColor; stroke-width: 2; fill: none; opacity: 0.8; }
+.fig__corner { fill: none; stroke: currentColor; stroke-width: 2; }
+.fig__dot { fill: currentColor; }
+.fig__label { fill: currentColor; font-size: 15px; font-weight: 800; }
+.fig__label--ask { fill: var(--q-wrong); font-size: 18px; }
+.question__gap {
+  white-space: nowrap;
+}
