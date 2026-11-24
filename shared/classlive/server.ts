@@ -58,6 +58,11 @@ export interface Session {
    * "Join now?" button on their home page or with the code. Missing: the teacher's class only.
    */
   lobby?: Lobby;
+  /**
+   * A class game's late-join code (James, 25 Nov 2026 NZ): shown on the big screen while it runs, typed on a pupil's
+   * Class Live screen. Only pupils of the class can use it (a lobby game's code is `lobby.code`).
+   */
+  joinCode?: string;
   /** Music on pupils' devices too (James, 25 Nov 2026 NZ: a teacher toggle; off means the big screen only). */
   padMusic?: boolean;
 }
@@ -108,6 +113,8 @@ export type PublicRound = Omit<Round, 'rolled' | 'caught' | 'saved' | 'items'> &
 /** What the projector draws: the whole game, names (when allowed) and the newest events (each with a number). */
 export interface ScreenView extends Omit<RoomView, 'game'> {
   showNames: boolean;
+  /** The code a late pupil types to join (the lobby code, or the class game's join code). */
+  joinCode: string | null;
   people: { id: string; name: string | null; colour: number }[];
   game: Game;
   seq: number;
@@ -252,6 +259,7 @@ function screenView(row: Pick<RoomRow, 'showNames' | 'seq' | 'events'>, s: Sessi
   return {
     ...base,
     showNames: row.showNames,
+    joinCode: s.lobby?.code ?? s.joinCode ?? null,
     people: s.order.map((id) => ({ id, name: row.showNames ? firstName(s.players[id].name) : null, colour: s.players[id].colour })),
     game: s.game,
     seq: row.seq,
@@ -479,7 +487,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
       }
       if (!code) return busy();
       session.lobby = { code, host };
-    }
+    } else session.joinCode = String(1000 + (Math.floor(sv.random() * 9000) % 9000));
     const row = { showNames: teach.showNames, seq: 0, events: [] };
     const change: Change = { session, view: roomView(session, null), screen: screenView(row, session, null), startedAt: null, players: [] };
     const id = await sv.openRoom(classId, who, change);
@@ -545,8 +553,12 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
       const code = readCode(body.code);
       const found = code ? await sv.codeRoom(me.schoolId, code) : null;
       if (found === 'busy') return busy();
-      if (!found) return no(404, "That code didn't work. Check the big screen!", 'bad-code');
-      room = found.id;
+      // Not a lobby game: their own class's game, joining late with its code.
+      const own = !found && code ? await sv.classRoom(me.classId) : null;
+      if (own === 'busy') return busy();
+      const late = own && own.session.state !== 'over' && own.session.joinCode === code ? own : null;
+      if (!found && !late) return no(404, "That code didn't work. Check the big screen!", 'bad-code');
+      room = (found || late)!.id;
     } else if (action === 'join' && body.room === undefined) {
       const open = await sv.classRoom(me.classId);
       if (open === 'busy') return busy();

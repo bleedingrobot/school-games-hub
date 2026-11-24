@@ -65,8 +65,10 @@ function Mine({ me }: { me: PlayerView | null }) {
   );
 }
 
-export function Controller({ link, me, room: roomProp, lookElsewhere, avatar }: {
+export function Controller({ link, me, room: roomProp, code: codeProp, lookElsewhere, avatar }: {
   link: ClassLiveLink; me: string; room?: number;
+  /** A 4-digit code typed in the hub Lobby (a lobby game, or joining their class's game late). */
+  code?: string;
   /** The pupil's own hub avatar (Four Corners). */
   avatar?: unknown;
   /** While nothing is on here, looks for another class game (Class Showdown) every few seconds and goes to it. */
@@ -79,7 +81,7 @@ export function Controller({ link, me, room: roomProp, lookElsewhere, avatar }: 
   const [mine, setMine] = useState<PlayerView | null>(null);
   const [attempt, setAttempt] = useState(0);
   // A lobby game's code, typed by the pupil (James, 25 Nov 2026: games open to any class).
-  const [code, setCode] = useState<string | null>(null);
+  const [code, setCode] = useState<string | null>(codeProp ?? null);
   const [typed, setTyped] = useState('');
   const [codeProblem, setCodeProblem] = useState('');
   /** The server's clock minus this device's (from every reply's `now`). */

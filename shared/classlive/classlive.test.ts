@@ -311,6 +311,12 @@ describe('Class Live server', () => {
     const cls = (await classLiveStep(sv, T, { action: 'open', classId: A, activity: 'mural' })).body as { room: number; screen: { lobby: unknown } };
     expect(cls.screen.lobby).toBeNull();
     expect((await classLiveStep(sv, 'bo', { action: 'join', room: cls.room })).status).toBe(403);
+    // Joining a running class game late with the code on the big screen: the class only.
+    const late = (cls.screen as unknown as { joinCode: string }).joinCode;
+    expect(late).toMatch(/^\d{4}$/);
+    await classLiveStep(sv, T, { action: 'start', room: cls.room });
+    expect((await classLiveStep(sv, 'ana', { action: 'join', code: late })).body.room).toBe(cls.room);
+    expect((await classLiveStep(sv, 'bo', { action: 'join', code: late })).body.reason).toBe('bad-code');
     // Open in the lobby: a code on the screen, and the host's words.
     const lob = (await classLiveStep(sv, T, { action: 'open', classId: A, activity: 'serpent', where: 'lobby', host: 'Mr Riley' })).body as { room: number; screen: { lobby: { code: string; host: string } } };
     expect(lob.screen.lobby.host).toBe('Mr Riley');

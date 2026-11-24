@@ -363,6 +363,9 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
       {serpent ? <JungleBackdrop /> : <NightBackdrop />}
       {backPic && <div className={`cl-painted ${serpent ? 'cl-painted--serpent' : ''} ${hall ? 'cl-painted--hall' : ''}`} style={{ backgroundImage: `url(${backPic})` }} aria-hidden="true" />}
       {serpent && <SerpentAmbience awake={serpent.awake || state === 'over'} />}
+      {screen?.joinCode && state === 'live' && (
+        <div className="cl-late" aria-label={`Late? Join with code ${screen.joinCode.split('').join(' ')}`}>Late? Join with code <b>{screen.joinCode}</b></div>
+      )}
       <div className={`cl-bar ${barOpen ? 'cl-bar--open' : ''}`}>
         <button type="button" className="cl-bar__tab" onClick={() => setBarOpen(!barOpen)} aria-expanded={barOpen} aria-label={barOpen ? 'Hide the teacher bar' : 'Show the teacher bar'}>{barOpen ? '▲' : '☰'}</button>
         {barOpen && (
