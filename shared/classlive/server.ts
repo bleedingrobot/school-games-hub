@@ -53,6 +53,8 @@ export interface Session {
    * "Join now?" button on their home page or with the code. Missing: the teacher's class only.
    */
   lobby?: Lobby;
+  /** Music on pupils' devices too (James, 25 Nov 2026 NZ: a teacher toggle; off means the big screen only). */
+  padMusic?: boolean;
 }
 
 export interface Lobby {
@@ -78,6 +80,8 @@ export interface RoomView {
   game: PublicGame;
   /** A lobby game's code and host, or null for a class game. */
   lobby: Lobby | null;
+  /** Pupils' devices play the background music too. */
+  padMusic: boolean;
 }
 
 export type PublicGame =
@@ -199,7 +203,7 @@ export function publicGame(g: Game, players: number): PublicGame {
 export function roomView(s: Session, startedAt: number | null): RoomView {
   return {
     activity: s.activity, state: s.state, lengthMin: s.lengthMin, startedAt, players: s.order.length, game: publicGame(s.game, s.order.length),
-    lobby: s.lobby ?? null,
+    lobby: s.lobby ?? null, padMusic: s.padMusic === true,
   };
 }
 
@@ -347,7 +351,7 @@ export function newSession(body: Record<string, unknown>, seed: number, random: 
     const level = SERPENT_LEVELS.find((l) => l === body.level) ?? 'gold';
     game = newSerpent(level, random);
   } else game = newMural(random);
-  return { seed, activity, state: 'lobby', lengthMin, players: {}, order: [], game };
+  return { seed, activity, state: 'lobby', lengthMin, players: {}, order: [], game, ...(body.padMusic === true ? { padMusic: true } : {}) };
 }
 
 /** One request from a signed-in person (`who`). */
@@ -385,7 +389,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     return ok({ room: id, screen: change.screen, now: sv.now() });
   }
 
-  if (action === 'view' || action === 'start' || action === 'end' || action === 'spotlight' || action === 'reveal') {
+  if (action === 'view' || action === 'start' || action === 'end' || action === 'spotlight' || action === 'reveal' || action === 'padmusic') {
     const room = readRoom(body.room);
     if (!room) return no(400, "That room couldn't be found.");
     const row = await sv.loadRoom(room);
@@ -411,6 +415,10 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         if (s.game.phase !== 'guess') return { reply: null, events: startGuessing(s.game, t) };
         s.state = 'over';
         return { reply: null, events: [...reveal(s.game, t), { type: 'over', t, why: 'teacher' }] };
+      }
+      if (action === 'padmusic') {
+        s.padMusic = body.on === true;
+        return { reply: null, events: [] };
       }
       if (action === 'spotlight') {
         const id = body.id === null ? null : Number.isInteger(body.id) ? (body.id as number) : undefined;

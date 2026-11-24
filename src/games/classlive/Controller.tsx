@@ -8,6 +8,7 @@ import { ARM_NAMES, laggingArm, type StarsReply } from '../../../shared/classliv
 import { ARM_COLOURS, ARM_HINTS, lagHint, useHeldLag } from './arms';
 import { MuralPad } from './MuralPad';
 import { PadGuard } from './PadGuard';
+import { classLiveTrack, useMusic } from './music';
 import { SerpentPad } from './SerpentPad';
 import type { ClassLiveLink } from './link';
 import './controller.css';
@@ -139,6 +140,10 @@ export function Controller({ link, me, room: roomProp, lookElsewhere }: {
     const id = window.setInterval(lookElsewhere, 5000);
     return () => window.clearInterval(id);
   }, [phase, lookElsewhere]);
+
+  // The big screen's music on this device too, when the teacher switched that on (James, 25 Nov 2026 NZ).
+  const muralGame = view?.game.kind === 'mural' ? view.game : null;
+  useMusic(phase === 'playing' && view?.padMusic ? classLiveTrack(view.state, view.game.kind, muralGame?.phase === 'guess') : null, true);
 
   if (phase === 'joining') return <Sky><div className="cl-c-center"><p className="cl-c-say">Joining…</p></div></Sky>;
   if (phase === 'none') {
