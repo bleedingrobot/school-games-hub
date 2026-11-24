@@ -64,59 +64,70 @@ function noise(ctx: Ctx, out: AudioNode, at: number, dur: number, from: number, 
   src.start(at);
 }
 
-function voice(ctx: Ctx, out: AudioNode, name: SoundName) {
+/** Each sound has three takes, played in turn, each a little higher or lower too, so a sound heard 30 times in a game
+ *  never sounds the same twice running (James, 24 Nov 2026: more variety in the sounds). */
+export const TAKES = 3;
+const SHIFT = [1, 1.122, 0.891];
+const TWINKLES = [[1568, 2093], [1760, 2349], [1319, 1976, 2637]];
+const CHIMES = [[1047, 1319, 1568, 2093], [1568, 1319, 1568, 2093], [1175, 1397, 1760, 2349]];
+const FANFARES = [[523, 659, 784, 1047, 784, 1047, 1319], [392, 523, 659, 784, 659, 784, 1047], [587, 740, 880, 1175, 880, 1175, 1480]];
+
+function voice(ctx: Ctx, out: AudioNode, name: SoundName, take: number, jitter: number) {
   const t = ctx.currentTime + 0.01;
+  const v = take % TAKES;
+  const k = SHIFT[v] * jitter;
   switch (name) {
     case 'twinkle':
-      tone(ctx, out, 1568, t, 0.35, 'sine', 0.22);
-      tone(ctx, out, 2093, t + 0.09, 0.4, 'sine', 0.16);
+      TWINKLES[v].forEach((f, i) => tone(ctx, out, f * jitter, t + i * 0.09, 0.35 + i * 0.05, 'sine', 0.22 - i * 0.05));
       break;
     case 'whoosh':
-      noise(ctx, out, t, 0.7, 300, 3200, 0.35);
+      noise(ctx, out, t, [0.7, 0.55, 0.9][v], 300 * k, [3200, 4200, 2400][v] * jitter, 0.35);
       break;
     case 'chime':
-      [1047, 1319, 1568, 2093].forEach((f, i) => tone(ctx, out, f, t + i * 0.1, 1.1, 'sine', 0.2));
+      CHIMES[v].forEach((f, i) => tone(ctx, out, f * jitter, t + i * 0.1, 1.1, 'sine', 0.2));
       break;
     case 'glow':
-      tone(ctx, out, 660, t, 0.7, 'triangle', 0.2, 990);
-      tone(ctx, out, 1320, t + 0.1, 0.6, 'sine', 0.1);
+      tone(ctx, out, 660 * k, t, 0.7, 'triangle', 0.2, 990 * k);
+      tone(ctx, out, 1320 * k, t + 0.1, 0.6, 'sine', 0.1);
       break;
     case 'swell':
-      [196, 247, 294, 392].forEach((f, i) => tone(ctx, out, f, t + i * 0.15, 2.4, 'sawtooth', 0.07, f * 1.5));
-      tone(ctx, out, 98, t, 2.6, 'sine', 0.25, 147);
+      [196, 247, 294, 392].forEach((f, i) => tone(ctx, out, f * k, t + i * 0.15, 2.4, 'sawtooth', 0.07, f * k * 1.5));
+      tone(ctx, out, 98 * k, t, 2.6, 'sine', 0.25, 147 * k);
       break;
     case 'fanfare':
-      [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => {
+      FANFARES[v].map((f) => f * jitter).forEach((f, i) => {
         tone(ctx, out, f, t + i * 0.13, i === 6 ? 1.2 : 0.3, 'square', 0.1);
         tone(ctx, out, f / 2, t + i * 0.13, i === 6 ? 1.2 : 0.3, 'triangle', 0.14);
       });
       noise(ctx, out, t + 0.9, 1.0, 4000, 800, 0.12);
       break;
     case 'roar':
-      tone(ctx, out, 90, t, 1.6, 'sawtooth', 0.22, 45);
-      tone(ctx, out, 135, t + 0.05, 1.5, 'square', 0.08, 60);
-      tone(ctx, out, 60, t, 1.8, 'sine', 0.35, 38);
-      noise(ctx, out, t, 1.4, 700, 150, 0.3);
+      tone(ctx, out, 90 * k, t, 1.6, 'sawtooth', 0.22, 45 * k);
+      tone(ctx, out, 135 * k, t + 0.05, 1.5, 'square', 0.08, 60 * k);
+      tone(ctx, out, 60 * k, t, 1.8, 'sine', 0.35, 38 * k);
+      noise(ctx, out, t, [1.4, 1.1, 1.7][v], 700 * k, 150 * k, 0.3);
+      if (v === 1) tone(ctx, out, 180 * jitter, t + 0.5, 0.9, 'sawtooth', 0.08, 70);
       break;
     case 'hop':
-      tone(ctx, out, 520, t, 0.14, 'triangle', 0.18, 880);
+      tone(ctx, out, 520 * k, t, 0.14, 'triangle', 0.18, 880 * k);
       break;
     case 'flip':
-      tone(ctx, out, 420, t, 0.12, 'triangle', 0.18, 840);
-      tone(ctx, out, 1760, t + 0.1, 0.25, 'sine', 0.1);
+      tone(ctx, out, 420 * k, t, 0.12, 'triangle', 0.18, 840 * k);
+      tone(ctx, out, 1760 * k, t + 0.1, 0.25, 'sine', 0.1);
       break;
     case 'reveal':
       // A rising shimmer while the tiles flip in a wave, then the fanfare.
       noise(ctx, out, t, 1.8, 400, 5000, 0.3);
-      [392, 494, 587, 784].forEach((f, i) => tone(ctx, out, f, t + i * 0.28, 0.9, 'triangle', 0.14));
-      [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => {
+      [392, 494, 587, 784].forEach((f, i) => tone(ctx, out, f * k, t + i * 0.28, 0.9, 'triangle', 0.14));
+      FANFARES[v].map((f) => f * jitter).forEach((f, i) => {
         tone(ctx, out, f, t + 1.8 + i * 0.13, i === 6 ? 1.4 : 0.3, 'square', 0.1);
         tone(ctx, out, f / 2, t + 1.8 + i * 0.13, i === 6 ? 1.4 : 0.3, 'triangle', 0.14);
       });
       break;
     case 'drum':
-      tone(ctx, out, 140, t, 0.5, 'sine', 0.6, 40);
-      noise(ctx, out, t, 0.12, 900, 300, 0.2);
+      tone(ctx, out, 140 * k, t, 0.5, 'sine', 0.6, 40);
+      noise(ctx, out, t, 0.12, 900 * k, 300, 0.2);
+      if (v === 2) { tone(ctx, out, 160 * jitter, t + 0.16, 0.4, 'sine', 0.45, 45); noise(ctx, out, t + 0.16, 0.1, 1000, 300, 0.15); }
       break;
   }
 }
@@ -127,6 +138,7 @@ export function makeClassLiveSound(): ClassLiveSound {
   let master: GainNode | null = null;
   const recent: number[] = [];
   const last: Partial<Record<SoundName, number>> = {};
+  const takes: Partial<Record<SoundName, number>> = {};
   return {
     play(name) {
       if (mute) return;
@@ -146,7 +158,9 @@ export function makeClassLiveSound(): ClassLiveSound {
           master.connect(ctx.destination);
         }
         if (ctx.state === 'suspended') void ctx.resume().catch(() => undefined);
-        voice(ctx, master as GainNode, name);
+        const take = takes[name] ?? 0;
+        takes[name] = take + 1;
+        voice(ctx, master as GainNode, name, take, 0.97 + Math.random() * 0.06);
       } catch { /* no audio here: stay quiet */ }
     },
     muted: () => mute,

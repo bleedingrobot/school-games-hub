@@ -129,3 +129,9 @@
 @keyframes cl-m-fill { to { stroke-dashoffset: 0; } }
 @keyframes cl-m-wiggle { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
 @media (prefers-reduced-motion: reduce) { .cl-m-guessbtn, .cl-m-cloth, .cl-m-final { animation: none; } }
+
+/* Star Web: a gentle hint for an arm lagging behind (Controller.tsx). */
+.cl-c-lag { margin: 0; padding: 6px 12px; border-radius: 12px; border: 1px solid var(--arm); background: rgba(255, 255, 255, 0.06); color: #e9e8ff; font-size: 0.85rem; line-height: 1.3; animation: cl-c-lag-in 1s ease-out both; }
+.cl-c-lag b { color: var(--arm); }
+@keyframes cl-c-lag-in { from { opacity: 0; transform: translate3d(0, -6px, 0); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .cl-c-lag { animation: none; } }

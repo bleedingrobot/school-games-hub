@@ -6,7 +6,8 @@ export type SoundName = 'roar' | 'hit' | 'bighit' | 'clang' | 'crack' | 'chime' 
 
 export interface ShowdownSound {
   play(name: SoundName): void;
-  say(line: string): void;
+  /** `urgent` lines (the end of the round, the start) never wait for the gap after the last line. */
+  say(line: string, urgent?: boolean): void;
   muted: boolean;
   setMuted(b: boolean): void;
 }
@@ -28,11 +29,26 @@ export function silentSound(): ShowdownSound {
 
 type Ctx = AudioContext;
 
+/** The same (non-hit) sound plays at most once in this long. */
+export const SOUND_GAP_MS = 400;
+/** The announcer waits this long after a line before the next, and doesn't repeat a line within `LINE_REPEAT_MS`. */
+export const SAY_GAP_MS = 1800;
+export const LINE_REPEAT_MS = 8000;
+
+/** Whether the announcer may say `line` now. */
+export function sayAllowed(now: number, line: string, lastSaid: number, lastLine: Map<string, number>): boolean {
+  if (now - lastSaid < SAY_GAP_MS) return false;
+  return now - (lastLine.get(line) ?? -Infinity) >= LINE_REPEAT_MS;
+}
+
 export function makeShowdownSound(): ShowdownSound {
   let ctx: Ctx | null = null;
   let master: GainNode | null = null;
   let noiseBuf: AudioBuffer | null = null;
   let hitTimes: number[] = [];
+  const lastSound = new Map<string, number>();
+  const lastLine = new Map<string, number>();
+  let lastSaid = 0;
 
   const api: ShowdownSound = {
     muted: readMuted(),
@@ -47,8 +63,13 @@ export function makeShowdownSound(): ShowdownSound {
         if (name === 'hit' || name === 'bighit') {
           const now = Date.now();
           hitTimes = hitTimes.filter((t) => now - t < 1000);
-          if (hitTimes.length >= 8) return;
+          if (hitTimes.length >= 5) return;
           hitTimes.push(now);
+        } else {
+          // The same sound fired by many pupils at once (every pupil's shield in solo) plays once.
+          const now = Date.now();
+          if (now - (lastSound.get(name) ?? 0) < SOUND_GAP_MS) return;
+          lastSound.set(name, now);
         }
         const c = ensure();
         if (!c || !master) return;
@@ -58,8 +79,14 @@ export function makeShowdownSound(): ShowdownSound {
         // Sound is never worth a crash.
       }
     },
-    say(line) {
+    say(line, urgent = false) {
       if (api.muted || !line) return;
+      // Never two lines on top of each other, and never the same line again straight away: in solo each pupil's shield
+      // held or broke on its own, and the announcer said it once per pupil (24 Nov 2026).
+      const now = Date.now();
+      if (!sayAllowed(now, line, urgent ? -Infinity : lastSaid, lastLine)) return;
+      lastSaid = now;
+      lastLine.set(line, now);
       try {
         speak(line, VOICE_FOLDER);
       } catch {

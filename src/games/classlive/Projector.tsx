@@ -5,12 +5,12 @@
  * ever draws good things: there are no wrong answers in the screen data.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ARMS, ARM_GOAL, ARM_NAMES, SUPERNOVA, type Arm, type Star, type StarsGame } from '../../../shared/classlive/stars';
+import { ARMS, ARM_GOAL, ARM_NAMES, SUPERNOVA, armCounts, laggingArm, type Arm, type Star, type StarsGame } from '../../../shared/classlive/stars';
 import { PICTURES, type MuralGame } from '../../../shared/classlive/mural';
 import { BODY, SERPENT_LEVELS, SERPENT_LEVEL_ABOUT, SERPENT_LEVEL_NAMES, stepText, wakeAt, type SerpentGame, type SerpentLevel } from '../../../shared/classlive/serpent';
 import { ACTIVITY_NAMES, type Activity, type Event, type ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
-import { ARM_COLOURS } from './arms';
+import { ARM_COLOURS, lagHint, useHeldLag } from './arms';
 import type { ClassLiveLink, Reply } from './link';
 import { NightBackdrop, PLAYER_COLOURS, StarSky } from './StarSky';
 import { MuralCloth, MuralScene, NO_MURAL_FX, type MuralFx } from './MuralScene';
@@ -18,7 +18,7 @@ import { CoiledSerpent, JungleBackdrop, NO_SERPENT_FX, SerpentScene, type Serpen
 import './projector.css';
 import { painted } from './paintedArt';
 import { speak } from '../../speech';
-import { LINES, VOICE_FOLDER } from './voiceLines';
+import { next, VOICE_FOLDER } from './voiceLines';
 
 const ROOM_KEY = 'classlive-room';
 type Ev = Event & { seq: number };
@@ -121,7 +121,7 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
       if (e.type === 'join') sound.play('twinkle');
       else if (e.type === 'start') {
         sound.play('drum');
-        say(s.game.kind === 'serpent' ? LINES.startSerpent : s.game.kind === 'mural' ? LINES.startMural : LINES.startStars, 900);
+        say(s.game.kind === 'serpent' ? next('startSerpent') : s.game.kind === 'mural' ? next('startMural') : next('startStars'), 900);
       }
       else if (e.type === 'climb') {
         const id = e.pupil;
@@ -132,7 +132,7 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
         const who = nameOf(e.pupil);
         banner(e.place === 1 ? `${who ?? 'Someone'} reached the head!` : `${who ?? 'Someone else'} reached the head too!`, 2600);
         sound.play('chime');
-        if (e.place === 1) say(LINES.head, 600);
+        if (e.place === 1) say(next('head'), 600);
       } else if (e.type === 'tail') {
         sx((f) => ({ ...f, tailPulse: f.tailPulse + 1 }));
         later(() => sx((f) => ({ ...f, tailPulse: 0 })), 1800);
@@ -142,7 +142,7 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
         later(() => sx((f) => ({ ...f, shake: false })), 1500);
         banner('The serpent wakes!', 2600);
         sound.play('roar');
-        say(LINES.awake, 1600);
+        say(next('awake'), 1600);
       } else if (e.type === 'star') {
         const id = e.star.id;
         flag('arriving', id, 1300);
@@ -159,17 +159,17 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
       } else if (e.type === 'arm_lit') {
         flag('drawing', e.arm, 2600);
         sound.play('chime');
-        say(LINES.armLit, 700);
+        say(next('armLit'), 700);
       } else if (e.type === 'creature') {
         setFx((f) => ({ ...f, swim: true }));
         later(() => setFx((f) => ({ ...f, swim: false })), 26000);
         sound.play('swell');
-        say(LINES.creature, 1200);
+        say(next('creature'), 1200);
       } else if (e.type === 'supernova') {
         setFx((f) => ({ ...f, nova: f.nova + 1 }));
         later(() => setFx((f) => ({ ...f, nova: 0 })), 4200);
         sound.play('fanfare');
-        say(LINES.supernova, 1500);
+        say(next('supernova'), 1500);
       } else if (e.type === 'flip') {
         const p = s.people.find((x) => x.id === e.pupil);
         const tile = e.tile;
@@ -179,24 +179,24 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
       } else if (e.type === 'guess_open') {
         mbanner('Guessing is open!', 3200);
         sound.play('chime');
-        say(LINES.guessOpen, 600);
+        say(next('guessOpen'), 600);
       } else if (e.type === 'guessed') {
         const who = nameOf(e.pupil);
         mbanner(e.place === 1 ? `${who ?? 'Someone'} got it first!` : `${who ?? 'Someone else'} got it too!`, 2600);
         sound.play('twinkle');
-        if (e.place === 1) say(LINES.guessed, 500);
+        if (e.place === 1) say(next('guessed'), 500);
       } else if (e.type === 'reveal') {
         mx((f) => ({ ...f, revealing: true }));
         later(() => mx((f) => ({ ...f, revealing: false })), 9000);
         sound.play('reveal');
-        say(LINES.reveal, 1200);
+        say(next('reveal'), 1200);
       } else if (e.type === 'over') {
         if (s.game.kind === 'mural' && !s.game.revealed) {
           mx((f) => ({ ...f, revealing: true }));
           later(() => mx((f) => ({ ...f, revealing: false })), 9000);
           sound.play('reveal');
         } else sound.play('swell');
-        say(e.why === 'time' ? LINES.timeUp : LINES.finished, 1500);
+        say(e.why === 'time' ? next('timeUp') : next('finished'), 1500);
       }
     }
   }, [flag, later, say, sound]);
@@ -306,7 +306,7 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
   const backPic = painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky');
   const lobbyOpen = state === 'lobby' && room !== null;
   useEffect(() => {
-    if (lobbyOpen) say(LINES.joinNow, 400);
+    if (lobbyOpen) say(next('joinNow'), 400);
   }, [lobbyOpen, room, say]);
   useEffect(() => {
     if (state !== 'over') { setRevealed(false); setHideResults(false); }
@@ -386,6 +386,7 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
             onPick={state === 'live' && room ? (id) => void act({ action: 'spotlight', room, id }) : undefined}
           />
           <Hud game={game} />
+          {state === 'live' && game.spotlight === null && <LagHint game={game} />}
           {state === 'live' && game.spotlight !== null && room && <Spotlight screen={screen} game={game} onBack={() => void act({ action: 'spotlight', room, id: null })} />}
           {state === 'over' && (hideResults
             ? <button type="button" className="cl-btn cl-results-tab" onClick={() => setHideResults(false)}>★ Show the results</button>
@@ -547,7 +548,19 @@ function SerpentLobbyHead({ game }: { game: SerpentGame }) {
   );
 }
 
-/* ---------------- live: counters, spotlight ---------------- */
+/* ---------------- live: counters, hints, spotlight ---------------- */
+
+/** A gentle hint, above the counter, on how to find facts for an arm lagging well behind the rest. Never the answer. */
+function LagHint({ game }: { game: StarsGame }) {
+  const shown = useHeldLag(laggingArm(armCounts(game), game.stars.length));
+  if (shown === null) return null;
+  return (
+    <div className="cl-lag" key={shown} role="status" style={{ '--arm': ARM_COLOURS[shown] } as React.CSSProperties}>
+      <span className="cl-lag__tag">💡 {ARM_NAMES[shown]}</span>
+      <span className="cl-lag__text">{lagHint(shown, game.anchor)}</span>
+    </div>
+  );
+}
 
 function Hud({ game }: { game: StarsGame }) {
   const total = game.stars.length;
