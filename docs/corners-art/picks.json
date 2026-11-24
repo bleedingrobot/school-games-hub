@@ -39,5 +39,9 @@
   "dice-blue": 2,
   "dice-green": 3,
   "dice-yellow": 3,
-  "dice-star": 2
+  "dice-star": 2,
+  "back-snow": 2,
+  "back-jungle": 2,
+  "back-castle": 3,
+  "back-space": 2
 }
