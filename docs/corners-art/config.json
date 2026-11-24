@@ -569,6 +569,54 @@
       "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
       "style": "c",
       "max": 512
+    },
+    {
+      "name": "back-snow",
+      "prompt": "A wide backdrop painting: a wide cosy snowy mountain village at twilight, pine forests, glowing hut windows, soft falling snow, distant mountains, northern lights, deep blue and violet sky. The middle is calm, darker and softer (a game board will sit on top of it), with the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "corners",
+      "file": "back-snow",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, game board, user interface"
+    },
+    {
+      "name": "back-jungle",
+      "prompt": "A wide backdrop painting: a wide lush jungle valley around an ancient overgrown temple at golden hour, waterfalls, giant leaves and vines, misty light rays, deep greens. The middle is calm, darker and softer (a game board will sit on top of it), with the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "corners",
+      "file": "back-jungle",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, game board, user interface"
+    },
+    {
+      "name": "back-castle",
+      "prompt": "A wide backdrop painting: a wide friendly haunted castle hall at night, purple moonlight through tall windows, cute candles, banners, cobwebs, soft fog, cosy and spooky not scary. The middle is calm, darker and softer (a game board will sit on top of it), with the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "corners",
+      "file": "back-castle",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, game board, user interface"
+    },
+    {
+      "name": "back-space",
+      "prompt": "A wide backdrop painting: a wide view from a bright space station window, a colourful planet with rings, nebula, stars, sleek station struts framing the edges, deep blue and magenta. The middle is calm, darker and softer (a game board will sit on top of it), with the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "corners",
+      "file": "back-space",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, game board, user interface"
     }
   ]
 }
