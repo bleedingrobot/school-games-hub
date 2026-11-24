@@ -21,3 +21,7 @@ James asked for a painted serpent and a better-looking Serpent Chain page. Nine 
 `serpent/head-asleep`, `head-awake` (painted heads, crossfaded when the serpent wakes), `coil` (lobby), `tail` (the tip, behind the START tablet), `plate` (each box), `tablet` (START), `skin` (a pattern along the body), `burst` (a glow when it wakes and when someone reaches the head), and `back/jungle-awake` (the glowing temple that fades in when it wakes).
 The page adds light shafts, drifting mist, fireflies, falling leaves, a gold "life" line that runs up the body as far as the furthest pupil, and a head that bobs (faster when awake). SerpentScene.tsx finds every piece with `painted('serpent', ...)` and falls back to the drawing for any piece that is missing.
 Prompt fixes after the first run: no "dragon-like" on the sleeping head (it gave antlers), the tail says "no head, not a whole snake", and the awake temple says "no statues".
+
+## Picker page (24 Nov 2026 NZ)
+
+James asked for a painted picker page. Four more pictures in `pick/`: `hall` (the page backdrop, a games hall under a starry dome) and `stars`, `serpent`, `mural` (the picture across the top of each game card). Each card falls back to its game's `back/` picture if its own is missing. Hall prompt: say "no writing anywhere" (it painted big made-up titles in the sky otherwise). Sleeping serpent: describe the eyes as "gentle curved sleepy lines" and put open eyes, idols and carved faces in the negative list.
