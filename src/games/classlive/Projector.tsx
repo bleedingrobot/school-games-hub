@@ -17,6 +17,7 @@ import { MuralCloth, MuralScene, NO_MURAL_FX, type MuralFx } from './MuralScene'
 import { CoiledSerpent, JungleBackdrop, NO_SERPENT_FX, SerpentAmbience, SerpentScene, type SerpentFx } from './SerpentScene';
 import './projector.css';
 import { painted } from './paintedArt';
+import { HowTo } from './HowTo';
 import { speak } from '../../speech';
 import { next, VOICE_FOLDER } from './voiceLines';
 
@@ -77,6 +78,8 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
   const [fx, setFx] = useState<Fx>(NO_FX);
   const [now, setNow] = useState(() => Date.now());
   const [hideResults, setHideResults] = useState(false);
+  /** How to play, shown when the teacher presses Start in the lobby; "Let's play!" starts the game. */
+  const [showHow, setShowHow] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const bannerKey = useRef(0);
   const offset = useRef(0);
@@ -197,7 +200,8 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
           later(() => mx((f) => ({ ...f, revealing: false })), 9000);
           sound.play('reveal');
         } else sound.play('swell');
-        say(e.why === 'time' ? next('timeUp') : next('finished'), 1500);
+        if (e.why === 'heads') banner('Everyone reached the head!', 2600);
+        say(e.why === 'time' ? next('timeUp') : e.why === 'heads' ? next('allHeads') : next('finished'), 1500);
       }
     }
   }, [flag, later, say, sound]);
@@ -311,6 +315,7 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
   }, [lobbyOpen, room, say]);
   useEffect(() => {
     if (state !== 'over') { setRevealed(false); setHideResults(false); }
+    if (state !== 'lobby') setShowHow(false);
   }, [state]);
 
   return (
@@ -336,7 +341,9 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
       {!screen && (resuming ? <div className="cl-center"><p className="cl-center__word">Finding your room…</p></div> : <Setup busy={busy} problem={problem} onOpen={open} />)}
 
       {screen && game && state === 'lobby' && room && (
-        <Lobby screen={screen} game={game} className={className} onStart={() => void act({ action: 'start', room })} />
+        showHow
+          ? <HowTo game={game} players={screen.players} muted={sound.muted} onPlay={() => { setShowHow(false); void act({ action: 'start', room }); }} onBack={() => setShowHow(false)} />
+          : <Lobby screen={screen} game={game} className={className} onStart={() => setShowHow(true)} />
       )}
 
       {screen && serpent && (state === 'live' || state === 'over') && (

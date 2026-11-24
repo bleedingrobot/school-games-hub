@@ -419,6 +419,7 @@ export function SerpentScene({ game, people, wakeAt, over, fx, sound, onRevealed
             <linearGradient id="sp-stone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#9aa89d" /><stop offset="1" stopColor="#4d5c55" /></linearGradient>
             <radialGradient id="sp-head" cx="40%" cy="40%" r="75%"><stop offset="0" stopColor="#4ff0b0" /><stop offset="1" stopColor="#0b6b4c" /></radialGradient>
             <filter id="sp-blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="7" /></filter>
+            <linearGradient id="sp-roarg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff6c9" /><stop offset="1" stopColor="#ffd54a" /></linearGradient>
             <radialGradient id="sp-halo"><stop offset="0" stopColor="#ffe14d" stopOpacity="0.55" /><stop offset="1" stopColor="#ffe14d" stopOpacity="0" /></radialGradient>
             <filter id="sp-soft" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation={Math.max(2, lay.th * 0.06)} /></filter>
             {ART.skin && (
@@ -538,13 +539,23 @@ export function SerpentScene({ game, people, wakeAt, over, fx, sound, onRevealed
               </g>
             )}
 
-            {/* the answer-roar */}
-            {roaring && (
-              <g transform={`translate(${lay.head.x} ${Math.max(lay.head.y - lay.head.hh * 1.9, 70)})`}><g className="sp-roar">
-                <ellipse rx={Math.min(lay.w * 0.3, 230)} ry={lay.th * 0.62} fill="#fff6c9" stroke="#ff9f1c" strokeWidth="6" />
-                <text textAnchor="middle" dominantBaseline="central" className="sp-roar__num" style={{ fontSize: Math.min(lay.th * 0.95, lay.w * 0.12) }}>{chain.values[BODY]}</text>
-              </g></g>
-            )}
+            {/* the answer-roar: a speech bubble from the head with the chain's final answer, beside it so no box is hidden */}
+            {roaring && (() => {
+              // Below the head, the tip pointing up to its mouth.
+              const bw = Math.min(lay.th * 1.9, lay.w * 0.3);
+              const bh = lay.th * 0.78;
+              const x = Math.min(Math.max(lay.head.x + lay.head.dir * lay.th * 0.4, bw / 2 + 8), lay.w - bw / 2 - 8);
+              const y = Math.min(lay.head.y + lay.th * 0.95, lay.h - bh / 2 - 8);
+              const tip = lay.head.x + lay.head.dir * lay.th * 0.55 - x;
+              return (
+                <g transform={`translate(${x} ${y})`}><g className="sp-roar">
+                  <path d={`M ${-bw * 0.1} ${-bh / 2 + 2} L ${tip} ${-bh * 0.95} L ${bw * 0.12} ${-bh / 2 + 2} Z`} fill="#ffe27a" stroke="#b8860b" strokeWidth="4" strokeLinejoin="round" />
+                  <rect x={-bw / 2} y={-bh / 2} width={bw} height={bh} rx={bh * 0.3} fill="url(#sp-roarg)" stroke="#b8860b" strokeWidth="5" />
+                  <text y={-bh * 0.24} textAnchor="middle" dominantBaseline="central" className="sp-roar__word" style={{ fontSize: bh * 0.2 }}>The answer is</text>
+                  <text y={bh * 0.14} textAnchor="middle" dominantBaseline="central" className="sp-roar__num" style={{ fontSize: Math.min(bh * 0.55, (bw * 0.9) / (String(chain.values[BODY]).length * 0.62)) }}>{chain.values[BODY]}!</text>
+                </g></g>
+              );
+            })()}
           </g>
 
           {/* the gems */}

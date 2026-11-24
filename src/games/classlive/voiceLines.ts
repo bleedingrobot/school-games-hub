@@ -21,7 +21,35 @@ export const LINES = {
   guessed: ['Someone has guessed the picture!', 'A good guess! Someone got it!', 'We have a right guess!'],
   reveal: ["Here's the picture!", 'Ta-da! Here it is!', "Let's see the whole picture!"],
   timeUp: ["Time's up! Well done, everyone!", "That's time! Great work, everyone!", "Time's up! What a team!"],
+  allHeads: ['Everyone reached the head! Amazing!', 'The whole class made it to the head!', 'All the way to the top, everyone! Brilliant!'],
   finished: ['Well done, everyone!', 'Great work, everyone!', 'What a team! Well done!'],
+} as const;
+
+/** How to play (HowTo.tsx), read in order before a game. No numbers, so every line has a clip. */
+export const HOWTO = {
+  stars: [
+    'We know one times fact.',
+    'Use it to work out new facts. Turn it round, double, halve, times by ten, or add one more group.',
+    'Send your fact. Each new one becomes a star on the big screen.',
+    'Light up every arm of the web to bring out the sky creature!',
+  ],
+  serpent: [
+    'Start at the stone. Do each sum along the serpent, one box at a time.',
+    'Write each answer on your device. You get two tries.',
+    'Every right answer moves your gem up the serpent.',
+    'Right answers from the whole class wake the serpent. Reach the head, then keep going on the bonus tail!',
+  ],
+  serpentLevel: {
+    green: 'Today it is the green serpent: adding and taking away.',
+    gold: 'Today it is the gold serpent: all four, with times and share by two, five and ten.',
+    fire: 'Today it is the fire serpent: all four, with times tables up to twelve.',
+  },
+  mural: [
+    'A mystery picture is hiding under the tiles.',
+    'Answer maths questions on your device. Each right answer earns a flip.',
+    'Pick a tile to flip and show a little more of the picture.',
+    'When guessing opens, guess what the picture is!',
+  ],
 } as const;
 
 export type LineKey = keyof typeof LINES;
@@ -35,4 +63,7 @@ export function next(key: LineKey): string {
   return takes[n % takes.length];
 }
 
-export const allVoiceLines = (): string[] => Object.values(LINES).flat();
+export const allVoiceLines = (): string[] => [
+  ...Object.values(LINES).flat(),
+  ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural,
+];

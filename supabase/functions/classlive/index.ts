@@ -9870,6 +9870,19 @@ async function classLiveStep(sv, who, body) {
 						box: boxOf(s.game, who)
 					}
 				} };
+				const g = s.game;
+				if (out.events.some((e) => e.type === "head") && s.order.every((id) => g.heads.includes(id))) {
+					s.state = "over";
+					return {
+						reply: out.reply,
+						events: [...out.events, {
+							type: "over",
+							t,
+							why: "heads"
+						}],
+						players: [who]
+					};
+				}
 				return {
 					reply: out.reply,
 					events: out.events,

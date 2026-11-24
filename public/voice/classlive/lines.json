@@ -156,6 +156,18 @@
   "text": "Time's up! What a team!"
  },
  {
+  "slug": "everyone-reached-the-head-amazing",
+  "text": "Everyone reached the head! Amazing!"
+ },
+ {
+  "slug": "the-whole-class-made-it-to-the-head",
+  "text": "The whole class made it to the head!"
+ },
+ {
+  "slug": "all-the-way-to-the-top-everyone-brilliant",
+  "text": "All the way to the top, everyone! Brilliant!"
+ },
+ {
   "slug": "well-done-everyone",
   "text": "Well done, everyone!"
  },
@@ -166,5 +178,65 @@
  {
   "slug": "what-a-team-well-done",
   "text": "What a team! Well done!"
+ },
+ {
+  "slug": "we-know-one-times-fact",
+  "text": "We know one times fact."
+ },
+ {
+  "slug": "use-it-to-work-out-new-facts-turn-it-round-double-halve-times-by-ten-or-add-one-more-group",
+  "text": "Use it to work out new facts. Turn it round, double, halve, times by ten, or add one more group."
+ },
+ {
+  "slug": "send-your-fact-each-new-one-becomes-a-star-on-the-big-screen",
+  "text": "Send your fact. Each new one becomes a star on the big screen."
+ },
+ {
+  "slug": "light-up-every-arm-of-the-web-to-bring-out-the-sky-creature",
+  "text": "Light up every arm of the web to bring out the sky creature!"
+ },
+ {
+  "slug": "start-at-the-stone-do-each-sum-along-the-serpent-one-box-at-a-time",
+  "text": "Start at the stone. Do each sum along the serpent, one box at a time."
+ },
+ {
+  "slug": "write-each-answer-on-your-device-you-get-two-tries",
+  "text": "Write each answer on your device. You get two tries."
+ },
+ {
+  "slug": "every-right-answer-moves-your-gem-up-the-serpent",
+  "text": "Every right answer moves your gem up the serpent."
+ },
+ {
+  "slug": "right-answers-from-the-whole-class-wake-the-serpent-reach-the-head-then-keep-going-on-the-bonus-tail",
+  "text": "Right answers from the whole class wake the serpent. Reach the head, then keep going on the bonus tail!"
+ },
+ {
+  "slug": "today-it-is-the-green-serpent-adding-and-taking-away",
+  "text": "Today it is the green serpent: adding and taking away."
+ },
+ {
+  "slug": "today-it-is-the-gold-serpent-all-four-with-times-and-share-by-two-five-and-ten",
+  "text": "Today it is the gold serpent: all four, with times and share by two, five and ten."
+ },
+ {
+  "slug": "today-it-is-the-fire-serpent-all-four-with-times-tables-up-to-twelve",
+  "text": "Today it is the fire serpent: all four, with times tables up to twelve."
+ },
+ {
+  "slug": "a-mystery-picture-is-hiding-under-the-tiles",
+  "text": "A mystery picture is hiding under the tiles."
+ },
+ {
+  "slug": "answer-maths-questions-on-your-device-each-right-answer-earns-a-flip",
+  "text": "Answer maths questions on your device. Each right answer earns a flip."
+ },
+ {
+  "slug": "pick-a-tile-to-flip-and-show-a-little-more-of-the-picture",
+  "text": "Pick a tile to flip and show a little more of the picture."
+ },
+ {
+  "slug": "when-guessing-opens-guess-what-the-picture-is",
+  "text": "When guessing opens, guess what the picture is!"
  }
 ]
