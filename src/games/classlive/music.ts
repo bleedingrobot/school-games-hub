@@ -9,10 +9,18 @@
  */
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 
-export type Track = 'picker' | 'stars' | 'serpent' | 'mural' | 'guess' | 'boss' | 'goldrush' | 'skyclimb' | 'island' | 'hill' | 'auction';
+type Calm = 'stars' | 'serpent' | 'boss' | 'goldrush' | 'skyclimb' | 'island' | 'hill' | 'auction';
+/**
+ * Each game and arena has a calm track and a "-hot" one: the same tune made more dramatic and high-energy, for the
+ * last 30 seconds and the big moments (James, 25 Nov 2026 NZ). Mystery Mural's hot one is its guessing music.
+ */
+export type Track = 'picker' | 'win' | 'mural' | 'guess' | Calm | `${Calm}-hot`;
 
 const FILES = import.meta.glob('./music/*.mp3', { eager: true, import: 'default' }) as Record<string, string>;
-export const trackUrl = (t: Track): string | undefined => FILES[`./music/${t}.mp3`];
+const file = (t: string): string | undefined => FILES[`./music/${t}.mp3`];
+/** The file for a track; a missing hot track plays its calm one, a missing win plays the picker's. */
+export const trackUrl = (t: Track): string | undefined =>
+  file(t) ?? (t.endsWith('-hot') ? file(t.slice(0, -4)) : t === 'win' ? file('picker') : undefined);
 
 const KEY = 'classlive.music';
 const FADE_MS = 900;
@@ -130,9 +138,19 @@ export function useMusic(track: Track | null, soundOn: boolean) {
   useEffect(() => () => player.want(me, null), [me]);
 }
 
-/** The track for a Class Live room: the lobby and the end share the picker's, Mystery Mural's guessing has its own. */
-export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | null, guessing: boolean): Track {
+/** How hot a moment is: the last 30 seconds, a serpent awake, a full web chasing the supernova. */
+export const HOT_MS = 30_000;
+
+/** The track for a Class Live room: the lobby shares the picker's, the end plays the win, hot moments the hot one. */
+export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | null, o: { guessing?: boolean; hot?: boolean } = {}): Track {
+  if (state === 'over') return 'win';
   if (!state || !kind || state !== 'live') return 'picker';
-  if (kind === 'mural') return guessing ? 'guess' : 'mural';
-  return kind;
+  if (kind === 'mural') return o.guessing || o.hot ? 'guess' : 'mural';
+  return o.hot ? `${kind}-hot` : kind;
+}
+
+/** The track for a Class Showdown arena. */
+export function arenaTrack(arena: Calm, state: 'lobby' | 'live' | 'over' | undefined, hot: boolean): Track {
+  if (state === 'over') return 'win';
+  return state === 'live' && hot ? `${arena}-hot` : arena;
 }
