@@ -269,3 +269,11 @@ export const INTEGER_SKILL_KEYS = {
   'int-add-sub': ['int:up', 'int:down', 'int:neg-minus', 'int:temp-up', 'int:temp-down'],
   'int-negatives': ['int:add-neg', 'int:sub-neg', 'int:compare-dec'],
 };
+
+export const INTEGER_SLOW_KEYS: string[] = [];
+
+export const INTEGER_LADDER = [
+  { id: 'int-compare', label: 'Negative numbers in order', tiny: 'Negatives in order', stage: 'integers', year: 7, tags: Y7 },
+  { id: 'int-add-sub', label: 'Adding and taking away across zero', tiny: 'Across zero', stage: 'integers', year: 7, tags: Y7_OPS },
+  { id: 'int-negatives', label: 'Adding and taking away negatives', tiny: 'Adding negatives', stage: 'integers', year: 8, tags: Y8 },
+] as const;

@@ -972,12 +972,20 @@ function foldBondPairs(stats) {
 /** A whole number from lo to hi (both included). */
 const int = (random, lo, hi) => lo + Math.floor(random() * (hi - lo + 1));
 const pickOne = (random, items) => items[Math.floor(random() * items.length)];
+function shuffle(items, random) {
+	const out = [...items];
+	for (let i = out.length - 1; i > 0; i--) {
+		const j = Math.floor(random() * (i + 1));
+		[out[i], out[j]] = [out[j], out[i]];
+	}
+	return out;
+}
 /** Rounds away floating-point dust: 0.1 + 0.2 → 0.3. */
 const tidy = (n) => Math.round(n * 1e3) / 1e3;
 /** Whole numbers within [lo, hi]. */
 const isInt = (n, lo, hi) => typeof n === "number" && Number.isInteger(n) && n >= lo && n <= hi;
 /** How a number is written on screen: 3406 → "3406", 12500 → "12 500" (NZ style for 5+ digits), 0.5 → "0.5". */
-function show(n) {
+function show$1(n) {
 	const [whole, frac] = String(tidy(Math.abs(n))).split(".");
 	const grouped = whole.length >= 5 ? whole.replace(/\B(?=(\d{3})+(?!\d))/g, " ") : whole;
 	return (n < 0 ? "−" : "") + grouped + (frac ? "." + frac : "");
@@ -1088,11 +1096,11 @@ const sameAnswer = (a, b) => Math.abs(a - b) < 1e-6;
 * Band 4: 3-digit ± 3-digit, and near-hundreds (398 + 250, 634 − 299).
 */
 const TODO$6 = (what) => [`TODO-${what}`];
-const sum = (a, b, extra = {}) => {
+const sum$1 = (a, b, extra = {}) => {
 	const parts = [
-		show(a),
+		show$1(a),
 		"+",
-		show(b),
+		show$1(b),
 		"=",
 		"?"
 	];
@@ -1105,9 +1113,9 @@ const sum = (a, b, extra = {}) => {
 };
 const diff = (a, b, extra = {}) => {
 	const parts = [
-		show(a),
+		show$1(a),
 		"−",
-		show(b),
+		show$1(b),
 		"=",
 		"?"
 	];
@@ -1179,13 +1187,13 @@ const facts = {
 		const fact = parseFact$1(key);
 		if (!fact || fact.a !== a || fact.b !== b || !isInt(v, 0, 4)) return null;
 		const s = a + b;
-		if (v === 0) return sum(a, b, { wrong: [
+		if (v === 0) return sum$1(a, b, { wrong: [
 			s + 1,
 			s - 1,
 			s + 2,
 			s - 2
 		] });
-		if (v === 1) return sum(b, a, { wrong: [
+		if (v === 1) return sum$1(b, a, { wrong: [
 			s + 1,
 			s - 1,
 			s + 2,
@@ -1240,7 +1248,7 @@ const ADD_SUB = {
 	label: "Adding and taking away",
 	families: {
 		facts,
-		"add:tens": kind("add:tens", "Adding tens (40 + 30)", "add-tens", (r) => [int(r, 1, 9) * 10, int(r, 1, 9) * 10], (a, b) => a % 10 === 0 && b % 10 === 0 && a >= 10 && a <= 90 && b >= 10 && b <= 90, (a, b) => sum(a, b, { wrong: [
+		"add:tens": kind("add:tens", "Adding tens (40 + 30)", "add-tens", (r) => [int(r, 1, 9) * 10, int(r, 1, 9) * 10], (a, b) => a % 10 === 0 && b % 10 === 0 && a >= 10 && a <= 90 && b >= 10 && b <= 90, (a, b) => sum$1(a, b, { wrong: [
 			a + b + 10,
 			a + b - 10,
 			(a + b) / 10,
@@ -1254,7 +1262,7 @@ const ADD_SUB = {
 			a - b - 10,
 			a + b
 		] })),
-		"add:2d+tens": kind("add:2d+tens", "Adding tens to a 2-digit number (47 + 30)", "add-tens-to-2d", (r) => [int(r, 1, 6) * 10 + int(r, 1, 9), int(r, 1, 3) * 10], (a, b) => a >= 11 && a <= 69 && ones$1(a) !== 0 && b % 10 === 0 && b >= 10 && b <= 30, (a, b) => sum(a, b, { wrong: addWrong(a, b).concat([a + b / 10]) })),
+		"add:2d+tens": kind("add:2d+tens", "Adding tens to a 2-digit number (47 + 30)", "add-tens-to-2d", (r) => [int(r, 1, 6) * 10 + int(r, 1, 9), int(r, 1, 3) * 10], (a, b) => a >= 11 && a <= 69 && ones$1(a) !== 0 && b % 10 === 0 && b >= 10 && b <= 30, (a, b) => sum$1(a, b, { wrong: addWrong(a, b).concat([a + b / 10]) })),
 		"sub:2d-tens": kind("sub:2d-tens", "Taking tens from a 2-digit number (77 − 30)", "sub-tens-from-2d", (r) => {
 			const b = int(r, 1, 3) * 10;
 			return [b + int(r, 1, 5) * 10 + int(r, 1, 9), b];
@@ -1262,7 +1270,7 @@ const ADD_SUB = {
 		"add:bridge10": kind("add:bridge10", "Adding across a ten (47 + 8)", "add-bridge-ten", (r) => {
 			const a = int(r, 1, 8) * 10 + int(r, 2, 9);
 			return [a, int(r, 11 - ones$1(a), 9)];
-		}, (a, b) => a >= 12 && a <= 89 && b >= 2 && b <= 9 && ones$1(a) + b >= 10, (a, b) => sum(a, b, { wrong: addWrong(a, b) })),
+		}, (a, b) => a >= 12 && a <= 89 && b >= 2 && b <= 9 && ones$1(a) + b >= 10, (a, b) => sum$1(a, b, { wrong: addWrong(a, b) })),
 		"sub:bridge10": kind("sub:bridge10", "Taking away across a ten (53 − 8)", "sub-bridge-ten", (r) => {
 			const a = int(r, 2, 9) * 10 + int(r, 0, 7);
 			return [a, int(r, Math.max(2, ones$1(a) + 1), 9)];
@@ -1270,7 +1278,7 @@ const ADD_SUB = {
 		"add:2d+2d": kind("add:2d+2d", "Adding 2-digit numbers (34 + 25)", "add-2d", (r) => {
 			const a = int(r, 1, 7) * 10 + int(r, 1, 8);
 			return [a, int(r, 1, 8 - tens(a)) * 10 + int(r, 1, 9 - ones$1(a))];
-		}, (a, b) => a >= 10 && a <= 99 && b >= 10 && b <= 99 && ones$1(a) + ones$1(b) <= 9 && a + b <= 99, (a, b) => sum(a, b, { wrong: addWrong(a, b) })),
+		}, (a, b) => a >= 10 && a <= 99 && b >= 10 && b <= 99 && ones$1(a) + ones$1(b) <= 9 && a + b <= 99, (a, b) => sum$1(a, b, { wrong: addWrong(a, b) })),
 		"sub:2d-2d": kind("sub:2d-2d", "Taking away 2-digit numbers (59 − 25)", "sub-2d", (r) => {
 			const b = int(r, 1, 7) * 10 + int(r, 1, 8);
 			return [b + int(r, 1, 9 - tens(b)) * 10 + int(r, 0, 9 - ones$1(b)), b];
@@ -1278,7 +1286,7 @@ const ADD_SUB = {
 		"add:2d+2d:carry": kind("add:2d+2d:carry", "Adding 2-digit numbers, with regrouping (47 + 36)", "add-2d-regroup", (r) => {
 			const a = int(r, 1, 7) * 10 + int(r, 2, 9);
 			return [a, int(r, 1, 8 - tens(a)) * 10 + int(r, 10 - ones$1(a), 9)];
-		}, (a, b) => a >= 10 && a <= 99 && b >= 10 && b <= 99 && ones$1(a) + ones$1(b) >= 10 && a + b <= 99, (a, b) => sum(a, b, { wrong: addWrong(a, b) })),
+		}, (a, b) => a >= 10 && a <= 99 && b >= 10 && b <= 99 && ones$1(a) + ones$1(b) >= 10 && a + b <= 99, (a, b) => sum$1(a, b, { wrong: addWrong(a, b) })),
 		"sub:2d-2d:borrow": kind("sub:2d-2d:borrow", "Taking away 2-digit numbers, with regrouping (52 − 37)", "sub-2d-regroup", (r) => {
 			const a = int(r, 3, 9) * 10 + int(r, 0, 8);
 			return [a, int(r, 1, tens(a) - 2) * 10 + int(r, ones$1(a) + 1, 9)];
@@ -1314,12 +1322,12 @@ const ADD_SUB = {
 		"add:3d+3d": kind("add:3d+3d", "Adding 3-digit numbers (456 + 278)", "add-3d", (r) => {
 			const a = int(r, 101, 799);
 			return [a, int(r, 101, 999 - a)];
-		}, (a, b) => a >= 101 && a <= 799 && b >= 101 && a + b <= 999, (a, b) => sum(a, b, { wrong: addWrong(a, b) })),
+		}, (a, b) => a >= 101 && a <= 799 && b >= 101 && a + b <= 999, (a, b) => sum$1(a, b, { wrong: addWrong(a, b) })),
 		"sub:3d-3d": kind("sub:3d-3d", "Taking away 3-digit numbers (502 − 178)", "sub-3d", (r) => {
 			const b = int(r, 101, 799);
 			return [int(r, b + 11, 999), b];
 		}, (a, b) => a >= 112 && a <= 999 && b >= 101 && b <= 799 && a - b >= 11, (a, b) => diff(a, b, { wrong: subWrong(a, b) })),
-		"add:near100": kind("add:near100", "Adding a number close to a hundred (398 + 250)", "add-compensate", (r) => [int(r, 1, 5) * 100 - int(r, 1, 3), int(r, 11, 49) * 10], (a, b) => a % 100 >= 97 && a >= 97 && a <= 499 && b % 10 === 0 && b >= 110 && b <= 490, (a, b) => sum(a, b, { wrong: [
+		"add:near100": kind("add:near100", "Adding a number close to a hundred (398 + 250)", "add-compensate", (r) => [int(r, 1, 5) * 100 - int(r, 1, 3), int(r, 11, 49) * 10], (a, b) => a % 100 >= 97 && a >= 97 && a <= 499 && b % 10 === 0 && b >= 110 && b <= 490, (a, b) => sum$1(a, b, { wrong: [
 			a + b + 2,
 			Math.ceil(a / 100) * 100 + b,
 			a + b - 10,
@@ -1450,8 +1458,8 @@ function say(n) {
 * Band 4: rounding to a whole number, decimals × whole numbers, fractions as decimals (3/4 = 0.75).
 */
 const TODO$5 = (what) => [`TODO-${what}`];
-const tenths$1 = (n) => show(n / 10);
-const hundredths$1 = (n) => show(n / 100);
+const tenths$1 = (n) => show$1(n / 10);
+const hundredths$1 = (n) => show$1(n / 100);
 const decimal = (made) => ({
 	...made,
 	input: "decimal"
@@ -1913,9 +1921,9 @@ function factFamily(label, divisors, upTo) {
 }
 const divide = (n, d, extra = {}) => {
 	const parts = [
-		show(n),
+		show$1(n),
 		"÷",
-		show(d),
+		show$1(d),
 		"=",
 		"?"
 	];
@@ -2089,7 +2097,7 @@ const DIVISION = {
 * Band 4: comparing any two fractions, simplifying (6/8 = 3/?).
 */
 const TODO$3 = (what) => [`TODO-${what}`];
-const gcd$2 = (a, b) => b === 0 ? a : gcd$2(b, a % b);
+const gcd$3 = (a, b) => b === 0 ? a : gcd$3(b, a % b);
 const frac$1 = (n, d) => `${n}/${d}`;
 /** A "which is bigger?" question: the answer is the index of the bigger fraction. */
 function bigger(n1, d1, n2, d2) {
@@ -2197,7 +2205,7 @@ const FRACTIONS$1 = {
 				let n;
 				do
 					n = int(r, 2, d - 1);
-				while (gcd$2(n, d) !== 1);
+				while (gcd$3(n, d) !== 1);
 				return [
 					n,
 					d,
@@ -2211,7 +2219,7 @@ const FRACTIONS$1 = {
 					5,
 					8,
 					10
-				].includes(d) || !isInt(n, 2, d - 1) || gcd$2(n, d) !== 1 || !isInt(q, 1, 10)) return null;
+				].includes(d) || !isInt(n, 2, d - 1) || gcd$3(n, d) !== 1 || !isInt(q, 1, 10)) return null;
 				const parts = [
 					frac$1(n, d),
 					"of",
@@ -2242,7 +2250,7 @@ const FRACTIONS$1 = {
 				let n;
 				do
 					n = int(r, 1, d - 1);
-				while (gcd$2(n, d) !== 1);
+				while (gcd$3(n, d) !== 1);
 				return [
 					n,
 					d,
@@ -2251,7 +2259,7 @@ const FRACTIONS$1 = {
 				];
 			},
 			make: (_k, [n, d, k, v]) => {
-				if (!isInt(d, 2, 5) || !isInt(n, 1, d - 1) || gcd$2(n, d) !== 1 || !isInt(k, 2, 5) || !isInt(v, 0, 1)) return null;
+				if (!isInt(d, 2, 5) || !isInt(n, 1, d - 1) || gcd$3(n, d) !== 1 || !isInt(k, 2, 5) || !isInt(v, 0, 1)) return null;
 				const blank = v === 0 ? `?/${d * k}` : `${n * k}/?`;
 				const parts = [
 					frac$1(n, d),
@@ -2451,7 +2459,7 @@ const FRACTIONS$1 = {
 				const d = int(r, 2, 6);
 				do
 					n = int(r, 1, d - 1);
-				while (gcd$2(n, d) !== 1);
+				while (gcd$3(n, d) !== 1);
 				return [
 					n,
 					d,
@@ -2460,7 +2468,7 @@ const FRACTIONS$1 = {
 				];
 			},
 			make: (_k, [n, d, k, v]) => {
-				if (!isInt(d, 2, 6) || !isInt(n, 1, d - 1) || gcd$2(n, d) !== 1 || !isInt(k, 2, 6) || !isInt(v, 0, 1)) return null;
+				if (!isInt(d, 2, 6) || !isInt(n, 1, d - 1) || gcd$3(n, d) !== 1 || !isInt(k, 2, 6) || !isInt(v, 0, 1)) return null;
 				const parts = [
 					frac$1(n * k, d * k),
 					"=",
@@ -2564,7 +2572,7 @@ function digitWorth(key, label, lo, hi) {
 			const d = digitAt(n, place);
 			const parts = [
 				"In",
-				show(n) + ",",
+				show$1(n) + ",",
 				"the",
 				String(d),
 				"is worth",
@@ -2580,7 +2588,7 @@ function digitWorth(key, label, lo, hi) {
 					d * 10 ** (place - 1),
 					d * 10 ** (place + 2)
 				],
-				fact: `In ${show(n)}, the ${d} is worth ${show(d * 10 ** place)}`
+				fact: `In ${show$1(n)}, the ${d} is worth ${show$1(d * 10 ** place)}`
 			};
 		}
 	};
@@ -2605,10 +2613,10 @@ function partition(key, label, lo, hi) {
 				const d = digitAt(n, p);
 				if (d === 0) continue;
 				if (terms.length) terms.push("+");
-				terms.push(p === place ? "?" : show(d * 10 ** p));
+				terms.push(p === place ? "?" : show$1(d * 10 ** p));
 			}
 			const parts = [
-				show(n),
+				show$1(n),
 				"=",
 				...terms
 			];
@@ -2652,8 +2660,8 @@ function moreLess(key, label, steps, lo, hi) {
 		make: (_k, [n, v, step]) => {
 			if (!ok(n, v, step)) return null;
 			const parts = [
-				`${show(step)} ${v === 0 ? "more" : "less"} than`,
-				show(n),
+				`${show$1(step)} ${v === 0 ? "more" : "less"} than`,
+				show$1(n),
 				"=",
 				"?"
 			];
@@ -2693,8 +2701,8 @@ function rounding(key, label, to, lo, hi) {
 			const answer = n % to >= to / 2 ? down + to : down;
 			const parts = [
 				"Round",
-				show(n),
-				`to the nearest ${show(to)}:`,
+				show$1(n),
+				`to the nearest ${show$1(to)}:`,
 				"?"
 			];
 			return {
@@ -2707,7 +2715,7 @@ function rounding(key, label, to, lo, hi) {
 					Math.round(n / (to / 10 || 1)) * (to / 10 || 1),
 					answer + to
 				],
-				fact: `${show(n)} rounded to the nearest ${show(to)} is ${show(answer)}`
+				fact: `${show$1(n)} rounded to the nearest ${show$1(to)} is ${show$1(answer)}`
 			};
 		}
 	};
@@ -2737,7 +2745,7 @@ const PLACE_VALUE = {
 				const parts = [
 					String(n),
 					"×",
-					show(m),
+					show$1(m),
 					"=",
 					"?"
 				];
@@ -2915,12 +2923,12 @@ const LAYOUTS = [
 	"scatter",
 	"ring"
 ];
-const range$7 = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
+const range$8 = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
 const COUNT_KEYS = {
-	give: range$7(1, 20).map((n) => `give:n${n}`),
-	howmany: LAYOUTS.flatMap((layout) => range$7(1, 10).map((n) => `howmany:n${n}:${layout}`)),
-	counton: range$7(4, 9).map((s) => `counton:${s}+1`),
-	across: range$7(11, 20).map((n) => `across:n${n}`)
+	give: range$8(1, 20).map((n) => `give:n${n}`),
+	howmany: LAYOUTS.flatMap((layout) => range$8(1, 10).map((n) => `howmany:n${n}:${layout}`)),
+	counton: range$8(4, 9).map((s) => `counton:${s}+1`),
+	across: range$8(11, 20).map((n) => `across:n${n}`)
 };
 Object.values(COUNT_KEYS).flat();
 /** The numbers a key names: give:n6 is [6], howmany:n6:ring is [6], counton:5+1 is [5, 1]. */
@@ -3010,11 +3018,11 @@ function bonds(label, tag, prefix, total, from) {
 		}
 	};
 }
-const range$6 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
+const range$7 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
 /** Doubles of dblFrom–dblTo and halves of the even numbers halfFrom–halfTo. */
 function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
-	const dbls = range$6(dblFrom, dblTo);
-	const halves = range$6(halfFrom, halfTo, 2);
+	const dbls = range$7(dblFrom, dblTo);
+	const halves = range$7(halfFrom, halfTo, 2);
 	const keys = [...dbls.map((n) => `dbl:${n}`), ...halves.map((n) => `half:${n}`)];
 	return {
 		label,
@@ -3086,7 +3094,7 @@ function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
 const tenAnd = {
 	label: "\"Ten and\" facts (10 + 4)",
 	curriculumTags: ["MS.Y1.NUM.OP.P6"],
-	keys: range$6(1, 9).map((n) => `tenand:${n}`),
+	keys: range$7(1, 9).map((n) => `tenand:${n}`),
 	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 1)],
 	make: (key, [n, v]) => {
 		if (!isInt(n, 1, 9) || key !== `tenand:${n}` || !isInt(v, 0, 3)) return null;
@@ -3135,7 +3143,7 @@ const tenAnd = {
 const tenLess = {
 	label: "\"Ten less\" facts (14 − 10)",
 	curriculumTags: ["MS.Y1.NUM.OP.P6"],
-	keys: range$6(1, 9).map((n) => `tenless:${n}`),
+	keys: range$7(1, 9).map((n) => `tenless:${n}`),
 	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 1)],
 	make: (key, [n, v]) => {
 		if (!isInt(n, 1, 9) || key !== `tenless:${n}` || !isInt(v, 0, 1)) return null;
@@ -3168,7 +3176,7 @@ const tenLess = {
 	}
 };
 const tenMove = (up) => {
-	const keys = range$6(up ? 10 : 20, (up ? 10 : 20) + 9).map((n) => `${up ? "tenup" : "tendown"}:${n}`);
+	const keys = range$7(up ? 10 : 20, (up ? 10 : 20) + 9).map((n) => `${up ? "tenup" : "tendown"}:${n}`);
 	return {
 		label: up ? "Ten more than a teen (14 + 10)" : "Ten less than a number in the twenties (24 − 10)",
 		curriculumTags: ["MS.Y1.NUM.OP.P6"],
@@ -3296,7 +3304,7 @@ const SKIP_FROM_STEPS = [
 function skipTerms(spec, kind, answer, at, offset = 0) {
 	const { step, upTo } = spec;
 	if (kind === "next" ? at !== 3 && at !== 4 : at !== 1 && at !== 2) return null;
-	const terms = kind === "up" ? range$6(answer - at * step, answer + (3 - at) * step, step) : kind === "back" ? range$6(answer - (3 - at) * step, answer + at * step, step).reverse() : range$6(answer - at * step, answer, step);
+	const terms = kind === "up" ? range$7(answer - at * step, answer + (3 - at) * step, step) : kind === "back" ? range$7(answer - (3 - at) * step, answer + at * step, step).reverse() : range$7(answer - at * step, answer, step);
 	if (spec.offsets && (kind === "back" || terms[0] !== offset)) return null;
 	if (spec.above !== void 0 && answer <= spec.above) return null;
 	return terms.every((n) => n >= 0 && n <= upTo) && answer % step === offset ? terms : null;
@@ -3306,7 +3314,7 @@ const skipKeys = (spec) => skipOffsets(spec).flatMap((offset) => (spec.offsets ?
 	"up",
 	"next",
 	"back"
-]).flatMap((kind) => range$6(offset, spec.upTo, spec.step).filter((n) => [
+]).flatMap((kind) => range$7(offset, spec.upTo, spec.step).filter((n) => [
 	1,
 	2,
 	3,
@@ -3392,7 +3400,7 @@ const skipFamilies = {
 		step,
 		upTo: step * 5,
 		word,
-		offsets: range$6(1, step - 1),
+		offsets: range$7(1, step - 1),
 		prefix: (offset) => `skip${step}o${offset}`
 	})]))
 };
@@ -3403,7 +3411,7 @@ const PART_WHOLES = {
 	parts5: [3, 5],
 	parts10: [6, 10]
 };
-const partKeys = (from, to) => range$6(from, to).flatMap((w) => range$6(0, w).map((s) => `part${w}:${s}`));
+const partKeys = (from, to) => range$7(from, to).flatMap((w) => range$7(0, w).map((s) => `part${w}:${s}`));
 const parsePart = (key) => {
 	const m = /^part(\d+):(\d+)$/.exec(key);
 	return m ? {
@@ -3454,7 +3462,7 @@ const ODD_EVEN_LABELS = ["odd", "even"];
 const oddEven = {
 	label: "Odd and even numbers to 20",
 	curriculumTags: ["MS.Y2.NUM.OP.P2"],
-	keys: range$6(1, 20).map((n) => `oddeven:${n}`),
+	keys: range$7(1, 20).map((n) => `oddeven:${n}`),
 	roll: (key) => [Number(key.split(":")[1])],
 	make: (key, [n]) => {
 		if (!isInt(n, 1, 20) || key !== `oddeven:${n}`) return null;
@@ -3474,7 +3482,7 @@ const oddEven = {
 		};
 	}
 };
-const LINE_TENS = range$6(1, 9).map((n) => n * 10);
+const LINE_TENS = range$7(1, 9).map((n) => n * 10);
 const LINE_OTHERS_100 = [
 	11,
 	14,
@@ -3498,7 +3506,7 @@ const LINE_OTHERS_100 = [
 	94,
 	97
 ];
-const LINE_HUNDREDS = range$6(1, 9).map((n) => n * 100);
+const LINE_HUNDREDS = range$7(1, 9).map((n) => n * 100);
 const LINE_OTHERS_1000 = [
 	120,
 	140,
@@ -3557,8 +3565,8 @@ const TENS_LESS = [
 	100
 ];
 /** Not a tens number and not halfway: every third, so the spread covers the whole line. */
-const NEAR10_OTHERS = range$6(1, 99).filter((n) => n % 5 !== 0).filter((_, i) => i % 3 === 0).slice(0, 26);
-const NEAR10_HALF = range$6(5, 95, 10);
+const NEAR10_OTHERS = range$7(1, 99).filter((n) => n % 5 !== 0).filter((_, i) => i % 3 === 0).slice(0, 26);
+const NEAR10_HALF = range$7(5, 95, 10);
 const NEAR100_OTHERS = [
 	130,
 	180,
@@ -3580,16 +3588,16 @@ const NEAR100_OTHERS = [
 	920,
 	960
 ].filter((_, i) => i % 2 === 0).concat([440]);
-const NEAR100_HALF = range$6(150, 950, 100);
+const NEAR100_HALF = range$7(150, 950, 100);
 const ZOOM_KEYS = [
-	...range$6(41, 49).map((n) => `zoom:40-50:${n}`),
-	...range$6(71, 79).map((n) => `zoom:70-80:${n}`),
+	...range$7(41, 49).map((n) => `zoom:40-50:${n}`),
+	...range$7(71, 79).map((n) => `zoom:70-80:${n}`),
 	"zoom:0-200:130",
 	"zoom:300-400:350"
 ];
-const PV_TENS = range$6(1, 9).map((n) => n * 10);
+const PV_TENS = range$7(1, 9).map((n) => n * 10);
 /** Two-digit numbers that are not tens: four ones digits for each ten, spread so no two ends repeat. */
-const PV_OTHERS = range$6(1, 9).flatMap((t) => [
+const PV_OTHERS = range$7(1, 9).flatMap((t) => [
 	1,
 	3,
 	5,
@@ -3657,9 +3665,9 @@ const PV_TEN_LESS = [
 	39,
 	72
 ];
-const PV_HUNDREDS = range$6(1, 9).map((h) => h * 100);
+const PV_HUNDREDS = range$7(1, 9).map((h) => h * 100);
 /** Three-digit numbers that are not hundreds: for each hundred, one with every digit, one with a zero in the middle, one with a zero at the end. */
-const PV3_OTHERS = range$6(1, 9).flatMap((h) => [
+const PV3_OTHERS = range$7(1, 9).flatMap((h) => [
 	h * 100 + (h * 3 % 9 + 1) * 10 + h * 2 % 9 + 1,
 	h * 100 + h * 2 % 9 + 1,
 	h * 100 + ((h + 4) % 9 + 1) * 10
@@ -3954,16 +3962,16 @@ const countingFamilies = {
 	countOn: counting("One more (count on from a covered plate)", COUNT_KEYS.counton),
 	across: counting("How many berries? (11 to 20, past ten)", COUNT_KEYS.across)
 };
-const ROWS_KEYS = range$6(2, 5).flatMap((r) => range$6(2, 10).map((c) => `rows:${r}x${c}`));
-const TURN_PAIRS = range$6(2, 6).flatMap((r) => range$6(2, 6).filter((c) => c !== r).map((c) => [r, c]));
+const ROWS_KEYS = range$7(2, 5).flatMap((r) => range$7(2, 10).map((c) => `rows:${r}x${c}`));
+const TURN_PAIRS = range$7(2, 6).flatMap((r) => range$7(2, 6).filter((c) => c !== r).map((c) => [r, c]));
 const SHARE_KEYS = [
 	2,
 	3,
 	4,
 	5,
 	10
-].flatMap((r) => range$6(2, 7).map((a) => `share:${r * a}/${r}`));
-const CUT_KEYS = range$6(6, 9).flatMap((r) => range$6(3, 9).map((c) => `cut:${r}x${c}`));
+].flatMap((r) => range$7(2, 7).map((a) => `share:${r * a}/${r}`));
+const CUT_KEYS = range$7(6, 9).flatMap((r) => range$7(3, 9).map((c) => `cut:${r}x${c}`));
 const keyPair = (key) => {
 	const m = /(\d+)[x/](\d+)$/.exec(key);
 	return [Number(m[1]), Number(m[2])];
@@ -4409,7 +4417,7 @@ function labelValue(label) {
 	return /^\d+(?:\.\d+)?$/.test(label) ? Number(label) : null;
 }
 const frac = (n, d) => `${n}/${d}`;
-const gcd$1 = (a, b) => b === 0 ? a : gcd$1(b, a % b);
+const gcd$2 = (a, b) => b === 0 ? a : gcd$2(b, a % b);
 /** A question's parts spoken for a screen reader: "3/4" is "3 quarters", "25%" is "25 percent", "0.25" is "0 point 2 5". */
 function talk(parts) {
 	const words = {
@@ -4481,7 +4489,7 @@ function pick(base, right, named, opts) {
 *   fraction-bonds  bondf1:whole  bondf1:missing-top  bondf1:small  bondf1:big  bondf1:take
 *   decimal-bonds   bondd1:next-whole  bondd1:hundredths  bondd1:take  bondd10:tenths  bondd10:take
 */
-const range$5 = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
+const range$6 = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
 const notTen$1 = (n) => n % 10 !== 0;
 const FRACTION_TAGS = ["MS.Y3.NUM.RN.P6", "MS.Y3.NUM.RN.K6"];
 const ALL_DENS = [
@@ -4626,9 +4634,9 @@ const fractionFamilies = [
 ];
 const DECIMAL_TAGS = ["MS.Y4.NUM.RN.P10", "MS.Y5.NUM.RN.P12"];
 /** Hundredths that are not whole tenths (0.01 to 0.99, not 0.3): those are tenths to 1, in add-tenths. */
-const HUNDREDTHS = range$5(1, 99).filter(notTen$1);
+const HUNDREDTHS = range$6(1, 99).filter(notTen$1);
 /** Tenths from 0.1 to 9.9 that are not whole numbers. */
-const TENTHS = range$5(1, 99).filter(notTen$1);
+const TENTHS = range$6(1, 99).filter(notTen$1);
 /**
 * A number of small units (hundredths or tenths) and a target of `whole` such units: the answer is `whole - u`, written with
 * `scale` (100 for hundredths, 10 for tenths). Every value is worked out in whole units and only divided at the end.
@@ -4639,7 +4647,7 @@ function decimalBond(u, whole, scale, target) {
 	const answer = whole - u;
 	return {
 		answer: answer / scale,
-		shown: show(u / scale),
+		shown: show$1(u / scale),
 		named: {
 			"made each digit up to 10": ((10 - tens) * 10 + (10 - ones)) / scale,
 			"made each digit up to 9": (whole - 1 - u) / scale,
@@ -4694,14 +4702,14 @@ function decimalFamilies(prefix, word, labels, pool, scale, target) {
 	})];
 }
 /** Tenths up to the next whole number, the step that makes 10 easy: 6.3 + ? = 7. Tenth counts 11 to 89 that are not whole. */
-const PAST_ONE = range$5(11, 89).filter(notTen$1);
+const PAST_ONE = range$6(11, 89).filter(notTen$1);
 const decimalBondFamilies = [
 	oneKey("bondd1:next-whole", "Tenths up to the next whole number (6.3 + ? = 7)", DECIMAL_TAGS, 1, (_k, r) => [pickOne(r, PAST_ONE)], (_k, [u]) => {
 		if (!PAST_ONE.includes(u)) return null;
 		const next = Math.floor(u / 10) + 1;
 		const answer = next * 10 - u;
 		const parts = [
-			show(u / 10),
+			show$1(u / 10),
 			"+",
 			"?",
 			"=",
@@ -4742,6 +4750,979 @@ const BOND_SKILL_KEYS = {
 	]
 };
 //#endregion
+//#region shared/maths/skillPacks/dataSkills.ts
+/**
+* Data and chance, Year 7 (docs/plans/ladder-7-8/PLAN.md, card Y8).
+*
+* `averages`: mean, median, mode and range of up to 5 small numbers (1 to 20) shown in the prompt, "The numbers 3, 7, 7, 9, 4".
+* Every answer is a whole number, typed. `probability`: a bag of counters, a dice (tap a fraction), the chance something
+* doesn't happen (typed decimal) and a chance as a percent (typed). Fractions stay at or under one and in simplest form.
+*
+* Types:
+*   averages     avg:mode  avg:range  avg:median (slow)  avg:mean (slow)
+*   probability  prob:bag  prob:dice  prob:not  prob:percent
+*/
+const AVG = ["MS.Y7.STAT.DA.P1", "MS.Y7.STAT.DA.P2"];
+const PROB = ["MS.Y7.STAT.PR.P1", "MS.Y7.STAT.PR.P2"];
+const sum = (nums) => nums.reduce((a, b) => a + b, 0);
+const sorted = (nums) => [...nums].sort((a, b) => a - b);
+const inRange = (nums) => nums.every((n) => isInt(n, 1, 20));
+/** `count` different numbers from 1 to 20. */
+function distinct(r, count) {
+	const set = new Set();
+	while (set.size < count) set.add(int(r, 1, 20));
+	return [...set];
+}
+/** The numbers as a prompt: "The numbers 3, 7, 7, 9, 4". */
+const listPrompt = (nums) => `The numbers ${nums.join(", ")}`;
+/** A typed question about a list of numbers: "Median = ?" under "The numbers 3, 7, 7, 9, 4". */
+function about(word, nums, answer, named) {
+	return withMistakes({
+		parts: [
+			word,
+			"=",
+			"?"
+		],
+		spoken: `${listPrompt(nums)}. What is the ${word.toLowerCase()}?`,
+		answer,
+		prompt: listPrompt(nums)
+	}, named);
+}
+/** The number that comes up most often, from five numbers. */
+const mode = oneKey("avg:mode", "The mode of five numbers", AVG, 5, (_k, r) => {
+	const m = int(r, 1, 20);
+	const copies = int(r, 2, 3);
+	const others = [];
+	while (others.length < 5 - copies) {
+		const n = int(r, 1, 20);
+		if (n !== m && !others.includes(n)) others.push(n);
+	}
+	return shuffle([...Array(copies).fill(m), ...others], r);
+}, (_k, nums) => {
+	if (!inRange(nums)) return null;
+	const counts = new Map();
+	for (const n of nums) counts.set(n, (counts.get(n) ?? 0) + 1);
+	const top = Math.max(...counts.values());
+	const winners = [...counts].filter(([, c]) => c === top);
+	if (top < 2 || top > 3 || winners.length !== 1) return null;
+	return about("Mode", nums, winners[0][0], {
+		"picked the biggest number": Math.max(...nums),
+		"picked the smallest number": Math.min(...nums),
+		"gave how many times it comes up": top,
+		"picked the middle of the list": nums[2],
+		"gave the range": Math.max(...nums) - Math.min(...nums)
+	});
+});
+/** Biggest take smallest, from four or five numbers. */
+const range$5 = oneKey("avg:range", "The range of four or five numbers", AVG, null, (_k, r) => distinct(r, int(r, 4, 5)), (_k, nums) => {
+	if (!isInt(nums.length, 4, 5) || !inRange(nums) || new Set(nums).size !== nums.length) return null;
+	const hi = Math.max(...nums);
+	const lo = Math.min(...nums);
+	if (hi - lo < 3) return null;
+	return about("Range", nums, hi - lo, {
+		"gave the biggest number": hi,
+		"gave the smallest number": lo,
+		"added the biggest and smallest": hi + lo,
+		"took the first from the last": Math.abs(nums[nums.length - 1] - nums[0]),
+		"one too many": hi - lo + 1,
+		"one too few": hi - lo - 1
+	});
+});
+/** The middle number once they are in order: three or five numbers (slow: it needs sorting). */
+const median = oneKey("avg:median", "The median of three or five numbers", AVG, null, (_k, r) => distinct(r, pickOne(r, [
+	3,
+	5,
+	5
+])), (_k, nums) => {
+	if (!(nums.length === 3 || nums.length === 5) || !inRange(nums) || new Set(nums).size !== nums.length) return null;
+	const mid = (nums.length - 1) / 2;
+	const answer = sorted(nums)[mid];
+	if (nums[mid] === answer) return null;
+	return about("Median", nums, answer, {
+		"picked the middle of the unsorted list": nums[mid],
+		"gave the biggest number": Math.max(...nums),
+		"gave the smallest number": Math.min(...nums),
+		"gave the first number": nums[0],
+		"gave the mean": sum(nums) / nums.length,
+		"gave the range": Math.max(...nums) - Math.min(...nums)
+	});
+});
+/** The mean of three or four numbers that share out evenly (slow: add, then divide). */
+const mean = oneKey("avg:mean", "The mean of three or four numbers (a whole number)", AVG, null, (_k, r) => {
+	const n = int(r, 3, 4);
+	for (;;) {
+		const nums = Array.from({ length: n }, () => int(r, 1, 20));
+		if (sum(nums) % n === 0) return nums;
+	}
+}, (_k, nums) => {
+	if (!isInt(nums.length, 3, 4) || !inRange(nums) || sum(nums) % nums.length !== 0 || new Set(nums).size === 1) return null;
+	const total = sum(nums);
+	const n = nums.length;
+	return about("Mean", nums, total / n, {
+		"gave the total, not divided": total,
+		"divided by one too many": total / (n + 1),
+		"divided by one too few": total / (n - 1),
+		"gave the middle number": sorted(nums)[Math.floor(n / 2)],
+		"gave the biggest number": Math.max(...nums),
+		"gave the range": Math.max(...nums) - Math.min(...nums)
+	});
+});
+/** n/d in simplest form. */
+const simple$1 = (n, d) => {
+	const g = gcd$2(n, d);
+	return frac(n / g, d / g);
+};
+/** Fraction labels worth showing as a wrong choice: more than none and less than all. Anything else is left out. */
+const fractions = (named) => {
+	const out = {};
+	for (const [name, [n, d]] of Object.entries(named)) if (n > 0 && d > 0 && n < d) out[name] = simple$1(n, d);
+	return out;
+};
+const COLOURS = [
+	["red", "blue"],
+	["green", "yellow"],
+	["black", "white"],
+	["pink", "orange"]
+];
+/** "A bag has 3 red and 5 blue counters. P(red) = ?" (tap 3/8). */
+const bag = oneKey("prob:bag", "Chance of a colour from a bag (3 red, 5 blue: P(red))", PROB, 6, (_k, r) => [
+	int(r, 1, 7),
+	int(r, 1, 7),
+	int(r, 0, COLOURS.length - 1),
+	int(r, 0, 1),
+	...rollPick(r)
+], (_k, [a, b, pair, which, slot, salt]) => {
+	if (!isInt(a, 1, 7) || !isInt(b, 1, 7) || !isInt(pair, 0, COLOURS.length - 1) || !isInt(which, 0, 1) || !goodPick(slot, salt)) return null;
+	const total = a + b;
+	if (a === b || total > 10) return null;
+	const [first, second] = COLOURS[pair];
+	const want = which === 0 ? a : b;
+	const other = which === 0 ? b : a;
+	if (gcd$2(want, total) !== 1) return null;
+	const colour = which === 0 ? first : second;
+	const right = frac(want, total);
+	const made = pick({
+		parts: [
+			`P(${colour})`,
+			"=",
+			"?"
+		],
+		spoken: `A bag has ${a} ${first} and ${b} ${second} counters. What is the probability of ${colour}?`,
+		fact: `P(${colour}) = ${right}`
+	}, right, fractions({
+		"put it over the other colour": [want, other],
+		"gave the other colour": [other, total],
+		"one over the counters": [1, total],
+		"one over the colour": [1, want],
+		"the other colour over this one": [other, want]
+	}), {
+		slot,
+		salt
+	});
+	return made ? {
+		...made,
+		prompt: `A bag has ${a} ${first} and ${b} ${second} counters.`
+	} : null;
+});
+const DICE_KINDS = [
+	"not",
+	"more than",
+	"less than"
+];
+/** "A fair dice is rolled. P(not 6) = ?" (tap 5/6). */
+const dice = oneKey("prob:dice", "Chance on a dice (P(not 6), P(more than 3))", PROB, 4, (_k, r) => {
+	const kind = int(r, 0, 2);
+	return [
+		kind,
+		kind === 0 ? int(r, 1, 6) : kind === 1 ? int(r, 2, 4) : int(r, 3, 5),
+		...rollPick(r)
+	];
+}, (_k, [kind, n, slot, salt]) => {
+	if (!isInt(kind, 0, 2) || !goodPick(slot, salt)) return null;
+	if (!(kind === 0 ? isInt(n, 1, 6) : kind === 1 ? isInt(n, 2, 4) : isInt(n, 3, 5))) return null;
+	const k = kind === 0 ? 5 : kind === 1 ? 6 - n : n - 1;
+	const word = DICE_KINDS[kind];
+	const phrase = kind === 0 ? `not rolling a ${n}` : `rolling ${word} ${n}`;
+	const right = simple$1(k, 6);
+	const named = kind === 0 ? {
+		"gave the chance of the number": [1, 6],
+		"put it over the five others": [1, 5],
+		"gave the number over six": [n, 6],
+		"took away two faces": [4, 6]
+	} : {
+		"counted the other side": [6 - k, 6],
+		"counted the number itself": [k + 1, 6],
+		"left one face out": [k - 1, 6],
+		"put it over five": [k, 5],
+		"gave one face": [1, 6]
+	};
+	const made = pick({
+		parts: [
+			`P(${word} ${n})`,
+			"=",
+			"?"
+		],
+		spoken: `A fair dice is rolled. What is the probability of ${phrase}?`,
+		fact: `P(${word} ${n}) = ${right}`
+	}, right, fractions(named), {
+		slot,
+		salt
+	});
+	return made ? {
+		...made,
+		prompt: "A fair dice is rolled."
+	} : null;
+});
+const EVENTS = [
+	["rain", "no rain"],
+	["win", "not win"],
+	["late", "not late"],
+	["goal", "no goal"]
+];
+/** "P(rain) = 0.3. P(no rain) = ?" (type 0.7). */
+const not = oneKey("prob:not", "Chance it does not happen (P(rain) = 0.3, P(no rain))", PROB, 2, (_k, r) => [int(r, 1, 9), int(r, 0, EVENTS.length - 1)], (_k, [tenths, event]) => {
+	if (!isInt(tenths, 1, 9) || tenths === 5 || !isInt(event, 0, EVENTS.length - 1)) return null;
+	const [yes, no] = EVENTS[event];
+	const p = tenths / 10;
+	const answer = (10 - tenths) / 10;
+	return withMistakes({
+		parts: [
+			`P(${no})`,
+			"=",
+			"?"
+		],
+		spoken: `The probability of ${yes} is ${say(p)}. What is the probability of ${no}?`,
+		answer,
+		input: "decimal",
+		prompt: `P(${yes}) = ${show$1(p)}`
+	}, {
+		"gave the same chance": p,
+		"added it to one": 1 + p,
+		"took the tenths from ten": 10 - tenths,
+		"one tenth too many": answer + .1,
+		"one tenth too few": answer - .1
+	});
+});
+/** [top, bottom] pairs whose "top in bottom" is a whole percent, kept easy. */
+const IN = [
+	[1, 4],
+	[3, 4],
+	[1, 5],
+	[2, 5],
+	[3, 5],
+	[4, 5],
+	[1, 10],
+	[3, 10],
+	[7, 10],
+	[9, 10]
+];
+/** "1 in 4 = ?%" (type 25). */
+const percent = oneKey("prob:percent", "A chance as a percent (1 in 4 is what percent)", PROB, 2, (_k, r) => pickOne(r, IN), (_k, [a, d]) => {
+	if (!IN.some(([x, y]) => x === a && y === d)) return null;
+	const answer = a * 100 / d;
+	return withMistakes({
+		parts: [
+			`${a} in ${d}`,
+			"=",
+			"?",
+			"%"
+		],
+		spoken: `${a} in ${d} is what percent?`,
+		answer
+	}, {
+		"gave the bottom number": d,
+		"gave the top number": a,
+		"divided 100 by the top": 100 / a,
+		"multiplied the two": a * d,
+		"doubled it": answer * 2,
+		"halved it": answer / 2
+	});
+});
+const DATA_FAMILIES = Object.fromEntries([
+	mode,
+	range$5,
+	median,
+	mean,
+	bag,
+	dice,
+	not,
+	percent
+].map((f) => [f.keys[0], f]));
+const DATA_SKILL_KEYS = {
+	averages: [
+		"avg:mode",
+		"avg:range",
+		"avg:median",
+		"avg:mean"
+	],
+	probability: [
+		"prob:bag",
+		"prob:dice",
+		"prob:not",
+		"prob:percent"
+	]
+};
+/** The two-step types: sort first, or add then divide. They get 12 s to count as quick. */
+const DATA_SLOW_KEYS = ["avg:median", "avg:mean"];
+/** One row per skill, in ladder order (`tiny` is the 20-character name for tight places). */
+const DATA_LADDER = [{
+	id: "averages",
+	label: "Mean, median, mode and range",
+	tiny: "Averages",
+	stage: "data-chance",
+	year: 7,
+	tags: AVG
+}, {
+	id: "probability",
+	label: "Chance as a fraction, decimal or percent",
+	tiny: "Chance",
+	stage: "data-chance",
+	year: 7,
+	tags: PROB
+}];
+//#endregion
+//#region shared/maths/skillPacks/powerSkills.ts
+/**
+* Powers, primes and factors, Year 7 and 8 (docs/plans/ladder-7-8/PLAN.md section 3b, card Y4).
+*
+* Quick recall only: one number to type or one of four choices to tap. Powers and roots are written with Unicode
+* superscripts (10⁴, 2³, 10⁻²). A blank power can't be a superscript, so those questions show "10 000 = 10ⁿ. What is n?" above the sum and ask n = ?.
+*
+* Types:
+*   powers-10     (Y7) pow:ten  pow:zeros  pow:times  pow:same
+*   exponents     (Y7) exp:value  exp:repeat  exp:plus
+*   primes        (Y7) prime:which  prime:not
+*   divisibility  (Y7) divis:by
+*   hcf-lcm       (Y7) hcf:of  hcf:lcm
+*   prime-factors (Y8) pf:mult  pf:power  pf:which
+*   neg-powers    (Y8) negpow:dec  negpow:exp
+*/
+const Y7_POW = ["MS.Y7.NUM.NS.P9", "MS.Y7.NUM.NS.P10"];
+const Y7_PRIME = ["MS.Y7.NUM.NS.P11", "MS.Y7.NUM.NS.P12"];
+const Y7_FACT = ["MS.Y7.NUM.NS.P13"];
+const Y8$2 = ["MS.Y8.NUM.NS.P9", "MS.Y8.NUM.NS.P10"];
+const SUP = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+/** 4 → "⁴", -2 → "⁻²". */
+const sup = (n) => (n < 0 ? "⁻" : "") + [...String(Math.abs(n))].map((d) => SUP[Number(d)]).join("");
+/** pw(10, 4) → "10⁴"; a power of 1 is just the base. */
+const pw = (base, e) => e === 1 ? String(base) : `${base}${sup(e)}`;
+/** 10000 → "10 000" (NZ style for 5 or more digits, like the rest of the ladder). */
+const spaced = (n) => n >= 1e4 ? String(n).replace(/\B(?=(\d{3})+$)/g, " ") : String(n);
+const gcd$1 = (a, b) => b === 0 ? a : gcd$1(b, a % b);
+const lcm = (a, b) => a / gcd$1(a, b) * b;
+const isPrime = (n) => {
+	if (n < 2) return false;
+	for (let d = 2; d * d <= n; d++) if (n % d === 0) return false;
+	return true;
+};
+const smallestFactor$1 = (n) => {
+	for (let d = 2; d * d <= n; d++) if (n % d === 0) return d;
+	return n;
+};
+/** The two pick numbers every pick family here ends with. */
+const withPick$3 = (random, ...params) => [...params, ...rollPick(random)];
+const pickOf = (random, items) => items[int(random, 0, items.length - 1)];
+/** A pick question with its prompt and fact filled in. */
+function choose(parts, prompt, spoken, right, named, slot, salt, fact) {
+	const made = pick({
+		parts,
+		spoken,
+		fact
+	}, right, named, {
+		slot,
+		salt
+	});
+	return made ? {
+		...made,
+		prompt
+	} : null;
+}
+/** "10⁴ = ?" (typed). */
+const powTen = oneKey("pow:ten", "A power of ten written out (10⁴ = 10 000)", Y7_POW, 1, (_k, r) => [int(r, 2, 6)], (_k, [n]) => {
+	if (!isInt(n, 2, 6)) return null;
+	const parts = [
+		pw(10, n),
+		"=",
+		"?"
+	];
+	return withMistakes({
+		parts,
+		spoken: talk(parts),
+		answer: 10 ** n
+	}, {
+		"wrote n × 10": n * 10,
+		"one zero too many": 10 ** (n + 1),
+		"one zero too few": 10 ** (n - 1),
+		"added n to 10": 10 + n,
+		"wrote n": n
+	});
+});
+/** "10 000 = 10ⁿ, n = ?" (typed): the number of zeros. */
+const powZeros = oneKey("pow:zeros", "Which power of ten a number is (10 000 = 10ⁿ)", Y7_POW, 1, (_k, r) => [int(r, 2, 6)], (_k, [n]) => {
+	if (!isInt(n, 2, 6)) return null;
+	const v = spaced(10 ** n);
+	return withMistakes({
+		parts: [
+			"n",
+			"=",
+			"?"
+		],
+		prompt: `${v} = 10ⁿ. What is n?`,
+		spoken: `${v} equals 10 to the power of n. What is n?`,
+		answer: n
+	}, {
+		"counted the digits": n + 1,
+		"one zero too few": n - 1,
+		"times 10": n * 10,
+		"two too many": n + 2
+	});
+});
+/** "3 × 10³ = ?" (typed). */
+const powTimes = oneKey("pow:times", "A number times a power of ten (3 × 10³)", Y7_POW, 2, (_k, r) => [int(r, 2, 9), int(r, 2, 4)], (_k, [a, n]) => {
+	if (!isInt(a, 2, 9) || !isInt(n, 2, 4)) return null;
+	const parts = [
+		String(a),
+		"×",
+		pw(10, n),
+		"=",
+		"?"
+	];
+	return withMistakes({
+		parts,
+		spoken: talk(parts),
+		answer: a * 10 ** n
+	}, {
+		"left out the number": 10 ** n,
+		"one zero too many": a * 10 ** (n + 1),
+		"one zero too few": a * 10 ** (n - 1),
+		"multiplied the two numbers": a * n
+	});
+});
+/** "Which power of 10 is 10 000?" (tap 10⁴). */
+const powSame = oneKey("pow:same", "Which power of ten a number is (tap 10⁴)", Y7_POW, 3, (_k, r) => withPick$3(r, int(r, 2, 6)), (_k, [n, slot, salt]) => {
+	if (!isInt(n, 2, 6) || !goodPick(slot, salt)) return null;
+	const v = spaced(10 ** n);
+	return choose([
+		v,
+		"=",
+		"?"
+	], "Which power of 10 is it?", `Which power of 10 is ${v}?`, pw(10, n), {
+		"counted the digits": pw(10, n + 1),
+		"one zero too few": pw(10, n - 1),
+		"two zeros too many": pw(10, n + 2),
+		"two zeros too few": n > 2 ? pw(10, n - 2) : pw(10, n + 3)
+	}, slot, salt, `${v} = ${pw(10, n)}`);
+});
+/** "2⁵ = ?" (typed, answer 256 or less). */
+const expValue = oneKey("exp:value", "Working out a small power (2⁵, 3³, 5²)", Y7_POW, 2, (_k, r) => [int(r, 2, 12), int(r, 2, 8)], (_k, [b, e]) => {
+	if (!isInt(b, 2, 12) || !isInt(e, 2, 8) || b ** e > 256) return null;
+	const parts = [
+		pw(b, e),
+		"=",
+		"?"
+	];
+	return withMistakes({
+		parts,
+		spoken: talk(parts),
+		answer: b ** e
+	}, {
+		"multiplied the base by the power": b * e,
+		"one power too many": b ** (e + 1),
+		"one power too few": b ** (e - 1),
+		"added the base and the power": b + e
+	});
+});
+/** "5 × 5 × 5 = ?" (tap 5³). */
+const expRepeat = oneKey("exp:repeat", "Repeated multiplying as a power (5 × 5 × 5 = 5³)", Y7_POW, 4, (_k, r) => withPick$3(r, int(r, 2, 9), int(r, 2, 4)), (_k, [b, e, slot, salt]) => {
+	if (!isInt(b, 2, 9) || !isInt(e, 2, 4) || !goodPick(slot, salt)) return null;
+	const product = Array(e).fill(b).join(" × ");
+	const named = {
+		"one power too many": pw(b, e + 1),
+		"one power too few": pw(b, e - 1)
+	};
+	if (e ** b !== b ** e) named["swapped the base and the power"] = pw(e, b);
+	if (b * e !== b ** e) named["multiplied the base by the count"] = String(b * e);
+	return choose([
+		product,
+		"=",
+		"?"
+	], "Which is the same?", `Which is the same as ${product.replace(/×/g, "times")}?`, pw(b, e), named, slot, salt, `${product} = ${pw(b, e)}`);
+});
+/** "6² + 1 = ?" (typed, two steps). */
+const expPlus = oneKey("exp:plus", "A power plus or take away a small number (6² + 1)", Y7_POW, 4, (_k, r) => [
+	int(r, 2, 10),
+	int(r, 2, 3),
+	int(r, 1, 9),
+	int(r, 0, 1)
+], (_k, [b, e, c, minus]) => {
+	if (!isInt(b, 2, 10) || !isInt(e, 2, 3) || !isInt(c, 1, 9) || !isInt(minus, 0, 1) || b ** e > 100 || minus === 1 && b ** e <= c) return null;
+	const sign = minus ? -1 : 1;
+	const parts = [
+		pw(b, e),
+		minus ? "−" : "+",
+		String(c),
+		"=",
+		"?"
+	];
+	return withMistakes({
+		parts,
+		spoken: talk(parts),
+		answer: b ** e + sign * c
+	}, {
+		"forgot the power": b + sign * c,
+		"multiplied the base by the power": b * e + sign * c,
+		"did the sum first": (b + sign * c) ** e,
+		"ignored the last number": b ** e,
+		"went the other way": b ** e - sign * c
+	});
+});
+/** Primes a pupil should know to 100, and odd composites that look prime. */
+const PRIMES = [
+	11,
+	13,
+	17,
+	19,
+	23,
+	29,
+	31,
+	37,
+	41,
+	43,
+	47,
+	53,
+	59,
+	61,
+	67,
+	71,
+	73,
+	79,
+	83,
+	89,
+	97
+];
+const LOOKS_PRIME = [
+	21,
+	27,
+	33,
+	39,
+	49,
+	51,
+	55,
+	57,
+	63,
+	65,
+	69,
+	77,
+	81,
+	85,
+	87,
+	91,
+	93,
+	95
+];
+const oddButFactors = (n) => `${n} is odd but ${smallestFactor$1(n)} × ${n / smallestFactor$1(n)}`;
+/** "Which is prime?" (tap the prime among three odd composites). */
+const primeWhich = oneKey("prime:which", "Which number is prime (49, 53, 57, 63)", Y7_PRIME, 6, (_k, r) => {
+	const cs = new Set();
+	while (cs.size < 3) cs.add(pickOf(r, LOOKS_PRIME));
+	return withPick$3(r, pickOf(r, PRIMES), ...cs);
+}, (_k, [p, c1, c2, c3, slot, salt]) => {
+	const cs = [
+		c1,
+		c2,
+		c3
+	];
+	if (!PRIMES.includes(p) || !cs.every((c) => LOOKS_PRIME.includes(c)) || new Set(cs).size !== 3 || !goodPick(slot, salt)) return null;
+	const named = Object.fromEntries(cs.map((c) => [oddButFactors(c), String(c)]));
+	return choose([
+		"Prime number",
+		"=",
+		"?"
+	], "Which is prime?", "Which of these numbers is prime?", String(p), named, slot, salt, `${p} is prime`);
+});
+/** "Which is NOT prime?" (tap the odd composite among three primes). */
+const primeNot = oneKey("prime:not", "Which number is not prime (53, 59, 61, 51)", Y7_PRIME, 6, (_k, r) => {
+	const ps = new Set();
+	while (ps.size < 3) ps.add(pickOf(r, PRIMES));
+	return withPick$3(r, pickOf(r, LOOKS_PRIME), ...ps);
+}, (_k, [c, p1, p2, p3, slot, salt]) => {
+	const ps = [
+		p1,
+		p2,
+		p3
+	];
+	if (!LOOKS_PRIME.includes(c) || !ps.every((p) => PRIMES.includes(p)) || new Set(ps).size !== 3 || !goodPick(slot, salt)) return null;
+	const named = Object.fromEntries(ps.map((p) => [`picked ${p}, which is prime`, String(p)]));
+	return choose([
+		"Not prime",
+		"=",
+		"?"
+	], "Which is NOT prime?", "Which of these numbers is not prime?", String(c), named, slot, salt, `${oddButFactors(c)}, so ${c} is not prime`);
+});
+const DIVISORS = [
+	3,
+	4,
+	6,
+	8,
+	9
+];
+/** The slips for "which is divisible by d?", from a true multiple `m`. `t` makes the "ends in d" number (10t + d). */
+function divisibleSlips(d, m, t) {
+	const ends = 10 * t + d;
+	const slips = d === 3 ? {
+		"digit sum one too many": m + 1,
+		"digit sum one too few": m - 1,
+		"ends in 3": ends,
+		"digit sum two too many": m + 2
+	} : d === 4 ? {
+		"even but not a multiple of 4": m + 2,
+		"even but not a multiple of 4 (below)": m - 2,
+		"ends in 4": ends,
+		"one more than a multiple of 4": m + 1
+	} : d === 6 ? {
+		"divisible by 3 only": m + 3,
+		"divisible by 3 only (below)": m - 3,
+		"divisible by 2 only": m + 2,
+		"ends in 6": ends
+	} : d === 8 ? {
+		"divisible by 4 only": m + 4,
+		"divisible by 4 only (below)": m - 4,
+		"even but not a multiple of 8": m + 2,
+		"ends in 8": ends
+	} : {
+		"divisible by 3 only": m + 3,
+		"divisible by 3 only (below)": m - 3,
+		"digit sum 8": m - 1,
+		"ends in 9": ends
+	};
+	return Object.fromEntries(Object.entries(slips).filter(([, n]) => n > 0 && n % d !== 0));
+}
+/** "Which is divisible by 9?" (tap the multiple). */
+const divBy = oneKey("divis:by", "Which number is divisible by 3, 4, 6, 8 or 9", Y7_FACT, 5, (_k, r) => {
+	const d = pickOf(r, DIVISORS);
+	return withPick$3(r, d, int(r, Math.ceil(24 / d), Math.floor(198 / d)), int(r, 1, 19));
+}, (_k, [d, k, t, slot, salt]) => {
+	if (!DIVISORS.includes(d) || !isInt(k, 1, 66) || !isInt(t, 1, 19) || !goodPick(slot, salt)) return null;
+	const m = d * k;
+	if (m < 24 || m > 198) return null;
+	const named = Object.fromEntries(Object.entries(divisibleSlips(d, m, t)).map(([name, n]) => [name, String(n)]));
+	return choose([
+		`Divisible by ${d}`,
+		"=",
+		"?"
+	], `Which is divisible by ${d}?`, `Which of these numbers is divisible by ${d}?`, String(m), named, slot, salt, `${m} is divisible by ${d}`);
+});
+/** "HCF of 24 and 36 = ?" (typed). */
+const hcfOf = oneKey("hcf:of", "Highest common factor of two numbers to 60 (24 and 36)", Y7_FACT, 2, (_k, r) => {
+	const a = int(r, 6, 48);
+	return [a, int(r, a + 2, 60)];
+}, (_k, [a, b]) => {
+	if (!isInt(a, 6, 48) || !isInt(b, a + 2, 60)) return null;
+	const g = gcd$1(a, b);
+	if (g < 2 || g >= a) return null;
+	const parts = [
+		`HCF of ${a} and ${b}`,
+		"=",
+		"?"
+	];
+	const sp = smallestFactor$1(g);
+	return withMistakes({
+		parts,
+		spoken: `What is the highest common factor of ${a} and ${b}?`,
+		answer: g
+	}, {
+		"gave the LCM": lcm(a, b),
+		"gave the smaller number": a,
+		"gave the difference": b - a,
+		"gave 1": 1,
+		"a common factor, not the highest": sp < g ? g / sp : NaN
+	});
+});
+/** "LCM of 4 and 6 = ?" (typed). */
+const hcfLcm = oneKey("hcf:lcm", "Least common multiple of two numbers to 12 (4 and 6)", Y7_FACT, 2, (_k, r) => {
+	const a = int(r, 2, 11);
+	return [a, int(r, a + 1, 12)];
+}, (_k, [a, b]) => {
+	if (!isInt(a, 2, 11) || !isInt(b, a + 1, 12) || b % a === 0) return null;
+	return withMistakes({
+		parts: [
+			`LCM of ${a} and ${b}`,
+			"=",
+			"?"
+		],
+		spoken: `What is the least common multiple of ${a} and ${b}?`,
+		answer: lcm(a, b)
+	}, {
+		"multiplied them": a * b,
+		"gave the HCF": gcd$1(a, b),
+		"added them": a + b,
+		"gave the bigger number": b,
+		"doubled the bigger number": 2 * b
+	});
+});
+const PF_PRIMES = [
+	2,
+	3,
+	5,
+	7
+];
+/** "2³ × 3 = ?" (typed, two steps). */
+const pfMult = oneKey("pf:mult", "Prime factors with powers, multiplied out (2³ × 3)", Y8$2, 4, (_k, r) => {
+	const p = pickOf(r, PF_PRIMES.slice(0, 3));
+	return [
+		p,
+		int(r, 2, 3),
+		pickOf(r, PF_PRIMES.filter((q) => q > p)),
+		int(r, 1, 2)
+	];
+}, (_k, [p, e, q, f]) => {
+	if (!PF_PRIMES.includes(p) || !PF_PRIMES.includes(q) || q <= p || !isInt(e, 2, 3) || !isInt(f, 1, 2)) return null;
+	const answer = p ** e * q ** f;
+	if (answer > 300) return null;
+	const parts = [
+		pw(p, e),
+		"×",
+		pw(q, f),
+		"=",
+		"?"
+	];
+	return withMistakes({
+		parts,
+		spoken: talk(parts),
+		answer
+	}, {
+		"multiplied the base by the power": p * e * q ** f,
+		"added the two": p ** e + q ** f,
+		"one power too many": p ** (e + 1) * q ** f,
+		"one power too few": p ** (e - 1) * q ** f,
+		"multiplied the bases": p * q
+	});
+});
+/** "36 = 2² × 3ⁿ, n = ?" (typed, two steps). */
+const pfPower = oneKey("pf:power", "A missing power in prime factors (36 = 2² × 3ⁿ)", Y8$2, 4, (_k, r) => {
+	const p = pickOf(r, PF_PRIMES.slice(0, 2));
+	return [
+		p,
+		int(r, 2, 3),
+		pickOf(r, PF_PRIMES.filter((q) => q > p)),
+		int(r, 2, 3)
+	];
+}, (_k, [p, e, q, f]) => {
+	if (!PF_PRIMES.includes(p) || !PF_PRIMES.includes(q) || q <= p || !isInt(e, 2, 3) || !isInt(f, 2, 3)) return null;
+	const v = p ** e * q ** f;
+	if (v > 200) return null;
+	return withMistakes({
+		parts: [
+			"n",
+			"=",
+			"?"
+		],
+		prompt: `${v} = ${pw(p, e)} × ${q}ⁿ. What is n?`,
+		spoken: `${v} equals ${p} to the power of ${e} times ${q} to the power of n. What is n?`,
+		answer: f
+	}, {
+		"added the powers": e + f,
+		"one too many": f + 1,
+		"one too few": f - 1,
+		"gave the other prime": q,
+		"gave the first power": e
+	});
+});
+/** Numbers whose prime factors are quick to find. */
+const PF_NUMBERS = [
+	12,
+	18,
+	20,
+	24,
+	28,
+	30,
+	36,
+	40,
+	45,
+	48,
+	50,
+	60,
+	63,
+	72,
+	75,
+	90,
+	100
+];
+/** n as [prime, power] pairs, smallest prime first. */
+function primeFactors(n) {
+	const out = [];
+	let rest = n;
+	for (let p = 2; rest > 1; p++) {
+		let e = 0;
+		while (rest % p === 0) {
+			rest /= p;
+			e++;
+		}
+		if (e) out.push([p, e]);
+	}
+	return out;
+}
+const asPrimes = (fs) => fs.filter(([, e]) => e > 0).map(([p, e]) => pw(p, e)).join(" × ");
+/** "Which is 60 as primes?" (tap 2² × 3 × 5). */
+const pfWhich = oneKey("pf:which", "A number written with prime factors (60 = 2² × 3 × 5)", Y8$2, 3, (_k, r) => withPick$3(r, pickOf(r, PF_NUMBERS)), (_k, [n, slot, salt]) => {
+	if (!PF_NUMBERS.includes(n) || !goodPick(slot, salt)) return null;
+	const fs = primeFactors(n);
+	const bump = (i, by) => fs.map(([p, e], j) => [p, j === i ? e + by : e]);
+	const last = fs.length - 1;
+	const named = {
+		"left out a prime": asPrimes(bump(0, -1)),
+		"left out a prime (the last)": asPrimes(bump(last, -1)),
+		"one prime too many": asPrimes(bump(0, 1)),
+		"one prime too many (the last)": asPrimes(bump(last, 1))
+	};
+	const [p0, e0] = fs[0];
+	if (e0 >= 2) named["wrote a square number, not a prime"] = [String(p0 ** e0), ...fs.slice(1).map(([p, e]) => pw(p, e))].join(" × ");
+	if (n / p0 > 3 && !isPrime(n / p0)) named["stopped before all primes"] = `${p0} × ${n / p0}`;
+	return choose([
+		"" + n,
+		"=",
+		"?"
+	], `Which is ${n} as primes?`, `Which of these is ${n} written as a product of prime numbers?`, asPrimes(fs), named, slot, salt, `${n} = ${asPrimes(fs)}`);
+});
+/** 3 → "0.001". */
+const tenth = (n) => n <= 0 ? String(10 ** -n) : `0.${"0".repeat(n - 1)}1`;
+/** "10⁻² = ?" (tap 0.01). */
+const negDec = oneKey("negpow:dec", "A negative power of ten as a decimal (10⁻² = 0.01)", Y8$2, 3, (_k, r) => withPick$3(r, int(r, 2, 4)), (_k, [n, slot, salt]) => {
+	if (!isInt(n, 2, 4) || !goodPick(slot, salt)) return null;
+	return choose([
+		pw(10, -n),
+		"=",
+		"?"
+	], "Write it as a decimal.", `${pw(10, -n).replace(/⁻.*/, "")} to the power of negative ${n} equals what?`, tenth(n), {
+		"one place too few": tenth(n - 1),
+		"one place too many": tenth(n + 1),
+		"went big instead of small": String(10 ** n),
+		"wrote n tenths": `0.${n}`
+	}, slot, salt, `${pw(10, -n)} = ${tenth(n)}`);
+});
+/** "0.001 = ?" (tap 10⁻³). */
+const negExp = oneKey("negpow:exp", "A decimal as a negative power of ten (0.001 = 10⁻³)", Y8$2, 3, (_k, r) => withPick$3(r, int(r, 2, 4)), (_k, [n, slot, salt]) => {
+	if (!isInt(n, 2, 4) || !goodPick(slot, salt)) return null;
+	return choose([
+		tenth(n),
+		"=",
+		"?"
+	], "Write it as a power of 10.", `${say(Number(tenth(n)))} equals 10 to the power of what?`, pw(10, -n), {
+		"forgot the minus": pw(10, n),
+		"one too few": pw(10, -(n - 1)),
+		"one too far": pw(10, -(n + 1)),
+		"two too far": pw(10, -(n + 2))
+	}, slot, salt, `${tenth(n)} = ${pw(10, -n)}`);
+});
+const POWER_FAMILIES = Object.fromEntries([
+	powTen,
+	powZeros,
+	powTimes,
+	powSame,
+	expValue,
+	expRepeat,
+	expPlus,
+	primeWhich,
+	primeNot,
+	divBy,
+	hcfOf,
+	hcfLcm,
+	pfMult,
+	pfPower,
+	pfWhich,
+	negDec,
+	negExp
+].map((f) => [f.keys[0], f]));
+const POWER_SKILL_KEYS = {
+	"powers-10": [
+		"pow:ten",
+		"pow:zeros",
+		"pow:times",
+		"pow:same"
+	],
+	exponents: [
+		"exp:value",
+		"exp:repeat",
+		"exp:plus"
+	],
+	primes: ["prime:which", "prime:not"],
+	divisibility: ["divis:by"],
+	"hcf-lcm": ["hcf:of", "hcf:lcm"],
+	"prime-factors": [
+		"pf:mult",
+		"pf:power",
+		"pf:which"
+	],
+	"neg-powers": ["negpow:dec", "negpow:exp"]
+};
+/** The two-step types: 12 seconds counts as quick (slow.ts). */
+const POWER_SLOW_KEYS = [
+	"exp:plus",
+	"hcf:of",
+	"hcf:lcm",
+	"pf:mult",
+	"pf:power",
+	"pf:which"
+];
+const POWER_LADDER = [
+	{
+		id: "powers-10",
+		label: "Powers of ten",
+		tiny: "Powers of ten",
+		stage: "place-value",
+		year: 7,
+		tags: Y7_POW
+	},
+	{
+		id: "exponents",
+		label: "Exponents (2⁵, 3³)",
+		tiny: "Exponents",
+		stage: "place-value",
+		year: 7,
+		tags: Y7_POW
+	},
+	{
+		id: "primes",
+		label: "Prime numbers to 100",
+		tiny: "Prime numbers",
+		stage: "place-value",
+		year: 7,
+		tags: Y7_PRIME
+	},
+	{
+		id: "divisibility",
+		label: "Divisibility rules",
+		tiny: "Divisibility rules",
+		stage: "place-value",
+		year: 7,
+		tags: Y7_FACT
+	},
+	{
+		id: "hcf-lcm",
+		label: "Highest common factor and least common multiple",
+		tiny: "HCF and LCM",
+		stage: "place-value",
+		year: 7,
+		tags: Y7_FACT
+	},
+	{
+		id: "prime-factors",
+		label: "Prime factors with powers",
+		tiny: "Prime factors",
+		stage: "place-value",
+		year: 8,
+		tags: Y8$2
+	},
+	{
+		id: "neg-powers",
+		label: "Negative powers of ten",
+		tiny: "Negative powers",
+		stage: "place-value",
+		year: 8,
+		tags: Y8$2
+	}
+];
+//#endregion
 //#region shared/maths/skillPacks/integerSkills.ts
 /**
 * Negative numbers, Year 7 and 8 (docs/plans/ladder-7-8/PLAN.md, card Y3).
@@ -4758,9 +5739,9 @@ const BOND_SKILL_KEYS = {
 *   int-add-sub   (Y7) int:up  int:down  int:neg-minus  int:temp-up  int:temp-down
 *   int-negatives (Y8) int:add-neg  int:sub-neg  int:compare-dec
 */
-const Y7 = ["MS.Y7.NUM.NS.P3", "MS.Y7.NUM.NS.P4"];
+const Y7$1 = ["MS.Y7.NUM.NS.P3", "MS.Y7.NUM.NS.P4"];
 const Y7_OPS = ["MS.Y7.NUM.NS.P5", "MS.Y7.NUM.NS.P6"];
-const Y8 = ["MS.Y8.NUM.NS.P7", "MS.Y8.NUM.NS.P8"];
+const Y8$1 = ["MS.Y8.NUM.NS.P7", "MS.Y8.NUM.NS.P8"];
 /** −4, 0, 7: how a whole or decimal number is shown, with the real minus sign. */
 const signedText = (n) => n < 0 ? `−${String(Math.round(-n * 100) / 100)}` : String(Math.round(n * 100) / 100);
 /**
@@ -4768,7 +5749,7 @@ const signedText = (n) => n < 0 ? `−${String(Math.round(-n * 100) / 100)}` : S
 * each named mistake to the number it gives; a typed question keeps the mistakes that are zero or more (the pad has no minus),
 * a pick question shows them as labels.
 */
-function signed(base, answer, named, slot, salt) {
+function signed$1(base, answer, named, slot, salt) {
 	const spoken = base.spoken ?? talk(base.parts);
 	if (answer >= 0) return withMistakes({
 		parts: base.parts,
@@ -4793,9 +5774,9 @@ function signed(base, answer, named, slot, salt) {
 	} : made;
 }
 /** The two pick numbers every family here ends with. */
-const withPick = (random, ...params) => [...params, ...rollPick(random)];
+const withPick$2 = (random, ...params) => [...params, ...rollPick(random)];
 /** "Which is the smallest?" from four numbers, at least two of them below zero. */
-const smallest = oneKey("int:smallest", "The smallest of four numbers, some below zero", Y7, 6, (_k, r) => {
+const smallest = oneKey("int:smallest", "The smallest of four numbers, some below zero", Y7$1, 6, (_k, r) => {
 	const set = new Set();
 	while (set.size < 4) set.add(set.size < 2 ? -int(r, 1, 12) : int(r, -12, 12));
 	return [...set, ...rollPick(r)];
@@ -4830,7 +5811,7 @@ const smallest = oneKey("int:smallest", "The smallest of four numbers, some belo
 	};
 });
 /** "−7 + ? = 0": the additive inverse of a number below zero (typed, 7). */
-const inverse = oneKey("int:inverse", "What adds to a negative number to make zero (−7 + ? = 0)", Y7, 1, (_k, r) => [int(r, 2, 20)], (_k, [n]) => {
+const inverse = oneKey("int:inverse", "What adds to a negative number to make zero (−7 + ? = 0)", Y7$1, 1, (_k, r) => [int(r, 2, 20)], (_k, [n]) => {
 	if (!isInt(n, 2, 20)) return null;
 	const parts = [
 		signedText(-n),
@@ -4851,9 +5832,9 @@ const inverse = oneKey("int:inverse", "What adds to a negative number to make ze
 	});
 });
 /** "9 + ? = 0": the additive inverse of a number above zero (tap −9). */
-const inversePick = oneKey("int:inverse-pick", "What adds to a number to make zero (9 + ? = 0)", Y7, 3, (_k, r) => withPick(r, int(r, 2, 20)), (_k, [n, slot, salt]) => {
+const inversePick = oneKey("int:inverse-pick", "What adds to a number to make zero (9 + ? = 0)", Y7$1, 3, (_k, r) => withPick$2(r, int(r, 2, 20)), (_k, [n, slot, salt]) => {
 	if (!isInt(n, 2, 20)) return null;
-	return signed({ parts: [
+	return signed$1({ parts: [
 		String(n),
 		"+",
 		"?",
@@ -4870,10 +5851,10 @@ const inversePick = oneKey("int:inverse-pick", "What adds to a number to make ze
 /** "−4 + 9 = ?": up from below zero, ending at zero or above (typed). */
 const up = oneKey("int:up", "Adding up from below zero (−4 + 9)", Y7_OPS, 4, (_k, r) => {
 	const a = int(r, 1, 12);
-	return withPick(r, a, int(r, a, a + 12));
+	return withPick$2(r, a, int(r, a, a + 12));
 }, (_k, [a, b, slot, salt]) => {
 	if (!isInt(a, 1, 12) || !isInt(b, a, a + 12)) return null;
-	return signed({ parts: [
+	return signed$1({ parts: [
 		signedText(-a),
 		"+",
 		String(b),
@@ -4889,10 +5870,10 @@ const up = oneKey("int:up", "Adding up from below zero (−4 + 9)", Y7_OPS, 4, (
 /** "3 − 7 = ?": down past zero (tap −4). */
 const down = oneKey("int:down", "Taking away past zero (3 − 7)", Y7_OPS, 4, (_k, r) => {
 	const a = int(r, 1, 10);
-	return withPick(r, a, int(r, a + 1, a + 12));
+	return withPick$2(r, a, int(r, a + 1, a + 12));
 }, (_k, [a, b, slot, salt]) => {
 	if (!isInt(a, 1, 10) || !isInt(b, a + 1, a + 12)) return null;
-	return signed({ parts: [
+	return signed$1({ parts: [
 		String(a),
 		"−",
 		String(b),
@@ -4907,9 +5888,9 @@ const down = oneKey("int:down", "Taking away past zero (3 − 7)", Y7_OPS, 4, (_
 	}, slot, salt);
 });
 /** "−2 − 5 = ?": further below zero (tap −7). */
-const negMinus = oneKey("int:neg-minus", "Taking away from a negative number (−2 − 5)", Y7_OPS, 4, (_k, r) => withPick(r, int(r, 1, 10), int(r, 1, 10)), (_k, [a, b, slot, salt]) => {
+const negMinus = oneKey("int:neg-minus", "Taking away from a negative number (−2 − 5)", Y7_OPS, 4, (_k, r) => withPick$2(r, int(r, 1, 10), int(r, 1, 10)), (_k, [a, b, slot, salt]) => {
 	if (!isInt(a, 1, 10) || !isInt(b, 1, 10)) return null;
-	return signed({ parts: [
+	return signed$1({ parts: [
 		signedText(-a),
 		"−",
 		String(b),
@@ -4926,10 +5907,10 @@ const negMinus = oneKey("int:neg-minus", "Taking away from a negative number (�
 /** Temperature: "−3°C, warms up 8°": up from below zero (typed 5). */
 const tempUp = oneKey("int:temp-up", "Temperature going up from below zero", Y7_OPS, 4, (_k, r) => {
 	const a = int(r, 1, 10);
-	return withPick(r, a, int(r, a, a + 10));
+	return withPick$2(r, a, int(r, a, a + 10));
 }, (_k, [a, b, slot, salt]) => {
 	if (!isInt(a, 1, 10) || !isInt(b, a, a + 10)) return null;
-	return signed({
+	return signed$1({
 		parts: [
 			`${signedText(-a)}°`,
 			"+",
@@ -4949,10 +5930,10 @@ const tempUp = oneKey("int:temp-up", "Temperature going up from below zero", Y7_
 /** Temperature: "4°C, drops 9°": down past zero (tap −5). */
 const tempDown = oneKey("int:temp-down", "Temperature dropping below zero", Y7_OPS, 4, (_k, r) => {
 	const a = int(r, 1, 10);
-	return withPick(r, a, int(r, a + 1, a + 10));
+	return withPick$2(r, a, int(r, a + 1, a + 10));
 }, (_k, [a, b, slot, salt]) => {
 	if (!isInt(a, 1, 10) || !isInt(b, a + 1, a + 10)) return null;
-	return signed({
+	return signed$1({
 		parts: [
 			`${a}°`,
 			"−",
@@ -4971,7 +5952,7 @@ const tempDown = oneKey("int:temp-down", "Temperature dropping below zero", Y7_O
 	}, slot, salt);
 });
 /** "3 + −7 = ?" or "9 + −4 = ?": adding a negative is taking away. */
-const addNeg = oneKey("int:add-neg", "Adding a negative number (3 + −7)", Y8, 4, (_k, r) => withPick(r, int(r, -10, 12), int(r, 1, 12)), (_k, [a, b, slot, salt]) => {
+const addNeg = oneKey("int:add-neg", "Adding a negative number (3 + −7)", Y8$1, 4, (_k, r) => withPick$2(r, int(r, -10, 12), int(r, 1, 12)), (_k, [a, b, slot, salt]) => {
 	if (!isInt(a, -10, 12) || !isInt(b, 1, 12) || a === 0) return null;
 	const parts = [
 		signedText(a),
@@ -4981,7 +5962,7 @@ const addNeg = oneKey("int:add-neg", "Adding a negative number (3 + −7)", Y8, 
 		"?"
 	];
 	const answer = a - b;
-	return signed({ parts }, answer, {
+	return signed$1({ parts }, answer, {
 		"added instead": a + b,
 		"forgot the minus on the answer": -answer,
 		"one too far": answer - 1,
@@ -4989,7 +5970,7 @@ const addNeg = oneKey("int:add-neg", "Adding a negative number (3 + −7)", Y8, 
 	}, slot, salt);
 });
 /** "5 − −2 = ?" or "−6 − −4 = ?": taking away a negative is adding. */
-const subNeg = oneKey("int:sub-neg", "Taking away a negative number (5 − −2)", Y8, 4, (_k, r) => withPick(r, int(r, -10, 12), int(r, 1, 12)), (_k, [a, b, slot, salt]) => {
+const subNeg = oneKey("int:sub-neg", "Taking away a negative number (5 − −2)", Y8$1, 4, (_k, r) => withPick$2(r, int(r, -10, 12), int(r, 1, 12)), (_k, [a, b, slot, salt]) => {
 	if (!isInt(a, -10, 12) || !isInt(b, 1, 12) || a === 0) return null;
 	const parts = [
 		signedText(a),
@@ -5000,7 +5981,7 @@ const subNeg = oneKey("int:sub-neg", "Taking away a negative number (5 − −2)
 	];
 	const answer = a + b;
 	if (answer === 0) return null;
-	return signed({ parts }, answer, {
+	return signed$1({ parts }, answer, {
 		"took away instead": a - b,
 		"forgot the minus on the answer": -answer,
 		"one too far": answer + 1,
@@ -5008,7 +5989,7 @@ const subNeg = oneKey("int:sub-neg", "Taking away a negative number (5 − −2)
 	}, slot, salt);
 });
 /** "Which is smaller?" with decimals below zero: −3.4 or −3 (four choices around one whole number). */
-const compareDec = oneKey("int:compare-dec", "The smallest of four decimals below zero (−3.4, −3)", Y8, 3, (_k, r) => withPick(r, int(r, 1, 9)), (_k, [w, slot, salt]) => {
+const compareDec = oneKey("int:compare-dec", "The smallest of four decimals below zero (−3.4, −3)", Y8$1, 3, (_k, r) => withPick$2(r, int(r, 1, 9)), (_k, [w, slot, salt]) => {
 	if (!isInt(w, 1, 9) || !goodPick(slot, salt)) return null;
 	const right = -(w + .5);
 	const named = {
@@ -5066,6 +6047,2511 @@ const INTEGER_SKILL_KEYS = {
 		"int:compare-dec"
 	]
 };
+const INTEGER_SLOW_KEYS = [];
+const INTEGER_LADDER = [
+	{
+		id: "int-compare",
+		label: "Negative numbers in order",
+		tiny: "Negatives in order",
+		stage: "integers",
+		year: 7,
+		tags: Y7$1
+	},
+	{
+		id: "int-add-sub",
+		label: "Adding and taking away across zero",
+		tiny: "Across zero",
+		stage: "integers",
+		year: 7,
+		tags: Y7_OPS
+	},
+	{
+		id: "int-negatives",
+		label: "Adding and taking away negatives",
+		tiny: "Adding negatives",
+		stage: "integers",
+		year: 8,
+		tags: Y8$1
+	}
+];
+//#endregion
+//#region shared/maths/skillPacks/algebraSkills.ts
+/**
+* Algebra, Year 7 and 8 (docs/plans/ladder-7-8/PLAN.md section 3d, card Y6).
+*
+* Fluency, not method: every question is one number to type or four choices to tap, from small numbers. A letter is a plain
+* letter (x, t, a). A question that asks for an unknown shows the equation in the prompt ("If t + 7 = 12") and the sum under
+* it is "t = ?", so the blank is always the thing to find. A negative answer is four choices to tap (no minus key), as in
+* integerSkills.ts; one that is zero or more is typed.
+*
+* Types (key prefix `alg`):
+*   substitute            (Y7) alg:sub-sq  alg:sub-area  alg:sub-lin*
+*   equations-1           (Y7) alg:eq-add  alg:eq-mul  alg:eq-div  alg:eq-two*
+*   like-terms            (Y7) alg:like-add  alg:like-sub
+*   patterns-rule         (Y7) alg:pat-next  alg:pat-term*  alg:pat-rule
+*   true-false-sentences  (Y7) alg:tf-whole*  alg:tf-dec*
+*   equations-2           (Y8) alg:eq2-dec  alg:eq2-ineq  alg:eq2-two*
+* (* = two steps, in ALGEBRA_SLOW_KEYS.)
+*/
+const Y7 = ["MS.Y7.ALG.P1", "MS.Y7.ALG.P2"];
+const Y8 = ["MS.Y8.ALG.P1", "MS.Y8.ALG.P2"];
+/** The letters a question may use (a number from a roll picks one). */
+const LETTERS = [
+	"x",
+	"t",
+	"a",
+	"n",
+	"m",
+	"p",
+	"y",
+	"s"
+];
+const letterOk = (i) => isInt(i, 0, LETTERS.length - 1);
+const rollLetter = (r) => int(r, 0, LETTERS.length - 1);
+/** "3x", or "x" for one of them. */
+const coef = (c, v) => c === 1 ? v : `${c}${v}`;
+const SIGN_WORDS = {
+	"+": "plus",
+	"−": "minus",
+	"×": "times",
+	"÷": "divided by",
+	"=": "equals",
+	"≥": "is at least",
+	"≤": "is at most",
+	"<": "is less than",
+	">": "is more than"
+};
+/** An expression read aloud: "3x + 2" is "3 x plus 2", "−5" is "negative 5", "0.8" is "0 point 8", "a²" is "a squared". */
+function sayAlg(text) {
+	return text.replace(/−(?=\d)/g, "negative ").replace(/(\d+)\.(\d+)/g, (_, w, f) => `${w} point ${f.split("").join(" ")}`).replace(/²/g, " squared").replace(/(\d)([a-z])/g, "$1 $2").replace(/[+−×÷=≥≤<>]/g, (c) => ` ${SIGN_WORDS[c]} `).replace(/\s+/g, " ").trim();
+}
+/**
+* Typed when the answer is zero or more, four choices to tap when it is below zero (as integerSkills.ts). A mistake that is
+* not a whole number is dropped from a whole-number question, so a choice never looks like a different kind of answer.
+*/
+function signed(base, answer, named, slot, salt) {
+	const keep = {};
+	for (const [name, n] of Object.entries(named)) if (Number.isFinite(n) && (base.decimal || Number.isInteger(n))) keep[name] = Math.round(n * 100) / 100;
+	const extra = base.prompt ? { prompt: base.prompt } : {};
+	if (answer >= 0) return withMistakes({
+		parts: base.parts,
+		spoken: base.spoken,
+		answer,
+		...base.decimal ? { input: "decimal" } : {},
+		...extra
+	}, keep);
+	const labels = {};
+	for (const [name, n] of Object.entries(keep)) if (n !== answer) labels[name] = signedText(n);
+	const fact = `${base.prompt ? `${base.prompt}, ` : ""}${base.parts.map((p) => p.replace("?", signedText(answer))).join(" ")}`;
+	const made = pick({
+		parts: base.parts,
+		spoken: base.spoken,
+		fact
+	}, signedText(answer), labels, {
+		slot,
+		salt
+	});
+	return made ? {
+		...made,
+		...extra
+	} : null;
+}
+const withPick$1 = (random, ...params) => [...params, ...rollPick(random)];
+/** "a² when a = 6". */
+const subSq = oneKey("alg:sub-sq", "Putting a number in a square (a² when a = 6)", Y7, 2, (_k, r) => [rollLetter(r), int(r, 2, 12)], (_k, [li, a]) => {
+	if (!letterOk(li) || !isInt(a, 2, 12)) return null;
+	const v = LETTERS[li];
+	return withMistakes({
+		parts: [
+			`${v}²`,
+			"=",
+			"?"
+		],
+		prompt: `When ${v} = ${a}`,
+		spoken: `When ${v} equals ${a}, ${v} squared equals what?`,
+		answer: a * a
+	}, {
+		"doubled instead of squared": 2 * a,
+		"added 2": a + 2,
+		"cubed": a * a * a,
+		"one more": a * a + 1,
+		"one less": a * a - 1
+	});
+});
+/** "A = lw with l = 6, w = 4". */
+const subArea = oneKey("alg:sub-area", "Putting numbers in a formula (A = lw)", Y7, 2, (_k, r) => [int(r, 3, 12), int(r, 2, 9)], (_k, [l, w]) => {
+	if (!isInt(l, 3, 12) || !isInt(w, 2, 9)) return null;
+	return withMistakes({
+		parts: [
+			"A",
+			"=",
+			"?"
+		],
+		prompt: `A = lw, when l = ${l} and w = ${w}`,
+		spoken: `A equals l w, when l equals ${l} and w equals ${w}. What is A?`,
+		answer: l * w
+	}, {
+		"added them": l + w,
+		"found the distance round (perimeter)": 2 * (l + w),
+		"squared the length": l * l,
+		"joined the digits": Number(`${l}${w}`),
+		"one more row": l * w + l
+	});
+});
+/** "3x + 2 when x = 5" (two steps). */
+const subLin = oneKey("alg:sub-lin", "Putting a number in (3x + 2 when x = 5)", Y7, 5, (_k, r) => {
+	const a = int(r, 2, 9);
+	const x = int(r, 2, 9);
+	const minus = int(r, 0, 1);
+	return [
+		rollLetter(r),
+		a,
+		x,
+		int(r, 1, minus ? Math.min(9, a * x - 1) : 9),
+		minus
+	];
+}, (_k, [li, a, x, b, minus]) => {
+	if (!letterOk(li) || !isInt(a, 2, 9) || !isInt(x, 2, 9) || !isInt(b, 1, 9) || !isInt(minus, 0, 1)) return null;
+	if (minus && a * x - b < 1) return null;
+	const v = LETTERS[li];
+	const s = minus ? -1 : 1;
+	const expr = `${a}${v} ${minus ? "−" : "+"} ${b}`;
+	return withMistakes({
+		parts: [
+			expr,
+			"=",
+			"?"
+		],
+		prompt: `When ${v} = ${x}`,
+		spoken: `When ${v} equals ${x}, ${sayAlg(expr)} equals what?`,
+		answer: a * x + s * b
+	}, {
+		"added instead of multiplied": a + x + s * b,
+		"forgot the last number": a * x,
+		"multiplied the lot": a * (x + s * b),
+		"joined the digits": Number(`${a}${x}`) + s * b,
+		"one more": a * x + s * b + 1,
+		"one less": a * x + s * b - 1
+	});
+});
+const eqParts = (v) => [
+	v,
+	"=",
+	"?"
+];
+/** "t + 7 = 12" or "t − 3 = 5". */
+const eqAdd = oneKey("alg:eq-add", "One-step equation with + or − (t + 7 = 12)", Y7, 4, (_k, r) => {
+	const minus = int(r, 0, 1);
+	const a = int(r, 2, 12);
+	return [
+		rollLetter(r),
+		minus,
+		a,
+		minus ? int(r, a + 1, a + 12) : int(r, 2, 12)
+	];
+}, (_k, [li, minus, a, t]) => {
+	if (!letterOk(li) || !isInt(minus, 0, 1) || !isInt(a, 2, 12) || !isInt(t, 2, 24) || (minus ? t <= a : t > 12)) return null;
+	const v = LETTERS[li];
+	const rhs = minus ? t - a : t + a;
+	const eq = `${v} ${minus ? "−" : "+"} ${a} = ${rhs}`;
+	return withMistakes({
+		parts: eqParts(v),
+		prompt: `If ${eq}`,
+		spoken: `If ${sayAlg(eq)}, what is ${v}?`,
+		answer: t
+	}, {
+		"did the wrong operation": minus ? rhs - a : rhs + a,
+		"gave the number in the equation": a,
+		"gave the right-hand side": rhs,
+		"one more": t + 1,
+		"one less": t - 1
+	});
+});
+/** "3a = 18". */
+const eqMul = oneKey("alg:eq-mul", "One-step equation with × (3a = 18)", Y7, 3, (_k, r) => [
+	rollLetter(r),
+	int(r, 2, 9),
+	int(r, 2, 9)
+], (_k, [li, a, v]) => {
+	if (!letterOk(li) || !isInt(a, 2, 9) || !isInt(v, 2, 9)) return null;
+	const x = LETTERS[li];
+	const eq = `${a}${x} = ${a * v}`;
+	return withMistakes({
+		parts: eqParts(x),
+		prompt: `If ${eq}`,
+		spoken: `If ${sayAlg(eq)}, what is ${x}?`,
+		answer: v
+	}, {
+		"took away": a * v - a,
+		"added": a * v + a,
+		"gave the number in front": a,
+		"gave the right-hand side": a * v,
+		"one more": v + 1,
+		"one less": v - 1
+	});
+});
+/** "x ÷ 4 = 6". */
+const eqDiv = oneKey("alg:eq-div", "One-step equation with ÷ (x ÷ 4 = 6)", Y7, 3, (_k, r) => [
+	rollLetter(r),
+	int(r, 2, 9),
+	int(r, 2, 9)
+], (_k, [li, a, v]) => {
+	if (!letterOk(li) || !isInt(a, 2, 9) || !isInt(v, 2, 9)) return null;
+	const x = LETTERS[li];
+	const eq = `${x} ÷ ${a} = ${v}`;
+	return withMistakes({
+		parts: eqParts(x),
+		prompt: `If ${eq}`,
+		spoken: `If ${sayAlg(eq)}, what is ${x}?`,
+		answer: a * v
+	}, {
+		"added": v + a,
+		"took away": v - a,
+		"gave the number divided by": a,
+		"gave the right-hand side": v,
+		"one more": a * v + 1,
+		"one less": a * v - 1
+	});
+});
+/** "5s + 3 = 18" (two steps). */
+const eqTwo = oneKey("alg:eq-two", "Two-step equation (5s + 3 = 18)", Y7, 5, (_k, r) => [
+	rollLetter(r),
+	int(r, 2, 6),
+	int(r, 2, 9),
+	int(r, 1, 9),
+	int(r, 0, 1)
+], (_k, [li, a, s, b, minus]) => {
+	if (!letterOk(li) || !isInt(a, 2, 6) || !isInt(s, 2, 9) || !isInt(b, 1, 9) || !isInt(minus, 0, 1)) return null;
+	if (minus && a * s - b < 1) return null;
+	const v = LETTERS[li];
+	const rhs = minus ? a * s - b : a * s + b;
+	const eq = `${a}${v} ${minus ? "−" : "+"} ${b} = ${rhs}`;
+	return withMistakes({
+		parts: eqParts(v),
+		prompt: `If ${eq}`,
+		spoken: `If ${sayAlg(eq)}, what is ${v}?`,
+		answer: s
+	}, {
+		"forgot to divide": a * s,
+		"did the wrong operation first": minus ? rhs - b : rhs + b,
+		"gave the number in front": a,
+		"gave the right-hand side": rhs,
+		"one more": s + 1,
+		"one less": s - 1
+	});
+});
+/** "3a + a + a = ?a". */
+const likeAdd = oneKey("alg:like-add", "Adding like terms (3a + a + a = ?a)", Y7, 4, (_k, r) => [
+	rollLetter(r),
+	int(r, 1, 6),
+	int(r, 1, 6),
+	int(r, 0, 6)
+], (_k, [li, c1, c2, c3]) => {
+	if (!letterOk(li) || !isInt(c1, 1, 6) || !isInt(c2, 1, 6) || !isInt(c3, 0, 6)) return null;
+	const cs = c3 ? [
+		c1,
+		c2,
+		c3
+	] : [c1, c2];
+	const sum = cs.reduce((x, y) => x + y, 0);
+	if (sum > 12 || Math.max(...cs) === 1) return null;
+	const v = LETTERS[li];
+	const expr = cs.map((c) => coef(c, v)).join(" + ");
+	return withMistakes({
+		parts: [
+			expr,
+			"=",
+			`?${v}`
+		],
+		spoken: `${sayAlg(expr)} equals what ${v}?`,
+		answer: sum
+	}, {
+		"multiplied": cs.reduce((x, y) => x * y, 1),
+		"counted the letters": cs.length,
+		"ignored the lone letters": cs.filter((c) => c > 1).reduce((x, y) => x + y, 0),
+		"one more": sum + 1,
+		"one less": sum - 1
+	});
+});
+/** "7b − 2b = ?b". */
+const likeSub = oneKey("alg:like-sub", "Taking away like terms (7b − 2b = ?b)", Y7, 3, (_k, r) => {
+	const p = int(r, 3, 12);
+	return [
+		rollLetter(r),
+		p,
+		int(r, 1, p - 1)
+	];
+}, (_k, [li, p, q]) => {
+	if (!letterOk(li) || !isInt(p, 3, 12) || !isInt(q, 1, p - 1)) return null;
+	const v = LETTERS[li];
+	const expr = `${coef(p, v)} − ${coef(q, v)}`;
+	return withMistakes({
+		parts: [
+			expr,
+			"=",
+			`?${v}`
+		],
+		spoken: `${sayAlg(expr)} equals what ${v}?`,
+		answer: p - q
+	}, {
+		"added": p + q,
+		"gave the first number": p,
+		"gave the second number": q,
+		"one more": p - q + 1,
+		"one less": p - q - 1
+	});
+});
+/** "4, 7, 10, 13, ?": the next term, going up or down. */
+const patNext = oneKey("alg:pat-next", "The next number in a pattern (4, 7, 10, 13)", Y7, 3, (_k, r) => {
+	const down = int(r, 0, 1);
+	const step = int(r, 2, down ? 7 : 9);
+	return [
+		down,
+		down ? 4 * step + int(r, 1, 9) : int(r, 1, 10),
+		step
+	];
+}, (_k, [down, start, step]) => {
+	if (!isInt(down, 0, 1) || !isInt(step, 2, 9) || !isInt(start, 1, 50)) return null;
+	const s = down ? -step : step;
+	if (down && start + 4 * s < 1) return null;
+	const shown = [
+		0,
+		1,
+		2,
+		3
+	].map((i) => start + i * s);
+	const last = shown[3];
+	return withMistakes({
+		parts: [...shown.map((n) => `${n},`), "?"],
+		prompt: "What comes next?",
+		spoken: `${shown.join(", ")}, what comes next?`,
+		answer: last + s
+	}, {
+		"repeated the last number": last,
+		"went the other way": last - s,
+		"added the last two numbers": last + shown[2],
+		"one more": last + s + 1,
+		"one less": last + s - 1,
+		"jumped twice": last + 2 * s
+	});
+});
+const ordinal = (n) => `${n}th`;
+/** "Rule t = 3n + 4, the 10th term" (two steps). */
+const patTerm = oneKey("alg:pat-term", "A term from its rule (t = 3n + 4, the 10th term)", Y7, 3, (_k, r) => [
+	int(r, 2, 6),
+	int(r, 1, 9),
+	int(r, 6, 10)
+], (_k, [a, b, n]) => {
+	if (!isInt(a, 2, 6) || !isInt(b, 1, 9) || !isInt(n, 6, 10)) return null;
+	const rule = `${a}n + ${b}`;
+	return withMistakes({
+		parts: [
+			`${ordinal(n)} term`,
+			"=",
+			"?"
+		],
+		prompt: `Rule: t = ${rule}`,
+		spoken: `The rule is t equals ${sayAlg(rule)}. What is the ${n}th term?`,
+		answer: a * n + b
+	}, {
+		"forgot the last number": a * n,
+		"added everything": a + n + b,
+		"added before multiplying": a * (n + b),
+		"took the next term": a * (n + 1) + b,
+		"took the one before": a * (n - 1) + b
+	});
+});
+/** "Which rule makes 5, 9, 13, 17?" (pick the rule). */
+const patRule = oneKey("alg:pat-rule", "Which rule makes a pattern (5, 9, 13, 17)", Y7, 4, (_k, r) => {
+	const d = int(r, 2, 6);
+	const b = int(r, -3, 6);
+	return withPick$1(r, d, b === 0 ? 1 : b);
+}, (_k, [d, b, slot, salt]) => {
+	if (!isInt(d, 2, 6) || !isInt(b, -3, 6) || b === 0 || !goodPick(slot, salt)) return null;
+	const rule = (m, c) => `${coef(m, "n")}${c === 0 ? "" : ` ${c < 0 ? "−" : "+"} ${Math.abs(c)}`}`;
+	const first = d + b;
+	if (first < 1) return null;
+	const terms = [
+		0,
+		1,
+		2,
+		3
+	].map((i) => first + i * d);
+	const right = rule(d, b);
+	const named = {
+		"added the step to n": rule(1, d),
+		"forgot the start": rule(d, 0),
+		"used the first term as the start": rule(d, first),
+		"used the first term as the multiplier": rule(first, 0),
+		"swapped the numbers": b > 0 ? rule(b, d) : rule(d, -b)
+	};
+	const made = pick({
+		parts: [
+			"t",
+			"=",
+			"?"
+		],
+		spoken: `Which rule makes ${terms.join(", ")}?`,
+		fact: `${right} makes ${terms.join(", ")}`
+	}, right, named, {
+		slot,
+		salt
+	});
+	return made ? {
+		...made,
+		prompt: `Which rule makes ${terms.join(", ")}?`
+	} : null;
+});
+/**
+* "Which sign makes it true?" two sides and four signs to tap. The right one is < or ≤ (or > or ≥) the right way round; the
+* others are the turned-round signs and "=". The sides are never equal, so only one sentence is true.
+*/
+function sentences(left, lv, right, rv, lenient, swap, slot, salt) {
+	if (lv === rv || !isInt(lenient, 0, 1) || !isInt(swap, 0, 1) || !goodPick(slot, salt)) return null;
+	const [first, second, fv, sv] = swap ? [
+		right,
+		left,
+		rv,
+		lv
+	] : [
+		left,
+		right,
+		lv,
+		rv
+	];
+	const less = fv < sv;
+	const say = (sign) => `${first} ${sign} ${second}`;
+	const truth = less ? lenient ? "≤" : "<" : lenient ? "≥" : ">";
+	const wrongSigns = less ? [
+		">",
+		"≥",
+		"="
+	] : [
+		"<",
+		"≤",
+		"="
+	];
+	const names = [
+		"turned the sign round",
+		"turned the sign round (or equal)",
+		"thought they were equal"
+	];
+	const named = Object.fromEntries(wrongSigns.map((s, i) => [names[i], s]));
+	const spoken = `${sayAlg(first)}, which sign goes in the gap, then ${sayAlg(second)}?`;
+	const made = pick({
+		parts: [
+			first,
+			"?",
+			second
+		],
+		spoken,
+		fact: `${say(truth)} is true`
+	}, truth, named, {
+		slot,
+		salt
+	});
+	return made ? {
+		...made,
+		prompt: "Which sign makes it true?"
+	} : null;
+}
+/** "6 × 4 < 9 + 18". */
+const tfWhole = oneKey("alg:tf-whole", "True or false with <, ≤, ≥, > (6 × 4 < 9 + 18)", Y7, 8, (_k, r) => withPick$1(r, int(r, 2, 9), int(r, 2, 9), int(r, 2, 20), int(r, 2, 20), int(r, 0, 1), int(r, 0, 1)), (_k, [a, b, c, d, lenient, swap, slot, salt]) => {
+	if (!isInt(a, 2, 9) || !isInt(b, 2, 9) || !isInt(c, 2, 20) || !isInt(d, 2, 20)) return null;
+	const lv = a * b;
+	const rv = c + d;
+	if (Math.abs(lv - rv) < 1 || Math.abs(lv - rv) > 8 || lv < 8 || rv < 8) return null;
+	return sentences(`${a} × ${b}`, lv, `${c} + ${d}`, rv, lenient, swap, slot, salt);
+});
+/** "0.8 × 12 ≤ 8 + 4". */
+const tfDec = oneKey("alg:tf-dec", "True or false with decimals (0.8 × 12 ≤ 8 + 4)", Y7, 8, (_k, r) => withPick$1(r, int(r, 2, 9), int(r, 4, 15), int(r, 2, 9), int(r, 2, 9), int(r, 0, 1), int(r, 0, 1)), (_k, [tenths, q, c, d, lenient, swap, slot, salt]) => {
+	if (!isInt(tenths, 2, 9) || !isInt(q, 4, 15) || !isInt(c, 2, 9) || !isInt(d, 2, 9)) return null;
+	const diff = tenths * q - 10 * (c + d);
+	if (Math.abs(diff) < 5 || Math.abs(diff) > 60) return null;
+	return sentences(`0.${tenths} × ${q}`, tenths * q, `${c} + ${d}`, 10 * (c + d), lenient, swap, slot, salt);
+});
+/** "t + 7 = 6.5": a decimal answer, below zero as often as not. */
+const eq2Dec = oneKey("alg:eq2-dec", "Equation with a decimal answer (t + 7 = 6.5)", Y8, 5, (_k, r) => {
+	const a = int(r, 2, 9);
+	let h = int(r, -4, 4) * 2 + 1;
+	if (a + h / 2 < .5) h = -h;
+	return withPick$1(r, int(r, 0, 7), a, h);
+}, (_k, [li, a, h, slot, salt]) => {
+	if (!letterOk(li) || !isInt(a, 2, 9) || !isInt(h, -9, 9) || Math.abs(h) % 2 !== 1) return null;
+	const ans = h / 2;
+	const rhs = a + ans;
+	if (rhs < .5) return null;
+	const v = LETTERS[li];
+	const eq = `${v} + ${a} = ${rhs}`;
+	return signed({
+		parts: eqParts(v),
+		prompt: `If ${eq}`,
+		spoken: `If ${sayAlg(eq)}, what is ${v}?`,
+		decimal: true
+	}, ans, {
+		"added instead": rhs + a,
+		"turned the answer round": -ans,
+		"gave the right-hand side": rhs,
+		"gave the number in the equation": a,
+		"one more": ans + 1,
+		"one less": ans - 1,
+		"half a unit more": ans + .5
+	}, slot, salt);
+});
+/** "t − 3 ≥ −5, so t ≥ ?". */
+const eq2Ineq = oneKey("alg:eq2-ineq", "Inequality with a negative answer (t − 3 ≥ −5)", Y8, 7, (_k, r) => withPick$1(r, rollLetter(r), int(r, 0, 1), int(r, 1, 9), int(r, -8, 8), int(r, 0, 1)), (_k, [li, minus, b, c, atMost, slot, salt]) => {
+	if (!letterOk(li) || !isInt(minus, 0, 1) || !isInt(b, 1, 9) || !isInt(c, -8, 8) || !isInt(atMost, 0, 1)) return null;
+	const v = LETTERS[li];
+	const ans = minus ? c + b : c - b;
+	if (ans === c) return null;
+	const sign = atMost ? "≤" : "≥";
+	const eq = `${v} ${minus ? "−" : "+"} ${b} ${sign} ${signedText(c)}`;
+	const words = `${sayAlg(`${v} ${minus ? "−" : "+"} ${b}`)} ${SIGN_WORDS[sign]} ${sayAlg(signedText(c))}`;
+	return signed({
+		parts: [
+			v,
+			sign,
+			"?"
+		],
+		prompt: `If ${eq}`,
+		spoken: `If ${words}, then ${v} ${SIGN_WORDS[sign]} what?`.replace(/\bis (at (?:least|most)) what\?/, "$1 what?")
+	}, ans, {
+		"did the wrong operation": minus ? c - b : c + b,
+		"turned the answer round": -ans,
+		"gave the right-hand side": c,
+		"gave the number in the equation": b,
+		"one more": ans + 1,
+		"one less": ans - 1
+	}, slot, salt);
+});
+/** "2x + 9 = 1": two steps, an answer below zero as often as not. */
+const eq2Two = oneKey("alg:eq2-two", "Two-step equation with a negative answer (2x + 9 = 1)", Y8, 6, (_k, r) => {
+	for (;;) {
+		const a = int(r, 2, 5);
+		const x = int(r, -6, 5);
+		const b = int(r, 1, 9);
+		if (x !== 0 && a * x + b >= 0) return withPick$1(r, rollLetter(r), a, x, b);
+	}
+}, (_k, [li, a, x, b, slot, salt]) => {
+	if (!letterOk(li) || !isInt(a, 2, 5) || !isInt(x, -6, 5) || x === 0 || !isInt(b, 1, 9) || a * x + b < 0) return null;
+	const v = LETTERS[li];
+	const rhs = a * x + b;
+	const eq = `${a}${v} + ${b} = ${rhs}`;
+	return signed({
+		parts: eqParts(v),
+		prompt: `If ${eq}`,
+		spoken: `If ${sayAlg(eq)}, what is ${v}?`,
+		decimal: false
+	}, x, {
+		"forgot to divide": rhs - b,
+		"added the number": (rhs + b) / a,
+		"turned the answer round": -x,
+		"gave the right-hand side": rhs,
+		"one more": x + 1,
+		"one less": x - 1,
+		"did not take it away": rhs / a
+	}, slot, salt);
+});
+const ALGEBRA_FAMILIES = Object.fromEntries([
+	subSq,
+	subArea,
+	subLin,
+	eqAdd,
+	eqMul,
+	eqDiv,
+	eqTwo,
+	likeAdd,
+	likeSub,
+	patNext,
+	patTerm,
+	patRule,
+	tfWhole,
+	tfDec,
+	eq2Dec,
+	eq2Ineq,
+	eq2Two
+].map((f) => [f.keys[0], f]));
+const ALGEBRA_SKILL_KEYS = {
+	substitute: [
+		"alg:sub-sq",
+		"alg:sub-area",
+		"alg:sub-lin"
+	],
+	"equations-1": [
+		"alg:eq-add",
+		"alg:eq-mul",
+		"alg:eq-div",
+		"alg:eq-two"
+	],
+	"like-terms": ["alg:like-add", "alg:like-sub"],
+	"patterns-rule": [
+		"alg:pat-next",
+		"alg:pat-term",
+		"alg:pat-rule"
+	],
+	"true-false-sentences": ["alg:tf-whole", "alg:tf-dec"],
+	"equations-2": [
+		"alg:eq2-dec",
+		"alg:eq2-ineq",
+		"alg:eq2-two"
+	]
+};
+/** The two-step types: 12 seconds to count as quick. */
+const ALGEBRA_SLOW_KEYS = [
+	"alg:sub-lin",
+	"alg:eq-two",
+	"alg:pat-term",
+	"alg:tf-whole",
+	"alg:tf-dec",
+	"alg:eq2-two"
+];
+const ALGEBRA_LADDER = [
+	{
+		id: "substitute",
+		label: "Putting a number in a letter",
+		tiny: "Putting in a number",
+		stage: "algebra",
+		year: 7,
+		tags: Y7
+	},
+	{
+		id: "equations-1",
+		label: "One- and two-step equations",
+		tiny: "Solving equations",
+		stage: "algebra",
+		year: 7,
+		tags: Y7
+	},
+	{
+		id: "like-terms",
+		label: "Collecting like terms",
+		tiny: "Collecting terms",
+		stage: "algebra",
+		year: 7,
+		tags: Y7
+	},
+	{
+		id: "patterns-rule",
+		label: "Pattern rules",
+		tiny: "Pattern rules",
+		stage: "algebra",
+		year: 7,
+		tags: Y7
+	},
+	{
+		id: "true-false-sentences",
+		label: "True or false with < and ≤",
+		tiny: "True or false, < ≤",
+		stage: "algebra",
+		year: 7,
+		tags: Y7
+	},
+	{
+		id: "equations-2",
+		label: "Equations below zero",
+		tiny: "Equations below 0",
+		stage: "algebra",
+		year: 8,
+		tags: Y8
+	}
+];
+//#endregion
+//#region shared/maths/skillPacks/numberFactSkills.ts
+/**
+* Number facts for Year 7 and 8: decimals, estimating, fractions, percent change, ratio and money (docs/plans/ladder-7-8/PLAN.md
+* section 3c, card Y5). Recall, not working: small friendly numbers, one number to type or one of four choices to tap.
+*
+* Typed answers are decimals where a point can be needed (`input: 'decimal'`) and are tidied to 3 places so no floating dust
+* is ever shown. A fraction answer is four choices to tap in its simplest form, always under one. Wrong choices are the answers
+* named slips give, never random numbers. Money parts read '$40', and the blank is '$' then '?'.
+*
+* Types (all keys start `nf:`):
+*   decimal-facts     (Y7) nf:dec-tenth  nf:dec-tens  nf:dec-hund  nf:dec-div
+*   estimate          (Y7) nf:est-times
+*   fraction-add-easy (Y7) nf:fadd  nf:fsub
+*   fraction-divide   (Y7) nf:fdiv-whole  nf:fdiv-frac
+*   percent-change    (Y7) nf:pc-off*  nf:pc-more*  nf:pc-swap
+*   ratio             (Y7) nf:ratio-eq  nf:ratio-share*  nf:ratio-blue*
+*   money             (Y7) nf:change  nf:cash
+*   round-thousandth  (Y8) nf:round-3dp
+*   fraction-times    (Y8) nf:ftimes
+* (* two-step: NUMFACT_SLOW_KEYS)
+*/
+const DEC_TAGS = ["MS.Y7.NUM.RN.P1", "MS.Y7.NUM.RN.P2"];
+const EST_TAGS = ["MS.Y7.NUM.NS.P1"];
+const FADD_TAGS = ["MS.Y7.NUM.RN.P3"];
+const FDIV_TAGS = ["MS.Y7.NUM.RN.P4"];
+const PCT_TAGS = ["MS.Y7.NUM.RN.P5"];
+const RATIO_TAGS = ["MS.Y7.NUM.RN.P6"];
+const MONEY_TAGS = ["MS.Y7.NUM.RN.P7"];
+const ROUND_TAGS = ["MS.Y8.NUM.NS.P1"];
+const FTIMES_TAGS = ["MS.Y8.NUM.RN.P3"];
+/** The two pick numbers every pick family here ends with. */
+const withPick = (random, ...params) => [...params, ...rollPick(random)];
+/** A fraction label in its simplest form ("6/12" → "1/2"). */
+const simple = (n, d) => {
+	const g = gcd$2(n, d);
+	return frac(n / g, d / g);
+};
+/** A fraction label, or an empty one (dropped later) when it has no top or bottom. */
+const lab = (n, d) => n > 0 && d > n && Number.isInteger(n) && Number.isInteger(d) ? frac(n, d) : "";
+/**
+* A fraction pick: the right label (simplest form) and slips by name. A slip with the right value but a different shape
+* ("did not simplify") is a wrong choice on purpose; any other slip that has the right value, or the value of an earlier slip, is dropped.
+*/
+function fracPick(base, right, named, slot, salt) {
+	const rightValue = labelValue(right);
+	if (rightValue === null) return null;
+	const clean = {};
+	const seen = [];
+	for (const [name, label] of Object.entries(named)) {
+		const v = label ? labelValue(label) : null;
+		if (v === null || label === right) continue;
+		if (name !== "did not simplify") {
+			if (Math.abs(v - rightValue) < 1e-9 || seen.some((x) => Math.abs(x - v) < 1e-9)) continue;
+			seen.push(v);
+		}
+		clean[name] = label;
+	}
+	const made = pick(base, right, clean, {
+		slot,
+		salt,
+		allowEqual: true
+	});
+	return made ? {
+		...made,
+		prompt: "Give the answer in its simplest form."
+	} : null;
+}
+const RIGHT10 = "point one place too far right (10 times too big)";
+const LEFT10 = "point one place too far left (10 times too small)";
+/** 0.7 × 5 = 3.5: tenths times a single digit. */
+const decTenth = oneKey("nf:dec-tenth", "A tenth number times a single digit (0.7 × 5)", DEC_TAGS, 2, (_k, r) => [int(r, 2, 9), int(r, 2, 9)], (_k, [a, b]) => {
+	if (!isInt(a, 2, 9) || !isInt(b, 2, 9)) return null;
+	const parts = [
+		show$1(a / 10),
+		"×",
+		String(b),
+		"=",
+		"?"
+	];
+	const answer = tidy(a * b / 10);
+	return withMistakes({
+		parts,
+		spoken: talk(parts),
+		answer,
+		input: "decimal"
+	}, {
+		[RIGHT10]: answer * 10,
+		[LEFT10]: answer / 10,
+		"added the numbers": tidy(a / 10 + b),
+		"one tenth too many": answer + .1,
+		"one tenth too few": answer - .1
+	});
+});
+/** 0.7 × 50 = 35: tenths times a multiple of ten. */
+const decTens = oneKey("nf:dec-tens", "A tenth number times a multiple of ten (0.7 × 50)", DEC_TAGS, 2, (_k, r) => [int(r, 2, 9), int(r, 2, 9)], (_k, [a, m]) => {
+	if (!isInt(a, 2, 9) || !isInt(m, 2, 9)) return null;
+	const parts = [
+		show$1(a / 10),
+		"×",
+		String(m * 10),
+		"=",
+		"?"
+	];
+	const answer = a * m;
+	return withMistakes({
+		parts,
+		spoken: talk(parts),
+		answer,
+		input: "decimal"
+	}, {
+		[RIGHT10]: answer * 10,
+		[LEFT10]: answer / 10,
+		"added the numbers": tidy(a / 10 + m * 10),
+		"one too many": answer + 1,
+		"one too few": answer - 1
+	});
+});
+/** 0.04 × 6 = 0.24: hundredths times a single digit. */
+const decHund = oneKey("nf:dec-hund", "A hundredth number times a single digit (0.04 × 6)", DEC_TAGS, 2, (_k, r) => [int(r, 2, 9), int(r, 2, 9)], (_k, [a, b]) => {
+	if (!isInt(a, 2, 9) || !isInt(b, 2, 9)) return null;
+	const parts = [
+		show$1(a / 100),
+		"×",
+		String(b),
+		"=",
+		"?"
+	];
+	const answer = tidy(a * b / 100);
+	return withMistakes({
+		parts,
+		spoken: talk(parts),
+		answer,
+		input: "decimal"
+	}, {
+		[RIGHT10]: answer * 10,
+		[LEFT10]: answer / 10,
+		"one hundredth too many": answer + .01,
+		"one hundredth too few": answer - .01
+	});
+});
+/** 2.4 ÷ 8 = 0.3: a tenths number divided by a single digit, from the fact 24 ÷ 8 = 3. */
+const decDiv = oneKey("nf:dec-div", "A decimal divided by a single digit (2.4 ÷ 8)", DEC_TAGS, 2, (_k, r) => [int(r, 2, 9), int(r, 2, 9)], (_k, [b, k]) => {
+	if (!isInt(b, 2, 9) || !isInt(k, 2, 9) || b * k % 10 === 0) return null;
+	const parts = [
+		show$1(b * k / 10),
+		"÷",
+		String(b),
+		"=",
+		"?"
+	];
+	const answer = k / 10;
+	return withMistakes({
+		parts,
+		spoken: talk(parts),
+		answer,
+		input: "decimal"
+	}, {
+		[RIGHT10]: k,
+		[LEFT10]: k / 100,
+		"one tenth too many": answer + .1,
+		"one tenth too few": answer - .1
+	});
+});
+/** 19.8 × 5 is about 100: round the decimal to the nearest ten first, four round-number choices. */
+const estTimes = oneKey("nf:est-times", "Estimating a times by rounding (19.8 × 5 is about 100)", EST_TAGS, 5, (_k, r) => withPick(r, int(r, 2, 9), int(r, -4, 4), int(r, 2, 9)), (_k, [k, d, b, slot, salt]) => {
+	if (!isInt(k, 2, 9) || !isInt(d, -4, 4) || d === 0 || !isInt(b, 2, 9) || !goodPick(slot, salt)) return null;
+	const a = show$1(10 * k + d / 10);
+	const right = 10 * k * b;
+	const parts = [
+		a,
+		"×",
+		String(b),
+		"≈",
+		"?"
+	];
+	const named = {
+		"zero in the wrong place (10 times too big)": String(right * 10),
+		"zero left off (10 times too small)": String(right / 10),
+		"rounded the wrong way": String(10 * (d < 0 ? k - 1 : k + 1) * b),
+		"added instead of multiplying": String(10 * k + b)
+	};
+	const made = pick({
+		parts,
+		spoken: `${say(10 * k + d / 10)} times ${b} is about what?`,
+		fact: `${a} × ${b} is about ${right}`
+	}, String(right), named, {
+		slot,
+		salt
+	});
+	return made ? {
+		...made,
+		prompt: "Round first, then estimate."
+	} : null;
+});
+/** Bottoms where one is a multiple of the other, the bigger one at most 12. */
+const RELATED = [
+	[2, 4],
+	[2, 6],
+	[2, 8],
+	[3, 6],
+	[3, 9],
+	[3, 12],
+	[4, 8],
+	[4, 12],
+	[5, 10],
+	[4, 2],
+	[6, 2],
+	[8, 2],
+	[6, 3],
+	[9, 3],
+	[12, 3],
+	[8, 4],
+	[12, 4],
+	[10, 5]
+];
+const propers = (b) => Array.from({ length: b - 1 }, (_, i) => i + 1).filter((a) => gcd$2(a, b) === 1);
+/** Every a/b ± c/d with related bottoms. Sums stay under one; differences stay above zero. */
+const pairs = (keep) => RELATED.flatMap(([b, d]) => propers(b).flatMap((a) => propers(d).map((c) => ({
+	a,
+	b,
+	c,
+	d
+})))).filter(keep);
+const ADDS = pairs(({ a, b, c, d }) => a / b + c / d < 1);
+const SUBS = pairs(({ a, b, c, d }) => a / b - c / d > 0);
+/** ½ + ¼ = ¾ (four fraction labels). */
+const fAdd = oneKey("nf:fadd", "Adding fractions with related bottoms (½ + ¼)", FADD_TAGS, 3, (_k, r) => withPick(r, int(r, 0, ADDS.length - 1)), (_k, [i, slot, salt]) => {
+	if (!isInt(i, 0, ADDS.length - 1) || !goodPick(slot, salt)) return null;
+	const { a, b, c, d } = ADDS[i];
+	const bottom = Math.max(b, d);
+	const top = a * (bottom / b) + c * (bottom / d);
+	const g = gcd$2(top, bottom);
+	const right = simple(top, bottom);
+	const parts = [
+		frac(a, b),
+		"+",
+		frac(c, d),
+		"=",
+		"?"
+	];
+	const named = {
+		"added the tops and the bottoms": lab(a + c, b + d),
+		"added the tops, kept the bigger bottom": lab(a + c, bottom),
+		"added the tops, kept the smaller bottom": lab(a + c, Math.min(b, d)),
+		"did not simplify": lab(top, bottom),
+		"took away instead": lab(Math.abs(a * (bottom / b) - c * (bottom / d)), bottom),
+		"one too many on the top": lab(top / g + 1, bottom / g)
+	};
+	return fracPick({
+		parts,
+		spoken: talk(parts),
+		fact: `${parts[0]} + ${parts[2]} = ${right}`
+	}, right, named, slot, salt);
+});
+/** ⅔ − ⅙ = ½. */
+const fSub = oneKey("nf:fsub", "Taking away fractions with related bottoms (⅔ − ⅙)", FADD_TAGS, 3, (_k, r) => withPick(r, int(r, 0, SUBS.length - 1)), (_k, [i, slot, salt]) => {
+	if (!isInt(i, 0, SUBS.length - 1) || !goodPick(slot, salt)) return null;
+	const { a, b, c, d } = SUBS[i];
+	const bottom = Math.max(b, d);
+	const top = a * (bottom / b) - c * (bottom / d);
+	const g = gcd$2(top, bottom);
+	const right = simple(top, bottom);
+	const parts = [
+		frac(a, b),
+		"−",
+		frac(c, d),
+		"=",
+		"?"
+	];
+	const named = {
+		"took the tops away, kept the bigger bottom": lab(a - c, bottom),
+		"took the tops away, kept the first bottom": lab(a - c, b),
+		"took the tops and the bottoms away": lab(a - c, b - d),
+		"did not simplify": lab(top, bottom),
+		"added instead": lab(a * (bottom / b) + c * (bottom / d), bottom),
+		"one too many on the top": lab(top / g + 1, bottom / g),
+		"one too few on the top": lab(top / g - 1, bottom / g)
+	};
+	return fracPick({
+		parts,
+		spoken: talk(parts),
+		fact: `${parts[0]} − ${parts[2]} = ${right}`
+	}, right, named, slot, salt);
+});
+/** 4 ÷ 1/3 = 12 (typed). */
+const fDivWhole = oneKey("nf:fdiv-whole", "A whole number divided by a unit fraction (4 ÷ ⅓)", FDIV_TAGS, 2, (_k, r) => [int(r, 2, 9), int(r, 2, 6)], (_k, [w, d]) => {
+	if (!isInt(w, 2, 9) || !isInt(d, 2, 6)) return null;
+	const parts = [
+		String(w),
+		"÷",
+		frac(1, d),
+		"=",
+		"?"
+	];
+	const answer = w * d;
+	return withMistakes({
+		parts,
+		spoken: talk(parts),
+		answer
+	}, {
+		"divided by the bottom number": w / d,
+		"gave the bottom number": d,
+		"added them": w + d,
+		"gave the whole number": w,
+		"one too many": answer + 1,
+		"one too few": answer - 1
+	});
+});
+/** 1/2 ÷ 3 = 1/6 (tap). */
+const fDivFrac = oneKey("nf:fdiv-frac", "A unit fraction divided by a whole number (½ ÷ 3)", FDIV_TAGS, 4, (_k, r) => withPick(r, int(r, 2, 4), int(r, 2, 5)), (_k, [b, c, slot, salt]) => {
+	if (!isInt(b, 2, 4) || !isInt(c, 2, 5) || !goodPick(slot, salt)) return null;
+	const parts = [
+		frac(1, b),
+		"÷",
+		String(c),
+		"=",
+		"?"
+	];
+	const right = frac(1, b * c);
+	const named = {
+		"used the whole number as the bottom": lab(1, c),
+		"added the bottoms": lab(1, b + c),
+		"did nothing to it": lab(1, b),
+		"multiplied instead of dividing": c <= b ? lab(c, b) : "",
+		"divided the bottom by the number": b % c === 0 ? lab(1, b / c) : ""
+	};
+	return fracPick({
+		parts,
+		spoken: talk(parts),
+		fact: `${parts[0]} ÷ ${c} = ${right}`
+	}, right, named, slot, salt);
+});
+const CHANGES = [
+	10,
+	20,
+	25,
+	50
+];
+const worth = (p, k) => p === 25 ? 20 * k : 10 * k;
+/** 20% off $40 = $32 (two steps). */
+const pcOff = oneKey("nf:pc-off", "A percent off a price (20% off $40)", PCT_TAGS, 2, (_k, r) => [int(r, 0, 3), int(r, 2, 10)], (_k, [pi, k]) => {
+	if (!isInt(pi, 0, 3) || !isInt(k, 2, 10)) return null;
+	const p = CHANGES[pi];
+	const amount = worth(p, k);
+	const off = amount * p / 100;
+	return withMistakes({
+		parts: [
+			"Sale price",
+			"=",
+			"$",
+			"?"
+		],
+		spoken: `${p} percent off ${amount} dollars. How many dollars?`,
+		answer: amount - off,
+		prompt: `${p}% off $${show$1(amount)}`
+	}, {
+		"gave the discount": off,
+		"added it on": amount + off,
+		"took the percent number off": amount - p,
+		"took off 10% only": amount * 90 / 100,
+		"took it off twice": amount - 2 * off
+	});
+});
+/** 10% more than $30 = $33 (two steps). */
+const pcMore = oneKey("nf:pc-more", "A percent more than a price (10% more than $30)", PCT_TAGS, 2, (_k, r) => [int(r, 0, 3), int(r, 2, 10)], (_k, [pi, k]) => {
+	if (!isInt(pi, 0, 3) || !isInt(k, 2, 10)) return null;
+	const p = CHANGES[pi];
+	const amount = worth(p, k);
+	const extra = amount * p / 100;
+	return withMistakes({
+		parts: [
+			"New price",
+			"=",
+			"$",
+			"?"
+		],
+		spoken: `${p} percent more than ${amount} dollars. How many dollars?`,
+		answer: amount + extra,
+		prompt: `${p}% more than $${show$1(amount)}`
+	}, {
+		"gave the increase": extra,
+		"took it off instead": amount - extra,
+		"added the percent number": amount + p,
+		"added 10% only": amount * 110 / 100,
+		"added it on twice": amount + 2 * extra
+	});
+});
+const SWAP_BOTTOMS = [
+	10,
+	20,
+	25,
+	30,
+	40,
+	50,
+	60
+];
+/** 45% of 20 = 20% of ? (the swap trick: 45). */
+const pcSwap = oneKey("nf:pc-swap", "The swap trick (45% of 20 = 20% of ?)", PCT_TAGS, 2, (_k, r) => [int(r, 11, 89), pickOne(r, SWAP_BOTTOMS)], (_k, [a, b]) => {
+	if (!isInt(a, 11, 89) || !SWAP_BOTTOMS.includes(b) || a === b) return null;
+	return withMistakes({
+		parts: [
+			`${a}%`,
+			"×",
+			String(b),
+			"=",
+			`${b}%`,
+			"×",
+			"?"
+		],
+		spoken: `${a} percent of ${b} equals ${b} percent of what?`,
+		answer: a
+	}, {
+		"gave the other number": b,
+		"worked out the first side": a * b / 100,
+		"added the numbers": a + b,
+		"multiplied the numbers": a * b,
+		"took it from 100": 100 - a
+	});
+});
+/** Pairs in their simplest form, the smaller first. */
+const RATIOS = [
+	[1, 2],
+	[1, 3],
+	[1, 4],
+	[1, 5],
+	[2, 3],
+	[2, 5],
+	[3, 4],
+	[3, 5],
+	[4, 5]
+];
+/** 6 : 9 = 2 : ? (typed 3). */
+const ratioEq = oneKey("nf:ratio-eq", "An equal ratio (6 : 9 = 2 : ?)", RATIO_TAGS, 3, (_k, r) => [
+	int(r, 0, RATIOS.length - 1),
+	int(r, 2, 5),
+	int(r, 0, 1)
+], (_k, [ri, k, flip]) => {
+	if (!isInt(ri, 0, RATIOS.length - 1) || !isInt(k, 2, 5) || !isInt(flip, 0, 1)) return null;
+	const [lo, hi] = RATIOS[ri];
+	const [a, b] = flip ? [hi, lo] : [lo, hi];
+	return withMistakes({
+		parts: [
+			String(k * a),
+			":",
+			String(k * b),
+			"=",
+			String(a),
+			":",
+			"?"
+		],
+		spoken: `${k * a} to ${k * b} equals ${a} to what?`,
+		answer: b
+	}, {
+		"kept the same difference": a + k * (b - a),
+		"gave the big number": k * b,
+		"gave the scale factor": k,
+		"gave the top number": a,
+		"one too many": b + 1,
+		"one too few": b - 1
+	});
+});
+/** Share 20 in the ratio 2 : 3, the bigger part (typed 12, two steps). */
+const ratioShare = oneKey("nf:ratio-share", "Sharing in a ratio, the bigger part (share 20 as 2 : 3)", RATIO_TAGS, 2, (_k, r) => [int(r, 0, RATIOS.length - 1), int(r, 2, 6)], (_k, [ri, k]) => {
+	if (!isInt(ri, 0, RATIOS.length - 1) || !isInt(k, 2, 6)) return null;
+	const [a, b] = RATIOS[ri];
+	const total = k * (a + b);
+	return withMistakes({
+		parts: [
+			"Bigger part",
+			"=",
+			"?"
+		],
+		prompt: `Share ${total} in the ratio ${a} : ${b}.`,
+		spoken: `Share ${total} in the ratio ${a} to ${b}. How much is the bigger part?`,
+		answer: k * b
+	}, {
+		"gave the smaller part": k * a,
+		"gave one share": k,
+		"gave the number of shares": a + b,
+		"took the bigger ratio number off the total": total - b,
+		"halved the total": total / 2
+	});
+});
+/** 3 red to 7 blue and 18 red: how many blue (typed 42, two steps). */
+const ratioBlue = oneKey("nf:ratio-blue", "Using a ratio to find a count (3 red to 7 blue, 18 red)", RATIO_TAGS, 3, (_k, r) => [
+	int(r, 2, 8),
+	int(r, 2, 9),
+	int(r, 2, 6)
+], (_k, [a, b, k]) => {
+	if (!isInt(a, 2, 8) || !isInt(b, 2, 9) || !isInt(k, 2, 6) || a === b) return null;
+	return withMistakes({
+		parts: [
+			"Blue",
+			"=",
+			"?"
+		],
+		prompt: `${a} red to ${b} blue. There are ${k * a} red.`,
+		spoken: `${a} red to ${b} blue. There are ${k * a} red. How many blue?`,
+		answer: k * b
+	}, {
+		"kept the same difference": k * a + (b - a),
+		"gave the ratio number": b,
+		"gave the scale factor": k,
+		"gave the total shares times the scale": (a + b) * k,
+		"added the ratio number to the red": k * a + b
+	});
+});
+const NOTES = [
+	10,
+	20,
+	50
+];
+/** Change from $20 for $13.60 (typed 6.4). */
+const change = oneKey("nf:change", "Change from a note ($20 for $13.60)", MONEY_TAGS, 2, (_k, r) => [pickOne(r, NOTES), int(r, 11, 79)], (_k, [pay, t]) => {
+	if (!NOTES.includes(pay) || !isInt(t, 11, 79) || t % 10 === 0) return null;
+	const cost = pay * 100 - t * 10;
+	const whole = Math.floor(cost / 100);
+	const answer = tidy(t * 10 / 100);
+	return withMistakes({
+		parts: [
+			`$${pay}`,
+			"−",
+			dollars(cost),
+			"=",
+			"$",
+			"?"
+		],
+		spoken: `You pay ${pay} dollars for something that costs ${say(cost / 100)} dollars. What is the change in dollars?`,
+		answer,
+		input: "decimal",
+		prompt: "What is the change?"
+	}, {
+		"ignored the cents": pay - whole,
+		"took the cents the wrong way round": tidy(pay - whole - 1 + cost % 100 / 100),
+		[RIGHT10]: answer * 10,
+		[LEFT10]: answer / 10,
+		"one dollar too many": answer + 1,
+		"one dollar too few": answer - 1
+	});
+});
+/** $4.37 in cash is $4.40 (typed 4.4). A cent digit of 5 is left out: only clear cases. */
+const CENTS = [
+	1,
+	2,
+	3,
+	4,
+	6,
+	7,
+	8,
+	9
+];
+const cash = oneKey("nf:cash", "Cash rounding to the nearest 10c ($4.37)", MONEY_TAGS, 3, (_k, r) => [
+	int(r, 1, 19),
+	int(r, 0, 9),
+	pickOne(r, CENTS)
+], (_k, [d, t, u]) => {
+	if (!isInt(d, 1, 19) || !isInt(t, 0, 9) || !CENTS.includes(u)) return null;
+	const cents = d * 100 + t * 10 + u;
+	const down = d * 100 + t * 10;
+	const answer = tidy((u < 5 ? down : down + 10) / 100);
+	return withMistakes({
+		parts: [
+			dollars(cents),
+			"≈",
+			"$",
+			"?"
+		],
+		spoken: `${d} dollars and ${t * 10 + u} cents, rounded to the nearest 10 cents, is how many dollars?`,
+		answer,
+		input: "decimal",
+		prompt: "Cash rounding: nearest 10c."
+	}, {
+		"rounded the wrong way": tidy((u < 5 ? down + 10 : down) / 100),
+		"rounded to the nearest dollar": Math.round(cents / 100),
+		"rounded to the nearest 5c": tidy(Math.round(cents / 5) * 5 / 100),
+		[RIGHT10]: answer * 10
+	});
+});
+/** 3.4567 to 3 decimal places = 3.457 (typed). */
+const round3 = oneKey("nf:round-3dp", "Rounding to 3 decimal places (3.4567)", ROUND_TAGS, 2, (_k, r) => [int(r, 1, 9), int(r, 1, 9999)], (_k, [w, n]) => {
+	if (!isInt(w, 1, 9) || !isInt(n, 1, 9999) || n % 10 === 0) return null;
+	const digits = String(n).padStart(4, "0");
+	const total = w * 1e4 + n;
+	const answer = tidy(Math.round(total / 10) / 1e3);
+	return withMistakes({
+		parts: [
+			`${w}.${digits}`,
+			"≈",
+			"?"
+		],
+		spoken: `${w} point ${digits.split("").join(" ")}, rounded to 3 decimal places, is what?`,
+		answer,
+		input: "decimal",
+		prompt: "Round to 3 decimal places."
+	}, {
+		"cut off after 3 places (truncated)": tidy(Math.floor(total / 10) / 1e3),
+		"rounded to 2 places": tidy(Math.round(total / 100) / 100),
+		"rounded to 1 place": tidy(Math.round(total / 1e3) / 10),
+		"rounded up every time": tidy((Math.floor(total / 10) + 1) / 1e3)
+	});
+});
+const FTIMES = [
+	2,
+	3,
+	4,
+	5,
+	6
+].flatMap((b) => [
+	2,
+	3,
+	4,
+	5,
+	6
+].flatMap((d) => propers(b).flatMap((a) => propers(d).map((c) => ({
+	a,
+	b,
+	c,
+	d
+})))));
+/** 2/3 × 3/4 = 1/2. */
+const fTimes = oneKey("nf:ftimes", "A fraction times a fraction (⅔ × ¾)", FTIMES_TAGS, 3, (_k, r) => withPick(r, int(r, 0, FTIMES.length - 1)), (_k, [i, slot, salt]) => {
+	if (!isInt(i, 0, FTIMES.length - 1) || !goodPick(slot, salt)) return null;
+	const { a, b, c, d } = FTIMES[i];
+	const right = simple(a * c, b * d);
+	const parts = [
+		frac(a, b),
+		"×",
+		frac(c, d),
+		"=",
+		"?"
+	];
+	const named = {
+		"added the tops and the bottoms": lab(a + c, b + d),
+		"did not simplify": lab(a * c, b * d),
+		"crossed the wrong way (flipped the second fraction)": lab(a * d, b * c),
+		"multiplied the tops, added the bottoms": lab(a * c, b + d),
+		"multiplied the tops, kept one bottom": lab(a * c, b),
+		"multiplied the tops, kept the other bottom": lab(a * c, d)
+	};
+	return fracPick({
+		parts,
+		spoken: talk(parts),
+		fact: `${parts[0]} × ${parts[2]} = ${right}`
+	}, right, named, slot, salt);
+});
+const NUMFACT_FAMILIES = Object.fromEntries([
+	decTenth,
+	decTens,
+	decHund,
+	decDiv,
+	estTimes,
+	fAdd,
+	fSub,
+	fDivWhole,
+	fDivFrac,
+	pcOff,
+	pcMore,
+	pcSwap,
+	ratioEq,
+	ratioShare,
+	ratioBlue,
+	change,
+	cash,
+	round3,
+	fTimes
+].map((f) => [f.keys[0], f]));
+const NUMFACT_SKILL_KEYS = {
+	"decimal-facts": [
+		"nf:dec-tenth",
+		"nf:dec-tens",
+		"nf:dec-hund",
+		"nf:dec-div"
+	],
+	estimate: ["nf:est-times"],
+	"fraction-add-easy": ["nf:fadd", "nf:fsub"],
+	"fraction-divide": ["nf:fdiv-whole", "nf:fdiv-frac"],
+	"percent-change": [
+		"nf:pc-off",
+		"nf:pc-more",
+		"nf:pc-swap"
+	],
+	ratio: [
+		"nf:ratio-eq",
+		"nf:ratio-share",
+		"nf:ratio-blue"
+	],
+	money: ["nf:change", "nf:cash"],
+	"round-thousandth": ["nf:round-3dp"],
+	"fraction-times": ["nf:ftimes"]
+};
+/** The two-step types: 12 seconds to count as quick. */
+const NUMFACT_SLOW_KEYS = [
+	"nf:pc-off",
+	"nf:pc-more",
+	"nf:ratio-share",
+	"nf:ratio-blue"
+];
+/** The ladder rows, in order (Year 7 first). `tiny` is the short name (20 characters at most). */
+const NUMFACT_LADDER = [
+	{
+		id: "decimal-facts",
+		label: "Decimals times and divided by a whole number (0.7 × 5)",
+		tiny: "Decimal facts",
+		stage: "fractions-decimals-percentages",
+		year: 7,
+		tags: DEC_TAGS
+	},
+	{
+		id: "estimate",
+		label: "Estimating by rounding (14.7 × 5)",
+		tiny: "Estimating",
+		stage: "fractions-decimals-percentages",
+		year: 7,
+		tags: EST_TAGS
+	},
+	{
+		id: "fraction-add-easy",
+		label: "Adding and taking away fractions with related bottoms (½ + ¼)",
+		tiny: "Add easy fractions",
+		stage: "fractions-decimals-percentages",
+		year: 7,
+		tags: FADD_TAGS
+	},
+	{
+		id: "fraction-divide",
+		label: "Dividing with fractions (4 ÷ ⅓, ½ ÷ 3)",
+		tiny: "Divide fractions",
+		stage: "fractions-decimals-percentages",
+		year: 7,
+		tags: FDIV_TAGS
+	},
+	{
+		id: "percent-change",
+		label: "Discounts, increases and the swap trick (20% off $40)",
+		tiny: "Percent change",
+		stage: "fractions-decimals-percentages",
+		year: 7,
+		tags: PCT_TAGS
+	},
+	{
+		id: "ratio",
+		label: "Ratio (6 : 9 = 2 : ?, share 20 as 2 : 3)",
+		tiny: "Ratio",
+		stage: "fractions-decimals-percentages",
+		year: 7,
+		tags: RATIO_TAGS
+	},
+	{
+		id: "money",
+		label: "Change and cash rounding ($20 for $13.60)",
+		tiny: "Change, cash round",
+		stage: "fractions-decimals-percentages",
+		year: 7,
+		tags: MONEY_TAGS
+	},
+	{
+		id: "round-thousandth",
+		label: "Rounding to a thousandth (3.4567)",
+		tiny: "Round to thousandth",
+		stage: "fractions-decimals-percentages",
+		year: 8,
+		tags: ROUND_TAGS
+	},
+	{
+		id: "fraction-times",
+		label: "A fraction times a fraction (⅔ × ¾)",
+		tiny: "Fraction times",
+		stage: "fractions-decimals-percentages",
+		year: 8,
+		tags: FTIMES_TAGS
+	}
+];
+//#endregion
+//#region shared/maths/skillPacks/measureSkills.ts
+/**
+* Measurement and geometry facts, Year 7 and 8 (docs/plans/ladder-7-8/PLAN.md section 3e, card Y7).
+*
+* Every question is one number to type, answerable in about 8 seconds (12 for the two-step types in MEASURE_SLOW_KEYS). Angle
+* and shape questions come with a small picture (shared/maths/figure.ts): the parts and prompt say everything, the picture is
+* extra and its '?' label is the thing asked. All answers are typed (never below zero); decimals use the decimal pad.
+*
+* Types:
+*   metric             (Y7) metric:km-m  metric:l-ml  metric:mm-cm  metric:cm-m  metric:g-kg
+*   time-convert       (Y7) mtime:frac-h  mtime:h-min  mtime:min-h
+*   formulas           (Y7) formula:rect-area  formula:rect-perim  formula:tri-area  formula:cube-vol  formula:cuboid-vol  formula:square-side
+*   angle-facts        (Y7) angle:tri-third  angle:line  angle:line3  angle:point  angle:isosceles
+*   polygon-angles     (Y7) polygon:exterior  polygon:sum
+*   compass-degrees    (Y7) compass:turn  compass:from-n
+*   metric-area-volume (Y8) unitsq:cm2  unitsq:m2  unitsq:ml-cm3  unitsq:l-cm3  unitsq:m3-l
+*   circle-parts       (Y8) circle:diam  circle:radius
+*/
+const T = (strand, year, ...n) => n.map((i) => `MS.Y${year}.MG.${strand}.P${i}`);
+const Y7_METRIC = T("M", 7, 1, 2);
+const Y7_TIME = T("M", 7, 3);
+const Y7_FORMULA = T("M", 7, 4, 5);
+const Y7_ANGLE = T("G", 7, 1, 2);
+const Y7_POLY = T("G", 7, 3);
+const Y7_COMPASS = T("G", 7, 4);
+const Y8_UNITS = T("M", 8, 1, 2);
+const Y8_CIRCLE = T("G", 8, 1);
+/** A number as shown: 8.5, 0.45, 3500. */
+const show = (n) => String(tidy(n));
+/** A typed question: decimal pad when the answer isn't whole. Null when fewer than three named mistakes are left. */
+function typed(base, named) {
+	const answer = tidy(base.answer);
+	return withMistakes({
+		...base,
+		answer,
+		...Number.isInteger(answer) ? {} : { input: "decimal" }
+	}, named);
+}
+const SAY = {
+	km: "kilometres",
+	m: "metres",
+	mm: "millimetres",
+	cm: "centimetres",
+	L: "litres",
+	mL: "millilitres",
+	g: "grams",
+	kg: "kilograms"
+};
+/** "3.5 km = ? m": a number and a unit, and the unit it is asked in. `value` comes from the first number, `answer` from it. */
+function metric(key, label, from, to, lo, hi, value, answer) {
+	return oneKey(key, label, Y7_METRIC, 1, (_k, r) => {
+		for (;;) {
+			const n = int(r, lo, hi);
+			if (n % 10 !== 0) return [n];
+		}
+	}, (_k, [n]) => {
+		if (!isInt(n, lo, hi) || n % 10 === 0) return null;
+		const v = value(n);
+		const a = tidy(answer(n));
+		const parts = [
+			`${show(v)} ${from}`,
+			"=",
+			"?",
+			to
+		];
+		const spoken = `${show(v)} ${SAY[from]} equals how many ${SAY[to]}?`;
+		const wrongPower = {
+			"one zero too many": a * 10,
+			"one zero too few": a / 10,
+			"two zeros too many": a * 100,
+			"two zeros too few": a / 100,
+			"forgot to convert": v
+		};
+		return typed({
+			parts,
+			spoken,
+			answer: a
+		}, wrongPower);
+	});
+}
+const kmM = metric("metric:km-m", "Kilometres to metres (3.5 km)", "km", "m", 11, 99, (n) => n / 10, (n) => n * 100);
+const lMl = metric("metric:l-ml", "Litres to millilitres (2.4 L)", "L", "mL", 11, 99, (n) => n / 10, (n) => n * 100);
+const mmCm = metric("metric:mm-cm", "Millimetres to centimetres (85 mm)", "mm", "cm", 11, 99, (n) => n, (n) => n / 10);
+const cmM = metric("metric:cm-m", "Centimetres to metres (240 cm)", "cm", "m", 11, 49, (n) => n * 10, (n) => n / 10);
+/** "450 g = ? kg": grams in steps of 50, to under a kilogram. */
+const gKg = oneKey("metric:g-kg", "Grams to kilograms (450 g)", Y7_METRIC, 1, (_k, r) => [int(r, 1, 19)], (_k, [k]) => {
+	if (!isInt(k, 1, 19)) return null;
+	const g = k * 50;
+	const a = g / 1e3;
+	return typed({
+		parts: [
+			`${g} g`,
+			"=",
+			"?",
+			"kg"
+		],
+		spoken: `${g} grams equals how many kilograms?`,
+		answer: a
+	}, {
+		"one zero too many": a * 10,
+		"two zeros too many": a * 100,
+		"one zero too few": a / 10,
+		"three zeros too many": a * 1e3,
+		"forgot to convert": g
+	});
+});
+const FRACS = [
+	[1, 4],
+	[1, 2],
+	[3, 4],
+	[1, 3],
+	[2, 3],
+	[1, 6],
+	[1, 5],
+	[2, 5]
+];
+/** "3/4 h = ? min". */
+const fracH = oneKey("mtime:frac-h", "Part of an hour in minutes (3/4 h)", Y7_TIME, 1, (_k, r) => [int(r, 0, FRACS.length - 1)], (_k, [i]) => {
+	if (!isInt(i, 0, FRACS.length - 1)) return null;
+	const [n, d] = FRACS[i];
+	const a = 60 * n / d;
+	return typed({
+		parts: [
+			`${n}/${d} h`,
+			"=",
+			"?",
+			"min"
+		],
+		spoken: `${n} over ${d} of an hour equals how many minutes?`,
+		answer: a
+	}, {
+		"took it of 100 minutes": 100 * n / d,
+		"gave the top number": n,
+		"gave the bottom number": d,
+		"one step too many": 60 * (n + 1) / d,
+		"one step too few": 60 * (n - 1) / d || NaN,
+		doubled: a * 2
+	});
+});
+/** "2 h 15 min = ? min". */
+const hMin = oneKey("mtime:h-min", "Hours and minutes in minutes (2 h 15 min)", Y7_TIME, 2, (_k, r) => [int(r, 1, 4), int(r, 1, 11) * 5], (_k, [h, m]) => {
+	if (!isInt(h, 1, 4) || !isInt(m, 5, 55) || m % 5 !== 0) return null;
+	const a = h * 60 + m;
+	return typed({
+		parts: [
+			`${h} h ${m} min`,
+			"=",
+			"?",
+			"min"
+		],
+		spoken: `${h} hours ${m} minutes equals how many minutes?`,
+		answer: a
+	}, {
+		"100 minutes in an hour": h * 100 + m,
+		"added the numbers": h + m,
+		"forgot the hours": m,
+		"one hour short": a - 60,
+		"one hour too many": a + 60
+	});
+});
+/** "150 min = 2 h ? min". */
+const minH = oneKey("mtime:min-h", "Minutes as hours and minutes (150 min)", Y7_TIME, 2, (_k, r) => [int(r, 1, 4), int(r, 1, 11) * 5], (_k, [h, m]) => {
+	if (!isInt(h, 1, 4) || !isInt(m, 5, 55) || m % 5 !== 0) return null;
+	const total = h * 60 + m;
+	return typed({
+		parts: [
+			`${total} min`,
+			"=",
+			`${h} h`,
+			"?",
+			"min"
+		],
+		spoken: `${total} minutes equals ${h} hours and how many minutes?`,
+		answer: m
+	}, {
+		"100 minutes in an hour": total - 100 * h,
+		"took off 100 once": total - 100,
+		"did not take off the hours": total,
+		"counted back to the next hour": 60 - m,
+		"left an hour in": m + 60
+	});
+});
+const cm = (n) => `${n} cm`;
+/** "Area = ? cm²" for a rectangle. */
+const rectArea = oneKey("formula:rect-area", "Area of a rectangle (6 cm by 4 cm)", Y7_FORMULA, 2, (_k, r) => rectRoll(r), (_k, [w, h]) => {
+	if (!isInt(w, 3, 12) || !isInt(h, 2, 9) || w === h) return null;
+	return typed({
+		parts: [
+			"Area",
+			"=",
+			"?",
+			"cm²"
+		],
+		spoken: `A rectangle is ${w} centimetres by ${h} centimetres. What is its area in square centimetres?`,
+		prompt: `A rectangle ${w} cm by ${h} cm`,
+		figure: {
+			kind: "rectangle",
+			width: cm(w),
+			height: cm(h),
+			inside: "?"
+		},
+		answer: w * h
+	}, {
+		"added the sides": w + h,
+		"found the perimeter": 2 * (w + h),
+		"doubled the product": 2 * w * h,
+		"one row short": w * (h - 1),
+		"one row too many": w * (h + 1)
+	});
+});
+/** "Perimeter = ? cm" for a rectangle (two steps). */
+const rectPerim = oneKey("formula:rect-perim", "Perimeter of a rectangle (6 cm by 4 cm)", Y7_FORMULA, 2, (_k, r) => rectRoll(r), (_k, [w, h]) => {
+	if (!isInt(w, 3, 12) || !isInt(h, 2, 9) || w === h) return null;
+	return typed({
+		parts: [
+			"Perimeter",
+			"=",
+			"?",
+			"cm"
+		],
+		spoken: `A rectangle is ${w} centimetres by ${h} centimetres. What is its perimeter in centimetres?`,
+		prompt: `A rectangle ${w} cm by ${h} cm`,
+		figure: {
+			kind: "rectangle",
+			width: cm(w),
+			height: cm(h),
+			inside: "P = ?"
+		},
+		answer: 2 * (w + h)
+	}, {
+		"added two sides only": w + h,
+		"found the area": w * h,
+		"added three sides": 2 * w + h,
+		"doubled the longer side": 2 * Math.max(w, h),
+		"one side left out": w + 2 * h
+	});
+});
+function rectRoll(r) {
+	for (;;) {
+		const w = int(r, 3, 12);
+		const h = int(r, 2, 9);
+		if (w !== h) return [w, h];
+	}
+}
+/** "Area = ? cm²" for a triangle from its base and height (two steps). */
+const triArea = oneKey("formula:tri-area", "Area of a triangle (base 8 cm, height 5 cm)", Y7_FORMULA, 2, (_k, r) => {
+	for (;;) {
+		const b = int(r, 4, 14);
+		const h = int(r, 3, 9);
+		if (b * h % 2 === 0) return [b, h];
+	}
+}, (_k, [b, h]) => {
+	if (!isInt(b, 4, 14) || !isInt(h, 3, 9) || b * h % 2 !== 0) return null;
+	return typed({
+		parts: [
+			"Area",
+			"=",
+			"?",
+			"cm²"
+		],
+		spoken: `A triangle has a base of ${b} centimetres and a height of ${h} centimetres. What is its area in square centimetres?`,
+		prompt: `A triangle: base ${b} cm, height ${h} cm`,
+		figure: {
+			kind: "triangle-area",
+			base: cm(b),
+			height: cm(h),
+			inside: "?"
+		},
+		answer: b * h / 2
+	}, {
+		"forgot to halve": b * h,
+		"added them": b + h,
+		"halved twice": b * h / 4,
+		"doubled it": 2 * b * h,
+		"halved one and added": b / 2 + h
+	});
+});
+/** "Volume = ? cm³" for a cube. */
+const cubeVol = oneKey("formula:cube-vol", "Volume of a cube (3 cm sides)", Y7_FORMULA, 1, (_k, r) => [int(r, 2, 6)], (_k, [s]) => {
+	if (!isInt(s, 2, 6)) return null;
+	return typed({
+		parts: [
+			"Volume",
+			"=",
+			"?",
+			"cm³"
+		],
+		spoken: `A cube has sides of ${s} centimetres. What is its volume in cubic centimetres?`,
+		prompt: `A cube with ${s} cm sides`,
+		figure: {
+			kind: "cuboid",
+			length: cm(s),
+			width: "",
+			height: "",
+			cube: true
+		},
+		answer: s ** 3
+	}, {
+		"times three": 3 * s,
+		"squared it": s * s,
+		"found the surface": 6 * s * s,
+		"added three sides": s * 3 + 3,
+		"times two": 2 * s
+	});
+});
+/** "Volume = ? cm³" for a box: length, width, height (two steps). */
+const cuboidVol = oneKey("formula:cuboid-vol", "Volume of a box (5 by 3 by 2 cm)", Y7_FORMULA, 3, (_k, r) => [
+	int(r, 2, 8),
+	int(r, 2, 5),
+	int(r, 2, 5)
+], (_k, [l, w, h]) => {
+	if (!isInt(l, 2, 8) || !isInt(w, 2, 5) || !isInt(h, 2, 5)) return null;
+	return typed({
+		parts: [
+			"Volume",
+			"=",
+			"?",
+			"cm³"
+		],
+		spoken: `A box is ${l} centimetres long, ${w} centimetres wide and ${h} centimetres high. What is its volume in cubic centimetres?`,
+		prompt: `A box: length ${l} cm, width ${w} cm, height ${h} cm`,
+		figure: {
+			kind: "cuboid",
+			length: cm(l),
+			width: cm(w),
+			height: cm(h)
+		},
+		answer: l * w * h
+	}, {
+		"added the sides": l + w + h,
+		"only length times width": l * w,
+		"only width times height": w * h,
+		"only length times height": l * h,
+		"times two sides and added": l * w + h
+	});
+});
+/** "Square, perimeter 36 cm: side = ? cm". */
+const squareSide = oneKey("formula:square-side", "Side of a square from its perimeter (36 cm)", Y7_FORMULA, 1, (_k, r) => [int(r, 2, 12) * 4], (_k, [p]) => {
+	if (!isInt(p, 8, 48) || p % 4 !== 0) return null;
+	const s = p / 4;
+	return typed({
+		parts: [
+			"Side",
+			"=",
+			"?",
+			"cm"
+		],
+		spoken: `A square has a perimeter of ${p} centimetres. How long is one side in centimetres?`,
+		prompt: `A square with a perimeter of ${p} cm`,
+		figure: {
+			kind: "rectangle",
+			width: "?",
+			height: "?",
+			inside: `P = ${p} cm`
+		},
+		answer: s
+	}, {
+		"halved it": p / 2,
+		"gave the perimeter": p,
+		"divided by 3": p / 3,
+		"squared the side": s * s,
+		"took off 4": p - 4
+	});
+});
+const deg = (n) => `${n}°`;
+const round5 = (r, lo, hi) => int(r, lo / 5, hi / 5) * 5;
+/** "50° + 60° + ?° = 180°". */
+const triThird = oneKey("angle:tri-third", "The third angle of a triangle (50°, 60°)", Y7_ANGLE, 2, (_k, r) => {
+	for (;;) {
+		const a = round5(r, 20, 100);
+		const b = round5(r, 20, 100);
+		if (a + b <= 150) return [a, b];
+	}
+}, (_k, [a, b]) => {
+	if (!isInt(a, 20, 100) || !isInt(b, 20, 100) || a % 5 || b % 5 || a + b > 150) return null;
+	return typed({
+		parts: [
+			deg(a),
+			"+",
+			deg(b),
+			"+",
+			"?°",
+			"=",
+			"180°"
+		],
+		spoken: `A triangle has angles of ${a} degrees and ${b} degrees. What is the third angle?`,
+		prompt: "The angles in a triangle",
+		figure: {
+			kind: "triangle",
+			angles: [
+				deg(a),
+				deg(b),
+				"?"
+			]
+		},
+		answer: 180 - a - b
+	}, {
+		"used 360": 360 - a - b,
+		"added them": a + b,
+		"forgot one angle": 180 - a,
+		"forgot the other angle": 180 - b,
+		"used 90": 90 - a - b || NaN
+	});
+});
+/** "115° + ?° = 180°". */
+const lineAngle = oneKey("angle:line", "Angles on a straight line (115°)", Y7_ANGLE, 1, (_k, r) => {
+	for (;;) {
+		const a = round5(r, 20, 160);
+		if (a !== 90) return [a];
+	}
+}, (_k, [a]) => {
+	if (!isInt(a, 20, 160) || a % 5 || a === 90) return null;
+	return typed({
+		parts: [
+			deg(a),
+			"+",
+			"?°",
+			"=",
+			"180°"
+		],
+		spoken: `Angles on a straight line: ${a} degrees and what?`,
+		prompt: "Angles on a straight line",
+		figure: {
+			kind: "line",
+			angles: [deg(a), "?"]
+		},
+		answer: 180 - a
+	}, {
+		"used 360": 360 - a,
+		"used 90": 90 - a,
+		"added to 180": 180 + a,
+		"gave the angle itself": a,
+		"off by 10": 180 - a + 10
+	});
+});
+/** "40° + 75° + ?° = 180°" on a line (three angles). */
+const line3 = oneKey("angle:line3", "Three angles on a straight line (40°, 75°)", Y7_ANGLE, 2, (_k, r) => {
+	for (;;) {
+		const a = round5(r, 20, 100);
+		const b = round5(r, 20, 100);
+		if (a + b <= 150) return [a, b];
+	}
+}, (_k, [a, b]) => {
+	if (!isInt(a, 20, 100) || !isInt(b, 20, 100) || a % 5 || b % 5 || a + b > 150) return null;
+	return typed({
+		parts: [
+			deg(a),
+			"+",
+			deg(b),
+			"+",
+			"?°",
+			"=",
+			"180°"
+		],
+		spoken: `Angles on a straight line: ${a} degrees, ${b} degrees and what?`,
+		prompt: "Angles on a straight line",
+		figure: {
+			kind: "line",
+			angles: [
+				deg(a),
+				deg(b),
+				"?"
+			]
+		},
+		answer: 180 - a - b
+	}, {
+		"used 360": 360 - a - b,
+		"added them": a + b,
+		"forgot one angle": 180 - a,
+		"forgot the other angle": 180 - b
+	});
+});
+/** "130° + 100° + ?° = 360°" round a point. */
+const pointAngle = oneKey("angle:point", "Angles round a point (130°, 100°)", Y7_ANGLE, 2, (_k, r) => {
+	for (;;) {
+		const a = round5(r, 60, 150);
+		const b = round5(r, 60, 150);
+		if (a + b <= 280) return [a, b];
+	}
+}, (_k, [a, b]) => {
+	if (!isInt(a, 60, 150) || !isInt(b, 60, 150) || a % 5 || b % 5 || a + b > 280) return null;
+	return typed({
+		parts: [
+			deg(a),
+			"+",
+			deg(b),
+			"+",
+			"?°",
+			"=",
+			"360°"
+		],
+		spoken: `Angles round a point: ${a} degrees, ${b} degrees and what?`,
+		prompt: "Angles round a point",
+		figure: {
+			kind: "point",
+			angles: [
+				deg(a),
+				deg(b),
+				"?"
+			]
+		},
+		answer: 360 - a - b
+	}, {
+		"used 180": 180 - a - b || NaN,
+		"added them": a + b,
+		"forgot one angle": 360 - a,
+		"forgot the other angle": 360 - b,
+		"off by 10": 360 - a - b + 10
+	});
+});
+/** Isosceles triangle: base angles equal, find the top (two steps). */
+const isosceles = oneKey("angle:isosceles", "Top angle of an isosceles triangle (base angles 70°)", Y7_ANGLE, 1, (_k, r) => {
+	for (;;) {
+		const b = round5(r, 40, 80);
+		if (b !== 60) return [b];
+	}
+}, (_k, [b]) => {
+	if (!isInt(b, 40, 80) || b % 5 || b === 60) return null;
+	return typed({
+		parts: [
+			deg(b),
+			"+",
+			deg(b),
+			"+",
+			"?°",
+			"=",
+			"180°"
+		],
+		spoken: `An isosceles triangle has two equal base angles of ${b} degrees. What is the top angle?`,
+		prompt: "An isosceles triangle: the base angles are equal",
+		figure: {
+			kind: "triangle",
+			angles: [
+				deg(b),
+				deg(b),
+				"?"
+			],
+			equal: "two"
+		},
+		answer: 180 - 2 * b
+	}, {
+		"took off one base angle only": 180 - b,
+		"used 360": 360 - 2 * b,
+		"added the base angles": 2 * b,
+		"used 90": 90 - b,
+		"gave the base angle": b
+	});
+});
+const POLYGONS = [
+	[3, "triangle"],
+	[4, "square"],
+	[5, "pentagon"],
+	[6, "hexagon"],
+	[8, "octagon"],
+	[9, "nonagon"],
+	[10, "decagon"],
+	[12, "dodecagon"]
+];
+const SUM_SIDES = [
+	4,
+	5,
+	6,
+	7,
+	8,
+	9,
+	10,
+	12
+];
+const polyName = (n) => POLYGONS.find(([s]) => s === n)?.[1] ?? { 7: "heptagon" }[n] ?? `${n}-sided shape`;
+/** "Exterior angle of a regular hexagon = ?°". */
+const exterior = oneKey("polygon:exterior", "Exterior angle of a regular polygon (hexagon)", Y7_POLY, 1, (_k, r) => [POLYGONS[int(r, 0, POLYGONS.length - 1)][0]], (_k, [n]) => {
+	const found = POLYGONS.find(([s]) => s === n);
+	if (!found) return null;
+	const a = 360 / n;
+	return typed({
+		parts: [
+			"Exterior angle",
+			"=",
+			"?°"
+		],
+		spoken: `What is the exterior angle of a regular ${found[1]} with ${n} sides?`,
+		prompt: `A regular ${found[1]} (${n} sides)`,
+		figure: {
+			kind: "polygon",
+			sides: n,
+			label: "?"
+		},
+		answer: a
+	}, {
+		"found the inside angle": 180 - a,
+		"found the angle sum": (n - 2) * 180,
+		"divided 180 by the sides": 180 / n,
+		"gave the number of sides": n,
+		"one side too many": 360 / (n + 1),
+		"one side too few": 360 / (n - 1)
+	});
+});
+/** "Angle sum = ?°": the inside angles of a polygon (two steps). */
+const interiorSum = oneKey("polygon:sum", "Interior angle sum of a polygon (pentagon)", Y7_POLY, 1, (_k, r) => [SUM_SIDES[int(r, 0, SUM_SIDES.length - 1)]], (_k, [n]) => {
+	if (!SUM_SIDES.includes(n)) return null;
+	const name = polyName(n);
+	return typed({
+		parts: [
+			"Angle sum",
+			"=",
+			"?°"
+		],
+		spoken: `What do the inside angles of a ${name} with ${n} sides add up to?`.replace(" a octagon", " an octagon"),
+		prompt: `Inside angles of ${/^[aeiou]/.test(name) ? "an" : "a"} ${name} (${n} sides)`,
+		figure: {
+			kind: "polygon",
+			sides: n,
+			label: ""
+		},
+		answer: (n - 2) * 180
+	}, {
+		"sides times 180": n * 180,
+		"one triangle too many": (n - 1) * 180,
+		"one triangle too few": (n - 3) * 180,
+		"sides times 90": n * 90,
+		"gave the outside angles": 360,
+		"took 2 off after": n * 180 - 2
+	});
+});
+const POINTS = [
+	"N",
+	"NE",
+	"E",
+	"SE",
+	"S",
+	"SW",
+	"W",
+	"NW"
+];
+const POINT_SAY = [
+	"north",
+	"north-east",
+	"east",
+	"south-east",
+	"south",
+	"south-west",
+	"west",
+	"north-west"
+];
+/** "N to SE clockwise = ?°". */
+const turn = oneKey("compass:turn", "Turning clockwise between compass points (N to SE)", Y7_COMPASS, 2, (_k, r) => [int(r, 0, 7), int(r, 1, 7)], (_k, [from, steps]) => {
+	if (!isInt(from, 0, 7) || !isInt(steps, 1, 7)) return null;
+	const to = (from + steps) % 8;
+	const a = steps * 45;
+	return typed({
+		parts: [
+			POINTS[from],
+			"to",
+			POINTS[to],
+			"=",
+			"?°"
+		],
+		spoken: `Turning clockwise from ${POINT_SAY[from]} to ${POINT_SAY[to]} is how many degrees?`,
+		prompt: "Turn clockwise",
+		figure: {
+			kind: "compass",
+			from: POINTS[from],
+			to: POINTS[to]
+		},
+		answer: a
+	}, {
+		"turned anticlockwise": 360 - a,
+		"counted the points": steps,
+		"one point too far": a + 45,
+		"one point short": a - 45,
+		"used 90 a point": steps * 90
+	});
+});
+/** "NE is ?° from N". */
+const fromN = oneKey("compass:from-n", "Compass point in degrees from north (NE is 45°)", Y7_COMPASS, 1, (_k, r) => [int(r, 1, 7)], (_k, [k]) => {
+	if (!isInt(k, 1, 7)) return null;
+	const a = k * 45;
+	return typed({
+		parts: [
+			POINTS[k],
+			"is",
+			"?°",
+			"from",
+			"N"
+		],
+		spoken: `${POINT_SAY[k]} is how many degrees clockwise from north?`,
+		prompt: "Turn clockwise from north",
+		figure: {
+			kind: "compass",
+			from: "N",
+			to: POINTS[k]
+		},
+		answer: a
+	}, {
+		"turned anticlockwise": 360 - a,
+		"counted the points": k,
+		"one point too far": a + 45,
+		"one point short": a - 45,
+		"used 90 a point": k * 90
+	});
+});
+/** "1 m² = ? cm²" and the like: the unit pair's factor times a small number. */
+function unitPair(key, label, from, to, factor, nums, named) {
+	return oneKey(key, label, Y8_UNITS, 1, (_k, r) => [nums[int(r, 0, nums.length - 1)]], (_k, [n]) => {
+		if (!nums.includes(n)) return null;
+		return typed({
+			parts: [
+				`${n} ${from}`,
+				"=",
+				"?",
+				to
+			],
+			spoken: talk([
+				`${n} ${from}`,
+				"=",
+				"?",
+				to
+			]),
+			answer: n * factor
+		}, named(n));
+	});
+}
+const cm2 = unitPair("unitsq:cm2", "Square centimetres to square millimetres", "cm²", "mm²", 100, [
+	1,
+	2,
+	3,
+	5,
+	10
+], (n) => ({
+	"used 10": n * 10,
+	"one zero too many": n * 1e3,
+	"two zeros too many": n * 1e4,
+	"forgot to convert": n
+}));
+const m2 = unitPair("unitsq:m2", "Square metres to square centimetres", "m²", "cm²", 1e4, [
+	1,
+	2,
+	3,
+	5
+], (n) => ({
+	"used 100": n * 100,
+	"used 1000": n * 1e3,
+	"one zero too many": n * 1e5,
+	"forgot to convert": n
+}));
+const mlCm3 = unitPair("unitsq:ml-cm3", "Millilitres to cubic centimetres", "mL", "cm³", 1, [
+	1,
+	2,
+	5,
+	10,
+	25,
+	50,
+	250,
+	500
+], (n) => ({
+	"times 10": n * 10,
+	"times 100": n * 100,
+	"times 1000": n * 1e3,
+	"one more": n + 1
+}));
+const lCm3 = unitPair("unitsq:l-cm3", "Litres to cubic centimetres", "L", "cm³", 1e3, [
+	1,
+	2,
+	3,
+	5
+], (n) => ({
+	"used 100": n * 100,
+	"used 10": n * 10,
+	"one zero too many": n * 1e4,
+	"forgot to convert": n
+}));
+const m3L = unitPair("unitsq:m3-l", "Cubic metres to litres", "m³", "L", 1e3, [
+	1,
+	2,
+	3,
+	5
+], (n) => ({
+	"used 100": n * 100,
+	"used 10000": n * 1e4,
+	"used a million": n * 1e6,
+	"forgot to convert": n
+}));
+/** "Radius 7 cm: diameter = ? cm". */
+const diameter = oneKey("circle:diam", "Diameter from the radius (radius 7)", Y8_CIRCLE, 1, (_k, r) => [int(r, 2, 25)], (_k, [rad]) => {
+	if (!isInt(rad, 2, 25)) return null;
+	return typed({
+		parts: [
+			"Diameter",
+			"=",
+			"?",
+			"cm"
+		],
+		spoken: `A circle has a radius of ${rad} centimetres. What is its diameter in centimetres?`,
+		prompt: `A circle with radius ${rad} cm`,
+		figure: {
+			kind: "circle",
+			radius: cm(rad),
+			diameter: "?"
+		},
+		answer: 2 * rad
+	}, {
+		"halved it": rad / 2,
+		"squared it": rad * rad,
+		"added 2": rad + 2,
+		"times three": 3 * rad,
+		"gave the radius": rad
+	});
+});
+/** "Diameter 18 cm: radius = ? cm". */
+const radius = oneKey("circle:radius", "Radius from the diameter (diameter 18)", Y8_CIRCLE, 1, (_k, r) => [int(r, 2, 25) * 2], (_k, [d]) => {
+	if (!isInt(d, 4, 50) || d % 2 !== 0) return null;
+	return typed({
+		parts: [
+			"Radius",
+			"=",
+			"?",
+			"cm"
+		],
+		spoken: `A circle has a diameter of ${d} centimetres. What is its radius in centimetres?`,
+		prompt: `A circle with diameter ${d} cm`,
+		figure: {
+			kind: "circle",
+			radius: "?",
+			diameter: cm(d)
+		},
+		answer: d / 2
+	}, {
+		"doubled it": 2 * d,
+		"quartered it": d / 4,
+		"took off 2": d - 2,
+		"added 2": d + 2,
+		"gave the diameter": d
+	});
+});
+const MEASURE_FAMILIES = Object.fromEntries([
+	kmM,
+	lMl,
+	mmCm,
+	cmM,
+	gKg,
+	fracH,
+	hMin,
+	minH,
+	rectArea,
+	rectPerim,
+	triArea,
+	cubeVol,
+	cuboidVol,
+	squareSide,
+	triThird,
+	lineAngle,
+	line3,
+	pointAngle,
+	isosceles,
+	exterior,
+	interiorSum,
+	turn,
+	fromN,
+	cm2,
+	m2,
+	mlCm3,
+	lCm3,
+	m3L,
+	diameter,
+	radius
+].map((f) => [f.keys[0], f]));
+//#endregion
+//#region shared/maths/skillPacks/y78.ts
+const CARDS = [
+	{
+		families: INTEGER_FAMILIES,
+		keys: INTEGER_SKILL_KEYS,
+		slow: INTEGER_SLOW_KEYS,
+		ladder: INTEGER_LADDER
+	},
+	{
+		families: POWER_FAMILIES,
+		keys: POWER_SKILL_KEYS,
+		slow: POWER_SLOW_KEYS,
+		ladder: POWER_LADDER
+	},
+	{
+		families: NUMFACT_FAMILIES,
+		keys: NUMFACT_SKILL_KEYS,
+		slow: NUMFACT_SLOW_KEYS,
+		ladder: NUMFACT_LADDER
+	},
+	{
+		families: ALGEBRA_FAMILIES,
+		keys: ALGEBRA_SKILL_KEYS,
+		slow: ALGEBRA_SLOW_KEYS,
+		ladder: ALGEBRA_LADDER
+	},
+	{
+		families: MEASURE_FAMILIES,
+		keys: {
+			metric: [
+				"metric:km-m",
+				"metric:l-ml",
+				"metric:mm-cm",
+				"metric:cm-m",
+				"metric:g-kg"
+			],
+			"time-convert": [
+				"mtime:frac-h",
+				"mtime:h-min",
+				"mtime:min-h"
+			],
+			formulas: [
+				"formula:rect-area",
+				"formula:rect-perim",
+				"formula:tri-area",
+				"formula:cube-vol",
+				"formula:cuboid-vol",
+				"formula:square-side"
+			],
+			"angle-facts": [
+				"angle:tri-third",
+				"angle:line",
+				"angle:line3",
+				"angle:point",
+				"angle:isosceles"
+			],
+			"polygon-angles": ["polygon:exterior", "polygon:sum"],
+			"compass-degrees": ["compass:turn", "compass:from-n"],
+			"metric-area-volume": [
+				"unitsq:cm2",
+				"unitsq:m2",
+				"unitsq:ml-cm3",
+				"unitsq:l-cm3",
+				"unitsq:m3-l"
+			],
+			"circle-parts": ["circle:diam", "circle:radius"]
+		},
+		slow: [
+			"mtime:h-min",
+			"mtime:min-h",
+			"formula:rect-perim",
+			"formula:tri-area",
+			"formula:cuboid-vol",
+			"angle:isosceles",
+			"polygon:sum"
+		],
+		ladder: [
+			{
+				id: "metric",
+				label: "Metric conversions (3.5 km in m)",
+				tiny: "Metric units",
+				stage: "measurement-geometry",
+				year: 7,
+				tags: Y7_METRIC
+			},
+			{
+				id: "time-convert",
+				label: "Time conversions (2 h 15 min in min)",
+				tiny: "Hours and minutes",
+				stage: "measurement-geometry",
+				year: 7,
+				tags: Y7_TIME
+			},
+			{
+				id: "formulas",
+				label: "Area, perimeter and volume formulas",
+				tiny: "Area and volume",
+				stage: "measurement-geometry",
+				year: 7,
+				tags: Y7_FORMULA
+			},
+			{
+				id: "angle-facts",
+				label: "Missing angles",
+				tiny: "Missing angles",
+				stage: "measurement-geometry",
+				year: 7,
+				tags: Y7_ANGLE
+			},
+			{
+				id: "polygon-angles",
+				label: "Angles in polygons",
+				tiny: "Polygon angles",
+				stage: "measurement-geometry",
+				year: 7,
+				tags: Y7_POLY
+			},
+			{
+				id: "compass-degrees",
+				label: "Compass points in degrees",
+				tiny: "Compass degrees",
+				stage: "measurement-geometry",
+				year: 7,
+				tags: Y7_COMPASS
+			},
+			{
+				id: "metric-area-volume",
+				label: "Area and volume units (1 m² in cm²)",
+				tiny: "Area, volume units",
+				stage: "measurement-geometry",
+				year: 8,
+				tags: Y8_UNITS
+			},
+			{
+				id: "circle-parts",
+				label: "Radius and diameter",
+				tiny: "Radius, diameter",
+				stage: "measurement-geometry",
+				year: 8,
+				tags: Y8_CIRCLE
+			}
+		]
+	},
+	{
+		families: DATA_FAMILIES,
+		keys: DATA_SKILL_KEYS,
+		slow: DATA_SLOW_KEYS,
+		ladder: DATA_LADDER
+	}
+];
+const Y78_FAMILIES = Object.assign({}, ...CARDS.map((c) => c.families));
+const Y78_SKILL_KEYS = Object.assign({}, ...CARDS.map((c) => c.keys));
+const Y78_SLOW_KEYS = CARDS.flatMap((c) => c.slow);
+const rows = CARDS.flatMap((c) => c.ladder);
+const Y78_LADDER = [...rows.filter((r) => r.year === 7), ...rows.filter((r) => r.year === 8)];
+Object.fromEntries(rows.map((r) => [r.id, r.tiny]));
 //#endregion
 //#region shared/maths/skillPacks/decimalSkills.ts
 /**
@@ -5085,8 +8571,8 @@ const INTEGER_SKILL_KEYS = {
 *   times-decimals      timesdec:ten  timesdec:hundred  timesdec:div-ten  timesdec:div-hundred  timesdec:missing
 */
 const range$4 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
-const tenths = (n) => show(n / 10);
-const hundredths = (n) => show(n / 100);
+const tenths = (n) => show$1(n / 10);
+const hundredths = (n) => show$1(n / 100);
 const notTen = (n) => n % 10 !== 0;
 const TENTH_TAGS = ["MS.Y4.NUM.RN.P3", "MS.Y4.NUM.RN.P5"];
 /** Whole tenths, which a tenth count of 1 to 39 that is not a whole number can be shown as (0.7, 1.4, 3.9). */
@@ -5139,7 +8625,7 @@ const tenthFamilies = [
 	oneKey("tenth:divide", "Dividing by 10 to make tenths (27 ÷ 10 = 2.7)", TENTH_TAGS, 1, (_k, r) => [pickOne(r, range$4(1, 99).filter(notTen))], (_k, [n]) => {
 		if (!isInt(n, 1, 99) || !notTen(n)) return null;
 		const parts = [
-			show(n),
+			show$1(n),
 			"÷",
 			"10",
 			"=",
@@ -5445,13 +8931,13 @@ const equivFamilies$1 = [
 	}),
 	oneKey("deceq:pick", "Which decimal is the same as the fraction? (3/4 = 0.75)", EQUIV_TAGS$1, 4, (_k, r) => [...pickOne(r, COMMON), ...rollPick(r)], (_k, [n, d, slot, salt]) => {
 		if (!isCommon(n, d) || !goodPick(slot, salt)) return null;
-		const right = show(decimalOf(n, d));
+		const right = show$1(decimalOf(n, d));
 		const parts = [
 			frac(n, d),
 			"=",
 			"?"
 		];
-		const named = Object.fromEntries(Object.entries(decimalMistakes(n, d)).map(([name, v]) => [name, show(v)]));
+		const named = Object.fromEntries(Object.entries(decimalMistakes(n, d)).map(([name, v]) => [name, show$1(v)]));
 		return pick({
 			parts,
 			spoken: talk(parts),
@@ -5609,7 +9095,7 @@ const timesFamilies = [
 	})),
 	moveFamily("timesdec:div-hundred", "Dividing by 100 (345 ÷ 100)", (r) => [pickOne(r, range$4(12, 999).filter((n) => n % 100 !== 0))], (n) => n >= 12 && n <= 999 && n % 100 !== 0, (n) => ({
 		parts: [
-			show(n),
+			show$1(n),
 			"÷",
 			"100",
 			"=",
@@ -5849,7 +9335,7 @@ const families$1 = [
 	oneKey("fdp:dec-to-pct", "A decimal as a percentage (0.35 = 35%)", TAGS, 1, (_k, r) => [pickOne(r, range$3(1, 99))], (_k, [h]) => {
 		if (!isInt(h, 1, 99)) return null;
 		const parts = [
-			show(h / 100),
+			show$1(h / 100),
 			"=",
 			"?",
 			"%"
@@ -5890,17 +9376,17 @@ const families$1 = [
 		if (!MATCH.includes(h) || !goodPick(slot, salt)) return null;
 		const right = `${h}%`;
 		const parts = [
-			show(h / 100),
+			show$1(h / 100),
 			"=",
 			"?"
 		];
 		return pick({
 			parts,
 			spoken: talk(parts),
-			fact: `${show(h / 100)} = ${right}`
+			fact: `${show$1(h / 100)} = ${right}`
 		}, right, {
-			"did not move the point": `${show(h / 100)}%`,
-			"moved the point one place only": `${show(h / 10)}%`,
+			"did not move the point": `${show$1(h / 100)}%`,
+			"moved the point one place only": `${show$1(h / 10)}%`,
 			"moved the point three places": `${h * 10}%`,
 			...h >= 10 && h % 11 !== 0 ? { "swapped the digits": `${reversed(h)}%` } : {}
 		}, {
@@ -5943,7 +9429,7 @@ function unitFamily(key, label, dens, qLo, qHi) {
 		const parts = [
 			frac(1, d),
 			"of",
-			show(amount),
+			show$1(amount),
 			"=",
 			"?"
 		];
@@ -6020,7 +9506,7 @@ function nonUnitFamily(word) {
 		const parts = [
 			frac(n, d),
 			"of",
-			show(d * q),
+			show$1(d * q),
 			"=",
 			"?"
 		];
@@ -6042,8 +9528,8 @@ function nonUnitFamily(word) {
 }
 const EQUIV_TAGS = ["MS.Y5.NUM.RN.P9", "MS.Y6.NUM.RN.P6"];
 /** Fractions in their simplest form, under one, with a bottom number up to 6. */
-const SIMPLEST = range$2(2, 6).flatMap((d) => range$2(1, d - 1).filter((n) => gcd$1(n, d) === 1).map((n) => [n, d]));
-const isSimplest = (n, d) => isInt(d, 2, 6) && isInt(n, 1, d - 1) && gcd$1(n, d) === 1;
+const SIMPLEST = range$2(2, 6).flatMap((d) => range$2(1, d - 1).filter((n) => gcd$2(n, d) === 1).map((n) => [n, d]));
+const isSimplest = (n, d) => isInt(d, 2, 6) && isInt(n, 1, d - 1) && gcd$2(n, d) === 1;
 /** Smallest number that divides k other than 1, if k is not prime (so 12/16 can be "only halved"). */
 const smallestFactor = (k) => range$2(2, k - 1).find((p) => k % p === 0);
 const equivFamilies = [
@@ -6235,7 +9721,7 @@ function wholeFamily$2(key, label, shapes, qLo, qHi) {
 			"of",
 			"?",
 			"=",
-			show(part)
+			show$1(part)
 		];
 		const named = {
 			"gave the part back as the answer": part,
@@ -6360,7 +9846,7 @@ function ofFamily(key, label, tags, p, step, qLo, qHi, tidy) {
 		const parts = [
 			pct(p),
 			"of",
-			show(amount),
+			show$1(amount),
 			"=",
 			"?"
 		];
@@ -6403,7 +9889,7 @@ const bigFamily = oneKey("pct:big", "A simple percentage of a bigger amount (25%
 	const parts = [
 		pct(p),
 		"of",
-		show(amount),
+		show$1(amount),
 		"=",
 		"?"
 	];
@@ -6426,7 +9912,7 @@ function wholeFamily$1(key, label, p, xLo, xHi, step = 1) {
 			"of",
 			"?",
 			"=",
-			show(x)
+			show$1(x)
 		];
 		const named = {
 			"gave the part back as the answer": x,
@@ -6709,9 +10195,9 @@ function timesFamily(key, label, pools) {
 		if (!isInt(x, 1, 1e3) || !isInt(y, 1, 1e3) || timesKeyOf(x, y) !== key) return null;
 		const answer = x * y;
 		const parts = [
-			show(x),
+			show$1(x),
 			"×",
-			show(y),
+			show$1(y),
 			"=",
 			"?"
 		];
@@ -6735,7 +10221,7 @@ const divTens = oneKey("times:div-tens", "Dividing tens (240 ÷ 6)", ["MS.Y4.NUM
 	if (!isInt(d, 2, 9) || !isTens(q)) return null;
 	const n = d * q;
 	const parts = [
-		show(n),
+		show$1(n),
 		"÷",
 		String(d),
 		"=",
@@ -7186,7 +10672,7 @@ function wholeKeyOf(unit, n) {
 	if (Math.abs(mod - half) <= unit / 10) return `round:${unit}:near-halfway`;
 	return `round:${unit}:${String(n).length}digit`;
 }
-const unitText = (unit) => `to the nearest ${show(unit)}`;
+const unitText = (unit) => `to the nearest ${show$1(unit)}`;
 function wholeFamily(unit, suffix, lo, hi, tags, label) {
 	const key = `round:${unit}:${suffix}`;
 	const half = unit / 2;
@@ -7213,14 +10699,14 @@ function wholeFamily(unit, suffix, lo, hi, tags, label) {
 		return withMistakes({
 			parts: [
 				"Round",
-				show(n),
+				show$1(n),
 				unitText(unit),
 				"=",
 				"?"
 			],
 			spoken: `Round ${n} ${unitText(unit)}. What is it?`,
 			answer,
-			fact: `${show(n)} rounded ${unitText(unit)} is ${show(answer)}`
+			fact: `${show$1(n)} rounded ${unitText(unit)} is ${show$1(answer)}`
 		}, named);
 	});
 }
@@ -7264,7 +10750,7 @@ function decimalFamily({ key, unit, dp, lo, hi, label, tags }) {
 		const up = m % step >= step / 2;
 		const answer = (up ? upper : lower) / unitScale;
 		const value = m / scale;
-		const shown = show(value);
+		const shown = show$1(value);
 		const named = { "rounded the wrong way": (up ? lower : upper) / unitScale };
 		if (unit === "whole") {
 			named["one too many"] = answer + 1;
@@ -7287,7 +10773,7 @@ function decimalFamily({ key, unit, dp, lo, hi, label, tags }) {
 			spoken: `Round ${say(value)} ${UNIT_WORDS[unit]}. What is it?`,
 			answer,
 			input: unit === "whole" ? "whole" : "decimal",
-			fact: `${shown} rounded ${UNIT_WORDS[unit]} is ${show(answer)}`
+			fact: `${shown} rounded ${UNIT_WORDS[unit]} is ${show$1(answer)}`
 		}, named);
 	});
 }
@@ -7398,7 +10884,7 @@ const families = {
 	...DECIMAL_FAMILIES,
 	...FDP_FAMILIES,
 	...BOND_FAMILIES,
-	...INTEGER_FAMILIES
+	...Y78_FAMILIES
 };
 for (const key of Object.keys(families)) if (!RECORD_KEY.test(key)) throw new Error(`generated skill key "${key}" is not a valid record key`);
 Object.keys(families), quickMsForPack("generated");
@@ -7412,7 +10898,7 @@ const GENERATED_SKILL_KEYS = {
 	...DECIMAL_SKILL_KEYS,
 	...FDP_SKILL_KEYS,
 	...BOND_SKILL_KEYS,
-	...INTEGER_SKILL_KEYS
+	...Y78_SKILL_KEYS
 };
 /** Every question type this pack owns. */
 const GENERATED_KEYS = new Set(Object.keys(families));
@@ -7836,18 +11322,10 @@ const LADDER = [
 	generated("percent-of", "Percentages of an amount", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["percent-of"], "MS.Y6.NUM.RN.P13", "MS.Y6.NUM.RN.P14"),
 	generated("whole-from-fraction", "Finding the whole from a fraction", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["whole-from-fraction"], "MS.Y6.NUM.RN.P12"),
 	generated("bedmas", "Order of operations", "order-of-operations", GENERATED_SKILL_KEYS.bedmas, "MS.Y6.NUM.OP.P1"),
-	{
-		...generated("int-compare", "Negative numbers in order", "integers", GENERATED_SKILL_KEYS["int-compare"], "MS.Y7.NUM.NS.P3", "MS.Y7.NUM.NS.P4"),
-		year: 7
-	},
-	{
-		...generated("int-add-sub", "Adding and taking away across zero", "integers", GENERATED_SKILL_KEYS["int-add-sub"], "MS.Y7.NUM.NS.P5", "MS.Y7.NUM.NS.P6"),
-		year: 7
-	},
-	{
-		...generated("int-negatives", "Adding and taking away negatives", "integers", GENERATED_SKILL_KEYS["int-negatives"], "MS.Y8.NUM.NS.P7", "MS.Y8.NUM.NS.P8"),
-		year: 8
-	}
+	...Y78_LADDER.map((r) => ({
+		...generated(r.id, r.label, r.stage, Y78_SKILL_KEYS[r.id], ...r.tags),
+		year: r.year
+	}))
 ];
 /**
 * Skills that were renamed or taken out (19 Nov 2026: the times-table steps split into one table each, and rounding to a million
@@ -8031,7 +11509,7 @@ function ladderKeyPacks() {
 */
 const SLOW_QUICK_MS = 12e3;
 /** Mastery keys of two-step types. Each Year 7-8 card adds its own. */
-const SLOW_KEYS = new Set([]);
+const SLOW_KEYS = new Set(Y78_SLOW_KEYS);
 /** The quick time for one answer's record: 12 s for a two-step type, otherwise the pack's own. */
 const quickMsForKey = (key, packQuickMs) => SLOW_KEYS.has(key) ? Math.max(SLOW_QUICK_MS, packQuickMs) : packQuickMs;
 //#endregion

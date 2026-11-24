@@ -289,6 +289,22 @@
   color: var(--q-soft);
 }
 
+.question__quantity {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.18em;
+}
+.question__unit {
+  font-size: 0.55em;
+  font-weight: 800;
+  color: var(--q-soft);
+}
+.question__algebra i {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  padding-inline: 0.03em;
+}
+
 /* Fractions: top over bottom with a bar between. */
 .qfrac {
   display: inline-flex;

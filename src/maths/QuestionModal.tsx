@@ -37,8 +37,14 @@ const readPadOpen = () => {
 
 const FRACTION = /^(?:(\d+|\?) )?(\d+|\?)\/(\d+|\?)$/;
 
-/** One part of the question: a fraction, a word, or a plain number or sign. `blank` stands in for '?'. */
-function Part({ text, blank }: { text: string; blank: ReactNode }) {
+/** Small letters, numbers and signs, with no word of two letters and no unit after a number (6.1 L, 4 h): 3x + 2, a², t. */
+const ALGEBRA = /^(?=.*[a-z])(?!.*[a-z]{2})(?!.*\d\s+[a-z])[a-z\d\s+−×÷=.²³()]+$/;
+
+/** Numbers each followed by a short unit: 9.1 km, 1/3 h, 4 h 15 min, 2 cm², 6.1 L. */
+const QUANTITY = /^[\d.,/]+ [a-zA-Z]{1,3}[²³]?( [\d.,/]+ [a-zA-Z]{1,3}[²³]?)*$/;
+
+/** One part of the question: a fraction, a word, algebra, or a plain number or sign. `blank` stands in for '?'. */
+function Part({ text, blank, unit }: { text: string; blank: ReactNode; unit?: boolean }) {
   const fill = (piece: string) => (piece === '?' ? blank : piece);
   const f = FRACTION.exec(text);
   if (f) {
@@ -53,8 +59,19 @@ function Part({ text, blank }: { text: string; blank: ReactNode }) {
     );
   }
   // A gap in a list ('?,' in 6, 8, ?, 12) keeps its comma after the blank, and an angle ('?°') its degree sign.
-  const gap = /^\?([,;]|°C?)?$/.exec(text);
-  if (gap) return <span className="question__gap">{blank}{gap[1] ?? ''}</span>;
+  // A letter after it is algebra: '?a' in 3a + a + a = ?a.
+  const gap = /^\?([,;]|°C?|[a-z])?$/.exec(text);
+  if (gap) return <span className="question__gap question__algebra">{blank}{gap[1] && /[a-z]/.test(gap[1]) ? <i>{gap[1]}</i> : (gap[1] ?? '')}</span>;
+  // Algebra (7y + 3, s², 4x + 3x, t) is maths, shown as big as the numbers with its letters in italics. A lone letter right
+  // after the blank is a unit (? m, ? a), shown small like a word.
+  if (ALGEBRA.test(text) && !unit) return <span className="question__algebra">{[...text].map((c, k) => (/[a-z]/i.test(c) ? <i key={k}>{c}</i> : c))}</span>;
+  // A measure (9.1 km, 4 h 15 min, 3 m²): numbers as big as the sum, units small like words.
+  if (QUANTITY.test(text))
+    return (
+      <span className="question__quantity">
+        {text.split(' ').map((t, k) => (/\d/.test(t) ? <span key={k}>{t}</span> : <span key={k} className="question__unit">{t}</span>))}
+      </span>
+    );
   if (/[a-z]/i.test(text)) return <span className="question__word">{text}</span>;
   return <span>{text}</span>;
 }
@@ -329,7 +346,7 @@ export function QuestionModal({
         {question.prompt && <p className="question__prompt">{question.prompt}</p>}
         <p ref={fact} className="question__fact" aria-label={question.spoken} data-long={question.parts.join('').length > 12 || undefined} data-one-line={oneLine || undefined}>
           {question.parts.map((part, i) => (
-            <Part key={i} text={part} blank={blankBox} />
+            <Part key={i} text={part} blank={blankBox} unit={i > 0 && question.parts[i - 1].startsWith('?')} />
           ))}
         </p>
         {secondsLeft !== null && !result && (

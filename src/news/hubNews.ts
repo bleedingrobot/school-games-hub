@@ -24,6 +24,13 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'ladder-year-7-8-2026-11-24',
+    date: '2026-11-24',
+    emoji: '🧭',
+    title: 'Year 7 and 8 maths',
+    text: 'The maths path now has powers, primes, algebra, angles, averages and chance.',
+  },
+  {
     id: 'ladder-negatives-2026-11-24',
     date: '2026-11-24',
     emoji: '🧊',

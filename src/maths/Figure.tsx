@@ -135,23 +135,30 @@ function Body({ f }: { f: FigureSpec }) {
         </>
       );
     }
-    case 'rectangle':
+    case 'rectangle': {
+      // Both sides labelled the same ('?' and '?', or '5 cm' and '5 cm') is a square.
+      const square = f.width !== '' && f.width === f.height;
+      const x = square ? 72 : 50;
+      const w = square ? 96 : 140;
+      const h = square ? 96 : 84;
+      const y = square ? 18 : 30;
       return (
         <>
-          <rect x={50} y={30} width={140} height={84} className="fig__shape" />
-          <Label x={120} y={130} text={f.width} />
-          <Label x={36} y={72} text={f.height} anchor="end" />
-          <Label x={120} y={72} text={f.inside ?? ''} />
+          <rect x={x} y={y} width={w} height={h} className="fig__shape" />
+          <Label x={x + w / 2} y={y + h + 16} text={f.width} />
+          <Label x={x - 14} y={y + h / 2} text={f.height} anchor="end" />
+          <Label x={x + w / 2} y={y + h / 2} text={f.inside ?? ''} />
         </>
       );
+    }
     case 'triangle-area':
       return (
         <>
           <polygon points="40,118 200,118 90,24" className="fig__shape" />
           <line x1={90} y1={24} x2={90} y2={118} className="fig__dash" />
           <Label x={120} y={134} text={f.base} />
-          <Label x={84} y={70} text={f.height} anchor="end" />
-          <Label x={140} y={92} text={f.inside ?? ''} />
+          <Label x={96} y={74} text={f.height} anchor="start" />
+          <Label x={148} y={96} text={f.inside ?? ''} />
         </>
       );
     case 'parallelogram':
@@ -212,7 +219,7 @@ function Body({ f }: { f: FigureSpec }) {
           {f.diameter !== undefined && <line x1={62} y1={75} x2={178} y2={75} className="fig__line" />}
           {f.radius !== undefined && <line x1={120} y1={75} x2={161} y2={34} className="fig__line" />}
           {f.diameter !== undefined && <Label x={120} y={90} text={f.diameter} />}
-          {f.radius !== undefined && <Label x={152} y={58} text={f.radius} anchor="start" />}
+          {f.radius !== undefined && <Label x={134} y={52} text={f.radius} anchor="end" />}
         </>
       );
     case 'polygon': {
