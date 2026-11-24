@@ -143,7 +143,7 @@ export function Controller({ link, me, room: roomProp, lookElsewhere }: {
 
   // The big screen's music on this device too, when the teacher switched that on (James, 25 Nov 2026 NZ).
   const muralGame = view?.game.kind === 'mural' ? view.game : null;
-  useMusic(phase === 'playing' && view?.padMusic ? classLiveTrack(view.state, view.game.kind, muralGame?.phase === 'guess') : null, true);
+  useMusic(phase === 'playing' && view?.padMusic ? classLiveTrack(view.state, view.game.kind, { guessing: muralGame?.phase === 'guess', hot: view.game.kind === 'serpent' ? view.game.awake : view.game.kind === 'stars' ? view.game.creature && !view.game.supernova : false }) : null, true);
 
   if (phase === 'joining') return <Sky><div className="cl-c-center"><p className="cl-c-say">Joining…</p></div></Sky>;
   if (phase === 'none') {

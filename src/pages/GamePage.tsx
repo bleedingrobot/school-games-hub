@@ -5,6 +5,7 @@ import type { GameDefinition } from '../games/types';
 import { BOT_LEVELS, isBotLevel } from '../games/types';
 import { GameGate } from '../training/TrainFirst';
 import { NonMathsGate } from '../components/NonMathsGate';
+import { GameMusic } from '../games/GameMusic';
 
 const EMOJI: Record<string, string> = { chess: '♟️', checkers: '🔴', space: '🚀', '101': '🃏' };
 
@@ -17,6 +18,7 @@ export function GamePage({ game }: { game: GameDefinition }) {
     <NonMathsGate on={game.group === 'no-maths'}>
       <GameGate>
         <GameScreen game={game} />
+        {(game.group === 'easy-maths' || game.group === 'complex-maths') && <GameMusic id={game.id} />}
       </GameGate>
     </NonMathsGate>
   );
