@@ -18,6 +18,8 @@ const data = vi.hoisted(() => ({
   fetchStudentLadder: vi.fn(),
   fetchStudentYears: vi.fn(),
   setStudentYear: vi.fn(),
+  fetchLadderCaps: vi.fn(),
+  setLadderCap: vi.fn(),
   /** Each game's own student panel, and its one-line summary (see the registry mock below). */
   panelShown: vi.fn(),
   summary: vi.fn(),
@@ -43,6 +45,8 @@ vi.mock('../data/years', async (original) => ({
   ...(await original<typeof import('../data/years')>()),
   fetchStudentYears: data.fetchStudentYears,
   setStudentYear: data.setStudentYear,
+  fetchLadderCaps: data.fetchLadderCaps,
+  setLadderCap: data.setLadderCap,
 }));
 vi.mock('../data/skillMap', async (original) => ({
   ...(await original<typeof import('../data/skillMap')>()),
@@ -154,6 +158,8 @@ beforeEach(async () => {
   data.moveStudent.mockResolvedValue(undefined);
   data.fetchStudentYears.mockResolvedValue({ s1: { year: 4, by: 'pupil' } });
   data.setStudentYear.mockResolvedValue(undefined);
+  data.fetchLadderCaps.mockResolvedValue(new Set(['s2']));
+  data.setLadderCap.mockResolvedValue(undefined);
   data.fetchStudentLadder.mockResolvedValue({ on: true, placed: 'done', placement: 'tables-6-9', furthest: 'tables-6-9' });
   // Maths Monsters hasn't been played; every other game has.
   data.summary.mockImplementation(async (game: string) => (game === 'monsters' ? null : `${game} so far`));
@@ -186,6 +192,13 @@ describe('the class roster', () => {
     await user.selectOptions(within(table).getByRole('combobox', { name: 'Year for Brave Kiwi 7' }), '');
     expect(data.setStudentYear).toHaveBeenCalledWith('s1', null);
     expect(await screen.findByText('Brave Kiwi 7 will be asked their year next time they sign in.')).toBeInTheDocument();
+    // "Stop at Year 6": Lucky Tui is ticked already; the teacher ticks Brave Kiwi and un-ticks Lucky Tui.
+    expect(within(table).getByRole('checkbox', { name: 'Stop Lucky Tui 12 at Year 6' })).toBeChecked();
+    await user.click(within(table).getByRole('checkbox', { name: 'Stop Brave Kiwi 7 at Year 6' }));
+    expect(data.setLadderCap).toHaveBeenCalledWith('s1', true);
+    expect(await screen.findByText('Brave Kiwi 7 stops at Year 6: no Year 7 or 8 maths on their path.')).toBeInTheDocument();
+    await user.click(within(table).getByRole('checkbox', { name: 'Stop Lucky Tui 12 at Year 6' }));
+    expect(data.setLadderCap).toHaveBeenCalledWith('s2', false);
   });
 
 });

@@ -9,6 +9,9 @@ export const TINY_LABEL_MAX = 20;
 
 const TINY: Record<string, string> = {
   'parts-5': 'Parts of 5',
+  'int-compare': 'Negatives in order',
+  'int-add-sub': 'Across zero',
+  'int-negatives': 'Adding negatives',
   'parts-10': 'Parts of 10',
   'dbl-half-10': 'Doubles, halves 10',
   'ten-and': '10 and a number',

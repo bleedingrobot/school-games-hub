@@ -108,3 +108,18 @@ export function yearsText(y: ClassYears | undefined): string {
   if (!y || y.low === null || y.high === null) return '';
   return y.low === y.high ? yearName(y.low) : `Years ${y.low}–${y.high}`;
 }
+
+/**
+ * "Stop at Year 6" (migration 20261124001000_ladder_cap.sql): pupils whose teacher keeps Year 7 and 8 skills off auto for them.
+ * The ids of the class's capped pupils.
+ */
+export async function fetchLadderCaps(classId: string): Promise<Set<string>> {
+  const { data, error } = await supabase.rpc('teacher_ladder_caps', { target_class: classId });
+  if (error) fail(error, 'We couldn’t load who stops at Year 6.');
+  return new Set(Array.isArray(data) ? data.filter((v): v is string => typeof v === 'string') : []);
+}
+
+export async function setLadderCap(student: string, capped: boolean): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_ladder_cap', { student, capped });
+  if (error) fail(error, 'We couldn’t save that. Please try again.');
+}

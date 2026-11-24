@@ -13,7 +13,7 @@ import { whenPlayed } from '../components/MyGames';
 import { fetchClassOverview, type RosterStudent } from '../data/classOverview';
 import { FriendlyError } from '../data/profile';
 import { fetchPeople, type Person } from '../data/teacher';
-import { fetchStudentYears, setStudentYear, TEACHER_YEARS, yearName, type StudentYear } from '../data/years';
+import { fetchLadderCaps, fetchStudentYears, setLadderCap, setStudentYear, TEACHER_YEARS, yearName, type StudentYear } from '../data/years';
 import { ALL_GAMES } from '../games/registry';
 import { gameName, share } from '../pages/TeacherQuestionSkips';
 import { isTeacherFocus, skillList, skillShortLabel, type MathsFocus } from '../../shared/maths/focus';
@@ -179,6 +179,7 @@ function ClassRoster({ classId, name, hideReal }: { classId: string; name: strin
   const [students, setStudents] = useState<RosterStudent[] | null>(null);
   const [years, setYears] = useState<Years>({});
   const [yearNote, setYearNote] = useState<string | null>(null);
+  const [caps, setCaps] = useState<Set<string>>(new Set());
   const [failed, setFailed] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
   const [params, setParams] = useSearchParams();
@@ -197,6 +198,10 @@ function ClassRoster({ classId, name, hideReal }: { classId: string; name: strin
     fetchStudentYears(classId).then(
       (list) => current && setYears(list),
       (error) => current && setYearNote(errorText(error)),
+    );
+    fetchLadderCaps(classId).then(
+      (list) => current && setCaps(list),
+      () => {},
     );
     return () => {
       current = false;
@@ -217,6 +222,23 @@ function ClassRoster({ classId, name, hideReal }: { classId: string; name: strin
       setYearNote(level === null ? `${student.name} will be asked their year next time they sign in.` : `${student.name} is now in ${yearName(level)}.`);
     } catch (error) {
       setYears(before);
+      setYearNote(errorText(error));
+    }
+  }
+
+  async function changeCap(student: RosterStudent, capped: boolean) {
+    const before = caps;
+    setCaps((c) => {
+      const next = new Set(c);
+      if (capped) next.add(student.id);
+      else next.delete(student.id);
+      return next;
+    });
+    try {
+      await setLadderCap(student.id, capped);
+      setYearNote(capped ? `${student.name} stops at Year 6: no Year 7 or 8 maths on their path.` : `${student.name} can go on to Year 7 and 8 maths.`);
+    } catch (error) {
+      setCaps(before);
       setYearNote(errorText(error));
     }
   }
@@ -278,7 +300,7 @@ function ClassRoster({ classId, name, hideReal }: { classId: string; name: strin
       ) : (
         <>
           <p className="roster__year-hint" role="status">
-            {yearNote ?? 'Each student picks their year the first time they sign in. Change it here if it’s wrong. It moves up by itself each new school year.'}
+            {yearNote ?? 'Each student picks their year the first time they sign in. Change it here if it’s wrong. It moves up by itself each new school year. Tick “Stop at Y6” to keep Year 7 and 8 maths off a pupil’s path.'}
           </p>
           <div className="roster__scroll">
           <table className="stats-table roster">
@@ -324,6 +346,10 @@ function ClassRoster({ classId, name, hideReal }: { classId: string; name: strin
                         <option value={years[s.id].year}>{yearName(years[s.id].year)}</option>
                       )}
                     </select>
+                    <label className="roster__cap" title="Year 7 and 8 maths stays off this pupil's path">
+                      <input type="checkbox" aria-label={`Stop ${s.name} at Year 6`} checked={caps.has(s.id)} onChange={(e) => void changeCap(s, e.target.checked)} />
+                      Stop at Y6
+                    </label>
                   </td>
                   <td className="roster__nowrap">{s.lastActive ? whenPlayed(s.lastActive) : 'Not yet'}</td>
                   <td className="roster__today">

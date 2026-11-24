@@ -1,6 +1,6 @@
 # Year 7 and 8 on the maths ladder: plan
 
-**Status (24 Nov 2026):** plan only, nothing built. All 10 of James's questions answered (section 9); the plan below is updated to match. Next: card Y1.
+**Status (24 Nov 2026):** being built. Y1 (question pop-up notation, pictures, 12 s for two-step types) LIVE (PR #802). Y2 (longer ladder, new stages, "Stop at Year 6": table `ladder_caps`, `ladder_info().capped`, `LadderOptions.capAtYear6`, `pastYear6`) and Y3 (negative numbers: `shared/maths/skillPacks/integerSkills.ts`, skills int-compare, int-add-sub Y7, int-negatives Y8) built together. Every Y7-8 question type is checked by `shared/maths/y78.test.ts`: add new keys' worked answers to its `oracle`. Next: Y4.
 
 **Sources read:** NZC Mathematics and Statistics teaching sequences, Year 7 and Year 8 (October 2025), every strand. Today's ladder: `shared/maths/ladder.ts`, `docs/MATHS-FOCUS-PLAN.md` sections 3 and 12, `docs/game-guide/4-maths.md`.
 
