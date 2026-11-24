@@ -28,6 +28,7 @@ Total 41: 4 maps, 4 jails, 1 pick, 7 powers, 20 hazards, 5 dice.
 - Cut-outs are painted on plain white then made transparent. Check edges of glows (storm, portal, black hole) on a dark and a light background; hazards are drawn top-down and may be shown semi-transparent in code.
 - Dice faces: a plain single pip or star; the code draws the corner colour label and tumbling.
 - Prompt fixes go here after the first run, as in the other plans.
+- First run (25 Nov 2026, 3 tries each): `space-ice` (Zero-g zone) painted a big "0" every time, so its words now say "anti-gravity zone" instead of "zero-g". `jungle-teleport` (vine swing) kept white inside the ring after rembg; its near-white was made see-through by hand after tidy, so redo that if it is re-tidied with `--force`.
 
 ## Music to find later (not yet fetched)
 
