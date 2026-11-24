@@ -5,6 +5,7 @@
  * Each moment has a few takes, said in turn (`next`), so nothing is said the same way twice running (James, 24 Nov 2026:
  * more variety in the sounds).
  */
+import { CLUES } from '../../../shared/classlive/mural';
 export const VOICE_FOLDER = 'voice/classlive/';
 
 export const LINES = {
@@ -57,6 +58,9 @@ export const HOWTO = {
   ],
 } as const;
 
+/** Bella reads the mural's riddle once guessing opens. */
+export const clueLine = (clue: string) => `Here is a clue. ${clue}`;
+
 export type LineKey = keyof typeof LINES;
 
 const turn: Partial<Record<LineKey, number>> = {};
@@ -71,4 +75,5 @@ export function next(key: LineKey): string {
 export const allVoiceLines = (): string[] => [
   ...Object.values(LINES).flat(),
   ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural,
+  ...Object.values(CLUES).map(clueLine),
 ];

@@ -310,7 +310,6 @@ export function MuralPad({ link, room, view, me, setMe, setView }: { link: Class
             <div className="cl-m-choices">
               {pub.choices.map((c) => (
                 <button key={c} type="button" className="cl-m-choice" disabled={busy} onClick={() => void guess(c)}>
-                  <span className="cl-m-choice__pic"><MuralPicture id={c} small /></span>
                   <span>{PICTURES[c]}</span>
                 </button>
               ))}
