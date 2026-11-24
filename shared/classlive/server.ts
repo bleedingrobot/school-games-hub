@@ -54,7 +54,7 @@ export type Event =
   | GameEvent
   | { type: 'join'; t: number; pupil: string }
   | { type: 'start'; t: number }
-  | { type: 'over'; t: number; why: 'teacher' | 'time' };
+  | { type: 'over'; t: number; why: 'teacher' | 'time' | 'heads' };
 
 /** What pupils of the class may read of a room (their pop-up, their device). No names. */
 export interface RoomView {
@@ -424,6 +424,12 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         if (!out.ok) {
           const words = { too_soon: 'One at a time!', stale: 'That box is done. Here is your next one.', done: 'You have finished the whole chain!', unreadable: "That answer couldn't be read." };
           return { refuse: { status: 409, body: { error: words[out.reason], reason: out.reason, box: boxOf(s.game, who) } } };
+        }
+        // Serpent Chain ends by itself once every pupil has reached the head (James, 24 Nov 2026).
+        const g = s.game;
+        if (out.events.some((e) => e.type === 'head') && s.order.every((id) => g.heads.includes(id))) {
+          s.state = 'over';
+          return { reply: out.reply, events: [...out.events, { type: 'over' as const, t, why: 'heads' as const }], players: [who] };
         }
         return { reply: out.reply, events: out.events, players: [who] };
       }

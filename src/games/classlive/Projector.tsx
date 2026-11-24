@@ -200,7 +200,8 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
           later(() => mx((f) => ({ ...f, revealing: false })), 9000);
           sound.play('reveal');
         } else sound.play('swell');
-        say(e.why === 'time' ? next('timeUp') : next('finished'), 1500);
+        if (e.why === 'heads') banner('Everyone reached the head!', 2600);
+        say(e.why === 'time' ? next('timeUp') : e.why === 'heads' ? next('allHeads') : next('finished'), 1500);
       }
     }
   }, [flag, later, say, sound]);

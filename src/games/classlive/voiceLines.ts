@@ -21,6 +21,7 @@ export const LINES = {
   guessed: ['Someone has guessed the picture!', 'A good guess! Someone got it!', 'We have a right guess!'],
   reveal: ["Here's the picture!", 'Ta-da! Here it is!', "Let's see the whole picture!"],
   timeUp: ["Time's up! Well done, everyone!", "That's time! Great work, everyone!", "Time's up! What a team!"],
+  allHeads: ['Everyone reached the head! Amazing!', 'The whole class made it to the head!', 'All the way to the top, everyone! Brilliant!'],
   finished: ['Well done, everyone!', 'Great work, everyone!', 'What a team! Well done!'],
 } as const;
 

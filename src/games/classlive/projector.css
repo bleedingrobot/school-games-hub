@@ -248,7 +248,8 @@
 .sp-eye__shut, .sp-eye__open { transition: opacity 0.7s; }
 .sp-eye__glow { animation: cl-pulse-op 1.4s ease-in-out infinite; }
 .sp-roar { animation: sp-pop 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.4) both; transform-box: fill-box; transform-origin: center; }
-.sp-roar__num { font-weight: 900; fill: #7a2200; stroke: #fff; stroke-width: 4px; paint-order: stroke; }
+.sp-roar__num { font-weight: 900; fill: #5a2a00; }
+.sp-roar__word { font-weight: 900; fill: #6b4a00; letter-spacing: 0.04em; }
 .sp-link { stroke: #8cffe0; stroke-width: 4; stroke-dasharray: 3 11; stroke-linecap: round; opacity: 0.8; }
 .sp-tail__label { font-weight: 900; font-size: 15px; letter-spacing: 0.12em; text-transform: uppercase; fill: #bffff0; }
 .sp-tail__glow { animation: cl-pulse-op 3s ease-in-out infinite; }

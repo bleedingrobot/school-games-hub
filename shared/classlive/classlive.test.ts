@@ -134,6 +134,22 @@ describe('Class Live server', () => {
     expect(paid[0].players.every((p) => p.points >= 3 && p.points <= 10)).toBe(true);
     await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'view', room });
     expect(pc.db.paid.size).toBe(1);
+
+    // Serpent Chain ends by itself once every pupil has reached the head (and is paid then too).
+    const sRoom = (await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'open', classId: PRETEND_CLASS, activity: 'serpent', level: 'green' })).body.room as number;
+    const two = pc.ids.slice(0, 2);
+    for (const id of two) await classLiveStep(pc.services, id, { action: 'join', room: sRoom });
+    await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'start', room: sRoom });
+    const chainOf = () => (pc.db.rooms.get(sRoom)!.session.game as { chain: { values: number[] } }).chain.values;
+    for (const id of two) {
+      for (let box = 0; box < BODY; box++) {
+        await clock.run(clock.now() + 1000);
+        await classLiveStep(pc.services, id, { action: 'play', room: sRoom, box, value: chainOf()[box + 1] });
+      }
+      expect(pc.db.rooms.get(sRoom)!.session.state).toBe(id === two[0] ? 'live' : 'over');
+    }
+    expect(pc.db.rooms.get(sRoom)!.screen.events.at(-1)).toMatchObject({ type: 'over', why: 'heads' });
+    expect(pc.db.paid.size).toBe(2);
   });
 
   it('Mystery Mural: right answers earn flips, a question counts once, guesses open later and the teacher reveals it', async () => {
