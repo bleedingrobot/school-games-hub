@@ -141,9 +141,9 @@ select throws_ok($$ select count(*) from public.classlive_spots $$, '42501', nul
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
 select ok(public.classlive_positions(current_setting('test.corners')::bigint) ? pg_temp.id('0a')::text, 'the teacher''s projector reads every spot');
 select pg_temp.act_as_server();
-select is(public.classlive_finish(current_setting('test.corners')::bigint, jsonb_build_object('seed', 11, 'activity', 'corners',
-  'players', jsonb_build_array(jsonb_build_object('player', pg_temp.id('0a'), 'points', 5, 'safe', 20, 'champion', true)))) || ':' ||
-  (select safe_rounds || ',' || corner_wins from public.classlive_stats where player = pg_temp.id('0a')), 'ok:20,1', 'Four Corners pays safe rounds and wins');
+select public.classlive_finish(current_setting('test.corners')::bigint, jsonb_build_object('seed', 11, 'activity', 'corners',
+  'players', jsonb_build_array(jsonb_build_object('player', pg_temp.id('0a'), 'points', 5, 'safe', 20, 'champion', true))));
+select is((select safe_rounds || ',' || corner_wins from public.classlive_stats where player = pg_temp.id('0a')), '20,1', 'Four Corners pays safe rounds and wins');
 
 select * from finish();
 rollback;
