@@ -148,7 +148,11 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
           lastSent.current = now;
           sentAt.current = { ...pos.current.p };
           const p = pos.current.p;
-          void link.move(room, p.x, p.y).then((all) => { if (all) others.current = all; }, () => undefined);
+          void link.move(room, p.x, p.y).then((all) => {
+            if (all) others.current = all;
+            // Count the teleport for the end-of-game stats (after the spot is saved, so the server sees it).
+            if (warped) void link.send({ action: 'play', room, warp: true }).catch(() => undefined);
+          }, () => undefined);
         }
         // Run over a power-up to grab it.
         if (!mg?.held && grabbing.current === null) {
@@ -269,6 +273,19 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
         <h1 className="cl-c-title">{mg.place === 1 ? '🏆 You won!' : mg.place ? `🥈 Podium place ${mg.place}!` : 'Finished!'}</h1>
         <div className="fc-pad-me"><AvatarImage avatar={avatar ?? null} size={110} /></div>
         <p className="cl-c-say">You were safe {mg.safe} {mg.safe === 1 ? 'round' : 'rounds'}{mg.score > mg.safe ? ` and scored ${mg.score} with Double stars` : ''}.</p>
+        {mg.stats && (
+          <ul className="fc-pad-stats">
+            {([
+              ['🧮', mg.stats.right, 'right answers'],
+              ['🔥', mg.stats.bestStreak, 'in a row, best'],
+              ['🎁', mg.stats.grabs, 'power-ups picked up'],
+              ['⚡', mg.stats.powers, 'switched on'],
+              ['🌀', mg.stats.warps, 'teleports'],
+              ['🍀', mg.stats.lucky, 'lucky escapes'],
+              ['🔓', mg.stats.escapes, 'jail escapes'],
+            ] as const).filter(([, n]) => n > 0).map(([e, n, w]) => <li key={w}><span aria-hidden="true">{e}</span> <b>{n}</b> {w}</li>)}
+          </ul>
+        )}
         <p className="cl-c-look">Look at the big screen!</p>
       </div>
     );

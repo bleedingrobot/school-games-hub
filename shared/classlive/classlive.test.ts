@@ -281,6 +281,9 @@ describe('Class Live server', () => {
     expect(mines.some((m) => m.safe > 0) && mines.some((m) => m.caught > 0)).toBe(true);
     expect(mines.some((m) => m.escapes > 0)).toBe(true);
     expect(mines.some((m) => m.grabs > 0)).toBe(true);
+    // End-of-game stats: answers, streaks, timings and the dice's favourite corners are kept.
+    expect(mines.some((m) => (m.right ?? 0) > 0 && (m.bestStreak ?? 0) > 0 && m.fastMs === 3000) && (cg.caughtAll ?? 0) > 0).toBe(true);
+    expect((cg.rolls ?? []).reduce((a, b) => a + b, 0)).toBeGreaterThan(3);
     // Everyone let out of jail was put back in the middle (their saved spot moved by the server).
     const escaped = pc.ids.find((id) => cg.mine[id].escapes > 0)!;
     expect(pc.db.spots.get(room)![escaped]).toBeDefined();
