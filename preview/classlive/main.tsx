@@ -23,7 +23,7 @@ function Page() {
   return (
     <>
       <div style={{ display: view === 'big' ? 'contents' : 'none' }}>
-        <Projector link={teacher} classId={classId} className="Room 4 (pretend)" sound={sound} />
+        <Projector link={teacher} classId={classId} className="Room 4 (pretend)" sound={sound} onShowdown={(s) => console.log("showdown", JSON.stringify(s))} />
       </div>
       <div style={{ display: view === 'ipad' ? 'contents' : 'none' }}>
         <Controller link={pupil} me={ME} />

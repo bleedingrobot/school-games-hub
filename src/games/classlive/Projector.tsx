@@ -13,6 +13,8 @@ import type { ClassLiveSound } from './audio';
 import { ARM_COLOURS, lagHint, useHeldLag } from './arms';
 import type { ClassLiveLink, Reply } from './link';
 import { NightBackdrop, PLAYER_COLOURS, StarSky } from './StarSky';
+import { ShowdownCard } from './ShowdownCard';
+import type { ShowdownStart } from '../showdown/Projector';
 import { MuralCloth, MuralScene, NO_MURAL_FX, type MuralFx } from './MuralScene';
 import { CoiledSerpent, JungleBackdrop, NO_SERPENT_FX, SerpentAmbience, SerpentScene, type SerpentFx } from './SerpentScene';
 import './projector.css';
@@ -67,7 +69,11 @@ interface Fx {
 }
 const NO_FX: Fx = { arriving: new Set(), fresh: {}, pulsing: new Set(), drawing: new Set(), swim: false, nova: 0, serpent: NO_SERPENT_FX, mural: NO_MURAL_FX };
 
-export function Projector({ link, classId, className, sound }: { link: ClassLiveLink; classId: string; className?: string; sound: ClassLiveSound }) {
+export function Projector({ link, classId, className, sound, onShowdown }: {
+  link: ClassLiveLink; classId: string; className?: string; sound: ClassLiveSound;
+  /** Class Showdown is on the same picker (James, 24 Nov 2026: one Class Live page); null when it is switched off. */
+  onShowdown?: ((s: ShowdownStart) => void) | null;
+}) {
   const [room, setRoom] = useState<number | null>(null);
   const [screen, setScreenState] = useState<ScreenView | null>(null);
   const [resuming, setResuming] = useState<boolean>(() => roomFromUrl() !== null);
@@ -359,7 +365,7 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
         )}
       </div>
 
-      {!screen && (resuming ? <div className="cl-center"><p className="cl-center__word">Finding your room…</p></div> : <Setup busy={busy} problem={problem} onOpen={open} />)}
+      {!screen && (resuming ? <div className="cl-center"><p className="cl-center__word">Finding your room…</p></div> : <Setup busy={busy} problem={problem} onOpen={open} onShowdown={onShowdown ?? null} />)}
 
       {screen && game && state === 'lobby' && room && (
         showHow
@@ -460,7 +466,7 @@ const HOST_KEY = 'classlive.host';
 const readKept = (key: string): string | null => { try { return window.localStorage.getItem(key); } catch { return null; } };
 const keep = (key: string, v: string) => { try { window.localStorage.setItem(key, v); } catch { /* private window: not kept */ } };
 
-function Setup({ busy, problem, onOpen: open }: { busy: boolean; problem: string; onOpen: (activity: Activity, body: Record<string, unknown>) => void }) {
+function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; problem: string; onOpen: (activity: Activity, body: Record<string, unknown>) => void; onShowdown: ((s: ShowdownStart) => void) | null }) {
   const [level, setLevel] = useState<LevelPick>('middle');
   const [sLevel, setSLevel] = useState<SerpentLevel>('gold');
   const [sLength, setSLength] = useState(0);
@@ -551,6 +557,7 @@ function Setup({ busy, problem, onOpen: open }: { busy: boolean; problem: string
           <TimerChips length={mLength} setLength={setMLength} />
           <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('mural', { length: mLength })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
+        {onShowdown && <ShowdownCard busy={busy} onOpen={onShowdown} />}
       </div>
     </div>
   );

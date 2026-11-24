@@ -90,7 +90,9 @@ const SWITCHED_GAMES = GAMES.filter((g) => g.teacherSwitch).map((g) => g.id);
 function useShownGames(nonMathsOpen: boolean | null, remembered: string[] | undefined): { games: GameDefinition[]; on: Set<string> | null } {
   const on = useClassSwitches(SWITCHED_GAMES);
   const isOn = (id: string) => (on ? on.has(id) : (remembered?.includes(id) ?? false));
-  const games = GAMES.filter((game) => (!game.teacherSwitch || isOn(game.id)) && (nonMathsOpen !== false || game.group !== 'no-maths'));
+  // Class Showdown is reached through the Class Live card when both are on (James, 24 Nov 2026: one Class Live page).
+  const games = GAMES.filter((game) => (!game.teacherSwitch || isOn(game.id)) && (nonMathsOpen !== false || game.group !== 'no-maths')
+    && !(game.id === 'showdown' && GAMES.some((g) => g.id === 'classlive') && isOn('classlive')));
   return { games, on };
 }
 

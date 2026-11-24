@@ -104,7 +104,8 @@ function TeacherHeader({ isAdmin }: { isAdmin: boolean }) {
     { to: pathFor(classId, 'maths'), label: 'Maths' },
     { to: pathFor(classId, 'games'), label: 'Games' },
     { to: pathFor(classId, 'quests'), label: 'Quests' },
-    ...(showdownOn() ? [{ to: pathFor(classId, 'showdown'), label: 'Class Showdown' }] : []),
+    // Class Showdown is part of the Class Live page when that is on (James, 24 Nov 2026).
+    ...(showdownOn() && !classliveOn() ? [{ to: pathFor(classId, 'showdown'), label: 'Class Showdown' }] : []),
     ...(classliveOn() ? [{ to: pathFor(classId, 'classlive'), label: 'Class Live' }] : []),
     { to: pathFor(classId, 'setup'), label: 'Class set-up' },
   ];

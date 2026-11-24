@@ -41,6 +41,12 @@ function roomFromUrl(): number | null {
     return null;
   }
 }
+/** Is a Showdown room kept for this tab (so the Class Live page opens on it)? */
+export const keptShowdownRoom = (): boolean => roomFromUrl() !== null;
+
+/** What the Class Live page's picker chose (James, 24 Nov 2026: one Class Live page for every class game). */
+export interface ShowdownStart { mode: Mode; length: number; arena: Arena }
+
 function keepRoom(room: number | null) {
   try {
     if (room) window.sessionStorage.setItem(ROOM_KEY, String(room));
@@ -88,10 +94,16 @@ function useFit(ref: RefObject<HTMLElement | null>, watch: RefObject<HTMLElement
 }
 const hash = (s: string) => [...s].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
 
-export function Projector({ link, classId, className, sound, onMute }: { link: ShowdownLink; classId: string; className?: string; sound?: ShowdownSound; onMute?: (muted: boolean) => void }) {
+export function Projector({ link, classId, className, sound, onMute, start, onLeave }: {
+  link: ShowdownLink; classId: string; className?: string; sound?: ShowdownSound; onMute?: (muted: boolean) => void;
+  /** Open a room with these choices straight away (from the Class Live page's picker). */
+  start?: ShowdownStart;
+  /** Back to the Class Live page's picker (shown while no room is running). */
+  onLeave?: () => void;
+}) {
   const [room, setRoom] = useState<number | null>(roomFromUrl);
-  const [mode, setMode] = useState<Mode>('class');
-  const [length, setLength] = useState<number>(SHOWDOWN.defaultLength);
+  const [mode, setMode] = useState<Mode>(start?.mode ?? 'class');
+  const [length, setLength] = useState<number>(start?.length ?? SHOWDOWN.defaultLength);
   const [ps, dispatch] = useReducer(projectorAct, undefined, () => initialState());
   const psRef = useRef(ps);
   psRef.current = ps;
@@ -109,7 +121,7 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
   const [recapStage, setRecapStage] = useState<0 | 1>(0);
   const [rosterRows, setRosterRows] = useState<RosterRow[] | null>(null);
   const [pick, setPick] = useState<BossId | ''>('');
-  const [arena, setArena] = useState<Arena>('boss');
+  const [arena, setArena] = useState<Arena>(start?.arena ?? 'boss');
   const soundRef = useRef(sound);
   soundRef.current = sound;
   const lastHitSound = useRef(0);
@@ -314,7 +326,21 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
       soundRef.current?.say(arenaWords(nv.arena).lines.start ?? bossInfo(nv.bossId).roar);
     }
   };
+  // Opened from the Class Live picker: open the room at once.
+  const started = useRef(false);
+  useEffect(() => {
+    if (!start || room || started.current) return;
+    started.current = true;
+    void open();
+    // Once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const newRound = () => {
+    if (onLeave) {
+      keepRoom(null);
+      onLeave();
+      return;
+    }
     keepRoom(null);
     setRoom(null);
     dispatch({ kind: 'reset', reply: undefined as never });
@@ -351,7 +377,7 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
       {state === 'live' || state === 'over' ? <Battle ps={ps} roundNow={roundNow} flinch={flinch} /> : null}
       {state === 'lobby' && briefing && room && <HowToScreen arena={arenaNow} mode={ps.view?.mode ?? mode} say={(line) => soundRef.current?.say(line, true)} onStart={() => { setBriefing(false); void send({ action: 'start', room }); }} onBack={() => setBriefing(false)} />}
       {state === 'lobby' && <Lobby ps={ps} className={className} roster={arenaNow === 'boss' ? rosterRows : null} onMove={(pupil, team) => void send({ action: 'teams', room, pupil, team })} />}
-      {!state && <div className="sd-p-idle"><h2>Class Showdown</h2><p>Pick how long, then press Open to bring in the class.</p></div>}
+      {!state && <div className="sd-p-idle"><h2>Class Showdown</h2><p>{start ? 'Opening the room…' : 'Pick how long, then press Open to bring in the class.'}</p>{onLeave && <button type="button" className="sd-p-btn" onClick={onLeave}>← All Class Live games</button>}</div>}
 
       {live && ps.banner && roundNow < ps.banner.until && <div key={`${ps.banner.text}${ps.banner.until}`} className={`sd-p-banner sd-p-banner--${ps.banner.kind}`} role="status">{ps.banner.text}</div>}
       {live && ps.goldenSeq > 0 && <div key={`g${ps.goldenSeq}`} className="sd-p-goldflash" aria-hidden="true" />}
@@ -366,6 +392,7 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
         {barOpen && (
           <div className="sd-p-bar__row">
             <a className="sd-p-btn sd-p-btn--hub" href="#/">⌂ Back to hub</a>
+            {onLeave && (!room || state === 'over') && <button type="button" className="sd-p-btn" onClick={newRound}>← All Class Live games</button>}
             <label>Mode <select value={mode} disabled={!!room} onChange={(e) => setMode(e.target.value as Mode)}>
               <option value="class">Whole class</option><option value="teams2">2 teams</option><option value="teams4">4 teams</option><option value="solo">Everyone for themselves</option>
             </select></label>
@@ -386,7 +413,7 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
               <button type="button" className="sd-p-btn sd-p-btn--danger" onClick={() => { if (armEnd) { setArmEnd(false); void send({ action: 'end', room }); } else { setArmEnd(true); setTimeout(() => setArmEnd(false), 3000); } }}>{armEnd ? 'Sure? End now' : 'End'}</button>
             )}
             {room && state === 'over' && <button type="button" className="sd-p-btn sd-p-btn--go" onClick={() => void again()}>Again?</button>}
-            {room && state === 'over' && <button type="button" className="sd-p-btn" onClick={newRound}>New class or mode</button>}
+            {room && state === 'over' && !onLeave && <button type="button" className="sd-p-btn" onClick={newRound}>New class or mode</button>}
           </div>
         )}
         {problem && <p className="sd-p-bar__problem" role="alert">{problem}</p>}

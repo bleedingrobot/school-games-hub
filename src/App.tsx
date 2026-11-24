@@ -112,7 +112,8 @@ export function teacherRoutes() {
           <Route path=":gameId" element={null} />
         </Route>
         <Route path="quests" element={<TeacherQuests />} />
-        {showdownOn() && <Route path="showdown" element={<Suspense fallback={loading}><TeacherShowdown /></Suspense>} />}
+        {/* Class Showdown lives on the Class Live page (James, 24 Nov 2026: one page for both). */}
+        {showdownOn() && <Route path="showdown" element={classliveOn() ? <Navigate to="../classlive?game=showdown" relative="path" replace /> : <Suspense fallback={loading}><TeacherShowdown /></Suspense>} />}
         {classliveOn() && <Route path="classlive" element={<Suspense fallback={loading}><TeacherClassLive /></Suspense>} />}
         <Route path="setup" element={<ClassSetup />} />
         <Route path="*" element={<Navigate to=".." relative="path" replace />} />
