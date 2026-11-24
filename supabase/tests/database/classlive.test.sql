@@ -3,7 +3,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh classlive, then scripts/scratch-test.sh classlive supabase/tests/database/classlive.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(39);
+select plan(40);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -116,9 +116,8 @@ select ok(public.classlive_here() @> jsonb_build_array(jsonb_build_object('class
   '... and her pop-up says who is starting which game');
 select pg_temp.act_as_server();
 select is(public.classlive_finish(current_setting('test.lobby')::bigint, jsonb_build_object('seed', 9, 'activity', 'mural',
-  'players', jsonb_build_array(jsonb_build_object('player', pg_temp.id('0a'), 'points', 3)))) || ':' ||
-  (select count(*)::int from public.game_points where game = 'classlive' and player = pg_temp.id('0a'))::text, 'ok:2',
-  'a pupil of another class is paid for a lobby game');
+  'players', jsonb_build_array(jsonb_build_object('player', pg_temp.id('0a'), 'points', 3)))), 'ok', 'a finished lobby game is paid');
+select is((select sessions from public.classlive_stats where player = pg_temp.id('0a')), 2, '... a pupil of another class too');
 
 select * from finish();
 rollback;
