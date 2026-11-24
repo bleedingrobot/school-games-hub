@@ -192,7 +192,7 @@
         1536,
         1536
       ],
-      "prompt": "The head and a short piece of neck of an original friendly temple serpent of glossy emerald green scales with gold-edged belly plates, a small golden crest of jade frills on its head, side view facing right, eyes peacefully closed, mouth shut, calm and sleeping, cute storybook dragon-like snake head, the neck ends at the left edge of the subject. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "prompt": "The head and a short piece of neck of an original friendly temple serpent of glossy emerald green scales with gold-edged belly plates, a small golden crest of jade frills on its head, side view facing right, eyes peacefully closed, mouth shut, calm and sleeping, cute storybook snake head, no antlers, no horns, the neck ends at the left edge of the subject. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
       "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges"
     },
     {
@@ -234,7 +234,7 @@
         1536,
         1536
       ],
-      "prompt": "The tail end of an original friendly temple serpent of glossy emerald green scales with gold-edged belly plates, a small golden crest of jade frills on its head, a short curving tail tip with a little fan of golden jade feathers at the very end, lying flat, horizontal, pointing left, side view. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "prompt": "Only the tail end of a glossy emerald green serpent, a short curving tail tip with a little fan of jade feathers at the very end, no head, not a whole snake, lying flat, horizontal, pointing left, side view. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
       "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges"
     },
     {
@@ -310,7 +310,7 @@
         1536,
         864
       ],
-      "prompt": "Empty background scenery: the same ancient jungle temple at night lit up by magic, glowing emerald and gold light pouring from carved stone serpent statues, floating golden fireflies, mossy steps, hanging vines, misty jungle on both sides, dark and calm in the middle, an empty open space, no characters, no creatures, no animals. Wide landscape.",
+      "prompt": "Empty background scenery: the same ancient jungle temple at night lit up by magic, glowing emerald and gold light pouring from carved stone pillars, no statues, floating golden fireflies, mossy steps, hanging vines, misty jungle on both sides, dark and calm in the middle, an empty open space, no characters, no creatures, no animals. Wide landscape.",
       "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
     }
   ],
