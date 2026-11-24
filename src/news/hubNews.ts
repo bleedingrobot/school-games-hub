@@ -28,7 +28,7 @@ export const HUB_NEWS: NewsItem[] = [
     date: '2026-11-25',
     emoji: '🎲',
     title: 'Four Corners',
-    text: 'A new Class Live game! Run your avatar to a corner before the dice rolls. Grab power-ups, dodge blizzards and answer your way out of jail.',
+    text: 'Run your avatar to a corner before the dice rolls. Dodge blizzards and escape jail!',
     game: 'classlive',
   },
   {
