@@ -23,6 +23,7 @@ import './projector.css';
 import { painted } from './paintedArt';
 import { HowTo } from './HowTo';
 import { CornersScene } from './CornersScene';
+import { CornersGuide } from './CornersGuide';
 import { MAPS, MAP_WORDS, RUN_DEFAULT_S, RUN_MAX_S, RUN_MIN_S, type CornerMap } from '../../../shared/classlive/corners';
 
 const RUN_CHOICES = Array.from({ length: RUN_MAX_S - RUN_MIN_S + 1 }, (_, i) => RUN_MIN_S + i);
@@ -667,12 +668,15 @@ function StarsLobbyHead({ game }: { game: StarsGame }) {
 }
 
 function CornersLobbyHead({ map }: { map: CornerMap }) {
+  const [guide, setGuide] = useState(false);
   return (
     <>
+      {guide && <CornersGuide map={map} onClose={() => setGuide(false)} />}
       <h1 className="cl-lobby__title">Four Corners</h1>
       <div className="cl-lobby__fact">{MAP_WORDS[map].name}</div>
       <div className="fc-lobby-corners" aria-hidden="true"><i /><i /><i /><i /></div>
       <p className="cl-lobby__ask">Run to a corner before the countdown ends. Which corner will the dice pick?</p>
+      <button type="button" className="cl-btn fc-guide-btn" onClick={() => setGuide(true)}>⚡ Power-ups and hazards</button>
     </>
   );
 }

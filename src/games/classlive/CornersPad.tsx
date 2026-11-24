@@ -15,6 +15,7 @@ import type { PlayerView, RoomView } from '../../../shared/classlive/server';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import { CORNER_COLOURS, CORNER_NAMES, CornersBoard, Token } from './CornersBoard';
+import { CornersGuide } from './CornersGuide';
 import type { ClassLiveLink } from './link';
 import './controller.css';
 
@@ -111,6 +112,7 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
   const [question, setQuestion] = useState<PublicQuestion | null>(null);
   const [purpose, setPurpose] = useState<'jail' | 'power' | null>(null);
   const [say, setSay] = useState<{ n: number; text: string; good?: boolean } | null>(null);
+  const [guide, setGuide] = useState(false);
   const sayN = useRef(0);
   const asking = useRef(false);
   const pendingMe = useRef<{ me?: PlayerView; view?: RoomView } | null>(null);
@@ -264,6 +266,8 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
         <div className="fc-pad-me"><AvatarImage avatar={avatar ?? null} size={120} /></div>
         <p className="cl-c-say">Use the joystick (or the arrow keys) to run to a corner before the countdown ends. Don't get caught!</p>
         <p className="cl-c-say">Today's map: <b>{words.name}</b></p>
+        <button type="button" className="cl-btn fc-guide-btn" onClick={() => setGuide(true)}>⚡ Power-ups and hazards</button>
+        {guide && <CornersGuide map={pub.map} onClose={() => setGuide(false)} />}
       </div>
     );
   }
