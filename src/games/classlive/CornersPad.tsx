@@ -1,6 +1,6 @@
 /**
  * Four Corners, the pupil's device (docs/CORNERS-PLAN.md): a joystick (or arrow keys / WASD) moves their own avatar at
- * once on the board; the spot is saved about every 0.3 s (`link.move`, a plain database call), and the other pupils
+ * once on the board; the spot is saved about every 0.4 s (`link.move`, a plain database call), and the other pupils
  * come back as dots (no names). Running over a power-up grabs it; standing in a corner with one brings a question,
  * and a right answer switches it on. In jail: three right answers to come back. Never shows anyone else's results.
  *
@@ -20,7 +20,7 @@ import './controller.css';
 
 type Mine = Extract<PlayerView['game'], { kind: 'corners' }>;
 type Pub = Extract<RoomView['game'], { kind: 'corners' }>;
-const SEND_MS = 300;
+const SEND_MS = 400;
 const factOf = (q: PublicQuestion, answer: number) => q.parts.map((p) => p.replace(/\?/g, String(answer))).join(' ');
 
 /** Arrow keys and WASD. */
@@ -127,7 +127,7 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
   const jailed = !!mg?.jailed;
   const canRun = !!r && !jailed && view.state === 'live' && !r.ended;
 
-  // Move every frame; save the spot every 0.3 s (and right away after a teleport).
+  // Move every frame; save the spot every 0.4 s (and right away after a teleport).
   useEffect(() => {
     if (room === null) return;
     let id = 0;
