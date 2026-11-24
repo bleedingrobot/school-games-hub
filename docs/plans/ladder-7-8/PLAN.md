@@ -147,7 +147,7 @@ That is about 34 new skills (18 marked to build first). Order on the ladder: Yea
 | # | Card | Size |
 |---|---|---|
 | Y1 | Shared display: powers and roots, units, small pictures (`figure`), per-type quick time; every game's question display checked | L |
-| Y2 | One longer ladder: new stages in Set focus, Skill map and Progress tab; pupils' "new skills added" line | M |
+| Y2 | One longer ladder: new stages in Set focus, Skill map and Progress tab; pupils' "new skills added" line; the "Stop at Year 6" switch (answer 11) | M |
 | Y3 | Integers: `int-compare`, `int-add-sub`, `int-negatives` | M |
 | Y4 | Powers and primes: `powers-10`, `exponents`, `primes`, `divisibility`, `hcf-lcm`, `prime-factors`, `neg-powers` | M |
 | Y5 | Fractions, decimals, percent, ratio, money | L |
@@ -193,3 +193,4 @@ Asked on question cards in the thread. Summary:
 8. **Data and chance (24 Nov): yes, both.** `averages` (up to 5 small numbers) and `probability` go on the ladder (card Y8).
 9. **New Year 7-8 pupils (24 Nov): same warm-up from the bottom.** No change to the warm-up (10 questions, 3-skill jumps). A strong senior ends near the Year 6 top and climbs into Year 7-8 by auto, which also catches gaps below.
 10. **Longer methods as Activities (24 Nov): not now.** Section 4 stays as a record only; no Activities or new games planned from it.
+11. **Stop at Year 6 (James, 24 Nov, in chat): "an option added to cap a kid at year 6 - and they dont progress the ladder".** A teacher switch per pupil, on the Students tab beside the Year column (and on Set focus for a group or class, as a shortcut that sets it for each pupil). For a capped pupil, every Year 7-8 skill acts as if it were beside the ladder (`inAuto: false`): auto never makes one the current skill, review and stretch never ask one, and progress counts only up to the Year 6 top ("x of 42"). Once the Year 6 top is secure, the pupil stays on mixed review of everything they know. A teacher can still pick a Year 7-8 skill as a focus on purpose. Saved in its own table through a `teacher_set_ladder_cap(student, capped)` function, read by `space_maths_context` and `my_maths_focus`, so every game follows it with no game changes. Default: not capped. Built in card Y2, before any Year 7 skill goes live.
