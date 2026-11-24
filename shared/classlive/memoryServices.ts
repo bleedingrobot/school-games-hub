@@ -6,6 +6,7 @@
 import type { FactAnswer } from '../maths/leitner';
 import type { MathsContext } from '../maths/serverQuestions';
 import type { FinishedSession } from './rewards';
+import { clampMove } from './corners';
 import type { Change, ClassLiveServices, PlayerView, RoomRow, RoomView, ScreenView, StoredQuestion } from './server';
 
 export interface MemoryDb {
@@ -23,6 +24,8 @@ export interface MemoryDb {
   teachers: Map<string, string[]>;
   enabled: boolean;
   showNames: boolean;
+  /** Four Corners: each player's last saved spot, by room. */
+  spots: Map<number, Record<string, { x: number; y: number; at: number }>>;
 }
 
 export function memoryDb(opts: { pupils?: { id: string; name: string; classId: string; schoolId?: number }[]; teachers?: Record<string, string[]>; schools?: Record<string, number> } = {}): MemoryDb {
@@ -31,7 +34,7 @@ export function memoryDb(opts: { pupils?: { id: string; name: string; classId: s
     pupils: new Map((opts.pupils ?? []).map((p) => [p.id, p])),
     teachers: new Map(Object.entries(opts.teachers ?? {})),
     schools: new Map(Object.entries(opts.schools ?? {})),
-    enabled: true, showNames: true,
+    enabled: true, showNames: true, spots: new Map(),
   };
 }
 
@@ -111,6 +114,14 @@ export function memoryServices(db: MemoryDb, clock: { now(): number; random?(): 
       list.push(kept);
       return copy(kept);
     },
+    async positions(room) {
+      return Object.fromEntries(Object.entries(db.spots.get(room) ?? {}).map(([id, p]) => [id, { x: p.x, y: p.y }]));
+    },
+    async place(room, spots) {
+      const all = db.spots.get(room) ?? {};
+      for (const p of spots) all[p.player] = { x: p.x, y: p.y, at: clock.now() };
+      db.spots.set(room, all);
+    },
     async finishSession(room, done) {
       const key = `${room}:${done.seed}`;
       if (!db.paid.has(key)) db.paid.set(key, copy(done));
@@ -119,4 +130,19 @@ export function memoryServices(db: MemoryDb, clock: { now(): number; random?(): 
       if (!db.answers.some((a) => a.player === player && a.once === once)) db.answers.push({ player, once, answers: copy(answers) });
     },
   };
+}
+
+/**
+ * A pupil's device saving its spot (the database's classlive_move): clamped by `clampMove`, and answered with every
+ * spot in the room (no names). Only players of a live Four Corners room.
+ */
+export function memoryMove(db: MemoryDb, now: number, room: number, player: string, x: number, y: number): { x: number; y: number }[] | null {
+  const r = db.rooms.get(room);
+  if (!r || r.session.state !== 'live' || r.session.game.kind !== 'corners' || !r.session.players[player]) return null;
+  const all = db.spots.get(room) ?? {};
+  const g = r.session.game;
+  const p = clampMove(all[player], { x, y }, now, g.round?.teleports ?? []);
+  all[player] = { ...p, at: now };
+  db.spots.set(room, all);
+  return Object.values(all).map((q) => ({ x: q.x, y: q.y }));
 }

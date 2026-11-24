@@ -163,10 +163,17 @@ export function useMusic(track: Track | null, soundOn: boolean) {
 export const HOT_MS = 30_000;
 
 /** The track for a Class Live room: the lobby shares the picker's, the end plays the win, hot moments the hot one. */
-export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | null, o: { guessing?: boolean; hot?: boolean } = {}): Track {
+/** Four Corners plays a track for its map, from the Class Live and Showdown sets for now (docs/CORNERS-ART-PLAN.md: own tracks later). */
+const CORNER_TRACKS: Record<string, Calm> = { snow: 'skyclimb', jungle: 'island', castle: 'boss', space: 'stars' };
+
+export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | 'corners' | null, o: { guessing?: boolean; hot?: boolean; map?: string } = {}): Track {
   if (state === 'over') return 'win';
   if (!state || !kind || state !== 'live') return 'picker';
   if (kind === 'mural') return o.guessing || o.hot ? 'guess' : 'mural';
+  if (kind === 'corners') {
+    const calm = CORNER_TRACKS[o.map ?? ''] ?? 'goldrush';
+    return o.hot ? `${calm}-hot` : calm;
+  }
   return o.hot ? `${kind}-hot` : kind;
 }
 

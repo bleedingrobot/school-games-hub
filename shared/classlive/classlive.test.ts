@@ -7,6 +7,7 @@ import { answerBox, apply, BODY, makeChain, newSerpent, SERPENT_LEVELS } from '.
 import { MAX_OPEN, openCap, UNTIMED_PACE_MS, type MuralGame } from './mural';
 import { ARMS, armCounts, isTrue, laggingArm, linkOf, newStars, readFact, tryFact, type Anchor } from './stars';
 import { lagHint } from '../../src/games/classlive/arms';
+import { clampMove, cornerOf, grab, makeRound, MAX_SPEED, newCorners, startSpot, stepMove, type CornersGame } from './corners';
 
 const k: Anchor = { x: 6, y: 7, p: 42 };
 const arm = (text: string) => {
@@ -17,7 +18,7 @@ const arm = (text: string) => {
 };
 
 describe('Star Web rules', () => {
-  it('reads facts written many ways, checks them exactly, puts each on the right arm and says how it links', () => {
+  it('reads facts written many ways, puts each on the right arm, makes stars and glows, and lights the creature', () => {
     expect(readFact('12 x 7 = 84')).toEqual({ a: 1200, op: '×', b: 700, c: 8400 });
     expect(readFact('84=12×7')).toEqual({ a: 1200, op: '×', b: 700, c: 8400 });
     expect(readFact('6 × 7')).toBeNull();
@@ -36,9 +37,7 @@ describe('Star Web rules', () => {
     for (const [t, a] of Object.entries(want)) expect(arm(t), t).toBe(a);
     const how = linkOf(readFact('12×7=84')!, k);
     expect(how !== 'same' && how?.how).toBe('6 → 12 is double, so 42 → 84.');
-  });
-
-  it('a new fact makes a star, the same fact again makes it glow, and every arm lit draws the creature', () => {
+    // A new fact makes a star, the same fact again makes it glow, and every arm lit draws the creature.
     const g = newStars(k, 'middle');
     let t = 0;
     const go = (who: string, text: string) => tryFact(g, who, text, (t += 2000));
@@ -230,6 +229,67 @@ describe('Class Live server', () => {
     await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'view', room });
     expect(pc.db.rooms.get(room)!.session).toMatchObject({ state: 'over', game: { revealed: true } });
     expect(pc.db.rooms.get(room)!.screen.events.at(-1)).toMatchObject({ type: 'over', why: 'time' });
+  });
+
+  it('Four Corners: rounds run on the clock, the dice catches pupils by their saved spots, jail, power-ups, time ends it', async () => {
+    // Rules: corners, moves clamped to the fastest speed, storms slow, a grab needs to be close.
+    expect([cornerOf({ x: 0.1, y: 0.1 }), cornerOf({ x: 0.9, y: 0.95 }), cornerOf({ x: 0.5, y: 0.1 })]).toEqual([0, 2, null]);
+    const cut = clampMove({ x: 0.5, y: 0.5, at: 0 }, { x: 0, y: 0 }, 500, []);
+    expect(Math.hypot(cut.x - 0.5, cut.y - 0.5)).toBeCloseTo(MAX_SPEED * 0.5 + 0.05, 5);
+    expect(clampMove({ x: 0.92, y: 0.4, at: 0 }, { x: 0.08, y: 0.6 }, 100, [{ a: { x: 0.08, y: 0.6 }, b: { x: 0.92, y: 0.4 } }])).toEqual({ x: 0.08, y: 0.6 });
+    const g: CornersGame = newCorners('snow');
+    const r = makeRound(g, 3, 0, rng(3), 20);
+    expect(r.storms.length).toBeGreaterThan(0);
+    const storm = r.storms[0];
+    const slow = stepMove({ p: { x: storm.x, y: storm.y }, v: { x: 0, y: 0 } }, { x: 1, y: 0 }, 100, { ...r, teleports: [], ice: [], hole: false, roller: null }, 0, { boost: false, ghost: false });
+    expect(slow.p.x - storm.x).toBeLessThan(0.3 * 0.1 * 0.5);
+    g.round = r;
+    g.mine.a = { ...(await import('./corners')).freshMine(0) };
+    const item = r.items[0];
+    expect(grab(g, 'a', item.id, { x: item.x + 0.3, y: item.y }, 10)).toEqual({ ok: false, reason: 'far' });
+    expect(grab(g, 'a', item.id, { x: item.x, y: item.y }, 10)).toMatchObject({ ok: true });
+    expect(g.mine.a.held).toBe(item.power);
+
+    // A pretend class of 20 runs about; the projector asks at each deadline.
+    const clock = pretendClock();
+    const pc = pretendClass({ size: 20, seed: 11, clock, later: clock.later });
+    const room = (await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'open', classId: PRETEND_CLASS, activity: 'corners', map: 'jungle', length: 3 })).body.room as number;
+    await pc.joinAll();
+    await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'start', room });
+    pc.play(room);
+    const game = () => pc.db.rooms.get(room)!.session.game as CornersGame;
+    let hidden = false;
+    for (let s = 0; s < 3 * 60 + 40; s += 0.5) {
+      await clock.run(clock.now() + 500);
+      await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'view', room });
+      const gr = game().round;
+      // Pupils' devices don't learn the corner until the dice lands (the projector's screen does).
+      if (gr && gr.caught !== null && clock.now() - pc.db.rooms.get(room)!.startedAt! < gr.rollEnd) {
+        const look = await classLiveStep(pc.services, pc.ids[0], { action: 'look', room });
+        const pr = (look.body.view as { game: { round: { rolled: unknown } } }).game.round;
+        hidden ||= pr.rolled === null;
+      }
+    }
+    expect(hidden).toBe(true);
+    const done = pc.db.rooms.get(room)!;
+    expect(done.session.state).toBe('over');
+    const cg = game();
+    expect(cg.map).toBe('jungle');
+    expect(cg.round!.n).toBeGreaterThan(6);
+    const mines = Object.values(cg.mine);
+    expect(mines.some((m) => m.safe > 0) && mines.some((m) => m.caught > 0)).toBe(true);
+    expect(mines.some((m) => m.escapes > 0)).toBe(true);
+    expect(mines.some((m) => m.grabs > 0)).toBe(true);
+    // Everyone let out of jail was put back in the middle (their saved spot moved by the server).
+    const escaped = pc.ids.find((id) => cg.mine[id].escapes > 0)!;
+    expect(pc.db.spots.get(room)![escaped]).toBeDefined();
+    expect(done.screen.events.some((e) => e.type === 'roll')).toBe(true);
+    expect(JSON.stringify(done.view)).not.toContain(pc.ids[0]);
+    // Paid once: the podium gets 2 more points.
+    const paid = [...pc.db.paid.values()].find((p) => p.activity === 'corners')!;
+    expect(paid.players.filter((p) => p.champion).length).toBeGreaterThan(0);
+    expect(paid.players.every((p) => p.points >= 1 && p.points <= 10)).toBe(true);
+    expect(startSpot(0)).not.toEqual(startSpot(1));
   });
 
   it('a lobby game: any pupil of the school joins by its room or code; a class game and other schools stay closed', async () => {
