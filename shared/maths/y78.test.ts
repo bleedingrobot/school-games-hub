@@ -13,20 +13,18 @@ const pack = generatedPack();
 const Y78 = LADDER.filter(pastYear6);
 const KEYS = Y78.flatMap((s) => s.keys);
 
-/** A number as the screen shows it: "−4" → -4, "−3°C" → -3, "8°" → 8. */
+/** A number as the screen shows it: "−4" → -4, "8°" → 8, "0.5" → 0.5. */
 const num = (text: string) => Number(text.replace(/°C?$/, '').replace('−', '-'));
 
-/** The right answer worked out from what is on screen, without the generators. Null when a key has no check here yet. */
-function oracle(key: string, parts: string[], prompt?: string): number | null {
-  if (key === 'int:smallest') return Math.min(...prompt!.replace(/^Which is the smallest\? /, '').split(', ').map(num));
-  if (key === 'int:compare-dec') return null; // checked against its choices below
-  if (key.startsWith('int:')) {
-    const [a, op, b, , c] = parts;
-    if (c !== '?' && !c.startsWith('?')) return num(c) - num(a); // a + ? = c
-    return op === '+' ? num(a) + num(b) : num(a) - num(b);
+/** Each card's answers worked out from the screen text alone (shared/maths/y78/*.oracle.ts). */
+const ORACLES = Object.values(import.meta.glob<{ oracle: (key: string, parts: string[], prompt: string | undefined) => number | null }>('./y78/*.oracle.ts', { eager: true })).map((m) => m.oracle);
+const oracle = (key: string, parts: string[], prompt?: string) => {
+  for (const o of ORACLES) {
+    const found = o(key, parts, prompt);
+    if (found !== null) return found;
   }
   return null;
-}
+};
 
 describe('Year 7 and 8 skills', () => {
   it('every roll is sound, repeatable, marked from its numbers, and right by separate arithmetic', () => {
