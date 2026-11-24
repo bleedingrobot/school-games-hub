@@ -368,5 +368,85 @@
     "seconds": 88.0,
     "take_kept": 4,
     "lufs_target": -16
+  },
+  {
+    "name": "corners-snow",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "upbeat winter sleigh ride chase, jingling sleigh bells, bouncy pizzicato strings, glockenspiel, playful woodwinds, brisk snare drum, catchy, fun, 128 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 128,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "corners-snow-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic winter sleigh race, fast jingling sleigh bells, rapid strings, pounding drums, brass stabs, very energetic, intense, fast tempo, busy rhythm, starts immediately at full volume, 160 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 160,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "corners-jungle",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "jungle chase, bongos, marimba, tribal hand drums, wooden flute, shakers, energetic world percussion, catchy, fun, 120 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 120,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "corners-jungle-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic jungle stampede chase, fast pounding bongos, tribal war drums, rapid marimba, very energetic, intense, fast tempo, busy rhythm, starts immediately at full volume, 160 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 160,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -16
+  },
+  {
+    "name": "corners-castle",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "playful friendly spooky Halloween chase, harpsichord, pizzicato strings, bassoon, sneaky mischievous, light percussion, cute, fun, not scary, 120 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 120,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "corners-castle-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic playful spooky Halloween castle chase, fast harpsichord, rapid pizzicato strings, pipe organ stabs, pounding drums, cute, not scary, very energetic, fast tempo, busy rhythm, starts immediately at full volume, 160 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 160,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "corners-space",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "fast bright synth chase, sparkling synth arpeggios, driving electronic beat, upbeat, catchy, fun, 135 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 135,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "corners-space-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic space chase, very fast bright synth arpeggios, pounding electronic drums, driving synth bass, intense, fast tempo, busy rhythm, starts immediately at full volume, 165 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 165,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
   }
 ]
