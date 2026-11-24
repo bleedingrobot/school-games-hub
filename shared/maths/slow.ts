@@ -5,10 +5,12 @@
  *
  * Kept apart from untimed.ts on purpose: these are still timed, as recall is the point of the hub.
  */
+import { Y78_SLOW_KEYS } from './skillPacks/y78';
+
 export const SLOW_QUICK_MS = 12_000;
 
 /** Mastery keys of two-step types. Each Year 7-8 card adds its own. */
-export const SLOW_KEYS: ReadonlySet<string> = new Set<string>([]);
+export const SLOW_KEYS: ReadonlySet<string> = new Set<string>(Y78_SLOW_KEYS);
 
 /** The quick time for one answer's record: 12 s for a two-step type, otherwise the pack's own. */
 export const quickMsForKey = (key: string, packQuickMs: number): number => (SLOW_KEYS.has(key) ? Math.max(SLOW_QUICK_MS, packQuickMs) : packQuickMs);

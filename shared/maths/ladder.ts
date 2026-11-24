@@ -19,6 +19,7 @@ import { EARLY_FACTS, earlyFactsPack, SKIP_FROM_STEPS, SKIP_MORE_STEPS, SKIP_STE
 import { foldBondPairs } from './skillPacks/bondPairs';
 import { GENERATED_SKILL_KEYS, generatedPack, isGeneratedKey } from './skillPacks/generated';
 import { BandedPack } from './banded';
+import { Y78_LADDER, Y78_SKILL_KEYS } from './skillPacks/y78';
 import { TimesTables } from './skillPacks/timesTables';
 
 export type LadderStage =
@@ -191,9 +192,7 @@ export const LADDER: LadderSkill[] = [
   generated('whole-from-fraction', 'Finding the whole from a fraction', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['whole-from-fraction'], 'MS.Y6.NUM.RN.P12'),
   generated('bedmas', 'Order of operations', 'order-of-operations', GENERATED_SKILL_KEYS.bedmas, 'MS.Y6.NUM.OP.P1'),
   // Year 7 and 8 (docs/plans/ladder-7-8/PLAN.md): only past this point for pupils a teacher hasn't stopped at Year 6.
-  { ...generated('int-compare', 'Negative numbers in order', 'integers', GENERATED_SKILL_KEYS['int-compare'], 'MS.Y7.NUM.NS.P3', 'MS.Y7.NUM.NS.P4'), year: 7 },
-  { ...generated('int-add-sub', 'Adding and taking away across zero', 'integers', GENERATED_SKILL_KEYS['int-add-sub'], 'MS.Y7.NUM.NS.P5', 'MS.Y7.NUM.NS.P6'), year: 7 },
-  { ...generated('int-negatives', 'Adding and taking away negatives', 'integers', GENERATED_SKILL_KEYS['int-negatives'], 'MS.Y8.NUM.NS.P7', 'MS.Y8.NUM.NS.P8'), year: 8 },
+  ...Y78_LADDER.map((r) => ({ ...generated(r.id, r.label, r.stage, Y78_SKILL_KEYS[r.id], ...r.tags), year: r.year })),
 ];
 
 /**

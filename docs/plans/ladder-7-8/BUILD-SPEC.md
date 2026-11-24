@@ -51,6 +51,15 @@ that works out the right answer from the screen text alone, with plain arithmeti
 question, return the value of the right label as a number (or null if the label isn't a number, e.g. "2² × 3²", and check
 it some other way inside the oracle file's own small test if needed). `y78.test.ts` imports every oracle.
 
+For a pick question whose right label isn't a number ("2² × 5", "4n + 1", "<"), add `shared/maths/y78/<name>.picks.ts`
+exporting `PICK_CHECKS: Record<key, (parts, prompt, right, wrong) => void>` that checks the right label is right and every
+wrong one is wrong, with plain arithmetic. Add the card's exports to `shared/maths/skillPacks/y78.ts`: that wires the
+families, the ladder rows, the short names and the two-step keys everywhere.
+
+Key prefixes must not clash with existing ones: `div:` is division facts (turned off with division), so divisibility is
+`divis:`. Algebra parts (7y + 3, s², t) show full size with italic letters; a measure (9.1 km, 4 h 15 min) shows its numbers
+big and its units small; a letter or unit straight after the blank goes in the blank's part (`?a`) or its own part.
+
 Run: `npx vitest run shared/maths/y78.test.ts shared/maths/generated.test.ts` and `npx tsc -b`.
 Screens: the preview at `npm run dev -- --config vite.ladder-cards-preview.config.ts` (port 5191),
 `/preview/ladder-cards/?keys=a,b,c&seed=3` shows each type as pupils see it.

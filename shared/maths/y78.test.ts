@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { randomFromSeed } from '../space/random';
 import { autoPools, LADDER, ladderProgress, pastYear6 } from './ladder';
 import { GENERATED, generatedPack, solveByNumbers } from './skillPacks/generated';
+import { labelValue } from './skillPacks/pickKit';
 
 const pack = generatedPack();
 const Y78 = LADDER.filter(pastYear6);
@@ -18,6 +19,9 @@ const num = (text: string) => Number(text.replace(/°C?$/, '').replace('−', '-
 
 /** Each card's answers worked out from the screen text alone (shared/maths/y78/*.oracle.ts). */
 const ORACLES = Object.values(import.meta.glob<{ oracle: (key: string, parts: string[], prompt: string | undefined) => number | null }>('./y78/*.oracle.ts', { eager: true })).map((m) => m.oracle);
+/** Each card's checks of pick questions whose right choice isn't a number (shared/maths/y78/*.picks.ts). */
+type PickCheck = (parts: string[], prompt: string, right: string, wrong: string[]) => void;
+const PICK_CHECKS: Record<string, PickCheck> = Object.assign({}, ...Object.values(import.meta.glob<{ PICK_CHECKS: Record<string, PickCheck> }>('./y78/*.picks.ts', { eager: true })).map((m) => m.PICK_CHECKS));
 const oracle = (key: string, parts: string[], prompt?: string) => {
   for (const o of ORACLES) {
     const found = o(key, parts, prompt);
@@ -55,7 +59,8 @@ describe('Year 7 and 8 skills', () => {
             if (k !== q.answer) expect(named, `${where} wrong choice ${label}`).toContain(label);
           });
           expect(made.fact, where).toContain(labels[q.answer]);
-          worth = num(labels[q.answer]);
+          worth = Number.isNaN(num(labels[q.answer])) ? (labelValue(labels[q.answer]) ?? NaN) : num(labels[q.answer]);
+          PICK_CHECKS[key]?.(q.parts, made.prompt ?? '', labels[q.answer], labels.filter((_, k) => k !== q.answer));
           if (key === 'int:compare-dec') expect(worth, where).toBe(Math.min(...labels.map(num)));
         } else {
           // Typed answers are never below zero: the pad has no minus key.
