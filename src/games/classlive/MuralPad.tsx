@@ -75,7 +75,8 @@ export function MuralPad({ link, room, view, me, setMe, setView }: { link: Class
 
   const mg: Mine | null = me && me.game.kind === 'mural' ? me.game : null;
   const pub: Pub | null = view.game.kind === 'mural' ? view.game : null;
-  const live = view.state === 'live' && !!pub && !pub.revealed;
+  // No more questions once guessing opens (they couldn't be seen, and were fetched for nothing).
+  const live = view.state === 'live' && !!pub && !pub.revealed && pub.phase !== 'guess';
 
   const toast = useCallback((text: string, good?: boolean) => setSay({ n: ++sayN.current, text, good }), []);
 
