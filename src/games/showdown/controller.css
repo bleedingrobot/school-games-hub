@@ -246,9 +246,9 @@ button.sd-c-rolechip { cursor: pointer; } .sd-c-rolechip u { opacity: 0.8; } .sd
 .sd-cs__sky { position: absolute; inset: 0; --tc: #ffffff; }
 .sd-cs__sky--red { --tc: #ff4d5e; } .sd-cs__sky--blue { --tc: #4da3ff; } .sd-cs__sky--gold { --tc: #ffd23f; } .sd-cs__sky--green { --tc: #4dd97a; }
 .sd-cs__rope { position: absolute; left: 50%; top: 10%; bottom: 0; width: 4px; margin-left: -2px; background: repeating-linear-gradient(180deg, #e8c27a 0 8px, #a87b33 8px 14px); box-shadow: 0 0 0 1px rgba(0,0,0,0.35); }
-.sd-cs__flag { position: absolute; left: 50%; top: 2%; transform: translateX(-30%); font-size: 2rem; width: 18%; transform-origin: bottom left; animation: sd-cs-flap 1.2s ease-in-out infinite alternate; }
+.sd-cs__flag { position: absolute; left: 50%; top: 2%; transform: translateX(-30%); font-size: 2rem; width: 10%; transform-origin: bottom left; animation: sd-cs-flap 1.2s ease-in-out infinite alternate; }
 .sd-cs__flag img { width: 100%; }
-.sd-cs__climber { position: absolute; left: 50%; width: 22%; aspect-ratio: 1; transform: translate(-50%, -50%); display: grid; place-items: center; transition: top 0.6s cubic-bezier(.2,1.3,.4,1); filter: drop-shadow(0 0 6px var(--tc)) drop-shadow(0 6px 8px rgba(0,0,0,0.45)); }
+.sd-cs__climber { position: absolute; left: 50%; width: 14%; aspect-ratio: 0.6; transform: translate(-50%, -50%); display: grid; place-items: center; transition: top 0.6s cubic-bezier(.2,1.3,.4,1); filter: drop-shadow(0 0 6px var(--tc)) drop-shadow(0 6px 8px rgba(0,0,0,0.45)); }
 .sd-cs__climber b { font-size: 2.4rem; line-height: 1; }
 .sd-cs__climber img { width: 100%; height: 100%; object-fit: contain; }
 .sd-cs__climber--step { animation: sd-cs-step 0.45s ease-out; }
