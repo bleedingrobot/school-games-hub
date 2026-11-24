@@ -1000,3 +1000,34 @@
 @media (prefers-reduced-motion: reduce) {
   .sd-p-auc__goldenhour, .sd-p-auc__spot, .sd-p-treasure--onsale, .sd-p-treasure--sold, .sd-p-auc__gavel, .sd-p-auc__sold b, .sd-p-auc__sold i, .sd-p-auc__stolen b, .sd-p-auc__stolen em, .sd-p-auc__card--last, .sd-p-thieves__alarm, .sd-p-thieves__thief, .sd-p-auc-entrance__curtain, .sd-p-auc-entrance__gavel, .sd-p-aucrecap__row li, .sd-p-auc__top strong { animation: none !important; }
 }
+
+/* "How to play" before the round (James, 24 Nov 2026): one screen, big and bright, read from the back of the room. */
+.sd-p-howto { position: absolute; inset: 0; z-index: 40; display: grid; place-items: center; padding: 3vh 3vw; background: radial-gradient(ellipse at 50% 40%, rgba(10,14,30,0.55), rgba(4,6,14,0.9)); animation: sd-p-howin 0.5s ease-out both; }
+@keyframes sd-p-howin { from { opacity: 0; } to { opacity: 1; } }
+.sd-p-howto__card { width: min(94vw, 1500px); max-height: 94vh; overflow: auto; padding: 3vh 3vw 2.6vh; border-radius: 3vh; background: linear-gradient(180deg, rgba(28,22,60,0.96), rgba(12,10,30,0.96)); border: 0.5vh solid #ffd23f; box-shadow: 0 0 6vh rgba(255,210,63,0.35), 0 3vh 6vh rgba(0,0,0,0.6); color: #fff; text-align: center; animation: sd-p-pop 0.7s cubic-bezier(.2,1.4,.4,1) both; }
+.sd-p-howto__kicker { margin: 0; font-weight: 900; letter-spacing: 0.3em; text-transform: uppercase; color: #9fd8ff; font-size: clamp(0.8rem, 2.2vh, 1.3rem); }
+.sd-p-howto__title { margin: 0.4vh 0 0; font-weight: 1000; font-size: clamp(2rem, 8vh, 5.4rem); line-height: 1; color: #ffe27a; text-shadow: 0 0.6vh 0 #7a4a00, 0 0 4vh rgba(255,210,63,0.6); }
+.sd-p-howto__goal { margin: 1.4vh auto 2vh; max-width: 70ch; font-weight: 800; font-size: clamp(1rem, 3.4vh, 2.2rem); }
+.sd-p-howto__label { font-weight: 900; color: #9fd8ff; font-size: clamp(0.8rem, 2.2vh, 1.3rem); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1vh; }
+.sd-p-howto__roles { list-style: none; margin: 0 0 2vh; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.6vw; }
+.sd-p-howto__roles--one { grid-template-columns: minmax(0, 32vw); justify-content: center; }
+.sd-p-howto__roles li { display: grid; justify-items: center; gap: 0.4vh; padding: 1.8vh 1vw; border-radius: 2vh; background: rgba(255,255,255,0.08); border: 0.3vh solid rgba(255,255,255,0.25); animation: sd-p-howcard 0.6s cubic-bezier(.2,1.5,.4,1) calc(0.25s + var(--i) * 0.18s) both; }
+.sd-p-howto__roles b { font-size: clamp(1.1rem, 4vh, 2.6rem); font-weight: 1000; }
+.sd-p-howto__roles small { font-size: clamp(0.85rem, 2.6vh, 1.6rem); font-weight: 700; opacity: 0.9; }
+.sd-p-howto__emoji { font-size: clamp(2rem, 8vh, 5rem); line-height: 1; animation: sd-p-howbob 2.4s ease-in-out calc(var(--i) * 0.3s) infinite; }
+@keyframes sd-p-howcard { from { opacity: 0; transform: translateY(4vh) scale(0.8); } to { opacity: 1; transform: none; } }
+@keyframes sd-p-howbob { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-1vh) rotate(4deg); } }
+.sd-p-howto__watch { list-style: none; margin: 0 0 1.6vh; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 1.6vw; }
+.sd-p-howto__watch li, .sd-p-howto__win { display: flex; align-items: center; gap: 1vw; text-align: left; padding: 1.4vh 1.4vw; border-radius: 1.6vh; font-weight: 800; font-size: clamp(0.9rem, 2.8vh, 1.8rem); animation: sd-p-howcard 0.6s cubic-bezier(.2,1.5,.4,1) calc(0.25s + var(--i) * 0.18s) both; }
+.sd-p-howto__watch li { background: rgba(255,90,90,0.16); border: 0.3vh solid rgba(255,120,120,0.55); }
+.sd-p-howto__watch li + li { background: rgba(255,210,63,0.14); border-color: rgba(255,210,63,0.55); }
+.sd-p-howto__watch span, .sd-p-howto__win span { font-size: clamp(1.6rem, 5.4vh, 3.4rem); line-height: 1; flex: none; }
+.sd-p-howto__win { margin: 0 0 2vh; justify-content: center; background: linear-gradient(90deg, rgba(62,160,255,0.25), rgba(63,212,106,0.25)); border: 0.3vh solid rgba(159,216,255,0.6); font-size: clamp(1rem, 3.2vh, 2rem); }
+.sd-p-howto__go { display: flex; justify-content: center; gap: 1.6vw; }
+.sd-p-howto__start, .sd-p-howto__back { font: inherit; font-weight: 1000; border-radius: 999px; cursor: pointer; }
+.sd-p-howto__start { padding: 1.6vh 3vw; font-size: clamp(1.1rem, 3.8vh, 2.4rem); color: #2a1600; background: linear-gradient(180deg, #ffe27a, #ffb21f); border: 0.4vh solid #fff3c4; box-shadow: 0 0 4vh rgba(255,210,63,0.7), 0 0.8vh 0 #8a5a00; animation: sd-p-howpulse 1.4s ease-in-out 2s infinite; }
+.sd-p-howto__start:focus-visible { outline: 0.5vh solid #9fd8ff; outline-offset: 0.6vh; }
+.sd-p-howto__back { padding: 1.4vh 2vw; font-size: clamp(0.9rem, 2.6vh, 1.6rem); color: #fff; background: rgba(255,255,255,0.1); border: 0.3vh solid rgba(255,255,255,0.5); }
+@keyframes sd-p-howpulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+@media (max-width: 900px) { .sd-p-howto__roles, .sd-p-howto__watch { grid-template-columns: 1fr; } .sd-p-howto__roles--one { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .sd-p-howto, .sd-p-howto__card, .sd-p-howto__roles li, .sd-p-howto__emoji, .sd-p-howto__watch li, .sd-p-howto__win, .sd-p-howto__start { animation: none !important; } }

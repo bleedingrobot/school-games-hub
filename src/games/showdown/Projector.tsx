@@ -14,6 +14,7 @@ import type { ShowdownLink } from './link';
 import { AWARD_WORDS, TEAM_WORDS, bestComeback, initialState, isGoldRush, ordinal, projectorAct, soundFor, type DrySeam, type HitBurst, type ProjectorState, type ShowdownSound } from './projectorState';
 import { TREASURE } from './treasures';
 import { ARENA_CALLS, NARRATION } from './voiceLines';
+import { howToLines, howToPlay } from './howToPlay';
 import './projector.css';
 
 const ART = import.meta.glob('./art/paint/**/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
@@ -98,6 +99,8 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
   const [barOpen, setBarOpen] = useState(true);
   const [muted, setMutedState] = useState(sound?.muted ?? false);
   const [armEnd, setArmEnd] = useState(false);
+  /** The "How to play" screen is up: Start shows it first, and the teacher starts the round from it. */
+  const [briefing, setBriefing] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [offset, setOffset] = useState(0);
   const [count, setCount] = useState<number | null>(null);
@@ -346,6 +349,7 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
       <h1 className="sd-p__sr">Class Showdown{state ? ` ${state}` : ''}</h1>
       <Backdrop state={state} boss={view?.bossId} arena={arenaNow} />
       {state === 'live' || state === 'over' ? <Battle ps={ps} roundNow={roundNow} flinch={flinch} /> : null}
+      {state === 'lobby' && briefing && room && <HowToScreen arena={arenaNow} mode={ps.view?.mode ?? mode} say={(line) => soundRef.current?.say(line, true)} onStart={() => { setBriefing(false); void send({ action: 'start', room }); }} onBack={() => setBriefing(false)} />}
       {state === 'lobby' && <Lobby ps={ps} className={className} roster={arenaNow === 'boss' ? rosterRows : null} onMove={(pupil, team) => void send({ action: 'teams', room, pupil, team })} />}
       {!state && <div className="sd-p-idle"><h2>Class Showdown</h2><p>Pick how long, then press Open to bring in the class.</p></div>}
 
@@ -374,7 +378,7 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
             {(!room || state === 'over') && arenaNow === 'boss' && rosterRows && <BossPicker rows={rosterRows} value={pick} onChange={setPick} />}
             {!room && <button type="button" className="sd-p-btn sd-p-btn--go" onClick={() => void open()}>Open</button>}
             {room && state === 'lobby' && <button type="button" className="sd-p-btn" onClick={() => void send({ action: 'teams', room, reshuffle: true })}>Reshuffle</button>}
-            {room && state === 'lobby' && <button type="button" className="sd-p-btn sd-p-btn--go" onClick={() => void send({ action: 'start', room })}>Start</button>}
+            {room && state === 'lobby' && <button type="button" className="sd-p-btn sd-p-btn--go" onClick={() => (briefing ? (setBriefing(false), void send({ action: 'start', room })) : setBriefing(true))}>{briefing ? 'Start now' : 'Start'}</button>}
             {room && live && <button type="button" className="sd-p-btn" onClick={() => void send({ action: 'enrage', room })}>{W.enrageButton}</button>}
             {room && live && <button type="button" className="sd-p-btn" onClick={() => void send({ action: 'pause', room, resume: paused })}>{paused ? 'Resume' : 'Pause'}</button>}
             <button type="button" className="sd-p-btn" aria-pressed={muted} onClick={toggleMute}>{muted ? 'Unmute' : 'Mute'}</button>
@@ -1574,3 +1578,50 @@ function awardValue(kind: string, v: number): string {
   return '';
 }
 
+
+/**
+ * "How to play" on the big screen before the round (James, 24 Nov 2026): the goal, the roles, what to watch for and how
+ * this mode is won, on one screen, with Bella reading the goal and the mode aloud. The teacher starts the round from it
+ * (the button, or Enter), or goes back to the lobby.
+ */
+function HowToScreen({ arena, mode, say, onStart, onBack }: { arena: Arena; mode: Mode; say: (line: string) => void; onStart: () => void; onBack: () => void }) {
+  const h = howToPlay(arena, mode);
+  const startRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const lines = howToLines(arena, mode);
+    const timers = lines.map((line, i) => setTimeout(() => say(line), [300, 5600, 10200][i] ?? 0));
+    startRef.current?.focus();
+    return () => timers.forEach(clearTimeout);
+    // Read once when the screen opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [arena, mode]);
+  return (
+    <section className={`sd-p-howto sd-p-howto--${arena}`} role="dialog" aria-modal="true" aria-labelledby="sd-howto-title" onKeyDown={(e) => { if (e.key === 'Escape') onBack(); }}>
+      <div className="sd-p-howto__card">
+        <p className="sd-p-howto__kicker">How to play</p>
+        <h2 id="sd-howto-title" className="sd-p-howto__title">{h.title}</h2>
+        <p className="sd-p-howto__goal">{h.goal}</p>
+        <div className="sd-p-howto__label">{h.oneRole ? 'Everyone is a…' : 'Pick a role on your iPad'}</div>
+        <ul className={`sd-p-howto__roles${h.oneRole ? ' sd-p-howto__roles--one' : ''}`}>
+          {h.roles.map((r, i) => (
+            <li key={r.name} style={{ '--i': i } as CSSProperties}>
+              <span className="sd-p-howto__emoji" aria-hidden="true">{r.emoji}</span>
+              <b>{r.name}</b>
+              <small>{r.line}</small>
+            </li>
+          ))}
+        </ul>
+        <ul className="sd-p-howto__watch">
+          {h.watch.map((w, i) => (
+            <li key={w.text} style={{ '--i': i + 3 } as CSSProperties}><span aria-hidden="true">{w.emoji}</span>{w.text}</li>
+          ))}
+        </ul>
+        <p className="sd-p-howto__win" style={{ '--i': 6 } as CSSProperties}><span aria-hidden="true">{h.win.emoji}</span>{h.win.text}</p>
+        <div className="sd-p-howto__go">
+          <button type="button" className="sd-p-howto__back" onClick={onBack}>Back</button>
+          <button ref={startRef} type="button" className="sd-p-howto__start" onClick={onStart}>Got it! Start the showdown ▶</button>
+        </div>
+      </div>
+    </section>
+  );
+}
