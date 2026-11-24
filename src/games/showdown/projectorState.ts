@@ -10,13 +10,16 @@ import type { FeedEvent, PlayerView, RoomView } from '../../../shared/showdown/s
 import type { Role, TeamId } from '../../../shared/showdown/types';
 import type { Arena } from '../../../shared/showdown/types';
 import { arenaWords } from './arenaWords';
-import { ANNOUNCER } from './voiceLines';
+import { ANNOUNCER, ARENA_CALLS, AUCTION_LINES, HILL_LINES, NARRATION } from './voiceLines';
+import type { TreasureKind } from '../../../shared/showdown/auction';
 
 /** What the projector needs from the announcer and sound (src/games/showdown/audio.ts implements it). */
 export interface ShowdownSound {
   play(name: 'roar' | 'hit' | 'bighit' | 'clang' | 'crack' | 'chime' | 'drum' | 'cheer' | 'fanfare' | 'countdown' | 'whoosh'): void;
   /** `urgent` lines (the end of the round, the start) never wait for the gap after the last line. */
   say(line: string, urgent?: boolean): void;
+  /** The arena, for its own touch on the hit sound. */
+  setArena?(arena: string | null | undefined): void;
   muted: boolean;
   setMuted(b: boolean): void;
 }
@@ -103,6 +106,15 @@ export interface ProjectorState {
   splashes: { id: number; pupil: string; t: number }[];
   swims: { id: number; pupil: string; t: number }[];
   waveAt: number;
+  /** King of the Hill: the latest crown change (from whom, when), counted, and the crown's latest payments. */
+  crownSeq: number;
+  crownAt: number;
+  crownFrom: string | null;
+  crownPays: { id: number; holder: string; points: number; t: number }[];
+  /** Auction House: the latest bids (each pops up), when the latest treasure went up, and how the latest sale ended. */
+  bids: { id: number; pupil: string; amount: number; t: number }[];
+  lotAt: number;
+  sale: { lot: number; kind: TreasureKind | null; pupil: string | null; bid: number; value: number; stolen: boolean; t: number } | null;
   /** Round time of the latest event. */
   t: number;
   seq: number;
@@ -143,7 +155,7 @@ export function initialState(reply?: { view?: RoomView; players?: PlayerView[]; 
     weakUntil: view?.weakSpotUntil ?? 0, goldenUntil: view?.goldenUntil ?? 0, goldenSeq: 0, enrageUntil: view?.enrageUntil ?? 0,
     final: view?.finalStarted ?? false, finalUntil: 0, startSeq: 0, hitSeq: 0, bigHitSeq: 0, healAt: 0,
     beaten: view?.result === 'beaten', timeUp: view?.result === 'time', paused: view?.pausedAt != null, ended: view?.state === 'over',
-    recap: reply?.recap ?? null, tugSeq: 0, tugAt: 0, turn: null, turnSeq: 0, moves: [], damage: {}, lastHitter: null, bestStreak: null, worstRank: {}, againSeq: 0, seamInfo: seamsOf(view), dry: [], jumps: [], blown: null, splashes: [], swims: [], waveAt: 0, t: view?.t ?? 0, seq: 0,
+    recap: reply?.recap ?? null, tugSeq: 0, tugAt: 0, turn: null, turnSeq: 0, moves: [], damage: {}, lastHitter: null, bestStreak: null, worstRank: {}, againSeq: 0, seamInfo: seamsOf(view), dry: [], jumps: [], blown: null, splashes: [], swims: [], waveAt: 0, crownSeq: 0, crownAt: 0, crownFrom: null, crownPays: [], bids: [], lotAt: 0, sale: null, t: view?.t ?? 0, seq: 0,
   };
 }
 
@@ -326,6 +338,26 @@ export function projectorReduce(s: ProjectorState, event: FeedEvent): ProjectorS
       return { ...n, seq: n.seq + 1, swims: [...n.swims, { id: n.seq + 1, pupil: event.pupil, t: event.t }].slice(-8) };
     case 'wave':
       return { ...n, waveAt: event.t };
+    case 'crown': {
+      const who = event.holder ? (event.team ? `${TEAM_NAME[event.holder as TeamId]} TEAM` : n.view?.showNames ? nm(event.holder) : 'A NEW KING') : null;
+      return {
+        ...n, crownSeq: n.crownSeq + 1, crownAt: event.t, crownFrom: event.from,
+        banner: who ? { text: `👑 ${who} TAKES THE CROWN!`, kind: 'golden', until: event.t + 2600 } : n.banner,
+      };
+    }
+    case 'crown_paid':
+      return { ...n, seq: n.seq + 1, crownPays: [...n.crownPays, { id: n.seq + 1, holder: event.holder, points: event.points, t: event.t }].slice(-4) };
+    case 'lot_open':
+      return { ...n, lotAt: event.t, bids: [], banner: { text: event.kind === 'mystery' ? '🎁 A MYSTERY BOX! Start your bids!' : event.kind === 'dragon' ? '🐉 THE GOLDEN DRAGON! The last treasure!' : '🔔 A NEW TREASURE! Start your bids!', kind: 'golden', until: event.t + 2600 } };
+    case 'bid':
+      return { ...n, seq: n.seq + 1, bids: [...n.bids, { id: n.seq + 1, pupil: event.pupil, amount: event.amount, t: event.t }].slice(-6) };
+    case 'lot_sold': {
+      const who = n.view?.showNames ? nm(event.pupil) : event.team ? `${TEAM_NAME[event.team]} TEAM` : 'A collector';
+      const deal = event.value > event.bid ? ' A bargain!' : '';
+      return { ...n, sale: { lot: event.lot, kind: event.kind, pupil: event.pupil, bid: event.bid, value: event.value, stolen: false, t: event.t }, banner: { text: `🔨 SOLD to ${who} for ${event.bid}!${deal}`, kind: 'golden', until: event.t + 3200 } };
+    }
+    case 'lot_unsold':
+      return { ...n, sale: { lot: event.lot, kind: null, pupil: null, bid: 0, value: 0, stolen: event.stolen, t: event.t } };
     case 'again':
       return afterAgain(n);
     case 'pause':
@@ -355,6 +387,18 @@ export function projectorAct(s: ProjectorState, a: ProjectorAction): ProjectorSt
 
 /** What the announcer and sound do for an event (the screen throttles hit sounds). */
 export function soundFor(e: FeedEvent, arena: Arena | null | undefined = 'boss'): { play?: Parameters<ShowdownSound['play']>[0]; say?: string } {
+  // Narration every arena shares (James, 24 Nov 2026: more Bella during the game).
+  switch (e.type) {
+    case 'streak': return e.streak === 5 ? { play: 'chime', say: NARRATION.fiveRow } : e.streak === 10 ? { play: 'fanfare', say: NARRATION.tenRow } : {};
+    case 'lucky_chest': return { play: 'chime', say: NARRATION.luckyChest };
+    case 'revive': return { play: 'chime', say: NARRATION.revive };
+    case 'enrage': return { play: 'roar', say: ARENA_CALLS[arena ?? 'boss'].enrage };
+    case 'golden_end': return { say: NARRATION.goldenEnd };
+    case 'pause': return { say: NARRATION.paused };
+    case 'resume': return { play: 'whoosh', say: NARRATION.resumed };
+    case 'boss_turns': return { play: 'roar', say: { red: NARRATION.turnRed, blue: NARRATION.turnBlue, gold: NARRATION.turnGold, green: NARRATION.turnGreen }[e.team] };
+    default: break;
+  }
   if (arena && arena !== 'boss') {
     const L = arenaWords(arena).lines;
     switch (e.type) {
@@ -371,6 +415,11 @@ export function soundFor(e: FeedEvent, arena: Arena | null | undefined = 'boss')
       case 'washed_up': return { play: 'whoosh' };
       case 'swam_back': return { play: 'chime' };
       case 'wave': return { play: 'crack' };
+      case 'lot_open': return { play: 'chime', say: e.kind === 'mystery' ? AUCTION_LINES.mystery : e.kind === 'dragon' ? AUCTION_LINES.dragon : AUCTION_LINES.lot };
+      case 'bid': return { play: 'hit' };
+      case 'lot_sold': return { play: 'clang', say: AUCTION_LINES.sold };
+      case 'lot_unsold': return e.stolen ? { play: 'crack' } : { say: AUCTION_LINES.unsold };
+      case 'crown': return e.holder ? { play: 'fanfare', say: e.team ? HILL_LINES[e.holder as TeamId] : HILL_LINES.newKing } : { play: 'crack' };
       default: break;
     }
   }
@@ -382,12 +431,9 @@ export function soundFor(e: FeedEvent, arena: Arena | null | undefined = 'boss')
     case 'seam_new': return { play: 'chime' };
     case 'shield_held': return { play: 'clang', say: ANNOUNCER.held };
     case 'shield_broke': return { play: 'crack', say: ANNOUNCER.broke };
-    case 'revive': return { play: 'chime' };
     case 'weak_spot': return { play: 'whoosh', say: ANNOUNCER.weakSpot };
     case 'golden': return { play: 'chime', say: ANNOUNCER.golden };
     case 'phase': return { play: 'roar', say: ANNOUNCER.phase };
-    case 'boss_turns': return { play: 'roar' };
-    case 'enrage': return { play: 'roar' };
     case 'final': return { play: 'drum', say: ANNOUNCER.thirty };
     case 'boss_beaten': return { play: 'cheer', say: ANNOUNCER.beaten };
     case 'time_up': return { say: ANNOUNCER.timeUp };

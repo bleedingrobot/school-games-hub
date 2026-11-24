@@ -8,6 +8,8 @@ import { makeSchedule } from './schedule';
 import { playRound } from './sim';
 import { SKYCLIMB } from './skyclimb';
 import { ISLAND, shoreAt } from './island';
+import { HILL } from './hill';
+import { AUCTION, bid, coinsOf } from './auction';
 import { balanceTeams } from './teams';
 import type { Mode, Round, ShowdownEvent } from './types';
 
@@ -388,6 +390,70 @@ describe('Class Showdown rules', () => {
     expect(of(evs, 'wave')[0].pupils).toContain('p3');
     expect(r.players.p3.isle!.rock).toBe(true);
     const won = Array.from({ length: 24 }, (_, i) => playRound({ seed: 500 + i, size: 24, lengthMin: 10, mode: 'class', arena: 'island' }).beaten).filter(Boolean).length;
+    expect(won).toBeGreaterThanOrEqual(14);
+    expect(won).toBeLessThanOrEqual(23);
+  });
+  it('king of the hill: the crown goes to the most points in the last 30 seconds, pays its holder, swings, is knocked off by a broken charge, about 80% won', () => {
+    const r = newRound({ seed: 9, mode: 'solo', lengthMin: 10, bossHealth: 100000 });
+    r.arena = 'hill';
+    for (const p of ids(3)) join(r, p);
+    start(r);
+    r.schedule = [];
+    for (const t of [0, 4000]) answer(r, 'p1', true, t);
+    expect(of(advance(r, HILL.everyMs), 'crown')[0]).toMatchObject({ holder: 'p1', from: null });
+    const before = r.players.p1.score;
+    expect(of(advance(r, HILL.everyMs * 2), 'crown_paid')[0]).toMatchObject({ holder: 'p1', points: HILL.crownPoints });
+    expect(r.players.p1.score).toBe(before + HILL.crownPoints);
+    // p2 has a burst while p1 stops: after p1's points fall out of the 30 seconds, p2 takes it.
+    const evs: ShowdownEvent[] = [];
+    for (let t = 12000; t <= 40000; t += 4000) evs.push(...answer(r, 'p2', true, t).events);
+    const swing = of([...evs, ...advance(r, 45000)], 'crown');
+    expect(swing[swing.length - 1]).toMatchObject({ holder: 'p2', from: 'p1' });
+    // A charge nobody holds back knocks the crown off.
+    r.schedule = [{ at: 50000, kind: 'wind_up' }];
+    const knocked = of(advance(r, 80000), 'crown').find((e) => e.holder === null);
+    expect(knocked?.from).toBe('p2');
+    const won = Array.from({ length: 24 }, (_, i) => playRound({ seed: 500 + i, size: 24, lengthMin: 10, mode: 'class', arena: 'hill' }).beaten).filter(Boolean).length;
+    expect(won).toBeGreaterThanOrEqual(14);
+    expect(won).toBeLessThanOrEqual(23);
+  });
+  it('auction house: right answers earn coins, a treasure goes up every minute, the top bid buys it, fortune = coins + treasure, no bidding against your own team, thieves steal, about 80% won', () => {
+    const r = newRound({ seed: 9, mode: 'teams2', lengthMin: 5, bossHealth: 100000 });
+    r.arena = 'auction';
+    for (const p of ids(4)) join(r, p);
+    start(r);
+    r.schedule = [];
+    for (let t = 0; t <= 24000; t += 4000) for (const k of ['p1', 'p2', 'p3', 'p4']) answer(r, k, true, t + 100);
+    const up = of(advance(r, AUCTION.firstMs), 'lot_open')[0];
+    expect(up).toMatchObject({ lot: 0, endsAt: AUCTION.firstMs + AUCTION.openMs });
+    const lot = r.auction!.lots[0];
+    const [a, b] = r.order.filter((k) => r.players[k].team === r.players.p1.team);
+    const other = r.order.find((k) => r.players[k].team !== r.players[a].team)!;
+    const coins = coinsOf(r.players[a]);
+    const evs: ShowdownEvent[] = [];
+    expect(bid(r, a, lot.min - 5, evs)).toBe('too_low');
+    expect(bid(r, a, coins + 10, evs)).toBe('too_poor');
+    expect(bid(r, a, lot.min, evs)).toBeNull();
+    expect(bid(r, b, lot.min + 10, evs)).toBe('own_team');
+    expect(bid(r, other, lot.min, evs)).toBe('too_low');
+    expect(bid(r, other, lot.min + 10, evs)).toBeNull();
+    expect(bid(r, a, lot.min + 20, evs)).toBeNull();
+    const before = r.players[a].score;
+    const sold = of(advance(r, AUCTION.firstMs + AUCTION.openMs), 'lot_sold')[0];
+    expect(sold).toMatchObject({ pupil: a, bid: lot.min + 20, value: lot.value });
+    expect(r.players[a].score).toBe(before + lot.value - (lot.min + 20));
+    expect(coinsOf(r.players[a])).toBe(coins - (lot.min + 20));
+    // Thieves nobody stops steal the next treasure, and nobody pays.
+    for (const k of r.order) answer(r, k, true, 85000);
+    r.schedule = [{ at: AUCTION.firstMs + AUCTION.everyMs + 1000, kind: 'wind_up' }];
+    const stolen = of(advance(r, AUCTION.firstMs + AUCTION.everyMs + 19000), 'lot_unsold')[0];
+    expect(stolen).toMatchObject({ lot: 1, stolen: true });
+    // The last treasure is always the golden dragon, and none goes up too late to close before the end.
+    advance(r, 5 * 60000 - 1);
+    const lots = r.auction!.lots;
+    expect(lots[lots.length - 1].kind).toBe('dragon');
+    expect(lots.every((l) => l.endsAt <= 5 * 60000 - AUCTION.endGapMs)).toBe(true);
+    const won = Array.from({ length: 24 }, (_, i) => playRound({ seed: 500 + i, size: 24, lengthMin: 10, mode: 'class', arena: 'auction' }).beaten).filter(Boolean).length;
     expect(won).toBeGreaterThanOrEqual(14);
     expect(won).toBeLessThanOrEqual(23);
   });

@@ -12,6 +12,8 @@ import { ARENA_CHOICES, arenaWords, rolesNeeded } from './arenaWords';
 import { BossStandIn } from './BossStandIn';
 import type { ShowdownLink } from './link';
 import { AWARD_WORDS, TEAM_WORDS, bestComeback, initialState, isGoldRush, ordinal, projectorAct, soundFor, type DrySeam, type HitBurst, type ProjectorState, type ShowdownSound } from './projectorState';
+import { TREASURE } from './treasures';
+import { ARENA_CALLS, NARRATION } from './voiceLines';
 import './projector.css';
 
 const ART = import.meta.glob('./art/paint/**/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
@@ -115,7 +117,48 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
 
   const view = ps.view;
   arenaRef.current = view?.arena ?? 'boss';
+  soundRef.current?.setArena?.(arenaRef.current);
   const roundNow = view && view.startedAt !== null ? Math.max(0, (view.pausedAt ?? now + offset) - view.startedAt) : 0;
+
+  // Narration for moments that aren't one event (James, 24 Nov 2026: "more narration with Bella... like more guards
+  // needed"): halfway and nearly there, one minute left, the roles the class is short of (every 25 seconds while it is,
+  // never during a shield check), a new leader in solo, and a shield check that's nearly held. audio.ts spaces them out.
+  const told = useRef({ round: -1, halfway: false, nearly: false, minute: false, needAt: -Infinity, leader: '', leaderAt: -Infinity, shieldAt: 0 });
+  useEffect(() => {
+    const v = ps.view;
+    const snd = soundRef.current;
+    if (!v || !snd || v.pausedAt) return;
+    const k = told.current;
+    if (k.round !== ps.startSeq) Object.assign(k, { round: ps.startSeq, halfway: false, nearly: false, minute: false, needAt: -Infinity, leader: '', leaderAt: -Infinity, shieldAt: 0 });
+    const calls = ARENA_CALLS[v.arena ?? 'boss'];
+    const nowMs = Date.now();
+    if (v.state === 'lobby' || (v.state === 'live' && !(ps.shield && ps.shield.state === null))) {
+      const needs = v.mode === 'solo' ? [] : rolesNeeded(v.roles?.all);
+      if (needs.length && nowMs - k.needAt > 25000) {
+        k.needAt = nowMs;
+        snd.say(needs[0] === 'guard' ? calls.guards : calls.healer);
+      }
+    }
+    if (v.state !== 'live') return;
+    const done = 1 - v.boss.hp / Math.max(1, v.boss.max);
+    if (v.boss.max > 0 && done >= 0.5 && !k.halfway) { k.halfway = true; snd.say(NARRATION.halfway); }
+    if (v.boss.max > 0 && done >= 0.85 && !k.nearly) { k.nearly = true; snd.say(NARRATION.nearly); }
+    const left = v.lengthMin * 60000 - roundNow;
+    if (left <= 60000 && left > 40000 && !k.minute) { k.minute = true; snd.say(NARRATION.oneMinute); }
+    if (ps.shield && ps.shield.state === null && ps.shield.needed > 0 && ps.shield.got / ps.shield.needed >= 0.8 && k.shieldAt !== ps.shield.endsAt) {
+      k.shieldAt = ps.shield.endsAt;
+      snd.say(NARRATION.shieldClose);
+    }
+    if (v.mode === 'solo') {
+      const top = ps.order.map((id) => ps.roster[id]).filter((r) => r.score > 0).sort((a, b) => b.score - a.score)[0];
+      if (top && top.id !== k.leader) {
+        const had = k.leader !== '';
+        k.leader = top.id;
+        // Collapsed: a lead that swaps back and forth is called at most every 20 seconds.
+        if (had && nowMs - k.leaderAt > 20000 && roundNow > 30000) { k.leaderAt = nowMs; snd.say(NARRATION.newLeader); }
+      }
+    }
+  }, [ps, roundNow]);
 
   useEffect(() => {
     void link.clockOffset().then(setOffset).catch(() => undefined);
@@ -176,7 +219,8 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
         const now = psRef.current;
         if (v.state === 'over' && v.result === 'beaten' && !now.beaten) {
           dispatch({ kind: 'feed', event: { type: 'boss_beaten', t: v.t, lastHit: null } });
-          soundRef.current?.play('cheer');
+          const snd = soundRef.current;
+          snd?.play('cheer');
         }
         if (v.state === 'over' && out.body.recap && !now.recap) dispatch({ kind: 'feed', event: { type: 'recap', t: v.t, recap: out.body.recap as never } });
       }, () => undefined);
@@ -288,12 +332,14 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
   const gr = arenaNow === 'goldrush';
   const sky = arenaNow === 'skyclimb';
   const isle = arenaNow === 'island';
+  const hill = arenaNow === 'hill';
+  const auc = arenaNow === 'auction';
   const winding = !!ps.shield && ps.shield.state === null && roundNow < ps.shield.endsAt && view?.state === 'live';
   const caving = gr && winding;
   const paused = !!view?.pausedAt;
   const live = state === 'live';
   const final = ps.final && live;
-  const stageClass = ['sd-p', `sd-p--p${ps.phase}`, gr ? 'sd-p--gr' : '', caving ? 'sd-p--cavein' : '', gr && ps.weakUntil > roundNow && live ? 'sd-p--lode' : '', sky ? 'sd-p--sky' : '', sky && winding ? 'sd-p--storm' : '', sky && ps.weakUntil > roundNow && live ? 'sd-p--updraft' : '', isle ? 'sd-p--isle' : '', isle && winding ? 'sd-p--bigwave' : '', shaking ? 'sd-p--shake' : '', final ? 'sd-p--final' : '', roundNow - ps.phaseAt < 3200 && ps.phaseAt > 0 && live ? 'sd-p--transform' : ''].filter(Boolean).join(' ');
+  const stageClass = ['sd-p', `sd-p--p${ps.phase}`, gr ? 'sd-p--gr' : '', caving ? 'sd-p--cavein' : '', gr && ps.weakUntil > roundNow && live ? 'sd-p--lode' : '', sky ? 'sd-p--sky' : '', sky && winding ? 'sd-p--storm' : '', sky && ps.weakUntil > roundNow && live ? 'sd-p--updraft' : '', isle ? 'sd-p--isle' : '', isle && winding ? 'sd-p--bigwave' : '', hill ? 'sd-p--hill' : '', hill && winding ? 'sd-p--charge' : '', hill && ps.weakUntil > roundNow && live ? 'sd-p--double' : '', auc ? 'sd-p--auc' : '', auc && ps.view && isTeamMode(ps.view) ? 'sd-p--aucteams' : '', ps.view?.mode === 'solo' ? 'sd-p--solo' : '', auc && winding ? 'sd-p--thieves' : '', auc && ps.weakUntil > roundNow && live ? 'sd-p--goldenhour' : '', shaking ? 'sd-p--shake' : '', final ? 'sd-p--final' : '', roundNow - ps.phaseAt < 3200 && ps.phaseAt > 0 && live ? 'sd-p--transform' : ''].filter(Boolean).join(' ');
 
   return (
     <div ref={stageRef} className={stageClass} data-state={state ?? 'idle'}>
@@ -347,8 +393,8 @@ export function Projector({ link, classId, className, sound, onMute }: { link: S
 
 function Backdrop({ state, boss, arena }: { state: string | undefined; boss: BossId | undefined; arena: Arena }) {
   const gold = arena === 'goldrush';
-  const img = gold ? art('back', 'gold-rush') : arena === 'skyclimb' ? art('back', 'sky-climb') : arena === 'island' ? art('back', 'shrinking-island') : state === 'lobby' || !state ? art('back', 'lobby') : art('back', bossInfo(boss).backdrop) ?? art('back', 'river-valley');
-  return <div className={`sd-p-back${gold ? ' sd-p-back--gold' : ''}${arena === 'skyclimb' ? ' sd-p-back--sky' : ''}${arena === 'island' ? ' sd-p-back--isle' : ''}${img ? '' : ' sd-p-back--plain'}`} style={img ? ({ backgroundImage: `url(${img})` } as CSSProperties) : undefined} aria-hidden="true" />;
+  const img = gold ? art('back', 'gold-rush') : arena === 'skyclimb' ? art('back', 'sky-climb') : arena === 'island' ? art('back', 'shrinking-island') : arena === 'hill' ? art('back', 'king-hill') : arena === 'auction' ? art('back', 'auction-house') : state === 'lobby' || !state ? art('back', 'lobby') : art('back', bossInfo(boss).backdrop) ?? art('back', 'river-valley');
+  return <div className={`sd-p-back${gold ? ' sd-p-back--gold' : ''}${arena === 'skyclimb' ? ' sd-p-back--sky' : ''}${arena === 'island' ? ' sd-p-back--isle' : ''}${arena === 'hill' ? ' sd-p-back--hill' : ''}${arena === 'auction' ? ' sd-p-back--auc' : ''}${img ? '' : ' sd-p-back--plain'}`} style={img ? ({ backgroundImage: `url(${img})` } as CSSProperties) : undefined} aria-hidden="true" />;
 }
 
 /** Boss choice before opening (and for "Again?"): only the bosses the class has open. "" = the next one in order. */
@@ -448,7 +494,7 @@ function Lobby({ ps, className, roster, onMove }: { ps: ProjectorState; classNam
   };
   return (
     <div className="sd-p-lobby" ref={lobbyRef}>
-      {ps.view && (isGoldRush(ps.view) ? <GoldEntrance seq={ps.againSeq} /> : ps.view.arena === 'skyclimb' ? <SkyEntrance seq={ps.againSeq} /> : ps.view.arena === 'island' ? <IsleEntrance seq={ps.againSeq} /> : <Entrance boss={ps.view.bossId} seq={ps.againSeq} />)}
+      {ps.view && (isGoldRush(ps.view) ? <GoldEntrance seq={ps.againSeq} /> : ps.view.arena === 'skyclimb' ? <SkyEntrance seq={ps.againSeq} /> : ps.view.arena === 'island' ? <IsleEntrance seq={ps.againSeq} /> : ps.view.arena === 'hill' ? <HillEntrance seq={ps.againSeq} /> : ps.view.arena === 'auction' ? <AuctionEntrance seq={ps.againSeq} /> : <Entrance boss={ps.view.bossId} seq={ps.againSeq} />)}
       <div className="sd-p-lobby__join">Join now!</div>
       {className && <div className="sd-p-lobby__class">{className}</div>}
       <p className="sd-p-lobby__hint">{teamMode ? 'Tap a name, then tap a team (or drag it) to move it' : arenaWords(ps.view?.arena).lobbyHint ?? 'Open Class Showdown on your iPad'}</p>
@@ -549,7 +595,7 @@ function Battle({ ps, roundNow, flinch }: { ps: ProjectorState; roundNow: number
   const bursts = ps.bursts.filter((b) => roundNow - b.t < 2500 && roundNow >= b.t - 500);
   const heals = ps.heals.filter((h) => roundNow - h.t < 2800);
   const crewRef = useRef<HTMLUListElement>(null);
-  const dug = new Set(gr || sky || view.arena === 'island' ? ps.bursts.filter((b) => roundNow - b.t < 1300 && roundNow >= b.t).map((b) => b.pupil) : []);
+  const dug = new Set(gr || sky || view.arena === 'island' || view.arena === 'auction' ? ps.bursts.filter((b) => roundNow - b.t < 1300 && roundNow >= b.t).map((b) => b.pupil) : []);
   useFit(crewRef, null, `${roster.length}${showNames}${roster.map((r) => r.name.length).join()}`, () => Math.max(12, Math.min(window.innerWidth * 0.016, window.innerHeight * 0.03, 22)), 8);
 
   return (
@@ -572,6 +618,8 @@ function Battle({ ps, roundNow, flinch }: { ps: ProjectorState; roundNow: number
       {gr && <Mine ps={ps} roundNow={roundNow} weak={weak} over={over} />}
       {sky && <Climb ps={ps} roundNow={roundNow} pct={pct} weak={weak} over={over} />}
       {view.arena === 'island' && <Isle ps={ps} roundNow={roundNow} pct={pct} weak={weak} over={over} />}
+      {view.arena === 'hill' && <Hill ps={ps} roundNow={roundNow} pct={pct} weak={weak} over={over} />}
+      {view.arena === 'auction' && <Auction ps={ps} roundNow={roundNow} pct={pct} weak={weak} over={over} />}
       {bossArena && <div className={`sd-p-bosswrap${teamMode ? ' sd-p-bosswrap--teams' : ''}${over && ps.beaten ? ' sd-p-bosswrap--beaten' : ''}`} style={t2 ? ({ left: `calc(50% + ${Math.max(-1, Math.min(1, view.tug)) * 16}vw)` } as CSSProperties) : undefined}>
         {facing && <div key={`gz${ps.turnSeq}`} className={`sd-p-gaze sd-p-team--${facing}`} aria-hidden="true" />}
         {roaring && ps.turn && <div key={`rw${ps.turnSeq}`} className={`sd-p-roarwave sd-p-team--${ps.turn.team}`} aria-hidden="true"><i /><i /><i /></div>}
@@ -599,7 +647,7 @@ function Battle({ ps, roundNow, flinch }: { ps: ProjectorState; roundNow: number
             const dazed = (ps.dazed[r.id] ?? 0) > roundNow;
             const portrait = art('roles', r.role);
             return (
-              <li key={r.id} data-pid={r.id} className={`sd-p-chip${r.team ? ` sd-p-team--${r.team}` : ''}${dazed ? ' sd-p-chip--dazed' : ''}${dug.has(r.id) ? ' sd-p-chip--got' : ''}`}>
+              <li key={r.id} data-pid={r.id} className={`sd-p-chip${view.crown?.holder && (view.crown.holder === r.id || view.crown.holder === r.team) ? ' sd-p-chip--king' : ''}${r.team ? ` sd-p-team--${r.team}` : ''}${dazed ? ' sd-p-chip--dazed' : ''}${dug.has(r.id) ? ' sd-p-chip--got' : ''}`}>
                 <span className={`sd-p-chip__role sd-p-role--${r.role}`} title={ROLE_WORD[r.role]}>{portrait ? <img src={portrait} alt="" /> : ROLE_LETTER[r.role]}</span>
                 {showNames && <span className="sd-p-chip__name">{r.name}</span>}
                 {dazed && <span className="sd-p-daze" aria-hidden="true"><b>★</b><b>★</b><b>★</b></span>}
@@ -707,7 +755,7 @@ function TeamFlags({ ps, facing }: { ps: ProjectorState; facing: TeamId | null }
   const t2 = view.mode === 'teams2';
   const gr = isGoldRush(view);
   const unit = arenaWords(view.arena).teamUnit;
-  const val = (k: TeamId) => Math.round((t2 || unit ? view.teamDamage[k] : view.teamPoints[k]) ?? 0);
+  const val = (k: TeamId) => Math.round(((t2 && view.arena !== 'hill' && view.arena !== 'auction') || unit ? view.teamDamage[k] : view.teamPoints[k]) ?? 0);
   const max = Math.max(1, ...view.teams.map(val));
   return (
     <div className="sd-p-flags" aria-label="Teams">
@@ -720,7 +768,7 @@ function TeamFlags({ ps, facing }: { ps: ProjectorState; facing: TeamId | null }
             <Cloth team={k} className="sd-p-flag__cloth">
               <b>{TEAM_SHORT[k]}</b>
               <strong>{unit === 'metres' ? val(k) * 10 : val(k)}</strong>
-              <small>{unit ?? (t2 ? 'damage' : 'points')}</small>
+              <small>{unit ?? (t2 && view.arena !== 'hill' && view.arena !== 'auction' ? 'damage' : view.arena === 'auction' ? 'fortune' : 'points')}</small>
             </Cloth>
             {gr ? <GoldPile share={val(k) / max} amount={val(k)} team={k} /> : <div className="sd-p-flag__bar"><i style={{ transform: `scaleX(${val(k) / max})` }} /></div>}
             {facing === k && <div className="sd-p-flag__faces">BOSS FACES YOU</div>}
@@ -1152,6 +1200,256 @@ function RaftSail({ sailed, pct }: { sailed: boolean; pct: number }) {
   );
 }
 
+/** King of the Hill lobby: the hill rises, the throne on top, the crown spinning down onto it, and the cry. */
+function HillEntrance({ seq }: { seq: number }) {
+  const crown = art('hill', 'crown');
+  return (
+    <>
+      <div key={`he${seq}`} className="sd-p-hill-entrance" aria-hidden="true">
+        <span className="sd-p-hill-entrance__mound" />
+        <span className="sd-p-hill-entrance__crown">{crown ? <img src={crown} alt="" /> : '👑'}</span>
+      </div>
+      <div key={`hr${seq}`} className="sd-p-roar sd-p-roar--hill" role="status">Who will wear the crown?</div>
+    </>
+  );
+}
+
+/** A crown holder's name for the screen: a team, a pupil (or "A hero" with names hidden), or nobody yet. */
+function holderName(ps: ProjectorState, holder: string | null, team: boolean): string {
+  if (!holder) return 'Up for grabs!';
+  if (team) return `${TEAM_SHORT[holder as TeamId]} TEAM`;
+  return ps.view?.showNames ? ps.names[holder] ?? ps.roster[holder]?.name ?? 'A hero' : 'A hero';
+}
+
+/** The castle on the hilltop, built in three parts as the class answers: the wall, the battlements, the towers and flags. */
+function Castle({ pct }: { pct: number }) {
+  const part = (from: number) => Math.max(0, Math.min(1, (pct - from) / 33.4));
+  return (
+    <div className="sd-p-castle" aria-hidden="true">
+      <span className="sd-p-castle__tower sd-p-castle__tower--l" style={{ transform: `scaleY(${part(66.6)})` }}><i /></span>
+      <span className="sd-p-castle__tower sd-p-castle__tower--r" style={{ transform: `scaleY(${part(66.6)})` }}><i /></span>
+      <span className="sd-p-castle__keep" style={{ transform: `scaleY(${part(33.3)})` }} />
+      <span className="sd-p-castle__wall" style={{ transform: `scaleY(${part(0)})` }}><b /></span>
+    </div>
+  );
+}
+
+/**
+ * King of the Hill: the hill with the castle rising on top, the throne in front with the crown floating over it and the
+ * holder's name, the crown race (most points in the last 30 seconds) with a ring counting down to the next crown check,
+ * "+5 👑" as the crown pays, a burst and "NEW KING!" when it changes hands, a crash when a charge knocks it off, knights
+ * galloping in during a charge, and golden rays for double crown.
+ */
+function Hill({ ps, roundNow, pct, weak, over }: { ps: ProjectorState; roundNow: number; pct: number; weak: boolean; over: boolean }) {
+  const view = ps.view as RoomView;
+  const crown = view.crown ?? { holder: null, team: false, since: 0, nextAt: 0, contenders: [], held: {} };
+  const crownImg = art('hill', 'crown');
+  const throne = art('hill', 'throne');
+  const sh = ps.shield;
+  const charging = !!sh && sh.state === null && roundNow < sh.endsAt && !over;
+  const fresh = ps.crownSeq > 0 && roundNow - ps.crownAt < 2400 && roundNow >= ps.crownAt;
+  const knocked = fresh && !crown.holder;
+  const pays = ps.crownPays.filter((x) => roundNow - x.t < 1600 && roundNow >= x.t);
+  const top = Math.max(1, ...crown.contenders.map((c) => c[1]));
+  const ring = Math.max(0, Math.min(1, 1 - (crown.nextAt - roundNow) / 5000));
+  const name = holderName(ps, crown.holder, crown.team);
+  const team = crown.team && crown.holder ? (crown.holder as TeamId) : crown.holder ? ps.roster[crown.holder]?.team ?? null : null;
+  return (
+    <>
+      <div className="sd-p-hill" aria-hidden="true">
+        <span className="sd-p-hill__mound" />
+        <Castle pct={over && ps.beaten ? 100 : pct} />
+        {weak && !over && <span className="sd-p-hill__rays" />}
+        <div className={`sd-p-throne${crown.holder ? ' sd-p-throne--held' : ''}${team ? ` sd-p-team--${team}` : ''}`}>
+          <span className="sd-p-throne__seat">{throne ? <img src={throne} alt="" /> : <i />}</span>
+          <span key={`c${ps.crownSeq}`} className={`sd-p-throne__crown${fresh && crown.holder ? ' sd-p-throne__crown--new' : ''}${knocked ? ' sd-p-throne__crown--knocked' : ''}${!crown.holder && !knocked ? ' sd-p-throne__crown--free' : ''}`}>
+            {crownImg ? <img src={crownImg} alt="" /> : '👑'}
+          </span>
+          {fresh && crown.holder && <span key={`b${ps.crownSeq}`} className="sd-p-throne__burst"><b>NEW KING!</b>{Array.from({ length: 12 }, (_, i) => <i key={i} style={{ '--i': i } as CSSProperties} />)}</span>}
+          {knocked && <span key={`k${ps.crownSeq}`} className="sd-p-throne__crash">CRASH!</span>}
+          <span key={`n${crown.holder ?? 'none'}`} className="sd-p-throne__name">{name}</span>
+          {crown.holder && <small className="sd-p-throne__held">wearing it {Math.max(0, Math.floor((roundNow - crown.since) / 1000))}s</small>}
+          {pays.map((x) => <span key={x.id} className="sd-p-throne__pay">+{x.points} 👑</span>)}
+        </div>
+      </div>
+      {!over && (
+        <aside className="sd-p-race" aria-label="Crown race">
+          <h2>👑 Crown race <svg viewBox="0 0 36 36" className="sd-p-race__ring"><circle cx="18" cy="18" r="15" /><circle cx="18" cy="18" r="15" className="on" strokeDasharray={94.2} strokeDashoffset={94.2 * (1 - ring)} transform="rotate(-90 18 18)" /></svg></h2>
+          <small>Most points in the last 30 seconds</small>
+          <ol>
+            {crown.contenders.map(([who, pts], i) => (
+              <li key={who} className={`sd-p-race__row${who === crown.holder ? ' sd-p-race__row--king' : ''}${crown.team ? ` sd-p-team--${who}` : ps.roster[who]?.team ? ` sd-p-team--${ps.roster[who].team}` : ''}`}>
+                <b>{i + 1}</b><span>{holderName(ps, who, crown.team)}</span><em>{pts}</em>
+                <i style={{ transform: `scaleX(${pts / top})` }} />
+              </li>
+            ))}
+            {!crown.contenders.length && <li className="sd-p-race__row sd-p-race__row--empty">Answer to get on the board!</li>}
+          </ol>
+        </aside>
+      )}
+      {charging && <Charge heavy={!!sh?.enraged} />}
+    </>
+  );
+}
+
+/** A challenger's charge: knights galloping in from the side in a cloud of dust, banners flying. */
+function Charge({ heavy }: { heavy: boolean }) {
+  return (
+    <div className={`sd-p-charge${heavy ? ' sd-p-charge--heavy' : ''}`} aria-hidden="true">
+      {Array.from({ length: heavy ? 7 : 5 }, (_, i) => <span key={i} className="sd-p-charge__knight" style={{ '--i': i, bottom: `${8 + (i % 3) * 6}vh` } as CSSProperties}>🐎</span>)}
+      <span className="sd-p-charge__dust" />
+    </div>
+  );
+}
+
+/** The King of the Hill recap scene: the finished castle (or nearly), and the crown floating over it. */
+function HillRecap({ ps, built, pct }: { ps: ProjectorState; built: boolean; pct: number }) {
+  const crown = art('hill', 'crown');
+  const held = Object.entries(ps.view?.crown?.held ?? {}).sort((a, b) => b[1] - a[1])[0];
+  return (
+    <div className={`sd-p-hillrecap${built ? ' sd-p-hillrecap--built' : ''}`} aria-hidden="true">
+      <span className="sd-p-hill__mound" />
+      <Castle pct={built ? 100 : pct} />
+      <span className="sd-p-hillrecap__crown">{crown ? <img src={crown} alt="" /> : '👑'}</span>
+      {held && <b className="sd-p-hillrecap__king">Longest reign: {holderName(ps, held[0], !!ps.view?.crown?.team)} ({Math.round(held[1] / 1000)}s)</b>}
+    </div>
+  );
+}
+
+/** Auction House lobby: the curtains part on an empty plinth under a spotlight, the gavel taps, and the cry. */
+function AuctionEntrance({ seq }: { seq: number }) {
+  const gavel = art('auction', 'gavel');
+  return (
+    <>
+      <div key={`ae${seq}`} className="sd-p-auc-entrance" aria-hidden="true">
+        <span className="sd-p-auc-entrance__curtain sd-p-auc-entrance__curtain--l" />
+        <span className="sd-p-auc-entrance__curtain sd-p-auc-entrance__curtain--r" />
+        <span className="sd-p-auc-entrance__gavel">{gavel ? <img src={gavel} alt="" /> : '🔨'}</span>
+      </div>
+      <div key={`ar${seq}`} className="sd-p-roar sd-p-roar--auc" role="status">Treasure for sale!</div>
+    </>
+  );
+}
+
+/** A treasure: its painting, or its stand-in (a mystery box is a wrapped box with a question mark). */
+function Treasure({ kind, className }: { kind: keyof typeof TREASURE; className?: string }) {
+  const img = kind === 'mystery' ? undefined : art('auction', kind);
+  return (
+    <span className={`sd-p-treasure sd-p-treasure--${kind}${className ? ` ${className}` : ''}`}>
+      {img ? <img src={img} alt="" /> : kind === 'mystery' ? <b>?</b> : <i>{TREASURE[kind].emoji}</i>}
+    </span>
+  );
+}
+
+/**
+ * Auction House: the royal treasury filling with coins on the left, the auction stage in the middle (a spotlit plinth
+ * with the treasure on sale turning slowly, what it's worth, the leading bid bumping up with each new bid and the
+ * bidder's name, a timer running down, the gavel coming down with "SOLD!"), the biggest fortunes on the right, the
+ * treasures sold so far on a shelf, thieves sneaking across during a wind-up, and golden light in the golden hour.
+ */
+function Auction({ ps, roundNow, pct, weak, over }: { ps: ProjectorState; roundNow: number; pct: number; weak: boolean; over: boolean }) {
+  const view = ps.view as RoomView;
+  const a = view.auction ?? { lot: null, nextAt: null, sold: [], rich: [], steps: [] };
+  const lot = a.lot;
+  const sh = ps.shield;
+  const sneaking = !!sh && sh.state === null && roundNow < sh.endsAt && !over;
+  const sale = ps.sale && roundNow - ps.sale.t < 4200 && roundNow >= ps.sale.t ? ps.sale : null;
+  const gavel = art('auction', 'gavel');
+  const coins = art('auction', 'coins');
+  const name = (id: string | null, team: TeamId | null = null) => (!id ? '' : view.showNames ? ps.names[id] ?? ps.roster[id]?.name ?? 'A collector' : team ? `${TEAM_SHORT[team]} TEAM` : 'A collector');
+  const leftMs = lot ? Math.max(0, lot.endsAt - roundNow) : 0;
+  const bids = ps.bids.filter((b) => roundNow - b.t < 1800 && roundNow >= b.t);
+  const soldKind = sale?.kind ?? null;
+  const nextIn = a.nextAt !== null ? Math.max(0, Math.ceil((a.nextAt - roundNow) / 1000)) : null;
+  return (
+    <>
+      <div className="sd-p-auc" aria-hidden="true">
+        <span className="sd-p-auc__curtain sd-p-auc__curtain--l" /><span className="sd-p-auc__curtain sd-p-auc__curtain--r" />
+        <span className="sd-p-auc__swag" />
+        {weak && !over && <span className="sd-p-auc__goldenhour" />}
+        <div className={`sd-p-auc__stage${lot ? ' sd-p-auc__stage--on' : ''}`}>
+          <span className="sd-p-auc__spot" />
+          <span className="sd-p-auc__plinth" />
+          {lot && <Treasure key={`l${lot.id}`} kind={lot.kind} className="sd-p-treasure--onsale" />}
+          {!lot && sale && !sale.stolen && soldKind && <Treasure key={`s${sale.lot}`} kind={soldKind} className="sd-p-treasure--sold" />}
+          {sale && <span key={`g${sale.t}`} className={`sd-p-auc__gavel${sale.stolen ? ' sd-p-auc__gavel--none' : ''}`}>{gavel ? <img src={gavel} alt="" /> : '🔨'}</span>}
+          {sale && !sale.stolen && sale.pupil && <span key={`sw${sale.t}`} className="sd-p-auc__sold"><b>SOLD!</b><small>{sale.value > sale.bid ? `Worth ${sale.value}: a bargain!` : sale.value < sale.bid ? `Worth ${sale.value}: paid too much!` : `Worth ${sale.value}`}</small>{Array.from({ length: 12 }, (_, i) => <i key={i} style={{ '--i': i } as CSSProperties} />)}</span>}
+          {sale && sale.stolen && <span key={`th${sale.t}`} className="sd-p-auc__stolen"><b>STOLEN!</b><em>🦹💨</em></span>}
+          {sale && !sale.stolen && !sale.pupil && <span key={`un${sale.t}`} className="sd-p-auc__unsold">No bids!</span>}
+        </div>
+        {lot ? (
+          <div key={`c${lot.id}`} className={`sd-p-auc__card${leftMs < 5000 ? ' sd-p-auc__card--last' : ''}`}>
+            <h2>{TREASURE[lot.kind].name}</h2>
+            <span className="sd-p-auc__worth">{lot.value === null ? 'Worth ??? coins' : `Worth ${lot.value} coins`}</span>
+            <div className={`sd-p-auc__top${lot.topTeam ? ` sd-p-team--${lot.topTeam}` : ''}`}>
+              <strong key={`b${lot.top}`}>{lot.top ? <>{lot.top} <i>🪙</i></> : <small>Bids from {lot.min} 🪙</small>}</strong>
+              {lot.topBy && <span key={`w${lot.topBy}`}>{name(lot.topBy, lot.topTeam)}</span>}
+            </div>
+            <span className="sd-p-auc__timer"><i style={{ transform: `scaleX(${leftMs / 20000})` }} /><b>{Math.ceil(leftMs / 1000)}s</b></span>
+            <small className="sd-p-auc__bids">{lot.bids} {lot.bids === 1 ? 'bid' : 'bids'}{leftMs < 5000 && lot.bids ? ' · Going, going…' : ''}</small>
+            {bids.map((b) => <span key={b.id} className="sd-p-auc__pop">+{b.amount} 🪙</span>)}
+          </div>
+        ) : !over && nextIn !== null ? (
+          <div className="sd-p-auc__card sd-p-auc__card--wait"><h2>Next treasure in</h2><strong>{nextIn}s</strong><small>Answer now to earn coins!</small></div>
+        ) : !over ? (
+          <div className="sd-p-auc__card sd-p-auc__card--wait"><h2>The auction is over</h2><small>Fill the treasury!</small></div>
+        ) : null}
+        <div className="sd-p-auc__treasury">
+          <span className="sd-p-auc__chest">{coins ? <img src={coins} alt="" /> : null}</span>
+          <GoldPile big share={pct / 100} amount={Math.round(((view.boss.max - view.boss.hp) / Math.max(1, view.boss.max)) * 100)} />
+          <b>Royal treasury {Math.floor(pct)}%</b>
+        </div>
+        {a.sold.length > 0 && (
+          <ul className="sd-p-auc__shelf">
+            {a.sold.slice(-8).map((x) => (
+              <li key={x.id} className={x.team ? `sd-p-team--${x.team}` : ''}>
+                <Treasure kind={x.kind} />
+                <small>{x.bid}→{x.value}</small>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      {!over && view.mode !== 'solo' && a.rich.length > 0 && (
+        <aside className="sd-p-race sd-p-race--auc" aria-label="Biggest fortunes">
+          <h2>💰 Biggest fortunes</h2>
+          <small>Coins + treasure</small>
+          <ol>
+            {a.rich.map((x, i) => (
+              <li key={x.id} className={`sd-p-race__row${ps.roster[x.id]?.team ? ` sd-p-team--${ps.roster[x.id].team}` : ''}`}>
+                <b>{i + 1}</b><span>{name(x.id, ps.roster[x.id]?.team ?? null)}</span><em>{x.fortune}</em>
+                <i style={{ transform: `scaleX(${x.fortune / Math.max(1, a.rich[0].fortune)})` }} />
+              </li>
+            ))}
+          </ol>
+        </aside>
+      )}
+      {sneaking && <Thieves heavy={!!sh?.enraged} />}
+    </>
+  );
+}
+
+/** Thieves sneaking across the auction house on tiptoe, under a sweeping red alarm light. */
+function Thieves({ heavy }: { heavy: boolean }) {
+  return (
+    <div className={`sd-p-thieves${heavy ? ' sd-p-thieves--heavy' : ''}`} aria-hidden="true">
+      <span className="sd-p-thieves__alarm" />
+      {Array.from({ length: heavy ? 5 : 3 }, (_, i) => <span key={i} className="sd-p-thieves__thief" style={{ '--i': i } as CSSProperties}>🦹</span>)}
+    </div>
+  );
+}
+
+/** The Auction House recap scene: the treasury overflowing (or nearly full) and every treasure sold, on show. */
+function AuctionRecap({ ps, full, pct }: { ps: ProjectorState; full: boolean; pct: number }) {
+  const sold = ps.view?.auction?.sold ?? [];
+  return (
+    <div className={`sd-p-aucrecap${full ? ' sd-p-aucrecap--full' : ''}`} aria-hidden="true">
+      <div className="sd-p-aucrecap__pile"><GoldPile big share={full ? 1 : pct / 100} amount={full ? 100 : pct} /></div>
+      <ul className="sd-p-aucrecap__row">{sold.map((x, i) => <li key={x.id} style={{ '--i': i } as CSSProperties}><Treasure kind={x.kind} /></li>)}</ul>
+    </div>
+  );
+}
+
 /** A heap of gold that grows with the team's share: a team's banner grows one, and the recap shows big ones. */
 function GoldPile({ share, amount, team, big = false }: { share: number; amount: number; team?: TeamId; big?: boolean }) {
   const s = 0.4 + 0.6 * Math.max(0, Math.min(1, share));
@@ -1191,8 +1489,10 @@ function Recap({ ps, stage, onAgain }: { ps: ProjectorState; stage: 0 | 1; onAga
   const gr = isGoldRush(ps.view);
   const sky = ps.view?.arena === 'skyclimb';
   const isle = ps.view?.arena === 'island';
+  const hill = ps.view?.arena === 'hill';
+  const auc = ps.view?.arena === 'auction';
   const W = arenaWords(ps.view?.arena);
-  const scene = gr ? art('back', 'gold-rush') : sky ? art('back', 'sky-climb') : isle ? art('back', 'shrinking-island') : art('back', beaten ? 'victory' : 'so-close');
+  const scene = gr ? art('back', 'gold-rush') : sky ? art('back', 'sky-climb') : isle ? art('back', 'shrinking-island') : hill ? art('back', 'king-hill') : auc ? art('back', 'auction-house') : art('back', beaten ? 'victory' : 'so-close');
   const words = { ...AWARD_WORDS, ...W.awards };
   const mountain = ps.view?.boss;
   const dugPct = mountain ? Math.round(Math.max(0, Math.min(1, 1 - mountain.hp / Math.max(1, mountain.max))) * 100) : 0;
@@ -1203,13 +1503,15 @@ function Recap({ ps, stage, onAgain }: { ps: ProjectorState; stage: 0 | 1; onAga
   const t2 = ps.view?.mode === 'teams2';
   const solo = rc?.winner && 'pupil' in rc.winner;
   return (
-    <div className={`sd-p-recap${beaten ? ' sd-p-recap--win' : ' sd-p-recap--close'}${gr ? ' sd-p-recap--gold' : ''}${sky ? ' sd-p-recap--sky' : ''}${isle ? ' sd-p-recap--isle' : ''}`}>
+    <div className={`sd-p-recap${beaten ? ' sd-p-recap--win' : ' sd-p-recap--close'}${gr ? ' sd-p-recap--gold' : ''}${sky ? ' sd-p-recap--sky' : ''}${isle ? ' sd-p-recap--isle' : ''}${hill ? ' sd-p-recap--hill' : ''}${auc ? ' sd-p-recap--auc' : ''}`}>
       {scene && <div className="sd-p-recap__scene" style={{ backgroundImage: `url(${scene})` }} aria-hidden="true" />}
       {(beaten || winTeam) && <Confetti team={winTeam} gold={gr} />}
       {stage === 0 && <div className="sd-p-recap__title" role="status">{W.recapTitle(beaten)}</div>}
       {stage === 0 && gr && mountain && <div className="sd-p-recap__heap"><GoldPile big share={dugPct / 100} amount={Math.round(mountain.max - mountain.hp)} /></div>}
       {stage === 0 && sky && <SummitFlag planted={beaten} pct={dugPct} />}
       {stage === 0 && isle && <RaftSail sailed={beaten} pct={dugPct} />}
+      {stage === 0 && hill && <HillRecap ps={ps} built={beaten} pct={dugPct} />}
+      {stage === 0 && auc && <AuctionRecap ps={ps} full={beaten} pct={dugPct} />}
       {stage === 1 && rc && (
         <div className="sd-p-recap__cards">
           <h2 className="sd-p-recap__head">{W.recapHead(beaten, dugPct, bossInfo(ps.view?.bossId).name)}</h2>
@@ -1225,7 +1527,7 @@ function Recap({ ps, stage, onAgain }: { ps: ProjectorState; stage: 0 | 1; onAga
               {rc.teams.map((t, i) => (
                 <div key={t.team} className={`sd-p-teamcard sd-p-team--${t.team}${i === 0 ? ' sd-p-teamcard--first' : ''}${gr ? ' sd-p-teamcard--gold' : ''}`}>
                   {gr && <GoldPile big team={t.team} share={t.damage / bestTeam} amount={t.damage} />}
-                  <b>{TEAM_WORDS[t.team]}</b><span>{gr ? `${t.damage} gold` : sky ? `${t.damage * 10} m climbed` : isle ? `${t.damage} planks` : t2 ? `${t.damage} damage` : `${t.points} points`}</span>{(t2 || gr || sky || isle) && <small>{t.points} points</small>}
+                  <b>{TEAM_WORDS[t.team]}</b><span>{gr ? `${t.damage} gold` : sky ? `${t.damage * 10} m climbed` : isle ? `${t.damage} planks` : auc ? `${t.points} fortune` : t2 && !hill ? `${t.damage} damage` : `${t.points} points`}</span>{((t2 && !hill && !auc) || gr || sky || isle) && <small>{t.points} points</small>}
                 </div>
               ))}
             </div>

@@ -9205,6 +9205,303 @@ function wave(r, events, broke = () => false) {
 	tide(r, events);
 }
 //#endregion
+//#region shared/showdown/hill.ts
+const HILL = {
+	/** The castle needs this much more than the boss has health (tuned with the simulator to about 80% won). */
+	castle: {
+		class: 1.05,
+		teams2: 1.01,
+		teams4: 1.03,
+		solo: 1.02
+	},
+	/** The crown goes to the most points in this long. */
+	windowMs: 3e4,
+	/** How often the crown is checked (and pays). */
+	everyMs: 5e3,
+	/** What the crown pays its holder each check (doubled during the weak spot). */
+	crownPoints: 5,
+	/** A pupil must have at least this many recent points to take the crown. */
+	minPoints: 10
+};
+/** Who a point counts for: the pupil, or their team in team modes. */
+const whoOf = (r, p) => r.teams.length && p.team ? p.team : p.id;
+/** At the start: the castle is set and the crown is up for grabs. */
+function setHill(r) {
+	r.boss.max = Math.round(r.boss.max * HILL.castle[r.mode]);
+	r.boss.hp = r.boss.max;
+	r.crown = {
+		holder: null,
+		team: r.teams.length > 0,
+		since: 0,
+		nextAt: HILL.everyMs,
+		recent: [],
+		held: {}
+	};
+}
+/** A right answer's points count towards the crown. */
+function notePoints(r, p, points) {
+	if (!r.crown || points <= 0) return;
+	r.crown.recent.push([
+		r.t,
+		whoOf(r, p),
+		points
+	]);
+}
+/** The points each pupil (or team) scored in the last 30 seconds, most first. */
+function contenders(r, t = r.t) {
+	const c = r.crown;
+	if (!c) return [];
+	const sums = new Map();
+	for (const [at, who, pts] of c.recent) if (t - at <= HILL.windowMs) sums.set(who, (sums.get(who) ?? 0) + pts);
+	return [...sums.entries()].sort((a, b) => b[1] - a[1]);
+}
+function pay(r, holder, amount) {
+	if (r.crown?.team) {
+		const team = holder;
+		r.teamPoints[team] = (r.teamPoints[team] ?? 0) + amount;
+		const members = r.order.filter((id) => r.players[id].team === team);
+		members.forEach((id, i) => {
+			r.players[id].score += Math.floor(amount / members.length) + (i < amount % members.length ? 1 : 0);
+		});
+	} else if (r.players[holder]) r.players[holder].score += amount;
+}
+/** Every 5 seconds: the crown pays whoever wears it, then goes to whoever scored most in the last 30 seconds. */
+function crownTick(r, events) {
+	const c = r.crown;
+	if (!c) return;
+	c.recent = c.recent.filter(([at]) => r.t - at <= HILL.windowMs);
+	if (c.holder) {
+		const amount = HILL.crownPoints * (r.t < r.weakSpotUntil ? 2 : 1);
+		pay(r, c.holder, amount);
+		c.held[c.holder] = (c.held[c.holder] ?? 0) + HILL.everyMs;
+		events.push({
+			type: "crown_paid",
+			t: r.t,
+			holder: c.holder,
+			points: amount
+		});
+	}
+	const [best, second] = contenders(r);
+	const top = best && best[1] >= HILL.minPoints && (!second || best[1] > second[1]) ? best[0] : null;
+	if (top && top !== c.holder) {
+		events.push({
+			type: "crown",
+			t: r.t,
+			holder: top,
+			from: c.holder,
+			team: c.team
+		});
+		c.holder = top;
+		c.since = r.t;
+	}
+	c.nextAt += HILL.everyMs;
+}
+/** The challenger broke through: the crown is knocked off and up for grabs again. */
+function knockCrown(r, events) {
+	const c = r.crown;
+	if (!c || !c.holder) return;
+	events.push({
+		type: "crown",
+		t: r.t,
+		holder: null,
+		from: c.holder,
+		team: c.team
+	});
+	c.holder = null;
+	c.since = r.t;
+	c.recent = [];
+}
+//#endregion
+//#region shared/showdown/auction.ts
+/**
+* Auction House, Class Showdown's sixth arena (docs/SHOWDOWN-PLAN.md section 4.6). Same round, modes, roles and big events
+* as Boss Bounty (the engine), with the boss's health standing in for the royal treasury the class fills: every right
+* answer pays coins into it, and the class wins when it's full.
+*
+* What's different: right answers also earn each pupil coins to spend. Every minute a treasure goes up for auction on the
+* projector and everyone can bid for it from their iPad for 20 seconds; the highest bid when the hammer falls buys it.
+* A pupil's fortune (their score) is their coins plus what their treasures are worth, so a bargain grows it and paying
+* more than a treasure is worth shrinks it: saving versus spending. Treasures get more valuable as the round goes on and
+* the last one is always the golden dragon, so saving up can pay. Now and then a mystery box hides its value until it's
+* sold. The wind-up is thieves sneaking in (a shield check): if they get through, the treasure on sale is stolen and
+* nobody pays. The weak spot is the golden hour (double coins), from the engine. In team modes a pupil can't bid against
+* their own team's leading bid, and treasures count for the team.
+*/
+const AUCTION = {
+	/** The treasury needs this much more (or less) than the boss has health, tuned with the simulator to about 80% won. */
+	treasury: {
+		class: 1.05,
+		teams2: 1.02,
+		teams4: 1.03,
+		solo: 1.02
+	},
+	/** The first treasure goes up this long after the start, then one every `everyMs`. */
+	firstMs: 3e4,
+	everyMs: 6e4,
+	/** Bidding lasts this long, and a treasure only goes up if bidding closes this long before the end. */
+	openMs: 2e4,
+	endGapMs: 5e3,
+	/** What a treasure is worth before its kind: `base` plus `perMinute` for each minute gone, give or take 15%. */
+	base: 60,
+	perMinute: 25,
+	kinds: {
+		goblet: 1,
+		lamp: 1.1,
+		map: 1.2,
+		orb: 1.4,
+		egg: 1.6,
+		mystery: 1,
+		dragon: 2.2
+	},
+	/** A mystery box is worth anything from `mystery[0]` to `mystery[1]` times a usual treasure. */
+	mystery: [.4, 2.2],
+	/** Every this-many-th treasure is a mystery box (never the last). */
+	mysteryEvery: 3,
+	/** The lowest first bid is this share of what the treasure is worth (a mystery box: of a usual one). */
+	minShare: .2,
+	/** The iPad's bid buttons raise the leading bid by these. */
+	steps: [
+		10,
+		25,
+		50
+	]
+};
+const ORDER = [
+	"goblet",
+	"lamp",
+	"map",
+	"orb",
+	"egg"
+];
+const roundMs$1 = (r) => r.lengthMin * 6e4;
+const fits = (r, at) => at + AUCTION.openMs <= roundMs$1(r) - AUCTION.endGapMs;
+/** At the start: the treasury is set and the first treasure is on its way. */
+function setAuction(r) {
+	r.boss.max = Math.round(r.boss.max * AUCTION.treasury[r.mode]);
+	r.boss.hp = r.boss.max;
+	r.auction = {
+		lots: [],
+		nextAt: fits(r, AUCTION.firstMs) ? AUCTION.firstMs : null
+	};
+	for (const id of r.order) r.players[id].vault = 0;
+}
+/** What a pupil has won so far is worth (their score minus this is the coins they can spend). */
+const vaultOf = (p) => p.vault ?? 0;
+const coinsOf = (p) => Math.max(0, p.score - vaultOf(p));
+/** The treasure on sale now, if any. */
+function openLot(r) {
+	const lot = r.auction?.lots[r.auction.lots.length - 1];
+	return lot && lot.end === null ? lot : null;
+}
+/** The round time the auction next needs the engine: the hammer falling, or the next treasure going up. */
+function auctionDue(r) {
+	const lot = openLot(r);
+	return lot ? lot.endsAt : r.auction?.nextAt ?? Infinity;
+}
+/** Runs when `auctionDue` comes round: the hammer falls on the treasure on sale, or the next one goes up. */
+function auctionTick(r, events) {
+	const a = r.auction;
+	if (!a) return;
+	const lot = openLot(r);
+	if (lot) return hammer(r, lot, events);
+	if (a.nextAt === null) return;
+	const id = a.lots.length;
+	const at = a.nextAt;
+	const last = !fits(r, at + AUCTION.everyMs);
+	const kind = last ? "dragon" : id % AUCTION.mysteryEvery === AUCTION.mysteryEvery - 1 ? "mystery" : ORDER[(id + hashSeed$1(r.seed, `lot${id}`)) % ORDER.length];
+	const h = hashSeed$1(r.seed, `value${id}`);
+	const usual = (AUCTION.base + AUCTION.perMinute * at / 6e4) * (.85 + h % 1e3 / 1e3 * .3);
+	const luck = kind === "mystery" ? AUCTION.mystery[0] + (h >>> 10) % 1e3 / 1e3 * (AUCTION.mystery[1] - AUCTION.mystery[0]) : AUCTION.kinds[kind];
+	const value = Math.max(10, Math.round(usual * luck / 5) * 5);
+	const min = Math.max(10, Math.round(usual * AUCTION.kinds[kind === "mystery" ? "goblet" : kind] * AUCTION.minShare / 5) * 5);
+	a.lots.push({
+		id,
+		kind,
+		value,
+		min,
+		openAt: at,
+		endsAt: at + AUCTION.openMs,
+		top: 0,
+		topBy: null,
+		bids: 0,
+		end: null
+	});
+	a.nextAt = last ? null : at + AUCTION.everyMs;
+	events.push({
+		type: "lot_open",
+		t: r.t,
+		lot: id,
+		kind,
+		value: kind === "mystery" ? null : value,
+		min,
+		endsAt: at + AUCTION.openMs
+	});
+}
+/** The hammer falls: the leading bid buys the treasure (the coins are spent, its value joins their fortune). */
+function hammer(r, lot, events) {
+	const p = lot.topBy ? r.players[lot.topBy] : null;
+	if (!p) {
+		lot.end = "unsold";
+		events.push({
+			type: "lot_unsold",
+			t: r.t,
+			lot: lot.id,
+			stolen: false
+		});
+		return;
+	}
+	lot.end = "sold";
+	const gain = lot.value - lot.top;
+	p.score += gain;
+	p.vault = vaultOf(p) + lot.value;
+	if (p.team) r.teamPoints[p.team] = (r.teamPoints[p.team] ?? 0) + gain;
+	events.push({
+		type: "lot_sold",
+		t: r.t,
+		lot: lot.id,
+		kind: lot.kind,
+		pupil: p.id,
+		team: p.team,
+		bid: lot.top,
+		value: lot.value
+	});
+}
+/** Thieves got through: the treasure on sale is stolen, and nobody pays for it. */
+function thieves(r, events) {
+	const lot = openLot(r);
+	if (!lot) return;
+	lot.end = "stolen";
+	events.push({
+		type: "lot_unsold",
+		t: r.t,
+		lot: lot.id,
+		stolen: true
+	});
+}
+/** A pupil bids `amount` coins for the treasure on sale. */
+function bid(r, id, amount, events) {
+	const p = r.players[id];
+	const lot = openLot(r);
+	if (!p || !lot || r.t >= lot.endsAt) return "no_lot";
+	if (lot.topBy === id) return "already_top";
+	if (p.team && lot.topBy && r.players[lot.topBy]?.team === p.team) return "own_team";
+	if (!Number.isInteger(amount) || amount < lot.min || amount <= lot.top) return "too_low";
+	if (amount > coinsOf(p)) return "too_poor";
+	lot.top = amount;
+	lot.topBy = id;
+	lot.bids++;
+	p.lastActive = r.t;
+	events.push({
+		type: "bid",
+		t: r.t,
+		lot: lot.id,
+		pupil: id,
+		team: p.team,
+		amount
+	});
+	return null;
+}
+//#endregion
 //#region shared/showdown/engine.ts
 /**
 * Class Showdown's rules as plain functions on one plain-JSON round (docs/SHOWDOWN-PLAN.md). The server holds the
@@ -9332,6 +9629,8 @@ function start(r) {
 	if (r.arena === "goldrush") openSeams(r);
 	if (r.arena === "skyclimb") setSummit(r);
 	if (r.arena === "island") setRaft(r);
+	if (r.arena === "hill") setHill(r);
+	if (r.arena === "auction") setAuction(r);
 	return {
 		ok: true,
 		events: [{
@@ -9514,6 +9813,7 @@ function answer(r, id, correct, t, opts = {}) {
 		golden,
 		...seam !== void 0 ? { seam } : {}
 	});
+	if (r.arena === "hill") notePoints(r, p, points);
 	if (p.streak === 3 || p.streak % 5 === 0) events.push({
 		type: "streak",
 		t: r.t,
@@ -9633,6 +9933,11 @@ function advance(r, t) {
 				t: r.t
 			});
 		}]);
+		if (r.arena === "hill" && r.crown) {
+			const c = r.crown;
+			due.push([c.nextAt, () => crownTick(r, events)]);
+		}
+		if (r.arena === "auction" && r.auction) due.push([auctionDue(r), () => auctionTick(r, events)]);
 		if (planned) due.push([planned.at, () => {
 			r.nextPlanned++;
 			runPlanned(r, planned.kind, events);
@@ -9766,6 +10071,12 @@ function finishWindUp(r, events) {
 	const enraged = w.enraged;
 	r.windUp = null;
 	if (r.arena === "skyclimb") blowBack(r, events);
+	if (r.arena === "hill" && Object.values(w.groups).some((g) => g.done === "broke")) knockCrown(r, events);
+	if (r.arena === "auction") {
+		const gs = Object.values(w.groups);
+		const broke = gs.filter((g) => g.done === "broke").length;
+		if (r.mode === "solo" ? gs.length > 0 && (gs.length - broke) / gs.length < SHOWDOWN.windUp.soloHealShare : broke > 0) thieves(r, events);
+	}
 	if (r.arena === "island") {
 		const broke = new Set(Object.keys(w.groups).filter((k) => w.groups[k].done === "broke"));
 		wave(r, events, (p) => broke.has(groupOf(r, p) ?? ""));
@@ -9976,7 +10287,7 @@ function recap(r) {
 		team,
 		points: r.teamPoints[team] ?? 0,
 		damage: Math.round(r.teamDamage[team] ?? 0)
-	})).sort((a, b) => (r.mode === "teams2" ? b.damage - a.damage : 0) || b.points - a.points);
+	})).sort((a, b) => (r.mode === "teams2" && r.arena !== "hill" && r.arena !== "auction" ? b.damage - a.damage : 0) || b.points - a.points);
 	const top = r.order.map((k) => r.players[k]).sort((a, b) => b.score - a.score).slice(0, 10).map((p) => ({
 		pupil: p.id,
 		score: p.score
@@ -10170,12 +10481,14 @@ const ROLES = [
 	"guard",
 	"healer"
 ];
-/** Arenas a room can be opened as (each arena's rules: goldrush.ts, skyclimb.ts, island.ts). */
+/** Arenas a room can be opened as (each arena's rules: goldrush.ts, skyclimb.ts, island.ts, hill.ts, auction.ts). */
 const ARENAS = [
 	"boss",
 	"goldrush",
 	"skyclimb",
-	"island"
+	"island",
+	"hill",
+	"auction"
 ];
 const MAX_TRIES = 8;
 const MAX_ANSWER_MS = 6e4;
@@ -10241,7 +10554,16 @@ function roomView(row, r) {
 		result: r.result,
 		showNames: row.showNames,
 		island: r.arena === "island" ? islandView(r) : null,
-		roles: roleCounts(r)
+		roles: roleCounts(r),
+		auction: r.arena === "auction" && r.auction ? auctionView(r) : null,
+		crown: r.arena === "hill" && r.crown ? {
+			holder: r.crown.holder,
+			team: r.crown.team,
+			since: r.crown.since,
+			nextAt: r.crown.nextAt,
+			contenders: contenders(r).slice(0, 3),
+			held: { ...r.crown.held }
+		} : null
 	};
 }
 function roleCounts(r) {
@@ -10260,6 +10582,40 @@ function roleCounts(r) {
 		})[p.role]++;
 	}
 	return out;
+}
+function auctionView(r) {
+	const a = r.auction;
+	const lot = openLot(r);
+	const sold = a.lots.filter((l) => l.end === "sold" && l.topBy).map((l) => ({
+		id: l.id,
+		kind: l.kind,
+		value: l.value,
+		bid: l.top,
+		by: l.topBy,
+		team: r.players[l.topBy]?.team ?? null
+	}));
+	const rich = r.order.map((id) => r.players[id]).filter((p) => p.score > 0).sort((x, y) => y.score - x.score).slice(0, 5).map((p) => ({
+		id: p.id,
+		fortune: p.score,
+		vault: vaultOf(p)
+	}));
+	return {
+		lot: lot ? {
+			id: lot.id,
+			kind: lot.kind,
+			value: lot.kind === "mystery" ? null : lot.value,
+			min: lot.min,
+			endsAt: lot.endsAt,
+			top: lot.top,
+			topBy: lot.topBy,
+			topTeam: lot.topBy ? r.players[lot.topBy]?.team ?? null : null,
+			bids: lot.bids
+		} : null,
+		nextAt: a.nextAt,
+		sold,
+		rich,
+		steps: AUCTION.steps
+	};
 }
 function islandView(r) {
 	const spots = {};
@@ -10286,6 +10642,8 @@ function playerView(p, top = new Set()) {
 		topTen: top.has(p.id),
 		reward: p.reward ?? null,
 		seam: p.seam ?? null,
+		coins: coinsOf(p),
+		vault: vaultOf(p),
 		player: p.id,
 		name: p.name,
 		team: p.team,
@@ -10776,6 +11134,34 @@ async function showdownStep(s, who, body) {
 						pupil: who,
 						seam
 					}]
+				};
+			});
+			if ("refuse" in done) return done.refuse;
+			return ok({
+				room,
+				me: playerView(done.row.round.players[who], topTenOf(done.row.round)),
+				view: roomView(done.row, done.row.round),
+				now: s.now()
+			});
+		}
+		if (action === "choose" && typeof body.bid === "number") {
+			const amount = body.bid;
+			const said = {
+				no_lot: "Bidding has closed. Wait for the next treasure!",
+				too_low: "Someone bid more! Try a higher bid.",
+				too_poor: "You haven't got that many coins. Answer more to earn them!",
+				own_team: "Your team is already winning this one!",
+				already_top: "You're already the top bid!"
+			};
+			const done = await mutate(s, room, (r, t, row) => {
+				if (r.arena !== "auction" || r.state !== "live") return { refuse: no(409, "Bid once the auction starts.", "not-now") };
+				const events = row.pausedAt === null ? advance(r, t) : [];
+				if (row.pausedAt !== null) return { refuse: no(409, "Paused. Look at the teacher.", "paused") };
+				const refused = bid(r, who, amount, events);
+				if (refused) return { refuse: no(409, said[refused], refused) };
+				return {
+					reply: null,
+					events
 				};
 			});
 			if ("refuse" in done) return done.refuse;
