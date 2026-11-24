@@ -7,7 +7,7 @@
  * -18 LUFS. The teacher turns music on or off and sets its volume (kept on this computer); the Sound off button
  * silences it too.
  */
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 
 export type Track = 'picker' | 'stars' | 'serpent' | 'mural' | 'guess' | 'boss' | 'goldrush' | 'skyclimb' | 'island' | 'hill' | 'auction';
 
@@ -18,18 +18,23 @@ const KEY = 'classlive.music';
 const FADE_MS = 900;
 export const DEFAULT_VOLUME = 0.35;
 
-interface Settings { on: boolean; volume: number }
+interface Settings {
+  on: boolean;
+  volume: number;
+  /** The teacher's choice: pupils' devices play the music too (James, 25 Nov 2026 NZ). Off: the big screen only. */
+  pads: boolean;
+}
 
 function load(): Settings {
   try {
     const s = JSON.parse(window.localStorage.getItem(KEY) ?? '{}') as Partial<Settings>;
-    return { on: s.on !== false, volume: typeof s.volume === 'number' && s.volume >= 0 && s.volume <= 1 ? s.volume : DEFAULT_VOLUME };
+    return { on: s.on !== false, volume: typeof s.volume === 'number' && s.volume >= 0 && s.volume <= 1 ? s.volume : DEFAULT_VOLUME, pads: s.pads === true };
   } catch {
-    return { on: true, volume: DEFAULT_VOLUME };
+    return { on: true, volume: DEFAULT_VOLUME, pads: false };
   }
 }
 
-let settings: Settings = typeof window === 'undefined' ? { on: true, volume: DEFAULT_VOLUME } : load();
+let settings: Settings = typeof window === 'undefined' ? { on: true, volume: DEFAULT_VOLUME, pads: false } : load();
 const listeners = new Set<() => void>();
 const tell = () => listeners.forEach((f) => f());
 
@@ -70,19 +75,19 @@ function start(el: HTMLAudioElement, ok: () => void, refused: () => void) {
 class Player {
   private el: HTMLAudioElement | null = null;
   private track: Track | null = null;
-  private wanted: Track | null = null;
-  private allowed = true;
+  /** Each screen's wish, newest last (the Class Live test page shows the projector and a pupil's pad at once). */
+  private wishes = new Map<object, Track | null>();
   private waitingForTap = false;
 
-  /** What the screen wants playing (null: silence); `allowed` is false while the teacher has Sound off. */
-  want(track: Track | null, allowed: boolean) {
-    this.wanted = track;
-    this.allowed = allowed;
+  /** What a screen wants playing (null: silence, or gone). The newest screen that wants a track wins. */
+  want(who: object, track: Track | null) {
+    this.wishes.delete(who);
+    if (track) this.wishes.set(who, track);
     this.refresh();
   }
 
   refresh() {
-    const t = settings.on && this.allowed ? this.wanted : null;
+    const t = settings.on ? [...this.wishes.values()].pop() ?? null : null;
     if (t === this.track && this.el) {
       fade(this.el, settings.volume);
       return;
@@ -120,6 +125,14 @@ const player = new Player();
 
 /** Plays `track` while the calling screen is shown (null: silence), unless music or sound is off. */
 export function useMusic(track: Track | null, soundOn: boolean) {
-  useEffect(() => { player.want(track, soundOn); }, [track, soundOn]);
-  useEffect(() => () => player.want(null, true), []);
+  const me = useRef({}).current;
+  useEffect(() => { player.want(me, soundOn ? track : null); }, [me, track, soundOn]);
+  useEffect(() => () => player.want(me, null), [me]);
+}
+
+/** The track for a Class Live room: the lobby and the end share the picker's, Mystery Mural's guessing has its own. */
+export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | null, guessing: boolean): Track {
+  if (!state || !kind || state !== 'live') return 'picker';
+  if (kind === 'mural') return guessing ? 'guess' : 'mural';
+  return kind;
 }

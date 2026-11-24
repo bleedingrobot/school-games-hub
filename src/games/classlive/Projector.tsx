@@ -4,7 +4,7 @@
  * shout-outs). It listens to the room's screen row, animates each new event once (never the ones it has seen), and only
  * ever draws good things: there are no wrong answers in the screen data.
  */
-import { useMusic } from './music';
+import { classLiveTrack, musicSettings, useMusic } from './music';
 import { MusicControl } from './MusicControl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ARMS, ARM_GOAL, ARM_NAMES, SUPERNOVA, armCounts, laggingArm, type Arm, type Star, type StarsGame } from '../../../shared/classlive/stars';
@@ -319,7 +319,8 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   const open = async (activity: Activity, body: Record<string, unknown>) => {
     setBusy(true);
     setProblem('');
-    const r = await act({ action: 'open', classId, activity, ...body });
+    const m = musicSettings();
+    const r = await act({ action: 'open', classId, activity, ...body, padMusic: m.on && m.pads });
     setBusy(false);
     if (r.status === 200 && typeof r.body.room === 'number') {
       keepRoom(r.body.room);
@@ -338,7 +339,7 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   const mural = game?.kind === 'mural' ? game : null;
   const hall = !screen && !resuming ? painted('pick', 'hall') : null;
   // Background music for what is on screen (James, 25 Nov 2026 NZ).
-  useMusic(!screen || state === 'lobby' || state === 'over' ? 'picker' : serpent ? 'serpent' : mural ? (mural.phase === 'guess' ? 'guess' : 'mural') : 'stars', !muted);
+  useMusic(classLiveTrack(state, game?.kind ?? null, mural?.phase === 'guess'), !muted);
   const backPic = hall ?? painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky');
   const lobbyOpen = state === 'lobby' && room !== null;
   useEffect(() => {
@@ -360,7 +361,7 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
           <div className="cl-bar__row">
             <a className="cl-btn cl-btn--small" href="#/">⌂ Hub</a>
             <button type="button" className="cl-btn cl-btn--small" onClick={toggleSound} aria-pressed={!muted}>{muted ? '🔇 Sound off' : '🔊 Sound on'}</button>
-            <MusicControl />
+            <MusicControl onPads={(on) => { if (room) void act({ action: 'padmusic', room, on }); }} />
             {screen && <span className="cl-bar__name">{ACTIVITY_NAMES[screen.activity]}</span>}
             {leftMs !== null && <span className={`cl-bar__time ${leftMs < 30_000 ? 'cl-bar__time--low' : ''}`} role="timer">{mmss(leftMs)}</span>}
             {screen && screen.state !== 'over' && room && (

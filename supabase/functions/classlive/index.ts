@@ -13548,7 +13548,8 @@ function roomView(s, startedAt) {
 		startedAt,
 		players: s.order.length,
 		game: publicGame(s.game, s.order.length),
-		lobby: s.lobby ?? null
+		lobby: s.lobby ?? null,
+		padMusic: s.padMusic === true
 	};
 }
 function screenView(row, s, startedAt) {
@@ -13741,7 +13742,8 @@ function newSession(body, seed, random) {
 		lengthMin,
 		players: {},
 		order: [],
-		game
+		game,
+		...body.padMusic === true ? { padMusic: true } : {}
 	};
 }
 /** One request from a signed-in person (`who`). */
@@ -13792,7 +13794,7 @@ async function classLiveStep(sv, who, body) {
 			now: sv.now()
 		});
 	}
-	if (action === "view" || action === "start" || action === "end" || action === "spotlight" || action === "reveal") {
+	if (action === "view" || action === "start" || action === "end" || action === "spotlight" || action === "reveal" || action === "padmusic") {
 		const room = readRoom(body.room);
 		if (!room) return no(400, "That room couldn't be found.");
 		const row = await sv.loadRoom(room);
@@ -13837,6 +13839,13 @@ async function classLiveStep(sv, who, body) {
 						t,
 						why: "teacher"
 					}]
+				};
+			}
+			if (action === "padmusic") {
+				s.padMusic = body.on === true;
+				return {
+					reply: null,
+					events: []
 				};
 			}
 			if (action === "spotlight") {
