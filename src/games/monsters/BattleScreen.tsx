@@ -765,7 +765,6 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
           closeLabel="Back"
           // Back goes to choosing another move and no turn passes, so the skip switch leaves it alone (James).
           closeIsSkip={false}
-          choiceKeys
           onSubmit={(answer, ms): MarkedAnswer => {
             const marked = packOf(asking.topic).recordAnswer(asking.question, answer, ms);
             answered.current = {
