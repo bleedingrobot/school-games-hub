@@ -1,20 +1,18 @@
 /**
  * Mystery Mural (docs/CLASSLIVE-PLAN.md section 4): a hidden painting under a grid of tiles. Every right answer from a
- * pupil's own maths focus (way A, marked on the server) earns a flip; the pupil picks which tile to flip on their device.
- * As the picture appears, pupils guess what it is. Pure rules (the questions are the server's job).
+ * pupil's own maths focus (way A, marked on the server) flips one tile at random (James, 24 Nov 2026: pupils no longer
+ * pick; smaller tiles and many more pictures make it harder). As the picture appears, pupils guess what it is. Pure rules (the questions are the server's job).
  */
 
-export const COLS = 12;
-export const ROWS = 8;
+export const COLS = 18;
+export const ROWS = 12;
 export const TILES = COLS * ROWS;
-/** Flips a pupil can save up before using them. */
-export const MAX_FLIPS = 3;
 /** One marked answer every this many ms per pupil (no speed bonus; same as Class Showdown). */
 export const ANSWER_GAP_MS = 4000;
 /** Guessing opens once this share of the tiles is flipped. */
 export const GUESS_FROM = 0.15;
 /** A pupil may guess again after this many more tiles have flipped. */
-export const GUESS_EVERY = 20;
+export const GUESS_EVERY = 40;
 /** How many picture choices a guess offers. */
 export const CHOICES = 6;
 
@@ -30,6 +28,36 @@ export const PICTURES = {
   octopus: 'An octopus',
   treehouse: 'A treehouse',
   pirate: 'A pirate ship',
+  elephant: 'An elephant',
+  penguin: 'A penguin',
+  giraffe: 'A giraffe',
+  lion: 'A lion',
+  panda: 'A panda',
+  dinosaur: 'A dinosaur',
+  unicorn: 'A unicorn',
+  robot: 'A robot',
+  balloon: 'A hot air balloon',
+  train: 'A steam train',
+  submarine: 'A submarine',
+  helicopter: 'A helicopter',
+  snowman: 'A snowman',
+  pyramid: 'A pyramid',
+  windmill: 'A windmill',
+  cupcake: 'A cupcake',
+  icecream: 'An ice cream',
+  pizza: 'A pizza',
+  sunflower: 'A sunflower',
+  cactus: 'A cactus',
+  butterfly: 'A butterfly',
+  beehive: 'A beehive',
+  turtle: 'A sea turtle',
+  shark: 'A shark',
+  owl: 'An owl',
+  frog: 'A frog',
+  tractor: 'A tractor',
+  fireengine: 'A fire engine',
+  guitar: 'A guitar',
+  pumpkin: 'A pumpkin',
 } as const;
 export type Picture = keyof typeof PICTURES;
 
@@ -48,6 +76,36 @@ export const CLUES: Record<Picture, string> = {
   octopus: 'Three hearts, blue blood, and more arms than I could ever need for a hug.',
   treehouse: 'A home with no ground floor, where the neighbours are birds and the walls grow leaves.',
   pirate: 'I fly bones on my flag, and my crew says "arr" instead of hello.',
+  elephant: 'I never forget, I carry my own hose, and I wear my ears like giant fans.',
+  penguin: "I wear a suit to every party, I can't fly, but I'm a champion at sliding on my tummy.",
+  giraffe: 'I can lick my own ears and I eat my lunch from the top of the tree. My scarf would need to be very long.',
+  lion: "I'm the king, but my crown is made of hair, and my wife does most of the hunting.",
+  panda: "I'm a bear in black and white, and I spend half my day chewing a very tough salad.",
+  dinosaur: "My big teeth are scary but my tiny arms can't reach my nose. You'll only find my bones today.",
+  unicorn: "I'm a horse with a party hat that never comes off, and nobody has ever taken my photo.",
+  robot: "I never get tired and never eat lunch, but if you pull my plug, I'll take a very long nap.",
+  balloon: 'I go up when I get hot under my collar, and my passengers ride in a basket.',
+  train: 'I huff and I puff along my two long lines, and I always stop at the station to let people in.',
+  submarine: "I'm a boat that likes to hide, and I peek above the waves with one long eye.",
+  helicopter: 'My hat spins so fast it lifts me up, and I can hover in one spot like a hummingbird.',
+  snowman: 'My nose is a vegetable, my buttons are coal, and the sun is my only enemy.',
+  pyramid: "Four triangles stand guard over a king who's been asleep for thousands of years.",
+  windmill: 'I wave my four arms all day long, but I never say goodbye. The wind helps me make flour.',
+  cupcake: 'I wear a paper skirt and a fluffy hat, and on your birthday I might hold a candle.',
+  icecream: "I'm sweet and cold and I cry when the sun looks at me, so eat me quickly from my crunchy cone.",
+  pizza: "I'm round, but you cut me into triangles. I come from Italy wearing cheese.",
+  sunflower: 'My face follows the sun all day, and my seeds are a snack for birds and people.',
+  cactus: "I never need a drink and I'm not a fan of hugs. I keep my water hidden in the desert.",
+  butterfly: 'I was a hungry caterpillar before I slept in a little bed of silk. Now I taste with my feet.',
+  beehive: 'A busy city with thousands of workers, one queen, and walls made of sweet golden hexagons.',
+  turtle: 'I carry my home everywhere I swim, and I come back to the same beach to lay my eggs.',
+  shark: 'I have rows and rows of teeth, I never stop swimming, and my fin says hello above the waves.',
+  owl: "I can turn my head almost all the way round, and I'm wide awake while you're asleep. Who? Who?",
+  frog: 'I started life with a tail and no legs, and now I catch flies with my tongue on a lily pad.',
+  tractor: "My back wheels are bigger than my front ones, and I'm the strongest worker on the farm.",
+  fireengine: "I'm red, I'm loud, I carry a ladder and a hose, and I rush to put the hot stuff out.",
+  guitar: 'I have a neck but no head, six strings but no puppet, and I sing when you strum me.',
+  pumpkin: "I'm a giant orange berry, and in a fairy tale I turned into a carriage.",
 };
 export const PICTURE_IDS = Object.keys(PICTURES) as Picture[];
 
@@ -96,7 +154,7 @@ const mineOf = (g: MuralGame, pupil: string): MuralMine =>
   (g.mine[pupil] ??= { flips: 0, right: 0, answered: 0, lastAt: -1e12, guessedAt: -1, guesses: 0, gotIt: 0, tiles: 0 });
 
 export const flipped = (g: MuralGame) => g.tiles.filter(Boolean).length;
-export const guessOpen = (g: MuralGame) => flipped(g) >= Math.ceil(TILES * GUESS_FROM);
+export const guessOpen = (g: MuralGame) => flipped(g) >= Math.ceil(g.tiles.length * GUESS_FROM);
 
 /** May this pupil guess now? */
 export function canGuess(g: MuralGame, pupil: string): boolean {
@@ -108,37 +166,33 @@ export function canGuess(g: MuralGame, pupil: string): boolean {
 /** Is it time for this pupil's next marked answer? (ms to wait, 0 when now) */
 export const waitFor = (g: MuralGame, pupil: string, t: number) => Math.max(0, mineOf(g, pupil).lastAt + ANSWER_GAP_MS - t);
 
-/** A marked answer (the server has marked it): a right one earns a flip. */
-export function answered(g: MuralGame, pupil: string, right: boolean, t: number): { ok: true } | { ok: false; reason: 'too_soon' } {
+/** A marked answer (the server has marked it): a right one flips a tile at random. */
+export function answered(g: MuralGame, pupil: string, right: boolean, t: number, random: () => number): { ok: true; events: MuralEvent[] } | { ok: false; reason: 'too_soon' } {
   const m = mineOf(g, pupil);
   if (t - m.lastAt < ANSWER_GAP_MS) return { ok: false, reason: 'too_soon' };
   m.lastAt = t;
   m.answered++;
-  if (right) {
-    m.right++;
-    m.flips = Math.min(MAX_FLIPS, m.flips + 1);
-  }
-  return { ok: true };
+  if (!right) return { ok: true, events: [] };
+  m.right++;
+  return { ok: true, events: flipRandom(g, pupil, t, random) };
 }
 
-/** A pupil flips a tile (using one of their flips). */
-export function flip(g: MuralGame, pupil: string, tile: unknown, t: number): { ok: true; events: MuralEvent[] } | { ok: false; reason: 'no_flips' | 'taken' | 'bad_tile' | 'revealed' } {
-  const m = mineOf(g, pupil);
-  if (g.revealed) return { ok: false, reason: 'revealed' };
-  if (!Number.isInteger(tile) || (tile as number) < 0 || (tile as number) >= TILES) return { ok: false, reason: 'bad_tile' };
-  if (m.flips < 1) return { ok: false, reason: 'no_flips' };
-  if (g.tiles[tile as number]) return { ok: false, reason: 'taken' };
+/** Flips one tile that isn't flipped yet, chosen at random, for this pupil. */
+function flipRandom(g: MuralGame, pupil: string, t: number, random: () => number): MuralEvent[] {
+  if (g.revealed) return [];
+  const free = g.tiles.map((x, i) => (x ? -1 : i)).filter((i) => i >= 0);
+  if (!free.length) return [];
+  const tile = free[Math.floor(random() * free.length) % free.length];
   const wasOpen = guessOpen(g);
-  g.tiles[tile as number] = pupil;
-  m.flips--;
-  m.tiles++;
-  const events: MuralEvent[] = [{ type: 'flip', t, pupil, tile: tile as number }];
+  g.tiles[tile] = pupil;
+  mineOf(g, pupil).tiles++;
+  const events: MuralEvent[] = [{ type: 'flip', t, pupil, tile }];
   if (!wasOpen && guessOpen(g)) events.push({ type: 'guess_open', t });
-  if (flipped(g) === TILES) {
+  if (flipped(g) === g.tiles.length) {
     g.revealed = true;
     events.push({ type: 'reveal', t });
   }
-  return { ok: true, events };
+  return events;
 }
 
 /** A pupil's guess. Wrong guesses are only told to the pupil. */
@@ -159,13 +213,4 @@ export function reveal(g: MuralGame, t: number): MuralEvent[] {
   if (g.revealed) return [];
   g.revealed = true;
   return [{ type: 'reveal', t }];
-}
-
-/** A pretend pupil's flip: next to tiles already flipped (they're curious about the edges of what they can see). */
-export function pretendTile(g: MuralGame, random: () => number): number | null {
-  const free = g.tiles.map((x, i) => (x ? -1 : i)).filter((i) => i >= 0);
-  if (!free.length) return null;
-  const near = free.filter((i) => [i - 1, i + 1, i - COLS, i + COLS].some((j) => j >= 0 && j < TILES && g.tiles[j]));
-  const from = near.length && random() < 0.6 ? near : free;
-  return from[Math.floor(random() * from.length) % from.length];
 }

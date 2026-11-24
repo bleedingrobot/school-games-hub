@@ -1,13 +1,13 @@
 /**
  * Mystery Mural, the pupil's screen (docs/CLASSLIVE-PLAN.md section 4): answer a maths question (the shared QuestionModal,
- * marked on the server), wait for the ring to fill, and every right answer earns a flip. Spend flips on the tile picker,
- * and once enough of the picture shows, guess it. Never shows anyone else's results.
+ * marked on the server), wait for the ring to fill, and every right answer flips a tile at random on the big screen.
+ * Once enough of the picture shows, guess it. Never shows anyone else's results.
  *
  * The server's `nextAt` is in session time (ms since the room started), so the wait is worked out from the `now` the
  * server sent back and the room's `startedAt`.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { COLS, GUESS_FROM, MAX_FLIPS, PICTURES, TILES, type Picture } from '../../../shared/classlive/mural';
+import { GUESS_FROM, PICTURES, TILES, type Picture } from '../../../shared/classlive/mural';
 import type { MuralReply, PlayerView, RoomView } from '../../../shared/classlive/server';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
@@ -41,33 +41,10 @@ function WaitRing({ ms, onDone }: { ms: number; onDone: () => void }) {
   );
 }
 
-function TilePicker({ tiles, picked, setPicked, busy, onFlip }: { tiles: string; picked: number | null; setPicked: (n: number | null) => void; busy: boolean; onFlip: () => void }) {
-  return (
-    <div className="cl-m-pick">
-      <div className="cl-m-grid" role="group" aria-label="Pick a tile to flip" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
-        {Array.from({ length: TILES }, (_, i) => {
-          const done = tiles[i] === '1';
-          return (
-            <button
-              key={i} type="button" disabled={done}
-              className={`cl-m-tile${done ? ' is-done' : ''}${picked === i ? ' is-picked' : ''}`}
-              aria-label={`Row ${Math.floor(i / COLS) + 1}, column ${(i % COLS) + 1}${done ? ', flipped' : ''}`}
-              aria-pressed={picked === i}
-              onClick={() => setPicked(picked === i ? null : i)}
-            />
-          );
-        })}
-      </div>
-      <button type="button" className="cl-c-send cl-m-flip" disabled={busy || picked === null} onClick={onFlip}>{picked === null ? 'Tap a tile' : 'Flip it! ✨'}</button>
-    </div>
-  );
-}
-
 export function MuralPad({ link, room, view, me, setMe, setView }: { link: ClassLiveLink; room: number | null; view: RoomView; me: PlayerView | null; setMe: (m: PlayerView) => void; setView: (f: (v: RoomView | null) => RoomView | null) => void }) {
   const [question, setQuestion] = useState<PublicQuestion | null>(null);
   const [wait, setWait] = useState<number | null>(null);
   const [trouble, setTrouble] = useState('');
-  const [picked, setPicked] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [say, setSay] = useState<{ n: number; text: string; good?: boolean } | null>(null);
   const [guessing, setGuessing] = useState(false);
@@ -85,7 +62,6 @@ export function MuralPad({ link, room, view, me, setMe, setView }: { link: Class
   const mg: Mine | null = me && me.game.kind === 'mural' ? me.game : null;
   const pub: Pub | null = view.game.kind === 'mural' ? view.game : null;
   const live = view.state === 'live' && !!pub && !pub.revealed;
-  const flips = mg?.flips ?? 0;
 
   const toast = useCallback((text: string, good?: boolean) => setSay({ n: ++sayN.current, text, good }), []);
 
@@ -162,7 +138,7 @@ export function MuralPad({ link, room, view, me, setMe, setView }: { link: Class
     queued.current = next?.question ?? null;
     if (next?.question) setWait(Math.max(300, next.wait));
     else setWait(null);
-    if (next?.me?.game.kind === 'mural' && next.me.game.flips > (mg?.flips ?? 0)) toast('You earned a flip!', true);
+    if (next?.me?.game.kind === 'mural' && next.me.game.tiles > (mg?.tiles ?? 0)) toast('You flipped a tile! Look at the big screen.', true);
   };
 
   const waitDone = useCallback(() => {
@@ -171,32 +147,6 @@ export function MuralPad({ link, room, view, me, setMe, setView }: { link: Class
     queued.current = null;
     if (q) setQuestion(q);
   }, []);
-
-  const flip = async () => {
-    if (picked === null || busyRef.current || room === null) return;
-    busyRef.current = true; setBusy(true);
-    try {
-      const r = await link.send({ action: 'play', room, tile: picked });
-      const b = r.body as { reply?: MuralReply; me?: PlayerView; view?: RoomView; reason?: string; error?: string };
-      if (r.status === 200 && b.reply) {
-        if (b.me) setMe(b.me);
-        if (b.view) setView(() => b.view as RoomView);
-        setPicked(null);
-        toast('Flipped! Look at the big screen.', true);
-      } else if (r.status === 409 && b.reason === 'taken') {
-        setPicked(null);
-        toast('Someone just flipped that one. Pick another!');
-      } else if (r.status === 409 && b.reason === 'revealed') {
-        setView((v) => (v && v.game.kind === 'mural' ? { ...v, game: { ...v.game, revealed: true } } : v));
-      } else {
-        toast(String(b.error ?? "That didn't send. Try again!"));
-      }
-    } catch {
-      toast("That didn't send. Try again!");
-    } finally {
-      busyRef.current = false; setBusy(false);
-    }
-  };
 
   const guess = async (pick: Picture) => {
     if (busyRef.current || room === null) return;
@@ -224,11 +174,6 @@ export function MuralPad({ link, room, view, me, setMe, setView }: { link: Class
     }
   };
 
-  // After the picker is used up (or the game stops), nothing more to clear; a picked tile that gets taken is dropped.
-  useEffect(() => {
-    if (picked !== null && pub?.tiles[picked] === '1') setPicked(null);
-  }, [pub?.tiles, picked]);
-
   if (view.state === 'lobby') {
     return (
       <div className="cl-c-center">
@@ -255,9 +200,8 @@ export function MuralPad({ link, room, view, me, setMe, setView }: { link: Class
   const need = Math.max(0, OPEN_AT - (pub?.flipped ?? 0));
   const canGuess = !!mg?.canGuess;
   const flipsRow = (
-    <p className="cl-m-flips" aria-label={`${flips} ${flips === 1 ? 'flip' : 'flips'} saved`}>
-      <span aria-hidden="true">{Array.from({ length: 3 }, (_, i) => <i key={i} className={i < flips ? 'is-on' : ''} />)}</span>
-      <b>{flips === 0 ? 'No flips yet' : flips === 1 ? '1 flip' : `${flips} flips`}</b>
+    <p className="cl-m-flips" aria-label={`You flipped ${mg?.tiles ?? 0} tiles`}>
+      <b>✨ {mg?.tiles ?? 0} {(mg?.tiles ?? 0) === 1 ? 'tile' : 'tiles'} flipped</b>
     </p>
   );
 
@@ -282,17 +226,12 @@ export function MuralPad({ link, room, view, me, setMe, setView }: { link: Class
         {say && <div key={say.n} className={`cl-s-card${say.good ? ' cl-s-card--right' : ''}`}><p className="cl-s-card__text">{say.text}</p></div>}
       </div>
 
-      {flips > 0 ? (
-        <>
-          <p className="cl-m-say">{flips >= MAX_FLIPS ? 'Use a flip so you can earn more!' : 'Pick a tile to flip!'}</p>
-          <TilePicker tiles={pub?.tiles ?? ''} picked={picked} setPicked={setPicked} busy={busy} onFlip={() => void flip()} />
-        </>
-      ) : question ? (
+      {question ? (
         <div className="cl-m-q">
           <QuestionModal
             key={question.slot}
             question={{ id: question.slot, parts: question.parts, spoken: question.spoken, prompt: question.prompt, choices: question.choices, choiceLabels: question.choiceLabels, input: question.input, maxLength: question.maxLength }}
-            title="Mystery Mural" note="Right answers flip tiles" spot="Class Live" inline scribble={false} onSubmit={onSubmit} onDone={onDone}
+            title="Mystery Mural" note="Each right answer flips a tile" spot="Class Live" inline scribble={false} onSubmit={onSubmit} onDone={onDone}
           />
         </div>
       ) : wait !== null ? (
@@ -300,8 +239,6 @@ export function MuralPad({ link, room, view, me, setMe, setView }: { link: Class
       ) : (
         <p className="cl-c-say cl-m-load" role="status">{trouble || 'Getting your question…'}</p>
       )}
-
-      {flips > 0 && question === null && wait !== null && <p className="cl-m-hint">Your next question is getting ready.</p>}
 
       {guessing && pub && (
         <div className="cl-m-modal" role="dialog" aria-modal="true" aria-label="Guess the picture">

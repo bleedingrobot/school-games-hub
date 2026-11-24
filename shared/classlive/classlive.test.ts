@@ -152,7 +152,7 @@ describe('Class Live server', () => {
     expect(pc.db.paid.size).toBe(2);
   });
 
-  it('Mystery Mural: right answers earn flips, a question counts once, guesses open later and the teacher reveals it', async () => {
+  it('Mystery Mural: right answers flip a random tile, a question counts once, guesses open later and the teacher reveals it', async () => {
     const clock = pretendClock();
     const pc = pretendClass({ size: 30, seed: 11, clock, later: clock.later });
     const room = (await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'open', classId: PRETEND_CLASS, activity: 'mural' })).body.room as number;
@@ -168,10 +168,9 @@ describe('Class Live server', () => {
     const kept = pc.db.questions.get(`${room}:${a}`)!.find((k) => k.slot === q.slot)!;
     const answer = markQuestion(kept.question)!.answer;
     const first = await classLiveStep(pc.services, a, { action: 'answer', room, slot: q.slot, answer, ms: 2000 });
-    expect(first.body).toMatchObject({ right: true, me: { game: { flips: 1 } } });
+    expect(first.body).toMatchObject({ right: true, me: { game: { tiles: 1 } }, view: { game: { flipped: 1 } } });
     expect((await classLiveStep(pc.services, a, { action: 'answer', room, slot: q.slot, answer, ms: 2000 })).status).toBe(409);
     expect(pc.db.answers.filter((x) => x.player === a)).toHaveLength(1);
-    expect((await classLiveStep(pc.services, a, { action: 'play', room, tile: 0 })).status).toBe(200);
     pc.play(room);
     await clock.run(clock.now() + 4 * 60_000);
     const g = pc.db.rooms.get(room)!.session.game;
