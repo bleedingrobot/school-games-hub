@@ -28,7 +28,7 @@ export const HUB_NEWS: NewsItem[] = [
     date: '2026-11-24',
     emoji: '🧊',
     title: 'Maths goes below zero',
-    text: 'Finished the whole maths path? Now it keeps going, with numbers below zero like −4 and the temperature on a cold day.',
+    text: 'The maths path now goes further, with numbers below zero like −4 on a cold day.',
   },
   {
     id: 'isles-goal-2026-11-24',
