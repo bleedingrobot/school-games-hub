@@ -69,6 +69,11 @@ export function CornersGuide({ map, onClose }: { map: CornerMap; onClose: () => 
             </li>
           ))}
           <li>
+            <Pic src={null} emoji="🔁" />
+            <b>Second half <small>halfway</small></b>
+            <span>Change corners every round: if you stay in the corner you were safe in last time, you’re caught.</span>
+          </li>
+          <li>
             <Pic src={null} emoji="🎲" />
             <b>Twist rolls <small>round {UNLOCK.twist}</small></b>
             <span>The dice might pick two corners, or land on a lucky star so nobody is caught.</span>

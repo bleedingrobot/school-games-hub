@@ -509,3 +509,9 @@
 .fc-guide__grid span:not(.fc-guide__pic) { font-size: clamp(0.85rem, 1.9vmin, 1.05rem); opacity: 0.9; }
 .fc-guide__pic { grid-row: span 2; width: 76px; height: 76px; object-fit: contain; }
 .fc-guide__pic--emoji { display: grid; place-items: center; font-size: 44px; border-radius: 14px; background: rgba(255, 255, 255, 0.08); }
+
+/* Second half: the corner a pupil was in last round (their pad only). */
+.fc-corner--banned { background: repeating-linear-gradient(45deg, rgba(15, 23, 42, 0.55) 0 10px, rgba(15, 23, 42, 0.25) 10px 20px); }
+.fc-corner__ban { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: clamp(28px, 7vmin, 64px); filter: drop-shadow(0 2px 6px #000); }
+.fc-chip--swap { border-color: #fb923c; background: rgba(124, 45, 18, 0.75); }
+.fc-new--swap { background: linear-gradient(135deg, #fb923c, #7c3aed); }

@@ -364,8 +364,8 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
       {serpent ? <JungleBackdrop /> : <NightBackdrop />}
       {backPic && <div className={`cl-painted ${serpent ? 'cl-painted--serpent' : ''} ${hall ? 'cl-painted--hall' : ''}`} style={{ backgroundImage: `url(${backPic})` }} aria-hidden="true" />}
       {serpent && <SerpentAmbience awake={serpent.awake || state === 'over'} />}
-      {screen?.joinCode && state === 'live' && (
-        <div className="cl-late" aria-label={`Late? Join with code ${screen.joinCode.split('').join(' ')}`}>Late? Join with code <b>{screen.joinCode}</b></div>
+      {screen?.joinCode && state === 'live' && !barOpen && (
+        <div className="cl-late" aria-label={`Late? Join with code ${screen.joinCode.split('').join(' ')}`}>Late? Code <b>{screen.joinCode}</b></div>
       )}
       <div className={`cl-bar ${barOpen ? 'cl-bar--open' : ''}`}>
         <button type="button" className="cl-bar__tab" onClick={() => setBarOpen(!barOpen)} aria-expanded={barOpen} aria-label={barOpen ? 'Hide the teacher bar' : 'Show the teacher bar'}>{barOpen ? '▲' : '☰'}</button>
@@ -376,6 +376,9 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
             <MusicControl onPads={(on) => { if (room) void act({ action: 'padmusic', room, on }); }} />
             {screen && <span className="cl-bar__name">{ACTIVITY_NAMES[screen.activity]}</span>}
             {leftMs !== null && <span className={`cl-bar__time ${leftMs < 30_000 ? 'cl-bar__time--low' : ''}`} role="timer">{mmss(leftMs)}</span>}
+            {screen?.joinCode && state === 'live' && (
+              <span className="cl-late cl-late--bar" aria-label={`Late? Join with code ${screen.joinCode.split('').join(' ')}`}>Late? Code <b>{screen.joinCode}</b></span>
+            )}
             {screen && screen.state !== 'over' && room && (
               <button type="button" className="cl-btn cl-btn--small cl-btn--danger" onClick={() => void act({ action: 'end', room })}>End</button>
             )}

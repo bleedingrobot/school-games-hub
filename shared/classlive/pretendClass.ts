@@ -113,6 +113,8 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
       if (r && r.n !== roundSeen) {
         roundSeen = r.n;
         target = CORNERS[Math.floor(rand() * 4)];
+        // Second half: most remember to change corners.
+        if (r.swap && target === mine.lastCorner && rand() < skill) target = ((target + 1 + Math.floor(rand() * 3)) % 4) as Corner;
       }
       if (mine.jailedIn === null && r && r.caught === null && t < r.runEnd) {
         // Now and then change corner halfway; a few dawdle.

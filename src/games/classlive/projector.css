@@ -186,6 +186,7 @@
   position: absolute; top: 10px; right: 12px; z-index: 25; padding: 6px 14px; border-radius: 999px; pointer-events: none;
   background: rgba(10, 6, 48, 0.78); border: 2px solid rgba(255, 213, 74, 0.7); color: #fff6c9; font-weight: 700; font-size: clamp(0.85rem, 1.8vmin, 1.2rem);
 }
+.cl-late--bar { position: static; padding: 3px 12px; }
 .cl-late b { font-size: 1.35em; letter-spacing: 0.12em; color: #ffe08a; margin-left: 4px; }
 .cl-results-tab { position: absolute; right: 12px; bottom: 12px; z-index: 30; }
 

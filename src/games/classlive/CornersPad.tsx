@@ -343,10 +343,11 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
         {mg.boost && <span className="fc-chip">⚡ Fast</span>}
         {mg.ghost && <span className="fc-chip">👻 Ghost</span>}
         {mg.double && <span className="fc-chip">⭐ Double</span>}
+        {mg.stay != null && r && !r.ended && <span className="fc-chip fc-chip--swap">🔁 Change corners! Not {CORNER_NAMES[mg.stay]}</span>}
         {mg.crystal !== null && <span className="fc-chip" style={{ borderColor: CORNER_COLOURS[mg.crystal] }}>🔮 {CORNER_NAMES[mg.crystal]} is safe</span>}
       </div>
       <div className="fc-pad__board">
-        <CornersBoard map={pub.map} round={r} t={t} flash={r?.ended && r.rolled ? r.rolled : null} crystal={mg.crystal} fogOn={false} onCorner={mg.jump && canRun ? (c) => void jump(c) : undefined}>
+        <CornersBoard map={pub.map} round={r} t={t} flash={r?.ended && r.rolled ? r.rolled : null} crystal={mg.crystal} banned={r && !r.ended ? mg.stay ?? null : null} fogOn={false} onCorner={mg.jump && canRun ? (c) => void jump(c) : undefined}>
           {!fogged && others.current.map((o, i) => <span key={i} className="fc-dot" style={{ left: `${o.x * 100}%`, top: `${o.y * 100}%` }} />)}
           <Token x={here.x} y={here.y} size={AVATAR_R * 2.2} className={`fc-token--me ${mg.shield ? 'fc-token--shield' : ''} ${mg.boost ? 'fc-token--fast' : ''} ${mg.ghost ? 'fc-token--ghost' : ''}`} label="You">
             <AvatarImage avatar={avatar ?? null} size={64} />

@@ -7,7 +7,7 @@ import { answerBox, apply, BODY, makeChain, newSerpent, SERPENT_LEVELS } from '.
 import { MAX_OPEN, openCap, UNTIMED_PACE_MS, type MuralGame } from './mural';
 import { ARMS, armCounts, isTrue, laggingArm, linkOf, newStars, readFact, tryFact, type Anchor } from './stars';
 import { lagHint } from '../../src/games/classlive/arms';
-import { clampMove, cornerOf, grab, makeRound, MAX_SPEED, newCorners, startSpot, stepMove, type CornersGame } from './corners';
+import { advance, clampMove, cornerOf, freshMine, grab, makeRound, MAX_SPEED, newCorners, startSpot, stepMove, type CornersGame } from './corners';
 
 const k: Anchor = { x: 6, y: 7, p: 42 };
 const arm = (text: string) => {
@@ -284,6 +284,15 @@ describe('Class Live server', () => {
     // End-of-game stats: answers, streaks, timings and the dice's favourite corners are kept.
     expect(mines.some((m) => (m.right ?? 0) > 0 && (m.bestStreak ?? 0) > 0 && m.fastMs === 3000) && (cg.caughtAll ?? 0) > 0).toBe(true);
     expect((cg.rolls ?? []).reduce((a, b) => a + b, 0)).toBeGreaterThan(3);
+    // The second half (from 1.5 of 3 minutes): change corners every round, or be caught for staying put.
+    const halves = [cg.halfAt, makeRound({ ...newCorners('snow'), halfAt: 1000 }, 2, 999, rng(2), 5).swap, makeRound({ ...newCorners('snow'), halfAt: 1000 }, 2, 1000, rng(2), 5).swap];
+    expect(halves).toEqual([90_000, undefined, true]);
+    expect(cg.round!.swap).toBe(true);
+    const sw = newCorners('snow');
+    sw.mine = { a: { ...freshMine(0), lastCorner: 0 }, b: { ...freshMine(1), lastCorner: 0 } };
+    sw.round = { ...makeRound(sw, 9, 0, rng(9), 2), swap: true, twist: null, rolled: [2] };
+    advance(sw, sw.round.runEnd, ['a', 'b'], { a: { x: 0.05, y: 0.05 }, b: { x: 0.95, y: 0.05 } }, rng(1));
+    expect([sw.round.stayed, sw.round.caught, sw.mine.b.lastCorner]).toEqual([['a'], ['a'], 1]);
     // Everyone let out of jail was put back in the middle (their saved spot moved by the server).
     const escaped = pc.ids.find((id) => cg.mine[id].escapes > 0)!;
     expect(pc.db.spots.get(room)![escaped]).toBeDefined();

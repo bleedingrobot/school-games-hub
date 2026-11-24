@@ -134,6 +134,8 @@ export interface PlayerView {
         kind: 'corners'; safe: number; score: number; jailed: boolean; jailRight: number; held: Power | null; boost: boolean; ghost: boolean;
         shield: boolean; double: boolean; crystal: Corner | null; jump: boolean; caughtLast: boolean; savedLast: boolean;
         placed: number; spot: Spot; nextAt: number; place: 1 | 2 | 3 | null;
+        /** Second half: the corner they may not stay in this round. */
+        stay: Corner | null;
         /** Own stats for the end screen. */
         stats: { right: number; wrong: number; bestStreak: number; warps: number; lucky: number; grabs: number; powers: number; escapes: number };
       };
@@ -282,7 +284,7 @@ export function playerView(s: Session, id: string): PlayerView {
         boost: boosted(m, n), ghost: ghostly(m, n), shield: !!r && m.shieldIn === n, double: !!r && m.doubleIn === n,
         crystal: r && m.crystalIn === n ? crystalCorner(r) : null, jump: !!r && m.jumpIn === n,
         caughtLast: !!r?.caught?.includes(id), savedLast: !!r?.saved.includes(id), placed: m.placed, spot: m.spot,
-        nextAt: m.lastAt + CORNERS_GAP_MS, place,
+        nextAt: m.lastAt + CORNERS_GAP_MS, place, stay: r?.swap && m.jailedIn === null ? m.lastCorner ?? null : null,
         stats: {
           right: m.right ?? 0, wrong: m.wrong ?? 0, bestStreak: m.bestStreak ?? 0, warps: m.warps ?? 0, lucky: m.lucky ?? 0,
           grabs: m.grabs, powers: m.powersUsed, escapes: m.escapes,
@@ -512,6 +514,8 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
       if (action === 'start') {
         if (s.state !== 'lobby') return { refuse: no(409, 'It has already started.', 'not-now') };
         s.state = 'live';
+        // Four Corners: change corners every round in the second half (a timed game's halfway point).
+        if (s.game.kind === 'corners' && s.lengthMin > 0) s.game.halfAt = (s.lengthMin * 60_000) / 2;
         return { reply: null, events: [{ type: 'start', t: 0 }], startedAt: sv.now() };
       }
       if (action === 'reveal') {
