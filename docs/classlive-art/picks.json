@@ -12,5 +12,14 @@
   "back-star-sky": 1,
   "back-jungle-temple": 1,
   "back-gallery": 2,
-  "card": 3
+  "card": 3,
+  "serpent-head-asleep": 20,
+  "serpent-head-awake": 8,
+  "serpent-coil": 3,
+  "serpent-tail": 9,
+  "serpent-plate": 1,
+  "serpent-tablet": 2,
+  "serpent-skin": 1,
+  "serpent-burst": 2,
+  "back-jungle-awake": 6
 }
