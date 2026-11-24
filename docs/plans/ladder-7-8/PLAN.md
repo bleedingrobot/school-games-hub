@@ -181,4 +181,4 @@ Asked on question cards in the thread. Summary:
 
 ## 9. James's answers
 
-(none yet)
+1. **Who uses it (24 Nov): both.** Year 7-8 pupils start on these skills, and strong Year 5-6 pupils can reach them.
