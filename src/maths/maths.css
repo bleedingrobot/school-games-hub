@@ -227,7 +227,7 @@
 .question__choice:has(.question__choice-key) {
   position: relative;
 }
-/* The key that picks this choice (games that turn choiceKeys on). */
+/* The key that picks this choice (every pick-one question). */
 .question__choice-key {
   position: absolute;
   left: 8px;
@@ -611,5 +611,12 @@
     to {
       opacity: 1;
     }
+  }
+}
+
+/* Touch-only screens (phones, iPads without a keyboard): no key badges, the number keys still work. */
+@media (hover: none) and (pointer: coarse) {
+  .question__choice-key {
+    display: none;
   }
 }

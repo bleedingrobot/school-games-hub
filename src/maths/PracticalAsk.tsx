@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { PracticalQuestion } from '../../shared/maths/practical';
 import { NumberPad } from './NumberPad';
 import { SkipsLeft } from './QuestionModal';
+import { choiceForKey, useQuestionKeys } from './questionKeys';
 import { noteQuestion, questionOpened, spendSkip, spotFromTitle, useSkipRule } from './questionLog';
 import './maths.css';
 
@@ -40,7 +41,7 @@ export function PracticalAsk({
 
   useEffect(() => {
     setTyped('');
-    box.current?.focus();
+    box.current?.focus({ preventScroll: true });
   }, [question]);
 
   // Each question shown is noted once for the teacher (questionLog.ts): answered, or skipped ("No thanks", or the box going away
@@ -85,19 +86,25 @@ export function PracticalAsk({
     if (typed !== '' && typed !== '-' && Number.isFinite(n)) onSubmit(n);
   };
 
-  function keys(event: React.KeyboardEvent) {
-    if (question.choices) return;
-    if (event.key === 'Enter' && event.target instanceof HTMLButtonElement) return;
-    if (/^[0-9]$/.test(event.key)) addDigit(event.key);
-    else if (event.key === '-' && negatives) minus();
-    else if (event.key === 'Backspace') back();
-    else if (event.key === 'Enter') enter();
-    else return;
-    event.preventDefault();
-  }
+  // The keys work wherever the keyboard focus is (questionKeys.ts): digits type, 1 to 4 pick a choice.
+  useQuestionKeys(box, (e) => {
+    if (question.choices) {
+      if (e.repeat) return false;
+      const choice = choiceForKey(e.key, question.choices);
+      if (!choice) return false;
+      onSubmit(choice.value);
+      return true;
+    }
+    if (/^[0-9]$/.test(e.key)) addDigit(e.key);
+    else if (e.key === '-' && negatives) minus();
+    else if (e.key === 'Backspace') back();
+    else if (e.key === 'Enter') enter();
+    else return false;
+    return true;
+  });
 
   return (
-    <div ref={box} className="question question--inline question--practical" role="group" aria-labelledby={titleId} tabIndex={-1} onKeyDown={keys}>
+    <div ref={box} className="question question--inline question--practical" role="group" aria-labelledby={titleId} tabIndex={-1}>
       <h2 id={titleId} className="question__title">
         {title}
       </h2>
@@ -105,8 +112,9 @@ export function PracticalAsk({
       <p className="question__text">{question.text}</p>
       {question.choices ? (
         <div className="question__choices" role="group" aria-label="Tap an answer">
-          {question.choices.map((c) => (
-            <button key={c.value} type="button" className="question__choice question__choice--label" onClick={() => onSubmit(c.value)}>
+          {question.choices.map((c, i) => (
+            <button key={c.value} type="button" className="question__choice question__choice--label" onClick={() => onSubmit(c.value)} aria-keyshortcuts={i < 9 ? String(i + 1) : undefined}>
+              {i < 9 && <kbd className="question__choice-key" aria-hidden="true">{i + 1}</kbd>}
               {c.label}
             </button>
           ))}

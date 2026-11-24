@@ -1,6 +1,7 @@
 /**
  * One maths question in a box over the game. The fact is shown big and clear; the student
- * types the answer (number pad or keyboard) or, in multiple-choice mode, taps one of four.
+ * types the answer (number pad or keyboard) or, in multiple-choice mode, taps one of four (or presses 1 to 4).
+ * The keyboard works as soon as the box opens, wherever the focus is (questionKeys.ts).
  *
  * Right: a sparkle and "Correct!", then it closes. Wrong: no buzzer, nothing taken away,
  * just the whole fact ("7 × 8 = 56") for 2 seconds, then it closes. The game decides what a
@@ -14,6 +15,7 @@ import { spokenLabel } from '../../shared/maths/banded';
 import { hintFor } from '../../shared/maths/hint';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { NumberPad } from './NumberPad';
+import { choiceForKey, useQuestionKeys } from './questionKeys';
 import { countAnswer, noteQuestion, questionOpened, spendSkip, spotFromTitle, STREAK_FROM, useSkipRule } from './questionLog';
 import { ScribblePad } from './ScribblePad';
 import './maths.css';
@@ -94,7 +96,6 @@ export function QuestionModal({
   scribble = true,
   spot,
   closeIsSkip = true,
-  choiceKeys = false,
 }: {
   question: ShownQuestion;
   /** What the question is for, e.g. "Mana Well". */
@@ -128,8 +129,6 @@ export function QuestionModal({
    * "Skip button" switch then leaves it alone.
    */
   closeIsSkip?: boolean;
-  /** Pick-one questions: the 1, 2, 3 and 4 keys pick the choices (each button shows its number). Off unless given. */
-  choiceKeys?: boolean;
 }) {
   const [typed, setTyped] = useState('');
   const [result, setResult] = useState<MarkedAnswer | null>(null);
@@ -158,7 +157,7 @@ export function QuestionModal({
     setTrouble('');
     setHint(null);
     shownAt.current = performance.now();
-    if (!inline) box.current?.focus();
+    if (!inline) box.current?.focus({ preventScroll: true });
   }, [question.id, inline]);
 
   // A sum (no words) stays on one line: if it is too wide for the box ("(12 + 8) × 3 − 4 = ?"), the text shrinks to fit
@@ -264,40 +263,28 @@ export function QuestionModal({
   const back = () => setTyped((t) => t.slice(0, -1));
   const enter = () => typed !== '' && submit(Number(typed));
 
-  function keys(event: React.KeyboardEvent) {
-    if (event.key === 'Escape' && canClose && !result && !checking) {
-      event.preventDefault();
+  // The keys work wherever the keyboard focus is (questionKeys.ts), so nobody has to click the box before typing.
+  const outer = useRef<HTMLDivElement>(null);
+  useQuestionKeys(outer, (e) => {
+    if (e.key === 'Escape') {
+      if (!canClose || result || checking) return false;
       close();
-      return;
+      return true;
     }
-    if (result || checking || question.choices) return;
-    // Enter on a focused button (keyboard users tabbing round the pad) presses that button.
-    if (event.key === 'Enter' && event.target instanceof HTMLButtonElement) return;
-    if (/^[0-9.]$/.test(event.key)) addDigit(event.key);
-    else if (event.key === 'Backspace') back();
-    else if (event.key === 'Enter') enter();
-    else return;
-    event.preventDefault();
-  }
-
-  // The number keys pick a choice wherever the keyboard is (the scribble pad too), but not while typing in a box.
-  const pickKey = useRef<(e: KeyboardEvent) => void>(() => {});
-  pickKey.current = (e) => {
-    if (!choiceKeys || !question.choices || result || checking) return;
-    if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
-    const tag = (e.target as HTMLElement | null)?.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-    const choice = /^[1-9]$/.test(e.key) ? question.choices[Number(e.key) - 1] : undefined;
-    if (choice === undefined || hint?.remove.includes(choice)) return;
-    e.preventDefault();
-    submit(choice);
-  };
-  useEffect(() => {
-    if (!choiceKeys) return;
-    const on = (e: KeyboardEvent) => pickKey.current(e);
-    window.addEventListener('keydown', on);
-    return () => window.removeEventListener('keydown', on);
-  }, [choiceKeys]);
+    if (result || checking) return false;
+    if (question.choices) {
+      if (e.repeat) return false;
+      const choice = choiceForKey(e.key, question.choices);
+      if (choice === undefined || hint?.remove.includes(choice)) return false;
+      submit(choice);
+      return true;
+    }
+    if (/^[0-9.]$/.test(e.key)) addDigit(e.key);
+    else if (e.key === 'Backspace') back();
+    else if (e.key === 'Enter') enter();
+    else return false;
+    return true;
+  });
 
   const showPad = scribble && !inline;
   const setPad = (open: boolean) => {
@@ -321,7 +308,7 @@ export function QuestionModal({
     </span>
   );
   return (
-    <div className={inline ? undefined : 'question-backdrop'}>
+    <div ref={outer} className={inline ? undefined : 'question-backdrop'}>
       <div className={showPad ? 'question-wrap' : 'question-wrap question-wrap--single'} data-pad={showPad && padOpen ? 'open' : undefined}>
       <div
         ref={box}
@@ -330,7 +317,6 @@ export function QuestionModal({
         aria-modal={inline ? undefined : true}
         aria-labelledby={titleId}
         tabIndex={-1}
-        onKeyDown={keys}
         data-result={result ? (result.correct ? 'right' : 'wrong') : undefined}
       >
         <h2 id={titleId} className="question__title">
@@ -387,9 +373,9 @@ export function QuestionModal({
                 disabled={!!result || checking || hint?.remove.includes(choice)}
                 data-answer={result && choice === (result.answer ?? question.answer) ? true : undefined}
                 onClick={() => submit(choice)}
-                aria-keyshortcuts={choiceKeys && i < 9 ? String(i + 1) : undefined}
+                aria-keyshortcuts={i < 9 ? String(i + 1) : undefined}
               >
-                {choiceKeys && i < 9 && <kbd className="question__choice-key" aria-hidden="true">{i + 1}</kbd>}
+                {i < 9 && <kbd className="question__choice-key" aria-hidden="true">{i + 1}</kbd>}
                 {question.choiceLabels ? choiceText(question.choiceLabels[i]) : choice}
               </button>
             ))}
