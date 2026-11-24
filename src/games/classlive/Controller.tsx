@@ -60,7 +60,11 @@ function Mine({ me }: { me: PlayerView | null }) {
   );
 }
 
-export function Controller({ link, me, room: roomProp }: { link: ClassLiveLink; me: string; room?: number }) {
+export function Controller({ link, me, room: roomProp, lookElsewhere }: {
+  link: ClassLiveLink; me: string; room?: number;
+  /** While nothing is on here, looks for another class game (Class Showdown) every few seconds and goes to it. */
+  lookElsewhere?: () => void;
+}) {
   const [phase, setPhase] = useState<Phase>('joining');
   const [error, setError] = useState('');
   const [room, setRoom] = useState<number | null>(roomProp ?? null);
@@ -126,6 +130,14 @@ export function Controller({ link, me, room: roomProp }: { link: ClassLiveLink; 
     const timer = window.setInterval(() => void look(), over ? 6000 : LOOK_MS);
     return () => { stop = true; window.clearInterval(timer); b(); };
   }, [link, me, room, phase, over]);
+
+  // Class Showdown is on the same Class Live page (James, 24 Nov 2026): a pupil waiting here is taken to it.
+  useEffect(() => {
+    if (phase !== 'none' || !lookElsewhere) return;
+    lookElsewhere();
+    const id = window.setInterval(lookElsewhere, 5000);
+    return () => window.clearInterval(id);
+  }, [phase, lookElsewhere]);
 
   if (phase === 'joining') return <Sky><div className="cl-c-center"><p className="cl-c-say">Joining…</p></div></Sky>;
   if (phase === 'none') {
