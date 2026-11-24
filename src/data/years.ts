@@ -123,3 +123,18 @@ export async function setLadderCap(student: string, capped: boolean): Promise<vo
   const { error } = await supabase.rpc('teacher_set_ladder_cap', { student, capped });
   if (error) fail(error, 'We couldn’t save that. Please try again.');
 }
+
+/**
+ * "Taught" switches for the Year 7 and 8 skills (migration 20261125000100_ladder_taught.sql): the skill ids a class has been
+ * taught. Pupils only get a Year 7-8 skill on auto once it is here.
+ */
+export async function fetchLadderTaught(classId: string): Promise<Set<string>> {
+  const { data, error } = await supabase.rpc('teacher_ladder_taught', { target_class: classId });
+  if (error) fail(error, 'We couldn’t load which Year 7 and 8 skills are switched on.');
+  return new Set(Array.isArray(data) ? data.filter((v): v is string => typeof v === 'string') : []);
+}
+
+export async function setLadderTaught(classId: string, skills: string[], taught: boolean): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_ladder_taught', { target_class: classId, skills, taught });
+  if (error) fail(error, 'We couldn’t save that. Please try again.');
+}

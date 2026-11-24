@@ -3,7 +3,7 @@ import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as ladderData from '../data/ladder';
 import { AUTO_FOCUS, type MathsFocus } from '../../shared/maths/focus';
-import { LADDER } from '../../shared/maths/ladder';
+import { LADDER, pastYear6 } from '../../shared/maths/ladder';
 import { newStats, type FactStats } from '../../shared/maths/leitner';
 import MathsPathCard from './MathsPathCard';
 
@@ -13,7 +13,8 @@ vi.mock('../data/ladder', async (importOriginal) => ({
 }));
 vi.mock('../auth/AuthContext', () => ({ useAuth: () => ({ profile: { id: 'student-1', role: 'student' } }) }));
 
-const built = LADDER.filter((s) => s.built && s.inAuto !== false); // the part-whole skills sit beside the path
+// The part-whole skills sit beside the path, and Year 7-8 skills are off until the class is taught them.
+const built = LADDER.filter((s) => s.built && s.inAuto !== false && !pastYear6(s));
 const secure = (ids: string[]): FactStats[] => built.filter((s) => ids.includes(s.id)).flatMap((s) => s.keys.map((k) => ({ ...newStats(k), attempts: 3, correct: 3, box: 3 })));
 const on = (over: Partial<NonNullable<MathsFocus['ladder']>> = {}): MathsFocus => ({
   ...AUTO_FOCUS,

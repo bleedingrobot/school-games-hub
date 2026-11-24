@@ -8430,30 +8430,35 @@ const MEASURE_FAMILIES = Object.fromEntries([
 //#region shared/maths/skillPacks/y78.ts
 const CARDS = [
 	{
+		name: "Negative numbers",
 		families: INTEGER_FAMILIES,
 		keys: INTEGER_SKILL_KEYS,
 		slow: INTEGER_SLOW_KEYS,
 		ladder: INTEGER_LADDER
 	},
 	{
+		name: "Powers, primes and factors",
 		families: POWER_FAMILIES,
 		keys: POWER_SKILL_KEYS,
 		slow: POWER_SLOW_KEYS,
 		ladder: POWER_LADDER
 	},
 	{
+		name: "Decimals, fractions, percentages, ratio and money",
 		families: NUMFACT_FAMILIES,
 		keys: NUMFACT_SKILL_KEYS,
 		slow: NUMFACT_SLOW_KEYS,
 		ladder: NUMFACT_LADDER
 	},
 	{
+		name: "Algebra",
 		families: ALGEBRA_FAMILIES,
 		keys: ALGEBRA_SKILL_KEYS,
 		slow: ALGEBRA_SLOW_KEYS,
 		ladder: ALGEBRA_LADDER
 	},
 	{
+		name: "Measurement and angles",
 		families: MEASURE_FAMILIES,
 		keys: {
 			metric: [
@@ -8571,6 +8576,7 @@ const CARDS = [
 		]
 	},
 	{
+		name: "Averages and chance",
 		families: DATA_FAMILIES,
 		keys: DATA_SKILL_KEYS,
 		slow: DATA_SLOW_KEYS,
@@ -8583,6 +8589,10 @@ const Y78_SLOW_KEYS = CARDS.flatMap((c) => c.slow);
 const rows = CARDS.flatMap((c) => c.ladder);
 const Y78_LADDER = [...rows.filter((r) => r.year === 7), ...rows.filter((r) => r.year === 8)];
 Object.fromEntries(rows.map((r) => [r.id, r.tiny]));
+CARDS.map((c) => ({
+	name: c.name,
+	skills: c.ladder
+}));
 //#endregion
 //#region shared/maths/skillPacks/decimalSkills.ts
 /**
@@ -11411,6 +11421,8 @@ function formerIdsOf(id) {
 }
 /** A Year 7 or 8 skill, left out for a pupil stopped at Year 6. */
 const pastYear6 = (skill) => (skill.year ?? 0) >= 7;
+/** A Year 7 or 8 skill this pupil doesn't get on auto: stopped at Year 6, or their class hasn't been taught it yet. */
+const offY78 = (skill, opts) => pastYear6(skill) && (opts.capAtYear6 === true || !(opts.y78Taught ?? []).includes(skill.id));
 /** The skill's keys once switched-off tables are taken out. */
 function activeKeys(skill, enabledTables, division = true) {
 	const on = new Set(enabledTables);
@@ -11455,7 +11467,7 @@ function ladderProgress(stats, opts = {}) {
 	const floor = Math.max(opts.floor ?? 0, tablesJumpFloor(byKey, enabled));
 	return {
 		skills: LADDER.map((skill, index) => {
-			if (!skill.built || opts.capAtYear6 && pastYear6(skill)) return {
+			if (!skill.built || offY78(skill, opts)) return {
 				skill,
 				status: "later",
 				share: 0
@@ -11570,11 +11582,17 @@ function parseLadderInfo(raw) {
 		placement: placed === "done" ? placement : null,
 		furthest: skillId(r.furthest),
 		...yearLevel !== null ? { yearLevel } : {},
-		...r.capped === true ? { capped: true } : {}
+		...r.capped === true ? { capped: true } : {},
+		...Array.isArray(r.taught) ? { taught: r.taught.filter((t) => typeof t === "string" && ID.test(t)).slice(0, 60) } : {}
 	};
 }
 const builtSkills = () => LADDER.filter((s) => s.built);
 const indexOfSkill = (id) => id ? LADDER.findIndex((s) => s.id === id) : -1;
+/** The Year 7-8 options a pupil's ladder facts give: stopped at Year 6, and what their class has been taught. */
+const y78Options = (info) => ({
+	...info.capped ? { capAtYear6: true } : {},
+	y78Taught: info.taught ?? []
+});
 /** The floor under a student's place: an index into `LADDER`. */
 function floorRank(info) {
 	const start = info.placed === "done" ? indexOfSkill(info.placement) : -1;
@@ -11585,12 +11603,12 @@ function placeProgress(stats, info, opts = {}) {
 	return ladderProgress(stats, {
 		...opts,
 		floor: floorRank(info),
-		...info.capped ? { capAtYear6: true } : {}
+		...y78Options(info)
 	});
 }
 /** The furthest place to keep: where they are now, or the last built skill once all of them are secure. */
 function placeToStore(stats, info, opts = {}) {
-	const skill = placeProgress(stats, info, opts).current ?? builtSkills().filter((s) => !info.capped || !pastYear6(s)).at(-1) ?? null;
+	const skill = placeProgress(stats, info, opts).current ?? builtSkills().filter((s) => !offY78(s, y78Options(info))).at(-1) ?? null;
 	return skill ? {
 		skill: skill.id,
 		rank: LADDER.indexOf(skill)

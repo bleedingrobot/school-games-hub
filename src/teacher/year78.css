@@ -1,0 +1,72 @@
+/* Maths > Year 7–8: a "Taught" switch per Year 7-8 skill (Year78.tsx). */
+.y78__intro {
+  max-width: 70ch;
+  margin: 0 0 12px;
+}
+.y78__error {
+  color: var(--danger, #b42318);
+  font-weight: 700;
+}
+.y78__group {
+  margin-top: 18px;
+}
+.y78__group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.y78__group-head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.y78__all {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line, #d6dce5);
+  background: var(--surface, #fff);
+  color: inherit;
+  cursor: pointer;
+}
+.y78__list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.y78__row label {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  align-items: start;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line, #d6dce5);
+  cursor: pointer;
+}
+.y78__row input {
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  grid-row: span 2;
+}
+.y78__row:has(input:checked) label {
+  border-color: var(--accent, #1d6f63);
+  background: color-mix(in srgb, var(--accent, #1d6f63) 8%, transparent);
+}
+.y78__name {
+  font-weight: 700;
+}
+.y78__year {
+  font-size: 0.8rem;
+  font-weight: 700;
+  opacity: 0.7;
+  margin-left: 6px;
+}
+.y78__eg {
+  font-size: 0.88rem;
+  opacity: 0.75;
+}

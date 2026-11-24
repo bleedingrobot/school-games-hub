@@ -235,6 +235,9 @@ export function TeacherMaths() {
         <NavLink to={pathFor(classId, 'maths/foundational')} className="teacher-subtabs__tab">
           Foundational skills
         </NavLink>
+        <NavLink to={pathFor(classId, 'maths/year78')} className="teacher-subtabs__tab">
+          Year 7–8
+        </NavLink>
       </nav>
       <Suspense fallback={<div className="loading" role="status" data-page-loading>Loading…</div>}>
         <Outlet />

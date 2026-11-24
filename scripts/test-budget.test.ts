@@ -46,7 +46,7 @@ const BUDGET: Record<string, number> = {
   'chess+checkers': 16,
   maths: 31, // 27, plus 2 for the Year 7-8 notation and question pictures, plus 2 for the Year 7-8 skills and the Stop at Year 6 switch (24 Nov 2026)
   'src/pages': 29, // 25, plus 4 for the profile page (docs/TESTING.md, 12 Nov 2026)
-  'src/teacher': 26, // 25, plus 1 for the basic facts check panel (15 Nov 2026)
+  'src/teacher': 27, // 25, plus 1 for the basic facts check panel (15 Nov 2026), plus 1 for the Year 7-8 Taught switches (25 Nov 2026)
   'src/data': 20,
   'src/App': 6,
   'site parts': 8,

@@ -5,7 +5,7 @@ import { randomFromSeed } from '../space/random';
 import { } from './config';
 import { } from './facts';
 import { newStats, type FactStats } from './leitner';
-import { AutoPack, LADDER, ladderProgress, } from './ladder';
+import { AutoPack, LADDER, ladderProgress, pastYear6 } from './ladder';
 import { sameAnswer } from './banded';
 import { skillTinyLabel, TINY_LABEL_MAX } from './skillNames';
 import { } from './skillPacks';
@@ -16,7 +16,8 @@ import { solveParts } from './focus';
 const rec = (key: string, box: number): FactStats => ({ ...newStats(key), attempts: 3, correct: 3, box });
 const secure = (keys: string[]) => keys.map((k) => rec(k, 3));
 // The built skills on the ladder (the part-whole skills sit beside it: see `inAuto`).
-const built = LADDER.filter((s) => s.built && s.inAuto !== false);
+// Year 7-8 skills are off until a class is taught them (y78.test.ts covers them).
+const built = LADDER.filter((s) => s.built && s.inAuto !== false && !pastYear6(s));
 
 /** Reads a question off the screen for the plain sums the early facts ask. */
 function solve(parts: string[]): number {
