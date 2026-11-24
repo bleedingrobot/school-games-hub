@@ -23,7 +23,9 @@ import './projector.css';
 import { painted } from './paintedArt';
 import { HowTo } from './HowTo';
 import { CornersScene } from './CornersScene';
-import { MAPS, MAP_WORDS, type CornerMap } from '../../../shared/classlive/corners';
+import { MAPS, MAP_WORDS, RUN_DEFAULT_S, RUN_MAX_S, RUN_MIN_S, type CornerMap } from '../../../shared/classlive/corners';
+
+const RUN_CHOICES = Array.from({ length: RUN_MAX_S - RUN_MIN_S + 1 }, (_, i) => RUN_MIN_S + i);
 import { speak } from '../../speech';
 import { next, VOICE_FOLDER } from './voiceLines';
 
@@ -500,6 +502,7 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
   const [mLength, setMLength] = useState(0);
   const [cLength, setCLength] = useState(5);
   const [cMap, setCMap] = useState<CornerMap | 'any'>('any');
+  const [cRun, setCRun] = useState(RUN_DEFAULT_S);
   const [x, setX] = useState('6');
   const [y, setY] = useState('7');
   const [length, setLength] = useState(0);
@@ -599,8 +602,16 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
               ))}
             </div>
           </div>
+          <div className="cl-opt">
+            <span className="cl-opt__label">Time to reach a corner</span>
+            <div className="cl-chips" role="group" aria-label="Time to reach a corner">
+              {RUN_CHOICES.map((n) => (
+                <button key={n} type="button" className={`cl-choice ${cRun === n ? 'cl-choice--on' : ''}`} aria-pressed={cRun === n} onClick={() => setCRun(n)}>{n} s</button>
+              ))}
+            </div>
+          </div>
           <TimerChips length={cLength} setLength={setCLength} />
-          <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('corners', { length: cLength, ...(cMap === 'any' ? {} : { map: cMap }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
+          <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('corners', { length: cLength, run: cRun, ...(cMap === 'any' ? {} : { map: cMap }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
         {onShowdown && <ShowdownCard busy={busy} onOpen={onShowdown} />}
       </div>

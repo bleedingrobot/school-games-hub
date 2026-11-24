@@ -65,6 +65,12 @@ export const ANSWER_GAP_MS = 1500;
 export const FOG_SHARE = 0.55;
 
 export const runMs = (n: number) => Math.max(9000, 14000 - (n - 1) * 400);
+/** The teacher picks the run time on the card (James, 25 Nov 2026 NZ): 6 to 12 seconds, the same every round. */
+export const RUN_MIN_S = 6;
+export const RUN_MAX_S = 12;
+export const RUN_DEFAULT_S = 10;
+export const runSeconds = (v: unknown): number =>
+  typeof v === 'number' && Number.isFinite(v) ? Math.max(RUN_MIN_S, Math.min(RUN_MAX_S, Math.round(v))) : RUN_DEFAULT_S;
 
 // ---- Shapes ----
 
@@ -134,6 +140,8 @@ export interface CornersGame {
   mine: Record<string, CornersMine>;
   /** Items get ids from here. */
   nextItem: number;
+  /** Seconds to reach a corner each round, the teacher's pick (older games: none, so the run shrinks from 14 s to 9 s). */
+  runS?: number;
 }
 
 export type CornersEvent =
@@ -294,15 +302,15 @@ export function makeRound(g: CornersGame, n: number, startAt: number, random: ()
   }
   const first = pick(CORNERS, random);
   const rolled: Corner[] = twist === 'lucky' ? [] : twist === 'two' ? [first, ((first + 1 + Math.floor(random() * 3)) % 4) as Corner] : [first];
-  const run = runMs(n);
+  const run = g.runS ? g.runS * 1000 : runMs(n);
   return {
     n, startAt, runEnd: startAt + run, rollEnd: startAt + run + ROLL_MS, showEnd: startAt + run + ROLL_MS + SHOW_MS,
     storms, ice, teleports, roller, hole, fog: has.has('fog'), gate, twist, items, rolled, caught: null, saved: [],
   };
 }
 
-export function newCorners(map: CornerMap): CornersGame {
-  return { kind: 'corners', map, round: null, mine: {}, nextItem: 1 };
+export function newCorners(map: CornerMap, runS: number = RUN_DEFAULT_S): CornersGame {
+  return { kind: 'corners', map, round: null, mine: {}, nextItem: 1, runS: runSeconds(runS) };
 }
 
 export function freshMine(i: number): CornersMine {

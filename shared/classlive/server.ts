@@ -24,7 +24,7 @@ import { answerBox, boxOf, newSerpent, SERPENT_LEVELS, wakeAt, type SerpentBox, 
 import { rewardsOf, type FinishedSession } from './rewards';
 import {
   advance as cornersAdvance, answered as cornersAnswered, boosted, crystalCorner, freshMine, ghostly, grab as cornersGrab, jump as cornersJump,
-  cornersDone, MAPS, needsPositions, newCorners, nextDeadline, podium, questionFor, ANSWER_GAP_MS as CORNERS_GAP_MS,
+  cornersDone, MAPS, needsPositions, runSeconds, newCorners, nextDeadline, podium, questionFor, ANSWER_GAP_MS as CORNERS_GAP_MS,
   type Corner, type CornerMap, type CornersEvent, type CornersGame, type Item, type Positions, type Power, type Round, type Spot,
 } from './corners';
 
@@ -441,7 +441,7 @@ export function newSession(body: Record<string, unknown>, seed: number, random: 
     game = newSerpent(level, random);
   } else if (activity === 'corners') {
     const map = MAPS.find((m) => m === body.map) ?? MAPS[Math.floor(random() * MAPS.length) % MAPS.length];
-    game = newCorners(map);
+    game = newCorners(map, runSeconds(body.run));
   } else game = newMural(random);
   return { seed, activity, state: 'lobby', lengthMin, players: {}, order: [], game, ...(body.padMusic === true ? { padMusic: true } : {}) };
 }

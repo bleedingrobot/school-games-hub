@@ -23,7 +23,7 @@ It is the fourth Class Live activity (docs/CLASSLIVE-PLAN.md): same room, lobby 
 ## Rules (shared/classlive/corners.ts)
 
 - Board is a unit square; corner zones are the four 0.26 squares in the corners (Red top left, Blue top right, Green bottom right, Yellow bottom left). Pupils start in the middle.
-- A round: **run** (countdown, 14 s shrinking to 9 s), **roll** (4.5 s dice), **show** (4.5 s: caught pupils fly to jail, shields pop). The corner is decided on the server when the round is made (hidden from pupils until the dice lands); positions are read when the run ends.
+- A round: **run** (countdown: the teacher picks 6 to 12 s on the card, default 10, the same every round; James, 25 Nov 2026 NZ), **roll** (4.5 s dice), **show** (4.5 s: caught pupils fly to jail, shields pop). The corner is decided on the server when the round is made (hidden from pupils until the dice lands); positions are read when the run ends.
 - Score: +1 a safe round (+2 with Double star). Most safe rounds wins; ties share the podium.
 - Jail: caught in round n, sit out round n+1, back at the start of n+2 if 3 right answers by then, else the round after the 3rd right answer. Jail questions come every 1.5 s at most.
 - Power-ups (carry one at a time, grab by running over it; switched on by a right answer while standing in a corner):

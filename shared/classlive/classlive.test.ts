@@ -239,6 +239,7 @@ describe('Class Live server', () => {
     expect(clampMove({ x: 0.92, y: 0.4, at: 0 }, { x: 0.08, y: 0.6 }, 100, [{ a: { x: 0.08, y: 0.6 }, b: { x: 0.92, y: 0.4 } }])).toEqual({ x: 0.08, y: 0.6 });
     const g: CornersGame = newCorners('snow');
     const r = makeRound(g, 3, 0, rng(3), 20);
+    expect([r.runEnd, makeRound(newCorners('snow', 3), 1, 0, rng(1), 5).runEnd, newCorners('space', 40).runS]).toEqual([10_000, 6000, 12]);
     expect(r.storms.length).toBeGreaterThan(0);
     const storm = r.storms[0];
     const slow = stepMove({ p: { x: storm.x, y: storm.y }, v: { x: 0, y: 0 } }, { x: 1, y: 0 }, 100, { ...r, teleports: [], ice: [], hole: false, roller: null }, 0, { boost: false, ghost: false });

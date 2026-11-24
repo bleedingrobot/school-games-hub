@@ -13479,6 +13479,7 @@ const SHOW_MS = 4500;
 const READY_MS = 4e3;
 const ANSWER_GAP_MS = 1500;
 const runMs = (n) => Math.max(9e3, 14e3 - (n - 1) * 400);
+const runSeconds = (v) => typeof v === "number" && Number.isFinite(v) ? Math.max(6, Math.min(12, Math.round(v))) : 10;
 const START = {
 	x: .5,
 	y: .5
@@ -13598,7 +13599,7 @@ function makeRound(g, n, startAt, random, players) {
 	}
 	const first = pick(CORNERS, random);
 	const rolled = twist === "lucky" ? [] : twist === "two" ? [first, (first + 1 + Math.floor(random() * 3)) % 4] : [first];
-	const run = runMs(n);
+	const run = g.runS ? g.runS * 1e3 : runMs(n);
 	return {
 		n,
 		startAt,
@@ -13619,13 +13620,14 @@ function makeRound(g, n, startAt, random, players) {
 		saved: []
 	};
 }
-function newCorners(map) {
+function newCorners(map, runS = 10) {
 	return {
 		kind: "corners",
 		map,
 		round: null,
 		mine: {},
-		nextItem: 1
+		nextItem: 1,
+		runS: runSeconds(runS)
 	};
 }
 function freshMine(i) {
@@ -13773,7 +13775,7 @@ function grab(g, who, itemId, at, t) {
 		ok: false,
 		reason: "gone"
 	};
-	if (!at || dist(at, item) > .125) return {
+	if (!at || dist(at, item) > .135) return {
 		ok: false,
 		reason: "far"
 	};
@@ -14337,7 +14339,7 @@ function newSession(body, seed, random) {
 		if ((body.x !== void 0 || body.y !== void 0) && !own) return "Pick two different numbers from 2 to 12.";
 		game = newStars(own ?? pickAnchor(level, random), own ? "own" : level);
 	} else if (activity === "serpent") game = newSerpent(SERPENT_LEVELS.find((l) => l === body.level) ?? "gold", random);
-	else if (activity === "corners") game = newCorners(MAPS.find((m) => m === body.map) ?? MAPS[Math.floor(random() * MAPS.length) % MAPS.length]);
+	else if (activity === "corners") game = newCorners(MAPS.find((m) => m === body.map) ?? MAPS[Math.floor(random() * MAPS.length) % MAPS.length], runSeconds(body.run));
 	else game = newMural(random);
 	return {
 		seed,
