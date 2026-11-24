@@ -337,7 +337,7 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
                   <QuestionModal
                     key={question.slot}
                     question={{ id: question.slot, parts: question.parts, spoken: question.spoken, prompt: question.prompt, choices: question.choices, choiceLabels: question.choiceLabels, input: question.input, maxLength: question.maxLength }}
-                    title={questionTitle} spot="Class Showdown" inline scribble={false} choiceKeys onSubmit={onSubmit} onDone={onDone}
+                    title={questionTitle} spot="Class Showdown" inline scribble={false} onSubmit={onSubmit} onDone={onDone}
                   />
                 </div>
               </div>

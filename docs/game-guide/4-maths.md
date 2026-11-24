@@ -16,7 +16,7 @@ Maths is the most important shared system. A student has **one maths focus** at 
    - `boxes: [0, 1]` gives only facts in those mastery boxes (easier: weakest first); `boxes: [3, 4]` gives confidence builders.
    - `missingFactor`, `division` follow the class's settings for times tables.
    - Easier or harder *within* the focus is the pack's job (60% focus, 30% review, 10% stretch). Don't pick skills yourself.
-4. **Show every kind of question the ladder can make**, so a skill added later just works. Show it with `QuestionModal` (or pass a `ShownQuestion` to it), and never draw `parts` yourself. If you must build your own display (Marble's answer gates), handle **all** of these:
+4. **Show every kind of question the ladder can make**, so a skill added later just works. Show it with `QuestionModal` (or pass a `ShownQuestion` to it), and never draw `parts` yourself. If you must build your own display (Marble's answer gates), use `useQuestionKeys` and `choiceForKey` (`src/maths/questionKeys.ts`) for its keys and handle **all** of these:
    - `parts`: text left to right with `'?'` as the blank; a part like `'3/4'` or `'?/8'` is a fraction; parts can be words (`'Round'`). Plus an optional `prompt` line above.
    - `choices` (numbers) with optional `choiceLabels` (`'2/3'`, `'0.25'`, `'25%'`). **When `choiceLabels` is set, the question can only be answered by picking**, whatever the multiple-choice switch says. There can be 2 or 4 choices.
    - `input: 'decimal'` means show a point key; `maxLength` is the longest answer (default 3).

@@ -554,7 +554,6 @@ export function RaceScreen({ road, number, sound, maths = null, hard = false, co
           onClose={closePort}
           closeLabel="Skip (half charge)"
           spot="circuit-port"
-          choiceKeys
         />
       )}
       <div className="cr-touch" aria-hidden="true">

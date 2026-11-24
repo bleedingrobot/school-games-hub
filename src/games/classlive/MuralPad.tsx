@@ -292,7 +292,7 @@ export function MuralPad({ link, room, view, me, setMe, setView }: { link: Class
           <QuestionModal
             key={question.slot}
             question={{ id: question.slot, parts: question.parts, spoken: question.spoken, prompt: question.prompt, choices: question.choices, choiceLabels: question.choiceLabels, input: question.input, maxLength: question.maxLength }}
-            title="Mystery Mural" note="Right answers flip tiles" spot="Class Live" inline scribble={false} choiceKeys onSubmit={onSubmit} onDone={onDone}
+            title="Mystery Mural" note="Right answers flip tiles" spot="Class Live" inline scribble={false} onSubmit={onSubmit} onDone={onDone}
           />
         </div>
       ) : wait !== null ? (
