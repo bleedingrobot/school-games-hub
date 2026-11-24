@@ -360,8 +360,8 @@ export function SerpentScene({ game, people, wakeAt, over, fx, sound, onRevealed
     const id = window.setInterval(() => {
       n++;
       setRevealed(n);
-      if (n <= BODY) soundRef.current.play('twinkle');
-      if (n === BODY + 1) soundRef.current.play('roar');
+      if (n <= BODY) soundRef.current.play('climb');
+      if (n === BODY + 1) soundRef.current.play('awake');
       if (n >= BODY + 1) { window.clearInterval(id); window.setTimeout(() => doneRef.current(), 2600); }
     }, 400);
     return () => window.clearInterval(id);
