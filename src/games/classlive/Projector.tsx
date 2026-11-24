@@ -4,7 +4,7 @@
  * shout-outs). It listens to the room's screen row, animates each new event once (never the ones it has seen), and only
  * ever draws good things: there are no wrong answers in the screen data.
  */
-import { classLiveTrack, musicSettings, useMusic } from './music';
+import { classLiveTrack, HOT_MS, musicSettings, useMusic } from './music';
 import { MusicControl } from './MusicControl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ARMS, ARM_GOAL, ARM_NAMES, SUPERNOVA, armCounts, laggingArm, type Arm, type Star, type StarsGame } from '../../../shared/classlive/stars';
@@ -343,7 +343,9 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   const corners = game?.kind === 'corners' ? game : null;
   const hall = !screen && !resuming ? painted('pick', 'hall') : null;
   // Background music for what is on screen (James, 25 Nov 2026 NZ).
-  useMusic(classLiveTrack(state, game?.kind ?? null, mural?.phase === 'guess', corners?.map), !muted);
+  const hotNow = (leftMs !== null && leftMs < HOT_MS) || (serpent ? serpent.awake || serpent.energy >= 0.75 * wakeAt(screen?.players ?? 1) : false)
+    || (game?.kind === 'stars' ? game.creature && !game.supernova : false);
+  useMusic(classLiveTrack(state, game?.kind ?? null, { guessing: mural?.phase === 'guess', hot: hotNow, map: corners?.map }), !muted);
   const backPic = hall ?? (corners ? null : painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky'));
   const lobbyOpen = state === 'lobby' && room !== null;
   useEffect(() => {

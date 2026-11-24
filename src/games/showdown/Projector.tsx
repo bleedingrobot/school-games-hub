@@ -3,7 +3,7 @@
  * teacher puts on the board. It listens to the room row and the feed, draws every event with its own moment (all in
  * projector.css, transform/opacity only), ticks the server once a second and never shows a question or a wrong answer.
  */
-import { useMusic } from '../classlive/music';
+import { arenaTrack, useMusic } from '../classlive/music';
 import { MusicControl } from '../classlive/MusicControl';
 import { useEffect, useLayoutEffect, useReducer, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { SHOWDOWN } from '../../../shared/showdown/config';
@@ -360,7 +360,7 @@ export function Projector({ link, classId, className, sound, onMute, start, onLe
   const state = view?.state;
   const arenaNow: Arena = room && view ? view.arena : arena;
   // Background music, one track per arena (James, 25 Nov 2026 NZ).
-  useMusic(arenaNow, !muted);
+
   const W = arenaWords(arenaNow);
   const gr = arenaNow === 'goldrush';
   const sky = arenaNow === 'skyclimb';
@@ -372,6 +372,8 @@ export function Projector({ link, classId, className, sound, onMute, start, onLe
   const paused = !!view?.pausedAt;
   const live = state === 'live';
   const final = ps.final && live;
+  // Background music, one track per arena, hotter in the final phase and the big waves (James, 25 Nov 2026 NZ).
+  useMusic(arenaTrack(arenaNow, state, final || winding), !muted);
   const stageClass = ['sd-p', `sd-p--p${ps.phase}`, gr ? 'sd-p--gr' : '', caving ? 'sd-p--cavein' : '', gr && ps.weakUntil > roundNow && live ? 'sd-p--lode' : '', sky ? 'sd-p--sky' : '', sky && winding ? 'sd-p--storm' : '', sky && ps.weakUntil > roundNow && live ? 'sd-p--updraft' : '', isle ? 'sd-p--isle' : '', isle && winding ? 'sd-p--bigwave' : '', hill ? 'sd-p--hill' : '', hill && winding ? 'sd-p--charge' : '', hill && ps.weakUntil > roundNow && live ? 'sd-p--double' : '', auc ? 'sd-p--auc' : '', auc && ps.view && isTeamMode(ps.view) ? 'sd-p--aucteams' : '', ps.view?.mode === 'solo' ? 'sd-p--solo' : '', auc && winding ? 'sd-p--thieves' : '', auc && ps.weakUntil > roundNow && live ? 'sd-p--goldenhour' : '', shaking ? 'sd-p--shake' : '', final ? 'sd-p--final' : '', roundNow - ps.phaseAt < 3200 && ps.phaseAt > 0 && live ? 'sd-p--transform' : ''].filter(Boolean).join(' ');
 
   return (

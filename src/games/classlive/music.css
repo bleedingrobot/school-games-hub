@@ -1,3 +1,11 @@
 /* The teacher's music switch and volume (shared with the Showdown bar). */
 .cl-music { display: inline-flex; align-items: center; gap: 6px; }
 .cl-music__vol { width: 90px; accent-color: #ffd54a; }
+
+/* The music button in the corner of the maths games. */
+.game-music { position: fixed; left: 10px; bottom: 10px; z-index: 900; display: flex; align-items: center; gap: 8px; padding: 4px; border-radius: 999px; background: rgba(20, 16, 60, 0.55); }
+.game-music.is-open { padding: 4px 10px 4px 4px; background: rgba(20, 16, 60, 0.85); }
+.game-music__btn, .game-music__close { width: 36px; height: 36px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, 0.15); color: #fff; font-size: 1.1rem; cursor: pointer; }
+.game-music__close { width: 28px; height: 28px; font-size: 0.9rem; }
+.game-music:not(.is-open) { opacity: 0.6; }
+.game-music:hover { opacity: 1; }
