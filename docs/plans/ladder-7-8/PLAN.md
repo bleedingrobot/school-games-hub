@@ -184,3 +184,4 @@ Asked on question cards in the thread. Summary:
 1. **Who uses it (24 Nov): both.** Year 7-8 pupils start on these skills, and strong Year 5-6 pupils can reach them.
 2. **Ladder shape (24 Nov): one longer ladder.** The Year 7-8 skills go on top of today's list; everyone's "x of 42" becomes "x of about 76". Card Y2 adds a pupil-facing line so the drop doesn't read as going backwards.
 3. **Finishing the Year 6 top (24 Nov): carry on by themselves.** Auto moves a Year 4-6 pupil on to the first Year 7 skill once the Year 6 top is secure; no teacher switch.
+4. **Quick time (24 Nov): 12 seconds for two-step types.** One-step types keep 8 s; two-step types (two-step equations, ratio, percent change) get 12 s, set per question type (card Y1 adds a per-type quick time).
