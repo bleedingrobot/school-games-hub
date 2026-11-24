@@ -17,16 +17,14 @@ const arm = (text: string) => {
 };
 
 describe('Star Web rules', () => {
-  it('reads facts written many ways and checks them exactly, decimals too', () => {
+  it('reads facts written many ways, checks them exactly, puts each on the right arm and says how it links', () => {
     expect(readFact('12 x 7 = 84')).toEqual({ a: 1200, op: '×', b: 700, c: 8400 });
     expect(readFact('84=12×7')).toEqual({ a: 1200, op: '×', b: 700, c: 8400 });
     expect(readFact('6 × 7')).toBeNull();
     expect(readFact('abc')).toBeNull();
     for (const t of ['0.6×7=4.2', '6×3.5=21', '42÷0.6=70', '42−7=35', '4.2÷7=0.6']) expect(isTrue(readFact(t)!), t).toBe(true);
     for (const t of ['6×7=43', '0.6×7=42', '42÷6=8']) expect(isTrue(readFact(t)!), t).toBe(false);
-  });
-
-  it('puts each true fact on the right arm, and says how it links', () => {
+    // Each true fact goes on the right arm, and says how it links.
     const want: Record<string, string> = {
       '6×7=42': 'same', '7×6=42': 'turn', '42÷6=7': 'divide', '42÷7=6': 'divide', '84÷6=14': 'divide', '420÷6=70': 'divide',
       '12×7=84': 'double', '6×14=84': 'double', '12×14=168': 'double', '42+42=84': 'double',
