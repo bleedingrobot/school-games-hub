@@ -12,9 +12,7 @@ describe('Year 7-8 notation read aloud', () => {
     expect(spokenNotation('?°')).toBe('? degrees');
     expect(spokenNotation('? cm²')).toBe('? square centimetres');
     expect(spokenNotation('2² × 3²')).toBe('2 squared × 3 squared');
-  });
-  it('leaves plain parts alone and works in a whole question', () => {
-    expect(spokenLabel('3/4')).toBe(spokenLabel('3/4'));
+    expect(spokenLabel('0.25')).toBe('0 point 2 5');
     expect(speak(['10³', '=', '?'])).toBe('10 cubed equals what?');
   });
 });

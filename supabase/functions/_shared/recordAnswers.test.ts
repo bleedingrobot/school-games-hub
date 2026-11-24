@@ -36,13 +36,11 @@ describe('saving marked maths answers', () => {
     expect(saves.map((a) => a.quick_ms)).toEqual([5000, 120000]);
     expect(saves.find((a) => a.quick_ms === 120000)?.answers).toHaveLength(1);
     expect(new Set(saves.map((a) => a.batch_id)).size).toBe(saves.length);
-  });
-
-  it('two-step types save in a batch of their own, with 12 seconds to be quick', async () => {
+    // Two-step types (slow.ts) save in a batch of their own, with 12 seconds to be quick.
     const db = fakeDb();
     await recordMathsAnswers(db, 'student-1', [tables, { key: 'square:of', correct: true, ms: 11000, at: 5 }], 'seed-3:0', 'marble');
-    const saves = db.mock.calls.filter(([name]) => name === 'record_fact_answers').map(([, a]) => a);
-    expect(saves.map((a) => a.quick_ms).sort()).toEqual([12000, 5000].sort());
-    expect(new Set(saves.map((a) => a.batch_id)).size).toBe(2);
+    const slowSaves = db.mock.calls.filter(([name]) => name === 'record_fact_answers').map(([, a]) => a);
+    expect(slowSaves.map((a) => a.quick_ms)).toEqual([5000, 12000]);
+    expect(new Set(slowSaves.map((a) => a.batch_id)).size).toBe(2);
   });
 });

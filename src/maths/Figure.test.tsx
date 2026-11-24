@@ -33,8 +33,7 @@ describe('question pictures', () => {
       if (JSON.stringify(f).includes('?')) expect(container.querySelector('.fig__label--ask')).not.toBeNull();
       unmount();
     }
-  });
-  it('only accepts figures it can draw', () => {
+    // Only figures it can draw are shown.
     expect(isFigure({ kind: 'triangle', angles: ['', '', ''] })).toBe(true);
     expect(isFigure({ kind: 'hexagon-ish' })).toBe(false);
     expect(isFigure(null)).toBe(false);

@@ -44,7 +44,7 @@ const BUDGET: Record<string, number> = {
   trader: 12,
   monsters: 10,
   'chess+checkers': 16,
-  maths: 27,
+  maths: 29, // 27, plus 2 for the Year 7-8 notation and question pictures (24 Nov 2026)
   'src/pages': 29, // 25, plus 4 for the profile page (docs/TESTING.md, 12 Nov 2026)
   'src/teacher': 26, // 25, plus 1 for the basic facts check panel (15 Nov 2026)
   'src/data': 20,
