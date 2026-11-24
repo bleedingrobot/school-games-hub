@@ -19,10 +19,12 @@ export interface BotPupil {
 }
 
 export const BOT_KINDS: Record<BotKind, { thinkMs: [number, number]; right: number; share: number }> = {
-  fast: { thinkMs: [2500, 5000], right: 0.9, share: 0.25 },
-  steady: { thinkMs: [5000, 9000], right: 0.8, share: 0.4 },
-  slow: { thinkMs: [9000, 16000], right: 0.7, share: 0.2 },
-  wobbly: { thinkMs: [4000, 9000], right: 0.55, share: 0.15 },
+  // Thinking times are 0.6x what they were first guessed: the first real class (24 Nov 2026, 19 pupils, 5 minutes) beat
+  // the boss at 192 s of 300, where the first pretend pupils took about 250 s; at 0.6x they take about 210 s.
+  fast: { thinkMs: [1500, 3000], right: 0.9, share: 0.25 },
+  steady: { thinkMs: [3000, 5400], right: 0.8, share: 0.4 },
+  slow: { thinkMs: [5400, 9600], right: 0.7, share: 0.2 },
+  wobbly: { thinkMs: [2400, 5400], right: 0.55, share: 0.15 },
 };
 
 const NAMES = ['Aroha', 'Leo', 'Mia', 'Nikau', 'Ava', 'Tama', 'Isla', 'Mason', 'Ruby', 'Kai', 'Zoe', 'Hemi', 'Lily', 'Jack', 'Maia',

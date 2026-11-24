@@ -312,6 +312,10 @@ The rules are in `shared/showdown/` (see `shared/README.md`), with 4 tests (budg
 
 After the first real class round James asked for more Bella and less sameness. 59 new lines: the round's milestones (halfway, nearly there, one minute left), streaks of 5 and 10, the lucky chest, a revive, pause and resume, a new solo leader, team pushes, the boss turning on each team, and each arena's own role calls ("We need more Anchors!", "We need a Medic!") said every 25 seconds while a role is short. Common lines have alternate takes, picked at random but never the same twice running. Every sound plays at a slightly different pitch, and each arena adds its own touch to a hit (pickaxe ping, splash, coin, stone thud, gust). The gap rules from #787 still apply, so it never piles up.
 
+## Tuning after the first real rounds (24 Nov 2026)
+
+The first real 5-minute rounds (about 19 pupils) beat the boss at 192 s (class) and 210 s (solo) of 300, and dug out Gold Rush (teams4) at 151 s. James found it a little easy. The pretend pupils now think at 0.6x their first guessed times, which reproduces about 210 s at the old health, and every boss health table value is scaled by `REAL_CLASS_PACE` = 1.3 (`bossHealth.ts`). With 19 pupils the simulator then wins about 78% of rounds, with a won round ending about 30 to 40 seconds before the bell; the other arenas scale with it.
+
 ## 10. Risks
 
 - **School wi-fi with 30 iPads at once.** Tiny messages only (a hit is a few bytes); the iPad never waits on the projector. Try it in a real class in stage 4 before switching on for everyone.
