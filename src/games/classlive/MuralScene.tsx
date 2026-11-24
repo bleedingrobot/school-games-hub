@@ -6,7 +6,7 @@
  * picture zooms and confetti falls. Moving parts are CSS transform/opacity (projector.css, classes prefixed mu-).
  */
 import { memo, useEffect, useRef, useState } from 'react';
-import { COLS, GUESS_FROM, PICTURES, TILES, type MuralGame } from '../../../shared/classlive/mural';
+import { CLUES, COLS, GUESS_FROM, PICTURES, TILES, type MuralGame } from '../../../shared/classlive/mural';
 import type { ScreenView } from '../../../shared/classlive/server';
 import { MuralPicture } from './muralPictures';
 import { PLAYER_COLOURS } from './StarSky';
@@ -139,14 +139,18 @@ export function MuralScene({ game, people, state, fx, showReveal, onReveal, onRe
           <h2 className={`mu-side__title${open && !shown ? ' mu-side__title--open' : ''}`}>
             {shown ? 'The picture is…' : open ? 'Guessing is open!' : `Guessing opens at ${OPEN_AT} tiles`}
           </h2>
-          <ul className={`mu-choices${open || shown ? ' is-open' : ''}`} aria-label="What could it be?">
-            {game.choices.map((c) => (
-              <li key={c} className={`mu-choice${shown && c === game.picture ? ' is-right' : ''}${shown && c !== game.picture ? ' is-not' : ''}`}>
-                <span className="mu-choice__pic"><MuralPicture id={c} small /></span>
-                <span className="mu-choice__name">{PICTURES[c]}</span>
-              </li>
-            ))}
-          </ul>
+          {open || shown ? (
+            <div className="mu-clue" role="status">
+              <span className="mu-clue__key" aria-hidden="true">🗝️</span>
+              <b className="mu-clue__label">Clue</b>
+              <p className="mu-clue__text">{CLUES[game.picture]}</p>
+            </div>
+          ) : (
+            <div className="mu-clue mu-clue--locked">
+              <span className="mu-clue__key" aria-hidden="true">🔒</span>
+              <p className="mu-clue__text">A clue appears when guessing opens.</p>
+            </div>
+          )}
           <h3 className="mu-side__sub">Guessed it</h3>
           {game.solvers.length === 0 ? <p className="mu-none">Nobody yet</p> : (
             <ol className="mu-solvers" aria-label="Who guessed right, in order">

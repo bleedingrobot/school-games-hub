@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ARMS, ARM_GOAL, ARM_NAMES, SUPERNOVA, armCounts, laggingArm, type Arm, type Star, type StarsGame } from '../../../shared/classlive/stars';
-import { PICTURES, type MuralGame } from '../../../shared/classlive/mural';
+import { CLUES, PICTURES, type MuralGame } from '../../../shared/classlive/mural';
 import { BODY, SERPENT_LEVELS, SERPENT_LEVEL_ABOUT, SERPENT_LEVEL_NAMES, stepText, wakeAt, type SerpentGame, type SerpentLevel } from '../../../shared/classlive/serpent';
 import { ACTIVITY_NAMES, type Activity, type Event, type ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
@@ -19,7 +19,7 @@ import './projector.css';
 import { painted } from './paintedArt';
 import { HowTo } from './HowTo';
 import { speak } from '../../speech';
-import { next, VOICE_FOLDER } from './voiceLines';
+import { clueLine, next, VOICE_FOLDER } from './voiceLines';
 
 const ROOM_KEY = 'classlive-room';
 type Ev = Event & { seq: number };
@@ -184,6 +184,7 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
         mbanner('Guessing is open!', 3200);
         sound.play('chime');
         say(next('guessOpen'), 600);
+        if (s.game.kind === 'mural') say(clueLine(CLUES[s.game.picture]), 4200);
       } else if (e.type === 'guessed') {
         const who = nameOf(e.pupil);
         mbanner(e.place === 1 ? `${who ?? 'Someone'} got it first!` : `${who ?? 'Someone else'} got it too!`, 2600);

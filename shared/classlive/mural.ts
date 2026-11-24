@@ -32,6 +32,23 @@ export const PICTURES = {
   pirate: 'A pirate ship',
 } as const;
 export type Picture = keyof typeof PICTURES;
+
+/**
+ * A riddle for each picture, shown (and read by Bella) once guessing opens instead of a list of the answers with
+ * thumbnails (James, 24 Nov 2026: the list made it too easy; a cryptic clue, not a description).
+ */
+export const CLUES: Record<Picture, string> = {
+  whale: "I'm bigger than any dinosaur, yet my dinner is smaller than your fingernail.",
+  volcano: 'I have a mouth but never eat. When I lose my temper, the whole island feels the heat.',
+  castle: 'I wear a crown of stone teeth, and water hugs my feet to keep strangers out.',
+  rocket: 'I count backwards before I leave, and I go out through the roof of the sky.',
+  kiwi: 'I share my name with a fruit and a whole nation, but I can never fly to visit either.',
+  dragon: "My breath could light your birthday candles, but you'll only meet me in a story.",
+  lighthouse: 'I stand alone all night and wink at ships so they never bump the rocks.',
+  octopus: 'Three hearts, blue blood, and more arms than I could ever need for a hug.',
+  treehouse: 'A home with no ground floor, where the neighbours are birds and the walls grow leaves.',
+  pirate: 'I fly bones on my flag, and my crew says "arr" instead of hello.',
+};
 export const PICTURE_IDS = Object.keys(PICTURES) as Picture[];
 
 export interface MuralMine {
