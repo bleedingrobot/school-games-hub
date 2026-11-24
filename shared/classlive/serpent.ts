@@ -13,14 +13,41 @@ export interface SerpentStep {
   op: SerpentOp;
   by: number;
 }
-export const SERPENT_LEVELS = ['green', 'gold', 'fire'] as const;
+/**
+ * Eight serpents in small steps (James, 24 Nov 2026: "more levels with more graduation"). Each step changes one thing:
+ * bigger numbers, bigger jumps, or one more kind of × and ÷. green, gold and fire are the three original levels, kept
+ * exactly as they were so saved rooms read the same.
+ */
+export const SERPENT_LEVELS = ['sprout', 'leaf', 'green', 'jade', 'gold', 'amber', 'ruby', 'fire'] as const;
 export type SerpentLevel = (typeof SERPENT_LEVELS)[number];
-export const SERPENT_LEVEL_NAMES: Record<SerpentLevel, string> = { green: 'Green serpent', gold: 'Gold serpent', fire: 'Fire serpent' };
-export const SERPENT_LEVEL_ABOUT: Record<SerpentLevel, string> = {
-  green: '+ and − within 200',
-  gold: 'all four: × and ÷ by 2, 5 and 10, numbers to 500',
-  fire: 'all four: × and ÷ up to 12, numbers to 1000',
+
+interface LevelRule {
+  name: string;
+  about: string;
+  /** Running answers stay from 0 to this. */
+  max: number;
+  /** + and − jump by these. */
+  addSub: [number, number];
+  /** × and ÷ by these (none: adding and taking away only). */
+  factors: number[];
+  /** Start number: from, to, and a step (10 starts on a multiple of ten). */
+  start: [number, number, number];
+  /** Chance of a × or ÷ box when one fits. */
+  mul: number;
+}
+
+const RULES: Record<SerpentLevel, LevelRule> = {
+  sprout: { name: 'Sprout serpent', about: '+ and − by up to 10, numbers to 50', max: 50, addSub: [1, 10], factors: [], start: [5, 20, 1], mul: 0 },
+  leaf: { name: 'Leaf serpent', about: '+ and − by up to 20, numbers to 100', max: 100, addSub: [2, 20], factors: [], start: [10, 40, 1], mul: 0 },
+  green: { name: 'Green serpent', about: '+ and − within 200', max: 200, addSub: [3, 49], factors: [], start: [10, 40, 1], mul: 0 },
+  jade: { name: 'Jade serpent', about: '+ and −, plus × and ÷ by 2 and 10, numbers to 200', max: 200, addSub: [3, 49], factors: [2, 10], start: [10, 40, 2], mul: 0.3 },
+  gold: { name: 'Gold serpent', about: 'all four: × and ÷ by 2, 5 and 10, numbers to 500', max: 500, addSub: [5, 99], factors: [2, 5, 10], start: [10, 60, 10], mul: 0.4 },
+  amber: { name: 'Amber serpent', about: 'all four: × and ÷ by 2, 3, 4, 5 and 10, numbers to 500', max: 500, addSub: [5, 99], factors: [2, 3, 4, 5, 10], start: [12, 48, 1], mul: 0.4 },
+  ruby: { name: 'Ruby serpent', about: 'all four: × and ÷ up to 6 and by 10, numbers to 1000', max: 1000, addSub: [7, 149], factors: [2, 3, 4, 5, 6, 10], start: [12, 48, 1], mul: 0.4 },
+  fire: { name: 'Fire serpent', about: 'all four: × and ÷ up to 12, numbers to 1000', max: 1000, addSub: [7, 199], factors: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], start: [12, 48, 1], mul: 0.4 },
 };
+export const SERPENT_LEVEL_NAMES = Object.fromEntries(SERPENT_LEVELS.map((l) => [l, RULES[l].name])) as Record<SerpentLevel, string>;
+export const SERPENT_LEVEL_ABOUT = Object.fromEntries(SERPENT_LEVELS.map((l) => [l, RULES[l].about])) as Record<SerpentLevel, string>;
 
 /** Boxes on the serpent itself; the rest is bonus tail. */
 export const BODY = 12;
@@ -35,23 +62,21 @@ export const SERPENT_GAP_MS = 800;
 /** Share of the class's possible right answers (12 each) that wakes the serpent. */
 export const WAKE_SHARE = 0.6;
 
-const LIMITS: Record<SerpentLevel, number> = { green: 200, gold: 500, fire: 1000 };
-
 export const apply = (v: number, s: SerpentStep) => (s.op === '+' ? v + s.by : s.op === '-' ? v - s.by : s.op === '×' ? v * s.by : v / s.by);
 export const stepText = (s: SerpentStep) => `${s.op === '-' ? '−' : s.op} ${s.by}`;
 
 /** Every step that works from `v` at this level. */
 function choices(level: SerpentLevel, v: number): SerpentStep[] {
-  const max = LIMITS[level];
+  const r = RULES[level];
+  const max = r.max;
   const out: SerpentStep[] = [];
-  const addSub = level === 'green' ? range(3, 49) : level === 'gold' ? range(5, 99) : range(7, 199);
+  const addSub = range(r.addSub[0], r.addSub[1]);
   for (const by of addSub) {
     if (v + by <= max) out.push({ op: '+', by });
     if (v - by >= 0) out.push({ op: '-', by });
   }
-  if (level !== 'green') {
-    const factors = level === 'gold' ? [2, 5, 10] : range(2, 12);
-    for (const by of factors) {
+  {
+    for (const by of r.factors) {
       if (v > 0 && v * by <= max) out.push({ op: '×', by });
       if (v > 0 && v % by === 0 && v / by >= 2) out.push({ op: '÷', by });
     }
@@ -77,7 +102,8 @@ export interface Chain {
  */
 export function makeChain(level: SerpentLevel, random: () => number, length = CHAIN_LENGTH): Chain {
   const pick = <T>(xs: readonly T[]) => xs[Math.floor(random() * xs.length) % xs.length];
-  let v = level === 'green' ? 10 + Math.floor(random() * 31) : level === 'gold' ? 10 * (1 + Math.floor(random() * 6)) : 12 + Math.floor(random() * 37);
+  const [from, to, by] = RULES[level].start;
+  let v = from + by * Math.floor(random() * (Math.floor((to - from) / by) + 1));
   const start = v;
   const steps: SerpentStep[] = [];
   const values = [v];
@@ -87,7 +113,7 @@ export function makeChain(level: SerpentLevel, random: () => number, length = CH
     let all = choices(level, v).filter((s) => s.op !== prev?.op && !undoes(s));
     if (!all.length) all = choices(level, v);
     const multiply = all.filter((s) => s.op === '×' || s.op === '÷');
-    const wantMul = level !== 'green' && multiply.length > 0 && random() < 0.4;
+    const wantMul = RULES[level].mul > 0 && multiply.length > 0 && random() < RULES[level].mul;
     const pool = wantMul ? multiply : all.filter((s) => s.op === '+' || s.op === '-');
     const step = pick(pool.length ? pool : all);
     steps.push(step);
