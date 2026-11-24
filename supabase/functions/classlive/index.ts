@@ -9153,25 +9153,168 @@ function markQuestion(q) {
 const sameAnswer = (typed, answer) => Math.abs(typed - answer) < 1e-9;
 //#endregion
 //#region shared/classlive/serpent.ts
+/**
+* Eight serpents in small steps (James, 24 Nov 2026: "more levels with more graduation"). Each step changes one thing:
+* bigger numbers, bigger jumps, or one more kind of × and ÷. green, gold and fire are the three original levels, kept
+* exactly as they were so saved rooms read the same.
+*/
 const SERPENT_LEVELS = [
+	"sprout",
+	"leaf",
 	"green",
+	"jade",
 	"gold",
+	"amber",
+	"ruby",
 	"fire"
 ];
+const RULES = {
+	sprout: {
+		name: "Sprout serpent",
+		about: "+ and − by up to 10, numbers to 50",
+		max: 50,
+		addSub: [1, 10],
+		factors: [],
+		start: [
+			5,
+			20,
+			1
+		],
+		mul: 0
+	},
+	leaf: {
+		name: "Leaf serpent",
+		about: "+ and − by up to 20, numbers to 100",
+		max: 100,
+		addSub: [2, 20],
+		factors: [],
+		start: [
+			10,
+			40,
+			1
+		],
+		mul: 0
+	},
+	green: {
+		name: "Green serpent",
+		about: "+ and − within 200",
+		max: 200,
+		addSub: [3, 49],
+		factors: [],
+		start: [
+			10,
+			40,
+			1
+		],
+		mul: 0
+	},
+	jade: {
+		name: "Jade serpent",
+		about: "+ and −, plus × and ÷ by 2 and 10, numbers to 200",
+		max: 200,
+		addSub: [3, 49],
+		factors: [2, 10],
+		start: [
+			10,
+			40,
+			2
+		],
+		mul: .3
+	},
+	gold: {
+		name: "Gold serpent",
+		about: "all four: × and ÷ by 2, 5 and 10, numbers to 500",
+		max: 500,
+		addSub: [5, 99],
+		factors: [
+			2,
+			5,
+			10
+		],
+		start: [
+			10,
+			60,
+			10
+		],
+		mul: .4
+	},
+	amber: {
+		name: "Amber serpent",
+		about: "all four: × and ÷ by 2, 3, 4, 5 and 10, numbers to 500",
+		max: 500,
+		addSub: [5, 99],
+		factors: [
+			2,
+			3,
+			4,
+			5,
+			10
+		],
+		start: [
+			12,
+			48,
+			1
+		],
+		mul: .4
+	},
+	ruby: {
+		name: "Ruby serpent",
+		about: "all four: × and ÷ up to 6 and by 10, numbers to 1000",
+		max: 1e3,
+		addSub: [7, 149],
+		factors: [
+			2,
+			3,
+			4,
+			5,
+			6,
+			10
+		],
+		start: [
+			12,
+			48,
+			1
+		],
+		mul: .4
+	},
+	fire: {
+		name: "Fire serpent",
+		about: "all four: × and ÷ up to 12, numbers to 1000",
+		max: 1e3,
+		addSub: [7, 199],
+		factors: [
+			2,
+			3,
+			4,
+			5,
+			6,
+			7,
+			8,
+			9,
+			10,
+			11,
+			12
+		],
+		start: [
+			12,
+			48,
+			1
+		],
+		mul: .4
+	}
+};
+Object.fromEntries(SERPENT_LEVELS.map((l) => [l, RULES[l].name]));
+Object.fromEntries(SERPENT_LEVELS.map((l) => [l, RULES[l].about]));
 /** Share of the class's possible right answers (12 each) that wakes the serpent. */
 const WAKE_SHARE = .6;
-const LIMITS = {
-	green: 200,
-	gold: 500,
-	fire: 1e3
-};
 const apply = (v, s) => s.op === "+" ? v + s.by : s.op === "-" ? v - s.by : s.op === "×" ? v * s.by : v / s.by;
 const stepText = (s) => `${s.op === "-" ? "−" : s.op} ${s.by}`;
 /** Every step that works from `v` at this level. */
 function choices(level, v) {
-	const max = LIMITS[level];
+	const r = RULES[level];
+	const max = r.max;
 	const out = [];
-	const addSub = level === "green" ? range(3, 49) : level === "gold" ? range(5, 99) : range(7, 199);
+	const addSub = range(r.addSub[0], r.addSub[1]);
 	for (const by of addSub) {
 		if (v + by <= max) out.push({
 			op: "+",
@@ -9182,22 +9325,15 @@ function choices(level, v) {
 			by
 		});
 	}
-	if (level !== "green") {
-		const factors = level === "gold" ? [
-			2,
-			5,
-			10
-		] : range(2, 12);
-		for (const by of factors) {
-			if (v > 0 && v * by <= max) out.push({
-				op: "×",
-				by
-			});
-			if (v > 0 && v % by === 0 && v / by >= 2) out.push({
-				op: "÷",
-				by
-			});
-		}
+	for (const by of r.factors) {
+		if (v > 0 && v * by <= max) out.push({
+			op: "×",
+			by
+		});
+		if (v > 0 && v % by === 0 && v / by >= 2) out.push({
+			op: "÷",
+			by
+		});
 	}
 	return out;
 }
@@ -9210,7 +9346,8 @@ function range(a, b) {
 */
 function makeChain(level, random, length = 48) {
 	const pick = (xs) => xs[Math.floor(random() * xs.length) % xs.length];
-	let v = level === "green" ? 10 + Math.floor(random() * 31) : level === "gold" ? 10 * (1 + Math.floor(random() * 6)) : 12 + Math.floor(random() * 37);
+	const [from, to, by] = RULES[level].start;
+	let v = from + by * Math.floor(random() * (Math.floor((to - from) / by) + 1));
 	const start = v;
 	const steps = [];
 	const values = [v];
@@ -9220,7 +9357,7 @@ function makeChain(level, random, length = 48) {
 		let all = choices(level, v).filter((s) => s.op !== prev?.op && !undoes(s));
 		if (!all.length) all = choices(level, v);
 		const multiply = all.filter((s) => s.op === "×" || s.op === "÷");
-		const pool = level !== "green" && multiply.length > 0 && random() < .4 ? multiply : all.filter((s) => s.op === "+" || s.op === "-");
+		const pool = RULES[level].mul > 0 && multiply.length > 0 && random() < RULES[level].mul ? multiply : all.filter((s) => s.op === "+" || s.op === "-");
 		const step = pick(pool.length ? pool : all);
 		steps.push(step);
 		v = apply(v, step);

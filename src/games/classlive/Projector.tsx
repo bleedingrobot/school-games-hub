@@ -468,13 +468,14 @@ function Setup({ busy, problem, onOpen }: { busy: boolean; problem: string; onOp
           <div className="cl-opt">
             <span className="cl-opt__label">Which serpent?</span>
             <div className="cl-levels" role="group" aria-label="Serpent level">
-              {SERPENT_LEVELS.map((l) => (
-                <button key={l} type="button" className={`cl-choice cl-lvl cl-lvl--${l} ${sLevel === l ? 'cl-choice--on' : ''}`} aria-pressed={sLevel === l} onClick={() => setSLevel(l)}>
+              {SERPENT_LEVELS.map((l, i) => (
+                <button key={l} type="button" className={`cl-choice cl-lvl cl-lvl--${l} ${sLevel === l ? 'cl-choice--on' : ''}`} aria-pressed={sLevel === l} title={SERPENT_LEVEL_ABOUT[l]} onClick={() => setSLevel(l)}>
+                  <i className="cl-lvl__n">{i + 1}</i>
                   <b>{SERPENT_LEVEL_NAMES[l].replace(' serpent', '')}</b>
-                  <small>{SERPENT_LEVEL_ABOUT[l]}</small>
                 </button>
               ))}
             </div>
+            <p className="cl-lvl__about" aria-live="polite"><b className={`cl-lvl--${sLevel}`}>{SERPENT_LEVEL_NAMES[sLevel]}</b> {SERPENT_LEVEL_ABOUT[sLevel]}</p>
           </div>
           <TimerChips length={sLength} setLength={setSLength} />
           <button type="button" className="cl-btn cl-btn--go" disabled={busy} onClick={() => onOpen('serpent', { level: sLevel, length: sLength })}>{busy ? 'Opening…' : 'Open the room'}</button>

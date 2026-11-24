@@ -40,8 +40,13 @@ export const HOWTO = {
     'Right answers from the whole class wake the serpent. Reach the head, then keep going on the bonus tail!',
   ],
   serpentLevel: {
+    sprout: 'Today it is the sprout serpent: adding and taking away small numbers.',
+    leaf: 'Today it is the leaf serpent: adding and taking away, numbers up to one hundred.',
     green: 'Today it is the green serpent: adding and taking away.',
+    jade: 'Today it is the jade serpent: adding and taking away, with times and share by two and ten.',
     gold: 'Today it is the gold serpent: all four, with times and share by two, five and ten.',
+    amber: 'Today it is the amber serpent: all four, with times and share by two, three, four, five and ten.',
+    ruby: 'Today it is the ruby serpent: all four, with times tables up to six, and numbers up to one thousand.',
     fire: 'Today it is the fire serpent: all four, with times tables up to twelve.',
   },
   mural: [
