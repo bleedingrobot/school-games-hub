@@ -8,6 +8,20 @@ import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'rea
 import { BODY, stepText, type SerpentGame } from '../../../shared/classlive/serpent';
 import type { ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
+import { painted } from './paintedArt';
+
+/** The painted serpent (docs/CLASSLIVE-ART-PLAN.md, folder serpent). Any piece not painted falls back to its drawing. */
+const ART = {
+  asleep: painted('serpent', 'head-asleep'),
+  awake: painted('serpent', 'head-awake'),
+  coil: painted('serpent', 'coil'),
+  tail: painted('serpent', 'tail'),
+  plate: painted('serpent', 'plate'),
+  tablet: painted('serpent', 'tablet'),
+  skin: painted('serpent', 'skin'),
+  burst: painted('serpent', 'burst'),
+  awakeBack: painted('back', 'jungle-awake'),
+};
 
 /** Twelve bright, different gem colours (the people[].colour index 0 to 11). */
 export const GEM_COLOURS = ['#ff4d6d', '#ff9f1c', '#ffe14d', '#a6ff4d', '#2ee6a6', '#2de2ff', '#4d8dff', '#9b6bff', '#e05cff', '#ff7fc0', '#ffffff', '#ffb38a'];
@@ -18,8 +32,10 @@ export interface SerpentFx {
   tailPulse: number;
   shake: boolean;
   roar: number;
+  /** Counts up each time someone reaches the head (a flash of light there). */
+  headPulse: number;
 }
-export const NO_SERPENT_FX: SerpentFx = { hopping: new Set(), banner: null, tailPulse: 0, shake: false, roar: 0 };
+export const NO_SERPENT_FX: SerpentFx = { hopping: new Set(), banner: null, tailPulse: 0, shake: false, roar: 0, headPulse: 0 };
 
 type Person = ScreenView['people'][number];
 
@@ -62,9 +78,45 @@ export const JungleBackdrop = memo(function JungleBackdrop() {
   );
 });
 
+const MOTES = Array.from({ length: 34 }, (_, i) => ({
+  x: rnd(i * 7 + 3) * 100, y: 8 + rnd(i * 5 + 9) * 88, d: 7 + rnd(i * 13 + 1) * 10, s: 3 + rnd(i * 19) * 5, o: rnd(i * 23) * -12,
+}));
+const LEAVES = Array.from({ length: 9 }, (_, i) => ({ x: rnd(i * 31 + 4) * 100, d: 11 + rnd(i * 7 + 2) * 9, o: rnd(i * 3 + 8) * -20, s: 14 + rnd(i * 41) * 14 }));
+
+/**
+ * Over the painted jungle: light shafts, drifting mist, golden fireflies and falling leaves; when the serpent wakes, the
+ * glowing temple (back/jungle-awake) fades in behind them.
+ */
+export const SerpentAmbience = memo(function SerpentAmbience({ awake }: { awake: boolean }) {
+  return (
+    <div className={`sp-amb ${awake ? 'sp-amb--awake' : ''}`} aria-hidden="true">
+      {ART.awakeBack && <div className="sp-amb__awake" style={{ backgroundImage: `url(${ART.awakeBack})` }} />}
+      <div className="sp-amb__rays" />
+      <div className="sp-amb__mist sp-amb__mist--a" />
+      <div className="sp-amb__mist sp-amb__mist--b" />
+      {MOTES.map((m, i) => (
+        <i key={i} className="sp-mote" style={{ left: `${m.x}%`, top: `${m.y}%`, width: m.s, height: m.s, animationDuration: `${m.d}s, ${m.d / 3}s`, animationDelay: `${m.o}s` }} />
+      ))}
+      {LEAVES.map((l, i) => (
+        <i key={`l${i}`} className="sp-fall" style={{ left: `${l.x}%`, width: l.s, height: l.s * 0.6, animationDuration: `${l.d}s`, animationDelay: `${l.o}s` }} />
+      ))}
+      <div className="sp-amb__vignette" />
+    </div>
+  );
+});
+
 /* ---------------- the coiled sleeping serpent (lobby) ---------------- */
 
 export function CoiledSerpent() {
+  if (ART.coil) {
+    return (
+      <div className="sp-coilp" role="img" aria-label="A sleeping serpent, coiled up">
+        <i className="sp-coilp__glow" aria-hidden="true" />
+        <img className="sp-coilp__img" src={ART.coil} alt="" draggable={false} />
+        <span className="sp-coilp__zzz" aria-hidden="true"><b>z</b><b>z</b><b>z</b></span>
+      </div>
+    );
+  }
   return (
     <svg className="sp-coil" viewBox="0 0 260 160" role="img" aria-label="A sleeping serpent, coiled up">
       <defs>
@@ -96,6 +148,8 @@ interface Lay {
   nodes: Pt[]; path: string; th: number; bw: number; bh: number;
   head: { x: number; y: number; hw: number; hh: number; dir: number };
   tail: TailLay | null;
+  /** Distance along the body path to each node, and to the head (the path's end). */
+  at: number[]; total: number;
 }
 const TOP = 54;
 const BOTTOM = 66;
@@ -128,19 +182,24 @@ function layoutOf(w: number, h: number, tail: number): Lay {
   const bw = Math.min(cw * 0.88, bh * 1.8);
   let path = `M ${nodes[0].x} ${nodes[0].y}`;
   const k = rx * 1.33;
+  const at = [0];
   for (let i = 1; i < nodes.length; i++) {
     const a = nodes[i - 1];
     const b = nodes[i];
-    if (Math.abs(a.y - b.y) < 1) path += ` L ${b.x} ${b.y}`;
-    else {
+    if (Math.abs(a.y - b.y) < 1) {
+      path += ` L ${b.x} ${b.y}`;
+      at.push(at[i - 1] + Math.abs(b.x - a.x));
+    } else {
       const dir = Math.floor((i - 1) / C) % 2 === 0 ? 1 : -1;
       path += ` C ${a.x + dir * k} ${a.y} ${b.x + dir * k} ${b.y} ${b.x} ${b.y}`;
+      at.push(at[i - 1] + cubicLength(a, { x: a.x + dir * k, y: a.y }, { x: b.x + dir * k, y: b.y }, b));
     }
   }
   const last = nodes[BODY];
   const lastDir = Math.floor(BODY / C) % 2 === 0 ? 1 : -1;
   const head = { x: last.x + lastDir * cw * 0.92, y: last.y, hw: Math.min(cw * 0.52, th * 1.05), hh: th * 0.6, dir: lastDir };
   path += ` L ${head.x} ${head.y}`;
+  const total = at[BODY] + Math.abs(head.x - last.x);
   let tl: TailLay | null = null;
   if (tail > 0) {
     const top = TOP + mainH;
@@ -165,7 +224,23 @@ function layoutOf(w: number, h: number, tail: number): Lay {
       curl: curl && curl.x > 20 && curl.x < w - 20 ? curl : null,
     };
   }
-  return { w, h, C, nodes, path, th, bw, bh, head, tail: tl };
+  return { w, h, C, nodes, path, th, bw, bh, head, tail: tl, at, total };
+}
+
+function cubicLength(a: Pt, b: Pt, c: Pt, d: Pt) {
+  let len = 0;
+  let prev = a;
+  for (let i = 1; i <= 24; i++) {
+    const t = i / 24;
+    const u = 1 - t;
+    const p = {
+      x: u * u * u * a.x + 3 * u * u * t * b.x + 3 * u * t * t * c.x + t * t * t * d.x,
+      y: u * u * u * a.y + 3 * u * u * t * b.y + 3 * u * t * t * c.y + t * t * t * d.y,
+    };
+    len += Math.hypot(p.x - prev.x, p.y - prev.y);
+    prev = p;
+  }
+  return len;
 }
 
 /** Lay the gems of one box out in rows (each maybe with a first-name label), as big as will fit. */
@@ -223,8 +298,18 @@ function Scale({ p, bw, bh, text, lit, answer, over, i, small }: { p: Pt; bw: nu
   return (
     <g transform={`translate(${p.x} ${p.y})`}><g className={`sp-scale ${lit ? 'sp-scale--lit' : ''}`} style={{ animationDelay: `${(i % 12) * 0.35}s` }}>
       {lit && <rect x={-bw / 2 - 5} y={-bh / 2 - 5} width={bw + 10} height={bh + 10} rx={bh * 0.3} className="sp-scale__glow" />}
-      <rect x={-bw / 2} y={-bh / 2} width={bw} height={bh} rx={bh * 0.26} className="sp-scale__face" strokeWidth={Math.max(2, bh * 0.04)} />
-      <path d={`M ${-bw * 0.36} ${-bh * 0.4} Q 0 ${-bh * 0.5} ${bw * 0.36} ${-bh * 0.4}`} className="sp-scale__ridge" strokeWidth={Math.max(2, bh * 0.045)} fill="none" />
+      {ART.plate ? (
+        <>
+          <image href={ART.plate} x={-bw / 2 - bw * 0.04} y={-bh / 2 - bh * 0.06} width={bw * 1.08} height={bh * 1.12} preserveAspectRatio="none" className="sp-plate" />
+          <rect x={-bw * 0.4} y={-bh * 0.36} width={bw * 0.8} height={bh * 0.72} rx={bh * 0.2} className="sp-plate__well" />
+          {lit && <rect x={-bw / 2} y={-bh / 2} width={bw} height={bh} rx={bh * 0.26} className="sp-plate__shine" />}
+        </>
+      ) : (
+        <>
+          <rect x={-bw / 2} y={-bh / 2} width={bw} height={bh} rx={bh * 0.26} className="sp-scale__face" strokeWidth={Math.max(2, bh * 0.04)} />
+          <path d={`M ${-bw * 0.36} ${-bh * 0.4} Q 0 ${-bh * 0.5} ${bw * 0.36} ${-bh * 0.4}`} className="sp-scale__ridge" strokeWidth={Math.max(2, bh * 0.045)} fill="none" />
+        </>
+      )}
       <text y={textY} textAnchor="middle" dominantBaseline="central" className="sp-op" style={{ fontSize: fs, strokeWidth: fs * 0.14 }}>{text}</text>
       {answer !== null && (
         <text y={bh * 0.22} textAnchor="middle" dominantBaseline="central" className="sp-ans" style={{ fontSize: af, strokeWidth: af * 0.14 }}>= {answer}</text>
@@ -318,6 +403,8 @@ export function SerpentScene({ game, people, wakeAt, over, fx, sound, onRevealed
   }, [lay, people, game.mine, tail, over]);
 
   const awakeLook = game.awake || over;
+  // How far the gold life has run up the body: to the furthest scale anyone has passed, or all the way.
+  const lit = !lay ? 0 : awakeLook ? lay.total : lay.at[Math.min(maxAt, BODY)];
   const pct = Math.min(1, game.energy / Math.max(1, wakeAt));
   const tailWord = tail > 0 ? `, tail grown to ${tail} extra scales` : '';
 
@@ -332,35 +419,63 @@ export function SerpentScene({ game, people, wakeAt, over, fx, sound, onRevealed
             <linearGradient id="sp-stone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#9aa89d" /><stop offset="1" stopColor="#4d5c55" /></linearGradient>
             <radialGradient id="sp-head" cx="40%" cy="40%" r="75%"><stop offset="0" stopColor="#4ff0b0" /><stop offset="1" stopColor="#0b6b4c" /></radialGradient>
             <filter id="sp-blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="7" /></filter>
+            <radialGradient id="sp-halo"><stop offset="0" stopColor="#ffe14d" stopOpacity="0.55" /><stop offset="1" stopColor="#ffe14d" stopOpacity="0" /></radialGradient>
+            <filter id="sp-soft" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation={Math.max(2, lay.th * 0.06)} /></filter>
+            {ART.skin && (
+              <pattern id="sp-skin" patternUnits="userSpaceOnUse" width={lay.th * 1.4} height={lay.th * 1.4}>
+                <image href={ART.skin} width={lay.th * 1.4} height={lay.th * 1.4} preserveAspectRatio="none" />
+              </pattern>
+            )}
           </defs>
 
           <g className={`sp-serpent ${over ? 'sp-serpent--rise' : ''}`}>
+            {/* the tail tip, behind the start tablet */}
+            {ART.tail && (
+              <g transform={`translate(${lay.nodes[0].x - lay.bw * 0.32} ${lay.nodes[0].y + lay.bh * 0.32})`}>
+                <g className="sp-tailtip">
+                  <image href={ART.tail} x={-lay.th * 2.1} y={-lay.th * 0.75} width={lay.th * 2.6} height={lay.th * 1.5} preserveAspectRatio="xMaxYMid meet" />
+                </g>
+              </g>
+            )}
+
             {/* the body */}
             <g className="sp-bodyg" fill="none" strokeLinecap="round" strokeLinejoin="round">
-              <path d={lay.path} stroke="#6dffcf" strokeOpacity={awakeLook ? 0.5 : 0.22} strokeWidth={lay.th + 18} filter="url(#sp-blur)" className="sp-body__aura" />
-              <path d={lay.path} stroke="#032b21" strokeWidth={lay.th + 8} />
-              <path d={lay.path} stroke="#0f7a58" strokeWidth={lay.th} />
-              <path d={lay.path} stroke="#27b886" strokeWidth={lay.th * 0.7} />
-              <path d={lay.path} stroke="#c5ffe6" strokeOpacity="0.4" strokeWidth={lay.th * 0.9} strokeDasharray={`2 ${lay.th * 0.3}`} />
+              <path d={lay.path} stroke="#6dffcf" strokeOpacity={awakeLook ? 0.55 : 0.22} strokeWidth={lay.th + 26} filter="url(#sp-blur)" className="sp-body__aura" />
+              <path d={lay.path} stroke="#021a14" strokeWidth={lay.th + 10} />
+              {ART.skin ? (
+                <>
+                  <path d={lay.path} stroke="url(#sp-skin)" strokeWidth={lay.th} />
+                  <path d={lay.path} stroke="#021a14" strokeOpacity="0.45" strokeWidth={lay.th} strokeDasharray={`1 ${lay.th * 0.55}`} className="sp-body__ribs" />
+                </>
+              ) : (
+                <>
+                  <path d={lay.path} stroke="#0f7a58" strokeWidth={lay.th} />
+                  <path d={lay.path} stroke="#27b886" strokeWidth={lay.th * 0.7} />
+                  <path d={lay.path} stroke="#c5ffe6" strokeOpacity="0.4" strokeWidth={lay.th * 0.9} strokeDasharray={`2 ${lay.th * 0.3}`} />
+                </>
+              )}
+              {/* roundness: dark edges, a soft shine down the middle */}
+              <path d={lay.path} stroke="#00140e" strokeOpacity="0.38" strokeWidth={lay.th} />
+              <path d={lay.path} stroke="url(#sp-skin)" strokeOpacity={ART.skin ? 1 : 0} strokeWidth={lay.th * 0.74} />
+              {!ART.skin && <path d={lay.path} stroke="#27b886" strokeWidth={lay.th * 0.7} />}
+              <path d={lay.path} stroke="#eafff4" strokeOpacity="0.2" strokeWidth={lay.th * 0.22} filter="url(#sp-soft)" />
+              {/* the life running up the serpent: gold as far as the furthest pupil, all the way when awake */}
+              <path d={lay.path} stroke="#ffd84d" strokeWidth={lay.th * 0.5} filter="url(#sp-soft)" className="sp-life"
+                strokeDasharray={`${lit} ${lay.total + 10}`} style={{ opacity: lit > 0 ? 0.42 : 0 }} />
+              <path d={lay.path} stroke="#fff6c4" strokeWidth={Math.max(3, lay.th * 0.07)} strokeDasharray={`${lay.th * 0.18} ${lay.th * 0.9}`} className="sp-flow"
+                style={{ opacity: awakeLook ? 0.9 : 0.35, animationDuration: awakeLook ? '1.6s' : '4s' }} />
             </g>
-
-            {/* the head */}
-            <g transform={`translate(${lay.head.x} ${lay.head.y}) scale(${lay.head.dir} 1)`}><g className={`sp-headg ${roaring ? 'sp-headg--roar' : ''}`}>
-              <g className="sp-tongue" stroke="#ff4d6d" strokeWidth={Math.max(3, lay.head.hh * 0.1)} fill="none" strokeLinecap="round">
-                <path d={`M ${lay.head.hw * 0.85} 0 H ${lay.head.hw + lay.head.hh * 0.9} M ${lay.head.hw + lay.head.hh * 0.9} 0 l ${lay.head.hh * 0.38} ${-lay.head.hh * 0.24} M ${lay.head.hw + lay.head.hh * 0.9} 0 l ${lay.head.hh * 0.38} ${lay.head.hh * 0.24}`} />
-              </g>
-              <path d={`M ${-lay.head.hw * 0.7} ${-lay.head.hh * 0.55} C ${-lay.head.hw * 0.1} ${-lay.head.hh * 1.25} ${lay.head.hw * 0.9} ${-lay.head.hh * 0.8} ${lay.head.hw} 0 C ${lay.head.hw * 0.9} ${lay.head.hh * 0.8} ${-lay.head.hw * 0.1} ${lay.head.hh * 1.25} ${-lay.head.hw * 0.7} ${lay.head.hh * 0.55} Z`}
-                fill="url(#sp-head)" stroke="#032b21" strokeWidth={Math.max(3, lay.head.hh * 0.07)} strokeLinejoin="round" />
-              <circle cx={lay.head.hw * 0.86} cy={-lay.head.hh * 0.14} r={lay.head.hh * 0.05} fill="#032b21" />
-              <circle cx={lay.head.hw * 0.86} cy={lay.head.hh * 0.14} r={lay.head.hh * 0.05} fill="#032b21" />
-              <Eye x={lay.head.hw * 0.18} y={-lay.head.hh * 0.5} r={lay.head.hh * 0.19} open={awakeLook} dir={1} />
-              <Eye x={lay.head.hw * 0.18} y={lay.head.hh * 0.5} r={lay.head.hh * 0.19} open={awakeLook} dir={1} />
-            </g></g>
 
             {/* start tablet */}
             <g transform={`translate(${lay.nodes[0].x} ${lay.nodes[0].y})`} className="sp-tablet">
-              <rect x={-lay.bw * 0.5} y={-lay.bh * 0.58} width={lay.bw} height={lay.bh * 1.16} rx={lay.bh * 0.18} fill="url(#sp-stone)" stroke="#1d2a25" strokeWidth="4" />
-              <path d={`M ${-lay.bw * 0.3} ${-lay.bh * 0.58} l ${lay.bw * 0.08} ${lay.bh * 0.2} l ${-lay.bw * 0.05} ${lay.bh * 0.15} M ${lay.bw * 0.34} ${lay.bh * 0.58} l ${-lay.bw * 0.06} ${-lay.bh * 0.25}`} stroke="#2c3a34" strokeWidth="3" fill="none" strokeLinecap="round" />
+              {ART.tablet ? (
+                <image href={ART.tablet} x={-lay.bw * 0.56} y={-lay.bh * 0.66} width={lay.bw * 1.12} height={lay.bh * 1.32} preserveAspectRatio="none" />
+              ) : (
+                <>
+                  <rect x={-lay.bw * 0.5} y={-lay.bh * 0.58} width={lay.bw} height={lay.bh * 1.16} rx={lay.bh * 0.18} fill="url(#sp-stone)" stroke="#1d2a25" strokeWidth="4" />
+                  <path d={`M ${-lay.bw * 0.3} ${-lay.bh * 0.58} l ${lay.bw * 0.08} ${lay.bh * 0.2} l ${-lay.bw * 0.05} ${lay.bh * 0.15} M ${lay.bw * 0.34} ${lay.bh * 0.58} l ${-lay.bw * 0.06} ${-lay.bh * 0.25}`} stroke="#2c3a34" strokeWidth="3" fill="none" strokeLinecap="round" />
+                </>
+              )}
               <text y={-lay.bh * 0.34} textAnchor="middle" dominantBaseline="central" className="sp-tablet__word" style={{ fontSize: lay.bh * 0.2 }}>START</text>
               <text y={lay.bh * 0.12} textAnchor="middle" dominantBaseline="central" className="sp-tablet__num" style={{ fontSize: Math.min(lay.bh * 0.62, (lay.bw * 0.86) / (String(chain.start).length * 0.6)) }}>{chain.start}</text>
             </g>
@@ -370,6 +485,41 @@ export function SerpentScene({ game, people, wakeAt, over, fx, sound, onRevealed
               <Scale key={i} i={i} p={lay.nodes[i + 1]} bw={lay.bw} bh={lay.bh} text={stepText(s)} lit={maxAt > i || over} over={over}
                 answer={over && revealed > i ? chain.values[i + 1] : null} />
             ))}
+
+            {/* the head */}
+            <g transform={`translate(${lay.head.x} ${lay.head.y}) scale(${lay.head.dir} 1)`}><g className={`sp-headg ${roaring ? 'sp-headg--roar' : ''}`}>
+              {ART.burst && (awakeLook || fx.headPulse > 0) && (
+                <image key={`burst${fx.headPulse}${awakeLook}`} href={ART.burst} x={-lay.th * 2.6} y={-lay.th * 2.6} width={lay.th * 5.2} height={lay.th * 5.2} className="sp-burst" />
+              )}
+              {awakeLook && <circle cx={lay.head.hw * 0.3} r={lay.th * 1.4} fill="url(#sp-halo)" className="sp-head__halo" />}
+              {ART.asleep && ART.awake ? (
+                <g className="sp-headp">
+                  <image href={ART.asleep} x={-lay.th * 0.6} y={-lay.th * 1.15} width={lay.th * 1.7} height={lay.th * 1.65} preserveAspectRatio="xMinYMax meet"
+                    className="sp-headp__img" style={{ opacity: awakeLook ? 0 : 1 }} />
+                  <image href={ART.awake} x={-lay.th * 0.6} y={-lay.th * 1.15} width={lay.th * 1.7} height={lay.th * 1.65} preserveAspectRatio="xMinYMax meet"
+                    className="sp-headp__img sp-headp__img--awake" style={{ opacity: awakeLook ? 1 : 0 }} />
+                </g>
+              ) : (
+                <>
+                  <g className="sp-tongue" stroke="#ff4d6d" strokeWidth={Math.max(3, lay.head.hh * 0.1)} fill="none" strokeLinecap="round">
+                    <path d={`M ${lay.head.hw * 0.85} 0 H ${lay.head.hw + lay.head.hh * 0.9} M ${lay.head.hw + lay.head.hh * 0.9} 0 l ${lay.head.hh * 0.38} ${-lay.head.hh * 0.24} M ${lay.head.hw + lay.head.hh * 0.9} 0 l ${lay.head.hh * 0.38} ${lay.head.hh * 0.24}`} />
+                  </g>
+                  <path d={`M ${-lay.head.hw * 0.7} ${-lay.head.hh * 0.55} C ${-lay.head.hw * 0.1} ${-lay.head.hh * 1.25} ${lay.head.hw * 0.9} ${-lay.head.hh * 0.8} ${lay.head.hw} 0 C ${lay.head.hw * 0.9} ${lay.head.hh * 0.8} ${-lay.head.hw * 0.1} ${lay.head.hh * 1.25} ${-lay.head.hw * 0.7} ${lay.head.hh * 0.55} Z`}
+                    fill="url(#sp-head)" stroke="#032b21" strokeWidth={Math.max(3, lay.head.hh * 0.07)} strokeLinejoin="round" />
+                  <circle cx={lay.head.hw * 0.86} cy={-lay.head.hh * 0.14} r={lay.head.hh * 0.05} fill="#032b21" />
+                  <circle cx={lay.head.hw * 0.86} cy={lay.head.hh * 0.14} r={lay.head.hh * 0.05} fill="#032b21" />
+                  <Eye x={lay.head.hw * 0.18} y={-lay.head.hh * 0.5} r={lay.head.hh * 0.19} open={awakeLook} dir={1} />
+                  <Eye x={lay.head.hw * 0.18} y={lay.head.hh * 0.5} r={lay.head.hh * 0.19} open={awakeLook} dir={1} />
+                </>
+              )}
+              {!awakeLook && (
+                <g className="sp-zzz sp-zzz--head" fill="#d9fff0" transform={`scale(${lay.head.dir} 1)`}>
+                  <text x={lay.head.dir * lay.head.hw * 0.4} y={-lay.th * 0.9} fontSize={lay.th * 0.34} fontWeight="900">z</text>
+                  <text x={lay.head.dir * lay.head.hw * 0.4 + lay.th * 0.3} y={-lay.th * 1.2} fontSize={lay.th * 0.26} fontWeight="900">z</text>
+                  <text x={lay.head.dir * lay.head.hw * 0.4 + lay.th * 0.55} y={-lay.th * 1.45} fontSize={lay.th * 0.2} fontWeight="900">z</text>
+                </g>
+              )}
+            </g></g>
 
             {/* the bonus tail */}
             {lay.tail && (

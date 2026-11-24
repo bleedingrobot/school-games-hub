@@ -14,7 +14,7 @@ import { ARM_COLOURS, lagHint, useHeldLag } from './arms';
 import type { ClassLiveLink, Reply } from './link';
 import { NightBackdrop, PLAYER_COLOURS, StarSky } from './StarSky';
 import { MuralCloth, MuralScene, NO_MURAL_FX, type MuralFx } from './MuralScene';
-import { CoiledSerpent, JungleBackdrop, NO_SERPENT_FX, SerpentScene, type SerpentFx } from './SerpentScene';
+import { CoiledSerpent, JungleBackdrop, NO_SERPENT_FX, SerpentAmbience, SerpentScene, type SerpentFx } from './SerpentScene';
 import './projector.css';
 import { painted } from './paintedArt';
 import { speak } from '../../speech';
@@ -132,6 +132,7 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
         const who = nameOf(e.pupil);
         banner(e.place === 1 ? `${who ?? 'Someone'} reached the head!` : `${who ?? 'Someone else'} reached the head too!`, 2600);
         sound.play('chime');
+        sx((f) => ({ ...f, headPulse: f.headPulse + 1 }));
         if (e.place === 1) say(next('head'), 600);
       } else if (e.type === 'tail') {
         sx((f) => ({ ...f, tailPulse: f.tailPulse + 1 }));
@@ -315,7 +316,8 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
   return (
     <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''} ${mural ? 'cl-p--mural' : ''} ${backPic ? 'cl-p--painted' : ''}`}>
       {serpent ? <JungleBackdrop /> : <NightBackdrop />}
-      {backPic && <div className="cl-painted" style={{ backgroundImage: `url(${backPic})` }} aria-hidden="true" />}
+      {backPic && <div className={`cl-painted ${serpent ? 'cl-painted--serpent' : ''}`} style={{ backgroundImage: `url(${backPic})` }} aria-hidden="true" />}
+      {serpent && <SerpentAmbience awake={serpent.awake || state === 'over'} />}
       <div className={`cl-bar ${barOpen ? 'cl-bar--open' : ''}`}>
         <button type="button" className="cl-bar__tab" onClick={() => setBarOpen(!barOpen)} aria-expanded={barOpen} aria-label={barOpen ? 'Hide the teacher bar' : 'Show the teacher bar'}>{barOpen ? '▲' : '☰'}</button>
         {barOpen && (
