@@ -17,17 +17,20 @@ export interface MemoryDb {
   maths: MathsContext;
   /** Sessions paid, by `${room}:${seed}`. */
   paid: Map<string, FinishedSession>;
-  pupils: Map<string, { id: string; name: string; classId: string }>;
+  pupils: Map<string, { id: string; name: string; classId: string; schoolId?: number }>;
+  /** Each class's school (1 when not listed). */
+  schools: Map<string, number>;
   teachers: Map<string, string[]>;
   enabled: boolean;
   showNames: boolean;
 }
 
-export function memoryDb(opts: { pupils?: { id: string; name: string; classId: string }[]; teachers?: Record<string, string[]> } = {}): MemoryDb {
+export function memoryDb(opts: { pupils?: { id: string; name: string; classId: string; schoolId?: number }[]; teachers?: Record<string, string[]>; schools?: Record<string, number> } = {}): MemoryDb {
   return {
     rooms: new Map(), players: new Map(), questions: new Map(), answers: [], maths: { facts: [], settings: {} }, paid: new Map(),
     pupils: new Map((opts.pupils ?? []).map((p) => [p.id, p])),
     teachers: new Map(Object.entries(opts.teachers ?? {})),
+    schools: new Map(Object.entries(opts.schools ?? {})),
     enabled: true, showNames: true,
   };
 }
@@ -40,17 +43,21 @@ export function memoryServices(db: MemoryDb, clock: { now(): number; random?(): 
     now: () => clock.now(),
     random: clock.random ?? Math.random,
     async teacherClass(teacher, classId) {
-      return db.teachers.get(teacher)?.includes(classId) ? { enabled: db.enabled, showNames: db.showNames } : null;
+      return db.teachers.get(teacher)?.includes(classId) ? { enabled: db.enabled, showNames: db.showNames, schoolId: db.schools.get(classId) ?? 1 } : null;
     },
     async pupil(player) {
       const p = db.pupils.get(player);
-      return p ? { classId: p.classId, name: p.name, enabled: db.enabled } : null;
+      return p ? { classId: p.classId, schoolId: p.schoolId ?? db.schools.get(p.classId) ?? 1, name: p.name, enabled: db.enabled } : null;
+    },
+    async codeRoom(schoolId, code) {
+      const r = [...db.rooms.values()].filter((x) => x.schoolId === schoolId && x.session.lobby?.code === code && x.session.state !== 'over' && clock.now() - x.openedAt < 3 * 3600_000).sort((a, b) => b.id - a.id)[0];
+      return r ? copy(r) : null;
     },
     async openRoom(classId, teacher, change) {
       for (const r of db.rooms.values()) if (r.classId === classId) r.session.state = 'over';
       const id = nextRoom++;
       db.rooms.set(id, {
-        id, classId, teacher, version: 1, startedAt: null, showNames: change.screen.showNames, session: copy(change.session),
+        id, classId, schoolId: db.schools.get(classId) ?? 1, teacher, version: 1, startedAt: null, showNames: change.screen.showNames, session: copy(change.session),
         seq: 0, events: [], view: copy(change.view), screen: copy(change.screen), openedAt: clock.now(),
       });
       onChange?.(id, change);

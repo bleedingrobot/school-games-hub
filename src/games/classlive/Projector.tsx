@@ -455,7 +455,12 @@ function CardArt({ pic }: { pic: string | null }) {
   );
 }
 
-function Setup({ busy, problem, onOpen }: { busy: boolean; problem: string; onOpen: (activity: Activity, body: Record<string, unknown>) => void }) {
+const WHERE_KEY = 'classlive.where';
+const HOST_KEY = 'classlive.host';
+const readKept = (key: string): string | null => { try { return window.localStorage.getItem(key); } catch { return null; } };
+const keep = (key: string, v: string) => { try { window.localStorage.setItem(key, v); } catch { /* private window: not kept */ } };
+
+function Setup({ busy, problem, onOpen: open }: { busy: boolean; problem: string; onOpen: (activity: Activity, body: Record<string, unknown>) => void }) {
   const [level, setLevel] = useState<LevelPick>('middle');
   const [sLevel, setSLevel] = useState<SerpentLevel>('gold');
   const [sLength, setSLength] = useState(0);
@@ -467,12 +472,34 @@ function Setup({ busy, problem, onOpen }: { busy: boolean; problem: string; onOp
   const yi = Number(y);
   const okPick = Number.isInteger(xi) && Number.isInteger(yi) && xi >= 2 && xi <= 12 && yi >= 2 && yi <= 12 && xi !== yi;
   const own = level === 'pick';
-  const canOpen = !busy && (!own || okPick);
+  // Who can join (James, 25 Nov 2026): the class, or any pupil of the school from their home page's "Join now?".
+  const [where, setWhere] = useState<'class' | 'lobby'>(() => (readKept(WHERE_KEY) === 'lobby' ? 'lobby' : 'class'));
+  const [host, setHost] = useState(() => readKept(HOST_KEY) ?? '');
+  const hostOk = where === 'class' || /\p{L}/u.test(host);
+  const canOpen = !busy && hostOk && (!own || okPick);
+  const onOpen = (activity: Activity, body: Record<string, unknown>) => {
+    keep(WHERE_KEY, where);
+    if (where === 'lobby') keep(HOST_KEY, host.trim());
+    open(activity, where === 'lobby' ? { ...body, where: 'lobby', host: host.trim() } : body);
+  };
   return (
     <div className="cl-setup">
       <div className="cl-motes" aria-hidden="true">{MOTES.map((m, i) => <i key={i} style={{ left: `${m[0]}%`, animationDelay: `${m[1]}s`, animationDuration: `${m[2]}s`, ['--s' as string]: m[3] }} />)}</div>
       <h1 className="cl-setup__title">Class Live</h1>
       <p className="cl-setup__sub">Pick a game for the big screen</p>
+      <div className="cl-where" role="group" aria-label="Who can join?">
+        <span className="cl-opt__label">Who can join?</span>
+        <button type="button" className={`cl-choice ${where === 'class' ? 'cl-choice--on' : ''}`} aria-pressed={where === 'class'} onClick={() => setWhere('class')}>🏫 My class</button>
+        <button type="button" className={`cl-choice ${where === 'lobby' ? 'cl-choice--on' : ''}`} aria-pressed={where === 'lobby'} onClick={() => setWhere('lobby')}>🌏 Open in the lobby</button>
+        {where === 'lobby' && (
+          <label className="cl-where__host">
+            <span>Pupils see:</span>
+            <input className="cl-where__input" value={host} maxLength={30} placeholder="Mr Riley" onChange={(e) => setHost(e.target.value)} aria-label="Your name for pupils" />
+            <span>is starting a game. Join now?</span>
+          </label>
+        )}
+        {where === 'lobby' && <p className="cl-where__note">Any pupil in the school can join, from their home page or with the code on the big screen.</p>}
+      </div>
       <div className="cl-cards">
         <section className="cl-card cl-card--active" aria-label="Star Web">
           <CardArt pic={painted('pick', 'stars', true) ?? painted('back', 'star-sky', true)} />
@@ -515,14 +542,14 @@ function Setup({ busy, problem, onOpen }: { busy: boolean; problem: string; onOp
             <p className="cl-lvl__about" aria-live="polite"><b className={`cl-lvl--${sLevel}`}>{SERPENT_LEVEL_NAMES[sLevel]}</b> {SERPENT_LEVEL_ABOUT[sLevel]}</p>
           </div>
           <TimerChips length={sLength} setLength={setSLength} />
-          <button type="button" className="cl-btn cl-btn--go" disabled={busy} onClick={() => onOpen('serpent', { level: sLevel, length: sLength })}>{busy ? 'Opening…' : 'Open the room'}</button>
+          <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('serpent', { level: sLevel, length: sLength })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
         <section className="cl-card cl-card--active cl-card--mural" aria-label="Mystery Mural">
           <CardArt pic={painted('pick', 'mural', true) ?? painted('back', 'gallery', true)} />
           <h2 className="cl-card__name">🎨 Mystery Mural</h2>
           <p className="cl-card__blurb">Your maths uncovers a hidden painting. Guess what it is!</p>
           <TimerChips length={mLength} setLength={setMLength} />
-          <button type="button" className="cl-btn cl-btn--go" disabled={busy} onClick={() => onOpen('mural', { length: mLength })}>{busy ? 'Opening…' : 'Open the room'}</button>
+          <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('mural', { length: mLength })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
       </div>
     </div>
@@ -547,7 +574,9 @@ function Lobby({ screen, game, className, onStart }: { screen: ScreenView; game:
   return (
     <div className={`cl-lobby ${game.kind === 'serpent' ? 'cl-lobby--serpent' : ''}`}>
       {head}
-      <div className="cl-lobby__join">Join now!{className ? <span className="cl-lobby__class"> {className}</span> : null}</div>
+      {screen.lobby
+        ? <div className="cl-lobby__join cl-lobby__join--code">Any class can join! <span className="cl-lobby__class">Tap <b>Join now</b> on your home page, or type the code</span> <b className="cl-lobby__code" aria-label={`Join code ${screen.lobby.code.split('').join(' ')}`}>{screen.lobby.code}</b></div>
+        : <div className="cl-lobby__join">Join now!{className ? <span className="cl-lobby__class"> {className}</span> : null}</div>}
       <div className="cl-lobby__count" aria-live="polite">{n === 0 ? (screen.game.kind === 'stars' ? 'Waiting for the first star…' : 'Waiting for the first pupil…') : `${n} ${n === 1 ? 'pupil' : 'pupils'} joined`}</div>
       <div className="cl-crowd" style={{ ['--k' as string]: Math.max(1.9, Math.min(3.6, 4 - n * 0.06)) }}>
         {screen.people.map((pp, i) => <Chip key={pp.id} p={pp} i={i} />)}

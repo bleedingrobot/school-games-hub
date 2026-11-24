@@ -550,3 +550,13 @@
 @keyframes cl-how-bob { from { transform: translate3d(0, 0, 0) rotate(-6deg); } to { transform: translate3d(0, -4px, 0) rotate(6deg); } }
 @media (prefers-reduced-motion: reduce) { .cl-how, .cl-how__card, .cl-how__step, .cl-how__icon, .cl-how--serpent .cl-how__art { animation: none !important; } }
 @keyframes cl-how-card { from { opacity: 0; transform: translate3d(0, 30px, 0) scale(0.94); } to { opacity: 1; transform: none; } }
+
+/* Who can join: the class, or the school's lobby (James, 25 Nov 2026). */
+.cl-where { position: relative; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin: 0 auto 18px; padding: 10px 16px; max-width: 980px; border-radius: 22px; background: rgba(20, 16, 60, 0.72); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35); }
+.cl-where .cl-opt__label { margin: 0 4px 0 0; }
+.cl-where__host { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; width: 100%; justify-content: center; color: #e4e8ff; font-weight: 700; }
+.cl-where__input { min-height: 44px; width: 11em; padding: 0 14px; border-radius: 14px; border: 2px solid rgba(255, 213, 74, 0.7); background: #1b1650; color: #fff; font: inherit; font-weight: 800; font-size: 1.1rem; }
+.cl-where__note { width: 100%; margin: 0; text-align: center; color: #cdd3ff; font-size: 0.95rem; }
+.cl-lobby__join--code { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 0.4em; font-size: clamp(1.4rem, min(6vw, 5vh), 3.2rem); }
+.cl-lobby__join--code .cl-lobby__class { font-size: 0.55em; font-weight: 800; }
+.cl-lobby__code { padding: 0.05em 0.45em; border-radius: 0.3em; background: #fff6c9; color: #3b1f86; letter-spacing: 0.18em; font-size: 1.3em; text-shadow: none; box-shadow: 0 6px 0 #9a5a00, 0 0 40px rgba(255, 213, 74, 0.7); }

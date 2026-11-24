@@ -11,7 +11,7 @@ import { ClassTag, SchoolPlayerList, StarButton, useStars, type SchoolPlayer } f
 import { GAME_NAMES, STAR_HINT, STAR_HINT_SPOKEN, VOICE_FOLDER, askLine } from '../components/challengeWords';
 import { starPlayer } from '../data/lobbyStars';
 import { speak } from '../speech';
-import { isInviteGame, type AskGame, type LobbyGame, type HubAsk, type InviteGame, type LiveGame } from '../data/hubAsks';
+import { isClassGame, isInviteGame, type AskGame, type LobbyGame, type HubAsk, type InviteGame, type LiveGame } from '../data/hubAsks';
 import type { HerePlayer, MyGame, MyState, StarAway, WithThem } from '../data/lobbyHere';
 import './lobbyFriends.css';
 
@@ -92,15 +92,16 @@ export function ChallengesForYou({ asks, serverNow, onYes, onNo }: {
       <ul className="lobby-list">
         {asks.map((a) => {
           const left = Math.max(0, Math.ceil((Date.parse(a.deadline) - serverNow()) / 1000));
+          const classGame = isClassGame(a.game);
           return (
             <li key={`${a.game}:${a.id}`}>
               <span className="lobby-list__emoji" aria-hidden="true">{EMOJI[a.game]}</span>
               <span className="lobby-list__what">
                 <strong>{askLine(a.game, a.from)}</strong>
-                <span>{GAME_NAMES[a.game]} · {left}s to answer</span>
+                <span>{GAME_NAMES[a.game]} · {classGame ? 'join any time' : `${left}s to answer`}</span>
               </span>
               <span className="lobby-asks__buttons">
-                <button type="button" className="button button--primary" onClick={() => onYes(a)}>Yes!</button>
+                <button type="button" className="button button--primary" onClick={() => onYes(a)}>{classGame ? 'Join now!' : 'Yes!'}</button>
                 <button type="button" className="button button--light" onClick={() => onNo(a)}>No</button>
               </span>
             </li>

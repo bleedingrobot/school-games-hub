@@ -67,6 +67,10 @@ export function Controller({ link, me, room: roomProp }: { link: ClassLiveLink; 
   const [view, setView] = useState<RoomView | null>(null);
   const [mine, setMine] = useState<PlayerView | null>(null);
   const [attempt, setAttempt] = useState(0);
+  // A lobby game's code, typed by the pupil (James, 25 Nov 2026: games open to any class).
+  const [code, setCode] = useState<string | null>(null);
+  const [typed, setTyped] = useState('');
+  const [codeProblem, setCodeProblem] = useState('');
 
   // Join (and retry while nothing is on, or the network drops).
   useEffect(() => {
@@ -75,7 +79,7 @@ export function Controller({ link, me, room: roomProp }: { link: ClassLiveLink; 
     const go = async () => {
       let r;
       try {
-        r = await link.send({ action: 'join', ...(roomProp ? { room: roomProp } : {}) });
+        r = await link.send({ action: 'join', ...(code ? { code } : roomProp ? { room: roomProp } : {}) });
       } catch {
         if (!dead) timer = setTimeout(go, 3000);
         return;
@@ -84,6 +88,8 @@ export function Controller({ link, me, room: roomProp }: { link: ClassLiveLink; 
       const b = r.body as { room?: number; view?: RoomView; me?: PlayerView; error?: string; reason?: string };
       if (r.status === 200 && b.view && b.me && typeof b.room === 'number') {
         setRoom(b.room); setView(b.view); setMine(b.me); setPhase('playing');
+      } else if (r.status === 404 && b.reason === 'bad-code') {
+        setCodeProblem(b.error ?? "That code didn't work."); setCode(null); setPhase('none');
       } else if (r.status === 404 && b.reason === 'none') {
         setPhase('none'); timer = setTimeout(go, 5000);
       } else if (r.status === 409 && b.reason === 'over') {
@@ -97,7 +103,7 @@ export function Controller({ link, me, room: roomProp }: { link: ClassLiveLink; 
     setPhase((p) => (p === 'error' ? 'joining' : p));
     void go();
     return () => { dead = true; if (timer) clearTimeout(timer); };
-  }, [link, roomProp, attempt]);
+  }, [link, roomProp, attempt, code]);
 
   // Live updates. The room comes from every reply and a look every 2 seconds (every 6 once it's over): each device
   // listening to every change of the room row went over Realtime's messages-per-second limit with a class of devices,
@@ -129,6 +135,14 @@ export function Controller({ link, me, room: roomProp }: { link: ClassLiveLink; 
           <div className="cl-c-bigstar" aria-hidden="true">🌙</div>
           <h1 className="cl-c-title">Nothing is on in your class right now.</h1>
           <p className="cl-c-say">Your teacher will start it.</p>
+          <form className="cl-c-code" onSubmit={(e) => { e.preventDefault(); if (/^\d{4}$/.test(typed)) { setCodeProblem(''); setPhase('joining'); setCode(typed); } }}>
+            <label htmlFor="cl-code">Got a code from the big screen?</label>
+            <span className="cl-c-code__row">
+              <input id="cl-code" className="cl-c-code__input" inputMode="numeric" autoComplete="off" maxLength={4} placeholder="1234" value={typed} onChange={(e) => setTyped(e.target.value.replace(/\D/g, '').slice(0, 4))} />
+              <button type="submit" className="cl-c-send" disabled={!/^\d{4}$/.test(typed)}>Join</button>
+            </span>
+            {codeProblem && <p className="cl-c-code__problem" role="alert">{codeProblem}</p>}
+          </form>
         </div>
       </Sky>
     );
