@@ -110,16 +110,6 @@
     "lufs_target": -18
   },
   {
-    "name": "goldrush-hot",
-    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
-    "prompt": "frantic mine cart chase, fast banjo, fiddle, driving drums, bluegrass, intense, 150 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
-    "seed": 42424,
-    "bpm": 150,
-    "seconds": 88.0,
-    "take_kept": 2,
-    "lufs_target": -16
-  },
-  {
     "name": "skyclimb",
     "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
     "prompt": "uplifting airy climb, soaring strings, light percussion, orchestral, hopeful, 105 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
@@ -155,26 +145,6 @@
     "prompt": "rising tide race, fast steel drums, energetic percussion, ukulele, intense, upbeat, 145 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
     "seed": 42424,
     "bpm": 145,
-    "seconds": 88.0,
-    "take_kept": 2,
-    "lufs_target": -16
-  },
-  {
-    "name": "hill",
-    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
-    "prompt": "medieval kingdom castle building, lute, recorder, light drums, folk, renaissance, 105 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
-    "seed": 42424,
-    "bpm": 105,
-    "seconds": 88.0,
-    "take_kept": 2,
-    "lufs_target": -18
-  },
-  {
-    "name": "hill-hot",
-    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
-    "prompt": "castle siege charge, war drums, brass fanfares, epic medieval orchestral, intense, 150 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
-    "seed": 42424,
-    "bpm": 150,
     "seconds": 88.0,
     "take_kept": 2,
     "lufs_target": -16
@@ -368,5 +338,35 @@
     "seconds": 88.0,
     "take_kept": 2,
     "lufs_target": -18
+  },
+  {
+    "name": "hill",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "medieval kingdom castle building, lute, recorder, light drums, folk, renaissance, starts immediately at full volume, no intro, no fade in, 105 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 90210,
+    "bpm": 105,
+    "seconds": 88.0,
+    "take_kept": 3,
+    "lufs_target": -18
+  },
+  {
+    "name": "hill-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "castle siege charge, fast pounding war drums, rapid strings, brass fanfares, epic medieval orchestral, very energetic, intense, fast tempo, busy rhythm, starts immediately at full volume, 160 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 24680,
+    "bpm": 160,
+    "seconds": 88.0,
+    "take_kept": 6,
+    "lufs_target": -16
+  },
+  {
+    "name": "goldrush-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic mine cart chase, frantic fast banjo picking, fast fiddle, pounding driving drums, breakneck bluegrass, very energetic, busy rhythm, starts immediately at full volume, 160 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 31337,
+    "bpm": 160,
+    "seconds": 88.0,
+    "take_kept": 4,
+    "lufs_target": -16
   }
 ]
