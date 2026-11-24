@@ -28,8 +28,20 @@ export const BOSS_HEALTH: Record<Mode, Record<number, [number, number][]>> = {
   },
 };
 
+/**
+ * Real classes answer faster than the simulator's pupils: in the first real rounds (24 Nov 2026, 5 minutes, 19 pupils)
+ * the boss fell with about 1.5 minutes left in class and solo (192 s and 210 s of 300), and Gold Rush in teams4 at 151 s.
+ * James asked for it a little harder. The pretend pupils in bots.ts now think at the real pace, and every table value is
+ * scaled by this: about 78% of rounds won, and a won round ends about 30 to 40 seconds before the bell.
+ */
+export const REAL_CLASS_PACE = 1.3;
+
 /** The boss's full health for this many pupils. */
 export function bossHealth(mode: Mode, lengthMin: number, pupils: number): number {
+  return Math.round(tableHealth(mode, lengthMin, pupils) * REAL_CLASS_PACE);
+}
+
+function tableHealth(mode: Mode, lengthMin: number, pupils: number): number {
   const rows = BOSS_HEALTH[mode][lengthMin] ?? BOSS_HEALTH[mode][10];
   const n = Math.max(1, pupils);
   if (n <= rows[0][0]) return Math.round((rows[0][1] / rows[0][0]) * n);
