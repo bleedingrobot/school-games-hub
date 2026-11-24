@@ -114,6 +114,17 @@ Deno.serve(
       const raw = await call<StoredQuestion>('classlive_keep_question', { target: room, player, question });
       return raw === 'busy' ? 'busy' : (questionOf(raw) as StoredQuestion);
     },
+    async positions(room) {
+      const raw = await call<Record<string, { x: number; y: number }> | null>('classlive_room_positions', { target: room });
+      if (raw === 'busy') return 'busy';
+      const out: Record<string, { x: number; y: number }> = {};
+      for (const [id, p] of Object.entries(raw ?? {})) if (p && Number.isFinite(p.x) && Number.isFinite(p.y)) out[id] = { x: Number(p.x), y: Number(p.y) };
+      return out;
+    },
+    async place(room, spots) {
+      const out = await call<string>('classlive_place', { target: room, spots });
+      if (out === 'busy') throw new Error('classlive_place failed');
+    },
     async finishSession(room, done) {
       const out = await call<string>('classlive_finish', { target: room, done });
       if (out === 'busy') throw new Error('classlive_finish failed');

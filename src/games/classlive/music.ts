@@ -131,8 +131,12 @@ export function useMusic(track: Track | null, soundOn: boolean) {
 }
 
 /** The track for a Class Live room: the lobby and the end share the picker's, Mystery Mural's guessing has its own. */
-export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | null, guessing: boolean): Track {
+/** Four Corners plays a track for its map (`map`), from the Class Live and Showdown sets for now. */
+const CORNER_TRACKS: Record<string, Track> = { snow: 'skyclimb', jungle: 'serpent', castle: 'boss', space: 'stars' };
+
+export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | 'corners' | null, guessing: boolean, map?: string): Track {
   if (!state || !kind || state !== 'live') return 'picker';
   if (kind === 'mural') return guessing ? 'guess' : 'mural';
+  if (kind === 'corners') return CORNER_TRACKS[map ?? ''] ?? 'goldrush';
   return kind;
 }

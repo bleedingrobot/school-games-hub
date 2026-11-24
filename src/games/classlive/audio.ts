@@ -11,7 +11,7 @@
  * The AudioContext is made on the first sound (browsers need a tap first), busy moments are rate-limited, and every call is
  * wrapped so a browser without audio just stays quiet.
  */
-export type Kit = 'stars' | 'serpent' | 'mural';
+export type Kit = 'stars' | 'serpent' | 'mural' | 'corners';
 
 export type SoundName =
   | 'join' | 'start' | 'over'
@@ -127,6 +127,7 @@ const KITS: Record<Kit, { root: number; scale: number[]; lead: InstrumentName[];
   stars: { root: 523.25, scale: [0, 2, 4, 7, 9, 11], lead: ['glass', 'celesta', 'shimmer'], low: ['pad', 'shimmer'] },
   serpent: { root: 220, scale: [0, 3, 5, 7, 10], lead: ['marimba', 'kalimba', 'wood'], low: ['logdrum', 'marimba'] },
   mural: { root: 293.66, scale: [0, 2, 4, 6, 7, 9, 11], lead: ['harp', 'musicbox', 'pizz', 'glock'], low: ['harp', 'pizz'] },
+  corners: { root: 261.63, scale: [0, 2, 4, 5, 7, 9], lead: ['glock', 'marimba', 'pizz'], low: ['logdrum', 'pizz'] },
 };
 
 /** The frequency of scale step `n` (any whole number, wrapping into octaves). */
