@@ -6,12 +6,45 @@
 import { bossInfo } from '../../../shared/showdown/bosses';
 import { arenaWords, rolesNeeded } from './arenaWords';
 import type { RoomView } from '../../../shared/showdown/server';
-import type { Role, TeamId } from '../../../shared/showdown/types';
+import type { Role, ShowdownEvent, TeamId } from '../../../shared/showdown/types';
 import { TREASURE } from './treasures';
 
 const paintings = import.meta.glob('./art/paint/**/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
 const art = (folder: string, name: string) => paintings[`./art/paint/${folder}/${name}.webp`] ?? paintings[`./art/paint/${folder}/${name}-800.webp`];
 const TEAM: Record<TeamId, string> = { red: 'Red', blue: 'Blue', gold: 'Gold', green: 'Green' };
+
+/** What the pupil's last answer did, for the iPad's own animation: a strike flying at the boss, a shield going up, a heal. */
+export interface StageAct {
+  seq: number;
+  right: boolean;
+  role: Role;
+  damage: number;
+  times: number;
+  weak: boolean;
+  golden: boolean;
+  streak: number;
+  /** Gold Rush: the seam dug. */
+  seam?: number;
+  /** A Healer woke someone up with this answer. */
+  woke: boolean;
+}
+
+export function actFrom(prev: StageAct | null, right: boolean, events: ShowdownEvent[], me: string, role: Role): StageAct {
+  const hit = events.find((e): e is Extract<ShowdownEvent, { type: 'hit' }> => e.type === 'hit' && e.pupil === me);
+  return {
+    seq: (prev?.seq ?? 0) + 1,
+    right,
+    role: hit?.role ?? role,
+    // The points it scored (what the big screen shows too); the raw damage is too small a number to feel like a hit.
+    damage: hit?.points ?? 0,
+    times: hit?.times ?? 1,
+    weak: !!hit?.weakSpot,
+    golden: !!hit?.golden,
+    streak: hit?.streak ?? 0,
+    seam: hit?.seam,
+    woke: events.some((e) => e.type === 'revive' && e.pupil === me),
+  };
+}
 
 type Notice = { key: string; text: string; tone: 'alarm' | 'good' | 'gold' | 'info' };
 
@@ -73,7 +106,7 @@ export function noticesFor(view: RoomView, t: number, team: TeamId | null, me: s
   return out;
 }
 
-export function ControllerStage({ view, t, hit, team, me, role = null, streak = 0, coins = 0, vault = 0, onBid, bidSaid = null }: { view: RoomView; t: number; hit: number; team: TeamId | null; me: string; role?: Role | null; streak?: number; coins?: number; vault?: number; onBid?: (amount: number) => void; bidSaid?: { text: string; good: boolean } | null }) {
+export function ControllerStage({ view, t, hit, act = null, team, me, role = null, streak = 0, coins = 0, vault = 0, onBid, bidSaid = null }: { view: RoomView; t: number; hit: number; act?: StageAct | null; team: TeamId | null; me: string; role?: Role | null; streak?: number; coins?: number; vault?: number; onBid?: (amount: number) => void; bidSaid?: { text: string; good: boolean } | null }) {
   const boss = bossInfo(view.bossId);
   const W = arenaWords(view.arena);
   const gr = view.arena === 'goldrush';
@@ -115,9 +148,10 @@ export function ControllerStage({ view, t, hit, team, me, role = null, streak = 
         ) : auc && view.auction ? (
           <AuctionMini auction={view.auction} me={me} team={team} hit={hit} t={t} wind={wind} weak={weak} />
         ) : bossImg ? (
-          <img key={`b${hit}`} className={`sd-cs__boss${hit ? ' sd-cs__boss--hit' : ''}`} src={bossImg} alt="" aria-hidden="true" />
+          <BossMini img={bossImg} act={act} wind={wind} weak={weak} phase={view.boss.phase} />
         ) : null}
-        {hit > 0 && !sky && !isle && !hill && !auc && <span key={`h${hit}`} className="sd-cs__pow" aria-hidden="true">{gr ? '🪙' : '💥'}</span>}
+        {gr && act && <DigFx key={`d${act.seq}`} act={act} seam={view.seams.find((s) => s.id === act.seam) ?? null} />}
+        {act && !gr && !bossImg && act.right && act.damage > 0 && <span key={`n${act.seq}`} className={`sd-cs__num sd-cs__num--soft${act.times > 1 ? ' sd-cs__num--big' : ''}`} aria-hidden="true">+{act.damage}</span>}
       </div>
       <div className="sd-cs__bar" role="progressbar" aria-label={W.fills ? name : `${name} health`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
         <span className="sd-cs__name">{name}</span>
@@ -245,5 +279,65 @@ function BidPanel({ view, t, me, team, coins, vault, onBid, said }: { view: Room
       )}
       {said && lot && <p key={said.text} className={`sd-cs__bidsaid${said.good ? ' sd-cs__bidsaid--good' : ''}`}>{said.text}</p>}
     </div>
+  );
+}
+
+const ROLE_WEAPON: Record<Role, string> = { striker: '⚔️', guard: '🛡️', healer: '✨' };
+
+/**
+ * The boss on the iPad, alive: it breathes and sways, embers drift past, and each of the pupil's answers plays out on it.
+ * A Striker's blade flies in and lands with a flash, sparks and the damage; a Guard's shield rises and glows; a Healer's
+ * light rises in sparkles (and hearts when they woke someone). A miss whooshes past and the boss laughs. In a wind-up the
+ * boss rears up and glows red while sparks are pulled in; in a weak spot a target ring pulses on it.
+ */
+function BossMini({ img, act, wind, weak, phase }: { img: string; act: StageAct | null; wind: boolean; weak: boolean; phase: number }) {
+  const a = act;
+  const hitNow = !!a && a.right;
+  const tone = a?.golden ? ' sd-cs__fx--gold' : a?.weak ? ' sd-cs__fx--crit' : '';
+  return (
+    <div className={`sd-cs__arena sd-cs__arena--p${phase}${wind ? ' sd-cs__arena--wind' : ''}`} aria-hidden="true">
+      <span className="sd-cs__embers">{Array.from({ length: 8 }, (_, i) => <i key={i} style={{ '--x': `${8 + i * 12}%`, '--d': `${(i * 0.73) % 4}s`, '--s': `${3.5 + (i % 3)}s` } as React.CSSProperties} />)}</span>
+      {wind && <span className="sd-cs__charge">{Array.from({ length: 10 }, (_, i) => <i key={i} style={{ '--a': `${i * 36}deg`, '--d': `${(i % 5) * 0.12}s` } as React.CSSProperties} />)}</span>}
+      <span className="sd-cs__bosswrap">
+        <img key={a ? `b${a.seq}` : 'b'} className={`sd-cs__boss${hitNow ? (a!.times > 1 || a!.weak ? ' sd-cs__boss--bighit' : ' sd-cs__boss--hit') : a && !a.right ? ' sd-cs__boss--laugh' : ''}`} src={img} alt="" />
+      </span>
+      {weak && <span className="sd-cs__target"><i /></span>}
+      {a && (
+        <span key={`fx${a.seq}`} className={`sd-cs__fx sd-cs__fx--${a.right ? a.role : 'miss'}${tone}`}>
+          {!a.right ? (
+            <>
+              <b className="sd-cs__shot sd-cs__shot--miss">{ROLE_WEAPON[a.role]}</b>
+              <em className="sd-cs__ha">Ha!</em>
+            </>
+          ) : (
+            <>
+              {a.role === 'guard' && <span className="sd-cs__dome" />}
+              {a.role === 'healer' && <span className="sd-cs__rise">{Array.from({ length: 9 }, (_, i) => <i key={i} style={{ '--x': `${10 + i * 10}%`, '--d': `${(i % 4) * 0.08}s` } as React.CSSProperties}>{a.woke && i % 3 === 0 ? '💚' : '✦'}</i>)}</span>}
+              <b className="sd-cs__shot">{ROLE_WEAPON[a.role]}</b>
+              <span className="sd-cs__impact"><i />{Array.from({ length: 10 }, (_, i) => <s key={i} style={{ '--a': `${i * 36}deg`, '--r': `${48 + (i % 3) * 18}px` } as React.CSSProperties} />)}</span>
+              {a.damage > 0 && <span className={`sd-cs__num${a.times > 1 ? ' sd-cs__num--big' : ''}`}>{a.damage}{a.times > 1 && <small>×{Math.round(a.times * 10) / 10}</small>}</span>}
+              {a.weak && <span className="sd-cs__crit">CRIT!</span>}
+              {a.role === 'guard' && <span className="sd-cs__tag">Shield up!</span>}
+              {a.role === 'healer' && <span className="sd-cs__tag">{a.woke ? 'Woke a friend!' : 'Healing light!'}</span>}
+              {a.streak >= 3 && <span className="sd-cs__combo">COMBO ×{a.streak}</span>}
+            </>
+          )}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** Gold Rush on the iPad: the pickaxe swings at the seam the pupil dug, with gold chips flying and what it paid. */
+function DigFx({ act, seam }: { act: StageAct; seam: { x: number; y: number } | null }) {
+  const x = `${(seam?.x ?? 0.5) * 100}%`;
+  const y = `${(seam?.y ?? 0.5) * 100}%`;
+  return (
+    <span className={`sd-cs__dig${act.right ? '' : ' sd-cs__dig--miss'}`} style={{ left: x, top: y }} aria-hidden="true">
+      <b className="sd-cs__pick">⛏</b>
+      {act.right && <span className="sd-cs__impact"><i />{Array.from({ length: 8 }, (_, i) => <s key={i} style={{ '--a': `${i * 45}deg`, '--r': `${36 + (i % 3) * 14}px` } as React.CSSProperties} />)}</span>}
+      {act.right && act.damage > 0 && <span className={`sd-cs__num sd-cs__num--gold${act.times > 1 ? ' sd-cs__num--big' : ''}`}>+{act.damage}</span>}
+      {!act.right && <em className="sd-cs__ha">Clunk!</em>}
+    </span>
   );
 }

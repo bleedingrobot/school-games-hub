@@ -7,11 +7,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { bossInfo, CHEST_GAMES, type Reward } from '../../../shared/showdown/bosses';
 import { SHOWDOWN } from '../../../shared/showdown/config';
 import type { PlayerView, RoomView } from '../../../shared/showdown/server';
-import type { Role, TeamId } from '../../../shared/showdown/types';
+import type { Role, ShowdownEvent, TeamId } from '../../../shared/showdown/types';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import type { ShowdownLink } from './link';
 import { arenaWords } from './arenaWords';
-import { ControllerStage } from './ControllerStage';
+import { actFrom, ControllerStage, type StageAct } from './ControllerStage';
 import { PayMeter, SEAM_NAME, SeamPicker, seamPay, seamRoom } from './SeamPicker';
 import './controller.css';
 
@@ -52,6 +52,7 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
   const [joinTries, setJoinTries] = useState(0);
   const [askTries, setAskTries] = useState(0);
   const [burst, setBurst] = useState(0);
+  const [act, setAct] = useState<StageAct | null>(null);
   const [rolesOpen, setRolesOpen] = useState(true);
   const [seamsOpen, setSeamsOpen] = useState(false);
   const [seamSaid, setSeamSaid] = useState<string | null>(null);
@@ -223,6 +224,8 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
     const answer = out.body.answer as number;
     pending.current = { question: (out.body.question as Q | undefined) ?? null, me: out.body.me as PlayerView, view: out.body.view as RoomView };
     if (right) setBurst((n) => n + 1);
+    // What this answer did to the boss, for the iPad's own animation (James, 24 Nov 2026: not just a static picture).
+    setAct((a) => actFrom(a, right, (out.body.events as ShowdownEvent[] | undefined) ?? [], String(mine?.player ?? ''), mine?.role ?? 'striker'));
     return { correct: right, fact: factOf(q, answer), boxBefore: 0, boxAfter: 0, answer };
   };
   const onDone = () => {
@@ -370,7 +373,7 @@ export function Controller({ link, me, room: roomProp }: { link: ShowdownLink; m
       {split && view && mine ? (
         <div className="sd-c-body sd-c-body--split">
           <div className="sd-c-main">{body}</div>
-          <ControllerStage view={view} t={t} hit={burst} team={team} me={mine.player} role={mine.role} streak={mine.streak} coins={mine.coins ?? 0} vault={mine.vault ?? 0} onBid={(n) => void placeBid(n)} bidSaid={bidSaid} />
+          <ControllerStage view={view} t={t} hit={burst} act={act} team={team} me={mine.player} role={mine.role} streak={mine.streak} coins={mine.coins ?? 0} vault={mine.vault ?? 0} onBid={(n) => void placeBid(n)} bidSaid={bidSaid} />
         </div>
       ) : <div className="sd-c-body">{body}</div>}
       {gr && live && seamsOpen && view && <SeamPicker view={view} mySeam={mine?.seam ?? null} onPick={(id) => void pickSeam(id)} onClose={() => setSeamsOpen(false)} said={seamSaid} />}

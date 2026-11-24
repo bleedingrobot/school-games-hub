@@ -17,6 +17,8 @@ describe('Class Showdown controller', () => {
     for (let i = 0; i < 3; i++) await u.click(Array.from(pad.querySelectorAll('button')).find((b) => b.textContent === '9')!);
     await u.click(screen.getByRole('button', { name: 'Check my answer' }));
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/=/), { timeout: 3000 });
+    // The miss plays out on the boss beside the question (the iPad's own animation, not a still picture).
+    expect(document.querySelector('.sd-cs__fx--miss')).toBeTruthy();
     // The round ends: every iPad reaches the finish screen without the room's live updates (they can be dropped under
     // load, 24 Nov 2026), and a refused ask brings the finished room back with it.
     await teacher.send({ action: 'end', room });
