@@ -134,9 +134,10 @@
 .cl-m-mine > img, .cl-m-mine > svg { position: absolute; inset: 0; }
 .cl-m-mine__grid { position: absolute; inset: 0; display: grid; }
 .cl-m-mine__grid i { background: linear-gradient(135deg, #6b3fc4, #4a2596); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.08); transition: opacity 0.5s; }
-.cl-m-mine__grid i.is-mine { opacity: 0; }
-.cl-m-mine__grid i.is-new { opacity: 0; box-shadow: inset 0 0 0 2px #ffe27a, 0 0 12px #ffd54a; animation: cl-m-new 1.4s ease-out; }
-@keyframes cl-m-new { from { opacity: 1; } to { opacity: 0; } }
+.cl-m-mine__grid i.is-open { background: transparent; box-shadow: none; }
+.cl-m-mine__grid i.is-mine { background: transparent; box-shadow: inset 0 0 0 1.5px rgba(255, 226, 122, 0.95); }
+.cl-m-mine__grid i.is-new { background: transparent; box-shadow: inset 0 0 0 2px #ffe27a, 0 0 12px #ffd54a; animation: cl-m-new 1.4s ease-out; }
+@keyframes cl-m-new { from { box-shadow: inset 0 0 0 40px #6b3fc4; } to { box-shadow: inset 0 0 0 2px #ffe27a, 0 0 12px #ffd54a; } }
 .cl-m-guess { display: flex; flex-direction: column; gap: 10px; align-items: stretch; width: min(100%, 640px); margin: 0 auto; }
 .cl-m-guess .cl-c-title { text-align: center; }
 .cl-m-riddles { display: grid; gap: 8px; }

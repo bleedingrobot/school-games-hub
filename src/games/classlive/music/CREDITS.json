@@ -1,0 +1,101 @@
+[
+  {
+    "mood": "picker",
+    "file": "picker.ogg",
+    "title": "Town Theme RPG",
+    "author": "cynicmusic",
+    "source_url": "https://opengameart.org/content/town-theme-rpg",
+    "licence": "CC0",
+    "notes": "Harps and recorders town theme. Used whole. Licence on page: CC0. Loudness-normalised to -18 LUFS, 96 kbps, 44.1 kHz; 97.5 s. Also picker.mp3."
+  },
+  {
+    "mood": "stars",
+    "file": "stars.ogg",
+    "title": "Magic Space",
+    "author": "codemanu",
+    "source_url": "https://opengameart.org/content/magic-space",
+    "licence": "CC0",
+    "notes": "Uplifting sci-fi ambience. Used whole. Licence on page: CC0. Loudness-normalised to -18 LUFS, 96 kbps, 44.1 kHz; 54.9 s. Also stars.mp3."
+  },
+  {
+    "mood": "serpent",
+    "file": "serpent.ogg",
+    "title": "Jungle Simple Style 1",
+    "author": "tozan",
+    "source_url": "https://opengameart.org/content/jungle-simple-style-1",
+    "licence": "CC0",
+    "notes": "Vibraphone, marimba, strings. Cut from 162.8 s at a quiet point, 0.5 s fades. Licence on page: CC0. Loudness-normalised to -18 LUFS, 96 kbps, 44.1 kHz; 108.4 s. Also serpent.mp3."
+  },
+  {
+    "mood": "mural",
+    "file": "mural.ogg",
+    "title": "Cute Tune (from 4 Music Box Tracks)",
+    "author": "aureolusomicron",
+    "source_url": "https://opengameart.org/content/4-music-box-tracks",
+    "licence": "CC0",
+    "notes": "File musicbox2_cute_tune.ogg. Cut from 137.1 s at a quiet point, 0.5 s fades. Licence on page: CC0. Loudness-normalised to -18 LUFS, 96 kbps, 44.1 kHz; 116.2 s. Also mural.mp3."
+  },
+  {
+    "mood": "guess",
+    "file": "guess.ogg",
+    "title": "8 Bit Concentration Loop",
+    "author": "cosmac",
+    "source_url": "https://opengameart.org/content/8-bit-concentration-loop",
+    "licence": "CC0",
+    "notes": "Seamless 30.7 s chiptune loop played twice; no fades so it still loops. Licence on page: CC0. Loudness-normalised to -18 LUFS, 96 kbps, 44.1 kHz; 61.3 s. Also guess.mp3."
+  },
+  {
+    "mood": "boss",
+    "file": "boss.ogg",
+    "title": "A Knight's Challenge",
+    "author": "umplix",
+    "source_url": "https://opengameart.org/content/a-knights-challenge",
+    "licence": "CC0",
+    "notes": "Heroic yet friendly battle theme. Used whole. Licence on page: CC0. Loudness-normalised to -18 LUFS, 96 kbps, 44.1 kHz; 62.4 s. Also boss.mp3."
+  },
+  {
+    "mood": "goldrush",
+    "file": "goldrush.ogg",
+    "title": "Miniature Saloon",
+    "author": "zane-little-music",
+    "source_url": "https://opengameart.org/content/miniature-saloon",
+    "licence": "CC0",
+    "notes": "Honky-tonk saloon tune; 33.3 s original played twice, no fades. Licence on page: CC0. Loudness-normalised to -18 LUFS, 96 kbps, 44.1 kHz; 66.6 s. Also goldrush.mp3."
+  },
+  {
+    "mood": "skyclimb",
+    "file": "skyclimb.ogg",
+    "title": "Determined to Fly",
+    "author": "owlishmedia",
+    "source_url": "https://opengameart.org/content/determined-to-fly",
+    "licence": "CC0",
+    "notes": "From the short film Cat's Sky (file climax.wav). Used whole. Licence on page: CC0. Loudness-normalised to -18 LUFS, 96 kbps, 44.1 kHz; 70.4 s. Also skyclimb.mp3."
+  },
+  {
+    "mood": "island",
+    "file": "island.ogg",
+    "title": "Happy Ukelele Island Surfing Theme",
+    "author": "tarush-singhal",
+    "source_url": "https://opengameart.org/content/happy-ukelele-island-surfing-theme",
+    "licence": "CC0",
+    "notes": "Ukulele. Cut from 135.8 s at a quiet point, 0.5 s fades. Licence on page: CC0. Loudness-normalised to -18 LUFS, 96 kbps, 44.1 kHz; 108.2 s. Also island.mp3."
+  },
+  {
+    "mood": "hill",
+    "file": "hill.ogg",
+    "title": "Medieval: Rejoicing (loop version)",
+    "author": "randommind",
+    "source_url": "https://opengameart.org/content/medieval-rejoicing",
+    "licence": "CC0",
+    "notes": "File Loop_Rejoicing.wav, 41.8 s loop played twice, no fades. Licence on page: CC0. Loudness-normalised to -18 LUFS, 96 kbps, 44.1 kHz; 83.6 s. Also hill.mp3."
+  },
+  {
+    "mood": "auction",
+    "file": "auction.ogg",
+    "title": "Catchy Swing",
+    "author": "doge",
+    "source_url": "https://opengameart.org/content/catchy-swing",
+    "licence": "CC0",
+    "notes": "Loopable swing from a game-jam cooking game. Used whole. Licence on page: CC0. Loudness-normalised to -18 LUFS, 96 kbps, 44.1 kHz; 60.0 s. Also auction.mp3."
+  }
+]

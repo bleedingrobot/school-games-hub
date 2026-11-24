@@ -7,6 +7,7 @@ import type { PlayerView, RoomView } from '../../../shared/classlive/server';
 import { ARM_NAMES, laggingArm, type StarsReply } from '../../../shared/classlive/stars';
 import { ARM_COLOURS, ARM_HINTS, lagHint, useHeldLag } from './arms';
 import { MuralPad } from './MuralPad';
+import { PadGuard } from './PadGuard';
 import { SerpentPad } from './SerpentPad';
 import type { ClassLiveLink } from './link';
 import './controller.css';
@@ -180,7 +181,7 @@ export function Controller({ link, me, room: roomProp, lookElsewhere }: {
   if (view.game.kind === 'mural') {
     return (
       <Sky tint="mural">
-        <MuralPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} />
+        <PadGuard><MuralPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} /></PadGuard>
       </Sky>
     );
   }

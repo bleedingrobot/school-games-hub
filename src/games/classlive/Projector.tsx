@@ -4,6 +4,8 @@
  * shout-outs). It listens to the room's screen row, animates each new event once (never the ones it has seen), and only
  * ever draws good things: there are no wrong answers in the screen data.
  */
+import { useMusic } from './music';
+import { MusicControl } from './MusicControl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ARMS, ARM_GOAL, ARM_NAMES, SUPERNOVA, armCounts, laggingArm, type Arm, type Star, type StarsGame } from '../../../shared/classlive/stars';
 import { GUESS_MS, PICTURES, type MuralGame } from '../../../shared/classlive/mural';
@@ -335,6 +337,8 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   const serpent = game?.kind === 'serpent' ? game : null;
   const mural = game?.kind === 'mural' ? game : null;
   const hall = !screen && !resuming ? painted('pick', 'hall') : null;
+  // Background music for what is on screen (James, 25 Nov 2026 NZ).
+  useMusic(!screen || state === 'lobby' || state === 'over' ? 'picker' : serpent ? 'serpent' : mural ? (mural.phase === 'guess' ? 'guess' : 'mural') : 'stars', !muted);
   const backPic = hall ?? painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky');
   const lobbyOpen = state === 'lobby' && room !== null;
   useEffect(() => {
@@ -356,6 +360,7 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
           <div className="cl-bar__row">
             <a className="cl-btn cl-btn--small" href="#/">⌂ Hub</a>
             <button type="button" className="cl-btn cl-btn--small" onClick={toggleSound} aria-pressed={!muted}>{muted ? '🔇 Sound off' : '🔊 Sound on'}</button>
+            <MusicControl />
             {screen && <span className="cl-bar__name">{ACTIVITY_NAMES[screen.activity]}</span>}
             {leftMs !== null && <span className={`cl-bar__time ${leftMs < 30_000 ? 'cl-bar__time--low' : ''}`} role="timer">{mmss(leftMs)}</span>}
             {screen && screen.state !== 'over' && room && (
