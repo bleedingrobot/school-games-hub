@@ -5,7 +5,6 @@
  * Each moment has a few takes, said in turn (`next`), so nothing is said the same way twice running (James, 24 Nov 2026:
  * more variety in the sounds).
  */
-import { CLUES } from '../../../shared/classlive/mural';
 export const VOICE_FOLDER = 'voice/classlive/';
 
 export const LINES = {
@@ -18,7 +17,8 @@ export const LINES = {
   supernova: ['Supernova! What a lot of facts!', 'Supernova! The whole sky is shining!', 'Boom! A supernova of facts!'],
   awake: ['The serpent is waking up!', 'Wake up, serpent! It is opening its eyes!', 'Rumble! The serpent is awake!'],
   head: ['Someone reached the head of the serpent!', 'We made it to the head of the serpent!', 'All the way to the head! Brilliant!'],
-  guessOpen: ['Guessing is open! What could it be?', 'You can guess now! What is the picture?', 'Time to guess! What do you think it is?'],
+  guessTime: ["Time's up! Now read the six riddles and pick the one that fits the picture.", 'Pens down! Which riddle fits the picture? Pick one on your device.', "Time to guess! Read the riddles and choose the one that matches."],
+  allGuessed: ['Everyone has picked! Let us see the picture!', 'All the guesses are in! Here comes the picture!', 'Everyone has chosen. Time for the big reveal!'],
   guessed: ['Someone has guessed the picture!', 'A good guess! Someone got it!', 'We have a right guess!'],
   reveal: ["Here's the picture!", 'Ta-da! Here it is!', "Let's see the whole picture!"],
   timeUp: ["Time's up! Well done, everyone!", "That's time! Great work, everyone!", "Time's up! What a team!"],
@@ -52,14 +52,11 @@ export const HOWTO = {
   },
   mural: [
     'A mystery picture is hiding under the tiles.',
-    'Answer maths questions on your device. Each right answer earns a flip.',
-    'Pick a tile to flip and show a little more of the picture.',
-    'When guessing opens, guess what the picture is!',
+    'Answer maths questions on your device. Each right answer flips a tile, and you can see your tiles on your device.',
+    'Keep answering until the time is up. The more tiles we flip, the more of the picture we see.',
+    'Then read the six riddles and pick the one that fits the picture!',
   ],
 } as const;
-
-/** Bella reads the mural's riddle once guessing opens. */
-export const clueLine = (clue: string) => `Here is a clue. ${clue}`;
 
 export type LineKey = keyof typeof LINES;
 
@@ -75,5 +72,4 @@ export function next(key: LineKey): string {
 export const allVoiceLines = (): string[] => [
   ...Object.values(LINES).flat(),
   ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural,
-  ...Object.values(CLUES).map(clueLine),
 ];

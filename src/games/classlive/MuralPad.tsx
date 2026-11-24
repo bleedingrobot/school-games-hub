@@ -1,13 +1,13 @@
 /**
  * Mystery Mural, the pupil's screen (docs/CLASSLIVE-PLAN.md section 4): answer a maths question (the shared QuestionModal,
- * marked on the server), wait for the ring to fill, and every right answer flips a tile at random on the big screen.
- * Once enough of the picture shows, guess it. Never shows anyone else's results.
+ * marked on the server), wait for the ring to fill, and every right answer flips a tile at random; the pupil sees the tiles they
+ * flipped on their own little mural. When the time is up, they get one guess, picking from six riddles. Never shows anyone else's results.
  *
  * The server's `nextAt` is in session time (ms since the room started), so the wait is worked out from the `now` the
  * server sent back and the room's `startedAt`.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { GUESS_FROM, PICTURES, TILES, type Picture } from '../../../shared/classlive/mural';
+import { CLUES, COLS, PICTURES, ROWS, TILES, type Picture } from '../../../shared/classlive/mural';
 import type { MuralReply, PlayerView, RoomView } from '../../../shared/classlive/server';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
@@ -18,7 +18,7 @@ import './controller.css';
 type Mine = Extract<PlayerView['game'], { kind: 'mural' }>;
 type Pub = Extract<RoomView['game'], { kind: 'mural' }>;
 type Pending = { question: PublicQuestion | null; me: PlayerView; view: RoomView; wait: number };
-const OPEN_AT = Math.ceil(TILES * GUESS_FROM);
+const LETTERS = 'ABCDEF';
 
 const factOf = (q: PublicQuestion, answer: number) => q.parts.map((p) => p.replace(/\?/g, String(answer))).join(' ');
 
@@ -41,14 +41,26 @@ function WaitRing({ ms, onDone }: { ms: number; onDone: () => void }) {
   );
 }
 
+/** The pupil's own little mural: the picture shows only through the tiles they flipped (newest one glows). */
+function MyMural({ picture, tiles }: { picture: Picture; tiles: number[] }) {
+  const mine = new Set(tiles);
+  const newest = tiles.length ? tiles[tiles.length - 1] : -1;
+  return (
+    <div className="cl-m-mine" aria-label={`Your ${tiles.length} ${tiles.length === 1 ? 'tile' : 'tiles'} of the picture`}>
+      <MuralPicture id={picture} small />
+      <div className="cl-m-mine__grid" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)`, gridTemplateRows: `repeat(${ROWS}, 1fr)` }} aria-hidden="true">
+        {Array.from({ length: TILES }, (_, i) => <i key={i} className={mine.has(i) ? (i === newest ? 'is-mine is-new' : 'is-mine') : ''} />)}
+      </div>
+    </div>
+  );
+}
+
 export function MuralPad({ link, room, view, me, setMe, setView }: { link: ClassLiveLink; room: number | null; view: RoomView; me: PlayerView | null; setMe: (m: PlayerView) => void; setView: (f: (v: RoomView | null) => RoomView | null) => void }) {
   const [question, setQuestion] = useState<PublicQuestion | null>(null);
   const [wait, setWait] = useState<number | null>(null);
   const [trouble, setTrouble] = useState('');
   const [busy, setBusy] = useState(false);
   const [say, setSay] = useState<{ n: number; text: string; good?: boolean } | null>(null);
-  const [guessing, setGuessing] = useState(false);
-  const [tries, setTries] = useState(0);
   const pending = useRef<Pending | null>(null);
   const queued = useRef<PublicQuestion | null>(null);
   const offset = useRef(0);
@@ -138,7 +150,8 @@ export function MuralPad({ link, room, view, me, setMe, setView }: { link: Class
     queued.current = next?.question ?? null;
     if (next?.question) setWait(Math.max(300, next.wait));
     else setWait(null);
-    if (next?.me?.game.kind === 'mural' && next.me.game.tiles > (mg?.tiles ?? 0)) toast('You flipped a tile! Look at the big screen.', true);
+    if (next?.me?.game.kind === 'mural' && next.me.game.tiles > (mg?.tiles ?? 0)) toast('You flipped a tile! ✨', true);
+    else if (next?.me?.game.kind === 'mural' && next.me.game.right > (mg?.right ?? 0)) toast('Right! Your tile flips soon ✨', true);
   };
 
   const waitDone = useCallback(() => {
@@ -154,19 +167,10 @@ export function MuralPad({ link, room, view, me, setMe, setView }: { link: Class
     try {
       const r = await link.send({ action: 'play', room, guess: pick });
       const b = r.body as { reply?: MuralReply; me?: PlayerView; view?: RoomView; error?: string };
-      if (r.status === 200 && b.reply) {
-        if (b.me) setMe(b.me);
-        if (b.view) setView(() => b.view as RoomView);
-        setGuessing(false);
-        if (b.reply.result === 'guessed') {
-          const place = b.me?.game.kind === 'mural' ? b.me.game.gotIt : 0;
-          toast(`You got it! #${place}`, true);
-        } else toast('Not it, keep flipping!');
-        setTries((n) => n + 1);
-      } else {
-        setGuessing(false);
-        toast(String(b.error ?? "That didn't send. Try again!"));
-      }
+      if (b.me) setMe(b.me);
+      if (b.view) setView(() => b.view as RoomView);
+      if (r.status === 200 && b.reply) toast('Locked in! Watch the big screen for the reveal.', true);
+      else toast(String(b.error ?? "That didn't send. Try again!"));
     } catch {
       toast("That didn't send. Try again!");
     } finally {
@@ -184,21 +188,49 @@ export function MuralPad({ link, room, view, me, setMe, setView }: { link: Class
     );
   }
 
+  const myTiles = mg?.myTiles ?? [];
+  const picture = mg?.picture ?? null;
+  const mural = picture ? <MyMural picture={picture} tiles={myTiles} /> : null;
+
   if (view.state === 'over' || pub?.revealed) {
     const pic = pub?.picture ?? null;
     return (
       <div className="cl-c-center">
         {pic && <div className="cl-m-final"><MuralPicture id={pic} label={PICTURES[pic]} /></div>}
         <h1 className="cl-c-title">{pic ? `It was ${PICTURES[pic].toLowerCase()}!` : 'Finished!'}</h1>
-        {mg && mg.gotIt > 0 && <p className="cl-c-say">You guessed it! #{mg.gotIt}</p>}
+        {mg && (mg.gotIt > 0 ? <p className="cl-m-got">🎉 You guessed it! #{mg.gotIt}</p> : mg.picked ? <p className="cl-c-say">Not this time. Good try!</p> : null)}
         <p className="cl-c-say">You flipped {mg?.tiles ?? 0} {(mg?.tiles ?? 0) === 1 ? 'tile' : 'tiles'} and got {mg?.right ?? 0} right.</p>
         <p className="cl-c-look">Look at the big screen!</p>
       </div>
     );
   }
 
-  const need = Math.max(0, OPEN_AT - (pub?.flipped ?? 0));
-  const canGuess = !!mg?.canGuess;
+  if (pub?.phase === 'guess') {
+    return (
+      <div className="cl-m-guess">
+        <h1 className="cl-c-title">{mg?.picked ? 'Locked in!' : 'Time to guess!'}</h1>
+        {mural}
+        {mg?.picked ? (
+          <p className="cl-c-say">Watch the big screen for the reveal.</p>
+        ) : (
+          <>
+            <p className="cl-c-say">Which riddle fits the hidden picture? You get one pick.</p>
+            <div className="cl-m-riddles" role="group" aria-label="Pick a riddle">
+              {pub.choices.map((c, i) => (
+                <button key={c} type="button" className="cl-m-riddle" disabled={busy || !mg?.canGuess} onClick={() => void guess(c)}>
+                  <b aria-hidden="true">{LETTERS[i]}</b><span>{CLUES[c]}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+        <div className="cl-c-fb cl-m-fb" aria-live="polite">
+          {say && <div key={say.n} className={`cl-s-card${say.good ? ' cl-s-card--right' : ''}`}><p className="cl-s-card__text">{say.text}</p></div>}
+        </div>
+      </div>
+    );
+  }
+
   const flipsRow = (
     <p className="cl-m-flips" aria-label={`You flipped ${mg?.tiles ?? 0} tiles`}>
       <b>✨ {mg?.tiles ?? 0} {(mg?.tiles ?? 0) === 1 ? 'tile' : 'tiles'} flipped</b>
@@ -211,16 +243,8 @@ export function MuralPad({ link, room, view, me, setMe, setView }: { link: Class
         {flipsRow}
         <p className="cl-m-prog">{pub?.flipped ?? 0} / {TILES} tiles</p>
       </header>
-
-      {mg && mg.gotIt > 0 ? (
-        <p className="cl-m-got" role="status">🎉 You got it! #{mg.gotIt}</p>
-      ) : canGuess ? (
-        <button type="button" className="cl-c-send cl-m-guessbtn" onClick={() => setGuessing(true)}>Guess the picture! 🎨</button>
-      ) : (pub?.guessOpen ?? false) && tries > 0 ? (
-        <p className="cl-m-hint">Flip a few more tiles, then guess again.</p>
-      ) : need > 0 ? (
-        <p className="cl-m-hint">Guessing opens when {OPEN_AT} tiles are flipped ({need} to go).</p>
-      ) : null}
+      {mural}
+      <p className="cl-m-hint">Keep answering! You all guess when the time is up.</p>
 
       <div className="cl-c-fb cl-m-fb" aria-live="polite">
         {say && <div key={say.n} className={`cl-s-card${say.good ? ' cl-s-card--right' : ''}`}><p className="cl-s-card__text">{say.text}</p></div>}
@@ -238,22 +262,6 @@ export function MuralPad({ link, room, view, me, setMe, setView }: { link: Class
         <WaitRing key={`${wait}-${mg?.answered ?? 0}`} ms={wait} onDone={waitDone} />
       ) : (
         <p className="cl-c-say cl-m-load" role="status">{trouble || 'Getting your question…'}</p>
-      )}
-
-      {guessing && pub && (
-        <div className="cl-m-modal" role="dialog" aria-modal="true" aria-label="Guess the picture">
-          <div className="cl-m-modal__box">
-            <h2 className="cl-m-modal__title">What is the picture?</h2>
-            <div className="cl-m-choices">
-              {pub.choices.map((c) => (
-                <button key={c} type="button" className="cl-m-choice" disabled={busy} onClick={() => void guess(c)}>
-                  <span>{PICTURES[c]}</span>
-                </button>
-              ))}
-            </div>
-            <button type="button" className="cl-c-key cl-m-later" onClick={() => setGuessing(false)}>Not yet</button>
-          </div>
-        </div>
       )}
     </>
   );

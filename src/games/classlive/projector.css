@@ -396,6 +396,14 @@
 .mu-clue--locked .mu-clue__text { font-style: normal; font-weight: 700; color: #cdd3ff; font-size: clamp(0.95rem, 2vh, 1.2rem); }
 @keyframes mu-clue-in { from { opacity: 0; transform: scale(0.8) rotate(-2deg); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .mu-clue, .mu-clue__key { animation: none; } }
+.mu-side__how { margin: 0; font-weight: 800; color: #ffe08a; text-align: center; font-size: clamp(0.95rem, 2vh, 1.2rem); }
+.mu-riddles { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(4px, 0.8vh, 8px); min-height: 0; overflow-y: auto; }
+.mu-riddle { display: flex; gap: 8px; align-items: flex-start; padding: 6px 8px; border-radius: 10px; background: rgba(255, 255, 255, 0.09); border: 2px solid transparent; font-weight: 700; font-style: italic; line-height: 1.25; font-size: clamp(0.8rem, 1.75vh, 1.1rem); animation: mu-clue-in 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.25) both; }
+.mu-riddle b { flex: none; display: grid; place-items: center; width: 1.7em; height: 1.7em; border-radius: 50%; background: linear-gradient(180deg, #ffe27a, #ffb920); color: #2a1650; font-style: normal; }
+.mu-riddle.is-right { background: #4dd37b; border-color: #fff; color: #05301a; box-shadow: 0 0 22px #4dd37b; }
+.mu-riddle.is-not { opacity: 0.35; }
+.mu-picked { margin: 0; text-align: center; font-weight: 800; color: #cdd3ff; }
+@media (prefers-reduced-motion: reduce) { .mu-riddle { animation: none; } }
 .mu-side__sub { margin: 4px 0 0; flex: none; font-size: 1.05rem; font-weight: 800; color: #ffe08a; }
 .mu-choices { list-style: none; margin: 0; padding: 0; flex: none; display: grid; gap: clamp(3px, 0.7vh, 8px); opacity: 0.55; transition: opacity 0.4s; }
 .mu-choices.is-open { opacity: 1; }

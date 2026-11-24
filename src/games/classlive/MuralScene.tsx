@@ -6,7 +6,7 @@
  * picture zooms and confetti falls. Moving parts are CSS transform/opacity (projector.css, classes prefixed mu-).
  */
 import { memo, useEffect, useRef, useState } from 'react';
-import { CLUES, COLS, GUESS_FROM, PICTURES, TILES, type MuralGame } from '../../../shared/classlive/mural';
+import { CLUES, COLS, PICTURES, TILES, type MuralGame } from '../../../shared/classlive/mural';
 import type { ScreenView } from '../../../shared/classlive/server';
 import { MuralPicture } from './muralPictures';
 import { PLAYER_COLOURS } from './StarSky';
@@ -22,7 +22,7 @@ export const NO_MURAL_FX: MuralFx = { fresh: {}, banner: null, revealing: false 
 
 type Person = ScreenView['people'][number];
 
-const OPEN_AT = Math.ceil(TILES * GUESS_FROM);
+const LETTERS = 'ABCDEF';
 const CONFETTI = Array.from({ length: 56 }, (_, i) => {
   const r = (n: number) => { const x = Math.sin((i + 1) * 91.7 + n * 17.3) * 43758.5453; return x - Math.floor(x); };
   return { x: r(1) * 100, d: 2.6 + r(2) * 2.4, o: r(3) * 1.6, h: Math.floor(r(4) * 360), w: 8 + r(5) * 10, s: r(6) > 0.5 ? 1 : -1 };
@@ -64,8 +64,10 @@ function Who({ p, n }: { p: Person | undefined; n: number }) {
   );
 }
 
-export function MuralScene({ game, people, state, fx, showReveal, onReveal, onRevealed }: {
+export function MuralScene({ game, people, state, fx, showReveal, onReveal, onRevealed, guessLeft }: {
   game: MuralGame;
+  /** Seconds left to guess (in the guessing), or null. */
+  guessLeft: number | null;
   people: Person[];
   state: 'live' | 'over';
   fx: MuralFx;
@@ -76,7 +78,8 @@ export function MuralScene({ game, people, state, fx, showReveal, onReveal, onRe
 }) {
   const shown = game.revealed || state === 'over';
   const flipped = game.tiles.filter(Boolean).length;
-  const open = flipped >= OPEN_AT;
+  const guessTime = game.phase === 'guess' && !shown;
+  const picked = Object.values(game.mine).filter((m) => m.pick).length;
   const [sure, setSure] = useState(false);
   const calm = typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const doneRef = useRef(onRevealed);
@@ -103,7 +106,6 @@ export function MuralScene({ game, people, state, fx, showReveal, onReveal, onRe
         <span className="mu-count" aria-label={`${flipped} of ${TILES} tiles flipped`}><b>{flipped}</b> / {TILES}</span>
         <span className="mu-progress" role="progressbar" aria-valuemin={0} aria-valuemax={TILES} aria-valuenow={flipped} aria-label="Tiles flipped">
           <span className="mu-progress__fill" style={{ transform: `scaleX(${flipped / TILES})` }} />
-          <span className="mu-progress__mark" style={{ left: `${GUESS_FROM * 100}%` }} aria-hidden="true" />
         </span>
         <span className="mu-pct">{shown ? 'All done!' : `${pct}%`}</span>
       </div>
@@ -136,31 +138,43 @@ export function MuralScene({ game, people, state, fx, showReveal, onReveal, onRe
         </div>
 
         <aside className="mu-side" aria-label="Guessing">
-          <h2 className={`mu-side__title${open && !shown ? ' mu-side__title--open' : ''}`}>
-            {shown ? 'The picture is…' : open ? 'Guessing is open!' : `Guessing opens at ${OPEN_AT} tiles`}
+          <h2 className={`mu-side__title${guessTime ? ' mu-side__title--open' : ''}`}>
+            {shown ? 'The picture is…' : guessTime ? 'Time to guess!' : 'Guessing comes at the end'}
           </h2>
-          {open || shown ? (
-            <div className="mu-clue" role="status">
-              <span className="mu-clue__key" aria-hidden="true">🗝️</span>
-              <b className="mu-clue__label">Clue</b>
-              <p className="mu-clue__text">{CLUES[game.picture]}</p>
-            </div>
+          {shown || guessTime ? (
+            <>
+              <p className="mu-side__how">{shown ? 'The riddle that fits:' : `Pick one riddle on your device.${guessLeft !== null ? ` ${guessLeft}s left` : ''}`}</p>
+              <ol className="mu-riddles" aria-label="The six riddles">
+                {game.choices.map((c, i) => (
+                  <li key={c} className={`mu-riddle${shown && c === game.picture ? ' is-right' : ''}${shown && c !== game.picture ? ' is-not' : ''}`} style={{ animationDelay: `${i * 0.12}s` }}>
+                    <b aria-hidden="true">{LETTERS[i]}</b><span>{CLUES[c]}</span>
+                  </li>
+                ))}
+              </ol>
+              {guessTime && <p className="mu-picked" aria-live="polite">{picked} of {people.length} picked</p>}
+            </>
           ) : (
             <div className="mu-clue mu-clue--locked">
               <span className="mu-clue__key" aria-hidden="true">🔒</span>
-              <p className="mu-clue__text">A clue appears when guessing opens.</p>
+              <p className="mu-clue__text">Keep answering to flip tiles. When the time is up, everyone picks from six riddles.</p>
             </div>
           )}
-          <h3 className="mu-side__sub">Guessed it</h3>
-          {game.solvers.length === 0 ? <p className="mu-none">Nobody yet</p> : (
-            <ol className="mu-solvers" aria-label="Who guessed right, in order">
-              {game.solvers.map((id, i) => <Who key={id} p={byId(id)} n={i + 1} />)}
-            </ol>
+          {shown && (
+            <>
+              <h3 className="mu-side__sub">Guessed it</h3>
+              {game.solvers.length === 0 ? <p className="mu-none">Nobody this time</p> : (
+                <ol className="mu-solvers" aria-label="Who guessed right, in order">
+                  {game.solvers.map((id, i) => <Who key={id} p={byId(id)} n={i + 1} />)}
+                </ol>
+              )}
+            </>
           )}
           {showReveal && !game.revealed && (
-            sure
-              ? <button type="button" className="cl-btn cl-btn--go mu-reveal" onClick={() => { setSure(false); onReveal(); }}>Yes, show it!</button>
-              : <button type="button" className="cl-btn mu-reveal" onClick={() => setSure(true)}>Reveal</button>
+            !guessTime
+              ? <button type="button" className="cl-btn cl-btn--go mu-reveal" onClick={onReveal}>Time to guess!</button>
+              : sure
+                ? <button type="button" className="cl-btn cl-btn--go mu-reveal" onClick={() => { setSure(false); onReveal(); }}>Yes, show it!</button>
+                : <button type="button" className="cl-btn mu-reveal" onClick={() => setSure(true)}>Reveal</button>
           )}
         </aside>
       </div>

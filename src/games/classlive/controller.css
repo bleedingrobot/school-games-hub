@@ -128,3 +128,20 @@
 .cl-c-lag b { color: var(--arm); }
 @keyframes cl-c-lag-in { from { opacity: 0; transform: translate3d(0, -6px, 0); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .cl-c-lag { animation: none; } }
+
+/* Mystery Mural: the pupil's own tiles, and the riddle pick at the end (James, 24 Nov 2026). */
+.cl-m-mine { position: relative; width: min(100%, 520px); aspect-ratio: 3 / 2; max-width: 100%; margin: 4px auto; border-radius: 12px; overflow: hidden; border: 3px solid #c9952e; box-shadow: 0 8px 24px rgba(0,0,0,0.35); background: #241b5e; }
+.cl-m-mine > img, .cl-m-mine > svg { position: absolute; inset: 0; }
+.cl-m-mine__grid { position: absolute; inset: 0; display: grid; }
+.cl-m-mine__grid i { background: linear-gradient(135deg, #6b3fc4, #4a2596); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.08); transition: opacity 0.5s; }
+.cl-m-mine__grid i.is-mine { opacity: 0; }
+.cl-m-mine__grid i.is-new { opacity: 0; box-shadow: inset 0 0 0 2px #ffe27a, 0 0 12px #ffd54a; animation: cl-m-new 1.4s ease-out; }
+@keyframes cl-m-new { from { opacity: 1; } to { opacity: 0; } }
+.cl-m-guess { display: flex; flex-direction: column; gap: 10px; align-items: stretch; width: min(100%, 640px); margin: 0 auto; }
+.cl-m-guess .cl-c-title { text-align: center; }
+.cl-m-riddles { display: grid; gap: 8px; }
+.cl-m-riddle { display: flex; gap: 12px; align-items: flex-start; text-align: left; padding: 12px 14px; border-radius: 14px; border: 2px solid rgba(255,255,255,0.25); background: rgba(40,36,110,0.85); color: #fff; font: inherit; font-weight: 700; font-style: italic; line-height: 1.35; cursor: pointer; touch-action: manipulation; }
+.cl-m-riddle b { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(180deg, #ffe27a, #ffb920); color: #2a1650; font-style: normal; }
+.cl-m-riddle:not(:disabled):hover, .cl-m-riddle:focus-visible { border-color: #ffd54a; outline: none; }
+.cl-m-riddle:disabled { opacity: 0.6; cursor: default; }
+@media (prefers-reduced-motion: reduce) { .cl-m-mine__grid i.is-new { animation: none; } }

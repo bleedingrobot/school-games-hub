@@ -8972,8 +8972,12 @@ function spotlight(g, id, t) {
 }
 /** One marked answer every this many ms per pupil (no speed bonus; same as Class Showdown). */
 const ANSWER_GAP_MS = 4e3;
-/** Guessing opens once this share of the tiles is flipped. */
-const GUESS_FROM = .15;
+/** How long the guessing lasts once the flipping is over (it ends sooner when everyone has picked). */
+const GUESS_MS = 45e3;
+/** The pace of an untimed game (the teacher ends it): as if it were 5 minutes. */
+const UNTIMED_PACE_MS = 3e5;
+/** How many tiles may be open by time t, in a game whose flipping lasts paceMs. */
+const openCap = (t, paceMs) => Math.min(130, Math.ceil(130 * Math.max(0, t) / Math.max(1, paceMs)));
 const PICTURE_IDS = Object.keys({
 	whale: "A whale",
 	volcano: "A volcano",
@@ -9027,7 +9031,8 @@ function newMural(random, avoid = []) {
 		tiles: Array(216).fill(""),
 		solvers: [],
 		revealed: false,
-		mine: {}
+		mine: {},
+		phase: "flip"
 	};
 }
 const mineOf = (g, pupil) => g.mine[pupil] ??= {
@@ -9041,15 +9046,30 @@ const mineOf = (g, pupil) => g.mine[pupil] ??= {
 	tiles: 0
 };
 const flipped = (g) => g.tiles.filter(Boolean).length;
-const guessOpen = (g) => flipped(g) >= Math.ceil(g.tiles.length * GUESS_FROM);
-/** May this pupil guess now? */
+const guessing = (g) => g.phase === "guess" && !g.revealed;
+/** The tiles this pupil flipped. */
+const tilesOf = (g, pupil) => g.tiles.flatMap((x, i) => x === pupil ? [i] : []);
+/** May this pupil guess now? (Once, in the guessing.) */
 function canGuess(g, pupil) {
-	const m = mineOf(g, pupil);
-	if (m.gotIt || g.revealed || !guessOpen(g)) return false;
-	return m.guessedAt < 0 || flipped(g) - m.guessedAt >= 40;
+	return guessing(g) && !g.mine[pupil]?.pick;
 }
+/** The flipping is over: everyone gets one guess. */
+function startGuessing(g, t) {
+	if (g.phase === "guess" || g.revealed) return [];
+	g.phase = "guess";
+	g.queue = [];
+	g.guessFrom = t;
+	return [{
+		type: "guess_time",
+		t
+	}];
+}
+/** Has the guessing run its time? */
+const guessingDone = (g, t) => guessing(g) && t >= (g.guessFrom ?? 0) + 45e3;
+/** Has every pupil in the room picked? */
+const allPicked = (g, order) => order.length > 0 && order.every((id) => !!g.mine[id]?.pick);
 /** A marked answer (the server has marked it): a right one flips a tile at random. */
-function answered(g, pupil, right, t, random) {
+function answered(g, pupil, right, t, random, paceMs = UNTIMED_PACE_MS) {
 	const m = mineOf(g, pupil);
 	if (t - m.lastAt < 4e3) return {
 		ok: false,
@@ -9059,21 +9079,38 @@ function answered(g, pupil, right, t, random) {
 	m.answered++;
 	if (!right) return {
 		ok: true,
-		events: []
+		events: paced(g, t, random, paceMs)
 	};
 	m.right++;
+	if (g.revealed || g.phase === "guess") return {
+		ok: true,
+		events: []
+	};
+	(g.queue ??= []).push(pupil);
 	return {
 		ok: true,
-		events: flipRandom(g, pupil, t, random)
+		events: paced(g, t, random, paceMs)
 	};
+}
+/** Flips the queued right answers' tiles, as many as the pace allows by now. */
+function paced(g, t, random, paceMs = UNTIMED_PACE_MS) {
+	const events = [];
+	const cap = openCap(t, paceMs);
+	while (g.queue?.length && flipped(g) < cap && g.phase !== "guess" && !g.revealed) {
+		let at = 0;
+		g.queue.forEach((id, i) => {
+			if (mineOf(g, id).tiles < mineOf(g, g.queue[at]).tiles) at = i;
+		});
+		events.push(...flipRandom(g, g.queue.splice(at, 1)[0], t, random));
+	}
+	return events;
 }
 /** Flips one tile that isn't flipped yet, chosen at random, for this pupil. */
 function flipRandom(g, pupil, t, random) {
-	if (g.revealed) return [];
+	if (g.revealed || g.phase === "guess") return [];
 	const free = g.tiles.map((x, i) => x ? -1 : i).filter((i) => i >= 0);
 	if (!free.length) return [];
 	const tile = free[Math.floor(random() * free.length) % free.length];
-	const wasOpen = guessOpen(g);
 	g.tiles[tile] = pupil;
 	mineOf(g, pupil).tiles++;
 	const events = [{
@@ -9082,20 +9119,10 @@ function flipRandom(g, pupil, t, random) {
 		pupil,
 		tile
 	}];
-	if (!wasOpen && guessOpen(g)) events.push({
-		type: "guess_open",
-		t
-	});
-	if (flipped(g) === g.tiles.length) {
-		g.revealed = true;
-		events.push({
-			type: "reveal",
-			t
-		});
-	}
+	if (flipped(g) === g.tiles.length) events.push(...startGuessing(g, t));
 	return events;
 }
-/** A pupil's guess. Wrong guesses are only told to the pupil. */
+/** A pupil's one guess (a riddle's picture). Nobody is told if it's right until the reveal. */
 function guess(g, pupil, pick, t) {
 	if (!canGuess(g, pupil)) return {
 		ok: false,
@@ -9106,27 +9133,22 @@ function guess(g, pupil, pick, t) {
 		reason: "bad_pick"
 	};
 	const m = mineOf(g, pupil);
-	m.guessedAt = flipped(g);
+	m.pick = pick;
 	m.guesses++;
-	if (pick !== g.picture) return {
-		ok: true,
-		right: false,
-		events: []
-	};
-	g.solvers.push(pupil);
-	m.gotIt = g.solvers.length;
+	if (pick === g.picture) {
+		g.solvers.push(pupil);
+		m.gotIt = g.solvers.length;
+	}
 	return {
 		ok: true,
-		right: true,
 		events: [{
-			type: "guessed",
+			type: "picked",
 			t,
-			pupil,
-			place: m.gotIt
+			pupil
 		}]
 	};
 }
-/** The teacher (or the last tile) shows the whole picture. */
+/** The end of the guessing (time, everyone picked, or the teacher) shows the whole picture. */
 function reveal(g, t) {
 	if (g.revealed) return [];
 	g.revealed = true;
@@ -9632,6 +9654,8 @@ const ACTIVITIES = [
 ];
 const LENGTHS = [
 	0,
+	2,
+	3,
 	5,
 	10,
 	15
@@ -9656,7 +9680,9 @@ function publicGame(g, players) {
 		kind: "mural",
 		tiles: g.tiles.map((x) => x ? "1" : "0").join(""),
 		flipped: flipped(g),
-		guessOpen: guessOpen(g),
+		phase: g.phase ?? "flip",
+		guessEndsAt: g.phase === "guess" ? (g.guessFrom ?? 0) + GUESS_MS : null,
+		picked: Object.values(g.mine).filter((m) => m.pick).length,
 		choices: g.choices,
 		solvers: g.solvers.length,
 		revealed: g.revealed,
@@ -9722,8 +9748,11 @@ function playerView(s, id) {
 				tiles: m?.tiles ?? 0,
 				canGuess: canGuess(s.game, id),
 				guesses: m?.guesses ?? 0,
-				gotIt: m?.gotIt ?? 0,
-				nextAt: m ? m.lastAt + ANSWER_GAP_MS : 0
+				nextAt: m ? m.lastAt + ANSWER_GAP_MS : 0,
+				gotIt: s.game.revealed || s.state === "over" ? m?.gotIt ?? 0 : 0,
+				picked: !!m?.pick,
+				myTiles: tilesOf(s.game, id),
+				picture: s.game.picture
 			}
 		};
 	}
@@ -9779,6 +9808,18 @@ async function mutate(sv, room, step) {
 		const t = timeOf(row, now);
 		const events = [];
 		if (timeUp(s, row, now)) {
+			if (s.game.kind === "mural" && s.game.phase !== "guess" && !s.game.revealed) events.push(...startGuessing(s.game, t));
+			else if (s.game.kind !== "mural" || s.game.revealed || guessingDone(s.game, t)) {
+				if (s.game.kind === "mural") events.push(...reveal(s.game, t));
+				s.state = "over";
+				events.push({
+					type: "over",
+					t,
+					why: "time"
+				});
+			}
+		} else if (s.state === "live" && s.game.kind === "mural" && guessingDone(s.game, t)) {
+			events.push(...reveal(s.game, t));
 			s.state = "over";
 			events.push({
 				type: "over",
@@ -9921,9 +9962,22 @@ async function classLiveStep(sv, who, body) {
 			}
 			if (action === "reveal") {
 				if (s.game.kind !== "mural") return { refuse: no(400, "Only a mural can be revealed.") };
+				if (s.state !== "live") return {
+					reply: null,
+					events: []
+				};
+				if (s.game.phase !== "guess") return {
+					reply: null,
+					events: startGuessing(s.game, t)
+				};
+				s.state = "over";
 				return {
 					reply: null,
-					events: reveal(s.game, t)
+					events: [...reveal(s.game, t), {
+						type: "over",
+						t,
+						why: "teacher"
+					}]
 				};
 			}
 			if (action === "spotlight") {
@@ -9941,7 +9995,7 @@ async function classLiveStep(sv, who, body) {
 			s.state = "over";
 			return {
 				reply: null,
-				events: [{
+				events: [...s.game.kind === "mural" ? reveal(s.game, t) : [], {
 					type: "over",
 					t,
 					why: "teacher"
@@ -10029,9 +10083,25 @@ async function classLiveStep(sv, who, body) {
 			if (s.game.kind === "mural") {
 				if (body.tile !== void 0) return { refuse: no(409, "Answer a question to flip a tile!", "no_flips") };
 				const out = guess(s.game, who, body.guess, t);
-				if (!out.ok) return { refuse: no(409, out.reason === "not_now" ? "Not yet! Wait for more tiles." : "Pick a picture.", out.reason) };
+				if (!out.ok) return { refuse: no(409, out.reason === "not_now" ? "Guessing comes at the end!" : "Pick a riddle.", out.reason) };
+				if (allPicked(s.game, s.order)) {
+					s.state = "over";
+					return {
+						reply: { result: "picked" },
+						events: [
+							...out.events,
+							...reveal(s.game, t),
+							{
+								type: "over",
+								t,
+								why: "guessed"
+							}
+						],
+						players: [who]
+					};
+				}
 				return {
-					reply: { result: out.right ? "guessed" : "not_it" },
+					reply: { result: "picked" },
 					events: out.events,
 					players: [who]
 				};
@@ -10152,7 +10222,7 @@ async function muralMaths(sv, cur, who, body) {
 	const right = sameAnswer(value, marked.answer);
 	const done = await mutate(sv, room, (s, t) => {
 		if (s.state !== "live" || s.game.kind !== "mural") return { refuse: no(409, "This one has finished.", "over") };
-		const out = answered(s.game, who, right, t, () => sv.random());
+		const out = answered(s.game, who, right, t, () => sv.random(), s.lengthMin > 0 ? s.lengthMin * 6e4 * .9 : void 0);
 		if (!out.ok) return { refuse: no(409, "Wait for the ring to fill!", out.reason) };
 		return {
 			reply: null,

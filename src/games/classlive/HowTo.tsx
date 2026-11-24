@@ -48,9 +48,9 @@ export function sheetFor(game: Game): Sheet {
     title: 'How to play Mystery Mural', mode: null, modeSay: null, art: painted('back', 'gallery', true),
     steps: [
       { icon: '🖼️', text: 'A mystery picture is hiding under the tiles.', say: H[0] },
-      { icon: '✅', text: 'Answer maths questions on your device. Each right answer earns a flip.', say: H[1] },
-      { icon: '🎴', text: 'Pick a tile to flip and show a little more of the picture.', say: H[2] },
-      { icon: '🤔', text: 'When guessing opens, guess what the picture is!', say: H[3] },
+      { icon: '✅', text: 'Answer maths questions on your device. Each right answer flips a tile. You can see your tiles on your device.', say: H[1] },
+      { icon: '⏱️', text: 'Keep answering until the time is up. The more tiles we flip, the more we see.', say: H[2] },
+      { icon: '🤔', text: 'Then read the six riddles and pick the one that fits the picture!', say: H[3] },
     ],
   };
 }

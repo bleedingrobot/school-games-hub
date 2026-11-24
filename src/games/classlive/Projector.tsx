@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ARMS, ARM_GOAL, ARM_NAMES, SUPERNOVA, armCounts, laggingArm, type Arm, type Star, type StarsGame } from '../../../shared/classlive/stars';
-import { CLUES, PICTURES, type MuralGame } from '../../../shared/classlive/mural';
+import { GUESS_MS, PICTURES, type MuralGame } from '../../../shared/classlive/mural';
 import { BODY, SERPENT_LEVELS, SERPENT_LEVEL_ABOUT, SERPENT_LEVEL_NAMES, stepText, wakeAt, type SerpentGame, type SerpentLevel } from '../../../shared/classlive/serpent';
 import { ACTIVITY_NAMES, type Activity, type Event, type ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
@@ -19,7 +19,7 @@ import './projector.css';
 import { painted } from './paintedArt';
 import { HowTo } from './HowTo';
 import { speak } from '../../speech';
-import { clueLine, next, VOICE_FOLDER } from './voiceLines';
+import { next, VOICE_FOLDER } from './voiceLines';
 
 const ROOM_KEY = 'classlive-room';
 type Ev = Event & { seq: number };
@@ -30,7 +30,7 @@ const LEVEL_WORDS: { id: LevelPick; label: string }[] = [
   { id: 'big', label: 'Up to 12s' },
   { id: 'pick', label: 'Pick the fact' },
 ];
-const TIMERS = [0, 5, 10, 15];
+const TIMERS = [0, 2, 3, 5, 10, 15];
 
 function roomFromUrl(): number | null {
   try {
@@ -180,11 +180,12 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
         mx((f) => ({ ...f, fresh: { ...f.fresh, [tile]: { name: p?.name ?? null, colour: p?.colour ?? 0 } } }));
         later(() => mx((f) => { const n = { ...f.fresh }; delete n[tile]; return { ...f, fresh: n }; }), 3800);
         sound.play('flip');
-      } else if (e.type === 'guess_open') {
-        mbanner('Guessing is open!', 3200);
+      } else if (e.type === 'guess_time') {
+        mbanner('Time to guess!', 3200);
         sound.play('chime');
-        say(next('guessOpen'), 600);
-        if (s.game.kind === 'mural') say(clueLine(CLUES[s.game.picture]), 4200);
+        say(next('guessTime'), 600);
+      } else if (e.type === 'picked') {
+        sound.play('twinkle');
       } else if (e.type === 'guessed') {
         const who = nameOf(e.pupil);
         mbanner(e.place === 1 ? `${who ?? 'Someone'} got it first!` : `${who ?? 'Someone else'} got it too!`, 2600);
@@ -202,7 +203,7 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
           sound.play('reveal');
         } else sound.play('swell');
         if (e.why === 'heads') banner('Everyone reached the head!', 2600);
-        say(e.why === 'time' ? next('timeUp') : e.why === 'heads' ? next('allHeads') : next('finished'), 1500);
+        say(e.why === 'time' ? next('timeUp') : e.why === 'heads' ? next('allHeads') : e.why === 'guessed' ? next('allGuessed') : next('finished'), 1500);
       }
     }
   }, [flag, later, say, sound]);
@@ -282,6 +283,24 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
       void link.send({ action: 'view', room }).then(take, () => undefined);
     }
   }, [leftMs, room, link, take]);
+  // Mystery Mural's guessing time: a clock of its own (in timed and untimed games), and a nudge to the server when it ends.
+  const mg = screen?.game.kind === 'mural' ? screen.game : null;
+  const guessOn = live && !!mg && mg.phase === 'guess' && !mg.revealed && screen?.startedAt != null;
+  useEffect(() => {
+    if (!guessOn) return;
+    const id = window.setInterval(() => setNow(Date.now()), 500);
+    return () => window.clearInterval(id);
+  }, [guessOn]);
+  const guessMs = guessOn && screen && mg ? (screen.startedAt as number) + (mg.guessFrom ?? 0) + GUESS_MS - (now + offset.current) : null;
+  const guessLeft = guessMs === null ? null : Math.max(0, Math.ceil(guessMs / 1000));
+  const sentGuessEnd = useRef(0);
+  useEffect(() => {
+    if (guessMs === null || guessMs > 0 || !room) return;
+    const t = Date.now();
+    if (t - sentGuessEnd.current < 3000) return;
+    sentGuessEnd.current = t;
+    void link.send({ action: 'view', room }).then(take, () => undefined);
+  }, [guessMs, room, link, take]);
 
   const act = useCallback(async (body: Record<string, unknown>) => {
     const r = await link.send(body).catch(() => ({ status: 0, body: { error: 'Could not reach the server.' } }) as Reply);
@@ -370,6 +389,7 @@ export function Projector({ link, classId, className, sound }: { link: ClassLive
         <>
           <MuralScene
             game={mural}
+            guessLeft={guessLeft}
             people={screen.people}
             state={state}
             fx={fx.mural}
