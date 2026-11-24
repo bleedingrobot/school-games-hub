@@ -483,3 +483,28 @@
   .sp-fall { display: none; }
 }
 
+
+/* ---------- How to play (HowTo.tsx) ---------- */
+.cl-how { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; padding: 56px 16px 16px; background: rgba(4, 4, 26, 0.55); animation: cl-fade-in 0.5s ease-out both; }
+.cl-how__art { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.35; filter: blur(2px); }
+.cl-how--serpent .cl-how__art { background-size: min(40vh, 40vw); background-repeat: no-repeat; background-position: right 4vw bottom 4vh; opacity: 0.9; filter: drop-shadow(0 0 30px rgba(63, 224, 160, 0.6)); animation: sp-coilbreathe 4.5s ease-in-out infinite alternate; }
+.cl-how__card { position: relative; width: min(94vw, 1180px); max-height: 100%; overflow: auto; display: flex; flex-direction: column; gap: clamp(8px, 1.8vh, 18px); padding: clamp(16px, 3vh, 34px) clamp(18px, 3vw, 44px);
+  border-radius: 28px; border: 3px solid #ffd54a; background: linear-gradient(180deg, rgba(36, 22, 90, 0.94), rgba(12, 10, 48, 0.94)); box-shadow: 0 0 60px rgba(255, 213, 74, 0.35); animation: cl-how-card 0.6s ease-out both; text-align: left; }
+.cl-how--serpent .cl-how__card { border-color: #3fe0a0; background: linear-gradient(180deg, rgba(6, 48, 36, 0.94), rgba(2, 20, 16, 0.94)); box-shadow: 0 0 60px rgba(63, 224, 160, 0.4); }
+.cl-how--mural .cl-how__card { border-color: #f9a8d4; }
+.cl-how__title { margin: 0; text-align: center; font-size: clamp(1.6rem, min(5vw, 6.5vh), 3.6rem); font-weight: 900; color: #ffe14d; text-shadow: 0 0 24px rgba(255, 213, 74, 0.6); }
+.cl-how__mode { margin: 0; align-self: center; padding: 4px 18px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); font-weight: 800; font-size: clamp(1rem, min(2.2vw, 3vh), 1.6rem); color: #d9fff0; transition: background 0.4s, transform 0.4s; }
+.cl-how__mode--on { background: rgba(63, 224, 160, 0.35); transform: scale(1.05); }
+.cl-how__steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: clamp(6px, 1.4vh, 14px); }
+.cl-how__step { display: flex; align-items: center; gap: clamp(10px, 1.6vw, 22px); padding: clamp(6px, 1.2vh, 14px) clamp(10px, 1.4vw, 20px); border-radius: 18px; background: rgba(255, 255, 255, 0.06);
+  font-weight: 800; font-size: clamp(1.05rem, min(2.6vw, 3.6vh), 2.1rem); line-height: 1.2; color: #f1f0ff; opacity: 0.82; transition: background 0.35s, transform 0.35s, opacity 0.35s; animation: cl-how-in 0.6s ease-out both; }
+.cl-how__step--on { opacity: 1; background: rgba(255, 213, 74, 0.22); transform: scale(1.02); box-shadow: 0 0 24px rgba(255, 213, 74, 0.35); }
+.cl-how__step--done { opacity: 1; }
+.cl-how__icon { flex: none; width: 1.6em; font-size: 1.5em; text-align: center; }
+.cl-how__step--on .cl-how__icon { animation: cl-how-bob 0.9s ease-in-out infinite alternate; }
+.cl-how__go { display: flex; justify-content: center; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 4px; }
+.cl-how__who { margin: 0; text-align: center; color: #bfb8ff; font-weight: 700; }
+@keyframes cl-how-in { from { opacity: 0; transform: translate3d(-24px, 0, 0); } to { opacity: 0.82; transform: none; } }
+@keyframes cl-how-bob { from { transform: translate3d(0, 0, 0) rotate(-6deg); } to { transform: translate3d(0, -4px, 0) rotate(6deg); } }
+@media (prefers-reduced-motion: reduce) { .cl-how, .cl-how__card, .cl-how__step, .cl-how__icon, .cl-how--serpent .cl-how__art { animation: none !important; } }
+@keyframes cl-how-card { from { opacity: 0; transform: translate3d(0, 30px, 0) scale(0.94); } to { opacity: 1; transform: none; } }
