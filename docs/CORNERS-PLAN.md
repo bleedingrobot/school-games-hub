@@ -1,6 +1,6 @@
 # Four Corners (Class Live activity `corners`)
 
-**Status: stages 1 and 2 LIVE 25 Nov 2026 NZ (PR #813) (rules, server, database, big screen, pupil pad, sounds, 86 Bella clips, drawn stand-ins); art plan in docs/CORNERS-ART-PLAN.md. Next: stage 3, paintings and map music on James's PC.** Migration `20261125000300_classlive_corners` (check again: `node scripts/migration-numbers.mjs`).
+**Status: ALL stages LIVE 25 Nov 2026 NZ: stages 1 and 2 (PR #813), run-time setting and end-of-game awards (PR #815), stage 3 paintings and map music made on James's PC (branch corners-art-inbox).** Migration `20261125000300_classlive_corners` (check again: `node scripts/migration-numbers.mjs`).
 
 James's idea (25 Nov 2026 NZ): every pupil runs their own hub avatar around a square map with a joystick. A countdown gives them time to reach one of four corners; then a big dramatic dice roll picks a corner. Pupils in that corner (and anyone in no corner) go to jail: they miss the next round and answer 3 maths questions to get back. Power-ups lie on the map; map hazards change round by round.
 
