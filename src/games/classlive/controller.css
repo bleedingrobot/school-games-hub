@@ -102,13 +102,6 @@
 .cl-m-hint { margin: 0; text-align: center; font-size: 0.95rem; opacity: 0.8; }
 .cl-m-say { margin: 0; text-align: center; font-size: 1.1rem; font-weight: 800; color: #ffd54a; }
 .cl-m-fb { min-height: 0; }
-.cl-m-pick { display: flex; flex-direction: column; gap: 8px; }
-.cl-m-grid { display: grid; gap: 2px; padding: 4px; border-radius: 10px; background: rgba(0,0,10,0.4); aspect-ratio: 3 / 2; }
-.cl-m-tile { min-width: 0; min-height: 0; padding: 0; border: 0; border-radius: 4px; cursor: pointer; touch-action: manipulation; background: linear-gradient(135deg, #8a55e0, #5b2bb8); box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25); }
-.cl-m-tile.is-done { background: rgba(255,255,255,0.1); box-shadow: none; cursor: default; }
-.cl-m-tile.is-picked { background: linear-gradient(180deg, #ffe27a, #ffb920); box-shadow: 0 0 0 2px #fff, 0 0 12px #ffd54a; transform: scale(1.25); position: relative; z-index: 1; }
-.cl-m-flip { background: linear-gradient(180deg, #ff9ad5, #e8438f); color: #fff; }
-.cl-m-flip:disabled { background: rgba(255,255,255,0.16); color: rgba(255,255,255,0.7); opacity: 1; }
 .cl-m-q { flex: none; }
 .cl-m-q .question--inline { max-width: 100%; margin: 0 auto; }
 .cl-m-load { text-align: center; padding: 24px 0; }

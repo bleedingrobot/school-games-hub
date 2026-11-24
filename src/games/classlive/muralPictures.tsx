@@ -19,7 +19,7 @@ const Cloud = ({ x, y, s = 1 }: { x: number; y: number; s?: number }) => (
 );
 const Star = ({ x, y, r = 2 }: { x: number; y: number; r?: number }) => <circle cx={x} cy={y} r={r} fill="#fff6b0" />;
 
-const ART: Record<Picture, () => ReactNode> = {
+const ART: Partial<Record<Picture, () => ReactNode>> = {
   whale: () => (
     <>
       <rect width="240" height="160" fill="#7fd6ff" />
@@ -199,7 +199,7 @@ export function MuralPicture({ id, label, className, small }: { id: Picture; lab
   }
   return (
     <svg className={className} viewBox="0 0 240 160" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" role={label ? 'img' : undefined} aria-label={label} aria-hidden={label ? undefined : true} style={{ display: 'block' }}>
-      {draw()}
+      {draw ? draw() : <><rect width="240" height="160" fill="#3b2f8f" /><text x="120" y="98" textAnchor="middle" fontSize="64" fill="#ffe08a">?</text></>}
     </svg>
   );
 }
