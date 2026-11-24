@@ -14,7 +14,7 @@
  */
 import { ARMS, anchorOf, armCount, newStars, pickAnchor, spotlight, tryFact, type Arm, type Star, type StarLevel, type StarsEvent, type StarsGame, type StarsReply } from './stars';
 import { LEVELS } from './stars';
-import { answered, canGuess, flip, flipped, guess, guessOpen, newMural, reveal, TILES, ANSWER_GAP_MS, type MuralEvent, type MuralGame, type Picture } from './mural';
+import { answered, canGuess, flipped, guess, guessOpen, newMural, reveal, TILES, ANSWER_GAP_MS, type MuralEvent, type MuralGame, type Picture } from './mural';
 import type { FactAnswer } from '../maths/leitner';
 import { markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext, type PublicQuestion } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
@@ -407,14 +407,8 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     const done = await mutate<StarsReply | SerpentReply | MuralReply>(sv, room, (s, t) => {
       if (s.state !== 'live') return { refuse: no(409, s.state === 'lobby' ? 'Wait for the start!' : 'This one has finished.', s.state) };
       if (s.game.kind === 'mural') {
-        if (body.tile !== undefined) {
-          const out = flip(s.game, who, body.tile, t);
-          if (!out.ok) {
-            const words = { no_flips: 'Answer a question to earn a flip!', taken: 'That tile is already flipped. Pick another!', bad_tile: 'Pick a tile.', revealed: 'The picture is showing!' };
-            return { refuse: no(409, words[out.reason], out.reason) };
-          }
-          return { reply: { result: 'flipped' as const, tile: body.tile as number }, events: out.events, players: [who] };
-        }
+        // Tiles flip at random with right answers now; an old pad's tile pick gets a plain no.
+        if (body.tile !== undefined) return { refuse: no(409, 'Answer a question to flip a tile!', 'no_flips') };
         const out = guess(s.game, who, body.guess, t);
         if (!out.ok) return { refuse: no(409, out.reason === 'not_now' ? 'Not yet! Wait for more tiles.' : 'Pick a picture.', out.reason) };
         return { reply: { result: out.right ? ('guessed' as const) : ('not_it' as const) }, events: out.events, players: [who] };
@@ -451,7 +445,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
   return no(400, "That couldn't be read.");
 }
 
-export type MuralReply = { result: 'flipped'; tile: number } | { result: 'guessed' | 'not_it' };
+export type MuralReply = { result: 'guessed' | 'not_it' };
 
 /** Longest answer time kept (ms), as Class Showdown. */
 const MAX_ANSWER_MS = 120_000;
@@ -503,9 +497,9 @@ async function muralMaths(sv: ClassLiveServices, cur: RoomRow, who: string, body
   const right = sameAnswer(value, marked.answer);
   const done = await mutate(sv, room, (s, t) => {
     if (s.state !== 'live' || s.game.kind !== 'mural') return { refuse: no(409, 'This one has finished.', 'over') };
-    const out = answered(s.game, who, right, t);
+    const out = answered(s.game, who, right, t, () => sv.random());
     if (!out.ok) return { refuse: no(409, 'Wait for the ring to fill!', out.reason) };
-    return { reply: null, events: [], players: [who], claim: { player: who, slot: slot as number, value, right } };
+    return { reply: null, events: out.events, players: [who], claim: { player: who, slot: slot as number, value, right } };
   });
   if ('refuse' in done) {
     const g = cur.session.game;

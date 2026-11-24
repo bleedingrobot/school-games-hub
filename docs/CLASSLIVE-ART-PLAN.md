@@ -25,3 +25,7 @@ Prompt fixes after the first run: no "dragon-like" on the sleeping head (it gave
 ## Picker page (24 Nov 2026 NZ)
 
 James asked for a painted picker page. Four more pictures in `pick/`: `hall` (the page backdrop, a games hall under a starry dome) and `stars`, `serpent`, `mural` (the picture across the top of each game card). Each card falls back to its game's `back/` picture if its own is missing. Hall prompt: say "no writing anywhere" (it painted big made-up titles in the sky otherwise). Sleeping serpent: describe the eyes as "gentle curved sleepy lines" and put open eyes, idols and carved faces in the negative list.
+
+## 30 more mural pictures (24 Nov 2026 NZ)
+
+James asked for way more Mystery Mural pictures. 30 more (40 in all), painted on the gaming PC: elephant, penguin, giraffe, lion, panda, dinosaur, unicorn, robot, balloon, train, submarine, helicopter, snowman, pyramid, windmill, cupcake, icecream, pizza, sunflower, cactus, butterfly, beehive, turtle, shark, owl, frog, tractor, fireengine, guitar, pumpkin. Each has a riddle in `CLUES` (shared/classlive/mural.ts). Fire engine prompt: "plain panels with no writing, numbers or badges" (it painted made-up lettering on the cab).
