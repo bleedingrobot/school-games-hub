@@ -312,6 +312,54 @@
       ],
       "prompt": "Empty background scenery: the same ancient jungle temple at night lit up by magic, glowing emerald and gold light pouring from carved stone pillars, no statues, floating golden fireflies, mossy steps, hanging vines, misty jungle on both sides, dark and calm in the middle, an empty open space, no characters, no creatures, no animals. Wide landscape.",
       "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+    },
+    {
+      "name": "pick-hall",
+      "prompt": "Empty background scenery: a grand magical games hall at night under a huge glass dome open to a starry purple and blue nebula sky, glowing golden lanterns floating in the air, three tall arched stone doorways along the back wall, one glowing gold with stars, one glowing jade green with jungle vines, one glowing pink with paint swirls, warm light spilling out of each, a polished floor reflecting the light, sparkles and drifting glowing motes, dark and calm in the upper middle so a big title on top stands out, no characters, no creatures. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "pick",
+      "file": "hall",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "pick-stars",
+      "prompt": "A magical night sky full of stars where glowing golden lines join bright stars into a big spider-web shaped constellation, one huge bright star glowing in the centre, a swirling purple and blue nebula, a tiny observatory dome with a telescope on a dark hilltop at the bottom, no characters. Wide landscape picture.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "pick",
+      "file": "stars",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "pick-serpent",
+      "prompt": "An ancient mossy jungle temple at golden hour, a long friendly emerald green serpent with gold-edged belly plates coiled up the temple steps with its eyes closed asleep, glowing jade stone tablets on each step, shafts of warm sunlight through the canopy, hanging vines, fireflies, no other creatures, no statues. Wide landscape picture.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "pick",
+      "file": "serpent",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "pick-mural",
+      "prompt": "A grand magical art gallery at night, one huge golden picture frame on the wall half covered by a velvet purple curtain being pulled back, the hidden painting behind made of glowing square tiles some flipped to show bright colours, paint brushes and a palette on a stool, sparkles of paint drifting in the air, soft spotlights, no characters. Wide landscape picture.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "pick",
+      "file": "mural",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
     }
   ],
   "_cutouts": "Paint cut-outs (kind cut) with style c on plain white, then rembg in tidy; scenes with style s."
