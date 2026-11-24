@@ -239,6 +239,7 @@ describe('Class Live server', () => {
     expect(clampMove({ x: 0.92, y: 0.4, at: 0 }, { x: 0.08, y: 0.6 }, 100, [{ a: { x: 0.08, y: 0.6 }, b: { x: 0.92, y: 0.4 } }])).toEqual({ x: 0.08, y: 0.6 });
     const g: CornersGame = newCorners('snow');
     const r = makeRound(g, 3, 0, rng(3), 20);
+    expect([r.runEnd, makeRound(newCorners('snow', 3), 1, 0, rng(1), 5).runEnd, newCorners('space', 40).runS]).toEqual([10_000, 6000, 12]);
     expect(r.storms.length).toBeGreaterThan(0);
     const storm = r.storms[0];
     const slow = stepMove({ p: { x: storm.x, y: storm.y }, v: { x: 0, y: 0 } }, { x: 1, y: 0 }, 100, { ...r, teleports: [], ice: [], hole: false, roller: null }, 0, { boost: false, ghost: false });
@@ -280,6 +281,9 @@ describe('Class Live server', () => {
     expect(mines.some((m) => m.safe > 0) && mines.some((m) => m.caught > 0)).toBe(true);
     expect(mines.some((m) => m.escapes > 0)).toBe(true);
     expect(mines.some((m) => m.grabs > 0)).toBe(true);
+    // End-of-game stats: answers, streaks, timings and the dice's favourite corners are kept.
+    expect(mines.some((m) => (m.right ?? 0) > 0 && (m.bestStreak ?? 0) > 0 && m.fastMs === 3000) && (cg.caughtAll ?? 0) > 0).toBe(true);
+    expect((cg.rolls ?? []).reduce((a, b) => a + b, 0)).toBeGreaterThan(3);
     // Everyone let out of jail was put back in the middle (their saved spot moved by the server).
     const escaped = pc.ids.find((id) => cg.mine[id].escapes > 0)!;
     expect(pc.db.spots.get(room)![escaped]).toBeDefined();

@@ -287,19 +287,56 @@ export function CornersScene({ screen, game, link, room, clock, sound, say, onTi
 function CornersFinish({ screen, game, avatars, onAgain }: { screen: ScreenView; game: CornersGame; avatars: Record<string, unknown>; onAgain: () => void }) {
   const top = podium(game, screen.people.map((p) => p.id));
   const byId = (id: string) => screen.people.find((p) => p.id === id);
-  const best = (f: (id: string) => number) => {
-    let out: { id: string; v: number } | null = null;
-    for (const p of screen.people) { const v = f(p.id); if (v > 0 && (!out || v > out.v)) out = { id: p.id, v }; }
-    return out;
+  const ids = screen.people.map((p) => p.id);
+  const m = (id: string) => game.mine[id];
+  const names = (list: string[]) => {
+    const n = list.map((id) => byId(id)?.name).filter(Boolean) as string[];
+    return n.length > 2 ? `${n.slice(0, 2).join(', ')} and ${n.length - 2} more` : n.join(' and ');
   };
-  const escapes = best((id) => game.mine[id]?.escapes ?? 0);
-  const powers = best((id) => game.mine[id]?.powersUsed ?? 0);
-  const keys = best((id) => game.mine[id]?.freed ?? 0);
-  const shouts = screen.showNames ? [
-    escapes && `🔓 Great escaper: ${byId(escapes.id)?.name} (${escapes.v})`,
-    powers && `⚡ Power player: ${byId(powers.id)?.name} (${powers.v} power-ups)`,
-    keys && `🔑 Kind friend: ${byId(keys.id)?.name} freed ${keys.v} from jail`,
-  ].filter(Boolean) as string[] : [];
+  /** The top pupils on a stat (ties share it); low: smallest wins. */
+  const top1 = (f: (id: string) => number | undefined, low = false) => {
+    let v: number | null = null;
+    for (const id of ids) { const x = f(id); if (x !== undefined && x > 0 && (v === null || (low ? x < v : x > v))) v = x; }
+    return v === null ? null : { v, who: ids.filter((id) => f(id) === v) };
+  };
+  const award = (emoji: string, title: string, f: (id: string) => number | undefined, say: (v: number) => string, low = false) => {
+    const t = top1(f, low);
+    return t ? { emoji, title, who: names(t.who), what: say(t.v) } : null;
+  };
+  const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+  const accuracy = (id: string) => {
+    const r = m(id)?.right ?? 0;
+    const w = m(id)?.wrong ?? 0;
+    return r + w >= 5 ? Math.round((100 * r) / (r + w)) : undefined;
+  };
+  const untouched = ids.filter((id) => (m(id)?.caught ?? 0) === 0 && (m(id)?.safe ?? 0) > 0);
+  const awards = screen.showNames ? [
+    award('🍀', 'Luckiest', (id) => m(id)?.lucky, (v) => plural(v, 'lucky escape')),
+    award('🎁', 'Power-up collector', (id) => m(id)?.grabs, (v) => `picked up ${v}`),
+    award('⚡', 'Power player', (id) => m(id)?.powersUsed, (v) => `switched on ${v}`),
+    award('🌀', 'Teleport traveller', (id) => m(id)?.warps, (v) => plural(v, 'warp')),
+    award('🧮', 'Maths whizz', (id) => m(id)?.right, (v) => plural(v, 'right answer')),
+    award('🔥', 'Hot streak', (id) => ((m(id)?.bestStreak ?? 0) >= 3 ? m(id)?.bestStreak : undefined), (v) => `${v} right in a row`),
+    award('⏱️', 'Fastest answer', (id) => m(id)?.fastMs, (v) => `${(v / 1000).toFixed(1)} seconds`, true),
+    award('🎯', 'Sharpshooter', accuracy, (v) => `${v}% right`),
+    award('🔓', 'Great escaper', (id) => m(id)?.escapes, (v) => `got out ${plural(v, 'time')}`),
+    award('🔑', 'Kind friend', (id) => m(id)?.freed, (v) => `freed ${v} from jail`),
+    award('🦸', 'Lone ranger', (id) => m(id)?.alone, (v) => `${plural(v, 'round')} with a corner to themselves`),
+    untouched.length > 0 && untouched.length < ids.length ? { emoji: '🛡️', title: 'Never caught', who: names(untouched), what: '' } : null,
+  ].filter((x): x is { emoji: string; title: string; who: string; what: string } => !!x) : [];
+  // Facts about the whole class (no names, so they show even with names off).
+  const rolls = game.rolls ?? [0, 0, 0, 0];
+  const most = Math.max(...rolls);
+  const fav = most > 0 ? rolls.indexOf(most) : -1;
+  const sum = (f: (id: string) => number | undefined) => ids.reduce((n, id) => n + (f(id) ?? 0), 0);
+  const facts = [
+    fav >= 0 && `🎲 The dice picked ${CORNER_NAMES[fav]} most (${plural(most, 'time')})`,
+    (game.caughtAll ?? 0) > 0 && `🚔 ${plural(game.caughtAll ?? 0, 'trip')} to jail`,
+    sum((id) => m(id)?.escapes) > 0 && `🔓 ${plural(sum((id) => m(id)?.escapes), 'escape')}`,
+    sum((id) => m(id)?.right) > 0 && `🧮 ${plural(sum((id) => m(id)?.right), 'right answer')}`,
+    sum((id) => m(id)?.powersUsed) > 0 && `⚡ ${plural(sum((id) => m(id)?.powersUsed), 'power-up')} switched on`,
+    sum((id) => m(id)?.warps) > 0 && `🌀 ${plural(sum((id) => m(id)?.warps), 'teleport')}`,
+  ].filter(Boolean) as string[];
   const rounds = game.round?.n ?? 0;
   return (
     <div className="cl-finish fc-finish" role="dialog" aria-label="Finish">
@@ -319,7 +356,19 @@ function CornersFinish({ screen, game, avatars, onAgain }: { screen: ScreenView;
           ))}
         </div>
       )}
-      {shouts.length > 0 && <ul className="cl-shouts">{shouts.map((s, i) => <li key={i} style={{ animationDelay: `${0.4 + i * 0.25}s` }}>{s}</li>)}</ul>}
+      {facts.length > 0 && <p className="fc-facts">{facts.map((f, i) => <span key={i}>{f}</span>)}</p>}
+      {awards.length > 0 && (
+        <ul className="fc-awards">
+          {awards.map((a, i) => (
+            <li key={a.title} style={{ animationDelay: `${0.4 + i * 0.12}s` }}>
+              <span className="fc-awards__emoji" aria-hidden="true">{a.emoji}</span>
+              <span className="fc-awards__title">{a.title}</span>
+              <b className="fc-awards__who">{a.who}</b>
+              {a.what && <span className="fc-awards__what">{a.what}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="cl-finish__row">
         <button type="button" className="cl-btn cl-btn--go cl-btn--big" onClick={onAgain}>Again?</button>
       </div>

@@ -376,6 +376,30 @@
 .fc-podium__step--2 .fc-podium__block { height: 12vh; background: linear-gradient(#e5e7eb, #9ca3af); }
 .fc-podium__step--3 .fc-podium__block { height: 8vh; background: linear-gradient(#fed7aa, #c2410c); }
 
+.fc-finish { width: min(94vw, 1180px); }
+.fc-finish > * { flex-shrink: 0; }
+.fc-finish .cl-finish__title { font-size: clamp(1.8rem, min(6vw, 7vh), 4rem); }
+.fc-finish .fc-podium { margin: 0.5vh 0; }
+.fc-finish .fc-podium__step--1 .fc-podium__block { height: 12vh; }
+.fc-finish .fc-podium__step--2 .fc-podium__block { height: 8vh; }
+.fc-finish .fc-podium__step--3 .fc-podium__block { height: 5vh; }
+.fc-finish .fc-podium__block { font-size: 3.6vh; }
+.fc-facts { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; margin: 0; font-weight: 700; font-size: clamp(0.85rem, 2vmin, 1.25rem); opacity: 0.9; }
+.fc-awards { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 8px; }
+.fc-awards li {
+  display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: center;
+  padding: 8px 12px; border-radius: 14px; background: rgba(255, 255, 255, 0.1); text-align: left;
+  animation: cl-shout-in 0.6s ease-out both;
+}
+.fc-awards__emoji { grid-row: span 3; font-size: clamp(1.4rem, 4vmin, 2.4rem); }
+.fc-awards__title { font-size: clamp(0.7rem, 1.6vmin, 0.95rem); text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.8; }
+.fc-awards__who { font-size: clamp(0.9rem, 2.2vmin, 1.35rem); overflow-wrap: anywhere; }
+.fc-awards__what { font-size: clamp(0.75rem, 1.7vmin, 1rem); opacity: 0.85; }
+@media (max-height: 620px) { .fc-awards { display: none; } }
+
+.fc-pad-stats { list-style: none; margin: 4px 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 420px; }
+.fc-pad-stats li { padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.14); font-size: 0.95rem; }
+
 .fc-lobby-corners { display: grid; grid-template-columns: repeat(2, 8vh); gap: 1vh; margin: 2vh auto; width: max-content; }
 .fc-lobby-corners i { width: 8vh; height: 8vh; border-radius: 22%; animation: fc-bob 1s ease-in-out infinite alternate; }
 .fc-lobby-corners i:nth-child(1) { background: #ef4444; }

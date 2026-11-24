@@ -13479,6 +13479,7 @@ const SHOW_MS = 4500;
 const READY_MS = 4e3;
 const ANSWER_GAP_MS = 1500;
 const runMs = (n) => Math.max(9e3, 14e3 - (n - 1) * 400);
+const runSeconds = (v) => typeof v === "number" && Number.isFinite(v) ? Math.max(6, Math.min(12, Math.round(v))) : 10;
 const START = {
 	x: .5,
 	y: .5
@@ -13598,7 +13599,7 @@ function makeRound(g, n, startAt, random, players) {
 	}
 	const first = pick(CORNERS, random);
 	const rolled = twist === "lucky" ? [] : twist === "two" ? [first, (first + 1 + Math.floor(random() * 3)) % 4] : [first];
-	const run = runMs(n);
+	const run = g.runS ? g.runS * 1e3 : runMs(n);
 	return {
 		n,
 		startAt,
@@ -13619,13 +13620,14 @@ function makeRound(g, n, startAt, random, players) {
 		saved: []
 	};
 }
-function newCorners(map) {
+function newCorners(map, runS = 10) {
 	return {
 		kind: "corners",
 		map,
 		round: null,
 		mine: {},
-		nextItem: 1
+		nextItem: 1,
+		runS: runSeconds(runS)
 	};
 }
 function freshMine(i) {
@@ -13720,6 +13722,28 @@ function endRun(g, r, order, positions) {
 	const caught = [];
 	const saved = [];
 	const lucky = r.twist === "lucky";
+	const inCorner = [
+		0,
+		0,
+		0,
+		0
+	];
+	for (const id of order) {
+		const m = g.mine[id];
+		if (!m || m.jailedIn !== null) continue;
+		const c = cornerOf(positions[id] ?? m.spot);
+		if (c !== null) inCorner[c]++;
+	}
+	if (!lucky) {
+		const rolls = g.rolls ?? [
+			0,
+			0,
+			0,
+			0
+		];
+		for (const c of r.rolled) rolls[c]++;
+		g.rolls = rolls;
+	}
 	for (const id of order) {
 		const m = g.mine[id];
 		if (!m || m.jailedIn !== null) continue;
@@ -13732,9 +13756,12 @@ function endRun(g, r, order, positions) {
 		if (!(c === null || !lucky && r.rolled.includes(c))) {
 			m.safe++;
 			m.score += m.doubleIn === r.n ? 2 : 1;
+			if (c !== null && inCorner[c] === 1) m.alone = (m.alone ?? 0) + 1;
+			if (lucky && (c === null || r.rolled.includes(c)) || !lucky && r.rolled.length > 1) m.lucky = (m.lucky ?? 0) + 1;
 			continue;
 		}
 		if (m.shieldIn === r.n) {
+			m.lucky = (m.lucky ?? 0) + 1;
 			saved.push(id);
 			continue;
 		}
@@ -13746,6 +13773,7 @@ function endRun(g, r, order, positions) {
 	}
 	r.caught = caught;
 	r.saved = saved;
+	g.caughtAll = (g.caughtAll ?? 0) + caught.length;
 	return {
 		type: "roll",
 		t: r.runEnd,
@@ -13773,7 +13801,7 @@ function grab(g, who, itemId, at, t) {
 		ok: false,
 		reason: "gone"
 	};
-	if (!at || dist(at, item) > .125) return {
+	if (!at || dist(at, item) > .135) return {
 		ok: false,
 		reason: "far"
 	};
@@ -13790,6 +13818,21 @@ function grab(g, who, itemId, at, t) {
 		}]
 	};
 }
+/** The pad says it stepped through a teleport: counted when the saved spot is by one, at most WARPS_A_ROUND a round. */
+function warp(g, who, at, t) {
+	const r = g.round;
+	const m = g.mine[who];
+	if (!r || !m || !at || m.jailedIn !== null || t < r.startAt || t > r.runEnd + 500) return false;
+	if (!r.teleports.some((tp) => dist(at, tp.a) < .16499999999999998 || dist(at, tp.b) < .16499999999999998)) return false;
+	if (m.warpRound !== r.n) {
+		m.warpRound = r.n;
+		m.warpN = 0;
+	}
+	if ((m.warpN ?? 0) >= 4) return false;
+	m.warpN = (m.warpN ?? 0) + 1;
+	m.warps = (m.warps ?? 0) + 1;
+	return true;
+}
 /** What a question is for right now: getting out of jail, switching on a held power-up (standing in a corner), or nothing. */
 function questionFor(g, who, at, t) {
 	const m = g.mine[who];
@@ -13800,7 +13843,7 @@ function questionFor(g, who, at, t) {
 	return "power";
 }
 /** A marked answer: in jail it counts towards getting out; otherwise a right one switches on the held power-up. */
-function answered(g, who, right, purpose, order, t) {
+function answered(g, who, right, purpose, order, t, ms) {
 	const m = g.mine[who];
 	if (!m) return {
 		ok: false,
@@ -13812,6 +13855,15 @@ function answered(g, who, right, purpose, order, t) {
 	};
 	m.lastAt = t;
 	m.answered++;
+	if (right) {
+		m.right = (m.right ?? 0) + 1;
+		m.streak = (m.streak ?? 0) + 1;
+		m.bestStreak = Math.max(m.bestStreak ?? 0, m.streak);
+		if (ms !== void 0 && ms >= 300 && (m.fastMs === void 0 || ms < m.fastMs)) m.fastMs = ms;
+	} else {
+		m.wrong = (m.wrong ?? 0) + 1;
+		m.streak = 0;
+	}
 	if (purpose === "jail") {
 		if (m.jailedIn === null) return {
 			ok: false,
@@ -14134,7 +14186,17 @@ function playerView(s, id) {
 				placed: m.placed,
 				spot: m.spot,
 				nextAt: m.lastAt + ANSWER_GAP_MS,
-				place
+				place,
+				stats: {
+					right: m.right ?? 0,
+					wrong: m.wrong ?? 0,
+					bestStreak: m.bestStreak ?? 0,
+					warps: m.warps ?? 0,
+					lucky: m.lucky ?? 0,
+					grabs: m.grabs,
+					powers: m.powersUsed,
+					escapes: m.escapes
+				}
 			}
 		};
 	}
@@ -14337,7 +14399,7 @@ function newSession(body, seed, random) {
 		if ((body.x !== void 0 || body.y !== void 0) && !own) return "Pick two different numbers from 2 to 12.";
 		game = newStars(own ?? pickAnchor(level, random), own ? "own" : level);
 	} else if (activity === "serpent") game = newSerpent(SERPENT_LEVELS.find((l) => l === body.level) ?? "gold", random);
-	else if (activity === "corners") game = newCorners(MAPS.find((m) => m === body.map) ?? MAPS[Math.floor(random() * MAPS.length) % MAPS.length]);
+	else if (activity === "corners") game = newCorners(MAPS.find((m) => m === body.map) ?? MAPS[Math.floor(random() * MAPS.length) % MAPS.length], runSeconds(body.run));
 	else game = newMural(random);
 	return {
 		seed,
@@ -14792,7 +14854,7 @@ async function cornersStep(sv, cur, who, body) {
 		...extra
 	});
 	if (body.action === "play") {
-		const at = body.grab !== void 0 ? await spotOf() : void 0;
+		const at = body.grab !== void 0 || body.warp !== void 0 ? await spotOf() : void 0;
 		if (at === "busy") return busy();
 		const done = await mutate(sv, room, (s, t) => {
 			if (s.state !== "live" || s.game.kind !== "corners") return { refuse: no(409, "This one has finished.", "over") };
@@ -14806,6 +14868,14 @@ async function cornersStep(sv, cur, who, body) {
 			}
 			const g = s.game;
 			const mine = g.mine[who];
+			if (body.warp !== void 0) {
+				if (!warp(g, who, at ?? mine?.spot, t)) return { refuse: no(409, "No teleport there.", "not_now") };
+				return {
+					reply: null,
+					events: [],
+					players: []
+				};
+			}
 			const out = grab(g, who, body.grab, at ?? mine?.spot, t);
 			if (!out.ok) return { refuse: no(409, out.reason === "full" ? "You are already carrying one!" : out.reason === "far" ? "Get closer!" : "Too late!", out.reason) };
 			return {
@@ -14845,11 +14915,12 @@ async function cornersStep(sv, cur, who, body) {
 	const right = sameAnswer(value, marked.answer);
 	const at = await spotOf();
 	if (at === "busy") return busy();
+	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS, MAX_ANSWER_MS));
 	const done = await mutate(sv, room, (s, t) => {
 		if (s.state !== "live" || s.game.kind !== "corners") return { refuse: no(409, "This one has finished.", "over") };
 		const purpose = questionFor(s.game, who, at ?? s.game.mine[who]?.spot, t);
 		if (!purpose) return { refuse: no(409, "Get to a corner first!", "not_now") };
-		const out = answered(s.game, who, right, purpose, s.order, t);
+		const out = answered(s.game, who, right, purpose, s.order, t, typeof body.ms === "number" ? ms : void 0);
 		if (!out.ok) return { refuse: no(409, out.reason === "too_soon" ? "One at a time!" : "No question right now.", out.reason) };
 		const freed = out.events.flatMap((e) => e.type === "power" && e.freed ? [e.freed] : []);
 		return {
@@ -14865,7 +14936,6 @@ async function cornersStep(sv, cur, who, body) {
 		};
 	});
 	if ("refuse" in done) return done.refuse;
-	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS, MAX_ANSWER_MS));
 	try {
 		await sv.recordAnswers(who, `classlive:${room}:${s0.seed}:${slot}`, [{
 			key: marked.key,

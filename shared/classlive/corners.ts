@@ -65,6 +65,12 @@ export const ANSWER_GAP_MS = 1500;
 export const FOG_SHARE = 0.55;
 
 export const runMs = (n: number) => Math.max(9000, 14000 - (n - 1) * 400);
+/** The teacher picks the run time on the card (James, 25 Nov 2026 NZ): 6 to 12 seconds, the same every round. */
+export const RUN_MIN_S = 6;
+export const RUN_MAX_S = 12;
+export const RUN_DEFAULT_S = 10;
+export const runSeconds = (v: unknown): number =>
+  typeof v === 'number' && Number.isFinite(v) ? Math.max(RUN_MIN_S, Math.min(RUN_MAX_S, Math.round(v))) : RUN_DEFAULT_S;
 
 // ---- Shapes ----
 
@@ -124,7 +130,25 @@ export interface CornersMine {
   /** Bumped when the server moves them (back from jail, a jump), so their device snaps to `spot`. */
   placed: number;
   spot: Spot;
+  /** End-of-game stats (James, 25 Nov 2026 NZ); missing in games from before them. */
+  right?: number;
+  wrong?: number;
+  streak?: number;
+  bestStreak?: number;
+  /** Fastest right answer, ms (from the pad's timer, capped). */
+  fastMs?: number;
+  /** Teleports taken, at most WARPS_A_ROUND a round. */
+  warps?: number;
+  warpRound?: number;
+  warpN?: number;
+  /** Lucky escapes: a shield saved them, safe through a two-corner roll, or out of a corner on a lucky roll. */
+  lucky?: number;
+  /** Safe rounds with a corner all to themselves. */
+  alone?: number;
 }
+
+/** Most teleports a pupil can count in one round. */
+export const WARPS_A_ROUND = 4;
 
 export interface CornersGame {
   kind: 'corners';
@@ -134,6 +158,11 @@ export interface CornersGame {
   mine: Record<string, CornersMine>;
   /** Items get ids from here. */
   nextItem: number;
+  /** How often the dice picked each corner (Red, Blue, Green, Yellow), and how many went to jail in all. */
+  rolls?: [number, number, number, number];
+  caughtAll?: number;
+  /** Seconds to reach a corner each round, the teacher's pick (older games: none, so the run shrinks from 14 s to 9 s). */
+  runS?: number;
 }
 
 export type CornersEvent =
@@ -294,15 +323,15 @@ export function makeRound(g: CornersGame, n: number, startAt: number, random: ()
   }
   const first = pick(CORNERS, random);
   const rolled: Corner[] = twist === 'lucky' ? [] : twist === 'two' ? [first, ((first + 1 + Math.floor(random() * 3)) % 4) as Corner] : [first];
-  const run = runMs(n);
+  const run = g.runS ? g.runS * 1000 : runMs(n);
   return {
     n, startAt, runEnd: startAt + run, rollEnd: startAt + run + ROLL_MS, showEnd: startAt + run + ROLL_MS + SHOW_MS,
     storms, ice, teleports, roller, hole, fog: has.has('fog'), gate, twist, items, rolled, caught: null, saved: [],
   };
 }
 
-export function newCorners(map: CornerMap): CornersGame {
-  return { kind: 'corners', map, round: null, mine: {}, nextItem: 1 };
+export function newCorners(map: CornerMap, runS: number = RUN_DEFAULT_S): CornersGame {
+  return { kind: 'corners', map, round: null, mine: {}, nextItem: 1, runS: runSeconds(runS) };
 }
 
 export function freshMine(i: number): CornersMine {
@@ -379,6 +408,19 @@ function endRun(g: CornersGame, r: Round, order: string[], positions: Positions)
   const caught: string[] = [];
   const saved: string[] = [];
   const lucky = r.twist === 'lucky';
+  // How many free pupils stand in each corner (for "a corner all to themselves").
+  const inCorner = [0, 0, 0, 0];
+  for (const id of order) {
+    const m = g.mine[id];
+    if (!m || m.jailedIn !== null) continue;
+    const c = cornerOf(positions[id] ?? m.spot);
+    if (c !== null) inCorner[c]++;
+  }
+  if (!lucky) {
+    const rolls = g.rolls ?? [0, 0, 0, 0];
+    for (const c of r.rolled) rolls[c]++;
+    g.rolls = rolls;
+  }
   for (const id of order) {
     const m = g.mine[id];
     if (!m || m.jailedIn !== null) continue;
@@ -389,9 +431,12 @@ function endRun(g: CornersGame, r: Round, order: string[], positions: Positions)
     if (!out) {
       m.safe++;
       m.score += m.doubleIn === r.n ? 2 : 1;
+      if (c !== null && inCorner[c] === 1) m.alone = (m.alone ?? 0) + 1;
+      if ((lucky && (c === null || r.rolled.includes(c))) || (!lucky && r.rolled.length > 1)) m.lucky = (m.lucky ?? 0) + 1;
       continue;
     }
     if (m.shieldIn === r.n) {
+      m.lucky = (m.lucky ?? 0) + 1;
       saved.push(id);
       // Stragglers saved by a shield still score nothing, but stay free.
       continue;
@@ -404,6 +449,7 @@ function endRun(g: CornersGame, r: Round, order: string[], positions: Positions)
   }
   r.caught = caught;
   r.saved = saved;
+  g.caughtAll = (g.caughtAll ?? 0) + caught.length;
   return { type: 'roll', t: r.runEnd, n: r.n, rolled: r.rolled, lucky, caught, saved };
 }
 
@@ -422,6 +468,19 @@ export function grab(g: CornersGame, who: string, itemId: unknown, at: Spot | un
   return { ok: true, events: [{ type: 'grab', t, pupil: who, power: item.power }] };
 }
 
+/** The pad says it stepped through a teleport: counted when the saved spot is by one, at most WARPS_A_ROUND a round. */
+export function warp(g: CornersGame, who: string, at: Spot | undefined, t: number): boolean {
+  const r = g.round;
+  const m = g.mine[who];
+  if (!r || !m || !at || m.jailedIn !== null || t < r.startAt || t > r.runEnd + 500) return false;
+  if (!r.teleports.some((tp) => dist(at, tp.a) < TELEPORT_R + 0.12 || dist(at, tp.b) < TELEPORT_R + 0.12)) return false;
+  if (m.warpRound !== r.n) { m.warpRound = r.n; m.warpN = 0; }
+  if ((m.warpN ?? 0) >= WARPS_A_ROUND) return false;
+  m.warpN = (m.warpN ?? 0) + 1;
+  m.warps = (m.warps ?? 0) + 1;
+  return true;
+}
+
 /** What a question is for right now: getting out of jail, switching on a held power-up (standing in a corner), or nothing. */
 export function questionFor(g: CornersGame, who: string, at: Spot | undefined, t: number): 'jail' | 'power' | null {
   const m = g.mine[who];
@@ -433,12 +492,21 @@ export function questionFor(g: CornersGame, who: string, at: Spot | undefined, t
 }
 
 /** A marked answer: in jail it counts towards getting out; otherwise a right one switches on the held power-up. */
-export function answered(g: CornersGame, who: string, right: boolean, purpose: 'jail' | 'power', order: string[], t: number): { ok: true; events: CornersEvent[] } | { ok: false; reason: 'too_soon' | 'not_now' } {
+export function answered(g: CornersGame, who: string, right: boolean, purpose: 'jail' | 'power', order: string[], t: number, ms?: number): { ok: true; events: CornersEvent[] } | { ok: false; reason: 'too_soon' | 'not_now' } {
   const m = g.mine[who];
   if (!m) return { ok: false, reason: 'not_now' };
   if (t - m.lastAt < ANSWER_GAP_MS) return { ok: false, reason: 'too_soon' };
   m.lastAt = t;
   m.answered++;
+  if (right) {
+    m.right = (m.right ?? 0) + 1;
+    m.streak = (m.streak ?? 0) + 1;
+    m.bestStreak = Math.max(m.bestStreak ?? 0, m.streak);
+    if (ms !== undefined && ms >= 300 && (m.fastMs === undefined || ms < m.fastMs)) m.fastMs = ms;
+  } else {
+    m.wrong = (m.wrong ?? 0) + 1;
+    m.streak = 0;
+  }
   if (purpose === 'jail') {
     if (m.jailedIn === null) return { ok: false, reason: 'not_now' };
     if (!right) return { ok: true, events: [] };

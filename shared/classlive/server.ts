@@ -23,8 +23,8 @@ import { makeSpacePack, pickSpaceQuestion } from '../space/mathsQuestion';
 import { answerBox, boxOf, newSerpent, SERPENT_LEVELS, wakeAt, type SerpentBox, type SerpentEvent, type SerpentGame, type SerpentLevel, type SerpentReply } from './serpent';
 import { rewardsOf, type FinishedSession } from './rewards';
 import {
-  advance as cornersAdvance, answered as cornersAnswered, boosted, crystalCorner, freshMine, ghostly, grab as cornersGrab, jump as cornersJump,
-  cornersDone, MAPS, needsPositions, newCorners, nextDeadline, podium, questionFor, ANSWER_GAP_MS as CORNERS_GAP_MS,
+  advance as cornersAdvance, answered as cornersAnswered, boosted, crystalCorner, freshMine, ghostly, grab as cornersGrab, jump as cornersJump, warp as cornersWarp,
+  cornersDone, MAPS, needsPositions, runSeconds, newCorners, nextDeadline, podium, questionFor, ANSWER_GAP_MS as CORNERS_GAP_MS,
   type Corner, type CornerMap, type CornersEvent, type CornersGame, type Item, type Positions, type Power, type Round, type Spot,
 } from './corners';
 
@@ -127,6 +127,8 @@ export interface PlayerView {
         kind: 'corners'; safe: number; score: number; jailed: boolean; jailRight: number; held: Power | null; boost: boolean; ghost: boolean;
         shield: boolean; double: boolean; crystal: Corner | null; jump: boolean; caughtLast: boolean; savedLast: boolean;
         placed: number; spot: Spot; nextAt: number; place: 1 | 2 | 3 | null;
+        /** Own stats for the end screen. */
+        stats: { right: number; wrong: number; bestStreak: number; warps: number; lucky: number; grabs: number; powers: number; escapes: number };
       };
 }
 
@@ -273,6 +275,10 @@ export function playerView(s: Session, id: string): PlayerView {
         crystal: r && m.crystalIn === n ? crystalCorner(r) : null, jump: !!r && m.jumpIn === n,
         caughtLast: !!r?.caught?.includes(id), savedLast: !!r?.saved.includes(id), placed: m.placed, spot: m.spot,
         nextAt: m.lastAt + CORNERS_GAP_MS, place,
+        stats: {
+          right: m.right ?? 0, wrong: m.wrong ?? 0, bestStreak: m.bestStreak ?? 0, warps: m.warps ?? 0, lucky: m.lucky ?? 0,
+          grabs: m.grabs, powers: m.powersUsed, escapes: m.escapes,
+        },
       },
     };
   }
@@ -441,7 +447,7 @@ export function newSession(body: Record<string, unknown>, seed: number, random: 
     game = newSerpent(level, random);
   } else if (activity === 'corners') {
     const map = MAPS.find((m) => m === body.map) ?? MAPS[Math.floor(random() * MAPS.length) % MAPS.length];
-    game = newCorners(map);
+    game = newCorners(map, runSeconds(body.run));
   } else game = newMural(random);
   return { seed, activity, state: 'lobby', lengthMin, players: {}, order: [], game, ...(body.padMusic === true ? { padMusic: true } : {}) };
 }
@@ -727,7 +733,7 @@ async function cornersStep(sv: ClassLiveServices, cur: RoomRow, who: string, bod
     ok({ room, view: roomView(session, startedAt, sv.now()), me: playerView(session, who), now: sv.now(), ...extra });
 
   if (body.action === 'play') {
-    const at = body.grab !== undefined ? await spotOf() : undefined;
+    const at = body.grab !== undefined || body.warp !== undefined ? await spotOf() : undefined;
     if (at === 'busy') return busy();
     const done = await mutate(sv, room, (s, t) => {
       if (s.state !== 'live' || s.game.kind !== 'corners') return { refuse: no(409, 'This one has finished.', 'over') };
@@ -738,6 +744,10 @@ async function cornersStep(sv: ClassLiveServices, cur: RoomRow, who: string, bod
       }
       const g = s.game;
       const mine = g.mine[who];
+      if (body.warp !== undefined) {
+        if (!cornersWarp(g, who, at ?? mine?.spot, t)) return { refuse: no(409, 'No teleport there.', 'not_now') };
+        return { reply: null, events: [], players: [] };
+      }
       const out = cornersGrab(g, who, body.grab, at ?? mine?.spot, t);
       if (!out.ok) return { refuse: no(409, out.reason === 'full' ? 'You are already carrying one!' : out.reason === 'far' ? 'Get closer!' : 'Too late!', out.reason) };
       return { reply: null, events: out.events, players: [who] };
@@ -769,17 +779,17 @@ async function cornersStep(sv: ClassLiveServices, cur: RoomRow, who: string, bod
   const right = sameAnswer(value, marked.answer);
   const at = await spotOf();
   if (at === 'busy') return busy();
+  const ms = Math.round(Math.min(typeof body.ms === 'number' && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS, MAX_ANSWER_MS));
   const done = await mutate(sv, room, (s, t) => {
     if (s.state !== 'live' || s.game.kind !== 'corners') return { refuse: no(409, 'This one has finished.', 'over') };
     const purpose = questionFor(s.game, who, at ?? s.game.mine[who]?.spot, t);
     if (!purpose) return { refuse: no(409, 'Get to a corner first!', 'not_now') };
-    const out = cornersAnswered(s.game, who, right, purpose, s.order, t);
+    const out = cornersAnswered(s.game, who, right, purpose, s.order, t, typeof body.ms === 'number' ? ms : undefined);
     if (!out.ok) return { refuse: no(409, out.reason === 'too_soon' ? 'One at a time!' : 'No question right now.', out.reason) };
     const freed = out.events.flatMap((e) => (e.type === 'power' && e.freed ? [e.freed] : []));
     return { reply: purpose, events: out.events, players: [who, ...freed], claim: { player: who, slot: slot as number, value, right } };
   });
   if ('refuse' in done) return done.refuse;
-  const ms = Math.round(Math.min(typeof body.ms === 'number' && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS, MAX_ANSWER_MS));
   try {
     await sv.recordAnswers(who, `classlive:${room}:${s0.seed}:${slot}`, [{ key: marked.key, correct: right, ms, at: sv.now(), given: value }]);
   } catch {
