@@ -110,16 +110,6 @@
     "lufs_target": -18
   },
   {
-    "name": "goldrush-hot",
-    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
-    "prompt": "frantic mine cart chase, fast banjo, fiddle, driving drums, bluegrass, intense, 150 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
-    "seed": 42424,
-    "bpm": 150,
-    "seconds": 88.0,
-    "take_kept": 2,
-    "lufs_target": -16
-  },
-  {
     "name": "skyclimb",
     "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
     "prompt": "uplifting airy climb, soaring strings, light percussion, orchestral, hopeful, 105 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
@@ -160,26 +150,6 @@
     "lufs_target": -16
   },
   {
-    "name": "hill",
-    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
-    "prompt": "medieval kingdom castle building, lute, recorder, light drums, folk, renaissance, 105 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
-    "seed": 42424,
-    "bpm": 105,
-    "seconds": 88.0,
-    "take_kept": 2,
-    "lufs_target": -18
-  },
-  {
-    "name": "hill-hot",
-    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
-    "prompt": "castle siege charge, war drums, brass fanfares, epic medieval orchestral, intense, 150 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
-    "seed": 42424,
-    "bpm": 150,
-    "seconds": 88.0,
-    "take_kept": 2,
-    "lufs_target": -16
-  },
-  {
     "name": "auction",
     "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
     "prompt": "playful jazzy swing marketplace, upright bass, piano, muted trumpet, brushed drums, 110 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
@@ -197,6 +167,206 @@
     "bpm": 155,
     "seconds": 88.0,
     "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "game-space",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "upbeat retro space adventure, synth arpeggios, race to the space station, catchy but not too busy, background music, light texture, 115 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 115,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "game-gem-keep",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "sparkly crystal cave treasure, glockenspiel, soft pads, catchy but not too busy, background music, light texture, 100 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 100,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "game-marble",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "rolling marble race against the clock, bouncy funky electro, catchy but not too busy, background music, light texture, 125 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 125,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -18
+  },
+  {
+    "name": "game-bond-match",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "cheerful puzzle matching tune, xylophone, pizzicato strings, catchy but not too busy, background music, light texture, 105 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 105,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "game-mine",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "driving action synthwave with drums, flying through a mine, catchy but not too busy, background music, light texture, 135 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 135,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "game-archery",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "medieval tournament, lute, light drums, confident, catchy but not too busy, background music, light texture, 110 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 110,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "game-diamond",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "claw machine arcade, playful chiptune meets funk, catchy but not too busy, background music, light texture, 120 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 120,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -18
+  },
+  {
+    "name": "game-isles",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "floating islands in the sky, airy dreamy flute and strings, catchy but not too busy, background music, light texture, 95 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 95,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "game-decree",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "cosy village court, harpsichord, recorder, catchy but not too busy, background music, light texture, 100 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 100,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "game-toonflap",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "zany cartoon chase, slide whistle, brass, bouncy, catchy but not too busy, background music, light texture, 130 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 130,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "game-goblinstorm",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "energetic heroic action, drums and brass, not scary, catchy but not too busy, background music, light texture, 140 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 140,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "game-monsters",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "cheerful adventure overworld, orchestral pop, catchy but not too busy, background music, light texture, 110 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 110,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "game-dragon-maths",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "heroic fantasy quest, orchestral strings and horns, catchy but not too busy, background music, light texture, 115 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 115,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "game-clan-quest",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "tribal clan adventure, hand drums, flute, rousing, catchy but not too busy, background music, light texture, 110 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 110,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "game-trader",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "cosy space trading, smooth lo-fi synth, light beat, catchy but not too busy, background music, light texture, 95 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 95,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -18
+  },
+  {
+    "name": "game-circuit",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "glowing circuit board racing, fast electro, catchy but not too busy, background music, light texture, 140 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 140,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -18
+  },
+  {
+    "name": "game-kingdom",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "city building kingdom, warm orchestral, gentle march, catchy but not too busy, background music, light texture, 100 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 100,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "hill",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "medieval kingdom castle building, lute, recorder, light drums, folk, renaissance, starts immediately at full volume, no intro, no fade in, 105 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 90210,
+    "bpm": 105,
+    "seconds": 88.0,
+    "take_kept": 3,
+    "lufs_target": -18
+  },
+  {
+    "name": "hill-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "castle siege charge, fast pounding war drums, rapid strings, brass fanfares, epic medieval orchestral, very energetic, intense, fast tempo, busy rhythm, starts immediately at full volume, 160 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 24680,
+    "bpm": 160,
+    "seconds": 88.0,
+    "take_kept": 6,
+    "lufs_target": -16
+  },
+  {
+    "name": "goldrush-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic mine cart chase, frantic fast banjo picking, fast fiddle, pounding driving drums, breakneck bluegrass, very energetic, busy rhythm, starts immediately at full volume, 160 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 31337,
+    "bpm": 160,
+    "seconds": 88.0,
+    "take_kept": 4,
     "lufs_target": -16
   }
 ]
