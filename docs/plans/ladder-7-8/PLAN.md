@@ -1,6 +1,6 @@
 # Year 7 and 8 on the maths ladder: plan
 
-**Status (24 Nov 2026):** plan only, nothing built. Waiting on James's answers (question cards in the thread "Plan Year 7 and 8 ladder content"). Answers go in section 9 as they come.
+**Status (24 Nov 2026):** plan only, nothing built. All 10 of James's questions answered (section 9); the plan below is updated to match. Next: card Y1.
 
 **Sources read:** NZC Mathematics and Statistics teaching sequences, Year 7 and Year 8 (October 2025), every strand. Today's ladder: `shared/maths/ladder.ts`, `docs/MATHS-FOCUS-PLAN.md` sections 3 and 12, `docs/game-guide/4-maths.md`.
 
@@ -41,8 +41,8 @@ Each row is a skill: question types, an example, which year, and how it's answer
 | id | Skill | Examples | Year | Answer |
 |---|---|---|---|---|
 | **`int-compare`** | Ordering negative numbers | Which is smaller: −7 or −3? −5 + ? = 0 (additive inverse). Y8: −3.4 or −3? | 7, 8 | tap / type |
-| **`int-add-sub`** | Adding and subtracting across zero | −4 + 9, 3 − 7, −2 − 5, "It's −3°C and warms by 8°" | 7 | type with minus key |
-| `int-negatives` | Adding and taking away a negative | 3 + −7, 5 − −2, −6 − −4 | 8 | type with minus key |
+| **`int-add-sub`** | Adding and subtracting across zero | −4 + 9, 3 − 7, −2 − 5, "It's −3°C and warms by 8°" | 7 | type when the answer is positive, tap when negative |
+| `int-negatives` | Adding and taking away a negative | 3 + −7, 5 − −2, −6 − −4 | 8 | tap |
 
 Integer × and ÷ are Year 9, so they are left out.
 
@@ -57,7 +57,7 @@ Integer × and ÷ are Year 9, so they are left out.
 | `divisibility` | Divisibility rules 2, 3, 4, 5, 6, 8, 9, 10 | Is 738 divisible by 9? Which is divisible by 6? | 7 | tap |
 | **`hcf-lcm`** | Highest common factor and least common multiple | HCF of 24 and 36; LCM of 4 and 6 | 7 | type |
 | `prime-factors` | Prime factors with exponents | 36 = 2² × 3^?, 2³ × 3 = ?, pick 60 as primes | 8 | type / tap |
-| `neg-powers` | Negative powers of ten | 10⁻² = ? (0.01), 0.001 = 10^? | 8 | tap / type with minus |
+| `neg-powers` | Negative powers of ten | 10⁻² = ? (0.01), 0.001 = 10^? | 8 | tap |
 
 ### 3c. Decimals, fractions, percentages, ratio, money (stage `fractions-decimals-percentages`)
 
@@ -82,7 +82,7 @@ Integer × and ÷ are Year 9, so they are left out.
 | `like-terms` | Collecting like terms | 3a + a + a = ?a, 7b − 2b = ?b; Y8: 2(x + 3) + 1 = 2x + ?, 5x − 35 = 5(x − ?) | 7, 8 | type |
 | **`patterns-rule`** | Linear pattern rules | 4, 7, 10, 13: next? Rule t = 3n + 4: the 10th term? Which rule makes 5, 9, 13? | 7, 8 | type / tap |
 | `true-false-sentences` | True or false with < ≤ = | 0.8 × 12 ≤ 8 × 0.5 + 8? | 7 | tap |
-| `equations-2` | Equations and inequalities with negative or decimal answers | t + 7 = 6.5, 2x + 9 = 1, t − 3 ≥ −5 so t ≥ ? | 8 | type with minus / point |
+| `equations-2` | Equations and inequalities with negative or decimal answers | t + 7 = 6.5, 2x + 9 = 1, t − 3 ≥ −5 so t ≥ ? | 8 | tap when negative, type with point otherwise |
 
 ### 3e. Measurement and geometry facts (new stage `measurement-geometry`)
 
@@ -97,7 +97,7 @@ Integer × and ÷ are Year 9, so they are left out.
 | `compass-degrees` | Compass points in degrees | N to SE clockwise = ?°; NE is ?° from N | 7 | type |
 | `circle-parts` | Radius and diameter | radius 7: diameter? | 8 | type |
 
-Angle and shape questions can be written in words first. Small pictures would be better: see question 6.
+Angle and shape questions come with a small picture (answer 6).
 
 ### 3f. Data and chance facts (new stage `data-chance`)
 
@@ -130,30 +130,32 @@ That is about 34 new skills (18 marked to build first). Order on the ladder: Yea
 
 ## 5. What has to change in the shared maths (for the build cards)
 
-1. **Minus key.** `Question.input` gets `'integer'` (and `'integer-decimal'`); `QuestionModal` shows the minus key (the number pad already has one, used by `PracticalAsk`); the server's answer parsing takes negatives. Games with their own question display (Marble's gates) must handle it: rule 4 in `4-maths.md`.
+1. **Negative answers by tapping only** (answer 5). No minus key: a question whose answer is negative always comes with four `choiceLabels` (so it can only be picked). Negative numbers in the *question* (−4 + 9) are just text parts. Games with their own display (Marble's gates) already handle `choiceLabels`.
 2. **Powers and roots on screen.** A part like `'10^4'` drawn as 10⁴, `'√81'` and `'∛64'`, and `'10^?'` with a blank exponent. Spoken text too ("10 to the power of 4").
 3. **Letters in a question.** Parts like `'3x'`, `'?a'` are just text, so most algebra works now. Check every game's display shows them well.
 4. **Units in a question.** `'? cm²'`, `'?°'`, `'$?'` as a part after the blank.
-5. **Quick time.** Most new types fit 8 s. Two-step ones (`equations-1` two-step, `ratio`, `percent-change`) may need a longer quick time per type, not per pack. See question 4.
+5. **Quick time** (answer 4). 8 s stays; two-step types (`equations-1` two-step, `ratio`, `percent-change`, `equations-2`) get 12 s. Today quick time is per pack (`QUICK_MS_BY_PACK`), so Y1 adds a per-type quick time that `recordMathsAnswers` and the warm-up both read.
+5b. **Small pictures** (answer 6). `Question.figure`: a small described drawing (angles in a triangle, on a line, round a point; a labelled rectangle, triangle, prism, circle). Drawn as SVG by `QuestionModal`, kept with the stored question on the server, read out through `spoken`. Games with their own display show it too.
 6. **Curriculum tags.** Year 7 and 8 IDs (`MS.Y7.NUM.NS.P1` style) from James's alignment tool, if it has Years 7 and 8.
 7. **Teacher views.** Short names for every new skill (`TINY`, 20 characters); Skill map and Set focus grouped by the new stages; the Progress tab ladder board gains the new stages.
-8. **Placement.** The warm-up's 10 questions with 3-skill jumps can't reach 76 skills. Start the warm-up from the pupil's year (a Year 7 starts near the top of Year 6) or give each part of the ladder its own warm-up. See questions 2 and 9.
-9. **Progress numbers.** Adding 34 skills to one list drops every pupil's "x of 42" overnight. See question 2.
+8. **Placement** (answer 9). The warm-up stays as it is, from the bottom. With about 76 skills, a pupil who is right and quick all the way ends near the Year 6 top and auto climbs from there.
+9. **Progress numbers** (answer 2: one longer ladder). Every pupil's "x of 42" becomes "x of about 76" the day the first Year 7 skills go live. Y2 adds a one-off "New skills added to the path" line for pupils and a What's new line, so it doesn't read as going backwards. Auto carries a Year 4-6 pupil on into Year 7 by itself (answer 3).
 10. **Tests.** `ladder.test.ts` and `shared/archery/server.test.ts` already run every ladder skill through marking, so each new type gets checked by the server in every way-A game.
 
 ## 6. Build cards (draft, order after James's answers)
 
 | # | Card | Size |
 |---|---|---|
-| Y1 | Shared display: minus key, powers and roots, units; every game's question display checked | M |
-| Y2 | Ladder shape (question 2), placement and progress numbers, new stages in Set focus, Skill map and Progress tab | M |
+| Y1 | Shared display: powers and roots, units, small pictures (`figure`), per-type quick time; every game's question display checked | L |
+| Y2 | One longer ladder: new stages in Set focus, Skill map and Progress tab; pupils' "new skills added" line | M |
 | Y3 | Integers: `int-compare`, `int-add-sub`, `int-negatives` | M |
 | Y4 | Powers and primes: `powers-10`, `exponents`, `primes`, `divisibility`, `hcf-lcm`, `prime-factors`, `neg-powers` | M |
 | Y5 | Fractions, decimals, percent, ratio, money | L |
 | Y6 | Algebra quick-fire | M |
 | Y7 | Measurement and angle facts | M |
 | Y8 | Data and chance facts | S |
-| Y9 | Ideas list for Activities and new games (section 4) on the Prompts board | S |
+
+Order (answer 7): Y1, Y2, then Y3 and Y4 first, then Y5 to Y8. Section 4's Activities and game ideas are parked (answer 10).
 
 Each card: question types in `shared/maths/skillPacks/`, ladder rows, short names, curriculum tags, tests, `docs/MATHS-FOCUS-PLAN.md` and this file updated, live.
 
@@ -185,8 +187,9 @@ Asked on question cards in the thread. Summary:
 2. **Ladder shape (24 Nov): one longer ladder.** The Year 7-8 skills go on top of today's list; everyone's "x of 42" becomes "x of about 76". Card Y2 adds a pupil-facing line so the drop doesn't read as going backwards.
 3. **Finishing the Year 6 top (24 Nov): carry on by themselves.** Auto moves a Year 4-6 pupil on to the first Year 7 skill once the Year 6 top is secure; no teacher switch.
 4. **Quick time (24 Nov): 12 seconds for two-step types.** One-step types keep 8 s; two-step types (two-step equations, ratio, percent change) get 12 s, set per question type (card Y1 adds a per-type quick time).
-5. **Negative answers (24 Nov): tap from four choices only.** No minus key: any question whose answer is negative is always multiple choice (`choiceLabels`, so it can only be picked), with wrong choices from known slips (sign flipped, distance from zero, adding instead of subtracting). Card Y1 shrinks to powers, roots and units on screen.
+5. **Negative answers (24 Nov): tap from four choices only.** No minus key: any question whose answer is negative is always multiple choice (`choiceLabels`, so it can only be picked), with wrong choices from known slips (sign flipped, distance from zero, adding instead of subtracting). Card Y1 needs no minus key.
 6. **Angle and shape questions (24 Nov): small pictures from the start.** `Question` gets an optional `figure` (a small described drawing: triangle with two marked angles, a straight line, angles round a point, a labelled rectangle or prism). `QuestionModal` draws it as SVG; the server stores the figure with the question so marking never trusts the browser. Card Y1 builds the figure part; Y7 uses it. `spoken` still describes the picture in words.
 7. **First strand (24 Nov): integers, powers and primes.** After Y1 (display) and Y2 (ladder shape), build Y3 then Y4 first.
 8. **Data and chance (24 Nov): yes, both.** `averages` (up to 5 small numbers) and `probability` go on the ladder (card Y8).
 9. **New Year 7-8 pupils (24 Nov): same warm-up from the bottom.** No change to the warm-up (10 questions, 3-skill jumps). A strong senior ends near the Year 6 top and climbs into Year 7-8 by auto, which also catches gaps below.
+10. **Longer methods as Activities (24 Nov): not now.** Section 4 stays as a record only; no Activities or new games planned from it.
