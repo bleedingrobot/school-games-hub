@@ -43,6 +43,22 @@ export const liveClassLiveLink: ClassLiveLink = {
   },
   watchScreen: (room, on) => listen('classlive-screen', 'classlive_screens', `room=eq.${room}`, (row) => (row.screen as ScreenView) ?? null, on),
   watchRoom: (room, on) => listen('classlive-room', 'classlive_rooms', `id=eq.${room}`, (row) => (row.view as RoomView) ?? null, on),
+  async move(room, x, y) {
+    const { data, error } = await supabase.rpc('classlive_move', { target: room, x, y });
+    if (error || !Array.isArray(data)) return null;
+    return (data as unknown[]).flatMap((p) => (Array.isArray(p) && p.length === 2 ? [{ x: Number(p[0]), y: Number(p[1]) }] : []));
+  },
+  async positions(room) {
+    const { data, error } = await supabase.rpc('classlive_positions', { target: room });
+    if (error || !data || typeof data !== 'object') return null;
+    const out: Record<string, { x: number; y: number }> = {};
+    for (const [id, p] of Object.entries(data as Record<string, { x?: unknown; y?: unknown }>)) out[id] = { x: Number(p.x), y: Number(p.y) };
+    return out;
+  },
+  async avatars(room) {
+    const { data, error } = await supabase.rpc('classlive_avatars', { target: room });
+    return error || !data || typeof data !== 'object' ? null : (data as Record<string, unknown>);
+  },
   watchMe: (room, me, on) =>
     listen('classlive-me', 'classlive_players', `player=eq.${me}`, (row) => (Number(row.room) === room ? (row.view as PlayerView) : null), on),
 };

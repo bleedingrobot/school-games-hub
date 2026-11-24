@@ -10,6 +10,7 @@ import { MuralPad } from './MuralPad';
 import { PadGuard } from './PadGuard';
 import { classLiveTrack, useMusic } from './music';
 import { SerpentPad } from './SerpentPad';
+import { CornersPad } from './CornersPad';
 import type { ClassLiveLink } from './link';
 import './controller.css';
 
@@ -39,7 +40,7 @@ function Dots({ x, y, small }: { x: number; y: number; small?: boolean }) {
 
 const sym = (s: string) => s.replace(/\s+/g, '');
 
-export function Sky({ children, tint }: { children: React.ReactNode; tint?: 'serpent' | 'mural' }) {
+export function Sky({ children, tint }: { children: React.ReactNode; tint?: 'serpent' | 'mural' | 'corners' }) {
   return (
     <div className={`cl-c${tint ? ` cl-c--${tint}` : ''}`}>
       <div className="cl-c-twinkle" aria-hidden="true">
@@ -62,8 +63,10 @@ function Mine({ me }: { me: PlayerView | null }) {
   );
 }
 
-export function Controller({ link, me, room: roomProp, lookElsewhere }: {
+export function Controller({ link, me, room: roomProp, lookElsewhere, avatar }: {
   link: ClassLiveLink; me: string; room?: number;
+  /** The pupil's own hub avatar (Four Corners). */
+  avatar?: unknown;
   /** While nothing is on here, looks for another class game (Class Showdown) every few seconds and goes to it. */
   lookElsewhere?: () => void;
 }) {
@@ -77,6 +80,9 @@ export function Controller({ link, me, room: roomProp, lookElsewhere }: {
   const [code, setCode] = useState<string | null>(null);
   const [typed, setTyped] = useState('');
   const [codeProblem, setCodeProblem] = useState('');
+  /** The server's clock minus this device's (from every reply's `now`). */
+  const offset = useRef(0);
+  const clock = useCallback(() => Date.now() + offset.current, []);
 
   // Join (and retry while nothing is on, or the network drops).
   useEffect(() => {
@@ -91,7 +97,8 @@ export function Controller({ link, me, room: roomProp, lookElsewhere }: {
         return;
       }
       if (dead) return;
-      const b = r.body as { room?: number; view?: RoomView; me?: PlayerView; error?: string; reason?: string };
+      const b = r.body as { room?: number; view?: RoomView; me?: PlayerView; error?: string; reason?: string; now?: number };
+      if (typeof b.now === 'number') offset.current = b.now - Date.now();
       if (r.status === 200 && b.view && b.me && typeof b.room === 'number') {
         setRoom(b.room); setView(b.view); setMine(b.me); setPhase('playing');
       } else if (r.status === 404 && b.reason === 'bad-code') {
@@ -124,6 +131,7 @@ export function Controller({ link, me, room: roomProp, lookElsewhere }: {
       link.send({ action: 'look', room }).then(
         (out) => {
           if (stop || out.status !== 200) return;
+          if (typeof out.body.now === 'number') offset.current = out.body.now - Date.now();
           if (out.body.view) setView(out.body.view as RoomView);
           if (out.body.me) setMine(out.body.me as PlayerView);
         },
@@ -143,7 +151,7 @@ export function Controller({ link, me, room: roomProp, lookElsewhere }: {
 
   // The big screen's music on this device too, when the teacher switched that on (James, 25 Nov 2026 NZ).
   const muralGame = view?.game.kind === 'mural' ? view.game : null;
-  useMusic(phase === 'playing' && view?.padMusic ? classLiveTrack(view.state, view.game.kind, muralGame?.phase === 'guess') : null, true);
+  useMusic(phase === 'playing' && view?.padMusic ? classLiveTrack(view.state, view.game.kind, muralGame?.phase === 'guess', view.game.kind === 'corners' ? view.game.map : undefined) : null, true);
 
   if (phase === 'joining') return <Sky><div className="cl-c-center"><p className="cl-c-say">Joining…</p></div></Sky>;
   if (phase === 'none') {
@@ -180,6 +188,13 @@ export function Controller({ link, me, room: roomProp, lookElsewhere }: {
     return (
       <Sky tint="serpent">
         <SerpentPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} />
+      </Sky>
+    );
+  }
+  if (view.game.kind === 'corners') {
+    return (
+      <Sky tint="corners">
+        <PadGuard><CornersPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} clock={clock} avatar={avatar} /></PadGuard>
       </Sky>
     );
   }

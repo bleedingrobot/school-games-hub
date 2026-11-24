@@ -1,0 +1,574 @@
+{
+  "_from": "docs/showdown-art/config.json layout, docs/classlive-art/config.json styles. Check with: python3 scripts/game_art.py corners paint OUT --dry-run",
+  "game": "corners",
+  "filename_prefix": "corners/img",
+  "style": "s",
+  "styles": {
+    "s": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. ",
+    "c": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. "
+  },
+  "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly",
+  "negative_cut": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+  "inbox": "~/dragon-art-inbox/corners-art/set",
+  "picks": "docs/corners-art/picks.json",
+  "art_dir": "src/games/classlive/art/paint",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "map-snow",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down painted game board of a snowy mountain village: four cosy wooden huts, one in each corner, with a red roof (top-left), a blue roof (top-right), a green roof (bottom-right) and a yellow roof (bottom-left), pine trees and snowdrifts round the edges, smooth trodden snow in the middle. a big red area in the top-left corner, a big blue area in the top-right corner, a big green area in the bottom-right corner, a big yellow area in the bottom-left corner, four clearly different corner areas, an open empty walkable middle with a faint path, calm plain ground, nothing in the middle, top-down bird's-eye view straight down, game board, square picture, no characters, no writing anywhere.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "corners",
+      "file": "map-snow",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view"
+    },
+    {
+      "name": "map-jungle",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down painted game board of a jungle temple courtyard: four small stone shrines, one in each corner, with a red banner and glowing red gem (top-left), blue (top-right), green (bottom-right) and yellow (bottom-left), mossy flagstones, vines and ferns round the edges, open stone floor in the middle. a big red area in the top-left corner, a big blue area in the top-right corner, a big green area in the bottom-right corner, a big yellow area in the bottom-left corner, four clearly different corner areas, an open empty walkable middle with a faint path, calm plain ground, nothing in the middle, top-down bird's-eye view straight down, game board, square picture, no characters, no writing anywhere.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "corners",
+      "file": "map-jungle",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view"
+    },
+    {
+      "name": "map-castle",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down painted game board of a haunted castle courtyard, spooky but friendly: four round stone towers, one in each corner, with a red roof (top-left), blue (top-right), green (bottom-right) and yellow (bottom-left), cobblestones, a few cute floating candles and cobwebs at the edges, soft purple moonlight, open cobbled floor in the middle. a big red area in the top-left corner, a big blue area in the top-right corner, a big green area in the bottom-right corner, a big yellow area in the bottom-left corner, four clearly different corner areas, an open empty walkable middle with a faint path, calm plain ground, nothing in the middle, top-down bird's-eye view straight down, game board, square picture, no characters, no writing anywhere.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "corners",
+      "file": "map-castle",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view"
+    },
+    {
+      "name": "map-space",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down painted game board of a space station deck: four round landing pods, one in each corner, with a glowing red light ring (top-left), blue (top-right), green (bottom-right) and yellow (bottom-left), clean metal floor panels with soft glowing lines, portholes showing stars round the edges, open metal floor in the middle. a big red area in the top-left corner, a big blue area in the top-right corner, a big green area in the bottom-right corner, a big yellow area in the bottom-left corner, four clearly different corner areas, an open empty walkable middle with a faint path, calm plain ground, nothing in the middle, top-down bird's-eye view straight down, game board, square picture, no characters, no writing anywhere.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "corners",
+      "file": "map-space",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view"
+    },
+    {
+      "name": "jail-snow",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A wide strip picture of a friendly igloo jail: a snow igloo with a barred ice-block doorway and icicles, snow-covered ground, a few icy bars, cool blue light, no characters, no writing. Wide landscape strip, the middle of the picture calm and uncluttered.",
+      "size": [
+        1536,
+        512
+      ],
+      "kind": "scene",
+      "folder": "corners",
+      "file": "jail-snow",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, statues"
+    },
+    {
+      "name": "jail-jungle",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A wide strip picture of a vine cage jail: a round cage woven from thick jungle vines and bamboo hanging between mossy temple pillars, dappled green light, no characters, no writing. Wide landscape strip, the middle of the picture calm and uncluttered.",
+      "size": [
+        1536,
+        512
+      ],
+      "kind": "scene",
+      "folder": "corners",
+      "file": "jail-jungle",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, statues"
+    },
+    {
+      "name": "jail-castle",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A wide strip picture of a friendly castle dungeon: a stone cell with iron bars, a flickering torch, hanging chains, a small barred window with moonlight, spooky but cute, no characters, no writing. Wide landscape strip, the middle of the picture calm and uncluttered.",
+      "size": [
+        1536,
+        512
+      ],
+      "kind": "scene",
+      "folder": "corners",
+      "file": "jail-castle",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, statues"
+    },
+    {
+      "name": "jail-space",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A wide strip picture of a space brig: a metal cell with a glowing blue force-field door, humming panels and portholes of stars, clean sci-fi, no characters, no writing. Wide landscape strip, the middle of the picture calm and uncluttered.",
+      "size": [
+        1536,
+        512
+      ],
+      "kind": "scene",
+      "folder": "corners",
+      "file": "jail-space",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, statues"
+    },
+    {
+      "name": "pick-corners",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down scene of a square game board with four colourful corners, a red hut at the top-left, a blue hut at the top-right, a green hut at the bottom-right, a yellow hut at the bottom-left, giant friendly dice tumbling in the open middle in a burst of sparkles, snowy ground fading into jungle and stone, bright and exciting, no characters, no writing. Wide landscape picture.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "pick",
+      "file": "corners",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "power-shield",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A game power-up icon: A round glossy blue and silver shield with a glowing gold rim and a soft shimmering bubble of light around it, front view. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "power-shield",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-speed",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A game power-up icon: A bright golden lightning bolt with swooshing speed streaks, glowing yellow and orange, front view. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "power-speed",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-key",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A game power-up icon: An ornate golden key with a round glowing green gem in its handle, slightly tilted, sparkles. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "power-key",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-crystal",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A game power-up icon: A glowing purple crystal ball on a small gold stand, swirling light inside, sparkles. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "power-crystal",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-jump",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A game power-up icon: A friendly red and white parachute, open, with strings, floating, seen from the front. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "power-jump",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-double",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A game power-up icon: A big shiny golden star with a smaller golden star beside it, glowing, sparkles. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "power-double",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-ghost",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A game power-up icon: A cute friendly white ghost with a round smiling face and wavy bottom, softly glowing, a little translucent, not scary. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "power-ghost",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "snow-storm",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a blizzard swirl of white snow and wind streaks, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "snow-storm",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "snow-ice",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a smooth glossy ice patch with pale blue cracks, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "snow-ice",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "snow-hole",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: cracked ice with a dark blue hole in the middle, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "snow-hole",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "snow-roller",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a giant rolling snowball with a few sticks and pebbles stuck in it, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "snow-roller",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "snow-teleport",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: an ice portal, a glowing blue ring of ice crystals, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "snow-teleport",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "jungle-storm",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a sandstorm swirl of golden sand and wind streaks, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "jungle-storm",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "jungle-ice",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a slippery brown mud slide puddle with shiny wet swirls, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "jungle-ice",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "jungle-hole",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a pit of quicksand, a swirling sand whirlpool, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "jungle-hole",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "jungle-roller",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a giant rolling stone boulder with moss and vines, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "jungle-roller",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "jungle-teleport",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a vine swing portal, a glowing green ring of twisted vines and leaves, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "jungle-teleport",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "castle-storm",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a swirl of soft friendly ghost mist, pale purple wisps, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "castle-storm",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "castle-ice",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a patch of slippery green moss, wet and shiny, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "castle-ice",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "castle-hole",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a collapsed floor, a ragged dark hole in cobblestones with broken stones round it, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "castle-hole",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "castle-roller",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a big rolling wooden barrel with iron hoops, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "castle-roller",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "castle-teleport",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a magic mirror portal, a glowing round gold-framed mirror shimmering purple, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "castle-teleport",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "space-storm",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a meteor storm, a cluster of small glowing fiery rocks with streaks, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "space-storm",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "space-ice",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a zero-g zone, a floating ring of light with tiny drifting bubbles and stars, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "space-ice",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "space-hole",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a black hole, a swirling dark whirlpool with a bright purple glowing rim, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "space-hole",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "space-roller",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a big rolling grey asteroid with craters, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "space-roller",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "space-teleport",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a warp pad, a round glowing cyan metal pad with light rings rising, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "space-teleport",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "dice-red",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. One big glossy red cube dice, rounded corners, a sparkle highlight, white dots showing a single big pip on the front face, tilted three-quarter view, a little glow. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "dice-red",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "dice-blue",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. One big glossy blue cube dice, rounded corners, a sparkle highlight, white dots showing a single big pip on the front face, tilted three-quarter view, a little glow. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "dice-blue",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "dice-green",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. One big glossy green cube dice, rounded corners, a sparkle highlight, white dots showing a single big pip on the front face, tilted three-quarter view, a little glow. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "dice-green",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "dice-yellow",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. One big glossy yellow cube dice, rounded corners, a sparkle highlight, white dots showing a single big pip on the front face, tilted three-quarter view, a little glow. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "dice-yellow",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "dice-star",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. One big glossy rainbow-coloured cube dice, rounded corners, a big golden star on the front face, magical sparkles and glow, tilted three-quarter view. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "corners-fx",
+      "file": "dice-star",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    }
+  ]
+}

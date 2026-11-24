@@ -20,7 +20,9 @@ export type SoundName =
   // Serpent Chain
   | 'climb' | 'head' | 'tail' | 'awake'
   // Mystery Mural
-  | 'flip' | 'guess' | 'pick' | 'reveal';
+  | 'flip' | 'guess' | 'pick' | 'reveal'
+  // Four Corners
+  | 'tick' | 'tickLast' | 'drumroll' | 'dice' | 'land' | 'caught' | 'safe' | 'grab' | 'power' | 'escape' | 'warp' | 'storm';
 
 export interface ClassLiveSound {
   play(name: SoundName): void;
@@ -31,7 +33,7 @@ export interface ClassLiveSound {
 }
 
 const KEY = 'classlive-muted';
-const BIG: SoundName[] = ['start', 'over', 'creature', 'supernova', 'awake', 'reveal', 'head', 'arm', 'guess'];
+const BIG: SoundName[] = ['start', 'over', 'creature', 'supernova', 'awake', 'reveal', 'head', 'arm', 'guess', 'drumroll', 'land'];
 
 function readMuted(): boolean {
   try {
@@ -306,6 +308,107 @@ const RECIPES: Record<SoundName, Recipe> = {
     for (let i = 0; i < 14; i++) osc(ctx, out, 98, t + i * 0.12, 0.2, 'sine', 0.05 + i * 0.012, 90);
     phrase(ctx, out, kit, t + 0.2, 'harp', run(p, 0, 12).map((s) => Math.abs(s)), 0.13, 0.6);
     cadence(ctx, out, kit, t + 1.8, p);
+  },
+  // ---- Four Corners ----
+  tick: (ctx, out, kit, t, p) => {
+    const f = p.one([900, 1100, 1300]);
+    osc(ctx, out, f, t, 0.06, 'triangle', 0.18, f * 0.8);
+    hiss(ctx, out, t, 0.03, 3000, 2000, 0.05, 'bandpass', 4, 0.1);
+    if (p.chance(0.3)) INSTRUMENTS.wood(ctx, out, note(kit, p.int(4) + 4), t, 0.4);
+  },
+  tickLast: (ctx, out, kit, t, p) => {
+    const f = p.one([1500, 1800, 2100]);
+    osc(ctx, out, f, t, 0.1, 'square', 0.1, f * 0.9);
+    osc(ctx, out, f * 1.5, t, 0.08, 'sine', 0.08);
+    hiss(ctx, out, t, 0.04, 5000, 3000, 0.08, 'bandpass', 5, 0.1);
+    if (p.chance(0.4)) INSTRUMENTS.pizz(ctx, out, note(kit, p.int(3) + 7), t, 0.5);
+  },
+  drumroll: (ctx, out, _kit, t, p) => {
+    // A snare roll from noise that speeds up and swells, over a low rumble.
+    const dur = p.one([2.3, 2.5, 2.7]);
+    const rate = p.one([14, 18, 22]);
+    const top = p.one([3000, 4000, 5000]);
+    let at = 0;
+    for (let i = 0; at < dur; i++) {
+      const k = at / dur;
+      hiss(ctx, out, t + at, 0.07, top, top * 0.5, 0.06 + k * 0.2, 'bandpass', 1.2, 0.1);
+      osc(ctx, out, 180 - k * 40, t + at, 0.06, 'triangle', 0.04 + k * 0.08);
+      at += 1 / (rate + k * rate * 1.2) + (i % 2 ? 0.004 : 0);
+    }
+    hiss(ctx, out, t, dur, 120, 400, 0.18, 'lowpass', 1, 0.9);
+    if (p.chance(0.5)) hiss(ctx, out, t + dur - 0.6, 0.6, 3000, 9000, 0.1, 'highpass', 1, 0.9);
+  },
+  dice: (ctx, out, _kit, t, p) => {
+    // Wooden clacks that start wide apart and bunch up, like a die tumbling to rest.
+    const n = p.one([9, 11, 13]);
+    const base = p.one([500, 650, 800]);
+    let at = 0;
+    for (let i = 0; i < n; i++) {
+      const gap = 0.26 - i * (0.2 / n);
+      const v = 0.9 - i * (0.5 / n);
+      INSTRUMENTS.wood(ctx, out, base * (1 + (i % 3) * 0.18) * p.wobble(0.9, 1.1), t + at, v);
+      hiss(ctx, out, t + at, 0.05, 2500, 1200, 0.08 * v, 'bandpass', 3, 0.1);
+      at += Math.max(0.05, gap * p.wobble(0.7, 1.2));
+    }
+  },
+  land: (ctx, out, kit, t, p) => {
+    // A big boom with a crash, a brass-like stab, and a low shake.
+    osc(ctx, out, 110, t, 1.2, 'sine', 0.55, 38);
+    osc(ctx, out, 70, t, 0.9, 'sawtooth', 0.12, 40);
+    hiss(ctx, out, t, 1.4, 6000, 800, 0.3, 'highpass', 1, 0.02);
+    hiss(ctx, out, t, 1.2, 400, 100, 0.3, 'lowpass', 1, 0.05);
+    chord(ctx, out, kit, t + 0.05, p.one(['glock', 'marimba'] as const), [0, 2, 4, 7].map((s) => s + p.int(2) * 3), 0.0, 1.3);
+    if (p.chance(0.5)) INSTRUMENTS.logdrum(ctx, out, note(kit, -3), t + 0.2, 1.2);
+  },
+  caught: (ctx, out, kit, t, p) => {
+    // A clang of the jail door, then a comic slide down (wah-wah), never scary.
+    const f = p.one([420, 520, 620]);
+    [1, 2.76, 5.4, 8.9].forEach((m, i) => osc(ctx, out, f * m, t, 0.9 - i * 0.15, 'sine', 0.2 / (i + 1)));
+    hiss(ctx, out, t, 0.06, 4000, 2500, 0.2, 'bandpass', 2, 0.05);
+    const shape = p.int(3);
+    const steps = shape === 0 ? [4, 3, 1] : shape === 1 ? [5, 3, 2, 0] : [3, 2, 0];
+    phrase(ctx, out, kit, t + 0.3, p.one(['pizz', 'marimba'] as const), steps, p.one([0.14, 0.18]), 0.9);
+  },
+  safe: (ctx, out, kit, t, p) => {
+    const s = p.int(4) + 4;
+    const inst = p.one(KITS[kit].lead);
+    phrase(ctx, out, kit, t, inst, p.one([[0, 2], [0, 4], [0, 2, 4]]).map((x) => s + x), p.one([0.07, 0.09]), 0.9);
+    hiss(ctx, out, t, 0.4, 5000, 8000, 0.03, 'highpass', 1, 0.2);
+  },
+  grab: (ctx, out, kit, t, p) => {
+    const s = p.int(4) + 5;
+    INSTRUMENTS[p.one(['pizz', 'glock', 'marimba'] as const)](ctx, out, note(kit, s), t, 0.9);
+    osc(ctx, out, note(kit, s + 4), t + 0.07, 0.25, 'sine', 0.12, note(kit, s + 4) * 1.5);
+    if (p.chance(0.4)) hiss(ctx, out, t, 0.1, 3000, 6000, 0.05, 'bandpass', 3, 0.3);
+  },
+  power: (ctx, out, kit, t, p) => {
+    hiss(ctx, out, t, 0.7, 800, 7000, 0.15, 'bandpass', 3, 0.7);
+    phrase(ctx, out, kit, t + 0.05, p.one(['glock', 'celesta', 'glass'] as const), run(p, 2, 6).map((s) => Math.abs(s) + 3), p.one([0.05, 0.07]), 0.9);
+    INSTRUMENTS.shimmer(ctx, out, note(kit, 12), t + 0.45, 0.8);
+  },
+  escape: (ctx, out, kit, t, p) => {
+    // A key-turn rattle, then a jingly little tune.
+    for (let i = 0; i < 4; i++) hiss(ctx, out, t + i * 0.05, 0.04, 4000, 6000, 0.1, 'bandpass', 5, 0.2);
+    const tune = p.one([[4, 6, 5, 7, 9], [2, 4, 7, 5, 9], [4, 5, 7, 9, 11]]);
+    phrase(ctx, out, kit, t + 0.25, p.one(['marimba', 'glock', 'pizz'] as const), tune, p.one([0.1, 0.13]), 1, 0.01);
+    chord(ctx, out, kit, t + 0.25 + tune.length * 0.12, 'glock', [0, 2, 4].map((s) => s + 7), 0.02, 0.8);
+  },
+  warp: (ctx, out, _kit, t, p) => {
+    const dur = p.one([0.5, 0.6, 0.7]);
+    if (p.chance(0.5)) hiss(ctx, out, t, 0.1, 3000, 5000, 0.06, 'highpass', 1, 0.3);
+    hiss(ctx, out, t, dur, 300, 6000, 0.25, 'bandpass', 4, 0.5);
+    hiss(ctx, out, t + dur, 0.4, 6000, 400, 0.2, 'bandpass', 4, 0.2);
+    const a = p.one([300, 400, 500]);
+    osc(ctx, out, a, t, dur, 'sine', 0.12, a * 5);
+    osc(ctx, out, a * 5, t + dur, 0.35, 'sine', 0.1, a);
+  },
+  storm: (ctx, out, _kit, t, p) => {
+    // A gust of wind: filtered noise that swells and fades, with a faint howl.
+    const lo = p.one([300, 500, 700]);
+    hiss(ctx, out, t, 1.5, lo, lo * 3, 0.3, 'bandpass', 1.5, 0.45);
+    hiss(ctx, out, t + 0.1, 1.4, lo * 2.5, lo, 0.15, 'bandpass', 3, 0.5);
+    const h = p.one([380, 440, 520]);
+    osc(ctx, out, h, t + 0.2, 1.2, 'sine', 0.04, h * 1.15, 0.5);
   },
 };
 

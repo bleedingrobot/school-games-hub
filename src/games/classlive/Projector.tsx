@@ -22,6 +22,8 @@ import { CoiledSerpent, JungleBackdrop, NO_SERPENT_FX, SerpentAmbience, SerpentS
 import './projector.css';
 import { painted } from './paintedArt';
 import { HowTo } from './HowTo';
+import { CornersScene } from './CornersScene';
+import { MAPS, MAP_WORDS, type CornerMap } from '../../../shared/classlive/corners';
 import { speak } from '../../speech';
 import { next, VOICE_FOLDER } from './voiceLines';
 
@@ -133,7 +135,8 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
       if (e.type === 'join') sound.play('join');
       else if (e.type === 'start') {
         sound.play('start');
-        say(s.game.kind === 'serpent' ? next('startSerpent') : s.game.kind === 'mural' ? next('startMural') : next('startStars'), 900);
+        // Four Corners' scene says its own start, with the first round.
+        if (s.game.kind !== 'corners') say(s.game.kind === 'serpent' ? next('startSerpent') : s.game.kind === 'mural' ? next('startMural') : next('startStars'), 900);
       }
       else if (e.type === 'climb') {
         const id = e.pupil;
@@ -337,10 +340,11 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   const game = screen?.game ?? null;
   const serpent = game?.kind === 'serpent' ? game : null;
   const mural = game?.kind === 'mural' ? game : null;
+  const corners = game?.kind === 'corners' ? game : null;
   const hall = !screen && !resuming ? painted('pick', 'hall') : null;
   // Background music for what is on screen (James, 25 Nov 2026 NZ).
-  useMusic(classLiveTrack(state, game?.kind ?? null, mural?.phase === 'guess'), !muted);
-  const backPic = hall ?? painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky');
+  useMusic(classLiveTrack(state, game?.kind ?? null, mural?.phase === 'guess', corners?.map), !muted);
+  const backPic = hall ?? (corners ? null : painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky'));
   const lobbyOpen = state === 'lobby' && room !== null;
   useEffect(() => {
     if (lobbyOpen) say(next('joinNow'), 400);
@@ -351,7 +355,7 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   }, [state]);
 
   return (
-    <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''} ${mural ? 'cl-p--mural' : ''} ${backPic ? 'cl-p--painted' : ''}`}>
+    <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''} ${mural ? 'cl-p--mural' : ''} ${corners ? `cl-p--corners fc-back--${corners.map}` : ''} ${backPic ? 'cl-p--painted' : ''}`}>
       {serpent ? <JungleBackdrop /> : <NightBackdrop />}
       {backPic && <div className={`cl-painted ${serpent ? 'cl-painted--serpent' : ''} ${hall ? 'cl-painted--hall' : ''}`} style={{ backgroundImage: `url(${backPic})` }} aria-hidden="true" />}
       {serpent && <SerpentAmbience awake={serpent.awake || state === 'over'} />}
@@ -413,6 +417,21 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
             ? <button type="button" className="cl-btn cl-results-tab" onClick={() => setHideResults(false)}>🎨 Show the results</button>
             : <MuralFinish screen={screen} game={mural} onAgain={forget} onSky={() => setHideResults(true)} />)}
         </>
+      )}
+
+      {screen && corners && (state === 'live' || state === 'over') && (
+        <CornersScene
+          screen={screen}
+          game={corners}
+          link={link}
+          room={room}
+          clock={() => Date.now() + offset.current}
+          sound={sound}
+          say={say}
+          over={state === 'over'}
+          onTick={() => { if (room) void act({ action: 'view', room }); }}
+          onAgain={forget}
+        />
       )}
 
       {screen && game?.kind === 'stars' && (state === 'live' || state === 'over') && (
@@ -477,6 +496,8 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
   const [sLevel, setSLevel] = useState<SerpentLevel>('gold');
   const [sLength, setSLength] = useState(0);
   const [mLength, setMLength] = useState(0);
+  const [cLength, setCLength] = useState(5);
+  const [cMap, setCMap] = useState<CornerMap | 'any'>('any');
   const [x, setX] = useState('6');
   const [y, setY] = useState('7');
   const [length, setLength] = useState(0);
@@ -563,6 +584,22 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
           <TimerChips length={mLength} setLength={setMLength} />
           <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('mural', { length: mLength })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
+        <section className="cl-card cl-card--active cl-card--corners" aria-label="Four Corners">
+          <CardArt pic={painted('pick', 'corners', true) ?? painted('corners', 'map-snow', true)} />
+          <h2 className="cl-card__name">🎲 Four Corners</h2>
+          <p className="cl-card__blurb">Run your avatar to a corner. The dice decides who goes to jail!</p>
+          <div className="cl-opt">
+            <span className="cl-opt__label">Which map?</span>
+            <div className="cl-chips" role="group" aria-label="Map">
+              <button type="button" className={`cl-choice ${cMap === 'any' ? 'cl-choice--on' : ''}`} aria-pressed={cMap === 'any'} onClick={() => setCMap('any')}>Surprise me</button>
+              {MAPS.map((m) => (
+                <button key={m} type="button" className={`cl-choice ${cMap === m ? 'cl-choice--on' : ''}`} aria-pressed={cMap === m} onClick={() => setCMap(m)}>{MAP_WORDS[m].name}</button>
+              ))}
+            </div>
+          </div>
+          <TimerChips length={cLength} setLength={setCLength} />
+          <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('corners', { length: cLength, ...(cMap === 'any' ? {} : { map: cMap }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
+        </section>
         {onShowdown && <ShowdownCard busy={busy} onOpen={onShowdown} />}
       </div>
     </div>
@@ -583,7 +620,7 @@ function Chip({ p, i }: { p: ScreenView['people'][number]; i: number }) {
 
 function Lobby({ screen, game, className, onStart }: { screen: ScreenView; game: ScreenView['game']; className?: string; onStart: () => void }) {
   const n = screen.people.length;
-  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : <MuralLobbyHead />;
+  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : game.kind === 'corners' ? <CornersLobbyHead map={game.map} /> : <MuralLobbyHead />;
   return (
     <div className={`cl-lobby ${game.kind === 'serpent' ? 'cl-lobby--serpent' : ''}`}>
       {head}
@@ -609,6 +646,17 @@ function StarsLobbyHead({ game }: { game: StarsGame }) {
         {Array.from({ length: x * y }, (_, i) => <i key={i} className="cl-array__dot" style={{ animationDelay: `${(i % 12) * 0.12}s` }} />)}
       </div>
       <p className="cl-lobby__ask">What else can we find from this one fact?</p>
+    </>
+  );
+}
+
+function CornersLobbyHead({ map }: { map: CornerMap }) {
+  return (
+    <>
+      <h1 className="cl-lobby__title">Four Corners</h1>
+      <div className="cl-lobby__fact">{MAP_WORDS[map].name}</div>
+      <div className="fc-lobby-corners" aria-hidden="true"><i /><i /><i /><i /></div>
+      <p className="cl-lobby__ask">Run to a corner before the countdown ends. Which corner will the dice pick?</p>
     </>
   );
 }

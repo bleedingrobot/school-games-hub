@@ -4,7 +4,9 @@
  * school's server and Supabase Realtime; `pretendLink` below runs the real server steps in the page on a database in
  * memory with a pretend class (`?pretend=30`), so a whole session can be tried with no class.
  */
-import { memoryServices } from '../../../shared/classlive/memoryServices';
+import { memoryMove, memoryServices } from '../../../shared/classlive/memoryServices';
+import { randomAvatar } from '../../avatar/avatarParts';
+import { rng } from '../../../shared/classlive/pretendClass';
 import { pretendClass, PRETEND_CLASS, PRETEND_TEACHER } from '../../../shared/classlive/pretendClass';
 import { classLiveStep, type Change, type PlayerView, type RoomView, type ScreenView } from '../../../shared/classlive/server';
 
@@ -18,6 +20,12 @@ export interface ClassLiveLink {
   watchRoom(room: number, on: (view: RoomView) => void): () => void;
   /** One pupil's own row. */
   watchMe(room: number, me: string, on: (me: PlayerView) => void): () => void;
+  /** Four Corners: a pupil's device saves its spot; every spot in the room comes back (no names), or null. */
+  move(room: number, x: number, y: number): Promise<{ x: number; y: number }[] | null>;
+  /** Four Corners: the projector reads every spot (teachers only), or null. */
+  positions(room: number): Promise<Record<string, { x: number; y: number }> | null>;
+  /** Four Corners: the projector reads everyone's hub avatar (teachers only), or null. */
+  avatars(room: number): Promise<Record<string, unknown> | null>;
 }
 
 type Listener = { room: number; kind: 'screen' | 'room' | 'me'; me?: string; on: (x: never) => void };
@@ -54,6 +62,14 @@ export function pretendLink(opts: { size: number; seed?: number; me?: { id: stri
     watchScreen: (room, on) => watch({ room, kind: 'screen', on: on as (x: never) => void }),
     watchRoom: (room, on) => watch({ room, kind: 'room', on: on as (x: never) => void }),
     watchMe: (room, me, on) => watch({ room, kind: 'me', me, on: on as (x: never) => void }),
+    move: async (room, x, y) => memoryMove(pc.db, Date.now(), room, who, x, y),
+    positions: async (room) => (isTeacher ? Object.fromEntries(Object.entries(pc.db.spots.get(room) ?? {}).map(([id, p]) => [id, { x: p.x, y: p.y }])) : null),
+    avatars: async (room) => {
+      if (!isTeacher) return null;
+      const r = pc.db.rooms.get(room);
+      // Pretend pupils get a made-up avatar each (the same one every time).
+      return r ? Object.fromEntries(r.session.order.map((id) => [id, randomAvatar(rng(parseInt(id.slice(-6), 16) || 1))])) : null;
+    },
   });
   return { teacher: linkFor(PRETEND_TEACHER, true), pupil: linkFor(opts.me?.id ?? 'nobody', false), classId: PRETEND_CLASS };
 }

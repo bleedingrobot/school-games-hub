@@ -50,7 +50,7 @@ export const BOOST = 1.6;
 export const STORM_SLOW = 0.45;
 /** The fastest anyone can go (the database clamps saved moves to this, with some slack). */
 export const MAX_SPEED = SPEED * BOOST * 1.25;
-export const AVATAR_R = 0.025;
+export const AVATAR_R = 0.035;
 export const GRAB_R = 0.07;
 export const HOLE_R = 0.15;
 export const TELEPORT_R = 0.045;
@@ -185,7 +185,10 @@ export function rollerAt(r: Roller, t: number): Spot {
   return r.axis === 'x' ? { x: v, y: r.at } : { x: r.at, y: v };
 }
 
-export const gateShut = (round: Round, t: number) => round.gate !== null && t >= round.runEnd - GATE_EARLY_MS;
+/** What movement needs of a round (the pupils' copy of a round has these too). */
+export type MoveRound = Pick<Round, 'storms' | 'ice' | 'teleports' | 'roller' | 'hole' | 'gate' | 'runEnd'>;
+
+export const gateShut = (round: Pick<Round, 'gate' | 'runEnd'>, t: number) => round.gate !== null && t >= round.runEnd - GATE_EARLY_MS;
 
 export interface MoveState { p: Spot; v: Spot }
 
@@ -193,7 +196,7 @@ export interface MoveState { p: Spot; v: Spot }
  * One step of movement (device and preview): `dir` is the joystick (length 0 to 1), dt in ms. Storms slow, ice keeps
  * momentum, the hole and a shut gate are walls (unless a ghost), teleports warp to the other end, the roller bumps.
  */
-export function stepMove(m: MoveState, dir: Spot, dtMs: number, round: Round | null, t: number, opts: { boost: boolean; ghost: boolean }): MoveState {
+export function stepMove(m: MoveState, dir: Spot, dtMs: number, round: MoveRound | null, t: number, opts: { boost: boolean; ghost: boolean }): MoveState {
   const dt = Math.min(100, Math.max(0, dtMs)) / 1000;
   const len = Math.hypot(dir.x, dir.y);
   const d = len > 1 ? { x: dir.x / len, y: dir.y / len } : dir;

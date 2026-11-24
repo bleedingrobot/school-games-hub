@@ -1,6 +1,6 @@
 # Four Corners (Class Live activity `corners`)
 
-**Status: plan written 25 Nov 2026 NZ. Stage 1 (rules, server, database) under way.** Migration `20261125000300_classlive_corners` (check again: `node scripts/migration-numbers.mjs`).
+**Status: stages 1 and 2 built 25 Nov 2026 NZ (rules, server, database, big screen, pupil pad, sounds, 86 Bella clips, drawn stand-ins); art plan in docs/CORNERS-ART-PLAN.md. Next: stage 3, paintings and map music on James's PC.** Migration `20261125000300_classlive_corners` (check again: `node scripts/migration-numbers.mjs`).
 
 James's idea (25 Nov 2026 NZ): every pupil runs their own hub avatar around a square map with a joystick. A countdown gives them time to reach one of four corners; then a big dramatic dice roll picks a corner. Pupils in that corner (and anyone in no corner) go to jail: they miss the next round and answer 3 maths questions to get back. Power-ups lie on the map; map hazards change round by round.
 
@@ -22,7 +22,7 @@ It is the fourth Class Live activity (docs/CLASSLIVE-PLAN.md): same room, lobby 
 
 ## Rules (shared/classlive/corners.ts)
 
-- Board is a unit square; corner zones are the four 0.26 squares in the corners. Pupils start in the middle.
+- Board is a unit square; corner zones are the four 0.26 squares in the corners (Red top left, Blue top right, Green bottom right, Yellow bottom left). Pupils start in the middle.
 - A round: **run** (countdown, 14 s shrinking to 9 s), **roll** (4.5 s dice), **show** (4.5 s: caught pupils fly to jail, shields pop). The corner is decided on the server when the round is made (hidden from pupils until the dice lands); positions are read when the run ends.
 - Score: +1 a safe round (+2 with Double star). Most safe rounds wins; ties share the podium.
 - Jail: caught in round n, sit out round n+1, back at the start of n+2 if 3 right answers by then, else the round after the 3rd right answer. Jail questions come every 1.5 s at most.
@@ -52,3 +52,7 @@ Way A from the pupil's focus (`makeQuestion`, the same as Mystery Mural), in the
 1. Rules, server steps, migration, tests, pretend pupils that run about.
 2. Big screen scene and pupil pad (joystick, question pop-up, dice), How to play, picker card, sounds, music tracks, Bella lines, drawn stand-in art, art plan.
 3. Painted art from James's PC (docs/CORNERS-ART-PLAN.md, docs/corners-art/config.json).
+
+## Files
+
+`shared/classlive/corners.ts` (rules), `shared/classlive/server.ts` (`cornersStep`, rounds in `mutate`), `src/games/classlive/CornersBoard.tsx` (board for both screens), `CornersScene.tsx` (big screen, dice, jail, podium), `CornersPad.tsx` (joystick, questions, jail), `corners.css`, `link.ts`/`liveLink.ts` (`move`, `positions`, `avatars`). Try it: `npx vite --config vite.classlive-preview.config.ts` (Four Corners card; "Be a pupil" to run with the arrow keys).

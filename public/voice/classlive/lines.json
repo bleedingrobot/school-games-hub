@@ -192,6 +192,330 @@
   "text": "What a team! Well done!"
  },
  {
+  "slug": "here-we-go-when-the-countdown-starts-run-to-a-corner",
+  "text": "Here we go! When the countdown starts, run to a corner!"
+ },
+ {
+  "slug": "four-corners-is-on-pick-a-corner-and-run",
+  "text": "Four Corners is on! Pick a corner and run!"
+ },
+ {
+  "slug": "off-we-go-get-to-a-corner-before-the-dice-rolls",
+  "text": "Off we go! Get to a corner before the dice rolls."
+ },
+ {
+  "slug": "run-to-a-corner",
+  "text": "Run to a corner!"
+ },
+ {
+  "slug": "go-go-go-find-a-corner",
+  "text": "Go go go! Find a corner!"
+ },
+ {
+  "slug": "quick-pick-a-corner",
+  "text": "Quick, pick a corner!"
+ },
+ {
+  "slug": "hurry-hurry-nearly-out-of-time",
+  "text": "Hurry, hurry! Nearly out of time!"
+ },
+ {
+  "slug": "quick-the-countdown-is-nearly-over",
+  "text": "Quick, the countdown is nearly over!"
+ },
+ {
+  "slug": "get-to-a-corner-now",
+  "text": "Get to a corner, now!"
+ },
+ {
+  "slug": "here-comes-the-dice",
+  "text": "Here comes the dice!"
+ },
+ {
+  "slug": "time-to-roll-the-dice",
+  "text": "Time to roll the dice!"
+ },
+ {
+  "slug": "the-dice-is-rolling",
+  "text": "The dice is rolling!"
+ },
+ {
+  "slug": "the-red-corner",
+  "text": "The red corner!"
+ },
+ {
+  "slug": "it-is-the-red-corner",
+  "text": "It is the red corner!"
+ },
+ {
+  "slug": "red-the-red-corner",
+  "text": "Red! The red corner!"
+ },
+ {
+  "slug": "the-blue-corner",
+  "text": "The blue corner!"
+ },
+ {
+  "slug": "it-is-the-blue-corner",
+  "text": "It is the blue corner!"
+ },
+ {
+  "slug": "blue-the-blue-corner",
+  "text": "Blue! The blue corner!"
+ },
+ {
+  "slug": "the-green-corner",
+  "text": "The green corner!"
+ },
+ {
+  "slug": "it-is-the-green-corner",
+  "text": "It is the green corner!"
+ },
+ {
+  "slug": "green-the-green-corner",
+  "text": "Green! The green corner!"
+ },
+ {
+  "slug": "the-yellow-corner",
+  "text": "The yellow corner!"
+ },
+ {
+  "slug": "it-is-the-yellow-corner",
+  "text": "It is the yellow corner!"
+ },
+ {
+  "slug": "yellow-the-yellow-corner",
+  "text": "Yellow! The yellow corner!"
+ },
+ {
+  "slug": "two-corners-this-time",
+  "text": "Two corners this time!"
+ },
+ {
+  "slug": "twist-two-corners-are-out",
+  "text": "Twist! Two corners are out!"
+ },
+ {
+  "slug": "oh-no-two-corners-at-once",
+  "text": "Oh no, two corners at once!"
+ },
+ {
+  "slug": "a-lucky-roll-everyone-in-a-corner-is-safe",
+  "text": "A lucky roll! Everyone in a corner is safe!"
+ },
+ {
+  "slug": "lucky-nobody-is-caught-this-time",
+  "text": "Lucky! Nobody is caught this time!"
+ },
+ {
+  "slug": "what-luck-every-corner-is-safe",
+  "text": "What luck! Every corner is safe!"
+ },
+ {
+  "slug": "nobody-was-caught-brilliant",
+  "text": "Nobody was caught! Brilliant!"
+ },
+ {
+  "slug": "everyone-got-away-that-time",
+  "text": "Everyone got away that time!"
+ },
+ {
+  "slug": "not-one-pupil-caught-well-done",
+  "text": "Not one pupil caught! Well done!"
+ },
+ {
+  "slug": "oh-no-lots-of-pupils-off-to-jail",
+  "text": "Oh no, lots of pupils off to jail!"
+ },
+ {
+  "slug": "whoops-a-big-crowd-is-going-to-jail",
+  "text": "Whoops! A big crowd is going to jail!"
+ },
+ {
+  "slug": "clang-so-many-in-jail-this-time",
+  "text": "Clang! So many in jail this time!"
+ },
+ {
+  "slug": "a-shield-saved-someone",
+  "text": "A shield saved someone!"
+ },
+ {
+  "slug": "phew-a-shield-kept-someone-safe",
+  "text": "Phew! A shield kept someone safe!"
+ },
+ {
+  "slug": "shield-to-the-rescue",
+  "text": "Shield to the rescue!"
+ },
+ {
+  "slug": "someone-answered-their-way-out-of-jail",
+  "text": "Someone answered their way out of jail!"
+ },
+ {
+  "slug": "a-great-escape-from-jail",
+  "text": "A great escape from jail!"
+ },
+ {
+  "slug": "out-of-jail-well-done",
+  "text": "Out of jail! Well done!"
+ },
+ {
+  "slug": "a-power-up-is-switched-on",
+  "text": "A power-up is switched on!"
+ },
+ {
+  "slug": "power-up-activated",
+  "text": "Power-up activated!"
+ },
+ {
+  "slug": "someone-switched-on-a-power-up",
+  "text": "Someone switched on a power-up!"
+ },
+ {
+  "slug": "power-ups-have-appeared-grab-one-then-answer-a-question-in-a-corner-to-switch-it-on",
+  "text": "Power-ups have appeared! Grab one, then answer a question in a corner to switch it on."
+ },
+ {
+  "slug": "watch-out-a-blizzard-it-slows-you-down",
+  "text": "Watch out, a blizzard! It slows you down."
+ },
+ {
+  "slug": "look-ice-portals-step-on-one-and-you-pop-out-of-the-other",
+  "text": "Look, ice portals! Step on one and you pop out of the other."
+ },
+ {
+  "slug": "careful-ice-patches-you-will-slide",
+  "text": "Careful, ice patches! You will slide."
+ },
+ {
+  "slug": "here-comes-the-snow-fog-you-will-not-see-everyone-near-the-end",
+  "text": "Here comes the snow fog! You will not see everyone near the end."
+ },
+ {
+  "slug": "look-out-for-the-giant-snowball-it-will-bump-you-aside",
+  "text": "Look out for the giant snowball! It will bump you aside."
+ },
+ {
+  "slug": "mind-the-cracked-ice-in-the-middle-go-round-it",
+  "text": "Mind the cracked ice in the middle! Go round it."
+ },
+ {
+  "slug": "the-frozen-gate-will-shut-one-corner-just-before-the-end",
+  "text": "The frozen gate will shut one corner just before the end!"
+ },
+ {
+  "slug": "twist-sometimes-two-corners-are-picked-and-sometimes-it-is-a-lucky-roll",
+  "text": "Twist! Sometimes two corners are picked, and sometimes it is a lucky roll."
+ },
+ {
+  "slug": "power-ups-are-hiding-in-the-jungle-grab-one-then-answer-a-question-in-a-corner-to-switch-it-on",
+  "text": "Power-ups are hiding in the jungle! Grab one, then answer a question in a corner to switch it on."
+ },
+ {
+  "slug": "watch-out-a-sandstorm-it-slows-you-down",
+  "text": "Watch out, a sandstorm! It slows you down."
+ },
+ {
+  "slug": "look-vine-swings-step-on-one-and-you-pop-out-of-the-other",
+  "text": "Look, vine swings! Step on one and you pop out of the other."
+ },
+ {
+  "slug": "careful-mud-slides-you-will-slide",
+  "text": "Careful, mud slides! You will slide."
+ },
+ {
+  "slug": "here-comes-the-jungle-mist-you-will-not-see-everyone-near-the-end",
+  "text": "Here comes the jungle mist! You will not see everyone near the end."
+ },
+ {
+  "slug": "look-out-for-the-rolling-boulder-it-will-bump-you-aside",
+  "text": "Look out for the rolling boulder! It will bump you aside."
+ },
+ {
+  "slug": "mind-the-quicksand-in-the-middle-go-round-it",
+  "text": "Mind the quicksand in the middle! Go round it."
+ },
+ {
+  "slug": "the-temple-door-will-shut-one-corner-just-before-the-end",
+  "text": "The temple door will shut one corner just before the end!"
+ },
+ {
+  "slug": "twist-time-sometimes-two-corners-are-picked-and-sometimes-it-is-a-lucky-roll",
+  "text": "Twist time! Sometimes two corners are picked, and sometimes it is a lucky roll."
+ },
+ {
+  "slug": "power-ups-are-floating-around-the-castle-grab-one-then-answer-a-question-in-a-corner-to-switch-it-on",
+  "text": "Power-ups are floating around the castle! Grab one, then answer a question in a corner to switch it on."
+ },
+ {
+  "slug": "watch-out-a-ghost-mist-it-slows-you-down",
+  "text": "Watch out, a ghost mist! It slows you down."
+ },
+ {
+  "slug": "look-magic-mirrors-step-on-one-and-you-pop-out-of-the-other",
+  "text": "Look, magic mirrors! Step on one and you pop out of the other."
+ },
+ {
+  "slug": "careful-slippery-moss-you-will-slide",
+  "text": "Careful, slippery moss! You will slide."
+ },
+ {
+  "slug": "here-comes-the-spooky-fog-you-will-not-see-everyone-near-the-end",
+  "text": "Here comes the spooky fog! You will not see everyone near the end."
+ },
+ {
+  "slug": "look-out-for-the-rolling-barrel-it-will-bump-you-aside",
+  "text": "Look out for the rolling barrel! It will bump you aside."
+ },
+ {
+  "slug": "mind-the-collapsed-floor-in-the-middle-go-round-it",
+  "text": "Mind the collapsed floor in the middle! Go round it."
+ },
+ {
+  "slug": "the-portcullis-will-shut-one-corner-just-before-the-end",
+  "text": "The portcullis will shut one corner just before the end!"
+ },
+ {
+  "slug": "a-twist-sometimes-two-corners-are-picked-and-sometimes-it-is-a-lucky-roll",
+  "text": "A twist! Sometimes two corners are picked, and sometimes it is a lucky roll."
+ },
+ {
+  "slug": "power-ups-are-drifting-in-space-grab-one-then-answer-a-question-in-a-corner-to-switch-it-on",
+  "text": "Power-ups are drifting in space! Grab one, then answer a question in a corner to switch it on."
+ },
+ {
+  "slug": "watch-out-a-meteor-storm-it-slows-you-down",
+  "text": "Watch out, a meteor storm! It slows you down."
+ },
+ {
+  "slug": "look-warp-pads-step-on-one-and-you-pop-out-of-the-other",
+  "text": "Look, warp pads! Step on one and you pop out of the other."
+ },
+ {
+  "slug": "careful-zero-g-zones-you-will-slide",
+  "text": "Careful, zero-g zones! You will slide."
+ },
+ {
+  "slug": "here-comes-the-nebula-cloud-you-will-not-see-everyone-near-the-end",
+  "text": "Here comes the nebula cloud! You will not see everyone near the end."
+ },
+ {
+  "slug": "look-out-for-the-rolling-asteroid-it-will-bump-you-aside",
+  "text": "Look out for the rolling asteroid! It will bump you aside."
+ },
+ {
+  "slug": "mind-the-black-hole-in-the-middle-go-round-it",
+  "text": "Mind the black hole in the middle! Go round it."
+ },
+ {
+  "slug": "the-airlock-will-shut-one-corner-just-before-the-end",
+  "text": "The airlock will shut one corner just before the end!"
+ },
+ {
+  "slug": "twist-alert-sometimes-two-corners-are-picked-and-sometimes-it-is-a-lucky-roll",
+  "text": "Twist alert! Sometimes two corners are picked, and sometimes it is a lucky roll."
+ },
+ {
   "slug": "we-know-one-times-fact",
   "text": "We know one times fact."
  },
@@ -270,5 +594,25 @@
  {
   "slug": "then-read-the-six-riddles-and-pick-the-one-that-fits-the-picture",
   "text": "Then read the six riddles and pick the one that fits the picture!"
+ },
+ {
+  "slug": "move-your-avatar-with-the-joystick-or-the-arrow-keys",
+  "text": "Move your avatar with the joystick, or the arrow keys."
+ },
+ {
+  "slug": "get-to-a-corner-before-the-countdown-ends",
+  "text": "Get to a corner before the countdown ends!"
+ },
+ {
+  "slug": "then-the-dice-picks-a-corner-anyone-in-that-corner-or-in-no-corner-goes-to-jail",
+  "text": "Then the dice picks a corner. Anyone in that corner, or in no corner, goes to jail."
+ },
+ {
+  "slug": "in-jail-answer-three-questions-to-come-back",
+  "text": "In jail, answer three questions to come back."
+ },
+ {
+  "slug": "grab-power-ups-on-the-map-then-answer-a-question-in-a-corner-to-switch-them-on-the-most-safe-rounds-wins",
+  "text": "Grab power-ups on the map, then answer a question in a corner to switch them on. The most safe rounds wins!"
  }
 ]
