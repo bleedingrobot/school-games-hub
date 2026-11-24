@@ -360,6 +360,366 @@
       "folder": "pick",
       "file": "mural",
       "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-elephant",
+      "prompt": "A big friendly grey elephant with large flapping ears spraying water from its trunk at a watering hole on the golden African savanna, acacia trees, sunset sky. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "elephant",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-penguin",
+      "prompt": "A family of black and white penguins waddling and sliding on blue ice and snow in Antarctica, icebergs, sparkling sea, pale blue sky. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "penguin",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-giraffe",
+      "prompt": "A tall spotted giraffe stretching its long neck to eat leaves from a flat-topped acacia tree on the savanna, blue sky with fluffy clouds. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "giraffe",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-lion",
+      "prompt": "A proud lion with a big golden mane sitting on a rock above the savanna, warm golden sunset, tall grass. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "lion",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-panda",
+      "prompt": "A cute black and white giant panda sitting and munching green bamboo in a misty bamboo forest. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "panda",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-dinosaur",
+      "prompt": "A big friendly green dinosaur, a tyrannosaurus with tiny arms, stomping through a prehistoric jungle with ferns, a smoking volcano far behind. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "dinosaur",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-unicorn",
+      "prompt": "A white unicorn with a spiral golden horn and a rainbow mane galloping across a meadow of flowers, a rainbow and sparkles in the sky. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "unicorn",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-robot",
+      "prompt": "A friendly shiny silver and blue robot with round glowing eyes, antenna and big metal hands, waving in a bright futuristic workshop. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "robot",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-balloon",
+      "prompt": "A big colourful striped hot air balloon with a wicker basket floating high over green patchwork fields and hills, blue sky with clouds. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "balloon",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-train",
+      "prompt": "A bright red steam train puffing white smoke crossing a stone bridge over a valley, green hills and mountains. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "train",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-submarine",
+      "prompt": "A bright yellow submarine with round portholes and a periscope exploring a deep blue coral reef with colourful fish and bubbles. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "submarine",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-helicopter",
+      "prompt": "A red rescue helicopter with spinning rotor blades flying over snowy mountains, clear blue sky. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "helicopter",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-snowman",
+      "prompt": "A happy snowman with a carrot nose, coal buttons, a red scarf and a top hat in a snowy garden, snowflakes falling, pine trees. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "snowman",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-pyramid",
+      "prompt": "Three huge sandy stone pyramids in a golden desert under a hot blue sky, camels walking past, sand dunes. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "pyramid",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-windmill",
+      "prompt": "An old Dutch windmill with four big sails standing in fields of bright red, yellow and pink tulips, a canal, blue sky. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "windmill",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-cupcake",
+      "prompt": "A giant cupcake with swirly pink frosting, rainbow sprinkles and a cherry on top, in a colourful bakery window display with other cakes. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "cupcake",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-icecream",
+      "prompt": "A giant ice cream cone with three scoops of strawberry, chocolate and mint, dripping, with sprinkles, at a sunny beach. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "icecream",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-pizza",
+      "prompt": "A giant round pizza with melted cheese, red pepperoni, green peppers and mushrooms on a wooden board in a cosy pizzeria with a brick oven. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "pizza",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-sunflower",
+      "prompt": "A field of giant bright yellow sunflowers with big brown centres facing the sun, blue sky, bees flying. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "sunflower",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-cactus",
+      "prompt": "A tall green saguaro cactus with arms and pink flowers in a red rocky desert at sunset, smaller cacti around. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "cactus",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-butterfly",
+      "prompt": "A huge colourful butterfly with bright blue and orange patterned wings resting on a purple flower in a sunny garden. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "butterfly",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-beehive",
+      "prompt": "A golden dripping beehive hanging from a tree branch with busy striped bees flying around, honeycomb, flowers below. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "beehive",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-turtle",
+      "prompt": "A green sea turtle with a patterned shell swimming over a bright coral reef, sunbeams through clear turquoise water, small fish. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "turtle",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-shark",
+      "prompt": "A big grey shark with a pointed fin and a friendly toothy grin swimming in deep blue ocean, a school of small silver fish, light rays. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "shark",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-owl",
+      "prompt": "A wise brown owl with huge round orange eyes perched on a tree branch at night, a big full moon behind, stars. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "owl",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-frog",
+      "prompt": "A bright green frog with big eyes sitting on a lily pad in a pond, pink water lilies, dragonflies, reeds. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "frog",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-tractor",
+      "prompt": "A big shiny red farm tractor with huge black wheels ploughing a field, a red barn and hay bales behind, sunny sky. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "tractor",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-fireengine",
+      "prompt": "A bright red fire engine with a long silver ladder and flashing lights, a firefighter hose spraying water, a city street. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "fireengine",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-guitar",
+      "prompt": "A shiny wooden acoustic guitar with strings and a round sound hole leaning on a stool on a stage with colourful spotlights and music notes in the air. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "guitar",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "mural-pumpkin",
+      "prompt": "A big orange pumpkin with a curly green stalk in a pumpkin patch with vines and leaves, autumn trees, a scarecrow far behind. The subject is big and fills most of the frame, clear bold shapes and bright distinct colours across the whole picture, so even a small part of it gives a clue. Wide landscape picture.",
+      "size": [
+        1536,
+        1024
+      ],
+      "kind": "scene",
+      "folder": "mural",
+      "file": "pumpkin",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
     }
   ],
   "_cutouts": "Paint cut-outs (kind cut) with style c on plain white, then rembg in tidy; scenes with style s."
