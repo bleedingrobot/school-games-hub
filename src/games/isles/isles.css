@@ -147,7 +147,7 @@
 .si-more { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; position: relative; z-index: 300; }
 .si-more__spot { min-height: 44px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; font: inherit; }
 /* Decorations, free places to put one, islanders strolling about, and coins popping off at the collect. */
-.si-decor { position: absolute; width: 13%; min-width: 40px; transform: translate(-50%, -85%); pointer-events: none; display: flex; justify-content: center; }
+.si-decor { position: absolute; width: 11%; min-width: 40px; transform: translate(-50%, -85%); pointer-events: none; display: flex; justify-content: center; }
 .si-decor__pic { position: relative; z-index: 1; width: 100%; display: flex; justify-content: center; transform-origin: 50% 100%; animation: si-sway 4s ease-in-out infinite alternate; }
 .si-decor img { width: 100%; display: block; filter: drop-shadow(0 3px 3px rgba(40, 60, 20, 0.4)) drop-shadow(0 0 6px rgba(255, 240, 180, 0.8)); }
 .si-decor__drawn { font-size: clamp(2rem, 5.5vw, 3.4rem); line-height: 1; filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 6px rgba(255, 240, 180, 0.9)); }
@@ -156,6 +156,16 @@
 .si-decor__twinkle:nth-of-type(3) { left: -12%; top: 8%; }
 .si-decor__twinkle:nth-of-type(4) { right: -14%; top: 30%; width: 20%; }
 .si-decor__twinkle:nth-of-type(5) { left: 40%; top: -22%; width: 18%; }
+/* The hot-air balloon: up in the sky beside the island, on a rope to its spot; the whole thing swings round the stake. */
+.si-balloon, .si-balloon__swing { position: absolute; inset: 0; pointer-events: none; }
+.si-balloon__swing { animation: si-tether 5s ease-in-out infinite alternate; }
+.si-balloon__stake { position: absolute; width: 4%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(circle, #7a4a22 0 22%, transparent 26%); }
+.si-balloon__stake .si-decor__halo { bottom: auto; top: 50%; width: 260%; transform: translate(-50%, -50%); animation: none; opacity: 0.8; }
+.si-balloon__rope { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.si-balloon__rope path { fill: none; stroke: #6b4423; stroke-width: 2px; stroke-linecap: round; filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.5)); }
+.si-balloon__pic { position: absolute; width: 8%; min-width: 34px; transform: translate(-50%, -100%); }
+.si-balloon__pic img { width: 100%; display: block; filter: drop-shadow(0 6px 8px rgba(40, 60, 90, 0.35)); }
+@keyframes si-tether { from { transform: rotate(-2.5deg); } to { transform: rotate(2deg); } }
 @keyframes si-sway { from { transform: rotate(-3deg) translateY(0); } to { transform: rotate(3deg) translateY(-3%); } }
 @keyframes si-halo { from { opacity: 0.7; transform: translate(-50%, 30%) scale(0.92); } to { opacity: 1; transform: translate(-50%, 30%) scale(1.08); } }
 @keyframes si-twinkle { 0%, 100% { opacity: 0; transform: scale(0.3) rotate(0); } 45% { opacity: 1; transform: scale(1) rotate(45deg); } 60% { opacity: 0.9; } }
@@ -341,7 +351,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .si-spot--up img, .si-spot__up, .si-upgrade-pick__arrow, .si-drift, .si-lit, .si-walker, .si-pop, .si-pop__sparks > span, .si-pop__sparks > .si-pop__fall, .si-spot--counting img, .si-after, .si-counting__dots span, .si-decor__pic, .si-decor__halo, .si-decor__twinkle { animation: none; }
+  .si-spot--up img, .si-spot__up, .si-upgrade-pick__arrow, .si-drift, .si-lit, .si-walker, .si-pop, .si-pop__sparks > span, .si-pop__sparks > .si-pop__fall, .si-spot--counting img, .si-after, .si-counting__dots span, .si-decor__pic, .si-decor__halo, .si-decor__twinkle, .si-balloon__swing { animation: none; }
   .si-decor__twinkle { opacity: 0.85; }
   .si-counting { display: none; }
   .si-pop { transform: translate(-50%, -150%); }

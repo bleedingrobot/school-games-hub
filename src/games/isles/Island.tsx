@@ -43,7 +43,7 @@ export function Card({ art, alt = '', className }: { art: { wide?: string; small
 }
 
 /** How wide a building is drawn, as a share of the base's width: smaller on the bigger bases, bigger at higher levels. */
-const BUILDING_WIDTH = [19, 16, 15, 13, 12];
+const BUILDING_WIDTH = [16, 13.5, 12.5, 11, 10];
 const LEVEL_GROWTH = [0.8, 1, 1.14, 1.3];
 /** Seconds between one building's coins and the next at the collect, so they're counted one at a time. */
 export const POP_GAP = 0.55;
@@ -69,6 +69,14 @@ export const spotName = (kind: PlotOrEmpty, level: number) => (kind === 'empty' 
 
 /** How many little islanders stroll about: more islanders, more walkers, up to 8. */
 export const walkerCount = (islanders: number) => Math.min(8, Math.max(1, Math.floor(islanders / 15)));
+
+/**
+ * The hot-air balloon floats in the sky beside the island, tied by a rope to the place it was put (James, 24 Nov 2026:
+ * "float next to the island and be tethered to the spot it was built"). Basket on the nearer side, above the spot.
+ */
+export function balloonFloat(x: number, y: number): { x: number; y: number } {
+  return { x: x < 50 ? 1 : 99, y: Math.min(30, Math.max(17, y - 20)) };
+}
 
 /** Where decoration place n is: on the island's base, or (past the base's places) in the sky garden. */
 function placeAt(base: number, place: number): { garden: boolean; x: number; y: number } {
@@ -157,6 +165,27 @@ export function IslandPicture({
 
   const decorPicture = (d: (typeof decor)[number]) => {
     const name = decoration(d.id)?.name ?? 'Decoration';
+    if (d.id === 'balloon' && !d.at.garden) {
+      const { x, y } = d.at;
+      const to = balloonFloat(x, y);
+      // The rope sags a little between the stake and the basket.
+      const sag = { x: (x + to.x) / 2, y: Math.max(y, to.y) + 4 };
+      return (
+        <span key={`d${d.i}`} className="si-balloon" style={{ zIndex: 140 }} role="img" aria-label={name}>
+          <span className="si-balloon__stake" style={{ left: `${x}%`, top: `${y}%` }} aria-hidden="true">
+            <span className="si-decor__halo" />
+          </span>
+          <span className="si-balloon__swing" style={{ transformOrigin: `${x}% ${y}%`, animationDelay: `${-(d.i % 5) * 0.8}s` }}>
+            <svg className="si-balloon__rope" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              <path d={`M${x} ${y} Q${sag.x} ${sag.y} ${to.x} ${to.y - 0.5}`} vectorEffect="non-scaling-stroke" />
+            </svg>
+            <span className="si-balloon__pic" style={{ left: `${to.x}%`, top: `${to.y}%` }}>
+              <Art src={decorArt(d.id)} fallback={<span className="si-decor__drawn" aria-hidden="true">{DECOR_EMOJI[d.id]}</span>} />
+            </span>
+          </span>
+        </span>
+      );
+    }
     return (
       <span key={`d${d.i}`} className="si-decor" style={{ left: `${d.at.x}%`, top: `${d.at.y}%`, zIndex: Math.round(d.at.y) + 10 }} role="img" aria-label={name}>
         {/* A decoration makes its corner of the island glow and twinkle (James: "a much bigger effect on the island"). */}
