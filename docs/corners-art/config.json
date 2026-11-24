@@ -572,7 +572,7 @@
     },
     {
       "name": "back-snow",
-      "prompt": "A wide backdrop painting: a wide cosy snowy mountain village at twilight, pine forests, glowing hut windows, soft falling snow, distant mountains, northern lights, deep blue and violet sky. The middle is calm, darker and softer (a game board will sit on top of it), with the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "prompt": "A wide backdrop painting: a wide cosy snowy mountain village at twilight, pine forests, glowing hut windows, soft falling snow, distant mountains, northern lights, deep blue and violet sky. The middle is calm, darker and softer, an empty open middle with nothing in it, just plain soft snowy ground, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
       "size": [
         1920,
         1088
@@ -584,7 +584,7 @@
     },
     {
       "name": "back-jungle",
-      "prompt": "A wide backdrop painting: a wide lush jungle valley around an ancient overgrown temple at golden hour, waterfalls, giant leaves and vines, misty light rays, deep greens. The middle is calm, darker and softer (a game board will sit on top of it), with the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "prompt": "A wide backdrop painting: a wide lush jungle valley around an ancient overgrown temple at golden hour, waterfalls, giant leaves and vines, misty light rays, deep greens. The middle is calm, darker and softer, an empty open middle with nothing in it, just a soft grassy clearing, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
       "size": [
         1920,
         1088
@@ -596,7 +596,7 @@
     },
     {
       "name": "back-castle",
-      "prompt": "A wide backdrop painting: a wide friendly haunted castle hall at night, purple moonlight through tall windows, cute candles, banners, cobwebs, soft fog, cosy and spooky not scary. The middle is calm, darker and softer (a game board will sit on top of it), with the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "prompt": "A wide backdrop painting: a wide friendly haunted castle hall at night, purple moonlight through tall windows, cute candles, banners, cobwebs, soft fog, cosy and spooky not scary. The middle is calm, darker and softer, an empty open middle with nothing in it, just a plain dim stone floor, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
       "size": [
         1920,
         1088
@@ -608,7 +608,7 @@
     },
     {
       "name": "back-space",
-      "prompt": "A wide backdrop painting: a wide view from a bright space station window, a colourful planet with rings, nebula, stars, sleek station struts framing the edges, deep blue and magenta. The middle is calm, darker and softer (a game board will sit on top of it), with the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "prompt": "A wide backdrop painting: a wide view from a bright space station window, a colourful planet with rings, nebula, stars, sleek station struts framing the edges, deep blue and magenta. The middle is calm, darker and softer, an empty open middle with nothing in it, just plain dark starry space, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
       "size": [
         1920,
         1088
