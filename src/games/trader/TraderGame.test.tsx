@@ -69,9 +69,15 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
     await market();
     const hud = screen.getByTitle('Your credits');
     const before = Number(within(hud).getByText(/\d/).textContent?.replace(/,/g, ''));
-    const row = screen.getAllByRole('row').find((r) => within(r).queryByLabelText(/^Buy one Water$/));
-    if (!row) throw new Error('no water row');
-    fireEvent.click(within(row).getByLabelText('Buy one Water'));
+    // A late landing redraw can wipe the pick before Trade (about 1 run in 6), so pick until it shows.
+    await waitFor(() => {
+      if (screen.queryByText(/Nothing picked yet/)) {
+        const row = screen.getAllByRole('row').find((r) => within(r).queryByLabelText(/^Buy one Water$/));
+        if (!row) throw new Error('no water row');
+        fireEvent.click(within(row).getByLabelText('Buy one Water'));
+      }
+      expect(screen.queryByText(/Nothing picked yet/)).toBeNull();
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Trade' }));
     await waitFor(() => {
       // A maths check can come up (it can open a moment after Trade); skip it.
