@@ -59,42 +59,50 @@ export interface Y78Row {
 }
 
 const CARDS: {
+  /** The card's name, for the teacher's Year 7–8 page. */
+  name: string;
   families: Record<string, Family>;
   keys: Record<string, readonly string[]>;
   slow: readonly string[];
   ladder: readonly Y78Row[];
 }[] = [
   {
+    name: 'Negative numbers',
     families: INTEGER_FAMILIES,
     keys: INTEGER_SKILL_KEYS,
     slow: INTEGER_SLOW_KEYS,
     ladder: INTEGER_LADDER,
   },
   {
+    name: 'Powers, primes and factors',
     families: POWER_FAMILIES,
     keys: POWER_SKILL_KEYS,
     slow: POWER_SLOW_KEYS,
     ladder: POWER_LADDER,
   },
   {
+    name: 'Decimals, fractions, percentages, ratio and money',
     families: NUMFACT_FAMILIES,
     keys: NUMFACT_SKILL_KEYS,
     slow: NUMFACT_SLOW_KEYS,
     ladder: NUMFACT_LADDER,
   },
   {
+    name: 'Algebra',
     families: ALGEBRA_FAMILIES,
     keys: ALGEBRA_SKILL_KEYS,
     slow: ALGEBRA_SLOW_KEYS,
     ladder: ALGEBRA_LADDER,
   },
   {
+    name: 'Measurement and angles',
     families: MEASURE_FAMILIES,
     keys: MEASURE_SKILL_KEYS,
     slow: MEASURE_SLOW_KEYS,
     ladder: MEASURE_LADDER,
   },
   {
+    name: 'Averages and chance',
     families: DATA_FAMILIES,
     keys: DATA_SKILL_KEYS,
     slow: DATA_SLOW_KEYS,
@@ -119,3 +127,6 @@ export const Y78_LADDER: readonly Y78Row[] = [
 export const Y78_TINY: Record<string, string> = Object.fromEntries(
   rows.map((r) => [r.id, r.tiny]),
 );
+
+/** The Year 7-8 skills card by card, for the teacher's "Taught" switches (src/teacher/Year78.tsx). */
+export const Y78_GROUPS: readonly { name: string; skills: readonly Y78Row[] }[] = CARDS.map((c) => ({ name: c.name, skills: c.ladder }));

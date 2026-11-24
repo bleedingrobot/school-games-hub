@@ -73,16 +73,25 @@ describe('Year 7 and 8 skills', () => {
     }
   });
 
-  it('"Stop at Year 6" keeps a pupil off Year 7 and 8: none asked, none counted', () => {
-    // A pupil placed just past the Year 6 top: their next skill is the first Year 7 one, unless they are stopped at Year 6.
+  it('Year 7-8 skills are only asked once the class is taught them, and never for a pupil stopped at Year 6', () => {
+    // A pupil placed just past the Year 6 top.
     const floor = LADDER.indexOf(Y78[0]);
     expect(LADDER[floor - 1].id).toBe('bedmas');
-    const open = ladderProgress([], { floor });
-    const capped = ladderProgress([], { floor, capAtYear6: true });
-    expect(open.skills.find((p) => p.skill.id === Y78[0].id)?.status).toBe('current');
-    for (const p of capped.skills.filter((p) => pastYear6(p.skill))) expect(p.status, p.skill.id).toBe('later');
-    const asked = (pools: ReturnType<typeof autoPools>) => [...pools.focus, ...pools.review, ...pools.stretch];
-    expect(asked(autoPools(open)).some((k) => KEYS.includes(k))).toBe(true);
-    expect(asked(autoPools(capped)).some((k) => KEYS.includes(k))).toBe(false);
+    const first = Y78[0].id;
+    const later = (opts: Parameters<typeof ladderProgress>[1]) => ladderProgress([], { floor, ...opts }).skills.filter((p) => pastYear6(p.skill) && p.status !== 'later').map((p) => p.skill.id);
+    const asked = (opts: Parameters<typeof ladderProgress>[1]) => {
+      const pools = autoPools(ladderProgress([], { floor, ...opts }), opts);
+      return [...pools.focus, ...pools.review, ...pools.stretch];
+    };
+    // Nothing taught: no Year 7-8 skill is on the path or asked.
+    expect(later({})).toEqual([]);
+    expect(asked({}).some((k) => KEYS.includes(k))).toBe(false);
+    // Taught: only that skill, and it is the next one.
+    expect(later({ y78Taught: [first] })).toEqual([first]);
+    expect(ladderProgress([], { floor, y78Taught: [first] }).current?.id).toBe(first);
+    expect(asked({ y78Taught: [first] }).filter((k) => KEYS.includes(k)).every((k) => Y78[0].keys.includes(k))).toBe(true);
+    // Stopped at Year 6 wins over taught.
+    expect(later({ y78Taught: Y78.map((s) => s.id), capAtYear6: true })).toEqual([]);
+    expect(asked({ y78Taught: Y78.map((s) => s.id), capAtYear6: true }).some((k) => KEYS.includes(k))).toBe(false);
   });
 });

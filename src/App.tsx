@@ -42,6 +42,7 @@ const HardestQuestions = lazy(() => import('./teacher/Hardest').then((m) => ({ d
 const TeacherShowdown = lazy(() => import('./pages/TeacherShowdown').then((m) => ({ default: m.TeacherShowdown })));
 const TeacherClassLive = lazy(() => import('./pages/TeacherClassLive').then((m) => ({ default: m.TeacherClassLive })));
 const TeacherQuests = lazy(() => import('./quests/TeacherQuests').then((m) => ({ default: m.TeacherQuests })));
+const Year78Taught = lazy(() => import('./teacher/Year78').then((m) => ({ default: m.Year78Taught })));
 const TeacherGames = lazy(() => import('./teacher/Games').then((m) => ({ default: m.TeacherGames })));
 const AdminYear = lazy(() => import('./teacher/AdminYear').then((m) => ({ default: m.AdminYear })));
 const Today = lazy(() => import('./teacher/Today').then((m) => ({ default: m.Today })));
@@ -104,6 +105,7 @@ export function teacherRoutes() {
           <Route path="skips" element={<Suspense fallback={loading}><QuestionSkipsPanel /></Suspense>} />
           <Route path="hardest" element={<HardestQuestions />} />
           <Route path="foundational" element={<Suspense fallback={loading}><FoundationalSkills /></Suspense>} />
+          <Route path="year78" element={<Suspense fallback={loading}><Year78Taught /></Suspense>} />
         </Route>
         <Route path="games" element={<TeacherGames />}>
           {/* A game's settings: a drawer over the table on a wide screen, its own page on a narrow one. */}

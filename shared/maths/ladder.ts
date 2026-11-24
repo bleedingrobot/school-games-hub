@@ -272,10 +272,19 @@ export interface LadderOptions {
    * show as 'later', never count, and are never focus, review or stretch. A teacher's focus can still name them.
    */
   capAtYear6?: boolean;
+  /**
+   * The Year 7 and 8 skills the pupil's class has been taught (James, 25 Nov 2026: the teacher's "Taught" switches on the
+   * Maths > Year 7–8 page). Any Year 7-8 skill not listed is off auto like a capped pupil's. Not set = none taught.
+   */
+  y78Taught?: readonly string[];
 }
 
 /** A Year 7 or 8 skill, left out for a pupil stopped at Year 6. */
 export const pastYear6 = (skill: LadderSkill) => (skill.year ?? 0) >= 7;
+
+/** A Year 7 or 8 skill this pupil doesn't get on auto: stopped at Year 6, or their class hasn't been taught it yet. */
+export const offY78 = (skill: LadderSkill, opts: Pick<LadderOptions, 'capAtYear6' | 'y78Taught'>) =>
+  pastYear6(skill) && (opts.capAtYear6 === true || !(opts.y78Taught ?? []).includes(skill.id));
 
 /** The skills a focus names, and whether earlier skills are left out ("only these"). */
 export interface FocusSpec {
@@ -330,7 +339,7 @@ export function ladderProgress(stats: Iterable<FactStats>, opts: LadderOptions =
   let builtCount = 0;
   const floor = Math.max(opts.floor ?? 0, tablesJumpFloor(byKey, enabled));
   const skills: SkillProgress[] = LADDER.map((skill, index) => {
-    if (!skill.built || (opts.capAtYear6 && pastYear6(skill))) return { skill, status: 'later' as const, share: 0 };
+    if (!skill.built || offY78(skill, opts)) return { skill, status: 'later' as const, share: 0 };
     const keys = activeKeys(skill, enabled, opts.division !== false);
     if (keys.length === 0) return { skill, status: 'upcoming' as const, share: 1 };
     const share = keys.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / keys.length;

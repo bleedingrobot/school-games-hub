@@ -10,7 +10,7 @@ import { parseFactKey } from './facts';
 import type { FactStats } from './leitner';
 import { isBondPairKey } from './skillPacks/bondPairs';
 import { AutoPack, currentSkillIds, FOCUS_PACKS, focusSkills, FORMER_SKILLS, ladderKeyPacks, LADDER, packIdOfKey, type FocusPackId, type FocusSpec } from './ladder';
-import { floorRank, NO_LADDER, parseLadderInfo, type LadderInfo } from './place';
+import { floorRank, NO_LADDER, parseLadderInfo, y78Options, type LadderInfo } from './place';
 import type { SkillPack } from './skillPack';
 import { solveArray, solveCounting, solveEquals, solveLine, solveOddEven, solvePart, solveSkip } from './skillPacks/earlyFacts';
 import { solveGenerated } from './skillPacks/generated';
@@ -81,7 +81,7 @@ export const focusKey = (focus: MathsFocus | null | undefined) =>
   hasFocus(focus)
     ? `${focus.source}|${focus.onlyThese ? 'only' : 'mix'}|${[...focus.skills].sort().join(',')}`
     : usesLadder(focus)
-      ? `ladder|${floorRank(ladderOf(focus))}${ladderOf(focus).capped ? '|y6' : ''}`
+      ? `ladder|${floorRank(ladderOf(focus))}${ladderOf(focus).capped ? '|y6' : ''}|${(ladderOf(focus).taught ?? []).join(',')}`
       : 'auto';
 
 /** What the student and teacher see for a skill. */
@@ -207,7 +207,7 @@ export function makeFocusPack(stats: FactStats[], focus: MathsFocus | null | und
       enabledTables: opts.enabledTables,
       division: opts.division,
       floor: floorRank(ladderOf(focus)),
-      ...(ladderOf(focus).capped ? { capAtYear6: true } : {}),
+      ...y78Options(ladderOf(focus)),
     });
   if (!hasFocus(focus)) return new TimesTables(stats.filter((s) => parseFactKey(s.key)), random, now);
   const spec: FocusSpec = { skills: focus.skills, onlyThese: focus.onlyThese };

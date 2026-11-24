@@ -20,7 +20,7 @@ import {
   type LadderOptions,
   type LadderProgress,
   type LadderSkill,
-  pastYear6,
+  offY78,
 } from "./ladder";
 import type { Question } from "./skillPack";
 
@@ -37,6 +37,8 @@ export interface LadderInfo {
   furthest: string | null;
   /** "Stop at Year 6": the teacher keeps Year 7 and 8 skills off auto for this pupil (ladder.ts `capAtYear6`). */
   capped?: boolean;
+  /** The Year 7-8 skills the pupil's class has been taught (ladder.ts `y78Taught`). Missing = none. */
+  taught?: string[];
 }
 
 export const NO_LADDER: LadderInfo = {
@@ -75,6 +77,7 @@ export function parseLadderInfo(raw: unknown): LadderInfo {
     furthest: skillId(r.furthest),
     ...(yearLevel !== null ? { yearLevel } : {}),
     ...(r.capped === true ? { capped: true } : {}),
+    ...(Array.isArray(r.taught) ? { taught: r.taught.filter((t): t is string => typeof t === "string" && ID.test(t)).slice(0, 60) } : {}),
   };
 }
 
@@ -83,6 +86,12 @@ const builtSkills = () => LADDER.filter((s) => s.built);
 const warmUpSkills = () => builtSkills().filter((s) => s.inWarmUp !== false);
 const indexOfSkill = (id: string | null) =>
   id ? LADDER.findIndex((s) => s.id === id) : -1;
+
+/** The Year 7-8 options a pupil's ladder facts give: stopped at Year 6, and what their class has been taught. */
+export const y78Options = (info: LadderInfo): Pick<LadderOptions, "capAtYear6" | "y78Taught"> => ({
+  ...(info.capped ? { capAtYear6: true } : {}),
+  y78Taught: info.taught ?? [],
+});
 
 /** The floor under a student's place: an index into `LADDER`. */
 export function floorRank(info: LadderInfo): number {
@@ -96,7 +105,7 @@ export function placeProgress(
   info: LadderInfo,
   opts: LadderOptions = {},
 ): LadderProgress {
-  return ladderProgress(stats, { ...opts, floor: floorRank(info), ...(info.capped ? { capAtYear6: true } : {}) });
+  return ladderProgress(stats, { ...opts, floor: floorRank(info), ...y78Options(info) });
 }
 
 /** The furthest place to keep: where they are now, or the last built skill once all of them are secure. */
@@ -108,7 +117,7 @@ export function placeToStore(
   const progress = placeProgress(stats, info, opts);
   // All done: the last skill they can reach (a pupil stopped at Year 6 tops out at the Year 6 top, so un-ticking it later
   // doesn't count the Year 7 and 8 skills as passed).
-  const skill = progress.current ?? builtSkills().filter((s) => !info.capped || !pastYear6(s)).at(-1) ?? null;
+  const skill = progress.current ?? builtSkills().filter((s) => !offY78(s, y78Options(info))).at(-1) ?? null;
   return skill ? { skill: skill.id, rank: LADDER.indexOf(skill) } : null;
 }
 
