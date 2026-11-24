@@ -3,8 +3,8 @@
  * time, chosen by what is on screen: the picker and lobby, each game, Mystery Mural's guessing time, and each Class
  * Showdown arena. Tracks cross-fade when the screen changes. Only the projector plays music, never pupils' devices.
  *
- * The tracks are CC0 from OpenGameArt (music/CREDITS.json has each title, author and page), loudness-matched to about
- * -18 LUFS. The teacher turns music on or off and sets its volume (kept on this computer); the Sound off button
+ * The tracks are original, made on James's PC with a local music model (ACE-Step in ComfyUI, 25 Nov 2026 NZ; prompts
+ * and seeds in music/MAKING.json), about -18 LUFS calm and -16 LUFS hot. The teacher turns music on or off and sets its volume (kept on this computer); the Sound off button
  * silences it too.
  */
 import { useEffect, useRef, useSyncExternalStore } from 'react';
@@ -107,10 +107,31 @@ class Player {
     const url = t ? trackUrl(t) : undefined;
     if (!t || !url || typeof Audio === 'undefined') return;
     const el = new Audio(url);
-    el.loop = true;
     el.volume = 0;
     this.el = el;
+    this.chain(el, t, url);
     start(el, () => fade(el, settings.volume), () => this.afterTap());
+  }
+
+  /**
+   * Seamless looping: the tracks fade in and out at their ends, so a fresh copy starts 1.5 s before the end and the
+   * two overlap (a plain loop would dip in volume every time round).
+   */
+  private chain(el: HTMLAudioElement, t: Track, url: string) {
+    let passed = false;
+    const tick = () => {
+      if (passed || !Number.isFinite(el.duration) || el.currentTime < el.duration - 1.5) return;
+      passed = true;
+      el.removeEventListener('timeupdate', tick);
+      if (this.el !== el || this.track !== t) return;
+      const next = new Audio(url);
+      next.volume = el.volume;
+      this.el = next;
+      this.chain(next, t, url);
+      start(next, () => fade(next, settings.volume), () => undefined);
+      el.addEventListener('ended', () => { el.src = ''; }, { once: true });
+    };
+    el.addEventListener('timeupdate', tick);
   }
 
   /** Browsers only start sound after a tap or key: try again on the next one. */
