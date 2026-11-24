@@ -1,7 +1,8 @@
 /**
  * Mystery Mural, the pupil's screen (docs/CLASSLIVE-PLAN.md section 4): answer a maths question (the shared QuestionModal,
  * marked on the server), wait for the ring to fill, and every right answer flips a tile at random; the pupil sees the tiles they
- * flipped on their own little mural. When the time is up, they get one guess, picking from six riddles. Never shows anyone else's results.
+ * flipped on their own little mural, and every tile the class has opened shows the picture too (theirs edged in gold).
+ * When the time is up, they get one guess, picking from six riddles. Never shows anyone else's names or scores.
  *
  * The server's `nextAt` is in session time (ms since the room started), so the wait is worked out from the `now` the
  * server sent back and the room's `startedAt`.
@@ -41,15 +42,16 @@ function WaitRing({ ms, onDone }: { ms: number; onDone: () => void }) {
   );
 }
 
-/** The pupil's own little mural: the picture shows only through the tiles they flipped (newest one glows). */
-function MyMural({ picture, tiles }: { picture: Picture; tiles: number[] }) {
+/** The pupil's little mural: the picture shows through every tile the class opened; their own are edged in gold (newest glows). */
+function MyMural({ picture, tiles, open }: { picture: Picture; tiles: number[]; open: string }) {
   const mine = new Set(tiles);
   const newest = tiles.length ? tiles[tiles.length - 1] : -1;
+  const opened = Math.max(tiles.length, [...open].filter((c) => c === '1').length);
   return (
-    <div className="cl-m-mine" aria-label={`Your ${tiles.length} ${tiles.length === 1 ? 'tile' : 'tiles'} of the picture`}>
+    <div className="cl-m-mine" aria-label={`${opened} of ${TILES} tiles open, ${tiles.length} of them yours`}>
       <MuralPicture id={picture} small />
       <div className="cl-m-mine__grid" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)`, gridTemplateRows: `repeat(${ROWS}, 1fr)` }} aria-hidden="true">
-        {Array.from({ length: TILES }, (_, i) => <i key={i} className={mine.has(i) ? (i === newest ? 'is-mine is-new' : 'is-mine') : ''} />)}
+        {Array.from({ length: TILES }, (_, i) => <i key={i} className={mine.has(i) ? (i === newest ? 'is-mine is-new' : 'is-mine') : open[i] === '1' ? 'is-open' : ''} />)}
       </div>
     </div>
   );
@@ -190,7 +192,7 @@ export function MuralPad({ link, room, view, me, setMe, setView }: { link: Class
 
   const myTiles = mg?.myTiles ?? [];
   const picture = mg?.picture ?? null;
-  const mural = picture ? <MyMural picture={picture} tiles={myTiles} /> : null;
+  const mural = picture ? <MyMural picture={picture} tiles={myTiles} open={pub?.tiles ?? ''} /> : null;
 
   if (view.state === 'over' || pub?.revealed) {
     const pic = pub?.picture ?? null;
