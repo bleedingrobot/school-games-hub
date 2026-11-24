@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { batchIdFor, recordMathsAnswers, type RpcWithData } from './recordAnswers';
 
+vi.mock('../../../shared/maths/slow', () => ({ SLOW_KEYS: new Set(['square:of']), quickMsForKey: (_k: string, base: number) => Math.max(12000, base) }));
+
 const tables = { key: 'mul:6x7', correct: true, ms: 1000, at: 5 };
 
 afterEach(() => vi.restoreAllMocks());
@@ -36,4 +38,11 @@ describe('saving marked maths answers', () => {
     expect(new Set(saves.map((a) => a.batch_id)).size).toBe(saves.length);
   });
 
+  it('two-step types save in a batch of their own, with 12 seconds to be quick', async () => {
+    const db = fakeDb();
+    await recordMathsAnswers(db, 'student-1', [tables, { key: 'square:of', correct: true, ms: 11000, at: 5 }], 'seed-3:0', 'marble');
+    const saves = db.mock.calls.filter(([name]) => name === 'record_fact_answers').map(([, a]) => a);
+    expect(saves.map((a) => a.quick_ms).sort()).toEqual([12000, 5000].sort());
+    expect(new Set(saves.map((a) => a.batch_id)).size).toBe(2);
+  });
 });

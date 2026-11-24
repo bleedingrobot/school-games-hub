@@ -1018,7 +1018,42 @@ function spokenFraction(part) {
 * One part or choice in words for a screen reader: "3/4" is "3 quarters", "25%" is "25 percent", "0.25" is "0 point 2 5".
 * Anything else is read as it is.
 */
+const SUPERSCRIPT = {
+	"⁰": "0",
+	"¹": "1",
+	"²": "2",
+	"³": "3",
+	"⁴": "4",
+	"⁵": "5",
+	"⁶": "6",
+	"⁷": "7",
+	"⁸": "8",
+	"⁹": "9",
+	"⁻": "-"
+};
+const UNITS = {
+	"mm²": "square millimetres",
+	"cm²": "square centimetres",
+	"m²": "square metres",
+	"km²": "square kilometres",
+	"mm³": "cubic millimetres",
+	"cm³": "cubic centimetres",
+	"m³": "cubic metres"
+};
+/**
+* Year 7-8 notation read aloud (24 Nov 2026): powers written with superscript digits (10⁴, 2⁻³), roots (√81, ∛64), degrees
+* and squared or cubed units. Text without any of these comes back unchanged.
+*/
+function spokenNotation(text) {
+	return text.replace(/(mm|cm|km|m)([²³])/g, (u) => ` ${UNITS[u] ?? u}`).replace(/(\S+?)([⁻]?[⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g, (_, base, sup) => {
+		const n = [...sup].map((c) => SUPERSCRIPT[c]).join("");
+		if (n === "2") return `${base} squared`;
+		if (n === "3") return `${base} cubed`;
+		return `${base} to the power of ${n.replace("-", "negative ")}`;
+	}).replace(/∛\s*/g, "the cube root of ").replace(/√\s*/g, "the square root of ").replace(/°/g, " degrees").replace(/\s+/g, " ").trim();
+}
 function spokenLabel(part) {
+	if (/[⁰¹²³⁴⁵⁶⁷⁸⁹√∛°]/.test(part)) return spokenNotation(part);
 	const percent = /^(\d+(?:\.\d+)?)%$/.exec(part);
 	if (percent) return `${spokenLabel(percent[1])} percent`;
 	if (/^\d+\.\d+$/.test(part)) {
@@ -1029,7 +1064,7 @@ function spokenLabel(part) {
 }
 /** The spoken version of a question's parts, for screen readers. */
 function speak(parts) {
-	const text = parts.map((p) => SPOKEN_WORDS[p] ?? (/^\d+(?:\.\d+)?%$/.test(p) ? spokenLabel(p) : p.includes("/") ? spokenFraction(p) : p.replace(/^\$/, "$"))).join(" ").replace(/\s+/g, " ").trim();
+	const text = parts.map((p) => SPOKEN_WORDS[p] ?? (/[⁰¹²³⁴⁵⁶⁷⁸⁹√∛°]/.test(p) ? spokenNotation(p) : /^\d+(?:\.\d+)?%$/.test(p) ? spokenLabel(p) : p.includes("/") ? spokenFraction(p) : p.replace(/^\$/, "$"))).join(" ").replace(/\s+/g, " ").trim();
 	return /[?.!:]$/.test(text) ? text : text + "?";
 }
 /** Same answer, allowing for floating-point dust (0.30000000000000004). */

@@ -1,0 +1,60 @@
+/**
+ * A small picture shown above a question (James, 24 Nov 2026: "small pictures from the start" for angle and shape questions).
+ *
+ * A figure only ever adds to a question: the question's `parts` (and `spoken`) always say everything needed to answer it, so a
+ * game that shows only the parts still works, and the server never has to check a picture. Labels are short strings: '50°',
+ * '6 cm', '?' (the thing asked, drawn highlighted) or '' (no label).
+ *
+ * src/maths/Figure.tsx draws these as SVG inside `QuestionModal`.
+ */
+export type Figure =
+  /** A triangle. `angles` are the corner labels, bottom-left, bottom-right, top. `equal` marks equal sides with ticks. */
+  | { kind: 'triangle'; angles: [string, string, string]; equal?: 'two' | 'three' }
+  /** Angles side by side on a straight line (2 or 3). */
+  | { kind: 'line'; angles: string[] }
+  /** Angles round a point (3 or 4), adding to 360°. */
+  | { kind: 'point'; angles: string[] }
+  /** Two straight lines crossing: `angles[0]` and `angles[1]` are vertically opposite. */
+  | { kind: 'crossing'; angles: [string, string] }
+  /** A right angle split in two. */
+  | { kind: 'right-angle'; angles: [string, string] }
+  /** A rectangle (or square) with its side labels, and a label inside (its area, or '?'). */
+  | { kind: 'rectangle'; width: string; height: string; inside?: string }
+  /** A triangle drawn with its base and dashed height. */
+  | { kind: 'triangle-area'; base: string; height: string; inside?: string }
+  | { kind: 'parallelogram'; base: string; height: string; inside?: string }
+  | { kind: 'trapezium'; top: string; bottom: string; height: string; inside?: string }
+  /** A box (rectangular prism) or cube; for a cube only `length` is labelled. */
+  | { kind: 'cuboid'; length: string; width: string; height: string; cube?: boolean }
+  | { kind: 'prism'; base: string; height: string; length: string }
+  | { kind: 'circle'; radius?: string; diameter?: string }
+  /** A regular polygon with one exterior angle marked. */
+  | { kind: 'polygon'; sides: number; label?: string }
+  /** Compass points: the turn from `from` to `to`, clockwise. */
+  | { kind: 'compass'; from: string; to: string };
+
+export type FigureKind = Figure['kind'];
+
+/** True when this looks like a figure the box can draw. Anything odd is dropped, never shown half-drawn. */
+export function isFigure(value: unknown): value is Figure {
+  if (!value || typeof value !== 'object') return false;
+  const kind = (value as { kind?: unknown }).kind;
+  return typeof kind === 'string' && FIGURE_KINDS.includes(kind as FigureKind);
+}
+
+export const FIGURE_KINDS: readonly FigureKind[] = [
+  'triangle',
+  'line',
+  'point',
+  'crossing',
+  'right-angle',
+  'rectangle',
+  'triangle-area',
+  'parallelogram',
+  'trapezium',
+  'cuboid',
+  'prism',
+  'circle',
+  'polygon',
+  'compass',
+];

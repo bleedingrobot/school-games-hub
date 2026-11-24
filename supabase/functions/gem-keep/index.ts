@@ -263,7 +263,42 @@ function spokenFraction(part) {
 * One part or choice in words for a screen reader: "3/4" is "3 quarters", "25%" is "25 percent", "0.25" is "0 point 2 5".
 * Anything else is read as it is.
 */
+const SUPERSCRIPT = {
+	"⁰": "0",
+	"¹": "1",
+	"²": "2",
+	"³": "3",
+	"⁴": "4",
+	"⁵": "5",
+	"⁶": "6",
+	"⁷": "7",
+	"⁸": "8",
+	"⁹": "9",
+	"⁻": "-"
+};
+const UNITS = {
+	"mm²": "square millimetres",
+	"cm²": "square centimetres",
+	"m²": "square metres",
+	"km²": "square kilometres",
+	"mm³": "cubic millimetres",
+	"cm³": "cubic centimetres",
+	"m³": "cubic metres"
+};
+/**
+* Year 7-8 notation read aloud (24 Nov 2026): powers written with superscript digits (10⁴, 2⁻³), roots (√81, ∛64), degrees
+* and squared or cubed units. Text without any of these comes back unchanged.
+*/
+function spokenNotation(text) {
+	return text.replace(/(mm|cm|km|m)([²³])/g, (u) => ` ${UNITS[u] ?? u}`).replace(/(\S+?)([⁻]?[⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g, (_, base, sup) => {
+		const n = [...sup].map((c) => SUPERSCRIPT[c]).join("");
+		if (n === "2") return `${base} squared`;
+		if (n === "3") return `${base} cubed`;
+		return `${base} to the power of ${n.replace("-", "negative ")}`;
+	}).replace(/∛\s*/g, "the cube root of ").replace(/√\s*/g, "the square root of ").replace(/°/g, " degrees").replace(/\s+/g, " ").trim();
+}
 function spokenLabel(part) {
+	if (/[⁰¹²³⁴⁵⁶⁷⁸⁹√∛°]/.test(part)) return spokenNotation(part);
 	const percent = /^(\d+(?:\.\d+)?)%$/.exec(part);
 	if (percent) return `${spokenLabel(percent[1])} percent`;
 	if (/^\d+\.\d+$/.test(part)) {
@@ -274,7 +309,7 @@ function spokenLabel(part) {
 }
 /** The spoken version of a question's parts, for screen readers. */
 function speak(parts) {
-	const text = parts.map((p) => SPOKEN_WORDS[p] ?? (/^\d+(?:\.\d+)?%$/.test(p) ? spokenLabel(p) : p.includes("/") ? spokenFraction(p) : p.replace(/^\$/, "$"))).join(" ").replace(/\s+/g, " ").trim();
+	const text = parts.map((p) => SPOKEN_WORDS[p] ?? (/[⁰¹²³⁴⁵⁶⁷⁸⁹√∛°]/.test(p) ? spokenNotation(p) : /^\d+(?:\.\d+)?%$/.test(p) ? spokenLabel(p) : p.includes("/") ? spokenFraction(p) : p.replace(/^\$/, "$"))).join(" ").replace(/\s+/g, " ").trim();
 	return /[?.!:]$/.test(text) ? text : text + "?";
 }
 /** Same answer, allowing for floating-point dust (0.30000000000000004). */
@@ -7203,6 +7238,20 @@ function ladderKeyPacks() {
 	return out;
 }
 //#endregion
+//#region shared/maths/slow.ts
+/**
+* Question types that take two steps (James, 24 Nov 2026: "12 seconds for two-step types"): 5s + 3 = 18, sharing in a ratio,
+* 20% off $45. A right answer within `SLOW_QUICK_MS` counts as quick for these, instead of the pack's 8 seconds. One-step
+* types keep the pack's quick time. Listed by mastery key (question type), so one skill can hold both kinds.
+*
+* Kept apart from untimed.ts on purpose: these are still timed, as recall is the point of the hub.
+*/
+const SLOW_QUICK_MS = 12e3;
+/** Mastery keys of two-step types. Each Year 7-8 card adds its own. */
+const SLOW_KEYS = new Set([]);
+/** The quick time for one answer's record: 12 s for a two-step type, otherwise the pack's own. */
+const quickMsForKey = (key, packQuickMs) => SLOW_KEYS.has(key) ? Math.max(SLOW_QUICK_MS, packQuickMs) : packQuickMs;
+//#endregion
 //#region shared/maths/place.ts
 /**
 * A student's place on the ladder (docs/MATHS-FOCUS-PLAN.md section 5). Two things set the floor under it:
@@ -7292,8 +7341,14 @@ function placementResult(steps) {
 	}
 	return built[Math.max(0, best - 1)];
 }
-/** Quick enough for the skill: its records' own quick time (a rounding or order-of-operations question gets longer than a fact). */
-const isQuick = (ms, skill) => ms <= quickMsForPack(skill?.keys[0] ? packIdOfKey(skill.keys[0]) : null);
+/**
+* Quick enough for the question: its records' own quick time (a rounding or order-of-operations question gets longer than a fact),
+* and 12 seconds for a two-step type (slow.ts) when the question's key is given.
+*/
+const isQuick = (ms, skill, key) => {
+	const pack = quickMsForPack(skill?.keys[0] ? packIdOfKey(skill.keys[0]) : null);
+	return ms <= (key ? quickMsForKey(key, pack) : pack);
+};
 //#endregion
 //#region shared/maths/focus.ts
 const AUTO_FOCUS = {
@@ -7569,7 +7624,7 @@ function checkPlacement(answers) {
 		steps.push({
 			skill: a.skill,
 			correct,
-			quick: correct && isQuick(a.ms, expected)
+			quick: correct && isQuick(a.ms, expected, solved.keys[0])
 		});
 	}
 	if (placementNext(steps) !== null) return null;

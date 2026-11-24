@@ -14,6 +14,8 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { spokenLabel } from '../../shared/maths/banded';
 import { hintFor } from '../../shared/maths/hint';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
+import { Figure } from './Figure';
+import { isFigure } from '../../shared/maths/figure';
 import { NumberPad } from './NumberPad';
 import { choiceForKey, useQuestionKeys } from './questionKeys';
 import { countAnswer, noteQuestion, questionOpened, spendSkip, spotFromTitle, STREAK_FROM, useSkipRule } from './questionLog';
@@ -50,9 +52,9 @@ function Part({ text, blank }: { text: string; blank: ReactNode }) {
       </span>
     );
   }
-  // A gap in a list ('?,' in 6, 8, ?, 12) keeps its comma after the blank.
-  const gap = /^\?([,;]?)$/.exec(text);
-  if (gap) return <>{blank}{gap[1]}</>;
+  // A gap in a list ('?,' in 6, 8, ?, 12) keeps its comma after the blank, and an angle ('?°') its degree sign.
+  const gap = /^\?([,;°]?)$/.exec(text);
+  if (gap) return <span className="question__gap">{blank}{gap[1]}</span>;
   if (/[a-z]/i.test(text)) return <span className="question__word">{text}</span>;
   return <span>{text}</span>;
 }
@@ -73,7 +75,7 @@ export function SkipsLeft({ left }: { left: number }) {
 }
 
 /** What the box needs of a question. `answer` is missing when the game's server keeps it secret until marked. */
-export type ShownQuestion = Pick<Question, 'id' | 'parts' | 'spoken' | 'prompt' | 'choices' | 'choiceLabels' | 'maxLength' | 'input'> & { answer?: number };
+export type ShownQuestion = Pick<Question, 'id' | 'parts' | 'spoken' | 'prompt' | 'choices' | 'choiceLabels' | 'maxLength' | 'input' | 'figure'> & { answer?: number };
 
 /**
  * A marked answer, plus what it earned, e.g. "+15 mana" (shown under "Correct!"). `answer` is
@@ -323,6 +325,7 @@ export function QuestionModal({
           {title}
         </h2>
         {note && <p className="question__note">{note}</p>}
+        {isFigure(question.figure) && <Figure figure={question.figure} />}
         {question.prompt && <p className="question__prompt">{question.prompt}</p>}
         <p ref={fact} className="question__fact" aria-label={question.spoken} data-long={question.parts.join('').length > 12 || undefined} data-one-line={oneLine || undefined}>
           {question.parts.map((part, i) => (

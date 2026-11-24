@@ -13,6 +13,7 @@
  * server can make the question again from its key and numbers to check an answer, without
  * trusting the browser's copy of the question.
  */
+import type { Figure } from './figure';
 import { CHOICES } from './config';
 import { afterAnswer, newStats, type FactAnswer, type FactStats } from './leitner';
 import { newMemory, pickFromPools, scheduleRepeat, type Pools, type QuestionContext, type SessionMemory } from './selector';
@@ -38,6 +39,8 @@ export interface Made {
   prompt?: string;
   /** The right answer in words, when filling in the blank doesn't say it ("3/4 is bigger than 2/3"). */
   fact?: string;
+  /** A small picture above the sum (figure.ts). The parts must still say everything needed to answer. */
+  figure?: Figure;
 }
 
 export interface Family {
@@ -144,7 +147,31 @@ export function spokenFraction(part: string): string {
  * One part or choice in words for a screen reader: "3/4" is "3 quarters", "25%" is "25 percent", "0.25" is "0 point 2 5".
  * Anything else is read as it is.
  */
+const SUPERSCRIPT: Record<string, string> = { '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9', '⁻': '-' };
+const UNITS: Record<string, string> = { 'mm²': 'square millimetres', 'cm²': 'square centimetres', 'm²': 'square metres', 'km²': 'square kilometres', 'mm³': 'cubic millimetres', 'cm³': 'cubic centimetres', 'm³': 'cubic metres' };
+
+/**
+ * Year 7-8 notation read aloud (24 Nov 2026): powers written with superscript digits (10⁴, 2⁻³), roots (√81, ∛64), degrees
+ * and squared or cubed units. Text without any of these comes back unchanged.
+ */
+export function spokenNotation(text: string): string {
+  return text
+    .replace(/(mm|cm|km|m)([²³])/g, (u) => ` ${UNITS[u] ?? u}`)
+    .replace(/(\S+?)([⁻]?[⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g, (_, base: string, sup: string) => {
+      const n = [...sup].map((c) => SUPERSCRIPT[c]).join('');
+      if (n === '2') return `${base} squared`;
+      if (n === '3') return `${base} cubed`;
+      return `${base} to the power of ${n.replace('-', 'negative ')}`;
+    })
+    .replace(/∛\s*/g, 'the cube root of ')
+    .replace(/√\s*/g, 'the square root of ')
+    .replace(/°/g, ' degrees')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function spokenLabel(part: string): string {
+  if (/[⁰¹²³⁴⁵⁶⁷⁸⁹√∛°]/.test(part)) return spokenNotation(part);
   const percent = /^(\d+(?:\.\d+)?)%$/.exec(part);
   if (percent) return `${spokenLabel(percent[1])} percent`;
   if (/^\d+\.\d+$/.test(part)) {
@@ -156,7 +183,7 @@ export function spokenLabel(part: string): string {
 
 /** The spoken version of a question's parts, for screen readers. */
 export function speak(parts: string[]): string {
-  const words = parts.map((p) => SPOKEN_WORDS[p] ?? (/^\d+(?:\.\d+)?%$/.test(p) ? spokenLabel(p) : p.includes('/') ? spokenFraction(p) : p.replace(/^\$/, '$')));
+  const words = parts.map((p) => SPOKEN_WORDS[p] ?? (/[⁰¹²³⁴⁵⁶⁷⁸⁹√∛°]/.test(p) ? spokenNotation(p) : /^\d+(?:\.\d+)?%$/.test(p) ? spokenLabel(p) : p.includes('/') ? spokenFraction(p) : p.replace(/^\$/, '$')));
   const text = words.join(' ').replace(/\s+/g, ' ').trim();
   return /[?.!:]$/.test(text) ? text : text + '?';
 }
@@ -306,6 +333,7 @@ export class BandedPack implements SkillPack {
       parts: made.parts,
       spoken: made.spoken,
       ...(made.prompt ? { prompt: made.prompt } : {}),
+      ...(made.figure ? { figure: made.figure } : {}),
       answer,
       choices,
       choiceLabels,

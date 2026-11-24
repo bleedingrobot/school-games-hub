@@ -9,6 +9,7 @@
  * answers work the place out with this file (`placeToStore`) and the database only checks that it never goes back.
  */
 import { PLACEMENT_JUMP, PLACEMENT_QUESTIONS, quickMsForPack } from "./config";
+import { quickMsForKey } from "./slow";
 import type { FactStats } from "./leitner";
 import {
   currentPlaceId,
@@ -162,5 +163,11 @@ export function placementQuestion(
   return questionForKey(pool[Math.floor(random() * pool.length)], id, random);
 }
 
-/** Quick enough for the skill: its records' own quick time (a rounding or order-of-operations question gets longer than a fact). */
-export const isQuick = (ms: number, skill?: LadderSkill | null) => ms <= quickMsForPack(skill?.keys[0] ? packIdOfKey(skill.keys[0]) : null);
+/**
+ * Quick enough for the question: its records' own quick time (a rounding or order-of-operations question gets longer than a fact),
+ * and 12 seconds for a two-step type (slow.ts) when the question's key is given.
+ */
+export const isQuick = (ms: number, skill?: LadderSkill | null, key?: string) => {
+  const pack = quickMsForPack(skill?.keys[0] ? packIdOfKey(skill.keys[0]) : null);
+  return ms <= (key ? quickMsForKey(key, pack) : pack);
+};
