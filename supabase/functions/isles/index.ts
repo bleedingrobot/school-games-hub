@@ -421,21 +421,6 @@ function afterAnswer(stats, correct, rawMs, at, quickMs = QUICK_MS) {
 }
 //#endregion
 //#region shared/maths/banded.ts
-/**
-* The common engine behind every skill pack except times tables. A pack is a list of
-* question families, grouped into difficulty bands (band 1 easiest). `QuestionContext.level`
-* is the band: its families are the focus, easier bands are review, and the next band up is
-* stretch, with the same 60/30/10 mix, mastery boxes and repeats as times tables
-* (`pickFromPools`).
-*
-* A family owns one or more mastery keys. Fact-style families (adding facts, division facts)
-* have one key per fact ("add:7+8"); the rest have a single key for the kind of question
-* ("add:2d+2d:carry"), because "47 + 36" and "58 + 25" are the same skill.
-*
-* Every question is made from a short list of numbers (`params`) by a pure function, so the
-* server can make the question again from its key and numbers to check an answer, without
-* trusting the browser's copy of the question.
-*/
 /** A whole number from lo to hi (both included). */
 const int = (random, lo, hi) => lo + Math.floor(random() * (hi - lo + 1));
 const pickOne = (random, items) => items[Math.floor(random() * items.length)];
@@ -499,7 +484,42 @@ function spokenFraction(part) {
 * One part or choice in words for a screen reader: "3/4" is "3 quarters", "25%" is "25 percent", "0.25" is "0 point 2 5".
 * Anything else is read as it is.
 */
+const SUPERSCRIPT = {
+	"⁰": "0",
+	"¹": "1",
+	"²": "2",
+	"³": "3",
+	"⁴": "4",
+	"⁵": "5",
+	"⁶": "6",
+	"⁷": "7",
+	"⁸": "8",
+	"⁹": "9",
+	"⁻": "-"
+};
+const UNITS = {
+	"mm²": "square millimetres",
+	"cm²": "square centimetres",
+	"m²": "square metres",
+	"km²": "square kilometres",
+	"mm³": "cubic millimetres",
+	"cm³": "cubic centimetres",
+	"m³": "cubic metres"
+};
+/**
+* Year 7-8 notation read aloud (24 Nov 2026): powers written with superscript digits (10⁴, 2⁻³), roots (√81, ∛64), degrees
+* and squared or cubed units. Text without any of these comes back unchanged.
+*/
+function spokenNotation(text) {
+	return text.replace(/(mm|cm|km|m)([²³])/g, (u) => ` ${UNITS[u] ?? u}`).replace(/(\S+?)([⁻]?[⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g, (_, base, sup) => {
+		const n = [...sup].map((c) => SUPERSCRIPT[c]).join("");
+		if (n === "2") return `${base} squared`;
+		if (n === "3") return `${base} cubed`;
+		return `${base} to the power of ${n.replace("-", "negative ")}`;
+	}).replace(/∛\s*/g, "the cube root of ").replace(/√\s*/g, "the square root of ").replace(/°/g, " degrees").replace(/\s+/g, " ").trim();
+}
 function spokenLabel(part) {
+	if (/[⁰¹²³⁴⁵⁶⁷⁸⁹√∛°]/.test(part)) return spokenNotation(part);
 	const percent = /^(\d+(?:\.\d+)?)%$/.exec(part);
 	if (percent) return `${spokenLabel(percent[1])} percent`;
 	if (/^\d+\.\d+$/.test(part)) {
@@ -510,7 +530,7 @@ function spokenLabel(part) {
 }
 /** The spoken version of a question's parts, for screen readers. */
 function speak(parts) {
-	const text = parts.map((p) => SPOKEN_WORDS[p] ?? (/^\d+(?:\.\d+)?%$/.test(p) ? spokenLabel(p) : p.includes("/") ? spokenFraction(p) : p.replace(/^\$/, "$"))).join(" ").replace(/\s+/g, " ").trim();
+	const text = parts.map((p) => SPOKEN_WORDS[p] ?? (/[⁰¹²³⁴⁵⁶⁷⁸⁹√∛°]/.test(p) ? spokenNotation(p) : /^\d+(?:\.\d+)?%$/.test(p) ? spokenLabel(p) : p.includes("/") ? spokenFraction(p) : p.replace(/^\$/, "$"))).join(" ").replace(/\s+/g, " ").trim();
 	return /[?.!:]$/.test(text) ? text : text + "?";
 }
 /** The parts with the blank filled in: "7 + 8 = ?" → "7 + 8 = 15", "1/2 = ?/8" → "1/2 = 4/8". */
@@ -639,6 +659,7 @@ var BandedPack = class {
 			parts: made.parts,
 			spoken: made.spoken,
 			...made.prompt ? { prompt: made.prompt } : {},
+			...made.figure ? { figure: made.figure } : {},
 			answer,
 			choices,
 			choiceLabels,
@@ -7957,6 +7978,20 @@ var AutoPack = class {
 	}
 };
 //#endregion
+//#region shared/maths/slow.ts
+/**
+* Question types that take two steps (James, 24 Nov 2026: "12 seconds for two-step types"): 5s + 3 = 18, sharing in a ratio,
+* 20% off $45. A right answer within `SLOW_QUICK_MS` counts as quick for these, instead of the pack's 8 seconds. One-step
+* types keep the pack's quick time. Listed by mastery key (question type), so one skill can hold both kinds.
+*
+* Kept apart from untimed.ts on purpose: these are still timed, as recall is the point of the hub.
+*/
+const SLOW_QUICK_MS = 12e3;
+/** Mastery keys of two-step types. Each Year 7-8 card adds its own. */
+const SLOW_KEYS = new Set([]);
+/** The quick time for one answer's record: 12 s for a two-step type, otherwise the pack's own. */
+const quickMsForKey = (key, packQuickMs) => SLOW_KEYS.has(key) ? Math.max(SLOW_QUICK_MS, packQuickMs) : packQuickMs;
+//#endregion
 //#region shared/maths/place.ts
 const NO_LADDER = {
 	on: false,
@@ -8427,19 +8462,26 @@ async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o
 	};
 	for (const [pack, all] of groupByPack(answers)) {
 		const untimed = all.filter((a) => isUntimed(a.key, pack));
-		const timed = all.filter((a) => !isUntimed(a.key, pack));
-		for (const [group, untimedGroup] of [[timed, false], [untimed, true]]) {
+		const slow = all.filter((a) => !isUntimed(a.key, pack) && SLOW_KEYS.has(a.key));
+		const groups = [
+			[all.filter((a) => !isUntimed(a.key, pack) && !SLOW_KEYS.has(a.key)), "timed"],
+			[untimed, "untimed"],
+			[slow, "slow"]
+		];
+		for (const [group, kind] of groups) {
 			if (group.length === 0) continue;
+			const untimedGroup = kind === "untimed";
+			const baseQuick = quickMs ?? quickMsForPack(pack);
 			try {
 				const { data, error } = await rpc("record_fact_answers", {
 					player,
 					pack,
-					batch_id: untimedGroup ? await batchIdFor(`${from}:${once}:${pack}:untimed`) : await batchId(once, pack),
+					batch_id: kind === "timed" ? await batchId(once, pack) : await batchIdFor(`${from}:${once}:${pack}:${kind}`),
 					answers: group.map((a) => ({
 						...cleanGiven(a),
 						ms: keptMs(a.ms)
 					})),
-					quick_ms: untimedGroup ? UNTIMED_MS : quickMs ?? quickMsForPack(pack),
+					quick_ms: untimedGroup ? UNTIMED_MS : kind === "slow" ? quickMsForKey(group[0].key, baseQuick) : baseQuick,
 					fluent_days: 2,
 					top_box: 4,
 					min_ms: minMs ?? 0
@@ -8546,17 +8588,6 @@ function pickSpaceQuestion(pack, settings = {}) {
 }
 //#endregion
 //#region shared/maths/serverQuestions.ts
-/**
-* For games whose server makes the maths questions and marks them itself (docs/GAME_DEVELOPMENT_GUIDE.md, section 4.2 A):
-* a random number generator made from a text seed, so the server can make the same questions again, and the part of a
-* question the browser may see (never its answer).
-*
-* Moved here from shared/marble/questions.ts (20 Oct 2026) so Clan Quest's Battle Cry makes its questions the same way;
-* Marble's file re-exports them, so nothing about a Marble run changed.
-*
-* `seededRandom` gives exactly the same numbers as Marble Rush's own copy (shared/marble/maths.ts on its branch), so
-* Marble can switch to this one without any run changing.
-*/
 function hashSeed(text) {
 	let h = 2166136261;
 	for (let i = 0; i < text.length; i++) {
@@ -8584,7 +8615,8 @@ function publicQuestion(q, slot) {
 		...q.choices ? { choices: q.choices } : {},
 		...q.choiceLabels ? { choiceLabels: q.choiceLabels } : {},
 		...q.input ? { input: q.input } : {},
-		...q.maxLength ? { maxLength: q.maxLength } : {}
+		...q.maxLength ? { maxLength: q.maxLength } : {},
+		...q.figure ? { figure: q.figure } : {}
 	};
 }
 /** The answer and the mastery record of a stored question. Null if it can't be marked. */

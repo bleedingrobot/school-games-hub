@@ -2,6 +2,7 @@ import { FLUENT_DAYS, TOP_BOX, keptMs, quickMsForPack } from '../../../shared/ma
 import { groupByPack } from '../../../shared/maths/focus';
 import type { FactAnswer } from '../../../shared/maths/leitner';
 import { makePlaceSyncer } from '../../../shared/maths/syncPlace';
+import { quickMsForKey, SLOW_KEYS } from '../../../shared/maths/slow';
 import { isUntimed, UNTIMED_MS } from '../../../shared/maths/untimed';
 import { countForFocuses } from './focusResults';
 
@@ -55,19 +56,24 @@ export async function recordMathsAnswers(
   for (const [pack, all] of groupByPack(answers)) {
     // Untimed skills (shared/maths/untimed.ts) go in their own batch, where any right answer is quick.
     const untimed = all.filter((a) => isUntimed(a.key, pack));
-    const timed = all.filter((a) => !isUntimed(a.key, pack));
-    for (const [group, untimedGroup] of [[timed, false], [untimed, true]] as const) {
+    // Two-step types (shared/maths/slow.ts) go in a batch of their own too, with 12 seconds to be quick.
+    const slow = all.filter((a) => !isUntimed(a.key, pack) && SLOW_KEYS.has(a.key));
+    const timed = all.filter((a) => !isUntimed(a.key, pack) && !SLOW_KEYS.has(a.key));
+    const groups = [[timed, 'timed'], [untimed, 'untimed'], [slow, 'slow']] as const;
+    for (const [group, kind] of groups) {
       if (group.length === 0) continue;
+      const untimedGroup = kind === 'untimed';
+      const baseQuick = quickMs ?? quickMsForPack(pack);
       try {
         const { data, error } = await rpc('record_fact_answers', {
           player,
           pack,
           // The timed batch keeps the id it always had, so a save sent again after this change still counts once. The untimed
           // batch always gets its own id (a game's own batch ids may not name the pack).
-          batch_id: untimedGroup ? await batchIdFor(`${from}:${once}:${pack}:untimed`) : await batchId(once, pack),
+          batch_id: kind === 'timed' ? await batchId(once, pack) : await batchIdFor(`${from}:${once}:${pack}:${kind}`),
           // Times as they are kept: at most two minutes (a pupil who wandered off isn't slow at the fact).
           answers: group.map((a) => ({ ...cleanGiven(a), ms: keptMs(a.ms) })),
-          quick_ms: untimedGroup ? UNTIMED_MS : (quickMs ?? quickMsForPack(pack)),
+          quick_ms: untimedGroup ? UNTIMED_MS : kind === 'slow' ? quickMsForKey(group[0].key, baseQuick) : baseQuick,
           fluent_days: FLUENT_DAYS,
           top_box: TOP_BOX,
           min_ms: minMs ?? 0,

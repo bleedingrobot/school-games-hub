@@ -126,7 +126,7 @@ export default function Placement() {
       {
         skill: skill.id,
         correct: result.correct,
-        quick: result.correct && isQuick(ms, skill),
+        quick: result.correct && isQuick(ms, skill, q.factKey),
       },
     ];
     const nextAnswers = [

@@ -75,7 +75,7 @@ export function checkPlacement(
     if (!solved || !solved.keys.some((k) => expected.keys.includes(k)))
       return null;
     const correct = sameAnswer(a.answer, solved.answer);
-    steps.push({ skill: a.skill, correct, quick: correct && isQuick(a.ms, expected) });
+    steps.push({ skill: a.skill, correct, quick: correct && isQuick(a.ms, expected, solved.keys[0]) });
   }
   if (placementNext(steps) !== null) return null;
   return placementResult(steps).id;
