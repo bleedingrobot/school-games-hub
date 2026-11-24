@@ -327,7 +327,7 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
 
   const here = pos.current.p;
   return (
-    <div className="fc-pad">
+    <div className="fc-pad fc-pad--run">
       <header className="fc-pad__top">
         <span>Round {roundN}</span>
         {left !== null ? <b className={`fc-pad__left ${left <= 3 ? 'is-low' : ''}`}>{left}</b> : <b>🎲 Look at the big screen!</b>}

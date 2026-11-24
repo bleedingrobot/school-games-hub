@@ -409,7 +409,10 @@
 
 /* ---------- the pupil's device ---------- */
 .cl-c--corners { background: radial-gradient(ellipse at 50% 20%, #1e3a5f, #0b1324); }
-.fc-pad { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; max-width: 640px; margin: 0 auto; padding-bottom: 8px; }
+/* The board fills as much of the iPad as it can (James, 25 Nov 2026 NZ): the body is not held to 560 px here. */
+.cl-c--corners .cl-c-body { max-width: none; padding: 48px 8px 8px; }
+.fc-pad { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; margin: 0 auto; padding-bottom: 8px; }
+.fc-pad__top, .fc-pad__powers { max-width: 720px; }
 .fc-pad__top { display: flex; justify-content: space-between; align-items: center; width: 100%; color: #fff; font-weight: 800; gap: 8px; }
 .fc-pad__left { font-size: 34px; min-width: 2ch; text-align: center; }
 .fc-pad__left.is-low { color: #fca5a5; animation: fc-beat 0.5s ease-out; }
@@ -417,7 +420,22 @@
 .fc-chip { border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 999px; padding: 2px 10px; color: #fff; font-weight: 700; font-size: 14px; background: rgba(15, 23, 42, 0.6); }
 .fc-chip--held { border-color: #facc15; animation: fc-pulse-chip 0.8s ease-in-out infinite alternate; }
 @keyframes fc-pulse-chip { to { box-shadow: 0 0 14px #facc15; } }
-.fc-pad__board { position: relative; width: min(100%, 62vh); }
+.fc-pad__board { position: relative; width: min(100%, calc(100dvh - 170px)); }
+/* Portrait: the joystick sits under the board when there's room. */
+@media (orientation: portrait) { .fc-pad__board { width: min(100%, calc(100dvh - 240px)); } }
+/* Landscape: round, timer and power-ups down the left, the board as tall as the screen, the joystick bottom right. */
+@media (orientation: landscape) and (min-width: 640px) {
+  .cl-c--corners .cl-c-body { padding-top: 8px; min-height: 100dvh; }
+  .fc-pad--run {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-rows: auto auto 1fr;
+    align-items: start; column-gap: 12px; row-gap: 8px; padding-bottom: 0;
+  }
+  .fc-pad--run .fc-pad__top { grid-column: 1; grid-row: 1; flex-direction: column; align-items: flex-start; padding-top: 44px; }
+  .fc-pad--run .fc-pad__left { font-size: 56px; }
+  .fc-pad--run .fc-pad__powers { grid-column: 1; grid-row: 2; flex-direction: column; align-items: flex-start; justify-content: flex-start; }
+  .fc-pad--run .fc-pad__board { grid-column: 2; grid-row: 1 / span 3; width: min(calc(100vw - 340px), calc(100dvh - 16px)); }
+  .fc-pad--run .fc-fb { grid-column: 3; grid-row: 1 / span 3; align-self: center; }
+}
 .fc-pad__hint { position: absolute; left: 0; right: 0; bottom: 40%; text-align: center; color: #fff; font-weight: 900; font-size: 20px; text-shadow: 0 2px 6px #000; pointer-events: none; }
 .fc-stick {
   position: fixed;
@@ -442,6 +460,15 @@
   pointer-events: none;
 }
 .fc-q { width: 100%; max-width: 520px; z-index: 25; }
+/* Questions pop up over the game, never below it (James, 25 Nov 2026 NZ: no scrolling to find them). */
+.fc-q {
+  position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(94vw, 520px); max-height: calc(100dvh - 24px); overflow-y: auto; z-index: 30;
+  border-radius: 20px; box-shadow: 0 0 0 100vmax rgba(4, 4, 26, 0.35), 0 12px 40px rgba(0, 0, 0, 0.5);
+  animation: fc-q-in 0.25s ease-out both;
+}
+@keyframes fc-q-in { from { opacity: 0; transform: translate(-50%, -46%) scale(0.95); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .fc-q { animation: none; } }
 .fc-fb { min-height: 0; }
 .fc-pad-me { width: 130px; height: 130px; border-radius: 50%; overflow: hidden; margin: 12px auto; box-shadow: 0 0 0 4px #facc15, 0 0 30px rgba(250, 204, 21, 0.6); background: rgba(255, 255, 255, 0.85); position: relative; }
 .fc-pad-me .avatar, .fc-pad-me svg { width: 100%; height: 100%; }

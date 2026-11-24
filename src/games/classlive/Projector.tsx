@@ -348,7 +348,7 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   const hotNow = (leftMs !== null && leftMs < HOT_MS) || (serpent ? serpent.awake || serpent.energy >= 0.75 * wakeAt(screen?.players ?? 1) : false)
     || (game?.kind === 'stars' ? game.creature && !game.supernova : false);
   useMusic(classLiveTrack(state, game?.kind ?? null, { guessing: mural?.phase === 'guess', hot: hotNow, map: corners?.map }), !muted);
-  const backPic = hall ?? (corners ? null : painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky'));
+  const backPic = hall ?? (corners ? painted('corners', `back-${corners.map}`) : painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky'));
   const lobbyOpen = state === 'lobby' && room !== null;
   useEffect(() => {
     if (lobbyOpen) say(next('joinNow'), 400);
