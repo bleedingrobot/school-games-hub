@@ -315,7 +315,7 @@
     },
     {
       "name": "pick-hall",
-      "prompt": "Empty background scenery: a grand magical games hall at night under a huge glass dome open to a starry purple and blue nebula sky, glowing golden lanterns floating in the air, three tall arched stone doorways along the back wall, one glowing gold with stars, one glowing jade green with jungle vines, one glowing pink with paint swirls, warm light spilling out of each, a polished floor reflecting the light, sparkles and drifting glowing motes, dark and calm in the upper middle so a big title on top stands out, no characters, no creatures. Wide landscape.",
+      "prompt": "Empty background scenery: a grand magical games hall at night under a huge glass dome open to a starry purple and blue nebula sky, glowing golden lanterns floating in the air, three tall arched stone doorways along the back wall, one glowing gold with stars, one glowing jade green with jungle vines, one glowing pink with paint swirls, warm light spilling out of each, a polished floor reflecting the light, sparkles and drifting glowing motes, the top middle of the picture is plain empty dark starry sky seen through the glass dome with nothing in it, no characters, no creatures, no writing anywhere. Wide landscape.",
       "size": [
         1536,
         864
@@ -323,7 +323,7 @@
       "kind": "scene",
       "folder": "pick",
       "file": "hall",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues, chinese characters, calligraphy, title, sign, banner, writing"
     },
     {
       "name": "pick-stars",
@@ -339,7 +339,7 @@
     },
     {
       "name": "pick-serpent",
-      "prompt": "An ancient mossy jungle temple at golden hour, a long friendly emerald green serpent with gold-edged belly plates coiled up the temple steps with its eyes closed asleep, glowing jade stone tablets on each step, shafts of warm sunlight through the canopy, hanging vines, fireflies, no other creatures, no statues. Wide landscape picture.",
+      "prompt": "Plain ancient mossy stone temple steps in a jungle at golden hour, a long friendly emerald green serpent with gold-edged belly plates coiled up the temple steps, one head only, its head resting flat on a step, eyes closed, eyelids shut and drawn as gentle curved sleepy lines like a sleeping cartoon cat, fast asleep with a soft smile, mouth closed, glowing jade stone tablets on each step, shafts of warm sunlight through the canopy, hanging vines, fireflies, no other creatures, no statues, no idols, no carved figures. Wide landscape picture.",
       "size": [
         1536,
         864
@@ -347,7 +347,7 @@
       "kind": "scene",
       "folder": "pick",
       "file": "serpent",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues, idol, buddha, figurine, carved figure, two heads, open eyes, pupils, staring eyes, tongue, fangs, carved faces"
     },
     {
       "name": "pick-mural",
