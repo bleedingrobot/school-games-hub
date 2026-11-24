@@ -38,7 +38,7 @@ function Disc({ x, y, r, className, pic, children }: { x: number; y: number; r: 
   );
 }
 
-export function CornersBoard({ map, round, t, flash, crystal, children, fogOn, onCorner, cornerLabel = true }: {
+export function CornersBoard({ map, round, t, flash, crystal, banned, children, fogOn, onCorner, cornerLabel = true }: {
   map: CornerMap;
   round: BoardRound | null;
   /** Session time (ms since the start), for the roller, the gate and the fog. */
@@ -51,6 +51,8 @@ export function CornersBoard({ map, round, t, flash, crystal, children, fogOn, o
   children?: ReactNode;
   /** Fog covers the board (the big screen: avatars hide under it). */
   fogOn?: boolean;
+  /** Second half: the corner this pupil can't stay in (their pad only). */
+  banned?: Corner | null;
   /** Corners become buttons (a Jump). */
   onCorner?: (c: Corner) => void;
   cornerLabel?: boolean;
@@ -68,12 +70,13 @@ export function CornersBoard({ map, round, t, flash, crystal, children, fogOn, o
         const left = c === 0 || c === 3;
         const top = c < 2;
         const style = { left: left ? 0 : pct(1 - ZONE), top: top ? 0 : pct(1 - ZONE), width: pct(ZONE), height: pct(ZONE), ['--cc' as string]: CORNER_COLOURS[c] };
-        const cls = `fc-corner fc-corner--${c} ${flashing ? 'fc-corner--hit' : ''} ${crystal === c ? 'fc-corner--crystal' : ''} ${shut && round?.gate === c ? 'fc-corner--shut' : ''}`;
+        const cls = `fc-corner fc-corner--${c} ${flashing ? 'fc-corner--hit' : ''} ${crystal === c ? 'fc-corner--crystal' : ''} ${shut && round?.gate === c ? 'fc-corner--shut' : ''} ${banned === c ? 'fc-corner--banned' : ''}`;
         const inner = (
           <>
             {!pic && <span className="fc-corner__icon" aria-hidden="true">{CORNER_ICONS[map][c]}</span>}
             {cornerLabel && <span className="fc-corner__name">{CORNER_NAMES[c]}</span>}
             {crystal === c && <span className="fc-corner__badge" aria-label="Crystal ball: safe here">🔮</span>}
+            {banned === c && <span className="fc-corner__ban" aria-label="You were here last round: change corners">🔁</span>}
             {shut && round?.gate === c && <span className="fc-corner__bars" aria-label={`${words.gate} shut`} />}
           </>
         );

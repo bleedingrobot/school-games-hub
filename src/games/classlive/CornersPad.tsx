@@ -15,6 +15,7 @@ import type { PlayerView, RoomView } from '../../../shared/classlive/server';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import { CORNER_COLOURS, CORNER_NAMES, CornersBoard, Token } from './CornersBoard';
+import { CornersGuide } from './CornersGuide';
 import type { ClassLiveLink } from './link';
 import './controller.css';
 
@@ -111,6 +112,7 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
   const [question, setQuestion] = useState<PublicQuestion | null>(null);
   const [purpose, setPurpose] = useState<'jail' | 'power' | null>(null);
   const [say, setSay] = useState<{ n: number; text: string; good?: boolean } | null>(null);
+  const [guide, setGuide] = useState(false);
   const sayN = useRef(0);
   const asking = useRef(false);
   const pendingMe = useRef<{ me?: PlayerView; view?: RoomView } | null>(null);
@@ -264,6 +266,8 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
         <div className="fc-pad-me"><AvatarImage avatar={avatar ?? null} size={120} /></div>
         <p className="cl-c-say">Use the joystick (or the arrow keys) to run to a corner before the countdown ends. Don't get caught!</p>
         <p className="cl-c-say">Today's map: <b>{words.name}</b></p>
+        <button type="button" className="cl-btn fc-guide-btn" onClick={() => setGuide(true)}>⚡ Power-ups and hazards</button>
+        {guide && <CornersGuide map={pub.map} onClose={() => setGuide(false)} />}
       </div>
     );
   }
@@ -327,7 +331,7 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
 
   const here = pos.current.p;
   return (
-    <div className="fc-pad">
+    <div className="fc-pad fc-pad--run">
       <header className="fc-pad__top">
         <span>Round {roundN}</span>
         {left !== null ? <b className={`fc-pad__left ${left <= 3 ? 'is-low' : ''}`}>{left}</b> : <b>🎲 Look at the big screen!</b>}
@@ -339,10 +343,11 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
         {mg.boost && <span className="fc-chip">⚡ Fast</span>}
         {mg.ghost && <span className="fc-chip">👻 Ghost</span>}
         {mg.double && <span className="fc-chip">⭐ Double</span>}
+        {mg.stay != null && r && !r.ended && <span className="fc-chip fc-chip--swap">🔁 Change corners! Not {CORNER_NAMES[mg.stay]}</span>}
         {mg.crystal !== null && <span className="fc-chip" style={{ borderColor: CORNER_COLOURS[mg.crystal] }}>🔮 {CORNER_NAMES[mg.crystal]} is safe</span>}
       </div>
       <div className="fc-pad__board">
-        <CornersBoard map={pub.map} round={r} t={t} flash={r?.ended && r.rolled ? r.rolled : null} crystal={mg.crystal} fogOn={false} onCorner={mg.jump && canRun ? (c) => void jump(c) : undefined}>
+        <CornersBoard map={pub.map} round={r} t={t} flash={r?.ended && r.rolled ? r.rolled : null} crystal={mg.crystal} banned={r && !r.ended ? mg.stay ?? null : null} fogOn={false} onCorner={mg.jump && canRun ? (c) => void jump(c) : undefined}>
           {!fogged && others.current.map((o, i) => <span key={i} className="fc-dot" style={{ left: `${o.x * 100}%`, top: `${o.y * 100}%` }} />)}
           <Token x={here.x} y={here.y} size={AVATAR_R * 2.2} className={`fc-token--me ${mg.shield ? 'fc-token--shield' : ''} ${mg.boost ? 'fc-token--fast' : ''} ${mg.ghost ? 'fc-token--ghost' : ''}`} label="You">
             <AvatarImage avatar={avatar ?? null} size={64} />

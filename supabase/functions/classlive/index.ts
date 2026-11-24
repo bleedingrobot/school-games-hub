@@ -13617,7 +13617,8 @@ function makeRound(g, n, startAt, random, players) {
 		items,
 		rolled,
 		caught: null,
-		saved: []
+		saved: [],
+		...(g.halfAt !== void 0 ? startAt >= g.halfAt : n >= 8) ? { swap: true } : {}
 	};
 }
 function newCorners(map, runS = 10) {
@@ -13721,6 +13722,7 @@ function advance(g, t, order, positions, random, last = false) {
 function endRun(g, r, order, positions) {
 	const caught = [];
 	const saved = [];
+	const stayed = [];
 	const lucky = r.twist === "lucky";
 	const inCorner = [
 		0,
@@ -13753,7 +13755,11 @@ function endRun(g, r, order, positions) {
 			y: at.y
 		};
 		const c = cornerOf(at);
-		if (!(c === null || !lucky && r.rolled.includes(c))) {
+		const stayedPut = !!r.swap && c !== null && m.lastCorner === c;
+		const out = c === null || !lucky && (r.rolled.includes(c) || stayedPut);
+		if (stayedPut && out) stayed.push(id);
+		m.lastCorner = out ? null : c;
+		if (!out) {
 			m.safe++;
 			m.score += m.doubleIn === r.n ? 2 : 1;
 			if (c !== null && inCorner[c] === 1) m.alone = (m.alone ?? 0) + 1;
@@ -13762,6 +13768,7 @@ function endRun(g, r, order, positions) {
 		}
 		if (m.shieldIn === r.n) {
 			m.lucky = (m.lucky ?? 0) + 1;
+			m.lastCorner = c;
 			saved.push(id);
 			continue;
 		}
@@ -13773,6 +13780,7 @@ function endRun(g, r, order, positions) {
 	}
 	r.caught = caught;
 	r.saved = saved;
+	if (stayed.length) r.stayed = stayed;
 	g.caughtAll = (g.caughtAll ?? 0) + caught.length;
 	return {
 		type: "roll",
@@ -13781,7 +13789,8 @@ function endRun(g, r, order, positions) {
 		rolled: r.rolled,
 		lucky,
 		caught,
-		saved
+		saved,
+		...stayed.length ? { stayed } : {}
 	};
 }
 /** Running over an item picks it up (one at a time; pupils in jail can't). */
@@ -14146,6 +14155,7 @@ function screenView(row, s, startedAt) {
 	return {
 		...base,
 		showNames: row.showNames,
+		joinCode: s.lobby?.code ?? s.joinCode ?? null,
 		people: s.order.map((id) => ({
 			id,
 			name: row.showNames ? firstName(s.players[id].name) : null,
@@ -14187,6 +14197,7 @@ function playerView(s, id) {
 				spot: m.spot,
 				nextAt: m.lastAt + ANSWER_GAP_MS,
 				place,
+				stay: r?.swap && m.jailedIn === null ? m.lastCorner ?? null : null,
 				stats: {
 					right: m.right ?? 0,
 					wrong: m.wrong ?? 0,
@@ -14439,7 +14450,7 @@ async function classLiveStep(sv, who, body) {
 				code,
 				host
 			};
-		}
+		} else session.joinCode = String(1e3 + Math.floor(sv.random() * 9e3) % 9e3);
 		const row = {
 			showNames: teach.showNames,
 			seq: 0,
@@ -14478,6 +14489,7 @@ async function classLiveStep(sv, who, body) {
 			if (action === "start") {
 				if (s.state !== "lobby") return { refuse: no(409, "It has already started.", "not-now") };
 				s.state = "live";
+				if (s.game.kind === "corners" && s.lengthMin > 0) s.game.halfAt = s.lengthMin * 6e4 / 2;
 				return {
 					reply: null,
 					events: [{
@@ -14554,8 +14566,11 @@ async function classLiveStep(sv, who, body) {
 			const code = readCode(body.code);
 			const found = code ? await sv.codeRoom(me.schoolId, code) : null;
 			if (found === "busy") return busy();
-			if (!found) return no(404, "That code didn't work. Check the big screen!", "bad-code");
-			room = found.id;
+			const own = !found && code ? await sv.classRoom(me.classId) : null;
+			if (own === "busy") return busy();
+			const late = own && own.session.state !== "over" && own.session.joinCode === code ? own : null;
+			if (!found && !late) return no(404, "That code didn't work. Check the big screen!", "bad-code");
+			room = (found || late).id;
 		} else if (action === "join" && body.room === void 0) {
 			const open = await sv.classRoom(me.classId);
 			if (open === "busy") return busy();

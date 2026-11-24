@@ -234,6 +234,7 @@ export function CornersScene({ screen, game, link, room, clock, sound, say, onTi
           <div className="fc-side__map">{words.name}</div>
           <div className="fc-side__round">{r ? `Round ${r.n}` : 'Get ready!'}</div>
           {fresh && phase === 'run' && <div className="fc-new" key={fresh}><b>New!</b> {MECH_ABOUT[fresh](words)}</div>}
+          {r?.swap && phase === 'run' && <div className="fc-new fc-new--swap"><b>🔁 Second half!</b> Change corners every round: you can't stay in the corner you were in last time.</div>}
           {top.length > 0 && phase !== 'roll' && (
             <div className="fc-best">
               <h3>Most safe rounds</h3>
@@ -273,7 +274,7 @@ export function CornersScene({ screen, game, link, room, clock, sound, say, onTi
               {r.twist === 'lucky'
                 ? '★ Lucky roll! Everyone in a corner is safe'
                 : r.rolled.map((c) => CORNER_NAMES[c]).join(' and ') + (r.rolled.length > 1 ? ' corners!' : ' corner!')}
-              <small>{(r.caught?.length ?? 0) === 0 ? 'Nobody caught!' : `${r.caught?.length} off to ${words.jail.toLowerCase()}`}{r.saved.length ? ` · 🛡️ ${r.saved.length} saved by a shield` : ''}</small>
+              <small>{(r.caught?.length ?? 0) === 0 ? 'Nobody caught!' : `${r.caught?.length} off to ${words.jail.toLowerCase()}`}{r.saved.length ? ` · 🛡️ ${r.saved.length} saved by a shield` : ''}{r.stayed?.length ? ` · 🔁 ${r.stayed.length} stayed put` : ''}</small>
             </div>
           )}
         </div>

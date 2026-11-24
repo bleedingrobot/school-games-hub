@@ -103,7 +103,14 @@ export interface Round {
   /** Filled when the run ends. */
   caught: string[] | null;
   saved: string[];
+  /** Second half of the game: nobody may stay in the corner they were safe in last round (James, 25 Nov 2026 NZ). */
+  swap?: boolean;
+  /** Caught for staying in last round's corner (second half). */
+  stayed?: string[];
 }
+
+/** An untimed game swaps corners from this round. */
+export const SWAP_ROUND = 8;
 
 export interface CornersMine {
   safe: number;
@@ -145,6 +152,8 @@ export interface CornersMine {
   lucky?: number;
   /** Safe rounds with a corner all to themselves. */
   alone?: number;
+  /** The corner they were safe in last round (null: none, or back from jail), for the second half's corner swap. */
+  lastCorner?: Corner | null;
 }
 
 /** Most teleports a pupil can count in one round. */
@@ -161,13 +170,15 @@ export interface CornersGame {
   /** How often the dice picked each corner (Red, Blue, Green, Yellow), and how many went to jail in all. */
   rolls?: [number, number, number, number];
   caughtAll?: number;
+  /** Ms after the start when the second half begins (a timed game); untimed games swap from round SWAP_ROUND. */
+  halfAt?: number;
   /** Seconds to reach a corner each round, the teacher's pick (older games: none, so the run shrinks from 14 s to 9 s). */
   runS?: number;
 }
 
 export type CornersEvent =
   | { type: 'round'; t: number; n: number }
-  | { type: 'roll'; t: number; n: number; rolled: Corner[]; lucky: boolean; caught: string[]; saved: string[] }
+  | { type: 'roll'; t: number; n: number; rolled: Corner[]; lucky: boolean; caught: string[]; saved: string[]; stayed?: string[] }
   | { type: 'grab'; t: number; pupil: string; power: Power }
   | { type: 'power'; t: number; pupil: string; power: Power; freed?: string }
   | { type: 'escape'; t: number; pupil: string }
@@ -327,6 +338,7 @@ export function makeRound(g: CornersGame, n: number, startAt: number, random: ()
   return {
     n, startAt, runEnd: startAt + run, rollEnd: startAt + run + ROLL_MS, showEnd: startAt + run + ROLL_MS + SHOW_MS,
     storms, ice, teleports, roller, hole, fog: has.has('fog'), gate, twist, items, rolled, caught: null, saved: [],
+    ...(g.halfAt !== undefined ? startAt >= g.halfAt : n >= SWAP_ROUND) ? { swap: true } : {},
   };
 }
 
@@ -407,6 +419,7 @@ export function advance(g: CornersGame, t: number, order: string[], positions: P
 function endRun(g: CornersGame, r: Round, order: string[], positions: Positions): CornersEvent {
   const caught: string[] = [];
   const saved: string[] = [];
+  const stayed: string[] = [];
   const lucky = r.twist === 'lucky';
   // How many free pupils stand in each corner (for "a corner all to themselves").
   const inCorner = [0, 0, 0, 0];
@@ -427,7 +440,10 @@ function endRun(g: CornersGame, r: Round, order: string[], positions: Positions)
     const at = positions[id] ?? m.spot;
     m.spot = { x: at.x, y: at.y };
     const c = cornerOf(at);
-    const out = c === null || (!lucky && r.rolled.includes(c));
+    const stayedPut = !!r.swap && c !== null && m.lastCorner === c;
+    const out = c === null || (!lucky && (r.rolled.includes(c) || stayedPut));
+    if (stayedPut && out) stayed.push(id);
+    m.lastCorner = out ? null : c;
     if (!out) {
       m.safe++;
       m.score += m.doubleIn === r.n ? 2 : 1;
@@ -437,6 +453,7 @@ function endRun(g: CornersGame, r: Round, order: string[], positions: Positions)
     }
     if (m.shieldIn === r.n) {
       m.lucky = (m.lucky ?? 0) + 1;
+      m.lastCorner = c;
       saved.push(id);
       // Stragglers saved by a shield still score nothing, but stay free.
       continue;
@@ -449,8 +466,9 @@ function endRun(g: CornersGame, r: Round, order: string[], positions: Positions)
   }
   r.caught = caught;
   r.saved = saved;
+  if (stayed.length) r.stayed = stayed;
   g.caughtAll = (g.caughtAll ?? 0) + caught.length;
-  return { type: 'roll', t: r.runEnd, n: r.n, rolled: r.rolled, lucky, caught, saved };
+  return { type: 'roll', t: r.runEnd, n: r.n, rolled: r.rolled, lucky, caught, saved, ...(stayed.length ? { stayed } : {}) };
 }
 
 /** Running over an item picks it up (one at a time; pupils in jail can't). */

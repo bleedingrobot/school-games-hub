@@ -186,6 +186,12 @@ export function Lobby() {
 
   function joinWithCode(event: FormEvent) {
     event.preventDefault();
+    // A 4-digit code is a Class Live game on the big screen (joining late, or a lobby game): Class Live joins it.
+    const digits = code.replace(/\s/g, '');
+    if (/^\d{4}$/.test(digits)) {
+      navigate(`/classlive?code=${digits}`);
+      return;
+    }
     const tidy = normaliseCode(code);
     if (!tidy) {
       setMessage({ where: 'join', text: 'Codes are 5 letters and numbers, like KM4 TP.' });

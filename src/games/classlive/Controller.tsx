@@ -11,6 +11,7 @@ import { PadGuard } from './PadGuard';
 import { classLiveTrack, useMusic } from './music';
 import { SerpentPad } from './SerpentPad';
 import { CornersPad } from './CornersPad';
+import { painted } from './paintedArt';
 import type { ClassLiveLink } from './link';
 import './controller.css';
 
@@ -40,9 +41,10 @@ function Dots({ x, y, small }: { x: number; y: number; small?: boolean }) {
 
 const sym = (s: string) => s.replace(/\s+/g, '');
 
-export function Sky({ children, tint }: { children: React.ReactNode; tint?: 'serpent' | 'mural' | 'corners' }) {
+export function Sky({ children, tint, back }: { children: React.ReactNode; tint?: 'serpent' | 'mural' | 'corners'; back?: string | null }) {
   return (
     <div className={`cl-c${tint ? ` cl-c--${tint}` : ''}`}>
+      {back && <div className="cl-c-back" style={{ backgroundImage: `url(${back})` }} aria-hidden="true" />}
       <div className="cl-c-twinkle" aria-hidden="true">
         {Array.from({ length: 14 }, (_, i) => <i key={i} style={{ left: `${(i * 37 + 11) % 100}%`, top: `${(i * 53 + 7) % 100}%`, animationDelay: `${(i % 5) * 0.7}s` }} />)}
       </div>
@@ -63,8 +65,10 @@ function Mine({ me }: { me: PlayerView | null }) {
   );
 }
 
-export function Controller({ link, me, room: roomProp, lookElsewhere, avatar }: {
+export function Controller({ link, me, room: roomProp, code: codeProp, lookElsewhere, avatar }: {
   link: ClassLiveLink; me: string; room?: number;
+  /** A 4-digit code typed in the hub Lobby (a lobby game, or joining their class's game late). */
+  code?: string;
   /** The pupil's own hub avatar (Four Corners). */
   avatar?: unknown;
   /** While nothing is on here, looks for another class game (Class Showdown) every few seconds and goes to it. */
@@ -77,7 +81,7 @@ export function Controller({ link, me, room: roomProp, lookElsewhere, avatar }: 
   const [mine, setMine] = useState<PlayerView | null>(null);
   const [attempt, setAttempt] = useState(0);
   // A lobby game's code, typed by the pupil (James, 25 Nov 2026: games open to any class).
-  const [code, setCode] = useState<string | null>(null);
+  const [code, setCode] = useState<string | null>(codeProp ?? null);
   const [typed, setTyped] = useState('');
   const [codeProblem, setCodeProblem] = useState('');
   /** The server's clock minus this device's (from every reply's `now`). */
@@ -193,7 +197,7 @@ export function Controller({ link, me, room: roomProp, lookElsewhere, avatar }: 
   }
   if (view.game.kind === 'corners') {
     return (
-      <Sky tint="corners">
+      <Sky tint="corners" back={painted('corners', `back-${view.game.map}`)}>
         <PadGuard><CornersPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} clock={clock} avatar={avatar} /></PadGuard>
       </Sky>
     );
