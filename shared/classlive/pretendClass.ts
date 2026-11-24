@@ -52,12 +52,13 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
       const g = row.session.game;
       if (g.kind === 'mural') {
         if (g.revealed) return;
-        // Guess when the picture is fairly clear (better pupils guess sooner), else answer (a right answer flips a tile).
-        const share = g.tiles.filter(Boolean).length / g.tiles.length;
-        if (canGuess(g, id) && rand() < share * (0.6 + skill)) {
-          const pick = rand() < Math.min(0.95, share * 2 * skill) ? g.picture : g.choices[Math.floor(rand() * g.choices.length)];
-          await classLiveStep(services, id, { action: 'play', room, guess: pick });
-          return opts.later(go, speed / 3);
+        // In the guessing, take a few seconds to read the riddles, then pick (better pupils are right more often);
+        // before it, answer (a right answer flips a tile).
+        if (g.phase === 'guess') {
+          if (!canGuess(g, id)) return opts.later(go, 2000);
+          const share = g.tiles.filter(Boolean).length / g.tiles.length;
+          const pick = rand() < Math.min(0.95, 0.3 + share * skill) ? g.picture : g.choices[Math.floor(rand() * g.choices.length)];
+          return opts.later(async () => { await classLiveStep(services, id, { action: 'play', room, guess: pick }); }, 3000 + rand() * 20_000);
         }
         const asked = await classLiveStep(services, id, { action: 'ask', room });
         const q = asked.body.question as { slot: number } | undefined;

@@ -14,7 +14,7 @@
  */
 import { ARMS, anchorOf, armCount, newStars, pickAnchor, spotlight, tryFact, type Arm, type Star, type StarLevel, type StarsEvent, type StarsGame, type StarsReply } from './stars';
 import { LEVELS } from './stars';
-import { answered, canGuess, flipped, guess, guessOpen, newMural, reveal, TILES, ANSWER_GAP_MS, type MuralEvent, type MuralGame, type Picture } from './mural';
+import { allPicked, answered, canGuess, flipped, guess, guessingDone, GUESS_MS, newMural, reveal, startGuessing, tilesOf, TILES, ANSWER_GAP_MS, type MuralEvent, type MuralGame, type Picture } from './mural';
 import type { FactAnswer } from '../maths/leitner';
 import { markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext, type PublicQuestion } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
@@ -25,7 +25,7 @@ import { rewardsOf, type FinishedSession } from './rewards';
 
 export const ACTIVITIES = ['stars', 'serpent', 'mural'] as const;
 export type Activity = (typeof ACTIVITIES)[number];
-export const LENGTHS = [0, 5, 10, 15] as const;
+export const LENGTHS = [0, 2, 3, 5, 10, 15] as const;
 export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural' };
 
 export interface LivePlayer {
@@ -54,7 +54,7 @@ export type Event =
   | GameEvent
   | { type: 'join'; t: number; pupil: string }
   | { type: 'start'; t: number }
-  | { type: 'over'; t: number; why: 'teacher' | 'time' | 'heads' };
+  | { type: 'over'; t: number; why: 'teacher' | 'time' | 'heads' | 'guessed' };
 
 /** What pupils of the class may read of a room (their pop-up, their device). No names. */
 export interface RoomView {
@@ -70,7 +70,7 @@ export type PublicGame =
   | { kind: 'stars'; anchor: StarsGame['anchor']; arms: Record<Arm, number>; total: number; creature: boolean; supernova: boolean }
   | { kind: 'serpent'; level: SerpentLevel; energy: number; wakeAt: number; awake: boolean; heads: number; tail: number }
   /** `tiles`: one character a tile, '1' flipped, '0' not. Never the picture itself (until it is revealed). */
-  | { kind: 'mural'; tiles: string; flipped: number; guessOpen: boolean; choices: Picture[]; solvers: number; revealed: boolean; picture: Picture | null };
+  | { kind: 'mural'; tiles: string; flipped: number; phase: 'flip' | 'guess'; guessEndsAt: number | null; picked: number; choices: Picture[]; solvers: number; revealed: boolean; picture: Picture | null };
 
 /** What the projector draws: the whole game, names (when allowed) and the newest events (each with a number). */
 export interface ScreenView extends Omit<RoomView, 'game'> {
@@ -89,7 +89,7 @@ export interface PlayerView {
   game:
     | { kind: 'stars'; found: number; glows: number; tries: number; mine: string[] }
     | { kind: 'serpent'; box: SerpentBox | null; at: number; right: number; shown: number }
-    | { kind: 'mural'; flips: number; right: number; answered: number; tiles: number; canGuess: boolean; guesses: number; gotIt: number; nextAt: number };
+    | { kind: 'mural'; flips: number; right: number; answered: number; tiles: number; canGuess: boolean; guesses: number; gotIt: number; nextAt: number; picked: boolean; myTiles: number[]; picture: Picture };
 }
 
 export interface RoomRow {
@@ -166,7 +166,8 @@ const firstName = (name: string) => name.trim().split(/\s+/)[0]?.slice(0, 20) ||
 export function publicGame(g: Game, players: number): PublicGame {
   if (g.kind === 'mural') {
     return {
-      kind: 'mural', tiles: g.tiles.map((x) => (x ? '1' : '0')).join(''), flipped: flipped(g), guessOpen: guessOpen(g), choices: g.choices,
+      kind: 'mural', tiles: g.tiles.map((x) => (x ? '1' : '0')).join(''), flipped: flipped(g), phase: g.phase ?? 'flip',
+      guessEndsAt: g.phase === 'guess' ? (g.guessFrom ?? 0) + GUESS_MS : null, picked: Object.values(g.mine).filter((m) => m.pick).length, choices: g.choices,
       solvers: g.solvers.length, revealed: g.revealed, picture: g.revealed ? g.picture : null,
     };
   }
@@ -201,7 +202,11 @@ export function playerView(s: Session, id: string): PlayerView {
       player: id, name: firstName(p.name), colour: p.colour,
       game: {
         kind: 'mural', flips: m?.flips ?? 0, right: m?.right ?? 0, answered: m?.answered ?? 0, tiles: m?.tiles ?? 0,
-        canGuess: canGuess(s.game, id), guesses: m?.guesses ?? 0, gotIt: m?.gotIt ?? 0, nextAt: m ? m.lastAt + ANSWER_GAP_MS : 0,
+        canGuess: canGuess(s.game, id), guesses: m?.guesses ?? 0, nextAt: m ? m.lastAt + ANSWER_GAP_MS : 0,
+        // Right or not stays secret until the reveal.
+        gotIt: s.game.revealed || s.state === 'over' ? (m?.gotIt ?? 0) : 0, picked: !!m?.pick,
+        // The pupil's own tiles, drawn on their device from the picture (James, 24 Nov 2026).
+        myTiles: tilesOf(s.game, id), picture: s.game.picture,
       },
     };
   }
@@ -252,7 +257,16 @@ async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<T>): Pr
     const t = timeOf(row, now);
     const events: Event[] = [];
     // A timed session ends by itself, whoever's step comes first.
+    // Mystery Mural's time ends the flipping instead; then the guessing runs its own time.
     if (timeUp(s, row, now)) {
+      if (s.game.kind === 'mural' && s.game.phase !== 'guess' && !s.game.revealed) events.push(...startGuessing(s.game, t));
+      else if (s.game.kind !== 'mural' || s.game.revealed || guessingDone(s.game, t)) {
+        if (s.game.kind === 'mural') events.push(...reveal(s.game, t));
+        s.state = 'over';
+        events.push({ type: 'over', t, why: 'time' });
+      }
+    } else if (s.state === 'live' && s.game.kind === 'mural' && guessingDone(s.game, t)) {
+      events.push(...reveal(s.game, t));
       s.state = 'over';
       events.push({ type: 'over', t, why: 'time' });
     }
@@ -344,8 +358,12 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         return { reply: null, events: [{ type: 'start', t: 0 }], startedAt: sv.now() };
       }
       if (action === 'reveal') {
+        // First press: stop flipping, time to guess. Second press (or the guessing's end): show it and finish.
         if (s.game.kind !== 'mural') return { refuse: no(400, 'Only a mural can be revealed.') };
-        return { reply: null, events: reveal(s.game, t) };
+        if (s.state !== 'live') return { reply: null, events: [] };
+        if (s.game.phase !== 'guess') return { reply: null, events: startGuessing(s.game, t) };
+        s.state = 'over';
+        return { reply: null, events: [...reveal(s.game, t), { type: 'over', t, why: 'teacher' }] };
       }
       if (action === 'spotlight') {
         const id = body.id === null ? null : Number.isInteger(body.id) ? (body.id as number) : undefined;
@@ -355,7 +373,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
       // end
       if (s.state === 'over') return { reply: null, events: [] };
       s.state = 'over';
-      return { reply: null, events: [{ type: 'over', t, why: 'teacher' }] };
+      return { reply: null, events: [...(s.game.kind === 'mural' ? reveal(s.game, t) : []), { type: 'over', t, why: 'teacher' }] };
     });
     if ('refuse' in done) return done.refuse;
     if (done.session.state === 'over' && (action === 'view' || action === 'end')) await payOut(sv, room, done.session);
@@ -410,8 +428,13 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         // Tiles flip at random with right answers now; an old pad's tile pick gets a plain no.
         if (body.tile !== undefined) return { refuse: no(409, 'Answer a question to flip a tile!', 'no_flips') };
         const out = guess(s.game, who, body.guess, t);
-        if (!out.ok) return { refuse: no(409, out.reason === 'not_now' ? 'Not yet! Wait for more tiles.' : 'Pick a picture.', out.reason) };
-        return { reply: { result: out.right ? ('guessed' as const) : ('not_it' as const) }, events: out.events, players: [who] };
+        if (!out.ok) return { refuse: no(409, out.reason === 'not_now' ? 'Guessing comes at the end!' : 'Pick a riddle.', out.reason) };
+        // Everyone has picked: show it now.
+        if (allPicked(s.game, s.order)) {
+          s.state = 'over';
+          return { reply: { result: 'picked' as const }, events: [...out.events, ...reveal(s.game, t), { type: 'over' as const, t, why: 'guessed' as const }], players: [who] };
+        }
+        return { reply: { result: 'picked' as const }, events: out.events, players: [who] };
       }
       if (s.game.kind === 'serpent') {
         const out = answerBox(s.game, who, body.box, body.value, t, s.order.length);
@@ -445,7 +468,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
   return no(400, "That couldn't be read.");
 }
 
-export type MuralReply = { result: 'guessed' | 'not_it' };
+export type MuralReply = { result: 'picked' };
 
 /** Longest answer time kept (ms), as Class Showdown. */
 const MAX_ANSWER_MS = 120_000;
@@ -497,7 +520,7 @@ async function muralMaths(sv: ClassLiveServices, cur: RoomRow, who: string, body
   const right = sameAnswer(value, marked.answer);
   const done = await mutate(sv, room, (s, t) => {
     if (s.state !== 'live' || s.game.kind !== 'mural') return { refuse: no(409, 'This one has finished.', 'over') };
-    const out = answered(s.game, who, right, t, () => sv.random());
+    const out = answered(s.game, who, right, t, () => sv.random(), s.lengthMin > 0 ? s.lengthMin * 60_000 * 0.9 : undefined);
     if (!out.ok) return { refuse: no(409, 'Wait for the ring to fill!', out.reason) };
     return { reply: null, events: out.events, players: [who], claim: { player: who, slot: slot as number, value, right } };
   });

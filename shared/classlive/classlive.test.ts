@@ -3,6 +3,7 @@ import { markQuestion } from '../maths/serverQuestions';
 import { classLiveStep } from './server';
 import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock, rng } from './pretendClass';
 import { answerBox, apply, BODY, makeChain, newSerpent, SERPENT_LEVELS } from './serpent';
+import { MAX_OPEN, openCap, UNTIMED_PACE_MS, type MuralGame } from './mural';
 import { ARMS, armCounts, isTrue, laggingArm, linkOf, newStars, readFact, tryFact, type Anchor } from './stars';
 import { lagHint } from '../../src/games/classlive/arms';
 
@@ -152,7 +153,7 @@ describe('Class Live server', () => {
     expect(pc.db.paid.size).toBe(2);
   });
 
-  it('Mystery Mural: right answers flip a random tile, a question counts once, guesses open later and the teacher reveals it', async () => {
+  it('Mystery Mural: right answers flip a random tile, a question counts once, everyone picks a riddle at the end', async () => {
     const clock = pretendClock();
     const pc = pretendClass({ size: 30, seed: 11, clock, later: clock.later });
     const room = (await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'open', classId: PRETEND_CLASS, activity: 'mural' })).body.room as number;
@@ -172,14 +173,63 @@ describe('Class Live server', () => {
     expect((await classLiveStep(pc.services, a, { action: 'answer', room, slot: q.slot, answer, ms: 2000 })).status).toBe(409);
     expect(pc.db.answers.filter((x) => x.player === a)).toHaveLength(1);
     pc.play(room);
-    await clock.run(clock.now() + 4 * 60_000);
+    await clock.run(clock.now() + 60_000);
+    const half = pc.db.rooms.get(room)!.session.game as MuralGame;
+    // A full class answers faster than the pace: tiles flip steadily (about 26 a minute untimed), the rest queue up.
+    expect(half.tiles.filter(Boolean).length).toBeGreaterThan(20);
+    expect(half.tiles.filter(Boolean).length).toBeLessThanOrEqual(openCap(65_000, UNTIMED_PACE_MS));
+    expect(half.queue!.length).toBeGreaterThan(0);
+    await clock.run(clock.now() + 5 * 60_000);
     const g = pc.db.rooms.get(room)!.session.game;
     if (g.kind !== 'mural') throw new Error('not a mural');
-    expect(g.tiles.filter(Boolean).length).toBeGreaterThan(20);
-    expect(g.solvers.length).toBeGreaterThan(0);
+    expect(g.tiles.filter(Boolean).length).toBe(MAX_OPEN);
+    // Shared fairly: everyone who answered gets tiles, nobody hogs them.
+    const counts = Object.values(g.mine).map((m) => m.tiles);
+    expect(Math.min(...counts)).toBeGreaterThanOrEqual(2);
+    expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(3);
+    // No guessing while the tiles flip (James, 24 Nov 2026): everyone guesses once, at the end, from six riddles.
+    expect(g.phase).toBe('flip');
+    expect(g.solvers).toHaveLength(0);
+    expect((await classLiveStep(pc.services, a, { action: 'play', room, guess: g.picture })).status).toBe(409);
+    // Each pupil sees the tiles they flipped (on the picture), the class does not see the picture.
+    const mine = (await classLiveStep(pc.services, a, { action: 'look', room })).body.me as { game: { myTiles: number[]; picture: string } };
+    expect(mine.game.myTiles.length).toBe(g.mine[a].tiles);
+    expect(mine.game.picture).toBe(g.picture);
     expect((await classLiveStep(pc.services, pc.ids[2], { action: 'play', room, reveal: true })).status).not.toBe(200);
+    // The teacher's first press ends the flipping and opens the guessing.
     expect((await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'reveal', room })).status).toBe(200);
-    const view = pc.db.rooms.get(room)!.view.game;
+    expect(g.phase === undefined ? null : (pc.db.rooms.get(room)!.session.game as typeof g).phase).toBe('guess');
+    expect(pc.db.rooms.get(room)!.view.game).toMatchObject({ kind: 'mural', phase: 'guess', picture: null });
+    expect(g.choices).toHaveLength(6);
+    expect(g.choices).toContain(g.picture);
+    // One pick each; when everyone has picked it shows the picture and ends.
+    await clock.run(clock.now() + 30_000);
+    const done = pc.db.rooms.get(room)!;
+    const dg = done.session.game as typeof g;
+    expect(done.session.state).toBe('over');
+    expect(Object.values(dg.mine).filter((m) => m.pick)).toHaveLength(30);
+    expect(dg.solvers.length).toBeGreaterThan(0);
+    expect(done.screen.events.at(-1)).toMatchObject({ type: 'over', why: 'guessed' });
+    const view = done.view.game;
     expect(view.kind === 'mural' && view.picture).toBe(g.picture);
+  });
+
+  it('Mystery Mural: a 2 minute game flips until the time, then guesses for its own time, then shows the picture', async () => {
+    const clock = pretendClock();
+    const pc = pretendClass({ size: 4, seed: 5, clock, later: clock.later });
+    const room = (await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'open', classId: PRETEND_CLASS, activity: 'mural', length: 2 })).body.room as number;
+    expect(pc.db.rooms.get(room)!.session.lengthMin).toBe(2);
+    await pc.joinAll();
+    await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'start', room });
+    clock.later(() => {}, 2 * 60_000 + 1000);
+    await clock.run(clock.now() + 2 * 60_000 + 1000);
+    await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'view', room });
+    expect(pc.db.rooms.get(room)!.session).toMatchObject({ state: 'live', game: { phase: 'guess' } });
+    // Nobody picks: the guessing's own time ends it.
+    clock.later(() => {}, 50_000);
+    await clock.run(clock.now() + 50_000);
+    await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'view', room });
+    expect(pc.db.rooms.get(room)!.session).toMatchObject({ state: 'over', game: { revealed: true } });
+    expect(pc.db.rooms.get(room)!.screen.events.at(-1)).toMatchObject({ type: 'over', why: 'time' });
   });
 });
