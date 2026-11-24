@@ -1,9 +1,9 @@
--- Class Live (migrations 20261124000100_classlive.sql, 20261124000700_classlive_mural.sql and 20261124000800_classlive_rewards.sql, id classlive): rooms, the hidden session, the projector's screen
+-- Class Live (migrations 20261124000100_classlive.sql, 20261124000700_classlive_mural.sql and 20261124000800_classlive_rewards.sql, 20261125000200_classlive_lobby.sql, id classlive): rooms, the hidden session, the projector's screen
 -- (teachers only), each pupil's own row, the compare-and-swap save, the switch, and the join pop-up in hub_here().
 -- Run on a throw-away copy: scripts/scratch-db.sh classlive, then scripts/scratch-test.sh classlive supabase/tests/database/classlive.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(33);
+select plan(40);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -102,6 +102,22 @@ select is((select count(*)::int from public.game_points where game = 'classlive'
 select is((select count(*)::int from public.game_points where game = 'classlive' and player = pg_temp.id('0e')), 0, '... a teacher (not in the class) gets none');
 select ok(exists (select 1 from public.achievements where player = pg_temp.id('0a') and achievement = 'classlive-stargazer'),
   'and Ana has the Stargazer trophy');
+
+-- ---- Lobby games: any pupil of the school (20261125000200_classlive_lobby.sql) ----
+select pg_temp.act_as_server();
+select set_config('test.lobby', public.classlive_open('00000000-0000-0000-0000-0000000000c2', pg_temp.id('0f'), 'mural',
+  '{"state":"lobby","lobby":{"code":"4821","host":"Mrs Fay"}}', '{"state":"lobby"}', '{"showNames":true,"seq":0,"events":[],"people":[]}')::text, true);
+select is(public.classlive_code_room(1, '4821') ->> 'id', current_setting('test.lobby'), 'Fay''s lobby game is found by its code');
+select is(public.classlive_code_room(1, '4821') ->> 'school_id', '1', '... with its school');
+select is(public.classlive_code_room(2, '4821'), null, '... but not from another school');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
+select is((select count(*)::int from public.classlive_rooms where code = '4821'), 1, 'Ana (another class) sees the lobby game');
+select ok(public.classlive_here() @> jsonb_build_array(jsonb_build_object('class', 'Mrs Fay is starting Mystery Mural', 'lobby', true)),
+  '... and her pop-up says who is starting which game');
+select pg_temp.act_as_server();
+select is(public.classlive_finish(current_setting('test.lobby')::bigint, jsonb_build_object('seed', 9, 'activity', 'mural',
+  'players', jsonb_build_array(jsonb_build_object('player', pg_temp.id('0a'), 'points', 3)))), 'ok', 'a finished lobby game is paid');
+select is((select sessions from public.classlive_stats where player = pg_temp.id('0a')), 2, '... a pupil of another class too');
 
 select * from finish();
 rollback;

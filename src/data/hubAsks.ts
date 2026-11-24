@@ -63,6 +63,9 @@ export interface HubAskLink {
 
 const isAskGame = (g: unknown): g is AskGame => typeof g === 'string' && (ASK_GAMES as readonly string[]).includes(g);
 
+/** Class Live's activities, for a lobby game's button (ACTIVITY_NAMES in shared/classlive/server.ts). */
+const LIVE_NAMES: Record<string, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural' };
+
 const TABLES: Record<LiveGame, string> = { archery: 'archery_duels', 'dragon-maths': 'lord_clashes', 'clan-quest': 'clan_duels' };
 
 /** A challenge row heard through Realtime, as an ask (or gone, once it isn't waiting any more). */
@@ -158,10 +161,12 @@ export const serverHubAskLink: HubAskLink = {
     // Class Showdown and Class Live rooms in my class (the table's rule limits which rows reach me).
     for (const game of CLASS_GAMES) {
       channel = channel.on('postgres_changes', { event: '*', schema: 'public', table: `${game}_rooms` }, (payload: { new?: unknown }) => {
-        const r = payload.new as { id?: unknown; state?: unknown } | undefined;
+        const r = payload.new as { id?: unknown; state?: unknown; host?: unknown; activity?: unknown } | undefined;
         const id = Number(r?.id);
         if (!r || !Number.isSafeInteger(id)) return;
-        if (r.state === 'lobby' || r.state === 'live') onHeard({ ask: { game, id, from: 'your class', deadline: new Date(Date.now() + 3 * 3600_000).toISOString() } });
+        // A Class Live lobby game names its teacher and game (the button reads "Mr Riley is starting Mystery Mural").
+        const from = game === 'classlive' && typeof r.host === 'string' && r.host ? `${r.host} is starting ${LIVE_NAMES[String(r.activity)] ?? 'a game'}` : 'your class';
+        if (r.state === 'lobby' || r.state === 'live') onHeard({ ask: { game, id, from, deadline: new Date(Date.now() + 3 * 3600_000).toISOString() } });
         else onHeard({ gone: { game, id } });
       });
     }

@@ -34,12 +34,12 @@ async function call<T>(name: string, args: Record<string, unknown>): Promise<T |
 }
 
 type RawRow = {
-  id: number; class_id: string; teacher: string; version: number; started_ms: number | null; show_names: boolean;
+  id: number; class_id: string; school_id: number; teacher: string; version: number; started_ms: number | null; show_names: boolean;
   session: RoomRow['session']; seq: number; events: RoomRow['events'] | null;
 };
 const rowOf = (raw: RawRow | null): RoomRow | null =>
   raw && {
-    id: Number(raw.id), classId: raw.class_id, teacher: raw.teacher, version: raw.version,
+    id: Number(raw.id), classId: raw.class_id, schoolId: Number(raw.school_id), teacher: raw.teacher, version: raw.version,
     startedAt: raw.started_ms === null ? null : Number(raw.started_ms), showNames: raw.show_names !== false, session: raw.session,
     seq: Number(raw.seq) || 0, events: Array.isArray(raw.events) ? raw.events : [],
   };
@@ -52,14 +52,18 @@ Deno.serve(
     random: () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32,
     userIdFor: userIdFromToken(admin.auth),
     async teacherClass(teacher, classId) {
-      const row = await call<{ enabled: boolean; show_names: boolean } | null>('classlive_teacher_class', { teacher, target_class: classId });
+      const row = await call<{ enabled: boolean; show_names: boolean; school_id: number } | null>('classlive_teacher_class', { teacher, target_class: classId });
       if (row === 'busy') return 'busy';
-      return row && { enabled: row.enabled === true, showNames: row.show_names !== false };
+      return row && { enabled: row.enabled === true, showNames: row.show_names !== false, schoolId: Number(row.school_id) };
     },
     async pupil(player) {
-      const row = await call<{ class_id: string; name: string | null; enabled: boolean } | null>('classlive_pupil', { player });
+      const row = await call<{ class_id: string; school_id: number; name: string | null; enabled: boolean } | null>('classlive_pupil', { player });
       if (row === 'busy') return 'busy';
-      return row && { classId: row.class_id, name: (row.name ?? 'A player').slice(0, 40), enabled: row.enabled === true };
+      return row && { classId: row.class_id, schoolId: Number(row.school_id), name: (row.name ?? 'A player').slice(0, 40), enabled: row.enabled === true };
+    },
+    async codeRoom(schoolId, code) {
+      const raw = await call<RawRow | null>('classlive_code_room', { target_school: schoolId, join_code: code });
+      return raw === 'busy' ? 'busy' : rowOf(raw);
     },
     async openRoom(classId, teacher, c) {
       const id = await call<number>('classlive_open', { target_class: classId, teacher, activity: c.session.activity, session: c.session, view: c.view, screen: c.screen });

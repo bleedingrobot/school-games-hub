@@ -48,6 +48,18 @@ export interface Session {
   players: Record<string, LivePlayer>;
   order: string[];
   game: Game;
+  /**
+   * Set when the teacher opened it "in the lobby" (James, 25 Nov 2026): any pupil of the school may join, from the
+   * "Join now?" button on their home page or with the code. Missing: the teacher's class only.
+   */
+  lobby?: Lobby;
+}
+
+export interface Lobby {
+  /** Four digits, shown big on the projector. */
+  code: string;
+  /** What pupils call the teacher, as the teacher typed it (e.g. "Mr Riley"). */
+  host: string;
 }
 
 export type Event =
@@ -64,6 +76,8 @@ export interface RoomView {
   startedAt: number | null;
   players: number;
   game: PublicGame;
+  /** A lobby game's code and host, or null for a class game. */
+  lobby: Lobby | null;
 }
 
 export type PublicGame =
@@ -95,6 +109,8 @@ export interface PlayerView {
 export interface RoomRow {
   id: number;
   classId: string;
+  /** The class's school (lobby games are open to the whole school). */
+  schoolId: number;
   teacher: string;
   version: number;
   startedAt: number | null;
@@ -128,9 +144,11 @@ export interface ClassLiveServices {
   now(): number;
   random(): number;
   /** Does this teacher teach this class, and is Class Live on for it? Null if they don't teach it. */
-  teacherClass(teacher: string, classId: string): Promise<{ enabled: boolean; showNames: boolean } | null | Busy>;
-  /** A pupil's class, first name and switch. Null if they aren't a pupil in a class. */
-  pupil(player: string): Promise<{ classId: string; name: string; enabled: boolean } | null | Busy>;
+  teacherClass(teacher: string, classId: string): Promise<{ enabled: boolean; showNames: boolean; schoolId: number } | null | Busy>;
+  /** A pupil's class, school, first name and switch. Null if they aren't a pupil in a class. */
+  pupil(player: string): Promise<{ classId: string; schoolId: number; name: string; enabled: boolean } | null | Busy>;
+  /** The school's lobby game with this code, not over, opened in the last 3 hours, or null. */
+  codeRoom(schoolId: number, code: string): Promise<RoomRow | null | Busy>;
   /** Makes a room (any other open room of the class is closed). */
   openRoom(classId: string, teacher: string, change: Change): Promise<number | Busy>;
   loadRoom(room: number): Promise<RoomRow | null | Busy>;
@@ -179,7 +197,10 @@ export function publicGame(g: Game, players: number): PublicGame {
 }
 
 export function roomView(s: Session, startedAt: number | null): RoomView {
-  return { activity: s.activity, state: s.state, lengthMin: s.lengthMin, startedAt, players: s.order.length, game: publicGame(s.game, s.order.length) };
+  return {
+    activity: s.activity, state: s.state, lengthMin: s.lengthMin, startedAt, players: s.order.length, game: publicGame(s.game, s.order.length),
+    lobby: s.lobby ?? null,
+  };
 }
 
 function screenView(row: Pick<RoomRow, 'showNames' | 'seq' | 'events'>, s: Session, startedAt: number | null): ScreenView {
@@ -299,6 +320,18 @@ async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<T>): Pr
 }
 
 const readRoom = (v: unknown): number | null => (Number.isSafeInteger(v) && (v as number) > 0 ? (v as number) : null);
+const readCode = (v: unknown): string | null => (typeof v === 'string' && /^\d{4}$/.test(v.trim()) ? v.trim() : null);
+
+/** What pupils call the teacher, tidied: letters, spaces and . ' - only, at most 30 characters. Null if nothing is left. */
+export function cleanHost(v: unknown): string | null {
+  if (typeof v !== 'string') return null;
+  const t = v.normalize('NFC').replace(/[^\p{L}\p{M} .'’-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 30).trim();
+  return /\p{L}/u.test(t) ? t : null;
+}
+
+/** May this pupil use this room? Their class's room, or a lobby game of their school. */
+const canUse = (row: RoomRow, me: { classId: string; schoolId: number }) =>
+  row.classId === me.classId || (!!row.session.lobby && row.schoolId === me.schoolId);
 
 /** A new session from the teacher's choices, or a refusal. */
 export function newSession(body: Record<string, unknown>, seed: number, random: () => number): Session | string {
@@ -331,6 +364,20 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     if (!teach.enabled) return no(403, OFF, 'off');
     const session = newSession(body, Math.floor(sv.random() * 2 ** 31), () => sv.random());
     if (typeof session === 'string') return no(400, session);
+    if (body.where === 'lobby') {
+      const host = cleanHost(body.host);
+      if (!host) return no(400, 'Type the name pupils call you, like Mr Riley.');
+      // A code no other open lobby game of the school has.
+      let code: string | null = null;
+      for (let i = 0; i < 12 && !code; i++) {
+        const tryCode = String(1000 + Math.floor(sv.random() * 9000) % 9000);
+        const taken = await sv.codeRoom(teach.schoolId, tryCode);
+        if (taken === 'busy') return busy();
+        if (!taken) code = tryCode;
+      }
+      if (!code) return busy();
+      session.lobby = { code, host };
+    }
     const row = { showNames: teach.showNames, seq: 0, events: [] };
     const change: Change = { session, view: roomView(session, null), screen: screenView(row, session, null), startedAt: null, players: [] };
     const id = await sv.openRoom(classId, who, change);
@@ -387,7 +434,14 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     if (!me) return no(403, 'Class Live is for pupils in a class.', 'no-class');
     if (!me.enabled) return no(403, OFF, 'off');
     let room: number | null;
-    if (action === 'join') {
+    if (action === 'join' && body.code !== undefined) {
+      // A lobby game's code, typed by the pupil.
+      const code = readCode(body.code);
+      const found = code ? await sv.codeRoom(me.schoolId, code) : null;
+      if (found === 'busy') return busy();
+      if (!found) return no(404, "That code didn't work. Check the big screen!", 'bad-code');
+      room = found.id;
+    } else if (action === 'join' && body.room === undefined) {
       const open = await sv.classRoom(me.classId);
       if (open === 'busy') return busy();
       if (!open || open.session.state === 'over') return no(404, 'There is nothing on in your class right now.', 'none');
@@ -396,7 +450,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     if (!room) return no(400, "That room couldn't be found.");
     const cur = await sv.loadRoom(room);
     if (cur === 'busy') return busy();
-    if (!cur || cur.classId !== me.classId) return no(403, "That room isn't in your class.", 'not-yours');
+    if (!cur || !canUse(cur, me)) return no(403, "That game isn't open to you.", 'not-yours');
 
     if (action === 'join') {
       const done = await mutate(sv, room, (s, t) => {

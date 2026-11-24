@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { markQuestion } from '../maths/serverQuestions';
-import { classLiveStep } from './server';
+import { classLiveStep, cleanHost } from './server';
+import { memoryDb, memoryServices } from './memoryServices';
 import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock, rng } from './pretendClass';
 import { answerBox, apply, BODY, makeChain, newSerpent, SERPENT_LEVELS } from './serpent';
 import { MAX_OPEN, openCap, UNTIMED_PACE_MS, type MuralGame } from './mural';
@@ -231,5 +232,41 @@ describe('Class Live server', () => {
     await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'view', room });
     expect(pc.db.rooms.get(room)!.session).toMatchObject({ state: 'over', game: { revealed: true } });
     expect(pc.db.rooms.get(room)!.screen.events.at(-1)).toMatchObject({ type: 'over', why: 'time' });
+  });
+
+  it('a lobby game: any pupil of the school joins by its room or code; a class game and other schools stay closed', async () => {
+    const T = 'teacher-1', A = '00000000-0000-4000-8000-00000000000a', B = '00000000-0000-4000-8000-00000000000b', FAR = '00000000-0000-4000-8000-0000000000ff';
+    const db = memoryDb({
+      pupils: [{ id: 'ana', name: 'Ana', classId: A }, { id: 'bo', name: 'Bo', classId: B }, { id: 'cy', name: 'Cy', classId: B }, { id: 'di', name: 'Di', classId: FAR }],
+      teachers: { [T]: [A] }, schools: { [FAR]: 2 },
+    });
+    let now = 1_000_000;
+    const sv = memoryServices(db, { now: () => now, random: rng(3) });
+    expect(cleanHost('  Mr  Riley!! ')).toBe('Mr Riley');
+    expect(cleanHost('1234')).toBeNull();
+    expect((await classLiveStep(sv, T, { action: 'open', classId: A, activity: 'mural', where: 'lobby' })).status).toBe(400);
+    // A class game: another class can't join it, even knowing the room.
+    const cls = (await classLiveStep(sv, T, { action: 'open', classId: A, activity: 'mural' })).body as { room: number; screen: { lobby: unknown } };
+    expect(cls.screen.lobby).toBeNull();
+    expect((await classLiveStep(sv, 'bo', { action: 'join', room: cls.room })).status).toBe(403);
+    // Open in the lobby: a code on the screen, and the host's words.
+    const lob = (await classLiveStep(sv, T, { action: 'open', classId: A, activity: 'serpent', where: 'lobby', host: 'Mr Riley' })).body as { room: number; screen: { lobby: { code: string; host: string } } };
+    expect(lob.screen.lobby.host).toBe('Mr Riley');
+    expect(lob.screen.lobby.code).toMatch(/^\d{4}$/);
+    expect((await classLiveStep(sv, 'ana', { action: 'join' })).body.room).toBe(lob.room); // the class finds it as before
+    expect((await classLiveStep(sv, 'bo', { action: 'join', room: lob.room })).status).toBe(200); // the home page's button
+    const byCode = await classLiveStep(sv, 'cy', { action: 'join', code: lob.screen.lobby.code });
+    expect(byCode.body.room).toBe(lob.room);
+    expect((byCode.body.view as { lobby: { host: string } }).lobby.host).toBe('Mr Riley');
+    expect((await classLiveStep(sv, 'cy', { action: 'look', room: lob.room })).status).toBe(200);
+    expect((await classLiveStep(sv, 'bo', { action: 'join', code: '00' })).body.reason).toBe('bad-code');
+    // Another school: not by room, not by code.
+    expect((await classLiveStep(sv, 'di', { action: 'join', room: lob.room })).status).toBe(403);
+    expect((await classLiveStep(sv, 'di', { action: 'join', code: lob.screen.lobby.code })).body.reason).toBe('bad-code');
+    expect(db.rooms.get(lob.room)!.session.order).toEqual(['ana', 'bo', 'cy']);
+    // A finished lobby game's code is free again.
+    await classLiveStep(sv, T, { action: 'end', room: lob.room });
+    now += 1000;
+    expect((await classLiveStep(sv, 'bo', { action: 'join', code: lob.screen.lobby.code })).body.reason).toBe('bad-code');
   });
 });

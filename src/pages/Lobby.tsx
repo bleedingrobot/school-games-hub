@@ -13,7 +13,7 @@ import { CLAN_QUEST_ON, DRAGON_MATHS_ON, findGame, GAMES, POWER_CLASH_ON } from 
 import { archeryOn } from '../games/archery/switch';
 import { islesOn } from '../games/isles/switch';
 import { GAME_NAMES } from '../components/challengeWords';
-import { INVITE_GAMES, isInviteGame, serverHubAskLink, type HubAsk, type InviteGame, type LiveGame } from '../data/hubAsks';
+import { INVITE_GAMES, isClassGame, isInviteGame, serverHubAskLink, type HubAsk, type InviteGame, type LiveGame } from '../data/hubAsks';
 import { cancelInvite, sendInvite, watchSentInvite } from '../data/boardInvites';
 import type { LiveSetup } from '../../shared/space/live';
 import { fetchLobbyHere, livePath, sendChallenge, type HerePlayer, type LobbyHere, type MyGame } from '../data/lobbyHere';
@@ -345,6 +345,10 @@ export function Lobby() {
 
   const sayYes = (a: HubAsk) => {
     hubAsks.drop(a);
+    if (isClassGame(a.game)) {
+      navigate(`/${a.game}?room=${a.id}`);
+      return;
+    }
     if (!isInviteGame(a.game)) {
       navigate(`/${a.game}?ask=${a.id}`);
       return;

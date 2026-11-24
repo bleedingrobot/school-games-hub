@@ -13547,7 +13547,8 @@ function roomView(s, startedAt) {
 		lengthMin: s.lengthMin,
 		startedAt,
 		players: s.order.length,
-		game: publicGame(s.game, s.order.length)
+		game: publicGame(s.game, s.order.length),
+		lobby: s.lobby ?? null
 	};
 }
 function screenView(row, s, startedAt) {
@@ -13712,6 +13713,15 @@ async function mutate(sv, room, step) {
 	return { refuse: busy() };
 }
 const readRoom = (v) => Number.isSafeInteger(v) && v > 0 ? v : null;
+const readCode = (v) => typeof v === "string" && /^\d{4}$/.test(v.trim()) ? v.trim() : null;
+/** What pupils call the teacher, tidied: letters, spaces and . ' - only, at most 30 characters. Null if nothing is left. */
+function cleanHost(v) {
+	if (typeof v !== "string") return null;
+	const t = v.normalize("NFC").replace(/[^\p{L}\p{M} .'’-]/gu, "").replace(/\s+/g, " ").trim().slice(0, 30).trim();
+	return /\p{L}/u.test(t) ? t : null;
+}
+/** May this pupil use this room? Their class's room, or a lobby game of their school. */
+const canUse = (row, me) => row.classId === me.classId || !!row.session.lobby && row.schoolId === me.schoolId;
 /** A new session from the teacher's choices, or a refusal. */
 function newSession(body, seed, random) {
 	const activity = ACTIVITIES.find((a) => a === body.activity) ?? "stars";
@@ -13746,6 +13756,22 @@ async function classLiveStep(sv, who, body) {
 		if (!teach.enabled) return no(403, OFF, "off");
 		const session = newSession(body, Math.floor(sv.random() * 2 ** 31), () => sv.random());
 		if (typeof session === "string") return no(400, session);
+		if (body.where === "lobby") {
+			const host = cleanHost(body.host);
+			if (!host) return no(400, "Type the name pupils call you, like Mr Riley.");
+			let code = null;
+			for (let i = 0; i < 12 && !code; i++) {
+				const tryCode = String(1e3 + Math.floor(sv.random() * 9e3) % 9e3);
+				const taken = await sv.codeRoom(teach.schoolId, tryCode);
+				if (taken === "busy") return busy();
+				if (!taken) code = tryCode;
+			}
+			if (!code) return busy();
+			session.lobby = {
+				code,
+				host
+			};
+		}
 		const row = {
 			showNames: teach.showNames,
 			seq: 0,
@@ -13849,7 +13875,13 @@ async function classLiveStep(sv, who, body) {
 		if (!me) return no(403, "Class Live is for pupils in a class.", "no-class");
 		if (!me.enabled) return no(403, OFF, "off");
 		let room;
-		if (action === "join") {
+		if (action === "join" && body.code !== void 0) {
+			const code = readCode(body.code);
+			const found = code ? await sv.codeRoom(me.schoolId, code) : null;
+			if (found === "busy") return busy();
+			if (!found) return no(404, "That code didn't work. Check the big screen!", "bad-code");
+			room = found.id;
+		} else if (action === "join" && body.room === void 0) {
 			const open = await sv.classRoom(me.classId);
 			if (open === "busy") return busy();
 			if (!open || open.session.state === "over") return no(404, "There is nothing on in your class right now.", "none");
@@ -13858,7 +13890,7 @@ async function classLiveStep(sv, who, body) {
 		if (!room) return no(400, "That room couldn't be found.");
 		const cur = await sv.loadRoom(room);
 		if (cur === "busy") return busy();
-		if (!cur || cur.classId !== me.classId) return no(403, "That room isn't in your class.", "not-yours");
+		if (!cur || !canUse(cur, me)) return no(403, "That game isn't open to you.", "not-yours");
 		if (action === "join") {
 			const done = await mutate(sv, room, (s, t) => {
 				if (s.state === "over") return { refuse: no(409, "This one has finished.", "over") };
@@ -14218,6 +14250,7 @@ async function call(name, args) {
 const rowOf = (raw) => raw && {
 	id: Number(raw.id),
 	classId: raw.class_id,
+	schoolId: Number(raw.school_id),
 	teacher: raw.teacher,
 	version: raw.version,
 	startedAt: raw.started_ms === null ? null : Number(raw.started_ms),
@@ -14243,7 +14276,8 @@ Deno.serve(makeHandler({
 		if (row === "busy") return "busy";
 		return row && {
 			enabled: row.enabled === true,
-			showNames: row.show_names !== false
+			showNames: row.show_names !== false,
+			schoolId: Number(row.school_id)
 		};
 	},
 	async pupil(player) {
@@ -14251,9 +14285,17 @@ Deno.serve(makeHandler({
 		if (row === "busy") return "busy";
 		return row && {
 			classId: row.class_id,
+			schoolId: Number(row.school_id),
 			name: (row.name ?? "A player").slice(0, 40),
 			enabled: row.enabled === true
 		};
+	},
+	async codeRoom(schoolId, code) {
+		const raw = await call("classlive_code_room", {
+			target_school: schoolId,
+			join_code: code
+		});
+		return raw === "busy" ? "busy" : rowOf(raw);
 	},
 	async openRoom(classId, teacher, c) {
 		const id = await call("classlive_open", {
