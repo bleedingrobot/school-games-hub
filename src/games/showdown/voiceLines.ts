@@ -158,4 +158,19 @@ export function pickTake(line: string, last: string | null, random = Math.random
   return all[Math.floor(random() * all.length)] ?? line;
 }
 
-export const allVoiceLines = (): string[] => [...Object.values(NARRATION), ...new Set(Object.values(ARENA_CALLS).flatMap((c) => [c.guards, c.healer, c.enrage])), ...Object.values(TAKES).flat(), ...Object.values(AUCTION_LINES), ...Object.values(HILL_LINES), ...Object.values(ANNOUNCER), ...Object.values(GOLD_RUSH_LINES), ...Object.values(SKY_CLIMB_LINES), ...Object.values(ISLAND_LINES), ...BOSSES.map((b) => b.roar)];
+/** The "How to play" screen before a round (howToPlay.ts): each arena's goal, each mode's way to win, and the go. */
+export const HOW_TO_LINES = {
+  boss: 'Boss Bounty! Answer questions to beat the boss before time runs out!',
+  goldrush: 'Gold Rush! Answer questions to dig all the gold out of the mountain!',
+  skyclimb: 'Sky Climb! Every right answer is a step up. Reach the summit!',
+  island: 'Shrinking Island! Answer questions to build the raft before the water rises!',
+  hill: 'King of the Hill! Build the castle, and score fast to wear the crown!',
+  auction: 'Auction House! Earn coins, bid for treasure, and fill the royal treasury!',
+  class: "We're one team today. Pick a role and work together!",
+  teams2: 'Two teams! Work together, and do more than the other team!',
+  teams4: 'Four teams! The team with the most points wins!',
+  solo: 'Everyone for themselves! Get into the top ten!',
+  ready: 'Ready? Get your iPads!',
+} as const;
+
+export const allVoiceLines = (): string[] => [...Object.values(HOW_TO_LINES), ...Object.values(NARRATION), ...new Set(Object.values(ARENA_CALLS).flatMap((c) => [c.guards, c.healer, c.enrage])), ...Object.values(TAKES).flat(), ...Object.values(AUCTION_LINES), ...Object.values(HILL_LINES), ...Object.values(ANNOUNCER), ...Object.values(GOLD_RUSH_LINES), ...Object.values(SKY_CLIMB_LINES), ...Object.values(ISLAND_LINES), ...BOSSES.map((b) => b.roar)];
