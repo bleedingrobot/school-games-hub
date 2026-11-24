@@ -81,7 +81,7 @@ export const focusKey = (focus: MathsFocus | null | undefined) =>
   hasFocus(focus)
     ? `${focus.source}|${focus.onlyThese ? 'only' : 'mix'}|${[...focus.skills].sort().join(',')}`
     : usesLadder(focus)
-      ? `ladder|${floorRank(ladderOf(focus))}`
+      ? `ladder|${floorRank(ladderOf(focus))}${ladderOf(focus).capped ? '|y6' : ''}`
       : 'auto';
 
 /** What the student and teacher see for a skill. */
@@ -202,7 +202,13 @@ export interface FocusOptions {
  * pack, asking only that focus. `stats` is every record the student has, whatever pack kept it.
  */
 export function makeFocusPack(stats: FactStats[], focus: MathsFocus | null | undefined, opts: FocusOptions = {}, random?: () => number, now?: () => number): SkillPack {
-  if (usesLadder(focus)) return new AutoPack(stats, random, now, { enabledTables: opts.enabledTables, division: opts.division, floor: floorRank(ladderOf(focus)) });
+  if (usesLadder(focus))
+    return new AutoPack(stats, random, now, {
+      enabledTables: opts.enabledTables,
+      division: opts.division,
+      floor: floorRank(ladderOf(focus)),
+      ...(ladderOf(focus).capped ? { capAtYear6: true } : {}),
+    });
   if (!hasFocus(focus)) return new TimesTables(stats.filter((s) => parseFactKey(s.key)), random, now);
   const spec: FocusSpec = { skills: focus.skills, onlyThese: focus.onlyThese };
   return new AutoPack(stats, random, now, { enabledTables: opts.enabledTables, division: opts.division, focus: spec });

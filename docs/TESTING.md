@@ -17,7 +17,7 @@ budget deletes a weaker test to make room.
 - A bug fix may add **one** test, only if the bug could quietly come back and would hurt pupils (wrong marking, lost saves,
   someone seeing another school's data). Otherwise fix it and move on.
 - **Class Showdown** (`showdown`, a live whole-class game with four modes) gets 12: 4 rule tests, 4 server tests, 4 screen tests (23 Nov 2026).
-- **Site areas** (not games): `shared/maths` + `src/maths` 29 (27, plus 2 for the Year 7-8 notation and question pictures, 24 Nov 2026), `src/pages` 29 (25, plus 4 for the profile page, 12 Nov 2026), `src/teacher` 26 (plus 1 for the basic facts check panel, 15 Nov 2026), Training 10 (8, plus 2 for the basic facts check), `src/data` 20,
+- **Site areas** (not games): `shared/maths` + `src/maths` 31 (27, plus 2 for the Year 7-8 notation and question pictures and 2 for the Year 7-8 skills and Stop at Year 6, 24 Nov 2026), `src/pages` 29 (25, plus 4 for the profile page, 12 Nov 2026), `src/teacher` 26 (plus 1 for the basic facts check panel, 15 Nov 2026), Training 10 (8, plus 2 for the basic facts check), `src/data` 20,
   `supabase/functions/_shared` 10, `src/components` (with theme, avatar, speech) 8, `src/App.test.tsx` 6.
 - **Waiting in screen tests:** `findBy`/`waitFor` wait up to 5 seconds (`src/test-setup.ts`), so a lazy page loading on a
   busy machine doesn't fail. Don't lower it per test. A test that starts a background import must let it finish before it

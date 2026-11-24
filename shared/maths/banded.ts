@@ -165,13 +165,15 @@ export function spokenNotation(text: string): string {
     })
     .replace(/∛\s*/g, 'the cube root of ')
     .replace(/√\s*/g, 'the square root of ')
-    .replace(/°/g, ' degrees')
+    .replace(/(^|\s)−(?=\d)/g, '$1negative ')
+    .replace(/°C?/g, ' degrees')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
 export function spokenLabel(part: string): string {
   if (/[⁰¹²³⁴⁵⁶⁷⁸⁹√∛°]/.test(part)) return spokenNotation(part);
+  if (/^−\d/.test(part)) return `negative ${spokenLabel(part.slice(1))}`;
   const percent = /^(\d+(?:\.\d+)?)%$/.exec(part);
   if (percent) return `${spokenLabel(percent[1])} percent`;
   if (/^\d+\.\d+$/.test(part)) {
@@ -183,7 +185,7 @@ export function spokenLabel(part: string): string {
 
 /** The spoken version of a question's parts, for screen readers. */
 export function speak(parts: string[]): string {
-  const words = parts.map((p) => SPOKEN_WORDS[p] ?? (/[⁰¹²³⁴⁵⁶⁷⁸⁹√∛°]/.test(p) ? spokenNotation(p) : /^\d+(?:\.\d+)?%$/.test(p) ? spokenLabel(p) : p.includes('/') ? spokenFraction(p) : p.replace(/^\$/, '$')));
+  const words = parts.map((p) => SPOKEN_WORDS[p] ?? (/[⁰¹²³⁴⁵⁶⁷⁸⁹√∛°]/.test(p) || /^−\d/.test(p) ? spokenLabel(p) : /^\d+(?:\.\d+)?%$/.test(p) ? spokenLabel(p) : p.includes('/') ? spokenFraction(p) : p.replace(/^\$/, '$')));
   const text = words.join(' ').replace(/\s+/g, ' ').trim();
   return /[?.!:]$/.test(text) ? text : text + '?';
 }

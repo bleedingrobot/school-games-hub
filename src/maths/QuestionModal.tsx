@@ -53,8 +53,8 @@ function Part({ text, blank }: { text: string; blank: ReactNode }) {
     );
   }
   // A gap in a list ('?,' in 6, 8, ?, 12) keeps its comma after the blank, and an angle ('?°') its degree sign.
-  const gap = /^\?([,;°]?)$/.exec(text);
-  if (gap) return <span className="question__gap">{blank}{gap[1]}</span>;
+  const gap = /^\?([,;]|°C?)?$/.exec(text);
+  if (gap) return <span className="question__gap">{blank}{gap[1] ?? ''}</span>;
   if (/[a-z]/i.test(text)) return <span className="question__word">{text}</span>;
   return <span>{text}</span>;
 }

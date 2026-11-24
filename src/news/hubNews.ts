@@ -24,6 +24,13 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'ladder-negatives-2026-11-24',
+    date: '2026-11-24',
+    emoji: '🧊',
+    title: 'Maths goes below zero',
+    text: 'Finished the whole maths path? Now it keeps going, with numbers below zero like −4 and the temperature on a cold day.',
+  },
+  {
     id: 'isles-goal-2026-11-24',
     date: '2026-11-24',
     emoji: '🗼',

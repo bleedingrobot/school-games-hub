@@ -2971,10 +2971,11 @@ function spokenNotation(text) {
 		if (n === "2") return `${base} squared`;
 		if (n === "3") return `${base} cubed`;
 		return `${base} to the power of ${n.replace("-", "negative ")}`;
-	}).replace(/∛\s*/g, "the cube root of ").replace(/√\s*/g, "the square root of ").replace(/°/g, " degrees").replace(/\s+/g, " ").trim();
+	}).replace(/∛\s*/g, "the cube root of ").replace(/√\s*/g, "the square root of ").replace(/(^|\s)−(?=\d)/g, "$1negative ").replace(/°C?/g, " degrees").replace(/\s+/g, " ").trim();
 }
 function spokenLabel(part) {
 	if (/[⁰¹²³⁴⁵⁶⁷⁸⁹√∛°]/.test(part)) return spokenNotation(part);
+	if (/^−\d/.test(part)) return `negative ${spokenLabel(part.slice(1))}`;
 	const percent = /^(\d+(?:\.\d+)?)%$/.exec(part);
 	if (percent) return `${spokenLabel(percent[1])} percent`;
 	if (/^\d+\.\d+$/.test(part)) {
@@ -2985,7 +2986,7 @@ function spokenLabel(part) {
 }
 /** The spoken version of a question's parts, for screen readers. */
 function speak(parts) {
-	const text = parts.map((p) => SPOKEN_WORDS[p] ?? (/[⁰¹²³⁴⁵⁶⁷⁸⁹√∛°]/.test(p) ? spokenNotation(p) : /^\d+(?:\.\d+)?%$/.test(p) ? spokenLabel(p) : p.includes("/") ? spokenFraction(p) : p.replace(/^\$/, "$"))).join(" ").replace(/\s+/g, " ").trim();
+	const text = parts.map((p) => SPOKEN_WORDS[p] ?? (/[⁰¹²³⁴⁵⁶⁷⁸⁹√∛°]/.test(p) || /^−\d/.test(p) ? spokenLabel(p) : /^\d+(?:\.\d+)?%$/.test(p) ? spokenLabel(p) : p.includes("/") ? spokenFraction(p) : p.replace(/^\$/, "$"))).join(" ").replace(/\s+/g, " ").trim();
 	return /[?.!:]$/.test(text) ? text : text + "?";
 }
 /** The parts with the blank filled in: "7 + 8 = ?" → "7 + 8 = 15", "1/2 = ?/8" → "1/2 = 4/8". */
@@ -7172,6 +7173,331 @@ const BOND_SKILL_KEYS = {
 	]
 };
 //#endregion
+//#region shared/maths/skillPacks/integerSkills.ts
+/**
+* Negative numbers, Year 7 and 8 (docs/plans/ladder-7-8/PLAN.md, card Y3).
+*
+* James, 24 Nov 2026: a negative answer is always four choices to tap, never typed (no minus key). So a question whose answer
+* is below zero is a pick question (`signed` below); one whose answer is zero or more is typed as usual. Every question rolls
+* its pick numbers (slot, salt) either way, so a family always takes the same count of numbers.
+*
+* Numbers below zero are written with the minus sign "−" (U+2212) stuck to the digits: −4. Small numbers only (to 20): this
+* is recall on a number line, not working out.
+*
+* Types:
+*   int-compare   (Y7) int:smallest  int:inverse  int:inverse-pick
+*   int-add-sub   (Y7) int:up  int:down  int:neg-minus  int:temp-up  int:temp-down
+*   int-negatives (Y8) int:add-neg  int:sub-neg  int:compare-dec
+*/
+const Y7 = ["MS.Y7.NUM.NS.P3", "MS.Y7.NUM.NS.P4"];
+const Y7_OPS = ["MS.Y7.NUM.NS.P5", "MS.Y7.NUM.NS.P6"];
+const Y8 = ["MS.Y8.NUM.NS.P7", "MS.Y8.NUM.NS.P8"];
+/** −4, 0, 7: how a whole or decimal number is shown, with the real minus sign. */
+const signedText = (n) => n < 0 ? `−${String(Math.round(-n * 100) / 100)}` : String(Math.round(n * 100) / 100);
+/**
+* The question as a typed one when the answer is zero or more, or as four choices to tap when it is below zero. `named` maps
+* each named mistake to the number it gives; a typed question keeps the mistakes that are zero or more (the pad has no minus),
+* a pick question shows them as labels.
+*/
+function signed(base, answer, named, slot, salt) {
+	const spoken = base.spoken ?? talk(base.parts);
+	if (answer >= 0) return withMistakes({
+		parts: base.parts,
+		spoken,
+		answer,
+		...base.prompt ? { prompt: base.prompt } : {}
+	}, named);
+	const labels = {};
+	for (const [name, n] of Object.entries(named)) if (Number.isFinite(n) && n !== answer) labels[name] = signedText(n);
+	const filled = base.parts.map((p) => p.replace("?", signedText(answer))).join(" ");
+	const made = pick({
+		parts: base.parts,
+		spoken,
+		fact: filled
+	}, signedText(answer), labels, {
+		slot,
+		salt
+	});
+	return made && base.prompt ? {
+		...made,
+		prompt: base.prompt
+	} : made;
+}
+/** The two pick numbers every family here ends with. */
+const withPick = (random, ...params) => [...params, ...rollPick(random)];
+/** "Which is the smallest?" from four numbers, at least two of them below zero. */
+const smallest = oneKey("int:smallest", "The smallest of four numbers, some below zero", Y7, 6, (_k, r) => {
+	const set = new Set();
+	while (set.size < 4) set.add(set.size < 2 ? -int(r, 1, 12) : int(r, -12, 12));
+	return [...set, ...rollPick(r)];
+}, (_k, params) => {
+	const nums = params.slice(0, 4);
+	const [slot, salt] = params.slice(4);
+	if (!nums.every((n) => isInt(n, -12, 12)) || new Set(nums).size !== 4 || nums.filter((n) => n < 0).length < 2) return null;
+	if (!goodPick(slot, salt)) return null;
+	const answer = Math.min(...nums);
+	const others = nums.filter((n) => n !== answer);
+	const nearest = [...others].sort((x, y) => Math.abs(x) - Math.abs(y) || x - y)[0];
+	const namedLabels = {};
+	for (const n of others) {
+		const why = n === Math.max(...nums) ? "picked the biggest" : n === nearest ? "picked the one nearest zero" : n < 0 ? "picked a number below zero nearer zero" : "ignored the minus signs";
+		namedLabels[why in namedLabels ? `${why} (again)` : why] = signedText(n);
+	}
+	const parts = [
+		"Smallest",
+		"=",
+		"?"
+	];
+	const choices = others.map(signedText);
+	choices.splice(slot, 0, signedText(answer));
+	return {
+		parts,
+		prompt: `Which is the smallest? ${nums.map(signedText).join(", ")}`,
+		spoken: `Which is the smallest: ${nums.map((n) => n < 0 ? `negative ${-n}` : String(n)).join(", ")}?`,
+		answer: slot,
+		pick: choices,
+		namedLabels,
+		fact: `${signedText(answer)} is the smallest`
+	};
+});
+/** "−7 + ? = 0": the additive inverse of a number below zero (typed, 7). */
+const inverse = oneKey("int:inverse", "What adds to a negative number to make zero (−7 + ? = 0)", Y7, 1, (_k, r) => [int(r, 2, 20)], (_k, [n]) => {
+	if (!isInt(n, 2, 20)) return null;
+	const parts = [
+		signedText(-n),
+		"+",
+		"?",
+		"=",
+		"0"
+	];
+	return withMistakes({
+		parts,
+		spoken: talk(parts),
+		answer: n
+	}, {
+		"gave zero": 0,
+		"doubled it": 2 * n,
+		"one more": n + 1,
+		"one less": n - 1
+	});
+});
+/** "9 + ? = 0": the additive inverse of a number above zero (tap −9). */
+const inversePick = oneKey("int:inverse-pick", "What adds to a number to make zero (9 + ? = 0)", Y7, 3, (_k, r) => withPick(r, int(r, 2, 20)), (_k, [n, slot, salt]) => {
+	if (!isInt(n, 2, 20)) return null;
+	return signed({ parts: [
+		String(n),
+		"+",
+		"?",
+		"=",
+		"0"
+	] }, -n, {
+		"forgot the minus": n,
+		"gave zero": 0,
+		"doubled it": -2 * n,
+		"one too far": -(n + 1),
+		"one short": -(n - 1)
+	}, slot, salt);
+});
+/** "−4 + 9 = ?": up from below zero, ending at zero or above (typed). */
+const up = oneKey("int:up", "Adding up from below zero (−4 + 9)", Y7_OPS, 4, (_k, r) => {
+	const a = int(r, 1, 12);
+	return withPick(r, a, int(r, a, a + 12));
+}, (_k, [a, b, slot, salt]) => {
+	if (!isInt(a, 1, 12) || !isInt(b, a, a + 12)) return null;
+	return signed({ parts: [
+		signedText(-a),
+		"+",
+		String(b),
+		"=",
+		"?"
+	] }, b - a, {
+		"added both numbers": a + b,
+		"one too many": b - a + 1,
+		"one too few": b - a - 1,
+		"went the wrong way": -a - b
+	}, slot, salt);
+});
+/** "3 − 7 = ?": down past zero (tap −4). */
+const down = oneKey("int:down", "Taking away past zero (3 − 7)", Y7_OPS, 4, (_k, r) => {
+	const a = int(r, 1, 10);
+	return withPick(r, a, int(r, a + 1, a + 12));
+}, (_k, [a, b, slot, salt]) => {
+	if (!isInt(a, 1, 10) || !isInt(b, a + 1, a + 12)) return null;
+	return signed({ parts: [
+		String(a),
+		"−",
+		String(b),
+		"=",
+		"?"
+	] }, a - b, {
+		"forgot the minus": b - a,
+		"added them": -(a + b),
+		"stopped at zero": 0,
+		"one too far": a - b - 1,
+		"one short": a - b + 1
+	}, slot, salt);
+});
+/** "−2 − 5 = ?": further below zero (tap −7). */
+const negMinus = oneKey("int:neg-minus", "Taking away from a negative number (−2 − 5)", Y7_OPS, 4, (_k, r) => withPick(r, int(r, 1, 10), int(r, 1, 10)), (_k, [a, b, slot, salt]) => {
+	if (!isInt(a, 1, 10) || !isInt(b, 1, 10)) return null;
+	return signed({ parts: [
+		signedText(-a),
+		"−",
+		String(b),
+		"=",
+		"?"
+	] }, -a - b, {
+		"forgot the minus": a + b,
+		"went up instead": b - a,
+		"took the smaller from the bigger": -Math.abs(a - b) || 1,
+		"one too far": -a - b - 1,
+		"one short": -a - b + 1
+	}, slot, salt);
+});
+/** Temperature: "−3°C, warms up 8°": up from below zero (typed 5). */
+const tempUp = oneKey("int:temp-up", "Temperature going up from below zero", Y7_OPS, 4, (_k, r) => {
+	const a = int(r, 1, 10);
+	return withPick(r, a, int(r, a, a + 10));
+}, (_k, [a, b, slot, salt]) => {
+	if (!isInt(a, 1, 10) || !isInt(b, a, a + 10)) return null;
+	return signed({
+		parts: [
+			`${signedText(-a)}°`,
+			"+",
+			`${b}°`,
+			"=",
+			"?°"
+		],
+		spoken: `It is negative ${a} degrees and it warms up by ${b} degrees. What is the temperature now, in degrees?`,
+		prompt: `It is ${signedText(-a)}°C. It warms up by ${b}°.`
+	}, b - a, {
+		"added both numbers": a + b,
+		"one too many": b - a + 1,
+		"one too few": b - a - 1,
+		"went the wrong way": -a - b
+	}, slot, salt);
+});
+/** Temperature: "4°C, drops 9°": down past zero (tap −5). */
+const tempDown = oneKey("int:temp-down", "Temperature dropping below zero", Y7_OPS, 4, (_k, r) => {
+	const a = int(r, 1, 10);
+	return withPick(r, a, int(r, a + 1, a + 10));
+}, (_k, [a, b, slot, salt]) => {
+	if (!isInt(a, 1, 10) || !isInt(b, a + 1, a + 10)) return null;
+	return signed({
+		parts: [
+			`${a}°`,
+			"−",
+			`${b}°`,
+			"=",
+			"?°"
+		],
+		spoken: `It is ${a} degrees and it drops by ${b} degrees. What is the temperature now, in degrees?`,
+		prompt: `It is ${a}°C. It drops by ${b}°.`
+	}, a - b, {
+		"forgot the minus": b - a,
+		"added them": -(a + b),
+		"stopped at zero": 0,
+		"one too far": a - b - 1,
+		"one short": a - b + 1
+	}, slot, salt);
+});
+/** "3 + −7 = ?" or "9 + −4 = ?": adding a negative is taking away. */
+const addNeg = oneKey("int:add-neg", "Adding a negative number (3 + −7)", Y8, 4, (_k, r) => withPick(r, int(r, -10, 12), int(r, 1, 12)), (_k, [a, b, slot, salt]) => {
+	if (!isInt(a, -10, 12) || !isInt(b, 1, 12) || a === 0) return null;
+	const parts = [
+		signedText(a),
+		"+",
+		signedText(-b),
+		"=",
+		"?"
+	];
+	const answer = a - b;
+	return signed({ parts }, answer, {
+		"added instead": a + b,
+		"forgot the minus on the answer": -answer,
+		"one too far": answer - 1,
+		"one short": answer + 1
+	}, slot, salt);
+});
+/** "5 − −2 = ?" or "−6 − −4 = ?": taking away a negative is adding. */
+const subNeg = oneKey("int:sub-neg", "Taking away a negative number (5 − −2)", Y8, 4, (_k, r) => withPick(r, int(r, -10, 12), int(r, 1, 12)), (_k, [a, b, slot, salt]) => {
+	if (!isInt(a, -10, 12) || !isInt(b, 1, 12) || a === 0) return null;
+	const parts = [
+		signedText(a),
+		"−",
+		signedText(-b),
+		"=",
+		"?"
+	];
+	const answer = a + b;
+	if (answer === 0) return null;
+	return signed({ parts }, answer, {
+		"took away instead": a - b,
+		"forgot the minus on the answer": -answer,
+		"one too far": answer + 1,
+		"one short": answer - 1
+	}, slot, salt);
+});
+/** "Which is smaller?" with decimals below zero: −3.4 or −3 (four choices around one whole number). */
+const compareDec = oneKey("int:compare-dec", "The smallest of four decimals below zero (−3.4, −3)", Y8, 3, (_k, r) => withPick(r, int(r, 1, 9)), (_k, [w, slot, salt]) => {
+	if (!isInt(w, 1, 9) || !goodPick(slot, salt)) return null;
+	const right = -(w + .5);
+	const named = {
+		"picked the whole number": signedText(-w),
+		"picked the smallest digit after the point": signedText(-(w + .1)),
+		"picked the one nearest zero": signedText(-(w - .5)),
+		"ignored the minus sign": signedText(w + .5)
+	};
+	const made = pick({
+		parts: [
+			"Smallest",
+			"=",
+			"?"
+		],
+		spoken: `Which is the smallest of these numbers below zero?`,
+		fact: `${signedText(right)} is the smallest`
+	}, signedText(right), named, {
+		slot,
+		salt
+	});
+	return made ? {
+		...made,
+		prompt: "Which is the smallest?"
+	} : null;
+});
+const INTEGER_FAMILIES = Object.fromEntries([
+	smallest,
+	inverse,
+	inversePick,
+	up,
+	down,
+	negMinus,
+	tempUp,
+	tempDown,
+	addNeg,
+	subNeg,
+	compareDec
+].map((f) => [f.keys[0], f]));
+const INTEGER_SKILL_KEYS = {
+	"int-compare": [
+		"int:smallest",
+		"int:inverse",
+		"int:inverse-pick"
+	],
+	"int-add-sub": [
+		"int:up",
+		"int:down",
+		"int:neg-minus",
+		"int:temp-up",
+		"int:temp-down"
+	],
+	"int-negatives": [
+		"int:add-neg",
+		"int:sub-neg",
+		"int:compare-dec"
+	]
+};
+//#endregion
 //#region shared/maths/skillPacks/decimalSkills.ts
 /**
 * Tenths and decimals (ladder skills `tenths`, `add-tenths`, `decimal-equivalents` and `times-decimals`).
@@ -9638,7 +9964,8 @@ const families = {
 	...PERCENT_FAMILIES,
 	...DECIMAL_FAMILIES,
 	...FDP_FAMILIES,
-	...BOND_FAMILIES
+	...BOND_FAMILIES,
+	...INTEGER_FAMILIES
 };
 for (const key of Object.keys(families)) if (!RECORD_KEY.test(key)) throw new Error(`generated skill key "${key}" is not a valid record key`);
 const GENERATED = {
@@ -9659,7 +9986,8 @@ const GENERATED_SKILL_KEYS = {
 	...PERCENT_SKILL_KEYS,
 	...DECIMAL_SKILL_KEYS,
 	...FDP_SKILL_KEYS,
-	...BOND_SKILL_KEYS
+	...BOND_SKILL_KEYS,
+	...INTEGER_SKILL_KEYS
 };
 /** Every question type this pack owns. */
 const GENERATED_KEYS = new Set(Object.keys(families));
@@ -10103,7 +10431,19 @@ const LADDER = [
 	generated("fdp-equivalents", "Fractions, decimals and percentages", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["fdp-equivalents"], "MS.Y6.NUM.RN.P3", "MS.Y6.NUM.RN.P4"),
 	generated("percent-of", "Percentages of an amount", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["percent-of"], "MS.Y6.NUM.RN.P13", "MS.Y6.NUM.RN.P14"),
 	generated("whole-from-fraction", "Finding the whole from a fraction", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["whole-from-fraction"], "MS.Y6.NUM.RN.P12"),
-	generated("bedmas", "Order of operations", "order-of-operations", GENERATED_SKILL_KEYS.bedmas, "MS.Y6.NUM.OP.P1")
+	generated("bedmas", "Order of operations", "order-of-operations", GENERATED_SKILL_KEYS.bedmas, "MS.Y6.NUM.OP.P1"),
+	{
+		...generated("int-compare", "Negative numbers in order", "integers", GENERATED_SKILL_KEYS["int-compare"], "MS.Y7.NUM.NS.P3", "MS.Y7.NUM.NS.P4"),
+		year: 7
+	},
+	{
+		...generated("int-add-sub", "Adding and taking away across zero", "integers", GENERATED_SKILL_KEYS["int-add-sub"], "MS.Y7.NUM.NS.P5", "MS.Y7.NUM.NS.P6"),
+		year: 7
+	},
+	{
+		...generated("int-negatives", "Adding and taking away negatives", "integers", GENERATED_SKILL_KEYS["int-negatives"], "MS.Y8.NUM.NS.P7", "MS.Y8.NUM.NS.P8"),
+		year: 8
+	}
 ];
 /**
 * Skills that were renamed or taken out (19 Nov 2026: the times-table steps split into one table each, and rounding to a million
@@ -10156,6 +10496,8 @@ function currentPlaceId(id) {
 function formerIdsOf(id) {
 	return Object.entries(FORMER_SKILLS).filter(([, f]) => f.now.includes(id)).map(([old]) => old);
 }
+/** A Year 7 or 8 skill, left out for a pupil stopped at Year 6. */
+const pastYear6 = (skill) => (skill.year ?? 0) >= 7;
 /** The skill's keys once switched-off tables are taken out. */
 function activeKeys(skill, enabledTables, division = true) {
 	const on = new Set(enabledTables);
@@ -10200,7 +10542,7 @@ function ladderProgress(stats, opts = {}) {
 	const floor = Math.max(opts.floor ?? 0, tablesJumpFloor(byKey, enabled));
 	return {
 		skills: LADDER.map((skill, index) => {
-			if (!skill.built) return {
+			if (!skill.built || opts.capAtYear6 && pastYear6(skill)) return {
 				skill,
 				status: "later",
 				share: 0
@@ -10253,7 +10595,7 @@ function ladderProgress(stats, opts = {}) {
 /** The focus, review and stretch keys auto draws from for these records. */
 function autoPools(progress, opts = {}) {
 	const enabled = opts.enabledTables ?? TABLES;
-	const live = progress.skills.filter((p) => p.skill.built && p.skill.inAuto !== false).map((p) => ({
+	const live = progress.skills.filter((p) => p.skill.built && p.skill.inAuto !== false && p.status !== "later").map((p) => ({
 		...p,
 		keys: activeKeys(p.skill, enabled, opts.division !== false)
 	})).filter((p) => p.keys.length);
@@ -10472,7 +10814,8 @@ function parseLadderInfo(raw) {
 		placed,
 		placement: placed === "done" ? placement : null,
 		furthest: skillId(r.furthest),
-		...yearLevel !== null ? { yearLevel } : {}
+		...yearLevel !== null ? { yearLevel } : {},
+		...r.capped === true ? { capped: true } : {}
 	};
 }
 const builtSkills = () => LADDER.filter((s) => s.built);
@@ -10486,12 +10829,13 @@ function floorRank(info) {
 function placeProgress(stats, info, opts = {}) {
 	return ladderProgress(stats, {
 		...opts,
-		floor: floorRank(info)
+		floor: floorRank(info),
+		...info.capped ? { capAtYear6: true } : {}
 	});
 }
 /** The furthest place to keep: where they are now, or the last built skill once all of them are secure. */
 function placeToStore(stats, info, opts = {}) {
-	const skill = placeProgress(stats, info, opts).current ?? builtSkills().at(-1) ?? null;
+	const skill = placeProgress(stats, info, opts).current ?? builtSkills().filter((s) => !info.capped || !pastYear6(s)).at(-1) ?? null;
 	return skill ? {
 		skill: skill.id,
 		rank: LADDER.indexOf(skill)
@@ -10566,7 +10910,8 @@ function makeFocusPack(stats, focus, opts = {}, random, now) {
 	if (usesLadder(focus)) return new AutoPack(stats, random, now, {
 		enabledTables: opts.enabledTables,
 		division: opts.division,
-		floor: floorRank(ladderOf(focus))
+		floor: floorRank(ladderOf(focus)),
+		...ladderOf(focus).capped ? { capAtYear6: true } : {}
 	});
 	if (!hasFocus(focus)) return new TimesTables(stats.filter((s) => parseFactKey(s.key)), random, now);
 	const spec = {

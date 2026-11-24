@@ -21,7 +21,18 @@ import { GENERATED_SKILL_KEYS, generatedPack, isGeneratedKey } from './skillPack
 import { BandedPack } from './banded';
 import { TimesTables } from './skillPacks/timesTables';
 
-export type LadderStage = 'early-facts' | 'times-tables' | 'place-value' | 'rounding' | 'order-of-operations' | 'fractions-decimals-percentages';
+export type LadderStage =
+  | 'early-facts'
+  | 'times-tables'
+  | 'place-value'
+  | 'rounding'
+  | 'order-of-operations'
+  | 'fractions-decimals-percentages'
+  // Year 7-8 (docs/plans/ladder-7-8/PLAN.md).
+  | 'integers'
+  | 'algebra'
+  | 'measurement-geometry'
+  | 'data-chance';
 
 export interface LadderSkill {
   id: string;
@@ -40,6 +51,11 @@ export interface LadderSkill {
    * it doesn't count towards progress. A teacher can still choose it as a focus, and a game (Pipi) can ask it from its own rules.
    */
   inAuto?: false;
+  /**
+   * The school year the NZC teaching sequence puts the skill in, for Year 7 and 8 skills only (left out below Year 7). A pupil
+   * whose teacher ticked "Stop at Year 6" never has these on auto (`LadderOptions.capAtYear6`).
+   */
+  year?: 7 | 8;
   /** For a times-tables skill: its table (7 for ×7). */
   table?: number;
   /** For a times-tables skill: which step of `CAMPAIGN_STEPS` its table is in (0 for ×2, ×5 and ×10). */
@@ -174,6 +190,10 @@ export const LADDER: LadderSkill[] = [
   generated('percent-of', 'Percentages of an amount', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['percent-of'], 'MS.Y6.NUM.RN.P13', 'MS.Y6.NUM.RN.P14'),
   generated('whole-from-fraction', 'Finding the whole from a fraction', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['whole-from-fraction'], 'MS.Y6.NUM.RN.P12'),
   generated('bedmas', 'Order of operations', 'order-of-operations', GENERATED_SKILL_KEYS.bedmas, 'MS.Y6.NUM.OP.P1'),
+  // Year 7 and 8 (docs/plans/ladder-7-8/PLAN.md): only past this point for pupils a teacher hasn't stopped at Year 6.
+  { ...generated('int-compare', 'Negative numbers in order', 'integers', GENERATED_SKILL_KEYS['int-compare'], 'MS.Y7.NUM.NS.P3', 'MS.Y7.NUM.NS.P4'), year: 7 },
+  { ...generated('int-add-sub', 'Adding and taking away across zero', 'integers', GENERATED_SKILL_KEYS['int-add-sub'], 'MS.Y7.NUM.NS.P5', 'MS.Y7.NUM.NS.P6'), year: 7 },
+  { ...generated('int-negatives', 'Adding and taking away negatives', 'integers', GENERATED_SKILL_KEYS['int-negatives'], 'MS.Y8.NUM.NS.P7', 'MS.Y8.NUM.NS.P8'), year: 8 },
 ];
 
 /**
@@ -248,7 +268,15 @@ export interface LadderOptions {
   floor?: number;
   /** A maths focus (teacher's or the student's own) instead of auto. */
   focus?: FocusSpec;
+  /**
+   * "Stop at Year 6" (James, 24 Nov 2026): the teacher capped this pupil, so Year 7 and 8 skills are off auto for them. They
+   * show as 'later', never count, and are never focus, review or stretch. A teacher's focus can still name them.
+   */
+  capAtYear6?: boolean;
 }
+
+/** A Year 7 or 8 skill, left out for a pupil stopped at Year 6. */
+export const pastYear6 = (skill: LadderSkill) => (skill.year ?? 0) >= 7;
 
 /** The skills a focus names, and whether earlier skills are left out ("only these"). */
 export interface FocusSpec {
@@ -303,7 +331,7 @@ export function ladderProgress(stats: Iterable<FactStats>, opts: LadderOptions =
   let builtCount = 0;
   const floor = Math.max(opts.floor ?? 0, tablesJumpFloor(byKey, enabled));
   const skills: SkillProgress[] = LADDER.map((skill, index) => {
-    if (!skill.built) return { skill, status: 'later' as const, share: 0 };
+    if (!skill.built || (opts.capAtYear6 && pastYear6(skill))) return { skill, status: 'later' as const, share: 0 };
     const keys = activeKeys(skill, enabled, opts.division !== false);
     if (keys.length === 0) return { skill, status: 'upcoming' as const, share: 1 };
     const share = keys.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / keys.length;
@@ -328,7 +356,7 @@ export function ladderProgress(stats: Iterable<FactStats>, opts: LadderOptions =
 /** The focus, review and stretch keys auto draws from for these records. */
 export function autoPools(progress: LadderProgress, opts: LadderOptions = {}): Pools {
   const enabled = opts.enabledTables ?? TABLES;
-  const live = progress.skills.filter((p) => p.skill.built && p.skill.inAuto !== false).map((p) => ({ ...p, keys: activeKeys(p.skill, enabled, opts.division !== false) })).filter((p) => p.keys.length);
+  const live = progress.skills.filter((p) => p.skill.built && p.skill.inAuto !== false && p.status !== 'later').map((p) => ({ ...p, keys: activeKeys(p.skill, enabled, opts.division !== false) })).filter((p) => p.keys.length);
   const at = live.findIndex((p) => p.status === 'current');
   if (at < 0) return { focus: [], review: live.flatMap((p) => p.keys), stretch: [] };
   return { focus: live[at].keys, review: live.slice(0, at).flatMap((p) => p.keys), stretch: live[at + 1]?.keys ?? [] };

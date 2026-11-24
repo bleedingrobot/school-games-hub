@@ -12,6 +12,10 @@ export const STAGE_NAMES: Record<LadderStage, string> = {
   rounding: 'Rounding',
   'order-of-operations': 'Order of operations',
   'fractions-decimals-percentages': 'Fractions, decimals and percentages',
+  integers: 'Negative numbers',
+  algebra: 'Algebra',
+  'measurement-geometry': 'Measurement and angles',
+  'data-chance': 'Data and chance',
 };
 
 /** The skills on offer, in ladder order. */

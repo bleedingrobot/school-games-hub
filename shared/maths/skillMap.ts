@@ -15,7 +15,7 @@ import { placeProgress, type LadderInfo } from './place';
 import { STEP_SECURE_SHARE } from './selector';
 
 /** The stages in the order a student meets them, with the words teachers see. */
-export const STAGES: readonly { id: LadderStage; label: string }[] = [
+const ALL_STAGES: readonly { id: LadderStage; label: string }[] = [
   { id: 'early-facts', label: 'Early number facts' },
   { id: 'times-tables', label: 'Times tables' },
   { id: 'place-value', label: 'Place value' },
@@ -25,7 +25,14 @@ export const STAGES: readonly { id: LadderStage; label: string }[] = [
     id: 'fractions-decimals-percentages',
     label: 'Fractions, decimals and percentages',
   },
+  { id: 'integers', label: 'Negative numbers' },
+  { id: 'algebra', label: 'Algebra' },
+  { id: 'measurement-geometry', label: 'Measurement and angles' },
+  { id: 'data-chance', label: 'Data and chance' },
 ];
+
+/** The stages that have a built skill (a Year 7-8 stage shows up once its first skill is built). */
+export const STAGES: readonly { id: LadderStage; label: string }[] = ALL_STAGES.filter((s) => LADDER.some((k) => k.built && k.stage === s.id));
 
 export const stageLabel = (id: LadderStage) => STAGES.find((s) => s.id === id)?.label ?? id;
 
