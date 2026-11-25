@@ -2,6 +2,7 @@
  * A pretend class for Class Live (`?pretend=30`): pretend pupils who join and play through the REAL server steps
  * (`classLiveStep`) on a database in memory. The tests drive it with a pretend clock; the preview with real timers.
  */
+import { ghostBot } from './ghostBot';
 import { memoryDb, memoryMove, memoryServices, type MemoryDb } from './memoryServices';
 import { boosted, CORNERS, cornerOf, ghostly, pretendDir, stepMove, type Corner, type MoveState } from './corners';
 import { classLiveStep, type Change, type ClassLiveServices } from './server';
@@ -52,6 +53,7 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
       if (row.session.state === 'lobby') return opts.later(go, 1000);
       const g = row.session.game;
       if (g.kind === 'corners') return cornersBot(room, id, skill);
+      if (g.kind === 'ghost') return ghostBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
       if (g.kind === 'mural') {
         if (g.revealed) return;
         // In the guessing, take a few seconds to read the riddles, then pick (better pupils are right more often);
