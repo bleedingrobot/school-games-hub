@@ -189,22 +189,29 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
   const t = tNow();
   const inCorner = cornerOf(pos.current.p);
   const wantQuestion = view.state === 'live' && !!r && (jailed ? (mg?.jailRight ?? 0) < JAIL_RIGHT : !!mg?.held && inCorner !== null && t < r.runEnd - 600 && !r.ended);
+  // Bumped to ask again after an ask that brought no question (a busy server, a dropped connection, the server not
+  // seeing the jail yet): without it the pad waited for ever and jailed pupils got no questions (James, 25 Nov 2026 NZ).
+  const [askAgain, setAskAgain] = useState(0);
   useEffect(() => {
     if (!wantQuestion || question || asking.current || room === null) return;
     asking.current = true;
     const p = pos.current.p;
+    let got = false;
     const go = async () => {
       if (!jailed) await link.move(room, p.x, p.y).catch(() => null);
       const out = await link.send({ action: 'ask', room });
       const b = out.body as { question?: PublicQuestion; purpose?: 'jail' | 'power' };
-      if (out.status === 200 && b.question) { setQuestion(b.question); setPurpose(b.purpose ?? null); }
+      if (out.status === 200 && b.question) { got = true; setQuestion(b.question); setPurpose(b.purpose ?? null); }
     };
-    void go().catch(() => undefined).finally(() => { window.setTimeout(() => { asking.current = false; }, 1200); });
-  }, [wantQuestion, question, room, link, jailed]);
-  // A power-up question goes away if the pupil leaves the corner or the run ends.
+    void go().catch(() => undefined).finally(() => {
+      window.setTimeout(() => { asking.current = false; if (!got) setAskAgain((n) => n + 1); }, got ? 600 : 2000);
+    });
+  }, [wantQuestion, question, room, link, jailed, askAgain]);
+  // A power-up question goes away if the pupil leaves the corner, the run ends or they are caught; a jail question
+  // goes once they are out.
   useEffect(() => {
-    if (question && purpose === 'power' && !wantQuestion) { setQuestion(null); setPurpose(null); }
-  }, [question, purpose, wantQuestion]);
+    if (question && ((purpose === 'power' && (!wantQuestion || jailed)) || (purpose === 'jail' && !jailed))) { setQuestion(null); setPurpose(null); }
+  }, [question, purpose, wantQuestion, jailed]);
 
   const onSubmit = async (value: number, ms: number): Promise<MarkedAnswer> => {
     const q = question as PublicQuestion;
