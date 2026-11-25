@@ -135,3 +135,23 @@
   gap: 8px 20px;
   font-weight: 700;
 }
+
+/* Online now (counts only). */
+.teacher-head__online {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.online-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ink-soft);
+  opacity: 0.5;
+}
+.online-dot--on {
+  background: #2fb35a;
+  opacity: 1;
+  box-shadow: 0 0 0 3px rgba(47, 179, 90, 0.2);
+}
