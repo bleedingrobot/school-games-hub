@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'starweb-2026-11-25',
+    date: '2026-11-25',
+    emoji: '✨',
+    title: 'Star Web',
+    text: 'One times-table fact you know lights up a whole sky of new ones. Fill your Star Map!',
+    game: 'starweb',
+  },
+  {
     id: 'classlive-ghost-tag-2026-11-25',
     date: '2026-11-25',
     emoji: '👻',
