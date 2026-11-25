@@ -113,3 +113,6 @@ All cards L0 to L5 built in one PR: shared/maths/skillPacks/y6.ts gathers y6Numb
 shared/maths/y6/*.oracle.ts and *.picks.ts check every roll (shared/maths/y78.test.ts covers Year 6 too). New pictures in
 shared/maths/figure.ts: `shape`, `grid`, `spinner` (with a colour), and `triangle-area` with `right`. Long tap choices get
 smaller text (QuestionModal `choicesSize`). Pupils' news line `ladder-year6-2026-11-26`.
+
+Tagged as Year 6 in the database (James, 26 Nov 2026): one row per question type in `maths_content_years` (migration
+20261126000600), kept in step by shared/maths/y78.test.ts. A new Year 6 question type needs its row in a new migration.
