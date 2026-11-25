@@ -1,4 +1,4 @@
-/* Saboteur Crew (docs/CREW-PLAN.md). Builds on corners.css (fc-board, fc-token, fc-stage, fc-side, fc-finish) and ghost.css's shared bits. */
+/* Glitches (docs/CREW-PLAN.md). Builds on corners.css (fc-board, fc-token, fc-stage, fc-side, fc-finish) and ghost.css's shared bits. */
 
 .sc-board__ground {
   position: absolute;
@@ -62,7 +62,46 @@
   animation: sc-spin 6s linear infinite;
 }
 .sc-machine--sparked { animation: sc-shake 0.25s ease-in-out infinite alternate; box-shadow: 0 0 0 3px #f97316, 0 0 3vmin #f97316; }
-.sc-machine__sparks { position: absolute; top: -40%; font-size: 3vmin; animation: sc-zap 0.4s steps(2) infinite; }
+/* A sparking machine has to jump out of a painted floor from the back of the classroom: a pulsing hot glow behind it,
+   a flashing outline round the painting and a shock ring, as well as the shake and the zap. */
+.sc-machine--sparked:has(img) { box-shadow: none; }
+.sc-machine--sparked::before {
+  content: '';
+  position: absolute;
+  inset: -45%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(253, 224, 71, 0.85) 0%, rgba(249, 115, 22, 0.6) 35%, rgba(239, 68, 68, 0.25) 55%, transparent 70%);
+  animation: sc-glow 0.45s ease-in-out infinite alternate;
+}
+.sc-machine--sparked img { animation: sc-flash 0.5s steps(1) infinite; }
+.sc-machine__sparks {
+  position: absolute;
+  top: -55%;
+  font-size: 4.6vmin;
+  filter: drop-shadow(0 0 1vmin #fde047) drop-shadow(0 0 2vmin #f97316);
+  animation: sc-zap 0.3s steps(2) infinite;
+}
+.sc-machine--sparked .sc-machine__sparks::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 155%;
+  width: 6vmin;
+  height: 6vmin;
+  border-radius: 50%;
+  border: 0.5vmin solid #fb923c;
+  transform: translate(-50%, -50%) scale(0.6);
+  opacity: 0.9;
+  animation: sc-ring 1s ease-out infinite;
+}
+.sc-machine--sparked .sc-machine__name { color: #fed7aa; background: rgba(185, 28, 28, 0.85); padding: 0 0.6vmin; border-radius: 0.6vmin; }
+@keyframes sc-glow { from { opacity: 0.55; transform: scale(0.85); } to { opacity: 1; transform: scale(1.12); } }
+@keyframes sc-flash {
+  0% { filter: drop-shadow(0 0 0.5vmin #fff7) drop-shadow(0 0 1.4vmin #f97316) brightness(1.05); }
+  50% { filter: drop-shadow(0 0 0.6vmin #fde047) drop-shadow(0 0 2.6vmin #fde047) brightness(1.45) saturate(1.3); }
+}
+@keyframes sc-ring { to { transform: translate(-50%, -50%) scale(2.6); opacity: 0; } }
 .sc-machine__fix { position: absolute; bottom: -12%; display: flex; gap: 2px; }
 .sc-machine__fix i { width: 1.2vmin; height: 1.2vmin; min-width: 6px; min-height: 6px; border-radius: 50%; background: #334155; box-shadow: 0 0 0 1px #fff; }
 .sc-machine__fix i.on { background: #4ade80; }
@@ -95,6 +134,23 @@
 .sc-token--out .fc-token__body { box-shadow: 0 0 0 4px #facc15, 0 0 30px #facc15; }
 .sc-token--winner .fc-token__body { box-shadow: 0 0 0 4px #4ade80, 0 0 24px #4ade80; }
 .sc-token--glitch .fc-token__body { box-shadow: 0 0 0 4px #c084fc, 0 0 24px #a855f7; }
+.sc-dot { z-index: 3; }
+.sc-dot__name {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  margin-top: 1px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(15, 23, 42, 0.78);
+  color: #f8fafc;
+  font-size: clamp(8px, 1.6vmin, 11px);
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+  pointer-events: none;
+}
 .sc-dot--1 { background: #7dd3fc; font-size: 10px; line-height: 1; display: grid; place-items: center; }
 .sc-dot--2 { background: #c084fc; box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.5); }
 .sc-pop--spark { color: #fdba74; font-size: 4vmin; }
@@ -187,7 +243,12 @@
 .sc-colour--9 { border-left: 8px solid #84cc16; } .sc-colour--10 { border-left: 8px solid #f43f5e; } .sc-colour--11 { border-left: 8px solid #64748b; }
 
 @media (prefers-reduced-motion: reduce) {
-  .sc-machine--sparked, .sc-machine__sparks, .sc-belt, .sc-machine--job::after, .sc-token--drone, .sc-call--hot { animation: none; }
+  .sc-machine--sparked, .sc-machine__sparks, .sc-machine--sparked::before, .sc-machine--sparked img, .sc-machine--sparked .sc-machine__sparks::after, .sc-belt, .sc-machine--job::after, .sc-token--drone, .sc-call--hot { animation: none; }
 }
 @keyframes sc-fade { from { opacity: 0; } }
 @keyframes sc-float { 50% { transform: translate(-50%, -62%); } }
+
+/* The pupil's factory name for the game */
+.sc-nick { margin: 0; font-size: 1.15rem; color: #e2e8f0; }
+.sc-nick b { color: #fde047; font-size: 1.3em; }
+.sc-nick-chip { background: rgba(253, 224, 71, 0.18); color: #fef08a; font-weight: 800; }

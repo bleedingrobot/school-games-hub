@@ -1,5 +1,5 @@
 /**
- * Saboteur Crew's parts of the Class Live page (docs/CREW-PLAN.md): the teacher's setup card, the lobby's head, the
+ * Glitches' parts of the Class Live page (docs/CREW-PLAN.md): the teacher's setup card, the lobby's head, the
  * How to play sheet and the "How it works" page (roles, machines, meetings, power-ups and tricks).
  */
 import { useState, type ReactNode } from 'react';
@@ -19,9 +19,9 @@ export function CrewPickCard({ busy, hostOk, onOpen, timer, art }: {
   const [length, setLength] = useState(15);
   const [help, setHelp] = useState(false);
   return (
-    <section className="cl-card cl-card--active cl-card--crew" aria-label="Saboteur Crew">
+    <section className="cl-card cl-card--active cl-card--crew" aria-label="Glitches">
       {art(painted('pick', 'crew', true) ?? painted('crew', 'map-factory', true))}
-      <h2 className="cl-card__name">🤖 Saboteur Crew</h2>
+      <h2 className="cl-card__name">🤖 Glitches</h2>
       <p className="cl-card__blurb">Keep the robot factory running with maths. But a few secret Glitches are jamming the machines! You call the meetings; the class votes in secret.</p>
       <p className="cl-card__blurb"><small>Best for 8 or more pupils. A shift is 4 minutes; press <b>Call a meeting</b> (or M) when you want the class to talk.</small></p>
       <button type="button" className="cl-btn cl-btn--small fc-guide-btn fc-guide-btn--card" onClick={() => setHelp(true)}>🤖 How it works</button>
@@ -37,7 +37,7 @@ export function CrewLobbyHead() {
   return (
     <>
       {help && <CrewHelp onClose={() => setHelp(false)} />}
-      <h1 className="cl-lobby__title">Saboteur Crew</h1>
+      <h1 className="cl-lobby__title">Glitches</h1>
       <div className="cl-lobby__fact">The Robot Factory</div>
       <div className="gt-lobby-ghosts sc-lobby-bots" aria-hidden="true"><i>🤖</i><i>🔧</i><i>⚡</i></div>
       <p className="cl-lobby__ask">Most of you are Crew. A few of you are secret Glitches. Can the Crew keep the factory running?</p>
@@ -50,7 +50,7 @@ export function CrewLobbyHead() {
 export function crewSheet() {
   const H = CREW_HOWTO;
   return {
-    title: 'How to play Saboteur Crew', mode: 'The Robot Factory', modeSay: null, art: painted('pick', 'crew', true) ?? painted('crew', 'map-factory', true),
+    title: 'How to play Glitches', mode: 'The Robot Factory', modeSay: null, art: painted('pick', 'crew', true) ?? painted('crew', 'map-factory', true),
     steps: [
       { icon: '🕹️', text: 'Steer with the joystick, or the arrow keys.', say: H[0] },
       { icon: '🤫', text: 'Check your device: most of you are Crew, a few are secret Glitches.', say: H[1] },
@@ -67,10 +67,10 @@ function Pic({ src, emoji }: { src: string | null; emoji: string }) {
 
 export function CrewHelp({ onClose }: { onClose: () => void }) {
   return createPortal(
-    <div className="fc-guide" role="dialog" aria-modal="true" aria-label="How Saboteur Crew works">
+    <div className="fc-guide" role="dialog" aria-modal="true" aria-label="How Glitches works">
       <div className="fc-guide__card">
         <header className="fc-guide__head">
-          <h2>How Saboteur Crew works</h2>
+          <h2>How Glitches works</h2>
           <button type="button" className="cl-btn cl-btn--small" onClick={onClose}>Close ✕</button>
         </header>
         <ul className="fc-guide__grid">

@@ -42,13 +42,13 @@ import { BAYS, isShark, newShark, sharkAdvance, sharkJump, sharkQuestionFor, typ
 
 import { advance as ghostAdvance, freshMine as ghostFresh, ghostDone, ghostPlayer, MAPS as GHOST_MAPS, needsPositions as ghostNeeds, newGhost, nextDeadline as ghostDeadline, publicGhost, type GhostEvent, type GhostGame, type GhostPlayer, type PublicGhost } from './ghost';
 import { ghostStep } from './ghostServer';
-import { advance as crewAdvance, callMeeting, crewDone, crewPlayer, freshMine as crewFresh, meetingControl, newCrew, nextDeadline as crewDeadline, publicCrew, type CrewEvent, type CrewGame, type CrewPlayer, type PublicCrew } from './crew';
+import { advance as crewAdvance, callMeeting, crewDone, crewNick, crewPlayer, freshMine as crewFresh, meetingControl, newCrew, nextDeadline as crewDeadline, publicCrew, type CrewEvent, type CrewGame, type CrewPlayer, type PublicCrew } from './crew';
 import { crewStep } from './crewServer';
 
 export const ACTIVITIES = ['stars', 'serpent', 'mural', 'corners', 'shark', 'ghost', 'clash', 'thrones', 'lava', 'crew'] as const;
 export type Activity = (typeof ACTIVITIES)[number];
 export const LENGTHS = [0, 2, 3, 5, 10, 15] as const;
-export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners', shark: 'Shark Bay', ghost: 'Ghost Tag', clash: 'Colour Clash', thrones: 'Musical Thrones', lava: 'Floor is Lava', crew: 'Saboteur Crew' };
+export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners', shark: 'Shark Bay', ghost: 'Ghost Tag', clash: 'Colour Clash', thrones: 'Musical Thrones', lava: 'Floor is Lava', crew: 'Glitches' };
 
 export interface LivePlayer {
   id: string;
@@ -343,7 +343,8 @@ function screenView(row: Pick<RoomRow, 'showNames' | 'seq' | 'events'>, s: Sessi
     ...base,
     showNames: row.showNames,
     joinCode: s.lobby?.code ?? s.joinCode ?? null,
-    people: s.order.map((id) => ({ id, name: row.showNames ? names[id] : null, colour: s.players[id].colour })),
+    // Glitches shows everyone's factory name instead (always: it is no one's real name).
+    people: s.order.map((id) => ({ id, name: s.game.kind === 'crew' && s.game.mine[id]?.nick ? s.game.mine[id].nick : row.showNames ? names[id] : null, colour: s.players[id].colour })),
     game: s.game,
     seq: row.seq,
     events: row.events,
@@ -356,7 +357,11 @@ export function playerView(s: Session, id: string): PlayerView {
   if (s.game.kind === 'lava') return { player: id, name, colour: p.colour, game: lavaPlayer(s, s.game, id, () => freshLavaMine(s.order.indexOf(id))) };
   if (s.game.kind === 'thrones') return { player: id, name, colour: p.colour, game: thronesPlayer(s.game, s.order, id, s.state === 'over') };
   if (s.game.kind === 'clash') return { player: id, name, colour: p.colour, game: clashPlayer(s, s.game, id) };
-  if (s.game.kind === 'crew') return { player: id, name: firstName(p.name), colour: p.colour, game: crewPlayer(s.game, id, s.order, s.state === 'over', (x) => ({ name: firstName(s.players[x]?.name ?? ''), colour: s.players[x]?.colour ?? 0 })) };
+  if (s.game.kind === 'crew') {
+    // Glitches: everyone is only ever their factory name (a first name only for a game saved before factory names).
+    const cg = s.game;
+    return { player: id, name: cg.mine[id]?.nick ?? firstName(p.name), colour: p.colour, game: crewPlayer(cg, id, s.order, s.state === 'over', (x) => ({ name: cg.mine[x]?.nick ?? firstName(s.players[x]?.name ?? ''), colour: s.players[x]?.colour ?? 0 })) };
+  }
   if (s.game.kind === 'ghost') return { player: id, name, colour: p.colour, game: ghostPlayer(s.game, id, s.order, s.state === 'over') };
   if (s.game.kind === 'corners') {
     const g = s.game;
@@ -483,7 +488,7 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
     // Four Corners: the server moves pupils (back from jail, a jump); their devices snap to the new spot.
     const placedBefore = g0.kind === 'corners' || g0.kind === 'ghost' || g0.kind === 'crew' || g0.kind === 'clash' || g0.kind === 'thrones' || g0.kind === 'lava' ? new Map(s.order.map((id) => [id, g0.mine[id]?.placed ?? 0])) : null;
     if (g0.kind === 'crew') {
-      // Saboteur Crew runs on the clock too: role cards, delayed jams, the power bar, meetings, rounds (docs/CREW-PLAN.md).
+      // Glitches runs on the clock too: role cards, delayed jams, the power bar, meetings, rounds (docs/CREW-PLAN.md).
       if (s.state === 'live') {
         const last = timeUp(s, row, now);
         events.push(...crewAdvance(g0, t, s.order, () => sv.random(), last));
@@ -601,7 +606,7 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
     // A round's end changes every pupil's own row (caught, safe, scores).
     if ((g1.kind === 'corners' || g1.kind === 'lava') && events.some((e) => e.type === 'roll' || e.type === 'crack' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
     if ((g1.kind === 'corners' || g1.kind === 'clash') && events.some((e) => e.type === 'roll' || e.type === 'clash_count' || e.type === 'clash_round' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
-    // Saboteur Crew: roles, meetings (the ballot), reveals and rounds change everyone's own row.
+    // Glitches: roles, meetings (the ballot), reveals and rounds change everyone's own row.
     if (g1.kind === 'crew' && events.some((e) => e.type === 'c_round' || e.type === 'c_meeting' || e.type === 'c_vote' || e.type === 'c_out' || e.type === 'c_resume' || e.type === 'c_end' || e.type === 'over')) for (const id of s.order) changed.add(id);
     if (g1.kind === 'ghost' && events.some((e) => e.type === 'g_round' || e.type === 'g_end' || e.type === 'over' || (e.type === 'g_grab' && e.froze > 0))) for (const id of s.order) changed.add(id);
     if (g1.kind === 'thrones' && events.some((e) => e.type === 'stop' || e.type === 'seated' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
@@ -653,7 +658,7 @@ export function newSession(body: Record<string, unknown>, seed: number, random: 
     const level = SERPENT_LEVELS.find((l) => l === body.level) ?? 'gold';
     game = newSerpent(level, random);
   } else if (activity === 'crew') {
-    game = newCrew();
+    game = newCrew('factory', random);
   } else if (activity === 'ghost') {
     game = newGhost(GHOST_MAPS.find((m) => m === body.map) ?? GHOST_MAPS[Math.floor(random() * GHOST_MAPS.length) % GHOST_MAPS.length]);
   } else if (activity === 'corners') {
@@ -688,7 +693,7 @@ function joinGame(g: Game, who: string, index: number) {
   if (g.kind === 'thrones') g.mine[who] = thronesFresh(index);
   if (g.kind === 'clash') clashJoin(g, who);
   if (g.kind === 'ghost') g.mine[who] = ghostFresh(index);
-  if (g.kind === 'crew') g.mine[who] = crewFresh(index);
+  if (g.kind === 'crew') g.mine[who] = { ...crewFresh(index), nick: crewNick(g, who) };
 }
 
 /** Lobby to live (the teacher's Start, or a set-time game's start). */
@@ -765,7 +770,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         return { reply: null, events: [...reveal(s.game, t), { type: 'over', t, why: 'teacher' }] };
       }
       if (action === 'crew') {
-        // Saboteur Crew's meeting buttons (James: only the teacher calls a meeting).
+        // Glitches' meeting buttons (James: only the teacher calls a meeting).
         if (s.game.kind !== 'crew' || s.state !== 'live') return { refuse: no(400, 'No meeting here.') };
         const out = body.do === 'meeting' ? callMeeting(s.game, t, s.order) : body.do === 'vote' || body.do === 'more' ? meetingControl(s.game, t, body.do) : { ok: false as const };
         if (!out.ok) return { refuse: no(409, 'Not now.', 'not_now') };

@@ -9,7 +9,7 @@ import { crewSpotsOf } from './crewBot';
 
 const by = (id: number) => ({ x: MACHINES[id].x + MACHINES[id].r + 0.04, y: MACHINES[id].y });
 
-describe('Saboteur Crew', () => {
+describe('Glitches', () => {
   it('delayed jams, fixing, jobs, the power bar, meetings, secret votes, drones and wins', () => {
     expect([glitchCount(2), glitchCount(3), glitchCount(8), glitchCount(12), glitchCount(25), glitchCount(40)]).toEqual([0, 1, 1, 2, 3, 4]);
     const g: CrewGame = newCrew();
@@ -138,6 +138,15 @@ describe('Saboteur Crew', () => {
     expect(JSON.stringify(done.view)).not.toContain(pc.ids[0]);
     const look = await classLiveStep(pc.services, pc.ids[0], { action: 'look', room });
     expect((look.body.me as { game: { kind: string } }).game.kind).toBe('crew');
+    // Everyone has their own factory name, and it is the only name the game shows (big screen, their device, other maps).
+    const nicks = pc.ids.map((id) => g.mine[id].nick);
+    expect(new Set(nicks).size).toBe(pc.ids.length);
+    expect(nicks.every((n) => /^[A-Z][a-z]+ [A-Z][a-z]+$/.test(n ?? ''))).toBe(true);
+    expect(done.screen.people.map((p) => p.name)).toEqual(done.session.order.map((id) => g.mine[id].nick));
+    expect((look.body.me as { name: string }).name).toBe(g.mine[pc.ids[0]].nick);
+    const realName = done.session.players[pc.ids[1]].name.split(' ')[0];
+    expect(crewSpotsOf(g, 0, { [pc.ids[0]]: { x: 0.5, y: 0.5 }, [pc.ids[1]]: { x: 0.4, y: 0.4 } }, pc.ids[0], done.session.players).spots[0][3]).toBe(g.mine[pc.ids[1]].nick);
+    expect(JSON.stringify(done.screen.people)).not.toContain(realName);
     // A pupil can't call a meeting.
     expect((await classLiveStep(pc.services, pc.ids[0], { action: 'crew', room, do: 'meeting' })).status).toBe(403);
     const paid = [...pc.db.paid.values()].find((p) => p.activity === 'crew')!;

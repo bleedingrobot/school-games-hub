@@ -1,5 +1,5 @@
 /**
- * Saboteur Crew (Class Live activity `crew`, docs/CREW-PLAN.md): a hidden-role game in a robot factory. Every pupil runs
+ * Glitches (Class Live activity `crew`, docs/CREW-PLAN.md): a hidden-role game in a robot factory. Every pupil runs
  * their own avatar about. Most are the Crew: they do jobs at the machines (a right answer fills the factory's power
  * bar) and fix sparking machines (right answers fill the machine's fix bar). A few are secretly Glitches: they do no
  * maths (James, 25 Nov 2026 NZ), they jam machines (the machine sparks 4 s later) and, from round 3, switch the lights
@@ -198,6 +198,8 @@ export interface CrewMine {
   glitchWins: number;
   timesGlitch: number;
   last: 'won' | 'lost' | null;
+  /** Their factory name for this game ("Turbo Toaster"), shown instead of their real name everywhere in the game. */
+  nick?: string;
 }
 
 export interface CrewGame {
@@ -206,6 +208,8 @@ export interface CrewGame {
   round: CrewRound | null;
   mine: Record<string, CrewMine>;
   nextItem: number;
+  /** Mixed into everyone's factory name, so names change from game to game. */
+  salt?: number;
 }
 
 export type CrewEvent =
@@ -227,8 +231,39 @@ export type CrewEvent =
 const dist = (a: Spot, b: Spot) => Math.hypot(a.x - b.x, a.y - b.y);
 const clamp01 = (v: number) => Math.min(1 - AVATAR_R, Math.max(AVATAR_R, v));
 
-export function newCrew(map: CrewMap = 'factory'): CrewGame {
-  return { kind: 'crew', map, round: null, mine: {}, nextItem: 1 };
+export function newCrew(map: CrewMap = 'factory', random: () => number = Math.random): CrewGame {
+  return { kind: 'crew', map, round: null, mine: {}, nextItem: 1, salt: Math.floor(random() * 1e6) };
+}
+
+// ---- Factory names (James, 26 Nov 2026 NZ: first names clash, so everyone gets a fun name for the game) ----
+
+export const NICK_FIRST = [
+  'Turbo', 'Rusty', 'Sparky', 'Bouncy', 'Zippy', 'Wobbly', 'Shiny', 'Clanky', 'Fizzy', 'Mega', 'Tiny', 'Speedy',
+  'Bubbly', 'Jolly', 'Sneaky', 'Squeaky', 'Dizzy', 'Lucky', 'Rocket', 'Cosmic', 'Buzzy', 'Chunky', 'Snappy', 'Wiggly',
+] as const;
+export const NICK_LAST = [
+  'Toaster', 'Bolt', 'Sprocket', 'Gizmo', 'Widget', 'Gadget', 'Kettle', 'Magnet', 'Nugget', 'Piston', 'Robot', 'Spanner',
+  'Teapot', 'Blender', 'Button', 'Dynamo', 'Pickle', 'Muffin', 'Noodle', 'Pancake', 'Waffle', 'Doodle', 'Gear', 'Wrench',
+] as const;
+
+const hashOf = (text: string) => {
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
+  return h >>> 0;
+};
+
+/** A factory name nobody else in this game has, picked from the pupil's id and the game's salt. */
+export function crewNick(g: CrewGame, who: string): string {
+  const taken = new Set(Object.entries(g.mine).filter(([id]) => id !== who).map(([, m]) => m.nick));
+  const size = NICK_FIRST.length * NICK_LAST.length;
+  const start = hashOf(`${who}:${g.salt ?? 0}`) % size;
+  for (let k = 0; k < size; k++) {
+    // Step by a number with no common factor with 576, so neighbours land on different first and last words.
+    const n = (start + k * 101) % size;
+    const name = `${NICK_FIRST[Math.floor(n / NICK_LAST.length)]} ${NICK_LAST[n % NICK_LAST.length]}`;
+    if (!taken.has(name)) return name;
+  }
+  return `Robot ${Object.keys(g.mine).length + 1}`;
 }
 
 /** A seat round the Canteen (everyone starts and meets here). */

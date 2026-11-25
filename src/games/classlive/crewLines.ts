@@ -1,5 +1,5 @@
 /**
- * Saboteur Crew's Bella lines (docs/CREW-PLAN.md): Bella is the factory computer. Spread into LINES and the clip list in
+ * Glitches' Bella lines (docs/CREW-PLAN.md): Bella is the factory computer. Spread into LINES and the clip list in
  * voiceLines.ts. No names and no numbers, so every line has a clip; Bella never says who voted for whom, and the
  * reveal is only "That was a Glitch" or "That was Crew" (names stay on the screen). A few takes each, said in turn.
  */
