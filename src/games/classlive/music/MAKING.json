@@ -448,5 +448,85 @@
     "seconds": 88.0,
     "take_kept": 2,
     "lufs_target": -16
+  },
+  {
+    "name": "ghost-graveyard",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "playful friendly spooky chase, tinkling music box, celesta, pizzicato strings, sneaky tiptoe bassline, light percussion, cute, mischievous, fun, not scary, 118 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 118,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -18
+  },
+  {
+    "name": "ghost-graveyard-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic playful spooky chase, fast music box, rapid celesta, racing pizzicato strings, pounding drums, cute, not scary, very energetic, fast tempo, busy rhythm, starts immediately at full volume, 160 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 160,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -16
+  },
+  {
+    "name": "ghost-mansion",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "playful friendly spooky haunted mansion waltz, harpsichord, pipe organ, pizzicato strings, bouncy 3/4 waltz feel, cute, mischievous, fun, not scary, 120 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 120,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -18
+  },
+  {
+    "name": "ghost-mansion-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic playful spooky haunted mansion chase, fast harpsichord, pipe organ stabs, rapid strings, pounding drums, cute, not scary, very energetic, fast tempo, busy rhythm, starts immediately at full volume, 160 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 160,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "ghost-pumpkin",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "playful friendly spooky barn dance, banjo, fiddle, stomping hoedown rhythm, washboard, cute, mischievous, fun, not scary, 124 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 124,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -18
+  },
+  {
+    "name": "ghost-pumpkin-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic playful spooky hoedown chase, fast banjo picking, racing fiddle, stomping drums, cute, not scary, very energetic, fast tempo, busy rhythm, starts immediately at full volume, 165 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 165,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "ghost-ship",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "playful friendly spooky sea shanty, accordion, creaky wooden percussion, tuba, swaying rhythm, cute, mischievous, fun, not scary, 116 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 116,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -18
+  },
+  {
+    "name": "ghost-ship-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic playful spooky sea shanty chase, fast accordion, rapid fiddle, pounding drums, cute, not scary, very energetic, fast tempo, busy rhythm, starts immediately at full volume, 160 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 160,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -16
   }
 ]
