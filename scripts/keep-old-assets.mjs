@@ -21,6 +21,8 @@ import { pathToFileURL } from 'node:url';
 
 export const KEEP_HOURS = 48;
 export const MANIFEST = 'assets-manifest.json';
+/** How many old files to fetch from the live site at once. */
+const PARALLEL = 16;
 const SITE = 'https://bleedingrobot.github.io/school-games-hub/';
 
 /**
@@ -60,6 +62,20 @@ async function listFiles(dir, root = dir) {
   return out;
 }
 
+/** GitHub Pages sometimes answers "busy" (503 or 429) when many files are asked for at once: wait a moment and ask again. */
+async function fetchWithRetry(url, tries = 4) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const response = await fetch(url);
+      if (response.ok) return response;
+      if (attempt >= tries || (response.status !== 503 && response.status !== 429 && response.status < 500)) throw new Error(`HTTP ${response.status}`);
+    } catch (error) {
+      if (attempt >= tries || String(error).startsWith('Error: HTTP')) throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+  }
+}
+
 async function main() {
   const dist = process.argv[2] ?? 'dist';
   const site = (process.argv[3] ?? SITE).replace(/\/?$/, '/');
@@ -76,19 +92,24 @@ async function main() {
 
   const { manifest, fetch: wanted } = planKeep(live, built, Date.now());
   let kept = 0;
-  for (const path of wanted) {
-    try {
-      const response = await fetch(`${site}${path}`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const target = join(dist, path);
-      await mkdir(dirname(target), { recursive: true });
-      await writeFile(target, Buffer.from(await response.arrayBuffer()));
-      kept++;
-    } catch (error) {
-      console.log(`::warning::Couldn't keep ${path}: ${error}`);
-      delete manifest[path];
+  // A publish can carry a few thousand files over; fetched one at a time that took 2 to 4 minutes, so fetch several at once.
+  let next = 0;
+  async function worker() {
+    while (next < wanted.length) {
+      const path = wanted[next++];
+      try {
+        const response = await fetchWithRetry(`${site}${path}`);
+        const target = join(dist, path);
+        await mkdir(dirname(target), { recursive: true });
+        await writeFile(target, Buffer.from(await response.arrayBuffer()));
+        kept++;
+      } catch (error) {
+        console.log(`::warning::Couldn't keep ${path}: ${error}`);
+        delete manifest[path];
+      }
     }
   }
+  await Promise.all(Array.from({ length: PARALLEL }, worker));
   await writeFile(join(dist, MANIFEST), JSON.stringify(manifest, null, 0));
   console.log(`${built.length} files in this build; kept ${kept} from earlier publishes for up to ${KEEP_HOURS} hours.`);
 }
