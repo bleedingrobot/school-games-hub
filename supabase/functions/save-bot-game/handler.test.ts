@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { seeded } from '../../../shared/seededRandom';
 import { applyMove, boardResult, legalMoves, startPosition } from '../../../shared/checkers/rules';
@@ -218,14 +216,5 @@ describe('saving Wormholes & Black Holes games', () => {
     expect(other.savedSpace).toEqual([]);
     expect((await handleSaveBotGame(post(report), s)).status).toBe(200);
     expect(savedSpace).toHaveLength(1);
-  });
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('save-bot-game');
-    expect(readFileSync(resolve('supabase/functions/save-bot-game/index.ts'), 'utf8')).toBe(built);
   });
 });

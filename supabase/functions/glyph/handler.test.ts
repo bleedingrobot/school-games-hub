@@ -1,6 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 import { FACT_KEY, POINTS_PASS } from '../../../shared/glyph/config';
 import { memoryServices, type MemoryOptions } from '../../../shared/glyph/memoryServices';
 import type { Go, WallPlay } from '../../../shared/glyph/play';
@@ -75,13 +73,4 @@ it('refuses while the switch is off, a go that could not be played, and remember
   expect(log.points).toHaveLength(0);
 
   expect((await send('pupil-a', { type: 'guide-seen' })).body.progress.guideSeen).toBe(true);
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions -- glyph` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('glyph');
-    expect(readFileSync(resolve('supabase/functions/glyph/index.ts'), 'utf8')).toBe(built);
-  });
 });

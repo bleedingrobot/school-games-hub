@@ -38,7 +38,7 @@ Do these in order. Each line says what, then where. Tags: **J** junior only, **O
 4. **Migration number.** `git fetch && node scripts/migration-numbers.mjs`; write it in the plan.
 5. **Plan.** `docs/<ID>-PLAN.md` from [templates/plan.md](templates/plan.md), answering [1-design.md](1-design.md) and [2-steps-and-progress.md](2-steps-and-progress.md), with stages. Choices for James on question cards.
 6. **Rules.** Pure functions and one config file in `shared/<id>/`.
-7. **Server.** `supabase/functions/<id>/` (`handler.ts`, `entry.ts`); marks or replays everything that counts; checks the teacher switch; `npm run build:functions -- <id>` ([5-server-and-saving.md](5-server-and-saving.md)).
+7. **Server.** `supabase/functions/<id>/` (`handler.ts`, `entry.ts`); marks or replays everything that counts; checks the teacher switch; the publish builds and deploys it, so there is no `index.ts` to commit ([5-server-and-saving.md](5-server-and-saving.md)).
 8. **Maths.** **O:** way A from the focus ([4-maths.md](4-maths.md)). **J:** rounds from early-facts records, `recordMathsAnswers(…, JUNIOR_QUICK_MS)`.
 9. **Database.** `supabase/migrations/<number>_<id>.sql` from [templates/migration.sql](templates/migration.sql): tables with RLS, `hub_games`, achievements, `record_<id>` functions, revoke/grant. Save everything in "What to save per go".
 10. **Screens.** `src/games/<id>/` with kit parts first, maths questions in the shared pop-up (`QuestionModal`: ready to type, 1 to 4 keys), your own prefixed CSS, How to play from the config. **Full window from the start:** the game covers the hub bar, paintings edge to edge, its own ⌂ Hub and sound buttons ([3-files-and-clashes.md](3-files-and-clashes.md) "Full window").

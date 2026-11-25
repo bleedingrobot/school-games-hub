@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import type { OpenFight, Result, ServerState } from '../../../shared/clans/actions';
 import { startingDrafts } from '../../../shared/clans/create';
@@ -481,14 +479,5 @@ describe('ask through the server function', () => {
       expect(t.answers).toEqual([]);
   
     }
-  });
-});
-
-describe('the deployed file', () => {
-  it('is up to date (run `npm run build:functions` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('clans');
-    expect(readFileSync(resolve('supabase/functions/clans/index.ts'), 'utf8')).toBe(built);
   });
 });

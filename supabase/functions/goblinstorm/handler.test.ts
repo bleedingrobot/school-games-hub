@@ -1,6 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 import { LADDER } from '../../../shared/maths/ladder';
 import { markQuestion, type MathsContext } from '../../../shared/maths/serverQuestions';
 import { botRun } from '../../../shared/goblinstorm/bot';
@@ -124,13 +122,4 @@ it('makes level-up questions the server can mark, for every skill on the maths l
     // The same seed makes the same questions.
     expect(runQuestions(context, 7), skill.id).toEqual(qs);
   }
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions -- goblinstorm` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('goblinstorm');
-    expect(readFileSync(resolve('supabase/functions/goblinstorm/index.ts'), 'utf8')).toBe(built);
-  });
 });

@@ -1,6 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 import { memoryServices, type MemoryOptions } from '../../../shared/robin/memoryServices';
 import type { Tap } from '../../../shared/robin/play';
 import { GUIDED_KEY, showRound, type Round } from '../../../shared/robin/round';
@@ -116,13 +114,4 @@ it('keeps a hard kind of go at its level while another kind fades over two good 
   const levels = (kind: string) => [...new Set(showRound(next).filter((g) => g.kind === kind).map((g) => g.l))];
   expect(levels('give')).toEqual([5]);
   expect(levels('howmany')).toEqual([2]);
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions -- robin` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('robin');
-    expect(readFileSync(resolve('supabase/functions/robin/index.ts'), 'utf8')).toBe(built);
-  });
 });

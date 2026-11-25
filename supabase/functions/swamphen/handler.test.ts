@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { memoryServices, type MemoryOptions } from '../../../shared/swamphen/memoryServices';
 import type { Tap } from '../../../shared/swamphen/play';
@@ -73,12 +71,4 @@ it('finishes only a pupil’s own, finished challenge, once; records each key on
   const off = setup({ settings: () => ({ enabled: false, help: 'fade' }) });
   expect((await off.send('pupil-a', { action: 'load' })).body).toMatchObject({ code: 'game-off' });
 
-  // The deployable file is up to date with the code (run `npm run build:functions -- swamphen` if this fails).
-  {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('swamphen');
-    expect(readFileSync(resolve('supabase/functions/swamphen/handler.ts'), 'utf8').length).toBeGreaterThan(0);
-    expect(readFileSync(resolve('supabase/functions/swamphen/index.ts'), 'utf8')).toBe(built);
-  }
 });

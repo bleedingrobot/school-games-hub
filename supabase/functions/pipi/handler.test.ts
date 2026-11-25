@@ -1,6 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 import { newStats } from '../../../shared/maths/leitner';
 import { memoryServices, type MemoryOptions } from '../../../shared/pipi/memoryServices';
 import type { Tap } from '../../../shared/pipi/play';
@@ -95,13 +93,4 @@ it('changes one shell a NZ day by the server’s clock, whatever the browser sen
   expect(last.round.goes.filter((g) => g.kind === 'twoTides')).toHaveLength(2);
   expect(last.reply).toMatchObject({ daysDone: 30, shellChanged: 9, pearl: true });
   expect(log.pearls).toEqual(['pupil-a']); // the hub gives the Golden Pearl achievement
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions -- pipi` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('pipi');
-    expect(readFileSync(resolve('supabase/functions/pipi/index.ts'), 'utf8')).toBe(built);
-  });
 });
