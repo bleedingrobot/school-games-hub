@@ -6,7 +6,7 @@
 import type { FactAnswer } from '../maths/leitner';
 import type { MathsContext } from '../maths/serverQuestions';
 import type { FinishedSession } from './rewards';
-import { clampMove } from './corners';
+import { clampMove, type Teleport } from './corners';
 import type { Change, ClassLiveServices, PlayerView, RoomRow, RoomView, ScreenView, StoredQuestion } from './server';
 
 export interface MemoryDb {
@@ -134,13 +134,16 @@ export function memoryServices(db: MemoryDb, clock: { now(): number; random?(): 
 
 /**
  * A pupil's device saving its spot (the database's classlive_move): clamped by `clampMove`, and answered with every
- * spot in the room (no names). Only players of a live Four Corners room.
+ * spot in the room (no names). Only players of a live room of a moving activity (classlive_activities.moves).
  */
+/** Activities whose pupils don't move an avatar (classlive_activities.moves is false); every other activity moves. */
+export const STILL = new Set<string>(['stars', 'serpent', 'mural']);
+
 export function memoryMove(db: MemoryDb, now: number, room: number, player: string, x: number, y: number): { x: number; y: number }[] | null {
   const r = db.rooms.get(room);
-  if (!r || r.session.state !== 'live' || r.session.game.kind !== 'corners' || !r.session.players[player]) return null;
+  if (!r || r.session.state !== 'live' || STILL.has(r.session.game.kind) || !r.session.players[player]) return null;
   const all = db.spots.get(room) ?? {};
-  const g = r.session.game;
+  const g = r.session.game as { round?: { teleports?: Teleport[] } | null };
   const p = clampMove(all[player], { x, y }, now, g.round?.teleports ?? []);
   all[player] = { ...p, at: now };
   db.spots.set(room, all);
