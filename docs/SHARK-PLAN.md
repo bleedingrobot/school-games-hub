@@ -1,6 +1,6 @@
 # Shark Bay (Class Live activity `shark`)
 
-**Status: stage 1 (rules, server, database rows, big screen, pupil pads, drawn stand-ins) built 25 Nov 2026 NZ.** Migration `20261125001400_classlive_shark` (inserts only, on the shared base `20261125000800_classlive_activities`).
+**Status: stage 1 (rules, server, database rows, big screen, pupil pads, drawn stand-ins, Bella clips) going live 25 Nov 2026 NZ; stage 2 paintings and music being made on James's PC.**
 
 James's pick (25 Nov 2026 NZ, from the coordinator's list of map games): a shark circles a pool and strikes a quarter, like Four Corners with moving zones and a hide-under-the-boat shield. Built alongside Floor is Lava, Musical Thrones, Colour Clash and Ghost Tag.
 
