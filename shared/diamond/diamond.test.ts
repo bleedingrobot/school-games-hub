@@ -10,7 +10,7 @@ import { makeRandom } from './random';
 const steady = { wobble: 4, choice: 3, maths: 0.6 };
 
 describe('Diamond Drop rules', () => {
-  it('replays a level exactly from its seed, drops, boosts and marks, so the server and the browser agree', () => {
+  it('replays a level exactly from its seed, drops, boosts and marks, so the server and the browser agree (Monster Dig caverns too)', () => {
     const boosts: BoostId[][] = [[], ['luckyCharm'], ['strongWinch', 'extraTime'], ['rockBlaster']];
     for (let level = 1; level <= LAST_LEVEL; level++) {
       const seed = 1000 + level * 77;
@@ -56,6 +56,8 @@ describe('Diamond Drop rules', () => {
       if (RARE_IDS.some((id) => (played.result.caught[id] ?? 0) > 0)) caught++;
     }
     expect(caught).toBeGreaterThan(0);
+
+    monsterDigChecks();
   });
 
   it('slips come only from the seed and the marks; a wrong mark drops the gem; nothing slips past the cap; the first go cannot miss', () => {
@@ -169,8 +171,9 @@ describe('Diamond Drop rules', () => {
   });
 });
 
-describe('Monster Dig (docs/DIAMOND-MONSTERS-PLAN.md)', () => {
-  it('opens for good with the diamond, buries monsters at their tier odds, replays exactly and fills a book New Season keeps', () => {
+/** The Monster Dig (docs/DIAMOND-MONSTERS-PLAN.md): opens for good with the diamond, buries monsters at their tier odds, replays exactly and fills a book New Season keeps. */
+function monsterDigChecks() {
+  {
     const day = new Date('2026-11-25T01:00:00Z');
     const next = new Date('2026-11-26T01:00:00Z');
     // Locked until the Heart Diamond has been caught, then open even after New Season.
@@ -225,5 +228,5 @@ describe('Monster Dig (docs/DIAMOND-MONSTERS-PLAN.md)', () => {
     const fresh = newSeason(a.player);
     expect(fresh.lifetime.monsters?.['digibud-1']?.count).toBe(2);
     expect(fresh.caves).toBeUndefined();
-  });
-});
+  }
+}
