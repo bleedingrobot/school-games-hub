@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'classlive-ghost-tag-2026-11-25',
+    date: '2026-11-25',
+    emoji: '👻',
+    title: 'Ghost Tag',
+    text: 'Run from the ghosts! Get caught and you become one. A right answer makes you invisible.',
+    game: 'classlive',
+  },
+  {
     id: 'classlive-thrones-2026-11-25',
     date: '2026-11-25',
     emoji: '👑',
