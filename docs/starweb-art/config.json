@@ -1,0 +1,59 @@
+{
+  "_from": "docs/classlive-art/config.json layout (same storybook night style as Class Live's Star Web). Check with: python3 scripts/game_art.py starweb paint OUT --dry-run",
+  "game": "starweb",
+  "filename_prefix": "starweb/img",
+  "style": "s",
+  "styles": {
+    "s": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. "
+  },
+  "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly",
+  "inbox": "~/dragon-art-inbox/starweb-art/set",
+  "picks": "docs/starweb-art/picks.json",
+  "art_dir": "src/games/starweb/art/paint",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "back-map",
+      "prompt": "Empty background scenery: an old explorer's star chart come to life in a deep blue night sky, faint golden grid lines and soft swirling nebula clouds in purple and teal, scattered tiny stars, a soft milky way band across the middle, dark and calm all over so bright stars and glowing lines drawn on top stand out, no characters, no creatures. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "map"
+    },
+    {
+      "name": "back-sky-dusk",
+      "prompt": "Empty background scenery: a magical evening sky just after sunset over gentle New Zealand hills, deep violet and indigo above fading to a warm orange glow at the very bottom edge, the first bright stars coming out, distant hills as dark silhouettes along the bottom, dark and calm in the middle so bright stars and glowing lines drawn on top stand out, no characters, no creatures. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "sky-dusk"
+    },
+    {
+      "name": "back-sky-aurora",
+      "prompt": "Empty background scenery: a deep night sky with soft green and pink southern lights (aurora australis) rippling gently near the top, thousands of tiny stars, a calm dark lake reflecting the sky at the very bottom, dark and calm in the middle so bright stars and glowing lines drawn on top stand out, no characters, no creatures. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "sky-aurora"
+    },
+    {
+      "name": "card",
+      "prompt": "A child seen from behind sitting on a grassy hilltop at night looking through a small brass telescope, above them a glowing constellation web with seven coloured arms of stars (blue, purple, gold, pink, green, orange, white) spreading from one huge bright golden star, a whale drawn in glowing starlight lines swimming across the deep blue sky, bright flat storybook landscape, calm sky at the top, wide landscape picture for a game title card.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "card",
+      "file": "starweb"
+    }
+  ]
+}
