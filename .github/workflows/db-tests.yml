@@ -20,10 +20,17 @@ jobs:
   db:
     name: Database checks passed
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 2
+          # Only what the database checks use (scripts, supabase/ and the top-level files such as package.json),
+          # not the 350 MB of art and code.
+          filter: blob:none
+          sparse-checkout: |
+            scripts
+            supabase
       # On a pull request, skip the rest when no database file changed. ("Test and publish" decides for itself.)
       - id: what
         if: github.event_name == 'pull_request'

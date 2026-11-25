@@ -416,12 +416,12 @@ function shuffle$1(items, random) {
 	return out;
 }
 /** Rounds away floating-point dust: 0.1 + 0.2 → 0.3. */
-const tidy = (n) => Math.round(n * 1e3) / 1e3;
+const tidy$1 = (n) => Math.round(n * 1e3) / 1e3;
 /** Whole numbers within [lo, hi]. */
 const isInt = (n, lo, hi) => typeof n === "number" && Number.isInteger(n) && n >= lo && n <= hi;
 /** How a number is written on screen: 3406 → "3406", 12500 → "12 500" (NZ style for 5+ digits), 0.5 → "0.5". */
 function show$2(n) {
-	const [whole, frac] = String(tidy(Math.abs(n))).split(".");
+	const [whole, frac] = String(tidy$1(Math.abs(n))).split(".");
 	const grouped = whole.length >= 5 ? whole.replace(/\B(?=(\d{3})+(?!\d))/g, " ") : whole;
 	return (n < 0 ? "−" : "") + grouped + (frac ? "." + frac : "");
 }
@@ -522,12 +522,12 @@ const fillBlank = (parts, answer) => parts.map((p) => p.includes("?") ? p.replac
 /** Same answer, allowing for floating-point dust (0.30000000000000004). */
 const sameAnswer$1 = (a, b) => Math.abs(a - b) < 1e-6;
 /** Digits a typed answer needs, allowing one extra so the length doesn't give the answer away. */
-const lengthFor = (answer) => String(tidy(answer)).length;
+const lengthFor = (answer) => String(tidy$1(answer)).length;
 /** Four choices: the answer plus believable wrong ones, padded with near misses when short. */
 function choicesFor$1(answer, wrong, decimal, random) {
 	const ok = (n) => Number.isFinite(n) && n >= 0 && !sameAnswer$1(n, answer) && (decimal || Number.isInteger(n));
 	const picked = [];
-	for (const n of shuffle$1(wrong.map(tidy), random)) if (ok(n) && !picked.some((p) => sameAnswer$1(p, n)) && picked.length < 3) picked.push(n);
+	for (const n of shuffle$1(wrong.map(tidy$1), random)) if (ok(n) && !picked.some((p) => sameAnswer$1(p, n)) && picked.length < 3) picked.push(n);
 	const steps = decimal && !Number.isInteger(answer) ? [
 		.1,
 		1,
@@ -539,7 +539,7 @@ function choicesFor$1(answer, wrong, decimal, random) {
 		2,
 		100
 	];
-	for (let i = 1; picked.length < 3; i++) for (const step of steps) for (const n of [tidy(answer + step * i), tidy(answer - step * i)]) if (ok(n) && !picked.some((p) => sameAnswer$1(p, n)) && picked.length < 3) picked.push(n);
+	for (let i = 1; picked.length < 3; i++) for (const step of steps) for (const n of [tidy$1(answer + step * i), tidy$1(answer - step * i)]) if (ok(n) && !picked.some((p) => sameAnswer$1(p, n)) && picked.length < 3) picked.push(n);
 	return shuffle$1([answer, ...picked], random);
 }
 var BandedPack = class {
@@ -628,7 +628,7 @@ var BandedPack = class {
 		if (!family || !params.every((p) => Number.isFinite(p))) return null;
 		const made = family.make(key, params);
 		if (!made) return null;
-		const answer = tidy(made.answer);
+		const answer = tidy$1(made.answer);
 		const decimal = made.input === "decimal";
 		let choices;
 		let choiceLabels;
@@ -1020,7 +1020,7 @@ function mistakes(answer, named, opts = {}) {
 	const kept = {};
 	const seen = [];
 	for (const [name, raw] of Object.entries(named)) {
-		const n = tidy(raw);
+		const n = tidy$1(raw);
 		if (!Number.isFinite(n) || n < 0 || sameAnswer$1(n, answer)) continue;
 		if (!opts.decimal && !Number.isInteger(n)) continue;
 		if (opts.ok && !opts.ok(n)) continue;
@@ -1071,7 +1071,7 @@ function oneKey(key, label, tags, size, roll, make) {
 }
 /** A number for a screen reader: 12500 → "12500", 4.15 → "4 point 1 5" (a point and then the digits one by one). */
 function say(n) {
-	const [whole, frac] = String(tidy(n)).split(".");
+	const [whole, frac] = String(tidy$1(n)).split(".");
 	return frac ? `${whole} point ${frac.split("").join(" ")}` : whole;
 }
 //#endregion
@@ -1343,7 +1343,7 @@ const DECIMALS = {
 					"=",
 					"?"
 				];
-				const answer = tidy(a * m / 10);
+				const answer = tidy$1(a * m / 10);
 				return decimal({
 					parts,
 					spoken: speak(parts),
@@ -1438,7 +1438,7 @@ const DECIMALS = {
 					wrong: [
 						Number(`${n}.${d}`),
 						n / 10,
-						tidy(n / d + .1),
+						tidy$1(n / d + .1),
 						d / n / 10
 					]
 				});
@@ -6786,7 +6786,7 @@ const decTenth = oneKey("nf:dec-tenth", "A tenth number times a single digit (0.
 		"=",
 		"?"
 	];
-	const answer = tidy(a * b / 10);
+	const answer = tidy$1(a * b / 10);
 	return withMistakes({
 		parts,
 		spoken: talk(parts),
@@ -6795,7 +6795,7 @@ const decTenth = oneKey("nf:dec-tenth", "A tenth number times a single digit (0.
 	}, {
 		[RIGHT10]: answer * 10,
 		[LEFT10]: answer / 10,
-		"added the numbers": tidy(a / 10 + b),
+		"added the numbers": tidy$1(a / 10 + b),
 		"one tenth too many": answer + .1,
 		"one tenth too few": answer - .1
 	});
@@ -6819,7 +6819,7 @@ const decTens = oneKey("nf:dec-tens", "A tenth number times a multiple of ten (0
 	}, {
 		[RIGHT10]: answer * 10,
 		[LEFT10]: answer / 10,
-		"added the numbers": tidy(a / 10 + m * 10),
+		"added the numbers": tidy$1(a / 10 + m * 10),
 		"one too many": answer + 1,
 		"one too few": answer - 1
 	});
@@ -6834,7 +6834,7 @@ const decHund = oneKey("nf:dec-hund", "A hundredth number times a single digit (
 		"=",
 		"?"
 	];
-	const answer = tidy(a * b / 100);
+	const answer = tidy$1(a * b / 100);
 	return withMistakes({
 		parts,
 		spoken: talk(parts),
@@ -7224,7 +7224,7 @@ const change = oneKey("nf:change", "Change from a note ($20 for $13.60)", MONEY_
 	if (!NOTES.includes(pay) || !isInt(t, 11, 79) || t % 10 === 0) return null;
 	const cost = pay * 100 - t * 10;
 	const whole = Math.floor(cost / 100);
-	const answer = tidy(t * 10 / 100);
+	const answer = tidy$1(t * 10 / 100);
 	return withMistakes({
 		parts: [
 			`$${pay}`,
@@ -7240,7 +7240,7 @@ const change = oneKey("nf:change", "Change from a note ($20 for $13.60)", MONEY_
 		prompt: "What is the change?"
 	}, {
 		"ignored the cents": pay - whole,
-		"took the cents the wrong way round": tidy(pay - whole - 1 + cost % 100 / 100),
+		"took the cents the wrong way round": tidy$1(pay - whole - 1 + cost % 100 / 100),
 		[RIGHT10]: answer * 10,
 		[LEFT10]: answer / 10,
 		"one dollar too many": answer + 1,
@@ -7266,7 +7266,7 @@ const cash = oneKey("nf:cash", "Cash rounding to the nearest 10c ($4.37)", MONEY
 	if (!isInt(d, 1, 19) || !isInt(t, 0, 9) || !CENTS.includes(u)) return null;
 	const cents = d * 100 + t * 10 + u;
 	const down = d * 100 + t * 10;
-	const answer = tidy((u < 5 ? down : down + 10) / 100);
+	const answer = tidy$1((u < 5 ? down : down + 10) / 100);
 	return withMistakes({
 		parts: [
 			dollars(cents),
@@ -7279,9 +7279,9 @@ const cash = oneKey("nf:cash", "Cash rounding to the nearest 10c ($4.37)", MONEY
 		input: "decimal",
 		prompt: "Cash rounding: nearest 10c."
 	}, {
-		"rounded the wrong way": tidy((u < 5 ? down + 10 : down) / 100),
+		"rounded the wrong way": tidy$1((u < 5 ? down + 10 : down) / 100),
 		"rounded to the nearest dollar": Math.round(cents / 100),
-		"rounded to the nearest 5c": tidy(Math.round(cents / 5) * 5 / 100),
+		"rounded to the nearest 5c": tidy$1(Math.round(cents / 5) * 5 / 100),
 		[RIGHT10]: answer * 10
 	});
 });
@@ -7290,7 +7290,7 @@ const round3 = oneKey("nf:round-3dp", "Rounding to 3 decimal places (3.4567)", R
 	if (!isInt(w, 1, 9) || !isInt(n, 1, 9999) || n % 10 === 0) return null;
 	const digits = String(n).padStart(4, "0");
 	const total = w * 1e4 + n;
-	const answer = tidy(Math.round(total / 10) / 1e3);
+	const answer = tidy$1(Math.round(total / 10) / 1e3);
 	return withMistakes({
 		parts: [
 			`${w}.${digits}`,
@@ -7302,10 +7302,10 @@ const round3 = oneKey("nf:round-3dp", "Rounding to 3 decimal places (3.4567)", R
 		input: "decimal",
 		prompt: "Round to 3 decimal places."
 	}, {
-		"cut off after 3 places (truncated)": tidy(Math.floor(total / 10) / 1e3),
-		"rounded to 2 places": tidy(Math.round(total / 100) / 100),
-		"rounded to 1 place": tidy(Math.round(total / 1e3) / 10),
-		"rounded up every time": tidy((Math.floor(total / 10) + 1) / 1e3)
+		"cut off after 3 places (truncated)": tidy$1(Math.floor(total / 10) / 1e3),
+		"rounded to 2 places": tidy$1(Math.round(total / 100) / 100),
+		"rounded to 1 place": tidy$1(Math.round(total / 1e3) / 10),
+		"rounded up every time": tidy$1((Math.floor(total / 10) + 1) / 1e3)
 	});
 });
 const FTIMES = [
@@ -7508,10 +7508,10 @@ const Y7_COMPASS = T("G", 7, 4);
 const Y8_UNITS = T("M", 8, 1, 2);
 const Y8_CIRCLE = T("G", 8, 1);
 /** A number as shown: 8.5, 0.45, 3500. */
-const show$1 = (n) => String(tidy(n));
+const show$1 = (n) => String(tidy$1(n));
 /** A typed question: decimal pad when the answer isn't whole. Null when fewer than three named mistakes are left. */
 function typed(base, named) {
-	const answer = tidy(base.answer);
+	const answer = tidy$1(base.answer);
 	return withMistakes({
 		...base,
 		answer,
@@ -7538,7 +7538,7 @@ function metric(key, label, from, to, lo, hi, value, answer) {
 	}, (_k, [n]) => {
 		if (!isInt(n, lo, hi) || n % 10 === 0) return null;
 		const v = value(n);
-		const a = tidy(answer(n));
+		const a = tidy$1(answer(n));
 		const parts = [
 			`${show$1(v)} ${from}`,
 			"=",
@@ -11024,7 +11024,7 @@ function solveGenerated(parts) {
 		if (!found) continue;
 		const made = families[found.key]?.make(found.key, found.params);
 		if (made && sameParts(made.parts, parts)) return {
-			answer: tidy(made.answer),
+			answer: tidy$1(made.answer),
 			key: found.key
 		};
 	}
@@ -17844,6 +17844,47 @@ function rewardsOf(s) {
 	};
 }
 //#endregion
+//#region shared/liveNames.ts
+/**
+* The name a pupil goes by in a Class Live game (big screen, iPads, results), James 25 Nov 2026 NZ.
+*
+* A pupil's profile name (profiles.display_name) is either a made-up name, "Brave Kiwi 7" (two list words and a number,
+* public.is_made_up_name), or their own typed name a teacher approved ("Bob", "Bob Lee"; migration 20261112002800).
+*   - own typed name: shown as it is
+*   - made-up name:   the first word and its number, "Brave 7"
+* If two pupils in the same game would show the same short name ("Brave Kiwi 7" and "Brave Tui 7"), both show their
+* whole made-up name instead, so no two players on the screen look the same.
+*
+* Saboteur Crew uses its own fun factory names instead (shared/classlive/crew.ts).
+*/
+const MADE_UP = /^([A-Z][a-z]+) [A-Z][a-z]+ ([1-9][0-9]?)$/;
+const MAX = 20;
+const tidy = (name) => name.trim().replace(/\s+/g, " ");
+/** One pupil's short game name, without looking at anyone else. */
+function liveName(name) {
+	const n = tidy(name);
+	const m = MADE_UP.exec(n);
+	if (m) return `${m[1]} ${m[2]}`;
+	return n.slice(0, MAX) || "A player";
+}
+/** The whole name, used when two short names clash. */
+const fullName = (name) => tidy(name).slice(0, MAX) || "A player";
+/** Every player's game name in one game, keyed like `names`. Short names that clash fall back to the whole name. */
+function liveNames(names) {
+	const keys = Object.keys(names);
+	const count = new Map();
+	for (const k of keys) {
+		const s = liveName(names[k]).toLowerCase();
+		count.set(s, (count.get(s) ?? 0) + 1);
+	}
+	const out = {};
+	for (const k of keys) {
+		const s = liveName(names[k]);
+		out[k] = (count.get(s.toLowerCase()) ?? 0) > 1 ? fullName(names[k]) : s;
+	}
+	return out;
+}
+//#endregion
 //#region shared/classlive/lavaServer.ts
 /**
 * Floor is Lava's part of the Class Live server (docs/LAVA-PLAN.md): what pupils and the projector see of the game, and
@@ -18931,6 +18972,8 @@ const busy = () => no(503, "Class Live is very busy. Try again!", "busy");
 const OFF = "Class Live is switched off for this class.";
 const MAX_TRIES = 8;
 const firstName = (name) => name.trim().split(/\s+/)[0]?.slice(0, 20) || "A player";
+/** Every player's game name (own name, or first word + number; shared/liveNames.ts). */
+const roomNames = (s) => liveNames(Object.fromEntries(s.order.map((id) => [id, s.players[id].name])));
 function publicRound(r, t) {
 	const { rolled, caught, saved: _saved, items, ...rest } = r;
 	return {
@@ -19020,13 +19063,14 @@ function roomView(s, startedAt, now) {
 }
 function screenView(row, s, startedAt) {
 	const { game: _g, ...base } = roomView(s, startedAt);
+	const names = roomNames(s);
 	return {
 		...base,
 		showNames: row.showNames,
 		joinCode: s.lobby?.code ?? s.joinCode ?? null,
 		people: s.order.map((id) => ({
 			id,
-			name: s.game.kind === "crew" && s.game.mine[id]?.nick ? s.game.mine[id].nick : row.showNames ? firstName(s.players[id].name) : null,
+			name: s.game.kind === "crew" && s.game.mine[id]?.nick ? s.game.mine[id].nick : row.showNames ? names[id] : null,
 			colour: s.players[id].colour
 		})),
 		game: s.game,
@@ -19036,21 +19080,22 @@ function screenView(row, s, startedAt) {
 }
 function playerView(s, id) {
 	const p = s.players[id];
+	const name = roomNames(s)[id] ?? liveName(p.name);
 	if (s.game.kind === "lava") return {
 		player: id,
-		name: firstName(p.name),
+		name,
 		colour: p.colour,
 		game: lavaPlayer(s, s.game, id, () => freshLavaMine(s.order.indexOf(id)))
 	};
 	if (s.game.kind === "thrones") return {
 		player: id,
-		name: firstName(p.name),
+		name,
 		colour: p.colour,
 		game: thronesPlayer(s.game, s.order, id, s.state === "over")
 	};
 	if (s.game.kind === "clash") return {
 		player: id,
-		name: firstName(p.name),
+		name,
 		colour: p.colour,
 		game: clashPlayer(s, s.game, id)
 	};
@@ -19068,7 +19113,7 @@ function playerView(s, id) {
 	}
 	if (s.game.kind === "ghost") return {
 		player: id,
-		name: firstName(p.name),
+		name,
 		colour: p.colour,
 		game: ghostPlayer(s.game, id, s.order, s.state === "over")
 	};
@@ -19080,7 +19125,7 @@ function playerView(s, id) {
 		const place = s.state === "over" ? podium$3(g, s.order).find((x) => x.player === id)?.place ?? null : null;
 		return {
 			player: id,
-			name: firstName(p.name),
+			name,
 			colour: p.colour,
 			game: {
 				kind: "corners",
@@ -19123,7 +19168,7 @@ function playerView(s, id) {
 		const m = s.game.mine[id];
 		return {
 			player: id,
-			name: firstName(p.name),
+			name,
 			colour: p.colour,
 			game: {
 				kind: "mural",
@@ -19145,7 +19190,7 @@ function playerView(s, id) {
 		const m = s.game.mine[id];
 		return {
 			player: id,
-			name: firstName(p.name),
+			name,
 			colour: p.colour,
 			game: {
 				kind: "serpent",
@@ -19159,7 +19204,7 @@ function playerView(s, id) {
 	const mine = s.game.mine[id];
 	return {
 		player: id,
-		name: firstName(p.name),
+		name,
 		colour: p.colour,
 		game: {
 			kind: "stars",

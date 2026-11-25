@@ -22,6 +22,7 @@ import { isUntimed } from '../maths/untimed';
 import { makeSpacePack, pickSpaceQuestion } from '../space/mathsQuestion';
 import { answerBox, boxOf, newSerpent, SERPENT_LEVELS, wakeAt, type SerpentBox, type SerpentEvent, type SerpentGame, type SerpentLevel, type SerpentReply } from './serpent';
 import { rewardsOf, type FinishedSession } from './rewards';
+import { liveName, liveNames } from '../liveNames';
 import {
   advance as cornersAdvance, answered as cornersAnswered, boosted, crystalCorner, freshMine, ghostly, grab as cornersGrab, jump as cornersJump, warp as cornersWarp, freeAt as cornersFreeAt,
   cornersDone, MAPS, needsPositions, runSeconds, newCorners, nextDeadline, podium, questionFor, ANSWER_GAP_MS as CORNERS_GAP_MS,
@@ -284,6 +285,8 @@ const KEEP_EVENTS = 40;
 export const MAX_PLAYERS = 40;
 
 const firstName = (name: string) => name.trim().split(/\s+/)[0]?.slice(0, 20) || 'A player';
+/** Every player's game name (own name, or first word + number; shared/liveNames.ts). */
+const roomNames = (s: Session) => liveNames(Object.fromEntries(s.order.map((id) => [id, s.players[id].name])));
 
 function publicRound(r: Round, t: number): PublicRound {
   const { rolled, caught, saved: _saved, items, ...rest } = r;
@@ -335,12 +338,13 @@ export function roomView(s: Session, startedAt: number | null, now?: number): Ro
 
 function screenView(row: Pick<RoomRow, 'showNames' | 'seq' | 'events'>, s: Session, startedAt: number | null): ScreenView {
   const { game: _g, ...base } = roomView(s, startedAt);
+  const names = roomNames(s);
   return {
     ...base,
     showNames: row.showNames,
     joinCode: s.lobby?.code ?? s.joinCode ?? null,
     // Glitches shows everyone's factory name instead (always: it is no one's real name).
-    people: s.order.map((id) => ({ id, name: s.game.kind === 'crew' && s.game.mine[id]?.nick ? s.game.mine[id].nick : row.showNames ? firstName(s.players[id].name) : null, colour: s.players[id].colour })),
+    people: s.order.map((id) => ({ id, name: s.game.kind === 'crew' && s.game.mine[id]?.nick ? s.game.mine[id].nick : row.showNames ? names[id] : null, colour: s.players[id].colour })),
     game: s.game,
     seq: row.seq,
     events: row.events,
@@ -349,14 +353,16 @@ function screenView(row: Pick<RoomRow, 'showNames' | 'seq' | 'events'>, s: Sessi
 
 export function playerView(s: Session, id: string): PlayerView {
   const p = s.players[id];
-  if (s.game.kind === 'lava') return { player: id, name: firstName(p.name), colour: p.colour, game: lavaPlayer(s, s.game, id, () => freshLavaMine(s.order.indexOf(id))) };
-  if (s.game.kind === 'thrones') return { player: id, name: firstName(p.name), colour: p.colour, game: thronesPlayer(s.game, s.order, id, s.state === 'over') };
-  if (s.game.kind === 'clash') return { player: id, name: firstName(p.name), colour: p.colour, game: clashPlayer(s, s.game, id) };
+  const name = roomNames(s)[id] ?? liveName(p.name);
+  if (s.game.kind === 'lava') return { player: id, name, colour: p.colour, game: lavaPlayer(s, s.game, id, () => freshLavaMine(s.order.indexOf(id))) };
+  if (s.game.kind === 'thrones') return { player: id, name, colour: p.colour, game: thronesPlayer(s.game, s.order, id, s.state === 'over') };
+  if (s.game.kind === 'clash') return { player: id, name, colour: p.colour, game: clashPlayer(s, s.game, id) };
   if (s.game.kind === 'crew') {
+    // Glitches: everyone is only ever their factory name (a first name only for a game saved before factory names).
     const cg = s.game;
     return { player: id, name: cg.mine[id]?.nick ?? firstName(p.name), colour: p.colour, game: crewPlayer(cg, id, s.order, s.state === 'over', (x) => ({ name: cg.mine[x]?.nick ?? firstName(s.players[x]?.name ?? ''), colour: s.players[x]?.colour ?? 0 })) };
   }
-  if (s.game.kind === 'ghost') return { player: id, name: firstName(p.name), colour: p.colour, game: ghostPlayer(s.game, id, s.order, s.state === 'over') };
+  if (s.game.kind === 'ghost') return { player: id, name, colour: p.colour, game: ghostPlayer(s.game, id, s.order, s.state === 'over') };
   if (s.game.kind === 'corners') {
     const g = s.game;
     const m = g.mine[id] ?? freshMine(s.order.indexOf(id));
@@ -364,7 +370,7 @@ export function playerView(s: Session, id: string): PlayerView {
     const n = r?.n ?? 0;
     const place = s.state === 'over' ? (podium(g, s.order).find((x) => x.player === id)?.place ?? null) : null;
     return {
-      player: id, name: firstName(p.name), colour: p.colour,
+      player: id, name, colour: p.colour,
       game: {
         kind: 'corners', safe: m.safe, score: m.score, jailed: m.jailedIn !== null, jailRight: m.jailRight, held: m.held,
         boost: boosted(m, n), ghost: ghostly(m, n), shield: !!r && m.shieldIn === n, double: !!r && m.doubleIn === n,
@@ -382,7 +388,7 @@ export function playerView(s: Session, id: string): PlayerView {
   if (s.game.kind === 'mural') {
     const m = s.game.mine[id];
     return {
-      player: id, name: firstName(p.name), colour: p.colour,
+      player: id, name, colour: p.colour,
       game: {
         kind: 'mural', flips: m?.flips ?? 0, right: m?.right ?? 0, answered: m?.answered ?? 0, tiles: m?.tiles ?? 0,
         canGuess: canGuess(s.game, id), guesses: m?.guesses ?? 0, nextAt: m ? m.lastAt + ANSWER_GAP_MS : 0,
@@ -396,14 +402,14 @@ export function playerView(s: Session, id: string): PlayerView {
   if (s.game.kind === 'serpent') {
     const m = s.game.mine[id];
     return {
-      player: id, name: firstName(p.name), colour: p.colour,
+      player: id, name, colour: p.colour,
       game: { kind: 'serpent', box: boxOf(s.game, id), at: m?.at ?? 0, right: m?.right ?? 0, shown: m?.shown ?? 0 },
     };
   }
   const mine = s.game.mine[id];
   return {
     player: id,
-    name: firstName(p.name),
+    name,
     colour: p.colour,
     game: {
       kind: 'stars', found: mine?.found ?? 0, glows: mine?.glows ?? 0, tries: mine?.tries ?? 0,
