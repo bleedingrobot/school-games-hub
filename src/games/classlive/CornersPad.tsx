@@ -322,7 +322,14 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
         <div className="fc-locks" aria-label={`${mg.jailRight} of ${JAIL_RIGHT} right`}>
           {Array.from({ length: JAIL_RIGHT }, (_, i) => <i key={i} className={i < mg.jailRight ? 'on' : ''}>{i < mg.jailRight ? '🔓' : '🔒'}</i>)}
         </div>
-        <p className="cl-c-say">{mg.jailRight >= JAIL_RIGHT ? 'Free! You come back at the start of a round.' : `Answer ${JAIL_RIGHT - mg.jailRight} more right to come back.`}</p>
+        {mg.jailRight >= JAIL_RIGHT ? (
+          <div className="fc-free" role="status">
+            <b className="fc-free__word">🔓 You're free!</b>
+            {mg.freeAt != null && mg.freeAt > t
+              ? <><span className="fc-free__count" key={Math.ceil((mg.freeAt - t) / 1000)}>{Math.ceil((mg.freeAt - t) / 1000)}</span><span className="fc-free__say">seconds until you're back in the game</span></>
+              : <span className="fc-free__say">Coming back now. Get ready to run!</span>}
+          </div>
+        ) : <p className="cl-c-say">{`Answer ${JAIL_RIGHT - mg.jailRight} more right to come back.`}</p>}
         {toastBox}
         {questionBox}
       </div>
