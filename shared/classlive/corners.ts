@@ -163,6 +163,8 @@ export const WARPS_A_ROUND = 4;
 
 export interface CornersGame {
   kind: 'corners';
+  /** Shark Bay plays on Four Corners' engine (shared/classlive/shark.ts). Missing: Four Corners. */
+  variant?: 'shark';
   map: CornerMap;
   /** 0 before the first round. */
   round: Round | null;

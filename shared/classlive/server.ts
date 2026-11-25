@@ -27,11 +27,12 @@ import {
   cornersDone, MAPS, needsPositions, runSeconds, newCorners, nextDeadline, podium, questionFor, ANSWER_GAP_MS as CORNERS_GAP_MS,
   type Corner, type CornerMap, type CornersEvent, type CornersGame, type Item, type Positions, type Power, type Round, type Spot,
 } from './corners';
+import { BAYS, isShark, newShark, sharkAdvance, sharkJump, sharkQuestionFor, type BayMap } from './shark';
 
-export const ACTIVITIES = ['stars', 'serpent', 'mural', 'corners'] as const;
+export const ACTIVITIES = ['stars', 'serpent', 'mural', 'corners', 'shark'] as const;
 export type Activity = (typeof ACTIVITIES)[number];
 export const LENGTHS = [0, 2, 3, 5, 10, 15] as const;
-export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners' };
+export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners', shark: 'Shark Bay' };
 
 export interface LivePlayer {
   id: string;
@@ -100,7 +101,7 @@ export type PublicGame =
   /** `tiles`: one character a tile, '1' flipped, '0' not. Never the picture itself (until it is revealed). */
   | { kind: 'mural'; tiles: string; cols: number; rows: number; flipped: number; phase: 'flip' | 'guess'; guessEndsAt: number | null; picked: number; choices: Picture[]; solvers: number; revealed: boolean; picture: Picture | null }
   /** Four Corners: the round without the roll (until the dice lands) and without who was caught. */
-  | { kind: 'corners'; map: CornerMap; round: PublicRound | null; jailed: number; free: number };
+  | { kind: 'corners'; map: CornerMap; round: PublicRound | null; jailed: number; free: number; variant?: 'shark'; bay?: BayMap };
 
 export type PublicRound = Omit<Round, 'rolled' | 'caught' | 'saved' | 'items'> & {
   rolled: Corner[] | null;
@@ -237,7 +238,7 @@ function publicRound(r: Round, t: number): PublicRound {
 export function publicGame(g: Game, players: number, t = 0): PublicGame {
   if (g.kind === 'corners') {
     const jailed = Object.values(g.mine).filter((m) => m.jailedIn !== null).length;
-    return { kind: 'corners', map: g.map, round: g.round ? publicRound(g.round, t) : null, jailed, free: players - jailed };
+    return { kind: 'corners', map: g.map, round: g.round ? publicRound(g.round, t) : null, jailed, free: players - jailed, ...(isShark(g) ? { variant: 'shark' as const, bay: g.bay } : {}) };
   }
   if (g.kind === 'mural') {
     return {
@@ -372,7 +373,7 @@ async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<T>): Pr
           spots = got;
         }
         const last = timeUp(s, row, now);
-        events.push(...cornersAdvance(g0, t, s.order, spots, () => sv.random(), last));
+        events.push(...(isShark(g0) ? sharkAdvance : cornersAdvance)(g0, t, s.order, spots, () => sv.random(), last));
         if (last && cornersDone(g0, t)) {
           s.state = 'over';
           events.push({ type: 'over', t, why: 'time' });
@@ -464,6 +465,10 @@ export function newSession(body: Record<string, unknown>, seed: number, random: 
   } else if (activity === 'corners') {
     const map = MAPS.find((m) => m === body.map) ?? MAPS[Math.floor(random() * MAPS.length) % MAPS.length];
     game = newCorners(map, runSeconds(body.run));
+  } else if (activity === 'shark') {
+    // Shark Bay (docs/SHARK-PLAN.md): Four Corners' engine with spinning quarters, boats and a shark.
+    const bay = BAYS.find((m) => m === body.map) ?? BAYS[Math.floor(random() * BAYS.length) % BAYS.length];
+    game = newShark(bay, runSeconds(body.run));
   } else game = newMural(random);
   return { seed, activity, state: 'lobby', lengthMin, players: {}, order: [], game, ...(body.padMusic === true ? { padMusic: true } : {}) };
 }
@@ -762,7 +767,7 @@ async function cornersStep(sv: ClassLiveServices, cur: RoomRow, who: string, bod
     const done = await mutate(sv, room, (s, t) => {
       if (s.state !== 'live' || s.game.kind !== 'corners') return { refuse: no(409, 'This one has finished.', 'over') };
       if (body.jump !== undefined) {
-        const out = cornersJump(s.game, who, body.jump, s.order, t);
+        const out = (isShark(s.game) ? sharkJump : cornersJump)(s.game, who, body.jump, s.order, t);
         if (!out.ok) return { refuse: no(409, "You can't jump there now.", 'not_now') };
         return { reply: null, events: [], players: [who] };
       }
@@ -785,7 +790,7 @@ async function cornersStep(sv: ClassLiveServices, cur: RoomRow, who: string, bod
   if (body.action === 'ask') {
     const at = await spotOf();
     if (at === 'busy') return busy();
-    const purpose = questionFor(g0, who, at ?? g0.mine[who]?.spot, t0);
+    const purpose = (isShark(g0) ? sharkQuestionFor : questionFor)(g0, who, at ?? g0.mine[who]?.spot, t0);
     if (!purpose) return no(409, 'No question right now.', 'not_now');
     const question = await nextQuestion(sv, cur, who);
     if (question === 'busy') return busy();
@@ -806,8 +811,8 @@ async function cornersStep(sv: ClassLiveServices, cur: RoomRow, who: string, bod
   const ms = Math.round(Math.min(typeof body.ms === 'number' && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS, MAX_ANSWER_MS));
   const done = await mutate(sv, room, (s, t) => {
     if (s.state !== 'live' || s.game.kind !== 'corners') return { refuse: no(409, 'This one has finished.', 'over') };
-    const purpose = questionFor(s.game, who, at ?? s.game.mine[who]?.spot, t);
-    if (!purpose) return { refuse: no(409, 'Get to a corner first!', 'not_now') };
+    const purpose = (isShark(s.game) ? sharkQuestionFor : questionFor)(s.game, who, at ?? s.game.mine[who]?.spot, t);
+    if (!purpose) return { refuse: no(409, isShark(s.game) ? 'Swim off the jetty first!' : 'Get to a corner first!', 'not_now') };
     const out = cornersAnswered(s.game, who, right, purpose, s.order, t, typeof body.ms === 'number' ? ms : undefined);
     if (!out.ok) return { refuse: no(409, out.reason === 'too_soon' ? 'One at a time!' : 'No question right now.', out.reason) };
     const freed = out.events.flatMap((e) => (e.type === 'power' && e.freed ? [e.freed] : []));
