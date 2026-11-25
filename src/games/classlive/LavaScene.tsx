@@ -118,7 +118,7 @@ export function LavaScene({ screen, game, link, room, clock, sound, say, onTick,
       sound.play('crack');
       say(lavaLine('lavaCrack'), 200);
       const fell = r.fell?.length ?? 0;
-      window.setTimeout(() => sound.play(fell ? 'splash' : 'safe'), 1300);
+      window.setTimeout(() => sound.play(fell ? 'plop' : 'safe'), 1300);
       if (r.booted.length) window.setTimeout(() => say(lavaLine('lavaBoots')), 2400);
       else if (fell === 0) window.setTimeout(() => say(lavaLine('lavaNobody')), 2400);
       else if (fell >= Math.max(4, screen.people.length / 3)) window.setTimeout(() => say(lavaLine('lavaLots')), 2400);

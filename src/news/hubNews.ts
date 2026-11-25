@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'classlive-shark-bay-2026-11-25',
+    date: '2026-11-25',
+    emoji: '🦈',
+    title: 'Shark Bay',
+    text: 'Swim to a spinning colour or hide under a boat before Simon the shark strikes!',
+    game: 'classlive',
+  },
+  {
     id: 'classlive-floor-is-lava-2026-11-25',
     date: '2026-11-25',
     emoji: '🌋',

@@ -9,6 +9,7 @@ import { SERPENT_LEVEL_ABOUT, SERPENT_LEVEL_NAMES } from '../../../shared/classl
 import { speak, stopSpeaking } from '../../speech';
 import { painted } from './paintedArt';
 import { MAP_WORDS } from '../../../shared/classlive/corners';
+import { BAY_WORDS, isShark, SHARK } from '../../../shared/classlive/shark';
 import { HOWTO, VOICE_FOLDER } from './voiceLines';
 import { LAVA_HOWTO, LAVA_MAP_SAY } from './lavaVoice';
 import { LAVA_WORDS } from '../../../shared/classlive/lava';
@@ -56,6 +57,20 @@ export function sheetFor(game: Game): Sheet {
         { icon: '🛶', text: 'Fall in and you wait on the raft for a friend to rescue you, or answer 5 questions to climb back.', say: H[2] },
         { icon: '🧱', text: 'Right answers earn bricks: 1 builds a bridge over lava, 2 rescue a friend.', say: H[3] },
         { icon: '⚡', text: 'Grab power-ups and answer to switch them on. Stay up the most rounds to win!', say: H[4] },
+      ],
+    };
+  }
+  // Shark Bay
+  if (isShark(game)) {
+    const H = HOWTO.shark;
+    return {
+      title: 'How to play Shark Bay', mode: BAY_WORDS[game.bay].name, modeSay: null, art: painted('pick', 'shark', true),
+      steps: [
+        { icon: '🕹️', text: 'Swim your avatar with the joystick, or the arrow keys.', say: H[0] },
+        { icon: '🌀', text: 'The bay has four coloured quarters. They slowly spin round!', say: H[1] },
+        { icon: '⏱️', text: 'Get to a quarter before the countdown ends. Do not stay on the jetty!', say: H[2] },
+        { icon: '🦈', text: `${SHARK} strikes one quarter. Anyone in it, or on the jetty, goes to the shark cave.`, say: H[3] },
+        { icon: '⛵', text: 'Hide under a boat to be safe, but boats only have a few seats! In the cave, answer 3 questions to swim back out.', say: H[4] },
       ],
     };
   }
@@ -110,7 +125,7 @@ export function HowTo({ game, players, muted, onPlay, onBack }: { game: Game; pl
     };
     timer = window.setTimeout(() => next(0), 500);
     return () => { dead = true; window.clearTimeout(timer); stopSpeaking(); };
-  }, [game.kind]);
+  }, [game.kind, isShark(game)]);
   const play = () => { stopSpeaking(); onPlay(); };
   return (
     <div className={`cl-how cl-how--${game.kind}`} role="dialog" aria-label={sheet.title}>

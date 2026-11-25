@@ -24,7 +24,9 @@ export type SoundName =
   // Four Corners
   | 'tick' | 'tickLast' | 'drumroll' | 'dice' | 'land' | 'caught' | 'safe' | 'grab' | 'power' | 'escape' | 'warp' | 'storm'
   // Floor is Lava
-  | 'rumble' | 'crack' | 'splash' | 'build';
+  | 'rumble' | 'crack' | 'plop' | 'build'
+  // Shark Bay
+  | 'splash' | 'chomp';
 
 export interface ClassLiveSound {
   play(name: SoundName): void;
@@ -35,7 +37,7 @@ export interface ClassLiveSound {
 }
 
 const KEY = 'classlive-muted';
-const BIG: SoundName[] = ['start', 'over', 'creature', 'supernova', 'awake', 'reveal', 'head', 'arm', 'guess', 'drumroll', 'land'];
+const BIG: SoundName[] = ['start', 'over', 'creature', 'supernova', 'awake', 'reveal', 'head', 'arm', 'guess', 'drumroll', 'land', 'splash'];
 
 function readMuted(): boolean {
   try {
@@ -312,6 +314,22 @@ const RECIPES: Record<SoundName, Recipe> = {
     phrase(ctx, out, kit, t + 0.2, 'harp', run(p, 0, 12).map((s) => Math.abs(s)), 0.13, 0.6);
     cadence(ctx, out, kit, t + 1.8, p);
   },
+  // ---- Shark Bay: a big splash and a cartoon chomp ----
+  splash: (ctx, out, _kit, t, p) => {
+    hiss(ctx, out, t, 1.1, 7000, 600, 0.4, 'bandpass', 0.8, 0.02);
+    hiss(ctx, out, t + 0.05, 0.9, 900, 200, 0.3, 'lowpass', 1, 0.05);
+    osc(ctx, out, p.one([140, 170, 200, 240]), t, 0.5, 'sine', 0.4, 50);
+    const sparkle = p.one([600, 800, 1000]);
+    for (let i = 0; i < 6; i++) osc(ctx, out, sparkle + i * 140, t + 0.15 + i * 0.07, 0.12, 'sine', 0.05, 300);
+  },
+  chomp: (ctx, out, _kit, t, p) => {
+    const f = p.one([100, 120, 140, 170]);
+    const bites = p.one([2, 3, 4]);
+    for (let i = 0; i < bites; i++) {
+      osc(ctx, out, f, t + i * 0.18, 0.14, 'square', 0.18, f * 0.5);
+      hiss(ctx, out, t + i * 0.18, 0.07, 3500, 1500, 0.2, 'bandpass', 2, 0.01);
+    }
+  },
   // ---- Four Corners ----
   tick: (ctx, out, kit, t, p) => {
     const f = p.one([900, 1100, 1300]);
@@ -435,7 +453,7 @@ const RECIPES: Record<SoundName, Recipe> = {
     osc(ctx, out, 70, t + 0.45, 1.2, 'sine', 0.5, 30);
     if (p.chance(0.5)) INSTRUMENTS.logdrum(ctx, out, note(kit, -5), t + 0.5, 1.1);
   },
-  splash: (ctx, out, kit, t, p) => {
+  plop: (ctx, out, kit, t, p) => {
     // A gloopy lava plop (falling pitch), a sizzle, and a comic slide down. Never scary.
     const f = p.one([500, 650, 800]);
     osc(ctx, out, f, t, 0.35, 'sine', 0.25, f * 0.25);
