@@ -4,6 +4,7 @@
  * (drawn emoji until a painting is there); hazards show the chosen map's names, with tabs for the other maps.
  */
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { MAPS, MAP_WORDS, POWERS, POWER_WORDS, UNLOCK, type CornerMap } from '../../../shared/classlive/corners';
 import { hazardPic, powerPic } from './CornersBoard';
 
@@ -28,7 +29,8 @@ function Pic({ src, emoji }: { src: string | null; emoji: string }) {
 export function CornersGuide({ map, onClose }: { map: CornerMap; onClose: () => void }) {
   const [shown, setShown] = useState<CornerMap>(map);
   const w = MAP_WORDS[shown];
-  return (
+  // On document.body, so a card with a transform (the setup card) can't trap the fixed overlay.
+  return createPortal(
     <div className="fc-guide" role="dialog" aria-modal="true" aria-label="Power-ups and hazards">
       <div className="fc-guide__card">
         <header className="fc-guide__head">
@@ -80,6 +82,7 @@ export function CornersGuide({ map, onClose }: { map: CornerMap; onClose: () => 
           </li>
         </ul>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
