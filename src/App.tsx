@@ -38,6 +38,7 @@ const ClassSetup = lazy(() => import('./pages/MyClasses').then((m) => ({ default
 const TeacherStudents = lazy(() => import('./teacher/Students').then((m) => ({ default: m.TeacherStudents })));
 const StudentPage = lazy(() => import('./teacher/StudentPage').then((m) => ({ default: m.StudentPage })));
 const BadgeSheet = lazy(() => import('./teacher/BadgeSheet').then((m) => ({ default: m.BadgeSheet })));
+const AddPupils = lazy(() => import('./teacher/AddPupils').then((m) => ({ default: m.AddPupils })));
 const HardestQuestions = lazy(() => import('./teacher/Hardest').then((m) => ({ default: m.HardestQuestions })));
 const TeacherShowdown = lazy(() => import('./pages/TeacherShowdown').then((m) => ({ default: m.TeacherShowdown })));
 const TeacherClassLive = lazy(() => import('./pages/TeacherClassLive').then((m) => ({ default: m.TeacherClassLive })));
@@ -101,6 +102,7 @@ export function teacherRoutes() {
         <Route path="students" element={<TeacherStudents />} />
         <Route path="students/:studentId" element={<StudentPage />} />
         <Route path="badges" element={<BadgeSheet />} />
+        <Route path="add-pupils" element={<AddPupils />} />
         <Route path="maths" element={<TeacherMaths />}>
           <Route index element={<Suspense fallback={loading}><SetFocus /></Suspense>} />
           <Route path="skills" element={<Suspense fallback={loading}><SkillMap /></Suspense>} />

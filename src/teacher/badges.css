@@ -57,6 +57,135 @@
   min-height: 44px;
   margin-top: 4px;
 }
+.badge-card__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.badges__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Find a pupil (BadgeSheet.tsx FindPupil). */
+.badges__find {
+  margin: 12px 0;
+}
+.badges__find-label,
+.add-pupils__label {
+  display: grid;
+  gap: 6px;
+  max-width: 480px;
+  font-weight: 700;
+}
+.badges__find-label input,
+.add-pupils__row input {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 2px solid #94a3b8;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 400;
+}
+
+/* Add new pupils (AddPupils.tsx). */
+.add-pupils__label {
+  max-width: 640px;
+}
+.add-pupils__emails {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 2px solid #94a3b8;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 400;
+}
+.add-pupils__google {
+  margin: 12px 0;
+  max-width: 640px;
+}
+.add-pupils__google summary {
+  cursor: pointer;
+  font-weight: 700;
+  min-height: 32px;
+}
+.add-pupils__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+}
+.add-pupils__row input {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.add-pupils__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 720px;
+}
+.add-pupils__result {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+.add-pupils__email {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.add-pupils__result--added span:last-child,
+.add-pupils__result--here span:last-child {
+  color: #15803d;
+}
+.add-pupils__result--no-account span:last-child,
+.add-pupils__result--not-school span:last-child {
+  color: #b91c1c;
+}
+.add-pupils__find-title {
+  margin-top: 28px;
+}
+
+/* The badge filling the screen, to scan straight off it. */
+.big-badge {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(15 23 42 / 0.75);
+}
+.big-badge__box {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 20px;
+  border-radius: 18px;
+  background: #fff;
+  color: #0f172a;
+  max-width: 100%;
+}
+.big-badge .badge-card__qr {
+  width: min(70vmin, 520px);
+  height: min(70vmin, 520px);
+}
+.big-badge__name {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  text-align: center;
+}
+.big-badge__tip {
+  margin: 0;
+  font-weight: 700;
+}
 
 @media print {
   @page {
@@ -89,8 +218,15 @@
     width: 40mm;
     height: 40mm;
   }
-  .badge-card__renew {
+  .badge-card__renew,
+  .badge-card__tools {
     display: none;
+  }
+  /* Printing one sheet (a class, or the pupils just added) or one card: printBadges() in badgePrint.ts marks them. */
+  body.badges-picked .badges__sheet:not(.badges-pick-sheet),
+  body.badges-picked .badges-one .badge-card:not(.badges-pick),
+  .big-badge {
+    display: none !important;
   }
   html,
   body {
