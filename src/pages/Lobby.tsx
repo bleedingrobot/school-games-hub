@@ -2,6 +2,7 @@ import { Fragment, useCallback, useEffect, useRef, useState, type FormEvent } fr
 import { Link, useNavigate } from 'react-router';
 import { colourName, normaliseCode, otherSide, prettyCode, type GameKind, type Side } from '../../shared/multiplayer';
 import { useAuth } from '../auth/AuthContext';
+import { HallWindow } from '../achievements/HallWindow';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { FavouriteTrophies, useTrophyShelves } from '../trophies/FavouriteTrophies';
 import { fetchLobbyPage } from '../data/lobby';
@@ -451,8 +452,16 @@ export function Lobby() {
   ];
 
   return (
-    <div className="lobby">
-      <h1 className="page-title">🤝 Play a friend</h1>
+    <HallWindow
+      title="Play a friend"
+      page="lobby"
+      action={
+        <Link to="/leaderboard" className="ah-btn ah-btn--gold">
+          <span aria-hidden="true">🏆</span> Leaderboard
+        </Link>
+      }
+    >
+    <div className="lobby hp-body">
 
       {loadFailed && !open && <p className="chess-note">We couldn’t load the lobby. Check the Wi-Fi; we’ll keep trying.</p>}
 
@@ -946,6 +955,7 @@ export function Lobby() {
         </section>
       )}
     </div>
+    </HallWindow>
   );
 }
 
