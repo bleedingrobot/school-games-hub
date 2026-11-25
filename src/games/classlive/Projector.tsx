@@ -7,6 +7,7 @@
 import { classLiveTrack, HOT_MS, musicSettings, useMusic } from './music';
 import { MusicControl } from './MusicControl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { GROUP_WORDS, LIVE_GAMES, liveGame, type LiveGame, type LiveGroup } from './gameList';
 import { ARMS, ARM_GOAL, ARM_NAMES, SUPERNOVA, armCounts, laggingArm, type Arm, type Star, type StarsGame } from '../../../shared/classlive/stars';
 import { GUESS_MS, PICTURES, type MuralGame } from '../../../shared/classlive/mural';
 import { BODY, SERPENT_LEVELS, SERPENT_LEVEL_ABOUT, SERPENT_LEVEL_NAMES, stepText, wakeAt, type SerpentGame, type SerpentLevel } from '../../../shared/classlive/serpent';
@@ -23,8 +24,14 @@ import './projector.css';
 import { painted } from './paintedArt';
 import { HowTo } from './HowTo';
 import { CornersScene } from './CornersScene';
+import { ClashScene } from './ClashScene';
+import { ClashCard } from './ClashCard';
+import { ClashGuide } from './ClashGuide';
+import { MAP_WORDS as CLASH_WORDS, type ClashMap } from '../../../shared/classlive/clash';
 import { CornersGuide } from './CornersGuide';
 import { LavaCard, LavaLobbyHead, LavaScene } from './LavaScene';
+import { GhostScene } from './GhostScene';
+import { GhostLobbyHead, GhostPickCard } from './GhostCard';
 // Shark Bay
 import { SharkScene } from './SharkScene';
 import { SharkGuide } from './SharkGuide';
@@ -144,7 +151,7 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
       else if (e.type === 'start') {
         sound.play('start');
         // Four Corners' scene says its own start, with the first round.
-        if (s.game.kind !== 'corners' && s.game.kind !== 'lava') say(s.game.kind === 'serpent' ? next('startSerpent') : s.game.kind === 'mural' ? next('startMural') : next('startStars'), 900);
+        if (s.game.kind !== 'corners' && s.game.kind !== 'ghost' && s.game.kind !== 'lava') say(s.game.kind === 'serpent' ? next('startSerpent') : s.game.kind === 'mural' ? next('startMural') : next('startStars'), 900);
       }
       else if (e.type === 'climb') {
         const id = e.pupil;
@@ -351,12 +358,14 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   const shark = game && isShark(game) ? game : null; // Shark Bay
   const corners = game?.kind === 'corners' && !shark ? game : null;
   const lava = game?.kind === 'lava' ? game : null;
+  const clash = game?.kind === 'clash' ? game : null;
+  const ghostG = game?.kind === 'ghost' ? game : null;
   const hall = !screen && !resuming ? painted('pick', 'hall') : null;
   // Background music for what is on screen (James, 25 Nov 2026 NZ).
   const hotNow = (leftMs !== null && leftMs < HOT_MS) || (serpent ? serpent.awake || serpent.energy >= 0.75 * wakeAt(screen?.players ?? 1) : false)
     || (game?.kind === 'stars' ? game.creature && !game.supernova : false);
-  useMusic(classLiveTrack(state, game?.kind ?? null, { guessing: mural?.phase === 'guess', hot: hotNow, map: shark ? shark.bay : corners?.map ?? lava?.map, shark: !!shark }), !muted);
-  const backPic = hall ?? (shark ? painted('shark', `back-${shark.bay}`) : lava ? painted('lava', `back-${lava.map}`) : corners ? painted('corners', `back-${corners.map}`) : painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky'));
+  useMusic(classLiveTrack(state, game?.kind ?? null, { guessing: mural?.phase === 'guess', hot: hotNow, map: shark ? shark.bay : corners?.map ?? ghostG?.map ?? clash?.map ?? lava?.map, shark: !!shark }), !muted);
+  const backPic = hall ?? (clash ? painted('clash', `back-${clash.map}`) ?? painted('corners', 'back-snow') : shark ? painted('shark', `back-${shark.bay}`) : ghostG ? painted('ghost', `back-${ghostG.map}`) : lava ? painted('lava', `back-${lava.map}`) : corners ? painted('corners', `back-${corners.map}`) : painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky'));
   const lobbyOpen = state === 'lobby' && room !== null;
   useEffect(() => {
     if (lobbyOpen) say(next('joinNow'), 400);
@@ -367,7 +376,7 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   }, [state]);
 
   return (
-    <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''} ${mural ? 'cl-p--mural' : ''} ${corners ? `cl-p--corners fc-back--${corners.map}` : ''} ${shark ? `cl-p--shark sb-back--${shark.bay}` : ''} ${lava ? `cl-p--lava lv-back--${lava.map}` : ''} ${backPic ? 'cl-p--painted' : ''}`}>
+    <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''} ${mural ? 'cl-p--mural' : ''} ${corners ? `cl-p--corners fc-back--${corners.map}` : ''} ${shark ? `cl-p--shark sb-back--${shark.bay}` : ''} ${clash ? 'cl-p--corners cl-p--clash' : ''} ${ghostG ? `cl-p--corners cl-p--ghost gt-back--${ghostG.map}` : ''} ${lava ? `cl-p--lava lv-back--${lava.map}` : ''} ${backPic ? 'cl-p--painted' : ''}`}>
       {serpent ? <JungleBackdrop /> : <NightBackdrop />}
       {backPic && <div className={`cl-painted ${serpent ? 'cl-painted--serpent' : ''} ${hall ? 'cl-painted--hall' : ''}`} style={{ backgroundImage: `url(${backPic})` }} aria-hidden="true" />}
       {serpent && <SerpentAmbience awake={serpent.awake || state === 'over'} />}
@@ -467,6 +476,36 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
         />
       )}
 
+      {screen && clash && (state === 'live' || state === 'over') && (
+        <ClashScene
+          screen={screen}
+          game={clash}
+          link={link}
+          room={room}
+          clock={() => Date.now() + offset.current}
+          sound={sound}
+          say={say}
+          over={state === 'over'}
+          onTick={() => { if (room) void act({ action: 'view', room }); }}
+          onAgain={forget}
+        />
+      )}
+
+      {screen && ghostG && (state === 'live' || state === 'over') && (
+        <GhostScene
+          screen={screen}
+          game={ghostG}
+          link={link}
+          room={room}
+          clock={() => Date.now() + offset.current}
+          sound={sound}
+          say={say}
+          over={state === 'over'}
+          onTick={() => { if (room) void act({ action: 'view', room }); }}
+          onAgain={forget}
+        />
+      )}
+
       {/* Shark Bay */}
       {screen && shark && (state === 'live' || state === 'over') && (
         <SharkScene
@@ -510,7 +549,7 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
 
 /* ---------------- setup ---------------- */
 
-function TimerChips({ length, setLength }: { length: number; setLength: (m: number) => void }) {
+export function TimerChips({ length, setLength }: { length: number; setLength: (m: number) => void }) {
   return (
     <div className="cl-opt">
       <span className="cl-opt__label">Timer</span>
@@ -527,7 +566,7 @@ function TimerChips({ length, setLength }: { length: number; setLength: (m: numb
 const MOTES: [number, number, number, number][] = Array.from({ length: 22 }, (_, i) => [(i * 37 + 7) % 100, -((i * 1.7) % 14), 11 + ((i * 5) % 9), 0.6 + ((i * 3) % 5) * 0.2]);
 
 /** The painted picture across the top of a game card (a drawn glow when none is painted). */
-function CardArt({ pic }: { pic: string | null }) {
+export function CardArt({ pic }: { pic: string | null }) {
   return (
     <div className="cl-card__art" aria-hidden="true">
       {pic ? <img src={pic} alt="" loading="eager" /> : null}
@@ -561,6 +600,9 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
   const yi = Number(y);
   const okPick = Number.isInteger(xi) && Number.isInteger(yi) && xi >= 2 && xi <= 12 && yi >= 2 && yi <= 12 && xi !== yi;
   const own = level === 'pick';
+  const games = LIVE_GAMES.filter((g) => g.id !== 'showdown' || onShowdown);
+  const [pick, choose] = usePicked(games.map((g) => g.id));
+  const chosen = liveGame(pick);
   // Who can join (James, 25 Nov 2026): the class, or any pupil of the school from their home page's "Join now?".
   const [where, setWhere] = useState<'class' | 'lobby'>(() => (readKept(WHERE_KEY) === 'lobby' ? 'lobby' : 'class'));
   const [host, setHost] = useState(() => readKept(HOST_KEY) ?? '');
@@ -574,9 +616,19 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
   return (
     <div className="cl-setup">
       <div className="cl-motes" aria-hidden="true">{MOTES.map((m, i) => <i key={i} style={{ left: `${m[0]}%`, animationDelay: `${m[1]}s`, animationDuration: `${m[2]}s`, ['--s' as string]: m[3] }} />)}</div>
-      <h1 className="cl-setup__title">Class Live</h1>
-      <p className="cl-setup__sub">Pick a game for the big screen</p>
-      <div className="cl-where" role="group" aria-label="Who can join?">
+      {!chosen ? (
+        <>
+          <h1 className="cl-setup__title">Class Live</h1>
+          <p className="cl-setup__sub">Pick a game for the big screen</p>
+          <GamePicker games={games} onPick={choose} />
+        </>
+      ) : (
+      <>
+      <div className="cl-chosen">
+        <button type="button" className="cl-btn cl-btn--small cl-chosen__back" onClick={() => choose(null)}>← All games</button>
+        <span className="cl-chosen__where">Class Live</span>
+      </div>
+      {pick !== 'showdown' && <div className="cl-where" role="group" aria-label="Who can join?">
         <span className="cl-opt__label">Who can join?</span>
         <button type="button" className={`cl-choice ${where === 'class' ? 'cl-choice--on' : ''}`} aria-pressed={where === 'class'} onClick={() => setWhere('class')}>🏫 My class</button>
         <button type="button" className={`cl-choice ${where === 'lobby' ? 'cl-choice--on' : ''}`} aria-pressed={where === 'lobby'} onClick={() => setWhere('lobby')}>🌏 Open in the lobby</button>
@@ -588,8 +640,9 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
           </label>
         )}
         {where === 'lobby' && <p className="cl-where__note">Any pupil in the school can join, from their home page or with the code on the big screen.</p>}
-      </div>
-      <div className="cl-cards">
+      </div>}
+      <div className="cl-cards cl-cards--one">
+        {pick === 'stars' && (
         <section className="cl-card cl-card--active" aria-label="Star Web">
           <CardArt pic={painted('pick', 'stars', true) ?? painted('back', 'star-sky', true)} />
           <h2 className="cl-card__name">★ Star Web</h2>
@@ -614,6 +667,8 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
           {problem && <p className="cl-problem" role="alert">{problem}</p>}
           <button type="button" className="cl-btn cl-btn--go" disabled={!canOpen} onClick={() => onOpen('stars', { level: own ? 'middle' : level, length, ...(own ? { x: xi, y: yi } : {}) })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
+        )}
+        {pick === 'serpent' && (
         <section className="cl-card cl-card--active cl-card--serpent" aria-label="Serpent Chain">
           <CardArt pic={painted('pick', 'serpent', true) ?? painted('back', 'jungle-temple', true)} />
           <h2 className="cl-card__name">🐍 Serpent Chain</h2>
@@ -633,6 +688,8 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
           <TimerChips length={sLength} setLength={setSLength} />
           <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('serpent', { level: sLevel, length: sLength })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
+        )}
+        {pick === 'mural' && (
         <section className="cl-card cl-card--active cl-card--mural" aria-label="Mystery Mural">
           <CardArt pic={painted('pick', 'mural', true) ?? painted('back', 'gallery', true)} />
           <h2 className="cl-card__name">🎨 Mystery Mural</h2>
@@ -640,6 +697,8 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
           <TimerChips length={mLength} setLength={setMLength} />
           <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('mural', { length: mLength })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
+        )}
+        {pick === 'corners' && (
         <section className="cl-card cl-card--active cl-card--corners" aria-label="Four Corners">
           <CardArt pic={painted('pick', 'corners', true) ?? painted('corners', 'map-snow', true)} />
           <h2 className="cl-card__name">🎲 Four Corners</h2>
@@ -666,8 +725,12 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
           <TimerChips length={cLength} setLength={setCLength} />
           <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('corners', { length: cLength, run: cRun, ...(cMap === 'any' ? {} : { map: cMap }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
-        <LavaCard busy={busy} disabled={!hostOk} onOpen={(body) => onOpen('lava', body)} />
+        )}
+        {pick === 'clash' && <ClashCard busy={busy} disabled={!hostOk} onOpen={(body) => onOpen('clash', body)} />}
+        {pick === 'ghost' && <GhostPickCard busy={busy} hostOk={hostOk} onOpen={(body) => onOpen('ghost', body)} timer={(l, set) => <TimerChips length={l} setLength={set} />} art={(pic) => <CardArt pic={pic} />} />}
+        {pick === 'lava' && <LavaCard busy={busy} disabled={!hostOk} onOpen={(body) => onOpen('lava', body)} />}
         {/* Shark Bay */}
+        {pick === 'shark' && (
         <section className="cl-card cl-card--active cl-card--corners cl-card--shark" aria-label="Shark Bay">
           <CardArt pic={painted('pick', 'shark', true)} />
           <h2 className="cl-card__name">🦈 Shark Bay</h2>
@@ -694,8 +757,67 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
           <TimerChips length={bLength} setLength={setBLength} />
           <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('shark', { length: bLength, run: bRun, ...(bBay === 'any' ? {} : { map: bBay }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
-        {onShowdown && <ShowdownCard busy={busy} onOpen={onShowdown} />}
+        )}
+        {pick === 'showdown' && onShowdown && <ShowdownCard busy={busy} onOpen={onShowdown} />}
       </div>
+      </>
+      )}
+    </div>
+  );
+}
+
+const PICK_KEY = 'pick';
+
+/** The game chosen on the picker, kept in the address (?pick=serpent) so a link (the Today page's card) opens on it. */
+function usePicked(ids: string[]): [string | null, (id: string | null) => void] {
+  const [pick, setPick] = useState<string | null>(() => {
+    try {
+      const hashQuery = window.location.hash.split('?')[1] ?? '';
+      const p = new URLSearchParams(window.location.search).get(PICK_KEY) ?? new URLSearchParams(hashQuery).get(PICK_KEY);
+      return p && ids.includes(p) ? p : null;
+    } catch { return null; }
+  });
+  const choose = useCallback((id: string | null) => {
+    setPick(id);
+    try {
+      const url = new URL(window.location.href);
+      const [path, q] = url.hash.split('?');
+      if (q !== undefined || (url.hash.startsWith('#/') && !url.search)) {
+        // A hash address (the previews): the query sits after the #.
+        const hq = new URLSearchParams(q ?? '');
+        if (id) hq.set(PICK_KEY, id); else hq.delete(PICK_KEY);
+        url.hash = `${path}${hq.toString() ? `?${hq}` : ''}`;
+      } else if (id) url.searchParams.set(PICK_KEY, id); else url.searchParams.delete(PICK_KEY);
+      window.history.replaceState(window.history.state, '', url);
+    } catch { /* not kept */ }
+    try { document.querySelector('.cl-setup')?.scrollTo({ top: 0 }); } catch { /* old browser */ }
+  }, []);
+  return [pick, choose];
+}
+
+/** The first screen: one painted tile per game, grouped (James, 25 Nov 2026 NZ). */
+function GamePicker({ games, onPick }: { games: LiveGame[]; onPick: (id: string) => void }) {
+  const groups = (Object.keys(GROUP_WORDS) as LiveGroup[]).map((g) => ({ g, list: games.filter((x) => x.group === g) })).filter((x) => x.list.length > 0);
+  let n = 0;
+  return (
+    <div className="cl-picker">
+      {groups.map(({ g, list }) => (
+        <section key={g} className="cl-picker__group" aria-label={GROUP_WORDS[g].name}>
+          <h2 className="cl-picker__head">{GROUP_WORDS[g].name} <small>{GROUP_WORDS[g].about}</small></h2>
+          <div className="cl-picker__tiles">
+            {list.map((game) => {
+              const pic = game.pic();
+              return (
+                <button key={game.id} type="button" className={`cl-tile cl-tile--${game.id}`} style={{ ['--tint' as string]: game.tint, animationDelay: `${0.05 * n++}s` }} onClick={() => onPick(game.id)}>
+                  <span className="cl-tile__art" aria-hidden="true">{pic ? <img src={pic} alt="" loading="eager" /> : <i className="cl-tile__emoji">{game.emoji}</i>}</span>
+                  <b className="cl-tile__name"><span aria-hidden="true">{game.emoji}</span> {game.name}</b>
+                  <span className="cl-tile__blurb">{game.blurb}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
@@ -714,7 +836,7 @@ function Chip({ p, i }: { p: ScreenView['people'][number]; i: number }) {
 
 function Lobby({ screen, game, className, onStart }: { screen: ScreenView; game: ScreenView['game']; className?: string; onStart: () => void }) {
   const n = screen.people.length;
-  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : game.kind === 'corners' ? (isShark(game) ? <SharkLobbyHead bay={game.bay} /> : <CornersLobbyHead map={game.map} />) : game.kind === 'lava' ? <LavaLobbyHead map={game.map} /> : <MuralLobbyHead />;
+  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : game.kind === 'corners' ? (isShark(game) ? <SharkLobbyHead bay={game.bay} /> : <CornersLobbyHead map={game.map} />) : game.kind === 'clash' ? <ClashLobbyHead map={game.map} teams={game.teams} /> : game.kind === 'ghost' ? <GhostLobbyHead map={game.map} /> : game.kind === 'lava' ? <LavaLobbyHead map={game.map} /> : <MuralLobbyHead />;
   return (
     <div className={`cl-lobby ${game.kind === 'serpent' ? 'cl-lobby--serpent' : ''}`}>
       {head}
@@ -753,6 +875,20 @@ function CornersLobbyHead({ map }: { map: CornerMap }) {
       <div className="cl-lobby__fact">{MAP_WORDS[map].name}</div>
       <div className="fc-lobby-corners" aria-hidden="true"><i /><i /><i /><i /></div>
       <p className="cl-lobby__ask">Run to a corner before the countdown ends. Which corner will the dice pick?</p>
+      <button type="button" className="cl-btn fc-guide-btn" onClick={() => setGuide(true)}>⚡ Power-ups and hazards</button>
+    </>
+  );
+}
+
+function ClashLobbyHead({ map, teams }: { map: ClashMap; teams: number }) {
+  const [guide, setGuide] = useState(false);
+  return (
+    <>
+      {guide && <ClashGuide map={map} onClose={() => setGuide(false)} />}
+      <h1 className="cl-lobby__title">Colour Clash</h1>
+      <div className="cl-lobby__fact">{CLASH_WORDS[map].name} · {teams} teams</div>
+      <div className="fc-lobby-corners" aria-hidden="true">{Array.from({ length: teams }, (_, i) => <i key={i} />)}</div>
+      <p className="cl-lobby__ask">Paint the floor your team's colour. Answer maths to drop paint bombs!</p>
       <button type="button" className="cl-btn fc-guide-btn" onClick={() => setGuide(true)}>⚡ Power-ups and hazards</button>
     </>
   );

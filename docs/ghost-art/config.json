@@ -1,0 +1,504 @@
+{
+  "_from": "docs/corners-art/config.json layout. Check with: python3 scripts/game_art.py ghost paint OUT --dry-run",
+  "game": "ghost",
+  "filename_prefix": "ghost/img",
+  "style": "s",
+  "styles": {
+    "s": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. ",
+    "c": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. "
+  },
+  "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly",
+  "negative_cut": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+  "inbox": "~/dragon-art-inbox/ghost-art/set",
+  "picks": "docs/ghost-art/picks.json",
+  "art_dir": "src/games/classlive/art/paint",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "map-graveyard",
+      "prompt": "A top-down painted game board of a friendly moonlit graveyard: soft blue moonlight, short green grass, a winding gravel path loop, a low iron fence and little pumpkins and lanterns round the edges, a stone crypt with a round purple glowing doorway seen from above in the exact centre. Spooky but friendly for children aged 7 to 11. An open empty walkable floor everywhere else, calm plain ground, no objects in the open floor, top-down bird's-eye view straight down, game board, square picture, no characters, no writing anywhere.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "ghost",
+      "file": "map-graveyard",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, ghosts, statues, perspective view, side view"
+    },
+    {
+      "name": "map-mansion",
+      "prompt": "A top-down painted game board of the ballroom floor of a friendly haunted mansion: a big patterned carpet on wooden floorboards, faint candle glow, cobwebs and potted ferns round the edges, a round old stone fireplace hearth with purple flames seen from above in the exact centre. Spooky but friendly for children aged 7 to 11. An open empty walkable floor everywhere else, calm plain ground, no objects in the open floor, top-down bird's-eye view straight down, game board, square picture, no characters, no writing anywhere.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "ghost",
+      "file": "map-mansion",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, ghosts, statues, perspective view, side view"
+    },
+    {
+      "name": "map-pumpkin",
+      "prompt": "A top-down painted game board of a pumpkin patch field at night: rows of soft earth, curly vines and leaves round the edges, warm lantern glow, a round straw circle with a friendly scarecrow hat seen from above in the exact centre. Spooky but friendly for children aged 7 to 11. An open empty walkable floor everywhere else, calm plain ground, no objects in the open floor, top-down bird's-eye view straight down, game board, square picture, no characters, no writing anywhere.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "ghost",
+      "file": "map-pumpkin",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, ghosts, statues, perspective view, side view"
+    },
+    {
+      "name": "map-ship",
+      "prompt": "A top-down painted game board of the wooden deck of a friendly ghost pirate ship: weathered planks, ropes and a railing round the edges, glowing green sea showing at the sides, a round ship's steering wheel platform with a soft green glow seen from above in the exact centre. Spooky but friendly for children aged 7 to 11. An open empty walkable floor everywhere else, calm plain ground, no objects in the open floor, top-down bird's-eye view straight down, game board, square picture, no characters, no writing anywhere.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "ghost",
+      "file": "map-ship",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, ghosts, statues, perspective view, side view"
+    },
+    {
+      "name": "back-graveyard",
+      "prompt": "A wide backdrop painting: a wide moonlit graveyard at night, friendly not scary: a big round moon, soft blue mist, crooked trees, glowing lanterns and pumpkins round the edges, deep blue and purple. The middle is calm, darker and softer, an empty open middle with nothing in it, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "ghost",
+      "file": "back-graveyard",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, game board, user interface"
+    },
+    {
+      "name": "back-mansion",
+      "prompt": "A wide backdrop painting: a wide grand hall of a friendly haunted mansion: tall arched windows with moonlight, floating candles, portraits, purple curtains round the edges, warm candle glow. The middle is calm, darker and softer, an empty open middle with nothing in it, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "ghost",
+      "file": "back-mansion",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, game board, user interface"
+    },
+    {
+      "name": "back-pumpkin",
+      "prompt": "A wide backdrop painting: a wide pumpkin patch at night under a big orange harvest moon, friendly: rows of glowing carved pumpkins, a red barn, fireflies, cornfields round the edges. The middle is calm, darker and softer, an empty open middle with nothing in it, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "ghost",
+      "file": "back-pumpkin",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, game board, user interface"
+    },
+    {
+      "name": "back-ship",
+      "prompt": "A wide backdrop painting: a wide view of a friendly ghost pirate ship sailing a glowing green sea at night, tattered sails, lanterns, a big moon, mist round the edges. The middle is calm, darker and softer, an empty open middle with nothing in it, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "ghost",
+      "file": "back-ship",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, game board, user interface"
+    },
+    {
+      "name": "pick-ghost",
+      "prompt": "A moonlit graveyard game board seen from above at an angle, a crowd of cute friendly little white sheet ghosts with big round eyes swooping and chasing in a swirl of purple sparkles, glowing lanterns, a big full moon, playful and exciting, not scary, no people, no writing. Wide landscape picture.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "pick",
+      "file": "ghost",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues, people"
+    },
+    {
+      "name": "sheet",
+      "prompt": "a cute friendly cartoon ghost costume: a floating white sheet with a wavy hem and two big round black eye holes and a happy little smile, soft white glow, seen from the front. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "sheet",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "vanish",
+      "prompt": "a burst of purple and white magic sparkles and stars, a puff of glittering smoke, round shape. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "vanish",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "dash",
+      "prompt": "a white ghostly speed swoosh with motion lines and a little lightning spark, round shape. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "dash",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "lantern",
+      "prompt": "an old brass lantern with a warm golden glow shining out, front view. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "lantern",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-shield",
+      "prompt": "a game power-up icon: a glowing bulb of garlic with a shimmering golden shield of light around it. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "power-shield",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-boots",
+      "prompt": "a game power-up icon: a pair of bright red running trainers with little golden wings and speed lines. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "power-boots",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-freeze",
+      "prompt": "a game power-up icon: a round blue frost bomb covered in ice crystals with a sparkling snowflake fuse. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "power-freeze",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "graveyard-stone",
+      "prompt": "A top-down game map piece: a grey stone tombstone with a rounded top and moss, seen from above, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "graveyard-stone",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "graveyard-crypt",
+      "prompt": "A top-down game map piece: a small round stone crypt roof with a purple glowing doorway, seen from above, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "graveyard-crypt",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "graveyard-slow",
+      "prompt": "A top-down game map piece: a big sticky silver cobweb spread flat on the ground, round, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "graveyard-slow",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "graveyard-teleport",
+      "prompt": "A top-down game map piece: an open grave hole with a swirling purple portal glow inside, round, seen from above, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "graveyard-teleport",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "graveyard-bats",
+      "prompt": "A top-down game map piece: a swarm of five cute purple cartoon bats flying together in a round cluster, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "graveyard-bats",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "mansion-stone",
+      "prompt": "A top-down game map piece: an old red velvet armchair seen from above, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "mansion-stone",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "mansion-crypt",
+      "prompt": "A top-down game map piece: a round stone fireplace hearth with purple flames, seen from above, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "mansion-crypt",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "mansion-slow",
+      "prompt": "A top-down game map piece: a spilled green bubbling potion puddle with a tipped bottle, round, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "mansion-slow",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "mansion-teleport",
+      "prompt": "A top-down game map piece: an oval magic mirror in a gold frame swirling with purple light, lying flat, seen from above, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "mansion-teleport",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "mansion-bats",
+      "prompt": "A top-down game map piece: a flock of flying old books flapping their pages like wings, round cluster, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "mansion-bats",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "pumpkin-stone",
+      "prompt": "A top-down game map piece: a giant round orange pumpkin seen from above, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "pumpkin-stone",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "pumpkin-crypt",
+      "prompt": "A top-down game map piece: a round straw circle with a friendly scarecrow hat in the middle, seen from above, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "pumpkin-crypt",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "pumpkin-slow",
+      "prompt": "A top-down game map piece: a round puddle of sticky brown mud with bubbles, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "pumpkin-slow",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "pumpkin-teleport",
+      "prompt": "A top-down game map piece: a hollow log end seen from above with a swirling green portal glow inside, round, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "pumpkin-teleport",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "pumpkin-bats",
+      "prompt": "A top-down game map piece: a flock of five cute black crows flying together in a round cluster, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "pumpkin-bats",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "ship-stone",
+      "prompt": "A top-down game map piece: a wooden barrel with iron hoops seen from above, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "ship-stone",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "ship-crypt",
+      "prompt": "A top-down game map piece: a round ship's steering wheel with a soft green glow, seen from above, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "ship-crypt",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "ship-slow",
+      "prompt": "A top-down game map piece: a round tangle of slimy green seaweed, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "ship-slow",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "ship-teleport",
+      "prompt": "A top-down game map piece: a round wooden trapdoor hatch with a swirling green portal glow, seen from above, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "ship-teleport",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "ship-bats",
+      "prompt": "A top-down game map piece: a flock of five cute glowing white ghost seagulls flying together in a round cluster, soft edges, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "ghost-fx",
+      "file": "ship-bats",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    }
+  ]
+}

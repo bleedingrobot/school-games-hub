@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
+import { HallWindow } from '../achievements/HallWindow';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
 import type { TrophyShelf } from '../data/trophies';
@@ -119,14 +120,16 @@ export function Leaderboard() {
   );
   const pick = (id: Tab) => setParams(id === 'achievements' ? {} : { board: id }, { replace: true });
   return (
-    <div className="leaderboard">
-      <div className="leaderboard__head">
-        <h1 className="page-title">Leaderboard</h1>
-        <Link to="/points" className="link-button">
-          How points and badges work
+    <HallWindow
+      title="Leaderboard"
+      page="leaderboard"
+      action={
+        <Link to="/points" className="ah-btn ah-btn--gold">
+          <span aria-hidden="true">❓</span> How points work
         </Link>
-      </div>
-
+      }
+    >
+    <div className="leaderboard hp-body">
       <div className="panel leaderboard__panel">
         <div className="leaderboard__tabs" role="tablist" aria-label="Boards">
           {TABS.map((t) => (
@@ -156,6 +159,7 @@ export function Leaderboard() {
         )}
       </div>
     </div>
+    </HallWindow>
   );
 }
 

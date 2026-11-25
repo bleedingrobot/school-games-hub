@@ -2,6 +2,7 @@
  * A pretend class for Class Live (`?pretend=30`): pretend pupils who join and play through the REAL server steps
  * (`classLiveStep`) on a database in memory. The tests drive it with a pretend clock; the preview with real timers.
  */
+import { ghostBot } from './ghostBot';
 import { memoryDb, memoryMove, memoryServices, type MemoryDb } from './memoryServices';
 import { boosted, CORNERS, cornerOf, ghostly, pretendDir, stepMove, type Corner, type MoveState } from './corners';
 import { bayRound, isShark, quarterOf, sharkMove, sharkPretendDir, spinAt } from './shark';
@@ -11,6 +12,7 @@ import { ANSWER_GAP_MS, canGuess } from './mural';
 import { pretendAnswer } from './serpent';
 import { pretendFacts } from './stars';
 import { lavaBot } from './lavaPretend';
+import { clashBot } from './clashMemory';
 
 export const PRETEND_TEACHER = '00000000-0000-4000-8000-00000000feed';
 export const PRETEND_CLASS = '00000000-0000-4000-8000-00000000c1a5';
@@ -55,6 +57,8 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
       const g = row.session.game;
       if (g.kind === 'corners') return cornersBot(room, id, skill);
       if (g.kind === 'lava') return lavaBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
+      if (g.kind === 'clash') return clashBot({ db, room, id, skill, rand, now: opts.clock.now, later: opts.later, step: (who, body) => classLiveStep(services, who, body) });
+      if (g.kind === 'ghost') return ghostBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
       if (g.kind === 'mural') {
         if (g.revealed) return;
         // In the guessing, take a few seconds to read the riddles, then pick (better pupils are right more often);

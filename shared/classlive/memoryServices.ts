@@ -7,6 +7,7 @@ import type { FactAnswer } from '../maths/leitner';
 import type { MathsContext } from '../maths/serverQuestions';
 import type { FinishedSession } from './rewards';
 import { clampMove, type Teleport } from './corners';
+import { memoryClashServices } from './clashMemory';
 import type { Change, ClassLiveServices, PlayerView, RoomRow, RoomView, ScreenView, StoredQuestion } from './server';
 
 export interface MemoryDb {
@@ -43,6 +44,7 @@ const copy = <T>(v: T): T => structuredClone(v);
 export function memoryServices(db: MemoryDb, clock: { now(): number; random?(): number }, onChange?: (room: number, change: Change) => void): ClassLiveServices {
   let nextRoom = 1;
   return {
+    ...memoryClashServices(db, clock),
     now: () => clock.now(),
     random: clock.random ?? Math.random,
     async teacherClass(teacher, classId) {
