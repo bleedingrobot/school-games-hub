@@ -29,7 +29,7 @@ export const signedText = (n: number) => (n < 0 ? `−${String(Math.round(-n * 1
  * each named mistake to the number it gives; a typed question keeps the mistakes that are zero or more (the pad has no minus),
  * a pick question shows them as labels.
  */
-function signed(base: { parts: string[]; prompt?: string; spoken?: string }, answer: number, named: Named, slot: number, salt: number): Made | null {
+export function signed(base: { parts: string[]; prompt?: string; spoken?: string }, answer: number, named: Named, slot: number, salt: number): Made | null {
   const spoken = base.spoken ?? talk(base.parts);
   if (answer >= 0) return withMistakes({ parts: base.parts, spoken, answer, ...(base.prompt ? { prompt: base.prompt } : {}) }, named);
   const labels: Record<string, string> = {};

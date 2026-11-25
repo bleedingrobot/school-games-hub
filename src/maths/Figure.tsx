@@ -3,7 +3,7 @@
  * text already says everything in the picture. A '?' label is drawn highlighted, as the thing being asked.
  */
 import type { ReactNode } from 'react';
-import type { Figure as FigureSpec } from '../../shared/maths/figure';
+import type { Figure as FigureSpec, SpinnerColour } from '../../shared/maths/figure';
 
 const W = 240;
 const H = 150;
@@ -152,6 +152,16 @@ function Body({ f }: { f: FigureSpec }) {
       );
     }
     case 'triangle-area':
+      if (f.right)
+        return (
+          <>
+            <polygon points="60,118 200,118 60,24" className="fig__shape" />
+            <polyline points="60,106 72,106 72,118" className="fig__line" fill="none" />
+            <Label x={130} y={134} text={f.base} />
+            <Label x={54} y={74} text={f.height} anchor="end" />
+            <Label x={100} y={96} text={f.inside ?? ''} />
+          </>
+        );
       return (
         <>
           <polygon points="40,118 200,118 90,24" className="fig__shape" />
@@ -261,8 +271,79 @@ function Body({ f }: { f: FigureSpec }) {
         </>
       );
     }
+    case 'shape': {
+      const reg = (n: number, r = 58) =>
+        Array.from({ length: n }, (_, i) => {
+          const t = -Math.PI / 2 + (i * 2 * Math.PI) / n;
+          return `${120 + r * Math.cos(t)},${75 + r * Math.sin(t)}`;
+        }).join(' ');
+      const table: Record<string, string> = {
+        square: '72,19 168,19 168,115 72,115',
+        rectangle: '45,35 195,35 195,115 45,115',
+        rhombus: '120,12 190,75 120,138 50,75',
+        kite: '120,10 175,60 120,140 65,60',
+        parallelogram: '40,115 150,115 200,35 90,35',
+        trapezium: '30,115 210,115 165,35 75,35',
+        equilateral: '40,120 200,120 120,31',
+        isosceles: '55,125 185,125 120,22',
+        scalene: '35,125 205,125 80,25',
+        'right-triangle': '55,125 195,125 55,25',
+        pentagon: reg(5),
+        hexagon: reg(6),
+        octagon: reg(8),
+      };
+      return <polygon points={table[f.name] ?? table.square} className="fig__shape" />;
+    }
+    case 'grid': {
+      const n = Math.max(4, Math.min(10, Math.round(f.size)));
+      const step = 100 / n;
+      const ox = 50;
+      const oy = 120;
+      return (
+        <>
+          {Array.from({ length: n + 1 }, (_, i) => (
+            <g key={i}>
+              <line x1={ox + i * step} y1={oy} x2={ox + i * step} y2={oy - 100} className={i === 0 ? 'fig__line' : 'fig__dash'} />
+              <line x1={ox} y1={oy - i * step} x2={ox + 100} y2={oy - i * step} className={i === 0 ? 'fig__line' : 'fig__dash'} />
+              {/* Every number up to 6, every other one on a bigger grid, so the labels never run together. */}
+              {(n <= 6 || i % 2 === 0) && <Label x={ox + i * step} y={oy + 10} text={String(i)} />}
+              {i > 0 && (n <= 6 || i % 2 === 0) && <Label x={ox - 9} y={oy - i * step} text={String(i)} anchor="end" />}
+            </g>
+          ))}
+          {f.points.map((p, i) => (
+            <g key={`p${i}`}>
+              <circle cx={ox + p.x * step} cy={oy - p.y * step} r={4} className="fig__dot" />
+              <Label x={ox + p.x * step + 7} y={oy - p.y * step - 8} text={p.label ?? ''} anchor="start" />
+            </g>
+          ))}
+        </>
+      );
+    }
+    case 'spinner': {
+      const n = Math.max(2, Math.min(10, Math.round(f.parts)));
+      const at = (i: number) => {
+        const t = -Math.PI / 2 + (i * 2 * Math.PI) / n;
+        return { x: 120 + 58 * Math.cos(t), y: 75 + 58 * Math.sin(t) };
+      };
+      return (
+        <>
+          <circle cx={120} cy={75} r={58} className="fig__shape" />
+          {Array.from({ length: Math.min(n, Math.max(0, Math.round(f.shaded))) }, (_, i) => {
+            const a = at(i);
+            const b = at(i + 1);
+            return <path key={`s${i}`} d={`M 120 75 L ${a.x} ${a.y} A 58 58 0 0 1 ${b.x} ${b.y} Z`} className="fig__fill" style={f.colour ? { fill: SPINNER_FILL[f.colour] } : undefined} />;
+          })}
+          {Array.from({ length: n }, (_, i) => (
+            <line key={i} x1={120} y1={75} x2={at(i).x} y2={at(i).y} className="fig__line" />
+          ))}
+        </>
+      );
+    }
   }
 }
+
+/** Soft fills for the spinner colours, dark enough to read against white and light enough for the lines to show. */
+const SPINNER_FILL: Record<SpinnerColour, string> = { red: '#f87171', blue: '#60a5fa', green: '#4ade80', yellow: '#facc15', purple: '#c084fc', orange: '#fb923c' };
 
 export function Figure({ figure }: { figure: FigureSpec }) {
   return (

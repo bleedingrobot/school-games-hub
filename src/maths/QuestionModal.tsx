@@ -92,6 +92,15 @@ export function SkipsLeft({ left }: { left: number }) {
 }
 
 /** What the box needs of a question. `answer` is missing when the game's server keeps it secret until marked. */
+/**
+ * Smaller text for long choice labels ("parallelogram", "5:50 pm", "even chance"), so a word fits its button beside the key
+ * number instead of running under it or out of the box.
+ */
+function choicesSize(labels: readonly string[] | undefined): string {
+  const longest = Math.max(0, ...(labels ?? []).map((l) => l.length));
+  return longest >= 12 ? ' question__choices--xlong' : longest >= 10 ? ' question__choices--long' : longest >= 7 ? ' question__choices--mid' : '';
+}
+
 export type ShownQuestion = Pick<Question, 'id' | 'parts' | 'spoken' | 'prompt' | 'choices' | 'choiceLabels' | 'maxLength' | 'input' | 'figure'> & { answer?: number };
 
 /**
@@ -383,7 +392,7 @@ export function QuestionModal({
           {result && !result.correct && <>{result.fact}</>}
         </p>
         {question.choices ? (
-          <div className="question__choices" role="group" aria-label="Choose an answer">
+          <div className={`question__choices${choicesSize(question.choiceLabels)}`} role="group" aria-label="Choose an answer">
             {question.choices.map((choice, i) => (
               <button
                 key={choice}

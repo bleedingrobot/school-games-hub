@@ -20,6 +20,7 @@ import { foldBondPairs } from './skillPacks/bondPairs';
 import { GENERATED_SKILL_KEYS, generatedPack, isGeneratedKey } from './skillPacks/generated';
 import { BandedPack } from './banded';
 import { Y78_LADDER, Y78_SKILL_KEYS } from './skillPacks/y78';
+import { Y6_LADDER, Y6_SKILL_KEYS, type Y6Row } from './skillPacks/y6';
 import { TimesTables } from './skillPacks/timesTables';
 
 export type LadderStage =
@@ -53,10 +54,11 @@ export interface LadderSkill {
    */
   inAuto?: false;
   /**
-   * The school year the NZC teaching sequence puts the skill in, for Year 7 and 8 skills only (left out below Year 7). A pupil
-   * whose teacher ticked "Stop at Year 6" never has these on auto (`LadderOptions.capAtYear6`).
+   * The school year the NZC teaching sequence puts the skill in, for the Year 6 skills of docs/plans/ladder-y6/PLAN.md and the
+   * Year 7 and 8 skills (left out on the older skills). A pupil whose teacher ticked "Stop at Year 6" never has the Year 7 and 8
+   * ones on auto (`LadderOptions.capAtYear6`); Year 6 ones are always on.
    */
-  year?: 7 | 8;
+  year?: 6 | 7 | 8;
   /** For a times-tables skill: its table (7 for ×7). */
   table?: number;
   /** For a times-tables skill: which step of `CAMPAIGN_STEPS` its table is in (0 for ×2, ×5 and ×10). */
@@ -117,8 +119,27 @@ const generated = (id: string, label: string, stage: LadderStage, keys: readonly
 const tables = tablesSkills();
 const tablesOfStep = (step: number) => tables.filter((s) => s.tablesStep === step);
 
+/**
+ * The Year 6 skills (docs/plans/ladder-y6/PLAN.md) slotted in by difficulty (James, 25 Nov 2026), each straight after the
+ * skill its row names. They stay out of the warm-up so its ten questions still reach as high as before; a pupil whose place
+ * is already past one has it as passed over and meets it in review, while a pupil below it meets it as their current skill.
+ */
+function slotYear6(base: LadderSkill[], rows: readonly Y6Row[]): LadderSkill[] {
+  const out = [...base];
+  const used = new Set<string>();
+  for (const r of rows) {
+    // Two rows after the same skill would land in the wrong order, so a run of new skills chains: each names the one before.
+    if (used.has(r.after)) throw new Error(`Two Year 6 skills go after ${r.after}: chain them (the second goes after the first)`);
+    used.add(r.after);
+    const at = out.findIndex((s) => s.id === r.after);
+    if (at < 0) throw new Error(`Year 6 skill ${r.id} goes after ${r.after}, which isn't on the ladder yet`);
+    out.splice(at + 1, 0, { ...generated(r.id, r.label, r.stage, Y6_SKILL_KEYS[r.id], ...r.tags), year: 6, inWarmUp: false });
+  }
+  return out;
+}
+
 /** Easiest first. Table skills are in the order of `CAMPAIGN_STEPS`. */
-export const LADDER: LadderSkill[] = [
+export const LADDER: LadderSkill[] = slotYear6([
   // The part-whole facts (7 is 4 and 3) sit under the facts to 10, for the youngest. Pipi's Hidden Shells asks them from the
   // child's own records, so they stay beside the ladder (`inAuto`) and an older student's auto practice never meets them.
   { id: 'parts-5', label: 'Parts of numbers to 5', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P1'], keys: earlyKeys('parts5'), built: true, inWarmUp: false, inAuto: false },
@@ -193,7 +214,7 @@ export const LADDER: LadderSkill[] = [
   generated('bedmas', 'Order of operations', 'order-of-operations', GENERATED_SKILL_KEYS.bedmas, 'MS.Y6.NUM.OP.P1'),
   // Year 7 and 8 (docs/plans/ladder-7-8/PLAN.md): only past this point for pupils a teacher hasn't stopped at Year 6.
   ...Y78_LADDER.map((r) => ({ ...generated(r.id, r.label, r.stage, Y78_SKILL_KEYS[r.id], ...r.tags), year: r.year })),
-];
+], Y6_LADDER);
 
 /**
  * Skills that were renamed or taken out (19 Nov 2026: the times-table steps split into one table each, and rounding to a million
