@@ -155,6 +155,8 @@ The hub stays one website and one database, with every row belonging to a school
 
 ### Before a second school can join
 
+The current plan for this (25 Nov 2026, with an audit of everything since) is [plans/second-school/PLAN.md](plans/second-school/PLAN.md).
+
 None of this is code, but each item has to be done first:
 
 - **Google sign-in.** The Google project is "Internal" to Douglas Park, so only Douglas Park accounts can use it. Other schools need it switched to "External" and published. Each school's Google Workspace admin also has to allow the app. Google blocks students under 18 from apps their school hasn't approved, and that school-by-school step is part of setting up each school.
