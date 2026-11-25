@@ -46,6 +46,7 @@ export const GAME_SWITCH_COLUMNS: Readonly<Record<string, string>> = {
   circuit: 'circuit_enabled',
   showdown: 'showdown_enabled',
   classlive: 'classlive_enabled',
+  starweb: 'starweb_enabled',
 };
 
 /**
