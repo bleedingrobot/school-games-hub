@@ -204,7 +204,7 @@ export const SHAPE_SKILL_KEYS: Record<string, readonly string[]> = {
 export const SHAPE_SLOW_KEYS: string[] = [];
 
 export const SHAPE_LADDER: readonly Y6Row[] = [
-  { id: 'shape-clue', label: 'Naming shapes from a clue', tiny: 'Shape from a clue', stage: 'measurement-geometry', after: 'angles-y6', tags: SHAPE_TAGS },
-  { id: 'rot-symmetry', label: 'Order of rotational symmetry', tiny: 'Turn symmetry', stage: 'measurement-geometry', after: 'shape-clue', tags: ROT_TAGS },
-  { id: 'coordinates', label: 'Coordinates (x, y)', tiny: 'Coordinates', stage: 'algebra', after: 'rot-symmetry', tags: COORD_TAGS },
+  // Shape from a clue and rotational symmetry were taken off the ladder (James, 26 Nov 2026 NZ): see FORMER_SKILLS in ladder.ts.
+  // Their question types stay in SHAPE_FAMILIES so answers pupils already gave still read back.
+  { id: 'coordinates', label: 'Coordinates (x, y)', tiny: 'Coordinates', stage: 'algebra', after: 'angles-y6', tags: COORD_TAGS },
 ];
