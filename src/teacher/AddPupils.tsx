@@ -28,13 +28,17 @@ const SAY: Record<Outcome, string> = {
 };
 
 export function AddPupils() {
-  const { classId, current } = useTeacherClass();
+  const { classId, current, classes } = useTeacherClass();
+  const [chosen, setChosen] = useState<string | null>(null);
+  const open = classes.filter((c) => !c.archived);
+  const target = open.find((c) => c.id === chosen) ?? current;
   const [text, setText] = useState('');
   const [link, setLink] = useState('');
   const [busy, setBusy] = useState<'link' | 'add' | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [results, setResults] = useState<AddedPupil[] | null>(null);
   const [big, setBig] = useState<CardPupil | null>(null);
+  const [addedTo, setAddedTo] = useState('');
   const sheet = useRef<HTMLUListElement>(null);
   const emails = useMemo(() => emailsIn(text), [text]);
 
@@ -53,12 +57,13 @@ export function AddPupils() {
   };
 
   const add = async () => {
-    if (!classId || !emails.length || emails.length > MAX) return;
+    if (!target || !emails.length || emails.length > MAX) return;
     setBusy('add');
     setProblem(null);
     try {
-      const done = await addPupils(classId, emails);
+      const done = await addPupils(target.id, emails);
       setResults(done);
+      setAddedTo(target.name);
       // Keep only the emails that still need something, so Add can be tapped again for them.
       setText(done.filter((r) => r.outcome === 'no-account').map((r) => r.email).join('\n'));
     } catch (e) {
@@ -68,7 +73,7 @@ export function AddPupils() {
     }
   };
 
-  if (!classId || !current) return null;
+  if (!classId || !current || !target) return null;
   const cards = (results ?? []).filter((r): r is AddedPupil & { player: string; code: string } => !!r.player && !!r.code);
   const added = (results ?? []).filter((r) => r.outcome === 'added').length;
 
@@ -76,7 +81,7 @@ export function AddPupils() {
     <section className="panel badges add-pupils" aria-labelledby="add-pupils-title">
       <div className="badges__head">
         <h2 id="add-pupils-title" className="panel__title">
-          Add new pupils to {current.name}
+          Add new pupils
         </h2>
         <Link className="button button--light" to={`/teacher/${classId}/badges`}>
           📷 Class badges
@@ -84,9 +89,20 @@ export function AddPupils() {
       </div>
       <p className="badges__note">
         For pupils who have never played. Put in their <strong>school emails</strong>, one per line, or paste a column copied
-        from a Google Sheet or Doc. Tap Add: each pupil gets an account in this class and a sign-in badge to print. They can
+        from a Google Sheet or Doc. Tap Add: each pupil gets an account in the class you pick and a sign-in badge to print. They can
         play with the badge straight away, and signing in with Google later still works: it’s the same account.
       </p>
+
+      <label className="add-pupils__label">
+        Add them to
+        <select className="add-pupils__class" value={target.id} onChange={(e) => setChosen(e.target.value)}>
+          {open.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </label>
 
       <label className="add-pupils__label">
         School emails
@@ -127,7 +143,7 @@ export function AddPupils() {
           onClick={() => void add()}
           disabled={!emails.length || emails.length > MAX || busy !== null}
         >
-          {busy === 'add' ? 'Adding…' : emails.length ? `Add ${emails.length} pupil${emails.length === 1 ? '' : 's'}` : 'Add pupils'}
+          {busy === 'add' ? 'Adding…' : emails.length ? `Add ${emails.length} pupil${emails.length === 1 ? '' : 's'} to ${target.name}` : 'Add pupils'}
         </button>
         {emails.length > MAX && <span role="alert">Add up to {MAX} at a time.</span>}
       </div>
@@ -136,7 +152,7 @@ export function AddPupils() {
       {results && (
         <div className="add-pupils__results" role="status">
           <h3>
-            {added} added to {current.name}
+            {added} added to {addedTo}
           </h3>
           <ul className="add-pupils__list">
             {results.map((r) => (
@@ -165,7 +181,7 @@ export function AddPupils() {
               <BadgeCard
                 key={r.player}
                 pupil={{ player: r.player, displayName: r.displayName ?? '', realName: r.realName, code: r.code }}
-                className={current.name}
+                className={addedTo}
                 onShow={() => setBig({ player: r.player, displayName: r.displayName ?? '', realName: r.realName, code: r.code })}
               />
             ))}
