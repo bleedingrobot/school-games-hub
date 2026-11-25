@@ -19,7 +19,7 @@ Machine positions are in `MACHINES` (shared/classlive/crew.ts): the floor painti
 
 ## Music
 
-A calm and a "-hot" looping track: `src/games/classlive/music/crew-factory.mp3` and `crew-factory-hot.mp3` (hot plays while 3 or more machines spark). Made with ACE-Step like the other Class Live tracks; add the takes kept to `music/MAKING.json`. Until they exist the game borrows island.
+A calm and a "-hot" looping track: `src/games/classlive/music/crew-factory.mp3` and `crew-factory-hot.mp3` (hot plays while 3 or more machines spark). Made with ACE-Step like the other Class Live tracks; add the takes kept to `music/MAKING.json`. The game borrows island if a file is missing.
 
 - `crew-factory`: "playful friendly robot factory groove, bouncy synth bass, clanky metallic percussion, marimba, little robot bleeps, sneaky but cheerful, 116 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, loopable, steady tempo"
 - `crew-factory-hot`: "urgent playful robot factory alarm groove, fast synth bass, pounding clanky drums, rapid marimba, alarm-like synth stabs, not scary, very energetic, starts immediately at full volume, 150 bpm, instrumental, no vocals, video game soundtrack, kids game music, loopable, steady tempo"
