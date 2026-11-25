@@ -1,0 +1,502 @@
+{
+  "_from": "docs/corners-art/config.json layout. Check with: python3 scripts/game_art.py clash paint OUT --dry-run",
+  "game": "clash",
+  "filename_prefix": "clash/img",
+  "style": "s",
+  "styles": {
+    "s": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. ",
+    "c": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. "
+  },
+  "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly",
+  "negative_cut": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+  "inbox": "~/dragon-art-inbox/clash-art/set",
+  "picks": "docs/clash-art/picks.json",
+  "art_dir": "src/games/classlive/art/paint",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "map-park",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down empty floor texture, straight down bird's-eye view: a sunny city park playground floor: smooth pale warm-grey paving with a very faint soft chalk-white texture, light and even, calm and bright. An empty open floor with nothing on it, the same plain colour all the way to the edges, bright and low detail, no paint splats, no game board, no grid, no lines, no objects, no characters, no writing. Square picture.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "clash",
+      "file": "map-park",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view, paint splats, grid lines, tiles drawn as a grid, game board, borders, frame, shadows of objects, objects on the floor"
+    },
+    {
+      "name": "map-rooftops",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down empty floor texture, straight down bird's-eye view: a rooftop floor: smooth light concrete in warm cream, a very faint soft texture, bright, calm and even. An empty open floor with nothing on it, the same plain colour all the way to the edges, bright and low detail, no paint splats, no game board, no grid, no lines, no objects, no characters, no writing. Square picture.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "clash",
+      "file": "map-rooftops",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view, paint splats, grid lines, tiles drawn as a grid, game board, borders, frame, shadows of objects, objects on the floor"
+    },
+    {
+      "name": "map-beach",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down empty floor texture, straight down bird's-eye view: a sandy beach floor: smooth pale golden sand with a very faint soft ripple texture, bright, calm and even. An empty open floor with nothing on it, the same plain colour all the way to the edges, bright and low detail, no paint splats, no game board, no grid, no lines, no objects, no characters, no writing. Square picture.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "clash",
+      "file": "map-beach",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view, paint splats, grid lines, tiles drawn as a grid, game board, borders, frame, shadows of objects, objects on the floor"
+    },
+    {
+      "name": "map-space",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down empty floor texture, straight down bird's-eye view: a space-lab floor: smooth pale silver-white metal panels with a faint cool blue tint and no seams, bright, calm and even. An empty open floor with nothing on it, the same plain colour all the way to the edges, bright and low detail, no paint splats, no game board, no grid, no lines, no objects, no characters, no writing. Square picture.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "clash",
+      "file": "map-space",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view, paint splats, grid lines, tiles drawn as a grid, game board, borders, frame, shadows of objects, objects on the floor"
+    },
+    {
+      "name": "back-park",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. a wide sunny paint-park backdrop: green hills, big friendly trees, a playground with slides and swings and a fountain far off, bright blue sky with puffy clouds, flower beds. The middle is calm, bright and softer, an empty open middle with nothing in it, just plain soft pale paving, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "clash",
+      "file": "back-park",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, game board, user interface, paint splats, grid lines"
+    },
+    {
+      "name": "back-rooftops",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. a wide city rooftops backdrop at golden sunset: rows of rooftops with water tanks and washing lines, colourful graffiti walls, string lights, warm orange and pink sky. The middle is calm, bright and softer, an empty open middle with nothing in it, just plain soft light concrete, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "clash",
+      "file": "back-rooftops",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, game board, user interface, paint splats, grid lines"
+    },
+    {
+      "name": "back-beach",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. a wide sunny beach backdrop: turquoise sea and gentle waves, palm trees, colourful beach umbrellas and towels, rock pools, big blue sky. The middle is calm, bright and softer, an empty open middle with nothing in it, just plain soft pale sand, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "clash",
+      "file": "back-beach",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, game board, user interface, paint splats, grid lines"
+    },
+    {
+      "name": "back-space",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. a wide space paint-lab backdrop: round windows showing stars and a ringed planet, friendly glowing machines and pipes, floating paint blobs, deep purple and blue glow. The middle is calm, bright and softer, an empty open middle with nothing in it, just plain soft pale metal floor, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "clash",
+      "file": "back-space",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, game board, user interface, paint splats, grid lines"
+    },
+    {
+      "name": "pick-clash",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down scene of a big open floor splashed with huge bright paint splats and footprints in red, blue, green and yellow, four colourful paint buckets tipped over in the four corners with paint rolling out, a giant round paint bomb splash bursting in the middle in a spray of sparkles, bright and exciting, no characters, no writing. Wide landscape picture.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "pick",
+      "file": "pick-clash",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
+    },
+    {
+      "name": "power-brush",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A game power-up icon: a fat round paintbrush with a thick rainbow-coloured bristle tip and a wide stripe of wet paint trailing behind it, shown diagonally. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "power-brush",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-speed",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A game power-up icon: a pair of bright red running shoes with little white wings and three speed streaks behind them. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "power-speed",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-mega",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A game power-up icon: a big round cartoon paint bomb, glossy, with a short lit fuse and a rainbow splash bursting out of it, sparkles. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "power-mega",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-cross",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A game power-up icon: a bold plus-shaped cross made of four stripes of paint, one red, one blue, one green and one yellow, glossy and sparkling, front view. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "power-cross",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "goo-park",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a puddle of sticky brown mud with a few bubbles and a little twig stuck in it, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "goo-park",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "slip-park",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a glossy puddle of wet shiny paint, pale blue, with a bright highlight and a few drips, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "slip-park",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "roller-park",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a chunky yellow paint roller on its side, with a fat fuzzy roller and a short handle, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "roller-park",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "fountain-park",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a round stone park fountain with a tall spray of water and sparkling droplets, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "fountain-park",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "goo-rooftops",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a round black tar puddle, thick and shiny, with a few bubbles, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "goo-rooftops",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "slip-rooftops",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a swirly rainbow-sheened oil slick puddle, dark and glossy, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "slip-rooftops",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "roller-rooftops",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a big round wooden barrel lying on its side with metal rings, rolling, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "roller-rooftops",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "fountain-rooftops",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a round wooden rooftop water tower seen from above, a ring of planks with a dome lid and a splash of water spilling over, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "fountain-rooftops",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "goo-beach",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a heap of soft sand with ripples and a tiny shell and a footprint in it, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "goo-beach",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "slip-beach",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a patch of wet shiny green-brown seaside rocks with a glossy sheen, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "slip-beach",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "roller-beach",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a big round striped beach ball in red, white and blue, rolling, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "roller-beach",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "fountain-beach",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a round rock pool ringed with rocks, clear blue water, a starfish and a small crab-free splash, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "fountain-beach",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "goo-space",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a blob of glowing green gloop, sticky and bubbling, with a few floating drops, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "goo-space",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "slip-space",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a floating ring of anti-gravity light with little floating bubbles and a soft purple glow, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "slip-space",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "roller-space",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a round grey cratered space rock rolling, chunky and friendly, with a few little craters, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "roller-space",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "fountain-space",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game hazard marker seen from above: a round glowing blue reactor core in a metal ring, humming with swirling energy and sparkles, round shape, soft edges, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "fountain-space",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "portal",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game portal marker seen from above: a round swirling hole of glowing magic in rainbow colours, spiralling into the middle, with sparkles and a soft ring of light, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "portal",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "golden",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game bonus tile seen from above: a square shiny golden tile with rounded corners and a bright gold star in the middle, glowing, with a few sparkles, bold and easy to see, centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "golden",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "team-red",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A cartoon paint-team flag: a bold red waving flag on a short pole, with a big splash of red paint across it and a few red paint drips, a small paintbrush crossed on it, front view, only red and white. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "team-red",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "team-blue",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A cartoon paint-team flag: a bold blue waving flag on a short pole, with a big splash of blue paint across it and a few blue paint drips, a small paintbrush crossed on it, front view, only blue and white. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "team-blue",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "team-green",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A cartoon paint-team flag: a bold green waving flag on a short pole, with a big splash of green paint across it and a few green paint drips, a small paintbrush crossed on it, front view, only green and white. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "team-green",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "team-yellow",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A cartoon paint-team flag: a bold yellow waving flag on a short pole, with a big splash of yellow paint across it and a few yellow paint drips, a small paintbrush crossed on it, front view, only yellow and white. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "clash-fx",
+      "file": "team-yellow",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "win",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A joyful celebration: fireworks made of bursting rainbow paint in red, blue, green and yellow filling a night sky, falling confetti and ribbons, big paint splashes and drips at the bottom, bright and exciting, an empty open middle with nothing in it, no characters, no writing. Wide landscape picture.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "clash",
+      "file": "win",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, game board, user interface, paint splats, grid lines"
+    }
+  ]
+}
