@@ -1,6 +1,6 @@
 # Colour Clash (Class Live activity `clash`)
 
-**Status: stage 1 (rules, server, database, tests) in PR; stage 2 screens next.** Migration `20261125001200_classlive_clash` (numbers agreed with the other Class Live game threads: Lava 1000, Thrones 1100, Clash 1200, Ghost Tag 1300, Shark Bay 1400).
+**Status: stages 1 and 2 (rules, server, database, big screen, pad, Bella) in PR #834, 25 Nov 2026 NZ; painted art and map music next (docs/CLASH-ART-PLAN.md).** Migration `20261125001200_classlive_clash` (numbers agreed with the other Class Live game threads: Lava 1000, Thrones 1100, Clash 1200, Ghost Tag 1300, Shark Bay 1400).
 
 James's idea (25 Nov 2026 NZ, from the coordinator's list): kids run over tiles to paint them their team's colour; answering questions bombs an area; the biggest colour wins. Built on Four Corners (docs/CORNERS-PLAN.md): same room, joystick, hub avatars, lobby codes, timers, music, Bella, rewards.
 
