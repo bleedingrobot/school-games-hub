@@ -21,7 +21,6 @@ type Person = ScreenView['people'][number];
 const reducedMotion = () => {
   try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
 };
-const firstName = (name: string | null | undefined) => (name ? name.split(' ')[0] : null);
 
 export function RelayScene({ screen, game, clock, sound, say, onTick, over, onAgain }: {
   screen: ScreenView; game: RelayGame; link: ClassLiveLink; room: number | null;
@@ -180,7 +179,8 @@ export function RelayScene({ screen, game, clock, sound, say, onTick, over, onAg
   }, [screen.events, screen.seq, sound]);
 
   const byId = useMemo(() => new Map(screen.people.map((p) => [p.id, p] as [string, Person])), [screen.people]);
-  const flyerName = (id: string | undefined) => (screen.showNames && id ? firstName(byId.get(id)?.name) : null);
+  // The screen's names are already the live names (shared/liveNames.ts once PR #868 lands): shown as they come.
+  const flyerName = (id: string | undefined) => (screen.showNames && id ? (byId.get(id)?.name ?? null) : null);
   const standings = r?.standings ?? null;
   const n = game.teams.length;
 
