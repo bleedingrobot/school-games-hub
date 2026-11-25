@@ -93,6 +93,15 @@
 .add-pupils__label {
   max-width: 640px;
 }
+.add-pupils__class {
+  min-height: 44px;
+  max-width: 320px;
+  padding: 6px 10px;
+  border: 2px solid #94a3b8;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 400;
+}
 .add-pupils__emails {
   width: 100%;
   box-sizing: border-box;

@@ -12,7 +12,8 @@ their QR code." B6 in [REVIEW.md](REVIEW.md) (James chose 11 Nov: keep Google fi
 2. Paste school emails (any text: one per line, a Sheet column, a Doc). Or open "Or read them from a Google Doc or Sheet",
    paste the link of a file shared as *Anyone with the link can view*, tap **Read emails**: the `pupils` function fetches
    the Doc's `export?format=txt` or the Sheet's `export?format=csv` (docs.google.com only) and fills the box.
-3. **Add N pupils**: the browser calls the `pupils` function with the emails. It checks the teacher's token, asks
+3. Pick the class in **Add them to** (default: the class open in the teacher page; any class the teacher may manage, so a school admin sees every class). James, 26 Nov: new pupils go into Kahikatea, Kōwhai, Rātā or Rimu Landing, not his own class.
+4. **Add N pupils to <class>**: the browser calls the `pupils` function with the emails. It checks the teacher's token, asks
    `pupils_may_create(teacher, emails)` (service role only: teacher at an active school, email on that school's domain, no
    account yet, at most 100), and makes each with `auth.admin.createUser({ email, email_confirm: true })`. The usual
    triggers give the profile (random player name, school).
