@@ -16,4 +16,15 @@ Notes: maps must have no boats, characters or writing; the quarter colours are d
 
 ## Music
 
-`shark-<bay>` and `shark-<bay>-hot` (calm run / strike), original ACE-Step tracks made on James's PC like Four Corners' (prompts in src/games/classlive/music/MAKING.json). Until they exist the game plays Four Corners' tracks.
+`shark-<bay>` and `shark-<bay>-hot` (calm run / strike), original ACE-Step tracks made on James's PC like Four Corners' (prompts in src/games/classlive/music/MAKING.json). Made 25 Nov 2026 (take 2, seed 42424, for all eight).
+
+## First run (25 Nov 2026, 3 tries each, picks in docs/shark-art/picks.json)
+
+- `map-pirate` painted a pirate ship every time ("shipwreck on the shore"): that phrase is gone and "no ships, no shipwrecks" added.
+- `map-icy` painted penguins every time ("a few cute penguins"), and still slipped one in after rewording to "a frozen winter bay" with penguins in the negative. The kept try had one small penguin on the corner ice, filled in by hand with the surrounding ice; redo that if it is re-tidied with `--force` from a new try.
+- `cave-lagoon` put a realistic shark in the cave ("shark's cave" draws a shark despite "no characters"): all four caves now say "an empty friendly underwater sea cave" with sharks/fish in the negative.
+- `power-shield` drew a toothy shark inside the cage: now "an empty glossy silver diving cage".
+- Cut-out water hazards drift to brown wooden discs and rims: `lagoon-ice`, `reef-ice`, `pirate-ice` (was a galaxy), `icy-ice` (was a playground slide), `icy-roller`, `icy-teleport` and `lagoon-roller` (was a bullseye target) now say "only water, nothing solid" or similar, with wood/disc/rim/brown in the negative.
+- `shark` (the leap) had rows of sharp teeth: now rounded blunt teeth, tongue out, googly eyes.
+- `power-key` (rescue ring) kept white in its hole after rembg; the middle was made see-through by hand after tidy, so redo that if re-tidied with `--force`.
+- `cave-icy` reads more like a plain sea cave than an icy one; fine for now, repaint if it matters.
