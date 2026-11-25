@@ -37,7 +37,7 @@ export const HUB_NEWS: NewsItem[] = [
     date: '2026-11-26',
     emoji: '🧮',
     title: '18 new maths skills',
-    text: 'Time, angles, coordinates, chance and more join the maths ladder. They pop up in every game.',
+    text: 'Time, angles, coordinates, chance and more join the maths ladder. They pop up in all games.',
   },
   {
     id: 'starweb-2026-11-25',
