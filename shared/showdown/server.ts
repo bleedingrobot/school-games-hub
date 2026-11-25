@@ -16,6 +16,7 @@
  * When a round ends, every pupil's reward (hub points and a Showdown chest, shared/showdown/bosses.ts) is put on their row in
  * the same save, and `finishRound` pays it out and records the class's roster (once per round, however often it's called).
  */
+import { liveNameAmong } from '../liveNames';
 import { recap, type Recap } from './awards';
 import { SHOWDOWN } from './config';
 import { advance, answer, chooseRole, enrage, goldenNext, join, moveToTeam, newRound, roundMs, start } from './engine';
@@ -586,7 +587,9 @@ export async function showdownStep(s: ShowdownServices, who: string, body: Recor
       const context = cur.round.players[who] ? null : await s.mathsContext(who);
       const ladder = ladderOf(context);
       const done = await mutate(s, room, (r, t, row) => {
-        const out = join(r, { id: who, name: me.name, ladder }, row.pausedAt === null ? t : r.t);
+        // Own name, or first word + number (shared/liveNames.ts); a rejoin keeps the name it had.
+        const name = r.players[who]?.name ?? liveNameAmong(me.name, Object.values(r.players).map((p) => p.name));
+        const out = join(r, { id: who, name, ladder }, row.pausedAt === null ? t : r.t);
         if (!out.ok) return { refuse: no(409, 'This showdown has finished.', 'over') };
         return { reply: null, events: out.events };
       });
