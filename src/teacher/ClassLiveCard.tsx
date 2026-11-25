@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { fetchClassLiveTimes, type ClassLiveTime } from '../data/classliveTimes';
-import { LIVE_GAMES, liveGame } from '../games/classlive/gameList';
+import { liveGame, pickableGames } from '../games/classlive/gameList';
 import { classliveOn } from '../games/classlive/switch';
 import { painted } from '../games/classlive/paintedArt';
 import { showdownOn } from '../games/showdown/switch';
@@ -15,7 +15,7 @@ import './class-live-card.css';
 export function ClassLiveCard({ classId }: { classId: string }) {
   if (!classliveOn()) return null;
   const base = `/teacher/${classId}/classlive`;
-  const games = LIVE_GAMES.filter((g) => g.id !== 'showdown' || showdownOn());
+  const games = pickableGames(showdownOn());
   const hall = painted('pick', 'hall', true);
   return (
     <section className="panel cl-today" aria-labelledby="cl-today-title" style={hall ? { ['--hall' as string]: `url(${hall})` } : undefined}>
