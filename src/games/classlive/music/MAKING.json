@@ -448,5 +448,85 @@
     "seconds": 88.0,
     "take_kept": 2,
     "lufs_target": -16
+  },
+  {
+    "name": "clash-park",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "sunny playful park paint fight, bouncy ukulele, whistling, hand claps, glockenspiel, funky bass, upbeat, catchy, fun, 124 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 124,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "clash-park-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic sunny park paint battle, fast bouncy ukulele, rapid hand claps, pounding drums, brass stabs, very energetic, intense, fast tempo, busy rhythm, starts immediately at full volume, 160 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 160,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "clash-rooftops",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "cool urban rooftop graffiti groove, funky hip hop beat, scratchy turntable, slap bass, electric piano, upbeat, catchy, fun, 100 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 100,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "clash-rooftops-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic urban rooftop chase, fast breakbeat drums, funky slap bass, brass stabs, turntable scratches, very energetic, intense, fast tempo, busy rhythm, starts immediately at full volume, 150 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 150,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "clash-beach",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "sunny tropical beach party, steel drums, surf guitar, marimba, bongos, upbeat, catchy, fun, 120 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 120,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "clash-beach-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic tropical beach race, fast steel drums, twangy surf guitar, pounding bongos, brass stabs, very energetic, intense, fast tempo, busy rhythm, starts immediately at full volume, 160 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 160,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "clash-space",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "bubbly space laboratory, bouncy synth arpeggios, quirky bleeps, electronic beat, playful, upbeat, catchy, fun, 128 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 128,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "clash-space-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic space lab experiment, very fast synth arpeggios, pounding electronic drums, driving synth bass, quirky bleeps, very energetic, intense, fast tempo, busy rhythm, starts immediately at full volume, 165 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 165,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
   }
 ]
