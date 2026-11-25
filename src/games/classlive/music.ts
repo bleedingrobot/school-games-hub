@@ -86,6 +86,8 @@ class Player {
   /** Each screen's wish, newest last (the Class Live test page shows the projector and a pupil's pad at once). */
   private wishes = new Map<object, Track | null>();
   private waitingForTap = false;
+  /** A looping copy still finishing its last 1.5 s, stopped along with the current one when music goes off. */
+  private stopped = new Set<HTMLAudioElement>();
 
   /** What a screen wants playing (null: silence, or gone). The newest screen that wants a track wins. */
   want(who: object, track: Track | null) {
@@ -95,13 +97,17 @@ class Player {
   }
 
   refresh() {
-    const t = settings.on ? [...this.wishes.values()].pop() ?? null : null;
+    // Volume 0 is off too: iPads ignore the volume, so only stopping the track silences it there.
+    const t = settings.on && settings.volume > 0 ? [...this.wishes.values()].pop() ?? null : null;
     if (t === this.track && this.el) {
       fade(this.el, settings.volume);
       return;
     }
     const old = this.el;
-    if (old) fade(old, 0, () => { old.pause(); old.src = ''; });
+    // Turning music off stops it at once (a fade-out sounds like the button did nothing, and iPads can't fade).
+    if (old) { if (t) fade(old, 0, () => { old.pause(); old.src = ''; }); else { old.pause(); old.src = ''; } }
+    this.stopped.forEach((e) => { e.pause(); e.src = ''; });
+    this.stopped.clear();
     this.el = null;
     this.track = t;
     const url = t ? trackUrl(t) : undefined;
@@ -129,7 +135,8 @@ class Player {
       this.el = next;
       this.chain(next, t, url);
       start(next, () => fade(next, settings.volume), () => undefined);
-      el.addEventListener('ended', () => { el.src = ''; }, { once: true });
+      this.stopped.add(el);
+      el.addEventListener('ended', () => { el.src = ''; this.stopped.delete(el); }, { once: true });
     };
     el.addEventListener('timeupdate', tick);
   }
@@ -151,6 +158,12 @@ class Player {
 }
 
 const player = new Player();
+
+/** iPads and iPhones fix a page's volume at full: there the slider would do nothing, so it is not shown. */
+export const canSetVolume = (() => {
+  if (typeof Audio === 'undefined') return true;
+  try { const a = new Audio(); a.volume = 0.5; return a.volume === 0.5; } catch { return false; }
+})();
 
 /** Plays `track` while the calling screen is shown (null: silence), unless music or sound is off. */
 export function useMusic(track: Track | null, soundOn: boolean) {
