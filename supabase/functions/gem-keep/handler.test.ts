@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { CAMPAIGN } from '../../../shared/gem-keep/levels';
 import { minWinSeconds, type SaveItem } from '../../../shared/gem-keep/save';
@@ -75,14 +73,5 @@ describe('the gem-keep server function', () => {
     const { body } = await send(s, [{ type: 'facts', pack: 'times-tables', facts }]);
     expect(body.results[0]).toEqual({ type: 'facts', changed: 1 });
     expect(s.recordFacts).toHaveBeenCalledWith('student-1', 'times-tables', [fact()]);
-  });
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('gem-keep');
-    expect(readFileSync(resolve('supabase/functions/gem-keep/index.ts'), 'utf8')).toBe(built);
   });
 });

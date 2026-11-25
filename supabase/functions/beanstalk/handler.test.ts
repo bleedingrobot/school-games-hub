@@ -1,6 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 import { memoryServices, type MemoryOptions } from '../../../shared/beanstalk/memoryServices';
 import type { FactStats } from '../../../shared/maths/leitner';
 import { bondKey, replay, targetOf, type Round, type Tap } from '../../../shared/beanstalk/round';
@@ -143,13 +141,4 @@ it('moves a child’s dots on the day’s first finish only, saves them, and sta
   hours(24);
   expect(await finish(goodTaps)).toMatchObject({ stage: 1, moved: 1, help: 0 });
   expect(saved()).toMatchObject({ stage: 1, help: 0, goodInRow: 0, goodDays: 0, stageDays: 0 });
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions -- beanstalk` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('beanstalk');
-    expect(readFileSync(resolve('supabase/functions/beanstalk/index.ts'), 'utf8')).toBe(built);
-  });
 });

@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { seeded } from '../../../shared/seededRandom';
 import { CARD_PATTERN, type Card } from '../../../shared/card101/cards';
@@ -209,16 +207,6 @@ describe('refereeing', () => {
     expect((await w.ask(me, { action: 'knock', gameId: id, version: g.version + 1 })).body.error).toMatch(/once everyone has had a turn|holding/i);
     expect((await w.ask('cat', { action: 'draw', gameId: id, version: g.version + 1, from: 'stack' })).body.problem).toBe('not-yours');
     expect((await w.ask(me, { action: 'fly', gameId: id })).status).toBe(400);
-  });
-
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('card-game');
-    expect(readFileSync(resolve('supabase/functions/card-game/index.ts'), 'utf8')).toBe(built);
   });
 
 });

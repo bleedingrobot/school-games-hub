@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import type { FactAnswer } from '../../../shared/maths/leitner';
 import type { Stored } from '../../../shared/monsters/save/check';
@@ -117,15 +115,5 @@ describe('the monster server function', () => {
     expect(warn).toHaveBeenCalledWith('monster: refused a save (team)');
     expect(JSON.stringify(warn.mock.calls)).not.toContain('student-1');
     warn.mockRestore();
-  });
-});
-
-describe('the deployable file', () => {
-  // Skipped: monster/index.ts is deliberately left as deployed, so it no longer matches the code.
-  it('is up to date with the code (run `npm run build:functions` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('monster');
-    expect(readFileSync(resolve('supabase/functions/monster/index.ts'), 'utf8')).toBe(built);
   });
 });

@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { expNeeded } from '../../../shared/lord/data';
 import { MAX_REQUESTS_PER_MINUTE } from './handler';
@@ -155,14 +153,5 @@ describe('the lord server function', () => {
     expect(wrong.body.result).toMatchObject({ interest: 0, right: false, answer: stored.answer });
     expect(g.hero().bank).toBe(259);
     expect(g.state!.interestDone).toBe(true);
-  });
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('lord');
-    expect(readFileSync(resolve('supabase/functions/lord/index.ts'), 'utf8')).toBe(built);
   });
 });

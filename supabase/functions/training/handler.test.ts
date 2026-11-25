@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { CHECK_FACTS, CHECK_VERSION } from '../../../shared/training/check';
 import { makeHandler, MAX_REQUESTS_PER_MINUTE, type Services } from './handler';
@@ -106,14 +104,5 @@ describe('the training server function', () => {
     const again = await send(s, [same]);
     expect(first.body.results).toEqual([{ type: 'answers', added: 1 }]);
     expect(again.body.results).toEqual([{ type: 'answers', added: 0 }]);
-  });
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('training');
-    expect(readFileSync(resolve('supabase/functions/training/index.ts'), 'utf8')).toBe(built);
   });
 });

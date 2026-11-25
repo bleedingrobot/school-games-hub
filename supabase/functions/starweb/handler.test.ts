@@ -1,6 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 import { POINTS } from '../../../shared/starweb/config';
 import { memoryServices, type MemoryOptions } from '../../../shared/starweb/memoryServices';
 import { GOLD_FACTS } from '../../../shared/starweb/pretend';
@@ -86,13 +84,4 @@ it('refuses while the switch is off, opens Free sky after 5 lit skies, and finis
   expect(log.points).toHaveLength(1);
   expect(next.body.sky.seed).not.toBe(sky.seed);
   expect((await send('pupil-a', { type: 'open', mode: 'free', x: 7, y: 7 })).body.code).toBe('locked');
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions -- starweb` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('starweb');
-    expect(readFileSync(resolve('supabase/functions/starweb/index.ts'), 'utf8')).toBe(built);
-  });
 });

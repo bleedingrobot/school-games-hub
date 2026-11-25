@@ -46,6 +46,8 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run build
+      # Every server function still builds (the publish builds and deploys them; the bundles aren't kept in git).
+      - run: npm run build:functions
 
   tests:
     needs: [changes]

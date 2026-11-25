@@ -1,6 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 import { newStats } from '../../../shared/maths/leitner';
 import { memoryServices, type MemoryOptions } from '../../../shared/korora/memoryServices';
 import type { Tap } from '../../../shared/korora/play';
@@ -103,13 +101,4 @@ it('changes one pebble a NZ day by the server’s clock, with fair-or-not record
   expect(log.answers.at(-1)!.answers.filter((a) => a.key.startsWith('oddeven:'))).toHaveLength(FAIR_GOES);
   expect(last.reply).toMatchObject({ daysDone: 30, pebbleChanged: 9, goldenFish: true, shoesWon: 'gold' });
   expect(log.fish).toEqual(['pupil-a']); // the hub gives Two-Shoes' gold dancing shoes achievement
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions -- korora` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('korora');
-    expect(readFileSync(resolve('supabase/functions/korora/index.ts'), 'utf8')).toBe(built);
-  });
 });

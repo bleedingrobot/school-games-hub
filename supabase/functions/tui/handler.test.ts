@@ -1,6 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 import { memoryServices, type MemoryOptions } from '../../../shared/tui/memoryServices';
 import type { Tap } from '../../../shared/tui/play';
 import { GUIDED_KEY, showRound, type Round } from '../../../shared/tui/round';
@@ -74,13 +72,4 @@ it('changes one flower a NZ day by the server’s clock, and tells the hub on th
   hours(24);
   expect(await finish()).toMatchObject({ daysDone: 30, flowerChanged: 9, goldenNest: true });
   expect(log.nests).toEqual(['pupil-a']); // the hub gives Tūī's Golden Nest achievement
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions -- tui` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('tui');
-    expect(readFileSync(resolve('supabase/functions/tui/index.ts'), 'utf8')).toBe(built);
-  });
 });
