@@ -7,11 +7,8 @@ import { findGame } from '../games/registry';
 import { playSound } from '../games/sounds';
 import { useSound } from '../sound';
 import { earnedWords, FILTERS, matches, nextUp, progressWords, readChoice, saveChoice, share, shelvesOf, type HallFilter, type Shelf } from './hall';
+import { HallWindow } from './HallWindow';
 import { Medallion, TIER_WORDS } from './Medallion';
-import hall from './art/hall.webp';
-import hallSmall from './art/hall-800.webp';
-import hallTall from './art/hall-tall.webp';
-import hallTallSmall from './art/hall-tall-800.webp';
 import shelfArt from './art/shelf.webp';
 import './hall.css';
 
@@ -72,8 +69,7 @@ export function AchievementHall() {
   const [choice, setChoice] = useState(readChoice);
   const [sparkle, setSparkle] = useState(0);
   const [open, setOpen] = useState<Open | null>(null);
-  const headingRef = useRef<HTMLHeadingElement>(null);
-  const { soundOn, setSoundOn } = useSound();
+  const { soundOn } = useSound();
 
   useEffect(() => {
     let current = true;
@@ -90,7 +86,6 @@ export function AchievementHall() {
       (rules) => current && setPoints(rules.achievementPoints),
       () => {},
     );
-    headingRef.current?.focus();
     return () => {
       current = false;
     };
@@ -120,38 +115,14 @@ export function AchievementHall() {
   const earnedCount = all?.filter((a) => a.earnedAt).length ?? 0;
 
   return (
-    <div className="ah-window">
-      <picture className="ah-backdrop" aria-hidden="true">
-        <source media="(orientation: portrait) and (max-width: 600px)" srcSet={hallTallSmall} />
-        <source media="(orientation: portrait)" srcSet={hallTall} />
-        <source media="(max-width: 900px)" srcSet={hallSmall} />
-        <img src={hall} alt="" />
-      </picture>
-      <div className="ah">
-        <header className="ah-top">
-          <span className="ah-top__buttons">
-            <a className="ah-btn" href="#/">
-              <span aria-hidden="true">⌂</span> Hub
-            </a>
-            <button
-              type="button"
-              className="ah-btn"
-              aria-pressed={soundOn}
-              onClick={() => setSoundOn(!soundOn)}
-              title={soundOn ? 'Sound is on: click to mute' : 'Sound is off: click to turn on'}
-            >
-              <span aria-hidden="true">{soundOn ? '🔊' : '🔇'}</span>
-              <span className="sr-only">Sound</span>
-            </button>
-          </span>
-          <h1 className="ah-title" ref={headingRef} tabIndex={-1}>
-            Achievement Hall
-          </h1>
-          <Link className="ah-btn ah-btn--gold" to="/profile#trophies">
-            <span aria-hidden="true">🏆</span> My trophies
-          </Link>
-        </header>
-
+    <HallWindow
+      title="Achievement Hall"
+      action={
+        <Link className="ah-btn ah-btn--gold" to="/profile#trophies">
+          <span aria-hidden="true">🏆</span> My trophies
+        </Link>
+      }
+    >
         {!all ? (
           <p className="ah-note" role="status">
             {failed ? 'We couldn’t open the Hall just now. Try again soon.' : 'Opening the Hall…'}
@@ -201,7 +172,6 @@ export function AchievementHall() {
             </div>
           </>
         )}
-      </div>
       {open && (
         <BadgeCard
           open={open}
@@ -212,7 +182,7 @@ export function AchievementHall() {
           }}
         />
       )}
-    </div>
+    </HallWindow>
   );
 }
 
