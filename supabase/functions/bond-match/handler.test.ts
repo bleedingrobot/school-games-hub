@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { findBondSet } from '../../../shared/bond-match/bonds';
 import { buildDeck } from '../../../shared/bond-match/deck';
@@ -119,14 +117,5 @@ describe('the bond-match server function', () => {
     });
     const { body } = await send(s, [perfect(), perfect()]);
     expect(body.results.map((r: { status: string }) => r.status)).toEqual(['duplicate', 'duplicate']);
-  });
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `node scripts/build-bond-match.mjs` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('bond-match');
-    expect(readFileSync(resolve('supabase/functions/bond-match/index.ts'), 'utf8')).toBe(built);
   });
 });

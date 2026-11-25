@@ -1,6 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 import { newStats } from '../../../shared/maths/leitner';
 import { memoryServices, type MemoryOptions } from '../../../shared/weka/memoryServices';
 import type { Tap } from '../../../shared/weka/play';
@@ -105,13 +103,4 @@ it('keeps which kinds of go a pupil has seen: unreadable kinds are refused, a ki
   expect((await send('pupil-a', { action: 'load' })).body.seen).toEqual(['back', 'turn']);
   services.data.facts['pupil-b'] = [{ ...newStats(GUIDED_KEY), attempts: 2 }];
   expect((await send('pupil-b', { action: 'load' })).body.seen).toEqual(['add']);
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions -- weka` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('weka');
-    expect(readFileSync(resolve('supabase/functions/weka/index.ts'), 'utf8')).toBe(built);
-  });
 });

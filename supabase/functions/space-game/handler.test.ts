@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { CODE_ALPHABET } from '../../../shared/multiplayer';
 import { seeded } from '../../../shared/seededRandom';
@@ -302,15 +300,5 @@ describe('Mission Control maths with classmates', () => {
     expect(done.answer).toBe(solveQuestion(asked.question!.parts)!.answer);
     // The time is never more than the server saw.
     expect(w.recorded[0].answer).toMatchObject({ correct: false, ms: 2000 });
-  });
-});
-
-describe('the server function', () => {
-
-  it('has an up-to-date index.ts (run `npm run build:functions` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('space-game');
-    expect(readFileSync(resolve('supabase/functions/space-game/index.ts'), 'utf8')).toBe(built);
   });
 });

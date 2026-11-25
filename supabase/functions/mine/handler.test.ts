@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { flyLevel } from '../../../shared/mine/bot';
 import { makeWorld } from '../../../shared/mine/engine';
@@ -214,13 +212,3 @@ describe('the mine server function', () => {
     }
   });
 });
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions -- mine` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('mine');
-    expect(readFileSync(resolve('supabase/functions/mine/index.ts'), 'utf8')).toBe(built);
-  });
-});
-

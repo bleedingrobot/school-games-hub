@@ -1,6 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 import { markQuestion, type MathsContext } from '../../../shared/maths/serverQuestions';
 import { botLevel } from '../../../shared/diamond/bot';
 import { playLevel } from '../../../shared/diamond/engine';
@@ -132,13 +130,4 @@ it('saves what its own replay says, never a total the browser sends', async () =
     expect(second.player.coins).toBe(85);
     expect(calls[1]).toEqual(['pupil-a', 4]);
   }
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions -- diamond` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('diamond');
-    expect(readFileSync(resolve('supabase/functions/diamond/index.ts'), 'utf8')).toBe(built);
-  });
 });

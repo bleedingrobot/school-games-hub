@@ -4,3 +4,4 @@ Merging to main (many threads merge at once, and every red "Test and publish" em
 - If your PR changes shared code (types, `src/maths/`, shared components, `shared/`) or a migration, update it from main right before merging and merge only once its checks are green again. Two PRs that each pass can still break the build together.
 - After merging, check that your "Test and publish" run on main went green before saying it's live. Flaky tests and Supabase hiccups are retried automatically (vitest `retry` on CI, retries in `scripts/apply-live-migrations.sh` and the function deploy), so a red run is a real problem: fix it first, before anything else merges.
 - Never fix a flaky test by raising the retry count; make the test wait properly (see docs/TESTING.md).
+- Never commit a server function bundle (`supabase/functions/<id>/index.ts`): it is built and deployed by "Test and publish" and is in .gitignore. If merging main gives a conflict on one, `git rm` it.

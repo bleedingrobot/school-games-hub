@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { markQuestion, seededRandom, type MathsContext } from '../../../shared/maths/serverQuestions';
 import { CALM_TURNS, GIFT_COINS, TURNS_PER_DAY, WELL_RACED_COINS } from '../../../shared/isles/config';
@@ -275,11 +273,4 @@ it("lets classmates visit, leave gifts and race each other's islands, never writ
   const named = (await send('pupil-a', { action: 'sky' })).body.classmates[0];
   expect(named).toMatchObject({ name: 'Ben', islandName: 'Puffin Cove', worth: islandWorth(ben()) });
   expect((await send('pupil-a', { action: 'hall' })).body).toEqual({ hall: [] });
-});
-
-it('the deployable file is up to date with the code (run `npm run build:functions -- isles` if this fails)', async () => {
-  // @ts-expect-error: plain JavaScript build script
-  const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-  const built: string = await buildFunction('isles');
-  expect(readFileSync(resolve('supabase/functions/isles/index.ts'), 'utf8')).toBe(built);
 });
