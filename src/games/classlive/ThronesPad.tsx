@@ -222,8 +222,19 @@ export function ThronesPad({ link, room, view, me, setMe, setView, clock, avatar
               .finally(() => { window.setTimeout(() => { grabbing.current = null; }, 600); });
           }
         }
+        // Touch a mimic (a throne with eyes) after the music stops: it eats you.
+        const mm = tt >= rd.musicEnd && rd.stopped && sitting.current === null ? (rd.mimics ?? []).find((x) => dist(x, here) < SIT_R) : undefined;
+        if (mm) {
+          sitting.current = -1 - mm.id;
+          void link.move(room, here.x, here.y)
+            .then(() => act({ action: 'play', room, bite: mm.id }))
+            .then((out) => {
+              if (out.status === 200) { showFlash('stop', '🦷 CHOMP! That throne was a mimic!', 2200); buzz(300); }
+            }, () => undefined)
+            .finally(() => { window.setTimeout(() => { sitting.current = null; }, 450); });
+        }
         // Sit on a throne: after the music stops, on a free one (or a taken one with a Crown thief ready).
-        if (tt >= rd.musicEnd && rd.stopped && sitting.current === null) {
+        if (!mm && tt >= rd.musicEnd && rd.stopped && sitting.current === null) {
           const th = rd.thrones.find((x) => dist(x, here) < SIT_R && !refused.current.ids.has(x.id) && (!x.taken || m.steal));
           if (th) {
             sitting.current = th.id;
@@ -321,12 +332,14 @@ export function ThronesPad({ link, room, view, me, setMe, setView, clock, avatar
 
   // What just happened at the end of a round.
   const told = useRef('');
+  const eatenSeen = useRef(0);
   useEffect(() => {
     if (!r || !mg || r.standing === null) return;
     const key = `${r.n}`;
     if (told.current === key) return;
     told.current = key;
-    if (mg.stoodLast) toast(`🔒 No throne! Off to the ${HALL_WORDS[pub?.hall ?? 'castle'].court.toLowerCase()}. Answer ${COURT_RIGHT} questions to come back.`);
+    if ((mg.stats.eaten ?? 0) > eatenSeen.current) { eatenSeen.current = mg.stats.eaten; toast(`🦷 Eaten by a mimic! Answer ${COURT_RIGHT} questions in the ${HALL_WORDS[pub?.hall ?? 'castle'].court.toLowerCase()} to come back.`); }
+    else if (mg.stoodLast) toast(`🔒 No throne! Off to the ${HALL_WORDS[pub?.hall ?? 'castle'].court.toLowerCase()}. Answer ${COURT_RIGHT} questions to come back.`);
     else if (mg.danced) toast('💃 Dance tile bonus! +1 crown', true);
   }, [r, mg, pub?.hall, toast]);
 
@@ -357,6 +370,7 @@ export function ThronesPad({ link, room, view, me, setMe, setView, clock, avatar
               ['🧮', mg.stats.right, 'right answers'],
               ['🔥', mg.stats.bestStreak, 'in a row, best'],
               ['🌟', mg.stats.golden, 'golden thrones'],
+              ['🦷', mg.stats.eaten ?? 0, 'eaten by mimics'],
               ['💃', mg.stats.dances, 'dance tile bonuses'],
               ['🗡️', mg.stats.steals, 'thrones stolen'],
               ['🎁', mg.stats.grabs, 'power-ups picked up'],

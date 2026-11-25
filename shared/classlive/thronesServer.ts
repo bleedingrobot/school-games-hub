@@ -7,7 +7,7 @@ import type { PublicQuestion } from '../maths/serverQuestions';
 import { markQuestion, sameAnswer } from '../maths/serverQuestions';
 import type { Busy, ClassLiveServices, PlayerView, RoomRow, RoomView, Session, Step, StepReply } from './server';
 import {
-  answered, boosted, COURT_RIGHT, EAR_MS, freeAt, freshMine, ghostly, grab, podium, questionFor, sit, ANSWER_GAP_MS,
+  answered, bite, boosted, COURT_RIGHT, EAR_MS, freeAt, freshMine, ghostly, grab, podium, questionFor, sit, ANSWER_GAP_MS,
   type Hall, type ThroneItem, type ThronePower, type ThroneRound, type ThronesGame,
 } from './thrones';
 import type { Spot } from './corners';
@@ -16,8 +16,10 @@ import type { Spot } from './corners';
 export interface ThronesPublic {
   kind: 'thrones';
   hall: Hall;
-  round: (Omit<ThroneRound, 'thrones' | 'items' | 'standing' | 'dancers'> & {
+  round: (Omit<ThroneRound, 'thrones' | 'mimics' | 'items' | 'standing' | 'dancers'> & {
     thrones: { id: number; x: number; y: number; golden: boolean; taken: boolean }[];
+    /** Trick thrones with eyes: how many each has eaten, never whom. */
+    mimics: { id: number; x: number; y: number; ate: number }[];
     items: Omit<ThroneItem, 'by'>[];
     /** How many were left standing (once the scramble is over), or null. */
     standing: number | null;
@@ -53,7 +55,7 @@ export interface ThronesPlayer {
   place: 1 | 2 | 3 | null;
   speedLeft: number;
   ghostLeft: number;
-  stats: { right: number; wrong: number; bestStreak: number; steals: number; stolen: number; golden: number; dances: number; powers: number; escapes: number; grabs: number };
+  stats: { right: number; wrong: number; bestStreak: number; steals: number; stolen: number; golden: number; dances: number; powers: number; escapes: number; grabs: number; eaten: number };
 }
 
 export function thronesPublic(g: ThronesGame, players: number): ThronesPublic {
@@ -63,6 +65,7 @@ export function thronesPublic(g: ThronesGame, players: number): ThronesPublic {
     kind: 'thrones', hall: g.hall, court, playing: players - court,
     round: r ? {
       ...r, thrones: r.thrones.map((th) => ({ id: th.id, x: th.x, y: th.y, golden: th.golden, taken: th.by !== null })),
+      mimics: (r.mimics ?? []).map((mm) => ({ id: mm.id, x: mm.x, y: mm.y, ate: mm.ate.length })),
       items: r.items.filter((x) => !x.by).map(({ by: _by, ...x }) => x), standing: r.standing ? r.standing.length : null,
     } : null,
   };
@@ -81,7 +84,7 @@ export function thronesPlayer(g: ThronesGame, order: string[], id: string, over:
     speedLeft: m.speedTo !== null && n <= m.speedTo ? m.speedTo - n + 1 : 0, ghostLeft: m.ghostTo !== null && n <= m.ghostTo ? m.ghostTo - n + 1 : 0,
     stats: {
       right: m.right, wrong: m.wrong, bestStreak: m.bestStreak, steals: m.steals, stolen: m.stolen, golden: m.golden, dances: m.dances,
-      powers: m.powersUsed, escapes: m.escapes, grabs: m.grabs,
+      powers: m.powersUsed, escapes: m.escapes, grabs: m.grabs, eaten: m.eaten ?? 0,
     },
   };
 }
@@ -121,6 +124,11 @@ export async function thronesStep(k: ThronesKit, cur: RoomRow, who: string, body
       if (s.state !== 'live' || s.game.kind !== 'thrones') return { refuse: no(409, 'This one has finished.', 'over') };
       const g = s.game;
       const mine = g.mine[who];
+      if (body.bite !== undefined) {
+        const out = bite(g, who, body.bite, at ?? mine?.spot, t);
+        if (!out.ok) return { refuse: no(409, out.reason === 'far' ? 'Get closer!' : out.reason === 'seated' ? "You're on a throne!" : 'Too late!', out.reason) };
+        return { reply: null, events: out.events, players: [who] };
+      }
       if (body.sit !== undefined) {
         const out = sit(g, who, body.sit, at ?? mine?.spot, t);
         if (!out.ok) return { refuse: no(409, SIT_WORDS[out.reason], out.reason) };

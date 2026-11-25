@@ -34,6 +34,7 @@ export function ThronesGuide({ hall, onClose }: { hall: Hall; onClose: () => voi
         <ul className="mt-rules">
           <li>🪑 A throne: {CROWNS.throne} crown</li>
           <li>🌟 A golden throne: {CROWNS.golden} crowns</li>
+          <li>👀 A throne with little eyes is a mimic (from round 2): touch it and it grows teeth and eats you, off to the {w.court.toLowerCase()}!</li>
           <li>💃 On a glowing dance tile when the music stops: +{CROWNS.dance}</li>
           <li>🗡️ Stealing a throne: take 1 crown</li>
         </ul>

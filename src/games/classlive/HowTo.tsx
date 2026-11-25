@@ -70,7 +70,7 @@ export function sheetFor(game: Game): Sheet {
       steps: [
         { icon: '🕹️', text: 'Move your avatar with the joystick, or the arrow keys.', say: H[0] },
         { icon: '💃', text: 'Dance while the music plays. Be on a glowing dance tile when it stops for a bonus crown.', say: H[1] },
-        { icon: '🪑', text: 'When the music stops, thrones pop up in new places. Run and sit on one! There are fewer every round.', say: H[2] },
+        { icon: '🪑', text: 'When the music stops, thrones pop up in new places. Run and sit on one! There are fewer every round. Careful: a throne with eyes is a hungry mimic. It eats you!', say: H[2] },
         { icon: '🏰', text: 'Left standing? Answer 3 questions in the courtyard to come back. 3 right in a row wins a 🗡️ Crown thief!', say: H[3] },
         { icon: '👑', text: 'A throne is 1 crown, a golden throne is 3. Most crowns wins!', say: H[4] },
       ],

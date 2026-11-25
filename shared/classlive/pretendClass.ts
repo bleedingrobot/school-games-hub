@@ -171,6 +171,9 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
     let placedSeen = -1;
     let roam = { x: 0.2 + rand() * 0.6, y: 0.2 + rand() * 0.6 };
     let busy = false;
+    // Now and then a pretend pupil falls for a mimic (decided once a round).
+    let fooledIn = -1;
+    let fooled = false;
     const think = async () => {
       const row = db.rooms.get(room);
       if (!row || row.session.state === 'over') return;
@@ -192,7 +195,9 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
           const tile = r.tiles[Math.floor(rand() * r.tiles.length)];
           roam = tile && rand() < 0.5 ? { x: tile.x, y: tile.y } : { x: 0.1 + rand() * 0.8, y: 0.1 + rand() * 0.8 };
         }
-        const goal = music ? (item ?? roam) : thronesNearest(r, m.p) ?? roam;
+        if (fooledIn !== r.n) { fooledIn = r.n; fooled = rand() < 0.12; }
+        const mimic = !music && r.stopped && fooled ? (r.mimics ?? []).slice().sort((a, b) => Math.hypot(a.x - m!.p.x, a.y - m!.p.y) - Math.hypot(b.x - m!.p.x, b.y - m!.p.y))[0] : undefined;
+        const goal = music ? (item ?? roam) : mimic ?? thronesNearest(r, m.p) ?? roam;
         let dir = { x: goal.x - m.p.x, y: goal.y - m.p.y };
         const len = Math.hypot(dir.x, dir.y);
         dir = len < 0.01 ? { x: 0, y: 0 } : { x: dir.x / len, y: dir.y / len };
@@ -200,7 +205,11 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
         m = stepMove(m, dir, 200, thronesMoveRound(r), t, { boost: thronesBoosted(mine, r.n), ghost: thronesGhostly(mine, r.n) });
         memoryMove(db, now, room, id, m.p.x, m.p.y);
         const on = !music ? thronesAt(r, m.p) : null;
-        if (!busy && on && !on.by) {
+        if (!busy && mimic && Math.hypot(mimic.x - m.p.x, mimic.y - m.p.y) < 0.06) {
+          busy = true;
+          await classLiveStep(services, id, { action: 'play', room, bite: mimic.id });
+          busy = false;
+        } else if (!busy && on && !on.by) {
           busy = true;
           await classLiveStep(services, id, { action: 'play', room, sit: on.id });
           busy = false;
