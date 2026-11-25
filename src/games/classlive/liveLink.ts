@@ -48,6 +48,13 @@ export const liveClassLiveLink: ClassLiveLink = {
     if (error || !Array.isArray(data)) return null;
     return (data as unknown[]).flatMap((p) => (Array.isArray(p) && p.length === 2 ? [{ x: Number(p[0]), y: Number(p[1]) }] : []));
   },
+  async ghostMove(room, x, y) {
+    const { data, error } = await supabase.rpc('classlive_ghost_move', { target: room, x, y });
+    if (error || !data || typeof data !== 'object' || !Array.isArray((data as { spots?: unknown }).spots)) return null;
+    const d = data as { me?: { ghost?: unknown }; spots: unknown[] };
+    const spots = d.spots.flatMap((p) => (Array.isArray(p) && p.length === 3 ? [[Number(p[0]), Number(p[1]), Number(p[2]) as 0 | 1 | 2 | 3] as [number, number, 0 | 1 | 2 | 3]] : []));
+    return { me: { ghost: d.me?.ghost === true }, spots };
+  },
   async positions(room) {
     const { data, error } = await supabase.rpc('classlive_positions', { target: room });
     if (error || !data || typeof data !== 'object') return null;

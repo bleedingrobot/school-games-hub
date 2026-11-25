@@ -11,7 +11,7 @@
  * The AudioContext is made on the first sound (browsers need a tap first), busy moments are rate-limited, and every call is
  * wrapped so a browser without audio just stays quiet.
  */
-export type Kit = 'stars' | 'serpent' | 'mural' | 'corners' | 'clash';
+export type Kit = 'stars' | 'serpent' | 'mural' | 'corners' | 'ghost' | 'clash';
 
 export type SoundName =
   | 'join' | 'start' | 'over'
@@ -133,6 +133,8 @@ const KITS: Record<Kit, { root: number; scale: number[]; lead: InstrumentName[];
   mural: { root: 293.66, scale: [0, 2, 4, 6, 7, 9, 11], lead: ['harp', 'musicbox', 'pizz', 'glock'], low: ['harp', 'pizz'] },
   corners: { root: 261.63, scale: [0, 2, 4, 5, 7, 9], lead: ['glock', 'marimba', 'pizz'], low: ['logdrum', 'pizz'] },
   clash: { root: 329.63, scale: [0, 2, 4, 7, 9], lead: ['kalimba', 'glock', 'marimba'], low: ['logdrum', 'wood'] },
+  // Ghost Tag: a spooky minor scale on celesta and music box (docs/GHOST-PLAN.md).
+  ghost: { root: 246.94, scale: [0, 1, 3, 6, 7, 10], lead: ['celesta', 'musicbox', 'glass'], low: ['pad', 'pizz'] },
 };
 
 /** The frequency of scale step `n` (any whole number, wrapping into octaves). */

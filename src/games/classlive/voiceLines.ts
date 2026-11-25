@@ -7,9 +7,12 @@
  */
 import { CLASH_HOWTO, CLASH_LINES } from './clashVoice';
 
+import { GHOST_HOWTO, GHOST_LINES } from './ghostLines';
+
 export const VOICE_FOLDER = 'voice/classlive/';
 
 export const LINES = {
+  ...GHOST_LINES,
   joinNow: ['Join Class Live now!', 'Come and join in, everyone!', 'Grab your device and join the game!'],
   startStars: ['Here we go! If we know this fact, what else do we know?', 'Star Web is on! How many facts can we find from this one?', 'Off we go! Use this fact to find lots more.'],
   startSerpent: ['Here we go! Work along the chain and wake the serpent!', 'The serpent is sleeping. Work along the chain to wake it!', 'Off we go! Climb the serpent one sum at a time.'],
@@ -157,5 +160,5 @@ export function next(key: LineKey): string {
 
 export const allVoiceLines = (): string[] => [
   ...Object.values(LINES).flat(),
-  ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural, ...HOWTO.corners, ...HOWTO.shark, ...HOWTO.clash,
+  ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural, ...HOWTO.corners, ...HOWTO.shark, ...GHOST_HOWTO, ...HOWTO.clash,
 ];

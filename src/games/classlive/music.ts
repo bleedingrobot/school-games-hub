@@ -14,7 +14,7 @@ type Calm = 'stars' | 'serpent' | 'boss' | 'goldrush' | 'skyclimb' | 'island' | 
  * Each game and arena has a calm track and a "-hot" one: the same tune made more dramatic and high-energy, for the
  * last 30 seconds and the big moments (James, 25 Nov 2026 NZ). Mystery Mural's hot one is its guessing music.
  */
-export type Track = 'picker' | 'win' | 'mural' | 'guess' | Calm | `${Calm}-hot` | `game-${string}` | `corners-${string}` | `shark-${string}` | `clash-${string}`;
+export type Track = 'picker' | 'win' | 'mural' | 'guess' | Calm | `${Calm}-hot` | `game-${string}` | `corners-${string}` | `shark-${string}` | `ghost-${string}` | `clash-${string}`;
 
 const FILES = import.meta.glob('./music/*.mp3', { eager: true, import: 'default' }) as Record<string, string>;
 const file = (t: string): string | undefined => FILES[`./music/${t}.mp3`];
@@ -186,7 +186,7 @@ const SHARK_BORROWS: Record<string, string> = { lagoon: 'jungle', reef: 'space',
 
 /** The track for a Class Live room: the lobby shares the picker's, the end plays the win, hot moments the hot one. */
 
-export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | 'corners' | 'clash' | null, o: { guessing?: boolean; hot?: boolean; /** A Four Corners or Colour Clash map, or (with `shark`) a Shark Bay bay. */ map?: string; /** Shark Bay: `map` is a bay. */ shark?: boolean } = {}): Track {
+export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | 'corners' | 'ghost' | 'clash' | null, o: { guessing?: boolean; hot?: boolean; /** A Four Corners, Ghost Tag or Colour Clash map, or (with `shark`) a Shark Bay bay. */ map?: string; /** Shark Bay: `map` is a bay. */ shark?: boolean } = {}): Track {
   if (state === 'over') return 'win';
   if (!state || !kind || state !== 'live') return 'picker';
   if (kind === 'mural') return o.guessing || o.hot ? 'guess' : 'mural';
@@ -195,6 +195,11 @@ export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 's
     const own: Track = o.hot ? `clash-${o.map}-hot` : `clash-${o.map}`;
     if (o.map && trackUrl(own)) return own;
     return o.hot ? 'goldrush-hot' : 'goldrush';
+  }
+  if (kind === 'ghost') {
+    // Ghost Tag's own map track (ghost-graveyard, ghost-graveyard-hot...), else the boss's.
+    const own: Track = o.hot ? `ghost-${o.map ?? 'graveyard'}-hot` : `ghost-${o.map ?? 'graveyard'}`;
+    return trackUrl(own) ? own : o.hot ? 'boss-hot' : 'boss';
   }
   if (kind === 'corners') {
     if (o.shark) {
