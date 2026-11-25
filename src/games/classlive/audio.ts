@@ -315,12 +315,14 @@ const RECIPES: Record<SoundName, Recipe> = {
   splash: (ctx, out, _kit, t, p) => {
     hiss(ctx, out, t, 1.1, 7000, 600, 0.4, 'bandpass', 0.8, 0.02);
     hiss(ctx, out, t + 0.05, 0.9, 900, 200, 0.3, 'lowpass', 1, 0.05);
-    osc(ctx, out, p.one([160, 200]), t, 0.5, 'sine', 0.4, 50);
-    for (let i = 0; i < 6; i++) osc(ctx, out, 700 + i * 140, t + 0.15 + i * 0.07, 0.12, 'sine', 0.05, 300);
+    osc(ctx, out, p.one([140, 170, 200, 240]), t, 0.5, 'sine', 0.4, 50);
+    const sparkle = p.one([600, 800, 1000]);
+    for (let i = 0; i < 6; i++) osc(ctx, out, sparkle + i * 140, t + 0.15 + i * 0.07, 0.12, 'sine', 0.05, 300);
   },
   chomp: (ctx, out, _kit, t, p) => {
-    const f = p.one([110, 140, 170]);
-    for (let i = 0; i < 2; i++) {
+    const f = p.one([100, 120, 140, 170]);
+    const bites = p.one([2, 3, 4]);
+    for (let i = 0; i < bites; i++) {
       osc(ctx, out, f, t + i * 0.18, 0.14, 'square', 0.18, f * 0.5);
       hiss(ctx, out, t + i * 0.18, 0.07, 3500, 1500, 0.2, 'bandpass', 2, 0.01);
     }

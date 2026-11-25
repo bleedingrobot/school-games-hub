@@ -143,7 +143,7 @@ export interface PlayerView {
         speedLeft: number;
         ghostLeft: number;
         /** Own stats for the end screen. */
-        stats: { right: number; wrong: number; bestStreak: number; warps: number; lucky: number; grabs: number; powers: number; escapes: number };
+        stats: { right: number; wrong: number; bestStreak: number; warps: number; lucky: number; grabs: number; powers: number; escapes: number; boats?: number };
       };
 }
 
@@ -294,7 +294,7 @@ export function playerView(s: Session, id: string): PlayerView {
         speedLeft: m.speedTo !== null && n <= m.speedTo ? m.speedTo - n + 1 : 0, ghostLeft: m.ghostTo !== null && n <= m.ghostTo ? m.ghostTo - n + 1 : 0,
         stats: {
           right: m.right ?? 0, wrong: m.wrong ?? 0, bestStreak: m.bestStreak ?? 0, warps: m.warps ?? 0, lucky: m.lucky ?? 0,
-          grabs: m.grabs, powers: m.powersUsed, escapes: m.escapes,
+          grabs: m.grabs, powers: m.powersUsed, escapes: m.escapes, ...(isShark(g) ? { boats: (m as { boats?: number }).boats ?? 0 } : {}),
         },
       },
     };
