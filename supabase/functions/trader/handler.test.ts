@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { PICTURE_GAP_MINUTES, type StickerId } from '../../../shared/trader/gallery';
 import { makeGalaxy } from '../../../shared/trader/galaxy';
@@ -162,11 +160,6 @@ describe('the Star Trader server function', () => {
     await w.call({ action: 'load' }, 'good2');
     expect(w.state.games.has('ben')).toBe(true);
     expect(w.state.games.get('ben')!.game).not.toBe(w.state.games.get('ana')!.game);
-    // The deployable file is up to date with the code (run `npm run build:functions -- trader` if this fails).
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('trader');
-    expect(readFileSync(resolve('supabase/functions/trader/index.ts'), 'utf8')).toBe(built);
   });
 
   it('applies a trade with the shared rules, a request sent twice counts once, and quest moves go through the same rules', async () => {

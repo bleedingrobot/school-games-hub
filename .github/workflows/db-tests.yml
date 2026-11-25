@@ -20,10 +20,17 @@ jobs:
   db:
     name: Database checks passed
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 2
+          # Only what the database checks use (scripts, supabase/ and the top-level files such as package.json),
+          # not the 350 MB of art and code.
+          filter: blob:none
+          sparse-checkout: |
+            scripts
+            supabase
       # On a pull request, skip the rest when no database file changed. ("Test and publish" decides for itself.)
       - id: what
         if: github.event_name == 'pull_request'
@@ -38,7 +45,20 @@ jobs:
       - if: steps.what.outputs.db != 'false'
         run: npm ci
       # Only the database: the rest of Supabase isn't needed for these checks.
+      # The database image comes from GitHub's own registry first (ghcr.io: fast, and no download cap). Amazon's
+      # (public.ecr.aws, Supabase's default) answered "Data limit exceeded" on 25 Nov 2026; it and Docker Hub are the
+      # fallbacks, so one registry having a bad day doesn't turn the check red.
       - if: steps.what.outputs.db != 'false'
-        run: npx supabase db start
+        run: |
+          for reg in ghcr.io public.ecr.aws docker.io; do
+            echo "Starting the database with images from $reg ..."
+            if SUPABASE_INTERNAL_IMAGE_REGISTRY=$reg npx supabase db start; then
+              echo "SUPABASE_INTERNAL_IMAGE_REGISTRY=$reg" >> "$GITHUB_ENV"   # the test runner's image comes from there too
+              exit 0
+            fi
+            npx supabase stop --no-backup || true
+            sleep 10
+          done
+          exit 1
       - if: steps.what.outputs.db != 'false'
         run: npx supabase test db supabase/tests/database

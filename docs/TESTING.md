@@ -47,8 +47,8 @@ looking, not with a test.
 - `scripts/migrations.test.ts`: no two migrations share a number.
 - `scripts/test-budget.test.ts`: fails the PR when a game or site area goes over its budget below (or the whole suite
   passes 650). Over budget: delete a weaker test. Change a number there only when James agrees a new budget.
-- Most server functions' `handler.test.ts` check its `index.ts` is up to date with the code. Rebuild with
-  `npm run build:functions -- <name>`.
+- Server function bundles (`index.ts`) are not in git since 25 Nov 2026: the checks' build job runs
+  `npm run build:functions`, and the publish deploys each function whose build changed.
 - The database checks in `supabase/tests/database/` (pgTAP, run by CI on a fresh copy) are the security checks for pupils'
   data. A new game writes one file checking the four things in the development guide (section 7), and no more.
 

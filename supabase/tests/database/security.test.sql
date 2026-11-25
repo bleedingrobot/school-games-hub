@@ -103,7 +103,7 @@ $$, array[
   'teacher_game_sets', 'teacher_save_game_set', 'teacher_use_game_set', 'teacher_delete_game_set',
   'teacher_set_decree',
   'teacher_foundational_class', 'teacher_quick_looks_class',
-  'teacher_class_badges', 'teacher_renew_badge',
+  'teacher_class_badges', 'teacher_renew_badge', 'teacher_add_pupils_by_email', 'teacher_find_pupils',
   'teacher_set_space_reactions', 'teacher_set_training_first', 'teacher_set_warp_mode', 'teacher_student_card', 'teacher_student_detail', 'teacher_student_ladder', 'teacher_students',
   'teacher_training_student', 'trophies_of', 'teacher_unassigned_students', 'teacher_update_class', 'teacher_villages',
   'teacher_warp_requests', 'warp_join', 'warp_preview',

@@ -207,4 +207,4 @@ Asked on question cards in the review thread:
 | B3 | | to do |
 | B4 | | to do |
 | B5 | | to do (decided: Not you? button) |
-| B6 | | to do (decided: both ways) |
+| B6 | (add-pupils PR) | done 26 Nov 2026: teacher adds pupils by school email (paste, or a shared Google Doc/Sheet link), badges made at once, Google first sign-in still works; also find any pupil, Print this card, Show big. See ADD-PUPILS.md |

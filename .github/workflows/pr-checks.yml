@@ -18,12 +18,16 @@ concurrency:
 jobs:
   changes:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       site: ${{ steps.what.outputs.site }}
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 2
+          # Only the scripts and git's list of changed files, not the 350 MB of art and code: seconds instead of 15-30.
+          filter: blob:none
+          sparse-checkout: scripts
       # The checkout is the pull request merged into main, so its first parent is main: the diff is just this PR.
       - id: what
         run: scripts/ci-changes.sh HEAD^1
@@ -32,6 +36,7 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.site == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -41,11 +46,14 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run build
+      # Every server function still builds (the publish builds and deploys them; the bundles aren't kept in git).
+      - run: npm run build:functions
 
   tests:
     needs: [changes]
     if: needs.changes.outputs.site == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -67,6 +75,7 @@ jobs:
     needs: [changes, build, tests]
     if: always()
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
         run: echo "A site check failed." && exit 1

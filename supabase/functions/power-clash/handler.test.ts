@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { chooseAction } from '../../../shared/power-clash/bot';
 import type { PowerId } from '../../../shared/power-clash/types';
@@ -271,14 +269,5 @@ describe('power clash server', () => {
     expect(left.game).toMatchObject({ status: 'finished', ending: 'abandoned', leaver: 'ana', won: [false, false], counts: [false, false], deadline: null });
     // leaving twice is fine
     expect((await w.ask('ana', { action: 'leave', gameId: g.id })).game!.version).toBe(left.game!.version);
-  });
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('power-clash');
-    expect(readFileSync(resolve('supabase/functions/power-clash/index.ts'), 'utf8')).toBe(built);
   });
 });

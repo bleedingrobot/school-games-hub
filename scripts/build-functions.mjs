@@ -1,7 +1,8 @@
 // Builds each server function into a single index.ts file, so it can be deployed with the
 // Supabase CLI or pasted straight into the Supabase dashboard's function editor.
-// Run from the project folder with: npm run build:functions   (a test fails if index.ts is out of date)
-// or, for just some: npm run build:functions -- lord clans
+// The built index.ts files are NOT kept in git (25 Nov 2026): "Test and publish" builds every function, compares each with
+// the build of the last green publish, and deploys the ones that differ. Run it yourself only to try a function locally:
+// npm run build:functions   or, for just some: npm run build:functions -- lord clans
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { rolldown } from 'rolldown';
@@ -12,7 +13,7 @@ const versionOf = (name) => (pkg.dependencies[name] ?? '').replace(/^[\^~]/, '')
 // Libraries come from npm when the function runs, at the same versions the website uses.
 const LIBRARIES = ['chess.js', '@supabase/supabase-js'];
 
-export const FUNCTIONS = ['save-bot-game', 'multiplayer', 'space-game', 'card-game', 'gem-keep', 'power-clash', 'monster', 'lord', 'clans', 'training', 'marble', 'bond-match', 'mine', 'archery', 'kingdom', 'trader', 'isles', 'diamond', 'beanstalk', 'hop', 'badge', 'pipi', 'korora', 'weka', 'tui', 'decree', 'pigeon', 'parrot', 'lizard', 'swamphen', 'robin', 'toonflap', 'glyph', 'orderup', 'goblinstorm', 'circuit', 'showdown', 'classlive', 'starweb'];
+export const FUNCTIONS = ['save-bot-game', 'multiplayer', 'space-game', 'card-game', 'gem-keep', 'power-clash', 'monster', 'lord', 'clans', 'training', 'marble', 'bond-match', 'mine', 'archery', 'kingdom', 'trader', 'isles', 'diamond', 'beanstalk', 'hop', 'badge', 'pipi', 'korora', 'weka', 'tui', 'decree', 'pigeon', 'parrot', 'lizard', 'swamphen', 'robin', 'toonflap', 'glyph', 'orderup', 'goblinstorm', 'circuit', 'showdown', 'classlive', 'starweb', 'pupils'];
 
 export async function buildFunction(name) {
   const bundle = await rolldown({
@@ -36,9 +37,8 @@ export async function buildFunction(name) {
   );
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   // Name the functions to build only those (npm run build:functions -- lord clans); with none, every function in FUNCTIONS.
-  // Build only your own: rebuilding every one rewrites monster/index.ts, which is deliberately left as deployed.
   const named = process.argv.slice(2);
   const unknown = named.filter((name) => !/^[a-z0-9-]+$/.test(name) || !existsSync(`supabase/functions/${name}/entry.ts`));
   if (unknown.length) {

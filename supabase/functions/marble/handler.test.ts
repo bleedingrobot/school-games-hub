@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { botRun } from '../../../shared/marble/bot';
 import { courseById } from '../../../shared/marble/courses';
@@ -232,14 +230,5 @@ describe('maths: marking and saving', () => {
     t.clock.now = NOW + (answering.state.steps / 60 + 30) * 1000;
     const claim = { action: 'save', course: COURSE, mode: 'up', seed: tb.seed, stamp: tb.stamp, inputs: encodeInputs(answering.runs) };
     expect((await send(t.s, claim)).status).toBe(400);
-  });
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('marble');
-    expect(readFileSync(resolve('supabase/functions/marble/index.ts'), 'utf8')).toBe(built);
   });
 });

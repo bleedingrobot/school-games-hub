@@ -22,7 +22,7 @@ shared/<id>/                        rules, config (every tuning number), memoryS
 src/games/<id>/                     screens, index.tsx (the GameDefinition), switch.ts, teacher.ts, <id>.css, art/, voiceLines.ts, words.ts
 src/data/<id>.ts or src/games/<id>/backend.ts    calls to your server function
 src/pages/Teacher<Game>.tsx         your teacher panel (only if you need settings)
-supabase/functions/<id>/            handler.ts, entry.ts, handler.test.ts, index.ts (generated)
+supabase/functions/<id>/            handler.ts, entry.ts, handler.test.ts (index.ts is built by the publish, not in git)
 supabase/migrations/<number>_<id>.sql      new files only
 supabase/tests/database/<id>.test.sql
 preview/<id>/ + vite.<id>-preview.config.ts
@@ -36,7 +36,7 @@ public/voice/<id>/
 - `src/games/registry.ts`: import and **append** to the end of `GAMES` behind your code switch: `...(myGameOn() ? [myGame] : [])`. A Foundational game instead goes where its maths fits in the learning order (comment above `GAMES`), and also in `GAME_IDS` (`src/data/foundational.ts`).
 - `src/games/registry.test.ts` lists every game's id and group: the PR that turns your code switch on adds your id.
 - Your home card picture: two files dropped into `src/assets/home/`, found by name, no code ([6-art-voice-cards.md](6-art-voice-cards.md)).
-- `scripts/build-functions.mjs`: add your name to the end of `FUNCTIONS`. While building, run only `npm run build:functions -- <id>`; the full build churns every function.
+- `scripts/build-functions.mjs`: add your name to the end of `FUNCTIONS`. Never commit a built `index.ts` (it is in .gitignore).
 - `package.json`: your scripts at the end of `scripts`. No new dependencies without James (check the licence, pin the version).
 - `src/App.tsx`: only for a second page; every game already gets `/#/<id>`.
 - `shared/README.md`, `docs/PRIVACY-SUMMARY.md`, `docs/PLAN.md` (migration note), `.gitignore` (`dist-preview-<id>/`): your lines at the end of the right section.
@@ -45,7 +45,7 @@ public/voice/<id>/
 ## Never change from a game branch
 
 `shared/maths/`, `src/maths/`, `src/styles.css`, `src/maths/maths.css`, `src/components/`, `src/auth/`, `supabase/functions/_shared/`, `shared/kit/`, `src/kit/`, other games' folders and functions, any migration already on `main`, `package-lock.json`, `src/pages/Dashboard.tsx`, `src/pages/Teacher.tsx`, CLAUDE.md. If your game needs one changed, it becomes its own small PR first.
-Why: each function's `index.ts` bundles the shared code it imports, so a shared change puts every other function out of date.
+Why: a shared change goes into every game's server function and screens at once, so it needs its own review and checks.
 
 ## Rules for the shared database
 

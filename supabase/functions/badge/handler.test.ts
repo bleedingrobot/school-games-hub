@@ -1,6 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 import { MAX_SCANS_PER_MINUTE, MAX_WRONG_PER_MINUTE, makeHandler, type Services } from './handler';
 
 // The badge sign-in function's tests: a good card signs in its own pupil only; anything else signs nobody in.
@@ -63,13 +61,4 @@ it('slows down an address that keeps trying wrong codes, but not good cards befo
   expect((await send({ code: GOOD })).status).toBe(429);
   expect((await send({ code: GOOD }, '5.6.7.8')).status).toBe(200);
   expect(keysFor).toEqual(['ava.k@school.test']);
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions -- badge` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('badge');
-    expect(readFileSync(resolve('supabase/functions/badge/index.ts'), 'utf8')).toBe(built);
-  });
 });
