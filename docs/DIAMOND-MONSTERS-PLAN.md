@@ -1,12 +1,12 @@
-# Diamond Drop: Monster Caverns (expansion plan)
+# Diamond Drop: Monster Dig (expansion plan)
 
 *Asked for by James, 25 Nov 2026: "an expansion for Diamond Drop. It's going to be catching the maths monsters. We can reuse a lot of the art, finishing first version of game the diamond unlocks it. Lots of monsters that have different chances to appear, filling up a collection book along the way." Branch `claude/project-thread-kmcz6m`. Built on [DIAMOND-PLAN.md](DIAMOND-PLAN.md) and [DIAMOND-RULES.md](DIAMOND-RULES.md); monster data from `shared/monsters/monsterBook.ts`.*
 
-**Status: Stage 0, plan only.** Written on my recommended answers while James answers 10 question cards (25 Nov 2026). Decisions below marked *(rec)* are recommendations until he taps. Next free migration number when written: `20261125000400` (re-check with `node scripts/migration-numbers.mjs`).
+**Status: Stage 0 done, plan agreed.** James answered all 10 question cards on 25 Nov 2026 (table below); the *(rec)* marks below are now his choices except where the table says otherwise. Next: Stage 1. Next free migration number when written: `20261125000400` (re-check with `node scripts/migration-numbers.mjs`).
 
 ## The short version
 
-- Catching the **Heart Diamond** (ever: `lifetime.found > 0`, kept through New Season) opens a gate at the bottom of the level map: **Monster Caverns**, 10 new levels (11 to 20) below the diamond. *(rec)*
+- Catching the **Heart Diamond** (ever: `lifetime.found > 0`, kept through New Season) opens a gate at the bottom of the level map: **Monster Dig**, 10 new cavern levels (11 to 20) below the diamond. *(rec)*
 - Same claw, same one button. Monsters hide in the rock like gems. **Grab one** and it may **wriggle**: a Hold on! question from the pupil's own maths focus (way A, as now). Right: caught, into the book. Wrong: it wriggles free and burrows deeper, where it can be grabbed again. Rarer monsters wriggle more often. *(rec)*
 - Each cavern has a monster **habitat** (one per Maths Monsters type), so the water monsters live by the underground lake and fire ones near magma. Which monsters turn up is a weighted roll from the cavern's seed.
 - **The Monster Book**: a page for each of the 75 Maths Monsters forms, plus shiny pages. It shows how many caught and the first date, and is kept for good. *(rec)*
@@ -16,16 +16,16 @@
 
 | # | Question | Recommended | James |
 |---|---|---|---|
-| 1 | How to catch | grab it, then Hold on! to keep it | |
-| 2 | Shape | 10 new Monster Caverns levels | |
-| 3 | Which monsters | all 75, shinies as extra pages | |
-| 4 | Link to Maths Monsters | book only, with a "caught in both" stamp | |
-| 5 | Unlock | found the diamond ever, kept for good | |
-| 6 | Pace | one new cavern a day, replays any time | |
-| 7 | Book rewards | achievements, trophy, picture, plus monster claw looks | |
-| 8 | Shop | Monster Lure and Monster Net boosts | |
-| 9 | Moving monsters | rare ones move and the rarest burrow away | |
-| 10 | Name | Monster Caverns | |
+| 1 | How to catch | grab it, then Hold on! to keep it | **chosen** |
+| 2 | Shape | 10 new Monster Caverns levels | **chosen** |
+| 3 | Which monsters | all 75, shinies as extra pages | **chosen** |
+| 4 | Link to Maths Monsters | book only, with a "caught in both" stamp | **no link: the book is its own** |
+| 5 | Unlock | found the diamond ever, kept for good | **chosen** |
+| 6 | Pace | one new cavern a day, replays any time | **chosen** |
+| 7 | Book rewards | achievements, trophy, picture, plus monster claw looks | **chosen** |
+| 8 | Shop | Monster Lure and Monster Net boosts | **chosen** |
+| 9 | Moving monsters | rare ones move and the rarest burrow away | **chosen** |
+| 10 | Name | Monster Caverns | **Monster Dig** |
 
 ## Rules (all numbers in `shared/diamond/caverns.ts`, starting guesses for the simulator)
 
@@ -76,7 +76,6 @@ Never a way to buy a monster outright.
 ### Monster Book
 
 - New tab in the Gem Book: **Monster Book**. Pages in Maths Monsters book order, grouped by type; uncaught pages show a dark outline and the tier; shiny pages hidden until caught.
-- Stamp "Caught in Maths Monsters too" when the pupil's Maths Monsters save has that species *(rec)*. Read only; nothing is sent to that game.
 - Kept for good (`lifetime.monsters`), never reset by New Season.
 
 ### Rewards *(rec)*
