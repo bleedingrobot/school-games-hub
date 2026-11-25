@@ -12,6 +12,7 @@ import { classLiveTrack, useMusic } from './music';
 import { SerpentPad } from './SerpentPad';
 import { CornersPad } from './CornersPad';
 import { LavaPad } from './LavaPad';
+import { RelayPad } from './RelayPad';
 import { ThronesPad } from './ThronesPad';
 import { useMusicOn } from './thronesMusic';
 import { ClashPad } from './ClashPad';
@@ -248,6 +249,13 @@ export function Controller({ link, me, room: roomProp, code: codeProp, lookElsew
     return (
       <Sky tint="corners" back={painted('lava', `back-${view.game.map}`)}>
         <PadGuard><LavaPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} clock={clock} avatar={avatar} /></PadGuard>
+      </Sky>
+    );
+  }
+  if (view.game.kind === 'relay') {
+    return (
+      <Sky tint="corners" back={painted('relay', 'back')}>
+        <PadGuard><RelayPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} clock={clock} avatar={avatar} /></PadGuard>
       </Sky>
     );
   }

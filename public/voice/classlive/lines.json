@@ -1642,5 +1642,301 @@
  {
   "slug": "today-we-are-on-the-lava-planet",
   "text": "Today we are on the Lava Planet."
+ },
+ {
+  "slug": "welcome-to-the-toon-flap-relay-flyers-get-ready",
+  "text": "Welcome to the Toon Flap Relay! Flyers, get ready!"
+ },
+ {
+  "slug": "it-is-relay-time-find-your-team-colour",
+  "text": "It is relay time! Find your team colour!"
+ },
+ {
+  "slug": "the-toon-flap-relay-is-about-to-begin",
+  "text": "The Toon Flap Relay is about to begin!"
+ },
+ {
+  "slug": "next-race-new-teams-new-course",
+  "text": "Next race! New teams, new course!"
+ },
+ {
+  "slug": "here-comes-another-race-check-your-new-team",
+  "text": "Here comes another race! Check your new team!"
+ },
+ {
+  "slug": "get-ready-for-the-next-race",
+  "text": "Get ready for the next race!"
+ },
+ {
+  "slug": "three-two-one-fly",
+  "text": "Three, two, one, fly!"
+ },
+ {
+  "slug": "and-they-are-off",
+  "text": "And they are off!"
+ },
+ {
+  "slug": "go-go-go",
+  "text": "Go, go, go!"
+ },
+ {
+  "slug": "change-flyers",
+  "text": "Change flyers!"
+ },
+ {
+  "slug": "pass-the-baton",
+  "text": "Pass the baton!"
+ },
+ {
+  "slug": "new-flyer-coming-in",
+  "text": "New flyer coming in!"
+ },
+ {
+  "slug": "last-stretch-the-nest-is-close",
+  "text": "Last stretch! The nest is close!"
+ },
+ {
+  "slug": "nearly-at-the-nest",
+  "text": "Nearly at the nest!"
+ },
+ {
+  "slug": "here-comes-the-finish",
+  "text": "Here comes the finish!"
+ },
+ {
+  "slug": "time-is-up-the-furthest-team-wins",
+  "text": "Time is up! The furthest team wins!"
+ },
+ {
+  "slug": "that-is-time-who-got-the-furthest",
+  "text": "That is time! Who got the furthest?"
+ },
+ {
+  "slug": "the-race-is-over",
+  "text": "The race is over!"
+ },
+ {
+  "slug": "what-a-relay-well-done-everyone",
+  "text": "What a relay! Well done, everyone!"
+ },
+ {
+  "slug": "brilliant-flying-everyone",
+  "text": "Brilliant flying, everyone!"
+ },
+ {
+  "slug": "that-was-amazing-teamwork",
+  "text": "That was amazing teamwork!"
+ },
+ {
+  "slug": "shield-up",
+  "text": "Shield up!"
+ },
+ {
+  "slug": "a-shield-for-the-flyer",
+  "text": "A shield for the flyer!"
+ },
+ {
+  "slug": "wide-gaps-fly-through",
+  "text": "Wide gaps! Fly through!"
+ },
+ {
+  "slug": "the-gaps-just-got-bigger",
+  "text": "The gaps just got bigger!"
+ },
+ {
+  "slug": "slow-motion",
+  "text": "Slow motion!"
+ },
+ {
+  "slug": "everything-slows-right-down",
+  "text": "Everything slows right down!"
+ },
+ {
+  "slug": "tailwind-zoom",
+  "text": "Tailwind! Zoom!"
+ },
+ {
+  "slug": "whoosh-a-big-tailwind",
+  "text": "Whoosh! A big tailwind!"
+ },
+ {
+  "slug": "magnet-on-straight-through-the-middle",
+  "text": "Magnet on! Straight through the middle!"
+ },
+ {
+  "slug": "a-magnet-pulls-the-flyer-to-safety",
+  "text": "A magnet pulls the flyer to safety!"
+ },
+ {
+  "slug": "ghost-wings-right-through-the-wall",
+  "text": "Ghost wings! Right through the wall!"
+ },
+ {
+  "slug": "spooky-ghost-wings",
+  "text": "Spooky! Ghost wings!"
+ },
+ {
+  "slug": "mini-bird-tiny-wings",
+  "text": "Mini bird! Tiny wings!"
+ },
+ {
+  "slug": "the-bird-shrinks-down",
+  "text": "The bird shrinks down!"
+ },
+ {
+  "slug": "clear-sky-the-trouble-blows-away",
+  "text": "Clear sky! The trouble blows away!"
+ },
+ {
+  "slug": "a-rainbow-clears-the-sky",
+  "text": "A rainbow clears the sky!"
+ },
+ {
+  "slug": "whoa-a-gust-of-wind",
+  "text": "Whoa, a gust of wind!"
+ },
+ {
+  "slug": "windy-weather-ahead",
+  "text": "Windy weather ahead!"
+ },
+ {
+  "slug": "fog-rolls-in",
+  "text": "Fog rolls in!"
+ },
+ {
+  "slug": "who-turned-on-the-fog",
+  "text": "Who turned on the fog?"
+ },
+ {
+  "slug": "an-extra-wall-pops-up",
+  "text": "An extra wall pops up!"
+ },
+ {
+  "slug": "surprise-another-wall",
+  "text": "Surprise! Another wall!"
+ },
+ {
+  "slug": "the-gaps-are-getting-narrow",
+  "text": "The gaps are getting narrow!"
+ },
+ {
+  "slug": "squeeze-through-the-narrow-gaps",
+  "text": "Squeeze through the narrow gaps!"
+ },
+ {
+  "slug": "red-team-takes-the-lead",
+  "text": "Red team takes the lead!"
+ },
+ {
+  "slug": "red-is-in-front",
+  "text": "Red is in front!"
+ },
+ {
+  "slug": "blue-team-takes-the-lead",
+  "text": "Blue team takes the lead!"
+ },
+ {
+  "slug": "blue-is-in-front",
+  "text": "Blue is in front!"
+ },
+ {
+  "slug": "green-team-takes-the-lead",
+  "text": "Green team takes the lead!"
+ },
+ {
+  "slug": "green-is-in-front",
+  "text": "Green is in front!"
+ },
+ {
+  "slug": "yellow-team-takes-the-lead",
+  "text": "Yellow team takes the lead!"
+ },
+ {
+  "slug": "yellow-is-in-front",
+  "text": "Yellow is in front!"
+ },
+ {
+  "slug": "purple-team-takes-the-lead",
+  "text": "Purple team takes the lead!"
+ },
+ {
+  "slug": "purple-is-in-front",
+  "text": "Purple is in front!"
+ },
+ {
+  "slug": "orange-team-takes-the-lead",
+  "text": "Orange team takes the lead!"
+ },
+ {
+  "slug": "orange-is-in-front",
+  "text": "Orange is in front!"
+ },
+ {
+  "slug": "red-team-wins-the-race",
+  "text": "Red team wins the race!"
+ },
+ {
+  "slug": "a-win-for-red-team",
+  "text": "A win for Red team!"
+ },
+ {
+  "slug": "blue-team-wins-the-race",
+  "text": "Blue team wins the race!"
+ },
+ {
+  "slug": "a-win-for-blue-team",
+  "text": "A win for Blue team!"
+ },
+ {
+  "slug": "green-team-wins-the-race",
+  "text": "Green team wins the race!"
+ },
+ {
+  "slug": "a-win-for-green-team",
+  "text": "A win for Green team!"
+ },
+ {
+  "slug": "yellow-team-wins-the-race",
+  "text": "Yellow team wins the race!"
+ },
+ {
+  "slug": "a-win-for-yellow-team",
+  "text": "A win for Yellow team!"
+ },
+ {
+  "slug": "purple-team-wins-the-race",
+  "text": "Purple team wins the race!"
+ },
+ {
+  "slug": "a-win-for-purple-team",
+  "text": "A win for Purple team!"
+ },
+ {
+  "slug": "orange-team-wins-the-race",
+  "text": "Orange team wins the race!"
+ },
+ {
+  "slug": "a-win-for-orange-team",
+  "text": "A win for Orange team!"
+ },
+ {
+  "slug": "you-are-in-a-colour-team-teams-race-to-the-nest-at-the-same-time",
+  "text": "You are in a colour team. Teams race to the nest at the same time."
+ },
+ {
+  "slug": "take-turns-to-fly-tap-your-device-to-flap-each-flyer-has-thirty-seconds",
+  "text": "Take turns to fly. Tap your device to flap. Each flyer has thirty seconds."
+ },
+ {
+  "slug": "not-flying-answer-questions-each-right-answer-gives-you-a-spark",
+  "text": "Not flying? Answer questions. Each right answer gives you a spark."
+ },
+ {
+  "slug": "spend-sparks-on-perks-for-your-own-flyer-like-a-shield-or-wider-gaps",
+  "text": "Spend sparks on perks for your own flyer, like a shield or wider gaps."
+ },
+ {
+  "slug": "or-send-trouble-to-another-team-like-wind-or-fog-first-team-to-the-nest-wins",
+  "text": "Or send trouble to another team, like wind or fog. First team to the nest wins!"
  }
 ]

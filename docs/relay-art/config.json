@@ -1,0 +1,226 @@
+{
+ "_from": "docs/lava-art/config.json layout. Check with: python3 scripts/game_art.py relay paint OUT --dry-run",
+ "game": "relay",
+ "filename_prefix": "relay/img",
+ "style": "s",
+ "styles": {
+  "s": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. ",
+  "c": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. "
+ },
+ "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly",
+ "negative_cut": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+ "inbox": "~/dragon-art-inbox/relay-art/set",
+ "picks": "docs/relay-art/picks.json",
+ "art_dir": "src/games/classlive/art/paint",
+ "home_dir": "src/assets/home",
+ "pictures": [
+  {
+   "name": "back",
+   "prompt": "A bright cheerful sports-day stadium under a big blue sky with fluffy clouds, colourful flags and bunting strung across the top, tiny cheering crowd stands far away at the bottom edges, an empty open middle with nothing in it, wide landscape picture, no writing anywhere.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "relay",
+   "file": "back",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters close up, birds in the middle, scoreboard, numbers"
+  },
+  {
+   "name": "card",
+   "prompt": "Four cute round cartoon birds in red, blue, green and yellow racing through a bright sky past tall flower-covered posts towards a cosy nest, colourful bunting across the top, sports-day relay race feeling, wide landscape picture, no writing anywhere.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "pick",
+   "file": "relay",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly"
+  },
+  {
+   "name": "bunting",
+   "prompt": "A single straight row of colourful triangle bunting flags in red, blue, green, yellow, purple and orange hanging from a string, seen straight on, the string runs from the left edge to the right edge, wide strip picture. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    1536,
+    256
+   ],
+   "kind": "cut",
+   "folder": "relay",
+   "file": "bunting",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, curved string, sky, poles",
+   "max": 1536
+  },
+  {
+   "name": "fx-shield",
+   "prompt": "A glowing round blue bubble shield with a soft shine, a game power-up icon. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "relay",
+   "file": "fx-shield",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, symbol, emblem, logo in the middle",
+   "max": 512
+  },
+  {
+   "name": "fx-wide",
+   "prompt": "Two big friendly arrows pointing up and down away from each other, stretching a gap wider, a game power-up icon. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "relay",
+   "file": "fx-wide",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, symbol, emblem, logo in the middle",
+   "max": 512
+  },
+  {
+   "name": "fx-slow",
+   "prompt": "A cute smiling green turtle with a small clock on its shell, a game power-up icon. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "relay",
+   "file": "fx-slow",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, symbol, emblem, logo in the middle",
+   "max": 512
+  },
+  {
+   "name": "fx-tailwind",
+   "prompt": "A swirl of bright white and blue wind gusts zooming to the right with speed lines, a game power-up icon. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "relay",
+   "file": "fx-tailwind",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, symbol, emblem, logo in the middle",
+   "max": 512
+  },
+  {
+   "name": "fx-magnet",
+   "prompt": "A shiny red and silver horseshoe magnet with little sparkles, a game power-up icon. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "relay",
+   "file": "fx-magnet",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, symbol, emblem, logo in the middle",
+   "max": 512
+  },
+  {
+   "name": "fx-ghost",
+   "prompt": "A pair of see-through glowing white ghostly bird wings, a game power-up icon. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "relay",
+   "file": "fx-ghost",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, symbol, emblem, logo in the middle",
+   "max": 512
+  },
+  {
+   "name": "fx-mini",
+   "prompt": "A tiny cute fluffy yellow baby chick, a game power-up icon. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "relay",
+   "file": "fx-mini",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, symbol, emblem, logo in the middle",
+   "max": 512
+  },
+  {
+   "name": "fx-clear",
+   "prompt": "A bright rainbow arching over a small white cloud with sunshine, a game power-up icon. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "relay",
+   "file": "fx-clear",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, symbol, emblem, logo in the middle",
+   "max": 512
+  },
+  {
+   "name": "fx-wind",
+   "prompt": "A grumpy cartoon storm cloud blowing a strong gust of wind, a game power-up icon. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "relay",
+   "file": "fx-wind",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, symbol, emblem, logo in the middle",
+   "max": 512
+  },
+  {
+   "name": "fx-fog",
+   "prompt": "A thick soft grey fog cloud with swirls, a game power-up icon. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "relay",
+   "file": "fx-fog",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, symbol, emblem, logo in the middle",
+   "max": 512
+  },
+  {
+   "name": "fx-wall",
+   "prompt": "A short stack of red bricks forming a little wall, a game power-up icon. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "relay",
+   "file": "fx-wall",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, symbol, emblem, logo in the middle",
+   "max": 512
+  },
+  {
+   "name": "fx-narrow",
+   "prompt": "Two big friendly arrows pointing towards each other, squeezing a gap smaller, a game power-up icon. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "relay",
+   "file": "fx-narrow",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, symbol, emblem, logo in the middle",
+   "max": 512
+  }
+ ]
+}
