@@ -86,6 +86,8 @@ Since migration `20261125000800_classlive_activities` the activity list is the t
 
 The Class Live page opens on a grid of games (James, 25 Nov 2026 NZ); tapping one shows only that game's options, with "← All games" back. A new activity adds one row to `LIVE_GAMES` in `src/games/classlive/gameList.ts` (id, name, emoji, one-line blurb, group `think`/`run`/`battle`, tint, picture) and renders its setup card in `Setup` (Projector.tsx) under `{pick === '<id>' && …}`. The same list feeds the Class Live card on the teacher's Today page, whose tiles link to `classlive?pick=<id>`.
 
+Class Showdown has one tile per arena (James, 26 Nov 2026 NZ): `ARENAS` in gameList.ts makes rows `showdown-<arena>` with `arena` set, and `Setup` renders `ShowdownCard` (who plays, how long) for any row with an `arena`. A new Showdown arena adds one `ARENAS` entry (name, emoji, painted back, blurb) plus its `ABOUT` line in ShowdownCard.tsx. Old `?pick=showdown` links open Boss Bounty.
+
 ## 6. Design checklist
 
 1. **Big goal**: draw every sky creature (one per level), wake all three serpents, reveal every mural.

@@ -7,7 +7,7 @@
 import { classLiveTrack, HOT_MS, musicSettings, useMusic } from './music';
 import { MusicControl } from './MusicControl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { GROUP_WORDS, LIVE_GAMES, liveGame, type LiveGame, type LiveGroup } from './gameList';
+import { GROUP_WORDS, liveGame, pickableGames, showdownPick, type LiveGame, type LiveGroup } from './gameList';
 import { ARMS, ARM_GOAL, ARM_NAMES, SUPERNOVA, armCounts, laggingArm, type Arm, type Star, type StarsGame } from '../../../shared/classlive/stars';
 import { GUESS_MS, PICTURES, type MuralGame } from '../../../shared/classlive/mural';
 import { BODY, SERPENT_LEVELS, SERPENT_LEVEL_ABOUT, SERPENT_LEVEL_NAMES, stepText, wakeAt, type SerpentGame, type SerpentLevel } from '../../../shared/classlive/serpent';
@@ -661,7 +661,7 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
   const yi = Number(y);
   const okPick = Number.isInteger(xi) && Number.isInteger(yi) && xi >= 2 && xi <= 12 && yi >= 2 && yi <= 12 && xi !== yi;
   const own = level === 'pick';
-  const games = LIVE_GAMES.filter((g) => g.id !== 'showdown' || onShowdown);
+  const games = pickableGames(!!onShowdown);
   const [pick, choose] = usePicked(games.map((g) => g.id));
   const chosen = liveGame(pick);
   // Who can join (James, 25 Nov 2026): the class, or any pupil of the school from their home page's "Join now?".
@@ -689,7 +689,7 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
         <button type="button" className="cl-btn cl-btn--small cl-chosen__back" onClick={() => choose(null)}>← All games</button>
         <span className="cl-chosen__where">Class Live</span>
       </div>
-      {pick !== 'showdown' && <div className="cl-where" role="group" aria-label="Who can join?">
+      {!chosen.arena && <div className="cl-where" role="group" aria-label="Who can join?">
         <span className="cl-opt__label">Who can join?</span>
         <button type="button" className={`cl-choice ${where === 'class' ? 'cl-choice--on' : ''}`} aria-pressed={where === 'class'} onClick={() => setWhere('class')}>🏫 My class</button>
         <button type="button" className={`cl-choice ${where === 'lobby' ? 'cl-choice--on' : ''}`} aria-pressed={where === 'lobby'} onClick={() => setWhere('lobby')}>🌏 Open in the lobby</button>
@@ -822,7 +822,7 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
         )}
         {pick === 'thrones' && <ThronesCard busy={busy} hostOk={hostOk} onOpen={(body) => onOpen('thrones', body)} Timer={TimerChips} Art={CardArt} />}
         {pick === 'relay' && <RelayPickCard busy={busy} hostOk={hostOk} onOpen={(body) => onOpen('relay', body)} timer={(l, set) => <TimerChips length={l} setLength={set} />} art={(pic) => <CardArt pic={pic} />} />}
-        {pick === 'showdown' && onShowdown && <ShowdownCard busy={busy} onOpen={onShowdown} />}
+        {chosen.arena && onShowdown && <ShowdownCard key={chosen.arena} arena={chosen.arena} busy={busy} onOpen={onShowdown} />}
       </div>
       </>
       )}
@@ -837,7 +837,9 @@ function usePicked(ids: string[]): [string | null, (id: string | null) => void] 
   const [pick, setPick] = useState<string | null>(() => {
     try {
       const hashQuery = window.location.hash.split('?')[1] ?? '';
-      const p = new URLSearchParams(window.location.search).get(PICK_KEY) ?? new URLSearchParams(hashQuery).get(PICK_KEY);
+      const raw = new URLSearchParams(window.location.search).get(PICK_KEY) ?? new URLSearchParams(hashQuery).get(PICK_KEY);
+      // Old links (?pick=showdown) open the first arena, Boss Bounty.
+      const p = raw === 'showdown' ? showdownPick('boss') : raw;
       return p && ids.includes(p) ? p : null;
     } catch { return null; }
   });
