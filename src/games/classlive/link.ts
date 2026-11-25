@@ -5,6 +5,7 @@
  * memory with a pretend class (`?pretend=30`), so a whole session can be tried with no class.
  */
 import { memoryMove, memoryServices } from '../../../shared/classlive/memoryServices';
+import { memoryClashBoard, memoryClashPaint } from '../../../shared/classlive/clashMemory';
 import { memoryGhostMove, type GhostSpots } from '../../../shared/classlive/ghostBot';
 import { randomAvatar } from '../../avatar/avatarParts';
 import { rng } from '../../../shared/classlive/pretendClass';
@@ -27,9 +28,16 @@ export interface ClassLiveLink {
   positions(room: number): Promise<Record<string, { x: number; y: number }> | null>;
   /** Four Corners: the projector reads everyone's hub avatar (teachers only), or null. */
   avatars(room: number): Promise<Record<string, unknown> | null>;
+  /** Colour Clash: save the spot and paint on the way (classlive_clash_paint); tiles changed since `since` come back. */
+  clashPaint(room: number, x: number, y: number, since: number | null): Promise<ClashPaint | null>;
+  /** Colour Clash: the projector reads tiles changed since `since` (teachers only). */
+  clashBoard(room: number, since: number | null): Promise<Omit<ClashPaint, 'spots'> | null>;
   /** Ghost Tag: saves the spot like `move`; back come the other spots with who is a ghost (no names), or null. Optional so other links needn't have it. */
   ghostMove?(room: number, x: number, y: number): Promise<GhostSpots | null>;
 }
+
+/** What a Colour Clash paint call answers: every spot (no names), the round, the database's time, changed tiles [idx, team]. */
+export interface ClashPaint { spots: { x: number; y: number }[]; round: number; now: number; tiles: [number, number][] }
 
 type Listener = { room: number; kind: 'screen' | 'room' | 'me'; me?: string; on: (x: never) => void };
 
@@ -66,6 +74,11 @@ export function pretendLink(opts: { size: number; seed?: number; me?: { id: stri
     watchRoom: (room, on) => watch({ room, kind: 'room', on: on as (x: never) => void }),
     watchMe: (room, me, on) => watch({ room, kind: 'me', me, on: on as (x: never) => void }),
     move: async (room, x, y) => memoryMove(pc.db, Date.now(), room, who, x, y),
+    clashPaint: async (room, x, y, since) => {
+      const out = memoryClashPaint(pc.db, Date.now(), room, who, x, y, since);
+      return out ? { ...out, spots: out.spots.map((q) => ({ x: q.x, y: q.y })) } : null;
+    },
+    clashBoard: async (room, since) => (isTeacher ? memoryClashBoard(pc.db, Date.now(), room, since) : null),
     ghostMove: async (room, x, y) => memoryGhostMove(pc.db, Date.now(), room, who, x, y),
     positions: async (room) => (isTeacher ? Object.fromEntries(Object.entries(pc.db.spots.get(room) ?? {}).map(([id, p]) => [id, { x: p.x, y: p.y }])) : null),
     avatars: async (room) => {

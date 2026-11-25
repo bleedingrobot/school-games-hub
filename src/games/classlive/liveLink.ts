@@ -66,6 +66,22 @@ export const liveClassLiveLink: ClassLiveLink = {
     const { data, error } = await supabase.rpc('classlive_avatars', { target: room });
     return error || !data || typeof data !== 'object' ? null : (data as Record<string, unknown>);
   },
+  async clashPaint(room, x, y, since) {
+    const { data, error } = await supabase.rpc('classlive_clash_paint', { target: room, x, y, since });
+    if (error || !data || typeof data !== 'object') return null;
+    const d = data as { spots?: unknown; round?: unknown; now?: unknown; tiles?: unknown };
+    return { spots: spotsOf(d.spots), round: Number(d.round) || 0, now: Number(d.now) || 0, tiles: tilesOf(d.tiles) };
+  },
+  async clashBoard(room, since) {
+    const { data, error } = await supabase.rpc('classlive_clash_board', { target: room, since });
+    if (error || !data || typeof data !== 'object') return null;
+    const d = data as { round?: unknown; now?: unknown; tiles?: unknown };
+    return { round: Number(d.round) || 0, now: Number(d.now) || 0, tiles: tilesOf(d.tiles) };
+  },
   watchMe: (room, me, on) =>
     listen('classlive-me', 'classlive_players', `player=eq.${me}`, (row) => (Number(row.room) === room ? (row.view as PlayerView) : null), on),
 };
+
+const spotsOf = (v: unknown) => (Array.isArray(v) ? v : []).flatMap((p) => (Array.isArray(p) && p.length === 2 ? [{ x: Number(p[0]), y: Number(p[1]) }] : []));
+const tilesOf = (v: unknown): [number, number][] =>
+  (Array.isArray(v) ? v : []).flatMap((p) => (Array.isArray(p) && p.length === 2 && Number.isInteger(p[0]) && Number.isInteger(p[1]) ? [[p[0] as number, p[1] as number] as [number, number]] : []));

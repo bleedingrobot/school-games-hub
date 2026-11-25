@@ -3,6 +3,7 @@
  * once a session is over and paid once per room and session (`classlive_finish`). Pupils who only joined get 1 point.
  */
 import { podium } from './corners';
+import { clashReward } from './clashServer';
 import { podium as ghostPodium } from './ghost';
 import type { Session } from './server';
 
@@ -43,13 +44,19 @@ export const POINTS = { joined: 1, played: 3, goal: 2, guessed: 2, max: 10 } as 
 
 export function rewardsOf(s: Session): FinishedSession {
   const g = s.game;
-  const goal = g.kind === 'stars' ? g.creature : g.kind === 'serpent' ? g.awake : g.kind === 'corners' || g.kind === 'ghost' ? false : g.solvers.length > 0;
+  const goal = g.kind === 'stars' ? g.creature : g.kind === 'serpent' ? g.awake : g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'clash' ? false : g.solvers.length > 0;
   const top = g.kind === 'corners' ? podium(g, s.order) : g.kind === 'ghost' ? ghostPodium(g, s.order) : [];
   const players = s.order.map((id): PupilReward => {
     let did = false;
     const r: PupilReward = { player: id, points: 0, stars: 0, boxes: 0, head: false, tiles: 0, guessed: false, safe: 0, champion: false, escapes: 0, powers: 0 };
     let podiumPlace = false;
-    if (g.kind === 'corners') {
+    if (g.kind === 'clash') {
+      // Colour Clash: the winning team's pupils get the podium bonus.
+      const c = clashReward(g, id);
+      did = c.did;
+      podiumPlace = c.won && c.did;
+      r.extra = c.extra;
+    } else if (g.kind === 'corners') {
       const m = g.mine[id];
       r.safe = m?.safe ?? 0;
       r.escapes = m?.escapes ?? 0;

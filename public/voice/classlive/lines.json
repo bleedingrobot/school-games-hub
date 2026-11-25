@@ -708,6 +708,142 @@
   "text": "Twist alert! Sometimes two corners are picked, and sometimes it is a lucky roll."
  },
  {
+  "slug": "colour-clash-is-on-run-over-the-floor-to-paint-it-your-colour",
+  "text": "Colour Clash is on! Run over the floor to paint it your colour!"
+ },
+ {
+  "slug": "get-ready-to-paint-cover-the-floor-in-your-team-colour",
+  "text": "Get ready to paint! Cover the floor in your team colour!"
+ },
+ {
+  "slug": "here-we-go-paint-everything-you-can",
+  "text": "Here we go! Paint everything you can!"
+ },
+ {
+  "slug": "fresh-floor-get-ready-to-paint",
+  "text": "Fresh floor! Get ready to paint!"
+ },
+ {
+  "slug": "new-round-find-an-empty-patch-and-paint-it",
+  "text": "New round! Find an empty patch and paint it!"
+ },
+ {
+  "slug": "get-ready-painters",
+  "text": "Get ready, painters!"
+ },
+ {
+  "slug": "ten-seconds-left-splat-splat-splat",
+  "text": "Ten seconds left! Splat, splat, splat!"
+ },
+ {
+  "slug": "ten-seconds-keep-painting",
+  "text": "Ten seconds! Keep painting!"
+ },
+ {
+  "slug": "nearly-time-ten-seconds-to-go",
+  "text": "Nearly time! Ten seconds to go!"
+ },
+ {
+  "slug": "time-s-up-let-s-count-the-paint",
+  "text": "Time's up! Let's count the paint!"
+ },
+ {
+  "slug": "brushes-down-who-painted-the-most",
+  "text": "Brushes down! Who painted the most?"
+ },
+ {
+  "slug": "stop-let-us-see-who-covered-the-most-floor",
+  "text": "Stop! Let us see who covered the most floor!"
+ },
+ {
+  "slug": "it-s-a-tie-what-a-battle",
+  "text": "It's a tie! What a battle!"
+ },
+ {
+  "slug": "too-close-to-call-it-is-a-tie",
+  "text": "Too close to call. It is a tie!"
+ },
+ {
+  "slug": "exactly-the-same-a-tie",
+  "text": "Exactly the same! A tie!"
+ },
+ {
+  "slug": "red-wins-the-round",
+  "text": "Red wins the round!"
+ },
+ {
+  "slug": "the-red-team-takes-it",
+  "text": "The red team takes it!"
+ },
+ {
+  "slug": "red-red-painted-the-most",
+  "text": "Red! Red painted the most!"
+ },
+ {
+  "slug": "blue-wins-the-round",
+  "text": "Blue wins the round!"
+ },
+ {
+  "slug": "the-blue-team-takes-it",
+  "text": "The blue team takes it!"
+ },
+ {
+  "slug": "blue-blue-painted-the-most",
+  "text": "Blue! Blue painted the most!"
+ },
+ {
+  "slug": "green-wins-the-round",
+  "text": "Green wins the round!"
+ },
+ {
+  "slug": "the-green-team-takes-it",
+  "text": "The green team takes it!"
+ },
+ {
+  "slug": "green-green-painted-the-most",
+  "text": "Green! Green painted the most!"
+ },
+ {
+  "slug": "yellow-wins-the-round",
+  "text": "Yellow wins the round!"
+ },
+ {
+  "slug": "the-yellow-team-takes-it",
+  "text": "The yellow team takes it!"
+ },
+ {
+  "slug": "yellow-yellow-painted-the-most",
+  "text": "Yellow! Yellow painted the most!"
+ },
+ {
+  "slug": "power-ups-have-appeared-run-over-one-then-drop-a-paint-bomb-to-switch-it-on",
+  "text": "Power-ups have appeared! Run over one, then drop a paint bomb to switch it on."
+ },
+ {
+  "slug": "golden-tiles-each-golden-tile-counts-three-paint-them-last",
+  "text": "Golden tiles! Each golden tile counts three. Paint them last!"
+ },
+ {
+  "slug": "portals-step-into-one-and-pop-out-of-the-other",
+  "text": "Portals! Step into one and pop out of the other."
+ },
+ {
+  "slug": "watch-out-for-the-sticky-patches-they-slow-you-down",
+  "text": "Watch out for the sticky patches. They slow you down!"
+ },
+ {
+  "slug": "slippery-paint-you-will-slide-and-you-cannot-stop-fast",
+  "text": "Slippery paint! You will slide and you cannot stop fast."
+ },
+ {
+  "slug": "rollers-are-coming-get-hit-and-you-go-flying",
+  "text": "Rollers are coming! Get hit and you go flying!"
+ },
+ {
+  "slug": "a-fountain-in-the-middle-go-round-it-nobody-can-paint-it",
+  "text": "A fountain in the middle! Go round it. Nobody can paint it."
+ },
+ {
   "slug": "here-we-go-swim-to-a-coloured-quarter-or-hide-under-a-boat",
   "text": "Here we go! Swim to a coloured quarter, or hide under a boat!"
  },
@@ -1014,5 +1150,25 @@
  {
   "slug": "the-last-one-standing-wins-the-round-win-the-most-rounds-to-win-the-game",
   "text": "The last one standing wins the round. Win the most rounds to win the game!"
+ },
+ {
+  "slug": "you-are-on-a-colour-team-move-your-avatar-with-the-joystick-or-the-arrow-keys",
+  "text": "You are on a colour team. Move your avatar with the joystick, or the arrow keys."
+ },
+ {
+  "slug": "every-tile-you-run-over-turns-your-team-colour",
+  "text": "Every tile you run over turns your team colour."
+ },
+ {
+  "slug": "tap-the-bomb-and-answer-a-question-get-it-right-to-splat-your-colour-all-around-you-you-stand-still-while-you-answer",
+  "text": "Tap the bomb and answer a question. Get it right to splat your colour all around you! You stand still while you answer."
+ },
+ {
+  "slug": "get-answers-right-in-a-row-for-a-bigger-splat",
+  "text": "Get answers right in a row for a bigger splat."
+ },
+ {
+  "slug": "when-the-time-is-up-we-count-the-paint-the-team-that-wins-the-most-rounds-wins",
+  "text": "When the time is up we count the paint. The team that wins the most rounds wins!"
  }
 ]

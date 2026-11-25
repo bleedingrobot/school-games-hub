@@ -9,6 +9,7 @@ import { SERPENT_LEVEL_ABOUT, SERPENT_LEVEL_NAMES } from '../../../shared/classl
 import { speak, stopSpeaking } from '../../speech';
 import { painted } from './paintedArt';
 import { MAP_WORDS } from '../../../shared/classlive/corners';
+import { MAP_WORDS as CLASH_WORDS } from '../../../shared/classlive/clash';
 import { BAY_WORDS, isShark, SHARK } from '../../../shared/classlive/shark';
 import { HOWTO, VOICE_FOLDER } from './voiceLines';
 import { ghostSheet } from './GhostCard';
@@ -43,6 +44,21 @@ export function sheetFor(game: Game): Sheet {
         { icon: '🔢', text: 'Write each answer on your device. You get two tries.', say: H[1] },
         { icon: '💎', text: 'Every right answer moves your gem up the serpent.', say: H[2] },
         { icon: '⚡', text: 'Right answers from the whole class wake the serpent. Reach the head, then keep going on the bonus tail!', say: H[3] },
+      ],
+    };
+  }
+  if (game.kind === 'clash') {
+    const H = HOWTO.clash;
+    const teams = (['Red', 'Blue', 'Green', 'Yellow'] as const).slice(0, game.teams).join(', ');
+    return {
+      title: 'How to play Colour Clash', mode: `${CLASH_WORDS[game.map].name} · ${game.teams} teams: ${teams}`, modeSay: null,
+      art: painted('pick', 'clash', true) ?? painted('clash', `map-${game.map}`, true),
+      steps: [
+        { icon: '🕹️', text: 'You are on a colour team. Move with the joystick, or the arrow keys.', say: H[0] },
+        { icon: '🎨', text: 'Every tile you run over turns your team colour.', say: H[1] },
+        { icon: '💣', text: 'Tap 💣 and answer a question: right splats your colour all around you. You stand still while you answer.', say: H[2] },
+        { icon: '🔥', text: 'Right answers in a row make a bigger splat.', say: H[3] },
+        { icon: '🏆', text: 'When the time is up we count the paint. Most rounds won wins!', say: H[4] },
       ],
     };
   }

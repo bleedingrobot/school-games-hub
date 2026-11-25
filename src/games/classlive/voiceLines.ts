@@ -5,6 +5,8 @@
  * Each moment has a few takes, said in turn (`next`), so nothing is said the same way twice running (James, 24 Nov 2026:
  * more variety in the sounds).
  */
+import { CLASH_HOWTO, CLASH_LINES } from './clashVoice';
+
 import { GHOST_HOWTO, GHOST_LINES } from './ghostLines';
 
 export const VOICE_FOLDER = 'voice/classlive/';
@@ -79,6 +81,8 @@ export const LINES = {
   mech_space_hole: ["Mind the black hole in the middle! Go round it."],
   mech_space_gate: ["The airlock will shut one corner just before the end!"],
   mech_space_twist: ["Twist alert! Sometimes two corners are picked, and sometimes it is a lucky roll."],
+  // Colour Clash (clashVoice.ts)
+  ...CLASH_LINES,
   // Shark Bay (Simon the shark)
   sharkStart: ['Here we go! Swim to a coloured quarter, or hide under a boat!', 'Shark Bay is on! Simon is hungry, so find a safe quarter!', 'Off we go! Keep off the jetty and watch out for Simon!'],
   sharkRun: ['Swim, swim, swim! Find a quarter!', 'Quick, Simon is coming! Pick a colour!', 'Go go go! Hide under a boat or pick a colour!'],
@@ -133,6 +137,7 @@ export const HOWTO = {
     'In jail, answer three questions to come back.',
     'Grab power-ups on the map, then answer a question in a corner to switch them on. The most safe rounds wins!',
   ],
+  clash: CLASH_HOWTO,
   shark: [
     'Swim your avatar with the joystick, or the arrow keys.',
     'The bay has four coloured quarters, and they slowly spin round!',
@@ -155,5 +160,5 @@ export function next(key: LineKey): string {
 
 export const allVoiceLines = (): string[] => [
   ...Object.values(LINES).flat(),
-  ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural, ...HOWTO.corners, ...HOWTO.shark, ...GHOST_HOWTO,
+  ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural, ...HOWTO.corners, ...HOWTO.shark, ...GHOST_HOWTO, ...HOWTO.clash,
 ];
