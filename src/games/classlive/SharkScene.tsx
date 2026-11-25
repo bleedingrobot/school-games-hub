@@ -1,8 +1,8 @@
 /**
  * Shark Bay on the big screen (docs/SHARK-PLAN.md): Four Corners' scene with the round bay, spinning quarters and drifting
  * boats, a fin that circles (gently while pupils swim, then faster and faster for the strike), and the strike itself:
- * either Chomper leaps out of the struck quarter with a big splash, or the water darkens, a spotlight sweeps quarter to
- * quarter like a dice roll and Chomper snaps where it stops. Rounds run on the server's clock: this asks the server
+ * either Simon leaps out of the struck quarter with a big splash, or the water darkens, a spotlight sweeps quarter to
+ * quarter like a dice roll and Simon snaps where it stops. Rounds run on the server's clock: this asks the server
  * (`onTick`) just after each deadline so it moves on.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -54,7 +54,7 @@ function Fin({ a, r, bay, size = 0.1, calm }: { a: number; r: number; bay: Shark
   );
 }
 
-/** Chomper bursting out (or snapping) at a spot, with a big splash. */
+/** Simon bursting out (or snapping) at a spot, with a big splash. */
 function Burst({ at: p, bay, style, late }: { at: Spot; bay: SharkGame['bay']; style: 'leap' | 'spot'; late?: boolean }) {
   const pic = sharkHazardPic(bay, 'shark');
   return (
@@ -163,7 +163,7 @@ export function SharkScene({ screen, game, link, room, clock, sound, say, onTick
     } else if (phase === 'roll') {
       sound.play('drumroll');
       const style = (r as BayRound).style;
-      say(lineOf(style === 'spot' ? 'sharkSpot' : 'sharkLeap') ?? 'Here comes Chomper!', 100);
+      say(lineOf(style === 'spot' ? 'sharkSpot' : 'sharkLeap') ?? 'Here comes Simon!', 100);
       // The burst: a big splash and a chomp, then Bella calls the quarter.
       const burstIn = Math.max(0, r.runEnd + ROLL_MS * BURST - (screen.startedAt === null ? 0 : clock() - screen.startedAt));
       window.setTimeout(() => { sound.play('splash'); window.setTimeout(() => sound.play('chomp'), 250); }, burstIn);
@@ -229,7 +229,7 @@ export function SharkScene({ screen, game, link, room, clock, sound, say, onTick
   }, [screen.people, screen.showNames, game.mine]);
   const jailPic = painted('shark', `cave-${game.bay}`) ?? painted('corners', `jail-${game.map}`);
 
-  // The strike picture: where Chomper hits, and the fin's or the spotlight's place on the way.
+  // The strike picture: where Simon hits, and the fin's or the spotlight's place on the way.
   const spin = br ? spinAt(br, t) : 0;
   const strikeAt = (br?.rolled ?? []).map((q) => quarterMid(q, spin, 0.27));
   const strikeActive = !!br && br.caught !== null && (phase === 'roll' || phase === 'show');

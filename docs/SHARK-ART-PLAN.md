@@ -10,9 +10,9 @@
 | `pick/shark` | scene | 1536 × 864 | Class Live picker card and How to play |
 | `shark-fx/power-<power>` | cut | 512² | the 7 power-ups (Shark cage, Dolphin dash, Rescue ring, Periscope, Jet ski, Pearl, Ink cloud) |
 | `shark-fx/<bay>-storm`, `-ice`, `-roller`, `-teleport`, `-boat`, `-dock` | cut | 512² | hazards, boat and jetty per bay (`BAY_WORDS`) |
-| `shark-fx/fin`, `shark-fx/shark` | cut | 512² | Chomper's fin circling, and the leap |
+| `shark-fx/fin`, `shark-fx/shark` | cut | 512² | Simon's fin circling, and the leap |
 
-Notes: maps must have no boats, characters or writing; the quarter colours are drawn in code. Boats are seen straight down, pointing up (the code turns them). Chomper is goofy, never scary, no blood.
+Notes: maps must have no boats, characters or writing; the quarter colours are drawn in code. Boats are seen straight down, pointing up (the code turns them). Simon is goofy, never scary, no blood.
 
 ## Music
 

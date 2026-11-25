@@ -19,7 +19,7 @@ export const BAYS = ['lagoon', 'reef', 'pirate', 'icy'] as const;
 export type BayMap = (typeof BAYS)[number];
 
 /** The shark's name (said by Bella and shown on screens). */
-export const SHARK = 'Chomper';
+export const SHARK = 'Simon';
 
 export const QUARTER_NAMES = ['Red', 'Yellow', 'Green', 'Purple'] as const;
 export const QUARTER_COLOURS = ['#ef4444', '#facc15', '#22c55e', '#a855f7'] as const;
@@ -34,7 +34,7 @@ export const BAY_WORDS: Record<BayMap, { name: string; storm: string; ice: strin
 
 /** Power-ups keep Four Corners' powers, with sea names. */
 export const SHARK_POWER_WORDS: Record<Power, { name: string; emoji: string; how: string }> = {
-  shield: { name: 'Shark cage', emoji: '🛡️', how: "Chomper can't catch you this round." },
+  shield: { name: 'Shark cage', emoji: '🛡️', how: "Simon can't catch you this round." },
   speed: { name: 'Dolphin dash', emoji: '🐬', how: 'Swim faster this round and the next two.' },
   key: { name: 'Rescue ring', emoji: '🛟', how: "Pulls a friend out of the Shark's Cave." },
   crystal: { name: 'Periscope', emoji: '🔭', how: 'Shows you one safe colour this round.' },

@@ -265,7 +265,7 @@ export function SharkPad({ link, room, view, me, setMe, setView, clock, avatar }
     told.current = key;
     const n = br?.caught ?? r.caught;
     const count = n > 0 ? ` ${n} ${n === 1 ? 'swimmer was' : 'swimmers were'} caught.` : ' Nobody was caught!';
-    if (mg.caughtLast) toast(`🦈 Caught by Chomper! Off to the ${BAY_WORDS[bay].jail}. Answer ${JAIL_RIGHT} questions to come back.${count}`);
+    if (mg.caughtLast) toast(`🦈 Caught by Simon! Off to the ${BAY_WORDS[bay].jail}. Answer ${JAIL_RIGHT} questions to come back.${count}`);
     else if (mg.savedLast) toast(`🛡️ Your Shark cage saved you!${count}`, true);
     else if (!mg.jailed) {
       const p = pos.current.p;
@@ -292,7 +292,7 @@ export function SharkPad({ link, room, view, me, setMe, setView, clock, avatar }
       <div className="cl-c-center fc-pad-lobby">
         <h1 className="cl-c-title">You're in! Look at the big screen.</h1>
         <div className="fc-pad-me"><AvatarImage avatar={avatar ?? null} size={120} /></div>
-        <p className="cl-c-say">Use the joystick (or the arrow keys) to swim off the {words.dock.toLowerCase()} and into a colour before the countdown ends. Don't get caught by Chomper!</p>
+        <p className="cl-c-say">Use the joystick (or the arrow keys) to swim off the {words.dock.toLowerCase()} and into a colour before the countdown ends. Don't get caught by Simon!</p>
         <p className="cl-c-say">Today's bay: <b>{words.name}</b></p>
       </div>
     );
@@ -406,7 +406,7 @@ export function SharkPad({ link, room, view, me, setMe, setView, clock, avatar }
         {mg.held && (
           <PowerCard power={mg.held} state="held" text={`In your pocket! Swim off the ${words.dock.toLowerCase()} and answer a question to switch it on. ${SHARK_POWER_WORDS[mg.held].how}`} />
         )}
-        {mg.shield && <PowerCard power="shield" state="on" text="Chomper can't catch you this round." />}
+        {mg.shield && <PowerCard power="shield" state="on" text="Simon can't catch you this round." />}
         {mg.boost && <PowerCard power="speed" state="on" text={`You swim faster: ${(mg.speedLeft ?? 1) > 1 ? `this round and ${(mg.speedLeft ?? 1) - 1} more` : 'last round of it'}.`} />}
         {mg.ghost && <PowerCard power="ghost" state="on" text={`You swim straight through hazards${(mg.ghostLeft ?? 1) > 1 ? ' this round and next' : ' this round'}.`} />}
         {mg.double && <PowerCard power="double" state="on" text="Be safe this round to score 2 points." />}

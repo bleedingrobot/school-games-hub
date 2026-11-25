@@ -13,7 +13,7 @@ export { QUARTER_COLOURS, QUARTER_NAMES };
 
 export const sharkPowerPic = (p: Power) => painted('shark-fx', `power-${p}`) ?? painted('corners-fx', `power-${p}`);
 export const sharkHazardPic = (map: BayMap, h: 'storm' | 'ice' | 'roller' | 'teleport' | 'boat' | 'dock' | 'fin' | 'shark') =>
-  // Chomper's fin and leap are the same in every bay.
+  // Simon's fin and leap are the same in every bay.
   painted('shark-fx', h === 'fin' || h === 'shark' ? h : `${map}-${h}`);
 
 /** What the board needs of a round (the pupils' copy has these too). */

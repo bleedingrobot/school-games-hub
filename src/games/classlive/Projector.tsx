@@ -653,7 +653,7 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
         <section className="cl-card cl-card--active cl-card--corners cl-card--shark" aria-label="Shark Bay">
           <CardArt pic={painted('pick', 'shark', true)} />
           <h2 className="cl-card__name">🦈 Shark Bay</h2>
-          <p className="cl-card__blurb">Swim to a spinning colour or hide under a boat. Chomper the shark strikes one quarter!</p>
+          <p className="cl-card__blurb">Swim to a spinning colour or hide under a boat. Simon the shark strikes one quarter!</p>
           <button type="button" className="cl-btn cl-btn--small fc-guide-btn fc-guide-btn--card" onClick={() => setBGuide(true)}>⚡ Power-ups and hazards</button>
           {bGuide && <SharkGuide bay={bBay === 'any' ? BAYS[0] : bBay} onClose={() => setBGuide(false)} />}
           <div className="cl-opt">
@@ -749,7 +749,7 @@ function SharkLobbyHead({ bay }: { bay: BayMap }) {
       <h1 className="cl-lobby__title">Shark Bay</h1>
       <div className="cl-lobby__fact">{BAY_WORDS[bay].name}</div>
       <div className="fc-lobby-corners" aria-hidden="true"><i /><i /><i /><i /></div>
-      <p className="cl-lobby__ask">Swim to a coloured quarter, or hide under a boat. Which quarter will Chomper strike?</p>
+      <p className="cl-lobby__ask">Swim to a coloured quarter, or hide under a boat. Which quarter will Simon strike?</p>
       <button type="button" className="cl-btn fc-guide-btn" onClick={() => setGuide(true)}>⚡ Power-ups and hazards</button>
     </>
   );
