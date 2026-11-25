@@ -113,6 +113,7 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
   const [purpose, setPurpose] = useState<'jail' | 'power' | null>(null);
   const [say, setSay] = useState<{ n: number; text: string; good?: boolean } | null>(null);
   const [guide, setGuide] = useState(false);
+  const [shake, setShake] = useState(0);
   const sayN = useRef(0);
   const asking = useRef(false);
   const pendingMe = useRef<{ me?: PlayerView; view?: RoomView } | null>(null);
@@ -142,7 +143,14 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
         const k = keysDir();
         const dir = k.x || k.y ? k : stickDir.current;
         const before = pos.current.p;
+        const hitBefore = pos.current.hitAt;
         pos.current = stepMove(pos.current, dir, dt, r, t, { boost: !!mg?.boost, ghost: !!mg?.ghost });
+        if (pos.current.hitAt !== undefined && pos.current.hitAt !== hitBefore && pub) {
+          // Knocked flying by a roller: say so, buzz and shake.
+          toast(`💥 The ${MAP_WORDS[pub.map].roller.toLowerCase()} knocked you flying!`);
+          try { navigator.vibrate?.(200); } catch { /* not on this device */ }
+          setShake(Date.now());
+        }
         const warped = Math.hypot(pos.current.p.x - before.x, pos.current.p.y - before.y) > 0.2;
         const moved = !sentAt.current || Math.hypot(pos.current.p.x - sentAt.current.x, pos.current.p.y - sentAt.current.y) > 0.002;
         const now = Date.now();
@@ -363,7 +371,7 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
         {mg.crystal !== null && <PowerCard power="crystal" state="on" text={`${CORNER_NAMES[mg.crystal]} is safe this round. Run there!`} />}
         {mg.stay != null && r && !r.ended && <span className="fc-chip fc-chip--swap">🔁 Change corners! Not {CORNER_NAMES[mg.stay]}</span>}
       </div>
-      <div className="fc-pad__board">
+      <div className={`fc-pad__board ${Date.now() - shake < 500 ? 'fc-pad__board--hit' : ''}`}>
         <CornersBoard map={pub.map} round={r} t={t} flash={r?.ended && r.rolled ? r.rolled : null} crystal={mg.crystal} banned={r && !r.ended ? mg.stay ?? null : null} fogOn={false} onCorner={mg.jump && canRun ? (c) => void jump(c) : undefined}>
           {!fogged && others.current.map((o, i) => <span key={i} className="fc-dot" style={{ left: `${o.x * 100}%`, top: `${o.y * 100}%` }} />)}
           <Token x={here.x} y={here.y} size={AVATAR_R * 2.2} className={`fc-token--me ${mg.shield ? 'fc-token--shield' : ''} ${mg.boost ? 'fc-token--fast' : ''} ${mg.ghost ? 'fc-token--ghost' : ''}`} label="You">

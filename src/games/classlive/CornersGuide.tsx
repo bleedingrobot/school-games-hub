@@ -13,7 +13,7 @@ const HAZARDS: { key: Hazard; emoji: string; how: string }[] = [
   { key: 'storm', emoji: '🌨️', how: 'Slows you right down while you are in it.' },
   { key: 'teleport', emoji: '🌀', how: 'Comes in pairs: step in one and pop out of the other.' },
   { key: 'ice', emoji: '🧊', how: 'Slippery! You slide and can’t stop quickly.' },
-  { key: 'roller', emoji: '🪨', how: 'Rolls across the board and bumps you out of the way.' },
+  { key: 'roller', emoji: '🪨', how: 'Two roll through the corners, one across and one up and down. Get hit and you go flying! Jump back in quickly.' },
   { key: 'hole', emoji: '🕳️', how: 'Opens in the middle: you can’t cross it, so go round.' },
 ];
 /** Drawn in code, no picture. */

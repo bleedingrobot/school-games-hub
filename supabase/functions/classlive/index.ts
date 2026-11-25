@@ -13619,11 +13619,18 @@ function makeRound(g, n, startAt, random, players) {
 			}
 		});
 	}
+	const cornerLine = () => random() < .5 ? .09 + random() * .1 : .81 + random() * .1;
 	const roller = has.has("roller") ? {
-		axis: random() < .5 ? "x" : "y",
-		at: .35 + random() * .3,
-		r: .07,
-		periodMs: 6e3 + Math.floor(random() * 2e3)
+		axis: "x",
+		at: cornerLine(),
+		r: .08,
+		periodMs: 4500 + Math.floor(random() * 1500)
+	} : null;
+	const roller2 = has.has("roller") ? {
+		axis: "y",
+		at: cornerLine(),
+		r: .08,
+		periodMs: 5200 + Math.floor(random() * 1500)
 	} : null;
 	const gate = has.has("gate") ? pick(CORNERS, random) : null;
 	const twist = has.has("twist") ? random() < .6 ? "two" : "lucky" : null;
@@ -13650,6 +13657,7 @@ function makeRound(g, n, startAt, random, players) {
 		ice,
 		teleports,
 		roller,
+		roller2,
 		hole,
 		fog: has.has("fog"),
 		gate,
