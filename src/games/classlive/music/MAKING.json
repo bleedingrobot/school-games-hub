@@ -696,5 +696,85 @@
     "seconds": 88.0,
     "take_kept": 2,
     "lufs_target": -16
+  },
+  {
+    "name": "shark-lagoon",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "sunny tropical beach chase, bright steel drums, strummed ukulele, light shakers, bouncy bass, calm but bouncy, catchy, fun, 110 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 110,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "shark-lagoon-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "tense tropical beach chase, fast steel drums, rapid strummed ukulele, pulsing low ominous bass ostinato, driving drums, tense, very energetic, fast tempo, busy rhythm, starts immediately at full volume, 140 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 140,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "shark-reef",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "playful underwater coral reef chase, bouncy marimba, bubbly synth plucks, soft hand percussion, calm but bouncy, catchy, fun, 110 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 110,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "shark-reef-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "tense underwater reef chase, fast marimba, bubbly synth plucks, pulsing low ominous bass ostinato, driving drums, tense, very energetic, fast tempo, busy rhythm, starts immediately at full volume, 140 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 140,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "shark-pirate",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "jolly sea shanty chase, squeezebox accordion, lively fiddle, stomping percussion, calm but bouncy, catchy, fun, 110 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 110,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "shark-pirate-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "tense sea shanty chase, fast accordion, rapid fiddle, pulsing low ominous bass ostinato, driving drums, tense, very energetic, fast tempo, busy rhythm, starts immediately at full volume, 140 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 140,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "shark-icy",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "playful icy arctic bay chase, sparkling glockenspiel, bouncy pizzicato strings, light percussion, calm but bouncy, catchy, fun, 110 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 110,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "shark-icy-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "tense icy arctic bay chase, fast glockenspiel, rapid pizzicato strings, pulsing low ominous bass ostinato, driving drums, tense, very energetic, fast tempo, busy rhythm, starts immediately at full volume, 140 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 140,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
   }
 ]
