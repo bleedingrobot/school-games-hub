@@ -65,7 +65,7 @@ export function ghostSheet(game: GhostGame) {
   return {
     title: 'How to play Ghost Tag', mode: MAP_WORDS[game.map].name, modeSay: null, art: painted('pick', 'ghost', true) ?? painted('ghost', `map-${game.map}`, true),
     steps: [
-      { icon: '🕹️', text: 'Move your avatar with the joystick, or the arrow keys.', say: H[0] },
+      { icon: '🕹️', text: 'Steer your avatar with the joystick, or the arrow keys.', say: H[0] },
       { icon: '👻', text: 'A few players start as ghosts. If a ghost touches you, you become a ghost too.', say: H[1] },
       { icon: '✨', text: 'Answer a question right to turn invisible for 5 seconds. Ghosts can’t catch you then!', say: H[2] },
       { icon: '🏮', text: 'Ghosts answer too: a speed dash, or a lantern that finds invisible players.', say: H[3] },

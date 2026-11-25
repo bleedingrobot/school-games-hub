@@ -26,7 +26,7 @@ export const GHOST_LINES = {
 
 /** How to play (HowTo.tsx). */
 export const GHOST_HOWTO = [
-  'Move your avatar with the joystick, or the arrow keys.',
+  'Steer your avatar with the joystick, or the arrow keys.',
   'A few players start as ghosts. If a ghost touches you, you become a ghost too.',
   'Answer a question right to turn invisible for five seconds. Ghosts cannot catch you then!',
   'Ghosts answer questions too, for a speed dash or a lantern that finds invisible players.',
