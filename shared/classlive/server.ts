@@ -41,11 +41,13 @@ import { BAYS, isShark, newShark, sharkAdvance, sharkJump, sharkQuestionFor, typ
 
 import { advance as ghostAdvance, freshMine as ghostFresh, ghostDone, ghostPlayer, MAPS as GHOST_MAPS, needsPositions as ghostNeeds, newGhost, nextDeadline as ghostDeadline, publicGhost, type GhostEvent, type GhostGame, type GhostPlayer, type PublicGhost } from './ghost';
 import { ghostStep } from './ghostServer';
+import { advanceRelay, joinRelay, newRelay, raceCount, relayDeadline, type RelayEvent, type RelayGame } from './relay';
+import { relayPlayer, relayPublic, relayStep, type RelayPlayer, type RelayPublic } from './relayServer';
 
-export const ACTIVITIES = ['stars', 'serpent', 'mural', 'corners', 'shark', 'ghost', 'clash', 'thrones', 'lava'] as const;
+export const ACTIVITIES = ['stars', 'serpent', 'mural', 'corners', 'shark', 'ghost', 'clash', 'thrones', 'lava', 'relay'] as const;
 export type Activity = (typeof ACTIVITIES)[number];
 export const LENGTHS = [0, 2, 3, 5, 10, 15] as const;
-export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners', shark: 'Shark Bay', ghost: 'Ghost Tag', clash: 'Colour Clash', thrones: 'Musical Thrones', lava: 'Floor is Lava' };
+export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners', shark: 'Shark Bay', ghost: 'Ghost Tag', clash: 'Colour Clash', thrones: 'Musical Thrones', lava: 'Floor is Lava', relay: 'Toon Flap Relay' };
 
 export interface LivePlayer {
   id: string;
@@ -55,8 +57,8 @@ export interface LivePlayer {
   colour: number;
 }
 
-export type Game = StarsGame | SerpentGame | MuralGame | CornersGame | GhostGame | ClashGame | ThronesGame | LavaGame;
-export type GameEvent = StarsEvent | SerpentEvent | MuralEvent | CornersEvent | GhostEvent | ClashEvent | ThronesEvent | LavaEvent;
+export type Game = StarsGame | SerpentGame | MuralGame | CornersGame | GhostGame | ClashGame | ThronesGame | LavaGame | RelayGame;
+export type GameEvent = StarsEvent | SerpentEvent | MuralEvent | CornersEvent | GhostEvent | ClashEvent | ThronesEvent | LavaEvent | RelayEvent;
 
 export interface Session {
   seed: number;
@@ -146,7 +148,8 @@ export type PublicGame =
   /** Colour Clash (shared/classlive/clashServer.ts). */
   | ClashPublic
   | ThronesPublic
-  | LavaPublic;
+  | LavaPublic
+  | RelayPublic;
 
 export type PublicRound = Omit<Round, 'rolled' | 'caught' | 'saved' | 'items'> & {
   rolled: Corner[] | null;
@@ -193,7 +196,8 @@ export interface PlayerView {
     | GhostPlayer
     | ClashPlayer
     | ThronesPlayer
-    | LavaPlayer;
+    | LavaPlayer
+    | RelayPlayer;
 }
 
 export interface RoomRow {
@@ -292,6 +296,7 @@ function publicRound(r: Round, t: number): PublicRound {
 /** `t`: ms since the start, so a pupil's device only learns the rolled corner once the dice has landed. */
 export function publicGame(g: Game, players: number, t = 0, order: string[] = []): PublicGame {
   if (g.kind === 'ghost') return publicGhost(g, order);
+  if (g.kind === 'relay') return relayPublic(g);
   if (g.kind === 'clash') return clashPublic(g);
   if (g.kind === 'lava') return lavaPublic(g, players);
   if (g.kind === 'thrones') return thronesPublic(g, players);
@@ -343,6 +348,7 @@ function screenView(row: Pick<RoomRow, 'showNames' | 'seq' | 'events'>, s: Sessi
 
 export function playerView(s: Session, id: string): PlayerView {
   const p = s.players[id];
+  if (s.game.kind === 'relay') return { player: id, name: firstName(p.name), colour: p.colour, game: relayPlayer(s, s.game, id) };
   if (s.game.kind === 'lava') return { player: id, name: firstName(p.name), colour: p.colour, game: lavaPlayer(s, s.game, id, () => freshLavaMine(s.order.indexOf(id))) };
   if (s.game.kind === 'thrones') return { player: id, name: firstName(p.name), colour: p.colour, game: thronesPlayer(s.game, s.order, id, s.state === 'over') };
   if (s.game.kind === 'clash') return { player: id, name: firstName(p.name), colour: p.colour, game: clashPlayer(s, s.game, id) };
@@ -527,6 +533,17 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
           events.push({ type: 'over', t, why: 'time' });
         }
       }
+    } else if (g0.kind === 'relay') {
+      // Toon Flap Relay runs on the clock too: the countdown, turns that ran out, the race's time, the next race.
+      if (s.state === 'live') {
+        const last = timeUp(s, row, now);
+        const out = advanceRelay(g0, t, s.order, () => sv.random(), last);
+        events.push(...out.events);
+        if (out.over) {
+          s.state = 'over';
+          events.push({ type: 'over', t, why: 'time' });
+        }
+      }
     } else if (g0.kind === 'lava') {
       // Floor is Lava runs on the clock too: crack the floor when a run ends (from the saved spots), start the next round.
       if (s.state === 'live') {
@@ -581,6 +598,11 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
     if ((g1.kind === 'corners' || g1.kind === 'lava') && events.some((e) => e.type === 'roll' || e.type === 'crack' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
     if ((g1.kind === 'corners' || g1.kind === 'clash') && events.some((e) => e.type === 'roll' || e.type === 'clash_count' || e.type === 'clash_round' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
     if (g1.kind === 'ghost' && events.some((e) => e.type === 'g_round' || e.type === 'g_end' || e.type === 'over' || (e.type === 'g_grab' && e.froze > 0))) for (const id of s.order) changed.add(id);
+    if (g1.kind === 'relay') {
+      // A new race (new teams) or a race's end changes everyone's row; a new turn changes that team's.
+      if (events.some((e) => e.type === 'relay_race' || e.type === 'relay_end' || e.type === 'relay_go' || e.type === 'over')) for (const id of s.order) changed.add(id);
+      for (const e of events) if (e.type === 'relay_turn') for (const id of g1.teams[e.team]?.members ?? []) changed.add(id);
+    }
     if (g1.kind === 'thrones' && events.some((e) => e.type === 'stop' || e.type === 'seated' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
     const players = [...changed].filter((id) => s.players[id]).map((id) => playerView(s, id));
     const saved = await sv.save(room, version, { session: s, view: roomView(s, startedAt, now), screen: screenView(next, s, startedAt), startedAt, players, ...(claim ? { claim } : {}) });
@@ -644,6 +666,8 @@ export function newSession(body: Record<string, unknown>, seed: number, random: 
     // Shark Bay (docs/SHARK-PLAN.md): Four Corners' engine with spinning quarters, boats and a shark.
     const bay = BAYS.find((m) => m === body.map) ?? BAYS[Math.floor(random() * BAYS.length) % BAYS.length];
     game = newShark(bay, runSeconds(body.run));
+  } else if (activity === 'relay') {
+    game = newRelay(raceCount(body.races));
   } else if (activity === 'thrones') {
     game = newThrones(HALLS.find((h) => h === body.hall) ?? HALLS[Math.floor(random() * HALLS.length) % HALLS.length]);
   } else game = newMural(random);
@@ -663,6 +687,7 @@ function joinGame(g: Game, who: string, index: number) {
   if (g.kind === 'thrones') g.mine[who] = thronesFresh(index);
   if (g.kind === 'clash') clashJoin(g, who);
   if (g.kind === 'ghost') g.mine[who] = ghostFresh(index);
+  if (g.kind === 'relay') joinRelay(g, who);
 }
 
 /** Lobby to live (the teacher's Start, or a set-time game's start). */
@@ -822,7 +847,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     if (action === 'look') {
       // Four Corners runs on the clock: if the big screen hasn't moved a round on (closed, asleep), a pupil's look does.
       const cg = cur.session.game;
-      const due = cur.session.state !== 'live' ? null : cg.kind === 'corners' ? nextDeadline(cg, cur.startedAt) : cg.kind === 'ghost' ? ghostDeadline(cg, cur.startedAt) : cg.kind === 'clash' ? clashDeadline(cg, cur.startedAt) : cg.kind === 'thrones' ? thronesDeadline(cg, cur.startedAt) : cg.kind === 'lava' ? lavaDeadline(cg, cur.startedAt) : null;
+      const due = cur.session.state !== 'live' ? null : cg.kind === 'corners' ? nextDeadline(cg, cur.startedAt) : cg.kind === 'ghost' ? ghostDeadline(cg, cur.startedAt) : cg.kind === 'clash' ? clashDeadline(cg, cur.startedAt) : cg.kind === 'thrones' ? thronesDeadline(cg, cur.startedAt) : cg.kind === 'lava' ? lavaDeadline(cg, cur.startedAt) : cg.kind === 'relay' ? relayDeadline(cg, cur.startedAt) : null;
       // Also anything else due with no big screen to move it on (a set-time game): its start, the time up, Mural's guessing.
       const n = sv.now(), tt = timeOf(cur, n), cs = cur.session;
       const otherDue = cs.auto && cs.state === 'lobby' ? n >= cs.auto.startsAt
@@ -832,6 +857,10 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         if (!('refuse' in done)) return ok({ room, view: roomView(done.session, done.row.startedAt, sv.now()), me: playerView(done.session, who), now: sv.now() });
       }
       return ok({ room, view: roomView(cur.session, cur.startedAt, sv.now()), me: playerView(cur.session, who), now: sv.now() });
+    }
+    if (cur.session.game.kind === 'relay' && (action === 'ask' || action === 'answer' || action === 'play')) {
+      const out = await relayStep(sv, cur, who, body);
+      return cur.session.state === 'live' ? out : withRoom(out);
     }
     if (cur.session.game.kind === 'lava' && (action === 'ask' || action === 'answer' || action === 'play')) {
       const out = await lavaStep(sv, cur, who, body, { mutate, nextQuestion, roomView, playerView, ok, no, busy });
@@ -885,7 +914,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         }
         return { reply: out.reply, events: out.events, players: [who] };
       }
-      if (s.game.kind === 'corners' || s.game.kind === 'ghost' || s.game.kind === 'clash' || s.game.kind === 'thrones' || s.game.kind === 'lava') return { refuse: no(409, 'Use the joystick!', 'not_now') };
+      if (s.game.kind === 'corners' || s.game.kind === 'ghost' || s.game.kind === 'clash' || s.game.kind === 'thrones' || s.game.kind === 'lava' || s.game.kind === 'relay') return { refuse: no(409, 'Use the joystick!', 'not_now') };
       const out = tryFact(s.game, who, body.fact, t);
       if (!out.ok) return { refuse: no(409, 'One at a time!', out.reason) };
       return { reply: out.reply, events: out.events, players: [who] };
@@ -926,7 +955,7 @@ export async function nextQuestion(sv: ClassLiveServices, row: RoomRow, who: str
   const ctx = await sv.mathsContext(who);
   if (!ctx) return null;
   const g = row.session.game;
-  const m = g.kind === 'mural' || g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'clash' || g.kind === 'thrones' || g.kind === 'lava' ? g.mine[who] : undefined;
+  const m = g.kind === 'mural' || g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'clash' || g.kind === 'thrones' || g.kind === 'lava' || g.kind === 'relay' ? g.mine[who] : undefined;
   const q = makeQuestion(ctx, `${row.session.seed}:${who}:${m?.answered ?? 0}`);
   if (!q) return null;
   const kept = await sv.keepQuestion(row.id, who, q);

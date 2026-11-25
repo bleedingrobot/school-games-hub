@@ -7,6 +7,7 @@ import { lavaPodium } from './lava';
 import { podium as thronesPodium } from './thrones';
 import { clashReward } from './clashServer';
 import { podium as ghostPodium } from './ghost';
+import { relayPodium } from './relay';
 import type { Session } from './server';
 
 export interface PupilReward {
@@ -46,13 +47,20 @@ export const POINTS = { joined: 1, played: 3, goal: 2, guessed: 2, max: 10 } as 
 
 export function rewardsOf(s: Session): FinishedSession {
   const g = s.game;
-  const goal = g.kind === 'stars' ? g.creature : g.kind === 'serpent' ? g.awake : g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'clash' || g.kind === 'thrones' || g.kind === 'lava' ? false : g.solvers.length > 0;
-  const top = g.kind === 'corners' ? podium(g, s.order) : g.kind === 'ghost' ? ghostPodium(g, s.order) : g.kind === 'thrones' ? thronesPodium(g, s.order) : g.kind === 'lava' ? lavaPodium(g, s.order) : [];
+  const goal = g.kind === 'stars' ? g.creature : g.kind === 'serpent' ? g.awake : g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'clash' || g.kind === 'thrones' || g.kind === 'lava' || g.kind === 'relay' ? false : g.solvers.length > 0;
+  const top = g.kind === 'corners' ? podium(g, s.order) : g.kind === 'ghost' ? ghostPodium(g, s.order) : g.kind === 'thrones' ? thronesPodium(g, s.order) : g.kind === 'lava' ? lavaPodium(g, s.order) : g.kind === 'relay' ? relayPodium(g, s.order) : [];
   const players = s.order.map((id): PupilReward => {
     let did = false;
     const r: PupilReward = { player: id, points: 0, stars: 0, boxes: 0, head: false, tiles: 0, guessed: false, safe: 0, champion: false, escapes: 0, powers: 0 };
     let podiumPlace = false;
-    if (g.kind === 'lava') {
+    if (g.kind === 'relay') {
+      // Toon Flap Relay (docs/RELAY-PLAN.md): +2 if your team won a race; trophies count races won, perks given, troubles sent.
+      const m = g.mine[id];
+      podiumPlace = (m?.wins ?? 0) > 0;
+      did = (m?.right ?? 0) > 0 || (m?.flights ?? 0) > 0;
+      const cap = (n: number | undefined) => Math.max(0, Math.min(500, Math.round(n ?? 0)));
+      r.extra = { relay_wins: cap(m?.wins), relay_perks: cap(m?.perks), relay_troubles: cap(m?.troubles) };
+    } else if (g.kind === 'lava') {
       // Floor is Lava (docs/LAVA-PLAN.md): rounds stayed up, top of the podium, tiles rebuilt, friends rescued.
       const m = g.mine[id];
       const place = top.find((x) => x.player === id)?.place;

@@ -12804,7 +12804,7 @@ function spotlight(g, id, t) {
 	}];
 }
 /** One marked answer every this many ms per pupil (no speed bonus; same as Class Showdown). */
-const ANSWER_GAP_MS$5 = 4e3;
+const ANSWER_GAP_MS$6 = 4e3;
 /** How long the guessing lasts once the flipping is over (it ends sooner when everyone has picked). */
 const GUESS_MS = 45e3;
 /**
@@ -13514,10 +13514,10 @@ const UNLOCK$3 = {
 /** A corner zone's side (corners are squares in the board's corners). */
 const ZONE = .26;
 const ROLL_MS = 4500;
-const SHOW_MS$3 = 4500;
+const SHOW_MS$4 = 4500;
 /** Before the first round. */
-const READY_MS$4 = 4e3;
-const ANSWER_GAP_MS$4 = 1500;
+const READY_MS$5 = 4e3;
+const ANSWER_GAP_MS$5 = 1500;
 const runMs = (n) => Math.max(9e3, 14e3 - (n - 1) * 400);
 const runSeconds = (v) => typeof v === "number" && Number.isFinite(v) ? Math.max(6, Math.min(12, Math.round(v))) : 10;
 const START$1 = {
@@ -13541,7 +13541,7 @@ const cornerCentre = (c) => ({
 });
 const dist$5 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 /** A start spot in the middle, spread by player number so avatars don't sit on top of each other. */
-function startSpot$1(i) {
+function startSpot$2(i) {
 	const a = i * 2.399963;
 	const r = .03 + .11 * Math.sqrt((i % 40 + .5) / 40);
 	return {
@@ -13652,7 +13652,7 @@ function makeRound$3(g, n, startAt, random, players) {
 		startAt,
 		runEnd: startAt + run,
 		rollEnd: startAt + run + ROLL_MS,
-		showEnd: startAt + run + ROLL_MS + SHOW_MS$3,
+		showEnd: startAt + run + ROLL_MS + SHOW_MS$4,
 		storms,
 		ice,
 		teleports,
@@ -13700,7 +13700,7 @@ function freshMine$3(i) {
 		answered: 0,
 		lastAt: -1500,
 		placed: 0,
-		spot: startSpot$1(i)
+		spot: startSpot$2(i)
 	};
 }
 /**
@@ -13711,7 +13711,7 @@ function freeAt$1(g, m) {
 	const r = g.round;
 	if (!m || m.jailedIn === null || m.jailRight < 3 || !r) return null;
 	if (m.jailedIn < r.n) return r.showEnd;
-	return r.showEnd + (g.runS ? g.runS * 1e3 : runMs(r.n + 1)) + ROLL_MS + SHOW_MS$3;
+	return r.showEnd + (g.runS ? g.runS * 1e3 : runMs(r.n + 1)) + ROLL_MS + SHOW_MS$4;
 }
 const boosted$1 = (m, n) => !!m && m.speedTo !== null && n <= m.speedTo;
 const ghostly$1 = (m, n) => !!m && m.ghostTo !== null && n <= m.ghostTo;
@@ -13720,7 +13720,7 @@ const cornersDone = (g, t) => !g.round || g.round.caught !== null && t >= g.roun
 /** The time of the next thing the server must do (end a run, start the next round), or null. */
 function nextDeadline$3(g, startedAt) {
 	if (startedAt === null) return null;
-	if (!g.round) return READY_MS$4;
+	if (!g.round) return READY_MS$5;
 	if (g.round.caught === null) return g.round.runEnd;
 	return g.round.showEnd;
 }
@@ -13738,10 +13738,10 @@ function advance$3(g, t, order, positions, random, last = false) {
 		const r = g.round;
 		if (!r) {
 			if (t < 4e3 || last) break;
-			g.round = makeRound$3(g, 1, READY_MS$4, random, order.length);
+			g.round = makeRound$3(g, 1, READY_MS$5, random, order.length);
 			events.push({
 				type: "round",
-				t: READY_MS$4,
+				t: READY_MS$5,
 				n: 1
 			});
 			continue;
@@ -13759,7 +13759,7 @@ function advance$3(g, t, order, positions, random, last = false) {
 				m.jailedIn = null;
 				m.jailRight = 0;
 				m.escapes++;
-				m.spot = startSpot$1(order.indexOf(id));
+				m.spot = startSpot$2(order.indexOf(id));
 				m.placed++;
 				events.push({
 					type: "escape",
@@ -14088,9 +14088,9 @@ const LAVA_UNLOCK = {
 };
 const TILE$1 = 1 / 8;
 const CRACK_MS = 2200;
-const SHOW_MS$2 = 3800;
-const READY_MS$3 = 4e3;
-const ANSWER_GAP_MS$3 = 1500;
+const SHOW_MS$3 = 3800;
+const READY_MS$4 = 4e3;
+const ANSWER_GAP_MS$4 = 1500;
 const lavaRunSeconds = (v) => typeof v === "number" && Number.isFinite(v) ? Math.max(5, Math.min(10, Math.round(v))) : 7;
 const START = {
 	x: .5,
@@ -14269,7 +14269,7 @@ function makeLavaRound(g, n, startAt, random, players) {
 		startAt,
 		runEnd: startAt + run,
 		crackEnd: startAt + run + CRACK_MS,
-		showEnd: startAt + run + CRACK_MS + SHOW_MS$2,
+		showEnd: startAt + run + CRACK_MS + SHOW_MS$3,
 		pattern,
 		glow: lit,
 		late,
@@ -14338,7 +14338,7 @@ function climbAt(g, m) {
 const lavaDone = (g, t) => !g.round || g.round.fell !== null && t >= g.round.showEnd;
 function lavaDeadline(g, startedAt) {
 	if (startedAt === null) return null;
-	if (!g.round) return READY_MS$3;
+	if (!g.round) return READY_MS$4;
 	if (g.round.fell === null) return g.round.runEnd;
 	return g.round.showEnd;
 }
@@ -14350,10 +14350,10 @@ function advanceLava(g, t, order, positions, random, last = false) {
 		const r = g.round;
 		if (!r) {
 			if (t < 4e3 || last) break;
-			g.round = makeLavaRound(g, 1, READY_MS$3, random, order.length);
+			g.round = makeLavaRound(g, 1, READY_MS$4, random, order.length);
 			events.push({
 				type: "round",
-				t: READY_MS$3,
+				t: READY_MS$4,
 				n: 1,
 				pattern: g.round.pattern
 			});
@@ -14708,13 +14708,13 @@ const UNLOCK$2 = {
 	roller: 6
 };
 const TILE_R = .065;
-const READY_MS$2 = 4e3;
+const READY_MS$3 = 4e3;
 const MUSIC_MIN_MS = 7e3;
 const SCRAMBLE_MS = 4e3;
-const SHOW_MS$1 = 4500;
+const SHOW_MS$2 = 4500;
 /** A Golden ear buzzes this long before the music stops. */
 const EAR_MS = 2e3;
-const ANSWER_GAP_MS$2 = 1500;
+const ANSWER_GAP_MS$3 = 1500;
 /** Crowns: a throne, a golden throne, a lit dance tile when the music stops. */
 const CROWNS = {
 	throne: 1,
@@ -14903,7 +14903,7 @@ function makeRound$2(g, n, startAt, random, playing) {
 		startAt,
 		musicEnd,
 		scrambleEnd: musicEnd + SCRAMBLE_MS,
-		showEnd: musicEnd + SCRAMBLE_MS + SHOW_MS$1,
+		showEnd: musicEnd + SCRAMBLE_MS + SHOW_MS$2,
 		thrones,
 		mimics: Array.from({ length: mimicsFor(n, k) }, (_, i) => ({
 			id: i,
@@ -14967,7 +14967,7 @@ function freshMine$2(i) {
 		fastMs: null,
 		lastAt: -1500,
 		placed: 0,
-		spot: startSpot$1(i)
+		spot: startSpot$2(i)
 	};
 }
 /** When a courtyard pupil with all their right answers comes back (session ms), or null (as Four Corners' jail). */
@@ -14975,7 +14975,7 @@ function freeAt(g, m) {
 	const r = g.round;
 	if (!m || m.courtIn === null || m.courtRight < 3 || !r) return null;
 	if (m.courtIn < r.n) return r.showEnd;
-	return r.showEnd + 12e3 + SCRAMBLE_MS + SHOW_MS$1;
+	return r.showEnd + 12e3 + SCRAMBLE_MS + SHOW_MS$2;
 }
 /** The last round has been shown (or none started): the game can end. */
 const thronesDone = (g, t) => !g.round || g.round.standing !== null && t >= g.round.showEnd;
@@ -14983,7 +14983,7 @@ const thronesDone = (g, t) => !g.round || g.round.standing !== null && t >= g.ro
 function nextDeadline$2(g, startedAt) {
 	if (startedAt === null) return null;
 	const r = g.round;
-	if (!r) return READY_MS$2;
+	if (!r) return READY_MS$3;
 	if (!r.stopped) return r.musicEnd;
 	if (r.standing === null) return r.scrambleEnd;
 	return r.showEnd;
@@ -14997,10 +14997,10 @@ function advance$2(g, t, order, positions, random, last = false) {
 		const r = g.round;
 		if (!r) {
 			if (t < 4e3 || last) break;
-			g.round = makeRound$2(g, 1, READY_MS$2, random, playingCount(g, order));
+			g.round = makeRound$2(g, 1, READY_MS$3, random, playingCount(g, order));
 			events.push({
 				type: "round",
-				t: READY_MS$2,
+				t: READY_MS$3,
 				n: 1,
 				thrones: g.round.thrones.length
 			});
@@ -15025,7 +15025,7 @@ function advance$2(g, t, order, positions, random, last = false) {
 				m.courtIn = null;
 				m.courtRight = 0;
 				m.escapes++;
-				m.spot = startSpot$1(order.indexOf(id));
+				m.spot = startSpot$2(order.indexOf(id));
 				m.placed++;
 				events.push({
 					type: "escape",
@@ -15033,7 +15033,7 @@ function advance$2(g, t, order, positions, random, last = false) {
 					pupil: id
 				});
 			} else if (m && m.courtIn === null) {
-				m.spot = startSpot$1(order.indexOf(id));
+				m.spot = startSpot$2(order.indexOf(id));
 				m.placed++;
 			}
 		}
@@ -15418,7 +15418,7 @@ const UNLOCK$1 = {
 	roller: 7,
 	fountain: 8
 };
-const READY_MS$1 = 3500;
+const READY_MS$2 = 3500;
 const COUNT_MS = 7e3;
 const PAINT_S = [
 	45,
@@ -15432,7 +15432,7 @@ const TEAM_COUNTS = [
 	4
 ];
 const teamCount = (v) => TEAM_COUNTS.includes(v) ? v : 4;
-const ANSWER_GAP_MS$1 = 1500;
+const ANSWER_GAP_MS$2 = 1500;
 /** Power-ups that last (Big Brush, Speed Shoes). */
 const POWER_MS = 1e4;
 /** Bomb radius in tiles: bigger on a streak of right answers. */
@@ -15592,7 +15592,7 @@ function makeRound$1(g, n, startAt, random, players) {
 			...openSpot$1(random, hole)
 		});
 	}
-	const paintFrom = startAt + READY_MS$1;
+	const paintFrom = startAt + READY_MS$2;
 	const paintTo = paintFrom + g.paintS * 1e3;
 	return {
 		n,
@@ -15677,7 +15677,7 @@ function freshMine$1(team) {
 	};
 }
 /** Where each team starts: its own side of the board. */
-function startSpot(team, teams, i) {
+function startSpot$1(team, teams, i) {
 	const sides = teams === 2 ? [{
 		x: .15,
 		y: .5
@@ -15957,9 +15957,9 @@ function clashPlayer(s, g, id) {
 		held: m.held,
 		brushTo: m.brushTo,
 		speedTo: m.speedTo,
-		nextAt: m.lastAt + ANSWER_GAP_MS$1,
+		nextAt: m.lastAt + ANSWER_GAP_MS$2,
 		placed: m.placed ?? 0,
-		spot: m.spot ?? startSpot(m.team, g.teams, 0),
+		spot: m.spot ?? startSpot$1(m.team, g.teams, 0),
 		place,
 		grabs: m.grabs,
 		powers: m.powersUsed
@@ -15970,7 +15970,7 @@ function clashJoin(g, who) {
 	const team = teamFor(g);
 	const m = freshMine$1(team);
 	const same = Object.values(g.mine).filter((x) => x.team === team).length;
-	m.spot = startSpot(team, g.teams, same);
+	m.spot = startSpot$1(team, g.teams, same);
 	m.placed = 0;
 	g.mine[who] = m;
 }
@@ -16000,7 +16000,7 @@ async function clashTick(sv, room, s, t, last) {
 		for (const id of s.order) {
 			const m = g.mine[id];
 			if (!m) continue;
-			m.spot = startSpot(m.team, g.teams, count[m.team]++);
+			m.spot = startSpot$1(m.team, g.teams, count[m.team]++);
 			m.placed = (m.placed ?? 0) + 1;
 		}
 	}
@@ -16027,7 +16027,7 @@ const no$1 = (status, error, reason) => ({
 	}
 });
 const busyReply = () => no$1(503, "Class Live is very busy. Try again!", "busy");
-const MAX_ANSWER_MS$3 = 12e4;
+const MAX_ANSWER_MS$4 = 12e4;
 const timeOf$1 = (row, now) => row.startedAt === null ? 0 : Math.max(0, now - row.startedAt);
 /** Colour Clash's pupil steps: `play` with `grab`, `ask` and `answer` (a right answer drops a paint bomb). */
 async function clashStep(sv, cur, who, body) {
@@ -16085,7 +16085,7 @@ async function clashStep(sv, cur, who, body) {
 	const right = sameAnswer(value, marked.answer);
 	const at = await spotOf();
 	if (at === "busy") return busyReply();
-	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS$3, MAX_ANSWER_MS$3));
+	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS$4, MAX_ANSWER_MS$4));
 	let bomb = null;
 	const done = await mutate(sv, room, (s, t) => {
 		if (s.state !== "live" || s.game.kind !== "clash") return { refuse: no$1(409, "This one has finished.", "over") };
@@ -16187,11 +16187,11 @@ const CRYPT = {
 	r: .09
 };
 /** From a round being made to the ghosts being let out of the crypt. */
-const READY_MS = 4e3;
+const READY_MS$1 = 4e3;
 /** Longest a round runs once the ghosts are out. */
 const ROUND_MS = 9e4;
 /** The end-of-round show (who won), before the next round is made. */
-const SHOW_MS = 6500;
+const SHOW_MS$1 = 6500;
 /** Invisible after a right answer (James's pick on the card, 25 Nov 2026 NZ: 5 s recommended). */
 const HIDE_MS = 5e3;
 /** A garlic shield's bounce: invisible this long, so the same ghost can't catch you straight away. */
@@ -16201,7 +16201,7 @@ const LANTERN_MS = 3500;
 const BOOTS_MS = 5e3;
 const FREEZE_MS = 2500;
 /** Least time between two answers (a wrong one too). */
-const ANSWER_GAP_MS = 1500;
+const ANSWER_GAP_MS$1 = 1500;
 /** Ghosts at the start of a round: one for every 10 pupils (James, 25 Nov 2026 NZ), at least 1, never everyone. */
 const ghostCount = (players) => players < 2 ? 0 : Math.max(1, Math.min(players - 1, Math.ceil(players / 10)));
 const dist$1 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -16401,8 +16401,8 @@ function makeRound(g, n, readyAt, order, random) {
 	return {
 		n,
 		readyAt,
-		startAt: readyAt + READY_MS,
-		endAt: readyAt + READY_MS + ROUND_MS,
+		startAt: readyAt + READY_MS$1,
+		endAt: readyAt + READY_MS$1 + ROUND_MS,
 		starters,
 		humans: humans.length,
 		stones,
@@ -16531,7 +16531,7 @@ function endRound(g, r, t, why, winners, order, events) {
 		why,
 		winners: [...winners]
 	};
-	r.showEnd = t + SHOW_MS;
+	r.showEnd = t + SHOW_MS$1;
 	for (const id of order) {
 		const m = g.mine[id];
 		if (!m) continue;
@@ -16704,7 +16704,7 @@ function ghostPlayer(g, id, order, over) {
 		shield: m.shield,
 		spot: m.spot,
 		placed: m.placed,
-		nextAt: m.lastAt + ANSWER_GAP_MS,
+		nextAt: m.lastAt + ANSWER_GAP_MS$1,
 		last: m.last,
 		crowns: m.crowns,
 		tags: m.tags,
@@ -16720,6 +16720,945 @@ function ghostPlayer(g, id, order, over) {
 			aliveS: Math.round(m.aliveMs / 1e3)
 		}
 	};
+}
+const DT = 1 / 60;
+/** The bird's hit box: a square this big. Every flyer uses it, whatever its picture (plan section 5a). */
+const BIRD_SIZE = .6;
+const BIRD_HALF = BIRD_SIZE / 2;
+/** How wide a wall is. */
+const WALL_WIDTH = 1.3;
+/** Distance from the start to the first wall, in seconds of flying. */
+const LEAD_IN_SECONDS = 2.2;
+/** After a bump the bird comes back this far in front of the wall it hit (a share of the gap to the wall before). */
+const RESPAWN_BACK = .55;
+/** …and this far below the middle of the opening, since the flap that sets off lifts it. */
+const RESPAWN_LOW = .45;
+/** Flying feel at each speed. "Floaty" early: less gravity and a softer lift. */
+const WINGS = {
+	slow: {
+		speed: 3,
+		gravity: 15,
+		lift: 5.4,
+		maxFall: 7
+	},
+	medium: {
+		speed: 3.5,
+		gravity: 17,
+		lift: 5.8,
+		maxFall: 7.5
+	},
+	"medium-fast": {
+		speed: 3.9,
+		gravity: 18.5,
+		lift: 6.1,
+		maxFall: 8
+	},
+	fast: {
+		speed: 4.3,
+		gravity: 20,
+		lift: 6.4,
+		maxFall: 8.5
+	}
+};
+//#endregion
+//#region shared/classlive/relay.ts
+/**
+* Toon Flap Relay (docs/RELAY-PLAN.md): the rules, pure functions only. The class is dealt into colour teams of 4 or 5;
+* every team has one flyer up at a time, racing the same Toon Flap course in its own lane. A turn is 30 s of flying, then
+* the next teammate carries on from where the bird got to. Teammates who aren't flying answer maths questions for
+* sparks, and spend them on perks for their own flyer or troubles that land on a random other team. First team to the
+* nest wins the race; the teacher picks 1, 3 or 5 races.
+*
+* The physics is Toon Flap's (shared/toonflap: same numbers, same fixed 1/60 s step), with the relay's effects added in
+* `flyStep`. Every effect is laid down as a stretch of the course (x0 to x1), never a time, so the flyer's iPad and the
+* server replay the same flaps to the same place. Effects always start a couple of walls ahead of where the server last
+* saw the bird, so the flyer's iPad hears of them (in the reply to its next flap list) before it gets there.
+*/
+/** A turn: this many steps of flying (hovering doesn't count). */
+const TURN_STEPS = 1800;
+/** …but a turn never lasts longer than this on the clock (a flyer who hovers and never taps). */
+const TURN_WALL_MS = 42e3;
+/** No flap list from the flyer for this long: they've gone, pass the baton. */
+const IDLE_MS = 1e4;
+/** "3, 2, 1, go!" before each race. */
+const READY_MS = 5e3;
+/** Longest a race runs once it's going; then the furthest team wins. */
+const RACE_MS = 21e4;
+/** Cheers and standings between races. */
+const SHOW_MS = 9e3;
+/** Each pupil waits this long between sends (perks and troubles share it). */
+const SEND_COOL_MS = 1e4;
+/** A team with a trouble on it can't get another for this long, then is safe for SAFE_MS more (docs/RELAY-PLAN.md section 4). */
+const TROUBLE_LOCK_MS = 1e4;
+const SAFE_MS = 8e3;
+/** A new question this long after the last answer. */
+const ANSWER_GAP_MS = 1e3;
+/** Effects start this many walls ahead of where the server last saw the bird. */
+const LEAD_WALLS = 2;
+/** Narrow gaps never get smaller than Toon Flap level 10's (3.5 bird heights). */
+const MIN_GAP = 3.5 * BIRD_SIZE;
+const RACE_CHOICES = [
+	1,
+	3,
+	5
+];
+const raceCount = (v) => RACE_CHOICES.includes(v) ? v : 3;
+/** Teams of 4 or 5 (James: auto teams of 4-5, balanced): 2 to 6 teams, sizes differ by at most one. */
+const teamsFor = (players) => players <= 1 ? 1 : players <= 5 ? 2 : Math.max(2, Math.min(6, Math.round(players / 4.5)));
+const PERKS = [
+	"shield",
+	"wide",
+	"slow",
+	"tailwind",
+	"magnet",
+	"ghost",
+	"mini",
+	"clear"
+];
+const TROUBLES = [
+	"wind",
+	"fog",
+	"wall",
+	"narrow"
+];
+/** The race each perk opens on (James: 8 perks, unlocked race by race). Troubles are all on from race 1. */
+const PERK_UNLOCK = {
+	shield: 1,
+	wide: 1,
+	slow: 1,
+	tailwind: 1,
+	magnet: 2,
+	ghost: 3,
+	mini: 4,
+	clear: 5
+};
+const isPerk = (k) => PERKS.includes(k);
+const isTrouble = (k) => TROUBLES.includes(k);
+/** Each race a little tighter (race 1 is Toon Flap level 1), always slow wings so Years 1 to 8 can all fly it. */
+const RACE_TUNE = [
+	{
+		gap: 5,
+		spacing: 2.6,
+		wander: 1.2
+	},
+	{
+		gap: 4.8,
+		spacing: 2.5,
+		wander: 1.6
+	},
+	{
+		gap: 4.6,
+		spacing: 2.4,
+		wander: 1.9
+	},
+	{
+		gap: 4.4,
+		spacing: 2.3,
+		wander: 2.1
+	},
+	{
+		gap: 4.2,
+		spacing: 2.2,
+		wander: 2.2
+	}
+];
+function newRelay(races) {
+	return {
+		kind: "relay",
+		races,
+		race: null,
+		teams: [],
+		wins: [
+			0,
+			0,
+			0,
+			0,
+			0,
+			0
+		],
+		mine: {},
+		nextFx: 1,
+		lastT: 0
+	};
+}
+function freshRelayMine(team = 0) {
+	return {
+		team,
+		sparks: 0,
+		answered: 0,
+		right: 0,
+		wrong: 0,
+		streak: 0,
+		bestStreak: 0,
+		lastAt: -1e3,
+		sendAt: -1e4,
+		perks: 0,
+		troubles: 0,
+		flights: 0,
+		flown: 0,
+		wins: 0
+	};
+}
+function stream(seed) {
+	let s = Math.abs(seed) % 2147483646 + 1;
+	return () => {
+		s = s * 48271 % 2147483647;
+		return s / 2147483647;
+	};
+}
+const RELAY_DEF = (n) => ({
+	n: 1,
+	id: `relay-${n}`,
+	name: "Stadium Sky",
+	world: "a sports-day stadium sky",
+	seconds: 120,
+	pace: "slow",
+	gap: RACE_TUNE[Math.min(n, 5) - 1].gap,
+	spacing: RACE_TUNE[Math.min(n, 5) - 1].spacing,
+	checks: 0,
+	answerWalls: 0,
+	answerGaps: 2,
+	wander: RACE_TUNE[Math.min(n, 5) - 1].wander,
+	features: [],
+	newThing: ""
+});
+const courseCache = new Map();
+/** Race `n`'s course from its seed: the same for every team (and on every device). */
+function relayCourse(n, seed) {
+	const key = `${n}:${seed}`;
+	const hit = courseCache.get(key);
+	if (hit) return hit;
+	const def = RELAY_DEF(n);
+	const speed = WINGS.slow.speed;
+	const random = stream(seed * 7 + n);
+	const mid = 5;
+	const endX = 2 + speed * 120;
+	const walls = [];
+	let x = 2 + speed * LEAD_IN_SECONDS;
+	let lastY = mid;
+	for (let i = 0; x < endX; i++) {
+		const h = def.gap * BIRD_SIZE;
+		const reach = i === 0 ? .6 : def.wander;
+		const maxJump = 2.2 + def.spacing * .6;
+		let y = mid + (random() * 2 - 1) * reach;
+		y = Math.max(lastY - maxJump, Math.min(lastY + maxJump, y));
+		const room = h / 2 + .8;
+		y = Math.max(room, Math.min(10 - room, y));
+		walls.push({
+			i,
+			x,
+			gaps: [{
+				y,
+				h
+			}]
+		});
+		lastY = y;
+		x += speed * def.spacing;
+	}
+	const big = 9999;
+	const course = {
+		def,
+		speed,
+		walls,
+		perches: [],
+		signs: [],
+		zones: [],
+		nestX: walls[walls.length - 1].x + WALL_WIDTH + 4,
+		medals: {
+			gold: big,
+			silver: big,
+			goldPlain: big,
+			silverPlain: big
+		}
+	};
+	if (courseCache.size > 40) courseCache.clear();
+	courseCache.set(key, course);
+	return course;
+}
+/** Gap size change of each effect (multiplied together). */
+const GAP_SCALE = {
+	wide: 1.3,
+	tailwind: 1.15,
+	narrow: .8
+};
+/** A team's own course: the race's course with its extra walls in, its gaps resized and its wind as zones. */
+function teamCourse(base, effects) {
+	if (!effects.length) return base;
+	const walls = base.walls.map((w) => ({
+		...w,
+		gaps: w.gaps.map((g) => ({ ...g }))
+	}));
+	for (const e of effects) if (e.kind === "wall" && e.gapY !== void 0 && e.gapH !== void 0) walls.push({
+		i: -1,
+		x: e.x0,
+		gaps: [{
+			y: e.gapY,
+			h: e.gapH
+		}]
+	});
+	walls.sort((a, b) => a.x - b.x);
+	walls.forEach((w, i) => {
+		w.i = i;
+	});
+	for (const w of walls) {
+		let k = 1;
+		for (const e of effects) {
+			const s = GAP_SCALE[e.kind];
+			if (s && w.x + 1.3 >= e.x0 && w.x <= e.x1) k *= s;
+		}
+		if (k !== 1) for (const g of w.gaps) {
+			g.h = Math.max(MIN_GAP, Math.min(8.8, g.h * k));
+			g.y = Math.max(g.h / 2 + .3, Math.min(10 - g.h / 2 - .3, g.y));
+		}
+	}
+	const zones = effects.filter((e) => e.kind === "wind").map((e) => ({
+		kind: "gust",
+		x0: e.x0,
+		x1: e.x1,
+		push: e.push ?? 7,
+		gravity: 1
+	}));
+	return {
+		...base,
+		walls,
+		zones
+	};
+}
+const on = (e, x) => x >= e.x0 && x <= e.x1;
+const has = (effects, kind, x) => effects.some((e) => e.kind === kind && on(e, x));
+function inside(y, half, g) {
+	return y - half >= g.y - g.h / 2 && y + half <= g.y + g.h / 2;
+}
+/** The first wall the bird (at x) hasn't passed. */
+function wallAhead(course, x) {
+	let w = 0;
+	while (w < course.walls.length && course.walls[w].x + 1.3 < x - .3) w++;
+	return w;
+}
+/**
+* Where a new turn's bird hovers: where the last one got to, but never inside or right against a wall (then just in
+* front of it, in the middle of its gap, as Toon Flap's bump does).
+*/
+function startSpot(course, x) {
+	const w = wallAhead(course, x);
+	const wall = course.walls[w];
+	if (!wall) return {
+		x: Math.min(x, course.nestX - 1),
+		y: 5,
+		w
+	};
+	const before = w > 0 ? course.walls[w - 1].x + WALL_WIDTH : 2;
+	const spot = wall.x - (wall.x - before) * RESPAWN_BACK;
+	const g = wall.gaps[0];
+	return {
+		x: w === 0 && x <= 2 ? 2 : Math.max(before + .2, Math.min(x, spot)),
+		y: w === 0 && x <= 2 ? 5 : g.y - RESPAWN_LOW,
+		w
+	};
+}
+function newFly(turn) {
+	return {
+		t: 0,
+		x: turn.x0,
+		y: turn.y0,
+		vy: 0,
+		mode: "hover",
+		hover: "start",
+		bumps: 0,
+		nextWall: turn.w0,
+		perches: 0,
+		picks: [],
+		outcome: "running",
+		used: [],
+		phaseTo: -1
+	};
+}
+function respawn(course, s) {
+	const wall = course.walls[s.nextWall];
+	if (wall) {
+		const before = s.nextWall > 0 ? course.walls[s.nextWall - 1].x + WALL_WIDTH : 2;
+		s.x = wall.x - (wall.x - before) * RESPAWN_BACK;
+		s.y = wall.gaps[0].y - RESPAWN_LOW;
+	} else s.y = 5;
+	s.vy = 0;
+	s.mode = "hover";
+	s.hover = "bump";
+}
+/** One step (1/60 s). While hovering, a step without a flap does nothing. `course` is the team's course (teamCourse). */
+function flyStep(course, effects, s, flap) {
+	if (s.mode === "done") return null;
+	if (s.mode === "hover") {
+		if (!flap) return "wait";
+		s.mode = "fly";
+	}
+	const wings = WINGS[course.def.pace];
+	let gravity = wings.gravity;
+	let push = 0;
+	for (const z of course.zones) if (s.x >= z.x0 && s.x <= z.x1) {
+		push += z.push;
+		gravity *= z.gravity;
+	}
+	if (flap) s.vy = wings.lift;
+	const wallNow = course.walls[s.nextWall];
+	if (wallNow && has(effects, "magnet", s.x)) push += (wallNow.gaps[0].y - s.y) * 6 - s.vy * 1.5;
+	s.vy += (push - gravity) * DT;
+	if (s.vy < -wings.maxFall) s.vy = -wings.maxFall;
+	if (s.vy > wings.lift * 1.5) s.vy = wings.lift * 1.5;
+	s.y += s.vy * DT;
+	const speedK = has(effects, "slow", s.x) ? .7 : has(effects, "tailwind", s.x) ? 1.5 : 1;
+	s.x += course.speed * speedK * DT;
+	s.t++;
+	const half = has(effects, "mini", s.x) ? BIRD_HALF * .7 : BIRD_HALF;
+	while (s.nextWall < course.walls.length && course.walls[s.nextWall].x + 1.3 < s.x - half) s.nextWall++;
+	const edge = s.y - half < 0 || s.y + half > 10;
+	let wallHit = false;
+	const ghost = has(effects, "ghost", s.x) || s.x <= s.phaseTo;
+	for (let w = s.nextWall; !ghost && !wallHit && w < course.walls.length; w++) {
+		const wall = course.walls[w];
+		if (wall.x > s.x + half) break;
+		if (!wall.gaps.some((g) => inside(s.y, half, g))) wallHit = true;
+	}
+	if (edge || wallHit) {
+		const shield = effects.find((e) => e.kind === "shield" && e.to >= 0 && s.x >= e.x0 && s.x <= e.x1 && !s.used.includes(e.id));
+		if (shield) {
+			s.used.push(shield.id);
+			if (edge) {
+				s.y = Math.max(half, Math.min(10 - half, s.y));
+				s.vy = s.y < 5 ? wings.lift * .8 : -1;
+			}
+			if (wallHit) s.phaseTo = course.walls[s.nextWall].x + WALL_WIDTH + half;
+			return "shield";
+		}
+		s.bumps++;
+		respawn(course, s);
+		return "bump";
+	}
+	if (s.x >= course.nestX) {
+		s.mode = "done";
+		s.outcome = "finished";
+		return "nest";
+	}
+	return null;
+}
+/**
+* Plays a turn's flaps from its start up to `upTo` steps of flying (or the turn's end, or the nest). Not valid if the
+* list can't have come from playing (out of order, or a hover the next flap doesn't match).
+*/
+function replayTurn(course, effects, turn, flaps, upTo) {
+	const s = newFly(turn);
+	const limit = Math.min(upTo, TURN_STEPS);
+	let k = 0;
+	while (s.mode !== "done" && s.t < limit) {
+		const next = k < flaps.length ? flaps[k] : -1;
+		if (next >= 0 && next < s.t) return {
+			valid: false,
+			state: s,
+			bumps: s.bumps
+		};
+		const flap = next === s.t;
+		if (s.mode === "hover" && !flap) return {
+			valid: next < 0 || next >= limit,
+			state: s,
+			bumps: s.bumps
+		};
+		if (flap) k++;
+		flyStep(course, effects, s, flap);
+	}
+	return {
+		valid: true,
+		state: s,
+		bumps: s.bumps
+	};
+}
+/** Deals the players into teams. Race 1 at random; later races mix by flying (average distance a turn, snake order). */
+function dealTeams(g, order, random) {
+	const k = teamsFor(order.length);
+	const ids = [...order];
+	for (let i = ids.length - 1; i > 0; i--) {
+		const j = Math.floor(random() * (i + 1)) % (i + 1);
+		[ids[i], ids[j]] = [ids[j], ids[i]];
+	}
+	const skill = (id) => {
+		const m = g.mine[id];
+		return m && m.flights > 0 ? m.flown / m.flights : -1;
+	};
+	if (g.race) ids.sort((a, b) => skill(b) - skill(a));
+	const members = Array.from({ length: k }, () => []);
+	ids.forEach((id, i) => {
+		const at = Math.floor(i / k) % 2 === 0 ? i % k : k - 1 - i % k;
+		members[at].push(id);
+	});
+	const flights = (id) => g.mine[id]?.flights ?? 0;
+	for (const list of members) list.sort((a, b) => flights(a) - flights(b));
+	g.teams = members.map((list, colour) => ({
+		colour,
+		members: list,
+		next: 0,
+		turn: null,
+		turns: 0,
+		x: 2,
+		wall: 0,
+		bumps: 0,
+		effects: [],
+		calmAt: 0,
+		finishT: null
+	}));
+	for (const [ti, team] of g.teams.entries()) for (const id of team.members) {
+		const m = g.mine[id] ?? freshRelayMine(ti);
+		m.team = ti;
+		g.mine[id] = m;
+	}
+}
+/** A new player: into the smallest team (or the first race's deal, if no race yet). */
+function joinRelay(g, who) {
+	if (g.mine[who]) return;
+	if (!g.teams.length) {
+		g.mine[who] = freshRelayMine(0);
+		return;
+	}
+	let best = 0;
+	g.teams.forEach((tm, i) => {
+		if (tm.members.length < g.teams[best].members.length) best = i;
+	});
+	g.teams[best].members.push(who);
+	g.mine[who] = freshRelayMine(best);
+}
+function newRace(g, n, t, order, random) {
+	g.race = {
+		n,
+		seed: 1 + Math.floor(random() * 2e9),
+		startT: t,
+		goT: t + READY_MS,
+		endT: null,
+		showEnd: null,
+		winner: null,
+		standings: null
+	};
+	dealTeams(g, order, random);
+	return [{
+		type: "relay_race",
+		t,
+		n
+	}];
+}
+const courseOf = (g) => g.race ? relayCourse(g.race.n, g.race.seed) : null;
+const teamCourseOf = (g, team) => {
+	const base = courseOf(g);
+	return base ? teamCourse(base, team.effects) : null;
+};
+function startTurn(g, team, ti, t, events) {
+	const course = teamCourseOf(g, team);
+	if (!course || !team.members.length) {
+		team.turn = null;
+		return;
+	}
+	const flyer = team.members[team.next % team.members.length];
+	team.next = (team.next + 1) % team.members.length;
+	const at = startSpot(course, team.x);
+	team.turn = {
+		n: ++team.turns,
+		flyer,
+		startT: t,
+		x0: at.x,
+		y0: at.y,
+		w0: at.w,
+		flaps: "",
+		at: 0,
+		lastPost: t,
+		bumps: 0
+	};
+	team.x = at.x;
+	team.wall = at.w;
+	events.push({
+		type: "relay_turn",
+		t,
+		team: ti,
+		pupil: flyer
+	});
+}
+function endTurn(g, team) {
+	const turn = team.turn;
+	if (!turn) return;
+	const m = g.mine[turn.flyer];
+	if (m) {
+		m.flights++;
+		m.flown += Math.max(0, team.x - turn.x0);
+	}
+	team.turn = null;
+}
+/** Teams in race order: at the nest first (soonest first), then furthest. */
+function standingsOf(g) {
+	return g.teams.map((_, i) => i).sort((a, b) => {
+		const A = g.teams[a], B = g.teams[b];
+		if (A.finishT !== null || B.finishT !== null) return (A.finishT ?? Infinity) - (B.finishT ?? Infinity);
+		return B.x - A.x;
+	});
+}
+const leaderOf = (g) => {
+	if (g.teams.length < 2) return null;
+	const s = standingsOf(g);
+	const a = g.teams[s[0]], b = g.teams[s[1]];
+	return a.finishT !== null || a.x > b.x + .01 ? s[0] : null;
+};
+function endRace(g, t, why) {
+	const r = g.race;
+	if (!r || r.endT !== null) return [];
+	for (const team of g.teams) endTurn(g, team);
+	const standings = standingsOf(g);
+	const first = g.teams[standings[0]];
+	const moved = first && (first.finishT !== null || first.x > 2.5);
+	const tie = standings.length > 1 && first.finishT === null && Math.abs(first.x - g.teams[standings[1]].x) < .01;
+	r.endT = t;
+	r.showEnd = t + SHOW_MS;
+	r.standings = standings;
+	r.winner = moved && !tie ? standings[0] : null;
+	if (r.winner !== null) {
+		g.wins[g.teams[r.winner].colour]++;
+		for (const id of g.teams[r.winner].members) if (g.mine[id]) g.mine[id].wins++;
+	}
+	return [{
+		type: "relay_end",
+		t,
+		n: r.n,
+		winner: r.winner,
+		why
+	}];
+}
+/** The next time the game moves on by itself (countdown, turn ends, race time, the show's end), or null. */
+function relayDeadline(g, startedAt) {
+	if (startedAt === null) return null;
+	const r = g.race;
+	if (!r) return 0;
+	if (r.endT !== null) return r.showEnd;
+	if (r.goT > 0 && !g.teams.some((tm) => tm.turn)) return r.goT;
+	let due = r.goT + RACE_MS;
+	for (const tm of g.teams) if (tm.turn) due = Math.min(due, tm.turn.startT + TURN_WALL_MS, tm.turn.lastPost + IDLE_MS);
+	return due;
+}
+/**
+* Moves the game on at session time t: the first race, "go", turns that ran out (time, or a flyer who's gone), the
+* race's time, the next race. `last`: the session's time is up (the race on now ends at once; no new one).
+* Returns the events and whether the whole game is over.
+*/
+function advanceRelay(g, t, order, random, last) {
+	const events = [];
+	g.lastT = Math.max(g.lastT ?? 0, t);
+	if (!g.race) {
+		if (!order.length) return {
+			events,
+			over: false
+		};
+		events.push(...newRace(g, 1, t, order, random));
+	}
+	const r = g.race;
+	if (r.endT === null) {
+		if (t >= r.goT) {
+			if (!g.teams.some((tm) => tm.turn || tm.turns > 0)) events.push({
+				type: "relay_go",
+				t,
+				n: r.n
+			});
+			g.teams.forEach((tm, i) => {
+				if (tm.finishT !== null) return;
+				if (tm.turn && (t >= tm.turn.startT + 42e3 || t >= tm.turn.lastPost + 1e4)) endTurn(g, tm);
+				if (!tm.turn) startTurn(g, tm, i, t, events);
+			});
+		}
+		if (t >= r.goT + 21e4) events.push(...endRace(g, t, "time"));
+		else if (last) events.push(...endRace(g, t, "time"));
+	}
+	if (r.endT !== null && r.showEnd !== null && t >= r.showEnd) {
+		if (r.n < g.races && !last) events.push(...newRace(g, r.n + 1, t, order, random));
+		else return {
+			events,
+			over: true
+		};
+	}
+	return {
+		events,
+		over: false
+	};
+}
+/**
+* The flyer's flap list (`flaps` text, `at` steps flown). Replayed on the team's course with its effects; the team's
+* distance is the replay's, never the iPad's word. `elapsedMs`: since the turn began, so a list can't run ahead of the clock.
+*/
+function flyTurn(g, who, turnN, flaps, flapsText, at, t) {
+	const r = g.race;
+	if (!r || r.endT !== null || t < r.goT) return {
+		ok: false,
+		reason: "not_now"
+	};
+	const ti = g.teams.findIndex((tm) => tm.turn?.flyer === who);
+	if (ti < 0) return {
+		ok: false,
+		reason: "not_flying"
+	};
+	const team = g.teams[ti];
+	const turn = team.turn;
+	if (turn.n !== turnN) return {
+		ok: false,
+		reason: "old_turn"
+	};
+	const most = Math.floor((t - turn.startT) / 1e3 * 60) + 45;
+	const upTo = Math.max(0, Math.min(at, most, TURN_STEPS));
+	const course = teamCourseOf(g, team);
+	const before = leaderOf(g);
+	const out = replayTurn(course, team.effects, turn, flaps, upTo);
+	if (!out.valid) return {
+		ok: false,
+		reason: "bad"
+	};
+	const events = [];
+	if (out.bumps > turn.bumps) {
+		team.bumps += out.bumps - turn.bumps;
+		events.push({
+			type: "relay_bump",
+			t,
+			team: ti
+		});
+	}
+	turn.bumps = out.bumps;
+	turn.flaps = flapsText;
+	turn.at = upTo;
+	turn.lastPost = t;
+	team.x = out.state.x;
+	team.wall = out.state.nextWall;
+	const nest = out.state.outcome === "finished";
+	const after = leaderOf(g);
+	if (after !== null && after !== before) events.push({
+		type: "relay_lead",
+		t,
+		team: after
+	});
+	if (nest) {
+		team.finishT = t;
+		endTurn(g, team);
+		events.push({
+			type: "relay_nest",
+			t,
+			team: ti
+		});
+		events.push(...endRace(g, t, "nest"));
+		return {
+			ok: true,
+			events,
+			done: true
+		};
+	}
+	if (upTo >= TURN_STEPS) {
+		endTurn(g, team);
+		startTurn(g, team, ti, t, events);
+		return {
+			ok: true,
+			events,
+			done: true
+		};
+	}
+	return {
+		ok: true,
+		events,
+		done: false
+	};
+}
+/** Who's flying now (any team), or null. */
+const flyingTeam = (g, who) => g.teams.findIndex((tm) => tm.turn?.flyer === who);
+/** Can this pupil get a question now? Not while flying, only while a race is on (the countdown too). */
+function relayCanAsk(g, who) {
+	const r = g.race;
+	return !!r && r.endT === null && !!g.mine[who] && flyingTeam(g, who) < 0;
+}
+function relayAnswered(g, who, right, t, ms) {
+	const m = g.mine[who];
+	if (!m || !relayCanAsk(g, who)) return {
+		ok: false,
+		reason: "not_now"
+	};
+	if (t - m.lastAt < 1e3) return {
+		ok: false,
+		reason: "too_soon"
+	};
+	m.lastAt = t;
+	m.answered++;
+	if (right) {
+		m.right++;
+		m.streak++;
+		m.bestStreak = Math.max(m.bestStreak, m.streak);
+		m.sparks = Math.min(6, m.sparks + 1);
+		if (ms !== void 0 && ms >= 300 && (m.fastMs === void 0 || ms < m.fastMs)) m.fastMs = ms;
+	} else {
+		m.wrong++;
+		m.streak = 0;
+	}
+	return {
+		ok: true,
+		events: []
+	};
+}
+/** A perk's price for this team: 1 less for the team in last place, 1 more for the leader (James: gentle catch-up). */
+function perkCost(g, team) {
+	const live = standingsOf(g).filter((i) => g.teams[i].finishT === null);
+	if (live.length < 2) return 2;
+	if (leaderOf(g) === team) return 3;
+	const last = live[live.length - 1];
+	const second = g.teams[live[live.length - 2]];
+	if (last === team && g.teams[last].x < second.x - .01) return 1;
+	return 2;
+}
+/** Can a trouble land on this team now? Racing, past the handover, nothing on it, not in its safe time. */
+const troubleFree = (team, t) => team.finishT === null && !!team.turn && t >= team.turn.startT + 3e3 && t >= team.calmAt;
+/** The teams a trouble from this team could land on now. */
+const troubleTargets = (g, from, t) => g.teams.map((tm, i) => i !== from && troubleFree(tm, t) ? i : -1).filter((i) => i >= 0);
+/** The stretch an effect starts at: just after the wall before `LEAD_WALLS` walls ahead. */
+function startOf(course, wall) {
+	const k = Math.max(1, wall + LEAD_WALLS);
+	if (k >= course.walls.length) return null;
+	return {
+		x: course.walls[k - 1].x + WALL_WIDTH + .2,
+		k
+	};
+}
+const WALL_COUNT = {
+	wide: 3,
+	tailwind: 3,
+	magnet: 2,
+	ghost: 1,
+	narrow: 2
+};
+const SECONDS = {
+	slow: 5,
+	mini: 8,
+	wind: 5,
+	fog: 5,
+	shield: 25
+};
+/** Lays an effect on a team's course, `LEAD_WALLS` walls ahead of its bird. */
+function layEffect(g, kind, by, from, to, t, random) {
+	const team = g.teams[to];
+	const course = teamCourseOf(g, team);
+	if (!course) return "no_room";
+	const at = startOf(course, team.wall);
+	if (!at) return "no_room";
+	const e = {
+		id: g.nextFx++,
+		kind,
+		x0: at.x,
+		x1: at.x,
+		by,
+		from,
+		to,
+		at: t
+	};
+	const n = WALL_COUNT[kind];
+	if (n) e.x1 = course.walls[Math.min(at.k + n - 1, course.walls.length - 1)].x + WALL_WIDTH + .4;
+	const secs = SECONDS[kind];
+	if (secs) e.x1 = at.x + course.speed * secs;
+	if (kind === "wind") e.push = random() < .5 ? 7 : -6;
+	if (kind === "wall") {
+		const a = course.walls[at.k - 1], b = course.walls[at.k];
+		const room = b.x - (a.x + WALL_WIDTH);
+		if (room < 1.3 * 3) return "no_room";
+		e.x0 = a.x + WALL_WIDTH + (room - WALL_WIDTH) / 2;
+		e.x1 = e.x0 + WALL_WIDTH;
+		e.gapY = (a.gaps[0].y + b.gaps[0].y) / 2;
+		e.gapH = Math.max(a.gaps[0].h, b.gaps[0].h, 4.6 * BIRD_SIZE);
+	}
+	if (kind === "clear") {
+		team.effects = team.effects.filter((x) => !(x.kind === "wall" && x.x0 > at.x));
+		for (const x of team.effects) if (isTrouble(x.kind) && x.x1 > at.x) x.x1 = Math.max(x.x0, at.x);
+		team.calmAt = Math.max(t, Math.min(team.calmAt, t + SAFE_MS));
+	}
+	team.effects.push(e);
+	return e;
+}
+/**
+* A pupil spends sparks: a perk for their own flyer, or a trouble for a random other team that's free (James: no aiming,
+* so nobody can gang up). The server checks every rule.
+*/
+function relaySpend(g, who, kind, t, random) {
+	const r = g.race;
+	const m = g.mine[who];
+	if (!r || r.endT !== null || t < r.goT || !m) return {
+		ok: false,
+		reason: "not_now"
+	};
+	if (flyingTeam(g, who) >= 0) return {
+		ok: false,
+		reason: "not_now"
+	};
+	if (!isPerk(kind) && !isTrouble(kind)) return {
+		ok: false,
+		reason: "unknown"
+	};
+	const mine = g.teams[m.team];
+	if (!mine || mine.finishT !== null || !mine.turn) return {
+		ok: false,
+		reason: "not_now"
+	};
+	if (isPerk(kind) && PERK_UNLOCK[kind] > r.n) return {
+		ok: false,
+		reason: "locked"
+	};
+	if (t - m.sendAt < 1e4) return {
+		ok: false,
+		reason: "cool"
+	};
+	const cost = isPerk(kind) ? perkCost(g, m.team) : 3;
+	if (m.sparks < cost) return {
+		ok: false,
+		reason: "sparks"
+	};
+	let to = m.team;
+	if (isPerk(kind)) {
+		if (mine.effects.filter((e) => isPerk(e.kind) && t - e.at < 1e4).length >= 2) return {
+			ok: false,
+			reason: "stack"
+		};
+	} else {
+		const free = troubleTargets(g, m.team, t);
+		if (!free.length) return {
+			ok: false,
+			reason: "busy_teams"
+		};
+		to = free[Math.floor(random() * free.length) % free.length];
+	}
+	if (layEffect(g, kind, who, m.team, to, t, random) === "no_room") return {
+		ok: false,
+		reason: "no_room"
+	};
+	if (isTrouble(kind)) g.teams[to].calmAt = t + TROUBLE_LOCK_MS + SAFE_MS;
+	m.sparks -= cost;
+	m.sendAt = t;
+	if (isPerk(kind)) m.perks++;
+	else m.troubles++;
+	return {
+		ok: true,
+		events: [{
+			type: "relay_fx",
+			t,
+			kind,
+			from: m.team,
+			to,
+			pupil: who
+		}],
+		to
+	};
+}
+/** A small seeded random from the game's own count, so a send's target is the same on every retry of the step. */
+function fxRandom(g, seed) {
+	return stream(seed + g.nextFx * 7919);
+}
+/** Pupils on winning teams: the most races won (team), then their own right answers. Shares ties like the other games. */
+function relayPodium(g, order) {
+	const score = (id) => g.mine[id]?.wins ?? 0;
+	const scores = [...new Set(order.map(score))].filter((s) => s > 0).sort((a, b) => b - a).slice(0, 3);
+	return order.map((id) => ({
+		player: id,
+		s: score(id)
+	})).filter((x) => scores.includes(x.s)).sort((a, b) => b.s - a.s).map((x) => ({
+		player: x.player,
+		place: scores.indexOf(x.s) + 1
+	}));
 }
 //#endregion
 //#region shared/classlive/rewards.ts
@@ -16740,8 +17679,8 @@ const POINTS = {
 };
 function rewardsOf(s) {
 	const g = s.game;
-	const goal = g.kind === "stars" ? g.creature : g.kind === "serpent" ? g.awake : g.kind === "corners" || g.kind === "ghost" || g.kind === "clash" || g.kind === "thrones" || g.kind === "lava" ? false : g.solvers.length > 0;
-	const top = g.kind === "corners" ? podium$2(g, s.order) : g.kind === "ghost" ? podium(g, s.order) : g.kind === "thrones" ? podium$1(g, s.order) : g.kind === "lava" ? lavaPodium(g, s.order) : [];
+	const goal = g.kind === "stars" ? g.creature : g.kind === "serpent" ? g.awake : g.kind === "corners" || g.kind === "ghost" || g.kind === "clash" || g.kind === "thrones" || g.kind === "lava" || g.kind === "relay" ? false : g.solvers.length > 0;
+	const top = g.kind === "corners" ? podium$2(g, s.order) : g.kind === "ghost" ? podium(g, s.order) : g.kind === "thrones" ? podium$1(g, s.order) : g.kind === "lava" ? lavaPodium(g, s.order) : g.kind === "relay" ? relayPodium(g, s.order) : [];
 	const players = s.order.map((id) => {
 		let did = false;
 		const r = {
@@ -16758,7 +17697,17 @@ function rewardsOf(s) {
 			powers: 0
 		};
 		let podiumPlace = false;
-		if (g.kind === "lava") {
+		if (g.kind === "relay") {
+			const m = g.mine[id];
+			podiumPlace = (m?.wins ?? 0) > 0;
+			did = (m?.right ?? 0) > 0 || (m?.flights ?? 0) > 0;
+			const cap = (n) => Math.max(0, Math.min(500, Math.round(n ?? 0)));
+			r.extra = {
+				relay_wins: cap(m?.wins),
+				relay_perks: cap(m?.perks),
+				relay_troubles: cap(m?.troubles)
+			};
+		} else if (g.kind === "lava") {
 			const m = g.mine[id];
 			const place = top.find((x) => x.player === id)?.place;
 			r.champion = place === 1;
@@ -16889,7 +17838,7 @@ function lavaPlayer(s, g, id, fresh) {
 		bootedLast: !!r?.booted.includes(id),
 		placed: m.placed,
 		spot: m.spot,
-		nextAt: m.lastAt + ANSWER_GAP_MS$3,
+		nextAt: m.lastAt + ANSWER_GAP_MS$4,
 		place: s.state === "over" ? lavaPodium(g, s.order).find((x) => x.player === id)?.place ?? null : null,
 		climbAt: climbAt(g, m),
 		speedLeft: m.speedTo !== null && n <= m.speedTo ? m.speedTo - n + 1 : 0,
@@ -16906,7 +17855,7 @@ function lavaPlayer(s, g, id, fresh) {
 		}
 	};
 }
-const MAX_ANSWER_MS$2 = 12e4;
+const MAX_ANSWER_MS$3 = 12e4;
 /** Floor is Lava's pupil steps. */
 async function lavaStep(sv, cur, who, body, h) {
 	const { ok, no, busy } = h;
@@ -16986,7 +17935,7 @@ async function lavaStep(sv, cur, who, body, h) {
 	const right = sameAnswer(value, marked.answer);
 	const at = await spotOf();
 	if (at === "busy") return busy();
-	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS$2, MAX_ANSWER_MS$2));
+	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS$3, MAX_ANSWER_MS$3));
 	const done = await h.mutate(sv, room, (s, t) => {
 		if (s.state !== "live" || s.game.kind !== "lava") return { refuse: no(409, "This one has finished.", "over") };
 		const m = s.game.mine[who];
@@ -17085,7 +18034,7 @@ function thronesPlayer(g, order, id, over) {
 		danced: !!r?.dancers.includes(id),
 		placed: m.placed,
 		spot: m.spot,
-		nextAt: m.lastAt + ANSWER_GAP_MS$2,
+		nextAt: m.lastAt + ANSWER_GAP_MS$3,
 		place: over ? podium$1(g, order).find((x) => x.player === id)?.place ?? null : null,
 		speedLeft: m.speedTo !== null && n <= m.speedTo ? m.speedTo - n + 1 : 0,
 		ghostLeft: m.ghostTo !== null && n <= m.ghostTo ? m.ghostTo - n + 1 : 0,
@@ -17423,7 +18372,7 @@ function makeBayRound(g, n, startAt, random, players) {
 		startAt,
 		runEnd: startAt + run,
 		rollEnd: startAt + run + ROLL_MS,
-		showEnd: startAt + run + ROLL_MS + SHOW_MS$3,
+		showEnd: startAt + run + ROLL_MS + SHOW_MS$4,
 		storms,
 		ice,
 		teleports,
@@ -17567,10 +18516,10 @@ function sharkAdvance(g, t, order, positions, random, last = false) {
 		const r = g.round;
 		if (!r) {
 			if (t < 4e3 || last) break;
-			g.round = makeBayRound(g, 1, READY_MS$4, random, order.length);
+			g.round = makeBayRound(g, 1, READY_MS$5, random, order.length);
 			events.push({
 				type: "round",
-				t: READY_MS$4,
+				t: READY_MS$5,
 				n: 1
 			});
 			continue;
@@ -17588,7 +18537,7 @@ function sharkAdvance(g, t, order, positions, random, last = false) {
 				m.jailedIn = null;
 				m.jailRight = 0;
 				m.escapes++;
-				m.spot = startSpot$1(order.indexOf(id));
+				m.spot = startSpot$2(order.indexOf(id));
 				m.placed++;
 				events.push({
 					type: "escape",
@@ -17642,7 +18591,7 @@ function sharkJump(g, who, quarter, order, t) {
 * power-up, checked against the saved spot), `ask` (a question when one is allowed) and `answer` (marked here, claimed
 * once, recorded): a pupil's right answer makes them invisible, a ghost's gives a dash or a lantern.
 */
-const MAX_ANSWER_MS$1 = 12e4;
+const MAX_ANSWER_MS$2 = 12e4;
 async function ghostStep(sv, cur, who, body) {
 	const room = cur.id;
 	const s0 = cur.session;
@@ -17692,7 +18641,7 @@ async function ghostStep(sv, cur, who, body) {
 	if (!kept || !marked) return no(400, "That answer couldn't be marked.");
 	if (kept.answered) return no(409, "You've already answered that one.", "answered");
 	const right = sameAnswer(value, marked.answer);
-	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS$1, MAX_ANSWER_MS$1));
+	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS$2, MAX_ANSWER_MS$2));
 	const done = await mutate(sv, room, (s, t) => {
 		if (s.state !== "live" || s.game.kind !== "ghost") return { refuse: no(409, "This one has finished.", "over") };
 		const out = answered(s.game, who, right, t);
@@ -17726,6 +18675,202 @@ async function ghostStep(sv, cur, who, body) {
 	});
 }
 //#endregion
+//#region shared/toonflap/engine.ts
+function decodeFlaps(text) {
+	if (text === "") return [];
+	if (text.length > 4e4 || !/^[0-9a-z]+(,[0-9a-z]+)*$/.test(text)) return null;
+	let at = 0;
+	const out = [];
+	for (const part of text.split(",")) {
+		at += parseInt(part, 36);
+		out.push(at);
+	}
+	return out;
+}
+//#endregion
+//#region shared/classlive/relayServer.ts
+/**
+* Toon Flap Relay's part of the Class Live server (docs/RELAY-PLAN.md): what pupils see of the game, and the pupil steps:
+* `play` with `fly` (the flyer's flap list, replayed here) or `spend` (a perk or a trouble), `ask` and `answer`.
+*/
+const strip = (e) => {
+	const { by: _by, ...rest } = e;
+	return rest;
+};
+function relayPublic(g) {
+	return {
+		kind: "relay",
+		races: g.races,
+		race: g.race,
+		wins: g.wins,
+		teams: g.teams.map((tm) => ({
+			colour: tm.colour,
+			size: tm.members.length,
+			x: tm.x,
+			wall: tm.wall,
+			finishT: tm.finishT,
+			flying: !!tm.turn,
+			turnN: tm.turn?.n ?? 0,
+			effects: tm.effects.map(strip),
+			calmAt: tm.calmAt
+		}))
+	};
+}
+function relayPlayer(s, g, id) {
+	const t = g.lastT ?? 0;
+	const m = g.mine[id];
+	const ti = m?.team ?? 0;
+	const team = g.teams[ti];
+	const flying = team?.turn?.flyer === id ? {
+		turn: team.turn,
+		effects: team.effects.map(strip)
+	} : null;
+	let upNext = null;
+	if (team && team.members.includes(id) && !flying) upNext = (team.members.indexOf(id) - team.next + team.members.length) % team.members.length;
+	const n = g.race?.n ?? 1;
+	return {
+		kind: "relay",
+		team: ti,
+		colour: team?.colour ?? 0,
+		sparks: m?.sparks ?? 0,
+		right: m?.right ?? 0,
+		wrong: m?.wrong ?? 0,
+		flights: m?.flights ?? 0,
+		flown: Math.round(m?.flown ?? 0),
+		perks: m?.perks ?? 0,
+		troubles: m?.troubles ?? 0,
+		wins: m?.wins ?? 0,
+		flying,
+		upNext,
+		perkCost: team ? perkCost(g, ti) : 2,
+		troubleCost: 3,
+		coolUntil: (m?.sendAt ?? -1e4) + SEND_COOL_MS,
+		nextAt: (m?.lastAt ?? 0) + ANSWER_GAP_MS,
+		perksOpen: PERKS.filter((p) => PERK_UNLOCK[p] <= n),
+		canTrouble: troubleTargets(g, ti, t).length > 0,
+		place: s.state === "over" ? relayPodium(g, s.order).find((x) => x.player === id)?.place ?? null : null
+	};
+}
+const MAX_ANSWER_MS$1 = 12e4;
+const SPEND_WORDS = {
+	not_now: "Not right now!",
+	unknown: "That couldn't be read.",
+	locked: "That one opens in a later race.",
+	sparks: "Answer more questions for sparks!",
+	cool: "Wait a moment before sending another.",
+	stack: "Your flyer has enough perks for now.",
+	busy_teams: "Every other team is busy. Try again soon!",
+	no_room: "Too close to the nest!"
+};
+async function relayStep(sv, cur, who, body) {
+	const room = cur.id;
+	const s0 = cur.session;
+	if (s0.state !== "live") return no(409, s0.state === "lobby" ? "Wait for the start!" : "This one has finished.", s0.state);
+	const reply = (session, startedAt, extra = {}) => ok({
+		room,
+		view: roomView(session, startedAt, sv.now()),
+		me: playerView(session, who),
+		now: sv.now(),
+		...extra
+	});
+	if (body.action === "play") {
+		if (typeof body.fly === "string") {
+			const flaps = decodeFlaps(body.fly);
+			const turnN = body.turn;
+			const at = body.at;
+			if (!flaps || !Number.isInteger(turnN) || !Number.isInteger(at) || at < 0) return no(400, "That couldn't be read.");
+			const done = await mutate(sv, room, (s, t) => {
+				if (s.state !== "live" || s.game.kind !== "relay") return { refuse: no(409, "This one has finished.", "over") };
+				const out = flyTurn(s.game, who, turnN, flaps, body.fly, at, t);
+				if (!out.ok) return { refuse: no(409, out.reason === "bad" ? "Those flaps didn't add up." : "Not your turn now.", out.reason) };
+				const g = s.game;
+				const players = [who];
+				for (const e of out.events) {
+					if (e.type === "relay_turn") players.push(...g.teams[e.team].members);
+					if (e.type === "relay_end") players.push(...s.order);
+				}
+				return {
+					reply: out.done,
+					events: out.events,
+					players
+				};
+			});
+			if ("refuse" in done) return done.refuse;
+			return reply(done.session, done.row.startedAt, { done: done.reply });
+		}
+		if (body.spend !== void 0) {
+			const done = await mutate(sv, room, (s, t) => {
+				if (s.state !== "live" || s.game.kind !== "relay") return { refuse: no(409, "This one has finished.", "over") };
+				const g = s.game;
+				const out = relaySpend(g, who, body.spend, t, fxRandom(g, s.seed));
+				if (!out.ok) return { refuse: no(409, SPEND_WORDS[out.reason] ?? "Not right now!", out.reason) };
+				const flyer = g.teams[out.to]?.turn?.flyer;
+				return {
+					reply: out.to,
+					events: out.events,
+					players: flyer ? [who, flyer] : [who]
+				};
+			});
+			if ("refuse" in done) return done.refuse;
+			return reply(done.session, done.row.startedAt, { to: done.reply });
+		}
+		return no(400, "That couldn't be read.");
+	}
+	const g0 = s0.game;
+	if (body.action === "ask") {
+		if (!relayCanAsk(g0, who)) return no(409, flyingTeam(g0, who) >= 0 ? "You're flying!" : "No question right now.", "not_now");
+		const question = await nextQuestion(sv, cur, who);
+		if (question === "busy") return busy();
+		if (!question) return no(503, "We couldn't make a question just now.");
+		return ok({
+			room,
+			question,
+			now: sv.now(),
+			t: timeOf(cur, sv.now())
+		});
+	}
+	const slot = body.slot;
+	const value = body.answer;
+	if (!Number.isInteger(slot) || typeof value !== "number" || !Number.isFinite(value) || Math.abs(value) > 1e6) return no(400, "That answer couldn't be read.");
+	const kept = await sv.loadQuestion(room, who, slot);
+	if (kept === "busy") return busy();
+	const marked = kept ? markQuestion(kept.question) : null;
+	if (!kept || !marked) return no(400, "That answer couldn't be marked.");
+	if (kept.answered) return no(409, "You've already answered that one.", "answered");
+	const right = sameAnswer(value, marked.answer);
+	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS$1, MAX_ANSWER_MS$1));
+	const done = await mutate(sv, room, (s, t) => {
+		if (s.state !== "live" || s.game.kind !== "relay") return { refuse: no(409, "This one has finished.", "over") };
+		const out = relayAnswered(s.game, who, right, t, typeof body.ms === "number" ? ms : void 0);
+		if (!out.ok) return { refuse: no(409, out.reason === "too_soon" ? "One at a time!" : "No question right now.", out.reason) };
+		return {
+			reply: null,
+			events: out.events,
+			players: [who],
+			claim: {
+				player: who,
+				slot,
+				value,
+				right
+			}
+		};
+	});
+	if ("refuse" in done) return done.refuse;
+	try {
+		await sv.recordAnswers(who, `classlive:${room}:${s0.seed}:${slot}`, [{
+			key: marked.key,
+			correct: right,
+			ms,
+			at: sv.now(),
+			given: value
+		}]);
+	} catch {}
+	return reply(done.session, done.row.startedAt, {
+		right,
+		answer: marked.answer
+	});
+}
+//#endregion
 //#region shared/classlive/server.ts
 /**
 * Class Live's server steps (docs/CLASSLIVE-PLAN.md section 5), with the database passed in (`ClassLiveServices`), so the
@@ -17750,7 +18895,8 @@ const ACTIVITIES = [
 	"ghost",
 	"clash",
 	"thrones",
-	"lava"
+	"lava",
+	"relay"
 ];
 const LENGTHS = [
 	0,
@@ -17759,6 +18905,17 @@ const LENGTHS = [
 	5,
 	10,
 	15
+];
+/** The games a set-time game may be (all but Star Web, whose shared sky needs a big screen). */
+const AUTO_ACTIVITIES = [
+	"serpent",
+	"mural",
+	"corners",
+	"shark",
+	"ghost",
+	"clash",
+	"thrones",
+	"lava"
 ];
 const ok = (body) => ({
 	status: 200,
@@ -17788,6 +18945,7 @@ function publicRound(r, t) {
 /** `t`: ms since the start, so a pupil's device only learns the rolled corner once the dice has landed. */
 function publicGame(g, players, t = 0, order = []) {
 	if (g.kind === "ghost") return publicGhost(g, order);
+	if (g.kind === "relay") return relayPublic(g);
 	if (g.kind === "clash") return clashPublic(g);
 	if (g.kind === "lava") return lavaPublic(g, players);
 	if (g.kind === "thrones") return thronesPublic(g, players);
@@ -17852,7 +19010,12 @@ function roomView(s, startedAt, now) {
 		auto: s.auto ? {
 			startsAt: s.auto.startsAt,
 			min: s.auto.min,
-			calledOff: s.auto.calledOff === true
+			calledOff: s.auto.calledOff === true,
+			vote: s.auto.vote?.choices ? {
+				choices: s.auto.vote.choices,
+				counts: s.auto.vote.choices.map((c) => Object.values(s.auto.vote.picks).filter((p) => p === c).length),
+				winner: s.auto.vote.winner ?? null
+			} : null
 		} : null
 	};
 }
@@ -17874,6 +19037,12 @@ function screenView(row, s, startedAt) {
 }
 function playerView(s, id) {
 	const p = s.players[id];
+	if (s.game.kind === "relay") return {
+		player: id,
+		name: firstName(p.name),
+		colour: p.colour,
+		game: relayPlayer(s, s.game, id)
+	};
 	if (s.game.kind === "lava") return {
 		player: id,
 		name: firstName(p.name),
@@ -17925,7 +19094,7 @@ function playerView(s, id) {
 				savedLast: !!r?.saved.includes(id),
 				placed: m.placed,
 				spot: m.spot,
-				nextAt: m.lastAt + ANSWER_GAP_MS$4,
+				nextAt: m.lastAt + ANSWER_GAP_MS$5,
 				place,
 				stay: r?.swap && m.jailedIn === null ? m.lastCorner ?? null : null,
 				freeAt: freeAt$1(g, m),
@@ -17959,7 +19128,7 @@ function playerView(s, id) {
 				tiles: m?.tiles ?? 0,
 				canGuess: canGuess(s.game, id),
 				guesses: m?.guesses ?? 0,
-				nextAt: m ? m.lastAt + ANSWER_GAP_MS$5 : 0,
+				nextAt: m ? m.lastAt + ANSWER_GAP_MS$6 : 0,
 				gotIt: s.game.revealed || s.state === "over" ? m?.gotIt ?? 0 : 0,
 				picked: !!m?.pick,
 				myTiles: tilesOf(s.game, id),
@@ -18018,10 +19187,30 @@ async function mutate(sv, room, step) {
 		const version = row.version;
 		const s = structuredClone(row.session);
 		const made = !s.game && !!s.auto;
-		if (made) s.game = gameFor(s.activity, s.auto.level, () => sv.random());
+		if (made) {
+			const v = s.auto.vote;
+			if (v && !v.choices) {
+				const pool = [...AUTO_ACTIVITIES];
+				v.choices = [];
+				while (v.choices.length < 3) v.choices.push(pool.splice(Math.floor(sv.random() * pool.length) % pool.length, 1)[0]);
+				s.activity = v.choices[0];
+			}
+			s.game = gameFor(s.activity, s.auto.level, () => sv.random());
+		}
 		const autoEvents = [];
 		if (s.auto && s.state === "lobby" && sv.now() >= s.auto.startsAt) {
 			if (s.order.length >= s.auto.min) {
+				const v = s.auto.vote;
+				if (v?.choices && !v.winner) {
+					const counts = v.choices.map((c) => Object.values(v.picks).filter((p) => p === c).length);
+					const top = v.choices.filter((_, i) => counts[i] === Math.max(...counts));
+					v.winner = top[Math.floor(sv.random() * top.length) % top.length];
+					if (v.winner !== s.activity) {
+						s.activity = v.winner;
+						s.game = gameFor(v.winner, null, () => sv.random());
+						s.order.forEach((id, i) => joinGame(s.game, id, i));
+					}
+				}
 				startGame(s, sv.now());
 				row = {
 					...row,
@@ -18109,6 +19298,20 @@ async function mutate(sv, room, step) {
 					});
 				}
 			}
+		} else if (g0.kind === "relay") {
+			if (s.state === "live") {
+				const last = timeUp(s, row, now);
+				const out = advanceRelay(g0, t, s.order, () => sv.random(), last);
+				events.push(...out.events);
+				if (out.over) {
+					s.state = "over";
+					events.push({
+						type: "over",
+						t,
+						why: "time"
+					});
+				}
+			}
 		} else if (g0.kind === "lava") {
 			if (s.state === "live") {
 				let spots = {};
@@ -18183,6 +19386,10 @@ async function mutate(sv, room, step) {
 		if ((g1.kind === "corners" || g1.kind === "lava") && events.some((e) => e.type === "roll" || e.type === "crack" || e.type === "round" || e.type === "over")) for (const id of s.order) changed.add(id);
 		if ((g1.kind === "corners" || g1.kind === "clash") && events.some((e) => e.type === "roll" || e.type === "clash_count" || e.type === "clash_round" || e.type === "round" || e.type === "over")) for (const id of s.order) changed.add(id);
 		if (g1.kind === "ghost" && events.some((e) => e.type === "g_round" || e.type === "g_end" || e.type === "over" || e.type === "g_grab" && e.froze > 0)) for (const id of s.order) changed.add(id);
+		if (g1.kind === "relay") {
+			if (events.some((e) => e.type === "relay_race" || e.type === "relay_end" || e.type === "relay_go" || e.type === "over")) for (const id of s.order) changed.add(id);
+			for (const e of events) if (e.type === "relay_turn") for (const id of g1.teams[e.team]?.members ?? []) changed.add(id);
+		}
 		if (g1.kind === "thrones" && events.some((e) => e.type === "stop" || e.type === "seated" || e.type === "round" || e.type === "over")) for (const id of s.order) changed.add(id);
 		const players = [...changed].filter((id) => s.players[id]).map((id) => playerView(s, id));
 		const saved = await sv.save(room, version, {
@@ -18241,6 +19448,7 @@ function newSession(body, seed, random) {
 	else if (activity === "lava") game = newLava(LAVA_MAPS.find((m) => m === body.map) ?? LAVA_MAPS[Math.floor(random() * LAVA_MAPS.length) % LAVA_MAPS.length], lavaRunSeconds(body.run));
 	else if (activity === "clash") game = newClash(CLASH_MAPS.find((m) => m === body.map) ?? CLASH_MAPS[Math.floor(random() * CLASH_MAPS.length) % CLASH_MAPS.length], teamCount(body.teams), paintSeconds(body.paint));
 	else if (activity === "shark") game = newShark(BAYS.find((m) => m === body.map) ?? BAYS[Math.floor(random() * BAYS.length) % BAYS.length], runSeconds(body.run));
+	else if (activity === "relay") game = newRelay(raceCount(body.races));
 	else if (activity === "thrones") game = newThrones(HALLS.find((h) => h === body.hall) ?? HALLS[Math.floor(random() * HALLS.length) % HALLS.length]);
 	else game = newMural(random);
 	return {
@@ -18263,6 +19471,15 @@ function gameFor(activity, level, random) {
 		hall: level
 	}, 0, random);
 	return typeof s === "string" ? newMural(random) : s.game;
+}
+/** A new player's own part of the game (the `index`th to join). */
+function joinGame(g, who, index) {
+	if (g.kind === "corners") g.mine[who] = freshMine$3(index);
+	if (g.kind === "lava") g.mine[who] = freshLavaMine(index);
+	if (g.kind === "thrones") g.mine[who] = freshMine$2(index);
+	if (g.kind === "clash") clashJoin(g, who);
+	if (g.kind === "ghost") g.mine[who] = freshMine(index);
+	if (g.kind === "relay") joinRelay(g, who);
 }
 /** Lobby to live (the teacher's Start, or a set-time game's start). */
 function startGame(s, now) {
@@ -18403,7 +19620,7 @@ async function classLiveStep(sv, who, body) {
 			now: sv.now()
 		});
 	}
-	if (action === "join" || action === "play" || action === "ask" || action === "answer" || action === "look") {
+	if (action === "join" || action === "play" || action === "ask" || action === "answer" || action === "look" || action === "vote") {
 		const me = await sv.pupil(who);
 		if (me === "busy") return busy();
 		if (!me) return no(403, "Class Live is for pupils in a class.", "no-class");
@@ -18443,11 +19660,7 @@ async function classLiveStep(sv, who, body) {
 					joinedAt: t,
 					colour: s.order.length % 12
 				};
-				if (s.game.kind === "corners") s.game.mine[who] = freshMine$3(s.order.length);
-				if (s.game.kind === "lava") s.game.mine[who] = freshLavaMine(s.order.length);
-				if (s.game.kind === "thrones") s.game.mine[who] = freshMine$2(s.order.length);
-				if (s.game.kind === "clash") clashJoin(s.game, who);
-				if (s.game.kind === "ghost") s.game.mine[who] = freshMine(s.order.length);
+				joinGame(s.game, who, s.order.length);
 				s.order.push(who);
 				return {
 					reply: null,
@@ -18475,9 +19688,30 @@ async function classLiveStep(sv, who, body) {
 				me: playerView(cur.session, who)
 			}
 		};
+		if (action === "vote") {
+			const done = await mutate(sv, room, (s) => {
+				const v = s.auto?.vote;
+				if (!v?.choices || s.state !== "lobby" || v.winner) return { refuse: no(409, "Voting has finished.", "not_now") };
+				const pick = v.choices.find((c) => c === body.pick);
+				if (!pick) return { refuse: no(400, "Pick a game.") };
+				v.picks[who] = pick;
+				return {
+					reply: null,
+					events: [],
+					players: [who]
+				};
+			});
+			if ("refuse" in done) return withRoom(done.refuse);
+			return ok({
+				room,
+				view: roomView(done.session, done.row.startedAt, sv.now()),
+				me: playerView(done.session, who),
+				now: sv.now()
+			});
+		}
 		if (action === "look") {
 			const cg = cur.session.game;
-			const due = cur.session.state !== "live" ? null : cg.kind === "corners" ? nextDeadline$3(cg, cur.startedAt) : cg.kind === "ghost" ? nextDeadline(cg, cur.startedAt) : cg.kind === "clash" ? clashDeadline(cg, cur.startedAt) : cg.kind === "thrones" ? nextDeadline$2(cg, cur.startedAt) : cg.kind === "lava" ? lavaDeadline(cg, cur.startedAt) : null;
+			const due = cur.session.state !== "live" ? null : cg.kind === "corners" ? nextDeadline$3(cg, cur.startedAt) : cg.kind === "ghost" ? nextDeadline(cg, cur.startedAt) : cg.kind === "clash" ? clashDeadline(cg, cur.startedAt) : cg.kind === "thrones" ? nextDeadline$2(cg, cur.startedAt) : cg.kind === "lava" ? lavaDeadline(cg, cur.startedAt) : cg.kind === "relay" ? relayDeadline(cg, cur.startedAt) : null;
 			const n = sv.now(), tt = timeOf(cur, n), cs = cur.session;
 			const otherDue = cs.auto && cs.state === "lobby" ? n >= cs.auto.startsAt : cs.state === "live" && (cs.lengthMin > 0 && tt >= cs.lengthMin * 6e4 || cg.kind === "mural" && guessingDone(cg, tt));
 			if (due !== null && tt >= due + 1500 || otherDue) {
@@ -18498,6 +19732,10 @@ async function classLiveStep(sv, who, body) {
 				me: playerView(cur.session, who),
 				now: sv.now()
 			});
+		}
+		if (cur.session.game.kind === "relay" && (action === "ask" || action === "answer" || action === "play")) {
+			const out = await relayStep(sv, cur, who, body);
+			return cur.session.state === "live" ? out : withRoom(out);
 		}
 		if (cur.session.game.kind === "lava" && (action === "ask" || action === "answer" || action === "play")) {
 			const out = await lavaStep(sv, cur, who, body, {
@@ -18604,7 +19842,7 @@ async function classLiveStep(sv, who, body) {
 					players: [who]
 				};
 			}
-			if (s.game.kind === "corners" || s.game.kind === "ghost" || s.game.kind === "clash" || s.game.kind === "thrones" || s.game.kind === "lava") return { refuse: no(409, "Use the joystick!", "not_now") };
+			if (s.game.kind === "corners" || s.game.kind === "ghost" || s.game.kind === "clash" || s.game.kind === "thrones" || s.game.kind === "lava" || s.game.kind === "relay") return { refuse: no(409, "Use the joystick!", "not_now") };
 			const out = tryFact(s.game, who, body.fact, t);
 			if (!out.ok) return { refuse: no(409, "One at a time!", out.reason) };
 			return {
@@ -18654,7 +19892,7 @@ async function nextQuestion(sv, row, who) {
 	const ctx = await sv.mathsContext(who);
 	if (!ctx) return null;
 	const g = row.session.game;
-	const m = g.kind === "mural" || g.kind === "corners" || g.kind === "ghost" || g.kind === "clash" || g.kind === "thrones" || g.kind === "lava" ? g.mine[who] : void 0;
+	const m = g.kind === "mural" || g.kind === "corners" || g.kind === "ghost" || g.kind === "clash" || g.kind === "thrones" || g.kind === "lava" || g.kind === "relay" ? g.mine[who] : void 0;
 	const q = makeQuestion(ctx, `${row.session.seed}:${who}:${m?.answered ?? 0}`);
 	if (!q) return null;
 	const kept = await sv.keepQuestion(row.id, who, q);
@@ -18707,7 +19945,7 @@ async function muralMaths(sv, cur, who, body) {
 			...done.refuse,
 			body: {
 				...done.refuse.body,
-				nextAt: (g.mine[who]?.lastAt ?? 0) + ANSWER_GAP_MS$5,
+				nextAt: (g.mine[who]?.lastAt ?? 0) + ANSWER_GAP_MS$6,
 				now: sv.now()
 			}
 		};
