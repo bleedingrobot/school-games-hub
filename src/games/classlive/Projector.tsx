@@ -805,7 +805,7 @@ function Finish({ screen, game, onAgain, onSky }: { screen: ScreenView; game: St
         </ul>
       )}
       <div className="cl-finish__row">
-        <button type="button" className="cl-btn cl-btn--go cl-btn--big" onClick={onAgain}>Again?</button>
+        <button type="button" className="cl-btn cl-btn--go cl-btn--big" onClick={onAgain}>Back to Class Live</button>
         <button type="button" className="cl-btn" onClick={onSky}>See the sky</button>
       </div>
     </div>
@@ -842,7 +842,7 @@ function MuralFinish({ screen, game, onAgain, onSky }: { screen: ScreenView; gam
         </ul>
       )}
       <div className="cl-finish__row">
-        <button type="button" className="cl-btn cl-btn--go cl-btn--big" onClick={onAgain}>Again?</button>
+        <button type="button" className="cl-btn cl-btn--go cl-btn--big" onClick={onAgain}>Back to Class Live</button>
         <button type="button" className="cl-btn" onClick={onSky}>See the mural</button>
       </div>
     </div>
@@ -888,7 +888,7 @@ function SerpentFinish({ screen, game, onAgain, onSky }: { screen: ScreenView; g
         </ul>
       )}
       <div className="cl-finish__row">
-        <button type="button" className="cl-btn cl-btn--go cl-btn--big" onClick={onAgain}>Again?</button>
+        <button type="button" className="cl-btn cl-btn--go cl-btn--big" onClick={onAgain}>Back to Class Live</button>
         <button type="button" className="cl-btn" onClick={onSky}>See the serpent</button>
       </div>
     </div>

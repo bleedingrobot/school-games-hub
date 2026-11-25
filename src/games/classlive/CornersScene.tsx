@@ -371,7 +371,7 @@ function CornersFinish({ screen, game, avatars, onAgain }: { screen: ScreenView;
         </ul>
       )}
       <div className="cl-finish__row">
-        <button type="button" className="cl-btn cl-btn--go cl-btn--big" onClick={onAgain}>Again?</button>
+        <button type="button" className="cl-btn cl-btn--go cl-btn--big" onClick={onAgain}>Back to Class Live</button>
       </div>
     </div>
   );
