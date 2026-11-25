@@ -4392,7 +4392,7 @@ const goodPick = (slot, salt, wrong = 3) => isInt(slot, 0, wrong) && isInt(salt,
 * gives. Choices that repeat the right one (or each other, in value) are dropped; null when fewer than needed are left, so the
 * generator rolls again.
 */
-function pick$1(base, right, named, opts) {
+function pick$2(base, right, named, opts) {
 	const need = opts.wrong ?? 3;
 	if (!goodPick(opts.slot, opts.salt, need)) return null;
 	const kept = [];
@@ -4502,7 +4502,7 @@ function pairFamily(key, label, dens) {
 			"=",
 			"1"
 		];
-		return pick$1({
+		return pick$2({
 			parts,
 			spoken: talk(parts),
 			fact: `${frac(n, d)} + ${right} = 1`
@@ -4573,7 +4573,7 @@ const fractionFamilies = [
 			"=",
 			"?"
 		];
-		return pick$1({
+		return pick$2({
 			parts,
 			spoken: talk(parts),
 			fact: `1 − ${frac(n, d)} = ${right}`
@@ -4852,7 +4852,7 @@ const bag = oneKey("prob:bag", "Chance of a colour from a bag (3 red, 5 blue: P(
 	if (gcd$2(want, total) !== 1) return null;
 	const colour = which === 0 ? first : second;
 	const right = frac(want, total);
-	const made = pick$1({
+	const made = pick$2({
 		parts: [
 			`P(${colour})`,
 			"=",
@@ -4907,7 +4907,7 @@ const dice = oneKey("prob:dice", "Chance on a dice (P(not 6), P(more than 3))", 
 		"put it over five": [k, 5],
 		"gave one face": [1, 6]
 	};
-	const made = pick$1({
+	const made = pick$2({
 		parts: [
 			`P(${word} ${n})`,
 			"=",
@@ -5075,7 +5075,7 @@ const withPick$3 = (random, ...params) => [...params, ...rollPick(random)];
 const pickOf = (random, items) => items[int(random, 0, items.length - 1)];
 /** A pick question with its prompt and fact filled in. */
 function choose(parts, prompt, spoken, right, named, slot, salt, fact) {
-	const made = pick$1({
+	const made = pick$2({
 		parts,
 		spoken,
 		fact
@@ -5711,7 +5711,7 @@ function signed$1(base, answer, named, slot, salt) {
 	const labels = {};
 	for (const [name, n] of Object.entries(named)) if (Number.isFinite(n) && n !== answer) labels[name] = signedText(n);
 	const filled = base.parts.map((p) => p.replace("?", signedText(answer))).join(" ");
-	const made = pick$1({
+	const made = pick$2({
 		parts: base.parts,
 		spoken,
 		fact: filled
@@ -5949,7 +5949,7 @@ const compareDec = oneKey("int:compare-dec", "The smallest of four decimals belo
 		"picked the one nearest zero": signedText(-(w - .5)),
 		"ignored the minus sign": signedText(w + .5)
 	};
-	const made = pick$1({
+	const made = pick$2({
 		parts: [
 			"Smallest",
 			"=",
@@ -6094,7 +6094,7 @@ function signed(base, answer, named, slot, salt) {
 	const labels = {};
 	for (const [name, n] of Object.entries(keep)) if (n !== answer) labels[name] = signedText(n);
 	const fact = `${base.prompt ? `${base.prompt}, ` : ""}${base.parts.map((p) => p.replace("?", signedText(answer))).join(" ")}`;
-	const made = pick$1({
+	const made = pick$2({
 		parts: base.parts,
 		spoken: base.spoken,
 		fact
@@ -6436,7 +6436,7 @@ const patRule = oneKey("alg:pat-rule", "Which rule makes a pattern (5, 9, 13, 17
 		"used the first term as the multiplier": rule(first, 0),
 		"swapped the numbers": b > 0 ? rule(b, d) : rule(d, -b)
 	};
-	const made = pick$1({
+	const made = pick$2({
 		parts: [
 			"t",
 			"=",
@@ -6489,7 +6489,7 @@ function sentences(left, lv, right, rv, lenient, swap, slot, salt) {
 	];
 	const named = Object.fromEntries(wrongSigns.map((s, i) => [names[i], s]));
 	const spoken = `${sayAlg(first)}, which sign goes in the gap, then ${sayAlg(second)}?`;
-	const made = pick$1({
+	const made = pick$2({
 		parts: [
 			first,
 			"?",
@@ -6764,7 +6764,7 @@ function fracPick(base, right, named, slot, salt) {
 		}
 		clean[name] = label;
 	}
-	const made = pick$1(base, right, clean, {
+	const made = pick$2(base, right, clean, {
 		slot,
 		salt,
 		allowEqual: true
@@ -6888,7 +6888,7 @@ const estTimes = oneKey("nf:est-times", "Estimating a times by rounding (19.8 ×
 		"rounded the wrong way": String(10 * (d < 0 ? k - 1 : k + 1) * b),
 		"added instead of multiplying": String(10 * k + b)
 	};
-	const made = pick$1({
+	const made = pick$2({
 		parts,
 		spoken: `${say(10 * k + d / 10)} times ${b} is about what?`,
 		fact: `${a} × ${b} is about ${right}`
@@ -8547,7 +8547,7 @@ const tenthFamilies = [
 			"=",
 			"?"
 		];
-		return pick$1({
+		return pick$2({
 			parts,
 			spoken: talk(parts),
 			fact: `${tenths(d)} = ${right}`
@@ -8569,7 +8569,7 @@ const tenthFamilies = [
 			"=",
 			"?"
 		];
-		return pick$1({
+		return pick$2({
 			parts,
 			spoken: talk(parts),
 			fact: `${frac(d, 10)} = ${right}`
@@ -8899,7 +8899,7 @@ const equivFamilies$1 = [
 			"?"
 		];
 		const named = Object.fromEntries(Object.entries(decimalMistakes(n, d)).map(([name, v]) => [name, show$2(v)]));
-		return pick$1({
+		return pick$2({
 			parts,
 			spoken: talk(parts),
 			fact: `${frac(n, d)} = ${right}`
@@ -8937,7 +8937,7 @@ const equivFamilies$1 = [
 			"=",
 			"?"
 		];
-		return pick$1({
+		return pick$2({
 			parts,
 			spoken: talk(parts),
 			fact: `${decimal} = ${right}`
@@ -8971,7 +8971,7 @@ const equivFamilies$1 = [
 		if (v === 1 && !(isInt(y, 1, 9) && y === Math.floor(x / 10))) return null;
 		const right = hundredths$1(bigger);
 		const wrong = hundredths$1(smaller);
-		return pick$1({
+		return pick$2({
 			parts: ["Which is bigger?"],
 			spoken: "Which is bigger?",
 			fact: `${right} is bigger than ${wrong}`
@@ -9284,7 +9284,7 @@ const families$1 = [
 			"=",
 			"?"
 		];
-		return pick$1({
+		return pick$2({
 			parts,
 			spoken: talk(parts),
 			fact: `${p}% = ${f.right}`
@@ -9341,7 +9341,7 @@ const families$1 = [
 			"=",
 			"?"
 		];
-		return pick$1({
+		return pick$2({
 			parts,
 			spoken: talk(parts),
 			fact: `${show$2(h / 100)} = ${right}`
@@ -9567,7 +9567,7 @@ const equivFamilies = [
 			"=",
 			"?"
 		];
-		return pick$1({
+		return pick$2({
 			parts,
 			spoken: talk(parts),
 			fact: `${frac(n, d)} = ${right}`
@@ -9600,7 +9600,7 @@ const equivFamilies = [
 			"?"
 		];
 		const p = smallestFactor(k);
-		return pick$1({
+		return pick$2({
 			parts,
 			spoken: talk(parts),
 			fact: `${shown} = ${frac(n, d)} in its simplest form`
@@ -9911,7 +9911,7 @@ const toFraction = oneKey("pct:to-fraction", "A percentage as a fraction (25% = 
 		"=",
 		"?"
 	];
-	return pick$1({
+	return pick$2({
 		parts,
 		spoken: talk(parts),
 		fact: `${pct(p)} = ${right}`
@@ -10149,7 +10149,7 @@ const parseBond = (total) => (parts) => {
 };
 const TENS = range$1(20, 90, 10);
 const HUNDREDS = range$1(200, 900, 100);
-const POWERS$1 = [
+const POWERS$2 = [
 	10,
 	100,
 	1e3
@@ -10164,7 +10164,7 @@ function timesKeyOf(x, y) {
 	if (pair(digit, isHundreds)) return "times:hundreds";
 	if (isTens(x) && isTens(y)) return "times:tens-tens";
 	if (pair((n) => n >= 13 && n <= 99 && n % 10 !== 0, (n) => n === 10 || n === 100)) return "times:shift";
-	if (POWERS$1.includes(x) && POWERS$1.includes(y) && !(x === 10 && y === 10)) return "times:powers";
+	if (POWERS$2.includes(x) && POWERS$2.includes(y) && !(x === 10 && y === 10)) return "times:powers";
 	return null;
 }
 function timesFamily(key, label, pools) {
@@ -10400,7 +10400,7 @@ const factorFamilies = [
 	}, (_k, [n, a, slot, salt]) => {
 		if (!PAIR_NUMBERS.includes(n) || !isInt(a, 2, n - 1) || n % a !== 0 || a * a > n || !goodPick(slot, salt)) return null;
 		const right = pairLabel(a, n / a);
-		return pick$1({
+		return pick$2({
 			parts: ["Which is a factor pair of", `${n}?`],
 			spoken: `Which is a factor pair of ${n}?`,
 			fact: `${a} × ${n / a} = ${n}, so ${right} are a factor pair of ${n}`
@@ -10663,7 +10663,7 @@ const PLACE_FAMILIES = Object.fromEntries([
 	timesFamily("times:hundreds", "Times a number of hundreds (6 × 300)", [range$1(2, 9), HUNDREDS]),
 	timesFamily("times:tens-tens", "Tens times tens (20 × 30)", [TENS, TENS]),
 	timesFamily("times:shift", "Times 10 and 100 (34 × 10)", [range$1(13, 99).filter((n) => n % 10 !== 0), [10, 100]]),
-	timesFamily("times:powers", "Times 10, 100 and 1000 together (10 × 100)", [POWERS$1, POWERS$1]),
+	timesFamily("times:powers", "Times 10, 100 and 1000 together (10 × 100)", [POWERS$2, POWERS$2]),
 	divTens,
 	...factorFamilies,
 	...squareFamilies
@@ -12804,7 +12804,7 @@ function spotlight(g, id, t) {
 	}];
 }
 /** One marked answer every this many ms per pupil (no speed bonus; same as Class Showdown). */
-const ANSWER_GAP_MS$1 = 4e3;
+const ANSWER_GAP_MS$2 = 4e3;
 /** How long the guessing lasts once the flipping is over (it ends sooner when everyone has picked). */
 const GUESS_MS = 45e3;
 /**
@@ -12942,7 +12942,7 @@ const guessingDone = (g, t) => guessing(g) && t >= (g.guessFrom ?? 0) + 45e3;
 /** Has every pupil in the room picked? */
 const allPicked = (g, order) => order.length > 0 && order.every((id) => !!g.mine[id]?.pick);
 /** A marked answer (the server has marked it): a right one flips a tile at random. */
-function answered$1(g, pupil, right, t, random, paceMs = UNTIMED_PACE_MS) {
+function answered$2(g, pupil, right, t, random, paceMs = UNTIMED_PACE_MS) {
 	const m = mineOf(g, pupil);
 	if (t - m.lastAt < 4e3) return {
 		ok: false,
@@ -13479,7 +13479,7 @@ const CORNERS = [
 	2,
 	3
 ];
-const POWERS = [
+const POWERS$1 = [
 	"shield",
 	"speed",
 	"key",
@@ -13488,7 +13488,7 @@ const POWERS = [
 	"double",
 	"ghost"
 ];
-const MECHANICS = [
+const MECHANICS$1 = [
 	"items",
 	"storm",
 	"teleport",
@@ -13500,7 +13500,7 @@ const MECHANICS = [
 	"twist"
 ];
 /** The round each mechanic first appears (James: "unlocked bit by bit so it isn't chaos"). */
-const UNLOCK = {
+const UNLOCK$1 = {
 	items: 2,
 	storm: 3,
 	teleport: 4,
@@ -13516,8 +13516,8 @@ const ZONE = .26;
 const ROLL_MS = 4500;
 const SHOW_MS = 4500;
 /** Before the first round. */
-const READY_MS = 4e3;
-const ANSWER_GAP_MS = 1500;
+const READY_MS$1 = 4e3;
+const ANSWER_GAP_MS$1 = 1500;
 const runMs = (n) => Math.max(9e3, 14e3 - (n - 1) * 400);
 const runSeconds = (v) => typeof v === "number" && Number.isFinite(v) ? Math.max(6, Math.min(12, Math.round(v))) : 10;
 const START = {
@@ -13539,9 +13539,9 @@ const cornerCentre = (c) => ({
 	x: c === 0 || c === 3 ? ZONE / 2 : 1 - ZONE / 2,
 	y: c < 2 ? ZONE / 2 : 1 - ZONE / 2
 });
-const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const dist$1 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 /** A start spot in the middle, spread by player number so avatars don't sit on top of each other. */
-function startSpot(i) {
+function startSpot$1(i) {
 	const a = i * 2.399963;
 	const r = .03 + .11 * Math.sqrt((i % 40 + .5) / 40);
 	return {
@@ -13550,17 +13550,17 @@ function startSpot(i) {
 	};
 }
 const gateShut = (round, t) => round.gate !== null && t >= round.runEnd - 3e3;
-const pick = (list, random) => list[Math.floor(random() * list.length) % list.length];
+const pick$1 = (list, random) => list[Math.floor(random() * list.length) % list.length];
 /** Which mechanics a round has: each new one alone on its unlock round (with the earlier ones sometimes), then a mix. */
-function mechanicsFor(n, random) {
+function mechanicsFor$1(n, random) {
 	const out = new Set();
-	const open = MECHANICS.filter((m) => UNLOCK[m] <= n);
+	const open = MECHANICS$1.filter((m) => UNLOCK$1[m] <= n);
 	if (open.includes("items")) out.add("items");
-	const fresh = MECHANICS.find((m) => UNLOCK[m] === n);
+	const fresh = MECHANICS$1.find((m) => UNLOCK$1[m] === n);
 	if (fresh) {
 		out.add(fresh);
 		const older = open.filter((m) => m !== "items" && m !== fresh);
-		if (older.length && random() < .4) out.add(pick(older, random));
+		if (older.length && random() < .4) out.add(pick$1(older, random));
 		return out;
 	}
 	const others = open.filter((m) => m !== "items");
@@ -13570,14 +13570,14 @@ function mechanicsFor(n, random) {
 	return out;
 }
 /** Somewhere in the open middle band (not in a corner, not on the hole). */
-function openSpot(random, hole) {
+function openSpot$1(random, hole) {
 	for (let i = 0; i < 20; i++) {
 		const p = {
 			x: .12 + random() * .76,
 			y: .12 + random() * .76
 		};
 		if (cornerOf(p) !== null) continue;
-		if (hole && dist(p, START) < .21) continue;
+		if (hole && dist$1(p, START) < .21) continue;
 		return p;
 	}
 	return {
@@ -13585,15 +13585,15 @@ function openSpot(random, hole) {
 		y: .2
 	};
 }
-function makeRound(g, n, startAt, random, players) {
-	const has = mechanicsFor(n, random);
+function makeRound$1(g, n, startAt, random, players) {
+	const has = mechanicsFor$1(n, random);
 	const hole = has.has("hole");
 	const storms = has.has("storm") ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({
-		...openSpot(random, hole),
+		...openSpot$1(random, hole),
 		r: .12 + random() * .06
 	})) : [];
 	const ice = has.has("ice") ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({
-		...openSpot(random, hole),
+		...openSpot$1(random, hole),
 		r: .1 + random() * .05
 	})) : [];
 	const teleports = [];
@@ -13632,19 +13632,19 @@ function makeRound(g, n, startAt, random, players) {
 		r: .08,
 		periodMs: 5200 + Math.floor(random() * 1500)
 	} : null;
-	const gate = has.has("gate") ? pick(CORNERS, random) : null;
+	const gate = has.has("gate") ? pick$1(CORNERS, random) : null;
 	const twist = has.has("twist") ? random() < .6 ? "two" : "lucky" : null;
 	const items = [];
 	if (has.has("items")) {
 		const count = Math.max(2, Math.min(8, Math.round(players / 6)));
 		for (let i = 0; i < count; i++) items.push({
 			id: g.nextItem++,
-			power: pick(POWERS, random),
+			power: pick$1(POWERS$1, random),
 			by: null,
-			...openSpot(random, hole)
+			...openSpot$1(random, hole)
 		});
 	}
-	const first = pick(CORNERS, random);
+	const first = pick$1(CORNERS, random);
 	const rolled = twist === "lucky" ? [] : twist === "two" ? [first, (first + 1 + Math.floor(random() * 3)) % 4] : [first];
 	const run = g.runS ? g.runS * 1e3 : runMs(n);
 	return {
@@ -13679,7 +13679,7 @@ function newCorners(map, runS = 10) {
 		runS: runSeconds(runS)
 	};
 }
-function freshMine(i) {
+function freshMine$1(i) {
 	return {
 		safe: 0,
 		score: 0,
@@ -13700,7 +13700,7 @@ function freshMine(i) {
 		answered: 0,
 		lastAt: -1500,
 		placed: 0,
-		spot: startSpot(i)
+		spot: startSpot$1(i)
 	};
 }
 /**
@@ -13718,9 +13718,9 @@ const ghostly = (m, n) => !!m && m.ghostTo !== null && n <= m.ghostTo;
 /** Time is up and the last round has been shown (or never started): the game can end. */
 const cornersDone = (g, t) => !g.round || g.round.caught !== null && t >= g.round.showEnd;
 /** The time of the next thing the server must do (end a run, start the next round), or null. */
-function nextDeadline(g, startedAt) {
+function nextDeadline$1(g, startedAt) {
 	if (startedAt === null) return null;
-	if (!g.round) return READY_MS;
+	if (!g.round) return READY_MS$1;
 	if (g.round.caught === null) return g.round.runEnd;
 	return g.round.showEnd;
 }
@@ -13732,16 +13732,16 @@ function nextDeadline(g, startedAt) {
 function needsPositions(g, t) {
 	return !!g.round && g.round.caught === null && t >= g.round.runEnd;
 }
-function advance(g, t, order, positions, random, last = false) {
+function advance$1(g, t, order, positions, random, last = false) {
 	const events = [];
 	for (let guard = 0; guard < 4; guard++) {
 		const r = g.round;
 		if (!r) {
 			if (t < 4e3 || last) break;
-			g.round = makeRound(g, 1, READY_MS, random, order.length);
+			g.round = makeRound$1(g, 1, READY_MS$1, random, order.length);
 			events.push({
 				type: "round",
-				t: READY_MS,
+				t: READY_MS$1,
 				n: 1
 			});
 			continue;
@@ -13759,7 +13759,7 @@ function advance(g, t, order, positions, random, last = false) {
 				m.jailedIn = null;
 				m.jailRight = 0;
 				m.escapes++;
-				m.spot = startSpot(order.indexOf(id));
+				m.spot = startSpot$1(order.indexOf(id));
 				m.placed++;
 				events.push({
 					type: "escape",
@@ -13768,7 +13768,7 @@ function advance(g, t, order, positions, random, last = false) {
 				});
 			}
 		}
-		g.round = makeRound(g, r.n + 1, startAt, random, order.length);
+		g.round = makeRound$1(g, r.n + 1, startAt, random, order.length);
 		events.push({
 			type: "round",
 			t: startAt,
@@ -13852,7 +13852,7 @@ function endRun(g, r, order, positions) {
 	};
 }
 /** Running over an item picks it up (one at a time; pupils in jail can't). */
-function grab(g, who, itemId, at, t) {
+function grab$1(g, who, itemId, at, t) {
 	const r = g.round;
 	const m = g.mine[who];
 	if (!r || !m || r.caught !== null || t < r.startAt || t >= r.runEnd || m.jailedIn !== null) return {
@@ -13868,7 +13868,7 @@ function grab(g, who, itemId, at, t) {
 		ok: false,
 		reason: "gone"
 	};
-	if (!at || dist(at, item) > .135) return {
+	if (!at || dist$1(at, item) > .135) return {
 		ok: false,
 		reason: "far"
 	};
@@ -13890,7 +13890,7 @@ function warp(g, who, at, t) {
 	const r = g.round;
 	const m = g.mine[who];
 	if (!r || !m || !at || m.jailedIn !== null || t < r.startAt || t > r.runEnd + 500) return false;
-	if (!r.teleports.some((tp) => dist(at, tp.a) < .16499999999999998 || dist(at, tp.b) < .16499999999999998)) return false;
+	if (!r.teleports.some((tp) => dist$1(at, tp.a) < .16499999999999998 || dist$1(at, tp.b) < .16499999999999998)) return false;
 	if (m.warpRound !== r.n) {
 		m.warpRound = r.n;
 		m.warpN = 0;
@@ -13910,7 +13910,7 @@ function questionFor(g, who, at, t) {
 	return "power";
 }
 /** A marked answer: in jail it counts towards getting out; otherwise a right one switches on the held power-up. */
-function answered(g, who, right, purpose, order, t, ms) {
+function answered$1(g, who, right, purpose, order, t, ms) {
 	const m = g.mine[who];
 	if (!m) return {
 		ok: false,
@@ -14029,6 +14029,772 @@ function podium(g, order) {
 	}));
 }
 //#endregion
+//#region shared/classlive/clash.ts
+const CLASH_MAPS = [
+	"park",
+	"rooftops",
+	"beach",
+	"space"
+];
+const POWERS = [
+	"brush",
+	"speed",
+	"mega",
+	"cross"
+];
+const MECHANICS = [
+	"items",
+	"golden",
+	"portal",
+	"goo",
+	"slip",
+	"roller",
+	"fountain"
+];
+/** The round each mechanic first appears (a few at a time, as Four Corners). */
+const UNLOCK = {
+	items: 2,
+	golden: 3,
+	portal: 4,
+	goo: 5,
+	slip: 6,
+	roller: 7,
+	fountain: 8
+};
+const READY_MS = 3500;
+const COUNT_MS = 7e3;
+const PAINT_S = [
+	45,
+	60,
+	90
+];
+const paintSeconds = (v) => PAINT_S.includes(v) ? v : 60;
+const TEAM_COUNTS = [
+	2,
+	3,
+	4
+];
+const teamCount = (v) => TEAM_COUNTS.includes(v) ? v : 4;
+const ANSWER_GAP_MS = 1500;
+/** Power-ups that last (Big Brush, Speed Shoes). */
+const POWER_MS = 1e4;
+/** Bomb radius in tiles: bigger on a streak of right answers. */
+const bombRadius = (streak, mega) => mega ? 5.5 : streak >= 5 ? 3.6 : streak >= 3 ? 2.9 : 2.2;
+const clampTile = (v) => Math.min(23, Math.max(0, Math.floor(v * 24)));
+const tileOf = (p) => clampTile(p.y) * 24 + clampTile(p.x);
+const tileCentre = (i) => ({
+	x: (i % 24 + .5) / 24,
+	y: (Math.floor(i / 24) + .5) / 24
+});
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const FOUNTAIN_R = .15;
+/** Tiles inside the fountain can't be painted (the database checks this too). */
+const inFountain = (i) => dist(tileCentre(i), {
+	x: .5,
+	y: .5
+}) < FOUNTAIN_R;
+/** A bomb's splat: tiles whose centre is within `r` tiles of the spot. */
+function bombTiles(at, r) {
+	const out = [];
+	for (let i = 0; i < 576; i++) if (dist(tileCentre(i), at) <= r * .041666666666666664) out.push(i);
+	return out;
+}
+/** Rainbow Cross: the pupil's whole row and column. */
+function crossTiles(at) {
+	const cx = clampTile(at.x);
+	const cy = clampTile(at.y);
+	const out = [];
+	for (let i = 0; i < 24; i++) out.push(cy * 24 + i, i * 24 + cx);
+	return [...new Set(out)];
+}
+/** Each team's score (golden tiles count more) and plain tile counts; index = team. */
+function scoreTiles(tiles, golden, hole) {
+	const score = [
+		0,
+		0,
+		0,
+		0,
+		0
+	];
+	const counts = [
+		0,
+		0,
+		0,
+		0,
+		0
+	];
+	const gold = new Set(golden);
+	for (let i = 0; i < 576; i++) {
+		const team = Number(tiles[i] ?? "0");
+		if (!team || hole && inFountain(i)) continue;
+		counts[team]++;
+		score[team] += gold.has(i) ? 3 : 1;
+	}
+	return {
+		score,
+		tiles: counts
+	};
+}
+const pick = (list, random) => list[Math.floor(random() * list.length) % list.length];
+function mechanicsFor(n, random) {
+	const out = new Set();
+	const open = MECHANICS.filter((m) => UNLOCK[m] <= n);
+	if (open.includes("items")) out.add("items");
+	const fresh = MECHANICS.find((m) => UNLOCK[m] === n);
+	if (fresh) {
+		out.add(fresh);
+		const older = open.filter((m) => m !== "items" && m !== fresh);
+		if (older.length && random() < .5) out.add(pick(older, random));
+		return out;
+	}
+	const others = open.filter((m) => m !== "items");
+	const count = Math.min(others.length, 2 + Math.floor(random() * 2));
+	const bag = [...others];
+	while (out.size < count + (open.includes("items") ? 1 : 0) && bag.length) out.add(bag.splice(Math.floor(random() * bag.length), 1)[0]);
+	return out;
+}
+function openSpot(random, hole) {
+	for (let i = 0; i < 20; i++) {
+		const p = {
+			x: .1 + random() * .8,
+			y: .1 + random() * .8
+		};
+		if (hole && dist(p, {
+			x: .5,
+			y: .5
+		}) < .21) continue;
+		return p;
+	}
+	return {
+		x: .5,
+		y: .2
+	};
+}
+function makeRound(g, n, startAt, random, players) {
+	const has = mechanicsFor(n, random);
+	const hole = has.has("fountain");
+	const storms = has.has("goo") ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({
+		...openSpot(random, hole),
+		r: .1 + random() * .05
+	})) : [];
+	const ice = has.has("slip") ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({
+		...openSpot(random, hole),
+		r: .1 + random() * .04
+	})) : [];
+	const teleports = [];
+	if (has.has("portal")) {
+		const along = .3 + random() * .4;
+		teleports.push(random() < .5 ? {
+			a: {
+				x: .06,
+				y: along
+			},
+			b: {
+				x: .94,
+				y: 1 - along
+			}
+		} : {
+			a: {
+				x: along,
+				y: .06
+			},
+			b: {
+				x: 1 - along,
+				y: .94
+			}
+		});
+	}
+	const line = () => .15 + random() * .7;
+	const roller = has.has("roller") ? {
+		axis: "x",
+		at: line(),
+		r: .07,
+		periodMs: 5e3 + Math.floor(random() * 1500)
+	} : null;
+	const roller2 = has.has("roller") ? {
+		axis: "y",
+		at: line(),
+		r: .07,
+		periodMs: 5600 + Math.floor(random() * 1500)
+	} : null;
+	const golden = [];
+	if (has.has("golden")) for (let k = 0; k < 3; k++) {
+		const p = openSpot(random, hole);
+		const t = tileOf(p);
+		const x = Math.min(22, t % 24);
+		const y = Math.min(22, Math.floor(t / 24));
+		golden.push(y * 24 + x, y * 24 + x + 1, (y + 1) * 24 + x, (y + 1) * 24 + x + 1);
+	}
+	const items = [];
+	if (has.has("items")) {
+		const count = Math.max(2, Math.min(8, Math.round(players / 5)));
+		for (let i = 0; i < count; i++) items.push({
+			id: g.nextItem++,
+			power: pick(POWERS, random),
+			by: null,
+			...openSpot(random, hole)
+		});
+	}
+	const paintFrom = startAt + READY_MS;
+	const paintTo = paintFrom + g.paintS * 1e3;
+	return {
+		n,
+		startAt,
+		paintFrom,
+		paintTo,
+		countEnd: paintTo + COUNT_MS,
+		storms,
+		ice,
+		teleports,
+		roller,
+		roller2,
+		hole,
+		golden: [...new Set(golden)].filter((i) => !(hole && inFountain(i))),
+		items,
+		result: null
+	};
+}
+function newClash(map, teams, paintS = 60) {
+	return {
+		kind: "clash",
+		map,
+		teams,
+		paintS: paintSeconds(paintS),
+		zeroMs: null,
+		round: null,
+		wins: [
+			0,
+			0,
+			0,
+			0,
+			0
+		],
+		totals: [
+			0,
+			0,
+			0,
+			0,
+			0
+		],
+		history: [],
+		mine: {},
+		nextItem: 1
+	};
+}
+/** A new pupil joins the smallest team (the lowest-numbered of the smallest). */
+function teamFor(g) {
+	const sizes = [
+		0,
+		0,
+		0,
+		0,
+		0
+	];
+	for (const m of Object.values(g.mine)) sizes[m.team]++;
+	let best = 1;
+	for (let t = 2; t <= g.teams; t++) if (sizes[t] < sizes[best]) best = t;
+	return best;
+}
+function freshMine(team) {
+	return {
+		team,
+		painted: 0,
+		bombs: 0,
+		right: 0,
+		wrong: 0,
+		streak: 0,
+		bestStreak: 0,
+		answered: 0,
+		lastAt: -1500,
+		held: null,
+		grabs: 0,
+		powersUsed: 0,
+		brushTo: null,
+		speedTo: null,
+		bombTiles: 0,
+		placed: 0,
+		spot: {
+			x: .5,
+			y: .5
+		}
+	};
+}
+/** Where each team starts: its own side of the board. */
+function startSpot(team, teams, i) {
+	const sides = teams === 2 ? [{
+		x: .15,
+		y: .5
+	}, {
+		x: .85,
+		y: .5
+	}] : [
+		{
+			x: .15,
+			y: .15
+		},
+		{
+			x: .85,
+			y: .15
+		},
+		{
+			x: .85,
+			y: .85
+		},
+		{
+			x: .15,
+			y: .85
+		}
+	];
+	const c = sides[(team - 1) % sides.length];
+	return {
+		x: c.x + (i % 3 - 1) * .04,
+		y: c.y + (Math.floor(i / 3) % 3 - 1) * .04
+	};
+}
+const painting = (r, t) => !!r && r.result === null && t >= r.paintFrom && t < r.paintTo;
+/** The time of the next thing the server must do (count a round, start the next), or null. */
+function nextDeadline(g, startedAt) {
+	if (startedAt === null) return null;
+	if (!g.round) return 0;
+	if (g.round.result === null) return g.round.paintTo;
+	return g.round.countEnd;
+}
+/** Painting has ended and the round isn't counted yet: the server needs the board. */
+const needsTiles = (g, t) => !!g.round && g.round.result === null && t >= g.round.paintTo;
+const clashDone = (g, t) => !g.round || g.round.result !== null && t >= g.round.countEnd;
+/**
+* Moves the game on to time t: counts the round (from `board`, the database's tiles, and `painted`, tiles painted by
+* each pupil in the whole game), starts the next. When `last` (time is up), no new round starts.
+*/
+function advance(g, t, order, board, random, last = false) {
+	const events = [];
+	for (let guard = 0; guard < 4; guard++) {
+		const r = g.round;
+		if (!r) {
+			if (last) break;
+			g.round = makeRound(g, 1, Math.max(0, t), random, order.length);
+			events.push({
+				type: "clash_round",
+				t,
+				n: 1
+			});
+			continue;
+		}
+		if (r.result === null) {
+			if (t < r.paintTo || !board) break;
+			const { score, tiles } = scoreTiles(board.tiles, r.golden, r.hole);
+			const top = Math.max(...score.slice(1, g.teams + 1));
+			const winners = top > 0 ? [
+				1,
+				2,
+				3,
+				4
+			].filter((tm) => tm <= g.teams && score[tm] === top) : [];
+			r.result = {
+				score,
+				tiles,
+				winners
+			};
+			for (const w of winners) g.wins[w]++;
+			for (let tm = 1; tm <= 4; tm++) g.totals[tm] += tiles[tm];
+			g.history.push({
+				n: r.n,
+				score,
+				winners
+			});
+			for (const id of order) if (g.mine[id] && board.painted[id] !== void 0) g.mine[id].painted = Math.max(g.mine[id].painted, board.painted[id]);
+			events.push({
+				type: "clash_count",
+				t: r.paintTo,
+				n: r.n,
+				score,
+				winners
+			});
+			continue;
+		}
+		if (t < r.countEnd || last) break;
+		const startAt = t - r.countEnd > 2e3 ? t : r.countEnd;
+		for (const m of Object.values(g.mine)) {
+			m.brushTo = null;
+			m.speedTo = null;
+		}
+		g.round = makeRound(g, r.n + 1, startAt, random, order.length);
+		events.push({
+			type: "clash_round",
+			t: startAt,
+			n: r.n + 1
+		});
+	}
+	return events;
+}
+/** Running over an item picks it up (one at a time, while painting). */
+function grab(g, who, itemId, at, t) {
+	const r = g.round;
+	const m = g.mine[who];
+	if (!m || !painting(r, t)) return {
+		ok: false,
+		reason: "not_now"
+	};
+	if (m.held) return {
+		ok: false,
+		reason: "full"
+	};
+	const item = r.items.find((x) => x.id === itemId);
+	if (!item || item.by) return {
+		ok: false,
+		reason: "gone"
+	};
+	if (!at || dist(at, item) > .135) return {
+		ok: false,
+		reason: "far"
+	};
+	item.by = who;
+	m.held = item.power;
+	m.grabs++;
+	return {
+		ok: true,
+		events: [{
+			type: "clash_grab",
+			t,
+			pupil: who,
+			power: item.power
+		}]
+	};
+}
+/** Can this pupil ask for a question now (painting is on)? */
+const canAsk = (g, who, t) => !!g.mine[who] && painting(g.round, t);
+/**
+* A marked answer. A right one drops a paint bomb at `at` (their saved spot) and switches on a held power-up. Returns
+* the tiles to paint (the server paints them in the database).
+*/
+function answered(g, who, right, at, t) {
+	const m = g.mine[who];
+	const r = g.round;
+	if (!m || !r || !painting(r, t)) return {
+		ok: false,
+		reason: "not_now"
+	};
+	if (t - m.lastAt < 1500) return {
+		ok: false,
+		reason: "too_soon"
+	};
+	m.lastAt = t;
+	m.answered++;
+	if (!right) {
+		m.wrong++;
+		m.streak = 0;
+		return {
+			ok: true,
+			events: [],
+			tiles: []
+		};
+	}
+	m.right++;
+	m.streak++;
+	m.bestStreak = Math.max(m.bestStreak, m.streak);
+	const spot = at ?? {
+		x: .5,
+		y: .5
+	};
+	const power = m.held;
+	const events = [];
+	if (power) {
+		m.held = null;
+		m.powersUsed++;
+		events.push({
+			type: "clash_power",
+			t,
+			pupil: who,
+			power
+		});
+		if (power === "brush") m.brushTo = t + POWER_MS;
+		if (power === "speed") m.speedTo = t + POWER_MS;
+	}
+	const radius = bombRadius(m.streak, power === "mega");
+	let tiles = bombTiles(spot, radius);
+	if (power === "cross") tiles = [...new Set([...tiles, ...crossTiles(spot)])];
+	if (r.hole) tiles = tiles.filter((i) => !inFountain(i));
+	m.bombs++;
+	m.bombTiles += tiles.length;
+	events.push({
+		type: "clash_bomb",
+		t,
+		pupil: who,
+		team: m.team,
+		x: spot.x,
+		y: spot.y,
+		r: radius,
+		...power ? { power } : {}
+	});
+	return {
+		ok: true,
+		events,
+		tiles
+	};
+}
+/** Teams in order, best first: round wins, then tiles over the game. Ties share a place. */
+function standings(g) {
+	const teams = [
+		1,
+		2,
+		3,
+		4
+	].filter((t) => t <= g.teams).map((team) => ({
+		team,
+		wins: g.wins[team],
+		tiles: g.totals[team],
+		place: 0
+	}));
+	teams.sort((a, b) => b.wins - a.wins || b.tiles - a.tiles);
+	teams.forEach((x, i) => {
+		const prev = teams[i - 1];
+		x.place = prev && prev.wins === x.wins && prev.tiles === x.tiles ? prev.place : i + 1;
+	});
+	return teams;
+}
+/** The winning team(s): first place, if any round was played and won. */
+const champions = (g) => g.history.some((h) => h.winners.length) ? standings(g).filter((x) => x.place === 1).map((x) => x.team) : [];
+//#endregion
+//#region shared/classlive/clashServer.ts
+/**
+* Colour Clash's server parts (docs/CLASH-PLAN.md), kept out of server.ts so the other Class Live games built at the
+* same time touch different files. server.ts calls these at a few hooks: the clock (`clashTick` in mutate), joining,
+* the views, and the pupil steps (`clashStep`).
+*/
+function clashPublic(g) {
+	const sizes = [
+		0,
+		0,
+		0,
+		0,
+		0
+	];
+	for (const m of Object.values(g.mine)) sizes[m.team]++;
+	return {
+		kind: "clash",
+		map: g.map,
+		teams: g.teams,
+		zeroMs: g.zeroMs,
+		round: g.round ? {
+			...g.round,
+			items: g.round.items.filter((x) => !x.by).map(({ by: _by, ...x }) => x)
+		} : null,
+		wins: g.wins,
+		totals: g.totals,
+		history: g.history,
+		sizes
+	};
+}
+function clashPlayer(s, g, id) {
+	const m = g.mine[id] ?? freshMine(1);
+	const place = s.state === "over" ? standings(g).find((x) => x.team === m.team)?.place ?? null : null;
+	return {
+		kind: "clash",
+		team: m.team,
+		painted: m.painted,
+		bombs: m.bombs,
+		right: m.right,
+		wrong: m.wrong,
+		streak: m.streak,
+		bestStreak: m.bestStreak,
+		held: m.held,
+		brushTo: m.brushTo,
+		speedTo: m.speedTo,
+		nextAt: m.lastAt + ANSWER_GAP_MS,
+		placed: m.placed ?? 0,
+		spot: m.spot ?? startSpot(m.team, g.teams, 0),
+		place,
+		grabs: m.grabs,
+		powers: m.powersUsed
+	};
+}
+/** A pupil joins: the smallest team, at its side of the board. */
+function clashJoin(g, who) {
+	const team = teamFor(g);
+	const m = freshMine(team);
+	const same = Object.values(g.mine).filter((x) => x.team === team).length;
+	m.spot = startSpot(team, g.teams, same);
+	m.placed = 0;
+	g.mine[who] = m;
+}
+/**
+* The clock (from mutate): count a round when painting ends (the board from the database), start the next. Each new
+* round puts every pupil back at their team's side (`placed` bumps; mutate saves the spots).
+*/
+async function clashTick(sv, room, s, t, last) {
+	const g = s.game;
+	const r = g.round;
+	let board = null;
+	if (r && needsTiles(g, t)) {
+		const got = await sv.clashBoard(room, r.n);
+		if (got === "busy") return "busy";
+		board = got;
+	}
+	const events = advance(g, t, s.order, board, () => sv.random(), last);
+	for (const e of events) {
+		if (e.type !== "clash_round") continue;
+		const count = [
+			0,
+			0,
+			0,
+			0,
+			0
+		];
+		for (const id of s.order) {
+			const m = g.mine[id];
+			if (!m) continue;
+			m.spot = startSpot(m.team, g.teams, count[m.team]++);
+			m.placed = (m.placed ?? 0) + 1;
+		}
+	}
+	if (last && clashDone(g, t)) {
+		s.state = "over";
+		events.push({
+			type: "over",
+			t,
+			why: "time"
+		});
+	}
+	return events;
+}
+const clashDeadline = (g, startedAt) => nextDeadline(g, startedAt);
+const ok$1 = (body) => ({
+	status: 200,
+	body
+});
+const no$1 = (status, error, reason) => ({
+	status,
+	body: {
+		error,
+		...reason ? { reason } : {}
+	}
+});
+const busyReply = () => no$1(503, "Class Live is very busy. Try again!", "busy");
+const MAX_ANSWER_MS$1 = 12e4;
+const timeOf$1 = (row, now) => row.startedAt === null ? 0 : Math.max(0, now - row.startedAt);
+/** Colour Clash's pupil steps: `play` with `grab`, `ask` and `answer` (a right answer drops a paint bomb). */
+async function clashStep(sv, cur, who, body) {
+	const room = cur.id;
+	const s0 = cur.session;
+	if (s0.state !== "live") return no$1(409, s0.state === "lobby" ? "Wait for the start!" : "This one has finished.", s0.state);
+	const spotOf = async () => {
+		const all = await sv.positions(room);
+		if (all === "busy") return "busy";
+		return all[who];
+	};
+	const reply = (session, startedAt, extra = {}) => ok$1({
+		room,
+		view: roomView(session, startedAt, sv.now()),
+		me: playerView(session, who),
+		now: sv.now(),
+		...extra
+	});
+	if (body.action === "play") {
+		const at = await spotOf();
+		if (at === "busy") return busyReply();
+		const done = await mutate(sv, room, (s, t) => {
+			if (s.state !== "live" || s.game.kind !== "clash") return { refuse: no$1(409, "This one has finished.", "over") };
+			const out = grab(s.game, who, body.grab, at ?? s.game.mine[who]?.spot, t);
+			if (!out.ok) return { refuse: no$1(409, out.reason === "full" ? "You are already carrying one!" : out.reason === "far" ? "Get closer!" : "Too late!", out.reason) };
+			return {
+				reply: null,
+				events: out.events,
+				players: [who]
+			};
+		});
+		if ("refuse" in done) return done.refuse;
+		return reply(done.session, done.row.startedAt);
+	}
+	const g0 = s0.game;
+	if (body.action === "ask") {
+		if (!canAsk(g0, who, timeOf$1(cur, sv.now()))) return no$1(409, "Wait for the paint to start!", "not_now");
+		const question = await nextQuestion(sv, cur, who);
+		if (question === "busy") return busyReply();
+		if (!question) return no$1(503, "We couldn't make a question just now.");
+		return ok$1({
+			room,
+			question,
+			now: sv.now()
+		});
+	}
+	const slot = body.slot;
+	const value = body.answer;
+	if (!Number.isInteger(slot) || typeof value !== "number" || !Number.isFinite(value) || Math.abs(value) > 1e6) return no$1(400, "That answer couldn't be read.");
+	const kept = await sv.loadQuestion(room, who, slot);
+	if (kept === "busy") return busyReply();
+	const marked = kept ? markQuestion(kept.question) : null;
+	if (!kept || !marked) return no$1(400, "That answer couldn't be marked.");
+	if (kept.answered) return no$1(409, "You've already answered that one.", "answered");
+	const right = sameAnswer(value, marked.answer);
+	const at = await spotOf();
+	if (at === "busy") return busyReply();
+	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS$1, MAX_ANSWER_MS$1));
+	let bomb = null;
+	const done = await mutate(sv, room, (s, t) => {
+		if (s.state !== "live" || s.game.kind !== "clash") return { refuse: no$1(409, "This one has finished.", "over") };
+		const g = s.game;
+		const out = answered(g, who, right, at ?? g.mine[who]?.spot, t);
+		if (!out.ok) return { refuse: no$1(409, out.reason === "too_soon" ? "One at a time!" : "Wait for the paint to start!", out.reason) };
+		bomb = out.tiles.length && g.round ? {
+			round: g.round.n,
+			team: g.mine[who].team,
+			tiles: out.tiles
+		} : null;
+		return {
+			reply: null,
+			events: out.events,
+			players: [who],
+			claim: {
+				player: who,
+				slot,
+				value,
+				right
+			}
+		};
+	});
+	if ("refuse" in done) return done.refuse;
+	const b = bomb;
+	if (b) try {
+		await sv.clashBomb(room, b.round, b.team, who, b.tiles);
+	} catch {
+		console.error(`classlive: clash bomb in room ${room} failed`);
+	}
+	try {
+		await sv.recordAnswers(who, `classlive:${room}:${s0.seed}:${slot}`, [{
+			key: marked.key,
+			correct: right,
+			ms,
+			at: sv.now(),
+			given: value
+		}]);
+	} catch {}
+	const g1 = done.session.game;
+	const next = done.session.state === "live" && painting(g1.round, timeOf$1(done.row, sv.now())) ? await nextQuestion(sv, {
+		...done.row,
+		session: done.session
+	}, who) : null;
+	return reply(done.session, done.row.startedAt, {
+		right,
+		answer: marked.answer,
+		...next && next !== "busy" ? { question: next } : {}
+	});
+}
+/** Rewards: the class "goal" is their team winning; extra totals for the trophies. */
+function clashReward(g, id) {
+	const m = g.mine[id];
+	const won = !!m && champions(g).includes(m.team);
+	return {
+		did: !!m && (m.painted > 0 || m.right > 0),
+		won,
+		extra: {
+			clash_tiles: m?.painted ?? 0,
+			clash_bombs: m?.bombs ?? 0,
+			clash_wins: won ? 1 : 0,
+			clash_games: m ? 1 : 0
+		}
+	};
+}
+//#endregion
 //#region shared/classlive/rewards.ts
 /**
 * Class Live's rewards (docs/CLASSLIVE-PLAN.md, stage 4): hub points and the totals behind the trophies, worked out
@@ -14047,7 +14813,7 @@ const POINTS = {
 };
 function rewardsOf(s) {
 	const g = s.game;
-	const goal = g.kind === "stars" ? g.creature : g.kind === "serpent" ? g.awake : g.kind === "corners" ? false : g.solvers.length > 0;
+	const goal = g.kind === "stars" ? g.creature : g.kind === "serpent" ? g.awake : g.kind === "corners" || g.kind === "clash" ? false : g.solvers.length > 0;
 	const top = g.kind === "corners" ? podium(g, s.order) : [];
 	const players = s.order.map((id) => {
 		let did = false;
@@ -14065,7 +14831,12 @@ function rewardsOf(s) {
 			powers: 0
 		};
 		let podiumPlace = false;
-		if (g.kind === "corners") {
+		if (g.kind === "clash") {
+			const c = clashReward(g, id);
+			did = c.did;
+			podiumPlace = c.won && c.did;
+			r.extra = c.extra;
+		} else if (g.kind === "corners") {
 			const m = g.mine[id];
 			r.safe = m?.safe ?? 0;
 			r.escapes = m?.escapes ?? 0;
@@ -14117,7 +14888,8 @@ const ACTIVITIES = [
 	"stars",
 	"serpent",
 	"mural",
-	"corners"
+	"corners",
+	"clash"
 ];
 const LENGTHS = [
 	0,
@@ -14154,6 +14926,7 @@ function publicRound(r, t) {
 }
 /** `t`: ms since the start, so a pupil's device only learns the rolled corner once the dice has landed. */
 function publicGame(g, players, t = 0) {
+	if (g.kind === "clash") return clashPublic(g);
 	if (g.kind === "corners") {
 		const jailed = Object.values(g.mine).filter((m) => m.jailedIn !== null).length;
 		return {
@@ -14228,9 +15001,15 @@ function screenView(row, s, startedAt) {
 }
 function playerView(s, id) {
 	const p = s.players[id];
+	if (s.game.kind === "clash") return {
+		player: id,
+		name: firstName(p.name),
+		colour: p.colour,
+		game: clashPlayer(s, s.game, id)
+	};
 	if (s.game.kind === "corners") {
 		const g = s.game;
-		const m = g.mine[id] ?? freshMine(s.order.indexOf(id));
+		const m = g.mine[id] ?? freshMine$1(s.order.indexOf(id));
 		const r = g.round;
 		const n = r?.n ?? 0;
 		const place = s.state === "over" ? podium(g, s.order).find((x) => x.player === id)?.place ?? null : null;
@@ -14255,7 +15034,7 @@ function playerView(s, id) {
 				savedLast: !!r?.saved.includes(id),
 				placed: m.placed,
 				spot: m.spot,
-				nextAt: m.lastAt + ANSWER_GAP_MS,
+				nextAt: m.lastAt + ANSWER_GAP_MS$1,
 				place,
 				stay: r?.swap && m.jailedIn === null ? m.lastCorner ?? null : null,
 				freeAt: freeAt(g, m),
@@ -14288,7 +15067,7 @@ function playerView(s, id) {
 				tiles: m?.tiles ?? 0,
 				canGuess: canGuess(s.game, id),
 				guesses: m?.guesses ?? 0,
-				nextAt: m ? m.lastAt + ANSWER_GAP_MS$1 : 0,
+				nextAt: m ? m.lastAt + ANSWER_GAP_MS$2 : 0,
 				gotIt: s.game.revealed || s.state === "over" ? m?.gotIt ?? 0 : 0,
 				picked: !!m?.pick,
 				myTiles: tilesOf(s.game, id),
@@ -14348,8 +15127,14 @@ async function mutate(sv, room, step) {
 		const t = timeOf(row, now);
 		const events = [];
 		const g0 = s.game;
-		const placedBefore = g0.kind === "corners" ? new Map(s.order.map((id) => [id, g0.mine[id]?.placed ?? 0])) : null;
-		if (g0.kind === "corners") {
+		const placedBefore = g0.kind === "corners" || g0.kind === "clash" ? new Map(s.order.map((id) => [id, g0.mine[id]?.placed ?? 0])) : null;
+		if (g0.kind === "clash") {
+			if (s.state === "live") {
+				const got = await clashTick(sv, room, s, t, timeUp(s, row, now));
+				if (got === "busy") return { refuse: busy() };
+				events.push(...got);
+			}
+		} else if (g0.kind === "corners") {
 			if (s.state === "live") {
 				let spots = {};
 				if (needsPositions(g0, t)) {
@@ -14358,7 +15143,7 @@ async function mutate(sv, room, step) {
 					spots = got;
 				}
 				const last = timeUp(s, row, now);
-				events.push(...advance(g0, t, s.order, spots, () => sv.random(), last));
+				events.push(...advance$1(g0, t, s.order, spots, () => sv.random(), last));
 				if (last && cornersDone(g0, t)) {
 					s.state = "over";
 					events.push({
@@ -14414,13 +15199,13 @@ async function mutate(sv, room, step) {
 		};
 		for (const e of events) if ("pupil" in e && typeof e.pupil === "string") changed.add(e.pupil);
 		const g1 = s.game;
-		const places = g1.kind === "corners" && placedBefore ? s.order.filter((id) => (g1.mine[id]?.placed ?? 0) !== (placedBefore.get(id) ?? 0)).map((id) => ({
+		const places = (g1.kind === "corners" || g1.kind === "clash") && placedBefore ? s.order.filter((id) => (g1.mine[id]?.placed ?? 0) !== (placedBefore.get(id) ?? 0)).map((id) => ({
 			player: id,
 			x: g1.mine[id].spot.x,
 			y: g1.mine[id].spot.y
 		})) : [];
 		for (const p of places) changed.add(p.player);
-		if (g1.kind === "corners" && events.some((e) => e.type === "roll" || e.type === "round" || e.type === "over")) for (const id of s.order) changed.add(id);
+		if ((g1.kind === "corners" || g1.kind === "clash") && events.some((e) => e.type === "roll" || e.type === "clash_count" || e.type === "clash_round" || e.type === "round" || e.type === "over")) for (const id of s.order) changed.add(id);
 		const players = [...changed].filter((id) => s.players[id]).map((id) => playerView(s, id));
 		const saved = await sv.save(room, row.version, {
 			session: s,
@@ -14474,6 +15259,7 @@ function newSession(body, seed, random) {
 		game = newStars(own ?? pickAnchor(level, random), own ? "own" : level);
 	} else if (activity === "serpent") game = newSerpent(SERPENT_LEVELS.find((l) => l === body.level) ?? "gold", random);
 	else if (activity === "corners") game = newCorners(MAPS.find((m) => m === body.map) ?? MAPS[Math.floor(random() * MAPS.length) % MAPS.length], runSeconds(body.run));
+	else if (activity === "clash") game = newClash(CLASH_MAPS.find((m) => m === body.map) ?? CLASH_MAPS[Math.floor(random() * CLASH_MAPS.length) % CLASH_MAPS.length], teamCount(body.teams), paintSeconds(body.paint));
 	else game = newMural(random);
 	return {
 		seed,
@@ -14553,6 +15339,7 @@ async function classLiveStep(sv, who, body) {
 				if (s.state !== "lobby") return { refuse: no(409, "It has already started.", "not-now") };
 				s.state = "live";
 				if (s.game.kind === "corners" && s.lengthMin > 0) s.game.halfAt = s.lengthMin * 6e4 / 2;
+				if (s.game.kind === "clash") s.game.zeroMs = sv.now();
 				if (s.game.kind === "mural") sizeMural(s.game, s.order.length, s.lengthMin);
 				return {
 					reply: null,
@@ -14660,7 +15447,8 @@ async function classLiveStep(sv, who, body) {
 					joinedAt: t,
 					colour: s.order.length % 12
 				};
-				if (s.game.kind === "corners") s.game.mine[who] = freshMine(s.order.length);
+				if (s.game.kind === "corners") s.game.mine[who] = freshMine$1(s.order.length);
+				if (s.game.kind === "clash") clashJoin(s.game, who);
 				s.order.push(who);
 				return {
 					reply: null,
@@ -14690,7 +15478,7 @@ async function classLiveStep(sv, who, body) {
 		};
 		if (action === "look") {
 			const cg = cur.session.game;
-			const due = cg.kind === "corners" && cur.session.state === "live" ? nextDeadline(cg, cur.startedAt) : null;
+			const due = cur.session.state !== "live" ? null : cg.kind === "corners" ? nextDeadline$1(cg, cur.startedAt) : cg.kind === "clash" ? clashDeadline(cg, cur.startedAt) : null;
 			if (due !== null && timeOf(cur, sv.now()) >= due + 1500) {
 				const done = await mutate(sv, room, () => ({
 					reply: null,
@@ -14709,6 +15497,10 @@ async function classLiveStep(sv, who, body) {
 				me: playerView(cur.session, who),
 				now: sv.now()
 			});
+		}
+		if (cur.session.game.kind === "clash" && (action === "ask" || action === "answer" || action === "play")) {
+			const out = await clashStep(sv, cur, who, body);
+			return cur.session.state === "live" ? out : withRoom(out);
 		}
 		if (cur.session.game.kind === "corners" && (action === "ask" || action === "answer" || action === "play")) {
 			const out = await cornersStep(sv, cur, who, body);
@@ -14780,7 +15572,7 @@ async function classLiveStep(sv, who, body) {
 					players: [who]
 				};
 			}
-			if (s.game.kind === "corners") return { refuse: no(409, "Use the joystick!", "not_now") };
+			if (s.game.kind === "corners" || s.game.kind === "clash") return { refuse: no(409, "Use the joystick!", "not_now") };
 			const out = tryFact(s.game, who, body.fact, t);
 			if (!out.ok) return { refuse: no(409, "One at a time!", out.reason) };
 			return {
@@ -14830,7 +15622,7 @@ async function nextQuestion(sv, row, who) {
 	const ctx = await sv.mathsContext(who);
 	if (!ctx) return null;
 	const g = row.session.game;
-	const m = g.kind === "mural" || g.kind === "corners" ? g.mine[who] : void 0;
+	const m = g.kind === "mural" || g.kind === "corners" || g.kind === "clash" ? g.mine[who] : void 0;
 	const q = makeQuestion(ctx, `${row.session.seed}:${who}:${m?.answered ?? 0}`);
 	if (!q) return null;
 	const kept = await sv.keepQuestion(row.id, who, q);
@@ -14863,7 +15655,7 @@ async function muralMaths(sv, cur, who, body) {
 	const right = sameAnswer(value, marked.answer);
 	const done = await mutate(sv, room, (s, t) => {
 		if (s.state !== "live" || s.game.kind !== "mural") return { refuse: no(409, "This one has finished.", "over") };
-		const out = answered$1(s.game, who, right, t, () => sv.random(), s.lengthMin > 0 ? s.lengthMin * 6e4 * .9 : void 0);
+		const out = answered$2(s.game, who, right, t, () => sv.random(), s.lengthMin > 0 ? s.lengthMin * 6e4 * .9 : void 0);
 		if (!out.ok) return { refuse: no(409, "Wait for the ring to fill!", out.reason) };
 		return {
 			reply: null,
@@ -14883,7 +15675,7 @@ async function muralMaths(sv, cur, who, body) {
 			...done.refuse,
 			body: {
 				...done.refuse.body,
-				nextAt: (g.mine[who]?.lastAt ?? 0) + ANSWER_GAP_MS$1,
+				nextAt: (g.mine[who]?.lastAt ?? 0) + ANSWER_GAP_MS$2,
 				now: sv.now()
 			}
 		};
@@ -14955,7 +15747,7 @@ async function cornersStep(sv, cur, who, body) {
 					players: []
 				};
 			}
-			const out = grab(g, who, body.grab, at ?? mine?.spot, t);
+			const out = grab$1(g, who, body.grab, at ?? mine?.spot, t);
 			if (!out.ok) return { refuse: no(409, out.reason === "full" ? "You are already carrying one!" : out.reason === "far" ? "Get closer!" : "Too late!", out.reason) };
 			return {
 				reply: null,
@@ -14999,7 +15791,7 @@ async function cornersStep(sv, cur, who, body) {
 		if (s.state !== "live" || s.game.kind !== "corners") return { refuse: no(409, "This one has finished.", "over") };
 		const purpose = questionFor(s.game, who, at ?? s.game.mine[who]?.spot, t);
 		if (!purpose) return { refuse: no(409, "Get to a corner first!", "not_now") };
-		const out = answered(s.game, who, right, purpose, s.order, t, typeof body.ms === "number" ? ms : void 0);
+		const out = answered$1(s.game, who, right, purpose, s.order, t, typeof body.ms === "number" ? ms : void 0);
 		if (!out.ok) return { refuse: no(409, out.reason === "too_soon" ? "One at a time!" : "No question right now.", out.reason) };
 		const freed = out.events.flatMap((e) => e.type === "power" && e.freed ? [e.freed] : []);
 		return {
@@ -15295,6 +16087,28 @@ Deno.serve(makeHandler({
 	},
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "classlive");
+	},
+	async clashBoard(room, round) {
+		const raw = await call("classlive_clash_count", {
+			target: room,
+			rnd: round
+		});
+		if (raw === "busy") return "busy";
+		const painted = {};
+		for (const [id, n] of Object.entries(raw?.painted ?? {})) if (Number.isFinite(Number(n))) painted[id] = Number(n);
+		return {
+			tiles: typeof raw?.tiles === "string" ? raw.tiles : "",
+			painted
+		};
+	},
+	async clashBomb(room, round, team, player, tiles) {
+		if (await call("classlive_clash_bomb", {
+			target: room,
+			rnd: round,
+			tm: team,
+			player,
+			idxs: tiles
+		}) === "busy") throw new Error("classlive_clash_bomb failed");
 	}
 }));
 //#endregion

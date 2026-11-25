@@ -9,6 +9,7 @@ import { markQuestion } from '../maths/serverQuestions';
 import { ANSWER_GAP_MS, canGuess } from './mural';
 import { pretendAnswer } from './serpent';
 import { pretendFacts } from './stars';
+import { clashBot } from './clashMemory';
 
 export const PRETEND_TEACHER = '00000000-0000-4000-8000-00000000feed';
 export const PRETEND_CLASS = '00000000-0000-4000-8000-00000000c1a5';
@@ -52,6 +53,7 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
       if (row.session.state === 'lobby') return opts.later(go, 1000);
       const g = row.session.game;
       if (g.kind === 'corners') return cornersBot(room, id, skill);
+      if (g.kind === 'clash') return clashBot({ db, room, id, skill, rand, now: opts.clock.now, later: opts.later, step: (who, body) => classLiveStep(services, who, body) });
       if (g.kind === 'mural') {
         if (g.revealed) return;
         // In the guessing, take a few seconds to read the riddles, then pick (better pupils are right more often);
