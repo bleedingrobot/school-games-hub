@@ -204,6 +204,31 @@ export function layThrones(k: number, random: () => number): Spot[] {
   return out.slice(0, k);
 }
 
+/** How far a throne appears from every pupil when the music stops (when the hall has room). */
+export const APPEAR_GAP = 0.16;
+
+/**
+ * Where the thrones appear when the music stops: scattered at random, apart from each other, and at least APPEAR_GAP
+ * from every pupil where the hall has room, so nobody is already on one and everyone has to race.
+ */
+export function scatterThrones(k: number, avoid: Spot[], random: () => number): Spot[] {
+  const out: Spot[] = [];
+  for (let i = 0; i < k; i++) {
+    let best: Spot | null = null;
+    let bestScore = -1;
+    for (let c = 0; c < 80; c++) {
+      const p = { x: 0.1 + random() * 0.8, y: 0.1 + random() * 0.8 };
+      const apart = out.reduce((a, q) => Math.min(a, dist(p, q)), 1);
+      if (apart < (c < 60 ? 0.12 : 0.08)) continue;
+      const clear = avoid.reduce((a, q) => Math.min(a, dist(p, q)), 1);
+      const score = Math.min(clear, APPEAR_GAP) + random() * 0.01;
+      if (score > bestScore) { bestScore = score; best = p; }
+    }
+    out.push(best ?? { x: 0.1 + random() * 0.8, y: 0.1 + random() * 0.8 });
+  }
+  return out;
+}
+
 /** Which mechanics a round has: each new one on its unlock round, then a mix of 1 to 3. */
 export function mechanicsFor(n: number, random: () => number): Set<ThroneMechanic> {
   const out = new Set<ThroneMechanic>();
@@ -314,7 +339,7 @@ export function advance(g: ThronesGame, t: number, order: string[], positions: P
     }
     if (!r.stopped) {
       if (t < r.musicEnd) break;
-      events.push(stopMusic(g, r, order, positions));
+      events.push(stopMusic(g, r, order, positions, random));
       continue;
     }
     if (r.standing === null) {
@@ -349,20 +374,24 @@ export function advance(g: ThronesGame, t: number, order: string[], positions: P
 const playingCount = (g: ThronesGame, order: string[]) => order.filter((id) => !inCourt(g.mine[id])).length;
 const times = (m: ThronesMine, n: number) => (m.doubleIn === n ? 2 : 1);
 
-function stopMusic(g: ThronesGame, r: ThroneRound, order: string[], positions: Positions): ThronesEvent {
+function stopMusic(g: ThronesGame, r: ThroneRound, order: string[], positions: Positions, random: () => number): ThronesEvent {
   r.stopped = true;
   const dancers: string[] = [];
+  const dancing: Spot[] = [];
   for (const id of order) {
     const m = g.mine[id];
     if (!m || m.courtIn !== null) continue;
     const at = positions[id] ?? m.spot;
     m.spot = { x: at.x, y: at.y };
+    dancing.push(m.spot);
     if (r.tiles.some((tl) => dist(tl, at) < tl.r + AVATAR_R * 0.5)) {
       dancers.push(id);
       m.dances++;
       m.crowns += CROWNS.dance * times(m, r.n);
     }
   }
+  // The thrones appear only now, in new spots away from everyone (James, 25 Nov 2026 NZ: nobody can wait on one).
+  scatterThrones(r.thrones.length, dancing, random).forEach((p, i) => { r.thrones[i].x = p.x; r.thrones[i].y = p.y; });
   // Royal seats: straight onto the nearest free throne.
   for (const id of order) {
     const m = g.mine[id];

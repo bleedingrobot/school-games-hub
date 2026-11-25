@@ -112,7 +112,7 @@ export function ThronesScene({ screen, game, link, room, clock, sound, say, onTi
   }, [deadline, gap, over, screen.startedAt]);
 
   const phase = !r ? 'ready' : phaseOf(r, t);
-  const covered = phase === 'music' && !!r;
+  const covered = !!r && (phase === 'music' || !r.stopped);
 
   // Banners, pops and sounds, from the screen's events (once each).
   const gameRef = useRef(game);

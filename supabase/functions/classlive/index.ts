@@ -14765,6 +14765,37 @@ function layThrones(k, random) {
 	});
 	return out.slice(0, k);
 }
+/** How far a throne appears from every pupil when the music stops (when the hall has room). */
+const APPEAR_GAP = .16;
+/**
+* Where the thrones appear when the music stops: scattered at random, apart from each other, and at least APPEAR_GAP
+* from every pupil where the hall has room, so nobody is already on one and everyone has to race.
+*/
+function scatterThrones(k, avoid, random) {
+	const out = [];
+	for (let i = 0; i < k; i++) {
+		let best = null;
+		let bestScore = -1;
+		for (let c = 0; c < 80; c++) {
+			const p = {
+				x: .1 + random() * .8,
+				y: .1 + random() * .8
+			};
+			if (out.reduce((a, q) => Math.min(a, dist$3(p, q)), 1) < (c < 60 ? .12 : .08)) continue;
+			const clear = avoid.reduce((a, q) => Math.min(a, dist$3(p, q)), 1);
+			const score = Math.min(clear, APPEAR_GAP) + random() * .01;
+			if (score > bestScore) {
+				bestScore = score;
+				best = p;
+			}
+		}
+		out.push(best ?? {
+			x: .1 + random() * .8,
+			y: .1 + random() * .8
+		});
+	}
+	return out;
+}
 /** Which mechanics a round has: each new one on its unlock round, then a mix of 1 to 3. */
 function mechanicsFor$2(n, random) {
 	const out = new Set();
@@ -14969,7 +15000,7 @@ function advance$2(g, t, order, positions, random, last = false) {
 		}
 		if (!r.stopped) {
 			if (t < r.musicEnd) break;
-			events.push(stopMusic(g, r, order, positions));
+			events.push(stopMusic(g, r, order, positions, random));
 			continue;
 		}
 		if (r.standing === null) {
@@ -15010,9 +15041,10 @@ function advance$2(g, t, order, positions, random, last = false) {
 }
 const playingCount = (g, order) => order.filter((id) => !inCourt(g.mine[id])).length;
 const times = (m, n) => m.doubleIn === n ? 2 : 1;
-function stopMusic(g, r, order, positions) {
+function stopMusic(g, r, order, positions, random) {
 	r.stopped = true;
 	const dancers = [];
+	const dancing = [];
 	for (const id of order) {
 		const m = g.mine[id];
 		if (!m || m.courtIn !== null) continue;
@@ -15021,12 +15053,17 @@ function stopMusic(g, r, order, positions) {
 			x: at.x,
 			y: at.y
 		};
+		dancing.push(m.spot);
 		if (r.tiles.some((tl) => dist$3(tl, at) < tl.r + .0175)) {
 			dancers.push(id);
 			m.dances++;
 			m.crowns += CROWNS.dance * times(m, r.n);
 		}
 	}
+	scatterThrones(r.thrones.length, dancing, random).forEach((p, i) => {
+		r.thrones[i].x = p.x;
+		r.thrones[i].y = p.y;
+	});
 	for (const id of order) {
 		const m = g.mine[id];
 		if (!m || m.courtIn !== null || m.seatIn !== r.n || m.seat !== null) continue;

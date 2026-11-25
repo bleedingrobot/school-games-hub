@@ -37,7 +37,7 @@ export function ThronesGuide({ hall, onClose }: { hall: Hall; onClose: () => voi
           <li>💃 On a glowing dance tile when the music stops: +{CROWNS.dance}</li>
           <li>🗡️ Stealing a throne: take 1 crown</li>
         </ul>
-        <p className="fc-guide__note">Dance while the music plays. When it stops (nobody knows when!) run and sit on a throne. There are fewer thrones every round, and anyone left standing goes to the {w.court.toLowerCase()} until they answer 3 questions right.</p>
+        <p className="fc-guide__note">Dance while the music plays. When it stops (nobody knows when!) the thrones pop up in new places, away from everyone: run and sit on one. There are fewer thrones every round, and anyone left standing goes to the {w.court.toLowerCase()} until they answer 3 questions right.</p>
         <h3 className="fc-guide__title">⚡ Power-ups <small>from round {UNLOCK.items}</small></h3>
         <p className="fc-guide__note">Run over one to pick it up (you can carry one). Press “Switch on” and answer a question right while the music plays.</p>
         <ul className="fc-guide__grid">
