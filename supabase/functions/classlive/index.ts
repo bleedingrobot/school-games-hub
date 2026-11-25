@@ -4392,7 +4392,7 @@ const goodPick = (slot, salt, wrong = 3) => isInt(slot, 0, wrong) && isInt(salt,
 * gives. Choices that repeat the right one (or each other, in value) are dropped; null when fewer than needed are left, so the
 * generator rolls again.
 */
-function pick$2(base, right, named, opts) {
+function pick$3(base, right, named, opts) {
 	const need = opts.wrong ?? 3;
 	if (!goodPick(opts.slot, opts.salt, need)) return null;
 	const kept = [];
@@ -4502,7 +4502,7 @@ function pairFamily(key, label, dens) {
 			"=",
 			"1"
 		];
-		return pick$2({
+		return pick$3({
 			parts,
 			spoken: talk(parts),
 			fact: `${frac(n, d)} + ${right} = 1`
@@ -4573,7 +4573,7 @@ const fractionFamilies = [
 			"=",
 			"?"
 		];
-		return pick$2({
+		return pick$3({
 			parts,
 			spoken: talk(parts),
 			fact: `1 − ${frac(n, d)} = ${right}`
@@ -4852,7 +4852,7 @@ const bag = oneKey("prob:bag", "Chance of a colour from a bag (3 red, 5 blue: P(
 	if (gcd$2(want, total) !== 1) return null;
 	const colour = which === 0 ? first : second;
 	const right = frac(want, total);
-	const made = pick$2({
+	const made = pick$3({
 		parts: [
 			`P(${colour})`,
 			"=",
@@ -4907,7 +4907,7 @@ const dice = oneKey("prob:dice", "Chance on a dice (P(not 6), P(more than 3))", 
 		"put it over five": [k, 5],
 		"gave one face": [1, 6]
 	};
-	const made = pick$2({
+	const made = pick$3({
 		parts: [
 			`P(${word} ${n})`,
 			"=",
@@ -5075,7 +5075,7 @@ const withPick$3 = (random, ...params) => [...params, ...rollPick(random)];
 const pickOf = (random, items) => items[int(random, 0, items.length - 1)];
 /** A pick question with its prompt and fact filled in. */
 function choose(parts, prompt, spoken, right, named, slot, salt, fact) {
-	const made = pick$2({
+	const made = pick$3({
 		parts,
 		spoken,
 		fact
@@ -5711,7 +5711,7 @@ function signed$1(base, answer, named, slot, salt) {
 	const labels = {};
 	for (const [name, n] of Object.entries(named)) if (Number.isFinite(n) && n !== answer) labels[name] = signedText(n);
 	const filled = base.parts.map((p) => p.replace("?", signedText(answer))).join(" ");
-	const made = pick$2({
+	const made = pick$3({
 		parts: base.parts,
 		spoken,
 		fact: filled
@@ -5949,7 +5949,7 @@ const compareDec = oneKey("int:compare-dec", "The smallest of four decimals belo
 		"picked the one nearest zero": signedText(-(w - .5)),
 		"ignored the minus sign": signedText(w + .5)
 	};
-	const made = pick$2({
+	const made = pick$3({
 		parts: [
 			"Smallest",
 			"=",
@@ -6094,7 +6094,7 @@ function signed(base, answer, named, slot, salt) {
 	const labels = {};
 	for (const [name, n] of Object.entries(keep)) if (n !== answer) labels[name] = signedText(n);
 	const fact = `${base.prompt ? `${base.prompt}, ` : ""}${base.parts.map((p) => p.replace("?", signedText(answer))).join(" ")}`;
-	const made = pick$2({
+	const made = pick$3({
 		parts: base.parts,
 		spoken: base.spoken,
 		fact
@@ -6436,7 +6436,7 @@ const patRule = oneKey("alg:pat-rule", "Which rule makes a pattern (5, 9, 13, 17
 		"used the first term as the multiplier": rule(first, 0),
 		"swapped the numbers": b > 0 ? rule(b, d) : rule(d, -b)
 	};
-	const made = pick$2({
+	const made = pick$3({
 		parts: [
 			"t",
 			"=",
@@ -6489,7 +6489,7 @@ function sentences(left, lv, right, rv, lenient, swap, slot, salt) {
 	];
 	const named = Object.fromEntries(wrongSigns.map((s, i) => [names[i], s]));
 	const spoken = `${sayAlg(first)}, which sign goes in the gap, then ${sayAlg(second)}?`;
-	const made = pick$2({
+	const made = pick$3({
 		parts: [
 			first,
 			"?",
@@ -6764,7 +6764,7 @@ function fracPick(base, right, named, slot, salt) {
 		}
 		clean[name] = label;
 	}
-	const made = pick$2(base, right, clean, {
+	const made = pick$3(base, right, clean, {
 		slot,
 		salt,
 		allowEqual: true
@@ -6888,7 +6888,7 @@ const estTimes = oneKey("nf:est-times", "Estimating a times by rounding (19.8 ×
 		"rounded the wrong way": String(10 * (d < 0 ? k - 1 : k + 1) * b),
 		"added instead of multiplying": String(10 * k + b)
 	};
-	const made = pick$2({
+	const made = pick$3({
 		parts,
 		spoken: `${say(10 * k + d / 10)} times ${b} is about what?`,
 		fact: `${a} × ${b} is about ${right}`
@@ -8547,7 +8547,7 @@ const tenthFamilies = [
 			"=",
 			"?"
 		];
-		return pick$2({
+		return pick$3({
 			parts,
 			spoken: talk(parts),
 			fact: `${tenths(d)} = ${right}`
@@ -8569,7 +8569,7 @@ const tenthFamilies = [
 			"=",
 			"?"
 		];
-		return pick$2({
+		return pick$3({
 			parts,
 			spoken: talk(parts),
 			fact: `${frac(d, 10)} = ${right}`
@@ -8899,7 +8899,7 @@ const equivFamilies$1 = [
 			"?"
 		];
 		const named = Object.fromEntries(Object.entries(decimalMistakes(n, d)).map(([name, v]) => [name, show$2(v)]));
-		return pick$2({
+		return pick$3({
 			parts,
 			spoken: talk(parts),
 			fact: `${frac(n, d)} = ${right}`
@@ -8937,7 +8937,7 @@ const equivFamilies$1 = [
 			"=",
 			"?"
 		];
-		return pick$2({
+		return pick$3({
 			parts,
 			spoken: talk(parts),
 			fact: `${decimal} = ${right}`
@@ -8971,7 +8971,7 @@ const equivFamilies$1 = [
 		if (v === 1 && !(isInt(y, 1, 9) && y === Math.floor(x / 10))) return null;
 		const right = hundredths$1(bigger);
 		const wrong = hundredths$1(smaller);
-		return pick$2({
+		return pick$3({
 			parts: ["Which is bigger?"],
 			spoken: "Which is bigger?",
 			fact: `${right} is bigger than ${wrong}`
@@ -9284,7 +9284,7 @@ const families$1 = [
 			"=",
 			"?"
 		];
-		return pick$2({
+		return pick$3({
 			parts,
 			spoken: talk(parts),
 			fact: `${p}% = ${f.right}`
@@ -9341,7 +9341,7 @@ const families$1 = [
 			"=",
 			"?"
 		];
-		return pick$2({
+		return pick$3({
 			parts,
 			spoken: talk(parts),
 			fact: `${show$2(h / 100)} = ${right}`
@@ -9567,7 +9567,7 @@ const equivFamilies = [
 			"=",
 			"?"
 		];
-		return pick$2({
+		return pick$3({
 			parts,
 			spoken: talk(parts),
 			fact: `${frac(n, d)} = ${right}`
@@ -9600,7 +9600,7 @@ const equivFamilies = [
 			"?"
 		];
 		const p = smallestFactor(k);
-		return pick$2({
+		return pick$3({
 			parts,
 			spoken: talk(parts),
 			fact: `${shown} = ${frac(n, d)} in its simplest form`
@@ -9911,7 +9911,7 @@ const toFraction = oneKey("pct:to-fraction", "A percentage as a fraction (25% = 
 		"=",
 		"?"
 	];
-	return pick$2({
+	return pick$3({
 		parts,
 		spoken: talk(parts),
 		fact: `${pct(p)} = ${right}`
@@ -10400,7 +10400,7 @@ const factorFamilies = [
 	}, (_k, [n, a, slot, salt]) => {
 		if (!PAIR_NUMBERS.includes(n) || !isInt(a, 2, n - 1) || n % a !== 0 || a * a > n || !goodPick(slot, salt)) return null;
 		const right = pairLabel(a, n / a);
-		return pick$2({
+		return pick$3({
 			parts: ["Which is a factor pair of", `${n}?`],
 			spoken: `Which is a factor pair of ${n}?`,
 			fact: `${a} × ${n / a} = ${n}, so ${right} are a factor pair of ${n}`
@@ -13539,7 +13539,7 @@ const cornerCentre = (c) => ({
 	x: c === 0 || c === 3 ? ZONE / 2 : 1 - ZONE / 2,
 	y: c < 2 ? ZONE / 2 : 1 - ZONE / 2
 });
-const dist$1 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const dist$2 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 /** A start spot in the middle, spread by player number so avatars don't sit on top of each other. */
 function startSpot$1(i) {
 	const a = i * 2.399963;
@@ -13550,7 +13550,7 @@ function startSpot$1(i) {
 	};
 }
 const gateShut = (round, t) => round.gate !== null && t >= round.runEnd - 3e3;
-const pick$1 = (list, random) => list[Math.floor(random() * list.length) % list.length];
+const pick$2 = (list, random) => list[Math.floor(random() * list.length) % list.length];
 /** Which mechanics a round has: each new one alone on its unlock round (with the earlier ones sometimes), then a mix. */
 function mechanicsFor$1(n, random) {
 	const out = new Set();
@@ -13560,7 +13560,7 @@ function mechanicsFor$1(n, random) {
 	if (fresh) {
 		out.add(fresh);
 		const older = open.filter((m) => m !== "items" && m !== fresh);
-		if (older.length && random() < .4) out.add(pick$1(older, random));
+		if (older.length && random() < .4) out.add(pick$2(older, random));
 		return out;
 	}
 	const others = open.filter((m) => m !== "items");
@@ -13577,7 +13577,7 @@ function openSpot$1(random, hole) {
 			y: .12 + random() * .76
 		};
 		if (cornerOf(p) !== null) continue;
-		if (hole && dist$1(p, START) < .21) continue;
+		if (hole && dist$2(p, START) < .21) continue;
 		return p;
 	}
 	return {
@@ -13632,19 +13632,19 @@ function makeRound$1(g, n, startAt, random, players) {
 		r: .08,
 		periodMs: 5200 + Math.floor(random() * 1500)
 	} : null;
-	const gate = has.has("gate") ? pick$1(CORNERS, random) : null;
+	const gate = has.has("gate") ? pick$2(CORNERS, random) : null;
 	const twist = has.has("twist") ? random() < .6 ? "two" : "lucky" : null;
 	const items = [];
 	if (has.has("items")) {
 		const count = Math.max(2, Math.min(8, Math.round(players / 6)));
 		for (let i = 0; i < count; i++) items.push({
 			id: g.nextItem++,
-			power: pick$1(POWERS$1, random),
+			power: pick$2(POWERS$1, random),
 			by: null,
 			...openSpot$1(random, hole)
 		});
 	}
-	const first = pick$1(CORNERS, random);
+	const first = pick$2(CORNERS, random);
 	const rolled = twist === "lucky" ? [] : twist === "two" ? [first, (first + 1 + Math.floor(random() * 3)) % 4] : [first];
 	const run = g.runS ? g.runS * 1e3 : runMs(n);
 	return {
@@ -13868,7 +13868,7 @@ function grab$1(g, who, itemId, at, t) {
 		ok: false,
 		reason: "gone"
 	};
-	if (!at || dist$1(at, item) > .135) return {
+	if (!at || dist$2(at, item) > .135) return {
 		ok: false,
 		reason: "far"
 	};
@@ -13890,7 +13890,7 @@ function warp(g, who, at, t) {
 	const r = g.round;
 	const m = g.mine[who];
 	if (!r || !m || !at || m.jailedIn !== null || t < r.startAt || t > r.runEnd + 500) return false;
-	if (!r.teleports.some((tp) => dist$1(at, tp.a) < .16499999999999998 || dist$1(at, tp.b) < .16499999999999998)) return false;
+	if (!r.teleports.some((tp) => dist$2(at, tp.a) < .16499999999999998 || dist$2(at, tp.b) < .16499999999999998)) return false;
 	if (m.warpRound !== r.n) {
 		m.warpRound = r.n;
 		m.warpN = 0;
@@ -14086,17 +14086,17 @@ const tileCentre = (i) => ({
 	x: (i % 24 + .5) / 24,
 	y: (Math.floor(i / 24) + .5) / 24
 });
-const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const dist$1 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const FOUNTAIN_R = .15;
 /** Tiles inside the fountain can't be painted (the database checks this too). */
-const inFountain = (i) => dist(tileCentre(i), {
+const inFountain = (i) => dist$1(tileCentre(i), {
 	x: .5,
 	y: .5
 }) < FOUNTAIN_R;
 /** A bomb's splat: tiles whose centre is within `r` tiles of the spot. */
 function bombTiles(at, r) {
 	const out = [];
-	for (let i = 0; i < 576; i++) if (dist(tileCentre(i), at) <= r * .041666666666666664) out.push(i);
+	for (let i = 0; i < 576; i++) if (dist$1(tileCentre(i), at) <= r * .041666666666666664) out.push(i);
 	return out;
 }
 /** Rainbow Cross: the pupil's whole row and column. */
@@ -14135,7 +14135,7 @@ function scoreTiles(tiles, golden, hole) {
 		tiles: counts
 	};
 }
-const pick = (list, random) => list[Math.floor(random() * list.length) % list.length];
+const pick$1 = (list, random) => list[Math.floor(random() * list.length) % list.length];
 function mechanicsFor(n, random) {
 	const out = new Set();
 	const open = MECHANICS.filter((m) => UNLOCK[m] <= n);
@@ -14144,7 +14144,7 @@ function mechanicsFor(n, random) {
 	if (fresh) {
 		out.add(fresh);
 		const older = open.filter((m) => m !== "items" && m !== fresh);
-		if (older.length && random() < .5) out.add(pick(older, random));
+		if (older.length && random() < .5) out.add(pick$1(older, random));
 		return out;
 	}
 	const others = open.filter((m) => m !== "items");
@@ -14159,7 +14159,7 @@ function openSpot(random, hole) {
 			x: .1 + random() * .8,
 			y: .1 + random() * .8
 		};
-		if (hole && dist(p, {
+		if (hole && dist$1(p, {
 			x: .5,
 			y: .5
 		}) < .21) continue;
@@ -14230,7 +14230,7 @@ function makeRound(g, n, startAt, random, players) {
 		const count = Math.max(2, Math.min(8, Math.round(players / 5)));
 		for (let i = 0; i < count; i++) items.push({
 			id: g.nextItem++,
-			power: pick(POWERS, random),
+			power: pick$1(POWERS, random),
 			by: null,
 			...openSpot(random, hole)
 		});
@@ -14444,7 +14444,7 @@ function grab(g, who, itemId, at, t) {
 		ok: false,
 		reason: "gone"
 	};
-	if (!at || dist(at, item) > .135) return {
+	if (!at || dist$1(at, item) > .135) return {
 		ok: false,
 		reason: "far"
 	};
@@ -14845,6 +14845,18 @@ function rewardsOf(s) {
 			r.champion = place === 1;
 			podiumPlace = place !== void 0;
 			did = r.safe > 0 || (m?.answered ?? 0) > 0;
+			if (g.variant === "shark") {
+				r.extra = {
+					shark_safe: r.safe,
+					shark_boats: m?.boats ?? 0,
+					shark_wins: r.champion ? 1 : 0,
+					shark_escapes: r.escapes
+				};
+				r.safe = 0;
+				r.escapes = 0;
+				r.powers = 0;
+				r.champion = false;
+			}
 		} else if (g.kind === "stars") {
 			r.stars = g.mine[id]?.found ?? 0;
 			did = r.stars + (g.mine[id]?.glows ?? 0) > 0;
@@ -14869,6 +14881,400 @@ function rewardsOf(s) {
 	};
 }
 //#endregion
+//#region shared/classlive/shark.ts
+/**
+* Shark Bay (docs/SHARK-PLAN.md): the rules, pure functions only. A Four Corners variant (`CornersGame` with
+* `variant: 'shark'`), so the room, positions, jail, questions, power-ups and rewards all run through Four Corners'
+* code; only what differs lives here.
+*
+* The board is a round bay in the unit square. Rope lines split it into four coloured quarters that slowly spin round
+* the bay (from round 2, faster each round). Pupils start on the jetty in the middle. When the run ends the shark strikes
+* one quarter (two in a "two sharks" round, none when it is full): everyone in it is caught, and so is anyone still on
+* the jetty, unless they are hiding under a boat. Boats drift round the bay; each has a few seats, and the pupils nearest
+* its middle fit.
+*/
+const BAYS = [
+	"lagoon",
+	"reef",
+	"pirate",
+	"icy"
+];
+const CENTRE = START;
+const SHARK_MECHANICS = [
+	"items",
+	"storm",
+	"teleport",
+	"ice",
+	"fog",
+	"roller",
+	"twist"
+];
+const SHARK_UNLOCK = {
+	items: 2,
+	storm: 3,
+	teleport: 4,
+	ice: 5,
+	fog: 6,
+	roller: 7,
+	twist: 8
+};
+const isShark = (g) => g.kind === "corners" && g.variant === "shark";
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const TAU = Math.PI * 2;
+/** The quarters' turn at session time t (they stop when the run ends). */
+function spinAt(r, t) {
+	const s = Math.max(0, Math.min(t, r.runEnd) - r.startAt) / 1e3;
+	return r.spin0 + r.spinRate * s;
+}
+/** Which quarter a spot is in at this turn, or null on the jetty. 0 starts top left, then clockwise. */
+function quarterOf(p, spin) {
+	if (dist(p, CENTRE) < .15) return null;
+	const n = ((Math.atan2(p.y - CENTRE.y, p.x - CENTRE.x) - spin + Math.PI) % TAU + TAU) % TAU;
+	return Math.floor(n / (Math.PI / 2)) % 4;
+}
+/** The middle of a quarter (for a Jet ski, the shark's leap and labels), at this turn. */
+function quarterMid(q, spin, radius = .3) {
+	const a = spin - Math.PI + (q + .5) * (Math.PI / 2);
+	return {
+		x: CENTRE.x + Math.cos(a) * radius,
+		y: CENTRE.y + Math.sin(a) * radius
+	};
+}
+function boatAt(b, r, t) {
+	const s = Math.max(0, Math.min(t, r.runEnd) - r.startAt) / 1e3;
+	const a = b.a0 + b.w * s;
+	return {
+		x: CENTRE.x + Math.cos(a) * b.orbit,
+		y: CENTRE.y + Math.sin(a) * b.orbit
+	};
+}
+/** Keeps a spot in the water. */
+function inBay(p) {
+	const d = dist(p, CENTRE);
+	const most = .43499999999999994;
+	if (d <= most) return p;
+	return {
+		x: CENTRE.x + (p.x - CENTRE.x) / d * most,
+		y: CENTRE.y + (p.y - CENTRE.y) / d * most
+	};
+}
+const pick = (list, random) => list[Math.floor(random() * list.length) % list.length];
+function sharkMechanicsFor(n, random) {
+	const out = new Set();
+	const open = SHARK_MECHANICS.filter((m) => SHARK_UNLOCK[m] <= n);
+	if (open.includes("items")) out.add("items");
+	const fresh = SHARK_MECHANICS.find((m) => SHARK_UNLOCK[m] === n);
+	if (fresh) {
+		out.add(fresh);
+		const older = open.filter((m) => m !== "items" && m !== fresh);
+		if (older.length && random() < .4) out.add(pick(older, random));
+		return out;
+	}
+	const others = open.filter((m) => m !== "items");
+	const count = Math.min(others.length, 1 + Math.floor(random() * 3));
+	const bag = [...others];
+	while (out.size < count + (open.includes("items") ? 1 : 0) && bag.length) out.add(bag.splice(Math.floor(random() * bag.length), 1)[0]);
+	return out;
+}
+/** Somewhere in the open water (off the jetty, away from the edge). */
+function waterSpot(random) {
+	const a = random() * TAU;
+	const r = .21 + random() * .17999999999999994;
+	return {
+		x: CENTRE.x + Math.cos(a) * r,
+		y: CENTRE.y + Math.sin(a) * r
+	};
+}
+/** How many boats and seats for a class: about a third of the class fits. */
+function boatsFor(players) {
+	const count = Math.max(1, Math.min(3, Math.round(players / 9)));
+	return {
+		count,
+		seats: Math.max(2, Math.ceil(Math.max(1, players) / (count * 3)))
+	};
+}
+/** The spin speed for round n (radians a second): still in round 1, then faster each round; faster still in a frenzy. */
+function spinRateFor(n, frenzy) {
+	if (n <= 1) return 0;
+	return Math.min(.32, .1 + (n - 2) * .025) * (frenzy ? 1.4 : 1);
+}
+function makeBayRound(g, n, startAt, random, players) {
+	const has = sharkMechanicsFor(n, random);
+	const frenzy = g.halfAt !== void 0 ? startAt >= g.halfAt : n >= 8;
+	const storms = has.has("storm") ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({
+		...waterSpot(random),
+		r: .1 + random() * .05
+	})) : [];
+	const ice = has.has("ice") ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({
+		...waterSpot(random),
+		r: .09 + random() * .04
+	})) : [];
+	const teleports = [];
+	if (has.has("teleport")) {
+		const a = random() * TAU;
+		const at = (ang) => ({
+			x: CENTRE.x + Math.cos(ang) * .36,
+			y: CENTRE.y + Math.sin(ang) * .36
+		});
+		teleports.push({
+			a: at(a),
+			b: at(a + Math.PI)
+		});
+	}
+	const line = () => random() < .5 ? .27 + random() * .06 : .67 + random() * .06;
+	const roller = has.has("roller") ? {
+		axis: "x",
+		at: line(),
+		r: .07,
+		periodMs: 4800 + Math.floor(random() * 1500)
+	} : null;
+	const roller2 = has.has("roller") && random() < .6 ? {
+		axis: "y",
+		at: line(),
+		r: .07,
+		periodMs: 5400 + Math.floor(random() * 1500)
+	} : null;
+	const twist = has.has("twist") || frenzy && n >= SHARK_UNLOCK.twist && random() < .25 ? random() < .65 ? "two" : "lucky" : null;
+	const items = [];
+	if (has.has("items")) {
+		const count = Math.max(2, Math.min(8, Math.round(players / 6)));
+		for (let i = 0; i < count; i++) items.push({
+			id: g.nextItem++,
+			power: pick(POWERS$1, random),
+			by: null,
+			...waterSpot(random)
+		});
+	}
+	const { count, seats } = boatsFor(players);
+	const dirB = random() < .5 ? 1 : -1;
+	const boats = Array.from({ length: count }, (_, i) => ({
+		id: i,
+		orbit: .25 + random() * .1,
+		a0: i / count * TAU + random() * .8,
+		w: dirB * (.12 + random() * .12) * (frenzy ? 1.3 : 1),
+		seats
+	}));
+	const first = pick(CORNERS, random);
+	const rolled = twist === "lucky" ? [] : twist === "two" ? [first, (first + 2) % 4] : [first];
+	const run = g.runS ? g.runS * 1e3 : runMs(n);
+	return {
+		n,
+		startAt,
+		runEnd: startAt + run,
+		rollEnd: startAt + run + ROLL_MS,
+		showEnd: startAt + run + ROLL_MS + SHOW_MS,
+		storms,
+		ice,
+		teleports,
+		roller,
+		roller2,
+		hole: false,
+		fog: has.has("fog"),
+		gate: null,
+		twist,
+		items,
+		rolled,
+		caught: null,
+		saved: [],
+		bay: true,
+		spin0: random() * TAU,
+		spinRate: (random() < .5 ? 1 : -1) * spinRateFor(n, frenzy) || 0,
+		boats,
+		style: random() < .5 ? "leap" : "spot"
+	};
+}
+function newShark(bay, runS = 10) {
+	return {
+		kind: "corners",
+		variant: "shark",
+		bay,
+		map: "snow",
+		round: null,
+		mine: {},
+		nextItem: 1,
+		runS: runSeconds(runS)
+	};
+}
+const bayRound = (r) => r && r.bay ? r : null;
+/** Who fits under each boat at the strike: nearest the middle first, up to its seats. */
+function seated(r, spots) {
+	const t = r.runEnd;
+	const pairs = [];
+	for (const b of r.boats) {
+		const at = boatAt(b, r, t);
+		for (const s of spots) {
+			const d = dist(s.p, at);
+			if (d < .0925) pairs.push({
+				id: s.id,
+				boat: b.id,
+				d
+			});
+		}
+	}
+	pairs.sort((a, b) => a.d - b.d);
+	const left = new Map(r.boats.map((b) => [b.id, b.seats]));
+	const out = new Set();
+	for (const x of pairs) {
+		if (out.has(x.id) || (left.get(x.boat) ?? 0) <= 0) continue;
+		out.add(x.id);
+		left.set(x.boat, (left.get(x.boat) ?? 0) - 1);
+	}
+	return out;
+}
+function endBayRun(g, r, order, positions) {
+	const caught = [];
+	const saved = [];
+	const lucky = r.twist === "lucky";
+	const spin = spinAt(r, r.runEnd);
+	const free = order.filter((id) => g.mine[id] && g.mine[id].jailedIn === null);
+	const at = (id) => positions[id] ?? g.mine[id].spot;
+	const boated = seated(r, free.map((id) => ({
+		id,
+		p: at(id)
+	})));
+	const inQ = [
+		0,
+		0,
+		0,
+		0
+	];
+	for (const id of free) {
+		const q = quarterOf(at(id), spin);
+		if (q !== null && !boated.has(id)) inQ[q]++;
+	}
+	if (!lucky) {
+		const rolls = g.rolls ?? [
+			0,
+			0,
+			0,
+			0
+		];
+		for (const c of r.rolled) rolls[c]++;
+		g.rolls = rolls;
+	}
+	for (const id of free) {
+		const m = g.mine[id];
+		const p = at(id);
+		m.spot = {
+			x: p.x,
+			y: p.y
+		};
+		const q = quarterOf(p, spin);
+		const struck = q !== null && !lucky && r.rolled.includes(q);
+		const inBoat = boated.has(id);
+		const out = !inBoat && (q === null || struck);
+		m.lastCorner = null;
+		if (!out) {
+			m.safe++;
+			m.score += m.doubleIn === r.n ? 2 : 1;
+			if (inBoat) m.boats = (m.boats ?? 0) + 1;
+			if (q !== null && !inBoat && inQ[q] === 1) m.alone = (m.alone ?? 0) + 1;
+			if (inBoat && (q === null || struck) || lucky && q !== null || !lucky && r.rolled.length > 1 && !inBoat) m.lucky = (m.lucky ?? 0) + 1;
+			continue;
+		}
+		if (m.shieldIn === r.n) {
+			m.lucky = (m.lucky ?? 0) + 1;
+			saved.push(id);
+			continue;
+		}
+		if (struck) m.strikes = (m.strikes ?? 0) + 1;
+		caught.push(id);
+		m.caught++;
+		m.jailedIn = r.n;
+		m.jailRight = 0;
+		m.held = null;
+	}
+	r.caught = caught;
+	r.saved = saved;
+	r.boated = [...boated];
+	g.caughtAll = (g.caughtAll ?? 0) + caught.length;
+	return {
+		type: "roll",
+		t: r.runEnd,
+		n: r.n,
+		rolled: r.rolled,
+		lucky,
+		caught,
+		saved,
+		boated: [...boated]
+	};
+}
+/** Four Corners' `advance`, with Shark Bay's rounds and strike. */
+function sharkAdvance(g, t, order, positions, random, last = false) {
+	const events = [];
+	for (let guard = 0; guard < 4; guard++) {
+		const r = g.round;
+		if (!r) {
+			if (t < 4e3 || last) break;
+			g.round = makeBayRound(g, 1, READY_MS$1, random, order.length);
+			events.push({
+				type: "round",
+				t: READY_MS$1,
+				n: 1
+			});
+			continue;
+		}
+		if (r.caught === null) {
+			if (t < r.runEnd) break;
+			events.push(endBayRun(g, r, order, positions));
+			continue;
+		}
+		if (t < r.showEnd || last) break;
+		const startAt = t - r.showEnd > 2e3 ? t : r.showEnd;
+		for (const id of order) {
+			const m = g.mine[id];
+			if (m && m.jailedIn !== null && m.jailedIn < r.n && m.jailRight >= 3) {
+				m.jailedIn = null;
+				m.jailRight = 0;
+				m.escapes++;
+				m.spot = startSpot$1(order.indexOf(id));
+				m.placed++;
+				events.push({
+					type: "escape",
+					t: startAt,
+					pupil: id
+				});
+			}
+		}
+		g.round = makeBayRound(g, r.n + 1, startAt, random, order.length);
+		events.push({
+			type: "round",
+			t: startAt,
+			n: r.n + 1
+		});
+	}
+	return events;
+}
+/** A question is due: in the cave (until 3 right), or holding a power-up while in the water (off the jetty). */
+function sharkQuestionFor(g, who, at, t) {
+	const m = g.mine[who];
+	if (!m) return null;
+	if (m.jailedIn !== null) return m.jailRight < 3 ? "jail" : null;
+	const r = bayRound(g.round);
+	if (!m.held || !r || r.caught !== null || t >= r.runEnd || !at || dist(at, CENTRE) < .15) return null;
+	return "power";
+}
+/** A switched-on Jet ski: zoom to the middle of a quarter (where it is now). */
+function sharkJump(g, who, quarter, order, t) {
+	const r = bayRound(g.round);
+	const m = g.mine[who];
+	if (!r || !m || m.jumpIn !== r.n || r.caught !== null || t >= r.runEnd || m.jailedIn !== null) return { ok: false };
+	if (!CORNERS.includes(quarter)) return { ok: false };
+	const i = order.indexOf(who);
+	const c = quarterMid(quarter, spinAt(r, t), .3 + (i % 3 - 1) * .04);
+	const spot = inBay({
+		x: c.x + (i % 5 - 2) * .012,
+		y: c.y + (Math.floor(i / 5) % 5 - 2) * .012
+	});
+	m.jumpIn = null;
+	m.spot = spot;
+	m.placed++;
+	return {
+		ok: true,
+		spot
+	};
+}
+//#endregion
 //#region shared/classlive/server.ts
 /**
 * Class Live's server steps (docs/CLASSLIVE-PLAN.md section 5), with the database passed in (`ClassLiveServices`), so the
@@ -14889,6 +15295,7 @@ const ACTIVITIES = [
 	"serpent",
 	"mural",
 	"corners",
+	"shark",
 	"clash"
 ];
 const LENGTHS = [
@@ -14934,7 +15341,11 @@ function publicGame(g, players, t = 0) {
 			map: g.map,
 			round: g.round ? publicRound(g.round, t) : null,
 			jailed,
-			free: players - jailed
+			free: players - jailed,
+			...isShark(g) ? {
+				variant: "shark",
+				bay: g.bay
+			} : {}
 		};
 	}
 	if (g.kind === "mural") return {
@@ -15048,7 +15459,8 @@ function playerView(s, id) {
 					lucky: m.lucky ?? 0,
 					grabs: m.grabs,
 					powers: m.powersUsed,
-					escapes: m.escapes
+					escapes: m.escapes,
+					...isShark(g) ? { boats: m.boats ?? 0 } : {}
 				}
 			}
 		};
@@ -15143,7 +15555,7 @@ async function mutate(sv, room, step) {
 					spots = got;
 				}
 				const last = timeUp(s, row, now);
-				events.push(...advance$1(g0, t, s.order, spots, () => sv.random(), last));
+				events.push(...(isShark(g0) ? sharkAdvance : advance$1)(g0, t, s.order, spots, () => sv.random(), last));
 				if (last && cornersDone(g0, t)) {
 					s.state = "over";
 					events.push({
@@ -15260,6 +15672,7 @@ function newSession(body, seed, random) {
 	} else if (activity === "serpent") game = newSerpent(SERPENT_LEVELS.find((l) => l === body.level) ?? "gold", random);
 	else if (activity === "corners") game = newCorners(MAPS.find((m) => m === body.map) ?? MAPS[Math.floor(random() * MAPS.length) % MAPS.length], runSeconds(body.run));
 	else if (activity === "clash") game = newClash(CLASH_MAPS.find((m) => m === body.map) ?? CLASH_MAPS[Math.floor(random() * CLASH_MAPS.length) % CLASH_MAPS.length], teamCount(body.teams), paintSeconds(body.paint));
+	else if (activity === "shark") game = newShark(BAYS.find((m) => m === body.map) ?? BAYS[Math.floor(random() * BAYS.length) % BAYS.length], runSeconds(body.run));
 	else game = newMural(random);
 	return {
 		seed,
@@ -15730,7 +16143,7 @@ async function cornersStep(sv, cur, who, body) {
 		const done = await mutate(sv, room, (s, t) => {
 			if (s.state !== "live" || s.game.kind !== "corners") return { refuse: no(409, "This one has finished.", "over") };
 			if (body.jump !== void 0) {
-				if (!jump(s.game, who, body.jump, s.order, t).ok) return { refuse: no(409, "You can't jump there now.", "not_now") };
+				if (!(isShark(s.game) ? sharkJump : jump)(s.game, who, body.jump, s.order, t).ok) return { refuse: no(409, "You can't jump there now.", "not_now") };
 				return {
 					reply: null,
 					events: [],
@@ -15763,7 +16176,7 @@ async function cornersStep(sv, cur, who, body) {
 	if (body.action === "ask") {
 		const at = await spotOf();
 		if (at === "busy") return busy();
-		const purpose = questionFor(g0, who, at ?? g0.mine[who]?.spot, t0);
+		const purpose = (isShark(g0) ? sharkQuestionFor : questionFor)(g0, who, at ?? g0.mine[who]?.spot, t0);
 		if (!purpose) return no(409, "No question right now.", "not_now");
 		const question = await nextQuestion(sv, cur, who);
 		if (question === "busy") return busy();
@@ -15789,8 +16202,8 @@ async function cornersStep(sv, cur, who, body) {
 	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS, MAX_ANSWER_MS));
 	const done = await mutate(sv, room, (s, t) => {
 		if (s.state !== "live" || s.game.kind !== "corners") return { refuse: no(409, "This one has finished.", "over") };
-		const purpose = questionFor(s.game, who, at ?? s.game.mine[who]?.spot, t);
-		if (!purpose) return { refuse: no(409, "Get to a corner first!", "not_now") };
+		const purpose = (isShark(s.game) ? sharkQuestionFor : questionFor)(s.game, who, at ?? s.game.mine[who]?.spot, t);
+		if (!purpose) return { refuse: no(409, isShark(s.game) ? "Swim off the jetty first!" : "Get to a corner first!", "not_now") };
 		const out = answered$1(s.game, who, right, purpose, s.order, t, typeof body.ms === "number" ? ms : void 0);
 		if (!out.ok) return { refuse: no(409, out.reason === "too_soon" ? "One at a time!" : "No question right now.", out.reason) };
 		const freed = out.events.flatMap((e) => e.type === "power" && e.freed ? [e.freed] : []);

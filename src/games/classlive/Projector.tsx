@@ -28,6 +28,10 @@ import { ClashCard } from './ClashCard';
 import { ClashGuide } from './ClashGuide';
 import { MAP_WORDS as CLASH_WORDS, type ClashMap } from '../../../shared/classlive/clash';
 import { CornersGuide } from './CornersGuide';
+// Shark Bay
+import { SharkScene } from './SharkScene';
+import { SharkGuide } from './SharkGuide';
+import { BAYS, BAY_WORDS, isShark, type BayMap } from '../../../shared/classlive/shark';
 import { MAPS, MAP_WORDS, RUN_DEFAULT_S, RUN_MAX_S, RUN_MIN_S, type CornerMap } from '../../../shared/classlive/corners';
 
 const RUN_CHOICES = Array.from({ length: RUN_MAX_S - RUN_MIN_S + 1 }, (_, i) => RUN_MIN_S + i);
@@ -347,14 +351,15 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   const game = screen?.game ?? null;
   const serpent = game?.kind === 'serpent' ? game : null;
   const mural = game?.kind === 'mural' ? game : null;
-  const corners = game?.kind === 'corners' ? game : null;
+  const shark = game && isShark(game) ? game : null; // Shark Bay
+  const corners = game?.kind === 'corners' && !shark ? game : null;
   const clash = game?.kind === 'clash' ? game : null;
   const hall = !screen && !resuming ? painted('pick', 'hall') : null;
   // Background music for what is on screen (James, 25 Nov 2026 NZ).
   const hotNow = (leftMs !== null && leftMs < HOT_MS) || (serpent ? serpent.awake || serpent.energy >= 0.75 * wakeAt(screen?.players ?? 1) : false)
     || (game?.kind === 'stars' ? game.creature && !game.supernova : false);
-  useMusic(classLiveTrack(state, game?.kind ?? null, { guessing: mural?.phase === 'guess', hot: hotNow, map: corners?.map ?? clash?.map }), !muted);
-  const backPic = hall ?? (clash ? painted('clash', `back-${clash.map}`) ?? painted('corners', 'back-snow') : corners ? painted('corners', `back-${corners.map}`) : painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky'));
+  useMusic(classLiveTrack(state, game?.kind ?? null, { guessing: mural?.phase === 'guess', hot: hotNow, map: shark ? shark.bay : corners?.map ?? clash?.map, shark: !!shark }), !muted);
+  const backPic = hall ?? (clash ? painted('clash', `back-${clash.map}`) ?? painted('corners', 'back-snow') : shark ? painted('shark', `back-${shark.bay}`) : corners ? painted('corners', `back-${corners.map}`) : painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky'));
   const lobbyOpen = state === 'lobby' && room !== null;
   useEffect(() => {
     if (lobbyOpen) say(next('joinNow'), 400);
@@ -365,7 +370,7 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   }, [state]);
 
   return (
-    <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''} ${mural ? 'cl-p--mural' : ''} ${corners ? `cl-p--corners fc-back--${corners.map}` : ''} ${clash ? 'cl-p--corners cl-p--clash' : ''} ${backPic ? 'cl-p--painted' : ''}`}>
+    <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''} ${mural ? 'cl-p--mural' : ''} ${corners ? `cl-p--corners fc-back--${corners.map}` : ''} ${shark ? `cl-p--shark sb-back--${shark.bay}` : ''} ${clash ? 'cl-p--corners cl-p--clash' : ''} ${backPic ? 'cl-p--painted' : ''}`}>
       {serpent ? <JungleBackdrop /> : <NightBackdrop />}
       {backPic && <div className={`cl-painted ${serpent ? 'cl-painted--serpent' : ''} ${hall ? 'cl-painted--hall' : ''}`} style={{ backgroundImage: `url(${backPic})` }} aria-hidden="true" />}
       {serpent && <SerpentAmbience awake={serpent.awake || state === 'over'} />}
@@ -465,6 +470,22 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
         />
       )}
 
+      {/* Shark Bay */}
+      {screen && shark && (state === 'live' || state === 'over') && (
+        <SharkScene
+          screen={screen}
+          game={shark}
+          link={link}
+          room={room}
+          clock={() => Date.now() + offset.current}
+          sound={sound}
+          say={say}
+          over={state === 'over'}
+          onTick={() => { if (room) void act({ action: 'view', room }); }}
+          onAgain={forget}
+        />
+      )}
+
       {screen && game?.kind === 'stars' && (state === 'live' || state === 'over') && (
         <>
           <StarSky
@@ -531,6 +552,11 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
   const [cMap, setCMap] = useState<CornerMap | 'any'>('any');
   const [cRun, setCRun] = useState(RUN_DEFAULT_S);
   const [cGuide, setCGuide] = useState(false);
+  // Shark Bay
+  const [bLength, setBLength] = useState(5);
+  const [bBay, setBBay] = useState<BayMap | 'any'>('any');
+  const [bRun, setBRun] = useState(RUN_DEFAULT_S);
+  const [bGuide, setBGuide] = useState(false);
   const [x, setX] = useState('6');
   const [y, setY] = useState('7');
   const [length, setLength] = useState(0);
@@ -644,6 +670,33 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
           <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('corners', { length: cLength, run: cRun, ...(cMap === 'any' ? {} : { map: cMap }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
         <ClashCard busy={busy} disabled={!hostOk} onOpen={(body) => onOpen('clash', body)} />
+        {/* Shark Bay */}
+        <section className="cl-card cl-card--active cl-card--corners cl-card--shark" aria-label="Shark Bay">
+          <CardArt pic={painted('pick', 'shark', true)} />
+          <h2 className="cl-card__name">🦈 Shark Bay</h2>
+          <p className="cl-card__blurb">Swim to a spinning colour or hide under a boat. Simon the shark strikes one quarter!</p>
+          <button type="button" className="cl-btn cl-btn--small fc-guide-btn fc-guide-btn--card" onClick={() => setBGuide(true)}>⚡ Power-ups and hazards</button>
+          {bGuide && <SharkGuide bay={bBay === 'any' ? BAYS[0] : bBay} onClose={() => setBGuide(false)} />}
+          <div className="cl-opt">
+            <span className="cl-opt__label">Which bay?</span>
+            <div className="cl-chips" role="group" aria-label="Bay">
+              <button type="button" className={`cl-choice ${bBay === 'any' ? 'cl-choice--on' : ''}`} aria-pressed={bBay === 'any'} onClick={() => setBBay('any')}>Surprise me</button>
+              {BAYS.map((m) => (
+                <button key={m} type="button" className={`cl-choice ${bBay === m ? 'cl-choice--on' : ''}`} aria-pressed={bBay === m} onClick={() => setBBay(m)}>{BAY_WORDS[m].name}</button>
+              ))}
+            </div>
+          </div>
+          <div className="cl-opt">
+            <span className="cl-opt__label">Time to find a safe place</span>
+            <div className="cl-chips" role="group" aria-label="Time to find a safe place">
+              {RUN_CHOICES.map((n) => (
+                <button key={n} type="button" className={`cl-choice ${bRun === n ? 'cl-choice--on' : ''}`} aria-pressed={bRun === n} onClick={() => setBRun(n)}>{n} s</button>
+              ))}
+            </div>
+          </div>
+          <TimerChips length={bLength} setLength={setBLength} />
+          <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('shark', { length: bLength, run: bRun, ...(bBay === 'any' ? {} : { map: bBay }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
+        </section>
         {onShowdown && <ShowdownCard busy={busy} onOpen={onShowdown} />}
       </div>
     </div>
@@ -664,7 +717,7 @@ function Chip({ p, i }: { p: ScreenView['people'][number]; i: number }) {
 
 function Lobby({ screen, game, className, onStart }: { screen: ScreenView; game: ScreenView['game']; className?: string; onStart: () => void }) {
   const n = screen.people.length;
-  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : game.kind === 'corners' ? <CornersLobbyHead map={game.map} /> : game.kind === 'clash' ? <ClashLobbyHead map={game.map} teams={game.teams} /> : <MuralLobbyHead />;
+  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : game.kind === 'corners' ? (isShark(game) ? <SharkLobbyHead bay={game.bay} /> : <CornersLobbyHead map={game.map} />) : game.kind === 'clash' ? <ClashLobbyHead map={game.map} teams={game.teams} /> : <MuralLobbyHead />;
   return (
     <div className={`cl-lobby ${game.kind === 'serpent' ? 'cl-lobby--serpent' : ''}`}>
       {head}
@@ -717,6 +770,21 @@ function ClashLobbyHead({ map, teams }: { map: ClashMap; teams: number }) {
       <div className="cl-lobby__fact">{CLASH_WORDS[map].name} · {teams} teams</div>
       <div className="fc-lobby-corners" aria-hidden="true">{Array.from({ length: teams }, (_, i) => <i key={i} />)}</div>
       <p className="cl-lobby__ask">Paint the floor your team's colour. Answer maths to drop paint bombs!</p>
+      <button type="button" className="cl-btn fc-guide-btn" onClick={() => setGuide(true)}>⚡ Power-ups and hazards</button>
+    </>
+  );
+}
+
+/* Shark Bay */
+function SharkLobbyHead({ bay }: { bay: BayMap }) {
+  const [guide, setGuide] = useState(false);
+  return (
+    <>
+      {guide && <SharkGuide bay={bay} onClose={() => setGuide(false)} />}
+      <h1 className="cl-lobby__title">Shark Bay</h1>
+      <div className="cl-lobby__fact">{BAY_WORDS[bay].name}</div>
+      <div className="fc-lobby-corners" aria-hidden="true"><i /><i /><i /><i /></div>
+      <p className="cl-lobby__ask">Swim to a coloured quarter, or hide under a boat. Which quarter will Simon strike?</p>
       <button type="button" className="cl-btn fc-guide-btn" onClick={() => setGuide(true)}>⚡ Power-ups and hazards</button>
     </>
   );
