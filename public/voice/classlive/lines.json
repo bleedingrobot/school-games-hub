@@ -708,6 +708,174 @@
   "text": "Twist alert! Sometimes two corners are picked, and sometimes it is a lucky roll."
  },
  {
+  "slug": "here-we-go-swim-to-a-coloured-quarter-or-hide-under-a-boat",
+  "text": "Here we go! Swim to a coloured quarter, or hide under a boat!"
+ },
+ {
+  "slug": "shark-bay-is-on-simon-is-hungry-so-find-a-safe-quarter",
+  "text": "Shark Bay is on! Simon is hungry, so find a safe quarter!"
+ },
+ {
+  "slug": "off-we-go-keep-off-the-jetty-and-watch-out-for-simon",
+  "text": "Off we go! Keep off the jetty and watch out for Simon!"
+ },
+ {
+  "slug": "swim-swim-swim-find-a-quarter",
+  "text": "Swim, swim, swim! Find a quarter!"
+ },
+ {
+  "slug": "quick-simon-is-coming-pick-a-colour",
+  "text": "Quick, Simon is coming! Pick a colour!"
+ },
+ {
+  "slug": "go-go-go-hide-under-a-boat-or-pick-a-colour",
+  "text": "Go go go! Hide under a boat or pick a colour!"
+ },
+ {
+  "slug": "hide-under-a-boat",
+  "text": "Hide under a boat!"
+ },
+ {
+  "slug": "a-boat-is-a-safe-place-to-hide",
+  "text": "A boat is a safe place to hide!"
+ },
+ {
+  "slug": "get-under-a-boat-quick",
+  "text": "Get under a boat, quick!"
+ },
+ {
+  "slug": "hurry-hurry-simon-is-nearly-here",
+  "text": "Hurry, hurry! Simon is nearly here!"
+ },
+ {
+  "slug": "quick-the-shark-is-almost-here",
+  "text": "Quick, the shark is almost here!"
+ },
+ {
+  "slug": "get-to-a-safe-place-now",
+  "text": "Get to a safe place, now!"
+ },
+ {
+  "slug": "look-out-a-fin-is-circling-the-bay",
+  "text": "Look out! A fin is circling the bay!"
+ },
+ {
+  "slug": "simon-is-swimming-round-and-round",
+  "text": "Simon is swimming round and round!"
+ },
+ {
+  "slug": "here-comes-the-fin",
+  "text": "Here comes the fin!"
+ },
+ {
+  "slug": "the-lights-are-going-out-where-will-simon-snap",
+  "text": "The lights are going out! Where will Simon snap?"
+ },
+ {
+  "slug": "the-spotlight-is-searching-for-simon",
+  "text": "The spotlight is searching for Simon!"
+ },
+ {
+  "slug": "dark-water-where-is-the-shark-going-to-snap",
+  "text": "Dark water! Where is the shark going to snap?"
+ },
+ {
+  "slug": "simon-strikes-red",
+  "text": "Simon strikes Red!"
+ },
+ {
+  "slug": "chomp-simon-bites-the-red-quarter",
+  "text": "Chomp! Simon bites the red quarter!"
+ },
+ {
+  "slug": "it-is-red-simon-strikes-red",
+  "text": "It is Red! Simon strikes Red!"
+ },
+ {
+  "slug": "simon-strikes-yellow",
+  "text": "Simon strikes Yellow!"
+ },
+ {
+  "slug": "chomp-simon-bites-the-yellow-quarter",
+  "text": "Chomp! Simon bites the yellow quarter!"
+ },
+ {
+  "slug": "it-is-yellow-simon-strikes-yellow",
+  "text": "It is Yellow! Simon strikes Yellow!"
+ },
+ {
+  "slug": "simon-strikes-green",
+  "text": "Simon strikes Green!"
+ },
+ {
+  "slug": "chomp-simon-bites-the-green-quarter",
+  "text": "Chomp! Simon bites the green quarter!"
+ },
+ {
+  "slug": "it-is-green-simon-strikes-green",
+  "text": "It is Green! Simon strikes Green!"
+ },
+ {
+  "slug": "simon-strikes-purple",
+  "text": "Simon strikes Purple!"
+ },
+ {
+  "slug": "chomp-simon-bites-the-purple-quarter",
+  "text": "Chomp! Simon bites the purple quarter!"
+ },
+ {
+  "slug": "it-is-purple-simon-strikes-purple",
+  "text": "It is Purple! Simon strikes Purple!"
+ },
+ {
+  "slug": "two-sharks-simon-has-a-friend",
+  "text": "Two sharks! Simon has a friend!"
+ },
+ {
+  "slug": "oh-no-two-sharks-this-time",
+  "text": "Oh no, two sharks this time!"
+ },
+ {
+  "slug": "twist-two-quarters-are-struck",
+  "text": "Twist! Two quarters are struck!"
+ },
+ {
+  "slug": "simon-is-full-nobody-is-caught",
+  "text": "Simon is full! Nobody is caught!"
+ },
+ {
+  "slug": "simon-has-had-enough-everyone-is-safe",
+  "text": "Simon has had enough! Everyone is safe!"
+ },
+ {
+  "slug": "lucky-simon-is-too-full-to-bite",
+  "text": "Lucky! Simon is too full to bite!"
+ },
+ {
+  "slug": "the-boats-kept-some-pupils-safe",
+  "text": "The boats kept some pupils safe!"
+ },
+ {
+  "slug": "phew-a-boat-saved-some-of-you",
+  "text": "Phew! A boat saved some of you!"
+ },
+ {
+  "slug": "safe-under-the-boats",
+  "text": "Safe under the boats!"
+ },
+ {
+  "slug": "oh-no-off-to-the-shark-cave",
+  "text": "Oh no, off to the shark cave!"
+ },
+ {
+  "slug": "splash-a-crowd-is-going-to-the-shark-cave",
+  "text": "Splash! A crowd is going to the shark cave!"
+ },
+ {
+  "slug": "into-the-cave-you-go",
+  "text": "Into the cave you go!"
+ },
+ {
   "slug": "we-know-one-times-fact",
   "text": "We know one times fact."
  },
@@ -806,6 +974,26 @@
  {
   "slug": "grab-power-ups-on-the-map-then-answer-a-question-in-a-corner-to-switch-them-on-the-most-safe-rounds-wins",
   "text": "Grab power-ups on the map, then answer a question in a corner to switch them on. The most safe rounds wins!"
+ },
+ {
+  "slug": "swim-your-avatar-with-the-joystick-or-the-arrow-keys",
+  "text": "Swim your avatar with the joystick, or the arrow keys."
+ },
+ {
+  "slug": "the-bay-has-four-coloured-quarters-and-they-slowly-spin-round",
+  "text": "The bay has four coloured quarters, and they slowly spin round!"
+ },
+ {
+  "slug": "get-to-a-quarter-before-the-countdown-ends-do-not-stay-on-the-jetty",
+  "text": "Get to a quarter before the countdown ends. Do not stay on the jetty!"
+ },
+ {
+  "slug": "simon-the-shark-strikes-a-quarter-anyone-in-it-or-on-the-jetty-goes-to-the-shark-cave",
+  "text": "Simon the shark strikes a quarter. Anyone in it, or on the jetty, goes to the shark cave."
+ },
+ {
+  "slug": "hide-under-a-boat-and-you-are-safe-but-boats-only-have-a-few-seats-in-the-cave-answer-three-questions-to-swim-back-out",
+  "text": "Hide under a boat and you are safe, but boats only have a few seats! In the cave, answer three questions to swim back out."
  },
  {
   "slug": "steer-your-avatar-with-the-joystick-or-the-arrow-keys",

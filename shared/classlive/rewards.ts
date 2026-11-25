@@ -58,6 +58,11 @@ export function rewardsOf(s: Session): FinishedSession {
       r.champion = place === 1;
       podiumPlace = place !== undefined;
       did = r.safe > 0 || (m?.answered ?? 0) > 0;
+      if (g.variant === 'shark') {
+        // Shark Bay has its own trophies (migration 20261125001400): kept out of Four Corners' totals.
+        r.extra = { shark_safe: r.safe, shark_boats: (m as { boats?: number } | undefined)?.boats ?? 0, shark_wins: r.champion ? 1 : 0, shark_escapes: r.escapes };
+        r.safe = 0; r.escapes = 0; r.powers = 0; r.champion = false;
+      }
     } else if (g.kind === 'ghost') {
       // Ghost Tag (docs/GHOST-PLAN.md): podium place +2, like Four Corners; its trophies count catches, wins, vanishes.
       const m = g.mine[id];

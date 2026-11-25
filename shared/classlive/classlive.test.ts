@@ -7,6 +7,7 @@ import { answerBox, apply, BODY, makeChain, newSerpent, SERPENT_LEVELS } from '.
 import { gridFor, maxOpen, openCap, UNTIMED_PACE_MS, type MuralGame } from './mural';
 import { ARMS, armCounts, isTrue, laggingArm, linkOf, newStars, readFact, tryFact, type Anchor } from './stars';
 import { lagHint } from '../../src/games/classlive/arms';
+import { boatAt, inBay, isShark, makeBayRound, newShark, quarterMid, quarterOf, sharkAdvance, spinAt, type BayRound, type SharkGame } from './shark';
 import { advance, clampMove, cornerOf, freeAt, freshMine, grab, makeRound, ROLL_MS, SHOW_MS, MAX_SPEED, newCorners, rollerAt, rollersOf, startSpot, stepMove, type CornersGame } from './corners';
 
 const k: Anchor = { x: 6, y: 7, p: 42 };
@@ -324,6 +325,39 @@ describe('Class Live server', () => {
     expect(paid.players.filter((p) => p.champion).length).toBeGreaterThan(0);
     expect(paid.players.every((p) => p.points >= 1 && p.points <= 10)).toBe(true);
     expect(startSpot(0)).not.toEqual(startSpot(1));
+
+    // Shark Bay (docs/SHARK-PLAN.md) runs on the same engine: quarters spin, the jetty and the struck quarter are caught,
+    // and the pupils nearest a boat's middle fit under it (up to its seats).
+    expect([quarterOf({ x: 0.2, y: 0.2 }, 0), quarterOf({ x: 0.8, y: 0.8 }, 0), quarterOf({ x: 0.5, y: 0.52 }, 0), quarterOf({ x: 0.2, y: 0.2 }, Math.PI / 2)]).toEqual([0, 2, null, 3]);
+    const bayG = newShark('reef');
+    const br = { ...makeBayRound(bayG, 2, 0, rng(5), 4), twist: null, rolled: [0 as const] };
+    expect([makeBayRound(bayG, 1, 0, rng(1), 4).spinRate, br.spinRate !== 0, br.boats.length, br.boats[0].seats]).toEqual([0, true, 1, 2]);
+    const boatSpot = boatAt(br.boats[0], br, br.runEnd);
+    const tl = quarterMid(0, spinAt(br, br.runEnd));
+    const near = (d: number) => ({ x: boatSpot.x + d, y: boatSpot.y });
+    bayG.round = br;
+    bayG.mine = Object.fromEntries(['j', 'q', 'b1', 'b2', 'b3'].map((id, i) => [id, freshMine(i)]));
+    sharkAdvance(bayG, br.runEnd, Object.keys(bayG.mine), { j: { x: 0.5, y: 0.5 }, q: tl, b1: near(0), b2: near(0.01), b3: near(0.06) }, rng(2));
+    const boatQ = quarterOf(near(0.06), spinAt(br, br.runEnd));
+    expect(br.caught).toEqual(['j', 'q', ...(boatQ === 0 ? ['b3'] : [])]);
+    expect([[...(br as BayRound).boated!].sort(), (bayG.mine.b1 as { boats?: number }).boats]).toEqual([['b1', 'b2'], 1]);
+    expect(inBay({ x: 0, y: 0 }).x).toBeGreaterThan(0.1);
+    // A pretend class plays a 2-minute game; Shark Bay pays its own trophies, not Four Corners'.
+    const sc = pretendClass({ size: 12, seed: 4, clock, later: clock.later });
+    const sroom = (await classLiveStep(sc.services, PRETEND_TEACHER, { action: 'open', classId: PRETEND_CLASS, activity: 'shark', map: 'pirate', length: 2 })).body.room as number;
+    await sc.joinAll();
+    await classLiveStep(sc.services, PRETEND_TEACHER, { action: 'start', room: sroom });
+    sc.play(sroom);
+    for (let s = 0; s < 2 * 60 + 40; s += 0.5) {
+      await clock.run(clock.now() + 500);
+      await classLiveStep(sc.services, PRETEND_TEACHER, { action: 'view', room: sroom });
+    }
+    const sg = sc.db.rooms.get(sroom)!.session.game as SharkGame;
+    expect([sc.db.rooms.get(sroom)!.session.state, sg.bay, isShark(sg), sg.round!.n > 4]).toEqual(['over', 'pirate', true, true]);
+    expect(Object.values(sg.mine).some((m) => m.caught > 0) && Object.values(sg.mine).some((m) => m.safe > 0)).toBe(true);
+    const spaid = [...sc.db.paid.values()].find((p) => p.activity === 'shark')!;
+    expect(spaid.players.every((p) => p.safe === 0 && p.extra && p.extra.shark_safe >= 0)).toBe(true);
+    expect(spaid.players.some((p) => (p.extra?.shark_safe ?? 0) > 0)).toBe(true);
   });
 
   it('a lobby game: any pupil of the school joins by its room or code; a class game and other schools stay closed', async () => {
