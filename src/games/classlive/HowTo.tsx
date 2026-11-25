@@ -9,6 +9,7 @@ import { SERPENT_LEVEL_ABOUT, SERPENT_LEVEL_NAMES } from '../../../shared/classl
 import { speak, stopSpeaking } from '../../speech';
 import { painted } from './paintedArt';
 import { MAP_WORDS } from '../../../shared/classlive/corners';
+import { BAY_WORDS, isShark, SHARK } from '../../../shared/classlive/shark';
 import { HOWTO, VOICE_FOLDER } from './voiceLines';
 
 type Game = ScreenView['game'];
@@ -41,6 +42,20 @@ export function sheetFor(game: Game): Sheet {
         { icon: '🔢', text: 'Write each answer on your device. You get two tries.', say: H[1] },
         { icon: '💎', text: 'Every right answer moves your gem up the serpent.', say: H[2] },
         { icon: '⚡', text: 'Right answers from the whole class wake the serpent. Reach the head, then keep going on the bonus tail!', say: H[3] },
+      ],
+    };
+  }
+  // Shark Bay
+  if (isShark(game)) {
+    const H = HOWTO.shark;
+    return {
+      title: 'How to play Shark Bay', mode: BAY_WORDS[game.bay].name, modeSay: null, art: painted('pick', 'shark', true),
+      steps: [
+        { icon: '🕹️', text: 'Swim your avatar with the joystick, or the arrow keys.', say: H[0] },
+        { icon: '🌀', text: 'The bay has four coloured quarters. They slowly spin round!', say: H[1] },
+        { icon: '⏱️', text: 'Get to a quarter before the countdown ends. Do not stay on the jetty!', say: H[2] },
+        { icon: '🦈', text: `${SHARK} strikes one quarter. Anyone in it, or on the jetty, goes to the shark cave.`, say: H[3] },
+        { icon: '⛵', text: 'Hide under a boat to be safe, but boats only have a few seats! In the cave, answer 3 questions to swim back out.', say: H[4] },
       ],
     };
   }
@@ -95,7 +110,7 @@ export function HowTo({ game, players, muted, onPlay, onBack }: { game: Game; pl
     };
     timer = window.setTimeout(() => next(0), 500);
     return () => { dead = true; window.clearTimeout(timer); stopSpeaking(); };
-  }, [game.kind]);
+  }, [game.kind, isShark(game)]);
   const play = () => { stopSpeaking(); onPlay(); };
   return (
     <div className={`cl-how cl-how--${game.kind}`} role="dialog" aria-label={sheet.title}>
