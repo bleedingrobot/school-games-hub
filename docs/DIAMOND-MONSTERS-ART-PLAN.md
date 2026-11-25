@@ -1,6 +1,6 @@
 # Diamond Drop Monster Dig: art plan
 
-*For [DIAMOND-MONSTERS-PLAN.md](DIAMOND-MONSTERS-PLAN.md). Painted by James on the gaming PC (ComfyUI) with the one art script, `scripts/game_art.py`. Nothing here blocks the game: every picture falls back to what shows today.*
+*For [DIAMOND-MONSTERS-PLAN.md](DIAMOND-MONSTERS-PLAN.md). Painted 25 Nov 2026 on the gaming PC (ComfyUI) with the one art script, `scripts/game_art.py`. Nothing here blocks the game: every picture falls back to what shows today.*
 
 ## Reused, nothing to paint
 
