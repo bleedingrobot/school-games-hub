@@ -29,7 +29,7 @@
   },
   {
    "name": "tile-volcano",
-   "prompt": "A top-down painted texture of a chunky square slab of dark grey volcanic basalt rock with rough edges and a few tiny glowing cracks, seen straight down from above, filling the whole square picture edge to edge, flat even lighting, no writing anywhere.",
+   "prompt": "A seamless close-up top-down texture of rough dark grey volcanic basalt rock with a few tiny glowing cracks, seen straight down from above, the rock surface covers the entire picture right out to every edge and corner, no slab outline, no background showing, flat even lighting, no writing anywhere.",
    "size": [
     1024,
     1024
@@ -38,7 +38,7 @@
    "folder": "lava",
    "file": "tile-volcano",
    "style": "s",
-   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, lava, frame, border, objects"
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, lava, frame, border, objects, slab, tile edge, outline, background, table, paper"
   },
   {
    "name": "raft-volcano",
@@ -124,7 +124,7 @@
   },
   {
    "name": "tile-dragon",
-   "prompt": "A top-down painted texture of a chunky square slab of purple-grey cave stone with a few gold flecks, seen straight down from above, filling the whole square picture edge to edge, flat even lighting, no writing anywhere.",
+   "prompt": "A seamless close-up top-down texture of rough purple-grey cave stone with a few gold flecks, seen straight down from above, the rock surface covers the entire picture right out to every edge and corner, no slab outline, no background showing, flat even lighting, no writing anywhere.",
    "size": [
     1024,
     1024
@@ -133,7 +133,7 @@
    "folder": "lava",
    "file": "tile-dragon",
    "style": "s",
-   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, lava, frame, border, objects"
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, lava, frame, border, objects, slab, tile edge, outline, background, table, paper"
   },
   {
    "name": "raft-dragon",
@@ -178,7 +178,7 @@
   },
   {
    "name": "dragon-crust",
-   "prompt": "A small flat scattered pile of shiny gold coins, seen from above. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "prompt": "A small flat scattered pile of shiny plain smooth gold coins with blank faces and no markings, seen from above. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
    "size": [
     512,
     512
@@ -187,7 +187,7 @@
    "folder": "lava-fx",
    "file": "dragon-crust",
    "style": "c",
-   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, symbols, engravings, dollar sign",
    "max": 512
   },
   {
@@ -206,7 +206,7 @@
   },
   {
    "name": "lake-forge",
-   "prompt": "A top-down painted texture of a pool of bright yellow-orange molten metal with dark slag swirls and sparks, seen straight down from above, even all over, the same everywhere, seamless, no edges, no shore, nothing floating in it, square picture, no writing anywhere.",
+   "prompt": "A seamless repeating top-down texture of flowing bright yellow-orange molten metal, long wavy streaks of liquid gold with thin dark slag ripples and sparks running across the whole picture, seen straight down from above, the same pattern everywhere right out to every edge and corner, no whirlpool, no spiral, no centre, no container, no rim, no shore, nothing floating in it, square picture, no writing anywhere.",
    "size": [
     1536,
     1536
@@ -215,7 +215,7 @@
    "folder": "lava",
    "file": "lake-forge",
    "style": "s",
-   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, rocks, islands, shore, frame, border"
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, rocks, islands, shore, frame, border, pot, crucible, container, bowl, rim, pan, vignette, whirlpool, spiral, vortex, dark corners"
   },
   {
    "name": "tile-forge",
@@ -314,7 +314,7 @@
   },
   {
    "name": "tile-planet",
-   "prompt": "A top-down painted texture of a chunky square slab of dark blue-black alien rock with small glowing purple crystals, seen straight down from above, filling the whole square picture edge to edge, flat even lighting, no writing anywhere.",
+   "prompt": "A seamless close-up top-down texture of rough dark blue-black alien rock with small glowing purple crystals, seen straight down from above, the rock surface covers the entire picture right out to every edge and corner, no slab outline, no background showing, flat even lighting, no writing anywhere.",
    "size": [
     1024,
     1024
@@ -323,7 +323,7 @@
    "folder": "lava",
    "file": "tile-planet",
    "style": "s",
-   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, lava, frame, border, objects"
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, lava, frame, border, objects, slab, tile edge, outline, background, table, paper"
   },
   {
    "name": "raft-planet",
@@ -465,7 +465,7 @@
   },
   {
    "name": "power-rope",
-   "prompt": "A coiled thick rescue rope with a red and white ring buoy, a game power-up icon. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "prompt": "A coiled thick brown rescue rope tied to a plain red and white striped ring buoy with an empty hole in the middle, a game power-up icon. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
    "size": [
     512,
     512
@@ -474,7 +474,7 @@
    "folder": "lava-fx",
    "file": "power-rope",
    "style": "c",
-   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, symbol, emblem, logo in the middle",
    "max": 512
   }
  ]
