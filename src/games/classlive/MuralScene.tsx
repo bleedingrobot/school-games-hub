@@ -6,7 +6,7 @@
  * picture zooms and confetti falls. Moving parts are CSS transform/opacity (projector.css, classes prefixed mu-).
  */
 import { memo, useEffect, useRef, useState } from 'react';
-import { CLUES, COLS, PICTURES, TILES, type MuralGame } from '../../../shared/classlive/mural';
+import { CLUES, colsOf, PICTURES, rowsOf, type MuralGame } from '../../../shared/classlive/mural';
 import type { ScreenView } from '../../../shared/classlive/server';
 import { MuralPicture } from './muralPictures';
 import { PLAYER_COLOURS } from './StarSky';
@@ -28,9 +28,9 @@ const CONFETTI = Array.from({ length: 56 }, (_, i) => {
   return { x: r(1) * 100, d: 2.6 + r(2) * 2.4, o: r(3) * 1.6, h: Math.floor(r(4) * 360), w: 8 + r(5) * 10, s: r(6) > 0.5 ? 1 : -1 };
 });
 
-const Tile = memo(function Tile({ i, open, wave, fresh }: { i: number; open: boolean; wave: number | null; fresh: MuralFx['fresh'][number] | undefined }) {
-  const col = i % COLS;
-  const row = Math.floor(i / COLS);
+const Tile = memo(function Tile({ i, cols, open, wave, fresh }: { i: number; cols: number; open: boolean; wave: number | null; fresh: MuralFx['fresh'][number] | undefined }) {
+  const col = i % cols;
+  const row = Math.floor(i / cols);
   const hue = 258 + ((col + row) % 3) * 22;
   return (
     <div className="mu-tile" role="presentation">
@@ -78,6 +78,12 @@ export function MuralScene({ game, people, state, fx, showReveal, onReveal, onRe
 }) {
   const shown = game.revealed || state === 'over';
   const flipped = game.tiles.filter(Boolean).length;
+  // The grid fits the class and the time (shared/classlive/mural.ts gridFor); older rooms are 18 by 12.
+  const cols = colsOf(game);
+  const rows = rowsOf(game);
+  const total = game.tiles.length;
+  // The reveal wave takes the same time whatever the grid (18 by 12 took 30 steps of 85 ms).
+  const step = (85 * 30) / (cols + rows);
   const guessTime = game.phase === 'guess' && !shown;
   const picked = Object.values(game.mine).filter((m) => m.pick).length;
   const [sure, setSure] = useState(false);
@@ -97,15 +103,15 @@ export function MuralScene({ game, people, state, fx, showReveal, onReveal, onRe
   }, [state, calm]);
 
   const byId = (id: string) => people.find((p) => p.id === id);
-  const pct = Math.round((flipped / TILES) * 100);
+  const pct = Math.round((flipped / total) * 100);
   const name = PICTURES[game.picture];
 
   return (
     <div className={`mu${shown ? ' mu--shown' : ''}${fx.revealing ? ' mu--reveal' : ''}`}>
       <div className="mu-head">
-        <span className="mu-count" aria-label={`${flipped} of ${TILES} tiles flipped`}><b>{flipped}</b> / {TILES}</span>
-        <span className="mu-progress" role="progressbar" aria-valuemin={0} aria-valuemax={TILES} aria-valuenow={flipped} aria-label="Tiles flipped">
-          <span className="mu-progress__fill" style={{ transform: `scaleX(${flipped / TILES})` }} />
+        <span className="mu-count" aria-label={`${flipped} of ${total} tiles flipped`}><b>{flipped}</b> / {total}</span>
+        <span className="mu-progress" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={flipped} aria-label="Tiles flipped">
+          <span className="mu-progress__fill" style={{ transform: `scaleX(${flipped / total})` }} />
         </span>
         <span className="mu-pct">{shown ? 'All done!' : `${pct}%`}</span>
       </div>
@@ -114,12 +120,12 @@ export function MuralScene({ game, people, state, fx, showReveal, onReveal, onRe
         <div className="mu-stage">
           <div className="mu-board">
             <div className="mu-art"><MuralPicture id={game.picture} label={shown ? name : undefined} /></div>
-            <div className="mu-grid">
-              {Array.from({ length: TILES }, (_, i) => {
+            <div className="mu-grid" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)`, gridTemplateRows: `repeat(${rows}, 1fr)`, ['--cols' as string]: cols }}>
+              {Array.from({ length: total }, (_, i) => {
                 const was = !!game.tiles[i];
-                const col = i % COLS;
-                const row = Math.floor(i / COLS);
-                return <Tile key={i} i={i} open={was || shown} wave={shown && !was ? (col + row) * 85 + 250 : null} fresh={fx.fresh[i]} />;
+                const col = i % cols;
+                const row = Math.floor(i / cols);
+                return <Tile key={i} i={i} cols={cols} open={was || shown} wave={shown && !was ? Math.round((col + row) * step) + 250 : null} fresh={fx.fresh[i]} />;
               })}
             </div>
             {shown && <div className="mu-glow" aria-hidden="true" />}

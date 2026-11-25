@@ -14,7 +14,7 @@
  */
 import { ARMS, anchorOf, armCount, newStars, pickAnchor, spotlight, tryFact, type Arm, type Star, type StarLevel, type StarsEvent, type StarsGame, type StarsReply } from './stars';
 import { LEVELS } from './stars';
-import { allPicked, answered, canGuess, flipped, guess, guessingDone, GUESS_MS, newMural, reveal, startGuessing, tilesOf, TILES, ANSWER_GAP_MS, type MuralEvent, type MuralGame, type Picture } from './mural';
+import { allPicked, answered, canGuess, colsOf, flipped, guess, guessingDone, GUESS_MS, newMural, reveal, rowsOf, sizeMural, startGuessing, tilesOf, TILES, ANSWER_GAP_MS, type MuralEvent, type MuralGame, type Picture } from './mural';
 import type { FactAnswer } from '../maths/leitner';
 import { markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext, type PublicQuestion } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
@@ -22,11 +22,16 @@ import { isUntimed } from '../maths/untimed';
 import { makeSpacePack, pickSpaceQuestion } from '../space/mathsQuestion';
 import { answerBox, boxOf, newSerpent, SERPENT_LEVELS, wakeAt, type SerpentBox, type SerpentEvent, type SerpentGame, type SerpentLevel, type SerpentReply } from './serpent';
 import { rewardsOf, type FinishedSession } from './rewards';
+import {
+  advance as cornersAdvance, answered as cornersAnswered, boosted, crystalCorner, freshMine, ghostly, grab as cornersGrab, jump as cornersJump, warp as cornersWarp, freeAt as cornersFreeAt,
+  cornersDone, MAPS, needsPositions, runSeconds, newCorners, nextDeadline, podium, questionFor, ANSWER_GAP_MS as CORNERS_GAP_MS,
+  type Corner, type CornerMap, type CornersEvent, type CornersGame, type Item, type Positions, type Power, type Round, type Spot,
+} from './corners';
 
-export const ACTIVITIES = ['stars', 'serpent', 'mural'] as const;
+export const ACTIVITIES = ['stars', 'serpent', 'mural', 'corners'] as const;
 export type Activity = (typeof ACTIVITIES)[number];
 export const LENGTHS = [0, 2, 3, 5, 10, 15] as const;
-export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural' };
+export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners' };
 
 export interface LivePlayer {
   id: string;
@@ -36,8 +41,8 @@ export interface LivePlayer {
   colour: number;
 }
 
-export type Game = StarsGame | SerpentGame | MuralGame;
-export type GameEvent = StarsEvent | SerpentEvent | MuralEvent;
+export type Game = StarsGame | SerpentGame | MuralGame | CornersGame;
+export type GameEvent = StarsEvent | SerpentEvent | MuralEvent | CornersEvent;
 
 export interface Session {
   seed: number;
@@ -53,6 +58,11 @@ export interface Session {
    * "Join now?" button on their home page or with the code. Missing: the teacher's class only.
    */
   lobby?: Lobby;
+  /**
+   * A class game's late-join code (James, 25 Nov 2026 NZ): shown on the big screen while it runs, typed on a pupil's
+   * Class Live screen. Only pupils of the class can use it (a lobby game's code is `lobby.code`).
+   */
+  joinCode?: string;
   /** Music on pupils' devices too (James, 25 Nov 2026 NZ: a teacher toggle; off means the big screen only). */
   padMusic?: boolean;
 }
@@ -88,11 +98,23 @@ export type PublicGame =
   | { kind: 'stars'; anchor: StarsGame['anchor']; arms: Record<Arm, number>; total: number; creature: boolean; supernova: boolean }
   | { kind: 'serpent'; level: SerpentLevel; energy: number; wakeAt: number; awake: boolean; heads: number; tail: number }
   /** `tiles`: one character a tile, '1' flipped, '0' not. Never the picture itself (until it is revealed). */
-  | { kind: 'mural'; tiles: string; flipped: number; phase: 'flip' | 'guess'; guessEndsAt: number | null; picked: number; choices: Picture[]; solvers: number; revealed: boolean; picture: Picture | null };
+  | { kind: 'mural'; tiles: string; cols: number; rows: number; flipped: number; phase: 'flip' | 'guess'; guessEndsAt: number | null; picked: number; choices: Picture[]; solvers: number; revealed: boolean; picture: Picture | null }
+  /** Four Corners: the round without the roll (until the dice lands) and without who was caught. */
+  | { kind: 'corners'; map: CornerMap; round: PublicRound | null; jailed: number; free: number };
+
+export type PublicRound = Omit<Round, 'rolled' | 'caught' | 'saved' | 'items'> & {
+  rolled: Corner[] | null;
+  items: Omit<Item, 'by'>[];
+  /** The run has ended (positions are fixed); the dice is rolling or has landed. */
+  ended: boolean;
+  caught: number;
+};
 
 /** What the projector draws: the whole game, names (when allowed) and the newest events (each with a number). */
 export interface ScreenView extends Omit<RoomView, 'game'> {
   showNames: boolean;
+  /** The code a late pupil types to join (the lobby code, or the class game's join code). */
+  joinCode: string | null;
   people: { id: string; name: string | null; colour: number }[];
   game: Game;
   seq: number;
@@ -107,7 +129,21 @@ export interface PlayerView {
   game:
     | { kind: 'stars'; found: number; glows: number; tries: number; mine: string[] }
     | { kind: 'serpent'; box: SerpentBox | null; at: number; right: number; shown: number }
-    | { kind: 'mural'; flips: number; right: number; answered: number; tiles: number; canGuess: boolean; guesses: number; gotIt: number; nextAt: number; picked: boolean; myTiles: number[]; picture: Picture };
+    | { kind: 'mural'; flips: number; right: number; answered: number; tiles: number; canGuess: boolean; guesses: number; gotIt: number; nextAt: number; picked: boolean; myTiles: number[]; picture: Picture }
+    | {
+        kind: 'corners'; safe: number; score: number; jailed: boolean; jailRight: number; held: Power | null; boost: boolean; ghost: boolean;
+        shield: boolean; double: boolean; crystal: Corner | null; jump: boolean; caughtLast: boolean; savedLast: boolean;
+        placed: number; spot: Spot; nextAt: number; place: 1 | 2 | 3 | null;
+        /** Second half: the corner they may not stay in this round. */
+        stay: Corner | null;
+        /** Out of jail at this session time (all right answers in), or null. */
+        freeAt: number | null;
+        /** Rounds a Speed boost / Ghost still covers, this one included (0: off). */
+        speedLeft: number;
+        ghostLeft: number;
+        /** Own stats for the end screen. */
+        stats: { right: number; wrong: number; bestStreak: number; warps: number; lucky: number; grabs: number; powers: number; escapes: number };
+      };
 }
 
 export interface RoomRow {
@@ -168,6 +204,10 @@ export interface ClassLiveServices {
   /** Keeps a new question at the pupil's next slot, unless one is still open: then that one comes back. */
   keepQuestion(room: number, player: string, question: Question): Promise<StoredQuestion | Busy>;
   recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
+  /** Four Corners: every player's last saved spot in the room (classlive_positions). */
+  positions(room: number): Promise<Positions | Busy>;
+  /** Four Corners: the server moves pupils (back from jail, a jump). */
+  place(room: number, spots: { player: string; x: number; y: number }[]): Promise<void>;
   /** Pays a finished session's points and trophies, once per room and session (later calls change nothing). */
   finishSession(room: number, done: FinishedSession): Promise<void>;
 }
@@ -185,10 +225,23 @@ export const MAX_PLAYERS = 40;
 
 const firstName = (name: string) => name.trim().split(/\s+/)[0]?.slice(0, 20) || 'A player';
 
-export function publicGame(g: Game, players: number): PublicGame {
+function publicRound(r: Round, t: number): PublicRound {
+  const { rolled, caught, saved: _saved, items, ...rest } = r;
+  return {
+    ...rest, rolled: t >= r.rollEnd ? rolled : null, items: items.filter((x) => !x.by).map(({ by: _by, ...x }) => x), ended: caught !== null,
+    caught: t >= r.rollEnd ? (caught?.length ?? 0) : 0,
+  };
+}
+
+/** `t`: ms since the start, so a pupil's device only learns the rolled corner once the dice has landed. */
+export function publicGame(g: Game, players: number, t = 0): PublicGame {
+  if (g.kind === 'corners') {
+    const jailed = Object.values(g.mine).filter((m) => m.jailedIn !== null).length;
+    return { kind: 'corners', map: g.map, round: g.round ? publicRound(g.round, t) : null, jailed, free: players - jailed };
+  }
   if (g.kind === 'mural') {
     return {
-      kind: 'mural', tiles: g.tiles.map((x) => (x ? '1' : '0')).join(''), flipped: flipped(g), phase: g.phase ?? 'flip',
+      kind: 'mural', tiles: g.tiles.map((x) => (x ? '1' : '0')).join(''), cols: colsOf(g), rows: rowsOf(g), flipped: flipped(g), phase: g.phase ?? 'flip',
       guessEndsAt: g.phase === 'guess' ? (g.guessFrom ?? 0) + GUESS_MS : null, picked: Object.values(g.mine).filter((m) => m.pick).length, choices: g.choices,
       solvers: g.solvers.length, revealed: g.revealed, picture: g.revealed ? g.picture : null,
     };
@@ -200,9 +253,10 @@ export function publicGame(g: Game, players: number): PublicGame {
   return { kind: 'stars', anchor: g.anchor, arms, total: g.stars.length, creature: g.creature, supernova: g.supernova };
 }
 
-export function roomView(s: Session, startedAt: number | null): RoomView {
+export function roomView(s: Session, startedAt: number | null, now?: number): RoomView {
+  const t = startedAt === null ? 0 : Math.max(0, (now ?? startedAt) - startedAt);
   return {
-    activity: s.activity, state: s.state, lengthMin: s.lengthMin, startedAt, players: s.order.length, game: publicGame(s.game, s.order.length),
+    activity: s.activity, state: s.state, lengthMin: s.lengthMin, startedAt, players: s.order.length, game: publicGame(s.game, s.order.length, t),
     lobby: s.lobby ?? null, padMusic: s.padMusic === true,
   };
 }
@@ -212,6 +266,7 @@ function screenView(row: Pick<RoomRow, 'showNames' | 'seq' | 'events'>, s: Sessi
   return {
     ...base,
     showNames: row.showNames,
+    joinCode: s.lobby?.code ?? s.joinCode ?? null,
     people: s.order.map((id) => ({ id, name: row.showNames ? firstName(s.players[id].name) : null, colour: s.players[id].colour })),
     game: s.game,
     seq: row.seq,
@@ -221,6 +276,28 @@ function screenView(row: Pick<RoomRow, 'showNames' | 'seq' | 'events'>, s: Sessi
 
 export function playerView(s: Session, id: string): PlayerView {
   const p = s.players[id];
+  if (s.game.kind === 'corners') {
+    const g = s.game;
+    const m = g.mine[id] ?? freshMine(s.order.indexOf(id));
+    const r = g.round;
+    const n = r?.n ?? 0;
+    const place = s.state === 'over' ? (podium(g, s.order).find((x) => x.player === id)?.place ?? null) : null;
+    return {
+      player: id, name: firstName(p.name), colour: p.colour,
+      game: {
+        kind: 'corners', safe: m.safe, score: m.score, jailed: m.jailedIn !== null, jailRight: m.jailRight, held: m.held,
+        boost: boosted(m, n), ghost: ghostly(m, n), shield: !!r && m.shieldIn === n, double: !!r && m.doubleIn === n,
+        crystal: r && m.crystalIn === n ? crystalCorner(r) : null, jump: !!r && m.jumpIn === n,
+        caughtLast: !!r?.caught?.includes(id), savedLast: !!r?.saved.includes(id), placed: m.placed, spot: m.spot,
+        nextAt: m.lastAt + CORNERS_GAP_MS, place, stay: r?.swap && m.jailedIn === null ? m.lastCorner ?? null : null, freeAt: cornersFreeAt(g, m),
+        speedLeft: m.speedTo !== null && n <= m.speedTo ? m.speedTo - n + 1 : 0, ghostLeft: m.ghostTo !== null && n <= m.ghostTo ? m.ghostTo - n + 1 : 0,
+        stats: {
+          right: m.right ?? 0, wrong: m.wrong ?? 0, bestStreak: m.bestStreak ?? 0, warps: m.warps ?? 0, lucky: m.lucky ?? 0,
+          grabs: m.grabs, powers: m.powersUsed, escapes: m.escapes,
+        },
+      },
+    };
+  }
   if (s.game.kind === 'mural') {
     const m = s.game.mine[id];
     return {
@@ -281,9 +358,29 @@ async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<T>): Pr
     const now = sv.now();
     const t = timeOf(row, now);
     const events: Event[] = [];
-    // A timed session ends by itself, whoever's step comes first.
-    // Mystery Mural's time ends the flipping instead; then the guessing runs its own time.
-    if (timeUp(s, row, now)) {
+    const g0 = s.game;
+    // Four Corners: the server moves pupils (back from jail, a jump); their devices snap to the new spot.
+    const placedBefore = g0.kind === 'corners' ? new Map(s.order.map((id) => [id, g0.mine[id]?.placed ?? 0])) : null;
+    if (g0.kind === 'corners') {
+      // Rounds run on the clock: end the run (who is caught, from the saved spots), start the next round. When the time is
+      // up, the round that is on is the last one.
+      if (s.state === 'live') {
+        let spots: Positions = {};
+        if (needsPositions(g0, t)) {
+          const got = await sv.positions(room);
+          if (got === 'busy') return { refuse: busy() };
+          spots = got;
+        }
+        const last = timeUp(s, row, now);
+        events.push(...cornersAdvance(g0, t, s.order, spots, () => sv.random(), last));
+        if (last && cornersDone(g0, t)) {
+          s.state = 'over';
+          events.push({ type: 'over', t, why: 'time' });
+        }
+      }
+    } else if (timeUp(s, row, now)) {
+      // A timed session ends by itself, whoever's step comes first.
+      // Mystery Mural's time ends the flipping instead; then the guessing runs its own time.
       if (s.game.kind === 'mural' && s.game.phase !== 'guess' && !s.game.revealed) events.push(...startGuessing(s.game, t));
       else if (s.game.kind !== 'mural' || s.game.revealed || guessingDone(s.game, t)) {
         if (s.game.kind === 'mural') events.push(...reveal(s.game, t));
@@ -310,11 +407,25 @@ async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<T>): Pr
     const numbered = events.map((e) => ({ ...e, seq: ++seq }));
     const next: RoomRow = { ...row, startedAt, seq, events: [...row.events, ...numbered].slice(-KEEP_EVENTS), session: s };
     for (const e of events) if ('pupil' in e && typeof e.pupil === 'string') changed.add(e.pupil);
+    const g1 = s.game;
+    const places = g1.kind === 'corners' && placedBefore
+      ? s.order.filter((id) => (g1.mine[id]?.placed ?? 0) !== (placedBefore.get(id) ?? 0)).map((id) => ({ player: id, x: g1.mine[id].spot.x, y: g1.mine[id].spot.y }))
+      : [];
+    for (const p of places) changed.add(p.player);
+    // A round's end changes every pupil's own row (caught, safe, scores).
+    if (g1.kind === 'corners' && events.some((e) => e.type === 'roll' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
     const players = [...changed].filter((id) => s.players[id]).map((id) => playerView(s, id));
-    const saved = await sv.save(room, row.version, { session: s, view: roomView(s, startedAt), screen: screenView(next, s, startedAt), startedAt, players, ...(claim ? { claim } : {}) });
+    const saved = await sv.save(room, row.version, { session: s, view: roomView(s, startedAt, now), screen: screenView(next, s, startedAt), startedAt, players, ...(claim ? { claim } : {}) });
     if (saved === 'busy') return { refuse: busy() };
     if (saved === 'answered') return { refuse: no(409, "You've already answered that one.", 'answered') };
     if (saved === 'ok') {
+      if (places.length) {
+        try {
+          await sv.place(room, places);
+        } catch {
+          console.error(`classlive: placing in room ${room} failed`);
+        }
+      }
       if (s.state === 'over' && events.some((e) => e.type === 'over')) await payOut(sv, room, s);
       return 'refuse' in out ? out : { reply: out.reply, row: { ...next, version: row.version + 1 }, session: s };
     }
@@ -350,6 +461,9 @@ export function newSession(body: Record<string, unknown>, seed: number, random: 
   } else if (activity === 'serpent') {
     const level = SERPENT_LEVELS.find((l) => l === body.level) ?? 'gold';
     game = newSerpent(level, random);
+  } else if (activity === 'corners') {
+    const map = MAPS.find((m) => m === body.map) ?? MAPS[Math.floor(random() * MAPS.length) % MAPS.length];
+    game = newCorners(map, runSeconds(body.run));
   } else game = newMural(random);
   return { seed, activity, state: 'lobby', lengthMin, players: {}, order: [], game, ...(body.padMusic === true ? { padMusic: true } : {}) };
 }
@@ -381,7 +495,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
       }
       if (!code) return busy();
       session.lobby = { code, host };
-    }
+    } else session.joinCode = String(1000 + (Math.floor(sv.random() * 9000) % 9000));
     const row = { showNames: teach.showNames, seq: 0, events: [] };
     const change: Change = { session, view: roomView(session, null), screen: screenView(row, session, null), startedAt: null, players: [] };
     const id = await sv.openRoom(classId, who, change);
@@ -406,6 +520,10 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
       if (action === 'start') {
         if (s.state !== 'lobby') return { refuse: no(409, 'It has already started.', 'not-now') };
         s.state = 'live';
+        // Four Corners: change corners every round in the second half (a timed game's halfway point).
+        if (s.game.kind === 'corners' && s.lengthMin > 0) s.game.halfAt = (s.lengthMin * 60_000) / 2;
+        // Mystery Mural: the grid fits the class and the time (about 75% uncovered by a class doing well).
+        if (s.game.kind === 'mural') sizeMural(s.game, s.order.length, s.lengthMin);
         return { reply: null, events: [{ type: 'start', t: 0 }], startedAt: sv.now() };
       }
       if (action === 'reveal') {
@@ -447,8 +565,12 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
       const code = readCode(body.code);
       const found = code ? await sv.codeRoom(me.schoolId, code) : null;
       if (found === 'busy') return busy();
-      if (!found) return no(404, "That code didn't work. Check the big screen!", 'bad-code');
-      room = found.id;
+      // Not a lobby game: their own class's game, joining late with its code.
+      const own = !found && code ? await sv.classRoom(me.classId) : null;
+      if (own === 'busy') return busy();
+      const late = own && own.session.state !== 'over' && own.session.joinCode === code ? own : null;
+      if (!found && !late) return no(404, "That code didn't work. Check the big screen!", 'bad-code');
+      room = (found || late)!.id;
     } else if (action === 'join' && body.room === undefined) {
       const open = await sv.classRoom(me.classId);
       if (open === 'busy') return busy();
@@ -466,6 +588,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         if (s.players[who]) return { reply: null, events: [], players: [who] };
         if (s.order.length >= MAX_PLAYERS) return { refuse: no(409, 'This room is full.', 'full') };
         s.players[who] = { id: who, name: me.name, joinedAt: t, colour: s.order.length % 12 };
+        if (s.game.kind === 'corners') s.game.mine[who] = freshMine(s.order.length);
         s.order.push(who);
         return { reply: null, events: [{ type: 'join', t, pupil: who }] };
       });
@@ -478,8 +601,21 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     // of the room row: a class of devices each sent every change goes over Realtime's messages-per-second limit, and
     // changes are dropped (Class Showdown hung in a real class, 24 Nov 2026).
     const withRoom = (r: StepReply): StepReply =>
-      r.status === 200 ? r : { ...r, body: { ...r.body, view: roomView(cur.session, cur.startedAt), me: playerView(cur.session, who) } };
-    if (action === 'look') return ok({ room, view: roomView(cur.session, cur.startedAt), me: playerView(cur.session, who), now: sv.now() });
+      r.status === 200 ? r : { ...r, body: { ...r.body, view: roomView(cur.session, cur.startedAt, sv.now()), me: playerView(cur.session, who) } };
+    if (action === 'look') {
+      // Four Corners runs on the clock: if the big screen hasn't moved a round on (closed, asleep), a pupil's look does.
+      const cg = cur.session.game;
+      const due = cg.kind === 'corners' && cur.session.state === 'live' ? nextDeadline(cg, cur.startedAt) : null;
+      if (due !== null && timeOf(cur, sv.now()) >= due + 1500) {
+        const done = await mutate(sv, room, () => ({ reply: null, events: [] }));
+        if (!('refuse' in done)) return ok({ room, view: roomView(done.session, done.row.startedAt, sv.now()), me: playerView(done.session, who), now: sv.now() });
+      }
+      return ok({ room, view: roomView(cur.session, cur.startedAt, sv.now()), me: playerView(cur.session, who), now: sv.now() });
+    }
+    if (cur.session.game.kind === 'corners' && (action === 'ask' || action === 'answer' || action === 'play')) {
+      const out = await cornersStep(sv, cur, who, body);
+      return cur.session.state === 'live' ? out : withRoom(out);
+    }
     if (action === 'ask' || action === 'answer') {
       const out = await muralMaths(sv, cur, who, body);
       return cur.session.state === 'live' ? out : withRoom(out);
@@ -512,6 +648,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         }
         return { reply: out.reply, events: out.events, players: [who] };
       }
+      if (s.game.kind === 'corners') return { refuse: no(409, 'Use the joystick!', 'not_now') };
       const out = tryFact(s.game, who, body.fact, t);
       if (!out.ok) return { refuse: no(409, 'One at a time!', out.reason) };
       return { reply: out.reply, events: out.events, players: [who] };
@@ -552,7 +689,7 @@ async function nextQuestion(sv: ClassLiveServices, row: RoomRow, who: string): P
   const ctx = await sv.mathsContext(who);
   if (!ctx) return null;
   const g = row.session.game;
-  const m = g.kind === 'mural' ? g.mine[who] : undefined;
+  const m = g.kind === 'mural' || g.kind === 'corners' ? g.mine[who] : undefined;
   const q = makeQuestion(ctx, `${row.session.seed}:${who}:${m?.answered ?? 0}`);
   if (!q) return null;
   const kept = await sv.keepQuestion(row.id, who, q);
@@ -601,6 +738,92 @@ async function muralMaths(sv: ClassLiveServices, cur: RoomRow, who: string, body
     room, right, answer: marked.answer, me: playerView(done.session, who), view: roomView(done.session, done.row.startedAt), now: sv.now(),
     ...(next && next !== 'busy' ? { question: next } : {}),
   });
+}
+
+/**
+ * Four Corners' pupil steps: `play` with `grab` (an item, checked against their saved spot) or `jump` (a corner), and
+ * `ask`/`answer` (jail questions, or switching on a held power-up while standing in a corner). Way-A maths as the mural.
+ */
+async function cornersStep(sv: ClassLiveServices, cur: RoomRow, who: string, body: Record<string, unknown>): Promise<StepReply> {
+  const room = cur.id;
+  const s0 = cur.session;
+  if (s0.state !== 'live') return no(409, s0.state === 'lobby' ? 'Wait for the start!' : 'This one has finished.', s0.state);
+  const spotOf = async (): Promise<Spot | undefined | Busy> => {
+    const all = await sv.positions(room);
+    if (all === 'busy') return 'busy';
+    return all[who];
+  };
+  const reply = (session: Session, startedAt: number | null, extra: Record<string, unknown> = {}) =>
+    ok({ room, view: roomView(session, startedAt, sv.now()), me: playerView(session, who), now: sv.now(), ...extra });
+
+  if (body.action === 'play') {
+    const at = body.grab !== undefined || body.warp !== undefined ? await spotOf() : undefined;
+    if (at === 'busy') return busy();
+    const done = await mutate(sv, room, (s, t) => {
+      if (s.state !== 'live' || s.game.kind !== 'corners') return { refuse: no(409, 'This one has finished.', 'over') };
+      if (body.jump !== undefined) {
+        const out = cornersJump(s.game, who, body.jump, s.order, t);
+        if (!out.ok) return { refuse: no(409, "You can't jump there now.", 'not_now') };
+        return { reply: null, events: [], players: [who] };
+      }
+      const g = s.game;
+      const mine = g.mine[who];
+      if (body.warp !== undefined) {
+        if (!cornersWarp(g, who, at ?? mine?.spot, t)) return { refuse: no(409, 'No teleport there.', 'not_now') };
+        return { reply: null, events: [], players: [] };
+      }
+      const out = cornersGrab(g, who, body.grab, at ?? mine?.spot, t);
+      if (!out.ok) return { refuse: no(409, out.reason === 'full' ? 'You are already carrying one!' : out.reason === 'far' ? 'Get closer!' : 'Too late!', out.reason) };
+      return { reply: null, events: out.events, players: [who] };
+    });
+    if ('refuse' in done) return done.refuse;
+    return reply(done.session, done.row.startedAt);
+  }
+
+  const g0 = s0.game as CornersGame;
+  const t0 = timeOf(cur, sv.now());
+  if (body.action === 'ask') {
+    const at = await spotOf();
+    if (at === 'busy') return busy();
+    const purpose = questionFor(g0, who, at ?? g0.mine[who]?.spot, t0);
+    if (!purpose) return no(409, 'No question right now.', 'not_now');
+    const question = await nextQuestion(sv, cur, who);
+    if (question === 'busy') return busy();
+    if (!question) return no(503, "We couldn't make a question just now.");
+    return ok({ room, question, purpose, now: sv.now() });
+  }
+  const slot = body.slot;
+  const value = body.answer;
+  if (!Number.isInteger(slot) || typeof value !== 'number' || !Number.isFinite(value) || Math.abs(value) > 1_000_000) return no(400, "That answer couldn't be read.");
+  const kept = await sv.loadQuestion(room, who, slot as number);
+  if (kept === 'busy') return busy();
+  const marked = kept ? markQuestion(kept.question) : null;
+  if (!kept || !marked) return no(400, "That answer couldn't be marked.");
+  if (kept.answered) return no(409, "You've already answered that one.", 'answered');
+  const right = sameAnswer(value, marked.answer);
+  const at = await spotOf();
+  if (at === 'busy') return busy();
+  const ms = Math.round(Math.min(typeof body.ms === 'number' && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS, MAX_ANSWER_MS));
+  const done = await mutate(sv, room, (s, t) => {
+    if (s.state !== 'live' || s.game.kind !== 'corners') return { refuse: no(409, 'This one has finished.', 'over') };
+    const purpose = questionFor(s.game, who, at ?? s.game.mine[who]?.spot, t);
+    if (!purpose) return { refuse: no(409, 'Get to a corner first!', 'not_now') };
+    const out = cornersAnswered(s.game, who, right, purpose, s.order, t, typeof body.ms === 'number' ? ms : undefined);
+    if (!out.ok) return { refuse: no(409, out.reason === 'too_soon' ? 'One at a time!' : 'No question right now.', out.reason) };
+    const freed = out.events.flatMap((e) => (e.type === 'power' && e.freed ? [e.freed] : []));
+    return { reply: purpose, events: out.events, players: [who, ...freed], claim: { player: who, slot: slot as number, value, right } };
+  });
+  if ('refuse' in done) return done.refuse;
+  try {
+    await sv.recordAnswers(who, `classlive:${room}:${s0.seed}:${slot}`, [{ key: marked.key, correct: right, ms, at: sv.now(), given: value }]);
+  } catch {
+    // The maths records are a bonus.
+  }
+  // In jail, the next question straight away (until 3 right).
+  const g1 = done.session.game as CornersGame;
+  const more = done.reply === 'jail' && g1.mine[who]?.jailedIn !== null && (g1.mine[who]?.jailRight ?? 0) < 3;
+  const next = more ? await nextQuestion(sv, { ...done.row, session: done.session }, who) : null;
+  return reply(done.session, done.row.startedAt, { right, answer: marked.answer, purpose: done.reply, ...(next && next !== 'busy' ? { question: next } : {}) });
 }
 
 export { TILES };

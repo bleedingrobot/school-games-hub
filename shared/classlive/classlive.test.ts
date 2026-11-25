@@ -4,9 +4,10 @@ import { classLiveStep, cleanHost } from './server';
 import { memoryDb, memoryServices } from './memoryServices';
 import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock, rng } from './pretendClass';
 import { answerBox, apply, BODY, makeChain, newSerpent, SERPENT_LEVELS } from './serpent';
-import { MAX_OPEN, openCap, UNTIMED_PACE_MS, type MuralGame } from './mural';
+import { gridFor, maxOpen, openCap, UNTIMED_PACE_MS, type MuralGame } from './mural';
 import { ARMS, armCounts, isTrue, laggingArm, linkOf, newStars, readFact, tryFact, type Anchor } from './stars';
 import { lagHint } from '../../src/games/classlive/arms';
+import { advance, clampMove, cornerOf, freeAt, freshMine, grab, makeRound, ROLL_MS, SHOW_MS, MAX_SPEED, newCorners, rollerAt, rollersOf, startSpot, stepMove, type CornersGame } from './corners';
 
 const k: Anchor = { x: 6, y: 7, p: 42 };
 const arm = (text: string) => {
@@ -17,7 +18,7 @@ const arm = (text: string) => {
 };
 
 describe('Star Web rules', () => {
-  it('reads facts written many ways, checks them exactly, puts each on the right arm and says how it links', () => {
+  it('reads facts written many ways, puts each on the right arm, makes stars and glows, and lights the creature', () => {
     expect(readFact('12 x 7 = 84')).toEqual({ a: 1200, op: '×', b: 700, c: 8400 });
     expect(readFact('84=12×7')).toEqual({ a: 1200, op: '×', b: 700, c: 8400 });
     expect(readFact('6 × 7')).toBeNull();
@@ -36,9 +37,7 @@ describe('Star Web rules', () => {
     for (const [t, a] of Object.entries(want)) expect(arm(t), t).toBe(a);
     const how = linkOf(readFact('12×7=84')!, k);
     expect(how !== 'same' && how?.how).toBe('6 → 12 is double, so 42 → 84.');
-  });
-
-  it('a new fact makes a star, the same fact again makes it glow, and every arm lit draws the creature', () => {
+    // A new fact makes a star, the same fact again makes it glow, and every arm lit draws the creature.
     const g = newStars(k, 'middle');
     let t = 0;
     const go = (who: string, text: string) => tryFact(g, who, text, (t += 2000));
@@ -176,12 +175,17 @@ describe('Class Live server', () => {
     const half = pc.db.rooms.get(room)!.session.game as MuralGame;
     // A full class answers faster than the pace: tiles flip steadily (about 26 a minute untimed), the rest queue up.
     expect(half.tiles.filter(Boolean).length).toBeGreaterThan(20);
-    expect(half.tiles.filter(Boolean).length).toBeLessThanOrEqual(openCap(65_000, UNTIMED_PACE_MS));
+    expect(half.tiles.filter(Boolean).length).toBeLessThanOrEqual(openCap(65_000, UNTIMED_PACE_MS, half.tiles.length));
+    // The grid fits the class and the time (James, 25 Nov 2026): 30 pupils untimed (as 5 minutes) get 42 by 28.
+    expect([half.cols, half.rows, half.tiles.length]).toEqual([42, 28, 1176]);
+    expect(gridFor(24, 2)).toEqual({ cols: 24, rows: 16 });
+    expect(gridFor(1, 2)).toEqual({ cols: 9, rows: 6 });
+    expect(gridFor(30, 15)).toEqual({ cols: 60, rows: 40 });
     expect(half.queue!.length).toBeGreaterThan(0);
     await clock.run(clock.now() + 5 * 60_000);
     const g = pc.db.rooms.get(room)!.session.game;
     if (g.kind !== 'mural') throw new Error('not a mural');
-    expect(g.tiles.filter(Boolean).length).toBe(MAX_OPEN);
+    expect(g.tiles.filter(Boolean).length).toBe(maxOpen(g.tiles.length));
     // Shared fairly: everyone who answered gets tiles, nobody hogs them.
     const counts = Object.values(g.mine).map((m) => m.tiles);
     expect(Math.min(...counts)).toBeGreaterThanOrEqual(2);
@@ -232,6 +236,96 @@ describe('Class Live server', () => {
     expect(pc.db.rooms.get(room)!.screen.events.at(-1)).toMatchObject({ type: 'over', why: 'time' });
   });
 
+  it('Four Corners: rounds run on the clock, the dice catches pupils by their saved spots, jail, power-ups, time ends it', async () => {
+    // Rules: corners, moves clamped to the fastest speed, storms slow, a grab needs to be close.
+    expect([cornerOf({ x: 0.1, y: 0.1 }), cornerOf({ x: 0.9, y: 0.95 }), cornerOf({ x: 0.5, y: 0.1 })]).toEqual([0, 2, null]);
+    const cut = clampMove({ x: 0.5, y: 0.5, at: 0 }, { x: 0, y: 0 }, 500, []);
+    expect(Math.hypot(cut.x - 0.5, cut.y - 0.5)).toBeCloseTo(MAX_SPEED * 0.5 + 0.05, 5);
+    expect(clampMove({ x: 0.92, y: 0.4, at: 0 }, { x: 0.08, y: 0.6 }, 100, [{ a: { x: 0.08, y: 0.6 }, b: { x: 0.92, y: 0.4 } }])).toEqual({ x: 0.08, y: 0.6 });
+    const g: CornersGame = newCorners('snow');
+    const r = makeRound(g, 3, 0, rng(3), 20);
+    expect([r.runEnd, makeRound(newCorners('snow', 3), 1, 0, rng(1), 5).runEnd, newCorners('space', 40).runS]).toEqual([10_000, 6000, 12]);
+    expect(r.storms.length).toBeGreaterThan(0);
+    const storm = r.storms[0];
+    const slow = stepMove({ p: { x: storm.x, y: storm.y }, v: { x: 0, y: 0 } }, { x: 1, y: 0 }, 100, { ...r, teleports: [], ice: [], hole: false, roller: null }, 0, { boost: false, ghost: false });
+    expect(slow.p.x - storm.x).toBeLessThan(0.3 * 0.1 * 0.5);
+    // Rollers (round 7 on): two, one each way, through the corners; one knocks a pupil standing in its path flying.
+    const rr = makeRound(newCorners('space'), 7, 0, rng(7), 20);
+    expect(rollersOf(rr).map((x) => x.axis)).toEqual(['x', 'y']);
+    expect(rollersOf(rr).every((x) => x.at < 0.26 || x.at > 0.74)).toBe(true);
+    const ro = rr.roller!;
+    const at = rollerAt(ro, 1000);
+    const still = { storms: [], ice: [], teleports: [], roller: ro, hole: false, gate: null, runEnd: 99_999 };
+    const hit = stepMove({ p: { x: at.x, y: at.y + 0.02 }, v: { x: 0, y: 0 } }, { x: 0, y: 0 }, 16, still, 1000, { boost: false, ghost: false });
+    expect([hit.hitAt, hit.stun]).toEqual([1000, 1550]);
+    let fly = hit;
+    for (let i = 0; i < 30; i++) fly = stepMove(fly, { x: 0, y: -1 }, 20, { ...still, roller: null }, 1000 + i * 20, { boost: false, ghost: false });
+    expect(Math.abs(fly.p.y - at.y)).toBeGreaterThan(0.3);
+    expect(stepMove({ p: { x: at.x, y: at.y }, v: { x: 0, y: 0 } }, { x: 0, y: 0 }, 16, still, 1000, { boost: false, ghost: true }).hitAt).toBeUndefined();
+    g.round = r;
+    g.mine.a = { ...(await import('./corners')).freshMine(0) };
+    const item = r.items[0];
+    expect(grab(g, 'a', item.id, { x: item.x + 0.3, y: item.y }, 10)).toEqual({ ok: false, reason: 'far' });
+    expect(grab(g, 'a', item.id, { x: item.x, y: item.y }, 10)).toMatchObject({ ok: true });
+    expect(g.mine.a.held).toBe(item.power);
+
+    // A pretend class of 20 runs about; the projector asks at each deadline.
+    const clock = pretendClock();
+    const pc = pretendClass({ size: 20, seed: 11, clock, later: clock.later });
+    const room = (await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'open', classId: PRETEND_CLASS, activity: 'corners', map: 'jungle', length: 3 })).body.room as number;
+    await pc.joinAll();
+    await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'start', room });
+    pc.play(room);
+    const game = () => pc.db.rooms.get(room)!.session.game as CornersGame;
+    let hidden = false;
+    for (let s = 0; s < 3 * 60 + 40; s += 0.5) {
+      await clock.run(clock.now() + 500);
+      await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'view', room });
+      const gr = game().round;
+      // Pupils' devices don't learn the corner until the dice lands (the projector's screen does).
+      if (gr && gr.caught !== null && clock.now() - pc.db.rooms.get(room)!.startedAt! < gr.rollEnd) {
+        const look = await classLiveStep(pc.services, pc.ids[0], { action: 'look', room });
+        const pr = (look.body.view as { game: { round: { rolled: unknown } } }).game.round;
+        hidden ||= pr.rolled === null;
+      }
+    }
+    expect(hidden).toBe(true);
+    const done = pc.db.rooms.get(room)!;
+    expect(done.session.state).toBe('over');
+    const cg = game();
+    expect(cg.map).toBe('jungle');
+    expect(cg.round!.n).toBeGreaterThan(6);
+    const mines = Object.values(cg.mine);
+    expect(mines.some((m) => m.safe > 0) && mines.some((m) => m.caught > 0)).toBe(true);
+    expect(mines.some((m) => m.escapes > 0)).toBe(true);
+    expect(mines.some((m) => m.grabs > 0)).toBe(true);
+    // End-of-game stats: answers, streaks, timings and the dice's favourite corners are kept.
+    expect(mines.some((m) => (m.right ?? 0) > 0 && (m.bestStreak ?? 0) > 0 && m.fastMs === 3000) && (cg.caughtAll ?? 0) > 0).toBe(true);
+    expect((cg.rolls ?? []).reduce((a, b) => a + b, 0)).toBeGreaterThan(3);
+    // The second half (from 1.5 of 3 minutes): change corners every round, or be caught for staying put.
+    const halves = [cg.halfAt, makeRound({ ...newCorners('snow'), halfAt: 1000 }, 2, 999, rng(2), 5).swap, makeRound({ ...newCorners('snow'), halfAt: 1000 }, 2, 1000, rng(2), 5).swap];
+    expect(halves).toEqual([90_000, undefined, true]);
+    expect(cg.round!.swap).toBe(true);
+    const sw = newCorners('snow');
+    sw.mine = { a: { ...freshMine(0), lastCorner: 0 }, b: { ...freshMine(1), lastCorner: 0 } };
+    sw.round = { ...makeRound(sw, 9, 0, rng(9), 2), swap: true, twist: null, rolled: [2] };
+    advance(sw, sw.round.runEnd, ['a', 'b'], { a: { x: 0.05, y: 0.05 }, b: { x: 0.95, y: 0.05 } }, rng(1));
+    expect([sw.round.stayed, sw.round.caught, sw.mine.b.lastCorner]).toEqual([['a'], ['a'], 1]);
+    // Out of jail with all 3 right: free when the round after the one they sit out starts.
+    sw.mine.a.jailRight = 3;
+    expect([freeAt(sw, sw.mine.a), freeAt(sw, sw.mine.b)]).toEqual([sw.round.showEnd + 10_000 + ROLL_MS + SHOW_MS, null]);
+    // Everyone let out of jail was put back in the middle (their saved spot moved by the server).
+    const escaped = pc.ids.find((id) => cg.mine[id].escapes > 0)!;
+    expect(pc.db.spots.get(room)![escaped]).toBeDefined();
+    expect(done.screen.events.some((e) => e.type === 'roll')).toBe(true);
+    expect(JSON.stringify(done.view)).not.toContain(pc.ids[0]);
+    // Paid once: the podium gets 2 more points.
+    const paid = [...pc.db.paid.values()].find((p) => p.activity === 'corners')!;
+    expect(paid.players.filter((p) => p.champion).length).toBeGreaterThan(0);
+    expect(paid.players.every((p) => p.points >= 1 && p.points <= 10)).toBe(true);
+    expect(startSpot(0)).not.toEqual(startSpot(1));
+  });
+
   it('a lobby game: any pupil of the school joins by its room or code; a class game and other schools stay closed', async () => {
     const T = 'teacher-1', A = '00000000-0000-4000-8000-00000000000a', B = '00000000-0000-4000-8000-00000000000b', FAR = '00000000-0000-4000-8000-0000000000ff';
     const db = memoryDb({
@@ -247,6 +341,12 @@ describe('Class Live server', () => {
     const cls = (await classLiveStep(sv, T, { action: 'open', classId: A, activity: 'mural' })).body as { room: number; screen: { lobby: unknown } };
     expect(cls.screen.lobby).toBeNull();
     expect((await classLiveStep(sv, 'bo', { action: 'join', room: cls.room })).status).toBe(403);
+    // Joining a running class game late with the code on the big screen: the class only.
+    const late = (cls.screen as unknown as { joinCode: string }).joinCode;
+    expect(late).toMatch(/^\d{4}$/);
+    await classLiveStep(sv, T, { action: 'start', room: cls.room });
+    expect((await classLiveStep(sv, 'ana', { action: 'join', code: late })).body.room).toBe(cls.room);
+    expect((await classLiveStep(sv, 'bo', { action: 'join', code: late })).body.reason).toBe('bad-code');
     // Open in the lobby: a code on the screen, and the host's words.
     const lob = (await classLiveStep(sv, T, { action: 'open', classId: A, activity: 'serpent', where: 'lobby', host: 'Mr Riley' })).body as { room: number; screen: { lobby: { code: string; host: string } } };
     expect(lob.screen.lobby.host).toBe('Mr Riley');

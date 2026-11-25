@@ -9,6 +9,7 @@
  * Only looks live here. Nothing in this file is read by the rules, so a picture can never change a level.
  * Gems differ by shape as well as colour, so colour-blind pupils can tell them apart.
  */
+import { artLevel, caveTint } from './monsters';
 import { FIELD_H, FIELD_W, GROUND_Y, PIVOT, rareOf, type GemId, type RareId, type RareTier } from '../../../../shared/diamond/config';
 import { drawPainting, paintNow } from './paint';
 
@@ -494,7 +495,14 @@ const SURFACE: Partial<Record<number, { line: number; bottom: number }>> = {
  * The level's still background (sky or cave roof, the layers of earth, and the decorations that stay put). Gives true
  * when it drew the painting, false for the drawn fallback (so the caller can draw again once the painting arrives).
  */
-export function drawBackground(ctx: Ctx, level: number): boolean {
+export function drawBackground(ctx: Ctx, cavernOrLevel: number): boolean {
+  const drawn = drawBackgroundOf(ctx, artLevel(cavernOrLevel));
+  const tint = caveTint(cavernOrLevel);
+  if (tint) { ctx.save(); ctx.fillStyle = tint; ctx.fillRect(0, 0, FIELD_W, FIELD_H); ctx.restore(); }
+  return drawn;
+}
+
+function drawBackgroundOf(ctx: Ctx, level: number): boolean {
   // Each level's painting is in its own style; it covers the field, trimming a little off the sides. Where its grass
   // line sits lower than the game's ground (SURFACE), the sky above it is squeezed into the top band.
   const painted = paintNow('levels', ctx.canvas.width > 1000 ? String(level) : `${level}-800`);
@@ -689,7 +697,8 @@ function crystalCluster(ctx: Ctx, x: number, y: number, size: number, rnd: () =>
 }
 
 /** The moving bits of a place (glow-worms twinkling, steam, bubbles, magma pulsing). With less motion: drawn still. */
-export function drawAmbient(ctx: Ctx, level: number, time: number, still: boolean) {
+export function drawAmbient(ctx: Ctx, cavernOrLevel: number, time: number, still: boolean) {
+  const level = artLevel(cavernOrLevel);
   const t = still ? 0 : time;
   const rnd = decoRandom(level * 31337);
   ctx.save();
@@ -882,6 +891,11 @@ export function drawRope(ctx: Ctx, x1: number, y1: number, x2: number, y2: numbe
     case 'bike-chain':
       along(10, (x, y, i) => { ctx.strokeStyle = i % 2 ? '#374151' : '#6b7280'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.ellipse(x, y, 6, 3.5, Math.atan2(uy, ux), 0, Math.PI * 2); ctx.stroke(); });
       break;
+    // Monster Dig: Squaremander's tail, orange with a little flame every so often.
+    case 'squaremander-tail':
+      line(6, '#f97316');
+      along(26, (x, y, i) => { ctx.fillStyle = i % 2 ? '#fde047' : '#fb923c'; ctx.beginPath(); ctx.moveTo(x, y - 7); ctx.quadraticCurveTo(x + 5, y, x, y + 3); ctx.quadraticCurveTo(x - 5, y, x, y - 7); ctx.fill(); });
+      break;
     case 'star-rope':
       line(4, '#facc15');
       along(30, (x, y) => { ctx.fillStyle = '#fff7c2'; star(ctx, x, y, 7, 5, 0.45); ctx.fill(); });
@@ -932,6 +946,8 @@ export function drawClaw(ctx: Ctx, x: number, y: number, angle: number, closed: 
   };
   switch (id) {
     case 'golden-claw': prongs('#facc15', '#854d0e', '#fff7c2'); break;
+    // Monster Dig: Fractopus's purple tentacle-tipped claw.
+    case 'fractopus-claw': prongs('#c084fc', '#581c87', '#f0abfc'); break;
     case 'diamond-claw': {
       prongs('#e0f2fe', '#0e7490', '#ffffff');
       drawGem(ctx, 'heartDiamond', 0, 4, 6);
@@ -1180,6 +1196,7 @@ export function drawTrail(ctx: Ctx, points: readonly Pt[], id: string | undefine
     ctx.globalAlpha = Math.max(0, 1 - age);
     const wob = Math.sin(time * 9 + i) * 4;
     switch (id) {
+      case 'infinity-sparks': ctx.fillStyle = i % 2 ? '#fb923c' : '#38bdf8'; star(ctx, x + wob * Math.sin(time * 4 + i), y, 6 * (1 - age * 0.6), 4, 0.3, time * 3 + i); ctx.fill(); break;
       case 'sparkles': ctx.fillStyle = i % 4 ? '#fde047' : '#ffffff'; star(ctx, x + wob, y, 6 * (1 - age * 0.6), 4, 0.3, time * 3 + i); ctx.fill(); break;
       case 'bubbles': ctx.strokeStyle = '#bae6fd'; ctx.lineWidth = 1.8; circle(ctx, x + wob, y - age * 20, 3 + age * 6); ctx.stroke(); break;
       case 'flames': ctx.fillStyle = age < 0.4 ? '#fde047' : '#fb923c'; circle(ctx, x + wob * 0.5, y - age * 10, 7 * (1 - age)); ctx.fill(); break;

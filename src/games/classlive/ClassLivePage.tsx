@@ -32,5 +32,7 @@ export function ClassLivePage() {
   }
   const raw = Number(params.get('room'));
   const room = Number.isInteger(raw) && raw > 0 ? raw : undefined;
-  return <Controller link={liveClassLiveLink} me={profile.id} room={room} lookElsewhere={showdownOn() && !room ? lookElsewhere : undefined} />;
+  const typed = params.get('code');
+  const code = typed && /^\d{4}$/.test(typed) ? typed : undefined;
+  return <Controller link={liveClassLiveLink} me={profile.id} room={room} code={code} avatar={profile.avatar} lookElsewhere={showdownOn() && !room ? lookElsewhere : undefined} />;
 }

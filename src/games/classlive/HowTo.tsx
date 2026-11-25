@@ -8,6 +8,7 @@ import type { ScreenView } from '../../../shared/classlive/server';
 import { SERPENT_LEVEL_ABOUT, SERPENT_LEVEL_NAMES } from '../../../shared/classlive/serpent';
 import { speak, stopSpeaking } from '../../speech';
 import { painted } from './paintedArt';
+import { MAP_WORDS } from '../../../shared/classlive/corners';
 import { HOWTO, VOICE_FOLDER } from './voiceLines';
 
 type Game = ScreenView['game'];
@@ -40,6 +41,19 @@ export function sheetFor(game: Game): Sheet {
         { icon: '🔢', text: 'Write each answer on your device. You get two tries.', say: H[1] },
         { icon: '💎', text: 'Every right answer moves your gem up the serpent.', say: H[2] },
         { icon: '⚡', text: 'Right answers from the whole class wake the serpent. Reach the head, then keep going on the bonus tail!', say: H[3] },
+      ],
+    };
+  }
+  if (game.kind === 'corners') {
+    const H = HOWTO.corners;
+    return {
+      title: 'How to play Four Corners', mode: MAP_WORDS[game.map].name, modeSay: null, art: painted('pick', 'corners', true) ?? painted('corners', `map-${game.map}`, true),
+      steps: [
+        { icon: '🕹️', text: 'Move your avatar with the joystick, or the arrow keys.', say: H[0] },
+        { icon: '⏱️', text: 'Get to a corner before the countdown ends!', say: H[1] },
+        { icon: '🎲', text: 'The dice picks a corner. Anyone there, or in no corner, goes to jail.', say: H[2] },
+        { icon: '🔒', text: 'In jail, answer 3 questions to come back.', say: H[3] },
+        { icon: '⚡', text: 'Grab power-ups, then answer a question in a corner to switch them on. Most safe rounds wins!', say: H[4] },
       ],
     };
   }

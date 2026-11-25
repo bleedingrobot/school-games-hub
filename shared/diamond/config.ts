@@ -156,6 +156,30 @@ export interface LevelSpec {
   bigRocks: number;
   sacks: number;
   crabs: number;
+  /** Monster Dig caverns (levels 11 to 20) only: monsters buried, where they live, and the cavern's goal. */
+  cavern?: CavernSpec;
+}
+
+// ---- Monster Dig (docs/DIAMOND-MONSTERS-PLAN.md): 10 caverns below the Heart Diamond ----
+/** Which Maths Monsters type a cavern's monsters mostly are ('all': any). */
+export type Habitat = 'leaf' | 'water' | 'fire' | 'ice' | 'spark' | 'stone' | 'all';
+/** How rare a monster is in the Monster Dig (rarest last). */
+export type DigTier = 'common' | 'uncommon' | 'rare' | 'giant' | 'ultra';
+export const DIG_TIERS: readonly DigTier[] = ['common', 'uncommon', 'rare', 'giant', 'ultra'];
+export interface CavernGoal {
+  /** Monsters to bring up. */
+  count: number;
+  /** Count different kinds instead of every monster. */
+  kinds?: boolean;
+  /** At least one monster this rare or rarer. */
+  atLeast?: DigTier;
+}
+export interface CavernSpec {
+  habitat: Habitat;
+  monsters: number;
+  goal: CavernGoal;
+  /** Tiers made more likely in this cavern (times their chance). */
+  favour?: Partial<Record<DigTier, number>>;
 }
 
 export const LEVELS: readonly LevelSpec[] = [
@@ -170,8 +194,31 @@ export const LEVELS: readonly LevelSpec[] = [
   { level: 9, place: 'Magma Edge', gem: 'starSapphire', seconds: 80, target: 240, gems: [2, 2, 3, 3, 3, 3, 3, 2, 2], smallRocks: 5, bigRocks: 4, sacks: 2, crabs: 3 },
   { level: 10, place: 'The Diamond Heart', gem: 'heartDiamond', seconds: 90, target: 0, gems: [2, 2, 2, 3, 3, 3, 2, 2, 1, 1], smallRocks: 4, bigRocks: 4, sacks: 2, crabs: 2 },
 ];
+/** The level holding the Heart Diamond: the end of the first version of the game. */
 export const LAST_LEVEL = LEVELS.length;
-export const levelSpec = (level: number): LevelSpec => LEVELS[level - 1];
+
+/** The caverns' gems: a thinner mix than level 9 (the monsters are the point), never the Heart Diamond. */
+const CAVE_GEMS = [2, 2, 2, 2, 2, 2, 1, 1, 1] as const;
+const cave = (level: number, place: string, seconds: number, habitat: Habitat, monsters: number, goal: CavernGoal, favour?: CavernSpec['favour']): LevelSpec => ({
+  level, place, gem: 'starSapphire', seconds, target: 0, gems: CAVE_GEMS, smallRocks: 4, bigRocks: 3, sacks: 2, crabs: 1,
+  cavern: { habitat, monsters, goal, ...(favour ? { favour } : {}) },
+});
+export const CAVERNS: readonly LevelSpec[] = [
+  cave(11, 'Mossy Burrows', 70, 'leaf', 6, { count: 3 }),
+  cave(12, 'Drip Grotto', 70, 'water', 7, { count: 4 }),
+  cave(13, 'Ember Tunnels', 70, 'fire', 7, { count: 4 }),
+  cave(14, 'Frost Vault', 80, 'ice', 8, { count: 5 }),
+  cave(15, 'Spark Seam', 75, 'spark', 8, { count: 5 }),
+  cave(16, 'Boulder Deep', 80, 'stone', 9, { count: 5, atLeast: 'uncommon' }),
+  cave(17, 'Mixed Hollow', 80, 'all', 9, { count: 5, kinds: true }),
+  cave(18, "Giants' Rest", 85, 'all', 9, { count: 4, atLeast: 'rare' }, { giant: 2 }),
+  cave(19, 'Starlit Chasm', 85, 'all', 10, { count: 6, atLeast: 'rare' }),
+  cave(20, 'The Monster Heart', 90, 'all', 11, { count: 7 }, { ultra: 2 }),
+];
+export const FIRST_CAVERN = LAST_LEVEL + 1;
+export const LAST_CAVERN = LAST_LEVEL + CAVERNS.length;
+export const isCavern = (level: number) => level >= FIRST_CAVERN && level <= LAST_CAVERN;
+export const levelSpec = (level: number): LevelSpec => (level > LAST_LEVEL ? CAVERNS[level - FIRST_CAVERN] : LEVELS[level - 1]);
 /** A field is made again (from the next seed in line) until its gems are worth at least this many times the target. */
 export const FIELD_VALUE_MARGIN = 1.5;
 /** Big rocks placed just above the Heart Diamond on level 10 (counted in bigRocks). */
@@ -185,14 +232,14 @@ export const DIAMOND_OPENING = 6;
 /** Most Hold on! questions in one level. After that nothing slips. */
 export const QUESTION_CAP = 6;
 export const QUESTION_CAP_LAST = 8;
-export const questionCap = (level: number) => (level === LAST_LEVEL ? QUESTION_CAP_LAST : QUESTION_CAP);
+export const questionCap = (level: number) => (level === LAST_LEVEL || level === LAST_CAVERN ? QUESTION_CAP_LAST : QUESTION_CAP);
 
 // ---- Stars ----
 /** Two stars: passed with at least this many seconds left. */
 export const STAR_TWO_SECONDS = 15;
 
 // ---- Boosts (the next level only, at most one of each) ----
-export type BoostId = 'strongWinch' | 'luckyCharm' | 'extraTime' | 'rockBlaster';
+export type BoostId = 'strongWinch' | 'luckyCharm' | 'extraTime' | 'rockBlaster' | 'monsterLure' | 'monsterNet';
 export interface Boost {
   id: BoostId;
   name: string;
@@ -200,14 +247,27 @@ export interface Boost {
   base: number;
   perLevel: number;
   about: string;
+  /** Only in the Monster Dig caverns. */
+  caverns?: true;
 }
 export const BOOSTS: readonly Boost[] = [
   { id: 'strongWinch', name: 'Strong Winch', base: 20, perLevel: 10, about: 'Heavy things reel up 50% faster.' },
   { id: 'luckyCharm', name: 'Lucky Charm', base: 15, perLevel: 10, about: 'Gems slip half as often.' },
   { id: 'extraTime', name: 'Extra Time', base: 10, perLevel: 5, about: '10 more seconds.' },
   { id: 'rockBlaster', name: 'Rock Blaster', base: 10, perLevel: 5, about: 'The first rock you grab turns to dust.' },
+  // Monster Dig (James, 25 Nov 2026). Prices use the cavern's number from 1 (cavern 1 is level 11).
+  { id: 'monsterLure', name: 'Monster Lure', base: 30, perLevel: 5, about: 'Rare monsters turn up half as often again.', caverns: true },
+  { id: 'monsterNet', name: 'Monster Net', base: 25, perLevel: 5, about: 'The first monster that wriggles is caught for free.', caverns: true },
 ];
 export const BOOST_IDS: readonly BoostId[] = BOOSTS.map((b) => b.id);
+/** The boosts a mystery sack can give (the first four, so sacks are as they always were). */
+export const SACK_BOOST_IDS: readonly BoostId[] = ['strongWinch', 'luckyCharm', 'extraTime', 'rockBlaster'];
+/** The boosts on sale before a level. */
+export const boostsFor = (level: number): readonly Boost[] => BOOSTS.filter((b) => !b.caverns || isCavern(level));
+/** The number a boost's price is worked out from: the level, or the cavern's own number (1 to 10) in the Monster Dig. */
+export const priceLevel = (level: number) => (isCavern(level) ? level - LAST_LEVEL : level);
+/** Monster Lure: rare, giant and ultra monsters this many times as likely. */
+export const MONSTER_LURE = 1.5;
 /** Strong Winch: everything heavier than light reels this many times as fast. */
 export const STRONG_WINCH = 1.5;
 /** Lucky Charm: slip chances times this (not the Heart Diamond's). */
@@ -237,13 +297,16 @@ export const WEEK_ZERO = '2024-01-01';
 
 export type AchievementMeasure = 'diamond_found' | 'diamond_stars' | 'diamond_kinds' | 'diamond_grips';
 export type RareMeasure = 'diamond_rare_kinds' | 'diamond_rare_total' | 'diamond_phoenix';
+export type MonsterMeasure = 'diamond_monster_kinds' | 'diamond_monster_total' | 'diamond_monster_shiny' | 'diamond_monster_giant' | 'diamond_monster_ultra';
 export interface WorkshopItem {
   id: string;
   name: string;
   slot: Slot;
   rarity: Rarity;
-  /** Can't be bought: comes with this achievement. */
-  earnedBy?: AchievementMeasure;
+  /** Can't be bought: comes with this achievement (or this many Monster Book kinds). */
+  earnedBy?: AchievementMeasure | 'diamond_monster_kinds';
+  /** What `earnedBy` must reach, when not ACHIEVEMENT_NEEDS's number. */
+  needs?: number;
 }
 /** What each earning achievement needs (docs/DIAMOND-PLAN.md, section 6.5). */
 export const ACHIEVEMENT_NEEDS: Record<AchievementMeasure, number> = {
@@ -270,9 +333,19 @@ export const ACHIEVEMENTS = [
   { id: 'diamond-rare-hoard', name: 'Rare Hoard: 25 rare gems', emoji: '👑', measure: 'diamond_rare_total', goal: 25, for: 'Catch 25 rare gems' },
   { id: 'diamond-phoenix', name: 'Fablet Rose Finder', emoji: '🌹', measure: 'diamond_phoenix', goal: 1, for: 'Catch the Fablet Rose (1% chance!)' },
   { id: 'diamond-full-book', name: 'Complete Collection: all 7 rare gems', emoji: '🏆', measure: 'diamond_rare_kinds', goal: 7, for: 'Catch all 7 rare gems' },
+  // Monster Dig (migration 20261125000400): kept for good.
+  { id: 'diamond-monster-first', name: 'Monster Catcher', emoji: '🐾', measure: 'diamond_monster_kinds', goal: 1, for: 'Catch your first monster in the Monster Dig' },
+  { id: 'diamond-monster-spotter', name: 'Monster Spotter: 10 kinds', emoji: '🔎', measure: 'diamond_monster_kinds', goal: 10, for: 'Catch 10 different monsters' },
+  { id: 'diamond-monster-keeper', name: 'Monster Keeper: 30 kinds', emoji: '📗', measure: 'diamond_monster_kinds', goal: 30, for: 'Catch 30 different monsters' },
+  { id: 'diamond-monster-shiny', name: 'Shiny Finder', emoji: '✨', measure: 'diamond_monster_shiny', goal: 1, for: 'Catch a shiny monster' },
+  { id: 'diamond-monster-giant', name: 'Giant Tamer', emoji: '😴', measure: 'diamond_monster_giant', goal: 1, for: 'Catch a sleeping giant' },
+  { id: 'diamond-monster-ultra', name: 'Ultra Catch', emoji: '🌟', measure: 'diamond_monster_ultra', goal: 1, for: 'Catch an ultra rare monster' },
+  { id: 'diamond-monster-book', name: 'Full Monster Book: all 75', emoji: '🏆', measure: 'diamond_monster_kinds', goal: 75, for: 'Catch all 75 monsters' },
 ] as const;
+/** Monster Book trophy steps: kinds caught for bronze, silver and gold. */
+export const MONSTER_CUP_STEPS = [15, 40, 75] as const;
 /** Gem Book trophy steps: different rare gems caught for bronze, silver and gold (the Rare Gem Cup). */
 export const RARE_CUP_STEPS = [3, 5, 7] as const;
 
 // ---- Points (rules_fn, Stage 4) ----
-export const POINTS = { firstPass: 2, newStar: 1, diamond: 5 };
+export const POINTS = { firstPass: 2, newStar: 1, diamond: 5, firstMonster: 3 };

@@ -1,6 +1,8 @@
 /* Star Web pupil controller (Controller.tsx). */
 .cl-c { position: fixed; inset: 0; z-index: 40; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; color: #fff; font-family: inherit;
   background: radial-gradient(ellipse 80% 50% at 80% 0%, #4b2a8a 0%, rgba(75,42,138,0) 70%), linear-gradient(180deg, #0b1a52 0%, #150f3d 60%, #0a0a26 100%); }
+.cl-c-back { position: fixed; inset: 0; z-index: 1; pointer-events: none; background-size: cover; background-position: center; }
+.cl-c-back::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, rgba(4, 4, 26, 0.25) 0%, rgba(4, 4, 26, 0.55) 75%, rgba(4, 4, 26, 0.7) 100%); }
 .cl-c-twinkle { position: fixed; inset: 0; pointer-events: none; }
 .cl-c-twinkle i { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff; animation: cl-c-tw 3s ease-in-out infinite; }
 .cl-c-hub { position: absolute; top: 8px; left: 8px; z-index: 3; display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: 18px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.35); color: #fff; text-decoration: none; font-weight: 700; font-size: 0.9rem; }

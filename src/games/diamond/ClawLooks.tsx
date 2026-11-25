@@ -57,7 +57,7 @@ export function ClawLooks({
             {isSpecial && <span className="dd-chip dd-chip--gold">Special this week</span>}
           </p>
           {it.earnedBy && !owned ? (
-            <p className="dd-item__how">{HOW_TO_WIN[it.earnedBy]}</p>
+            <p className="dd-item__how">{it.earnedBy === 'diamond_monster_kinds' ? `Win it by catching ${it.needs} different monsters in the Monster Dig.` : HOW_TO_WIN[it.earnedBy]}</p>
           ) : owned ? (
             <p className="dd-item__how">{wearing ? 'You’re wearing it.' : 'Yours.'}</p>
           ) : (

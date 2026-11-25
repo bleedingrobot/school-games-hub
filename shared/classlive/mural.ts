@@ -6,6 +6,7 @@
  * Pure rules (the questions are the server's job).
  */
 
+/** The old fixed grid: rooms saved before the grid scaled (and the size before a game starts) use it. */
 export const COLS = 18;
 export const ROWS = 12;
 export const TILES = COLS * ROWS;
@@ -16,15 +17,47 @@ export const CHOICES = 6;
 /** How long the guessing lasts once the flipping is over (it ends sooner when everyone has picked). */
 export const GUESS_MS = 45_000;
 /**
- * The most of the picture the class can uncover (James, 24 Nov 2026: work through the time, then guess; a full class
- * flipped all 216 tiles in about a minute, which gave the picture away). Tiles flip at a steady pace up to this many by
- * the end of the time; right answers past the pace wait in a queue and flip as the time goes on (fewest tiles first).
+ * Right answers a pupil gets a minute in a class that's doing well. Measured on the live game, 25 Nov 2026: a class of
+ * 24 in a 2-minute mural got a median 5.2 and a top quarter 5.9 a minute; pupils on their own got 3.6 to 5.1 over 2 to 5
+ * minutes. So 6 is a class doing well.
  */
-export const MAX_OPEN = 130;
+export const RIGHT_PER_MIN = 6;
+/**
+ * The grid is sized when the game starts, from the players and the time, so a class doing well uncovers about this
+ * much of the picture (James, 25 Nov 2026: a class of 25 found the fixed 216 tiles too easy; aim for about 75%).
+ */
+export const AIM = 0.75;
+/** The most of the picture the class can uncover, however well they do. */
+export const MAX_SHARE = 0.8;
 /** The pace of an untimed game (the teacher ends it): as if it were 5 minutes. */
 export const UNTIMED_PACE_MS = 5 * 60_000;
-/** How many tiles may be open by time t, in a game whose flipping lasts paceMs. */
-export const openCap = (t: number, paceMs: number) => Math.min(MAX_OPEN, Math.ceil((MAX_OPEN * Math.max(0, t)) / Math.max(1, paceMs)));
+/** The grid keeps the painting's 3:2 shape; it is never coarser or finer than these. */
+const MIN_ROWS = 6;
+const MAX_ROWS = 40;
+
+/** The grid for this many players and minutes (0: untimed, sized as 5 minutes). */
+export function gridFor(players: number, lengthMin: number): { cols: number; rows: number } {
+  const minutes = lengthMin > 0 ? lengthMin : UNTIMED_PACE_MS / 60_000;
+  const target = (Math.max(1, players) * RIGHT_PER_MIN * minutes) / AIM;
+  const rows = Math.min(MAX_ROWS, Math.max(MIN_ROWS, Math.round(Math.sqrt(target / 1.5))));
+  return { cols: Math.round(rows * 1.5), rows };
+}
+
+/** The game's grid (older rooms: 18 by 12). */
+export const colsOf = (g: { cols?: number }) => g.cols ?? COLS;
+export const rowsOf = (g: { rows?: number }) => g.rows ?? ROWS;
+
+/** The most tiles a game of this many tiles can open. */
+export const maxOpen = (tiles: number) => Math.floor(tiles * MAX_SHARE);
+/**
+ * How many tiles may be open by time t, in a game whose flipping lasts paceMs: a steady pace up to the most, so a
+ * burst of right answers early on can't give the picture away (James, 24 Nov 2026). Right answers past the pace wait
+ * in a queue and flip as the time goes on (fewest tiles first).
+ */
+export const openCap = (t: number, paceMs: number, tiles = TILES) => {
+  const most = maxOpen(tiles);
+  return Math.min(most, Math.ceil((most * Math.max(0, t)) / Math.max(1, paceMs)));
+};
 
 /** The pictures (painted later; drawn stand-ins until then), with the words a guess shows. */
 export const PICTURES = {
@@ -151,6 +184,9 @@ export interface MuralGame {
   guessFrom?: number;
   /** Right answers waiting for their tile (the pace holds them back), oldest first. */
   queue?: string[];
+  /** The grid, set when the game starts (missing in older rooms: 18 by 12). */
+  cols?: number;
+  rows?: number;
 }
 
 export type MuralEvent =
@@ -168,6 +204,15 @@ export function newMural(random: () => number, avoid: readonly string[] = []): M
   const others = PICTURE_IDS.filter((p) => p !== picture).sort(() => random() - 0.5).slice(0, CHOICES - 1);
   const choices = [...others, picture].sort(() => random() - 0.5);
   return { kind: 'mural', picture, choices, tiles: Array(TILES).fill(''), solvers: [], revealed: false, mine: {}, phase: 'flip' };
+}
+
+/** Sizes the grid for the class and the time, as the game starts (only while no tile is open). */
+export function sizeMural(g: MuralGame, players: number, lengthMin: number): void {
+  if (g.tiles.some(Boolean)) return;
+  const { cols, rows } = gridFor(players, lengthMin);
+  g.cols = cols;
+  g.rows = rows;
+  g.tiles = Array(cols * rows).fill('');
 }
 
 const mineOf = (g: MuralGame, pupil: string): MuralMine =>
@@ -217,7 +262,7 @@ export function answered(g: MuralGame, pupil: string, right: boolean, t: number,
 /** Flips the queued right answers' tiles, as many as the pace allows by now. */
 export function paced(g: MuralGame, t: number, random: () => number, paceMs = UNTIMED_PACE_MS): MuralEvent[] {
   const events: MuralEvent[] = [];
-  const cap = openCap(t, paceMs);
+  const cap = openCap(t, paceMs, g.tiles.length);
   while (g.queue?.length && flipped(g) < cap && g.phase !== 'guess' && !g.revealed) {
     // The waiting pupil with the fewest tiles goes first (the earliest of them), so every busy pupil keeps flipping.
     let at = 0;

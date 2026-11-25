@@ -1,9 +1,9 @@
--- Class Live (migrations 20261124000100_classlive.sql, 20261124000700_classlive_mural.sql and 20261124000800_classlive_rewards.sql, 20261125000200_classlive_lobby.sql, id classlive): rooms, the hidden session, the projector's screen
+-- Class Live (migrations 20261124000100_classlive.sql, 20261124000700_classlive_mural.sql and 20261124000800_classlive_rewards.sql, 20261125000200_classlive_lobby.sql, 20261125000300_classlive_corners.sql, id classlive): rooms, the hidden session, the projector's screen
 -- (teachers only), each pupil's own row, the compare-and-swap save, the switch, and the join pop-up in hub_here().
 -- Run on a throw-away copy: scripts/scratch-db.sh classlive, then scripts/scratch-test.sh classlive supabase/tests/database/classlive.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(40);
+select plan(49);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -118,6 +118,32 @@ select pg_temp.act_as_server();
 select is(public.classlive_finish(current_setting('test.lobby')::bigint, jsonb_build_object('seed', 9, 'activity', 'mural',
   'players', jsonb_build_array(jsonb_build_object('player', pg_temp.id('0a'), 'points', 3)))), 'ok', 'a finished lobby game is paid');
 select is((select sessions from public.classlive_stats where player = pg_temp.id('0a')), 2, '... a pupil of another class too');
+
+-- ---- Four Corners: saved spots (20261125000300_classlive_corners.sql) ----
+select pg_temp.act_as_server();
+select set_config('test.corners', public.classlive_open(current_setting('test.cls')::uuid, pg_temp.id('0e'), 'corners',
+  '{"state":"live","game":{"kind":"corners","round":{"teleports":[]}}}', '{"state":"live"}', '{"showNames":true,"seq":0,"events":[],"people":[]}')::text, true);
+update public.classlive_rooms set state = 'live' where id = current_setting('test.corners')::bigint;
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
+select is(public.classlive_move(current_setting('test.corners')::bigint, 0.5, 0.5), null, 'a pupil who has not joined can''t save a spot');
+select pg_temp.reset();
+insert into public.classlive_players (room, player, view) values (current_setting('test.corners')::bigint, pg_temp.id('0a'), '{}');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
+select is(public.classlive_move(current_setting('test.corners')::bigint, 0.5, 0.5), '[[0.5, 0.5]]'::jsonb, 'a player saves a spot and gets every spot back');
+select pg_temp.reset();
+update public.classlive_spots set at_ms = at_ms - 500 where room = current_setting('test.corners')::bigint;
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
+select ok((public.classlive_move(current_setting('test.corners')::bigint, 0.0, 0.0) #>> '{0,0}')::float < 0.1 is false,
+  'a move further than the fastest speed is cut short');
+select is(public.classlive_positions(current_setting('test.corners')::bigint), null, 'a pupil can''t read the projector''s spots');
+select throws_ok($$ select public.classlive_place(1, '[]') $$, '42501', null, 'a pupil can''t place anyone');
+select throws_ok($$ select count(*) from public.classlive_spots $$, '42501', null, 'a pupil can''t read the spots table');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
+select ok(public.classlive_positions(current_setting('test.corners')::bigint) ? pg_temp.id('0a')::text, 'the teacher''s projector reads every spot');
+select pg_temp.act_as_server();
+select is(public.classlive_finish(current_setting('test.corners')::bigint, jsonb_build_object('seed', 11, 'activity', 'corners',
+  'players', jsonb_build_array(jsonb_build_object('player', pg_temp.id('0a'), 'points', 5, 'safe', 20, 'champion', true)))), 'ok', 'a Four Corners game is paid');
+select is((select safe_rounds || ',' || corner_wins from public.classlive_stats where player = pg_temp.id('0a')), '20,1', 'Four Corners pays safe rounds and wins');
 
 select * from finish();
 rollback;

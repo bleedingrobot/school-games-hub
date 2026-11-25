@@ -182,6 +182,12 @@
 .cl-shouts { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; text-align: left; }
 .cl-shouts li { padding: 8px 14px; border-radius: 14px; background: rgba(255, 255, 255, 0.1); font-weight: 700; font-size: clamp(0.9rem, 2.3vmin, 1.5rem); animation: cl-card-in 0.6s ease-out both; }
 .cl-finish__row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 4px; }
+.cl-late {
+  position: absolute; top: 10px; right: 12px; z-index: 25; padding: 6px 14px; border-radius: 999px; pointer-events: none;
+  background: rgba(10, 6, 48, 0.78); border: 2px solid rgba(255, 213, 74, 0.7); color: #fff6c9; font-weight: 700; font-size: clamp(0.85rem, 1.8vmin, 1.2rem);
+}
+.cl-late--bar { position: static; padding: 3px 12px; }
+.cl-late b { font-size: 1.35em; letter-spacing: 0.12em; color: #ffe08a; margin-left: 4px; }
 .cl-results-tab { position: absolute; right: 12px; bottom: 12px; z-index: 30; }
 
 /* ---------- small screens ---------- */
@@ -368,10 +374,10 @@
 .mu-cover {
   position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform: perspective(700px) rotateY(0deg);
   background: radial-gradient(circle at 28% 26%, rgba(255, 255, 255, 0.28) 0 7%, transparent 8%), repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.07) 0 6px, transparent 6px 12px), linear-gradient(135deg, hsl(var(--h) 62% 46%), hsl(var(--h) 70% 28%));
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.3), inset 0 -5px 0 rgba(0, 0, 0, 0.25); display: grid; place-items: center;
+  box-shadow: inset 0 0 0 calc(36cqw / var(--cols, 18) / 10) rgba(255, 255, 255, 0.3), inset 0 calc(-9cqw / var(--cols, 18)) 0 rgba(0, 0, 0, 0.25); display: grid; place-items: center;
   transition: transform 0.75s cubic-bezier(0.4, 0.1, 0.2, 1);
 }
-.mu-cover::after { content: '?'; font-weight: 900; font-size: 2.4cqw; color: rgba(255, 255, 255, 0.3); text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25); }
+.mu-cover::after { content: '?'; font-weight: 900; font-size: calc(43cqw / var(--cols, 18)); color: rgba(255, 255, 255, 0.3); text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25); }
 .mu-cover.is-open { transform: perspective(700px) rotateY(-180deg); pointer-events: none; }
 .mu-sparks { position: absolute; left: 50%; top: 50%; width: 0; height: 0; z-index: 4; pointer-events: none; }
 .mu-sparks i { position: absolute; width: 0.9cqw; height: 0.9cqw; margin: -0.45cqw; border-radius: 50%; background: #fff6b0; box-shadow: 0 0 10px 2px #ffd54a; animation: mu-spark 0.95s ease-out 0.3s both; }

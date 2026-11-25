@@ -2,7 +2,8 @@
  * A pretend class for Class Live (`?pretend=30`): pretend pupils who join and play through the REAL server steps
  * (`classLiveStep`) on a database in memory. The tests drive it with a pretend clock; the preview with real timers.
  */
-import { memoryDb, memoryServices, type MemoryDb } from './memoryServices';
+import { memoryDb, memoryMove, memoryServices, type MemoryDb } from './memoryServices';
+import { boosted, CORNERS, cornerOf, ghostly, pretendDir, stepMove, type Corner, type MoveState } from './corners';
 import { classLiveStep, type Change, type ClassLiveServices } from './server';
 import { markQuestion } from '../maths/serverQuestions';
 import { ANSWER_GAP_MS, canGuess } from './mural';
@@ -50,6 +51,7 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
       if (!row || row.session.state === 'over') return;
       if (row.session.state === 'lobby') return opts.later(go, 1000);
       const g = row.session.game;
+      if (g.kind === 'corners') return cornersBot(room, id, skill);
       if (g.kind === 'mural') {
         if (g.revealed) return;
         // In the guessing, take a few seconds to read the riddles, then pick (better pupils are right more often);
@@ -82,6 +84,70 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
       opts.later(go, speed * (0.6 + rand() * 0.8));
     };
     opts.later(go, speed * rand());
+  };
+
+  /**
+   * A pretend Four Corners pupil: runs for a corner each round (now and then changing its mind, or dawdling), grabs items
+   * on the way, answers to switch them on in a corner, and answers its way out of jail. Moves every 200 ms as a device.
+   */
+  const cornersBot = (room: number, id: string, skill: number) => {
+    let m: MoveState | null = null;
+    let target: Corner = CORNERS[Math.floor(rand() * 4)];
+    let roundSeen = -1;
+    let placedSeen = -1;
+    let busy = false;
+    const think = async () => {
+      const row = db.rooms.get(room);
+      if (!row || row.session.state === 'over') return;
+      const g = row.session.game;
+      if (g.kind !== 'corners' || row.startedAt === null) return;
+      const mine = g.mine[id];
+      if (!mine) return;
+      const now = opts.clock.now();
+      const t = now - row.startedAt;
+      const r = g.round;
+      if (!m || mine.placed !== placedSeen) {
+        m = { p: { ...mine.spot }, v: { x: 0, y: 0 } };
+        placedSeen = mine.placed;
+      }
+      if (r && r.n !== roundSeen) {
+        roundSeen = r.n;
+        target = CORNERS[Math.floor(rand() * 4)];
+        // Second half: most remember to change corners.
+        if (r.swap && target === mine.lastCorner && rand() < skill) target = ((target + 1 + Math.floor(rand() * 3)) % 4) as Corner;
+      }
+      if (mine.jailedIn === null && r && r.caught === null && t < r.runEnd) {
+        // Now and then change corner halfway; a few dawdle.
+        if (rand() < 0.01) target = CORNERS[Math.floor(rand() * 4)];
+        const item = !mine.held ? r.items.find((x) => !x.by && Math.hypot(x.x - m!.p.x, x.y - m!.p.y) < 0.25) : undefined;
+        let dir = item ? { x: item.x - m.p.x, y: item.y - m.p.y } : pretendDir(m.p, target, rand);
+        const len = Math.hypot(dir.x, dir.y);
+        if (len > 1) dir = { x: dir.x / len, y: dir.y / len };
+        if (cornerOf(m.p) === target && !item) dir = { x: 0, y: 0 };
+        if (rand() > skill + 0.1) dir = { x: dir.x * 0.4, y: dir.y * 0.4 };
+        m = stepMove(m, dir, 200, r, t, { boost: boosted(mine, r.n), ghost: ghostly(mine, r.n) });
+        memoryMove(db, now, room, id, m.p.x, m.p.y);
+        if (item && !busy && Math.hypot(item.x - m.p.x, item.y - m.p.y) < 0.08) {
+          busy = true;
+          await classLiveStep(services, id, { action: 'play', room, grab: item.id });
+          busy = false;
+        }
+      }
+      const wantsQuestion = mine.jailedIn !== null ? mine.jailRight < 3 && t - mine.lastAt > 4000 + rand() * 3000 : !!mine.held && !!r && cornerOf(m.p) !== null && t < (r?.runEnd ?? 0) && rand() < 0.1;
+      if (wantsQuestion && !busy) {
+        busy = true;
+        const asked = await classLiveStep(services, id, { action: 'ask', room });
+        const q = asked.body.question as { slot: number } | undefined;
+        if (q) {
+          const kept = db.questions.get(`${room}:${id}`)?.find((k) => k.slot === q.slot);
+          const right = markQuestion(kept?.question)?.answer ?? 0;
+          await classLiveStep(services, id, { action: 'answer', room, slot: q.slot, answer: rand() < skill ? right : right + 1, ms: 3000 });
+        }
+        busy = false;
+      }
+      opts.later(think, 200);
+    };
+    opts.later(think, 200 + rand() * 400);
   };
 
   return {

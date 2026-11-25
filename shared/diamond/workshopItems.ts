@@ -18,6 +18,7 @@ export const WORKSHOP_ITEMS: readonly WorkshopItem[] = [
   { id: 'ice-crystal-claw', name: 'Ice Crystal Claw', slot: 'head', rarity: 'epic' },
   { id: 'grabby-glove', name: 'Grabby Glove', slot: 'head', rarity: 'cool' },
   { id: 'diamond-claw', name: 'Diamond Claw', slot: 'head', rarity: 'legendary', earnedBy: 'diamond_found' },
+  { id: 'fractopus-claw', name: 'Fractopus Claw', slot: 'head', rarity: 'epic', earnedBy: 'diamond_monster_kinds', needs: 10 },
   // rope: the line the claw hangs from
   { id: 'rainbow-rope', name: 'Rainbow Rope', slot: 'rope', rarity: 'epic' },
   { id: 'jungle-vine', name: 'Jungle Vine', slot: 'rope', rarity: 'cool' },
@@ -27,12 +28,14 @@ export const WORKSHOP_ITEMS: readonly WorkshopItem[] = [
   { id: 'candy-cane', name: 'Candy Cane', slot: 'rope', rarity: 'common' },
   { id: 'bike-chain', name: 'Bike Chain', slot: 'rope', rarity: 'cool' },
   { id: 'star-rope', name: 'Star Rope', slot: 'rope', rarity: 'legendary', earnedBy: 'diamond_stars' },
+  { id: 'squaremander-tail', name: 'Squaremander Tail', slot: 'rope', rarity: 'epic', earnedBy: 'diamond_monster_kinds', needs: 30 },
   // trail: what follows the claw as it moves
   { id: 'sparkles', name: 'Sparkles', slot: 'trail', rarity: 'epic' },
   { id: 'bubbles', name: 'Bubbles', slot: 'trail', rarity: 'common' },
   { id: 'flames', name: 'Flames', slot: 'trail', rarity: 'cool' },
   { id: 'confetti', name: 'Confetti', slot: 'trail', rarity: 'cool' },
   { id: 'music-notes', name: 'Music Notes', slot: 'trail', rarity: 'common' },
+  { id: 'infinity-sparks', name: 'Infinity Sparks', slot: 'trail', rarity: 'legendary', earnedBy: 'diamond_monster_kinds', needs: 50 },
   // catch: what happens when the claw grabs something
   { id: 'fireworks', name: 'Fireworks', slot: 'catch', rarity: 'epic' },
   { id: 'disco-ball', name: 'Disco Ball', slot: 'catch', rarity: 'epic' },

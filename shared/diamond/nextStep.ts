@@ -3,7 +3,8 @@
  * it means, worked out fresh from the pupil's progress. Words a 9-year-old reads easily. Never about the maths itself.
  */
 import { GEMS, LAST_LEVEL, levelSpec } from './config';
-import { levelsOpen, nzDate, type Player } from './progress';
+import { DIG_PAGES, bookKinds, goalWords } from './caverns';
+import { cavernsOpen, levelsOpen, nzDate, type Player } from './progress';
 import { BUYABLE, priceOf, weekNumber, weeklySpecial } from './workshop';
 
 export type StepButton = 'play' | 'replay' | 'workshop';
@@ -37,6 +38,20 @@ export function nextStep(p: Player, now: Date, unlimited = false): NextStep {
     return { text: `${passLine(open.next)}.`, button: 'play', level: open.next };
   }
   const first = open.next !== null ? `Level ${open.next} opens tomorrow. ` : '';
+  // The Monster Dig, once the diamond is found: today's new cavern, then hunting for the book.
+  const caves = cavernsOpen(p, now, unlimited);
+  if (caves.next !== null && caves.nextOpen) {
+    const spec = levelSpec(caves.next);
+    const intro = caves.next === LAST_LEVEL + 1 ? 'The Monster Dig is open! ' : '';
+    return { text: `${intro}Cavern ${caves.next - LAST_LEVEL}, ${spec.place}: ${goalWords(spec.cavern!.goal).toLowerCase()} in ${spec.seconds} seconds.`, button: 'play', level: caves.next };
+  }
+  if (caves.replays.length && open.next === null) {
+    const kinds = bookKinds(p.lifetime.monsters ?? {});
+    if (kinds < DIG_PAGES) {
+      const deepest = caves.replays[caves.replays.length - 1];
+      return { text: `${caves.next !== null ? `Cavern ${caves.next - LAST_LEVEL} opens tomorrow. ` : ''}Your Monster Book has ${kinds} of ${DIG_PAGES}. Replay cavern ${deepest - LAST_LEVEL} to hunt for more!`, button: 'replay', level: deepest };
+    }
+  }
   const gap = missingGem(p);
   if (gap) return { text: `${first}Replay level ${gap.level} to find the ${gap.name} you're missing.`, button: 'replay', level: gap.level };
   const week = weekNumber(nzDate(now));

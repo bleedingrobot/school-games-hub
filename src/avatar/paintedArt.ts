@@ -62,6 +62,7 @@ export const TROPHY_ART: Record<string, string> = {
   'hw-cup': 'home-learning-cup',
   'quest-hero': 'questing-hero',
   'diamond-rare-collection': 'rare-gem-cup',
+  'diamond-monster-book': 'monster-book-trophy',
 };
 
 /** Each early-years game's Garden Cup is `<game>-cup`. */

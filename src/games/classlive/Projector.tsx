@@ -22,6 +22,11 @@ import { CoiledSerpent, JungleBackdrop, NO_SERPENT_FX, SerpentAmbience, SerpentS
 import './projector.css';
 import { painted } from './paintedArt';
 import { HowTo } from './HowTo';
+import { CornersScene } from './CornersScene';
+import { CornersGuide } from './CornersGuide';
+import { MAPS, MAP_WORDS, RUN_DEFAULT_S, RUN_MAX_S, RUN_MIN_S, type CornerMap } from '../../../shared/classlive/corners';
+
+const RUN_CHOICES = Array.from({ length: RUN_MAX_S - RUN_MIN_S + 1 }, (_, i) => RUN_MIN_S + i);
 import { speak } from '../../speech';
 import { next, VOICE_FOLDER } from './voiceLines';
 
@@ -133,7 +138,8 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
       if (e.type === 'join') sound.play('join');
       else if (e.type === 'start') {
         sound.play('start');
-        say(s.game.kind === 'serpent' ? next('startSerpent') : s.game.kind === 'mural' ? next('startMural') : next('startStars'), 900);
+        // Four Corners' scene says its own start, with the first round.
+        if (s.game.kind !== 'corners') say(s.game.kind === 'serpent' ? next('startSerpent') : s.game.kind === 'mural' ? next('startMural') : next('startStars'), 900);
       }
       else if (e.type === 'climb') {
         const id = e.pupil;
@@ -337,12 +343,13 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   const game = screen?.game ?? null;
   const serpent = game?.kind === 'serpent' ? game : null;
   const mural = game?.kind === 'mural' ? game : null;
+  const corners = game?.kind === 'corners' ? game : null;
   const hall = !screen && !resuming ? painted('pick', 'hall') : null;
   // Background music for what is on screen (James, 25 Nov 2026 NZ).
   const hotNow = (leftMs !== null && leftMs < HOT_MS) || (serpent ? serpent.awake || serpent.energy >= 0.75 * wakeAt(screen?.players ?? 1) : false)
     || (game?.kind === 'stars' ? game.creature && !game.supernova : false);
-  useMusic(classLiveTrack(state, game?.kind ?? null, { guessing: mural?.phase === 'guess', hot: hotNow }), !muted);
-  const backPic = hall ?? painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky');
+  useMusic(classLiveTrack(state, game?.kind ?? null, { guessing: mural?.phase === 'guess', hot: hotNow, map: corners?.map }), !muted);
+  const backPic = hall ?? (corners ? painted('corners', `back-${corners.map}`) : painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky'));
   const lobbyOpen = state === 'lobby' && room !== null;
   useEffect(() => {
     if (lobbyOpen) say(next('joinNow'), 400);
@@ -353,10 +360,13 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   }, [state]);
 
   return (
-    <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''} ${mural ? 'cl-p--mural' : ''} ${backPic ? 'cl-p--painted' : ''}`}>
+    <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''} ${mural ? 'cl-p--mural' : ''} ${corners ? `cl-p--corners fc-back--${corners.map}` : ''} ${backPic ? 'cl-p--painted' : ''}`}>
       {serpent ? <JungleBackdrop /> : <NightBackdrop />}
       {backPic && <div className={`cl-painted ${serpent ? 'cl-painted--serpent' : ''} ${hall ? 'cl-painted--hall' : ''}`} style={{ backgroundImage: `url(${backPic})` }} aria-hidden="true" />}
       {serpent && <SerpentAmbience awake={serpent.awake || state === 'over'} />}
+      {screen?.joinCode && state === 'live' && !barOpen && (
+        <div className="cl-late" aria-label={`Late? Join with code ${screen.joinCode.split('').join(' ')}`}>Late? Code <b>{screen.joinCode}</b></div>
+      )}
       <div className={`cl-bar ${barOpen ? 'cl-bar--open' : ''}`}>
         <button type="button" className="cl-bar__tab" onClick={() => setBarOpen(!barOpen)} aria-expanded={barOpen} aria-label={barOpen ? 'Hide the teacher bar' : 'Show the teacher bar'}>{barOpen ? '▲' : '☰'}</button>
         {barOpen && (
@@ -366,6 +376,9 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
             <MusicControl onPads={(on) => { if (room) void act({ action: 'padmusic', room, on }); }} />
             {screen && <span className="cl-bar__name">{ACTIVITY_NAMES[screen.activity]}</span>}
             {leftMs !== null && <span className={`cl-bar__time ${leftMs < 30_000 ? 'cl-bar__time--low' : ''}`} role="timer">{mmss(leftMs)}</span>}
+            {screen?.joinCode && state === 'live' && (
+              <span className="cl-late cl-late--bar" aria-label={`Late? Join with code ${screen.joinCode.split('').join(' ')}`}>Late? Code <b>{screen.joinCode}</b></span>
+            )}
             {screen && screen.state !== 'over' && room && (
               <button type="button" className="cl-btn cl-btn--small cl-btn--danger" onClick={() => void act({ action: 'end', room })}>End</button>
             )}
@@ -415,6 +428,21 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
             ? <button type="button" className="cl-btn cl-results-tab" onClick={() => setHideResults(false)}>🎨 Show the results</button>
             : <MuralFinish screen={screen} game={mural} onAgain={forget} onSky={() => setHideResults(true)} />)}
         </>
+      )}
+
+      {screen && corners && (state === 'live' || state === 'over') && (
+        <CornersScene
+          screen={screen}
+          game={corners}
+          link={link}
+          room={room}
+          clock={() => Date.now() + offset.current}
+          sound={sound}
+          say={say}
+          over={state === 'over'}
+          onTick={() => { if (room) void act({ action: 'view', room }); }}
+          onAgain={forget}
+        />
       )}
 
       {screen && game?.kind === 'stars' && (state === 'live' || state === 'over') && (
@@ -479,6 +507,10 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
   const [sLevel, setSLevel] = useState<SerpentLevel>('gold');
   const [sLength, setSLength] = useState(0);
   const [mLength, setMLength] = useState(0);
+  const [cLength, setCLength] = useState(5);
+  const [cMap, setCMap] = useState<CornerMap | 'any'>('any');
+  const [cRun, setCRun] = useState(RUN_DEFAULT_S);
+  const [cGuide, setCGuide] = useState(false);
   const [x, setX] = useState('6');
   const [y, setY] = useState('7');
   const [length, setLength] = useState(0);
@@ -565,6 +597,32 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
           <TimerChips length={mLength} setLength={setMLength} />
           <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('mural', { length: mLength })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
+        <section className="cl-card cl-card--active cl-card--corners" aria-label="Four Corners">
+          <CardArt pic={painted('pick', 'corners', true) ?? painted('corners', 'map-snow', true)} />
+          <h2 className="cl-card__name">🎲 Four Corners</h2>
+          <p className="cl-card__blurb">Run your avatar to a corner. The dice decides who goes to jail!</p>
+          <button type="button" className="cl-btn cl-btn--small fc-guide-btn fc-guide-btn--card" onClick={() => setCGuide(true)}>⚡ Power-ups and hazards</button>
+          {cGuide && <CornersGuide map={cMap === 'any' ? MAPS[0] : cMap} onClose={() => setCGuide(false)} />}
+          <div className="cl-opt">
+            <span className="cl-opt__label">Which map?</span>
+            <div className="cl-chips" role="group" aria-label="Map">
+              <button type="button" className={`cl-choice ${cMap === 'any' ? 'cl-choice--on' : ''}`} aria-pressed={cMap === 'any'} onClick={() => setCMap('any')}>Surprise me</button>
+              {MAPS.map((m) => (
+                <button key={m} type="button" className={`cl-choice ${cMap === m ? 'cl-choice--on' : ''}`} aria-pressed={cMap === m} onClick={() => setCMap(m)}>{MAP_WORDS[m].name}</button>
+              ))}
+            </div>
+          </div>
+          <div className="cl-opt">
+            <span className="cl-opt__label">Time to reach a corner</span>
+            <div className="cl-chips" role="group" aria-label="Time to reach a corner">
+              {RUN_CHOICES.map((n) => (
+                <button key={n} type="button" className={`cl-choice ${cRun === n ? 'cl-choice--on' : ''}`} aria-pressed={cRun === n} onClick={() => setCRun(n)}>{n} s</button>
+              ))}
+            </div>
+          </div>
+          <TimerChips length={cLength} setLength={setCLength} />
+          <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('corners', { length: cLength, run: cRun, ...(cMap === 'any' ? {} : { map: cMap }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
+        </section>
         {onShowdown && <ShowdownCard busy={busy} onOpen={onShowdown} />}
       </div>
     </div>
@@ -585,7 +643,7 @@ function Chip({ p, i }: { p: ScreenView['people'][number]; i: number }) {
 
 function Lobby({ screen, game, className, onStart }: { screen: ScreenView; game: ScreenView['game']; className?: string; onStart: () => void }) {
   const n = screen.people.length;
-  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : <MuralLobbyHead />;
+  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : game.kind === 'corners' ? <CornersLobbyHead map={game.map} /> : <MuralLobbyHead />;
   return (
     <div className={`cl-lobby ${game.kind === 'serpent' ? 'cl-lobby--serpent' : ''}`}>
       {head}
@@ -611,6 +669,20 @@ function StarsLobbyHead({ game }: { game: StarsGame }) {
         {Array.from({ length: x * y }, (_, i) => <i key={i} className="cl-array__dot" style={{ animationDelay: `${(i % 12) * 0.12}s` }} />)}
       </div>
       <p className="cl-lobby__ask">What else can we find from this one fact?</p>
+    </>
+  );
+}
+
+function CornersLobbyHead({ map }: { map: CornerMap }) {
+  const [guide, setGuide] = useState(false);
+  return (
+    <>
+      {guide && <CornersGuide map={map} onClose={() => setGuide(false)} />}
+      <h1 className="cl-lobby__title">Four Corners</h1>
+      <div className="cl-lobby__fact">{MAP_WORDS[map].name}</div>
+      <div className="fc-lobby-corners" aria-hidden="true"><i /><i /><i /><i /></div>
+      <p className="cl-lobby__ask">Run to a corner before the countdown ends. Which corner will the dice pick?</p>
+      <button type="button" className="cl-btn fc-guide-btn" onClick={() => setGuide(true)}>⚡ Power-ups and hazards</button>
     </>
   );
 }
@@ -736,7 +808,7 @@ function Finish({ screen, game, onAgain, onSky }: { screen: ScreenView; game: St
         </ul>
       )}
       <div className="cl-finish__row">
-        <button type="button" className="cl-btn cl-btn--go cl-btn--big" onClick={onAgain}>Again?</button>
+        <button type="button" className="cl-btn cl-btn--go cl-btn--big" onClick={onAgain}>Back to Class Live</button>
         <button type="button" className="cl-btn" onClick={onSky}>See the sky</button>
       </div>
     </div>
@@ -773,7 +845,7 @@ function MuralFinish({ screen, game, onAgain, onSky }: { screen: ScreenView; gam
         </ul>
       )}
       <div className="cl-finish__row">
-        <button type="button" className="cl-btn cl-btn--go cl-btn--big" onClick={onAgain}>Again?</button>
+        <button type="button" className="cl-btn cl-btn--go cl-btn--big" onClick={onAgain}>Back to Class Live</button>
         <button type="button" className="cl-btn" onClick={onSky}>See the mural</button>
       </div>
     </div>
@@ -819,7 +891,7 @@ function SerpentFinish({ screen, game, onAgain, onSky }: { screen: ScreenView; g
         </ul>
       )}
       <div className="cl-finish__row">
-        <button type="button" className="cl-btn cl-btn--go cl-btn--big" onClick={onAgain}>Again?</button>
+        <button type="button" className="cl-btn cl-btn--go cl-btn--big" onClick={onAgain}>Back to Class Live</button>
         <button type="button" className="cl-btn" onClick={onSky}>See the serpent</button>
       </div>
     </div>

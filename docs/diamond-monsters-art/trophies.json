@@ -1,0 +1,66 @@
+{
+  "game": "diamond-monsters-trophies",
+  "filename_prefix": "diamond-monsters/trophy",
+  "style": "epic",
+  "seed_by": "name",
+  "styles": {
+    "epic": "Epic collectible-card illustration, luminous painterly fantasy art, a radiant sunburst of light rays behind the subject, glowing magic particles and lens sparkles, mirror-bright metal, rich saturated colour, deep dark midnight-blue and violet jewel-toned background, one subject, large and centred, filling the square, bold clear silhouette, friendly and heroic, made for children aged 5 to 11, no text, no letters, no numbers. "
+  },
+  "inbox": "~/dragon-art-inbox/diamond-monsters-trophies",
+  "picks": "docs/diamond-monsters-art/trophy-picks.json",
+  "art_dir": "src/avatar/art",
+  "pictures": [
+    {
+      "name": "monster-book-trophy-bronze",
+      "prompt": "A trophy shaped like an open storybook standing on a pedestal, little friendly monster faces peeking over the pages, a paw print on the cover, made of warm reddish-brown bronze metal, sturdy with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "monster-book-trophy-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "monster-book-trophy-silver",
+      "prompt": "A trophy shaped like an open storybook standing on a pedestal, little friendly monster faces peeking over the pages, a paw print on the cover, made of bright gleaming silver, finely engraved, a cool blue-white glow and frosty sparkles all around. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "monster-book-trophy-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "monster-book-trophy-gold",
+      "prompt": "A trophy shaped like an open storybook standing on a pedestal, little friendly monster faces peeking over the pages, a paw print on the cover, made of dazzling polished gold, richly ornate, brilliant golden light rays bursting out behind it, clouds of golden sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "monster-book-trophy-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "monster-book",
+      "prompt": "A glowing open storybook full of colourful friendly monster pictures, every page filled, little monsters jumping out of the pages in a swirl of golden sparkles, a soft halo of light behind it.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "monster-book",
+      "max": 512,
+      "small": 160
+    }
+  ]
+}

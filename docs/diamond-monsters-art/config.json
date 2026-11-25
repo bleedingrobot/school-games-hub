@@ -1,0 +1,184 @@
+{
+  "game": "diamond-monsters",
+  "filename_prefix": "diamond-monsters/img",
+  "style": "story",
+  "seed_by": "name",
+  "styles": {
+    "story": "Rich storybook game painting, warm glowing light, soft painterly edges, bright saturated colours, friendly and magical for children aged 8 to 12, no text, no letters. "
+  },
+  "inbox": "~/dragon-art-inbox/diamond-monsters",
+  "picks": "docs/diamond-monsters-art/picks.json",
+  "art_dir": "src/games/diamond/art/paint",
+  "pictures": [
+    {
+      "name": "cavern-11",
+      "prompt": "Side-on cut-away view inside the ground: a cosy underground burrow lined with soft green moss, ferns and tangled tree roots hanging at the edges, little glowing mushrooms in the corners. The top fifth is a rocky cave ceiling with a flat stone ledge. The middle of the picture is calm, smooth and low-detail with soft colour so small monsters and gems will stand out, detail only at the edges and the bottom, wide landscape.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "scene",
+      "folder": "levels",
+      "file": "11"
+    },
+    {
+      "name": "cavern-12",
+      "prompt": "Side-on cut-away view inside the ground: a cool blue water grotto, shining wet rock, small waterfalls and drips at the edges, still pools along the bottom. The top fifth is a rocky cave ceiling with a flat stone ledge. The middle of the picture is calm, smooth and low-detail with soft colour so small monsters and gems will stand out, detail only at the edges and the bottom, wide landscape.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "scene",
+      "folder": "levels",
+      "file": "12"
+    },
+    {
+      "name": "cavern-13",
+      "prompt": "Side-on cut-away view inside the ground: warm orange rock tunnels with glowing ember cracks and a few small friendly flames at the edges. The top fifth is a rocky cave ceiling with a flat stone ledge. The middle of the picture is calm, smooth and low-detail with soft colour so small monsters and gems will stand out, detail only at the edges and the bottom, wide landscape.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "scene",
+      "folder": "levels",
+      "file": "13"
+    },
+    {
+      "name": "cavern-14",
+      "prompt": "Side-on cut-away view inside the ground: an icy blue cavern with frost on the walls, hanging icicles at the edges and snowy crystal ledges. The top fifth is a rocky cave ceiling with a flat stone ledge. The middle of the picture is calm, smooth and low-detail with soft colour so small monsters and gems will stand out, detail only at the edges and the bottom, wide landscape.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "scene",
+      "folder": "levels",
+      "file": "14"
+    },
+    {
+      "name": "cavern-15",
+      "prompt": "Side-on cut-away view inside the ground: a dark purple cave with glowing yellow electric crystal veins and tiny crackling sparks at the edges. The top fifth is a rocky cave ceiling with a flat stone ledge. The middle of the picture is calm, smooth and low-detail with soft colour so small monsters and gems will stand out, detail only at the edges and the bottom, wide landscape.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "scene",
+      "folder": "levels",
+      "file": "15"
+    },
+    {
+      "name": "cavern-16",
+      "prompt": "Side-on cut-away view inside the ground: a deep grey-brown cave of big round boulders and stone pillars at the edges, pebbles along the bottom. The top fifth is a rocky cave ceiling with a flat stone ledge. The middle of the picture is calm, smooth and low-detail with soft colour so small monsters and gems will stand out, detail only at the edges and the bottom, wide landscape.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "scene",
+      "folder": "levels",
+      "file": "16"
+    },
+    {
+      "name": "cavern-17",
+      "prompt": "Side-on cut-away view inside the ground: a cave where moss, water, ice crystals, embers and glowing veins all meet in patches at the edges, colourful and magical. The top fifth is a rocky cave ceiling with a flat stone ledge. The middle of the picture is calm, smooth and low-detail with soft colour so small monsters and gems will stand out, detail only at the edges and the bottom, wide landscape.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "scene",
+      "folder": "levels",
+      "file": "17"
+    },
+    {
+      "name": "cavern-18",
+      "prompt": "Side-on cut-away view inside the ground: a huge quiet cavern with three giant sleeping stone shapes curled up at the far edges like snoring hills, soft violet light. The top fifth is a rocky cave ceiling with a flat stone ledge. The middle of the picture is calm, smooth and low-detail with soft colour so small monsters and gems will stand out, detail only at the edges and the bottom, wide landscape.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "scene",
+      "folder": "levels",
+      "file": "18"
+    },
+    {
+      "name": "cavern-19",
+      "prompt": "Side-on cut-away view inside the ground: a deep dark-blue chasm with thousands of tiny glowing star-like crystals on the walls like a night sky. The top fifth is a rocky cave ceiling with a flat stone ledge. The middle of the picture is calm, smooth and low-detail with soft colour so small monsters and gems will stand out, detail only at the edges and the bottom, wide landscape.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "scene",
+      "folder": "levels",
+      "file": "19"
+    },
+    {
+      "name": "cavern-20",
+      "prompt": "Side-on cut-away view inside the ground: a grand round golden chamber deep underground, warm golden glow rising from the bottom centre, carved monster footprints and paw marks around the edges. The top fifth is a rocky cave ceiling with a flat stone ledge. The middle of the picture is calm, smooth and low-detail with soft colour so small monsters and gems will stand out, detail only at the edges and the bottom, wide landscape.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "scene",
+      "folder": "levels",
+      "file": "20"
+    },
+    {
+      "name": "monster-book-cover",
+      "prompt": "A thick old leather-bound storybook with a green cover, a gold paw print and little gold monster silhouettes embossed on the front, brass corners, a ribbon bookmark, closed. Single object, centred, the whole object visible with space around it, on a plain pure white background.",
+      "size": [
+        832,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "cover",
+      "max": 512
+    },
+    {
+      "name": "dig-gate",
+      "prompt": "A round stone gate set into rock, carved with paw prints and swirling monster tails, a soft green and gold glow coming through the gap, two small lanterns either side. Single object, centred, the whole object visible with space around it, on a plain pure white background.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "gate",
+      "max": 512
+    },
+    {
+      "name": "fractopus-claw",
+      "prompt": "A purple three-pronged claw shaped like an octopus's tentacles, each prong curling with pale pink suckers, a little glowing fraction-bar emblem in the middle, hanging downwards with a ring at the top for a rope, prongs spread wide. Single object, centred, the whole object visible with space around it, on a plain pure white background.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "heads",
+      "file": "fractopus-claw",
+      "max": 256
+    },
+    {
+      "name": "squaremander-tail",
+      "prompt": "A long orange lizard tail with square scale patterns and tiny flame tips, seen straight on, running vertically down the middle of a tall narrow image, plain white background, the pattern repeats exactly the same at the top and the bottom edge, seamless.",
+      "size": [
+        512,
+        1536
+      ],
+      "kind": "cut",
+      "folder": "ropes",
+      "file": "squaremander-tail",
+      "max": 512
+    },
+    {
+      "name": "infinity-sparks",
+      "prompt": "A glowing figure-of-eight infinity sign made of orange fire and blue lightning sparks swirling together. Single object, centred, the whole object visible with space around it, on a plain pure white background.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "icons",
+      "file": "infinity-sparks",
+      "max": 256
+    }
+  ]
+}

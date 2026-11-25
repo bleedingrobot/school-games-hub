@@ -14,7 +14,7 @@ type Calm = 'stars' | 'serpent' | 'boss' | 'goldrush' | 'skyclimb' | 'island' | 
  * Each game and arena has a calm track and a "-hot" one: the same tune made more dramatic and high-energy, for the
  * last 30 seconds and the big moments (James, 25 Nov 2026 NZ). Mystery Mural's hot one is its guessing music.
  */
-export type Track = 'picker' | 'win' | 'mural' | 'guess' | Calm | `${Calm}-hot` | `game-${string}`;
+export type Track = 'picker' | 'win' | 'mural' | 'guess' | Calm | `${Calm}-hot` | `game-${string}` | `corners-${string}`;
 
 const FILES = import.meta.glob('./music/*.mp3', { eager: true, import: 'default' }) as Record<string, string>;
 const file = (t: string): string | undefined => FILES[`./music/${t}.mp3`];
@@ -162,11 +162,26 @@ export function useMusic(track: Track | null, soundOn: boolean) {
 /** How hot a moment is: the last 30 seconds, a serpent awake, a full web chasing the supernova. */
 export const HOT_MS = 30_000;
 
+/**
+ * Four Corners plays its map's own track (corners-snow, corners-snow-hot...; made on James's PC, 25 Nov 2026 NZ). A map
+ * whose track is missing borrows one from the Class Live and Showdown sets.
+ */
+const CORNER_TRACKS: Record<string, Calm> = { snow: 'skyclimb', jungle: 'island', castle: 'boss', space: 'stars' };
+const MAPS = ['snow', 'jungle', 'castle', 'space'];
+
 /** The track for a Class Live room: the lobby shares the picker's, the end plays the win, hot moments the hot one. */
-export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | null, o: { guessing?: boolean; hot?: boolean } = {}): Track {
+
+export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | 'corners' | null, o: { guessing?: boolean; hot?: boolean; map?: string } = {}): Track {
   if (state === 'over') return 'win';
   if (!state || !kind || state !== 'live') return 'picker';
   if (kind === 'mural') return o.guessing || o.hot ? 'guess' : 'mural';
+  if (kind === 'corners') {
+    const map = MAPS.includes(o.map ?? '') ? o.map! : 'snow';
+    const own: Track = o.hot ? `corners-${map}-hot` : `corners-${map}`;
+    if (trackUrl(own)) return own;
+    const calm = CORNER_TRACKS[map] ?? 'goldrush';
+    return o.hot ? `${calm}-hot` : calm;
+  }
   return o.hot ? `${kind}-hot` : kind;
 }
 
