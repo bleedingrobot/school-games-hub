@@ -550,3 +550,7 @@
   .fc-pad--run .fc-power__words span { font-size: 0.92rem; }
 }
 @media (prefers-reduced-motion: reduce) { .fc-power--held { animation: none; } }
+
+/* Bad things glow red, good things glow gold (James, 25 Nov 2026 NZ: "a small red glow to bad things, a small golden glow to good things"). */
+.fc-storm, .fc-ice, .fc-hole, .fc-roller { filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.95)) drop-shadow(0 0 12px rgba(239, 68, 68, 0.55)); }
+.fc-item { filter: drop-shadow(0 0 5px rgba(250, 204, 21, 0.95)) drop-shadow(0 0 12px rgba(250, 204, 21, 0.6)); }
