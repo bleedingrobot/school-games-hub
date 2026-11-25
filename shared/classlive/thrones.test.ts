@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { classLiveStep } from './server';
 import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock, rng } from './pretendClass';
-import { advance, answered, freshMine, layThrones, makeRound, newThrones, sit, thronesFor, type ThronesGame } from './thrones';
+import { advance, APPEAR_GAP, answered, freshMine, layThrones, makeRound, newThrones, sit, thronesFor, type ThronesGame } from './thrones';
 
 describe('Musical Thrones', () => {
   it('rules: fewer thrones every round, sitting first, steals and shields, the courtyard, crowns', () => {
@@ -25,6 +25,9 @@ describe('Musical Thrones', () => {
     const tile = r.tiles[0];
     advance(g, r.musicEnd, order, { a: { x: 0.5, y: 0.5 }, b: { x: tile.x, y: tile.y }, c: { x: 0.5, y: 0.5 } }, rng(3));
     expect(r.dancers).toEqual(['b']);
+    // The thrones only appear now, away from everyone, so nobody could wait on one.
+    const where = [{ x: 0.5, y: 0.5 }, tile];
+    expect(r.thrones.every((th) => where.every((p) => Math.hypot(th.x - p.x, th.y - p.y) >= APPEAR_GAP))).toBe(true);
     expect(sit(g, 'a', t0.id, { x: t0.x + 0.3, y: t0.y }, r.musicEnd + 100)).toEqual({ ok: false, reason: 'far' });
     expect(sit(g, 'a', t0.id, t0, r.musicEnd + 100)).toMatchObject({ ok: true });
     expect(sit(g, 'b', t0.id, t0, r.musicEnd + 200)).toEqual({ ok: false, reason: 'taken' });

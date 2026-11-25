@@ -77,7 +77,8 @@ export function ThronesBoard({ hall, round, t, covered, crowned, mySeat, courtLa
             <Disc x={tp.b.x} y={tp.b.y} r={TELEPORT_R * 1.4} className="mt-warp mt-warp--b" pic={throneHazardPic(hall, 'teleport')} />
           </span>
         ))}
-        {round?.thrones.map((th) => {
+        {/* While the music plays there are no thrones: they appear in new spots when it stops (thrones.ts scatterThrones). */}
+        {!covered && round?.thrones.map((th) => {
           const img = painted('thrones-fx', th.golden ? 'throne-gold' : 'throne');
           const mine = mySeat === th.id;
           const cls = `mt-throne ${th.golden ? 'mt-throne--gold' : ''} ${covered ? 'mt-throne--covered' : 'mt-throne--lit'} ${th.taken ? 'mt-throne--taken' : ''} ${mine ? 'mt-throne--mine' : ''}`;

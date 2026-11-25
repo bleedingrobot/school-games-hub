@@ -223,7 +223,7 @@ export function ThronesPad({ link, room, view, me, setMe, setView, clock, avatar
           }
         }
         // Sit on a throne: after the music stops, on a free one (or a taken one with a Crown thief ready).
-        if (tt >= rd.musicEnd && sitting.current === null) {
+        if (tt >= rd.musicEnd && rd.stopped && sitting.current === null) {
           const th = rd.thrones.find((x) => dist(x, here) < SIT_R && !refused.current.ids.has(x.id) && (!x.taken || m.steal));
           if (th) {
             sitting.current = th.id;
@@ -458,7 +458,7 @@ export function ThronesPad({ link, room, view, me, setMe, setView, clock, avatar
       {onChips.length > 0 && <div className="mt-pad__chips">{onChips.map((c) => <span key={c.key} className={`mt-chip ${c.cls ?? ''}`}>{c.text}</span>)}</div>}
       {seated && <div className="mt-seated" role="status">{goldenSeat ? '👑👑👑 Golden throne! 3 crowns!' : '👑 You got a throne!'}</div>}
       <div className={`mt-pad__board ${Date.now() - shake < 500 ? 'mt-pad__board--hit' : ''}`}>
-        <ThronesBoard hall={pub.hall} round={r ? { ...r, thrones } : null} t={t} covered={music} mySeat={mg.seat}>
+        <ThronesBoard hall={pub.hall} round={r ? { ...r, thrones } : null} t={t} covered={music || !r?.stopped} mySeat={mg.seat}>
           {others.current.filter((o) => o.y <= 1).map((o, i) => <span key={i} className="mt-dot" style={{ left: `${o.x * 100}%`, top: `${o.y * 100}%` }} />)}
           <Token x={here.x} y={here.y} size={AVATAR_R * 2.2} className={`mt-token--me ${music ? 'mt-token--dance' : ''} ${seated ? 'mt-token--sit' : ''} ${mg.shield ? 'mt-token--shield' : ''} ${mg.boost ? 'fc-token--fast' : ''} ${mg.ghost ? 'mt-token--ghost' : ''}`} label="You">
             <AvatarImage avatar={avatar ?? null} size={64} />
