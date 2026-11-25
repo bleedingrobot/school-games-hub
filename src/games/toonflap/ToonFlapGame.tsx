@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode, type Ref } fr
 import { useGameKeys } from '../../kit';
 import { speak, stopSpeaking, useReadAloud } from '../../speech';
 import { guideSkipped, readHelp, saveHelp, setGuideSkipped, showTip, voiceLine, VOICE_FOLDER, type HelpSetting } from './guide';
-import { LEVELS } from '../../../shared/toonflap/levels';
+import { levelByN, LEVELS } from '../../../shared/toonflap/levels';
 import { nzDate } from '../../../shared/kit/dayArc';
 import { ToonFlapError, type DashFinishReply, type FinishReply, type Loaded, type Picks, type StartReply, type ToonFlapBackend } from './backend';
 import { DashScreen } from './DashScreen';
@@ -80,9 +80,10 @@ export function ToonFlapGame({ backend, extra, onServer = false }: { backend: To
     setBusy(true);
     setError(null);
     try {
-      const r = await backend.start(LEVELS[n - 1].id, gentle);
+      const def = levelByN(n) ?? LEVELS[0];
+      const r = await backend.start(def.id, gentle);
       const p = loaded?.progress;
-      const finishes = p?.levels[LEVELS[n - 1].id]?.finishes ?? 0;
+      const finishes = (p?.levels[def.id] ?? p?.seasonal?.[def.id])?.finishes ?? 0;
       const never = !p || Object.values(p.levels).every((l) => !l || l.finishes === 0);
       if (replayGuide) setGuideSkipped(false);
       setGuide(n === 1 && (replayGuide || (never && !guideSkipped())));

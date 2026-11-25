@@ -185,6 +185,8 @@ const WORLDS: World[] = [
   { skyTop: '#F7C77A', skyBot: '#FBE7C0', ink: '#1e1818', ground: '#3B3434', groundTop: '#F26B1D' },
   { skyTop: '#141E4A', skyBot: '#432a78', ink: '#02030c', ground: '#0c1030', groundTop: '#3EE0FF' },
   { skyTop: '#1D2340', skyBot: '#3b3f78', ink: '#0a0d20', ground: '#4d4780', groundTop: '#C3B1E1' },
+  // 11 Christmas Coast: a Kiwi summer Christmas beach
+  { skyTop: '#5EC8F2', skyBot: '#D9F4FB', ink: '#5a1414', ground: '#F3DC9B', groundTop: '#E2C277' },
 ];
 
 /** Everything a layer function needs. */
@@ -414,6 +416,31 @@ function back(p: P) {
         windows(c, x, g - h, tile * 0.8, h, 3, Math.max(2, Math.floor(h / v.s / 0.7)), '#FFD84A', i, 0.45);
       });
       break;
+    case 11:
+      // a summer Christmas beach: the sun, a turquoise sea and red-flowering trees
+      c.fillStyle = '#fff4b0';
+      circ(c, v.w * 0.8, sy(v, 8.2), v.s * 0.9);
+      c.fill();
+      clouds(p, 0.04, '#ffffff', 0.8);
+      c.fillStyle = '#3cc2c9';
+      c.fillRect(-20, sy(v, 2.2), v.w + 40, g - sy(v, 2.2));
+      c.fillStyle = 'rgba(255,255,255,0.5)';
+      layer(p, 0.12, 3, (i, x0, tile) => c.fillRect(x0 + rnd(i, 1) * tile, sy(v, 1.6 + rnd(i, 2) * 0.5), v.s * 0.6, Math.max(2, v.s * 0.05)));
+      layer(p, 0.16, 8, (i, x0, tile) => {
+        const x = x0 + tile * (0.2 + rnd(i, 1) * 0.5);
+        const top = sy(v, 3.2 + rnd(i, 2) * 0.8);
+        c.fillStyle = '#6b4a2b';
+        c.fillRect(x - v.s * 0.12, top, v.s * 0.24, g - top);
+        for (let k = 0; k < 5; k++) {
+          circ(c, x + (k - 2) * v.s * 0.55, top - (k % 2) * v.s * 0.35, v.s * 0.7);
+          paint(c, '#2f6b3a');
+        }
+        for (let k = 0; k < 9; k++) {
+          circ(c, x + (rnd(i, 20 + k) - 0.5) * v.s * 2.8, top - v.s * 0.3 + (rnd(i, 40 + k) - 0.5) * v.s, v.s * 0.16);
+          paint(c, '#d7263d');
+        }
+      });
+      break;
     default:
       stars(p, 0.04, 9, '#ffffff');
       layer(p, 0.07, 18, (i, x0) => {
@@ -578,6 +605,19 @@ function mid(p: P) {
         windows(c, x, g - h, tile * 0.75, h, 2, Math.max(1, Math.floor(h / v.s / 0.8)), i % 2 ? '#FF3E9A' : '#FFD84A', i, 0.5);
       });
       break;
+    case 11:
+      // sand dunes with presents on them
+      layer(p, 0.3, 6, (i, x0, tile) => {
+        const x = x0 + tile * (0.15 + rnd(i, 1) * 0.5);
+        ell(c, x, g, v.s * 1.6, v.s * 0.6);
+        paint(c, '#ecd08a');
+        const size = v.s * (0.5 + rnd(i, 2) * 0.25);
+        c.fillStyle = i % 2 ? '#d7263d' : '#1f8a4c';
+        c.fillRect(x - size / 2, g - v.s * 0.4 - size, size, size);
+        c.fillStyle = '#ffd166';
+        c.fillRect(x - size * 0.08, g - v.s * 0.4 - size, size * 0.16, size);
+      });
+      break;
     default:
       layer(p, 0.26, 8, (i, x0, tile) => {
         const x = x0 + tile * 0.3;
@@ -605,7 +645,7 @@ function mid(p: P) {
  * How much of each painted wall picture's width is the post itself (measured from the pictures), so the picture is drawn
  * wide enough that the post matches the wall's hit box. The end pieces (flowers, caps) may stick out a little sideways.
  */
-const POST_SHARE = [0.41, 0.42, 0.44, 0.58, 0.46, 0.65, 0.67, 0.66, 0.96, 0.4];
+const POST_SHARE = [0.41, 0.42, 0.44, 0.58, 0.46, 0.65, 0.67, 0.66, 0.96, 0.4, 0.34];
 
 /**
  * A wall piece from the paintings: the repeating middle fills it, and an end piece sits at each edge that meets a gap
@@ -619,7 +659,9 @@ function paintedSegment(p: P, x: number, w: number, y0: number, y1: number, capT
   if (!middle || !up || !down) return false;
   // The middle is stretched sideways so its post is exactly the wall's width; the end pieces keep their shape.
   const Wm = w / POST_SHARE[n - 1];
-  const Wc = Math.min(Wm, w * 1.4);
+  // Christmas Coast's candy cane is thin with a wide hook and bow: its end pieces keep the post's width too (its share is
+  // set so the cane is drawn a little thinner than the hit box, which keeps the bow and star from swamping the gaps).
+  const Wc = n === 11 ? Wm : Math.min(Wm, w * 1.4);
   const mid = x + w / 2;
   const tileH = Wc * (middle.naturalHeight / middle.naturalWidth);
   const capH = Wc * (up.naturalHeight / up.naturalWidth);
@@ -959,6 +1001,37 @@ function segment(p: P, wall: Wall, x: number, w: number, y0: number, y1: number,
       }
       break;
     }
+    case 11: {
+      // a candy cane pole, a gold star on the end
+      c.fillStyle = '#fbf7f2';
+      c.fillRect(x, y0, w, H);
+      c.save();
+      c.beginPath();
+      c.rect(x, y0, w, H);
+      c.clip();
+      c.fillStyle = '#d7263d';
+      for (let y = y0 - w; y < y1 + w; y += w * 0.9) {
+        poly(c, [x, y, x + w, y - w * 0.5, x + w, y - w * 0.1, x, y + w * 0.4]);
+        c.fill();
+      }
+      c.restore();
+      c.strokeStyle = ink;
+      c.lineWidth = lw;
+      c.strokeRect(x, y0, w, H);
+      for (const [on, ey, dir] of [[capTop, y0, -1], [capBot, y1, 1]] as const) {
+        if (!on) continue;
+        const cy = ey + dir * w * 0.35;
+        const pts: number[] = [];
+        for (let k = 0; k < 10; k++) {
+          const r = k % 2 ? w * 0.2 : w * 0.45;
+          const a = -Math.PI / 2 + (k * TAU) / 10;
+          pts.push(x + w / 2 + Math.cos(a) * r, cy + Math.sin(a) * r);
+        }
+        poly(c, pts);
+        paint(c, '#ffd166', ink, lw);
+      }
+      break;
+    }
     default: {
       if (!alt) {
         // rocket gantry
@@ -1250,6 +1323,27 @@ function drawNest(p: P, x: number) {
   }
 }
 
+/** A present to grab: James's painting, or a drawn box with a ribbon. */
+function drawPresent(p: P, x: number, y: number) {
+  const { c, v } = p;
+  const img = picture(extraArt('present'));
+  if (img) {
+    blit(c, img, x, y, v.s * 1.0);
+    return;
+  }
+  const s = v.s * 0.75;
+  c.fillStyle = '#d7263d';
+  rr(c, x - s / 2, y - s / 2, s, s, 4);
+  paint(c, '#d7263d', '#5a1414', 2);
+  c.fillStyle = '#ffd166';
+  c.fillRect(x - s * 0.09, y - s / 2, s * 0.18, s);
+  c.fillRect(x - s / 2, y - s * 0.09, s, s * 0.18);
+  ell(c, x - s * 0.18, y - s * 0.58, s * 0.2, s * 0.12, -0.4);
+  paint(c, '#ffd166', '#a8741a', 1.5);
+  ell(c, x + s * 0.18, y - s * 0.58, s * 0.2, s * 0.12, 0.4);
+  paint(c, '#ffd166', '#a8741a', 1.5);
+}
+
 /* ---------- the scene ---------- */
 
 export function drawScene(c: Ctx, o: SceneOpts): View {
@@ -1334,6 +1428,14 @@ export function drawScene(c: Ctx, o: SceneOpts): View {
     drawWall(p, wall, st.t);
     if (wall.answer !== undefined) drawGapMarks(p, wall, o.labels ? o.labels[wall.answer] : null, st.t);
   }
+
+  // presents still to grab (Christmas Coast)
+  course.presents.forEach((gift) => {
+    if (st.got?.[gift.i]) return;
+    const px = sx(v, gift.x);
+    if (px < -60 || px > v.w + 60) return;
+    drawPresent(p, px, sy(v, gift.y + (p.reduced ? 0 : Math.sin(p.time * 3 + gift.i) * 0.08)));
+  });
 
   // ceiling
   c.fillStyle = world.skyTop;

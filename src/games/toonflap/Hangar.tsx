@@ -62,11 +62,13 @@ export function Hangar({ progress, picks, onPick, onBack }: { progress: Progress
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
   const how = (f: Flyer): string => {
+    if (f.allPresents) return `Grab every present in one flight of ${levelById(f.allPresents)?.name ?? ''} (December and January)`;
     if (f.level === null) return 'Gold on every level';
+    const seasonal = levelById(f.level)?.months ? ' (December and January)' : '';
     const left = finishesToUnlock(progress, f.level);
     const name = levelById(f.level)?.name ?? '';
     const runs = unlockRuns(f.level);
-    return `Finish ${name} ${runs} times${left < runs ? ` (${left} to go)` : ''}`;
+    return `Finish ${name} ${runs} times${left < runs ? ` (${left} to go)` : ''}${seasonal}`;
   };
   const current = FLYERS.find((f) => f.id === picks.flyer) ?? FLYERS[0];
   return (

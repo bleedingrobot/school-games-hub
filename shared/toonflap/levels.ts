@@ -8,7 +8,7 @@
 import { ANSWER_GAP_MIN, BIRD_SIZE, LEAD_IN_SECONDS, NEST_AFTER, RESPAWN_LOW, SKY, START_X, STEPS_PER_SECOND, WALL_WIDTH, WINGS, type Pace } from './config';
 import { MEDALS } from './medals';
 
-export type Feature = 'answer-gaps' | 'slide' | 'mixed-gaps' | 'ghosts' | 'gusts' | 'steam' | 'low-gravity' | 'underwater' | 'dark';
+export type Feature = 'answer-gaps' | 'slide' | 'mixed-gaps' | 'ghosts' | 'gusts' | 'steam' | 'low-gravity' | 'underwater' | 'dark' | 'presents';
 
 export interface LevelDef {
   /** 1 to 10. */
@@ -34,6 +34,8 @@ export interface LevelDef {
   features: readonly Feature[];
   /** The new thing, in a pupil's words. */
   newThing: string;
+  /** A seasonal level only opens in these months of the NZ year (1 to 12). */
+  months?: readonly number[];
 }
 
 export const LEVELS: readonly LevelDef[] = [
@@ -48,6 +50,26 @@ export const LEVELS: readonly LevelDef[] = [
   { n: 9, id: 'robot', name: 'Robot City', world: 'a neon cartoon city at night', seconds: 70, pace: 'fast', gap: 3.6, spacing: 1.8, checks: 4, answerWalls: 3, answerGaps: 3, wander: 2.6, features: ['answer-gaps', 'slide', 'ghosts', 'dark'], newThing: 'It is dark, but the gaps light up. Sliding walls and wind too.' },
   { n: 10, id: 'cosmic', name: 'Cosmic Storm', world: 'cartoon outer space with wobbly planets and comets', seconds: 80, pace: 'fast', gap: 3.5, spacing: 1.7, checks: 4, answerWalls: 4, answerGaps: 3, wander: 2.6, features: ['answer-gaps', 'slide', 'mixed-gaps', 'gusts', 'low-gravity'], newThing: 'Low gravity bubbles make you float. Everything else is here too!' },
 ];
+
+/**
+ * Seasonal levels (James, 25 Nov 2026): extra levels that open only at a time of year, outside the 10-level trail. They
+ * don't open the next level, don't count towards "every level" (golds, the rainbow flyer, achievements) and are saved
+ * under `seasonal` in a pupil's progress. Christmas Coast is a Kiwi summer Christmas, open in December and January.
+ */
+export const SEASONAL_LEVELS: readonly LevelDef[] = [
+  { n: 11, id: 'xmas', name: 'Christmas Coast', world: 'a sunny Kiwi summer Christmas beach with red-flowering trees, candy canes and presents', seconds: 45, pace: 'slow', gap: 4.6, spacing: 2.4, checks: 2, answerWalls: 1, answerGaps: 2, wander: 1.8, features: ['answer-gaps', 'presents'], newThing: 'Grab the presents as you fly! Get them all in one flight to unlock a Christmas flyer.', months: [12, 1] },
+];
+
+/** Every level: the trail's 10, then the seasonal ones. */
+export const ALL_LEVELS: readonly LevelDef[] = [...LEVELS, ...SEASONAL_LEVELS];
+
+export const isSeasonal = (def: LevelDef): boolean => !!def.months;
+
+/** Is a level open at this time of year? `today` is the NZ day, YYYY-MM-DD. The trail's levels always are. */
+export const inSeason = (def: LevelDef, today: string): boolean => !def.months || def.months.includes(Number(today.slice(5, 7)));
+
+/** Seasonal levels open on NZ day `today`. */
+export const seasonalNow = (today: string): LevelDef[] => SEASONAL_LEVELS.filter((l) => inSeason(l, today));
 
 export interface Gap {
   /** Middle of the opening (units from the ground) when the wall is still. */
@@ -88,6 +110,13 @@ export interface Perch {
   y: number;
 }
 
+/** A present to grab (levels with 'presents'): looks and a count only, never time. */
+export interface Present {
+  i: number;
+  x: number;
+  y: number;
+}
+
 export interface Sign {
   /** Which answer sign (0, 1, …), the same as its wall's `answer`. */
   i: number;
@@ -103,6 +132,8 @@ export interface Course {
   perches: Perch[];
   signs: Sign[];
   zones: Zone[];
+  /** Presents to grab (empty on most levels). */
+  presents: Present[];
   /** The nest: crossing this x finishes the run. */
   nestX: number;
   /** Medal times for this level, seconds (medals.ts, written by the sim). */
@@ -204,6 +235,16 @@ export function buildCourse(def: LevelDef, gentle = false): Course {
     if (def.features.includes('low-gravity') && i % 4 === 0) zones.push({ kind: 'low-gravity', x0: x0 + 0.5, x1: x1 - 2, push: 0, gravity: 0.55 }); // ends well before the next wall
   }
 
+  // Presents float halfway between two plain walls, at the height between their openings, so a good line grabs them.
+  const presents: Present[] = [];
+  if (def.features.includes('presents')) {
+    for (let i = 0; i < count - 1; i++) {
+      if (!plainGaps(i)) continue;
+      const { x0, x1 } = between(i);
+      presents.push({ i: presents.length, x: (x0 + x1) / 2, y: (walls[i].gaps[0].y + walls[i + 1].gaps[0].y) / 2 });
+    }
+  }
+
   return {
     def,
     speed,
@@ -211,9 +252,11 @@ export function buildCourse(def: LevelDef, gentle = false): Course {
     perches,
     signs,
     zones,
+    presents,
     nestX: walls[count - 1].x + WALL_WIDTH + NEST_AFTER,
     medals: MEDALS[def.id] ?? { gold: def.seconds, silver: def.seconds + 10, goldPlain: def.seconds, silverPlain: def.seconds + 10 },
   };
 }
 
-export const levelById = (id: string): LevelDef | undefined => LEVELS.find((l) => l.id === id);
+export const levelById = (id: string): LevelDef | undefined => ALL_LEVELS.find((l) => l.id === id);
+export const levelByN = (n: number): LevelDef | undefined => ALL_LEVELS.find((l) => l.n === n);
