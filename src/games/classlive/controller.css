@@ -154,3 +154,9 @@
 .cl-c-code__row { display: flex; gap: 10px; align-items: center; }
 .cl-c-code__input { width: 5.2em; min-height: 52px; padding: 0 12px; border-radius: 14px; border: 2px solid rgba(255, 213, 74, 0.8); background: #1b1650; color: #fff; font: inherit; font-size: 1.6rem; font-weight: 900; letter-spacing: 0.2em; text-align: center; }
 .cl-c-code__problem { margin: 0; color: #ffb4b4; }
+
+/* Kids vote on a set-time game (James, 25 Nov 2026 NZ). */
+.cl-c-vote { display: flex; flex-direction: column; gap: 10px; width: min(420px, 100%); margin: 8px auto; }
+.cl-c-vote__pick { display: flex; justify-content: space-between; align-items: center; width: 100%; opacity: 0.85; }
+.cl-c-vote__pick--mine { opacity: 1; outline: 3px solid #ffd54a; outline-offset: 2px; }
+.cl-c-vote__n { font-variant-numeric: tabular-nums; background: rgb(0 0 0 / 0.25); border-radius: 999px; padding: 2px 10px; }

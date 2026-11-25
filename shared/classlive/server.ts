@@ -95,7 +95,15 @@ export interface Auto {
   level: string | null;
   /** Too few joined by the start: called off (no points). */
   calledOff?: boolean;
+  /**
+   * "Kids vote" (James, 25 Nov 2026 NZ): pupils in the waiting room vote for one of `choices` (3 games picked on the first
+   * step); at the start the most votes wins (a tie at random) and that game is made. `winner` once decided.
+   */
+  vote?: { choices?: Activity[]; picks: Record<string, Activity>; winner?: Activity };
 }
+
+/** The games a set-time game may be (all but Star Web, whose shared sky needs a big screen). */
+export const AUTO_ACTIVITIES: Activity[] = ['serpent', 'mural', 'corners', 'shark', 'ghost', 'clash', 'thrones', 'lava'];
 
 export interface Lobby {
   /** Four digits, shown big on the projector. */
@@ -123,7 +131,7 @@ export interface RoomView {
   /** Pupils' devices play the background music too. */
   padMusic: boolean;
   /** A game the server opened at a set time, or null. */
-  auto: { startsAt: number; min: number; calledOff: boolean } | null;
+  auto: { startsAt: number; min: number; calledOff: boolean; vote: { choices: Activity[]; counts: number[]; winner: Activity | null } | null } | null;
 }
 
 export type PublicGame =
@@ -310,7 +318,13 @@ export function roomView(s: Session, startedAt: number | null, now?: number): Ro
   return {
     activity: s.activity, state: s.state, lengthMin: s.lengthMin, startedAt, players: s.order.length, game: publicGame(s.game, s.order.length, t, s.order),
     lobby: s.lobby ?? null, padMusic: s.padMusic === true,
-    auto: s.auto ? { startsAt: s.auto.startsAt, min: s.auto.min, calledOff: s.auto.calledOff === true } : null,
+    auto: s.auto ? {
+      startsAt: s.auto.startsAt, min: s.auto.min, calledOff: s.auto.calledOff === true,
+      vote: s.auto.vote?.choices ? {
+        choices: s.auto.vote.choices, counts: s.auto.vote.choices.map((c) => Object.values(s.auto!.vote!.picks).filter((p) => p === c).length),
+        winner: s.auto.vote.winner ?? null,
+      } : null,
+    } : null,
   };
 }
 
@@ -416,10 +430,32 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
     const s = structuredClone(row.session);
     // A game the server opened at a set time: made on its first step, started (or called off) at its time.
     const made = !s.game && !!s.auto;
-    if (made) s.game = gameFor(s.activity, s.auto!.level, () => sv.random());
+    if (made) {
+      const v = s.auto!.vote;
+      if (v && !v.choices) {
+        // Kids vote: three different games to pick from.
+        const pool = [...AUTO_ACTIVITIES];
+        v.choices = [];
+        while (v.choices.length < 3) v.choices.push(pool.splice(Math.floor(sv.random() * pool.length) % pool.length, 1)[0]);
+        s.activity = v.choices[0];
+      }
+      s.game = gameFor(s.activity, s.auto!.level, () => sv.random());
+    }
     const autoEvents: Event[] = [];
     if (s.auto && s.state === 'lobby' && sv.now() >= s.auto.startsAt) {
       if (s.order.length >= s.auto.min) {
+        const v = s.auto.vote;
+        if (v?.choices && !v.winner) {
+          // The most votes wins; a tie (or no votes) is settled at random among the top.
+          const counts = v.choices.map((c) => Object.values(v.picks).filter((p) => p === c).length);
+          const top = v.choices.filter((_, i) => counts[i] === Math.max(...counts));
+          v.winner = top[Math.floor(sv.random() * top.length) % top.length];
+          if (v.winner !== s.activity) {
+            s.activity = v.winner;
+            s.game = gameFor(v.winner, null, () => sv.random());
+            s.order.forEach((id, i) => joinGame(s.game, id, i));
+          }
+        }
         startGame(s, sv.now());
         row = { ...row, startedAt: sv.now() };
         autoEvents.push({ type: 'start', t: 0 });
@@ -620,6 +656,15 @@ export function gameFor(activity: Activity, level: string | null, random: () => 
   return typeof s === 'string' ? newMural(random) : s.game;
 }
 
+/** A new player's own part of the game (the `index`th to join). */
+function joinGame(g: Game, who: string, index: number) {
+  if (g.kind === 'corners') g.mine[who] = freshMine(index);
+  if (g.kind === 'lava') g.mine[who] = freshLavaMine(index);
+  if (g.kind === 'thrones') g.mine[who] = thronesFresh(index);
+  if (g.kind === 'clash') clashJoin(g, who);
+  if (g.kind === 'ghost') g.mine[who] = ghostFresh(index);
+}
+
 /** Lobby to live (the teacher's Start, or a set-time game's start). */
 function startGame(s: Session, now: number) {
   s.state = 'live';
@@ -713,7 +758,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
   }
 
   // ---- Pupil steps ----
-  if (action === 'join' || action === 'play' || action === 'ask' || action === 'answer' || action === 'look') {
+  if (action === 'join' || action === 'play' || action === 'ask' || action === 'answer' || action === 'look' || action === 'vote') {
     const me = await sv.pupil(who);
     if (me === 'busy') return busy();
     if (!me) return no(403, 'Class Live is for pupils in a class.', 'no-class');
@@ -747,11 +792,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         if (s.players[who]) return { reply: null, events: [], players: [who] };
         if (s.order.length >= MAX_PLAYERS) return { refuse: no(409, 'This room is full.', 'full') };
         s.players[who] = { id: who, name: me.name, joinedAt: t, colour: s.order.length % 12 };
-        if (s.game.kind === 'corners') s.game.mine[who] = freshMine(s.order.length);
-        if (s.game.kind === 'lava') s.game.mine[who] = freshLavaMine(s.order.length);
-        if (s.game.kind === 'thrones') s.game.mine[who] = thronesFresh(s.order.length);
-        if (s.game.kind === 'clash') clashJoin(s.game, who);
-        if (s.game.kind === 'ghost') s.game.mine[who] = ghostFresh(s.order.length);
+        joinGame(s.game, who, s.order.length);
         s.order.push(who);
         return { reply: null, events: [{ type: 'join', t, pupil: who }] };
       });
@@ -765,6 +806,19 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     // changes are dropped (Class Showdown hung in a real class, 24 Nov 2026).
     const withRoom = (r: StepReply): StepReply =>
       r.status === 200 ? r : { ...r, body: { ...r.body, view: roomView(cur.session, cur.startedAt, sv.now()), me: playerView(cur.session, who) } };
+    if (action === 'vote') {
+      // Kids vote: one vote each, changeable until the start.
+      const done = await mutate(sv, room, (s) => {
+        const v = s.auto?.vote;
+        if (!v?.choices || s.state !== 'lobby' || v.winner) return { refuse: no(409, 'Voting has finished.', 'not_now') };
+        const pick = v.choices.find((c) => c === body.pick);
+        if (!pick) return { refuse: no(400, 'Pick a game.') };
+        v.picks[who] = pick;
+        return { reply: null, events: [], players: [who] };
+      });
+      if ('refuse' in done) return withRoom(done.refuse);
+      return ok({ room, view: roomView(done.session, done.row.startedAt, sv.now()), me: playerView(done.session, who), now: sv.now() });
+    }
     if (action === 'look') {
       // Four Corners runs on the clock: if the big screen hasn't moved a round on (closed, asleep), a pupil's look does.
       const cg = cur.session.game;

@@ -13,7 +13,7 @@ function fail(error: { code?: string; message?: string } | null, fallback: strin
   throw new FriendlyError(fallback);
 }
 
-export type ClassLiveActivity = 'serpent' | 'mural' | 'corners' | 'shark' | 'ghost' | 'clash' | 'thrones' | 'lava';
+export type ClassLiveActivity = 'serpent' | 'mural' | 'corners' | 'shark' | 'ghost' | 'clash' | 'thrones' | 'lava' | 'vote';
 
 export interface ClassLiveTime {
   id: number | null;
@@ -33,7 +33,7 @@ export interface ClassLiveTime {
 }
 
 const LENGTHS = [2, 3, 5, 10, 15] as const;
-const ACTIVITIES: ClassLiveActivity[] = ['serpent', 'mural', 'corners', 'shark', 'ghost', 'clash', 'thrones', 'lava'];
+const ACTIVITIES: ClassLiveActivity[] = ['serpent', 'mural', 'corners', 'shark', 'ghost', 'clash', 'thrones', 'lava', 'vote'];
 const clamp = (v: unknown, lo: number, hi: number, fallback: number) =>
   typeof v === 'number' && Number.isFinite(v) ? Math.min(hi, Math.max(lo, Math.round(v))) : fallback;
 
