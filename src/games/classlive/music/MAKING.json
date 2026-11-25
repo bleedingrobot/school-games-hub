@@ -528,5 +528,93 @@
     "seconds": 88.0,
     "take_kept": 1,
     "lufs_target": -16
+  },
+  {
+    "name": "thrones-castle",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "party dance music for musical chairs, bouncy, upbeat, strong steady four-on-the-floor beat from the very first second, starts immediately at full volume, no intro, royal medieval dance, harpsichord, brass, tambourine, festive court dance, catchy, 124 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 124,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18,
+    "notes": "3 takes (seeds 11117, 42424, 77777); kept the take with a full-volume first 2 s; fade-in 0.02 s only (no audible fade) so it starts on the beat"
+  },
+  {
+    "name": "thrones-castle-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "party dance music for musical chairs, bouncy, upbeat, strong steady four-on-the-floor beat from the very first second, starts immediately at full volume, no intro, fast royal medieval dance, harpsichord, bold brass, tambourine, pounding drums, energetic, fuller, catchy, 134 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 134,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16,
+    "notes": "3 takes (seeds 11117, 42424, 77777); kept the take with a full-volume first 2 s; fade-in 0.02 s only (no audible fade) so it starts on the beat"
+  },
+  {
+    "name": "thrones-ice",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "party dance music for musical chairs, bouncy, upbeat, strong steady four-on-the-floor beat from the very first second, starts immediately at full volume, no intro, sparkly frosty dance, glockenspiel, sleigh bells, synth plucks, icy shimmer, catchy, 120 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 77777,
+    "bpm": 120,
+    "seconds": 88.0,
+    "take_kept": 3,
+    "lufs_target": -18,
+    "notes": "3 takes (seeds 11117, 42424, 77777); kept the take with a full-volume first 2 s; fade-in 0.02 s only (no audible fade) so it starts on the beat"
+  },
+  {
+    "name": "thrones-ice-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "party dance music for musical chairs, bouncy, upbeat, strong steady four-on-the-floor beat from the very first second, starts immediately at full volume, no intro, fast sparkly frosty dance, glockenspiel, sleigh bells, bright synth plucks, driving electronic drums, energetic, fuller, catchy, 130 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 130,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16,
+    "notes": "3 takes (seeds 11117, 42424, 77777); kept the take with a full-volume first 2 s; fade-in 0.02 s only (no audible fade) so it starts on the beat"
+  },
+  {
+    "name": "thrones-jungle",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "party dance music for musical chairs, bouncy, upbeat, strong steady four-on-the-floor beat from the very first second, starts immediately at full volume, no intro, bongo and marimba party, tropical, congas, shakers, sunny, catchy, 122 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 122,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -18,
+    "notes": "3 takes (seeds 11117, 42424, 77777); kept the take with a full-volume first 2 s; fade-in 0.02 s only (no audible fade) so it starts on the beat"
+  },
+  {
+    "name": "thrones-jungle-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "party dance music for musical chairs, bouncy, upbeat, strong steady four-on-the-floor beat from the very first second, starts immediately at full volume, no intro, fast bongo and marimba party, tropical, pounding congas, shakers, steel drums, energetic, fuller, catchy, 132 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 77777,
+    "bpm": 132,
+    "seconds": 88.0,
+    "take_kept": 3,
+    "lufs_target": -16,
+    "notes": "3 takes (seeds 11117, 42424, 77777); kept the take with a full-volume first 2 s; fade-in 0.02 s only (no audible fade) so it starts on the beat"
+  },
+  {
+    "name": "thrones-pirate",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "party dance music for musical chairs, bouncy, upbeat, strong steady four-on-the-floor beat from the very first second, starts immediately at full volume, no intro, jolly sea shanty jig, accordion, fiddle, stomping beat, tin whistle, catchy, 128 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 128,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18,
+    "notes": "3 takes (seeds 11117, 42424, 77777); kept the take with a full-volume first 2 s; fade-in 0.02 s only (no audible fade) so it starts on the beat"
+  },
+  {
+    "name": "thrones-pirate-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "party dance music for musical chairs, bouncy, upbeat, strong steady four-on-the-floor beat from the very first second, starts immediately at full volume, no intro, fast jolly sea shanty jig, accordion, fast fiddle, stomping drums, tin whistle, energetic, fuller, catchy, 138 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 138,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16,
+    "notes": "3 takes (seeds 11117, 42424, 77777); kept the take with a full-volume first 2 s; fade-in 0.02 s only (no audible fade) so it starts on the beat"
   }
 ]
