@@ -9,7 +9,7 @@
 - **Same game, one player.** One known fact glows in the night sky (6 × 7 = 42). The pupil types facts they can work out from it (7 × 6, 42 ÷ 6, 12 × 7, 60 × 7, 3 × 7 ...). Each true, linked fact shoots a star into one of the seven arms (Turn around, Divide, Double, Halve, Tens, Near facts, Wild links) with its "how we know" line. Light every arm and the sky creature draws itself.
 - **Reuse almost everything.** The fact reader, checker and link finder are the class game's pure rules (`shared/classlive/stars.ts`, imported, never changed). The sky is the class game's `StarSky` and `NightBackdrop` (`src/games/classlive/StarSky.tsx`), the arm colours and hints are `arms.ts`, the painted night sky, the Star Web music and Bella's Star Web lines all exist.
 - **The big goal: a Sky Atlas.** 21 constellations, one per known fact, in three chapters that open in order: Small (3 × 4 ... 4 × 6), Middle (6 × 7 ... 6 × 8), Big (6 × 12 ... 7 × 11). These are the class game's three `LEVELS`. Each constellation earns bronze (every arm lit), silver (25 stars) or gold (supernova, 30 stars). Finishing a chapter adds a new line-art creature to the Atlas.
-- **No clock** to light a sky, so solo pupils think. A 3-minute **Night Race** opens after 5 lit skies, for the buzz of the class game (best count kept per constellation).
+- **No clock at all** (James, 25 Nov 2026): pupils light a sky at their own pace, so they think. No race mode.
 - **Help follows the pupil:** a nudge to the emptiest arm (as now), the lag hint with the fact's own numbers when they stall, then "Show me" with a worked example on a *different* fact. Never this sky's answers.
 - **Server in charge:** the browser checks each fact at once with the shared rules for instant feedback; the server re-checks every fact with the same rules when it saves (every few stars and at the end). About 4 to 8 calls a sky.
 - **Teacher:** an on/off switch, an "Other games" Progress column (constellations lit), and a Today line on the arm the class finds least ("Hardly anyone halves yet").
@@ -18,7 +18,7 @@
 
 | Question | Recommendation | James chose |
 |---|---|---|
-| A clock? | No clock to light a sky; 3-minute Night Race opens after 5 lit skies | (card) |
+| A clock? | No clock to light a sky; 3-minute Night Race opens after 5 lit skies | **No clock at all** (25 Nov) |
 | How much a day? | No limit; the first 5 skies a day earn hub points | (card) |
 | Where the starting fact comes from | A Sky Atlas of 21 constellations in 3 chapters | (card) |
 | Name | Keep **Star Web** (pupils know it); card subtitle "Fill the Sky Atlas" | mine |
@@ -38,8 +38,6 @@
 4. **Every arm lit:** the creature draws itself (bronze). Keep going for 25 (silver) and 30 (gold, supernova). "Finish" is there from bronze on; leaving earlier keeps the stars (it saves as it goes) and the sky carries on next time.
 5. **End card:** stars per arm, medal, best so far, "Next constellation" button.
 
-**Night Race** (after 5 lit skies): same sky, 3 minutes, count stars; best count on the Atlas. The clock pauses while a "Show me" is open.
-
 ## Changes from the class rules (in `shared/starweb/`, wrapping `stars.ts`)
 
 - **Wild links capped at 5 stars a sky for medals.** In class the Wild arm is fine; solo, `42 + 1 = 43`, `42 + 2 = 44` ... could farm silver and gold. Wild stars past 5 still show but don't count towards 25 and 30.
@@ -49,9 +47,9 @@
 
 ## Design (docs/game-guide/1-design.md)
 
-1. **Big goal:** fill the Sky Atlas: 21 constellations lit (bronze), then gold on all 21. A lit sky takes a strong Year 5 about 5 to 8 minutes (19 stars), so 2 to 3 skies a session: all 21 lit in about 3 weeks at 3 to 4 days a week; gold on all takes a term. After that: Night Race bests, and a **Free sky** (type any × fact up to 12 × 12) that never ends.
+1. **Big goal:** fill the Sky Atlas: 21 constellations lit (bronze), then gold on all 21. A lit sky takes a strong Year 5 about 5 to 8 minutes (19 stars), so 2 to 3 skies a session: all 21 lit in about 3 weeks at 3 to 4 days a week; gold on all takes a term. After that: a **Free sky** (type any × fact up to 12 × 12) that never ends.
 2. **Season game?** Not for this game: nothing piles up that late joiners can't catch.
-3. **Play a day:** no limit (it's practice). Hub points for the first 5 skies a day (`add_game_points`, writes `scored_games`, so it counts for Hard workers): 2 for bronze, 3 silver, 4 gold, 1 for a Night Race. Not in `UNLIMITED_GAMES` (nothing to unlock).
+3. **Play a day:** no limit (it's practice). Hub points for the first 5 skies a day (`add_game_points`, writes `scored_games`, so it counts for Hard workers): 2 for bronze, 3 silver, 4 gold. Not in `UNLIMITED_GAMES` (nothing to unlock).
 4. **Progress bars:** on the Atlas, a bar "14 of 21 lit" and a chapter bar; in a sky, the seven arm meters and a star count towards 25 and 30.
 5. **Achievements** (`hub_games`):
 
@@ -62,7 +60,6 @@
    | Every Way | Light a sky without a hint | `starweb_nohint` | 1 | about half | yes |
    | Supernova | Get gold on a sky | `starweb_gold` | 1 | about half | yes |
    | Chapter Done | Light every sky in a chapter | `starweb_chapter` | 1 | many | yes |
-   | Night Racer | Find 15 stars in a Night Race | `starweb_race` | 15 | some | yes |
    | Sky Atlas | Light all 21 skies | `starweb_lit` | 21 | some | yes |
    | Golden Atlas | Gold on all 21 skies | `starweb_gold` | 21 | a few | yes |
 
@@ -77,7 +74,7 @@
    | Wrong answer | "Not quite" + working after 2 tries | arithmetic slip | the working, never this sky's answer |
    | "True but unlinked" | "How does it link?" | typed a random true fact | names the arms to try |
 
-   Next-step line always there (pure function `nextStep(sky)`), naming the arm and a starting point but never a whole fact: "Divide needs 2 more stars: start from 12." First-time tips on the Atlas and the Night Race. "Replay the guide" on the Atlas.
+   Next-step line always there (pure function `nextStep(sky)`), naming the arm and a starting point but never a whole fact: "Divide needs 2 more stars: start from 12." First-time tips on the Atlas and the first medal. "Replay the guide" on the Atlas.
 8. **Learning design:** the maths is the move (every star is a true, linked fact; no choices to guess from). The model is the "how we know" line and the constellation arms (the seven ways facts link). Help follows the pupil: hint after a stall, "Show me" after two hints on one arm, fading as they light arms without hints (`shared/kit/help.ts`). Pacing: instant feedback, no holds. Progression: Small, Middle, Big chapters, then Free sky and decimals (halves of odd numbers appear in Middle).
 
    | Mistake | Its choice | "Why" line | What the picture does |
@@ -99,7 +96,7 @@ Also: **lesson fit:** a sky fits 5 to 10 minutes and saves as it goes. **Who pla
 ## Server, data and cost
 
 - Function `starweb` (`handler.ts`, `entry.ts`): `atlas` (load), `open` (start or resume a sky), `save` (a batch of typed facts with times: the server re-runs `readFact`, `isTrue`, `linkOf`, `factKey` from `stars.ts` and the solo caps, and keeps only what holds), `finish` (medal, points once, achievements).
-- Tables (RLS on, read through functions): `starweb_skies` (player, anchor, mode, stars jsonb, medal, best_race, hints, updated) and `starweb_stats` (player, lit, gold, stars, races). Migration number: next free was `20261125000500` on 25 Nov 2026; re-run `node scripts/migration-numbers.mjs` at SW1.
+- Tables (RLS on, read through functions): `starweb_skies` (player, anchor, mode, stars jsonb, medal, hints, updated) and `starweb_stats` (player, lit, gold, stars). Migration number: next free was `20261125000500` on 25 Nov 2026; re-run `node scripts/migration-numbers.mjs` at SW1.
 - Cost: atlas 1 + open 1 + a save every 4 stars or 20 s + finish 1: 6 to 8 calls a sky, about 200 a class a lesson. Small.
 
 ## Art, music, voice (reuse first)
@@ -110,7 +107,7 @@ Also: **lesson fit:** a sky fits 5 to 10 minutes and saves as it goes. **Who pla
 | Atlas map | drawn in code on `star-sky` | an old star-map parchment-at-night backdrop |
 | Creatures | the whale line art (`StarSky.tsx`) | none: two more drawn in code (a falcon, a dragon) |
 | Home card | copy of `pick/stars.webp` | the scene in Design 6 |
-| Music | `classlive/music/stars.mp3`, `stars-hot.mp3` for Night Race | none |
+| Music | `classlive/music/stars.mp3` (`stars-hot.mp3` once a sky reaches silver) | none |
 | Voice | Class Live's Star Web and HOWTO lines | ~25 new Bella lines (guide, medals, Atlas) |
 
 Art plan file `docs/STARWEB-ART-PLAN.md` and `docs/starweb-art/config.json` come in SW4. Never wait for the paintings.
@@ -123,7 +120,7 @@ Art plan file `docs/STARWEB-ART-PLAN.md` and `docs/starweb-art/config.json` come
 | **SW2. Sky Atlas** | Atlas map, 3 chapters opening in order, medals, resume, creatures, points (first 5 a day), achievements | |
 | **SW3. Guide and help** | guided first go, lag hint → "Show me" ladder, mistakes "why" lines, first-time tips, Bella lines | |
 | **SW4. Teacher, art plan, go live** | teacher switch, Progress column, Today `hardest`, home card stand-in, art plan, tests, screen checks; switch on for every class | |
-| **SW5. Night Race and Free sky** | 3-minute race after 5 lit skies, best counts; Free sky | |
+| **SW5. Free sky** | type any × fact up to 12 × 12 as the known fact; an endless sky after the Atlas | |
 | Art (evening, James's PC) | home card, Atlas map, dusk and aurora skies | |
 
 Rules for every stage: import from `shared/classlive/` and `src/games/classlive/`, never edit them from this branch; if Star Web solo needs a change there (say `StarSky` must take a smaller size), make it a tiny separate PR. Tests within the 8 for an older game (docs/TESTING.md).
