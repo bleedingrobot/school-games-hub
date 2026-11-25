@@ -32,6 +32,8 @@ import { RecentTrophies } from '../trophies/RecentTrophies';
 import { SeasonNote } from '../trophies/SeasonNote';
 import { QuestBar } from '../quests/QuestBar';
 import { WhatsNew } from '../news/WhatsNew';
+import { ClassLiveCard } from '../teacher/ClassLiveCard';
+import { rememberedClass } from '../teacher/TeacherClass';
 import { useOnlineNow } from '../data/onlineNow';
 
 // The teacher pages and older tests still find these here.
@@ -438,6 +440,9 @@ function DashboardPage() {
         </div>
       ) : (
         <>
+
+        {/* Teachers start Class Live from the main page too (James, 25 Nov 2026 NZ); 'mine' opens their first class. */}
+        {!pupil && <ClassLiveCard classId={rememberedClass() ?? 'mine'} />}
 
         {/* New games, pictures and achievements, for pupils (src/news/hubNews.ts). */}
         {meId && <WhatsNew me={meId} today={nzDay(Date.now())} canSee={(game) => tiles.some((t) => t.id === game)} />}
