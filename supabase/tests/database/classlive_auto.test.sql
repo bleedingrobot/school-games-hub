@@ -17,7 +17,8 @@ on conflict (student_id) do update set class_id = excluded.class_id;
 
 create function pg_temp.act_as(id text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
-         set_config('request.jwt.claims', json_build_object('sub', id, 'role', 'authenticated')::text, true);
+         set_config('request.jwt.claims', json_build_object('sub', id, 'role', 'authenticated',
+           'email', case right($1, 2) when 'a1' then 'ada' when 'a2' then 'tia' else 'pip' end || '@douglaspark.school.nz')::text, true);
 $$;
 create function pg_temp.reset() returns void language sql as $$
   select set_config('role', 'postgres', true), set_config('request.jwt.claims', '', true);
