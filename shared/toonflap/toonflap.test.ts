@@ -6,7 +6,7 @@ import { addRun, emptyProgress, finishesToUnlock, flyersUnlocked, levelOpen, unl
 import { BUMP_PENALTY_STEPS, POTIONS_MAX, STEPS_PER_SECOND, WALL_WIDTH } from './config';
 import { decodeFlaps, encodeFlaps, medalFor, newRun, replayRun, scoreRun, stepRun, type RunState } from './engine';
 import { buildCourse, LEVELS } from './levels';
-import { buildDashCourse, earnFeather, newDash, stepDash } from './dash';
+import { buildDashCourse, dashWalls, earnFeather, newDash, replayDash, stepDash } from './dash';
 import { gapLabels, gapsRight, rightGaps } from './maths';
 
 const garden = buildCourse(LEVELS[0]);
@@ -47,6 +47,16 @@ describe('Toon Flap rules', () => {
     }
     expect(saves).toEqual(['feather', 'potion', 'crash']);
     expect(d).toMatchObject({ crashed: true, feathers: 0, feathersUsed: 1, potionUsed: true });
+  });
+
+  it('Sky Dash keeps going for a pupil who never bumps (it used to stop dead at about wall 143)', () => {
+    const dash = buildDashCourse('123456789012');
+    expect(dash.walls.length).toBeGreaterThan(550);
+    const flown = botRun(dash);
+    const replay = replayDash(dash, flown.flaps, dash.perches.map(() => true), false);
+    expect(replay.valid).toBe(true);
+    expect(replay.dash.crashed).toBe(false);
+    expect(dashWalls(replay.dash)).toBeGreaterThan(500);
   });
 
   it('a perfect run with every bonus is gold; Gentle wings and maths-off have their own rules; a potion cancels only one bump', () => {

@@ -6,13 +6,13 @@
  * revive potion saves the run, otherwise it ends there. Feathers come from checks answered right (the server marks them),
  * so the server replays a dash with the same marks and gets the same walls.
  */
-import { BIRD_SIZE, DASH_CHECK_SECONDS, DASH_END, DASH_FEATHERS_MAX, DASH_RAMP_WALLS, DASH_START, LEAD_IN_SECONDS, MAX_RUN_STEPS, NEST_AFTER, RESPAWN_LOW, SKY, START_X, STEPS_PER_SECOND, WALL_WIDTH, WINGS } from './config';
+import { BIRD_SIZE, DASH_CHECK_SECONDS, DASH_END, DASH_MAX_SECONDS, DASH_FEATHERS_MAX, DASH_RAMP_WALLS, DASH_START, LEAD_IN_SECONDS, NEST_AFTER, RESPAWN_LOW, SKY, START_X, STEPS_PER_SECOND, WALL_WIDTH, WINGS } from './config';
 import { newRun, stepRun, type RunState, type StepEvent } from './engine';
 import type { Course, LevelDef, Perch, Wall } from './levels';
 
 /** Sky Dash as a level: the Cosmic Storm sky (world 10), medium wings. */
 export const DASH_DEF: LevelDef = {
-  n: 10, id: 'dash', name: 'Sky Dash', world: 'cartoon outer space', seconds: MAX_RUN_STEPS / STEPS_PER_SECOND, pace: 'medium',
+  n: 10, id: 'dash', name: 'Sky Dash', world: 'cartoon outer space', seconds: DASH_MAX_SECONDS, pace: 'medium',
   gap: DASH_START.gap, spacing: DASH_START.spacing, checks: 0, answerWalls: 0, answerGaps: 2, wander: DASH_START.wander,
   features: [], newThing: 'One bump and the dash is over. Get checks right for spare feathers.',
 };
@@ -28,12 +28,12 @@ function stream(seed: number): () => number {
 /** The seed's own number (the last 9 digits), so each dash has its own course and the server builds the same one. */
 const seedNumber = (seed: string): number => Number(seed.slice(-9)) || 1;
 
-/** A dash's course: long enough for the longest run (MAX_RUN_STEPS), with a perch (a check) every 30 s of flying. */
+/** A dash's course: long enough for the longest dash (DASH_MAX_SECONDS), with a perch (a check) every 30 s of flying. */
 export function buildDashCourse(seed: string): Course {
   const speed = WINGS[DASH_DEF.pace].speed;
   const random = stream(seedNumber(seed));
   const mid = SKY / 2;
-  const endX = START_X + speed * (MAX_RUN_STEPS / STEPS_PER_SECOND) + 20;
+  const endX = START_X + speed * DASH_MAX_SECONDS + 20;
   const walls: Wall[] = [];
   let x = START_X + speed * LEAD_IN_SECONDS;
   let lastY = mid;
@@ -65,6 +65,7 @@ export function buildDashCourse(seed: string): Course {
     def: DASH_DEF, speed, walls, perches, signs: [], zones: [], presents: [],
     nestX: walls[walls.length - 1].x + WALL_WIDTH + NEST_AFTER,
     medals: { gold: big, silver: big, goldPlain: big, silverPlain: big },
+    maxSteps: DASH_MAX_SECONDS * STEPS_PER_SECOND,
   };
 }
 
