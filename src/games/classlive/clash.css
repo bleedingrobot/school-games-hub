@@ -210,20 +210,16 @@
 .cc-count--low { color: #fecaca; }
 @keyframes cc-pulse { from { transform: scale(1.5); opacity: 0; } }
 .cc-clock {
-  position: absolute;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 7;
+  align-self: flex-start;
   background: rgba(15, 23, 42, 0.8);
   color: #fff;
   font-weight: 900;
-  font-size: clamp(18px, 3.4vmin, 40px);
-  padding: 2px 18px;
+  font-size: clamp(26px, 6vmin, 72px);
+  padding: 0 22px;
   border-radius: 999px;
 }
 .cc-clock--low { background: #b91c1c; animation: cc-throb 0.5s ease-in-out infinite alternate; }
-@keyframes cc-throb { to { transform: translateX(-50%) scale(1.08); } }
+@keyframes cc-throb { to { transform: scale(1.08); } }
 
 /* the count-up reveal */
 .cc-reveal {
@@ -255,19 +251,23 @@
 .cc-stand__who { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-top: 8px; }
 
 /* ---------- the pupil's device ---------- */
-.cc-pad { position: relative; display: flex; flex-direction: column; gap: 8px; height: 100%; padding: 8px 10px; color: #fff; }
-.cc-pad__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 800; }
+.cc-pad { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; padding: 0 4px 8px; color: #fff; }
+.cc-pad__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; max-width: 720px; font-weight: 800; }
 .cc-pad__team { padding: 2px 12px; border-radius: 999px; background: var(--tc); color: #0f172a; font-weight: 900; }
-.cc-pad__left { font-size: 1.6em; }
+.cc-pad__left { font-size: 34px; min-width: 2ch; text-align: center; }
 .cc-pad__left.is-low { color: #fecaca; }
-.cc-pad__board { position: relative; flex: 1; min-height: 0; display: grid; place-items: center; }
-.cc-pad__board .cc-board { height: 100%; max-width: 100%; max-height: 100%; }
-@media (orientation: landscape) {
-  .cc-pad--run { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto 1fr; }
-  .cc-pad--run .cc-pad__top { grid-column: 1 / -1; }
-  .cc-pad__controls { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+/* The board is as wide as fits above the bomb and joystick (the joystick is fixed bottom right). */
+.cc-pad__board { position: relative; width: min(100%, calc(100dvh - 300px)); }
+.cc-pad__board .cc-board { width: 100%; }
+.cc-pad__controls { display: flex; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; max-width: 720px; padding-right: min(42vw, 190px); }
+/* Landscape: team, timer and bomb down the left, the board as tall as the screen, the joystick bottom right. */
+@media (orientation: landscape) and (min-width: 640px) {
+  .cc-pad--run { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-rows: auto 1fr; align-items: start; column-gap: 12px; padding-bottom: 0; }
+  .cc-pad--run .cc-pad__top { grid-column: 1; grid-row: 1; flex-direction: column; align-items: flex-start; padding-top: 44px; }
+  .cc-pad--run .cc-pad__left { font-size: 56px; }
+  .cc-pad--run .cc-pad__board { grid-column: 2; grid-row: 1 / span 2; width: min(calc(100vw - 340px), calc(100dvh - 16px)); }
+  .cc-pad--run .cc-pad__controls { grid-column: 1; grid-row: 2; flex-direction: column; align-items: flex-start; padding-right: 0; }
 }
-.cc-pad__controls { display: flex; align-items: center; justify-content: space-around; gap: 12px; }
 .cc-bomb {
   width: clamp(90px, 22vmin, 150px);
   aspect-ratio: 1;

@@ -23,6 +23,10 @@ import './projector.css';
 import { painted } from './paintedArt';
 import { HowTo } from './HowTo';
 import { CornersScene } from './CornersScene';
+import { ClashScene } from './ClashScene';
+import { ClashCard } from './ClashCard';
+import { ClashGuide } from './ClashGuide';
+import { MAP_WORDS as CLASH_WORDS, type ClashMap } from '../../../shared/classlive/clash';
 import { CornersGuide } from './CornersGuide';
 import { MAPS, MAP_WORDS, RUN_DEFAULT_S, RUN_MAX_S, RUN_MIN_S, type CornerMap } from '../../../shared/classlive/corners';
 
@@ -344,12 +348,13 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   const serpent = game?.kind === 'serpent' ? game : null;
   const mural = game?.kind === 'mural' ? game : null;
   const corners = game?.kind === 'corners' ? game : null;
+  const clash = game?.kind === 'clash' ? game : null;
   const hall = !screen && !resuming ? painted('pick', 'hall') : null;
   // Background music for what is on screen (James, 25 Nov 2026 NZ).
   const hotNow = (leftMs !== null && leftMs < HOT_MS) || (serpent ? serpent.awake || serpent.energy >= 0.75 * wakeAt(screen?.players ?? 1) : false)
     || (game?.kind === 'stars' ? game.creature && !game.supernova : false);
-  useMusic(classLiveTrack(state, game?.kind ?? null, { guessing: mural?.phase === 'guess', hot: hotNow, map: corners?.map }), !muted);
-  const backPic = hall ?? (corners ? painted('corners', `back-${corners.map}`) : painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky'));
+  useMusic(classLiveTrack(state, game?.kind ?? null, { guessing: mural?.phase === 'guess', hot: hotNow, map: corners?.map ?? clash?.map }), !muted);
+  const backPic = hall ?? (clash ? painted('clash', `back-${clash.map}`) ?? painted('corners', 'back-snow') : corners ? painted('corners', `back-${corners.map}`) : painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky'));
   const lobbyOpen = state === 'lobby' && room !== null;
   useEffect(() => {
     if (lobbyOpen) say(next('joinNow'), 400);
@@ -360,7 +365,7 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   }, [state]);
 
   return (
-    <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''} ${mural ? 'cl-p--mural' : ''} ${corners ? `cl-p--corners fc-back--${corners.map}` : ''} ${backPic ? 'cl-p--painted' : ''}`}>
+    <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''} ${mural ? 'cl-p--mural' : ''} ${corners ? `cl-p--corners fc-back--${corners.map}` : ''} ${clash ? 'cl-p--corners cl-p--clash' : ''} ${backPic ? 'cl-p--painted' : ''}`}>
       {serpent ? <JungleBackdrop /> : <NightBackdrop />}
       {backPic && <div className={`cl-painted ${serpent ? 'cl-painted--serpent' : ''} ${hall ? 'cl-painted--hall' : ''}`} style={{ backgroundImage: `url(${backPic})` }} aria-hidden="true" />}
       {serpent && <SerpentAmbience awake={serpent.awake || state === 'over'} />}
@@ -445,6 +450,21 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
         />
       )}
 
+      {screen && clash && (state === 'live' || state === 'over') && (
+        <ClashScene
+          screen={screen}
+          game={clash}
+          link={link}
+          room={room}
+          clock={() => Date.now() + offset.current}
+          sound={sound}
+          say={say}
+          over={state === 'over'}
+          onTick={() => { if (room) void act({ action: 'view', room }); }}
+          onAgain={forget}
+        />
+      )}
+
       {screen && game?.kind === 'stars' && (state === 'live' || state === 'over') && (
         <>
           <StarSky
@@ -472,7 +492,7 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
 
 /* ---------------- setup ---------------- */
 
-function TimerChips({ length, setLength }: { length: number; setLength: (m: number) => void }) {
+export function TimerChips({ length, setLength }: { length: number; setLength: (m: number) => void }) {
   return (
     <div className="cl-opt">
       <span className="cl-opt__label">Timer</span>
@@ -489,7 +509,7 @@ function TimerChips({ length, setLength }: { length: number; setLength: (m: numb
 const MOTES: [number, number, number, number][] = Array.from({ length: 22 }, (_, i) => [(i * 37 + 7) % 100, -((i * 1.7) % 14), 11 + ((i * 5) % 9), 0.6 + ((i * 3) % 5) * 0.2]);
 
 /** The painted picture across the top of a game card (a drawn glow when none is painted). */
-function CardArt({ pic }: { pic: string | null }) {
+export function CardArt({ pic }: { pic: string | null }) {
   return (
     <div className="cl-card__art" aria-hidden="true">
       {pic ? <img src={pic} alt="" loading="eager" /> : null}
@@ -623,6 +643,7 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
           <TimerChips length={cLength} setLength={setCLength} />
           <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('corners', { length: cLength, run: cRun, ...(cMap === 'any' ? {} : { map: cMap }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
+        <ClashCard busy={busy} disabled={!hostOk} onOpen={(body) => onOpen('clash', body)} />
         {onShowdown && <ShowdownCard busy={busy} onOpen={onShowdown} />}
       </div>
     </div>
@@ -643,7 +664,7 @@ function Chip({ p, i }: { p: ScreenView['people'][number]; i: number }) {
 
 function Lobby({ screen, game, className, onStart }: { screen: ScreenView; game: ScreenView['game']; className?: string; onStart: () => void }) {
   const n = screen.people.length;
-  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : game.kind === 'corners' ? <CornersLobbyHead map={game.map} /> : <MuralLobbyHead />;
+  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : game.kind === 'corners' ? <CornersLobbyHead map={game.map} /> : game.kind === 'clash' ? <ClashLobbyHead map={game.map} teams={game.teams} /> : <MuralLobbyHead />;
   return (
     <div className={`cl-lobby ${game.kind === 'serpent' ? 'cl-lobby--serpent' : ''}`}>
       {head}
@@ -682,6 +703,20 @@ function CornersLobbyHead({ map }: { map: CornerMap }) {
       <div className="cl-lobby__fact">{MAP_WORDS[map].name}</div>
       <div className="fc-lobby-corners" aria-hidden="true"><i /><i /><i /><i /></div>
       <p className="cl-lobby__ask">Run to a corner before the countdown ends. Which corner will the dice pick?</p>
+      <button type="button" className="cl-btn fc-guide-btn" onClick={() => setGuide(true)}>⚡ Power-ups and hazards</button>
+    </>
+  );
+}
+
+function ClashLobbyHead({ map, teams }: { map: ClashMap; teams: number }) {
+  const [guide, setGuide] = useState(false);
+  return (
+    <>
+      {guide && <ClashGuide map={map} onClose={() => setGuide(false)} />}
+      <h1 className="cl-lobby__title">Colour Clash</h1>
+      <div className="cl-lobby__fact">{CLASH_WORDS[map].name} · {teams} teams</div>
+      <div className="fc-lobby-corners" aria-hidden="true">{Array.from({ length: teams }, (_, i) => <i key={i} />)}</div>
+      <p className="cl-lobby__ask">Paint the floor your team's colour. Answer maths to drop paint bombs!</p>
       <button type="button" className="cl-btn fc-guide-btn" onClick={() => setGuide(true)}>⚡ Power-ups and hazards</button>
     </>
   );
