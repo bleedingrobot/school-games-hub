@@ -32,7 +32,10 @@ Total 36: 4 maps, 4 backdrops, 1 pick, 1 win, 4 powers, 16 hazards, 1 portal, 1 
 - Cut-outs are painted on plain white then made transparent. Check edges of glows (portal, reactor, anti-gravity ring) on a dark and a light background; hazards are drawn top-down and may be shown semi-transparent in code. Team banners use only their own colour and white, so they stay readable for colour-blind pupils with the team name beside them (drawn in code).
 - The splat sticker per team colour is drawn in code, not painted.
 - Prompt fixes go here after the first run, as in the other plans.
+- First run (25 Nov 2026 NZ, James's PC, 3 tries each): park, rooftops and space floors came out as scenes (trees and a round path edge, roof walls, metal panels with seams and light patches). Their prompts were rewritten as "a close-up texture of ..." plus "seamless flat texture swatch ... no border, no walls, no edges, no seams", with trees, walls, panels, seams, tiles and light beams in the negative; the repaints are plain and even. The beach floor (sand) was fine first time.
+- The picker card's file was `pick-clash`; changed to `clash` so it lands at `pick/clash.webp`, which `ClashCard` loads.
+- Rejected tries: rooftop backdrops 1 and 3 (letter-like graffiti), slip-beach 1 (a stray yellow cross), portal 1 (white rim on dark backgrounds after cut-out), team-red 3 (white blob under the drip).
 
-## Music to find later (not yet fetched)
+## Music
 
-One looping CC0 upbeat track per map from OpenGameArt (park, rooftops, beach, space), fetched on James's PC as for Four Corners. Moods `clash-park`, `clash-rooftops`, `clash-beach`, `clash-space` (check the exact names stage 2 uses), with an entry per track in `src/games/classlive/music/CREDITS.json`.
+Made on James's PC like the Four Corners tracks (ACE-Step in ComfyUI, 25 Nov 2026 NZ), not downloaded: `clash-park`, `clash-rooftops`, `clash-beach`, `clash-space` and a `-hot` of each in `src/games/classlive/music/`, 88 s, 128k MP3, about -18 LUFS calm / -16 LUFS hot. Prompts and seeds in `music/MAKING.json`. Take 2 (seed 42424) kept for all eight: no silent gaps and the steadier loudness of the two takes.
