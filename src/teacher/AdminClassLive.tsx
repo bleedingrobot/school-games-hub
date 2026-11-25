@@ -1,6 +1,11 @@
 /** /teacher/admin/classlive: the times Class Live games start by themselves (docs/plans/classlive-auto/PLAN.md). */
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { CLASH_MAPS } from '../../shared/classlive/clash';
 import { MAPS } from '../../shared/classlive/corners';
+import { MAPS as GHOST_MAPS } from '../../shared/classlive/ghost';
+import { LAVA_MAPS } from '../../shared/classlive/lava';
+import { BAYS } from '../../shared/classlive/shark';
+import { HALLS } from '../../shared/classlive/thrones';
 import { SERPENT_LEVELS } from '../../shared/classlive/serpent';
 import {
   fetchClassLiveTimes,
@@ -15,7 +20,14 @@ import './admin-classlive.css';
 const errorText = (error: unknown) => (error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.');
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const GAMES: Record<ClassLiveActivity, string> = { serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners' };
+const GAMES: Record<ClassLiveActivity, string> = {
+  serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners', shark: 'Shark Bay', ghost: 'Ghost Tag',
+  clash: 'Colour Clash', thrones: 'Musical Thrones', lava: 'Floor is Lava',
+};
+/** Each game's maps (or Serpent Chain's levels); Mystery Mural has none. */
+const LEVELS: Record<ClassLiveActivity, readonly string[]> = {
+  serpent: SERPENT_LEVELS, mural: [], corners: MAPS, shark: BAYS, ghost: GHOST_MAPS, clash: CLASH_MAPS, thrones: HALLS, lava: LAVA_MAPS,
+};
 const LENGTHS = [2, 3, 5, 10, 15] as const;
 
 /** "Mon–Fri", "Mon, Wed, Fri", "Every day". */
@@ -40,7 +52,7 @@ const blank = (): ClassLiveTime => ({
   id: null, days: [1, 2, 3, 4, 5], at: '12:40', activity: 'serpent', length: 5, min: 6, open: 3, host: 'Games Hub', level: 'gold', on: true,
 });
 
-const levelsFor = (a: ClassLiveActivity): readonly string[] => (a === 'serpent' ? SERPENT_LEVELS : a === 'corners' ? MAPS : []);
+const levelsFor = (a: ClassLiveActivity): readonly string[] => LEVELS[a];
 
 function TimeForm({ start, busy, onSave, onCancel }: { start: ClassLiveTime; busy: boolean; onSave: (t: ClassLiveTime) => void; onCancel: () => void }) {
   const [t, setT] = useState(start);
@@ -109,9 +121,9 @@ function TimeForm({ start, busy, onSave, onCancel }: { start: ClassLiveTime; bus
       </label>
       {levels.length > 0 && (
         <label>
-          {t.activity === 'serpent' ? 'Level' : 'Map'}
+          {t.activity === 'serpent' ? 'Level' : t.activity === 'thrones' ? 'Hall' : 'Map'}
           <select value={t.level ?? ''} onChange={(e) => set({ level: e.target.value || null })}>
-            {t.activity === 'corners' && <option value="">Surprise me</option>}
+            {t.activity !== 'serpent' && <option value="">Surprise me</option>}
             {levels.map((l) => (
               <option key={l} value={l}>{cap(l)}</option>
             ))}
