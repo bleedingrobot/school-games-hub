@@ -19,6 +19,11 @@ export interface PupilReward {
   champion: boolean;
   escapes: number;
   powers: number;
+  /**
+   * Per-game totals for a game's own trophies (migration 20261125000800_classlive_activities): keys of 2 to 30 lowercase
+   * letters or _, whole numbers 0 to 500 a session. classlive_counts returns each as the measure 'classlive_<key>'.
+   */
+  extra?: Record<string, number>;
 }
 
 export interface FinishedSession {
