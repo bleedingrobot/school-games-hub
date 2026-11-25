@@ -17,7 +17,7 @@ export interface CrewSpots {
 }
 
 /**
- * Same rules as classlive_crew_move (migration 20261126000300_classlive_crew_names.sql): factory names, no ids; fellow Glitches are
+ * Same rules as classlive_crew_move (migration 20261126000400_classlive_crew_names.sql): factory names, no ids; fellow Glitches are
  * marked only for a Glitch; in the dark (lights out) Crew on the floor only see players within LIGHT_R, unless their camera is on.
  */
 export function crewSpotsOf(g: CrewGame, t: number, all: Record<string, { x: number; y: number }>, me: string, people: Record<string, { name: string; colour: number }> = {}): CrewSpots {
