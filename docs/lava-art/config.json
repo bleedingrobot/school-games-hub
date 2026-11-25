@@ -1,0 +1,481 @@
+{
+ "_from": "docs/corners-art/config.json layout. Check with: python3 scripts/game_art.py lava paint OUT --dry-run",
+ "game": "lava",
+ "filename_prefix": "lava/img",
+ "style": "s",
+ "styles": {
+  "s": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. ",
+  "c": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. "
+ },
+ "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly",
+ "negative_cut": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+ "inbox": "~/dragon-art-inbox/lava-art/set",
+ "picks": "docs/lava-art/picks.json",
+ "art_dir": "src/games/classlive/art/paint",
+ "home_dir": "src/assets/home",
+ "pictures": [
+  {
+   "name": "lake-volcano",
+   "prompt": "A top-down painted texture of a bubbling lake of bright orange molten lava with dark crusted swirls, glowing cracks and little sparks, seen straight down from above, even all over, the same everywhere, seamless, no edges, no shore, nothing floating in it, square picture, no writing anywhere.",
+   "size": [
+    1536,
+    1536
+   ],
+   "kind": "scene",
+   "folder": "lava",
+   "file": "lake-volcano",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, rocks, islands, shore, frame, border"
+  },
+  {
+   "name": "tile-volcano",
+   "prompt": "A top-down painted texture of a chunky square slab of dark grey volcanic basalt rock with rough edges and a few tiny glowing cracks, seen straight down from above, filling the whole square picture edge to edge, flat even lighting, no writing anywhere.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "scene",
+   "folder": "lava",
+   "file": "tile-volcano",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, lava, frame, border, objects"
+  },
+  {
+   "name": "raft-volcano",
+   "prompt": "A small wooden log raft tied with rope, floating, slightly scorched, seen from slightly above. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava",
+   "file": "raft-volcano",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "back-volcano",
+   "prompt": "A wide painted backdrop of a tropical volcano island at dusk, a smoking volcano far away, palm trees and dark rocks round the edges, an orange sky, an empty open middle with nothing in it, dark soft ground in the middle, wide picture, no characters, no writing anywhere.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "lava",
+   "file": "back-volcano",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, game board, grid, tiles, map"
+  },
+  {
+   "name": "volcano-bubbles",
+   "prompt": "A cluster of round bubbling orange lava bubbles popping, seen from above. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava-fx",
+   "file": "volcano-bubbles",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "volcano-crust",
+   "prompt": "A flat patch of grey slippery volcanic ash, seen from above. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava-fx",
+   "file": "volcano-crust",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "volcano-fireball",
+   "prompt": "A round rolling ball of glowing molten lava with a dark crust, seen from above. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava-fx",
+   "file": "volcano-fireball",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "lake-dragon",
+   "prompt": "A top-down painted texture of a lake of glowing red-orange lava with dark rocky swirls and golden sparkles, seen straight down from above, even all over, the same everywhere, seamless, no edges, no shore, nothing floating in it, square picture, no writing anywhere.",
+   "size": [
+    1536,
+    1536
+   ],
+   "kind": "scene",
+   "folder": "lava",
+   "file": "lake-dragon",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, rocks, islands, shore, frame, border"
+  },
+  {
+   "name": "tile-dragon",
+   "prompt": "A top-down painted texture of a chunky square slab of purple-grey cave stone with a few gold flecks, seen straight down from above, filling the whole square picture edge to edge, flat even lighting, no writing anywhere.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "scene",
+   "folder": "lava",
+   "file": "tile-dragon",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, lava, frame, border, objects"
+  },
+  {
+   "name": "raft-dragon",
+   "prompt": "A small friendly raft made of big old white bones lashed with rope, cartoon style, not scary, seen from slightly above. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava",
+   "file": "raft-dragon",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "back-dragon",
+   "prompt": "A wide painted backdrop of a huge cave lair lit by lava, piles of gold coins and gems round the edges, a sleepy friendly dragon tail curled at one side, an empty open middle with nothing in it, dark soft ground in the middle, wide picture, no characters, no writing anywhere.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "lava",
+   "file": "back-dragon",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, game board, grid, tiles, map"
+  },
+  {
+   "name": "dragon-bubbles",
+   "prompt": "A puff of curling grey-purple dragon smoke, seen from above. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava-fx",
+   "file": "dragon-bubbles",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "dragon-crust",
+   "prompt": "A small flat scattered pile of shiny gold coins, seen from above. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava-fx",
+   "file": "dragon-crust",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "dragon-fireball",
+   "prompt": "A round swirling dragon fireball of orange and yellow flame, seen from above. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava-fx",
+   "file": "dragon-fireball",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "lake-forge",
+   "prompt": "A top-down painted texture of a pool of bright yellow-orange molten metal with dark slag swirls and sparks, seen straight down from above, even all over, the same everywhere, seamless, no edges, no shore, nothing floating in it, square picture, no writing anywhere.",
+   "size": [
+    1536,
+    1536
+   ],
+   "kind": "scene",
+   "folder": "lava",
+   "file": "lake-forge",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, rocks, islands, shore, frame, border"
+  },
+  {
+   "name": "tile-forge",
+   "prompt": "A top-down painted texture of a chunky square riveted iron floor plate, dark steel with rivets in the corners, seen straight down from above, filling the whole square picture edge to edge, flat even lighting, no writing anywhere.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "scene",
+   "folder": "lava",
+   "file": "tile-forge",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, lava, frame, border, objects"
+  },
+  {
+   "name": "raft-forge",
+   "prompt": "A small round iron cauldron-boat with riveted sides, floating, seen from slightly above. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava",
+   "file": "raft-forge",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "back-forge",
+   "prompt": "A wide painted backdrop of a huge blacksmith forge hall, anvils, hammers, chains and glowing furnaces round the edges, warm orange light, an empty open middle with nothing in it, dark soft ground in the middle, wide picture, no characters, no writing anywhere.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "lava",
+   "file": "back-forge",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, game board, grid, tiles, map"
+  },
+  {
+   "name": "forge-bubbles",
+   "prompt": "A hissing white steam vent puffing from a metal grate, seen from above. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava-fx",
+   "file": "forge-bubbles",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "forge-crust",
+   "prompt": "A flat dark shiny puddle of black oil, seen from above. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava-fx",
+   "file": "forge-crust",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "forge-fireball",
+   "prompt": "A small runaway iron mine cart full of glowing coals, seen from above, seen from above. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava-fx",
+   "file": "forge-fireball",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "lake-planet",
+   "prompt": "A top-down painted texture of a lake of glowing magenta and orange alien lava with dark swirls and glowing crystals, seen straight down from above, even all over, the same everywhere, seamless, no edges, no shore, nothing floating in it, square picture, no writing anywhere.",
+   "size": [
+    1536,
+    1536
+   ],
+   "kind": "scene",
+   "folder": "lava",
+   "file": "lake-planet",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, rocks, islands, shore, frame, border"
+  },
+  {
+   "name": "tile-planet",
+   "prompt": "A top-down painted texture of a chunky square slab of dark blue-black alien rock with small glowing purple crystals, seen straight down from above, filling the whole square picture edge to edge, flat even lighting, no writing anywhere.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "scene",
+   "folder": "lava",
+   "file": "tile-planet",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, lava, frame, border, objects"
+  },
+  {
+   "name": "raft-planet",
+   "prompt": "A small round white and orange rescue space pod with a glass dome, hovering, seen from slightly above. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava",
+   "file": "raft-planet",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "back-planet",
+   "prompt": "A wide painted backdrop of an alien lava planet surface at night, two big moons and stars in a purple sky, strange crystal spires round the edges, an empty open middle with nothing in it, dark soft ground in the middle, wide picture, no characters, no writing anywhere.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "lava",
+   "file": "back-planet",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, game board, grid, tiles, map"
+  },
+  {
+   "name": "planet-bubbles",
+   "prompt": "A fizzing alien geyser spraying glowing purple droplets, seen from above. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava-fx",
+   "file": "planet-bubbles",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "planet-crust",
+   "prompt": "A flat patch of shiny black volcanic glass, seen from above. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava-fx",
+   "file": "planet-crust",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "planet-fireball",
+   "prompt": "A round glowing rolling meteor rock with fiery cracks, seen from above. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava-fx",
+   "file": "planet-fireball",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "lava",
+   "prompt": "A cheerful game scene of a floor of square stone tiles over glowing orange lava, some tiles glowing hot and cracking, a little wooden raft floating on the lava, a smoking volcano behind, exciting and fun for children, wide picture, no characters, no writing anywhere.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "pick",
+   "file": "lava",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view"
+  },
+  {
+   "name": "power-boots",
+   "prompt": "A pair of chunky red and orange fire boots with little flames at the heels, a game power-up icon. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava-fx",
+   "file": "power-boots",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "power-freeze",
+   "prompt": "A swirling icy blue snowflake blast with frost sparkles, a game power-up icon. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava-fx",
+   "file": "power-freeze",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "power-speed",
+   "prompt": "A bright yellow lightning bolt with speed lines, a game power-up icon. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava-fx",
+   "file": "power-speed",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "power-double",
+   "prompt": "Two shiny golden stars overlapping, a game power-up icon. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava-fx",
+   "file": "power-double",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  },
+  {
+   "name": "power-rope",
+   "prompt": "A coiled thick rescue rope with a red and white ring buoy, a game power-up icon. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+   "size": [
+    512,
+    512
+   ],
+   "kind": "cut",
+   "folder": "lava-fx",
+   "file": "power-rope",
+   "style": "c",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+   "max": 512
+  }
+ ]
+}

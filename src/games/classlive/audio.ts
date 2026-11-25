@@ -11,7 +11,7 @@
  * The AudioContext is made on the first sound (browsers need a tap first), busy moments are rate-limited, and every call is
  * wrapped so a browser without audio just stays quiet.
  */
-export type Kit = 'stars' | 'serpent' | 'mural' | 'corners';
+export type Kit = 'stars' | 'serpent' | 'mural' | 'corners' | 'lava';
 
 export type SoundName =
   | 'join' | 'start' | 'over'
@@ -22,7 +22,9 @@ export type SoundName =
   // Mystery Mural
   | 'flip' | 'guess' | 'pick' | 'reveal'
   // Four Corners
-  | 'tick' | 'tickLast' | 'drumroll' | 'dice' | 'land' | 'caught' | 'safe' | 'grab' | 'power' | 'escape' | 'warp' | 'storm';
+  | 'tick' | 'tickLast' | 'drumroll' | 'dice' | 'land' | 'caught' | 'safe' | 'grab' | 'power' | 'escape' | 'warp' | 'storm'
+  // Floor is Lava
+  | 'rumble' | 'crack' | 'splash' | 'build';
 
 export interface ClassLiveSound {
   play(name: SoundName): void;
@@ -130,6 +132,7 @@ const KITS: Record<Kit, { root: number; scale: number[]; lead: InstrumentName[];
   serpent: { root: 220, scale: [0, 3, 5, 7, 10], lead: ['marimba', 'kalimba', 'wood'], low: ['logdrum', 'marimba'] },
   mural: { root: 293.66, scale: [0, 2, 4, 6, 7, 9, 11], lead: ['harp', 'musicbox', 'pizz', 'glock'], low: ['harp', 'pizz'] },
   corners: { root: 261.63, scale: [0, 2, 4, 5, 7, 9], lead: ['glock', 'marimba', 'pizz'], low: ['logdrum', 'pizz'] },
+  lava: { root: 196, scale: [0, 1, 4, 5, 7, 8, 10], lead: ['marimba', 'pizz', 'glock'], low: ['logdrum', 'marimba'] },
 };
 
 /** The frequency of scale step `n` (any whole number, wrapping into octaves). */
@@ -409,6 +412,44 @@ const RECIPES: Record<SoundName, Recipe> = {
     hiss(ctx, out, t + 0.1, 1.4, lo * 2.5, lo, 0.15, 'bandpass', 3, 0.5);
     const h = p.one([380, 440, 520]);
     osc(ctx, out, h, t + 0.2, 1.2, 'sine', 0.04, h * 1.15, 0.5);
+  },
+  // ---- Floor is Lava ----
+  rumble: (ctx, out, _kit, t, p) => {
+    // The floor warming up: a deep rumble that swells, with a fizz of heat.
+    const dur = p.one([1.2, 1.5, 1.8]);
+    const lo = p.one([45, 55, 65]);
+    osc(ctx, out, lo, t, dur, 'sawtooth', 0.12, lo * 0.8, 0.4);
+    osc(ctx, out, lo * 1.5, t + 0.1, dur, 'sine', 0.14, lo * 1.2, 0.3);
+    hiss(ctx, out, t, dur, 120, 300, 0.25, 'lowpass', 1, 0.6);
+    if (p.chance(0.6)) hiss(ctx, out, t + 0.3, dur * 0.7, 3000, 7000, 0.04, 'highpass', 1, 0.4);
+  },
+  crack: (ctx, out, kit, t, p) => {
+    // Rock snapping: sharp cracks in a burst, then a heavy crumble and a low boom.
+    const n = p.one([5, 7, 9]);
+    for (let i = 0; i < n; i++) {
+      const at = t + i * p.one([0.05, 0.07, 0.09]) * p.wobble(0.7, 1.3);
+      hiss(ctx, out, at, 0.04, 6000, 2000, 0.22, 'highpass', 1, 0.01);
+      osc(ctx, out, p.one([180, 240, 320]), at, 0.08, 'square', 0.05, 60);
+    }
+    hiss(ctx, out, t + 0.4, 1.2, 600, 120, 0.3, 'lowpass', 1, 0.1);
+    osc(ctx, out, 70, t + 0.45, 1.2, 'sine', 0.5, 30);
+    if (p.chance(0.5)) INSTRUMENTS.logdrum(ctx, out, note(kit, -5), t + 0.5, 1.1);
+  },
+  splash: (ctx, out, kit, t, p) => {
+    // A gloopy lava plop (falling pitch), a sizzle, and a comic slide down. Never scary.
+    const f = p.one([500, 650, 800]);
+    osc(ctx, out, f, t, 0.35, 'sine', 0.25, f * 0.25);
+    hiss(ctx, out, t + 0.05, 0.9, 2500, 6000, 0.12, 'highpass', 1, 0.2);
+    const steps = p.one([[5, 4, 2], [6, 4, 3, 1], [4, 2, 0]]);
+    phrase(ctx, out, kit, t + 0.35, p.one(['pizz', 'marimba'] as const), steps, p.one([0.12, 0.16]), 0.8);
+  },
+  build: (ctx, out, kit, t, p) => {
+    // Two stone clunks and a bright little chime: a bridge is down.
+    const f = p.one([220, 260, 300]);
+    INSTRUMENTS.wood(ctx, out, f, t, 0.9);
+    INSTRUMENTS.wood(ctx, out, f * 1.25, t + p.one([0.09, 0.12]), 0.8);
+    hiss(ctx, out, t, 0.12, 800, 300, 0.12, 'lowpass', 1, 0.02);
+    INSTRUMENTS[p.one(['glock', 'marimba'] as const)](ctx, out, note(kit, p.int(4) + 7), t + 0.22, 0.7);
   },
 };
 

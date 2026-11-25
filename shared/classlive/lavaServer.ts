@@ -162,7 +162,7 @@ export async function lavaStep(sv: ClassLiveServices, cur: RoomRow, who: string,
   } catch {
     // The maths records are a bonus.
   }
-  // On the raft, the next question straight away (until 3 right).
+  // On the raft, the next question straight away (until 5 right).
   const g1 = done.session.game as LavaGame;
   const more = done.reply === 'raft' && g1.mine[who]?.raftIn !== null && (g1.mine[who]?.raftRight ?? 0) < RAFT_RIGHT;
   const next = more ? await h.nextQuestion(sv, { ...done.row, session: done.session }, who) : null;

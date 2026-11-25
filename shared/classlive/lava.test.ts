@@ -40,7 +40,7 @@ describe('Floor is Lava', () => {
     expect(isLava(g, lava, 2)).toBe(false);
     g.mine.a.bricks = 2;
     expect(lavaRescue(g, 'a', ['a', 'b'], 400)).toMatchObject({ ok: true, friend: 'b' });
-    expect(g.mine.b.raftRight).toBe(3);
+    expect(g.mine.b.raftRight).toBe(5);
 
     // A pretend class of 20 plays 3 minutes; the projector asks every half second.
     const clock = pretendClock();

@@ -2,7 +2,7 @@
  * Floor is Lava (docs/LAVA-PLAN.md): the rules, pure functions only. Pupils run their avatars over a floor of tiles
  * above a lake of lava. Each round some tiles glow; when the countdown ends they crack and sink, and anyone standing on
  * lava falls onto the lava raft. Right answers earn bricks (rebuild a sunk tile next to you, or pull a friend off the
- * raft) and switch on power-ups. Three right answers on the raft and you climb back on at the next round.
+ * raft) and switch on power-ups. On the raft you wait for a friend's rescue, or answer five right to climb back yourself.
  *
  * Movement happens on each pupil's device (`stepLava`, the same here and in the preview) and is saved through the shared
  * `classlive_move` (clamped to MAX_SPEED); the server reads the saved spots when a run ends (`advanceLava`).
@@ -58,7 +58,8 @@ export const FREEZE_REACH = 1.6 * TILE;
 export const CRACK_MS = 2200;
 export const SHOW_MS = 3800;
 export const READY_MS = 4000;
-export const RAFT_RIGHT = 3;
+/** Right answers to climb off the raft on your own (James, 25 Nov 2026 NZ: out until a friend rescues, or 5 on your own). */
+export const RAFT_RIGHT = 5;
 export const ANSWER_GAP_MS = 1500;
 export const MAX_BRICKS = 3;
 export const RESCUE_BRICKS = 2;
@@ -314,10 +315,10 @@ export function patternTiles(pattern: Pattern, n: number, random: () => number):
     default: {
       // Random patches: a few blobs.
       const out = new Set<number>();
-      const blobs = 3 + Math.floor(random() * 3) + Math.floor(n / 3);
+      const blobs = 5 + Math.floor(random() * 3) + Math.floor(n / 2);
       for (let k = 0; k < blobs; k++) {
         let i = Math.floor(random() * TILES);
-        const size = 2 + Math.floor(random() * 4);
+        const size = 3 + Math.floor(random() * 4);
         for (let s = 0; s < size; s++) {
           out.add(i);
           const { c, r } = rc(i);
@@ -414,7 +415,7 @@ export const lavaBoosted = (m: LavaMine | undefined, n: number) => !!m && m.spee
 export const lavaBooted = (m: LavaMine | undefined, n: number) => !!m && m.bootsIn === n;
 
 /** The tiles that sink this round (glowing, late, not frozen). */
-export const sinking = (r: LavaRound): number[] => {
+export const sinking = (r: Pick<LavaRound, 'glow' | 'late' | 'frozen'>): number[] => {
   const frozen = new Set(r.frozen);
   return [...new Set([...r.glow, ...r.late])].filter((i) => !frozen.has(i));
 };
@@ -423,9 +424,8 @@ export const sinking = (r: LavaRound): number[] => {
 export function climbAt(g: LavaGame, m: LavaMine | undefined): number | null {
   const r = g.round;
   if (!m || m.raftIn === null || m.raftRight < RAFT_RIGHT || !r) return null;
-  // They sit out the round after the one they fell in (as Four Corners jail).
-  if (m.raftIn < r.n) return r.showEnd;
-  return r.showEnd + g.runS * 1000 + CRACK_MS + SHOW_MS;
+  // Back at the start of the next round.
+  return r.showEnd;
 }
 
 export const lavaDone = (g: LavaGame, t: number) => !g.round || (g.round.fell !== null && t >= g.round.showEnd);
@@ -461,7 +461,7 @@ export function advanceLava(g: LavaGame, t: number, order: string[], positions: 
     const startAt = t - r.showEnd > 2000 ? t : r.showEnd;
     for (const id of order) {
       const m = g.mine[id];
-      if (m && m.raftIn !== null && m.raftIn < r.n && m.raftRight >= RAFT_RIGHT) {
+      if (m && m.raftIn !== null && m.raftRight >= RAFT_RIGHT) {
         m.raftIn = null;
         m.raftRight = 0;
         m.climbs++;
