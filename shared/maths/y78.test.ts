@@ -4,6 +4,8 @@
  * choices to tap (no minus key), wrong choices only from named mistakes, and the right answer worked out separately from the
  * screen text. Also the teacher's "Stop at Year 6" switch.
  */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { randomFromSeed } from '../space/random';
 import { autoPools, LADDER, ladderProgress, pastYear6 } from './ladder';
@@ -50,6 +52,9 @@ describe('Year 6 skills', () => {
 describe('Year 7 and 8 skills', () => {
   it('every roll is sound, repeatable, marked from its numbers, and right by separate arithmetic', () => {
     expect(KEYS.length).toBeGreaterThan(0);
+    // Every Year 7-8 question type is tagged with its skill and year in the database (maths_content_years), and nothing else.
+    const tagged = [...readFileSync(resolve(__dirname, '../../supabase/migrations/20261126000500_maths_content_years.sql'), 'utf8').matchAll(/^  \('([^']+)', '([^']+)', '(?:[^']|'')+', ([78])\)/gm)].map((m) => `${m[1]} ${m[2]} ${m[3]}`);
+    expect(tagged.sort()).toEqual(Y78.flatMap((s) => s.keys.map((k) => `${k} ${s.id} ${s.year}`)).sort());
     for (const key of KEYS) {
       const family = GENERATED.families[key];
       expect(family, key).toBeTruthy();
