@@ -13,4 +13,4 @@ insert into public.achievement_types (id, game, name, emoji, measure, goal, sort
   ('classlive-shark-dodger', 'classlive', 'Shark Dodger', '🦈', 'classlive_shark_safe', 20, 40, 'Stay safe from Simon in 20 Shark Bay rounds.', 1),
   ('classlive-boat-hider', 'classlive', 'Boat Hider', '🚣', 'classlive_shark_boats', 5, 41, 'Hide under a boat when Simon strikes, 5 times.', 1),
   ('classlive-bay-champion', 'classlive', 'Bay Champion', '🏆', 'classlive_shark_wins', 1, 42, 'Finish top of the Shark Bay podium.', 2),
-  ('classlive-cave-escape', 'classlive', 'Cave Escape', '🌊', 'classlive_shark_escapes', 5, 43, "Answer your way out of the Shark's Cave 5 times.", 1);
+  ('classlive-cave-escape', 'classlive', 'Cave Escape', '🌊', 'classlive_shark_escapes', 5, 43, 'Answer your way out of the Shark''s Cave 5 times.', 1);
