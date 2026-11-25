@@ -1,0 +1,551 @@
+{
+  "_from": "docs/corners-art/config.json layout. Check with: python3 scripts/game_art.py thrones paint OUT --dry-run",
+  "game": "thrones",
+  "filename_prefix": "thrones/img",
+  "style": "s",
+  "styles": {
+    "s": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. ",
+    "c": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. "
+  },
+  "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly",
+  "negative_cut": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+  "inbox": "~/dragon-art-inbox/thrones-art/set",
+  "picks": "docs/thrones-art/picks.json",
+  "art_dir": "src/games/classlive/art/paint",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "back-castle",
+      "prompt": "A wide backdrop painting: a grand royal castle throne hall: red carpets, gold pillars, banners, glowing chandeliers, stained glass windows. The middle is calm, darker and softer, an empty open middle with nothing in it, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "thrones",
+      "file": "back-castle",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, game board, user interface, thrones, chairs",
+      "style": "s"
+    },
+    {
+      "name": "hall-castle",
+      "prompt": "A top-down painted game floor: a polished stone and red carpet castle hall floor, gold trim borders. An open empty walkable middle with nothing in it, calm plain floor, top-down bird's-eye view straight down, square picture, no furniture, no chairs, no thrones, no characters, no writing anywhere.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "thrones",
+      "file": "hall-castle",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, chairs, thrones, tables, furniture",
+      "style": "s"
+    },
+    {
+      "name": "court-castle",
+      "prompt": "A wide strip painting of a castle courtyard with stone walls and flower pots, friendly not scary, an empty open floor along the middle, no characters, no writing.",
+      "size": [
+        1536,
+        512
+      ],
+      "kind": "scene",
+      "folder": "thrones",
+      "file": "court-castle",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, people",
+      "style": "s"
+    },
+    {
+      "name": "back-ice",
+      "prompt": "A wide backdrop painting: a sparkling ice palace hall: frozen crystal pillars, snowflake chandeliers, pale blue and silver light, frosted windows. The middle is calm, darker and softer, an empty open middle with nothing in it, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "thrones",
+      "file": "back-ice",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, game board, user interface, thrones, chairs",
+      "style": "s"
+    },
+    {
+      "name": "hall-ice",
+      "prompt": "A top-down painted game floor: a smooth pale blue ice palace floor with silver snowflake patterns round the borders. An open empty walkable middle with nothing in it, calm plain floor, top-down bird's-eye view straight down, square picture, no furniture, no chairs, no thrones, no characters, no writing anywhere.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "thrones",
+      "file": "hall-ice",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, chairs, thrones, tables, furniture",
+      "style": "s"
+    },
+    {
+      "name": "court-ice",
+      "prompt": "A wide strip painting of a snowy ice pit with icicles, friendly not scary, an empty open floor along the middle, no characters, no writing.",
+      "size": [
+        1536,
+        512
+      ],
+      "kind": "scene",
+      "folder": "thrones",
+      "file": "court-ice",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, people",
+      "style": "s"
+    },
+    {
+      "name": "back-jungle",
+      "prompt": "A wide backdrop painting: a jungle temple throne hall: mossy stone pillars, hanging vines, carved golden idols, sunbeams, tropical flowers. The middle is calm, darker and softer, an empty open middle with nothing in it, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "thrones",
+      "file": "back-jungle",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, game board, user interface, thrones, chairs",
+      "style": "s"
+    },
+    {
+      "name": "hall-jungle",
+      "prompt": "A top-down painted game floor: a mossy carved stone temple floor with vines and flowers round the borders. An open empty walkable middle with nothing in it, calm plain floor, top-down bird's-eye view straight down, square picture, no furniture, no chairs, no thrones, no characters, no writing anywhere.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "thrones",
+      "file": "hall-jungle",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, chairs, thrones, tables, furniture",
+      "style": "s"
+    },
+    {
+      "name": "court-jungle",
+      "prompt": "A wide strip painting of a cage of jungle vines and leaves, friendly not scary, an empty open floor along the middle, no characters, no writing.",
+      "size": [
+        1536,
+        512
+      ],
+      "kind": "scene",
+      "folder": "thrones",
+      "file": "court-jungle",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, people",
+      "style": "s"
+    },
+    {
+      "name": "back-pirate",
+      "prompt": "A wide backdrop painting: a pirate ship deck at sunset: masts, rigging, sails, treasure chests, lanterns, the sea beyond the rails. The middle is calm, darker and softer, an empty open middle with nothing in it, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "thrones",
+      "file": "back-pirate",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, game board, user interface, thrones, chairs",
+      "style": "s"
+    },
+    {
+      "name": "hall-pirate",
+      "prompt": "A top-down painted game floor: a big wooden pirate ship deck seen from above, planks, ropes and barrels round the edges. An open empty walkable middle with nothing in it, calm plain floor, top-down bird's-eye view straight down, square picture, no furniture, no chairs, no thrones, no characters, no writing anywhere.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "thrones",
+      "file": "hall-pirate",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, chairs, thrones, tables, furniture",
+      "style": "s"
+    },
+    {
+      "name": "court-pirate",
+      "prompt": "A wide strip painting of a pirate ship brig with wooden bars and lanterns, friendly not scary, an empty open floor along the middle, no characters, no writing.",
+      "size": [
+        1536,
+        512
+      ],
+      "kind": "scene",
+      "folder": "thrones",
+      "file": "court-pirate",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, people",
+      "style": "s"
+    },
+    {
+      "name": "pick-thrones",
+      "prompt": "A magical royal hall with a ring of golden thrones, one shining golden throne in the middle, musical notes and sparkles swirling in the air, a glowing dance floor, red curtains, bright and exciting, no characters, no writing. Wide landscape picture.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "pick",
+      "file": "thrones",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues",
+      "style": "s"
+    },
+    {
+      "name": "throne",
+      "prompt": "A game icon: a royal throne seen from slightly above, red velvet cushion, carved gold wooden frame, a little crown on the top of the back. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "throne",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "throne-gold",
+      "prompt": "A game icon: a dazzling solid gold royal throne seen from slightly above, sparkling jewels, glowing golden light, a big crown on top of the back. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "throne-gold",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "tile",
+      "prompt": "A top-down game marker seen from above: a round glowing disco dance floor tile, bright rainbow lights, sparkles, smooth glossy Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "tile",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-steal",
+      "prompt": "A game icon: a cheeky silver dagger crossed with a small golden crown, glinting. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "power-steal",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-shield",
+      "prompt": "A game icon: a round glossy royal shield with a gold crown on it and a shimmering bubble of light. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "power-shield",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-speed",
+      "prompt": "A game icon: a pair of winged golden running boots with lightning sparks. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "power-speed",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-ear",
+      "prompt": "A game icon: a golden glowing ear trumpet with musical notes coming out. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "power-ear",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-double",
+      "prompt": "A game icon: two shining golden crowns stacked together with sparkles. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "power-double",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-seat",
+      "prompt": "A game icon: a small red velvet royal cushion with gold tassels and a glowing star above it. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "power-seat",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-ghost",
+      "prompt": "A game icon: a cute friendly little ghost wearing a tiny crown, see-through glow. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "power-ghost",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "castle-storm",
+      "prompt": "A top-down game marker seen from above: a puddle of golden sticky honey, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "castle-storm",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "castle-ice",
+      "prompt": "A top-down game marker seen from above: a shiny polished marble floor patch with a gleam, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "castle-ice",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "castle-roller",
+      "prompt": "A top-down game marker seen from above: a rolling wooden barrel with iron hoops, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "castle-roller",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "castle-teleport",
+      "prompt": "A top-down game marker seen from above: a magic golden mirror portal with a swirling glow, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "castle-teleport",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "ice-storm",
+      "prompt": "A top-down game marker seen from above: a swirling blizzard cloud of snow, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "ice-storm",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "ice-ice",
+      "prompt": "A top-down game marker seen from above: a smooth glossy ice patch with pale blue cracks, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "ice-ice",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "ice-roller",
+      "prompt": "A top-down game marker seen from above: a giant rolling snowball, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "ice-roller",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "ice-teleport",
+      "prompt": "A top-down game marker seen from above: a glowing blue ice portal ring, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "ice-teleport",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "jungle-storm",
+      "prompt": "A top-down game marker seen from above: a round muddy brown mud pool with bubbles, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "jungle-storm",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "jungle-ice",
+      "prompt": "A top-down game marker seen from above: a patch of slippery wet green leaves, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "jungle-ice",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "jungle-roller",
+      "prompt": "A top-down game marker seen from above: a big rolling round stone boulder, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "jungle-roller",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "jungle-teleport",
+      "prompt": "A top-down game marker seen from above: a swinging jungle vine loop with leaves and a glow, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "jungle-teleport",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "pirate-storm",
+      "prompt": "A top-down game marker seen from above: a splash of white sea spray and foam, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "pirate-storm",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "pirate-ice",
+      "prompt": "A top-down game marker seen from above: a wet shiny patch of wooden deck with puddles, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "pirate-ice",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "pirate-roller",
+      "prompt": "A top-down game marker seen from above: a rolling black iron cannonball, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "pirate-roller",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "pirate-teleport",
+      "prompt": "A top-down game marker seen from above: an open wooden deck hatch with a glow inside, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "pirate-teleport",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    }
+  ]
+}

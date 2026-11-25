@@ -3,6 +3,7 @@
  * once a session is over and paid once per room and session (`classlive_finish`). Pupils who only joined get 1 point.
  */
 import { podium } from './corners';
+import { podium as thronesPodium } from './thrones';
 import type { Session } from './server';
 
 export interface PupilReward {
@@ -42,8 +43,8 @@ export const POINTS = { joined: 1, played: 3, goal: 2, guessed: 2, max: 10 } as 
 
 export function rewardsOf(s: Session): FinishedSession {
   const g = s.game;
-  const goal = g.kind === 'stars' ? g.creature : g.kind === 'serpent' ? g.awake : g.kind === 'corners' ? false : g.solvers.length > 0;
-  const top = g.kind === 'corners' ? podium(g, s.order) : [];
+  const goal = g.kind === 'stars' ? g.creature : g.kind === 'serpent' ? g.awake : g.kind === 'corners' || g.kind === 'thrones' ? false : g.solvers.length > 0;
+  const top = g.kind === 'corners' ? podium(g, s.order) : g.kind === 'thrones' ? thronesPodium(g, s.order) : [];
   const players = s.order.map((id): PupilReward => {
     let did = false;
     const r: PupilReward = { player: id, points: 0, stars: 0, boxes: 0, head: false, tiles: 0, guessed: false, safe: 0, champion: false, escapes: 0, powers: 0 };
@@ -57,6 +58,13 @@ export function rewardsOf(s: Session): FinishedSession {
       r.champion = place === 1;
       podiumPlace = place !== undefined;
       did = r.safe > 0 || (m?.answered ?? 0) > 0;
+    } else if (g.kind === 'thrones') {
+      // Musical Thrones: its trophies count `extra` (classlive_thrones_sat, _crowns, _steals, _wins).
+      const m = g.mine[id];
+      const place = top.find((x) => x.player === id)?.place;
+      podiumPlace = place !== undefined;
+      r.extra = { thrones_sat: m?.sat ?? 0, thrones_crowns: m?.crowns ?? 0, thrones_steals: m?.steals ?? 0, thrones_wins: place === 1 ? 1 : 0 };
+      did = (m?.sat ?? 0) > 0 || (m?.answered ?? 0) > 0;
     } else if (g.kind === 'stars') {
       r.stars = g.mine[id]?.found ?? 0;
       did = r.stars + (g.mine[id]?.glows ?? 0) > 0;

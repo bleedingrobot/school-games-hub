@@ -372,6 +372,222 @@
   "text": "Someone switched on a power-up!"
  },
  {
+  "slug": "here-we-go-dance-while-the-music-plays-when-it-stops-sit-on-a-throne",
+  "text": "Here we go! Dance while the music plays. When it stops, sit on a throne!"
+ },
+ {
+  "slug": "musical-thrones-is-on-when-the-music-stops-find-a-throne",
+  "text": "Musical Thrones is on! When the music stops, find a throne!"
+ },
+ {
+  "slug": "off-we-go-listen-for-the-music-to-stop-then-grab-a-throne",
+  "text": "Off we go! Listen for the music to stop, then grab a throne."
+ },
+ {
+  "slug": "stop-sit-down",
+  "text": "Stop! Sit down!"
+ },
+ {
+  "slug": "the-music-has-stopped-find-a-throne",
+  "text": "The music has stopped! Find a throne!"
+ },
+ {
+  "slug": "freeze-grab-a-throne-quick",
+  "text": "Freeze! Grab a throne, quick!"
+ },
+ {
+  "slug": "stop-the-music-sit-sit-sit",
+  "text": "Stop the music! Sit, sit, sit!"
+ },
+ {
+  "slug": "one-fewer-throne-this-time",
+  "text": "One fewer throne this time!"
+ },
+ {
+  "slug": "look-there-are-fewer-thrones-now",
+  "text": "Look, there are fewer thrones now!"
+ },
+ {
+  "slug": "the-thrones-are-disappearing",
+  "text": "The thrones are disappearing!"
+ },
+ {
+  "slug": "a-golden-throne-it-is-worth-three-crowns",
+  "text": "A golden throne! It is worth three crowns."
+ },
+ {
+  "slug": "look-for-the-golden-throne-three-crowns",
+  "text": "Look for the golden throne! Three crowns!"
+ },
+ {
+  "slug": "there-is-a-golden-throne-this-round",
+  "text": "There is a golden throne this round!"
+ },
+ {
+  "slug": "everyone-found-a-throne",
+  "text": "Everyone found a throne!"
+ },
+ {
+  "slug": "not-one-left-standing-brilliant",
+  "text": "Not one left standing! Brilliant!"
+ },
+ {
+  "slug": "a-throne-for-everyone-this-time",
+  "text": "A throne for everyone this time!"
+ },
+ {
+  "slug": "oh-no-lots-of-royals-left-standing",
+  "text": "Oh no, lots of royals left standing!"
+ },
+ {
+  "slug": "so-many-standing-off-to-the-courtyard",
+  "text": "So many standing! Off to the courtyard!"
+ },
+ {
+  "slug": "whoops-a-big-crowd-without-a-throne",
+  "text": "Whoops! A big crowd without a throne!"
+ },
+ {
+  "slug": "anyone-standing-off-to-the-courtyard",
+  "text": "Anyone standing, off to the courtyard!"
+ },
+ {
+  "slug": "no-throne-to-the-courtyard-you-go",
+  "text": "No throne? To the courtyard you go!"
+ },
+ {
+  "slug": "those-left-standing-go-to-the-courtyard",
+  "text": "Those left standing go to the courtyard."
+ },
+ {
+  "slug": "a-throne-has-been-stolen",
+  "text": "A throne has been stolen!"
+ },
+ {
+  "slug": "sneaky-a-crown-thief-struck",
+  "text": "Sneaky! A crown thief struck!"
+ },
+ {
+  "slug": "ooh-someone-stole-a-throne",
+  "text": "Ooh, someone stole a throne!"
+ },
+ {
+  "slug": "great-dancing-on-the-tiles-bonus-crowns",
+  "text": "Great dancing on the tiles! Bonus crowns!"
+ },
+ {
+  "slug": "dance-tile-bonus",
+  "text": "Dance tile bonus!"
+ },
+ {
+  "slug": "nice-moves-on-the-dance-floor",
+  "text": "Nice moves on the dance floor!"
+ },
+ {
+  "slug": "someone-answered-their-way-back-from-the-courtyard",
+  "text": "Someone answered their way back from the courtyard!"
+ },
+ {
+  "slug": "back-from-the-courtyard-well-done",
+  "text": "Back from the courtyard! Well done!"
+ },
+ {
+  "slug": "a-royal-return-from-the-courtyard",
+  "text": "A royal return from the courtyard!"
+ },
+ {
+  "slug": "the-music-is-back-on-dance",
+  "text": "The music is back on! Dance!"
+ },
+ {
+  "slug": "here-comes-the-music-again",
+  "text": "Here comes the music again!"
+ },
+ {
+  "slug": "dance-time-keep-moving",
+  "text": "Dance time! Keep moving!"
+ },
+ {
+  "slug": "power-ups-have-appeared-in-the-castle-hall-grab-one-then-answer-a-question-while-the-music-plays-to-switch-it-on",
+  "text": "Power-ups have appeared in the castle hall! Grab one, then answer a question while the music plays to switch it on."
+ },
+ {
+  "slug": "watch-out-for-the-sticky-honey-it-slows-you-down",
+  "text": "Watch out for the sticky honey! It slows you down."
+ },
+ {
+  "slug": "look-a-magic-mirror-step-in-one-end-and-you-pop-out-of-the-other",
+  "text": "Look, a magic mirror! Step in one end and you pop out of the other."
+ },
+ {
+  "slug": "careful-the-polished-floor-you-will-slide",
+  "text": "Careful, the polished floor! You will slide."
+ },
+ {
+  "slug": "look-out-for-the-rolling-barrel-it-knocks-you-flying",
+  "text": "Look out for the rolling barrel! It knocks you flying."
+ },
+ {
+  "slug": "power-ups-have-appeared-in-the-ice-palace-grab-one-then-answer-a-question-while-the-music-plays-to-switch-it-on",
+  "text": "Power-ups have appeared in the ice palace! Grab one, then answer a question while the music plays to switch it on."
+ },
+ {
+  "slug": "watch-out-for-the-blizzard-it-slows-you-down",
+  "text": "Watch out for the blizzard! It slows you down."
+ },
+ {
+  "slug": "look-a-ice-portal-step-in-one-end-and-you-pop-out-of-the-other",
+  "text": "Look, a ice portal! Step in one end and you pop out of the other."
+ },
+ {
+  "slug": "careful-the-ice-patch-you-will-slide",
+  "text": "Careful, the ice patch! You will slide."
+ },
+ {
+  "slug": "look-out-for-the-giant-snowball-it-knocks-you-flying",
+  "text": "Look out for the giant snowball! It knocks you flying."
+ },
+ {
+  "slug": "power-ups-have-appeared-in-the-temple-grab-one-then-answer-a-question-while-the-music-plays-to-switch-it-on",
+  "text": "Power-ups have appeared in the temple! Grab one, then answer a question while the music plays to switch it on."
+ },
+ {
+  "slug": "watch-out-for-the-mud-pool-it-slows-you-down",
+  "text": "Watch out for the mud pool! It slows you down."
+ },
+ {
+  "slug": "look-a-vine-swing-step-in-one-end-and-you-pop-out-of-the-other",
+  "text": "Look, a vine swing! Step in one end and you pop out of the other."
+ },
+ {
+  "slug": "careful-the-slippery-leaves-you-will-slide",
+  "text": "Careful, the slippery leaves! You will slide."
+ },
+ {
+  "slug": "look-out-for-the-rolling-boulder-it-knocks-you-flying",
+  "text": "Look out for the rolling boulder! It knocks you flying."
+ },
+ {
+  "slug": "power-ups-have-appeared-on-the-deck-grab-one-then-answer-a-question-while-the-music-plays-to-switch-it-on",
+  "text": "Power-ups have appeared on the deck! Grab one, then answer a question while the music plays to switch it on."
+ },
+ {
+  "slug": "watch-out-for-the-sea-spray-it-slows-you-down",
+  "text": "Watch out for the sea spray! It slows you down."
+ },
+ {
+  "slug": "look-a-hatch-step-in-one-end-and-you-pop-out-of-the-other",
+  "text": "Look, a hatch! Step in one end and you pop out of the other."
+ },
+ {
+  "slug": "careful-the-wet-deck-you-will-slide",
+  "text": "Careful, the wet deck! You will slide."
+ },
+ {
+  "slug": "look-out-for-the-rolling-cannonball-it-knocks-you-flying",
+  "text": "Look out for the rolling cannonball! It knocks you flying."
+ },
+ {
   "slug": "power-ups-have-appeared-grab-one-then-answer-a-question-in-a-corner-to-switch-it-on",
   "text": "Power-ups have appeared! Grab one, then answer a question in a corner to switch it on."
  },
@@ -614,5 +830,25 @@
  {
   "slug": "grab-power-ups-on-the-map-then-answer-a-question-in-a-corner-to-switch-them-on-the-most-safe-rounds-wins",
   "text": "Grab power-ups on the map, then answer a question in a corner to switch them on. The most safe rounds wins!"
+ },
+ {
+  "slug": "move-your-royal-avatar-with-the-joystick-or-the-arrow-keys",
+  "text": "Move your royal avatar with the joystick, or the arrow keys."
+ },
+ {
+  "slug": "while-the-music-plays-dance-about-stand-on-a-glowing-dance-tile-when-it-stops-for-a-bonus-crown",
+  "text": "While the music plays, dance about. Stand on a glowing dance tile when it stops for a bonus crown."
+ },
+ {
+  "slug": "when-the-music-stops-run-and-sit-on-a-throne-there-are-fewer-thrones-every-round",
+  "text": "When the music stops, run and sit on a throne! There are fewer thrones every round."
+ },
+ {
+  "slug": "if-you-are-left-standing-go-to-the-courtyard-and-answer-three-questions-to-come-back-three-right-in-a-row-wins-a-crown-thief-scroll",
+  "text": "If you are left standing, go to the courtyard and answer three questions to come back. Three right in a row wins a crown thief scroll!"
+ },
+ {
+  "slug": "a-throne-is-one-crown-a-golden-throne-is-three-the-most-crowns-wins",
+  "text": "A throne is one crown, a golden throne is three. The most crowns wins!"
  }
 ]

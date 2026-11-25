@@ -14,7 +14,7 @@ type Calm = 'stars' | 'serpent' | 'boss' | 'goldrush' | 'skyclimb' | 'island' | 
  * Each game and arena has a calm track and a "-hot" one: the same tune made more dramatic and high-energy, for the
  * last 30 seconds and the big moments (James, 25 Nov 2026 NZ). Mystery Mural's hot one is its guessing music.
  */
-export type Track = 'picker' | 'win' | 'mural' | 'guess' | Calm | `${Calm}-hot` | `game-${string}` | `corners-${string}`;
+export type Track = 'picker' | 'win' | 'mural' | 'guess' | Calm | `${Calm}-hot` | `game-${string}` | `corners-${string}` | `thrones-${string}`;
 
 const FILES = import.meta.glob('./music/*.mp3', { eager: true, import: 'default' }) as Record<string, string>;
 const file = (t: string): string | undefined => FILES[`./music/${t}.mp3`];
@@ -184,9 +184,22 @@ const MAPS = ['snow', 'jungle', 'castle', 'space'];
 
 /** The track for a Class Live room: the lobby shares the picker's, the end plays the win, hot moments the hot one. */
 
-export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | 'corners' | null, o: { guessing?: boolean; hot?: boolean; map?: string } = {}): Track {
+/**
+ * Musical Thrones plays its hall's dance track (thrones-castle, thrones-castle-hot...) only while the music is on: the
+ * screens pass no track the moment it stops (`useMusic(null)` cuts it at once). A missing track borrows one.
+ */
+const THRONE_TRACKS: Record<string, Calm> = { castle: 'boss', ice: 'skyclimb', jungle: 'serpent', pirate: 'island' };
+
+export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | 'corners' | 'thrones' | null, o: { guessing?: boolean; hot?: boolean; map?: string } = {}): Track {
   if (state === 'over') return 'win';
   if (!state || !kind || state !== 'live') return 'picker';
+  if (kind === 'thrones') {
+    const hall = o.map && THRONE_TRACKS[o.map] ? o.map : 'castle';
+    const own: Track = o.hot ? `thrones-${hall}-hot` : `thrones-${hall}`;
+    if (trackUrl(own)) return own;
+    const calm = THRONE_TRACKS[hall];
+    return o.hot ? `${calm}-hot` : calm;
+  }
   if (kind === 'mural') return o.guessing || o.hot ? 'guess' : 'mural';
   if (kind === 'corners') {
     const map = MAPS.includes(o.map ?? '') ? o.map! : 'snow';
