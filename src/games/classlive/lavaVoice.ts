@@ -33,7 +33,7 @@ export const LAVA_LINES = {
 export type LavaLineKey = keyof typeof LAVA_LINES;
 
 export const LAVA_HOWTO = [
-  'Move your avatar with the joystick, or the arrow keys.',
+  'Run round the floor with the joystick, or the arrow keys.',
   'When tiles glow, get off them! When the countdown ends, they crack and sink into the lava.',
   'Fall in, and you go on the lava raft. Wait for a friend to rescue you, or answer five questions to climb back.',
   'Answer questions to earn bricks. Use a brick to build a bridge over the lava, or two bricks to rescue a friend.',

@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'classlive-floor-is-lava-2026-11-25',
+    date: '2026-11-25',
+    emoji: '🌋',
+    title: 'Floor is Lava',
+    text: 'Run off the glowing tiles, build bridges and rescue friends from the lava raft!',
+    game: 'classlive',
+  },
+  {
     id: 'diamond-monster-dig-2026-11-25',
     date: '2026-11-25',
     emoji: '🐾',
