@@ -2,14 +2,17 @@
  * A pretend class for Class Live (`?pretend=30`): pretend pupils who join and play through the REAL server steps
  * (`classLiveStep`) on a database in memory. The tests drive it with a pretend clock; the preview with real timers.
  */
+import { ghostBot } from './ghostBot';
 import { memoryDb, memoryMove, memoryServices, type MemoryDb } from './memoryServices';
 import { boosted as thronesBoosted, ghostly as thronesGhostly, moveRound as thronesMoveRound, nearestFree as thronesNearest, throneAt as thronesAt } from './thrones';
 import { boosted, CORNERS, cornerOf, ghostly, pretendDir, stepMove, type Corner, type MoveState } from './corners';
+import { bayRound, isShark, quarterOf, sharkMove, sharkPretendDir, spinAt } from './shark';
 import { classLiveStep, type Change, type ClassLiveServices } from './server';
 import { markQuestion } from '../maths/serverQuestions';
 import { ANSWER_GAP_MS, canGuess } from './mural';
 import { pretendAnswer } from './serpent';
 import { pretendFacts } from './stars';
+import { clashBot } from './clashMemory';
 
 export const PRETEND_TEACHER = '00000000-0000-4000-8000-00000000feed';
 export const PRETEND_CLASS = '00000000-0000-4000-8000-00000000c1a5';
@@ -54,6 +57,8 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
       const g = row.session.game;
       if (g.kind === 'corners') return cornersBot(room, id, skill);
       if (g.kind === 'thrones') return thronesBot(room, id, skill);
+      if (g.kind === 'clash') return clashBot({ db, room, id, skill, rand, now: opts.clock.now, later: opts.later, step: (who, body) => classLiveStep(services, who, body) });
+      if (g.kind === 'ghost') return ghostBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
       if (g.kind === 'mural') {
         if (g.revealed) return;
         // In the guessing, take a few seconds to read the riddles, then pick (better pupils are right more often);
@@ -123,12 +128,14 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
         // Now and then change corner halfway; a few dawdle.
         if (rand() < 0.01) target = CORNERS[Math.floor(rand() * 4)];
         const item = !mine.held ? r.items.find((x) => !x.by && Math.hypot(x.x - m!.p.x, x.y - m!.p.y) < 0.25) : undefined;
-        let dir = item ? { x: item.x - m.p.x, y: item.y - m.p.y } : pretendDir(m.p, target, rand);
+        // Shark Bay: swim with the spinning quarter, and a few make for a boat.
+        const bay = isShark(g) ? bayRound(r) : null;
+        let dir = item ? { x: item.x - m.p.x, y: item.y - m.p.y } : bay ? sharkPretendDir(m.p, target, bay, t, (id.charCodeAt(id.length - 1) + r.n) % 3 === 0, rand) : pretendDir(m.p, target, rand);
         const len = Math.hypot(dir.x, dir.y);
         if (len > 1) dir = { x: dir.x / len, y: dir.y / len };
-        if (cornerOf(m.p) === target && !item) dir = { x: 0, y: 0 };
+        if (!bay && cornerOf(m.p) === target && !item) dir = { x: 0, y: 0 };
         if (rand() > skill + 0.1) dir = { x: dir.x * 0.4, y: dir.y * 0.4 };
-        m = stepMove(m, dir, 200, r, t, { boost: boosted(mine, r.n), ghost: ghostly(mine, r.n) });
+        m = (bay ? sharkMove : stepMove)(m, dir, 200, r, t, { boost: boosted(mine, r.n), ghost: ghostly(mine, r.n) });
         memoryMove(db, now, room, id, m.p.x, m.p.y);
         if (item && !busy && Math.hypot(item.x - m.p.x, item.y - m.p.y) < 0.08) {
           busy = true;
@@ -136,7 +143,7 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
           busy = false;
         }
       }
-      const wantsQuestion = mine.jailedIn !== null ? mine.jailRight < 3 && t - mine.lastAt > 4000 + rand() * 3000 : !!mine.held && !!r && cornerOf(m.p) !== null && t < (r?.runEnd ?? 0) && rand() < 0.1;
+      const wantsQuestion = mine.jailedIn !== null ? mine.jailRight < 3 && t - mine.lastAt > 4000 + rand() * 3000 : !!mine.held && !!r && (isShark(g) && bayRound(r) ? quarterOf(m.p, spinAt(bayRound(r)!, t)) !== null : cornerOf(m.p) !== null) && t < (r?.runEnd ?? 0) && rand() < 0.1;
       if (wantsQuestion && !busy) {
         busy = true;
         const asked = await classLiveStep(services, id, { action: 'ask', room });

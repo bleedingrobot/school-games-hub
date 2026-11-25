@@ -22,3 +22,11 @@
 
 - Garden games' days could count on Hard workers if they wrote a finished-go row.
 - Painted tab icons, if James wants them.
+
+## Hall look (25 Nov 2026)
+
+James asked for the leaderboard and the lobby to look like the Achievement Hall. Both now open in `HallWindow`
+(`src/achievements/HallWindow.tsx`): full window over the hub bar, the painted hall behind, ⌂ Hub and sound, a gold title.
+`hallPages.css` repaints the hub's shared parts (panels, chips, tabs, pickers, buttons, board rows, lobby tiles) inside
+`.hall-page` only, so the boards and the lobby keep their own markup. A new hub page that should match: wrap it in
+`<HallWindow page="<name>">` and add any page-only rules to `hallPages.css`.

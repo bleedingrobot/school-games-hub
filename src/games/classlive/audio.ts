@@ -11,7 +11,7 @@
  * The AudioContext is made on the first sound (browsers need a tap first), busy moments are rate-limited, and every call is
  * wrapped so a browser without audio just stays quiet.
  */
-export type Kit = 'stars' | 'serpent' | 'mural' | 'corners' | 'thrones';
+export type Kit = 'stars' | 'serpent' | 'mural' | 'corners' | 'ghost' | 'clash' | 'thrones';
 
 export type SoundName =
   | 'join' | 'start' | 'over'
@@ -23,6 +23,8 @@ export type SoundName =
   | 'flip' | 'guess' | 'pick' | 'reveal'
   // Four Corners
   | 'tick' | 'tickLast' | 'drumroll' | 'dice' | 'land' | 'caught' | 'safe' | 'grab' | 'power' | 'escape' | 'warp' | 'storm'
+  // Shark Bay
+  | 'splash' | 'chomp'
   // Musical Thrones (also uses grab, power, escape, caught, safe, tick)
   | 'stop' | 'sit' | 'steal';
 
@@ -35,7 +37,7 @@ export interface ClassLiveSound {
 }
 
 const KEY = 'classlive-muted';
-const BIG: SoundName[] = ['start', 'over', 'creature', 'supernova', 'awake', 'reveal', 'head', 'arm', 'guess', 'drumroll', 'land', 'stop'];
+const BIG: SoundName[] = ['start', 'over', 'creature', 'supernova', 'awake', 'reveal', 'head', 'arm', 'guess', 'drumroll', 'land', 'splash', 'stop'];
 
 function readMuted(): boolean {
   try {
@@ -132,6 +134,9 @@ const KITS: Record<Kit, { root: number; scale: number[]; lead: InstrumentName[];
   serpent: { root: 220, scale: [0, 3, 5, 7, 10], lead: ['marimba', 'kalimba', 'wood'], low: ['logdrum', 'marimba'] },
   mural: { root: 293.66, scale: [0, 2, 4, 6, 7, 9, 11], lead: ['harp', 'musicbox', 'pizz', 'glock'], low: ['harp', 'pizz'] },
   corners: { root: 261.63, scale: [0, 2, 4, 5, 7, 9], lead: ['glock', 'marimba', 'pizz'], low: ['logdrum', 'pizz'] },
+  clash: { root: 329.63, scale: [0, 2, 4, 7, 9], lead: ['kalimba', 'glock', 'marimba'], low: ['logdrum', 'wood'] },
+  // Ghost Tag: a spooky minor scale on celesta and music box (docs/GHOST-PLAN.md).
+  ghost: { root: 246.94, scale: [0, 1, 3, 6, 7, 10], lead: ['celesta', 'musicbox', 'glass'], low: ['pad', 'pizz'] },
   // Musical Thrones: a royal court. Harp, glockenspiel, pizzicato; a bright mixolydian.
   thrones: { root: 349.23, scale: [0, 2, 4, 5, 7, 9, 10], lead: ['harp', 'glock', 'pizz'], low: ['pizz', 'harp'] },
 };
@@ -312,6 +317,22 @@ const RECIPES: Record<SoundName, Recipe> = {
     for (let i = 0; i < 14; i++) osc(ctx, out, 98, t + i * 0.12, 0.2, 'sine', 0.05 + i * 0.012, 90);
     phrase(ctx, out, kit, t + 0.2, 'harp', run(p, 0, 12).map((s) => Math.abs(s)), 0.13, 0.6);
     cadence(ctx, out, kit, t + 1.8, p);
+  },
+  // ---- Shark Bay: a big splash and a cartoon chomp ----
+  splash: (ctx, out, _kit, t, p) => {
+    hiss(ctx, out, t, 1.1, 7000, 600, 0.4, 'bandpass', 0.8, 0.02);
+    hiss(ctx, out, t + 0.05, 0.9, 900, 200, 0.3, 'lowpass', 1, 0.05);
+    osc(ctx, out, p.one([140, 170, 200, 240]), t, 0.5, 'sine', 0.4, 50);
+    const sparkle = p.one([600, 800, 1000]);
+    for (let i = 0; i < 6; i++) osc(ctx, out, sparkle + i * 140, t + 0.15 + i * 0.07, 0.12, 'sine', 0.05, 300);
+  },
+  chomp: (ctx, out, _kit, t, p) => {
+    const f = p.one([100, 120, 140, 170]);
+    const bites = p.one([2, 3, 4]);
+    for (let i = 0; i < bites; i++) {
+      osc(ctx, out, f, t + i * 0.18, 0.14, 'square', 0.18, f * 0.5);
+      hiss(ctx, out, t + i * 0.18, 0.07, 3500, 1500, 0.2, 'bandpass', 2, 0.01);
+    }
   },
   // ---- Four Corners ----
   tick: (ctx, out, kit, t, p) => {

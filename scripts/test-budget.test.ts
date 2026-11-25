@@ -59,7 +59,9 @@ const BUDGET: Record<string, number> = {
   kit: 14, // shared/kit: the junior games' shared rules
   badge: 8,
   training: 10, // 8, plus 2 for the basic facts check (15 Nov 2026)
+  classlive: 18, // 2 tests (rules, server) for each of the five map games (James, 25 Nov 2026 NZ)
   showdown: 18, // live whole-class game, 4 modes: 4 rules, 4 server, 4 screens (stage 1, 23 Nov 2026); +1 rewards and roster (stage 5); +1 Gold Rush rules (stage 6); +1 Sky Climb rules, +1 Shrinking Island rules, +1 King of the Hill rules, +1 Auction House rules (stage 7)
+  classlive: 18, // 8, plus 2 (a rules test and a server test) for each of the five map games: Floor is Lava, Musical Thrones, Colour Clash, Ghost Tag, Shark Bay (James, 25 Nov 2026 NZ)
 };
 
 function testFiles(dir: string): string[] {

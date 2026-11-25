@@ -5,9 +5,14 @@
  * Each moment has a few takes, said in turn (`next`), so nothing is said the same way twice running (James, 24 Nov 2026:
  * more variety in the sounds).
  */
+import { CLASH_HOWTO, CLASH_LINES } from './clashVoice';
+
+import { GHOST_HOWTO, GHOST_LINES } from './ghostLines';
+
 export const VOICE_FOLDER = 'voice/classlive/';
 
 export const LINES = {
+  ...GHOST_LINES,
   joinNow: ['Join Class Live now!', 'Come and join in, everyone!', 'Grab your device and join the game!'],
   startStars: ['Here we go! If we know this fact, what else do we know?', 'Star Web is on! How many facts can we find from this one?', 'Off we go! Use this fact to find lots more.'],
   startSerpent: ['Here we go! Work along the chain and wake the serpent!', 'The serpent is sleeping. Work along the chain to wake it!', 'Off we go! Climb the serpent one sum at a time.'],
@@ -108,6 +113,23 @@ export const LINES = {
   mech_space_hole: ["Mind the black hole in the middle! Go round it."],
   mech_space_gate: ["The airlock will shut one corner just before the end!"],
   mech_space_twist: ["Twist alert! Sometimes two corners are picked, and sometimes it is a lucky roll."],
+  // Colour Clash (clashVoice.ts)
+  ...CLASH_LINES,
+  // Shark Bay (Simon the shark)
+  sharkStart: ['Here we go! Swim to a coloured quarter, or hide under a boat!', 'Shark Bay is on! Simon is hungry, so find a safe quarter!', 'Off we go! Keep off the jetty and watch out for Simon!'],
+  sharkRun: ['Swim, swim, swim! Find a quarter!', 'Quick, Simon is coming! Pick a colour!', 'Go go go! Hide under a boat or pick a colour!'],
+  sharkBoat: ['Hide under a boat!', 'A boat is a safe place to hide!', 'Get under a boat, quick!'],
+  sharkHurry: ['Hurry, hurry! Simon is nearly here!', 'Quick, the shark is almost here!', 'Get to a safe place, now!'],
+  sharkLeap: ['Look out! A fin is circling the bay!', 'Simon is swimming round and round!', 'Here comes the fin!'],
+  sharkSpot: ['The lights are going out! Where will Simon snap?', 'The spotlight is searching for Simon!', 'Dark water! Where is the shark going to snap?'],
+  sharkStrikeRed: ['Simon strikes Red!', 'Chomp! Simon bites the red quarter!', 'It is Red! Simon strikes Red!'],
+  sharkStrikeYellow: ['Simon strikes Yellow!', 'Chomp! Simon bites the yellow quarter!', 'It is Yellow! Simon strikes Yellow!'],
+  sharkStrikeGreen: ['Simon strikes Green!', 'Chomp! Simon bites the green quarter!', 'It is Green! Simon strikes Green!'],
+  sharkStrikePurple: ['Simon strikes Purple!', 'Chomp! Simon bites the purple quarter!', 'It is Purple! Simon strikes Purple!'],
+  sharkTwo: ['Two sharks! Simon has a friend!', 'Oh no, two sharks this time!', 'Twist! Two quarters are struck!'],
+  sharkFull: ['Simon is full! Nobody is caught!', 'Simon has had enough! Everyone is safe!', 'Lucky! Simon is too full to bite!'],
+  sharkBoated: ['The boats kept some pupils safe!', 'Phew! A boat saved some of you!', 'Safe under the boats!'],
+  sharkCave: ['Oh no, off to the shark cave!', 'Splash! A crowd is going to the shark cave!', 'Into the cave you go!'],
 } as const;
 
 /** How to play (HowTo.tsx), read in order before a game. No numbers, so every line has a clip. */
@@ -154,6 +176,14 @@ export const HOWTO = {
     'In jail, answer three questions to come back.',
     'Grab power-ups on the map, then answer a question in a corner to switch them on. The most safe rounds wins!',
   ],
+  clash: CLASH_HOWTO,
+  shark: [
+    'Swim your avatar with the joystick, or the arrow keys.',
+    'The bay has four coloured quarters, and they slowly spin round!',
+    'Get to a quarter before the countdown ends. Do not stay on the jetty!',
+    'Simon the shark strikes a quarter. Anyone in it, or on the jetty, goes to the shark cave.',
+    'Hide under a boat and you are safe, but boats only have a few seats! In the cave, answer three questions to swim back out.',
+  ],
 } as const;
 
 export type LineKey = keyof typeof LINES;
@@ -169,5 +199,5 @@ export function next(key: LineKey): string {
 
 export const allVoiceLines = (): string[] => [
   ...Object.values(LINES).flat(),
-  ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural, ...HOWTO.corners, ...HOWTO.thrones,
+  ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural, ...HOWTO.corners, ...HOWTO.shark, ...GHOST_HOWTO, ...HOWTO.clash, ...HOWTO.thrones,
 ];
