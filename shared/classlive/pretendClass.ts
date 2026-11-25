@@ -12,6 +12,7 @@ import { markQuestion } from '../maths/serverQuestions';
 import { ANSWER_GAP_MS, canGuess } from './mural';
 import { pretendAnswer } from './serpent';
 import { pretendFacts } from './stars';
+import { lavaBot } from './lavaPretend';
 import { clashBot } from './clashMemory';
 
 export const PRETEND_TEACHER = '00000000-0000-4000-8000-00000000feed';
@@ -56,6 +57,7 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
       if (row.session.state === 'lobby') return opts.later(go, 1000);
       const g = row.session.game;
       if (g.kind === 'corners') return cornersBot(room, id, skill);
+      if (g.kind === 'lava') return lavaBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
       if (g.kind === 'thrones') return thronesBot(room, id, skill);
       if (g.kind === 'clash') return clashBot({ db, room, id, skill, rand, now: opts.clock.now, later: opts.later, step: (who, body) => classLiveStep(services, who, body) });
       if (g.kind === 'ghost') return ghostBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);

@@ -1,3 +1,4 @@
+import { allLavaLines } from './lavaVoice';
 /**
  * Everything Class Live says on the projector, read by Bella (af_bella) like every game. No pupils' names (names are
  * shown, never spoken). iPads stay silent. Clips go in public/voice/classlive/, made with scripts/voice-clips.py classlive.
@@ -200,4 +201,5 @@ export function next(key: LineKey): string {
 export const allVoiceLines = (): string[] => [
   ...Object.values(LINES).flat(),
   ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural, ...HOWTO.corners, ...HOWTO.shark, ...GHOST_HOWTO, ...HOWTO.clash, ...HOWTO.thrones,
+  ...allLavaLines(),
 ];

@@ -1406,5 +1406,221 @@
  {
   "slug": "a-throne-is-one-crown-a-golden-throne-is-three-the-most-crowns-wins",
   "text": "A throne is one crown, a golden throne is three. The most crowns wins!"
+ },
+ {
+  "slug": "here-we-go-the-floor-is-lava-watch-for-the-glowing-tiles",
+  "text": "Here we go! The floor is lava! Watch for the glowing tiles!"
+ },
+ {
+  "slug": "floor-is-lava-is-on-stay-off-the-glowing-tiles",
+  "text": "Floor is Lava is on! Stay off the glowing tiles!"
+ },
+ {
+  "slug": "off-we-go-when-a-tile-glows-get-off-it",
+  "text": "Off we go! When a tile glows, get off it!"
+ },
+ {
+  "slug": "find-a-safe-tile",
+  "text": "Find a safe tile!"
+ },
+ {
+  "slug": "off-the-glowing-tiles-quick",
+  "text": "Off the glowing tiles, quick!"
+ },
+ {
+  "slug": "move-move-find-solid-rock",
+  "text": "Move, move! Find solid rock!"
+ },
+ {
+  "slug": "three-seconds-get-off-the-glow",
+  "text": "Three seconds! Get off the glow!"
+ },
+ {
+  "slug": "hurry-the-floor-is-about-to-crack",
+  "text": "Hurry! The floor is about to crack!"
+ },
+ {
+  "slug": "quick-the-tiles-are-going-to-break",
+  "text": "Quick, the tiles are going to break!"
+ },
+ {
+  "slug": "crack-there-goes-the-floor",
+  "text": "Crack! There goes the floor!"
+ },
+ {
+  "slug": "rumble-crack-splash",
+  "text": "Rumble, crack, splash!"
+ },
+ {
+  "slug": "down-they-go-into-the-lava",
+  "text": "Down they go into the lava!"
+ },
+ {
+  "slug": "everyone-is-safe-brilliant-footwork",
+  "text": "Everyone is safe! Brilliant footwork!"
+ },
+ {
+  "slug": "nobody-fell-in-amazing",
+  "text": "Nobody fell in! Amazing!"
+ },
+ {
+  "slug": "not-one-splash-well-done",
+  "text": "Not one splash! Well done!"
+ },
+ {
+  "slug": "splash-lots-of-you-are-on-the-lava-raft",
+  "text": "Splash! Lots of you are on the lava raft!"
+ },
+ {
+  "slug": "oh-no-a-big-splash-into-the-lava",
+  "text": "Oh no! A big splash into the lava!"
+ },
+ {
+  "slug": "so-many-on-the-raft-answer-to-climb-back",
+  "text": "So many on the raft! Answer to climb back!"
+ },
+ {
+  "slug": "fire-boots-saved-someone",
+  "text": "Fire boots saved someone!"
+ },
+ {
+  "slug": "those-fire-boots-work-safe-on-the-lava",
+  "text": "Those fire boots work! Safe on the lava!"
+ },
+ {
+  "slug": "lava-walker-fire-boots-to-the-rescue",
+  "text": "Lava walker! Fire boots to the rescue!"
+ },
+ {
+  "slug": "back-on-the-floor",
+  "text": "Back on the floor!"
+ },
+ {
+  "slug": "someone-climbed-off-the-raft",
+  "text": "Someone climbed off the raft!"
+ },
+ {
+  "slug": "welcome-back-to-the-floor",
+  "text": "Welcome back to the floor!"
+ },
+ {
+  "slug": "a-new-bridge",
+  "text": "A new bridge!"
+ },
+ {
+  "slug": "somebody-built-a-bridge",
+  "text": "Somebody built a bridge!"
+ },
+ {
+  "slug": "brick-by-brick",
+  "text": "Brick by brick!"
+ },
+ {
+  "slug": "what-a-rescue",
+  "text": "What a rescue!"
+ },
+ {
+  "slug": "saved-from-the-raft-by-a-friend",
+  "text": "Saved from the raft by a friend!"
+ },
+ {
+  "slug": "a-kind-rescue",
+  "text": "A kind rescue!"
+ },
+ {
+  "slug": "watch-out-more-tiles-are-glowing",
+  "text": "Watch out! More tiles are glowing!"
+ },
+ {
+  "slug": "aftershock-new-tiles-are-glowing",
+  "text": "Aftershock! New tiles are glowing!"
+ },
+ {
+  "slug": "look-the-glow-is-spreading",
+  "text": "Look! The glow is spreading!"
+ },
+ {
+  "slug": "glowing-patches-find-the-solid-rock",
+  "text": "Glowing patches! Find the solid rock!"
+ },
+ {
+  "slug": "stripes-every-other-line-is-going-to-crack",
+  "text": "Stripes! Every other line is going to crack!"
+ },
+ {
+  "slug": "a-checkerboard-jump-to-the-right-squares",
+  "text": "A checkerboard! Jump to the right squares!"
+ },
+ {
+  "slug": "rings-a-whole-ring-of-the-floor-is-glowing",
+  "text": "Rings! A whole ring of the floor is glowing!"
+ },
+ {
+  "slug": "a-giant-cross-is-glowing-get-out-of-the-middle-lines",
+  "text": "A giant cross is glowing! Get out of the middle lines!"
+ },
+ {
+  "slug": "islands-only-a-few-small-islands-will-stay-up",
+  "text": "Islands! Only a few small islands will stay up!"
+ },
+ {
+  "slug": "a-wave-of-glow-is-sweeping-across-get-out-of-its-way",
+  "text": "A wave of glow is sweeping across! Get out of its way!"
+ },
+ {
+  "slug": "power-ups-have-appeared-grab-one-then-answer-a-question-to-switch-it-on",
+  "text": "Power-ups have appeared! Grab one, then answer a question to switch it on."
+ },
+ {
+  "slug": "bubbles-they-slow-you-down-so-go-round-them",
+  "text": "Bubbles! They slow you down, so go round them."
+ },
+ {
+  "slug": "slippery-patches-you-slide-when-you-step-on-them",
+  "text": "Slippery patches! You slide when you step on them."
+ },
+ {
+  "slug": "a-rolling-fireball-it-will-knock-you-flying-maybe-into-the-lava",
+  "text": "A rolling fireball! It will knock you flying, maybe into the lava!"
+ },
+ {
+  "slug": "watch-out-now-some-tiles-start-glowing-late-near-the-end-of-the-countdown",
+  "text": "Watch out! Now some tiles start glowing late, near the end of the countdown."
+ },
+ {
+  "slug": "run-round-the-floor-with-the-joystick-or-the-arrow-keys",
+  "text": "Run round the floor with the joystick, or the arrow keys."
+ },
+ {
+  "slug": "when-tiles-glow-get-off-them-when-the-countdown-ends-they-crack-and-sink-into-the-lava",
+  "text": "When tiles glow, get off them! When the countdown ends, they crack and sink into the lava."
+ },
+ {
+  "slug": "fall-in-and-you-go-on-the-lava-raft-wait-for-a-friend-to-rescue-you-or-answer-five-questions-to-climb-back",
+  "text": "Fall in, and you go on the lava raft. Wait for a friend to rescue you, or answer five questions to climb back."
+ },
+ {
+  "slug": "answer-questions-to-earn-bricks-use-a-brick-to-build-a-bridge-over-the-lava-or-two-bricks-to-rescue-a-friend",
+  "text": "Answer questions to earn bricks. Use a brick to build a bridge over the lava, or two bricks to rescue a friend."
+ },
+ {
+  "slug": "grab-power-ups-then-answer-a-question-to-switch-them-on-stay-up-the-most-rounds-to-win",
+  "text": "Grab power-ups, then answer a question to switch them on. Stay up the most rounds to win!"
+ },
+ {
+  "slug": "today-we-are-on-volcano-island",
+  "text": "Today we are on Volcano Island."
+ },
+ {
+  "slug": "today-we-are-in-the-dragon-s-lair",
+  "text": "Today we are in the Dragon's Lair."
+ },
+ {
+  "slug": "today-we-are-in-the-lava-forge",
+  "text": "Today we are in the Lava Forge."
+ },
+ {
+  "slug": "today-we-are-on-the-lava-planet",
+  "text": "Today we are on the Lava Planet."
  }
 ]

@@ -13,6 +13,8 @@ import { HALL_WORDS } from '../../../shared/classlive/thrones';
 import { MAP_WORDS as CLASH_WORDS } from '../../../shared/classlive/clash';
 import { BAY_WORDS, isShark, SHARK } from '../../../shared/classlive/shark';
 import { HOWTO, VOICE_FOLDER } from './voiceLines';
+import { LAVA_HOWTO, LAVA_MAP_SAY } from './lavaVoice';
+import { LAVA_WORDS } from '../../../shared/classlive/lava';
 import { ghostSheet } from './GhostCard';
 
 type Game = ScreenView['game'];
@@ -45,6 +47,19 @@ export function sheetFor(game: Game): Sheet {
         { icon: '🔢', text: 'Write each answer on your device. You get two tries.', say: H[1] },
         { icon: '💎', text: 'Every right answer moves your gem up the serpent.', say: H[2] },
         { icon: '⚡', text: 'Right answers from the whole class wake the serpent. Reach the head, then keep going on the bonus tail!', say: H[3] },
+      ],
+    };
+  }
+  if (game.kind === 'lava') {
+    const H = LAVA_HOWTO;
+    return {
+      title: 'How to play Floor is Lava', mode: LAVA_WORDS[game.map].name, modeSay: LAVA_MAP_SAY[game.map], art: painted('pick', 'lava', true) ?? painted('lava', `lake-${game.map}`, true),
+      steps: [
+        { icon: '🕹️', text: 'Move your avatar with the joystick, or the arrow keys.', say: H[0] },
+        { icon: '🔥', text: 'When tiles glow, get off them! When the countdown ends, they crack and sink.', say: H[1] },
+        { icon: '🛶', text: 'Fall in and you wait on the raft for a friend to rescue you, or answer 5 questions to climb back.', say: H[2] },
+        { icon: '🧱', text: 'Right answers earn bricks: 1 builds a bridge over lava, 2 rescue a friend.', say: H[3] },
+        { icon: '⚡', text: 'Grab power-ups and answer to switch them on. Stay up the most rounds to win!', say: H[4] },
       ],
     };
   }

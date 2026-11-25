@@ -3,6 +3,7 @@
  * once a session is over and paid once per room and session (`classlive_finish`). Pupils who only joined get 1 point.
  */
 import { podium } from './corners';
+import { lavaPodium } from './lava';
 import { podium as thronesPodium } from './thrones';
 import { clashReward } from './clashServer';
 import { podium as ghostPodium } from './ghost';
@@ -45,13 +46,23 @@ export const POINTS = { joined: 1, played: 3, goal: 2, guessed: 2, max: 10 } as 
 
 export function rewardsOf(s: Session): FinishedSession {
   const g = s.game;
-  const goal = g.kind === 'stars' ? g.creature : g.kind === 'serpent' ? g.awake : g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'clash' || g.kind === 'thrones' ? false : g.solvers.length > 0;
-  const top = g.kind === 'corners' ? podium(g, s.order) : g.kind === 'ghost' ? ghostPodium(g, s.order) : g.kind === 'thrones' ? thronesPodium(g, s.order) : [];
+  const goal = g.kind === 'stars' ? g.creature : g.kind === 'serpent' ? g.awake : g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'clash' || g.kind === 'thrones' || g.kind === 'lava' ? false : g.solvers.length > 0;
+  const top = g.kind === 'corners' ? podium(g, s.order) : g.kind === 'ghost' ? ghostPodium(g, s.order) : g.kind === 'thrones' ? thronesPodium(g, s.order) : g.kind === 'lava' ? lavaPodium(g, s.order) : [];
   const players = s.order.map((id): PupilReward => {
     let did = false;
     const r: PupilReward = { player: id, points: 0, stars: 0, boxes: 0, head: false, tiles: 0, guessed: false, safe: 0, champion: false, escapes: 0, powers: 0 };
     let podiumPlace = false;
-    if (g.kind === 'clash') {
+    if (g.kind === 'lava') {
+      // Floor is Lava (docs/LAVA-PLAN.md): rounds stayed up, top of the podium, tiles rebuilt, friends rescued.
+      const m = g.mine[id];
+      const place = top.find((x) => x.player === id)?.place;
+      r.champion = place === 1;
+      podiumPlace = place !== undefined;
+      r.escapes = m?.climbs ?? 0;
+      r.powers = m?.powersUsed ?? 0;
+      r.extra = { lava_rounds: m?.up ?? 0, lava_wins: place === 1 ? 1 : 0, lava_built: m?.built ?? 0, lava_rescues: m?.rescues ?? 0 };
+      did = (m?.up ?? 0) > 0 || (m?.answered ?? 0) > 0;
+    } else if (g.kind === 'clash') {
       // Colour Clash: the winning team's pupils get the podium bonus.
       const c = clashReward(g, id);
       did = c.did;

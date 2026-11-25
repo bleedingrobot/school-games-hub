@@ -27,6 +27,8 @@ import {
   cornersDone, MAPS, needsPositions, runSeconds, newCorners, nextDeadline, podium, questionFor, ANSWER_GAP_MS as CORNERS_GAP_MS,
   type Corner, type CornerMap, type CornersEvent, type CornersGame, type Item, type Positions, type Power, type Round, type Spot,
 } from './corners';
+import { advanceLava, freshLavaMine, lavaDeadline, lavaDone, lavaNeedsPositions, lavaRunSeconds, LAVA_MAPS, newLava, type LavaEvent, type LavaGame } from './lava';
+import { lavaPlayer, lavaPublic, lavaStep, type LavaPlayer, type LavaPublic } from './lavaServer';
 import {
   advance as thronesAdvance, freshMine as thronesFresh, HALLS, needsPositions as thronesNeedsPositions, newThrones, nextDeadline as thronesDeadline,
   thronesDone, type ThronesEvent, type ThronesGame,
@@ -40,10 +42,10 @@ import { BAYS, isShark, newShark, sharkAdvance, sharkJump, sharkQuestionFor, typ
 import { advance as ghostAdvance, freshMine as ghostFresh, ghostDone, ghostPlayer, MAPS as GHOST_MAPS, needsPositions as ghostNeeds, newGhost, nextDeadline as ghostDeadline, publicGhost, type GhostEvent, type GhostGame, type GhostPlayer, type PublicGhost } from './ghost';
 import { ghostStep } from './ghostServer';
 
-export const ACTIVITIES = ['stars', 'serpent', 'mural', 'corners', 'shark', 'ghost', 'clash', 'thrones'] as const;
+export const ACTIVITIES = ['stars', 'serpent', 'mural', 'corners', 'shark', 'ghost', 'clash', 'thrones', 'lava'] as const;
 export type Activity = (typeof ACTIVITIES)[number];
 export const LENGTHS = [0, 2, 3, 5, 10, 15] as const;
-export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners', shark: 'Shark Bay', ghost: 'Ghost Tag', clash: 'Colour Clash', thrones: 'Musical Thrones' };
+export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners', shark: 'Shark Bay', ghost: 'Ghost Tag', clash: 'Colour Clash', thrones: 'Musical Thrones', lava: 'Floor is Lava' };
 
 export interface LivePlayer {
   id: string;
@@ -53,8 +55,8 @@ export interface LivePlayer {
   colour: number;
 }
 
-export type Game = StarsGame | SerpentGame | MuralGame | CornersGame | GhostGame | ClashGame | ThronesGame;
-export type GameEvent = StarsEvent | SerpentEvent | MuralEvent | CornersEvent | GhostEvent | ClashEvent | ThronesEvent;
+export type Game = StarsGame | SerpentGame | MuralGame | CornersGame | GhostGame | ClashGame | ThronesGame | LavaGame;
+export type GameEvent = StarsEvent | SerpentEvent | MuralEvent | CornersEvent | GhostEvent | ClashEvent | ThronesEvent | LavaEvent;
 
 export interface Session {
   seed: number;
@@ -117,7 +119,8 @@ export type PublicGame =
   | PublicGhost
   /** Colour Clash (shared/classlive/clashServer.ts). */
   | ClashPublic
-  | ThronesPublic;
+  | ThronesPublic
+  | LavaPublic;
 
 export type PublicRound = Omit<Round, 'rolled' | 'caught' | 'saved' | 'items'> & {
   rolled: Corner[] | null;
@@ -163,7 +166,8 @@ export interface PlayerView {
       }
     | GhostPlayer
     | ClashPlayer
-    | ThronesPlayer;
+    | ThronesPlayer
+    | LavaPlayer;
 }
 
 export interface RoomRow {
@@ -261,6 +265,7 @@ function publicRound(r: Round, t: number): PublicRound {
 export function publicGame(g: Game, players: number, t = 0, order: string[] = []): PublicGame {
   if (g.kind === 'ghost') return publicGhost(g, order);
   if (g.kind === 'clash') return clashPublic(g);
+  if (g.kind === 'lava') return lavaPublic(g, players);
   if (g.kind === 'thrones') return thronesPublic(g, players);
   if (g.kind === 'corners') {
     const jailed = Object.values(g.mine).filter((m) => m.jailedIn !== null).length;
@@ -303,6 +308,7 @@ function screenView(row: Pick<RoomRow, 'showNames' | 'seq' | 'events'>, s: Sessi
 
 export function playerView(s: Session, id: string): PlayerView {
   const p = s.players[id];
+  if (s.game.kind === 'lava') return { player: id, name: firstName(p.name), colour: p.colour, game: lavaPlayer(s, s.game, id, () => freshLavaMine(s.order.indexOf(id))) };
   if (s.game.kind === 'thrones') return { player: id, name: firstName(p.name), colour: p.colour, game: thronesPlayer(s.game, s.order, id, s.state === 'over') };
   if (s.game.kind === 'clash') return { player: id, name: firstName(p.name), colour: p.colour, game: clashPlayer(s, s.game, id) };
   if (s.game.kind === 'ghost') return { player: id, name: firstName(p.name), colour: p.colour, game: ghostPlayer(s.game, id, s.order, s.state === 'over') };
@@ -390,7 +396,7 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
     const events: Event[] = [];
     const g0 = s.game;
     // Four Corners: the server moves pupils (back from jail, a jump); their devices snap to the new spot.
-    const placedBefore = g0.kind === 'corners' || g0.kind === 'ghost' || g0.kind === 'clash' || g0.kind === 'thrones' ? new Map(s.order.map((id) => [id, g0.mine[id]?.placed ?? 0])) : null;
+    const placedBefore = g0.kind === 'corners' || g0.kind === 'ghost' || g0.kind === 'clash' || g0.kind === 'thrones' || g0.kind === 'lava' ? new Map(s.order.map((id) => [id, g0.mine[id]?.placed ?? 0])) : null;
     if (g0.kind === 'ghost') {
       // Ghost Tag runs on the clock too: rounds, the hunt, tags from the saved spots (docs/GHOST-PLAN.md).
       if (s.state === 'live') {
@@ -447,6 +453,22 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
           events.push({ type: 'over', t, why: 'time' });
         }
       }
+    } else if (g0.kind === 'lava') {
+      // Floor is Lava runs on the clock too: crack the floor when a run ends (from the saved spots), start the next round.
+      if (s.state === 'live') {
+        let spots: Positions = {};
+        if (lavaNeedsPositions(g0, t)) {
+          const got = await sv.positions(room);
+          if (got === 'busy') return { refuse: busy() };
+          spots = got;
+        }
+        const last = timeUp(s, row, now);
+        events.push(...advanceLava(g0, t, s.order, spots, () => sv.random(), last));
+        if (last && lavaDone(g0, t)) {
+          s.state = 'over';
+          events.push({ type: 'over', t, why: 'time' });
+        }
+      }
     } else if (timeUp(s, row, now)) {
       // A timed session ends by itself, whoever's step comes first.
       // Mystery Mural's time ends the flipping instead; then the guessing runs its own time.
@@ -477,11 +499,12 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
     const next: RoomRow = { ...row, startedAt, seq, events: [...row.events, ...numbered].slice(-KEEP_EVENTS), session: s };
     for (const e of events) if ('pupil' in e && typeof e.pupil === 'string') changed.add(e.pupil);
     const g1 = s.game;
-    const places = (g1.kind === 'corners' || g1.kind === 'ghost' || g1.kind === 'clash' || g1.kind === 'thrones') && placedBefore
+    const places = (g1.kind === 'corners' || g1.kind === 'ghost' || g1.kind === 'clash' || g1.kind === 'thrones' || g1.kind === 'lava') && placedBefore
       ? s.order.filter((id) => (g1.mine[id]?.placed ?? 0) !== (placedBefore.get(id) ?? 0)).map((id) => ({ player: id, x: g1.mine[id].spot.x, y: g1.mine[id].spot.y }))
       : [];
     for (const p of places) changed.add(p.player);
     // A round's end changes every pupil's own row (caught, safe, scores).
+    if ((g1.kind === 'corners' || g1.kind === 'lava') && events.some((e) => e.type === 'roll' || e.type === 'crack' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
     if ((g1.kind === 'corners' || g1.kind === 'clash') && events.some((e) => e.type === 'roll' || e.type === 'clash_count' || e.type === 'clash_round' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
     if (g1.kind === 'ghost' && events.some((e) => e.type === 'g_round' || e.type === 'g_end' || e.type === 'over' || (e.type === 'g_grab' && e.froze > 0))) for (const id of s.order) changed.add(id);
     if (g1.kind === 'thrones' && events.some((e) => e.type === 'stop' || e.type === 'seated' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
@@ -537,6 +560,9 @@ export function newSession(body: Record<string, unknown>, seed: number, random: 
   } else if (activity === 'corners') {
     const map = MAPS.find((m) => m === body.map) ?? MAPS[Math.floor(random() * MAPS.length) % MAPS.length];
     game = newCorners(map, runSeconds(body.run));
+  } else if (activity === 'lava') {
+    const map = LAVA_MAPS.find((m) => m === body.map) ?? LAVA_MAPS[Math.floor(random() * LAVA_MAPS.length) % LAVA_MAPS.length];
+    game = newLava(map, lavaRunSeconds(body.run));
   } else if (activity === 'clash') {
     const map = CLASH_MAPS.find((m) => m === body.map) ?? CLASH_MAPS[Math.floor(random() * CLASH_MAPS.length) % CLASH_MAPS.length];
     game = newClash(map, teamCount(body.teams), paintSeconds(body.paint));
@@ -672,6 +698,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         if (s.order.length >= MAX_PLAYERS) return { refuse: no(409, 'This room is full.', 'full') };
         s.players[who] = { id: who, name: me.name, joinedAt: t, colour: s.order.length % 12 };
         if (s.game.kind === 'corners') s.game.mine[who] = freshMine(s.order.length);
+        if (s.game.kind === 'lava') s.game.mine[who] = freshLavaMine(s.order.length);
         if (s.game.kind === 'thrones') s.game.mine[who] = thronesFresh(s.order.length);
         if (s.game.kind === 'clash') clashJoin(s.game, who);
         if (s.game.kind === 'ghost') s.game.mine[who] = ghostFresh(s.order.length);
@@ -691,12 +718,16 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     if (action === 'look') {
       // Four Corners runs on the clock: if the big screen hasn't moved a round on (closed, asleep), a pupil's look does.
       const cg = cur.session.game;
-      const due = cur.session.state !== 'live' ? null : cg.kind === 'corners' ? nextDeadline(cg, cur.startedAt) : cg.kind === 'ghost' ? ghostDeadline(cg, cur.startedAt) : cg.kind === 'clash' ? clashDeadline(cg, cur.startedAt) : cg.kind === 'thrones' ? thronesDeadline(cg, cur.startedAt) : null;
+      const due = cur.session.state !== 'live' ? null : cg.kind === 'corners' ? nextDeadline(cg, cur.startedAt) : cg.kind === 'ghost' ? ghostDeadline(cg, cur.startedAt) : cg.kind === 'clash' ? clashDeadline(cg, cur.startedAt) : cg.kind === 'thrones' ? thronesDeadline(cg, cur.startedAt) : cg.kind === 'lava' ? lavaDeadline(cg, cur.startedAt) : null;
       if (due !== null && timeOf(cur, sv.now()) >= due + 1500) {
         const done = await mutate(sv, room, () => ({ reply: null, events: [] }));
         if (!('refuse' in done)) return ok({ room, view: roomView(done.session, done.row.startedAt, sv.now()), me: playerView(done.session, who), now: sv.now() });
       }
       return ok({ room, view: roomView(cur.session, cur.startedAt, sv.now()), me: playerView(cur.session, who), now: sv.now() });
+    }
+    if (cur.session.game.kind === 'lava' && (action === 'ask' || action === 'answer' || action === 'play')) {
+      const out = await lavaStep(sv, cur, who, body, { mutate, nextQuestion, roomView, playerView, ok, no, busy });
+      return cur.session.state === 'live' ? out : withRoom(out);
     }
     if (cur.session.game.kind === 'thrones' && (action === 'ask' || action === 'answer' || action === 'play')) {
       const out = await thronesStep({ sv, mutate, nextQuestion, roomView, playerView, timeOf, ok, no, busy, maxAnswerMs: MAX_ANSWER_MS }, cur, who, body);
@@ -746,7 +777,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         }
         return { reply: out.reply, events: out.events, players: [who] };
       }
-      if (s.game.kind === 'corners' || s.game.kind === 'ghost' || s.game.kind === 'clash' || s.game.kind === 'thrones') return { refuse: no(409, 'Use the joystick!', 'not_now') };
+      if (s.game.kind === 'corners' || s.game.kind === 'ghost' || s.game.kind === 'clash' || s.game.kind === 'thrones' || s.game.kind === 'lava') return { refuse: no(409, 'Use the joystick!', 'not_now') };
       const out = tryFact(s.game, who, body.fact, t);
       if (!out.ok) return { refuse: no(409, 'One at a time!', out.reason) };
       return { reply: out.reply, events: out.events, players: [who] };
@@ -787,7 +818,7 @@ export async function nextQuestion(sv: ClassLiveServices, row: RoomRow, who: str
   const ctx = await sv.mathsContext(who);
   if (!ctx) return null;
   const g = row.session.game;
-  const m = g.kind === 'mural' || g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'clash' || g.kind === 'thrones' ? g.mine[who] : undefined;
+  const m = g.kind === 'mural' || g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'clash' || g.kind === 'thrones' || g.kind === 'lava' ? g.mine[who] : undefined;
   const q = makeQuestion(ctx, `${row.session.seed}:${who}:${m?.answered ?? 0}`);
   if (!q) return null;
   const kept = await sv.keepQuestion(row.id, who, q);

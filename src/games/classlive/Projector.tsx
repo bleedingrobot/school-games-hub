@@ -29,6 +29,7 @@ import { ClashCard } from './ClashCard';
 import { ClashGuide } from './ClashGuide';
 import { MAP_WORDS as CLASH_WORDS, type ClashMap } from '../../../shared/classlive/clash';
 import { CornersGuide } from './CornersGuide';
+import { LavaCard, LavaLobbyHead, LavaScene } from './LavaScene';
 import { ThronesScene } from './ThronesScene';
 import { ThronesCard, ThronesLobbyHead } from './ThronesCard';
 import { useMusicOn } from './thronesMusic';
@@ -154,7 +155,7 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
       else if (e.type === 'start') {
         sound.play('start');
         // Four Corners' scene says its own start, with the first round.
-        if (s.game.kind !== 'corners' && s.game.kind !== 'ghost' && s.game.kind !== 'thrones') say(s.game.kind === 'serpent' ? next('startSerpent') : s.game.kind === 'mural' ? next('startMural') : next('startStars'), 900);
+        if (s.game.kind !== 'corners' && s.game.kind !== 'ghost' && s.game.kind !== 'thrones' && s.game.kind !== 'lava') say(s.game.kind === 'serpent' ? next('startSerpent') : s.game.kind === 'mural' ? next('startMural') : next('startStars'), 900);
       }
       else if (e.type === 'climb') {
         const id = e.pupil;
@@ -360,6 +361,7 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   const mural = game?.kind === 'mural' ? game : null;
   const shark = game && isShark(game) ? game : null; // Shark Bay
   const corners = game?.kind === 'corners' && !shark ? game : null;
+  const lava = game?.kind === 'lava' ? game : null;
   const clash = game?.kind === 'clash' ? game : null;
   const ghostG = game?.kind === 'ghost' ? game : null;
   const thrones = game?.kind === 'thrones' ? game : null;
@@ -369,8 +371,8 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   const hotNow = (leftMs !== null && leftMs < HOT_MS) || (serpent ? serpent.awake || serpent.energy >= 0.75 * wakeAt(screen?.players ?? 1) : false)
     || (game?.kind === 'stars' ? game.creature && !game.supernova : false);
     // Musical Thrones: the music cuts out the moment it stops (and stays off until the next round).
-  useMusic(thrones && state === 'live' && !thronesMusic ? null : classLiveTrack(state, game?.kind ?? null, { guessing: mural?.phase === 'guess', hot: hotNow, map: shark ? shark.bay : corners?.map ?? ghostG?.map ?? clash?.map ?? thrones?.hall, shark: !!shark }), !muted);
-  const backPic = hall ?? (clash ? painted('clash', `back-${clash.map}`) ?? painted('corners', 'back-snow') : shark ? painted('shark', `back-${shark.bay}`) : ghostG ? painted('ghost', `back-${ghostG.map}`) : corners ? painted('corners', `back-${corners.map}`) : thrones ? painted('thrones', `back-${thrones.hall}`) : painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky'));
+  useMusic(thrones && state === 'live' && !thronesMusic ? null : classLiveTrack(state, game?.kind ?? null, { guessing: mural?.phase === 'guess', hot: hotNow, map: shark ? shark.bay : corners?.map ?? ghostG?.map ?? clash?.map ?? thrones?.hall ?? lava?.map, shark: !!shark }), !muted);
+  const backPic = hall ?? (clash ? painted('clash', `back-${clash.map}`) ?? painted('corners', 'back-snow') : shark ? painted('shark', `back-${shark.bay}`) : ghostG ? painted('ghost', `back-${ghostG.map}`) : corners ? painted('corners', `back-${corners.map}`) : thrones ? painted('thrones', `back-${thrones.hall}`) : lava ? painted('lava', `back-${lava.map}`) : painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky'));
   const lobbyOpen = state === 'lobby' && room !== null;
   useEffect(() => {
     if (lobbyOpen) say(next('joinNow'), 400);
@@ -381,7 +383,7 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   }, [state]);
 
   return (
-    <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''} ${mural ? 'cl-p--mural' : ''} ${corners ? `cl-p--corners fc-back--${corners.map}` : ''} ${shark ? `cl-p--shark sb-back--${shark.bay}` : ''} ${clash ? 'cl-p--corners cl-p--clash' : ''} ${ghostG ? `cl-p--corners cl-p--ghost gt-back--${ghostG.map}` : ''} ${thrones ? `cl-p--thrones mt-back--${thrones.hall}` : ''} ${backPic ? 'cl-p--painted' : ''}`}>
+    <div className={`cl-p cl-p--${state ?? 'setup'} ${serpent ? 'cl-p--serpent' : ''} ${mural ? 'cl-p--mural' : ''} ${corners ? `cl-p--corners fc-back--${corners.map}` : ''} ${shark ? `cl-p--shark sb-back--${shark.bay}` : ''} ${clash ? 'cl-p--corners cl-p--clash' : ''} ${ghostG ? `cl-p--corners cl-p--ghost gt-back--${ghostG.map}` : ''} ${thrones ? `cl-p--thrones mt-back--${thrones.hall}` : ''} ${lava ? `cl-p--lava lv-back--${lava.map}` : ''} ${backPic ? 'cl-p--painted' : ''}`}>
       {serpent ? <JungleBackdrop /> : <NightBackdrop />}
       {backPic && <div className={`cl-painted ${serpent ? 'cl-painted--serpent' : ''} ${hall ? 'cl-painted--hall' : ''}`} style={{ backgroundImage: `url(${backPic})` }} aria-hidden="true" />}
       {serpent && <SerpentAmbience awake={serpent.awake || state === 'over'} />}
@@ -455,6 +457,21 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
         <CornersScene
           screen={screen}
           game={corners}
+          link={link}
+          room={room}
+          clock={() => Date.now() + offset.current}
+          sound={sound}
+          say={say}
+          over={state === 'over'}
+          onTick={() => { if (room) void act({ action: 'view', room }); }}
+          onAgain={forget}
+        />
+      )}
+
+      {screen && lava && (state === 'live' || state === 'over') && (
+        <LavaScene
+          screen={screen}
+          game={lava}
           link={link}
           room={room}
           clock={() => Date.now() + offset.current}
@@ -733,6 +750,7 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
         )}
         {pick === 'clash' && <ClashCard busy={busy} disabled={!hostOk} onOpen={(body) => onOpen('clash', body)} />}
         {pick === 'ghost' && <GhostPickCard busy={busy} hostOk={hostOk} onOpen={(body) => onOpen('ghost', body)} timer={(l, set) => <TimerChips length={l} setLength={set} />} art={(pic) => <CardArt pic={pic} />} />}
+        {pick === 'lava' && <LavaCard busy={busy} disabled={!hostOk} onOpen={(body) => onOpen('lava', body)} />}
         {/* Shark Bay */}
         {pick === 'shark' && (
         <section className="cl-card cl-card--active cl-card--corners cl-card--shark" aria-label="Shark Bay">
@@ -841,7 +859,7 @@ function Chip({ p, i }: { p: ScreenView['people'][number]; i: number }) {
 
 function Lobby({ screen, game, className, onStart }: { screen: ScreenView; game: ScreenView['game']; className?: string; onStart: () => void }) {
   const n = screen.people.length;
-  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : game.kind === 'corners' ? (isShark(game) ? <SharkLobbyHead bay={game.bay} /> : <CornersLobbyHead map={game.map} />) : game.kind === 'clash' ? <ClashLobbyHead map={game.map} teams={game.teams} /> : game.kind === 'ghost' ? <GhostLobbyHead map={game.map} /> : game.kind === 'thrones' ? <ThronesLobbyHead hall={game.hall} /> : <MuralLobbyHead />;
+  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : game.kind === 'corners' ? (isShark(game) ? <SharkLobbyHead bay={game.bay} /> : <CornersLobbyHead map={game.map} />) : game.kind === 'clash' ? <ClashLobbyHead map={game.map} teams={game.teams} /> : game.kind === 'ghost' ? <GhostLobbyHead map={game.map} /> : game.kind === 'thrones' ? <ThronesLobbyHead hall={game.hall} /> : game.kind === 'lava' ? <LavaLobbyHead map={game.map} /> : <MuralLobbyHead />;
   return (
     <div className={`cl-lobby ${game.kind === 'serpent' ? 'cl-lobby--serpent' : ''}`}>
       {head}

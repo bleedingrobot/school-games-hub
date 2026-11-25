@@ -11,6 +11,7 @@ import { PadGuard } from './PadGuard';
 import { classLiveTrack, useMusic } from './music';
 import { SerpentPad } from './SerpentPad';
 import { CornersPad } from './CornersPad';
+import { LavaPad } from './LavaPad';
 import { ThronesPad } from './ThronesPad';
 import { useMusicOn } from './thronesMusic';
 import { ClashPad } from './ClashPad';
@@ -162,7 +163,7 @@ export function Controller({ link, me, room: roomProp, code: codeProp, lookElsew
   const muralGame = view?.game.kind === 'mural' ? view.game : null;
   const padThrones = view?.game.kind === 'thrones' ? view.game : null;
   const padThronesMusic = useMusicOn(padThrones?.round, view?.startedAt ?? null, clock);
-  useMusic(phase === 'playing' && view?.padMusic && !(padThrones && view.state === 'live' && !padThronesMusic) ? classLiveTrack(view.state, view.game.kind, { guessing: muralGame?.phase === 'guess', hot: view.game.kind === 'serpent' ? view.game.awake : view.game.kind === 'stars' ? view.game.creature && !view.game.supernova : false, map: view.game.kind === 'clash' ? view.game.map : view.game.kind === 'thrones' ? view.game.hall : view.game.kind === 'ghost' ? view.game.map : view.game.kind === 'corners' ? (view.game.variant === 'shark' ? view.game.bay : view.game.map) : undefined, shark: view.game.kind === 'corners' && view.game.variant === 'shark' }) : null, true);
+  useMusic(phase === 'playing' && view?.padMusic && !(padThrones && view.state === 'live' && !padThronesMusic) ? classLiveTrack(view.state, view.game.kind, { guessing: muralGame?.phase === 'guess', hot: view.game.kind === 'serpent' ? view.game.awake : view.game.kind === 'stars' ? view.game.creature && !view.game.supernova : false, map: view.game.kind === 'clash' ? view.game.map : view.game.kind === 'thrones' ? view.game.hall : view.game.kind === 'ghost' ? view.game.map : view.game.kind === 'corners' ? (view.game.variant === 'shark' ? view.game.bay : view.game.map) : view.game.kind === 'lava' ? view.game.map : undefined, shark: view.game.kind === 'corners' && view.game.variant === 'shark' }) : null, true);
 
   if (phase === 'joining') return <Sky><div className="cl-c-center"><p className="cl-c-say">Joining…</p></div></Sky>;
   if (phase === 'none') {
@@ -235,6 +236,13 @@ export function Controller({ link, me, room: roomProp, code: codeProp, lookElsew
     return (
       <Sky tint="corners" back={painted('corners', `back-${view.game.map}`)}>
         <PadGuard><CornersPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} clock={clock} avatar={avatar} /></PadGuard>
+      </Sky>
+    );
+  }
+  if (view.game.kind === 'lava') {
+    return (
+      <Sky tint="corners" back={painted('lava', `back-${view.game.map}`)}>
+        <PadGuard><LavaPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} clock={clock} avatar={avatar} /></PadGuard>
       </Sky>
     );
   }
