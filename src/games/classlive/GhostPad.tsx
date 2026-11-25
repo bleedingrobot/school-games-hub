@@ -1,6 +1,6 @@
 /**
  * Ghost Tag, the pupil's device (docs/GHOST-PLAN.md): a joystick (or arrow keys / WASD) moves their own avatar at once;
- * the spot is saved every 0.4 s (0.25 s with someone near) through `link.ghostMove`, which brings back every other
+ * the spot is saved every 0.4 s (0.3 s with someone near; one call at a time, see liveLink `gated`) through `link.ghostMove`, which brings back every other
  * spot with who is a ghost (no names). A big button gets a question: a pupil's right answer makes them invisible for
  * 5 seconds; a ghost's gives a speed dash or a lantern. Running over a power-up grabs it. Never shows anyone's results.
  */
@@ -23,7 +23,7 @@ import './controller.css';
 type Mine = Extract<PlayerView['game'], { kind: 'ghost' }>;
 type Pub = Extract<RoomView['game'], { kind: 'ghost' }>;
 const SEND_MS = 400;
-const SEND_NEAR_MS = 250;
+const SEND_NEAR_MS = 300;
 const factOf = (q: PublicQuestion, answer: number) => q.parts.map((p) => p.replace(/\?/g, String(answer))).join(' ');
 
 export function GhostPad({ link, room, view, me, setMe, setView, clock, avatar }: {
