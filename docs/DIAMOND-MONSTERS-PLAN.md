@@ -2,7 +2,7 @@
 
 *Asked for by James, 25 Nov 2026: "an expansion for Diamond Drop. It's going to be catching the maths monsters. We can reuse a lot of the art, finishing first version of game the diamond unlocks it. Lots of monsters that have different chances to appear, filling up a collection book along the way." Branch `claude/project-thread-kmcz6m`. Built on [DIAMOND-PLAN.md](DIAMOND-PLAN.md) and [DIAMOND-RULES.md](DIAMOND-RULES.md); monster data from `shared/monsters/monsterBook.ts`.*
 
-**Status: Stage 0 done, plan agreed.** James answered all 10 question cards on 25 Nov 2026 (table below); the *(rec)* marks below are now his choices except where the table says otherwise. Next: Stage 1. Next free migration number when written: `20261125000400` (re-check with `node scripts/migration-numbers.mjs`).
+**Status: built 25 Nov 2026 (stages 1 to 5), going live with the PR.** James answered all 10 question cards on 25 Nov 2026 (table below); the *(rec)* marks are his choices except where the table says otherwise. Migration `20261125000400_diamond_monsters.sql`. Rules in `shared/diamond/caverns.ts` and `config.ts` (`CAVERNS`); art in [DIAMOND-MONSTERS-ART-PLAN.md](DIAMOND-MONSTERS-ART-PLAN.md).
 
 ## The short version
 
@@ -46,23 +46,25 @@ Like the rare gems, the game tries the rarest tier first with its own random str
 
 ### The caverns
 
-| Level | Cavern | Habitat | Goal (tune) |
-|---|---|---|---|
-| 11 | Mossy Burrows | leaf | catch 3 monsters |
-| 12 | Drip Grotto | water | catch 4 |
-| 13 | Ember Tunnels | fire | catch 4 |
-| 14 | Frost Vault | ice | catch 5 |
-| 15 | Spark Seam | spark | catch 5 |
-| 16 | Boulder Deep | stone | catch 6, one uncommon or better |
-| 17 | Mixed Hollow | all | catch 6 kinds |
-| 18 | Giants' Rest | all, giants twice as likely | catch a rare or better |
-| 19 | Starlit Chasm | all | catch 8, one rare or better |
-| 20 | The Monster Heart | all, ultras twice as likely | catch 10 |
+| Level | Cavern | Habitat | Time | Goal (simulator-tuned) |
+|---|---|---|---|---|
+| 11 | Mossy Burrows | leaf | 70 s | catch 3 monsters |
+| 12 | Drip Grotto | water | 70 s | catch 4 |
+| 13 | Ember Tunnels | fire | 70 s | catch 4 |
+| 14 | Frost Vault | ice | 80 s | catch 5 |
+| 15 | Spark Seam | spark | 75 s | catch 5 |
+| 16 | Boulder Deep | stone | 80 s | catch 5, one uncommon or rarer |
+| 17 | Mixed Hollow | all | 80 s | catch 5 different kinds |
+| 18 | Giants' Rest | all, giants twice as likely | 85 s | catch 4, one rare or rarer |
+| 19 | Starlit Chasm | all | 85 s | catch 6, one rare or rarer |
+| 20 | The Monster Heart | all, ultras twice as likely | 90 s | catch 7 |
 
-- Gems still sit in the caverns and pay coins as now. Rocks, sacks and crabs as level 9.
-- Stars: 1 pass, 2 pass with 15 s left, 3 also a new page in the book this go.
-- Hold on! cap stays at 6 a go (8 on cavern 20), counting gems and monsters together. After the cap nothing wriggles.
-- Passed caverns replay any time, with a fresh field each replay day so the hunt goes on after cavern 20.
+- Gems still sit in the caverns (a thinner mix than level 9) and pay coins as now. Rocks, sacks and one crab. Monsters pay coins by tier (5, 10, 20, 40, 80; a shiny twice).
+- Stars: 1 pass, 2 pass with 15 s left, 3 also every monster in the cavern caught.
+- Hold on! cap stays at 6 a go (8 in cavern 20), gems and monsters together. After the cap nothing wriggles.
+- One new cavern a day (its own date, apart from the levels'), unlimited tries, replays any time with a fresh field each go. The teacher's unlimited switch opens caverns too.
+- **New Season** sends caverns back to cavern 1 like the levels; the way in (the diamond) and the Monster Book stay.
+- Simulator (bots, 60 goes a cavern, 25 Nov 2026): steady pupils pass 58% to 93% of tries, weak 42% to 77%, strong 75% to 100%; about 250 to 400 coins a go.
 
 ### Shop (Boosts tab, caverns only) *(rec)*
 
@@ -86,21 +88,20 @@ Never a way to buy a monster outright.
 
 ## Server and data
 
-- Same `diamond` function and replay; new field parts behind `level > 10`. New `record` checks the unlock on the server.
-- Migration `20261125000400_diamond_monsters.sql`: achievements, trophy, picture, trigger on `diamond_players` as the rare gems did. The save is the existing player JSON (new `lifetime.monsters`, `cavernDeepest`, `cavernStars`).
-- Teacher switch: a second switch "Monster Caverns" (on by default when Diamond Drop is on). Progress tab "Other games" column shows deepest cavern.
+- Same `diamond` function, same replay; levels 11 to 20 are accepted, and `canStart` checks the way in (`lifetime.found > 0`) and the one-a-day rule on the server. The Lure is part of the field, so the replay agrees.
+- Save: the existing player JSON. `caves` (this season: deepest, date, stars), `lifetime.monsters` (species → count, first, shiny, shinyFirst).
+- Migration `20261125000400_diamond_monsters.sql`: 5 measures in `diamond_counts`, 7 achievements, the Monster Book Trophy (15/40/75 kinds) and the Full Monster Book picture, given by a trigger on `diamond_players`.
+- **Teacher:** no second switch (the Monster Dig follows Diamond Drop's switch, and the unlimited switch covers caverns). The Progress tab column still shows the deepest level. "Reset my turns" clears today's new level but not today's new cavern (it would mean re-creating a shared function); a teacher trying caverns can use the unlimited switch.
 
-## Art
+## Art and voice
 
-- Monsters: reuse `monsterPic(species, shiny, small)` from `src/games/monsters/art/painted.ts` (import only, no change to that game's files).
-- To paint on the gaming PC (ComfyUI, `docs/diamond-art/` style): 10 cavern backgrounds, the cavern gate on the map, Monster Book cover, trophy (3 metals), full-book picture, 3 claw looks. Drawn stand-ins until then.
-- Bella: about 20 new lines (cavern names, "It's wriggling, hold on!", "New page in your Monster Book!", tier banners).
+See [DIAMOND-MONSTERS-ART-PLAN.md](DIAMOND-MONSTERS-ART-PLAN.md): all monster pictures reused from Maths Monsters; caverns borrow level paintings with a colour wash until James paints their own. No Bella lines: Diamond Drop has none yet.
 
 ## Stages
 
-1. **Rules and simulator**: `caverns.ts`, field monsters, wriggle, burrow-away, book; sim tunes goals so cavern 20 lands in about 3 weeks and a full book takes most of a year. 3 rule tests.
-2. **Screens**: cavern gate on the map, monsters in the field with painted pictures, wriggle pop-up, Monster Book tab, phone preview artifact.
-3. **Server and migration**: replay, unlock check, rewards, pgTAP tests.
-4. **Hub fit**: Shop boosts, claw looks, teacher switch and Progress column, How to play, Nugget tips for the caverns.
-5. **Art and voice**: ART-PLAN prompts, Bella lines, James paints, thread fetches the files.
-6. **Go live**: merge, switch on, What's new line.
+1. **Rules and simulator** (done 25 Nov): `caverns.ts`, monsters in the field (own random stream), wriggles, Net, Lure, burrowing, the book, one test.
+2. **Screens** (done): gate and caverns on the map, monsters drawn from Maths Monsters' paintings, wriggle pop-up, Monster Book tab, level end, preview tools (`digTo`, `monsterBook`).
+3. **Server and migration** (done): function rebuilt, migration, `supabase/tests/database/diamond_monsters.test.sql`.
+4. **Hub fit** (done): Shop boosts by level, 3 earned claw looks, next-step line, How to play, teacher note, What's new.
+5. **Art plan** (done): configs in `docs/diamond-monsters-art/`, waiting for the gaming PC.
+6. **Go live**: the PR; the game is already on, so the caverns appear to anyone who has found the diamond.

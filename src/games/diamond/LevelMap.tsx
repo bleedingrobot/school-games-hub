@@ -213,7 +213,7 @@ export function LevelMap({
         <li className="dd-gauge__heart" aria-label={player.lifetime.found > 0 ? 'The Heart Diamond: found!' : 'The Heart Diamond waits at the bottom'}>
           <Sprite size={56} className={still ? undefined : 'dd-pulse'} draw={(c) => drawGem(c, 'heartDiamond', 50, 50, 38, { halo: true })} />
         </li>
-        {dig && <li className="dd-dig-gate"><p className="dd-dig-gate__title">⛏️ The Monster Dig 🐾</p></li>}
+        {dig && <li className="dd-dig-gate">{paintFile('monsters', 'gate') && <img className="dd-dig-gate__art" src={paintFile('monsters', 'gate')} alt="" width={64} height={64} />}<p className="dd-dig-gate__title">⛏️ The Monster Dig 🐾</p></li>}
         {dig && CAVERNS.map(chamber)}
       </ol>
       <p className="dd-sr">{`Level ${LAST_LEVEL}, ${levelSpec(LAST_LEVEL).place}, holds the Heart Diamond.`}</p>

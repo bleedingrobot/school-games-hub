@@ -14642,6 +14642,14 @@ const WORKSHOP_ITEMS = [
 		earnedBy: "diamond_found"
 	},
 	{
+		id: "fractopus-claw",
+		name: "Fractopus Claw",
+		slot: "head",
+		rarity: "epic",
+		earnedBy: "diamond_monster_kinds",
+		needs: 10
+	},
+	{
 		id: "rainbow-rope",
 		name: "Rainbow Rope",
 		slot: "rope",
@@ -14691,6 +14699,14 @@ const WORKSHOP_ITEMS = [
 		earnedBy: "diamond_stars"
 	},
 	{
+		id: "squaremander-tail",
+		name: "Squaremander Tail",
+		slot: "rope",
+		rarity: "epic",
+		earnedBy: "diamond_monster_kinds",
+		needs: 30
+	},
+	{
 		id: "sparkles",
 		name: "Sparkles",
 		slot: "trail",
@@ -14719,6 +14735,14 @@ const WORKSHOP_ITEMS = [
 		name: "Music Notes",
 		slot: "trail",
 		rarity: "common"
+	},
+	{
+		id: "infinity-sparks",
+		name: "Infinity Sparks",
+		slot: "trail",
+		rarity: "legendary",
+		earnedBy: "diamond_monster_kinds",
+		needs: 50
 	},
 	{
 		id: "fireworks",
