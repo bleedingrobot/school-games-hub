@@ -29,6 +29,8 @@ export interface ThronesBoardRound {
   teleports: Teleport[];
   roller: Roller | null;
   roller2: Roller | null;
+  /** Trick thrones with little eyes (they pop up with the real ones and bite). */
+  mimics?: { id: number; x: number; y: number; ate: number }[];
 }
 
 const pct = (v: number) => `${v * 100}%`;
@@ -43,13 +45,15 @@ function Disc({ x, y, r, className, pic, spin, children }: { x: number; y: numbe
   );
 }
 
-export function ThronesBoard({ hall, round, t, covered, crowned, mySeat, courtLabel, courtCount, children }: {
+export function ThronesBoard({ hall, round, t, covered, crowned, chomping, mySeat, courtLabel, courtCount, children }: {
   hall: Hall;
   round: ThronesBoardRound | null;
   /** Session time (ms since the start), for the rollers. */
   t: number;
   /** The music is playing: thrones are under sheets. */
   covered: boolean;
+  /** Mimics that just ate someone (their teeth snap). */
+  chomping?: number[];
   /** Thrones that just got a king or queen (a crown pops over them). */
   crowned?: number[];
   /** The throne this pupil sits on (their pad). */
@@ -90,6 +94,20 @@ export function ThronesBoard({ hall, round, t, covered, crowned, mySeat, courtLa
               {covered && <span className="mt-throne__sheet" aria-hidden="true" />}
               {th.taken && !covered && !mine && <span className="mt-throne__tag">taken</span>}
               {crowned?.includes(th.id) && <span className="mt-throne__pop" aria-hidden="true">{th.golden ? '👑👑👑' : '👑'}</span>}
+            </div>
+          );
+        })}
+        {!covered && round?.mimics?.map((mm) => {
+          const bit = mm.ate > 0 || !!chomping?.includes(mm.id);
+          const img = painted('thrones-fx', bit ? 'mimic-bite' : 'mimic') ?? painted('thrones-fx', 'throne');
+          const own = !!painted('thrones-fx', 'mimic');
+          return (
+            <div key={`mm${mm.id}`} className={`mt-throne mt-throne--lit mt-mimic ${bit ? 'mt-mimic--bite' : ''} ${chomping?.includes(mm.id) ? 'mt-mimic--chomp' : ''}`} style={{ left: pct(mm.x - size / 2), top: pct(mm.y - size / 2), width: pct(size), height: pct(size) }} aria-label="Throne">
+              <div className="mt-throne__seat">
+                {img ? <img src={img} alt="" /> : <span className="mt-throne__emoji" aria-hidden="true">🪑</span>}
+              </div>
+              {!own && <span className="mt-mimic__eyes" aria-hidden="true"><i /><i /></span>}
+              {!own && bit && <span className="mt-mimic__teeth" aria-hidden="true" />}
             </div>
           );
         })}

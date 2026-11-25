@@ -14826,6 +14826,7 @@ function openSpot$2(random, thrones, gap = .09) {
 		y: .06
 	};
 }
+const mimicsFor = (n, k) => n < 2 ? 0 : Math.min(3, 1 + Math.floor(k / 8));
 function makeRound$2(g, n, startAt, random, playing) {
 	const has = mechanicsFor$2(n, random);
 	const k = thronesFor(n, playing, g.round ? g.round.thrones.length : null);
@@ -14904,6 +14905,12 @@ function makeRound$2(g, n, startAt, random, playing) {
 		scrambleEnd: musicEnd + SCRAMBLE_MS,
 		showEnd: musicEnd + SCRAMBLE_MS + SHOW_MS$1,
 		thrones,
+		mimics: Array.from({ length: mimicsFor(n, k) }, (_, i) => ({
+			id: i,
+			x: .5,
+			y: .5,
+			ate: []
+		})),
 		tiles,
 		items,
 		storms,
@@ -14950,6 +14957,7 @@ function freshMine$2(i) {
 		grabs: 0,
 		steals: 0,
 		stolen: 0,
+		eaten: 0,
 		seat: null,
 		answered: 0,
 		right: 0,
@@ -15060,9 +15068,21 @@ function stopMusic(g, r, order, positions, random) {
 			m.crowns += CROWNS.dance * times(m, r.n);
 		}
 	}
-	scatterThrones(r.thrones.length, dancing, random).forEach((p, i) => {
-		r.thrones[i].x = p.x;
-		r.thrones[i].y = p.y;
+	const mimics = r.mimics ?? [];
+	const spots = scatterThrones(r.thrones.length + mimics.length, dancing, random);
+	const order2 = spots.map((_, i) => i);
+	for (let i = order2.length - 1; i > 0; i--) {
+		const j = Math.floor(random() * (i + 1)) % (i + 1);
+		[order2[i], order2[j]] = [order2[j], order2[i]];
+	}
+	r.thrones.forEach((th, i) => {
+		th.x = spots[order2[i]].x;
+		th.y = spots[order2[i]].y;
+	});
+	mimics.forEach((mm, i) => {
+		const p = spots[order2[r.thrones.length + i]];
+		mm.x = p.x;
+		mm.y = p.y;
 	});
 	for (const id of order) {
 		const m = g.mine[id];
@@ -15119,6 +15139,48 @@ function endScramble(g, r, order) {
 		n: r.n,
 		standing,
 		seated
+	};
+}
+/** Touching a mimic after the music stops: it eats you, and you go to the courtyard (as if left standing). */
+function bite(g, who, mimicId, at, t) {
+	const r = g.round;
+	const m = g.mine[who];
+	if (!r || !m || m.courtIn !== null || !r.stopped || r.standing !== null || t < r.musicEnd || t > r.scrambleEnd + 400) return {
+		ok: false,
+		reason: "not_now"
+	};
+	if (m.seat !== null) return {
+		ok: false,
+		reason: "seated"
+	};
+	const mm = (r.mimics ?? []).find((x) => x.id === mimicId);
+	if (!mm) return {
+		ok: false,
+		reason: "gone"
+	};
+	if (!at || dist$3(at, mm) > .14500000000000002) return {
+		ok: false,
+		reason: "far"
+	};
+	mm.ate.push(who);
+	m.eaten = (m.eaten ?? 0) + 1;
+	m.stood++;
+	m.courtIn = r.n;
+	m.courtRight = 0;
+	m.courtStreak = 0;
+	m.held = null;
+	const inCourtNow = Object.values(g.mine).filter((x) => x.courtIn !== null).length;
+	m.spot = courtSpot(inCourtNow - 1);
+	m.placed++;
+	g.stoodAll++;
+	return {
+		ok: true,
+		events: [{
+			type: "eaten",
+			t,
+			pupil: who,
+			mimic: mm.id
+		}]
 	};
 }
 /** Sitting down: a free throne, or a taken one with a Crown thief switched on (unless its sitter has a Royal shield). */
@@ -16988,6 +17050,12 @@ function thronesPublic(g, players) {
 				golden: th.golden,
 				taken: th.by !== null
 			})),
+			mimics: (r.mimics ?? []).map((mm) => ({
+				id: mm.id,
+				x: mm.x,
+				y: mm.y,
+				ate: mm.ate.length
+			})),
 			items: r.items.filter((x) => !x.by).map(({ by: _by, ...x }) => x),
 			standing: r.standing ? r.standing.length : null
 		} : null
@@ -17031,7 +17099,8 @@ function thronesPlayer(g, order, id, over) {
 			dances: m.dances,
 			powers: m.powersUsed,
 			escapes: m.escapes,
-			grabs: m.grabs
+			grabs: m.grabs,
+			eaten: m.eaten ?? 0
 		}
 	};
 }
@@ -17066,6 +17135,15 @@ async function thronesStep(k, cur, who, body) {
 			if (s.state !== "live" || s.game.kind !== "thrones") return { refuse: no(409, "This one has finished.", "over") };
 			const g = s.game;
 			const mine = g.mine[who];
+			if (body.bite !== void 0) {
+				const out = bite(g, who, body.bite, at ?? mine?.spot, t);
+				if (!out.ok) return { refuse: no(409, out.reason === "far" ? "Get closer!" : out.reason === "seated" ? "You're on a throne!" : "Too late!", out.reason) };
+				return {
+					reply: null,
+					events: out.events,
+					players: [who]
+				};
+			}
 			if (body.sit !== void 0) {
 				const out = sit(g, who, body.sit, at ?? mine?.spot, t);
 				if (!out.ok) return { refuse: no(409, SIT_WORDS[out.reason], out.reason) };

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { classLiveStep } from './server';
 import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock, rng } from './pretendClass';
-import { advance, APPEAR_GAP, answered, freshMine, layThrones, makeRound, newThrones, sit, thronesFor, type ThronesGame } from './thrones';
+import { advance, APPEAR_GAP, bite, answered, freshMine, layThrones, makeRound, newThrones, sit, thronesFor, type ThronesGame } from './thrones';
 
 describe('Musical Thrones', () => {
   it('rules: fewer thrones every round, sitting first, steals and shields, the courtyard, crowns', () => {
@@ -24,7 +24,7 @@ describe('Musical Thrones', () => {
     // The music stops: b is on a dance tile (+1 crown).
     const tile = r.tiles[0];
     advance(g, r.musicEnd, order, { a: { x: 0.5, y: 0.5 }, b: { x: tile.x, y: tile.y }, c: { x: 0.5, y: 0.5 } }, rng(3));
-    expect(r.dancers).toEqual(['b']);
+    expect([r.dancers, r.mimics]).toEqual([['b'], []]);
     // The thrones only appear now, away from everyone, so nobody could wait on one.
     const where = [{ x: 0.5, y: 0.5 }, tile];
     expect(r.thrones.every((th) => where.every((p) => Math.hypot(th.x - p.x, th.y - p.y) >= APPEAR_GAP))).toBe(true);
@@ -63,6 +63,12 @@ describe('Musical Thrones', () => {
     const th2 = g2.round.thrones[0];
     sit(g2, 'a', th2.id, th2, g2.round.musicEnd + 10);
     expect(sit(g2, 'b', th2.id, th2, g2.round.musicEnd + 20)).toEqual({ ok: false, reason: 'taken' });
+    // A mimic (a throne with eyes, from round 2) eats whoever touches it: off to the courtyard.
+    const mm = g2.round.mimics![0];
+    expect(bite(g2, 'b', mm.id, { x: mm.x + 0.3, y: mm.y }, g2.round.musicEnd + 30)).toEqual({ ok: false, reason: 'far' });
+    expect(bite(g2, 'a', mm.id, mm, g2.round.musicEnd + 30)).toEqual({ ok: false, reason: 'seated' });
+    expect(bite(g2, 'b', mm.id, mm, g2.round.musicEnd + 40)).toMatchObject({ ok: true });
+    expect([g2.round.mimics!.length, g2.mine.b.courtIn, g2.mine.b.eaten, mm.ate]).toEqual([1, 4, 1, ['b']]);
   });
 
   it('server: a pretend class of 24 plays a 3 minute game on the clock, the music hides nothing it shouldn\'t, and is paid', async () => {

@@ -60,6 +60,11 @@ export const CROWNS = { throne: 1, golden: 3, dance: 1 } as const;
 // ---- Shapes ----
 
 export interface Throne extends Spot { id: number; golden: boolean; by: string | null }
+/**
+ * A mimic: a trick throne with little eyes (James, 25 Nov 2026 NZ). It pops up with the real ones when the music
+ * stops; a pupil who touches it is eaten (it grows teeth) and goes to the courtyard, as if left standing.
+ */
+export interface Mimic extends Spot { id: number; ate: string[] }
 export interface ThroneItem extends Spot { id: number; power: ThronePower; by: string | null }
 
 export interface ThroneRound {
@@ -71,6 +76,8 @@ export interface ThroneRound {
   scrambleEnd: number;
   showEnd: number;
   thrones: Throne[];
+  /** Trick thrones (from round MIMIC_FROM). Missing in rounds saved before mimics. */
+  mimics?: Mimic[];
   /** Lit dance tiles: on one when the music stops, +1 crown. */
   tiles: Circle[];
   items: ThroneItem[];
@@ -113,6 +120,8 @@ export interface ThronesMine {
   grabs: number;
   steals: number;
   stolen: number;
+  /** Times a mimic ate them (missing in games saved before mimics). */
+  eaten?: number;
   /** The throne they sit on this round. */
   seat: number | null;
   answered: number;
@@ -147,6 +156,7 @@ export type ThronesEvent =
   | { type: 'grab'; t: number; pupil: string; power: ThronePower }
   | { type: 'power'; t: number; pupil: string; power: ThronePower }
   | { type: 'escape'; t: number; pupil: string }
+  | { type: 'eaten'; t: number; pupil: string; mimic: number }
   | { type: 'court_right'; t: number; pupil: string; right: number; scroll: boolean };
 
 const dist = (a: Spot, b: Spot) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -255,6 +265,10 @@ function openSpot(random: () => number, thrones: Spot[], gap = 0.09): Spot {
   return { x: 0.08 + random() * 0.84, y: 0.06 };
 }
 
+/** Mimics start in round 2: 1, then 1 more for every 8 thrones, at most 3. */
+export const MIMIC_FROM = 2;
+export const mimicsFor = (n: number, k: number) => (n < MIMIC_FROM ? 0 : Math.min(3, 1 + Math.floor(k / 8)));
+
 export function makeRound(g: ThronesGame, n: number, startAt: number, random: () => number, playing: number): ThroneRound {
   const has = mechanicsFor(n, random);
   const k = thronesFor(n, playing, g.round ? g.round.thrones.length : null);
@@ -283,7 +297,8 @@ export function makeRound(g: ThronesGame, n: number, startAt: number, random: ()
   const musicEnd = startAt + music;
   return {
     n, startAt, musicEnd, scrambleEnd: musicEnd + SCRAMBLE_MS, showEnd: musicEnd + SCRAMBLE_MS + SHOW_MS,
-    thrones, tiles, items, storms, ice, teleports, roller, roller2, stopped: false, standing: null, dancers: [],
+    thrones, mimics: Array.from({ length: mimicsFor(n, k) }, (_, i) => ({ id: i, x: 0.5, y: 0.5, ate: [] })),
+    tiles, items, storms, ice, teleports, roller, roller2, stopped: false, standing: null, dancers: [],
   };
 }
 
@@ -295,7 +310,7 @@ export function freshMine(i: number): ThronesMine {
   return {
     crowns: 0, sat: 0, stood: 0, golden: 0, dances: 0, courtIn: null, courtRight: 0, courtStreak: 0, escapes: 0, held: null,
     stealIn: null, shieldIn: null, speedTo: null, ghostTo: null, earIn: null, doubleIn: null, seatIn: null, powersUsed: 0, grabs: 0,
-    steals: 0, stolen: 0, seat: null, answered: 0, right: 0, wrong: 0, streak: 0, bestStreak: 0, fastMs: null, lastAt: -ANSWER_GAP_MS,
+    steals: 0, stolen: 0, eaten: 0, seat: null, answered: 0, right: 0, wrong: 0, streak: 0, bestStreak: 0, fastMs: null, lastAt: -ANSWER_GAP_MS,
     placed: 0, spot: startSpot(i),
   };
 }
@@ -391,7 +406,13 @@ function stopMusic(g: ThronesGame, r: ThroneRound, order: string[], positions: P
     }
   }
   // The thrones appear only now, in new spots away from everyone (James, 25 Nov 2026 NZ: nobody can wait on one).
-  scatterThrones(r.thrones.length, dancing, random).forEach((p, i) => { r.thrones[i].x = p.x; r.thrones[i].y = p.y; });
+  // Mimics pop up with them, mixed in.
+  const mimics = r.mimics ?? [];
+  const spots = scatterThrones(r.thrones.length + mimics.length, dancing, random);
+  const order2 = spots.map((_, i) => i);
+  for (let i = order2.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)) % (i + 1); [order2[i], order2[j]] = [order2[j], order2[i]]; }
+  r.thrones.forEach((th, i) => { th.x = spots[order2[i]].x; th.y = spots[order2[i]].y; });
+  mimics.forEach((mm, i) => { const p = spots[order2[r.thrones.length + i]]; mm.x = p.x; mm.y = p.y; });
   // Royal seats: straight onto the nearest free throne.
   for (const id of order) {
     const m = g.mine[id];
@@ -437,6 +458,31 @@ function endScramble(g: ThronesGame, r: ThroneRound, order: string[]): ThronesEv
   r.standing = standing;
   g.stoodAll += standing.length;
   return { type: 'seated', t: r.scrambleEnd, n: r.n, standing, seated };
+}
+
+/** Touching a mimic after the music stops: it eats you, and you go to the courtyard (as if left standing). */
+export function bite(
+  g: ThronesGame, who: string, mimicId: unknown, at: Spot | undefined, t: number,
+): { ok: true; events: ThronesEvent[] } | { ok: false; reason: 'not_now' | 'gone' | 'far' | 'seated' } {
+  const r = g.round;
+  const m = g.mine[who];
+  if (!r || !m || m.courtIn !== null || !r.stopped || r.standing !== null || t < r.musicEnd || t > r.scrambleEnd + 400) return { ok: false, reason: 'not_now' };
+  if (m.seat !== null) return { ok: false, reason: 'seated' };
+  const mm = (r.mimics ?? []).find((x) => x.id === mimicId);
+  if (!mm) return { ok: false, reason: 'gone' };
+  if (!at || dist(at, mm) > SIT_R + SIT_SLACK) return { ok: false, reason: 'far' };
+  mm.ate.push(who);
+  m.eaten = (m.eaten ?? 0) + 1;
+  m.stood++;
+  m.courtIn = r.n;
+  m.courtRight = 0;
+  m.courtStreak = 0;
+  m.held = null;
+  const inCourtNow = Object.values(g.mine).filter((x) => x.courtIn !== null).length;
+  m.spot = courtSpot(inCourtNow - 1);
+  m.placed++;
+  g.stoodAll++;
+  return { ok: true, events: [{ type: 'eaten', t, pupil: who, mimic: mm.id }] };
 }
 
 /** Sitting down: a free throne, or a taken one with a Crown thief switched on (unless its sitter has a Royal shield). */

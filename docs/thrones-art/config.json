@@ -546,6 +546,34 @@
       "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
       "style": "c",
       "max": 512
+    },
+    {
+      "name": "mimic",
+      "prompt": "A game icon: a royal throne seen from slightly above, red velvet cushion, carved gold wooden frame, a little crown on the top of the back, exactly like a normal throne except two small cute round cartoon eyes peeking out of the velvet back, looking sideways, sneaky and funny. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "mimic",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "mimic-bite",
+      "prompt": "A game icon: a cartoon mimic throne monster, a royal throne with red velvet cushion and carved gold wooden frame whose seat has opened into a big funny mouth full of white pointy cartoon teeth, two round cartoon eyes on the velvet back, a pink tongue, silly and goofy, not scary. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "file": "mimic-bite",
+      "kind": "cut",
+      "size": [
+        512,
+        512
+      ],
+      "folder": "thrones-fx",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
     }
   ]
 }

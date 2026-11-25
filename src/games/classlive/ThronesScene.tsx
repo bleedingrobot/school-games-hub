@@ -10,7 +10,7 @@ import type { Spot } from '../../../shared/classlive/corners';
 import { AVATAR_R } from '../../../shared/classlive/corners';
 import type { ScreenView } from '../../../shared/classlive/server';
 import {
-  COURT_RIGHT, HALL_WORDS, MECHANICS, nextDeadline, phaseOf, podium, POWER_WORDS, SCRAMBLE_MS, UNLOCK, type ThroneMechanic, type ThronesEvent, type ThronesGame,
+  COURT_RIGHT, HALL_WORDS, MECHANICS, MIMIC_FROM, nextDeadline, phaseOf, podium, POWER_WORDS, SCRAMBLE_MS, UNLOCK, type ThroneMechanic, type ThronesEvent, type ThronesGame,
 } from '../../../shared/classlive/thrones';
 import type { ClassLiveSound } from './audio';
 import { lineOf } from './CornersScene';
@@ -124,6 +124,8 @@ export function ThronesScene({ screen, game, link, room, clock, sound, say, onTi
   const [top, setTop] = useState<Top | null>(null);
   const [pops, setPops] = useState<PopText[]>([]);
   const [crowned, setCrowned] = useState<number[]>([]);
+  const [chomping, setChomping] = useState<number[]>([]);
+  const saidMimic = useRef(false);
   const [shake, setShake] = useState(0);
   useEffect(() => {
     if (seenSeq.current === null) { seenSeq.current = screen.seq; return; }
@@ -150,6 +152,8 @@ export function ThronesScene({ screen, game, link, room, clock, sound, say, onTi
         if (mech) extra(lineOf(`mt_${g.hall}_${mech}`));
         if (g.round && g.round.n === e.n && g.round.thrones.some((th) => th.golden) && !saidGolden.current) { saidGolden.current = true; extra(next('goldenThrone')); }
         else if (fewer && Math.random() < 0.6) extra(next('fewerThrones'));
+        // The first round with mimics: a warning (they pop up when the music stops).
+        if (e.n === MIMIC_FROM && !saidMimic.current) { saidMimic.current = true; extra(next('mimicWarn')); }
       } else if (e.type === 'stop') {
         sound.play('stop');
         setSlam({ key: e.seq, text: 'STOP! SIT DOWN!', kind: 'stop' });
@@ -181,6 +185,15 @@ export function ThronesScene({ screen, game, link, room, clock, sound, say, onTi
       } else if (e.type === 'power') {
         sound.play('power');
         add.push({ key: e.seq * 1000 + add.length, at: where(e.pupil), text: `${POWER_WORDS[e.power].emoji} ${POWER_WORDS[e.power].name}!` });
+      } else if (e.type === 'eaten') {
+        sound.play('chomp');
+        const mm = g.round?.mimics?.find((x) => x.id === e.mimic);
+        if (mm) add.push({ key: e.seq * 1000 + add.length, at: mm, text: '🦷 CHOMP!' });
+        setSlam({ key: e.seq, text: '🦷 CHOMP! A mimic!', kind: 'steal' });
+        window.setTimeout(() => setSlam((x) => (x && x.key === e.seq ? null : x)), 1800);
+        setChomping((c) => [...c, e.mimic]);
+        window.setTimeout(() => setChomping((c) => c.filter((id) => id !== e.mimic)), 1400);
+        say(next('mimicChomp'), 300);
       } else if (e.type === 'escape') {
         sound.play('escape');
         say(next('courtBack'), 800);
@@ -211,7 +224,7 @@ export function ThronesScene({ screen, game, link, room, clock, sound, say, onTi
   const inCourt = screen.people.filter((p) => game.mine[p.id]?.courtIn != null);
   const fresh = r && phase === 'music' ? MECHANICS.find((m) => UNLOCK[m] === r.n && (m !== 'items' || r.n > 1)) : undefined;
   const board = useMemo<ThronesBoardRound | null>(
-    () => (r ? { ...r, thrones: r.thrones.map((th) => ({ id: th.id, x: th.x, y: th.y, golden: th.golden, taken: th.by !== null })), items: r.items.filter((x) => !x.by) } : null),
+    () => (r ? { ...r, thrones: r.thrones.map((th) => ({ id: th.id, x: th.x, y: th.y, golden: th.golden, taken: th.by !== null })), mimics: (r.mimics ?? []).map((mm) => ({ id: mm.id, x: mm.x, y: mm.y, ate: mm.ate.length })), items: r.items.filter((x) => !x.by) } : null),
     [r],
   );
   const best = useMemo(
@@ -224,7 +237,7 @@ export function ThronesScene({ screen, game, link, room, clock, sound, say, onTi
   return (
     <div className={`mt-scene mt-scene--${hall}`}>
       <div className={`mt-stage ${Date.now() - shake < 700 ? 'mt-shake' : ''}`}>
-        <ThronesBoard hall={hall} round={board} t={t} covered={covered} crowned={crowned} courtLabel={words.court} courtCount={inCourt.length}>
+        <ThronesBoard hall={hall} round={board} t={t} covered={covered} crowned={crowned} chomping={chomping} courtLabel={words.court} courtCount={inCourt.length}>
           {screen.people.map((p) => {
             const m = game.mine[p.id];
             const at = shown.current[p.id] ?? m?.spot;

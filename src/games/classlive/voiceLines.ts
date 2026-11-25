@@ -56,6 +56,8 @@ export const LINES = {
   stoodUp: ['Anyone standing, off to the courtyard!', 'No throne? To the courtyard you go!', 'Those left standing go to the courtyard.'],
   steal: ['A throne has been stolen!', 'Sneaky! A crown thief struck!', 'Ooh, someone stole a throne!'],
   dancers: ['Great dancing on the tiles! Bonus crowns!', 'Dance tile bonus!', 'Nice moves on the dance floor!'],
+  mimicWarn: ['Careful! Some thrones have little eyes. They bite!', 'Watch out for thrones with eyes. They are hungry!'],
+  mimicChomp: ['Chomp! That throne was a mimic!', 'Oh no! A hungry throne!', 'Gobbled up by a mimic!'],
   courtBack: ['Someone answered their way back from the courtyard!', 'Back from the courtyard! Well done!', 'A royal return from the courtyard!'],
   newRound: ['The music is back on! Dance!', 'Here comes the music again!', 'Dance time! Keep moving!'],
   mt_castle_items: ["Power-ups have appeared in the castle hall! Grab one, then answer a question while the music plays to switch it on."],

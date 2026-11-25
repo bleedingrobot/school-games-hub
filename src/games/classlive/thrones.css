@@ -362,3 +362,14 @@
 .mt-rules li { padding: 8px 14px; border-radius: 999px; background: rgba(250, 204, 21, 0.16); border: 2px solid rgba(250, 204, 21, 0.6); font-weight: 800; }
 
 .mt-q-cancel { display: block; margin: 6px auto 8px; }
+
+/* Mimics: a throne with little eyes that blink; when it bites, a mouth of teeth snaps open. */
+.mt-mimic__eyes { position: absolute; left: 50%; top: 30%; transform: translateX(-50%); display: flex; gap: 14%; width: 46%; justify-content: center; pointer-events: none; z-index: 2; }
+.mt-mimic__eyes i { display: block; width: 32%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 55% 55%, #111 0 32%, #fff 34%); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5); animation: mt-blink 3.2s infinite; }
+.mt-mimic__eyes i:nth-child(2) { animation-delay: 0.05s; }
+@keyframes mt-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+.mt-mimic--bite .mt-mimic__eyes i { background: radial-gradient(circle at 50% 50%, #b91c1c 0 30%, #fff 34%); }
+.mt-mimic__teeth { position: absolute; left: 22%; right: 22%; top: 52%; height: 22%; border-radius: 0 0 40% 40%; background: #3b0a0a; pointer-events: none; z-index: 2;
+  -webkit-mask: none; box-shadow: inset 0 0.35em 0 -0.1em #fff; background-image: linear-gradient(135deg, #fff 25%, transparent 25%), linear-gradient(225deg, #fff 25%, transparent 25%); background-size: 22% 60%; background-repeat: repeat-x; background-color: #3b0a0a; }
+.mt-mimic--chomp { animation: mt-chomp 0.25s ease-in-out 5; z-index: 4; }
+@keyframes mt-chomp { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25) rotate(-6deg); } }

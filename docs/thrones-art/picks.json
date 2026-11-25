@@ -37,5 +37,7 @@
   "pirate-storm": 1,
   "pirate-ice": 1,
   "pirate-roller": 3,
-  "pirate-teleport": 3
+  "pirate-teleport": 3,
+  "mimic": 2,
+  "mimic-bite": 3
 }
