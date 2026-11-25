@@ -1,6 +1,6 @@
 /** How to play, on its own page. Every number is read from the game's settings (shared/toonflap/config.ts). */
 import { useEffect, useRef } from 'react';
-import { BUMP_PENALTY_STEPS, CHECK_BONUS_STEPS, GENTLE_SPEED, POTIONS_MAX, STEPS_PER_SECOND, TAILWIND_STEPS, UNLOCK_RUNS, EASY_LEVELS, DASH_CHECK_SECONDS, DASH_FEATHERS_MAX, SKY_DASH_AFTER } from '../../../shared/toonflap/config';
+import { BUMP_PENALTY_STEPS, CHECK_BONUS_STEPS, GENTLE_SPEED, POTIONS_MAX, STEPS_PER_SECOND, TAILWIND_STEPS, UNLOCK_RUNS, EASY_LEVELS, DASH_CHECK_SECONDS, DASH_FEATHERS_MAX, SEASONAL_UNLOCK_RUNS, SKY_DASH_AFTER } from '../../../shared/toonflap/config';
 import { LEVELS } from '../../../shared/toonflap/levels';
 
 const sec = (steps: number) => steps / STEPS_PER_SECOND;
@@ -56,6 +56,10 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
               <li key={l.id}><strong>{l.name}.</strong> {l.newThing}</li>
             ))}
           </ol>
+        </section>
+        <section>
+          <h3 className="tf-h3">Christmas Coast 🎄</h3>
+          <p>A special summer Christmas level, open in <strong>December and January</strong> once you have finished Toon Garden. Grab the 🎁 presents as you fly. Get every present in one flight to unlock the <strong>Santa Fantail</strong>. Finish it {SEASONAL_UNLOCK_RUNS} times for the <strong>Surf Sleigh</strong>, and win gold for a candy cane trail. Flyers you unlock stay all year.</p>
         </section>
       </div>
     </section>

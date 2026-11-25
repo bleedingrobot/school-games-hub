@@ -13,13 +13,14 @@
  */
 const FILES = import.meta.glob('./**/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
-export const WORLD_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
+/** 11 is Christmas Coast (seasonal). */
+export const WORLD_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as const;
 export const WORLD_PARTS = ['back', 'mid', 'wall-top', 'wall-bottom', 'wall-middle'] as const;
 export type WorldPart = (typeof WORLD_PARTS)[number];
 export type WorldLayer = WorldPart;
 
 export const FLYER_IDS = ['fantail', 'puppy-plane', 'rocket-carrot', 'bathtub-boat', 'mousetrap-glider', 'donut-cruiser', 'mini-van',
-  'toilet-rocket', 'lava-lizard', 'jet-bot', 'saucer-kid', 'rainbow'] as const;
+  'toilet-rocket', 'lava-lizard', 'jet-bot', 'saucer-kid', 'rainbow', 'surf-sleigh', 'santa-fantail'] as const;
 /** Every flyer has glide, up (zooming upward, shown after a flap) and dizzy (after a bump); the fantail also perches and cheers. */
 export const FLYER_POSES = ['glide', 'up', 'perched', 'cheer', 'dizzy'] as const;
 export type FlyerPose = (typeof FLYER_POSES)[number];
@@ -27,11 +28,12 @@ export const POSES_PAINTED: Record<string, readonly FlyerPose[]> = {
   ...Object.fromEntries(FLYER_IDS.map((f) => [f, ['glide', 'up', 'dizzy']])),
   fantail: ['glide', 'up', 'perched', 'cheer', 'dizzy'],
   rainbow: ['glide', 'up', 'dizzy'],
+  'santa-fantail': ['glide', 'up', 'dizzy'],
 };
 
-export const TRAIL_IDS = ['flowers', 'cookies', 'donut-crumbs', 'pineapples', 'cheese', 'mouse-tail', 'rainbow-stars'] as const;
-/** gust: the icy wind zone; bubble: the low-gravity zone (draw it see-through); bump-stars: the ring after a bump. */
-export const EXTRA_IDS = ['jellyfish', 'ghost', 'steam', 'comet', 'gust', 'bubble', 'bump-stars'] as const;
+export const TRAIL_IDS = ['flowers', 'cookies', 'donut-crumbs', 'pineapples', 'cheese', 'mouse-tail', 'rainbow-stars', 'candy-canes'] as const;
+/** gust: the icy wind zone; bubble: the low-gravity zone (draw it see-through); bump-stars: the ring after a bump; present: Christmas Coast's pickup. */
+export const EXTRA_IDS = ['jellyfish', 'ghost', 'steam', 'comet', 'gust', 'bubble', 'bump-stars', 'present'] as const;
 /** badge: the blank round coin behind each answer gap's number (the game writes the number). */
 export const UI_IDS = ['perch', 'nest', 'sign', 'badge'] as const;
 export const SCREENS = ['map', 'hangar', 'card', 'card-small', 'potion'] as const;

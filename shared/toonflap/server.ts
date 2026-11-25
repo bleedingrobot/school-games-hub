@@ -33,8 +33,8 @@ import { makeSpacePack, pickSpaceQuestion, type MathsQuestionSettings } from '..
 import { addDash, addRun, emptyProgress, flyersUnlocked, levelOpen, skyDashOpen, trailsUnlocked, type Progress, type Unlocks } from './collection';
 import { BREAK_AFTER_RUNS, DASH_POINTS, DASHES_A_DAY, WINS_A_DAY, POINT_RUNS_A_DAY, POINTS, READ_TIME_LEVELS, SIGN_SECONDS, STEPS_PER_SECOND } from './config';
 import { buildDashCourse, dashWalls, replayDash } from './dash';
-import { decodeFlaps, medalFor, replayRun, scoreRun, type Medal, type Score } from './engine';
-import { buildCourse, levelById, type Course } from './levels';
+import { decodeFlaps, medalFor, presentsGot, replayRun, scoreRun, type Medal, type Score } from './engine';
+import { buildCourse, inSeason, isSeasonal, levelById, type Course } from './levels';
 import { gapLabels, gapsRight, rightGaps, slotPlan } from './maths';
 
 export interface Picks {
@@ -210,6 +210,8 @@ export interface FinishReply {
   unlocks: Unlocks;
   progress: Progress;
   signs: Array<{ parts: string[]; answer: number; right: number; picked: number | null }>;
+  /** Presents grabbed and on the course (levels with presents only). */
+  presents?: { got: number; of: number };
 }
 
 const MAX_ANSWER_MS = 120_000;
@@ -297,7 +299,10 @@ export async function handleToonFlap(services: ToonFlapServices, player: string,
     const gentle = body.gentle === true;
     const [saved, today] = await Promise.all([services.load(player), services.runsToday(player, nzDate(new Date(services.now())))]);
     if (saved === 'busy' || today === 'busy') return busy();
-    if (!levelOpen(saved.progress, def.n, nzDate(new Date(services.now())))) return { status: 409, body: { error: 'That level isn’t open yet. One new level opens each day.', code: 'locked' } };
+    if (isSeasonal(def) && !inSeason(def, nzDate(new Date(services.now())))) return { status: 409, body: { error: `${def.name} is a special level for December and January.`, code: 'locked' } };
+    if (!levelOpen(saved.progress, def.n, nzDate(new Date(services.now())))) {
+      return { status: 409, body: { error: isSeasonal(def) ? 'Finish Toon Garden first, then this special level opens.' : 'That level isn’t open yet. One new level opens each day.', code: 'locked' } };
+    }
     if (today.started >= BREAK_AFTER_RUNS) return { status: 429, body: { error: 'Time for a break? Your wings need a rest. Come back tomorrow!', code: 'break' } };
     if (!settings.unlimited && today.wins >= WINS_A_DAY) return { status: 429, body: { error: `That’s ${WINS_A_DAY} wins today. Great flying! Come back tomorrow.`, code: 'done-today' } };
     const course = buildCourse(def, gentle);
@@ -452,7 +457,11 @@ export async function handleToonFlap(services: ToonFlapServices, player: string,
     const potion = body.potion === true && saved.progress.potions > 0 && replay.state.bumps > 0;
     const score = scoreRun(replay.state, { checksRight: checks.filter(Boolean).length, gapsRight: gapsOk, potion });
     const medal = medalFor(course, score.seconds, run.maths, run.gentle);
-    const added = addRun(saved.progress, { level: def.id, maths: run.maths, seconds: score.seconds, medal, bumps: replay.state.bumps, checks, rightGaps: gapsOk, potionUsed: score.potion }, nzDate(new Date(services.now())));
+    const gifts = presentsGot(replay.state);
+    const added = addRun(saved.progress, {
+      level: def.id, maths: run.maths, seconds: score.seconds, medal, bumps: replay.state.bumps, checks, rightGaps: gapsOk, potionUsed: score.potion,
+      ...(course.presents.length ? { presents: gifts, presentsOf: course.presents.length } : {}),
+    }, nzDate(new Date(services.now())));
     const today = await services.runsToday(player, nzDate(new Date(services.now())));
     const done = await services.finish(player, seed, saved.version, added.progress, {
       flaps: body.flaps, seconds: score.seconds, medal, bumps: replay.state.bumps, checksRight: checks.filter(Boolean).length, gapsRight: gapsOk, potion: score.potion,
@@ -487,6 +496,7 @@ export async function handleToonFlap(services: ToonFlapServices, player: string,
         right: right[i],
         picked: replay.state.picks[i],
       })),
+      ...(course.presents.length ? { presents: { got: gifts, of: course.presents.length } } : {}),
     };
     return { status: 200, body: reply as unknown as Record<string, unknown> };
   }

@@ -28,13 +28,18 @@ export interface RunState {
   perches: number;
   /** The gap each answer wall was first flown into (by index), null if not yet. */
   picks: Array<number | null>;
+  /** Presents grabbed (by index; levels with 'presents'). Missing on states saved before presents. */
+  got: boolean[];
   outcome: 'running' | 'finished' | 'timeout';
 }
 
-export type StepEvent = 'wait' | 'bump' | 'perch' | 'pick' | 'finish' | null;
+export type StepEvent = 'wait' | 'bump' | 'perch' | 'pick' | 'present' | 'finish' | null;
+
+/** How close the bird's middle must come to a present's middle to grab it. */
+export const PRESENT_REACH = 0.6;
 
 export function newRun(course: Course): RunState {
-  return { t: 0, x: START_X, y: START_Y, vy: 0, mode: 'hover', hover: 'start', bumps: 0, nextWall: 0, perches: 0, picks: course.signs.map(() => null), outcome: 'running' };
+  return { t: 0, x: START_X, y: START_Y, vy: 0, mode: 'hover', hover: 'start', bumps: 0, nextWall: 0, perches: 0, picks: course.signs.map(() => null), got: course.presents.map(() => false), outcome: 'running' };
 }
 
 /** 0 to 1 and back, smoothed at the ends, over `period` steps: a sliding wall's position. No sin, so it is exact everywhere. */
@@ -134,6 +139,11 @@ export function stepRun(course: Course, s: RunState, flap: boolean): StepEvent {
     s.bumps++;
     respawn(course, s);
     return 'bump';
+  }
+  for (const gift of course.presents) {
+    if (s.got[gift.i] || Math.abs(gift.x - s.x) > PRESENT_REACH || Math.abs(gift.y - s.y) > PRESENT_REACH) continue;
+    s.got[gift.i] = true;
+    event ??= 'present';
   }
   const perch = course.perches[s.perches];
   if (perch && s.x >= perch.x) {
@@ -238,4 +248,7 @@ export function decodeFlaps(text: string): number[] | null {
 }
 
 /** A short text of the whole state, for the determinism check. */
-export const stateKey = (s: RunState): string => `${s.t}|${s.x.toFixed(6)}|${s.y.toFixed(6)}|${s.vy.toFixed(6)}|${s.mode}|${s.bumps}|${s.perches}|${s.picks.join('.')}`;
+export const stateKey = (s: RunState): string => `${s.t}|${s.x.toFixed(6)}|${s.y.toFixed(6)}|${s.vy.toFixed(6)}|${s.mode}|${s.bumps}|${s.perches}|${s.picks.join('.')}|${presentsGot(s)}`;
+
+/** How many presents a run grabbed. */
+export const presentsGot = (s: RunState): number => (s.got ?? []).filter(Boolean).length;
