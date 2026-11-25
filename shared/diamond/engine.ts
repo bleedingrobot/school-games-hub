@@ -10,9 +10,10 @@
 import {
   DIAMOND_COINS, DIAMOND_SLIPS, EXTRA_TIME_SECONDS, FALL_DISTANCE, FIELD_H, FIELD_W, GEMS, LAST_LEVEL, LUCKY_CHARM,
   PIVOT, REEL_SPEED, ROCKS, SHOOT_SPEED, SLIP_AT, STARTER, STAR_TWO_SECONDS, STRONG_WINCH, SWING_RANGE, SWING_SPEED,
-  TICKS_PER_SECOND, CLAW_R, gemOf, levelSpec, questionCap, type BoostId, type GemId, type Weight,
+  TICKS_PER_SECOND, CLAW_R, gemOf, isCavern, levelSpec, questionCap, type BoostId, type GemId, type Weight,
 } from './config';
-import { direction, makeField, makeStarterField, thingAt, type Thing } from './field';
+import { SHINY_WRIGGLE, TIER_RULES, ULTRA_WRIGGLES, goalMet as cavernGoalMet, monsterCoins, type Caught } from './caverns';
+import { direction, makeField, makeStarterField, shownAt, thingAt, type Thing } from './field';
 import { STREAM, makeRandom, mixSeed } from './random';
 
 export type Phase = 'swing' | 'out' | 'reel' | 'question' | 'done';
@@ -23,7 +24,10 @@ export interface Slip {
   slot: number;
   /** Which catch of the level it was (0 is the first). */
   catchNo: number;
-  gem: GemId;
+  /** The gem that slipped (a wriggling monster: none, see `monster`). */
+  gem?: GemId;
+  /** The monster that wriggled (Monster Dig). */
+  monster?: Caught;
   tick: number;
   /** How far out the claw was when it slipped. */
   length: number;
@@ -52,6 +56,10 @@ export interface Shot {
   coins: number;
   /** A rock turned to dust by the Rock Blaster. */
   blasted?: boolean;
+  /** The monster it carried up (Monster Dig). */
+  monster?: Caught;
+  /** The Monster Net caught this one's first wriggle. */
+  netted?: boolean;
 }
 
 export interface LevelState {
@@ -75,6 +83,8 @@ export interface LevelState {
   grabbed: Thing | null;
   /** What the claw is carrying up, if anything worth something. */
   carrying: GemId | null;
+  /** The monster the claw is carrying up (Monster Dig). */
+  carryingMonster: Caught | null;
   weight: Weight;
   /** Lengths at which the current catch will slip, highest first. */
   slipsDue: number[];
@@ -83,6 +93,9 @@ export interface LevelState {
   /** The slot the level is waiting on an answer for. */
   waitingSlot: number | null;
   blasterLeft: boolean;
+  netLeft: boolean;
+  /** Monsters brought up (Monster Dig). */
+  monsters: Caught[];
   banked: number;
   coins: number;
   passTick: number | null;
@@ -107,6 +120,8 @@ export interface LevelResult {
   ticksLeft: number;
   /** Gems brought up, by kind. */
   caught: Partial<Record<GemId, number>>;
+  /** Monsters brought up (Monster Dig; empty on levels 1 to 10). */
+  monsters: Caught[];
   diamond: boolean;
   /** Hold on! questions used, and how many were held. */
   questions: number;
@@ -124,15 +139,15 @@ const has = (s: LevelState, b: BoostId) => s.boosts.includes(b);
 export function startLevel(level: number, seed: number, boosts: readonly BoostId[] = [], starter = false): LevelState {
   const spec = levelSpec(level);
   const isStarter = starter && level === 1;
-  const things = isStarter ? makeStarterField(seed) : makeField(level, seed);
+  const things = isStarter ? makeStarterField(seed) : makeField(level, seed, boosts.includes('monsterLure'));
   const seconds = spec.seconds + (boosts.includes('extraTime') ? EXTRA_TIME_SECONDS : 0);
   return {
     level, seed, boosts: [...new Set(boosts)], starter: isStarter, things,
     buried: new Set(things.map((t) => t.id)),
     tick: 0, endTick: seconds * TICKS_PER_SECOND, phase: 'swing',
     swing: 0, swingDir: 1, starterSwing: isStarter, degree: 0, length: 0,
-    grabbed: null, carrying: null, weight: 'empty', slipsDue: [], catchNo: 0, slotsUsed: 0, waitingSlot: null,
-    blasterLeft: boosts.includes('rockBlaster'), banked: 0, coins: 0, passTick: null, leftAtPass: 0, caught: {}, freeBoost: null,
+    grabbed: null, carrying: null, carryingMonster: null, weight: 'empty', slipsDue: [], catchNo: 0, slotsUsed: 0, waitingSlot: null,
+    blasterLeft: boosts.includes('rockBlaster'), netLeft: boosts.includes('monsterNet'), monsters: [], banked: 0, coins: 0, passTick: null, leftAtPass: 0, caught: {}, freeBoost: null,
     shots: [], slips: [],
   };
 }
@@ -140,8 +155,12 @@ export function startLevel(level: number, seed: number, boosts: readonly BoostId
 /** The claw's angle now, in whole degrees (0 straight down, positive to the right). */
 export const clawDegree = (s: LevelState) => (s.swing - (s.swing % 10)) / 10;
 
-/** Has the level's goal been met (the target, or on the last level the Heart Diamond)? */
-const goalMet = (s: LevelState) => (s.level === LAST_LEVEL ? (s.caught.heartDiamond ?? 0) > 0 : s.banked >= levelSpec(s.level).target);
+/** Has the level's goal been met (the target; on the last level the Heart Diamond; in a cavern its monster goal)? */
+function goalMet(s: LevelState): boolean {
+  const cavern = levelSpec(s.level).cavern;
+  if (cavern) return cavernGoalMet(cavern.goal, s.monsters);
+  return s.level === LAST_LEVEL ? (s.caught.heartDiamond ?? 0) > 0 : s.banked >= levelSpec(s.level).target;
+}
 
 function swingOn(s: LevelState) {
   const range = s.starterSwing ? STARTER.swingRange : SWING_RANGE;
@@ -188,6 +207,23 @@ function grab(s: LevelState, t: Thing) {
     s.carrying = null;
     return;
   }
+  if (t.kind === 'monster' && t.monster) {
+    const m = t.monster;
+    const rule = TIER_RULES[m.tier];
+    s.carrying = null;
+    s.carryingMonster = { species: m.species, shiny: m.shiny };
+    shot.monster = s.carryingMonster;
+    s.weight = rule.weight;
+    if (m.tier === 'ultra') s.slipsDue = ULTRA_WRIGGLES.map(([lo, hi]) => s.length * rng.between(lo, hi));
+    else if (rng.fraction() < rule.wriggle + (m.shiny ? SHINY_WRIGGLE : 0)) s.slipsDue = [s.length * rng.between(SLIP_AT[0], SLIP_AT[1])];
+    // The Monster Net catches the first wriggle of the go.
+    if (s.slipsDue.length && s.netLeft) {
+      s.netLeft = false;
+      s.slipsDue.shift();
+      shot.netted = true;
+    }
+    return;
+  }
   const gem = t.kind === 'crab' ? t.crab!.gem : t.gem;
   s.carrying = gem ?? null;
   shot.gem = gem;
@@ -212,6 +248,12 @@ function bank(s: LevelState) {
     if ('coins' in p) { s.coins += p.coins; shot.coins = p.coins; }
     else if ('seconds' in p) s.endTick += p.seconds * TICKS_PER_SECOND;
     else if (!s.freeBoost) s.freeBoost = p.boost;
+  } else if (s.carryingMonster) {
+    const m = s.carryingMonster;
+    s.monsters.push(m);
+    const coins = monsterCoins(m);
+    s.coins += coins;
+    shot.coins = coins;
   } else if (s.carrying) {
     const gem = s.carrying;
     const value = t?.kind === 'gem' && t.value !== undefined ? t.value : gemOf(gem).value;
@@ -224,6 +266,7 @@ function bank(s: LevelState) {
   }
   s.grabbed = null;
   s.carrying = null;
+  s.carryingMonster = null;
   s.weight = 'empty';
   s.length = 0;
   s.phase = 'swing';
@@ -253,7 +296,7 @@ export function step(s: LevelState, press: 'drop' | 'finish' | null = null): voi
     let hit: Thing | null = null;
     let hitD2 = 0;
     for (const t of s.things) {
-      if (!s.buried.has(t.id)) continue;
+      if (!s.buried.has(t.id) || !shownAt(t, s.tick)) continue;
       const p = thingAt(t, s.tick);
       const ddx = at.x - p.x;
       const ddy = at.y - p.y;
@@ -292,8 +335,10 @@ export function step(s: LevelState, press: 'drop' | 'finish' | null = null): voi
 
 /** The server's mark for the question the level is waiting on. Right: the claw holds on. Wrong: the gem falls back into the rock. */
 export function answer(s: LevelState, correct: boolean): void {
-  if (s.phase !== 'question' || s.waitingSlot === null || !s.grabbed || !s.carrying) return;
-  const slip: Slip = { slot: s.waitingSlot, catchNo: s.catchNo - 1, gem: s.carrying, tick: s.tick, length: s.length, held: correct };
+  if (s.phase !== 'question' || s.waitingSlot === null || !s.grabbed || !(s.carrying || s.carryingMonster)) return;
+  const slip: Slip = { slot: s.waitingSlot, catchNo: s.catchNo - 1, tick: s.tick, length: s.length, held: correct };
+  if (s.carrying) slip.gem = s.carrying;
+  if (s.carryingMonster) slip.monster = s.carryingMonster;
   s.slips.push(slip);
   s.waitingSlot = null;
   s.phase = 'reel';
@@ -313,14 +358,20 @@ export function answer(s: LevelState, correct: boolean): void {
     if (!clashes(s, t, x, y)) break;
   }
   if (fall < 0) { x = PIVOT.x + s.length * dx; y = PIVOT.y + s.length * dy; }
-  // A crab drops its gem, which stays put; the crab itself scuttles off.
-  const fallen: Thing = { id: t.id, kind: 'gem', gem: s.carrying, x, y, r: t.kind === 'crab' ? gemOf(s.carrying).r : t.r };
-  if (t.value !== undefined) fallen.value = t.value;
+  // A crab drops its gem, which stays put; the crab itself scuttles off. A wriggling monster burrows deeper and stays
+  // there (no more walking), popping out as before if it's one of the rarest.
+  let fallen: Thing;
+  if (t.kind === 'monster') fallen = { id: t.id, kind: 'monster', monster: t.monster, x, y, r: t.r };
+  else {
+    fallen = { id: t.id, kind: 'gem', gem: s.carrying!, x, y, r: t.kind === 'crab' ? gemOf(s.carrying!).r : t.r };
+    if (t.value !== undefined) fallen.value = t.value;
+  }
   s.things[s.things.findIndex((o) => o.id === t.id)] = fallen;
   s.buried.add(t.id);
   slip.landed = { x, y };
   s.grabbed = null;
   s.carrying = null;
+  s.carryingMonster = null;
   s.weight = 'empty';
   s.slipsDue = [];
 }
@@ -345,12 +396,13 @@ export function levelResult(s: LevelState): LevelResult {
     stars = 1;
     if (s.leftAtPass >= STAR_TWO_SECONDS * TICKS_PER_SECOND) {
       stars = 2;
-      if (levelKinds(level.level).every((k) => (s.caught[k] ?? 0) > 0)) stars = 3;
+      // A cavern's third star: every monster in it caught. Other levels: every kind of gem.
+      if (isCavern(level.level) ? s.things.every((t) => t.kind !== 'monster' || !s.buried.has(t.id)) : levelKinds(level.level).every((k) => (s.caught[k] ?? 0) > 0)) stars = 3;
     }
   }
   return {
     level: s.level, seed: s.seed, banked: s.banked, coins: s.coins, passed, stars,
-    ticksLeft: Math.max(0, s.endTick - s.tick), caught: { ...s.caught }, diamond: (s.caught.heartDiamond ?? 0) > 0,
+    ticksLeft: Math.max(0, s.endTick - s.tick), caught: { ...s.caught }, monsters: [...s.monsters], diamond: (s.caught.heartDiamond ?? 0) > 0,
     questions: s.slips.length, held: s.slips.filter((x) => x.held).length, slips: s.slips, shots: s.shots,
     freeBoost: s.freeBoost, endTick: s.tick,
   };

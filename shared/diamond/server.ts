@@ -18,7 +18,7 @@
 import type { FactAnswer } from '../maths/leitner';
 import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
-import { BOOST_IDS, LAST_LEVEL, SLOTS, questionCap, type BoostId, type Slot } from './config';
+import { BOOST_IDS, FIRST_CAVERN, LAST_CAVERN, SLOTS, isCavern, questionCap, type BoostId, type Slot } from './config';
 import { playLevel, type LevelResult } from './engine';
 import { applyResult, canStart, needsStarter, newPlayer, takeBoosts, type Player } from './progress';
 import { buy, wear } from './workshop';
@@ -146,12 +146,15 @@ export async function handleDiamond(services: DiamondServices, player: string, b
   if (body.action === 'levelStart') {
     const level = body.level;
     const boosts = readBoosts(body.boosts ?? []);
-    if (!Number.isInteger(level) || (level as number) < 1 || (level as number) > LAST_LEVEL || !boosts) return unreadable();
+    if (!Number.isInteger(level) || (level as number) < 1 || (level as number) > LAST_CAVERN || !boosts) return unreadable();
     for (let tries = 0; tries < TRIES; tries++) {
       const s = await services.load(player);
       if (s === 'busy') return busy();
       if (!canStart(s.player, level as number, now(), unlimited)) {
-        return no(409, (level as number) > s.player.deepest + 1 ? 'That level is still locked.' : 'That level opens tomorrow.', { code: 'not-open' });
+        const locked = isCavern(level as number)
+          ? s.player.lifetime.found === 0 || (level as number) > FIRST_CAVERN + (s.player.caves?.deepest ?? 0)
+          : (level as number) > s.player.deepest + 1;
+        return no(409, locked ? 'That level is still locked.' : 'That level opens tomorrow.', { code: 'not-open' });
       }
       const paid = takeBoosts(s.player, level as number, boosts);
       if (!paid.ok) return no(400, paid.reason === 'coins' ? 'Not enough coins for those boosts.' : 'Those boosts can’t be used.');
@@ -215,7 +218,7 @@ export async function handleDiamond(services: DiamondServices, player: string, b
       if (kept) {
         if (applied.points > 0) await services.awardPoints(player, applied.points, `diamond:${seed}`);
         await services.progressChanged(player);
-        return ok({ result, coins: applied.coins, points: applied.points, newLevel: applied.newLevel, earned: applied.earned, newRare: applied.newRare, player: applied.player });
+        return ok({ result, coins: applied.coins, points: applied.points, newLevel: applied.newLevel, earned: applied.earned, newRare: applied.newRare, newMonsters: applied.newMonsters, player: applied.player });
       }
     }
     return busy();

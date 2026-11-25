@@ -4,9 +4,11 @@
  * boosts, and what New Season clears and keeps. The server runs exactly these before saving.
  */
 import {
-  ACHIEVEMENTS, ACHIEVEMENT_NEEDS, BOOSTS, GEMS, LAST_LEVEL, POINTS, RARE_GEMS, RARE_IDS, REPLAY_COIN_SHARE,
-  type AchievementMeasure, type BoostId, type GemId, type RareId, type RareMeasure, type Slot,
+  ACHIEVEMENTS, ACHIEVEMENT_NEEDS, BOOSTS, CAVERNS, FIRST_CAVERN, GEMS, LAST_CAVERN, LAST_LEVEL, POINTS, RARE_GEMS, RARE_IDS, REPLAY_COIN_SHARE,
+  boostsFor, isCavern, priceLevel,
+  type AchievementMeasure, type BoostId, type GemId, type MonsterMeasure, type RareId, type RareMeasure, type Slot,
 } from './config';
+import { bookHas, bookKinds, bookShinies, bookTotal, type MonsterBook } from './caverns';
 import { EXTRA_TURN_POINTS } from '../unlimited';
 import type { LevelResult } from './engine';
 import { WORKSHOP_ITEMS } from './workshopItems';
@@ -36,6 +38,11 @@ export interface Player {
   gemBook: Partial<Record<GemId, GemPage>>;
   /** A free boost from a mystery sack, for the next level played. */
   freeBoost: BoostId | null;
+  /**
+   * The Monster Dig this season (missing in saves from before it): the deepest cavern passed (0 to 10, cavern 1 is
+   * level 11), the date one was first passed, and best stars on each. One new cavern a day, like the levels.
+   */
+  caves?: { deepest: number; newDate: string | null; stars: number[] };
   // ---- Kept for good ----
   /** Workshop upgrades bought or earned. */
   owned: string[];
@@ -52,6 +59,8 @@ export interface Player {
     bestStars: number;
     /** The rare gems' Gem Book pages, kept for good (missing in saves from before rare gems). */
     rare?: Partial<Record<RareId, GemPage>>;
+    /** The Monster Book, kept for good (missing in saves from before the Monster Dig). */
+    monsters?: MonsterBook;
   };
 }
 
@@ -64,6 +73,20 @@ export function newPlayer(): Player {
 
 /** Does this pupil get the guided first go (they have never played a level)? */
 export const needsStarter = (p: Player) => p.lifetime.plays === 0;
+
+/** The Monster Dig opens for good once a pupil has caught the Heart Diamond, in any season (James, 25 Nov 2026). */
+export const digOpen = (p: Player) => p.lifetime.found > 0;
+export const freshCaves = () => ({ deepest: 0, newDate: null, stars: Array(CAVERNS.length).fill(0) as number[] });
+const cavesOf = (p: Player) => p.caves ?? freshCaves();
+
+/** Which caverns a pupil may start now (as level numbers 11 to 20), by the same one-new-a-day rule as the levels. */
+export function cavernsOpen(p: Player, now: Date, unlimited = false): LevelsOpen {
+  if (!digOpen(p)) return { replays: [], next: null, nextOpen: false };
+  const c = cavesOf(p);
+  const replays = Array.from({ length: c.deepest }, (_, i) => FIRST_CAVERN + i);
+  const next = c.deepest < CAVERNS.length ? FIRST_CAVERN + c.deepest : null;
+  return { replays, next, nextOpen: next !== null && (unlimited || c.newDate !== nzDate(now)) };
+}
 
 export interface LevelsOpen {
   /** Levels already passed, open to replay. */
@@ -86,7 +109,13 @@ export function levelsOpen(p: Player, now: Date, unlimited = false): LevelsOpen 
 }
 
 export function canStart(p: Player, level: number, now: Date, unlimited = false): boolean {
-  if (!Number.isInteger(level) || level < 1 || level > LAST_LEVEL) return false;
+  if (!Number.isInteger(level) || level < 1 || level > LAST_CAVERN) return false;
+  if (isCavern(level)) {
+    if (!digOpen(p)) return false;
+    if (level < FIRST_CAVERN + cavesOf(p).deepest) return true;
+    const open = cavernsOpen(p, now, unlimited);
+    return level === open.next && open.nextOpen;
+  }
   if (level <= p.deepest) return true;
   const open = levelsOpen(p, now, unlimited);
   return level === open.next && open.nextOpen;
@@ -94,7 +123,7 @@ export function canStart(p: Player, level: number, now: Date, unlimited = false)
 
 export function boostPrice(id: BoostId, level: number): number {
   const b = BOOSTS.find((x) => x.id === id)!;
-  return b.base + b.perLevel * level;
+  return b.base + b.perLevel * priceLevel(level);
 }
 
 /**
@@ -103,7 +132,7 @@ export function boostPrice(id: BoostId, level: number): number {
  */
 export function takeBoosts(p: Player, level: number, ids: readonly BoostId[]): { ok: true; player: Player; cost: number } | { ok: false; reason: 'twice' | 'unknown' | 'coins' } {
   if (new Set(ids).size !== ids.length) return { ok: false, reason: 'twice' };
-  if (ids.some((id) => !BOOSTS.some((b) => b.id === id))) return { ok: false, reason: 'unknown' };
+  if (ids.some((id) => !boostsFor(level).some((b) => b.id === id))) return { ok: false, reason: 'unknown' };
   let cost = 0;
   let freeUsed = false;
   for (const id of ids) {
@@ -115,9 +144,15 @@ export function takeBoosts(p: Player, level: number, ids: readonly BoostId[]): {
 }
 
 /** Achievement measures (counts_fn in Stage 4). */
-export function measures(p: Player): Record<AchievementMeasure | RareMeasure | 'diamond_gems' | 'diamond_level', number> {
+export function measures(p: Player): Record<AchievementMeasure | RareMeasure | MonsterMeasure | 'diamond_gems' | 'diamond_level', number> {
   const rare = p.lifetime.rare ?? {};
+  const book = p.lifetime.monsters ?? {};
   return {
+    diamond_monster_kinds: bookKinds(book),
+    diamond_monster_total: bookTotal(book),
+    diamond_monster_shiny: bookShinies(book),
+    diamond_monster_giant: bookHas(book, 'giant') ? 1 : 0,
+    diamond_monster_ultra: bookHas(book, 'ultra') ? 1 : 0,
     diamond_rare_kinds: RARE_IDS.filter((id) => rare[id]).length,
     diamond_rare_total: RARE_IDS.reduce((n, id) => n + (rare[id]?.count ?? 0), 0),
     diamond_phoenix: rare.phoenixGem?.count ?? 0,
@@ -140,7 +175,7 @@ export function newAchievements(before: Player, after: Player): (typeof ACHIEVEM
 /** Workshop upgrades this pupil has earned but doesn't have yet. */
 export function newlyEarned(p: Player): string[] {
   const m = measures(p);
-  return WORKSHOP_ITEMS.filter((it) => it.earnedBy && m[it.earnedBy] >= ACHIEVEMENT_NEEDS[it.earnedBy] && !p.owned.includes(it.id)).map((it) => it.id);
+  return WORKSHOP_ITEMS.filter((it) => it.earnedBy && m[it.earnedBy] >= (it.needs ?? ACHIEVEMENT_NEEDS[it.earnedBy as AchievementMeasure]) && !p.owned.includes(it.id)).map((it) => it.id);
 }
 
 export interface Applied {
@@ -155,6 +190,8 @@ export interface Applied {
   earned: string[];
   /** Rare gems caught for the very first time (new Gem Book pages). */
   newRare: RareId[];
+  /** Monster Book pages filled for the first time (species ids; a shiny page as "<id>-shiny"). */
+  newMonsters: string[];
 }
 
 /**
@@ -167,14 +204,45 @@ export function applyResult(before: Player, r: LevelResult, now: Date, unlimited
     ...before,
     stars: [...before.stars],
     gemBook: { ...before.gemBook },
-    lifetime: { ...before.lifetime, kinds: [...before.lifetime.kinds], rare: { ...(before.lifetime.rare ?? {}) } },
+    lifetime: { ...before.lifetime, kinds: [...before.lifetime.kinds], rare: { ...(before.lifetime.rare ?? {}) }, monsters: { ...(before.lifetime.monsters ?? {}) } },
     owned: [...before.owned],
   };
   const newRare: RareId[] = [];
+  const newMonsters: string[] = [];
   let points = 0;
   let newLevel = false;
   let extra = false;
-  if (r.passed && r.level === before.deepest + 1 && levelsOpen(before, now, unlimited).nextOpen) {
+  const cave = isCavern(r.level);
+  if (cave) {
+    // The Monster Dig: its own deepest, date and stars, by the same rules as the levels.
+    const c = { ...cavesOf(before), stars: [...cavesOf(before).stars] };
+    const open = cavernsOpen(before, now, unlimited);
+    if (r.passed && r.level === open.next && open.nextOpen) {
+      extra = c.newDate === today;
+      c.deepest++;
+      c.newDate = today;
+      newLevel = true;
+      points += POINTS.firstPass;
+    }
+    const i = r.level - FIRST_CAVERN;
+    if (i < c.deepest && r.stars > c.stars[i]) {
+      points += (r.stars - c.stars[i]) * POINTS.newStar;
+      c.stars[i] = r.stars;
+    }
+    p.caves = c;
+    const book = p.lifetime.monsters!;
+    for (const m of r.monsters ?? []) {
+      const page = book[m.species];
+      if (!page) { newMonsters.push(m.species); if (bookKinds(book) === 0) points += POINTS.firstMonster; }
+      const next = { count: (page?.count ?? 0) + 1, first: page?.first ?? today, ...(page?.shiny ? { shiny: page.shiny, shinyFirst: page.shinyFirst } : {}) };
+      if (m.shiny) {
+        if (!page?.shiny) newMonsters.push(`${m.species}-shiny`);
+        next.shiny = (page?.shiny ?? 0) + 1;
+        next.shinyFirst = page?.shinyFirst ?? today;
+      }
+      book[m.species] = next;
+    }
+  } else if (r.passed && r.level === before.deepest + 1 && levelsOpen(before, now, unlimited).nextOpen) {
     // A new level when one was already passed today is an extra one (only possible on an unlimited day).
     extra = before.newLevelDate === today;
     p.deepest = r.level;
@@ -186,7 +254,7 @@ export function applyResult(before: Player, r: LevelResult, now: Date, unlimited
   const coins = newLevel ? r.coins : Math.floor(r.coins * REPLAY_COIN_SHARE);
   p.coins += coins;
   // Stars count only on levels passed (a level beyond the deepest that didn't count earns none).
-  if (r.level <= p.deepest && r.stars > p.stars[r.level - 1]) {
+  if (!cave && r.level <= p.deepest && r.stars > p.stars[r.level - 1]) {
     points += (r.stars - p.stars[r.level - 1]) * POINTS.newStar;
     p.stars[r.level - 1] = r.stars;
   }
@@ -217,11 +285,17 @@ export function applyResult(before: Player, r: LevelResult, now: Date, unlimited
   const earned = newlyEarned(p);
   p.owned.push(...earned);
   // Extra new levels give everything but hub points.
-  return { player: p, coins, points: extra ? EXTRA_TURN_POINTS : points, newLevel, earned, newRare };
+  return { player: p, coins, points: extra ? EXTRA_TURN_POINTS : points, newLevel, earned, newRare, newMonsters };
 }
 
-/** New Season: back to level 1 with no coins, stars or Gem Book. Workshop upgrades, what's worn and achievement totals stay. */
+/**
+ * New Season: back to level 1 (and cavern 1) with no coins, stars or Gem Book. Workshop upgrades, what's worn,
+ * achievement totals, the rare gems and the Monster Book stay, and so does the way into the Monster Dig.
+ */
 export function newSeason(p: Player): Player {
   const fresh = newPlayer();
-  return { ...fresh, owned: [...p.owned], worn: { ...p.worn }, lifetime: { ...p.lifetime, kinds: [...p.lifetime.kinds], rare: { ...(p.lifetime.rare ?? {}) } } };
+  return {
+    ...fresh, owned: [...p.owned], worn: { ...p.worn },
+    lifetime: { ...p.lifetime, kinds: [...p.lifetime.kinds], rare: { ...(p.lifetime.rare ?? {}) }, monsters: { ...(p.lifetime.monsters ?? {}) } },
+  };
 }
