@@ -78,7 +78,7 @@ select is(public.diamond_level(pg_temp.id('0a'), 777) -> 'marks', '[true, null]'
 select ok(public.diamond_end(pg_temp.id('0a'), 777, 1, pg_temp.state(10, 300, 1), '[5, 90]', null, '{"diamond": true}'), 'the level ends');
 select ok(not public.diamond_end(pg_temp.id('0a'), 777, 2, pg_temp.state(10, 900, 1), '[5, 90]', null, '{"diamond": true}'), '... once');
 select is(public.diamond_counts(pg_temp.id('0a')),
-  '{"diamond_gems": 12, "diamond_grips": 2, "diamond_level": 10, "diamond_kinds": 2, "diamond_found": 1, "diamond_stars": 5, "diamond_rare_kinds": 0, "diamond_rare_total": 0, "diamond_phoenix": 0}'::jsonb,
+  '{"diamond_gems": 12, "diamond_grips": 2, "diamond_level": 10, "diamond_kinds": 2, "diamond_found": 1, "diamond_stars": 5, "diamond_rare_kinds": 0, "diamond_rare_total": 0, "diamond_phoenix": 0, "diamond_monster_kinds": 0, "diamond_monster_total": 0, "diamond_monster_shiny": 0, "diamond_monster_giant": 0, "diamond_monster_ultra": 0}'::jsonb,
   'the achievement counts');
 
 -- ---- The Hall, own school only ----

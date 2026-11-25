@@ -63,14 +63,14 @@ as $$
   from public.diamond_players d where d.player = who
 $$;
 
-insert into public.achievement_types (id, game, name, emoji, measure, goal, sort) values
-  ('diamond-monster-first', 'diamond', 'Monster Catcher', '🐾', 'diamond_monster_kinds', 1, 12),
-  ('diamond-monster-spotter', 'diamond', 'Monster Spotter: 10 kinds', '🔎', 'diamond_monster_kinds', 10, 13),
-  ('diamond-monster-keeper', 'diamond', 'Monster Keeper: 30 kinds', '📗', 'diamond_monster_kinds', 30, 14),
-  ('diamond-monster-shiny', 'diamond', 'Shiny Finder', '✨', 'diamond_monster_shiny', 1, 15),
-  ('diamond-monster-giant', 'diamond', 'Giant Tamer', '😴', 'diamond_monster_giant', 1, 16),
-  ('diamond-monster-ultra', 'diamond', 'Ultra Catch', '🌟', 'diamond_monster_ultra', 1, 17),
-  ('diamond-monster-book', 'diamond', 'Full Monster Book: all 75', '🏆', 'diamond_monster_kinds', 75, 18);
+insert into public.achievement_types (id, game, name, emoji, measure, goal, sort, how, tier) values
+  ('diamond-monster-first', 'diamond', 'Monster Catcher', '🐾', 'diamond_monster_kinds', 1, 12, 'Catch your first monster in the Monster Dig.', 1),
+  ('diamond-monster-spotter', 'diamond', 'Monster Spotter: 10 kinds', '🔎', 'diamond_monster_kinds', 10, 13, 'Catch 10 different monsters in the Monster Dig.', 2),
+  ('diamond-monster-keeper', 'diamond', 'Monster Keeper: 30 kinds', '📗', 'diamond_monster_kinds', 30, 14, 'Catch 30 different monsters in the Monster Dig.', 2),
+  ('diamond-monster-shiny', 'diamond', 'Shiny Finder', '✨', 'diamond_monster_shiny', 1, 15, 'Catch a shiny monster in the Monster Dig.', 2),
+  ('diamond-monster-giant', 'diamond', 'Giant Tamer', '😴', 'diamond_monster_giant', 1, 16, 'Catch a sleeping giant in the Monster Dig.', 2),
+  ('diamond-monster-ultra', 'diamond', 'Ultra Catch', '🌟', 'diamond_monster_ultra', 1, 17, 'Catch an ultra rare monster in the Monster Dig.', 3),
+  ('diamond-monster-book', 'diamond', 'Full Monster Book: all 75', '🏆', 'diamond_monster_kinds', 75, 18, 'Catch all 75 monsters in the Monster Dig.', 3);
 
 -- ---------------------------------------------------------------------------
 -- 2. Trophies
