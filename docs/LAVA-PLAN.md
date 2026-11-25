@@ -1,6 +1,6 @@
 # Floor is Lava (Class Live activity `lava`)
 
-**Status: stages 1 and 2 built 25 Nov 2026 NZ (rules, server, pretend pupils, big screen, pad, How to play, sounds, Bella clips, art plan). Stage 3 paintings not painted yet: the game draws stand-ins.** Migration `20261125001000_classlive_lava` (number agreed with the sibling Class Live threads: Thrones 1100, Clash 1200, Ghost 1300, Shark 1400; check again with `node scripts/migration-numbers.mjs`).
+**Status: ALL stages LIVE 25 Nov 2026 NZ: stages 1 and 2 (PR #837), stage 3 paintings made on James's PC (branch lava-art-inbox). Own music per map still to come (boss track for now).**
 
 James's idea (25 Nov 2026 NZ, idea 1 of the Class Live shortlist): every pupil runs their hub avatar round a floor of tiles over lava. Each round some tiles glow, then crack away. Anyone left on a cracked tile falls onto the lava raft. Right answers earn bricks to rebuild the floor or rescue friends.
 
