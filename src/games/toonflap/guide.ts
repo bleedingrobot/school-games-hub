@@ -8,7 +8,8 @@
  * - **Bella** (scripts/voice-clips.py toonflap) says only the fixed lines in `allVoiceLines()`. Maths questions and lines
  *   with changing numbers are never read aloud: `voiceLine()` gives null for anything not on the list.
  */
-import { LEVELS } from '../../../shared/toonflap/levels';
+import { LEVELS, SEASONAL_LEVELS } from '../../../shared/toonflap/levels';
+import { seasonalLine } from '../../../shared/toonflap/collection';
 import { DASH_DEF } from '../../../shared/toonflap/dash';
 import type { Medal } from '../../../shared/toonflap/engine';
 
@@ -58,6 +59,7 @@ export const RESULT_LINES = {
   notChecked: 'That run couldn’t be checked, so it wasn’t saved.',
   newLevel: 'A new level is open!',
   tomorrow: 'Well done! The next level opens tomorrow. One new level opens each day.',
+  allPresents: 'Every present! Merry Christmas!',
 } as const;
 
 /** Sky Dash's fixed lines (stage F.7). Walls flown past change, so they are never said. */
@@ -80,6 +82,7 @@ function nextStepLines(): string[] {
     ...LEVELS.map((l) => `Try for gold on ${l.name}.`),
     'Every level done with gold! Try Sky Dash.',
     'A new level opens tomorrow. Try for a better medal today!',
+    ...SEASONAL_LEVELS.map((l) => seasonalLine(l.name)),
   ];
 }
 
@@ -88,8 +91,8 @@ export function allVoiceLines(): string[] {
   const lines = [
     ...Object.values(GUIDE),
     ...Object.values(SHORT),
-    ...LEVELS.map((l) => l.name),
-    ...LEVELS.map((l) => l.newThing),
+    ...[...LEVELS, ...SEASONAL_LEVELS].map((l) => l.name),
+    ...[...LEVELS, ...SEASONAL_LEVELS].map((l) => l.newThing),
     ...Object.values(MEDAL_LINE),
     ...Object.values(RESULT_LINES),
     ...nextStepLines(),

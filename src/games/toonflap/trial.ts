@@ -64,6 +64,12 @@ export function trialBackend({ storageKey }: { storageKey: string }) {
     nextDay: () => {
       ahead += 24 * 60 * 60 * 1000;
     },
+    /** Jumps the pretend clock to the next 10 December, when Christmas Coast is open. */
+    christmas: () => {
+      const now = new Date(Date.now() + ahead);
+      const year = now.getUTCMonth() === 11 && now.getUTCDate() > 10 ? now.getUTCFullYear() + 1 : now.getUTCFullYear();
+      ahead += Date.UTC(year, 11, 10) - now.getTime();
+    },
     unlockAll: () => {
       const p = progress();
       const levels = { ...p.levels };

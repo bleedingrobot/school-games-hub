@@ -62,7 +62,7 @@ export function buildDashCourse(seed: string): Course {
   }
   const big = 9999;
   return {
-    def: DASH_DEF, speed, walls, perches, signs: [], zones: [],
+    def: DASH_DEF, speed, walls, perches, signs: [], zones: [], presents: [],
     nestX: walls[walls.length - 1].x + WALL_WIDTH + NEST_AFTER,
     medals: { gold: big, silver: big, goldPlain: big, silverPlain: big },
   };

@@ -13,13 +13,15 @@ never name a show or studio. Wording is positive only: this model draws whatever
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 import urllib.parse
 import urllib.request
 from pathlib import Path
 
-COMFY = 'http://100.97.96.115:8188'
+# From the Mac over Tailscale; on the gaming PC itself set TOONFLAP_COMFY=http://127.0.0.1:8188.
+COMFY = os.environ.get('TOONFLAP_COMFY', 'http://100.97.96.115:8188')
 KIDS = " Children's cartoon art, friendly and fun, wordless, every character an original design."
 
 # Art plan section 1a: each level's look, for scenery (back layers) and for things (walls, flyers, extras).
@@ -49,6 +51,10 @@ SCENE = {
        'cyan, electric purple and window yellow, glowing lights, rounded retro-futuristic shapes. ',
     10: '1960s space-age TV cartoon art, clean thin black outlines, flat colour with simple gradients and starburst highlights, '
         'atomic-age Googie shapes, boomerang curves and starbursts, deep space blue with teal, atomic orange, cream and pale lilac. ',
+    # 11: the Christmas level (Dec and Jan only, 25 Nov 2026): the classic 1960s stop-motion holiday TV special look.
+    11: 'Classic 1960s stop-motion holiday TV special look, a handmade miniature set of felt, clay, painted wood and cotton wool, soft '
+        'fuzzy fabric textures, warm studio lighting with gentle soft shadows, chunky rounded handmade shapes, cheerful colours of '
+        'bright crimson red, sea turquoise, golden sand, leaf green and summer sky blue. ',
 }
 THING = {
     1: 'Flat modern preschool TV cartoon style, simple soft rounded flat shapes with no outlines, a slightly darker edge colour, warm soft '
@@ -68,6 +74,8 @@ THING = {
        'and gold, curling stylised flames. ',
     9: SCENE[9] + 'Big sparkly eyes with highlights. ',
     10: SCENE[10].replace('deep space blue with ', ''),
+    11: 'Classic 1960s stop-motion holiday TV special style, a handmade puppet of felt, clay and painted wood, soft fuzzy fabric '
+        'textures, chunky rounded shapes, warm studio lighting with soft shadows, little round shiny button eyes. ',
 }
 import re as _re
 # Walls and ground rows use the look without any eye or character wording: with it, the model gave every rock a face.
@@ -112,6 +120,11 @@ WORLDS = {
     10: ('a starry outer space sky with big ringed planets and flying-saucer houses on tall stilts floating on little asteroids',
          'a row of small cratered asteroids and little bubble-dome houses along the bottom',
          'a very tall thick round space tower of orange and teal metal panels with round portholes and a glowing bubble dome on top'),
+    11: ('a sunny New Zealand beach at Christmas in summer, big spreading coastal trees with dark green leaves covered in bright crimson '
+         'bottlebrush flowers along the sand, a calm turquoise sea, a little wooden beach hut with strings of fairy lights, a green '
+         'headland far off, a clear summer sky', 'a row of little sand dunes with grass tufts, wrapped presents with ribbons, a small '
+         'decorated Christmas tree in a pot, a pair of beach jandals and a sandcastle with a gold star on top along the sand',
+         'a very tall thick red and white striped candy cane pole wound with shiny green tinsel, a big red ribbon bow and a gold star on top'),
 }
 
 # Art plan section 5a. (level style, rider and craft). Riders are our own made-up characters.
@@ -134,6 +147,12 @@ FLYERS = {
     'lava-lizard': (8, 'a small red-orange fire lizard with glowing yellow spots surfing on a glowing lava rock, little flames trailing'),
     'jet-bot': (9, 'a small round white and cyan robot with a big round visor face showing sparkly eyes, wearing a pink jet pack'),
     'saucer-kid': (10, 'a cute lilac alien kid with three eyes and a little antenna in a teal and orange flying saucer with a glass bubble dome'),
+    # The Christmas level's two (25 Nov 2026). Our own Santa: summer clothes for a Kiwi Christmas.
+    'surf-sleigh': (11, 'a jolly round Santa with a big fluffy white beard, rosy cheeks, a red Santa hat, a red short-sleeved shirt, red '
+                    'board shorts and jandals, riding a flying red sleigh shaped like a surfboard with little gold bells'),
+    'santa-fantail': (None, 'a cute round cartoon New Zealand fantail bird, grey-brown back, cream-yellow belly, a white eyebrow stripe, '
+                      'big friendly cartoon eyes, a tiny beak and a big spread fan-shaped tail with white edges, wearing a little red '
+                      'Santa hat with a white fluffy brim and pom-pom'),
 }
 # Poses share a seed so they look alike. Birds get two flaps; everything else flies in one picture (code tilts it).
 BIRD_POSES = {'glide': 'gliding with wings spread out flat', 'up': 'flapping with both wings raised high above its back'}
@@ -146,6 +165,7 @@ TRAILS = {
     'cheese': 'a small wedge of holey yellow cheese',
     'mouse-tail': 'a short curly pink mouse tail with a little heart at the tip',
     'rainbow-stars': 'a plump rainbow-coloured five-pointed star',
+    'candy-canes': 'a small red and white striped candy cane with a tiny green bow',
 }
 EXTRAS = {
     'jellyfish': (3, 'a goofy pink jellyfish with a round wobbly bell and curly tentacles, big happy eyes, floating alone'),
@@ -156,6 +176,8 @@ EXTRAS = {
     'gust': (None, 'a swirling gust of icy wind, three curly pale blue wind streaks blowing to the left with snowflakes tumbling in them'),
     'bubble': (None, 'one big round soap bubble, very pale blue and see-through with a rainbow sheen and a white shine spot'),
     'bump-stars': (None, 'a little ring of five spinning yellow cartoon stars and tiny swirls, the kind seen after a bonk'),
+    # The Christmas level's pickup (25 Nov 2026).
+    'present': (11, 'a small square wrapped Christmas present box in shiny red paper with a gold ribbon tied in a big bow on top'),
 }
 
 SQUARE = (832, 832)
@@ -274,7 +296,11 @@ def paint(out: Path, wanted: list[str], tries: int, first: int):
 
 ROOT = Path(__file__).resolve().parent.parent
 ART = ROOT / 'src' / 'games' / 'toonflap' / 'art'
-INBOX = Path.home() / 'dragon-art-inbox' / 'toonflap-art'
+INBOX = Path(os.environ.get('TOONFLAP_INBOX', Path.home() / 'dragon-art-inbox' / 'toonflap-art'))
+
+
+# The Christmas pictures (stop-motion look) were painted on a grey backdrop: cut those with rembg alone.
+PLAIN_CUT = {'w11-wall', 'extra-present'}
 
 
 def tidy(force: bool):
@@ -289,7 +315,11 @@ def tidy(force: bool):
         img.save(out, 'WEBP', quality=quality, method=6)
         print(f'  {out.relative_to(ROOT)}  {img.width}x{img.height}  {out.stat().st_size // 1024} KB', flush=True)
 
-    def cut(img):
+    def cut(img, plain=False):
+        if plain:  # rembg alone, cropped: for pictures on a grey studio backdrop, which the rule below would keep
+            c = remove(img.convert('RGB'), session=session, post_process_mask=True)
+            ys, xs = np.where(np.asarray(c)[..., 3] > 40)
+            return c.crop((max(0, xs.min() - 4), max(0, ys.min() - 4), min(c.width, xs.max() + 5), min(c.height, ys.max() + 5)))
         # rembg alone drops white parts of a sprite (a white cloud, ghost or wing). So also keep everything that the
         # plain light background can't reach from the picture's edge: white shapes inside a dark outline stay.
         from scipy import ndimage
@@ -327,6 +357,8 @@ def tidy(force: bool):
 
     for name, t in picks.items():
         src = INBOX / f'{name}-{t}.png'
+        if not src.exists():  # only the pictures painted this time are in the inbox
+            continue
         img = Image.open(src)
         if name.endswith('-back'):
             out = ART / 'worlds' / name[1:].split('-')[0] / 'back.webp'
@@ -348,7 +380,16 @@ def tidy(force: bool):
             folder = ART / 'worlds' / name[1:].split('-')[0]
             if (folder / 'wall-bottom.webp').exists() and not force:
                 continue
-            c = cut(img)
+            c = cut(img, name in PLAIN_CUT)
+            # Centre the post (measured low down, below any hook or bow) so the picture lines up with the wall's hit box.
+            alpha = np.asarray(c)[int(c.height * 0.6):, :, 3] > 128
+            cols = np.where(alpha.mean(axis=0) > 0.5)[0]
+            if len(cols):
+                mid = (cols.min() + cols.max()) / 2
+                half = int(max(mid, c.width - mid)) + 1
+                wide = Image.new('RGBA', (half * 2, c.height), (0, 0, 0, 0))
+                wide.paste(c, (half - int(round(mid)), 0))
+                c = wide
             c = c.resize((256, round(c.height * 256 / c.width)), Image.LANCZOS)
             # The end piece is the top 512 px (cap pointing up); the stretchy middle is a looped slice from below it.
             end = c.crop((0, 0, 256, min(512, c.height)))
@@ -384,7 +425,7 @@ def tidy(force: bool):
             out = (ART / kind if kind else ART) / f'{name}.webp'
             if out.exists() and not force:
                 continue
-            save(square(cut(img), size), out, quality)
+            save(square(cut(img, f'extra-{name}' in PLAIN_CUT), size), out, quality)
 
 
 if __name__ == '__main__':

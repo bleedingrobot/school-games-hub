@@ -84,6 +84,10 @@
   "text": "Cosmic Storm"
  },
  {
+  "slug": "christmas-coast",
+  "text": "Christmas Coast"
+ },
+ {
   "slug": "tap-to-flap-each-tap-lifts-you-up",
   "text": "Tap to flap. Each tap lifts you up."
  },
@@ -122,6 +126,10 @@
  {
   "slug": "low-gravity-bubbles-make-you-float-everything-else-is-here-too",
   "text": "Low gravity bubbles make you float. Everything else is here too!"
+ },
+ {
+  "slug": "grab-the-presents-as-you-fly-get-them-all-in-one-flight-to-unlock-a-christmas-flyer",
+  "text": "Grab the presents as you fly! Get them all in one flight to unlock a Christmas flyer."
  },
  {
   "slug": "gold-medal",
@@ -166,6 +174,10 @@
  {
   "slug": "well-done-the-next-level-opens-tomorrow-one-new-level-opens-each-day",
   "text": "Well done! The next level opens tomorrow. One new level opens each day."
+ },
+ {
+  "slug": "every-present-merry-christmas",
+  "text": "Every present! Merry Christmas!"
  },
  {
   "slug": "tap-toon-garden-to-start",
@@ -254,6 +266,10 @@
  {
   "slug": "a-new-level-opens-tomorrow-try-for-a-better-medal-today",
   "text": "A new level opens tomorrow. Try for a better medal today!"
+ },
+ {
+  "slug": "christmas-coast-is-here-a-special-level-for-a-little-while",
+  "text": "Christmas Coast is here! A special level for a little while."
  },
  {
   "slug": "sky-dash",

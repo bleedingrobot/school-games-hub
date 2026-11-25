@@ -137,3 +137,44 @@ describe('Toon Flap rules', () => {
     expect(missed).toEqual([]);
   });
 });
+
+describe('Christmas Coast (seasonal)', () => {
+  it('opens only in December and January after Toon Garden, grabs presents, and keeps its record apart', async () => {
+    const { SEASONAL_LEVELS, inSeason } = await import('./levels');
+    const { levelRecord, nextStep, trailsUnlocked, golds } = await import('./collection');
+    const xmas = SEASONAL_LEVELS[0];
+    expect([inSeason(xmas, '2026-11-30'), inSeason(xmas, '2026-12-01'), inSeason(xmas, '2027-01-31'), inSeason(xmas, '2027-02-01')]).toEqual([false, true, true, false]);
+    const run = (level: string, extra: Partial<RunSummary> = {}): RunSummary => ({ level, maths: true, seconds: 30, medal: 'gold', bumps: 0, checks: [], rightGaps: 0, potionUsed: false, ...extra });
+    let p = emptyProgress();
+    expect(levelOpen(p, xmas.n, '2026-12-05')).toBe(false); // Toon Garden first
+    p = addRun(p, run('garden'), '2026-12-05').progress;
+    expect(levelOpen(p, xmas.n, '2026-12-05')).toBe(true);
+    expect(levelOpen(p, xmas.n, '2027-03-01')).toBe(false);
+    expect(nextStep(p, '2026-12-06')).toContain('Christmas Coast');
+
+    // Presents: flying through one grabs it.
+    const course = buildCourse(xmas);
+    expect(course.presents.length).toBeGreaterThan(5);
+    const s = newRun(course);
+    const gift = course.presents[0];
+    Object.assign(s, { mode: 'fly', x: gift.x - 0.01, y: gift.y, vy: 0 });
+    expect(stepRun(course, s, false)).toBe('present');
+    expect(s.got[0]).toBe(true);
+
+    // The record sits under `seasonal`: it never opens the next level or counts as a trail level.
+    const opened = p.opened;
+    const all = addRun(p, run('xmas', { presents: course.presents.length, presentsOf: course.presents.length }), '2026-12-06');
+    expect(all.progress.opened).toBe(opened);
+    expect(all.progress.levels.xmas).toBeUndefined();
+    expect(levelRecord(all.progress, 'xmas')).toMatchObject({ finishes: 1, medal: 'gold', allPresents: 1 });
+    expect(all.progress.presents).toBe(course.presents.length);
+    expect(golds(all.progress)).toBe(1);
+    expect(all.unlocks.flyers).toEqual(['santa-fantail']);
+    expect(trailsUnlocked(all.progress)).toContain('candy-canes');
+    expect(unlockRuns('xmas')).toBe(5);
+    let q = all.progress;
+    for (let i = 0; i < 4; i++) q = addRun(q, run('xmas'), '2026-12-07').progress;
+    expect(flyersUnlocked(q)).toContain('surf-sleigh');
+    expect(finishesToUnlock(q, 'xmas')).toBe(0);
+  });
+});

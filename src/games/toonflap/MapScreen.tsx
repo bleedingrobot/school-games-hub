@@ -1,7 +1,7 @@
 /** The map: a cartoon trail through the 10 worlds (docs/TOON-FLAP-PLAN.md, section 1). Tap a lit stop to fly it. */
-import { FLYERS, finishesToUnlock, levelOpen, nextStep, openedLevel, opensTomorrow, skyDashOpen, unlockRuns, type Progress } from '../../../shared/toonflap/collection';
+import { FLYERS, finishesToUnlock, levelOpen, levelRecord, nextStep, openedLevel, opensTomorrow, skyDashOpen, unlockRuns, type Progress } from '../../../shared/toonflap/collection';
 import { DASHES_A_DAY, WINS_A_DAY } from '../../../shared/toonflap/config';
-import { LEVELS } from '../../../shared/toonflap/levels';
+import { inSeason, LEVELS, SEASONAL_LEVELS } from '../../../shared/toonflap/levels';
 import { useEffect } from 'react';
 import { KeyBadge } from '../../kit';
 import { DASH_LINES, HELP_SETTINGS, type HelpSetting } from './guide';
@@ -30,6 +30,8 @@ export const LEVEL_LOOK: Array<{ a: string; b: string; icon: string }> = [
   { a: '#F7C77A', b: '#F26B1D', icon: '🌋' },
   { a: '#141E4A', b: '#FF3E9A', icon: '🤖' },
   { a: '#1D2340', b: '#F28C38', icon: '🪐' },
+  // 11: Christmas Coast (seasonal)
+  { a: '#2FB7C8', b: '#D7263D', icon: '🎄' },
 ];
 
 export const MEDAL_ICON = { gold: '🥇', silver: '🥈', bronze: '🥉' } as const;
@@ -115,6 +117,38 @@ export function MapScreen({ progress, today, winsLeft, dashesLeft, maths, gentle
       )}
       {error && <p className="tf-error" role="alert">{error}</p>}
       {outOfWins && !error && <p className="tf-done-today" role="status">That’s {WINS_A_DAY} wins today. Great flying! New wins tomorrow.</p>}
+
+      {SEASONAL_LEVELS.filter((l) => inSeason(l, today)).map((l) => {
+        const rec = levelRecord(progress, l.id);
+        const open = levelOpen(progress, l.n, today);
+        const look = LEVEL_LOOK[l.n - 1];
+        const best = maths ? rec.best : rec.bestPlain;
+        const sleigh = FLYERS.find((f) => f.level === l.id);
+        const left = finishesToUnlock(progress, l.id);
+        return (
+          <div key={l.id} className="tf-stop tf-festive" data-open={open} style={{ ['--tf-a' as string]: look.a, ['--tf-b' as string]: look.b }}>
+            <button type="button" className="tf-stop__btn" data-key="0" disabled={!open || busy || outOfWins} onClick={() => onPlay(l.n)} aria-label={`${l.name}, special Christmas level${open ? '' : ', locked'}${rec.medal ? `, ${MEDAL_WORD[rec.medal]} medal` : ''}`}>
+              <KeyBadge k="0" />
+              <span className="tf-stop__node" aria-hidden="true"><span className="tf-stop__icon">{open ? look.icon : '🔒'}</span></span>
+              <span className="tf-stop__body">
+                <span className="tf-stop__name">{l.name} <span className="tf-festive__tag">Christmas special</span></span>
+                {open ? (
+                  <>
+                    <span className="tf-stop__line">
+                      {rec.medal ? <span title={MEDAL_WORD[rec.medal]}>{MEDAL_ICON[rec.medal]}</span> : <span className="tf-dim">No medal yet</span>}
+                      {best !== null && <span className="tf-stop__best">{fmtSeconds(best)}</span>}
+                      <span className="tf-dim">Here until the end of January</span>
+                    </span>
+                    {sleigh && <span className="tf-stop__flyer">{left === 0 ? `${sleigh.name} unlocked` : `${unlockRuns(l.id) - left} of ${unlockRuns(l.id)} to unlock the ${sleigh.name}`}</span>}
+                  </>
+                ) : (
+                  <span className="tf-stop__line tf-dim">Finish Toon Garden to open it.</span>
+                )}
+              </span>
+            </button>
+          </div>
+        );
+      })}
 
       <ol className="tf-trail">
         {LEVELS.map((l) => {

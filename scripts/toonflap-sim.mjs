@@ -12,7 +12,7 @@ const WRITE_MEDALS = process.argv.includes('--write-medals');
 const entryFile = join(process.cwd(), `.toonflap-sim-entry-${process.pid}.ts`);
 writeFileSync(entryFile, [
   "export { botRun, planRun } from './shared/toonflap/bot.ts';",
-  "export { LEVELS, buildCourse } from './shared/toonflap/levels.ts';",
+  "export { LEVELS, ALL_LEVELS, buildCourse } from './shared/toonflap/levels.ts';",
   "export { replayRun, scoreRun, encodeFlaps, decodeFlaps } from './shared/toonflap/engine.ts';",
   "export * as config from './shared/toonflap/config.ts';",
   "export { addRun, emptyProgress, levelOpen } from './shared/toonflap/collection.ts';",
@@ -33,7 +33,7 @@ let bad = 0;
 const rows = [];
 const medals = {};
 
-for (const def of mod.LEVELS) {
+for (const def of mod.ALL_LEVELS) {
   const course = mod.buildCourse(def);
   const row = { level: def.n, id: def.id, walls: course.walls.length, checks: course.perches.length, signs: course.signs.length };
   // 1. The perfect flight: no bumps, through every answer wall's every gap (the right one depends on the seed).
