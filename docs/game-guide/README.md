@@ -35,7 +35,7 @@ Do these in order. Each line says what, then where. Tags: **J** junior only, **O
 1. **Branch.** Your `claude/…` branch, or a worktree on the Mac ([3-files-and-clashes.md](3-files-and-clashes.md)).
 2. **Board.** Mark the prompt you started from `used` on the Games Hub Prompts board (memory note `work-board`).
 3. **Read** the route's example game: its plan (`docs/<ID>-PLAN.md`), `shared/<id>/`, `supabase/functions/<id>/`.
-4. **Migration number.** `git fetch && node scripts/migration-numbers.mjs`; write it in the plan.
+4. **Migration number.** `git fetch && node scripts/migration-numbers.mjs` gives the time now, to the second; use that, never a hand-picked number. Write it in the plan.
 5. **Plan.** `docs/<ID>-PLAN.md` from [templates/plan.md](templates/plan.md), answering [1-design.md](1-design.md) and [2-steps-and-progress.md](2-steps-and-progress.md), with stages. Choices for James on question cards.
 6. **Rules.** Pure functions and one config file in `shared/<id>/`.
 7. **Server.** `supabase/functions/<id>/` (`handler.ts`, `entry.ts`); marks or replays everything that counts; checks the teacher switch; the publish builds and deploys it, so there is no `index.ts` to commit ([5-server-and-saving.md](5-server-and-saving.md)).

@@ -32,19 +32,22 @@ export function clashes(files) {
 }
 
 /**
- * The next free number: today's date (New Zealand) with counter 000100, or 100 past the highest number on any branch if
- * that is today or later. Numbers sort as text, so a new file always comes after every file that exists.
+ * The next free number: the time now in New Zealand, to the second (YYYYMMDDHHMMSS, Supabase's own style), or one past
+ * the highest number on any branch if that is later. Numbers sort as text, so a new file always comes after every file
+ * that exists. Two threads working at once used to both get "100 past the top" and clash after merging (#864 and #879,
+ * 26 Nov 2026); with the clock they would have to pick a number in the same second.
  */
-export function nextVersion(files, today = new Date()) {
+export function nextVersion(files, now = new Date()) {
   let top = '';
   for (const { file } of files) {
     const version = versionOf(file);
     if (version && version > top) top = version;
   }
-  const date = today.toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' }).replaceAll('-', '');
-  const fresh = `${date}000100`;
+  const part = (type) => now.toLocaleString('en-GB', { timeZone: 'Pacific/Auckland', hourCycle: 'h23', [type]: '2-digit' }).padStart(2, '0');
+  const year = now.toLocaleString('en-GB', { timeZone: 'Pacific/Auckland', year: 'numeric' });
+  const fresh = `${year}${part('month')}${part('day')}${part('hour')}${part('minute')}${part('second')}`;
   if (top < fresh) return fresh;
-  return `${top.slice(0, 8)}${String(Number(top.slice(8)) + 100).padStart(6, '0')}`;
+  return String(BigInt(top) + 1n);
 }
 
 function git(...args) {

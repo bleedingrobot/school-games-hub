@@ -38,17 +38,17 @@ describe('migration numbers', () => {
     ]);
   });
 
-  it('the next number is today in New Zealand, after every number on any branch', () => {
+  it('the next number is the time now in New Zealand to the second, after every number on any branch', () => {
     const files = [
       { branch: 'main', file: '20261018002700_maths_focus.sql' },
       { branch: 'main', file: '20261019000800_lobby.sql' },
       { branch: 'marble', file: '20261019000900_marble.sql' },
     ];
-    // 20 Oct 2026 11:00 in New Zealand is still 19 Oct in UTC.
-    expect(nextVersion(files, new Date('2026-10-19T22:00:00Z'))).toBe('20261020000100');
-    // Something already numbered today (or later): 100 past it.
-    expect(nextVersion([...files, { branch: 'x', file: '20261020000300_x.sql' }], new Date('2026-10-19T22:00:00Z'))).toBe('20261020000400');
-    // Late in the day in UTC is already tomorrow in New Zealand.
-    expect(nextVersion(files, new Date('2026-10-20T12:00:00Z'))).toBe('20261021000100');
+    // 20 Oct 2026 11:00:05 in New Zealand is still 19 Oct in UTC.
+    expect(nextVersion(files, new Date('2026-10-19T22:00:05Z'))).toBe('20261020110005');
+    // Something already numbered later than now: one past it.
+    expect(nextVersion([...files, { branch: 'x', file: '20261020120000_x.sql' }], new Date('2026-10-19T22:00:05Z'))).toBe('20261020120001');
+    // Just after midnight in New Zealand (hour 00, not 24).
+    expect(nextVersion(files, new Date('2026-10-20T11:00:09Z'))).toBe('20261021000009');
   });
 });
