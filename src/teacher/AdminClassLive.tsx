@@ -1,6 +1,11 @@
 /** /teacher/admin/classlive: the times Class Live games start by themselves (docs/plans/classlive-auto/PLAN.md). */
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { CLASH_MAPS } from '../../shared/classlive/clash';
 import { MAPS } from '../../shared/classlive/corners';
+import { MAPS as GHOST_MAPS } from '../../shared/classlive/ghost';
+import { LAVA_MAPS } from '../../shared/classlive/lava';
+import { BAYS } from '../../shared/classlive/shark';
+import { HALLS } from '../../shared/classlive/thrones';
 import { SERPENT_LEVELS } from '../../shared/classlive/serpent';
 import {
   fetchClassLiveTimes,
@@ -15,7 +20,14 @@ import './admin-classlive.css';
 const errorText = (error: unknown) => (error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.');
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const GAMES: Record<ClassLiveActivity, string> = { serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners' };
+const GAMES: Record<ClassLiveActivity, string> = {
+  serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners', shark: 'Shark Bay', ghost: 'Ghost Tag',
+  clash: 'Colour Clash', thrones: 'Musical Thrones', lava: 'Floor is Lava',
+};
+/** Each game's maps (or Serpent Chain's levels); Mystery Mural has none. */
+const LEVELS: Record<ClassLiveActivity, readonly string[]> = {
+  serpent: SERPENT_LEVELS, mural: [], corners: MAPS, shark: BAYS, ghost: GHOST_MAPS, clash: CLASH_MAPS, thrones: HALLS, lava: LAVA_MAPS,
+};
 const LENGTHS = [2, 3, 5, 10, 15] as const;
 
 /** "Mon–Fri", "Mon, Wed, Fri", "Every day". */
@@ -40,11 +52,14 @@ const blank = (): ClassLiveTime => ({
   id: null, days: [1, 2, 3, 4, 5], at: '12:40', activity: 'serpent', length: 5, min: 6, open: 3, host: 'Games Hub', level: 'gold', on: true,
 });
 
-const levelsFor = (a: ClassLiveActivity): readonly string[] => (a === 'serpent' ? SERPENT_LEVELS : a === 'corners' ? MAPS : []);
+const levelsFor = (a: ClassLiveActivity): readonly string[] => LEVELS[a];
 
 function TimeForm({ start, busy, onSave, onCancel }: { start: ClassLiveTime; busy: boolean; onSave: (t: ClassLiveTime) => void; onCancel: () => void }) {
   const [t, setT] = useState(start);
   const [problem, setProblem] = useState('');
+  // Typed as text and only tidied on leaving the box or saving, so a number can be cleared and retyped (James, 25 Nov 2026 NZ).
+  const [minText, setMinText] = useState(String(start.min));
+  const [openText, setOpenText] = useState(String(start.open));
   const levels = levelsFor(t.activity);
   const set = (change: Partial<ClassLiveTime>) => setT((old) => ({ ...old, ...change }));
   const num = (v: string, lo: number, hi: number) => Math.min(hi, Math.max(lo, Math.round(Number(v)) || lo));
@@ -57,7 +72,7 @@ function TimeForm({ start, busy, onSave, onCancel }: { start: ClassLiveTime; bus
     if (t.days.length === 0) return setProblem('Pick at least one day.');
     if (!/^\d\d:\d\d$/.test(t.at)) return setProblem('Pick a time.');
     setProblem('');
-    onSave({ ...t, host: t.host.trim() || 'Games Hub' });
+    onSave({ ...t, min: num(minText, 2, 40), open: num(openText, 1, 15), host: t.host.trim() || 'Games Hub' });
   }
 
   return (
@@ -97,11 +112,11 @@ function TimeForm({ start, busy, onSave, onCancel }: { start: ClassLiveTime; bus
       </label>
       <label>
         Fewest players
-        <input type="number" min={2} max={40} value={t.min} onChange={(e) => set({ min: num(e.target.value, 2, 40) })} />
+        <input type="number" inputMode="numeric" min={2} max={40} value={minText} onChange={(e) => setMinText(e.target.value)} onBlur={() => setMinText(String(num(minText, 2, 40)))} />
       </label>
       <label>
         Pop-up minutes before
-        <input type="number" min={1} max={15} value={t.open} onChange={(e) => set({ open: num(e.target.value, 1, 15) })} />
+        <input type="number" inputMode="numeric" min={1} max={15} value={openText} onChange={(e) => setOpenText(e.target.value)} onBlur={() => setOpenText(String(num(openText, 1, 15)))} />
       </label>
       <label>
         Name on the pop-up
@@ -109,9 +124,9 @@ function TimeForm({ start, busy, onSave, onCancel }: { start: ClassLiveTime; bus
       </label>
       {levels.length > 0 && (
         <label>
-          {t.activity === 'serpent' ? 'Level' : 'Map'}
+          {t.activity === 'serpent' ? 'Level' : t.activity === 'thrones' ? 'Hall' : 'Map'}
           <select value={t.level ?? ''} onChange={(e) => set({ level: e.target.value || null })}>
-            {t.activity === 'corners' && <option value="">Surprise me</option>}
+            {t.activity !== 'serpent' && <option value="">Surprise me</option>}
             {levels.map((l) => (
               <option key={l} value={l}>{cap(l)}</option>
             ))}
