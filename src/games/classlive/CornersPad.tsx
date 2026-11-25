@@ -25,7 +25,7 @@ const SEND_MS = 400;
 const factOf = (q: PublicQuestion, answer: number) => q.parts.map((p) => p.replace(/\?/g, String(answer))).join(' ');
 
 /** Arrow keys and WASD. */
-function useKeys() {
+export function useKeys() {
   const keys = useRef(new Set<string>());
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -55,7 +55,7 @@ function useKeys() {
 }
 
 /** The on-screen joystick: drag the knob; its pull (0 to 1) is the direction. */
-function Joystick({ onDir }: { onDir: (d: Spot) => void }) {
+export function Joystick({ onDir }: { onDir: (d: Spot) => void }) {
   const base = useRef<HTMLDivElement>(null);
   const [knob, setKnob] = useState<Spot>({ x: 0, y: 0 });
   const active = useRef<number | null>(null);

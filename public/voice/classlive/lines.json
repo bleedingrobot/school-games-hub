@@ -1,5 +1,197 @@
 [
  {
+  "slug": "ghost-tag-is-on-run-from-the-ghosts",
+  "text": "Ghost Tag is on! Run from the ghosts!"
+ },
+ {
+  "slug": "here-we-go-do-not-let-the-ghosts-catch-you",
+  "text": "Here we go! Do not let the ghosts catch you!"
+ },
+ {
+  "slug": "the-ghosts-are-waking-up-run",
+  "text": "The ghosts are waking up. Run!"
+ },
+ {
+  "slug": "new-round-new-ghosts",
+  "text": "New round! New ghosts!"
+ },
+ {
+  "slug": "everyone-back-the-ghosts-are-in-the-crypt",
+  "text": "Everyone back! The ghosts are in the crypt."
+ },
+ {
+  "slug": "get-ready-for-the-next-round",
+  "text": "Get ready for the next round!"
+ },
+ {
+  "slug": "ghosts-go-and-get-them",
+  "text": "Ghosts, go and get them!"
+ },
+ {
+  "slug": "the-ghosts-are-out-run",
+  "text": "The ghosts are out! Run!"
+ },
+ {
+  "slug": "here-they-come-run-run-run",
+  "text": "Here they come! Run, run, run!"
+ },
+ {
+  "slug": "caught-another-ghost",
+  "text": "Caught! Another ghost!"
+ },
+ {
+  "slug": "boo-got-one",
+  "text": "Boo! Got one!"
+ },
+ {
+  "slug": "oh-no-you-are-a-ghost-now",
+  "text": "Oh no, you are a ghost now!"
+ },
+ {
+  "slug": "another-one-joins-the-ghosts",
+  "text": "Another one joins the ghosts!"
+ },
+ {
+  "slug": "poof-invisible",
+  "text": "Poof! Invisible!"
+ },
+ {
+  "slug": "now-you-see-them-now-you-do-not",
+  "text": "Now you see them, now you do not!"
+ },
+ {
+  "slug": "vanished",
+  "text": "Vanished!"
+ },
+ {
+  "slug": "a-ghost-lit-its-lantern",
+  "text": "A ghost lit its lantern!"
+ },
+ {
+  "slug": "the-lantern-can-see-invisible-players",
+  "text": "The lantern can see invisible players!"
+ },
+ {
+  "slug": "lantern-on",
+  "text": "Lantern on!"
+ },
+ {
+  "slug": "ghost-dash",
+  "text": "Ghost dash!"
+ },
+ {
+  "slug": "whoosh-a-ghost-is-speeding",
+  "text": "Whoosh! A ghost is speeding!"
+ },
+ {
+  "slug": "watch-out-a-speedy-ghost",
+  "text": "Watch out, a speedy ghost!"
+ },
+ {
+  "slug": "garlic-the-ghost-bounced-off",
+  "text": "Garlic! The ghost bounced off!"
+ },
+ {
+  "slug": "ha-the-garlic-shield-worked",
+  "text": "Ha! The garlic shield worked!"
+ },
+ {
+  "slug": "bounced-garlic-saves-the-day",
+  "text": "Bounced! Garlic saves the day!"
+ },
+ {
+  "slug": "frost-bomb-the-ghosts-are-frozen",
+  "text": "Frost bomb! The ghosts are frozen!"
+ },
+ {
+  "slug": "brrr-frozen-ghosts",
+  "text": "Brrr! Frozen ghosts!"
+ },
+ {
+  "slug": "freeze-the-ghosts-cannot-move",
+  "text": "Freeze! The ghosts cannot move!"
+ },
+ {
+  "slug": "only-two-left",
+  "text": "Only two left!"
+ },
+ {
+  "slug": "just-two-players-left",
+  "text": "Just two players left!"
+ },
+ {
+  "slug": "two-left-who-will-win",
+  "text": "Two left! Who will win?"
+ },
+ {
+  "slug": "the-last-one-standing-wins-the-round",
+  "text": "The last one standing wins the round!"
+ },
+ {
+  "slug": "we-have-a-winner-the-last-one-standing",
+  "text": "We have a winner! The last one standing!"
+ },
+ {
+  "slug": "last-one-standing-amazing",
+  "text": "Last one standing! Amazing!"
+ },
+ {
+  "slug": "time-is-up-everyone-still-running-wins-the-round",
+  "text": "Time is up! Everyone still running wins the round!"
+ },
+ {
+  "slug": "that-is-the-round-the-survivors-win",
+  "text": "That is the round! The survivors win!"
+ },
+ {
+  "slug": "round-over-well-done-survivors",
+  "text": "Round over! Well done, survivors!"
+ },
+ {
+  "slug": "the-ghosts-caught-everyone",
+  "text": "The ghosts caught everyone!"
+ },
+ {
+  "slug": "everyone-is-a-ghost-spooky",
+  "text": "Everyone is a ghost! Spooky!"
+ },
+ {
+  "slug": "the-ghosts-win-this-round",
+  "text": "The ghosts win this round!"
+ },
+ {
+  "slug": "ten-seconds-left-in-this-round",
+  "text": "Ten seconds left in this round!"
+ },
+ {
+  "slug": "hang-on-nearly-there",
+  "text": "Hang on, nearly there!"
+ },
+ {
+  "slug": "ten-more-seconds",
+  "text": "Ten more seconds!"
+ },
+ {
+  "slug": "power-ups-run-over-one-to-grab-it",
+  "text": "Power-ups! Run over one to grab it."
+ },
+ {
+  "slug": "teleports-step-in-one-to-pop-out-of-the-other",
+  "text": "Teleports! Step in one to pop out of the other."
+ },
+ {
+  "slug": "sticky-patches-they-slow-you-down-but-not-the-ghosts",
+  "text": "Sticky patches! They slow you down, but not the ghosts."
+ },
+ {
+  "slug": "fog-the-big-screen-cannot-see-far-use-your-device",
+  "text": "Fog! The big screen cannot see far. Use your device!"
+ },
+ {
+  "slug": "watch-out-something-swoops-across-the-map-and-knocks-you-flying",
+  "text": "Watch out! Something swoops across the map and knocks you flying."
+ },
+ {
   "slug": "join-class-live-now",
   "text": "Join Class Live now!"
  },
@@ -802,5 +994,25 @@
  {
   "slug": "hide-under-a-boat-and-you-are-safe-but-boats-only-have-a-few-seats-in-the-cave-answer-three-questions-to-swim-back-out",
   "text": "Hide under a boat and you are safe, but boats only have a few seats! In the cave, answer three questions to swim back out."
+ },
+ {
+  "slug": "steer-your-avatar-with-the-joystick-or-the-arrow-keys",
+  "text": "Steer your avatar with the joystick, or the arrow keys."
+ },
+ {
+  "slug": "a-few-players-start-as-ghosts-if-a-ghost-touches-you-you-become-a-ghost-too",
+  "text": "A few players start as ghosts. If a ghost touches you, you become a ghost too."
+ },
+ {
+  "slug": "answer-a-question-right-to-turn-invisible-for-five-seconds-ghosts-cannot-catch-you-then",
+  "text": "Answer a question right to turn invisible for five seconds. Ghosts cannot catch you then!"
+ },
+ {
+  "slug": "ghosts-answer-questions-too-for-a-speed-dash-or-a-lantern-that-finds-invisible-players",
+  "text": "Ghosts answer questions too, for a speed dash or a lantern that finds invisible players."
+ },
+ {
+  "slug": "the-last-one-standing-wins-the-round-win-the-most-rounds-to-win-the-game",
+  "text": "The last one standing wins the round. Win the most rounds to win the game!"
  }
 ]

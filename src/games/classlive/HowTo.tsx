@@ -11,6 +11,7 @@ import { painted } from './paintedArt';
 import { MAP_WORDS } from '../../../shared/classlive/corners';
 import { BAY_WORDS, isShark, SHARK } from '../../../shared/classlive/shark';
 import { HOWTO, VOICE_FOLDER } from './voiceLines';
+import { ghostSheet } from './GhostCard';
 
 type Game = ScreenView['game'];
 interface Step { icon: string; text: string; say: string }
@@ -45,6 +46,7 @@ export function sheetFor(game: Game): Sheet {
       ],
     };
   }
+  if (game.kind === 'ghost') return ghostSheet(game);
   // Shark Bay
   if (isShark(game)) {
     const H = HOWTO.shark;
