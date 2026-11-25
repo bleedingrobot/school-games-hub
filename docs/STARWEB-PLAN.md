@@ -2,7 +2,7 @@
 
 *James, 25 Nov 2026: "some kids really love the star web game! can you plan how we can turn this into a single player game on the main dash please!" Id `starweb`, CSS prefix `.sw-`, group `'complex-maths'` (next to Class Live). Older-pupil route, Years 3 to 6.*
 
-**Status: plan only (this PR). Nothing built. Stages SW1 to SW5 below; James's three choices (25 Nov) are in the Decisions table.**
+**Status (25 Nov 2026): LIVE and switched on, with painted art (PRs #846, #848). See "Went live".**
 
 ## The short version
 
@@ -128,6 +128,14 @@ Art plan file `docs/STARWEB-ART-PLAN.md` and `docs/starweb-art/config.json` come
 
 Rules for every stage: import from `shared/classlive/` and `src/games/classlive/`, never edit them from this branch; if Star Web solo needs a change there (say `StarSky` must take a smaller size), make it a tiny separate PR. Tests within the 8 for an older game (docs/TESTING.md).
 
+## Built (25 Nov 2026)
+
+- **Choices made while building:** Free sky opens after 5 lit skies (not after the whole Star Map, so keen pupils get it sooner); free skies light nothing and earn no points (practice). Help comes slowly (James, 25 Nov: "if kids get stuck it should slowly give them hints"): no new star for 20 s brings a nudge to the emptiest arm, 20 s more the hint with the fact's own numbers, 20 s more "Show me" (a worked example on 2 × 5 or 3 × 4); "I'm stuck" asks for the next rung at once; a new star takes the help back down. Every rung shown counts as help for "Every Way". A lit sky left open is finished (medal and points kept) when the pupil starts a new one. The guided first sky is 3 × 4. The seven arm names stay on the sky; the pad shows small coloured counts.
+- **Today's "Hardest right now"** lists the arms that under half the class's skies this week lit (at most 2), with a warm-up idea.
+- **Tables lit** measures end in `_step` (they follow the pupil's times tables), so the boards leave them out.
+
 ## Went live
 
-Nothing yet. Next prompt is on the Games Hub Prompts board (`starweb-sw1`).
+- **25 Nov 2026 NZ:** SW1-SW5 merged in PR #846 (deploy green; tables, `starweb_enabled` on, function `starweb` live, outside callers refused). Switched on with a What's new line and the painted art (Star Map backdrop, dusk and aurora skies, home card; picks in `docs/starweb-art/picks.json`) in PR #848.
+- **Art notes:** the aurora sky is bright through the upper middle, so stars there stand out less; repaint it darker if pupils find it hard to see. Map try 3 left out (busy compass rose).
+- **Next ideas (not planned):** a darker aurora repaint; creature pictures for whale, falcon and dragon.

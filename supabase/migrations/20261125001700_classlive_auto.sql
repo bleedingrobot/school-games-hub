@@ -233,7 +233,7 @@ as $$
     and not exists (select 1 from public.classlive_players p where p.room = r.id and p.player = me)
 $$;
 
--- As 20261125000300_classlive_corners.sql, with rooms that have no class.
+-- As 20261125000800_classlive_activities.sql, with rooms that have no class.
 create or replace function public.classlive_here()
 returns jsonb
 language sql
@@ -243,8 +243,7 @@ set search_path = ''
 as $$
   select coalesce(jsonb_agg(jsonb_build_object('room', r.id,
       'class', case when r.code is not null and r.host is not null
-        then r.host || ' is starting ' || case r.activity when 'stars' then 'Star Web' when 'serpent' then 'Serpent Chain'
-          when 'corners' then 'Four Corners' else 'Mystery Mural' end
+        then r.host || ' is starting ' || coalesce((select a.name from public.classlive_activities a where a.id = r.activity), 'a Class Live game')
         else coalesce(c.name, 'your class') end,
       'lobby', r.code is not null, 'state', r.state, 'activity', r.activity,
       'until', to_char((r.opened_at + interval '3 hours') at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))
@@ -254,7 +253,7 @@ as $$
   where coalesce((select s.classlive_enabled from public.settings_of(auth.uid()) s), false)
 $$;
 
--- As 20261125000300_classlive_corners.sql, but a room with no class (a set-time game) pays pupils of its school.
+-- As 20261125000800_classlive_activities.sql, but a room with no class (a set-time game) pays pupils of its school.
 create or replace function public.classlive_finish(target bigint, done jsonb)
 returns text
 language plpgsql
@@ -268,7 +267,8 @@ declare
   p jsonb;
   who uuid;
   reached boolean := coalesce((done ->> 'goal')::boolean, false);
-  small integer;
+  small integer := 500;
+  add jsonb;
 begin
   select r.class_id, r.school_id, r.code is not null into room_class, room_school, room_lobby
   from public.classlive_rooms r where r.id = target;
@@ -287,8 +287,11 @@ begin
     end if;
     perform public.add_game_points(who, 'classlive', least(greatest(coalesce((p ->> 'points')::integer, 0), 0), 10),
       'classlive:' || target || ':' || (done ->> 'seed'));
-    small := 500;
-    insert into public.classlive_stats as s (player, sessions, stars, boxes, heads, tiles, guessed, goals, safe_rounds, corner_wins, escapes, powers)
+    -- Extra totals: keys of 2 to 30 lowercase letters or _, whole numbers 0 to 500, at most 12 keys.
+    select coalesce(jsonb_object_agg(e.key, least(greatest(floor(e.value::text::numeric), 0), small)), '{}'::jsonb) into add
+    from (select key, value from jsonb_each(case when jsonb_typeof(p -> 'extra') = 'object' then p -> 'extra' else '{}'::jsonb end)
+          where key ~ '^[a-z_]{2,30}$' and jsonb_typeof(value) = 'number' limit 12) e;
+    insert into public.classlive_stats as s (player, sessions, stars, boxes, heads, tiles, guessed, goals, safe_rounds, corner_wins, escapes, powers, extra)
     values (who, 1,
       least(greatest(coalesce((p ->> 'stars')::integer, 0), 0), small),
       least(greatest(coalesce((p ->> 'boxes')::integer, 0), 0), small),
@@ -299,7 +302,8 @@ begin
       least(greatest(coalesce((p ->> 'safe')::integer, 0), 0), small),
       case when coalesce((p ->> 'champion')::boolean, false) then 1 else 0 end,
       least(greatest(coalesce((p ->> 'escapes')::integer, 0), 0), small),
-      least(greatest(coalesce((p ->> 'powers')::integer, 0), 0), small))
+      least(greatest(coalesce((p ->> 'powers')::integer, 0), 0), small),
+      add)
     on conflict (player) do update set
       sessions = s.sessions + 1,
       stars = s.stars + excluded.stars,
@@ -312,6 +316,8 @@ begin
       corner_wins = s.corner_wins + excluded.corner_wins,
       escapes = s.escapes + excluded.escapes,
       powers = s.powers + excluded.powers,
+      extra = (select coalesce(jsonb_object_agg(k, coalesce((s.extra ->> k)::numeric, 0) + coalesce((excluded.extra ->> k)::numeric, 0)), '{}'::jsonb)
+               from (select jsonb_object_keys(s.extra) k union select jsonb_object_keys(excluded.extra)) keys),
       updated_at = now();
     perform public.game_progress_changed(who, 'classlive');
   end loop;

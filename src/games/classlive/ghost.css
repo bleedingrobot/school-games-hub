@@ -1,0 +1,187 @@
+/* Ghost Tag (docs/GHOST-PLAN.md). Builds on corners.css (fc-board, fc-token, fc-stage, fc-side, fc-finish). */
+
+.gt-board { --gt-a: #1e293b; --gt-b: #0f172a; }
+.gt-board--graveyard { --gt-a: #26354a; --gt-b: #0b1220; }
+.gt-board--mansion { --gt-a: #3b2340; --gt-b: #160b19; }
+.gt-board--pumpkin { --gt-a: #3a2a12; --gt-b: #140d04; }
+.gt-board--ship { --gt-a: #123241; --gt-b: #06141b; }
+.gt-board__ground {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 70% 15%, rgba(255, 255, 230, 0.22), transparent 18%),
+    radial-gradient(circle at 50% 50%, var(--gt-a), var(--gt-b) 80%);
+}
+.gt-board__ground::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 5% 5%;
+}
+
+.gt-crypt, .gt-stone, .gt-slow, .gt-warp, .gt-bats {
+  position: absolute;
+  border-radius: 50%;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: grid;
+  place-items: center;
+}
+.gt-crypt { background-color: rgba(76, 29, 149, 0.35); box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.6), 0 0 40px rgba(167, 139, 250, 0.5) inset; }
+.gt-crypt[style*='url'] { background-color: transparent; box-shadow: none; }
+.gt-crypt span { font-size: 4vmin; opacity: 0.9; }
+.gt-crypt--open { box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.25); }
+.gt-stone span { font-size: 3.6vmin; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.6)); }
+.gt-stone:not([style*='url']) { background: rgba(0, 0, 0, 0.18); }
+.gt-slow:not([style*='url']) { background: radial-gradient(circle, rgba(148, 163, 184, 0.45), rgba(148, 163, 184, 0.1) 70%); outline: 2px dashed rgba(203, 213, 225, 0.4); }
+.gt-warp:not([style*='url']) { background: radial-gradient(circle, #000 30%, rgba(168, 85, 247, 0.7) 70%, transparent); }
+.gt-warp { animation: gt-spin 4s linear infinite; }
+.gt-warp span { font-size: 2.6vmin; }
+.gt-bats { z-index: 3; filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8)); }
+.gt-bats span { font-size: 3vmin; animation: gt-flap 0.3s ease-in-out infinite alternate; }
+.gt-item { filter: drop-shadow(0 0 10px rgba(250, 204, 21, 0.9)); }
+@keyframes gt-spin { to { transform: rotate(360deg); } }
+@keyframes gt-flap { to { transform: scaleY(0.7); } }
+
+.gt-fog {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(203, 213, 225, 0.55), rgba(148, 163, 184, 0.85));
+  animation: gt-fogin 1.5s ease-out;
+}
+@keyframes gt-fogin { from { opacity: 0; } }
+
+/* Players */
+.gt-token--ghost .fc-token__body { opacity: 0.55; filter: grayscale(0.6) brightness(1.4); box-shadow: 0 0 18px 4px rgba(226, 232, 240, 0.9); }
+.gt-token--ghost { animation: gt-float 1.6s ease-in-out infinite; z-index: 3; }
+.gt-token__sheet {
+  position: absolute;
+  left: 50%;
+  top: -55%;
+  width: 90%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.gt-token__sheet--emoji { width: auto; font-size: 2.6vmin; line-height: 1; filter: drop-shadow(0 0 6px #fff); }
+.gt-token--rising { animation: gt-rise 1.5s ease-out; }
+.gt-token--frozen .fc-token__body { filter: hue-rotate(180deg) saturate(2); box-shadow: 0 0 0 4px #7dd3fc, 0 0 24px #38bdf8; }
+.gt-token--lantern::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 900%;
+  height: 900%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(253, 224, 71, 0.35), transparent 65%);
+  pointer-events: none;
+}
+.gt-token--hidden .fc-token__body { opacity: 0.3; box-shadow: 0 0 0 3px #e9d5ff, 0 0 24px #c084fc; }
+.gt-token--winner .fc-token__body { animation: fc-safe 0.6s ease-out infinite; }
+@keyframes gt-float { 50% { transform: translate(-50%, -62%); } }
+@keyframes gt-rise { from { transform: translate(-50%, -50%) scale(0.3); opacity: 0.2; } }
+
+.gt-dot { display: grid; place-items: center; font-size: 2vmin; }
+.gt-dot--0 { background: #facc15; }
+.gt-dot--1 { background: transparent; box-shadow: none; font-size: 3.2vmin; }
+.gt-dot--2 { background: transparent; box-shadow: none; font-size: 3.2vmin; filter: hue-rotate(180deg) saturate(3); }
+.gt-dot--3 { background: #c084fc; opacity: 0.8; box-shadow: 0 0 12px #c084fc; }
+
+.gt-pop--tag { font-size: 5vmin; color: #fff; text-shadow: 0 0 16px #a78bfa; }
+.gt-pop--vanish { font-size: 6vmin; }
+
+/* Big screen */
+.gt-counts { display: flex; gap: 1vw; font-size: clamp(16px, 3vh, 34px); font-weight: 800; }
+.gt-counts span { background: rgba(0, 0, 0, 0.35); border-radius: 12px; padding: 0.6vh 0.8vw; }
+.gt-counts__g { color: #e9d5ff; }
+.gt-time { font-size: clamp(18px, 3.6vh, 42px); font-weight: 900; }
+.gt-time--low { color: #fca5a5; animation: fc-pulse 0.8s ease-in-out infinite; }
+.gt-ready {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 30;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+.gt-ready__n { font-size: 22vh; font-weight: 900; line-height: 1; animation: fc-newin 0.5s cubic-bezier(0.3, 1.6, 0.5, 1); color: #e9d5ff; }
+.gt-ready p { font-size: clamp(18px, 4vh, 44px); font-weight: 800; margin: 0; }
+.gt-ready__who { font-size: clamp(14px, 2.6vh, 30px) !important; opacity: 0.9; }
+.gt-banner {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5vh;
+  padding: 3vh 4vw;
+  border-radius: 24px;
+  color: #fff;
+  background: linear-gradient(135deg, rgba(76, 29, 149, 0.95), rgba(15, 23, 42, 0.95));
+  box-shadow: 0 0 80px rgba(167, 139, 250, 0.7);
+  animation: fc-newin 0.7s cubic-bezier(0.3, 1.6, 0.5, 1);
+  max-width: 80vw;
+  text-align: center;
+}
+.gt-banner b { font-size: clamp(22px, 5vh, 60px); }
+.gt-banner--last { background: linear-gradient(135deg, rgba(234, 179, 8, 0.95), rgba(180, 83, 9, 0.95)); box-shadow: 0 0 90px rgba(250, 204, 21, 0.8); }
+.gt-banner__who { display: flex; flex-wrap: wrap; gap: 1vw; justify-content: center; }
+.gt-banner__who span { display: flex; flex-direction: column; align-items: center; }
+.gt-lobby-ghosts { display: flex; gap: 3vw; font-size: 9vh; }
+.gt-lobby-ghosts i { font-style: normal; animation: gt-float2 2s ease-in-out infinite; }
+.gt-lobby-ghosts i:nth-child(2) { animation-delay: -0.7s; }
+.gt-lobby-ghosts i:nth-child(3) { animation-delay: -1.4s; }
+@keyframes gt-float2 { 50% { transform: translateY(-20%); } }
+
+/* Pupil's device */
+.gt-pad--ghost { background: radial-gradient(circle at 50% 30%, rgba(167, 139, 250, 0.25), transparent 70%); }
+.gt-pad__status { font-size: clamp(14px, 2.6vh, 24px); }
+.gt-pad__status.is-hidden { color: #e9d5ff; }
+.gt-controls { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.gt-power {
+  min-width: 140px;
+  min-height: 72px;
+  border: 0;
+  border-radius: 20px;
+  font: inherit;
+  font-size: 22px;
+  font-weight: 900;
+  color: #fff;
+  background: linear-gradient(135deg, #a855f7, #6366f1);
+  box-shadow: 0 6px 0 #4c1d95, 0 0 24px rgba(168, 85, 247, 0.7);
+  cursor: pointer;
+}
+.gt-power--ghost { background: linear-gradient(135deg, #e2e8f0, #94a3b8); color: #1e1b4b; box-shadow: 0 6px 0 #475569, 0 0 24px rgba(226, 232, 240, 0.7); }
+.gt-power:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
+.gt-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  font-size: clamp(32px, 9vw, 90px);
+  font-weight: 900;
+  color: #fff;
+  text-align: center;
+  pointer-events: none;
+  animation: gt-flash 1.6s ease-out forwards;
+}
+.gt-flash--caught { background: radial-gradient(circle, rgba(167, 139, 250, 0.85), rgba(15, 23, 42, 0.9)); }
+.gt-flash--hide { background: radial-gradient(circle, rgba(233, 213, 255, 0.6), transparent 70%); }
+.gt-flash--win { background: radial-gradient(circle, rgba(250, 204, 21, 0.7), transparent 70%); font-size: 30vw; }
+@keyframes gt-flash { 0% { opacity: 0; transform: scale(1.3); } 15% { opacity: 1; transform: scale(1); } 75% { opacity: 1; } to { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-token--ghost, .gt-warp, .gt-bats span, .gt-lobby-ghosts i { animation: none; }
+}

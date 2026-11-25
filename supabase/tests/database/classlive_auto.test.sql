@@ -1,4 +1,4 @@
--- Class Live games at set times (migration 20261125000600_classlive_auto.sql; docs/plans/classlive-auto/PLAN.md): only a
+-- Class Live games at set times (migration 20261125001700_classlive_auto.sql; docs/plans/classlive-auto/PLAN.md): only a
 -- school admin sets times; the job opens one school-wide room per time per day with no class or teacher; pupils of the
 -- school see it in the pop-up; it is closed if nobody moved it on.
 begin;

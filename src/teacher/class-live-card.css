@@ -1,0 +1,31 @@
+/* The Class Live card on the teacher's Today page (ClassLiveCard.tsx). */
+.cl-today {
+  position: relative; overflow: hidden; color: #fff; border: 2px solid #ffd54a;
+  background: linear-gradient(120deg, rgba(20, 14, 70, 0.93), rgba(52, 20, 90, 0.86)), var(--hall, none) center / cover, #1a1450;
+  box-shadow: 0 8px 28px rgba(40, 20, 100, 0.35), 0 0 30px rgba(255, 200, 80, 0.25);
+}
+.cl-today__top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-bottom: 14px; }
+.cl-today__title { margin: 0; font-size: 1.6rem; font-weight: 900; color: #fff6c9; text-shadow: 0 0 18px rgba(255, 191, 71, 0.7); }
+.cl-today__sub { margin: 2px 0 0; color: #dfe2ff; }
+.cl-today__go {
+  display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 999px; font-weight: 800; font-size: 1.1rem; text-decoration: none;
+  color: #2a1a00; background: linear-gradient(180deg, #ffe58a, #ffbf2f); box-shadow: 0 4px 0 #b57d00, 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+.cl-today__go:hover { filter: brightness(1.07); }
+.cl-today__go:active { transform: translateY(2px); box-shadow: 0 2px 0 #b57d00; }
+.cl-today__games { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+.cl-today__game {
+  --tint: #3b3fb8;
+  display: flex; flex-direction: column; overflow: hidden; height: 100%; border-radius: 14px; text-decoration: none; color: #fff;
+  border: 2px solid color-mix(in srgb, var(--tint) 50%, #ffd54a); background: rgba(14, 10, 56, 0.85); transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.cl-today__game:hover, .cl-today__game:focus-visible { transform: translateY(-3px); border-color: #ffd54a; }
+.cl-today__pic { display: grid; place-items: center; aspect-ratio: 16 / 9; overflow: hidden; background: radial-gradient(ellipse at 50% 35%, color-mix(in srgb, var(--tint) 80%, #fff 20%), var(--tint) 60%); }
+.cl-today__pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cl-today__pic i { font-style: normal; font-size: 2rem; }
+.cl-today__game b { padding: 6px 8px 8px; font-size: 0.92rem; line-height: 1.2; }
+@media (max-width: 560px) {
+  .cl-today__games { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cl-today__go { width: 100%; justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) { .cl-today__game:hover { transform: none; } }

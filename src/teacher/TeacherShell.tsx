@@ -23,6 +23,7 @@ import { prettyCode } from '../../shared/multiplayer';
 import { showdownOn } from '../games/showdown/switch';
 import { classliveOn } from '../games/classlive/switch';
 import { mineFirst, rememberedClass, TeacherClassPicker, TeacherClassProvider, useTeacherClass } from './TeacherClass';
+import { useOnlineNow } from '../data/onlineNow';
 import './teacher-shell.css';
 
 function TeachersOnly() {
@@ -94,6 +95,19 @@ function ShellBody({ inAddress, mode, isAdmin }: { inAddress: string | null; mod
   );
 }
 
+/** How many of the class (and the school) have the hub open right now. Counts only, so it is safe on a projector. */
+function OnlineNowFact({ classId, members }: { classId: string; members: number }) {
+  const online = useOnlineNow(classId);
+  if (!online) return null;
+  const inClass = online.class ?? 0;
+  return (
+    <span className="teacher-head__online" data-online-now>
+      <span className={`online-dot${inClass > 0 ? ' online-dot--on' : ''}`} aria-hidden="true" />
+      <strong>{inClass}</strong>&nbsp;of {members} online now · {online.school} in the school
+    </span>
+  );
+}
+
 function TeacherHeader({ isAdmin }: { isAdmin: boolean }) {
   const { current, classId } = useTeacherClass();
   if (!current || !classId) return null;
@@ -131,6 +145,7 @@ function TeacherHeader({ isAdmin }: { isAdmin: boolean }) {
           Code {prettyCode(current.warp_code)}
           {current.warp_mode === 'off' ? ' (off)' : current.warp_mode === 'ask' ? ' (asks you first)' : ''}
         </span>
+        <OnlineNowFact classId={classId} members={current.members} />
       </p>
       <nav className="teacher-tabs" aria-label="Teacher pages">
         {tabs.map((t) => (

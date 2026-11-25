@@ -1,0 +1,607 @@
+{
+  "_from": "docs/corners-art/config.json. Check with: python3 scripts/game_art.py shark paint OUT --dry-run",
+  "game": "shark",
+  "filename_prefix": "shark/img",
+  "style": "s",
+  "styles": {
+    "s": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. ",
+    "c": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. "
+  },
+  "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly",
+  "negative_cut": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+  "art_dir": "src/games/classlive/art/paint",
+  "home_dir": "src/assets/home",
+  "inbox": "~/dragon-art-inbox/shark-art/set",
+  "picks": "docs/shark-art/picks.json",
+  "pictures": [
+    {
+      "name": "map-lagoon",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down painted game board of a sunny tropical lagoon: a big perfectly round bay of clear turquoise water filling the picture, golden sand beach, palm trees and bright green bushes round the edges, in the very middle a small round wooden jetty platform, the water calm, open and empty everywhere else, top-down bird's-eye view straight down, game board, square picture, no boats, no characters, no creatures, no writing anywhere.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "shark",
+      "file": "map-lagoon",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view"
+    },
+    {
+      "name": "back-lagoon",
+      "prompt": "A wide backdrop painting: bright sunny tropical sky, white clouds, palm islands. The middle is calm, darker and softer, an empty open middle with nothing in it, just plain soft water, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "shark",
+      "file": "back-lagoon"
+    },
+    {
+      "name": "cave-lagoon",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A wide strip picture of an empty friendly underwater sea cave in a sunny tropical lagoon: a rocky cave mouth with seaweed, bubbles and a soft glow, sandy floor, no sharks, no fish, no animals, no characters, no writing. Wide landscape strip, the middle of the picture calm and uncluttered.",
+      "size": [
+        1536,
+        512
+      ],
+      "kind": "scene",
+      "folder": "shark",
+      "file": "cave-lagoon",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, shark, sharks, fish, animals, creatures"
+    },
+    {
+      "name": "map-reef",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down painted game board of a coral reef bay: a big perfectly round bay of clear aqua water with soft sandy patches seen through it filling the picture, pink and orange coral and smooth rocks round the edges, in the very middle a small round wooden jetty platform, the water calm, open and empty everywhere else, top-down bird's-eye view straight down, game board, square picture, no boats, no characters, no creatures, no writing anywhere.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "shark",
+      "file": "map-reef",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view"
+    },
+    {
+      "name": "back-reef",
+      "prompt": "A wide backdrop painting: a bright reef seen from above, little colourful fish shadows at the edges, sun sparkles. The middle is calm, darker and softer, an empty open middle with nothing in it, just plain soft water, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "shark",
+      "file": "back-reef"
+    },
+    {
+      "name": "cave-reef",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A wide strip picture of an empty friendly underwater sea cave in a coral reef bay: a rocky cave mouth with seaweed, bubbles and a soft glow, sandy floor, no sharks, no fish, no animals, no characters, no writing. Wide landscape strip, the middle of the picture calm and uncluttered.",
+      "size": [
+        1536,
+        512
+      ],
+      "kind": "scene",
+      "folder": "shark",
+      "file": "cave-reef",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, shark, sharks, fish, animals, creatures"
+    },
+    {
+      "name": "map-pirate",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down painted game board of a pirate cove: a big perfectly round bay of deep teal water filling the picture, dark rocky cliffs, barrels and treasure chests round the edges, in the very middle a small round wooden jetty platform, the water calm, open and empty everywhere else, top-down bird's-eye view straight down, game board, square picture, no boats, no ships, no shipwrecks, no characters, no creatures, no writing anywhere.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "shark",
+      "file": "map-pirate",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view, ship, ships, shipwreck, sails, boat"
+    },
+    {
+      "name": "back-pirate",
+      "prompt": "A wide backdrop painting: a pirate cove at sunset with a big pirate ship at anchor and a skull-shaped rock, orange sky. The middle is calm, darker and softer, an empty open middle with nothing in it, just plain soft water, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "shark",
+      "file": "back-pirate"
+    },
+    {
+      "name": "cave-pirate",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A wide strip picture of an empty friendly underwater sea cave in a pirate cove: a rocky cave mouth with seaweed, bubbles and a soft glow, sandy floor, no sharks, no fish, no animals, no characters, no writing. Wide landscape strip, the middle of the picture calm and uncluttered.",
+      "size": [
+        1536,
+        512
+      ],
+      "kind": "scene",
+      "folder": "shark",
+      "file": "cave-pirate",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, shark, sharks, fish, animals, creatures"
+    },
+    {
+      "name": "map-icy",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down painted game board of a frozen winter bay: a big perfectly round bay of deep cold blue water filling the picture, smooth snowy ice shelves and icebergs round the edges, the snow completely empty and untouched, in the very middle a small round wooden jetty platform, the water calm, open and empty everywhere else, top-down bird's-eye view straight down, game board, square picture, no boats, no penguins, no animals, no characters, no creatures, no writing anywhere.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "shark",
+      "file": "map-icy",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view, penguin, penguins, birds, seals, polar bear"
+    },
+    {
+      "name": "back-icy",
+      "prompt": "A wide backdrop painting: a polar bay under northern lights, icebergs and snowy cliffs, pale violet sky. The middle is calm, darker and softer, an empty open middle with nothing in it, just plain soft water, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "shark",
+      "file": "back-icy"
+    },
+    {
+      "name": "cave-icy",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A wide strip picture of an empty friendly underwater sea cave in an icy polar bay: a rocky cave mouth with seaweed, bubbles and a soft glow, sandy floor, no sharks, no fish, no animals, no characters, no writing. Wide landscape strip, the middle of the picture calm and uncluttered.",
+      "size": [
+        1536,
+        512
+      ],
+      "kind": "scene",
+      "folder": "shark",
+      "file": "cave-icy",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, shark, sharks, fish, animals, creatures"
+    },
+    {
+      "name": "pick-shark",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A wide picture of a round bay of turquoise water split into red, yellow, green and purple quarters by rope lines with floats, a big friendly cartoon shark fin circling, a little rowboat, a wooden jetty in the middle, splashes and sparkles, bright and exciting, no characters, no writing. Wide landscape picture.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "pick",
+      "file": "shark"
+    },
+    {
+      "name": "power-shield",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A game power-up icon: an empty glossy silver diving cage, a round dome of metal bars with a gold rim and a shimmer of blue light, front view, the cage empty with nothing inside. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "power-shield",
+      "style": "c",
+      "max": 512,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, shark, animal, fish, teeth, creature inside"
+    },
+    {
+      "name": "power-speed",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A game power-up icon: a happy leaping dolphin with speed streaks of water, front view. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "power-speed",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-key",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A game power-up icon: a red and white lifebuoy ring with a rope and a sparkle, front view. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "power-key",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-crystal",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A game power-up icon: a shiny brass periscope with a glowing lens, front view. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "power-crystal",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-jump",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A game power-up icon: a small bright yellow jet ski with a white spray of water, front view. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "power-jump",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-double",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A game power-up icon: an open oyster shell with a big glowing pearl, front view. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "power-double",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-ghost",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A game power-up icon: a cute purple squid puffing a swirl of dark ink cloud, front view. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "power-ghost",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "lagoon-storm",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a round clump of floating green seaweed, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "lagoon-storm",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "lagoon-ice",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a round swirl of bright turquoise sea water with fast white foam streaks spinning around it, only water, nothing solid, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "lagoon-ice",
+      "style": "c",
+      "max": 512,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, wood, wooden, disc, plate, rim, ball, brown"
+    },
+    {
+      "name": "lagoon-roller",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a big curling turquoise ocean wave crest with white foam spray, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "lagoon-roller",
+      "style": "c",
+      "max": 512,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, target, bullseye, roundel, concentric rings, disc"
+    },
+    {
+      "name": "lagoon-teleport",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a deep blue whirlpool spiral, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "lagoon-teleport",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "lagoon-boat",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a small wooden rowboat seen straight down from above, empty, pointing up, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "lagoon-boat",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "lagoon-dock",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a round wooden jetty platform of planks seen straight down from above, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "lagoon-dock",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "reef-storm",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a round patch of tall swaying kelp, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "reef-storm",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "reef-ice",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a round swirl of bright turquoise sea water rip current with white foam streaks spinning around it, only water, nothing solid, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "reef-ice",
+      "style": "c",
+      "max": 512,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, wood, wooden, disc, plate, rim, orange, red, brown"
+    },
+    {
+      "name": "reef-roller",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a rolling turquoise wave seen from above, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "reef-roller",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "reef-teleport",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a ring of rising bubbles in a glowing tube, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "reef-teleport",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "reef-boat",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a small glass-bottom boat seen straight down from above, empty, pointing up, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "reef-boat",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "reef-dock",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a round flat reef rock with coral seen straight down from above, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "reef-dock",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "pirate-storm",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a tangle of old fishing nets floating in a round patch, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "pirate-storm",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "pirate-ice",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a round swirl of dark teal sea water with white foam streaks spinning around it, only water, nothing solid, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "pirate-ice",
+      "style": "c",
+      "max": 512,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, galaxy, space, stars, glowing centre, wood, wooden, disc, rim, brown, orange"
+    },
+    {
+      "name": "pirate-roller",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a rolling wooden barrel seen from above, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "pirate-roller",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "pirate-teleport",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a dark round secret tunnel hole in the water with a glow, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "pirate-teleport",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "pirate-boat",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a small pirate dinghy with a tiny skull flag seen straight down from above, empty, pointing up, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "pirate-boat",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "pirate-dock",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a round wooden pirate pier platform with a rope post seen straight down from above, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "pirate-dock",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "icy-storm",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a round patch of slushy ice chunks, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "icy-storm",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "icy-ice",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a flat round patch of shiny smooth pale blue ice with white swirly skate scratch lines, seen straight down, only ice, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "icy-ice",
+      "style": "c",
+      "max": 512,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, slide, playground, chute, wood, wooden, bowl, rim, brown, orange"
+    },
+    {
+      "name": "icy-roller",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a small chunky white and pale blue iceberg seen from above, on its own with nothing around it, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "icy-roller",
+      "style": "c",
+      "max": 512,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, disc, plate, rim, wood, wooden, brown, orange, frame, badge"
+    },
+    {
+      "name": "icy-teleport",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a round hole in white snowy ice showing dark blue water with a soft cyan glow, the edge made of white snow and ice, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "icy-teleport",
+      "style": "c",
+      "max": 512,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, wood, wooden, rim, frame, brown, orange, porthole"
+    },
+    {
+      "name": "icy-boat",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a small flat floating ice floe seen straight down from above, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "icy-boat",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "icy-dock",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A top-down game marker seen from above: a round icy jetty platform of ice blocks seen straight down from above, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "icy-dock",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "fin",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A big grey cartoon shark fin sticking up out of the water with a little white splash ring, friendly and not scary, side view. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "fin",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "shark",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. A big friendly cartoon grey shark leaping out of the water with a silly goofy grin, small rounded blunt teeth, tongue poking out, big round googly eyes, cute and clumsy, splashes all round, not scary, no blood, side view. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "shark-fx",
+      "file": "shark",
+      "style": "c",
+      "max": 512,
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, sharp teeth, fangs, rows of teeth, menacing, angry"
+    }
+  ]
+}

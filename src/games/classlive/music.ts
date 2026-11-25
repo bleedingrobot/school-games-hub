@@ -14,7 +14,7 @@ type Calm = 'stars' | 'serpent' | 'boss' | 'goldrush' | 'skyclimb' | 'island' | 
  * Each game and arena has a calm track and a "-hot" one: the same tune made more dramatic and high-energy, for the
  * last 30 seconds and the big moments (James, 25 Nov 2026 NZ). Mystery Mural's hot one is its guessing music.
  */
-export type Track = 'picker' | 'win' | 'mural' | 'guess' | Calm | `${Calm}-hot` | `game-${string}` | `corners-${string}`;
+export type Track = 'picker' | 'win' | 'mural' | 'guess' | Calm | `${Calm}-hot` | `game-${string}` | `corners-${string}` | `shark-${string}` | `ghost-${string}` | `clash-${string}` | `thrones-${string}` | `lava-${string}`;
 
 const FILES = import.meta.glob('./music/*.mp3', { eager: true, import: 'default' }) as Record<string, string>;
 const file = (t: string): string | undefined => FILES[`./music/${t}.mp3`];
@@ -181,14 +181,52 @@ export const HOT_MS = 30_000;
  */
 const CORNER_TRACKS: Record<string, Calm> = { snow: 'skyclimb', jungle: 'island', castle: 'boss', space: 'stars' };
 const MAPS = ['snow', 'jungle', 'castle', 'space'];
+/** Shark Bay: its own tracks (shark-lagoon, shark-lagoon-hot...) when made, else a Four Corners map's track. */
+const SHARK_BORROWS: Record<string, string> = { lagoon: 'jungle', reef: 'space', pirate: 'castle', icy: 'snow' };
 
 /** The track for a Class Live room: the lobby shares the picker's, the end plays the win, hot moments the hot one. */
 
-export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | 'corners' | null, o: { guessing?: boolean; hot?: boolean; map?: string } = {}): Track {
+/**
+ * Musical Thrones plays its hall's dance track (thrones-castle, thrones-castle-hot...) only while the music is on: the
+ * screens pass no track the moment it stops (`useMusic(null)` cuts it at once). A missing track borrows one.
+ */
+const THRONE_TRACKS: Record<string, Calm> = { castle: 'boss', ice: 'skyclimb', jungle: 'serpent', pirate: 'island' };
+
+export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | 'corners' | 'ghost' | 'clash' | 'thrones' | 'lava' | null, o: { guessing?: boolean; hot?: boolean; /** A Four Corners, Ghost Tag or Colour Clash map, or (with `shark`) a Shark Bay bay. */ map?: string; /** Shark Bay: `map` is a bay. */ shark?: boolean } = {}): Track {
   if (state === 'over') return 'win';
   if (!state || !kind || state !== 'live') return 'picker';
+  if (kind === 'thrones') {
+    const hall = o.map && THRONE_TRACKS[o.map] ? o.map : 'castle';
+    const own: Track = o.hot ? `thrones-${hall}-hot` : `thrones-${hall}`;
+    if (trackUrl(own)) return own;
+    const calm = THRONE_TRACKS[hall];
+    return o.hot ? `${calm}-hot` : calm;
+  }
   if (kind === 'mural') return o.guessing || o.hot ? 'guess' : 'mural';
+  if (kind === 'clash') {
+    // Colour Clash: its own map tracks once painted on James's PC (clash-<map>[-hot].mp3), else a Showdown arena's.
+    const own: Track = o.hot ? `clash-${o.map}-hot` : `clash-${o.map}`;
+    if (o.map && trackUrl(own)) return own;
+    return o.hot ? 'goldrush-hot' : 'goldrush';
+  }
+  if (kind === 'ghost') {
+    // Ghost Tag's own map track (ghost-graveyard, ghost-graveyard-hot...), else the boss's.
+    const own: Track = o.hot ? `ghost-${o.map ?? 'graveyard'}-hot` : `ghost-${o.map ?? 'graveyard'}`;
+    return trackUrl(own) ? own : o.hot ? 'boss-hot' : 'boss';
+  }
+  if (kind === 'lava') {
+    // Floor is Lava: its map's own track (lava-volcano, lava-volcano-hot...), else a borrowed one.
+    const own: Track = o.hot ? `lava-${o.map ?? 'volcano'}-hot` : `lava-${o.map ?? 'volcano'}`;
+    if (trackUrl(own)) return own;
+    return o.hot ? 'boss-hot' : 'boss';
+  }
   if (kind === 'corners') {
+    if (o.shark) {
+      const bay = o.map ?? 'lagoon';
+      const mine: Track = o.hot ? `shark-${bay}-hot` : `shark-${bay}`;
+      if (trackUrl(mine)) return mine;
+      return classLiveTrack(state, kind, { hot: o.hot, map: SHARK_BORROWS[bay] ?? 'jungle' });
+    }
     const map = MAPS.includes(o.map ?? '') ? o.map! : 'snow';
     const own: Track = o.hot ? `corners-${map}-hot` : `corners-${map}`;
     if (trackUrl(own)) return own;

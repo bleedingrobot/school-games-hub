@@ -43,7 +43,8 @@ async function show(world: World, role?: string, wait = true) {
 }
 
 // The home layout (folded sections, pinned games) is asked once while the site is open, not each time the page opens.
-const asked = () => sent.filter((s) => s !== 'from app_settings' && s !== 'rpc my_home_layout');
+// The "online now" chip is a tiny count of its own, read every 30 seconds, and never holds the page up.
+const asked = () => sent.filter((s) => s !== 'from app_settings' && s !== 'rpc my_home_layout' && s !== 'rpc hub_online_now');
 
 describe('the home page in one request', () => {
 

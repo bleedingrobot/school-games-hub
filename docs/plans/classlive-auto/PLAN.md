@@ -1,6 +1,6 @@
 # Class Live games that start by themselves
 
-**Status: building (25 Nov 2026 NZ), one PR. Migration `20261125000600_classlive_auto`.**
+**Status: building (25 Nov 2026 NZ), one PR. Migration `20261125001700_classlive_auto`.**
 
 James asked (25 Nov 2026 NZ): "Can we get the server to start a class live game at set times and run it if there are enough players?" and "We'll need an admin page for all the settings."
 

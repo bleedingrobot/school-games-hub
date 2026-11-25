@@ -1,9 +1,9 @@
--- Class Live (migrations 20261124000100_classlive.sql, 20261124000700_classlive_mural.sql and 20261124000800_classlive_rewards.sql, 20261125000200_classlive_lobby.sql, 20261125000300_classlive_corners.sql, id classlive): rooms, the hidden session, the projector's screen
+-- Class Live (migrations 20261124000100_classlive.sql, 20261124000700_classlive_mural.sql and 20261124000800_classlive_rewards.sql, 20261125000200_classlive_lobby.sql, 20261125000300_classlive_corners.sql, 20261125000800_classlive_activities.sql, id classlive): rooms, the hidden session, the projector's screen
 -- (teachers only), each pupil's own row, the compare-and-swap save, the switch, and the join pop-up in hub_here().
 -- Run on a throw-away copy: scripts/scratch-db.sh classlive, then scripts/scratch-test.sh classlive supabase/tests/database/classlive.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(49);
+select plan(53);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -144,6 +144,16 @@ select pg_temp.act_as_server();
 select is(public.classlive_finish(current_setting('test.corners')::bigint, jsonb_build_object('seed', 11, 'activity', 'corners',
   'players', jsonb_build_array(jsonb_build_object('player', pg_temp.id('0a'), 'points', 5, 'safe', 20, 'champion', true)))), 'ok', 'a Four Corners game is paid');
 select is((select safe_rounds || ',' || corner_wins from public.classlive_stats where player = pg_temp.id('0a')), '20,1', 'Four Corners pays safe rounds and wins');
+
+-- ---- One list of activities, per-game totals (20261125000800_classlive_activities.sql) ----
+select pg_temp.act_as_server();
+select is(public.classlive_finish(current_setting('test.corners')::bigint, jsonb_build_object('seed', 12, 'activity', 'corners',
+  'players', jsonb_build_array(jsonb_build_object('player', pg_temp.id('0a'), 'points', 3, 'extra', jsonb_build_object('thrones', 4, 'BAD', 9))))), 'ok', 'a game with extra totals is paid');
+select is(public.classlive_finish(current_setting('test.corners')::bigint, jsonb_build_object('seed', 13, 'activity', 'corners',
+  'players', jsonb_build_array(jsonb_build_object('player', pg_temp.id('0a'), 'points', 3, 'extra', jsonb_build_object('thrones', 2000))))), 'ok', '... twice');
+select is(public.classlive_counts(pg_temp.id('0a')) -> 'classlive_thrones', '504'::jsonb, 'extra totals add up (500 at most a session) and bad keys are dropped');
+select throws_ok($$ update public.classlive_rooms set activity = 'nope' where id = current_setting('test.corners')::bigint $$,
+  '23503', null, 'a room''s activity must be on the list');
 
 select * from finish();
 rollback;

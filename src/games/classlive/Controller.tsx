@@ -11,6 +11,12 @@ import { PadGuard } from './PadGuard';
 import { classLiveTrack, useMusic } from './music';
 import { SerpentPad } from './SerpentPad';
 import { CornersPad } from './CornersPad';
+import { LavaPad } from './LavaPad';
+import { ThronesPad } from './ThronesPad';
+import { useMusicOn } from './thronesMusic';
+import { ClashPad } from './ClashPad';
+import { GhostPad } from './GhostPad';
+import { SharkPad } from './SharkPad';
 import { painted } from './paintedArt';
 import type { ClassLiveLink } from './link';
 import './controller.css';
@@ -41,7 +47,7 @@ function Dots({ x, y, small }: { x: number; y: number; small?: boolean }) {
 
 const sym = (s: string) => s.replace(/\s+/g, '');
 
-export function Sky({ children, tint, back }: { children: React.ReactNode; tint?: 'serpent' | 'mural' | 'corners'; back?: string | null }) {
+export function Sky({ children, tint, back }: { children: React.ReactNode; tint?: 'serpent' | 'mural' | 'corners' | 'thrones'; back?: string | null }) {
   return (
     <div className={`cl-c${tint ? ` cl-c--${tint}` : ''}`}>
       {back && <div className="cl-c-back" style={{ backgroundImage: `url(${back})` }} aria-hidden="true" />}
@@ -155,7 +161,9 @@ export function Controller({ link, me, room: roomProp, code: codeProp, lookElsew
 
   // The big screen's music on this device too, when the teacher switched that on (James, 25 Nov 2026 NZ).
   const muralGame = view?.game.kind === 'mural' ? view.game : null;
-  useMusic(phase === 'playing' && view?.padMusic ? classLiveTrack(view.state, view.game.kind, { guessing: muralGame?.phase === 'guess', hot: view.game.kind === 'serpent' ? view.game.awake : view.game.kind === 'stars' ? view.game.creature && !view.game.supernova : false, map: view.game.kind === 'corners' ? view.game.map : undefined }) : null, true);
+  const padThrones = view?.game.kind === 'thrones' ? view.game : null;
+  const padThronesMusic = useMusicOn(padThrones?.round, view?.startedAt ?? null, clock);
+  useMusic(phase === 'playing' && view?.padMusic && !(padThrones && view.state === 'live' && !padThronesMusic) ? classLiveTrack(view.state, view.game.kind, { guessing: muralGame?.phase === 'guess', hot: view.game.kind === 'serpent' ? view.game.awake : view.game.kind === 'stars' ? view.game.creature && !view.game.supernova : false, map: view.game.kind === 'clash' ? view.game.map : view.game.kind === 'thrones' ? view.game.hall : view.game.kind === 'ghost' ? view.game.map : view.game.kind === 'corners' ? (view.game.variant === 'shark' ? view.game.bay : view.game.map) : view.game.kind === 'lava' ? view.game.map : undefined, shark: view.game.kind === 'corners' && view.game.variant === 'shark' }) : null, true);
 
   if (phase === 'joining') return <Sky><div className="cl-c-center"><p className="cl-c-say">Joining…</p></div></Sky>;
   if (phase === 'none') {
@@ -190,7 +198,7 @@ export function Controller({ link, me, room: roomProp, code: codeProp, lookElsew
 
   // A game the server started at a set time (no teacher, no big screen): its own waiting and called-off screens.
   if (view.auto && (view.state === 'lobby' || view.auto.calledOff)) {
-    return <Sky tint={view.game.kind === 'stars' ? undefined : view.game.kind}><AutoWait view={view} clock={clock} /></Sky>;
+    return <Sky tint={view.game.kind === 'serpent' || view.game.kind === 'mural' || view.game.kind === 'corners' ? view.game.kind : undefined}><AutoWait view={view} clock={clock} /></Sky>;
   }
 
   if (view.game.kind === 'serpent') {
@@ -200,10 +208,46 @@ export function Controller({ link, me, room: roomProp, code: codeProp, lookElsew
       </Sky>
     );
   }
+  if (view.game.kind === 'thrones') {
+    return (
+      <Sky tint="thrones" back={painted('thrones', `back-${view.game.hall}`)}>
+        <PadGuard><ThronesPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} clock={clock} avatar={avatar} /></PadGuard>
+      </Sky>
+    );
+  }
+  if (view.game.kind === 'clash') {
+    return (
+      <Sky tint="corners" back={painted('clash', `back-${view.game.map}`)}>
+        <PadGuard><ClashPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} clock={clock} avatar={avatar} /></PadGuard>
+      </Sky>
+    );
+  }
+  if (view.game.kind === 'ghost') {
+    return (
+      <Sky tint="corners" back={painted('ghost', `back-${view.game.map}`)}>
+        <PadGuard><GhostPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} clock={clock} avatar={avatar} /></PadGuard>
+      </Sky>
+    );
+  }
+  // Shark Bay: a Four Corners variant with its own pad.
+  if (view.game.kind === 'corners' && view.game.variant === 'shark') {
+    return (
+      <Sky tint="corners" back={painted('shark', `back-${view.game.bay}`) ?? painted('corners', 'back-snow')}>
+        <PadGuard><SharkPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} clock={clock} avatar={avatar} /></PadGuard>
+      </Sky>
+    );
+  }
   if (view.game.kind === 'corners') {
     return (
       <Sky tint="corners" back={painted('corners', `back-${view.game.map}`)}>
         <PadGuard><CornersPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} clock={clock} avatar={avatar} /></PadGuard>
+      </Sky>
+    );
+  }
+  if (view.game.kind === 'lava') {
+    return (
+      <Sky tint="corners" back={painted('lava', `back-${view.game.map}`)}>
+        <PadGuard><LavaPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} clock={clock} avatar={avatar} /></PadGuard>
       </Sky>
     );
   }

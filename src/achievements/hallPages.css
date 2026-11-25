@@ -1,0 +1,294 @@
+/* Hub pages in the Achievement Hall's look (HallWindow with `page`): the leaderboard and the lobby (James, 25 Nov 2026).
+   The pages keep their own markup; this file repaints the hub's shared parts inside `.hall-page` only: dark glass panels with a
+   gold edge, gold headings, gold pill chips and tabs, glass rows, and the Hall's gold and green buttons. */
+
+.hall-page {
+  /* The site's tokens, swapped for the Hall's, so every part written against them follows. */
+  --ink: #fff8e7;
+  --ink-soft: #e6d6bb;
+  --line: rgba(255, 230, 170, 0.4);
+  --surface: rgba(20, 10, 34, 0.75);
+  --tint: rgba(255, 255, 255, 0.07);
+  --tint-hover: rgba(255, 255, 255, 0.12);
+  --card: rgba(22, 11, 38, 0.66);
+  --brand: #f0a722;
+  --brand-dark: #ffd98a;
+  --focus: #ffd76a;
+  --play: #f5c451;
+  --play-dark: #f5c451;
+  --h-focus: #ffd76a;
+  --h-focus-halo: #160d24;
+  --h-link: #ffd98a;
+  color-scheme: dark;
+  font-family: var(--h-body, 'Segoe UI', Tahoma, system-ui, sans-serif);
+}
+.hall-page .ah-title { font-family: var(--display, 'Trebuchet MS', sans-serif); }
+.ah-window .ah-title:focus,
+.ah-window .ah-title:focus-visible { outline: none; box-shadow: none; }
+.hall-page .ah-top__spacer { min-width: 1px; }
+.hall-page .ah { max-width: 1040px; }
+.hall-page a:not([class]) { color: #ffd98a; }
+
+/* The column of panels. */
+.hall-page .hp-body {
+  display: grid;
+  gap: 16px;
+  padding-top: 6px;
+}
+
+/* Panels: the Hall's glass strip. */
+.hall-page .panel {
+  padding: 16px 20px;
+  border-radius: 22px;
+  background: rgba(22, 11, 38, 0.7);
+  border: 1.5px solid rgba(255, 214, 120, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  color: #fff8e7;
+  animation: ah-shelf-in 0.5s ease-out both;
+}
+.hall-page .panel__title {
+  margin: 0 0 12px;
+  font-size: 1.15rem;
+  color: #ffd98a;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.hall-page .panel__empty { color: #e6d6bb; }
+
+/* Notes and tips: gold glass instead of pale yellow. */
+.hall-page .chess-note,
+.hall-page .friend-note,
+.hall-page .leaderboard__me-off,
+.hall-page .lobby-here__hint {
+  background: rgba(255, 210, 90, 0.14);
+  border: 1.5px solid rgba(255, 214, 120, 0.4);
+  color: #ffe9b0;
+}
+.hall-page .friend-note--timer { background: rgba(255, 210, 90, 0.2); }
+
+/* Chips (radio pills) and the leaderboard tabs: the Hall's filter chips. */
+.hall-page .choice-group legend,
+.hall-page .level-picker legend {
+  color: #ffd98a;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.hall-page .chip span,
+.hall-page .leaderboard__tab {
+  min-height: 48px;
+  padding: 6px 18px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 230, 170, 0.4);
+  background: rgba(20, 10, 34, 0.75);
+  color: #fff3d6;
+  font-weight: 700;
+  backdrop-filter: blur(6px);
+}
+.hall-page .leaderboard__tab { display: inline-flex; align-items: center; font-size: 1.02rem; }
+.hall-page .chip:hover span,
+.hall-page .leaderboard__tab:hover { border-color: #f5c451; background: rgba(48, 26, 76, 0.85); }
+.hall-page .chip input:checked + span,
+.hall-page .leaderboard__tab.is-on {
+  background: linear-gradient(180deg, #ffe189, #f0a722);
+  border-color: #fff1b8;
+  color: #3b1c03;
+  box-shadow: 0 0 16px rgba(255, 196, 64, 0.55);
+}
+.hall-page .chip input:focus-visible + span,
+.hall-page .leaderboard__tab:focus-visible,
+.hall-page .board-list__tap:focus-visible,
+.hall-page .level-picker__option input:focus-visible + span,
+.hall-page .button:focus-visible,
+.hall-page select:focus-visible,
+.hall-page .code-form__input:focus-visible {
+  outline: 3px solid #ffd76a;
+  outline-offset: 3px;
+}
+
+/* The bigger option boxes (start-a-game form). */
+.hall-page .level-picker__option span {
+  border-radius: 16px;
+  border: 2px solid rgba(255, 230, 170, 0.4);
+  background: rgba(20, 10, 34, 0.75);
+  color: #fff3d6;
+}
+.hall-page .level-picker__option:hover span { background: rgba(48, 26, 76, 0.85); }
+.hall-page .level-picker__option input:checked + span {
+  background: linear-gradient(180deg, #ffe189, #f0a722);
+  border-color: #fff1b8;
+  color: #3b1c03;
+  box-shadow: 0 0 14px rgba(255, 196, 64, 0.45);
+}
+
+/* Pickers and the code box. */
+.hall-page select,
+.hall-page .board-filter__pick select {
+  min-height: 48px;
+  max-width: 100%;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 230, 170, 0.4);
+  background: rgba(20, 10, 34, 0.85);
+  color: #fff3d6;
+  font: inherit;
+  font-weight: 700;
+}
+.hall-page option { background: #24133a; color: #fff3d6; }
+.hall-page .code-form__input {
+  border: 2px solid rgba(255, 230, 170, 0.45);
+  background: rgba(14, 7, 26, 0.8);
+  color: #ffe08a;
+}
+.hall-page .code-form__input::placeholder { color: rgba(255, 232, 180, 0.4); }
+
+/* Buttons: gold for the main one, glass for the light one, the Hall's green Play for Start game. */
+.hall-page .button--primary {
+  background: linear-gradient(180deg, #ffe189, #f0a722);
+  color: #3b1c03;
+  box-shadow: 0 5px 0 #a8630a;
+}
+.hall-page .button--primary:hover { background: linear-gradient(180deg, #fff0b5, #f5b333); }
+.hall-page .button--light {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1.5px solid rgba(255, 230, 170, 0.45);
+  color: #fff3d6;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
+}
+.hall-page .button--light:hover { background: rgba(255, 255, 255, 0.18); }
+.hall-page .button--play {
+  background: linear-gradient(180deg, #7ee08a, #2e9e48);
+  border: 2px solid #c8ffd0;
+  color: #0b2a12;
+  box-shadow: 0 6px 0 #1b6b2e, 0 10px 20px rgba(0, 0, 0, 0.35);
+}
+.hall-page .link-button { color: #ffd98a; }
+
+/* ---------- Leaderboard ---------- */
+
+.hall-page .leaderboard { max-width: none; gap: 16px; }
+.hall-page .leaderboard__tabs {
+  justify-content: center;
+  gap: 8px;
+}
+.hall-page .leaderboard__about { color: #e6d6bb; }
+.hall-page .leaderboard__note { color: #d9c7a6; }
+
+/* Rows: glass, with gold place numbers and points; the top three glow gold, silver and bronze. */
+.hall-page .board-list { gap: 8px; }
+.hall-page .board-list li {
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.15s, background 0.15s;
+}
+.hall-page .board-list li:hover { background: rgba(255, 255, 255, 0.1); }
+.hall-page .board-list li:nth-child(1):not(.board-list__gap) {
+  border-color: rgba(255, 207, 63, 0.75);
+  background: linear-gradient(90deg, rgba(255, 207, 63, 0.22), rgba(255, 255, 255, 0.05) 70%);
+}
+.hall-page .board-list li:nth-child(2):not(.board-list__gap) {
+  border-color: rgba(207, 227, 247, 0.6);
+  background: linear-gradient(90deg, rgba(207, 227, 247, 0.16), rgba(255, 255, 255, 0.05) 70%);
+}
+.hall-page .board-list li:nth-child(3):not(.board-list__gap) {
+  border-color: rgba(227, 154, 91, 0.6);
+  background: linear-gradient(90deg, rgba(227, 154, 91, 0.18), rgba(255, 255, 255, 0.05) 70%);
+}
+.hall-page .board-list li.is-me {
+  outline: 3px solid #f5c451;
+  outline-offset: 0;
+  box-shadow: 0 0 18px rgba(255, 196, 64, 0.45);
+}
+.hall-page .board-list li.board-list__gap {
+  border: 0;
+  background: none;
+  color: #ffd98a;
+}
+.hall-page .board-list__place { color: #ffe08a; text-shadow: 0 2px 0 #5a2c06; }
+.hall-page .board-list__points { color: #ffe08a; }
+.hall-page .board-list__you,
+.hall-page .board-list__sub,
+.hall-page .board-games__names,
+.hall-page .board-trophies__how { color: #e6d6bb; }
+.hall-page .board-games li,
+.hall-page .board-trophies li { border: 0; background: none; }
+
+/* The Hard workers band (five school days) and the Hall of fame. */
+.hall-page .hard-band {
+  background: rgba(255, 210, 90, 0.14);
+  border: 1.5px solid rgba(255, 214, 120, 0.4);
+  color: #ffe9b0;
+}
+.hall-page .hard-band h2 { color: #ffd98a; letter-spacing: 0.04em; text-transform: uppercase; }
+.hall-page .hall__part h2,
+.hall-page .hall__season h3 { color: #ffd98a; }
+.hall-page .hall__list li {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  color: #fff8e7;
+}
+.hall-page .hall__where,
+.hall-page .hall__won { color: #e6d6bb; }
+
+/* ---------- Lobby ---------- */
+
+.hall-page .lobby { gap: 16px; }
+.hall-page .lobby-asks { outline: 3px solid #f5c451; box-shadow: 0 0 22px rgba(255, 196, 64, 0.45); }
+.hall-page .lobby-list li {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+}
+.hall-page .lobby-list__what span { color: #e6d6bb; }
+.hall-page .lobby-tile__face {
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff8e7;
+}
+.hall-page button.lobby-tile__face:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: #f5c451;
+}
+.hall-page .lobby-tile--picked .lobby-tile__face {
+  border-color: #fff1b8;
+  background: rgba(255, 210, 90, 0.18);
+  box-shadow: 0 0 18px rgba(255, 196, 64, 0.5);
+}
+.hall-page .lobby-tile__blurb,
+.hall-page .lobby-tile__why { color: #e6d6bb; }
+.hall-page .lobby-tile--grey .lobby-tile__face {
+  background: rgba(0, 0, 0, 0.25);
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.hall-page .lobby-here__all { color: #ffd98a; }
+.hall-page .lobby-list__what .lobby-here__no,
+.hall-page .lobby-recent__choices .lobby-here__no {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.2);
+  color: #e6d6bb;
+}
+.hall-page .lobby-recent__kid { background: rgba(255, 255, 255, 0.06); }
+.hall-page .lobby-start__which { color: #ffe08a; }
+
+@media (max-width: 760px) {
+  .hall-page .panel { padding: 14px 12px; }
+  .hall-page .chip span,
+  .hall-page .leaderboard__tab { padding: 6px 14px; font-size: 0.95rem; }
+  .hall-page .board-list li { padding: 8px 10px; gap: 8px; }
+  .hall-page .lobby-list li { padding: 8px 10px; gap: 8px; }
+  .hall-page .lobby-list .button { min-height: 44px; padding: 8px 14px; font-size: 0.98rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hall-page .panel { animation: none; }
+  .hall-page .board-list li,
+  .hall-page button.lobby-tile__face { transition: none; }
+}
+
+/* Buttons in a lobby row are only as wide as their words, so the words beside them keep the row. */
+.hall-page .lobby-list .button { width: auto; flex: none; margin: 0; }

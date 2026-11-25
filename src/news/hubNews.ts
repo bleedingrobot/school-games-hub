@@ -24,6 +24,46 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'starweb-2026-11-25',
+    date: '2026-11-25',
+    emoji: '✨',
+    title: 'Star Web',
+    text: 'One times-table fact you know lights up a whole sky of new ones. Fill your Star Map!',
+    game: 'starweb',
+  },
+  {
+    id: 'classlive-ghost-tag-2026-11-25',
+    date: '2026-11-25',
+    emoji: '👻',
+    title: 'Ghost Tag',
+    text: 'Run from the ghosts! Get caught and you become one. A right answer makes you invisible.',
+    game: 'classlive',
+  },
+  {
+    id: 'classlive-thrones-2026-11-25',
+    date: '2026-11-25',
+    emoji: '👑',
+    title: 'Musical Thrones',
+    text: 'Dance till the music stops, then race to a throne! Collect the most crowns to win.',
+    game: 'classlive',
+  },
+  {
+    id: 'classlive-shark-bay-2026-11-25',
+    date: '2026-11-25',
+    emoji: '🦈',
+    title: 'Shark Bay',
+    text: 'Swim to a spinning colour or hide under a boat before Simon the shark strikes!',
+    game: 'classlive',
+  },
+  {
+    id: 'classlive-floor-is-lava-2026-11-25',
+    date: '2026-11-25',
+    emoji: '🌋',
+    title: 'Floor is Lava',
+    text: 'Run off the glowing tiles, build bridges and rescue friends from the lava raft!',
+    game: 'classlive',
+  },
+  {
     id: 'diamond-monster-dig-2026-11-25',
     date: '2026-11-25',
     emoji: '🐾',

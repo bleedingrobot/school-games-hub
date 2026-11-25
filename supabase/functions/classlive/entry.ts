@@ -132,5 +132,16 @@ Deno.serve(
     async recordAnswers(player, once, answers) {
       await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'classlive');
     },
+    async clashBoard(room, round) {
+      const raw = await call<{ tiles: string; painted: Record<string, number> } | null>('classlive_clash_count', { target: room, rnd: round });
+      if (raw === 'busy') return 'busy';
+      const painted: Record<string, number> = {};
+      for (const [id, n] of Object.entries(raw?.painted ?? {})) if (Number.isFinite(Number(n))) painted[id] = Number(n);
+      return { tiles: typeof raw?.tiles === 'string' ? raw.tiles : '', painted };
+    },
+    async clashBomb(room, round, team, player, tiles) {
+      const out = await call<number>('classlive_clash_bomb', { target: room, rnd: round, tm: team, player, idxs: tiles });
+      if (out === 'busy') throw new Error('classlive_clash_bomb failed');
+    },
   }),
 );

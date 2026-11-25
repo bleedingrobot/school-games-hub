@@ -1,5 +1,197 @@
 [
  {
+  "slug": "ghost-tag-is-on-run-from-the-ghosts",
+  "text": "Ghost Tag is on! Run from the ghosts!"
+ },
+ {
+  "slug": "here-we-go-do-not-let-the-ghosts-catch-you",
+  "text": "Here we go! Do not let the ghosts catch you!"
+ },
+ {
+  "slug": "the-ghosts-are-waking-up-run",
+  "text": "The ghosts are waking up. Run!"
+ },
+ {
+  "slug": "new-round-new-ghosts",
+  "text": "New round! New ghosts!"
+ },
+ {
+  "slug": "everyone-back-the-ghosts-are-in-the-crypt",
+  "text": "Everyone back! The ghosts are in the crypt."
+ },
+ {
+  "slug": "get-ready-for-the-next-round",
+  "text": "Get ready for the next round!"
+ },
+ {
+  "slug": "ghosts-go-and-get-them",
+  "text": "Ghosts, go and get them!"
+ },
+ {
+  "slug": "the-ghosts-are-out-run",
+  "text": "The ghosts are out! Run!"
+ },
+ {
+  "slug": "here-they-come-run-run-run",
+  "text": "Here they come! Run, run, run!"
+ },
+ {
+  "slug": "caught-another-ghost",
+  "text": "Caught! Another ghost!"
+ },
+ {
+  "slug": "boo-got-one",
+  "text": "Boo! Got one!"
+ },
+ {
+  "slug": "oh-no-you-are-a-ghost-now",
+  "text": "Oh no, you are a ghost now!"
+ },
+ {
+  "slug": "another-one-joins-the-ghosts",
+  "text": "Another one joins the ghosts!"
+ },
+ {
+  "slug": "poof-invisible",
+  "text": "Poof! Invisible!"
+ },
+ {
+  "slug": "now-you-see-them-now-you-do-not",
+  "text": "Now you see them, now you do not!"
+ },
+ {
+  "slug": "vanished",
+  "text": "Vanished!"
+ },
+ {
+  "slug": "a-ghost-lit-its-lantern",
+  "text": "A ghost lit its lantern!"
+ },
+ {
+  "slug": "the-lantern-can-see-invisible-players",
+  "text": "The lantern can see invisible players!"
+ },
+ {
+  "slug": "lantern-on",
+  "text": "Lantern on!"
+ },
+ {
+  "slug": "ghost-dash",
+  "text": "Ghost dash!"
+ },
+ {
+  "slug": "whoosh-a-ghost-is-speeding",
+  "text": "Whoosh! A ghost is speeding!"
+ },
+ {
+  "slug": "watch-out-a-speedy-ghost",
+  "text": "Watch out, a speedy ghost!"
+ },
+ {
+  "slug": "garlic-the-ghost-bounced-off",
+  "text": "Garlic! The ghost bounced off!"
+ },
+ {
+  "slug": "ha-the-garlic-shield-worked",
+  "text": "Ha! The garlic shield worked!"
+ },
+ {
+  "slug": "bounced-garlic-saves-the-day",
+  "text": "Bounced! Garlic saves the day!"
+ },
+ {
+  "slug": "frost-bomb-the-ghosts-are-frozen",
+  "text": "Frost bomb! The ghosts are frozen!"
+ },
+ {
+  "slug": "brrr-frozen-ghosts",
+  "text": "Brrr! Frozen ghosts!"
+ },
+ {
+  "slug": "freeze-the-ghosts-cannot-move",
+  "text": "Freeze! The ghosts cannot move!"
+ },
+ {
+  "slug": "only-two-left",
+  "text": "Only two left!"
+ },
+ {
+  "slug": "just-two-players-left",
+  "text": "Just two players left!"
+ },
+ {
+  "slug": "two-left-who-will-win",
+  "text": "Two left! Who will win?"
+ },
+ {
+  "slug": "the-last-one-standing-wins-the-round",
+  "text": "The last one standing wins the round!"
+ },
+ {
+  "slug": "we-have-a-winner-the-last-one-standing",
+  "text": "We have a winner! The last one standing!"
+ },
+ {
+  "slug": "last-one-standing-amazing",
+  "text": "Last one standing! Amazing!"
+ },
+ {
+  "slug": "time-is-up-everyone-still-running-wins-the-round",
+  "text": "Time is up! Everyone still running wins the round!"
+ },
+ {
+  "slug": "that-is-the-round-the-survivors-win",
+  "text": "That is the round! The survivors win!"
+ },
+ {
+  "slug": "round-over-well-done-survivors",
+  "text": "Round over! Well done, survivors!"
+ },
+ {
+  "slug": "the-ghosts-caught-everyone",
+  "text": "The ghosts caught everyone!"
+ },
+ {
+  "slug": "everyone-is-a-ghost-spooky",
+  "text": "Everyone is a ghost! Spooky!"
+ },
+ {
+  "slug": "the-ghosts-win-this-round",
+  "text": "The ghosts win this round!"
+ },
+ {
+  "slug": "ten-seconds-left-in-this-round",
+  "text": "Ten seconds left in this round!"
+ },
+ {
+  "slug": "hang-on-nearly-there",
+  "text": "Hang on, nearly there!"
+ },
+ {
+  "slug": "ten-more-seconds",
+  "text": "Ten more seconds!"
+ },
+ {
+  "slug": "power-ups-run-over-one-to-grab-it",
+  "text": "Power-ups! Run over one to grab it."
+ },
+ {
+  "slug": "teleports-step-in-one-to-pop-out-of-the-other",
+  "text": "Teleports! Step in one to pop out of the other."
+ },
+ {
+  "slug": "sticky-patches-they-slow-you-down-but-not-the-ghosts",
+  "text": "Sticky patches! They slow you down, but not the ghosts."
+ },
+ {
+  "slug": "fog-the-big-screen-cannot-see-far-use-your-device",
+  "text": "Fog! The big screen cannot see far. Use your device!"
+ },
+ {
+  "slug": "watch-out-something-swoops-across-the-map-and-knocks-you-flying",
+  "text": "Watch out! Something swoops across the map and knocks you flying."
+ },
+ {
   "slug": "join-class-live-now",
   "text": "Join Class Live now!"
  },
@@ -372,6 +564,222 @@
   "text": "Someone switched on a power-up!"
  },
  {
+  "slug": "here-we-go-dance-while-the-music-plays-when-it-stops-sit-on-a-throne",
+  "text": "Here we go! Dance while the music plays. When it stops, sit on a throne!"
+ },
+ {
+  "slug": "musical-thrones-is-on-when-the-music-stops-find-a-throne",
+  "text": "Musical Thrones is on! When the music stops, find a throne!"
+ },
+ {
+  "slug": "off-we-go-listen-for-the-music-to-stop-then-grab-a-throne",
+  "text": "Off we go! Listen for the music to stop, then grab a throne."
+ },
+ {
+  "slug": "stop-sit-down",
+  "text": "Stop! Sit down!"
+ },
+ {
+  "slug": "the-music-has-stopped-find-a-throne",
+  "text": "The music has stopped! Find a throne!"
+ },
+ {
+  "slug": "freeze-grab-a-throne-quick",
+  "text": "Freeze! Grab a throne, quick!"
+ },
+ {
+  "slug": "stop-the-music-sit-sit-sit",
+  "text": "Stop the music! Sit, sit, sit!"
+ },
+ {
+  "slug": "one-fewer-throne-this-time",
+  "text": "One fewer throne this time!"
+ },
+ {
+  "slug": "look-there-are-fewer-thrones-now",
+  "text": "Look, there are fewer thrones now!"
+ },
+ {
+  "slug": "the-thrones-are-disappearing",
+  "text": "The thrones are disappearing!"
+ },
+ {
+  "slug": "a-golden-throne-it-is-worth-three-crowns",
+  "text": "A golden throne! It is worth three crowns."
+ },
+ {
+  "slug": "look-for-the-golden-throne-three-crowns",
+  "text": "Look for the golden throne! Three crowns!"
+ },
+ {
+  "slug": "there-is-a-golden-throne-this-round",
+  "text": "There is a golden throne this round!"
+ },
+ {
+  "slug": "everyone-found-a-throne",
+  "text": "Everyone found a throne!"
+ },
+ {
+  "slug": "not-one-left-standing-brilliant",
+  "text": "Not one left standing! Brilliant!"
+ },
+ {
+  "slug": "a-throne-for-everyone-this-time",
+  "text": "A throne for everyone this time!"
+ },
+ {
+  "slug": "oh-no-lots-of-royals-left-standing",
+  "text": "Oh no, lots of royals left standing!"
+ },
+ {
+  "slug": "so-many-standing-off-to-the-courtyard",
+  "text": "So many standing! Off to the courtyard!"
+ },
+ {
+  "slug": "whoops-a-big-crowd-without-a-throne",
+  "text": "Whoops! A big crowd without a throne!"
+ },
+ {
+  "slug": "anyone-standing-off-to-the-courtyard",
+  "text": "Anyone standing, off to the courtyard!"
+ },
+ {
+  "slug": "no-throne-to-the-courtyard-you-go",
+  "text": "No throne? To the courtyard you go!"
+ },
+ {
+  "slug": "those-left-standing-go-to-the-courtyard",
+  "text": "Those left standing go to the courtyard."
+ },
+ {
+  "slug": "a-throne-has-been-stolen",
+  "text": "A throne has been stolen!"
+ },
+ {
+  "slug": "sneaky-a-crown-thief-struck",
+  "text": "Sneaky! A crown thief struck!"
+ },
+ {
+  "slug": "ooh-someone-stole-a-throne",
+  "text": "Ooh, someone stole a throne!"
+ },
+ {
+  "slug": "great-dancing-on-the-tiles-bonus-crowns",
+  "text": "Great dancing on the tiles! Bonus crowns!"
+ },
+ {
+  "slug": "dance-tile-bonus",
+  "text": "Dance tile bonus!"
+ },
+ {
+  "slug": "nice-moves-on-the-dance-floor",
+  "text": "Nice moves on the dance floor!"
+ },
+ {
+  "slug": "someone-answered-their-way-back-from-the-courtyard",
+  "text": "Someone answered their way back from the courtyard!"
+ },
+ {
+  "slug": "back-from-the-courtyard-well-done",
+  "text": "Back from the courtyard! Well done!"
+ },
+ {
+  "slug": "a-royal-return-from-the-courtyard",
+  "text": "A royal return from the courtyard!"
+ },
+ {
+  "slug": "the-music-is-back-on-dance",
+  "text": "The music is back on! Dance!"
+ },
+ {
+  "slug": "here-comes-the-music-again",
+  "text": "Here comes the music again!"
+ },
+ {
+  "slug": "dance-time-keep-moving",
+  "text": "Dance time! Keep moving!"
+ },
+ {
+  "slug": "power-ups-have-appeared-in-the-castle-hall-grab-one-then-answer-a-question-while-the-music-plays-to-switch-it-on",
+  "text": "Power-ups have appeared in the castle hall! Grab one, then answer a question while the music plays to switch it on."
+ },
+ {
+  "slug": "watch-out-for-the-sticky-honey-it-slows-you-down",
+  "text": "Watch out for the sticky honey! It slows you down."
+ },
+ {
+  "slug": "look-a-magic-mirror-step-in-one-end-and-you-pop-out-of-the-other",
+  "text": "Look, a magic mirror! Step in one end and you pop out of the other."
+ },
+ {
+  "slug": "careful-the-polished-floor-you-will-slide",
+  "text": "Careful, the polished floor! You will slide."
+ },
+ {
+  "slug": "look-out-for-the-rolling-barrel-it-knocks-you-flying",
+  "text": "Look out for the rolling barrel! It knocks you flying."
+ },
+ {
+  "slug": "power-ups-have-appeared-in-the-ice-palace-grab-one-then-answer-a-question-while-the-music-plays-to-switch-it-on",
+  "text": "Power-ups have appeared in the ice palace! Grab one, then answer a question while the music plays to switch it on."
+ },
+ {
+  "slug": "watch-out-for-the-blizzard-it-slows-you-down",
+  "text": "Watch out for the blizzard! It slows you down."
+ },
+ {
+  "slug": "look-a-ice-portal-step-in-one-end-and-you-pop-out-of-the-other",
+  "text": "Look, a ice portal! Step in one end and you pop out of the other."
+ },
+ {
+  "slug": "careful-the-ice-patch-you-will-slide",
+  "text": "Careful, the ice patch! You will slide."
+ },
+ {
+  "slug": "look-out-for-the-giant-snowball-it-knocks-you-flying",
+  "text": "Look out for the giant snowball! It knocks you flying."
+ },
+ {
+  "slug": "power-ups-have-appeared-in-the-temple-grab-one-then-answer-a-question-while-the-music-plays-to-switch-it-on",
+  "text": "Power-ups have appeared in the temple! Grab one, then answer a question while the music plays to switch it on."
+ },
+ {
+  "slug": "watch-out-for-the-mud-pool-it-slows-you-down",
+  "text": "Watch out for the mud pool! It slows you down."
+ },
+ {
+  "slug": "look-a-vine-swing-step-in-one-end-and-you-pop-out-of-the-other",
+  "text": "Look, a vine swing! Step in one end and you pop out of the other."
+ },
+ {
+  "slug": "careful-the-slippery-leaves-you-will-slide",
+  "text": "Careful, the slippery leaves! You will slide."
+ },
+ {
+  "slug": "look-out-for-the-rolling-boulder-it-knocks-you-flying",
+  "text": "Look out for the rolling boulder! It knocks you flying."
+ },
+ {
+  "slug": "power-ups-have-appeared-on-the-deck-grab-one-then-answer-a-question-while-the-music-plays-to-switch-it-on",
+  "text": "Power-ups have appeared on the deck! Grab one, then answer a question while the music plays to switch it on."
+ },
+ {
+  "slug": "watch-out-for-the-sea-spray-it-slows-you-down",
+  "text": "Watch out for the sea spray! It slows you down."
+ },
+ {
+  "slug": "look-a-hatch-step-in-one-end-and-you-pop-out-of-the-other",
+  "text": "Look, a hatch! Step in one end and you pop out of the other."
+ },
+ {
+  "slug": "careful-the-wet-deck-you-will-slide",
+  "text": "Careful, the wet deck! You will slide."
+ },
+ {
+  "slug": "look-out-for-the-rolling-cannonball-it-knocks-you-flying",
+  "text": "Look out for the rolling cannonball! It knocks you flying."
+ },
+ {
   "slug": "power-ups-have-appeared-grab-one-then-answer-a-question-in-a-corner-to-switch-it-on",
   "text": "Power-ups have appeared! Grab one, then answer a question in a corner to switch it on."
  },
@@ -516,6 +924,310 @@
   "text": "Twist alert! Sometimes two corners are picked, and sometimes it is a lucky roll."
  },
  {
+  "slug": "colour-clash-is-on-run-over-the-floor-to-paint-it-your-colour",
+  "text": "Colour Clash is on! Run over the floor to paint it your colour!"
+ },
+ {
+  "slug": "get-ready-to-paint-cover-the-floor-in-your-team-colour",
+  "text": "Get ready to paint! Cover the floor in your team colour!"
+ },
+ {
+  "slug": "here-we-go-paint-everything-you-can",
+  "text": "Here we go! Paint everything you can!"
+ },
+ {
+  "slug": "fresh-floor-get-ready-to-paint",
+  "text": "Fresh floor! Get ready to paint!"
+ },
+ {
+  "slug": "new-round-find-an-empty-patch-and-paint-it",
+  "text": "New round! Find an empty patch and paint it!"
+ },
+ {
+  "slug": "get-ready-painters",
+  "text": "Get ready, painters!"
+ },
+ {
+  "slug": "ten-seconds-left-splat-splat-splat",
+  "text": "Ten seconds left! Splat, splat, splat!"
+ },
+ {
+  "slug": "ten-seconds-keep-painting",
+  "text": "Ten seconds! Keep painting!"
+ },
+ {
+  "slug": "nearly-time-ten-seconds-to-go",
+  "text": "Nearly time! Ten seconds to go!"
+ },
+ {
+  "slug": "time-s-up-let-s-count-the-paint",
+  "text": "Time's up! Let's count the paint!"
+ },
+ {
+  "slug": "brushes-down-who-painted-the-most",
+  "text": "Brushes down! Who painted the most?"
+ },
+ {
+  "slug": "stop-let-us-see-who-covered-the-most-floor",
+  "text": "Stop! Let us see who covered the most floor!"
+ },
+ {
+  "slug": "it-s-a-tie-what-a-battle",
+  "text": "It's a tie! What a battle!"
+ },
+ {
+  "slug": "too-close-to-call-it-is-a-tie",
+  "text": "Too close to call. It is a tie!"
+ },
+ {
+  "slug": "exactly-the-same-a-tie",
+  "text": "Exactly the same! A tie!"
+ },
+ {
+  "slug": "red-wins-the-round",
+  "text": "Red wins the round!"
+ },
+ {
+  "slug": "the-red-team-takes-it",
+  "text": "The red team takes it!"
+ },
+ {
+  "slug": "red-red-painted-the-most",
+  "text": "Red! Red painted the most!"
+ },
+ {
+  "slug": "blue-wins-the-round",
+  "text": "Blue wins the round!"
+ },
+ {
+  "slug": "the-blue-team-takes-it",
+  "text": "The blue team takes it!"
+ },
+ {
+  "slug": "blue-blue-painted-the-most",
+  "text": "Blue! Blue painted the most!"
+ },
+ {
+  "slug": "green-wins-the-round",
+  "text": "Green wins the round!"
+ },
+ {
+  "slug": "the-green-team-takes-it",
+  "text": "The green team takes it!"
+ },
+ {
+  "slug": "green-green-painted-the-most",
+  "text": "Green! Green painted the most!"
+ },
+ {
+  "slug": "yellow-wins-the-round",
+  "text": "Yellow wins the round!"
+ },
+ {
+  "slug": "the-yellow-team-takes-it",
+  "text": "The yellow team takes it!"
+ },
+ {
+  "slug": "yellow-yellow-painted-the-most",
+  "text": "Yellow! Yellow painted the most!"
+ },
+ {
+  "slug": "power-ups-have-appeared-run-over-one-then-drop-a-paint-bomb-to-switch-it-on",
+  "text": "Power-ups have appeared! Run over one, then drop a paint bomb to switch it on."
+ },
+ {
+  "slug": "golden-tiles-each-golden-tile-counts-three-paint-them-last",
+  "text": "Golden tiles! Each golden tile counts three. Paint them last!"
+ },
+ {
+  "slug": "portals-step-into-one-and-pop-out-of-the-other",
+  "text": "Portals! Step into one and pop out of the other."
+ },
+ {
+  "slug": "watch-out-for-the-sticky-patches-they-slow-you-down",
+  "text": "Watch out for the sticky patches. They slow you down!"
+ },
+ {
+  "slug": "slippery-paint-you-will-slide-and-you-cannot-stop-fast",
+  "text": "Slippery paint! You will slide and you cannot stop fast."
+ },
+ {
+  "slug": "rollers-are-coming-get-hit-and-you-go-flying",
+  "text": "Rollers are coming! Get hit and you go flying!"
+ },
+ {
+  "slug": "a-fountain-in-the-middle-go-round-it-nobody-can-paint-it",
+  "text": "A fountain in the middle! Go round it. Nobody can paint it."
+ },
+ {
+  "slug": "here-we-go-swim-to-a-coloured-quarter-or-hide-under-a-boat",
+  "text": "Here we go! Swim to a coloured quarter, or hide under a boat!"
+ },
+ {
+  "slug": "shark-bay-is-on-simon-is-hungry-so-find-a-safe-quarter",
+  "text": "Shark Bay is on! Simon is hungry, so find a safe quarter!"
+ },
+ {
+  "slug": "off-we-go-keep-off-the-jetty-and-watch-out-for-simon",
+  "text": "Off we go! Keep off the jetty and watch out for Simon!"
+ },
+ {
+  "slug": "swim-swim-swim-find-a-quarter",
+  "text": "Swim, swim, swim! Find a quarter!"
+ },
+ {
+  "slug": "quick-simon-is-coming-pick-a-colour",
+  "text": "Quick, Simon is coming! Pick a colour!"
+ },
+ {
+  "slug": "go-go-go-hide-under-a-boat-or-pick-a-colour",
+  "text": "Go go go! Hide under a boat or pick a colour!"
+ },
+ {
+  "slug": "hide-under-a-boat",
+  "text": "Hide under a boat!"
+ },
+ {
+  "slug": "a-boat-is-a-safe-place-to-hide",
+  "text": "A boat is a safe place to hide!"
+ },
+ {
+  "slug": "get-under-a-boat-quick",
+  "text": "Get under a boat, quick!"
+ },
+ {
+  "slug": "hurry-hurry-simon-is-nearly-here",
+  "text": "Hurry, hurry! Simon is nearly here!"
+ },
+ {
+  "slug": "quick-the-shark-is-almost-here",
+  "text": "Quick, the shark is almost here!"
+ },
+ {
+  "slug": "get-to-a-safe-place-now",
+  "text": "Get to a safe place, now!"
+ },
+ {
+  "slug": "look-out-a-fin-is-circling-the-bay",
+  "text": "Look out! A fin is circling the bay!"
+ },
+ {
+  "slug": "simon-is-swimming-round-and-round",
+  "text": "Simon is swimming round and round!"
+ },
+ {
+  "slug": "here-comes-the-fin",
+  "text": "Here comes the fin!"
+ },
+ {
+  "slug": "the-lights-are-going-out-where-will-simon-snap",
+  "text": "The lights are going out! Where will Simon snap?"
+ },
+ {
+  "slug": "the-spotlight-is-searching-for-simon",
+  "text": "The spotlight is searching for Simon!"
+ },
+ {
+  "slug": "dark-water-where-is-the-shark-going-to-snap",
+  "text": "Dark water! Where is the shark going to snap?"
+ },
+ {
+  "slug": "simon-strikes-red",
+  "text": "Simon strikes Red!"
+ },
+ {
+  "slug": "chomp-simon-bites-the-red-quarter",
+  "text": "Chomp! Simon bites the red quarter!"
+ },
+ {
+  "slug": "it-is-red-simon-strikes-red",
+  "text": "It is Red! Simon strikes Red!"
+ },
+ {
+  "slug": "simon-strikes-yellow",
+  "text": "Simon strikes Yellow!"
+ },
+ {
+  "slug": "chomp-simon-bites-the-yellow-quarter",
+  "text": "Chomp! Simon bites the yellow quarter!"
+ },
+ {
+  "slug": "it-is-yellow-simon-strikes-yellow",
+  "text": "It is Yellow! Simon strikes Yellow!"
+ },
+ {
+  "slug": "simon-strikes-green",
+  "text": "Simon strikes Green!"
+ },
+ {
+  "slug": "chomp-simon-bites-the-green-quarter",
+  "text": "Chomp! Simon bites the green quarter!"
+ },
+ {
+  "slug": "it-is-green-simon-strikes-green",
+  "text": "It is Green! Simon strikes Green!"
+ },
+ {
+  "slug": "simon-strikes-purple",
+  "text": "Simon strikes Purple!"
+ },
+ {
+  "slug": "chomp-simon-bites-the-purple-quarter",
+  "text": "Chomp! Simon bites the purple quarter!"
+ },
+ {
+  "slug": "it-is-purple-simon-strikes-purple",
+  "text": "It is Purple! Simon strikes Purple!"
+ },
+ {
+  "slug": "two-sharks-simon-has-a-friend",
+  "text": "Two sharks! Simon has a friend!"
+ },
+ {
+  "slug": "oh-no-two-sharks-this-time",
+  "text": "Oh no, two sharks this time!"
+ },
+ {
+  "slug": "twist-two-quarters-are-struck",
+  "text": "Twist! Two quarters are struck!"
+ },
+ {
+  "slug": "simon-is-full-nobody-is-caught",
+  "text": "Simon is full! Nobody is caught!"
+ },
+ {
+  "slug": "simon-has-had-enough-everyone-is-safe",
+  "text": "Simon has had enough! Everyone is safe!"
+ },
+ {
+  "slug": "lucky-simon-is-too-full-to-bite",
+  "text": "Lucky! Simon is too full to bite!"
+ },
+ {
+  "slug": "the-boats-kept-some-pupils-safe",
+  "text": "The boats kept some pupils safe!"
+ },
+ {
+  "slug": "phew-a-boat-saved-some-of-you",
+  "text": "Phew! A boat saved some of you!"
+ },
+ {
+  "slug": "safe-under-the-boats",
+  "text": "Safe under the boats!"
+ },
+ {
+  "slug": "oh-no-off-to-the-shark-cave",
+  "text": "Oh no, off to the shark cave!"
+ },
+ {
+  "slug": "splash-a-crowd-is-going-to-the-shark-cave",
+  "text": "Splash! A crowd is going to the shark cave!"
+ },
+ {
+  "slug": "into-the-cave-you-go",
+  "text": "Into the cave you go!"
+ },
+ {
   "slug": "we-know-one-times-fact",
   "text": "We know one times fact."
  },
@@ -614,5 +1326,301 @@
  {
   "slug": "grab-power-ups-on-the-map-then-answer-a-question-in-a-corner-to-switch-them-on-the-most-safe-rounds-wins",
   "text": "Grab power-ups on the map, then answer a question in a corner to switch them on. The most safe rounds wins!"
+ },
+ {
+  "slug": "swim-your-avatar-with-the-joystick-or-the-arrow-keys",
+  "text": "Swim your avatar with the joystick, or the arrow keys."
+ },
+ {
+  "slug": "the-bay-has-four-coloured-quarters-and-they-slowly-spin-round",
+  "text": "The bay has four coloured quarters, and they slowly spin round!"
+ },
+ {
+  "slug": "get-to-a-quarter-before-the-countdown-ends-do-not-stay-on-the-jetty",
+  "text": "Get to a quarter before the countdown ends. Do not stay on the jetty!"
+ },
+ {
+  "slug": "simon-the-shark-strikes-a-quarter-anyone-in-it-or-on-the-jetty-goes-to-the-shark-cave",
+  "text": "Simon the shark strikes a quarter. Anyone in it, or on the jetty, goes to the shark cave."
+ },
+ {
+  "slug": "hide-under-a-boat-and-you-are-safe-but-boats-only-have-a-few-seats-in-the-cave-answer-three-questions-to-swim-back-out",
+  "text": "Hide under a boat and you are safe, but boats only have a few seats! In the cave, answer three questions to swim back out."
+ },
+ {
+  "slug": "steer-your-avatar-with-the-joystick-or-the-arrow-keys",
+  "text": "Steer your avatar with the joystick, or the arrow keys."
+ },
+ {
+  "slug": "a-few-players-start-as-ghosts-if-a-ghost-touches-you-you-become-a-ghost-too",
+  "text": "A few players start as ghosts. If a ghost touches you, you become a ghost too."
+ },
+ {
+  "slug": "answer-a-question-right-to-turn-invisible-for-five-seconds-ghosts-cannot-catch-you-then",
+  "text": "Answer a question right to turn invisible for five seconds. Ghosts cannot catch you then!"
+ },
+ {
+  "slug": "ghosts-answer-questions-too-for-a-speed-dash-or-a-lantern-that-finds-invisible-players",
+  "text": "Ghosts answer questions too, for a speed dash or a lantern that finds invisible players."
+ },
+ {
+  "slug": "the-last-one-standing-wins-the-round-win-the-most-rounds-to-win-the-game",
+  "text": "The last one standing wins the round. Win the most rounds to win the game!"
+ },
+ {
+  "slug": "you-are-on-a-colour-team-move-your-avatar-with-the-joystick-or-the-arrow-keys",
+  "text": "You are on a colour team. Move your avatar with the joystick, or the arrow keys."
+ },
+ {
+  "slug": "every-tile-you-run-over-turns-your-team-colour",
+  "text": "Every tile you run over turns your team colour."
+ },
+ {
+  "slug": "tap-the-bomb-and-answer-a-question-get-it-right-to-splat-your-colour-all-around-you-you-stand-still-while-you-answer",
+  "text": "Tap the bomb and answer a question. Get it right to splat your colour all around you! You stand still while you answer."
+ },
+ {
+  "slug": "get-answers-right-in-a-row-for-a-bigger-splat",
+  "text": "Get answers right in a row for a bigger splat."
+ },
+ {
+  "slug": "when-the-time-is-up-we-count-the-paint-the-team-that-wins-the-most-rounds-wins",
+  "text": "When the time is up we count the paint. The team that wins the most rounds wins!"
+ },
+ {
+  "slug": "move-your-royal-avatar-with-the-joystick-or-the-arrow-keys",
+  "text": "Move your royal avatar with the joystick, or the arrow keys."
+ },
+ {
+  "slug": "while-the-music-plays-dance-about-stand-on-a-glowing-dance-tile-when-it-stops-for-a-bonus-crown",
+  "text": "While the music plays, dance about. Stand on a glowing dance tile when it stops for a bonus crown."
+ },
+ {
+  "slug": "when-the-music-stops-run-and-sit-on-a-throne-there-are-fewer-thrones-every-round",
+  "text": "When the music stops, run and sit on a throne! There are fewer thrones every round."
+ },
+ {
+  "slug": "if-you-are-left-standing-go-to-the-courtyard-and-answer-three-questions-to-come-back-three-right-in-a-row-wins-a-crown-thief-scroll",
+  "text": "If you are left standing, go to the courtyard and answer three questions to come back. Three right in a row wins a crown thief scroll!"
+ },
+ {
+  "slug": "a-throne-is-one-crown-a-golden-throne-is-three-the-most-crowns-wins",
+  "text": "A throne is one crown, a golden throne is three. The most crowns wins!"
+ },
+ {
+  "slug": "here-we-go-the-floor-is-lava-watch-for-the-glowing-tiles",
+  "text": "Here we go! The floor is lava! Watch for the glowing tiles!"
+ },
+ {
+  "slug": "floor-is-lava-is-on-stay-off-the-glowing-tiles",
+  "text": "Floor is Lava is on! Stay off the glowing tiles!"
+ },
+ {
+  "slug": "off-we-go-when-a-tile-glows-get-off-it",
+  "text": "Off we go! When a tile glows, get off it!"
+ },
+ {
+  "slug": "find-a-safe-tile",
+  "text": "Find a safe tile!"
+ },
+ {
+  "slug": "off-the-glowing-tiles-quick",
+  "text": "Off the glowing tiles, quick!"
+ },
+ {
+  "slug": "move-move-find-solid-rock",
+  "text": "Move, move! Find solid rock!"
+ },
+ {
+  "slug": "three-seconds-get-off-the-glow",
+  "text": "Three seconds! Get off the glow!"
+ },
+ {
+  "slug": "hurry-the-floor-is-about-to-crack",
+  "text": "Hurry! The floor is about to crack!"
+ },
+ {
+  "slug": "quick-the-tiles-are-going-to-break",
+  "text": "Quick, the tiles are going to break!"
+ },
+ {
+  "slug": "crack-there-goes-the-floor",
+  "text": "Crack! There goes the floor!"
+ },
+ {
+  "slug": "rumble-crack-splash",
+  "text": "Rumble, crack, splash!"
+ },
+ {
+  "slug": "down-they-go-into-the-lava",
+  "text": "Down they go into the lava!"
+ },
+ {
+  "slug": "everyone-is-safe-brilliant-footwork",
+  "text": "Everyone is safe! Brilliant footwork!"
+ },
+ {
+  "slug": "nobody-fell-in-amazing",
+  "text": "Nobody fell in! Amazing!"
+ },
+ {
+  "slug": "not-one-splash-well-done",
+  "text": "Not one splash! Well done!"
+ },
+ {
+  "slug": "splash-lots-of-you-are-on-the-lava-raft",
+  "text": "Splash! Lots of you are on the lava raft!"
+ },
+ {
+  "slug": "oh-no-a-big-splash-into-the-lava",
+  "text": "Oh no! A big splash into the lava!"
+ },
+ {
+  "slug": "so-many-on-the-raft-answer-to-climb-back",
+  "text": "So many on the raft! Answer to climb back!"
+ },
+ {
+  "slug": "fire-boots-saved-someone",
+  "text": "Fire boots saved someone!"
+ },
+ {
+  "slug": "those-fire-boots-work-safe-on-the-lava",
+  "text": "Those fire boots work! Safe on the lava!"
+ },
+ {
+  "slug": "lava-walker-fire-boots-to-the-rescue",
+  "text": "Lava walker! Fire boots to the rescue!"
+ },
+ {
+  "slug": "back-on-the-floor",
+  "text": "Back on the floor!"
+ },
+ {
+  "slug": "someone-climbed-off-the-raft",
+  "text": "Someone climbed off the raft!"
+ },
+ {
+  "slug": "welcome-back-to-the-floor",
+  "text": "Welcome back to the floor!"
+ },
+ {
+  "slug": "a-new-bridge",
+  "text": "A new bridge!"
+ },
+ {
+  "slug": "somebody-built-a-bridge",
+  "text": "Somebody built a bridge!"
+ },
+ {
+  "slug": "brick-by-brick",
+  "text": "Brick by brick!"
+ },
+ {
+  "slug": "what-a-rescue",
+  "text": "What a rescue!"
+ },
+ {
+  "slug": "saved-from-the-raft-by-a-friend",
+  "text": "Saved from the raft by a friend!"
+ },
+ {
+  "slug": "a-kind-rescue",
+  "text": "A kind rescue!"
+ },
+ {
+  "slug": "watch-out-more-tiles-are-glowing",
+  "text": "Watch out! More tiles are glowing!"
+ },
+ {
+  "slug": "aftershock-new-tiles-are-glowing",
+  "text": "Aftershock! New tiles are glowing!"
+ },
+ {
+  "slug": "look-the-glow-is-spreading",
+  "text": "Look! The glow is spreading!"
+ },
+ {
+  "slug": "glowing-patches-find-the-solid-rock",
+  "text": "Glowing patches! Find the solid rock!"
+ },
+ {
+  "slug": "stripes-every-other-line-is-going-to-crack",
+  "text": "Stripes! Every other line is going to crack!"
+ },
+ {
+  "slug": "a-checkerboard-jump-to-the-right-squares",
+  "text": "A checkerboard! Jump to the right squares!"
+ },
+ {
+  "slug": "rings-a-whole-ring-of-the-floor-is-glowing",
+  "text": "Rings! A whole ring of the floor is glowing!"
+ },
+ {
+  "slug": "a-giant-cross-is-glowing-get-out-of-the-middle-lines",
+  "text": "A giant cross is glowing! Get out of the middle lines!"
+ },
+ {
+  "slug": "islands-only-a-few-small-islands-will-stay-up",
+  "text": "Islands! Only a few small islands will stay up!"
+ },
+ {
+  "slug": "a-wave-of-glow-is-sweeping-across-get-out-of-its-way",
+  "text": "A wave of glow is sweeping across! Get out of its way!"
+ },
+ {
+  "slug": "power-ups-have-appeared-grab-one-then-answer-a-question-to-switch-it-on",
+  "text": "Power-ups have appeared! Grab one, then answer a question to switch it on."
+ },
+ {
+  "slug": "bubbles-they-slow-you-down-so-go-round-them",
+  "text": "Bubbles! They slow you down, so go round them."
+ },
+ {
+  "slug": "slippery-patches-you-slide-when-you-step-on-them",
+  "text": "Slippery patches! You slide when you step on them."
+ },
+ {
+  "slug": "a-rolling-fireball-it-will-knock-you-flying-maybe-into-the-lava",
+  "text": "A rolling fireball! It will knock you flying, maybe into the lava!"
+ },
+ {
+  "slug": "watch-out-now-some-tiles-start-glowing-late-near-the-end-of-the-countdown",
+  "text": "Watch out! Now some tiles start glowing late, near the end of the countdown."
+ },
+ {
+  "slug": "run-round-the-floor-with-the-joystick-or-the-arrow-keys",
+  "text": "Run round the floor with the joystick, or the arrow keys."
+ },
+ {
+  "slug": "when-tiles-glow-get-off-them-when-the-countdown-ends-they-crack-and-sink-into-the-lava",
+  "text": "When tiles glow, get off them! When the countdown ends, they crack and sink into the lava."
+ },
+ {
+  "slug": "fall-in-and-you-go-on-the-lava-raft-wait-for-a-friend-to-rescue-you-or-answer-five-questions-to-climb-back",
+  "text": "Fall in, and you go on the lava raft. Wait for a friend to rescue you, or answer five questions to climb back."
+ },
+ {
+  "slug": "answer-questions-to-earn-bricks-use-a-brick-to-build-a-bridge-over-the-lava-or-two-bricks-to-rescue-a-friend",
+  "text": "Answer questions to earn bricks. Use a brick to build a bridge over the lava, or two bricks to rescue a friend."
+ },
+ {
+  "slug": "grab-power-ups-then-answer-a-question-to-switch-them-on-stay-up-the-most-rounds-to-win",
+  "text": "Grab power-ups, then answer a question to switch them on. Stay up the most rounds to win!"
+ },
+ {
+  "slug": "today-we-are-on-volcano-island",
+  "text": "Today we are on Volcano Island."
+ },
+ {
+  "slug": "today-we-are-in-the-dragon-s-lair",
+  "text": "Today we are in the Dragon's Lair."
+ },
+ {
+  "slug": "today-we-are-in-the-lava-forge",
+  "text": "Today we are in the Lava Forge."
+ },
+ {
+  "slug": "today-we-are-on-the-lava-planet",
+  "text": "Today we are on the Lava Planet."
  }
 ]

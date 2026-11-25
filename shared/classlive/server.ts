@@ -27,11 +27,25 @@ import {
   cornersDone, MAPS, needsPositions, runSeconds, newCorners, nextDeadline, podium, questionFor, ANSWER_GAP_MS as CORNERS_GAP_MS,
   type Corner, type CornerMap, type CornersEvent, type CornersGame, type Item, type Positions, type Power, type Round, type Spot,
 } from './corners';
+import { advanceLava, freshLavaMine, lavaDeadline, lavaDone, lavaNeedsPositions, lavaRunSeconds, LAVA_MAPS, newLava, type LavaEvent, type LavaGame } from './lava';
+import { lavaPlayer, lavaPublic, lavaStep, type LavaPlayer, type LavaPublic } from './lavaServer';
+import {
+  advance as thronesAdvance, freshMine as thronesFresh, HALLS, needsPositions as thronesNeedsPositions, newThrones, nextDeadline as thronesDeadline,
+  thronesDone, type ThronesEvent, type ThronesGame,
+} from './thrones';
+import { thronesPlayer, thronesPublic, thronesStep, type ThronesPlayer, type ThronesPublic } from './thronesServer';
+import type { ClashEvent, ClashGame } from './clash';
+import { newClash, CLASH_MAPS, paintSeconds, teamCount } from './clash';
+import { clashDeadline, clashJoin, clashPlayer, clashPublic, clashStep, clashTick, type ClashPlayer, type ClashPublic } from './clashServer';
+import { BAYS, isShark, newShark, sharkAdvance, sharkJump, sharkQuestionFor, type BayMap } from './shark';
 
-export const ACTIVITIES = ['stars', 'serpent', 'mural', 'corners'] as const;
+import { advance as ghostAdvance, freshMine as ghostFresh, ghostDone, ghostPlayer, MAPS as GHOST_MAPS, needsPositions as ghostNeeds, newGhost, nextDeadline as ghostDeadline, publicGhost, type GhostEvent, type GhostGame, type GhostPlayer, type PublicGhost } from './ghost';
+import { ghostStep } from './ghostServer';
+
+export const ACTIVITIES = ['stars', 'serpent', 'mural', 'corners', 'shark', 'ghost', 'clash', 'thrones', 'lava'] as const;
 export type Activity = (typeof ACTIVITIES)[number];
 export const LENGTHS = [0, 2, 3, 5, 10, 15] as const;
-export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners' };
+export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners', shark: 'Shark Bay', ghost: 'Ghost Tag', clash: 'Colour Clash', thrones: 'Musical Thrones', lava: 'Floor is Lava' };
 
 export interface LivePlayer {
   id: string;
@@ -41,8 +55,8 @@ export interface LivePlayer {
   colour: number;
 }
 
-export type Game = StarsGame | SerpentGame | MuralGame | CornersGame;
-export type GameEvent = StarsEvent | SerpentEvent | MuralEvent | CornersEvent;
+export type Game = StarsGame | SerpentGame | MuralGame | CornersGame | GhostGame | ClashGame | ThronesGame | LavaGame;
+export type GameEvent = StarsEvent | SerpentEvent | MuralEvent | CornersEvent | GhostEvent | ClashEvent | ThronesEvent | LavaEvent;
 
 export interface Session {
   seed: number;
@@ -77,14 +91,11 @@ export interface Auto {
   startsAt: number;
   /** The fewest players it runs with. */
   min: number;
-  /** Serpent level or Four Corners map, or null for a surprise. */
+  /** Level or map, or null for a surprise. */
   level: string | null;
   /** Too few joined by the start: called off (no points). */
   calledOff?: boolean;
 }
-
-/** The games the server may start by itself (James, 25 Nov 2026 NZ: Star Web needs a big screen). */
-export const AUTO_ACTIVITIES = ['serpent', 'mural', 'corners'] as const;
 
 export interface Lobby {
   /** Four digits, shown big on the projector. */
@@ -121,7 +132,13 @@ export type PublicGame =
   /** `tiles`: one character a tile, '1' flipped, '0' not. Never the picture itself (until it is revealed). */
   | { kind: 'mural'; tiles: string; cols: number; rows: number; flipped: number; phase: 'flip' | 'guess'; guessEndsAt: number | null; picked: number; choices: Picture[]; solvers: number; revealed: boolean; picture: Picture | null }
   /** Four Corners: the round without the roll (until the dice lands) and without who was caught. */
-  | { kind: 'corners'; map: CornerMap; round: PublicRound | null; jailed: number; free: number };
+  | { kind: 'corners'; map: CornerMap; round: PublicRound | null; jailed: number; free: number; variant?: 'shark'; bay?: BayMap }
+  /** Ghost Tag (shared/classlive/ghost.ts). */
+  | PublicGhost
+  /** Colour Clash (shared/classlive/clashServer.ts). */
+  | ClashPublic
+  | ThronesPublic
+  | LavaPublic;
 
 export type PublicRound = Omit<Round, 'rolled' | 'caught' | 'saved' | 'items'> & {
   rolled: Corner[] | null;
@@ -163,8 +180,12 @@ export interface PlayerView {
         speedLeft: number;
         ghostLeft: number;
         /** Own stats for the end screen. */
-        stats: { right: number; wrong: number; bestStreak: number; warps: number; lucky: number; grabs: number; powers: number; escapes: number };
-      };
+        stats: { right: number; wrong: number; bestStreak: number; warps: number; lucky: number; grabs: number; powers: number; escapes: number; boats?: number };
+      }
+    | GhostPlayer
+    | ClashPlayer
+    | ThronesPlayer
+    | LavaPlayer;
 }
 
 export interface RoomRow {
@@ -233,12 +254,16 @@ export interface ClassLiveServices {
   place(room: number, spots: { player: string; x: number; y: number }[]): Promise<void>;
   /** Pays a finished session's points and trophies, once per room and session (later calls change nothing). */
   finishSession(room: number, done: FinishedSession): Promise<void>;
+  /** Colour Clash: a round's board (one character a tile, '0' blank or the team) and tiles painted by each pupil in the game. */
+  clashBoard(room: number, round: number): Promise<{ tiles: string; painted: Record<string, number> } | Busy>;
+  /** Colour Clash: a paint bomb's tiles take the team's colour. */
+  clashBomb(room: number, round: number, team: number, player: string, tiles: number[]): Promise<void>;
 }
 
 export type StepReply = { status: number; body: Record<string, unknown> };
-const ok = (body: Record<string, unknown>): StepReply => ({ status: 200, body });
-const no = (status: number, error: string, reason?: string): StepReply => ({ status, body: { error, ...(reason ? { reason } : {}) } });
-const busy = () => no(503, 'Class Live is very busy. Try again!', 'busy');
+export const ok = (body: Record<string, unknown>): StepReply => ({ status: 200, body });
+export const no = (status: number, error: string, reason?: string): StepReply => ({ status, body: { error, ...(reason ? { reason } : {}) } });
+export const busy = () => no(503, 'Class Live is very busy. Try again!', 'busy');
 const OFF = 'Class Live is switched off for this class.';
 const MAX_TRIES = 8;
 /** Events the screen row keeps (the projector animates the ones it hasn't seen). */
@@ -257,10 +282,14 @@ function publicRound(r: Round, t: number): PublicRound {
 }
 
 /** `t`: ms since the start, so a pupil's device only learns the rolled corner once the dice has landed. */
-export function publicGame(g: Game, players: number, t = 0): PublicGame {
+export function publicGame(g: Game, players: number, t = 0, order: string[] = []): PublicGame {
+  if (g.kind === 'ghost') return publicGhost(g, order);
+  if (g.kind === 'clash') return clashPublic(g);
+  if (g.kind === 'lava') return lavaPublic(g, players);
+  if (g.kind === 'thrones') return thronesPublic(g, players);
   if (g.kind === 'corners') {
     const jailed = Object.values(g.mine).filter((m) => m.jailedIn !== null).length;
-    return { kind: 'corners', map: g.map, round: g.round ? publicRound(g.round, t) : null, jailed, free: players - jailed };
+    return { kind: 'corners', map: g.map, round: g.round ? publicRound(g.round, t) : null, jailed, free: players - jailed, ...(isShark(g) ? { variant: 'shark' as const, bay: g.bay } : {}) };
   }
   if (g.kind === 'mural') {
     return {
@@ -279,7 +308,7 @@ export function publicGame(g: Game, players: number, t = 0): PublicGame {
 export function roomView(s: Session, startedAt: number | null, now?: number): RoomView {
   const t = startedAt === null ? 0 : Math.max(0, (now ?? startedAt) - startedAt);
   return {
-    activity: s.activity, state: s.state, lengthMin: s.lengthMin, startedAt, players: s.order.length, game: publicGame(s.game, s.order.length, t),
+    activity: s.activity, state: s.state, lengthMin: s.lengthMin, startedAt, players: s.order.length, game: publicGame(s.game, s.order.length, t, s.order),
     lobby: s.lobby ?? null, padMusic: s.padMusic === true,
     auto: s.auto ? { startsAt: s.auto.startsAt, min: s.auto.min, calledOff: s.auto.calledOff === true } : null,
   };
@@ -300,6 +329,10 @@ function screenView(row: Pick<RoomRow, 'showNames' | 'seq' | 'events'>, s: Sessi
 
 export function playerView(s: Session, id: string): PlayerView {
   const p = s.players[id];
+  if (s.game.kind === 'lava') return { player: id, name: firstName(p.name), colour: p.colour, game: lavaPlayer(s, s.game, id, () => freshLavaMine(s.order.indexOf(id))) };
+  if (s.game.kind === 'thrones') return { player: id, name: firstName(p.name), colour: p.colour, game: thronesPlayer(s.game, s.order, id, s.state === 'over') };
+  if (s.game.kind === 'clash') return { player: id, name: firstName(p.name), colour: p.colour, game: clashPlayer(s, s.game, id) };
+  if (s.game.kind === 'ghost') return { player: id, name: firstName(p.name), colour: p.colour, game: ghostPlayer(s.game, id, s.order, s.state === 'over') };
   if (s.game.kind === 'corners') {
     const g = s.game;
     const m = g.mine[id] ?? freshMine(s.order.indexOf(id));
@@ -317,7 +350,7 @@ export function playerView(s: Session, id: string): PlayerView {
         speedLeft: m.speedTo !== null && n <= m.speedTo ? m.speedTo - n + 1 : 0, ghostLeft: m.ghostTo !== null && n <= m.ghostTo ? m.ghostTo - n + 1 : 0,
         stats: {
           right: m.right ?? 0, wrong: m.wrong ?? 0, bestStreak: m.bestStreak ?? 0, warps: m.warps ?? 0, lucky: m.lucky ?? 0,
-          grabs: m.grabs, powers: m.powersUsed, escapes: m.escapes,
+          grabs: m.grabs, powers: m.powersUsed, escapes: m.escapes, ...(isShark(g) ? { boats: (m as { boats?: number }).boats ?? 0 } : {}),
         },
       },
     };
@@ -356,12 +389,12 @@ export function playerView(s: Session, id: string): PlayerView {
 }
 
 /** Time in ms since the start (0 in the lobby). */
-const timeOf = (row: Pick<RoomRow, 'startedAt'>, now: number) => (row.startedAt === null ? 0 : Math.max(0, now - row.startedAt));
+export const timeOf = (row: Pick<RoomRow, 'startedAt'>, now: number) => (row.startedAt === null ? 0 : Math.max(0, now - row.startedAt));
 
 /** Is a timed session past its end? */
 const timeUp = (s: Session, row: Pick<RoomRow, 'startedAt'>, now: number) => s.state === 'live' && s.lengthMin > 0 && timeOf(row, now) >= s.lengthMin * 60_000;
 
-type Step<T> = (s: Session, t: number, row: RoomRow) => { reply: T; events: Event[]; startedAt?: number | null; players?: string[]; claim?: Change['claim'] } | { refuse: StepReply };
+export type Step<T> = (s: Session, t: number, row: RoomRow) => { reply: T; events: Event[]; startedAt?: number | null; players?: string[]; claim?: Change['claim'] } | { refuse: StepReply };
 
 /** Pays out a finished session. A failure is only logged: the teacher's next view tries again (it pays once). */
 async function payOut(sv: ClassLiveServices, room: number, s: Session) {
@@ -374,36 +407,58 @@ async function payOut(sv: ClassLiveServices, room: number, s: Session) {
 }
 
 /** Loads the room, applies one step and saves it if nobody else saved first (else runs it again on the newer session). */
-async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<T>): Promise<{ reply: T; row: RoomRow; session: Session } | { refuse: StepReply }> {
+export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<T>): Promise<{ reply: T; row: RoomRow; session: Session } | { refuse: StepReply }> {
   for (let tries = 0; tries < MAX_TRIES; tries++) {
     let row = await sv.loadRoom(room);
     if (row === 'busy') return { refuse: busy() };
     if (!row) return { refuse: no(404, "That room couldn't be found.", 'gone') };
     const version = row.version;
     const s = structuredClone(row.session);
-    const now = sv.now();
-    const events: Event[] = [];
     // A game the server opened at a set time: made on its first step, started (or called off) at its time.
     const made = !s.game && !!s.auto;
-    if (made) s.game = gameFor(s.activity, { level: s.auto!.level, map: s.auto!.level }, () => sv.random());
-    let autoStart: number | undefined;
-    if (s.auto && s.state === 'lobby' && now >= s.auto.startsAt) {
+    if (made) s.game = gameFor(s.activity, s.auto!.level, () => sv.random());
+    const autoEvents: Event[] = [];
+    if (s.auto && s.state === 'lobby' && sv.now() >= s.auto.startsAt) {
       if (s.order.length >= s.auto.min) {
-        startGame(s);
-        autoStart = now;
-        events.push({ type: 'start', t: 0 });
+        startGame(s, sv.now());
+        row = { ...row, startedAt: sv.now() };
+        autoEvents.push({ type: 'start', t: 0 });
       } else {
         s.state = 'over';
         s.auto.calledOff = true;
-        events.push({ type: 'over', t: 0, why: 'few' });
+        autoEvents.push({ type: 'over', t: 0, why: 'few' });
       }
     }
-    if (autoStart !== undefined) row = { ...row, startedAt: autoStart };
+    const now = sv.now();
     const t = timeOf(row, now);
+    const events: Event[] = [...autoEvents];
     const g0 = s.game;
     // Four Corners: the server moves pupils (back from jail, a jump); their devices snap to the new spot.
-    const placedBefore = g0.kind === 'corners' ? new Map(s.order.map((id) => [id, g0.mine[id]?.placed ?? 0])) : null;
-    if (g0.kind === 'corners') {
+    const placedBefore = g0.kind === 'corners' || g0.kind === 'ghost' || g0.kind === 'clash' || g0.kind === 'thrones' || g0.kind === 'lava' ? new Map(s.order.map((id) => [id, g0.mine[id]?.placed ?? 0])) : null;
+    if (g0.kind === 'ghost') {
+      // Ghost Tag runs on the clock too: rounds, the hunt, tags from the saved spots (docs/GHOST-PLAN.md).
+      if (s.state === 'live') {
+        let spots: Positions = {};
+        if (ghostNeeds(g0, t)) {
+          const got = await sv.positions(room);
+          if (got === 'busy') return { refuse: busy() };
+          spots = got;
+        }
+        const last = timeUp(s, row, now);
+        events.push(...ghostAdvance(g0, t, s.order, spots, () => sv.random(), last));
+        if (last && ghostDone(g0, t)) {
+          s.state = 'over';
+          events.push({ type: 'over', t, why: 'time' });
+        }
+      }
+    } else if (g0.kind === 'clash') {
+      // Colour Clash runs on the clock too: count a round when painting ends, start the next (clashServer.ts).
+      if (s.state === 'live') {
+        const got = await clashTick(sv, room, s, t, timeUp(s, row, now));
+        if (got === 'busy') return { refuse: busy() };
+        events.push(...got);
+      }
+    } else if (g0.kind === 'corners') {
       // Rounds run on the clock: end the run (who is caught, from the saved spots), start the next round. When the time is
       // up, the round that is on is the last one.
       if (s.state === 'live') {
@@ -414,8 +469,40 @@ async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<T>): Pr
           spots = got;
         }
         const last = timeUp(s, row, now);
-        events.push(...cornersAdvance(g0, t, s.order, spots, () => sv.random(), last));
+        events.push(...(isShark(g0) ? sharkAdvance : cornersAdvance)(g0, t, s.order, spots, () => sv.random(), last));
         if (last && cornersDone(g0, t)) {
+          s.state = 'over';
+          events.push({ type: 'over', t, why: 'time' });
+        }
+      }
+    } else if (g0.kind === 'thrones') {
+      // Musical Thrones runs on the clock too: the music stops, the scramble ends, the next round starts.
+      if (s.state === 'live') {
+        let spots: Positions = {};
+        if (thronesNeedsPositions(g0, t)) {
+          const got = await sv.positions(room);
+          if (got === 'busy') return { refuse: busy() };
+          spots = got;
+        }
+        const last = timeUp(s, row, now);
+        events.push(...thronesAdvance(g0, t, s.order, spots, () => sv.random(), last));
+        if (last && thronesDone(g0, t)) {
+          s.state = 'over';
+          events.push({ type: 'over', t, why: 'time' });
+        }
+      }
+    } else if (g0.kind === 'lava') {
+      // Floor is Lava runs on the clock too: crack the floor when a run ends (from the saved spots), start the next round.
+      if (s.state === 'live') {
+        let spots: Positions = {};
+        if (lavaNeedsPositions(g0, t)) {
+          const got = await sv.positions(room);
+          if (got === 'busy') return { refuse: busy() };
+          spots = got;
+        }
+        const last = timeUp(s, row, now);
+        events.push(...advanceLava(g0, t, s.order, spots, () => sv.random(), last));
+        if (last && lavaDone(g0, t)) {
           s.state = 'over';
           events.push({ type: 'over', t, why: 'time' });
         }
@@ -450,12 +537,15 @@ async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<T>): Pr
     const next: RoomRow = { ...row, startedAt, seq, events: [...row.events, ...numbered].slice(-KEEP_EVENTS), session: s };
     for (const e of events) if ('pupil' in e && typeof e.pupil === 'string') changed.add(e.pupil);
     const g1 = s.game;
-    const places = g1.kind === 'corners' && placedBefore
+    const places = (g1.kind === 'corners' || g1.kind === 'ghost' || g1.kind === 'clash' || g1.kind === 'thrones' || g1.kind === 'lava') && placedBefore
       ? s.order.filter((id) => (g1.mine[id]?.placed ?? 0) !== (placedBefore.get(id) ?? 0)).map((id) => ({ player: id, x: g1.mine[id].spot.x, y: g1.mine[id].spot.y }))
       : [];
     for (const p of places) changed.add(p.player);
     // A round's end changes every pupil's own row (caught, safe, scores).
-    if (g1.kind === 'corners' && events.some((e) => e.type === 'roll' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
+    if ((g1.kind === 'corners' || g1.kind === 'lava') && events.some((e) => e.type === 'roll' || e.type === 'crack' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
+    if ((g1.kind === 'corners' || g1.kind === 'clash') && events.some((e) => e.type === 'roll' || e.type === 'clash_count' || e.type === 'clash_round' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
+    if (g1.kind === 'ghost' && events.some((e) => e.type === 'g_round' || e.type === 'g_end' || e.type === 'over' || (e.type === 'g_grab' && e.froze > 0))) for (const id of s.order) changed.add(id);
+    if (g1.kind === 'thrones' && events.some((e) => e.type === 'stop' || e.type === 'seated' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
     const players = [...changed].filter((id) => s.players[id]).map((id) => playerView(s, id));
     const saved = await sv.save(room, version, { session: s, view: roomView(s, startedAt, now), screen: screenView(next, s, startedAt), startedAt, players, ...(claim ? { claim } : {}) });
     if (saved === 'busy') return { refuse: busy() };
@@ -494,47 +584,50 @@ const canUse = (row: RoomRow, me: { classId: string; schoolId: number }) =>
 export function newSession(body: Record<string, unknown>, seed: number, random: () => number): Session | string {
   const activity = ACTIVITIES.find((a) => a === body.activity) ?? 'stars';
   const lengthMin = (LENGTHS as readonly number[]).includes(body.length as number) ? (body.length as number) : 0;
-  if (activity === 'stars' && (body.x !== undefined || body.y !== undefined) && !anchorOf(Number(body.x), Number(body.y))) return 'Pick two different numbers from 2 to 12.';
-  const game = gameFor(activity, body, random);
-  return { seed, activity, state: 'lobby', lengthMin, players: {}, order: [], game, ...(body.padMusic === true ? { padMusic: true } : {}) };
-}
-
-/** A new game of this activity from the choices (level, map, run time; anything unknown is a surprise or the usual). */
-export function gameFor(activity: Activity, body: Record<string, unknown>, random: () => number): Game {
+  let game: Game;
   if (activity === 'stars') {
     const own = anchorOf(Number(body.x), Number(body.y));
     const level = (Object.keys(LEVELS) as StarLevel[]).find((l) => l === body.level) ?? 'middle';
-    return newStars(own ?? pickAnchor(level, random), own ? 'own' : level);
-  }
-  if (activity === 'serpent') return newSerpent(SERPENT_LEVELS.find((l) => l === body.level) ?? 'gold', random);
-  if (activity === 'corners') {
+    if ((body.x !== undefined || body.y !== undefined) && !own) return 'Pick two different numbers from 2 to 12.';
+    game = newStars(own ?? pickAnchor(level, random), own ? 'own' : level);
+  } else if (activity === 'serpent') {
+    const level = SERPENT_LEVELS.find((l) => l === body.level) ?? 'gold';
+    game = newSerpent(level, random);
+  } else if (activity === 'ghost') {
+    game = newGhost(GHOST_MAPS.find((m) => m === body.map) ?? GHOST_MAPS[Math.floor(random() * GHOST_MAPS.length) % GHOST_MAPS.length]);
+  } else if (activity === 'corners') {
     const map = MAPS.find((m) => m === body.map) ?? MAPS[Math.floor(random() * MAPS.length) % MAPS.length];
-    return newCorners(map, runSeconds(body.run));
-  }
-  return newMural(random);
+    game = newCorners(map, runSeconds(body.run));
+  } else if (activity === 'lava') {
+    const map = LAVA_MAPS.find((m) => m === body.map) ?? LAVA_MAPS[Math.floor(random() * LAVA_MAPS.length) % LAVA_MAPS.length];
+    game = newLava(map, lavaRunSeconds(body.run));
+  } else if (activity === 'clash') {
+    const map = CLASH_MAPS.find((m) => m === body.map) ?? CLASH_MAPS[Math.floor(random() * CLASH_MAPS.length) % CLASH_MAPS.length];
+    game = newClash(map, teamCount(body.teams), paintSeconds(body.paint));
+  } else if (activity === 'shark') {
+    // Shark Bay (docs/SHARK-PLAN.md): Four Corners' engine with spinning quarters, boats and a shark.
+    const bay = BAYS.find((m) => m === body.map) ?? BAYS[Math.floor(random() * BAYS.length) % BAYS.length];
+    game = newShark(bay, runSeconds(body.run));
+  } else if (activity === 'thrones') {
+    game = newThrones(HALLS.find((h) => h === body.hall) ?? HALLS[Math.floor(random() * HALLS.length) % HALLS.length]);
+  } else game = newMural(random);
+  return { seed, activity, state: 'lobby', lengthMin, players: {}, order: [], game, ...(body.padMusic === true ? { padMusic: true } : {}) };
+}
+
+/** A new game of this activity for a set-time game (`level`: its level or map; anything unknown is a surprise). */
+export function gameFor(activity: Activity, level: string | null, random: () => number): Game {
+  const s = newSession({ activity, level, map: level, hall: level }, 0, random);
+  return typeof s === 'string' ? newMural(random) : s.game;
 }
 
 /** Lobby to live (the teacher's Start, or a set-time game's start). */
-function startGame(s: Session) {
+function startGame(s: Session, now: number) {
   s.state = 'live';
   // Four Corners: change corners every round in the second half (a timed game's halfway point).
   if (s.game.kind === 'corners' && s.lengthMin > 0) s.game.halfAt = (s.lengthMin * 60_000) / 2;
+  if (s.game.kind === 'clash') s.game.zeroMs = now;
   // Mystery Mural: the grid fits the class and the time (about 75% uncovered by a class doing well).
   if (s.game.kind === 'mural') sizeMural(s.game, s.order.length, s.lengthMin);
-}
-
-/** Is something due that a step would move on (a set-time start, the time up, the end of guessing, a Four Corners round)? */
-export function dueNow(s: Session, startedAt: number | null, now: number): boolean {
-  if (s.auto && s.state === 'lobby') return now >= s.auto.startsAt;
-  if (s.state !== 'live') return false;
-  const t = startedAt === null ? 0 : Math.max(0, now - startedAt);
-  const g = s.game;
-  if (g.kind === 'corners') {
-    const due = nextDeadline(g, startedAt);
-    return due !== null && t >= due + 1500;
-  }
-  if (s.lengthMin > 0 && t >= s.lengthMin * 60_000) return true;
-  return g.kind === 'mural' && guessingDone(g, t);
 }
 
 /** One request from a signed-in person (`who`). */
@@ -589,7 +682,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
       if (action === 'view') return { reply: null, events: [] };
       if (action === 'start') {
         if (s.state !== 'lobby') return { refuse: no(409, 'It has already started.', 'not-now') };
-        startGame(s);
+        startGame(s, sv.now());
         return { reply: null, events: [{ type: 'start', t: 0 }], startedAt: sv.now() };
       }
       if (action === 'reveal') {
@@ -655,6 +748,10 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         if (s.order.length >= MAX_PLAYERS) return { refuse: no(409, 'This room is full.', 'full') };
         s.players[who] = { id: who, name: me.name, joinedAt: t, colour: s.order.length % 12 };
         if (s.game.kind === 'corners') s.game.mine[who] = freshMine(s.order.length);
+        if (s.game.kind === 'lava') s.game.mine[who] = freshLavaMine(s.order.length);
+        if (s.game.kind === 'thrones') s.game.mine[who] = thronesFresh(s.order.length);
+        if (s.game.kind === 'clash') clashJoin(s.game, who);
+        if (s.game.kind === 'ghost') s.game.mine[who] = ghostFresh(s.order.length);
         s.order.push(who);
         return { reply: null, events: [{ type: 'join', t, pupil: who }] };
       });
@@ -669,13 +766,34 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     const withRoom = (r: StepReply): StepReply =>
       r.status === 200 ? r : { ...r, body: { ...r.body, view: roomView(cur.session, cur.startedAt, sv.now()), me: playerView(cur.session, who) } };
     if (action === 'look') {
-      // Games run on the clock: if no big screen has moved it on (closed, asleep, or a set-time game with none), a pupil's
-      // look does (a set-time start, the time up, the end of guessing, a Four Corners round).
-      if (dueNow(cur.session, cur.startedAt, sv.now())) {
+      // Four Corners runs on the clock: if the big screen hasn't moved a round on (closed, asleep), a pupil's look does.
+      const cg = cur.session.game;
+      const due = cur.session.state !== 'live' ? null : cg.kind === 'corners' ? nextDeadline(cg, cur.startedAt) : cg.kind === 'ghost' ? ghostDeadline(cg, cur.startedAt) : cg.kind === 'clash' ? clashDeadline(cg, cur.startedAt) : cg.kind === 'thrones' ? thronesDeadline(cg, cur.startedAt) : cg.kind === 'lava' ? lavaDeadline(cg, cur.startedAt) : null;
+      // Also anything else due with no big screen to move it on (a set-time game): its start, the time up, Mural's guessing.
+      const n = sv.now(), tt = timeOf(cur, n), cs = cur.session;
+      const otherDue = cs.auto && cs.state === 'lobby' ? n >= cs.auto.startsAt
+        : cs.state === 'live' && ((cs.lengthMin > 0 && tt >= cs.lengthMin * 60_000) || (cg.kind === 'mural' && guessingDone(cg, tt)));
+      if ((due !== null && tt >= due + 1500) || otherDue) {
         const done = await mutate(sv, room, () => ({ reply: null, events: [] }));
         if (!('refuse' in done)) return ok({ room, view: roomView(done.session, done.row.startedAt, sv.now()), me: playerView(done.session, who), now: sv.now() });
       }
       return ok({ room, view: roomView(cur.session, cur.startedAt, sv.now()), me: playerView(cur.session, who), now: sv.now() });
+    }
+    if (cur.session.game.kind === 'lava' && (action === 'ask' || action === 'answer' || action === 'play')) {
+      const out = await lavaStep(sv, cur, who, body, { mutate, nextQuestion, roomView, playerView, ok, no, busy });
+      return cur.session.state === 'live' ? out : withRoom(out);
+    }
+    if (cur.session.game.kind === 'thrones' && (action === 'ask' || action === 'answer' || action === 'play')) {
+      const out = await thronesStep({ sv, mutate, nextQuestion, roomView, playerView, timeOf, ok, no, busy, maxAnswerMs: MAX_ANSWER_MS }, cur, who, body);
+      return cur.session.state === 'live' ? out : withRoom(out);
+    }
+    if (cur.session.game.kind === 'clash' && (action === 'ask' || action === 'answer' || action === 'play')) {
+      const out = await clashStep(sv, cur, who, body);
+      return cur.session.state === 'live' ? out : withRoom(out);
+    }
+    if (cur.session.game.kind === 'ghost' && (action === 'ask' || action === 'answer' || action === 'play')) {
+      const out = await ghostStep(sv, cur, who, body);
+      return cur.session.state === 'live' ? out : withRoom(out);
     }
     if (cur.session.game.kind === 'corners' && (action === 'ask' || action === 'answer' || action === 'play')) {
       const out = await cornersStep(sv, cur, who, body);
@@ -713,7 +831,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         }
         return { reply: out.reply, events: out.events, players: [who] };
       }
-      if (s.game.kind === 'corners') return { refuse: no(409, 'Use the joystick!', 'not_now') };
+      if (s.game.kind === 'corners' || s.game.kind === 'ghost' || s.game.kind === 'clash' || s.game.kind === 'thrones' || s.game.kind === 'lava') return { refuse: no(409, 'Use the joystick!', 'not_now') };
       const out = tryFact(s.game, who, body.fact, t);
       if (!out.ok) return { refuse: no(409, 'One at a time!', out.reason) };
       return { reply: out.reply, events: out.events, players: [who] };
@@ -747,14 +865,14 @@ export function makeQuestion(context: MathsContext, seed: string): Question | nu
   return null;
 }
 
-async function nextQuestion(sv: ClassLiveServices, row: RoomRow, who: string): Promise<PublicQuestion | null | Busy> {
+export async function nextQuestion(sv: ClassLiveServices, row: RoomRow, who: string): Promise<PublicQuestion | null | Busy> {
   const open = await sv.openQuestion(row.id, who);
   if (open === 'busy') return 'busy';
   if (open) return publicQuestion(open.question, open.slot);
   const ctx = await sv.mathsContext(who);
   if (!ctx) return null;
   const g = row.session.game;
-  const m = g.kind === 'mural' || g.kind === 'corners' ? g.mine[who] : undefined;
+  const m = g.kind === 'mural' || g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'clash' || g.kind === 'thrones' || g.kind === 'lava' ? g.mine[who] : undefined;
   const q = makeQuestion(ctx, `${row.session.seed}:${who}:${m?.answered ?? 0}`);
   if (!q) return null;
   const kept = await sv.keepQuestion(row.id, who, q);
@@ -827,7 +945,7 @@ async function cornersStep(sv: ClassLiveServices, cur: RoomRow, who: string, bod
     const done = await mutate(sv, room, (s, t) => {
       if (s.state !== 'live' || s.game.kind !== 'corners') return { refuse: no(409, 'This one has finished.', 'over') };
       if (body.jump !== undefined) {
-        const out = cornersJump(s.game, who, body.jump, s.order, t);
+        const out = (isShark(s.game) ? sharkJump : cornersJump)(s.game, who, body.jump, s.order, t);
         if (!out.ok) return { refuse: no(409, "You can't jump there now.", 'not_now') };
         return { reply: null, events: [], players: [who] };
       }
@@ -850,7 +968,7 @@ async function cornersStep(sv: ClassLiveServices, cur: RoomRow, who: string, bod
   if (body.action === 'ask') {
     const at = await spotOf();
     if (at === 'busy') return busy();
-    const purpose = questionFor(g0, who, at ?? g0.mine[who]?.spot, t0);
+    const purpose = (isShark(g0) ? sharkQuestionFor : questionFor)(g0, who, at ?? g0.mine[who]?.spot, t0);
     if (!purpose) return no(409, 'No question right now.', 'not_now');
     const question = await nextQuestion(sv, cur, who);
     if (question === 'busy') return busy();
@@ -871,8 +989,8 @@ async function cornersStep(sv: ClassLiveServices, cur: RoomRow, who: string, bod
   const ms = Math.round(Math.min(typeof body.ms === 'number' && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS, MAX_ANSWER_MS));
   const done = await mutate(sv, room, (s, t) => {
     if (s.state !== 'live' || s.game.kind !== 'corners') return { refuse: no(409, 'This one has finished.', 'over') };
-    const purpose = questionFor(s.game, who, at ?? s.game.mine[who]?.spot, t);
-    if (!purpose) return { refuse: no(409, 'Get to a corner first!', 'not_now') };
+    const purpose = (isShark(s.game) ? sharkQuestionFor : questionFor)(s.game, who, at ?? s.game.mine[who]?.spot, t);
+    if (!purpose) return { refuse: no(409, isShark(s.game) ? 'Swim off the jetty first!' : 'Get to a corner first!', 'not_now') };
     const out = cornersAnswered(s.game, who, right, purpose, s.order, t, typeof body.ms === 'number' ? ms : undefined);
     if (!out.ok) return { refuse: no(409, out.reason === 'too_soon' ? 'One at a time!' : 'No question right now.', out.reason) };
     const freed = out.events.flatMap((e) => (e.type === 'power' && e.freed ? [e.freed] : []));
@@ -893,3 +1011,6 @@ async function cornersStep(sv: ClassLiveServices, cur: RoomRow, who: string, bod
 
 export { TILES };
 export type { Star, Arm };
+
+/** For the games' own server files (clashServer.ts). */
+export { mutate as mutateRoom, nextQuestion as nextQuestionFor };

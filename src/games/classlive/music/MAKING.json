@@ -448,5 +448,333 @@
     "seconds": 88.0,
     "take_kept": 2,
     "lufs_target": -16
+  },
+  {
+    "name": "ghost-graveyard",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "playful friendly spooky chase, tinkling music box, celesta, pizzicato strings, sneaky tiptoe bassline, light percussion, cute, mischievous, fun, not scary, 118 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 118,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -18
+  },
+  {
+    "name": "ghost-graveyard-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic playful spooky chase, fast music box, rapid celesta, racing pizzicato strings, pounding drums, cute, not scary, very energetic, fast tempo, busy rhythm, starts immediately at full volume, 160 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 160,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -16
+  },
+  {
+    "name": "ghost-mansion",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "playful friendly spooky haunted mansion waltz, harpsichord, pipe organ, pizzicato strings, bouncy 3/4 waltz feel, cute, mischievous, fun, not scary, 120 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 120,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -18
+  },
+  {
+    "name": "ghost-mansion-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic playful spooky haunted mansion chase, fast harpsichord, pipe organ stabs, rapid strings, pounding drums, cute, not scary, very energetic, fast tempo, busy rhythm, starts immediately at full volume, 160 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 160,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "ghost-pumpkin",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "playful friendly spooky barn dance, banjo, fiddle, stomping hoedown rhythm, washboard, cute, mischievous, fun, not scary, 124 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 124,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -18
+  },
+  {
+    "name": "ghost-pumpkin-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic playful spooky hoedown chase, fast banjo picking, racing fiddle, stomping drums, cute, not scary, very energetic, fast tempo, busy rhythm, starts immediately at full volume, 165 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 165,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "ghost-ship",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "playful friendly spooky sea shanty, accordion, creaky wooden percussion, tuba, swaying rhythm, cute, mischievous, fun, not scary, 116 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 116,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -18
+  },
+  {
+    "name": "ghost-ship-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic playful spooky sea shanty chase, fast accordion, rapid fiddle, pounding drums, cute, not scary, very energetic, fast tempo, busy rhythm, starts immediately at full volume, 160 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 160,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -16
+  },
+  {
+    "name": "thrones-castle",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "party dance music for musical chairs, bouncy, upbeat, strong steady four-on-the-floor beat from the very first second, starts immediately at full volume, no intro, royal medieval dance, harpsichord, brass, tambourine, festive court dance, catchy, 124 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 124,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18,
+    "notes": "3 takes (seeds 11117, 42424, 77777); kept the take with a full-volume first 2 s; fade-in 0.02 s only (no audible fade) so it starts on the beat"
+  },
+  {
+    "name": "thrones-castle-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "party dance music for musical chairs, bouncy, upbeat, strong steady four-on-the-floor beat from the very first second, starts immediately at full volume, no intro, fast royal medieval dance, harpsichord, bold brass, tambourine, pounding drums, energetic, fuller, catchy, 134 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 134,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16,
+    "notes": "3 takes (seeds 11117, 42424, 77777); kept the take with a full-volume first 2 s; fade-in 0.02 s only (no audible fade) so it starts on the beat"
+  },
+  {
+    "name": "thrones-ice",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "party dance music for musical chairs, bouncy, upbeat, strong steady four-on-the-floor beat from the very first second, starts immediately at full volume, no intro, sparkly frosty dance, glockenspiel, sleigh bells, synth plucks, icy shimmer, catchy, 120 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 77777,
+    "bpm": 120,
+    "seconds": 88.0,
+    "take_kept": 3,
+    "lufs_target": -18,
+    "notes": "3 takes (seeds 11117, 42424, 77777); kept the take with a full-volume first 2 s; fade-in 0.02 s only (no audible fade) so it starts on the beat"
+  },
+  {
+    "name": "thrones-ice-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "party dance music for musical chairs, bouncy, upbeat, strong steady four-on-the-floor beat from the very first second, starts immediately at full volume, no intro, fast sparkly frosty dance, glockenspiel, sleigh bells, bright synth plucks, driving electronic drums, energetic, fuller, catchy, 130 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 130,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16,
+    "notes": "3 takes (seeds 11117, 42424, 77777); kept the take with a full-volume first 2 s; fade-in 0.02 s only (no audible fade) so it starts on the beat"
+  },
+  {
+    "name": "thrones-jungle",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "party dance music for musical chairs, bouncy, upbeat, strong steady four-on-the-floor beat from the very first second, starts immediately at full volume, no intro, bongo and marimba party, tropical, congas, shakers, sunny, catchy, 122 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 122,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -18,
+    "notes": "3 takes (seeds 11117, 42424, 77777); kept the take with a full-volume first 2 s; fade-in 0.02 s only (no audible fade) so it starts on the beat"
+  },
+  {
+    "name": "thrones-jungle-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "party dance music for musical chairs, bouncy, upbeat, strong steady four-on-the-floor beat from the very first second, starts immediately at full volume, no intro, fast bongo and marimba party, tropical, pounding congas, shakers, steel drums, energetic, fuller, catchy, 132 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 77777,
+    "bpm": 132,
+    "seconds": 88.0,
+    "take_kept": 3,
+    "lufs_target": -16,
+    "notes": "3 takes (seeds 11117, 42424, 77777); kept the take with a full-volume first 2 s; fade-in 0.02 s only (no audible fade) so it starts on the beat"
+  },
+  {
+    "name": "thrones-pirate",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "party dance music for musical chairs, bouncy, upbeat, strong steady four-on-the-floor beat from the very first second, starts immediately at full volume, no intro, jolly sea shanty jig, accordion, fiddle, stomping beat, tin whistle, catchy, 128 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 128,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18,
+    "notes": "3 takes (seeds 11117, 42424, 77777); kept the take with a full-volume first 2 s; fade-in 0.02 s only (no audible fade) so it starts on the beat"
+  },
+  {
+    "name": "thrones-pirate-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "party dance music for musical chairs, bouncy, upbeat, strong steady four-on-the-floor beat from the very first second, starts immediately at full volume, no intro, fast jolly sea shanty jig, accordion, fast fiddle, stomping drums, tin whistle, energetic, fuller, catchy, 138 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 138,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16,
+    "notes": "3 takes (seeds 11117, 42424, 77777); kept the take with a full-volume first 2 s; fade-in 0.02 s only (no audible fade) so it starts on the beat"
+  },
+  {
+    "name": "clash-park",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "sunny playful park paint fight, bouncy ukulele, whistling, hand claps, glockenspiel, funky bass, upbeat, catchy, fun, 124 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 124,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "clash-park-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic sunny park paint battle, fast bouncy ukulele, rapid hand claps, pounding drums, brass stabs, very energetic, intense, fast tempo, busy rhythm, starts immediately at full volume, 160 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 160,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "clash-rooftops",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "cool urban rooftop graffiti groove, funky hip hop beat, scratchy turntable, slap bass, electric piano, upbeat, catchy, fun, 100 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 100,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "clash-rooftops-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic urban rooftop chase, fast breakbeat drums, funky slap bass, brass stabs, turntable scratches, very energetic, intense, fast tempo, busy rhythm, starts immediately at full volume, 150 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 150,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "clash-beach",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "sunny tropical beach party, steel drums, surf guitar, marimba, bongos, upbeat, catchy, fun, 120 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 120,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "clash-beach-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic tropical beach race, fast steel drums, twangy surf guitar, pounding bongos, brass stabs, very energetic, intense, fast tempo, busy rhythm, starts immediately at full volume, 160 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 160,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "clash-space",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "bubbly space laboratory, bouncy synth arpeggios, quirky bleeps, electronic beat, playful, upbeat, catchy, fun, 128 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 128,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "clash-space-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "frantic space lab experiment, very fast synth arpeggios, pounding electronic drums, driving synth bass, quirky bleeps, very energetic, intense, fast tempo, busy rhythm, starts immediately at full volume, 165 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 165,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "shark-lagoon",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "sunny tropical beach chase, bright steel drums, strummed ukulele, light shakers, bouncy bass, calm but bouncy, catchy, fun, 110 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 110,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "shark-lagoon-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "tense tropical beach chase, fast steel drums, rapid strummed ukulele, pulsing low ominous bass ostinato, driving drums, tense, very energetic, fast tempo, busy rhythm, starts immediately at full volume, 140 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 140,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "shark-reef",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "playful underwater coral reef chase, bouncy marimba, bubbly synth plucks, soft hand percussion, calm but bouncy, catchy, fun, 110 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 110,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "shark-reef-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "tense underwater reef chase, fast marimba, bubbly synth plucks, pulsing low ominous bass ostinato, driving drums, tense, very energetic, fast tempo, busy rhythm, starts immediately at full volume, 140 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 140,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "shark-pirate",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "jolly sea shanty chase, squeezebox accordion, lively fiddle, stomping percussion, calm but bouncy, catchy, fun, 110 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 110,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "shark-pirate-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "tense sea shanty chase, fast accordion, rapid fiddle, pulsing low ominous bass ostinato, driving drums, tense, very energetic, fast tempo, busy rhythm, starts immediately at full volume, 140 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 140,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
+  },
+  {
+    "name": "shark-icy",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "playful icy arctic bay chase, sparkling glockenspiel, bouncy pizzicato strings, light percussion, calm but bouncy, catchy, fun, 110 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 110,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -18
+  },
+  {
+    "name": "shark-icy-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "tense icy arctic bay chase, fast glockenspiel, rapid pizzicato strings, pulsing low ominous bass ostinato, driving drums, tense, very energetic, fast tempo, busy rhythm, starts immediately at full volume, 140 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
+    "seed": 42424,
+    "bpm": 140,
+    "seconds": 88.0,
+    "take_kept": 2,
+    "lufs_target": -16
   }
 ]

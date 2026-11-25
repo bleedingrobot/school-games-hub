@@ -1,3 +1,4 @@
+import { allLavaLines } from './lavaVoice';
 /**
  * Everything Class Live says on the projector, read by Bella (af_bella) like every game. No pupils' names (names are
  * shown, never spoken). iPads stay silent. Clips go in public/voice/classlive/, made with scripts/voice-clips.py classlive.
@@ -5,9 +6,14 @@
  * Each moment has a few takes, said in turn (`next`), so nothing is said the same way twice running (James, 24 Nov 2026:
  * more variety in the sounds).
  */
+import { CLASH_HOWTO, CLASH_LINES } from './clashVoice';
+
+import { GHOST_HOWTO, GHOST_LINES } from './ghostLines';
+
 export const VOICE_FOLDER = 'voice/classlive/';
 
 export const LINES = {
+  ...GHOST_LINES,
   joinNow: ['Join Class Live now!', 'Come and join in, everyone!', 'Grab your device and join the game!'],
   startStars: ['Here we go! If we know this fact, what else do we know?', 'Star Web is on! How many facts can we find from this one?', 'Off we go! Use this fact to find lots more.'],
   startSerpent: ['Here we go! Work along the chain and wake the serpent!', 'The serpent is sleeping. Work along the chain to wake it!', 'Off we go! Climb the serpent one sum at a time.'],
@@ -40,6 +46,38 @@ export const LINES = {
   shieldSaved: ['A shield saved someone!', 'Phew! A shield kept someone safe!', 'Shield to the rescue!'],
   escape: ['Someone answered their way out of jail!', 'A great escape from jail!', 'Out of jail! Well done!'],
   powerOn: ['A power-up is switched on!', 'Power-up activated!', 'Someone switched on a power-up!'],
+  // Musical Thrones
+  startThrones: ['Here we go! Dance while the music plays. When it stops, sit on a throne!', 'Musical Thrones is on! When the music stops, find a throne!', 'Off we go! Listen for the music to stop, then grab a throne.'],
+  musicStop: ['Stop! Sit down!', 'The music has stopped! Find a throne!', 'Freeze! Grab a throne, quick!', 'Stop the music! Sit, sit, sit!'],
+  fewerThrones: ['One fewer throne this time!', 'Look, there are fewer thrones now!', 'The thrones are disappearing!'],
+  goldenThrone: ['A golden throne! It is worth three crowns.', 'Look for the golden throne! Three crowns!', 'There is a golden throne this round!'],
+  allSeated: ['Everyone found a throne!', 'Not one left standing! Brilliant!', 'A throne for everyone this time!'],
+  lotsStanding: ['Oh no, lots of royals left standing!', 'So many standing! Off to the courtyard!', 'Whoops! A big crowd without a throne!'],
+  stoodUp: ['Anyone standing, off to the courtyard!', 'No throne? To the courtyard you go!', 'Those left standing go to the courtyard.'],
+  steal: ['A throne has been stolen!', 'Sneaky! A crown thief struck!', 'Ooh, someone stole a throne!'],
+  dancers: ['Great dancing on the tiles! Bonus crowns!', 'Dance tile bonus!', 'Nice moves on the dance floor!'],
+  courtBack: ['Someone answered their way back from the courtyard!', 'Back from the courtyard! Well done!', 'A royal return from the courtyard!'],
+  newRound: ['The music is back on! Dance!', 'Here comes the music again!', 'Dance time! Keep moving!'],
+  mt_castle_items: ["Power-ups have appeared in the castle hall! Grab one, then answer a question while the music plays to switch it on."],
+  mt_castle_storm: ["Watch out for the sticky honey! It slows you down."],
+  mt_castle_teleport: ["Look, a magic mirror! Step in one end and you pop out of the other."],
+  mt_castle_ice: ["Careful, the polished floor! You will slide."],
+  mt_castle_roller: ["Look out for the rolling barrel! It knocks you flying."],
+  mt_ice_items: ["Power-ups have appeared in the ice palace! Grab one, then answer a question while the music plays to switch it on."],
+  mt_ice_storm: ["Watch out for the blizzard! It slows you down."],
+  mt_ice_teleport: ["Look, a ice portal! Step in one end and you pop out of the other."],
+  mt_ice_ice: ["Careful, the ice patch! You will slide."],
+  mt_ice_roller: ["Look out for the giant snowball! It knocks you flying."],
+  mt_jungle_items: ["Power-ups have appeared in the temple! Grab one, then answer a question while the music plays to switch it on."],
+  mt_jungle_storm: ["Watch out for the mud pool! It slows you down."],
+  mt_jungle_teleport: ["Look, a vine swing! Step in one end and you pop out of the other."],
+  mt_jungle_ice: ["Careful, the slippery leaves! You will slide."],
+  mt_jungle_roller: ["Look out for the rolling boulder! It knocks you flying."],
+  mt_pirate_items: ["Power-ups have appeared on the deck! Grab one, then answer a question while the music plays to switch it on."],
+  mt_pirate_storm: ["Watch out for the sea spray! It slows you down."],
+  mt_pirate_teleport: ["Look, a hatch! Step in one end and you pop out of the other."],
+  mt_pirate_ice: ["Careful, the wet deck! You will slide."],
+  mt_pirate_roller: ["Look out for the rolling cannonball! It knocks you flying."],
   mech_snow_items: ["Power-ups have appeared! Grab one, then answer a question in a corner to switch it on."],
   mech_snow_storm: ["Watch out, a blizzard! It slows you down."],
   mech_snow_teleport: ["Look, ice portals! Step on one and you pop out of the other."],
@@ -76,6 +114,23 @@ export const LINES = {
   mech_space_hole: ["Mind the black hole in the middle! Go round it."],
   mech_space_gate: ["The airlock will shut one corner just before the end!"],
   mech_space_twist: ["Twist alert! Sometimes two corners are picked, and sometimes it is a lucky roll."],
+  // Colour Clash (clashVoice.ts)
+  ...CLASH_LINES,
+  // Shark Bay (Simon the shark)
+  sharkStart: ['Here we go! Swim to a coloured quarter, or hide under a boat!', 'Shark Bay is on! Simon is hungry, so find a safe quarter!', 'Off we go! Keep off the jetty and watch out for Simon!'],
+  sharkRun: ['Swim, swim, swim! Find a quarter!', 'Quick, Simon is coming! Pick a colour!', 'Go go go! Hide under a boat or pick a colour!'],
+  sharkBoat: ['Hide under a boat!', 'A boat is a safe place to hide!', 'Get under a boat, quick!'],
+  sharkHurry: ['Hurry, hurry! Simon is nearly here!', 'Quick, the shark is almost here!', 'Get to a safe place, now!'],
+  sharkLeap: ['Look out! A fin is circling the bay!', 'Simon is swimming round and round!', 'Here comes the fin!'],
+  sharkSpot: ['The lights are going out! Where will Simon snap?', 'The spotlight is searching for Simon!', 'Dark water! Where is the shark going to snap?'],
+  sharkStrikeRed: ['Simon strikes Red!', 'Chomp! Simon bites the red quarter!', 'It is Red! Simon strikes Red!'],
+  sharkStrikeYellow: ['Simon strikes Yellow!', 'Chomp! Simon bites the yellow quarter!', 'It is Yellow! Simon strikes Yellow!'],
+  sharkStrikeGreen: ['Simon strikes Green!', 'Chomp! Simon bites the green quarter!', 'It is Green! Simon strikes Green!'],
+  sharkStrikePurple: ['Simon strikes Purple!', 'Chomp! Simon bites the purple quarter!', 'It is Purple! Simon strikes Purple!'],
+  sharkTwo: ['Two sharks! Simon has a friend!', 'Oh no, two sharks this time!', 'Twist! Two quarters are struck!'],
+  sharkFull: ['Simon is full! Nobody is caught!', 'Simon has had enough! Everyone is safe!', 'Lucky! Simon is too full to bite!'],
+  sharkBoated: ['The boats kept some pupils safe!', 'Phew! A boat saved some of you!', 'Safe under the boats!'],
+  sharkCave: ['Oh no, off to the shark cave!', 'Splash! A crowd is going to the shark cave!', 'Into the cave you go!'],
 } as const;
 
 /** How to play (HowTo.tsx), read in order before a game. No numbers, so every line has a clip. */
@@ -108,12 +163,27 @@ export const HOWTO = {
     'Keep answering until the time is up. The more tiles we flip, the more of the picture we see.',
     'Then read the six riddles and pick the one that fits the picture!',
   ],
+  thrones: [
+    'Move your royal avatar with the joystick, or the arrow keys.',
+    'While the music plays, dance about. Stand on a glowing dance tile when it stops for a bonus crown.',
+    'When the music stops, run and sit on a throne! There are fewer thrones every round.',
+    'If you are left standing, go to the courtyard and answer three questions to come back. Three right in a row wins a crown thief scroll!',
+    'A throne is one crown, a golden throne is three. The most crowns wins!',
+  ],
   corners: [
     'Move your avatar with the joystick, or the arrow keys.',
     'Get to a corner before the countdown ends!',
     'Then the dice picks a corner. Anyone in that corner, or in no corner, goes to jail.',
     'In jail, answer three questions to come back.',
     'Grab power-ups on the map, then answer a question in a corner to switch them on. The most safe rounds wins!',
+  ],
+  clash: CLASH_HOWTO,
+  shark: [
+    'Swim your avatar with the joystick, or the arrow keys.',
+    'The bay has four coloured quarters, and they slowly spin round!',
+    'Get to a quarter before the countdown ends. Do not stay on the jetty!',
+    'Simon the shark strikes a quarter. Anyone in it, or on the jetty, goes to the shark cave.',
+    'Hide under a boat and you are safe, but boats only have a few seats! In the cave, answer three questions to swim back out.',
   ],
 } as const;
 
@@ -130,5 +200,6 @@ export function next(key: LineKey): string {
 
 export const allVoiceLines = (): string[] => [
   ...Object.values(LINES).flat(),
-  ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural, ...HOWTO.corners,
+  ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural, ...HOWTO.corners, ...HOWTO.shark, ...GHOST_HOWTO, ...HOWTO.clash, ...HOWTO.thrones,
+  ...allLavaLines(),
 ];
