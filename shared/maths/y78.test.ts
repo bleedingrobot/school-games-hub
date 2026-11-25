@@ -48,9 +48,9 @@ describe('Year 6, 7 and 8 skills', () => {
       expect(pastYear6(LADDER[at]), row.id).toBe(false);
     }
     expect(KEYS.length).toBeGreaterThan(0);
-    // Every Year 7-8 question type is tagged with its skill and year in the database (maths_content_years), and nothing else.
-    const tagged = [...readFileSync(resolve(__dirname, '../../supabase/migrations/20261126000500_maths_content_years.sql'), 'utf8').matchAll(/^  \('([^']+)', '([^']+)', '(?:[^']|'')+', ([78])\)/gm)].map((m) => `${m[1]} ${m[2]} ${m[3]}`);
-    expect(tagged.sort()).toEqual(Y78.flatMap((s) => s.keys.map((k) => `${k} ${s.id} ${s.year}`)).sort());
+    // Every Year 6, 7 and 8 question type is tagged with its skill and year in the database (maths_content_years), and nothing else.
+    const tagged = ['20261126000500_maths_content_years.sql', '20261126000600_maths_content_year6.sql'].flatMap((file) => [...readFileSync(resolve(__dirname, '../../supabase/migrations', file), 'utf8').matchAll(/^  \('([^']+)', '([^']+)', '(?:[^']|'')+', ([678])\)/gm)].map((m) => `${m[1]} ${m[2]} ${m[3]}`));
+    expect(tagged.sort()).toEqual(LADDER.filter((s) => (s.year ?? 0) >= 6).flatMap((s) => s.keys.map((k) => `${k} ${s.id} ${s.year}`)).sort());
     for (const key of KEYS) {
       const family = GENERATED.families[key];
       expect(family, key).toBeTruthy();
