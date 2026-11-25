@@ -5,7 +5,8 @@
  */
 import { AUTO_FOCUS, type MathsFocus } from '../../../shared/maths/focus';
 import type { MathsContext } from '../../../shared/maths/serverQuestions';
-import { LAST_LEVEL, RARE_GEMS } from '../../../shared/diamond/config';
+import { CAVERNS, FIRST_CAVERN, LAST_LEVEL, RARE_GEMS } from '../../../shared/diamond/config';
+import { DIG_MONSTERS } from '../../../shared/diamond/caverns';
 import { emptyData, memoryServices, type MemoryData } from '../../../shared/diamond/memoryServices';
 import { nzDate, newPlayer } from '../../../shared/diamond/progress';
 import { handleDiamond } from '../../../shared/diamond/server';
@@ -44,6 +45,10 @@ export interface Trial {
     jumpTo(level: number): void;
     /** Pretend this many rare gems have been caught (the commonest first), to see the Gem Book. */
     rareBook(kinds: number): void;
+    /** Pretend the Heart Diamond was found and caverns above this one passed (Monster Dig, 11 to 20). */
+    digTo(level: number): void;
+    /** Pretend this many Monster Book pages are filled (book order), some shiny. */
+    monsterBook(kinds: number): void;
     restart(): void;
   };
 }
@@ -113,6 +118,20 @@ export function trialBackend(options: TrialOptions = {}): Trial {
         const p = player();
         p.lifetime.rare = {};
         RARE_GEMS.slice(0, kinds).forEach((g, i) => { p.lifetime.rare![g.id] = { count: 7 - i, first: '2026-11-18' }; });
+        save();
+      },
+      digTo(level) {
+        const p = player();
+        p.lifetime.found = Math.max(1, p.lifetime.found);
+        p.lifetime.plays = Math.max(p.lifetime.plays, 1);
+        const deepest = Math.max(0, Math.min(CAVERNS.length, level - FIRST_CAVERN));
+        p.caves = { deepest, newDate: null, stars: CAVERNS.map((_, i) => (i < deepest ? 1 : 0)) };
+        save();
+      },
+      monsterBook(kinds) {
+        const p = player();
+        p.lifetime.monsters = {};
+        DIG_MONSTERS.slice(0, kinds).forEach((m, i) => { p.lifetime.monsters![m.id] = { count: 1 + (i % 4), first: '2026-11-25', ...(i % 9 === 0 ? { shiny: 1, shinyFirst: '2026-11-25' } : {}) }; });
         save();
       },
       jumpTo(level) {

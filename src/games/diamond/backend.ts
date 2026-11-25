@@ -47,6 +47,8 @@ export interface Ended {
   earned: string[];
   /** Rare gems caught for the very first time this level (new Gem Book pages). */
   newRare?: RareId[];
+  /** Monster Book pages filled for the first time (a shiny page as "<id>-shiny"). */
+  newMonsters?: string[];
   player: Player;
 }
 

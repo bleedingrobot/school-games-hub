@@ -9,6 +9,7 @@
  * Only looks live here. Nothing in this file is read by the rules, so a picture can never change a level.
  * Gems differ by shape as well as colour, so colour-blind pupils can tell them apart.
  */
+import { artLevel, caveTint } from './monsters';
 import { FIELD_H, FIELD_W, GROUND_Y, PIVOT, rareOf, type GemId, type RareId, type RareTier } from '../../../../shared/diamond/config';
 import { drawPainting, paintNow } from './paint';
 
@@ -494,7 +495,14 @@ const SURFACE: Partial<Record<number, { line: number; bottom: number }>> = {
  * The level's still background (sky or cave roof, the layers of earth, and the decorations that stay put). Gives true
  * when it drew the painting, false for the drawn fallback (so the caller can draw again once the painting arrives).
  */
-export function drawBackground(ctx: Ctx, level: number): boolean {
+export function drawBackground(ctx: Ctx, cavernOrLevel: number): boolean {
+  const drawn = drawBackgroundOf(ctx, artLevel(cavernOrLevel));
+  const tint = caveTint(cavernOrLevel);
+  if (tint) { ctx.save(); ctx.fillStyle = tint; ctx.fillRect(0, 0, FIELD_W, FIELD_H); ctx.restore(); }
+  return drawn;
+}
+
+function drawBackgroundOf(ctx: Ctx, level: number): boolean {
   // Each level's painting is in its own style; it covers the field, trimming a little off the sides. Where its grass
   // line sits lower than the game's ground (SURFACE), the sky above it is squeezed into the top band.
   const painted = paintNow('levels', ctx.canvas.width > 1000 ? String(level) : `${level}-800`);
@@ -689,7 +697,8 @@ function crystalCluster(ctx: Ctx, x: number, y: number, size: number, rnd: () =>
 }
 
 /** The moving bits of a place (glow-worms twinkling, steam, bubbles, magma pulsing). With less motion: drawn still. */
-export function drawAmbient(ctx: Ctx, level: number, time: number, still: boolean) {
+export function drawAmbient(ctx: Ctx, cavernOrLevel: number, time: number, still: boolean) {
+  const level = artLevel(cavernOrLevel);
   const t = still ? 0 : time;
   const rnd = decoRandom(level * 31337);
   ctx.save();

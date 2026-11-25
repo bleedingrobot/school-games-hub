@@ -7,7 +7,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useGameKeys } from '../../kit';
 import { type BoostId, type Slot } from '../../../shared/diamond/config';
 import { nextStep } from '../../../shared/diamond/nextStep';
-import { canStart, levelsOpen, newAchievements, type Player } from '../../../shared/diamond/progress';
+import { canStart, cavernsOpen, levelsOpen, newAchievements, type Player } from '../../../shared/diamond/progress';
+import { LAST_LEVEL, isCavern } from '../../../shared/diamond/config';
 import type { DiamondBackend, Ended, Started } from './backend';
 import { LevelMap, type MapButton } from './LevelMap';
 import { GemBook, Hall, HowToPlay, LevelEnd, Shop, type ShopTab } from './Pages';
@@ -30,6 +31,10 @@ export interface GameHandle {
 function bestLevel(p: Player, now: Date, unlimited = false): number {
   const open = levelsOpen(p, now, unlimited);
   if (open.next !== null && open.nextOpen) return open.next;
+  // Then today's new cavern in the Monster Dig, if it's open to them.
+  const caves = cavernsOpen(p, now, unlimited);
+  if (caves.next !== null && caves.nextOpen) return caves.next;
+  if (p.deepest < LAST_LEVEL && caves.replays.length) return caves.replays[caves.replays.length - 1];
   return Math.max(1, p.deepest);
 }
 
@@ -138,8 +143,10 @@ export function DiamondGame({ backend, extra, onServer = false }: { backend: Dia
   // A new pupil's map lights up Play until they've played once.
   const mapGlow = glow ?? (player.lifetime.plays === 0 && help !== 'off' ? 'play' : null);
   const startable = canStart(player, selected, today, unlimited);
-  const why = startable ? '' : selected === levelsOpen(player, today, unlimited).next ? `Level ${selected} opens tomorrow.` : `Level ${selected} is still locked.`;
-  const againLabel = ended && ended.result.passed && selected !== ended.result.level ? `Play level ${selected}` : `Play level ${ended?.result.level ?? selected} again`;
+  const nameOf = (n: number) => (isCavern(n) ? `Cavern ${n - LAST_LEVEL}` : `Level ${n}`);
+  const nextOf = (n: number) => (isCavern(n) ? cavernsOpen(player, today, unlimited) : levelsOpen(player, today, unlimited)).next;
+  const why = startable ? '' : selected === nextOf(selected) ? `${nameOf(selected)} opens tomorrow.` : `${nameOf(selected)} is still locked.`;
+  const againLabel = ended && ended.result.passed && selected !== ended.result.level ? `Play ${nameOf(selected).toLowerCase()}` : `Play ${nameOf(ended?.result.level ?? selected).toLowerCase()} again`;
 
   return (
     <div ref={rootRef} className={`dd-root${screen === 'play' ? ' dd-root--play' : screen === 'map' ? ' dd-root--map' : ''}${still ? ' dd-still' : ''}`}>

@@ -19,7 +19,7 @@ export function helpFor(choice: HelpChoice, plays: number): Help {
   return plays < LOTS_UNTIL ? 'lots' : plays < SOME_UNTIL ? 'some' : 'off';
 }
 
-export type TipId = 'rock' | 'passed' | 'crab' | 'sack';
+export type TipId = 'rock' | 'passed' | 'crab' | 'sack' | 'monster';
 
 /** First-time tips, each shown once on this device. "Some" help keeps only the ones marked `some`. */
 export const TIPS: Record<TipId, { text: string; some: boolean }> = {
@@ -27,6 +27,7 @@ export const TIPS: Record<TipId, { text: string; some: boolean }> = {
   passed: { text: 'Target reached: level passed! Keep digging for more coins and stars, or press Finish.', some: true },
   crab: { text: 'Cave crabs scuttle about, and some carry a gem. Grab a crab and its gem comes up with it!', some: true },
   sack: { text: 'Mystery sacks hold coins, extra seconds or a free boost. Worth a grab!', some: false },
+  monster: { text: 'Grab the monsters! If one wriggles, answer to hold on.', some: true },
 };
 
 export const showsTip = (help: Help, id: TipId, seen: readonly string[]) => help !== 'off' && !seen.includes(id) && (help === 'lots' || TIPS[id].some);

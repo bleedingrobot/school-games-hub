@@ -7,9 +7,11 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../maths/QuestionModal';
-import { FIELD_H, FIELD_W, LAST_LEVEL, PIVOT, RARE_TIER_NAME, TICKS_PER_SECOND, chanceWords, gemOf, isRare, levelSpec, rareOf, type GemId, type RareId } from '../../../shared/diamond/config';
+import { FIELD_H, FIELD_W, LAST_LEVEL, PIVOT, RARE_TIER_NAME, TICKS_PER_SECOND, chanceWords, gemOf, isRare, levelSpec, rareOf, type DigTier, type GemId, type RareId } from '../../../shared/diamond/config';
+import { TIER_RULES, digTierOf, goalWords, type Caught } from '../../../shared/diamond/caverns';
 import { answer as answerSlip, startLevel, step, type LevelState, type Phase } from '../../../shared/diamond/engine';
-import { direction, rareIn, thingAt, type Thing } from '../../../shared/diamond/field';
+import { direction, monstersIn, rareIn, shownAt, thingAt, type Thing } from '../../../shared/diamond/field';
+import { TIER_COLOUR, artLevel, drawMonster, monsterName, monsterUrl } from './art/monsters';
 import { Effects, NUGGET_SPOT, drawRareAura, drawRareGleam, drawAmbient, drawBackground, drawClaw, drawCrab, drawGem, drawNugget, drawRock, drawRope, drawSack, drawTrail, drawWinch } from './art/draw';
 import type { Worn } from './art/items';
 import { paintFile, paintNow } from './art/paint';
@@ -25,6 +27,8 @@ const HANG = 40;
 interface Hud {
   seconds: number;
   banked: number;
+  /** Monsters brought up (Monster Dig). */
+  monsters: number;
   coins: number;
   passed: boolean;
   busy: boolean;
@@ -35,6 +39,7 @@ interface Tumble { gem: GemId; id: number; from: [number, number]; to: [number, 
 const hudOf = (s: LevelState): Hud => ({
   seconds: Math.ceil(Math.max(0, s.endTick - s.tick) / TICKS_PER_SECOND),
   banked: s.banked,
+  monsters: s.monsters.length,
   coins: s.coins,
   passed: s.passTick !== null,
   busy: s.phase !== 'swing',
@@ -71,6 +76,9 @@ export function PlayLevel({
 }) {
   const spec = levelSpec(started.level);
   const last = started.level === LAST_LEVEL;
+  const cavern = spec.cavern;
+  /** The level whose painting this level shows (a cavern borrows one until it has its own). */
+  const art = artLevel(started.level);
   const stateRef = useRef<LevelState>(null as unknown as LevelState);
   if (!stateRef.current) stateRef.current = startLevel(started.level, started.seed, started.boosts, started.starter);
   const drops = useRef<number[]>([]);
@@ -91,6 +99,14 @@ export function PlayLevel({
     const t = window.setTimeout(() => setRareBanner(null), rareBanner.caught ? 4200 : 4800);
     return () => window.clearTimeout(t);
   }, [rareBanner]);
+  // Monster Dig: a banner when the cavern holds something special (the rarest buried first), and when one is caught.
+  const special = useRef(bestMonster(stateRef.current.things)).current;
+  const [monsterBanner, setMonsterBanner] = useState<{ m: Caught & { tier: DigTier }; caught: boolean; key: number } | null>(special ? { m: special, caught: false, key: 0 } : null);
+  useEffect(() => {
+    if (!monsterBanner) return;
+    const t = window.setTimeout(() => setMonsterBanner(null), 4200);
+    return () => window.clearTimeout(t);
+  }, [monsterBanner]);
   useEffect(() => {
     if (rareGem) setSay(`A rare gem is hiding near the bottom: a ${rareOf(rareGem).name}! ${RARE_TIER_NAME[rareOf(rareGem).tier]}, ${chanceWords(rareOf(rareGem))}.`);
   }, [rareGem]);
@@ -115,8 +131,13 @@ export function PlayLevel({
 
   useEffect(() => heading.current?.focus(), []);
   useEffect(() => {
+    // The caverns' tip shows once on this device whatever the help setting: it's new to everyone who gets this far.
+    if (cavern) {
+      if (!seen.current.has('monster')) { seen.current.add('monster'); setTip(TIPS.monster.text); onSeen('monster'); }
+      return;
+    }
     if (spec.crabs > 0) showTip('crab');
-  }, [spec.crabs, showTip]);
+  }, [spec.crabs, showTip, cavern, onSeen]);
   useEffect(() => {
     if (hud.passed && !last) showTip('passed');
   }, [hud.passed, last, showTip]);
@@ -191,7 +212,13 @@ export function PlayLevel({
       for (; announced < done; announced++) {
         const shot = s.shots[announced];
         const now = (performance.now() - t0.current) / 1000;
-        if (shot.banked > 0 && shot.gem) {
+        if (shot.monster) {
+          const m = shot.monster;
+          const tier = digTierOf(m.species);
+          effects.current.spawn(worn.catch, PIVOT.x, PIVOT.y + 20, now, still);
+          if (tier !== 'common' || m.shiny) setMonsterBanner({ m: { ...m, tier }, caught: true, key: now });
+          setSay(`Caught ${m.shiny ? 'a shiny ' : ''}${monsterName(m.species)}! ${TIER_RULES[tier].name}. ${s.monsters.length} caught.${shot.netted ? ' The Monster Net held it.' : ''}`);
+        } else if (shot.banked > 0 && shot.gem) {
           effects.current.spawn(worn.catch, PIVOT.x, PIVOT.y + 20, now, still, shot.gem);
           const name = gemOf(shot.gem).name;
           if (isRare(shot.gem)) {
@@ -216,7 +243,7 @@ export function PlayLevel({
 
     const thingPos = (t: Thing, tick: number) => thingAt(t, tick);
 
-    const drawThing = (c: CanvasRenderingContext2D, t: Thing, x: number, y: number, time: number, dir: 1 | -1 = 1) => {
+    const drawThing = (c: CanvasRenderingContext2D, t: Thing, x: number, y: number, time: number, dir: 1 | -1 = 1, out = true) => {
       if (t.kind === 'gem' && t.gem && isRare(t.gem)) {
         drawRareAura(c, t.gem, x, y, t.r, time + t.id, still);
         drawGem(c, t.gem, x, y, t.r * 1.15, { sparkle: still ? 0.8 : 0.6 + Math.sin(time * 4) * 0.4 });
@@ -225,6 +252,7 @@ export function PlayLevel({
       else if (t.kind === 'rock') drawRock(c, x, y, t.r, t.id);
       else if (t.kind === 'sack') drawSack(c, x, y, t.r);
       else if (t.kind === 'crab') drawCrab(c, x, y, t.r, time, still, t.crab?.gem, dir);
+      else if (t.kind === 'monster' && t.monster) drawMonster(c, t.monster, x, y, t.r, time, still, dir, out);
     };
 
     const render = (dt: number) => {
@@ -234,7 +262,7 @@ export function PlayLevel({
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       const scale = (w * dpr) / FIELD_W;
       if (el.width !== Math.round(FIELD_W * scale)) { el.width = Math.round(FIELD_W * scale); el.height = Math.round(FIELD_H * scale); }
-      if (!bg || bgScale !== scale || (!bgPainted && paintNow('levels', el.width > 1000 ? String(started.level) : `${started.level}-800`))) {
+      if (!bg || bgScale !== scale || (!bgPainted && paintNow('levels', el.width > 1000 ? String(art) : `${art}-800`))) {
         bg = document.createElement('canvas');
         bg.width = el.width; bg.height = el.height;
         const b = bg.getContext('2d');
@@ -252,7 +280,7 @@ export function PlayLevel({
         if (!s.buried.has(t.id) || (tumbling && t.id === tum!.id)) continue;
         const p = thingPos(t, s.tick);
         const ahead = t.crab ? thingPos(t, s.tick + 1).x - p.x : 0;
-        drawThing(ctx, t, p.x, p.y, time, ahead < 0 ? -1 : 1);
+        drawThing(ctx, t, p.x, p.y, time, ahead < 0 ? -1 : 1, shownAt(t, s.tick));
       }
       // The claw
       const swinging = s.phase === 'swing' || s.phase === 'done';
@@ -330,6 +358,7 @@ export function PlayLevel({
   const onAnswered = (result: MarkedAnswer) => {
     const s = stateRef.current;
     const carrying = s.carrying;
+    const wriggler = s.carryingMonster;
     const from = (() => {
       const d = direction(s.degree);
       return [PIVOT.x + d.dx * s.length, PIVOT.y + d.dy * s.length] as [number, number];
@@ -341,20 +370,23 @@ export function PlayLevel({
       if (landed) tumble.current = { gem: carrying, id, from, to: [landed.x, landed.y], start: (performance.now() - t0.current) / 1000 };
       setSay(`Oh no! The ${gemOf(carrying).name} fell back into the rock. You can catch it again.`);
     } else if (carrying) setSay(`Firm grip! The ${gemOf(carrying).name} is coming up.`);
+    else if (wriggler) setSay(result.correct ? `Got it! ${monsterName(wriggler.species)} is coming up.` : `${monsterName(wriggler.species)} wriggled free and burrowed deeper. You can grab it again.`);
     setSlot(null);
   };
 
-  const target = last ? 1 : spec.target;
+  const target = last ? 1 : cavern ? cavern.goal.count : spec.target;
   const guide = guiding ? guideStep({ drops: drops.current.length, banked: hud.banked, passed: hud.passed, busy: hud.busy, target: spec.target }) : null;
-  const progress = last ? (hud.passed ? 1 : 0) : Math.min(1, hud.banked / target);
+  const progress = last ? (hud.passed ? 1 : 0) : cavern ? (hud.passed ? 1 : Math.min(0.95, hud.monsters / target)) : Math.min(1, hud.banked / target);
+  const wriggling = stateRef.current.carryingMonster;
+  const goalText = cavern ? (hud.passed ? 'Goal met!' : `${goalWords(cavern.goal)} · ${hud.monsters} caught`) : null;
 
   return (
     <section className="dd-play" aria-labelledby="dd-play-title">
       {/* The level's painting, blurred, behind the whole window: it fills whatever edge the field doesn't reach. */}
-      {paintFile('levels', `${started.level}-800`) && <img className="dd-play__blur" src={paintFile('levels', `${started.level}-800`)} alt="" aria-hidden="true" />}
+      {paintFile('levels', `${art}-800`) && <img className="dd-play__blur" src={paintFile('levels', `${art}-800`)} alt="" aria-hidden="true" />}
       <div className="dd-play__hud">
         <h2 id="dd-play-title" ref={heading} tabIndex={-1} className="dd-play__title">
-          Level {started.level} <span className="dd-soft">· {spec.place}</span>
+          {cavern ? `Cavern ${started.level - LAST_LEVEL}` : `Level ${started.level}`} <span className="dd-soft">· {spec.place}</span>
         </h2>
         <div className="dd-hud__item" role="timer" aria-label={`${hud.seconds} seconds left`}>
           <span aria-hidden="true">⏱</span> {hud.seconds}s
@@ -362,9 +394,9 @@ export function PlayLevel({
         <div className="dd-hud__item dd-hud__coins" aria-label={`${hud.coins} coins this level`}>
           <span aria-hidden="true">🪙</span> {hud.coins}
         </div>
-        <div className={`dd-target${guide?.glow === 'bar' ? ' dd-glow' : ''}`} role="img" aria-label={last ? (hud.passed ? 'Heart Diamond caught!' : 'Goal: catch the Heart Diamond') : `${hud.banked} of ${target} gem coins`}>
+        <div className={`dd-target${guide?.glow === 'bar' ? ' dd-glow' : ''}`} role="img" aria-label={goalText ?? (last ? (hud.passed ? 'Heart Diamond caught!' : 'Goal: catch the Heart Diamond') : `${hud.banked} of ${target} gem coins`)}>
           <div className={`dd-target__fill${hud.passed ? ' is-done' : ''}`} style={{ width: `${progress * 100}%` }} />
-          <span className="dd-target__text">{last ? (hud.passed ? 'Heart Diamond caught!' : 'Catch the Heart Diamond') : `${hud.banked} / ${target}`}</span>
+          <span className="dd-target__text">{goalText ?? (last ? (hud.passed ? 'Heart Diamond caught!' : 'Catch the Heart Diamond') : `${hud.banked} / ${target}`)}</span>
         </div>
       </div>
 
@@ -384,6 +416,9 @@ export function PlayLevel({
         )}
         {rareBanner && (
           <RareBanner key={rareBanner.key} gem={rareBanner.gem} caught={rareBanner.caught} still={still} onClose={() => setRareBanner(null)} />
+        )}
+        {monsterBanner && (
+          <MonsterBanner key={monsterBanner.key} m={monsterBanner.m} caught={monsterBanner.caught} still={still} onClose={() => setMonsterBanner(null)} />
         )}
         {tip && !guide && (
           <div className="dd-tip" role="note">
@@ -432,8 +467,8 @@ export function PlayLevel({
       {shown && (
         <QuestionModal
           question={shown}
-          title="Hold on!"
-          note={hud.passed ? 'Answer to keep your grip.' : 'Slippery! Answer to keep your grip. The clock waits for you.'}
+          title={wriggling ? 'It’s wriggling!' : 'Hold on!'}
+          note={wriggling ? `${monsterName(wriggling.species)} is trying to wriggle free! Answer to hold on. The clock waits for you.` : hud.passed ? 'Answer to keep your grip.' : 'Slippery! Answer to keep your grip. The clock waits for you.'}
           onSubmit={onSubmit}
           onDone={onAnswered}
           spot="diamond-hold-on"
@@ -456,6 +491,33 @@ function RareBanner({ gem, caught, still, onClose }: { gem: RareId; caught: bool
         <span className="dd-rare-banner__kicker">{caught ? 'Rare gem caught!' : '✨ A rare gem appeared! ✨'}</span>
         <strong className="dd-rare-banner__name">{g.name}</strong>
         <span className="dd-rare-banner__tier">{RARE_TIER_NAME[g.tier]} · {chanceWords(g)}{caught ? ' · added to your Gem Book' : ' · buried near the bottom'}</span>
+      </div>
+      {!still && <div className="dd-rare-banner__glitter">{Array.from({ length: 14 }, (_, i) => <i key={i} style={{ ['--i' as string]: i }} />)}</div>}
+    </div>
+  );
+}
+
+/** The most special monster buried in a cavern (a shiny, a sleeping giant or an ultra rare), for the opening banner. */
+function bestMonster(things: readonly Thing[]): (Caught & { tier: DigTier }) | null {
+  const ms = monstersIn(things).map((t) => t.monster!);
+  const pick = ms.find((m) => m.tier === 'ultra') ?? ms.find((m) => m.tier === 'giant') ?? ms.find((m) => m.shiny) ?? null;
+  return pick ? { species: pick.species, shiny: pick.shiny, tier: pick.tier } : null;
+}
+
+/** The banner for a special monster: when a cavern starts with one in it, and when a rarer one is caught. */
+function MonsterBanner({ m, caught, still, onClose }: { m: Caught & { tier: DigTier }; caught: boolean; still: boolean; onClose: () => void }) {
+  const look = m.tier === 'ultra' || m.shiny ? 'legendary' : m.tier === 'giant' ? 'epic' : m.tier === 'rare' ? 'rare' : 'uncommon';
+  const what = m.tier === 'ultra' ? 'An ultra rare monster' : m.tier === 'giant' ? 'A sleeping giant' : m.shiny ? 'A shiny monster' : 'A rare monster';
+  return (
+    <div className={`dd-rare-banner is-${look}${caught ? ' is-caught' : ''}${still ? ' is-still' : ''}`} aria-hidden="true" onPointerDown={(e) => { e.stopPropagation(); onClose(); }}>
+      <div className="dd-rare-banner__rays" />
+      <div className="dd-rare-banner__gem">
+        {monsterUrl(m.species, m.shiny) ? <img src={monsterUrl(m.species, m.shiny)} alt="" width={92} height={92} /> : <span style={{ fontSize: 60, color: TIER_COLOUR[m.tier] }}>●</span>}
+      </div>
+      <div className="dd-rare-banner__words">
+        <span className="dd-rare-banner__kicker">{caught ? 'Monster caught!' : `✨ ${what} is hiding here! ✨`}</span>
+        <strong className="dd-rare-banner__name">{m.shiny ? 'Shiny ' : ''}{caught ? monsterName(m.species) : '???'}</strong>
+        <span className="dd-rare-banner__tier">{TIER_RULES[m.tier].name}{caught ? ' · added to your Monster Book' : ' · grab it before it burrows away'}</span>
       </div>
       {!still && <div className="dd-rare-banner__glitter">{Array.from({ length: 14 }, (_, i) => <i key={i} style={{ ['--i' as string]: i }} />)}</div>}
     </div>

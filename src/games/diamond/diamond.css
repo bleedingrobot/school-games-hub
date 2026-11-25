@@ -467,3 +467,24 @@ img.dd-item__icon { object-fit: contain; padding: 4px; }
 
 /* Key badges (docs/plans/game-keys/PLAN.md). */
 .dd-tile, .dd-shoptab { position: relative; }
+
+/* ---- Monster Dig (docs/DIAMOND-MONSTERS-PLAN.md) ---- */
+.dd-mb { margin-top: 12px; }
+.dd-mb__head { display: flex; gap: 14px; align-items: center; margin-bottom: 12px; }
+.dd-mb__cover { font-size: 56px; line-height: 1; }
+.dd-mb__tier { margin: 14px 0; }
+.dd-mb__tiername { margin: 0 0 8px; color: var(--tier); font-size: 1.1rem; }
+.dd-mb__grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+.dd-mb__page { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 6px; border-radius: 12px; background: rgba(0, 0, 0, 0.35); border: 2px solid color-mix(in srgb, var(--tier) 55%, transparent); text-align: center; min-width: 0; }
+.dd-mb__page.is-locked { border-color: rgba(255, 255, 255, 0.12); }
+.dd-mb__page.is-locked .dd-mb__pic { filter: brightness(0) opacity(0.45); }
+.dd-mb__pic { width: 72px; height: 72px; object-fit: contain; }
+.dd-mb__name { font-weight: 700; font-size: 0.9rem; overflow-wrap: anywhere; }
+.dd-mb__shiny { display: inline-flex; align-items: center; gap: 2px; font-size: 0.8rem; color: #fff6b0; }
+.dd-mb-caught { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.dd-mb-caught li { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 8px; border-radius: 12px; border: 2px solid var(--tier); background: rgba(0, 0, 0, 0.3); min-width: 96px; }
+.dd-mb-caught li.is-new { box-shadow: 0 0 14px var(--tier); }
+.dd-mb-caught__name { font-weight: 700; font-size: 0.9rem; }
+.dd-dig-gate { list-style: none; }
+.dd-dig-gate__title { margin: 6px 0 2px; text-align: center; font-weight: 800; letter-spacing: 0.04em; color: #ffe27a; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7); }
+.dd-chamber.is-cavern .dd-chamber__gem { border-radius: 50%; }
