@@ -27,4 +27,4 @@ Notes: maps must have no boats, characters or writing; the quarter colours are d
 - Cut-out water hazards drift to brown wooden discs and rims: `lagoon-ice`, `reef-ice`, `pirate-ice` (was a galaxy), `icy-ice` (was a playground slide), `icy-roller`, `icy-teleport` and `lagoon-roller` (was a bullseye target) now say "only water, nothing solid" or similar, with wood/disc/rim/brown in the negative.
 - `shark` (the leap) had rows of sharp teeth: now rounded blunt teeth, tongue out, googly eyes.
 - `power-key` (rescue ring) kept white in its hole after rembg; the middle was made see-through by hand after tidy, so redo that if re-tidied with `--force`.
-- `cave-icy` reads more like a plain sea cave than an icy one; fine for now, repaint if it matters.
+- `cave-icy` first came out as a plain rocky sea cave. Repainted (James asked, 25 Nov 2026) with a prompt that names ice walls, icicles and a snowy floor and bans rock, seaweed and sand.
