@@ -30,3 +30,10 @@
   .cl-today__go { width: 100%; justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) { .cl-today__game:hover { transform: none; } }
+/* School admins: the next set-time games (PR #831) and a link to change them. */
+.cl-today__times { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 12px; padding: 10px 12px; border-radius: 14px; background: rgba(10, 6, 40, 0.6); border: 1px solid rgba(255, 213, 74, 0.35); }
+.cl-today__times-label { font-weight: 800; color: #fff6c9; }
+.cl-today__time { padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); color: #eef0ff; font-size: 0.92rem; }
+.cl-today__time b { color: #ffe08a; margin-left: 4px; }
+.cl-today__none { color: #cdd3ff; }
+.panel.cl-today a.cl-today__set { margin-left: auto; color: #ffe08a; font-weight: 800; text-decoration: underline; }
