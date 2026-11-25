@@ -76,6 +76,21 @@ export const LINES = {
   mech_space_hole: ["Mind the black hole in the middle! Go round it."],
   mech_space_gate: ["The airlock will shut one corner just before the end!"],
   mech_space_twist: ["Twist alert! Sometimes two corners are picked, and sometimes it is a lucky roll."],
+  // Shark Bay (Chomper the shark)
+  sharkStart: ['Here we go! Swim to a coloured quarter, or hide under a boat!', 'Shark Bay is on! Chomper is hungry, so find a safe quarter!', 'Off we go! Keep off the jetty and watch out for Chomper!'],
+  sharkRun: ['Swim, swim, swim! Find a quarter!', 'Quick, Chomper is coming! Pick a colour!', 'Go go go! Hide under a boat or pick a colour!'],
+  sharkBoat: ['Hide under a boat!', 'A boat is a safe place to hide!', 'Get under a boat, quick!'],
+  sharkHurry: ['Hurry, hurry! Chomper is nearly here!', 'Quick, the shark is almost here!', 'Get to a safe place, now!'],
+  sharkLeap: ['Look out! A fin is circling the bay!', 'Chomper is swimming round and round!', 'Here comes the fin!'],
+  sharkSpot: ['The lights are going out! Where will Chomper snap?', 'The spotlight is searching for Chomper!', 'Dark water! Where is the shark going to snap?'],
+  sharkStrikeRed: ['Chomper strikes Red!', 'Chomp! Chomper bites the red quarter!', 'It is Red! Chomper strikes Red!'],
+  sharkStrikeYellow: ['Chomper strikes Yellow!', 'Chomp! Chomper bites the yellow quarter!', 'It is Yellow! Chomper strikes Yellow!'],
+  sharkStrikeGreen: ['Chomper strikes Green!', 'Chomp! Chomper bites the green quarter!', 'It is Green! Chomper strikes Green!'],
+  sharkStrikePurple: ['Chomper strikes Purple!', 'Chomp! Chomper bites the purple quarter!', 'It is Purple! Chomper strikes Purple!'],
+  sharkTwo: ['Two sharks! Chomper has a friend!', 'Oh no, two sharks this time!', 'Twist! Two quarters are struck!'],
+  sharkFull: ['Chomper is full! Nobody is caught!', 'Chomper has had enough! Everyone is safe!', 'Lucky! Chomper is too full to bite!'],
+  sharkBoated: ['The boats kept some pupils safe!', 'Phew! A boat saved some of you!', 'Safe under the boats!'],
+  sharkCave: ['Oh no, off to the shark cave!', 'Splash! A crowd is going to the shark cave!', 'Into the cave you go!'],
 } as const;
 
 /** How to play (HowTo.tsx), read in order before a game. No numbers, so every line has a clip. */
@@ -115,6 +130,13 @@ export const HOWTO = {
     'In jail, answer three questions to come back.',
     'Grab power-ups on the map, then answer a question in a corner to switch them on. The most safe rounds wins!',
   ],
+  shark: [
+    'Swim your avatar with the joystick, or the arrow keys.',
+    'The bay has four coloured quarters, and they slowly spin round!',
+    'Get to a quarter before the countdown ends. Do not stay on the jetty!',
+    'Chomper the shark strikes a quarter. Anyone in it, or on the jetty, goes to the shark cave.',
+    'Hide under a boat and you are safe, but boats only have a few seats! In the cave, answer three questions to swim back out.',
+  ],
 } as const;
 
 export type LineKey = keyof typeof LINES;
@@ -130,5 +152,5 @@ export function next(key: LineKey): string {
 
 export const allVoiceLines = (): string[] => [
   ...Object.values(LINES).flat(),
-  ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural, ...HOWTO.corners,
+  ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural, ...HOWTO.corners, ...HOWTO.shark,
 ];
