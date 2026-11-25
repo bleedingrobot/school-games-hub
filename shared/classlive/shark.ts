@@ -214,7 +214,7 @@ export function makeBayRound(g: CornersGame, n: number, startAt: number, random:
   return {
     n, startAt, runEnd: startAt + run, rollEnd: startAt + run + ROLL_MS, showEnd: startAt + run + ROLL_MS + SHOW_MS,
     storms, ice, teleports, roller, roller2, hole: false, fog: has.has('fog'), gate: null, twist, items, rolled, caught: null, saved: [],
-    bay: true, spin0: random() * TAU, spinRate: spinRateFor(n, frenzy) * (random() < 0.5 ? 1 : -1), boats, style: random() < 0.5 ? 'leap' : 'spot',
+    bay: true, spin0: random() * TAU, spinRate: (random() < 0.5 ? 1 : -1) * spinRateFor(n, frenzy) || 0, boats, style: random() < 0.5 ? 'leap' : 'spot',
   };
 }
 

@@ -1,0 +1,127 @@
+/* Shark Bay (docs/SHARK-PLAN.md): the bay board. Screens' own parts add their rules below the board's. */
+
+.sb-board {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 18px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 50%, var(--sand-a) 0 60%, var(--sand-b) 100%);
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 14px 50px rgba(0, 0, 0, 0.55), inset 0 0 0 3px rgba(255, 255, 255, 0.18);
+  touch-action: none;
+  user-select: none;
+  --sand-a: #f3dfa6;
+  --sand-b: #d8b56b;
+  --sea-a: #4fd1e8;
+  --sea-b: #1479b8;
+}
+.sb-board--reef { --sand-a: #f6d6b8; --sand-b: #e0a882; --sea-a: #58e0d0; --sea-b: #0f7f9c; }
+.sb-board--pirate { --sand-a: #b89a6a; --sand-b: #7a5f3a; --sea-a: #3a8fa8; --sea-b: #123c5a; }
+.sb-board--icy { --sand-a: #eef6ff; --sand-b: #bcd3ea; --sea-a: #7cc7e8; --sea-b: #245e8f; }
+
+.sb-water {
+  position: absolute;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle at 40% 35%, var(--sea-a), var(--sea-b));
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.55), inset 0 0 40px rgba(0, 20, 60, 0.45);
+}
+.sb-board--painted .sb-water { background: transparent; box-shadow: none; }
+.sb-quarters { position: absolute; inset: 0; transition: none; }
+.sb-q {
+  position: absolute;
+  width: 50%;
+  height: 50%;
+  opacity: 0.34;
+  mix-blend-mode: soft-light;
+}
+.sb-board--painted .sb-q { mix-blend-mode: normal; opacity: 0.28; }
+.sb-q--0 { left: 0; top: 0; background: var(--q0); }
+.sb-q--1 { right: 0; top: 0; background: var(--q1); }
+.sb-q--2 { right: 0; bottom: 0; background: var(--q2); }
+.sb-q--3 { left: 0; bottom: 0; background: var(--q3); }
+.sb-q--hit { opacity: 0.8; mix-blend-mode: normal; animation: sb-hit 0.35s ease-in-out infinite alternate; }
+.sb-q--safe { opacity: 0.55; box-shadow: inset 0 0 0 6px #fff; }
+@keyframes sb-hit { from { filter: brightness(1); } to { filter: brightness(1.6); } }
+/* Rope lines with floats between the quarters. */
+.sb-rope {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  margin-left: -3px;
+  background: repeating-linear-gradient(0deg, #fff 0 10px, #f43f5e 10px 20px);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.35);
+}
+.sb-rope--b { transform: rotate(90deg); }
+
+.sb-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 0.15em 0.6em;
+  border-radius: 999px;
+  border: 3px solid #fff;
+  background: var(--qc);
+  color: #111;
+  font: 800 clamp(11px, 1.6vmin, 22px) / 1.2 system-ui, sans-serif;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 3;
+}
+.sb-label--btn { pointer-events: auto; cursor: pointer; font-size: clamp(14px, 2.4vmin, 26px); animation: sb-bob 0.8s ease-in-out infinite alternate; }
+.sb-label--hit { transform: translate(-50%, -50%) scale(1.25); }
+@keyframes sb-bob { from { transform: translate(-50%, -50%) scale(1); } to { transform: translate(-50%, -50%) scale(1.12); } }
+
+.sb-storm, .sb-current, .sb-whirl, .sb-item, .sb-wave, .sb-boat, .sb-dock {
+  position: absolute;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+}
+.sb-dock {
+  display: grid;
+  place-items: end center;
+  background-color: #a8743f;
+  background-image: repeating-linear-gradient(90deg, #b9824a 0 12%, #8c5b2e 12% 14%);
+  border: 4px solid #6b4220;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+.sb-board--painted .sb-dock[style*='url'] { background-color: transparent; border: 0; box-shadow: none; }
+.sb-dock__name { margin-bottom: 6%; font: 700 clamp(9px, 1.2vmin, 16px) system-ui, sans-serif; color: #fff; text-shadow: 0 1px 2px #000; }
+.sb-storm { background-color: rgba(34, 120, 60, 0.55); border: 3px dashed rgba(20, 80, 30, 0.8); filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.7)); }
+.sb-current { background: repeating-conic-gradient(rgba(255, 255, 255, 0.35) 0 10deg, transparent 10deg 30deg); filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.7)); }
+.sb-whirl { background: repeating-conic-gradient(#0b3d6b 0 15deg, #4fd1e8 15deg 30deg); box-shadow: 0 0 14px #4fd1e8; }
+.sb-wave { background: radial-gradient(circle, #fff 0 30%, #9be7ff 31% 60%, rgba(255, 255, 255, 0.4) 61%); filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8)); }
+.sb-board--painted .sb-storm[style*='url'], .sb-board--painted .sb-current[style*='url'], .sb-board--painted .sb-whirl[style*='url'], .sb-board--painted .sb-wave[style*='url'] { background-color: transparent; border: 0; }
+.sb-item { display: grid; place-items: center; filter: drop-shadow(0 0 8px gold); animation: sb-bob 1s ease-in-out infinite alternate; }
+.sb-item img { width: 100%; height: 100%; object-fit: contain; }
+.sb-item span { font-size: clamp(14px, 2.6vmin, 34px); }
+.sb-boat {
+  display: grid;
+  place-items: center;
+  border-radius: 45% 45% 50% 50% / 70% 70% 30% 30%;
+  background-color: #c0612b;
+  border: 4px solid #7a3510;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+  z-index: 2;
+}
+.sb-board--painted .sb-boat[style*='url'] { background-color: transparent; border: 0; box-shadow: none; border-radius: 0; }
+.sb-boat__seats {
+  padding: 0.05em 0.4em;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font: 800 clamp(9px, 1.3vmin, 16px) system-ui, sans-serif;
+  white-space: nowrap;
+}
+.sb-board__people { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.sb-fog { position: absolute; inset: 0; z-index: 5; background: radial-gradient(circle, rgba(40, 70, 60, 0.75), rgba(20, 40, 40, 0.92)); animation: sb-fog 3s ease-in-out infinite alternate; }
+@keyframes sb-fog { from { opacity: 0.85; } to { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-q--hit, .sb-label--btn, .sb-item, .sb-fog { animation: none; }
+}
