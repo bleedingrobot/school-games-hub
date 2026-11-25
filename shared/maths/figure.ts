@@ -21,7 +21,8 @@ export type Figure =
   /** A rectangle (or square) with its side labels, and a label inside (its area, or '?'). */
   | { kind: 'rectangle'; width: string; height: string; inside?: string }
   /** A triangle drawn with its base and dashed height. */
-  | { kind: 'triangle-area'; base: string; height: string; inside?: string }
+  /** `right` draws it as a right-angled triangle, the height up its left side. */
+  | { kind: 'triangle-area'; base: string; height: string; inside?: string; right?: boolean }
   | { kind: 'parallelogram'; base: string; height: string; inside?: string }
   | { kind: 'trapezium'; top: string; bottom: string; height: string; inside?: string }
   /** A box (rectangular prism) or cube; for a cube only `length` is labelled. */
@@ -31,7 +32,21 @@ export type Figure =
   /** A regular polygon with one exterior angle marked. */
   | { kind: 'polygon'; sides: number; label?: string }
   /** Compass points: the turn from `from` to `to`, clockwise. */
-  | { kind: 'compass'; from: string; to: string };
+  | { kind: 'compass'; from: string; to: string }
+  /** A plain outline of a named shape. */
+  | { kind: 'shape'; name: ShapeName }
+  /** A small first-quadrant grid (axes numbered from 0, `size` 4-10) with dots. */
+  | { kind: 'grid'; size: number; points: { x: number; y: number; label?: string }[] }
+  /** A circle cut into equal parts, the first `shaded` coloured. */
+  /** `colour` fills the shaded parts in that colour (the one the question names); grey without it. */
+  | { kind: 'spinner'; parts: number; shaded: number; colour?: SpinnerColour };
+
+export const SPINNER_COLOURS = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'] as const;
+export type SpinnerColour = (typeof SPINNER_COLOURS)[number];
+
+export type ShapeName =
+  | 'square' | 'rectangle' | 'rhombus' | 'kite' | 'parallelogram' | 'trapezium' | 'equilateral'
+  | 'isosceles' | 'scalene' | 'right-triangle' | 'pentagon' | 'hexagon' | 'octagon';
 
 export type FigureKind = Figure['kind'];
 
@@ -57,4 +72,7 @@ export const FIGURE_KINDS: readonly FigureKind[] = [
   'circle',
   'polygon',
   'compass',
+  'shape',
+  'grid',
+  'spinner',
 ];

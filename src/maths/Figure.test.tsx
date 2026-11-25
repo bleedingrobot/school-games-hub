@@ -20,6 +20,10 @@ const SAMPLES: Spec[] = [
   { kind: 'circle', radius: '7 cm', diameter: '?' },
   { kind: 'polygon', sides: 6, label: '?' },
   { kind: 'compass', from: 'N', to: 'SE' },
+  { kind: 'shape', name: 'kite' },
+  { kind: 'shape', name: 'octagon' },
+  { kind: 'grid', size: 6, points: [{ x: 2, y: 3, label: '?' }] },
+  { kind: 'spinner', parts: 8, shaded: 3 },
 ];
 
 describe('question pictures', () => {

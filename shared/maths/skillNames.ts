@@ -4,11 +4,13 @@
  * `skillShortLabel` is longer than 20 characters needs a line here (ladder.test.ts checks every built skill).
  */
 import { skillShortLabel } from './focus';
+import { Y6_TINY } from './skillPacks/y6';
 import { Y78_TINY } from './skillPacks/y78';
 
 export const TINY_LABEL_MAX = 20;
 
 const TINY: Record<string, string> = {
+  ...Y6_TINY,
   ...Y78_TINY,
   'parts-5': 'Parts of 5',
   'parts-10': 'Parts of 10',
