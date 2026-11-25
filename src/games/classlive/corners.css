@@ -554,3 +554,16 @@
 /* Bad things glow red, good things glow gold (James, 25 Nov 2026 NZ: "a small red glow to bad things, a small golden glow to good things"). */
 .fc-storm, .fc-ice, .fc-hole, .fc-roller { filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.95)) drop-shadow(0 0 12px rgba(239, 68, 68, 0.55)); }
 .fc-item { filter: drop-shadow(0 0 5px rgba(250, 204, 21, 0.95)) drop-shadow(0 0 12px rgba(250, 204, 21, 0.6)); }
+
+/* Rollers: bigger, with a dust trail feel, and a shake on the pad when one hits you. */
+.fc-roller { box-shadow: 0 8px 14px rgba(0, 0, 0, 0.4); z-index: 3; }
+.fc-pad__board--hit { animation: fc-hit-shake 0.45s ease-out; }
+@keyframes fc-hit-shake {
+  0%, 100% { transform: translate(0, 0); }
+  15% { transform: translate(-10px, 4px); }
+  30% { transform: translate(9px, -5px); }
+  45% { transform: translate(-7px, 3px); }
+  60% { transform: translate(5px, -2px); }
+  80% { transform: translate(-2px, 1px); }
+}
+@media (prefers-reduced-motion: reduce) { .fc-pad__board--hit { animation: none; } }

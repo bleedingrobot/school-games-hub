@@ -4,7 +4,7 @@
  * Positions are board units (0 to 1); everything is placed in % of the square board.
  */
 import type { ReactNode } from 'react';
-import { CORNERS, FOG_SHARE, GRAB_R, gateShut, HOLE_R, MAP_WORDS, POWER_WORDS, rollerAt, TELEPORT_R, ZONE, type Corner, type CornerMap, type MoveRound, type Power } from '../../../shared/classlive/corners';
+import { CORNERS, FOG_SHARE, GRAB_R, gateShut, HOLE_R, MAP_WORDS, POWER_WORDS, rollerAt, rollersOf, TELEPORT_R, ZONE, type Corner, type CornerMap, type MoveRound, type Power } from '../../../shared/classlive/corners';
 import { painted } from './paintedArt';
 import './corners.css';
 
@@ -30,9 +30,9 @@ export interface BoardRound extends MoveRound {
 const pct = (v: number) => `${v * 100}%`;
 
 /** A circle on the board. */
-function Disc({ x, y, r, className, pic, children }: { x: number; y: number; r: number; className: string; pic?: string | null; children?: ReactNode }) {
+function Disc({ x, y, r, className, pic, spin, children }: { x: number; y: number; r: number; className: string; pic?: string | null; spin?: number; children?: ReactNode }) {
   return (
-    <div className={className} style={{ left: pct(x - r), top: pct(y - r), width: pct(r * 2), height: pct(r * 2), ...(pic ? { backgroundImage: `url(${pic})` } : {}) }}>
+    <div className={className} style={{ left: pct(x - r), top: pct(y - r), width: pct(r * 2), height: pct(r * 2), ...(pic ? { backgroundImage: `url(${pic})` } : {}), ...(spin !== undefined ? { transform: `rotate(${spin}deg)` } : {}) }}>
       {children}
     </div>
   );
@@ -98,10 +98,12 @@ export function CornersBoard({ map, round, t, flash, crystal, banned, children, 
           {powerPic(it.power) ? <img src={powerPic(it.power) as string} alt="" /> : <span aria-hidden="true">{POWER_WORDS[it.power].emoji}</span>}
         </Disc>
       ))}
-      {round?.roller && (() => {
-        const p = rollerAt(round.roller, t);
-        return <Disc x={p.x} y={p.y} r={round.roller.r} className="fc-roller" pic={hazardPic(map, 'roller')} />;
-      })()}
+      {round && rollersOf(round).map((ro, i) => {
+        const p = rollerAt(ro, t);
+        // Turns as it rolls (one turn per 2πr of board crossed).
+        const spin = (((ro.axis === 'x' ? p.x : p.y) / (2 * Math.PI * ro.r)) * 360) % 360;
+        return <Disc key={`r${i}`} x={p.x} y={p.y} r={ro.r} className="fc-roller" pic={hazardPic(map, 'roller')} spin={spin} />;
+      })}
       <div className="fc-board__people">{children}</div>
       {fogShows && <div className="fc-fog" aria-label={words.fog} />}
     </div>

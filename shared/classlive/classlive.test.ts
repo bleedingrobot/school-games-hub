@@ -7,7 +7,7 @@ import { answerBox, apply, BODY, makeChain, newSerpent, SERPENT_LEVELS } from '.
 import { gridFor, maxOpen, openCap, UNTIMED_PACE_MS, type MuralGame } from './mural';
 import { ARMS, armCounts, isTrue, laggingArm, linkOf, newStars, readFact, tryFact, type Anchor } from './stars';
 import { lagHint } from '../../src/games/classlive/arms';
-import { advance, clampMove, cornerOf, freeAt, freshMine, grab, makeRound, ROLL_MS, SHOW_MS, MAX_SPEED, newCorners, startSpot, stepMove, type CornersGame } from './corners';
+import { advance, clampMove, cornerOf, freeAt, freshMine, grab, makeRound, ROLL_MS, SHOW_MS, MAX_SPEED, newCorners, rollerAt, rollersOf, startSpot, stepMove, type CornersGame } from './corners';
 
 const k: Anchor = { x: 6, y: 7, p: 42 };
 const arm = (text: string) => {
@@ -249,6 +249,19 @@ describe('Class Live server', () => {
     const storm = r.storms[0];
     const slow = stepMove({ p: { x: storm.x, y: storm.y }, v: { x: 0, y: 0 } }, { x: 1, y: 0 }, 100, { ...r, teleports: [], ice: [], hole: false, roller: null }, 0, { boost: false, ghost: false });
     expect(slow.p.x - storm.x).toBeLessThan(0.3 * 0.1 * 0.5);
+    // Rollers (round 7 on): two, one each way, through the corners; one knocks a pupil standing in its path flying.
+    const rr = makeRound(newCorners('space'), 7, 0, rng(7), 20);
+    expect(rollersOf(rr).map((x) => x.axis)).toEqual(['x', 'y']);
+    expect(rollersOf(rr).every((x) => x.at < 0.26 || x.at > 0.74)).toBe(true);
+    const ro = rr.roller!;
+    const at = rollerAt(ro, 1000);
+    const still = { storms: [], ice: [], teleports: [], roller: ro, hole: false, gate: null, runEnd: 99_999 };
+    const hit = stepMove({ p: { x: at.x, y: at.y + 0.02 }, v: { x: 0, y: 0 } }, { x: 0, y: 0 }, 16, still, 1000, { boost: false, ghost: false });
+    expect([hit.hitAt, hit.stun]).toEqual([1000, 1550]);
+    let fly = hit;
+    for (let i = 0; i < 30; i++) fly = stepMove(fly, { x: 0, y: -1 }, 20, { ...still, roller: null }, 1000 + i * 20, { boost: false, ghost: false });
+    expect(Math.abs(fly.p.y - at.y)).toBeGreaterThan(0.3);
+    expect(stepMove({ p: { x: at.x, y: at.y }, v: { x: 0, y: 0 } }, { x: 0, y: 0 }, 16, still, 1000, { boost: false, ghost: true }).hitAt).toBeUndefined();
     g.round = r;
     g.mine.a = { ...(await import('./corners')).freshMine(0) };
     const item = r.items[0];

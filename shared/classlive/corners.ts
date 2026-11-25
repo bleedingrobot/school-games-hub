@@ -92,6 +92,8 @@ export interface Round {
   ice: Circle[];
   teleports: Teleport[];
   roller: Roller | null;
+  /** A second roller on the other axis (James, 25 Nov 2026 NZ: "add a vertical one as well"). */
+  roller2?: Roller | null;
   hole: boolean;
   fog: boolean;
   gate: Corner | null;
@@ -226,11 +228,25 @@ export function rollerAt(r: Roller, t: number): Spot {
 }
 
 /** What movement needs of a round (the pupils' copy of a round has these too). */
-export type MoveRound = Pick<Round, 'storms' | 'ice' | 'teleports' | 'roller' | 'hole' | 'gate' | 'runEnd'>;
+export type MoveRound = Pick<Round, 'storms' | 'ice' | 'teleports' | 'roller' | 'hole' | 'gate' | 'runEnd'> & { roller2?: Roller | null };
+
+/** A round's rollers (one or two). */
+export const rollersOf = (round: Pick<MoveRound, 'roller' | 'roller2'>): Roller[] => [round.roller, round.roller2].filter((x): x is Roller => !!x);
+
+/** A roller hit: you fly this fast (board widths a second) and can't steer for this long. */
+export const KNOCK_SPEED = 0.9;
+export const KNOCK_MS = 550;
 
 export const gateShut = (round: Pick<Round, 'gate' | 'runEnd'>, t: number) => round.gate !== null && t >= round.runEnd - GATE_EARLY_MS;
 
-export interface MoveState { p: Spot; v: Spot }
+export interface MoveState {
+  p: Spot;
+  v: Spot;
+  /** Knocked flying by a roller: no steering until this session time. */
+  stun?: number;
+  /** Session time of the last roller hit (the pad shakes and says so). */
+  hitAt?: number;
+}
 
 /**
  * One step of movement (device and preview): `dir` is the joystick (length 0 to 1), dt in ms. Storms slow, ice keeps
@@ -238,6 +254,17 @@ export interface MoveState { p: Spot; v: Spot }
  */
 export function stepMove(m: MoveState, dir: Spot, dtMs: number, round: MoveRound | null, t: number, opts: { boost: boolean; ghost: boolean }): MoveState {
   const dt = Math.min(100, Math.max(0, dtMs)) / 1000;
+  if (m.stun !== undefined && t < m.stun) {
+    // Flying: no steering, slowing down as you go; walls still hold.
+    const k = Math.max(0, 1 - dt * 2.2);
+    const v = { x: m.v.x * k, y: m.v.y * k };
+    let p = { x: clamp01(m.p.x + v.x * dt), y: clamp01(m.p.y + v.y * dt) };
+    if (round?.hole && !opts.ghost && dist(p, START) < HOLE_R + AVATAR_R) {
+      const a = Math.atan2(p.y - 0.5, p.x - 0.5);
+      p = { x: 0.5 + Math.cos(a) * (HOLE_R + AVATAR_R), y: 0.5 + Math.sin(a) * (HOLE_R + AVATAR_R) };
+    }
+    return { ...m, p, v };
+  }
   const len = Math.hypot(dir.x, dir.y);
   const d = len > 1 ? { x: dir.x / len, y: dir.y / len } : dir;
   let speed = SPEED * (opts.boost ? BOOST : 1);
@@ -257,13 +284,21 @@ export function stepMove(m: MoveState, dir: Spot, dtMs: number, round: MoveRound
       p = { x: 0.5 + Math.cos(a) * (HOLE_R + AVATAR_R), y: 0.5 + Math.sin(a) * (HOLE_R + AVATAR_R) };
     }
     if (gateShut(round, t) && round.gate !== null && cornerOf(p) === round.gate && cornerOf(m.p) !== round.gate) p = { ...m.p };
-    if (round.roller) {
-      const r = rollerAt(round.roller, t);
-      const gap = dist(p, r);
-      if (gap < round.roller.r + AVATAR_R) {
-        const a = Math.atan2(p.y - r.y, p.x - r.x);
-        const push = round.roller.r + AVATAR_R + 0.03;
-        p = { x: clamp01(r.x + Math.cos(a) * push), y: clamp01(r.y + Math.sin(a) * push) };
+    for (const ro of rollersOf(round)) {
+      const r = rollerAt(ro, t);
+      if (dist(p, r) < ro.r + AVATAR_R) {
+        // Knocked flying out of the corners, towards the middle of the board, plus a shove the way it rolls.
+        const s = ro.at < 0.5 ? 1 : -1;
+        const phase = (t % ro.periodMs) / ro.periodMs;
+        const fwd = phase < 0.5 ? 1 : -1;
+        const kx = ro.axis === 'x' ? fwd * 0.45 : s;
+        const ky = ro.axis === 'x' ? s : fwd * 0.45;
+        const kl = Math.hypot(kx, ky);
+        const kv = { x: (kx / kl) * KNOCK_SPEED, y: (ky / kl) * KNOCK_SPEED };
+        // Out of its way at once, then flying.
+        const push = ro.r + AVATAR_R + 0.01;
+        const out = ro.axis === 'x' ? { x: p.x, y: clamp01(r.y + s * push) } : { x: clamp01(r.x + s * push), y: p.y };
+        return { p: out, v: kv, stun: t + KNOCK_MS, hitAt: t };
       }
     }
   }
@@ -274,7 +309,7 @@ export function stepMove(m: MoveState, dir: Spot, dtMs: number, round: MoveRound
       if (dist(m.p, tp.b) >= TELEPORT_R && dist(p, tp.b) < TELEPORT_R) return { p: { x: clamp01(tp.a.x + v.x * 0.25), y: clamp01(tp.a.y + v.y * 0.25) }, v };
     }
   }
-  return { p, v: onIce ? v : { x: 0, y: 0 } };
+  return { p, v: onIce ? v : { x: 0, y: 0 }, ...(m.hitAt !== undefined ? { hitAt: m.hitAt } : {}) };
 }
 
 // ---- Making rounds ----
@@ -323,7 +358,10 @@ export function makeRound(g: CornersGame, n: number, startAt: number, random: ()
     const along = 0.3 + random() * 0.4;
     teleports.push(random() < 0.5 ? { a: { x: 0.08, y: along }, b: { x: 0.92, y: 1 - along } } : { a: { x: along, y: 0.08 }, b: { x: 1 - along, y: 0.92 } });
   }
-  const roller: Roller | null = has.has('roller') ? { axis: random() < 0.5 ? 'x' : 'y', at: 0.35 + random() * 0.3, r: 0.07, periodMs: 6000 + Math.floor(random() * 2000) } : null;
+  // Two rollers, one each way, rolling through the corners (in the middle they missed everyone).
+  const cornerLine = () => (random() < 0.5 ? 0.09 + random() * 0.1 : 0.81 + random() * 0.1);
+  const roller: Roller | null = has.has('roller') ? { axis: 'x', at: cornerLine(), r: 0.08, periodMs: 4500 + Math.floor(random() * 1500) } : null;
+  const roller2: Roller | null = has.has('roller') ? { axis: 'y', at: cornerLine(), r: 0.08, periodMs: 5200 + Math.floor(random() * 1500) } : null;
   const gate: Corner | null = has.has('gate') ? pick(CORNERS, random) : null;
   const twist = has.has('twist') ? (random() < 0.6 ? 'two' : 'lucky') : null;
   const items: Item[] = [];
@@ -337,7 +375,7 @@ export function makeRound(g: CornersGame, n: number, startAt: number, random: ()
   const run = g.runS ? g.runS * 1000 : runMs(n);
   return {
     n, startAt, runEnd: startAt + run, rollEnd: startAt + run + ROLL_MS, showEnd: startAt + run + ROLL_MS + SHOW_MS,
-    storms, ice, teleports, roller, hole, fog: has.has('fog'), gate, twist, items, rolled, caught: null, saved: [],
+    storms, ice, teleports, roller, roller2, hole, fog: has.has('fog'), gate, twist, items, rolled, caught: null, saved: [],
     ...(g.halfAt !== undefined ? startAt >= g.halfAt : n >= SWAP_ROUND) ? { swap: true } : {},
   };
 }

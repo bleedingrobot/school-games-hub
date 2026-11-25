@@ -24,7 +24,7 @@ const MECH_ABOUT: Record<Mechanic, (w: (typeof MAP_WORDS)['snow']) => string> = 
   teleport: (w) => `${w.teleport}s! Step in one to warp to the other.`,
   ice: (w) => `${w.ice}! You slide and can't stop fast.`,
   fog: (w) => `${w.fog}! The big screen can't see you at the end.`,
-  roller: (w) => `${w.roller}! It bumps you out of the way.`,
+  roller: (w) => `${w.roller}s! Two roll through the corners and knock you flying.`,
   hole: (w) => `${w.hole} in the middle! Go round it.`,
   gate: (w) => `${w.gate}! One corner shuts before the end.`,
   twist: () => 'Twist rolls! Two corners, or a lucky roll.',
