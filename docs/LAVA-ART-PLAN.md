@@ -28,6 +28,10 @@ Total 34: 4 lakes, 4 tiles, 4 rafts, 4 backdrops, 1 pick, 12 mechanics, 5 powers
 - Lakes and tiles must look the same all over (they are textures). If a lake paints a shore or rocks, repaint rather than crop.
 - Dragon's Lair: friendly, not scary (sleepy cartoon dragon, cartoon bones).
 - Prompt fixes go here after the first run.
+- First run (25 Nov): the tiles said "a square slab", so ComfyUI painted one slab on a background. Now they say "a seamless close-up texture of rough … rock … covers the entire picture right out to every edge and corner, no slab outline" (+ negative slab, tile edge, outline, background). tile-forge (riveted plate) was fine as it was.
+- lake-forge painted molten metal in a pan/crucible with a rim. Reworded twice: now "a seamless repeating texture of flowing … molten metal, long wavy streaks … no whirlpool, no spiral, no centre, no container, no rim" (+ negative pot, crucible, rim, whirlpool, spiral, dark corners).
+- dragon-crust gold coins came out stamped with letters and $ signs: now "plain smooth gold coins with blank faces and no markings".
+- power-rope ring buoy had a logo-like emblem in its middle: now "a plain red and white striped ring buoy with an empty hole in the middle".
 
 ## Music (later)
 
