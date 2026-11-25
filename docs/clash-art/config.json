@@ -16,7 +16,7 @@
   "pictures": [
     {
       "name": "map-park",
-      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down empty floor texture, straight down bird's-eye view: a sunny city park playground floor: smooth pale warm-grey paving with a very faint soft chalk-white texture, light and even, calm and bright. An empty open floor with nothing on it, the same plain colour all the way to the edges, bright and low detail, no paint splats, no game board, no grid, no lines, no objects, no characters, no writing. Square picture.",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A close-up texture of smooth pale warm-grey playground asphalt with a very faint soft chalky speckle. Seamless flat texture swatch, close-up, straight down, the texture fills the whole picture edge to edge with no border, no walls, no edges, no frame, one plain even colour everywhere, bright and low detail, nothing on it, no objects, no plants, no paint splats, no grid, no lines, no seams, no characters, no writing. Square picture.",
       "size": [
         1536,
         1536
@@ -24,11 +24,11 @@
       "kind": "scene",
       "folder": "clash",
       "file": "map-park",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view, paint splats, grid lines, tiles drawn as a grid, game board, borders, frame, shadows of objects, objects on the floor"
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view, paint splats, grid lines, tiles drawn as a grid, game board, borders, frame, shadows of objects, objects on the floor, trees, grass, plants, walls, railings, kerb, edge, border, panels, seams, tiles, rivets, light beams"
     },
     {
       "name": "map-rooftops",
-      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down empty floor texture, straight down bird's-eye view: a rooftop floor: smooth light concrete in warm cream, a very faint soft texture, bright, calm and even. An empty open floor with nothing on it, the same plain colour all the way to the edges, bright and low detail, no paint splats, no game board, no grid, no lines, no objects, no characters, no writing. Square picture.",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A close-up texture of smooth light cream concrete with a very faint soft mottled grain. Seamless flat texture swatch, close-up, straight down, the texture fills the whole picture edge to edge with no border, no walls, no edges, no frame, one plain even colour everywhere, bright and low detail, nothing on it, no objects, no plants, no paint splats, no grid, no lines, no seams, no characters, no writing. Square picture.",
       "size": [
         1536,
         1536
@@ -36,7 +36,7 @@
       "kind": "scene",
       "folder": "clash",
       "file": "map-rooftops",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view, paint splats, grid lines, tiles drawn as a grid, game board, borders, frame, shadows of objects, objects on the floor"
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view, paint splats, grid lines, tiles drawn as a grid, game board, borders, frame, shadows of objects, objects on the floor, trees, grass, plants, walls, railings, kerb, edge, border, panels, seams, tiles, rivets, light beams"
     },
     {
       "name": "map-beach",
@@ -52,7 +52,7 @@
     },
     {
       "name": "map-space",
-      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down empty floor texture, straight down bird's-eye view: a space-lab floor: smooth pale silver-white metal panels with a faint cool blue tint and no seams, bright, calm and even. An empty open floor with nothing on it, the same plain colour all the way to the edges, bright and low detail, no paint splats, no game board, no grid, no lines, no objects, no characters, no writing. Square picture.",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A close-up texture of one single smooth sheet of pale silver-white brushed metal with a faint cool blue tint and a very faint soft sheen. Seamless flat texture swatch, close-up, straight down, the texture fills the whole picture edge to edge with no border, no walls, no edges, no frame, one plain even colour everywhere, bright and low detail, nothing on it, no objects, no plants, no paint splats, no grid, no lines, no seams, no characters, no writing. Square picture.",
       "size": [
         1536,
         1536
@@ -60,7 +60,7 @@
       "kind": "scene",
       "folder": "clash",
       "file": "map-space",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view, paint splats, grid lines, tiles drawn as a grid, game board, borders, frame, shadows of objects, objects on the floor"
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view, paint splats, grid lines, tiles drawn as a grid, game board, borders, frame, shadows of objects, objects on the floor, trees, grass, plants, walls, railings, kerb, edge, border, panels, seams, tiles, rivets, light beams"
     },
     {
       "name": "back-park",
@@ -119,7 +119,7 @@
       ],
       "kind": "scene",
       "folder": "pick",
-      "file": "pick-clash",
+      "file": "clash",
       "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, statues"
     },
     {
