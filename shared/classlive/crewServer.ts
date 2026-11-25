@@ -1,5 +1,5 @@
 /**
- * Saboteur Crew's pupil steps (docs/CREW-PLAN.md), beside the other Class Live steps in server.ts. `play` with `jam`,
+ * Glitches' pupil steps (docs/CREW-PLAN.md), beside the other Class Live steps in server.ts. `play` with `jam`,
  * `work` (a Glitch's pretend job), `lights` (lights out), `grab` (a power-up) or `vote` (the secret vote), all checked
  * against the saved spot; `ask` (a question when the spot allows one: a job, a sparking machine, the light switch) and
  * `answer` (marked here, claimed once, recorded). Glitches on the floor get no questions (James, 25 Nov 2026 NZ).

@@ -14,5 +14,5 @@ values ('classlive_relay_wins'), ('classlive_relay_perks'), ('classlive_relay_tr
 
 insert into public.achievement_types (id, game, name, emoji, measure, goal, sort, how, tier) values
   ('classlive-relay-champ', 'classlive', 'Relay Champ', '🏁', 'classlive_relay_wins', 10, 44, 'Win 10 Toon Flap Relay races with your team.', 2),
-  ('classlive-team-player', 'classlive', 'Team Player', '🤝', 'classlive_relay_perks', 30, 45, 'Give your Toon Flap Relay flyers 30 perks.', 1),
-  ('classlive-trouble-maker', 'classlive', 'Trouble Maker', '🌪️', 'classlive_relay_troubles', 30, 46, 'Send 30 Toon Flap Relay troubles to other teams.', 1);
+  ('classlive-relay-helper', 'classlive', 'Relay Helper', '🤝', 'classlive_relay_perks', 30, 45, 'Give your Toon Flap Relay flyers 30 perks.', 1),
+  ('classlive-relay-trouble', 'classlive', 'Trouble Maker', '🌪️', 'classlive_relay_troubles', 30, 46, 'Send 30 Toon Flap Relay troubles to other teams.', 1);

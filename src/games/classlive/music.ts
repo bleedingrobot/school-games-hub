@@ -220,7 +220,7 @@ export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 's
     return trackUrl(own) ? own : o.hot ? 'skyclimb-hot' : 'skyclimb';
   }
   if (kind === 'crew') {
-    // Saboteur Crew: the factory's own track (crew-factory, crew-factory-hot with 3 machines sparking), else the island's.
+    // Glitches: the factory's own track (crew-factory, crew-factory-hot with 3 machines sparking), else the island's.
     const own: Track = o.hot ? 'crew-factory-hot' : 'crew-factory';
     return trackUrl(own) ? own : o.hot ? 'island-hot' : 'island';
   }

@@ -1,4 +1,4 @@
-# Saboteur Crew: art plan
+# Glitches (was Saboteur Crew): art plan
 
 **The game draws stand-ins until each painting arrives.** `painted(folder, file)` (src/games/classlive/paintedArt.ts) returns null for a missing picture, and `CrewBoard`, `CrewScene`, `CrewPad` and `CrewHelp` fall back to emoji and a drawn factory floor. Prompts: `docs/crew-art/config.json` (30 pictures). Paint on James's PC as Four Corners (docs/CORNERS-ART-PLAN.md): `python3 scripts/game_art.py crew paint ~/dragon-art-inbox/crew-art/set --tries 3`, picks in `docs/crew-art/picks.json`, then `tidy`.
 

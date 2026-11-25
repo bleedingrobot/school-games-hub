@@ -376,7 +376,7 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   // Background music for what is on screen (James, 25 Nov 2026 NZ).
   const hotNow = (leftMs !== null && leftMs < HOT_MS) || (serpent ? serpent.awake || serpent.energy >= 0.75 * wakeAt(screen?.players ?? 1) : false)
     || (game?.kind === 'stars' ? game.creature && !game.supernova : false)
-    // Saboteur Crew: the tense track with 3 machines sparking.
+    // Glitches: the tense track with 3 machines sparking.
     || (crew?.round ? crew.round.machines.filter((m) => m.sparked).length >= 3 : false);
     // Musical Thrones: the music cuts out the moment it stops (and stays off until the next round).
   useMusic(thrones && state === 'live' && !thronesMusic ? null : classLiveTrack(state, game?.kind ?? null, { guessing: mural?.phase === 'guess', hot: hotNow, map: shark ? shark.bay : corners?.map ?? ghostG?.map ?? clash?.map ?? thrones?.hall ?? lava?.map, shark: !!shark }), !muted);

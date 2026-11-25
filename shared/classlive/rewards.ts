@@ -99,7 +99,7 @@ export function rewardsOf(s: Session): FinishedSession {
       r.extra = { thrones_sat: m?.sat ?? 0, thrones_crowns: m?.crowns ?? 0, thrones_steals: m?.steals ?? 0, thrones_wins: place === 1 ? 1 : 0 };
       did = (m?.sat ?? 0) > 0 || (m?.answered ?? 0) > 0;
     } else if (g.kind === 'crew') {
-      // Saboteur Crew (docs/CREW-PLAN.md): 3 for a right answer or (Glitches do no maths) a jam; +2 for winning a round.
+      // Glitches (docs/CREW-PLAN.md): 3 for a right answer or (Glitches do no maths) a jam; +2 for winning a round.
       const m = g.mine[id];
       did = (m?.right ?? 0) > 0 || (m?.jams ?? 0) > 0;
       podiumPlace = did && (m?.wins ?? 0) > 0;

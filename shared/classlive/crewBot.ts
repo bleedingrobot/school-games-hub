@@ -1,5 +1,5 @@
 /**
- * Saboteur Crew in memory: the database's classlive_crew_move (`memoryCrewMove`) and a pretend pupil (`crewBot`) for the
+ * Glitches in memory: the database's classlive_crew_move (`memoryCrewMove`) and a pretend pupil (`crewBot`) for the
  * `?pretend=30` preview and the tests (docs/CREW-PLAN.md).
  */
 import { markQuestion } from '../maths/serverQuestions';
@@ -7,17 +7,20 @@ import { canAsk, LIGHT_R, MACHINES, phaseOf, pretendDir, speedOf, stepCrew, type
 import { memoryMove, type MemoryDb } from './memoryServices';
 import { classLiveStep, type ClassLiveServices } from './server';
 
-/** What a device gets back from saving its spot: my role, and every other spot with its kind (0 player, 1 drone, 2 a fellow Glitch). */
+/**
+ * What a device gets back from saving its spot: my role, and every other spot with its kind (0 player, 1 drone, 2 a
+ * fellow Glitch), factory name (or first name) and colour number (so pupils can tell who is where on their own map, as on the big screen).
+ */
 export interface CrewSpots {
   me: { glitch: boolean; drone: boolean };
-  spots: [number, number, 0 | 1 | 2][];
+  spots: [number, number, 0 | 1 | 2, string, number][];
 }
 
 /**
- * Same rules as classlive_crew_move in migration 20261126000200_classlive_crew.sql: no names or ids; fellow Glitches are
+ * Same rules as classlive_crew_move (migration 20261126000400_classlive_crew_names.sql): factory names, no ids; fellow Glitches are
  * marked only for a Glitch; in the dark (lights out) Crew on the floor only see players within LIGHT_R, unless their camera is on.
  */
-export function crewSpotsOf(g: CrewGame, t: number, all: Record<string, { x: number; y: number }>, me: string): CrewSpots {
+export function crewSpotsOf(g: CrewGame, t: number, all: Record<string, { x: number; y: number }>, me: string, people: Record<string, { name: string; colour: number }> = {}): CrewSpots {
   const mine = g.mine[me];
   const dark = !!g.round && g.round.lightsTo > t && !!mine && !mine.glitch && !mine.drone && mine.cameraTo <= t;
   const at = all[me];
@@ -27,16 +30,20 @@ export function crewSpotsOf(g: CrewGame, t: number, all: Record<string, { x: num
     if (id === me || !m) continue;
     if (dark && (!at || Math.hypot(p.x - at.x, p.y - at.y) > LIGHT_R)) continue;
     const kind: 0 | 1 | 2 = m.drone ? 1 : mine?.glitch && m.glitch ? 2 : 0;
-    spots.push([Math.round(p.x * 1e4) / 1e4, Math.round(p.y * 1e4) / 1e4, kind]);
+    const who = people[id];
+    spots.push([Math.round(p.x * 1e4) / 1e4, Math.round(p.y * 1e4) / 1e4, kind, m.nick ?? firstOf(who?.name ?? ''), who?.colour ?? 0]);
   }
   return { me: { glitch: !!mine?.glitch, drone: !!mine?.drone }, spots };
 }
+
+/** A first name, as the server's views show it (split_part(btrim(name), ' ', 1) in the database). */
+const firstOf = (name: string) => name.trim().split(/\s+/)[0]?.slice(0, 20) ?? '';
 
 export function memoryCrewMove(db: MemoryDb, now: number, room: number, player: string, x: number, y: number): CrewSpots | null {
   const r = db.rooms.get(room);
   if (!r || r.session.game.kind !== 'crew' || r.startedAt === null) return null;
   if (!memoryMove(db, now, room, player, x, y)) return null;
-  return crewSpotsOf(r.session.game, now - r.startedAt, db.spots.get(room) ?? {}, player);
+  return crewSpotsOf(r.session.game, now - r.startedAt, db.spots.get(room) ?? {}, player, r.session.players);
 }
 
 /**

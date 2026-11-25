@@ -140,7 +140,7 @@ const KITS: Record<Kit, { root: number; scale: number[]; lead: InstrumentName[];
   clash: { root: 329.63, scale: [0, 2, 4, 7, 9], lead: ['kalimba', 'glock', 'marimba'], low: ['logdrum', 'wood'] },
   // Ghost Tag: a spooky minor scale on celesta and music box (docs/GHOST-PLAN.md).
   ghost: { root: 246.94, scale: [0, 1, 3, 6, 7, 10], lead: ['celesta', 'musicbox', 'glass'], low: ['pad', 'pizz'] },
-  // Saboteur Crew: a clanky robot factory. Marimba, wood blocks and glockenspiel; a bright dorian.
+  // Glitches: a clanky robot factory. Marimba, wood blocks and glockenspiel; a bright dorian.
   crew: { root: 293.66, scale: [0, 2, 3, 5, 7, 9, 10], lead: ['marimba', 'wood', 'glock'], low: ['logdrum', 'wood'] },
   // Musical Thrones: a royal court. Harp, glockenspiel, pizzicato; a bright mixolydian.
   thrones: { root: 349.23, scale: [0, 2, 4, 5, 7, 9, 10], lead: ['harp', 'glock', 'pizz'], low: ['pizz', 'harp'] },

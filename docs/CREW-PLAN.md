@@ -1,6 +1,6 @@
-# Saboteur Crew (Class Live activity `crew`)
+# Glitches (was Saboteur Crew): plan
 
-**Status: BUILT (25 Nov 2026 NZ), all of stage 1 to 3 in one PR; paintings and music to come (docs/CREW-ART-PLAN.md).** Migration: `20261126000200_classlive_crew.sql`; it only INSERTs (plus `classlive_crew_move`) (docs/CLASSLIVE-PLAN.md section 5, "Adding an activity").
+**Renamed Glitches (James, 26 Nov 2026 NZ; the id stays `crew`), with a fun factory name for every player instead of real names (`crewNick`, migration 20261126000400).** **Status: BUILT (25 Nov 2026 NZ), all of stage 1 to 3 in one PR; paintings and music to come (docs/CREW-ART-PLAN.md).** Migration: `20261126000200_classlive_crew.sql`; it only INSERTs (plus `classlive_crew_move`) (docs/CLASSLIVE-PLAN.md section 5, "Adding an activity").
 
 James's idea (25 Nov 2026 NZ): an original hidden-role Class Live game. Every pupil runs their own hub avatar around a robot factory, keeping the machines running by answering maths questions. A few pupils are secretly **Glitches** who jam machines. The teacher calls a meeting, the class talks it over and votes someone off. Built on Four Corners / Ghost Tag (docs/CORNERS-PLAN.md, docs/GHOST-PLAN.md): same room, joystick, saved spots, lobby codes, timers, music, Bella, rewards.
 
