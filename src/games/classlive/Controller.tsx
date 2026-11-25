@@ -139,16 +139,24 @@ export function Controller({ link, me, room: roomProp, code: codeProp, lookElsew
     if (phase !== 'playing' || room === null) return;
     const b = link.watchMe(room, me, setMine);
     let stop = false;
-    const look = () =>
-      link.send({ action: 'look', room }).then(
+    // One look at a time, and a rest (with a random extra so a class doesn't come back together) after a failed one: a
+    // slow database got a new look from every iPad before the last finished, and the pile-up crashed it (26 Nov 2026).
+    let waiting = false;
+    let restTo = 0;
+    const look = () => {
+      if (waiting || Date.now() < restTo) return Promise.resolve();
+      waiting = true;
+      return link.send({ action: 'look', room }).then(
         (out) => {
+          if (out.status >= 500 || out.status === 429) restTo = Date.now() + 4000 + Math.random() * 4000;
           if (stop || out.status !== 200) return;
           if (typeof out.body.now === 'number') offset.current = out.body.now - Date.now();
           if (out.body.view) setView(out.body.view as RoomView);
           if (out.body.me) setMine(out.body.me as PlayerView);
         },
-        () => undefined,
-      );
+        () => { restTo = Date.now() + 4000 + Math.random() * 4000; },
+      ).finally(() => { waiting = false; });
+    };
     const timer = window.setInterval(() => void look(), over ? 6000 : LOOK_MS);
     return () => { stop = true; window.clearInterval(timer); b(); };
   }, [link, me, room, phase, over]);
