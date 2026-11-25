@@ -26,4 +26,9 @@ A calm and a "-hot" looping track: `src/games/classlive/music/crew-factory.mp3` 
 
 ## Notes
 
-- Nothing painted yet (25 Nov 2026).
+- Painted 26 Nov 2026 on James's PC, 3 tries each; picks in `docs/crew-art/picks.json`.
+- `map-factory` repainted: the first prompt painted machine-like boxes and robots inside the hazard border (right where `MACHINES` sit) and a table instead of a rug. New prompt describes only a seamless floor texture, a thin hazard border at the picture's edge and one round rug in the centre; machines, crates, pipes, furniture went into its negative. Kept try 3 (empty floor, rug just above centre).
+- `back-factory` repainted: the first prompt put big robot characters in the foreground. New prompt says "empty hall with nobody inside" and robots/figures/faces are in the negative. Kept try 2.
+- `belt` try 1 had a letter on it and try 2 painted a book; kept try 3 (a conveyor belt).
+- `canteen`: rembg left white between the stools; large enclosed near-white areas were made see-through after tidy (cups and bowl kept).
+- Music: `crew-factory` take 1 (seed 11117). Both `-hot` takes 1-2 opened quietly for several seconds, so takes 3 (31337) and 4 (77777) were made too; kept take 4, which starts at full volume. Fade-in is 0.05 s (no quiet intro). Whisper found no voices in any take.

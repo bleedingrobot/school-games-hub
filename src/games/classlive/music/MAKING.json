@@ -776,5 +776,25 @@
     "seconds": 88.0,
     "take_kept": 2,
     "lufs_target": -16
+  },
+  {
+    "name": "crew-factory",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "playful friendly robot factory groove, bouncy synth bass, clanky metallic percussion, marimba, little robot bleeps, sneaky but cheerful, 116 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 116,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -18
+  },
+  {
+    "name": "crew-factory-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "urgent playful robot factory alarm groove, fast synth bass, pounding clanky drums, rapid marimba, alarm-like synth stabs, not scary, very energetic, starts immediately at full volume, 150 bpm, instrumental, no vocals, video game soundtrack, kids game music, loopable, steady tempo",
+    "seed": 77777,
+    "bpm": 150,
+    "seconds": 88.0,
+    "take_kept": 4,
+    "lufs_target": -16
   }
 ]
