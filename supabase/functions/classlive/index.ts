@@ -16869,14 +16869,84 @@ const glitchCount = (players) => players < 3 ? 0 : Math.max(1, Math.min(4, Math.
 /** Power a right job answer adds: a busy crew fills the bar in a bit over 2 minutes with no jams. */
 const jobPower = (crew) => Math.min(12, Math.max(.3, 100 / (Math.max(1, crew) * 14)));
 const dist$1 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-function newCrew(map = "factory") {
+function newCrew(map = "factory", random = Math.random) {
 	return {
 		kind: "crew",
 		map,
 		round: null,
 		mine: {},
-		nextItem: 1
+		nextItem: 1,
+		salt: Math.floor(random() * 1e6)
 	};
+}
+const NICK_FIRST = [
+	"Turbo",
+	"Rusty",
+	"Sparky",
+	"Bouncy",
+	"Zippy",
+	"Wobbly",
+	"Shiny",
+	"Clanky",
+	"Fizzy",
+	"Mega",
+	"Tiny",
+	"Speedy",
+	"Bubbly",
+	"Jolly",
+	"Sneaky",
+	"Squeaky",
+	"Dizzy",
+	"Lucky",
+	"Rocket",
+	"Cosmic",
+	"Buzzy",
+	"Chunky",
+	"Snappy",
+	"Wiggly"
+];
+const NICK_LAST = [
+	"Toaster",
+	"Bolt",
+	"Sprocket",
+	"Gizmo",
+	"Widget",
+	"Gadget",
+	"Kettle",
+	"Magnet",
+	"Nugget",
+	"Piston",
+	"Robot",
+	"Spanner",
+	"Teapot",
+	"Blender",
+	"Button",
+	"Dynamo",
+	"Pickle",
+	"Muffin",
+	"Noodle",
+	"Pancake",
+	"Waffle",
+	"Doodle",
+	"Gear",
+	"Wrench"
+];
+const hashOf = (text) => {
+	let h = 2166136261;
+	for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
+	return h >>> 0;
+};
+/** A factory name nobody else in this game has, picked from the pupil's id and the game's salt. */
+function crewNick(g, who) {
+	const taken = new Set(Object.entries(g.mine).filter(([id]) => id !== who).map(([, m]) => m.nick));
+	const size = NICK_FIRST.length * NICK_LAST.length;
+	const start = hashOf(`${who}:${g.salt ?? 0}`) % size;
+	for (let k = 0; k < size; k++) {
+		const n = (start + k * 101) % size;
+		const name = `${NICK_FIRST[Math.floor(n / NICK_LAST.length)]} ${NICK_LAST[n % NICK_LAST.length]}`;
+		if (!taken.has(name)) return name;
+	}
+	return `Robot ${Object.keys(g.mine).length + 1}`;
 }
 /** A seat round the Canteen (everyone starts and meets here). */
 function canteenSpot(i, of) {
@@ -18659,7 +18729,7 @@ async function ghostStep(sv, cur, who, body) {
 //#endregion
 //#region shared/classlive/crewServer.ts
 /**
-* Saboteur Crew's pupil steps (docs/CREW-PLAN.md), beside the other Class Live steps in server.ts. `play` with `jam`,
+* Glitches' pupil steps (docs/CREW-PLAN.md), beside the other Class Live steps in server.ts. `play` with `jam`,
 * `work` (a Glitch's pretend job), `lights` (lights out), `grab` (a power-up) or `vote` (the secret vote), all checked
 * against the saved spot; `ask` (a question when the spot allows one: a job, a sparking machine, the light switch) and
 * `answer` (marked here, claimed once, recorded). Glitches on the floor get no questions (James, 25 Nov 2026 NZ).
@@ -18956,7 +19026,7 @@ function screenView(row, s, startedAt) {
 		joinCode: s.lobby?.code ?? s.joinCode ?? null,
 		people: s.order.map((id) => ({
 			id,
-			name: row.showNames ? firstName(s.players[id].name) : null,
+			name: s.game.kind === "crew" && s.game.mine[id]?.nick ? s.game.mine[id].nick : row.showNames ? firstName(s.players[id].name) : null,
 			colour: s.players[id].colour
 		})),
 		game: s.game,
@@ -18984,15 +19054,18 @@ function playerView(s, id) {
 		colour: p.colour,
 		game: clashPlayer(s, s.game, id)
 	};
-	if (s.game.kind === "crew") return {
-		player: id,
-		name: firstName(p.name),
-		colour: p.colour,
-		game: crewPlayer(s.game, id, s.order, s.state === "over", (x) => ({
-			name: firstName(s.players[x]?.name ?? ""),
-			colour: s.players[x]?.colour ?? 0
-		}))
-	};
+	if (s.game.kind === "crew") {
+		const cg = s.game;
+		return {
+			player: id,
+			name: cg.mine[id]?.nick ?? firstName(p.name),
+			colour: p.colour,
+			game: crewPlayer(cg, id, s.order, s.state === "over", (x) => ({
+				name: cg.mine[x]?.nick ?? firstName(s.players[x]?.name ?? ""),
+				colour: s.players[x]?.colour ?? 0
+			}))
+		};
+	}
 	if (s.game.kind === "ghost") return {
 		player: id,
 		name: firstName(p.name),
@@ -19371,7 +19444,7 @@ function newSession(body, seed, random) {
 		if ((body.x !== void 0 || body.y !== void 0) && !own) return "Pick two different numbers from 2 to 12.";
 		game = newStars(own ?? pickAnchor(level, random), own ? "own" : level);
 	} else if (activity === "serpent") game = newSerpent(SERPENT_LEVELS.find((l) => l === body.level) ?? "gold", random);
-	else if (activity === "crew") game = newCrew();
+	else if (activity === "crew") game = newCrew("factory", random);
 	else if (activity === "ghost") game = newGhost(MAPS.find((m) => m === body.map) ?? MAPS[Math.floor(random() * MAPS.length) % MAPS.length]);
 	else if (activity === "corners") game = newCorners(MAPS$1.find((m) => m === body.map) ?? MAPS$1[Math.floor(random() * MAPS$1.length) % MAPS$1.length], runSeconds(body.run));
 	else if (activity === "lava") game = newLava(LAVA_MAPS.find((m) => m === body.map) ?? LAVA_MAPS[Math.floor(random() * LAVA_MAPS.length) % LAVA_MAPS.length], lavaRunSeconds(body.run));
@@ -19407,7 +19480,10 @@ function joinGame(g, who, index) {
 	if (g.kind === "thrones") g.mine[who] = freshMine$3(index);
 	if (g.kind === "clash") clashJoin(g, who);
 	if (g.kind === "ghost") g.mine[who] = freshMine$1(index);
-	if (g.kind === "crew") g.mine[who] = freshMine(index);
+	if (g.kind === "crew") g.mine[who] = {
+		...freshMine(index),
+		nick: crewNick(g, who)
+	};
 }
 /** Lobby to live (the teacher's Start, or a set-time game's start). */
 function startGame(s, now) {

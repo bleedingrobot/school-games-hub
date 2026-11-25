@@ -59,7 +59,10 @@ export const liveClassLiveLink: ClassLiveLink = {
     const { data, error } = await supabase.rpc('classlive_crew_move', { target: room, x, y });
     if (error || !data || typeof data !== 'object' || !Array.isArray((data as { spots?: unknown }).spots)) return null;
     const d = data as { me?: { glitch?: unknown; drone?: unknown }; spots: unknown[] };
-    const spots = d.spots.flatMap((p) => (Array.isArray(p) && p.length === 3 ? [[Number(p[0]), Number(p[1]), Number(p[2]) as 0 | 1 | 2] as [number, number, 0 | 1 | 2]] : []));
+    // [x, y, kind, factory name, colour]; an older database sends only the first three.
+    const spots = d.spots.flatMap((p) => (Array.isArray(p) && p.length >= 3
+      ? [[Number(p[0]), Number(p[1]), Number(p[2]) as 0 | 1 | 2, typeof p[3] === 'string' ? p[3].slice(0, 24) : '', Number(p[4]) || 0] as [number, number, 0 | 1 | 2, string, number]]
+      : []));
     return { me: { glitch: d.me?.glitch === true, drone: d.me?.drone === true }, spots };
   },
   async positions(room) {

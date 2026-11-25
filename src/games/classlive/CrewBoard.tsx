@@ -1,5 +1,5 @@
 /**
- * Saboteur Crew's factory floor (docs/CREW-PLAN.md), drawn the same on the big screen and on each pupil's device: the
+ * Glitches' factory floor (docs/CREW-PLAN.md), drawn the same on the big screen and on each pupil's device: the
  * painted map (or a drawn stand-in), the Canteen in the middle, the 8 machines (sparking ones flash, with a fix bar),
  * conveyor belts, power-up crates and, in the dark, a torch circle. Positions are board units (0 to 1), in % of the board.
  */

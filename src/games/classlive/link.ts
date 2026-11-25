@@ -35,7 +35,7 @@ export interface ClassLiveLink {
   clashBoard(room: number, since: number | null): Promise<Omit<ClashPaint, 'spots'> | null>;
   /** Ghost Tag: saves the spot like `move`; back come the other spots with who is a ghost (no names), or null. Optional so other links needn't have it. */
   ghostMove?(room: number, x: number, y: number): Promise<GhostSpots | null>;
-  /** Saboteur Crew: saves the spot like `move`; back come the other spots with drones (and, for a Glitch, fellow Glitches) marked, or null. */
+  /** Glitches: saves the spot like `move`; back come the other spots with drones (and, for a Glitch, fellow Glitches) marked, or null. */
   crewMove?(room: number, x: number, y: number): Promise<CrewSpots | null>;
 }
 

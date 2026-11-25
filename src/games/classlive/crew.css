@@ -1,4 +1,4 @@
-/* Saboteur Crew (docs/CREW-PLAN.md). Builds on corners.css (fc-board, fc-token, fc-stage, fc-side, fc-finish) and ghost.css's shared bits. */
+/* Glitches (docs/CREW-PLAN.md). Builds on corners.css (fc-board, fc-token, fc-stage, fc-side, fc-finish) and ghost.css's shared bits. */
 
 .sc-board__ground {
   position: absolute;
@@ -134,6 +134,23 @@
 .sc-token--out .fc-token__body { box-shadow: 0 0 0 4px #facc15, 0 0 30px #facc15; }
 .sc-token--winner .fc-token__body { box-shadow: 0 0 0 4px #4ade80, 0 0 24px #4ade80; }
 .sc-token--glitch .fc-token__body { box-shadow: 0 0 0 4px #c084fc, 0 0 24px #a855f7; }
+.sc-dot { z-index: 3; }
+.sc-dot__name {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  margin-top: 1px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(15, 23, 42, 0.78);
+  color: #f8fafc;
+  font-size: clamp(8px, 1.6vmin, 11px);
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+  pointer-events: none;
+}
 .sc-dot--1 { background: #7dd3fc; font-size: 10px; line-height: 1; display: grid; place-items: center; }
 .sc-dot--2 { background: #c084fc; box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.5); }
 .sc-pop--spark { color: #fdba74; font-size: 4vmin; }
@@ -230,3 +247,8 @@
 }
 @keyframes sc-fade { from { opacity: 0; } }
 @keyframes sc-float { 50% { transform: translate(-50%, -62%); } }
+
+/* The pupil's factory name for the game */
+.sc-nick { margin: 0; font-size: 1.15rem; color: #e2e8f0; }
+.sc-nick b { color: #fde047; font-size: 1.3em; }
+.sc-nick-chip { background: rgba(253, 224, 71, 0.18); color: #fef08a; font-weight: 800; }

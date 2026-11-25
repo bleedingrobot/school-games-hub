@@ -1,5 +1,5 @@
 /**
- * Saboteur Crew on the big screen (docs/CREW-PLAN.md): the whole factory with everyone's avatar (roles never shown),
+ * Glitches on the big screen (docs/CREW-PLAN.md): the whole factory with everyone's avatar (roles never shown),
  * sparking machines, the power bar, the round's clock, the teacher's "Call a meeting" button (James: teacher only), the
  * meeting (40 s talk, secret vote with counts only, a kind reveal), the round's end with who the Glitches were, and
  * the podium. The server decides everything: this asks it (`onTick`) twice a second during work, and just after each
@@ -384,7 +384,7 @@ function CrewFinish({ screen, game, avatars, onAgain }: { screen: ScreenView; ga
   const rounds = game.round?.n ?? 0;
   return (
     <div className="cl-finish fc-finish" role="dialog" aria-label="Finish">
-      <h2 className="cl-finish__title">Saboteur Crew is over!</h2>
+      <h2 className="cl-finish__title">Glitches is over!</h2>
       <p className="cl-finish__sub">{rounds} {rounds === 1 ? 'shift' : 'shifts'} in the Robot Factory</p>
       {screen.showNames && top.length > 0 && (
         <div className="fc-podium">

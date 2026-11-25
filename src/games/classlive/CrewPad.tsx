@@ -1,6 +1,6 @@
 /**
- * Saboteur Crew, the pupil's device (docs/CREW-PLAN.md): a joystick (or arrow keys / WASD) moves their own avatar; the
- * spot is saved every 0.4 s through `link.crewMove`, which brings back every other spot (no names; drones marked; fellow
+ * Glitches, the pupil's device (docs/CREW-PLAN.md): a joystick (or arrow keys / WASD) moves their own avatar; the
+ * spot is saved every 0.4 s through `link.crewMove`, which brings back every other spot (first names and colours, no ids; drones marked; fellow
  * Glitches marked only for a Glitch; in the dark only those close by). Crew see their jobs and get a question at a job,
  * a sparking machine or the light switch. Glitches get pretend jobs (hold Work) and a Jam button, no maths (James).
  * In a meeting the device is the secret ballot. A Glitch's and a Crew member's screens look alike from across the room.
@@ -18,6 +18,7 @@ import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import { Joystick, useKeys } from './CornersPad';
 import { CrewBoard, CrewToken } from './CrewBoard';
 import { CrewHelp } from './CrewCard';
+import { PLAYER_COLOURS } from './StarSky';
 import type { ClassLiveLink } from './link';
 import './controller.css';
 
@@ -238,6 +239,7 @@ export function CrewPad({ link, room, view, me, setMe, setView, clock, avatar }:
       <div className="cl-c-center fc-pad-lobby">
         <h1 className="cl-c-title">You're in! Look at the big screen.</h1>
         <div className="fc-pad-me"><AvatarImage avatar={avatar ?? null} size={120} /></div>
+        {me?.name && <p className="sc-nick">Your factory name: <b>{me.name}</b></p>}
         <p className="cl-c-say">Most of you are Crew, keeping the robot factory running with maths. A few are secret Glitches…</p>
         <button type="button" className="cl-btn fc-guide-btn" onClick={() => setHelp(true)}>🤖 How it works</button>
         {help && <CrewHelp onClose={() => setHelp(false)} />}
@@ -273,6 +275,7 @@ export function CrewPad({ link, room, view, me, setMe, setView, clock, avatar }:
         <p className="cl-c-say">🤫 Keep it secret!</p>
         <h1 className="cl-c-title">{mg.glitch ? "You're a Glitch!" : "You're Crew!"}</h1>
         <div className="fc-pad-me"><AvatarImage avatar={avatar ?? null} size={120} /></div>
+        {me?.name && <p className="sc-nick">You are <b>{me.name}</b></p>}
         <p className="cl-c-say">{mg.glitch ? 'Sneak up to machines and jam them. Pretend to do your jobs so nobody guesses!' : 'Do your jobs, fix sparking machines, and work out who the Glitches are.'}</p>
         {mg.glitch && mg.mates.length > 0 && <p className="cl-c-say">Your fellow {mg.mates.length === 1 ? 'Glitch' : 'Glitches'}: <b>{mg.mates.join(', ')}</b></p>}
         {peek && <button type="button" className="cl-btn" onClick={() => setPeek(false)}>Hide</button>}
@@ -318,6 +321,7 @@ export function CrewPad({ link, room, view, me, setMe, setView, clock, avatar }:
       </header>
       <div className="fc-pad__powers">
         <button type="button" className="fc-chip sc-peek" onClick={() => setPeek(true)}>🤫 My role</button>
+        {me?.name && <span className="fc-chip sc-nick-chip">🤖 {me.name}</span>}
         {mg.drone && <span className="fc-chip">{role}</span>}
         {mg.held && <span className="fc-chip fc-chip--held">{POWER_WORDS[mg.held].emoji} {POWER_WORDS[mg.held].name}: answer to switch it on</span>}
         {mg.toolkit && <span className="fc-chip">🧰 Super toolkit ready</span>}
@@ -327,10 +331,13 @@ export function CrewPad({ link, room, view, me, setMe, setView, clock, avatar }:
       </div>
       <div className="fc-pad__board">
         <CrewBoard round={r} highlight={mg.jobs} dark={dark ? { x: here.x, y: here.y, r: LIGHT_R } : null}>
-          {(seen.current?.spots ?? []).map(([x, y, kind], i) => (
-            <span key={i} className={`fc-dot sc-dot sc-dot--${kind}`} style={{ left: `${x * 100}%`, top: `${y * 100}%` }}>{kind === 1 ? '🛸' : ''}</span>
+          {(seen.current?.spots ?? []).map(([x, y, kind, name, colour], i) => (
+            <span key={i} className={`fc-dot sc-dot sc-dot--${kind}`} style={{ left: `${x * 100}%`, top: `${y * 100}%`, ...(kind === 0 ? { background: PLAYER_COLOURS[(colour ?? 0) % 12] } : {}) }}>
+              {kind === 1 ? '🛸' : ''}
+              {name && <small className="sc-dot__name">{name}</small>}
+            </span>
           ))}
-          <CrewToken x={here.x} y={here.y} size={AVATAR_R * 2.4} drone={mg.drone} className="fc-token--me" label="You">
+          <CrewToken x={here.x} y={here.y} size={AVATAR_R * 2.4} drone={mg.drone} className="fc-token--me" label={me?.name ? `You: ${me.name}` : 'You'}>
             <AvatarImage avatar={avatar ?? null} size={64} />
           </CrewToken>
         </CrewBoard>
@@ -345,7 +352,7 @@ export function CrewPad({ link, room, view, me, setMe, setView, clock, avatar }:
             question={{ id: question.slot, parts: question.parts, spoken: question.spoken, prompt: question.prompt, choices: question.choices, choiceLabels: question.choiceLabels, input: question.input, maxLength: question.maxLength }}
             title={purpose.kind === 'fix' ? `Fix the ${MACHINES[purpose.machine].name}` : purpose.kind === 'job' ? `Job: ${MACHINES[purpose.machine].name}` : purpose.kind === 'lights' ? 'Light switch' : 'Drone help'}
             note={purpose.kind === 'job' ? 'Right: power for the factory' : purpose.kind === 'fix' ? 'Right: fills the fix bar' : undefined}
-            spot="Saboteur Crew" inline scribble={false} onSubmit={onSubmit} onDone={onDone}
+            spot="Glitches" inline scribble={false} onSubmit={onSubmit} onDone={onDone}
           />
         </div>
       )}
