@@ -29,6 +29,11 @@ import {
 } from './corners';
 import { advanceLava, freshLavaMine, lavaDeadline, lavaDone, lavaNeedsPositions, lavaRunSeconds, LAVA_MAPS, newLava, type LavaEvent, type LavaGame } from './lava';
 import { lavaPlayer, lavaPublic, lavaStep, type LavaPlayer, type LavaPublic } from './lavaServer';
+import {
+  advance as thronesAdvance, freshMine as thronesFresh, HALLS, needsPositions as thronesNeedsPositions, newThrones, nextDeadline as thronesDeadline,
+  thronesDone, type ThronesEvent, type ThronesGame,
+} from './thrones';
+import { thronesPlayer, thronesPublic, thronesStep, type ThronesPlayer, type ThronesPublic } from './thronesServer';
 import type { ClashEvent, ClashGame } from './clash';
 import { newClash, CLASH_MAPS, paintSeconds, teamCount } from './clash';
 import { clashDeadline, clashJoin, clashPlayer, clashPublic, clashStep, clashTick, type ClashPlayer, type ClashPublic } from './clashServer';
@@ -37,10 +42,10 @@ import { BAYS, isShark, newShark, sharkAdvance, sharkJump, sharkQuestionFor, typ
 import { advance as ghostAdvance, freshMine as ghostFresh, ghostDone, ghostPlayer, MAPS as GHOST_MAPS, needsPositions as ghostNeeds, newGhost, nextDeadline as ghostDeadline, publicGhost, type GhostEvent, type GhostGame, type GhostPlayer, type PublicGhost } from './ghost';
 import { ghostStep } from './ghostServer';
 
-export const ACTIVITIES = ['stars', 'serpent', 'mural', 'corners', 'lava', 'shark', 'ghost', 'clash'] as const;
+export const ACTIVITIES = ['stars', 'serpent', 'mural', 'corners', 'shark', 'ghost', 'clash', 'thrones', 'lava'] as const;
 export type Activity = (typeof ACTIVITIES)[number];
 export const LENGTHS = [0, 2, 3, 5, 10, 15] as const;
-export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners', lava: 'Floor is Lava', shark: 'Shark Bay', ghost: 'Ghost Tag', clash: 'Colour Clash' };
+export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners', shark: 'Shark Bay', ghost: 'Ghost Tag', clash: 'Colour Clash', thrones: 'Musical Thrones', lava: 'Floor is Lava' };
 
 export interface LivePlayer {
   id: string;
@@ -50,8 +55,8 @@ export interface LivePlayer {
   colour: number;
 }
 
-export type Game = StarsGame | SerpentGame | MuralGame | CornersGame | GhostGame | ClashGame | LavaGame;
-export type GameEvent = StarsEvent | SerpentEvent | MuralEvent | CornersEvent | GhostEvent | ClashEvent | LavaEvent;
+export type Game = StarsGame | SerpentGame | MuralGame | CornersGame | GhostGame | ClashGame | ThronesGame | LavaGame;
+export type GameEvent = StarsEvent | SerpentEvent | MuralEvent | CornersEvent | GhostEvent | ClashEvent | ThronesEvent | LavaEvent;
 
 export interface Session {
   seed: number;
@@ -114,6 +119,7 @@ export type PublicGame =
   | PublicGhost
   /** Colour Clash (shared/classlive/clashServer.ts). */
   | ClashPublic
+  | ThronesPublic
   | LavaPublic;
 
 export type PublicRound = Omit<Round, 'rolled' | 'caught' | 'saved' | 'items'> & {
@@ -160,6 +166,7 @@ export interface PlayerView {
       }
     | GhostPlayer
     | ClashPlayer
+    | ThronesPlayer
     | LavaPlayer;
 }
 
@@ -259,6 +266,7 @@ export function publicGame(g: Game, players: number, t = 0, order: string[] = []
   if (g.kind === 'ghost') return publicGhost(g, order);
   if (g.kind === 'clash') return clashPublic(g);
   if (g.kind === 'lava') return lavaPublic(g, players);
+  if (g.kind === 'thrones') return thronesPublic(g, players);
   if (g.kind === 'corners') {
     const jailed = Object.values(g.mine).filter((m) => m.jailedIn !== null).length;
     return { kind: 'corners', map: g.map, round: g.round ? publicRound(g.round, t) : null, jailed, free: players - jailed, ...(isShark(g) ? { variant: 'shark' as const, bay: g.bay } : {}) };
@@ -301,6 +309,7 @@ function screenView(row: Pick<RoomRow, 'showNames' | 'seq' | 'events'>, s: Sessi
 export function playerView(s: Session, id: string): PlayerView {
   const p = s.players[id];
   if (s.game.kind === 'lava') return { player: id, name: firstName(p.name), colour: p.colour, game: lavaPlayer(s, s.game, id, () => freshLavaMine(s.order.indexOf(id))) };
+  if (s.game.kind === 'thrones') return { player: id, name: firstName(p.name), colour: p.colour, game: thronesPlayer(s.game, s.order, id, s.state === 'over') };
   if (s.game.kind === 'clash') return { player: id, name: firstName(p.name), colour: p.colour, game: clashPlayer(s, s.game, id) };
   if (s.game.kind === 'ghost') return { player: id, name: firstName(p.name), colour: p.colour, game: ghostPlayer(s.game, id, s.order, s.state === 'over') };
   if (s.game.kind === 'corners') {
@@ -364,7 +373,7 @@ export const timeOf = (row: Pick<RoomRow, 'startedAt'>, now: number) => (row.sta
 /** Is a timed session past its end? */
 const timeUp = (s: Session, row: Pick<RoomRow, 'startedAt'>, now: number) => s.state === 'live' && s.lengthMin > 0 && timeOf(row, now) >= s.lengthMin * 60_000;
 
-type Step<T> = (s: Session, t: number, row: RoomRow) => { reply: T; events: Event[]; startedAt?: number | null; players?: string[]; claim?: Change['claim'] } | { refuse: StepReply };
+export type Step<T> = (s: Session, t: number, row: RoomRow) => { reply: T; events: Event[]; startedAt?: number | null; players?: string[]; claim?: Change['claim'] } | { refuse: StepReply };
 
 /** Pays out a finished session. A failure is only logged: the teacher's next view tries again (it pays once). */
 async function payOut(sv: ClassLiveServices, room: number, s: Session) {
@@ -387,7 +396,7 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
     const events: Event[] = [];
     const g0 = s.game;
     // Four Corners: the server moves pupils (back from jail, a jump); their devices snap to the new spot.
-    const placedBefore = g0.kind === 'corners' || g0.kind === 'ghost' || g0.kind === 'clash' || g0.kind === 'lava' ? new Map(s.order.map((id) => [id, g0.mine[id]?.placed ?? 0])) : null;
+    const placedBefore = g0.kind === 'corners' || g0.kind === 'ghost' || g0.kind === 'clash' || g0.kind === 'thrones' || g0.kind === 'lava' ? new Map(s.order.map((id) => [id, g0.mine[id]?.placed ?? 0])) : null;
     if (g0.kind === 'ghost') {
       // Ghost Tag runs on the clock too: rounds, the hunt, tags from the saved spots (docs/GHOST-PLAN.md).
       if (s.state === 'live') {
@@ -424,6 +433,22 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
         const last = timeUp(s, row, now);
         events.push(...(isShark(g0) ? sharkAdvance : cornersAdvance)(g0, t, s.order, spots, () => sv.random(), last));
         if (last && cornersDone(g0, t)) {
+          s.state = 'over';
+          events.push({ type: 'over', t, why: 'time' });
+        }
+      }
+    } else if (g0.kind === 'thrones') {
+      // Musical Thrones runs on the clock too: the music stops, the scramble ends, the next round starts.
+      if (s.state === 'live') {
+        let spots: Positions = {};
+        if (thronesNeedsPositions(g0, t)) {
+          const got = await sv.positions(room);
+          if (got === 'busy') return { refuse: busy() };
+          spots = got;
+        }
+        const last = timeUp(s, row, now);
+        events.push(...thronesAdvance(g0, t, s.order, spots, () => sv.random(), last));
+        if (last && thronesDone(g0, t)) {
           s.state = 'over';
           events.push({ type: 'over', t, why: 'time' });
         }
@@ -474,7 +499,7 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
     const next: RoomRow = { ...row, startedAt, seq, events: [...row.events, ...numbered].slice(-KEEP_EVENTS), session: s };
     for (const e of events) if ('pupil' in e && typeof e.pupil === 'string') changed.add(e.pupil);
     const g1 = s.game;
-    const places = (g1.kind === 'corners' || g1.kind === 'ghost' || g1.kind === 'clash' || g1.kind === 'lava') && placedBefore
+    const places = (g1.kind === 'corners' || g1.kind === 'ghost' || g1.kind === 'clash' || g1.kind === 'thrones' || g1.kind === 'lava') && placedBefore
       ? s.order.filter((id) => (g1.mine[id]?.placed ?? 0) !== (placedBefore.get(id) ?? 0)).map((id) => ({ player: id, x: g1.mine[id].spot.x, y: g1.mine[id].spot.y }))
       : [];
     for (const p of places) changed.add(p.player);
@@ -482,6 +507,7 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
     if ((g1.kind === 'corners' || g1.kind === 'lava') && events.some((e) => e.type === 'roll' || e.type === 'crack' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
     if ((g1.kind === 'corners' || g1.kind === 'clash') && events.some((e) => e.type === 'roll' || e.type === 'clash_count' || e.type === 'clash_round' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
     if (g1.kind === 'ghost' && events.some((e) => e.type === 'g_round' || e.type === 'g_end' || e.type === 'over' || (e.type === 'g_grab' && e.froze > 0))) for (const id of s.order) changed.add(id);
+    if (g1.kind === 'thrones' && events.some((e) => e.type === 'stop' || e.type === 'seated' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
     const players = [...changed].filter((id) => s.players[id]).map((id) => playerView(s, id));
     const saved = await sv.save(room, row.version, { session: s, view: roomView(s, startedAt, now), screen: screenView(next, s, startedAt), startedAt, players, ...(claim ? { claim } : {}) });
     if (saved === 'busy') return { refuse: busy() };
@@ -544,6 +570,8 @@ export function newSession(body: Record<string, unknown>, seed: number, random: 
     // Shark Bay (docs/SHARK-PLAN.md): Four Corners' engine with spinning quarters, boats and a shark.
     const bay = BAYS.find((m) => m === body.map) ?? BAYS[Math.floor(random() * BAYS.length) % BAYS.length];
     game = newShark(bay, runSeconds(body.run));
+  } else if (activity === 'thrones') {
+    game = newThrones(HALLS.find((h) => h === body.hall) ?? HALLS[Math.floor(random() * HALLS.length) % HALLS.length]);
   } else game = newMural(random);
   return { seed, activity, state: 'lobby', lengthMin, players: {}, order: [], game, ...(body.padMusic === true ? { padMusic: true } : {}) };
 }
@@ -671,6 +699,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         s.players[who] = { id: who, name: me.name, joinedAt: t, colour: s.order.length % 12 };
         if (s.game.kind === 'corners') s.game.mine[who] = freshMine(s.order.length);
         if (s.game.kind === 'lava') s.game.mine[who] = freshLavaMine(s.order.length);
+        if (s.game.kind === 'thrones') s.game.mine[who] = thronesFresh(s.order.length);
         if (s.game.kind === 'clash') clashJoin(s.game, who);
         if (s.game.kind === 'ghost') s.game.mine[who] = ghostFresh(s.order.length);
         s.order.push(who);
@@ -689,7 +718,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     if (action === 'look') {
       // Four Corners runs on the clock: if the big screen hasn't moved a round on (closed, asleep), a pupil's look does.
       const cg = cur.session.game;
-      const due = cur.session.state !== 'live' ? null : cg.kind === 'corners' ? nextDeadline(cg, cur.startedAt) : cg.kind === 'ghost' ? ghostDeadline(cg, cur.startedAt) : cg.kind === 'clash' ? clashDeadline(cg, cur.startedAt) : cg.kind === 'lava' ? lavaDeadline(cg, cur.startedAt) : null;
+      const due = cur.session.state !== 'live' ? null : cg.kind === 'corners' ? nextDeadline(cg, cur.startedAt) : cg.kind === 'ghost' ? ghostDeadline(cg, cur.startedAt) : cg.kind === 'clash' ? clashDeadline(cg, cur.startedAt) : cg.kind === 'thrones' ? thronesDeadline(cg, cur.startedAt) : cg.kind === 'lava' ? lavaDeadline(cg, cur.startedAt) : null;
       if (due !== null && timeOf(cur, sv.now()) >= due + 1500) {
         const done = await mutate(sv, room, () => ({ reply: null, events: [] }));
         if (!('refuse' in done)) return ok({ room, view: roomView(done.session, done.row.startedAt, sv.now()), me: playerView(done.session, who), now: sv.now() });
@@ -698,6 +727,10 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     }
     if (cur.session.game.kind === 'lava' && (action === 'ask' || action === 'answer' || action === 'play')) {
       const out = await lavaStep(sv, cur, who, body, { mutate, nextQuestion, roomView, playerView, ok, no, busy });
+      return cur.session.state === 'live' ? out : withRoom(out);
+    }
+    if (cur.session.game.kind === 'thrones' && (action === 'ask' || action === 'answer' || action === 'play')) {
+      const out = await thronesStep({ sv, mutate, nextQuestion, roomView, playerView, timeOf, ok, no, busy, maxAnswerMs: MAX_ANSWER_MS }, cur, who, body);
       return cur.session.state === 'live' ? out : withRoom(out);
     }
     if (cur.session.game.kind === 'clash' && (action === 'ask' || action === 'answer' || action === 'play')) {
@@ -744,7 +777,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         }
         return { reply: out.reply, events: out.events, players: [who] };
       }
-      if (s.game.kind === 'corners' || s.game.kind === 'ghost' || s.game.kind === 'clash' || s.game.kind === 'lava') return { refuse: no(409, 'Use the joystick!', 'not_now') };
+      if (s.game.kind === 'corners' || s.game.kind === 'ghost' || s.game.kind === 'clash' || s.game.kind === 'thrones' || s.game.kind === 'lava') return { refuse: no(409, 'Use the joystick!', 'not_now') };
       const out = tryFact(s.game, who, body.fact, t);
       if (!out.ok) return { refuse: no(409, 'One at a time!', out.reason) };
       return { reply: out.reply, events: out.events, players: [who] };
@@ -785,7 +818,7 @@ export async function nextQuestion(sv: ClassLiveServices, row: RoomRow, who: str
   const ctx = await sv.mathsContext(who);
   if (!ctx) return null;
   const g = row.session.game;
-  const m = g.kind === 'mural' || g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'clash' || g.kind === 'lava' ? g.mine[who] : undefined;
+  const m = g.kind === 'mural' || g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'clash' || g.kind === 'thrones' || g.kind === 'lava' ? g.mine[who] : undefined;
   const q = makeQuestion(ctx, `${row.session.seed}:${who}:${m?.answered ?? 0}`);
   if (!q) return null;
   const kept = await sv.keepQuestion(row.id, who, q);

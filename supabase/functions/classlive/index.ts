@@ -4392,7 +4392,7 @@ const goodPick = (slot, salt, wrong = 3) => isInt(slot, 0, wrong) && isInt(salt,
 * gives. Choices that repeat the right one (or each other, in value) are dropped; null when fewer than needed are left, so the
 * generator rolls again.
 */
-function pick$5(base, right, named, opts) {
+function pick$6(base, right, named, opts) {
 	const need = opts.wrong ?? 3;
 	if (!goodPick(opts.slot, opts.salt, need)) return null;
 	const kept = [];
@@ -4502,7 +4502,7 @@ function pairFamily(key, label, dens) {
 			"=",
 			"1"
 		];
-		return pick$5({
+		return pick$6({
 			parts,
 			spoken: talk(parts),
 			fact: `${frac(n, d)} + ${right} = 1`
@@ -4573,7 +4573,7 @@ const fractionFamilies = [
 			"=",
 			"?"
 		];
-		return pick$5({
+		return pick$6({
 			parts,
 			spoken: talk(parts),
 			fact: `1 − ${frac(n, d)} = ${right}`
@@ -4852,7 +4852,7 @@ const bag = oneKey("prob:bag", "Chance of a colour from a bag (3 red, 5 blue: P(
 	if (gcd$2(want, total) !== 1) return null;
 	const colour = which === 0 ? first : second;
 	const right = frac(want, total);
-	const made = pick$5({
+	const made = pick$6({
 		parts: [
 			`P(${colour})`,
 			"=",
@@ -4907,7 +4907,7 @@ const dice = oneKey("prob:dice", "Chance on a dice (P(not 6), P(more than 3))", 
 		"put it over five": [k, 5],
 		"gave one face": [1, 6]
 	};
-	const made = pick$5({
+	const made = pick$6({
 		parts: [
 			`P(${word} ${n})`,
 			"=",
@@ -5075,7 +5075,7 @@ const withPick$3 = (random, ...params) => [...params, ...rollPick(random)];
 const pickOf = (random, items) => items[int(random, 0, items.length - 1)];
 /** A pick question with its prompt and fact filled in. */
 function choose(parts, prompt, spoken, right, named, slot, salt, fact) {
-	const made = pick$5({
+	const made = pick$6({
 		parts,
 		spoken,
 		fact
@@ -5711,7 +5711,7 @@ function signed$1(base, answer, named, slot, salt) {
 	const labels = {};
 	for (const [name, n] of Object.entries(named)) if (Number.isFinite(n) && n !== answer) labels[name] = signedText(n);
 	const filled = base.parts.map((p) => p.replace("?", signedText(answer))).join(" ");
-	const made = pick$5({
+	const made = pick$6({
 		parts: base.parts,
 		spoken,
 		fact: filled
@@ -5949,7 +5949,7 @@ const compareDec = oneKey("int:compare-dec", "The smallest of four decimals belo
 		"picked the one nearest zero": signedText(-(w - .5)),
 		"ignored the minus sign": signedText(w + .5)
 	};
-	const made = pick$5({
+	const made = pick$6({
 		parts: [
 			"Smallest",
 			"=",
@@ -6094,7 +6094,7 @@ function signed(base, answer, named, slot, salt) {
 	const labels = {};
 	for (const [name, n] of Object.entries(keep)) if (n !== answer) labels[name] = signedText(n);
 	const fact = `${base.prompt ? `${base.prompt}, ` : ""}${base.parts.map((p) => p.replace("?", signedText(answer))).join(" ")}`;
-	const made = pick$5({
+	const made = pick$6({
 		parts: base.parts,
 		spoken: base.spoken,
 		fact
@@ -6436,7 +6436,7 @@ const patRule = oneKey("alg:pat-rule", "Which rule makes a pattern (5, 9, 13, 17
 		"used the first term as the multiplier": rule(first, 0),
 		"swapped the numbers": b > 0 ? rule(b, d) : rule(d, -b)
 	};
-	const made = pick$5({
+	const made = pick$6({
 		parts: [
 			"t",
 			"=",
@@ -6489,7 +6489,7 @@ function sentences(left, lv, right, rv, lenient, swap, slot, salt) {
 	];
 	const named = Object.fromEntries(wrongSigns.map((s, i) => [names[i], s]));
 	const spoken = `${sayAlg(first)}, which sign goes in the gap, then ${sayAlg(second)}?`;
-	const made = pick$5({
+	const made = pick$6({
 		parts: [
 			first,
 			"?",
@@ -6764,7 +6764,7 @@ function fracPick(base, right, named, slot, salt) {
 		}
 		clean[name] = label;
 	}
-	const made = pick$5(base, right, clean, {
+	const made = pick$6(base, right, clean, {
 		slot,
 		salt,
 		allowEqual: true
@@ -6888,7 +6888,7 @@ const estTimes = oneKey("nf:est-times", "Estimating a times by rounding (19.8 ×
 		"rounded the wrong way": String(10 * (d < 0 ? k - 1 : k + 1) * b),
 		"added instead of multiplying": String(10 * k + b)
 	};
-	const made = pick$5({
+	const made = pick$6({
 		parts,
 		spoken: `${say(10 * k + d / 10)} times ${b} is about what?`,
 		fact: `${a} × ${b} is about ${right}`
@@ -8547,7 +8547,7 @@ const tenthFamilies = [
 			"=",
 			"?"
 		];
-		return pick$5({
+		return pick$6({
 			parts,
 			spoken: talk(parts),
 			fact: `${tenths(d)} = ${right}`
@@ -8569,7 +8569,7 @@ const tenthFamilies = [
 			"=",
 			"?"
 		];
-		return pick$5({
+		return pick$6({
 			parts,
 			spoken: talk(parts),
 			fact: `${frac(d, 10)} = ${right}`
@@ -8899,7 +8899,7 @@ const equivFamilies$1 = [
 			"?"
 		];
 		const named = Object.fromEntries(Object.entries(decimalMistakes(n, d)).map(([name, v]) => [name, show$2(v)]));
-		return pick$5({
+		return pick$6({
 			parts,
 			spoken: talk(parts),
 			fact: `${frac(n, d)} = ${right}`
@@ -8937,7 +8937,7 @@ const equivFamilies$1 = [
 			"=",
 			"?"
 		];
-		return pick$5({
+		return pick$6({
 			parts,
 			spoken: talk(parts),
 			fact: `${decimal} = ${right}`
@@ -8971,7 +8971,7 @@ const equivFamilies$1 = [
 		if (v === 1 && !(isInt(y, 1, 9) && y === Math.floor(x / 10))) return null;
 		const right = hundredths$1(bigger);
 		const wrong = hundredths$1(smaller);
-		return pick$5({
+		return pick$6({
 			parts: ["Which is bigger?"],
 			spoken: "Which is bigger?",
 			fact: `${right} is bigger than ${wrong}`
@@ -9284,7 +9284,7 @@ const families$1 = [
 			"=",
 			"?"
 		];
-		return pick$5({
+		return pick$6({
 			parts,
 			spoken: talk(parts),
 			fact: `${p}% = ${f.right}`
@@ -9341,7 +9341,7 @@ const families$1 = [
 			"=",
 			"?"
 		];
-		return pick$5({
+		return pick$6({
 			parts,
 			spoken: talk(parts),
 			fact: `${show$2(h / 100)} = ${right}`
@@ -9567,7 +9567,7 @@ const equivFamilies = [
 			"=",
 			"?"
 		];
-		return pick$5({
+		return pick$6({
 			parts,
 			spoken: talk(parts),
 			fact: `${frac(n, d)} = ${right}`
@@ -9600,7 +9600,7 @@ const equivFamilies = [
 			"?"
 		];
 		const p = smallestFactor(k);
-		return pick$5({
+		return pick$6({
 			parts,
 			spoken: talk(parts),
 			fact: `${shown} = ${frac(n, d)} in its simplest form`
@@ -9911,7 +9911,7 @@ const toFraction = oneKey("pct:to-fraction", "A percentage as a fraction (25% = 
 		"=",
 		"?"
 	];
-	return pick$5({
+	return pick$6({
 		parts,
 		spoken: talk(parts),
 		fact: `${pct(p)} = ${right}`
@@ -10149,7 +10149,7 @@ const parseBond = (total) => (parts) => {
 };
 const TENS = range$1(20, 90, 10);
 const HUNDREDS = range$1(200, 900, 100);
-const POWERS$3 = [
+const POWERS$4 = [
 	10,
 	100,
 	1e3
@@ -10164,7 +10164,7 @@ function timesKeyOf(x, y) {
 	if (pair(digit, isHundreds)) return "times:hundreds";
 	if (isTens(x) && isTens(y)) return "times:tens-tens";
 	if (pair((n) => n >= 13 && n <= 99 && n % 10 !== 0, (n) => n === 10 || n === 100)) return "times:shift";
-	if (POWERS$3.includes(x) && POWERS$3.includes(y) && !(x === 10 && y === 10)) return "times:powers";
+	if (POWERS$4.includes(x) && POWERS$4.includes(y) && !(x === 10 && y === 10)) return "times:powers";
 	return null;
 }
 function timesFamily(key, label, pools) {
@@ -10400,7 +10400,7 @@ const factorFamilies = [
 	}, (_k, [n, a, slot, salt]) => {
 		if (!PAIR_NUMBERS.includes(n) || !isInt(a, 2, n - 1) || n % a !== 0 || a * a > n || !goodPick(slot, salt)) return null;
 		const right = pairLabel(a, n / a);
-		return pick$5({
+		return pick$6({
 			parts: ["Which is a factor pair of", `${n}?`],
 			spoken: `Which is a factor pair of ${n}?`,
 			fact: `${a} × ${n / a} = ${n}, so ${right} are a factor pair of ${n}`
@@ -10663,7 +10663,7 @@ const PLACE_FAMILIES = Object.fromEntries([
 	timesFamily("times:hundreds", "Times a number of hundreds (6 × 300)", [range$1(2, 9), HUNDREDS]),
 	timesFamily("times:tens-tens", "Tens times tens (20 × 30)", [TENS, TENS]),
 	timesFamily("times:shift", "Times 10 and 100 (34 × 10)", [range$1(13, 99).filter((n) => n % 10 !== 0), [10, 100]]),
-	timesFamily("times:powers", "Times 10, 100 and 1000 together (10 × 100)", [POWERS$3, POWERS$3]),
+	timesFamily("times:powers", "Times 10, 100 and 1000 together (10 × 100)", [POWERS$4, POWERS$4]),
 	divTens,
 	...factorFamilies,
 	...squareFamilies
@@ -12508,7 +12508,7 @@ function ratioOf(h, whole) {
 	}
 	return null;
 }
-const times = (r) => {
+const times$1 = (r) => {
 	const parts = [];
 	if (r.ten > 0) parts.push(`× ${10 ** r.ten}`);
 	if (r.ten < 0) parts.push(`÷ ${10 ** -r.ten}`);
@@ -12531,7 +12531,7 @@ function multiplyLink(u, v, w, k) {
 		const r1 = ratioOf(u, px);
 		const r2 = ratioOf(v, py);
 		if (r1 && r2 && !(r1.two === 0 && r1.ten === 0 && r2.two === 0 && r2.ten === 0)) {
-			const steps = [r1, r2].map((r, i) => r.two || r.ten ? `${i ? py : px} → ${show(i ? v : u)} is ${times(r)}` : "").filter(Boolean);
+			const steps = [r1, r2].map((r, i) => r.two || r.ten ? `${i ? py : px} → ${show(i ? v : u)} is ${times$1(r)}` : "").filter(Boolean);
 			const total = {
 				two: r1.two + r2.two,
 				ten: r1.ten + r2.ten
@@ -12804,7 +12804,7 @@ function spotlight(g, id, t) {
 	}];
 }
 /** One marked answer every this many ms per pupil (no speed bonus; same as Class Showdown). */
-const ANSWER_GAP_MS$4 = 4e3;
+const ANSWER_GAP_MS$5 = 4e3;
 /** How long the guessing lasts once the flipping is over (it ends sooner when everyone has picked). */
 const GUESS_MS = 45e3;
 /**
@@ -12942,7 +12942,7 @@ const guessingDone = (g, t) => guessing(g) && t >= (g.guessFrom ?? 0) + 45e3;
 /** Has every pupil in the room picked? */
 const allPicked = (g, order) => order.length > 0 && order.every((id) => !!g.mine[id]?.pick);
 /** A marked answer (the server has marked it): a right one flips a tile at random. */
-function answered$3(g, pupil, right, t, random, paceMs = UNTIMED_PACE_MS) {
+function answered$4(g, pupil, right, t, random, paceMs = UNTIMED_PACE_MS) {
 	const m = mineOf(g, pupil);
 	if (t - m.lastAt < 4e3) return {
 		ok: false,
@@ -13479,7 +13479,7 @@ const CORNERS = [
 	2,
 	3
 ];
-const POWERS$2 = [
+const POWERS$3 = [
 	"shield",
 	"speed",
 	"key",
@@ -13488,7 +13488,7 @@ const POWERS$2 = [
 	"double",
 	"ghost"
 ];
-const MECHANICS$2 = [
+const MECHANICS$3 = [
 	"items",
 	"storm",
 	"teleport",
@@ -13500,7 +13500,7 @@ const MECHANICS$2 = [
 	"twist"
 ];
 /** The round each mechanic first appears (James: "unlocked bit by bit so it isn't chaos"). */
-const UNLOCK$2 = {
+const UNLOCK$3 = {
 	items: 2,
 	storm: 3,
 	teleport: 4,
@@ -13514,10 +13514,10 @@ const UNLOCK$2 = {
 /** A corner zone's side (corners are squares in the board's corners). */
 const ZONE = .26;
 const ROLL_MS = 4500;
-const SHOW_MS$2 = 4500;
+const SHOW_MS$3 = 4500;
 /** Before the first round. */
-const READY_MS$3 = 4e3;
-const ANSWER_GAP_MS$3 = 1500;
+const READY_MS$4 = 4e3;
+const ANSWER_GAP_MS$4 = 1500;
 const runMs = (n) => Math.max(9e3, 14e3 - (n - 1) * 400);
 const runSeconds = (v) => typeof v === "number" && Number.isFinite(v) ? Math.max(6, Math.min(12, Math.round(v))) : 10;
 const START$1 = {
@@ -13539,7 +13539,7 @@ const cornerCentre = (c) => ({
 	x: c === 0 || c === 3 ? ZONE / 2 : 1 - ZONE / 2,
 	y: c < 2 ? ZONE / 2 : 1 - ZONE / 2
 });
-const dist$4 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const dist$5 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 /** A start spot in the middle, spread by player number so avatars don't sit on top of each other. */
 function startSpot$1(i) {
 	const a = i * 2.399963;
@@ -13550,17 +13550,17 @@ function startSpot$1(i) {
 	};
 }
 const gateShut = (round, t) => round.gate !== null && t >= round.runEnd - 3e3;
-const pick$4 = (list, random) => list[Math.floor(random() * list.length) % list.length];
+const pick$5 = (list, random) => list[Math.floor(random() * list.length) % list.length];
 /** Which mechanics a round has: each new one alone on its unlock round (with the earlier ones sometimes), then a mix. */
-function mechanicsFor$2(n, random) {
+function mechanicsFor$3(n, random) {
 	const out = new Set();
-	const open = MECHANICS$2.filter((m) => UNLOCK$2[m] <= n);
+	const open = MECHANICS$3.filter((m) => UNLOCK$3[m] <= n);
 	if (open.includes("items")) out.add("items");
-	const fresh = MECHANICS$2.find((m) => UNLOCK$2[m] === n);
+	const fresh = MECHANICS$3.find((m) => UNLOCK$3[m] === n);
 	if (fresh) {
 		out.add(fresh);
 		const older = open.filter((m) => m !== "items" && m !== fresh);
-		if (older.length && random() < .4) out.add(pick$4(older, random));
+		if (older.length && random() < .4) out.add(pick$5(older, random));
 		return out;
 	}
 	const others = open.filter((m) => m !== "items");
@@ -13570,14 +13570,14 @@ function mechanicsFor$2(n, random) {
 	return out;
 }
 /** Somewhere in the open middle band (not in a corner, not on the hole). */
-function openSpot$2(random, hole) {
+function openSpot$3(random, hole) {
 	for (let i = 0; i < 20; i++) {
 		const p = {
 			x: .12 + random() * .76,
 			y: .12 + random() * .76
 		};
 		if (cornerOf(p) !== null) continue;
-		if (hole && dist$4(p, START$1) < .21) continue;
+		if (hole && dist$5(p, START$1) < .21) continue;
 		return p;
 	}
 	return {
@@ -13585,15 +13585,15 @@ function openSpot$2(random, hole) {
 		y: .2
 	};
 }
-function makeRound$2(g, n, startAt, random, players) {
-	const has = mechanicsFor$2(n, random);
+function makeRound$3(g, n, startAt, random, players) {
+	const has = mechanicsFor$3(n, random);
 	const hole = has.has("hole");
 	const storms = has.has("storm") ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({
-		...openSpot$2(random, hole),
+		...openSpot$3(random, hole),
 		r: .12 + random() * .06
 	})) : [];
 	const ice = has.has("ice") ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({
-		...openSpot$2(random, hole),
+		...openSpot$3(random, hole),
 		r: .1 + random() * .05
 	})) : [];
 	const teleports = [];
@@ -13632,19 +13632,19 @@ function makeRound$2(g, n, startAt, random, players) {
 		r: .08,
 		periodMs: 5200 + Math.floor(random() * 1500)
 	} : null;
-	const gate = has.has("gate") ? pick$4(CORNERS, random) : null;
+	const gate = has.has("gate") ? pick$5(CORNERS, random) : null;
 	const twist = has.has("twist") ? random() < .6 ? "two" : "lucky" : null;
 	const items = [];
 	if (has.has("items")) {
 		const count = Math.max(2, Math.min(8, Math.round(players / 6)));
 		for (let i = 0; i < count; i++) items.push({
 			id: g.nextItem++,
-			power: pick$4(POWERS$2, random),
+			power: pick$5(POWERS$3, random),
 			by: null,
-			...openSpot$2(random, hole)
+			...openSpot$3(random, hole)
 		});
 	}
-	const first = pick$4(CORNERS, random);
+	const first = pick$5(CORNERS, random);
 	const rolled = twist === "lucky" ? [] : twist === "two" ? [first, (first + 1 + Math.floor(random() * 3)) % 4] : [first];
 	const run = g.runS ? g.runS * 1e3 : runMs(n);
 	return {
@@ -13652,7 +13652,7 @@ function makeRound$2(g, n, startAt, random, players) {
 		startAt,
 		runEnd: startAt + run,
 		rollEnd: startAt + run + ROLL_MS,
-		showEnd: startAt + run + ROLL_MS + SHOW_MS$2,
+		showEnd: startAt + run + ROLL_MS + SHOW_MS$3,
 		storms,
 		ice,
 		teleports,
@@ -13679,7 +13679,7 @@ function newCorners(map, runS = 10) {
 		runS: runSeconds(runS)
 	};
 }
-function freshMine$2(i) {
+function freshMine$3(i) {
 	return {
 		safe: 0,
 		score: 0,
@@ -13707,20 +13707,20 @@ function freshMine$2(i) {
 * When a jailed pupil with all their right answers walks free (session ms), or null. They come back as the round after
 * the one they sat out starts: this round's end if they were caught before it, else the end of the next round.
 */
-function freeAt(g, m) {
+function freeAt$1(g, m) {
 	const r = g.round;
 	if (!m || m.jailedIn === null || m.jailRight < 3 || !r) return null;
 	if (m.jailedIn < r.n) return r.showEnd;
-	return r.showEnd + (g.runS ? g.runS * 1e3 : runMs(r.n + 1)) + ROLL_MS + SHOW_MS$2;
+	return r.showEnd + (g.runS ? g.runS * 1e3 : runMs(r.n + 1)) + ROLL_MS + SHOW_MS$3;
 }
-const boosted = (m, n) => !!m && m.speedTo !== null && n <= m.speedTo;
-const ghostly = (m, n) => !!m && m.ghostTo !== null && n <= m.ghostTo;
+const boosted$1 = (m, n) => !!m && m.speedTo !== null && n <= m.speedTo;
+const ghostly$1 = (m, n) => !!m && m.ghostTo !== null && n <= m.ghostTo;
 /** Time is up and the last round has been shown (or never started): the game can end. */
 const cornersDone = (g, t) => !g.round || g.round.caught !== null && t >= g.round.showEnd;
 /** The time of the next thing the server must do (end a run, start the next round), or null. */
-function nextDeadline$2(g, startedAt) {
+function nextDeadline$3(g, startedAt) {
 	if (startedAt === null) return null;
-	if (!g.round) return READY_MS$3;
+	if (!g.round) return READY_MS$4;
 	if (g.round.caught === null) return g.round.runEnd;
 	return g.round.showEnd;
 }
@@ -13729,19 +13729,19 @@ function nextDeadline$2(g, startedAt) {
 * who have served their round and got 3 right). `order` is the players in join order. Needs positions only when a run
 * is ending (`needsPositions`).
 */
-function needsPositions$1(g, t) {
+function needsPositions$2(g, t) {
 	return !!g.round && g.round.caught === null && t >= g.round.runEnd;
 }
-function advance$2(g, t, order, positions, random, last = false) {
+function advance$3(g, t, order, positions, random, last = false) {
 	const events = [];
 	for (let guard = 0; guard < 4; guard++) {
 		const r = g.round;
 		if (!r) {
 			if (t < 4e3 || last) break;
-			g.round = makeRound$2(g, 1, READY_MS$3, random, order.length);
+			g.round = makeRound$3(g, 1, READY_MS$4, random, order.length);
 			events.push({
 				type: "round",
-				t: READY_MS$3,
+				t: READY_MS$4,
 				n: 1
 			});
 			continue;
@@ -13768,7 +13768,7 @@ function advance$2(g, t, order, positions, random, last = false) {
 				});
 			}
 		}
-		g.round = makeRound$2(g, r.n + 1, startAt, random, order.length);
+		g.round = makeRound$3(g, r.n + 1, startAt, random, order.length);
 		events.push({
 			type: "round",
 			t: startAt,
@@ -13852,7 +13852,7 @@ function endRun(g, r, order, positions) {
 	};
 }
 /** Running over an item picks it up (one at a time; pupils in jail can't). */
-function grab$2(g, who, itemId, at, t) {
+function grab$3(g, who, itemId, at, t) {
 	const r = g.round;
 	const m = g.mine[who];
 	if (!r || !m || r.caught !== null || t < r.startAt || t >= r.runEnd || m.jailedIn !== null) return {
@@ -13868,7 +13868,7 @@ function grab$2(g, who, itemId, at, t) {
 		ok: false,
 		reason: "gone"
 	};
-	if (!at || dist$4(at, item) > .135) return {
+	if (!at || dist$5(at, item) > .135) return {
 		ok: false,
 		reason: "far"
 	};
@@ -13890,7 +13890,7 @@ function warp(g, who, at, t) {
 	const r = g.round;
 	const m = g.mine[who];
 	if (!r || !m || !at || m.jailedIn !== null || t < r.startAt || t > r.runEnd + 500) return false;
-	if (!r.teleports.some((tp) => dist$4(at, tp.a) < .16499999999999998 || dist$4(at, tp.b) < .16499999999999998)) return false;
+	if (!r.teleports.some((tp) => dist$5(at, tp.a) < .16499999999999998 || dist$5(at, tp.b) < .16499999999999998)) return false;
 	if (m.warpRound !== r.n) {
 		m.warpRound = r.n;
 		m.warpN = 0;
@@ -13901,7 +13901,7 @@ function warp(g, who, at, t) {
 	return true;
 }
 /** What a question is for right now: getting out of jail, switching on a held power-up (standing in a corner), or nothing. */
-function questionFor(g, who, at, t) {
+function questionFor$1(g, who, at, t) {
 	const m = g.mine[who];
 	if (!m) return null;
 	if (m.jailedIn !== null) return m.jailRight < 3 ? "jail" : null;
@@ -13910,7 +13910,7 @@ function questionFor(g, who, at, t) {
 	return "power";
 }
 /** A marked answer: in jail it counts towards getting out; otherwise a right one switches on the held power-up. */
-function answered$2(g, who, right, purpose, order, t, ms) {
+function answered$3(g, who, right, purpose, order, t, ms) {
 	const m = g.mine[who];
 	if (!m) return {
 		ok: false,
@@ -14018,7 +14018,7 @@ function crystalCorner(r) {
 	return safe[r.n % safe.length];
 }
 /** The podium: players with the top 3 scores (ties share a place). */
-function podium$1(g, order) {
+function podium$2(g, order) {
 	const scores = [...new Set(order.map((id) => g.mine[id]?.score ?? 0))].filter((s) => s > 0).sort((a, b) => b - a).slice(0, 3);
 	return order.map((id) => ({
 		player: id,
@@ -14088,15 +14088,15 @@ const LAVA_UNLOCK = {
 };
 const TILE$1 = 1 / 8;
 const CRACK_MS = 2200;
-const SHOW_MS$1 = 3800;
-const READY_MS$2 = 4e3;
-const ANSWER_GAP_MS$2 = 1500;
+const SHOW_MS$2 = 3800;
+const READY_MS$3 = 4e3;
+const ANSWER_GAP_MS$3 = 1500;
 const lavaRunSeconds = (v) => typeof v === "number" && Number.isFinite(v) ? Math.max(5, Math.min(10, Math.round(v))) : 7;
 const START = {
 	x: .5,
 	y: .5
 };
-const dist$3 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const dist$4 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const tileAt = (p) => {
 	const c = Math.min(7, Math.max(0, Math.floor(p.x * 8)));
 	return Math.min(7, Math.max(0, Math.floor(p.y * 8))) * 8 + c;
@@ -14116,7 +14116,7 @@ function lavaStartSpot(i) {
 		y: .5 + Math.sin(a) * r
 	};
 }
-const pick$3 = (list, random) => list[Math.floor(random() * list.length) % list.length];
+const pick$4 = (list, random) => list[Math.floor(random() * list.length) % list.length];
 const rc = (i) => ({
 	c: i % 8,
 	r: Math.floor(i / 8)
@@ -14125,7 +14125,7 @@ const rc = (i) => ({
 function patternFor(n, random) {
 	const fresh = PATTERNS.find((p) => PATTERN_FROM[p] === n);
 	if (fresh) return fresh;
-	return pick$3(PATTERNS.filter((p) => PATTERN_FROM[p] <= n), random);
+	return pick$4(PATTERNS.filter((p) => PATTERN_FROM[p] <= n), random);
 }
 /** How much of the solid floor glows: almost a third at first, up to 60%. */
 const glowShare = (n) => Math.min(.6, .3 + (n - 1) * .03);
@@ -14177,7 +14177,7 @@ function patternTiles(pattern, n, random) {
 				for (let s = 0; s < size; s++) {
 					out.add(i);
 					const { c, r } = rc(i);
-					const step = pick$3([
+					const step = pick$4([
 						[1, 0],
 						[-1, 0],
 						[0, 1],
@@ -14258,7 +14258,7 @@ function makeLavaRound(g, n, startAt, random, players) {
 		const count = Math.max(2, Math.min(7, Math.round(players / 6)));
 		for (let i = 0; i < count; i++) items.push({
 			id: g.nextItem++,
-			power: pick$3(LAVA_POWERS, random),
+			power: pick$4(LAVA_POWERS, random),
 			by: null,
 			...openSpot()
 		});
@@ -14269,7 +14269,7 @@ function makeLavaRound(g, n, startAt, random, players) {
 		startAt,
 		runEnd: startAt + run,
 		crackEnd: startAt + run + CRACK_MS,
-		showEnd: startAt + run + CRACK_MS + SHOW_MS$1,
+		showEnd: startAt + run + CRACK_MS + SHOW_MS$2,
 		pattern,
 		glow: lit,
 		late,
@@ -14338,7 +14338,7 @@ function climbAt(g, m) {
 const lavaDone = (g, t) => !g.round || g.round.fell !== null && t >= g.round.showEnd;
 function lavaDeadline(g, startedAt) {
 	if (startedAt === null) return null;
-	if (!g.round) return READY_MS$2;
+	if (!g.round) return READY_MS$3;
 	if (g.round.fell === null) return g.round.runEnd;
 	return g.round.showEnd;
 }
@@ -14350,10 +14350,10 @@ function advanceLava(g, t, order, positions, random, last = false) {
 		const r = g.round;
 		if (!r) {
 			if (t < 4e3 || last) break;
-			g.round = makeLavaRound(g, 1, READY_MS$2, random, order.length);
+			g.round = makeLavaRound(g, 1, READY_MS$3, random, order.length);
 			events.push({
 				type: "round",
-				t: READY_MS$2,
+				t: READY_MS$3,
 				n: 1,
 				pattern: g.round.pattern
 			});
@@ -14395,7 +14395,7 @@ function advanceLava(g, t, order, positions, random, last = false) {
 function safeSpot(g, n, i) {
 	const solid = Array.from({ length: 64 }, (_, k) => k).filter((k) => !isLava(g, k, n));
 	if (!solid.length) return { ...START };
-	solid.sort((a, b) => dist$3(tileCentre$1(a), START) - dist$3(tileCentre$1(b), START));
+	solid.sort((a, b) => dist$4(tileCentre$1(a), START) - dist$4(tileCentre$1(b), START));
 	const c = tileCentre$1(solid[i % Math.min(solid.length, 12)]);
 	return {
 		x: c.x + (i * 7 % 5 - 2) * .012,
@@ -14461,7 +14461,7 @@ function lavaGrab(g, who, itemId, at, t) {
 		ok: false,
 		reason: "gone"
 	};
-	if (!at || dist$3(at, item) > .14) return {
+	if (!at || dist$4(at, item) > .14) return {
 		ok: false,
 		reason: "far"
 	};
@@ -14562,11 +14562,11 @@ function lavaAnswered(g, who, right, order, t, ms) {
 	else if (power === "double") m.doubleIn = n;
 	else if (power === "freeze") {
 		if (r.fell === null) {
-			const near = [...r.glow, ...r.late].filter((i) => !r.frozen.includes(i) && dist$3(tileCentre$1(i), m.spot) <= .2);
+			const near = [...r.glow, ...r.late].filter((i) => !r.frozen.includes(i) && dist$4(tileCentre$1(i), m.spot) <= .2);
 			r.frozen.push(...near);
 			ev.cooled = near;
 		} else {
-			const near = Array.from({ length: 64 }, (_, i) => i).filter((i) => g.sunk[i] > 0 && dist$3(tileCentre$1(i), m.spot) <= .2);
+			const near = Array.from({ length: 64 }, (_, i) => i).filter((i) => g.sunk[i] > 0 && dist$4(tileCentre$1(i), m.spot) <= .2);
 			for (const i of near) g.sunk[i] = 0;
 			ev.cooled = near;
 		}
@@ -14606,7 +14606,7 @@ function lavaBuild(g, who, tile, at, t) {
 		ok: false,
 		reason: "solid"
 	};
-	if (!at || dist$3(tileCentre$1(i), at) > .24) return {
+	if (!at || dist$4(tileCentre$1(i), at) > .24) return {
 		ok: false,
 		reason: "far"
 	};
@@ -14660,6 +14660,627 @@ function lavaPodium(g, order) {
 	return order.map((id) => ({
 		player: id,
 		s: g.mine[id]?.score ?? 0
+	})).filter((x) => scores.includes(x.s)).sort((a, b) => b.s - a.s).map((x) => ({
+		player: x.player,
+		place: scores.indexOf(x.s) + 1
+	}));
+}
+//#endregion
+//#region shared/classlive/thrones.ts
+/**
+* Musical Thrones (docs/THRONES-PLAN.md): the rules, pure functions only. Pupils roam a royal hall with a joystick while
+* the music plays; when it stops (a hidden time the server picked), they race to sit on a throne. There are fewer
+* thrones every round. Pupils left standing go to the courtyard: they sit out a round and answer 3 questions to come
+* back (3 right in a row also earns a Crown thief scroll, to steal a throne). Crowns win: 1 a throne, 3 a golden one,
+* +1 for being on a lit dance tile when the music stops.
+*
+* Movement is Four Corners' (`stepMove` in corners.ts) with this round's hazards, so the device, the preview and the
+* projector agree; the database clamps saved moves to the activity's max speed (classlive_move).
+*/
+const HALLS = [
+	"castle",
+	"ice",
+	"jungle",
+	"pirate"
+];
+const POWERS$2 = [
+	"steal",
+	"shield",
+	"speed",
+	"ear",
+	"double",
+	"seat",
+	"ghost"
+];
+const MECHANICS$2 = [
+	"items",
+	"storm",
+	"teleport",
+	"ice",
+	"roller"
+];
+/** The round each mechanic first appears (a few at a time, as Four Corners). */
+const UNLOCK$2 = {
+	items: 2,
+	storm: 3,
+	teleport: 4,
+	ice: 5,
+	roller: 6
+};
+const TILE_R = .065;
+const READY_MS$2 = 4e3;
+const MUSIC_MIN_MS = 7e3;
+const SCRAMBLE_MS = 4e3;
+const SHOW_MS$1 = 4500;
+/** A Golden ear buzzes this long before the music stops. */
+const EAR_MS = 2e3;
+const ANSWER_GAP_MS$2 = 1500;
+/** Crowns: a throne, a golden throne, a lit dance tile when the music stops. */
+const CROWNS = {
+	throne: 1,
+	golden: 3,
+	dance: 1
+};
+const dist$3 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const pick$3 = (list, random) => list[Math.floor(random() * list.length) % list.length];
+/** A courtyard seat (drawn below the hall). */
+function courtSpot(i) {
+	return {
+		x: .2 + i % 8 * .085,
+		y: 1.08 + Math.floor(i / 8) * .06
+	};
+}
+const inCourt = (m) => !!m && m.courtIn !== null;
+const boosted = (m, n) => !!m && m.speedTo !== null && n <= m.speedTo;
+const ghostly = (m, n) => !!m && m.ghostTo !== null && n <= m.ghostTo;
+/** Thrones this round: about 90% of those playing in round 1, fewer every round (never more than last round), at least 1. */
+function thronesFor(n, playing, before) {
+	if (playing <= 1) return 1;
+	const share = Math.max(.35, .9 - .07 * (n - 1));
+	let k = Math.round(playing * share);
+	if (before !== null) k = Math.min(k, Math.max(2, before - 1));
+	return Math.max(1, Math.min(playing - 1, k));
+}
+/** Throne spots: rings round the middle (one ring for a few, up to three for a big class), turned at random. */
+function layThrones(k, random) {
+	const rings = k <= 9 ? [.28] : k <= 22 ? [.18, .36] : [
+		.13,
+		.27,
+		.41
+	];
+	const weight = rings.reduce((a, r) => a + r, 0);
+	const counts = rings.map((r) => Math.max(1, Math.round(k * r / weight)));
+	counts[counts.length - 1] += k - counts.reduce((a, c) => a + c, 0);
+	const out = [];
+	rings.forEach((r, i) => {
+		const c = Math.max(0, counts[i]);
+		const turn = random() * Math.PI * 2;
+		for (let j = 0; j < c; j++) {
+			const a = turn + j / c * Math.PI * 2;
+			out.push({
+				x: .5 + Math.cos(a) * r,
+				y: .5 + Math.sin(a) * r
+			});
+		}
+	});
+	return out.slice(0, k);
+}
+/** Which mechanics a round has: each new one on its unlock round, then a mix of 1 to 3. */
+function mechanicsFor$2(n, random) {
+	const out = new Set();
+	const open = MECHANICS$2.filter((m) => UNLOCK$2[m] <= n);
+	if (open.includes("items")) out.add("items");
+	const fresh = MECHANICS$2.find((m) => m !== "items" && UNLOCK$2[m] === n);
+	if (fresh) {
+		out.add(fresh);
+		return out;
+	}
+	const others = open.filter((m) => m !== "items");
+	const count = Math.min(others.length, 1 + Math.floor(random() * 3));
+	const bag = [...others];
+	for (let i = 0; i < count && bag.length; i++) out.add(bag.splice(Math.floor(random() * bag.length), 1)[0]);
+	return out;
+}
+/** An open spot away from the thrones. */
+function openSpot$2(random, thrones, gap = .09) {
+	for (let i = 0; i < 30; i++) {
+		const p = {
+			x: .08 + random() * .84,
+			y: .08 + random() * .84
+		};
+		if (thrones.every((th) => dist$3(th, p) > gap)) return p;
+	}
+	return {
+		x: .08 + random() * .84,
+		y: .06
+	};
+}
+function makeRound$2(g, n, startAt, random, playing) {
+	const has = mechanicsFor$2(n, random);
+	const k = thronesFor(n, playing, g.round ? g.round.thrones.length : null);
+	const spots = layThrones(k, random);
+	const goldenAt = n >= 2 ? Math.floor(random() * k) % k : -1;
+	const thrones = spots.map((p, i) => ({
+		id: i,
+		x: p.x,
+		y: p.y,
+		golden: i === goldenAt,
+		by: null
+	}));
+	const tiles = Array.from({ length: 3 + n % 3 }, () => ({
+		...openSpot$2(random, spots, .14),
+		r: TILE_R
+	}));
+	const storms = has.has("storm") ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({
+		...openSpot$2(random, []),
+		r: .1 + random() * .05
+	})) : [];
+	const ice = has.has("ice") ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({
+		...openSpot$2(random, []),
+		r: .09 + random() * .05
+	})) : [];
+	const teleports = [];
+	if (has.has("teleport")) {
+		const along = .25 + random() * .5;
+		teleports.push(random() < .5 ? {
+			a: {
+				x: .06,
+				y: along
+			},
+			b: {
+				x: .94,
+				y: 1 - along
+			}
+		} : {
+			a: {
+				x: along,
+				y: .06
+			},
+			b: {
+				x: 1 - along,
+				y: .94
+			}
+		});
+	}
+	const line = () => .2 + random() * .6;
+	const roller = has.has("roller") ? {
+		axis: "x",
+		at: line(),
+		r: .07,
+		periodMs: 5e3 + Math.floor(random() * 1500)
+	} : null;
+	const roller2 = has.has("roller") && random() < .5 ? {
+		axis: "y",
+		at: line(),
+		r: .07,
+		periodMs: 5600 + Math.floor(random() * 1500)
+	} : null;
+	const items = [];
+	if (has.has("items")) {
+		const count = Math.max(2, Math.min(8, Math.round(playing / 5)));
+		for (let i = 0; i < count; i++) items.push({
+			id: g.nextItem++,
+			power: pick$3(POWERS$2, random),
+			by: null,
+			...openSpot$2(random, spots)
+		});
+	}
+	const musicEnd = startAt + (n === 1 ? 9e3 : MUSIC_MIN_MS + Math.floor(random() * 8e3));
+	return {
+		n,
+		startAt,
+		musicEnd,
+		scrambleEnd: musicEnd + SCRAMBLE_MS,
+		showEnd: musicEnd + SCRAMBLE_MS + SHOW_MS$1,
+		thrones,
+		tiles,
+		items,
+		storms,
+		ice,
+		teleports,
+		roller,
+		roller2,
+		stopped: false,
+		standing: null,
+		dancers: []
+	};
+}
+function newThrones(hall) {
+	return {
+		kind: "thrones",
+		hall,
+		round: null,
+		mine: {},
+		nextItem: 1,
+		stealsAll: 0,
+		stoodAll: 0
+	};
+}
+function freshMine$2(i) {
+	return {
+		crowns: 0,
+		sat: 0,
+		stood: 0,
+		golden: 0,
+		dances: 0,
+		courtIn: null,
+		courtRight: 0,
+		courtStreak: 0,
+		escapes: 0,
+		held: null,
+		stealIn: null,
+		shieldIn: null,
+		speedTo: null,
+		ghostTo: null,
+		earIn: null,
+		doubleIn: null,
+		seatIn: null,
+		powersUsed: 0,
+		grabs: 0,
+		steals: 0,
+		stolen: 0,
+		seat: null,
+		answered: 0,
+		right: 0,
+		wrong: 0,
+		streak: 0,
+		bestStreak: 0,
+		fastMs: null,
+		lastAt: -1500,
+		placed: 0,
+		spot: startSpot$1(i)
+	};
+}
+/** When a courtyard pupil with all their right answers comes back (session ms), or null (as Four Corners' jail). */
+function freeAt(g, m) {
+	const r = g.round;
+	if (!m || m.courtIn === null || m.courtRight < 3 || !r) return null;
+	if (m.courtIn < r.n) return r.showEnd;
+	return r.showEnd + 12e3 + SCRAMBLE_MS + SHOW_MS$1;
+}
+/** The last round has been shown (or none started): the game can end. */
+const thronesDone = (g, t) => !g.round || g.round.standing !== null && t >= g.round.showEnd;
+/** The next time the server must act (the music stops, the scramble ends, the next round), or null. */
+function nextDeadline$2(g, startedAt) {
+	if (startedAt === null) return null;
+	const r = g.round;
+	if (!r) return READY_MS$2;
+	if (!r.stopped) return r.musicEnd;
+	if (r.standing === null) return r.scrambleEnd;
+	return r.showEnd;
+}
+/** Saved spots are needed when the music stops (dance tiles, royal seats). */
+const needsPositions$1 = (g, t) => !!g.round && !g.round.stopped && t >= g.round.musicEnd;
+/** Moves the game on to time t. `last`: time is up, so no new round starts. */
+function advance$2(g, t, order, positions, random, last = false) {
+	const events = [];
+	for (let guard = 0; guard < 5; guard++) {
+		const r = g.round;
+		if (!r) {
+			if (t < 4e3 || last) break;
+			g.round = makeRound$2(g, 1, READY_MS$2, random, playingCount(g, order));
+			events.push({
+				type: "round",
+				t: READY_MS$2,
+				n: 1,
+				thrones: g.round.thrones.length
+			});
+			continue;
+		}
+		if (!r.stopped) {
+			if (t < r.musicEnd) break;
+			events.push(stopMusic(g, r, order, positions));
+			continue;
+		}
+		if (r.standing === null) {
+			if (t < r.scrambleEnd) break;
+			events.push(endScramble(g, r, order));
+			continue;
+		}
+		if (t < r.showEnd || last) break;
+		const startAt = t - r.showEnd > 2e3 ? t : r.showEnd;
+		for (const id of order) {
+			const m = g.mine[id];
+			if (m) m.seat = null;
+			if (m && m.courtIn !== null && m.courtIn < r.n && m.courtRight >= 3) {
+				m.courtIn = null;
+				m.courtRight = 0;
+				m.escapes++;
+				m.spot = startSpot$1(order.indexOf(id));
+				m.placed++;
+				events.push({
+					type: "escape",
+					t: startAt,
+					pupil: id
+				});
+			} else if (m && m.courtIn === null) {
+				m.spot = startSpot$1(order.indexOf(id));
+				m.placed++;
+			}
+		}
+		g.round = makeRound$2(g, r.n + 1, startAt, random, playingCount(g, order));
+		events.push({
+			type: "round",
+			t: startAt,
+			n: r.n + 1,
+			thrones: g.round.thrones.length
+		});
+	}
+	return events;
+}
+const playingCount = (g, order) => order.filter((id) => !inCourt(g.mine[id])).length;
+const times = (m, n) => m.doubleIn === n ? 2 : 1;
+function stopMusic(g, r, order, positions) {
+	r.stopped = true;
+	const dancers = [];
+	for (const id of order) {
+		const m = g.mine[id];
+		if (!m || m.courtIn !== null) continue;
+		const at = positions[id] ?? m.spot;
+		m.spot = {
+			x: at.x,
+			y: at.y
+		};
+		if (r.tiles.some((tl) => dist$3(tl, at) < tl.r + .0175)) {
+			dancers.push(id);
+			m.dances++;
+			m.crowns += CROWNS.dance * times(m, r.n);
+		}
+	}
+	for (const id of order) {
+		const m = g.mine[id];
+		if (!m || m.courtIn !== null || m.seatIn !== r.n || m.seat !== null) continue;
+		const free = r.thrones.filter((th) => th.by === null).sort((a, b) => dist$3(a, m.spot) - dist$3(b, m.spot))[0];
+		if (!free) continue;
+		seatOn(m, id, free);
+	}
+	r.dancers = dancers;
+	return {
+		type: "stop",
+		t: r.musicEnd,
+		n: r.n,
+		dancers
+	};
+}
+function seatOn(m, id, th) {
+	th.by = id;
+	m.seat = th.id;
+	m.spot = {
+		x: th.x,
+		y: th.y
+	};
+	m.placed++;
+}
+function endScramble(g, r, order) {
+	const standing = [];
+	let seated = 0;
+	for (const id of order) {
+		const m = g.mine[id];
+		if (!m || m.courtIn !== null) continue;
+		const th = m.seat === null ? void 0 : r.thrones.find((x) => x.id === m.seat && x.by === id);
+		if (th) {
+			seated++;
+			m.sat++;
+			if (th.golden) m.golden++;
+			m.crowns += (th.golden ? CROWNS.golden : CROWNS.throne) * times(m, r.n);
+			continue;
+		}
+		standing.push(id);
+		m.seat = null;
+		m.stood++;
+		m.courtIn = r.n;
+		m.courtRight = 0;
+		m.courtStreak = 0;
+		m.held = null;
+		m.spot = courtSpot(standing.length - 1);
+	}
+	r.standing = standing;
+	g.stoodAll += standing.length;
+	return {
+		type: "seated",
+		t: r.scrambleEnd,
+		n: r.n,
+		standing,
+		seated
+	};
+}
+/** Sitting down: a free throne, or a taken one with a Crown thief switched on (unless its sitter has a Royal shield). */
+function sit(g, who, throneId, at, t) {
+	const r = g.round;
+	const m = g.mine[who];
+	if (!r || !m || m.courtIn !== null || !r.stopped || r.standing !== null || t < r.musicEnd || t > r.scrambleEnd + 400) return {
+		ok: false,
+		reason: "not_now"
+	};
+	if (m.seat !== null) return {
+		ok: false,
+		reason: "seated"
+	};
+	const th = r.thrones.find((x) => x.id === throneId);
+	if (!th) return {
+		ok: false,
+		reason: "gone"
+	};
+	if (!at || dist$3(at, th) > .14500000000000002) return {
+		ok: false,
+		reason: "far"
+	};
+	if (th.by === null) {
+		seatOn(m, who, th);
+		return {
+			ok: true,
+			events: [{
+				type: "sit",
+				t,
+				pupil: who,
+				throne: th.id,
+				golden: th.golden
+			}],
+			bumped: null
+		};
+	}
+	const victimId = th.by;
+	const v = g.mine[victimId];
+	if (m.stealIn !== r.n || !v || v.shieldIn === r.n) return {
+		ok: false,
+		reason: "taken"
+	};
+	v.seat = null;
+	const a = Math.atan2(th.y - .5, th.x - .5);
+	v.spot = {
+		x: Math.min(.97, Math.max(.03, th.x + Math.cos(a) * .09)),
+		y: Math.min(.97, Math.max(.03, th.y + Math.sin(a) * .09))
+	};
+	v.placed++;
+	v.stolen++;
+	m.stealIn = null;
+	m.steals++;
+	g.stealsAll++;
+	if (v.crowns > 0) {
+		v.crowns--;
+		m.crowns++;
+	}
+	seatOn(m, who, th);
+	return {
+		ok: true,
+		events: [{
+			type: "steal",
+			t,
+			pupil: who,
+			from: victimId,
+			throne: th.id
+		}],
+		bumped: victimId
+	};
+}
+/** Running over an item picks it up (one at a time, only while the music plays). */
+function grab$2(g, who, itemId, at, t) {
+	const r = g.round;
+	const m = g.mine[who];
+	if (!r || !m || r.stopped || t < r.startAt || t >= r.musicEnd || m.courtIn !== null) return {
+		ok: false,
+		reason: "not_now"
+	};
+	if (m.held) return {
+		ok: false,
+		reason: "full"
+	};
+	const item = r.items.find((x) => x.id === itemId);
+	if (!item || item.by) return {
+		ok: false,
+		reason: "gone"
+	};
+	if (!at || dist$3(at, item) > .135) return {
+		ok: false,
+		reason: "far"
+	};
+	item.by = who;
+	m.held = item.power;
+	m.grabs++;
+	return {
+		ok: true,
+		events: [{
+			type: "grab",
+			t,
+			pupil: who,
+			power: item.power
+		}]
+	};
+}
+/** What a question is for: getting out of the courtyard, switching on a held power-up (while the music plays), or nothing. */
+function questionFor(g, who, t) {
+	const m = g.mine[who];
+	if (!m) return null;
+	if (m.courtIn !== null) return m.courtRight < 3 ? "court" : null;
+	const r = g.round;
+	if (!m.held || !r || r.stopped || t >= r.musicEnd) return null;
+	return "power";
+}
+/** A marked answer: in the courtyard it counts towards coming back; otherwise a right one switches on the held power-up. */
+function answered$2(g, who, right, purpose, t, ms) {
+	const m = g.mine[who];
+	if (!m) return {
+		ok: false,
+		reason: "not_now"
+	};
+	if (t - m.lastAt < 1500) return {
+		ok: false,
+		reason: "too_soon"
+	};
+	m.lastAt = t;
+	m.answered++;
+	if (right) {
+		m.right++;
+		m.streak++;
+		m.bestStreak = Math.max(m.bestStreak, m.streak);
+		if (ms !== void 0 && ms >= 300 && (m.fastMs === null || ms < m.fastMs)) m.fastMs = ms;
+	} else {
+		m.wrong++;
+		m.streak = 0;
+	}
+	if (purpose === "court") {
+		if (m.courtIn === null) return {
+			ok: false,
+			reason: "not_now"
+		};
+		if (!right) {
+			m.courtStreak = 0;
+			return {
+				ok: true,
+				events: []
+			};
+		}
+		m.courtRight = Math.min(3, m.courtRight + 1);
+		m.courtStreak++;
+		const scroll = m.courtRight === 3 && m.courtStreak >= 3 && m.held === null;
+		if (scroll) m.held = "steal";
+		return {
+			ok: true,
+			events: [{
+				type: "court_right",
+				t,
+				pupil: who,
+				right: m.courtRight,
+				scroll
+			}]
+		};
+	}
+	const r = g.round;
+	if (!m.held || !r || m.courtIn !== null || r.stopped) return {
+		ok: false,
+		reason: "not_now"
+	};
+	if (!right) return {
+		ok: true,
+		events: []
+	};
+	const power = m.held;
+	m.held = null;
+	m.powersUsed++;
+	const n = r.n;
+	if (power === "steal") m.stealIn = n;
+	else if (power === "shield") m.shieldIn = n;
+	else if (power === "speed") m.speedTo = n + 2;
+	else if (power === "ghost") m.ghostTo = n + 1;
+	else if (power === "ear") m.earIn = n;
+	else if (power === "double") m.doubleIn = n;
+	else m.seatIn = n;
+	return {
+		ok: true,
+		events: [{
+			type: "power",
+			t,
+			pupil: who,
+			power
+		}]
+	};
+}
+/** The podium: the top 3 crown counts (ties share a place). */
+function podium$1(g, order) {
+	const scores = [...new Set(order.map((id) => g.mine[id]?.crowns ?? 0))].filter((s) => s > 0).sort((a, b) => b - a).slice(0, 3);
+	return order.map((id) => ({
+		player: id,
+		s: g.mine[id]?.crowns ?? 0
 	})).filter((x) => scores.includes(x.s)).sort((a, b) => b.s - a.s).map((x) => ({
 		player: x.player,
 		place: scores.indexOf(x.s) + 1
@@ -16020,8 +16641,8 @@ const POINTS = {
 };
 function rewardsOf(s) {
 	const g = s.game;
-	const goal = g.kind === "stars" ? g.creature : g.kind === "serpent" ? g.awake : g.kind === "corners" || g.kind === "ghost" || g.kind === "clash" || g.kind === "lava" ? false : g.solvers.length > 0;
-	const top = g.kind === "corners" ? podium$1(g, s.order) : g.kind === "ghost" ? podium(g, s.order) : g.kind === "lava" ? lavaPodium(g, s.order) : [];
+	const goal = g.kind === "stars" ? g.creature : g.kind === "serpent" ? g.awake : g.kind === "corners" || g.kind === "ghost" || g.kind === "clash" || g.kind === "thrones" || g.kind === "lava" ? false : g.solvers.length > 0;
+	const top = g.kind === "corners" ? podium$2(g, s.order) : g.kind === "ghost" ? podium(g, s.order) : g.kind === "thrones" ? podium$1(g, s.order) : g.kind === "lava" ? lavaPodium(g, s.order) : [];
 	const players = s.order.map((id) => {
 		let did = false;
 		const r = {
@@ -16078,6 +16699,17 @@ function rewardsOf(s) {
 				r.powers = 0;
 				r.champion = false;
 			}
+		} else if (g.kind === "thrones") {
+			const m = g.mine[id];
+			const place = top.find((x) => x.player === id)?.place;
+			podiumPlace = place !== void 0;
+			r.extra = {
+				thrones_sat: m?.sat ?? 0,
+				thrones_crowns: m?.crowns ?? 0,
+				thrones_steals: m?.steals ?? 0,
+				thrones_wins: place === 1 ? 1 : 0
+			};
+			did = (m?.sat ?? 0) > 0 || (m?.answered ?? 0) > 0;
 		} else if (g.kind === "ghost") {
 			const m = g.mine[id];
 			podiumPlace = top.find((x) => x.player === id)?.place !== void 0;
@@ -16158,7 +16790,7 @@ function lavaPlayer(s, g, id, fresh) {
 		bootedLast: !!r?.booted.includes(id),
 		placed: m.placed,
 		spot: m.spot,
-		nextAt: m.lastAt + ANSWER_GAP_MS$2,
+		nextAt: m.lastAt + ANSWER_GAP_MS$3,
 		place: s.state === "over" ? lavaPodium(g, s.order).find((x) => x.player === id)?.place ?? null : null,
 		climbAt: climbAt(g, m),
 		speedLeft: m.speedTo !== null && n <= m.speedTo ? m.speedTo - n + 1 : 0,
@@ -16290,6 +16922,200 @@ async function lavaStep(sv, cur, who, body, h) {
 	} catch {}
 	const g1 = done.session.game;
 	const next = done.reply === "raft" && g1.mine[who]?.raftIn !== null && (g1.mine[who]?.raftRight ?? 0) < 5 ? await h.nextQuestion(sv, {
+		...done.row,
+		session: done.session
+	}, who) : null;
+	return reply(done.session, done.row.startedAt, {
+		right,
+		answer: marked.answer,
+		purpose: done.reply,
+		...next && next !== "busy" ? { question: next } : {}
+	});
+}
+//#endregion
+//#region shared/classlive/thronesServer.ts
+function thronesPublic(g, players) {
+	const court = Object.values(g.mine).filter((m) => m.courtIn !== null).length;
+	const r = g.round;
+	return {
+		kind: "thrones",
+		hall: g.hall,
+		court,
+		playing: players - court,
+		round: r ? {
+			...r,
+			thrones: r.thrones.map((th) => ({
+				id: th.id,
+				x: th.x,
+				y: th.y,
+				golden: th.golden,
+				taken: th.by !== null
+			})),
+			items: r.items.filter((x) => !x.by).map(({ by: _by, ...x }) => x),
+			standing: r.standing ? r.standing.length : null
+		} : null
+	};
+}
+function thronesPlayer(g, order, id, over) {
+	const m = g.mine[id] ?? freshMine$2(order.indexOf(id));
+	const r = g.round;
+	const n = r?.n ?? 0;
+	return {
+		kind: "thrones",
+		crowns: m.crowns,
+		sat: m.sat,
+		seat: m.seat,
+		court: m.courtIn !== null,
+		courtRight: m.courtRight,
+		freeAt: freeAt(g, m),
+		held: m.held,
+		boost: boosted(m, n),
+		ghost: ghostly(m, n),
+		steal: !!r && m.stealIn === n,
+		shield: !!r && m.shieldIn === n,
+		double: !!r && m.doubleIn === n,
+		seatPower: !!r && m.seatIn === n,
+		earAt: r && m.earIn === n ? r.musicEnd - EAR_MS : null,
+		stoodLast: !!r?.standing?.includes(id),
+		danced: !!r?.dancers.includes(id),
+		placed: m.placed,
+		spot: m.spot,
+		nextAt: m.lastAt + ANSWER_GAP_MS$2,
+		place: over ? podium$1(g, order).find((x) => x.player === id)?.place ?? null : null,
+		speedLeft: m.speedTo !== null && n <= m.speedTo ? m.speedTo - n + 1 : 0,
+		ghostLeft: m.ghostTo !== null && n <= m.ghostTo ? m.ghostTo - n + 1 : 0,
+		stats: {
+			right: m.right,
+			wrong: m.wrong,
+			bestStreak: m.bestStreak,
+			steals: m.steals,
+			stolen: m.stolen,
+			golden: m.golden,
+			dances: m.dances,
+			powers: m.powersUsed,
+			escapes: m.escapes,
+			grabs: m.grabs
+		}
+	};
+}
+const SIT_WORDS = {
+	not_now: "Wait for the music to stop!",
+	gone: "That throne has gone.",
+	far: "Get closer!",
+	taken: "Someone got there first!",
+	seated: "You are already sitting!"
+};
+async function thronesStep(k, cur, who, body) {
+	const { sv, ok, no, busy } = k;
+	const room = cur.id;
+	const s0 = cur.session;
+	if (s0.state !== "live") return no(409, s0.state === "lobby" ? "Wait for the start!" : "This one has finished.", s0.state);
+	const spotOf = async () => {
+		const all = await sv.positions(room);
+		if (all === "busy") return "busy";
+		return all[who];
+	};
+	const reply = (session, startedAt, extra = {}) => ok({
+		room,
+		view: k.roomView(session, startedAt, sv.now()),
+		me: k.playerView(session, who),
+		now: sv.now(),
+		...extra
+	});
+	if (body.action === "play") {
+		const at = await spotOf();
+		if (at === "busy") return busy();
+		const done = await k.mutate(sv, room, (s, t) => {
+			if (s.state !== "live" || s.game.kind !== "thrones") return { refuse: no(409, "This one has finished.", "over") };
+			const g = s.game;
+			const mine = g.mine[who];
+			if (body.sit !== void 0) {
+				const out = sit(g, who, body.sit, at ?? mine?.spot, t);
+				if (!out.ok) return { refuse: no(409, SIT_WORDS[out.reason], out.reason) };
+				return {
+					reply: null,
+					events: out.events,
+					players: out.bumped ? [who, out.bumped] : [who]
+				};
+			}
+			const out = grab$2(g, who, body.grab, at ?? mine?.spot, t);
+			if (!out.ok) return { refuse: no(409, out.reason === "full" ? "You are already carrying one!" : out.reason === "far" ? "Get closer!" : "Too late!", out.reason) };
+			return {
+				reply: null,
+				events: out.events,
+				players: [who]
+			};
+		});
+		if ("refuse" in done) {
+			const now = await sv.loadRoom(room);
+			if (!now || now === "busy") return done.refuse;
+			return {
+				...done.refuse,
+				body: {
+					...done.refuse.body,
+					view: k.roomView(now.session, now.startedAt, sv.now()),
+					me: k.playerView(now.session, who),
+					now: sv.now()
+				}
+			};
+		}
+		return reply(done.session, done.row.startedAt);
+	}
+	const g0 = s0.game;
+	const t0 = k.timeOf(cur, sv.now());
+	if (body.action === "ask") {
+		const purpose = questionFor(g0, who, t0);
+		if (!purpose) return no(409, "No question right now.", "not_now");
+		const question = await k.nextQuestion(sv, cur, who);
+		if (question === "busy") return busy();
+		if (!question) return no(503, "We couldn't make a question just now.");
+		return ok({
+			room,
+			question,
+			purpose,
+			now: sv.now()
+		});
+	}
+	const slot = body.slot;
+	const value = body.answer;
+	if (!Number.isInteger(slot) || typeof value !== "number" || !Number.isFinite(value) || Math.abs(value) > 1e6) return no(400, "That answer couldn't be read.");
+	const kept = await sv.loadQuestion(room, who, slot);
+	if (kept === "busy") return busy();
+	const marked = kept ? markQuestion(kept.question) : null;
+	if (!kept || !marked) return no(400, "That answer couldn't be marked.");
+	if (kept.answered) return no(409, "You've already answered that one.", "answered");
+	const right = sameAnswer(value, marked.answer);
+	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : k.maxAnswerMs, k.maxAnswerMs));
+	const done = await k.mutate(sv, room, (s, t) => {
+		if (s.state !== "live" || s.game.kind !== "thrones") return { refuse: no(409, "This one has finished.", "over") };
+		const purpose = questionFor(s.game, who, t);
+		if (!purpose) return { refuse: no(409, "The music has stopped!", "not_now") };
+		const out = answered$2(s.game, who, right, purpose, t, typeof body.ms === "number" ? ms : void 0);
+		if (!out.ok) return { refuse: no(409, out.reason === "too_soon" ? "One at a time!" : "No question right now.", out.reason) };
+		return {
+			reply: purpose,
+			events: out.events,
+			players: [who],
+			claim: {
+				player: who,
+				slot,
+				value,
+				right
+			}
+		};
+	});
+	if ("refuse" in done) return done.refuse;
+	try {
+		await sv.recordAnswers(who, `classlive:${room}:${s0.seed}:${slot}`, [{
+			key: marked.key,
+			correct: right,
+			ms,
+			at: sv.now(),
+			given: value
+		}]);
+	} catch {}
+	const m1 = done.session.game.mine[who];
+	const next = done.reply === "court" && !!m1 && m1.courtIn !== null && m1.courtRight < 3 ? await k.nextQuestion(sv, {
 		...done.row,
 		session: done.session
 	}, who) : null;
@@ -16460,7 +17286,7 @@ function makeBayRound(g, n, startAt, random, players) {
 		const count = Math.max(2, Math.min(8, Math.round(players / 6)));
 		for (let i = 0; i < count; i++) items.push({
 			id: g.nextItem++,
-			power: pick(POWERS$2, random),
+			power: pick(POWERS$3, random),
 			by: null,
 			...waterSpot(random)
 		});
@@ -16482,7 +17308,7 @@ function makeBayRound(g, n, startAt, random, players) {
 		startAt,
 		runEnd: startAt + run,
 		rollEnd: startAt + run + ROLL_MS,
-		showEnd: startAt + run + ROLL_MS + SHOW_MS$2,
+		showEnd: startAt + run + ROLL_MS + SHOW_MS$3,
 		storms,
 		ice,
 		teleports,
@@ -16626,10 +17452,10 @@ function sharkAdvance(g, t, order, positions, random, last = false) {
 		const r = g.round;
 		if (!r) {
 			if (t < 4e3 || last) break;
-			g.round = makeBayRound(g, 1, READY_MS$3, random, order.length);
+			g.round = makeBayRound(g, 1, READY_MS$4, random, order.length);
 			events.push({
 				type: "round",
-				t: READY_MS$3,
+				t: READY_MS$4,
 				n: 1
 			});
 			continue;
@@ -16805,10 +17631,11 @@ const ACTIVITIES = [
 	"serpent",
 	"mural",
 	"corners",
-	"lava",
 	"shark",
 	"ghost",
-	"clash"
+	"clash",
+	"thrones",
+	"lava"
 ];
 const LENGTHS = [
 	0,
@@ -16848,6 +17675,7 @@ function publicGame(g, players, t = 0, order = []) {
 	if (g.kind === "ghost") return publicGhost(g, order);
 	if (g.kind === "clash") return clashPublic(g);
 	if (g.kind === "lava") return lavaPublic(g, players);
+	if (g.kind === "thrones") return thronesPublic(g, players);
 	if (g.kind === "corners") {
 		const jailed = Object.values(g.mine).filter((m) => m.jailedIn !== null).length;
 		return {
@@ -16932,6 +17760,12 @@ function playerView(s, id) {
 		colour: p.colour,
 		game: lavaPlayer(s, s.game, id, () => freshLavaMine(s.order.indexOf(id)))
 	};
+	if (s.game.kind === "thrones") return {
+		player: id,
+		name: firstName(p.name),
+		colour: p.colour,
+		game: thronesPlayer(s.game, s.order, id, s.state === "over")
+	};
 	if (s.game.kind === "clash") return {
 		player: id,
 		name: firstName(p.name),
@@ -16946,10 +17780,10 @@ function playerView(s, id) {
 	};
 	if (s.game.kind === "corners") {
 		const g = s.game;
-		const m = g.mine[id] ?? freshMine$2(s.order.indexOf(id));
+		const m = g.mine[id] ?? freshMine$3(s.order.indexOf(id));
 		const r = g.round;
 		const n = r?.n ?? 0;
-		const place = s.state === "over" ? podium$1(g, s.order).find((x) => x.player === id)?.place ?? null : null;
+		const place = s.state === "over" ? podium$2(g, s.order).find((x) => x.player === id)?.place ?? null : null;
 		return {
 			player: id,
 			name: firstName(p.name),
@@ -16961,8 +17795,8 @@ function playerView(s, id) {
 				jailed: m.jailedIn !== null,
 				jailRight: m.jailRight,
 				held: m.held,
-				boost: boosted(m, n),
-				ghost: ghostly(m, n),
+				boost: boosted$1(m, n),
+				ghost: ghostly$1(m, n),
 				shield: !!r && m.shieldIn === n,
 				double: !!r && m.doubleIn === n,
 				crystal: r && m.crystalIn === n ? crystalCorner(r) : null,
@@ -16971,10 +17805,10 @@ function playerView(s, id) {
 				savedLast: !!r?.saved.includes(id),
 				placed: m.placed,
 				spot: m.spot,
-				nextAt: m.lastAt + ANSWER_GAP_MS$3,
+				nextAt: m.lastAt + ANSWER_GAP_MS$4,
 				place,
 				stay: r?.swap && m.jailedIn === null ? m.lastCorner ?? null : null,
-				freeAt: freeAt(g, m),
+				freeAt: freeAt$1(g, m),
 				speedLeft: m.speedTo !== null && n <= m.speedTo ? m.speedTo - n + 1 : 0,
 				ghostLeft: m.ghostTo !== null && n <= m.ghostTo ? m.ghostTo - n + 1 : 0,
 				stats: {
@@ -17005,7 +17839,7 @@ function playerView(s, id) {
 				tiles: m?.tiles ?? 0,
 				canGuess: canGuess(s.game, id),
 				guesses: m?.guesses ?? 0,
-				nextAt: m ? m.lastAt + ANSWER_GAP_MS$4 : 0,
+				nextAt: m ? m.lastAt + ANSWER_GAP_MS$5 : 0,
 				gotIt: s.game.revealed || s.state === "over" ? m?.gotIt ?? 0 : 0,
 				picked: !!m?.pick,
 				myTiles: tilesOf(s.game, id),
@@ -17065,7 +17899,7 @@ async function mutate(sv, room, step) {
 		const t = timeOf(row, now);
 		const events = [];
 		const g0 = s.game;
-		const placedBefore = g0.kind === "corners" || g0.kind === "ghost" || g0.kind === "clash" || g0.kind === "lava" ? new Map(s.order.map((id) => [id, g0.mine[id]?.placed ?? 0])) : null;
+		const placedBefore = g0.kind === "corners" || g0.kind === "ghost" || g0.kind === "clash" || g0.kind === "thrones" || g0.kind === "lava" ? new Map(s.order.map((id) => [id, g0.mine[id]?.placed ?? 0])) : null;
 		if (g0.kind === "ghost") {
 			if (s.state === "live") {
 				let spots = {};
@@ -17094,14 +17928,33 @@ async function mutate(sv, room, step) {
 		} else if (g0.kind === "corners") {
 			if (s.state === "live") {
 				let spots = {};
+				if (needsPositions$2(g0, t)) {
+					const got = await sv.positions(room);
+					if (got === "busy") return { refuse: busy() };
+					spots = got;
+				}
+				const last = timeUp(s, row, now);
+				events.push(...(isShark(g0) ? sharkAdvance : advance$3)(g0, t, s.order, spots, () => sv.random(), last));
+				if (last && cornersDone(g0, t)) {
+					s.state = "over";
+					events.push({
+						type: "over",
+						t,
+						why: "time"
+					});
+				}
+			}
+		} else if (g0.kind === "thrones") {
+			if (s.state === "live") {
+				let spots = {};
 				if (needsPositions$1(g0, t)) {
 					const got = await sv.positions(room);
 					if (got === "busy") return { refuse: busy() };
 					spots = got;
 				}
 				const last = timeUp(s, row, now);
-				events.push(...(isShark(g0) ? sharkAdvance : advance$2)(g0, t, s.order, spots, () => sv.random(), last));
-				if (last && cornersDone(g0, t)) {
+				events.push(...advance$2(g0, t, s.order, spots, () => sv.random(), last));
+				if (last && thronesDone(g0, t)) {
 					s.state = "over";
 					events.push({
 						type: "over",
@@ -17175,7 +18028,7 @@ async function mutate(sv, room, step) {
 		};
 		for (const e of events) if ("pupil" in e && typeof e.pupil === "string") changed.add(e.pupil);
 		const g1 = s.game;
-		const places = (g1.kind === "corners" || g1.kind === "ghost" || g1.kind === "clash" || g1.kind === "lava") && placedBefore ? s.order.filter((id) => (g1.mine[id]?.placed ?? 0) !== (placedBefore.get(id) ?? 0)).map((id) => ({
+		const places = (g1.kind === "corners" || g1.kind === "ghost" || g1.kind === "clash" || g1.kind === "thrones" || g1.kind === "lava") && placedBefore ? s.order.filter((id) => (g1.mine[id]?.placed ?? 0) !== (placedBefore.get(id) ?? 0)).map((id) => ({
 			player: id,
 			x: g1.mine[id].spot.x,
 			y: g1.mine[id].spot.y
@@ -17184,6 +18037,7 @@ async function mutate(sv, room, step) {
 		if ((g1.kind === "corners" || g1.kind === "lava") && events.some((e) => e.type === "roll" || e.type === "crack" || e.type === "round" || e.type === "over")) for (const id of s.order) changed.add(id);
 		if ((g1.kind === "corners" || g1.kind === "clash") && events.some((e) => e.type === "roll" || e.type === "clash_count" || e.type === "clash_round" || e.type === "round" || e.type === "over")) for (const id of s.order) changed.add(id);
 		if (g1.kind === "ghost" && events.some((e) => e.type === "g_round" || e.type === "g_end" || e.type === "over" || e.type === "g_grab" && e.froze > 0)) for (const id of s.order) changed.add(id);
+		if (g1.kind === "thrones" && events.some((e) => e.type === "stop" || e.type === "seated" || e.type === "round" || e.type === "over")) for (const id of s.order) changed.add(id);
 		const players = [...changed].filter((id) => s.players[id]).map((id) => playerView(s, id));
 		const saved = await sv.save(room, row.version, {
 			session: s,
@@ -17241,6 +18095,7 @@ function newSession(body, seed, random) {
 	else if (activity === "lava") game = newLava(LAVA_MAPS.find((m) => m === body.map) ?? LAVA_MAPS[Math.floor(random() * LAVA_MAPS.length) % LAVA_MAPS.length], lavaRunSeconds(body.run));
 	else if (activity === "clash") game = newClash(CLASH_MAPS.find((m) => m === body.map) ?? CLASH_MAPS[Math.floor(random() * CLASH_MAPS.length) % CLASH_MAPS.length], teamCount(body.teams), paintSeconds(body.paint));
 	else if (activity === "shark") game = newShark(BAYS.find((m) => m === body.map) ?? BAYS[Math.floor(random() * BAYS.length) % BAYS.length], runSeconds(body.run));
+	else if (activity === "thrones") game = newThrones(HALLS.find((h) => h === body.hall) ?? HALLS[Math.floor(random() * HALLS.length) % HALLS.length]);
 	else game = newMural(random);
 	return {
 		seed,
@@ -17428,8 +18283,9 @@ async function classLiveStep(sv, who, body) {
 					joinedAt: t,
 					colour: s.order.length % 12
 				};
-				if (s.game.kind === "corners") s.game.mine[who] = freshMine$2(s.order.length);
+				if (s.game.kind === "corners") s.game.mine[who] = freshMine$3(s.order.length);
 				if (s.game.kind === "lava") s.game.mine[who] = freshLavaMine(s.order.length);
+				if (s.game.kind === "thrones") s.game.mine[who] = freshMine$2(s.order.length);
 				if (s.game.kind === "clash") clashJoin(s.game, who);
 				if (s.game.kind === "ghost") s.game.mine[who] = freshMine(s.order.length);
 				s.order.push(who);
@@ -17461,7 +18317,7 @@ async function classLiveStep(sv, who, body) {
 		};
 		if (action === "look") {
 			const cg = cur.session.game;
-			const due = cur.session.state !== "live" ? null : cg.kind === "corners" ? nextDeadline$2(cg, cur.startedAt) : cg.kind === "ghost" ? nextDeadline(cg, cur.startedAt) : cg.kind === "clash" ? clashDeadline(cg, cur.startedAt) : cg.kind === "lava" ? lavaDeadline(cg, cur.startedAt) : null;
+			const due = cur.session.state !== "live" ? null : cg.kind === "corners" ? nextDeadline$3(cg, cur.startedAt) : cg.kind === "ghost" ? nextDeadline(cg, cur.startedAt) : cg.kind === "clash" ? clashDeadline(cg, cur.startedAt) : cg.kind === "thrones" ? nextDeadline$2(cg, cur.startedAt) : cg.kind === "lava" ? lavaDeadline(cg, cur.startedAt) : null;
 			if (due !== null && timeOf(cur, sv.now()) >= due + 1500) {
 				const done = await mutate(sv, room, () => ({
 					reply: null,
@@ -17491,6 +18347,21 @@ async function classLiveStep(sv, who, body) {
 				no,
 				busy
 			});
+			return cur.session.state === "live" ? out : withRoom(out);
+		}
+		if (cur.session.game.kind === "thrones" && (action === "ask" || action === "answer" || action === "play")) {
+			const out = await thronesStep({
+				sv,
+				mutate,
+				nextQuestion,
+				roomView,
+				playerView,
+				timeOf,
+				ok,
+				no,
+				busy,
+				maxAnswerMs: MAX_ANSWER_MS
+			}, cur, who, body);
 			return cur.session.state === "live" ? out : withRoom(out);
 		}
 		if (cur.session.game.kind === "clash" && (action === "ask" || action === "answer" || action === "play")) {
@@ -17571,7 +18442,7 @@ async function classLiveStep(sv, who, body) {
 					players: [who]
 				};
 			}
-			if (s.game.kind === "corners" || s.game.kind === "ghost" || s.game.kind === "clash" || s.game.kind === "lava") return { refuse: no(409, "Use the joystick!", "not_now") };
+			if (s.game.kind === "corners" || s.game.kind === "ghost" || s.game.kind === "clash" || s.game.kind === "thrones" || s.game.kind === "lava") return { refuse: no(409, "Use the joystick!", "not_now") };
 			const out = tryFact(s.game, who, body.fact, t);
 			if (!out.ok) return { refuse: no(409, "One at a time!", out.reason) };
 			return {
@@ -17621,7 +18492,7 @@ async function nextQuestion(sv, row, who) {
 	const ctx = await sv.mathsContext(who);
 	if (!ctx) return null;
 	const g = row.session.game;
-	const m = g.kind === "mural" || g.kind === "corners" || g.kind === "ghost" || g.kind === "clash" || g.kind === "lava" ? g.mine[who] : void 0;
+	const m = g.kind === "mural" || g.kind === "corners" || g.kind === "ghost" || g.kind === "clash" || g.kind === "thrones" || g.kind === "lava" ? g.mine[who] : void 0;
 	const q = makeQuestion(ctx, `${row.session.seed}:${who}:${m?.answered ?? 0}`);
 	if (!q) return null;
 	const kept = await sv.keepQuestion(row.id, who, q);
@@ -17654,7 +18525,7 @@ async function muralMaths(sv, cur, who, body) {
 	const right = sameAnswer(value, marked.answer);
 	const done = await mutate(sv, room, (s, t) => {
 		if (s.state !== "live" || s.game.kind !== "mural") return { refuse: no(409, "This one has finished.", "over") };
-		const out = answered$3(s.game, who, right, t, () => sv.random(), s.lengthMin > 0 ? s.lengthMin * 6e4 * .9 : void 0);
+		const out = answered$4(s.game, who, right, t, () => sv.random(), s.lengthMin > 0 ? s.lengthMin * 6e4 * .9 : void 0);
 		if (!out.ok) return { refuse: no(409, "Wait for the ring to fill!", out.reason) };
 		return {
 			reply: null,
@@ -17674,7 +18545,7 @@ async function muralMaths(sv, cur, who, body) {
 			...done.refuse,
 			body: {
 				...done.refuse.body,
-				nextAt: (g.mine[who]?.lastAt ?? 0) + ANSWER_GAP_MS$4,
+				nextAt: (g.mine[who]?.lastAt ?? 0) + ANSWER_GAP_MS$5,
 				now: sv.now()
 			}
 		};
@@ -17746,7 +18617,7 @@ async function cornersStep(sv, cur, who, body) {
 					players: []
 				};
 			}
-			const out = grab$2(g, who, body.grab, at ?? mine?.spot, t);
+			const out = grab$3(g, who, body.grab, at ?? mine?.spot, t);
 			if (!out.ok) return { refuse: no(409, out.reason === "full" ? "You are already carrying one!" : out.reason === "far" ? "Get closer!" : "Too late!", out.reason) };
 			return {
 				reply: null,
@@ -17762,7 +18633,7 @@ async function cornersStep(sv, cur, who, body) {
 	if (body.action === "ask") {
 		const at = await spotOf();
 		if (at === "busy") return busy();
-		const purpose = (isShark(g0) ? sharkQuestionFor : questionFor)(g0, who, at ?? g0.mine[who]?.spot, t0);
+		const purpose = (isShark(g0) ? sharkQuestionFor : questionFor$1)(g0, who, at ?? g0.mine[who]?.spot, t0);
 		if (!purpose) return no(409, "No question right now.", "not_now");
 		const question = await nextQuestion(sv, cur, who);
 		if (question === "busy") return busy();
@@ -17788,9 +18659,9 @@ async function cornersStep(sv, cur, who, body) {
 	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS, MAX_ANSWER_MS));
 	const done = await mutate(sv, room, (s, t) => {
 		if (s.state !== "live" || s.game.kind !== "corners") return { refuse: no(409, "This one has finished.", "over") };
-		const purpose = (isShark(s.game) ? sharkQuestionFor : questionFor)(s.game, who, at ?? s.game.mine[who]?.spot, t);
+		const purpose = (isShark(s.game) ? sharkQuestionFor : questionFor$1)(s.game, who, at ?? s.game.mine[who]?.spot, t);
 		if (!purpose) return { refuse: no(409, isShark(s.game) ? "Swim off the jetty first!" : "Get to a corner first!", "not_now") };
-		const out = answered$2(s.game, who, right, purpose, s.order, t, typeof body.ms === "number" ? ms : void 0);
+		const out = answered$3(s.game, who, right, purpose, s.order, t, typeof body.ms === "number" ? ms : void 0);
 		if (!out.ok) return { refuse: no(409, out.reason === "too_soon" ? "One at a time!" : "No question right now.", out.reason) };
 		const freed = out.events.flatMap((e) => e.type === "power" && e.freed ? [e.freed] : []);
 		return {

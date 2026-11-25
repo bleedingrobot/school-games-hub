@@ -37,6 +37,7 @@ export const LIVE_GAMES: LiveGame[] = [
   { id: 'ghost', name: 'Ghost Tag', emoji: '👻', group: 'run', tint: '#4b3d8f', blurb: 'Run from the ghosts, or become one!', pic: () => painted('pick', 'ghost', true) ?? painted('ghost', 'map-graveyard', true) },
   { id: 'shark', name: 'Shark Bay', emoji: '🦈', group: 'run', tint: '#167a9c', blurb: 'Swim to safety before Simon the shark strikes!', pic: () => painted('pick', 'shark', true) ?? painted('shark', 'map-lagoon', true) },
   { id: 'lava', name: 'Floor is Lava', emoji: '🌋', group: 'run', tint: '#c2410c', blurb: 'Get off the glowing tiles before they crack!', pic: () => painted('pick', 'lava', true) ?? painted('lava', 'lake-volcano', true) },
+  { id: 'thrones', name: 'Musical Thrones', emoji: '👑', group: 'run', tint: '#8a3fc4', blurb: 'Dance, then race to a throne when the music stops!', pic: () => painted('pick', 'thrones', true) ?? painted('thrones', 'hall-castle', true) },
   { id: 'showdown', name: 'Class Showdown', emoji: '⚔️', group: 'battle', tint: '#a8362a', blurb: 'Six arenas: boss, gold rush, sky climb and more.', pic: () => Object.values(SHOWDOWN_ART)[0] ?? null },
 ];
 

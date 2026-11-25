@@ -201,8 +201,9 @@ export function SharkScene({ screen, game, link, room, clock, sound, say, onTick
     const add: { key: number; at: Spot; text: string }[] = [];
     for (const e of fresh) {
       const pos = 'pupil' in e && typeof e.pupil === 'string' ? (shown.current[e.pupil] ?? { x: 0.5, y: 0.5 }) : { x: 0.5, y: 0.5 };
-      if (e.type === 'grab') { sound.play('grab'); add.push({ key: e.seq, at: pos, text: SHARK_POWER_WORDS[e.power].emoji }); }
-      else if (e.type === 'power') { sound.play('power'); add.push({ key: e.seq, at: pos, text: `${SHARK_POWER_WORDS[e.power].emoji} ${SHARK_POWER_WORDS[e.power].name}!` }); }
+      // `e.power` is typed for every map game's powers (Musical Thrones adds its own); these events are Shark Bay's.
+      if (e.type === 'grab') { sound.play('grab'); add.push({ key: e.seq, at: pos, text: SHARK_POWER_WORDS[e.power as keyof typeof SHARK_POWER_WORDS].emoji }); }
+      else if (e.type === 'power') { sound.play('power'); add.push({ key: e.seq, at: pos, text: `${SHARK_POWER_WORDS[e.power as keyof typeof SHARK_POWER_WORDS].emoji} ${SHARK_POWER_WORDS[e.power as keyof typeof SHARK_POWER_WORDS].name}!` }); }
       else if (e.type === 'escape') sound.play('escape');
     }
     if (fresh.some((e) => e.type === 'escape')) say(lineOf('escape') ?? 'Out of the cave!', 800);

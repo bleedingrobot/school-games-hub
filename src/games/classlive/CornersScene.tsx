@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AvatarImage } from '../../avatar/AvatarImage';
 import {
-  AVATAR_R, cornerOf, JAIL_RIGHT, MAP_WORDS, MECHANICS, podium, POWER_WORDS, UNLOCK, type Corner, type CornersGame, type Mechanic, type Spot,
+  AVATAR_R, cornerOf, JAIL_RIGHT, MAP_WORDS, MECHANICS, podium, POWER_WORDS, UNLOCK, type Corner, type CornersGame, type Mechanic, type Power, type Spot,
 } from '../../../shared/classlive/corners';
 import type { ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
@@ -180,8 +180,9 @@ export function CornersScene({ screen, game, link, room, clock, sound, say, onTi
     const add: { key: number; at: Spot; text: string }[] = [];
     for (const e of fresh) {
       const at = 'pupil' in e && typeof e.pupil === 'string' ? (shown.current[e.pupil] ?? { x: 0.5, y: 0.5 }) : { x: 0.5, y: 0.5 };
-      if (e.type === 'grab') { sound.play('grab'); add.push({ key: e.seq, at, text: POWER_WORDS[e.power].emoji }); }
-      else if (e.type === 'power') { sound.play('power'); add.push({ key: e.seq, at, text: `${POWER_WORDS[e.power].emoji} ${POWER_WORDS[e.power].name}!` }); }
+      // (Events of other games never reach this screen: the casts only narrow the shared event type.)
+      if (e.type === 'grab') { sound.play('grab'); add.push({ key: e.seq, at, text: POWER_WORDS[e.power as Power].emoji }); }
+      else if (e.type === 'power') { sound.play('power'); add.push({ key: e.seq, at, text: `${POWER_WORDS[e.power as Power].emoji} ${POWER_WORDS[e.power as Power].name}!` }); }
       else if (e.type === 'escape') sound.play('escape');
     }
     if (fresh.some((e) => e.type === 'escape')) say(lineOf('escape') ?? 'Out of jail!', 800);
