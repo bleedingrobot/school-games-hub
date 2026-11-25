@@ -73,7 +73,7 @@ type ShellMode = 'class' | 'admin' | 'entry';
 
 function ShellBody({ inAddress, mode, isAdmin }: { inAddress: string | null; mode: ShellMode; isAdmin: boolean }) {
   const { ready, classes, classId, failed } = useTeacherClass();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   if (!ready) {
     return (
       <p className="teacher__classes-link" role="status">
@@ -84,7 +84,7 @@ function ShellBody({ inAddress, mode, isAdmin }: { inAddress: string | null; mod
   if (classes.length === 0) return <NoClass failed={failed} />;
   // A class that isn't in the list (archived, someone else's, a typo) opens the remembered one instead, on the same tab.
   if (mode === 'entry') return <Navigate to={pathFor(classId!)} replace />;
-  if (inAddress && inAddress !== classId) return <Navigate to={pathFor(classId!, sectionOf(pathname))} replace />;
+  if (inAddress && inAddress !== classId) return <Navigate to={`${pathFor(classId!, sectionOf(pathname))}${search}`} replace />;
   return (
     <div className="teacher teacher-shell">
       <TeacherHeader isAdmin={isAdmin} />
