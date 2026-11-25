@@ -38,7 +38,7 @@ create function pg_temp.questions() returns jsonb language sql as $$ select '[{"
 select ok(exists (select 1 from public.hub_games where id = 'diamond' and switch_column = 'diamond_enabled' and counts_fn is not null
   and rules_fn is not null and players_fn is not null and season_fn is not null and last_played_fn is not null and keep_achievements),
   'Diamond Drop is registered with its hooks, keeping achievements through New Season');
-select is((select count(*)::integer from public.achievement_types where game = 'diamond'), 11, 'with eleven achievements (six, then five for rare gems)');
+select is((select count(*)::integer from public.achievement_types where game = 'diamond'), 18, 'with eighteen achievements (six, five for rare gems, seven for the Monster Dig)');
 select is((select diamond_enabled from public.app_settings limit 1), false, 'the game starts switched off');
 
 -- ---- Pupils can't reach anything directly ----
