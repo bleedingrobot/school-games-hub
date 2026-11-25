@@ -1,43 +1,74 @@
 /**
- * /teacher/:classId/badges: the class's QR sign-in badges, to print and cut out (docs/BADGE-SIGN-IN-PLAN.md). Each card
- * signs in one pupil when scanned. "Lost card" makes that pupil a new one, so the old card stops working, and signs
- * them out on every device.
+ * /teacher/:classId/badges: the class's QR sign-in badges, to print and cut out (docs/BADGE-SIGN-IN-PLAN.md), and a search
+ * for any pupil the teacher may see, to show or print one card (docs/plans/badge-review/ADD-PUPILS.md). Each card signs in
+ * one pupil when scanned. "Lost card" makes that pupil a new one, so the old card stops working, and signs them out on every
+ * device.
  */
-import qrcode from 'qrcode-generator';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { badgeLink, fetchClassBadges, renewBadge, type PupilBadge } from '../data/badge';
+import { findPupils, type FoundPupil } from '../data/addPupils';
+import { fetchClassBadges, renewBadge, type PupilBadge } from '../data/badge';
 import { FriendlyError } from '../data/profile';
+import { BadgeCard, BigBadge, cardName, type CardPupil } from './BadgeCard';
+import { printBadges } from './badgePrint';
 import { useTeacherClass } from './TeacherClass';
 import './badges.css';
 
+export { QrCode, cardName } from './BadgeCard';
+
 const errorText = (e: unknown) => (e instanceof FriendlyError ? e.message : 'Something went wrong. Please try again.');
 
-/** "ava.kingi" → "Ava Kingi": the school email's name part, tidied for the card. */
-export function cardName(realName: string): string {
-  return realName
-    .split(/[._-]+/)
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-}
+/** Search any pupil I may see (a school admin: the whole school) and show or print their badge. */
+export function FindPupil({ onShow }: { onShow: (p: CardPupil) => void }) {
+  const [words, setWords] = useState('');
+  const [found, setFound] = useState<FoundPupil[] | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
 
-/** A QR code as one SVG path (black squares on white), with the usual 4-square quiet edge. */
-export function QrCode({ text, label }: { text: string; label: string }) {
-  const path = useMemo(() => {
-    const qr = qrcode(0, 'M');
-    qr.addData(text);
-    qr.make();
-    const n = qr.getModuleCount();
-    let d = '';
-    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) d += `M${c + 4} ${r + 4}h1v1h-1z`;
-    return { d, size: n + 8 };
-  }, [text]);
+  useEffect(() => {
+    const q = words.trim();
+    if (q.length < 2) {
+      setFound(null);
+      return;
+    }
+    let live = true;
+    const wait = window.setTimeout(() => {
+      findPupils(q).then(
+        (f) => {
+          if (!live) return;
+          setFound(f);
+          setProblem(null);
+        },
+        (e: unknown) => live && setProblem(errorText(e)),
+      );
+    }, 300);
+    return () => {
+      live = false;
+      window.clearTimeout(wait);
+    };
+  }, [words]);
+
   return (
-    <svg className="badge-card__qr" viewBox={`0 0 ${path.size} ${path.size}`} role="img" aria-label={label} shapeRendering="crispEdges">
-      <rect width={path.size} height={path.size} fill="#fff" />
-      <path d={path.d} fill="#000" />
-    </svg>
+    <div className="badges__find">
+      <label className="badges__find-label">
+        Find a pupil
+        <input
+          type="search"
+          value={words}
+          onChange={(e) => setWords(e.target.value)}
+          placeholder="Name, email or player name"
+          autoComplete="off"
+        />
+      </label>
+      {problem && <p role="alert">{problem}</p>}
+      {found?.length === 0 && <p role="status">No pupils found. Not signed in yet? Add them with <strong>Add new pupils</strong>.</p>}
+      {found && found.length > 0 && (
+        <ul className="badges__sheet badges__sheet--found" aria-label="Pupils found">
+          {found.map((p) => (
+            <BadgeCard key={p.player} pupil={p} className={p.className} onShow={() => onShow(p)} />
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -46,6 +77,8 @@ export function BadgeSheet() {
   const [badges, setBadges] = useState<PupilBadge[] | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [big, setBig] = useState<CardPupil | null>(null);
+  const sheet = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
     if (!classId) return;
@@ -66,7 +99,7 @@ export function BadgeSheet() {
     try {
       const code = await renewBadge(b.player);
       setBadges((all) => all?.map((x) => (x.player === b.player ? { ...x, code } : x)) ?? null);
-      setNotice(`New badge made for ${name}. Print it and throw the old one away.`);
+      setNotice(`New badge made for ${name}. Tap “Print this card” on it, and throw the old one away.`);
     } catch (e) {
       setNotice(errorText(e));
     }
@@ -79,9 +112,14 @@ export function BadgeSheet() {
         <h2 id="badges-title" className="panel__title">
           Sign-in badges: {current.name}
         </h2>
-        <button type="button" className="button button--primary" onClick={() => window.print()} disabled={!badges?.length}>
-          Print badges
-        </button>
+        <div className="badges__actions">
+          <Link className="button button--light" to={`/teacher/${classId}/add-pupils`}>
+            ➕ Add new pupils
+          </Link>
+          <button type="button" className="button button--primary" onClick={() => printBadges(sheet.current)} disabled={!badges?.length}>
+            Print class badges
+          </button>
+        </div>
       </div>
       <p className="badges__note">
         Each card signs in one pupil, with no typing. They tap <strong>Scan my badge</strong> on the sign-in page and hold the
@@ -89,8 +127,10 @@ export function BadgeSheet() {
         one is lost, tap <strong>Lost card</strong> to make a new one: the old card stops working and the pupil is signed out
         everywhere (within the hour), so nobody can keep playing as them.
       </p>
+      <FindPupil onShow={setBig} />
       <p className="badges__note">
-        Only pupils in this class who have signed in once appear here. Back to <Link to={`/teacher/${classId}/students`}>Students</Link>.
+        Pupils who have never played can be added by school email with <Link to={`/teacher/${classId}/add-pupils`}>Add new pupils</Link>.
+        Back to <Link to={`/teacher/${classId}/students`}>Students</Link>.
       </p>
       {notice && (
         <p role="status" className="badges__notice">
@@ -101,26 +141,17 @@ export function BadgeSheet() {
       {!badges && !problem && <p role="status">Loading…</p>}
       {badges?.length === 0 && <p>No pupils in this class yet.</p>}
       {badges && badges.length > 0 && (
-        <ul className="badges__sheet">
-          {badges.map((b) => {
-            const name = cardName(b.realName) || b.displayName;
-            return (
-              <li key={b.player} className="badge-card">
-                <QrCode text={badgeLink(b.code)} label={`Sign-in badge for ${name}`} />
-                <div className="badge-card__words">
-                  <p className="badge-card__name">{name}</p>
-                  <p className="badge-card__player">{b.displayName}</p>
-                  <p className="badge-card__class">{current.name} · School Games Hub</p>
-                  <p className="badge-card__tip">📷 Scan me to play!</p>
-                  <button type="button" className="button button--light badge-card__renew" onClick={() => void renew(b)}>
-                    Lost card
-                  </button>
-                </div>
-              </li>
-            );
-          })}
+        <ul ref={sheet} className="badges__sheet" aria-label={`Badges for ${current.name}`}>
+          {badges.map((b) => (
+            <BadgeCard key={b.player} pupil={b} className={current.name} onShow={() => setBig(b)}>
+              <button type="button" className="button button--light badge-card__renew" onClick={() => void renew(b)}>
+                Lost card
+              </button>
+            </BadgeCard>
+          ))}
         </ul>
       )}
+      {big && <BigBadge pupil={big} onClose={() => setBig(null)} />}
     </section>
   );
 }
