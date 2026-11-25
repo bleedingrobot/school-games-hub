@@ -11,7 +11,7 @@
  * The AudioContext is made on the first sound (browsers need a tap first), busy moments are rate-limited, and every call is
  * wrapped so a browser without audio just stays quiet.
  */
-export type Kit = 'stars' | 'serpent' | 'mural' | 'corners' | 'ghost' | 'clash' | 'thrones' | 'lava' | 'crew';
+export type Kit = 'stars' | 'serpent' | 'mural' | 'corners' | 'ghost' | 'clash' | 'thrones' | 'lava' | 'crew' | 'relay';
 
 export type SoundName =
   | 'join' | 'start' | 'over'
@@ -144,6 +144,8 @@ const KITS: Record<Kit, { root: number; scale: number[]; lead: InstrumentName[];
   crew: { root: 293.66, scale: [0, 2, 3, 5, 7, 9, 10], lead: ['marimba', 'wood', 'glock'], low: ['logdrum', 'wood'] },
   // Musical Thrones: a royal court. Harp, glockenspiel, pizzicato; a bright mixolydian.
   thrones: { root: 349.23, scale: [0, 2, 4, 5, 7, 9, 10], lead: ['harp', 'glock', 'pizz'], low: ['pizz', 'harp'] },
+  // Toon Flap Relay: sports day. Bright major pentatonic on glockenspiel, kalimba and marimba.
+  relay: { root: 392, scale: [0, 2, 4, 7, 9], lead: ['glock', 'kalimba', 'marimba'], low: ['logdrum', 'wood'] },
 };
 
 /** The frequency of scale step `n` (any whole number, wrapping into octaves). */

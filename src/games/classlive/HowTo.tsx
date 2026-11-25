@@ -13,6 +13,7 @@ import { HALL_WORDS } from '../../../shared/classlive/thrones';
 import { MAP_WORDS as CLASH_WORDS } from '../../../shared/classlive/clash';
 import { BAY_WORDS, isShark, SHARK } from '../../../shared/classlive/shark';
 import { HOWTO, VOICE_FOLDER } from './voiceLines';
+import { relaySheet } from './RelayCard';
 import { LAVA_HOWTO, LAVA_MAP_SAY } from './lavaVoice';
 import { LAVA_WORDS } from '../../../shared/classlive/lava';
 import { ghostSheet } from './GhostCard';
@@ -51,6 +52,7 @@ export function sheetFor(game: Game): Sheet {
       ],
     };
   }
+  if (game.kind === 'relay') return relaySheet(game);
   if (game.kind === 'lava') {
     const H = LAVA_HOWTO;
     return {

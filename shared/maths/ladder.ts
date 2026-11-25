@@ -227,6 +227,9 @@ export const FORMER_SKILLS: Readonly<Record<string, { label: string; now: readon
   'tables-6-9': { label: 'Times tables: ×6, ×9', now: ['tables-6', 'tables-9'] },
   'tables-11-12': { label: 'Times tables: ×11, ×12', now: ['tables-11', 'tables-12'] },
   'round-million': { label: 'Rounding to the nearest million', now: [] },
+  // Year 6 skills taken off the ladder (James, 26 Nov 2026 NZ).
+  'shape-clue': { label: 'Naming shapes from a clue', now: [] },
+  'rot-symmetry': { label: 'Order of rotational symmetry', now: [] },
 };
 
 /** Skill ids as they are now: an old id becomes the skills it was split into. Order kept, no repeats. */
@@ -240,6 +243,7 @@ export function currentSkillIds(ids: readonly string[]): string[] {
  */
 export function currentPlaceId(id: string): string {
   if (id === 'round-million') return 'fdp-equivalents';
+  if (id === 'shape-clue' || id === 'rot-symmetry') return 'coordinates';
   return Object.hasOwn(FORMER_SKILLS, id) ? FORMER_SKILLS[id].now[0] : id;
 }
 
