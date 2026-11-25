@@ -1,6 +1,6 @@
 # Saboteur Crew (Class Live activity `crew`)
 
-**Status: PLAN ONLY (25 Nov 2026 NZ). Not built. James says when to build.** Migration: pick the next free number when building (`node scripts/migration-numbers.mjs`); it only INSERTs (docs/CLASSLIVE-PLAN.md section 5, "Adding an activity").
+**Status: BUILT (25 Nov 2026 NZ), all of stage 1 to 3 in one PR; paintings and music to come (docs/CREW-ART-PLAN.md).** Migration: `20261126000200_classlive_crew.sql`; it only INSERTs (plus `classlive_crew_move`) (docs/CLASSLIVE-PLAN.md section 5, "Adding an activity").
 
 James's idea (25 Nov 2026 NZ): an original hidden-role Class Live game. Every pupil runs their own hub avatar around a robot factory, keeping the machines running by answering maths questions. A few pupils are secretly **Glitches** who jam machines. The teacher calls a meeting, the class talks it over and votes someone off. Built on Four Corners / Ghost Tag (docs/CORNERS-PLAN.md, docs/GHOST-PLAN.md): same room, joystick, saved spots, lobby codes, timers, music, Bella, rewards.
 
@@ -46,7 +46,7 @@ Kind by design: the hidden role is a playful part ("a Glitch in the factory"), n
 - **Sent off**: a friendly reveal animation (robot arm lifts the avatar onto a belt, sign flips to "Glitch!" or "Crew"). They become a **helper drone** (little hover robot wearing their avatar's face) for the rest of the round: can't vote, can't jam. A Crew drone keeps doing jobs and fixes. A Glitch drone answers maths questions too: each right answer shortens the other Glitches' jam wait by 3 s (so every sent-off pupil does maths).
 - **Round end**: winners' side cheers, everyone's role is shown, then `SHOW_MS` (8 s) and a new round. When the session's time is up a running round ends at once (power bar decides: over 50 is a Crew win).
 - **Score**: rounds won, then right answers (Crew) / jams (Glitches) for the shout-outs. Podium shares ties.
-- **Mechanics** (`UNLOCK`, round by round like Ghost Tag): round 1 jobs, jams, fixes; round 2 power-up crates (Crew only, picked up by walking over; a right answer switches it on): speed boots (6 s), camera console (shows the whole map with all avatars on your pad for 8 s), toolkit (next fix answer mends a machine fully); round 3 **lights out** (each Glitch once a round: everyone's pad sees only `LIGHT_R` 0.2 around them for 8 s, the big screen dims to torch circles; Crew can switch the lights back on early with 2 right answers at the Control Room); round 4 conveyor belts (carry avatars along); round 5 sliding doors that close for 5 s now and then; from round 6 a mix of 2 to 4.
+- **Mechanics** (`UNLOCK`, round by round like Ghost Tag): round 1 jobs, jams, fixes; round 2 power-up crates (Crew only, picked up by walking over; a right answer switches it on): speed boots (6 s), camera console (shows the whole map with all avatars on your pad for 8 s), toolkit (next fix answer mends a machine fully); round 3 **lights out** (each Glitch once a round: everyone's pad sees only `LIGHT_R` 0.2 around them for 8 s, the big screen dims to torch circles; Crew can switch the lights back on early with 2 right answers at the Control Room); round 4 conveyor belts (carry avatars along); from round 5 a mix of 2 or 3. (Sliding doors were dropped when building: they blocked jobs and fixes more than they added.)
 
 ## Maths
 

@@ -41,11 +41,13 @@ import { BAYS, isShark, newShark, sharkAdvance, sharkJump, sharkQuestionFor, typ
 
 import { advance as ghostAdvance, freshMine as ghostFresh, ghostDone, ghostPlayer, MAPS as GHOST_MAPS, needsPositions as ghostNeeds, newGhost, nextDeadline as ghostDeadline, publicGhost, type GhostEvent, type GhostGame, type GhostPlayer, type PublicGhost } from './ghost';
 import { ghostStep } from './ghostServer';
+import { advance as crewAdvance, callMeeting, crewDone, crewPlayer, freshMine as crewFresh, meetingControl, newCrew, nextDeadline as crewDeadline, publicCrew, type CrewEvent, type CrewGame, type CrewPlayer, type PublicCrew } from './crew';
+import { crewStep } from './crewServer';
 
-export const ACTIVITIES = ['stars', 'serpent', 'mural', 'corners', 'shark', 'ghost', 'clash', 'thrones', 'lava'] as const;
+export const ACTIVITIES = ['stars', 'serpent', 'mural', 'corners', 'shark', 'ghost', 'clash', 'thrones', 'lava', 'crew'] as const;
 export type Activity = (typeof ACTIVITIES)[number];
 export const LENGTHS = [0, 2, 3, 5, 10, 15] as const;
-export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners', shark: 'Shark Bay', ghost: 'Ghost Tag', clash: 'Colour Clash', thrones: 'Musical Thrones', lava: 'Floor is Lava' };
+export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners', shark: 'Shark Bay', ghost: 'Ghost Tag', clash: 'Colour Clash', thrones: 'Musical Thrones', lava: 'Floor is Lava', crew: 'Saboteur Crew' };
 
 export interface LivePlayer {
   id: string;
@@ -55,8 +57,8 @@ export interface LivePlayer {
   colour: number;
 }
 
-export type Game = StarsGame | SerpentGame | MuralGame | CornersGame | GhostGame | ClashGame | ThronesGame | LavaGame;
-export type GameEvent = StarsEvent | SerpentEvent | MuralEvent | CornersEvent | GhostEvent | ClashEvent | ThronesEvent | LavaEvent;
+export type Game = StarsGame | SerpentGame | MuralGame | CornersGame | GhostGame | ClashGame | ThronesGame | LavaGame | CrewGame;
+export type GameEvent = StarsEvent | SerpentEvent | MuralEvent | CornersEvent | GhostEvent | ClashEvent | ThronesEvent | LavaEvent | CrewEvent;
 
 export interface Session {
   seed: number;
@@ -146,7 +148,8 @@ export type PublicGame =
   /** Colour Clash (shared/classlive/clashServer.ts). */
   | ClashPublic
   | ThronesPublic
-  | LavaPublic;
+  | LavaPublic
+  | PublicCrew;
 
 export type PublicRound = Omit<Round, 'rolled' | 'caught' | 'saved' | 'items'> & {
   rolled: Corner[] | null;
@@ -193,7 +196,8 @@ export interface PlayerView {
     | GhostPlayer
     | ClashPlayer
     | ThronesPlayer
-    | LavaPlayer;
+    | LavaPlayer
+    | CrewPlayer;
 }
 
 export interface RoomRow {
@@ -292,6 +296,7 @@ function publicRound(r: Round, t: number): PublicRound {
 /** `t`: ms since the start, so a pupil's device only learns the rolled corner once the dice has landed. */
 export function publicGame(g: Game, players: number, t = 0, order: string[] = []): PublicGame {
   if (g.kind === 'ghost') return publicGhost(g, order);
+  if (g.kind === 'crew') return publicCrew(g, order);
   if (g.kind === 'clash') return clashPublic(g);
   if (g.kind === 'lava') return lavaPublic(g, players);
   if (g.kind === 'thrones') return thronesPublic(g, players);
@@ -346,6 +351,7 @@ export function playerView(s: Session, id: string): PlayerView {
   if (s.game.kind === 'lava') return { player: id, name: firstName(p.name), colour: p.colour, game: lavaPlayer(s, s.game, id, () => freshLavaMine(s.order.indexOf(id))) };
   if (s.game.kind === 'thrones') return { player: id, name: firstName(p.name), colour: p.colour, game: thronesPlayer(s.game, s.order, id, s.state === 'over') };
   if (s.game.kind === 'clash') return { player: id, name: firstName(p.name), colour: p.colour, game: clashPlayer(s, s.game, id) };
+  if (s.game.kind === 'crew') return { player: id, name: firstName(p.name), colour: p.colour, game: crewPlayer(s.game, id, s.order, s.state === 'over', (x) => ({ name: firstName(s.players[x]?.name ?? ''), colour: s.players[x]?.colour ?? 0 })) };
   if (s.game.kind === 'ghost') return { player: id, name: firstName(p.name), colour: p.colour, game: ghostPlayer(s.game, id, s.order, s.state === 'over') };
   if (s.game.kind === 'corners') {
     const g = s.game;
@@ -470,8 +476,18 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
     const events: Event[] = [...autoEvents];
     const g0 = s.game;
     // Four Corners: the server moves pupils (back from jail, a jump); their devices snap to the new spot.
-    const placedBefore = g0.kind === 'corners' || g0.kind === 'ghost' || g0.kind === 'clash' || g0.kind === 'thrones' || g0.kind === 'lava' ? new Map(s.order.map((id) => [id, g0.mine[id]?.placed ?? 0])) : null;
-    if (g0.kind === 'ghost') {
+    const placedBefore = g0.kind === 'corners' || g0.kind === 'ghost' || g0.kind === 'crew' || g0.kind === 'clash' || g0.kind === 'thrones' || g0.kind === 'lava' ? new Map(s.order.map((id) => [id, g0.mine[id]?.placed ?? 0])) : null;
+    if (g0.kind === 'crew') {
+      // Saboteur Crew runs on the clock too: role cards, delayed jams, the power bar, meetings, rounds (docs/CREW-PLAN.md).
+      if (s.state === 'live') {
+        const last = timeUp(s, row, now);
+        events.push(...crewAdvance(g0, t, s.order, () => sv.random(), last));
+        if (last && crewDone(g0, t)) {
+          s.state = 'over';
+          events.push({ type: 'over', t, why: 'time' });
+        }
+      }
+    } else if (g0.kind === 'ghost') {
       // Ghost Tag runs on the clock too: rounds, the hunt, tags from the saved spots (docs/GHOST-PLAN.md).
       if (s.state === 'live') {
         let spots: Positions = {};
@@ -573,13 +589,15 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
     const next: RoomRow = { ...row, startedAt, seq, events: [...row.events, ...numbered].slice(-KEEP_EVENTS), session: s };
     for (const e of events) if ('pupil' in e && typeof e.pupil === 'string') changed.add(e.pupil);
     const g1 = s.game;
-    const places = (g1.kind === 'corners' || g1.kind === 'ghost' || g1.kind === 'clash' || g1.kind === 'thrones' || g1.kind === 'lava') && placedBefore
+    const places = (g1.kind === 'corners' || g1.kind === 'ghost' || g1.kind === 'crew' || g1.kind === 'clash' || g1.kind === 'thrones' || g1.kind === 'lava') && placedBefore
       ? s.order.filter((id) => (g1.mine[id]?.placed ?? 0) !== (placedBefore.get(id) ?? 0)).map((id) => ({ player: id, x: g1.mine[id].spot.x, y: g1.mine[id].spot.y }))
       : [];
     for (const p of places) changed.add(p.player);
     // A round's end changes every pupil's own row (caught, safe, scores).
     if ((g1.kind === 'corners' || g1.kind === 'lava') && events.some((e) => e.type === 'roll' || e.type === 'crack' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
     if ((g1.kind === 'corners' || g1.kind === 'clash') && events.some((e) => e.type === 'roll' || e.type === 'clash_count' || e.type === 'clash_round' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
+    // Saboteur Crew: roles, meetings (the ballot), reveals and rounds change everyone's own row.
+    if (g1.kind === 'crew' && events.some((e) => e.type === 'c_round' || e.type === 'c_meeting' || e.type === 'c_vote' || e.type === 'c_out' || e.type === 'c_resume' || e.type === 'c_end' || e.type === 'over')) for (const id of s.order) changed.add(id);
     if (g1.kind === 'ghost' && events.some((e) => e.type === 'g_round' || e.type === 'g_end' || e.type === 'over' || (e.type === 'g_grab' && e.froze > 0))) for (const id of s.order) changed.add(id);
     if (g1.kind === 'thrones' && events.some((e) => e.type === 'stop' || e.type === 'seated' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
     const players = [...changed].filter((id) => s.players[id]).map((id) => playerView(s, id));
@@ -629,6 +647,8 @@ export function newSession(body: Record<string, unknown>, seed: number, random: 
   } else if (activity === 'serpent') {
     const level = SERPENT_LEVELS.find((l) => l === body.level) ?? 'gold';
     game = newSerpent(level, random);
+  } else if (activity === 'crew') {
+    game = newCrew();
   } else if (activity === 'ghost') {
     game = newGhost(GHOST_MAPS.find((m) => m === body.map) ?? GHOST_MAPS[Math.floor(random() * GHOST_MAPS.length) % GHOST_MAPS.length]);
   } else if (activity === 'corners') {
@@ -663,6 +683,7 @@ function joinGame(g: Game, who: string, index: number) {
   if (g.kind === 'thrones') g.mine[who] = thronesFresh(index);
   if (g.kind === 'clash') clashJoin(g, who);
   if (g.kind === 'ghost') g.mine[who] = ghostFresh(index);
+  if (g.kind === 'crew') g.mine[who] = crewFresh(index);
 }
 
 /** Lobby to live (the teacher's Start, or a set-time game's start). */
@@ -710,7 +731,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     return ok({ room: id, screen: change.screen, now: sv.now() });
   }
 
-  if (action === 'view' || action === 'start' || action === 'end' || action === 'spotlight' || action === 'reveal' || action === 'padmusic') {
+  if (action === 'view' || action === 'start' || action === 'end' || action === 'spotlight' || action === 'reveal' || action === 'padmusic' || action === 'crew') {
     const room = readRoom(body.room);
     if (!room) return no(400, "That room couldn't be found.");
     const row = await sv.loadRoom(room);
@@ -737,6 +758,13 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         if (s.game.phase !== 'guess') return { reply: null, events: startGuessing(s.game, t) };
         s.state = 'over';
         return { reply: null, events: [...reveal(s.game, t), { type: 'over', t, why: 'teacher' }] };
+      }
+      if (action === 'crew') {
+        // Saboteur Crew's meeting buttons (James: only the teacher calls a meeting).
+        if (s.game.kind !== 'crew' || s.state !== 'live') return { refuse: no(400, 'No meeting here.') };
+        const out = body.do === 'meeting' ? callMeeting(s.game, t, s.order) : body.do === 'vote' || body.do === 'more' ? meetingControl(s.game, t, body.do) : { ok: false as const };
+        if (!out.ok) return { refuse: no(409, 'Not now.', 'not_now') };
+        return { reply: null, events: out.events, players: s.order };
       }
       if (action === 'padmusic') {
         s.padMusic = body.on === true;
@@ -822,7 +850,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     if (action === 'look') {
       // Four Corners runs on the clock: if the big screen hasn't moved a round on (closed, asleep), a pupil's look does.
       const cg = cur.session.game;
-      const due = cur.session.state !== 'live' ? null : cg.kind === 'corners' ? nextDeadline(cg, cur.startedAt) : cg.kind === 'ghost' ? ghostDeadline(cg, cur.startedAt) : cg.kind === 'clash' ? clashDeadline(cg, cur.startedAt) : cg.kind === 'thrones' ? thronesDeadline(cg, cur.startedAt) : cg.kind === 'lava' ? lavaDeadline(cg, cur.startedAt) : null;
+      const due = cur.session.state !== 'live' ? null : cg.kind === 'corners' ? nextDeadline(cg, cur.startedAt) : cg.kind === 'ghost' ? ghostDeadline(cg, cur.startedAt) : cg.kind === 'crew' ? crewDeadline(cg, cur.startedAt) : cg.kind === 'clash' ? clashDeadline(cg, cur.startedAt) : cg.kind === 'thrones' ? thronesDeadline(cg, cur.startedAt) : cg.kind === 'lava' ? lavaDeadline(cg, cur.startedAt) : null;
       // Also anything else due with no big screen to move it on (a set-time game): its start, the time up, Mural's guessing.
       const n = sv.now(), tt = timeOf(cur, n), cs = cur.session;
       const otherDue = cs.auto && cs.state === 'lobby' ? n >= cs.auto.startsAt
@@ -843,6 +871,10 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     }
     if (cur.session.game.kind === 'clash' && (action === 'ask' || action === 'answer' || action === 'play')) {
       const out = await clashStep(sv, cur, who, body);
+      return cur.session.state === 'live' ? out : withRoom(out);
+    }
+    if (cur.session.game.kind === 'crew' && (action === 'ask' || action === 'answer' || action === 'play')) {
+      const out = await crewStep(sv, cur, who, body);
       return cur.session.state === 'live' ? out : withRoom(out);
     }
     if (cur.session.game.kind === 'ghost' && (action === 'ask' || action === 'answer' || action === 'play')) {
@@ -885,7 +917,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         }
         return { reply: out.reply, events: out.events, players: [who] };
       }
-      if (s.game.kind === 'corners' || s.game.kind === 'ghost' || s.game.kind === 'clash' || s.game.kind === 'thrones' || s.game.kind === 'lava') return { refuse: no(409, 'Use the joystick!', 'not_now') };
+      if (s.game.kind === 'corners' || s.game.kind === 'ghost' || s.game.kind === 'crew' || s.game.kind === 'clash' || s.game.kind === 'thrones' || s.game.kind === 'lava') return { refuse: no(409, 'Use the joystick!', 'not_now') };
       const out = tryFact(s.game, who, body.fact, t);
       if (!out.ok) return { refuse: no(409, 'One at a time!', out.reason) };
       return { reply: out.reply, events: out.events, players: [who] };
@@ -926,7 +958,7 @@ export async function nextQuestion(sv: ClassLiveServices, row: RoomRow, who: str
   const ctx = await sv.mathsContext(who);
   if (!ctx) return null;
   const g = row.session.game;
-  const m = g.kind === 'mural' || g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'clash' || g.kind === 'thrones' || g.kind === 'lava' ? g.mine[who] : undefined;
+  const m = g.kind === 'mural' || g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'crew' || g.kind === 'clash' || g.kind === 'thrones' || g.kind === 'lava' ? g.mine[who] : undefined;
   const q = makeQuestion(ctx, `${row.session.seed}:${who}:${m?.answered ?? 0}`);
   if (!q) return null;
   const kept = await sv.keepQuestion(row.id, who, q);

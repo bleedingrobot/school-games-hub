@@ -10149,7 +10149,7 @@ const parseBond = (total) => (parts) => {
 };
 const TENS = range$1(20, 90, 10);
 const HUNDREDS = range$1(200, 900, 100);
-const POWERS$4 = [
+const POWERS$5 = [
 	10,
 	100,
 	1e3
@@ -10164,7 +10164,7 @@ function timesKeyOf(x, y) {
 	if (pair(digit, isHundreds)) return "times:hundreds";
 	if (isTens(x) && isTens(y)) return "times:tens-tens";
 	if (pair((n) => n >= 13 && n <= 99 && n % 10 !== 0, (n) => n === 10 || n === 100)) return "times:shift";
-	if (POWERS$4.includes(x) && POWERS$4.includes(y) && !(x === 10 && y === 10)) return "times:powers";
+	if (POWERS$5.includes(x) && POWERS$5.includes(y) && !(x === 10 && y === 10)) return "times:powers";
 	return null;
 }
 function timesFamily(key, label, pools) {
@@ -10663,7 +10663,7 @@ const PLACE_FAMILIES = Object.fromEntries([
 	timesFamily("times:hundreds", "Times a number of hundreds (6 × 300)", [range$1(2, 9), HUNDREDS]),
 	timesFamily("times:tens-tens", "Tens times tens (20 × 30)", [TENS, TENS]),
 	timesFamily("times:shift", "Times 10 and 100 (34 × 10)", [range$1(13, 99).filter((n) => n % 10 !== 0), [10, 100]]),
-	timesFamily("times:powers", "Times 10, 100 and 1000 together (10 × 100)", [POWERS$4, POWERS$4]),
+	timesFamily("times:powers", "Times 10, 100 and 1000 together (10 × 100)", [POWERS$5, POWERS$5]),
 	divTens,
 	...factorFamilies,
 	...squareFamilies
@@ -12804,7 +12804,7 @@ function spotlight(g, id, t) {
 	}];
 }
 /** One marked answer every this many ms per pupil (no speed bonus; same as Class Showdown). */
-const ANSWER_GAP_MS$5 = 4e3;
+const ANSWER_GAP_MS$6 = 4e3;
 /** How long the guessing lasts once the flipping is over (it ends sooner when everyone has picked). */
 const GUESS_MS = 45e3;
 /**
@@ -12942,7 +12942,7 @@ const guessingDone = (g, t) => guessing(g) && t >= (g.guessFrom ?? 0) + 45e3;
 /** Has every pupil in the room picked? */
 const allPicked = (g, order) => order.length > 0 && order.every((id) => !!g.mine[id]?.pick);
 /** A marked answer (the server has marked it): a right one flips a tile at random. */
-function answered$4(g, pupil, right, t, random, paceMs = UNTIMED_PACE_MS) {
+function answered$5(g, pupil, right, t, random, paceMs = UNTIMED_PACE_MS) {
 	const m = mineOf(g, pupil);
 	if (t - m.lastAt < 4e3) return {
 		ok: false,
@@ -13479,7 +13479,7 @@ const CORNERS = [
 	2,
 	3
 ];
-const POWERS$3 = [
+const POWERS$4 = [
 	"shield",
 	"speed",
 	"key",
@@ -13488,7 +13488,7 @@ const POWERS$3 = [
 	"double",
 	"ghost"
 ];
-const MECHANICS$3 = [
+const MECHANICS$4 = [
 	"items",
 	"storm",
 	"teleport",
@@ -13500,7 +13500,7 @@ const MECHANICS$3 = [
 	"twist"
 ];
 /** The round each mechanic first appears (James: "unlocked bit by bit so it isn't chaos"). */
-const UNLOCK$3 = {
+const UNLOCK$4 = {
 	items: 2,
 	storm: 3,
 	teleport: 4,
@@ -13514,10 +13514,10 @@ const UNLOCK$3 = {
 /** A corner zone's side (corners are squares in the board's corners). */
 const ZONE = .26;
 const ROLL_MS = 4500;
-const SHOW_MS$3 = 4500;
+const SHOW_MS$4 = 4500;
 /** Before the first round. */
 const READY_MS$4 = 4e3;
-const ANSWER_GAP_MS$4 = 1500;
+const ANSWER_GAP_MS$5 = 1500;
 const runMs = (n) => Math.max(9e3, 14e3 - (n - 1) * 400);
 const runSeconds = (v) => typeof v === "number" && Number.isFinite(v) ? Math.max(6, Math.min(12, Math.round(v))) : 10;
 const START$1 = {
@@ -13539,7 +13539,7 @@ const cornerCentre = (c) => ({
 	x: c === 0 || c === 3 ? ZONE / 2 : 1 - ZONE / 2,
 	y: c < 2 ? ZONE / 2 : 1 - ZONE / 2
 });
-const dist$5 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const dist$6 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 /** A start spot in the middle, spread by player number so avatars don't sit on top of each other. */
 function startSpot$1(i) {
 	const a = i * 2.399963;
@@ -13552,11 +13552,11 @@ function startSpot$1(i) {
 const gateShut = (round, t) => round.gate !== null && t >= round.runEnd - 3e3;
 const pick$5 = (list, random) => list[Math.floor(random() * list.length) % list.length];
 /** Which mechanics a round has: each new one alone on its unlock round (with the earlier ones sometimes), then a mix. */
-function mechanicsFor$3(n, random) {
+function mechanicsFor$4(n, random) {
 	const out = new Set();
-	const open = MECHANICS$3.filter((m) => UNLOCK$3[m] <= n);
+	const open = MECHANICS$4.filter((m) => UNLOCK$4[m] <= n);
 	if (open.includes("items")) out.add("items");
-	const fresh = MECHANICS$3.find((m) => UNLOCK$3[m] === n);
+	const fresh = MECHANICS$4.find((m) => UNLOCK$4[m] === n);
 	if (fresh) {
 		out.add(fresh);
 		const older = open.filter((m) => m !== "items" && m !== fresh);
@@ -13570,14 +13570,14 @@ function mechanicsFor$3(n, random) {
 	return out;
 }
 /** Somewhere in the open middle band (not in a corner, not on the hole). */
-function openSpot$3(random, hole) {
+function openSpot$4(random, hole) {
 	for (let i = 0; i < 20; i++) {
 		const p = {
 			x: .12 + random() * .76,
 			y: .12 + random() * .76
 		};
 		if (cornerOf(p) !== null) continue;
-		if (hole && dist$5(p, START$1) < .21) continue;
+		if (hole && dist$6(p, START$1) < .21) continue;
 		return p;
 	}
 	return {
@@ -13585,15 +13585,15 @@ function openSpot$3(random, hole) {
 		y: .2
 	};
 }
-function makeRound$3(g, n, startAt, random, players) {
-	const has = mechanicsFor$3(n, random);
+function makeRound$4(g, n, startAt, random, players) {
+	const has = mechanicsFor$4(n, random);
 	const hole = has.has("hole");
 	const storms = has.has("storm") ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({
-		...openSpot$3(random, hole),
+		...openSpot$4(random, hole),
 		r: .12 + random() * .06
 	})) : [];
 	const ice = has.has("ice") ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({
-		...openSpot$3(random, hole),
+		...openSpot$4(random, hole),
 		r: .1 + random() * .05
 	})) : [];
 	const teleports = [];
@@ -13639,9 +13639,9 @@ function makeRound$3(g, n, startAt, random, players) {
 		const count = Math.max(2, Math.min(8, Math.round(players / 6)));
 		for (let i = 0; i < count; i++) items.push({
 			id: g.nextItem++,
-			power: pick$5(POWERS$3, random),
+			power: pick$5(POWERS$4, random),
 			by: null,
-			...openSpot$3(random, hole)
+			...openSpot$4(random, hole)
 		});
 	}
 	const first = pick$5(CORNERS, random);
@@ -13652,7 +13652,7 @@ function makeRound$3(g, n, startAt, random, players) {
 		startAt,
 		runEnd: startAt + run,
 		rollEnd: startAt + run + ROLL_MS,
-		showEnd: startAt + run + ROLL_MS + SHOW_MS$3,
+		showEnd: startAt + run + ROLL_MS + SHOW_MS$4,
 		storms,
 		ice,
 		teleports,
@@ -13679,7 +13679,7 @@ function newCorners(map, runS = 10) {
 		runS: runSeconds(runS)
 	};
 }
-function freshMine$3(i) {
+function freshMine$4(i) {
 	return {
 		safe: 0,
 		score: 0,
@@ -13711,14 +13711,14 @@ function freeAt$1(g, m) {
 	const r = g.round;
 	if (!m || m.jailedIn === null || m.jailRight < 3 || !r) return null;
 	if (m.jailedIn < r.n) return r.showEnd;
-	return r.showEnd + (g.runS ? g.runS * 1e3 : runMs(r.n + 1)) + ROLL_MS + SHOW_MS$3;
+	return r.showEnd + (g.runS ? g.runS * 1e3 : runMs(r.n + 1)) + ROLL_MS + SHOW_MS$4;
 }
 const boosted$1 = (m, n) => !!m && m.speedTo !== null && n <= m.speedTo;
 const ghostly$1 = (m, n) => !!m && m.ghostTo !== null && n <= m.ghostTo;
 /** Time is up and the last round has been shown (or never started): the game can end. */
 const cornersDone = (g, t) => !g.round || g.round.caught !== null && t >= g.round.showEnd;
 /** The time of the next thing the server must do (end a run, start the next round), or null. */
-function nextDeadline$3(g, startedAt) {
+function nextDeadline$4(g, startedAt) {
 	if (startedAt === null) return null;
 	if (!g.round) return READY_MS$4;
 	if (g.round.caught === null) return g.round.runEnd;
@@ -13732,13 +13732,13 @@ function nextDeadline$3(g, startedAt) {
 function needsPositions$2(g, t) {
 	return !!g.round && g.round.caught === null && t >= g.round.runEnd;
 }
-function advance$3(g, t, order, positions, random, last = false) {
+function advance$4(g, t, order, positions, random, last = false) {
 	const events = [];
 	for (let guard = 0; guard < 4; guard++) {
 		const r = g.round;
 		if (!r) {
 			if (t < 4e3 || last) break;
-			g.round = makeRound$3(g, 1, READY_MS$4, random, order.length);
+			g.round = makeRound$4(g, 1, READY_MS$4, random, order.length);
 			events.push({
 				type: "round",
 				t: READY_MS$4,
@@ -13768,7 +13768,7 @@ function advance$3(g, t, order, positions, random, last = false) {
 				});
 			}
 		}
-		g.round = makeRound$3(g, r.n + 1, startAt, random, order.length);
+		g.round = makeRound$4(g, r.n + 1, startAt, random, order.length);
 		events.push({
 			type: "round",
 			t: startAt,
@@ -13852,7 +13852,7 @@ function endRun(g, r, order, positions) {
 	};
 }
 /** Running over an item picks it up (one at a time; pupils in jail can't). */
-function grab$3(g, who, itemId, at, t) {
+function grab$4(g, who, itemId, at, t) {
 	const r = g.round;
 	const m = g.mine[who];
 	if (!r || !m || r.caught !== null || t < r.startAt || t >= r.runEnd || m.jailedIn !== null) return {
@@ -13868,7 +13868,7 @@ function grab$3(g, who, itemId, at, t) {
 		ok: false,
 		reason: "gone"
 	};
-	if (!at || dist$5(at, item) > .135) return {
+	if (!at || dist$6(at, item) > .135) return {
 		ok: false,
 		reason: "far"
 	};
@@ -13890,7 +13890,7 @@ function warp(g, who, at, t) {
 	const r = g.round;
 	const m = g.mine[who];
 	if (!r || !m || !at || m.jailedIn !== null || t < r.startAt || t > r.runEnd + 500) return false;
-	if (!r.teleports.some((tp) => dist$5(at, tp.a) < .16499999999999998 || dist$5(at, tp.b) < .16499999999999998)) return false;
+	if (!r.teleports.some((tp) => dist$6(at, tp.a) < .16499999999999998 || dist$6(at, tp.b) < .16499999999999998)) return false;
 	if (m.warpRound !== r.n) {
 		m.warpRound = r.n;
 		m.warpN = 0;
@@ -13910,7 +13910,7 @@ function questionFor$1(g, who, at, t) {
 	return "power";
 }
 /** A marked answer: in jail it counts towards getting out; otherwise a right one switches on the held power-up. */
-function answered$3(g, who, right, purpose, order, t, ms) {
+function answered$4(g, who, right, purpose, order, t, ms) {
 	const m = g.mine[who];
 	if (!m) return {
 		ok: false,
@@ -14018,7 +14018,7 @@ function crystalCorner(r) {
 	return safe[r.n % safe.length];
 }
 /** The podium: players with the top 3 scores (ties share a place). */
-function podium$2(g, order) {
+function podium$3(g, order) {
 	const scores = [...new Set(order.map((id) => g.mine[id]?.score ?? 0))].filter((s) => s > 0).sort((a, b) => b - a).slice(0, 3);
 	return order.map((id) => ({
 		player: id,
@@ -14088,15 +14088,15 @@ const LAVA_UNLOCK = {
 };
 const TILE$1 = 1 / 8;
 const CRACK_MS = 2200;
-const SHOW_MS$2 = 3800;
+const SHOW_MS$3 = 3800;
 const READY_MS$3 = 4e3;
-const ANSWER_GAP_MS$3 = 1500;
+const ANSWER_GAP_MS$4 = 1500;
 const lavaRunSeconds = (v) => typeof v === "number" && Number.isFinite(v) ? Math.max(5, Math.min(10, Math.round(v))) : 7;
 const START = {
 	x: .5,
 	y: .5
 };
-const dist$4 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const dist$5 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const tileAt = (p) => {
 	const c = Math.min(7, Math.max(0, Math.floor(p.x * 8)));
 	return Math.min(7, Math.max(0, Math.floor(p.y * 8))) * 8 + c;
@@ -14191,7 +14191,7 @@ function patternTiles(pattern, n, random) {
 		}
 	}
 }
-function shuffled(list, random) {
+function shuffled$1(list, random) {
 	const a = [...list];
 	for (let i = a.length - 1; i > 0; i--) {
 		const j = Math.floor(random() * (i + 1));
@@ -14209,7 +14209,7 @@ function lavaMechanicsFor(n, random) {
 		out.add(fresh);
 		return out;
 	}
-	const others = shuffled(open.filter((m) => m !== "items"), random);
+	const others = shuffled$1(open.filter((m) => m !== "items"), random);
 	const count = Math.min(others.length, 1 + Math.floor(random() * 3));
 	for (const m of others.slice(0, count)) out.add(m);
 	return out;
@@ -14219,14 +14219,14 @@ function makeLavaRound(g, n, startAt, random, players) {
 	const pattern = patternFor(n, random);
 	const solid = Array.from({ length: 64 }, (_, i) => i).filter((i) => !isLava(g, i, n));
 	const solidSet = new Set(solid);
-	let lit = shuffled(patternTiles(pattern, n, random).filter((i) => solidSet.has(i)), random);
+	let lit = shuffled$1(patternTiles(pattern, n, random).filter((i) => solidSet.has(i)), random);
 	const keepAtLeast = Math.max(Math.ceil(12.8), Math.ceil(players / 2) + 4);
 	const most = Math.max(0, Math.min(Math.round(solid.length * glowShare(n) * (pattern === "patches" ? 1 : 1.6)), solid.length - keepAtLeast));
 	lit = lit.slice(0, most);
 	const late = [];
 	if (has.has("late")) {
 		const litSet = new Set(lit);
-		const spare = shuffled(solid.filter((i) => !litSet.has(i)), random);
+		const spare = shuffled$1(solid.filter((i) => !litSet.has(i)), random);
 		late.push(...spare.slice(0, Math.min(4, Math.max(0, solid.length - lit.length - keepAtLeast))));
 	}
 	const openSpot = () => {
@@ -14269,7 +14269,7 @@ function makeLavaRound(g, n, startAt, random, players) {
 		startAt,
 		runEnd: startAt + run,
 		crackEnd: startAt + run + CRACK_MS,
-		showEnd: startAt + run + CRACK_MS + SHOW_MS$2,
+		showEnd: startAt + run + CRACK_MS + SHOW_MS$3,
 		pattern,
 		glow: lit,
 		late,
@@ -14395,7 +14395,7 @@ function advanceLava(g, t, order, positions, random, last = false) {
 function safeSpot(g, n, i) {
 	const solid = Array.from({ length: 64 }, (_, k) => k).filter((k) => !isLava(g, k, n));
 	if (!solid.length) return { ...START };
-	solid.sort((a, b) => dist$4(tileCentre$1(a), START) - dist$4(tileCentre$1(b), START));
+	solid.sort((a, b) => dist$5(tileCentre$1(a), START) - dist$5(tileCentre$1(b), START));
 	const c = tileCentre$1(solid[i % Math.min(solid.length, 12)]);
 	return {
 		x: c.x + (i * 7 % 5 - 2) * .012,
@@ -14461,7 +14461,7 @@ function lavaGrab(g, who, itemId, at, t) {
 		ok: false,
 		reason: "gone"
 	};
-	if (!at || dist$4(at, item) > .14) return {
+	if (!at || dist$5(at, item) > .14) return {
 		ok: false,
 		reason: "far"
 	};
@@ -14562,11 +14562,11 @@ function lavaAnswered(g, who, right, order, t, ms) {
 	else if (power === "double") m.doubleIn = n;
 	else if (power === "freeze") {
 		if (r.fell === null) {
-			const near = [...r.glow, ...r.late].filter((i) => !r.frozen.includes(i) && dist$4(tileCentre$1(i), m.spot) <= .2);
+			const near = [...r.glow, ...r.late].filter((i) => !r.frozen.includes(i) && dist$5(tileCentre$1(i), m.spot) <= .2);
 			r.frozen.push(...near);
 			ev.cooled = near;
 		} else {
-			const near = Array.from({ length: 64 }, (_, i) => i).filter((i) => g.sunk[i] > 0 && dist$4(tileCentre$1(i), m.spot) <= .2);
+			const near = Array.from({ length: 64 }, (_, i) => i).filter((i) => g.sunk[i] > 0 && dist$5(tileCentre$1(i), m.spot) <= .2);
 			for (const i of near) g.sunk[i] = 0;
 			ev.cooled = near;
 		}
@@ -14606,7 +14606,7 @@ function lavaBuild(g, who, tile, at, t) {
 		ok: false,
 		reason: "solid"
 	};
-	if (!at || dist$4(tileCentre$1(i), at) > .24) return {
+	if (!at || dist$5(tileCentre$1(i), at) > .24) return {
 		ok: false,
 		reason: "far"
 	};
@@ -14683,7 +14683,7 @@ const HALLS = [
 	"jungle",
 	"pirate"
 ];
-const POWERS$2 = [
+const POWERS$3 = [
 	"steal",
 	"shield",
 	"speed",
@@ -14692,7 +14692,7 @@ const POWERS$2 = [
 	"seat",
 	"ghost"
 ];
-const MECHANICS$2 = [
+const MECHANICS$3 = [
 	"items",
 	"storm",
 	"teleport",
@@ -14700,7 +14700,7 @@ const MECHANICS$2 = [
 	"roller"
 ];
 /** The round each mechanic first appears (a few at a time, as Four Corners). */
-const UNLOCK$2 = {
+const UNLOCK$3 = {
 	items: 2,
 	storm: 3,
 	teleport: 4,
@@ -14711,17 +14711,17 @@ const TILE_R = .065;
 const READY_MS$2 = 4e3;
 const MUSIC_MIN_MS = 7e3;
 const SCRAMBLE_MS = 4e3;
-const SHOW_MS$1 = 4500;
+const SHOW_MS$2 = 4500;
 /** A Golden ear buzzes this long before the music stops. */
 const EAR_MS = 2e3;
-const ANSWER_GAP_MS$2 = 1500;
+const ANSWER_GAP_MS$3 = 1500;
 /** Crowns: a throne, a golden throne, a lit dance tile when the music stops. */
 const CROWNS = {
 	throne: 1,
 	golden: 3,
 	dance: 1
 };
-const dist$3 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const dist$4 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const pick$3 = (list, random) => list[Math.floor(random() * list.length) % list.length];
 /** A courtyard seat (drawn below the hall). */
 function courtSpot(i) {
@@ -14781,8 +14781,8 @@ function scatterThrones(k, avoid, random) {
 				x: .1 + random() * .8,
 				y: .1 + random() * .8
 			};
-			if (out.reduce((a, q) => Math.min(a, dist$3(p, q)), 1) < (c < 60 ? .12 : .08)) continue;
-			const clear = avoid.reduce((a, q) => Math.min(a, dist$3(p, q)), 1);
+			if (out.reduce((a, q) => Math.min(a, dist$4(p, q)), 1) < (c < 60 ? .12 : .08)) continue;
+			const clear = avoid.reduce((a, q) => Math.min(a, dist$4(p, q)), 1);
 			const score = Math.min(clear, APPEAR_GAP) + random() * .01;
 			if (score > bestScore) {
 				bestScore = score;
@@ -14797,11 +14797,11 @@ function scatterThrones(k, avoid, random) {
 	return out;
 }
 /** Which mechanics a round has: each new one on its unlock round, then a mix of 1 to 3. */
-function mechanicsFor$2(n, random) {
+function mechanicsFor$3(n, random) {
 	const out = new Set();
-	const open = MECHANICS$2.filter((m) => UNLOCK$2[m] <= n);
+	const open = MECHANICS$3.filter((m) => UNLOCK$3[m] <= n);
 	if (open.includes("items")) out.add("items");
-	const fresh = MECHANICS$2.find((m) => m !== "items" && UNLOCK$2[m] === n);
+	const fresh = MECHANICS$3.find((m) => m !== "items" && UNLOCK$3[m] === n);
 	if (fresh) {
 		out.add(fresh);
 		return out;
@@ -14813,13 +14813,13 @@ function mechanicsFor$2(n, random) {
 	return out;
 }
 /** An open spot away from the thrones. */
-function openSpot$2(random, thrones, gap = .09) {
+function openSpot$3(random, thrones, gap = .09) {
 	for (let i = 0; i < 30; i++) {
 		const p = {
 			x: .08 + random() * .84,
 			y: .08 + random() * .84
 		};
-		if (thrones.every((th) => dist$3(th, p) > gap)) return p;
+		if (thrones.every((th) => dist$4(th, p) > gap)) return p;
 	}
 	return {
 		x: .08 + random() * .84,
@@ -14827,8 +14827,8 @@ function openSpot$2(random, thrones, gap = .09) {
 	};
 }
 const mimicsFor = (n, k) => n < 2 ? 0 : Math.min(3, 1 + Math.floor(k / 8));
-function makeRound$2(g, n, startAt, random, playing) {
-	const has = mechanicsFor$2(n, random);
+function makeRound$3(g, n, startAt, random, playing) {
+	const has = mechanicsFor$3(n, random);
 	const k = thronesFor(n, playing, g.round ? g.round.thrones.length : null);
 	const spots = layThrones(k, random);
 	const goldenAt = n >= 2 ? Math.floor(random() * k) % k : -1;
@@ -14840,15 +14840,15 @@ function makeRound$2(g, n, startAt, random, playing) {
 		by: null
 	}));
 	const tiles = Array.from({ length: 3 + n % 3 }, () => ({
-		...openSpot$2(random, spots, .14),
+		...openSpot$3(random, spots, .14),
 		r: TILE_R
 	}));
 	const storms = has.has("storm") ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({
-		...openSpot$2(random, []),
+		...openSpot$3(random, []),
 		r: .1 + random() * .05
 	})) : [];
 	const ice = has.has("ice") ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({
-		...openSpot$2(random, []),
+		...openSpot$3(random, []),
 		r: .09 + random() * .05
 	})) : [];
 	const teleports = [];
@@ -14892,9 +14892,9 @@ function makeRound$2(g, n, startAt, random, playing) {
 		const count = Math.max(2, Math.min(8, Math.round(playing / 5)));
 		for (let i = 0; i < count; i++) items.push({
 			id: g.nextItem++,
-			power: pick$3(POWERS$2, random),
+			power: pick$3(POWERS$3, random),
 			by: null,
-			...openSpot$2(random, spots)
+			...openSpot$3(random, spots)
 		});
 	}
 	const musicEnd = startAt + (n === 1 ? 9e3 : MUSIC_MIN_MS + Math.floor(random() * 8e3));
@@ -14903,7 +14903,7 @@ function makeRound$2(g, n, startAt, random, playing) {
 		startAt,
 		musicEnd,
 		scrambleEnd: musicEnd + SCRAMBLE_MS,
-		showEnd: musicEnd + SCRAMBLE_MS + SHOW_MS$1,
+		showEnd: musicEnd + SCRAMBLE_MS + SHOW_MS$2,
 		thrones,
 		mimics: Array.from({ length: mimicsFor(n, k) }, (_, i) => ({
 			id: i,
@@ -14934,7 +14934,7 @@ function newThrones(hall) {
 		stoodAll: 0
 	};
 }
-function freshMine$2(i) {
+function freshMine$3(i) {
 	return {
 		crowns: 0,
 		sat: 0,
@@ -14975,12 +14975,12 @@ function freeAt(g, m) {
 	const r = g.round;
 	if (!m || m.courtIn === null || m.courtRight < 3 || !r) return null;
 	if (m.courtIn < r.n) return r.showEnd;
-	return r.showEnd + 12e3 + SCRAMBLE_MS + SHOW_MS$1;
+	return r.showEnd + 12e3 + SCRAMBLE_MS + SHOW_MS$2;
 }
 /** The last round has been shown (or none started): the game can end. */
 const thronesDone = (g, t) => !g.round || g.round.standing !== null && t >= g.round.showEnd;
 /** The next time the server must act (the music stops, the scramble ends, the next round), or null. */
-function nextDeadline$2(g, startedAt) {
+function nextDeadline$3(g, startedAt) {
 	if (startedAt === null) return null;
 	const r = g.round;
 	if (!r) return READY_MS$2;
@@ -14991,13 +14991,13 @@ function nextDeadline$2(g, startedAt) {
 /** Saved spots are needed when the music stops (dance tiles, royal seats). */
 const needsPositions$1 = (g, t) => !!g.round && !g.round.stopped && t >= g.round.musicEnd;
 /** Moves the game on to time t. `last`: time is up, so no new round starts. */
-function advance$2(g, t, order, positions, random, last = false) {
+function advance$3(g, t, order, positions, random, last = false) {
 	const events = [];
 	for (let guard = 0; guard < 5; guard++) {
 		const r = g.round;
 		if (!r) {
 			if (t < 4e3 || last) break;
-			g.round = makeRound$2(g, 1, READY_MS$2, random, playingCount(g, order));
+			g.round = makeRound$3(g, 1, READY_MS$2, random, playingCount(g, order));
 			events.push({
 				type: "round",
 				t: READY_MS$2,
@@ -15037,7 +15037,7 @@ function advance$2(g, t, order, positions, random, last = false) {
 				m.placed++;
 			}
 		}
-		g.round = makeRound$2(g, r.n + 1, startAt, random, playingCount(g, order));
+		g.round = makeRound$3(g, r.n + 1, startAt, random, playingCount(g, order));
 		events.push({
 			type: "round",
 			t: startAt,
@@ -15062,7 +15062,7 @@ function stopMusic(g, r, order, positions, random) {
 			y: at.y
 		};
 		dancing.push(m.spot);
-		if (r.tiles.some((tl) => dist$3(tl, at) < tl.r + .0175)) {
+		if (r.tiles.some((tl) => dist$4(tl, at) < tl.r + .0175)) {
 			dancers.push(id);
 			m.dances++;
 			m.crowns += CROWNS.dance * times(m, r.n);
@@ -15087,7 +15087,7 @@ function stopMusic(g, r, order, positions, random) {
 	for (const id of order) {
 		const m = g.mine[id];
 		if (!m || m.courtIn !== null || m.seatIn !== r.n || m.seat !== null) continue;
-		const free = r.thrones.filter((th) => th.by === null).sort((a, b) => dist$3(a, m.spot) - dist$3(b, m.spot))[0];
+		const free = r.thrones.filter((th) => th.by === null).sort((a, b) => dist$4(a, m.spot) - dist$4(b, m.spot))[0];
 		if (!free) continue;
 		seatOn(m, id, free);
 	}
@@ -15158,7 +15158,7 @@ function bite(g, who, mimicId, at, t) {
 		ok: false,
 		reason: "gone"
 	};
-	if (!at || dist$3(at, mm) > .14500000000000002) return {
+	if (!at || dist$4(at, mm) > .14500000000000002) return {
 		ok: false,
 		reason: "far"
 	};
@@ -15200,7 +15200,7 @@ function sit(g, who, throneId, at, t) {
 		ok: false,
 		reason: "gone"
 	};
-	if (!at || dist$3(at, th) > .14500000000000002) return {
+	if (!at || dist$4(at, th) > .14500000000000002) return {
 		ok: false,
 		reason: "far"
 	};
@@ -15253,7 +15253,7 @@ function sit(g, who, throneId, at, t) {
 	};
 }
 /** Running over an item picks it up (one at a time, only while the music plays). */
-function grab$2(g, who, itemId, at, t) {
+function grab$3(g, who, itemId, at, t) {
 	const r = g.round;
 	const m = g.mine[who];
 	if (!r || !m || r.stopped || t < r.startAt || t >= r.musicEnd || m.courtIn !== null) return {
@@ -15269,7 +15269,7 @@ function grab$2(g, who, itemId, at, t) {
 		ok: false,
 		reason: "gone"
 	};
-	if (!at || dist$3(at, item) > .135) return {
+	if (!at || dist$4(at, item) > .135) return {
 		ok: false,
 		reason: "far"
 	};
@@ -15296,7 +15296,7 @@ function questionFor(g, who, t) {
 	return "power";
 }
 /** A marked answer: in the courtyard it counts towards coming back; otherwise a right one switches on the held power-up. */
-function answered$2(g, who, right, purpose, t, ms) {
+function answered$3(g, who, right, purpose, t, ms) {
 	const m = g.mine[who];
 	if (!m) return {
 		ok: false,
@@ -15375,7 +15375,7 @@ function answered$2(g, who, right, purpose, t, ms) {
 	};
 }
 /** The podium: the top 3 crown counts (ties share a place). */
-function podium$1(g, order) {
+function podium$2(g, order) {
 	const scores = [...new Set(order.map((id) => g.mine[id]?.crowns ?? 0))].filter((s) => s > 0).sort((a, b) => b - a).slice(0, 3);
 	return order.map((id) => ({
 		player: id,
@@ -15393,13 +15393,13 @@ const CLASH_MAPS = [
 	"beach",
 	"space"
 ];
-const POWERS$1 = [
+const POWERS$2 = [
 	"brush",
 	"speed",
 	"mega",
 	"cross"
 ];
-const MECHANICS$1 = [
+const MECHANICS$2 = [
 	"items",
 	"golden",
 	"portal",
@@ -15409,7 +15409,7 @@ const MECHANICS$1 = [
 	"fountain"
 ];
 /** The round each mechanic first appears (a few at a time, as Four Corners). */
-const UNLOCK$1 = {
+const UNLOCK$2 = {
 	items: 2,
 	golden: 3,
 	portal: 4,
@@ -15432,7 +15432,7 @@ const TEAM_COUNTS = [
 	4
 ];
 const teamCount = (v) => TEAM_COUNTS.includes(v) ? v : 4;
-const ANSWER_GAP_MS$1 = 1500;
+const ANSWER_GAP_MS$2 = 1500;
 /** Power-ups that last (Big Brush, Speed Shoes). */
 const POWER_MS = 1e4;
 /** Bomb radius in tiles: bigger on a streak of right answers. */
@@ -15443,17 +15443,17 @@ const tileCentre = (i) => ({
 	x: (i % 24 + .5) / 24,
 	y: (Math.floor(i / 24) + .5) / 24
 });
-const dist$2 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const dist$3 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const FOUNTAIN_R = .15;
 /** Tiles inside the fountain can't be painted (the database checks this too). */
-const inFountain = (i) => dist$2(tileCentre(i), {
+const inFountain = (i) => dist$3(tileCentre(i), {
 	x: .5,
 	y: .5
 }) < FOUNTAIN_R;
 /** A bomb's splat: tiles whose centre is within `r` tiles of the spot. */
 function bombTiles(at, r) {
 	const out = [];
-	for (let i = 0; i < 576; i++) if (dist$2(tileCentre(i), at) <= r * .041666666666666664) out.push(i);
+	for (let i = 0; i < 576; i++) if (dist$3(tileCentre(i), at) <= r * .041666666666666664) out.push(i);
 	return out;
 }
 /** Rainbow Cross: the pupil's whole row and column. */
@@ -15493,11 +15493,11 @@ function scoreTiles(tiles, golden, hole) {
 	};
 }
 const pick$2 = (list, random) => list[Math.floor(random() * list.length) % list.length];
-function mechanicsFor$1(n, random) {
+function mechanicsFor$2(n, random) {
 	const out = new Set();
-	const open = MECHANICS$1.filter((m) => UNLOCK$1[m] <= n);
+	const open = MECHANICS$2.filter((m) => UNLOCK$2[m] <= n);
 	if (open.includes("items")) out.add("items");
-	const fresh = MECHANICS$1.find((m) => UNLOCK$1[m] === n);
+	const fresh = MECHANICS$2.find((m) => UNLOCK$2[m] === n);
 	if (fresh) {
 		out.add(fresh);
 		const older = open.filter((m) => m !== "items" && m !== fresh);
@@ -15510,13 +15510,13 @@ function mechanicsFor$1(n, random) {
 	while (out.size < count + (open.includes("items") ? 1 : 0) && bag.length) out.add(bag.splice(Math.floor(random() * bag.length), 1)[0]);
 	return out;
 }
-function openSpot$1(random, hole) {
+function openSpot$2(random, hole) {
 	for (let i = 0; i < 20; i++) {
 		const p = {
 			x: .1 + random() * .8,
 			y: .1 + random() * .8
 		};
-		if (hole && dist$2(p, {
+		if (hole && dist$3(p, {
 			x: .5,
 			y: .5
 		}) < .21) continue;
@@ -15527,15 +15527,15 @@ function openSpot$1(random, hole) {
 		y: .2
 	};
 }
-function makeRound$1(g, n, startAt, random, players) {
-	const has = mechanicsFor$1(n, random);
+function makeRound$2(g, n, startAt, random, players) {
+	const has = mechanicsFor$2(n, random);
 	const hole = has.has("fountain");
 	const storms = has.has("goo") ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({
-		...openSpot$1(random, hole),
+		...openSpot$2(random, hole),
 		r: .1 + random() * .05
 	})) : [];
 	const ice = has.has("slip") ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({
-		...openSpot$1(random, hole),
+		...openSpot$2(random, hole),
 		r: .1 + random() * .04
 	})) : [];
 	const teleports = [];
@@ -15576,7 +15576,7 @@ function makeRound$1(g, n, startAt, random, players) {
 	} : null;
 	const golden = [];
 	if (has.has("golden")) for (let k = 0; k < 3; k++) {
-		const p = openSpot$1(random, hole);
+		const p = openSpot$2(random, hole);
 		const t = tileOf(p);
 		const x = Math.min(22, t % 24);
 		const y = Math.min(22, Math.floor(t / 24));
@@ -15587,9 +15587,9 @@ function makeRound$1(g, n, startAt, random, players) {
 		const count = Math.max(2, Math.min(8, Math.round(players / 5)));
 		for (let i = 0; i < count; i++) items.push({
 			id: g.nextItem++,
-			power: pick$2(POWERS$1, random),
+			power: pick$2(POWERS$2, random),
 			by: null,
-			...openSpot$1(random, hole)
+			...openSpot$2(random, hole)
 		});
 	}
 	const paintFrom = startAt + READY_MS$1;
@@ -15652,7 +15652,7 @@ function teamFor(g) {
 	for (let t = 2; t <= g.teams; t++) if (sizes[t] < sizes[best]) best = t;
 	return best;
 }
-function freshMine$1(team) {
+function freshMine$2(team) {
 	return {
 		team,
 		painted: 0,
@@ -15710,7 +15710,7 @@ function startSpot(team, teams, i) {
 }
 const painting = (r, t) => !!r && r.result === null && t >= r.paintFrom && t < r.paintTo;
 /** The time of the next thing the server must do (count a round, start the next), or null. */
-function nextDeadline$1(g, startedAt) {
+function nextDeadline$2(g, startedAt) {
 	if (startedAt === null) return null;
 	if (!g.round) return 0;
 	if (g.round.result === null) return g.round.paintTo;
@@ -15723,13 +15723,13 @@ const clashDone = (g, t) => !g.round || g.round.result !== null && t >= g.round.
 * Moves the game on to time t: counts the round (from `board`, the database's tiles, and `painted`, tiles painted by
 * each pupil in the whole game), starts the next. When `last` (time is up), no new round starts.
 */
-function advance$1(g, t, order, board, random, last = false) {
+function advance$2(g, t, order, board, random, last = false) {
 	const events = [];
 	for (let guard = 0; guard < 4; guard++) {
 		const r = g.round;
 		if (!r) {
 			if (last) break;
-			g.round = makeRound$1(g, 1, Math.max(0, t), random, order.length);
+			g.round = makeRound$2(g, 1, Math.max(0, t), random, order.length);
 			events.push({
 				type: "clash_round",
 				t,
@@ -15775,7 +15775,7 @@ function advance$1(g, t, order, board, random, last = false) {
 			m.brushTo = null;
 			m.speedTo = null;
 		}
-		g.round = makeRound$1(g, r.n + 1, startAt, random, order.length);
+		g.round = makeRound$2(g, r.n + 1, startAt, random, order.length);
 		events.push({
 			type: "clash_round",
 			t: startAt,
@@ -15785,7 +15785,7 @@ function advance$1(g, t, order, board, random, last = false) {
 	return events;
 }
 /** Running over an item picks it up (one at a time, while painting). */
-function grab$1(g, who, itemId, at, t) {
+function grab$2(g, who, itemId, at, t) {
 	const r = g.round;
 	const m = g.mine[who];
 	if (!m || !painting(r, t)) return {
@@ -15801,7 +15801,7 @@ function grab$1(g, who, itemId, at, t) {
 		ok: false,
 		reason: "gone"
 	};
-	if (!at || dist$2(at, item) > .135) return {
+	if (!at || dist$3(at, item) > .135) return {
 		ok: false,
 		reason: "far"
 	};
@@ -15819,12 +15819,12 @@ function grab$1(g, who, itemId, at, t) {
 	};
 }
 /** Can this pupil ask for a question now (painting is on)? */
-const canAsk$1 = (g, who, t) => !!g.mine[who] && painting(g.round, t);
+const canAsk$2 = (g, who, t) => !!g.mine[who] && painting(g.round, t);
 /**
 * A marked answer. A right one drops a paint bomb at `at` (their saved spot) and switches on a held power-up. Returns
 * the tiles to paint (the server paints them in the database).
 */
-function answered$1(g, who, right, at, t) {
+function answered$2(g, who, right, at, t) {
 	const m = g.mine[who];
 	const r = g.round;
 	if (!m || !r || !painting(r, t)) return {
@@ -15943,7 +15943,7 @@ function clashPublic(g) {
 	};
 }
 function clashPlayer(s, g, id) {
-	const m = g.mine[id] ?? freshMine$1(1);
+	const m = g.mine[id] ?? freshMine$2(1);
 	const place = s.state === "over" ? standings(g).find((x) => x.team === m.team)?.place ?? null : null;
 	return {
 		kind: "clash",
@@ -15957,7 +15957,7 @@ function clashPlayer(s, g, id) {
 		held: m.held,
 		brushTo: m.brushTo,
 		speedTo: m.speedTo,
-		nextAt: m.lastAt + ANSWER_GAP_MS$1,
+		nextAt: m.lastAt + ANSWER_GAP_MS$2,
 		placed: m.placed ?? 0,
 		spot: m.spot ?? startSpot(m.team, g.teams, 0),
 		place,
@@ -15968,7 +15968,7 @@ function clashPlayer(s, g, id) {
 /** A pupil joins: the smallest team, at its side of the board. */
 function clashJoin(g, who) {
 	const team = teamFor(g);
-	const m = freshMine$1(team);
+	const m = freshMine$2(team);
 	const same = Object.values(g.mine).filter((x) => x.team === team).length;
 	m.spot = startSpot(team, g.teams, same);
 	m.placed = 0;
@@ -15987,7 +15987,7 @@ async function clashTick(sv, room, s, t, last) {
 		if (got === "busy") return "busy";
 		board = got;
 	}
-	const events = advance$1(g, t, s.order, board, () => sv.random(), last);
+	const events = advance$2(g, t, s.order, board, () => sv.random(), last);
 	for (const e of events) {
 		if (e.type !== "clash_round") continue;
 		const count = [
@@ -16014,7 +16014,7 @@ async function clashTick(sv, room, s, t, last) {
 	}
 	return events;
 }
-const clashDeadline = (g, startedAt) => nextDeadline$1(g, startedAt);
+const clashDeadline = (g, startedAt) => nextDeadline$2(g, startedAt);
 const ok$1 = (body) => ({
 	status: 200,
 	body
@@ -16027,7 +16027,7 @@ const no$1 = (status, error, reason) => ({
 	}
 });
 const busyReply = () => no$1(503, "Class Live is very busy. Try again!", "busy");
-const MAX_ANSWER_MS$3 = 12e4;
+const MAX_ANSWER_MS$4 = 12e4;
 const timeOf$1 = (row, now) => row.startedAt === null ? 0 : Math.max(0, now - row.startedAt);
 /** Colour Clash's pupil steps: `play` with `grab`, `ask` and `answer` (a right answer drops a paint bomb). */
 async function clashStep(sv, cur, who, body) {
@@ -16051,7 +16051,7 @@ async function clashStep(sv, cur, who, body) {
 		if (at === "busy") return busyReply();
 		const done = await mutate(sv, room, (s, t) => {
 			if (s.state !== "live" || s.game.kind !== "clash") return { refuse: no$1(409, "This one has finished.", "over") };
-			const out = grab$1(s.game, who, body.grab, at ?? s.game.mine[who]?.spot, t);
+			const out = grab$2(s.game, who, body.grab, at ?? s.game.mine[who]?.spot, t);
 			if (!out.ok) return { refuse: no$1(409, out.reason === "full" ? "You are already carrying one!" : out.reason === "far" ? "Get closer!" : "Too late!", out.reason) };
 			return {
 				reply: null,
@@ -16064,7 +16064,7 @@ async function clashStep(sv, cur, who, body) {
 	}
 	const g0 = s0.game;
 	if (body.action === "ask") {
-		if (!canAsk$1(g0, who, timeOf$1(cur, sv.now()))) return no$1(409, "Wait for the paint to start!", "not_now");
+		if (!canAsk$2(g0, who, timeOf$1(cur, sv.now()))) return no$1(409, "Wait for the paint to start!", "not_now");
 		const question = await nextQuestion(sv, cur, who);
 		if (question === "busy") return busyReply();
 		if (!question) return no$1(503, "We couldn't make a question just now.");
@@ -16085,12 +16085,12 @@ async function clashStep(sv, cur, who, body) {
 	const right = sameAnswer(value, marked.answer);
 	const at = await spotOf();
 	if (at === "busy") return busyReply();
-	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS$3, MAX_ANSWER_MS$3));
+	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS$4, MAX_ANSWER_MS$4));
 	let bomb = null;
 	const done = await mutate(sv, room, (s, t) => {
 		if (s.state !== "live" || s.game.kind !== "clash") return { refuse: no$1(409, "This one has finished.", "over") };
 		const g = s.game;
-		const out = answered$1(g, who, right, at ?? g.mine[who]?.spot, t);
+		const out = answered$2(g, who, right, at ?? g.mine[who]?.spot, t);
 		if (!out.ok) return { refuse: no$1(409, out.reason === "too_soon" ? "One at a time!" : "Wait for the paint to start!", out.reason) };
 		bomb = out.tiles.length && g.round ? {
 			round: g.round.n,
@@ -16159,12 +16159,12 @@ const MAPS = [
 	"pumpkin",
 	"ship"
 ];
-const POWERS = [
+const POWERS$1 = [
 	"shield",
 	"boots",
 	"freeze"
 ];
-const MECHANICS = [
+const MECHANICS$1 = [
 	"items",
 	"teleport",
 	"slow",
@@ -16172,7 +16172,7 @@ const MECHANICS = [
 	"bats"
 ];
 /** The round each mechanic first comes in (James, 25 Nov 2026 NZ: extras unlocked round by round). */
-const UNLOCK = {
+const UNLOCK$1 = {
 	items: 2,
 	teleport: 3,
 	slow: 4,
@@ -16180,7 +16180,7 @@ const UNLOCK = {
 	bats: 6
 };
 const AVATAR_R = .03;
-const GRAB_R = .06;
+const GRAB_R$1 = .06;
 const CRYPT = {
 	x: .5,
 	y: .5,
@@ -16189,22 +16189,22 @@ const CRYPT = {
 /** From a round being made to the ghosts being let out of the crypt. */
 const READY_MS = 4e3;
 /** Longest a round runs once the ghosts are out. */
-const ROUND_MS = 9e4;
+const ROUND_MS$1 = 9e4;
 /** The end-of-round show (who won), before the next round is made. */
-const SHOW_MS = 6500;
+const SHOW_MS$1 = 6500;
 /** Invisible after a right answer (James's pick on the card, 25 Nov 2026 NZ: 5 s recommended). */
 const HIDE_MS = 5e3;
 /** A garlic shield's bounce: invisible this long, so the same ghost can't catch you straight away. */
 const BOUNCE_MS = 2e3;
 const DASH_MS = 3e3;
 const LANTERN_MS = 3500;
-const BOOTS_MS = 5e3;
+const BOOTS_MS$1 = 5e3;
 const FREEZE_MS = 2500;
 /** Least time between two answers (a wrong one too). */
-const ANSWER_GAP_MS = 1500;
+const ANSWER_GAP_MS$1 = 1500;
 /** Ghosts at the start of a round: one for every 10 pupils (James, 25 Nov 2026 NZ), at least 1, never everyone. */
 const ghostCount = (players) => players < 2 ? 0 : Math.max(1, Math.min(players - 1, Math.ceil(players / 10)));
-const dist$1 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const dist$2 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const clamp01 = (v) => Math.min(.97, Math.max(AVATAR_R, v));
 const pick$1 = (list, random) => list[Math.floor(random() * list.length) % list.length];
 function newGhost(map) {
@@ -16237,7 +16237,7 @@ function cryptSpot(i, of) {
 		y: .5 + Math.sin(a) * CRYPT.r * .55
 	};
 }
-function freshMine(i, of = 30) {
+function freshMine$1(i, of = 30) {
 	return {
 		ghost: false,
 		caughtAt: null,
@@ -16269,9 +16269,9 @@ function freshMine(i, of = 30) {
 	};
 }
 /** Which mechanics a round has: each new one on its unlock round (with an earlier one sometimes), then a mix of 2 to 4. */
-function mechanicsFor(n, random) {
-	const open = MECHANICS.filter((m) => UNLOCK[m] <= n);
-	const fresh = MECHANICS.find((m) => UNLOCK[m] === n);
+function mechanicsFor$1(n, random) {
+	const open = MECHANICS$1.filter((m) => UNLOCK$1[m] <= n);
+	const fresh = MECHANICS$1.find((m) => UNLOCK$1[m] === n);
 	const out = new Set();
 	if (fresh) {
 		out.add(fresh);
@@ -16287,14 +16287,14 @@ function mechanicsFor(n, random) {
 	return out;
 }
 /** A clear spot for something new: away from the crypt, the edge and what is already placed. */
-function openSpot(random, taken, r) {
+function openSpot$1(random, taken, r) {
 	for (let i = 0; i < 30; i++) {
 		const p = {
 			x: .1 + random() * .8,
 			y: .1 + random() * .8
 		};
-		if (dist$1(p, CRYPT) < CRYPT.r + r + .05) continue;
-		if (taken.some((c) => dist$1(c, p) < c.r + r + .04)) continue;
+		if (dist$2(p, CRYPT) < CRYPT.r + r + .05) continue;
+		if (taken.some((c) => dist$2(c, p) < c.r + r + .04)) continue;
 		return p;
 	}
 	return {
@@ -16312,19 +16312,19 @@ function pickStarters(g, order, random) {
 	})).sort((a, b) => a.s - b.s || a.r - b.r).slice(0, k).map((x) => x.id);
 }
 /** A new round: everyone is a pupil again but the starters, pupils round the edge, ghosts in the crypt. */
-function makeRound(g, n, readyAt, order, random) {
-	const has = mechanicsFor(n, random);
+function makeRound$1(g, n, readyAt, order, random) {
+	const has = mechanicsFor$1(n, random);
 	const stones = [];
 	const count = 6 + Math.floor(random() * 3);
 	for (let i = 0; i < count; i++) {
 		const r = .035 + random() * .025;
 		stones.push({
-			...openSpot(random, stones, r),
+			...openSpot$1(random, stones, r),
 			r
 		});
 	}
 	const slows = has.has("slow") ? Array.from({ length: 2 }, () => ({
-		...openSpot(random, stones, .09),
+		...openSpot$1(random, stones, .09),
 		r: .08 + random() * .03
 	})) : [];
 	const teleports = [];
@@ -16361,14 +16361,14 @@ function makeRound(g, n, readyAt, order, random) {
 		const k = Math.max(2, Math.min(7, Math.round(order.length / 6)));
 		const taken = [...stones, ...slows];
 		for (let i = 0; i < k; i++) {
-			const p = openSpot(random, taken, GRAB_R);
+			const p = openSpot$1(random, taken, GRAB_R$1);
 			taken.push({
 				...p,
-				r: GRAB_R
+				r: GRAB_R$1
 			});
 			items.push({
 				id: g.nextItem++,
-				power: pick$1(POWERS, random),
+				power: pick$1(POWERS$1, random),
 				by: null,
 				...p
 			});
@@ -16377,7 +16377,7 @@ function makeRound(g, n, readyAt, order, random) {
 	const starters = pickStarters(g, order, random);
 	const humans = order.filter((id) => !starters.includes(id));
 	order.forEach((id) => {
-		const m = g.mine[id] ??= freshMine(order.indexOf(id), order.length);
+		const m = g.mine[id] ??= freshMine$1(order.indexOf(id), order.length);
 		const ghost = starters.includes(id);
 		Object.assign(m, {
 			ghost,
@@ -16392,7 +16392,7 @@ function makeRound(g, n, readyAt, order, random) {
 		});
 		if (ghost) m.starts++;
 		m.spot = ghost ? cryptSpot(starters.indexOf(id), starters.length) : edgeSpot(humans.indexOf(id), humans.length);
-		for (const s of stones) if (dist$1(m.spot, s) < s.r + .03) m.spot = {
+		for (const s of stones) if (dist$2(m.spot, s) < s.r + .03) m.spot = {
 			x: clamp01(m.spot.x),
 			y: clamp01(s.y + (m.spot.y < s.y ? -1 : 1) * (s.r + AVATAR_R + .005))
 		};
@@ -16402,7 +16402,7 @@ function makeRound(g, n, readyAt, order, random) {
 		n,
 		readyAt,
 		startAt: readyAt + READY_MS,
-		endAt: readyAt + READY_MS + ROUND_MS,
+		endAt: readyAt + READY_MS + ROUND_MS$1,
 		starters,
 		humans: humans.length,
 		stones,
@@ -16423,7 +16423,7 @@ const needsPositions = (g, t) => !!g.round && !g.round.done && t >= g.round.star
 /** The game can end: no round, or the last round's show is over. */
 const ghostDone = (g, t) => !g.round || g.round.done !== null && g.round.showEnd !== null && t >= g.round.showEnd;
 /** The next time the game moves on by itself (ghosts out, time up, the next round), or null. */
-function nextDeadline(g, startedAt) {
+function nextDeadline$1(g, startedAt) {
 	if (startedAt === null) return null;
 	const r = g.round;
 	if (!r) return 0;
@@ -16434,12 +16434,12 @@ function nextDeadline(g, startedAt) {
 * Moves the game on at time t: the first round, ghosts let out, tags (from the saved spots), the round's end, the
 * next round. `last`: the session's time is up, so a round that is on ends now and no new one starts.
 */
-function advance(g, t, order, positions, random, last = false) {
+function advance$1(g, t, order, positions, random, last = false) {
 	const events = [];
 	const begin = (readyAt) => {
 		if (order.length < 2 || last) return;
 		const n = (g.round?.n ?? 0) + 1;
-		g.round = makeRound(g, n, readyAt, order, random);
+		g.round = makeRound$1(g, n, readyAt, order, random);
 		events.push({
 			type: "g_round",
 			t,
@@ -16465,9 +16465,9 @@ function advance(g, t, order, positions, random, last = false) {
 		}
 		const left = alive(g, order);
 		if (!r.done) {
-			if (r.humans >= 2 && left.length <= 1) endRound(g, r, t, left.length ? "last" : "all", left, order, events);
-			else if (r.humans < 2 && left.length === 0) endRound(g, r, t, "all", [], order, events);
-			else if (t >= r.endAt || last) endRound(g, r, Math.min(t, r.endAt), "time", left, order, events);
+			if (r.humans >= 2 && left.length <= 1) endRound$1(g, r, t, left.length ? "last" : "all", left, order, events);
+			else if (r.humans < 2 && left.length === 0) endRound$1(g, r, t, "all", [], order, events);
+			else if (t >= r.endAt || last) endRound$1(g, r, Math.min(t, r.endAt), "time", left, order, events);
 		}
 		return events;
 	}
@@ -16488,7 +16488,7 @@ function tags(g, r, t, order) {
 			if (caughtNow.has(gid)) continue;
 			const gm = g.mine[gid];
 			if (m.hideTo > t && gm.lanternTo <= t) continue;
-			const d = dist$1(m.spot, gm.spot);
+			const d = dist$2(m.spot, gm.spot);
 			if (d <= .07 && (!best || d < best.d)) best = {
 				by: gid,
 				d
@@ -16525,13 +16525,13 @@ function tags(g, r, t, order) {
 	}
 	return out;
 }
-function endRound(g, r, t, why, winners, order, events) {
+function endRound$1(g, r, t, why, winners, order, events) {
 	r.done = {
 		at: t,
 		why,
 		winners: [...winners]
 	};
-	r.showEnd = t + SHOW_MS;
+	r.showEnd = t + SHOW_MS$1;
 	for (const id of order) {
 		const m = g.mine[id];
 		if (!m) continue;
@@ -16550,7 +16550,7 @@ function endRound(g, r, t, why, winners, order, events) {
 	});
 }
 /** Can this player get a question now? Pupils: not while invisible. Ghosts: not while frozen. Only while a hunt is on. */
-function canAsk(g, who, t) {
+function canAsk$1(g, who, t) {
 	const r = g.round;
 	const m = g.mine[who];
 	if (!r || r.done || !m || t < r.readyAt) return false;
@@ -16558,7 +16558,7 @@ function canAsk(g, who, t) {
 	return m.ghost ? m.frozenTo <= t : m.hideTo <= t;
 }
 /** A marked answer: a pupil's right answer makes them invisible; a ghost's gives a dash, then a lantern, in turn. */
-function answered(g, who, right, t) {
+function answered$1(g, who, right, t) {
 	const m = g.mine[who];
 	const r = g.round;
 	if (!m || !r || r.done) return {
@@ -16611,7 +16611,7 @@ function answered(g, who, right, t) {
 	};
 }
 /** A pupil (not a ghost) runs over a power-up: checked against their saved spot. A frost bomb freezes ghosts near. */
-function grab(g, who, itemId, at, t) {
+function grab$1(g, who, itemId, at, t) {
 	const r = g.round;
 	const m = g.mine[who];
 	if (!r || r.done || !m || m.ghost || !at) return {
@@ -16623,7 +16623,7 @@ function grab(g, who, itemId, at, t) {
 		ok: false,
 		reason: "gone"
 	};
-	if (dist$1(it, at) > .16) return {
+	if (dist$2(it, at) > .16) return {
 		ok: false,
 		reason: "far"
 	};
@@ -16631,8 +16631,8 @@ function grab(g, who, itemId, at, t) {
 	m.grabs++;
 	let froze = 0;
 	if (it.power === "shield") m.shield = true;
-	else if (it.power === "boots") m.bootsTo = Math.max(t, r.startAt) + BOOTS_MS;
-	else for (const gm of Object.values(g.mine)) if (gm.ghost && dist$1(gm.spot, at) <= .25) {
+	else if (it.power === "boots") m.bootsTo = Math.max(t, r.startAt) + BOOTS_MS$1;
+	else for (const gm of Object.values(g.mine)) if (gm.ghost && dist$2(gm.spot, at) <= .25) {
 		gm.frozenTo = Math.max(t, r.startAt) + FREEZE_MS;
 		froze++;
 	}
@@ -16648,7 +16648,7 @@ function grab(g, who, itemId, at, t) {
 	};
 }
 /** The podium: most rounds won (crowns), then most catches. Ties share a place. */
-function podium(g, order) {
+function podium$1(g, order) {
 	const score = (id) => (g.mine[id]?.crowns ?? 0) * 1e3 + (g.mine[id]?.tags ?? 0);
 	const scores = [...new Set(order.map(score))].filter((s) => s > 0).sort((a, b) => b - a).slice(0, 3);
 	return order.map((id) => ({
@@ -16689,7 +16689,7 @@ function publicGhost(g, order) {
 	};
 }
 function ghostPlayer(g, id, order, over) {
-	const m = g.mine[id] ?? freshMine(Math.max(0, order.indexOf(id)), order.length);
+	const m = g.mine[id] ?? freshMine$1(Math.max(0, order.indexOf(id)), order.length);
 	const starter = !!g.round?.starters.includes(id);
 	return {
 		kind: "ghost",
@@ -16704,11 +16704,11 @@ function ghostPlayer(g, id, order, over) {
 		shield: m.shield,
 		spot: m.spot,
 		placed: m.placed,
-		nextAt: m.lastAt + ANSWER_GAP_MS,
+		nextAt: m.lastAt + ANSWER_GAP_MS$1,
 		last: m.last,
 		crowns: m.crowns,
 		tags: m.tags,
-		place: over ? podium(g, order).find((x) => x.player === id)?.place ?? null : null,
+		place: over ? podium$1(g, order).find((x) => x.player === id)?.place ?? null : null,
 		stats: {
 			right: m.right,
 			wrong: m.wrong,
@@ -16718,6 +16718,927 @@ function ghostPlayer(g, id, order, over) {
 			shieldSaves: m.shieldSaves,
 			caught: m.caught,
 			aliveS: Math.round(m.aliveMs / 1e3)
+		}
+	};
+}
+//#endregion
+//#region shared/classlive/crew.ts
+/** The robot factory's 8 machines round the Canteen (James's map pick, 25 Nov 2026 NZ). */
+const MACHINES = [
+	{
+		id: 0,
+		key: "assembly",
+		name: "Robot Assembler",
+		room: "Assembly",
+		emoji: "🦾",
+		big: true,
+		x: .17,
+		y: .18,
+		r: .06
+	},
+	{
+		id: 1,
+		key: "paint",
+		name: "Paint Sprayer",
+		room: "Paint Shop",
+		emoji: "🎨",
+		big: false,
+		x: .5,
+		y: .12,
+		r: .045
+	},
+	{
+		id: 2,
+		key: "boiler",
+		name: "Steam Boiler",
+		room: "Boiler Room",
+		emoji: "♨️",
+		big: true,
+		x: .83,
+		y: .18,
+		r: .06
+	},
+	{
+		id: 3,
+		key: "sorter",
+		name: "Bolt Sorter",
+		room: "Sorting Belt",
+		emoji: "🔩",
+		big: false,
+		x: .12,
+		y: .5,
+		r: .045
+	},
+	{
+		id: 4,
+		key: "battery",
+		name: "Battery Charger",
+		room: "Battery Bay",
+		emoji: "🔋",
+		big: false,
+		x: .88,
+		y: .5,
+		r: .045
+	},
+	{
+		id: 5,
+		key: "control",
+		name: "Light Switch Panel",
+		room: "Control Room",
+		emoji: "🎛️",
+		big: false,
+		x: .17,
+		y: .83,
+		r: .045
+	},
+	{
+		id: 6,
+		key: "packer",
+		name: "Box Packer",
+		room: "Packing Dock",
+		emoji: "📦",
+		big: true,
+		x: .5,
+		y: .88,
+		r: .06
+	},
+	{
+		id: 7,
+		key: "recycler",
+		name: "Recycler",
+		room: "Recycling",
+		emoji: "♻️",
+		big: false,
+		x: .83,
+		y: .83,
+		r: .045
+	}
+];
+const CANTEEN = {
+	x: .5,
+	y: .5,
+	r: .13
+};
+const fixNeed = (m) => m.big ? 3 : 2;
+const POWERS = [
+	"boots",
+	"camera",
+	"toolkit"
+];
+const MECHANICS = [
+	"items",
+	"lights",
+	"belts"
+];
+/** The round each extra first comes in (James, 25 Nov 2026 NZ: unlocked round by round; lights out from round 3). */
+const UNLOCK = {
+	items: 2,
+	lights: 3,
+	belts: 4
+};
+/** Close enough to a machine to use it (centre to centre, beyond the machine's edge). */
+const REACH = .07;
+/** The server checks against the saved spot, which can be a moment behind. */
+const REACH_SLACK = .05;
+const GRAB_R = .05;
+/** Everyone sees their role card in the Canteen before work starts. */
+const ROLE_MS = 5e3;
+/** A round's work time (James: 4 minutes), not counting meetings. */
+const ROUND_MS = 24e4;
+/** Meetings: talk out loud (James: 40 s), then the secret vote, then the reveal. */
+const TALK_MS = 4e4;
+const MORE_TALK_MS = 2e4;
+const VOTE_MS = 15e3;
+const REVEAL_MS = 7e3;
+const SHOW_MS = 9e3;
+/** A jam starts sparking this long after it is set (James: delayed jam). */
+const JAM_DELAY = 4e3;
+/** A Glitch waits this long between jams, and this long into a round before the first. */
+const JAM_COOL = 2e4;
+const FIRST_JAM = 8e3;
+/** A Glitch drone's right answer takes this off the other Glitches' wait. */
+const DRONE_HELP = 3e3;
+/** Power lost per sparking machine, per second (the bar is 0 to 100). */
+const DRAIN = .3;
+const LIGHTS_MS = 8e3;
+const BOOTS_MS = 6e3;
+const CAMERA_MS = 1e4;
+const ANSWER_GAP_MS = 1500;
+/** Glitches in a round: 1 for every 8 pupils (James), at least 1, at most 4, never more than a third. */
+const glitchCount = (players) => players < 3 ? 0 : Math.max(1, Math.min(4, Math.round(players / 8), Math.floor(players / 3)));
+/** Power a right job answer adds: a busy crew fills the bar in a bit over 2 minutes with no jams. */
+const jobPower = (crew) => Math.min(12, Math.max(.3, 100 / (Math.max(1, crew) * 14)));
+const dist$1 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+function newCrew(map = "factory") {
+	return {
+		kind: "crew",
+		map,
+		round: null,
+		mine: {},
+		nextItem: 1
+	};
+}
+/** A seat round the Canteen (everyone starts and meets here). */
+function canteenSpot(i, of) {
+	const a = i / Math.max(1, of) * Math.PI * 2 + .3;
+	const r = CANTEEN.r * (of > 14 && i % 2 ? .45 : .8);
+	return {
+		x: CANTEEN.x + Math.cos(a) * r,
+		y: CANTEEN.y + Math.sin(a) * r
+	};
+}
+function shuffled(list, random) {
+	const out = [...list];
+	for (let i = out.length - 1; i > 0; i--) {
+		const j = Math.floor(random() * (i + 1)) % (i + 1);
+		[out[i], out[j]] = [out[j], out[i]];
+	}
+	return out;
+}
+/** Four jobs at different machines (never the same as the one just done). */
+function newJobs(random, not = null) {
+	return shuffled(MACHINES.map((m) => m.id).filter((id) => id !== not), random).slice(0, 4);
+}
+function freshMine(i, of = 30, random = Math.random) {
+	return {
+		glitch: false,
+		drone: false,
+		jobs: newJobs(random),
+		spot: canteenSpot(i, of),
+		placed: 0,
+		lastAt: -1500,
+		lastWork: -3e3,
+		jamTo: 0,
+		lightsIn: 0,
+		held: null,
+		bootsTo: 0,
+		cameraTo: 0,
+		toolkit: false,
+		answered: 0,
+		right: 0,
+		wrong: 0,
+		streak: 0,
+		bestStreak: 0,
+		jobsDone: 0,
+		fixes: 0,
+		mends: 0,
+		jams: 0,
+		fakeJobs: 0,
+		grabs: 0,
+		lightsOut: 0,
+		detects: 0,
+		wins: 0,
+		glitchWins: 0,
+		timesGlitch: 0,
+		last: null
+	};
+}
+/** Which extras a round has: each new one on its unlock round, then a mix of 2 or 3. */
+function mechanicsFor(n, random) {
+	const open = MECHANICS.filter((m) => UNLOCK[m] <= n);
+	const fresh = MECHANICS.find((m) => UNLOCK[m] === n);
+	const out = new Set();
+	if (fresh) {
+		out.add(fresh);
+		if (open.includes("items") && random() < .7) out.add("items");
+		return out;
+	}
+	const want = Math.min(open.length, 2 + Math.floor(random() * 2));
+	for (const m of shuffled(open, random).slice(0, want)) out.add(m);
+	return out;
+}
+/** Who is a Glitch this round: those who were one fewest times so far, then at random. */
+function pickGlitches(g, order, random) {
+	const k = glitchCount(order.length);
+	return order.map((id) => ({
+		id,
+		s: g.mine[id]?.timesGlitch ?? 0,
+		r: random()
+	})).sort((a, b) => a.s - b.s || a.r - b.r).slice(0, k).map((x) => x.id);
+}
+function openSpot(random, taken, r) {
+	for (let i = 0; i < 40; i++) {
+		const p = {
+			x: .08 + random() * .84,
+			y: .08 + random() * .84
+		};
+		if (dist$1(p, CANTEEN) < CANTEEN.r + r + .03) continue;
+		if ([...MACHINES, ...taken].some((c) => dist$1(c, p) < c.r + r + .05)) continue;
+		return p;
+	}
+	return {
+		x: .33,
+		y: .3
+	};
+}
+function seatAll(g, order) {
+	order.forEach((id, i) => {
+		const m = g.mine[id];
+		if (!m) return;
+		m.spot = canteenSpot(i, order.length);
+		m.placed++;
+	});
+}
+/** A new round: roles dealt, everyone in the Canteen, new jobs. */
+function makeRound(g, n, readyAt, order, random) {
+	const has = mechanicsFor(n, random);
+	const glitches = pickGlitches(g, order, random);
+	const startAt = readyAt + ROLE_MS;
+	order.forEach((id, i) => {
+		const m = g.mine[id] ??= freshMine(i, order.length, random);
+		const glitch = glitches.includes(id);
+		Object.assign(m, {
+			glitch,
+			drone: false,
+			jobs: newJobs(random),
+			jamTo: startAt + FIRST_JAM,
+			held: null,
+			bootsTo: 0,
+			cameraTo: 0,
+			toolkit: false,
+			lastWork: -3e3
+		});
+		if (glitch) m.timesGlitch++;
+	});
+	seatAll(g, order);
+	const items = [];
+	if (has.has("items")) {
+		const k = Math.max(2, Math.min(6, Math.round(order.length / 6)));
+		const taken = [];
+		for (let i = 0; i < k; i++) {
+			const p = openSpot(random, taken, GRAB_R);
+			taken.push({
+				...p,
+				r: GRAB_R
+			});
+			items.push({
+				id: g.nextItem++,
+				power: POWERS[Math.floor(random() * POWERS.length) % POWERS.length],
+				...p,
+				by: null
+			});
+		}
+	}
+	const belts = [];
+	if (has.has("belts")) {
+		const dir = random() < .5 ? 1 : -1;
+		belts.push({
+			x: .27,
+			y: .31,
+			w: .46,
+			h: .06,
+			dx: dir,
+			dy: 0
+		});
+		if (random() < .6) belts.push({
+			x: .27,
+			y: .63,
+			w: .46,
+			h: .06,
+			dx: -dir,
+			dy: 0
+		});
+	}
+	return {
+		n,
+		readyAt,
+		startAt,
+		endAt: startAt + ROUND_MS,
+		glitches,
+		crewAtStart: order.length - glitches.length,
+		power: 0,
+		powerAt: startAt,
+		machines: MACHINES.map(() => ({
+			jamAt: null,
+			sparkAt: null,
+			sparked: false,
+			by: null,
+			fix: 0,
+			fixedAt: -1e4
+		})),
+		meeting: null,
+		meetings: 0,
+		lightsTo: 0,
+		lightsFix: 0,
+		items,
+		belts,
+		lights: has.has("lights"),
+		done: null,
+		showEnd: null
+	};
+}
+function phaseOf(r, t) {
+	if (!r) return "wait";
+	if (r.done) return "done";
+	if (r.meeting) return t < r.meeting.talkEnd ? "talk" : r.meeting.revealEnd === null ? "vote" : "reveal";
+	return t < r.startAt ? "roles" : "work";
+}
+const isActive = (m) => !!m && !m.drone;
+const activeGlitches = (g, order) => order.filter((id) => g.mine[id]?.glitch && !g.mine[id].drone);
+const activeCrew = (g, order) => order.filter((id) => g.mine[id] && !g.mine[id].glitch && !g.mine[id].drone);
+const sparking = (r) => r.machines.filter((m) => m.sparked).length;
+/** Works out the power bar up to t: each sparking machine drains it (only during work). */
+function settle(r, t) {
+	if (r.done || r.meeting || t <= r.powerAt) return;
+	let lost = 0;
+	for (const m of r.machines) {
+		if (m.sparkAt === null) continue;
+		lost += Math.max(0, t - Math.max(r.powerAt, m.sparkAt));
+	}
+	r.power = Math.max(0, r.power - DRAIN * lost / 1e3);
+	r.powerAt = t;
+}
+/** The game can end: no round, or the last round's show is over. */
+const crewDone = (g, t) => !g.round || g.round.done !== null && g.round.showEnd !== null && t >= g.round.showEnd;
+/** The next time the game moves on by itself, or null. */
+function nextDeadline(g, startedAt) {
+	if (startedAt === null) return null;
+	const r = g.round;
+	if (!r) return 0;
+	if (r.done) return r.showEnd;
+	if (r.meeting) return r.meeting.revealEnd ?? (r.meeting.talkEnd > r.meeting.voteEnd ? r.meeting.talkEnd : r.meeting.voteEnd);
+	const sparks = r.machines.filter((m) => m.sparkAt !== null && !m.sparked).map((m) => m.sparkAt);
+	return Math.min(r.endAt, ...sparks);
+}
+function endRound(g, r, t, winner, why, order, events) {
+	settle(r, t);
+	r.done = {
+		at: t,
+		winner,
+		why
+	};
+	r.showEnd = t + SHOW_MS;
+	r.meeting = null;
+	for (const id of order) {
+		const m = g.mine[id];
+		if (!m) continue;
+		const won = winner === "glitch" === m.glitch;
+		m.last = won ? "won" : "lost";
+		if (won) {
+			m.wins++;
+			if (m.glitch) m.glitchWins++;
+		}
+	}
+	events.push({
+		type: "c_end",
+		t,
+		n: r.n,
+		winner,
+		why,
+		glitches: [...r.glitches]
+	});
+}
+/** Counts the secret votes: the most votes is sent off; a tie, or Skip on top, sends nobody. */
+function countVotes(votes) {
+	const counts = {};
+	for (const v of Object.values(votes)) counts[v] = (counts[v] ?? 0) + 1;
+	const top = Math.max(0, ...Object.values(counts));
+	const best = Object.keys(counts).filter((k) => counts[k] === top);
+	return {
+		out: top > 0 && best.length === 1 && best[0] !== "skip" ? best[0] : null,
+		counts
+	};
+}
+/**
+* Moves the game on at time t: the first round, work starting, delayed jams sparking, the power bar, wins, the end of a
+* meeting's talk and vote, the reveal, the next round. `last`: the session's time is up (a round that is on ends now).
+*/
+function advance(g, t, order, random, last = false) {
+	const events = [];
+	const begin = () => {
+		if (order.length < 3 || last) return;
+		const n = (g.round?.n ?? 0) + 1;
+		g.round = makeRound(g, n, t, order, random);
+		events.push({
+			type: "c_round",
+			t,
+			n
+		});
+	};
+	const r = g.round;
+	if (!r) {
+		begin();
+		return events;
+	}
+	if (r.done) {
+		if (r.showEnd !== null && t >= r.showEnd) begin();
+		return events;
+	}
+	if (last) {
+		settle(r, t);
+		endRound(g, r, t, r.power >= 50 ? "crew" : "glitch", r.power >= 50 ? "power" : "time", order, events);
+		return events;
+	}
+	const mt = r.meeting;
+	if (mt) {
+		const voters = order.filter((id) => isActive(g.mine[id]));
+		if (mt.revealEnd === null && t >= mt.talkEnd && (t >= mt.voteEnd || voters.length > 0 && voters.every((id) => mt.votes[id] !== void 0))) {
+			const { out, counts } = countVotes(mt.votes);
+			mt.counts = counts;
+			mt.out = out;
+			mt.glitch = out ? !!g.mine[out]?.glitch : null;
+			mt.revealEnd = t + REVEAL_MS;
+			if (out && g.mine[out]) {
+				g.mine[out].drone = true;
+				g.mine[out].held = null;
+				if (g.mine[out].glitch) {
+					for (const [voter, pick] of Object.entries(mt.votes)) if (pick === out && g.mine[voter]) g.mine[voter].detects++;
+				}
+			}
+			events.push({
+				type: "c_out",
+				t,
+				pupil: out,
+				glitch: mt.glitch
+			});
+		} else if (mt.revealEnd !== null && t >= mt.revealEnd) {
+			const glitches = activeGlitches(g, order).length;
+			const crew = activeCrew(g, order).length;
+			if (glitches === 0) endRound(g, r, t, "crew", "found", order, events);
+			else if (glitches >= crew) endRound(g, r, t, "glitch", "outnumbered", order, events);
+			else {
+				const gone = t - mt.at;
+				r.endAt += gone;
+				r.powerAt = t;
+				for (const m of r.machines) if (m.sparkAt !== null && !m.sparked) m.sparkAt += gone;
+				for (const id of order) {
+					const m = g.mine[id];
+					if (m && m.jamTo > mt.at) m.jamTo += gone;
+				}
+				r.meeting = null;
+				r.meetings++;
+				r.lightsTo = 0;
+				events.push({
+					type: "c_resume",
+					t
+				});
+			}
+		}
+		return events;
+	}
+	if (t < r.startAt) return events;
+	for (const [i, m] of r.machines.entries()) if (m.sparkAt !== null && !m.sparked && t >= m.sparkAt) {
+		settle(r, m.sparkAt);
+		m.sparked = true;
+		events.push({
+			type: "c_spark",
+			t,
+			machine: i
+		});
+	}
+	settle(r, t);
+	if (r.power >= 100) endRound(g, r, t, "crew", "power", order, events);
+	else if (sparking(r) >= 4) endRound(g, r, t, "glitch", "jammed", order, events);
+	else if (t >= r.endAt) endRound(g, r, Math.min(t, r.endAt), "glitch", "time", order, events);
+	return events;
+}
+/** The teacher calls a meeting (James: teacher only): everyone to the Canteen, the clock stops. */
+function callMeeting(g, t, order) {
+	const r = g.round;
+	if (!r || phaseOf(r, t) !== "work") return { ok: false };
+	settle(r, t);
+	r.meeting = {
+		at: t,
+		talkEnd: t + TALK_MS,
+		voteEnd: t + TALK_MS + VOTE_MS,
+		revealEnd: null,
+		votes: {},
+		out: null,
+		glitch: null,
+		counts: null
+	};
+	r.lightsTo = 0;
+	seatAll(g, order);
+	return {
+		ok: true,
+		events: [{
+			type: "c_meeting",
+			t
+		}]
+	};
+}
+/** The teacher's meeting buttons: vote now (skip the rest of the talk), or 20 more seconds of talk. */
+function meetingControl(g, t, what) {
+	const mt = g.round?.meeting;
+	if (!mt || mt.revealEnd !== null) return { ok: false };
+	if (what === "vote") {
+		if (t >= mt.talkEnd) return { ok: false };
+		mt.talkEnd = t;
+		mt.voteEnd = t + VOTE_MS;
+		return {
+			ok: true,
+			events: [{
+				type: "c_vote",
+				t
+			}]
+		};
+	}
+	if (t >= mt.talkEnd) {
+		mt.talkEnd = t + MORE_TALK_MS;
+		mt.voteEnd = mt.talkEnd + VOTE_MS;
+	} else {
+		mt.talkEnd += MORE_TALK_MS;
+		mt.voteEnd += MORE_TALK_MS;
+	}
+	return {
+		ok: true,
+		events: []
+	};
+}
+/** A secret vote (anyone still on the floor; drones don't vote): a player still on the floor, or 'skip'. */
+function castVote(g, who, pick, t, order) {
+	const r = g.round;
+	const m = g.mine[who];
+	if (!r || phaseOf(r, t) !== "vote" || !r.meeting || !isActive(m)) return {
+		ok: false,
+		reason: "not_now"
+	};
+	if (pick !== "skip" && (typeof pick !== "string" || pick === who || !order.includes(pick) || !isActive(g.mine[pick]))) return {
+		ok: false,
+		reason: "bad"
+	};
+	r.meeting.votes[who] = pick;
+	return { ok: true };
+}
+const inReach = (machine, at, slack = REACH_SLACK) => dist$1(machine, at) <= machine.r + REACH + slack;
+function purposeAt(g, who, at, t, slack = REACH_SLACK) {
+	const r = g.round;
+	const m = g.mine[who];
+	if (!r || !m || !at || phaseOf(r, t) !== "work") return null;
+	if (m.glitch) return m.drone ? { kind: "drone" } : null;
+	if (r.lightsTo > t && inReach(MACHINES[5], at, slack)) return { kind: "lights" };
+	const fix = MACHINES.find((mc) => r.machines[mc.id].sparked && inReach(mc, at, slack));
+	if (fix) return {
+		kind: "fix",
+		machine: fix.id
+	};
+	const job = MACHINES.find((mc) => m.jobs.includes(mc.id) && !r.machines[mc.id].sparked && inReach(mc, at, slack));
+	if (job) return {
+		kind: "job",
+		machine: job.id
+	};
+	return null;
+}
+/** Can this player get a question now (and why)? */
+function canAsk(g, who, at, t) {
+	const m = g.mine[who];
+	if (!m || t < m.lastAt + 1500) return null;
+	return purposeAt(g, who, at, t);
+}
+/** A marked answer. Right: fills a fix bar, does a job (power), switches the lights on, or helps the Glitches (a Glitch drone). */
+function answered(g, who, right, purpose, t, order, random) {
+	const r = g.round;
+	const m = g.mine[who];
+	if (!r || !m || phaseOf(r, t) !== "work") return {
+		ok: false,
+		reason: "not_now"
+	};
+	if (t < m.lastAt + 1500) return {
+		ok: false,
+		reason: "too_soon"
+	};
+	settle(r, t);
+	m.lastAt = t;
+	m.answered++;
+	if (!right) {
+		m.wrong++;
+		m.streak = 0;
+		return {
+			ok: true,
+			events: [],
+			gave: null
+		};
+	}
+	m.right++;
+	m.streak++;
+	m.bestStreak = Math.max(m.bestStreak, m.streak);
+	const events = [];
+	let gave = null;
+	if (purpose.kind === "drone") {
+		for (const id of activeGlitches(g, order)) g.mine[id].jamTo = Math.max(t, g.mine[id].jamTo - DRONE_HELP);
+		gave = "drone";
+	} else if (purpose.kind === "lights") {
+		r.lightsFix++;
+		if (r.lightsFix >= 2 && r.lightsTo > t) {
+			r.lightsTo = t;
+			events.push({
+				type: "c_light",
+				t,
+				pupil: who
+			});
+			gave = "lights_on";
+		} else gave = "lights";
+	} else if (purpose.kind === "fix" && r.machines[purpose.machine].sparked) {
+		const st = r.machines[purpose.machine];
+		st.fix += m.toolkit ? fixNeed(MACHINES[purpose.machine]) : 1;
+		if (m.toolkit) m.toolkit = false;
+		m.fixes++;
+		const mended = st.fix >= fixNeed(MACHINES[purpose.machine]);
+		if (mended) {
+			Object.assign(st, {
+				jamAt: null,
+				sparkAt: null,
+				sparked: false,
+				by: null,
+				fix: 0,
+				fixedAt: t
+			});
+			m.mends++;
+		}
+		events.push({
+			type: "c_fix",
+			t,
+			machine: purpose.machine,
+			pupil: who,
+			mended
+		});
+		gave = mended ? "mended" : "fix";
+	} else {
+		const id = purpose.kind === "job" || purpose.kind === "fix" ? purpose.machine : -1;
+		if (m.jobs.includes(id)) {
+			m.jobs = m.jobs.filter((x) => x !== id);
+			if (!m.jobs.length) m.jobs = newJobs(random, id);
+			m.jobsDone++;
+			r.power = Math.min(100, r.power + jobPower(r.crewAtStart));
+			events.push({
+				type: "c_job",
+				t,
+				machine: id,
+				pupil: who
+			});
+			gave = "job";
+		}
+	}
+	if (m.held === "boots") {
+		m.bootsTo = t + BOOTS_MS;
+		m.held = null;
+	} else if (m.held === "camera") {
+		m.cameraTo = t + CAMERA_MS;
+		m.held = null;
+	} else if (m.held === "toolkit" && !m.toolkit) {
+		m.toolkit = true;
+		m.held = null;
+	}
+	if (r.power >= 100) endRound(g, r, t, "crew", "power", order, events);
+	return {
+		ok: true,
+		events,
+		gave
+	};
+}
+/** A Glitch jams a machine it is standing by: it starts sparking JAM_DELAY later. */
+function jam(g, who, machine, at, t) {
+	const r = g.round;
+	const m = g.mine[who];
+	if (!r || !m || !m.glitch || m.drone || !at || phaseOf(r, t) !== "work") return {
+		ok: false,
+		reason: "not_now"
+	};
+	const mc = MACHINES.find((x) => x.id === machine);
+	if (!mc) return {
+		ok: false,
+		reason: "not_now"
+	};
+	if (!inReach(mc, at)) return {
+		ok: false,
+		reason: "far"
+	};
+	if (t < m.jamTo) return {
+		ok: false,
+		reason: "wait"
+	};
+	const st = r.machines[mc.id];
+	if (st.jamAt !== null || t < st.fixedAt + 1e4) return {
+		ok: false,
+		reason: "busy"
+	};
+	Object.assign(st, {
+		jamAt: t,
+		sparkAt: t + JAM_DELAY,
+		sparked: false,
+		by: who,
+		fix: 0
+	});
+	m.jamTo = t + JAM_COOL;
+	m.jams++;
+	return {
+		ok: true,
+		events: [{
+			type: "c_jam",
+			t,
+			machine: mc.id,
+			by: who
+		}]
+	};
+}
+/** A Glitch's pretend job: held Work at one of its job machines for WORK_MS (adds no power). */
+function fakeWork(g, who, machine, at, t, random) {
+	const r = g.round;
+	const m = g.mine[who];
+	if (!r || !m || !m.glitch || m.drone || !at || phaseOf(r, t) !== "work" || t < m.lastWork + 3e3 - 300) return {
+		ok: false,
+		reason: "not_now"
+	};
+	const mc = MACHINES.find((x) => x.id === machine);
+	if (!mc || !m.jobs.includes(mc.id)) return {
+		ok: false,
+		reason: "not_now"
+	};
+	if (!inReach(mc, at)) return {
+		ok: false,
+		reason: "far"
+	};
+	m.lastWork = t;
+	m.jobs = m.jobs.filter((x) => x !== mc.id);
+	if (!m.jobs.length) m.jobs = newJobs(random, mc.id);
+	m.fakeJobs++;
+	return { ok: true };
+}
+/** A Glitch switches the lights off (rounds with lights out, once each a round). */
+function lightsOff(g, who, t) {
+	const r = g.round;
+	const m = g.mine[who];
+	if (!r || !m || !m.glitch || m.drone || !r.lights || m.lightsIn === r.n || r.lightsTo > t || phaseOf(r, t) !== "work") return { ok: false };
+	r.lightsTo = t + LIGHTS_MS;
+	r.lightsFix = 0;
+	m.lightsIn = r.n;
+	m.lightsOut++;
+	return {
+		ok: true,
+		events: [{
+			type: "c_dark",
+			t,
+			by: who
+		}]
+	};
+}
+/** Crew (and Crew drones) pick up a power-up by walking over it; it switches on with the next right answer. */
+function grab(g, who, itemId, at, t) {
+	const r = g.round;
+	const m = g.mine[who];
+	if (!r || !m || m.glitch || !at || phaseOf(r, t) !== "work") return {
+		ok: false,
+		reason: "not_now"
+	};
+	const it = r.items.find((x) => x.id === itemId);
+	if (!it || it.by) return {
+		ok: false,
+		reason: "gone"
+	};
+	if (m.held || m.toolkit) return {
+		ok: false,
+		reason: "full"
+	};
+	if (dist$1(it, at) > .13) return {
+		ok: false,
+		reason: "far"
+	};
+	it.by = who;
+	m.held = it.power;
+	m.grabs++;
+	return {
+		ok: true,
+		events: [{
+			type: "c_grab",
+			t,
+			pupil: who,
+			power: it.power
+		}]
+	};
+}
+/** The podium: most rounds won, then right answers and jams. Ties share a place. */
+function podium(g, order) {
+	const score = (id) => (g.mine[id]?.wins ?? 0) * 1e3 + (g.mine[id]?.right ?? 0) + (g.mine[id]?.jams ?? 0) * 2;
+	const scores = [...new Set(order.map(score))].filter((s) => s >= 1e3).sort((a, b) => b - a).slice(0, 3);
+	return order.map((id) => ({
+		player: id,
+		s: score(id)
+	})).filter((x) => scores.includes(x.s)).sort((a, b) => b.s - a.s).map((x) => ({
+		player: x.player,
+		place: scores.indexOf(x.s) + 1
+	}));
+}
+function publicCrew(g, order) {
+	const r = g.round;
+	return {
+		kind: "crew",
+		map: g.map,
+		glitches: activeGlitches(g, order).length,
+		active: order.filter((id) => isActive(g.mine[id])).length,
+		round: r ? {
+			n: r.n,
+			readyAt: r.readyAt,
+			startAt: r.startAt,
+			endAt: r.endAt,
+			power: r.power,
+			powerAt: r.powerAt,
+			crewAtStart: r.crewAtStart,
+			machines: r.machines.map((m) => ({
+				sparked: m.sparked,
+				fix: m.sparked ? m.fix : 0
+			})),
+			meeting: r.meeting ? {
+				at: r.meeting.at,
+				talkEnd: r.meeting.talkEnd,
+				voteEnd: r.meeting.voteEnd,
+				revealEnd: r.meeting.revealEnd,
+				voted: Object.keys(r.meeting.votes).length,
+				out: r.meeting.revealEnd === null ? null : r.meeting.out !== null,
+				glitch: r.meeting.revealEnd === null ? null : r.meeting.glitch
+			} : null,
+			lightsTo: r.lightsTo,
+			lightsFix: r.lightsFix,
+			lights: r.lights,
+			items: r.items.filter((x) => !x.by).map(({ by: _by, ...x }) => x),
+			belts: r.belts,
+			done: r.done ? {
+				...r.done,
+				glitches: r.glitches.length
+			} : null,
+			showEnd: r.showEnd
+		} : null
+	};
+}
+function crewPlayer(g, id, order, over, people) {
+	const m = g.mine[id] ?? freshMine(Math.max(0, order.indexOf(id)), order.length);
+	const r = g.round;
+	const mt = r?.meeting ?? null;
+	return {
+		kind: "crew",
+		glitch: m.glitch,
+		drone: m.drone,
+		mates: m.glitch && r ? r.glitches.filter((x) => x !== id).map((x) => people(x).name) : [],
+		jobs: m.jobs,
+		jamTo: m.jamTo,
+		canLights: !!r?.lights && m.glitch && !m.drone && m.lightsIn !== r.n,
+		held: m.held,
+		bootsTo: m.bootsTo,
+		cameraTo: m.cameraTo,
+		toolkit: m.toolkit,
+		spot: m.spot,
+		placed: m.placed,
+		nextAt: m.lastAt + ANSWER_GAP_MS,
+		lastWork: m.lastWork,
+		ballot: mt ? order.filter((x) => x !== id && isActive(g.mine[x])).map((x) => ({
+			id: x,
+			...people(x)
+		})) : null,
+		myVote: mt?.votes[id] ?? null,
+		outName: mt && mt.revealEnd !== null && mt.out ? people(mt.out).name : null,
+		last: m.last,
+		wins: m.wins,
+		place: over ? podium(g, order).find((x) => x.player === id)?.place ?? null : null,
+		stats: {
+			right: m.right,
+			wrong: m.wrong,
+			bestStreak: m.bestStreak,
+			jobs: m.jobsDone,
+			mends: m.mends,
+			jams: m.jams,
+			fakeJobs: m.fakeJobs,
+			grabs: m.grabs,
+			detects: m.detects,
+			glitchWins: m.glitchWins
 		}
 	};
 }
@@ -16740,8 +17661,8 @@ const POINTS = {
 };
 function rewardsOf(s) {
 	const g = s.game;
-	const goal = g.kind === "stars" ? g.creature : g.kind === "serpent" ? g.awake : g.kind === "corners" || g.kind === "ghost" || g.kind === "clash" || g.kind === "thrones" || g.kind === "lava" ? false : g.solvers.length > 0;
-	const top = g.kind === "corners" ? podium$2(g, s.order) : g.kind === "ghost" ? podium(g, s.order) : g.kind === "thrones" ? podium$1(g, s.order) : g.kind === "lava" ? lavaPodium(g, s.order) : [];
+	const goal = g.kind === "stars" ? g.creature : g.kind === "serpent" ? g.awake : g.kind === "corners" || g.kind === "ghost" || g.kind === "crew" || g.kind === "clash" || g.kind === "thrones" || g.kind === "lava" ? false : g.solvers.length > 0;
+	const top = g.kind === "corners" ? podium$3(g, s.order) : g.kind === "ghost" ? podium$1(g, s.order) : g.kind === "crew" ? podium(g, s.order) : g.kind === "thrones" ? podium$2(g, s.order) : g.kind === "lava" ? lavaPodium(g, s.order) : [];
 	const players = s.order.map((id) => {
 		let did = false;
 		const r = {
@@ -16809,6 +17730,16 @@ function rewardsOf(s) {
 				thrones_wins: place === 1 ? 1 : 0
 			};
 			did = (m?.sat ?? 0) > 0 || (m?.answered ?? 0) > 0;
+		} else if (g.kind === "crew") {
+			const m = g.mine[id];
+			did = (m?.right ?? 0) > 0 || (m?.jams ?? 0) > 0;
+			podiumPlace = did && (m?.wins ?? 0) > 0;
+			const cap = (n) => Math.max(0, Math.min(500, Math.round(n ?? 0)));
+			r.extra = {
+				crew_mends: cap(m?.mends),
+				crew_detects: cap(m?.detects),
+				crew_glitchwins: cap(m?.glitchWins)
+			};
 		} else if (g.kind === "ghost") {
 			const m = g.mine[id];
 			podiumPlace = top.find((x) => x.player === id)?.place !== void 0;
@@ -16889,7 +17820,7 @@ function lavaPlayer(s, g, id, fresh) {
 		bootedLast: !!r?.booted.includes(id),
 		placed: m.placed,
 		spot: m.spot,
-		nextAt: m.lastAt + ANSWER_GAP_MS$3,
+		nextAt: m.lastAt + ANSWER_GAP_MS$4,
 		place: s.state === "over" ? lavaPodium(g, s.order).find((x) => x.player === id)?.place ?? null : null,
 		climbAt: climbAt(g, m),
 		speedLeft: m.speedTo !== null && n <= m.speedTo ? m.speedTo - n + 1 : 0,
@@ -16906,7 +17837,7 @@ function lavaPlayer(s, g, id, fresh) {
 		}
 	};
 }
-const MAX_ANSWER_MS$2 = 12e4;
+const MAX_ANSWER_MS$3 = 12e4;
 /** Floor is Lava's pupil steps. */
 async function lavaStep(sv, cur, who, body, h) {
 	const { ok, no, busy } = h;
@@ -16986,7 +17917,7 @@ async function lavaStep(sv, cur, who, body, h) {
 	const right = sameAnswer(value, marked.answer);
 	const at = await spotOf();
 	if (at === "busy") return busy();
-	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS$2, MAX_ANSWER_MS$2));
+	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS$3, MAX_ANSWER_MS$3));
 	const done = await h.mutate(sv, room, (s, t) => {
 		if (s.state !== "live" || s.game.kind !== "lava") return { refuse: no(409, "This one has finished.", "over") };
 		const m = s.game.mine[who];
@@ -17062,7 +17993,7 @@ function thronesPublic(g, players) {
 	};
 }
 function thronesPlayer(g, order, id, over) {
-	const m = g.mine[id] ?? freshMine$2(order.indexOf(id));
+	const m = g.mine[id] ?? freshMine$3(order.indexOf(id));
 	const r = g.round;
 	const n = r?.n ?? 0;
 	return {
@@ -17085,8 +18016,8 @@ function thronesPlayer(g, order, id, over) {
 		danced: !!r?.dancers.includes(id),
 		placed: m.placed,
 		spot: m.spot,
-		nextAt: m.lastAt + ANSWER_GAP_MS$2,
-		place: over ? podium$1(g, order).find((x) => x.player === id)?.place ?? null : null,
+		nextAt: m.lastAt + ANSWER_GAP_MS$3,
+		place: over ? podium$2(g, order).find((x) => x.player === id)?.place ?? null : null,
 		speedLeft: m.speedTo !== null && n <= m.speedTo ? m.speedTo - n + 1 : 0,
 		ghostLeft: m.ghostTo !== null && n <= m.ghostTo ? m.ghostTo - n + 1 : 0,
 		stats: {
@@ -17153,7 +18084,7 @@ async function thronesStep(k, cur, who, body) {
 					players: out.bumped ? [who, out.bumped] : [who]
 				};
 			}
-			const out = grab$2(g, who, body.grab, at ?? mine?.spot, t);
+			const out = grab$3(g, who, body.grab, at ?? mine?.spot, t);
 			if (!out.ok) return { refuse: no(409, out.reason === "full" ? "You are already carrying one!" : out.reason === "far" ? "Get closer!" : "Too late!", out.reason) };
 			return {
 				reply: null,
@@ -17205,7 +18136,7 @@ async function thronesStep(k, cur, who, body) {
 		if (s.state !== "live" || s.game.kind !== "thrones") return { refuse: no(409, "This one has finished.", "over") };
 		const purpose = questionFor(s.game, who, t);
 		if (!purpose) return { refuse: no(409, "The music has stopped!", "not_now") };
-		const out = answered$2(s.game, who, right, purpose, t, typeof body.ms === "number" ? ms : void 0);
+		const out = answered$3(s.game, who, right, purpose, t, typeof body.ms === "number" ? ms : void 0);
 		if (!out.ok) return { refuse: no(409, out.reason === "too_soon" ? "One at a time!" : "No question right now.", out.reason) };
 		return {
 			reply: purpose,
@@ -17401,7 +18332,7 @@ function makeBayRound(g, n, startAt, random, players) {
 		const count = Math.max(2, Math.min(8, Math.round(players / 6)));
 		for (let i = 0; i < count; i++) items.push({
 			id: g.nextItem++,
-			power: pick(POWERS$3, random),
+			power: pick(POWERS$4, random),
 			by: null,
 			...waterSpot(random)
 		});
@@ -17423,7 +18354,7 @@ function makeBayRound(g, n, startAt, random, players) {
 		startAt,
 		runEnd: startAt + run,
 		rollEnd: startAt + run + ROLL_MS,
-		showEnd: startAt + run + ROLL_MS + SHOW_MS$3,
+		showEnd: startAt + run + ROLL_MS + SHOW_MS$4,
 		storms,
 		ice,
 		teleports,
@@ -17642,7 +18573,7 @@ function sharkJump(g, who, quarter, order, t) {
 * power-up, checked against the saved spot), `ask` (a question when one is allowed) and `answer` (marked here, claimed
 * once, recorded): a pupil's right answer makes them invisible, a ghost's gives a dash or a lantern.
 */
-const MAX_ANSWER_MS$1 = 12e4;
+const MAX_ANSWER_MS$2 = 12e4;
 async function ghostStep(sv, cur, who, body) {
 	const room = cur.id;
 	const s0 = cur.session;
@@ -17660,7 +18591,7 @@ async function ghostStep(sv, cur, who, body) {
 		if (all === "busy") return busy();
 		const done = await mutate(sv, room, (s, t) => {
 			if (s.state !== "live" || s.game.kind !== "ghost") return { refuse: no(409, "This one has finished.", "over") };
-			const out = grab(s.game, who, body.grab, all[who] ?? s.game.mine[who]?.spot, t);
+			const out = grab$1(s.game, who, body.grab, all[who] ?? s.game.mine[who]?.spot, t);
 			if (!out.ok) return { refuse: no(409, out.reason === "far" ? "Get closer!" : "Too late!", out.reason) };
 			return {
 				reply: null,
@@ -17673,7 +18604,7 @@ async function ghostStep(sv, cur, who, body) {
 	}
 	const g0 = s0.game;
 	if (body.action === "ask") {
-		if (!canAsk(g0, who, timeOf(cur, sv.now()))) return no(409, "No question right now.", "not_now");
+		if (!canAsk$1(g0, who, timeOf(cur, sv.now()))) return no(409, "No question right now.", "not_now");
 		const question = await nextQuestion(sv, cur, who);
 		if (question === "busy") return busy();
 		if (!question) return no(503, "We couldn't make a question just now.");
@@ -17692,10 +18623,153 @@ async function ghostStep(sv, cur, who, body) {
 	if (!kept || !marked) return no(400, "That answer couldn't be marked.");
 	if (kept.answered) return no(409, "You've already answered that one.", "answered");
 	const right = sameAnswer(value, marked.answer);
-	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS$1, MAX_ANSWER_MS$1));
+	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS$2, MAX_ANSWER_MS$2));
 	const done = await mutate(sv, room, (s, t) => {
 		if (s.state !== "live" || s.game.kind !== "ghost") return { refuse: no(409, "This one has finished.", "over") };
-		const out = answered(s.game, who, right, t);
+		const out = answered$1(s.game, who, right, t);
+		if (!out.ok) return { refuse: no(409, out.reason === "too_soon" ? "One at a time!" : "No question right now.", out.reason) };
+		return {
+			reply: out.gave,
+			events: out.events,
+			players: [who],
+			claim: {
+				player: who,
+				slot,
+				value,
+				right
+			}
+		};
+	});
+	if ("refuse" in done) return done.refuse;
+	try {
+		await sv.recordAnswers(who, `classlive:${room}:${s0.seed}:${slot}`, [{
+			key: marked.key,
+			correct: right,
+			ms,
+			at: sv.now(),
+			given: value
+		}]);
+	} catch {}
+	return reply(done.session, done.row.startedAt, {
+		right,
+		answer: marked.answer,
+		gave: done.reply
+	});
+}
+//#endregion
+//#region shared/classlive/crewServer.ts
+/**
+* Saboteur Crew's pupil steps (docs/CREW-PLAN.md), beside the other Class Live steps in server.ts. `play` with `jam`,
+* `work` (a Glitch's pretend job), `lights` (lights out), `grab` (a power-up) or `vote` (the secret vote), all checked
+* against the saved spot; `ask` (a question when the spot allows one: a job, a sparking machine, the light switch) and
+* `answer` (marked here, claimed once, recorded). Glitches on the floor get no questions (James, 25 Nov 2026 NZ).
+*/
+const MAX_ANSWER_MS$1 = 12e4;
+async function crewStep(sv, cur, who, body) {
+	const room = cur.id;
+	const s0 = cur.session;
+	if (s0.state !== "live") return no(409, s0.state === "lobby" ? "Wait for the start!" : "This one has finished.", s0.state);
+	const reply = (session, startedAt, extra = {}) => ok({
+		room,
+		view: roomView(session, startedAt, sv.now()),
+		me: playerView(session, who),
+		now: sv.now(),
+		...extra
+	});
+	const spotOf = async () => {
+		const all = await sv.positions(room);
+		return all === "busy" ? "busy" : all[who];
+	};
+	if (body.action === "play") {
+		const at = body.vote === void 0 && body.lights === void 0 ? await spotOf() : void 0;
+		if (at === "busy") return busy();
+		const done = await mutate(sv, room, (s, t) => {
+			if (s.state !== "live" || s.game.kind !== "crew") return { refuse: no(409, "This one has finished.", "over") };
+			const g = s.game;
+			const here = at ?? g.mine[who]?.spot;
+			if (body.vote !== void 0) {
+				const out = castVote(g, who, body.vote, t, s.order);
+				if (!out.ok) return { refuse: no(409, out.reason === "bad" ? "Pick someone still on the floor." : "Voting is closed.", out.reason) };
+				return {
+					reply: null,
+					events: [],
+					players: [who]
+				};
+			}
+			if (body.lights !== void 0) {
+				const out = lightsOff(g, who, t);
+				if (!out.ok) return { refuse: no(409, "Not now.", "not_now") };
+				return {
+					reply: null,
+					events: out.events,
+					players: s.order
+				};
+			}
+			if (body.jam !== void 0) {
+				const out = jam(g, who, body.jam, here, t);
+				if (!out.ok) return { refuse: no(409, out.reason === "far" ? "Get closer!" : out.reason === "wait" ? "Recharging…" : out.reason === "busy" ? "That one is already done for." : "Not now.", out.reason) };
+				return {
+					reply: null,
+					events: out.events,
+					players: [who]
+				};
+			}
+			if (body.work !== void 0) {
+				const out = fakeWork(g, who, body.work, here, t, () => sv.random());
+				if (!out.ok) return { refuse: no(409, out.reason === "far" ? "Get closer!" : "Not now.", out.reason) };
+				return {
+					reply: null,
+					events: [],
+					players: [who]
+				};
+			}
+			if (body.grab !== void 0) {
+				const out = grab(g, who, body.grab, here, t);
+				if (!out.ok) return { refuse: no(409, out.reason === "far" ? "Get closer!" : out.reason === "full" ? "You already have one!" : "Too late!", out.reason) };
+				return {
+					reply: null,
+					events: out.events,
+					players: [who]
+				};
+			}
+			return { refuse: no(400, "That couldn't be read.") };
+		});
+		if ("refuse" in done) return done.refuse;
+		return reply(done.session, done.row.startedAt);
+	}
+	const g0 = s0.game;
+	if (body.action === "ask") {
+		const at = await spotOf();
+		if (at === "busy") return busy();
+		const purpose = canAsk(g0, who, at ?? g0.mine[who]?.spot, timeOf(cur, sv.now()));
+		if (!purpose) return no(409, "Go to a machine first!", "not_now");
+		const question = await nextQuestion(sv, cur, who);
+		if (question === "busy") return busy();
+		if (!question) return no(503, "We couldn't make a question just now.");
+		return ok({
+			room,
+			question,
+			purpose,
+			now: sv.now()
+		});
+	}
+	const slot = body.slot;
+	const value = body.answer;
+	if (!Number.isInteger(slot) || typeof value !== "number" || !Number.isFinite(value) || Math.abs(value) > 1e6) return no(400, "That answer couldn't be read.");
+	const kept = await sv.loadQuestion(room, who, slot);
+	if (kept === "busy") return busy();
+	const marked = kept ? markQuestion(kept.question) : null;
+	if (!kept || !marked) return no(400, "That answer couldn't be marked.");
+	if (kept.answered) return no(409, "You've already answered that one.", "answered");
+	const right = sameAnswer(value, marked.answer);
+	const at = await spotOf();
+	if (at === "busy") return busy();
+	const ms = Math.round(Math.min(typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : MAX_ANSWER_MS$1, MAX_ANSWER_MS$1));
+	const done = await mutate(sv, room, (s, t) => {
+		if (s.state !== "live" || s.game.kind !== "crew") return { refuse: no(409, "This one has finished.", "over") };
+		const purpose = purposeAt(s.game, who, at ?? s.game.mine[who]?.spot, t, .12);
+		if (!purpose) return { refuse: no(409, "Stay by the machine!", "not_now") };
+		const out = answered(s.game, who, right, purpose, t, s.order, () => sv.random());
 		if (!out.ok) return { refuse: no(409, out.reason === "too_soon" ? "One at a time!" : "No question right now.", out.reason) };
 		return {
 			reply: out.gave,
@@ -17750,7 +18824,8 @@ const ACTIVITIES = [
 	"ghost",
 	"clash",
 	"thrones",
-	"lava"
+	"lava",
+	"crew"
 ];
 const LENGTHS = [
 	0,
@@ -17759,6 +18834,17 @@ const LENGTHS = [
 	5,
 	10,
 	15
+];
+/** The games a set-time game may be (all but Star Web, whose shared sky needs a big screen). */
+const AUTO_ACTIVITIES = [
+	"serpent",
+	"mural",
+	"corners",
+	"shark",
+	"ghost",
+	"clash",
+	"thrones",
+	"lava"
 ];
 const ok = (body) => ({
 	status: 200,
@@ -17788,6 +18874,7 @@ function publicRound(r, t) {
 /** `t`: ms since the start, so a pupil's device only learns the rolled corner once the dice has landed. */
 function publicGame(g, players, t = 0, order = []) {
 	if (g.kind === "ghost") return publicGhost(g, order);
+	if (g.kind === "crew") return publicCrew(g, order);
 	if (g.kind === "clash") return clashPublic(g);
 	if (g.kind === "lava") return lavaPublic(g, players);
 	if (g.kind === "thrones") return thronesPublic(g, players);
@@ -17852,7 +18939,12 @@ function roomView(s, startedAt, now) {
 		auto: s.auto ? {
 			startsAt: s.auto.startsAt,
 			min: s.auto.min,
-			calledOff: s.auto.calledOff === true
+			calledOff: s.auto.calledOff === true,
+			vote: s.auto.vote?.choices ? {
+				choices: s.auto.vote.choices,
+				counts: s.auto.vote.choices.map((c) => Object.values(s.auto.vote.picks).filter((p) => p === c).length),
+				winner: s.auto.vote.winner ?? null
+			} : null
 		} : null
 	};
 }
@@ -17892,6 +18984,15 @@ function playerView(s, id) {
 		colour: p.colour,
 		game: clashPlayer(s, s.game, id)
 	};
+	if (s.game.kind === "crew") return {
+		player: id,
+		name: firstName(p.name),
+		colour: p.colour,
+		game: crewPlayer(s.game, id, s.order, s.state === "over", (x) => ({
+			name: firstName(s.players[x]?.name ?? ""),
+			colour: s.players[x]?.colour ?? 0
+		}))
+	};
 	if (s.game.kind === "ghost") return {
 		player: id,
 		name: firstName(p.name),
@@ -17900,10 +19001,10 @@ function playerView(s, id) {
 	};
 	if (s.game.kind === "corners") {
 		const g = s.game;
-		const m = g.mine[id] ?? freshMine$3(s.order.indexOf(id));
+		const m = g.mine[id] ?? freshMine$4(s.order.indexOf(id));
 		const r = g.round;
 		const n = r?.n ?? 0;
-		const place = s.state === "over" ? podium$2(g, s.order).find((x) => x.player === id)?.place ?? null : null;
+		const place = s.state === "over" ? podium$3(g, s.order).find((x) => x.player === id)?.place ?? null : null;
 		return {
 			player: id,
 			name: firstName(p.name),
@@ -17925,7 +19026,7 @@ function playerView(s, id) {
 				savedLast: !!r?.saved.includes(id),
 				placed: m.placed,
 				spot: m.spot,
-				nextAt: m.lastAt + ANSWER_GAP_MS$4,
+				nextAt: m.lastAt + ANSWER_GAP_MS$5,
 				place,
 				stay: r?.swap && m.jailedIn === null ? m.lastCorner ?? null : null,
 				freeAt: freeAt$1(g, m),
@@ -17959,7 +19060,7 @@ function playerView(s, id) {
 				tiles: m?.tiles ?? 0,
 				canGuess: canGuess(s.game, id),
 				guesses: m?.guesses ?? 0,
-				nextAt: m ? m.lastAt + ANSWER_GAP_MS$5 : 0,
+				nextAt: m ? m.lastAt + ANSWER_GAP_MS$6 : 0,
 				gotIt: s.game.revealed || s.state === "over" ? m?.gotIt ?? 0 : 0,
 				picked: !!m?.pick,
 				myTiles: tilesOf(s.game, id),
@@ -18018,10 +19119,30 @@ async function mutate(sv, room, step) {
 		const version = row.version;
 		const s = structuredClone(row.session);
 		const made = !s.game && !!s.auto;
-		if (made) s.game = gameFor(s.activity, s.auto.level, () => sv.random());
+		if (made) {
+			const v = s.auto.vote;
+			if (v && !v.choices) {
+				const pool = [...AUTO_ACTIVITIES];
+				v.choices = [];
+				while (v.choices.length < 3) v.choices.push(pool.splice(Math.floor(sv.random() * pool.length) % pool.length, 1)[0]);
+				s.activity = v.choices[0];
+			}
+			s.game = gameFor(s.activity, s.auto.level, () => sv.random());
+		}
 		const autoEvents = [];
 		if (s.auto && s.state === "lobby" && sv.now() >= s.auto.startsAt) {
 			if (s.order.length >= s.auto.min) {
+				const v = s.auto.vote;
+				if (v?.choices && !v.winner) {
+					const counts = v.choices.map((c) => Object.values(v.picks).filter((p) => p === c).length);
+					const top = v.choices.filter((_, i) => counts[i] === Math.max(...counts));
+					v.winner = top[Math.floor(sv.random() * top.length) % top.length];
+					if (v.winner !== s.activity) {
+						s.activity = v.winner;
+						s.game = gameFor(v.winner, null, () => sv.random());
+						s.order.forEach((id, i) => joinGame(s.game, id, i));
+					}
+				}
 				startGame(s, sv.now());
 				row = {
 					...row,
@@ -18045,8 +19166,21 @@ async function mutate(sv, room, step) {
 		const t = timeOf(row, now);
 		const events = [...autoEvents];
 		const g0 = s.game;
-		const placedBefore = g0.kind === "corners" || g0.kind === "ghost" || g0.kind === "clash" || g0.kind === "thrones" || g0.kind === "lava" ? new Map(s.order.map((id) => [id, g0.mine[id]?.placed ?? 0])) : null;
-		if (g0.kind === "ghost") {
+		const placedBefore = g0.kind === "corners" || g0.kind === "ghost" || g0.kind === "crew" || g0.kind === "clash" || g0.kind === "thrones" || g0.kind === "lava" ? new Map(s.order.map((id) => [id, g0.mine[id]?.placed ?? 0])) : null;
+		if (g0.kind === "crew") {
+			if (s.state === "live") {
+				const last = timeUp(s, row, now);
+				events.push(...advance(g0, t, s.order, () => sv.random(), last));
+				if (last && crewDone(g0, t)) {
+					s.state = "over";
+					events.push({
+						type: "over",
+						t,
+						why: "time"
+					});
+				}
+			}
+		} else if (g0.kind === "ghost") {
 			if (s.state === "live") {
 				let spots = {};
 				if (needsPositions(g0, t)) {
@@ -18055,7 +19189,7 @@ async function mutate(sv, room, step) {
 					spots = got;
 				}
 				const last = timeUp(s, row, now);
-				events.push(...advance(g0, t, s.order, spots, () => sv.random(), last));
+				events.push(...advance$1(g0, t, s.order, spots, () => sv.random(), last));
 				if (last && ghostDone(g0, t)) {
 					s.state = "over";
 					events.push({
@@ -18080,7 +19214,7 @@ async function mutate(sv, room, step) {
 					spots = got;
 				}
 				const last = timeUp(s, row, now);
-				events.push(...(isShark(g0) ? sharkAdvance : advance$3)(g0, t, s.order, spots, () => sv.random(), last));
+				events.push(...(isShark(g0) ? sharkAdvance : advance$4)(g0, t, s.order, spots, () => sv.random(), last));
 				if (last && cornersDone(g0, t)) {
 					s.state = "over";
 					events.push({
@@ -18099,7 +19233,7 @@ async function mutate(sv, room, step) {
 					spots = got;
 				}
 				const last = timeUp(s, row, now);
-				events.push(...advance$2(g0, t, s.order, spots, () => sv.random(), last));
+				events.push(...advance$3(g0, t, s.order, spots, () => sv.random(), last));
 				if (last && thronesDone(g0, t)) {
 					s.state = "over";
 					events.push({
@@ -18174,7 +19308,7 @@ async function mutate(sv, room, step) {
 		};
 		for (const e of events) if ("pupil" in e && typeof e.pupil === "string") changed.add(e.pupil);
 		const g1 = s.game;
-		const places = (g1.kind === "corners" || g1.kind === "ghost" || g1.kind === "clash" || g1.kind === "thrones" || g1.kind === "lava") && placedBefore ? s.order.filter((id) => (g1.mine[id]?.placed ?? 0) !== (placedBefore.get(id) ?? 0)).map((id) => ({
+		const places = (g1.kind === "corners" || g1.kind === "ghost" || g1.kind === "crew" || g1.kind === "clash" || g1.kind === "thrones" || g1.kind === "lava") && placedBefore ? s.order.filter((id) => (g1.mine[id]?.placed ?? 0) !== (placedBefore.get(id) ?? 0)).map((id) => ({
 			player: id,
 			x: g1.mine[id].spot.x,
 			y: g1.mine[id].spot.y
@@ -18182,6 +19316,7 @@ async function mutate(sv, room, step) {
 		for (const p of places) changed.add(p.player);
 		if ((g1.kind === "corners" || g1.kind === "lava") && events.some((e) => e.type === "roll" || e.type === "crack" || e.type === "round" || e.type === "over")) for (const id of s.order) changed.add(id);
 		if ((g1.kind === "corners" || g1.kind === "clash") && events.some((e) => e.type === "roll" || e.type === "clash_count" || e.type === "clash_round" || e.type === "round" || e.type === "over")) for (const id of s.order) changed.add(id);
+		if (g1.kind === "crew" && events.some((e) => e.type === "c_round" || e.type === "c_meeting" || e.type === "c_vote" || e.type === "c_out" || e.type === "c_resume" || e.type === "c_end" || e.type === "over")) for (const id of s.order) changed.add(id);
 		if (g1.kind === "ghost" && events.some((e) => e.type === "g_round" || e.type === "g_end" || e.type === "over" || e.type === "g_grab" && e.froze > 0)) for (const id of s.order) changed.add(id);
 		if (g1.kind === "thrones" && events.some((e) => e.type === "stop" || e.type === "seated" || e.type === "round" || e.type === "over")) for (const id of s.order) changed.add(id);
 		const players = [...changed].filter((id) => s.players[id]).map((id) => playerView(s, id));
@@ -18236,6 +19371,7 @@ function newSession(body, seed, random) {
 		if ((body.x !== void 0 || body.y !== void 0) && !own) return "Pick two different numbers from 2 to 12.";
 		game = newStars(own ?? pickAnchor(level, random), own ? "own" : level);
 	} else if (activity === "serpent") game = newSerpent(SERPENT_LEVELS.find((l) => l === body.level) ?? "gold", random);
+	else if (activity === "crew") game = newCrew();
 	else if (activity === "ghost") game = newGhost(MAPS.find((m) => m === body.map) ?? MAPS[Math.floor(random() * MAPS.length) % MAPS.length]);
 	else if (activity === "corners") game = newCorners(MAPS$1.find((m) => m === body.map) ?? MAPS$1[Math.floor(random() * MAPS$1.length) % MAPS$1.length], runSeconds(body.run));
 	else if (activity === "lava") game = newLava(LAVA_MAPS.find((m) => m === body.map) ?? LAVA_MAPS[Math.floor(random() * LAVA_MAPS.length) % LAVA_MAPS.length], lavaRunSeconds(body.run));
@@ -18263,6 +19399,15 @@ function gameFor(activity, level, random) {
 		hall: level
 	}, 0, random);
 	return typeof s === "string" ? newMural(random) : s.game;
+}
+/** A new player's own part of the game (the `index`th to join). */
+function joinGame(g, who, index) {
+	if (g.kind === "corners") g.mine[who] = freshMine$4(index);
+	if (g.kind === "lava") g.mine[who] = freshLavaMine(index);
+	if (g.kind === "thrones") g.mine[who] = freshMine$3(index);
+	if (g.kind === "clash") clashJoin(g, who);
+	if (g.kind === "ghost") g.mine[who] = freshMine$1(index);
+	if (g.kind === "crew") g.mine[who] = freshMine(index);
 }
 /** Lobby to live (the teacher's Start, or a set-time game's start). */
 function startGame(s, now) {
@@ -18319,7 +19464,7 @@ async function classLiveStep(sv, who, body) {
 			now: sv.now()
 		});
 	}
-	if (action === "view" || action === "start" || action === "end" || action === "spotlight" || action === "reveal" || action === "padmusic") {
+	if (action === "view" || action === "start" || action === "end" || action === "spotlight" || action === "reveal" || action === "padmusic" || action === "crew") {
 		const room = readRoom(body.room);
 		if (!room) return no(400, "That room couldn't be found.");
 		const row = await sv.loadRoom(room);
@@ -18366,6 +19511,16 @@ async function classLiveStep(sv, who, body) {
 					}]
 				};
 			}
+			if (action === "crew") {
+				if (s.game.kind !== "crew" || s.state !== "live") return { refuse: no(400, "No meeting here.") };
+				const out = body.do === "meeting" ? callMeeting(s.game, t, s.order) : body.do === "vote" || body.do === "more" ? meetingControl(s.game, t, body.do) : { ok: false };
+				if (!out.ok) return { refuse: no(409, "Not now.", "not_now") };
+				return {
+					reply: null,
+					events: out.events,
+					players: s.order
+				};
+			}
 			if (action === "padmusic") {
 				s.padMusic = body.on === true;
 				return {
@@ -18403,7 +19558,7 @@ async function classLiveStep(sv, who, body) {
 			now: sv.now()
 		});
 	}
-	if (action === "join" || action === "play" || action === "ask" || action === "answer" || action === "look") {
+	if (action === "join" || action === "play" || action === "ask" || action === "answer" || action === "look" || action === "vote") {
 		const me = await sv.pupil(who);
 		if (me === "busy") return busy();
 		if (!me) return no(403, "Class Live is for pupils in a class.", "no-class");
@@ -18443,11 +19598,7 @@ async function classLiveStep(sv, who, body) {
 					joinedAt: t,
 					colour: s.order.length % 12
 				};
-				if (s.game.kind === "corners") s.game.mine[who] = freshMine$3(s.order.length);
-				if (s.game.kind === "lava") s.game.mine[who] = freshLavaMine(s.order.length);
-				if (s.game.kind === "thrones") s.game.mine[who] = freshMine$2(s.order.length);
-				if (s.game.kind === "clash") clashJoin(s.game, who);
-				if (s.game.kind === "ghost") s.game.mine[who] = freshMine(s.order.length);
+				joinGame(s.game, who, s.order.length);
 				s.order.push(who);
 				return {
 					reply: null,
@@ -18475,9 +19626,30 @@ async function classLiveStep(sv, who, body) {
 				me: playerView(cur.session, who)
 			}
 		};
+		if (action === "vote") {
+			const done = await mutate(sv, room, (s) => {
+				const v = s.auto?.vote;
+				if (!v?.choices || s.state !== "lobby" || v.winner) return { refuse: no(409, "Voting has finished.", "not_now") };
+				const pick = v.choices.find((c) => c === body.pick);
+				if (!pick) return { refuse: no(400, "Pick a game.") };
+				v.picks[who] = pick;
+				return {
+					reply: null,
+					events: [],
+					players: [who]
+				};
+			});
+			if ("refuse" in done) return withRoom(done.refuse);
+			return ok({
+				room,
+				view: roomView(done.session, done.row.startedAt, sv.now()),
+				me: playerView(done.session, who),
+				now: sv.now()
+			});
+		}
 		if (action === "look") {
 			const cg = cur.session.game;
-			const due = cur.session.state !== "live" ? null : cg.kind === "corners" ? nextDeadline$3(cg, cur.startedAt) : cg.kind === "ghost" ? nextDeadline(cg, cur.startedAt) : cg.kind === "clash" ? clashDeadline(cg, cur.startedAt) : cg.kind === "thrones" ? nextDeadline$2(cg, cur.startedAt) : cg.kind === "lava" ? lavaDeadline(cg, cur.startedAt) : null;
+			const due = cur.session.state !== "live" ? null : cg.kind === "corners" ? nextDeadline$4(cg, cur.startedAt) : cg.kind === "ghost" ? nextDeadline$1(cg, cur.startedAt) : cg.kind === "crew" ? nextDeadline(cg, cur.startedAt) : cg.kind === "clash" ? clashDeadline(cg, cur.startedAt) : cg.kind === "thrones" ? nextDeadline$3(cg, cur.startedAt) : cg.kind === "lava" ? lavaDeadline(cg, cur.startedAt) : null;
 			const n = sv.now(), tt = timeOf(cur, n), cs = cur.session;
 			const otherDue = cs.auto && cs.state === "lobby" ? n >= cs.auto.startsAt : cs.state === "live" && (cs.lengthMin > 0 && tt >= cs.lengthMin * 6e4 || cg.kind === "mural" && guessingDone(cg, tt));
 			if (due !== null && tt >= due + 1500 || otherDue) {
@@ -18528,6 +19700,10 @@ async function classLiveStep(sv, who, body) {
 		}
 		if (cur.session.game.kind === "clash" && (action === "ask" || action === "answer" || action === "play")) {
 			const out = await clashStep(sv, cur, who, body);
+			return cur.session.state === "live" ? out : withRoom(out);
+		}
+		if (cur.session.game.kind === "crew" && (action === "ask" || action === "answer" || action === "play")) {
+			const out = await crewStep(sv, cur, who, body);
 			return cur.session.state === "live" ? out : withRoom(out);
 		}
 		if (cur.session.game.kind === "ghost" && (action === "ask" || action === "answer" || action === "play")) {
@@ -18604,7 +19780,7 @@ async function classLiveStep(sv, who, body) {
 					players: [who]
 				};
 			}
-			if (s.game.kind === "corners" || s.game.kind === "ghost" || s.game.kind === "clash" || s.game.kind === "thrones" || s.game.kind === "lava") return { refuse: no(409, "Use the joystick!", "not_now") };
+			if (s.game.kind === "corners" || s.game.kind === "ghost" || s.game.kind === "crew" || s.game.kind === "clash" || s.game.kind === "thrones" || s.game.kind === "lava") return { refuse: no(409, "Use the joystick!", "not_now") };
 			const out = tryFact(s.game, who, body.fact, t);
 			if (!out.ok) return { refuse: no(409, "One at a time!", out.reason) };
 			return {
@@ -18654,7 +19830,7 @@ async function nextQuestion(sv, row, who) {
 	const ctx = await sv.mathsContext(who);
 	if (!ctx) return null;
 	const g = row.session.game;
-	const m = g.kind === "mural" || g.kind === "corners" || g.kind === "ghost" || g.kind === "clash" || g.kind === "thrones" || g.kind === "lava" ? g.mine[who] : void 0;
+	const m = g.kind === "mural" || g.kind === "corners" || g.kind === "ghost" || g.kind === "crew" || g.kind === "clash" || g.kind === "thrones" || g.kind === "lava" ? g.mine[who] : void 0;
 	const q = makeQuestion(ctx, `${row.session.seed}:${who}:${m?.answered ?? 0}`);
 	if (!q) return null;
 	const kept = await sv.keepQuestion(row.id, who, q);
@@ -18687,7 +19863,7 @@ async function muralMaths(sv, cur, who, body) {
 	const right = sameAnswer(value, marked.answer);
 	const done = await mutate(sv, room, (s, t) => {
 		if (s.state !== "live" || s.game.kind !== "mural") return { refuse: no(409, "This one has finished.", "over") };
-		const out = answered$4(s.game, who, right, t, () => sv.random(), s.lengthMin > 0 ? s.lengthMin * 6e4 * .9 : void 0);
+		const out = answered$5(s.game, who, right, t, () => sv.random(), s.lengthMin > 0 ? s.lengthMin * 6e4 * .9 : void 0);
 		if (!out.ok) return { refuse: no(409, "Wait for the ring to fill!", out.reason) };
 		return {
 			reply: null,
@@ -18707,7 +19883,7 @@ async function muralMaths(sv, cur, who, body) {
 			...done.refuse,
 			body: {
 				...done.refuse.body,
-				nextAt: (g.mine[who]?.lastAt ?? 0) + ANSWER_GAP_MS$5,
+				nextAt: (g.mine[who]?.lastAt ?? 0) + ANSWER_GAP_MS$6,
 				now: sv.now()
 			}
 		};
@@ -18779,7 +19955,7 @@ async function cornersStep(sv, cur, who, body) {
 					players: []
 				};
 			}
-			const out = grab$3(g, who, body.grab, at ?? mine?.spot, t);
+			const out = grab$4(g, who, body.grab, at ?? mine?.spot, t);
 			if (!out.ok) return { refuse: no(409, out.reason === "full" ? "You are already carrying one!" : out.reason === "far" ? "Get closer!" : "Too late!", out.reason) };
 			return {
 				reply: null,
@@ -18823,7 +19999,7 @@ async function cornersStep(sv, cur, who, body) {
 		if (s.state !== "live" || s.game.kind !== "corners") return { refuse: no(409, "This one has finished.", "over") };
 		const purpose = (isShark(s.game) ? sharkQuestionFor : questionFor$1)(s.game, who, at ?? s.game.mine[who]?.spot, t);
 		if (!purpose) return { refuse: no(409, isShark(s.game) ? "Swim off the jetty first!" : "Get to a corner first!", "not_now") };
-		const out = answered$3(s.game, who, right, purpose, s.order, t, typeof body.ms === "number" ? ms : void 0);
+		const out = answered$4(s.game, who, right, purpose, s.order, t, typeof body.ms === "number" ? ms : void 0);
 		if (!out.ok) return { refuse: no(409, out.reason === "too_soon" ? "One at a time!" : "No question right now.", out.reason) };
 		const freed = out.events.flatMap((e) => e.type === "power" && e.freed ? [e.freed] : []);
 		return {

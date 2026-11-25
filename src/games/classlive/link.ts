@@ -7,6 +7,7 @@
 import { memoryMove, memoryServices } from '../../../shared/classlive/memoryServices';
 import { memoryClashBoard, memoryClashPaint } from '../../../shared/classlive/clashMemory';
 import { memoryGhostMove, type GhostSpots } from '../../../shared/classlive/ghostBot';
+import { memoryCrewMove, type CrewSpots } from '../../../shared/classlive/crewBot';
 import { randomAvatar } from '../../avatar/avatarParts';
 import { rng } from '../../../shared/classlive/pretendClass';
 import { pretendClass, PRETEND_CLASS, PRETEND_TEACHER } from '../../../shared/classlive/pretendClass';
@@ -34,6 +35,8 @@ export interface ClassLiveLink {
   clashBoard(room: number, since: number | null): Promise<Omit<ClashPaint, 'spots'> | null>;
   /** Ghost Tag: saves the spot like `move`; back come the other spots with who is a ghost (no names), or null. Optional so other links needn't have it. */
   ghostMove?(room: number, x: number, y: number): Promise<GhostSpots | null>;
+  /** Saboteur Crew: saves the spot like `move`; back come the other spots with drones (and, for a Glitch, fellow Glitches) marked, or null. */
+  crewMove?(room: number, x: number, y: number): Promise<CrewSpots | null>;
 }
 
 /** What a Colour Clash paint call answers: every spot (no names), the round, the database's time, changed tiles [idx, team]. */
@@ -80,6 +83,7 @@ export function pretendLink(opts: { size: number; seed?: number; me?: { id: stri
     },
     clashBoard: async (room, since) => (isTeacher ? memoryClashBoard(pc.db, Date.now(), room, since) : null),
     ghostMove: async (room, x, y) => memoryGhostMove(pc.db, Date.now(), room, who, x, y),
+    crewMove: async (room, x, y) => memoryCrewMove(pc.db, Date.now(), room, who, x, y),
     positions: async (room) => (isTeacher ? Object.fromEntries(Object.entries(pc.db.spots.get(room) ?? {}).map(([id, p]) => [id, { x: p.x, y: p.y }])) : null),
     avatars: async (room) => {
       if (!isTeacher) return null;
