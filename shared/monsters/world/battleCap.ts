@@ -1,5 +1,5 @@
 /**
- * The daily battle limit (James: 12 on 27 Oct 2026, 20 from 23 Nov 2026). The database holds the real number and counts the
+ * The daily battle limit (James: 12 on 27 Oct 2026, 20 from 23 Nov 2026, 40 from 25 Nov 2026). The database holds the real number and counts the
  * battles saved today (monster_battle_rules and monster_battles_today in the migration
  * 20261027000200_monster_battle_cap.sql); the game adds the battles it hasn't saved yet. Once the limit
  * is reached the monsters rest: no wild battles and no trainers until tomorrow. Tower battles stay open.
@@ -7,7 +7,7 @@
 import type { BattleReport } from '../save/check';
 
 /** Used when the server can't be reached. Keep it the same as monster_battle_rules(). */
-export const BATTLES_PER_DAY = 20;
+export const BATTLES_PER_DAY = 40;
 
 /** A battle counts when it asked a maths question and wasn't in a Tower (the same rule as monster_counts_for_cap). */
 export const countsTowardCap = (battle: Pick<BattleReport, 'map' | 'steps' | 'giant'>) =>
