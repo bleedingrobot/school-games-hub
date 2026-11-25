@@ -1,6 +1,6 @@
 # Toon Flap Relay: art plan
 
-**The game draws stand-ins until each painting arrives. Nothing waits on art.** `painted(folder, file)` in `src/games/classlive/paintedArt.ts` returns null for a missing picture and the drawn version shows (emoji icons, drawn bunting, the night sky). Painted pictures go in `src/games/classlive/art/paint/<folder>/<file>.webp` (scenes also get `<file>-800.webp`).
+**All 15 pictures painted and in the game (26 Nov 2026 NZ, picks in docs/relay-art/picks.json). The Stadium Sky and music are still to do.** The game draws stand-ins for any missing picture. `painted(folder, file)` in `src/games/classlive/paintedArt.ts` returns null for a missing picture and the drawn version shows (emoji icons, drawn bunting, the night sky). Painted pictures go in `src/games/classlive/art/paint/<folder>/<file>.webp` (scenes also get `<file>-800.webp`).
 
 Style: *bold storybook illustration, rich colour, warm light, painterly digital art, no text*. Every prompt is in `docs/relay-art/config.json` (15 pictures, same fields as `docs/lava-art/config.json`). Painted on James's PC in ComfyUI, driven by Remote Control; the thread fetches the files itself:
 
@@ -29,7 +29,7 @@ James picked "one new relay stadium sky" for the lanes. The lanes are drawn by T
 - Backdrop: say "an empty open middle with nothing in it" (Four Corners lesson); the lanes cover most of it.
 - Bunting must run edge to edge in a straight line so it can repeat; if it curves or droops, repaint rather than crop.
 - The perk icons read green and the troubles red in the game (the chips' colours), so the pictures themselves can be any colour.
-- Prompt fixes go here after the first run.
+- Prompt fix after the first run: "a game power-up icon" painted plus signs into icons (fog, ghost, shield); the icons now say "a cute storybook sticker" and the negatives say "plus sign, cross".
 
 ## Music (later)
 
