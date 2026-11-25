@@ -375,3 +375,7 @@ The Maths Monsters card shows "Left today ⚔️ 8 of 12 battles", like Clan Que
 **LIVE 27 Oct 2026 (James said go):** the migration was applied to the live database in one transaction; the live `my_moves_left()` had matched the repo's copy beforehand. Checked afterwards: it carries `monsters`, anon can't call it, signed-in users can; as a real pupil (rolled back) it returned `{ today: 7, perDay: 12 }` with `lord` and `clans` still there, and `my_home_page()` passes it through; `scored_games` untouched (1,292 rows). PR #39 merged the same day.
 
 **20 a day from 23 Nov 2026 (James):** migration `20261123000600_monster_twenty_battles.sql` changes the default in `monster_battle_rules()` to 20 (a pupil override and unlimited-today still win) and `BATTLES_PER_DAY` matches.
+
+## 40 battles a day (James, 25 Nov 2026)
+
+The limit went 12 → 20 (23 Nov, `20261123000600_monster_twenty_battles.sql`) → **40** (`20261125000500_monster_forty_battles.sql`, plus `BATTLES_PER_DAY` in `battleCap.ts`). Pupil overrides and the teacher's "unlimited today" are untouched. Points are unchanged: Maths Monsters shares the 40-points-a-day cap (`bot_daily_cap()`), so the extra battles give more practice, not more points past the cap.

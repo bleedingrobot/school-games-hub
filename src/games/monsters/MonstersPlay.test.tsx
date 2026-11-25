@@ -20,7 +20,7 @@ import { MonstersPlay, WORDS } from './MonstersPlay';
 
 const opened = (over: Partial<MonstersData> = {}): MonstersData => ({
   tail: null, settings: { enabled: true, topics: ALL_TOPICS }, facts: [], offline: false,
-  battles: { day: nzDay(Date.now()), today: 0, perDay: 20 }, ...over,
+  battles: { day: nzDay(Date.now()), today: 0, perDay: 40 }, ...over,
 });
 
 beforeEach(() => {
