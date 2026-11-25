@@ -57,6 +57,9 @@ const levelsFor = (a: ClassLiveActivity): readonly string[] => LEVELS[a];
 function TimeForm({ start, busy, onSave, onCancel }: { start: ClassLiveTime; busy: boolean; onSave: (t: ClassLiveTime) => void; onCancel: () => void }) {
   const [t, setT] = useState(start);
   const [problem, setProblem] = useState('');
+  // Typed as text and only tidied on leaving the box or saving, so a number can be cleared and retyped (James, 25 Nov 2026 NZ).
+  const [minText, setMinText] = useState(String(start.min));
+  const [openText, setOpenText] = useState(String(start.open));
   const levels = levelsFor(t.activity);
   const set = (change: Partial<ClassLiveTime>) => setT((old) => ({ ...old, ...change }));
   const num = (v: string, lo: number, hi: number) => Math.min(hi, Math.max(lo, Math.round(Number(v)) || lo));
@@ -69,7 +72,7 @@ function TimeForm({ start, busy, onSave, onCancel }: { start: ClassLiveTime; bus
     if (t.days.length === 0) return setProblem('Pick at least one day.');
     if (!/^\d\d:\d\d$/.test(t.at)) return setProblem('Pick a time.');
     setProblem('');
-    onSave({ ...t, host: t.host.trim() || 'Games Hub' });
+    onSave({ ...t, min: num(minText, 2, 40), open: num(openText, 1, 15), host: t.host.trim() || 'Games Hub' });
   }
 
   return (
@@ -109,11 +112,11 @@ function TimeForm({ start, busy, onSave, onCancel }: { start: ClassLiveTime; bus
       </label>
       <label>
         Fewest players
-        <input type="number" min={2} max={40} value={t.min} onChange={(e) => set({ min: num(e.target.value, 2, 40) })} />
+        <input type="number" inputMode="numeric" min={2} max={40} value={minText} onChange={(e) => setMinText(e.target.value)} onBlur={() => setMinText(String(num(minText, 2, 40)))} />
       </label>
       <label>
         Pop-up minutes before
-        <input type="number" min={1} max={15} value={t.open} onChange={(e) => set({ open: num(e.target.value, 1, 15) })} />
+        <input type="number" inputMode="numeric" min={1} max={15} value={openText} onChange={(e) => setOpenText(e.target.value)} onBlur={() => setOpenText(String(num(openText, 1, 15)))} />
       </label>
       <label>
         Name on the pop-up
