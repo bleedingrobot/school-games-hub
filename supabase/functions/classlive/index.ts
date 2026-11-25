@@ -14209,6 +14209,8 @@ function playerView(s, id) {
 				place,
 				stay: r?.swap && m.jailedIn === null ? m.lastCorner ?? null : null,
 				freeAt: freeAt(g, m),
+				speedLeft: m.speedTo !== null && n <= m.speedTo ? m.speedTo - n + 1 : 0,
+				ghostLeft: m.ghostTo !== null && n <= m.ghostTo ? m.ghostTo - n + 1 : 0,
 				stats: {
 					right: m.right ?? 0,
 					wrong: m.wrong ?? 0,

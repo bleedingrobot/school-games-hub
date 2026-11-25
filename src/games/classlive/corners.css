@@ -528,3 +528,24 @@
 .fc-free__say { font-size: clamp(1.05rem, 3.6vw, 1.5rem); font-weight: 700; }
 @keyframes fc-free-in { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .fc-free, .fc-free__count { animation: none; } }
+
+/* Power-ups on the pad: what you carry and what is working for you now. */
+.fc-power {
+  display: flex; align-items: center; gap: 10px; width: 100%; max-width: 520px; padding: 8px 12px; border-radius: 18px;
+  color: #fff; text-align: left; background: rgba(15, 23, 42, 0.82); border: 3px solid rgba(255, 255, 255, 0.4);
+}
+.fc-power--held { border-color: #facc15; animation: fc-pulse-chip 0.8s ease-in-out infinite alternate; }
+.fc-power--on { border-color: #4ade80; box-shadow: 0 0 18px rgba(74, 222, 128, 0.55); background: rgba(20, 83, 45, 0.85); }
+.fc-power__pic { width: 64px; height: 64px; flex: none; object-fit: contain; }
+.fc-power__pic--emoji { display: grid; place-items: center; font-size: 44px; }
+.fc-power__words { display: grid; gap: 2px; }
+.fc-power__words b { font-size: 1.25rem; letter-spacing: 0.01em; }
+.fc-power__words span { font-size: 1rem; line-height: 1.25; }
+.fc-pad__powers { width: 100%; align-items: center; flex-direction: column; }
+@media (orientation: landscape) and (min-width: 640px) {
+  .fc-pad--run .fc-power { max-width: 100%; }
+  .fc-pad--run .fc-power__pic { width: 52px; height: 52px; }
+  .fc-pad--run .fc-power__words b { font-size: 1.1rem; }
+  .fc-pad--run .fc-power__words span { font-size: 0.92rem; }
+}
+@media (prefers-reduced-motion: reduce) { .fc-power--held { animation: none; } }

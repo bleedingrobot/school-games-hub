@@ -138,6 +138,9 @@ export interface PlayerView {
         stay: Corner | null;
         /** Out of jail at this session time (all right answers in), or null. */
         freeAt: number | null;
+        /** Rounds a Speed boost / Ghost still covers, this one included (0: off). */
+        speedLeft: number;
+        ghostLeft: number;
         /** Own stats for the end screen. */
         stats: { right: number; wrong: number; bestStreak: number; warps: number; lucky: number; grabs: number; powers: number; escapes: number };
       };
@@ -287,6 +290,7 @@ export function playerView(s: Session, id: string): PlayerView {
         crystal: r && m.crystalIn === n ? crystalCorner(r) : null, jump: !!r && m.jumpIn === n,
         caughtLast: !!r?.caught?.includes(id), savedLast: !!r?.saved.includes(id), placed: m.placed, spot: m.spot,
         nextAt: m.lastAt + CORNERS_GAP_MS, place, stay: r?.swap && m.jailedIn === null ? m.lastCorner ?? null : null, freeAt: cornersFreeAt(g, m),
+        speedLeft: m.speedTo !== null && n <= m.speedTo ? m.speedTo - n + 1 : 0, ghostLeft: m.ghostTo !== null && n <= m.ghostTo ? m.ghostTo - n + 1 : 0,
         stats: {
           right: m.right ?? 0, wrong: m.wrong ?? 0, bestStreak: m.bestStreak ?? 0, warps: m.warps ?? 0, lucky: m.lucky ?? 0,
           grabs: m.grabs, powers: m.powersUsed, escapes: m.escapes,

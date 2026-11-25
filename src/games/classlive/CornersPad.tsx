@@ -9,12 +9,12 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { AvatarImage } from '../../avatar/AvatarImage';
 import {
-  AVATAR_R, cornerOf, GRAB_R, JAIL_RIGHT, MAP_WORDS, POWER_WORDS, startSpot, stepMove, type Corner, type MoveState, type Spot,
+  AVATAR_R, cornerOf, GRAB_R, JAIL_RIGHT, MAP_WORDS, POWER_WORDS, startSpot, stepMove, type Corner, type MoveState, type Power, type Spot,
 } from '../../../shared/classlive/corners';
 import type { PlayerView, RoomView } from '../../../shared/classlive/server';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
-import { CORNER_COLOURS, CORNER_NAMES, CornersBoard, Token } from './CornersBoard';
+import { CORNER_NAMES, CornersBoard, powerPic, Token } from './CornersBoard';
 import { CornersGuide } from './CornersGuide';
 import type { ClassLiveLink } from './link';
 import './controller.css';
@@ -352,13 +352,16 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
         <span>{r?.ended && r.rolled === null ? '🎲' : `✅ ${mg.safe}`}</span>
       </header>
       <div className="fc-pad__powers">
-        {mg.held && <span className="fc-chip fc-chip--held">{POWER_WORDS[mg.held].emoji} {POWER_WORDS[mg.held].name}: get to a corner!</span>}
-        {mg.shield && <span className="fc-chip">🛡️ Shield on</span>}
-        {mg.boost && <span className="fc-chip">⚡ Fast</span>}
-        {mg.ghost && <span className="fc-chip">👻 Ghost</span>}
-        {mg.double && <span className="fc-chip">⭐ Double</span>}
+        {mg.held && (
+          <PowerCard power={mg.held} state="held" text={`In your pocket! Run to a corner and answer a question to switch it on. ${POWER_WORDS[mg.held].how}`} />
+        )}
+        {mg.shield && <PowerCard power="shield" state="on" text="You can't be caught this round, even if the dice picks your corner." />}
+        {mg.boost && <PowerCard power="speed" state="on" text={`You run faster: ${(mg.speedLeft ?? 1) > 1 ? `this round and ${(mg.speedLeft ?? 1) - 1} more` : 'last round of it'}.`} />}
+        {mg.ghost && <PowerCard power="ghost" state="on" text={`You walk straight through hazards${(mg.ghostLeft ?? 1) > 1 ? ' this round and next' : ' this round'}.`} />}
+        {mg.double && <PowerCard power="double" state="on" text="Be safe this round to score 2 points." />}
+        {mg.jump && canRun && <PowerCard power="jump" state="on" text="Tap any corner on the board to jump straight there!" />}
+        {mg.crystal !== null && <PowerCard power="crystal" state="on" text={`${CORNER_NAMES[mg.crystal]} is safe this round. Run there!`} />}
         {mg.stay != null && r && !r.ended && <span className="fc-chip fc-chip--swap">🔁 Change corners! Not {CORNER_NAMES[mg.stay]}</span>}
-        {mg.crystal !== null && <span className="fc-chip" style={{ borderColor: CORNER_COLOURS[mg.crystal] }}>🔮 {CORNER_NAMES[mg.crystal]} is safe</span>}
       </div>
       <div className="fc-pad__board">
         <CornersBoard map={pub.map} round={r} t={t} flash={r?.ended && r.rolled ? r.rolled : null} crystal={mg.crystal} banned={r && !r.ended ? mg.stay ?? null : null} fogOn={false} onCorner={mg.jump && canRun ? (c) => void jump(c) : undefined}>
@@ -372,6 +375,20 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
       {toastBox}
       {questionBox}
       {canRun && !question && <Joystick onDir={(d) => { stickDir.current = d; }} />}
+    </div>
+  );
+}
+
+/** A power-up the pupil carries or has switched on, big and plain (James, 25 Nov 2026 NZ: make it really obvious). */
+function PowerCard({ power, state, text }: { power: Power; state: 'held' | 'on'; text: string }) {
+  const pic = powerPic(power);
+  return (
+    <div className={`fc-power fc-power--${state}`} role="status">
+      {pic ? <img className="fc-power__pic" src={pic} alt="" /> : <span className="fc-power__pic fc-power__pic--emoji" aria-hidden="true">{POWER_WORDS[power].emoji}</span>}
+      <span className="fc-power__words">
+        <b>{state === 'on' ? `${POWER_WORDS[power].name} ON` : POWER_WORDS[power].name}</b>
+        <span>{text}</span>
+      </span>
     </div>
   );
 }
