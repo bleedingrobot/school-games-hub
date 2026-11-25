@@ -17,6 +17,7 @@ import { relaySheet } from './RelayCard';
 import { LAVA_HOWTO, LAVA_MAP_SAY } from './lavaVoice';
 import { LAVA_WORDS } from '../../../shared/classlive/lava';
 import { ghostSheet } from './GhostCard';
+import { crewSheet } from './CrewCard';
 
 type Game = ScreenView['game'];
 interface Step { icon: string; text: string; say: string }
@@ -94,6 +95,7 @@ export function sheetFor(game: Game): Sheet {
     };
   }
   if (game.kind === 'ghost') return ghostSheet(game);
+  if (game.kind === 'crew') return crewSheet();
   // Shark Bay
   if (isShark(game)) {
     const H = HOWTO.shark;

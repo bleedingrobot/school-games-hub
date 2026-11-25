@@ -17,6 +17,7 @@ import { ThronesPad } from './ThronesPad';
 import { useMusicOn } from './thronesMusic';
 import { ClashPad } from './ClashPad';
 import { GhostPad } from './GhostPad';
+import { CrewPad } from './CrewPad';
 import { SharkPad } from './SharkPad';
 import { painted } from './paintedArt';
 import type { ClassLiveLink } from './link';
@@ -220,6 +221,13 @@ export function Controller({ link, me, room: roomProp, code: codeProp, lookElsew
     return (
       <Sky tint="corners" back={painted('clash', `back-${view.game.map}`)}>
         <PadGuard><ClashPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} clock={clock} avatar={avatar} /></PadGuard>
+      </Sky>
+    );
+  }
+  if (view.game.kind === 'crew') {
+    return (
+      <Sky tint="corners" back={painted('crew', 'back-factory')}>
+        <PadGuard><CrewPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} clock={clock} avatar={avatar} /></PadGuard>
       </Sky>
     );
   }

@@ -1,4 +1,4 @@
--- Toon Flap Relay (migration 20261126000200_classlive_relay.sql, Class Live activity 'relay'): the activity row and its
+-- Toon Flap Relay (migration 20261126000300_classlive_relay.sql, Class Live activity 'relay'): the activity row and its
 -- trophies. Run on a throw-away copy: scripts/scratch-test.sh classlive supabase/tests/database/classlive_relay.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;

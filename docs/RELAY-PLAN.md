@@ -1,6 +1,6 @@
 # Toon Flap Relay (Class Live activity `relay`)
 
-**Status: BUILT (25 Nov 2026 NZ), stages 1 and 2 (game, server, big screen, iPads, voice). Paintings and the Stadium Sky are the art stage: docs/RELAY-ART-PLAN.md.** Migration `20261126000200_classlive_relay.sql` (activity row + 3 trophies, INSERT only). On for every class with the Class Live switch; not in the set-time (auto) games list yet.
+**Status: BUILT (25 Nov 2026 NZ), stages 1 and 2 (game, server, big screen, iPads, voice). Paintings and the Stadium Sky are the art stage: docs/RELAY-ART-PLAN.md.** Migration `20261126000300_classlive_relay.sql` (activity row + 3 trophies, INSERT only). On for every class with the Class Live switch; not in the set-time (auto) games list yet.
 
 **How it was built, where it differs from the plan below:**
 - Effects live in `shared/classlive/relay.ts` (`flyStep`, a copy of Toon Flap's `stepRun` plus the effects, and `teamCourse`), not inside `shared/toonflap/engine.ts`, so solo Toon Flap is untouched. Each effect is a stretch of the team's course (x0 to x1), laid 2 walls ahead of the bird, so the pad, the server and the big screen all fly the same course.
@@ -124,4 +124,4 @@ Bella as a sports commentator, team colours only: "And they're off!", "Red team 
 
 ## Files
 
-`shared/classlive/relay.ts`, `relayServer.ts`, `relayBot.ts`, `relay.test.ts`; `src/games/classlive/RelayScene.tsx` (big screen), `RelayPad.tsx` (iPad), `RelayCard.tsx` (setup card, lobby, How to play, How it works), `relayDraw.ts` (a lane, and `LanePlayer` that plays saved flaps), `relay.css`, `relayLines.ts` (Bella); `supabase/migrations/20261126000200_classlive_relay.sql`, `supabase/tests/database/classlive_relay.test.sql`. Try it (once built): `npx vite --config vite.classlive-preview.config.ts` (Toon Flap Relay card, "Be a pupil").
+`shared/classlive/relay.ts`, `relayServer.ts`, `relayBot.ts`, `relay.test.ts`; `src/games/classlive/RelayScene.tsx` (big screen), `RelayPad.tsx` (iPad), `RelayCard.tsx` (setup card, lobby, How to play, How it works), `relayDraw.ts` (a lane, and `LanePlayer` that plays saved flaps), `relay.css`, `relayLines.ts` (Bella); `supabase/migrations/20261126000300_classlive_relay.sql`, `supabase/tests/database/classlive_relay.test.sql`. Try it (once built): `npx vite --config vite.classlive-preview.config.ts` (Toon Flap Relay card, "Be a pupil").

@@ -7,7 +7,7 @@
 --      relay_perks (perks given to your flyer), relay_troubles (troubles sent).
 
 insert into public.classlive_activities (id, name, moves, max_speed, reward_line, sort) values
-  ('relay', 'Toon Flap Relay', false, 0.6, 'Win a Toon Flap Relay race with your team: 2 more points.', 15);
+  ('relay', 'Toon Flap Relay', false, 0.6, 'Win a Toon Flap Relay race with your team: 2 more points.', 16);
 
 insert into public.achievement_measures (measure)
 values ('classlive_relay_wins'), ('classlive_relay_perks'), ('classlive_relay_troubles');
