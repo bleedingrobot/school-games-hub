@@ -137,5 +137,5 @@ Rules for every stage: import from `shared/classlive/` and `src/games/classlive/
 ## Went live
 
 - **25 Nov 2026 NZ:** SW1-SW5 merged in PR #846 (deploy green; tables, `starweb_enabled` on, function `starweb` live, outside callers refused). Switched on with a What's new line and the painted art (Star Map backdrop, dusk and aurora skies, home card; picks in `docs/starweb-art/picks.json`) in PR #848.
-- **Art notes:** the aurora sky is bright through the upper middle, so stars there stand out less; repaint it darker if pupils find it hard to see. Map try 3 left out (busy compass rose).
-- **Next ideas (not planned):** a darker aurora repaint; creature pictures for whale, falcon and dragon.
+- **Art notes:** the aurora sky was repainted darker on 25 Nov 2026 (James: "Repaint"): almost black sky, a thin green glow low over the hills. Map try 3 left out (busy compass rose).
+- **Next ideas (not planned):** creature pictures for whale, falcon and dragon.
