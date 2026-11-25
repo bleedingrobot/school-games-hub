@@ -19,11 +19,16 @@ Machine positions are in `MACHINES` (shared/classlive/crew.ts): the floor painti
 
 ## Music
 
-A calm and a "-hot" looping track: `src/games/classlive/music/crew-factory.mp3` and `crew-factory-hot.mp3` (hot plays while 3 or more machines spark). Made with ACE-Step like the other Class Live tracks; add the takes kept to `music/MAKING.json`. Until they exist the game borrows island.
+A calm and a "-hot" looping track: `src/games/classlive/music/crew-factory.mp3` and `crew-factory-hot.mp3` (hot plays while 3 or more machines spark). Made with ACE-Step like the other Class Live tracks; add the takes kept to `music/MAKING.json`. The game borrows island if a file is missing.
 
 - `crew-factory`: "playful friendly robot factory groove, bouncy synth bass, clanky metallic percussion, marimba, little robot bleeps, sneaky but cheerful, 116 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, loopable, steady tempo"
 - `crew-factory-hot`: "urgent playful robot factory alarm groove, fast synth bass, pounding clanky drums, rapid marimba, alarm-like synth stabs, not scary, very energetic, starts immediately at full volume, 150 bpm, instrumental, no vocals, video game soundtrack, kids game music, loopable, steady tempo"
 
 ## Notes
 
-- Nothing painted yet (25 Nov 2026).
+- Painted 26 Nov 2026 on James's PC, 3 tries each; picks in `docs/crew-art/picks.json`.
+- `map-factory` repainted: the first prompt painted machine-like boxes and robots inside the hazard border (right where `MACHINES` sit) and a table instead of a rug. New prompt describes only a seamless floor texture, a thin hazard border at the picture's edge and one round rug in the centre; machines, crates, pipes, furniture went into its negative. Kept try 3 (empty floor, rug just above centre).
+- `back-factory` repainted: the first prompt put big robot characters in the foreground. New prompt says "empty hall with nobody inside" and robots/figures/faces are in the negative. Kept try 2.
+- `belt` try 1 had a letter on it and try 2 painted a book; kept try 3 (a conveyor belt).
+- `canteen`: rembg left white between the stools; large enclosed near-white areas were made see-through after tidy (cups and bowl kept).
+- Music: `crew-factory` take 1 (seed 11117). Both `-hot` takes 1-2 opened quietly for several seconds, so takes 3 (31337) and 4 (77777) were made too; kept take 4, which starts at full volume. Fade-in is 0.05 s (no quiet intro). Whisper found no voices in any take.
