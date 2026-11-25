@@ -138,6 +138,8 @@ export interface Course {
   nestX: number;
   /** Medal times for this level, seconds (medals.ts, written by the sim). */
   medals: LevelMedals;
+  /** The run stops after this many steps (missing: MAX_RUN_STEPS). Sky Dash runs longer than a level. */
+  maxSteps?: number;
 }
 
 export interface LevelMedals {

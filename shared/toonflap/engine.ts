@@ -160,7 +160,7 @@ export function stepRun(course: Course, s: RunState, flap: boolean): StepEvent {
     s.outcome = 'finished';
     return 'finish';
   }
-  if (s.t >= MAX_RUN_STEPS) {
+  if (s.t >= (course.maxSteps ?? MAX_RUN_STEPS)) {
     s.mode = 'done';
     s.outcome = 'timeout';
     return 'finish';

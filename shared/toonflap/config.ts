@@ -102,6 +102,11 @@ export const SILVER_MISSES = 1;
  * The course gets harder slowly: walls closer together and openings smaller over the first `DASH_RAMP_WALLS` walls.
  */
 export const DASH_CHECK_SECONDS = 30;
+/**
+ * The longest a dash can go, seconds of flying. It used to share the levels' 5-minute cap, so a pupil who never bumped
+ * was stopped dead at about wall 143 (James, 26 Nov 2026: "crashes at wall 143"). 20 minutes is about 600 walls.
+ */
+export const DASH_MAX_SECONDS = 20 * 60;
 export const DASH_FEATHERS_MAX = 3;
 export const DASH_RAMP_WALLS = 80;
 export const DASH_START = { spacing: 2.4, gap: 4.6, wander: 1.6 } as const;
