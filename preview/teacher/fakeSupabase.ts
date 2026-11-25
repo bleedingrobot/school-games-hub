@@ -106,7 +106,7 @@ Object.assign(settingsRow, {
 });
 
 // ---- Student scenes use the home page's own fake -------------------------------------------------------------------------------
-const PROFILE_TEACHER = { id: 'me', display_name: 'Sneaky Dragon 28', role: 'teacher', school_admin: false, avatar: {} };
+const PROFILE_TEACHER = { id: 'me', display_name: 'Sneaky Dragon 28', role: 'teacher', school_admin: new URLSearchParams(location.search).get('admin') === '1', avatar: {} };
 const PROFILE_STUDENT = { id: 'me', display_name: 'Speedy Otter 27', role: 'student', school_admin: false, avatar: { kind: 'cat', bg: '#9b6bff', ...(new URLSearchParams(location.search).get('quest') === 'won' ? { title: 'moon-walker', frame: 'vine' } : {}) } };
 const profile = SCENE === 'student' ? PROFILE_STUDENT : PROFILE_TEACHER;
 
@@ -179,6 +179,10 @@ const answers: Record<string, (a: Row) => unknown> = {
     return null;
   },
   my_school_info: () => ({ id: 1, name: 'Douglas Park School', admin: false }),
+  classlive_times_list: () => [
+    { id: 1, days: [1, 2, 3, 4, 5], at: '13:30', activity: 'serpent', length: 5, min: 6, open: 3, host: 'Games Hub', level: 'gold', on: true },
+    { id: 2, days: [3], at: '09:15', activity: 'corners', length: 10, min: 6, open: 3, host: 'Mr Riley', level: null, on: true },
+  ],
   teacher_classes: () => (SCENE === 'noclass' ? [] : [classSummary]),
   teacher_class_detail: () => classDetail,
   teacher_unassigned_students: () => unassigned,
