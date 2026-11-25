@@ -271,7 +271,7 @@ export function relayCourse(n: number, seed: number): Course {
   }
   const big = 9999;
   const course: Course = {
-    def, speed, walls, perches: [], signs: [], zones: [],
+    def, speed, walls, perches: [], signs: [], zones: [], presents: [],
     nestX: walls[walls.length - 1].x + WALL_WIDTH + NEST_AFTER,
     medals: { gold: big, silver: big, goldPlain: big, silverPlain: big },
   };
@@ -345,7 +345,7 @@ export function startSpot(course: Course, x: number): { x: number; y: number; w:
 }
 
 export function newFly(turn: Pick<Turn, 'x0' | 'y0' | 'w0'>): FlyState {
-  return { t: 0, x: turn.x0, y: turn.y0, vy: 0, mode: 'hover', hover: 'start', bumps: 0, nextWall: turn.w0, perches: 0, picks: [], outcome: 'running', used: [], phaseTo: -1 };
+  return { t: 0, x: turn.x0, y: turn.y0, vy: 0, mode: 'hover', hover: 'start', bumps: 0, nextWall: turn.w0, perches: 0, picks: [], got: [], outcome: 'running', used: [], phaseTo: -1 };
 }
 
 function respawn(course: Course, s: FlyState): void {

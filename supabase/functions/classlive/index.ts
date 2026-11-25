@@ -16963,6 +16963,7 @@ function relayCourse(n, seed) {
 		perches: [],
 		signs: [],
 		zones: [],
+		presents: [],
 		nestX: walls[walls.length - 1].x + WALL_WIDTH + 4,
 		medals: {
 			gold: big,
@@ -17068,6 +17069,7 @@ function newFly(turn) {
 		nextWall: turn.w0,
 		perches: 0,
 		picks: [],
+		got: [],
 		outcome: "running",
 		used: [],
 		phaseTo: -1
