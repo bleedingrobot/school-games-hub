@@ -5,6 +5,7 @@ import { solveParts } from './focus';
 import { LADDER } from './ladder';
 import { BEDMAS_KEYS, BEDMAS_TEMPLATE_COUNT } from './skillPacks/bedmas';
 import { GENERATED, GENERATED_SKILL_KEYS, generatedPack, solveGenerated } from './skillPacks/generated';
+import { Y6_FAMILIES } from './skillPacks/y6';
 
 const FAMILIES = Object.values(GENERATED.families);
 const KEYS = FAMILIES.flatMap((f) => f.keys);
@@ -14,7 +15,7 @@ const F6_KEYS = new Set(F6_SKILLS.flatMap((id) => GENERATED_SKILL_KEYS[id]));
 // Picking a factor pair carries its numbers too, so fdp.test.ts checks it with the other pick-one types.
 // The Year 7-8 types carry their numbers too: y78.test.ts.
 // The Year 6 skill packs (docs/plans/ladder-y6) and Year 7-8 ones are checked roll by roll in y78.test.ts instead.
-const Y78_KEYS = new Set(LADDER.filter((s) => (s.year ?? 0) >= 6).flatMap((s) => s.keys));
+const Y78_KEYS = new Set([...LADDER.filter((s) => (s.year ?? 0) >= 6).flatMap((s) => s.keys), ...Object.keys(Y6_FAMILIES)]);
 const F5_KEYS = KEYS.filter((k) => !F6_KEYS.has(k) && !Y78_KEYS.has(k) && k !== 'factor:pick');
 const pack = generatedPack();
 
