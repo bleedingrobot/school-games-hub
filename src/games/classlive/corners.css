@@ -489,6 +489,7 @@
 
 /* ---------- power-ups and hazards page ---------- */
 .fc-guide-btn { margin-top: 6px; }
+.fc-guide-btn--card { align-self: flex-start; margin: 0 0 4px; }
 .fc-guide { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 12px; background: rgba(4, 4, 26, 0.72); backdrop-filter: blur(3px); }
 .fc-guide__card {
   width: min(100%, 1100px); max-height: calc(100dvh - 24px); overflow-y: auto; padding: clamp(12px, 2.4vmin, 28px);

@@ -510,6 +510,7 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
   const [cLength, setCLength] = useState(5);
   const [cMap, setCMap] = useState<CornerMap | 'any'>('any');
   const [cRun, setCRun] = useState(RUN_DEFAULT_S);
+  const [cGuide, setCGuide] = useState(false);
   const [x, setX] = useState('6');
   const [y, setY] = useState('7');
   const [length, setLength] = useState(0);
@@ -600,6 +601,8 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
           <CardArt pic={painted('pick', 'corners', true) ?? painted('corners', 'map-snow', true)} />
           <h2 className="cl-card__name">🎲 Four Corners</h2>
           <p className="cl-card__blurb">Run your avatar to a corner. The dice decides who goes to jail!</p>
+          <button type="button" className="cl-btn cl-btn--small fc-guide-btn fc-guide-btn--card" onClick={() => setCGuide(true)}>⚡ Power-ups and hazards</button>
+          {cGuide && <CornersGuide map={cMap === 'any' ? MAPS[0] : cMap} onClose={() => setCGuide(false)} />}
           <div className="cl-opt">
             <span className="cl-opt__label">Which map?</span>
             <div className="cl-chips" role="group" aria-label="Map">
