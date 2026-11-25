@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'classlive-thrones-2026-11-25',
+    date: '2026-11-25',
+    emoji: '👑',
+    title: 'Musical Thrones',
+    text: 'Dance till the music stops, then race to a throne! Collect the most crowns to win.',
+    game: 'classlive',
+  },
+  {
     id: 'diamond-monster-dig-2026-11-25',
     date: '2026-11-25',
     emoji: '🐾',

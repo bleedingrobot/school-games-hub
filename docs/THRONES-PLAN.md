@@ -1,6 +1,6 @@
 # Musical Thrones (Class Live activity `thrones`)
 
-**Status: building stages 1-2 (25 Nov 2026 NZ).** Migration `20261125001100_classlive_thrones` (only inserts, on the base `20261125000800_classlive_activities`).
+**Status: game LIVE on drawn stand-ins (25 Nov 2026 NZ); painted art and 8 music tracks coming from James's PC (branch thrones-art-inbox).** Migration `20261125001100_classlive_thrones` (only inserts, on the base `20261125000800_classlive_activities`).
 
 James's idea (25 Nov 2026 NZ, from the coordinator's list of map games after Four Corners): musical chairs with thrones. Fewer thrones than players; when the music stops, kids race to sit; those left standing answer questions to earn their way back. A Class Live activity like Four Corners (docs/CORNERS-PLAN.md): same room, lobby codes, timers, teacher bar, music, Bella, rewards, movement.
 
