@@ -791,10 +791,11 @@
     "name": "crew-factory-hot",
     "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
     "prompt": "urgent playful robot factory alarm groove, fast synth bass, pounding clanky drums, rapid marimba, alarm-like synth stabs, not scary, very energetic, starts immediately at full volume, 150 bpm, instrumental, no vocals, video game soundtrack, kids game music, loopable, steady tempo",
-    "seed": 77777,
+    "seed": 15015,
     "bpm": 150,
     "seconds": 88.0,
-    "take_kept": 4,
-    "lufs_target": -16
+    "take_kept": 5,
+    "lufs_target": -16,
+    "note": "26 Nov repaint: take 4 (seed 77777) ran ~170 bpm, not 150; takes 5 (seed 15015) and 6 (seed 60606) made with the same prompt. Take 5 kept: ~158 bpm and steady (155-160 in every 11 s window), loud from the first second, no vocals (Whisper hears none). Take 6 was ~162 bpm with a quiet 6 s opening."
   }
 ]

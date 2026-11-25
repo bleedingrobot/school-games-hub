@@ -16,7 +16,7 @@
   "pictures": [
     {
       "name": "map-factory",
-      "prompt": "A seamless top-down close-up texture of a clean blue-grey metal factory floor made of square floor plates with faint grid lines, covering the entire picture right out to every edge and corner, a thin yellow and black hazard stripe border running right along the outer edge of the picture, and one single round soft warm orange woven rug seen from above lying flat in the exact centre. Flat, even, calm and tidy, bird's-eye view straight down, square game board picture for children aged 7 to 11.",
+      "prompt": "A perfectly flat top-down orthographic view straight down, like a floor plan, of a clean empty open robot factory floor, completely flat, covering the entire square picture right out to every edge and corner with no walls, cabinets or anything beyond the floor: a patchwork of different metal floor panels, blue-grey diamond tread plate, riveted steel plates and smooth dark panels, painted bright yellow walkway lines and painted yellow arrows on the floor, small round floor hatches and drain grates set flush in the floor, painted coloured zone squares in teal, orange and purple on the floor, soft pools of warm light on the floor, a few small dark oil stains, a thin yellow and black hazard stripe border running right along the outer edge of the picture, and one single big round soft warm orange woven rug lying flat in the exact centre. Everything is painted flat on the floor, nothing stands up, calm and tidy, square game board picture for children aged 7 to 11.",
       "size": [
         1536,
         1536
@@ -24,7 +24,7 @@
       "kind": "scene",
       "folder": "crew",
       "file": "map-factory",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, robots, people, machines, boxes, crates, pipes, tables, chairs, stools, furniture, objects, conveyor belts, walls, perspective view, side view"
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, robots, people, machines, boxes, crates, pipes, tables, chairs, stools, furniture, objects, conveyor belts, walls, perspective view, side view, shelves, barrels, lamps, poles, columns, cars, vehicles, shadows of objects, 3d objects"
     },
     {
       "name": "back-factory",
@@ -80,7 +80,7 @@
     },
     {
       "name": "machine-assembly-broken",
-      "prompt": "a friendly rounded robot arm assembly machine in a little booth, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, jammed and broken: playful yellow sparks and a puff of grey smoke, a red warning light Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "prompt": "a friendly rounded robot arm assembly machine in a little booth, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, exactly the same machine but broken and switched off, no green light anywhere: bright yellow-white electric sparks and little zig-zag lightning zaps crackling off it, one red warning light glowing on top Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
       "size": [
         512,
         512
@@ -88,7 +88,7 @@
       "kind": "cut",
       "folder": "crew-fx",
       "file": "machine-assembly-broken",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, smoke, steam, clouds, puffs, sparkles, stars, twinkles, green glow, green light, fire, flames",
       "style": "c",
       "max": 512
     },
@@ -108,7 +108,7 @@
     },
     {
       "name": "machine-paint-broken",
-      "prompt": "a friendly paint mixing machine with colourful paint pots and a nozzle, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, jammed and broken: playful yellow sparks and a puff of grey smoke, a red warning light Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "prompt": "a friendly paint mixing machine with colourful paint pots and a nozzle, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, exactly the same machine but broken and switched off, no green light anywhere: bright yellow-white electric sparks and little zig-zag lightning zaps crackling off it, one red warning light glowing on top Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
       "size": [
         512,
         512
@@ -116,7 +116,7 @@
       "kind": "cut",
       "folder": "crew-fx",
       "file": "machine-paint-broken",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, smoke, steam, clouds, puffs, sparkles, stars, twinkles, green glow, green light, fire, flames",
       "style": "c",
       "max": 512
     },
@@ -136,7 +136,7 @@
     },
     {
       "name": "machine-boiler-broken",
-      "prompt": "a round friendly copper boiler machine with dials and a little chimney, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, jammed and broken: playful yellow sparks and a puff of grey smoke, a red warning light Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "prompt": "a round friendly copper boiler machine with dials and a little chimney, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, exactly the same machine but broken and switched off, no green light anywhere: bright yellow-white electric sparks and little zig-zag lightning zaps crackling off it, one red warning light glowing on top Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
       "size": [
         512,
         512
@@ -144,7 +144,7 @@
       "kind": "cut",
       "folder": "crew-fx",
       "file": "machine-boiler-broken",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, smoke, steam, clouds, puffs, sparkles, stars, twinkles, green glow, green light, fire, flames",
       "style": "c",
       "max": 512
     },
@@ -164,7 +164,7 @@
     },
     {
       "name": "machine-sorter-broken",
-      "prompt": "a friendly sorting machine with chutes and coloured bins, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, jammed and broken: playful yellow sparks and a puff of grey smoke, a red warning light Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "prompt": "a friendly sorting machine with chutes and coloured bins, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, exactly the same machine but broken and switched off, no green light anywhere: bright yellow-white electric sparks and little zig-zag lightning zaps crackling off it, one red warning light glowing on top Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
       "size": [
         512,
         512
@@ -172,7 +172,7 @@
       "kind": "cut",
       "folder": "crew-fx",
       "file": "machine-sorter-broken",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, smoke, steam, clouds, puffs, sparkles, stars, twinkles, green glow, green light, fire, flames",
       "style": "c",
       "max": 512
     },
@@ -192,7 +192,7 @@
     },
     {
       "name": "machine-battery-broken",
-      "prompt": "a big friendly battery charging machine with glowing green cells, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, jammed and broken: playful yellow sparks and a puff of grey smoke, a red warning light Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "prompt": "a big friendly battery charging machine with dark cells flickering red and orange, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, exactly the same machine but broken and switched off, no green light anywhere: bright yellow-white electric sparks and little zig-zag lightning zaps crackling off it, one red warning light glowing on top Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
       "size": [
         512,
         512
@@ -200,7 +200,7 @@
       "kind": "cut",
       "folder": "crew-fx",
       "file": "machine-battery-broken",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, smoke, steam, clouds, puffs, sparkles, stars, twinkles, green glow, green light, fire, flames",
       "style": "c",
       "max": 512
     },
@@ -220,7 +220,7 @@
     },
     {
       "name": "machine-control-broken",
-      "prompt": "a friendly control room desk with big buttons, levers and a light switch panel, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, jammed and broken: playful yellow sparks and a puff of grey smoke, a red warning light Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "prompt": "a friendly control room desk with big buttons, levers and a light switch panel, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, exactly the same machine but broken and switched off, no green light anywhere: bright yellow-white electric sparks and little zig-zag lightning zaps crackling off it, one red warning light glowing on top Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
       "size": [
         512,
         512
@@ -228,7 +228,7 @@
       "kind": "cut",
       "folder": "crew-fx",
       "file": "machine-control-broken",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, smoke, steam, clouds, puffs, sparkles, stars, twinkles, green glow, green light, fire, flames",
       "style": "c",
       "max": 512
     },
@@ -248,7 +248,7 @@
     },
     {
       "name": "machine-packer-broken",
-      "prompt": "a friendly packing machine with a cardboard box on a small belt, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, jammed and broken: playful yellow sparks and a puff of grey smoke, a red warning light Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "prompt": "a friendly packing machine with a cardboard box on a small belt, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, exactly the same machine but broken and switched off, no green light anywhere: bright yellow-white electric sparks and little zig-zag lightning zaps crackling off it, one red warning light glowing on top Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
       "size": [
         512,
         512
@@ -256,7 +256,7 @@
       "kind": "cut",
       "folder": "crew-fx",
       "file": "machine-packer-broken",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, smoke, steam, clouds, puffs, sparkles, stars, twinkles, green glow, green light, fire, flames",
       "style": "c",
       "max": 512
     },
@@ -276,7 +276,7 @@
     },
     {
       "name": "machine-recycler-broken",
-      "prompt": "a friendly green recycling machine with a big round hopper, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, jammed and broken: playful yellow sparks and a puff of grey smoke, a red warning light Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "prompt": "a friendly green recycling machine: a big round green funnel hopper sitting on top of a square green box base with rivets, not a wheelie bin, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, exactly the same machine but broken and switched off, no green light anywhere: bright yellow-white electric sparks and little zig-zag lightning zaps crackling off it, one red warning light glowing on top Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
       "size": [
         512,
         512
@@ -284,7 +284,7 @@
       "kind": "cut",
       "folder": "crew-fx",
       "file": "machine-recycler-broken",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, smoke, steam, clouds, puffs, sparkles, stars, twinkles, green glow, green light, fire, flames",
       "style": "c",
       "max": 512
     },
