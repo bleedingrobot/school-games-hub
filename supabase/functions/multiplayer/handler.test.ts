@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { seeded } from '../../../shared/seededRandom';
 import {
@@ -270,14 +268,5 @@ describe('invites by name (play anyone, stage 4)', () => {
     players.set('cat', { ...players.get('cat')!, schoolId: 2 });
     expect((await ask('dan', { action: 'invite', invite: 2, game: 'chess' })).problem).toBe('invite-gone');
     expect(invites.get(2)).toMatchObject({ status: 'cancelled', path: null });
-  });
-});
-
-describe('the deployable file', () => {
-  it('has an up-to-date index.ts (run `npm run build:functions` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('multiplayer');
-    expect(readFileSync(resolve('supabase/functions/multiplayer/index.ts'), 'utf8')).toBe(built);
   });
 });

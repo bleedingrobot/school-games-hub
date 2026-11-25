@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { botSetup, chooseForRun, type BotLevel } from '../../../shared/archery/bot';
 import { startFight, takeShot } from '../../../shared/archery/fight';
@@ -190,13 +188,4 @@ describe('loot chests and restocks', () => {
 
 
 
-});
-
-describe('index.ts', () => {
-  it('is up to date (run npm run build:functions -- archery)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('archery');
-    expect(readFileSync(resolve('supabase/functions/archery/index.ts'), 'utf8')).toBe(built);
-  });
 });

@@ -1,6 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 import { newStats } from '../../../shared/maths/leitner';
 import { memoryServices, type MemoryOptions } from '../../../shared/hop/memoryServices';
 import type { Tap } from '../../../shared/hop/play';
@@ -101,13 +99,4 @@ it('changes one pad a NZ day by the server’s clock, whatever the browser sends
   expect(last.round.hops.slice(-3).every((h) => h.key.includes(':back:'))).toBe(true);
   expect(last.reply).toMatchObject({ daysDone: 30, padChanged: 9, jar: true });
   expect(log.jars).toEqual(['pupil-a']); // the hub gives Hop's Golden Glow Jar achievement
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions -- hop` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('hop');
-    expect(readFileSync(resolve('supabase/functions/hop/index.ts'), 'utf8')).toBe(built);
-  });
 });

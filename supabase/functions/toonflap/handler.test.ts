@@ -1,6 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 import { botRun } from '../../../shared/toonflap/bot';
 import { BREAK_AFTER_RUNS, DASHES_A_DAY, WINS_A_DAY } from '../../../shared/toonflap/config';
 import { nzDate } from '../../../shared/kit/dayArc';
@@ -149,13 +147,4 @@ it('allows 10 level wins and 2 Sky Dashes a day, and the teacher’s Unlimited t
   settings = { ...settings, unlimited: false };
   wait(24 * 60 * 60);
   expect((await send('pupil-e', { action: 'load' })).body).toMatchObject({ winsLeft: WINS_A_DAY, dashesLeft: DASHES_A_DAY });
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions -- toonflap` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('toonflap');
-    expect(readFileSync(resolve('supabase/functions/toonflap/index.ts'), 'utf8')).toBe(built);
-  });
 });

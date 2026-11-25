@@ -340,11 +340,11 @@ docs/             the plan and the original brief
 
 ## Server functions (Supabase Edge Functions)
 
-Server functions live in `supabase/functions/`. Each one has a `handler.ts` (the logic, with tests) and an `index.ts`, which is **generated**: it's the single file that gets deployed. After changing a handler, or the rules in `shared/`, run `npm run build:functions`. A test fails if you forget.
+Server functions live in `supabase/functions/`. Each one has a `handler.ts` (the logic, with tests) and an `index.ts`, which is **generated** by `npm run build:functions` and not kept in git: "Test and publish" builds every function and deploys the ones whose build changed.
 
 To update a function on the live site without the Supabase CLI:
 
-1. On GitHub, open `supabase/functions/<name>/index.ts` and click **Copy raw file**.
+1. Run `npm run build:functions -- <name>` and open the `supabase/functions/<name>/index.ts` it writes.
 2. In Supabase, go to **Edge Functions**, open the function, click **Code**, select everything, paste, then click **Deploy**.
 
 There are seven main functions: `save-bot-game` (saves bot games, including space and 101 games), `multiplayer` (referees chess and checkers between students), `space-game` (runs Wormholes & Black Holes with classmates), `card-game` (runs 101 with classmates), `gem-keep` (saves Gem Keep levels, Level Keys and times-table records), `monster` (checks and saves Maths Monsters) and `marble` (checks and saves Marble Rush runs and marks its maths). The newer games have functions of their own too (`clans`, `lord`, `power-clash`, `training`), each described in its plan. The ones named above all must have **Verify JWT** switched **off** (under the function's **Details**). That's safe: each function checks the student's sign-in itself.
@@ -376,13 +376,13 @@ The free Supabase plan **pauses a project after a week with nobody using it**. I
 
 ### Updating a server function
 
-After changing `supabase/functions/<name>/handler.ts` or the rules in `shared/`, run `npm run build:functions`, then `npm run check`. Then deploy it:
+Normally nothing to do: merging to main builds every function and deploys the ones that changed. By hand: run `npm run build:functions`, then:
 
 ```bash
 npx supabase functions deploy <name> --project-ref zqzhetlzvtptnkmeiumi --no-verify-jwt --use-api
 ```
 
-Or, without the command line: on GitHub open `supabase/functions/<name>/index.ts`, click **Copy raw file**, then in Supabase go to **Edge Functions → <name> → Code**, select everything, paste and click **Deploy**. Keep **Verify JWT** switched **off** for every function (each function checks the sign-in itself). To undo, deploy the previous version of `index.ts` the same way (GitHub's **History** button on the file shows older versions).
+Or, without the command line: build it, copy `supabase/functions/<name>/index.ts`, then in Supabase go to **Edge Functions → <name> → Code**, select everything, paste and click **Deploy**. Keep **Verify JWT** switched **off** for every function (each function checks the sign-in itself). To undo, revert the change on main; the publish deploys the earlier build.
 
 ### Changing the database
 

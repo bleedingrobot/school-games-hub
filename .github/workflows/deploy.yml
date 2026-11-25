@@ -3,7 +3,7 @@
 #   1. checks, side by side: the site's (typecheck + build, and the tests split across 4 machines) and the
 #      database rules (db, in db-tests.yml, only when database files changed)
 #   2. live database: applies new migrations (scripts/apply-live-migrations.sh)
-#   3. server functions: deploys each one whose index.ts changed since the last green publish
+#   3. server functions: builds each one and deploys those whose build differs from the last green publish's
 #   4. the site, to GitHub Pages
 # If any step fails, the later ones don't run. A push that only changes notes and plans (docs/, top-level .md)
 # does nothing. Because everything is measured from the last green publish, a run that was dropped from the
@@ -38,7 +38,7 @@ jobs:
     outputs:
       site: ${{ steps.what.outputs.site }}
       db: ${{ steps.what.outputs.db }}
-      functions: ${{ steps.what.outputs.functions }}
+      base: ${{ steps.what.outputs.base }}
     env:
       GH_TOKEN: ${{ github.token }}
       EVENT: ${{ github.event_name }}
@@ -55,6 +55,7 @@ jobs:
           base=$(gh api "repos/${{ github.repository }}/actions/workflows/deploy.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // ""' || true)
           if [ -n "$base" ] && ! git merge-base --is-ancestor "$base" HEAD 2>/dev/null; then base=""; fi
           echo "Last green publish: ${base:-none found}"
+          echo "base=$base" >> "$GITHUB_OUTPUT"
           scripts/ci-changes.sh "$base"
           # Run by hand: always check and publish everything, whatever changed.
           if [ "$EVENT" = "workflow_dispatch" ]; then echo "site=true" >> "$GITHUB_OUTPUT"; echo "db=true" >> "$GITHUB_OUTPUT"; fi
@@ -73,6 +74,8 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run build
+      # Every server function must still build (they are built again, and deployed, after the database step).
+      - run: npm run build:functions
       # Put back the files the last publish used for a while, so pages already open still load their games.
       - run: node scripts/keep-old-assets.mjs dist
       - uses: actions/upload-pages-artifact@v4
@@ -139,31 +142,49 @@ jobs:
     timeout-minutes: 15
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      CHANGED: ${{ needs.changes.outputs.functions }}
+      BASE: ${{ needs.changes.outputs.base }}
       EXTRA: ${{ inputs.functions }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
       - run: npm ci
+      # The built index.ts files aren't kept in git: build every function here, and build them again as they were at the
+      # last green publish. A function goes live when its build differs (or it is new, or there is no last green publish).
+      - name: Work out which server functions changed
+        id: which
+        run: |
+          npm run build:functions > /dev/null
+          all=$(node -e "import('./scripts/build-functions.mjs').then(m => console.log(m.FUNCTIONS.join(' ')))")
+          if [ "$EXTRA" = "all" ] || [ -z "$BASE" ]; then
+            names="$all"
+          else
+            git worktree add -q --detach "$RUNNER_TEMP/base" "$BASE"
+            ln -s "$PWD/node_modules" "$RUNNER_TEMP/base/node_modules"
+            (cd "$RUNNER_TEMP/base" && node scripts/build-functions.mjs > /dev/null)
+            names="$EXTRA"
+            for n in $all; do
+              cmp -s "supabase/functions/$n/index.ts" "$RUNNER_TEMP/base/supabase/functions/$n/index.ts" || names="$names $n"
+            done
+          fi
+          names=$(echo $names | tr ' ' '\n' | sort -u | tr '\n' ' ')
+          echo "Functions to deploy: ${names:-none}"
+          echo "names=$names" >> "$GITHUB_OUTPUT"
       - name: Deploy changed server functions
+        env:
+          NAMES: ${{ steps.which.outputs.names }}
         run: |
           if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
             echo "::warning::No SUPABASE_ACCESS_TOKEN secret, so no server functions were deployed."
             exit 0
           fi
-          # A function goes live when its built file (supabase/functions/<name>/index.ts) changed since the last green publish.
-          if [ "$EXTRA" = "all" ]; then
-            names=$(node -e "import('./scripts/build-functions.mjs').then(m => console.log(m.FUNCTIONS.join(' ')))")
-          else
-            names="$CHANGED $EXTRA"
-          fi
-          names=$(echo $names | tr ' ' '\n' | sort -u)
-          if [ -z "$names" ]; then echo "No server function changed."; exit 0; fi
+          if [ -z "${NAMES// }" ]; then echo "No server function changed."; exit 0; fi
           # Supabase sometimes times out for a moment (24 Nov 2026); deploying again is safe, so try each one up to 3 times.
-          for n in $names; do
+          for n in $NAMES; do
             for i in 1 2 3; do
               echo "Deploying $n ..."
               npx supabase functions deploy "$n" --project-ref zqzhetlzvtptnkmeiumi --no-verify-jwt --use-api && break

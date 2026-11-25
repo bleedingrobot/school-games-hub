@@ -2,8 +2,6 @@
  * The circuit function on the pretend database (shared/circuit/memoryServices.ts). Server tests 1 to 3 of the game's 8
  * (Stage 1 used 3; Stage 3's other test is shared/circuit/maths.test.ts).
  */
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { botRun } from '../../../shared/circuit/bot';
 import { HALF_REFILL, TOP_SPEED } from '../../../shared/circuit/config';
@@ -170,11 +168,4 @@ it('marks a port answer once and replays its refill, gives no shortcut for a wro
   expect(plain.body.maths).toBeNull();
   expect(Object.keys(db.questions)).toHaveLength(1);
   expect((await send({ action: 'answer', road: road.def.id, seed: plain.body.seed, stamp: plain.body.stamp, slot: 0, answer: 1, ms: 1 })).status).toBe(400);
-});
-
-it('is up to date with the code (run `npm run build:functions -- circuit` if this fails)', async () => {
-  // @ts-expect-error: plain JavaScript build script
-  const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-  const built: string = await buildFunction('circuit');
-  expect(readFileSync(resolve('supabase/functions/circuit/index.ts'), 'utf8')).toBe(built);
 });
