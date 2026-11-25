@@ -41,7 +41,7 @@ select set_config('test.time', public.classlive_times_save(jsonb_build_object('d
   'activity', 'serpent', 'length', 5, 'min', 4, 'open', 3, 'host', 'Games Hub', 'level', 'gold'))::text, true);
 select is(jsonb_array_length(public.classlive_times_list()), 1, 'the admin sees the time');
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a3');
-select is((select count(*)::int from public.classlive_times), 0, 'pupils cannot read times');
+select throws_ok($$ select public.classlive_times_list() $$, '42501', null, 'pupils cannot read times');
 
 -- ---- The job opens one room ----
 select pg_temp.reset();
