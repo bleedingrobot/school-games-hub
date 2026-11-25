@@ -22,11 +22,11 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const GAMES: Record<ClassLiveActivity, string> = {
   serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners', shark: 'Shark Bay', ghost: 'Ghost Tag',
-  clash: 'Colour Clash', thrones: 'Musical Thrones', lava: 'Floor is Lava',
+  clash: 'Colour Clash', thrones: 'Musical Thrones', lava: 'Floor is Lava', vote: 'Kids vote (3 games to pick from)',
 };
 /** Each game's maps (or Serpent Chain's levels); Mystery Mural has none. */
 const LEVELS: Record<ClassLiveActivity, readonly string[]> = {
-  serpent: SERPENT_LEVELS, mural: [], corners: MAPS, shark: BAYS, ghost: GHOST_MAPS, clash: CLASH_MAPS, thrones: HALLS, lava: LAVA_MAPS,
+  serpent: SERPENT_LEVELS, mural: [], corners: MAPS, shark: BAYS, ghost: GHOST_MAPS, clash: CLASH_MAPS, thrones: HALLS, lava: LAVA_MAPS, vote: [],
 };
 const LENGTHS = [2, 3, 5, 10, 15] as const;
 

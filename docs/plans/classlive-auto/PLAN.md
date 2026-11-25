@@ -27,3 +27,7 @@ James asked (25 Nov 2026 NZ): "Can we get the server to start a class live game 
 - Rooms with no class: `class_id` and `teacher` may be null only when `schedule_id` is set. `classlive_open` (a teacher's Open) never closes them. Teacher steps refuse them (`row.teacher !== who`).
 - At most 40 players (`MAX_PLAYERS`); the 41st gets "This room is full."
 - Only school admins see and change the times (Admin, "Class Live times" tab).
+
+## Kids vote (James, 25 Nov 2026 NZ; migration `20261126000100_classlive_vote`)
+
+A time's game can be **Kids vote** (`activity = 'vote'`). The job opens the room with `session.auto.vote = { picks: {} }` and `classlive_rooms.vote = true`; the first step picks 3 random games from `AUTO_ACTIVITIES` (`vote.choices`). Pupils in the waiting room tap one (pupil action `vote`; they can change it until the start). At the start, if enough joined, the most-voted game wins (ties and no votes: random among the top) and is made with "Surprise me" map; every joined pupil is put into it. The pop-up says "<host> is starting a Class Live game. Come and vote".

@@ -198,7 +198,7 @@ export function Controller({ link, me, room: roomProp, code: codeProp, lookElsew
 
   // A game the server started at a set time (no teacher, no big screen): its own waiting and called-off screens.
   if (view.auto && (view.state === 'lobby' || view.auto.calledOff)) {
-    return <Sky tint={view.game.kind === 'serpent' || view.game.kind === 'mural' || view.game.kind === 'corners' ? view.game.kind : undefined}><AutoWait view={view} clock={clock} /></Sky>;
+    return <Sky tint={view.game.kind === 'serpent' || view.game.kind === 'mural' || view.game.kind === 'corners' ? view.game.kind : undefined}><AutoWait view={view} clock={clock} link={link} room={room} setView={setView} /></Sky>;
   }
 
   if (view.game.kind === 'serpent') {
@@ -443,14 +443,18 @@ function FeedbackBody({ reply, anchor }: { reply: StarsReply; anchor: Anchor }) 
 }
 
 /** Waiting for a set-time game to start, or told it was called off (James, 25 Nov 2026 NZ). */
-export function AutoWait({ view, clock }: { view: RoomView; clock: () => number }) {
+export function AutoWait({ view, clock, link, room, setView }: {
+  view: RoomView; clock: () => number; link?: ClassLiveLink; room?: number | null; setView?: (v: RoomView) => void;
+}) {
   const [, tick] = useState(0);
+  const [mine, setMine] = useState<string | null>(null);
   useEffect(() => {
     const id = window.setInterval(() => tick((n) => n + 1), 500);
     return () => window.clearInterval(id);
   }, []);
   const auto = view.auto!;
-  const name = ACTIVITY_NAMES[view.activity];
+  const vote = auto.vote;
+  const name = vote && !vote.winner ? 'Class Live' : ACTIVITY_NAMES[view.activity];
   if (auto.calledOff) {
     return (
       <div className="cl-c-center">
@@ -471,6 +475,29 @@ export function AutoWait({ view, clock }: { view: RoomView; clock: () => number 
         {view.players} {view.players === 1 ? 'player' : 'players'} so far.{' '}
         {need > 0 ? `It needs ${need} more to start.` : 'That’s enough to start!'}
       </p>
+      {vote && !vote.winner && (
+        <div className="cl-c-vote" role="group" aria-label="Vote for the game">
+          <p className="cl-c-say"><b>Vote for the game!</b> The most votes wins.</p>
+          {vote.choices.map((c, i) => (
+            <button
+              key={c}
+              type="button"
+              className={`cl-c-send cl-c-vote__pick${mine === c ? ' cl-c-vote__pick--mine' : ''}`}
+              aria-pressed={mine === c}
+              disabled={!link || room == null || left === 0}
+              onClick={() => {
+                if (!link || room == null) return;
+                setMine(c);
+                void link.send({ action: 'vote', room, pick: c }).then((out) => {
+                  if (out.status === 200 && out.body.view) setView?.(out.body.view as RoomView);
+                }, () => undefined);
+              }}
+            >
+              {mine === c ? '✓ ' : ''}{ACTIVITY_NAMES[c]} <span className="cl-c-vote__n">{vote.counts[i]}</span>
+            </button>
+          ))}
+        </div>
+      )}
       {view.lobby && <p className="cl-c-say">Friends can join from their home page, or with the code <b>{view.lobby.code}</b>.</p>}
     </div>
   );

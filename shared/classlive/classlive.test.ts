@@ -420,5 +420,18 @@ describe('Class Live server', () => {
     now += 1000;
     expect((await classLiveStep(sv, 'cy', { action: 'look', room: few })).body.view).toMatchObject({ state: 'over', auto: { calledOff: true } });
     expect([...db.paid.keys()].some((k) => k.startsWith(`${few}:`))).toBe(false);
+    // Kids vote: three games to pick from, one changeable vote each, the most votes is the game that starts.
+    const ballot = memoryAutoRoom(db, now, { activity: 'serpent', lengthMin: 5, min: 2, startsAt: now + 30_000, code: '7777', vote: true });
+    const seen = (await classLiveStep(sv, 'ana', { action: 'join', room: ballot })).body.view as { auto: { vote: { choices: string[] } } };
+    const [a1, a2] = seen.auto.vote.choices;
+    expect(new Set(seen.auto.vote.choices).size).toBe(3);
+    await classLiveStep(sv, 'bo', { action: 'join', room: ballot });
+    await classLiveStep(sv, 'ana', { action: 'vote', room: ballot, pick: a1 });
+    await classLiveStep(sv, 'ana', { action: 'vote', room: ballot, pick: a2 });
+    expect((await classLiveStep(sv, 'bo', { action: 'vote', room: ballot, pick: a2 })).body.view).toMatchObject({ auto: { vote: { counts: [0, 2, 0] } } });
+    expect((await classLiveStep(sv, 'bo', { action: 'vote', room: ballot, pick: 'stars' })).status).toBe(400);
+    now += 30_000;
+    expect((await classLiveStep(sv, 'ana', { action: 'look', room: ballot })).body.view).toMatchObject({ state: 'live', activity: a2, auto: { vote: { winner: a2 } } });
+    expect((await classLiveStep(sv, 'bo', { action: 'vote', room: ballot, pick: a1 })).status).toBe(409);
   });
 });

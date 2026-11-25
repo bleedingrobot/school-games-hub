@@ -159,13 +159,13 @@ export function memoryMove(db: MemoryDb, now: number, room: number, player: stri
 export function memoryAutoRoom(
   db: MemoryDb,
   now: number,
-  o: { schoolId?: number; activity: 'serpent' | 'mural' | 'corners'; lengthMin: number; min: number; startsAt: number; code: string; host?: string; level?: string | null },
+  o: { schoolId?: number; activity: 'serpent' | 'mural' | 'corners'; lengthMin: number; min: number; startsAt: number; code: string; host?: string; level?: string | null; vote?: boolean },
 ): number {
   const id = Math.max(1000, ...db.rooms.keys()) + 1;
   const lobby = { code: o.code, host: o.host ?? 'Games Hub' };
   const session = {
     seed: id, activity: o.activity, state: 'lobby', lengthMin: o.lengthMin, players: {}, order: [], game: null, lobby, padMusic: true,
-    auto: { startsAt: o.startsAt, min: o.min, level: o.level ?? null },
+    auto: { startsAt: o.startsAt, min: o.min, level: o.level ?? null, ...(o.vote ? { vote: { picks: {} } } : {}) },
   } as unknown as RoomRow['session'];
   db.rooms.set(id, {
     id, classId: null, schoolId: o.schoolId ?? 1, teacher: null, version: 1, startedAt: null, showNames: true, session, seq: 0, events: [],
