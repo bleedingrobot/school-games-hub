@@ -1,1 +1,17 @@
-{}
+{
+ "card": 2,
+ "back": 3,
+ "bunting": 2,
+ "fx-shield": 4,
+ "fx-wide": 3,
+ "fx-slow": 2,
+ "fx-tailwind": 2,
+ "fx-magnet": 2,
+ "fx-ghost": 1,
+ "fx-mini": 2,
+ "fx-clear": 3,
+ "fx-wind": 2,
+ "fx-fog": 3,
+ "fx-wall": 3,
+ "fx-narrow": 1
+}
