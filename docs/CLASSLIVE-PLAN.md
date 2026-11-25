@@ -64,6 +64,7 @@
 
 ## 4. Mystery Mural
 
+- **Grid size now (James, 25 Nov 2026):** the grid is sized when the teacher presses Start, from the players and the minutes (untimed counts as 5): tiles ≈ players × 6 right a minute × minutes ÷ 0.75, kept 3:2, 9×6 to 60×40 (`gridFor` in `shared/classlive/mural.ts`). 6 a minute is a class doing well, measured on the live game (24 pupils, 2 minutes: median 5.2, top quarter 5.9 right a minute each). So a class doing well uncovers about 75%; at most 80% can open, at a steady pace. Examples: 24 pupils × 2 min = 24×16; 25 × 5 min = 39×26. The bullets below are the first design; the code is the rule.
 - **The picture**: a painting under a 12 × 8 grid of tiles. Each right answer (own focus, way A) lets the pupil flip a tile: they tap one on their device (tiles already flipped are greyed). It flips on the projector with a sparkle.
 - **Guessing**: after 15% of tiles, each pupil may guess once per 20 tiles (6 picture choices). The projector shows how many have guessed, never what.
 - **Finish**: all tiles flipped, or the teacher taps Reveal: the rest flip in a wave and the answer pops with the pupils who guessed it earliest.

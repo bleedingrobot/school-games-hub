@@ -4,7 +4,7 @@ import { classLiveStep, cleanHost } from './server';
 import { memoryDb, memoryServices } from './memoryServices';
 import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock, rng } from './pretendClass';
 import { answerBox, apply, BODY, makeChain, newSerpent, SERPENT_LEVELS } from './serpent';
-import { MAX_OPEN, openCap, UNTIMED_PACE_MS, type MuralGame } from './mural';
+import { gridFor, maxOpen, openCap, UNTIMED_PACE_MS, type MuralGame } from './mural';
 import { ARMS, armCounts, isTrue, laggingArm, linkOf, newStars, readFact, tryFact, type Anchor } from './stars';
 import { lagHint } from '../../src/games/classlive/arms';
 import { advance, clampMove, cornerOf, freshMine, grab, makeRound, MAX_SPEED, newCorners, startSpot, stepMove, type CornersGame } from './corners';
@@ -175,12 +175,17 @@ describe('Class Live server', () => {
     const half = pc.db.rooms.get(room)!.session.game as MuralGame;
     // A full class answers faster than the pace: tiles flip steadily (about 26 a minute untimed), the rest queue up.
     expect(half.tiles.filter(Boolean).length).toBeGreaterThan(20);
-    expect(half.tiles.filter(Boolean).length).toBeLessThanOrEqual(openCap(65_000, UNTIMED_PACE_MS));
+    expect(half.tiles.filter(Boolean).length).toBeLessThanOrEqual(openCap(65_000, UNTIMED_PACE_MS, half.tiles.length));
+    // The grid fits the class and the time (James, 25 Nov 2026): 30 pupils untimed (as 5 minutes) get 42 by 28.
+    expect([half.cols, half.rows, half.tiles.length]).toEqual([42, 28, 1176]);
+    expect(gridFor(24, 2)).toEqual({ cols: 24, rows: 16 });
+    expect(gridFor(1, 2)).toEqual({ cols: 9, rows: 6 });
+    expect(gridFor(30, 15)).toEqual({ cols: 60, rows: 40 });
     expect(half.queue!.length).toBeGreaterThan(0);
     await clock.run(clock.now() + 5 * 60_000);
     const g = pc.db.rooms.get(room)!.session.game;
     if (g.kind !== 'mural') throw new Error('not a mural');
-    expect(g.tiles.filter(Boolean).length).toBe(MAX_OPEN);
+    expect(g.tiles.filter(Boolean).length).toBe(maxOpen(g.tiles.length));
     // Shared fairly: everyone who answered gets tiles, nobody hogs them.
     const counts = Object.values(g.mine).map((m) => m.tiles);
     expect(Math.min(...counts)).toBeGreaterThanOrEqual(2);

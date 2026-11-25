@@ -14,7 +14,7 @@
  */
 import { ARMS, anchorOf, armCount, newStars, pickAnchor, spotlight, tryFact, type Arm, type Star, type StarLevel, type StarsEvent, type StarsGame, type StarsReply } from './stars';
 import { LEVELS } from './stars';
-import { allPicked, answered, canGuess, flipped, guess, guessingDone, GUESS_MS, newMural, reveal, startGuessing, tilesOf, TILES, ANSWER_GAP_MS, type MuralEvent, type MuralGame, type Picture } from './mural';
+import { allPicked, answered, canGuess, colsOf, flipped, guess, guessingDone, GUESS_MS, newMural, reveal, rowsOf, sizeMural, startGuessing, tilesOf, TILES, ANSWER_GAP_MS, type MuralEvent, type MuralGame, type Picture } from './mural';
 import type { FactAnswer } from '../maths/leitner';
 import { markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext, type PublicQuestion } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
@@ -98,7 +98,7 @@ export type PublicGame =
   | { kind: 'stars'; anchor: StarsGame['anchor']; arms: Record<Arm, number>; total: number; creature: boolean; supernova: boolean }
   | { kind: 'serpent'; level: SerpentLevel; energy: number; wakeAt: number; awake: boolean; heads: number; tail: number }
   /** `tiles`: one character a tile, '1' flipped, '0' not. Never the picture itself (until it is revealed). */
-  | { kind: 'mural'; tiles: string; flipped: number; phase: 'flip' | 'guess'; guessEndsAt: number | null; picked: number; choices: Picture[]; solvers: number; revealed: boolean; picture: Picture | null }
+  | { kind: 'mural'; tiles: string; cols: number; rows: number; flipped: number; phase: 'flip' | 'guess'; guessEndsAt: number | null; picked: number; choices: Picture[]; solvers: number; revealed: boolean; picture: Picture | null }
   /** Four Corners: the round without the roll (until the dice lands) and without who was caught. */
   | { kind: 'corners'; map: CornerMap; round: PublicRound | null; jailed: number; free: number };
 
@@ -236,7 +236,7 @@ export function publicGame(g: Game, players: number, t = 0): PublicGame {
   }
   if (g.kind === 'mural') {
     return {
-      kind: 'mural', tiles: g.tiles.map((x) => (x ? '1' : '0')).join(''), flipped: flipped(g), phase: g.phase ?? 'flip',
+      kind: 'mural', tiles: g.tiles.map((x) => (x ? '1' : '0')).join(''), cols: colsOf(g), rows: rowsOf(g), flipped: flipped(g), phase: g.phase ?? 'flip',
       guessEndsAt: g.phase === 'guess' ? (g.guessFrom ?? 0) + GUESS_MS : null, picked: Object.values(g.mine).filter((m) => m.pick).length, choices: g.choices,
       solvers: g.solvers.length, revealed: g.revealed, picture: g.revealed ? g.picture : null,
     };
@@ -516,6 +516,8 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         s.state = 'live';
         // Four Corners: change corners every round in the second half (a timed game's halfway point).
         if (s.game.kind === 'corners' && s.lengthMin > 0) s.game.halfAt = (s.lengthMin * 60_000) / 2;
+        // Mystery Mural: the grid fits the class and the time (about 75% uncovered by a class doing well).
+        if (s.game.kind === 'mural') sizeMural(s.game, s.order.length, s.lengthMin);
         return { reply: null, events: [{ type: 'start', t: 0 }], startedAt: sv.now() };
       }
       if (action === 'reveal') {

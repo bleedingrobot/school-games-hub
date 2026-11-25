@@ -12807,10 +12807,42 @@ function spotlight(g, id, t) {
 const ANSWER_GAP_MS$1 = 4e3;
 /** How long the guessing lasts once the flipping is over (it ends sooner when everyone has picked). */
 const GUESS_MS = 45e3;
+/**
+* The grid is sized when the game starts, from the players and the time, so a class doing well uncovers about this
+* much of the picture (James, 25 Nov 2026: a class of 25 found the fixed 216 tiles too easy; aim for about 75%).
+*/
+const AIM = .75;
+/** The most of the picture the class can uncover, however well they do. */
+const MAX_SHARE = .8;
 /** The pace of an untimed game (the teacher ends it): as if it were 5 minutes. */
 const UNTIMED_PACE_MS = 3e5;
-/** How many tiles may be open by time t, in a game whose flipping lasts paceMs. */
-const openCap = (t, paceMs) => Math.min(130, Math.ceil(130 * Math.max(0, t) / Math.max(1, paceMs)));
+/** The grid keeps the painting's 3:2 shape; it is never coarser or finer than these. */
+const MIN_ROWS = 6;
+const MAX_ROWS = 40;
+/** The grid for this many players and minutes (0: untimed, sized as 5 minutes). */
+function gridFor(players, lengthMin) {
+	const minutes = lengthMin > 0 ? lengthMin : UNTIMED_PACE_MS / 6e4;
+	const target = Math.max(1, players) * 6 * minutes / AIM;
+	const rows = Math.min(MAX_ROWS, Math.max(MIN_ROWS, Math.round(Math.sqrt(target / 1.5))));
+	return {
+		cols: Math.round(rows * 1.5),
+		rows
+	};
+}
+/** The game's grid (older rooms: 18 by 12). */
+const colsOf = (g) => g.cols ?? 18;
+const rowsOf = (g) => g.rows ?? 12;
+/** The most tiles a game of this many tiles can open. */
+const maxOpen = (tiles) => Math.floor(tiles * MAX_SHARE);
+/**
+* How many tiles may be open by time t, in a game whose flipping lasts paceMs: a steady pace up to the most, so a
+* burst of right answers early on can't give the picture away (James, 24 Nov 2026). Right answers past the pace wait
+* in a queue and flip as the time goes on (fewest tiles first).
+*/
+const openCap = (t, paceMs, tiles = 216) => {
+	const most = maxOpen(tiles);
+	return Math.min(most, Math.ceil(most * Math.max(0, t) / Math.max(1, paceMs)));
+};
 const PICTURE_IDS = Object.keys({
 	whale: "A whale",
 	volcano: "A volcano",
@@ -12867,6 +12899,14 @@ function newMural(random, avoid = []) {
 		mine: {},
 		phase: "flip"
 	};
+}
+/** Sizes the grid for the class and the time, as the game starts (only while no tile is open). */
+function sizeMural(g, players, lengthMin) {
+	if (g.tiles.some(Boolean)) return;
+	const { cols, rows } = gridFor(players, lengthMin);
+	g.cols = cols;
+	g.rows = rows;
+	g.tiles = Array(cols * rows).fill("");
 }
 const mineOf = (g, pupil) => g.mine[pupil] ??= {
 	flips: 0,
@@ -12928,7 +12968,7 @@ function answered$1(g, pupil, right, t, random, paceMs = UNTIMED_PACE_MS) {
 /** Flips the queued right answers' tiles, as many as the pace allows by now. */
 function paced(g, t, random, paceMs = UNTIMED_PACE_MS) {
 	const events = [];
-	const cap = openCap(t, paceMs);
+	const cap = openCap(t, paceMs, g.tiles.length);
 	while (g.queue?.length && flipped(g) < cap && g.phase !== "guess" && !g.revealed) {
 		let at = 0;
 		g.queue.forEach((id, i) => {
@@ -14109,6 +14149,8 @@ function publicGame(g, players, t = 0) {
 	if (g.kind === "mural") return {
 		kind: "mural",
 		tiles: g.tiles.map((x) => x ? "1" : "0").join(""),
+		cols: colsOf(g),
+		rows: rowsOf(g),
 		flipped: flipped(g),
 		phase: g.phase ?? "flip",
 		guessEndsAt: g.phase === "guess" ? (g.guessFrom ?? 0) + GUESS_MS : null,
@@ -14490,6 +14532,7 @@ async function classLiveStep(sv, who, body) {
 				if (s.state !== "lobby") return { refuse: no(409, "It has already started.", "not-now") };
 				s.state = "live";
 				if (s.game.kind === "corners" && s.lengthMin > 0) s.game.halfAt = s.lengthMin * 6e4 / 2;
+				if (s.game.kind === "mural") sizeMural(s.game, s.order.length, s.lengthMin);
 				return {
 					reply: null,
 					events: [{

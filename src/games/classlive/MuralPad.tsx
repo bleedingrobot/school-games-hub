@@ -8,7 +8,7 @@
  * server sent back and the room's `startedAt`.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CLUES, COLS, PICTURES, ROWS, TILES, type Picture } from '../../../shared/classlive/mural';
+import { CLUES, COLS, PICTURES, ROWS, type Picture } from '../../../shared/classlive/mural';
 import type { MuralReply, PlayerView, RoomView } from '../../../shared/classlive/server';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
@@ -43,15 +43,16 @@ function WaitRing({ ms, onDone }: { ms: number; onDone: () => void }) {
 }
 
 /** The pupil's little mural: the picture shows through every tile the class opened; their own are edged in gold (newest glows). */
-function MyMural({ picture, tiles, open }: { picture: Picture; tiles: number[]; open: string }) {
+function MyMural({ picture, tiles, open, cols, rows }: { picture: Picture; tiles: number[]; open: string; cols: number; rows: number }) {
+  const total = cols * rows;
   const mine = new Set(tiles);
   const newest = tiles.length ? tiles[tiles.length - 1] : -1;
   const opened = Math.max(tiles.length, [...open].filter((c) => c === '1').length);
   return (
-    <div className="cl-m-mine" aria-label={`${opened} of ${TILES} tiles open, ${tiles.length} of them yours`}>
+    <div className="cl-m-mine" aria-label={`${opened} of ${total} tiles open, ${tiles.length} of them yours`}>
       <MuralPicture id={picture} small />
-      <div className="cl-m-mine__grid" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)`, gridTemplateRows: `repeat(${ROWS}, 1fr)` }} aria-hidden="true">
-        {Array.from({ length: TILES }, (_, i) => <i key={i} className={mine.has(i) ? (i === newest ? 'is-mine is-new' : 'is-mine') : open[i] === '1' ? 'is-open' : ''} />)}
+      <div className="cl-m-mine__grid" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)`, gridTemplateRows: `repeat(${rows}, 1fr)` }} aria-hidden="true">
+        {Array.from({ length: total }, (_, i) => <i key={i} className={mine.has(i) ? (i === newest ? 'is-mine is-new' : 'is-mine') : open[i] === '1' ? 'is-open' : ''} />)}
       </div>
     </div>
   );
@@ -193,7 +194,7 @@ export function MuralPad({ link, room, view, me, setMe, setView }: { link: Class
 
   const myTiles = mg?.myTiles ?? [];
   const picture = mg?.picture ?? null;
-  const mural = picture ? <MyMural picture={picture} tiles={myTiles} open={pub?.tiles ?? ''} /> : null;
+  const mural = picture ? <MyMural picture={picture} tiles={myTiles} open={pub?.tiles ?? ''} cols={pub?.cols ?? COLS} rows={pub?.rows ?? ROWS} /> : null;
 
   if (view.state === 'over' || pub?.revealed) {
     const pic = pub?.picture ?? null;
@@ -244,7 +245,7 @@ export function MuralPad({ link, room, view, me, setMe, setView }: { link: Class
     <>
       <header className="cl-m-top">
         {flipsRow}
-        <p className="cl-m-prog">{pub?.flipped ?? 0} / {TILES} tiles</p>
+        <p className="cl-m-prog">{pub?.flipped ?? 0} / {(pub?.cols ?? COLS) * (pub?.rows ?? ROWS)} tiles</p>
       </header>
       {mural}
       <p className="cl-m-hint">Keep answering! You all guess when the time is up.</p>
