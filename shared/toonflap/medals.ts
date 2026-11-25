@@ -15,4 +15,5 @@ export const MEDALS: Readonly<Record<string, LevelMedals>> = {
   volcano: { gold: 50, silver: 61, goldPlain: 65, silverPlain: 74 },
   robot: { gold: 53, silver: 63, goldPlain: 71, silverPlain: 79 },
   cosmic: { gold: 61, silver: 71, goldPlain: 81, silverPlain: 89 },
+  xmas: { gold: 38, silver: 49, goldPlain: 46, silverPlain: 55 },
 };

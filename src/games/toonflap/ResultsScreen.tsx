@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { FLYERS, TRAILS, levelOpen } from '../../../shared/toonflap/collection';
 import { BUMP_PENALTY_STEPS, CHECK_BONUS_STEPS, STEPS_PER_SECOND, TAILWIND_STEPS } from '../../../shared/toonflap/config';
-import { LEVELS } from '../../../shared/toonflap/levels';
+import { levelByN, LEVELS } from '../../../shared/toonflap/levels';
 import type { FinishReply } from './backend';
 import { FlyerCanvas, TrailCanvas } from './Hangar';
 import { MEDAL_ICON, MEDAL_WORD, PotionIcon, fmtSeconds } from './MapScreen';
@@ -28,11 +28,12 @@ export function ResultsScreen({ reply, today, level, gentle, maths, onNext, onAg
     // Bella: the medal, then the best news (one line, so it stays short).
     if (!reply.valid) return talk?.(RESULT_LINES.notChecked);
     const u = reply.unlocks;
-    const news = u.levelTomorrow ? RESULT_LINES.tomorrow : u.newLevel ? RESULT_LINES.newLevel : u.flyers.length ? RESULT_LINES.flyer : u.newGold ? RESULT_LINES.newGold : u.potion ? RESULT_LINES.potion : u.trails.length ? RESULT_LINES.trail : null;
+    const allGifts = !!reply.presents && reply.presents.got === reply.presents.of;
+    const news = u.levelTomorrow ? RESULT_LINES.tomorrow : u.newLevel ? RESULT_LINES.newLevel : u.flyers.length ? RESULT_LINES.flyer : allGifts ? RESULT_LINES.allPresents : u.flyers.length ? RESULT_LINES.flyer : u.newGold ? RESULT_LINES.newGold : u.potion ? RESULT_LINES.potion : u.trails.length ? RESULT_LINES.trail : null;
     talk?.(news ?? MEDAL_LINE[reply.medal]);
     // Said once, as the results open.
   }, []);
-  const def = LEVELS[level - 1];
+  const def = levelByN(level) ?? LEVELS[0];
   const { score, unlocks } = reply;
   if (!reply.valid) {
     return (
@@ -96,6 +97,13 @@ export function ResultsScreen({ reply, today, level, gentle, maths, onNext, onAg
             })}
           </ul>
         </div>
+      )}
+
+      {reply.presents && (
+        <p className="tf-gifts" role="status">
+          🎁 {reply.presents.got === reply.presents.of ? `Every present! All ${reply.presents.of}.` : `${reply.presents.got} of ${reply.presents.of} presents.`}
+          {reply.presents.got < reply.presents.of && !reply.progress.seasonal?.[def.id]?.allPresents ? ' Grab them all in one flight to unlock the Santa Fantail.' : ''}
+        </p>
       )}
 
       {celebrate && (

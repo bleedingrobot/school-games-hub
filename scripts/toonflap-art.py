@@ -299,6 +299,10 @@ ART = ROOT / 'src' / 'games' / 'toonflap' / 'art'
 INBOX = Path(os.environ.get('TOONFLAP_INBOX', Path.home() / 'dragon-art-inbox' / 'toonflap-art'))
 
 
+# The Christmas pictures (stop-motion look) were painted on a grey backdrop: cut those with rembg alone.
+PLAIN_CUT = {'w11-wall', 'extra-present'}
+
+
 def tidy(force: bool):
     import numpy as np
     from PIL import Image
@@ -311,7 +315,11 @@ def tidy(force: bool):
         img.save(out, 'WEBP', quality=quality, method=6)
         print(f'  {out.relative_to(ROOT)}  {img.width}x{img.height}  {out.stat().st_size // 1024} KB', flush=True)
 
-    def cut(img):
+    def cut(img, plain=False):
+        if plain:  # rembg alone, cropped: for pictures on a grey studio backdrop, which the rule below would keep
+            c = remove(img.convert('RGB'), session=session, post_process_mask=True)
+            ys, xs = np.where(np.asarray(c)[..., 3] > 40)
+            return c.crop((max(0, xs.min() - 4), max(0, ys.min() - 4), min(c.width, xs.max() + 5), min(c.height, ys.max() + 5)))
         # rembg alone drops white parts of a sprite (a white cloud, ghost or wing). So also keep everything that the
         # plain light background can't reach from the picture's edge: white shapes inside a dark outline stay.
         from scipy import ndimage
@@ -372,7 +380,16 @@ def tidy(force: bool):
             folder = ART / 'worlds' / name[1:].split('-')[0]
             if (folder / 'wall-bottom.webp').exists() and not force:
                 continue
-            c = cut(img)
+            c = cut(img, name in PLAIN_CUT)
+            # Centre the post (measured low down, below any hook or bow) so the picture lines up with the wall's hit box.
+            alpha = np.asarray(c)[int(c.height * 0.6):, :, 3] > 128
+            cols = np.where(alpha.mean(axis=0) > 0.5)[0]
+            if len(cols):
+                mid = (cols.min() + cols.max()) / 2
+                half = int(max(mid, c.width - mid)) + 1
+                wide = Image.new('RGBA', (half * 2, c.height), (0, 0, 0, 0))
+                wide.paste(c, (half - int(round(mid)), 0))
+                c = wide
             c = c.resize((256, round(c.height * 256 / c.width)), Image.LANCZOS)
             # The end piece is the top 512 px (cap pointing up); the stretchy middle is a looped slice from below it.
             end = c.crop((0, 0, 256, min(512, c.height)))
@@ -408,7 +425,7 @@ def tidy(force: bool):
             out = (ART / kind if kind else ART) / f'{name}.webp'
             if out.exists() and not force:
                 continue
-            save(square(cut(img), size), out, quality)
+            save(square(cut(img, f'extra-{name}' in PLAIN_CUT), size), out, quality)
 
 
 if __name__ == '__main__':

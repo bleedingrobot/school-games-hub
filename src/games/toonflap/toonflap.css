@@ -301,3 +301,11 @@
 .tf-window .tf-howto { max-width: 1180px; margin: 0 auto; }
 .tf-hubbtns { display: inline-flex; gap: 8px; }
 .tf-hubbtn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+
+/* Christmas Coast: the seasonal stop above the trail (December and January), and the presents count */
+.tf-festive { margin: 10px 0 4px; }
+.tf-festive .tf-stop__btn { border: 3px dashed #ffd166; box-shadow: 0 0 0 3px rgba(215, 38, 61, 0.35), 0 6px 18px rgba(0, 0, 0, 0.18); }
+.tf-festive__tag { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: #d7263d; color: #fff; font-size: 0.72em; font-weight: 800; vertical-align: middle; }
+.tf-festive .tf-stop__line { flex-wrap: wrap; }
+.tf-chip--gifts { background: #fff3d6; color: #8a1c1c; }
+.tf-gifts { margin: 10px 0 0; padding: 8px 12px; border-radius: 12px; background: #fff3d6; color: #6b1515; font-weight: 700; }

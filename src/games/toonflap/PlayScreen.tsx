@@ -7,7 +7,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BUMP_PENALTY_STEPS, CHECK_BONUS_STEPS, READ_TIME_MAX_SECONDS, START_X, STEPS_PER_SECOND } from '../../../shared/toonflap/config';
-import { encodeFlaps, newRun, stepRun, type RunState, type StepEvent } from '../../../shared/toonflap/engine';
+import { encodeFlaps, newRun, presentsGot, stepRun, type RunState, type StepEvent } from '../../../shared/toonflap/engine';
 import { buildCourse, levelById, LEVELS, type Course } from '../../../shared/toonflap/levels';
 import type { Progress } from '../../../shared/toonflap/collection';
 import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../maths/QuestionModal';
@@ -73,6 +73,8 @@ interface Hud {
   hover: RunState['hover'] | null;
   sign: number | null;
   potionUsed: boolean;
+  /** Presents grabbed so far. */
+  gifts: number;
 }
 
 export function PlayScreen({ backend, start, progress, picks, onFinished, onLeave, guide = false, tip = false, talk = () => undefined, onSkipGuide }: {
@@ -105,7 +107,7 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
   if (G.current === null) {
     G.current = { state: newRun(course), flaps: [], queued: false, paused: null, before: null, rightChecks: 0, potionUsed: false, shake: 0, dizzy: 0, flapAnim: 0, whoosh: 0, time: 0, seen: new Set(), bumpTold: false, pathTold: false, signTold: false, particles: [], finishing: false };
   }
-  const [hud, setHud] = useState<Hud>({ tenths: 0, bumps: 0, perches: 0, hover: 'start', sign: null, potionUsed: false });
+  const [hud, setHud] = useState<Hud>({ tenths: 0, bumps: 0, perches: 0, hover: 'start', sign: null, potionUsed: false, gifts: 0 });
   const [card, setCard] = useState<number | null>(null);
   const [reading, setReading] = useState(false);
   const [confirm, setConfirm] = useState(false);
@@ -228,6 +230,8 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
       } else if (ev === 'pick') {
         g.whoosh = 0.6;
         play('wormhole');
+      } else if (ev === 'present') {
+        play('chest');
       } else if (ev === 'finish' && !g.finishing) {
         g.finishing = true;
         g.paused = 'end';
@@ -294,7 +298,8 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
       const steps = s.t + (s.bumps - (g.potionUsed ? 1 : 0)) * BUMP_PENALTY_STEPS - g.rightChecks * CHECK_BONUS_STEPS;
       const tenths = Math.max(0, Math.floor(steps / (STEPS_PER_SECOND / 10)));
       const hover = s.mode === 'hover' ? s.hover : null;
-      setHud((o) => (o.tenths === tenths && o.bumps === s.bumps && o.perches === s.perches && o.hover === hover && o.sign === sign && o.potionUsed === g.potionUsed ? o : { tenths, bumps: s.bumps, perches: s.perches, hover, sign, potionUsed: g.potionUsed }));
+      const gifts = presentsGot(s);
+      setHud((o) => (o.tenths === tenths && o.bumps === s.bumps && o.perches === s.perches && o.hover === hover && o.sign === sign && o.potionUsed === g.potionUsed && o.gifts === gifts ? o : { tenths, bumps: s.bumps, perches: s.perches, hover, sign, potionUsed: g.potionUsed, gifts }));
       if (barRef.current) barRef.current.style.width = `${Math.max(0, Math.min(1, (s.x - START_X) / (course.nestX - START_X))) * 100}%`;
 
       stepTrail(g.particles, s.x, s.y, dt, s.mode === 'fly' && !g.paused);
@@ -370,6 +375,7 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
           <div className="tf-hud__left">
             <span className="tf-time" aria-label={`Time ${sec} seconds`}>{sec}<small> s</small></span>
             <span className="tf-chip">Bumps {bumpsLeft}</span>
+            {course.presents.length > 0 && <span className="tf-chip tf-chip--gifts" aria-label={`Presents ${hud.gifts} of ${course.presents.length}`}>🎁 {hud.gifts}/{course.presents.length}</span>}
             {start.gentle && <span className="tf-chip" title="Gentle wings">🪶</span>}
           </div>
           <div className="tf-hud__right">

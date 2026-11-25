@@ -5,8 +5,8 @@
  * The server works these out from saved runs (stage F.3, `my_toonflap()`); the preview's trial backend uses the same
  * functions, so both agree.
  */
-import { EASY_LEVELS, POTION_STREAK, POTIONS_MAX, SKY_DASH_AFTER, UNLOCK_RUNS } from './config';
-import { LEVELS } from './levels';
+import { EASY_LEVELS, POTION_STREAK, POTIONS_MAX, SEASONAL_UNLOCK_RUNS, SKY_DASH_AFTER, UNLOCK_RUNS } from './config';
+import { inSeason, isSeasonal, levelById, LEVELS, SEASONAL_LEVELS } from './levels';
 import type { Medal } from './engine';
 
 export interface Flyer {
@@ -18,6 +18,8 @@ export interface Flyer {
   level: string | null;
   /** A pupil's own idea. */
   pupils?: boolean;
+  /** Unlocked by grabbing every present in one flight of this (seasonal) level, instead of by finishes. */
+  allPresents?: string;
 }
 
 export const FLYERS: readonly Flyer[] = [
@@ -33,6 +35,9 @@ export const FLYERS: readonly Flyer[] = [
   { id: 'jet-bot', name: 'Jet Bot', look: 'a small robot with a jet pack', level: 'robot' },
   { id: 'saucer-kid', name: 'Saucer Kid', look: 'an alien kid in a flying saucer', level: 'cosmic' },
   { id: 'rainbow', name: 'Rainbow Toon', look: 'a rainbow-feathered fantail', level: null },
+  // Christmas Coast's (December and January only); once unlocked they stay all year.
+  { id: 'surf-sleigh', name: 'Surf Sleigh', look: 'a jolly Santa in board shorts on a flying surfboard sleigh', level: 'xmas' },
+  { id: 'santa-fantail', name: 'Santa Fantail', look: 'a fantail in a Santa hat', level: null, allPresents: 'xmas' },
 ];
 
 export type TrailRule =
@@ -59,6 +64,7 @@ export const TRAILS: readonly Trail[] = [
   { id: 'cheese', name: 'Cheese', rule: { kind: 'gold', level: 'kitchen' }, how: 'Gold on Cheese Kitchen', pupils: true },
   { id: 'mouse-tail', name: 'Mouse tail', rule: { kind: 'clean', count: 15 }, how: '15 clean flights (no bumps)', pupils: true },
   { id: 'rainbow-stars', name: 'Rainbow stars', rule: { kind: 'all-gold' }, how: 'Gold on every level' },
+  { id: 'candy-canes', name: 'Candy canes', rule: { kind: 'gold', level: 'xmas' }, how: 'Gold on Christmas Coast' },
 ];
 
 /** One level's record. */
@@ -68,6 +74,8 @@ export interface LevelRecord {
   best: number | null;
   bestPlain: number | null;
   medal: Medal | null;
+  /** Seasonal levels with presents: flights that grabbed every one. */
+  allPresents?: number;
 }
 
 /** What a pupil has done in Toon Flap: everything the unlocks are worked out from. */
@@ -87,11 +95,17 @@ export interface Progress {
   /** Sky Dash: dashes finished, and the most walls ever flown past in one (the class board keeps the season's best). */
   dashes?: number;
   dashBest?: number;
+  /** Seasonal levels (Christmas Coast), kept apart from the trail's 10 so they never count as "a level" for unlocks. */
+  seasonal?: Record<string, LevelRecord>;
+  /** Presents grabbed, all time. */
+  presents?: number;
 }
 
 export const emptyProgress = (): Progress => ({ levels: {}, checksRight: 0, streak: 0, cleanFlights: 0, rightGaps: 0, potions: 0, potionsEarned: 0 });
 
-const record = (p: Progress, id: string): LevelRecord => p.levels[id] ?? { finishes: 0, best: null, bestPlain: null, medal: null };
+const record = (p: Progress, id: string): LevelRecord => p.levels[id] ?? p.seasonal?.[id] ?? { finishes: 0, best: null, bestPlain: null, medal: null };
+/** A level's record (the trail's or a seasonal one). */
+export const levelRecord = record;
 export const levelsFinished = (p: Progress): number => LEVELS.filter((l) => record(p, l.id).finishes > 0).length;
 export const golds = (p: Progress): number => LEVELS.filter((l) => record(p, l.id).medal === 'gold').length;
 
@@ -108,6 +122,9 @@ export function openedLevel(p: Progress): number {
  * already opened today (NZ day `today`), the next waits until tomorrow.
  */
 export function levelOpen(p: Progress, n: number, today: string): boolean {
+  // A seasonal level: open in its months to anyone who has finished Toon Garden (so the guided first go comes first).
+  const seasonal = SEASONAL_LEVELS.find((l) => l.n === n);
+  if (seasonal) return inSeason(seasonal, today) && record(p, LEVELS[0].id).finishes > 0;
   const opened = openedLevel(p);
   if (n <= opened) return true;
   return n === opened + 1 && record(p, LEVELS[opened - 1].id).finishes > 0 && p.openedDay !== today;
@@ -121,14 +138,22 @@ export const opensTomorrow = (p: Progress, today: string): boolean => {
 export const skyDashOpen = (p: Progress): boolean => record(p, LEVELS[SKY_DASH_AFTER - 1].id).finishes > 0;
 
 /** Finishes of a level that unlock its flyer: 15 on the easy levels (1 to 5), 10 on the harder ones. */
-export const unlockRuns = (level: string): number =>
-  (LEVELS.find((l) => l.id === level)?.n ?? 1) <= EASY_LEVELS ? UNLOCK_RUNS.easy : UNLOCK_RUNS.hard;
+export const unlockRuns = (level: string): number => {
+  const def = levelById(level);
+  if (def && isSeasonal(def)) return SEASONAL_UNLOCK_RUNS;
+  return (def?.n ?? 1) <= EASY_LEVELS ? UNLOCK_RUNS.easy : UNLOCK_RUNS.hard;
+};
 
 /** Finishes still needed to unlock a level's flyer (0 = unlocked). */
 export const finishesToUnlock = (p: Progress, level: string): number => Math.max(0, unlockRuns(level) - record(p, level).finishes);
 
 export function flyersUnlocked(p: Progress): string[] {
-  return FLYERS.filter((f) => (f.id === 'fantail' ? true : f.id === 'rainbow' ? golds(p) === LEVELS.length : f.level !== null && finishesToUnlock(p, f.level) === 0)).map((f) => f.id);
+  return FLYERS.filter((f) => {
+    if (f.id === 'fantail') return true;
+    if (f.id === 'rainbow') return golds(p) === LEVELS.length;
+    if (f.allPresents) return (record(p, f.allPresents).allPresents ?? 0) > 0;
+    return f.level !== null && finishesToUnlock(p, f.level) === 0;
+  }).map((f) => f.id);
 }
 
 /** A gold on a level makes its flyer shiny. */
@@ -155,6 +180,9 @@ export interface RunSummary {
   checks: boolean[];
   rightGaps: number;
   potionUsed: boolean;
+  /** Presents grabbed, and how many the course had (levels with presents). */
+  presents?: number;
+  presentsOf?: number;
 }
 
 export interface Unlocks {
@@ -178,17 +206,19 @@ const MEDAL_RANK: Record<Medal, number> = { bronze: 1, silver: 2, gold: 3 };
  */
 export function addRun(before: Progress, run: RunSummary, today: string): { progress: Progress; unlocks: Unlocks } {
   const p: Progress = { ...before, levels: { ...before.levels } };
-  const n = LEVELS.find((l) => l.id === run.level)?.n ?? 1;
+  const def = levelById(run.level);
+  const seasonal = !!def && isSeasonal(def);
+  const n = seasonal ? 0 : def?.n ?? 1; // a seasonal level never opens the trail's next one
   let opened = openedLevel(before);
   let openedDay = before.openedDay ?? null;
   // A level that was waiting for a new day opens as it is first flown.
-  if (n === opened + 1) {
+  if (n > 0 && n === opened + 1) {
     opened = n;
     openedDay = today;
   }
   let newLevel = false;
   let levelTomorrow = false;
-  if (n === opened && opened < LEVELS.length) {
+  if (n > 0 && n === opened && opened < LEVELS.length) {
     if (openedDay !== today) {
       opened++;
       openedDay = today;
@@ -201,12 +231,17 @@ export function addRun(before: Progress, run: RunSummary, today: string): { prog
   const best = run.maths ? was.best : was.bestPlain;
   const newBest = best === null || run.seconds < best;
   const medal = was.medal === null || MEDAL_RANK[run.medal] > MEDAL_RANK[was.medal] ? run.medal : was.medal;
-  p.levels[run.level] = {
+  const rec: LevelRecord = {
     finishes: was.finishes + 1,
     best: run.maths && newBest ? run.seconds : was.best,
     bestPlain: !run.maths && newBest ? run.seconds : was.bestPlain,
     medal,
   };
+  if (seasonal) {
+    const all = (run.presentsOf ?? 0) > 0 && run.presents === run.presentsOf;
+    p.seasonal = { ...before.seasonal, [run.level]: { ...rec, allPresents: (was.allPresents ?? 0) + (all ? 1 : 0) } };
+  } else p.levels[run.level] = rec;
+  if (run.presents) p.presents = (before.presents ?? 0) + run.presents;
   let potion = false;
   const earn = () => {
     if (p.potions < POTIONS_MAX) {
@@ -250,12 +285,20 @@ export function addRun(before: Progress, run: RunSummary, today: string): { prog
 /** The map's next-step line (plan section 7): what to do next, in a pupil's words. */
 export function nextStep(p: Progress, today: string): string {
   if (opensTomorrow(p, today)) return 'A new level opens tomorrow. Try for a better medal today!';
+  const festive = SEASONAL_LEVELS.find((l) => levelOpen(p, l.n, today) && record(p, l.id).finishes === 0);
+  if (festive) return seasonalLine(festive.name);
   const open = LEVELS.find((l) => record(p, l.id).finishes === 0);
   if (open) return open.n === 1 ? `Tap ${open.name} to start.` : `Fly ${open.name} next (level ${open.n}).`;
   const notGold = LEVELS.find((l) => record(p, l.id).medal !== 'gold');
   if (notGold) return `Try for gold on ${notGold.name}.`;
   return 'Every level done with gold! Try Sky Dash.';
 }
+
+/** The map's line when a seasonal level is waiting (said by Bella, so one per seasonal level). */
+export const seasonalLine = (name: string): string => `${name} is here! A special level for a little while.`;
+
+/** Seasonal levels open on NZ day `today` for this pupil. */
+export const seasonalOpen = (p: Progress, today: string) => SEASONAL_LEVELS.filter((l) => levelOpen(p, l.n, today));
 
 /** Adds a finished Sky Dash to a pupil's progress (a potion used is spent). Returns a new object. */
 export function addDash(before: Progress, walls: number, potionUsed: boolean): { progress: Progress; newBest: boolean } {

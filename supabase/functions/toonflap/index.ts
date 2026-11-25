@@ -12347,6 +12347,12 @@ const MEDALS = {
 		silver: 71,
 		goldPlain: 81,
 		silverPlain: 89
+	},
+	xmas: {
+		gold: 38,
+		silver: 49,
+		goldPlain: 46,
+		silverPlain: 55
 	}
 };
 //#endregion
@@ -12531,6 +12537,33 @@ const LEVELS = [
 		newThing: "Low gravity bubbles make you float. Everything else is here too!"
 	}
 ];
+/**
+* Seasonal levels (James, 25 Nov 2026): extra levels that open only at a time of year, outside the 10-level trail. They
+* don't open the next level, don't count towards "every level" (golds, the rainbow flyer, achievements) and are saved
+* under `seasonal` in a pupil's progress. Christmas Coast is a Kiwi summer Christmas, open in December and January.
+*/
+const SEASONAL_LEVELS = [{
+	n: 11,
+	id: "xmas",
+	name: "Christmas Coast",
+	world: "a sunny Kiwi summer Christmas beach with red-flowering trees, candy canes and presents",
+	seconds: 45,
+	pace: "slow",
+	gap: 4.6,
+	spacing: 2.4,
+	checks: 2,
+	answerWalls: 1,
+	answerGaps: 2,
+	wander: 1.8,
+	features: ["answer-gaps", "presents"],
+	newThing: "Grab the presents as you fly! Get them all in one flight to unlock a Christmas flyer.",
+	months: [12, 1]
+}];
+/** Every level: the trail's 10, then the seasonal ones. */
+const ALL_LEVELS = [...LEVELS, ...SEASONAL_LEVELS];
+const isSeasonal = (def) => !!def.months;
+/** Is a level open at this time of year? `today` is the NZ day, YYYY-MM-DD. The trail's levels always are. */
+const inSeason = (def, today) => !def.months || def.months.includes(Number(today.slice(5, 7)));
 /** A small number stream with whole-number steps, so each course is the same everywhere. */
 function stream$1(seed) {
 	let s = seed;
@@ -12681,6 +12714,16 @@ function buildCourse(def, gentle = false) {
 			gravity: .55
 		});
 	}
+	const presents = [];
+	if (def.features.includes("presents")) for (let i = 0; i < count - 1; i++) {
+		if (!plainGaps(i)) continue;
+		const { x0, x1 } = between(i);
+		presents.push({
+			i: presents.length,
+			x: (x0 + x1) / 2,
+			y: (walls[i].gaps[0].y + walls[i + 1].gaps[0].y) / 2
+		});
+	}
 	return {
 		def,
 		speed,
@@ -12688,6 +12731,7 @@ function buildCourse(def, gentle = false) {
 		perches,
 		signs,
 		zones,
+		presents,
 		nestX: walls[count - 1].x + WALL_WIDTH + 4,
 		medals: MEDALS[def.id] ?? {
 			gold: def.seconds,
@@ -12697,7 +12741,7 @@ function buildCourse(def, gentle = false) {
 		}
 	};
 }
-const levelById = (id) => LEVELS.find((l) => l.id === id);
+const levelById = (id) => ALL_LEVELS.find((l) => l.id === id);
 //#endregion
 //#region shared/toonflap/collection.ts
 /**
@@ -12784,6 +12828,19 @@ const FLYERS = [
 		name: "Rainbow Toon",
 		look: "a rainbow-feathered fantail",
 		level: null
+	},
+	{
+		id: "surf-sleigh",
+		name: "Surf Sleigh",
+		look: "a jolly Santa in board shorts on a flying surfboard sleigh",
+		level: "xmas"
+	},
+	{
+		id: "santa-fantail",
+		name: "Santa Fantail",
+		look: "a fantail in a Santa hat",
+		level: null,
+		allPresents: "xmas"
 	}
 ];
 const TRAILS = [
@@ -12852,6 +12909,15 @@ const TRAILS = [
 		name: "Rainbow stars",
 		rule: { kind: "all-gold" },
 		how: "Gold on every level"
+	},
+	{
+		id: "candy-canes",
+		name: "Candy canes",
+		rule: {
+			kind: "gold",
+			level: "xmas"
+		},
+		how: "Gold on Christmas Coast"
 	}
 ];
 const emptyProgress = () => ({
@@ -12863,7 +12929,7 @@ const emptyProgress = () => ({
 	potions: 0,
 	potionsEarned: 0
 });
-const record = (p, id) => p.levels[id] ?? {
+const record = (p, id) => p.levels[id] ?? p.seasonal?.[id] ?? {
 	finishes: 0,
 	best: null,
 	bestPlain: null,
@@ -12883,17 +12949,28 @@ function openedLevel(p) {
 * already opened today (NZ day `today`), the next waits until tomorrow.
 */
 function levelOpen(p, n, today) {
+	const seasonal = SEASONAL_LEVELS.find((l) => l.n === n);
+	if (seasonal) return inSeason(seasonal, today) && record(p, LEVELS[0].id).finishes > 0;
 	const opened = openedLevel(p);
 	if (n <= opened) return true;
 	return n === opened + 1 && record(p, LEVELS[opened - 1].id).finishes > 0 && p.openedDay !== today;
 }
 const skyDashOpen = (p) => record(p, LEVELS[4].id).finishes > 0;
 /** Finishes of a level that unlock its flyer: 15 on the easy levels (1 to 5), 10 on the harder ones. */
-const unlockRuns = (level) => (LEVELS.find((l) => l.id === level)?.n ?? 1) <= 5 ? UNLOCK_RUNS.easy : UNLOCK_RUNS.hard;
+const unlockRuns = (level) => {
+	const def = levelById(level);
+	if (def && isSeasonal(def)) return 5;
+	return (def?.n ?? 1) <= 5 ? UNLOCK_RUNS.easy : UNLOCK_RUNS.hard;
+};
 /** Finishes still needed to unlock a level's flyer (0 = unlocked). */
 const finishesToUnlock = (p, level) => Math.max(0, unlockRuns(level) - record(p, level).finishes);
 function flyersUnlocked(p) {
-	return FLYERS.filter((f) => f.id === "fantail" ? true : f.id === "rainbow" ? golds(p) === LEVELS.length : f.level !== null && finishesToUnlock(p, f.level) === 0).map((f) => f.id);
+	return FLYERS.filter((f) => {
+		if (f.id === "fantail") return true;
+		if (f.id === "rainbow") return golds(p) === LEVELS.length;
+		if (f.allPresents) return (record(p, f.allPresents).allPresents ?? 0) > 0;
+		return f.level !== null && finishesToUnlock(p, f.level) === 0;
+	}).map((f) => f.id);
 }
 function trailEarned(p, t) {
 	const r = t.rule;
@@ -12918,16 +12995,18 @@ function addRun(before, run, today) {
 		...before,
 		levels: { ...before.levels }
 	};
-	const n = LEVELS.find((l) => l.id === run.level)?.n ?? 1;
+	const def = levelById(run.level);
+	const seasonal = !!def && isSeasonal(def);
+	const n = seasonal ? 0 : def?.n ?? 1;
 	let opened = openedLevel(before);
 	let openedDay = before.openedDay ?? null;
-	if (n === opened + 1) {
+	if (n > 0 && n === opened + 1) {
 		opened = n;
 		openedDay = today;
 	}
 	let newLevel = false;
 	let levelTomorrow = false;
-	if (n === opened && opened < LEVELS.length) {
+	if (n > 0 && n === opened && opened < LEVELS.length) {
 		if (openedDay !== today) {
 			opened++;
 			openedDay = today;
@@ -12940,12 +13019,23 @@ function addRun(before, run, today) {
 	const best = run.maths ? was.best : was.bestPlain;
 	const newBest = best === null || run.seconds < best;
 	const medal = was.medal === null || MEDAL_RANK[run.medal] > MEDAL_RANK[was.medal] ? run.medal : was.medal;
-	p.levels[run.level] = {
+	const rec = {
 		finishes: was.finishes + 1,
 		best: run.maths && newBest ? run.seconds : was.best,
 		bestPlain: !run.maths && newBest ? run.seconds : was.bestPlain,
 		medal
 	};
+	if (seasonal) {
+		const all = (run.presentsOf ?? 0) > 0 && run.presents === run.presentsOf;
+		p.seasonal = {
+			...before.seasonal,
+			[run.level]: {
+				...rec,
+				allPresents: (was.allPresents ?? 0) + (all ? 1 : 0)
+			}
+		};
+	} else p.levels[run.level] = rec;
+	if (run.presents) p.presents = (before.presents ?? 0) + run.presents;
 	let potion = false;
 	const earn = () => {
 		if (p.potions < 3) {
@@ -12996,16 +13086,6 @@ function addDash(before, walls, potionUsed) {
 		newBest
 	};
 }
-//#endregion
-//#region shared/toonflap/engine.ts
-/**
-* Toon Flap's physics (docs/TOON-FLAP-PLAN.md, section 1). One step is 1/60 s. The only input is "flap this step", so a run
-* is just the list of step numbers with a flap: the browser plays it live and the server replays the same list to check it.
-*
-* The clock is the flying steps. While the bird hovers (before the first tap, after a bump, on a perch) no time passes,
-* and the next flap lifts it off. A bump adds `BUMP_PENALTY_STEPS` to the time and the bird hovers again just in front of
-* the wall it hit, so a bump costs about 3 seconds and never ends the run.
-*/
 function newRun(course) {
 	return {
 		t: 0,
@@ -13018,6 +13098,7 @@ function newRun(course) {
 		nextWall: 0,
 		perches: 0,
 		picks: course.signs.map(() => null),
+		got: course.presents.map(() => false),
 		outcome: "running"
 	};
 }
@@ -13109,6 +13190,11 @@ function stepRun(course, s, flap) {
 		respawn(course, s);
 		return "bump";
 	}
+	for (const gift of course.presents) {
+		if (s.got[gift.i] || Math.abs(gift.x - s.x) > .6 || Math.abs(gift.y - s.y) > .6) continue;
+		s.got[gift.i] = true;
+		event ??= "present";
+	}
 	const perch = course.perches[s.perches];
 	if (perch && s.x >= perch.x) {
 		s.x = perch.x;
@@ -13193,6 +13279,8 @@ function decodeFlaps(text) {
 	}
 	return out;
 }
+/** How many presents a run grabbed. */
+const presentsGot = (s) => (s.got ?? []).filter(Boolean).length;
 //#endregion
 //#region shared/toonflap/dash.ts
 /**
@@ -13279,6 +13367,7 @@ function buildDashCourse(seed) {
 		perches,
 		signs: [],
 		zones: [],
+		presents: [],
 		nestX: walls[walls.length - 1].x + WALL_WIDTH + 4,
 		medals: {
 			gold: big,
@@ -13584,10 +13673,17 @@ async function handleToonFlap(services, player, body) {
 		const gentle = body.gentle === true;
 		const [saved, today] = await Promise.all([services.load(player), services.runsToday(player, nzDate(new Date(services.now())))]);
 		if (saved === "busy" || today === "busy") return busy();
+		if (isSeasonal(def) && !inSeason(def, nzDate(new Date(services.now())))) return {
+			status: 409,
+			body: {
+				error: `${def.name} is a special level for December and January.`,
+				code: "locked"
+			}
+		};
 		if (!levelOpen(saved.progress, def.n, nzDate(new Date(services.now())))) return {
 			status: 409,
 			body: {
-				error: "That level isn’t open yet. One new level opens each day.",
+				error: isSeasonal(def) ? "Finish Toon Garden first, then this special level opens." : "That level isn’t open yet. One new level opens each day.",
 				code: "locked"
 			}
 		};
@@ -13900,6 +13996,7 @@ async function handleToonFlap(services, player, body) {
 			potion
 		});
 		const medal = medalFor(course, score.seconds, run.maths, run.gentle);
+		const gifts = presentsGot(replay.state);
 		const added = addRun(saved.progress, {
 			level: def.id,
 			maths: run.maths,
@@ -13908,7 +14005,11 @@ async function handleToonFlap(services, player, body) {
 			bumps: replay.state.bumps,
 			checks,
 			rightGaps: gapsOk,
-			potionUsed: score.potion
+			potionUsed: score.potion,
+			...course.presents.length ? {
+				presents: gifts,
+				presentsOf: course.presents.length
+			} : {}
 		}, nzDate(new Date(services.now())));
 		const today = await services.runsToday(player, nzDate(new Date(services.now())));
 		const done = await services.finish(player, seed, saved.version, added.progress, {
@@ -13960,7 +14061,11 @@ async function handleToonFlap(services, player, body) {
 					answer: run.questions[plan.checks + i]?.answer ?? NaN,
 					right: right[i],
 					picked: replay.state.picks[i]
-				}))
+				})),
+				...course.presents.length ? { presents: {
+					got: gifts,
+					of: course.presents.length
+				} } : {}
 			}
 		};
 	}
