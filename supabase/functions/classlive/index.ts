@@ -13695,6 +13695,16 @@ function freshMine(i) {
 		spot: startSpot(i)
 	};
 }
+/**
+* When a jailed pupil with all their right answers walks free (session ms), or null. They come back as the round after
+* the one they sat out starts: this round's end if they were caught before it, else the end of the next round.
+*/
+function freeAt(g, m) {
+	const r = g.round;
+	if (!m || m.jailedIn === null || m.jailRight < 3 || !r) return null;
+	if (m.jailedIn < r.n) return r.showEnd;
+	return r.showEnd + (g.runS ? g.runS * 1e3 : runMs(r.n + 1)) + ROLL_MS + SHOW_MS;
+}
 const boosted = (m, n) => !!m && m.speedTo !== null && n <= m.speedTo;
 const ghostly = (m, n) => !!m && m.ghostTo !== null && n <= m.ghostTo;
 /** Time is up and the last round has been shown (or never started): the game can end. */
@@ -14240,6 +14250,9 @@ function playerView(s, id) {
 				nextAt: m.lastAt + ANSWER_GAP_MS,
 				place,
 				stay: r?.swap && m.jailedIn === null ? m.lastCorner ?? null : null,
+				freeAt: freeAt(g, m),
+				speedLeft: m.speedTo !== null && n <= m.speedTo ? m.speedTo - n + 1 : 0,
+				ghostLeft: m.ghostTo !== null && n <= m.ghostTo ? m.ghostTo - n + 1 : 0,
 				stats: {
 					right: m.right ?? 0,
 					wrong: m.wrong ?? 0,

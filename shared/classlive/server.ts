@@ -23,7 +23,7 @@ import { makeSpacePack, pickSpaceQuestion } from '../space/mathsQuestion';
 import { answerBox, boxOf, newSerpent, SERPENT_LEVELS, wakeAt, type SerpentBox, type SerpentEvent, type SerpentGame, type SerpentLevel, type SerpentReply } from './serpent';
 import { rewardsOf, type FinishedSession } from './rewards';
 import {
-  advance as cornersAdvance, answered as cornersAnswered, boosted, crystalCorner, freshMine, ghostly, grab as cornersGrab, jump as cornersJump, warp as cornersWarp,
+  advance as cornersAdvance, answered as cornersAnswered, boosted, crystalCorner, freshMine, ghostly, grab as cornersGrab, jump as cornersJump, warp as cornersWarp, freeAt as cornersFreeAt,
   cornersDone, MAPS, needsPositions, runSeconds, newCorners, nextDeadline, podium, questionFor, ANSWER_GAP_MS as CORNERS_GAP_MS,
   type Corner, type CornerMap, type CornersEvent, type CornersGame, type Item, type Positions, type Power, type Round, type Spot,
 } from './corners';
@@ -136,6 +136,11 @@ export interface PlayerView {
         placed: number; spot: Spot; nextAt: number; place: 1 | 2 | 3 | null;
         /** Second half: the corner they may not stay in this round. */
         stay: Corner | null;
+        /** Out of jail at this session time (all right answers in), or null. */
+        freeAt: number | null;
+        /** Rounds a Speed boost / Ghost still covers, this one included (0: off). */
+        speedLeft: number;
+        ghostLeft: number;
         /** Own stats for the end screen. */
         stats: { right: number; wrong: number; bestStreak: number; warps: number; lucky: number; grabs: number; powers: number; escapes: number };
       };
@@ -284,7 +289,8 @@ export function playerView(s: Session, id: string): PlayerView {
         boost: boosted(m, n), ghost: ghostly(m, n), shield: !!r && m.shieldIn === n, double: !!r && m.doubleIn === n,
         crystal: r && m.crystalIn === n ? crystalCorner(r) : null, jump: !!r && m.jumpIn === n,
         caughtLast: !!r?.caught?.includes(id), savedLast: !!r?.saved.includes(id), placed: m.placed, spot: m.spot,
-        nextAt: m.lastAt + CORNERS_GAP_MS, place, stay: r?.swap && m.jailedIn === null ? m.lastCorner ?? null : null,
+        nextAt: m.lastAt + CORNERS_GAP_MS, place, stay: r?.swap && m.jailedIn === null ? m.lastCorner ?? null : null, freeAt: cornersFreeAt(g, m),
+        speedLeft: m.speedTo !== null && n <= m.speedTo ? m.speedTo - n + 1 : 0, ghostLeft: m.ghostTo !== null && n <= m.ghostTo ? m.ghostTo - n + 1 : 0,
         stats: {
           right: m.right ?? 0, wrong: m.wrong ?? 0, bestStreak: m.bestStreak ?? 0, warps: m.warps ?? 0, lucky: m.lucky ?? 0,
           grabs: m.grabs, powers: m.powersUsed, escapes: m.escapes,

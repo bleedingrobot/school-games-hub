@@ -9,12 +9,12 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { AvatarImage } from '../../avatar/AvatarImage';
 import {
-  AVATAR_R, cornerOf, GRAB_R, JAIL_RIGHT, MAP_WORDS, POWER_WORDS, startSpot, stepMove, type Corner, type MoveState, type Spot,
+  AVATAR_R, cornerOf, GRAB_R, JAIL_RIGHT, MAP_WORDS, POWER_WORDS, startSpot, stepMove, type Corner, type MoveState, type Power, type Spot,
 } from '../../../shared/classlive/corners';
 import type { PlayerView, RoomView } from '../../../shared/classlive/server';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
-import { CORNER_COLOURS, CORNER_NAMES, CornersBoard, Token } from './CornersBoard';
+import { CORNER_NAMES, CornersBoard, powerPic, Token } from './CornersBoard';
 import { CornersGuide } from './CornersGuide';
 import type { ClassLiveLink } from './link';
 import './controller.css';
@@ -189,22 +189,29 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
   const t = tNow();
   const inCorner = cornerOf(pos.current.p);
   const wantQuestion = view.state === 'live' && !!r && (jailed ? (mg?.jailRight ?? 0) < JAIL_RIGHT : !!mg?.held && inCorner !== null && t < r.runEnd - 600 && !r.ended);
+  // Bumped to ask again after an ask that brought no question (a busy server, a dropped connection, the server not
+  // seeing the jail yet): without it the pad waited for ever and jailed pupils got no questions (James, 25 Nov 2026 NZ).
+  const [askAgain, setAskAgain] = useState(0);
   useEffect(() => {
     if (!wantQuestion || question || asking.current || room === null) return;
     asking.current = true;
     const p = pos.current.p;
+    let got = false;
     const go = async () => {
       if (!jailed) await link.move(room, p.x, p.y).catch(() => null);
       const out = await link.send({ action: 'ask', room });
       const b = out.body as { question?: PublicQuestion; purpose?: 'jail' | 'power' };
-      if (out.status === 200 && b.question) { setQuestion(b.question); setPurpose(b.purpose ?? null); }
+      if (out.status === 200 && b.question) { got = true; setQuestion(b.question); setPurpose(b.purpose ?? null); }
     };
-    void go().catch(() => undefined).finally(() => { window.setTimeout(() => { asking.current = false; }, 1200); });
-  }, [wantQuestion, question, room, link, jailed]);
-  // A power-up question goes away if the pupil leaves the corner or the run ends.
+    void go().catch(() => undefined).finally(() => {
+      window.setTimeout(() => { asking.current = false; if (!got) setAskAgain((n) => n + 1); }, got ? 600 : 2000);
+    });
+  }, [wantQuestion, question, room, link, jailed, askAgain]);
+  // A power-up question goes away if the pupil leaves the corner, the run ends or they are caught; a jail question
+  // goes once they are out.
   useEffect(() => {
-    if (question && purpose === 'power' && !wantQuestion) { setQuestion(null); setPurpose(null); }
-  }, [question, purpose, wantQuestion]);
+    if (question && ((purpose === 'power' && (!wantQuestion || jailed)) || (purpose === 'jail' && !jailed))) { setQuestion(null); setPurpose(null); }
+  }, [question, purpose, wantQuestion, jailed]);
 
   const onSubmit = async (value: number, ms: number): Promise<MarkedAnswer> => {
     const q = question as PublicQuestion;
@@ -322,7 +329,14 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
         <div className="fc-locks" aria-label={`${mg.jailRight} of ${JAIL_RIGHT} right`}>
           {Array.from({ length: JAIL_RIGHT }, (_, i) => <i key={i} className={i < mg.jailRight ? 'on' : ''}>{i < mg.jailRight ? '🔓' : '🔒'}</i>)}
         </div>
-        <p className="cl-c-say">{mg.jailRight >= JAIL_RIGHT ? 'Free! You come back at the start of a round.' : `Answer ${JAIL_RIGHT - mg.jailRight} more right to come back.`}</p>
+        {mg.jailRight >= JAIL_RIGHT ? (
+          <div className="fc-free" role="status">
+            <b className="fc-free__word">🔓 You're free!</b>
+            {mg.freeAt != null && mg.freeAt > t
+              ? <><span className="fc-free__count" key={Math.ceil((mg.freeAt - t) / 1000)}>{Math.ceil((mg.freeAt - t) / 1000)}</span><span className="fc-free__say">seconds until you're back in the game</span></>
+              : <span className="fc-free__say">Coming back now. Get ready to run!</span>}
+          </div>
+        ) : <p className="cl-c-say">{`Answer ${JAIL_RIGHT - mg.jailRight} more right to come back.`}</p>}
         {toastBox}
         {questionBox}
       </div>
@@ -338,13 +352,16 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
         <span>{r?.ended && r.rolled === null ? '🎲' : `✅ ${mg.safe}`}</span>
       </header>
       <div className="fc-pad__powers">
-        {mg.held && <span className="fc-chip fc-chip--held">{POWER_WORDS[mg.held].emoji} {POWER_WORDS[mg.held].name}: get to a corner!</span>}
-        {mg.shield && <span className="fc-chip">🛡️ Shield on</span>}
-        {mg.boost && <span className="fc-chip">⚡ Fast</span>}
-        {mg.ghost && <span className="fc-chip">👻 Ghost</span>}
-        {mg.double && <span className="fc-chip">⭐ Double</span>}
+        {mg.held && (
+          <PowerCard power={mg.held} state="held" text={`In your pocket! Run to a corner and answer a question to switch it on. ${POWER_WORDS[mg.held].how}`} />
+        )}
+        {mg.shield && <PowerCard power="shield" state="on" text="You can't be caught this round, even if the dice picks your corner." />}
+        {mg.boost && <PowerCard power="speed" state="on" text={`You run faster: ${(mg.speedLeft ?? 1) > 1 ? `this round and ${(mg.speedLeft ?? 1) - 1} more` : 'last round of it'}.`} />}
+        {mg.ghost && <PowerCard power="ghost" state="on" text={`You walk straight through hazards${(mg.ghostLeft ?? 1) > 1 ? ' this round and next' : ' this round'}.`} />}
+        {mg.double && <PowerCard power="double" state="on" text="Be safe this round to score 2 points." />}
+        {mg.jump && canRun && <PowerCard power="jump" state="on" text="Tap any corner on the board to jump straight there!" />}
+        {mg.crystal !== null && <PowerCard power="crystal" state="on" text={`${CORNER_NAMES[mg.crystal]} is safe this round. Run there!`} />}
         {mg.stay != null && r && !r.ended && <span className="fc-chip fc-chip--swap">🔁 Change corners! Not {CORNER_NAMES[mg.stay]}</span>}
-        {mg.crystal !== null && <span className="fc-chip" style={{ borderColor: CORNER_COLOURS[mg.crystal] }}>🔮 {CORNER_NAMES[mg.crystal]} is safe</span>}
       </div>
       <div className="fc-pad__board">
         <CornersBoard map={pub.map} round={r} t={t} flash={r?.ended && r.rolled ? r.rolled : null} crystal={mg.crystal} banned={r && !r.ended ? mg.stay ?? null : null} fogOn={false} onCorner={mg.jump && canRun ? (c) => void jump(c) : undefined}>
@@ -358,6 +375,20 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
       {toastBox}
       {questionBox}
       {canRun && !question && <Joystick onDir={(d) => { stickDir.current = d; }} />}
+    </div>
+  );
+}
+
+/** A power-up the pupil carries or has switched on, big and plain (James, 25 Nov 2026 NZ: make it really obvious). */
+function PowerCard({ power, state, text }: { power: Power; state: 'held' | 'on'; text: string }) {
+  const pic = powerPic(power);
+  return (
+    <div className={`fc-power fc-power--${state}`} role="status">
+      {pic ? <img className="fc-power__pic" src={pic} alt="" /> : <span className="fc-power__pic fc-power__pic--emoji" aria-hidden="true">{POWER_WORDS[power].emoji}</span>}
+      <span className="fc-power__words">
+        <b>{state === 'on' ? `${POWER_WORDS[power].name} ON` : POWER_WORDS[power].name}</b>
+        <span>{text}</span>
+      </span>
     </div>
   );
 }

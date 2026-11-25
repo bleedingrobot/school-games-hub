@@ -354,6 +354,16 @@ export function freshMine(i: number): CornersMine {
 }
 
 export const inJail = (m: CornersMine | undefined) => !!m && m.jailedIn !== null;
+/**
+ * When a jailed pupil with all their right answers walks free (session ms), or null. They come back as the round after
+ * the one they sat out starts: this round's end if they were caught before it, else the end of the next round.
+ */
+export function freeAt(g: CornersGame, m: CornersMine | undefined): number | null {
+  const r = g.round;
+  if (!m || m.jailedIn === null || m.jailRight < JAIL_RIGHT || !r) return null;
+  if (m.jailedIn < r.n) return r.showEnd;
+  return r.showEnd + (g.runS ? g.runS * 1000 : runMs(r.n + 1)) + ROLL_MS + SHOW_MS;
+}
 export const boosted = (m: CornersMine | undefined, n: number) => !!m && m.speedTo !== null && n <= m.speedTo;
 export const ghostly = (m: CornersMine | undefined, n: number) => !!m && m.ghostTo !== null && n <= m.ghostTo;
 

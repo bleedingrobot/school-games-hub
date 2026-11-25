@@ -7,7 +7,7 @@ import { answerBox, apply, BODY, makeChain, newSerpent, SERPENT_LEVELS } from '.
 import { gridFor, maxOpen, openCap, UNTIMED_PACE_MS, type MuralGame } from './mural';
 import { ARMS, armCounts, isTrue, laggingArm, linkOf, newStars, readFact, tryFact, type Anchor } from './stars';
 import { lagHint } from '../../src/games/classlive/arms';
-import { advance, clampMove, cornerOf, freshMine, grab, makeRound, MAX_SPEED, newCorners, startSpot, stepMove, type CornersGame } from './corners';
+import { advance, clampMove, cornerOf, freeAt, freshMine, grab, makeRound, ROLL_MS, SHOW_MS, MAX_SPEED, newCorners, startSpot, stepMove, type CornersGame } from './corners';
 
 const k: Anchor = { x: 6, y: 7, p: 42 };
 const arm = (text: string) => {
@@ -298,6 +298,9 @@ describe('Class Live server', () => {
     sw.round = { ...makeRound(sw, 9, 0, rng(9), 2), swap: true, twist: null, rolled: [2] };
     advance(sw, sw.round.runEnd, ['a', 'b'], { a: { x: 0.05, y: 0.05 }, b: { x: 0.95, y: 0.05 } }, rng(1));
     expect([sw.round.stayed, sw.round.caught, sw.mine.b.lastCorner]).toEqual([['a'], ['a'], 1]);
+    // Out of jail with all 3 right: free when the round after the one they sit out starts.
+    sw.mine.a.jailRight = 3;
+    expect([freeAt(sw, sw.mine.a), freeAt(sw, sw.mine.b)]).toEqual([sw.round.showEnd + 10_000 + ROLL_MS + SHOW_MS, null]);
     // Everyone let out of jail was put back in the middle (their saved spot moved by the server).
     const escaped = pc.ids.find((id) => cg.mine[id].escapes > 0)!;
     expect(pc.db.spots.get(room)![escaped]).toBeDefined();
