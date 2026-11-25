@@ -29,7 +29,7 @@
     },
     {
       "name": "hall-castle",
-      "prompt": "A top-down painted game floor: a polished stone and red carpet castle hall floor, gold trim borders. An open empty walkable middle with nothing in it, calm plain floor, top-down bird's-eye view straight down, square picture, no furniture, no chairs, no thrones, no characters, no writing anywhere.",
+      "prompt": "A flat floor texture seen from directly above, filling the whole square picture edge to edge: polished warm stone tiles inlaid with a big royal red carpet pattern and gold trim lines. Only the floor surface, a flat even pattern, plain and calm, like a game board or a rug, straight-down top view, no perspective, empty, nothing standing on it.",
       "size": [
         1536,
         1536
@@ -37,7 +37,7 @@
       "kind": "scene",
       "folder": "thrones",
       "file": "hall-castle",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, chairs, thrones, tables, furniture",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, chairs, thrones, tables, furniture, seats, benches, stools, barrels, crates, boxes, walls, pillars, columns, doors, railings, borders of a room, perspective view, objects, props",
       "style": "s"
     },
     {
@@ -68,7 +68,7 @@
     },
     {
       "name": "hall-ice",
-      "prompt": "A top-down painted game floor: a smooth pale blue ice palace floor with silver snowflake patterns round the borders. An open empty walkable middle with nothing in it, calm plain floor, top-down bird's-eye view straight down, square picture, no furniture, no chairs, no thrones, no characters, no writing anywhere.",
+      "prompt": "A flat floor texture seen from directly above, filling the whole square picture edge to edge: smooth pale blue polished ice with frosty silver snowflake patterns etched into it. Only the floor surface, a flat even pattern, plain and calm, like a game board or a rug, straight-down top view, no perspective, empty, nothing standing on it.",
       "size": [
         1536,
         1536
@@ -76,7 +76,7 @@
       "kind": "scene",
       "folder": "thrones",
       "file": "hall-ice",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, chairs, thrones, tables, furniture",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, chairs, thrones, tables, furniture, seats, benches, stools, barrels, crates, boxes, walls, pillars, columns, doors, railings, borders of a room, perspective view, objects, props",
       "style": "s"
     },
     {
@@ -107,7 +107,7 @@
     },
     {
       "name": "hall-jungle",
-      "prompt": "A top-down painted game floor: a mossy carved stone temple floor with vines and flowers round the borders. An open empty walkable middle with nothing in it, calm plain floor, top-down bird's-eye view straight down, square picture, no furniture, no chairs, no thrones, no characters, no writing anywhere.",
+      "prompt": "A flat floor texture seen from directly above, filling the whole square picture edge to edge: mossy carved temple flagstones with little patches of grass, vines and tiny flowers growing between the stones. Only the floor surface, a flat even pattern, plain and calm, like a game board or a rug, straight-down top view, no perspective, empty, nothing standing on it.",
       "size": [
         1536,
         1536
@@ -115,7 +115,7 @@
       "kind": "scene",
       "folder": "thrones",
       "file": "hall-jungle",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, chairs, thrones, tables, furniture",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, chairs, thrones, tables, furniture, seats, benches, stools, barrels, crates, boxes, walls, pillars, columns, doors, railings, borders of a room, perspective view, objects, props",
       "style": "s"
     },
     {
@@ -146,7 +146,7 @@
     },
     {
       "name": "hall-pirate",
-      "prompt": "A top-down painted game floor: a big wooden pirate ship deck seen from above, planks, ropes and barrels round the edges. An open empty walkable middle with nothing in it, calm plain floor, top-down bird's-eye view straight down, square picture, no furniture, no chairs, no thrones, no characters, no writing anywhere.",
+      "prompt": "A flat floor texture seen from directly above, filling the whole square picture edge to edge: weathered wooden ship deck planks running in long straight lines, brass nails, a few coiled ropes lying flat. Only the floor surface, a flat even pattern, plain and calm, like a game board or a rug, straight-down top view, no perspective, empty, nothing standing on it.",
       "size": [
         1536,
         1536
@@ -154,7 +154,7 @@
       "kind": "scene",
       "folder": "thrones",
       "file": "hall-pirate",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, chairs, thrones, tables, furniture",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, chairs, thrones, tables, furniture, seats, benches, stools, barrels, crates, boxes, walls, pillars, columns, doors, railings, borders of a room, perspective view, objects, props",
       "style": "s"
     },
     {
@@ -213,7 +213,7 @@
     },
     {
       "name": "tile",
-      "prompt": "A top-down game marker seen from above: a round glowing disco dance floor tile, bright rainbow lights, sparkles, smooth glossy Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "prompt": "A top-down game marker seen from directly above: a flat square glowing disco dance floor panel made of coloured glass squares lit from below, bright rainbow lights, sparkles, a flat square tile, not a ball, not a sphere. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
       "file": "tile",
       "kind": "cut",
       "size": [
@@ -221,7 +221,7 @@
         512
       ],
       "folder": "thrones-fx",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, ball, sphere, globe, mirror ball",
       "style": "c",
       "max": 512
     },
@@ -479,7 +479,7 @@
     },
     {
       "name": "jungle-teleport",
-      "prompt": "A top-down game marker seen from above: a swinging jungle vine loop with leaves and a glow, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "prompt": "A top-down game marker seen from above: a round ring of twisted green jungle vines with leaves, glowing green magic light inside the ring, a closed loop with nothing hanging from it, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
       "file": "jungle-teleport",
       "kind": "cut",
       "size": [
@@ -487,13 +487,13 @@
         512
       ],
       "folder": "thrones-fx",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, rope, hanging, cut off",
       "style": "c",
       "max": 512
     },
     {
       "name": "pirate-storm",
-      "prompt": "A top-down game marker seen from above: a splash of white sea spray and foam, round shape, bold and easy to see. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "prompt": "A top-down game marker seen from above: a round splash of white sea foam and blue-green sea water spray, a crashing wave seen from above, round shape, bold and easy to see, only water and foam. Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
       "file": "pirate-storm",
       "kind": "cut",
       "size": [
@@ -501,7 +501,7 @@
         512
       ],
       "folder": "thrones-fx",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges, ball, sphere, sign, card, block, numbers, digits",
       "style": "c",
       "max": 512
     },
