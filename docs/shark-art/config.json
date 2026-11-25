@@ -144,7 +144,7 @@
     },
     {
       "name": "cave-icy",
-      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A wide strip picture of an empty friendly underwater sea cave in an icy polar bay: a rocky cave mouth with seaweed, bubbles and a soft glow, sandy floor, no sharks, no fish, no animals, no characters, no writing. Wide landscape strip, the middle of the picture calm and uncluttered.",
+      "prompt": "Bold storybook illustration, rich colour, cool bright light, painterly digital art, no text. A wide strip picture of an empty friendly underwater ice cave under a frozen polar bay: walls and arch made of glowing pale blue ice and frost, icicles hanging from a frozen ceiling, snowy white ice floor, chunks of floating ice, sparkly frost crystals, bubbles, pale cyan and white colours, no rock, no seaweed, no sand, no sharks, no fish, no animals, no characters, no writing. Wide landscape strip, the middle of the picture calm and uncluttered.",
       "size": [
         1536,
         512
@@ -152,7 +152,7 @@
       "kind": "scene",
       "folder": "shark",
       "file": "cave-icy",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, shark, sharks, fish, animals, creatures"
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, shark, sharks, fish, animals, creatures, seaweed, sand, brown rock, warm colours, tropical"
     },
     {
       "name": "pick-shark",
