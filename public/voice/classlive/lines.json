@@ -520,20 +520,20 @@
   "text": "Here we go! Swim to a coloured quarter, or hide under a boat!"
  },
  {
-  "slug": "shark-bay-is-on-chomper-is-hungry-so-find-a-safe-quarter",
-  "text": "Shark Bay is on! Chomper is hungry, so find a safe quarter!"
+  "slug": "shark-bay-is-on-simon-is-hungry-so-find-a-safe-quarter",
+  "text": "Shark Bay is on! Simon is hungry, so find a safe quarter!"
  },
  {
-  "slug": "off-we-go-keep-off-the-jetty-and-watch-out-for-chomper",
-  "text": "Off we go! Keep off the jetty and watch out for Chomper!"
+  "slug": "off-we-go-keep-off-the-jetty-and-watch-out-for-simon",
+  "text": "Off we go! Keep off the jetty and watch out for Simon!"
  },
  {
   "slug": "swim-swim-swim-find-a-quarter",
   "text": "Swim, swim, swim! Find a quarter!"
  },
  {
-  "slug": "quick-chomper-is-coming-pick-a-colour",
-  "text": "Quick, Chomper is coming! Pick a colour!"
+  "slug": "quick-simon-is-coming-pick-a-colour",
+  "text": "Quick, Simon is coming! Pick a colour!"
  },
  {
   "slug": "go-go-go-hide-under-a-boat-or-pick-a-colour",
@@ -552,8 +552,8 @@
   "text": "Get under a boat, quick!"
  },
  {
-  "slug": "hurry-hurry-chomper-is-nearly-here",
-  "text": "Hurry, hurry! Chomper is nearly here!"
+  "slug": "hurry-hurry-simon-is-nearly-here",
+  "text": "Hurry, hurry! Simon is nearly here!"
  },
  {
   "slug": "quick-the-shark-is-almost-here",
@@ -568,76 +568,76 @@
   "text": "Look out! A fin is circling the bay!"
  },
  {
-  "slug": "chomper-is-swimming-round-and-round",
-  "text": "Chomper is swimming round and round!"
+  "slug": "simon-is-swimming-round-and-round",
+  "text": "Simon is swimming round and round!"
  },
  {
   "slug": "here-comes-the-fin",
   "text": "Here comes the fin!"
  },
  {
-  "slug": "the-lights-are-going-out-where-will-chomper-snap",
-  "text": "The lights are going out! Where will Chomper snap?"
+  "slug": "the-lights-are-going-out-where-will-simon-snap",
+  "text": "The lights are going out! Where will Simon snap?"
  },
  {
-  "slug": "the-spotlight-is-searching-for-chomper",
-  "text": "The spotlight is searching for Chomper!"
+  "slug": "the-spotlight-is-searching-for-simon",
+  "text": "The spotlight is searching for Simon!"
  },
  {
   "slug": "dark-water-where-is-the-shark-going-to-snap",
   "text": "Dark water! Where is the shark going to snap?"
  },
  {
-  "slug": "chomper-strikes-red",
-  "text": "Chomper strikes Red!"
+  "slug": "simon-strikes-red",
+  "text": "Simon strikes Red!"
  },
  {
-  "slug": "chomp-chomper-bites-the-red-quarter",
-  "text": "Chomp! Chomper bites the red quarter!"
+  "slug": "chomp-simon-bites-the-red-quarter",
+  "text": "Chomp! Simon bites the red quarter!"
  },
  {
-  "slug": "it-is-red-chomper-strikes-red",
-  "text": "It is Red! Chomper strikes Red!"
+  "slug": "it-is-red-simon-strikes-red",
+  "text": "It is Red! Simon strikes Red!"
  },
  {
-  "slug": "chomper-strikes-yellow",
-  "text": "Chomper strikes Yellow!"
+  "slug": "simon-strikes-yellow",
+  "text": "Simon strikes Yellow!"
  },
  {
-  "slug": "chomp-chomper-bites-the-yellow-quarter",
-  "text": "Chomp! Chomper bites the yellow quarter!"
+  "slug": "chomp-simon-bites-the-yellow-quarter",
+  "text": "Chomp! Simon bites the yellow quarter!"
  },
  {
-  "slug": "it-is-yellow-chomper-strikes-yellow",
-  "text": "It is Yellow! Chomper strikes Yellow!"
+  "slug": "it-is-yellow-simon-strikes-yellow",
+  "text": "It is Yellow! Simon strikes Yellow!"
  },
  {
-  "slug": "chomper-strikes-green",
-  "text": "Chomper strikes Green!"
+  "slug": "simon-strikes-green",
+  "text": "Simon strikes Green!"
  },
  {
-  "slug": "chomp-chomper-bites-the-green-quarter",
-  "text": "Chomp! Chomper bites the green quarter!"
+  "slug": "chomp-simon-bites-the-green-quarter",
+  "text": "Chomp! Simon bites the green quarter!"
  },
  {
-  "slug": "it-is-green-chomper-strikes-green",
-  "text": "It is Green! Chomper strikes Green!"
+  "slug": "it-is-green-simon-strikes-green",
+  "text": "It is Green! Simon strikes Green!"
  },
  {
-  "slug": "chomper-strikes-purple",
-  "text": "Chomper strikes Purple!"
+  "slug": "simon-strikes-purple",
+  "text": "Simon strikes Purple!"
  },
  {
-  "slug": "chomp-chomper-bites-the-purple-quarter",
-  "text": "Chomp! Chomper bites the purple quarter!"
+  "slug": "chomp-simon-bites-the-purple-quarter",
+  "text": "Chomp! Simon bites the purple quarter!"
  },
  {
-  "slug": "it-is-purple-chomper-strikes-purple",
-  "text": "It is Purple! Chomper strikes Purple!"
+  "slug": "it-is-purple-simon-strikes-purple",
+  "text": "It is Purple! Simon strikes Purple!"
  },
  {
-  "slug": "two-sharks-chomper-has-a-friend",
-  "text": "Two sharks! Chomper has a friend!"
+  "slug": "two-sharks-simon-has-a-friend",
+  "text": "Two sharks! Simon has a friend!"
  },
  {
   "slug": "oh-no-two-sharks-this-time",
@@ -648,16 +648,16 @@
   "text": "Twist! Two quarters are struck!"
  },
  {
-  "slug": "chomper-is-full-nobody-is-caught",
-  "text": "Chomper is full! Nobody is caught!"
+  "slug": "simon-is-full-nobody-is-caught",
+  "text": "Simon is full! Nobody is caught!"
  },
  {
-  "slug": "chomper-has-had-enough-everyone-is-safe",
-  "text": "Chomper has had enough! Everyone is safe!"
+  "slug": "simon-has-had-enough-everyone-is-safe",
+  "text": "Simon has had enough! Everyone is safe!"
  },
  {
-  "slug": "lucky-chomper-is-too-full-to-bite",
-  "text": "Lucky! Chomper is too full to bite!"
+  "slug": "lucky-simon-is-too-full-to-bite",
+  "text": "Lucky! Simon is too full to bite!"
  },
  {
   "slug": "the-boats-kept-some-pupils-safe",
@@ -796,8 +796,8 @@
   "text": "Get to a quarter before the countdown ends. Do not stay on the jetty!"
  },
  {
-  "slug": "chomper-the-shark-strikes-a-quarter-anyone-in-it-or-on-the-jetty-goes-to-the-shark-cave",
-  "text": "Chomper the shark strikes a quarter. Anyone in it, or on the jetty, goes to the shark cave."
+  "slug": "simon-the-shark-strikes-a-quarter-anyone-in-it-or-on-the-jetty-goes-to-the-shark-cave",
+  "text": "Simon the shark strikes a quarter. Anyone in it, or on the jetty, goes to the shark cave."
  },
  {
   "slug": "hide-under-a-boat-and-you-are-safe-but-boats-only-have-a-few-seats-in-the-cave-answer-three-questions-to-swim-back-out",
