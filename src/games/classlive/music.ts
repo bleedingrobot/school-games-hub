@@ -14,7 +14,7 @@ type Calm = 'stars' | 'serpent' | 'boss' | 'goldrush' | 'skyclimb' | 'island' | 
  * Each game and arena has a calm track and a "-hot" one: the same tune made more dramatic and high-energy, for the
  * last 30 seconds and the big moments (James, 25 Nov 2026 NZ). Mystery Mural's hot one is its guessing music.
  */
-export type Track = 'picker' | 'win' | 'mural' | 'guess' | Calm | `${Calm}-hot` | `game-${string}` | `corners-${string}`;
+export type Track = 'picker' | 'win' | 'mural' | 'guess' | Calm | `${Calm}-hot` | `game-${string}` | `corners-${string}` | `ghost-${string}`;
 
 const FILES = import.meta.glob('./music/*.mp3', { eager: true, import: 'default' }) as Record<string, string>;
 const file = (t: string): string | undefined => FILES[`./music/${t}.mp3`];
@@ -184,10 +184,15 @@ const MAPS = ['snow', 'jungle', 'castle', 'space'];
 
 /** The track for a Class Live room: the lobby shares the picker's, the end plays the win, hot moments the hot one. */
 
-export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | 'corners' | null, o: { guessing?: boolean; hot?: boolean; map?: string } = {}): Track {
+export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | 'corners' | 'ghost' | null, o: { guessing?: boolean; hot?: boolean; map?: string } = {}): Track {
   if (state === 'over') return 'win';
   if (!state || !kind || state !== 'live') return 'picker';
   if (kind === 'mural') return o.guessing || o.hot ? 'guess' : 'mural';
+  if (kind === 'ghost') {
+    // Ghost Tag's own map track (ghost-graveyard, ghost-graveyard-hot...), else the boss's.
+    const own: Track = o.hot ? `ghost-${o.map ?? 'graveyard'}-hot` : `ghost-${o.map ?? 'graveyard'}`;
+    return trackUrl(own) ? own : o.hot ? 'boss-hot' : 'boss';
+  }
   if (kind === 'corners') {
     const map = MAPS.includes(o.map ?? '') ? o.map! : 'snow';
     const own: Track = o.hot ? `corners-${map}-hot` : `corners-${map}`;

@@ -17,7 +17,7 @@ const arm = (text: string) => {
   return l === null ? 'none' : l === 'same' ? 'same' : l.arm;
 };
 
-describe('Star Web and Serpent Chain rules', () => {
+describe('Star Web rules', () => {
   it('reads facts written many ways, puts each on the right arm, makes stars and glows, and lights the creature', () => {
     expect(readFact('12 x 7 = 84')).toEqual({ a: 1200, op: '×', b: 700, c: 8400 });
     expect(readFact('84=12×7')).toEqual({ a: 1200, op: '×', b: 700, c: 8400 });
@@ -60,10 +60,11 @@ describe('Star Web and Serpent Chain rules', () => {
     expect(laggingArm(lagging, 4)).toBeNull();
     expect(laggingArm({ ...lagging, halve: 2 }, 16)).toBeNull();
     for (const a of ARMS) expect(lagHint(a, k)).not.toMatch(/=|\b(21|84|420|48|36|3 ×|12 ×)\b/);
+  });
+});
 
-    // Serpent Chain (folded in here to make room in the test budget for Ghost Tag): whole-number chains in range, two
-    // tries then the working, the tail grows and the serpent wakes.
-    {
+describe('Serpent Chain rules', () => {
+  it('makes whole-number chains in range, gives two tries then the working, and grows the tail and wakes the serpent', () => {
     for (const level of SERPENT_LEVELS) {
       for (let seed = 1; seed < 300; seed++) {
         const c = makeChain(level, rng(seed));
@@ -87,7 +88,6 @@ describe('Star Web and Serpent Chain rules', () => {
     expect(types).toContain('head');
     expect(types).toContain('tail');
     expect(g.tail).toBe(4);
-    }
   });
 });
 

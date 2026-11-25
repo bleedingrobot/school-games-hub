@@ -10,6 +10,7 @@ import { speak, stopSpeaking } from '../../speech';
 import { painted } from './paintedArt';
 import { MAP_WORDS } from '../../../shared/classlive/corners';
 import { HOWTO, VOICE_FOLDER } from './voiceLines';
+import { ghostSheet } from './GhostCard';
 
 type Game = ScreenView['game'];
 interface Step { icon: string; text: string; say: string }
@@ -44,6 +45,7 @@ export function sheetFor(game: Game): Sheet {
       ],
     };
   }
+  if (game.kind === 'ghost') return ghostSheet(game);
   if (game.kind === 'corners') {
     const H = HOWTO.corners;
     return {
