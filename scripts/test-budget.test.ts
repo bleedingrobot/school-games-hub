@@ -59,6 +59,7 @@ const BUDGET: Record<string, number> = {
   badge: 8,
   training: 10, // 8, plus 2 for the basic facts check (15 Nov 2026)
   showdown: 18, // live whole-class game, 4 modes: 4 rules, 4 server, 4 screens (stage 1, 23 Nov 2026); +1 rewards and roster (stage 5); +1 Gold Rush rules (stage 6); +1 Sky Climb rules, +1 Shrinking Island rules, +1 King of the Hill rules, +1 Auction House rules (stage 7)
+  classlive: 9, // 8, plus 1 for Floor is Lava (25 Nov 2026 NZ)
 };
 
 function testFiles(dir: string): string[] {
