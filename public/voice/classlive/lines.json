@@ -192,6 +192,262 @@
   "text": "Watch out! Something swoops across the map and knocks you flying."
  },
  {
+  "slug": "beep-boop-welcome-to-the-robot-factory-check-your-role",
+  "text": "Beep boop! Welcome to the robot factory. Check your role!"
+ },
+ {
+  "slug": "factory-computer-online-look-at-your-device-to-see-your-role",
+  "text": "Factory computer online. Look at your device to see your role!"
+ },
+ {
+  "slug": "good-morning-crew-some-of-you-are-secretly-glitches-shh",
+  "text": "Good morning, crew! Some of you are secretly Glitches. Shh!"
+ },
+ {
+  "slug": "new-shift-new-roles-check-your-device",
+  "text": "New shift! New roles! Check your device."
+ },
+ {
+  "slug": "everyone-back-to-the-canteen-new-roles-are-ready",
+  "text": "Everyone back to the canteen. New roles are ready!"
+ },
+ {
+  "slug": "next-shift-starting-who-are-the-glitches-this-time",
+  "text": "Next shift starting. Who are the Glitches this time?"
+ },
+ {
+  "slug": "shift-started-do-your-jobs-and-keep-the-factory-running",
+  "text": "Shift started! Do your jobs and keep the factory running!"
+ },
+ {
+  "slug": "machines-on-get-to-work-crew",
+  "text": "Machines on! Get to work, crew!"
+ },
+ {
+  "slug": "off-you-go-fill-up-the-power-bar",
+  "text": "Off you go! Fill up the power bar!"
+ },
+ {
+  "slug": "beep-a-machine-is-sparking",
+  "text": "Beep! A machine is sparking!"
+ },
+ {
+  "slug": "warning-machine-down",
+  "text": "Warning! Machine down!"
+ },
+ {
+  "slug": "uh-oh-sparks-fix-that-machine",
+  "text": "Uh oh, sparks! Fix that machine!"
+ },
+ {
+  "slug": "alert-something-has-been-jammed",
+  "text": "Alert! Something has been jammed!"
+ },
+ {
+  "slug": "machine-fixed-great-work",
+  "text": "Machine fixed! Great work!"
+ },
+ {
+  "slug": "mended-back-to-full-power",
+  "text": "Mended! Back to full power!"
+ },
+ {
+  "slug": "sparks-gone-nice-fixing",
+  "text": "Sparks gone. Nice fixing!"
+ },
+ {
+  "slug": "lights-out-somebody-flicked-the-switch",
+  "text": "Lights out! Somebody flicked the switch!"
+ },
+ {
+  "slug": "power-cut-it-is-dark-in-here",
+  "text": "Power cut! It is dark in here!"
+ },
+ {
+  "slug": "who-turned-off-the-lights",
+  "text": "Who turned off the lights?"
+ },
+ {
+  "slug": "lights-back-on-thank-you",
+  "text": "Lights back on! Thank you!"
+ },
+ {
+  "slug": "the-control-room-fixed-the-lights",
+  "text": "The control room fixed the lights!"
+ },
+ {
+  "slug": "bright-again",
+  "text": "Bright again!"
+ },
+ {
+  "slug": "three-machines-are-sparking-time-for-a-meeting",
+  "text": "Three machines are sparking! Time for a meeting?"
+ },
+ {
+  "slug": "danger-three-machines-are-down",
+  "text": "Danger! Three machines are down!"
+ },
+ {
+  "slug": "the-factory-is-in-trouble-three-machines-are-sparking",
+  "text": "The factory is in trouble! Three machines are sparking!"
+ },
+ {
+  "slug": "emergency-meeting-in-the-canteen",
+  "text": "Emergency meeting in the canteen!"
+ },
+ {
+  "slug": "alarm-everyone-to-the-canteen",
+  "text": "Alarm! Everyone to the canteen!"
+ },
+ {
+  "slug": "stop-work-meeting-time",
+  "text": "Stop work! Meeting time!"
+ },
+ {
+  "slug": "talk-it-over-who-was-near-the-sparking-machines",
+  "text": "Talk it over. Who was near the sparking machines?"
+ },
+ {
+  "slug": "share-what-you-saw-be-kind-and-use-your-clues",
+  "text": "Share what you saw. Be kind, and use your clues!"
+ },
+ {
+  "slug": "time-to-talk-who-is-the-glitch",
+  "text": "Time to talk. Who is the Glitch?"
+ },
+ {
+  "slug": "vote-now-on-your-device-it-is-a-secret",
+  "text": "Vote now on your device. It is a secret!"
+ },
+ {
+  "slug": "voting-time-pick-someone-or-skip",
+  "text": "Voting time! Pick someone, or skip."
+ },
+ {
+  "slug": "cast-your-secret-vote",
+  "text": "Cast your secret vote!"
+ },
+ {
+  "slug": "that-was-a-glitch-well-spotted",
+  "text": "That was a Glitch! Well spotted!"
+ },
+ {
+  "slug": "glitch-found-beep-boop-drone-mode-on",
+  "text": "Glitch found! Beep boop, drone mode on!"
+ },
+ {
+  "slug": "yes-that-was-a-glitch",
+  "text": "Yes! That was a Glitch!"
+ },
+ {
+  "slug": "oh-no-that-was-crew-drone-mode-on",
+  "text": "Oh no, that was Crew! Drone mode on."
+ },
+ {
+  "slug": "that-was-not-a-glitch-that-was-crew",
+  "text": "That was not a Glitch. That was Crew!"
+ },
+ {
+  "slug": "whoops-that-was-a-crew-member",
+  "text": "Whoops! That was a crew member."
+ },
+ {
+  "slug": "nobody-was-sent-off-back-to-work",
+  "text": "Nobody was sent off. Back to work!"
+ },
+ {
+  "slug": "no-one-was-picked-keep-your-eyes-open",
+  "text": "No one was picked. Keep your eyes open!"
+ },
+ {
+  "slug": "a-tie-nobody-leaves-back-to-work",
+  "text": "A tie! Nobody leaves. Back to work!"
+ },
+ {
+  "slug": "full-power-the-crew-win-the-round",
+  "text": "Full power! The crew win the round!"
+ },
+ {
+  "slug": "the-factory-is-powered-up-crew-win",
+  "text": "The factory is powered up! Crew win!"
+ },
+ {
+  "slug": "power-bar-full-brilliant-work-crew",
+  "text": "Power bar full! Brilliant work, crew!"
+ },
+ {
+  "slug": "every-glitch-was-found-the-crew-win",
+  "text": "Every Glitch was found! The crew win!"
+ },
+ {
+  "slug": "all-the-glitches-are-drones-now-crew-win",
+  "text": "All the Glitches are drones now. Crew win!"
+ },
+ {
+  "slug": "great-detective-work-the-crew-win",
+  "text": "Great detective work! The crew win!"
+ },
+ {
+  "slug": "four-machines-jammed-the-glitches-win-the-round",
+  "text": "Four machines jammed! The Glitches win the round!"
+ },
+ {
+  "slug": "the-factory-has-stopped-glitches-win",
+  "text": "The factory has stopped! Glitches win!"
+ },
+ {
+  "slug": "too-many-sparks-the-glitches-win",
+  "text": "Too many sparks! The Glitches win!"
+ },
+ {
+  "slug": "shift-over-and-the-power-bar-is-not-full-the-glitches-win",
+  "text": "Shift over, and the power bar is not full. The Glitches win!"
+ },
+ {
+  "slug": "time-is-up-the-glitches-win-this-round",
+  "text": "Time is up! The Glitches win this round!"
+ },
+ {
+  "slug": "the-clock-ran-out-glitches-win",
+  "text": "The clock ran out. Glitches win!"
+ },
+ {
+  "slug": "the-glitches-have-taken-over-the-factory-glitches-win",
+  "text": "The Glitches have taken over the factory! Glitches win!"
+ },
+ {
+  "slug": "there-are-as-many-glitches-as-crew-glitches-win",
+  "text": "There are as many Glitches as crew. Glitches win!"
+ },
+ {
+  "slug": "the-glitches-win-this-round",
+  "text": "The Glitches win this round!"
+ },
+ {
+  "slug": "thirty-seconds-left-in-this-shift",
+  "text": "Thirty seconds left in this shift!"
+ },
+ {
+  "slug": "hurry-the-shift-is-nearly-over",
+  "text": "Hurry, the shift is nearly over!"
+ },
+ {
+  "slug": "quick-fill-that-power-bar",
+  "text": "Quick! Fill that power bar!"
+ },
+ {
+  "slug": "power-ups-in-the-factory-grab-one-then-answer-a-question-to-switch-it-on",
+  "text": "Power-ups in the factory! Grab one, then answer a question to switch it on."
+ },
+ {
+  "slug": "new-trick-the-glitches-can-turn-off-the-lights-fix-them-in-the-control-room",
+  "text": "New trick! The Glitches can turn off the lights. Fix them in the control room."
+ },
+ {
+  "slug": "conveyor-belts-they-carry-you-along-watch-your-step",
+  "text": "Conveyor belts! They carry you along. Watch your step!"
+ },
+ {
   "slug": "join-class-live-now",
   "text": "Join Class Live now!"
  },
@@ -1386,6 +1642,26 @@
  {
   "slug": "the-last-one-standing-wins-the-round-win-the-most-rounds-to-win-the-game",
   "text": "The last one standing wins the round. Win the most rounds to win the game!"
+ },
+ {
+  "slug": "steer-your-robot-worker-with-the-joystick-or-the-arrow-keys",
+  "text": "Steer your robot worker with the joystick, or the arrow keys."
+ },
+ {
+  "slug": "check-your-device-most-of-you-are-crew-but-a-few-are-secret-glitches",
+  "text": "Check your device: most of you are crew, but a few are secret Glitches."
+ },
+ {
+  "slug": "crew-go-to-your-jobs-and-answer-questions-to-fill-the-power-bar-fix-sparking-machines-too",
+  "text": "Crew: go to your jobs and answer questions to fill the power bar. Fix sparking machines too!"
+ },
+ {
+  "slug": "glitches-sneak-up-to-a-machine-and-jam-it-it-starts-sparking-a-few-seconds-later",
+  "text": "Glitches: sneak up to a machine and jam it. It starts sparking a few seconds later."
+ },
+ {
+  "slug": "your-teacher-calls-a-meeting-talk-it-over-then-vote-in-secret-fill-the-power-bar-or-find-every-glitch-to-win",
+  "text": "Your teacher calls a meeting. Talk it over, then vote in secret. Fill the power bar, or find every Glitch, to win!"
  },
  {
   "slug": "you-are-on-a-colour-team-move-your-avatar-with-the-joystick-or-the-arrow-keys",

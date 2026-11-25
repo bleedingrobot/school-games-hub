@@ -3,6 +3,7 @@
  * (`classLiveStep`) on a database in memory. The tests drive it with a pretend clock; the preview with real timers.
  */
 import { ghostBot } from './ghostBot';
+import { crewBot } from './crewBot';
 import { memoryDb, memoryMove, memoryServices, type MemoryDb } from './memoryServices';
 import { boosted as thronesBoosted, ghostly as thronesGhostly, moveRound as thronesMoveRound, nearestFree as thronesNearest, throneAt as thronesAt } from './thrones';
 import { boosted, CORNERS, cornerOf, ghostly, pretendDir, stepMove, type Corner, type MoveState } from './corners';
@@ -60,6 +61,7 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
       if (g.kind === 'lava') return lavaBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
       if (g.kind === 'thrones') return thronesBot(room, id, skill);
       if (g.kind === 'clash') return clashBot({ db, room, id, skill, rand, now: opts.clock.now, later: opts.later, step: (who, body) => classLiveStep(services, who, body) });
+      if (g.kind === 'crew') return crewBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
       if (g.kind === 'ghost') return ghostBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
       if (g.kind === 'mural') {
         if (g.revealed) return;

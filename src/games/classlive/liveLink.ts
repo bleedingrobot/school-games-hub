@@ -55,6 +55,13 @@ export const liveClassLiveLink: ClassLiveLink = {
     const spots = d.spots.flatMap((p) => (Array.isArray(p) && p.length === 3 ? [[Number(p[0]), Number(p[1]), Number(p[2]) as 0 | 1 | 2 | 3] as [number, number, 0 | 1 | 2 | 3]] : []));
     return { me: { ghost: d.me?.ghost === true }, spots };
   },
+  async crewMove(room, x, y) {
+    const { data, error } = await supabase.rpc('classlive_crew_move', { target: room, x, y });
+    if (error || !data || typeof data !== 'object' || !Array.isArray((data as { spots?: unknown }).spots)) return null;
+    const d = data as { me?: { glitch?: unknown; drone?: unknown }; spots: unknown[] };
+    const spots = d.spots.flatMap((p) => (Array.isArray(p) && p.length === 3 ? [[Number(p[0]), Number(p[1]), Number(p[2]) as 0 | 1 | 2] as [number, number, 0 | 1 | 2]] : []));
+    return { me: { glitch: d.me?.glitch === true, drone: d.me?.drone === true }, spots };
+  },
   async positions(room) {
     const { data, error } = await supabase.rpc('classlive_positions', { target: room });
     if (error || !data || typeof data !== 'object') return null;

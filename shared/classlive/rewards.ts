@@ -7,6 +7,7 @@ import { lavaPodium } from './lava';
 import { podium as thronesPodium } from './thrones';
 import { clashReward } from './clashServer';
 import { podium as ghostPodium } from './ghost';
+import { podium as crewPodium } from './crew';
 import type { Session } from './server';
 
 export interface PupilReward {
@@ -46,8 +47,8 @@ export const POINTS = { joined: 1, played: 3, goal: 2, guessed: 2, max: 10 } as 
 
 export function rewardsOf(s: Session): FinishedSession {
   const g = s.game;
-  const goal = g.kind === 'stars' ? g.creature : g.kind === 'serpent' ? g.awake : g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'clash' || g.kind === 'thrones' || g.kind === 'lava' ? false : g.solvers.length > 0;
-  const top = g.kind === 'corners' ? podium(g, s.order) : g.kind === 'ghost' ? ghostPodium(g, s.order) : g.kind === 'thrones' ? thronesPodium(g, s.order) : g.kind === 'lava' ? lavaPodium(g, s.order) : [];
+  const goal = g.kind === 'stars' ? g.creature : g.kind === 'serpent' ? g.awake : g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'crew' || g.kind === 'clash' || g.kind === 'thrones' || g.kind === 'lava' ? false : g.solvers.length > 0;
+  const top = g.kind === 'corners' ? podium(g, s.order) : g.kind === 'ghost' ? ghostPodium(g, s.order) : g.kind === 'crew' ? crewPodium(g, s.order) : g.kind === 'thrones' ? thronesPodium(g, s.order) : g.kind === 'lava' ? lavaPodium(g, s.order) : [];
   const players = s.order.map((id): PupilReward => {
     let did = false;
     const r: PupilReward = { player: id, points: 0, stars: 0, boxes: 0, head: false, tiles: 0, guessed: false, safe: 0, champion: false, escapes: 0, powers: 0 };
@@ -89,6 +90,13 @@ export function rewardsOf(s: Session): FinishedSession {
       podiumPlace = place !== undefined;
       r.extra = { thrones_sat: m?.sat ?? 0, thrones_crowns: m?.crowns ?? 0, thrones_steals: m?.steals ?? 0, thrones_wins: place === 1 ? 1 : 0 };
       did = (m?.sat ?? 0) > 0 || (m?.answered ?? 0) > 0;
+    } else if (g.kind === 'crew') {
+      // Saboteur Crew (docs/CREW-PLAN.md): 3 for a right answer or (Glitches do no maths) a jam; +2 for winning a round.
+      const m = g.mine[id];
+      did = (m?.right ?? 0) > 0 || (m?.jams ?? 0) > 0;
+      podiumPlace = did && (m?.wins ?? 0) > 0;
+      const cap = (n: number | undefined) => Math.max(0, Math.min(500, Math.round(n ?? 0)));
+      r.extra = { crew_mends: cap(m?.mends), crew_detects: cap(m?.detects), crew_glitchwins: cap(m?.glitchWins) };
     } else if (g.kind === 'ghost') {
       // Ghost Tag (docs/GHOST-PLAN.md): podium place +2, like Four Corners; its trophies count catches, wins, vanishes.
       const m = g.mine[id];

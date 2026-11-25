@@ -1,0 +1,432 @@
+{
+  "_from": "docs/ghost-art/config.json layout. Check with: python3 scripts/game_art.py crew paint OUT --dry-run",
+  "game": "crew",
+  "filename_prefix": "crew/img",
+  "style": "s",
+  "styles": {
+    "s": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. ",
+    "c": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text, a single isolated subject only, nothing else in the picture, no scenery. "
+  },
+  "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly",
+  "negative_cut": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+  "inbox": "~/dragon-art-inbox/crew-art/set",
+  "picks": "docs/crew-art/picks.json",
+  "art_dir": "src/games/classlive/art/paint",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "map-factory",
+      "prompt": "A top-down painted game board of a bright friendly robot factory floor: clean blue-grey metal floor plates with a faint grid, yellow and black hazard stripes round the outer edge, a few pipes, cables and crates tucked along the very edges, a round friendly canteen area with a soft warm round rug seen from above in the exact centre. Cheerful and tidy for children aged 7 to 11. An open empty walkable floor everywhere else, calm plain ground, no machines and no objects in the open floor, top-down bird's-eye view straight down, game board, square picture, no characters, no writing anywhere.",
+      "size": [
+        1536,
+        1536
+      ],
+      "kind": "scene",
+      "folder": "crew",
+      "file": "map-factory",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, robots, people, machines, conveyor belts, perspective view, side view"
+    },
+    {
+      "name": "back-factory",
+      "prompt": "A wide cheerful painting of the inside of a huge friendly robot factory at night: tall glass windows with stars, glowing blue and teal lights, big pipes and gentle steam, rows of rounded friendly machines in the far distance, soft and slightly out of focus so it works as a page background, no characters, no writing. Wide landscape picture.",
+      "size": [
+        1920,
+        1088
+      ],
+      "kind": "scene",
+      "folder": "crew",
+      "file": "back-factory",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, people, characters, robots in the foreground"
+    },
+    {
+      "name": "pick-crew",
+      "prompt": "A friendly robot factory seen from above at an angle, a team of cute little cartoon helper robots in hard hats fixing glowing machines with spanners, one cheeky little purple robot with a mischievous grin hiding behind a machine making playful sparks, teal and orange lights, exciting and fun, not scary, no people, no writing. Wide landscape picture.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "pick",
+      "file": "crew",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, people, weapons, fire"
+    },
+    {
+      "name": "canteen",
+      "prompt": "a cosy round canteen table seen from above with stools around it, a bowl of fruit and little cups, cartoon game icon Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "canteen",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "machine-assembly",
+      "prompt": "a friendly rounded robot arm assembly machine in a little booth, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, working happily with a soft green glow Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "machine-assembly",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "machine-assembly-broken",
+      "prompt": "a friendly rounded robot arm assembly machine in a little booth, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, jammed and broken: playful yellow sparks and a puff of grey smoke, a red warning light Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "machine-assembly-broken",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "machine-paint",
+      "prompt": "a friendly paint mixing machine with colourful paint pots and a nozzle, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, working happily with a soft green glow Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "machine-paint",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "machine-paint-broken",
+      "prompt": "a friendly paint mixing machine with colourful paint pots and a nozzle, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, jammed and broken: playful yellow sparks and a puff of grey smoke, a red warning light Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "machine-paint-broken",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "machine-boiler",
+      "prompt": "a round friendly copper boiler machine with dials and a little chimney, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, working happily with a soft green glow Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "machine-boiler",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "machine-boiler-broken",
+      "prompt": "a round friendly copper boiler machine with dials and a little chimney, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, jammed and broken: playful yellow sparks and a puff of grey smoke, a red warning light Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "machine-boiler-broken",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "machine-sorter",
+      "prompt": "a friendly sorting machine with chutes and coloured bins, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, working happily with a soft green glow Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "machine-sorter",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "machine-sorter-broken",
+      "prompt": "a friendly sorting machine with chutes and coloured bins, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, jammed and broken: playful yellow sparks and a puff of grey smoke, a red warning light Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "machine-sorter-broken",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "machine-battery",
+      "prompt": "a big friendly battery charging machine with glowing green cells, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, working happily with a soft green glow Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "machine-battery",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "machine-battery-broken",
+      "prompt": "a big friendly battery charging machine with glowing green cells, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, jammed and broken: playful yellow sparks and a puff of grey smoke, a red warning light Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "machine-battery-broken",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "machine-control",
+      "prompt": "a friendly control room desk with big buttons, levers and a light switch panel, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, working happily with a soft green glow Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "machine-control",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "machine-control-broken",
+      "prompt": "a friendly control room desk with big buttons, levers and a light switch panel, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, jammed and broken: playful yellow sparks and a puff of grey smoke, a red warning light Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "machine-control-broken",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "machine-packer",
+      "prompt": "a friendly packing machine with a cardboard box on a small belt, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, working happily with a soft green glow Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "machine-packer",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "machine-packer-broken",
+      "prompt": "a friendly packing machine with a cardboard box on a small belt, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, jammed and broken: playful yellow sparks and a puff of grey smoke, a red warning light Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "machine-packer-broken",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "machine-recycler",
+      "prompt": "a friendly green recycling machine with a big round hopper, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, working happily with a soft green glow Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "machine-recycler",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "machine-recycler-broken",
+      "prompt": "a friendly green recycling machine with a big round hopper, cartoon game icon, chunky rounded shapes, teal and grey metal, seen from slightly above, jammed and broken: playful yellow sparks and a puff of grey smoke, a red warning light Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "machine-recycler-broken",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "drone",
+      "prompt": "a cute little friendly hover drone robot with a round body, big kind eyes and two small propellers, teal and white Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "drone",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-boots",
+      "prompt": "a pair of chunky cartoon rocket boots with little flames, game power-up icon Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "power-boots",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-camera",
+      "prompt": "a friendly cartoon security camera on a little stand with a glowing blue lens, game power-up icon Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "power-camera",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "power-toolkit",
+      "prompt": "an open cartoon red toolbox full of spanners and screwdrivers with sparkles, game power-up icon Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "power-toolkit",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "role-crew",
+      "prompt": "a cheerful little cartoon helper robot in a yellow hard hat holding a spanner and giving a thumbs up Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "role-crew",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "role-glitch",
+      "prompt": "a cheeky little cartoon purple robot with a mischievous grin and tiny playful sparks around it, friendly not scary Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "role-glitch",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "sparks",
+      "prompt": "a burst of bright yellow cartoon electric sparks and a little lightning bolt, game effect icon Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "sparks",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "meeting",
+      "prompt": "a big round red cartoon emergency button with a siren light on top, game icon Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "meeting",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "dark",
+      "prompt": "a cartoon light bulb switched off with a small crescent moon and stars, game icon Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "dark",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    },
+    {
+      "name": "belt",
+      "prompt": "a short straight section of cartoon conveyor belt seen from above with arrows of rollers, game icon Centred, the whole subject visible with space around it. On a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "crew-fx",
+      "file": "belt",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
+      "style": "c",
+      "max": 512
+    }
+  ]
+}
