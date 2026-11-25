@@ -1,8 +1,7 @@
-# Year 6 ladder gaps: plan (draft, 25 Nov 2026)
+# Year 6 ladder gaps: plan (25 Nov 2026), built 26 Nov 2026 NZ
 
 For Claude. James gave the NZC Year 6 Mathematics and Statistics teaching sequence (October 2025) and asked which Year 6
-skills, concepts and facts Games Hub doesn't cover yet, then for short fluency and memory skills to add to the ladder. This
-is a plan only: nothing is built until James says so.
+skills, concepts and facts Games Hub doesn't cover yet, then for short fluency and memory skills to add to the ladder. James said build all six cards (25 Nov 2026).
 
 ## 1. The rule
 
@@ -41,7 +40,7 @@ The Year 7 skills stay as they are. New ids end in `-y6` where a Year 7 skill ha
 | 11 | `angles-y6` | Angles on a line, at a point, vertically opposite | 115° on a line: other? | type | L3 |
 | 12 | `shape-clue` | Shape from a clue | one pair of parallel sides: trapezium; kite, rhombus, parallelogram; triangle types | tap | L4 |
 | 13 | `rot-symmetry` | Order of rotational symmetry | square 4, rectangle 2, equilateral triangle 3 | tap | L4 |
-| 14 | `coordinates` | Reading a point on a grid | the dot is at (3, ?) | type | L4 |
+| 14 | `coordinates` | Coordinates (x, y) | start at (2, 3), move 4 right: (?, 3); which point is on the x-axis? | type / tap | L4 |
 | 15 | `chance-words` | Chance words and the 0 to 1 line | rolling a 7 on a dice: impossible; P = 0.5 is even chance | tap | L5 |
 | 16 | `spinner` | Chance on a spinner | 3 of 8 parts red: P(red)? all chances add to 1 | tap | L5 |
 | 17 | `mean-range-y6` | Mean and range (copy of averages) | range of 3, 9, 4, 7; mean of 2, 4, 6 | type | L5 |
@@ -77,31 +76,40 @@ new questions as pupils see them, like the Year 7-8 cards.
 
 ## 6. Where each skill goes (James, 25 Nov 2026: slot in by difficulty)
 
-Each new skill goes where it fits on the ladder. A pupil already past one drops back to it until it is secure (accepted).
-Proposed places, each after the existing skill named:
+Each new skill goes where it fits on the ladder, straight after the skill its row names (`after` in
+shared/maths/skillPacks/y6Row.ts; a run chains, each naming the one before):
 
 | After | New skills, in order |
 |---|---|
 | `round-1000` | `round-huge` |
-| `factor-pairs` | `remainders`, `count-zero`, `time-y6`, `time-24`, `elapsed`, `coordinates` |
+| `factor-pairs` | `remainders`, `count-zero`, `time-y6`, `time-24`, `elapsed` |
 | `times-decimals` | `thousandths`, `decimal-order`, `metric-y6` |
 | `equivalent-fractions` | `fraction-add-y6` |
-| `squares-cubes` | `area-y6`, `angles-y6`, `shape-clue`, `rot-symmetry` |
+| `squares-cubes` | `area-y6`, `angles-y6`, `shape-clue`, `rot-symmetry`, `coordinates` |
 | `fdp-equivalents` | `chance-words`, `spinner` |
 | `percent-of` | `mean-range-y6` |
 | `whole-from-fraction` | `pattern-next` |
 | `bedmas` | `true-false-y6` (needs the order of operations) |
 
-L0 tells pupils who drop back why (the "new skills added" line from the Year 7-8 plan), and the warm-up includes the new
-skills so a new pupil is placed past them when they're quick.
+They stay out of the placement warm-up (`inWarmUp: false`), so its ten questions still reach as high as before.
 
-## 7. Risk: pupils dropping back
+## 7. Pupils already past a new skill
 
-Auto works on the first skill that isn't secure (`ladderProgress` in shared/maths/ladder.ts). A new skill slotted below
-where a pupil already is would become their current skill, so a pupil on order of operations could drop back to rounding.
-James chose to accept this (section 6).
+Auto works on the first skill that isn't secure, but never below the pupil's floor (their placement or the furthest place
+they have reached, shared/maths/place.ts). So a pupil whose place is already past a new skill has it as "passed over": it
+comes up in their review and shows on the Skill map, but doesn't become their current skill. A pupil below it meets it as
+their current skill when they get there. Every older game asks from the ladder, so the skills show up everywhere by
+themselves.
 
 ## 8. Questions for James
 
 1. Where the new skills go. **Answered 25 Nov 2026: slot in by difficulty** (section 6).
-2. Build all six cards in one go, or L0 and L1 first and check.
+2. Build all six cards in one go, or L0 and L1 first. **Answered 25 Nov 2026: all six.** James also asked (25 Nov) that fractions and time
+   questions stay simple instant recall (friendly numbers, round times, nothing to work out slowly).
+
+## 9. Built (26 Nov 2026 NZ)
+
+All cards L0 to L5 built in one PR: shared/maths/skillPacks/y6.ts gathers y6Number, y6Time, y6Measure, y6Shape and y6Chance;
+shared/maths/y6/*.oracle.ts and *.picks.ts check every roll (shared/maths/y78.test.ts covers Year 6 too). New pictures in
+shared/maths/figure.ts: `shape`, `grid`, `spinner` (with a colour), and `triangle-area` with `right`. Long tap choices get
+smaller text (QuestionModal `choicesSize`). Pupils' news line `ladder-year6-2026-11-26`.

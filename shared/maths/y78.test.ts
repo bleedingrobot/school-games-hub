@@ -35,8 +35,9 @@ const oracle = (key: string, parts: string[], prompt?: string) => {
   return null;
 };
 
-describe('Year 6 skills', () => {
-  it('each sits straight after the skill its row names, is on auto, and stays out of the warm-up', () => {
+describe('Year 6, 7 and 8 skills', () => {
+  it('every roll is sound, repeatable, marked from its numbers, and right by separate arithmetic', () => {
+    // Each Year 6 skill sits straight after the skill its row names, is on auto, and stays out of the warm-up.
     for (const row of Y6_LADDER) {
       const at = LADDER.findIndex((s) => s.id === row.id);
       expect(at, row.id).toBeGreaterThan(0);
@@ -46,11 +47,6 @@ describe('Year 6 skills', () => {
       expect(LADDER[at].keys.length, row.id).toBeGreaterThan(0);
       expect(pastYear6(LADDER[at]), row.id).toBe(false);
     }
-  });
-});
-
-describe('Year 7 and 8 skills', () => {
-  it('every roll is sound, repeatable, marked from its numbers, and right by separate arithmetic', () => {
     expect(KEYS.length).toBeGreaterThan(0);
     // Every Year 7-8 question type is tagged with its skill and year in the database (maths_content_years), and nothing else.
     const tagged = [...readFileSync(resolve(__dirname, '../../supabase/migrations/20261126000500_maths_content_years.sql'), 'utf8').matchAll(/^  \('([^']+)', '([^']+)', '(?:[^']|'')+', ([78])\)/gm)].map((m) => `${m[1]} ${m[2]} ${m[3]}`);
@@ -69,6 +65,9 @@ describe('Year 7 and 8 skills', () => {
         expect(again.parts, where).toEqual(q.parts);
         expect(again.choiceLabels, where).toEqual(q.choiceLabels);
         expect(q.spoken, where).not.toMatch(/−|\?\s*\?/);
+        // The server only marks an answer whose parts it can hold (shared/gem-keep/save.ts: 12 parts of 40 letters at most).
+        expect(q.parts.length, where).toBeLessThanOrEqual(12);
+        for (const part of q.parts) expect(part.length, `${where} part "${part}"`).toBeLessThanOrEqual(40);
         // The server marks the same question from the numbers it travels with.
         expect(solveByNumbers(key, params, q.parts)?.answer, where).toBe(q.answer);
         let worth: number;

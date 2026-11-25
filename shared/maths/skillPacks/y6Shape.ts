@@ -107,11 +107,14 @@ const order = oneKey(
   (_k, [i]) => {
     if (!isInt(i, 0, TURNS.length - 1)) return null;
     const t = TURNS[i];
-    const parts = [`Order of rotational symmetry of a ${t.name}`, '=', '?'];
-    return withMistakes(
-      { parts, spoken: `What is the order of rotational symmetry of a ${t.name}?`, answer: t.order, figure: { kind: 'shape', name: t.fig } },
+    // The shape's name is the part (a part is at most 40 letters on the server); the prompt says what is asked.
+    const parts = [t.name[0].toUpperCase() + t.name.slice(1), '=', '?'];
+    const an = /^[aeiou]/.test(t.name) ? 'an' : 'a';
+    const made = withMistakes(
+      { parts, spoken: `What is the order of rotational symmetry of ${an} ${t.name}?`, answer: t.order, figure: { kind: 'shape', name: t.fig } },
       { 'gave the number of sides': t.sides, 'gave the lines of symmetry': t.lines, 'said 1': 1, 'one more': t.order + 1, 'one less': t.order - 1, 'doubled it': t.order * 2 },
     );
+    return made ? { ...made, prompt: 'Order of rotational symmetry' } : null;
   },
 );
 

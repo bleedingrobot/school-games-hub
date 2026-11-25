@@ -63,3 +63,10 @@ big and its units small; a letter or unit straight after the blank goes in the b
 Run: `npx vitest run shared/maths/y78.test.ts shared/maths/generated.test.ts` and `npx tsc -b`.
 Screens: the preview at `npm run dev -- --config vite.ladder-cards-preview.config.ts` (port 5191),
 `/preview/ladder-cards/?keys=a,b,c&seed=3` shows each type as pupils see it.
+
+## Year 6 cards (docs/plans/ladder-y6/PLAN.md)
+
+Same rules. Each Year 6 card is `shared/maths/skillPacks/y6<Name>.ts`, gathered by `skillPacks/y6.ts`; its rows say which skill
+they go `after` (a run chains, each naming the one before). Oracles and pick checks live in `shared/maths/y6/`, and
+`shared/maths/y78.test.ts` checks every Year 6 roll too, including that each part is 40 letters or fewer (the server refuses
+longer parts, shared/gem-keep/save.ts).

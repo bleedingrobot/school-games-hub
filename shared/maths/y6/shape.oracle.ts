@@ -7,7 +7,7 @@ const ORDER: Record<string, number> = {
 
 export function oracle(key: string, parts: string[]): number | null {
   if (key === 'shp:faces') return SOLIDS[/^Faces of a (.+)$/.exec(parts[0])![1]];
-  if (key === 'rot:order') return ORDER[/^Order of rotational symmetry of a (.+)$/.exec(parts[0])![1]];
+  if (key === 'rot:order') return ORDER[parts[0].toLowerCase()];
   if (key === 'coord:move') {
     const [, x, y] = /^Start at \((\d+), (\d+)\)$/.exec(parts[0])!.map(Number);
     const m = /^Move (\d+) (right|left|up|down)$/.exec(parts[1])!;
