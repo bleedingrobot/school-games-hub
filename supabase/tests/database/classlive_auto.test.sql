@@ -50,11 +50,10 @@ select is(public.classlive_auto_open(), 0, '... only once a day');
 select ok(exists (select 1 from public.classlive_rooms r join public.classlive_state s on s.room = r.id
   where r.schedule_id = current_setting('test.time')::bigint and r.class_id is null and r.teacher is null and r.code ~ '^[0-9]{4}$'
     and s.session -> 'auto' ->> 'min' = '4' and s.session -> 'game' = 'null'::jsonb), 'a school-wide room with no class, no teacher and no game yet');
-select pg_temp.act_as('00000000-0000-0000-0000-0000000000a3');
-select like(public.classlive_here() -> 0 ->> 'class', 'Games Hub is starting Serpent Chain', 'a pupil of the school gets the pop-up');
+select ok(exists (select 1 from public.classlive_open_for('00000000-0000-0000-0000-0000000000a3') r
+  where r.schedule_id = current_setting('test.time')::bigint), 'a pupil of the school is offered it');
 
 -- ---- Nobody moved it on: closed after its start ----
-select pg_temp.reset();
 update public.classlive_rooms set starts_at = now() - interval '3 minutes' where schedule_id = current_setting('test.time')::bigint;
 select public.classlive_auto_open();
 select is((select state from public.classlive_rooms where schedule_id = current_setting('test.time')::bigint), 'over', 'a room still waiting after its start is closed');
