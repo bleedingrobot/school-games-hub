@@ -9,7 +9,7 @@
  *   /teacher/:classId/quests     Quests (weekly class quests: start one, every pupil's days)
  *   /teacher/:classId/games      Games (the Games table; /games/:gameId is a game's settings on a narrow screen)
  *   /teacher/:classId/setup      Class set-up (the class's My classes panel)
- *   /teacher/admin               Admin (school admins only: Overview, Classes, Students, Teachers, End of year)
+ *   /teacher/admin               Admin (school admins only: Overview, Classes, Students, Teachers, New class settings, Class Live times, End of year)
  *
  * The old addresses (/teacher, /classes, /focus?class=, /skills?class=) land on the remembered class through TeacherEntry.
  * The pages hide themselves from students, but that's only for tidiness: the database checks every action.
@@ -247,7 +247,7 @@ export function TeacherMaths() {
   );
 }
 
-/** /teacher/admin: school admins only (section 4.7). Its own tabs: Overview, Classes, Students, Teachers, New class settings, End of year. */
+/** /teacher/admin: school admins only (section 4.7). Its own tabs: Overview, Classes, Students, Teachers, New class settings, Class Live times (when Class Live is on), End of year. */
 export function TeacherAdmin() {
   const { profile } = useAuth();
   if (profile?.school_admin !== true) {
@@ -276,6 +276,11 @@ export function TeacherAdmin() {
         <NavLink to="/teacher/admin/defaults" className="teacher-subtabs__tab">
           New class settings
         </NavLink>
+        {classliveOn() && (
+          <NavLink to="/teacher/admin/classlive" className="teacher-subtabs__tab">
+            Class Live times
+          </NavLink>
+        )}
         <NavLink to="/teacher/admin/year" className="teacher-subtabs__tab">
           End of year
         </NavLink>

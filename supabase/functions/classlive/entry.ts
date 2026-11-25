@@ -34,7 +34,7 @@ async function call<T>(name: string, args: Record<string, unknown>): Promise<T |
 }
 
 type RawRow = {
-  id: number; class_id: string; school_id: number; teacher: string; version: number; started_ms: number | null; show_names: boolean;
+  id: number; class_id: string | null; school_id: number; teacher: string | null; version: number; started_ms: number | null; show_names: boolean;
   session: RoomRow['session']; seq: number; events: RoomRow['events'] | null;
 };
 const rowOf = (raw: RawRow | null): RoomRow | null =>

@@ -65,7 +65,26 @@ export interface Session {
   joinCode?: string;
   /** Music on pupils' devices too (James, 25 Nov 2026 NZ: a teacher toggle; off means the big screen only). */
   padMusic?: boolean;
+  /**
+   * A game the server opened at a set time (docs/plans/classlive-auto/PLAN.md): no teacher, no class. The database
+   * writes it with `game: null`; the first step makes the game (`gameFor`). It starts at `startsAt` if `min` have joined.
+   */
+  auto?: Auto;
 }
+
+export interface Auto {
+  /** When it starts (ms since 1970). */
+  startsAt: number;
+  /** The fewest players it runs with. */
+  min: number;
+  /** Serpent level or Four Corners map, or null for a surprise. */
+  level: string | null;
+  /** Too few joined by the start: called off (no points). */
+  calledOff?: boolean;
+}
+
+/** The games the server may start by itself (James, 25 Nov 2026 NZ: Star Web needs a big screen). */
+export const AUTO_ACTIVITIES = ['serpent', 'mural', 'corners'] as const;
 
 export interface Lobby {
   /** Four digits, shown big on the projector. */
@@ -78,7 +97,7 @@ export type Event =
   | GameEvent
   | { type: 'join'; t: number; pupil: string }
   | { type: 'start'; t: number }
-  | { type: 'over'; t: number; why: 'teacher' | 'time' | 'heads' | 'guessed' };
+  | { type: 'over'; t: number; why: 'teacher' | 'time' | 'heads' | 'guessed' | 'few' };
 
 /** What pupils of the class may read of a room (their pop-up, their device). No names. */
 export interface RoomView {
@@ -92,6 +111,8 @@ export interface RoomView {
   lobby: Lobby | null;
   /** Pupils' devices play the background music too. */
   padMusic: boolean;
+  /** A game the server opened at a set time, or null. */
+  auto: { startsAt: number; min: number; calledOff: boolean } | null;
 }
 
 export type PublicGame =
@@ -148,10 +169,12 @@ export interface PlayerView {
 
 export interface RoomRow {
   id: number;
-  classId: string;
+  /** Null for a game the server opened at a set time. */
+  classId: string | null;
   /** The class's school (lobby games are open to the whole school). */
   schoolId: number;
-  teacher: string;
+  /** Null for a game the server opened at a set time. */
+  teacher: string | null;
   version: number;
   startedAt: number | null;
   showNames: boolean;
@@ -258,6 +281,7 @@ export function roomView(s: Session, startedAt: number | null, now?: number): Ro
   return {
     activity: s.activity, state: s.state, lengthMin: s.lengthMin, startedAt, players: s.order.length, game: publicGame(s.game, s.order.length, t),
     lobby: s.lobby ?? null, padMusic: s.padMusic === true,
+    auto: s.auto ? { startsAt: s.auto.startsAt, min: s.auto.min, calledOff: s.auto.calledOff === true } : null,
   };
 }
 
@@ -341,6 +365,7 @@ type Step<T> = (s: Session, t: number, row: RoomRow) => { reply: T; events: Even
 
 /** Pays out a finished session. A failure is only logged: the teacher's next view tries again (it pays once). */
 async function payOut(sv: ClassLiveServices, room: number, s: Session) {
+  if (s.auto?.calledOff) return;
   try {
     await sv.finishSession(room, rewardsOf(s));
   } catch {
@@ -351,13 +376,30 @@ async function payOut(sv: ClassLiveServices, room: number, s: Session) {
 /** Loads the room, applies one step and saves it if nobody else saved first (else runs it again on the newer session). */
 async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<T>): Promise<{ reply: T; row: RoomRow; session: Session } | { refuse: StepReply }> {
   for (let tries = 0; tries < MAX_TRIES; tries++) {
-    const row = await sv.loadRoom(room);
+    let row = await sv.loadRoom(room);
     if (row === 'busy') return { refuse: busy() };
     if (!row) return { refuse: no(404, "That room couldn't be found.", 'gone') };
+    const version = row.version;
     const s = structuredClone(row.session);
     const now = sv.now();
-    const t = timeOf(row, now);
     const events: Event[] = [];
+    // A game the server opened at a set time: made on its first step, started (or called off) at its time.
+    const made = !s.game && !!s.auto;
+    if (made) s.game = gameFor(s.activity, { level: s.auto!.level, map: s.auto!.level }, () => sv.random());
+    let autoStart: number | undefined;
+    if (s.auto && s.state === 'lobby' && now >= s.auto.startsAt) {
+      if (s.order.length >= s.auto.min) {
+        startGame(s);
+        autoStart = now;
+        events.push({ type: 'start', t: 0 });
+      } else {
+        s.state = 'over';
+        s.auto.calledOff = true;
+        events.push({ type: 'over', t: 0, why: 'few' });
+      }
+    }
+    if (autoStart !== undefined) row = { ...row, startedAt: autoStart };
+    const t = timeOf(row, now);
     const g0 = s.game;
     // Four Corners: the server moves pupils (back from jail, a jump); their devices snap to the new spot.
     const placedBefore = g0.kind === 'corners' ? new Map(s.order.map((id) => [id, g0.mine[id]?.placed ?? 0])) : null;
@@ -400,7 +442,7 @@ async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<T>): Pr
     const startedAt = 'refuse' in out || out.startedAt === undefined ? row.startedAt : out.startedAt;
     const changed = new Set<string>('refuse' in out ? [] : (out.players ?? []));
     const claim = 'refuse' in out ? undefined : out.claim;
-    if (!events.length && !changed.size && !claim && ('refuse' in out || out.startedAt === undefined)) {
+    if (!made && !events.length && !changed.size && !claim && ('refuse' in out || out.startedAt === undefined)) {
       return 'refuse' in out ? out : { reply: out.reply, row, session: s };
     }
     let seq = row.seq;
@@ -415,7 +457,7 @@ async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<T>): Pr
     // A round's end changes every pupil's own row (caught, safe, scores).
     if (g1.kind === 'corners' && events.some((e) => e.type === 'roll' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
     const players = [...changed].filter((id) => s.players[id]).map((id) => playerView(s, id));
-    const saved = await sv.save(room, row.version, { session: s, view: roomView(s, startedAt, now), screen: screenView(next, s, startedAt), startedAt, players, ...(claim ? { claim } : {}) });
+    const saved = await sv.save(room, version, { session: s, view: roomView(s, startedAt, now), screen: screenView(next, s, startedAt), startedAt, players, ...(claim ? { claim } : {}) });
     if (saved === 'busy') return { refuse: busy() };
     if (saved === 'answered') return { refuse: no(409, "You've already answered that one.", 'answered') };
     if (saved === 'ok') {
@@ -427,7 +469,7 @@ async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<T>): Pr
         }
       }
       if (s.state === 'over' && events.some((e) => e.type === 'over')) await payOut(sv, room, s);
-      return 'refuse' in out ? out : { reply: out.reply, row: { ...next, version: row.version + 1 }, session: s };
+      return 'refuse' in out ? out : { reply: out.reply, row: { ...next, version: version + 1 }, session: s };
     }
     await new Promise((done) => setTimeout(done, 5 + Math.floor(sv.random() * 25 * (tries + 1))));
   }
@@ -452,20 +494,47 @@ const canUse = (row: RoomRow, me: { classId: string; schoolId: number }) =>
 export function newSession(body: Record<string, unknown>, seed: number, random: () => number): Session | string {
   const activity = ACTIVITIES.find((a) => a === body.activity) ?? 'stars';
   const lengthMin = (LENGTHS as readonly number[]).includes(body.length as number) ? (body.length as number) : 0;
-  let game: Game;
+  if (activity === 'stars' && (body.x !== undefined || body.y !== undefined) && !anchorOf(Number(body.x), Number(body.y))) return 'Pick two different numbers from 2 to 12.';
+  const game = gameFor(activity, body, random);
+  return { seed, activity, state: 'lobby', lengthMin, players: {}, order: [], game, ...(body.padMusic === true ? { padMusic: true } : {}) };
+}
+
+/** A new game of this activity from the choices (level, map, run time; anything unknown is a surprise or the usual). */
+export function gameFor(activity: Activity, body: Record<string, unknown>, random: () => number): Game {
   if (activity === 'stars') {
     const own = anchorOf(Number(body.x), Number(body.y));
     const level = (Object.keys(LEVELS) as StarLevel[]).find((l) => l === body.level) ?? 'middle';
-    if ((body.x !== undefined || body.y !== undefined) && !own) return 'Pick two different numbers from 2 to 12.';
-    game = newStars(own ?? pickAnchor(level, random), own ? 'own' : level);
-  } else if (activity === 'serpent') {
-    const level = SERPENT_LEVELS.find((l) => l === body.level) ?? 'gold';
-    game = newSerpent(level, random);
-  } else if (activity === 'corners') {
+    return newStars(own ?? pickAnchor(level, random), own ? 'own' : level);
+  }
+  if (activity === 'serpent') return newSerpent(SERPENT_LEVELS.find((l) => l === body.level) ?? 'gold', random);
+  if (activity === 'corners') {
     const map = MAPS.find((m) => m === body.map) ?? MAPS[Math.floor(random() * MAPS.length) % MAPS.length];
-    game = newCorners(map, runSeconds(body.run));
-  } else game = newMural(random);
-  return { seed, activity, state: 'lobby', lengthMin, players: {}, order: [], game, ...(body.padMusic === true ? { padMusic: true } : {}) };
+    return newCorners(map, runSeconds(body.run));
+  }
+  return newMural(random);
+}
+
+/** Lobby to live (the teacher's Start, or a set-time game's start). */
+function startGame(s: Session) {
+  s.state = 'live';
+  // Four Corners: change corners every round in the second half (a timed game's halfway point).
+  if (s.game.kind === 'corners' && s.lengthMin > 0) s.game.halfAt = (s.lengthMin * 60_000) / 2;
+  // Mystery Mural: the grid fits the class and the time (about 75% uncovered by a class doing well).
+  if (s.game.kind === 'mural') sizeMural(s.game, s.order.length, s.lengthMin);
+}
+
+/** Is something due that a step would move on (a set-time start, the time up, the end of guessing, a Four Corners round)? */
+export function dueNow(s: Session, startedAt: number | null, now: number): boolean {
+  if (s.auto && s.state === 'lobby') return now >= s.auto.startsAt;
+  if (s.state !== 'live') return false;
+  const t = startedAt === null ? 0 : Math.max(0, now - startedAt);
+  const g = s.game;
+  if (g.kind === 'corners') {
+    const due = nextDeadline(g, startedAt);
+    return due !== null && t >= due + 1500;
+  }
+  if (s.lengthMin > 0 && t >= s.lengthMin * 60_000) return true;
+  return g.kind === 'mural' && guessingDone(g, t);
 }
 
 /** One request from a signed-in person (`who`). */
@@ -509,7 +578,8 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     const row = await sv.loadRoom(room);
     if (row === 'busy') return busy();
     // Only the teacher who opened it runs the projector.
-    if (!row || row.teacher !== who) return no(403, "That isn't your room.", 'not-yours');
+    // A set-time game (no teacher, no class) runs on pupils' iPads only (James, 25 Nov 2026 NZ).
+    if (!row || row.teacher !== who || !row.classId) return no(403, "That isn't your room.", 'not-yours');
     const teach = await sv.teacherClass(who, row.classId);
     if (teach === 'busy') return busy();
     if (!teach) return no(403, "That isn't one of your classes.", 'not-yours');
@@ -519,11 +589,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
       if (action === 'view') return { reply: null, events: [] };
       if (action === 'start') {
         if (s.state !== 'lobby') return { refuse: no(409, 'It has already started.', 'not-now') };
-        s.state = 'live';
-        // Four Corners: change corners every round in the second half (a timed game's halfway point).
-        if (s.game.kind === 'corners' && s.lengthMin > 0) s.game.halfAt = (s.lengthMin * 60_000) / 2;
-        // Mystery Mural: the grid fits the class and the time (about 75% uncovered by a class doing well).
-        if (s.game.kind === 'mural') sizeMural(s.game, s.order.length, s.lengthMin);
+        startGame(s);
         return { reply: null, events: [{ type: 'start', t: 0 }], startedAt: sv.now() };
       }
       if (action === 'reveal') {
@@ -603,10 +669,9 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     const withRoom = (r: StepReply): StepReply =>
       r.status === 200 ? r : { ...r, body: { ...r.body, view: roomView(cur.session, cur.startedAt, sv.now()), me: playerView(cur.session, who) } };
     if (action === 'look') {
-      // Four Corners runs on the clock: if the big screen hasn't moved a round on (closed, asleep), a pupil's look does.
-      const cg = cur.session.game;
-      const due = cg.kind === 'corners' && cur.session.state === 'live' ? nextDeadline(cg, cur.startedAt) : null;
-      if (due !== null && timeOf(cur, sv.now()) >= due + 1500) {
+      // Games run on the clock: if no big screen has moved it on (closed, asleep, or a set-time game with none), a pupil's
+      // look does (a set-time start, the time up, the end of guessing, a Four Corners round).
+      if (dueNow(cur.session, cur.startedAt, sv.now())) {
         const done = await mutate(sv, room, () => ({ reply: null, events: [] }));
         if (!('refuse' in done)) return ok({ room, view: roomView(done.session, done.row.startedAt, sv.now()), me: playerView(done.session, who), now: sv.now() });
       }

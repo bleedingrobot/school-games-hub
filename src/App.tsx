@@ -47,6 +47,7 @@ const TeacherGames = lazy(() => import('./teacher/Games').then((m) => ({ default
 const AdminYear = lazy(() => import('./teacher/AdminYear').then((m) => ({ default: m.AdminYear })));
 const Today = lazy(() => import('./teacher/Today').then((m) => ({ default: m.Today })));
 const AdminClasses = lazy(() => import('./teacher/Admin').then((m) => ({ default: m.AdminClasses })));
+const AdminClassLive = lazy(() => import('./teacher/AdminClassLive').then((m) => ({ default: m.AdminClassLive })));
 const AdminDefaults = lazy(() => import('./teacher/Admin').then((m) => ({ default: m.AdminDefaults })));
 const AdminOverview = lazy(() => import('./teacher/Admin').then((m) => ({ default: m.AdminOverview })));
 const AdminStudents = lazy(() => import('./teacher/Admin').then((m) => ({ default: m.AdminStudents })));
@@ -90,6 +91,7 @@ export function teacherRoutes() {
           <Route path="students" element={<AdminStudents />} />
           <Route path="teachers" element={<AdminTeachers />} />
           <Route path="defaults" element={<AdminDefaults />} />
+          {classliveOn() && <Route path="classlive" element={<AdminClassLive />} />}
           <Route path="year" element={<AdminYear />} />
         </Route>
       </Route>

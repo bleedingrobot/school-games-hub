@@ -64,7 +64,7 @@ export interface HubAskLink {
 const isAskGame = (g: unknown): g is AskGame => typeof g === 'string' && (ASK_GAMES as readonly string[]).includes(g);
 
 /** Class Live's activities, for a lobby game's button (ACTIVITY_NAMES in shared/classlive/server.ts). */
-const LIVE_NAMES: Record<string, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural' };
+const LIVE_NAMES: Record<string, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners' };
 
 const TABLES: Record<LiveGame, string> = { archery: 'archery_duels', 'dragon-maths': 'lord_clashes', 'clan-quest': 'clan_duels' };
 
