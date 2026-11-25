@@ -22,9 +22,13 @@ describe('Goblin Storm voice lines', () => {
         const focus = { source: 'teacher-class' as const, skills: [skill.id], onlyThese: true, endsAt: null, canChoose: false, own: null };
         const context: MathsContext = { facts: [], settings: { multipleChoice }, focus };
         for (const q of makeRunQuestions(context, 4, seededRandom(`gs-voice-${skill.id}`))) {
-          all++;
           const pieces = questionPieces(q.spoken);
-          if (pieces) read++;
+          // The share counts the number-fact skills she was recorded for; the Year 6-8 skills (time, shapes, chance, …) are
+          // mostly words and go to the browser's voice, which is fine.
+          if (!skill.year) {
+            all++;
+            if (pieces) read++;
+          }
           // She says the question's own numbers, in order, and nothing else (never the answer).
           if (pieces) expect(pieces.filter((p) => /^\d+$/.test(p))).toEqual(q.spoken.match(/\d+/g) ?? []);
         }

@@ -209,7 +209,7 @@
 
 .question__choices {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   width: 100%;
 }
@@ -223,6 +223,18 @@
   font-size: 2rem;
   font-weight: 900;
   cursor: pointer;
+}
+.question__choices--mid .question__choice {
+  font-size: 1.5rem;
+  padding: 6px 8px 6px 34px;
+}
+.question__choices--long .question__choice {
+  font-size: 1.2rem;
+  padding: 6px 6px 6px 30px;
+}
+.question__choices--xlong .question__choice {
+  font-size: 1rem;
+  padding: 6px 6px 6px 30px;
 }
 .question__choice:has(.question__choice-key) {
   position: relative;
@@ -657,6 +669,7 @@
 .fig__arc { stroke: currentColor; stroke-width: 2; fill: none; opacity: 0.8; }
 .fig__corner { fill: none; stroke: currentColor; stroke-width: 2; }
 .fig__dot { fill: currentColor; }
+.fig__fill { fill: color-mix(in srgb, currentColor 35%, transparent); stroke: none; }
 .fig__label { fill: currentColor; font-size: 15px; font-weight: 800; }
 .fig__label--ask { fill: var(--q-wrong); font-size: 18px; }
 .question__gap {
