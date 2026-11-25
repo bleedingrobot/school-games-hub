@@ -149,9 +149,14 @@ jobs:
           fi
           names=$(echo $names | tr ' ' '\n' | sort -u)
           if [ -z "$names" ]; then echo "No server function changed."; exit 0; fi
+          # Supabase sometimes times out for a moment (24 Nov 2026); deploying again is safe, so try each one up to 3 times.
           for n in $names; do
-            echo "Deploying $n ..."
-            npx supabase functions deploy "$n" --project-ref zqzhetlzvtptnkmeiumi --no-verify-jwt --use-api
+            for i in 1 2 3; do
+              echo "Deploying $n ..."
+              npx supabase functions deploy "$n" --project-ref zqzhetlzvtptnkmeiumi --no-verify-jwt --use-api && break
+              [ $i -eq 3 ] && exit 1
+              echo "Trying $n again in $((20 * i)) seconds ..."; sleep $((20 * i))
+            done
           done
 
   deploy:

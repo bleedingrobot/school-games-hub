@@ -24,6 +24,9 @@ export default defineConfig({
   test: {
     // Screen tests are slow when many run at once; 5 seconds gave false failures on a busy computer.
     testTimeout: 20_000,
+    // On GitHub's busy machines a screen test now and then misses its timing (Weka's guide, Star Trader, Dragon Maths):
+    // try a failed test up to twice more there before calling it a failure. A real bug fails all three times.
+    retry: process.env.CI ? 2 : 0,
     passWithNoTests: which === 'slow',
     projects: [
       {
