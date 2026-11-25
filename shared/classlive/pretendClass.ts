@@ -15,6 +15,7 @@ import { pretendAnswer } from './serpent';
 import { pretendFacts } from './stars';
 import { lavaBot } from './lavaPretend';
 import { clashBot } from './clashMemory';
+import { relayBot } from './relayBot';
 
 export const PRETEND_TEACHER = '00000000-0000-4000-8000-00000000feed';
 export const PRETEND_CLASS = '00000000-0000-4000-8000-00000000c1a5';
@@ -62,6 +63,7 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
       if (g.kind === 'thrones') return thronesBot(room, id, skill);
       if (g.kind === 'clash') return clashBot({ db, room, id, skill, rand, now: opts.clock.now, later: opts.later, step: (who, body) => classLiveStep(services, who, body) });
       if (g.kind === 'crew') return crewBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
+      if (g.kind === 'relay') return relayBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
       if (g.kind === 'ghost') return ghostBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
       if (g.kind === 'mural') {
         if (g.revealed) return;

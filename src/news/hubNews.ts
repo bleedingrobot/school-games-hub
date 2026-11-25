@@ -33,6 +33,14 @@ export const HUB_NEWS: NewsItem[] = [
     game: 'toonflap',
   },
   {
+    id: 'classlive-relay-2026-11-26',
+    date: '2026-11-26',
+    emoji: '🐦',
+    title: 'Toon Flap Relay',
+    text: 'Fly in turns with your team! Answer for sparks: help your flyer or send trouble.',
+    game: 'classlive',
+  },
+  {
     id: 'ladder-year6-2026-11-26',
     date: '2026-11-26',
     emoji: '🧮',

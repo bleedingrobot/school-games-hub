@@ -1,6 +1,15 @@
 # Toon Flap Relay (Class Live activity `relay`)
 
-**Status: PLAN ONLY (25 Nov 2026 NZ), all 19 of James's answers in. Not built. James says when to build.** Migration: pick the next free number when building (`node scripts/migration-numbers.mjs`); it only INSERTs (docs/CLASSLIVE-PLAN.md section 5, "Adding an activity").
+**Status: BUILT (25 Nov 2026 NZ), stages 1 and 2 (game, server, big screen, iPads, voice). Paintings and the Stadium Sky are the art stage: docs/RELAY-ART-PLAN.md.** Migration `20261126000600_classlive_relay.sql` (activity row + 3 trophies, INSERT only). On for every class with the Class Live switch; not in the set-time (auto) games list yet.
+
+**How it was built, where it differs from the plan below:**
+- Effects live in `shared/classlive/relay.ts` (`flyStep`, a copy of Toon Flap's `stepRun` plus the effects, and `teamCourse`), not inside `shared/toonflap/engine.ts`, so solo Toon Flap is untouched. Each effect is a stretch of the team's course (x0 to x1), laid 2 walls ahead of the bird, so the pad, the server and the big screen all fly the same course.
+- The flyer's pad sends its flap list every 0.8 s (not 0.4 s) to keep room saves down; the server replays it, capped at the wall clock.
+- Teams are dealt at random for race 1, then re-dealt each race by flying (snake order on distance a turn), and whoever has flown least goes first, so everyone flies.
+- The finish shows races won by colour, a podium of pupils who won the most races, and shout-outs (far flyer, team helper, trouble maker, spark maker, hot streak).
+- Lanes use Toon Flap world 1 with bunting until the Stadium Sky is painted; music borrows Sky Climb's track.
+
+Try it: `npx vite --config vite.classlive-preview.config.ts`, open `?pick=relay`, "Be a pupil" to fly or answer.
 
 James's idea (25 Nov 2026 NZ): "a flappy toon relay? They take turns flying. When one is flying, the others answer questions to grant benefits to their team and detriments to others, where kids get put in groups and groups compete against each other." A team Class Live game built on Toon Flap (docs/TOON-FLAP-PLAN.md: `shared/toonflap/` physics, levels, painted worlds and flyers) and the Class Live room (docs/CLASSLIVE-PLAN.md: lobby codes, big screen, pads, timers, Bella, rewards).
 
@@ -113,6 +122,6 @@ Bella as a sports commentator, team colours only: "And they're off!", "Red team 
 2. **Screens**: `RelayScene.tsx`, `RelayPad.tsx`, `RelayBoard.tsx`, setup card / lobby / How to play (`RelayCard.tsx`, row in `gameList.ts`, group `run`), `relay.css`, Bella lines (`relayLines.ts`), sound kit, drawn stand-in icons, art plan `docs/RELAY-ART-PLAN.md`.
 3. **Art and music** on James's PC: Stadium Sky world (back, middle and front layers like a Toon Flap world, stadium walls as flag towers and scoreboard pillars, the nest on a finish podium), 8 perk + 4 trouble icons, fog cloud, wind arrows, baton, team-colour flyer tints, picker card, race track + fanfare.
 
-## Files (planned)
+## Files
 
-`shared/classlive/relay.ts`, `relayServer.ts`, `relayBot.ts`, `relay.test.ts`; `shared/toonflap/engine.ts` (effect options); `src/games/classlive/RelayScene.tsx`, `RelayPad.tsx`, `RelayBoard.tsx`, `RelayCard.tsx`, `relay.css`, `relayLines.ts`. Try it (once built): `npx vite --config vite.classlive-preview.config.ts` (Toon Flap Relay card, "Be a pupil").
+`shared/classlive/relay.ts`, `relayServer.ts`, `relayBot.ts`, `relay.test.ts`; `src/games/classlive/RelayScene.tsx` (big screen), `RelayPad.tsx` (iPad), `RelayCard.tsx` (setup card, lobby, How to play, How it works), `relayDraw.ts` (a lane, and `LanePlayer` that plays saved flaps), `relay.css`, `relayLines.ts` (Bella); `supabase/migrations/20261126000600_classlive_relay.sql`, `supabase/tests/database/classlive_relay.test.sql`. Try it (once built): `npx vite --config vite.classlive-preview.config.ts` (Toon Flap Relay card, "Be a pupil").
