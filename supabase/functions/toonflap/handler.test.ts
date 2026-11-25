@@ -92,11 +92,13 @@ it('follows the teacher’s switches, suggests a break after many runs, and only
   expect(dash).toMatchObject({ level: 'dash', signs: [] });
   expect(JSON.stringify(dash)).not.toContain('"answer"');
   const course = buildDashCourse(dash.seed);
-  const bot = botRun(course);
+  // The bot flies only the first 31 walls (a whole 20-minute dash would make this test slow); after wall 30 it stops
+  // flapping, so the dash ends in a crash.
+  const bot = botRun({ ...course, walls: course.walls.slice(0, 31), nestX: course.walls[31].x });
   const flown = newDash(course);
   const used: number[] = [];
   for (let k = 0; flown.run.mode !== 'done';) {
-    const f = bot.flaps[k] === flown.run.t;
+    const f = flown.run.nextWall < 30 && bot.flaps[k] === flown.run.t;
     if (f) { used.push(flown.run.t); k++; }
     stepDash(course, flown, f, false);
   }
