@@ -8,8 +8,6 @@ import { nzDay } from '../../shared/monsters/world/battleCap';
 import { spottedNote } from '../../shared/monsters/world/weather';
 import { recentGamesFrom, RecentList, type RecentGame } from '../components/MyGames';
 import { AchievementList, HeroPoints, nextAchievements, RankBadge } from '../components/Progress';
-import type { SeasonClock } from '../../shared/clans/season';
-import type { HomeLordSeason } from '../../shared/lord/seasonRoad';
 import { fetchMyHomePage, type HomePage, type TopGames } from '../data/homePage';
 import type { FriendGame, PlayerCard } from '../data/multiplayer';
 import type { MovesByGame } from '../data/movesLeft';
@@ -42,8 +40,6 @@ export { cardRecentGame, friendRecentGame, powerRecentGame, spaceRecentGame, whe
 // The maths box brings the whole maths ladder with it, so it loads on its own.
 const MathsFocusCard = lazy(() => import('../components/MathsFocusCard'));
 const MathsPathCard = lazy(() => import('../components/MathsPathCard'));
-const SeasonStrip = lazy(() => import('../components/SeasonStrip'));
-const DragonSeasonStrip = lazy(() => import('../components/DragonSeasonStrip'));
 
 /**
  * Where a card that isn't a registry game goes (Quick looks, dashboard plan D8): straight after the card `after`, or first in
@@ -114,10 +110,6 @@ function useMyGames(me: string | undefined) {
   const [progress, setProgress] = useState<MyProgress | null>(null);
   // Daily moves left (Dragon Maths, Clan Quest) are only a nicety: no line on the card if they can't be read.
   const [moves, setMoves] = useState<MovesByGame>({});
-  // The school's Clan Quest season, for the "This season" strip.
-  const [season, setSeason] = useState<SeasonClock | null>(null);
-  // The school's Dragon Maths season and the pupil's hero, for its strip.
-  const [lordSeason, setLordSeason] = useState<HomeLordSeason | null>(null);
   const [topGames, setTopGames] = useState<TopGames | null>(null);
   const [answer, setAnswer] = useState<HomePage | null>(null);
   const [failed, setFailed] = useState(false);
@@ -132,8 +124,6 @@ function useMyGames(me: string | undefined) {
         setAnswer(home);
         setProgress(home.progress);
         setMoves(home.moves);
-        setSeason(home.season);
-        setLordSeason(home.lordSeason);
         setTopGames(home.topGames);
         // Space and 101 games with classmates, and Power Clash with a classmate (nothing of it shows before it is switched on).
         setSpaceGoing(home.spaceOpen.filter((g) => g.status === 'playing'));
@@ -155,7 +145,7 @@ function useMyGames(me: string | undefined) {
       current = false;
     };
   }, [me]);
-  return { homePage, recent, inProgress, spaceGoing, cardGoing, powerGoing, progress, moves, season, lordSeason, topGames, answer, failed };
+  return { homePage, recent, inProgress, spaceGoing, cardGoing, powerGoing, progress, moves, topGames, answer, failed };
 }
 
 /** A game still going: a chip that carries on (dashboard plan D4: all of them on one line, not a row each). */
@@ -252,7 +242,7 @@ function DashboardPage() {
   const { profile } = useAuth();
   const meId = profile?.id;
   const pupil = profile?.role !== 'teacher';
-  const { homePage, recent, spaceGoing, progress, moves, season, lordSeason, topGames, answer, failed, ...going } = useMyGames(meId);
+  const { homePage, recent, spaceGoing, progress, moves, topGames, answer, failed, ...going } = useMyGames(meId);
   // The cards wait for the home page's answer, or ask for themselves if there is nobody to ask it for.
   const cardsFrom = meId ? homePage : undefined;
   const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
@@ -290,11 +280,6 @@ function DashboardPage() {
       return { key: game.id, emoji: <AvatarImage avatar={opponent?.avatar} size={28} />, to: `/play/${game.id}`, label: who, name: `Carry on your ${what} game with ${who}` };
     }),
   ];
-  // Teachers see the season strips too, so they know what their class sees (James, 30 Oct 2026).
-  const seasonShown = season && season.clockOn && season.number > 0 && shownGames.some((g) => g.id === 'clan-quest') ? season : null;
-  const lordSeasonShown = lordSeason && shownGames.some((g) => g.id === 'dragon-maths') ? lordSeason : null;
-  // With both strips showing, each says which game it is.
-  const bothSeasons = !!seasonShown && !!lordSeasonShown;
   const [levels, setLevels] = useState<Record<string, BotLevel>>({});
   const [featured, setFeatured] = useState(GAMES[0].id);
   const levelFor = (gameId: string) => levels[gameId] ?? 'easy';
@@ -383,17 +368,6 @@ function DashboardPage() {
   const popular = pinnedTiles.length === 0 && played.length === 0;
   const myTiles = [...pinnedTiles, ...(popular ? fill(top?.classGames ?? []) : played)].slice(0, Math.max(MY_GAMES_SHOWN, pinnedTiles.length));
   const topTiles = MY_GAMES_ON ? myTiles : pinnedTiles;
-  // The season timelines sit under My games when Clan Quest or Dragon Maths is in it, otherwise with the complex maths games.
-  const seasonsOnTop = MY_GAMES_ON && topTiles.some((t) => t.id === 'clan-quest' || t.id === 'dragon-maths');
-  const seasonStrips = (seasonShown || lordSeasonShown) && (
-    <div className={bothSeasons ? 'season-strips season-strips--two' : 'season-strips'}>
-      <Suspense fallback={null}>
-        {seasonShown && <SeasonStrip clock={seasonShown} title={bothSeasons ? 'Clan Quest this season' : undefined} />}
-        {lordSeasonShown && <DragonSeasonStrip season={lordSeasonShown} title={bothSeasons ? 'Dragon Maths this season' : undefined} />}
-      </Suspense>
-    </div>
-  );
-
   return (
     <div className="dashboard">
       <section className="hero" aria-labelledby="hero-title">
@@ -492,7 +466,6 @@ function DashboardPage() {
               onToggle={() => toggleCollapsed('pinned')}
             >
               <div className={MY_GAMES_ON ? 'game-grid game-grid--mine' : 'game-grid'}>{topTiles.map((tile) => tile.card)}</div>
-              {seasonsOnTop && seasonStrips}
             </GameGroup>
           )}
           {GAME_GROUPS.map((group) => {
@@ -512,9 +485,6 @@ function DashboardPage() {
                     collapsed={isCollapsed(group.group)}
                     onToggle={() => toggleCollapsed(group.group)}
                   >
-                    {/* The season timelines sit with their games, in the complex maths games (James, 29 Oct 2026): Clan Quest's and
-                        Dragon Maths', side by side on wide screens. */}
-                    {group.group === 'complex-maths' && !seasonsOnTop && seasonStrips}
                     {groupTiles.length > 0 ? (
                       <div className="game-grid">{groupTiles.map((tile) => tile.card)}</div>
                     ) : (
