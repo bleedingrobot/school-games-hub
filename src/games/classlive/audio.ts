@@ -11,7 +11,7 @@
  * The AudioContext is made on the first sound (browsers need a tap first), busy moments are rate-limited, and every call is
  * wrapped so a browser without audio just stays quiet.
  */
-export type Kit = 'stars' | 'serpent' | 'mural' | 'corners' | 'ghost' | 'clash';
+export type Kit = 'stars' | 'serpent' | 'mural' | 'corners' | 'ghost' | 'clash' | 'thrones';
 
 export type SoundName =
   | 'join' | 'start' | 'over'
@@ -24,7 +24,9 @@ export type SoundName =
   // Four Corners
   | 'tick' | 'tickLast' | 'drumroll' | 'dice' | 'land' | 'caught' | 'safe' | 'grab' | 'power' | 'escape' | 'warp' | 'storm'
   // Shark Bay
-  | 'splash' | 'chomp';
+  | 'splash' | 'chomp'
+  // Musical Thrones (also uses grab, power, escape, caught, safe, tick)
+  | 'stop' | 'sit' | 'steal';
 
 export interface ClassLiveSound {
   play(name: SoundName): void;
@@ -35,7 +37,7 @@ export interface ClassLiveSound {
 }
 
 const KEY = 'classlive-muted';
-const BIG: SoundName[] = ['start', 'over', 'creature', 'supernova', 'awake', 'reveal', 'head', 'arm', 'guess', 'drumroll', 'land', 'splash'];
+const BIG: SoundName[] = ['start', 'over', 'creature', 'supernova', 'awake', 'reveal', 'head', 'arm', 'guess', 'drumroll', 'land', 'splash', 'stop'];
 
 function readMuted(): boolean {
   try {
@@ -135,6 +137,8 @@ const KITS: Record<Kit, { root: number; scale: number[]; lead: InstrumentName[];
   clash: { root: 329.63, scale: [0, 2, 4, 7, 9], lead: ['kalimba', 'glock', 'marimba'], low: ['logdrum', 'wood'] },
   // Ghost Tag: a spooky minor scale on celesta and music box (docs/GHOST-PLAN.md).
   ghost: { root: 246.94, scale: [0, 1, 3, 6, 7, 10], lead: ['celesta', 'musicbox', 'glass'], low: ['pad', 'pizz'] },
+  // Musical Thrones: a royal court. Harp, glockenspiel, pizzicato; a bright mixolydian.
+  thrones: { root: 349.23, scale: [0, 2, 4, 5, 7, 9, 10], lead: ['harp', 'glock', 'pizz'], low: ['pizz', 'harp'] },
 };
 
 /** The frequency of scale step `n` (any whole number, wrapping into octaves). */
@@ -430,6 +434,30 @@ const RECIPES: Record<SoundName, Recipe> = {
     hiss(ctx, out, t + 0.1, 1.4, lo * 2.5, lo, 0.15, 'bandpass', 3, 0.5);
     const h = p.one([380, 440, 520]);
     osc(ctx, out, h, t + 0.2, 1.2, 'sine', 0.04, h * 1.15, 0.5);
+  },
+  // ---- Musical Thrones ----
+  stop: (ctx, out, kit, t, p) => {
+    // The music stops: a record scratch (noise swept down), a thump, and a bright "go!" stab.
+    const top = p.one([5000, 6500, 8000]);
+    hiss(ctx, out, t, p.one([0.25, 0.32, 0.4]), top, 300, 0.35, 'bandpass', 2.5, 0.05);
+    osc(ctx, out, p.one([700, 900, 1100]), t, 0.3, 'sawtooth', 0.08, 120);
+    osc(ctx, out, 90, t + 0.3, 0.5, 'sine', 0.5, 40);
+    chord(ctx, out, kit, t + 0.42, p.one(['glock', 'harp', 'pizz'] as const), [0, 2, 4].map((s) => s + 7 + p.int(3)), p.one([0, 0.02, 0.04]), 1);
+  },
+  sit: (ctx, out, kit, t, p) => {
+    // A soft cushion "plop" and a little royal two-note fanfare.
+    osc(ctx, out, p.one([200, 240, 280]), t, 0.12, 'sine', 0.3, 90);
+    hiss(ctx, out, t, 0.08, 900, 300, 0.08, 'lowpass', 1, 0.1);
+    const s = p.int(5) + 3;
+    phrase(ctx, out, kit, t + 0.08, p.one(['glock', 'harp', 'pizz'] as const), [s, s + p.one([2, 3, 4])], p.one([0.07, 0.09]), 0.8);
+  },
+  steal: (ctx, out, kit, t, p) => {
+    // A sword swish, a clang and a sly falling run.
+    hiss(ctx, out, t, 0.22, 1500, 7000, 0.25, 'bandpass', 3, 0.6);
+    const c = p.one([1200, 1500, 1800]);
+    osc(ctx, out, c, t + 0.2, 0.5, 'square', 0.06, c * 0.97);
+    osc(ctx, out, c * 2.7, t + 0.2, 0.35, 'sine', 0.05);
+    phrase(ctx, out, kit, t + 0.35, p.one(['pizz', 'marimba', 'harp'] as const), run(p, 6, 5).map((s) => 10 - Math.abs(s)), p.one([0.05, 0.07]), 0.8);
   },
 };
 

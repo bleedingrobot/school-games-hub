@@ -9,6 +9,7 @@ import { SERPENT_LEVEL_ABOUT, SERPENT_LEVEL_NAMES } from '../../../shared/classl
 import { speak, stopSpeaking } from '../../speech';
 import { painted } from './paintedArt';
 import { MAP_WORDS } from '../../../shared/classlive/corners';
+import { HALL_WORDS } from '../../../shared/classlive/thrones';
 import { MAP_WORDS as CLASH_WORDS } from '../../../shared/classlive/clash';
 import { BAY_WORDS, isShark, SHARK } from '../../../shared/classlive/shark';
 import { HOWTO, VOICE_FOLDER } from './voiceLines';
@@ -44,6 +45,19 @@ export function sheetFor(game: Game): Sheet {
         { icon: '🔢', text: 'Write each answer on your device. You get two tries.', say: H[1] },
         { icon: '💎', text: 'Every right answer moves your gem up the serpent.', say: H[2] },
         { icon: '⚡', text: 'Right answers from the whole class wake the serpent. Reach the head, then keep going on the bonus tail!', say: H[3] },
+      ],
+    };
+  }
+  if (game.kind === 'thrones') {
+    const H = HOWTO.thrones;
+    return {
+      title: 'How to play Musical Thrones', mode: HALL_WORDS[game.hall].name, modeSay: null, art: painted('pick', 'thrones', true) ?? painted('thrones', `hall-${game.hall}`, true),
+      steps: [
+        { icon: '🕹️', text: 'Move your avatar with the joystick, or the arrow keys.', say: H[0] },
+        { icon: '💃', text: 'Dance while the music plays. Be on a glowing dance tile when it stops for a bonus crown.', say: H[1] },
+        { icon: '🪑', text: 'When the music stops, sit on a throne! There are fewer every round.', say: H[2] },
+        { icon: '🏰', text: 'Left standing? Answer 3 questions in the courtyard to come back. 3 right in a row wins a 🗡️ Crown thief!', say: H[3] },
+        { icon: '👑', text: 'A throne is 1 crown, a golden throne is 3. Most crowns wins!', say: H[4] },
       ],
     };
   }

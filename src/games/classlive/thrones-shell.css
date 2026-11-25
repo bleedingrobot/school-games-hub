@@ -1,0 +1,15 @@
+/* Musical Thrones around its board: the page backgrounds per hall, the picker card, the lobby (docs/THRONES-PLAN.md). */
+.cl-p--thrones { background: radial-gradient(ellipse at 50% 30%, #5b1a2b, #1a0610); }
+.cl-p--thrones.mt-back--ice { background: radial-gradient(ellipse at 50% 30%, #2a5a7f, #071624); }
+.cl-p--thrones.mt-back--jungle { background: radial-gradient(ellipse at 50% 30%, #2d5a2a, #0a1708); }
+.cl-p--thrones.mt-back--pirate { background: radial-gradient(ellipse at 50% 30%, #5a3b1e, #140b04); }
+.cl-c--thrones { background: radial-gradient(ellipse at 50% 20%, #5b1a2b, #1a0610); }
+.cl-c--thrones .cl-c-body { max-width: none; padding: 48px 8px 8px; }
+@media (max-height: 560px), (max-width: 700px) {
+  .cl-c--thrones .cl-c-body { padding-top: 8px; min-height: 100dvh; }
+}
+.cl-card--thrones .cl-card__art { background: radial-gradient(circle at 50% 60%, #facc15 0, #b45309 40%, #5b1a2b 80%); }
+.mt-lobby-thrones { display: flex; gap: 2vh; justify-content: center; margin: 2vh auto; font-size: 7vh; }
+.mt-lobby-thrones i { font-style: normal; animation: mt-shell-bob 0.9s ease-in-out infinite alternate; filter: drop-shadow(0 0 1.2vh rgba(250, 204, 21, 0.7)); }
+@keyframes mt-shell-bob { from { transform: translateY(0) rotate(-6deg); } to { transform: translateY(-1.6vh) rotate(6deg); } }
+@media (prefers-reduced-motion: reduce) { .mt-lobby-thrones i { animation: none; } }
