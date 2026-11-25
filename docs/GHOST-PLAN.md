@@ -1,6 +1,6 @@
 # Ghost Tag (Class Live activity `ghost`)
 
-**Status: stages 1 and 2 built 25 Nov 2026 NZ (rules, server, database, both screens, How to play, sounds, Bella clips, drawn stand-in art); paintings and 8 map tracks being made on James's PC (branch `ghost-art-inbox`).** Migration `20261125001300_classlive_ghost` (number agreed with the other map-game threads: Lava 1000, Thrones 1100, Colour Clash 1200, Ghost Tag 1300, Shark Bay 1400).
+**Status: LIVE 25 Nov 2026 NZ (PR #836); painted art (36 pictures) and 8 map tracks (ghost-<map>[-hot]) added in the follow-up PR.** Weaker pictures to repaint if wanted: mansion fireplace and ship wheel sit at the top edge, pumpkin centre has a scarecrow, crow/seagull flocks on a light blob, faint snowflake on power-freeze. Migration `20261125001300_classlive_ghost` (number agreed with the other map-game threads: Lava 1000, Thrones 1100, Colour Clash 1200, Ghost Tag 1300, Shark Bay 1400).
 
 James's idea (25 Nov 2026 NZ, from the coordinator's list after Four Corners): every pupil runs their own hub avatar around a spooky map. A few start as ghosts; anyone a ghost touches becomes a ghost too. A right answer gives a short spell of invisibility. The last one standing wins. Built on Four Corners (docs/CORNERS-PLAN.md): same room, joystick, saved spots, lobby codes, timers, music, Bella, rewards.
 
