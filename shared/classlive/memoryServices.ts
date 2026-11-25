@@ -151,3 +151,25 @@ export function memoryMove(db: MemoryDb, now: number, room: number, player: stri
   db.spots.set(room, all);
   return Object.values(all).map((q) => ({ x: q.x, y: q.y }));
 }
+
+/**
+ * A game opened at a set time, as the database's classlive_auto_open() makes it: no class, no teacher, a lobby code,
+ * and the session with no game yet (the first step makes it). Returns the room.
+ */
+export function memoryAutoRoom(
+  db: MemoryDb,
+  now: number,
+  o: { schoolId?: number; activity: 'serpent' | 'mural' | 'corners'; lengthMin: number; min: number; startsAt: number; code: string; host?: string; level?: string | null },
+): number {
+  const id = Math.max(1000, ...db.rooms.keys()) + 1;
+  const lobby = { code: o.code, host: o.host ?? 'Games Hub' };
+  const session = {
+    seed: id, activity: o.activity, state: 'lobby', lengthMin: o.lengthMin, players: {}, order: [], game: null, lobby, padMusic: true,
+    auto: { startsAt: o.startsAt, min: o.min, level: o.level ?? null },
+  } as unknown as RoomRow['session'];
+  db.rooms.set(id, {
+    id, classId: null, schoolId: o.schoolId ?? 1, teacher: null, version: 1, startedAt: null, showNames: true, session, seq: 0, events: [],
+    view: { state: 'lobby' } as RoomView, screen: { events: [] } as unknown as ScreenView, openedAt: now,
+  });
+  return id;
+}

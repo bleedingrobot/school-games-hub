@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { markQuestion } from '../maths/serverQuestions';
 import { classLiveStep, cleanHost } from './server';
-import { memoryDb, memoryServices } from './memoryServices';
+import { memoryAutoRoom, memoryDb, memoryServices } from './memoryServices';
 import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock, rng } from './pretendClass';
 import { answerBox, apply, BODY, makeChain, newSerpent, SERPENT_LEVELS } from './serpent';
 import { gridFor, maxOpen, openCap, UNTIMED_PACE_MS, type MuralGame } from './mural';
@@ -400,5 +400,25 @@ describe('Class Live server', () => {
     await classLiveStep(sv, T, { action: 'end', room: lob.room });
     now += 1000;
     expect((await classLiveStep(sv, 'bo', { action: 'join', code: lob.screen.lobby.code })).body.reason).toBe('bad-code');
+
+    // A game the server opened at a set time (docs/plans/classlive-auto/PLAN.md): the school joins, it starts at its time
+    // with enough players, ends on its clock and pays; with too few it is called off; no teacher can run it.
+    const auto = memoryAutoRoom(db, now, { activity: 'serpent', lengthMin: 2, min: 2, startsAt: now + 60_000, code: '4321' });
+    const joined = await classLiveStep(sv, 'ana', { action: 'join', room: auto });
+    expect(joined.body.view).toMatchObject({ state: 'lobby', game: { kind: 'serpent' }, auto: { min: 2, calledOff: false }, padMusic: true });
+    expect((await classLiveStep(sv, 'bo', { action: 'join', code: '4321' })).body.room).toBe(auto);
+    expect((await classLiveStep(sv, 'di', { action: 'join', room: auto })).status).toBe(403);
+    expect((await classLiveStep(sv, T, { action: 'view', room: auto })).status).toBe(403);
+    expect((await classLiveStep(sv, 'ana', { action: 'look', room: auto })).body.view).toMatchObject({ state: 'lobby' });
+    now += 60_000;
+    expect((await classLiveStep(sv, 'bo', { action: 'look', room: auto })).body.view).toMatchObject({ state: 'live', startedAt: now });
+    now += 2 * 60_000;
+    expect((await classLiveStep(sv, 'ana', { action: 'look', room: auto })).body.view).toMatchObject({ state: 'over' });
+    expect([...db.paid.keys()].some((k) => k.startsWith(`${auto}:`))).toBe(true);
+    const few = memoryAutoRoom(db, now, { activity: 'mural', lengthMin: 5, min: 3, startsAt: now + 1000, code: '5555' });
+    await classLiveStep(sv, 'cy', { action: 'join', code: '5555' });
+    now += 1000;
+    expect((await classLiveStep(sv, 'cy', { action: 'look', room: few })).body.view).toMatchObject({ state: 'over', auto: { calledOff: true } });
+    expect([...db.paid.keys()].some((k) => k.startsWith(`${few}:`))).toBe(false);
   });
 });

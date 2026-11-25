@@ -79,6 +79,22 @@ export interface Session {
   joinCode?: string;
   /** Music on pupils' devices too (James, 25 Nov 2026 NZ: a teacher toggle; off means the big screen only). */
   padMusic?: boolean;
+  /**
+   * A game the server opened at a set time (docs/plans/classlive-auto/PLAN.md): no teacher, no class. The database
+   * writes it with `game: null`; the first step makes the game (`gameFor`). It starts at `startsAt` if `min` have joined.
+   */
+  auto?: Auto;
+}
+
+export interface Auto {
+  /** When it starts (ms since 1970). */
+  startsAt: number;
+  /** The fewest players it runs with. */
+  min: number;
+  /** Level or map, or null for a surprise. */
+  level: string | null;
+  /** Too few joined by the start: called off (no points). */
+  calledOff?: boolean;
 }
 
 export interface Lobby {
@@ -92,7 +108,7 @@ export type Event =
   | GameEvent
   | { type: 'join'; t: number; pupil: string }
   | { type: 'start'; t: number }
-  | { type: 'over'; t: number; why: 'teacher' | 'time' | 'heads' | 'guessed' };
+  | { type: 'over'; t: number; why: 'teacher' | 'time' | 'heads' | 'guessed' | 'few' };
 
 /** What pupils of the class may read of a room (their pop-up, their device). No names. */
 export interface RoomView {
@@ -106,6 +122,8 @@ export interface RoomView {
   lobby: Lobby | null;
   /** Pupils' devices play the background music too. */
   padMusic: boolean;
+  /** A game the server opened at a set time, or null. */
+  auto: { startsAt: number; min: number; calledOff: boolean } | null;
 }
 
 export type PublicGame =
@@ -172,10 +190,12 @@ export interface PlayerView {
 
 export interface RoomRow {
   id: number;
-  classId: string;
+  /** Null for a game the server opened at a set time. */
+  classId: string | null;
   /** The class's school (lobby games are open to the whole school). */
   schoolId: number;
-  teacher: string;
+  /** Null for a game the server opened at a set time. */
+  teacher: string | null;
   version: number;
   startedAt: number | null;
   showNames: boolean;
@@ -290,6 +310,7 @@ export function roomView(s: Session, startedAt: number | null, now?: number): Ro
   return {
     activity: s.activity, state: s.state, lengthMin: s.lengthMin, startedAt, players: s.order.length, game: publicGame(s.game, s.order.length, t, s.order),
     lobby: s.lobby ?? null, padMusic: s.padMusic === true,
+    auto: s.auto ? { startsAt: s.auto.startsAt, min: s.auto.min, calledOff: s.auto.calledOff === true } : null,
   };
 }
 
@@ -377,6 +398,7 @@ export type Step<T> = (s: Session, t: number, row: RoomRow) => { reply: T; event
 
 /** Pays out a finished session. A failure is only logged: the teacher's next view tries again (it pays once). */
 async function payOut(sv: ClassLiveServices, room: number, s: Session) {
+  if (s.auto?.calledOff) return;
   try {
     await sv.finishSession(room, rewardsOf(s));
   } catch {
@@ -387,13 +409,29 @@ async function payOut(sv: ClassLiveServices, room: number, s: Session) {
 /** Loads the room, applies one step and saves it if nobody else saved first (else runs it again on the newer session). */
 export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<T>): Promise<{ reply: T; row: RoomRow; session: Session } | { refuse: StepReply }> {
   for (let tries = 0; tries < MAX_TRIES; tries++) {
-    const row = await sv.loadRoom(room);
+    let row = await sv.loadRoom(room);
     if (row === 'busy') return { refuse: busy() };
     if (!row) return { refuse: no(404, "That room couldn't be found.", 'gone') };
+    const version = row.version;
     const s = structuredClone(row.session);
+    // A game the server opened at a set time: made on its first step, started (or called off) at its time.
+    const made = !s.game && !!s.auto;
+    if (made) s.game = gameFor(s.activity, s.auto!.level, () => sv.random());
+    const autoEvents: Event[] = [];
+    if (s.auto && s.state === 'lobby' && sv.now() >= s.auto.startsAt) {
+      if (s.order.length >= s.auto.min) {
+        startGame(s, sv.now());
+        row = { ...row, startedAt: sv.now() };
+        autoEvents.push({ type: 'start', t: 0 });
+      } else {
+        s.state = 'over';
+        s.auto.calledOff = true;
+        autoEvents.push({ type: 'over', t: 0, why: 'few' });
+      }
+    }
     const now = sv.now();
     const t = timeOf(row, now);
-    const events: Event[] = [];
+    const events: Event[] = [...autoEvents];
     const g0 = s.game;
     // Four Corners: the server moves pupils (back from jail, a jump); their devices snap to the new spot.
     const placedBefore = g0.kind === 'corners' || g0.kind === 'ghost' || g0.kind === 'clash' || g0.kind === 'thrones' || g0.kind === 'lava' ? new Map(s.order.map((id) => [id, g0.mine[id]?.placed ?? 0])) : null;
@@ -491,7 +529,7 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
     const startedAt = 'refuse' in out || out.startedAt === undefined ? row.startedAt : out.startedAt;
     const changed = new Set<string>('refuse' in out ? [] : (out.players ?? []));
     const claim = 'refuse' in out ? undefined : out.claim;
-    if (!events.length && !changed.size && !claim && ('refuse' in out || out.startedAt === undefined)) {
+    if (!made && !events.length && !changed.size && !claim && ('refuse' in out || out.startedAt === undefined)) {
       return 'refuse' in out ? out : { reply: out.reply, row, session: s };
     }
     let seq = row.seq;
@@ -509,7 +547,7 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
     if (g1.kind === 'ghost' && events.some((e) => e.type === 'g_round' || e.type === 'g_end' || e.type === 'over' || (e.type === 'g_grab' && e.froze > 0))) for (const id of s.order) changed.add(id);
     if (g1.kind === 'thrones' && events.some((e) => e.type === 'stop' || e.type === 'seated' || e.type === 'round' || e.type === 'over')) for (const id of s.order) changed.add(id);
     const players = [...changed].filter((id) => s.players[id]).map((id) => playerView(s, id));
-    const saved = await sv.save(room, row.version, { session: s, view: roomView(s, startedAt, now), screen: screenView(next, s, startedAt), startedAt, players, ...(claim ? { claim } : {}) });
+    const saved = await sv.save(room, version, { session: s, view: roomView(s, startedAt, now), screen: screenView(next, s, startedAt), startedAt, players, ...(claim ? { claim } : {}) });
     if (saved === 'busy') return { refuse: busy() };
     if (saved === 'answered') return { refuse: no(409, "You've already answered that one.", 'answered') };
     if (saved === 'ok') {
@@ -521,7 +559,7 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
         }
       }
       if (s.state === 'over' && events.some((e) => e.type === 'over')) await payOut(sv, room, s);
-      return 'refuse' in out ? out : { reply: out.reply, row: { ...next, version: row.version + 1 }, session: s };
+      return 'refuse' in out ? out : { reply: out.reply, row: { ...next, version: version + 1 }, session: s };
     }
     await new Promise((done) => setTimeout(done, 5 + Math.floor(sv.random() * 25 * (tries + 1))));
   }
@@ -576,6 +614,22 @@ export function newSession(body: Record<string, unknown>, seed: number, random: 
   return { seed, activity, state: 'lobby', lengthMin, players: {}, order: [], game, ...(body.padMusic === true ? { padMusic: true } : {}) };
 }
 
+/** A new game of this activity for a set-time game (`level`: its level or map; anything unknown is a surprise). */
+export function gameFor(activity: Activity, level: string | null, random: () => number): Game {
+  const s = newSession({ activity, level, map: level, hall: level }, 0, random);
+  return typeof s === 'string' ? newMural(random) : s.game;
+}
+
+/** Lobby to live (the teacher's Start, or a set-time game's start). */
+function startGame(s: Session, now: number) {
+  s.state = 'live';
+  // Four Corners: change corners every round in the second half (a timed game's halfway point).
+  if (s.game.kind === 'corners' && s.lengthMin > 0) s.game.halfAt = (s.lengthMin * 60_000) / 2;
+  if (s.game.kind === 'clash') s.game.zeroMs = now;
+  // Mystery Mural: the grid fits the class and the time (about 75% uncovered by a class doing well).
+  if (s.game.kind === 'mural') sizeMural(s.game, s.order.length, s.lengthMin);
+}
+
 /** One request from a signed-in person (`who`). */
 export async function classLiveStep(sv: ClassLiveServices, who: string, body: Record<string, unknown>): Promise<StepReply> {
   const action = body.action;
@@ -617,7 +671,8 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     const row = await sv.loadRoom(room);
     if (row === 'busy') return busy();
     // Only the teacher who opened it runs the projector.
-    if (!row || row.teacher !== who) return no(403, "That isn't your room.", 'not-yours');
+    // A set-time game (no teacher, no class) runs on pupils' iPads only (James, 25 Nov 2026 NZ).
+    if (!row || row.teacher !== who || !row.classId) return no(403, "That isn't your room.", 'not-yours');
     const teach = await sv.teacherClass(who, row.classId);
     if (teach === 'busy') return busy();
     if (!teach) return no(403, "That isn't one of your classes.", 'not-yours');
@@ -627,12 +682,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
       if (action === 'view') return { reply: null, events: [] };
       if (action === 'start') {
         if (s.state !== 'lobby') return { refuse: no(409, 'It has already started.', 'not-now') };
-        s.state = 'live';
-        // Four Corners: change corners every round in the second half (a timed game's halfway point).
-        if (s.game.kind === 'corners' && s.lengthMin > 0) s.game.halfAt = (s.lengthMin * 60_000) / 2;
-        if (s.game.kind === 'clash') s.game.zeroMs = sv.now();
-        // Mystery Mural: the grid fits the class and the time (about 75% uncovered by a class doing well).
-        if (s.game.kind === 'mural') sizeMural(s.game, s.order.length, s.lengthMin);
+        startGame(s, sv.now());
         return { reply: null, events: [{ type: 'start', t: 0 }], startedAt: sv.now() };
       }
       if (action === 'reveal') {
@@ -719,7 +769,11 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
       // Four Corners runs on the clock: if the big screen hasn't moved a round on (closed, asleep), a pupil's look does.
       const cg = cur.session.game;
       const due = cur.session.state !== 'live' ? null : cg.kind === 'corners' ? nextDeadline(cg, cur.startedAt) : cg.kind === 'ghost' ? ghostDeadline(cg, cur.startedAt) : cg.kind === 'clash' ? clashDeadline(cg, cur.startedAt) : cg.kind === 'thrones' ? thronesDeadline(cg, cur.startedAt) : cg.kind === 'lava' ? lavaDeadline(cg, cur.startedAt) : null;
-      if (due !== null && timeOf(cur, sv.now()) >= due + 1500) {
+      // Also anything else due with no big screen to move it on (a set-time game): its start, the time up, Mural's guessing.
+      const n = sv.now(), tt = timeOf(cur, n), cs = cur.session;
+      const otherDue = cs.auto && cs.state === 'lobby' ? n >= cs.auto.startsAt
+        : cs.state === 'live' && ((cs.lengthMin > 0 && tt >= cs.lengthMin * 60_000) || (cg.kind === 'mural' && guessingDone(cg, tt)));
+      if ((due !== null && tt >= due + 1500) || otherDue) {
         const done = await mutate(sv, room, () => ({ reply: null, events: [] }));
         if (!('refuse' in done)) return ok({ room, view: roomView(done.session, done.row.startedAt, sv.now()), me: playerView(done.session, who), now: sv.now() });
       }

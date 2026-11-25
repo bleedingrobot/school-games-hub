@@ -3,7 +3,7 @@
  * build a fact, a feedback card after each send, and the pupil's own stars. Never shows anyone else's results.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { PlayerView, RoomView } from '../../../shared/classlive/server';
+import { ACTIVITY_NAMES, type PlayerView, type RoomView } from '../../../shared/classlive/server';
 import { ARM_NAMES, laggingArm, type StarsReply } from '../../../shared/classlive/stars';
 import { ARM_COLOURS, ARM_HINTS, lagHint, useHeldLag } from './arms';
 import { MuralPad } from './MuralPad';
@@ -194,6 +194,11 @@ export function Controller({ link, me, room: roomProp, code: codeProp, lookElsew
         </div>
       </Sky>
     );
+  }
+
+  // A game the server started at a set time (no teacher, no big screen): its own waiting and called-off screens.
+  if (view.auto && (view.state === 'lobby' || view.auto.calledOff)) {
+    return <Sky tint={view.game.kind === 'serpent' || view.game.kind === 'mural' || view.game.kind === 'corners' ? view.game.kind : undefined}><AutoWait view={view} clock={clock} /></Sky>;
   }
 
   if (view.game.kind === 'serpent') {
@@ -435,4 +440,38 @@ function FeedbackBody({ reply, anchor }: { reply: StarsReply; anchor: Anchor }) 
     case 'full':
       return <p className="cl-c-card__text">The sky is full! Look at the big screen.</p>;
   }
+}
+
+/** Waiting for a set-time game to start, or told it was called off (James, 25 Nov 2026 NZ). */
+export function AutoWait({ view, clock }: { view: RoomView; clock: () => number }) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => tick((n) => n + 1), 500);
+    return () => window.clearInterval(id);
+  }, []);
+  const auto = view.auto!;
+  const name = ACTIVITY_NAMES[view.activity];
+  if (auto.calledOff) {
+    return (
+      <div className="cl-c-center">
+        <div className="cl-c-bigstar" aria-hidden="true">🌙</div>
+        <h1 className="cl-c-title">Not enough players joined this time.</h1>
+        <p className="cl-c-say">{name} needed {auto.min} players. Look out for the next one!</p>
+      </div>
+    );
+  }
+  const left = Math.max(0, Math.ceil((auto.startsAt - clock()) / 1000));
+  const need = Math.max(0, auto.min - view.players);
+  const clockText = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+  return (
+    <div className="cl-c-center">
+      <h1 className="cl-c-title">You're in {name}!</h1>
+      <p className="cl-c-known" aria-label={`Starts in ${clockText}`}>{left > 0 ? clockText : 'Starting…'}</p>
+      <p className="cl-c-say">
+        {view.players} {view.players === 1 ? 'player' : 'players'} so far.{' '}
+        {need > 0 ? `It needs ${need} more to start.` : 'That’s enough to start!'}
+      </p>
+      {view.lobby && <p className="cl-c-say">Friends can join from their home page, or with the code <b>{view.lobby.code}</b>.</p>}
+    </div>
+  );
 }
