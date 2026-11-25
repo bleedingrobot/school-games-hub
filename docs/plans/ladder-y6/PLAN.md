@@ -75,14 +75,33 @@ The rest use figures that exist already.
 Every older game asks from the ladder, so each card shows up in every game by itself. One Artifact page per card showing the
 new questions as pupils see them, like the Year 7-8 cards.
 
-## 6. Risk: pupils dropping back
+## 6. Where each skill goes (James, 25 Nov 2026: slot in by difficulty)
+
+Each new skill goes where it fits on the ladder. A pupil already past one drops back to it until it is secure (accepted).
+Proposed places, each after the existing skill named:
+
+| After | New skills, in order |
+|---|---|
+| `round-1000` | `round-huge` |
+| `factor-pairs` | `remainders`, `count-zero`, `time-y6`, `time-24`, `elapsed`, `coordinates` |
+| `times-decimals` | `thousandths`, `decimal-order`, `metric-y6` |
+| `equivalent-fractions` | `fraction-add-y6` |
+| `squares-cubes` | `area-y6`, `angles-y6`, `shape-clue`, `rot-symmetry` |
+| `fdp-equivalents` | `chance-words`, `spinner` |
+| `percent-of` | `mean-range-y6` |
+| `whole-from-fraction` | `pattern-next` |
+| `bedmas` | `true-false-y6` (needs the order of operations) |
+
+L0 tells pupils who drop back why (the "new skills added" line from the Year 7-8 plan), and the warm-up includes the new
+skills so a new pupil is placed past them when they're quick.
+
+## 7. Risk: pupils dropping back
 
 Auto works on the first skill that isn't secure (`ladderProgress` in shared/maths/ladder.ts). A new skill slotted below
 where a pupil already is would become their current skill, so a pupil on order of operations could drop back to rounding.
-Question 1 picks how to handle this.
+James chose to accept this (section 6).
 
-## 7. Questions for James
+## 8. Questions for James
 
-1. Where the new skills go: all after order of operations (a Year 6 block), or slotted in by difficulty (pupils past them
-   drop back), or slotted in but only reviewed by pupils already past them.
+1. Where the new skills go. **Answered 25 Nov 2026: slot in by difficulty** (section 6).
 2. Build all six cards in one go, or L0 and L1 first and check.
