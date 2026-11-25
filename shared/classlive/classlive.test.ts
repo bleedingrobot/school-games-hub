@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { markQuestion } from '../maths/serverQuestions';
 import { classLiveStep, cleanHost } from './server';
+import { liveName } from '../liveNames';
 import { memoryAutoRoom, memoryDb, memoryServices } from './memoryServices';
 import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock, rng } from './pretendClass';
 import { answerBox, apply, BODY, makeChain, newSerpent, SERPENT_LEVELS } from './serpent';
@@ -363,7 +364,7 @@ describe('Class Live server', () => {
   it('a lobby game: any pupil of the school joins by its room or code; a class game and other schools stay closed', async () => {
     const T = 'teacher-1', A = '00000000-0000-4000-8000-00000000000a', B = '00000000-0000-4000-8000-00000000000b', FAR = '00000000-0000-4000-8000-0000000000ff';
     const db = memoryDb({
-      pupils: [{ id: 'ana', name: 'Ana', classId: A }, { id: 'bo', name: 'Bo', classId: B }, { id: 'cy', name: 'Cy', classId: B }, { id: 'di', name: 'Di', classId: FAR }],
+      pupils: [{ id: 'ana', name: 'Brave Kiwi 7', classId: A }, { id: 'bo', name: 'Brave Tui 7', classId: B }, { id: 'cy', name: 'Bob Lee', classId: B }, { id: 'di', name: 'Di', classId: FAR }],
       teachers: { [T]: [A] }, schools: { [FAR]: 2 },
     });
     let now = 1_000_000;
@@ -396,6 +397,11 @@ describe('Class Live server', () => {
     expect((await classLiveStep(sv, 'di', { action: 'join', room: lob.room })).status).toBe(403);
     expect((await classLiveStep(sv, 'di', { action: 'join', code: lob.screen.lobby.code })).body.reason).toBe('bad-code');
     expect(db.rooms.get(lob.room)!.session.order).toEqual(['ana', 'bo', 'cy']);
+    // Names (James, 25 Nov 2026 NZ): an own name as it is, a made-up name as first word + number, whole if two clash.
+    expect(liveName('Calm Fox 9')).toBe('Calm 9');
+    const named = (await classLiveStep(sv, T, { action: 'view', room: lob.room })).body as { screen: { people: { name: string }[] } };
+    expect(named.screen.people.map((p) => p.name)).toEqual(['Brave Kiwi 7', 'Brave Tui 7', 'Bob Lee']);
+    expect(((await classLiveStep(sv, 'cy', { action: 'look', room: lob.room })).body.me as { name: string }).name).toBe('Bob Lee');
     // A finished lobby game's code is free again.
     await classLiveStep(sv, T, { action: 'end', room: lob.room });
     now += 1000;
