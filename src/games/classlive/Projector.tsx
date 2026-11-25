@@ -7,6 +7,7 @@
 import { classLiveTrack, HOT_MS, musicSettings, useMusic } from './music';
 import { MusicControl } from './MusicControl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { GROUP_WORDS, LIVE_GAMES, liveGame, type LiveGame, type LiveGroup } from './gameList';
 import { ARMS, ARM_GOAL, ARM_NAMES, SUPERNOVA, armCounts, laggingArm, type Arm, type Star, type StarsGame } from '../../../shared/classlive/stars';
 import { GUESS_MS, PICTURES, type MuralGame } from '../../../shared/classlive/mural';
 import { BODY, SERPENT_LEVELS, SERPENT_LEVEL_ABOUT, SERPENT_LEVEL_NAMES, stepText, wakeAt, type SerpentGame, type SerpentLevel } from '../../../shared/classlive/serpent';
@@ -582,6 +583,9 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
   const yi = Number(y);
   const okPick = Number.isInteger(xi) && Number.isInteger(yi) && xi >= 2 && xi <= 12 && yi >= 2 && yi <= 12 && xi !== yi;
   const own = level === 'pick';
+  const games = LIVE_GAMES.filter((g) => g.id !== 'showdown' || onShowdown);
+  const [pick, choose] = usePicked(games.map((g) => g.id));
+  const chosen = liveGame(pick);
   // Who can join (James, 25 Nov 2026): the class, or any pupil of the school from their home page's "Join now?".
   const [where, setWhere] = useState<'class' | 'lobby'>(() => (readKept(WHERE_KEY) === 'lobby' ? 'lobby' : 'class'));
   const [host, setHost] = useState(() => readKept(HOST_KEY) ?? '');
@@ -595,9 +599,19 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
   return (
     <div className="cl-setup">
       <div className="cl-motes" aria-hidden="true">{MOTES.map((m, i) => <i key={i} style={{ left: `${m[0]}%`, animationDelay: `${m[1]}s`, animationDuration: `${m[2]}s`, ['--s' as string]: m[3] }} />)}</div>
-      <h1 className="cl-setup__title">Class Live</h1>
-      <p className="cl-setup__sub">Pick a game for the big screen</p>
-      <div className="cl-where" role="group" aria-label="Who can join?">
+      {!chosen ? (
+        <>
+          <h1 className="cl-setup__title">Class Live</h1>
+          <p className="cl-setup__sub">Pick a game for the big screen</p>
+          <GamePicker games={games} onPick={choose} />
+        </>
+      ) : (
+      <>
+      <div className="cl-chosen">
+        <button type="button" className="cl-btn cl-btn--small cl-chosen__back" onClick={() => choose(null)}>← All games</button>
+        <span className="cl-chosen__where">Class Live</span>
+      </div>
+      {pick !== 'showdown' && <div className="cl-where" role="group" aria-label="Who can join?">
         <span className="cl-opt__label">Who can join?</span>
         <button type="button" className={`cl-choice ${where === 'class' ? 'cl-choice--on' : ''}`} aria-pressed={where === 'class'} onClick={() => setWhere('class')}>🏫 My class</button>
         <button type="button" className={`cl-choice ${where === 'lobby' ? 'cl-choice--on' : ''}`} aria-pressed={where === 'lobby'} onClick={() => setWhere('lobby')}>🌏 Open in the lobby</button>
@@ -609,8 +623,9 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
           </label>
         )}
         {where === 'lobby' && <p className="cl-where__note">Any pupil in the school can join, from their home page or with the code on the big screen.</p>}
-      </div>
-      <div className="cl-cards">
+      </div>}
+      <div className="cl-cards cl-cards--one">
+        {pick === 'stars' && (
         <section className="cl-card cl-card--active" aria-label="Star Web">
           <CardArt pic={painted('pick', 'stars', true) ?? painted('back', 'star-sky', true)} />
           <h2 className="cl-card__name">★ Star Web</h2>
@@ -635,6 +650,8 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
           {problem && <p className="cl-problem" role="alert">{problem}</p>}
           <button type="button" className="cl-btn cl-btn--go" disabled={!canOpen} onClick={() => onOpen('stars', { level: own ? 'middle' : level, length, ...(own ? { x: xi, y: yi } : {}) })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
+        )}
+        {pick === 'serpent' && (
         <section className="cl-card cl-card--active cl-card--serpent" aria-label="Serpent Chain">
           <CardArt pic={painted('pick', 'serpent', true) ?? painted('back', 'jungle-temple', true)} />
           <h2 className="cl-card__name">🐍 Serpent Chain</h2>
@@ -654,6 +671,8 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
           <TimerChips length={sLength} setLength={setSLength} />
           <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('serpent', { level: sLevel, length: sLength })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
+        )}
+        {pick === 'mural' && (
         <section className="cl-card cl-card--active cl-card--mural" aria-label="Mystery Mural">
           <CardArt pic={painted('pick', 'mural', true) ?? painted('back', 'gallery', true)} />
           <h2 className="cl-card__name">🎨 Mystery Mural</h2>
@@ -661,6 +680,8 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
           <TimerChips length={mLength} setLength={setMLength} />
           <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('mural', { length: mLength })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
+        )}
+        {pick === 'corners' && (
         <section className="cl-card cl-card--active cl-card--corners" aria-label="Four Corners">
           <CardArt pic={painted('pick', 'corners', true) ?? painted('corners', 'map-snow', true)} />
           <h2 className="cl-card__name">🎲 Four Corners</h2>
@@ -687,9 +708,11 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
           <TimerChips length={cLength} setLength={setCLength} />
           <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('corners', { length: cLength, run: cRun, ...(cMap === 'any' ? {} : { map: cMap }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
-        <ClashCard busy={busy} disabled={!hostOk} onOpen={(body) => onOpen('clash', body)} />
-        <GhostPickCard busy={busy} hostOk={hostOk} onOpen={(body) => onOpen('ghost', body)} timer={(l, set) => <TimerChips length={l} setLength={set} />} art={(pic) => <CardArt pic={pic} />} />
+        )}
+        {pick === 'clash' && <ClashCard busy={busy} disabled={!hostOk} onOpen={(body) => onOpen('clash', body)} />}
+        {pick === 'ghost' && <GhostPickCard busy={busy} hostOk={hostOk} onOpen={(body) => onOpen('ghost', body)} timer={(l, set) => <TimerChips length={l} setLength={set} />} art={(pic) => <CardArt pic={pic} />} />}
         {/* Shark Bay */}
+        {pick === 'shark' && (
         <section className="cl-card cl-card--active cl-card--corners cl-card--shark" aria-label="Shark Bay">
           <CardArt pic={painted('pick', 'shark', true)} />
           <h2 className="cl-card__name">🦈 Shark Bay</h2>
@@ -716,8 +739,67 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
           <TimerChips length={bLength} setLength={setBLength} />
           <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('shark', { length: bLength, run: bRun, ...(bBay === 'any' ? {} : { map: bBay }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
-        {onShowdown && <ShowdownCard busy={busy} onOpen={onShowdown} />}
+        )}
+        {pick === 'showdown' && onShowdown && <ShowdownCard busy={busy} onOpen={onShowdown} />}
       </div>
+      </>
+      )}
+    </div>
+  );
+}
+
+const PICK_KEY = 'pick';
+
+/** The game chosen on the picker, kept in the address (?pick=serpent) so a link (the Today page's card) opens on it. */
+function usePicked(ids: string[]): [string | null, (id: string | null) => void] {
+  const [pick, setPick] = useState<string | null>(() => {
+    try {
+      const hashQuery = window.location.hash.split('?')[1] ?? '';
+      const p = new URLSearchParams(window.location.search).get(PICK_KEY) ?? new URLSearchParams(hashQuery).get(PICK_KEY);
+      return p && ids.includes(p) ? p : null;
+    } catch { return null; }
+  });
+  const choose = useCallback((id: string | null) => {
+    setPick(id);
+    try {
+      const url = new URL(window.location.href);
+      const [path, q] = url.hash.split('?');
+      if (q !== undefined || (url.hash.startsWith('#/') && !url.search)) {
+        // A hash address (the previews): the query sits after the #.
+        const hq = new URLSearchParams(q ?? '');
+        if (id) hq.set(PICK_KEY, id); else hq.delete(PICK_KEY);
+        url.hash = `${path}${hq.toString() ? `?${hq}` : ''}`;
+      } else if (id) url.searchParams.set(PICK_KEY, id); else url.searchParams.delete(PICK_KEY);
+      window.history.replaceState(window.history.state, '', url);
+    } catch { /* not kept */ }
+    try { document.querySelector('.cl-setup')?.scrollTo({ top: 0 }); } catch { /* old browser */ }
+  }, []);
+  return [pick, choose];
+}
+
+/** The first screen: one painted tile per game, grouped (James, 25 Nov 2026 NZ). */
+function GamePicker({ games, onPick }: { games: LiveGame[]; onPick: (id: string) => void }) {
+  const groups = (Object.keys(GROUP_WORDS) as LiveGroup[]).map((g) => ({ g, list: games.filter((x) => x.group === g) })).filter((x) => x.list.length > 0);
+  let n = 0;
+  return (
+    <div className="cl-picker">
+      {groups.map(({ g, list }) => (
+        <section key={g} className="cl-picker__group" aria-label={GROUP_WORDS[g].name}>
+          <h2 className="cl-picker__head">{GROUP_WORDS[g].name} <small>{GROUP_WORDS[g].about}</small></h2>
+          <div className="cl-picker__tiles">
+            {list.map((game) => {
+              const pic = game.pic();
+              return (
+                <button key={game.id} type="button" className={`cl-tile cl-tile--${game.id}`} style={{ ['--tint' as string]: game.tint, animationDelay: `${0.05 * n++}s` }} onClick={() => onPick(game.id)}>
+                  <span className="cl-tile__art" aria-hidden="true">{pic ? <img src={pic} alt="" loading="eager" /> : <i className="cl-tile__emoji">{game.emoji}</i>}</span>
+                  <b className="cl-tile__name"><span aria-hidden="true">{game.emoji}</span> {game.name}</b>
+                  <span className="cl-tile__blurb">{game.blurb}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
