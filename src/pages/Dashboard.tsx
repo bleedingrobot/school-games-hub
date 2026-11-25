@@ -32,6 +32,7 @@ import { RecentTrophies } from '../trophies/RecentTrophies';
 import { SeasonNote } from '../trophies/SeasonNote';
 import { QuestBar } from '../quests/QuestBar';
 import { WhatsNew } from '../news/WhatsNew';
+import { useOnlineNow } from '../data/onlineNow';
 
 // The teacher pages and older tests still find these here.
 export { cardRecentGame, friendRecentGame, powerRecentGame, spaceRecentGame, whenPlayed, type RecentGame } from '../components/MyGames';
@@ -400,6 +401,7 @@ function DashboardPage() {
         <div className="hero__text">
           <p className="hero__hello">Kia ora,</p>
           <h1 id="hero-title">{profile?.display_name}</h1>
+          <OnlineNowChip enabled={profile?.role === 'student'} />
           {progress && (
             <div className="hero__meta">
               <HeroPoints progress={progress} shelf={answer?.trophyShelf ?? undefined} />
@@ -595,5 +597,17 @@ function DashboardPage() {
         </>
       )}
     </div>
+  );
+}
+
+/** "12 kids online now": everyone in the school with the hub open, counting me. Counts only. */
+function OnlineNowChip({ enabled }: { enabled: boolean }) {
+  const online = useOnlineNow(undefined, enabled);
+  if (!online || online.school < 1) return null;
+  return (
+    <p className="hero__online" data-online-now>
+      <span className="online-dot online-dot--on" aria-hidden="true" />
+      {online.school} {online.school === 1 ? 'kid' : 'kids'} online now
+    </p>
   );
 }

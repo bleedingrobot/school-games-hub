@@ -2505,6 +2505,24 @@ main:focus {
   line-height: 1.1;
   overflow-wrap: anywhere;
 }
+/* Online now chip under the pupil's name (counts only). */
+.hero__online {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 4px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--h-box-soft);
+}
+.hero__online .online-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #2fb35a;
+  box-shadow: 0 0 0 3px rgba(47, 179, 90, 0.25);
+}
 .hero__meta {
   flex-basis: 100%;
   display: flex;
