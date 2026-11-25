@@ -1,9 +1,9 @@
 -- Diamond Drop Monster Dig (migration 20261125000400_diamond_monsters.sql): the new counts, the Monster Book trophy's
--- three steps, the Full Monster Book picture, and that nothing is given twice.
+-- three steps, cavern levels with the monster boosts (20261125000900), the Full Monster Book picture, and that nothing is given twice.
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(11);
 
 insert into auth.users (id, email) values ('00000000-0000-0000-0000-00000000000b', 'bo@douglaspark.school.nz');
 
@@ -40,6 +40,12 @@ update public.diamond_players set version = version + 1, state = state where pla
 select is(pg_temp.has('diamond-monster-full'), 1, 'the Full Monster Book picture, once, even after saving again');
 
 select is(public.diamond_monster_kinds('{"lifetime": {"monsters": {"digibud-1": {"count": "lots"}, "divvy-1": {"count": 0}}}}'), 0, 'broken or empty pages count as nothing');
+
+select lives_ok($$ insert into public.diamond_levels (player, seed, level, boosts, questions, marks)
+  values ('00000000-0000-0000-0000-00000000000b', 1, 20, array['monsterLure', 'monsterNet'], '[{}]', '[null]') $$,
+  'a cavern level can be kept, with the Monster Lure and Net');
+select throws_ok($$ insert into public.diamond_levels (player, seed, level, boosts, questions, marks)
+  values ('00000000-0000-0000-0000-00000000000b', 2, 21, '{}', '[{}]', '[null]') $$, '23514', null, '... but not a level past the last cavern');
 
 select * from finish();
 rollback;
