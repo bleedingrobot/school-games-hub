@@ -43,6 +43,14 @@ createRoot(document.getElementById('root') as HTMLElement).render(
           {Array.from({ length: LAST_LEVEL }, (_, i) => i + 1).map((n) => (
             <button key={n} type="button" onClick={() => { trial.tools.jumpTo(n); h.reload(); }}>{n}</button>
           ))}
+          <p>Monster Dig: find the diamond and jump to cavern:</p>
+          {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+            <button key={`c${n}`} type="button" data-cavern={n} onClick={() => { trial.tools.digTo(LAST_LEVEL + n); h.reload(); }}>{n}</button>
+          ))}
+          <p>Monster Book pages filled:</p>
+          {[0, 10, 40, 75].map((n) => (
+            <button key={`m${n}`} type="button" onClick={() => { trial.tools.monsterBook(n); h.reload(); }}>{n}</button>
+          ))}
           <p>Rare gems in the Gem Book:</p>
           {[0, 3, 5, 7].map((n) => (
             <button key={n} type="button" onClick={() => { trial.tools.rareBook(n); h.reload(); }}>{n}</button>

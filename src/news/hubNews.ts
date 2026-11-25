@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'diamond-monster-dig-2026-11-25',
+    date: '2026-11-25',
+    emoji: '🐾',
+    title: 'Diamond Drop: the Monster Dig',
+    text: 'Found the Heart Diamond? Catch Maths Monsters in 10 new caverns and fill a Monster Book!',
+    game: 'diamond',
+  },
+  {
     id: 'classlive-four-corners-2026-11-25',
     date: '2026-11-25',
     emoji: '🎲',

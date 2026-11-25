@@ -59,6 +59,7 @@ export const EARNED_PICTURES: Record<string, PictureArt> = {
   'trader-blackhole': painted('🕳️', 'black-hole'),
   'diamond-heart': painted('💎', 'heart-diamond'),
   'diamond-phoenix': painted('🌹', 'phoenix-gem'),
+  'diamond-monster-full': painted('📗', 'monster-book'),
   'toonflap-rainbow': painted('🌈', 'rainbow-toon'),
   'chess-crown': painted('♛', 'chess-crown'),
   'checkers-crown': painted('⛀', 'checkers-crown'),

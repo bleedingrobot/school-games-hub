@@ -4,10 +4,11 @@
  */
 import { COS, SIN } from './angles';
 import {
-  BOOST_IDS, CLAW_R, CRAB_GEM_CHANCE, CRAB_R, CRAB_SPEED, DIAMOND_CORRIDOR, DIAMOND_GUARDS, DIAMOND_OPENING, FIELD_H, FIELD_VALUE_MARGIN, FIELD_W, GAP,
-  GEMS, GROUND_Y, LAST_LEVEL, PIVOT, RARE_GEMS, REACH_SLOPE, ROCKS, SACK, SACK_R, STARTER, SWING_RANGE, gemOf, levelSpec,
-  type BoostId, type GemId, type RareId,
+  CLAW_R, CRAB_GEM_CHANCE, CRAB_R, CRAB_SPEED, DIAMOND_CORRIDOR, DIAMOND_GUARDS, DIAMOND_OPENING, FIELD_H, FIELD_VALUE_MARGIN, FIELD_W, GAP,
+  GEMS, GROUND_Y, LAST_LEVEL, PIVOT, RARE_GEMS, REACH_SLOPE, ROCKS, SACK, SACK_BOOST_IDS, SACK_R, STARTER, SWING_RANGE, gemOf, levelSpec,
+  type DigTier, type GemId, type RareId, type BoostId,
 } from './config';
+import { TIER_RULES, rollMonster } from './caverns';
 import { STREAM, makeRandom, mixSeed, type Random } from './random';
 
 export type SackPrize = { coins: number } | { seconds: number } | { boost: BoostId };
@@ -23,15 +24,26 @@ export interface Crab {
   gem?: GemId;
 }
 
+/** A Monster Dig monster (levels 11 to 20). */
+export interface Monster {
+  species: string;
+  tier: DigTier;
+  shiny: boolean;
+  /** The rarest pop out of the rock for `on` ticks, then burrow away for `off`, starting `phase` ticks into that. */
+  pop?: { on: number; off: number; phase: number };
+}
+
 export interface Thing {
   id: number;
-  kind: 'gem' | 'rock' | 'sack' | 'crab';
+  kind: 'gem' | 'rock' | 'sack' | 'crab' | 'monster';
   gem?: GemId;
   /** Only the guided first go's big quartz is worth something other than its gem's value. */
   value?: number;
   rock?: 'small' | 'big';
   sack?: SackPrize;
+  /** A crab's walk, or a moving monster's (a monster's walk carries no gem). */
   crab?: Crab;
+  monster?: Monster;
   /** Where it is (a crab: where its walk starts; use `thingAt`). */
   x: number;
   y: number;
@@ -44,6 +56,13 @@ export function thingAt(t: Thing, tick: number): { x: number; y: number } {
   const span = t.crab.xMax - t.crab.xMin;
   const p = (t.crab.phase + tick * t.crab.speed) % (2 * span);
   return { x: p < span ? t.crab.xMin + p : t.crab.xMax - (p - span), y: t.y };
+}
+
+/** Can the claw touch it at this tick? Everything can, except a popping monster while it's burrowed away. */
+export function shownAt(t: Thing, tick: number): boolean {
+  const pop = t.monster?.pop;
+  if (!pop) return true;
+  return (tick + pop.phase) % (pop.on + pop.off) < pop.on;
 }
 
 /** Which way a whole degree points, from the fixed table (0 is straight down, positive is to the right). */
@@ -126,7 +145,7 @@ function sackPrize(rng: Random, level: number): SackPrize {
     return { coins: low + rng.int(low + 1) };
   }
   if (roll < SACK.coinsChance + SACK.secondsChance) return { seconds: SACK.seconds };
-  return { boost: BOOST_IDS[rng.int(BOOST_IDS.length)] };
+  return { boost: SACK_BOOST_IDS[rng.int(SACK_BOOST_IDS.length)] };
 }
 
 function buildField(level: number, rng: Random): Thing[] {
@@ -243,15 +262,59 @@ function addRare(things: Thing[], seed: number): Thing[] {
   return at ? [...things, { id: things.length, kind: 'gem', gem: id, ...at, r: g.r }] : things;
 }
 
+/**
+ * Buries a cavern's monsters (Monster Dig, levels 11 to 20), after everything else and from their own random stream, so
+ * the gems, rocks and sacks are made exactly as on any level. Common ones sit still, uncommon and rare ones walk, and
+ * the rarest pop out and burrow away again. The Monster Lure makes the rarer tiers likelier.
+ */
+function addMonsters(things: Thing[], level: number, seed: number, lure: boolean): Thing[] {
+  const cavern = levelSpec(level).cavern;
+  if (!cavern) return things;
+  const rng = makeRandom(mixSeed(seed, STREAM.monster));
+  const out = [...things];
+  const bottom = (r: number) => FIELD_H - r - 6;
+  for (let n = 0; n < cavern.monsters; n++) {
+    const m = rollMonster(rng, level, lure);
+    const rule = TIER_RULES[m.tier];
+    const r = rule.r;
+    // Rarer monsters live deeper.
+    const minY = 200 + 60 * ['common', 'uncommon', 'rare', 'giant', 'ultra'].indexOf(m.tier);
+    const monster: Monster = { species: m.species, tier: m.tier, shiny: m.shiny };
+    const move = rule.move;
+    if (move !== 'still' && 'walk' in move) {
+      for (let tries = 0; tries < 40; tries++) {
+        const y = rng.between(minY, bottom(r));
+        const [lo, hi] = rowAt(y, r);
+        const walk = rng.between(120, 240);
+        if (hi - lo < walk) continue;
+        const xMin = rng.between(lo, hi - walk);
+        if (overlaps(out, xMin, y, r, xMin + walk)) continue;
+        const crab: Crab = { xMin, xMax: xMin + walk, speed: rng.between(move.walk[0], move.walk[1]), phase: rng.between(0, 2 * walk) };
+        out.push({ id: out.length, kind: 'monster', monster, crab, x: xMin, y, r });
+        break;
+      }
+      if (out[out.length - 1]?.monster === monster) continue;
+      // No room to walk: it sits still instead.
+    }
+    if (move !== 'still' && 'pop' in move) monster.pop = { ...move.pop, phase: rng.int(move.pop.on + move.pop.off) };
+    const at = spot(rng, out, r, minY, bottom(r), null) ?? spot(rng, out, r, GROUND_Y + 20, bottom(r), null);
+    if (at) out.push({ id: out.length, kind: 'monster', monster, ...at, r });
+  }
+  return out;
+}
+
 /** The field for a level from its seed. Tries the next seed in line until every gem fits and the level can be passed. */
-export function makeField(level: number, seed: number): Thing[] {
+export function makeField(level: number, seed: number, lure = false): Thing[] {
   let things: Thing[] = [];
   for (let attempt = 0; attempt < 60; attempt++) {
     things = buildField(level, makeRandom(mixSeed(seed, STREAM.field + attempt)));
     if (fieldOk(level, things)) break;
   }
-  return addRare(things, seed);
+  return addMonsters(addRare(things, seed), level, seed, lure);
 }
+
+/** The monsters buried in a field. */
+export const monstersIn = (things: readonly Thing[]): Thing[] => things.filter((t) => t.kind === 'monster');
 
 /** The rare gem buried in a field, if there is one. */
 export const rareIn = (things: readonly Thing[]): Thing | undefined => things.find((t) => t.kind === 'gem' && RARE_GEMS.some((g) => g.id === t.gem));

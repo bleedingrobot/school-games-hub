@@ -108,3 +108,7 @@ The one-new-level-a-day rule sets the pace: nearly every pupil passes each new l
 | shaky | 76% | 73% | 54% | 68% | 64% | 63% | 47% | 62% | 62% | 88% |
 
 Re-run with `npm run diamond:sim` (season) and `npm run diamond:sim -- --levels 300` (single tries).
+
+## The Monster Dig (levels 11 to 20)
+
+Opens for good once a pupil has caught the Heart Diamond. Ten caverns of Maths Monsters, one new cavern a day; each has a monster goal instead of a gem target. Every number is in `shared/diamond/config.ts` (`CAVERNS`) and `shared/diamond/caverns.ts` (tiers, wriggle chances, coins, shiny 1 in 64). Full rules and the cavern table: [DIAMOND-MONSTERS-PLAN.md](DIAMOND-MONSTERS-PLAN.md).

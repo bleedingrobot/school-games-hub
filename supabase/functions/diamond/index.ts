@@ -4292,7 +4292,7 @@ function smallSteps(tokens) {
 }
 const MAX_NUMBER = 50;
 const MAX_ANSWER = 300;
-function build(templateIndex, nums) {
+function build$1(templateIndex, nums) {
 	const template = TEMPLATES[templateIndex];
 	if (!template || nums.length !== lettersOf(template.src) || !nums.every((n) => isInt(n, 2, MAX_NUMBER))) return null;
 	const tokens = tokensOf(template.src, nums);
@@ -4312,7 +4312,7 @@ function bedmasFamily(key, label) {
 		for (;;) {
 			const t = pickOne(r, mine);
 			const nums = Array.from({ length: lettersOf(t.src) }, () => r() < .25 ? int(r, 11, 50) : int(r, 2, 10));
-			const made = build(t.i, nums);
+			const made = build$1(t.i, nums);
 			if (made && smallSteps(made.tokens) && withMistakes({
 				parts: [],
 				spoken: "",
@@ -4321,7 +4321,7 @@ function bedmasFamily(key, label) {
 		}
 	}, (k, [index, ...nums]) => {
 		if (TEMPLATES[index]?.key !== k) return null;
-		const made = build(index, nums);
+		const made = build$1(index, nums);
 		if (!made) return null;
 		const parts = partsOf(made.tokens);
 		return withMistakes({
@@ -12451,6 +12451,13 @@ const SACK = {
 };
 /** Field units a crab scuttles each tick (from the seed, between these). */
 const CRAB_SPEED = [1, 2.2];
+const DIG_TIERS = [
+	"common",
+	"uncommon",
+	"rare",
+	"giant",
+	"ultra"
+];
 const LEVELS = [
 	{
 		level: 1,
@@ -12633,11 +12640,69 @@ const LEVELS = [
 		crabs: 2
 	}
 ];
+/** The level holding the Heart Diamond: the end of the first version of the game. */
 const LAST_LEVEL = LEVELS.length;
-const levelSpec = (level) => LEVELS[level - 1];
+/** The caverns' gems: a thinner mix than level 9 (the monsters are the point), never the Heart Diamond. */
+const CAVE_GEMS = [
+	2,
+	2,
+	2,
+	2,
+	2,
+	2,
+	1,
+	1,
+	1
+];
+const cave = (level, place, seconds, habitat, monsters, goal, favour) => ({
+	level,
+	place,
+	gem: "starSapphire",
+	seconds,
+	target: 0,
+	gems: CAVE_GEMS,
+	smallRocks: 4,
+	bigRocks: 3,
+	sacks: 2,
+	crabs: 1,
+	cavern: {
+		habitat,
+		monsters,
+		goal,
+		...favour ? { favour } : {}
+	}
+});
+const CAVERNS = [
+	cave(11, "Mossy Burrows", 70, "leaf", 6, { count: 3 }),
+	cave(12, "Drip Grotto", 70, "water", 7, { count: 4 }),
+	cave(13, "Ember Tunnels", 70, "fire", 7, { count: 4 }),
+	cave(14, "Frost Vault", 80, "ice", 8, { count: 5 }),
+	cave(15, "Spark Seam", 75, "spark", 8, { count: 5 }),
+	cave(16, "Boulder Deep", 80, "stone", 9, {
+		count: 5,
+		atLeast: "uncommon"
+	}),
+	cave(17, "Mixed Hollow", 80, "all", 9, {
+		count: 5,
+		kinds: true
+	}),
+	cave(18, "Giants' Rest", 85, "all", 9, {
+		count: 4,
+		atLeast: "rare"
+	}, { giant: 2 }),
+	cave(19, "Starlit Chasm", 85, "all", 10, {
+		count: 6,
+		atLeast: "rare"
+	}),
+	cave(20, "The Monster Heart", 90, "all", 11, { count: 7 }, { ultra: 2 })
+];
+const FIRST_CAVERN = LAST_LEVEL + 1;
+const LAST_CAVERN = LAST_LEVEL + CAVERNS.length;
+const isCavern = (level) => level >= FIRST_CAVERN && level <= LAST_CAVERN;
+const levelSpec = (level) => level > LAST_LEVEL ? CAVERNS[level - FIRST_CAVERN] : LEVELS[level - 1];
 /** A field is made again (from the next seed in line) until its gems are worth at least this many times the target. */
 const FIELD_VALUE_MARGIN = 1.5;
-const questionCap = (level) => level === LAST_LEVEL ? 8 : 6;
+const questionCap = (level) => level === LAST_LEVEL || level === LAST_CAVERN ? 8 : 6;
 const BOOSTS = [
 	{
 		id: "strongWinch",
@@ -12666,9 +12731,38 @@ const BOOSTS = [
 		base: 10,
 		perLevel: 5,
 		about: "The first rock you grab turns to dust."
+	},
+	{
+		id: "monsterLure",
+		name: "Monster Lure",
+		base: 30,
+		perLevel: 5,
+		about: "Rare monsters turn up half as often again.",
+		caverns: true
+	},
+	{
+		id: "monsterNet",
+		name: "Monster Net",
+		base: 25,
+		perLevel: 5,
+		about: "The first monster that wriggles is caught for free.",
+		caverns: true
 	}
 ];
 const BOOST_IDS = BOOSTS.map((b) => b.id);
+/** The boosts a mystery sack can give (the first four, so sacks are as they always were). */
+const SACK_BOOST_IDS = [
+	"strongWinch",
+	"luckyCharm",
+	"extraTime",
+	"rockBlaster"
+];
+/** The boosts on sale before a level. */
+const boostsFor = (level) => BOOSTS.filter((b) => !b.caverns || isCavern(level));
+/** The number a boost's price is worked out from: the level, or the cavern's own number (1 to 10) in the Monster Dig. */
+const priceLevel = (level) => isCavern(level) ? level - LAST_LEVEL : level;
+/** Monster Lure: rare, giant and ultra monsters this many times as likely. */
+const MONSTER_LURE = 1.5;
 /** Strong Winch: everything heavier than light reels this many times as fast. */
 const STRONG_WINCH = 1.5;
 /** Lucky Charm: slip chances times this (not the Heart Diamond's). */
@@ -12714,8 +12808,787 @@ const ACHIEVEMENT_NEEDS = {
 const POINTS = {
 	firstPass: 2,
 	newStar: 1,
-	diamond: 5
+	diamond: 5,
+	firstMonster: 3
 };
+//#endregion
+//#region shared/monsters/monsterBook.ts
+/** What a grown monster's base stats are multiplied by. */
+const STAGE_BOOST = [
+	1,
+	1.25,
+	1.55
+];
+/**
+* Rare and ultra rare monsters are a little stronger (James, 2 Nov 2026): their base stats are
+* multiplied by this on top of the stage boost, so a grown rare is about as strong as a fully grown
+* common, and never so strong that answering questions stops mattering.
+*/
+const RARITY_BOOST = {
+	common: 1,
+	uncommon: 1,
+	rare: 1.12,
+	ultra: 1.2
+};
+const TYPE_ATTACKS = {
+	leaf: {
+		basic: {
+			name: "Leaf Count",
+			power: 35,
+			anim: "leaf-1"
+		},
+		big: {
+			name: "Forest Sum",
+			power: 80,
+			anim: "leaf-3"
+		}
+	},
+	water: {
+		basic: {
+			name: "Splash Add",
+			power: 35,
+			anim: "water-1"
+		},
+		big: {
+			name: "Tidal Total",
+			power: 80,
+			anim: "water-3"
+		}
+	},
+	fire: {
+		basic: {
+			name: "Spark Times",
+			power: 35,
+			anim: "fire-1"
+		},
+		big: {
+			name: "Multiply Blaze",
+			power: 80,
+			anim: "fire-3"
+		}
+	},
+	ice: {
+		basic: {
+			name: "Frost Share",
+			power: 35,
+			anim: "ice-1"
+		},
+		big: {
+			name: "Blizzard Split",
+			power: 80,
+			anim: "ice-3"
+		}
+	},
+	spark: {
+		basic: {
+			name: "Zap Part",
+			power: 35,
+			anim: "spark-1"
+		},
+		big: {
+			name: "Thunder Whole",
+			power: 80,
+			anim: "spark-3"
+		}
+	},
+	stone: {
+		basic: {
+			name: "Pebble Toss",
+			power: 35,
+			anim: "stone-1"
+		},
+		big: {
+			name: "Boulder Point",
+			power: 80,
+			anim: "stone-3"
+		}
+	}
+};
+/** THE NAMES FOR JAMES TO OK are in the `names` of each family. */
+const FAMILIES = {
+	digibud: {
+		type: "leaf",
+		names: [
+			"Digibud",
+			"Tensprout",
+			"Thousandtree"
+		],
+		stats: {
+			hp: 42,
+			atk: 11,
+			def: 11
+		},
+		moves: ["Digit Dart", "Value Vine"],
+		evolveAt: [16, 32]
+	},
+	roundroot: {
+		type: "leaf",
+		names: [
+			"Roundroot",
+			"Nearestree",
+			"Rounderoak"
+		],
+		stats: {
+			hp: 50,
+			atk: 9,
+			def: 13
+		},
+		moves: ["Round Up", "Root Round"],
+		evolveAt: [15, 31]
+	},
+	placepetal: {
+		type: "leaf",
+		names: [
+			"Placepetal",
+			"Valuebloom",
+			"Millibloom"
+		],
+		stats: {
+			hp: 38,
+			atk: 13,
+			def: 9
+		},
+		moves: ["Petal Place", "Bloom Value"],
+		evolveAt: [17, 34]
+	},
+	plusplash: {
+		type: "water",
+		names: [
+			"Plusplash",
+			"Sumsplash",
+			"Totalwave"
+		],
+		stats: {
+			hp: 40,
+			atk: 11,
+			def: 11
+		},
+		moves: ["Plus Puddle", "Sum Surge"],
+		evolveAt: [16, 32]
+	},
+	minnowus: {
+		type: "water",
+		names: [
+			"Minnowus",
+			"Minusfin",
+			"Minusharker"
+		],
+		stats: {
+			hp: 36,
+			atk: 13,
+			def: 9
+		},
+		moves: ["Take Bite", "Minus Current"],
+		evolveAt: [16, 33]
+	},
+	carrycrab: {
+		type: "water",
+		names: [
+			"Carrycrab",
+			"Regroupcrab",
+			"Kingcarrab"
+		],
+		stats: {
+			hp: 48,
+			atk: 10,
+			def: 13
+		},
+		moves: ["Carry Claw", "Borrow Snap"],
+		evolveAt: [18, 35]
+	},
+	factorch: {
+		type: "fire",
+		names: [
+			"Factorch",
+			"Factoblaze",
+			"Factoinferno"
+		],
+		stats: {
+			hp: 38,
+			atk: 13,
+			def: 9
+		},
+		moves: ["Factor Flame", "Table Torch"],
+		evolveAt: [16, 32]
+	},
+	multipup: {
+		type: "fire",
+		names: [
+			"Multipup",
+			"Multihound",
+			"Multiplosion"
+		],
+		stats: {
+			hp: 42,
+			atk: 11,
+			def: 11
+		},
+		moves: ["Times Nip", "Product Pounce"],
+		evolveAt: [15, 30]
+	},
+	squaremander: {
+		type: "fire",
+		names: [
+			"Squaremander",
+			"Cubemander",
+			"Powermander"
+		],
+		stats: {
+			hp: 46,
+			atk: 10,
+			def: 12
+		},
+		moves: ["Square Singe", "Cube Scorch"],
+		evolveAt: [18, 36]
+	},
+	divvy: {
+		type: "ice",
+		names: [
+			"Divvy",
+			"Quotipeng",
+			"Emperor Quotient"
+		],
+		stats: {
+			hp: 40,
+			atk: 11,
+			def: 11
+		},
+		moves: ["Divide Dive", "Quotient Slide"],
+		evolveAt: [16, 32]
+	},
+	remaindeer: {
+		type: "ice",
+		names: [
+			"Remaindeer",
+			"Remainstag",
+			"Remaindreign"
+		],
+		stats: {
+			hp: 44,
+			atk: 12,
+			def: 10
+		},
+		moves: ["Left-over Leap", "Antler Chill"],
+		evolveAt: [17, 34]
+	},
+	sharebear: {
+		type: "ice",
+		names: [
+			"Sharebear",
+			"Splitbear",
+			"Polarsplit"
+		],
+		stats: {
+			hp: 50,
+			atk: 9,
+			def: 13
+		},
+		moves: ["Fair Share", "Equal Swipe"],
+		evolveAt: [16, 31]
+	},
+	fractopus: {
+		type: "spark",
+		names: [
+			"Fractopus",
+			"Fractoshock",
+			"Fractostorm"
+		],
+		stats: {
+			hp: 40,
+			atk: 12,
+			def: 10
+		},
+		moves: ["Half Zap", "Quarter Charge"],
+		evolveAt: [16, 32]
+	},
+	numeratot: {
+		type: "spark",
+		names: [
+			"Numeratot",
+			"Numerator",
+			"Numeratron"
+		],
+		stats: {
+			hp: 36,
+			atk: 13,
+			def: 9
+		},
+		moves: ["Top Spark", "Count Current"],
+		evolveAt: [15, 31]
+	},
+	denomibolt: {
+		type: "spark",
+		names: [
+			"Denomibolt",
+			"Denomivolt",
+			"Denominator"
+		],
+		stats: {
+			hp: 46,
+			atk: 10,
+			def: 12
+		},
+		moves: ["Bottom Bolt", "Equal Parts"],
+		evolveAt: [17, 34]
+	},
+	pebblepoint: {
+		type: "stone",
+		names: [
+			"Pebblepoint",
+			"Decimound",
+			"Decimountain"
+		],
+		stats: {
+			hp: 48,
+			atk: 10,
+			def: 12
+		},
+		moves: ["Point Pelt", "Tenth Tumble"],
+		evolveAt: [16, 32]
+	},
+	coinrock: {
+		type: "stone",
+		names: [
+			"Coinrock",
+			"Dollarock",
+			"Goldilith"
+		],
+		stats: {
+			hp: 42,
+			atk: 11,
+			def: 11
+		},
+		moves: ["Coin Clunk", "Change Crush"],
+		evolveAt: [16, 33]
+	},
+	centipebble: {
+		type: "stone",
+		names: [
+			"Centipebble",
+			"Centipillar",
+			"Centurock"
+		],
+		stats: {
+			hp: 38,
+			atk: 13,
+			def: 9
+		},
+		moves: ["Cent Skip", "Hundredth Hit"],
+		evolveAt: [17, 34]
+	}
+};
+/** One family of each type turns up less often in the grass (green ring in the book). No new pictures needed. */
+const UNCOMMON = new Set([
+	"placepetal",
+	"carrycrab",
+	"squaremander",
+	"remaindeer",
+	"denomibolt",
+	"centipebble"
+]);
+/** THE NEW NAMES FOR JAMES TO OK (Q.1). Rare families: one per type, found in the bonus areas and in eggs. */
+const RARE_FAMILIES = {
+	kilokiwi: {
+		type: "leaf",
+		names: ["Kilokiwi", "Megakiwi"],
+		stats: {
+			hp: 46,
+			atk: 12,
+			def: 12
+		},
+		moves: ["Thousand Peck", "Million Dash"],
+		evolveAt: 24
+	},
+	plustoise: {
+		type: "water",
+		names: ["Plustoise", "Totaltoise"],
+		stats: {
+			hp: 52,
+			atk: 10,
+			def: 14
+		},
+		moves: ["Shell Sum", "Grand Total"],
+		evolveAt: 25
+	},
+	arraydillo: {
+		type: "fire",
+		names: ["Arraydillo", "Arraymadillo"],
+		stats: {
+			hp: 44,
+			atk: 13,
+			def: 11
+		},
+		moves: ["Row Roll", "Column Blaze"],
+		evolveAt: 24
+	},
+	shareseal: {
+		type: "ice",
+		names: ["Shareseal", "Divisorca"],
+		stats: {
+			hp: 48,
+			atk: 12,
+			def: 11
+		},
+		moves: ["Ice Share", "Orca Split"],
+		evolveAt: 25
+	},
+	quarterowl: {
+		type: "spark",
+		names: ["Quarterowl", "Wholeowl"],
+		stats: {
+			hp: 42,
+			atk: 13,
+			def: 11
+		},
+		moves: ["Quarter Hoot", "Whole Flash"],
+		evolveAt: 24
+	},
+	tuatenth: {
+		type: "stone",
+		names: ["Tuatenth", "Hundredthara"],
+		stats: {
+			hp: 50,
+			atk: 11,
+			def: 13
+		},
+		moves: ["Tenth Tail", "Hundredth Crush"],
+		evolveAt: 25
+	},
+	dozepebble: {
+		type: "stone",
+		names: ["Dozepebble", "Snorumble"],
+		stats: {
+			hp: 60,
+			atk: 12,
+			def: 14
+		},
+		moves: ["Snore Tumble", "Rumble Nap"],
+		evolveAt: 28,
+		giant: true
+	},
+	napsea: {
+		type: "water",
+		names: ["Napsea", "Drowsea"],
+		stats: {
+			hp: 58,
+			atk: 12,
+			def: 13
+		},
+		moves: ["Sleepy Wave", "Deep Dream Tide"],
+		evolveAt: 28,
+		giant: true
+	},
+	blinkberg: {
+		type: "ice",
+		names: ["Blinkberg", "Yawnberg"],
+		stats: {
+			hp: 58,
+			atk: 13,
+			def: 12
+		},
+		moves: ["Yawn Freeze", "Glacier Snooze"],
+		evolveAt: 28,
+		giant: true
+	}
+};
+/** Ultra rares: from ultra rare eggs and the finale only. */
+const ULTRA_MONSTERS = {
+	infinitail: {
+		type: "fire",
+		type2: "spark",
+		name: "Infinitail",
+		stats: {
+			hp: 50,
+			atk: 14,
+			def: 12
+		},
+		moves: ["Endless Flame", "Forever Bolt"]
+	},
+	primerald: {
+		type: "leaf",
+		type2: "stone",
+		name: "Primerald",
+		stats: {
+			hp: 54,
+			atk: 13,
+			def: 13
+		},
+		moves: ["Prime Vine", "Prime Gem"]
+	},
+	equalizard: {
+		type: "water",
+		type2: "ice",
+		name: "Equalizard",
+		stats: {
+			hp: 52,
+			atk: 13,
+			def: 13
+		},
+		moves: ["Balance Wave", "Equal Frost"]
+	}
+};
+/** Moves' power: the type's basic attack is 35, then the family's two own attacks. */
+const OWN_POWER = [45, 60];
+const scaled = (stats, by) => ({
+	hp: Math.round(stats.hp * by),
+	atk: Math.round(stats.atk * by),
+	def: Math.round(stats.def * by)
+});
+function build() {
+	const out = [];
+	for (const [family, f] of Object.entries(FAMILIES)) {
+		const rarity = UNCOMMON.has(family) ? "uncommon" : "common";
+		const { basic, big } = TYPE_ATTACKS[f.type];
+		const own = f.moves.map((name, i) => ({
+			name,
+			power: OWN_POWER[i],
+			anim: `${f.type}-2`
+		}));
+		const idOf = (i) => `${family}-${i + 1}`;
+		f.names.forEach((name, i) => {
+			const stage = i + 1;
+			const boost = STAGE_BOOST[i];
+			out.push({
+				id: idOf(i),
+				name,
+				type: f.type,
+				family,
+				rarity,
+				stage,
+				final: stage === 3,
+				stats: scaled(f.stats, boost),
+				attacks: stage === 1 ? [basic, own[0]] : stage === 2 ? [
+					basic,
+					own[0],
+					own[1]
+				] : [
+					basic,
+					own[0],
+					own[1],
+					big
+				],
+				...stage < 3 ? {
+					evolvesTo: idOf(i + 1),
+					evolveAt: f.evolveAt[i]
+				} : {}
+			});
+		});
+	}
+	for (const [family, f] of Object.entries(RARE_FAMILIES)) {
+		const { basic, big } = TYPE_ATTACKS[f.type];
+		const own = f.moves.map((name, i) => ({
+			name,
+			power: OWN_POWER[i],
+			anim: `${f.type}-2`
+		}));
+		f.names.forEach((name, i) => {
+			const stage = i + 1;
+			out.push({
+				id: `${family}-${stage}`,
+				name,
+				type: f.type,
+				family,
+				rarity: "rare",
+				stage,
+				final: stage === 2,
+				stats: scaled(f.stats, STAGE_BOOST[i * 2] * RARITY_BOOST.rare),
+				attacks: stage === 1 ? [basic, own[0]] : [
+					basic,
+					own[0],
+					own[1],
+					big
+				],
+				...stage === 1 ? {
+					evolvesTo: `${family}-2`,
+					evolveAt: f.evolveAt
+				} : {}
+			});
+		});
+	}
+	for (const [family, u] of Object.entries(ULTRA_MONSTERS)) out.push({
+		id: `${family}-1`,
+		name: u.name,
+		type: u.type,
+		type2: u.type2,
+		family,
+		rarity: "ultra",
+		stage: 1,
+		final: true,
+		stats: scaled(u.stats, STAGE_BOOST[2] * RARITY_BOOST.ultra),
+		attacks: [
+			{
+				name: u.moves[0],
+				power: OWN_POWER[1],
+				anim: `${u.type}-2`,
+				type: u.type
+			},
+			{
+				name: u.moves[1],
+				power: OWN_POWER[1],
+				anim: `${u.type2}-2`,
+				type: u.type2
+			},
+			{
+				...TYPE_ATTACKS[u.type].big,
+				type: u.type
+			},
+			{
+				...TYPE_ATTACKS[u.type2].big,
+				type: u.type2
+			}
+		]
+	});
+	return out;
+}
+({
+	...Object.fromEntries(Object.entries(FAMILIES).map(([id, f]) => [id, f.evolveAt])),
+	...Object.fromEntries(Object.entries(RARE_FAMILIES).map(([id, f]) => [id, [f.evolveAt]]))
+});
+/** All 75 entries, family by family, first form to last: the first 18 families, the rare ones, then the ultra rares. */
+const MONSTER_BOOK = build();
+new Map(MONSTER_BOOK.map((s) => [s.id, s]));
+//#endregion
+//#region shared/diamond/caverns.ts
+/**
+* The Monster Dig (docs/DIAMOND-MONSTERS-PLAN.md): 10 caverns below the Heart Diamond where the claw catches Maths
+* Monsters. Which monsters live in each tier, how often each tier turns up, how hard each wriggles, and the cavern's
+* goal. The monsters themselves (names, types, pictures) come from Maths Monsters' book (shared/monsters/monsterBook.ts),
+* read only: catching one here never changes a pupil's Maths Monsters game (James, 25 Nov 2026).
+*/
+/** The sleeping giants' families (two forms each). */
+const GIANTS = new Set([
+	"dozepebble",
+	"napsea",
+	"blinkberg"
+]);
+/** A monster's Monster Dig tier: first forms common, second forms uncommon, third forms and rare families rare. */
+function tierOf(s) {
+	if (s.rarity === "ultra") return "ultra";
+	if (GIANTS.has(s.family)) return "giant";
+	if (s.rarity === "rare" || s.stage === 3) return "rare";
+	return s.stage === 2 ? "uncommon" : "common";
+}
+const TIER_RULES = {
+	common: {
+		name: "Common",
+		chance: .55,
+		wriggle: .1,
+		weight: "light",
+		coins: 5,
+		move: "still",
+		r: 24
+	},
+	uncommon: {
+		name: "Uncommon",
+		chance: .27,
+		wriggle: .25,
+		weight: "light",
+		coins: 10,
+		move: { walk: [.6, 1.2] },
+		r: 24
+	},
+	rare: {
+		name: "Rare",
+		chance: .14,
+		wriggle: .4,
+		weight: "medium",
+		coins: 20,
+		move: { walk: [1.2, 2] },
+		r: 25
+	},
+	giant: {
+		name: "Super rare",
+		chance: .035,
+		wriggle: .55,
+		weight: "heavy",
+		coins: 40,
+		move: { pop: {
+			on: 180,
+			off: 150
+		} },
+		r: 30
+	},
+	ultra: {
+		name: "Ultra rare",
+		chance: .005,
+		wriggle: 1,
+		weight: "heavy",
+		coins: 80,
+		move: { pop: {
+			on: 120,
+			off: 210
+		} },
+		r: 28
+	}
+};
+/** Chance any monster is shiny (rolled after its tier). A shiny wriggles a little more. */
+const SHINY_CHANCE = 1 / 64;
+/** Ultras wriggle twice, at these shares of the way up. */
+const ULTRA_WRIGGLES = [[.65, .8], [.25, .4]];
+/** Every monster the Monster Dig can bury, in book order, by tier. */
+const DIG_MONSTERS = MONSTER_BOOK;
+DIG_MONSTERS.length;
+const BY_TIER = {
+	common: [],
+	uncommon: [],
+	rare: [],
+	giant: [],
+	ultra: []
+};
+for (const s of DIG_MONSTERS) BY_TIER[tierOf(s)].push(s);
+const digTierOf = (species) => tierOf(DIG_MONSTERS.find((s) => s.id === species));
+/** Each tier's real chance per monster spot in this cavern (favour and Lure applied, then scaled to add up to 1). */
+function tierChances(level, lure = false) {
+	const spec = levelSpec(level).cavern;
+	const out = {};
+	let sum = 0;
+	for (const t of DIG_TIERS) {
+		let c = TIER_RULES[t].chance * (spec.favour?.[t] ?? 1);
+		if (t === "ultra" && level < 18) c = 0;
+		if (lure && (t === "rare" || t === "giant" || t === "ultra")) c *= MONSTER_LURE;
+		out[t] = c;
+		sum += c;
+	}
+	for (const t of DIG_TIERS) out[t] /= sum;
+	return out;
+}
+const livesIn = (s, habitat) => habitat === "all" || s.type === habitat || s.type2 === habitat;
+/** Roll one monster for a spot: the rarest tier first (so the table is the real odds), then a monster of that tier living here. */
+function rollMonster(rng, level, lure) {
+	const spec = levelSpec(level).cavern;
+	const chances = tierChances(level, lure);
+	const roll = rng.fraction();
+	let tier = "common";
+	let upTo = 0;
+	for (let i = DIG_TIERS.length - 1; i >= 0; i--) {
+		upTo += chances[DIG_TIERS[i]];
+		if (roll < upTo) {
+			tier = DIG_TIERS[i];
+			break;
+		}
+	}
+	const home = BY_TIER[tier].filter((s) => livesIn(s, spec.habitat));
+	const pool = home.length ? home : BY_TIER[tier];
+	return {
+		species: pool[rng.int(pool.length)].id,
+		tier,
+		shiny: rng.fraction() < SHINY_CHANCE
+	};
+}
+/** Has a cavern's goal been met by these catches? */
+function goalMet$1(goal, caught) {
+	if ((goal.kinds ? new Set(caught.map((c) => c.species)).size : caught.length) < goal.count) return false;
+	if (!goal.atLeast) return true;
+	const need = DIG_TIERS.indexOf(goal.atLeast);
+	return caught.some((c) => DIG_TIERS.indexOf(digTierOf(c.species)) >= need);
+}
+/** Coins a caught monster pays. */
+const monsterCoins = (c) => TIER_RULES[digTierOf(c.species)].coins * (c.shiny ? 2 : 1);
+/** Kinds caught. Any catch fills the plain page; a shiny one fills its shiny page too. */
+const bookKinds = (book) => DIG_MONSTERS.filter((s) => (book[s.id]?.count ?? 0) > 0).length;
+const bookShinies = (book) => DIG_MONSTERS.filter((s) => (book[s.id]?.shiny ?? 0) > 0).length;
+const bookTotal = (book) => DIG_MONSTERS.reduce((n, s) => n + (book[s.id]?.count ?? 0), 0);
+const bookHas = (book, tier) => DIG_MONSTERS.some((s) => tierOf(s) === tier && (book[s.id]?.count ?? 0) > 0);
 //#endregion
 //#region shared/diamond/angles.ts
 /**
@@ -12941,7 +13814,8 @@ const STREAM = {
 	field: 0,
 	catch: 1e3,
 	landing: 5e3,
-	rare: 9e3
+	rare: 9e3,
+	monster: 12e3
 };
 //#endregion
 //#region shared/diamond/field.ts
@@ -12961,6 +13835,12 @@ function thingAt(t, tick) {
 		x: p < span ? t.crab.xMin + p : t.crab.xMax - (p - span),
 		y: t.y
 	};
+}
+/** Can the claw touch it at this tick? Everything can, except a popping monster while it's burrowed away. */
+function shownAt(t, tick) {
+	const pop = t.monster?.pop;
+	if (!pop) return true;
+	return (tick + pop.phase) % (pop.on + pop.off) < pop.on;
 }
 /** Which way a whole degree points, from the fixed table (0 is straight down, positive is to the right). */
 function direction(degree) {
@@ -13042,7 +13922,7 @@ function sackPrize(rng, level) {
 		return { coins: low + rng.int(low + 1) };
 	}
 	if (roll < SACK.coinsChance + SACK.secondsChance) return { seconds: SACK.seconds };
-	return { boost: BOOST_IDS[rng.int(BOOST_IDS.length)] };
+	return { boost: SACK_BOOST_IDS[rng.int(SACK_BOOST_IDS.length)] };
 }
 function buildField(level, rng) {
 	const spec = levelSpec(level);
@@ -13189,14 +14069,84 @@ function addRare(things, seed) {
 		r: g.r
 	}] : things;
 }
+/**
+* Buries a cavern's monsters (Monster Dig, levels 11 to 20), after everything else and from their own random stream, so
+* the gems, rocks and sacks are made exactly as on any level. Common ones sit still, uncommon and rare ones walk, and
+* the rarest pop out and burrow away again. The Monster Lure makes the rarer tiers likelier.
+*/
+function addMonsters(things, level, seed, lure) {
+	const cavern = levelSpec(level).cavern;
+	if (!cavern) return things;
+	const rng = makeRandom(mixSeed(seed, STREAM.monster));
+	const out = [...things];
+	const bottom = (r) => 700 - r - 6;
+	for (let n = 0; n < cavern.monsters; n++) {
+		const m = rollMonster(rng, level, lure);
+		const rule = TIER_RULES[m.tier];
+		const r = rule.r;
+		const minY = 200 + 60 * [
+			"common",
+			"uncommon",
+			"rare",
+			"giant",
+			"ultra"
+		].indexOf(m.tier);
+		const monster = {
+			species: m.species,
+			tier: m.tier,
+			shiny: m.shiny
+		};
+		const move = rule.move;
+		if (move !== "still" && "walk" in move) {
+			for (let tries = 0; tries < 40; tries++) {
+				const y = rng.between(minY, bottom(r));
+				const [lo, hi] = rowAt(y, r);
+				const walk = rng.between(120, 240);
+				if (hi - lo < walk) continue;
+				const xMin = rng.between(lo, hi - walk);
+				if (overlaps(out, xMin, y, r, xMin + walk)) continue;
+				const crab = {
+					xMin,
+					xMax: xMin + walk,
+					speed: rng.between(move.walk[0], move.walk[1]),
+					phase: rng.between(0, 2 * walk)
+				};
+				out.push({
+					id: out.length,
+					kind: "monster",
+					monster,
+					crab,
+					x: xMin,
+					y,
+					r
+				});
+				break;
+			}
+			if (out[out.length - 1]?.monster === monster) continue;
+		}
+		if (move !== "still" && "pop" in move) monster.pop = {
+			...move.pop,
+			phase: rng.int(move.pop.on + move.pop.off)
+		};
+		const at = spot(rng, out, r, minY, bottom(r), null) ?? spot(rng, out, r, 150, bottom(r), null);
+		if (at) out.push({
+			id: out.length,
+			kind: "monster",
+			monster,
+			...at,
+			r
+		});
+	}
+	return out;
+}
 /** The field for a level from its seed. Tries the next seed in line until every gem fits and the level can be passed. */
-function makeField(level, seed) {
+function makeField(level, seed, lure = false) {
 	let things = [];
 	for (let attempt = 0; attempt < 60; attempt++) {
 		things = buildField(level, makeRandom(mixSeed(seed, STREAM.field + attempt)));
 		if (fieldOk(level, things)) break;
 	}
-	return addRare(things, seed);
+	return addMonsters(addRare(things, seed), level, seed, lure);
 }
 /**
 * The guided first go's field: level 1 with a big quartz straight below and nothing in the way, so wherever the slow,
@@ -13241,7 +14191,7 @@ const has = (s, b) => s.boosts.includes(b);
 function startLevel(level, seed, boosts = [], starter = false) {
 	const spec = levelSpec(level);
 	const isStarter = starter && level === 1;
-	const things = isStarter ? makeStarterField(seed) : makeField(level, seed);
+	const things = isStarter ? makeStarterField(seed) : makeField(level, seed, boosts.includes("monsterLure"));
 	const seconds = spec.seconds + (boosts.includes("extraTime") ? 10 : 0);
 	return {
 		level,
@@ -13260,12 +14210,15 @@ function startLevel(level, seed, boosts = [], starter = false) {
 		length: 0,
 		grabbed: null,
 		carrying: null,
+		carryingMonster: null,
 		weight: "empty",
 		slipsDue: [],
 		catchNo: 0,
 		slotsUsed: 0,
 		waitingSlot: null,
 		blasterLeft: boosts.includes("rockBlaster"),
+		netLeft: boosts.includes("monsterNet"),
+		monsters: [],
 		banked: 0,
 		coins: 0,
 		passTick: null,
@@ -13278,8 +14231,12 @@ function startLevel(level, seed, boosts = [], starter = false) {
 }
 /** The claw's angle now, in whole degrees (0 straight down, positive to the right). */
 const clawDegree = (s) => (s.swing - s.swing % 10) / 10;
-/** Has the level's goal been met (the target, or on the last level the Heart Diamond)? */
-const goalMet = (s) => s.level === LAST_LEVEL ? (s.caught.heartDiamond ?? 0) > 0 : s.banked >= levelSpec(s.level).target;
+/** Has the level's goal been met (the target; on the last level the Heart Diamond; in a cavern its monster goal)? */
+function goalMet(s) {
+	const cavern = levelSpec(s.level).cavern;
+	if (cavern) return goalMet$1(cavern.goal, s.monsters);
+	return s.level === LAST_LEVEL ? (s.caught.heartDiamond ?? 0) > 0 : s.banked >= levelSpec(s.level).target;
+}
 function swingOn(s) {
 	const range = s.starterSwing ? STARTER.swingRange : 700;
 	s.swing += s.swingDir * (s.starterSwing ? STARTER.swingSpeed : 20);
@@ -13330,6 +14287,25 @@ function grab(s, t) {
 		s.carrying = null;
 		return;
 	}
+	if (t.kind === "monster" && t.monster) {
+		const m = t.monster;
+		const rule = TIER_RULES[m.tier];
+		s.carrying = null;
+		s.carryingMonster = {
+			species: m.species,
+			shiny: m.shiny
+		};
+		shot.monster = s.carryingMonster;
+		s.weight = rule.weight;
+		if (m.tier === "ultra") s.slipsDue = ULTRA_WRIGGLES.map(([lo, hi]) => s.length * rng.between(lo, hi));
+		else if (rng.fraction() < rule.wriggle + (m.shiny ? .1 : 0)) s.slipsDue = [s.length * rng.between(SLIP_AT[0], SLIP_AT[1])];
+		if (s.slipsDue.length && s.netLeft) {
+			s.netLeft = false;
+			s.slipsDue.shift();
+			shot.netted = true;
+		}
+		return;
+	}
 	const gem = t.kind === "crab" ? t.crab.gem : t.gem;
 	s.carrying = gem ?? null;
 	shot.gem = gem;
@@ -13357,6 +14333,12 @@ function bank(s) {
 			shot.coins = p.coins;
 		} else if ("seconds" in p) s.endTick += p.seconds * 30;
 		else if (!s.freeBoost) s.freeBoost = p.boost;
+	} else if (s.carryingMonster) {
+		const m = s.carryingMonster;
+		s.monsters.push(m);
+		const coins = monsterCoins(m);
+		s.coins += coins;
+		shot.coins = coins;
 	} else if (s.carrying) {
 		const gem = s.carrying;
 		const value = t?.kind === "gem" && t.value !== void 0 ? t.value : gemOf(gem).value;
@@ -13369,6 +14351,7 @@ function bank(s) {
 	}
 	s.grabbed = null;
 	s.carrying = null;
+	s.carryingMonster = null;
 	s.weight = "empty";
 	s.length = 0;
 	s.phase = "swing";
@@ -13412,7 +14395,7 @@ function step(s, press = null) {
 		let hit = null;
 		let hitD2 = 0;
 		for (const t of s.things) {
-			if (!s.buried.has(t.id)) continue;
+			if (!s.buried.has(t.id) || !shownAt(t, s.tick)) continue;
 			const p = thingAt(t, s.tick);
 			const ddx = at.x - p.x;
 			const ddy = at.y - p.y;
@@ -13452,15 +14435,16 @@ function step(s, press = null) {
 }
 /** The server's mark for the question the level is waiting on. Right: the claw holds on. Wrong: the gem falls back into the rock. */
 function answer(s, correct) {
-	if (s.phase !== "question" || s.waitingSlot === null || !s.grabbed || !s.carrying) return;
+	if (s.phase !== "question" || s.waitingSlot === null || !s.grabbed || !(s.carrying || s.carryingMonster)) return;
 	const slip = {
 		slot: s.waitingSlot,
 		catchNo: s.catchNo - 1,
-		gem: s.carrying,
 		tick: s.tick,
 		length: s.length,
 		held: correct
 	};
+	if (s.carrying) slip.gem = s.carrying;
+	if (s.carryingMonster) slip.monster = s.carryingMonster;
 	s.slips.push(slip);
 	s.waitingSlot = null;
 	s.phase = "reel";
@@ -13482,15 +14466,26 @@ function answer(s, correct) {
 		x = PIVOT.x + s.length * dx;
 		y = PIVOT.y + s.length * dy;
 	}
-	const fallen = {
+	let fallen;
+	if (t.kind === "monster") fallen = {
 		id: t.id,
-		kind: "gem",
-		gem: s.carrying,
+		kind: "monster",
+		monster: t.monster,
 		x,
 		y,
-		r: t.kind === "crab" ? gemOf(s.carrying).r : t.r
+		r: t.r
 	};
-	if (t.value !== void 0) fallen.value = t.value;
+	else {
+		fallen = {
+			id: t.id,
+			kind: "gem",
+			gem: s.carrying,
+			x,
+			y,
+			r: t.kind === "crab" ? gemOf(s.carrying).r : t.r
+		};
+		if (t.value !== void 0) fallen.value = t.value;
+	}
 	s.things[s.things.findIndex((o) => o.id === t.id)] = fallen;
 	s.buried.add(t.id);
 	slip.landed = {
@@ -13499,6 +14494,7 @@ function answer(s, correct) {
 	};
 	s.grabbed = null;
 	s.carrying = null;
+	s.carryingMonster = null;
 	s.weight = "empty";
 	s.slipsDue = [];
 }
@@ -13521,7 +14517,7 @@ function levelResult(s) {
 		stars = 1;
 		if (s.leftAtPass >= 450) {
 			stars = 2;
-			if (levelKinds(level.level).every((k) => (s.caught[k] ?? 0) > 0)) stars = 3;
+			if (isCavern(level.level) ? s.things.every((t) => t.kind !== "monster" || !s.buried.has(t.id)) : levelKinds(level.level).every((k) => (s.caught[k] ?? 0) > 0)) stars = 3;
 		}
 	}
 	return {
@@ -13533,6 +14529,7 @@ function levelResult(s) {
 		stars,
 		ticksLeft: Math.max(0, s.endTick - s.tick),
 		caught: { ...s.caught },
+		monsters: [...s.monsters],
 		diamond: (s.caught.heartDiamond ?? 0) > 0,
 		questions: s.slips.length,
 		held: s.slips.filter((x) => x.held).length,
@@ -13645,6 +14642,14 @@ const WORKSHOP_ITEMS = [
 		earnedBy: "diamond_found"
 	},
 	{
+		id: "fractopus-claw",
+		name: "Fractopus Claw",
+		slot: "head",
+		rarity: "epic",
+		earnedBy: "diamond_monster_kinds",
+		needs: 10
+	},
+	{
 		id: "rainbow-rope",
 		name: "Rainbow Rope",
 		slot: "rope",
@@ -13694,6 +14699,14 @@ const WORKSHOP_ITEMS = [
 		earnedBy: "diamond_stars"
 	},
 	{
+		id: "squaremander-tail",
+		name: "Squaremander Tail",
+		slot: "rope",
+		rarity: "epic",
+		earnedBy: "diamond_monster_kinds",
+		needs: 30
+	},
+	{
 		id: "sparkles",
 		name: "Sparkles",
 		slot: "trail",
@@ -13722,6 +14735,14 @@ const WORKSHOP_ITEMS = [
 		name: "Music Notes",
 		slot: "trail",
 		rarity: "common"
+	},
+	{
+		id: "infinity-sparks",
+		name: "Infinity Sparks",
+		slot: "trail",
+		rarity: "legendary",
+		earnedBy: "diamond_monster_kinds",
+		needs: 50
 	},
 	{
 		id: "fireworks",
@@ -13876,6 +14897,30 @@ function newPlayer() {
 }
 /** Does this pupil get the guided first go (they have never played a level)? */
 const needsStarter = (p) => p.lifetime.plays === 0;
+/** The Monster Dig opens for good once a pupil has caught the Heart Diamond, in any season (James, 25 Nov 2026). */
+const digOpen = (p) => p.lifetime.found > 0;
+const freshCaves = () => ({
+	deepest: 0,
+	newDate: null,
+	stars: Array(CAVERNS.length).fill(0)
+});
+const cavesOf = (p) => p.caves ?? freshCaves();
+/** Which caverns a pupil may start now (as level numbers 11 to 20), by the same one-new-a-day rule as the levels. */
+function cavernsOpen(p, now, unlimited = false) {
+	if (!digOpen(p)) return {
+		replays: [],
+		next: null,
+		nextOpen: false
+	};
+	const c = cavesOf(p);
+	const replays = Array.from({ length: c.deepest }, (_, i) => FIRST_CAVERN + i);
+	const next = c.deepest < CAVERNS.length ? FIRST_CAVERN + c.deepest : null;
+	return {
+		replays,
+		next,
+		nextOpen: next !== null && (unlimited || c.newDate !== nzDate(now))
+	};
+}
 /**
 * Which levels a pupil may start now. Passed levels are always open. The next one is open unless a new level was
 * already passed today (New Zealand date): then it opens tomorrow. Tries at today's level are unlimited.
@@ -13891,14 +14936,20 @@ function levelsOpen(p, now, unlimited = false) {
 	};
 }
 function canStart(p, level, now, unlimited = false) {
-	if (!Number.isInteger(level) || level < 1 || level > LAST_LEVEL) return false;
+	if (!Number.isInteger(level) || level < 1 || level > LAST_CAVERN) return false;
+	if (isCavern(level)) {
+		if (!digOpen(p)) return false;
+		if (level < FIRST_CAVERN + cavesOf(p).deepest) return true;
+		const open = cavernsOpen(p, now, unlimited);
+		return level === open.next && open.nextOpen;
+	}
 	if (level <= p.deepest) return true;
 	const open = levelsOpen(p, now, unlimited);
 	return level === open.next && open.nextOpen;
 }
 function boostPrice(id, level) {
 	const b = BOOSTS.find((x) => x.id === id);
-	return b.base + b.perLevel * level;
+	return b.base + b.perLevel * priceLevel(level);
 }
 /**
 * Boosts for the level about to start: at most one of each, the sack's free boost costs nothing, and the rest must be
@@ -13909,7 +14960,7 @@ function takeBoosts(p, level, ids) {
 		ok: false,
 		reason: "twice"
 	};
-	if (ids.some((id) => !BOOSTS.some((b) => b.id === id))) return {
+	if (ids.some((id) => !boostsFor(level).some((b) => b.id === id))) return {
 		ok: false,
 		reason: "unknown"
 	};
@@ -13939,7 +14990,13 @@ function takeBoosts(p, level, ids) {
 /** Achievement measures (counts_fn in Stage 4). */
 function measures(p) {
 	const rare = p.lifetime.rare ?? {};
+	const book = p.lifetime.monsters ?? {};
 	return {
+		diamond_monster_kinds: bookKinds(book),
+		diamond_monster_total: bookTotal(book),
+		diamond_monster_shiny: bookShinies(book),
+		diamond_monster_giant: bookHas(book, "giant") ? 1 : 0,
+		diamond_monster_ultra: bookHas(book, "ultra") ? 1 : 0,
 		diamond_rare_kinds: RARE_IDS.filter((id) => rare[id]).length,
 		diamond_rare_total: RARE_IDS.reduce((n, id) => n + (rare[id]?.count ?? 0), 0),
 		diamond_phoenix: rare.phoenixGem?.count ?? 0,
@@ -13954,7 +15011,7 @@ function measures(p) {
 /** Workshop upgrades this pupil has earned but doesn't have yet. */
 function newlyEarned(p) {
 	const m = measures(p);
-	return WORKSHOP_ITEMS.filter((it) => it.earnedBy && m[it.earnedBy] >= ACHIEVEMENT_NEEDS[it.earnedBy] && !p.owned.includes(it.id)).map((it) => it.id);
+	return WORKSHOP_ITEMS.filter((it) => it.earnedBy && m[it.earnedBy] >= (it.needs ?? ACHIEVEMENT_NEEDS[it.earnedBy]) && !p.owned.includes(it.id)).map((it) => it.id);
 }
 /**
 * Add a finished level to the pupil's progress. The caller has checked `canStart` when the level began; a pass only
@@ -13969,15 +15026,59 @@ function applyResult(before, r, now, unlimited = false) {
 		lifetime: {
 			...before.lifetime,
 			kinds: [...before.lifetime.kinds],
-			rare: { ...before.lifetime.rare ?? {} }
+			rare: { ...before.lifetime.rare ?? {} },
+			monsters: { ...before.lifetime.monsters ?? {} }
 		},
 		owned: [...before.owned]
 	};
 	const newRare = [];
+	const newMonsters = [];
 	let points = 0;
 	let newLevel = false;
 	let extra = false;
-	if (r.passed && r.level === before.deepest + 1 && levelsOpen(before, now, unlimited).nextOpen) {
+	const cave = isCavern(r.level);
+	if (cave) {
+		const c = {
+			...cavesOf(before),
+			stars: [...cavesOf(before).stars]
+		};
+		const open = cavernsOpen(before, now, unlimited);
+		if (r.passed && r.level === open.next && open.nextOpen) {
+			extra = c.newDate === today;
+			c.deepest++;
+			c.newDate = today;
+			newLevel = true;
+			points += POINTS.firstPass;
+		}
+		const i = r.level - FIRST_CAVERN;
+		if (i < c.deepest && r.stars > c.stars[i]) {
+			points += (r.stars - c.stars[i]) * POINTS.newStar;
+			c.stars[i] = r.stars;
+		}
+		p.caves = c;
+		const book = p.lifetime.monsters;
+		for (const m of r.monsters ?? []) {
+			const page = book[m.species];
+			if (!page) {
+				newMonsters.push(m.species);
+				if (bookKinds(book) === 0) points += POINTS.firstMonster;
+			}
+			const next = {
+				count: (page?.count ?? 0) + 1,
+				first: page?.first ?? today,
+				...page?.shiny ? {
+					shiny: page.shiny,
+					shinyFirst: page.shinyFirst
+				} : {}
+			};
+			if (m.shiny) {
+				if (!page?.shiny) newMonsters.push(`${m.species}-shiny`);
+				next.shiny = (page?.shiny ?? 0) + 1;
+				next.shinyFirst = page?.shinyFirst ?? today;
+			}
+			book[m.species] = next;
+		}
+	} else if (r.passed && r.level === before.deepest + 1 && levelsOpen(before, now, unlimited).nextOpen) {
 		extra = before.newLevelDate === today;
 		p.deepest = r.level;
 		p.newLevelDate = today;
@@ -13986,7 +15087,7 @@ function applyResult(before, r, now, unlimited = false) {
 	}
 	const coins = newLevel ? r.coins : Math.floor(r.coins * REPLAY_COIN_SHARE);
 	p.coins += coins;
-	if (r.level <= p.deepest && r.stars > p.stars[r.level - 1]) {
+	if (!cave && r.level <= p.deepest && r.stars > p.stars[r.level - 1]) {
 		points += (r.stars - p.stars[r.level - 1]) * POINTS.newStar;
 		p.stars[r.level - 1] = r.stars;
 	}
@@ -14028,7 +15129,8 @@ function applyResult(before, r, now, unlimited = false) {
 		points: extra ? 0 : points,
 		newLevel,
 		earned,
-		newRare
+		newRare,
+		newMonsters
 	};
 }
 //#endregion
@@ -14188,11 +15290,14 @@ async function handleDiamond(services, player, body) {
 	if (body.action === "levelStart") {
 		const level = body.level;
 		const boosts = readBoosts(body.boosts ?? []);
-		if (!Number.isInteger(level) || level < 1 || level > LAST_LEVEL || !boosts) return unreadable();
+		if (!Number.isInteger(level) || level < 1 || level > LAST_CAVERN || !boosts) return unreadable();
 		for (let tries = 0; tries < TRIES; tries++) {
 			const s = await services.load(player);
 			if (s === "busy") return busy();
-			if (!canStart(s.player, level, now(), unlimited)) return no(409, level > s.player.deepest + 1 ? "That level is still locked." : "That level opens tomorrow.", { code: "not-open" });
+			if (!canStart(s.player, level, now(), unlimited)) {
+				const locked = isCavern(level) ? s.player.lifetime.found === 0 || level > FIRST_CAVERN + (s.player.caves?.deepest ?? 0) : level > s.player.deepest + 1;
+				return no(409, locked ? "That level is still locked." : "That level opens tomorrow.", { code: "not-open" });
+			}
 			const paid = takeBoosts(s.player, level, boosts);
 			if (!paid.ok) return no(400, paid.reason === "coins" ? "Not enough coins for those boosts." : "Those boosts can’t be used.");
 			const seed = Math.floor(services.random() * 2 ** 32);
@@ -14281,6 +15386,7 @@ async function handleDiamond(services, player, body) {
 					newLevel: applied.newLevel,
 					earned: applied.earned,
 					newRare: applied.newRare,
+					newMonsters: applied.newMonsters,
 					player: applied.player
 				});
 			}

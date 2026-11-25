@@ -4,10 +4,13 @@
  */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
-  ACHIEVEMENTS, BOOSTS, POINTS, EXTRA_TIME_SECONDS, GEMS, LAST_LEVEL, LEVELS, QUESTION_CAP, QUESTION_CAP_LAST, RARE_GEMS, RARE_TIER_NAME, RARITY_PRICE,
-  REPLAY_COIN_SHARE, SACK, SPECIAL_SHARE, STAR_TWO_SECONDS, chanceWords, levelSpec, type BoostId, type RareGem, type Slot,
+  ACHIEVEMENTS, BOOSTS, CAVERNS, DIG_TIERS, POINTS, EXTRA_TIME_SECONDS, GEMS, LAST_LEVEL, LEVELS, QUESTION_CAP, QUESTION_CAP_LAST, RARE_GEMS, RARE_TIER_NAME, RARITY_PRICE,
+  REPLAY_COIN_SHARE, SACK, SPECIAL_SHARE, STAR_TWO_SECONDS, boostsFor, chanceWords, levelSpec, type BoostId, type RareGem, type Slot,
 } from '../../../shared/diamond/config';
-import { boostPrice, type Player } from '../../../shared/diamond/progress';
+import { SHINY_CHANCE, TIER_RULES, digTierOf, goalWords } from '../../../shared/diamond/caverns';
+import { boostPrice, digOpen, type Player } from '../../../shared/diamond/progress';
+import { TIER_COLOUR, monsterName, monsterUrl } from './art/monsters';
+import { MonsterBook } from './MonsterBook';
 import { itemOf } from '../../../shared/diamond/workshop';
 import { drawGem, drawRareAura, GEM_LOOK } from './art/draw';
 import { paintFile, paintNow } from './art/paint';
@@ -60,13 +63,36 @@ export function LevelEnd({ ended, unlimited = false, onShop, onAgain, onMap, aga
   const bookDone = newRare.size > 0 && RARE_GEMS.every((g) => ended.player.lifetime.rare?.[g.id]);
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
-  const title = r.level === LAST_LEVEL && r.diamond ? 'You found the Heart Diamond!' : r.passed ? `Level ${r.level} passed!` : 'So close!';
+  const cavern = spec.cavern;
+  const name = cavern ? `Cavern ${r.level - LAST_LEVEL}` : `Level ${r.level}`;
+  const title = r.level === LAST_LEVEL && r.diamond ? 'You found the Heart Diamond!' : r.passed ? `${name} passed!` : 'So close!';
+  const newPages = new Set(ended.newMonsters ?? []);
   return (
     <section className="dd-page dd-end" aria-labelledby="dd-end-title">
       <h2 id="dd-end-title" ref={heading} tabIndex={-1} className="dd-title">{title}</h2>
-      <p className="dd-soft">Level {r.level} · {spec.place}</p>
+      <p className="dd-soft">{name} · {spec.place}</p>
       {bookDone && <GemLordWon />}
-      {r.passed ? <Stars n={r.stars} /> : <p>{r.level === LAST_LEVEL ? 'The Heart Diamond is still down there. Try again!' : `You banked ${r.banked} of ${spec.target}. Try again!`}</p>}
+      {r.level === LAST_LEVEL && r.diamond && <p className="dd-earned" role="status">A gate has opened below the diamond: the <strong>Monster Dig</strong>! Find it at the bottom of the level map.</p>}
+      {r.passed ? <Stars n={r.stars} /> : <p>{cavern ? `${goalWords(cavern.goal)}. You caught ${r.monsters.length}. Try again!` : r.level === LAST_LEVEL ? 'The Heart Diamond is still down there. Try again!' : `You banked ${r.banked} of ${spec.target}. Try again!`}</p>}
+      {cavern && r.monsters.length > 0 && (
+        <div className="dd-card">
+          <h3 className="dd-h3">Monsters caught</h3>
+          <ul className="dd-mb-caught">
+            {r.monsters.map((m, i) => {
+              const tier = digTierOf(m.species);
+              const isNew = newPages.has(m.shiny ? `${m.species}-shiny` : m.species) && !r.monsters.slice(0, i).some((o) => o.species === m.species && o.shiny === m.shiny);
+              return (
+                <li key={i} className={isNew ? 'is-new' : ''} style={{ ['--tier' as string]: TIER_COLOUR[tier] }}>
+                  {monsterUrl(m.species, m.shiny) && <img src={monsterUrl(m.species, m.shiny)} alt="" width={64} height={64} />}
+                  <span className="dd-mb-caught__name">{m.shiny ? '✨ Shiny ' : ''}{monsterName(m.species)}</span>
+                  <span className="dd-small">{TIER_RULES[tier].name}</span>
+                  {isNew && <span className="dd-chip dd-chip--gold">New page!</span>}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
       {rareCaught.map((g) => (
         <div key={g.id} className={`dd-rare-won is-${g.tier}`} role="status">
           <Sprite size={110} animate draw={(c, t) => { drawRareAura(c, g.id, 50, 50, 18, t); drawGem(c, g.id, 50, 50, 22); }} />
@@ -100,6 +126,7 @@ export function LevelEnd({ ended, unlimited = false, onShop, onAgain, onMap, aga
         {r.questions > 0 && <p>Hold on! questions: you held on {r.held} of {r.questions} times.</p>}
         {r.freeBoost && <p>A mystery sack gave you a free {BOOSTS.find((b) => b.id === r.freeBoost)?.name} for your next level.</p>}
         {ended.newLevel && r.level < LAST_LEVEL && !unlimited && <p>Level {r.level + 1} opens tomorrow. You can replay any level you’ve passed for stars, gems and coins.</p>}
+        {ended.newLevel && cavern && r.level < LAST_LEVEL + 10 && !unlimited && <p>Cavern {r.level - LAST_LEVEL + 1} opens tomorrow. You can replay any cavern you’ve passed to hunt for more monsters.</p>}
         {ended.points > 0 && <p>+{ended.points} {ended.points === 1 ? 'point' : 'points'} for the hub.</p>}
         {ended.earned.length > 0 && (
           <p className="dd-earned" role="status">New claw looks for you (in the Shop): {ended.earned.map((id) => itemOf(id)?.name ?? id).join(', ')}!</p>
@@ -152,6 +179,7 @@ export function Shop({ player, level, tab, onTab, basket, onToggle, onStart, can
   onBack: () => void;
 }) {
   const cost = basket.reduce((sum, id) => sum + (id === player.freeBoost ? 0 : boostPrice(id, level)), 0);
+  const levelName = levelSpec(level)?.cavern ? `cavern ${level - LAST_LEVEL}` : `level ${level}`;
   const left = player.coins - cost;
   return (
     <Page id="dd-shop-title" title="Shop" onBack={onBack} coins={player.coins}>
@@ -159,7 +187,7 @@ export function Shop({ player, level, tab, onTab, basket, onToggle, onStart, can
         {(['boosts', 'looks'] as const).map((t, i) => (
           <button key={t} type="button" role="tab" data-key={String(i + 1)} id={`dd-shoptab-${t}`} aria-selected={tab === t} aria-controls="dd-shoptab-panel" className={`dd-shoptab${tab === t ? ' is-on' : ''}`} onClick={() => onTab(t)}>
             <KeyBadge k={String(i + 1)} />
-            <span className="dd-shoptab__name">{t === 'boosts' ? `Boosts for level ${level}` : 'Claw looks'}</span>
+            <span className="dd-shoptab__name">{t === 'boosts' ? `Boosts for ${levelName}` : 'Claw looks'}</span>
             <span className="dd-shoptab__about">{t === 'boosts' ? 'Help on your next go' : 'Kept for good'}</span>
           </button>
         ))}
@@ -171,7 +199,7 @@ export function Shop({ player, level, tab, onTab, basket, onToggle, onStart, can
             <p className="dd-soft">Boosts help on your next level only. One of each at most.</p>
             {advice && <p className="dd-advice"><strong>Nugget says:</strong> {advice}</p>}
             <ul className="dd-list">
-              {BOOSTS.map((b) => {
+              {boostsFor(level).map((b) => {
                 const inBasket = basket.includes(b.id);
                 const free = b.id === player.freeBoost;
                 const price = free ? 0 : boostPrice(b.id, level);
@@ -195,7 +223,7 @@ export function Shop({ player, level, tab, onTab, basket, onToggle, onStart, can
             </ul>
             <div className="dd-row">
               <button type="button" className="button button--play dd-btn dd-btn--big" data-key="enter" onClick={onStart} disabled={!canStart}>
-                Start level {level}{basket.length ? ` with ${basket.length} boost${basket.length > 1 ? 's' : ''}` : ''}
+                Start {levelName}{basket.length ? ` with ${basket.length} boost${basket.length > 1 ? 's' : ''}` : ''}
               </button>
             </div>
             {why && <p className="dd-why">{why}</p>}
@@ -211,6 +239,34 @@ export function Shop({ player, level, tab, onTab, basket, onToggle, onStart, can
 const prettyDate = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 
 export function GemBook({ player, onBack }: { player: Player; onBack: () => void }) {
+  const [monsters, setMonsters] = useState(digOpen(player));
+  const tabs = digOpen(player) || Object.keys(player.lifetime.monsters ?? {}).length > 0;
+  if (tabs && monsters) {
+    return (
+      <Page id="dd-book-title" title="Monster Book" onBack={onBack}>
+        <BookTabs monsters onPick={setMonsters} />
+        <MonsterBook book={player.lifetime.monsters ?? {}} />
+      </Page>
+    );
+  }
+  return <GemPages player={player} onBack={onBack} tabs={tabs ? <BookTabs monsters={false} onPick={setMonsters} /> : null} />;
+}
+
+function BookTabs({ monsters, onPick }: { monsters: boolean; onPick: (m: boolean) => void }) {
+  return (
+    <div className="dd-shoptabs" role="tablist" aria-label="Which book">
+      {[false, true].map((m, i) => (
+        <button key={String(m)} type="button" role="tab" data-key={String(i + 1)} aria-selected={monsters === m} className={`dd-shoptab${monsters === m ? ' is-on' : ''}`} onClick={() => onPick(m)}>
+          <KeyBadge k={String(i + 1)} />
+          <span className="dd-shoptab__name">{m ? 'Monster Book' : 'Gem Book'}</span>
+          <span className="dd-shoptab__about">{m ? 'Monsters from the Monster Dig' : 'Gems and rare gems'}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function GemPages({ player, onBack, tabs }: { player: Player; onBack: () => void; tabs: ReactNode }) {
   const found = GEMS.filter((g) => player.gemBook[g.id]).length;
   const rare = player.lifetime.rare ?? {};
   const rareFound = RARE_GEMS.filter((g) => rare[g.id]).length;
@@ -218,6 +274,7 @@ export function GemBook({ player, onBack }: { player: Player; onBack: () => void
   const vault = paintFile('rare', 'vault-800') ?? paintFile('rare', 'vault');
   return (
     <Page id="dd-book-title" title="Gem Book" onBack={onBack}>
+      {tabs}
       <section className={`dd-rarebook${rareFound === RARE_GEMS.length ? ' is-complete' : ''}`} aria-labelledby="dd-rarebook-title">
         {vault && <img className="dd-rarebook__vault" src={vault} alt="" aria-hidden="true" />}
         <div className="dd-rarebook__head">
@@ -368,6 +425,12 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
           {RARE_GEMS.map((g) => <li key={g.id}><strong>{g.name}</strong> ({RARE_TIER_NAME[g.tier]}): {chanceWords(g)}.</li>)}
         </ul>
         <p>Catch one and it goes in your Gem Book for good, even after a new season. Collect them all for a trophy and the gold title The Gem Lord!</p>
+        <h3 className="dd-h3">The Monster Dig</h3>
+        <p>Catch the Heart Diamond and a gate opens below it, for good: {CAVERNS.length} caverns full of Maths Monsters. Grab a monster and it may wriggle. Answer the question to hold on; get it wrong and it burrows deeper, where you can grab it again. Each cavern has a goal, like “{goalWords(CAVERNS[0].cavern!.goal)}”. One new cavern a day, and passed caverns are always open for more hunting.</p>
+        <ul>
+          {DIG_TIERS.map((t) => <li key={t}><strong>{TIER_RULES[t].name}</strong>: about {Math.round(TIER_RULES[t].chance * 1000) / 10}% of monsters{t === 'ultra' ? ', only in the deepest caverns' : ''}.{t === 'uncommon' || t === 'rare' ? ' They walk about.' : t === 'giant' || t === 'ultra' ? ' They pop out, then burrow away again.' : ''}</li>)}
+        </ul>
+        <p>Any monster can be shiny (1 in {Math.round(1 / SHINY_CHANCE)}). Every monster you catch fills a page of your Monster Book, kept for good. In the caverns the Shop also sells the Monster Lure and the Monster Net.</p>
         <h3 className="dd-h3">One new level a day</h3>
         <p>You can try today’s new level as many times as you like. Once you pass it, the next level opens tomorrow. Levels you’ve passed are always open to replay. Some days your teacher may give unlimited new levels.</p>
         <h3 className="dd-h3">Stars and coins</h3>
@@ -377,7 +440,7 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
         <h3 className="dd-h3">The Shop</h3>
         <p>The Shop has two tabs. <strong>Boosts</strong> help on your next level only:</p>
         <ul>
-          {BOOSTS.map((b) => <li key={b.id}><strong>{b.name}</strong> ({b.base} + {b.perLevel} × the level number): {b.id === 'extraTime' ? `${EXTRA_TIME_SECONDS} more seconds.` : b.about}</li>)}
+          {BOOSTS.map((b) => <li key={b.id}><strong>{b.name}</strong> ({b.base} + {b.perLevel} × the {b.caverns ? 'cavern' : 'level'} number{b.caverns ? ', caverns only' : ''}): {b.id === 'extraTime' ? `${EXTRA_TIME_SECONDS} more seconds.` : b.about}</li>)}
         </ul>
         <p><strong>Claw looks</strong> are kept for good. They change how your claw looks, never how it digs: Common {RARITY_PRICE.common}, Cool {RARITY_PRICE.cool}, Epic {RARITY_PRICE.epic}, Legendary {RARITY_PRICE.legendary} coins. The special of the week costs {Math.round(SPECIAL_SHARE * 100)}% of its price. A few can’t be bought: you win them.</p>
         <h3 className="dd-h3">Achievements and points</h3>

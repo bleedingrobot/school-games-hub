@@ -1,15 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { botLevel } from './bot';
-import { FIELD_H, LAST_LEVEL, RARE_GEMS, RARE_IDS, TICKS_PER_SECOND, gemOf, isRare, levelSpec, questionCap, type BoostId, type RareId } from './config';
+import { DIG_TIERS, FIELD_H, FIRST_CAVERN, LAST_CAVERN, LAST_LEVEL, RARE_GEMS, RARE_IDS, TICKS_PER_SECOND, gemOf, isRare, levelSpec, questionCap, type BoostId, type RareId } from './config';
 import { levelKinds, levelResult, playLevel, starterLevel, startLevel, step } from './engine';
 import { makeField, rareFor, rareIn } from './field';
-import { applyResult, canStart, measures, newPlayer, newSeason, type Player } from './progress';
+import { DIG_MONSTERS, rollMonster, tierChances } from './caverns';
+import { applyResult, canStart, digOpen, measures, newPlayer, newSeason, takeBoosts, type Player } from './progress';
 import { makeRandom } from './random';
 
 const steady = { wobble: 4, choice: 3, maths: 0.6 };
 
 describe('Diamond Drop rules', () => {
-  it('replays a level exactly from its seed, drops, boosts and marks, so the server and the browser agree', () => {
+  it('replays a level exactly from its seed, drops, boosts and marks, so the server and the browser agree (Monster Dig caverns too)', () => {
     const boosts: BoostId[][] = [[], ['luckyCharm'], ['strongWinch', 'extraTime'], ['rockBlaster']];
     for (let level = 1; level <= LAST_LEVEL; level++) {
       const seed = 1000 + level * 77;
@@ -55,6 +56,8 @@ describe('Diamond Drop rules', () => {
       if (RARE_IDS.some((id) => (played.result.caught[id] ?? 0) > 0)) caught++;
     }
     expect(caught).toBeGreaterThan(0);
+
+    monsterDigChecks();
   });
 
   it('slips come only from the seed and the marks; a wrong mark drops the gem; nothing slips past the cap; the first go cannot miss', () => {
@@ -167,3 +170,63 @@ describe('Diamond Drop rules', () => {
     expect(second.coins).toBe(win.coins);
   });
 });
+
+/** The Monster Dig (docs/DIAMOND-MONSTERS-PLAN.md): opens for good with the diamond, buries monsters at their tier odds, replays exactly and fills a book New Season keeps. */
+function monsterDigChecks() {
+  {
+    const day = new Date('2026-11-25T01:00:00Z');
+    const next = new Date('2026-11-26T01:00:00Z');
+    // Locked until the Heart Diamond has been caught, then open even after New Season.
+    let p: Player = newPlayer();
+    expect(canStart(p, FIRST_CAVERN, day)).toBe(false);
+    p = { ...p, lifetime: { ...p.lifetime, found: 1 } };
+    p = newSeason(p);
+    expect(canStart(p, FIRST_CAVERN, day)).toBe(true);
+    expect(canStart(p, FIRST_CAVERN + 1, day)).toBe(false);
+    expect(digOpen(p)).toBe(true);
+
+    // The tier table is the real odds, with nothing ultra before cavern 18 and the Lure making rarer tiers likelier.
+    const n = 30000;
+    const count = (level: number, lure: boolean) => {
+      const seen: Record<string, number> = {};
+      const rng = makeRandom(level + (lure ? 99 : 0));
+      for (let i = 0; i < n; i++) { const t = rollMonster(rng, level, lure).tier; seen[t] = (seen[t] ?? 0) + 1; }
+      return seen;
+    };
+    const plain = count(17, false);
+    const odds = tierChances(17);
+    for (const t of DIG_TIERS) expect(Math.abs((plain[t] ?? 0) / n - odds[t])).toBeLessThan(0.01);
+    expect(plain.ultra ?? 0).toBe(0);
+    expect((count(17, true).rare ?? 0) / n).toBeGreaterThan(odds.rare + 0.03);
+    expect(DIG_MONSTERS.length).toBe(75);
+
+    // Every cavern buries its monsters, can be passed, and replays exactly (with the Net and the Lure too).
+    for (const level of [FIRST_CAVERN, 15, LAST_CAVERN]) {
+      const boosts: BoostId[] = level === 15 ? ['monsterNet', 'monsterLure'] : [];
+      const seed = 4242 + level;
+      expect(makeField(level, seed).filter((t) => t.kind === 'monster').length).toBeGreaterThanOrEqual(levelSpec(level).cavern!.monsters - 1);
+      const played = botLevel(level, seed, boosts, { wobble: 2, choice: 1, maths: 0.9 }, makeRandom(level));
+      expect(played.result.monsters.length).toBeGreaterThan(0);
+      expect(playLevel({ level, seed, drops: played.drops, boosts, marks: played.marks, finish: played.finish })).toEqual(played.result);
+    }
+    // Cavern boosts are only on sale in the caverns.
+    expect(takeBoosts({ ...p, coins: 999 }, 3, ['monsterLure']).ok).toBe(false);
+    expect(takeBoosts({ ...p, coins: 999 }, FIRST_CAVERN, ['monsterLure']).ok).toBe(true);
+
+    // A pass fills the book, moves one cavern deeper (one a day) and New Season keeps the book.
+    const result = { ...playLevel({ level: FIRST_CAVERN, seed: 1, drops: [] }), passed: true, stars: 1 as const,
+      monsters: [{ species: 'digibud-1', shiny: false }, { species: 'digibud-1', shiny: true }] };
+    const a = applyResult(p, result, day);
+    expect(a.newLevel).toBe(true);
+    expect(a.newMonsters).toEqual(['digibud-1', 'digibud-1-shiny']);
+    expect(a.player.lifetime.monsters?.['digibud-1']).toEqual({ count: 2, first: '2026-11-25', shiny: 1, shinyFirst: '2026-11-25' });
+    expect(a.player.caves?.deepest).toBe(1);
+    expect(a.player.deepest).toBe(0);
+    expect(canStart(a.player, FIRST_CAVERN + 1, day)).toBe(false);
+    expect(canStart(a.player, FIRST_CAVERN + 1, next)).toBe(true);
+    expect(measures(a.player).diamond_monster_kinds).toBe(1);
+    const fresh = newSeason(a.player);
+    expect(fresh.lifetime.monsters?.['digibud-1']?.count).toBe(2);
+    expect(fresh.caves).toBeUndefined();
+  }
+}

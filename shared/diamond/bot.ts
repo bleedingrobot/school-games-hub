@@ -2,9 +2,10 @@
  * Bot pupils for the simulator: they aim (well or badly), press Drop a little early or late, and answer Hold on!
  * questions right as often as their maths accuracy says. They play through the same engine the server replays.
  */
-import { LAST_LEVEL, REEL_SPEED, ROCKS, SHOOT_SPEED, STARTER, SWING_RANGE, SWING_SPEED, gemOf, type BoostId, type Weight } from './config';
+import { LAST_LEVEL, REEL_SPEED, isCavern, ROCKS, SHOOT_SPEED, STARTER, SWING_RANGE, SWING_SPEED, gemOf, type BoostId, type Weight } from './config';
 import { answer, levelKinds, levelResult, startLevel, step, type LevelResult, type LevelState } from './engine';
-import { firstHit, type Thing } from './field';
+import { TIER_RULES } from './caverns';
+import { firstHit, shownAt, type Thing } from './field';
 import type { Random } from './random';
 
 export interface Skill {
@@ -22,6 +23,12 @@ function worth(s: LevelState, t: Thing | null, length: number, wait: number, mat
   let weight: Weight = 'empty';
   if (t?.kind === 'rock') weight = ROCKS[t.rock!].weight;
   else if (t?.kind === 'sack') { value = 8; weight = 'light'; }
+  else if (t?.kind === 'monster' && t.monster) {
+    // Monsters are what a cavern is for: worth more than any gem, the rarer the more.
+    const rule = TIER_RULES[t.monster.tier];
+    weight = rule.weight;
+    value = (60 + rule.coins) * (1 - rule.wriggle * (1 - maths));
+  }
   else if (t) {
     const gem = t.kind === 'crab' ? t.crab!.gem : t.gem;
     if (gem) {
@@ -59,7 +66,7 @@ function swingAhead(s: LevelState, ahead: number): number[] {
 export function planDrop(s: LevelState, skill: Skill, rng: Random): number {
   const period = Math.ceil((4 * SWING_RANGE) / SWING_SPEED);
   const angles = swingAhead(s, period);
-  const buried = s.things.filter((t) => s.buried.has(t.id));
+  const buried = s.things.filter((t) => s.buried.has(t.id) && shownAt(t, s.tick + 20));
   const options: { k: number; score: number }[] = [];
   for (let k = 0; k < period; k++) {
     const hit = firstHit(buried, angles[k], s.tick + k + 20);
@@ -98,7 +105,7 @@ export function botLevel(level: number, seed: number, boosts: readonly BoostId[]
     let press: 'drop' | 'finish' | null = null;
     if (s.phase === 'swing') {
       // Done once passed with every kind caught (the bot isn't greedy for coins after that).
-      if (s.passTick !== null && level !== LAST_LEVEL && kinds.every((k) => (s.caught[k] ?? 0) > 0)) {
+      if (s.passTick !== null && level !== LAST_LEVEL && !isCavern(level) && kinds.every((k) => (s.caught[k] ?? 0) > 0)) {
         press = 'finish';
         finish = s.tick;
       } else {
