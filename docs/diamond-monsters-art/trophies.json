@@ -51,7 +51,7 @@
     },
     {
       "name": "monster-book",
-      "prompt": "A glowing open storybook full of colourful friendly monster pictures, every page filled, little monsters jumping out of the pages in a swirl of golden sparkles, a soft halo of light behind it.",
+      "prompt": "A glowing open storybook full of colourful friendly monster pictures, every page filled, little monsters jumping out of the pages in a swirl of golden sparkles, a soft halo of light behind it. The book and its monsters only: no people, no children, no human figures, no silhouettes.",
       "size": [
         1024,
         1024
