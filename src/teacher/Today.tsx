@@ -29,6 +29,7 @@ import { describeEnd, nzLocalToIso, skillList, timeLeft } from '../../shared/mat
 import { PUPILS_SEE_IT, SettingChoice, SettingToggle, useSetting } from './Settings';
 import type { SettingsTarget } from './Games';
 import { useTeacherClass } from './TeacherClass';
+import { ClassLiveCard } from './ClassLiveCard';
 import { GameSets } from './GameSets';
 import { GameSwitches } from './GameSwitches';
 import { NeedsYou } from './WaitingToJoin';
@@ -47,6 +48,7 @@ export function Today() {
   return (
     <div className="today">
       <ClassNeedsYou key={`needs-${classId}`} classId={classId} />
+      <ClassLiveCard classId={classId} />
       <GameSets key={`sets-${classId}`} classId={classId} name={current.name} onChanged={() => setSetsUsed((n) => n + 1)} />
       <LessonControls key={`controls-${classId}-${setsUsed}`} target={{ kind: 'class', classId }} name={current.name} />
       <GameSwitches key={`switches-${classId}`} classId={classId} />

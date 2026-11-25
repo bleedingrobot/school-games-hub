@@ -80,6 +80,10 @@
 
 Since migration `20261125000800_classlive_activities` the activity list is the table `public.classlive_activities` (id, name, moves, max_speed, reward_line, sort). A new activity's migration only INSERTs: its row there (`moves = true` lets pupils save spots through `classlive_move`, clamped to `max_speed`), plus `achievement_measures` ('classlive_<key>') and `achievement_types` rows. Its trophies count `PupilReward.extra` ({ key: number }, 0 to 500 a session) in `rewardsOf`, which `classlive_finish` adds into `classlive_stats.extra` and `classlive_counts` returns as 'classlive_<key>'. Never create-or-replace `classlive_move`, `classlive_finish`, `classlive_counts`, `classlive_rules`, `classlive_here` or the activity check from a game's migration: several games are built side by side and the last one would wipe out the others. In the memory copy (`memoryMove`) every activity except stars, serpent and mural moves.
 
+### Adding an activity (teacher's picker)
+
+The Class Live page opens on a grid of games (James, 25 Nov 2026 NZ); tapping one shows only that game's options, with "← All games" back. A new activity adds one row to `LIVE_GAMES` in `src/games/classlive/gameList.ts` (id, name, emoji, one-line blurb, group `think`/`run`/`battle`, tint, picture) and renders its setup card in `Setup` (Projector.tsx) under `{pick === '<id>' && …}`. The same list feeds the Class Live card on the teacher's Today page, whose tiles link to `classlive?pick=<id>`.
+
 ## 6. Design checklist
 
 1. **Big goal**: draw every sky creature (one per level), wake all three serpents, reveal every mural.
