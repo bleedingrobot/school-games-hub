@@ -33,15 +33,14 @@
   position: absolute;
   width: 50%;
   height: 50%;
-  opacity: 0.34;
-  mix-blend-mode: soft-light;
+  opacity: 0.5;
 }
-.sb-board--painted .sb-q { mix-blend-mode: normal; opacity: 0.28; }
+.sb-board--painted .sb-q { opacity: 0.42; }
 .sb-q--0 { left: 0; top: 0; background: var(--q0); }
 .sb-q--1 { right: 0; top: 0; background: var(--q1); }
 .sb-q--2 { right: 0; bottom: 0; background: var(--q2); }
 .sb-q--3 { left: 0; bottom: 0; background: var(--q3); }
-.sb-q--hit { opacity: 0.8; mix-blend-mode: normal; animation: sb-hit 0.35s ease-in-out infinite alternate; }
+.sb-q--hit { opacity: 0.85; animation: sb-hit 0.35s ease-in-out infinite alternate; }
 .sb-q--safe { opacity: 0.55; box-shadow: inset 0 0 0 6px #fff; }
 @keyframes sb-hit { from { filter: brightness(1); } to { filter: brightness(1.6); } }
 /* Rope lines with floats between the quarters. */
