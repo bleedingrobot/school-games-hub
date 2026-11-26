@@ -4,9 +4,10 @@ import { MONSTER_LOOKS, SUPPLY_KINDS, SUPPLY_NAMES, monsterOf, monsterSave, supp
 import { CONFIG } from '../../../shared/clans/config';
 import { GEAR_KINDS, cannotBuy, wornItem, wornTier } from '../../../shared/clans/character';
 import { levelOf } from '../../../shared/clans/empire';
-import { CLASS_FOCUS, itemLine, offhandWord, smithyFor, unlockedTier } from '../../../shared/clans/items';
+import { itemLine, offhandWord, smithyFor, unlockedTier } from '../../../shared/clans/items';
 import type { GearKind, GearStat, ItemDef, Member } from '../../../shared/clans/types';
 import { LadderAsk, type Asker } from './LadderAsk';
+import { RecBadge } from './RecBadge';
 import { buyItem, buySupplies, shopPrice } from './places';
 import type { Session, Change } from './session';
 import { ItemSprite, PlaceSprite, Portrait } from './Sprite';
@@ -16,17 +17,16 @@ import { lookOf } from '../../../shared/clans/looks';
 const GEAR_STATS: GearStat[] = ['strength', 'dexterity', 'agility', 'wisdom', 'armor', 'charisma', 'hp', 'sp'];
 const slotWord = (m: Member, kind: GearKind) => (kind === 'weapon' ? 'Weapon' : kind === 'armor' ? 'Armour' : offhandWord(m.cls));
 
-/** "Strength +4 → +7 (R)": what the item gives next to what the member has in that slot now. (R) marks the class's recommended stats. */
+/** "Strength +4 → +7 ★ Main": what the item gives next to what the member has in that slot now. ★ Main and Also good mark the class's stats worth having. */
 function Gains({ member, item }: { member: Member; item: ItemDef }) {
   const now = wornTier(member, item.kind) ? wornItem(member, item.kind)!.bonus : {};
-  const focus = CLASS_FOCUS[member.cls] ?? [];
   const lines = GEAR_STATS.filter((s) => item.bonus[s] || now[s]).map((s) => {
     const was = now[s] ?? 0;
     const will = item.bonus[s] ?? 0;
     return (
       <li key={s}>
         {GEAR_WORD[s]} {was === will || was === 0 ? `+${will}` : `+${was} → +${will}`}
-        {focus.includes(s) && <span className="cq-rec" title={`Good for a ${member.cls}`}> (R)<span className="sr-only"> recommended for a {member.cls}</span></span>}
+        <RecBadge cls={member.cls} stat={s} />
       </li>
     );
   });
