@@ -5,7 +5,7 @@
  */
 import { markQuestion, sameAnswer } from '../maths/serverQuestions';
 import { answered, canAsk, grab, type GhostGame } from './ghost';
-import { busy, mutate, nextQuestion, no, ok, playerView, roomView, timeOf, type ClassLiveServices, type RoomRow, type Session, type StepReply } from './server';
+import { busy, mutate, nextQuestion, no, ok, playerView, roomSpots, roomView, timeOf, type ClassLiveServices, type RoomRow, type Session, type StepReply } from './server';
 
 const MAX_ANSWER_MS = 120_000;
 
@@ -18,7 +18,7 @@ export async function ghostStep(sv: ClassLiveServices, cur: RoomRow, who: string
 
   if (body.action === 'play') {
     if (body.grab === undefined) return no(400, "That couldn't be read.");
-    const all = await sv.positions(room);
+    const all = await roomSpots(sv, s0, room);
     if (all === 'busy') return busy();
     const done = await mutate(sv, room, (s, t) => {
       if (s.state !== 'live' || s.game.kind !== 'ghost') return { refuse: no(409, 'This one has finished.', 'over') };

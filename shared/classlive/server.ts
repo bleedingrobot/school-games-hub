@@ -43,6 +43,7 @@ import { BAYS, isShark, newShark, sharkAdvance, sharkJump, sharkQuestionFor, typ
 
 import { advance as ghostAdvance, freshMine as ghostFresh, ghostDone, ghostPlayer, MAPS as GHOST_MAPS, needsPositions as ghostNeeds, newGhost, nextDeadline as ghostDeadline, publicGhost, type GhostEvent, type GhostGame, type GhostPlayer, type PublicGhost } from './ghost';
 import { ghostStep } from './ghostServer';
+import { ghostSync, type EdgeServices } from './edge';
 import { advanceRelay, joinRelay, newRelay, raceCount, relayDeadline, type RelayEvent, type RelayGame } from './relay';
 import { relayPlayer, relayPublic, relayStep, type RelayPlayer, type RelayPublic } from './relayServer';
 import { advance as crewAdvance, callMeeting, crewDone, crewNick, crewPlayer, freshMine as crewFresh, meetingControl, newCrew, nextDeadline as crewDeadline, publicCrew, type CrewEvent, type CrewGame, type CrewPlayer, type PublicCrew } from './crew';
@@ -90,6 +91,8 @@ export interface Session {
    * writes it with `game: null`; the first step makes the game (`gameFor`). It starts at `startsAt` if `min` have joined.
    */
   auto?: Auto;
+  /** Spots go through Cloudflare, not the database (shared/classlive/edge.ts; James's Ghost Tag pilot, 26 Nov 2026 NZ). */
+  edge?: true;
 }
 
 export interface Auto {
@@ -138,6 +141,8 @@ export interface RoomView {
   lobby: Lobby | null;
   /** Pupils' devices play the background music too. */
   padMusic: boolean;
+  /** A Cloudflare pilot room (shared/classlive/edge.ts): devices send spots there. */
+  edge?: boolean;
   /** A game the server opened at a set time, or null. */
   auto: { startsAt: number; min: number; calledOff: boolean; vote: { choices: Activity[]; counts: number[]; winner: Activity | null } | null } | null;
 }
@@ -280,7 +285,12 @@ export interface ClassLiveServices {
   clashBoard(room: number, round: number): Promise<{ tiles: string; painted: Record<string, number> } | Busy>;
   /** Colour Clash: a paint bomb's tiles take the team's colour. */
   clashBomb(room: number, round: number, team: number, player: string, tiles: number[]): Promise<void>;
+  /** Cloudflare's rooms (shared/classlive/edge.ts), when its secrets are set. */
+  edge?: EdgeServices;
 }
+
+/** The room's saved spots: from Cloudflare for a pilot room, else the database. */
+export const roomSpots = (sv: ClassLiveServices, s: Pick<Session, 'edge'>, room: number) => (s.edge && sv.edge ? sv.edge.positions(room) : sv.positions(room));
 
 export type StepReply = { status: number; body: Record<string, unknown> };
 export const ok = (body: Record<string, unknown>): StepReply => ({ status: 200, body });
@@ -335,7 +345,7 @@ export function roomView(s: Session, startedAt: number | null, now?: number): Ro
   const t = startedAt === null ? 0 : Math.max(0, (now ?? startedAt) - startedAt);
   return {
     activity: s.activity, state: s.state, lengthMin: s.lengthMin, startedAt, players: s.order.length, game: publicGame(s.game, s.order.length, t, s.order),
-    lobby: s.lobby ?? null, padMusic: s.padMusic === true,
+    lobby: s.lobby ?? null, padMusic: s.padMusic === true, ...(s.edge ? { edge: true as const } : {}),
     auto: s.auto ? {
       startsAt: s.auto.startsAt, min: s.auto.min, calledOff: s.auto.calledOff === true,
       vote: s.auto.vote?.choices ? {
@@ -515,7 +525,7 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
       if (s.state === 'live') {
         let spots: Positions = {};
         if (ghostNeeds(g0, t)) {
-          const got = await sv.positions(room);
+          const got = await roomSpots(sv, s, room);
           if (got === 'busy') return { refuse: busy() };
           spots = got;
         }
@@ -644,7 +654,14 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
     if (saved === 'busy') return { refuse: busy() };
     if (saved === 'answered') return { refuse: no(409, "You've already answered that one.", 'answered') };
     if (saved === 'ok') {
-      if (places.length) {
+      if (s.edge && sv.edge) {
+        // The Cloudflare room learns who is a ghost and who the server moved (instead of classlive_place).
+        try {
+          await sv.edge.sync(room, ghostSync(room, s, startedAt, places));
+        } catch {
+          console.error(`classlive: edge sync for room ${room} failed`);
+        }
+      } else if (places.length) {
         try {
           await sv.place(room, places);
         } catch {
@@ -752,6 +769,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     if (!teach.enabled) return no(403, OFF, 'off');
     const session = newSession(body, Math.floor(sv.random() * 2 ** 31), () => sv.random());
     if (typeof session === 'string') return no(400, session);
+    if (sv.edge?.allowed(who, session.activity)) session.edge = true;
     // One live game at a time, of any kind (James, 26 Nov 2026 NZ: the database stalled with two classes on).
     const running = await sv.openGames();
     if (running === 'busy') return busy();
@@ -830,6 +848,23 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     if ('refuse' in done) return done.refuse;
     if (done.session.state === 'over' && (action === 'view' || action === 'end')) await payOut(sv, room, done.session);
     return ok({ room, screen: screenView(done.row, done.session, done.row.startedAt), now: sv.now() });
+  }
+
+  // A pilot room's ticket for Cloudflare (shared/classlive/edge.ts): its teacher or one of its players.
+  if (action === 'edge') {
+    const room = readRoom(body.room);
+    if (!room) return no(400, "That room couldn't be found.");
+    const row = await sv.loadRoom(room);
+    if (row === 'busy') return busy();
+    if (!row) return no(404, "That room couldn't be found.", 'gone');
+    if (!row.session.edge || !sv.edge) return no(409, 'This game runs on the school server.', 'not_edge');
+    const kind = row.teacher === who ? 't' : row.session.players[who] ? 'p' : null;
+    if (!kind) return no(403, "That game isn't open to you.", 'not-yours');
+    try {
+      return ok({ room, ...(await sv.edge.ticket(room, who, kind)) });
+    } catch {
+      return busy();
+    }
   }
 
   // ---- Pupil steps ----

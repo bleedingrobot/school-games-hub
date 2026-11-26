@@ -14,6 +14,7 @@ import type { ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
 import { lineOf } from './CornersScene';
 import { GhostBoard, GhostToken } from './GhostBoard';
+import { useEdgeLink } from './edgeLink';
 import type { ClassLiveLink } from './link';
 
 type Person = ScreenView['people'][number];
@@ -30,7 +31,7 @@ export const MECH_ABOUT: Record<GhostMechanic, (w: (typeof MAP_WORDS)['graveyard
   bats: (w) => `${w.bats}! It swoops across the map and knocks you flying.`,
 };
 
-export function GhostScene({ screen, game, link, room, clock, sound, say, onTick, over, onAgain }: {
+export function GhostScene({ screen, game, link: baseLink, room, clock, sound, say, onTick, over, onAgain }: {
   screen: ScreenView; game: GhostGame; link: ClassLiveLink; room: number | null;
   clock: () => number;
   sound: ClassLiveSound; say: (text: string, delay?: number) => void;
@@ -38,6 +39,8 @@ export function GhostScene({ screen, game, link, room, clock, sound, say, onTick
   over: boolean;
   onAgain: () => void;
 }) {
+  // James's pilot rooms: spots straight from Cloudflare (edgeLink.ts), read 10 times a second.
+  const link = useEdgeLink(baseLink, room, screen.edge);
   const t = screen.startedAt === null ? 0 : clock() - screen.startedAt;
   const r = game.round;
   const targets = useRef<Record<string, Spot>>({});
@@ -62,7 +65,7 @@ export function GhostScene({ screen, game, link, room, clock, sound, say, onTick
     let live = true;
     const read = () => void link.positions(room).then((p) => { if (live && p) targets.current = p; }, () => undefined);
     read();
-    const id = window.setInterval(read, running ? 300 : 2000);
+    const id = window.setInterval(read, running ? (link.readMs ?? 300) : 2000);
     return () => { live = false; window.clearInterval(id); };
   }, [room, running, over, link]);
 

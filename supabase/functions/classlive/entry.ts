@@ -1,6 +1,7 @@
 // Connects the Class Live handler to Supabase. Edit handler.ts or shared/classlive/server.ts for the logic, then run
 // `npm run build:functions -- classlive` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
+import { EDGE_TEACHERS, makeTicket, TICKET_MS, type EdgeServices } from '../../../shared/classlive/edge';
 import { readOpenGames } from '../../../shared/classlive/limits';
 import type { RoomRow, StoredQuestion } from '../../../shared/classlive/server';
 import { parseFocus } from '../../../shared/maths/focus';
@@ -45,6 +46,42 @@ const rowOf = (raw: RawRow | null): RoomRow | null =>
     seq: Number(raw.seq) || 0, events: Array.isArray(raw.events) ? raw.events : [],
   };
 
+/**
+ * Cloudflare's rooms for the Ghost Tag pilot (shared/classlive/edge.ts). The publish sets both secrets when it deploys the
+ * Worker (.github/workflows/deploy.yml, "edge"); without them every game stays on the database.
+ */
+function edgeServices(): EdgeServices | undefined {
+  const base = (Deno.env.get('CLASSLIVE_EDGE_URL') ?? '').replace(/\/+$/, '');
+  const secret = Deno.env.get('CLASSLIVE_EDGE_SECRET') ?? '';
+  if (!/^https:\/\//.test(base) || !secret) return undefined;
+  const call = (room: number, what: string, init: RequestInit = {}) =>
+    fetch(`${base}/room/${room}/${what}`, { ...init, signal: AbortSignal.timeout(3000), headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' } });
+  return {
+    allowed: (teacher, activity) => activity === 'ghost' && EDGE_TEACHERS.includes(teacher),
+    async positions(room) {
+      try {
+        const res = await call(room, 'positions');
+        if (!res.ok) return 'busy';
+        const raw = (await res.json()) as Record<string, { x: number; y: number }>;
+        const out: Record<string, { x: number; y: number }> = {};
+        for (const [id, p] of Object.entries(raw ?? {})) if (p && Number.isFinite(p.x) && Number.isFinite(p.y)) out[id] = { x: Number(p.x), y: Number(p.y) };
+        return out;
+      } catch {
+        console.error('classlive: edge positions failed');
+        return 'busy';
+      }
+    },
+    async sync(room, sync) {
+      const res = await call(room, 'sync', { method: 'POST', body: JSON.stringify(sync) });
+      if (!res.ok) throw new Error(`edge sync ${res.status}`);
+      await res.body?.cancel();
+    },
+    async ticket(room, who, kind) {
+      return { url: `${base.replace(/^https:/, 'wss:')}/room/${room}/ws`, ticket: await makeTicket(secret, { r: room, u: who, k: kind, e: Date.now() + TICKET_MS }) };
+    },
+  };
+}
+
 const questionOf = (raw: StoredQuestion | null) => raw && { slot: raw.slot, question: raw.question, answered: raw.answered === true };
 
 Deno.serve(
@@ -52,6 +89,7 @@ Deno.serve(
     now: () => Date.now(),
     random: () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32,
     userIdFor: userIdFromToken(admin.auth),
+    edge: edgeServices(),
     async teacherClass(teacher, classId) {
       const row = await call<{ enabled: boolean; show_names: boolean; school_id: number } | null>('classlive_teacher_class', { teacher, target_class: classId });
       if (row === 'busy') return 'busy';
