@@ -339,6 +339,46 @@ function Body({ f }: { f: FigureSpec }) {
         </>
       );
     }
+    case 'angle': {
+      // One angle opening anticlockwise from a flat arm; a right angle gets the little square.
+      const d = Math.max(1, Math.min(359, Math.round(f.degrees)));
+      const cx = d > 180 ? 120 : 70;
+      const cy = d > 180 ? 75 : d > 90 ? 120 : 125;
+      const end = { x: cx + 95 * Math.cos((d * Math.PI) / 180), y: cy - 95 * Math.sin((d * Math.PI) / 180) };
+      return (
+        <>
+          <line x1={cx} y1={cy} x2={cx + 100} y2={cy} className="fig__line" />
+          <line x1={cx} y1={cy} x2={end.x} y2={end.y} className="fig__line" />
+          {d === 90 ? <path d={`M ${cx + 16} ${cy} L ${cx + 16} ${cy - 16} L ${cx} ${cy - 16}`} className="fig__corner" /> : <Arc cx={cx} cy={cy} r={22} a={0} b={d} />}
+        </>
+      );
+    }
+    case 'clock': {
+      const hour = ((Math.round(f.hour) % 12) + 12) % 12;
+      const minute = ((Math.round(f.minute) % 60) + 60) % 60;
+      const hand = (turns: number, len: number) => {
+        const t = turns * 2 * Math.PI - Math.PI / 2;
+        return { x: 120 + len * Math.cos(t), y: 75 + len * Math.sin(t) };
+      };
+      const short = hand((hour + minute / 60) / 12, 28);
+      const long = hand(minute / 60, 44);
+      return (
+        <>
+          <circle cx={120} cy={75} r={68} className="fig__shape" />
+          {Array.from({ length: 12 }, (_, i) => {
+            const at = hand((i + 1) / 12, 56);
+            return (
+              <text key={i} x={at.x} y={at.y} textAnchor="middle" dominantBaseline="central" className="fig__num">
+                {i + 1}
+              </text>
+            );
+          })}
+          <line x1={120} y1={75} x2={short.x} y2={short.y} className="fig__hand fig__hand--short" />
+          <line x1={120} y1={75} x2={long.x} y2={long.y} className="fig__hand" />
+          <circle cx={120} cy={75} r={4} className="fig__dot" />
+        </>
+      );
+    }
   }
 }
 
@@ -350,5 +390,37 @@ export function Figure({ figure }: { figure: FigureSpec }) {
     <svg className="question__figure" viewBox={`0 0 ${W} ${H}`} role="presentation" aria-hidden="true" focusable="false">
       <Body f={figure} />
     </svg>
+  );
+}
+
+/** The kinds of angle, each drawn with its name: the "Help me" picture for angle questions (James, 26 Nov 2026). */
+const ANGLE_KINDS: { name: string; degrees: number; words: string }[] = [
+  { name: 'Acute', degrees: 45, words: 'less than 90°' },
+  { name: 'Right', degrees: 90, words: 'exactly 90°' },
+  { name: 'Obtuse', degrees: 135, words: '90° to 180°' },
+  { name: 'Straight', degrees: 180, words: 'exactly 180°' },
+  { name: 'Reflex', degrees: 270, words: 'more than 180°' },
+];
+
+export function AngleNames() {
+  return (
+    <ul className="angle-names" aria-label="Kinds of angle">
+      {ANGLE_KINDS.map((k) => {
+        const cx = k.degrees > 180 ? 40 : 18;
+        const cy = k.degrees > 180 ? 34 : 56;
+        const r = (k.degrees * Math.PI) / 180;
+        return (
+          <li key={k.name} className="angle-names__item">
+            <svg viewBox="0 0 80 66" aria-hidden="true" focusable="false" className="angle-names__pic">
+              <line x1={cx} y1={cy} x2={cx + 36} y2={cy} className="fig__line" />
+              <line x1={cx} y1={cy} x2={cx + 36 * Math.cos(r)} y2={cy - 36 * Math.sin(r)} className="fig__line" />
+              {k.degrees === 90 ? <path d={`M ${cx + 9} ${cy} L ${cx + 9} ${cy - 9} L ${cx} ${cy - 9}`} className="fig__corner" /> : <Arc cx={cx} cy={cy} r={11} a={0} b={k.degrees} />}
+            </svg>
+            <strong>{k.name}</strong>
+            <span>{k.words}</span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

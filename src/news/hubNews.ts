@@ -41,6 +41,13 @@ export const HUB_NEWS: NewsItem[] = [
     game: 'classlive',
   },
   {
+    id: 'ladder-year5-2026-11-26',
+    date: '2026-11-26',
+    emoji: '🕰️',
+    title: '15 more maths skills',
+    text: 'Big numbers, clocks, angles, money and more join the ladder. They pop up in every game.',
+  },
+  {
     id: 'ladder-year6-2026-11-26',
     date: '2026-11-26',
     emoji: '🧮',

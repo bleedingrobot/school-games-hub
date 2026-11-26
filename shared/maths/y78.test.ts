@@ -16,17 +16,17 @@ import { labelValue } from './skillPacks/pickKit';
 const pack = generatedPack();
 const Y78 = LADDER.filter(pastYear6);
 /** Every question type of the Year 6, 7 and 8 skills, checked roll by roll below. */
-const KEYS = LADDER.filter((s) => (s.year ?? 0) >= 6).flatMap((s) => s.keys);
+const KEYS = LADDER.filter((s) => (s.year ?? 0) >= 5).flatMap((s) => s.keys);
 const Y78_KEYS = Y78.flatMap((s) => s.keys);
 
 /** A number as the screen shows it: "−4" → -4, "8°" → 8, "0.5" → 0.5. */
 const num = (text: string) => Number(text.replace(/°C?$/, '').replace('−', '-'));
 
 /** Each card's answers worked out from the screen text alone (shared/maths/y78/*.oracle.ts). */
-const ORACLES = Object.values(import.meta.glob<{ oracle: (key: string, parts: string[], prompt: string | undefined) => number | null }>(['./y78/*.oracle.ts', './y6/*.oracle.ts'], { eager: true })).map((m) => m.oracle);
+const ORACLES = Object.values(import.meta.glob<{ oracle: (key: string, parts: string[], prompt: string | undefined) => number | null }>(['./y78/*.oracle.ts', './y6/*.oracle.ts', './y5/*.oracle.ts'], { eager: true })).map((m) => m.oracle);
 /** Each card's checks of pick questions whose right choice isn't a number (shared/maths/y78/*.picks.ts). */
 type PickCheck = (parts: string[], prompt: string, right: string, wrong: string[]) => void;
-const PICK_CHECKS: Record<string, PickCheck> = Object.assign({}, ...Object.values(import.meta.glob<{ PICK_CHECKS: Record<string, PickCheck> }>(['./y78/*.picks.ts', './y6/*.picks.ts'], { eager: true })).map((m) => m.PICK_CHECKS));
+const PICK_CHECKS: Record<string, PickCheck> = Object.assign({}, ...Object.values(import.meta.glob<{ PICK_CHECKS: Record<string, PickCheck> }>(['./y78/*.picks.ts', './y6/*.picks.ts', './y5/*.picks.ts'], { eager: true })).map((m) => m.PICK_CHECKS));
 const oracle = (key: string, parts: string[], prompt?: string) => {
   for (const o of ORACLES) {
     const found = o(key, parts, prompt);
@@ -42,7 +42,7 @@ describe('Year 6, 7 and 8 skills', () => {
       const at = LADDER.findIndex((s) => s.id === row.id);
       expect(at, row.id).toBeGreaterThan(0);
       expect(LADDER[at - 1].id, row.id).toBe(row.after);
-      expect(LADDER[at]).toMatchObject({ year: 6, built: true, inWarmUp: false });
+      expect(LADDER[at]).toMatchObject({ year: row.year ?? 6, built: true, inWarmUp: false });
       expect(LADDER[at].inAuto, row.id).toBeUndefined();
       expect(LADDER[at].keys.length, row.id).toBeGreaterThan(0);
       expect(pastYear6(LADDER[at]), row.id).toBe(false);
@@ -50,8 +50,8 @@ describe('Year 6, 7 and 8 skills', () => {
     expect(KEYS.length).toBeGreaterThan(0);
     // Every Year 6, 7 and 8 question type is tagged with its skill and year in the database (maths_content_years), and nothing else
     // but the types of skills since taken off the ladder (FORMER_SKILLS), whose rows stay so old answers keep their year.
-    const tagged = ['20261126000500_maths_content_years.sql', '20261126000600_maths_content_year6.sql'].flatMap((file) => [...readFileSync(resolve(__dirname, '../../supabase/migrations', file), 'utf8').matchAll(/^  \('([^']+)', '([^']+)', '(?:[^']|'')+', ([678])\)/gm)].map((m) => `${m[1]} ${m[2]} ${m[3]}`)).filter((t) => !Object.hasOwn(FORMER_SKILLS, t.split(' ')[1]));
-    expect(tagged.sort()).toEqual(LADDER.filter((s) => (s.year ?? 0) >= 6).flatMap((s) => s.keys.map((k) => `${k} ${s.id} ${s.year}`)).sort());
+    const tagged = ['20261126000500_maths_content_years.sql', '20261126000600_maths_content_year6.sql', '20261126182956_maths_content_year5.sql'].flatMap((file) => [...readFileSync(resolve(__dirname, '../../supabase/migrations', file), 'utf8').matchAll(/^  \('([^']+)', '([^']+)', '(?:[^']|'')+', ([5678])\)/gm)].map((m) => `${m[1]} ${m[2]} ${m[3]}`)).filter((t) => !Object.hasOwn(FORMER_SKILLS, t.split(' ')[1]));
+    expect(tagged.sort()).toEqual(LADDER.filter((s) => (s.year ?? 0) >= 5).flatMap((s) => s.keys.map((k) => `${k} ${s.id} ${s.year}`)).sort());
     for (const key of KEYS) {
       const family = GENERATED.families[key];
       expect(family, key).toBeTruthy();

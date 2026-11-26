@@ -14,4 +14,6 @@ export interface Y6Row {
   /** The ladder skill this one goes straight after: an older skill, or the Year 6 row before it in a run (no two rows share one). */
   after: string;
   tags: readonly string[];
+  /** 5 for the Year 5 cards (docs/plans/ladder-y5/PLAN.md), which slot in the same way; 6 when left out. */
+  year?: 5;
 }

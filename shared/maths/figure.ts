@@ -39,7 +39,12 @@ export type Figure =
   | { kind: 'grid'; size: number; points: { x: number; y: number; label?: string }[] }
   /** A circle cut into equal parts, the first `shaded` coloured. */
   /** `colour` fills the shaded parts in that colour (the one the question names); grey without it. */
-  | { kind: 'spinner'; parts: number; shaded: number; colour?: SpinnerColour };
+  | { kind: 'spinner'; parts: number; shaded: number; colour?: SpinnerColour }
+  /** One angle, 1° to 359°, opening anticlockwise from a flat arm (Year 5 "kinds of angles"). The box shows a "Help me" button
+   *  with every kind of angle and its name beside this picture (James, 26 Nov 2026). */
+  | { kind: 'angle'; degrees: number }
+  /** An analogue clock face showing `hour` (1-12) and `minute` (0-59, a multiple of 5). */
+  | { kind: 'clock'; hour: number; minute: number };
 
 export const SPINNER_COLOURS = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'] as const;
 export type SpinnerColour = (typeof SPINNER_COLOURS)[number];
@@ -75,4 +80,6 @@ export const FIGURE_KINDS: readonly FigureKind[] = [
   'shape',
   'grid',
   'spinner',
+  'angle',
+  'clock',
 ];

@@ -14,7 +14,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { spokenLabel } from '../../shared/maths/banded';
 import { hintFor } from '../../shared/maths/hint';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
-import { Figure } from './Figure';
+import { AngleNames, Figure } from './Figure';
 import { isFigure } from '../../shared/maths/figure';
 import { NumberPad } from './NumberPad';
 import { choiceForKey, useQuestionKeys } from './questionKeys';
@@ -163,6 +163,7 @@ export function QuestionModal({
   const [checking, setChecking] = useState(false);
   const [trouble, setTrouble] = useState('');
   const [hint, setHint] = useState<ReturnType<typeof hintFor> | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [streak, setStreak] = useState(0);
   const [padOpen, setPadOpen] = useState(readPadOpen);
   const shownAt = useRef(performance.now());
@@ -184,6 +185,7 @@ export function QuestionModal({
     setChecking(false);
     setTrouble('');
     setHint(null);
+    setHelpOpen(false);
     shownAt.current = performance.now();
     if (!inline) box.current?.focus({ preventScroll: true });
   }, [question.id, inline]);
@@ -352,6 +354,15 @@ export function QuestionModal({
         </h2>
         {note && <p className="question__note">{note}</p>}
         {isFigure(question.figure) && <Figure figure={question.figure} />}
+        {isFigure(question.figure) && question.figure.kind === 'angle' && (
+          // A picture of every kind of angle with its name, free to open (James, 26 Nov 2026: angle questions need a help me button).
+          <div className="question__help">
+            <button type="button" className="question__hintbtn" aria-expanded={helpOpen} onClick={() => setHelpOpen((o) => !o)}>
+              {helpOpen ? 'Hide help' : 'Help me'}
+            </button>
+            {helpOpen && <AngleNames />}
+          </div>
+        )}
         {question.prompt && <p className="question__prompt">{question.prompt}</p>}
         <p ref={fact} className="question__fact" aria-label={question.spoken} data-long={question.parts.join('').length > 12 || undefined} data-one-line={oneLine || undefined}>
           {question.parts.map((part, i) => (

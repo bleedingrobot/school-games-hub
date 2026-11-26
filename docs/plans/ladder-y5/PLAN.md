@@ -1,4 +1,4 @@
-# Year 5 ladder gaps: plan (26 Nov 2026 NZ), NOTHING BUILT
+# Year 5 ladder gaps: plan (26 Nov 2026 NZ), 15 skills built 26 Nov 2026 NZ
 
 For Claude. James gave the NZC Year 5 Mathematics and Statistics teaching sequence (October 2025) and asked, as for Year 6
 (docs/plans/ladder-y6/PLAN.md), which Year 5 content fits the ladder (fluency, memory, basic facts), whether we already cover
@@ -89,3 +89,23 @@ Picks as of 26 Nov 2026 NZ (James is adding comments to the Maybes on the page; 
   pattern-decimal, compass-4, clock-read
 - **Maybe (4):** times-2by1, missing-big, add-hundredths, money-y5
 - **No (3):** count-11-12, fraction-compare, prism-faces
+
+James's comments: times-2by1 "only easy ones"; missing-big "only easy ones with nice tidy numbers"; add-hundredths "only easy ones
+with nice tidy numbers, or going through the ones like 4.8 + 0.3"; angle-types "will have to have a help me button with an image
+with the angles and their names". 26 Nov 2026 NZ James chose "Yes + Maybes, easy versions": build all 15.
+
+## 6. Built (26 Nov 2026 NZ)
+
+Three cards, written like the Year 6 ones and gathered by shared/maths/skillPacks/y6.ts (rows carry `year: 5`, slot in by `after`):
+
+| Card | Skills (after) | Keys |
+|---|---|---|
+| y5Number.ts | place-million, compare-big, count-big, mental-big, missing-big (chain after `add-tenths`); times-2by1 (after `times-tens`, 12 s) | pv5: big5: cnt5: ment5: miss5: mul5: |
+| y5Fraction.ts | mixed-improper (after `fraction-add-y6`); add-hundredths, money-y5 (after `decimal-bonds`); pattern-decimal (after `pattern-next`) | mix5: hund5: cash5: pat5: |
+| y5Measure.ts | perimeter, angle-types, metric-mm-km, compass-4, clock-read (chain after `round-big`) | per5: ang5: mmkm5: comp5: clock5: |
+
+metric-mm-km and pattern-decimal became their own rungs rather than additions to the Year 6 skills (keeps Year 6 rows and tags
+unchanged). Oracles and pick checks: shared/maths/y5/. New pictures (shared/maths/figure.ts, src/maths/Figure.tsx): `angle`
+(one angle; QuestionModal shows a free "Help me" button with every kind of angle and its name, `AngleNames`) and `clock`
+(analogue face). Tagged as Year 5 in `maths_content_years` (migration 20261126182956, table now takes 5 to 8), kept in step by
+shared/maths/y78.test.ts. Pupils' news line `ladder-year5-2026-11-26`.
