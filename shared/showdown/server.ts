@@ -16,6 +16,7 @@
  * When a round ends, every pupil's reward (hub points and a Showdown chest, shared/showdown/bosses.ts) is put on their row in
  * the same save, and `finishRound` pays it out and records the class's roster (once per round, however often it's called).
  */
+import { lockedBecause, type OpenGame } from '../classlive/limits';
 import { liveNameAmong } from '../liveNames';
 import { recap, type Recap } from './awards';
 import { SHOWDOWN } from './config';
@@ -163,6 +164,8 @@ export interface ShowdownServices {
   pupil(player: string): Promise<{ classId: string; name: string; enabled: boolean } | null | Busy>;
   mathsContext(player: string): Promise<MathsContext | null>;
   /** Makes a room (any other open room of the class is closed). */
+  /** Class Live and Showdown games running now in any class (shared/classlive/limits.ts). */
+  openGames(): Promise<OpenGame[] | Busy>;
   openRoom(classId: string, teacher: string, arena: Arena, round: Round, view: RoomView): Promise<number | Busy>;
   loadRoom(room: number): Promise<RoomRow | null | Busy>;
   /** The class's open room (lobby, live or just over), newest first. */
@@ -440,6 +443,11 @@ export async function showdownStep(s: ShowdownServices, who: string, body: Recor
     if (teach === 'busy') return busy();
     if (!teach) return no(403, "That isn't one of your classes.", 'not-yours');
     if (!teach.enabled) return no(403, OFF, 'off');
+    // Two Class Live or Showdown games at once at most (James, 26 Nov 2026 NZ).
+    const running = await s.openGames();
+    if (running === 'busy') return busy();
+    const locked = lockedBecause('showdown', running, classId);
+    if (locked) return no(409, locked, 'locked');
     const beaten = await s.classRoster(classId);
     if (beaten === 'busy') return busy();
     const arena: Arena = ARENAS.find((a) => a === body.arena) ?? 'boss';

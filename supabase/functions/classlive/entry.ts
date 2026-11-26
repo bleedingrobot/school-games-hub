@@ -1,6 +1,7 @@
 // Connects the Class Live handler to Supabase. Edit handler.ts or shared/classlive/server.ts for the logic, then run
 // `npm run build:functions -- classlive` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
+import { readOpenGames } from '../../../shared/classlive/limits';
 import type { RoomRow, StoredQuestion } from '../../../shared/classlive/server';
 import { parseFocus } from '../../../shared/maths/focus';
 import type { MathsContext } from '../../../shared/maths/serverQuestions';
@@ -64,6 +65,10 @@ Deno.serve(
     async codeRoom(schoolId, code) {
       const raw = await call<RawRow | null>('classlive_code_room', { target_school: schoolId, join_code: code });
       return raw === 'busy' ? 'busy' : rowOf(raw);
+    },
+    async openGames() {
+      const raw = await call<unknown>('classlive_open_games', {});
+      return raw === 'busy' ? 'busy' : readOpenGames(raw);
     },
     async openRoom(classId, teacher, c) {
       const id = await call<number>('classlive_open', { target_class: classId, teacher, activity: c.session.activity, session: c.session, view: c.view, screen: c.screen });

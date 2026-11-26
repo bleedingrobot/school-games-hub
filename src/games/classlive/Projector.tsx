@@ -17,6 +17,8 @@ import { ARM_COLOURS, lagHint, useHeldLag } from './arms';
 import type { ClassLiveLink, Reply } from './link';
 import { NightBackdrop, PLAYER_COLOURS, StarSky } from './StarSky';
 import { ShowdownCard } from './ShowdownCard';
+import { useRunningGames } from './useRunning';
+import { lockedBecause } from '../../../shared/classlive/limits';
 import type { ShowdownStart } from '../showdown/Projector';
 import { MuralCloth, MuralScene, NO_MURAL_FX, type MuralFx } from './MuralScene';
 import { CoiledSerpent, JungleBackdrop, NO_SERPENT_FX, SerpentAmbience, SerpentScene, type SerpentFx } from './SerpentScene';
@@ -417,7 +419,7 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
         )}
       </div>
 
-      {!screen && (resuming ? <div className="cl-center"><p className="cl-center__word">Finding your room…</p></div> : <Setup busy={busy} problem={problem} onOpen={open} onShowdown={onShowdown ?? null} />)}
+      {!screen && (resuming ? <div className="cl-center"><p className="cl-center__word">Finding your room…</p></div> : <Setup busy={busy} problem={problem} onOpen={open} onShowdown={onShowdown ?? null} classId={classId} />)}
 
       {screen && game && state === 'lobby' && room && (
         showHow
@@ -640,7 +642,7 @@ const HOST_KEY = 'classlive.host';
 const readKept = (key: string): string | null => { try { return window.localStorage.getItem(key); } catch { return null; } };
 const keep = (key: string, v: string) => { try { window.localStorage.setItem(key, v); } catch { /* private window: not kept */ } };
 
-function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; problem: string; onOpen: (activity: Activity, body: Record<string, unknown>) => void; onShowdown: ((s: ShowdownStart) => void) | null }) {
+function Setup({ busy, problem, onOpen: open, onShowdown, classId }: { busy: boolean; problem: string; onOpen: (activity: Activity, body: Record<string, unknown>) => void; onShowdown: ((s: ShowdownStart) => void) | null; classId: string }) {
   const [level, setLevel] = useState<LevelPick>('middle');
   const [sLevel, setSLevel] = useState<SerpentLevel>('gold');
   const [sLength, setSLength] = useState(0);
@@ -664,11 +666,15 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
   const games = pickableGames(!!onShowdown);
   const [pick, choose] = usePicked(games.map((g) => g.id));
   const chosen = liveGame(pick);
+  // Games on in other classes: a locked tile says why (James, 26 Nov 2026 NZ).
+  const running = useRunningGames(true).filter((g) => g.classId !== classId);
+  const lockOf = (g: LiveGame) => lockedBecause(g.arena ? 'showdown' : g.id, running, classId);
+  const chosenLock = chosen ? lockOf(chosen) : null;
   // Who can join (James, 25 Nov 2026): the class, or any pupil of the school from their home page's "Join now?".
   const [where, setWhere] = useState<'class' | 'lobby'>(() => (readKept(WHERE_KEY) === 'lobby' ? 'lobby' : 'class'));
   const [host, setHost] = useState(() => readKept(HOST_KEY) ?? '');
   const hostOk = where === 'class' || /\p{L}/u.test(host);
-  const canOpen = !busy && hostOk && (!own || okPick);
+  const canOpen = !busy && !chosenLock && hostOk && (!own || okPick);
   const onOpen = (activity: Activity, body: Record<string, unknown>) => {
     keep(WHERE_KEY, where);
     if (where === 'lobby') keep(HOST_KEY, host.trim());
@@ -681,7 +687,8 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
         <>
           <h1 className="cl-setup__title">Class Live</h1>
           <p className="cl-setup__sub">Pick a game for the big screen</p>
-          <GamePicker games={games} onPick={choose} />
+          {running.length > 0 && <p className="cl-running" role="status">On now in other classes: {running.map((g) => `${g.who} (${g.name})`).join(', ')}. Only one joystick game and two games in all can run at once.</p>}
+          <GamePicker games={games} onPick={choose} lockOf={lockOf} />
         </>
       ) : (
       <>
@@ -702,6 +709,7 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
         )}
         {where === 'lobby' && <p className="cl-where__note">Any pupil in the school can join, from their home page or with the code on the big screen.</p>}
       </div>}
+      {chosenLock && <p className="cl-locked" role="alert">🔒 {chosenLock}</p>}
       <div className="cl-cards cl-cards--one">
         {pick === 'stars' && (
         <section className="cl-card cl-card--active" aria-label="Star Web">
@@ -747,7 +755,7 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
             <p className="cl-lvl__about" aria-live="polite"><b className={`cl-lvl--${sLevel}`}>{SERPENT_LEVEL_NAMES[sLevel]}</b> {SERPENT_LEVEL_ABOUT[sLevel]}</p>
           </div>
           <TimerChips length={sLength} setLength={setSLength} />
-          <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('serpent', { level: sLevel, length: sLength })}>{busy ? 'Opening…' : 'Open the room'}</button>
+          <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk || !!chosenLock} onClick={() => onOpen('serpent', { level: sLevel, length: sLength })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
         )}
         {pick === 'mural' && (
@@ -756,7 +764,7 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
           <h2 className="cl-card__name">🎨 Mystery Mural</h2>
           <p className="cl-card__blurb">Your maths uncovers a hidden painting. Guess what it is!</p>
           <TimerChips length={mLength} setLength={setMLength} />
-          <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('mural', { length: mLength })}>{busy ? 'Opening…' : 'Open the room'}</button>
+          <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk || !!chosenLock} onClick={() => onOpen('mural', { length: mLength })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
         )}
         {pick === 'corners' && (
@@ -784,13 +792,13 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
             </div>
           </div>
           <TimerChips length={cLength} setLength={setCLength} />
-          <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('corners', { length: cLength, run: cRun, ...(cMap === 'any' ? {} : { map: cMap }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
+          <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk || !!chosenLock} onClick={() => onOpen('corners', { length: cLength, run: cRun, ...(cMap === 'any' ? {} : { map: cMap }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
         )}
-        {pick === 'clash' && <ClashCard busy={busy} disabled={!hostOk} onOpen={(body) => onOpen('clash', body)} />}
-        {pick === 'crew' && <CrewPickCard busy={busy} hostOk={hostOk} onOpen={(body) => onOpen('crew', body)} timer={(l, set) => <TimerChips length={l} setLength={set} />} art={(pic) => <CardArt pic={pic} />} />}
-        {pick === 'ghost' && <GhostPickCard busy={busy} hostOk={hostOk} onOpen={(body) => onOpen('ghost', body)} timer={(l, set) => <TimerChips length={l} setLength={set} />} art={(pic) => <CardArt pic={pic} />} />}
-        {pick === 'lava' && <LavaCard busy={busy} disabled={!hostOk} onOpen={(body) => onOpen('lava', body)} />}
+        {pick === 'clash' && <ClashCard busy={busy} disabled={!hostOk || !!chosenLock} onOpen={(body) => onOpen('clash', body)} />}
+        {pick === 'crew' && <CrewPickCard busy={busy} hostOk={hostOk && !chosenLock} onOpen={(body) => onOpen('crew', body)} timer={(l, set) => <TimerChips length={l} setLength={set} />} art={(pic) => <CardArt pic={pic} />} />}
+        {pick === 'ghost' && <GhostPickCard busy={busy} hostOk={hostOk && !chosenLock} onOpen={(body) => onOpen('ghost', body)} timer={(l, set) => <TimerChips length={l} setLength={set} />} art={(pic) => <CardArt pic={pic} />} />}
+        {pick === 'lava' && <LavaCard busy={busy} disabled={!hostOk || !!chosenLock} onOpen={(body) => onOpen('lava', body)} />}
         {/* Shark Bay */}
         {pick === 'shark' && (
         <section className="cl-card cl-card--active cl-card--corners cl-card--shark" aria-label="Shark Bay">
@@ -817,12 +825,12 @@ function Setup({ busy, problem, onOpen: open, onShowdown }: { busy: boolean; pro
             </div>
           </div>
           <TimerChips length={bLength} setLength={setBLength} />
-          <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen('shark', { length: bLength, run: bRun, ...(bBay === 'any' ? {} : { map: bBay }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
+          <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk || !!chosenLock} onClick={() => onOpen('shark', { length: bLength, run: bRun, ...(bBay === 'any' ? {} : { map: bBay }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
         )}
-        {pick === 'thrones' && <ThronesCard busy={busy} hostOk={hostOk} onOpen={(body) => onOpen('thrones', body)} Timer={TimerChips} Art={CardArt} />}
-        {pick === 'relay' && <RelayPickCard busy={busy} hostOk={hostOk} onOpen={(body) => onOpen('relay', body)} timer={(l, set) => <TimerChips length={l} setLength={set} />} art={(pic) => <CardArt pic={pic} />} />}
-        {chosen.arena && onShowdown && <ShowdownCard key={chosen.arena} arena={chosen.arena} busy={busy} onOpen={onShowdown} />}
+        {pick === 'thrones' && <ThronesCard busy={busy} hostOk={hostOk && !chosenLock} onOpen={(body) => onOpen('thrones', body)} Timer={TimerChips} Art={CardArt} />}
+        {pick === 'relay' && <RelayPickCard busy={busy} hostOk={hostOk && !chosenLock} onOpen={(body) => onOpen('relay', body)} timer={(l, set) => <TimerChips length={l} setLength={set} />} art={(pic) => <CardArt pic={pic} />} />}
+        {chosen.arena && onShowdown && <ShowdownCard key={chosen.arena} arena={chosen.arena} busy={busy} locked={!!chosenLock} onOpen={onShowdown} />}
       </div>
       </>
       )}
@@ -862,7 +870,7 @@ function usePicked(ids: string[]): [string | null, (id: string | null) => void] 
 }
 
 /** The first screen: one painted tile per game, grouped (James, 25 Nov 2026 NZ). */
-function GamePicker({ games, onPick }: { games: LiveGame[]; onPick: (id: string) => void }) {
+function GamePicker({ games, onPick, lockOf }: { games: LiveGame[]; onPick: (id: string) => void; lockOf: (g: LiveGame) => string | null }) {
   const groups = (Object.keys(GROUP_WORDS) as LiveGroup[]).map((g) => ({ g, list: games.filter((x) => x.group === g) })).filter((x) => x.list.length > 0);
   let n = 0;
   return (
@@ -873,11 +881,12 @@ function GamePicker({ games, onPick }: { games: LiveGame[]; onPick: (id: string)
           <div className="cl-picker__tiles">
             {list.map((game) => {
               const pic = game.pic();
+              const lock = lockOf(game);
               return (
-                <button key={game.id} type="button" className={`cl-tile cl-tile--${game.id}`} style={{ ['--tint' as string]: game.tint, animationDelay: `${0.05 * n++}s` }} onClick={() => onPick(game.id)}>
+                <button key={game.id} type="button" className={`cl-tile cl-tile--${game.id}${lock ? ' cl-tile--locked' : ''}`} style={{ ['--tint' as string]: game.tint, animationDelay: `${0.05 * n++}s` }} onClick={() => onPick(game.id)} title={lock ?? undefined}>
                   <span className="cl-tile__art" aria-hidden="true">{pic ? <img src={pic} alt="" loading="eager" /> : <i className="cl-tile__emoji">{game.emoji}</i>}</span>
                   <b className="cl-tile__name"><span aria-hidden="true">{game.emoji}</span> {game.name}</b>
-                  <span className="cl-tile__blurb">{game.blurb}</span>
+                  <span className="cl-tile__blurb">{lock ? <b className="cl-tile__lock">🔒 Locked for now</b> : game.blurb}</span>
                 </button>
               );
             })}

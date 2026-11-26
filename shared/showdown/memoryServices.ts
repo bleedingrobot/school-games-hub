@@ -4,6 +4,7 @@
  * version it was loaded at, a question is answered once, a class has one open room, and pupils' rows are written only
  * by saves.
  */
+import type { OpenGame } from '../classlive/limits';
 import type { FactAnswer } from '../maths/leitner';
 import type { MathsContext } from '../maths/serverQuestions';
 import type { BossId } from './bosses';
@@ -17,6 +18,8 @@ export interface MemoryPupil {
 
 export interface MemoryDb {
   rooms: Map<number, RoomRow & { view: Change['view'] }>;
+  /** Games running in other classes (shared/classlive/limits.ts); none unless a test sets some. */
+  openGames?: OpenGame[];
   questions: Map<string, StoredQuestion[]>;
   players: Map<string, PlayerView>;
   feed: { room: number; seq: number; event: FeedEvent }[];
@@ -62,6 +65,9 @@ export function memoryServices(db: MemoryDb, clock: { now(): number; random?(): 
     },
     async mathsContext() {
       return copy(db.maths);
+    },
+    async openGames() {
+      return copy(db.openGames ?? []);
     },
     async openRoom(classId, teacher, arena, round, view) {
       for (const r of db.rooms.values()) {

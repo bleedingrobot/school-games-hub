@@ -1,6 +1,7 @@
 // Connects the Class Showdown handler to Supabase. Edit handler.ts or shared/showdown/server.ts for the logic, then run
 // `npm run build:functions -- showdown` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
+import { readOpenGames } from '../../../shared/classlive/limits';
 import { parseFocus } from '../../../shared/maths/focus';
 import type { MathsContext } from '../../../shared/maths/serverQuestions';
 import type { PlayerView, RoomRow, StoredQuestion } from '../../../shared/showdown/server';
@@ -76,6 +77,10 @@ Deno.serve(
         focus: parseFocus(context.focus),
         settings: { enabledTables, division, multipleChoice, ...(typeof missingFactor === 'boolean' ? { missingFactor } : {}) },
       };
+    },
+    async openGames() {
+      const raw = await call<unknown>('classlive_open_games', {});
+      return raw === 'busy' ? 'busy' : readOpenGames(raw);
     },
     async openRoom(classId, teacher, arena, round, view) {
       const id = await call<number>('showdown_open', { target_class: classId, teacher, arena, round, view });

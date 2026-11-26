@@ -26,7 +26,7 @@ function kept(): Partial<ShowdownStart> {
   try { return JSON.parse(window.localStorage.getItem(KEY) ?? '{}') as Partial<ShowdownStart>; } catch { return {}; }
 }
 
-export function ShowdownCard({ arena, busy, onOpen }: { arena: Arena; busy: boolean; onOpen: (s: ShowdownStart) => void }) {
+export function ShowdownCard({ arena, busy, locked = false, onOpen }: { arena: Arena; busy: boolean; locked?: boolean; onOpen: (s: ShowdownStart) => void }) {
   const was = kept();
   const game = liveGame(showdownPick(arena));
   const pic = game?.pic() ?? null;
@@ -59,7 +59,7 @@ export function ShowdownCard({ arena, busy, onOpen }: { arena: Arena; busy: bool
           ))}
         </div>
       </div>
-      <button type="button" className="cl-btn cl-btn--go" disabled={busy} onClick={go}>{busy ? 'Opening…' : 'Open the battle'}</button>
+      <button type="button" className="cl-btn cl-btn--go" disabled={busy || locked} onClick={go}>{busy ? 'Opening…' : 'Open the battle'}</button>
       <p className="cl-sd__note">For your class only.</p>
     </section>
   );

@@ -3,6 +3,7 @@
  * (`server.ts`) with no school server. Same rules as the migration: a save lands only at the version it was loaded at,
  * a class has one open room, and pupils' rows are written only by saves.
  */
+import type { OpenGame } from './limits';
 import type { FactAnswer } from '../maths/leitner';
 import type { MathsContext } from '../maths/serverQuestions';
 import type { FinishedSession } from './rewards';
@@ -12,6 +13,8 @@ import type { Change, ClassLiveServices, PlayerView, RoomRow, RoomView, ScreenVi
 
 export interface MemoryDb {
   rooms: Map<number, RoomRow & { view: RoomView; screen: ScreenView; openedAt: number }>;
+  /** Games running in other classes (shared/classlive/limits.ts); none unless a test sets some. */
+  openGames?: OpenGame[];
   players: Map<string, PlayerView>;
   /** Mystery Mural's kept questions, by `${room}:${player}`. */
   questions: Map<string, StoredQuestion[]>;
@@ -57,6 +60,9 @@ export function memoryServices(db: MemoryDb, clock: { now(): number; random?(): 
     async codeRoom(schoolId, code) {
       const r = [...db.rooms.values()].filter((x) => x.schoolId === schoolId && x.session.lobby?.code === code && x.session.state !== 'over' && clock.now() - x.openedAt < 3 * 3600_000).sort((a, b) => b.id - a.id)[0];
       return r ? copy(r) : null;
+    },
+    async openGames() {
+      return copy(db.openGames ?? []);
     },
     async openRoom(classId, teacher, change) {
       for (const r of db.rooms.values()) if (r.classId === classId) r.session.state = 'over';
