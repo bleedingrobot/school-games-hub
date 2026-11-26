@@ -19,9 +19,9 @@ export function topicsText(on: number): string {
 export function useMonstersSummary(classId: string): string | null {
   const settings = useSetting(() => fetchMonstersSettings(classId), [classId]);
   if (settings.failed) return 'Couldn’t load';
-  return settings.value && topicsText(settings.value.topics.length);
+  return settings.value && 'Maths ladder';
 }
 
 /** Behind the switch's "?". */
 export const MONSTERS_ABOUT =
-  'A world to walk around where every attack and catch is a maths question, from the topics that are on in its Settings. Off hides it from students and nothing is saved.';
+  'A world to walk around where every attack and catch is a maths question from the student’s own maths ladder (or the focus you set), like the other games. Off hides it from students and nothing is saved.';

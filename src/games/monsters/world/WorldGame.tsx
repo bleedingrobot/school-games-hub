@@ -24,7 +24,7 @@ import { describeLoot } from '../../../../shared/monsters/world/rewards';
 import { useSound } from '../../../sound';
 import { playSound, type GameSound } from '../../sounds';
 import type { BattleReport } from '../../../../shared/monsters/save/check';
-import { BattleScreen, type BattleResult } from '../BattleScreen';
+import { BattleScreen, type BattleResult, type LadderMaths } from '../BattleScreen';
 import { MonsterArt } from '../art/MonsterArt';
 import { HubButtons } from '../HubButtons';
 import { monsterPic, personPic, preload, scenePic } from '../art/painted';
@@ -62,6 +62,8 @@ export interface WorldGameProps {
   /** Tests pass a fixed random source and fake questions. */
   random?: () => number;
   packFor?: (topic: TopicId) => SkillPack;
+  /** The student's maths ladder: every battle question comes from it (see BattleScreen). */
+  ladder?: LadderMaths;
   /** Tests set 0 to skip every pause. */
   timeScale?: number;
   /** Today's NZ day, the pupil, and the days of play the database has counted (quests, the notice board, eggs and weather). */
@@ -89,7 +91,7 @@ const questKey = (w: WorldState) => {
 };
 
 export function WorldGame({
-  initial, settings, onSettingsChange, maps = WORLD_MAPS, rawMaps = RAW_MAPS, fast = false, resting = false, teleport, cheat, onBattling, onState, onBattle, onMoment, enabledTopics, random, packFor, timeScale = 1, quest = {},
+  initial, settings, onSettingsChange, maps = WORLD_MAPS, rawMaps = RAW_MAPS, fast = false, resting = false, teleport, cheat, onBattling, onState, onBattle, onMoment, enabledTopics, random, packFor, ladder, timeScale = 1, quest = {},
 }: WorldGameProps) {
   const [world, setWorld] = useState<WorldState>(initial);
   const [scene, setScene] = useState<Scene2>({ kind: 'walk' });
@@ -476,6 +478,7 @@ export function WorldGame({
           prizeFor={prizeFor}
           random={random}
           packFor={packFor}
+          ladder={ladder}
           timeScale={timeScale}
           enabledTopics={enabledTopics}
           place={world.map}

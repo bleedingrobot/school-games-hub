@@ -1,13 +1,12 @@
 /**
  * The monster book as a screen: all the monsters in book order. The ones you have met or own show
  * in full; the others are a dark shape with a "?". Each tile shows how rare
- * the monster is: stars and a coloured tile for uncommon, rare and ultra rare. Pick one to read its type, maths topic, family,
+ * the monster is: stars and a coloured tile for uncommon, rare and ultra rare. Pick one to read its type, family,
  * attacks and when it grows. Normal HTML (buttons, a list, a live detail panel), keyboard and touch.
  */
 import { useState } from 'react';
-import { TOPICS } from '../../../shared/maths/skillPacks';
 import { MONSTER_BOOK, speciesOf, type Rarity } from '../../../shared/monsters/monsterBook';
-import { TYPE_LABEL, TYPE_TOPIC } from '../../../shared/monsters/types';
+import { TYPE_LABEL } from '../../../shared/monsters/types';
 import { MonsterArt } from './art/MonsterArt';
 import { TypeChip } from './ui';
 
@@ -26,7 +25,6 @@ function RarityChip({ rarity }: { rarity: Rarity }) {
   return <span className={`bk-rarity bk-rarity--${rarity}`}>{RARITY_STARS[rarity] && <span aria-hidden="true">{RARITY_STARS[rarity]} </span>}{RARITY_LABEL[rarity]}</span>;
 }
 
-const topicLabel = (id: string) => TOPICS.find((t) => t.id === id)?.label ?? id;
 
 export function MonsterBookScreen({ seen, owned }: BookProps) {
   const status = (id: string): Status => (owned.includes(id) ? 'owned' : seen.includes(id) ? 'seen' : 'unknown');
@@ -94,8 +92,6 @@ export function MonsterBookScreen({ seen, owned }: BookProps) {
               <dd><RarityChip rarity={shown.rarity} /></dd>
               <dt>Type</dt>
               <dd><TypeChip species={shown.id} /> {TYPE_LABEL[shown.type]}</dd>
-              <dt>Maths</dt>
-              <dd>{topicLabel(TYPE_TOPIC[shown.type])}</dd>
               <dt>Family</dt>
               <dd>{forms.length > 1 ? `${forms[0].name} family, form ${shown.stage} of ${forms.length}` : 'One of a kind'}</dd>
               <dt>Attacks</dt>

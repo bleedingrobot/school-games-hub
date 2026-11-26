@@ -12,7 +12,7 @@
  */
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { spokenLabel } from '../../shared/maths/banded';
-import { fractionSteps, helpKind, hintFor } from '../../shared/maths/hint';
+import { fractionSteps, helpKind, hintFor, unitSteps } from '../../shared/maths/hint';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { AngleNames, Figure } from './Figure';
 import { isFigure } from '../../shared/maths/figure';
@@ -41,23 +41,37 @@ const FRACTION = /^(?:(\d+|\?) )?(\d+|\?)\/(\d+|\?)$/;
 const ALGEBRA = /^(?=.*[a-z])(?!.*[a-z]{2})(?!.*\d\s+[a-z])[a-z\d\s+−×÷=.²³()]+$/;
 
 /** Numbers each followed by a short unit: 9.1 km, 1/3 h, 4 h 15 min, 2 cm², 6.1 L. */
-const QUANTITY = /^[\d.,/½]+ (?:hours?|minutes?|[a-zA-Z]{1,3})[²³]?( [\d.,/½]+ (?:hours?|minutes?|[a-zA-Z]{1,3})[²³]?)*$/;
+const QUANTITY = /^[\d.,/½]+ (?:[a-z]{4,12}|[a-zA-Z]{1,3})[²³]?( [\d.,/½]+ (?:[a-z]{4,12}|[a-zA-Z]{1,3})[²³]?)*$/;
+
+/** Units written as words (one, many). Squared and cubed units (cm², m³) keep their short form. */
+const UNIT_WORDS: Record<string, [string, string]> = {
+  h: ['hour', 'hours'],
+  min: ['minute', 'minutes'],
+  km: ['kilometre', 'kilometres'],
+  m: ['metre', 'metres'],
+  cm: ['centimetre', 'centimetres'],
+  mm: ['millimetre', 'millimetres'],
+  kg: ['kilogram', 'kilograms'],
+  g: ['gram', 'grams'],
+  L: ['litre', 'litres'],
+  mL: ['millilitre', 'millilitres'],
+};
 
 /**
- * Time units as words (James, 26 Nov 2026: "3 h = ? min" should read "3 hours = ? minutes"): h after a number becomes
- * hour(s), min becomes minute(s), and a lone h or min right after the blank becomes hours or minutes.
+ * Units as words (James, 26 Nov 2026: "3 h = ? min" should read "3 hours = ? minutes", "8 km = ? m" "8 kilometres = ?
+ * metres"): a unit after a number becomes its word, and a lone unit right after the blank becomes the plural.
  */
-export function timeWords(text: string, unit?: boolean): string {
-  if (unit && (text === 'h' || text === 'min')) return text === 'h' ? 'hours' : 'minutes';
-  return text.replace(/(^|\s)([\d.,/½]+|\?) (h|min)(?=\s|$)/g, (_m, pre: string, n: string, u: string) => {
+export function unitWords(text: string, unit?: boolean): string {
+  if (unit && UNIT_WORDS[text]) return UNIT_WORDS[text][1];
+  return text.replace(/(^|\s)([\d.,/½]+) (h|min|km|m|cm|mm|kg|g|L|mL)(?=\s|$)/g, (_m, pre: string, n: string, u: string) => {
     const one = n === '1' || n === '½' || /^\d+\/\d+$/.test(n);
-    return `${pre}${n} ${u === 'h' ? (one ? 'hour' : 'hours') : one ? 'minute' : 'minutes'}`;
+    return `${pre}${n} ${UNIT_WORDS[u][one ? 0 : 1]}`;
   });
 }
 
 /** One part of the question: a fraction, a word, algebra, or a plain number or sign. `blank` stands in for '?'. */
 function Part({ text: raw, blank, unit }: { text: string; blank: ReactNode; unit?: boolean }) {
-  const text = timeWords(raw, unit);
+  const text = unitWords(raw, unit);
   const fill = (piece: string) => (piece === '?' ? blank : piece);
   const f = FRACTION.exec(text);
   if (f) {
@@ -208,6 +222,33 @@ export function HoursHelp({ parts }: { parts: string[] }) {
       </p>
       <p>
         {ex} hours = {ex * 60} minutes. Half an hour is 30 minutes.
+      </p>
+    </div>
+  );
+}
+
+/** Changing a metric unit: the fact, multiply or divide, and a worked example that is never the question itself. */
+export function UnitHelp({ parts }: { parts: string[] }) {
+  const steps = unitSteps(parts);
+  if (!steps) return null;
+  const { from, to, big, small, factor, times, n } = steps;
+  const word = (u: string, many = true) => unitWords(`${many ? 2 : 1} ${u}`).split(' ')[1];
+  const sign = times ? '×' : '÷';
+  // A tidy example: whole numbers of the big unit going down, whole lots of the big unit going up.
+  const exBig = n === 3 || n === 3 * factor ? 5 : 3;
+  const [exFrom, exTo] = times ? [exBig, exBig * factor] : [exBig * factor, exBig];
+  return (
+    <div className="remainder-help">
+      <p>
+        <strong>
+          1 {word(big, false)} = {factor} {word(small)}.
+        </strong>
+      </p>
+      <p>
+        {word(from).replace(/^./, (c) => c.toUpperCase())} to {word(to)}: there are {times ? 'more' : 'fewer'} of them, so <strong>{times ? 'multiply' : 'divide'} by {factor}</strong>.
+      </p>
+      <p className="remainder-help__sum">
+        {unitWords(`${exFrom} ${from}`)} = {exFrom} {sign} {factor} = {unitWords(`${exTo} ${to}`)}
       </p>
     </div>
   );
@@ -528,7 +569,7 @@ export function QuestionModal({
             <button type="button" className="question__hintbtn" aria-expanded={helpOpen} onClick={() => setHelpOpen((o) => !o)}>
               {helpOpen ? 'Hide help' : 'Help me'}
             </button>
-            {helpOpen && (help === 'angles' ? <AngleNames /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : help === 'fractions' ? <FractionHelp parts={question.parts} /> : help === 'hours' ? <HoursHelp parts={question.parts} /> : <SymbolHelp />)}
+            {helpOpen && (help === 'angles' ? <AngleNames /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : help === 'fractions' ? <FractionHelp parts={question.parts} /> : help === 'hours' ? <HoursHelp parts={question.parts} /> : help === 'units' ? <UnitHelp parts={question.parts} /> : <SymbolHelp />)}
           </div>
         )}
         {question.prompt && <p className="question__prompt">{question.prompt}</p>}

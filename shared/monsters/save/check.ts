@@ -26,7 +26,6 @@
  * A save that fails any of these is refused as a whole (see supabase/functions/monster/handler.ts).
  */
 import type { FactAnswer } from '../../maths/leitner';
-import { quickSeconds } from '../bands';
 import {
   MAX_TEAM, newBattle, play, questionFor, type Bag, type BattleAction, type BattleSetup, type BattleState, type ItemId,
 } from '../engine';
@@ -45,7 +44,7 @@ import { keysOf } from '../world/questWorld';
 import { GIANTS, giantById, giantFoe } from '../quests/giants';
 import { nzDay } from '../world/battleCap';
 import { checkQuest, CRAFTED_ITEMS, questShape } from './checkQuest';
-import { markQuestion, type QuestionReport } from './verify';
+import { markQuestion, packOfReport, quickMsOfReport, type QuestionReport } from './verify';
 
 // ------------------------------------------------------------------ what is sent
 
@@ -337,7 +336,7 @@ function replay(report: unknown, pool: string[], allowance: Bag, hatched: string
       if (!isInt(q.ms, LIMITS.minAnswerMs, 3_600_000)) return 'battle-answer';
       // The result the rules were given has to agree with the marked answer. Quick means right, and within the question's time.
       const result = action.answer;
-      const quickOk = q.ms <= quickSeconds(q.topic, q.band) * 1000;
+      const quickOk = q.ms <= quickMsOfReport(q);
       if (marked.correct ? !(result === 'right' || (result === 'quick-right' && quickOk)) : result !== 'wrong') return 'battle-answer';
       answers.push({ q, correct: marked.correct });
     } else if (step.q !== undefined) return 'battle-answer';
@@ -527,7 +526,7 @@ export function checkSave(prev: Stored | null, raw: unknown, nowMs: number, play
     ats.push(q.at);
     while (ats[ats.length - 1] - ats[windowStart] >= 60_000) windowStart += 1;
     if (ats.length - windowStart > LIMITS.answersPerMinute) return fail('answer-pace');
-    (answers[q.topic] ??= []).push({ key: q.key, correct, ms: q.ms, at: q.at, ...(correct ? {} : { given: q.given }) });
+    (answers[packOfReport(q)] ??= []).push({ key: q.key, correct, ms: q.ms, at: q.at, ...(correct ? {} : { given: q.given }) });
   }
 
   summary.owned = w.owned.length;
