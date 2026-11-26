@@ -45,6 +45,14 @@ tab shows help use), rule-junior (junior games build their own, read aloud).
   `maths_help_cancel()`. Works for every game, since every game saves through `record_fact_answers`. Not done in H1: half
   points (each game's server gives its own points) and "comes back soon" (a helped fact simply stays unsecured, so the
   ladder keeps asking it).
+- H1 LIVE 26 Nov 2026 (PR #915).
+- H2-H7 (help cards) built: shared/maths/help/ makes a card for any ladder question from what it shows (parts, prompt,
+  choices): basic.ts (early facts, tables with near facts, patterns), number.ts, fractions.ts, measure.ts, algebra.ts.
+  index.ts tries them most specific first. QuestionModal shows Help me on every question with a card (title + numbered
+  steps, last one ends in "?"), above the older picture boxes (angles, remainder, axes...). The pupil's secure facts
+  (my_ladder, box 2+) load the first time Help me opens, so a tables card can start from "You know 7 × 7". The checkers
+  Hint button is hidden when a card exists. shared/maths/help/help.test.ts checks every inAuto key has a card that
+  isn't broken and doesn't end on the answer.
 
 ## Build outline (after James says go)
 

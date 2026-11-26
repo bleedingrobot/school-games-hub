@@ -76,5 +76,16 @@ describe('question box', () => {
     await vi.waitFor(() => expect(helpedQ.onSubmit).toHaveBeenCalledWith(1, expect.any(Number)));
     expect(sink.cancelled).not.toHaveBeenCalled();
     setHelpSink(null);
+
+    // H2: every ladder question has a Help me card worked with its own numbers, a fact they know first, and never the answer.
+    cleanup();
+    setHelpSink({ opened: async () => {}, cancelled: () => {}, known: async () => ['mul:7x7'] });
+    setup(question({ id: 5 }));
+    await user.click(screen.getByRole('button', { name: 'Help me' }));
+    const steps = await screen.findAllByRole('listitem');
+    await vi.waitFor(() => expect(screen.getByRole('list').textContent).toContain('7 × 7'));
+    expect(steps.at(-1)?.textContent).toContain('?');
+    expect(screen.getByRole('dialog').textContent).not.toMatch(/= 56|\b56\b/);
+    setHelpSink(null);
   });
 });

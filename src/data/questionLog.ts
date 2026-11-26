@@ -7,6 +7,7 @@
  * failed send just tries again later. Nothing here ever shows an error: a note is never worth interrupting a game.
  */
 import { supabase } from '../lib/supabase';
+import { ladderFrom } from './ladder';
 import { setHelpSink, setQuestionSink, type QuestionNote } from '../maths/questionLog';
 
 export interface LoggedNote extends QuestionNote {
@@ -116,6 +117,12 @@ export function startQuestionLog(): void {
     },
     cancelled() {
       if (player) void supabase.rpc('maths_help_cancel');
+    },
+    async known() {
+      if (!player) return [];
+      const { data, error } = await supabase.rpc('my_ladder');
+      const facts = error ? [] : (ladderFrom(data)?.facts ?? []);
+      return facts.filter((f) => f.box >= 2).map((f) => f.key);
     },
   });
   document.addEventListener('visibilitychange', () => {
