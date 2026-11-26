@@ -62,7 +62,7 @@ export function Hangar({ progress, today, picks, onPick, onBack }: { progress: P
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
   const how = (f: Flyer): string => {
-    if (f.window) return 'Free for everyone from 1 December to Boxing Day';
+    if (f.window) return 'Free for everyone until Boxing Day (26 December)';
     if (f.cleanOn) return `Fly ${levelById(f.cleanOn)?.name ?? ''} with no bumps (December and January)`;
     if (f.allPresents) return `Grab every present in one flight of ${levelById(f.allPresents)?.name ?? ''} (December and January)`;
     if (f.level === null) return 'Gold on every level';
