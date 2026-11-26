@@ -15,9 +15,9 @@ values ('00000000-0000-0000-0000-00000000000a', 'facts', 1, 10, now()),
        ('00000000-0000-0000-0000-00000000000f', 'facts', 2, 10, now());
 
 set local role authenticated;
-set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}';
+set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-00000000000a", "email": "ana@douglaspark.school.nz", "role": "authenticated"}';
 select throws_ok($$ select public.teacher_pulse() $$, '42501', null, 'a pupil cannot read the Pulse');
-set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-00000000000f", "role": "authenticated"}';
+set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-00000000000f", "email": "fin@douglaspark.school.nz", "role": "authenticated"}';
 select lives_ok($$ select public.teacher_pulse() $$, 'a teacher can read the Pulse');
 select ok(public.teacher_pulse() ?& array['kpis', 'daily', 'games', 'live', 'classes', 'hours', 'answers'], 'it has every part');
 select is(jsonb_array_length(public.teacher_pulse() -> 'daily'), 28, 'four weeks of days');
