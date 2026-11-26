@@ -64,7 +64,7 @@ export function ghostBot(o: { db: MemoryDb; services: ClassLiveServices; later: 
     if (r && !r.done) {
       const others = (seen?.spots ?? []).map(([x, y, k]) => ({ p: { x, y }, ghost: k === 1 || k === 2 }));
       const item = !mine.ghost ? r.items.find((x) => !x.by && Math.hypot(x.x - m!.p.x, x.y - m!.p.y) < 0.2) : undefined;
-      let dir = item ? { x: item.x - m.p.x, y: item.y - m.p.y } : pretendDir(m.p, mine.ghost, others, rand);
+      let dir = item ? { x: item.x - m.p.x, y: item.y - m.p.y } : pretendDir(m.p, mine.ghost, others, rand, r.w ?? 1);
       const len = Math.hypot(dir.x, dir.y);
       if (len > 1) dir = { x: dir.x / len, y: dir.y / len };
       if (rand() > skill + 0.15) dir = { x: dir.x * 0.5, y: dir.y * 0.5 };

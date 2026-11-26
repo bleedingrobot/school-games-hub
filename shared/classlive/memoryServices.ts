@@ -151,8 +151,9 @@ export function memoryMove(db: MemoryDb, now: number, room: number, player: stri
   const r = db.rooms.get(room);
   if (!r || r.session.state !== 'live' || STILL.has(r.session.game.kind) || !r.session.players[player]) return null;
   const all = db.spots.get(room) ?? {};
-  const g = r.session.game as { round?: { teleports?: Teleport[] } | null };
-  const p = clampMove(all[player], { x, y }, now, g.round?.teleports ?? []);
+  // classlive_activities.width: Ghost Tag's wide map (a game's own `w`).
+  const g = r.session.game as { w?: number; round?: { teleports?: Teleport[] } | null };
+  const p = clampMove(all[player], { x, y }, now, g.round?.teleports ?? [], g.w ?? 1);
   all[player] = { ...p, at: now };
   db.spots.set(room, all);
   return Object.values(all).map((q) => ({ x: q.x, y: q.y }));

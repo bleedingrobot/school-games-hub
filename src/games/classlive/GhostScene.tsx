@@ -13,7 +13,7 @@ import type { Spot } from '../../../shared/classlive/corners';
 import type { ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
 import { lineOf } from './CornersScene';
-import { GhostBoard, GhostToken } from './GhostBoard';
+import { at, GhostBoard, GhostToken } from './GhostBoard';
 import { useEdgeLink } from './edgeLink';
 import { useNetStats } from './netStats';
 import type { ClassLiveLink } from './link';
@@ -44,6 +44,8 @@ export function GhostScene({ screen, game, link: baseLink, room, clock, sound, s
   const link = useEdgeLink(baseLink, room, screen.edge);
   const t = screen.startedAt === null ? 0 : clock() - screen.startedAt;
   const r = game.round;
+  /** The map's width (height 1): wide since 26 Nov 2026. */
+  const bw = r?.w ?? game.w ?? 1;
   const targets = useRef<Record<string, Spot>>({});
   const shown = useRef<Record<string, Spot>>({});
   const [, setFrame] = useState(0);
@@ -175,7 +177,7 @@ export function GhostScene({ screen, game, link: baseLink, room, clock, sound, s
       if (line) say(line, 300);
     };
     for (const e of fresh) {
-      const at = 'pupil' in e && typeof e.pupil === 'string' ? (shown.current[e.pupil] ?? { x: 0.5, y: 0.5 }) : { x: 0.5, y: 0.5 };
+      const at = 'pupil' in e && typeof e.pupil === 'string' ? (shown.current[e.pupil] ?? { x: bw / 2, y: 0.5 }) : { x: bw / 2, y: 0.5 };
       if (e.type === 'g_tag') { sound.play('caught'); add.push({ key: e.seq, at, text: '👻 BOO!', kind: 'tag' }); chat('ghostTag'); }
       else if (e.type === 'g_vanish') { sound.play('warp'); add.push({ key: e.seq, at, text: '✨', kind: 'vanish' }); chat('ghostVanish'); }
       else if (e.type === 'g_bounce') { sound.play('power'); add.push({ key: e.seq, at, text: '🧄 Bounce!', kind: 'bounce' }); chat('ghostBounce'); }
@@ -208,9 +210,9 @@ export function GhostScene({ screen, game, link: baseLink, room, clock, sound, s
   const winners = r?.done ? screen.people.filter((p) => r.done!.winners.includes(p.id)) : [];
 
   return (
-    <div className={`fc-scene gt-scene gt-scene--${game.map}`}>
+    <div className={`fc-scene gt-scene gt-scene--${game.map} ${bw > 1 ? 'gt-scene--wide' : ''}`}>
       <div className="fc-stage">
-        <GhostBoard map={game.map} round={r} t={t} dark={fogged}>
+        <GhostBoard map={game.map} w={bw} round={r} t={t} dark={fogged}>
           {screen.people.map((p) => {
             const m = game.mine[p.id];
             const at = shown.current[p.id] ?? m?.spot;
@@ -229,7 +231,7 @@ export function GhostScene({ screen, game, link: baseLink, room, clock, sound, s
               </GhostToken>
             );
           })}
-          {pops.map((p) => <span key={p.key} className={`fc-pop gt-pop gt-pop--${p.kind}`} style={{ left: `${p.at.x * 100}%`, top: `${p.at.y * 100}%` }}>{p.text}</span>)}
+          {pops.map((p) => <span key={p.key} className={`fc-pop gt-pop gt-pop--${p.kind}`} style={at(p.at.x, p.at.y, bw)}>{p.text}</span>)}
         </GhostBoard>
 
         <aside className="fc-side">

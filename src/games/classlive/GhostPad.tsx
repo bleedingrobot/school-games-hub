@@ -15,7 +15,7 @@ import type { PlayerView, RoomView } from '../../../shared/classlive/server';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import { Joystick, useKeys } from './CornersPad';
-import { GhostBoard, GhostToken } from './GhostBoard';
+import { at, GhostBoard, GhostToken } from './GhostBoard';
 import { GhostHelp } from './GhostCard';
 import { useEdgeLink } from './edgeLink';
 import { useNetStats } from './netStats';
@@ -39,9 +39,11 @@ export function GhostPad({ link: baseLink, room, view, me, setMe, setView, clock
   const pub: Pub | null = view.game.kind === 'ghost' ? view.game : null;
   const mg: Mine | null = me && me.game.kind === 'ghost' ? me.game : null;
   const r = pub?.round ?? null;
+  /** The map's width (height 1): wide since 26 Nov 2026. */
+  const bw = r?.w ?? pub?.w ?? 1;
   const keysDir = useKeys();
   const stickDir = useRef<Spot>({ x: 0, y: 0 });
-  const pos = useRef<GhostMove>({ p: mg?.spot ?? { x: 0.5, y: 0.8 }, v: { x: 0, y: 0 } });
+  const pos = useRef<GhostMove>({ p: mg?.spot ?? { x: bw / 2, y: 0.8 }, v: { x: 0, y: 0 } });
   const placed = useRef(-1);
   const seen = useRef<GhostSpots | null>(null);
   const lastSent = useRef(0);
@@ -250,7 +252,7 @@ export function GhostPad({ link: baseLink, room, view, me, setMe, setView, clock
     : ghost ? (frozen ? '❄️ Frozen!' : '👻 Catch the others!') : hiddenLeft ? `✨ Invisible: ${hiddenLeft}` : '🏃 Run from the ghosts!';
   const btnText = ghost ? (frozen ? '❄️ Frozen' : '⚡ Ghost power') : hiddenLeft ? `✨ ${hiddenLeft}` : '✨ Vanish';
   return (
-    <div className={`fc-pad fc-pad--run gt-pad ${ghost ? 'gt-pad--ghost' : ''}`}>
+    <div className={`fc-pad fc-pad--run gt-pad ${bw > 1 ? 'gt-pad--wide' : ''} ${ghost ? 'gt-pad--ghost' : ''}`}>
       <header className="fc-pad__top">
         <span>Round {roundN}</span>
         <b className={`gt-pad__status ${hiddenLeft ? 'is-hidden' : ''}`}>{status}</b>
@@ -263,9 +265,9 @@ export function GhostPad({ link: baseLink, room, view, me, setMe, setView, clock
         {ghost && mg.lanternTo > t && <span className="fc-chip">🏮 Lantern lit</span>}
       </div>
       <div className="fc-pad__board">
-        <GhostBoard map={pub.map} round={r} t={t}>
+        <GhostBoard map={pub.map} w={bw} round={r} t={t}>
           {(seen.current?.spots ?? []).map(([x, y, kind], i) => (
-            <span key={i} className={`fc-dot gt-dot gt-dot--${kind}`} style={{ left: `${x * 100}%`, top: `${y * 100}%` }}>{kind === 1 || kind === 2 ? '👻' : ''}</span>
+            <span key={i} className={`fc-dot gt-dot gt-dot--${kind}`} style={at(x, y, bw)}>{kind === 1 || kind === 2 ? '👻' : ''}</span>
           ))}
           <GhostToken x={here.x} y={here.y} size={AVATAR_R * 2.4} ghost={ghost} className={`fc-token--me ${hiddenLeft ? 'gt-token--hidden' : ''} ${frozen ? 'gt-token--frozen' : ''} ${mg.shield && !ghost ? 'fc-token--shield' : ''}`} label="You">
             <AvatarImage avatar={avatar ?? null} size={64} />

@@ -63,6 +63,54 @@
       "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, ghosts, statues, perspective view, side view"
     },
     {
+      "name": "map-graveyard-wide",
+      "prompt": "A top-down painted game board of a friendly moonlit graveyard: soft blue moonlight, short green grass, a winding gravel path loop, a low iron fence and little pumpkins and lanterns round the edges, a stone crypt with a round purple glowing doorway seen from above in the exact centre. Spooky but friendly for children aged 7 to 11. An open empty walkable floor everywhere else, calm plain ground, no objects in the open floor, top-down bird's-eye view straight down, game board, wide landscape widescreen picture, the board fills the whole wide frame edge to edge, the centrepiece exactly in the middle, no characters, no writing anywhere.",
+      "size": [
+        2048,
+        1280
+      ],
+      "kind": "scene",
+      "folder": "ghost",
+      "file": "map-graveyard-wide",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, ghosts, statues, perspective view, side view"
+    },
+    {
+      "name": "map-mansion-wide",
+      "prompt": "A top-down painted game board of the ballroom floor of a friendly haunted mansion: a big patterned carpet on wooden floorboards, faint candle glow, cobwebs and potted ferns round the edges, a round old stone fireplace hearth with purple flames seen from above in the exact centre. Spooky but friendly for children aged 7 to 11. An open empty walkable floor everywhere else, calm plain ground, no objects in the open floor, top-down bird's-eye view straight down, game board, wide landscape widescreen picture, the board fills the whole wide frame edge to edge, the centrepiece exactly in the middle, no characters, no writing anywhere.",
+      "size": [
+        2048,
+        1280
+      ],
+      "kind": "scene",
+      "folder": "ghost",
+      "file": "map-mansion-wide",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, ghosts, statues, perspective view, side view"
+    },
+    {
+      "name": "map-pumpkin-wide",
+      "prompt": "A top-down painted game board of a pumpkin patch field at night: rows of soft earth, curly vines and leaves round the edges, warm lantern glow, a round straw circle with a friendly scarecrow hat seen from above in the exact centre. Spooky but friendly for children aged 7 to 11. An open empty walkable floor everywhere else, calm plain ground, no objects in the open floor, top-down bird's-eye view straight down, game board, wide landscape widescreen picture, the board fills the whole wide frame edge to edge, the centrepiece exactly in the middle, no characters, no writing anywhere.",
+      "size": [
+        2048,
+        1280
+      ],
+      "kind": "scene",
+      "folder": "ghost",
+      "file": "map-pumpkin-wide",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, ghosts, statues, perspective view, side view"
+    },
+    {
+      "name": "map-ship-wide",
+      "prompt": "A top-down painted game board of the wooden deck of a friendly ghost pirate ship: weathered planks, ropes and a railing round the edges, glowing green sea showing at the sides, a round ship's steering wheel platform with a soft green glow seen from above in the exact centre. Spooky but friendly for children aged 7 to 11. An open empty walkable floor everywhere else, calm plain ground, no objects in the open floor, top-down bird's-eye view straight down, game board, wide landscape widescreen picture, the board fills the whole wide frame edge to edge, the centrepiece exactly in the middle, no characters, no writing anywhere.",
+      "size": [
+        2048,
+        1280
+      ],
+      "kind": "scene",
+      "folder": "ghost",
+      "file": "map-ship-wide",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, ghosts, statues, perspective view, side view"
+    },
+    {
       "name": "back-graveyard",
       "prompt": "A wide backdrop painting: a wide moonlit graveyard at night, friendly not scary: a big round moon, soft blue mist, crooked trees, glowing lanterns and pumpkins round the edges, deep blue and purple. The middle is calm, darker and softer, an empty open middle with nothing in it, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
       "size": [
