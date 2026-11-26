@@ -687,7 +687,7 @@ function Setup({ busy, problem, onOpen: open, onShowdown, classId }: { busy: boo
         <>
           <h1 className="cl-setup__title">Class Live</h1>
           <p className="cl-setup__sub">Pick a game for the big screen</p>
-          {running.length > 0 && <p className="cl-running" role="status">On now in other classes: {running.map((g) => `${g.who} (${g.name})`).join(', ')}. Only one joystick game and two games in all can run at once.</p>}
+          {running.length > 0 && <p className="cl-running" role="status">On now in another class: {running.map((g) => `${g.who} (${g.name})`).join(', ')}. Only one live game can run at a time.</p>}
           <GamePicker games={games} onPick={choose} lockOf={lockOf} />
         </>
       ) : (
