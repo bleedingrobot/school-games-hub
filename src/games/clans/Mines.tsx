@@ -26,9 +26,21 @@ export function recommendedDepth(clan: Session['clan']): number {
 
 /**
  * Choose how deep to go. Each depth has its own painting and name, with the choices laid over it. The Mines open at the
- * recommended depth unless the clan already chose one that is just right or tough. Keys: Enter goes in, B takes on the
+ * depth the pupil last chose (kept on this device); the first time, at the recommended depth. Keys: Enter goes in, B takes on the
  * boss, the arrow keys (or - and +) change the depth.
  */
+/** The depth this pupil last chose in the Mines, kept on this device so it stays after fights and reloads. */
+const depthKey = (clanName: string) => `cq-mine-depth:${clanName}`;
+export function savedDepth(clanName: string): number | null {
+  try {
+    const n = Number(localStorage.getItem(depthKey(clanName)) ?? NaN);
+    return Number.isInteger(n) ? Math.max(0, Math.min(CONFIG.maxLevel, n)) : null;
+  } catch { return null; }
+}
+function saveDepth(clanName: string, depth: number) {
+  try { localStorage.setItem(depthKey(clanName), String(depth)); } catch { /* it just won't be remembered */ }
+}
+
 /** The painting of a mine depth, or its zone's painting when that depth has none of its own. */
 export function depthArt(depth: number): { wide?: string; small?: string } {
   const own = mineArt(depth);
@@ -41,11 +53,18 @@ export function Mines({ session, onDepth, onGo, onBack, locked, top }: { session
   const awake = session.clan.members.some((m) => !m.knockedOut);
   const unlimited = session.unlimitedToday === true;
   const canGo = (session.fightsLeft > 0 || unlimited) && awake && !locked;
-  const set = (d: number) => onDepth(Math.max(0, Math.min(CONFIG.maxLevel, d)));
+  const set = (d: number) => {
+    const depth = Math.max(0, Math.min(CONFIG.maxLevel, d));
+    saveDepth(session.clan.name, depth);
+    onDepth(depth);
+  };
   const recommended = recommendedDepth(session.clan);
-  // Opening: a depth that is too easy or too hard moves to the recommended one.
+  // Opening: the depth the pupil last chose stays (Recommended is only a hint). With none saved yet, a depth that is
+  // too easy or too hard moves to the recommended one.
   useEffect(() => {
-    if (hint === 'too easy' || hint === 'too hard') set(recommended);
+    const saved = savedDepth(session.clan.name);
+    if (saved !== null) { if (saved !== session.depth) onDepth(saved); }
+    else if (hint === 'too easy' || hint === 'too hard') onDepth(recommended);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // What is typed in the depth box while it is being typed: it may be empty for a moment, and a leading 0 goes.
   const [draft, setDraft] = useState<string | null>(null);
