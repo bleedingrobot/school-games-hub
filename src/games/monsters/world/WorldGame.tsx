@@ -14,6 +14,7 @@ import { maxHpOf, type Monster } from '../../../../shared/monsters/rules';
 import { RAW_MAPS, WORLD_MAPS } from '../../../../shared/monsters/maps';
 import type { TiledMap } from '../../../../shared/monsters/world/mapLoader';
 import type { Dir, GameMap, Thing, WorldState } from '../../../../shared/monsters/world/types';
+import { arrivalOf } from '../RareArrival';
 import { badgeName, finishBattle, giantBattle, meet, placeAt, trainerBattle, wildBattle, type InteractOutcome, type Maps, type WorldOptions } from '../../../../shared/monsters/world/world';
 import type { Giant } from '../../../../shared/monsters/quests/giants';
 import { coldEggs, coldWords, eggWarmth } from '../../../../shared/monsters/quests/eggs';
@@ -492,7 +493,7 @@ export function WorldGame({
       <h1 className="sr-only">Maths Monsters</h1>
       <p className="sr-only" role="status">{`You are in ${map.name}.`}</p>
       <div
-        className={`mw-stage${scene.kind === 'flash' ? ' is-flash' : ''}`}
+        className={`mw-stage${scene.kind === 'flash' ? ` is-flash${scene.setup.kind === 'wild' ? ` is-flash--${arrivalOf(scene.setup.foes[0])?.tone ?? 'plain'}` : ''}` : ''}`}
         ref={stage}
         tabIndex={-1}
         data-testid="mw-stage"

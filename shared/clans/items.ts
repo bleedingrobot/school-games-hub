@@ -1,27 +1,53 @@
 /**
  * The Market's items: every class has its own line in each slot (docs/CLANS-ITEMS-PLAN.md). Weapons go up to tier 7 (the
  * class's own top weapon); armour and the off-hand slot up to tier 6. Each tier only adds, and each is a clear step up from
- * the one before. Every item gives some of the class's recommended stats (`CLASS_FOCUS`, the same (R) the Training Hall
- * shows): a weapon mostly one, armour and shields armour or one, plus a smaller helpful extra. What the Smithy sells grows with its level (`SMITHY_TIERS`).
+ * the one before. A weapon gives mostly one stat, armour and shields armour or one, plus a smaller helpful extra (the
+ * Training Hall and Market mark each class's main stat and its "also good" ones: `CLASS_MAIN`, `CLASS_ALSO`). What the Smithy sells grows with its level (`SMITHY_TIERS`).
  *
  * The numbers come from the ladders below, so the whole shop can be tuned in one place (`npm run clans:sim`).
  */
 import type { GearKind, GearStat, ItemDef } from './types';
 
-/** The stats each class should train first: shown as (R) in the Training Hall and the Market. */
-export const CLASS_FOCUS: Record<string, GearStat[]> = {
-  Barbarian: ['strength', 'dexterity', 'armor', 'hp'],
-  Warrior: ['strength', 'agility', 'dexterity'],
-  'Martial Artist': ['agility', 'dexterity', 'strength', 'sp'],
-  Knight: ['strength', 'dexterity', 'armor', 'hp', 'charisma'],
-  Assassin: ['dexterity', 'agility', 'strength', 'sp'],
-  Healer: ['wisdom', 'sp'],
-  Sorcerer: ['wisdom', 'sp'],
-  Necromancer: ['wisdom', 'sp'],
-  Wizard: ['wisdom', 'sp', 'hp'],
-  Pirate: ['agility', 'dexterity', 'strength', 'charisma', 'hp'],
-  Samurai: ['agility', 'dexterity', 'strength', 'sp'],
+/**
+ * What each class should train: one main stat (shown "★ Main" in the Training Hall and the Market) and one or two that
+ * are also good. Picked from what the fight really uses (fight.ts, James 26 Nov 2026): a plain hit's damage is strength / 2
+ * and dexterity decides whether it lands (so classes that start on strength 1 or 2 have strength as their main); damage
+ * moves never miss and grow with wisdom / 3, so SP is what lets a class use them; healing grows with level, so a Healer
+ * needs SP; wisdom drives a caster's damage spells, tricks landing and SP coming back. Charisma is quests only.
+ */
+export const CLASS_MAIN: Record<string, GearStat> = {
+  Barbarian: 'strength',
+  Warrior: 'strength',
+  'Martial Artist': 'strength',
+  Knight: 'armor',
+  Assassin: 'strength',
+  Healer: 'sp',
+  Sorcerer: 'wisdom',
+  Necromancer: 'wisdom',
+  Wizard: 'wisdom',
+  Pirate: 'strength',
+  Samurai: 'strength',
 };
+
+/** The class's other good stats (one or two), after its main one. */
+export const CLASS_ALSO: Record<string, GearStat[]> = {
+  Barbarian: ['dexterity', 'hp'],
+  Warrior: ['dexterity', 'sp'],
+  'Martial Artist': ['agility', 'sp'],
+  Knight: ['strength', 'hp'],
+  Assassin: ['dexterity', 'sp'],
+  Healer: ['wisdom', 'hp'],
+  Sorcerer: ['sp'],
+  Necromancer: ['sp'],
+  Wizard: ['sp', 'hp'],
+  Pirate: ['dexterity', 'agility'],
+  Samurai: ['dexterity', 'sp'],
+};
+
+/** All the stats worth training for each class: its main one first, then the others. */
+export const CLASS_FOCUS: Record<string, GearStat[]> = Object.fromEntries(
+  Object.entries(CLASS_MAIN).map(([cls, main]) => [cls, [main, ...(CLASS_ALSO[cls] ?? [])]]),
+);
 
 /** Gold for each tier (index 0 is tier 1, which every member starts with). Round tens, so 10% off is always whole. */
 export const TIER_PRICES: Record<GearKind, readonly number[]> = {

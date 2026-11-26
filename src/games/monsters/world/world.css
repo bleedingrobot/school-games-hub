@@ -27,6 +27,11 @@
   animation: mw-flash 0.52s steps(5) both;
 }
 @keyframes mw-flash { 0% { opacity: 0; } 20% { opacity: 1; } 40% { opacity: 0; } 60% { opacity: 1; } 100% { opacity: 1; } }
+/* A rare, ultra rare or shiny monster in the grass: the flash is in its colours (then RareArrival takes over in the battle). */
+.mw-stage.is-flash--rare::after { background: radial-gradient(circle, #fff 0 20%, #d8b4fe 60%, #7e22ce 100%); }
+.mw-stage.is-flash--ultra::after { background: radial-gradient(circle, #fff 0 20%, #fde68a 60%, #d97706 100%); }
+.mw-stage.is-flash--shiny::after,
+.mw-stage.is-flash--shiny-max::after { background: conic-gradient(from 0deg, #f9a8d4, #fde047, #86efac, #7dd3fc, #c4b5fd, #f9a8d4); }
 @media (prefers-reduced-motion: reduce) { .mw-stage.is-flash::after { animation: none; opacity: 1; } }
 .mw-loading { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: #fff; font-weight: 700; }
 
@@ -84,6 +89,15 @@
 /* ---------- The map menu: pages inside the Sheet look from the battle screens ---------- */
 .mm { position: absolute; inset: 0; z-index: 20; color: var(--mb-ink); }
 .mm .mb-sheet { border-radius: 0; }
+/* The menu home: the strong and weak wheel on the left, the buttons on the right; stacked on narrow screens. */
+.mm-home { display: flex; align-items: center; justify-content: center; gap: 18px; max-width: 1180px; margin: 0 auto; width: 100%; }
+.mm-home__chart { flex: 0 1 min(44%, 460px); min-width: 0; }
+.mm-home__chart .mm-typechart { width: 100%; max-height: calc(100dvh - 120px); object-fit: contain; margin: 0; }
+.mm-home .mm-main { flex: 1 1 0; min-width: 0; margin: 0; }
+@media (max-width: 760px) {
+  .mm-home { flex-direction: column; align-items: stretch; gap: 12px; }
+  .mm-home__chart { flex: none; align-self: center; width: min(100%, 380px); }
+}
 .mm-main { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; max-width: 720px; margin: 0 auto; }
 .mm-main__btn { display: grid; justify-items: center; align-content: center; gap: 0; min-height: 64px; font-size: 1.15rem; }
 .mm-main__btn small { font-size: 0.78rem; font-weight: 600; color: var(--mb-soft); }
@@ -163,6 +177,8 @@
 
 @media (max-width: 760px) { .mm-badges, .mm-main { grid-template-columns: 1fr; } .bk { grid-template-columns: minmax(0, 1fr) 230px; } }
 @media (max-height: 520px) {
+  .mm-home { flex-direction: row; align-items: center; }
+  .mm-home__chart { flex: 0 0 auto; width: min(40vw, calc(100dvh - 90px)); align-self: center; }
   .mm-main { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .mm-main__btn { min-height: 52px; font-size: 1rem; }
   .mm-main__btn--settings { grid-column: auto; }
