@@ -44,11 +44,19 @@ h2{font-size:1.05rem;margin:10px 0 0}
 details{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 16px}
 summary{cursor:pointer;font-weight:500}
 details ul{margin:8px 0 4px;padding-left:20px;color:var(--muted);font-size:.88rem}
+.cmt{display:flex;flex-direction:column;gap:6px}
+.cmt label{font-size:.8rem;color:var(--muted)}
+.cmt textarea{font:inherit;font-size:.9rem;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:64px;resize:vertical}
+.cmt textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.cmt .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.cmt button{font:inherit;font-size:.84rem;padding:5px 12px;border-radius:8px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
+.cmt .saved{font-size:.78rem;color:var(--muted)}
+.rung[data-c="maybe"] .cmt textarea{border-color:var(--maybe)}
 </style>
 
 <div class="wrap">
   <h1>Year 5 ladder skills: your picks</h1>
-  <p class="lead">Skills from the Year 5 curriculum that the ladder doesn't have yet. Tap Yes, No or Maybe on each one. Nothing gets built until you've said yes. Every skill is one typed number or one tap, about 8 seconds.</p>
+  <p class="lead">Skills from the Year 5 curriculum that the ladder doesn't have yet. Tap Yes, No or Maybe on each one, and add a comment to any skill (a box opens on every Maybe). Nothing gets built until you've said yes. Every skill is one typed number or one tap, about 8 seconds.</p>
   <div class="tally"><span id="t-yes">Yes 0</span><span id="t-no">No 0</span><span id="t-maybe">Maybe 0</span><span id="t-open">Not picked 18</span></div>
   <div id="status">Loading your picks…</div>
   <div class="rungs" id="rungs"></div>
@@ -93,14 +101,13 @@ const SKILLS=[
  ["compass-4","Four compass points and quarter turns",["Face north, quarter turn clockwise: which way? → E"],"Tap",""],
  ["clock-read","Telling the time on a clock face",["Picture of a clock: 7:25, 7:35, 5:35 or 6:25?"],"Tap","Needs a clock picture."],
 ];
-const picks={}; let db=null; const busy=new Set();
+const picks={}, comments={}; let db=null; const busy=new Set();
 const LABEL={yes:"Yes",no:"No",maybe:"Maybe"};
 const root=document.getElementById("rungs"), statusEl=document.getElementById("status");
-function render(){
-  root.textContent="";
+const cards={};
+function build(){
   SKILLS.forEach(([id,name,ex,ans,note],i)=>{
-    const c=picks[id]||"";
-    const el=document.createElement("article"); el.className="rung"; el.dataset.c=c;
+    const el=document.createElement("article"); el.className="rung";
     const top=document.createElement("div"); top.className="top";
     const n=document.createElement("span"); n.className="num"; n.textContent=String(i+1).padStart(2,"0");
     const nm=document.createElement("span"); nm.className="name"; nm.textContent=name;
@@ -111,14 +118,38 @@ function render(){
     el.append(top,exs);
     if(note){const p=document.createElement("p"); p.className="note"; p.textContent=note; el.append(p)}
     const b=document.createElement("div"); b.className="btns";
+    const btns={};
     ["yes","no","maybe"].forEach(v=>{
-      const bt=document.createElement("button"); bt.type="button"; bt.id=`b-${id}-${v}`; bt.dataset.v=v;
-      bt.textContent=LABEL[v]; bt.setAttribute("aria-pressed",String(c===v));
-      bt.disabled=!db||busy.has(id);
-      bt.addEventListener("click",()=>choose(id,v)); b.append(bt);
+      const bt=document.createElement("button"); bt.type="button"; bt.id=`b-${id}-${v}`; bt.dataset.v=v; bt.textContent=LABEL[v];
+      bt.addEventListener("click",()=>choose(id,v)); b.append(bt); btns[v]=bt;
     });
-    el.append(b); root.append(el);
+    const add=document.createElement("button"); add.type="button"; add.id=`add-${id}`; add.textContent="Add comment";
+    add.addEventListener("click",()=>{ card.open=true; update(id); card.ta.focus(); }); b.append(add);
+    el.append(b);
+    const cm=document.createElement("div"); cm.className="cmt";
+    const lb=document.createElement("label"); lb.htmlFor=`c-${id}`; lb.textContent="Your comment";
+    const ta=document.createElement("textarea"); ta.id=`c-${id}`; ta.placeholder="What would make this a yes? What should change?";
+    const row=document.createElement("div"); row.className="row";
+    const sv=document.createElement("button"); sv.type="button"; sv.id=`s-${id}`; sv.textContent="Save comment";
+    const st=document.createElement("span"); st.className="saved";
+    sv.addEventListener("click",()=>saveComment(id));
+    ta.addEventListener("input",()=>{ st.textContent = ta.value.trim()===(comments[id]||"") ? "Saved" : "Not saved yet"; });
+    row.append(sv,st); cm.append(lb,ta,row); el.append(cm);
+    const card={el,btns,add,cm,ta,sv,st,open:false};
+    cards[id]=card; root.append(el);
   });
+}
+function update(id){
+  const c=picks[id]||"", k=cards[id];
+  k.el.dataset.c=c;
+  for(const v in k.btns){ k.btns[v].setAttribute("aria-pressed",String(c===v)); k.btns[v].disabled=!db||busy.has(id); }
+  const show = c==="maybe" || !!comments[id] || k.open;
+  k.cm.hidden=!show; k.add.hidden=show; k.add.disabled=!db;
+  k.ta.disabled=!db; k.sv.disabled=!db||busy.has(id);
+  if(document.activeElement!==k.ta && k.ta.value!==(comments[id]||"")) k.ta.value=comments[id]||"";
+  if(document.activeElement!==k.ta) k.st.textContent = comments[id] ? "Saved" : "";
+}
+function tally(){
   const vals=SKILLS.map(s=>picks[s[0]]);
   const cnt=v=>vals.filter(x=>x===v).length;
   document.getElementById("t-yes").textContent=`Yes ${cnt("yes")}`;
@@ -126,14 +157,28 @@ function render(){
   document.getElementById("t-maybe").textContent=`Maybe ${cnt("maybe")}`;
   document.getElementById("t-open").textContent=`Not picked ${vals.filter(x=>!x).length}`;
 }
+function renderAll(){ SKILLS.forEach(s=>update(s[0])); tally(); }
 async function choose(id,v){
   if(!db||busy.has(id)) return;
-  const prev=picks[id]; picks[id]=v; busy.add(id); render();
-  try{ await db.doc(`picks/${id}`).set({choice:v,at:new Date().toISOString()}); statusEl.textContent="Saved. Claude reads these picks from here."; }
+  const prev=picks[id]; picks[id]=v; busy.add(id); update(id); tally();
+  try{ await db.doc(`picks/${id}`).update({choice:v,at:new Date().toISOString()}).catch(()=>db.doc(`picks/${id}`).set({choice:v,at:new Date().toISOString()})); statusEl.textContent="Saved. Claude reads these picks from here."; }
   catch(e){ picks[id]=prev; statusEl.textContent="That pick didn't save. Try tapping it again."; }
-  finally{ busy.delete(id); render(); }
+  finally{ busy.delete(id); update(id); tally(); }
 }
-render();
+async function saveComment(id){
+  if(!db||busy.has(id)) return;
+  const k=cards[id], text=k.ta.value.trim().slice(0,2000);
+  busy.add(id); update(id); k.st.textContent="Saving…";
+  try{
+    const ref=db.doc(`picks/${id}`);
+    const data={comment:text,commentAt:new Date().toISOString()};
+    await ref.update(data).catch(()=>ref.set({...data,...(picks[id]?{choice:picks[id]}:{})}));
+    comments[id]=text; k.st.textContent="Saved";
+    statusEl.textContent="Comment saved. Claude reads it from here.";
+  }catch(e){ k.st.textContent="Didn't save. Try again."; }
+  finally{ busy.delete(id); update(id); if(k.st.textContent==="") k.st.textContent=text?"Saved":""; }
+}
+build(); renderAll();
 (async()=>{
   const timer=setTimeout(()=>{ if(!db) statusEl.textContent="Picks can't load here. Open this page signed in to claude.ai to choose."; },10000);
   try{
@@ -142,12 +187,13 @@ render();
     db=d;
     db.collection("picks").onSnapshot(snap=>{
       clearTimeout(timer);
-      const docs=snap.docs||[];
-      docs.forEach(doc=>{ const data=typeof doc.data==="function"?doc.data():doc.data; if(data&&LABEL[data.choice]) picks[doc.id]=data.choice; });
-      statusEl.textContent="Tap a choice on each skill. Picks save as you go.";
-      render();
+      (snap.docs||[]).forEach(doc=>{ const data=doc.data(); if(!data) return;
+        if(LABEL[data.choice]) picks[doc.id]=data.choice;
+        if(typeof data.comment==="string") comments[doc.id]=data.comment; });
+      statusEl.textContent="Tap a choice on each skill, and add a comment where you want one. Everything saves to this page.";
+      renderAll();
     },()=>{ clearTimeout(timer); statusEl.textContent="Picks couldn't load. Reload the page to try again."; });
-    render();
+    renderAll();
   }catch(e){ clearTimeout(timer); statusEl.textContent="Picks couldn't load. Reload the page to try again."; }
 })();
 </script>
