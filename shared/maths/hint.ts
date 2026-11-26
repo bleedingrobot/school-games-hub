@@ -40,7 +40,7 @@ export function hintFor(q: Pick<Question, 'answer' | 'choices' | 'parts'>): Hint
  * Which free "Help me" picture a question gets (James, 26 Nov 2026): every kind of angle on angle-picture questions, and what
  * < > ≤ ≥ ≠ mean on any question that shows one of them. Unlike the hint it costs nothing and never narrows the answer.
  */
-export function helpKind(q: Pick<Question, 'parts' | 'prompt' | 'choiceLabels' | 'figure'>): 'angles' | 'symbols' | 'remainder' | 'axes' | 'fractions' | 'hours' | 'units' | null {
+export function helpKind(q: Pick<Question, 'parts' | 'prompt' | 'choiceLabels' | 'figure'>): 'angles' | 'symbols' | 'remainder' | 'axes' | 'fractions' | 'hours' | 'units' | 'turns' | null {
   if (isFigure(q.figure) && q.figure.kind === 'angle') return 'angles';
   // Naming an angle from its size alone ("An angle of 250° is ?"), with no picture (James, 26 Nov 2026: no Help me showed).
   if ((q.choiceLabels ?? []).some((c) => /^(acute|obtuse|reflex|right|straight)( angle)?$/i.test(c)) || /kind of angle/i.test(q.prompt ?? '')) return 'angles';
@@ -49,6 +49,7 @@ export function helpKind(q: Pick<Question, 'parts' | 'prompt' | 'choiceLabels' |
   if (/\b[xy]-axis\b/.test(q.prompt ?? '')) return 'axes';
   if (fractionSteps(q.parts)) return 'fractions';
   if (unitSteps(q.parts)) return 'units';
+  if (/way are you (now )?facing/i.test(q.prompt ?? '')) return 'turns';
   // Hours into minutes ("3 h = ? min"): use the 6 times table (James, 26 Nov 2026).
   if (q.parts.includes('min') && q.parts.some((p) => /(\d|½) h(\s|$)/.test(p))) return 'hours';
   const texts = [...q.parts, q.prompt ?? '', ...(q.choiceLabels ?? [])];

@@ -265,9 +265,23 @@ function Body({ f }: { f: FigureSpec }) {
               </g>
             );
           })}
-          {dirs[f.from] !== undefined && dirs[f.to] !== undefined && (
+          {f.to !== undefined && dirs[f.from] !== undefined && dirs[f.to] !== undefined && (
             <Arc cx={cx} cy={cy} r={26} a={dirs[f.to]} b={dirs[f.from]} />
           )}
+          {f.to === undefined && dirs[f.from] !== undefined && (() => {
+            // The way you face: a thick arrow from the middle, with a little person-dot at the centre.
+            const r = (dirs[f.from] * Math.PI) / 180;
+            const [ux, uy] = [Math.cos(r), -Math.sin(r)];
+            const tip = { x: cx + 42 * ux, y: cy + 42 * uy };
+            const back = { x: cx + 30 * ux, y: cy + 30 * uy };
+            return (
+              <g className="fig__facing">
+                <line x1={cx} y1={cy} x2={back.x} y2={back.y} />
+                <polygon points={`${tip.x},${tip.y} ${back.x - 7 * uy},${back.y + 7 * ux} ${back.x + 7 * uy},${back.y - 7 * ux}`} />
+                <circle cx={cx} cy={cy} r={5} />
+              </g>
+            );
+          })()}
         </>
       );
     }
