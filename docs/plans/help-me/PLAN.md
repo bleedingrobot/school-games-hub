@@ -61,8 +61,8 @@ tab shows help use), rule-junior (junior games build their own, read aloud).
   dot rows, arrays, cut circles) show the question's own amounts, as the ideas asked; the others never mark the answer.
   pictures.test.ts checks every skill with an idea gets its picture.
 - H9 teacher view built: teacher_help_uses(class, days) and a "Help me" panel on the Progress tab (who used help, how
-  often, right after help, the skills). Junior games (Pipi, Hop, Penguin Pairs, Tūī, Pigeon, Parrot, Lizard, Swamp Hen,
-  Robin) draw their own questions and are next, one game at a time.
+  often, right after help, the skills).
+- Junior (Foundational) games are NOT changed (James, 26 Nov 2026: don't touch them). They keep their own read-aloud help.
 
 ## Build outline (after James says go)
 
