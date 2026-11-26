@@ -41,10 +41,23 @@ const FRACTION = /^(?:(\d+|\?) )?(\d+|\?)\/(\d+|\?)$/;
 const ALGEBRA = /^(?=.*[a-z])(?!.*[a-z]{2})(?!.*\d\s+[a-z])[a-z\d\s+−×÷=.²³()]+$/;
 
 /** Numbers each followed by a short unit: 9.1 km, 1/3 h, 4 h 15 min, 2 cm², 6.1 L. */
-const QUANTITY = /^[\d.,/]+ [a-zA-Z]{1,3}[²³]?( [\d.,/]+ [a-zA-Z]{1,3}[²³]?)*$/;
+const QUANTITY = /^[\d.,/½]+ (?:hours?|minutes?|[a-zA-Z]{1,3})[²³]?( [\d.,/½]+ (?:hours?|minutes?|[a-zA-Z]{1,3})[²³]?)*$/;
+
+/**
+ * Time units as words (James, 26 Nov 2026: "3 h = ? min" should read "3 hours = ? minutes"): h after a number becomes
+ * hour(s), min becomes minute(s), and a lone h or min right after the blank becomes hours or minutes.
+ */
+export function timeWords(text: string, unit?: boolean): string {
+  if (unit && (text === 'h' || text === 'min')) return text === 'h' ? 'hours' : 'minutes';
+  return text.replace(/(^|\s)([\d.,/½]+|\?) (h|min)(?=\s|$)/g, (_m, pre: string, n: string, u: string) => {
+    const one = n === '1' || n === '½' || /^\d+\/\d+$/.test(n);
+    return `${pre}${n} ${u === 'h' ? (one ? 'hour' : 'hours') : one ? 'minute' : 'minutes'}`;
+  });
+}
 
 /** One part of the question: a fraction, a word, algebra, or a plain number or sign. `blank` stands in for '?'. */
-function Part({ text, blank, unit }: { text: string; blank: ReactNode; unit?: boolean }) {
+function Part({ text: raw, blank, unit }: { text: string; blank: ReactNode; unit?: boolean }) {
+  const text = timeWords(raw, unit);
   const fill = (piece: string) => (piece === '?' ? blank : piece);
   const f = FRACTION.exec(text);
   if (f) {
@@ -177,6 +190,25 @@ export function FractionHelp({ parts }: { parts: string[] }) {
         {f(a2[0], a2[1])} {sign} {f(b2[0], b2[1])} = <Part text={`?/${bottom}`} blank="?" />
       </p>
       <p>Now {word} the tops. The bottom stays {bottom}.</p>
+    </div>
+  );
+}
+
+/** Hours into minutes: 1 hour is 60 minutes, so use the 6 times table. The worked example is never the question itself. */
+export function HoursHelp({ parts }: { parts: string[] }) {
+  const asked = /^(\d+) h$/.exec(parts[0] ?? '');
+  const ex = asked && Number(asked[1]) === 4 ? 5 : 4;
+  return (
+    <div className="remainder-help">
+      <p>
+        <strong>1 hour = 60 minutes.</strong> Use your <strong>6 times table</strong>, then put a 0 on the end.
+      </p>
+      <p className="remainder-help__sum">
+        {ex} × 6 = {ex * 6}, so {ex} × 60 = {ex * 60}
+      </p>
+      <p>
+        {ex} hours = {ex * 60} minutes. Half an hour is 30 minutes.
+      </p>
     </div>
   );
 }
@@ -337,7 +369,7 @@ export function QuestionModal({
       const pad = getComputedStyle(holder);
       const room = holder.clientWidth - parseFloat(pad.paddingLeft) - parseFloat(pad.paddingRight);
       delete el.dataset.wrap;
-      const floor = hasWords ? 31 : 16;
+      const floor = hasWords ? 22 : 16;
       let size = parseFloat(getComputedStyle(el).fontSize);
       while (el.scrollWidth > room + 1 && size > floor) {
         size -= 1;
@@ -496,7 +528,7 @@ export function QuestionModal({
             <button type="button" className="question__hintbtn" aria-expanded={helpOpen} onClick={() => setHelpOpen((o) => !o)}>
               {helpOpen ? 'Hide help' : 'Help me'}
             </button>
-            {helpOpen && (help === 'angles' ? <AngleNames /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : help === 'fractions' ? <FractionHelp parts={question.parts} /> : <SymbolHelp />)}
+            {helpOpen && (help === 'angles' ? <AngleNames /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : help === 'fractions' ? <FractionHelp parts={question.parts} /> : help === 'hours' ? <HoursHelp parts={question.parts} /> : <SymbolHelp />)}
           </div>
         )}
         {question.prompt && <p className="question__prompt">{question.prompt}</p>}

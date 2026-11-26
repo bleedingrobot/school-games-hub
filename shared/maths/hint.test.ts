@@ -20,6 +20,7 @@ describe('the one hint', () => {
     expect(helpKind({ parts: ['9', '÷', '4', '=', '?', 'r', '1'] })).toBe('remainder');
     expect(helpKind({ parts: ['?'], prompt: 'Which point sits on the x-axis (the line going across)?' })).toBe('axes');
     expect(helpKind({ parts: ['1/8', '+', '3/4', '=', '?'] })).toBe('fractions');
+    expect(helpKind({ parts: ['3 h', '=', '?', 'min'] })).toBe('hours');
     expect(fractionSteps(['1/8', '+', '3/4', '=', '?'])?.changes).toEqual([{ n: 3, d: 4, by: 2 }]);
     expect(fractionSteps(['2/3', '−', '1/4', '=', '?'])).toMatchObject({ bottom: 12, changes: [{ n: 2, d: 3, by: 4 }, { n: 1, d: 4, by: 3 }] });
     expect(fractionSteps(['1/5', '+', '2/5', '=', '?'])).toBeNull();
