@@ -48,7 +48,27 @@ export const CHECK_CONFIG = {
    * "Training" was otherwise a hard test (7 × 8, 72 ÷ 8) that leaves their facts map empty. Later checks are never held back.
    */
   firstAfterSessions: 3,
+  /**
+   * Retest weeks set by date, on top of `everyDays` (James, 27 Nov 2026 NZ: school ends before the 28-day retests fell due).
+   * From each date (NZ midnight, as UTC), a pupil whose last check is from before it, and at least `roundMinGapDays` old, is
+   * asked again. Add a date here for another early round; never remove a past one.
+   */
+  retestRounds: ['2026-11-29T11:00:00Z'] as readonly string[],
+  /** A round never retests a check younger than this, so a pupil who did their first check the day before isn't asked again. */
+  roundMinGapDays: 7,
 } as const;
+
+/** Whether a retest week (CHECK_CONFIG.retestRounds) makes a pupil whose last check was at `lastAt` due now. */
+export function retestRoundDue(lastAt: string | null | undefined, now: Date = new Date()): boolean {
+  if (!lastAt) return false;
+  const last = new Date(lastAt).getTime();
+  const t = now.getTime();
+  if (Number.isNaN(last) || last > t - CHECK_CONFIG.roundMinGapDays * 86_400_000) return false;
+  return CHECK_CONFIG.retestRounds.some((r) => {
+    const from = new Date(r).getTime();
+    return t >= from && last < from;
+  });
+}
 
 /** Whether to ask for the check now: the server says one is due, and a first check also waits for a few Training sessions. */
 export function checkDueNow(serverDue: boolean, checksDone: number, sessionsDone: number): boolean {
