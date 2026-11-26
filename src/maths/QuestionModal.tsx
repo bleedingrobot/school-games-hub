@@ -14,6 +14,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode }
 import { spokenLabel } from '../../shared/maths/banded';
 import { fractionSteps, helpKind, hintFor, unitSteps } from '../../shared/maths/hint';
 import { helpCardFor } from '../../shared/maths/help';
+import { pictureFor } from '../../shared/maths/pictures';
+import { QuestionPicture } from './QuestionPicture';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { AngleNames, Figure } from './Figure';
 import { isFigure } from '../../shared/maths/figure';
@@ -385,6 +387,8 @@ export function QuestionModal({
   const [hint, setHint] = useState<ReturnType<typeof hintFor> | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const help = helpKind(question);
+  // A picture of the numbers (ten-frames, a number line, fraction bars...) when the question has no figure of its own (H8).
+  const picture = useMemo(() => pictureFor(question), [question]);
   // The pupil's secure facts, so a card can start from one they know ("You know 6 × 7"). Loaded the first time help opens.
   const [known, setKnown] = useState<Set<string> | null>(null);
   const card = useMemo(
@@ -615,7 +619,7 @@ export function QuestionModal({
           {title}
         </h2>
         {note && <p className="question__note">{note}</p>}
-        {isFigure(question.figure) && <Figure figure={question.figure} />}
+        {isFigure(question.figure) ? <Figure figure={question.figure} /> : picture && <QuestionPicture picture={picture} />}
         {(card || help) && (
           // Help me (docs/plans/help-me/PLAN.md): a way to work it out with this question's numbers, never the answer, then
           // the picture box for the kinds that have one. Opening it means this answer doesn't count (H1).

@@ -53,6 +53,15 @@ tab shows help use), rule-junior (junior games build their own, read aloud).
   (my_ladder, box 2+) load the first time Help me opens, so a tables card can start from "You know 7 × 7". The checkers
   Hint button is hidden when a card exists. shared/maths/help/help.test.ts checks every inAuto key has a card that
   isn't broken and doesn't end on the answer.
+- H2-H7 LIVE 26 Nov 2026 (PR #916).
+- H8 (pictures) built: shared/maths/pictures/ (types.ts kinds, rules.ts one rule per question shape) works out a picture
+  from what the question shows; src/maths/QuestionPicture.tsx draws it above the question when there is no server figure.
+  Covers the 47 picture ideas except coins/notes (money-y5) and jug/scales (metric-y6). Counting pictures (ten-frames,
+  dot rows, arrays, cut circles) show the question's own amounts, as the ideas asked; the others never mark the answer.
+  pictures.test.ts checks every skill with an idea gets its picture.
+- H9 teacher view built: teacher_help_uses(class, days) and a "Help me" panel on the Progress tab (who used help, how
+  often, right after help, the skills). Junior games (Pipi, Hop, Penguin Pairs, Tūī, Pigeon, Parrot, Lizard, Swamp Hen,
+  Robin) draw their own questions and are next, one game at a time.
 
 ## Build outline (after James says go)
 

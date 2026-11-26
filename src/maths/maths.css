@@ -730,3 +730,38 @@
 .fraction-help .qfrac, .fraction-help .qfrac * { color: var(--q-ink); }
 .fig__facing line { stroke: #2563eb; stroke-width: 5; stroke-linecap: round; }
 .fig__facing polygon, .fig__facing circle { fill: #2563eb; }
+
+/* Question pictures (H8) */
+.question__picture {
+  display: block;
+  height: auto;
+  max-width: 320px;
+  margin: 6px auto 0;
+  color: var(--q-ink);
+  overflow: visible;
+}
+.question__picture .qp__t { font-size: 15px; }
+.question__picture .qp__small { font-size: 13px; font-weight: 700; }
+.question__picture .qp__big { font-size: 24px; }
+.question__picture .fig__label--ask { font-size: 20px; }
+.qp__a { fill: #3b82f6; }
+.qp__b { fill: #f97316; }
+.qp__counter { stroke: #0f172a; stroke-width: 1.5; }
+.qp__cell { fill: #fff; stroke: currentColor; stroke-width: 1.2; opacity: 1; }
+.qp__cell--box { fill: color-mix(in srgb, currentColor 5%, #fff); stroke-width: 2; }
+.qp__cell--head { fill: color-mix(in srgb, currentColor 14%, #fff); stroke-width: 2; }
+.qp__cell--a { fill: #93c5fd; }
+.qp__cell--b { fill: #fdba74; }
+.qp__cell--ask { fill: color-mix(in srgb, var(--q-wrong) 10%, #fff); stroke: var(--q-wrong); stroke-width: 2.5; stroke-dasharray: 6 4; }
+.qp__ask-shape { stroke: var(--q-wrong); stroke-dasharray: 7 5; }
+.qp__on { stroke-width: 3; }
+.qp__outline { fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linejoin: round; }
+.qp__fill { fill: #93c5fd; stroke: none; }
+.qp__ring { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-dasharray: 4 3; opacity: 0.8; }
+.qp__thin { stroke-width: 1.6; }
+.qp__beam { stroke-width: 4; }
+.qp__tick { stroke-width: 2; }
+.qp__inner { fill: #fff; }
+.qp__num-in { font-size: 13px; }
+.qp__num-out { font-size: 13px; fill: #c2410c; font-weight: 800; }
+.question__picture .qp__head { font-size: 14px; font-weight: 800; }

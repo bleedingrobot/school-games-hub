@@ -3,9 +3,13 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(12);
 
-insert into auth.users (id, email) values ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
+  ('00000000-0000-0000-0000-00000000000f', 'fin@douglaspark.school.nz');
+update public.profiles set role = 'teacher' where id = '00000000-0000-0000-0000-00000000000f';
+select set_config('test.ana_class', (select class_id::text from public.class_members
+  where student_id = '00000000-0000-0000-0000-00000000000a'), true);
 
 create function pg_temp.answer(batch text, key text, correct boolean) returns integer language sql as $$
   select public.record_fact_answers('00000000-0000-0000-0000-00000000000a', 'times-tables',
@@ -40,6 +44,17 @@ select public.maths_help_cancel();
 reset role;
 select is(pg_temp.answer('3', 'mul:6x8', false), 1, 'after a cancel (the box closed unanswered) the next answer counts');
 select is(pg_temp.attempts('mul:6x8'), 1, '... and a wrong one is recorded');
+
+-- H9: the teacher sees who used Help me; a pupil can't.
+set local role authenticated;
+set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}';
+select throws_ok(format($$ select public.teacher_help_uses(%L) $$, current_setting('test.ana_class')), '42501', null,
+  'a pupil cannot see the class''s helped answers');
+set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-00000000000f", "role": "authenticated"}';
+select is(jsonb_array_length(public.teacher_help_uses(current_setting('test.ana_class')::uuid)), 1, 'the teacher sees one pupil');
+select is((public.teacher_help_uses(current_setting('test.ana_class')::uuid) -> 0) - 'id' - 'name' - 'realName' - 'lastAt',
+  '{"helped": 1, "right": 1, "days": 1, "topKeys": ["mul:7x8"]}'::jsonb, '... with one helped answer, right, on 7 x 8');
+reset role;
 
 select * from finish();
 rollback;
