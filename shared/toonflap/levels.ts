@@ -36,6 +36,8 @@ export interface LevelDef {
   newThing: string;
   /** A seasonal level only opens in these months of the NZ year (1 to 12). */
   months?: readonly number[];
+  /** …and also from this NZ day (YYYY-MM-DD) until its months start (James, 26 Nov 2026: open Christmas Coast now). */
+  opensEarly?: string;
 }
 
 export const LEVELS: readonly LevelDef[] = [
@@ -57,7 +59,7 @@ export const LEVELS: readonly LevelDef[] = [
  * under `seasonal` in a pupil's progress. Christmas Coast is a Kiwi summer Christmas, open in December and January.
  */
 export const SEASONAL_LEVELS: readonly LevelDef[] = [
-  { n: 11, id: 'xmas', name: 'Christmas Coast', world: 'a sunny Kiwi summer Christmas beach with red-flowering trees, candy canes and presents', seconds: 45, pace: 'slow', gap: 4.6, spacing: 2.4, checks: 2, answerWalls: 1, answerGaps: 2, wander: 1.8, features: ['answer-gaps', 'presents', 'ghosts'], newThing: 'Grab the presents: 3 presents make a revive potion! Grumpy Santa pushes you like the Spooky Manor ghosts. The arrows show which way.', months: [12, 1] },
+  { n: 11, id: 'xmas', name: 'Christmas Coast', world: 'a sunny Kiwi summer Christmas beach with red-flowering trees, candy canes and presents', seconds: 45, pace: 'slow', gap: 4.6, spacing: 2.4, checks: 2, answerWalls: 1, answerGaps: 2, wander: 1.8, features: ['answer-gaps', 'presents', 'ghosts'], newThing: 'Grab the presents: 3 presents make a revive potion! Grumpy Santa pushes you like the Spooky Manor ghosts. The arrows show which way.', months: [12, 1], opensEarly: '2026-11-26' },
 ];
 
 /** Every level: the trail's 10, then the seasonal ones. */
@@ -66,7 +68,8 @@ export const ALL_LEVELS: readonly LevelDef[] = [...LEVELS, ...SEASONAL_LEVELS];
 export const isSeasonal = (def: LevelDef): boolean => !!def.months;
 
 /** Is a level open at this time of year? `today` is the NZ day, YYYY-MM-DD. The trail's levels always are. */
-export const inSeason = (def: LevelDef, today: string): boolean => !def.months || def.months.includes(Number(today.slice(5, 7)));
+export const inSeason = (def: LevelDef, today: string): boolean =>
+  !def.months || def.months.includes(Number(today.slice(5, 7))) || (!!def.opensEarly && today >= def.opensEarly && today < `${def.opensEarly.slice(0, 4)}-12-01`);
 
 /** Seasonal levels open on NZ day `today`. */
 export const seasonalNow = (today: string): LevelDef[] => SEASONAL_LEVELS.filter((l) => inSeason(l, today));

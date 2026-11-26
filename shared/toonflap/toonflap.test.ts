@@ -151,7 +151,7 @@ describe('Christmas Coast (seasonal)', () => {
     const { SEASONAL_LEVELS, inSeason } = await import('./levels');
     const { levelRecord, nextStep, trailsUnlocked, golds } = await import('./collection');
     const xmas = SEASONAL_LEVELS[0];
-    expect([inSeason(xmas, '2026-11-30'), inSeason(xmas, '2026-12-01'), inSeason(xmas, '2027-01-31'), inSeason(xmas, '2027-02-01')]).toEqual([false, true, true, false]);
+    expect([inSeason(xmas, '2026-11-25'), inSeason(xmas, '2026-11-26'), inSeason(xmas, '2026-12-01'), inSeason(xmas, '2027-01-31'), inSeason(xmas, '2027-02-01'), inSeason(xmas, '2027-11-30')]).toEqual([false, true, true, true, false, false]);
     const run = (level: string, extra: Partial<RunSummary> = {}): RunSummary => ({ level, maths: true, seconds: 30, medal: 'gold', bumps: 0, checks: [], rightGaps: 0, potionUsed: false, ...extra });
     let p = emptyProgress();
     expect(levelOpen(p, xmas.n, '2026-12-05')).toBe(false); // Toon Garden first
@@ -200,7 +200,8 @@ describe('Christmas Coast (seasonal)', () => {
     p = r.progress;
     expect(flyersUnlocked(p, '2026-12-26')).toContain('elf-globe');
     expect(flyersUnlocked(p, '2026-12-27')).not.toContain('elf-globe');
-    expect(flyersUnlocked(p, '2026-11-30')).not.toContain('elf-globe');
+    expect(flyersUnlocked(p, '2026-11-26')).toContain('elf-globe'); // opened early (James, 26 Nov 2026)
+    expect(flyersUnlocked(p, '2026-11-25')).not.toContain('elf-globe');
     expect(flyersUnlocked(p, '2026-12-10')).not.toContain('grumpy-santa'); // every flight so far had a bump
     expect(trailsUnlocked(p)).not.toContain('baubles');
     p = addRun(p, run({ bumps: 0, presents: 19 }), '2026-12-03').progress;
