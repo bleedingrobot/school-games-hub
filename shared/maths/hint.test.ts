@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hintFor } from './hint';
+import { helpKind, hintFor } from './hint';
 
 describe('the one hint', () => {
   it('takes two wrong choices away and never the right one', () => {
@@ -11,5 +11,11 @@ describe('the one hint', () => {
         expect(h.remove.every((c) => choices.includes(c))).toBe(true);
       }
     }
+    // The free Help me (helpKind): sign meanings wherever < > ≤ ≥ ≠ show, angle kinds on angle pictures.
+    expect(helpKind({ parts: ['8 × 7', '≤', '8 × 5 + 42'] })).toBe('symbols');
+    expect(helpKind({ parts: ['2 456 × 2', '?', '1 228 × 4'], choiceLabels: ['<', '>', '='] })).toBe('symbols');
+    expect(helpKind({ parts: ['This 130° angle', 'is', '?'], figure: { kind: 'angle', degrees: 130 } })).toBe('angles');
+    expect(helpKind({ parts: ['3 + 4', '≠', '8'] })).toBe('symbols');
+    expect(helpKind({ parts: ['7', '×', '8', '=', '?'] })).toBeNull();
   });
 });

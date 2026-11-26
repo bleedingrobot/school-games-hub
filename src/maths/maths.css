@@ -675,6 +675,8 @@
 .fig__hand { stroke: currentColor; stroke-width: 3; stroke-linecap: round; }
 .fig__hand--short { stroke-width: 5; }
 .question__help { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.symbol-help { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 14px; text-align: center; }
+.symbol-help b { font-size: 18px; display: inline-block; min-width: 1.2em; }
 .angle-names { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 10px; }
 .angle-names__item { display: flex; flex-direction: column; align-items: center; width: 84px; font-size: 13px; line-height: 1.2; text-align: center; }
 .angle-names__item span { opacity: 0.8; font-size: 12px; }
