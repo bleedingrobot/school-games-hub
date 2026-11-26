@@ -45,10 +45,14 @@ describe('Class Live on Cloudflare (pilot)', () => {
       sync: async (_room, s) => cf.applySync(s, clock.now()),
       ticket: async (room, who, kind) => ({ url: 'wss://edge.test/room', ticket: await makeTicket('s', { r: room, u: who, k: kind, e: clock.now() + 1000 }) }),
     };
-    const sv = { ...pc.services, edge };
-    const plain = await classLiveStep(sv, PRETEND_TEACHER, { action: 'open', classId: PRETEND_CLASS, activity: 'shark', length: 3 });
-    expect(pc.db.rooms.get(plain.body.room as number)!.session.edge).toBeUndefined();
-    await classLiveStep(sv, PRETEND_TEACHER, { action: 'end', room: plain.body.room });
+    const kept: unknown[] = [];
+    const sv = { ...pc.services, edge, saveStats: async (...a: unknown[]) => void kept.push(a) };
+    // Another game, or Ghost Tag with "School server" picked, stays on the database.
+    for (const body of [{ activity: 'shark' }, { activity: 'ghost', edge: false }]) {
+      const plain = await classLiveStep(sv, PRETEND_TEACHER, { action: 'open', classId: PRETEND_CLASS, length: 3, ...body });
+      expect(pc.db.rooms.get(plain.body.room as number)!.session.edge).toBeUndefined();
+      await classLiveStep(sv, PRETEND_TEACHER, { action: 'end', room: plain.body.room });
+    }
     const room = (await classLiveStep(sv, PRETEND_TEACHER, { action: 'open', classId: PRETEND_CLASS, activity: 'ghost', map: 'ship', length: 3 })).body.room as number;
     for (const id of pc.ids) await classLiveStep(sv, id, { action: 'join', room });
     expect((await classLiveStep(sv, pc.ids[0], { action: 'look', room })).body.view).toMatchObject({ edge: true });
@@ -77,5 +81,9 @@ describe('Class Live on Cloudflare (pilot)', () => {
     expect(g().mine[prey].ghost).toBe(true);
     expect(cf.sync!.roles[prey][0]).toBe(1);
     expect(ghostSync(room, pc.db.rooms.get(room)!.session, 0, []).live).toBe(true);
+    // Connection numbers for the before-and-after: only known numbers are kept, only from the room's people.
+    expect((await classLiveStep(sv, prey, { action: 'stats', room, part: 'pad', version: 'edge', stats: { rttP50: 12.34, name: 'x', calls: 50 } })).status).toBe(200);
+    expect(kept).toEqual([[room, prey, 'pad', 'edge', { rttP50: 12.3, calls: 50 }]]);
+    expect((await classLiveStep(sv, 'someone-else', { action: 'stats', room, part: 'pad', version: 'edge', stats: {} })).status).toBe(403);
   });
 });

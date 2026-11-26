@@ -28,6 +28,17 @@ and game stays on the database, with the one-live-game lock (PR #891).
   14 requests a second, ~50k an hour of play; 1M a month are included. The object stays awake while sockets are open.
 - Turn it off: empty `EDGE_TEACHERS` (or unset the two function secrets). Rooms already open keep `edge` until they end.
 
+## Before and after (James, 26 Nov 2026 NZ)
+
+- James's Ghost Tag card has "Run it on (trial): Cloudflare / School server" (only for `EDGE_TEACHERS`), so the two can be
+  played back to back.
+- Every Ghost Tag pad and big screen sends one summary per game (`src/games/classlive/netStats.ts`, `action: 'stats'`,
+  table `classlive_netstats`): spot calls, empty or failed calls, round trip p50/p95, gap between fresh spots p50/p95,
+  fresh spots a second; the big screen also dots moved a second. Read with
+  `select part, version, count(*), avg((stats->>'gapP50')::float) ... from classlive_netstats group by 1, 2`.
+- Database load per game from Supabase's request logs (calls a minute by path, 5xx, p50/p95), kept 1 day only: copy them
+  into the report the same day. The report: `/mnt/project-files/classlive-edge/before-after.md` (project files).
+
 ## Next stages (not built)
 
 2. Watch James's first games (Cloudflare dashboard, Supabase load). If good, add other moving games (Shark Bay, Four
