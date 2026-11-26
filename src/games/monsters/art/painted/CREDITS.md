@@ -16,3 +16,5 @@ build. They were not copied from any game, artist or art pack.
 | items/ | The five Bag items | 256 square |
 
 The map itself is still Kenney pixel art (CC0, see ../../world/assets/kenney).
+
+Sumsplash (`plusplash-2`, plain and shiny) was repainted on 26 Nov 2026 as one creature (the first painting showed an otter carrying it), James, with Z-Image Turbo in ComfyUI.
