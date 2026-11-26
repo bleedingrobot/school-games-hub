@@ -10,15 +10,16 @@
  * Parts like '3/4' are drawn as fractions ('?/8' has the blank on top), parts with words are
  * drawn smaller, and decimal questions get a point key.
  */
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { spokenLabel } from '../../shared/maths/banded';
 import { fractionSteps, helpKind, hintFor, unitSteps } from '../../shared/maths/hint';
+import { helpCardFor } from '../../shared/maths/help';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { AngleNames, Figure } from './Figure';
 import { isFigure } from '../../shared/maths/figure';
 import { NumberPad } from './NumberPad';
 import { choiceForKey, useQuestionKeys } from './questionKeys';
-import { countAnswer, helpCancelled, helpOpened, noteQuestion, questionOpened, spendSkip, spotFromTitle, STREAK_FROM, useSkipRule } from './questionLog';
+import { countAnswer, helpCancelled, helpKnownFacts, helpOpened, noteQuestion, questionOpened, spendSkip, spotFromTitle, STREAK_FROM, useSkipRule } from './questionLog';
 import { ScribblePad } from './ScribblePad';
 import './maths.css';
 
@@ -384,12 +385,19 @@ export function QuestionModal({
   const [hint, setHint] = useState<ReturnType<typeof hintFor> | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const help = helpKind(question);
+  // The pupil's secure facts, so a card can start from one they know ("You know 6 × 7"). Loaded the first time help opens.
+  const [known, setKnown] = useState<Set<string> | null>(null);
+  const card = useMemo(
+    () => helpCardFor(question, known ? { known: (key) => known.has(key) } : {}),
+    [question, known],
+  );
   // Help me was opened on this question (H1): the answer then doesn't count. Holds the call telling the database, so the
   // answer waits for it.
   const helped = useRef<{ id: ShownQuestion['id']; sent: Promise<void> } | null>(null);
   const openHelp = () => {
     setHelpOpen((o) => !o);
-    if (helped.current?.id !== question.id && !result) helped.current = { id: question.id, sent: helpOpened(help ?? 'help') };
+    if (!known) void helpKnownFacts().then(setKnown);
+    if (helped.current?.id !== question.id && !result) helped.current = { id: question.id, sent: helpOpened(card?.kind ?? help ?? 'help') };
   };
   const [streak, setStreak] = useState(0);
   const [padOpen, setPadOpen] = useState(readPadOpen);
@@ -608,14 +616,26 @@ export function QuestionModal({
         </h2>
         {note && <p className="question__note">{note}</p>}
         {isFigure(question.figure) && <Figure figure={question.figure} />}
-        {help && (
+        {(card || help) && (
+          // Help me (docs/plans/help-me/PLAN.md): a way to work it out with this question's numbers, never the answer, then
+          // the picture box for the kinds that have one. Opening it means this answer doesn't count (H1).
           // Free help, no cost (James, 26 Nov 2026): every kind of angle with its name on angle questions, and what < > ≤ ≥ mean
           // on any question that uses them; what r means on remainders; a small grid on axis questions.
           <div className="question__help">
             <button type="button" className="question__hintbtn" aria-expanded={helpOpen} onClick={openHelp}>
               {helpOpen ? 'Hide help' : 'Help me'}
             </button>
-            {helpOpen && (help === 'angles' ? <AngleNames /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : help === 'fractions' ? <FractionHelp parts={question.parts} /> : help === 'hours' ? <HoursHelp parts={question.parts} /> : help === 'units' ? <UnitHelp parts={question.parts} /> : help === 'turns' ? <TurnHelp parts={question.parts} /> : <SymbolHelp />)}
+            {helpOpen && card && (
+              <div className="help-card">
+                <p className="help-card__title">{card.title}</p>
+                <ol className="help-card__steps">
+                  {card.steps.map((step, i) => (
+                    <li key={i}>{step}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
+            {helpOpen && help && (help === 'angles' ? <AngleNames /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : help === 'fractions' ? <FractionHelp parts={question.parts} /> : help === 'hours' ? <HoursHelp parts={question.parts} /> : help === 'units' ? <UnitHelp parts={question.parts} /> : help === 'turns' ? <TurnHelp parts={question.parts} /> : <SymbolHelp />)}
           </div>
         )}
         {question.prompt && <p className="question__prompt">{question.prompt}</p>}
@@ -633,7 +653,7 @@ export function QuestionModal({
         <p className="sr-only" aria-live="polite">
           {secondsLeft !== null && !result && (secondsLeft === 10 || secondsLeft === 5) ? `${secondsLeft} seconds left` : ''}
         </p>
-        {onHint && question.answer !== undefined && (
+        {onHint && question.answer !== undefined && !card && !help && (
           <div className="question__hint">
             <button type="button" className="question__hintbtn" disabled={!!hint || !!result || checking} onClick={showHint}>
               {hint ? 'Hint used' : 'Hint'}

@@ -156,12 +156,15 @@ export interface HelpSink {
   opened: (kind: string) => Promise<void>;
   /** The help opened on this question no longer applies (the box closed without an answer, or the answer was marked). */
   cancelled: () => void;
+  /** The pupil's secure facts ("mul:6x7"), so help can start from a fact they know (H2). */
+  known?: () => Promise<string[]>;
 }
 
 let helpSink: HelpSink | null = null;
 
 export function setHelpSink(next: HelpSink | null): void {
   helpSink = next;
+  knownFacts = null;
 }
 
 /** Help me was opened. Never rejects, and gives up after `waitMs` so a slow network can't hold up the answer. */
@@ -177,4 +180,19 @@ export function helpCancelled(): void {
   } catch {
     // Never worth interrupting a game.
   }
+}
+
+let knownFacts: Promise<Set<string>> | null = null;
+
+/** The pupil's secure facts, loaded once per page the first time Help me opens. Empty when nothing is set or it fails. */
+export function helpKnownFacts(): Promise<Set<string>> {
+  if (!helpSink?.known) return Promise.resolve(new Set());
+  knownFacts ??= helpSink
+    .known()
+    .then((keys) => new Set(keys))
+    .catch(() => {
+      knownFacts = null;
+      return new Set<string>();
+    });
+  return knownFacts;
 }

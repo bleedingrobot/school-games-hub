@@ -693,6 +693,12 @@
   white-space: nowrap;
 }
 
+/* Help me card (docs/plans/help-me/PLAN.md): the trick, then numbered steps; the last one is for the pupil to finish. */
+.help-card { max-width: 340px; font-size: 15px; line-height: 1.35; text-align: left; padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, currentColor 8%, transparent); }
+.help-card__title { margin: 0 0 4px; font-weight: 900; text-align: center; }
+.help-card__steps { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: 3px; }
+.help-card__steps li:last-child { font-weight: 800; }
+
 /* "Help me" on a remainder question: what r means, with dots in groups and the left-overs in another colour. */
 .remainder-help { max-width: 320px; font-size: 14px; line-height: 1.35; text-align: center; }
 .remainder-help p { margin: 2px 0; }
