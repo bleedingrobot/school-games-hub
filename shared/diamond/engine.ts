@@ -65,6 +65,8 @@ export interface Shot {
 export interface LevelState {
   level: number;
   seed: number;
+  /** The seed the buried field (gems, rare gem, rocks, sacks, crabs, monsters) was made from. */
+  field: number;
   boosts: readonly BoostId[];
   starter: boolean;
   things: Thing[];
@@ -136,13 +138,17 @@ export interface LevelResult {
 
 const has = (s: LevelState, b: BoostId) => s.boosts.includes(b);
 
-export function startLevel(level: number, seed: number, boosts: readonly BoostId[] = [], starter = false): LevelState {
+/**
+ * `field` is the seed of what's buried. It is the go's own seed unless the pupil left an earlier go of this level
+ * unfinished: then the same field comes back (server.ts), so leaving and coming in again can't fish for rare gems.
+ */
+export function startLevel(level: number, seed: number, boosts: readonly BoostId[] = [], starter = false, field = seed): LevelState {
   const spec = levelSpec(level);
   const isStarter = starter && level === 1;
-  const things = isStarter ? makeStarterField(seed) : makeField(level, seed, boosts.includes('monsterLure'));
+  const things = isStarter ? makeStarterField(field) : makeField(level, field, boosts.includes('monsterLure'));
   const seconds = spec.seconds + (boosts.includes('extraTime') ? EXTRA_TIME_SECONDS : 0);
   return {
-    level, seed, boosts: [...new Set(boosts)], starter: isStarter, things,
+    level, seed, field, boosts: [...new Set(boosts)], starter: isStarter, things,
     buried: new Set(things.map((t) => t.id)),
     tick: 0, endTick: seconds * TICKS_PER_SECOND, phase: 'swing',
     swing: 0, swingDir: 1, starterSwing: isStarter, degree: 0, length: 0,
@@ -420,6 +426,8 @@ export interface LevelInput {
   finish?: number | null;
   /** The guided first go (level 1 only). */
   starter?: boolean;
+  /** The field's seed, if not the go's own (see startLevel). */
+  field?: number;
 }
 
 /** Most ticks a level could ever run (time, extra time and every sack's seconds), so a replay always stops. */
@@ -427,7 +435,7 @@ const MOST_TICKS = 10 * 60 * TICKS_PER_SECOND;
 
 /** Replay a whole level from its seed and what the pupil pressed. The server saves exactly this. */
 export function playLevel(input: LevelInput): LevelResult {
-  const s = startLevel(input.level, input.seed, input.boosts ?? [], input.starter ?? false);
+  const s = startLevel(input.level, input.seed, input.boosts ?? [], input.starter ?? false, input.field ?? input.seed);
   const drops = [...input.drops].sort((a, b) => a - b);
   const marks = input.marks ?? [];
   let next = 0;
