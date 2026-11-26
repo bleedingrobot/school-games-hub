@@ -84,7 +84,7 @@ describe('question box', () => {
     setup(question({ id: 5 }));
     await user.click(screen.getByRole('button', { name: 'Help me' }));
     const steps = await screen.findAllByRole('listitem');
-    await vi.waitFor(() => expect(screen.getByRole('list').textContent).toContain('7 × 7'));
+    await vi.waitFor(() => expect(screen.getAllByRole('list')[0].textContent).toContain('7 × 7'));
     expect(steps.at(-1)?.textContent).toContain('?');
     expect(screen.getByRole('dialog').textContent).not.toMatch(/= 56|\b56\b/);
     setHelpSink(null);
@@ -107,7 +107,7 @@ describe('question box', () => {
       feedback: 'Box should say 20 and 3', tags: ['picture'], key: 'mul:23x4',
       question: expect.objectContaining({ title: 'Mana Well', parts: ['23', '×', '4', '=', '?'], answer: 92 }),
       picture: expect.objectContaining({ kind: 'split-box', tens: 20, ones: 3 }),
-      help: expect.objectContaining({ steps: expect.any(Array) }),
+      help: [expect.objectContaining({ title: 'Use the box: tens and ones' })],
     }));
     expect(panel).toBeTruthy();
     // Typing the note never types into the answer.

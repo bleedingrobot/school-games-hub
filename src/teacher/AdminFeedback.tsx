@@ -25,6 +25,9 @@ export function questionLine(note: FeedbackNote): string {
   return (note.question.parts ?? []).join(' ').replace(/\s+/g, ' ').trim();
 }
 
+/** The Help me cards saved with a note: a list now, one card in the first notes. */
+const helpList = (note: FeedbackNote) => (Array.isArray(note.help) ? note.help : note.help ? [note.help] : []);
+
 function NoteCard({ note, onChange }: { note: FeedbackNote; onChange: () => void }) {
   const [reply, setReply] = useState(note.note);
   const [busy, setBusy] = useState(false);
@@ -74,15 +77,17 @@ function NoteCard({ note, onChange }: { note: FeedbackNote; onChange: () => void
           {note.picture && <QuestionPicture picture={note.picture} />}
         </div>
         <div className="admin-feedback__help">
-          {note.help ? (
-            <div className="help-card">
-              <p className="help-card__title">{note.help.title}</p>
-              <ol className="help-card__steps">
-                {note.help.steps.map((step, i) => (
-                  <li key={i}>{step}</li>
-                ))}
-              </ol>
-            </div>
+          {helpList(note).length ? (
+            helpList(note).map((c, n) => (
+              <div key={n} className="help-card">
+                <p className="help-card__title">{c.title}</p>
+                <ol className="help-card__steps">
+                  {c.steps.map((step, i) => (
+                    <li key={i}>{step}</li>
+                  ))}
+                </ol>
+              </div>
+            ))
           ) : (
             <p className="admin-feedback__none">No Help me card on this question.</p>
           )}

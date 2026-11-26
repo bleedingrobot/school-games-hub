@@ -43,7 +43,8 @@ export interface FeedbackItem {
   key: string;
   question: ShownCopy;
   picture: Picture | null;
-  help: HelpCard | null;
+  /** Every Help me card shown, best first (older notes hold just one card). */
+  help: HelpCard[] | HelpCard | null;
 }
 
 export interface FeedbackSink {

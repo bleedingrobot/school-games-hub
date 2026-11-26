@@ -13,7 +13,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { spokenLabel } from '../../shared/maths/banded';
 import { fractionSteps, helpKind, hintFor, unitSteps } from '../../shared/maths/hint';
-import { helpCardFor } from '../../shared/maths/help';
+import { helpCardsFor } from '../../shared/maths/help';
 import { pictureFor } from '../../shared/maths/pictures';
 import { QuestionPicture } from './QuestionPicture';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
@@ -395,10 +395,13 @@ export function QuestionModal({
   const picture = useMemo(() => pictureFor(question), [question]);
   // The pupil's secure facts, so a card can start from one they know ("You know 6 × 7"). Loaded the first time help opens.
   const [known, setKnown] = useState<Set<string> | null>(null);
-  const card = useMemo(
-    () => helpCardFor(question, known ? { known: (key) => known.has(key) } : {}),
+  // Every kind of help, best first (James, 26 Nov 2026): the one that matches the picture, then other strategies (a fact
+  // they know, doubling or halving), and counting in lots last.
+  const cards = useMemo(
+    () => helpCardsFor(question, known ? { known: (key) => known.has(key) } : {}),
     [question, known],
   );
+  const card = cards[0] ?? null;
   // Help me was opened on this question (H1): the answer then doesn't count. Holds the call telling the database, so the
   // answer waits for it.
   const helped = useRef<{ id: ShownQuestion['id']; sent: Promise<void> } | null>(null);
@@ -616,7 +619,7 @@ export function QuestionModal({
         skill: extra.skill,
       },
       picture: isFigure(question.figure) ? null : picture,
-      help: card,
+      help: cards,
     };
   };
   const beside = (showPad && padOpen ? 1 : 0) + (showFeedback && feedbackOpen ? 1 : 0);
@@ -684,16 +687,18 @@ export function QuestionModal({
             <button type="button" className="question__hintbtn" aria-expanded={helpOpen} onClick={openHelp}>
               {helpOpen ? 'Hide help' : 'Help me'}
             </button>
-            {helpOpen && card && (
-              <div className="help-card">
-                <p className="help-card__title">{card.title}</p>
-                <ol className="help-card__steps">
-                  {card.steps.map((step, i) => (
-                    <li key={i}>{step}</li>
-                  ))}
-                </ol>
-              </div>
-            )}
+            {helpOpen &&
+              cards.map((c, n) => (
+                <div key={`${n}-${c.title}`} className="help-card" data-more={n > 0 || undefined}>
+                  {n > 0 && <p className="help-card__or">Or try this</p>}
+                  <p className="help-card__title">{c.title}</p>
+                  <ol className="help-card__steps">
+                    {c.steps.map((step, i) => (
+                      <li key={i}>{step}</li>
+                    ))}
+                  </ol>
+                </div>
+              ))}
             {helpOpen && help && (help === 'angles' ? <AngleNames /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : help === 'fractions' ? <FractionHelp parts={question.parts} /> : help === 'hours' ? <HoursHelp parts={question.parts} /> : help === 'units' ? <UnitHelp parts={question.parts} /> : help === 'turns' ? <TurnHelp parts={question.parts} /> : <SymbolHelp />)}
           </div>
         )}

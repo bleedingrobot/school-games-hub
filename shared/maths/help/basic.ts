@@ -149,19 +149,64 @@ function times(a: number, b: number, ctx: HelpContext): HelpCard {
   return card('tables', title, ...(turned.length + steps.length <= 4 ? turned : []), ...steps);
 }
 
-/** Which number times `t` makes `c`, with the table's own help. */
-function missingFactor(t: number, c: number): HelpCard {
+/**
+ * Which number times `t` makes `c`: a fact they know or halving first (James, 26 Nov 2026: "start with a known fact or
+ * doubling or halving first"); counting in `t`s is its own card, shown last (countingCard).
+ */
+function missingFactor(t: number, c: number, ctx: HelpContext = {}): HelpCard {
   if (t === 2) return card('tables', 'Halve it', `What doubles to make ${c}?`, `Half of ${c} = ?`);
   if (t === 10) return card('tables', 'Take off the zero', `${c} is how many tens?`, `${c} ÷ 10 = ?`);
   if (t === 5) return card('tables', 'Double, then ÷ 10', `Double ${c} = ${2 * c}.`, `${2 * c} is how many tens? ?`);
   if (t === 1) return card('tables', 'Times 1', `One lot of anything is itself.`, `${c} ÷ 1 = ?`);
+  const n = c / t;
+  if (t === 4 && c % 2 === 0 && n !== c / 2) return card('halves', 'Halve, then halve again', `Sharing by 4 is halving twice.`, `Half of ${c} = ${c / 2}.`, `Half of ${c / 2} = ?`);
+  if (t === 8 && c % 4 === 0 && n !== c / 4) {
+    return card('halves', 'Halve three times', `Sharing by 8 is halving three times.`, `Half of ${c} = ${c / 2}. Half of ${c / 2} = ${c / 4}.`, `Half of ${c / 4} = ?`);
+  }
+  // Start from a fact they know (or an easy one: 2, 5 or 10 lots) that isn't the answer, and count the lots between.
+  const anchors = [1, 2, 5, 10, ...(ctx.known ? Array.from({ length: 12 }, (_, i) => i + 1).filter((k) => isKnown(ctx, k, t)) : [])]
+    .filter((k) => k !== n && k <= 12);
+  const k = anchors.reduce((best, x) => (Math.abs(c - x * t) < Math.abs(c - best * t) ? x : best), anchors[0]);
+  const from = k * t;
+  const lots = Math.abs(c - from) / t;
+  const known = ctx.known && isKnown(ctx, k, t) && ![1, 2, 5, 10].includes(k);
+  return card('tables', known ? 'Use a fact you know' : 'Start from a fact you know',
+    `You know ${k} × ${t} = ${from}.`,
+    `${c} is ${Math.abs(c - from)} ${c > from ? 'more' : 'less'}: that is ${lots} ${c > from ? 'more' : 'fewer'} ${t}${lots === 1 ? '' : 's'}.`,
+    `${k} ${c > from ? '+' : '−'} ${lots} = ?`);
+}
+
+/**
+ * Counting in lots, the last kind of help on a times or sharing question (James, 26 Nov 2026: "skip counting should be the
+ * last type of help"). Null when the question isn't one, or the counting would be too long to be any help.
+ */
+export function countingCard(q: HelpQuestion): HelpCard | null {
+  const s = sum(q);
+  if (!s || (s.op !== '×' && s.op !== '÷')) return null;
+  const nums = [s.a, s.b, s.c].filter((n): n is number => n !== null);
+  if (nums.some((n) => !Number.isInteger(n) || n < 1)) return null;
+  let t: number;
+  let c: number;
+  if (s.op === '×') {
+    if (s.c === null) {
+      const big = Math.max(s.a!, s.b!);
+      const small = Math.min(s.a!, s.b!);
+      if (small < 2 || small > 12 || big > 12) return null;
+      return card('skip-count', `Count in ${big}s`, `Count in ${big}s, ${small} times.`, `${countBy(0, big, big * (small - 1))}, …`, `Keep going: ${small} lots of ${big} is ?`);
+    }
+    t = s.a ?? s.b!;
+    c = s.c;
+  } else {
+    if (s.a === null) return null;
+    t = s.b ?? s.c!;
+    c = s.a;
+  }
+  if (t < 2 || t > 12 || c % t !== 0 || c / t > 12 || c / t < 2) return null;
   const five = 5 * t;
-  const from = c >= five
-    ? c === five
-      ? `10 × ${t} = ${10 * t}, and half of that is ${five}. So it is half of 10 lots.`
-      : `Start at 5 × ${t} = ${five}. Count on in ${t}s to ${c}: ${countBy(five, t, c)}.`
-    : `Count in ${t}s to ${c}: ${countBy(0, t, c)}.`;
-  return card('tables', `Think of the ${t} times table`, `Which number times ${t} makes ${c}?`, from, `How many ${t}s is that? ?`);
+  const fromFive = c >= five + 2 * t;
+  return card('skip-count', `Count in ${t}s`,
+    fromFive ? `Start at 5 × ${t} = ${five}. Count on in ${t}s to ${c}: ${countBy(five, t, c)}.` : `Count in ${t}s to ${c}: ${countBy(0, t, c)}.`,
+    fromFive ? `5 and how many more ${t}s? ?` : `How many ${t}s is that? ?`);
 }
 
 function countBy(from: number, step: number, to: number): string {
@@ -176,7 +221,7 @@ function tables(s: Sum, ctx: HelpContext): HelpCard | null {
   if (s.op === '×') {
     if (s.c === null) return s.a! <= 12 && s.b! <= 12 ? times(s.a!, s.b!, ctx) : null;
     const t = s.a ?? s.b!;
-    return t <= 12 && s.c <= 144 ? missingFactor(t, s.c) : null;
+    return t <= 12 && s.c <= 144 ? missingFactor(t, s.c, ctx) : null;
   }
   if (s.op === '÷') {
     // a ÷ b = ?  (b × ? = a)   a ÷ ? = c  (c × ? = a)   ? ÷ b = c  (b × c = ?)
@@ -184,7 +229,7 @@ function tables(s: Sum, ctx: HelpContext): HelpCard | null {
     const by = s.b ?? s.c!;
     if (by === 0 || by > 12 || s.a > 144 || s.a % by !== 0) return null;
     if (by === 2 && s.c === null && s.a <= 40) return card('halves', 'Dividing by 2 is halving', ...halfSteps(s.a));
-    const fact = missingFactor(by, s.a);
+    const fact = missingFactor(by, s.a, ctx);
     return card('tables', fact.title, `Think of the times fact: ${by} × ? = ${s.a}.`, ...fact.steps.filter((step) => !step.startsWith('Which number')));
   }
   return null;

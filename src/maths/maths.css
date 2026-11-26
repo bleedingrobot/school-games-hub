@@ -917,6 +917,8 @@
 .help-card__title { margin: 0 0 4px; font-weight: 900; text-align: center; }
 .help-card__steps { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: 3px; }
 .help-card__steps li:last-child { font-weight: 800; }
+.help-card + .help-card { margin-top: 6px; }
+.help-card__or { margin: 0 0 2px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; text-align: center; opacity: 0.65; }
 
 /* "Help me" on a remainder question: what r means, with dots in groups and the left-overs in another colour. */
 .remainder-help { max-width: 320px; font-size: 14px; line-height: 1.35; text-align: center; }
