@@ -29,7 +29,7 @@ it('gives every ladder question a help card that teaches without giving the answ
   const problems: string[] = [];
   const known = (k: string) => k === 'mul:6x7' || k === 'mul:7x7';
   for (const key of sampleKeys()) {
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 8; i++) {
       const q = questionForKey(key, i, random);
       if (!q) continue;
       const shown = `${key}: ${q.prompt ?? ''} ${q.parts.join(' ')}`;

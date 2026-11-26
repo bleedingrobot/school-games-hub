@@ -45,6 +45,7 @@ function addTo20(s: Sum): HelpCard | null {
   // A missing number: think of it as adding on.
   if (s.op === '+') {
     const known = a ?? b!;
+    if (c === 10 && known === 0) return card('pairs-10', 'Adding zero', 'Adding 0 adds nothing, so the other number has to make 10 all by itself.', 'Which number makes 10 on its own? ?');
     if (c === 10) return card('pairs-10', 'Pairs that make 10', `${known} and what make 10?`, 'Pairs to 10: 1+9, 2+8, 3+7, 4+6, 5+5.', `${known} + ? = 10`);
     return card('count-up', 'Count up to the total', `Start at ${known}.`, `Count up to ${c}. ${known < 10 && c! > 10 ? `${known} → 10 is ${10 - known}, then on to ${c}.` : ''}`.trim(), `How many did you count on? ?`);
   }
