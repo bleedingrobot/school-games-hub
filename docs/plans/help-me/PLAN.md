@@ -11,6 +11,13 @@ opens Help me, nothing gets ticked off.** Plan only. Build nothing until James h
 - The help text for each of the 136 skills (title, steps, picture) is the `SKILLS` array inside picker.html. It is the
   source for the build: copy it, don't rewrite it.
 
+## Pictures in the question (James, 26 Nov 2026)
+
+`PICS` in picker.html: per skill, the picture the question shows now and a picture idea. Separate picks: doc id
+`pic-<skill id>` (choice only). 12 ladder skills show a figure today (shared/maths/figure.ts kinds); junior-game skills
+are drawn by their games; 47 more have a picture idea (fraction bars, ten-frames, number lines through zero, compass
+rose, clocks, thermometers). New picture kinds go in figure.ts + QuestionModal like the existing ones.
+
 ## Review (what's there now)
 
 - 136 skills, Year 1-8, ~200 question types. 110 on the auto ladder; 26 `inAuto: false` skills are asked and marked by

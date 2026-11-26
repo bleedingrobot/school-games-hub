@@ -69,6 +69,10 @@ h2{font-size:1.1rem;margin:6px 0 0;text-wrap:balance}
 .bulk[data-arm="1"]{border-color:var(--yes);color:var(--yes)}
 .review{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
 .review ul{margin:6px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:.9rem}
+.pics{display:flex;flex-direction:column;gap:4px;border-top:1px dashed var(--line);padding-top:8px}
+.btns.small button{font-size:.8rem;padding:3px 10px}
+.btns .pl{font-size:.8rem;color:var(--muted);align-self:center}
+.chip.pic{background:var(--maybe-bg);color:var(--maybe)}
 .empty{color:var(--muted);font-size:.9rem;padding:20px 0}
 </style>
 <div class="wrap">
@@ -83,6 +87,8 @@ h2{font-size:1.1rem;margin:6px 0 0;text-wrap:balance}
         <option value="open">Not picked yet</option>
         <option value="has">Has a Help me now</option>
         <option value="game">Asked in a junior game</option>
+        <option value="needpic">Could use a picture</option>
+        <option value="haspic">Has a picture now</option>
         <option value="commented">With comments</option>
       </select>
       <button type="button" class="bulk" id="bulk">Yes to all not picked here</button>
@@ -103,6 +109,7 @@ h2{font-size:1.1rem;margin:6px 0 0;text-wrap:balance}
       <li>Some games also have a Hint button that greys out two choices or says "between 50 and 60". Hints don't teach a method and right answers after one still count, so the rules below fold it into Help me.</li>
       <li>Each times table holds only its new facts (×7 is 7 × 7, 7 × 8, 7 × 9…), so every newer table has easier facts below it. That makes the "use a fact you know" help a good fit for all the tables.</li>
       <li>Answers are all saved by one shared step on the server, so "doesn't count after Help me" can be done once there rather than in every game.</li>
+      <li>Pictures: 12 ladder skills show a picture in the question today (perimeter, kinds of angles, clock, area, angles, coordinates, spinner, formulas, missing angles, polygons, compass degrees, circles), and the 26 junior-game skills are drawn by their games. About 47 more could use one: fraction bars, ten-frames, number lines through zero, the compass rose, clocks for time across the hour, thermometers. Each card has its own Yes / No / Maybe for the picture, and the "Could use a picture" filter lists them.</li>
       <li>The 20 Year 4 skills you picked earlier aren't built yet. They'd get their help from this plan as they're built.</li>
     </ul>
   </section>
@@ -259,6 +266,77 @@ const SKILLS = [
 ["metric-area-volume",8,"Area and volume units","5 cm² = ? mm²","Square the jump",["1 cm = 10 mm, so 1 cm² = 10 × 10 = 100 mm².","5 cm² = 5 × 100.","1 m² = 10 000 cm². 1 mL = 1 cm³, 1 L = 1000 cm³."],"1 cm square cut into 100 small squares","",""],
 ["circle-parts",8,"Radius and diameter","Radius 24 cm: diameter?","The diameter is two radii",["The radius goes from the middle to the edge.","The diameter goes right across: two radii.","2 × 24 = ?"],"Circle with radius and diameter drawn","",""],
 ];
+
+// Pictures in the question itself (not the help). [now, idea]: now = the picture it shows today ('' none);
+// idea = a picture that would help ('' none needed). Junior-game skills are drawn by their game already.
+const PICS={
+"facts-5":["","Five-frame of dots for the two numbers (youngest only)"],
+"facts-10":["","Ten-frame with the dots filled in"],
+"dbl-half-10":["","Two matching rows of dots"],
+"ten-and":["","A full ten-frame and the loose ones"],
+"facts-20":["","Two ten-frames"],
+"dbl-half-20":["","Dot rows split at 5"],
+"skip-10":["","Number track with the gap marked"],"skip-5":["","Number track with the gap marked"],"skip-2":["","Number track with the gap marked"],
+"tables-2":["","Equal rows (array) for small facts only"],
+"bonds-100":["","Hundred square with the known part shaded"],
+"round-10-100":["","Number line between the two tens or hundreds"],
+"round-1000":["","Number line between the two thousands"],
+"round-huge":["",""],
+"unit-fraction-of":["","Fraction bar with the amount on the whole"],
+"fraction-bonds":["","Fraction bar with the known part shaded"],
+"tenths":["","Tenths strip or 0-1 number line"],
+"add-tenths":["",""],
+"decimal-bonds":["","Hundred square, known part shaded (hundredths types)"],
+"times-2by1":["","Area box split into tens and ones"],
+"place-million":["","Place-value chart with headings"],
+"compare-big":["",""],
+"perimeter":["Shape with one side labelled",""],
+"angle-types":["Angle picture on the 'what kind is this' type","Draw the angle on the '110° is…' type too"],
+"metric-mm-km":["","Ruler or unit ladder (maybe)"],
+"compass-4":["","Compass rose with the start arrow and the turn"],
+"clock-read":["Clock face",""],
+"decimal-equivalents":["","Hundred square for the hundredths types"],
+"money-y5":["","Coins and notes for change questions (maybe)"],
+"percent-basic":["","Bar in quarters or tenths"],
+"fraction-of":["","Fraction bar with the amount on the whole"],
+"equivalent-fractions":["","Two fraction bars lined up"],
+"mixed-improper":["","Whole circles cut into parts"],
+"remainders":["","Dots grouped with the left-overs (in the question, not only the help)"],
+"count-zero":["","Thermometer on the temperature type, number line on counting"],
+"time-y6":["",""],
+"time-24":["","24-hour clock ring (12-hour and 24-hour numbers)"],
+"elapsed":["","Two clock faces, start and end"],
+"thousandths":["",""],
+"decimal-order":["",""],
+"metric-y6":["","Measuring jug or scales (maybe)"],
+"fraction-add-y6":["","Fraction bar"],
+"area-y6":["Rectangle, triangle or box with sides labelled",""],
+"angles-y6":["Line, point or crossing lines with the angles",""],
+"coordinates":["Grid on the 'move' type","Grid with the four choice points on the axis type"],
+"chance-words":["","0 to 1 chance line"],
+"spinner":["Coloured spinner",""],
+"percent-of":["",""],
+"mean-range-y6":["","Bar towers (maybe)"],
+"whole-from-fraction":["","Fraction bar with the known part labelled"],
+"pattern-next":["",""],"pattern-decimal":["",""],
+"int-compare":["","Number line through zero"],
+"int-add-sub":["","Thermometer on the temperature types"],
+"fraction-add-easy":["","Two fraction bars (maybe)"],
+"fraction-divide":["","Wholes cut into the fraction"],
+"ratio":["","Bar of equal boxes for sharing"],
+"equations-1":["","Balance scale (maybe)"],
+"metric":["",""],
+"formulas":["Shape with its measurements",""],
+"angle-facts":["Triangle, line or point with the angles",""],
+"polygon-angles":["The polygon",""],
+"compass-degrees":["Compass with the two directions",""],
+"probability":["","Bag of coloured counters, or a dice"],
+"int-negatives":["","Number line through zero"],
+"prime-factors":["","Factor tree"],
+"metric-area-volume":["","Square split into small squares (maybe)"],
+"circle-parts":["Circle with the radius or diameter",""],
+"fraction-times":["","Area grid (maybe)"],
+};
 const RULES=[
  ["rule-no-tick","Help me means it doesn't count","If a pupil opens Help me, that answer never ticks off, secures or masters a fact. They still answer it, for practice."],
  ["rule-no-wrong","A wrong answer after Help me doesn't count against them either","So opening help is never a punishment. The answer is saved as 'helped' and left out of the ladder's records."],
@@ -272,15 +350,15 @@ const RULES=[
  ["rule-junior","Junior games get their help inside the game","The 26 skills beside the ladder get the same kind of help, shown the game's own way (pictures and the read-aloud voice), built game by game."],
 ];
 const VIEWS=[["start","Start here"],...[1,2,3,4,5,6,7,8].map(y=>[`year-${y}`,`Year ${y}`]),["all","All years"]];
-const picks={}, comments={}; let db=null; const busy=new Set(); const cards={};
+const picCards={}; const picks={}, comments={}; let db=null; const busy=new Set(); const cards={};
 const LABEL={yes:"Yes",no:"No",maybe:"Maybe"};
 const $=id=>document.getElementById(id);
 const statusEl=$("status");
 const el=(tag,cls,text)=>{const e=document.createElement(tag); if(cls) e.className=cls; if(text!==undefined) e.textContent=text; return e;};
-function makeCard(id,top,bodyParts){
+function makeCard(id,top,bodyParts,ask){
   const c=el("article","card"); c.id=`card-${id}`;
   c.append(top,...bodyParts);
-  const b=el("div","btns"); const btns={};
+  const b=el("div","btns"); const btns={}; b.append(el("span","pl",ask));
   ["yes","no","maybe"].forEach(v=>{const bt=el("button",null,LABEL[v]); bt.type="button"; bt.id=`b-${id}-${v}`; bt.dataset.v=v; bt.addEventListener("click",()=>choose(id,v)); b.append(bt); btns[v]=bt;});
   const add=el("button",null,"Add comment"); add.type="button"; add.id=`add-${id}`; b.append(add);
   const cm=el("div","cmt"); const lb=el("label",null,"Your comment"); lb.htmlFor=`c-${id}`;
@@ -298,7 +376,7 @@ function build(){
   VIEWS.forEach(([h,t])=>{const a=el("a",null,t); a.href=`#${h}`; a.dataset.view=h; tabs.append(a);});
   RULES.forEach(([id,title,text])=>{
     const top=el("div","top"); top.append(el("span","name",title));
-    $("rules").append(makeCard(id,top,[el("p","now",text)]));
+    $("rules").append(makeCard(id,top,[el("p","now",text)],"Use this rule?"));
   });
   SKILLS.forEach(([id,year,name,ex,title,steps,pic,game,now])=>{
     const top=el("div","top"); top.append(el("span","yr",`Y${year}`), el("span","name",name));
@@ -308,9 +386,19 @@ function build(){
     const nowP=el("p","now"); nowP.append("Help now: "); nowP.append(el("strong",null, now || (game ? "whatever the game shows" : "none (some games have a Hint that greys out two choices)")));
     const h=el("div","help"); h.append(el("span","lbl",now?"Proposed: keep the box and add":"Proposed Help me"), el("span","t",title));
     const ol=el("ol"); steps.forEach(s=>ol.append(el("li",null,s))); h.append(ol);
-    if(pic) h.append(el("p","pic",`Picture: ${pic}`));
+    if(pic) h.append(el("p","pic",`Help picture: ${pic}`));
     if(game) h.append(el("p","pic",`Shown inside ${game}, read aloud.`));
-    const c=makeCard(id,top,[q,nowP,h]);
+    const parts=[q,nowP,h];
+    const pv=PICS[id]||["",""]; const picNow=game?"Drawn by the game":pv[0], picIdea=game?"":pv[1];
+    const pb=el("div","pics"); const pn=el("p","now"); pn.append("Picture in the question now: "); pn.append(el("strong",null,picNow||"none")); pb.append(pn);
+    if(picIdea){ const pi=el("p","now"); pi.append("Picture idea: "); pi.append(el("strong",null,picIdea)); pb.append(pi);
+      const pbt=el("div","btns small"); pbt.append(el("span","pl","Add this picture?")); const pbs={};
+      ["yes","no","maybe"].forEach(v=>{const bt=el("button",null,LABEL[v]); bt.type="button"; bt.id=`b-pic-${id}-${v}`; bt.dataset.v=v; bt.addEventListener("click",()=>choose(`pic-${id}`,v)); pbt.append(bt); pbs[v]=bt;});
+      pb.append(pbt); picCards[`pic-${id}`]={btns:pbs}; }
+    parts.push(pb);
+    const c=makeCard(id,top,parts,"Add this help?");
+    c.dataset.picnow=picNow?"1":""; c.dataset.picidea=picIdea?"1":"";
+    if(picNow) top.append(el("span","chip pic","Has a picture")); else if(picIdea) top.append(el("span","chip none","Picture idea"));
     c.dataset.year=year; c.dataset.text=`${name} ${ex} ${title} ${steps.join(" ")} ${game}`.toLowerCase();
     c.dataset.has=now?"1":""; c.dataset.game=game?"1":"";
     $("list").append(c);
@@ -336,6 +424,8 @@ function applyView(){
     if(show && f==="open") show=!picks[id];
     if(show && f==="has") show=!!c.dataset.has;
     if(show && f==="game") show=!!c.dataset.game;
+    if(show && f==="needpic") show=!!c.dataset.picidea;
+    if(show && f==="haspic") show=!!c.dataset.picnow;
     if(show && f==="commented") show=!!comments[id];
     c.hidden=!show; if(show) n++;});
   $("list-title").textContent = v==="all" ? `All years: ${n} skills` : `Year ${v.slice(5)}: ${n} skills`;
@@ -350,6 +440,7 @@ async function bulkYes(){
   statusEl.textContent=`Said Yes to ${ids.length} skills.`;
 }
 function update(id){
+  if(picCards[id]){ const c=picks[id]||""; for(const v in picCards[id].btns){ const b=picCards[id].btns[v]; b.setAttribute("aria-pressed",String(c===v)); b.disabled=!db||busy.has(id);} return; }
   const c=picks[id]||"", k=cards[id];
   k.el.dataset.c=c;
   for(const v in k.btns){ k.btns[v].setAttribute("aria-pressed",String(c===v)); k.btns[v].disabled=!db||busy.has(id); }
@@ -364,10 +455,11 @@ function tally(){
   const cnt=x=>ids.filter(id=>picks[id]===x).length;
   const t=$("tally"); t.textContent="";
   [[`Yes ${cnt("yes")}`],[`No ${cnt("no")}`],[`Maybe ${cnt("maybe")}`],[`Not picked ${ids.filter(id=>!picks[id]).length}`],[`Comments ${ids.filter(id=>comments[id]).length}`]].forEach(([s])=>t.append(el("span",null,s)));
+  if(v!=="start"){ const pids=ids.map(id=>`pic-${id}`).filter(p=>picCards[p]); t.append(el("span",null,`Picture ideas: ${pids.filter(p=>picks[p]==="yes").length} yes of ${pids.length}`)); }
   const all=[...RULES.map(r=>r[0]),...SKILLS.map(s=>s[0])];
   t.append(el("span",null,`Whole page: ${all.filter(id=>picks[id]).length} of ${all.length} picked`));
 }
-function renderAll(){ Object.keys(cards).forEach(update); applyView(); }
+function renderAll(){ Object.keys(cards).forEach(update); Object.keys(picCards).forEach(update); applyView(); }
 async function choose(id,v){
   if(!db||busy.has(id)) return;
   const prev=picks[id]; picks[id]=v; busy.add(id); update(id); tally();
