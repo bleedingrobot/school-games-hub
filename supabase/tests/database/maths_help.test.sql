@@ -50,7 +50,7 @@ set local role authenticated;
 set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}';
 select throws_ok(format($$ select public.teacher_help_uses(%L) $$, current_setting('test.ana_class')), '42501', null,
   'a pupil cannot see the class''s helped answers');
-set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-00000000000f", "role": "authenticated"}';
+set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-00000000000f", "email": "fin@douglaspark.school.nz", "role": "authenticated"}';
 select is(jsonb_array_length(public.teacher_help_uses(current_setting('test.ana_class')::uuid)), 1, 'the teacher sees one pupil');
 select is((public.teacher_help_uses(current_setting('test.ana_class')::uuid) -> 0) - 'id' - 'name' - 'realName' - 'lastAt',
   '{"helped": 1, "right": 1, "days": 1, "topKeys": ["mul:7x8"]}'::jsonb, '... with one helped answer, right, on 7 x 8');
