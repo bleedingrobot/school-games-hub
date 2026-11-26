@@ -261,8 +261,8 @@ const isSeed = (v: unknown): v is string => typeof v === 'string' && /^[0-9]{6,1
 const isFlyer = (v: unknown): v is string => typeof v === 'string' && /^[a-z-]{2,30}$/.test(v);
 
 /** The saved flyer and trail, or the fantail and no trail if they aren't unlocked (any more: unlocks got harder on 11 Nov 2026). */
-function keptPicks(saved: Saved): Picks {
-  const flyer = flyersUnlocked(saved.progress).includes(saved.picks.flyer) ? saved.picks.flyer : 'fantail';
+function keptPicks(saved: Saved, today: string): Picks {
+  const flyer = flyersUnlocked(saved.progress, today).includes(saved.picks.flyer) ? saved.picks.flyer : 'fantail';
   const trail = saved.picks.trail !== null && trailsUnlocked(saved.progress).includes(saved.picks.trail) ? saved.picks.trail : null;
   return { flyer, trail };
 }
@@ -273,7 +273,7 @@ export async function handleToonFlap(services: ToonFlapServices, player: string,
     const day = nzDate(new Date(services.now()));
     const [settings, saved, today] = await Promise.all([services.settings(player), services.load(player), services.runsToday(player, day)]);
     if (!settings || saved === 'busy' || today === 'busy') return busy();
-    return { status: 200, body: { enabled: settings.enabled, maths: settings.maths, readTime: settings.readTime, progress: saved.progress, picks: keptPicks(saved), today: day, ...turnsLeft(today, settings.unlimited === true) } };
+    return { status: 200, body: { enabled: settings.enabled, maths: settings.maths, readTime: settings.readTime, progress: saved.progress, picks: keptPicks(saved, day), today: day, ...turnsLeft(today, settings.unlimited === true) } };
   }
 
   const settings = await services.settings(player);
@@ -286,7 +286,7 @@ export async function handleToonFlap(services: ToonFlapServices, player: string,
     const flyer = body.flyer;
     const trail = body.trail === null ? null : body.trail;
     if (!isFlyer(flyer) || (trail !== null && !isFlyer(trail))) return bad();
-    if (!flyersUnlocked(saved.progress).includes(flyer) || (trail !== null && !trailsUnlocked(saved.progress).includes(trail))) {
+    if (!flyersUnlocked(saved.progress, nzDate(new Date(services.now()))).includes(flyer) || (trail !== null && !trailsUnlocked(saved.progress).includes(trail))) {
       return { status: 409, body: { error: 'That one isn’t unlocked yet.', code: 'locked' } };
     }
     const ok = await services.savePicks(player, { flyer, trail });

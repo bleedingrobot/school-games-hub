@@ -5,7 +5,7 @@
  * The server works these out from saved runs (stage F.3, `my_toonflap()`); the preview's trial backend uses the same
  * functions, so both agree.
  */
-import { EASY_LEVELS, POTION_STREAK, POTIONS_MAX, SEASONAL_UNLOCK_RUNS, SKY_DASH_AFTER, UNLOCK_RUNS } from './config';
+import { EASY_LEVELS, POTION_STREAK, POTIONS_MAX, PRESENTS_PER_POTION, SEASONAL_UNLOCK_RUNS, SKY_DASH_AFTER, UNLOCK_RUNS } from './config';
 import { inSeason, isSeasonal, levelById, LEVELS, SEASONAL_LEVELS } from './levels';
 import type { Medal } from './engine';
 
@@ -20,6 +20,12 @@ export interface Flyer {
   pupils?: boolean;
   /** Unlocked by grabbing every present in one flight of this (seasonal) level, instead of by finishes. */
   allPresents?: string;
+  /** Unlocked by a clean flight (no bumps) on this (seasonal) level. */
+  cleanOn?: string;
+  /** Everyone can fly it, but only between these NZ days of the year (MM-DD, inclusive), e.g. 1 to 26 December. */
+  window?: { from: string; to: string };
+  /** Drawn by the pupils themselves (their scanned drawing is the picture). */
+  drawnByPupils?: boolean;
 }
 
 export const FLYERS: readonly Flyer[] = [
@@ -38,14 +44,22 @@ export const FLYERS: readonly Flyer[] = [
   // Christmas Coast's (December and January only); once unlocked they stay all year.
   { id: 'surf-sleigh', name: 'Surf Sleigh', look: 'a jolly Santa in board shorts on a flying surfboard sleigh', level: 'xmas' },
   { id: 'santa-fantail', name: 'Santa Fantail', look: 'a fantail in a Santa hat', level: null, allPresents: 'xmas' },
+  // Pupils' own ideas and drawings (26 Nov 2026): the elf in a snow globe, only from 1 December to Boxing Day, and the
+  // grumpy Santa, for a flight on Christmas Coast with no bumps.
+  { id: 'elf-globe', name: 'Elf Snow Globe', look: 'an elf on a Christmas tree inside a snow globe (a pupil\'s drawing)', level: null, pupils: true, drawnByPupils: true, window: { from: '12-01', to: '12-26' } },
+  { id: 'grumpy-santa', name: 'Grumpy Santa', look: 'a grumpy Santa (a pupil\'s drawing)', level: null, pupils: true, drawnByPupils: true, cleanOn: 'xmas' },
 ];
+
+/** Is NZ day `today` (YYYY-MM-DD) inside a flyer's window? */
+export const inWindow = (f: Flyer, today: string | undefined): boolean => !!f.window && !!today && today.slice(5) >= f.window.from && today.slice(5) <= f.window.to;
 
 export type TrailRule =
   | { kind: 'levels'; count: number }
   | { kind: 'checks'; count: number }
   | { kind: 'gold'; level: string }
   | { kind: 'clean'; count: number }
-  | { kind: 'all-gold' };
+  | { kind: 'all-gold' }
+  | { kind: 'presents'; count: number };
 
 export interface Trail {
   id: string;
@@ -65,6 +79,7 @@ export const TRAILS: readonly Trail[] = [
   { id: 'mouse-tail', name: 'Mouse tail', rule: { kind: 'clean', count: 15 }, how: '15 clean flights (no bumps)', pupils: true },
   { id: 'rainbow-stars', name: 'Rainbow stars', rule: { kind: 'all-gold' }, how: 'Gold on every level' },
   { id: 'candy-canes', name: 'Candy canes', rule: { kind: 'gold', level: 'xmas' }, how: 'Gold on Christmas Coast' },
+  { id: 'baubles', name: 'Bauble lights', rule: { kind: 'presents', count: 30 }, how: 'Grab 30 presents', pupils: true },
 ];
 
 /** One level's record. */
@@ -76,6 +91,8 @@ export interface LevelRecord {
   medal: Medal | null;
   /** Seasonal levels with presents: flights that grabbed every one. */
   allPresents?: number;
+  /** Seasonal levels: flights with no bumps. */
+  clean?: number;
 }
 
 /** What a pupil has done in Toon Flap: everything the unlocks are worked out from. */
@@ -99,6 +116,8 @@ export interface Progress {
   seasonal?: Record<string, LevelRecord>;
   /** Presents grabbed, all time. */
   presents?: number;
+  /** Presents towards the next revive potion (pupils' rule, 26 Nov 2026: 3 presents = 1 potion), 0 to 2. */
+  sack?: number;
 }
 
 export const emptyProgress = (): Progress => ({ levels: {}, checksRight: 0, streak: 0, cleanFlights: 0, rightGaps: 0, potions: 0, potionsEarned: 0 });
@@ -147,9 +166,12 @@ export const unlockRuns = (level: string): number => {
 /** Finishes still needed to unlock a level's flyer (0 = unlocked). */
 export const finishesToUnlock = (p: Progress, level: string): number => Math.max(0, unlockRuns(level) - record(p, level).finishes);
 
-export function flyersUnlocked(p: Progress): string[] {
+/** Flyers a pupil can fly. `today` (NZ day) matters only for a flyer with a window (the Elf Snow Globe). */
+export function flyersUnlocked(p: Progress, today?: string): string[] {
   return FLYERS.filter((f) => {
     if (f.id === 'fantail') return true;
+    if (f.window) return inWindow(f, today);
+    if (f.cleanOn) return (record(p, f.cleanOn).clean ?? 0) > 0;
     if (f.id === 'rainbow') return golds(p) === LEVELS.length;
     if (f.allPresents) return (record(p, f.allPresents).allPresents ?? 0) > 0;
     return f.level !== null && finishesToUnlock(p, f.level) === 0;
@@ -165,6 +187,7 @@ export function trailEarned(p: Progress, t: Trail): boolean {
   if (r.kind === 'checks') return p.checksRight >= r.count;
   if (r.kind === 'gold') return record(p, r.level).medal === 'gold';
   if (r.kind === 'clean') return p.cleanFlights >= r.count;
+  if (r.kind === 'presents') return (p.presents ?? 0) >= r.count;
   return golds(p) === LEVELS.length;
 }
 export const trailsUnlocked = (p: Progress): string[] => TRAILS.filter((t) => trailEarned(p, t)).map((t) => t.id);
@@ -189,6 +212,8 @@ export interface Unlocks {
   flyers: string[];
   trails: string[];
   potion: boolean;
+  /** The potion came from presents (3 presents = 1 potion). */
+  potionFromPresents?: boolean;
   newGold: boolean;
   firstFinish: boolean;
   newBest: boolean;
@@ -239,7 +264,7 @@ export function addRun(before: Progress, run: RunSummary, today: string): { prog
   };
   if (seasonal) {
     const all = (run.presentsOf ?? 0) > 0 && run.presents === run.presentsOf;
-    p.seasonal = { ...before.seasonal, [run.level]: { ...rec, allPresents: (was.allPresents ?? 0) + (all ? 1 : 0) } };
+    p.seasonal = { ...before.seasonal, [run.level]: { ...rec, allPresents: (was.allPresents ?? 0) + (all ? 1 : 0), clean: (was.clean ?? 0) + (run.bumps === 0 ? 1 : 0) } };
   } else p.levels[run.level] = rec;
   if (run.presents) p.presents = (before.presents ?? 0) + run.presents;
   let potion = false;
@@ -265,14 +290,28 @@ export function addRun(before: Progress, run: RunSummary, today: string): { prog
   if (run.bumps === 0) p.cleanFlights++;
   const newGold = run.medal === 'gold' && was.medal !== 'gold';
   if (newGold) earn();
-  const flyersBefore = flyersUnlocked(before);
+  // Pupils' rule (26 Nov 2026): every 3 presents grabbed make a revive potion, at most one a flight; spare presents wait
+  // in the sack for the next flight (at most 2 wait, so the sack never holds a potion's worth).
+  let potionFromPresents = false;
+  if (run.presents) {
+    let sack = (before.sack ?? 0) + run.presents;
+    if (sack >= PRESENTS_PER_POTION) {
+      sack -= PRESENTS_PER_POTION;
+      const had = potion;
+      earn();
+      potionFromPresents = potion && !had;
+    }
+    p.sack = Math.min(PRESENTS_PER_POTION - 1, sack);
+  }
+  const flyersBefore = flyersUnlocked(before, today);
   const trailsBefore = trailsUnlocked(before);
   return {
     progress: p,
     unlocks: {
-      flyers: flyersUnlocked(p).filter((f) => !flyersBefore.includes(f)),
+      flyers: flyersUnlocked(p, today).filter((f) => !flyersBefore.includes(f)),
       trails: trailsUnlocked(p).filter((t) => !trailsBefore.includes(t)),
       potion,
+      ...(potionFromPresents ? { potionFromPresents } : {}),
       newGold,
       firstFinish: was.finishes === 0,
       newBest,

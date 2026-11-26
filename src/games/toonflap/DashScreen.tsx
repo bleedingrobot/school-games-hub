@@ -18,6 +18,7 @@ import type { FlyerPose } from './art/art';
 import { DASH_LINES } from './guide';
 import { PotionIcon } from './MapScreen';
 import { factText } from './PlayScreen';
+import { christmasDash, playBeat } from './xmasBeat';
 
 const STEP_MS = 1000 / STEPS_PER_SECOND;
 const MAX_STEPS_A_FRAME = 5;
@@ -43,8 +44,10 @@ interface Hud {
   potionUsed: boolean;
 }
 
-export function DashScreen({ backend, start, progress, picks, onFinished, onLeave, talk = () => undefined }: {
+export function DashScreen({ backend, start, progress, picks, today, onFinished, onLeave, talk = () => undefined }: {
   backend: ToonFlapBackend;
+  /** NZ day: in December and January it's Sky Dash Christmas. */
+  today: string;
   start: StartReply;
   progress: Progress;
   picks: Picks;
@@ -54,6 +57,11 @@ export function DashScreen({ backend, start, progress, picks, onFinished, onLeav
   talk?: (text: string) => void;
 }) {
   const course = useMemo(() => buildDashCourse(start.seed), [start.seed]);
+  const festive = christmasDash(today);
+  // Sky Dash Christmas: the wall count the last beat rang for, and how strong the pulse still is.
+  const beatRef = useRef({ walls: 0, pulse: 0 });
+  const attempt = (progress.dashes ?? 0) + 1;
+  const best = progress.dashBest ?? 0;
   const { soundOn } = useSound();
   const soundRef = useRef(soundOn);
   soundRef.current = soundOn;
@@ -200,12 +208,19 @@ export function DashScreen({ backend, start, progress, picks, onFinished, onLeav
       } else acc = 0;
 
       const walls = dashWalls(g.dash);
+      const b = beatRef.current;
+      b.pulse = Math.max(0, b.pulse - dt * 2.5);
+      if (festive && walls > b.walls) {
+        b.walls = walls;
+        b.pulse = 1;
+        if (soundRef.current) playBeat(walls);
+      }
       const hover = s.mode === 'hover' ? s.hover : null;
       setHud((o) => (o.walls === walls && o.feathers === g.dash.feathers && o.hover === hover && o.potionUsed === g.dash.potionUsed ? o : { walls, feathers: g.dash.feathers, hover, potionUsed: g.dash.potionUsed }));
       stepTrail(g.particles, s.x, s.y, dt, s.mode === 'fly' && !g.paused);
       const pose: FlyerPose = g.dizzy > 0 ? 'dizzy' : s.mode === 'hover' && s.hover === 'perch' ? 'perched' : g.flapAnim > 0 ? 'up' : 'glide';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      drawScene(ctx, { course, state: s, w, h, time: g.time, reduced, shake: reduced ? 0 : g.shake * 24, flyer: flyerId, shiny, trail: picks.trail, particles: g.particles, pose, labels: null, ghostPath: false });
+      drawScene(ctx, { course, state: s, w, h, time: g.time, reduced, shake: reduced ? 0 : g.shake * 24, flyer: flyerId, shiny, trail: picks.trail, particles: g.particles, pose, labels: null, ghostPath: false, ...(festive ? { world: 11, beat: b.pulse } : {}) });
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
@@ -250,6 +265,13 @@ export function DashScreen({ backend, start, progress, picks, onFinished, onLeav
               {feathers.map((on, i) => <span key={i} aria-hidden="true" style={{ opacity: on ? 1 : 0.3 }}>🪶</span>)}
             </span>
             {hud.potionUsed && <span className="tf-chip tf-chip--good">Potion used</span>}
+            {festive && <span className="tf-chip tf-chip--xmas">Sky Dash Christmas · Attempt {attempt}</span>}
+            {festive && best > 0 && (
+              <span className="tf-xmasbar" role="img" aria-label={`${Math.min(100, Math.round((hud.walls / best) * 100))}% of your best`}>
+                <span style={{ width: `${Math.min(100, (hud.walls / best) * 100)}%` }} />
+                <small>{hud.walls >= best ? 'New best!' : `${Math.round((hud.walls / best) * 100)}% to your best`}</small>
+              </span>
+            )}
           </div>
           <div className="tf-hud__right">
             <button type="button" className="tf-btn tf-btn--small" data-noflap onClick={askLeave}>Leave</button>
@@ -273,7 +295,8 @@ export function DashScreen({ backend, start, progress, picks, onFinished, onLeav
         {bubble && <div className="tf-bubble" role="status">{bubble}</div>}
         {hud.hover === 'start' && !card && (
           <div className="tf-tap tf-tap--start">
-            <span className="tf-tap__text">Tap to start</span>
+            <span className="tf-tap__text">{festive ? 'Sky Dash Christmas! Tap to start' : 'Tap to start'}</span>
+            {festive && <span className="tf-tap__sub">Every wall rings the next note of the tune. Fly far to hear it all! (A pupil’s idea)</span>}
             <span className="tf-tap__sub">One bump ends the dash. Checks give spare feathers.</span>
             {progress.potions > 0 && (
               <label className="tf-dash-potion" data-noflap>

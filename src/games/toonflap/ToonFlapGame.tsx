@@ -154,7 +154,7 @@ export function ToonFlapGame({ backend, extra, onServer = false }: { backend: To
           {extra?.({ reload })}
         </>
       )}
-      {screen === 'hangar' && <Hangar progress={loaded.progress} picks={loaded.picks} onPick={pick} onBack={() => setScreen('map')} />}
+      {screen === 'hangar' && <Hangar progress={loaded.progress} today={loaded.today ?? nzDate(new Date())} picks={loaded.picks} onPick={pick} onBack={() => setScreen('map')} />}
       {screen === 'howto' && <HowToPlay onBack={() => setScreen('map')} />}
       {screen === 'play' && run && (
         <PlayScreen
@@ -186,6 +186,7 @@ export function ToonFlapGame({ backend, extra, onServer = false }: { backend: To
           start={run}
           progress={loaded.progress}
           picks={loaded.picks}
+          today={loaded.today ?? nzDate(new Date())}
           talk={talk}
           onLeave={() => {
             setRun(null);

@@ -194,6 +194,14 @@ for n, (back, row, wall) in WORLDS.items():
     PICTURES[f'w{n}-wall'] = (PROP[n] + f'{wall.capitalize()}, standing straight upright in the middle of a tall narrow picture, rising from '
                               'the very bottom edge to near the top, a thick solid chunky column filling the middle half of the picture\'s width, the '
                               'same width all the way up, plain pure white background on both sides, a sturdy game obstacle.' + SCENERY, TALL, None)
+# Pupils' ideas, 26 Nov 2026: Christmas Coast's background becomes Santa's factory (by the beach, so it still fits the level).
+PICTURES['w11-factory-back'] = (SCENE[11] + 'Wide side-scrolling game background, Santa\'s big cheerful toy factory beside a sunny New Zealand '
+                                'beach at Christmas in summer: a long low red and white wooden workshop building with candy-striped chimneys '
+                                'puffing little round clouds, big round windows glowing warm gold with toy machines, cogs and conveyor belts of '
+                                'wrapped presents inside, a gold star on the roof, strings of coloured fairy lights along the eaves, crimson-'
+                                'flowering coastal trees, golden sand in front and a turquoise sea far off at the sides, a clear summer sky. Calm '
+                                'and low in contrast with gentle colours and little detail, so things in front stand out. No writing or signs. '
+                                'The scene continues off both sides, wide panorama.' + SCENERY, WIDE, None)
 for f, (lvl, words) in FLYERS.items():
     style = THING[lvl] if lvl else PLAIN
     if lvl is None:

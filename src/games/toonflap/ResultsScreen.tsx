@@ -110,7 +110,7 @@ export function ResultsScreen({ reply, today, level, gentle, maths, onNext, onAg
         <div className="tf-party" role="status">
           {unlocks.newGold && <p className="tf-party__line">🥇 A new gold! That flyer is shiny now.</p>}
           {unlocks.newBest && !unlocks.firstFinish && <p className="tf-party__line">⭐ New best time!</p>}
-          {unlocks.potion && <p className="tf-party__line"><PotionIcon size={28} /> You earned a revive potion!</p>}
+          {unlocks.potion && <p className="tf-party__line"><PotionIcon size={28} /> {unlocks.potionFromPresents ? '3 presents made a revive potion!' : 'You earned a revive potion!'}</p>}
           {unlocks.newLevel && <p className="tf-party__line">🗺️ {RESULT_LINES.newLevel}</p>}
           {newFlyers.map((f) => f && (
             <div key={f.id} className="tf-party__item">
