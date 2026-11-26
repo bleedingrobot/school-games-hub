@@ -262,7 +262,7 @@ export function TeacherMaths() {
   );
 }
 
-/** /teacher/admin: school admins only (section 4.7). Its own tabs: Overview, Classes, Students, Teachers, New class settings, Class Live times (when Class Live is on), End of year. */
+/** /teacher/admin: school admins only (section 4.7). Its own tabs: Overview, Classes, Students, Teachers, New class settings, Class Live times (when Class Live is on), End of year, Question feedback. */
 export function TeacherAdmin() {
   const { profile } = useAuth();
   if (profile?.school_admin !== true) {
@@ -298,6 +298,9 @@ export function TeacherAdmin() {
         )}
         <NavLink to="/teacher/admin/year" className="teacher-subtabs__tab">
           End of year
+        </NavLink>
+        <NavLink to="/teacher/admin/feedback" className="teacher-subtabs__tab">
+          Question feedback
         </NavLink>
       </nav>
       <Suspense fallback={<div className="loading" role="status" data-page-loading>Loading…</div>}>

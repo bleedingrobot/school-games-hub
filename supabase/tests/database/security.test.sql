@@ -108,7 +108,8 @@ $$, array[
   'teacher_training_student', 'trophies_of', 'teacher_unassigned_students', 'teacher_update_class', 'teacher_villages',
   'teacher_warp_requests', 'warp_join', 'warp_preview',
   'my_year', 'set_my_year', 'teacher_student_years', 'teacher_set_student_year', 'class_years',
-  'maths_help_opened', 'maths_help_cancel', 'teacher_help_uses'
+  'maths_help_opened', 'maths_help_cancel', 'teacher_help_uses',
+  'maths_feedback_add', 'maths_feedback_list', 'maths_feedback_set_status'
 ], 'signed-in users can call only this list of functions (each checks who is asking)');
 
 select is_empty($$

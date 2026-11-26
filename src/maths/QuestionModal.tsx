@@ -23,6 +23,8 @@ import { NumberPad } from './NumberPad';
 import { choiceForKey, useQuestionKeys } from './questionKeys';
 import { countAnswer, helpCancelled, helpKnownFacts, helpOpened, noteQuestion, questionOpened, spendSkip, spotFromTitle, STREAK_FROM, useSkipRule } from './questionLog';
 import { ScribblePad } from './ScribblePad';
+import { FeedbackPanel } from './FeedbackPanel';
+import { useFeedbackSink } from './questionFeedback';
 import './maths.css';
 
 /** How long the feedback shows, in milliseconds. */
@@ -30,13 +32,15 @@ export const FEEDBACK_MS = { right: 800, wrong: 2000 };
 const MAX_DIGITS = 3;
 
 const PAD_KEY = 'sgh-scribble-open';
-const readPadOpen = () => {
+const FEEDBACK_KEY = 'sgh-feedback-open';
+const readOpen = (key: string) => {
   try {
-    return localStorage.getItem(PAD_KEY) === '1';
+    return localStorage.getItem(key) === '1';
   } catch {
     return false;
   }
 };
+const readPadOpen = () => readOpen(PAD_KEY);
 
 const FRACTION = /^(?:(\d+|\?) )?(\d+|\?)\/(\d+|\?)$/;
 
@@ -582,6 +586,40 @@ export function QuestionModal({
   });
 
   const showPad = scribble && !inline;
+  // "Feedback on this question" (questionFeedback.ts): teachers only, on the left, the mirror of the scribble pad.
+  const feedbackSink = useFeedbackSink();
+  const showFeedback = !!feedbackSink && !inline;
+  const [feedbackOpen, setFeedbackOpen] = useState(() => readOpen(FEEDBACK_KEY));
+  const setFeedback = (open: boolean) => {
+    setFeedbackOpen(open);
+    try {
+      localStorage.setItem(FEEDBACK_KEY, open ? '1' : '0');
+    } catch {
+      // Storage blocked: the panel just won't be remembered.
+    }
+  };
+  const feedbackItem = () => {
+    const extra = question as ShownQuestion & { factKey?: string; skill?: string };
+    return {
+      game: `${typeof window === 'undefined' ? '' : window.location.hash} · ${spotName.current}`.slice(0, 80),
+      key: extra.factKey ?? '',
+      question: {
+        title,
+        parts: question.parts,
+        prompt: question.prompt,
+        spoken: question.spoken,
+        choices: question.choices,
+        choiceLabels: question.choiceLabels,
+        figure: question.figure,
+        answer: question.answer,
+        helpBox: help ?? undefined,
+        skill: extra.skill,
+      },
+      picture: isFigure(question.figure) ? null : picture,
+      help: card,
+    };
+  };
+  const beside = (showPad && padOpen ? 1 : 0) + (showFeedback && feedbackOpen ? 1 : 0);
   const setPad = (open: boolean) => {
     setPadOpen(open);
     try {
@@ -605,7 +643,20 @@ export function QuestionModal({
   );
   return (
     <div ref={outer} className={inline ? undefined : 'question-backdrop'}>
-      <div className={showPad ? 'question-wrap' : 'question-wrap question-wrap--single'} data-pad={showPad && padOpen ? 'open' : undefined}>
+      <div
+        className={showPad || showFeedback ? 'question-wrap' : 'question-wrap question-wrap--single'}
+        data-pad={showPad && padOpen ? 'open' : undefined}
+        data-feedback={showFeedback && feedbackOpen ? 'open' : undefined}
+        data-beside={beside || undefined}
+      >
+      {showFeedback &&
+        (feedbackOpen ? (
+          <FeedbackPanel key={question.id} sink={feedbackSink} item={feedbackItem} onCollapse={() => setFeedback(false)} />
+        ) : (
+          <button type="button" className="feedback-tab" onPointerDown={(e) => e.preventDefault()} onClick={() => setFeedback(true)}>
+            <span aria-hidden="true">💬</span> Feedback
+          </button>
+        ))}
       <div
         ref={box}
         className={inline ? 'question question--inline' : 'question'}

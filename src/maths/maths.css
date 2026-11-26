@@ -595,6 +595,104 @@
   user-select: none;
 }
 
+/* ---- Feedback on this question (teachers): the mirror of the scribble pad, on the left on wide screens, under the
+   question on phones. ---- */
+.feedback-tab {
+  order: 2;
+  min-height: 44px;
+  padding: 6px 16px;
+  border: 2px solid #cbd5e1;
+  border-radius: 14px;
+  background: #fff;
+  color: #0f172a;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.feedback-tab:focus-visible,
+.qfeedback__save:focus-visible,
+.qfeedback__field:focus-visible {
+  outline: 3px solid #5b3cc4;
+  outline-offset: 2px;
+}
+.qfeedback {
+  order: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 24px;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.3);
+  text-align: left;
+}
+.qfeedback__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.qfeedback__title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.qfeedback__hide {
+  margin-left: auto;
+}
+.qfeedback__hint {
+  margin: 0;
+  color: #475569;
+  font-size: 0.9rem;
+}
+.qfeedback__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.qfeedback__tag {
+  min-height: 36px;
+  padding: 2px 10px;
+  font-size: 0.9rem;
+}
+.qfeedback__field {
+  flex: 1;
+  min-height: 120px;
+  padding: 10px;
+  border: 2px solid #cbd5e1;
+  border-radius: 14px;
+  color: #0f172a;
+  background: #fff;
+  font: inherit;
+  resize: vertical;
+}
+.qfeedback__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.qfeedback__save {
+  min-height: 44px;
+  padding: 6px 16px;
+  border: none;
+  border-radius: 12px;
+  background: #5b3cc4;
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.qfeedback__save:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.qfeedback__status {
+  font-weight: 700;
+  color: #166534;
+}
+
 /* The picture and Help me sit in .question__aside, the question and its answers in .question__main. Stacked (phones, and
    wide screens with nothing beside the question) both are display: contents, so the box lays out as one column. */
 .question__aside,
@@ -606,54 +704,84 @@
    and help on the left, the question and answers on the right, so the answer stays in view. With the scribble pad open
    this needs a big screen, so on mid-size screens the box stays stacked while the pad is out. */
 @media (min-width: 880px) and (min-height: 461px) {
-  .question-wrap:not([data-pad]) > .question[data-side] {
+  .question-wrap:not([data-beside]) > .question[data-side] {
     grid-template-columns: minmax(0, 330px) minmax(0, 380px);
     column-gap: 24px;
     align-items: start;
     width: min(100%, 780px);
   }
-  .question-wrap:not([data-pad]) > .question[data-side] > .question__title,
-  .question-wrap:not([data-pad]) > .question[data-side] > .question__note {
+  .question-wrap:not([data-beside]) > .question[data-side] > .question__title,
+  .question-wrap:not([data-beside]) > .question[data-side] > .question__note {
     grid-column: 1 / -1;
   }
-  .question-wrap:not([data-pad]) > .question[data-side] > .question__aside,
-  .question-wrap:not([data-pad]) > .question[data-side] > .question__main {
+  .question-wrap:not([data-beside]) > .question[data-side] > .question__aside,
+  .question-wrap:not([data-beside]) > .question[data-side] > .question__main {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px;
     min-width: 0;
   }
-  .question-wrap:not([data-pad]) > .question[data-side] > .question__main {
+  .question-wrap:not([data-beside]) > .question[data-side] > .question__main {
     align-self: center;
     width: 100%;
   }
 }
 @media (min-width: 1260px) and (min-height: 461px) {
-  .question-wrap[data-pad] > .question[data-side] {
+  .question-wrap[data-beside='1'] > .question[data-side] {
     grid-template-columns: minmax(0, 330px) minmax(0, 380px);
     column-gap: 24px;
     align-items: start;
     width: 780px;
   }
-  .question-wrap[data-pad] > .question[data-side] > .question__title,
-  .question-wrap[data-pad] > .question[data-side] > .question__note {
+  .question-wrap[data-beside='1'] > .question[data-side] > .question__title,
+  .question-wrap[data-beside='1'] > .question[data-side] > .question__note {
     grid-column: 1 / -1;
   }
-  .question-wrap[data-pad] > .question[data-side] > .question__aside,
-  .question-wrap[data-pad] > .question[data-side] > .question__main {
+  .question-wrap[data-beside='1'] > .question[data-side] > .question__aside,
+  .question-wrap[data-beside='1'] > .question[data-side] > .question__main {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px;
     min-width: 0;
   }
-  .question-wrap[data-pad] > .question[data-side] > .question__main {
+  .question-wrap[data-beside='1'] > .question[data-side] > .question__main {
     align-self: center;
     width: 100%;
   }
-  .question-wrap[data-pad] > .scribble {
+  .question-wrap[data-beside='1'] > .scribble,
+  .question-wrap[data-beside='1'] > .qfeedback {
     width: min(420px, calc(100vw - 860px));
+  }
+}
+/* Both the feedback panel and the scribble pad out: side by side only on very wide screens. */
+@media (min-width: 1640px) and (min-height: 461px) {
+  .question-wrap[data-beside='2'] > .question[data-side] {
+    grid-template-columns: minmax(0, 330px) minmax(0, 380px);
+    column-gap: 24px;
+    align-items: start;
+    width: 780px;
+  }
+  .question-wrap[data-beside='2'] > .question[data-side] > .question__title,
+  .question-wrap[data-beside='2'] > .question[data-side] > .question__note {
+    grid-column: 1 / -1;
+  }
+  .question-wrap[data-beside='2'] > .question[data-side] > .question__aside,
+  .question-wrap[data-beside='2'] > .question[data-side] > .question__main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .question-wrap[data-beside='2'] > .question[data-side] > .question__main {
+    align-self: center;
+    width: 100%;
+  }
+  .question-wrap[data-beside='2'] > .scribble,
+  .question-wrap[data-beside='2'] > .qfeedback {
+    width: min(380px, calc((100vw - 880px) / 2));
   }
 }
 
@@ -665,15 +793,28 @@
     justify-content: center;
     width: auto;
   }
-  .question-wrap > .scribble-tab {
+  .question-wrap > .scribble-tab,
+  .question-wrap > .feedback-tab {
     align-self: center;
     writing-mode: vertical-rl;
     padding: 16px 8px;
   }
-  .question-wrap > .scribble {
+  .question-wrap > .feedback-tab {
+    transform: rotate(180deg);
+  }
+  .question-wrap > .scribble,
+  .question-wrap > .qfeedback {
     width: min(420px, calc(100vw - 480px));
     height: auto;
     min-height: 420px;
+  }
+  .question-wrap > .feedback-tab,
+  .question-wrap > .qfeedback {
+    order: 0;
+  }
+  .question-wrap[data-beside='2'] > .scribble,
+  .question-wrap[data-beside='2'] > .qfeedback {
+    width: min(380px, calc((100vw - 500px) / 2));
   }
 }
 
@@ -694,6 +835,20 @@
     z-index: 51;
     width: min(380px, 55vw);
     height: auto;
+  }
+  .question-wrap > .feedback-tab {
+    position: fixed;
+    left: 8px;
+    bottom: 8px;
+    z-index: 51;
+  }
+  .question-wrap > .qfeedback {
+    position: fixed;
+    inset: 8px auto 8px 8px;
+    z-index: 51;
+    width: min(340px, 45vw);
+    min-height: 0;
+    overflow: auto;
   }
 }
 
