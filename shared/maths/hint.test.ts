@@ -17,5 +17,7 @@ describe('the one hint', () => {
     expect(helpKind({ parts: ['This 130° angle', 'is', '?'], figure: { kind: 'angle', degrees: 130 } })).toBe('angles');
     expect(helpKind({ parts: ['3 + 4', '≠', '8'] })).toBe('symbols');
     expect(helpKind({ parts: ['7', '×', '8', '=', '?'] })).toBeNull();
+    expect(helpKind({ parts: ['9', '÷', '4', '=', '?', 'r', '1'] })).toBe('remainder');
+    expect(helpKind({ parts: ['?'], prompt: 'Which point sits on the x-axis (the line going across)?' })).toBe('axes');
   });
 });
