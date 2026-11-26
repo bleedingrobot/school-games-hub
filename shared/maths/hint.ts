@@ -42,6 +42,8 @@ export function hintFor(q: Pick<Question, 'answer' | 'choices' | 'parts'>): Hint
  */
 export function helpKind(q: Pick<Question, 'parts' | 'prompt' | 'choiceLabels' | 'figure'>): 'angles' | 'symbols' | 'remainder' | 'axes' | 'fractions' | 'hours' | null {
   if (isFigure(q.figure) && q.figure.kind === 'angle') return 'angles';
+  // Naming an angle from its size alone ("An angle of 250° is ?"), with no picture (James, 26 Nov 2026: no Help me showed).
+  if ((q.choiceLabels ?? []).some((c) => /^(acute|obtuse|reflex|right|straight)( angle)?$/i.test(c)) || /kind of angle/i.test(q.prompt ?? '')) return 'angles';
   // A division with a remainder ("9 ÷ 4 = ? r 1"): what the r means. A point on an axis: a small grid (James, 26 Nov 2026).
   if (q.parts.includes('r')) return 'remainder';
   if (/\b[xy]-axis\b/.test(q.prompt ?? '')) return 'axes';
