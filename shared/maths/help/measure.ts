@@ -365,6 +365,13 @@ const compassTurn: Helper = (q) => {
 
 const coord: Helper = (q) => {
   const pr = prompt(q);
+  // One point on a grid: read its x value (across) or y value (up) (James, 26 Nov 2026).
+  const value = /^What is the (x|y) value of the point\?/.exec(pr);
+  if (value) {
+    return value[1] === 'x'
+      ? card('coord', 'Read across', 'A point is (across, up). x is how far across.', 'Put your finger on the point and slide straight down to the bottom line (the x-axis).', 'Read the number there: x = ?')
+      : card('coord', 'Read up', 'A point is (across, up). y is how far up.', 'Put your finger on the point and slide straight across to the side line (the y-axis).', 'Read the number there: y = ?');
+  }
   const ax = /(x|y)-axis/.exec(pr);
   if (ax) {
     return ax[1] === 'y'

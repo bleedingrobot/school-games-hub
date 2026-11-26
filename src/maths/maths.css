@@ -896,6 +896,12 @@
 .fig__fill { fill: color-mix(in srgb, currentColor 35%, transparent); stroke: none; }
 .fig__label { fill: currentColor; font-size: 15px; font-weight: 800; }
 .fig__num { fill: currentColor; font-size: 12px; font-weight: 700; }
+/* The coordinate grid (Figure.tsx GridFigure): bigger, bold axes, labels with a white edge so lines never run through them. */
+.question__figure--grid { width: min(100%, 320px); }
+.fig__axis { stroke: currentColor; stroke-width: 4; stroke-linecap: round; fill: none; }
+.fig__gridline { stroke: currentColor; stroke-width: 1.2; opacity: 0.35; fill: none; }
+.fig__num--grid { font-size: 13px; }
+.fig__label--halo { paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
 .fig__hand { stroke: currentColor; stroke-width: 3; stroke-linecap: round; }
 .fig__hand--short { stroke-width: 5; }
 .question__help { display: flex; flex-direction: column; align-items: center; gap: 6px; }
