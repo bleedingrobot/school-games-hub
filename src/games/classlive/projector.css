@@ -610,3 +610,9 @@
   .cl-tile__name { padding: 6px 10px 0; font-size: 1.02rem; }
   .cl-tile__blurb { padding: 0 10px; }
 }
+
+/* Locked games (one joystick game, two games in all at once; shared/classlive/limits.ts) */
+.cl-tile--locked { filter: grayscale(0.85) brightness(0.7); }
+.cl-tile__lock { color: #ffd54a; }
+.cl-running { max-width: 900px; margin: 0 auto 14px; padding: 10px 16px; border-radius: 14px; background: rgba(14, 10, 56, 0.7); color: #e8eaff; font-size: 0.95rem; text-align: center; }
+.cl-locked { max-width: 760px; margin: 10px auto; padding: 12px 18px; border-radius: 14px; background: #5b1a1a; border: 2px solid #ffb4a8; color: #fff; font-weight: 700; text-align: center; }

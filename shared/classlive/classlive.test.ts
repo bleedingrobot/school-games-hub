@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { markQuestion } from '../maths/serverQuestions';
 import { classLiveStep, cleanHost } from './server';
+import { lockedBecause, type OpenGame } from './limits';
 import { liveName } from '../liveNames';
 import { memoryAutoRoom, memoryDb, memoryServices } from './memoryServices';
 import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock, rng } from './pretendClass';
@@ -370,6 +371,17 @@ describe('Class Live server', () => {
     let now = 1_000_000;
     const sv = memoryServices(db, { now: () => now, random: rng(3) });
     expect(cleanHost('  Mr  Riley!! ')).toBe('Mr Riley');
+    // Limits (James, 26 Nov 2026 NZ): one joystick game at a time, two games in all; the class's own game doesn't count.
+    const ghost: OpenGame = { room: 9, kind: 'classlive', activity: 'ghost', name: 'Ghost Tag', moving: true, classId: B, who: 'Room 5' };
+    const duel: OpenGame = { room: 10, kind: 'showdown', activity: 'showdown', name: 'Class Showdown', moving: false, classId: FAR, who: 'Room 9' };
+    expect(lockedBecause('clash', [ghost], A)).toContain('Room 5 (Ghost Tag)');
+    expect(lockedBecause('clash', [ghost], B)).toBeNull();
+    expect(lockedBecause('serpent', [ghost], A)).toBeNull();
+    expect(lockedBecause('serpent', [ghost, duel], A)).toContain('2 Class Live games');
+    db.openGames = [ghost];
+    const refused = await classLiveStep(sv, T, { action: 'open', classId: A, activity: 'lava' });
+    expect([refused.status, refused.body.reason]).toEqual([409, 'locked']);
+    db.openGames = [];
     expect(cleanHost('1234')).toBeNull();
     expect((await classLiveStep(sv, T, { action: 'open', classId: A, activity: 'mural', where: 'lobby' })).status).toBe(400);
     // A class game: another class can't join it, even knowing the room.

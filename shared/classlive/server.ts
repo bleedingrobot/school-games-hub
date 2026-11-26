@@ -12,6 +12,7 @@
  *
  * Teacher steps: open, view, start, end, spotlight. Pupil steps: join, play.
  */
+import { isMoving, lockedBecause, type OpenGame } from './limits';
 import { ARMS, anchorOf, armCount, newStars, pickAnchor, spotlight, tryFact, type Arm, type Star, type StarLevel, type StarsEvent, type StarsGame, type StarsReply } from './stars';
 import { LEVELS } from './stars';
 import { allPicked, answered, canGuess, colsOf, flipped, guess, guessingDone, GUESS_MS, newMural, reveal, rowsOf, sizeMural, startGuessing, tilesOf, TILES, ANSWER_GAP_MS, type MuralEvent, type MuralGame, type Picture } from './mural';
@@ -105,6 +106,8 @@ export interface Auto {
    * step); at the start the most votes wins (a tie at random) and that game is made. `winner` once decided.
    */
   vote?: { choices?: Activity[]; picks: Record<string, Activity>; winner?: Activity };
+  /** A joystick game was on in another class when this opened: the vote offers only games that don't move. */
+  noMoving?: boolean;
 }
 
 /** The games a set-time game may be (all but Star Web, whose shared sky needs a big screen). */
@@ -250,6 +253,8 @@ export interface ClassLiveServices {
   pupil(player: string): Promise<{ classId: string; schoolId: number; name: string; enabled: boolean } | null | Busy>;
   /** The school's lobby game with this code, not over, opened in the last 3 hours, or null. */
   codeRoom(schoolId: number, code: string): Promise<RoomRow | null | Busy>;
+  /** Class Live and Showdown games running now in any class (shared/classlive/limits.ts). */
+  openGames(): Promise<OpenGame[] | Busy>;
   /** Makes a room (any other open room of the class is closed). */
   openRoom(classId: string, teacher: string, change: Change): Promise<number | Busy>;
   loadRoom(room: number): Promise<RoomRow | null | Busy>;
@@ -456,9 +461,11 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
       const v = s.auto!.vote;
       if (v && !v.choices) {
         // Kids vote: three different games to pick from.
-        const pool = [...AUTO_ACTIVITIES];
+        // A joystick game was already on when it opened (classlive_auto_open): only games that don't move.
+        const pool = AUTO_ACTIVITIES.filter((a) => !s.auto!.noMoving || !isMoving(a));
         v.choices = [];
-        while (v.choices.length < 3) v.choices.push(pool.splice(Math.floor(sv.random() * pool.length) % pool.length, 1)[0]);
+        const n = Math.min(3, pool.length);
+        while (v.choices.length < n) v.choices.push(pool.splice(Math.floor(sv.random() * pool.length) % pool.length, 1)[0]);
         s.activity = v.choices[0];
       }
       s.game = gameFor(s.activity, s.auto!.level, () => sv.random());
@@ -745,6 +752,11 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     if (!teach.enabled) return no(403, OFF, 'off');
     const session = newSession(body, Math.floor(sv.random() * 2 ** 31), () => sv.random());
     if (typeof session === 'string') return no(400, session);
+    // One joystick game at a time, two games in all (James, 26 Nov 2026 NZ: the database stalled with two classes on).
+    const running = await sv.openGames();
+    if (running === 'busy') return busy();
+    const locked = lockedBecause(session.activity, running, classId);
+    if (locked) return no(409, locked, 'locked');
     if (body.where === 'lobby') {
       const host = cleanHost(body.host);
       if (!host) return no(400, 'Type the name pupils call you, like Mr Riley.');

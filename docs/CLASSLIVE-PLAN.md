@@ -88,6 +88,10 @@ The Class Live page opens on a grid of games (James, 25 Nov 2026 NZ); tapping on
 
 Class Showdown has one tile per arena (James, 26 Nov 2026 NZ): `ARENAS` in gameList.ts makes rows `showdown-<arena>` with `arena` set, and `Setup` renders `ShowdownCard` (who plays, how long) for any row with an `arena`. A new Showdown arena adds one `ARENAS` entry (name, emoji, painted back, blurb) plus its `ABOUT` line in ShowdownCard.tsx. Old `?pick=showdown` links open Boss Bounty.
 
+### Limits: how many games at once (26 Nov 2026 NZ)
+
+After the database stalled twice in one morning (Ghost Tag plus Showdown, then Shark Bay), James set limits: **one joystick game at a time** (`classlive_activities.moves`: Four Corners, Shark Bay, Floor is Lava, Musical Thrones, Colour Clash, Ghost Tag, Glitches) and **two Class Live or Showdown games in all**. Rules: `shared/classlive/limits.ts` (`MOVING`, `lockedBecause`); running games: `classlive_open_games()` (not over, touched in the last 15 minutes). The open step (Class Live and Showdown) refuses with 409 `locked`; the picker greys locked tiles and says who is playing (`classlive_games_running()`, `useRunning.ts`); set-time games don't open while locked, and a Kids vote opened during a joystick game offers only games that don't move (`session.auto.noMoving`). **A new joystick game must be added to `MOVING` and have `moves = true`.**
+
 ## 6. Design checklist
 
 1. **Big goal**: draw every sky creature (one per level), wake all three serpents, reveal every mural.
