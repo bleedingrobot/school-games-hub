@@ -61,7 +61,7 @@ const BATTLE_CRY_NOTE = 'A right answer powers up the whole clan. No timer, noth
 /** The last question of a shallow fight: its power-up lasts every round after. */
 const BATTLE_CRY_NOTE_LASTS = 'A right answer powers up the whole clan for the rest of the fight. No timer, nothing lost.';
 
-const shown = (q: PublicQuestion): ShownQuestion => ({ id: q.slot, parts: q.parts, spoken: q.spoken, prompt: q.prompt, choices: q.choices, choiceLabels: q.choiceLabels, maxLength: q.maxLength, input: q.input });
+const shown = (q: PublicQuestion): ShownQuestion => ({ id: q.slot, parts: q.parts, spoken: q.spoken, prompt: q.prompt, choices: q.choices, choiceLabels: q.choiceLabels, maxLength: q.maxLength, input: q.input, figure: q.figure });
 type Mode = 'action' | 'spell' | 'target';
 
 /**

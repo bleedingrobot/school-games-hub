@@ -297,7 +297,7 @@ export function DashScreen({ backend, start, progress, picks, onFinished, onLeav
       {q && (
         <div data-noflap>
           <QuestionModal
-            question={{ id: q.slot, parts: q.parts, spoken: q.spoken, prompt: q.prompt, choices: q.choices, choiceLabels: q.choiceLabels, maxLength: q.maxLength, input: q.input }}
+            question={{ id: q.slot, parts: q.parts, spoken: q.spoken, prompt: q.prompt, choices: q.choices, choiceLabels: q.choiceLabels, maxLength: q.maxLength, input: q.input, figure: q.figure }}
             title="Check!"
             note="Right answer: a spare feather. The dash is paused."
             onSubmit={async (value, ms): Promise<MarkedAnswer> => {

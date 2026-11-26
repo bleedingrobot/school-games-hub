@@ -13,6 +13,7 @@ export function shownOf(q: PublicQuestion): ShownQuestion {
     ...(q.choiceLabels ? { choiceLabels: q.choiceLabels } : {}),
     ...(q.input ? { input: q.input } : {}),
     ...(q.maxLength ? { maxLength: q.maxLength } : {}),
+    ...(q.figure ? { figure: q.figure } : {}),
   };
 }
 
