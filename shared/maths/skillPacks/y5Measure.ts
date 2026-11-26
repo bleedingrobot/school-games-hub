@@ -288,7 +288,8 @@ function compass(start: number, turns: number, parts: string[], spoken: string, 
   const named: Record<string, string> = {};
   for (let t = 0; t < 4; t++) if (t !== turns) named[`${TURN_SLIP[t]} instead`] = DIRS[(start + t) % 4];
   const made = pick({ parts, spoken, fact: `${cap(DIRS[start])} then ${parts[1].replace(/:$/, '')} is ${right}` }, right, named, { slot, salt });
-  return tap(made, { prompt: 'Which way are you now facing?' });
+  // A compass with an arrow the way you face at the start (James, 26 Nov 2026: he couldn't answer it from words alone).
+  return tap(made, { prompt: 'Which way are you now facing?', figure: { kind: 'compass', from: 'NESW'[start] } });
 }
 
 /** "Face east, quarter turn clockwise: ?". */

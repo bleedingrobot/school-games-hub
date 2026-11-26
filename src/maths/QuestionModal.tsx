@@ -254,6 +254,26 @@ export function UnitHelp({ parts }: { parts: string[] }) {
   );
 }
 
+const DIRECTIONS = ['north', 'east', 'south', 'west'];
+
+/** Turning on a compass: clockwise order, how many steps each turn is, and a worked example that is never the question. */
+export function TurnHelp({ parts }: { parts: string[] }) {
+  const m = /^Face (north|east|south|west)/i.exec(parts[0] ?? '');
+  const start = m ? DIRECTIONS.indexOf(m[1].toLowerCase()) : 0;
+  const ex = (start + 1) % 4;
+  return (
+    <div className="remainder-help">
+      <p>
+        <strong>Clockwise</strong> goes north → east → south → west, the way a clock&rsquo;s hands go. <strong>Anticlockwise</strong> goes back the other way.
+      </p>
+      <p>A quarter turn moves 1 step, a half turn 2 steps, a three-quarter turn 3 steps.</p>
+      <p className="remainder-help__sum">
+        Face {DIRECTIONS[ex]}, quarter turn clockwise → {DIRECTIONS[(ex + 1) % 4]}
+      </p>
+    </div>
+  );
+}
+
 /** What a screen reader says for the digits typed so far: "4.15" is "4 point 1 5", "4." is "4 point". */
 function spokenTyped(typed: string): string {
   const [whole, fraction] = typed.split('.');
@@ -569,7 +589,7 @@ export function QuestionModal({
             <button type="button" className="question__hintbtn" aria-expanded={helpOpen} onClick={() => setHelpOpen((o) => !o)}>
               {helpOpen ? 'Hide help' : 'Help me'}
             </button>
-            {helpOpen && (help === 'angles' ? <AngleNames /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : help === 'fractions' ? <FractionHelp parts={question.parts} /> : help === 'hours' ? <HoursHelp parts={question.parts} /> : help === 'units' ? <UnitHelp parts={question.parts} /> : <SymbolHelp />)}
+            {helpOpen && (help === 'angles' ? <AngleNames /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : help === 'fractions' ? <FractionHelp parts={question.parts} /> : help === 'hours' ? <HoursHelp parts={question.parts} /> : help === 'units' ? <UnitHelp parts={question.parts} /> : help === 'turns' ? <TurnHelp parts={question.parts} /> : <SymbolHelp />)}
           </div>
         )}
         {question.prompt && <p className="question__prompt">{question.prompt}</p>}

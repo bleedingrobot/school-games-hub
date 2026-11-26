@@ -31,8 +31,8 @@ export type Figure =
   | { kind: 'circle'; radius?: string; diameter?: string }
   /** A regular polygon with one exterior angle marked. */
   | { kind: 'polygon'; sides: number; label?: string }
-  /** Compass points: the turn from `from` to `to`, clockwise. */
-  | { kind: 'compass'; from: string; to: string }
+  /** Compass points: the turn from `from` to `to`, clockwise. With no `to`, an arrow shows the way you face (`from`). */
+  | { kind: 'compass'; from: string; to?: string }
   /** A plain outline of a named shape; `side` labels its lowest side ("10 cm", for a perimeter question). */
   | { kind: 'shape'; name: ShapeName; side?: string }
   /** A small first-quadrant grid (axes numbered from 0, `size` 4-10) with dots. */
