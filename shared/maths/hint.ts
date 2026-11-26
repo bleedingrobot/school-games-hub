@@ -40,12 +40,15 @@ export function hintFor(q: Pick<Question, 'answer' | 'choices' | 'parts'>): Hint
  * Which free "Help me" picture a question gets (James, 26 Nov 2026): every kind of angle on angle-picture questions, and what
  * < > ≤ ≥ ≠ mean on any question that shows one of them. Unlike the hint it costs nothing and never narrows the answer.
  */
-export function helpKind(q: Pick<Question, 'parts' | 'prompt' | 'choiceLabels' | 'figure'>): 'angles' | 'symbols' | 'remainder' | 'axes' | 'fractions' | 'hours' | null {
+export function helpKind(q: Pick<Question, 'parts' | 'prompt' | 'choiceLabels' | 'figure'>): 'angles' | 'symbols' | 'remainder' | 'axes' | 'fractions' | 'hours' | 'units' | null {
   if (isFigure(q.figure) && q.figure.kind === 'angle') return 'angles';
+  // Naming an angle from its size alone ("An angle of 250° is ?"), with no picture (James, 26 Nov 2026: no Help me showed).
+  if ((q.choiceLabels ?? []).some((c) => /^(acute|obtuse|reflex|right|straight)( angle)?$/i.test(c)) || /kind of angle/i.test(q.prompt ?? '')) return 'angles';
   // A division with a remainder ("9 ÷ 4 = ? r 1"): what the r means. A point on an axis: a small grid (James, 26 Nov 2026).
   if (q.parts.includes('r')) return 'remainder';
   if (/\b[xy]-axis\b/.test(q.prompt ?? '')) return 'axes';
   if (fractionSteps(q.parts)) return 'fractions';
+  if (unitSteps(q.parts)) return 'units';
   // Hours into minutes ("3 h = ? min"): use the 6 times table (James, 26 Nov 2026).
   if (q.parts.includes('min') && q.parts.some((p) => /(\d|½) h(\s|$)/.test(p))) return 'hours';
   const texts = [...q.parts, q.prompt ?? '', ...(q.choiceLabels ?? [])];
@@ -80,4 +83,30 @@ export function fractionSteps(parts: readonly string[]): { a: [number, number]; 
     return { a, b, sign, bottom, changes };
   }
   return null;
+}
+
+/** How many of the small unit make one of the big one. */
+const UNIT_PAIRS: [string, string, number][] = [
+  ['km', 'm', 1000],
+  ['m', 'cm', 100],
+  ['cm', 'mm', 10],
+  ['m', 'mm', 1000],
+  ['kg', 'g', 1000],
+  ['L', 'mL', 1000],
+];
+
+/**
+ * Changing a metric unit ("8 km = ? m", "450 g = ? kg"): the fact to use and whether to multiply or divide (James,
+ * 26 Nov 2026). Null for anything else.
+ */
+export function unitSteps(parts: readonly string[]): { from: string; to: string; big: string; small: string; factor: number; times: boolean; n: number } | null {
+  const given = /^([\d.]+) ([a-zA-Z]+)$/.exec(parts[0] ?? '');
+  const ask = parts.indexOf('?');
+  const to = ask >= 0 ? parts[ask + 1] : undefined;
+  if (!given || !to) return null;
+  const from = given[2];
+  const pair = UNIT_PAIRS.find(([b, sm]) => (b === from && sm === to) || (b === to && sm === from));
+  if (!pair) return null;
+  const [big, small, factor] = pair;
+  return { from, to, big, small, factor, times: from === big, n: Number(given[1]) };
 }
