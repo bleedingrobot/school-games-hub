@@ -45,7 +45,8 @@ tab shows help use), rule-junior (junior games build their own, read aloud).
   `maths_help_cancel()`. Works for every game, since every game saves through `record_fact_answers`. Not done in H1: half
   points (each game's server gives its own points) and "comes back soon" (a helped fact simply stays unsecured, so the
   ladder keeps asking it).
-- H1 LIVE 26 Nov 2026 (PR #915).
+- H1 LIVE 26 Nov 2026 (PR #915). James, 26 Nov 8:47 pm NZ: "Dont do the half points": rule-points is dropped, helped
+  answers keep each game's normal points.
 - H2-H7 (help cards) built: shared/maths/help/ makes a card for any ladder question from what it shows (parts, prompt,
   choices): basic.ts (early facts, tables with near facts, patterns), number.ts, fractions.ts, measure.ts, algebra.ts.
   index.ts tries them most specific first. QuestionModal shows Help me on every question with a card (title + numbered
