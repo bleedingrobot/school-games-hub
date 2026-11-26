@@ -9,11 +9,35 @@ import { parseFactKey } from '../../maths/facts';
 import { solveQuestion } from '../../maths/skillPacks/timesTables';
 import { poolsFor } from '../../maths/selector';
 import { BANDED_PACKS, type TopicId } from '../../maths/skillPacks';
-import { bandFor } from '../bands';
+import { bandFor, quickSeconds } from '../bands';
+import { cleanParams, solveClaim } from '../../maths/claim';
+import { quickMsForPack } from '../../maths/config';
+import { packIdOfKey } from '../../maths/ladder';
 import { isTopicId } from '../topics';
 
-/** One question a student answered in a battle. */
-export interface QuestionReport {
+/** One question a student answered in a battle: from the maths ladder (since 26 Nov 2026), or the old way, from the attack's topic. */
+export type QuestionReport = LadderReport | TopicReport;
+
+/**
+ * A question from the student's maths ladder (the same questions as the other games, James 26 Nov 2026). The server makes it again
+ * from its key and numbers (`solveClaim`), so it must have been asked exactly as shown, and marks the answer itself.
+ */
+export interface LadderReport {
+  topic: 'ladder';
+  /** The record it counts towards, e.g. "add:7+8" or "gen:round10:47". */
+  key: string;
+  /** How it was shown. */
+  parts: string[];
+  /** The numbers it was made from (every generated skill). */
+  params?: number[];
+  /** What the student typed or tapped (for a pick-one question, as the pack takes it). */
+  given: number;
+  ms: number;
+  at: number;
+}
+
+/** The old way (before 26 Nov 2026, and the test page): the attack's type picked a topic, the area its band. */
+export interface TopicReport {
   topic: TopicId;
   /** The band it was asked at (times tables: the campaign level). */
   band: number;
@@ -51,6 +75,28 @@ const isNumber = (n: unknown): n is number => typeof n === 'number' && Number.is
 
 export type Marked = { ok: true; correct: boolean } | { ok: false; problem: string };
 
+/** The records pack an answer counts towards: a ladder question's pack comes from its key, an old one's is its topic. */
+export function packOfReport(q: QuestionReport): string {
+  return q.topic === 'ladder' ? (packIdOfKey(q.key) ?? 'generated') : q.topic;
+}
+
+/** How fast counts as quick for this question, in ms: the ladder's own time for the pack, or the old topic and band time. */
+export function quickMsOfReport(q: { topic: TopicId | 'ladder'; band?: number; key: string }): number {
+  return q.topic === 'ladder' ? quickMsForPack(packIdOfKey(q.key)) : quickSeconds(q.topic, q.band ?? 1) * 1000;
+}
+
+/** A ladder question: rebuilt from its key and numbers, and only accepted if it comes out exactly as it was shown. */
+function markLadder(r: Record<string, unknown>): Marked {
+  if (typeof r.key !== 'string' || r.key.length > 60 || !packIdOfKey(r.key)) return { ok: false, problem: 'question-key' };
+  if (typeof r.given !== 'number' || !Number.isFinite(r.given)) return { ok: false, problem: 'question-answer' };
+  const parts = r.parts;
+  if (!Array.isArray(parts) || parts.length === 0 || parts.length > 40 || !parts.every((p) => typeof p === 'string' && p.length <= 40)) return { ok: false, problem: 'question-parts' };
+  if (r.params !== undefined && !cleanParams(r.params)) return { ok: false, problem: 'question-params' };
+  const solved = solveClaim({ parts, key: r.key, params: r.params });
+  if (!solved || !solved.keys.includes(r.key)) return { ok: false, problem: 'question-parts' };
+  return { ok: true, correct: sameAnswer(r.given, solved.answer) };
+}
+
 /**
  * Is this a question the game could have asked in this area, and was the answer right?
  * `area` and `far` say where the battle was, so the band must be the one the area asks for
@@ -59,6 +105,7 @@ export type Marked = { ok: true; correct: boolean } | { ok: false; problem: stri
 export function markQuestion(q: unknown, area: number, far: boolean): Marked {
   if (!q || typeof q !== 'object') return { ok: false, problem: 'question' };
   const r = q as Record<string, unknown>;
+  if (r.topic === 'ladder') return markLadder(r);
   if (!isTopicId(r.topic)) return { ok: false, problem: 'question-topic' };
   const topic = r.topic;
   if (typeof r.key !== 'string' || r.key.length > 60) return { ok: false, problem: 'question-key' };

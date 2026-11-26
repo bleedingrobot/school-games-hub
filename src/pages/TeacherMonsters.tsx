@@ -1,5 +1,5 @@
 /**
- * Maths Monsters on the teacher pages: the topics that are on and the class report (each topic's answers, the hardest
+ * Maths Monsters on the teacher pages: where the questions come from and the class report (each topic's answers, the hardest
  * questions, badges, saves the server check turned down) in the Games table's drawer, for the header's class; and each
  * student's game. Loaded only when opened. The on/off switch is in the Games table row (src/games/monsters/teacher.ts).
  */
@@ -12,11 +12,11 @@ import { EARLY_FACTS } from '../../shared/maths/skillPacks/earlyFacts';
 import { GENERATED } from '../../shared/maths/skillPacks/generated';
 import { speciesOf } from '../../shared/monsters/monsterBook';
 import {
-  ALL_TOPICS, fetchClassMonsters, fetchMonstersSettings, fetchStudentMonsters, saveMonstersTopics,
+  fetchClassMonsters, fetchMonstersSettings, fetchStudentMonsters,
   type ClassMonsters, type StudentMonsters,
 } from '../data/monsters';
 import { FriendlyError } from '../data/profile';
-import { SettingChips, useSetting } from '../teacher/Settings';
+import { useSetting } from '../teacher/Settings';
 import { whenPlayed } from './Dashboard';
 import type { HardestRow, TeacherAlert } from '../games/types';
 import { refusalAlerts } from '../teacher/alerts';
@@ -62,7 +62,7 @@ const REASON: Record<string, string> = {
 const reasonText = (code: string) => REASON[code] ?? `check failed (${code})`;
 
 /**
- * The drawer on the Games table (docs/TEACHER-VIEW-PLAN.md, 4.5), for the header's class: the topics, then the class report.
+ * The drawer on the Games table (docs/TEACHER-VIEW-PLAN.md, 4.5), for the header's class: where the questions come from, then the class report.
  * The on/off switch is in the table row.
  */
 export function MonstersTeacherSettings({ classId }: { classId: string }) {
@@ -74,8 +74,7 @@ export function MonstersTeacherSettings({ classId }: { classId: string }) {
   );
 }
 
-const TOPIC_CHIPS = ALL_TOPICS.map((t) => ({ value: t, label: TOPIC_LABEL[t] }));
-
+/** Since 26 Nov 2026 every question comes from the student's maths ladder (or the focus set for them), like the other games. */
 function MonstersTopicsPanel({ classId }: { classId: string }) {
   const settings = useSetting(() => fetchMonstersSettings(classId), [classId]);
   return (
@@ -83,14 +82,10 @@ function MonstersTopicsPanel({ classId }: { classId: string }) {
       <h2 id="mm-settings-title" className="panel__title">
         Maths Monsters settings
       </h2>
-      <SettingChips
-        label="Topics on"
-        about="A topic switched off is never asked: its questions come from the nearest topic that is on, so no area is ever blocked. Students get the new topics the next time they open Maths Monsters."
-        options={TOPIC_CHIPS}
-        value={settings.value?.topics ?? null}
-        loadFailed={settings.failed}
-        save={(topics) => saveMonstersTopics(topics, classId)}
-      />
+      <p>
+        Every question comes from each student’s own <strong>maths ladder</strong>, the same as the other games, and every answer counts towards it. To aim it at
+        particular skills, set a focus on the <strong>Set focus</strong> page. A monster’s type only decides who is strong against who.
+      </p>
       {settings.value?.enabled === false && (
         <p className="panel__empty">Maths Monsters is off for this class, so this only matters once it’s on.</p>
       )}
@@ -184,7 +179,7 @@ function MonstersClassReport({ classId }: { classId: string }) {
             </table>
           </div>
           <table className="stats-table">
-            <caption>Topic Tower badges</caption>
+            <caption>Tower badges</caption>
             <thead>
               <tr>
                 <th scope="col">Students with at least</th>

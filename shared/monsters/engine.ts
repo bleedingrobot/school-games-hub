@@ -146,9 +146,10 @@ export function questionFor(state: BattleState, action: Pick<BattleAction, 'kind
  * Right, quick-right or wrong. Quick means correct within the time set by the question's
  * difficulty. `calm` (a student setting) switches the quick bonus off.
  */
-export function judgeAnswer(a: { correct: boolean; ms: number; topic: TopicId; band: number; calm?: boolean }): AnswerResult {
+export function judgeAnswer(a: { correct: boolean; ms: number; calm?: boolean } & ({ topic: TopicId; band: number } | { quickMs: number })): AnswerResult {
   if (!a.correct) return 'wrong';
-  if (!a.calm && a.ms <= quickSeconds(a.topic, a.band) * 1000) return 'quick-right';
+  const quickMs = 'quickMs' in a ? a.quickMs : quickSeconds(a.topic, a.band) * 1000;
+  if (!a.calm && a.ms <= quickMs) return 'quick-right';
   return 'right';
 }
 

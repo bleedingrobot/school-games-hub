@@ -67,6 +67,7 @@ const LADDER_GAMES = [
   'Clan Quest',
   'Star Trader',
   'Dragon Maths',
+  'Maths Monsters',
   'Mine Runner',
   'Archery Challenge',
   'Kingdom Keeper',
