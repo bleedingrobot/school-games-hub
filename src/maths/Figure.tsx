@@ -327,31 +327,8 @@ function Body({ f }: { f: FigureSpec }) {
         </>
       );
     }
-    case 'grid': {
-      const n = Math.max(4, Math.min(10, Math.round(f.size)));
-      const step = 100 / n;
-      const ox = 50;
-      const oy = 120;
-      return (
-        <>
-          {Array.from({ length: n + 1 }, (_, i) => (
-            <g key={i}>
-              <line x1={ox + i * step} y1={oy} x2={ox + i * step} y2={oy - 100} className={i === 0 ? 'fig__line' : 'fig__dash'} />
-              <line x1={ox} y1={oy - i * step} x2={ox + 100} y2={oy - i * step} className={i === 0 ? 'fig__line' : 'fig__dash'} />
-              {/* Every number up to 6, every other one on a bigger grid, so the labels never run together. */}
-              {(n <= 6 || i % 2 === 0) && <Label x={ox + i * step} y={oy + 10} text={String(i)} />}
-              {i > 0 && (n <= 6 || i % 2 === 0) && <Label x={ox - 9} y={oy - i * step} text={String(i)} anchor="end" />}
-            </g>
-          ))}
-          {f.points.map((p, i) => (
-            <g key={`p${i}`}>
-              <circle cx={ox + p.x * step} cy={oy - p.y * step} r={4} className="fig__dot" />
-              <Label x={ox + p.x * step + 7} y={oy - p.y * step - 8} text={p.label ?? ''} anchor="start" />
-            </g>
-          ))}
-        </>
-      );
-    }
+    case 'grid':
+      return null; // Drawn bigger, in its own picture (GridFigure).
     case 'spinner': {
       const n = Math.max(2, Math.min(10, Math.round(f.parts)));
       const at = (i: number) => {
@@ -418,7 +395,111 @@ function Body({ f }: { f: FigureSpec }) {
 /** Soft fills for the spinner colours, dark enough to read against white and light enough for the lines to show. */
 const SPINNER_FILL: Record<SpinnerColour, string> = { red: '#f87171', blue: '#60a5fa', green: '#4ade80', yellow: '#facc15', purple: '#c084fc', orange: '#fb923c' };
 
+/** Estimated width of a label at the figure's label size (15px, bold). */
+const labelWidth = (text: string) => text.length * 8.4;
+
+type Box = { x1: number; y1: number; x2: number; y2: number };
+const overlap = (a: Box, b: Box) => Math.max(0, Math.min(a.x2, b.x2) - Math.max(a.x1, b.x1)) * Math.max(0, Math.min(a.y2, b.y2) - Math.max(a.y1, b.y1));
+
+/**
+ * A coordinate grid, big enough to read (James, 26 Nov 2026: "this graph is unreadable"): bold x and y axes with their
+ * names and arrows, every number on small grids, big dots, and each dot's label put in the corner around it that clashes
+ * least with the other dots, labels and the axes.
+ */
+function GridFigure({ f }: { f: Extract<FigureSpec, { kind: 'grid' }> }) {
+  const n = Math.max(4, Math.min(10, Math.round(f.size)));
+  const span = 220;
+  const step = span / n;
+  const ox = 46;
+  const oy = 250;
+  const at = (p: { x: number; y: number }) => ({ x: ox + p.x * step, y: oy - p.y * step });
+  // Every number, so a point can be read straight off (the grid is big enough now).
+  const every = 1;
+  // Places already taken: the dots, the axis numbers and the axes themselves.
+  const taken: Box[] = [
+    { x1: ox - 30, y1: oy - span - 10, x2: ox + 3, y2: oy + 30 },
+    { x1: ox - 30, y1: oy - 3, x2: ox + span + 10, y2: oy + 30 },
+    ...f.points.map((p) => {
+      const c = at(p);
+      return { x1: c.x - 8, y1: c.y - 8, x2: c.x + 8, y2: c.y + 8 };
+    }),
+  ];
+  const labels = f.points.map((p) => {
+    const text = p.label ?? '';
+    if (!text) return null;
+    const c = at(p);
+    const w = labelWidth(text);
+    const h = 18;
+    const tries = [
+      { dx: 10, dy: -14, anchor: 'start' as const },
+      { dx: -10, dy: -14, anchor: 'end' as const },
+      { dx: 10, dy: 15, anchor: 'start' as const },
+      { dx: -10, dy: 15, anchor: 'end' as const },
+      { dx: 0, dy: -20, anchor: 'middle' as const },
+      { dx: 0, dy: 21, anchor: 'middle' as const },
+    ];
+    let best = tries[0];
+    let bestBox: Box | null = null;
+    let bestScore = Infinity;
+    for (const t of tries) {
+      const x = c.x + t.dx;
+      const y = c.y + t.dy;
+      const x1 = t.anchor === 'start' ? x : t.anchor === 'end' ? x - w : x - w / 2;
+      const box = { x1, y1: y - h / 2, x2: x1 + w, y2: y + h / 2 };
+      const outside = Math.max(0, -box.x1) + Math.max(0, box.x2 - GRID_W) + Math.max(0, -box.y1) + Math.max(0, box.y2 - GRID_H);
+      const score = taken.reduce((sum, b) => sum + overlap(box, b), 0) + outside * 50;
+      if (score < bestScore) {
+        bestScore = score;
+        best = t;
+        bestBox = box;
+      }
+    }
+    if (bestBox) taken.push(bestBox);
+    return { text, x: c.x + best.dx, y: c.y + best.dy, anchor: best.anchor };
+  });
+  return (
+    <svg className="question__figure question__figure--grid" viewBox={`0 0 ${GRID_W} ${GRID_H}`} role="presentation" aria-hidden="true" focusable="false">
+      {Array.from({ length: n }, (_, k) => k + 1).map((i) => (
+        <g key={i}>
+          <line x1={ox + i * step} y1={oy} x2={ox + i * step} y2={oy - span} className="fig__gridline" />
+          <line x1={ox} y1={oy - i * step} x2={ox + span} y2={oy - i * step} className="fig__gridline" />
+        </g>
+      ))}
+      {/* The axes, bold, with arrows and their names. */}
+      <line x1={ox} y1={oy} x2={ox + span + 14} y2={oy} className="fig__axis" />
+      <line x1={ox} y1={oy} x2={ox} y2={oy - span - 14} className="fig__axis" />
+      <path d={`M ${ox + span + 20} ${oy} l -10 -6 v 12 z`} className="fig__dot" />
+      <path d={`M ${ox} ${oy - span - 20} l -6 10 h 12 z`} className="fig__dot" />
+      <text x={ox + span + 24} y={oy} dominantBaseline="middle" className="fig__label">x</text>
+      <text x={ox + 12} y={oy - span - 16} dominantBaseline="middle" className="fig__label">y</text>
+      {Array.from({ length: n + 1 }, (_, i) => i)
+        .filter((i) => i % every === 0)
+        .map((i) => (
+          <g key={`n${i}`}>
+            <text x={ox + i * step} y={oy + 16} textAnchor="middle" dominantBaseline="middle" className="fig__num fig__num--grid">{i}</text>
+            {i > 0 && <text x={ox - 10} y={oy - i * step} textAnchor="end" dominantBaseline="middle" className="fig__num fig__num--grid">{i}</text>}
+          </g>
+        ))}
+      {f.points.map((p, i) => {
+        const c = at(p);
+        return <circle key={`p${i}`} cx={c.x} cy={c.y} r={6} className="fig__dot" />;
+      })}
+      {labels.map((l, i) =>
+        l ? (
+          <text key={`l${i}`} x={l.x} y={l.y} textAnchor={l.anchor} dominantBaseline="middle" className={`fig__label fig__label--halo${l.text.includes('?') ? ' fig__label--ask' : ''}`}>
+            {l.text}
+          </text>
+        ) : null,
+      )}
+    </svg>
+  );
+}
+
+const GRID_W = 300;
+const GRID_H = 290;
+
 export function Figure({ figure }: { figure: FigureSpec }) {
+  if (figure.kind === 'grid') return <GridFigure f={figure} />;
   return (
     <svg className="question__figure" viewBox={`0 0 ${W} ${H}`} role="presentation" aria-hidden="true" focusable="false">
       <Body f={figure} />

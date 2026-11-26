@@ -160,9 +160,15 @@ function end(x: number, y: number, d: number, n: number): [number, number] {
   return d === 0 ? [x + n, y] : d === 1 ? [x - n, y] : d === 2 ? [x, y + n] : [x, y - n];
 }
 
+/**
+ * One point marked on a big grid; the pupil reads its x value (how far across) or its y value (how far up). James, 26 Nov
+ * 2026: "a single marked point on the graph and asking the kids to identify one of the values of x or y" (it was "which of
+ * four points sits on the x-axis", with four labelled points crowded on a small grid). The key stays coord:axis, so the
+ * ladder and pupils' records carry on. The two numbers are never the same, so mixing up x and y is always wrong.
+ */
 const axis = oneKey(
   'coord:axis',
-  'Which point is on the x-axis or y-axis',
+  'Reading the x or y value of a point',
   COORD_TAGS,
   5,
   (_k, r) => {
@@ -170,25 +176,20 @@ const axis = oneKey(
     const a = int(r, 1, 9);
     let b = int(r, 1, 9);
     if (b === a) b = a === 9 ? 1 : a + 1;
+    // Five numbers as before (the last two are unused now), so questions already handed out still check.
     return [which, a, b, ...rollPick(r)];
   },
-  (_k, [which, a, b, slot, salt]) => {
-    if (!isInt(which, 0, 1) || !isInt(a, 1, 9) || !isInt(b, 1, 9) || a === b || !goodPick(slot, salt)) return null;
-    const p = (x: number, y: number) => `(${x}, ${y})`;
+  (_k, [which, a, b]) => {
+    if (!isInt(which, 0, 1) || !isInt(a, 1, 9) || !isInt(b, 1, 9) || a === b) return null;
     const name = which === 0 ? 'x' : 'y';
-    // On the x-axis the up-number is 0; on the y-axis the across-number is 0.
-    const right = which === 0 ? p(a, 0) : p(0, a);
-    const swapped = which === 0 ? p(0, a) : p(a, 0);
-    const named = {
-      'mixed up the axes': swapped,
-      'both numbers the same': p(a, a),
-      'neither number is zero': which === 0 ? p(b, a) : p(a, b),
-    };
-    // Asked in plain words, with no "Point on the x-axis = ?" line under it (James, 26 Nov 2026: it was confusing).
-    // QuestionModal's Help me draws a small grid for any question that names an axis.
-    const line = which === 0 ? 'the line going across' : 'the line going up';
-    const made = pick({ parts: ['?'], spoken: `Which point sits on the ${name} axis, ${line}?`, fact: `${right} is on the ${name}-axis` }, right, named, { slot, salt });
-    return made ? { ...made, prompt: `Which point sits on the ${name}-axis (${line})?` } : null;
+    const answer = which === 0 ? a : b;
+    const figure: Figure = { kind: 'grid', size: 10, points: [{ x: a, y: b }] };
+    const named: Named = { 'mixed up x and y': which === 0 ? b : a, 'one too many': answer + 1, 'one too few': answer - 1 };
+    const made = withMistakes(
+      { parts: [name, '=', '?'], spoken: `Look at the point on the grid. What is its ${name} value, how far ${which === 0 ? 'across' : 'up'}?`, answer, figure },
+      named,
+    );
+    return made ? { ...made, prompt: `What is the ${name} value of the point? (How far ${which === 0 ? 'across' : 'up'}?)` } : null;
   },
 );
 

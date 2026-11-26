@@ -40,7 +40,7 @@ The Year 7 skills stay as they are. New ids end in `-y6` where a Year 7 skill ha
 | 11 | `angles-y6` | Angles on a line, at a point, vertically opposite | 115° on a line: other? | type | L3 |
 | 12 | `shape-clue` | Shape from a clue | one pair of parallel sides: trapezium; kite, rhombus, parallelogram; triangle types | tap | L4 |
 | 13 | `rot-symmetry` | Order of rotational symmetry | square 4, rectangle 2, equilateral triangle 3 | tap | L4 |
-| 14 | `coordinates` | Coordinates (x, y) | start at (2, 3), move 4 right: (?, 3); which point is on the x-axis? | type / tap | L4 |
+| 14 | `coordinates` | Coordinates (x, y) | start at (2, 3), move 4 right: (?, 3); one marked point, what is its x (or y) value? (was "which point is on the x-axis?", changed by James 26 Nov 2026) | type / tap | L4 |
 | 15 | `chance-words` | Chance words and the 0 to 1 line | rolling a 7 on a dice: impossible; P = 0.5 is even chance | tap | L5 |
 | 16 | `spinner` | Chance on a spinner | 3 of 8 parts red: P(red)? all chances add to 1 | tap | L5 |
 | 17 | `mean-range-y6` | Mean and range (copy of averages) | range of 3, 9, 4, 7; mean of 2, 4, 6 | type | L5 |
