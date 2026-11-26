@@ -3,7 +3,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(13);
 
 insert into auth.users (id, email) values ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000f', 'fin@douglaspark.school.nz');
@@ -54,7 +54,11 @@ set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-00000000000f",
 select is(jsonb_array_length(public.teacher_help_uses(current_setting('test.ana_class')::uuid)), 1, 'the teacher sees one pupil');
 select is((public.teacher_help_uses(current_setting('test.ana_class')::uuid) -> 0) - 'id' - 'name' - 'realName' - 'lastAt',
   '{"helped": 1, "right": 1, "days": 1, "topKeys": ["mul:7x8"]}'::jsonb, '... with one helped answer, right, on 7 x 8');
+-- A teacher checking Help me still ticks off their own ladder (James, 27 Nov 2026).
+select public.maths_help_opened('tables');
 reset role;
+select is((select count(*)::integer from public.maths_help_pending where player = '00000000-0000-0000-0000-00000000000f'), 0,
+  'a teacher opening Help me leaves their next answer counting');
 
 select * from finish();
 rollback;
