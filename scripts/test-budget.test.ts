@@ -45,9 +45,9 @@ const BUDGET: Record<string, number> = {
   monsters: 10,
   classlive: 20, // 8, plus 2 (a rules test and a server test) for each map game: Floor is Lava, Musical Thrones, Colour Clash, Ghost Tag, Shark Bay (James, 25 Nov 2026 NZ), Saboteur Crew (docs/CREW-PLAN.md)
   'chess+checkers': 16,
-  maths: 32, // 27, plus 1 for Help me cards on every ladder question (26 Nov 2026), plus 2 for the Year 7-8 notation and question pictures, plus 2 for the Year 7-8 skills and the Stop at Year 6 switch (24 Nov 2026)
+  maths: 33, // 27, plus 1 for Help me cards and 1 for question pictures on every ladder question (26 Nov 2026), plus 2 for the Year 7-8 notation and question pictures, plus 2 for the Year 7-8 skills and the Stop at Year 6 switch (24 Nov 2026)
   'src/pages': 29, // 25, plus 4 for the profile page (docs/TESTING.md, 12 Nov 2026)
-  'src/teacher': 27, // 25, plus 1 for the basic facts check panel (15 Nov 2026), plus 1 for the Year 7-8 Taught switches (25 Nov 2026)
+  'src/teacher': 28, // 25, plus 1 for the Help me panel (26 Nov 2026), plus 1 for the basic facts check panel (15 Nov 2026), plus 1 for the Year 7-8 Taught switches (25 Nov 2026)
   'src/data': 20,
   'src/App': 6,
   'site parts': 8,
