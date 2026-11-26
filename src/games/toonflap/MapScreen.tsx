@@ -139,6 +139,7 @@ export function MapScreen({ progress, today, winsLeft, dashesLeft, maths, gentle
                       {best !== null && <span className="tf-stop__best">{fmtSeconds(best)}</span>}
                       <span className="tf-dim">Here until the end of January</span>
                     </span>
+                    <span className="tf-stop__line tf-dim">3 presents = 1 revive potion{progress.sack ? ` (${progress.sack} of 3 in your sack)` : ''}</span>
                     {sleigh && <span className="tf-stop__flyer">{left === 0 ? `${sleigh.name} unlocked` : `${unlockRuns(l.id) - left} of ${unlockRuns(l.id)} to unlock the ${sleigh.name}`}</span>}
                   </>
                 ) : (
@@ -146,6 +147,7 @@ export function MapScreen({ progress, today, winsLeft, dashesLeft, maths, gentle
                 )}
               </span>
             </button>
+            <p className="tf-festive__kids">Our pupils’ ideas and drawings: the trees, presents, grumpy Santa, Elf Snow Globe and Santa’s factory.</p>
           </div>
         );
       })}

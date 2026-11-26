@@ -242,3 +242,16 @@ James asked for a Christmas level open only in December and January (NZ time). *
 - Another seasonal level later = a new `SEASONAL_LEVELS` entry with its months, world number 12 and its own art.
 
 Status: LIVE 25 Nov 2026 (opens 1 Dec).
+
+### 13a. Pupils' ideas and drawings (James, 26 Nov 2026)
+
+James brought three pages from his pupils. Their crayon drawings are in the game itself (cut out, `art/kids/`), credited on the map's Christmas stop, the Hangar cards and in What's new.
+
+- **3 presents = 1 revive potion.** Presents go in a sack (`Progress.sack`, 0 to 2); every `PRESENTS_PER_POTION` (3) make a potion, at most one a flight, holding at most `POTIONS_MAX` as usual. Server-side in `addRun`; the results screen says "3 presents made a revive potion!".
+- **Grumpy Santa chases like the Spooky Manor ghosts:** Christmas Coast now has the `ghosts` feature; its push zones draw the pupil's grumpy Santa (`kids/santa`). Medal times unchanged (the sim's bot still flies it clean).
+- **Christmas trees and presents as obstacles:** Christmas Coast's walls take turns by wall number: candy cane (painted), the pupils' tree (pointing up from the ground, hanging upside down from the top, trunk = hit box), the pupils' present stack with its bow (`kidsSegment` in renderer.ts). Looks only.
+- **Santa's factory background:** `worlds/11/back.webp` repainted as Santa's toy factory by the beach.
+- **Elf flyer, only 1 December to Boxing Day:** `elf-globe` (the pupil's elf in a snow globe), free for everyone in that window (`Flyer.window`; `flyersUnlocked(p, today)`), back to the fantail after. **Grumpy Santa flyer:** a flight on Christmas Coast with no bumps (`Flyer.cleanOn`, `LevelRecord.clean`). **Bauble lights trail:** 30 presents (`presents` trail rule).
+- **"Sky Dash is now like a rhythm dash but Christmas edition":** in December and January Sky Dash plays in Christmas Coast's look (`SceneOpts.world`), with snow, a beat pulse on every wall and the next note of an original jingle (`xmasBeat.ts`), an attempt count and a "% to your best" bar. Course, physics and server replay unchanged.
+
+Status: built 26 Nov 2026 (PR on branch `claude/project-thread-cktmvy`).

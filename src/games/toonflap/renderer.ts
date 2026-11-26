@@ -9,7 +9,7 @@
 import { BIRD_HALF, BIRD_SIZE, SKY, START_X, START_Y, WALL_WIDTH } from '../../../shared/toonflap/config';
 import { gapsAt, zoneOn, type RunState } from '../../../shared/toonflap/engine';
 import type { Course, Wall, Zone } from '../../../shared/toonflap/levels';
-import { extraArt, flyerArt, trailArt, uiArt, worldArt, type FlyerPose } from './art/art';
+import { extraArt, flyerArt, kidsArt, trailArt, uiArt, worldArt, type FlyerPose } from './art/art';
 
 const TAU = Math.PI * 2;
 export const TOP_PAD = 0.25;
@@ -61,6 +61,10 @@ export interface SceneOpts {
   /** Labels for each answer wall (bottom to top), or null for arrows (maths off). */
   labels: Array<number[]> | null;
   ghostPath: boolean;
+  /** Draw this world instead of the course's own (Sky Dash Christmas uses Christmas Coast, 11). */
+  world?: number;
+  /** Sky Dash Christmas: how strongly the screen pulses on the beat, 0 to 1. */
+  beat?: number;
 }
 
 export function makeView(state: RunState, w: number, h: number): View {
@@ -651,8 +655,40 @@ const POST_SHARE = [0.41, 0.42, 0.44, 0.58, 0.46, 0.65, 0.67, 0.66, 0.96, 0.4, 0
  * A wall piece from the paintings: the repeating middle fills it, and an end piece sits at each edge that meets a gap
  * (wall-bottom's end points up, for a wall coming up from the ground; wall-top's points down). False if not painted.
  */
-function paintedSegment(p: P, x: number, w: number, y0: number, y1: number, capTop: boolean, capBot: boolean): boolean {
+/**
+ * Christmas Coast's walls take turns (pupils' ideas, 26 Nov 2026): the painted candy cane, then a pupil's drawn Christmas
+ * tree (pointing up from the ground, hanging upside down from the top), then a pupil's drawn present stack with its bow.
+ */
+function kidsSegment(p: P, kind: 'tree' | 'gift', x: number, w: number, y0: number, y1: number, capTop: boolean, capBot: boolean): boolean {
+  const { c } = p;
+  const middle = picture(kidsArt(kind === 'tree' ? 'trunk' : 'gift-middle'));
+  const up = picture(kidsArt(kind === 'tree' ? 'tree-bottom' : 'gift-bottom'));
+  const down = picture(kidsArt(kind === 'tree' ? 'tree-top' : 'gift-top'));
+  if (!middle || !up || !down) return false;
+  const mid = x + w / 2;
+  // The trunk / box is exactly the hit box; the tree's branches and the bow spread wider.
+  const Wc = kind === 'tree' ? w * 1.7 : w * 1.5;
+  const tileH = w * (middle.naturalHeight / middle.naturalWidth);
+  const capUp = Wc * (up.naturalHeight / up.naturalWidth);
+  const capDown = Wc * (down.naturalHeight / down.naturalWidth);
+  c.save();
+  c.beginPath();
+  c.rect(mid - Wc / 2 - 12, y0, Wc + 24, y1 - y0);
+  c.clip();
+  c.shadowColor = 'rgba(0, 0, 30, 0.45)';
+  c.shadowBlur = Math.max(4, w * 0.12);
+  const from = capTop ? y0 + capUp * 0.6 : capBot ? y1 - capDown * 0.6 : y0;
+  if (capBot && !capTop) for (let y = from - tileH; y > y0 - tileH; y -= tileH) c.drawImage(middle, mid - w / 2, y, w, tileH + 1);
+  else for (let y = from; y < y1; y += tileH) c.drawImage(middle, mid - w / 2, y, w, tileH + 1);
+  if (capTop) c.drawImage(up, mid - Wc / 2, y0, Wc, capUp);
+  if (capBot) c.drawImage(down, mid - Wc / 2, y1 - capDown, Wc, capDown);
+  c.restore();
+  return true;
+}
+
+function paintedSegment(p: P, x: number, w: number, y0: number, y1: number, capTop: boolean, capBot: boolean, wallI = 0): boolean {
   const { c, n } = p;
+  if (n === 11 && wallI % 3 !== 0 && kidsSegment(p, wallI % 3 === 1 ? 'tree' : 'gift', x, w, y0, y1, capTop, capBot)) return true;
   const middle = picture(worldArt(n, 'wall-middle'));
   const up = picture(worldArt(n, 'wall-bottom'));
   const down = picture(worldArt(n, 'wall-top'));
@@ -689,7 +725,7 @@ function segment(p: P, wall: Wall, x: number, w: number, y0: number, y1: number,
   const lw = Math.max(2, v.s * 0.07);
   const H = y1 - y0;
   if (H <= 0) return;
-  if (paintedSegment(p, x, w, y0, y1, capTop, capBot)) return;
+  if (paintedSegment(p, x, w, y0, y1, capTop, capBot, wall.i)) return;
   const alt = wall.i % 2 === 1;
   c.save();
   c.beginPath();
@@ -1129,8 +1165,16 @@ function drawZone(p: P, z: Zone, t: number, k: number) {
     const s = v.s;
     c.fillStyle = 'rgba(255,255,255,0.07)';
     c.fillRect(x0, sy(v, SKY), x1 - x0, v.s * SKY);
-    const ghostImg = picture(extraArt('ghost'));
-    if (ghostImg) blit(c, ghostImg, cx, cy, s * 2.0, 0.92);
+    // Christmas Coast: a pupil's grumpy Santa, leaning towards the bird as if chasing it.
+    const santaImg = p.n === 11 ? picture(kidsArt('santa')) : null;
+    const ghostImg = santaImg ?? picture(extraArt('ghost'));
+    if (santaImg) {
+      c.save();
+      c.translate(cx, cy);
+      c.rotate(wob ? Math.sin(p.time * 2.3 + k) * 0.12 : 0);
+      blit(c, santaImg, 0, 0, s * 3.4, 1);
+      c.restore();
+    } else if (ghostImg) blit(c, ghostImg, cx, cy, s * 2.0, 0.92);
     else {
     // wobbly sheet-ghost (drawn until the painting loads)
     c.beginPath();
@@ -1326,9 +1370,9 @@ function drawNest(p: P, x: number) {
 /** A present to grab: James's painting, or a drawn box with a ribbon. */
 function drawPresent(p: P, x: number, y: number) {
   const { c, v } = p;
-  const img = picture(extraArt('present'));
+  const img = picture(kidsArt('present')) ?? picture(extraArt('present'));
   if (img) {
-    blit(c, img, x, y, v.s * 1.0);
+    blit(c, img, x, y, v.s * 1.1);
     return;
   }
   const s = v.s * 0.75;
@@ -1344,11 +1388,32 @@ function drawPresent(p: P, x: number, y: number) {
   paint(c, '#ffd166', '#a8741a', 1.5);
 }
 
+/** Sky Dash Christmas: falling snow, and a warm pulse round the edges on each beat (none with reduced motion). */
+function drawBeat(p: P, beat: number) {
+  const { c, v } = p;
+  if (!p.reduced) {
+    c.fillStyle = 'rgba(255,255,255,0.85)';
+    for (let i = 0; i < 40; i++) {
+      const x = ((i * 97.3 + p.time * (14 + (i % 5) * 6)) % (v.w + 40)) - 20;
+      const y = ((i * 53.7 + p.time * (30 + (i % 7) * 9)) % (v.h + 20)) - 10;
+      c.beginPath();
+      c.arc(v.w - x, y, 1.5 + (i % 3), 0, TAU);
+      c.fill();
+    }
+  }
+  if (beat <= 0 || p.reduced) return;
+  const g = c.createRadialGradient(v.w / 2, v.h / 2, Math.min(v.w, v.h) * 0.3, v.w / 2, v.h / 2, Math.max(v.w, v.h) * 0.75);
+  g.addColorStop(0, 'rgba(255,214,102,0)');
+  g.addColorStop(1, `rgba(215,38,61,${0.35 * beat})`);
+  c.fillStyle = g;
+  c.fillRect(0, 0, v.w, v.h);
+}
+
 /* ---------- the scene ---------- */
 
 export function drawScene(c: Ctx, o: SceneOpts): View {
   const { course, state: st } = o;
-  const n = course.def.n;
+  const n = o.world ?? course.def.n;
   const world = WORLDS[n - 1];
   const view = makeView(st, o.w, o.h);
   const p: P = { c, v: view, n, time: o.time, reduced: o.reduced };
@@ -1455,6 +1520,7 @@ export function drawScene(c: Ctx, o: SceneOpts): View {
   c.rotate(Math.max(-0.5, Math.min(0.6, -st.vy * 0.06)) * (st.mode === 'hover' ? 0 : 1));
   drawFlyer(c, o.flyer, 0, 0, size, o.pose, o.shiny, o.reduced ? 0 : o.time);
   c.restore();
+  if (o.beat !== undefined) drawBeat(p, o.beat);
   c.restore();
   return view;
 }

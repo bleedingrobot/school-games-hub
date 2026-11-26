@@ -29,7 +29,7 @@ export const HUB_NEWS: NewsItem[] = [
     date: '2026-12-01',
     emoji: '🎄',
     title: 'Toon Flap: Christmas Coast',
-    text: 'A summer Christmas level until the end of January! Grab presents for Santa flyers.',
+    text: 'A Christmas level drawn with our pupils’ ideas: Santa’s factory, grumpy Santa, 3 presents = a revive potion, an Elf flyer and Sky Dash Christmas!',
     game: 'toonflap',
   },
   {

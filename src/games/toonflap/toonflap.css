@@ -309,3 +309,11 @@
 .tf-festive .tf-stop__line { flex-wrap: wrap; }
 .tf-chip--gifts { background: #fff3d6; color: #8a1c1c; }
 .tf-gifts { margin: 10px 0 0; padding: 8px 12px; border-radius: 12px; background: #fff3d6; color: #6b1515; font-weight: 700; }
+/* Christmas Coast: credit for the pupils' ideas and drawings (26 Nov 2026). */
+.tf-festive__kids { display: table; margin: 6px auto 0; padding: 3px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.9); font-size: 0.82em; font-weight: 700; color: #b3122b; }
+.tf-kids { color: #b3122b; font-weight: 700; }
+/* Sky Dash Christmas (pupil's idea, 26 Nov 2026). */
+.tf-chip--xmas { background: #d7263d; color: #fff; }
+.tf-xmasbar { position: relative; display: inline-flex; align-items: center; width: 140px; height: 22px; border-radius: 999px; background: rgba(255, 255, 255, 0.75); border: 2px solid #b3122b; overflow: hidden; }
+.tf-xmasbar > span { position: absolute; inset: 0 auto 0 0; background: repeating-linear-gradient(45deg, #d7263d 0 8px, #fff 8px 16px); }
+.tf-xmasbar > small { position: relative; width: 100%; text-align: center; font-weight: 800; font-size: 0.72rem; color: #3a0710; text-shadow: 0 0 3px #fff; }

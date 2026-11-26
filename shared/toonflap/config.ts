@@ -73,6 +73,8 @@ export const ANSWER_GAP_MIN = { 2: 2.6, 3: 2.2 } as const;
 export const UNLOCK_RUNS = { easy: 15, hard: 10 } as const;
 /** A seasonal level (Christmas Coast) is only open for two months, so its flyer needs fewer finishes. */
 export const SEASONAL_UNLOCK_RUNS = 5;
+/** Pupils' rule for Christmas Coast (26 Nov 2026): this many presents make one revive potion (at most one a flight). */
+export const PRESENTS_PER_POTION = 3;
 /** Levels up to this one count as easy for unlocking. */
 export const EASY_LEVELS = 5;
 /** Revive potions (rare, about one a week; the sim checks): earned for this many checks right in a row (the run of right answers carries on between levels, since no level has 5 checks) or a first gold on a level. */
