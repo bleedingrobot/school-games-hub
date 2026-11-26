@@ -43,17 +43,13 @@ function cries(depth: number, answers: ('right' | 'wrong' | 'none')[], reward: '
   return played;
 }
 
-it('Battle Cry comes in slowly near the top (once at depth 3, twice at depth 8), and a replay matches the live fight but catches a made-up answer', () => {
-  // Depth 3: a right first answer powers up every round, and nothing later changes it.
-  expect(cries(3, ['right', 'wrong', 'wrong', 'none']).every((c) => c === 'heal')).toBe(true);
-  expect(cries(3, ['wrong', 'right', 'right']).every((c) => c === null)).toBe(true);
-  // Depth 8: the second answer decides the rest of the fight.
-  const got = cries(8, ['wrong', 'right', 'wrong'], 'damage');
-  expect(got[0]).toBe(null);
-  expect(got.slice(1).every((c) => c === 'damage')).toBe(true);
-  const lost = cries(8, ['right', 'wrong', 'right'], 'damage');
-  expect(lost[0]).toBe('damage');
-  expect(lost.slice(1).every((c) => c === null)).toBe(true);
+it('Battle Cry asks once at every mine depth, and a replay matches the live fight but catches a made-up answer', () => {
+  // Shallow or deep: a right first answer powers up every round, and nothing later changes it.
+  for (const depth of [3, 8, 14]) {
+    expect(cries(depth, ['right', 'wrong', 'wrong', 'none']).every((c) => c === 'heal')).toBe(true);
+    expect(cries(depth, ['wrong', 'right', 'right']).every((c) => c === null)).toBe(true);
+    expect(cries(depth, ['right', 'wrong', 'right'], 'damage').every((c) => c === 'damage')).toBe(true);
+  }
   // A replay gives the same result as the live fight, at every pace.
   for (const depth of [2, 7, 14]) {
     const live = playLive(31, depth, settings(), 5);
