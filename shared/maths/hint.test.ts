@@ -11,11 +11,7 @@ describe('the one hint', () => {
         expect(h.remove.every((c) => choices.includes(c))).toBe(true);
       }
     }
-  });
-});
-
-describe('help me', () => {
-  it('explains the signs wherever < > ≤ ≥ show, and the angle kinds on angle pictures', () => {
+    // The free Help me (helpKind): sign meanings wherever < > ≤ ≥ ≠ show, angle kinds on angle pictures.
     expect(helpKind({ parts: ['8 × 7', '≤', '8 × 5 + 42'] })).toBe('symbols');
     expect(helpKind({ parts: ['2 456 × 2', '?', '1 228 × 4'], choiceLabels: ['<', '>', '='] })).toBe('symbols');
     expect(helpKind({ parts: ['This 130° angle', 'is', '?'], figure: { kind: 'angle', degrees: 130 } })).toBe('angles');
