@@ -465,6 +465,13 @@ const pow10: Helper = (q) => {
       return card('powers', `${b} multiplied ${pw.exp} times`, `${p[0]} means ${Array(pw.exp).fill(b).join(' × ')}.`,
         ...(pw.exp === 2 ? [`${b} × ${b} = ?`] : [`Work from the left: ${run.join(', ')}.`, `${show(b ** (pw.exp - 1))} × ${b} = ?`]));
     }
+    if (pw && pw.base !== 10 && pw.exp > 6 && pw.exp <= 12) {
+      // Long powers (2⁸): split into two equal halves the pupil can work out, rather than eight steps.
+      const b = pw.base, h = Math.floor(pw.exp / 2), odd = pw.exp % 2 === 1;
+      const sup = (n: number) => [...String(n)].map((d) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[Number(d)]).join('');
+      return card('powers', 'Split the power in half', `${p[0]} is ${b}${sup(h)} × ${b}${sup(h)}${odd ? ` × ${b}` : ''}: the small numbers add up to ${pw.exp}.`,
+        `${b}${sup(h)} = ${Array(h).fill(b).join(' × ')} = ${show(b ** h)}.`, odd ? `${show(b ** h)} × ${show(b ** h)} × ${b} = ?` : `${show(b ** h)} × ${show(b ** h)} = ?`);
+    }
     // "0.01 = ?" as a power of 10, "1 000 000 = ?" as a power of 10, "n = ?" with a prompt
     const dec = /^0\.0*1$/.test(p[0]);
     if (dec && /power of 10/.test(w)) return card('powers', 'Count the decimal places', `In ${p[0]} the 1 is in the ${ordinal(p[0].length - 2)} place after the decimal point.`, 'A decimal like that is 10 with a minus power.', `The power is − (that place number): 10 to the power ?`);
