@@ -22,7 +22,7 @@ export function ToonFlapTeacherSettings({ classId }: { classId: string }) {
       />
       <SettingToggle
         label="Read time at answer signs"
-        about="On levels 3 to 5 the flight pauses at each answer sign until the student taps Go (or a few seconds pass), so slower readers aren't rushed."
+        about="The flight pauses at each answer sign until the student taps Go, so they have time to think about the answer."
         value={settings.value?.readTime ?? null}
         loadFailed={settings.failed}
         save={(readTime) => saveToonFlapSetting({ readTime }, classId)}

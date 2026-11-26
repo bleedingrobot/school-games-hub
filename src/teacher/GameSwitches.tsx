@@ -97,7 +97,7 @@ export function GameSwitches({ classId }: { classId: string }) {
         <Switch label="Maths in flight" from={toon} read={(s) => s.maths !== 'off'} save={(on) => saveToonFlapSetting({ maths: on ? 'on' : 'off' }, classId)}
           about="Questions on the perches and answer gaps from level 3. Off: plain rests and arrows." />
         <Switch label="Read time at answer signs" from={toon} read={(s) => s.readTime ?? null} save={(readTime) => saveToonFlapSetting({ readTime }, classId)}
-          about="Levels 3 to 5 pause at each answer sign until the student taps Go, so slower readers aren’t rushed." />
+          about="The flight pauses at each answer sign until the student taps Go, so they have time to think about the answer." />
       </Game>
       <Game name="Marble Rush">
         <Switch label="Rescue questions" from={marble} read={(s) => (s.maths === 'off' ? false : s.rescue ?? null)} save={(on) => saveMarbleRescue(on, classId)}

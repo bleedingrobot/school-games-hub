@@ -41,9 +41,8 @@ export const CHECK_BONUS_STEPS = 3 * STEPS_PER_SECOND;
 export const TAILWIND_STEPS = 2 * STEPS_PER_SECOND;
 /** The answer sign shows this long before its wall. */
 export const SIGN_SECONDS = 4;
-/** Read time (on by default for levels 3 to 5): the game waits for Go at the sign, up to this long. */
-export const READ_TIME_MAX_SECONDS = 10;
-export const READ_TIME_LEVELS: readonly number[] = [3, 4, 5];
+/* Read time (on by default, every level with answer gaps, James 26 Nov 2026): the game waits at each answer sign until the
+   pupil clicks Go or presses Enter, with no time limit, just like a check question. */
 /** A run longer than this (flying steps) is stopped: nobody needs 5 minutes for one level. */
 export const MAX_RUN_STEPS = 5 * 60 * STEPS_PER_SECOND;
 
