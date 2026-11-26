@@ -76,6 +76,72 @@ function Part({ text, blank, unit }: { text: string; blank: ReactNode; unit?: bo
   return <span>{text}</span>;
 }
 
+/**
+ * What the "r" in a division means, with a worked example and dots in groups. The example is never the question itself.
+ */
+export function RemainderHelp({ parts }: { parts: string[] }) {
+  const [n, d] = parts[0] === '14' && parts[2] === '4' ? [9, 4] : [14, 4];
+  const q = Math.floor(n / d);
+  const r = n % d;
+  const groups = [...Array.from({ length: q }, () => d), r];
+  return (
+    <div className="remainder-help">
+      <p>
+        <strong>r</strong> means <strong>remainder</strong>: what is left over when you share into equal groups.
+      </p>
+      <p className="remainder-help__sum">
+        {n} ÷ {d} = {q} r {r}
+      </p>
+      <p className="remainder-help__dots" aria-hidden="true">
+        {groups.map((size, i) => (
+          <span key={i} className={i === q ? 'remainder-help__left' : 'remainder-help__group'}>
+            {'●'.repeat(size)}
+          </span>
+        ))}
+      </p>
+      <p>
+        {d} goes into {n} {q} times ({q} × {d} = {q * d}), and {r} is left over.
+      </p>
+    </div>
+  );
+}
+
+/** A small grid for "which point is on the x-axis" questions: the first number goes across, the second goes up. */
+export function AxisHelp() {
+  const step = 18;
+  const o = { x: 26, y: 112 };
+  const at = (x: number, y: number) => ({ cx: o.x + x * step, cy: o.y - y * step });
+  return (
+    <div className="remainder-help axis-help">
+      <svg viewBox="0 0 150 132" className="axis-help__pic" aria-hidden="true" focusable="false">
+        {Array.from({ length: 7 }, (_, i) => (
+          <g key={i} className="axis-help__grid">
+            <line x1={o.x + i * step} y1={o.y} x2={o.x + i * step} y2={o.y - 5 * step} />
+            {i < 6 && <line x1={o.x} y1={o.y - i * step} x2={o.x + 6 * step} y2={o.y - i * step} />}
+          </g>
+        ))}
+        <line x1={o.x} y1={o.y} x2={o.x + 6 * step + 8} y2={o.y} className="axis-help__axis axis-help__axis--x" />
+        <line x1={o.x} y1={o.y} x2={o.x} y2={o.y - 5 * step - 8} className="axis-help__axis axis-help__axis--y" />
+        <text x={o.x + 6 * step + 4} y={o.y + 14} className="axis-help__name">x</text>
+        <text x={o.x - 14} y={o.y - 5 * step - 2} className="axis-help__name">y</text>
+        <circle {...at(4, 0)} r={5} className="axis-help__dot axis-help__dot--x" />
+        <text x={at(4, 0).cx - 12} y={o.y + 16} className="axis-help__label">(4, 0)</text>
+        <circle {...at(0, 3)} r={5} className="axis-help__dot axis-help__dot--y" />
+        <text x={o.x + 8} y={at(0, 3).cy + 4} className="axis-help__label">(0, 3)</text>
+      </svg>
+      <p>
+        A point is (<strong>across</strong>, <strong>up</strong>).
+      </p>
+      <p>
+        On the <strong className="axis-help__x">x-axis</strong> (the line going across) the <strong>second</strong> number is 0, like (4, 0).
+      </p>
+      <p>
+        On the <strong className="axis-help__y">y-axis</strong> (the line going up) the <strong>first</strong> number is 0, like (0, 3).
+      </p>
+    </div>
+  );
+}
+
 /** What a screen reader says for the digits typed so far: "4.15" is "4 point 1 5", "4." is "4 point". */
 function spokenTyped(typed: string): string {
   const [whole, fraction] = typed.split('.');
@@ -98,7 +164,7 @@ export function SkipsLeft({ left }: { left: number }) {
  */
 function choicesSize(labels: readonly string[] | undefined): string {
   const longest = Math.max(0, ...(labels ?? []).map((l) => l.length));
-  return longest >= 12 ? ' question__choices--xlong' : longest >= 10 ? ' question__choices--long' : longest >= 7 ? ' question__choices--mid' : '';
+  return longest >= 12 ? ' question__choices--xlong' : longest >= 10 ? ' question__choices--long' : longest >= 6 ? ' question__choices--mid' : '';
 }
 
 export type ShownQuestion = Pick<Question, 'id' | 'parts' | 'spoken' | 'prompt' | 'choices' | 'choiceLabels' | 'maxLength' | 'input' | 'figure'> & { answer?: number };
@@ -190,35 +256,42 @@ export function QuestionModal({
     if (!inline) box.current?.focus({ preventScroll: true });
   }, [question.id, inline]);
 
-  // A sum (no words) stays on one line: if it is too wide for the box ("(12 + 8) × 3 − 4 = ?"), the text shrinks to fit
-  // instead of wrapping onto a second line. Re-fitted when the answer typed in the blank grows, and when the window resizes.
+  // Every question stays on one line (James, 26 Nov 2026): if it is too wide for the box ("(12 + 8) × 3 − 4 = ?",
+  // "9 ÷ 4 = ? r 1"), the text shrinks to fit instead of wrapping onto a second line. Words are drawn at 0.42em, so a
+  // question with words stops shrinking while they can still be read, and only then wraps. Re-fitted when the answer
+  // typed in the blank grows, and when the window resizes.
   const fact = useRef<HTMLParagraphElement>(null);
-  const oneLine = !question.parts.some((part) => /[a-z]/i.test(part));
+  const hasWords = question.parts.some((part) => /[a-z]/i.test(part));
   const shownAnswer = result ? 'done' : typed;
   useLayoutEffect(() => {
     const el = fact.current;
-    if (!el || !oneLine) return;
+    if (!el) return;
     const fit = () => {
       el.style.fontSize = '';
+      delete el.dataset.wrap;
       const holder = el.parentElement;
       if (!holder) return;
       // The room the box gives the sum, measured while it may wrap, so the one long line can't stretch the box first.
-      el.style.flexWrap = 'wrap';
-      el.style.whiteSpace = 'normal';
+      el.dataset.wrap = '';
       const pad = getComputedStyle(holder);
       const room = holder.clientWidth - parseFloat(pad.paddingLeft) - parseFloat(pad.paddingRight);
-      el.style.flexWrap = '';
-      el.style.whiteSpace = '';
+      delete el.dataset.wrap;
+      const floor = hasWords ? 31 : 16;
       let size = parseFloat(getComputedStyle(el).fontSize);
-      while (el.scrollWidth > room + 1 && size > 16) {
+      while (el.scrollWidth > room + 1 && size > floor) {
         size -= 1;
         el.style.fontSize = `${size}px`;
+      }
+      // Still too wide at the smallest readable size (a long sentence): back to full size, on two lines.
+      if (el.scrollWidth > room + 1) {
+        el.style.fontSize = '';
+        el.dataset.wrap = '';
       }
     };
     fit();
     window.addEventListener('resize', fit);
     return () => window.removeEventListener('resize', fit);
-  }, [question.id, question.parts, oneLine, shownAnswer]);
+  }, [question.id, question.parts, hasWords, shownAnswer]);
 
   // Each question shown is noted once for the teacher: answered at the first try, or skipped if the box closes (or moves on
   // to another question) without one. Escape, a skip button, a timer running out and the game rolling past it all count.
@@ -327,6 +400,10 @@ export function QuestionModal({
   };
 
   const blank = typed === '' ? '?' : typed;
+  const isAngle = isFigure(question.figure) && question.figure.kind === 'angle';
+  const isRemainder = question.parts.includes('r');
+  const isAxis = !isAngle && /\b[xy]-axis\b/.test(question.prompt ?? '');
+
   // Money answers are shown with cents: 4.1 → 4.10.
   const rightAnswer = result?.answer ?? question.answer ?? 0;
   // A pick-one question's answer is the number of the choice: show the choice itself in the blank.
@@ -354,17 +431,18 @@ export function QuestionModal({
         </h2>
         {note && <p className="question__note">{note}</p>}
         {isFigure(question.figure) && <Figure figure={question.figure} />}
-        {isFigure(question.figure) && question.figure.kind === 'angle' && (
-          // A picture of every kind of angle with its name, free to open (James, 26 Nov 2026: angle questions need a help me button).
+        {(isAngle || isRemainder || isAxis) && (
+          // Free to open. Angles: a picture of every kind with its name (James, 26 Nov 2026: angle questions need a help me
+          // button). Remainders: what the "r" means, with a worked example. Axes: a small grid (James, 26 Nov 2026).
           <div className="question__help">
             <button type="button" className="question__hintbtn" aria-expanded={helpOpen} onClick={() => setHelpOpen((o) => !o)}>
               {helpOpen ? 'Hide help' : 'Help me'}
             </button>
-            {helpOpen && <AngleNames />}
+            {helpOpen && (isAngle ? <AngleNames /> : isRemainder ? <RemainderHelp parts={question.parts} /> : <AxisHelp />)}
           </div>
         )}
         {question.prompt && <p className="question__prompt">{question.prompt}</p>}
-        <p ref={fact} className="question__fact" aria-label={question.spoken} data-long={question.parts.join('').length > 12 || undefined} data-one-line={oneLine || undefined}>
+        <p ref={fact} className="question__fact" aria-label={question.spoken} data-long={question.parts.join('').length > 12 || undefined} data-one-line>
           {question.parts.map((part, i) => (
             <Part key={i} text={part} blank={blankBox} unit={i > 0 && question.parts[i - 1].startsWith('?')} />
           ))}
