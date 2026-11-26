@@ -12,9 +12,9 @@ import type { GearKind, GearStat, ItemDef } from './types';
 export const CLASS_FOCUS: Record<string, GearStat[]> = {
   Barbarian: ['strength', 'dexterity', 'armor', 'hp'],
   Warrior: ['strength', 'agility', 'dexterity'],
-  'Martial Artist': ['agility', 'dexterity', 'sp'],
+  'Martial Artist': ['agility', 'dexterity', 'strength', 'sp'],
   Knight: ['strength', 'dexterity', 'armor', 'hp', 'charisma'],
-  Assassin: ['dexterity', 'agility', 'sp'],
+  Assassin: ['dexterity', 'agility', 'strength', 'sp'],
   Healer: ['wisdom', 'sp'],
   Sorcerer: ['wisdom', 'sp'],
   Necromancer: ['wisdom', 'sp'],
