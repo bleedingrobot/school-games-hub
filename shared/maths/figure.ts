@@ -33,8 +33,8 @@ export type Figure =
   | { kind: 'polygon'; sides: number; label?: string }
   /** Compass points: the turn from `from` to `to`, clockwise. */
   | { kind: 'compass'; from: string; to: string }
-  /** A plain outline of a named shape. */
-  | { kind: 'shape'; name: ShapeName }
+  /** A plain outline of a named shape; `side` labels its lowest side ("10 cm", for a perimeter question). */
+  | { kind: 'shape'; name: ShapeName; side?: string }
   /** A small first-quadrant grid (axes numbered from 0, `size` 4-10) with dots. */
   | { kind: 'grid'; size: number; points: { x: number; y: number; label?: string }[] }
   /** A circle cut into equal parts, the first `shaded` coloured. */

@@ -35,7 +35,7 @@ export function advance(course: Course, state: RunState, flapQueued: boolean, fl
   return stepRun(course, state, flap);
 }
 
-const shown = (q: PublicQuestion): ShownQuestion => ({ id: q.slot, parts: q.parts, spoken: q.spoken, prompt: q.prompt, choices: q.choices, choiceLabels: q.choiceLabels, maxLength: q.maxLength, input: q.input });
+const shown = (q: PublicQuestion): ShownQuestion => ({ id: q.slot, parts: q.parts, spoken: q.spoken, prompt: q.prompt, choices: q.choices, choiceLabels: q.choiceLabels, maxLength: q.maxLength, input: q.input, figure: q.figure });
 
 /** "6 × 7 = 42" from the question's parts, putting the answer where the question mark was. */
 export function factText(parts: readonly string[], answer: number): string {

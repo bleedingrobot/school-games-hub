@@ -155,7 +155,7 @@ const CNT_TAGS = ['MS.Y5.NUM.NS.P3'];
 const STEPS = [1000, 10000, 100000];
 const unitFor = (step: number) => (step === 100000 ? 1000 : 50);
 
-/** Changes one place, or crosses just one place along (49 000 + 1000, 70 250 − 1000). */
+/** Changes one place, or crosses just one place along (49 000 + 1000, 70 250 − 1000). Checks a question's numbers. */
 function stepOk(n: number, step: number, up: boolean): boolean {
   if (!STEPS.includes(step) || !isInt(n, Math.max(step, 10000), 999999) || n % unitFor(step) !== 0) return false;
   const r = up ? n + step : n - step;
@@ -165,24 +165,28 @@ function stepOk(n: number, step: number, up: boolean): boolean {
   return d >= 1 || dig(n, step * 10) >= 1;
 }
 
+/**
+ * New questions change one place only, never carrying or borrowing (46 300 + 10 000, 70 250 − 1000). James, 26 Nov 2026:
+ * "10 000 less than 503 800" needed borrowing from the column above. (stepOk stays wider so older answers still read back.)
+ */
+const noCarry = (n: number, step: number, up: boolean) => (up ? dig(n, step) <= 8 : dig(n, step) >= 1);
+
 const rollStep = (up: boolean) => (_k: string, r: () => number) => {
   for (;;) {
     const step = STEPS[int(r, 0, 2)];
     const u = unitFor(step);
     const n = u * int(r, Math.ceil(Math.max(step, 10000) / u), Math.floor(999999 / u));
-    if (stepOk(n, step, up)) return [n, step];
+    if (stepOk(n, step, up) && noCarry(n, step, up)) return [n, step];
   }
 };
 
 const stepNames = (n: number, step: number, up: boolean): Named => {
-  const r = up ? n + step : n - step;
   const sign = up ? 1 : -1;
   return {
     'went the wrong way': n - sign * step,
     'changed the next place along': n + sign * step * 10,
     'changed the place below': n + sign * (step / 10),
     'counted in the wrong size': n + sign * (step === 1000 ? 10000 : 1000),
-    [up ? 'forgot to carry' : 'forgot to take from the next place']: up ? r - step * 10 : r + step * 10,
     'left the number as it was': n,
   };
 };

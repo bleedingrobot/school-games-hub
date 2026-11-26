@@ -78,10 +78,17 @@ function partition(key: string, label: string, lo: number, hi: number): Family {
   };
 }
 
-/** "10 more than 395": steps are 10s (band 1) or 100s and 1000s (band 2). Half the questions cross into the next place. */
+/**
+ * "10 more than 365": steps are 10s (band 1) or 100s and 1000s (band 2). New questions never cross into the next place, so
+ * no carrying or borrowing is needed (James, 26 Nov 2026). `ok` stays wider so older answers that crossed still read back.
+ */
 function moreLess(key: string, label: string, steps: number[], lo: number, hi: number): Family {
   const ok = (n: number, v: number, step: number) =>
     isInt(v, 0, 1) && steps.includes(step) && isInt(n, lo, hi) && isInt(v === 0 ? n + step : n - step, lo - step, hi + step);
+  const noCarry = (n: number, v: number, step: number) => {
+    const d = digitAt(n, Math.log10(step));
+    return v === 0 ? d <= 8 : d >= 1;
+  };
   return {
     label,
     curriculumTags: TODO('place-value-more-less'),
@@ -90,22 +97,19 @@ function moreLess(key: string, label: string, steps: number[], lo: number, hi: n
       const step = steps[int(r, 0, steps.length - 1)];
       const v = int(r, 0, 1);
       for (;;) {
-        let n = int(r, lo, hi);
-        // Make it cross the next place half the time (395 + 10, 2045 − 100).
-        if (r() < 0.5) {
-          const digit = v === 0 ? 9 : 0;
-          n = n - digitAt(n, Math.log10(step)) * step + digit * step;
-        }
-        if (ok(n, v, step)) return [n, v, step];
+        const n = int(r, lo, hi);
+        if (ok(n, v, step) && noCarry(n, v, step)) return [n, v, step];
       }
     },
     make: (_k, [n, v, step]) => {
       if (!ok(n, v, step)) return null;
       const parts = [`${show(step)} ${v === 0 ? 'more' : 'less'} than`, show(n), '=', '?'];
       const answer = v === 0 ? n + step : n - step;
-      // The slip: only the one digit changes, without carrying (395 + 10 → 305).
+      // The slips: the place below changed (365 + 10 → 366), one more or less, the place above, or the wrong way.
+      // An older question that crossed (395 + 10) also offers "only the one digit changed" (305).
       const place = Math.log10(step);
-      const slip = n - digitAt(n, place) * step + ((digitAt(n, place) + (v === 0 ? 1 : 9)) % 10) * step;
+      const below = v === 0 ? n + step / 10 : n - step / 10;
+      const slip = noCarry(n, v, step) ? below : n - digitAt(n, place) * step + ((digitAt(n, place) + (v === 0 ? 1 : 9)) % 10) * step;
       return { parts, spoken: speak(parts), answer, wrong: [slip, v === 0 ? n + 1 : n - 1, v === 0 ? n + step * 10 : n - step * 10, v === 0 ? n - step : n + step] };
     },
   };

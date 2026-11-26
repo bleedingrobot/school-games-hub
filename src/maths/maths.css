@@ -350,10 +350,15 @@
   font-size: clamp(1.8rem, 7.5vw, 2.5rem);
 }
 
-/* A sum with no words stays on one line; QuestionModal shrinks the text if it is too wide for the box. */
+/* Every question stays on one line; QuestionModal shrinks the text if it is too wide for the box, and sets data-wrap
+   only when a long sentence still won't fit at the smallest readable size. */
 .question__fact[data-one-line] {
   flex-wrap: nowrap;
   white-space: nowrap;
+}
+.question__fact[data-one-line][data-wrap] {
+  flex-wrap: wrap;
+  white-space: normal;
 }
 
 /* The decimal pad has an extra row: shorter keys on Chromebook-height screens so the tick stays in view. */
@@ -684,4 +689,29 @@
 .fig__label--ask { fill: var(--q-wrong); font-size: 18px; }
 .question__gap {
   white-space: nowrap;
+}
+
+/* "Help me" on a remainder question: what r means, with dots in groups and the left-overs in another colour. */
+.remainder-help { max-width: 320px; font-size: 14px; line-height: 1.35; text-align: center; }
+.remainder-help p { margin: 2px 0; }
+.remainder-help__sum { font-size: 20px; font-weight: 900; }
+.remainder-help__dots { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; font-size: 16px; letter-spacing: 1px; }
+.remainder-help__group { padding: 0 4px; border-radius: 8px; background: color-mix(in srgb, currentColor 10%, transparent); }
+.remainder-help__left { color: #d97706; }
+.axis-help__pic { width: 150px; height: 132px; display: block; margin: 0 auto; }
+.axis-help__grid line { stroke: color-mix(in srgb, currentColor 18%, transparent); stroke-width: 1; }
+.axis-help__axis { stroke-width: 3; stroke-linecap: round; }
+.axis-help__axis--x, .axis-help__dot--x { stroke: #2563eb; fill: #2563eb; }
+.axis-help__axis--y, .axis-help__dot--y { stroke: #d97706; fill: #d97706; }
+.axis-help__x { color: #2563eb; }
+.axis-help__y { color: #d97706; }
+.axis-help__name { fill: currentColor; font-size: 13px; font-weight: 900; font-style: italic; }
+.axis-help__label { fill: currentColor; font-size: 11px; font-weight: 800; }
+
+/* Keep each choice's text clear of its 1-4 key badge (the badge sat on the "(" of "(9, 0)"). Touch screens hide the badge. */
+@media not ((hover: none) and (pointer: coarse)) {
+  .question__choice:has(.question__choice-key) {
+    padding-left: 36px;
+    padding-right: 10px;
+  }
 }

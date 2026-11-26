@@ -40,8 +40,11 @@ export function hintFor(q: Pick<Question, 'answer' | 'choices' | 'parts'>): Hint
  * Which free "Help me" picture a question gets (James, 26 Nov 2026): every kind of angle on angle-picture questions, and what
  * < > ≤ ≥ ≠ mean on any question that shows one of them. Unlike the hint it costs nothing and never narrows the answer.
  */
-export function helpKind(q: Pick<Question, 'parts' | 'prompt' | 'choiceLabels' | 'figure'>): 'angles' | 'symbols' | null {
+export function helpKind(q: Pick<Question, 'parts' | 'prompt' | 'choiceLabels' | 'figure'>): 'angles' | 'symbols' | 'remainder' | 'axes' | null {
   if (isFigure(q.figure) && q.figure.kind === 'angle') return 'angles';
+  // A division with a remainder ("9 ÷ 4 = ? r 1"): what the r means. A point on an axis: a small grid (James, 26 Nov 2026).
+  if (q.parts.includes('r')) return 'remainder';
+  if (/\b[xy]-axis\b/.test(q.prompt ?? '')) return 'axes';
   const texts = [...q.parts, q.prompt ?? '', ...(q.choiceLabels ?? [])];
   return texts.some((t) => /[<>≤≥≠]/.test(t)) ? 'symbols' : null;
 }

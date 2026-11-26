@@ -292,7 +292,26 @@ function Body({ f }: { f: FigureSpec }) {
         hexagon: reg(6),
         octagon: reg(8),
       };
-      return <polygon points={table[f.name] ?? table.square} className="fig__shape" />;
+      const points = table[f.name] ?? table.square;
+      if (!f.side) return <polygon points={points} className="fig__shape" />;
+      // Label the lowest side (its middle nearest the bottom), just outside the shape.
+      const pts = points.split(' ').map((p) => p.split(',').map(Number) as [number, number]);
+      const cx = pts.reduce((t, p) => t + p[0], 0) / pts.length;
+      const cy = pts.reduce((t, p) => t + p[1], 0) / pts.length;
+      const mids = pts.map((p, i) => {
+        const q = pts[(i + 1) % pts.length];
+        return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2] as [number, number];
+      });
+      const [mx, my] = mids.reduce((best, m) => (m[1] > best[1] + 0.5 ? m : best));
+      const len = Math.hypot(mx - cx, my - cy) || 1;
+      const lx = mx + ((mx - cx) / len) * 14;
+      const ly = Math.min(H - 6, my + ((my - cy) / len) * 12);
+      return (
+        <>
+          <polygon points={points} className="fig__shape" />
+          <Label x={lx} y={ly} text={f.side} anchor={Math.abs(mx - cx) < 4 ? 'middle' : mx > cx ? 'start' : 'end'} />
+        </>
+      );
     }
     case 'grid': {
       const n = Math.max(4, Math.min(10, Math.round(f.size)));

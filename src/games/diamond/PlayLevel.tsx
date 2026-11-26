@@ -347,7 +347,7 @@ export function PlayLevel({
   }, []);
 
   const q = slot !== null ? started.questions[slot] : undefined;
-  const shown: ShownQuestion | null = q ? { id: started.seed * 10 + q.slot, parts: q.parts, spoken: q.spoken, prompt: q.prompt, choices: q.choices, choiceLabels: q.choiceLabels, maxLength: q.maxLength, input: q.input } : null;
+  const shown: ShownQuestion | null = q ? { id: started.seed * 10 + q.slot, parts: q.parts, spoken: q.spoken, prompt: q.prompt, choices: q.choices, choiceLabels: q.choiceLabels, maxLength: q.maxLength, input: q.input, figure: q.figure } : null;
 
   const onSubmit = async (value: number, ms: number): Promise<MarkedAnswer> => {
     const r = await backend.answer(started.seed, slot!, value, ms);

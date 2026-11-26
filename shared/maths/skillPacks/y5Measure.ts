@@ -53,7 +53,7 @@ const sq = oneKey(
       {
         parts: [`Square, side ${s} cm`, 'perimeter', '=', '?', 'cm'],
         spoken: `A square has sides of ${s} centimetres. What is its perimeter in centimetres?`,
-        figure: { kind: 'shape', name: 'square' },
+        figure: { kind: 'shape', name: 'square', side: `${s} cm` },
         answer: 4 * s,
       },
       { 'added two sides': 2 * s, 'counted three sides': 3 * s, 'found the area': s * s, 'added four to the side': s + 4, 'five sides': 5 * s },
@@ -110,7 +110,7 @@ const reg = oneKey(
       {
         parts: [`${name}, side ${s} cm`, 'perimeter', '=', '?', 'cm'],
         spoken: `A ${name.toLowerCase()} has sides of ${s} centimetres. What is its perimeter in centimetres?`,
-        figure: { kind: 'shape', name: fig },
+        figure: { kind: 'shape', name: fig, side: `${s} cm` },
         answer: n * s,
       },
       { 'counted one side too few': (n - 1) * s, 'counted one side too many': (n + 1) * s, 'added the sides to the side': n + s, 'found the side squared': s * s, 'added two sides': 2 * s },
