@@ -15,6 +15,7 @@ import type { ClassLiveSound } from './audio';
 import { lineOf } from './CornersScene';
 import { GhostBoard, GhostToken } from './GhostBoard';
 import { useEdgeLink } from './edgeLink';
+import { useNetStats } from './netStats';
 import type { ClassLiveLink } from './link';
 
 type Person = ScreenView['people'][number];
@@ -60,10 +61,20 @@ export function GhostScene({ screen, game, link: baseLink, room, clock, sound, s
 
   const phase: 'wait' | 'ready' | 'hunt' | 'show' = !r ? 'wait' : r.done ? 'show' : t < r.startAt ? 'ready' : 'hunt';
   const running = phase === 'ready' || phase === 'hunt';
+  // Before-and-after numbers for the Cloudflare pilot (netStats.ts).
+  const netStats = useNetStats(baseLink, room, 'screen', screen.state === 'live', over, !!screen.edge);
   useEffect(() => {
     if (!room || over) return;
     let live = true;
-    const read = () => void link.positions(room).then((p) => { if (live && p) targets.current = p; }, () => undefined);
+    const read = () => {
+      const t0 = performance.now();
+      void link.positions(room).then((p) => {
+        const before = targets.current;
+        const moved = p ? Object.entries(p).filter(([id, q]) => !before[id] || before[id].x !== q.x || before[id].y !== q.y).length : 0;
+        if (running) netStats.current?.call(performance.now() - t0, !!p, moved > 0, moved);
+        if (live && p) targets.current = p;
+      }, () => { if (running) netStats.current?.call(performance.now() - t0, false, false); });
+    };
     read();
     const id = window.setInterval(read, running ? (link.readMs ?? 300) : 2000);
     return () => { live = false; window.clearInterval(id); };

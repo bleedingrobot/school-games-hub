@@ -285,6 +285,8 @@ export interface ClassLiveServices {
   clashBoard(room: number, round: number): Promise<{ tiles: string; painted: Record<string, number> } | Busy>;
   /** Colour Clash: a paint bomb's tiles take the team's colour. */
   clashBomb(room: number, round: number, team: number, player: string, tiles: number[]): Promise<void>;
+  /** Keeps one device's connection numbers for a game (classlive_netstats; the Cloudflare pilot's before-and-after). */
+  saveStats?(room: number, player: string, part: 'pad' | 'screen', version: 'db' | 'edge', stats: Record<string, number>): Promise<void>;
   /** Cloudflare's rooms (shared/classlive/edge.ts), when its secrets are set. */
   edge?: EdgeServices;
 }
@@ -676,6 +678,7 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
   return { refuse: busy() };
 }
 
+const NET_KEYS = ['seconds', 'calls', 'empty', 'fresh', 'rttP50', 'rttP95', 'gapP50', 'gapP95', 'freshPerS', 'movedPerS'] as const;
 const readRoom = (v: unknown): number | null => (Number.isSafeInteger(v) && (v as number) > 0 ? (v as number) : null);
 const readCode = (v: unknown): string | null => (typeof v === 'string' && /^\d{4}$/.test(v.trim()) ? v.trim() : null);
 
@@ -769,7 +772,8 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     if (!teach.enabled) return no(403, OFF, 'off');
     const session = newSession(body, Math.floor(sv.random() * 2 ** 31), () => sv.random());
     if (typeof session === 'string') return no(400, session);
-    if (sv.edge?.allowed(who, session.activity)) session.edge = true;
+    // James can still pick the school server for a game, to compare (body.edge false).
+    if (body.edge !== false && sv.edge?.allowed(who, session.activity)) session.edge = true;
     // One live game at a time, of any kind (James, 26 Nov 2026 NZ: the database stalled with two classes on).
     const running = await sv.openGames();
     if (running === 'busy') return busy();
@@ -865,6 +869,28 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     } catch {
       return busy();
     }
+  }
+
+  // A Ghost Tag device's connection numbers at the end of a game (src/games/classlive/netStats.ts).
+  if (action === 'stats') {
+    const room = readRoom(body.room);
+    const part = body.part === 'pad' || body.part === 'screen' ? body.part : null;
+    const version = body.version === 'edge' || body.version === 'db' ? body.version : null;
+    if (!room || !part || !version || !body.stats || typeof body.stats !== 'object' || !sv.saveStats) return no(400, "That couldn't be read.");
+    const row = await sv.loadRoom(room);
+    if (row === 'busy') return busy();
+    if (!row || row.session.activity !== 'ghost' || (row.teacher !== who && !row.session.players[who])) return no(403, "That isn't your room.", 'not-yours');
+    const stats: Record<string, number> = {};
+    for (const k of NET_KEYS) {
+      const v = (body.stats as Record<string, unknown>)[k];
+      if (typeof v === 'number' && Number.isFinite(v)) stats[k] = Math.max(0, Math.min(1e7, Math.round(v * 10) / 10));
+    }
+    try {
+      await sv.saveStats(room, who, part, version, stats);
+    } catch {
+      return busy();
+    }
+    return ok({ room });
   }
 
   // ---- Pupil steps ----

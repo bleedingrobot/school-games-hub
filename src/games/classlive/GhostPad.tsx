@@ -18,6 +18,7 @@ import { Joystick, useKeys } from './CornersPad';
 import { GhostBoard, GhostToken } from './GhostBoard';
 import { GhostHelp } from './GhostCard';
 import { useEdgeLink } from './edgeLink';
+import { useNetStats } from './netStats';
 import type { ClassLiveLink } from './link';
 import './controller.css';
 
@@ -65,6 +66,8 @@ export function GhostPad({ link: baseLink, room, view, me, setMe, setView, clock
   const seenRound = useRef(-1);
   const ghost = !!mg?.ghost || (!!seen.current?.me.ghost && !!r && !r.done && seenRound.current === r.n && tNow() >= r.startAt);
   const live = view.state === 'live' && !!r && !r.done;
+  // Before-and-after numbers for the Cloudflare pilot (netStats.ts).
+  const netStats = useNetStats(baseLink, room, 'pad', view.state === 'live', view.state === 'over', !!view.edge);
 
   useEffect(() => {
     if (room === null) return;
@@ -90,7 +93,11 @@ export function GhostPad({ link: baseLink, room, view, me, setMe, setView, clock
           lastSent.current = now;
           const send = link.ghostMove ?? (async () => null);
           const n = r.n;
-          void send(room, p.x, p.y).then((got) => { if (got) { seen.current = got; seenRound.current = n; } }, () => undefined);
+          const t0 = performance.now();
+          void send(room, p.x, p.y).then((got) => {
+            netStats.current?.call(performance.now() - t0, !!got, !!got && got !== seen.current);
+            if (got) { seen.current = got; seenRound.current = n; }
+          }, () => { netStats.current?.call(performance.now() - t0, false, false); });
         }
         if (!ghost && grabbing.current === null) {
           const it = r.items.find((x) => Math.hypot(x.x - p.x, x.y - p.y) < GRAB_R + AVATAR_R);

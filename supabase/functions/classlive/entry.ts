@@ -90,6 +90,10 @@ Deno.serve(
     random: () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32,
     userIdFor: userIdFromToken(admin.auth),
     edge: edgeServices(),
+    async saveStats(room, player, part, version, stats) {
+      const { error } = await admin.from('classlive_netstats').upsert({ room, player, part, version, stats, at: new Date().toISOString() });
+      if (error) throw new Error(`classlive_netstats failed (${error.code ?? 'unknown'})`);
+    },
     async teacherClass(teacher, classId) {
       const row = await call<{ enabled: boolean; show_names: boolean; school_id: number } | null>('classlive_teacher_class', { teacher, target_class: classId });
       if (row === 'busy') return 'busy';
