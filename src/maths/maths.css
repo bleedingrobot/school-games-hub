@@ -717,3 +717,8 @@
     padding-right: 10px;
   }
 }
+
+/* "Help me" on adding or taking away fractions with different bottoms. */
+.fraction-help__step { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 22px; font-weight: 900; }
+.fraction-help__step span { font-size: 13px; font-weight: 700; opacity: 0.8; }
+.fraction-help .qfrac, .fraction-help .qfrac * { color: var(--q-ink); }

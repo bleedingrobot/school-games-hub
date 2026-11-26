@@ -13,9 +13,10 @@
  * server as it is given (`cryCheck`), and the mark is kept with the fight. A round's bonus then comes from that mark,
  * so the replay still needs nothing the browser could change. A fight without `questions` is an old-style one, as above.
  *
- * **The maths comes in slowly** (from 17 Nov 2026). A mine fight at depth 0-5 asks only before round 1, and depth 6-10 before
- * rounds 1 and 2; the bonus the last question earned (or nothing, after a wrong answer or "No thanks") then plays every
- * round after it. Depth 11 and deeper, and the monster fight, ask every round as before.
+ * **One question a mine fight** (James, 26 Nov 2026; from 17 Nov it was one to depth 5, two to depth 10, then every round).
+ * Every mine fight (and a raid's hero fight), at any depth, asks only before round 1. A right answer lets the player pick
+ * more damage or healing, and that bonus plays every round of the fight; a wrong answer or "No thanks" means no bonus.
+ * The season monster fight still asks every round.
  */
 import type { FactAnswer } from '../maths/leitner';
 import { markAnswer, pickQuestion, type PracticalQuestion, type PracticalSettings, type YearBand } from '../maths/practical';
@@ -43,12 +44,7 @@ export interface FightMaths {
   marks?: readonly (CryMark | null | undefined)[];
 }
 
-/** Mine fights this deep or less ask only before round 1. */
-export const CRY_ONCE_TO = 5;
-/** Mine fights this deep or less (and deeper than CRY_ONCE_TO) ask before rounds 1 and 2. */
-export const CRY_TWICE_TO = 10;
-
-/** What decides how often a fight asks: its depth, and whether it is the monster fight. */
+/** What decides how often a fight asks: whether it is the monster fight (the depth no longer matters). */
 export interface CryPace {
   depth: number;
   monster?: unknown;
@@ -56,10 +52,7 @@ export interface CryPace {
 
 /** How many rounds of a fight ask a Battle Cry question (Infinity: every round). */
 export function cryAskRounds(fight: CryPace): number {
-  if (fight.monster) return Infinity;
-  if (fight.depth <= CRY_ONCE_TO) return 1;
-  if (fight.depth <= CRY_TWICE_TO) return 2;
-  return Infinity;
+  return fight.monster ? Infinity : 1;
 }
 
 /** Does `round` (1 is the first) of this fight ask a Battle Cry question? */

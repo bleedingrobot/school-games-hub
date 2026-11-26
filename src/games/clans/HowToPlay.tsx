@@ -1,5 +1,4 @@
 import { CONFIG } from '../../../shared/clans/config';
-import { CRY_ONCE_TO, CRY_TWICE_TO } from '../../../shared/clans/battleCry';
 import { ACHIEVEMENTS } from '../../../shared/clans/rewards';
 import { VILLAGE_BUILDINGS } from '../../../shared/clans/types';
 
@@ -28,8 +27,7 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
         </section>
         <section aria-labelledby="htp-cry">
           <h3 id="htp-cry">Battle Cry</h3>
-          <p>Before each round you get a maths question from your own maths: the same kind you are working on in the other maths games. Get it right and your clan chooses a power-up: <strong>{percent(CONFIG.battleCryDamage)}% more damage</strong> or <strong>a little healing</strong> for everyone.</p>
-          <p>Near the top of the Mines the maths comes in slowly. At depth {CRY_ONCE_TO} or less there is one question, before the first round, and its power-up lasts the whole fight. Down to depth {CRY_TWICE_TO} there are two: before rounds 1 and 2, and the second one's power-up lasts the rest of the fight. Deeper than that, and in the monster fight, every round has a question.</p>
+          <p>At the start of each fight in the Mines you get one maths question from your own maths: the same kind you are working on in the other maths games. Get it right and your clan chooses a power-up for the whole fight: <strong>{percent(CONFIG.battleCryDamage)}% more damage</strong> every round, or <strong>healing for everyone</strong> every round. It is one question at every depth. Only the monster fight asks a question every round.</p>
           <p>Get it wrong? Nothing is lost, and the game shows you the right answer. There is no timer. Not sure? Press <strong>No thanks</strong> and the round goes on as normal.</p>
         </section>
         <section aria-labelledby="htp-maths">
@@ -44,7 +42,7 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
         <section aria-labelledby="htp-shop">
           <h3 id="htp-shop">The Market</h3>
           <p>Every class has its own weapons, armour and a third item, like a shield or a charm. Each hero starts with the first of each. In the Market, pick a hero to see all their items, from what they wear now to the best there is, each with a <strong>Buy</strong> button.</p>
-          <p>Items give the stats marked <strong>(R)</strong>, as in the Training Hall. A bigger Smithy sells better items. Answer a maths question when you buy for <strong>{CONFIG.shopDiscount}% off</strong>.</p>
+          <p>Each member's most important stat is marked <strong>★ Main</strong> in the Training Hall and the Market, and one or two more are marked <strong>Also good</strong>. A bigger Smithy sells better items. Answer a maths question when you buy for <strong>{CONFIG.shopDiscount}% off</strong>.</p>
         </section>
         <section aria-labelledby="htp-train">
           <h3 id="htp-train">The Training Hall</h3>
@@ -76,7 +74,7 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
         <section aria-labelledby="htp-raids">
           <h3 id="htp-raids">Village Raids</h3>
           <p>Raid another clan's village anywhere in your school, from your very first day. You can raid <strong>{CONFIG.classRaids.perDay} villages a day</strong>, each a different one. Your teacher can switch raids on or off.</p>
-          <p>First your army storms their walls (one maths question makes it hit harder). Then your heroes fight a copy of their heroes, with a Battle Cry every round.</p>
+          <p>First your army storms their walls (one maths question makes it hit harder). Then your heroes fight a copy of their heroes, with one Battle Cry at the start.</p>
           <p><strong>Nobody loses anything.</strong> No gold, heroes, troops or buildings are ever taken. A win earns gold and Banners; a loss still earns a little. When your own village holds off a raid, you earn gold and Banners too.</p>
           <p>Your village helps: the Forge and your army break their walls, Walls and Tower defend yours, and the Strongroom adds gold to every raid. Banners count for the week and start again every Monday.</p>
         </section>

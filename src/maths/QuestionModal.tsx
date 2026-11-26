@@ -12,7 +12,7 @@
  */
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { spokenLabel } from '../../shared/maths/banded';
-import { helpKind, hintFor } from '../../shared/maths/hint';
+import { fractionSteps, helpKind, hintFor } from '../../shared/maths/hint';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { AngleNames, Figure } from './Figure';
 import { isFigure } from '../../shared/maths/figure';
@@ -41,10 +41,23 @@ const FRACTION = /^(?:(\d+|\?) )?(\d+|\?)\/(\d+|\?)$/;
 const ALGEBRA = /^(?=.*[a-z])(?!.*[a-z]{2})(?!.*\d\s+[a-z])[a-z\d\s+−×÷=.²³()]+$/;
 
 /** Numbers each followed by a short unit: 9.1 km, 1/3 h, 4 h 15 min, 2 cm², 6.1 L. */
-const QUANTITY = /^[\d.,/]+ [a-zA-Z]{1,3}[²³]?( [\d.,/]+ [a-zA-Z]{1,3}[²³]?)*$/;
+const QUANTITY = /^[\d.,/½]+ (?:hours?|minutes?|[a-zA-Z]{1,3})[²³]?( [\d.,/½]+ (?:hours?|minutes?|[a-zA-Z]{1,3})[²³]?)*$/;
+
+/**
+ * Time units as words (James, 26 Nov 2026: "3 h = ? min" should read "3 hours = ? minutes"): h after a number becomes
+ * hour(s), min becomes minute(s), and a lone h or min right after the blank becomes hours or minutes.
+ */
+export function timeWords(text: string, unit?: boolean): string {
+  if (unit && (text === 'h' || text === 'min')) return text === 'h' ? 'hours' : 'minutes';
+  return text.replace(/(^|\s)([\d.,/½]+|\?) (h|min)(?=\s|$)/g, (_m, pre: string, n: string, u: string) => {
+    const one = n === '1' || n === '½' || /^\d+\/\d+$/.test(n);
+    return `${pre}${n} ${u === 'h' ? (one ? 'hour' : 'hours') : one ? 'minute' : 'minutes'}`;
+  });
+}
 
 /** One part of the question: a fraction, a word, algebra, or a plain number or sign. `blank` stands in for '?'. */
-function Part({ text, blank, unit }: { text: string; blank: ReactNode; unit?: boolean }) {
+function Part({ text: raw, blank, unit }: { text: string; blank: ReactNode; unit?: boolean }) {
+  const text = timeWords(raw, unit);
   const fill = (piece: string) => (piece === '?' ? blank : piece);
   const f = FRACTION.exec(text);
   if (f) {
@@ -137,6 +150,64 @@ export function AxisHelp() {
       </p>
       <p>
         On the <strong className="axis-help__y">y-axis</strong> (the line going up) the <strong>first</strong> number is 0, like (0, 3).
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Adding or taking away fractions with different bottoms: which fraction to change into an equivalent one and how, worked
+ * from this question's own numbers. It stops before the final answer ("1/8 + 6/8 = ?/8").
+ */
+const PARTS_NAMES: Record<number, string> = { 2: 'halves', 3: 'thirds', 4: 'quarters', 5: 'fifths', 6: 'sixths', 7: 'sevenths', 8: 'eighths', 9: 'ninths', 10: 'tenths', 12: 'twelfths', 15: 'fifteenths', 16: 'sixteenths', 20: 'twentieths', 24: 'twenty-fourths', 100: 'hundredths' };
+
+export function FractionHelp({ parts }: { parts: string[] }) {
+  const steps = fractionSteps(parts);
+  if (!steps) return null;
+  const { a, b, sign, bottom, changes } = steps;
+  const after = ([n, d]: [number, number]) => (d === bottom ? [n, d] : [n * (bottom / d), bottom]);
+  const [a2, b2] = [after(a), after(b)];
+  const f = (n: number, d: number) => <Part text={`${n}/${d}`} blank={null} />;
+  const one = changes.length === 1;
+  const word = sign === '+' ? 'add' : 'take away';
+  const named = PARTS_NAMES[bottom] ?? `${bottom}ths`;
+  return (
+    <div className="remainder-help fraction-help">
+      <p>
+        <strong>Make the bottoms the same</strong> before you {word}.
+      </p>
+      <p>
+        {one
+          ? `${bottom} is a multiple of ${changes[0].d}, so change ${changes[0].n}/${changes[0].d} into ${named}.`
+          : `${a[1]} and ${b[1]} both go into ${bottom}, so change both fractions into ${named}.`}
+      </p>
+      {changes.map((c) => (
+        <p key={`${c.n}/${c.d}`} className="fraction-help__step">
+          {f(c.n, c.d)} <span>× {c.by} top and bottom</span> = {f(c.n * c.by, bottom)}
+        </p>
+      ))}
+      <p className="fraction-help__step">
+        {f(a2[0], a2[1])} {sign} {f(b2[0], b2[1])} = <Part text={`?/${bottom}`} blank="?" />
+      </p>
+      <p>Now {word} the tops. The bottom stays {bottom}.</p>
+    </div>
+  );
+}
+
+/** Hours into minutes: 1 hour is 60 minutes, so use the 6 times table. The worked example is never the question itself. */
+export function HoursHelp({ parts }: { parts: string[] }) {
+  const asked = /^(\d+) h$/.exec(parts[0] ?? '');
+  const ex = asked && Number(asked[1]) === 4 ? 5 : 4;
+  return (
+    <div className="remainder-help">
+      <p>
+        <strong>1 hour = 60 minutes.</strong> Use your <strong>6 times table</strong>, then put a 0 on the end.
+      </p>
+      <p className="remainder-help__sum">
+        {ex} × 6 = {ex * 6}, so {ex} × 60 = {ex * 60}
+      </p>
+      <p>
+        {ex} hours = {ex * 60} minutes. Half an hour is 30 minutes.
       </p>
     </div>
   );
@@ -298,7 +369,7 @@ export function QuestionModal({
       const pad = getComputedStyle(holder);
       const room = holder.clientWidth - parseFloat(pad.paddingLeft) - parseFloat(pad.paddingRight);
       delete el.dataset.wrap;
-      const floor = hasWords ? 31 : 16;
+      const floor = hasWords ? 22 : 16;
       let size = parseFloat(getComputedStyle(el).fontSize);
       while (el.scrollWidth > room + 1 && size > floor) {
         size -= 1;
@@ -457,7 +528,7 @@ export function QuestionModal({
             <button type="button" className="question__hintbtn" aria-expanded={helpOpen} onClick={() => setHelpOpen((o) => !o)}>
               {helpOpen ? 'Hide help' : 'Help me'}
             </button>
-            {helpOpen && (help === 'angles' ? <AngleNames /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : <SymbolHelp />)}
+            {helpOpen && (help === 'angles' ? <AngleNames /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : help === 'fractions' ? <FractionHelp parts={question.parts} /> : help === 'hours' ? <HoursHelp parts={question.parts} /> : <SymbolHelp />)}
           </div>
         )}
         {question.prompt && <p className="question__prompt">{question.prompt}</p>}

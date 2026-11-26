@@ -118,7 +118,11 @@ export type GameSound =
   | 'chaos'
   | 'draw'
   | 'medal'
-  | 'warp';
+  | 'warp'
+  | 'rare'
+  | 'ultra'
+  | 'shiny'
+  | 'shiny-max';
 
 export function playSound(sound: GameSound) {
   switch (sound) {
@@ -223,5 +227,25 @@ export function playSound(sound: GameSound) {
       // A bright chime: a quick sparkle up, then a ringing top note.
       [1047, 1319, 1568].forEach((f, i) => setTimeout(() => tone(f, 0.12, 0.12, 'triangle', 1), i * 70));
       return setTimeout(() => tone(2093, 0.7, 0.1, 'sine', 1), 220);
+    case 'rare':
+      // Maths Monsters: a rare monster! A swoosh up, a quick run of notes and a ringing top.
+      tone(300, 0.25, 0.12, 'sine', 3);
+      [659, 880, 1175].forEach((f, i) => setTimeout(() => tone(f, 0.12, 0.14, 'triangle', 1), 120 + i * 80));
+      return setTimeout(() => tone(1568, 0.6, 0.12, 'triangle', 1), 380);
+    case 'ultra':
+      // An ultra rare: a boom, then a bright fanfare to a long top note.
+      tone(110, 0.4, 0.25, 'sawtooth', 0.4);
+      [[523, 120, 0.12], [659, 220, 0.12], [784, 320, 0.12], [1047, 440, 0.18], [784, 620, 0.1], [1047, 720, 0.7]].forEach(([f, ms, len]) => setTimeout(() => tone(f, len, 0.17, 'triangle', 1.01), ms));
+      return setTimeout(() => tone(2093, 0.6, 0.06, 'sine', 1), 760);
+    case 'shiny':
+      // A shiny: a twinkly glissando up, twice, then a sparkling chord.
+      [1319, 1568, 1976, 2349, 2637, 3136].forEach((f, i) => setTimeout(() => tone(f, 0.1, 0.08, 'sine', 1), i * 45));
+      [1568, 1976, 2349, 2637, 3136, 3951].forEach((f, i) => setTimeout(() => tone(f, 0.1, 0.07, 'sine', 1), 320 + i * 45));
+      return [1047, 1319, 1568, 2093].forEach((f) => setTimeout(() => tone(f, 0.8, 0.06, 'triangle', 1), 640));
+    case 'shiny-max':
+      // Shiny and rare: the boom and fanfare with the twinkles over the top.
+      playSound('ultra');
+      [2349, 2637, 3136, 3520, 3951].forEach((f, i) => setTimeout(() => tone(f, 0.1, 0.06, 'sine', 1), 300 + i * 50));
+      return [2637, 3136, 3951, 4699].forEach((f, i) => setTimeout(() => tone(f, 0.12, 0.06, 'sine', 1), 900 + i * 50));
   }
 }

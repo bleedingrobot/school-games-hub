@@ -1,4 +1,4 @@
-import { CLASS_FOCUS } from '../../../shared/clans/items';
+import { CLASS_FOCUS, CLASS_MAIN } from '../../../shared/clans/items';
 import type { GearStat } from '../../../shared/clans/types';
 
 /** Kind, short writing for races, classes and mine zones. Our own words; nobody bleeds. */
@@ -57,7 +57,7 @@ export const TRAIN_HELP: Record<string, string> = {
   agility: 'Agility: who goes first in a fight, and how hard you are to hit. Enemies need to beat your agility to land a blow.',
   dexterity: 'Dexterity: your aim. The higher it is above the enemy\'s agility, the more of your hits land.',
   strength: 'Strength: how hard you hit. Damage is about half your strength, so every 2 points adds 1 damage.',
-  wisdom: 'Wisdom: makes your spells stronger and more likely to work, and gives you skill points back faster in a fight.',
+  wisdom: 'Wisdom: makes damage spells and moves hit harder, helps ropes, chains and scares work, and gives you skill points back faster in a fight. Healing grows with level, not wisdom.',
   armor: 'Armour: every point takes 1 damage off each hit you take (an enemy hit always does at least 1).',
   charisma: 'Charisma: not used in fights. The most charming member of the clan opens the talking choices in quests.',
   hp: 'Health: more HP means you can take more hits before being knocked out.',
@@ -73,8 +73,12 @@ export const CARD_HELP: Record<string, string> = {
 };
 
 /**
- * What is worth training for each class (R = recommended; the list is `CLASS_FOCUS`, which the Market's items follow too).
+ * What is worth training for each class (★ Main and Also good; the lists are `CLASS_MAIN` and `CLASS_FOCUS`, which the Market's items follow too).
  * Armour and health are for the ones who stand at the front; dexterity for anyone who hits, as a miss does nothing however
  * strong the arm; SP for anyone whose best hits are moves.
  */
 export const isRecommended = (cls: string, key: string) => (CLASS_FOCUS[cls] ?? []).includes(key as GearStat);
+
+/** How strongly a stat is recommended for a class: its main stat, also good, or neither. */
+export const recommendKind = (cls: string, key: string): 'main' | 'also' | null =>
+  CLASS_MAIN[cls] === key ? 'main' : isRecommended(cls, key) ? 'also' : null;
