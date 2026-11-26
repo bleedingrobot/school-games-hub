@@ -12,12 +12,16 @@ import type { Figure } from '../figure';
 export type Shade = 'a' | 'b';
 
 export type Picture =
-  /** Five- or ten-frames filled in order: `counts[0]` counters in colour a, then `counts[1]` in colour b. Up to 20 in all. */
-  | { kind: 'frames'; size: 5 | 10; counts: number[] }
+  /** Five- or ten-frames filled in order: `counts[0]` counters in colour a, then `counts[1]` in colour b. Up to 20 in all.
+   * `frames` draws at least that many frames, so there is room up to the total ("4 + ? = 11": a second, empty frame). */
+  | { kind: 'frames'; size: 5 | 10; counts: number[]; frames?: number }
   /** Rows of dots, one row per number. `fives` leaves a small gap after every 5 dots. */
   | { kind: 'dot-rows'; rows: number[]; fives?: boolean }
-  /** A number track: one box per value, '?' boxes drawn highlighted and empty. */
-  | { kind: 'track'; cells: string[] }
+  /**
+   * A number track: one box per value, '?' boxes drawn highlighted and empty. `arcs` draws a jump arrow over each gap,
+   * labelled '+?' or '−?' (the jump size is for the pupil to find), dashed into the missing box.
+   */
+  | { kind: 'track'; cells: string[]; arcs?: '+' | '−' }
   /**
    * A number line from `from` to `to` with a tick every `step`; ticks in `labels` get their number. `marks` are points on
    * the line with a short label ('8253', '−3', ''). `words` labels ticks with words instead (chance: impossible…certain).
@@ -26,10 +30,10 @@ export type Picture =
   /** A hundred square with the first `shaded` squares shaded (row by row). */
   | { kind: 'hundred'; shaded: number }
   /**
-   * Fraction bars, one under another: each cut into `parts` equal parts with the first `shaded` shaded. `label` sits over
-   * the whole bar ('35', '$40', '').
+   * Fraction bars, one under another: each cut into `parts` equal parts with `shaded` shaded, from part `start` (0, the
+   * left end, when left out). `label` sits over the whole bar ('35', '$40', '').
    */
-  | { kind: 'bars'; bars: { parts: number; shaded: number; label?: string; shade?: Shade }[] }
+  | { kind: 'bars'; bars: { parts: number; shaded: number; start?: number; label?: string; shade?: Shade }[] }
   /** Whole circles each cut into `parts`, the first `shaded` parts shaded across them all (mixed numbers, ÷ fractions). */
   | { kind: 'wholes'; count: number; parts: number; shaded: number }
   /** An array: `rows` rows of `cols` dots, then `extra` loose dots in colour b (remainders). `groups` rings each row. */
@@ -46,8 +50,8 @@ export type Picture =
   | { kind: 'clock-24' }
   /** A balance: left and right pan labels ('2x + 3', '11'). */
   | { kind: 'balance'; left: string; right: string }
-  /** Bar towers, one per value, labelled with the value. */
-  | { kind: 'towers'; values: number[] }
+  /** Bar towers, one per value, labelled with the value. `mark: 'range'` colours only the tallest and shortest. */
+  | { kind: 'towers'; values: number[]; mark?: 'range' }
   /** A unit ladder: steps from big to small with the ×/÷ between them ('km', '× 1000', 'm', ...), the two asked highlighted. */
   | { kind: 'unit-ladder'; units: string[]; links: string[]; highlight: string[] }
   /** A figure that the server-side figure kinds already draw (angle, compass, grid, clock...). */

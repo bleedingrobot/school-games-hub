@@ -8,6 +8,7 @@ import { FRACTIONS_HELPERS } from './fractions';
 import { MEASURE_HELPERS } from './measure';
 import { NUMBER_HELPERS } from './number';
 import { pictureFor } from '../pictures';
+import { sum } from './read';
 import { pictureCard, SAME_AS_PICTURE } from './picture';
 import type { HelpCard, HelpContext, HelpQuestion, Helper } from './types';
 
@@ -54,13 +55,18 @@ export function helpCardsFor(q: HelpQuestion, ctx: HelpContext = {}): HelpCard[]
     // A card that can't read this question is left out.
   }
   if (fromPicture && !fromPicture.steps.length) fromPicture = null;
-  if (fromPicture?.kind === 'array') {
+  // An array of dots is counting in lots, so its card goes last, unless the question is a share or a group (÷): then the
+  // rows are the groups and it matches the picture first.
+  const dividing = sum(q)?.op === '÷';
+  if (fromPicture?.kind === 'array' && !dividing) {
     counting = fromPicture;
     fromPicture = null;
   }
   const cards: HelpCard[] = [];
   if (fromPicture) cards.push(tidy(fromPicture));
-  if (topic && !(fromPicture && (SAME_AS_PICTURE.has(topic.title) || topic.title === fromPicture.title))) cards.push(topic);
+  // The same idea twice is left out: the thermometer card and the number-line card, the ladder and the units card.
+  const repeats = (fromPicture?.kind === 'thermometer' && topic?.kind === 'negatives') || (fromPicture?.kind === 'ladder' && topic?.kind === 'units');
+  if (topic && !repeats && !(fromPicture && (SAME_AS_PICTURE.has(topic.title) || topic.title === fromPicture.title))) cards.push(topic);
   if (counting && counting.steps.length) cards.push(tidy(counting));
   return cards;
 }

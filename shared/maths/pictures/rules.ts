@@ -96,17 +96,23 @@ const towers: PictureRule = (q) => {
   const m = /^The numbers ((?:\d+, )*\d+)$/.exec(q.prompt ?? '');
   if (!m || !/^(range|mean)$/i.test(q.parts[0] ?? '')) return null;
   const values = m[1].split(', ').map(Number);
-  return values.length >= 2 && values.length <= 12 ? { kind: 'towers', values } : null;
+  if (values.length < 2 || values.length > 12) return null;
+  return /^range$/i.test(q.parts[0]) ? { kind: 'towers', values, mark: 'range' } : { kind: 'towers', values };
 };
 
 /** Chance: a 0 to 1 line. The words go on only for "how likely", where they can't give the answer away. */
 const chance: PictureRule = (q) => {
   const p = q.prompt ?? '';
   const base = { kind: 'number-line' as const, from: 0, to: 1, step: 0.25, labels: [0, 1] };
-  if (/^How likely is it/i.test(p)) {
-    return { ...base, words: [{ at: 0, label: 'impossible' }, { at: 0.25, label: 'unlikely' }, { at: 0.5, label: 'even chance' }, { at: 0.75, label: 'likely' }, { at: 1, label: 'certain' }] };
+  const words = [{ at: 0, label: 'impossible' }, { at: 0.25, label: 'unlikely' }, { at: 0.5, label: 'even chance' }, { at: 0.75, label: 'likely' }, { at: 1, label: 'certain' }];
+  if (/^How likely is it/i.test(p)) return { ...base, words };
+  // "Likely means P = ?": the other words on the line (the one asked about is for the pupil to place).
+  if (/^Which number fits/i.test(p)) {
+    const asked = (q.parts[0] ?? '').replace(/ means P$/i, '').toLowerCase();
+    return { ...base, words: words.filter((w) => w.label !== asked) };
   }
-  return /^Which (chance word fits|number fits)/i.test(p) ? base : null;
+  // "P = 1 means ?": the numbers on the line, no words.
+  return /^Which chance word fits/i.test(p) ? { ...base, labels: [0, 0.25, 0.5, 0.75, 1] } : null;
 };
 
 // ---------- temperature and negative numbers ----------
@@ -128,7 +134,7 @@ const thermometer: PictureRule = (q) => {
   return to - from <= 60 ? { kind: 'thermometer', from, to, start: a } : null;
 };
 
-/** A line through zero with a tick for every whole number (or every 5 when it's long). */
+/** A line through zero with a tick for every whole number (or every 5 when it's long), the 5s labelled when it's wide. */
 function zeroLine(lo: number, hi: number, marks: { at: number; label: string }[] = []): Picture | null {
   lo = Math.floor(Math.min(lo, 0)) - 1;
   hi = Math.ceil(Math.max(hi, 0)) + 1;
@@ -138,7 +144,9 @@ function zeroLine(lo: number, hi: number, marks: { at: number; label: string }[]
     lo = Math.floor(lo / 5) * 5;
     hi = Math.ceil(hi / 5) * 5;
   }
-  return { kind: 'number-line', from: lo, to: hi, step: long ? 5 : 1, labels: range(lo, hi, long ? 5 : 1), marks };
+  // More than 12 wide, the numbers 1 apart print on top of each other: label only the 5s (0 is one of them).
+  const labels = hi - lo > 12 ? range(lo, hi, 1).filter((v) => v % 5 === 0) : range(lo, hi, 1);
+  return { kind: 'number-line', from: lo, to: hi, step: long ? 5 : 1, labels, marks };
 }
 
 /** "Which is the smallest? −10, −5, −8, 5": the line through zero, nothing marked. */
@@ -157,7 +165,7 @@ const intSum: PictureRule = (q) => {
   if (!s || (s.op !== '+' && s.op !== '−')) return null;
   const known = [s.a, s.b, s.c].filter((n): n is number => n !== null);
   if (known.some((n) => !Number.isInteger(n))) return null;
-  const below = (s.c === null && s.op === '−' && s.a! < s.b!) || known.some((n) => n < 0);
+  const below = (s.c === null && s.op === '−' && s.a! < s.b!) || known.some((n) => n < 0) || solve(s) < 0;
   if (!below) return null;
   const all = [...known, solve(s)];
   const start = s.a ?? s.b!;
@@ -181,13 +189,17 @@ const countLine: PictureRule = (q) => {
 
 // ---------- tracks ----------
 
-/** "0, ?, 20, 30": a number track with the gap as '?'. */
+/** "0, ?, 20, 30": a number track with the gap as '?', and a jump arrow over each gap. */
 const track: PictureRule = (q) => {
   const p = q.parts;
   if (p.length < 3 || p.length > 8 || !/missing|comes next/i.test(q.prompt ?? '')) return null;
   const cells = p.map((t) => t.replace(/,$/, ''));
   if (!cells.every((c) => c === '?' || /^\d+$/.test(c)) || cells.filter((c) => c === '?').length !== 1) return null;
-  return { kind: 'track', cells };
+  // Which way the jumps go, from the first two numbers side by side.
+  const v = cells.map((c) => (c === '?' ? null : Number(c)));
+  const i = v.findIndex((x, k) => x !== null && v[k + 1] != null);
+  if (i < 0 || cells.length > 10 || v[i] === v[i + 1]) return { kind: 'track', cells };
+  return { kind: 'track', cells, arcs: v[i + 1]! > v[i]! ? '+' : '−' };
 };
 
 // ---------- place value, rounding, units ----------
@@ -212,6 +224,42 @@ const place: PictureRule = (q) => {
   return null;
 };
 
+const DEC_HEADINGS = ['1000s', '100s', '10s', '1s', 'tenths', 'hundredths', 'thousandths'];
+
+/**
+ * "1.1 × 10 = ?", "58 ÷ 100 = ?", "0.013 × 1000 = ?": the number in a place-value chart, with empty columns for the digits
+ * to move into. Only the question's number is written in it, never the answer.
+ */
+const decimalPlace: PictureRule = (q) => {
+  const p = q.parts;
+  if (p.length !== 5 || (p[1] !== '×' && p[1] !== '÷') || p[3] !== '=' || p[4] !== '?') return null;
+  const text = (p[0] ?? '').trim();
+  const k = whole(p[2]);
+  const dp = places(text);
+  if (!/^\d+(\.\d+)?$/.test(text) || dp === null || dp > 3 || (k !== 10 && k !== 100 && k !== 1000)) return null;
+  const n = Number(text);
+  // Whole-number answers (7 × 10, 70 ÷ 10) are times-table facts, not place value with decimals.
+  if (dp === 0 && (p[1] === '×' || n % k === 0)) return null;
+  const [w, d = ''] = text.split('.');
+  // Places counted from the 1s (0), 10s (1), tenths (−1): the number's own, and room for where its digits go.
+  const span = (t: string) => {
+    const [a, b = ''] = t.split('.');
+    return { hi: a.replace(/^0+(?=\d)/, '').length - 1, lo: -b.length };
+  };
+  const moved = show(p[1] === '×' ? n * k : n / k).replace(/\s/g, '');
+  const hi = Math.max(span(text).hi, span(moved).hi, 0);
+  const lo = Math.min(span(text).lo, span(moved).lo);
+  const top = 3 - hi;
+  const bottom = 3 - lo;
+  if (top < 0 || bottom > 6 || bottom - top > 5) return null;
+  const headings = DEC_HEADINGS.slice(top, bottom + 1);
+  const digits = headings.map((_, c) => {
+    const place = hi - c;
+    return place >= 0 ? (w[w.length - 1 - place] ?? '') : (d[-place - 1] ?? '');
+  });
+  return { kind: 'place', headings, digits };
+};
+
 /** "Round 99 to the nearest 10": the line between the two tens (or hundreds, thousands) with the number marked. */
 const rounding: PictureRule = (q) => {
   const p = q.parts;
@@ -221,18 +269,30 @@ const rounding: PictureRule = (q) => {
   const unit = whole(m[1]);
   if (!unit || unit < 10) return null;
   const lo = Math.floor(n / unit) * unit;
-  return { kind: 'number-line', from: lo, to: lo + unit, step: unit / 10, labels: [lo, lo + unit], marks: [{ at: n, label: show(n) }] };
+  // The middle is labelled too (the card talks about it); a number on it needs no second label.
+  const mid = lo + unit / 2;
+  return { kind: 'number-line', from: lo, to: lo + unit, step: unit / 10, labels: [lo, mid, lo + unit], marks: [{ at: n, label: n === mid ? '' : show(n) }] };
 };
 
-const LENGTHS = ['km', 'm', 'cm', 'mm'];
-const LENGTH_LINKS = ['× 1000', '× 100', '× 10'];
+/** Metric ladders, big to small, with the × between each step and the next. */
+const LADDERS: { units: string[]; links: string[] }[] = [
+  { units: ['km', 'm', 'cm', 'mm'], links: ['× 1000', '× 100', '× 10'] },
+  { units: ['kg', 'g'], links: ['× 1000'] },
+  { units: ['L', 'mL'], links: ['× 1000'] },
+];
 
-/** "6 km = ? m": the unit ladder with the two units lit. */
+/** "6 km = ? m", "8.5 kg = ? g": the ladder from one unit to the other, nothing else (a short picture), both lit. */
 const unitLadder: PictureRule = (q) => {
   const p = q.parts;
-  const m = /^[\d., ]+ (km|m|cm|mm)$/.exec(p[0] ?? '');
-  if (!m || p[1] !== '=' || p[2] !== '?' || !LENGTHS.includes(p[3])) return null;
-  return { kind: 'unit-ladder', units: LENGTHS, links: LENGTH_LINKS, highlight: [m[1], p[3]] };
+  const m = /^[\d., ]+ ([a-zA-Z]+)$/.exec(p[0] ?? '');
+  if (!m || p[1] !== '=' || p[2] !== '?' || p.length !== 4) return null;
+  const ladder = LADDERS.find((l) => l.units.includes(m[1]) && l.units.includes(p[3]));
+  if (!ladder || m[1] === p[3]) return null;
+  const i = ladder.units.indexOf(m[1]);
+  const j = ladder.units.indexOf(p[3]);
+  const lo = Math.min(i, j);
+  const hi = Math.max(i, j);
+  return { kind: 'unit-ladder', units: ladder.units.slice(lo, hi + 1), links: ladder.links.slice(lo, hi), highlight: [m[1], p[3]] };
 };
 
 // ---------- fractions, decimals, percentages ----------
@@ -246,15 +306,17 @@ function percentBar(p: number): { parts: number; shaded: number } | null {
   return null;
 }
 
-/** "50% of 30 = ?", "75% = ?": a bar in quarters or tenths, with the amount over the whole. */
+/** "50% of 30 = ?": a bar in quarters or tenths, with the amount over the whole; "75% = ?": a hundred square. */
 const percent: PictureRule = (q) => {
   const p = q.parts;
   const m = /^(\d+)%$/.exec(p[0] ?? '');
   if (!m) return null;
+  // "75% = ?": a hundred square, out of 100 (a bar in quarters would be the answer fraction).
+  const pc = Number(m[1]);
+  if (p[1] === '=' && p[2] === '?' && p.length === 3) return pc >= 1 && pc <= 100 ? { kind: 'hundred', shaded: pc } : null;
   const bar = percentBar(Number(m[1]));
   if (!bar) return null;
   if (p[1] === 'of' && whole(p[2]) !== null && p[3] === '=') return { kind: 'bars', bars: [{ ...bar, label: p[2] }] };
-  if (p[1] === '=' && p[2] === '?' && p.length === 3) return { kind: 'bars', bars: [{ ...bar }] };
   return null;
 };
 
@@ -289,6 +351,7 @@ const tenths: PictureRule = (q) => {
 /** "35/100 = ?", "0.25 = ?": a hundred square with that many squares shaded. */
 const hundredths: PictureRule = (q) => {
   const p = q.parts;
+  if (/power of 10/i.test(q.prompt ?? '')) return null; // the square says what fraction, not what power
   if (p.length !== 3 || p[1] !== '=' || !(p[2] === '?' || p[2] === '?/100')) return null;
   const f = frac(p[0]);
   if (f && f.d === 100 && f.n >= 1 && f.n <= 100) return { kind: 'hundred', shaded: f.n };
@@ -315,7 +378,7 @@ const hundredBond: PictureRule = (q) => {
   return known !== null && known >= 1 && known <= 100 ? { kind: 'hundred', shaded: known } : null;
 };
 
-/** "2.3 + ? = 3", "8.4 + ? = 10", "10 − 0.8 = ?": a line up to the whole, the decimal marked. */
+/** "2.3 + ? = 3", "8.4 + ? = 10", "10 − 0.8 = ?", "1.1 − 0.5 = ?": a line up to the whole, the decimals marked. */
 const decimalBond: PictureRule = (q) => {
   const s = sum(q);
   if (!s) return null;
@@ -326,14 +389,28 @@ const decimalBond: PictureRule = (q) => {
     return { kind: 'number-line', from, to: s.c, step: s.c - from <= 1 ? 0.1 : 1, labels: [from, s.c], marks: [{ at: k, label: show(k) }] };
   }
   if (s.op === '−' && s.c === null && s.a !== null && s.b !== null && Number.isInteger(s.a) && !Number.isInteger(s.b) && s.b > 0 && s.b < s.a) {
-    return { kind: 'number-line', from: 0, to: s.a, step: 1, labels: [0, s.a], marks: [{ at: s.a, label: show(s.a) }] };
+    // "9 − 0.6": the last whole, 8 to 9, in tenths (the start needs no second label). "10 − 5.2": 0 to 10.
+    if (s.b < 1) return { kind: 'number-line', from: s.a - 1, to: s.a, step: 0.1, labels: [s.a - 1, s.a], marks: [{ at: s.a, label: '' }] };
+    return { kind: 'number-line', from: 0, to: s.a, step: 1, labels: [0], marks: [{ at: s.a, label: show(s.a) }] };
+  }
+  // "1.1 − 0.5": both on a line in tenths, either side of the whole between them (count up from one to the other).
+  if (s.op === '−' && s.c === null && s.a !== null && s.b !== null && !Number.isInteger(s.a) && !Number.isInteger(s.b) && s.b > 0 && Math.ceil(s.b) <= Math.floor(s.a)) {
+    const from = Math.floor(s.b);
+    const to = Math.ceil(s.a);
+    if (to - from > 5 || places(String(s.a)) !== 1 || places(String(s.b)) !== 1) return null;
+    return { kind: 'number-line', from, to, step: 0.1, labels: range(from, to, 1), marks: [{ at: s.b, label: show(s.b) }, { at: s.a, label: show(s.a) }] };
   }
   return null;
 };
 
-/** "?/5 + 3/5 = 1", "1 − 1/4 = ?": a bar with the known fraction shaded (the missing part stays empty). */
+/** "?/5 + 3/5 = 1", "1 − 1/4 = ?": a bar with the known fraction shaded (the missing part stays empty). "1 = ?/5": the whole bar, one part shaded. */
 const fractionBond: PictureRule = (q) => {
   const p = q.parts;
+  const whole = p.length === 3 && p[0] === '1' && p[1] === '=' ? /^\?\/(\d+)$/.exec(p[2]) : null;
+  if (whole) {
+    const d = Number(whole[1]);
+    return d >= 2 && d <= 12 ? { kind: 'bars', bars: [{ parts: d, shaded: 1, label: '1' }] } : null;
+  }
   if (p.length !== 5 || p[3] !== '=') return null;
   const miss = (t: string) => t === '?' || /^\?\/\d+$/.test(t);
   let known: { n: number; d: number } | null = null;
@@ -383,6 +460,17 @@ const mixed: PictureRule = (q) => {
   return parts >= 2 && parts <= 12 && count <= 6 ? { kind: 'wholes', count, parts, shaded } : null;
 };
 
+/** "4/5 = ?" as a decimal: the fraction bar, and a bar in tenths under it (nothing shaded) to show why the bottom becomes 10. */
+const fractionToTenths: PictureRule = (q) => {
+  const p = q.parts;
+  if (p.length !== 3 || p[1] !== '=' || p[2] !== '?') return null;
+  const f = frac(p[0]);
+  if (!f || (f.d !== 2 && f.d !== 5) || f.n < 1 || f.n >= f.d) return null;
+  const labels = q.choiceLabels ?? (q.choices ?? []).map(String);
+  const decimal = /decimal/i.test(q.prompt ?? '') || (labels.length > 0 && labels.every((l) => /^\d*\.\d+$/.test(l)));
+  return decimal ? { kind: 'bars', bars: [{ parts: f.d, shaded: f.n }, { parts: 10, shaded: 0 }] } : null;
+};
+
 /** "1/6 = ?/30", "1/3 = 4/?", "Simplify 6/8 = ?": the fraction as a bar (and the matching bar, unshaded, when its parts are known). */
 const equivalent: PictureRule = (q) => {
   const p = [...q.parts];
@@ -407,7 +495,12 @@ const ratio: PictureRule = (q) => {
   if (share) {
     const a = Number(share[2]);
     const b = Number(share[3]);
-    return a + b <= 20 ? { kind: 'bars', bars: [{ parts: a + b, shaded: a, label: share[1] }] } : null;
+    if (a + b > 20) return null;
+    // The share asked for is shaded: the bigger or smaller one, in its place on the bar.
+    const big = /^bigger/i.test(q.parts[0] ?? '');
+    const small = /^smaller/i.test(q.parts[0] ?? '');
+    const second = (big && b > a) || (small && b < a);
+    return { kind: 'bars', bars: [second ? { parts: a + b, shaded: b, start: a, label: share[1] } : { parts: a + b, shaded: a, label: share[1] }] };
   }
   const to = /^(\d+) [a-z]+ to (\d+) [a-z]+\./i.exec(p);
   if (to) {
@@ -427,14 +520,7 @@ const balance: PictureRule = (q) => {
 
 // ---------- counting ----------
 
-/** Dots in rows of at most `per`, for a count the pupil will halve or share. */
-function dotRows(n: number, per: number): number[] {
-  const rows: number[] = [];
-  for (let left = n; left > 0; left -= per) rows.push(Math.min(per, left));
-  return rows;
-}
-
-/** "31 ÷ 9 = 3 r ?" (the groups made) and "15 ÷ 2 = ? r 1" (all the dots): dots grouped, the left-overs not drawn. */
+/** "31 ÷ 9 = 3 r ?" (the groups made, the left-overs not drawn) and "15 ÷ 2 = ? r 1" (all the dots, in rows of 2). */
 const remainders: PictureRule = (q) => {
   const p = q.parts;
   if (p[1] !== '÷' || p[3] !== '=') return null;
@@ -446,7 +532,8 @@ const remainders: PictureRule = (q) => {
     const rows = Number(done[1]);
     return rows >= 1 && rows <= 12 && b <= 12 ? { kind: 'array', rows, cols: b, groups: true } : null;
   }
-  if (p[4] === '?' && p[5] === 'r' && a <= 100) return { kind: 'dot-rows', rows: dotRows(a, 10), fives: true };
+  // Rows the size of a group, the left-overs as a short last row in the other colour.
+  if (p[4] === '?' && p[5] === 'r' && a >= b && b <= 12 && Math.floor(a / b) <= 12) return { kind: 'array', rows: Math.floor(a / b), cols: b, extra: a % b };
   return null;
 };
 
@@ -463,10 +550,22 @@ const doubleHalf: PictureRule = (q) => {
   }
   const s = sum(q);
   if (s && s.op === '+' && s.c === null && s.a === s.b && Number.isInteger(s.a!) && s.a! >= 1 && s.a! <= 20) return { kind: 'dot-rows', rows: [s.a!, s.a!], fives: true };
-  if (s && s.op === '÷' && s.a !== null && Number.isInteger(s.a) && s.a >= 2 && s.a <= 20 && (s.b === null || (s.b >= 2 && s.b <= 10))) {
-    return { kind: 'dot-rows', rows: [s.a], fives: true };
-  }
   return null;
+};
+
+/**
+ * "16 ÷ 4 = ?", "9 ÷ 9 = ?", "12 ÷ ? = 3": an array with each row ringed as a group (teachers asked for an array, not
+ * dots in fives). The known number k is either how many rows (16 ÷ 4: 4 equal rows) or how many in a row (9 ÷ 9: rows of
+ * 9), whichever keeps the array wide rather than tall; the pupil counts the other.
+ */
+const divideArray: PictureRule = (q) => {
+  const s = sum(q);
+  if (!s || s.op !== '÷' || s.a === null || (s.b === null) === (s.c === null)) return null;
+  const a = s.a;
+  const k = (s.b ?? s.c)!;
+  if (!Number.isInteger(a) || !Number.isInteger(k) || a < 1 || a > 20 || k < 1 || a % k) return null;
+  const u = a / k;
+  return k <= u ? { kind: 'array', rows: k, cols: u, groups: true } : { kind: 'array', rows: u, cols: k, groups: true };
 };
 
 /** "7 × 8" is too big, but "3 × 4 = ?" and the 2 times table: rows of dots. */
@@ -475,7 +574,8 @@ const smallArray: PictureRule = (q) => {
   if (!s || s.op !== '×' || s.c !== null || s.a === null || s.b === null) return null;
   const { a, b } = s;
   if (!Number.isInteger(a) || !Number.isInteger(b) || a < 1 || b < 1 || a > 10 || b > 10 || a * b > 20) return null;
-  return { kind: 'array', rows: a, cols: b };
+  // "10 × 1": one row of 10, not a tall column.
+  return b === 1 ? { kind: 'array', rows: 1, cols: a } : { kind: 'array', rows: a, cols: b };
 };
 
 /** "11 × 7 = ?", "5 × 11 = ?", "35 × 2 = 60 + ?": an area box with the two-digit number split into tens and ones. */
@@ -506,6 +606,8 @@ const frames: PictureRule = (q) => {
   if (!s || (s.op !== '+' && s.op !== '−')) return null;
   const given = [s.a, s.b, s.c].filter((n): n is number => n !== null);
   if (given.some((n) => !Number.isInteger(n) || n < 0 || n > 20)) return null;
+  // "13 + ? = 0" goes down, not up: the line through zero (intSum) shows it, not counters.
+  if (s.op === '+' && s.c !== null && s.c < (s.a ?? s.b!)) return null;
   let counts: number[];
   if (s.op === '+') {
     if (s.c === null) counts = s.b === 10 && s.a !== 10 ? [s.b, s.a!] : [s.a!, s.b!];
@@ -519,7 +621,10 @@ const frames: PictureRule = (q) => {
   if (!counts.length) counts = [0];
   const total = counts.reduce((x, y) => x + y, 0);
   if (total > 20) return null;
-  return { kind: 'frames', size: Math.max(...given) <= 5 ? 5 : 10, counts };
+  const size = Math.max(...given) <= 5 ? 5 : 10;
+  // "4 + ? = 11": draw the room up to the total, so a second empty frame shows.
+  if (s.op === '+' && s.c !== null && s.c > size) return { kind: 'frames', size, counts, frames: Math.ceil(s.c / size) };
+  return { kind: 'frames', size, counts };
 };
 
 /** Most specific first. */
@@ -536,6 +641,7 @@ export const PICTURE_RULES: PictureRule[] = [
   countLine,
   track,
   place,
+  decimalPlace,
   rounding,
   unitLadder,
   percent,
@@ -550,11 +656,13 @@ export const PICTURE_RULES: PictureRule[] = [
   fractionAdd,
   fractionDivide,
   mixed,
+  fractionToTenths,
   equivalent,
   remainders,
   splitBox,
   intSum,
   doubleHalf,
+  divideArray,
   smallArray,
   frames,
 ];

@@ -28,9 +28,7 @@ const SKILLS = [
 /** Question types inside those skills that the idea doesn't cover (key prefix: why). */
 const NO_PICTURE: Record<string, string> = {
   'ang5:clue': 'only the "110° is…" type is drawn',
-  'tenth:divide': '74 ÷ 10 has no tenths picture that does not show 7.4',
   'tenth:half': 'half of a decimal has no tenths picture',
-  'bondf1:whole': '1 = ?/8: any bar cut in 8 shows the answer',
   'deceq:compare': 'which is bigger: no picture idea',
   'nf:ratio-eq': 'ratio sharing only',
 };
@@ -110,4 +108,39 @@ it('gives every question type with a picture idea a picture that does not show t
   expect(problems).toEqual([]);
   // The kinds the other helper draws are all used by something.
   expect([...pictures].sort()).toEqual(expect.arrayContaining(['array', 'balance', 'bars', 'clock-24', 'clocks', 'dot-rows', 'figure', 'frames', 'hundred', 'number-line', 'place', 'split-box', 'thermometer', 'towers', 'track', 'unit-ladder', 'wholes']));
+
+  // draws a ÷ fact as an array of equal rows
+  // Teacher notes 1 and 3 (27 Nov 2026): ÷ facts are an array (rows × columns), not dots in fives.
+  {
+    const pic = (parts: string) => pictureFor({ parts: parts.split(' ') });
+    expect(pic('16 ÷ 4 = ?')).toEqual({ kind: 'array', rows: 4, cols: 4, groups: true });
+    // Kept wide, not tall: 9 ÷ 9 is 1 row of 9, 12 ÷ ? = 3 is 3 rows of 4.
+    expect(pic('9 ÷ 9 = ?')).toEqual({ kind: 'array', rows: 1, cols: 9, groups: true });
+    expect(pic('12 ÷ ? = 3')).toEqual({ kind: 'array', rows: 3, cols: 4, groups: true });
+    // Remainders: rows the size of a group, the left-overs as a short row.
+    expect(pic('29 ÷ 8 = ? r 5')).toEqual({ kind: 'array', rows: 3, cols: 8, extra: 5 });
+  }
+
+  // makes pictures match their cards
+  {
+    const pic = (parts: string, prompt?: string) => pictureFor({ parts: parts.split(' '), prompt });
+    // Room up to the total: a second, empty ten-frame.
+    expect(pic('4 + ? = 11')).toEqual({ kind: 'frames', size: 10, counts: [4], frames: 2 });
+    // Back to 0 is a line through zero, not counters.
+    expect(pic('13 + ? = 0')?.kind).toBe('number-line');
+    // A wide line through zero labels only the 5s.
+    const line = pic('−6 + 13 = ?');
+    expect(line?.kind === 'number-line' && line.labels).toEqual([-5, 0, 5, 10]);
+    // Percent is out of 100, not the answer fraction as a bar; no square for a power of 10.
+    expect(pic('75% = ?')).toEqual({ kind: 'hundred', shaded: 75 });
+    expect(pic('0.01 = ?', 'Write it as a power of 10.')).toBeNull();
+    // The jumps on a track, with no size.
+    expect(pic('0, 10, 20, ?', 'What comes next?')).toEqual({ kind: 'track', cells: ['0', '10', '20', '?'], arcs: '+' });
+    // A ratio shades the share asked for.
+    expect(pictureFor({ parts: ['Bigger part', '=', '?'], prompt: 'Share 54 in the ratio 4 : 5.' })).toEqual({ kind: 'bars', bars: [{ parts: 9, shaded: 5, start: 4, label: '54' }] });
+    // A short unit ladder: only the two units asked.
+    expect(pictureFor({ parts: ['0.3 m', '=', '?', 'cm'] })).toEqual({ kind: 'unit-ladder', units: ['m', 'cm'], links: ['× 100'], highlight: ['m', 'cm'] });
+    // Decimals in a place chart, with room for the digits to move into (the answer is never written).
+    expect(pic('1.4 ÷ 10 = ?')).toEqual({ kind: 'place', headings: ['1s', 'tenths', 'hundredths'], digits: ['1', '4', ''] });
+  }
 });

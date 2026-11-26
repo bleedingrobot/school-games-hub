@@ -9,12 +9,13 @@ export function num(text: string | undefined): number | null {
   return Number(t);
 }
 
-/** Shows a number the way the questions do: 12 500 with a space for 5 or more digits, a real minus sign. */
+/** Shows a number the way the questions do: 12 500 with a space for 5 or more digits, a real minus sign. The space does
+ *  not break, so "586 000" can never wrap into two numbers. */
 export function show(n: number): string {
   const rounded = Math.round(n * 1e6) / 1e6;
   const sign = rounded < 0 ? '−' : '';
   const [whole, dec] = String(Math.abs(rounded)).split('.');
-  const spaced = whole.length >= 5 ? whole.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : whole;
+  const spaced = whole.length >= 5 ? whole.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0') : whole;
   return sign + spaced + (dec ? `.${dec}` : '');
 }
 
