@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fractionSteps, helpKind, hintFor } from './hint';
+import { fractionSteps, helpKind, hintFor, unitSteps } from './hint';
 
 describe('the one hint', () => {
   it('takes two wrong choices away and never the right one', () => {
@@ -21,6 +21,8 @@ describe('the one hint', () => {
     expect(helpKind({ parts: ['?'], prompt: 'Which point sits on the x-axis (the line going across)?' })).toBe('axes');
     expect(helpKind({ parts: ['1/8', '+', '3/4', '=', '?'] })).toBe('fractions');
     expect(helpKind({ parts: ['3 h', '=', '?', 'min'] })).toBe('hours');
+    expect(helpKind({ parts: ['8 km', '=', '?', 'm'] })).toBe('units');
+    expect(unitSteps(['450 g', '=', '?', 'kg'])).toMatchObject({ big: 'kg', factor: 1000, times: false });
     expect(helpKind({ parts: ['An angle of 250°', 'is', '?'], prompt: 'What kind of angle is it?', choiceLabels: ['reflex', 'obtuse', 'right', 'acute'] })).toBe('angles');
     expect(fractionSteps(['1/8', '+', '3/4', '=', '?'])?.changes).toEqual([{ n: 3, d: 4, by: 2 }]);
     expect(fractionSteps(['2/3', '−', '1/4', '=', '?'])).toMatchObject({ bottom: 12, changes: [{ n: 2, d: 3, by: 4 }, { n: 1, d: 4, by: 3 }] });
