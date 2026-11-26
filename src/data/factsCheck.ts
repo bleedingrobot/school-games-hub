@@ -2,7 +2,7 @@
  * Reading the basic facts check (shared/training/check.ts, docs/FACTS-CHECK-PLAN.md). Saving goes through the training queue
  * (enqueueCheck in ./training.ts), so a check finished with the Wi-Fi down is not lost.
  */
-import { CHECK_CONFIG, CHECK_VERSION, type CheckSummary } from '../../shared/training/check';
+import { CHECK_CONFIG, CHECK_VERSION, retestRoundDue, type CheckSummary } from '../../shared/training/check';
 import { supabase } from '../lib/supabase';
 
 export interface MyFactsCheck {
@@ -19,7 +19,9 @@ export async function fetchMyFactsCheck(): Promise<MyFactsCheck> {
     from_year: CHECK_CONFIG.fromYear,
   });
   if (error || !data) return { due: false, count: 0, last: null };
-  return data as MyFactsCheck;
+  const mine = data as MyFactsCheck;
+  // A retest week brings the next check forward (only pupils who have done one have a `last`, so teachers never get it).
+  return mine.due || !retestRoundDue(mine.last?.at) ? mine : { ...mine, due: true };
 }
 
 export interface CheckPupil {

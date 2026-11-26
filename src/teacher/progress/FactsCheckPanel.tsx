@@ -115,7 +115,7 @@ export function FactsCheckPanel({ classId, load = fetchClassFactsChecks }: { cla
               {secs(s.middleBefore)} → {secs(s.middleNow)}.
             </p>
           ) : (
-            <p className="facts-check__headline">Only first checks so far: the next ones show the change, {CHECK_CONFIG.everyDays / 7} weeks after each pupil’s first.</p>
+            <p className="facts-check__headline">Only first checks so far: the next ones show the change, from the week of 30 November.</p>
           )}
           {s.hardest.length > 0 && (
             <p className="qs-teacher__key">
