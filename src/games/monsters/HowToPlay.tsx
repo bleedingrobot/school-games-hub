@@ -1,21 +1,19 @@
 /**
  * "How to play" for Maths Monsters, in plain words for a 9-year-old. It is shown on the new-game screen and
  * from the map Menu. Numbers come from the game's own rules (steps a Repel lasts, how many badges, the six
- * types and their topics), never typed in twice. Short sections with real headings, so a screen reader
+ * types), never typed in twice. Short sections with real headings, so a screen reader
  * can jump between them. Points are explained on the hub's "How points work" page.
  */
-import { TOPICS } from '../../../shared/maths/skillPacks';
 import { AREAS, FOLLOW_BADGES } from '../../../shared/monsters/world/areas';
 import { BATTLES_PER_DAY } from '../../../shared/monsters/world/battleCap';
 import { REPEL_STEPS } from '../../../shared/monsters/world/rewards';
 import { MAX_TEAM } from '../../../shared/monsters/engine';
-import { TYPE_LABEL, TYPE_TOPIC, TYPES, strongAgainst } from '../../../shared/monsters/types';
+import { TYPE_LABEL, TYPES, strongAgainst } from '../../../shared/monsters/types';
 import { EGGS, HATCH_SPOTS } from '../../../shared/monsters/quests/eggs';
 import { GIANTS } from '../../../shared/monsters/quests/giants';
 import { QUESTS } from '../../../shared/monsters/quests/quests';
 import { TypeChart } from './TypeChart';
 
-const topicLabel = (id: string) => TOPICS.find((t) => t.id === id)?.label ?? id;
 
 export function HowToPlayBody() {
   return (
@@ -65,13 +63,16 @@ export function HowToPlayBody() {
       </section>
 
       <section aria-labelledby="mht-types">
-        <h3 id="mht-types">Types and maths</h3>
-        <p>Each type of monster asks its own kind of maths. A type hits the next one in the list extra hard.</p>
+        <h3 id="mht-types">Types</h3>
+        <p>
+          A type hits the one its arrow points at extra hard. Every maths question comes from <strong>your own maths ladder</strong>, the same as the other games,
+          whatever type your monster is, so every right answer helps you climb it.
+        </p>
         <TypeChart />
         <ul>
           {TYPES.map((t) => (
             <li key={t}>
-              <strong>{TYPE_LABEL[t]}</strong>: {topicLabel(TYPE_TOPIC[t])}. Strong against {TYPE_LABEL[strongAgainst(t)]}.
+              <strong>{TYPE_LABEL[t]}</strong>: strong against {TYPE_LABEL[strongAgainst(t)]}.
             </li>
           ))}
         </ul>

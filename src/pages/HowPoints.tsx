@@ -210,7 +210,7 @@ export function HowPoints() {
               Beat a trainer: <strong>{rules.monsters.trainerWin} points</strong>.
             </li>
             <li>
-              Win a Topic Tower badge: <strong>{rules.monsters.badge} points</strong>, the first time only.
+              Win a Tower badge: <strong>{rules.monsters.badge} points</strong>, the first time only.
             </li>
             <li>These share the {rules.botDailyCap}-points-a-day limit with games against bots.</li>
             <li>

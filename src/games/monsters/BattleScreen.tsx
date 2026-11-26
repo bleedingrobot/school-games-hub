@@ -18,7 +18,7 @@ import {
 import { bandFor } from '../../../shared/monsters/bands';
 import { speciesOf } from '../../../shared/monsters/monsterBook';
 import type { BattleStep } from '../../../shared/monsters/save/check';
-import type { QuestionReport } from '../../../shared/monsters/save/verify';
+import { quickMsOfReport, type QuestionReport } from '../../../shared/monsters/save/verify';
 import { effectiveTopic } from '../../../shared/monsters/topics';
 import { maxHpOf, type AnswerResult, type Monster } from '../../../shared/monsters/rules';
 import { TYPE_LABEL, typeMultiplier, type TypeId } from '../../../shared/monsters/types';
@@ -61,6 +61,11 @@ export interface BattleScreenProps {
   random?: () => number;
   /** Where the questions come from (tests pass a fake pack). */
   packFor?: (topic: TopicId) => SkillPack;
+  /**
+   * The student's maths ladder (James, 26 Nov 2026): every question comes from here, the same as the other games, and the
+   * monster's type no longer picks a topic. Left out (the test page, or the ladder could not be loaded), the old topic packs ask.
+   */
+  ladder?: LadderMaths;
   /** Tests set 0 to skip animation pauses. */
   timeScale?: number;
   /** The topics the teacher left on: a switched-off topic's questions come from the nearest topic that is on. */
@@ -137,9 +142,16 @@ interface Shown {
   foeActive: number;
 }
 
+/** The ladder pack for a visit, and the class's question settings. */
+export interface LadderMaths {
+  pack: SkillPack;
+  enabledTables?: number[];
+  division?: boolean;
+}
+
 interface Asking {
   question: Question;
-  topic: TopicId;
+  topic: TopicId | 'ladder';
   band: number;
   title: string;
   note?: string;
@@ -158,7 +170,7 @@ interface Pop {
 const clone = <T,>(v: T): T => structuredClone(v);
 const shownFrom = (s: BattleState): Shown => ({ team: clone(s.team), foes: clone(s.foes), active: s.active, foeActive: s.foeActive });
 
-export function BattleScreen({ setup, settings: given, onSettingsChange, onFinish, random = Math.random, packFor, timeScale = 1, enabledTopics, place, trainer, look, owned, powerUp = false, prizeFor }: BattleScreenProps) {
+export function BattleScreen({ setup, settings: given, onSettingsChange, onFinish, random = Math.random, packFor, ladder, timeScale = 1, enabledTopics, place, trainer, look, owned, powerUp = false, prizeFor }: BattleScreenProps) {
   const { soundOn } = useSound();
   const [ownSettings, setOwnSettings] = useState(loadMonsterSettings);
   const settings = given ?? ownSettings;
@@ -456,17 +468,25 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
     }
     const wanted = questionFor(battle, action);
     if (!wanted) return;
-    // A topic the teacher switched off is swapped for the nearest one that is on (and asked at that topic's band for this place).
-    const topic = effectiveTopic(wanted.topic, enabledTopics);
-    const spec = topic === wanted.topic ? wanted : { topic, band: bandFor(topic, battle.area, battle.far) };
-    const question = packOf(spec.topic).nextQuestion({ level: spec.band, multipleChoice: settings.multipleChoice });
-    const answerless = (r: AnswerResult) => ({ ...action, answer: r }) as BattleAction;
-    if (!question) return run(answerless('right'), undefined, thenOf(action)); // nothing can be asked: never block the battle
     const title = action.kind === 'fight' ? speciesOf(activeMonster(battle).species).attacks[action.attack].name
       : action.kind === 'power-up' ? 'Power up!' : `Catch ${nameOf(activeFoe(battle).species)}`;
     const note = action.kind === 'catch' ? 'A right answer makes the catch much more likely'
       : action.kind === 'power-up' ? `Get it right and every attack hits harder this battle${settings.calm ? '' : ' (even harder if you’re quick)'}`
       : settings.calm ? undefined : 'A quick right answer hits extra hard';
+    const answerless = (r: AnswerResult) => ({ ...action, answer: r }) as BattleAction;
+    if (ladder) {
+      // The student's own place on the maths ladder, whatever the monster's type.
+      const question = ladder.pack.nextQuestion({ multipleChoice: settings.multipleChoice, enabledTables: ladder.enabledTables, division: ladder.division });
+      if (!question) return run(answerless('right'), undefined, thenOf(action));
+      setAsking({ question, topic: 'ladder', band: 0, title, note, action, back });
+      setMode('question');
+      return;
+    }
+    // A topic the teacher switched off is swapped for the nearest one that is on (and asked at that topic's band for this place).
+    const topic = effectiveTopic(wanted.topic, enabledTopics);
+    const spec = topic === wanted.topic ? wanted : { topic, band: bandFor(topic, battle.area, battle.far) };
+    const question = packOf(spec.topic).nextQuestion({ level: spec.band, multipleChoice: settings.multipleChoice });
+    if (!question) return run(answerless('right'), undefined, thenOf(action)); // nothing can be asked: never block the battle
     setAsking({ question, topic: spec.topic, band: spec.band, title, note, action, back });
     setMode('question');
   }
@@ -781,14 +801,18 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
           // Back goes to choosing another move and no turn passes, so the skip switch leaves it alone (James).
           closeIsSkip={false}
           onSubmit={(answer, ms): MarkedAnswer => {
-            const marked = packOf(asking.topic).recordAnswer(asking.question, answer, ms);
-            answered.current = {
-              topic: asking.topic, band: asking.band, key: asking.question.factKey,
-              ...(asking.question.params ? { params: asking.question.params } : {}),
-              ...(asking.topic === 'times-tables' ? { kind: asking.question.kind, parts: asking.question.parts } : {}),
-              given: answer, ms: Math.round(ms), at: Date.now(),
-            };
-            judged.current = judgeAnswer({ correct: marked.correct, ms, topic: asking.topic, band: asking.band, calm: settings.calm });
+            const { topic, question: q } = asking;
+            const marked = (topic === 'ladder' ? ladder!.pack : packOf(topic)).recordAnswer(q, answer, ms);
+            // What the server needs to make the question again and mark it itself.
+            answered.current = topic === 'ladder'
+              ? { topic, key: q.factKey, parts: q.parts, ...(q.params ? { params: q.params } : {}), given: answer, ms: Math.round(ms), at: Date.now() }
+              : {
+                  topic, band: asking.band, key: q.factKey,
+                  ...(q.params ? { params: q.params } : {}),
+                  ...(topic === 'times-tables' ? { kind: q.kind, parts: q.parts } : {}),
+                  given: answer, ms: Math.round(ms), at: Date.now(),
+                };
+            judged.current = judgeAnswer({ correct: marked.correct, ms, quickMs: quickMsOfReport({ topic, band: asking.band, key: q.factKey }), calm: settings.calm });
             const reward = judged.current !== 'quick-right' ? undefined
               : asking.action.kind === 'catch' ? 'Quick! Great throw!' : asking.action.kind === 'power-up' ? 'Quick! Super power up!' : 'Quick! Critical hit!';
             return { ...marked, reward };

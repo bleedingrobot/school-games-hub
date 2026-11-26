@@ -24,6 +24,9 @@ import { HubButtons } from './HubButtons';
 import { StartScreen } from './StartScreen';
 import { loadWorldSettings, saveWorldSettings, type WorldSettings } from './world/settings';
 import { WorldGame } from './world/WorldGame';
+import type { LadderMaths } from './BattleScreen';
+import { fetchMyLadder, type MyLadder } from '../../data/ladder';
+import { currentFocus, makeFocusPack } from '../../../shared/maths/focus';
 
 /** How often a long stretch of play is saved (milliseconds). */
 export const AUTOSAVE_MS = 3 * 60_000;
@@ -60,10 +63,14 @@ export function MonstersPlay() {
   const battling = useRef(false);
   const afterBattle = useRef(false);
   const packs = useRef(new Map<TopicId, ReturnType<typeof makePack>>());
+  // The student's maths ladder: every question comes from it, as in the other games (James, 26 Nov 2026).
+  const [ladder, setLadder] = useState<MyLadder | null>(null);
 
   useEffect(() => {
     let current = true;
     setData(null);
+    // If the ladder can't be loaded (offline), the battles fall back to the old topic questions.
+    fetchMyLadder().then((l) => current && setLadder(l), () => {});
     void loadMonsters(player).then((loaded) => {
       if (!current) return;
       packs.current.clear();
@@ -194,6 +201,11 @@ export function MonstersPlay() {
     },
     [topicFacts],
   );
+  // One ladder pack for the visit, so the records carry from battle to battle.
+  const ladderMaths = useMemo<LadderMaths | undefined>(
+    () => (ladder ? { pack: makeFocusPack(ladder.facts, currentFocus(ladder.focus), ladder.settings), ...ladder.settings } : undefined),
+    [ladder],
+  );
 
   if (!data) {
     return (
@@ -247,6 +259,7 @@ export function MonstersPlay() {
         }}
         enabledTopics={data.settings.topics}
         packFor={packFor}
+        ladder={ladderMaths}
         quest={questOpts}
       />
       {resting && (

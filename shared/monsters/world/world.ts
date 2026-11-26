@@ -192,7 +192,7 @@ const fill = (page: string, state: WorldState) => page.replace('{box}', String(s
 export const badgeName = (badge: string) => `${badge[0].toUpperCase()}${badge.slice(1)} badge`;
 
 /** What a closed gate says: its own words, then which badge is missing. */
-export const gatePages = (gate: Gate): string[] => [...gate.pages, `You need the ${badgeName(gate.badge)} to go on. Win it from the Topic Tower trainer in this area.`];
+export const gatePages = (gate: Gate): string[] => [...gate.pages, `You need the ${badgeName(gate.badge)} to go on. Win it from the Tower trainer in this area.`];
 
 /** Space / Enter / a tap on what you are facing: read a sign, chat, open a chest, or be healed by the nurse. */
 export function interact(state: WorldState, opts: WorldOptions): InteractOutcome {
