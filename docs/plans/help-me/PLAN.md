@@ -63,6 +63,14 @@ tab shows help use), rule-junior (junior games build their own, read aloud).
 - H9 teacher view built: teacher_help_uses(class, days) and a "Help me" panel on the Progress tab (who used help, how
   often, right after help, the skills).
 - Junior (Foundational) games are NOT changed (James, 26 Nov 2026: don't touch them). They keep their own read-aloud help.
+- James's feedback, 27 Nov 2026 NZ (5:42-5:46 am):
+  - Help comes as several cards, in this order (`helpCardsFor` in shared/maths/help/index.ts):
+    1. The card that matches the question's picture (shared/maths/help/picture.ts), e.g. 3 × 12 with the area box: 3 × 10 + 3 × 2.
+    2. Other strategies: a fact they know, doubling or halving.
+    3. Counting in lots, always last. The array picture is counting, so its card goes last too.
+  - A topic card that says the same as the picture card is left out (`SAME_AS_PICTURE`).
+  - Division and missing factors start from a fact they know (or 2, 5 or 10 lots), never counting: ÷ 4 is halve twice, ÷ 8 is halve three times.
+  - A fraction of an amount always ends on the top number: how many of the equal groups the answer is.
 
 ## Build outline (after James says go)
 

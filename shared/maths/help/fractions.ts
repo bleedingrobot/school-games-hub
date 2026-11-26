@@ -50,17 +50,21 @@ function whole(n: number, b: number, v: number, intro?: string): HelpCard {
 }
 
 function ofCard(n: number, b: number, N: number): HelpCard {
-  if (n === 1) {
-    if (b === 2) return card('fraction-of', 'Half is sharing in 2', 'A half is 1 of 2 equal parts.', `Share ${show(N)} into 2 equal groups: ${show(N)} ÷ 2 = ?`);
-    if (b === 4 && isEven(N)) return card('fraction-of', 'A quarter is half of a half', 'A quarter is half of a half.', `Half of ${show(N)} is ${show(N / 2)}.`, `Half of ${show(N / 2)} = ?`);
-    if (b === 10) return card('fraction-of', 'A tenth is divide by 10', 'A tenth is 1 of 10 equal parts.', `÷ 10 moves each digit one place right: ${show(N)} ÷ 10 = ?`);
-    return card('fraction-of', `1/${b} is share into ${b}`, `1/${b} means share into ${b} equal groups.`, N % b === 0 ? `Think of the ${b} times table: ${b} × ? = ${show(N)}` : `${show(N)} ÷ ${b} = ?`);
-  }
+  // The last step always comes back to the top number: how many of the equal groups the answer is (James, 26 Nov 2026).
   const u = N / b;
-  return card('fraction-of', 'Find one part, then take the top many',
-    `1/${b} of ${show(N)} first: ${show(N)} ÷ ${b}${Number.isInteger(u) ? ` = ${show(u)}` : ''}.`,
-    `${n}/${b} is ${n} of those parts.`,
-    Number.isInteger(u) ? `${n} × ${show(u)} = ?` : `${n} × (1 part) = ?`);
+  const one = Number.isInteger(u) ? show(u) : null;
+  if (n === 1) {
+    const top = 'The top number is 1, so the answer is just 1 group: 1 group = ?';
+    if (b === 2) return card('fraction-of', 'Half is sharing in 2', 'A half is 1 of 2 equal groups.', `Share ${show(N)} into 2 equal groups: ${show(N)} ÷ 2 is one group.`, top);
+    if (b === 4 && isEven(N)) return card('fraction-of', 'A quarter is half of a half', 'A quarter is 1 of 4 equal groups: half of a half.', `Half of ${show(N)} is ${show(N / 2)}. Half again is one group.`, top);
+    if (b === 10) return card('fraction-of', 'A tenth is divide by 10', 'A tenth is 1 of 10 equal groups.', `÷ 10 moves each digit one place right: ${show(N)} ÷ 10 is one group.`, top);
+    return card('fraction-of', `1/${b} is share into ${b}`, `1/${b} means share ${show(N)} into ${b} equal groups.`,
+      N % b === 0 ? `Think of the ${b} times table: ${b} × (one group) = ${show(N)}.` : `${show(N)} ÷ ${b} is one group.`, top);
+  }
+  return card('fraction-of', 'Find one group, then take the top many',
+    `The bottom number is ${b}: share ${show(N)} into ${b} equal groups. ${show(N)} ÷ ${b}${one ? ` = ${one}` : ''} in each group.`,
+    `The top number is ${n}: the answer is ${n} of those groups.`,
+    one ? `${n} × ${one} = ?` : `${n} × (one group) = ?`);
 }
 
 const fractionOf: Helper = (q) => {
