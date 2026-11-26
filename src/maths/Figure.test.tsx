@@ -24,6 +24,10 @@ const SAMPLES: Spec[] = [
   { kind: 'shape', name: 'octagon' },
   { kind: 'grid', size: 6, points: [{ x: 2, y: 3, label: '?' }] },
   { kind: 'spinner', parts: 8, shaded: 3 },
+  { kind: 'angle', degrees: 130 },
+  { kind: 'angle', degrees: 90 },
+  { kind: 'angle', degrees: 250 },
+  { kind: 'clock', hour: 7, minute: 25 },
 ];
 
 describe('question pictures', () => {

@@ -70,3 +70,8 @@ Same rules. Each Year 6 card is `shared/maths/skillPacks/y6<Name>.ts`, gathered 
 they go `after` (a run chains, each naming the one before). Oracles and pick checks live in `shared/maths/y6/`, and
 `shared/maths/y78.test.ts` checks every Year 6 roll too, including that each part is 40 letters or fewer (the server refuses
 longer parts, shared/gem-keep/save.ts).
+
+## Year 5 cards (docs/plans/ladder-y5/PLAN.md)
+
+Same rules and the same mechanism as Year 6: `shared/maths/skillPacks/y5<Name>.ts`, rows with `year: 5`, gathered by `skillPacks/y6.ts`;
+oracles and pick checks in `shared/maths/y5/`. A new Year 5 question type needs its row in a new `maths_content_years` migration.

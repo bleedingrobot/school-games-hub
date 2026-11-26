@@ -58,7 +58,7 @@ export interface LadderSkill {
    * Year 7 and 8 skills (left out on the older skills). A pupil whose teacher ticked "Stop at Year 6" never has the Year 7 and 8
    * ones on auto (`LadderOptions.capAtYear6`); Year 6 ones are always on.
    */
-  year?: 6 | 7 | 8;
+  year?: 5 | 6 | 7 | 8;
   /** For a times-tables skill: its table (7 for ×7). */
   table?: number;
   /** For a times-tables skill: which step of `CAMPAIGN_STEPS` its table is in (0 for ×2, ×5 and ×10). */
@@ -133,7 +133,7 @@ function slotYear6(base: LadderSkill[], rows: readonly Y6Row[]): LadderSkill[] {
     used.add(r.after);
     const at = out.findIndex((s) => s.id === r.after);
     if (at < 0) throw new Error(`Year 6 skill ${r.id} goes after ${r.after}, which isn't on the ladder yet`);
-    out.splice(at + 1, 0, { ...generated(r.id, r.label, r.stage, Y6_SKILL_KEYS[r.id], ...r.tags), year: 6, inWarmUp: false });
+    out.splice(at + 1, 0, { ...generated(r.id, r.label, r.stage, Y6_SKILL_KEYS[r.id], ...r.tags), year: r.year ?? 6, inWarmUp: false });
   }
   return out;
 }

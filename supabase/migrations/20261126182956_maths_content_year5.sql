@@ -1,0 +1,50 @@
+-- Year 5 maths tagged in the database too, like Year 6 (20261126000600). One row per question type of the Year 5 ladder skills
+-- (docs/plans/ladder-y5/PLAN.md) in maths_content_years. Kept in step with shared/maths/skillPacks/y5*.ts by shared/maths/y78.test.ts.
+
+-- The table took Years 6 to 8; it now takes Year 5 as well. Nothing in it changes.
+alter table public.maths_content_years drop constraint maths_content_years_year_check;
+alter table public.maths_content_years add constraint maths_content_years_year_check check (year in (5, 6, 7, 8));
+
+insert into public.maths_content_years (question_key, skill, skill_label, year) values
+  ('mul5:times', 'times-2by1', '2-digit times 1-digit in your head (23 × 4)', 5),
+  ('mul5:flip', 'times-2by1', '2-digit times 1-digit in your head (23 × 4)', 5),
+  ('mul5:split', 'times-2by1', '2-digit times 1-digit in your head (23 × 4)', 5),
+  ('pv5:worth', 'place-million', 'Place value to a million', 5),
+  ('pv5:split', 'place-million', 'Place value to a million', 5),
+  ('big5:biggest', 'compare-big', 'Biggest and smallest to a million', 5),
+  ('big5:smallest', 'compare-big', 'Biggest and smallest to a million', 5),
+  ('cnt5:more', 'count-big', 'Counting in 1000s, 10 000s and 100 000s', 5),
+  ('cnt5:less', 'count-big', 'Counting in 1000s, 10 000s and 100 000s', 5),
+  ('cnt5:next', 'count-big', 'Counting in 1000s, 10 000s and 100 000s', 5),
+  ('ment5:add', 'mental-big', 'Adding and taking away thousands in your head', 5),
+  ('ment5:take', 'mental-big', 'Adding and taking away thousands in your head', 5),
+  ('ment5:big', 'mental-big', 'Adding and taking away thousands in your head', 5),
+  ('miss5:add', 'missing-big', 'Missing numbers with big numbers', 5),
+  ('miss5:sub', 'missing-big', 'Missing numbers with big numbers', 5),
+  ('miss5:nines', 'missing-big', 'Missing numbers with big numbers', 5),
+  ('per5:sq', 'perimeter', 'Perimeter of squares, rectangles and regular shapes', 5),
+  ('per5:rect', 'perimeter', 'Perimeter of squares, rectangles and regular shapes', 5),
+  ('per5:reg', 'perimeter', 'Perimeter of squares, rectangles and regular shapes', 5),
+  ('ang5:size', 'angle-types', 'Kinds of angles (acute, right, obtuse, reflex)', 5),
+  ('ang5:pic', 'angle-types', 'Kinds of angles (acute, right, obtuse, reflex)', 5),
+  ('ang5:clue', 'angle-types', 'Kinds of angles (acute, right, obtuse, reflex)', 5),
+  ('mmkm5:down', 'metric-mm-km', 'Millimetres, centimetres, metres and kilometres', 5),
+  ('mmkm5:up', 'metric-mm-km', 'Millimetres, centimetres, metres and kilometres', 5),
+  ('mmkm5:half', 'metric-mm-km', 'Millimetres, centimetres, metres and kilometres', 5),
+  ('comp5:quarter', 'compass-4', 'Compass points and quarter turns', 5),
+  ('comp5:half', 'compass-4', 'Compass points and quarter turns', 5),
+  ('comp5:three', 'compass-4', 'Compass points and quarter turns', 5),
+  ('clock5:read', 'clock-read', 'Telling the time on a clock face', 5),
+  ('clock5:words', 'clock-read', 'Telling the time on a clock face', 5),
+  ('hund5:add', 'add-hundredths', 'Adding and taking away hundredths', 5),
+  ('hund5:take', 'add-hundredths', 'Adding and taking away hundredths', 5),
+  ('hund5:cross', 'add-hundredths', 'Adding and taking away hundredths', 5),
+  ('cash5:total', 'money-y5', 'Money: totals, change and the nearest dollar', 5),
+  ('cash5:change', 'money-y5', 'Money: totals, change and the nearest dollar', 5),
+  ('cash5:near', 'money-y5', 'Money: totals, change and the nearest dollar', 5),
+  ('mix5:top', 'mixed-improper', 'Mixed numbers and improper fractions', 5),
+  ('mix5:whole', 'mixed-improper', 'Mixed numbers and improper fractions', 5),
+  ('mix5:tap', 'mixed-improper', 'Mixed numbers and improper fractions', 5),
+  ('pat5:next', 'pattern-decimal', 'Patterns that go up in halves and decimals', 5),
+  ('pat5:gap', 'pattern-decimal', 'Patterns that go up in halves and decimals', 5),
+  ('pat5:step', 'pattern-decimal', 'Patterns that go up in halves and decimals', 5);
