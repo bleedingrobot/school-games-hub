@@ -69,7 +69,7 @@ function DailyChart({ days }: { days: PulseDay[] }) {
   const max = Math.max(1, ...days.map((d) => d.plays));
   const w = 100 / Math.max(1, days.length);
   return (
-    <div className="pulse-chart" role="img" aria-label="Goes per day for the last four weeks">
+    <div className="pulse-chart" role="img" aria-label="Games played each day for the last four weeks">
       <svg viewBox="0 0 100 40" preserveAspectRatio="none" className="pulse-chart__svg">
         {days.map((d, i) => {
           const h = (36 * d.plays) / max;
@@ -77,14 +77,14 @@ function DailyChart({ days }: { days: PulseDay[] }) {
           return (
             <rect key={d.d} x={i * w + w * 0.12} y={40 - h} width={w * 0.76} height={Math.max(h, 0.3)}
               className={dow === 0 || dow === 6 ? 'pulse-bar pulse-bar--weekend' : 'pulse-bar'}>
-              <title>{`${dayLabel(d.d)}: ${fmt(d.plays)} goes by ${fmt(d.players)} pupils, ${fmt(d.answered)} maths answers (${pct(d.correct, d.answered)}% right)`}</title>
+              <title>{`${dayLabel(d.d)}: ${fmt(d.plays)} games played by ${fmt(d.players)} pupils, ${fmt(d.answered)} maths answers (${pct(d.correct, d.answered)}% right)`}</title>
             </rect>
           );
         })}
       </svg>
       <div className="pulse-chart__axis">
         <span>{days[0] ? dayLabel(days[0].d) : ''}</span>
-        <span>Busiest day: {fmt(max)} goes</span>
+        <span>Busiest day: {fmt(max)} games</span>
         <span>Today</span>
       </div>
     </div>
@@ -95,7 +95,7 @@ function HoursChart({ hours }: { hours: PulseHour[] }) {
   const shown = hours.filter((h) => h.h >= 6 && h.h <= 22);
   const max = Math.max(1, ...shown.map((h) => h.weekday + h.weekend));
   return (
-    <div className="pulse-hours" role="img" aria-label="Goes by hour of the day, last four weeks">
+    <div className="pulse-hours" role="img" aria-label="Games played by hour of the day, last four weeks">
       {shown.map((h) => (
         <div key={h.h} className="pulse-hours__col" title={`${h.h}:00 to ${h.h + 1}:00: ${fmt(h.weekday)} on school days, ${fmt(h.weekend)} at weekends`}>
           <div className="pulse-hours__bar">
@@ -179,7 +179,7 @@ function GamesTable({ pulse, switches }: { pulse: Pulse; switches: Record<string
           </select>
         </label>
       </div>
-      <p className="pulse-note">“This week” is the last 7 days against the 7 before. A go is a finished game unless it says otherwise under Last played. “Your class” is whether it is switched on for the class in the header.</p>
+      <p className="pulse-note">“This week” is the last 7 days against the 7 before. Each number counts finished games, unless it says otherwise under Last played (for example rounds, runs or sessions). “Your class” is whether it is switched on for the class in the header.</p>
       <div className="pulse-scroll">
         <table className="pulse-table">
           {head}
@@ -194,7 +194,7 @@ function GamesTable({ pulse, switches }: { pulse: Pulse; switches: Record<string
                 <tbody key={group}>
                   <tr className="pulse-table__group">
                     <th colSpan={8}>
-                      {title} · {fmt(week)} goes this week
+                      {title} · {fmt(week)} games played this week
                     </th>
                   </tr>
                   {list.map(line)}
@@ -294,7 +294,7 @@ function ClassesPanel({ pulse, mine }: { pulse: Pulse; mine: string | null }) {
               <th>Class</th>
               <th className="pulse-num">Pupils</th>
               <th className="pulse-num">Playing</th>
-              <th className="pulse-num">Goes</th>
+              <th className="pulse-num">Games played</th>
               <th className="pulse-num">Last week</th>
             </tr>
           </thead>
@@ -368,18 +368,18 @@ export function TeacherPulse() {
       {failed && <p className="pulse-note" role="alert">{failed} Showing the last numbers.</p>}
 
       <div className="pulse-tiles">
-        <Tile label="Pupils playing today" value={fmt(k.activeToday)} note={`${fmt(k.playsToday)} goes so far`} />
+        <Tile label="Pupils playing today" value={fmt(k.activeToday)} note={`${fmt(k.playsToday)} games played so far`} />
         <Tile label="Pupils playing this week" value={fmt(k.active7)} note={<>of {fmt(k.pupils)} · <Change now={k.active7} before={k.activePrev7} /></>} />
-        <Tile label="Goes this week" value={fmt(k.plays7)} note={<Change now={k.plays7} before={k.playsPrev7} />} />
+        <Tile label="Games played this week" value={fmt(k.plays7)} note={<><Change now={k.plays7} before={k.playsPrev7} /> on the week before</>} />
         <Tile label="Maths answers this week" value={fmt(answers.week)} note={`${pct(answers.right, answers.week)}% right · ${fmt(answers.today)} today`} />
         <Tile label="Maths answers so far" value={fmt(answers.all)} note="since the hub began" />
-        <Tile label="Played in school time" value={`${inSchool}%`} note="this week, Mon–Fri 9–3" />
+        <Tile label="Played in school time" value={`${inSchool}%`} note="of this week’s games, Mon–Fri 9–3" />
         <Tile label="Pupils active in 4 weeks" value={fmt(k.active28)} note={`${fmt(k.activeEver)} have ever played`} />
-        <Tile label="Goes all time" value={fmt(k.playsEver)} />
+        <Tile label="Games played so far" value={fmt(k.playsEver)} note="every finished game, run or round, in every game, since the hub began" />
       </div>
 
       <section className="panel pulse-panel" aria-labelledby="pulse-daily">
-        <h2 id="pulse-daily" className="panel__title">Goes each day, last four weeks</h2>
+        <h2 id="pulse-daily" className="panel__title">Games played each day, last four weeks</h2>
         <DailyChart days={pulse.daily} />
       </section>
 
