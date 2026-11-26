@@ -58,7 +58,7 @@ export interface CryChecked {
 const FLOAT_STEPS = 3;
 
 const BATTLE_CRY_NOTE = 'A right answer powers up the whole clan. No timer, nothing lost.';
-/** The last question of a shallow fight: its power-up lasts every round after. */
+/** A mine fight's one question: its power-up lasts every round after. */
 const BATTLE_CRY_NOTE_LASTS = 'A right answer powers up the whole clan for the rest of the fight. No timer, nothing lost.';
 
 const shown = (q: PublicQuestion): ShownQuestion => ({ id: q.slot, parts: q.parts, spoken: q.spoken, prompt: q.prompt, choices: q.choices, choiceLabels: q.choiceLabels, maxLength: q.maxLength, input: q.input, figure: q.figure });
@@ -127,7 +127,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   const startRound = (f: FightState) => {
     if (f.result) return setPhase('over');
     // Round f.round + 1 is next: a ladder fight's question for it is number f.round in the list.
-    // A shallow fight asks only in its first round or two; after that the power-up already earned carries on.
+    // A mine fight asks only before round 1; after that the power-up already earned carries on.
     const asks = cryAsked(f, f.round + 1);
     const lq = ladder && asks ? ladder[f.round] ?? null : null;
     const q = ladder || !asks ? null : nextCryQuestion(f, settings);
@@ -361,7 +361,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   const stageArt = fight.monster ? undefined : fight.raid ? sceneArt('raid-arena').wide ?? sceneArt('raid').wide : mineArt(fight.depth).wide ?? sceneArt(zoneScene(zone)).wide ?? zoneArt;
   // Each side gets room for its own fighters, so four members facing two monsters aren't squeezed into half the stage.
   const stageColumns = `minmax(0, ${Math.max(1.5, fight.enemies.length)}fr) minmax(0, ${Math.max(1.5, fight.clan.length)}fr)`;
-  // A right answer now powers up the rest of the fight (a shallow fight's last question), not just this round.
+  // A right answer now powers up the rest of the fight (a mine fight's one question), not just this round.
   const lasts = cryLastsTheFight(fight, fight.round + 1);
   const roundNow = Math.min(fight.round + (fight.result || phase === 'summary' ? 0 : 1), maxRoundsOf(fight));
   // The phases whose choices fit one slim row: they sit on the painting. The question and the end stay below it.
