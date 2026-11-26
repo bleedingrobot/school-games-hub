@@ -87,19 +87,6 @@
 .cq-log { height: 16em; margin: 0; padding: 6px 10px; overflow-y: auto; list-style: none; border: 1px solid #2a2a50; background: #05050c; border-radius: 4px; font-size: 0.9rem; }
 .cq-log__round { color: var(--cq-cyan); margin-top: 4px; }
 
-/* The question box, dark and compact inside the fight */
-.cq .question { --q-ink: #e4e4f0; --q-soft: #a6a6c4; --q-key: #1d1d40; --q-key-edge: var(--cq-line); --q-right: #187a30; background: var(--cq-panel); color: var(--q-ink); border-color: var(--cq-line); padding: 6px 10px 8px; gap: 4px; }
-.cq .question__title { font-family: 'VT323', ui-monospace, monospace; font-size: 1.5rem; color: var(--cq-yellow); margin: 0; }
-.cq .question__note { margin: 0; font-size: 0.85rem; }
-.cq .question__text { font-size: 1.05rem; }
-.cq .question__answer { font-size: 1.6rem; }
-.cq .question__blank { background: #1d1d40; box-shadow: inset 0 0 0 2px var(--cq-yellow); color: var(--cq-ink); border-radius: 6px; }
-.cq .question__blank[data-empty] { color: var(--cq-soft); }
-.cq .numpad { max-width: 280px; gap: 3px; }
-.cq .numpad__key { min-height: 44px; font-size: 1.2rem; border-radius: 6px; color: var(--q-ink); }
-.cq .numpad__key--enter { color: #fff; }
-.cq .question__choice { background: var(--cq-panel); color: var(--q-ink); border-radius: 6px; min-height: 56px; }
-.cq .question__close { background: var(--cq-panel); color: var(--q-ink); border-radius: 6px; min-height: 44px; }
 .working { margin: 0 0 8px; }
 .working__answer { color: var(--cq-green); }
 .working__steps { margin: 0; padding-left: 1.3em; }
@@ -196,9 +183,6 @@
 .cq label:has(> input[type='checkbox']) { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
 .cq summary:focus-visible { outline: 3px solid var(--cq-yellow); outline-offset: 2px; }
 .cq input[type='checkbox']:focus-visible { outline: 3px solid var(--cq-yellow); outline-offset: 2px; }
-.cq .numpad { max-width: 330px; }
-.cq .numpad:not([data-decimal]) { grid-template-columns: repeat(6, 1fr); }
-.cq .numpad[data-decimal] .numpad__key, .cq .numpad[data-decimal] .numpad__key--enter { min-height: 44px; }
 .cq [tabindex='-1']:focus { outline: none; }
 .cq h2[tabindex='-1']:focus-visible { outline: 3px solid var(--cq-yellow); outline-offset: 2px; }
 
@@ -220,7 +204,6 @@
 .cq h1 { font-size: 1.9rem; }
 .cq h2:not(.question__title) { font-size: 1.6rem; }
 .cq h3:not(.question__title) { font-size: 1.2rem; color: var(--f-head); }
-.cq .question__title { font-family: 'IM Fell English SC', Georgia, serif; }
 .cq-top { padding-bottom: 2px; }
 .cq :is(.cq-headline div, .cq-stats div, .cq-train th, .cq-train td) { border-color: var(--f-dot); }
 .cq-tag { font-family: inherit; }
@@ -242,9 +225,6 @@
 .cq :is(.cq-side li.is-up, .cq-table .cq-me) { background: var(--f-raise); }
 .cq :is(.cq-bar, .cq-log) { background: var(--f-deep); }
 .cq-log { border-color: var(--f-dot); }
-.cq .question { --q-ink: var(--cq-ink); --q-soft: var(--cq-soft); --q-key: var(--f-raise); border-radius: 3px; }
-.cq .question__blank { background: var(--f-raise); }
-.cq .numpad__key, .cq .question__choice, .cq .question__close { border-radius: 3px; }
 
 
 /* Clans art Stage A.5: members' paintings, and picking one of the four looks. --cq-portrait is the height (Sprite.tsx). */
@@ -961,7 +941,6 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
    nothing scrolls). The stage is tall enough to hold the question box. */
 .cq-fightwrap.is-pop .cq-lower { position: absolute; inset: 0; z-index: 7; display: grid; place-items: center; margin: 0; padding: 12px; overflow: auto; background: radial-gradient(ellipse at center, rgba(6, 6, 8, 0.45), rgba(6, 6, 8, 0.75)); }
 .cq-fightwrap.is-pop .cq-panel { width: min(560px, 100%); max-height: 100%; overflow: auto; padding: 10px 14px; border: 2px solid #6a5233; border-radius: 6px; background: rgba(24, 22, 20, 0.97); box-shadow: 0 0 0 1px #000, 0 12px 40px rgba(0, 0, 0, 0.85); }
-.cq-fightwrap.is-pop .cq-panel .question { border: 0; background: none; padding: 0; }
 .cq-fightwrap.is-pop .cq-arena--stage { min-height: max(calc(var(--fig) + 150px), 440px); }
 .cq-fightwrap.is-pop .cq-arena--boss { min-height: max(clamp(420px, 62vh, 640px), 460px); }
 @media (prefers-reduced-motion: no-preference) {
@@ -1651,3 +1630,10 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 
 /* The leader's extra (James, 22 Nov 2026: pupils didn't know the first slot matters). */
 .cq-leaderperk { margin: 6px 0; padding: 4px 8px; border: 1px solid #8a6a3e; border-radius: 6px; background: rgba(120, 80, 20, 0.35); color: #ffd36b; font-size: 0.85rem; font-weight: 700; }
+
+/* The maths question box looks the same as in every other game (James, 26 Nov 2026): the shared white pop-up, with
+   Help me, pictures, the scribble pad and the feedback tab. Clan Quest's own fonts and headings stop at its edge. */
+.cq .question-backdrop { font-family: var(--h-body, 'Segoe UI', Tahoma, system-ui, sans-serif); font-size: 1rem; line-height: normal; color: #0f172a; }
+.cq .question-backdrop :is(h2, h3):not(.question__title) { margin: 0; font-family: inherit; font-size: 1.05rem; font-weight: 700; letter-spacing: normal; color: inherit; }
+/* The pop-up covers the screen itself, so the fight's own panel around it shows nothing. */
+.cq-fightwrap.is-pop .cq-panel:has(.question-backdrop) { border: 0; background: none; box-shadow: none; animation: none; }
