@@ -82,4 +82,10 @@ Notes for James's choice:
 
 James taps Yes, No or Maybe per skill on the picks page https://claude.ai/artifact/3aWAok5QfCHSJPAGyQPLdX (source
 `picker.html` here). Read them with ArtifactData `list`, collection `picks` (doc id = skill id, field `choice`). Copy each answer
-into this section, then build only the yeses. None yet (26 Nov 2026).
+into this section, then build only the yeses.
+
+Picks as of 26 Nov 2026 NZ (James is adding comments to the Maybes on the page; read them before building):
+- **Yes (11):** place-million, compare-big, count-big, mental-big, mixed-improper, angle-types, perimeter, metric-mm-km,
+  pattern-decimal, compass-4, clock-read
+- **Maybe (4):** times-2by1, missing-big, add-hundredths, money-y5
+- **No (3):** count-11-12, fraction-compare, prism-faces
