@@ -76,7 +76,7 @@
     },
     {
       "name": "map-mansion-wide",
-      "prompt": "A top-down painted game board of the ballroom floor of a friendly haunted mansion: a big patterned carpet on wooden floorboards, faint candle glow, cobwebs and potted ferns round the edges, a round old stone fireplace hearth with purple flames seen from above in the exact centre. Spooky but friendly for children aged 7 to 11. An open empty walkable floor everywhere else, calm plain ground, no objects in the open floor, top-down bird's-eye view straight down, game board, wide landscape widescreen picture, the board fills the whole wide frame edge to edge, the centrepiece exactly in the middle, no characters, no writing anywhere.",
+      "prompt": "A top-down painted game board of the ballroom floor of a friendly haunted mansion: a big patterned carpet on wooden floorboards, faint candle glow, cobwebs and potted ferns round the edges, a round stone fire pit with purple flames in the middle of the floor seen from above in the exact centre, no walls. Spooky but friendly for children aged 7 to 11. An open empty walkable floor everywhere else, calm plain ground, no objects in the open floor, top-down bird's-eye view straight down, game board, wide landscape widescreen picture, the board fills the whole wide frame edge to edge, the centrepiece exactly in the middle, no characters, no writing anywhere.",
       "size": [
         2048,
         1280
@@ -84,7 +84,7 @@
       "kind": "scene",
       "folder": "ghost",
       "file": "map-mansion-wide",
-      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, ghosts, statues, perspective view, side view"
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, ghosts, statues, perspective view, side view, wall, fireplace on wall, mantelpiece, chimney, windows, doorway"
     },
     {
       "name": "map-pumpkin-wide",

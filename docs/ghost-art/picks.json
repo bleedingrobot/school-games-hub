@@ -34,5 +34,9 @@
   "ship-crypt": 1,
   "ship-slow": 1,
   "ship-teleport": 1,
-  "ship-bats": 1
+  "ship-bats": 1,
+  "map-graveyard-wide": 2,
+  "map-pumpkin-wide": 2,
+  "map-ship-wide": 2,
+  "map-mansion-wide": 5
 }
