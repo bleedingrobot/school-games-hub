@@ -7,6 +7,7 @@ import { } from '../../shared/space/random';
 import { } from '../../shared/maths/skillPacks/generated';
 import { QuestionModal } from './QuestionModal';
 import { setHelpSink } from './questionLog';
+import { setFeedbackSink } from './questionFeedback';
 
 const question = (extra: Partial<Question> = {}): Question => ({
   id: 1,
@@ -87,5 +88,31 @@ describe('question box', () => {
     expect(steps.at(-1)?.textContent).toContain('?');
     expect(screen.getByRole('dialog').textContent).not.toMatch(/= 56|\b56\b/);
     setHelpSink(null);
+
+    // Feedback on this question (teachers only): pupils get no tab; a teacher's note is saved with what the box showed.
+    cleanup();
+    setup(question({ id: 6 }));
+    expect(screen.queryByRole('button', { name: /Feedback/ })).toBeNull();
+    cleanup();
+    const send = vi.fn(async () => {});
+    setFeedbackSink({ send });
+    setup(question({ id: 7, parts: ['23', '×', '4', '=', '?'], factKey: 'mul:23x4', answer: 92 }));
+    await user.click(screen.getByRole('button', { name: /Feedback/ }));
+    const panel = screen.getByRole('region', { name: 'Feedback on this question' });
+    await user.click(screen.getByRole('button', { name: 'The picture' }));
+    await user.type(screen.getByRole('textbox', { name: 'Your feedback' }), 'Box should say 20 and 3');
+    await user.click(screen.getByRole('button', { name: 'Save feedback' }));
+    expect(await screen.findByText('Saved. Thank you!')).toBeTruthy();
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({
+      feedback: 'Box should say 20 and 3', tags: ['picture'], key: 'mul:23x4',
+      question: expect.objectContaining({ title: 'Mana Well', parts: ['23', '×', '4', '=', '?'], answer: 92 }),
+      picture: expect.objectContaining({ kind: 'split-box', tens: 20, ones: 3 }),
+      help: expect.objectContaining({ steps: expect.any(Array) }),
+    }));
+    expect(panel).toBeTruthy();
+    // Typing the note never types into the answer.
+    expect(screen.getByRole('dialog').querySelector('.question__blank')?.textContent).toBe('?');
+    setFeedbackSink(null);
+    localStorage.clear();
   });
 });

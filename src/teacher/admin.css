@@ -127,3 +127,109 @@
 .admin-year__step .button {
   min-height: 44px;
 }
+
+/* Admin → Question feedback: the tweak list (AdminFeedback.tsx). */
+.admin-feedback__intro {
+  margin: 0 0 10px;
+}
+.admin-feedback__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.admin-feedback__item[data-status='fixed'],
+.admin-feedback__item[data-status='skip'] {
+  opacity: 0.85;
+}
+.admin-feedback__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+}
+.admin-feedback__where {
+  font-weight: 800;
+}
+.admin-feedback__meta {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+  overflow-wrap: anywhere;
+}
+.admin-feedback__words {
+  margin: 8px 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.admin-feedback__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+.admin-feedback__tag {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #ede9fe;
+  color: #3b2a8a;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.admin-feedback__shown {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 8px 0;
+  padding: 12px;
+  border-radius: 16px;
+  background: #fff;
+  color: #0f172a;
+}
+.admin-feedback__question {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.admin-feedback__question svg {
+  max-width: 100%;
+}
+.admin-feedback__prompt,
+.admin-feedback__choices,
+.admin-feedback__answer,
+.admin-feedback__none {
+  margin: 0;
+}
+.admin-feedback__fact {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+.admin-feedback__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+  margin-top: 8px;
+}
+.admin-feedback__reply {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 220px;
+  font-size: 0.9rem;
+}
+.admin-feedback__reply input {
+  min-height: 40px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 2px solid #cbd5e1;
+  font: inherit;
+}
+.admin-feedback__done {
+  font-weight: 700;
+}

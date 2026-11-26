@@ -14,6 +14,7 @@ import { powerClash } from './games/power-clash';
 import { dragonMaths } from './games/lord';
 import { clanQuest } from './games/clans/game';
 import { useSkipRuleSync } from './data/questionSkips';
+import { useQuestionFeedbackSync } from './data/questionFeedback';
 import { SoundProvider } from './sound';
 import { activitiesOn } from './activities/switch';
 import { trainingOn } from './training/switch';
@@ -45,6 +46,7 @@ const TeacherClassLive = lazy(() => import('./pages/TeacherClassLive').then((m) 
 const TeacherQuests = lazy(() => import('./quests/TeacherQuests').then((m) => ({ default: m.TeacherQuests })));
 const Year78Taught = lazy(() => import('./teacher/Year78').then((m) => ({ default: m.Year78Taught })));
 const TeacherGames = lazy(() => import('./teacher/Games').then((m) => ({ default: m.TeacherGames })));
+const AdminFeedback = lazy(() => import('./teacher/AdminFeedback').then((m) => ({ default: m.AdminFeedback })));
 const AdminYear = lazy(() => import('./teacher/AdminYear').then((m) => ({ default: m.AdminYear })));
 const Today = lazy(() => import('./teacher/Today').then((m) => ({ default: m.Today })));
 const AdminClasses = lazy(() => import('./teacher/Admin').then((m) => ({ default: m.AdminClasses })));
@@ -94,6 +96,7 @@ export function teacherRoutes() {
           <Route path="defaults" element={<AdminDefaults />} />
           {classliveOn() && <Route path="classlive" element={<AdminClassLive />} />}
           <Route path="year" element={<AdminYear />} />
+          <Route path="feedback" element={<AdminFeedback />} />
         </Route>
       </Route>
       <Route path="teacher/:classId" element={<TeacherShell />}>
@@ -192,6 +195,7 @@ export function AppRoutes() {
 /** Hands the class's "Skip button" switch to the question box (src/data/questionSkips.ts). */
 function SkipRuleSync() {
   useSkipRuleSync();
+  useQuestionFeedbackSync();
   return null;
 }
 
