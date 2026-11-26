@@ -5,13 +5,12 @@
  * through the pure rules in shared/monsters/world/menu.ts.
  */
 import { useEffect, useRef, useState } from 'react';
-import { TOPICS } from '../../../../shared/maths/skillPacks';
 import type { ItemId } from '../../../../shared/monsters/engine';
 import { AREAS } from '../../../../shared/monsters/world/areas';
 import { applyItem, bookCounts, canHeal, moveToBox, moveToFront, moveToTeam, type MenuResult } from '../../../../shared/monsters/world/menu';
 import { ITEM_ORDER } from '../../../../shared/monsters/world/rewards';
 import type { WorldState } from '../../../../shared/monsters/world/types';
-import { TYPE_LABEL, TYPE_TOPIC } from '../../../../shared/monsters/types';
+import { TYPE_LABEL } from '../../../../shared/monsters/types';
 import { badgePic } from '../art/painted';
 import { BoxScreen } from '../BoxScreen';
 import { HowToPlayBody } from '../HowToPlay';
@@ -52,7 +51,6 @@ export interface MapMenuProps {
 }
 
 const TITLES: Record<MenuPage, string> = { main: 'Menu', team: 'Team', bag: 'Bag', book: 'Monster book', badges: 'Badges', settings: 'Settings', types: 'Strong and weak', box: 'Monster box', howto: 'How to play', look: 'Change my look', quests: 'Quests', eggs: 'Egg basket', tinker: 'The Tinker', board: 'Notice board', puzzle: 'Puzzle', world: 'World map' };
-const topicLabel = (id: string) => TOPICS.find((t) => t.id === id)?.label ?? id;
 
 export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, onClose, onChange, onTravel, map, questOpts = {}, puzzle }: MapMenuProps) {
   const root = useRef<HTMLDivElement>(null);
@@ -242,7 +240,6 @@ function BadgesPage({ world }: { world: WorldState }) {
             )}
             <span className="mm-badge__text">
               <strong>{TYPE_LABEL[a.type]} badge</strong>
-              <small>{topicLabel(TYPE_TOPIC[a.type])}</small>
               <small>{has ? 'Earned!' : `Win it in the ${TYPE_LABEL[a.type]} Tower, ${a.name}`}</small>
             </span>
           </li>
