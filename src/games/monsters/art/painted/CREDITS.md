@@ -18,3 +18,4 @@ build. They were not copied from any game, artist or art pack.
 The map itself is still Kenney pixel art (CC0, see ../../world/assets/kenney).
 
 Sumsplash (`plusplash-2`, plain and shiny) was repainted on 26 Nov 2026 as one creature (the first painting showed an otter carrying it), James, with Z-Image Turbo in ComfyUI.
+Quotipeng (`divvy-2`, plain only; the shiny was already one penguin) was repainted the same day as one penguin (the first painting had a second penguin beside it).
