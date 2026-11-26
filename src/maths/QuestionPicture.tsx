@@ -352,12 +352,13 @@ function ArrayPic({ rows, cols, extra = 0, groups }: { rows: number; cols: numbe
 function SplitBox({ tens, ones, by }: { tens: number; ones: number; by: number }) {
   const total = 250;
   const sum = Math.max(1, tens + ones);
-  const minW = 44;
+  const minW = 34; // just room for the ones label; the rest is in proportion (20 is drawn about 7 times as wide as 3)
   const tw = Math.min(total - minW, Math.max(minW, (tens / sum) * total));
   const ow = total - tw;
   const x0 = 40;
   const y0 = 30;
-  const bh = 84;
+  // Height in proportion to the side too, within reason: 4 × 23 is a long, low box.
+  const bh = Math.round(Math.min(110, Math.max(40, (total * by) / sum)));
   return (
     <Frame w={x0 + total + 8} h={y0 + bh + 6} label={`Area box split into ${tens} and ${ones} across, ${by} down`}>
       <rect x={x0} y={y0} width={tw} height={bh} className="qp__cell qp__cell--a" />

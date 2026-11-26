@@ -614,11 +614,15 @@ export function QuestionModal({
         aria-labelledby={titleId}
         tabIndex={-1}
         data-result={result ? (result.correct ? 'right' : 'wrong') : undefined}
+        data-side={!inline && (isFigure(question.figure) || picture || (helpOpen && (card || help))) ? true : undefined}
       >
         <h2 id={titleId} className="question__title">
           {title}
         </h2>
         {note && <p className="question__note">{note}</p>}
+        {/* The picture and Help me: above the question on phones, beside it on wide screens (James, 26 Nov 2026: "a little
+            wider, rather than longer"), so the answer stays in view. Both wrappers are display: contents when stacked. */}
+        <div className="question__aside">
         {isFigure(question.figure) ? <Figure figure={question.figure} /> : picture && <QuestionPicture picture={picture} />}
         {(card || help) && (
           // Help me (docs/plans/help-me/PLAN.md): a way to work it out with this question's numbers, never the answer, then
@@ -642,6 +646,8 @@ export function QuestionModal({
             {helpOpen && help && (help === 'angles' ? <AngleNames /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : help === 'fractions' ? <FractionHelp parts={question.parts} /> : help === 'hours' ? <HoursHelp parts={question.parts} /> : help === 'units' ? <UnitHelp parts={question.parts} /> : help === 'turns' ? <TurnHelp parts={question.parts} /> : <SymbolHelp />)}
           </div>
         )}
+        </div>
+        <div className="question__main">
         {question.prompt && <p className="question__prompt">{question.prompt}</p>}
         <p ref={fact} className="question__fact" aria-label={question.spoken} data-long={question.parts.join('').length > 12 || undefined} data-one-line>
           {question.parts.map((part, i) => (
@@ -713,6 +719,7 @@ export function QuestionModal({
           </button>
         )}
         {onClose && closeIsSkip && skips.left !== null && <SkipsLeft left={skips.left} />}
+        </div>
       </div>
       {showPad &&
         (padOpen ? (

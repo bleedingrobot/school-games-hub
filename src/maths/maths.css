@@ -382,11 +382,13 @@
     width: min(100%, 720px);
     padding: 10px 16px 12px;
   }
-  .question > * {
+  .question > *,
+  .question__aside > *,
+  .question__main > * {
     grid-column: 1;
   }
-  .question > .numpad,
-  .question > .question__choices {
+  .question__main > .numpad,
+  .question__main > .question__choices {
     grid-column: 2;
     grid-row: 1 / span 6;
   }
@@ -591,6 +593,68 @@
   cursor: crosshair;
   touch-action: none;
   user-select: none;
+}
+
+/* The picture and Help me sit in .question__aside, the question and its answers in .question__main. Stacked (phones, and
+   wide screens with nothing beside the question) both are display: contents, so the box lays out as one column. */
+.question__aside,
+.question__main {
+  display: contents;
+}
+
+/* Wide screens: with a picture, or Help me open, the box gets wider rather than longer (James, 26 Nov 2026): the picture
+   and help on the left, the question and answers on the right, so the answer stays in view. With the scribble pad open
+   this needs a big screen, so on mid-size screens the box stays stacked while the pad is out. */
+@media (min-width: 880px) and (min-height: 461px) {
+  .question-wrap:not([data-pad]) > .question[data-side] {
+    grid-template-columns: minmax(0, 330px) minmax(0, 380px);
+    column-gap: 24px;
+    align-items: start;
+    width: min(100%, 780px);
+  }
+  .question-wrap:not([data-pad]) > .question[data-side] > .question__title,
+  .question-wrap:not([data-pad]) > .question[data-side] > .question__note {
+    grid-column: 1 / -1;
+  }
+  .question-wrap:not([data-pad]) > .question[data-side] > .question__aside,
+  .question-wrap:not([data-pad]) > .question[data-side] > .question__main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .question-wrap:not([data-pad]) > .question[data-side] > .question__main {
+    align-self: center;
+    width: 100%;
+  }
+}
+@media (min-width: 1260px) and (min-height: 461px) {
+  .question-wrap[data-pad] > .question[data-side] {
+    grid-template-columns: minmax(0, 330px) minmax(0, 380px);
+    column-gap: 24px;
+    align-items: start;
+    width: 780px;
+  }
+  .question-wrap[data-pad] > .question[data-side] > .question__title,
+  .question-wrap[data-pad] > .question[data-side] > .question__note {
+    grid-column: 1 / -1;
+  }
+  .question-wrap[data-pad] > .question[data-side] > .question__aside,
+  .question-wrap[data-pad] > .question[data-side] > .question__main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .question-wrap[data-pad] > .question[data-side] > .question__main {
+    align-self: center;
+    width: 100%;
+  }
+  .question-wrap[data-pad] > .scribble {
+    width: min(420px, calc(100vw - 860px));
+  }
 }
 
 /* Wide screens (Chromebooks): the pad sits to the right of the box, as tall as the box. */

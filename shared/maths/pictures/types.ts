@@ -34,7 +34,7 @@ export type Picture =
   | { kind: 'wholes'; count: number; parts: number; shaded: number }
   /** An array: `rows` rows of `cols` dots, then `extra` loose dots in colour b (remainders). `groups` rings each row. */
   | { kind: 'array'; rows: number; cols: number; extra?: number; groups?: boolean }
-  /** An area box for 2-digit × 1-digit: the top split into `tens` and `ones`, the side `by`. No products written. */
+  /** An area box for 2-digit × 1-digit: the top split into the tens part (20, a value) and the ones part (3), drawn in proportion; the side `by`. No products written. */
   | { kind: 'split-box'; tens: number; ones: number; by: number }
   /** A place-value chart: `headings` (largest first) and the digits under them ('' for an empty column). */
   | { kind: 'place'; headings: string[]; digits: string[] }

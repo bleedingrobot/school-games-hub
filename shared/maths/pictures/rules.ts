@@ -495,7 +495,9 @@ const splitBox: PictureRule = (q) => {
   if (a === null || b === null) return null;
   const [big, small] = a >= b ? [a, b] : [b, a];
   if (!Number.isInteger(big) || !Number.isInteger(small) || big < 11 || big > 99 || small < 2 || small > 9) return null;
-  return { kind: 'split-box', tens: Math.floor(big / 10), ones: big % 10, by: small };
+  // The parts are values, not digits: 23 splits into 20 and 3 (James, 26 Nov 2026), drawn in proportion.
+  if (big % 10 === 0) return null;
+  return { kind: 'split-box', tens: big - (big % 10), ones: big % 10, by: small };
 };
 
 /** "3 + 4 = ?", "? + 15 = 20", "10 − 3 = ?", "10 + 3 = ?": five- or ten-frames, filled with what the question gives. */
