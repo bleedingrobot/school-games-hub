@@ -3,7 +3,8 @@ import { CONFIG } from '../../../shared/clans/config';
 import { train, trainOptions, type TrainKey, type TrainOption } from './places';
 import type { Session, Change } from './session';
 import { PlaceSprite, Portrait } from './Sprite';
-import { TRAIN_HELP, isRecommended } from './text';
+import { TRAIN_HELP } from './text';
+import { RecBadge } from './RecBadge';
 import { lookOf } from '../../../shared/clans/looks';
 
 type Phase = { t: 'idle' } | { t: 'choose'; opt: TrainOption } | { t: 'done'; text: string };
@@ -46,14 +47,14 @@ export function Training({ session, onChange, onBack }: { session: Session; onCh
   } else {
     body = (
       <table className="cq-train">
-        <caption className="cq-soft">Training Hall level {hall}. Choose what to train. <span className="cq-rec">(R)</span> means a good one for a {member.cls}. Hover over a name to see what it does.</caption>
+        <caption className="cq-soft">Training Hall level {hall}. Choose what to train. <span className="cq-rec">★ Main</span> is the most important stat for a {member.cls}, and <span className="cq-rec cq-rec--also">Also good</span> are worth training next. Hover over a name to see what it does.</caption>
         <thead><tr><th scope="col">What</th><th scope="col">Each costs</th><th scope="col"><span className="sr-only">Buy</span></th></tr></thead>
         <tbody>
           {options.map((o) => (
             <tr key={o.key}>
               <th scope="row" title={TRAIN_HELP[o.key]}>
                 {o.label}
-                {isRecommended(member.cls, o.key) && <span className="cq-rec" title={`Good to train for a ${member.cls}`}> (R)<span className="sr-only"> recommended for a {member.cls}</span></span>}
+                <RecBadge cls={member.cls} stat={o.key} />
                 {' '}<small className="cq-soft">{o.gives}</small>
               </th>
               <td>{o.cost} points</td>
