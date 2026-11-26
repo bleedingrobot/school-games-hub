@@ -3,7 +3,7 @@
 -- school see it in the pop-up; it is closed if nobody moved it on.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(14);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000a1', 'ada@douglaspark.school.nz'),
@@ -57,6 +57,10 @@ select ok(exists (select 1 from public.classlive_open_for('00000000-0000-0000-00
 update public.classlive_rooms set starts_at = now() - interval '3 minutes' where schedule_id = current_setting('test.time')::bigint;
 select public.classlive_auto_open();
 select is((select state from public.classlive_rooms where schedule_id = current_setting('test.time')::bigint), 'over', 'a room still waiting after its start is closed');
+
+-- ---- The time was changed after today's room: it opens again at the new time (the old room was at another start) ----
+select is(public.classlive_auto_open(), 1, 'a time changed after today''s room opens again');
+select is(public.classlive_auto_open(), 0, '... once');
 
 select * from finish();
 rollback;
