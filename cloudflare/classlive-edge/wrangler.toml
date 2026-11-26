@@ -1,0 +1,18 @@
+# Class Live's Cloudflare rooms (shared/classlive/edge.ts, docs/plans/classlive-edge/PLAN.md). Deployed by the publish
+# ("edge" job in .github/workflows/deploy.yml) when CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are set.
+# EDGE_SECRET is set by the same job (never in this file).
+name = "classlive-edge"
+main = "src/index.ts"
+compatibility_date = "2025-09-24"
+workers_dev = true
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "GhostRoom"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["GhostRoom"]
+
+[observability]
+enabled = true

@@ -17,6 +17,7 @@ import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import { Joystick, useKeys } from './CornersPad';
 import { GhostBoard, GhostToken } from './GhostBoard';
 import { GhostHelp } from './GhostCard';
+import { useEdgeLink } from './edgeLink';
 import type { ClassLiveLink } from './link';
 import './controller.css';
 
@@ -26,12 +27,14 @@ const SEND_MS = 400;
 const SEND_NEAR_MS = 300;
 const factOf = (q: PublicQuestion, answer: number) => q.parts.map((p) => p.replace(/\?/g, String(answer))).join(' ');
 
-export function GhostPad({ link, room, view, me, setMe, setView, clock, avatar }: {
+export function GhostPad({ link: baseLink, room, view, me, setMe, setView, clock, avatar }: {
   link: ClassLiveLink; room: number | null; view: RoomView; me: PlayerView | null;
   setMe: (m: PlayerView) => void; setView: (f: (v: RoomView | null) => RoomView | null) => void;
   clock: () => number;
   avatar?: unknown;
 }) {
+  // James's pilot rooms send spots through Cloudflare (edgeLink.ts), 10 times a second.
+  const link = useEdgeLink(baseLink, room, view.edge);
   const pub: Pub | null = view.game.kind === 'ghost' ? view.game : null;
   const mg: Mine | null = me && me.game.kind === 'ghost' ? me.game : null;
   const r = pub?.round ?? null;
@@ -83,7 +86,7 @@ export function GhostPad({ link, room, view, me, setMe, setView, clock, avatar }
         const p = pos.current.p;
         const near = (seen.current?.spots ?? []).some(([x, y, kind]) => (ghost ? kind === 0 || kind === 3 : kind === 1) && Math.hypot(x - p.x, y - p.y) < 0.25);
         const now = Date.now();
-        if (now - lastSent.current >= (near ? SEND_NEAR_MS : SEND_MS)) {
+        if (now - lastSent.current >= (link.sendMs ?? (near ? SEND_NEAR_MS : SEND_MS))) {
           lastSent.current = now;
           const send = link.ghostMove ?? (async () => null);
           const n = r.n;

@@ -193,6 +193,55 @@ jobs:
             done
           done
 
+  # Class Live's Cloudflare rooms (cloudflare/classlive-edge, shared/classlive/edge.ts): James's Ghost Tag pilot. Needs the
+  # repo secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID; without them it says so and is skipped. Deploys when the
+  # room's code changed, when run by hand, or when the server function doesn't know the room's address yet. The secret
+  # the two share is made from SUPABASE_ACCESS_TOKEN here and set on both sides, so nobody has to copy it.
+  edge:
+    needs: [changes, database]
+    if: ${{ !cancelled() && needs.database.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      BASE: ${{ needs.changes.outputs.base }}
+      EVENT: ${{ github.event_name }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Deploy the Cloudflare rooms
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::notice::No Cloudflare secrets yet, so the Class Live rooms were not deployed."
+            exit 0
+          fi
+          known=$(npx supabase secrets list --project-ref zqzhetlzvtptnkmeiumi | grep -c CLASSLIVE_EDGE_URL || true)
+          if [ "$EVENT" != "workflow_dispatch" ] && [ "$known" != "0" ] && [ -n "$BASE" ] && \
+            git diff --quiet "$BASE" HEAD -- cloudflare shared/classlive/edge.ts shared/classlive/ghost.ts shared/classlive/corners.ts; then
+            echo "The Cloudflare rooms didn't change."; exit 0
+          fi
+          secret=$(printf 'classlive-edge:%s' "$SUPABASE_ACCESS_TOKEN" | sha256sum | cut -d' ' -f1)
+          echo "::add-mask::$secret"
+          cd cloudflare/classlive-edge
+          for i in 1 2 3; do
+            npx -y wrangler@4.40.0 deploy 2>&1 | tee "$RUNNER_TEMP/wrangler.txt" && break
+            [ $i -eq 3 ] && exit 1
+            sleep $((20 * i))
+          done
+          url=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' "$RUNNER_TEMP/wrangler.txt" | head -1)
+          if [ -z "$url" ]; then echo "::error::Couldn't find the workers.dev address (open Workers & Pages once in Cloudflare to pick one)."; exit 1; fi
+          echo "Rooms live at $url"
+          printf '%s' "$secret" | npx -y wrangler@4.40.0 secret put EDGE_SECRET
+          npx supabase secrets set --project-ref zqzhetlzvtptnkmeiumi "CLASSLIVE_EDGE_URL=$url" "CLASSLIVE_EDGE_SECRET=$secret"
+
   deploy:
     needs: [functions]
     if: ${{ !cancelled() && needs.functions.result == 'success' }}
