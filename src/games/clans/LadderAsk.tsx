@@ -7,7 +7,7 @@ import type { ServerReply } from './remote';
 /** Sends an action and gives back the server's answer (ClanQuest's `ask`). Missing in Practice (no server). */
 export type Asker = (action: Action) => Promise<ServerReply>;
 
-const shown = (q: PublicQuestion): ShownQuestion => ({ id: q.slot, parts: q.parts, spoken: q.spoken, prompt: q.prompt, choices: q.choices, choiceLabels: q.choiceLabels, maxLength: q.maxLength, input: q.input });
+const shown = (q: PublicQuestion): ShownQuestion => ({ id: q.slot, parts: q.parts, spoken: q.spoken, prompt: q.prompt, choices: q.choices, choiceLabels: q.choiceLabels, maxLength: q.maxLength, input: q.input, figure: q.figure });
 
 /**
  * Ladder questions from the child's own maths for the shop discount, the quest or the siege. The server makes them (`ask`)

@@ -36,7 +36,7 @@ export function dragDirection(dx: number, dy: number, deadZone: number): number 
   return ((Math.round(a / (TAU / 16)) % 16) + 16) % 16;
 }
 
-const shown = (q: PublicQuestion): ShownQuestion => ({ id: q.slot, parts: q.parts, spoken: q.spoken, prompt: q.prompt, choices: q.choices, choiceLabels: q.choiceLabels, maxLength: q.maxLength, input: q.input });
+const shown = (q: PublicQuestion): ShownQuestion => ({ id: q.slot, parts: q.parts, spoken: q.spoken, prompt: q.prompt, choices: q.choices, choiceLabels: q.choiceLabels, maxLength: q.maxLength, input: q.input, figure: q.figure });
 
 type Stage = 'play' | 'ask' | 'cards' | 'codex' | 'leave' | 'end';
 

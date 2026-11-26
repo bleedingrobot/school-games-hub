@@ -184,8 +184,11 @@ const axis = oneKey(
       'both numbers the same': p(a, a),
       'neither number is zero': which === 0 ? p(b, a) : p(a, b),
     };
-    const made = pick({ parts: [`Point on the ${name}-axis`, '=', '?'], spoken: `Which point is on the ${name} axis?`, fact: `${right} is on the ${name}-axis` }, right, named, { slot, salt });
-    return made ? { ...made, prompt: `Which point is on the ${name}-axis?` } : null;
+    // Asked in plain words, with no "Point on the x-axis = ?" line under it (James, 26 Nov 2026: it was confusing).
+    // QuestionModal's Help me draws a small grid for any question that names an axis.
+    const line = which === 0 ? 'the line going across' : 'the line going up';
+    const made = pick({ parts: ['?'], spoken: `Which point sits on the ${name} axis, ${line}?`, fact: `${right} is on the ${name}-axis` }, right, named, { slot, salt });
+    return made ? { ...made, prompt: `Which point sits on the ${name}-axis (${line})?` } : null;
   },
 );
 
