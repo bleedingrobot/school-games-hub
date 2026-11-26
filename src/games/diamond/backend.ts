@@ -20,6 +20,8 @@ export interface Loaded {
 
 export interface Started {
   seed: number;
+  /** The seed of what's buried (the same as last time if the pupil left this level unfinished). Missing: the seed. */
+  field?: number;
   level: number;
   boosts: BoostId[];
   /** The guided first go (level 1, never played before). */

@@ -80,7 +80,7 @@ export function PlayLevel({
   /** The level whose painting this level shows (a cavern borrows one until it has its own). */
   const art = artLevel(started.level);
   const stateRef = useRef<LevelState>(null as unknown as LevelState);
-  if (!stateRef.current) stateRef.current = startLevel(started.level, started.seed, started.boosts, started.starter);
+  if (!stateRef.current) stateRef.current = startLevel(started.level, started.seed, started.boosts, started.starter, started.field ?? started.seed);
   const drops = useRef<number[]>([]);
   const finishAt = useRef<number | null>(null);
   const wantFinish = useRef(false);

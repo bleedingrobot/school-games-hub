@@ -43,6 +43,12 @@ export interface Player {
    * level 11), the date one was first passed, and best stars on each. One new cavern a day, like the levels.
    */
   caves?: { deepest: number; newDate: string | null; stars: number[] };
+  /**
+   * The field seed of each level (by level number) whose last go was left unfinished. The next go of that level digs
+   * the same field, so leaving and coming in again never rerolls the rare gem or the monsters (James, 26 Nov 2026).
+   * A level's entry goes when one of its goes ends.
+   */
+  fields?: Partial<Record<string, number>>;
   // ---- Kept for good ----
   /** Workshop upgrades bought or earned. */
   owned: string[];

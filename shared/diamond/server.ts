@@ -115,6 +115,18 @@ function readBoosts(v: unknown): BoostId[] | null {
   return new Set(v).size === v.length ? (v as BoostId[]) : null;
 }
 
+/** The field seed kept for a level left unfinished (undefined: none). */
+function fieldOf(p: Player, level: number): number | undefined {
+  const f = p.fields?.[String(level)];
+  return isSeed(f) ? f : undefined;
+}
+
+function withoutField(fields: Player['fields'], level: number): Player['fields'] {
+  const rest = { ...(fields ?? {}) };
+  delete rest[String(level)];
+  return rest;
+}
+
 /** The level's questions: the pupil's own focus, made from the level's seed. Null if their maths can't be read. */
 async function questionsFor(services: DiamondServices, player: string, seed: number, level: number): Promise<Question[] | null> {
   const context = await services.mathsContext(player);
@@ -159,13 +171,16 @@ export async function handleDiamond(services: DiamondServices, player: string, b
       const paid = takeBoosts(s.player, level as number, boosts);
       if (!paid.ok) return no(400, paid.reason === 'coins' ? 'Not enough coins for those boosts.' : 'Those boosts can’t be used.');
       const seed = Math.floor(services.random() * 2 ** 32);
+      // A level left unfinished comes back with the same field (no fishing for rare gems by leaving and coming back).
+      const field = fieldOf(s.player, level as number) ?? seed;
+      paid.player = { ...paid.player, fields: { ...(paid.player.fields ?? {}), [String(level)]: field } };
       const questions = await questionsFor(services, player, seed, level as number);
       if (!questions) return busy();
       const starter = level === 1 && needsStarter(s.player);
       const kept = await services.start(player, s.version, paid.player, { seed, level: level as number, boosts, starter, questions });
       if (kept === 'busy') return busy();
       if (kept) {
-        return ok({ seed, level, boosts, starter, questions: questions.map((q, slot) => publicQuestion(q, slot)), player: paid.player });
+        return ok({ seed, field, level, boosts, starter, questions: questions.map((q, slot) => publicQuestion(q, slot)), player: paid.player });
       }
     }
     return busy();
@@ -211,8 +226,12 @@ export async function handleDiamond(services: DiamondServices, player: string, b
       const result = playLevel({
         level: lvl.level, seed, drops: drops as number[], finish: (finish ?? null) as number | null,
         boosts: lvl.boosts, marks: lvl.marks.map((m) => m === true), starter: lvl.starter,
+        // Every go keeps its level's field in the save until it ends; a go from before that used its own seed.
+        field: fieldOf(s.player, lvl.level) ?? seed,
       });
       const applied = applyResult(s.player, result, now(), unlimited);
+      // This level's go is over: its next go digs a new field.
+      applied.player = { ...applied.player, fields: withoutField(applied.player.fields, lvl.level) };
       const kept = await services.end(player, seed, s.version, applied.player, { drops: drops as number[], finish: (finish ?? null) as number | null, result });
       if (kept === 'busy') return busy();
       if (kept) {

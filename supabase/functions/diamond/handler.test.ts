@@ -68,6 +68,15 @@ it('refuses another pupil’s level, and ends a level only once', async () => {
   const again = await send('pupil-a', { action: 'levelEnd', seed: start.seed, drops, finish: null });
   expect(again.body).toMatchObject({ code: 'ended' });
   expect(log.points).toEqual([{ player: 'pupil-a', points: first.body.points, once: `diamond:${start.seed}` }]);
+  // Leaving a go unfinished and coming back digs the same field (no rerolling rare gems); ending a go digs a new one.
+  expect(start.field).toBe(start.seed);
+  const left = (await send('pupil-a', { action: 'levelStart', level: 1, boosts: [] })).body;
+  const back = (await send('pupil-a', { action: 'levelStart', level: 1, boosts: [] })).body;
+  expect(back.seed).not.toBe(left.seed);
+  expect(back.field).toBe(left.field);
+  const timedOut = await send('pupil-a', { action: 'levelEnd', seed: back.seed, drops: [], finish: null });
+  expect(timedOut.body.result).toEqual(playLevel({ level: 1, seed: back.seed, field: left.field, drops: [], finish: null, marks: [] }));
+  expect((await send('pupil-a', { action: 'levelStart', level: 1, boosts: [] })).body.field).not.toBe(left.field);
   // Level 2 is a new level: it waits for tomorrow (New Zealand date), then opens.
   expect((await send('pupil-a', { action: 'levelStart', level: 2, boosts: [] })).body).toMatchObject({ code: 'not-open' });
 });
