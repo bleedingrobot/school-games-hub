@@ -8,6 +8,7 @@
  *   /teacher/:classId/maths      Maths: Focus, Skill map, Skipped questions
  *   /teacher/:classId/quests     Quests (weekly class quests: start one, every pupil's days)
  *   /teacher/:classId/games      Games (the Games table; /games/:gameId is a game's settings on a narrow screen)
+ *   /teacher/:classId/pulse      Pulse (the whole school's use of the hub, live: every game, counts only)
  *   /teacher/:classId/setup      Class set-up (the class's My classes panel)
  *   /teacher/admin               Admin (school admins only: Overview, Classes, Students, Teachers, New class settings, Class Live times, End of year)
  *
@@ -121,6 +122,7 @@ function TeacherHeader({ isAdmin }: { isAdmin: boolean }) {
     // Class Showdown is part of the Class Live page when that is on (James, 24 Nov 2026).
     ...(showdownOn() && !classliveOn() ? [{ to: pathFor(classId, 'showdown'), label: 'Class Showdown' }] : []),
     ...(classliveOn() ? [{ to: pathFor(classId, 'classlive'), label: 'Class Live' }] : []),
+    { to: pathFor(classId, 'pulse'), label: 'Pulse' },
     { to: pathFor(classId, 'setup'), label: 'Class set-up' },
   ];
   return (

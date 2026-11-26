@@ -48,6 +48,7 @@ const Year78Taught = lazy(() => import('./teacher/Year78').then((m) => ({ defaul
 const TeacherGames = lazy(() => import('./teacher/Games').then((m) => ({ default: m.TeacherGames })));
 const AdminFeedback = lazy(() => import('./teacher/AdminFeedback').then((m) => ({ default: m.AdminFeedback })));
 const AdminYear = lazy(() => import('./teacher/AdminYear').then((m) => ({ default: m.AdminYear })));
+const TeacherPulse = lazy(() => import('./teacher/pulse/Pulse').then((m) => ({ default: m.TeacherPulse })));
 const Today = lazy(() => import('./teacher/Today').then((m) => ({ default: m.Today })));
 const AdminClasses = lazy(() => import('./teacher/Admin').then((m) => ({ default: m.AdminClasses })));
 const AdminClassLive = lazy(() => import('./teacher/AdminClassLive').then((m) => ({ default: m.AdminClassLive })));
@@ -119,6 +120,7 @@ export function teacherRoutes() {
           <Route path=":gameId" element={null} />
         </Route>
         <Route path="quests" element={<TeacherQuests />} />
+        <Route path="pulse" element={<Suspense fallback={loading}><TeacherPulse /></Suspense>} />
         {/* Class Showdown lives on the Class Live page (James, 24 Nov 2026: one page for both). */}
         {showdownOn() && <Route path="showdown" element={classliveOn() ? <Navigate to="../classlive?game=showdown" relative="path" replace /> : <Suspense fallback={loading}><TeacherShowdown /></Suspense>} />}
         {classliveOn() && <Route path="classlive" element={<Suspense fallback={loading}><TeacherClassLive /></Suspense>} />}

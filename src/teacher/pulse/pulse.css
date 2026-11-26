@@ -1,0 +1,227 @@
+/* Games Hub Pulse (src/teacher/pulse/Pulse.tsx). */
+.pulse {
+  display: grid;
+  gap: 16px;
+}
+.panel.pulse-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.pulse-top__title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.4rem;
+}
+.pulse-note {
+  margin: 4px 0 8px;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+.pulse-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 10px;
+}
+.pulse-tile {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.pulse-tile__value {
+  font-family: var(--display);
+  font-size: 1.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.pulse-tile__label {
+  font-weight: 600;
+}
+.pulse-tile__note {
+  margin-top: 2px;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+.pulse-panel {
+  min-width: 0;
+}
+.pulse-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.pulse-sort select {
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+}
+.pulse-change {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.pulse-change--up {
+  color: var(--won);
+}
+.pulse-change--down {
+  color: var(--lost);
+}
+.pulse-scroll {
+  overflow-x: auto;
+}
+.pulse-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.pulse-table th,
+.pulse-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.pulse-table thead th {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.pulse-table__group th {
+  padding-top: 16px;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.pulse-table__mine td {
+  background: var(--tint);
+  font-weight: 600;
+}
+.pulse-table .pulse-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.pulse-game__name {
+  font-weight: 600;
+}
+.pulse-game__tag,
+.pulse-sub {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+.pulse-tag {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pulse-on,
+.pulse-off {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.pulse-on {
+  background: #dcfce7;
+  color: #166534;
+}
+.pulse-off {
+  background: var(--tint-hover);
+  color: var(--ink-soft);
+}
+.pulse-chart__svg {
+  display: block;
+  width: 100%;
+  height: 160px;
+}
+.pulse-bar {
+  fill: #2563eb;
+}
+.pulse-bar--weekend {
+  fill: #93c5fd;
+}
+.pulse-bar:hover {
+  fill: #9a1525;
+}
+.pulse-chart__axis {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+.pulse-hours {
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+  height: 150px;
+}
+.pulse-hours__col {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+.pulse-hours__bar {
+  display: flex;
+  flex: 1;
+  flex-direction: column-reverse;
+  width: 100%;
+}
+.pulse-hours__weekday {
+  background: #2563eb;
+}
+.pulse-hours__weekend {
+  background: #93c5fd;
+}
+.pulse-hours__label {
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+}
+.pulse-key {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin: 0 4px 0 8px;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+.pulse-key--weekday {
+  background: #2563eb;
+}
+.pulse-key--weekend {
+  background: #93c5fd;
+}
+@media (max-width: 640px) {
+  .pulse-wide {
+    display: none;
+  }
+}
+.pulse-refresh {
+  min-height: 44px;
+  padding: 8px 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pulse-refresh:hover {
+  background: var(--tint-hover);
+}

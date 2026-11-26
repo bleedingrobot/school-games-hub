@@ -273,7 +273,45 @@ const answers: Record<string, (a: Row) => unknown> = {
   set_my_frame: () => null,
   my_maths_focus: () => AUTO,
   my_ladder: () => ({ facts: [], settings: {}, focus: AUTO }),
+  teacher_pulse: () => pulseSample(),
 };
+
+/** Made-up numbers for the Pulse tab, shaped like teacher_pulse's answer. */
+function pulseSample() {
+  const today = new Date();
+  const iso = (n: number) => new Date(today.getTime() - n * 86_400_000).toISOString().slice(0, 10);
+  const ids = ['toonflap', 'goblinstorm', 'dragon-maths', 'training', 'archery', 'isles', 'chess', 'classlive', 'showdown', 'diamond', 'circuit', 'marble', 'robin', 'pipi', 'quick-looks', 'orderup', 'glyph', 'monsters', 'clan-quest', 'power-clash'];
+  return {
+    asOf: today.toISOString(),
+    today: iso(0),
+    kpis: { pupils: 225, activeToday: 84, active7: 128, activePrev7: 100, active28: 144, activeEver: 161, playsToday: 810, plays7: 2275, playsPrev7: 1752, playsEver: 9244, schoolHours7: 1775, outsideHours7: 500 },
+    daily: Array.from({ length: 28 }, (_, i) => {
+      const d = iso(27 - i);
+      const weekend = [0, 6].includes(new Date(`${d}T12:00:00`).getDay());
+      const plays = weekend ? 40 + i : 150 + i * 22;
+      return { d, plays, players: Math.round(plays / 8), answered: plays * 9, correct: plays * 8 };
+    }),
+    games: ids.map((id, i) => ({ id, today: Math.max(0, 9 - i), plays7: 360 - i * 18, playsPrev7: 300 - i * 12, players7: 60 - i * 2, plays28: 1400 - i * 60, playsEver: 1500 - i * 60, playersEver: 90 - i * 3, firstAt: qDay(-30), lastAt: qDay(-(i % 4)) })),
+    live: [
+      { id: 'corners', sessions: 9, sessions28: 9, pupils: 71, joins: 136, lastAt: qDay(-1) },
+      { id: 'mural', sessions: 6, sessions28: 6, pupils: 46, joins: 51, lastAt: qDay(-1) },
+      { id: 'showdown-boss', sessions: 8, sessions28: 8, pupils: 51, joins: 87, lastAt: qDay(-1) },
+    ],
+    classes: [
+      { id: 'c1', name: 'Room 12', students: 32, playing7: 31, plays7: 1392, playsPrev7: 1071 },
+      { id: 'c2', name: 'Room 9', students: 24, playing7: 24, plays7: 289, playsPrev7: 155 },
+      { id: 'c3', name: 'Room 4', students: 26, playing7: 22, plays7: 288, playsPrev7: 338 },
+    ],
+    hours: Array.from({ length: 24 }, (_, h) => ({ h, weekday: h >= 8 && h < 15 ? 300 + h * 20 : h > 5 && h < 22 ? 80 : 0, weekend: h > 6 && h < 21 ? 30 : 0 })),
+    answers: [
+      { source: 'training', answered: 34195, correct: 30957, week: 8712, weekCorrect: 7858, today: 48 },
+      { source: 'early-facts', answered: 10654, correct: 9706, week: 5078, weekCorrect: 4700, today: 11 },
+      { source: 'add-sub', answered: 8096, correct: 7142, week: 3074, weekCorrect: 2741, today: 1 },
+      { source: 'times-tables', answered: 6966, correct: 6008, week: 1713, weekCorrect: 1479, today: 12 },
+      { source: 'generated', answered: 3642, correct: 2574, week: 1314, weekCorrect: 944, today: 15 },
+    ],
+  };
+}
 
 function rpc(name: string, args: Row = {}) {
   if (name in answers && !(SCENE === 'student' && name === 'my_class' && false)) return ok(answers[name](args));

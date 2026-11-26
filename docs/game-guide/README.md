@@ -49,7 +49,7 @@ Do these in order. Each line says what, then where. Tags: **J** junior only, **O
 15. **Turns.** Limited turns or levels a day? Add the game to `UNLIMITED_GAMES` and `teacher_set_unlimited_today()` ([1-design.md](1-design.md) question 3).
 16. **Tests.** Within [TESTING.md](../TESTING.md) "How many", plus `supabase/tests/database/<id>.test.sql` on a scratch copy ([7-testing.md](7-testing.md)).
 17. **Screens checked** at phone, iPad and laptop sizes: full window, nothing scrolls sideways ([7-testing.md](7-testing.md)).
-18. **Shared one-line edits** after merging `main`: registry, `FUNCTIONS`, `package.json` scripts, `shared/README.md`, `docs/PRIVACY-SUMMARY.md` ([3-files-and-clashes.md](3-files-and-clashes.md)).
+18. **Shared one-line edits** after merging `main`: registry, `FUNCTIONS`, `package.json` scripts, `shared/README.md`, `docs/PRIVACY-SUMMARY.md` ([3-files-and-clashes.md](3-files-and-clashes.md)). If the game saves its goes in its own table (not `scored_games`), the teachers' Pulse tab counts 0 for it until `public.pulse_plays` has a line for it: a later migration that replaces that function (`create or replace`) after the game is live, plus its `UNITS` word in `src/teacher/pulse/games.ts`.
 19. **Ready check.** Every box in [templates/golive-pr.md](templates/golive-pr.md) ticked.
 20. **PR and merge.** `typecheck`, `test:changed`, `build`; open the PR, merge when green; migrations and the function go live by themselves ([8-going-live.md](8-going-live.md)).
 21. **After the merge.** Check the publish run, tables, the 401 from the function, refusals from outside; try it as a teacher.
