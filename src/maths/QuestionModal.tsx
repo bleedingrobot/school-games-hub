@@ -12,7 +12,7 @@
  */
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { spokenLabel } from '../../shared/maths/banded';
-import { helpKind, hintFor } from '../../shared/maths/hint';
+import { fractionSteps, helpKind, hintFor } from '../../shared/maths/hint';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { AngleNames, Figure } from './Figure';
 import { isFigure } from '../../shared/maths/figure';
@@ -138,6 +138,45 @@ export function AxisHelp() {
       <p>
         On the <strong className="axis-help__y">y-axis</strong> (the line going up) the <strong>first</strong> number is 0, like (0, 3).
       </p>
+    </div>
+  );
+}
+
+/**
+ * Adding or taking away fractions with different bottoms: which fraction to change into an equivalent one and how, worked
+ * from this question's own numbers. It stops before the final answer ("1/8 + 6/8 = ?/8").
+ */
+const PARTS_NAMES: Record<number, string> = { 2: 'halves', 3: 'thirds', 4: 'quarters', 5: 'fifths', 6: 'sixths', 7: 'sevenths', 8: 'eighths', 9: 'ninths', 10: 'tenths', 12: 'twelfths', 15: 'fifteenths', 16: 'sixteenths', 20: 'twentieths', 24: 'twenty-fourths', 100: 'hundredths' };
+
+export function FractionHelp({ parts }: { parts: string[] }) {
+  const steps = fractionSteps(parts);
+  if (!steps) return null;
+  const { a, b, sign, bottom, changes } = steps;
+  const after = ([n, d]: [number, number]) => (d === bottom ? [n, d] : [n * (bottom / d), bottom]);
+  const [a2, b2] = [after(a), after(b)];
+  const f = (n: number, d: number) => <Part text={`${n}/${d}`} blank={null} />;
+  const one = changes.length === 1;
+  const word = sign === '+' ? 'add' : 'take away';
+  const named = PARTS_NAMES[bottom] ?? `${bottom}ths`;
+  return (
+    <div className="remainder-help fraction-help">
+      <p>
+        <strong>Make the bottoms the same</strong> before you {word}.
+      </p>
+      <p>
+        {one
+          ? `${bottom} is a multiple of ${changes[0].d}, so change ${changes[0].n}/${changes[0].d} into ${named}.`
+          : `${a[1]} and ${b[1]} both go into ${bottom}, so change both fractions into ${named}.`}
+      </p>
+      {changes.map((c) => (
+        <p key={`${c.n}/${c.d}`} className="fraction-help__step">
+          {f(c.n, c.d)} <span>× {c.by} top and bottom</span> = {f(c.n * c.by, bottom)}
+        </p>
+      ))}
+      <p className="fraction-help__step">
+        {f(a2[0], a2[1])} {sign} {f(b2[0], b2[1])} = <Part text={`?/${bottom}`} blank="?" />
+      </p>
+      <p>Now {word} the tops. The bottom stays {bottom}.</p>
     </div>
   );
 }
@@ -457,7 +496,7 @@ export function QuestionModal({
             <button type="button" className="question__hintbtn" aria-expanded={helpOpen} onClick={() => setHelpOpen((o) => !o)}>
               {helpOpen ? 'Hide help' : 'Help me'}
             </button>
-            {helpOpen && (help === 'angles' ? <AngleNames /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : <SymbolHelp />)}
+            {helpOpen && (help === 'angles' ? <AngleNames /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : help === 'fractions' ? <FractionHelp parts={question.parts} /> : <SymbolHelp />)}
           </div>
         )}
         {question.prompt && <p className="question__prompt">{question.prompt}</p>}

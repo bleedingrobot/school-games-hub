@@ -40,11 +40,42 @@ export function hintFor(q: Pick<Question, 'answer' | 'choices' | 'parts'>): Hint
  * Which free "Help me" picture a question gets (James, 26 Nov 2026): every kind of angle on angle-picture questions, and what
  * < > ≤ ≥ ≠ mean on any question that shows one of them. Unlike the hint it costs nothing and never narrows the answer.
  */
-export function helpKind(q: Pick<Question, 'parts' | 'prompt' | 'choiceLabels' | 'figure'>): 'angles' | 'symbols' | 'remainder' | 'axes' | null {
+export function helpKind(q: Pick<Question, 'parts' | 'prompt' | 'choiceLabels' | 'figure'>): 'angles' | 'symbols' | 'remainder' | 'axes' | 'fractions' | null {
   if (isFigure(q.figure) && q.figure.kind === 'angle') return 'angles';
   // A division with a remainder ("9 ÷ 4 = ? r 1"): what the r means. A point on an axis: a small grid (James, 26 Nov 2026).
   if (q.parts.includes('r')) return 'remainder';
   if (/\b[xy]-axis\b/.test(q.prompt ?? '')) return 'axes';
+  if (fractionSteps(q.parts)) return 'fractions';
   const texts = [...q.parts, q.prompt ?? '', ...(q.choiceLabels ?? [])];
   return texts.some((t) => /[<>≤≥≠]/.test(t)) ? 'symbols' : null;
+}
+
+/** One fraction changed into an equivalent one: n/d becomes (n × by)/(d × by). */
+export interface FractionChange {
+  n: number;
+  d: number;
+  by: number;
+}
+
+/**
+ * Adding or taking away two fractions with different bottoms ("1/8 + 3/4 = ?"): which fraction(s) to change, and how
+ * (James, 26 Nov 2026). If one bottom is a multiple of the other only the smaller-bottom fraction changes; otherwise both
+ * change to the smallest bottom they share. Null for anything else (same bottoms, mixed numbers, no + or −).
+ */
+export function fractionSteps(parts: readonly string[]): { a: [number, number]; b: [number, number]; sign: '+' | '−'; bottom: number; changes: FractionChange[] } | null {
+  const frac = (t: string | undefined) => {
+    const m = /^(\d+)\/(\d+)$/.exec(t ?? '');
+    return m && Number(m[2]) > 0 ? ([Number(m[1]), Number(m[2])] as [number, number]) : null;
+  };
+  for (let i = 1; i + 1 < parts.length; i++) {
+    const sign = parts[i] === '+' ? '+' : parts[i] === '−' || parts[i] === '-' ? '−' : null;
+    const a = frac(parts[i - 1]);
+    const b = frac(parts[i + 1]);
+    if (!sign || !a || !b || a[1] === b[1]) continue;
+    const gcd = (x: number, y: number): number => (y === 0 ? x : gcd(y, x % y));
+    const bottom = (a[1] * b[1]) / gcd(a[1], b[1]);
+    const changes = [a, b].filter((f) => f[1] !== bottom).map(([n, d]) => ({ n, d, by: bottom / d }));
+    return { a, b, sign, bottom, changes };
+  }
+  return null;
 }
