@@ -90,6 +90,9 @@ export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, o
     >
       <Sheet title={page === 'puzzle' ? (puzzleById(puzzle ?? '')?.title ?? TITLES.puzzle) : TITLES[page]} reading={page === 'howto' || page === 'badges' || page === 'types'} onBack={back} backLabel={page === 'main' || from === 'object' ? 'Close' : 'Back'}>
         {page === 'main' && (
+          <div className="mm-home">
+          {/* The strong and weak wheel, beside the menu (James, 26 Nov 2026); above it on a narrow phone. */}
+          <div className="mm-home__chart"><TypeChart /></div>
           <nav aria-label="Menu" className="mm-main">
             {(['team', 'bag', 'world', 'quests', 'eggs', 'book', 'badges', 'settings', 'howto', ...(hasLooks() ? ['look' as const] : [])] as const).map((p) => (
               <button key={p} type="button" className={`mb-btn mm-main__btn mm-main__btn--${p}`} onClick={() => onGo(p)}>
@@ -104,6 +107,7 @@ export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, o
             ))}
             <button type="button" className="mb-btn mb-btn--primary mm-main__go" onClick={onClose}>Back to the map</button>
           </nav>
+          </div>
         )}
         {page === 'team' && <TeamPage world={world} apply={apply} />}
         {page === 'bag' && <BagPage world={world} apply={apply} />}
