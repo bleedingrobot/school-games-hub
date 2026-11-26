@@ -78,7 +78,8 @@ export interface Spot { x: number; y: number }
 export interface Circle extends Spot { r: number }
 export interface Teleport { a: Spot; b: Spot }
 /** A rolling thing crossing the board along a line, there and back. */
-export interface Roller { axis: 'x' | 'y'; at: number; r: number; periodMs: number }
+/** `span`: how far it rolls (the board's width for an x roller on a wide board); 1 when missing. */
+export interface Roller { axis: 'x' | 'y'; at: number; r: number; periodMs: number; span?: number }
 export interface Item extends Spot { id: number; power: Power; by: string | null }
 
 export interface Round {
@@ -225,7 +226,7 @@ export function jailSpot(i: number): Spot {
 export function rollerAt(r: Roller, t: number): Spot {
   const phase = (t % r.periodMs) / r.periodMs;
   const along = phase < 0.5 ? phase * 2 : 2 - phase * 2;
-  const v = -0.1 + along * 1.2;
+  const v = -0.1 + along * ((r.span ?? 1) + 0.2);
   return r.axis === 'x' ? { x: v, y: r.at } : { x: r.at, y: v };
 }
 
@@ -648,8 +649,8 @@ export function podium(g: CornersGame, order: string[]): { player: string; place
  * What the database does with a pupil's saved move (classlive_move mirrors this): kept on the board, and no further
  * from the last saved spot than the fastest speed allows (with slack), unless it is a teleport's far end.
  */
-export function clampMove(prev: { x: number; y: number; at: number } | undefined, next: Spot, at: number, teleports: Teleport[]): Spot {
-  const p = { x: Math.min(1, Math.max(0, next.x)), y: Math.min(1, Math.max(0, next.y)) };
+export function clampMove(prev: { x: number; y: number; at: number } | undefined, next: Spot, at: number, teleports: Teleport[], w = 1): Spot {
+  const p = { x: Math.min(w, Math.max(0, next.x)), y: Math.min(1, Math.max(0, next.y)) };
   if (!prev) return p;
   const most = MAX_SPEED * Math.min(5, Math.max(0, at - prev.at) / 1000) + 0.05;
   const gap = dist(prev, p);

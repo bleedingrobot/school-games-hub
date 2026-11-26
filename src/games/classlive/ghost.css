@@ -185,3 +185,31 @@
 @media (prefers-reduced-motion: reduce) {
   .gt-token--ghost, .gt-warp, .gt-bats span, .gt-lobby-ghosts i { animation: none; }
 }
+
+/* ---------- the wide map (26 Nov 2026: fills a widescreen projector and a landscape iPad) ---------- */
+/* Big screen: a slimmer side panel; the board as wide as fits, as tall as the screen allows. */
+.gt-scene--wide .fc-stage { align-items: center; height: auto; max-width: 100%; }
+.gt-scene--wide .fc-side { width: 17vw; max-width: 280px; }
+.gt-scene--wide .fc-stage .fc-board { height: auto; max-width: none; width: min(calc(96vw - 2vw - min(17vw, 280px)), calc((100vh - 80px) * var(--gt-w, 1.6))); }
+@media (max-width: 700px) {
+  .gt-scene--wide .fc-side { width: 100%; max-width: none; }
+  .gt-scene--wide .fc-stage .fc-board { width: 96vw; }
+}
+/* iPad: the board across the whole screen, the Vanish button and the joystick over its bottom corners. */
+.gt-pad--wide .fc-pad__board { width: min(100%, calc((100dvh - 250px) * 1.6)); }
+@media (orientation: portrait) { .gt-pad--wide .fc-pad__board { width: 100%; } }
+@media (orientation: landscape) and (min-width: 640px) {
+  .cl-c--corners .gt-pad--wide { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .gt-pad--wide .fc-pad__top { flex-direction: row; align-items: center; padding-top: 0; max-width: none; padding-inline: 56px 8px; }
+  .gt-pad--wide .fc-pad__left { font-size: 34px; }
+  .gt-pad--wide .fc-pad__powers { flex-direction: row; min-height: 0; position: absolute; top: 44px; left: 50%; transform: translateX(-50%); z-index: 3; }
+  .gt-pad--wide .fc-pad__board { width: min(calc(100vw - 16px), calc((100dvh - 52px) * 1.6)); }
+  .gt-pad--wide .fc-fb { position: fixed; top: 52px; right: 12px; max-width: 30vw; z-index: 4; }
+  .gt-pad--wide .gt-controls { position: fixed; inset: auto 0 0 0; padding: 0 max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-bottom)); pointer-events: none; z-index: 5; }
+  .gt-pad--wide .gt-controls > * { pointer-events: auto; }
+  .gt-pad--wide .gt-power { opacity: 0.92; }
+  .gt-pad--wide .fc-stick { opacity: 0.8; }
+}
+.gt-board--wide .fc-dot { width: calc(3% / 1.6); }
+.gt-scene--wide .gt-counts span { padding: 0.6vh 0.6vw; white-space: nowrap; }
+@media (orientation: landscape) and (min-width: 640px) { .gt-pad--wide .fc-pad__top { padding-inline: 96px 8px; } }

@@ -42,6 +42,8 @@ export interface EdgeSync {
   startedAt: number | null;
   live: boolean;
   maxSpeed: number;
+  /** The map's width (height 1); 1 when missing. */
+  width?: number;
   teleports: Teleport[];
   /** Every player in the room (only these may move). */
   roles: Record<string, EdgeRole>;
@@ -119,7 +121,7 @@ export class EdgeRoom {
   move(id: string, x: unknown, y: unknown, now: number): boolean {
     const s = this.sync;
     if (!s || !s.live || !s.roles[id] || !finite(x) || !finite(y)) return false;
-    let nx = Math.min(1, Math.max(0, x));
+    let nx = Math.min(s.width ?? 1, Math.max(0, x));
     let ny = Math.min(1, Math.max(0, y));
     const prev = this.spots.get(id);
     if (prev) {
@@ -186,5 +188,5 @@ export function ghostSync(room: number, s: { state: string; order: string[]; gam
     const m = mine[id];
     roles[id] = m ? [m.ghost ? 1 : 0, m.hideTo, m.frozenTo, m.lanternTo] : [0, 0, 0, 0];
   }
-  return { room, startedAt, live: s.state === 'live', maxSpeed: MAX_SPEED, teleports: g?.round?.teleports ?? [], roles, places };
+  return { room, startedAt, live: s.state === 'live', maxSpeed: MAX_SPEED, width: g?.w ?? 1, teleports: g?.round?.teleports ?? [], roles, places };
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { classLiveStep } from './server';
 import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock, rng } from './pretendClass';
-import { advance, answered, CRYPT, freshMine, ghostCount, grab, HIDE_MS, makeRound, newGhost, READY_MS, RISE_MS, stepGhost, TAG_R, type GhostGame } from './ghost';
+import { advance, answered, CRYPT, freshMine, GHOST_W, ghostCount, grab, HIDE_MS, makeRound, newGhost, READY_MS, RISE_MS, stepGhost, TAG_R, type GhostGame } from './ghost';
 import { ghostSpotsOf } from './ghostBot';
 
 describe('Ghost Tag', () => {
@@ -16,9 +16,15 @@ describe('Ghost Tag', () => {
     const [ghost] = r.starters;
     const [h1, h2, h3] = order.filter((id) => id !== ghost);
     const far = { x: 0.1, y: 0.9 };
-    expect(Math.hypot(g.mine[ghost].spot.x - 0.5, g.mine[ghost].spot.y - 0.5)).toBeLessThan(CRYPT.r);
-    const held = stepGhost({ p: { x: 0.5, y: 0.5 }, v: { x: 0, y: 0 } }, { x: 1, y: 0 }, 100, r, READY_MS - 500, { ghost: true, speed: 3 });
-    expect(held.p.x - 0.5).toBeLessThan(CRYPT.r);
+    // The map is wide (GHOST_W): the crypt in its middle, pupils spread across it, nothing off the edge.
+    const mid = GHOST_W / 2;
+    expect([g.w, r.w]).toEqual([GHOST_W, GHOST_W]);
+    expect(Math.hypot(g.mine[ghost].spot.x - mid, g.mine[ghost].spot.y - 0.5)).toBeLessThan(CRYPT.r);
+    expect(Math.max(...order.map((id) => g.mine[id].spot.x))).toBeGreaterThan(1.1);
+    expect([...r.stones, ...r.items].every((c) => c.x > 0 && c.x < GHOST_W)).toBe(true);
+    const held = stepGhost({ p: { x: mid, y: 0.5 }, v: { x: 0, y: 0 } }, { x: 1, y: 0 }, 100, r, READY_MS - 500, { ghost: true, speed: 3 });
+    expect(held.p.x - mid).toBeLessThan(CRYPT.r);
+    expect(stepGhost({ p: { x: 1.5, y: 0.5 }, v: { x: 0, y: 0 } }, { x: 1, y: 0 }, 100, r, r.startAt, { ghost: true, speed: 3 }).p.x).toBeCloseTo(GHOST_W - 0.03, 5);
     // Pupils bump into stones; ghosts glide through.
     const st = r.stones[0];
     const into = { p: { x: st.x - st.r - 0.031, y: st.y }, v: { x: 0, y: 0 } };

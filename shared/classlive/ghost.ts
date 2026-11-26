@@ -56,7 +56,11 @@ export const GRAB_R = 0.06;
 /** A grab is checked against the saved spot, which can be a moment behind. */
 export const GRAB_SLACK = 0.07;
 export const TELEPORT_R = 0.04;
+/** How wide the map is, in map heights: widescreen, so it fills a projector (26 Nov 2026). Games made before are square (1). */
+export const GHOST_W = 1.6;
 export const CRYPT: Circle = { x: 0.5, y: 0.5, r: 0.09 };
+/** The crypt, in the middle of a map `w` wide. */
+export const cryptOf = (w = 1): Circle => ({ ...CRYPT, x: w / 2 });
 export const KNOCK_SPEED = 0.8;
 export const KNOCK_MS = 500;
 
@@ -99,6 +103,8 @@ export interface GhostRound {
   endAt: number;
   /** Ghosts at the start. */
   starters: string[];
+  /** The map's width (height 1); missing in square games made before 26 Nov 2026. */
+  w?: number;
   /** Pupils (not ghosts) at the start. */
   humans: number;
   stones: Circle[];
@@ -156,6 +162,8 @@ export interface GhostMine {
 export interface GhostGame {
   kind: 'ghost';
   map: GhostMap;
+  /** The map's width (height 1); missing in square games made before 26 Nov 2026. */
+  w?: number;
   round: GhostRound | null;
   mine: Record<string, GhostMine>;
   nextItem: number;
@@ -174,30 +182,33 @@ export type GhostEvent =
 
 const dist = (a: Spot, b: Spot) => Math.hypot(a.x - b.x, a.y - b.y);
 const clamp01 = (v: number) => Math.min(1 - AVATAR_R, Math.max(AVATAR_R, v));
+const clampW = (v: number, w: number) => Math.min(w - AVATAR_R, Math.max(AVATAR_R, v));
+/** A round's (or game's) map width. */
+export const widthOf = (x: { w?: number } | null | undefined) => x?.w ?? 1;
 const pick = <T>(list: readonly T[], random: () => number): T => list[Math.floor(random() * list.length) % list.length];
 
 export function newGhost(map: GhostMap): GhostGame {
-  return { kind: 'ghost', map, round: null, mine: {}, nextItem: 1 };
+  return { kind: 'ghost', map, w: GHOST_W, round: null, mine: {}, nextItem: 1 };
 }
 
 /** A spot round the edge of the map, spread by number (pupils start here). */
-export function edgeSpot(i: number, of: number): Spot {
+export function edgeSpot(i: number, of: number, w = 1): Spot {
   const a = (i / Math.max(1, of)) * Math.PI * 2 + 0.4;
   const r = 0.36 + (i % 2) * 0.05;
-  return { x: clamp01(0.5 + Math.cos(a) * r), y: clamp01(0.5 + Math.sin(a) * r) };
+  return { x: clampW(w / 2 + Math.cos(a) * (r + (w - 1) / 2), w), y: clamp01(0.5 + Math.sin(a) * r) };
 }
 
 /** A seat in the crypt (ghosts start here). */
-export function cryptSpot(i: number, of: number): Spot {
-  if (of <= 1) return { x: 0.5, y: 0.5 };
+export function cryptSpot(i: number, of: number, w = 1): Spot {
+  if (of <= 1) return { x: w / 2, y: 0.5 };
   const a = (i / of) * Math.PI * 2;
-  return { x: 0.5 + Math.cos(a) * CRYPT.r * 0.55, y: 0.5 + Math.sin(a) * CRYPT.r * 0.55 };
+  return { x: w / 2 + Math.cos(a) * CRYPT.r * 0.55, y: 0.5 + Math.sin(a) * CRYPT.r * 0.55 };
 }
 
-export function freshMine(i: number, of = 30): GhostMine {
+export function freshMine(i: number, of = 30, w = 1): GhostMine {
   return {
     ghost: false, caughtAt: null, caughtBy: null, hideTo: 0, dashTo: 0, lanternTo: 0, frozenTo: 0, bootsTo: 0, shield: false, ghostRight: 0,
-    spot: edgeSpot(i, of), placed: 0, lastAt: -ANSWER_GAP_MS, answered: 0, right: 0, wrong: 0, streak: 0, bestStreak: 0,
+    spot: edgeSpot(i, of, w), placed: 0, lastAt: -ANSWER_GAP_MS, answered: 0, right: 0, wrong: 0, streak: 0, bestStreak: 0,
     tags: 0, crowns: 0, caught: 0, starts: 0, vanishes: 0, grabs: 0, shieldSaves: 0, aliveMs: 0, last: null,
   };
 }
@@ -222,14 +233,15 @@ export function mechanicsFor(n: number, random: () => number): Set<GhostMechanic
 }
 
 /** A clear spot for something new: away from the crypt, the edge and what is already placed. */
-function openSpot(random: () => number, taken: Circle[], r: number): Spot {
+function openSpot(random: () => number, taken: Circle[], r: number, w = 1): Spot {
+  const crypt = cryptOf(w);
   for (let i = 0; i < 30; i++) {
-    const p = { x: 0.1 + random() * 0.8, y: 0.1 + random() * 0.8 };
-    if (dist(p, CRYPT) < CRYPT.r + r + 0.05) continue;
+    const p = { x: 0.1 + random() * (w - 0.2), y: 0.1 + random() * 0.8 };
+    if (dist(p, crypt) < crypt.r + r + 0.05) continue;
     if (taken.some((c) => dist(c, p) < c.r + r + 0.04)) continue;
     return p;
   }
-  return { x: 0.2 + random() * 0.6, y: 0.15 };
+  return { x: 0.2 + random() * (w - 0.4), y: 0.15 };
 }
 
 /** Who starts as a ghost: those who started fewest times so far, then at random. */
@@ -242,25 +254,38 @@ export function pickStarters(g: GhostGame, order: string[], random: () => number
 /** A new round: everyone is a pupil again but the starters, pupils round the edge, ghosts in the crypt. */
 export function makeRound(g: GhostGame, n: number, readyAt: number, order: string[], random: () => number): GhostRound {
   const has = mechanicsFor(n, random);
+  const w = widthOf(g);
+  // A wider map gets more of everything, so it isn't empty.
+  const more = (k: number) => Math.round(k * w);
   const stones: Circle[] = [];
-  const count = 6 + Math.floor(random() * 3);
+  const count = more(6 + Math.floor(random() * 3));
   for (let i = 0; i < count; i++) {
     const r = 0.035 + random() * 0.025;
-    stones.push({ ...openSpot(random, stones, r), r });
+    stones.push({ ...openSpot(random, stones, r, w), r });
   }
-  const slows: Circle[] = has.has('slow') ? Array.from({ length: 2 }, () => ({ ...openSpot(random, stones, 0.09), r: 0.08 + random() * 0.03 })) : [];
+  const slows: Circle[] = has.has('slow') ? Array.from({ length: w > 1.2 ? 3 : 2 }, () => ({ ...openSpot(random, stones, 0.09, w), r: 0.08 + random() * 0.03 })) : [];
   const teleports: Teleport[] = [];
   if (has.has('teleport')) {
     const along = 0.25 + random() * 0.5;
-    teleports.push(random() < 0.5 ? { a: { x: 0.07, y: along }, b: { x: 0.93, y: 1 - along } } : { a: { x: along, y: 0.07 }, b: { x: 1 - along, y: 0.93 } });
+    teleports.push(random() < 0.5 ? { a: { x: 0.07, y: along }, b: { x: w - 0.07, y: 1 - along } } : { a: { x: along * w, y: 0.07 }, b: { x: (1 - along) * w, y: 0.93 } });
   }
-  const bats: Roller[] = has.has('bats') ? [{ axis: random() < 0.5 ? 'x' : 'y', at: 0.2 + random() * 0.6, r: 0.06, periodMs: 5000 + Math.floor(random() * 2000) }] : [];
+  const bats: Roller[] = [];
+  if (has.has('bats')) {
+    const x = random() < 0.5;
+    bats.push(x ? { axis: 'x', at: 0.2 + random() * 0.6, r: 0.06, periodMs: Math.round((5000 + Math.floor(random() * 2000)) * w), ...(w !== 1 ? { span: w } : {}) }
+      : { axis: 'y', at: (0.2 + random() * 0.6) * w, r: 0.06, periodMs: 5000 + Math.floor(random() * 2000) });
+    // A second flock on a wide map, on the other side of the crypt.
+    if (w > 1.2) {
+      const first = bats[0];
+      bats.push(first.axis === 'y' ? { ...first, at: w - first.at, periodMs: first.periodMs + 700 } : { axis: 'y', at: (first.at < 0.5 ? 0.25 : 0.75) * w, r: 0.06, periodMs: 5600 });
+    }
+  }
   const items: GhostItem[] = [];
   if (has.has('items')) {
-    const k = Math.max(2, Math.min(7, Math.round(order.length / 6)));
+    const k = Math.max(2, Math.min(more(7), Math.round((order.length / 6) * w)));
     const taken = [...stones, ...slows];
     for (let i = 0; i < k; i++) {
-      const p = openSpot(random, taken, GRAB_R);
+      const p = openSpot(random, taken, GRAB_R, w);
       taken.push({ ...p, r: GRAB_R });
       items.push({ id: g.nextItem++, power: pick(POWERS, random), by: null, ...p });
     }
@@ -272,13 +297,13 @@ export function makeRound(g: GhostGame, n: number, readyAt: number, order: strin
     const ghost = starters.includes(id);
     Object.assign(m, { ghost, caughtAt: null, caughtBy: null, hideTo: 0, dashTo: 0, lanternTo: 0, frozenTo: 0, bootsTo: 0, shield: false });
     if (ghost) m.starts++;
-    m.spot = ghost ? cryptSpot(starters.indexOf(id), starters.length) : edgeSpot(humans.indexOf(id), humans.length);
+    m.spot = ghost ? cryptSpot(starters.indexOf(id), starters.length, w) : edgeSpot(humans.indexOf(id), humans.length, w);
     // Off a stone.
-    for (const s of stones) if (dist(m.spot, s) < s.r + AVATAR_R) m.spot = { x: clamp01(m.spot.x), y: clamp01(s.y + (m.spot.y < s.y ? -1 : 1) * (s.r + AVATAR_R + 0.005)) };
+    for (const s of stones) if (dist(m.spot, s) < s.r + AVATAR_R) m.spot = { x: clampW(m.spot.x, w), y: clamp01(s.y + (m.spot.y < s.y ? -1 : 1) * (s.r + AVATAR_R + 0.005)) };
     m.placed++;
   });
   return {
-    n, readyAt, startAt: readyAt + READY_MS, endAt: readyAt + READY_MS + ROUND_MS, starters, humans: humans.length,
+    n, readyAt, startAt: readyAt + READY_MS, endAt: readyAt + READY_MS + ROUND_MS, starters, ...(w !== 1 ? { w } : {}), humans: humans.length,
     stones, slows, teleports, bats, fog: has.has('fog'), items, done: null, showEnd: null,
   };
 }
@@ -475,7 +500,7 @@ export interface GhostMove {
   warpTo?: number;
 }
 
-export type MoveRoundG = Pick<GhostRound, 'stones' | 'slows' | 'teleports' | 'bats' | 'startAt'>;
+export type MoveRoundG = Pick<GhostRound, 'stones' | 'slows' | 'teleports' | 'bats' | 'startAt' | 'w'>;
 
 /** Current speed multiplier for a player. */
 export function speedOf(m: Pick<GhostMine, 'ghost' | 'dashTo' | 'bootsTo' | 'frozenTo'>, t: number): number {
@@ -490,6 +515,8 @@ export function speedOf(m: Pick<GhostMine, 'ghost' | 'dashTo' | 'bootsTo' | 'fro
  */
 export function stepGhost(m: GhostMove, dir: Spot, dtMs: number, round: MoveRoundG | null, t: number, o: { ghost: boolean; speed: number }): GhostMove {
   const dt = Math.min(100, Math.max(0, dtMs)) / 1000;
+  const w = widthOf(round);
+  const cx = (v: number) => clampW(v, w);
   const stones = (p: Spot) => {
     if (o.ghost || !round) return p;
     let q = p;
@@ -499,7 +526,7 @@ export function stepGhost(m: GhostMove, dir: Spot, dtMs: number, round: MoveRoun
       if (d < min) {
         const ax = d < 1e-6 ? 1 : (q.x - s.x) / d;
         const ay = d < 1e-6 ? 0 : (q.y - s.y) / d;
-        q = { x: clamp01(s.x + ax * min), y: clamp01(s.y + ay * min) };
+        q = { x: cx(s.x + ax * min), y: clamp01(s.y + ay * min) };
       }
     }
     return q;
@@ -507,20 +534,21 @@ export function stepGhost(m: GhostMove, dir: Spot, dtMs: number, round: MoveRoun
   if (m.stun !== undefined && t < m.stun) {
     const k = Math.max(0, 1 - dt * 2.4);
     const v = { x: m.v.x * k, y: m.v.y * k };
-    return { ...m, p: stones({ x: clamp01(m.p.x + v.x * dt), y: clamp01(m.p.y + v.y * dt) }), v };
+    return { ...m, p: stones({ x: cx(m.p.x + v.x * dt), y: clamp01(m.p.y + v.y * dt) }), v };
   }
   const len = Math.hypot(dir.x, dir.y);
   const d = len > 1 ? { x: dir.x / len, y: dir.y / len } : dir;
   let speed = o.speed;
   if (round && !o.ghost && round.slows.some((c) => dist(c, m.p) < c.r)) speed *= SLOW;
   const v = { x: d.x * speed, y: d.y * speed };
-  let p = stones({ x: clamp01(m.p.x + v.x * dt), y: clamp01(m.p.y + v.y * dt) });
+  let p = stones({ x: cx(m.p.x + v.x * dt), y: clamp01(m.p.y + v.y * dt) });
   // Ghosts wait in the crypt until the hunt.
   if (round && o.ghost && t < round.startAt) {
-    const c = dist(p, CRYPT);
-    if (c > CRYPT.r - AVATAR_R * 0.5) {
-      const k = (CRYPT.r - AVATAR_R * 0.5) / c;
-      p = { x: CRYPT.x + (p.x - CRYPT.x) * k, y: CRYPT.y + (p.y - CRYPT.y) * k };
+    const crypt = cryptOf(w);
+    const c = dist(p, crypt);
+    if (c > crypt.r - AVATAR_R * 0.5) {
+      const k = (crypt.r - AVATAR_R * 0.5) / c;
+      p = { x: crypt.x + (p.x - crypt.x) * k, y: crypt.y + (p.y - crypt.y) * k };
     }
   }
   if (round && !o.ghost) {
@@ -530,21 +558,21 @@ export function stepGhost(m: GhostMove, dir: Spot, dtMs: number, round: MoveRoun
         const a = Math.atan2(p.y - at.y, p.x - at.x);
         const kv = { x: Math.cos(a) * KNOCK_SPEED, y: Math.sin(a) * KNOCK_SPEED };
         const push = b.r + AVATAR_R + 0.01;
-        return { p: stones({ x: clamp01(at.x + Math.cos(a) * push), y: clamp01(at.y + Math.sin(a) * push) }), v: kv, stun: t + KNOCK_MS, hitAt: t, ...(m.warpTo !== undefined ? { warpTo: m.warpTo } : {}) };
+        return { p: stones({ x: cx(at.x + Math.cos(a) * push), y: clamp01(at.y + Math.sin(a) * push) }), v: kv, stun: t + KNOCK_MS, hitAt: t, ...(m.warpTo !== undefined ? { warpTo: m.warpTo } : {}) };
       }
     }
   }
   if (round && (m.warpTo === undefined || t >= m.warpTo)) {
     for (const tp of round.teleports) {
-      if (dist(p, tp.a) < TELEPORT_R) return { p: { x: clamp01(tp.b.x + v.x * 0.2), y: clamp01(tp.b.y + v.y * 0.2) }, v: { x: 0, y: 0 }, warpTo: t + 900, ...(m.hitAt !== undefined ? { hitAt: m.hitAt } : {}) };
-      if (dist(p, tp.b) < TELEPORT_R) return { p: { x: clamp01(tp.a.x + v.x * 0.2), y: clamp01(tp.a.y + v.y * 0.2) }, v: { x: 0, y: 0 }, warpTo: t + 900, ...(m.hitAt !== undefined ? { hitAt: m.hitAt } : {}) };
+      if (dist(p, tp.a) < TELEPORT_R) return { p: { x: cx(tp.b.x + v.x * 0.2), y: clamp01(tp.b.y + v.y * 0.2) }, v: { x: 0, y: 0 }, warpTo: t + 900, ...(m.hitAt !== undefined ? { hitAt: m.hitAt } : {}) };
+      if (dist(p, tp.b) < TELEPORT_R) return { p: { x: cx(tp.a.x + v.x * 0.2), y: clamp01(tp.a.y + v.y * 0.2) }, v: { x: 0, y: 0 }, warpTo: t + 900, ...(m.hitAt !== undefined ? { hitAt: m.hitAt } : {}) };
     }
   }
   return { p, v: { x: 0, y: 0 }, ...(m.hitAt !== undefined ? { hitAt: m.hitAt } : {}), ...(m.warpTo !== undefined ? { warpTo: m.warpTo } : {}) };
 }
 
 /** A pretend pupil's joystick: pupils run from the nearest ghost (towards open space), ghosts chase the nearest pupil. */
-export function pretendDir(me: Spot, ghost: boolean, others: { p: Spot; ghost: boolean }[], random: () => number): Spot {
+export function pretendDir(me: Spot, ghost: boolean, others: { p: Spot; ghost: boolean }[], random: () => number, w = 1): Spot {
   const targets = others.filter((o) => o.ghost !== ghost);
   if (!targets.length) return { x: random() - 0.5, y: random() - 0.5 };
   const near = targets.reduce((a, b) => (dist(a.p, me) < dist(b.p, me) ? a : b));
@@ -553,7 +581,7 @@ export function pretendDir(me: Spot, ghost: boolean, others: { p: Spot; ghost: b
   if (!ghost) {
     dx = -dx; dy = -dy;
     // Away from walls.
-    dx += (0.5 - me.x) * 0.8;
+    dx += (w / 2 - me.x) * (0.8 / w);
     dy += (0.5 - me.y) * 0.8;
   }
   dx += (random() - 0.5) * 0.3;
@@ -568,6 +596,7 @@ export function pretendDir(me: Spot, ghost: boolean, others: { p: Spot; ghost: b
 export interface PublicGhost {
   kind: 'ghost';
   map: GhostMap;
+  w?: number;
   round: null | (Omit<GhostRound, 'starters' | 'items' | 'done'> & { items: Omit<GhostItem, 'by'>[]; done: null | { at: number; why: 'last' | 'time' | 'all'; winners: number } });
   /** Pupils not caught, and ghosts, now. */
   humans: number;
@@ -578,9 +607,9 @@ export function publicGhost(g: GhostGame, order: string[]): PublicGhost {
   const r = g.round;
   const left = alive(g, order).length;
   return {
-    kind: 'ghost', map: g.map, humans: left, ghosts: order.length - left,
+    kind: 'ghost', map: g.map, ...(g.w ? { w: g.w } : {}), humans: left, ghosts: order.length - left,
     round: r ? {
-      n: r.n, readyAt: r.readyAt, startAt: r.startAt, endAt: r.endAt, humans: r.humans, stones: r.stones, slows: r.slows, teleports: r.teleports,
+      n: r.n, ...(r.w ? { w: r.w } : {}), readyAt: r.readyAt, startAt: r.startAt, endAt: r.endAt, humans: r.humans, stones: r.stones, slows: r.slows, teleports: r.teleports,
       bats: r.bats, fog: r.fog, showEnd: r.showEnd, items: r.items.filter((x) => !x.by).map(({ by: _by, ...x }) => x),
       done: r.done ? { at: r.done.at, why: r.done.why, winners: r.done.winners.length } : null,
     } : null,
@@ -604,7 +633,7 @@ export interface GhostPlayer {
 }
 
 export function ghostPlayer(g: GhostGame, id: string, order: string[], over: boolean): GhostPlayer {
-  const m = g.mine[id] ?? freshMine(Math.max(0, order.indexOf(id)), order.length);
+  const m = g.mine[id] ?? freshMine(Math.max(0, order.indexOf(id)), order.length, widthOf(g));
   const starter = !!g.round?.starters.includes(id);
   return {
     kind: 'ghost', ghost: m.ghost, caught: m.ghost && !starter, caughtAt: m.caughtAt, hideTo: m.hideTo, dashTo: m.dashTo, lanternTo: m.lanternTo,

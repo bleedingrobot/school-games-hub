@@ -72,6 +72,11 @@ describe('Class Live on Cloudflare (pilot)', () => {
     expect(pc.db.spots.get(room) ?? {}).toEqual({});
     const [ghost] = r.starters;
     expect(cf.sync!.roles[ghost][0]).toBe(1);
+    // The wide map: Cloudflare keeps spots across its whole width, no further.
+    expect(cf.sync!.width).toBe(1.6);
+    cf.spots.set(ghost, { x: 1.5, y: 0.5, at: 0, placedAt: null });
+    cf.move(ghost, 1.9, 0.5, 2000);
+    expect(cf.spots.get(ghost)!.x).toBe(1.6);
     // The hunt: the ghost runs onto a pupil (spots on Cloudflare only) and the server's check catches them.
     const prey = pc.ids.find((id) => id !== ghost)!;
     await clock.run(pc.db.rooms.get(room)!.startedAt! + r.startAt + 200);
