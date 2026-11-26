@@ -31,7 +31,7 @@ import { TimesTables } from '../maths/skillPacks/timesTables';
 import { nzDate } from '../kit/dayArc';
 import { makeSpacePack, pickSpaceQuestion, type MathsQuestionSettings } from '../space/mathsQuestion';
 import { addDash, addRun, emptyProgress, flyersUnlocked, levelOpen, skyDashOpen, trailsUnlocked, type Progress, type Unlocks } from './collection';
-import { BREAK_AFTER_RUNS, DASH_POINTS, DASHES_A_DAY, WINS_A_DAY, POINT_RUNS_A_DAY, POINTS, READ_TIME_LEVELS, SIGN_SECONDS, STEPS_PER_SECOND } from './config';
+import { BREAK_AFTER_RUNS, DASH_POINTS, DASHES_A_DAY, WINS_A_DAY, POINT_RUNS_A_DAY, POINTS, SIGN_SECONDS, STEPS_PER_SECOND } from './config';
 import { buildDashCourse, dashWalls, replayDash } from './dash';
 import { decodeFlaps, medalFor, presentsGot, replayRun, scoreRun, type Medal, type Score } from './engine';
 import { buildCourse, inSeason, isSeasonal, levelById, type Course } from './levels';
@@ -334,7 +334,7 @@ export async function handleToonFlap(services: ToonFlapServices, player: string,
           return { slot: plan.checks + i, parts: q?.parts ?? [], spoken: q?.spoken ?? '', labels: labels[i] };
         })
         : [],
-      readTime: settings.readTime && READ_TIME_LEVELS.includes(def.n),
+      readTime: settings.readTime,
       ...turnsLeft(today, settings.unlimited === true),
     };
     return { status: 200, body: reply as unknown as Record<string, unknown> };

@@ -6,7 +6,7 @@
  * pupil never learns here whether a gap was right: the results screen says.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BUMP_PENALTY_STEPS, CHECK_BONUS_STEPS, READ_TIME_MAX_SECONDS, START_X, STEPS_PER_SECOND } from '../../../shared/toonflap/config';
+import { BUMP_PENALTY_STEPS, CHECK_BONUS_STEPS, START_X, STEPS_PER_SECOND } from '../../../shared/toonflap/config';
 import { encodeFlaps, newRun, presentsGot, stepRun, type RunState, type StepEvent } from '../../../shared/toonflap/engine';
 import { buildCourse, levelById, LEVELS, type Course } from '../../../shared/toonflap/levels';
 import type { Progress } from '../../../shared/toonflap/collection';
@@ -101,7 +101,6 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
-  const goTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const bubbleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const G = useRef<Game | null>(null);
   if (G.current === null) {
@@ -136,9 +135,10 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
   };
 
   const go = () => {
-    clearTimeout(goTimer.current);
     const g = G.current as Game;
-    if (g.paused === 'read') g.paused = null;
+    // Only while the sign is waiting (not under the Leave box, or the flight would be stuck with no Go button).
+    if (g.paused !== 'read') return;
+    g.paused = null;
     g.queued = false;
     setReading(false);
   };
@@ -283,11 +283,11 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
               g.signTold = true;
               say(GUIDE.sign);
             }
+            // The flight waits for the Go button (or Enter), with no time limit: taps and flap keys never clear it.
             if (start.readTime && info) {
               g.paused = 'read';
+              g.queued = false;
               setReading(true);
-              clearTimeout(goTimer.current);
-              goTimer.current = setTimeout(go, READ_TIME_MAX_SECONDS * 1000);
             }
           }
         });
@@ -325,7 +325,6 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
     return () => {
       cancelAnimationFrame(raf);
       ro?.disconnect();
-      clearTimeout(goTimer.current);
       clearTimeout(bubbleTimer.current);
     };
     // The run is made once for this start reply.
