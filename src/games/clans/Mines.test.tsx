@@ -9,7 +9,7 @@ import { CONFIG } from '../../../shared/clans/config';
 import { Mines, Results, recommendedDepth } from './Mines';
 import { newSession, type FightSummary } from './session';
 
-afterEach(cleanup);
+afterEach(() => { cleanup(); localStorage.clear(); });
 
 const clanAt = (level: number) => {
   const clan = makeClan('Red Banner', startingDrafts(4242));
@@ -17,7 +17,7 @@ const clanAt = (level: number) => {
 };
 
 describe('the Mines', () => {
-  it('recommends the deepest "just right" depth, opens there, lets the box be cleared and typed into, goes in on Enter; after the fight M and C go back', () => {
+  it('recommends the deepest "just right" depth, opens there, lets the box be cleared and typed into, goes in on Enter, keeps the last chosen depth; after the fight M and C go back', () => {
     expect(recommendedDepth(clanAt(1))).toBe(2);
     expect(recommendedDepth(clanAt(10))).toBe(11);
     expect(recommendedDepth(clanAt(40))).toBe(CONFIG.maxLevel);
@@ -37,6 +37,20 @@ describe('the Mines', () => {
     expect(onDepth).toHaveBeenLastCalledWith(CONFIG.maxLevel);
     fireEvent.keyDown(box, { key: 'Enter' });
     expect(onGo).toHaveBeenCalledWith(false);
+    cleanup();
+    localStorage.clear();
+    // It stays at the depth the pupil last chose, even after a fight when that is no longer the recommended one.
+    onDepth.mockClear();
+    const later = { ...newSession(clanAt(10), 1), depth: 11 };
+    render(<Mines session={later} onDepth={onDepth} onGo={() => {}} onBack={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Go deeper' }));
+    expect(onDepth).toHaveBeenLastCalledWith(12);
+    cleanup();
+    // Back from the fight the session may say any depth (and 12 may now be "too hard"): the saved 12 wins.
+    const back = vi.fn();
+    render(<Mines session={{ ...later, depth: 0 }} onDepth={back} onGo={() => {}} onBack={() => {}} />);
+    expect(back).toHaveBeenCalledWith(12);
+    expect(screen.getByRole('button', { name: /Recommended: 11/ })).toBeTruthy();
     cleanup();
     // After the fight: M goes back to the Mines, C back to the clan.
     const onMines = vi.fn();
