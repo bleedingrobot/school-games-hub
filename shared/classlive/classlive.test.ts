@@ -371,13 +371,14 @@ describe('Class Live server', () => {
     let now = 1_000_000;
     const sv = memoryServices(db, { now: () => now, random: rng(3) });
     expect(cleanHost('  Mr  Riley!! ')).toBe('Mr Riley');
-    // Limits (James, 26 Nov 2026 NZ): one joystick game at a time, two games in all; the class's own game doesn't count.
+    // Limits (James, 26 Nov 2026 NZ): one live game at a time, of any kind; the class's own game doesn't count.
     const ghost: OpenGame = { room: 9, kind: 'classlive', activity: 'ghost', name: 'Ghost Tag', moving: true, classId: B, who: 'Room 5' };
     const duel: OpenGame = { room: 10, kind: 'showdown', activity: 'showdown', name: 'Class Showdown', moving: false, classId: FAR, who: 'Room 9' };
     expect(lockedBecause('clash', [ghost], A)).toContain('Room 5 (Ghost Tag)');
     expect(lockedBecause('clash', [ghost], B)).toBeNull();
-    expect(lockedBecause('serpent', [ghost], A)).toBeNull();
-    expect(lockedBecause('serpent', [ghost, duel], A)).toContain('2 Class Live games');
+    expect(lockedBecause('serpent', [ghost], A)).toContain('Only one live game');
+    expect(lockedBecause('showdown', [duel], A)).toContain('Room 9 (Class Showdown)');
+    expect(lockedBecause('serpent', [], A)).toBeNull();
     db.openGames = [ghost];
     const refused = await classLiveStep(sv, T, { action: 'open', classId: A, activity: 'lava' });
     expect([refused.status, refused.body.reason]).toEqual([409, 'locked']);

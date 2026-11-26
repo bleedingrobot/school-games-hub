@@ -1,6 +1,6 @@
 /**
  * The Class Live and Showdown games running now in other classes, for the teacher's picker (James, 26 Nov 2026 NZ:
- * one joystick game at a time, two games in all; shared/classlive/limits.ts). Asked every 15 s while the picker shows;
+ * one live game at a time; shared/classlive/limits.ts). Asked every 15 s while the picker shows;
  * anything that fails (preview, signed out) counts as nothing running, and the server still checks on open.
  */
 import { useEffect, useState } from 'react';

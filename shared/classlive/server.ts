@@ -752,7 +752,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     if (!teach.enabled) return no(403, OFF, 'off');
     const session = newSession(body, Math.floor(sv.random() * 2 ** 31), () => sv.random());
     if (typeof session === 'string') return no(400, session);
-    // One joystick game at a time, two games in all (James, 26 Nov 2026 NZ: the database stalled with two classes on).
+    // One live game at a time, of any kind (James, 26 Nov 2026 NZ: the database stalled with two classes on).
     const running = await sv.openGames();
     if (running === 'busy') return busy();
     const locked = lockedBecause(session.activity, running, classId);
