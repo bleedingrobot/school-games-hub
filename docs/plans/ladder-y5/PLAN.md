@@ -109,3 +109,9 @@ unchanged). Oracles and pick checks: shared/maths/y5/. New pictures (shared/math
 (one angle; QuestionModal shows a free "Help me" button with every kind of angle and its name, `AngleNames`) and `clock`
 (analogue face). Tagged as Year 5 in `maths_content_years` (migration 20261126182956, table now takes 5 to 8), kept in step by
 shared/maths/y78.test.ts. Pupils' news line `ladder-year5-2026-11-26`.
+
+## 7. Help me for signs (26 Nov 2026 NZ)
+
+James asked for a Help me on every question that shows < > (and ≠). `helpKind` (shared/maths/hint.ts) gives `symbols` when a
+question's parts, prompt or choice labels hold < > ≤ ≥ ≠, and QuestionModal shows a free "Help me" list of what each sign means
+(all years, every game that uses the question box). Angle pictures keep their own angle-kinds help.
