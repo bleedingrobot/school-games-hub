@@ -18,7 +18,7 @@ import { AngleNames, Figure } from './Figure';
 import { isFigure } from '../../shared/maths/figure';
 import { NumberPad } from './NumberPad';
 import { choiceForKey, useQuestionKeys } from './questionKeys';
-import { countAnswer, noteQuestion, questionOpened, spendSkip, spotFromTitle, STREAK_FROM, useSkipRule } from './questionLog';
+import { countAnswer, helpCancelled, helpOpened, noteQuestion, questionOpened, spendSkip, spotFromTitle, STREAK_FROM, useSkipRule } from './questionLog';
 import { ScribblePad } from './ScribblePad';
 import './maths.css';
 
@@ -384,6 +384,13 @@ export function QuestionModal({
   const [hint, setHint] = useState<ReturnType<typeof hintFor> | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const help = helpKind(question);
+  // Help me was opened on this question (H1): the answer then doesn't count. Holds the call telling the database, so the
+  // answer waits for it.
+  const helped = useRef<{ id: ShownQuestion['id']; sent: Promise<void> } | null>(null);
+  const openHelp = () => {
+    setHelpOpen((o) => !o);
+    if (helped.current?.id !== question.id && !result) helped.current = { id: question.id, sent: helpOpened(help ?? 'help') };
+  };
   const [streak, setStreak] = useState(0);
   const [padOpen, setPadOpen] = useState(readPadOpen);
   const shownAt = useRef(performance.now());
@@ -458,7 +465,10 @@ export function QuestionModal({
     const close = questionOpened(spotName.current);
     return () => {
       close();
-      if (answeredId.current !== id) noteQuestion({ spot: spotName.current, skipped: true, ms: performance.now() - started });
+      if (answeredId.current !== id) {
+        noteQuestion({ spot: spotName.current, skipped: true, ms: performance.now() - started });
+        if (helped.current?.id === id) helpCancelled();
+      }
     };
   }, [question.id]);
 
@@ -478,6 +488,20 @@ export function QuestionModal({
       answeredId.current = question.id;
       noteQuestion({ spot: spotName.current, skipped: false, ms });
     }
+    const wasHelped = helped.current?.id === question.id ? helped.current.sent : null;
+    if (wasHelped) {
+      // Help me was opened: the database must hear that before the answer is saved, so wait (at most 1.5 s) first.
+      setChecking(true);
+      void wasHelped.then(() => {
+        setChecking(false);
+        send(answer, ms, true);
+      });
+      return;
+    }
+    send(answer, ms, false);
+  }
+
+  function send(answer: number, ms: number, wasHelped: boolean) {
     const marked = onSubmit(answer, ms);
     const show = (done: MarkedAnswer) => {
       setStreak(countAnswer(done.correct));
@@ -494,6 +518,8 @@ export function QuestionModal({
       (done) => {
         setChecking(false);
         show(done);
+        // The server marked and saved it, so any help still waiting is spent.
+        if (wasHelped) helpCancelled();
       },
       (error: unknown) => {
         setChecking(false);
@@ -586,7 +612,7 @@ export function QuestionModal({
           // Free help, no cost (James, 26 Nov 2026): every kind of angle with its name on angle questions, and what < > ≤ ≥ mean
           // on any question that uses them; what r means on remainders; a small grid on axis questions.
           <div className="question__help">
-            <button type="button" className="question__hintbtn" aria-expanded={helpOpen} onClick={() => setHelpOpen((o) => !o)}>
+            <button type="button" className="question__hintbtn" aria-expanded={helpOpen} onClick={openHelp}>
               {helpOpen ? 'Hide help' : 'Help me'}
             </button>
             {helpOpen && (help === 'angles' ? <AngleNames /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : help === 'fractions' ? <FractionHelp parts={question.parts} /> : help === 'hours' ? <HoursHelp parts={question.parts} /> : help === 'units' ? <UnitHelp parts={question.parts} /> : help === 'turns' ? <TurnHelp parts={question.parts} /> : <SymbolHelp />)}

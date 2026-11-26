@@ -7,7 +7,7 @@
  * failed send just tries again later. Nothing here ever shows an error: a note is never worth interrupting a game.
  */
 import { supabase } from '../lib/supabase';
-import { setQuestionSink, type QuestionNote } from '../maths/questionLog';
+import { setHelpSink, setQuestionSink, type QuestionNote } from '../maths/questionLog';
 
 export interface LoggedNote extends QuestionNote {
   game: string;
@@ -107,6 +107,16 @@ export function startQuestionLog(): void {
     if (!player) return;
     addNote(player, { ...note, game: gameFromHash(window.location.hash) });
     sendSoon();
+  });
+  // Help me (H1): the database leaves the next saved answer out of the records.
+  setHelpSink({
+    async opened(kind) {
+      if (!player) return;
+      await supabase.rpc('maths_help_opened', { kind });
+    },
+    cancelled() {
+      if (player) void supabase.rpc('maths_help_cancel');
+    },
   });
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden' && player) void sendNotes(player);

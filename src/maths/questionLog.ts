@@ -147,3 +147,34 @@ export function spotFromTitle(title: string): string {
   const spot = title.split(':')[0].replace(/\d+/g, '').replace(/\s+/g, ' ').trim().slice(0, 40).trim();
   return spot || 'Question';
 }
+
+// Help me (docs/plans/help-me/PLAN.md, H1): when a pupil opens Help me, the website tells the database, and the answer saved
+// next doesn't count (James, 26 Nov 2026: nothing gets ticked off if they ask for help). Set once by the website
+// (src/data/questionLog.ts); in tests and previews nothing is set, so nothing is sent.
+export interface HelpSink {
+  /** Help me was opened on the question showing now. Resolves once the database knows (or gave up). */
+  opened: (kind: string) => Promise<void>;
+  /** The help opened on this question no longer applies (the box closed without an answer, or the answer was marked). */
+  cancelled: () => void;
+}
+
+let helpSink: HelpSink | null = null;
+
+export function setHelpSink(next: HelpSink | null): void {
+  helpSink = next;
+}
+
+/** Help me was opened. Never rejects, and gives up after `waitMs` so a slow network can't hold up the answer. */
+export function helpOpened(kind: string, waitMs = 1500): Promise<void> {
+  if (!helpSink) return Promise.resolve();
+  const sent = helpSink.opened(kind).catch(() => undefined);
+  return Promise.race([sent, new Promise<void>((done) => setTimeout(done, waitMs))]);
+}
+
+export function helpCancelled(): void {
+  try {
+    helpSink?.cancelled();
+  } catch {
+    // Never worth interrupting a game.
+  }
+}

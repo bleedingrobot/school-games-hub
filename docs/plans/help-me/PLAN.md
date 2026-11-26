@@ -35,6 +35,17 @@ rule-every-q, rule-known-fact (tables/doubles/bonds help quotes a fact the pupil
 existing boxes follow the rule), rule-hint (Help me replaces Hint), rule-points (half points), rule-teacher (Progress
 tab shows help use), rule-junior (junior games build their own, read aloud).
 
+## Status
+
+- James said yes to everything (26 Nov 2026, 8 pm NZ) and chose "build all stages now".
+- H1 (the rule) built: migration 20261126200655_maths_help_me.sql. The question box calls `maths_help_opened(kind)` when Help
+  me is first opened on a question (src/maths/questionLog.ts help sink, set by src/data/questionLog.ts) and waits for it
+  before sending the answer. `record_fact_answers` leaves the next saved answer (within 10 minutes) out of the records and
+  writes it to `maths_help_uses`. Closing the box unanswered, or a server-marked answer coming back, calls
+  `maths_help_cancel()`. Works for every game, since every game saves through `record_fact_answers`. Not done in H1: half
+  points (each game's server gives its own points) and "comes back soon" (a helped fact simply stays unsecured, so the
+  ladder keeps asking it).
+
 ## Build outline (after James says go)
 
 - H1 The rule: `helped?: true` on FactAnswer; QuestionModal sets it when Help me opens and passes it with `onSubmit`;

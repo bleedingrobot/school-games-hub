@@ -6,6 +6,7 @@ import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { } from '../../shared/space/random';
 import { } from '../../shared/maths/skillPacks/generated';
 import { QuestionModal } from './QuestionModal';
+import { setHelpSink } from './questionLog';
 
 const question = (extra: Partial<Question> = {}): Question => ({
   id: 1,
@@ -59,5 +60,21 @@ describe('question box', () => {
     expect(screen.getByRole('button', { name: /56/ })).toHaveAttribute('aria-keyshortcuts', '2');
     await user.keyboard('2');
     expect(picked.onSubmit).toHaveBeenCalledWith(56, expect.any(Number));
+
+    // Help me (H1): opening it tells the database first, and the answer is only sent once it has heard.
+    cleanup();
+    let heard: () => void = () => {};
+    const sink = { opened: vi.fn(() => new Promise<void>((done) => (heard = done))), cancelled: vi.fn() };
+    setHelpSink(sink);
+    const helpedQ = setup(question({ id: 4, parts: ['9', '÷', '4', '=', '2', 'r', '?'], answer: 1 }));
+    await user.click(screen.getByRole('button', { name: 'Help me' }));
+    expect(sink.opened).toHaveBeenCalledWith('remainder');
+    await user.click(screen.getByRole('button', { name: '1' }));
+    await user.click(screen.getByRole('button', { name: 'Check my answer' }));
+    expect(helpedQ.onSubmit).not.toHaveBeenCalled();
+    heard();
+    await vi.waitFor(() => expect(helpedQ.onSubmit).toHaveBeenCalledWith(1, expect.any(Number)));
+    expect(sink.cancelled).not.toHaveBeenCalled();
+    setHelpSink(null);
   });
 });
