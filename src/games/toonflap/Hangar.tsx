@@ -56,12 +56,14 @@ export function TrailCanvas({ trail, size }: { trail: string; size: number }) {
   return <canvas ref={ref} className="tf-fcanvas" style={{ width: size * 2, height: size }} aria-hidden="true" />;
 }
 
-export function Hangar({ progress, picks, onPick, onBack }: { progress: Progress; picks: Picks; onPick: (p: Picks) => void; onBack: () => void }) {
-  const flyers = flyersUnlocked(progress);
+export function Hangar({ progress, today, picks, onPick, onBack }: { progress: Progress; today: string; picks: Picks; onPick: (p: Picks) => void; onBack: () => void }) {
+  const flyers = flyersUnlocked(progress, today);
   const trails = trailsUnlocked(progress);
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
   const how = (f: Flyer): string => {
+    if (f.window) return 'Free for everyone from 1 December to Boxing Day';
+    if (f.cleanOn) return `Fly ${levelById(f.cleanOn)?.name ?? ''} with no bumps (December and January)`;
     if (f.allPresents) return `Grab every present in one flight of ${levelById(f.allPresents)?.name ?? ''} (December and January)`;
     if (f.level === null) return 'Gold on every level';
     const seasonal = levelById(f.level)?.months ? ' (December and January)' : '';
@@ -106,6 +108,7 @@ export function Hangar({ progress, picks, onPick, onBack }: { progress: Progress
                 <FlyerCanvas flyer={f.id} gold={have && gold} size={72} />
                 <span className="tf-card__name">{f.name}</span>
                 <span className="tf-card__sub">{have ? (gold ? 'Shiny! Gold earned' : picks.flyer === f.id ? 'Flying with this one' : 'Tap to pick') : how(f)}</span>
+                {f.drawnByPupils && <span className="tf-card__sub tf-kids">Drawn by our pupils</span>}
               </button>
             </li>
           );

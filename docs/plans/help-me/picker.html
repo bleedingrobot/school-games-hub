@@ -1,0 +1,499 @@
+<title>Ladder Help Me Picks</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky year bar over one column of skill cards; each card = question, help now, proposed help, pick + comment */
+:root{
+  --bg:#f3f6f5; --panel:#ffffff; --fg:#17312b; --muted:#5b726c; --line:#d5e0dc;
+  --accent:#0f7a63; --accent-bg:#dcefe9; --yes:#127a3c; --yes-bg:#dff3e6; --no:#a33a2c; --no-bg:#f8e3df; --maybe:#8a6100; --maybe-bg:#f7edd2;
+  --code-bg:#eaf1ef; --help-bg:#f6faf9;
+  --f-body:"Lexend",system-ui,sans-serif; --f-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1a18; --panel:#16241f; --fg:#e3eeea; --muted:#9bb2ab; --line:#2a3c37; --accent:#4fc9a8; --accent-bg:#173a31;
+  --yes:#7fdc9f; --yes-bg:#173a26; --no:#f29c8f; --no-bg:#3d1f1a; --maybe:#e8c46a; --maybe-bg:#3a2f14; --code-bg:#1d2e29; --help-bg:#13201c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1a18; --panel:#16241f; --fg:#e3eeea; --muted:#9bb2ab; --line:#2a3c37; --accent:#4fc9a8; --accent-bg:#173a31;
+  --yes:#7fdc9f; --yes-bg:#173a26; --no:#f29c8f; --no-bg:#3d1f1a; --maybe:#e8c46a; --maybe-bg:#3a2f14; --code-bg:#1d2e29; --help-bg:#13201c; color-scheme:dark}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:820px;margin:0 auto;padding-block:24px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+h1{font-size:1.6rem;margin:0;text-wrap:balance;font-weight:700}
+h2{font-size:1.1rem;margin:6px 0 0;text-wrap:balance}
+.lead{color:var(--muted);margin:0;max-width:65ch}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:8px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line)}
+@media (max-width:600px){.bar{position:static}}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.tabs a{flex:none;text-decoration:none;color:var(--fg);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:.86rem;background:var(--panel);font-variant-numeric:tabular-nums}
+.tabs a[aria-current="page"]{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:600}
+.tabs a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:.85rem}
+.tools input[type=search]{font:inherit;font-size:.88rem;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg);flex:1 1 180px;min-width:0}
+.tools select{font:inherit;font-size:.85rem;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg)}
+.tally{display:flex;gap:8px;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
+.tally span{padding:2px 9px;border-radius:999px;border:1px solid var(--line);font-variant-numeric:tabular-nums}
+#status{font-size:.8rem;color:var(--muted)}
+.list{display:flex;flex-direction:column;gap:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:9px;min-width:0}
+.card[data-c="yes"]{border-color:var(--yes)} .card[data-c="no"]{border-color:var(--no)} .card[data-c="maybe"]{border-color:var(--maybe)}
+.top{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.yr{font-family:var(--f-mono);font-size:.74rem;color:var(--muted)}
+.name{font-weight:600;font-size:1.02rem}
+.chip{font-size:.72rem;padding:2px 8px;border-radius:999px;letter-spacing:.02em}
+.chip.game{background:var(--code-bg);color:var(--muted)}
+.chip.has{background:var(--accent-bg);color:var(--accent)}
+.chip.none{border:1px dashed var(--line);color:var(--muted)}
+.q{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.84rem;color:var(--muted)}
+.q code{font-family:var(--f-mono);font-size:.84rem;background:var(--code-bg);color:var(--fg);padding:3px 8px;border-radius:6px}
+.help{background:var(--help-bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.help .lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.help .t{font-weight:600;color:var(--accent)}
+.help ol{margin:2px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:2px}
+.help .pic{font-size:.8rem;color:var(--muted);margin:2px 0 0}
+.now{font-size:.82rem;color:var(--muted);margin:0}
+.now strong{color:var(--fg);font-weight:500}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btns button{font:inherit;font-size:.85rem;padding:5px 13px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--fg);cursor:pointer}
+.btns button[aria-pressed="true"][data-v="yes"]{background:var(--yes-bg);border-color:var(--yes);color:var(--yes)}
+.btns button[aria-pressed="true"][data-v="no"]{background:var(--no-bg);border-color:var(--no);color:var(--no)}
+.btns button[aria-pressed="true"][data-v="maybe"]{background:var(--maybe-bg);border-color:var(--maybe);color:var(--maybe)}
+.btns button:disabled{cursor:default;opacity:.6}
+.cmt{display:flex;flex-direction:column;gap:6px}
+.cmt label{font-size:.78rem;color:var(--muted)}
+.cmt textarea{font:inherit;font-size:.9rem;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:60px;resize:vertical}
+.cmt .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.cmt button{font:inherit;font-size:.83rem;padding:5px 12px;border-radius:8px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
+.cmt .saved{font-size:.78rem;color:var(--muted)}
+.bulk{font:inherit;font-size:.82rem;padding:5px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.bulk[data-arm="1"]{border-color:var(--yes);color:var(--yes)}
+.review{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+.review ul{margin:6px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:.9rem}
+.pics{display:flex;flex-direction:column;gap:4px;border-top:1px dashed var(--line);padding-top:8px}
+.btns.small button{font-size:.8rem;padding:3px 10px}
+.btns .pl{font-size:.8rem;color:var(--muted);align-self:center}
+.chip.pic{background:var(--maybe-bg);color:var(--maybe)}
+.empty{color:var(--muted);font-size:.9rem;padding:20px 0}
+</style>
+<div class="wrap">
+  <h1>Help me on every ladder question</h1>
+  <p class="lead">Every skill on the maths ladder, by year, with the help it has now and the Help me I'm proposing. Help teaches a trick, a fact they already know, or the steps worked with the question's own numbers, and stops before the answer. Tap Yes, No or Maybe and leave a comment on anything. Nothing is built until you say go.</p>
+  <div class="bar">
+    <nav class="tabs" id="tabs" aria-label="Choose a year"></nav>
+    <div class="tools" id="tools">
+      <input type="search" id="search" placeholder="Find a skill or a question, e.g. ×7 or perimeter" aria-label="Find a skill">
+      <select id="filter" aria-label="Show">
+        <option value="all">All skills</option>
+        <option value="open">Not picked yet</option>
+        <option value="has">Has a Help me now</option>
+        <option value="game">Asked in a junior game</option>
+        <option value="needpic">Could use a picture</option>
+        <option value="haspic">Has a picture now</option>
+        <option value="commented">With comments</option>
+      </select>
+      <button type="button" class="bulk" id="bulk">Yes to all not picked here</button>
+    </div>
+    <div class="tally" id="tally"></div>
+    <div id="status">Loading your picks…</div>
+  </div>
+  <section id="start">
+    <h2>The rules for Help me</h2>
+    <p class="lead">These apply to every skill. Pick each one too.</p>
+  </section>
+  <div class="list" id="rules"></div>
+  <section class="review" id="review">
+    <h2>What the review found</h2>
+    <ul>
+      <li>The ladder has 136 skills from Year 1 to Year 8, made of about 200 question types. 110 are on the auto ladder; 26 sit beside it and are asked by the junior games (Pipi, Hop, Penguin Pairs, Tūī, Pigeon, Parrot, Lizard, Swamp Hen, Robin), which draw and mark their own questions.</li>
+      <li>Only 8 skills have a free Help me box today: kinds of angles, remainders, x- and y-axis, adding fractions with different bottoms, hours to minutes (two skills), and the signs box on true-or-false and inequality questions.</li>
+      <li>Some games also have a Hint button that greys out two choices or says "between 50 and 60". Hints don't teach a method and right answers after one still count, so the rules below fold it into Help me.</li>
+      <li>Each times table holds only its new facts (×7 is 7 × 7, 7 × 8, 7 × 9…), so every newer table has easier facts below it. That makes the "use a fact you know" help a good fit for all the tables.</li>
+      <li>Answers are all saved by one shared step on the server, so "doesn't count after Help me" can be done once there rather than in every game.</li>
+      <li>Pictures: 12 ladder skills show a picture in the question today (perimeter, kinds of angles, clock, area, angles, coordinates, spinner, formulas, missing angles, polygons, compass degrees, circles), and the 26 junior-game skills are drawn by their games. About 47 more could use one: fraction bars, ten-frames, number lines through zero, the compass rose, clocks for time across the hour, thermometers. Each card has its own Yes / No / Maybe for the picture, and the "Could use a picture" filter lists them.</li>
+      <li>The 20 Year 4 skills you picked earlier aren't built yet. They'd get their help from this plan as they're built.</li>
+    </ul>
+  </section>
+  <h2 id="list-title">Skills</h2>
+  <div class="list" id="list"></div>
+</div>
+<script>
+// One row per ladder skill: [id, year, name, example, helpTitle, steps, picture, game, helpNow]
+// game: the junior game that asks it (skills beside the ladder), '' for ladder skills.
+// helpNow: the free Help me box it already has (26 Nov 2026), '' for none.
+const SKILLS = [
+// ---- Year 1
+["facts-5",1,"Number facts to 5","3 + 2","Count on from the bigger number",["Put 3 in your head.","Count on 2 more on your fingers: 4, …?","Take away: 5 − 2, count back 2 from 5: 4, …?"],"Five-frame: 3 red dots and 2 blue dots","",""],
+["facts-10",1,"Number facts to 10","7 + ? = 10","Pairs that make 10",["Ten-frame: 7 dots are filled.","How many empty boxes are left? That is the missing part.","Pairs to 10: 1+9, 2+8, 3+7, 4+6, 5+5."],"Ten-frame with 7 filled, 3 empty","",""],
+["dbl-half-10",1,"Doubles and halves to 10","4 + 4, 8 ÷ 2","Doubles are the same number twice",["Show 4 fingers on each hand: 4 and 4.","Count them all: …?","Half: share 8 dots into two equal rows. How many in one row?"],"Two matching dot rows","",""],
+["ten-and",1,"Ten and a number (10 + 4)","10 + 4, 14 − 10","A ten and some ones",["10 + 4 is 1 ten and 4 ones.","Say it: four-teen. The 1 is the ten, the 4 is the ones.","14 − 10: take the ten away and the ones are left: ?"],"A full ten-frame and 4 loose dots","",""],
+["skip-10",1,"Counting in tens","0, ?, 20, 30","Only the tens digit changes",["Say the count out loud: 0, 10, 20, 30…","Each jump adds one more ten.","Point to the gap and say the number that goes there: ?"],"Number track with jumps of 10","",""],
+["skip-5",1,"Counting in fives","0, 5, 10, ?","Fives end in 5 or 0",["Count out loud: 0, 5, 10…","The ones digit goes 5, 0, 5, 0.","After 10 comes 1 more five: ?"],"Hands: count in fives finger by finger","",""],
+["skip-2",1,"Counting in twos","0, 2, 4, ?","Twos are the even numbers",["Count every second number: 0, (1), 2, (3), 4…","Even numbers end in 0, 2, 4, 6 or 8.","Skip one number after 4: ?"],"Number track, every second number lit","",""],
+["parts-5",1,"Parts of numbers to 5","3 = 1 + ?","Some are hidden",["There are 3 shells altogether.","You can see 1. Count on from 1 up to 3.","The ones you counted on are hiding: ?"],"Shells, some under a cup","Pipi's Hidden Shells",""],
+["parts-10",1,"Parts of numbers to 10","7 = 4 + ?","Some are hidden",["There are 7 shells. You can see 4.","Count on from 4: 5, 6, 7.","How many did you count on? That's how many are hiding."],"Shells, some under a cup","Pipi's Hidden Shells",""],
+["ten-more-less-teens",1,"Ten more and ten less (14 + 10)","14 + 10","Ten more changes the tens only",["14 is 1 ten and 4 ones.","Add a ten: 2 tens and 4 ones.","Say it: twenty-…?"],"Ten-frames: one more full frame added","Tūī's Ten Tree",""],
+["count-out-10",1,"Counting out a set to 10","Give 6 berries","Touch and count",["Touch each berry once as you say a number.","Stop when you say 6.","The last number you say is how many."],"Berries in a line, each with a tick when touched","Robin's Berry Basket",""],
+["count-out-20",1,"Counting out a set to 20","Count 14 berries","Count a ten first",["Count 10 berries and push them together.","Then count on from 10: 11, 12, 13…","The last number is how many."],"A group of 10 and some loose berries","Robin's Berry Basket",""],
+["count-on",1,"One more: counting on from a covered plate","Plate of 4 and one more","Keep the plate number in your head",["The plate has 4. Say 4 in your head.","One more comes: count on one.","4, …?"],"Covered plate with 4 on its lid","Robin's Berry Basket",""],
+["balance-10",1,"The equals sign: a missing number to 10","3 = 1 + ?","Both sides must weigh the same",["The left side is 3.","The right side has 1. How many more make it 3?","Count on from 1 up to 3: 2, 3. That's ? more."],"See-saw with both sides labelled","Parrot's See-saw",""],
+// ---- Year 2
+["facts-20",2,"Number facts to 20","8 + 5, 13 − 4, 6 + 7","Make a ten, or use a double",["Bridge through 10: 8 + 5 = 8 + 2 + 3 = 10 + 3 = ?","Near double: 6 + 7 is 6 + 6 and one more: 12 + 1 = ?","Take away to 10: 13 − 4 = 13 − 3 − 1 = 10 − 1 = ?"],"Two ten-frames, the move to fill the first one shown","",""],
+["dbl-half-20",2,"Doubles and halves to 20","Double 7, half of 16","Split into ten and ones (or 5 and some)",["Double 7: double 5 is 10, double 2 is 4.","10 + 4 = ?","Half of 16: half of 10 is 5, half of 6 is 3, 5 + 3 = ?"],"Dot rows split at 5","",""],
+["tables-2",2,"Times tables: ×2","2 × 7, 14 ÷ 2","Times 2 is a double",["2 × 7 is double 7: 7 + 7.","A fact you know: double 5 = 10, double 2 = 4, 10 + 4 = ?","14 ÷ 2 is half of 14: what doubles to make 14?"],"Two equal rows of dots","",""],
+["tables-5",2,"Times tables: ×5","5 × 8, 35 ÷ 5","Times 5 is half of times 10",["10 × 8 = 80.","5 is half of 10, so 5 × 8 is half of 80: ?","35 ÷ 5: double 35 is 70, then 70 ÷ 10 = ?"],"Hand of five fingers repeated","",""],
+["tables-10",2,"Times tables: ×10","10 × 6, 60 ÷ 10","Ten lots: the digits move one place left",["10 × 6 is 6 tens.","6 tens is sixty: the 6 moves to the tens and a 0 fills the ones.","60 ÷ 10: take the 0 off: ?"],"Place chart: 6 slides from ones to tens","",""],
+["odd-even",2,"Odd and even numbers to 20","Is 13 odd or even?","Pair them up",["Put the dots in pairs.","If every dot has a partner it's even. One left alone: odd.","Quick check: look at the ones digit. Even ends in 0, 2, 4, 6, 8."],"Dots in pairs, one left over","Penguin Pairs",""],
+["skip-3",2,"Counting in threes","0, 3, 6, ?","Count in threes like the 3 times table",["Say it: 0, 3, 6…","Each jump is 3 more.","6 and 3 more: count on 7, 8, 9 → ?"],"Number track with jumps of 3","Hop",""],
+["skip-4",2,"Counting in fours","0, 4, 8, ?","Fours are double the twos",["Count in twos and say every second one: 2, 4, 6, 8…","Or add 4 each time.","8 and 4 more: ?"],"Number track with jumps of 4","Hop",""],
+["skip-10-past-100",2,"Counting in tens past 100","90, 100, ?, 120","Keep going past 100",["Only the tens digit changes: 100, 110, 120.","After 100 comes one hundred and ten.","Say the one that goes in the gap: ?"],"Number track from 90 to 130","Hop",""],
+["skip-from",2,"Counting on from a start (3, 13, 23)","3, 13, 23, ?","The ones stay the same",["The ones digit is 3 every time.","The tens go up by one each jump: 0, 1, 2…","Next tens digit is 3, ones still 3: ?"],"Hundred square column lit","Hop",""],
+["balance-20",2,"The equals sign: two numbers each side","10 + 4 = 12 + ?","Make both sides the same total",["Work out the left side: 10 + 4 = 14.","The right side must make 14 too.","12 + ? = 14: count on from 12."],"See-saw, left total shown","Parrot's See-saw",""],
+["true-false",2,"The equals sign: true or false","3 + 8 = 5 + 6","Work out each side",["Left: 3 + 8 = 11.","Right: 5 + 6 = 11.","Same number on both sides means true. Different means false."],"See-saw tipping or level","Parrot's See-saw",""],
+["bundles-50",2,"Bundles of ten to 50","Build 34 with bundles","Tens are bundles, ones are sticks",["34: the 3 is tens, the 4 is ones.","Take 3 bundles of ten.","Then 4 loose sticks."],"3 bundles and 4 sticks","Lizard's Bundles",""],
+["place-value-100",2,"Tens and ones to 100, and zero","Read 70 from bundles","Count the bundles in tens",["Count the bundles: 10, 20, 30…","No loose sticks means 0 ones.","7 bundles and no sticks: ?"],"Bundles only","Lizard's Bundles",""],
+["regroup-100",2,"Tying and untying bundles","Tie 23 sticks into bundles","10 sticks make a bundle",["Count out 10 sticks and tie them: that's one bundle.","Do it again while you have 10.","How many bundles, and how many sticks are left?"],"Sticks grouped into tens","Lizard's Bundles",""],
+["ten-more-less-100",2,"Ten more and ten less with bundles","Ten more than 46","Add or take one bundle",["46 is 4 bundles and 6 sticks.","Add one bundle: 5 bundles, still 6 sticks.","Say it: ?"],"Bundles with one sliding in","Lizard's Bundles",""],
+["equal-rows",2,"Equal rows (4 rows of 6)","4 rows of 6","Count by rows",["Each row has 6.","Count in sixes, one row at a time: 6, 12…","Or use a table you know: 4 × 6 is double 2 × 6."],"Reed rows, each row bracketed","Swamp Hen's Reed Rows",""],
+["arrays-turn",2,"Turning an array round","2 rows of 3 turned","Turning doesn't change how many",["2 rows of 3 is 6.","Turn it: now 3 rows of 2.","Still the same dots: ?"],"Array rotating a quarter turn","Swamp Hen's Reed Rows",""],
+// ---- Year 3
+["bonds-100",3,"Pairs that make 100","100 − 16, ? + 75 = 100","Tens make 9, ones make 10",["Jump to the next ten: 16 → 20 is 4.","Then to 100: 20 → 100 is 80.","4 + 80 = ?  (Check: tens 1 + 8 = 9, ones 6 + 4 = 10.)"],"Number line 16 → 20 → 100","",""],
+["tables-3",3,"Times tables: ×3","3 × 7, 21 ÷ 3","Double it, then one more lot",["3 × 7 is 7 + 7 + 7.","Double 7 is 14, then one more 7: 14 + 7 = ?","Or a near fact: 3 × 6 = 18, so 3 × 7 is 3 more."],"Three rows of 7, two shaded as the double","",""],
+["tables-4",3,"Times tables: ×4","4 × 7, 28 ÷ 4","Double, then double again",["Double 7 = 14.","Double 14 = ?","28 ÷ 4: halve, then halve again: 14, then ?"],"Two doubles drawn as rows","",""],
+["tables-8",3,"Times tables: ×8","8 × 6, 48 ÷ 8","Double three times",["Double 6 = 12, double 12 = 24, double 24 = ?","Or ×4 then double: 4 × 6 = 24, double it.","48 ÷ 8: halve three times: 24, 12, ?"],"Doubling arrows ×2 ×2 ×2","",""],
+["round-10-100",3,"Rounding to the nearest 10 and 100","Round 89 to the nearest 10","Which ten is it closer to?",["89 is between 80 and 90.","Look at the ones: 9. 5 or more rounds up, less than 5 rounds down.","So 89 goes to ?"],"Number line 80 to 90 with 85 marked","",""],
+["unit-fraction-of",3,"A fraction of an amount (⅓ of 15)","⅓ of 27","Divide by the bottom number",["⅓ means share into 3 equal parts.","27 ÷ 3: think 3 × ? = 27.","One part is the answer."],"Bar cut into 3 equal parts, 27 on the whole","",""],
+["fraction-bonds",3,"Fractions that make 1 (⅜ + ⅝)","? + 3/5 = 1","One whole is the bottom over the bottom",["1 whole = 5/5.","You have 3 fifths. How many more fifths make 5?","3 + ? = 5, so the answer is ?/5."],"Bar in 5 parts, 3 shaded","",""],
+["number-line-100",3,"The number line to 100","Place 63 on the line","Find the tens first",["63 is between 60 and 70.","Find 60 on the line.","63 is a little past 60, less than halfway to 70."],"0-100 line with tens marked","Pigeon's Number Line",""],
+["ten-more-less",3,"Ten more and ten less","Ten more than 47","Only the tens digit changes",["47: 4 tens and 7 ones.","Ten more: 5 tens, still 7 ones.","?"],"Hundred square: move one row down","Hop",""],
+["place-value-1000",3,"Hundreds, tens and ones","Build 143 with rafts","Hundreds, then tens, then ones",["143: 1 hundred, 4 tens, 3 ones.","Take 1 raft (a hundred), 4 bundles, 3 sticks.","Read it back: one hundred and forty-three."],"Raft, bundles and sticks","Lizard's Bundles",""],
+["sharing-rows",3,"Sharing into equal rows","Share 12 into 3 rows","Deal them out one at a time",["Put one in each row, then again, until none are left.","Count one row.","Or: 3 × ? = 12."],"Dots dealt into rows","Swamp Hen's Reed Rows",""],
+["cut-arrays",3,"Cutting an array into known parts","Cut 6 rows of 3","Cut it into facts you know",["6 rows of 3: cut it into 5 rows and 1 row.","5 × 3 = 15 and 1 × 3 = 3.","15 + 3 = ?"],"Array with a cut line after 5 rows","Swamp Hen's Reed Rows",""],
+// ---- Year 4
+["bonds-1000",4,"Hundreds that make 1000","240 + ? = 1000","Jump to the next hundred",["240 → 300 is 60.","300 → 1000 is 700.","60 + 700 = ?  (Hundreds make 9, tens make 10.)"],"Number line 240 → 300 → 1000","",""],
+["tables-6",4,"Times tables: ×6","6 × 7, 42 ÷ 6","Times 5 and one more lot",["5 × 7 = 35 (half of 70).","Add one more 7: 35 + 7 = ?","Or double ×3: 3 × 7 = 21, double it."],"Rows of 7: five shaded, one extra","",""],
+["tables-9",4,"Times tables: ×9","9 × 7, 63 ÷ 9","Times 10, take away one lot",["10 × 7 = 70.","9 lots is one lot less: 70 − 7 = ?","Check: the digits of a 9s answer add to 9 (6 + 3)."],"Ten rows, one crossed out","",""],
+["tables-7",4,"Times tables: ×7","7 × 8, 56 ÷ 7","Times 5 plus times 2",["5 × 8 = 40 and 2 × 8 = 16.","40 + 16 = ?","Or turn it round: 7 × 8 = 8 × 7, which you may know."],"Rows split 5 + 2","",""],
+["times-tens",4,"Times with tens and hundreds (30 × 4)","8 × 50, 150 ÷ 5","Take the zeros off, put them back",["8 × 50: do 8 × 5 = 40.","Put the zero back on: 40 → ?","150 ÷ 5: 15 ÷ 5 = 3, then put the 0 back."],"Zeros lifted off and dropped back","",""],
+["tenths",4,"Tenths and decimals of a half","14 ÷ 10, double 0.6","Tenths are the first place after the point",["0.2 is 2 tenths, which is 2/10.","14 ÷ 10: the digits move one place right: 1 and 4 tenths.","Double 0.6: double 6 tenths is 12 tenths, which is 1 and ? tenths."],"Place chart with a decimal point","",""],
+["add-tenths",4,"Adding and taking away tenths","4.9 + 0.5, 4 − 3.7","Make the whole number first",["4.9 + 0.1 = 5 (that uses 1 tenth of the 5).","4 tenths are left: 5 + 0.4 = ?","Take away: count up from 3.7 to 4. How many tenths?"],"Tenths number line from 4.9 to 5.4","",""],
+["round-1000",4,"Rounding to the nearest 1000","Round 7236 to the nearest 1000","Look at the hundreds digit",["7236 is between 7000 and 8000.","The hundreds digit is 2: less than 5, so round down.","So it goes to ?"],"Number line 7000 to 8000 with 7500 marked","",""],
+["decimal-bonds",4,"Decimals that make 1 and 10","0.64 + ? = 1","Like pairs to 100",["Think of 64 + ? = 100.","Tens make 9 (6 + 3), ones make 10 (4 + 6).","So 64 + 36. Put the point back: 0.? ?"],"Hundred square, 64 shaded","",""],
+["number-line-1000",4,"The number line to 1000","Place 620 on the line","Find the hundreds first",["620 is between 600 and 700.","Find 600.","620 is a small step past 600, less than halfway."],"0-1000 line with hundreds marked","Pigeon's Number Line",""],
+// ---- Year 5
+["times-2by1",5,"2-digit times 1-digit in your head","14 × 3","Split into tens and ones",["10 × 3 = 30.","4 × 3 = 12.","30 + 12 = ?"],"Area box split 10 | 4","",""],
+["place-million",5,"Place value to a million","In 253 475, the 2 is worth?","Name the place of each digit",["Read the places from the right: ones, tens, hundreds, thousands, ten thousands, hundred thousands.","The 2 is in the hundred thousands place.","So it's worth 2 hundred thousand: ?"],"Place chart with headings","",""],
+["compare-big",5,"Biggest and smallest to a million","Biggest of four 6-digit numbers","Compare from the left",["More digits means bigger.","Same number of digits: look at the first digit.","If they match, move to the next digit until one is different."],"Numbers lined up in columns","",""],
+["count-big",5,"Counting in 1000s, 10 000s and 100 000s","873 300 + 10 000","Only one digit changes",["10 000 changes the ten thousands digit.","873 300: the ten thousands digit is 7. It goes up to 8.","Everything else stays: ?"],"Place chart, one digit glowing","",""],
+["mental-big",5,"Adding and taking away thousands","4500 + 2500","Use small facts and the place names",["4000 + 2000 = 6000.","500 + 500 = 1000.","6000 + 1000 = ?"],"Split into thousands and hundreds","",""],
+["missing-big",5,"Missing numbers with big numbers","880 000 + ? = 900 000","Count up to the target",["Read them in thousands: 880 + ? = 900.","880 → 900 is 20.","So 20 thousand: ?"],"Number line 880 000 → 900 000","",""],
+["tables-11",5,"Times tables: ×11","11 × 4, 11 × 12","Times 10 plus one more lot",["Up to 9: the digit twice (11 × 4 = 44).","11 × 12: 10 × 12 = 120, plus 12.","120 + 12 = ?"],"","",""],
+["tables-12",5,"Times tables: ×12","12 × 7, 84 ÷ 12","Times 10 plus times 2",["10 × 7 = 70.","2 × 7 = 14.","70 + 14 = ?"],"Rows split 10 + 2","",""],
+["factor-pairs",5,"Factor pairs","6 and ? are a factor pair of 12","Two numbers that times to make it",["Think of the 6 times table: 6, 12.","6 × ? = 12.","To find them all, start at 1 and go up: 1 × 12, 2 × 6, 3 × 4."],"Rectangles of 12 squares","",""],
+["round-big",5,"Rounding decimals","Round 6.52 to the nearest tenth","Look at the next digit",["6.52 is between 6.5 and 6.6.","The next digit is 2: less than 5, so round down.","So it goes to ?"],"Number line 6.5 to 6.6","",""],
+["perimeter",5,"Perimeter of squares, rectangles and regular shapes","Rectangle 4 cm by 3 cm","Add every side",["A rectangle has two long sides and two short sides.","4 + 3 = 7 is half way round.","Twice round half: 7 × 2 = ?"],"The shape with every side labelled","",""],
+["angle-types",5,"Kinds of angles","An angle of 110°","Compare it with a right angle",["A right angle is 90°, like the corner of a book.","Smaller than 90° is acute. Between 90° and 180° is obtuse.","Exactly 180° is straight, more than 180° is reflex."],"Every kind of angle with its name (already built)","","Every kind of angle with its name"],
+["metric-mm-km",5,"Millimetres, centimetres, metres and kilometres","6 km = ? m","Learn the jumps",["10 mm = 1 cm, 100 cm = 1 m, 1000 m = 1 km.","Going to a smaller unit, the number gets bigger: times.","6 km = 6 × 1000 m = ?"],"Unit ladder km → m → cm → mm with ×1000, ×100, ×10","",""],
+["compass-4",5,"Compass points and quarter turns","Face west, quarter turn anticlockwise","Go round the compass",["Clockwise: N, E, S, W (Never Eat Soggy Weetbix).","A quarter turn is one step. Anticlockwise goes backwards.","From W, one step backwards: ?"],"Compass rose with a turning arrow","",""],
+["clock-read",5,"Telling the time on a clock face","Short hand between 6 and 7, long hand on 2","Short hand for hours, long hand in fives",["The short hand is past 6, so it's 6 something.","Count the long hand in fives from 12: 5, 10.","So it's 6 and ? minutes."],"Clock with 5, 10, 15… round the outside","",""],
+["decimal-equivalents",5,"Fractions as decimals","¼ as a decimal","Make the bottom 10 or 100",["¼ = 25/100 (4 × 25 = 100).","25 hundredths is 0.25.","The ones to know: ½ = 0.5, ¼ = 0.25, ¾ = 0.75, ⅕ = 0.2, ⅒ = 0.1."],"Hundred square, a quarter shaded","",""],
+["add-hundredths",5,"Adding and taking away hundredths","1.63 + 0.3, 7.5 − 0.6","Line up the point, add the same places",["0.3 is 3 tenths: add it to the 6 tenths.","Hundredths stay the same.","Crossing: 7.5 − 0.6 = 7.5 − 0.5 − 0.1 = 7 − 0.1 = ?"],"Place columns lined up on the point","",""],
+["money-y5",5,"Money: totals, change and the nearest dollar","Change from $10 for $5.50","Count up from the price",["$5.50 → $6 is 50c.","$6 → $10 is $4.","$4 + 50c = ?"],"Coins counted up along a line","",""],
+["percent-basic",5,"10%, 25% and 50%","25% of 60","Percents you can halve",["50% is half: half of 60 is 30.","25% is half of that: half of 30.","10% is ÷10."],"Bar in quarters and tenths","",""],
+["fraction-of",5,"Fractions of an amount (⅔ of 24)","⅔ of 12","Find one part, then take the top many",["⅓ of 12 = 12 ÷ 3 = 4.","⅔ is 2 of those parts.","2 × 4 = ?"],"Bar in 3 parts, 2 shaded","",""],
+["times-decimals",5,"Times 10 and 100 with decimals","5.78 × 100","The digits move, the point stays",["× 10 moves every digit one place left; × 100, two places.","5.78: the 5 moves from ones to hundreds.","Read the new number: ?"],"Place chart with digits sliding","",""],
+["equivalent-fractions",5,"Equivalent fractions and simplifying","1/3 = ?/9, simplify 5/25","Do the same to the top and the bottom",["3 × 3 = 9 on the bottom.","So the top is times 3 too: 1 × 3 = ?","Simplify: find a number that goes into both (5 into 5 and 25) and divide both."],"Two bars: thirds and ninths lined up","",""],
+["mixed-improper",5,"Mixed numbers and improper fractions","4 ¾ = ?/4","Each whole is 4 quarters",["4 wholes = 4 × 4 = 16 quarters.","Add the 3 quarters.","16 + 3 = ? quarters."],"Four whole circles in quarters plus 3 quarters","",""],
+["pattern-decimal",5,"Patterns that go up in halves and decimals","1.75, 2, 2.25, 2.5, ?","Find the jump first",["2 − 1.75 = 0.25. Check another pair: the same.","Each step goes up a quarter.","2.5 + 0.25 = ?"],"Number line with equal hops","",""],
+// ---- Year 6
+["round-huge",6,"Rounding to the nearest 10 000 and 100 000","Round 255 679 to the nearest 100 000","Look at the digit after the place",["255 679 is between 200 000 and 300 000.","The next digit (ten thousands) is 5: 5 or more rounds up.","So it goes to ?"],"Number line 200 000 to 300 000","",""],
+["remainders",6,"Division with a remainder (38 ÷ 5)","74 ÷ 7 = 10 r ?","Biggest fact that fits, then what's left",["7 × 10 = 70 fits into 74.","74 − 70 = ?","That's what's left over: the remainder."],"Dots in groups with the left-overs (already built)","","What the r means, with dots"],
+["count-zero",6,"Counting through zero","5° − 7°","Use the number line through 0",["Start at 5 and go down 5 to reach 0.","You still have 2 more to go.","2 below zero is ?"],"Thermometer from −10 to 10","",""],
+["time-y6",6,"Hours, minutes and seconds","3 h = ? min","60 in an hour, 60 in a minute",["1 hour = 60 minutes. Use the 6 times table: 3 × 6 = 18.","Put the zero on: 3 × 60 = ?","120 min to hours: how many 60s in 120?"],"Hours help already built (6 times table)","","Hours to minutes with the 6 times table"],
+["time-24",6,"24-hour time","20:45 in 12-hour time","After 12, take away 12",["20 is bigger than 12, so it's pm.","20 − 12 = 8.","So it's ?:45 pm."],"24-hour and 12-hour clock rings","",""],
+["elapsed",6,"Time across the hour","8:50 pm to 9:40 pm","Jump to the o'clock",["8:50 → 9:00 is 10 minutes.","9:00 → 9:40 is 40 minutes.","10 + 40 = ?"],"Time line with two jumps","",""],
+["thousandths",6,"Times and divide by 1000, and thousandths","450 ÷ 1000","Three places",["÷ 1000 moves every digit three places right.","450 → 45 → 4.5 → ?","× 1000 moves them three places left."],"Place chart with three hops","",""],
+["decimal-order",6,"Ordering decimals to 3 places","Biggest of 0.5, 0.45, 0.405","Make them the same length",["Fill the gaps with zeros: 0.500, 0.450, 0.405.","Now compare them like whole numbers: 500, 450, 405.","The biggest is ?"],"Numbers lined up on the point","",""],
+["metric-y6",6,"Metric units: kg and g, m and cm, L and mL","500 mL = ? L","1000 of the small one makes one big one",["1 L = 1000 mL.","500 is half of 1000.","So it's half a litre: ?"],"Jug with 1000 mL marked","",""],
+["fraction-add-y6",6,"Adding simple fractions","5/7 − 1/7, 1 − 3/10","Same bottom: only the tops change",["The bottom stays 7.","Tops: 5 − 1 = ?","1 − 3/10: write 1 as 10/10 first."],"Bar in sevenths","",""],
+["squares-cubes",6,"Square and cube numbers","5 cubed, square root of 25","Squared = times itself",["Squared: 8 × 8. Cubed: 5 × 5 × 5.","5 × 5 = 25, then 25 × 5 = ?","Square root: what number times itself makes 25?"],"Square of dots and a cube of blocks","",""],
+["area-y6",6,"Area of rectangles, triangles and boxes","Right triangle base 8, height 2","A right triangle is half a rectangle",["Draw the rectangle round it: 8 × 2 = 16.","The triangle is half of it.","Half of 16 = ?"],"Triangle inside its rectangle","",""],
+["angles-y6",6,"Angles on a line, at a point, opposite","100° + ?° = 180°","A straight line is 180°",["Angles on a line add to 180°. Round a point: 360°.","Count up from 100 to 180.","Opposite angles are equal; side-by-side ones make 180°."],"Labelled line and point pictures","",""],
+["coordinates",6,"Coordinates (x, y)","(10, 3), move 6 up","Across first, then up",["The first number is across (x), the second is up (y).","Moving up only changes the second number.","3 + 6 = ?"],"x-axis and y-axis help already built","","x-axis and y-axis grid"],
+["fdp-equivalents",6,"Fractions, decimals and percentages","4/5 = ?%","Percent means out of 100",["Make the bottom 100: 5 × 20 = 100.","Do the same to the top: 4 × 20.","4 × 20 = ? out of 100, so ?%"],"Hundred square, 4/5 shaded","",""],
+["chance-words",6,"Chance words and the 0 to 1 scale","A coin landing tails","Where it sits on the line",["0 is impossible, 1 is certain.","½ (0.5) is an even chance.","Below ½ is unlikely, above ½ is likely."],"0-1 chance line with the words","",""],
+["spinner",6,"Chance on a spinner","9 parts, 2 blue: P(blue)","Parts you want over all the parts",["Count the blue parts: 2.","Count all the parts: 9.","Write it as blue over all: ?/?"],"Spinner with parts numbered","",""],
+["percent-of",6,"Percentages of an amount","20% of 150, 75% of 188","Find 10% (or 1%), then build",["10% of 150 = 15 (÷ 10).","20% is two lots of 10%: 2 × 15 = ?","75% = 50% + 25%: half, plus half of the half."],"Bar in tenths","",""],
+["mean-range-y6",6,"Mean and range","Mean of 1, 15, 11","Add them, then share",["Add them all: 1 + 15 + 11 = 27.","There are 3 numbers.","27 ÷ 3 = ?  (Range is biggest − smallest.)"],"Towers levelled to the same height","",""],
+["whole-from-fraction",6,"Finding the whole from a fraction","⅔ of ? = 20","Work back to one part",["2 parts make 20, so 1 part is 10.","The whole has 3 parts.","3 × 10 = ?"],"Bar in 3 parts, 2 labelled 20","",""],
+["pattern-next",6,"Growing patterns","2, 6, 10, 14, ?","Find the jump",["6 − 2 = 4, 10 − 6 = 4. It goes up by 4.","Add 4 to the last one.","14 + 4 = ?"],"Hops of 4 drawn over the numbers","",""],
+["bedmas",6,"Order of operations","2 × (7 + 2) − 8","Brackets, then × ÷, then + −",["Brackets first: 7 + 2 = 9.","Then the ×: 2 × 9 = 18.","Then the −: 18 − 8 = ?"],"The part to do first is lit up","",""],
+["true-false-y6",6,"True or false with < > ≤ ≥","9 × 4 ? 40","Work out each side, then compare",["9 × 4 = 36.","Is 36 smaller than, bigger than or equal to 40?","The sign opens towards the bigger number."],"Signs help already built","","What < > ≤ ≥ ≠ mean"],
+// ---- Year 7
+["int-compare",7,"Negative numbers in order","Smallest of −4, −9, 5, −11","Further left is smaller",["Put them on a number line.","Below zero, the bigger the number after the minus, the further left it is.","The one furthest left is ?"],"Number line from −12 to 6","",""],
+["int-add-sub",7,"Adding and taking away across zero","7 − 16","Go to zero first",["7 down to 0 uses 7 of the 16.","9 more to go below zero.","So it's −?"],"Number line with a jump to 0 then past it","",""],
+["powers-10",7,"Powers of ten","10⁶ = ?","The power is the number of zeros",["10² = 100 (two zeros), 10³ = 1000.","10⁶ is a 1 with 6 zeros.","7 × 10² = 7 × 100."],"Table 10¹ to 10⁶","",""],
+["exponents",7,"Exponents (2⁵, 3³)","4⁴ = ?","Times the number by itself that many times",["4⁴ = 4 × 4 × 4 × 4.","4 × 4 = 16, × 4 = 64, × 4 = ?","In 4² + 3, do the power first."],"","",""],
+["primes",7,"Prime numbers to 100","Which is prime?","Only 1 and itself go in",["Even (not 2)? Not prime. Ends in 5 (not 5)? Not prime.","Digits add to a multiple of 3? Not prime.","Try 7 for the rest. If nothing goes in, it's prime."],"Checklist of the tests","",""],
+["divisibility",7,"Divisibility rules","Which is divisible by 9?","Use the rule for that number",["By 9: the digits add up to a multiple of 9.","Add the digits of each choice.","By 2 even, by 3 digits make a multiple of 3, by 5 ends 0 or 5, by 10 ends 0, by 4 last two digits ÷ 4."],"Rule card","",""],
+["hcf-lcm",7,"HCF and LCM","LCM of 4 and 7","Count in the bigger number",["Count in 7s: 7, 14, 21, 28…","Stop at the first one that 4 goes into.","HCF: list the factors of both and find the biggest they share."],"Two counting rows meeting","",""],
+["decimal-facts",7,"Decimals times a whole number (0.7 × 5)","0.6 × 4","Do the whole-number fact first",["6 × 4 = 24.","But it was 6 tenths, so it's 24 tenths.","24 tenths = ?"],"","",""],
+["estimate",7,"Estimating by rounding","79.7 × 3","Round to a friendly number first",["79.7 is about 80.","80 × 3 = 240.","Pick the choice nearest 240."],"","",""],
+["fraction-add-easy",7,"Adding fractions with related bottoms","3/10 + 3/5","Change to the same bottom",["5 × 2 = 10, so change fifths into tenths.","3/5 = 6/10.","3/10 + 6/10 = ?/10"],"Fractions help already built (worked from the numbers)","","Change to the same bottom, worked from the numbers"],
+["fraction-divide",7,"Dividing with fractions","7 ÷ ¼","How many quarters fit?",["Each whole has 4 quarters.","7 wholes have 7 × 4 quarters.","½ ÷ 3: cut a half into 3 parts: 1 ÷ (2 × 3)."],"7 bars cut into quarters","",""],
+["percent-change",7,"Discounts and increases","10% more than $80","Find the percent, then add or take it",["10% of $80 = $8.","More: add it on. Off: take it away.","$80 + $8 = ?"],"Bar with the extra piece added","",""],
+["ratio",7,"Ratio","Share 21 in the ratio 3 : 4","Count the parts",["3 + 4 = 7 parts.","21 ÷ 7 = 3 in each part.","The bigger share is 4 parts: 4 × 3 = ?"],"Bar of 7 equal boxes, 3 and 4","",""],
+["money",7,"Change and cash rounding","$50 − $43.30","Count up from the price",["$43.30 → $44 is 70c.","$44 → $50 is $6.","$6 + 70c = ?  (Cash rounding: 1-4c down, 5-9c up to 10c.)"],"","",""],
+["substitute",7,"Putting a number in a letter","7t − 9 when t = 9","Swap the letter for its number",["7t means 7 × t.","7 × 9 = 63.","Then − 9: 63 − 9 = ?"],"","",""],
+["equations-1",7,"One- and two-step equations","3x + 4 = 31","Undo it, last step first",["Take the + 4 off both sides: 3x = 27.","Then undo the × 3: divide by 3.","27 ÷ 3 = ?"],"Balance scale","",""],
+["like-terms",7,"Collecting like terms","2n + 5n + n","Count the n's",["A lone n is 1n.","2 + 5 + 1.","= ?n"],"","",""],
+["patterns-rule",7,"Pattern rules","t = 6n + 8, 10th term","Put the term number in for n",["The 10th term means n = 10.","6 × 10 = 60.","60 + 8 = ?  (Which rule? The jump is the number in front of n.)"],"","",""],
+["true-false-sentences",7,"True or false with < and ≤","14 + 5 ? 6 × 4","Work out each side, then compare",["14 + 5 = 19.","6 × 4 = 24.","19 is less than 24, so which sign fits?"],"Signs help already built","","What < > ≤ ≥ ≠ mean"],
+["metric",7,"Metric conversions","7.4 km = ? m","The point moves for 10, 100, 1000",["1 km = 1000 m, so × 1000.","× 1000 moves the digits three places left.","7.4 → 74 → 740 → ?"],"Unit ladder with ×10, ×100, ×1000","",""],
+["time-convert",7,"Time conversions","2/5 h = ? min","An hour is 60 minutes",["⅕ of 60 = 12.","⅖ is two of those.","2 × 12 = ?"],"Hours help already built","","Hours to minutes with the 6 times table"],
+["formulas",7,"Area, perimeter and volume formulas","Triangle base 8, height 9","Half of base × height",["Base × height: 8 × 9 = 72.","A triangle is half of that.","Half of 72 = ?"],"Shape with the formula beside it","",""],
+["angle-facts",7,"Missing angles","75° + 50° + ?° = 180°","Add the ones you know, then take from the total",["Triangle and straight line: 180°. Round a point: 360°.","75 + 50 = 125.","180 − 125 = ?"],"","",""],
+["polygon-angles",7,"Angles in polygons","Inside angles of a 12-sided shape","(sides − 2) × 180",["A shape splits into triangles: 2 fewer than its sides.","12 − 2 = 10 triangles.","10 × 180 = ?  (Outside angles of a regular shape: 360 ÷ sides.)"],"Polygon split into triangles","",""],
+["compass-degrees",7,"Compass points in degrees","NW is ?° from N","Each of the 8 points is 45°",["N 0°, E 90°, S 180°, W 270°.","NW is halfway between W and N.","270 + 45 = ?"],"Compass rose with degrees","",""],
+["averages",7,"Mean, median, mode and range","Median of 2, 13, 18, 3, 1","Put them in order first",["In order: 1, 2, 3, 13, 18.","The median is the middle one.","Mode: most often. Mean: add then share. Range: biggest − smallest."],"Numbers sorted with the middle lit","",""],
+["probability",7,"Chance as a fraction, decimal or percent","2 green, 7 yellow: P(yellow)","What you want over everything",["Yellow: 7.","All counters: 2 + 7 = 9.","Write it as ?/9.  Not: 1 − the chance."],"Bag of counters","",""],
+// ---- Year 8
+["int-negatives",8,"Adding and taking away negatives","10 − −5","Two minuses side by side make a plus",["Taking away a negative is the same as adding.","10 − −5 = 10 + 5.","Adding a negative is taking away: −3 + −3 = −3 − 3."],"Number line with direction arrows","",""],
+["prime-factors",8,"Prime factors with powers","72 = 2³ × 3ⁿ","Factor tree",["2³ = 8.","72 ÷ 8 = 9.","9 = 3 × 3 = 3 to the power ?"],"Factor tree of 72","",""],
+["neg-powers",8,"Negative powers of ten","10⁻⁴ as a decimal","Keep dividing by 10",["10⁰ = 1, 10⁻¹ = 0.1, 10⁻² = 0.01.","Each step moves the 1 one more place after the point.","10⁻⁴ has the 1 in the 4th place."],"Table of powers going down","",""],
+["round-thousandth",8,"Rounding to a thousandth","5.0363 to 3 places","Look at the 4th digit",["Keep three digits after the point: 5.036.","The next digit is 3: less than 5, so leave it.","Round up only if it's 5 or more."],"","",""],
+["fraction-times",8,"A fraction times a fraction","4/5 × 1/4","Top × top, bottom × bottom",["4 × 1 = 4 on top.","5 × 4 = 20 on the bottom.","4/20, then simplify: divide both by 4."],"Area grid of fifths by quarters","",""],
+["equations-2",8,"Equations below zero","x + 4 ≥ −1","Solve it like an =",["Take 4 off both sides.","−1 − 4 = ?","The sign stays the same: x ≥ ?"],"Signs help already built (for ≥ ≤)","","What < > ≤ ≥ ≠ mean"],
+["metric-area-volume",8,"Area and volume units","5 cm² = ? mm²","Square the jump",["1 cm = 10 mm, so 1 cm² = 10 × 10 = 100 mm².","5 cm² = 5 × 100.","1 m² = 10 000 cm². 1 mL = 1 cm³, 1 L = 1000 cm³."],"1 cm square cut into 100 small squares","",""],
+["circle-parts",8,"Radius and diameter","Radius 24 cm: diameter?","The diameter is two radii",["The radius goes from the middle to the edge.","The diameter goes right across: two radii.","2 × 24 = ?"],"Circle with radius and diameter drawn","",""],
+];
+
+// Pictures in the question itself (not the help). [now, idea]: now = the picture it shows today ('' none);
+// idea = a picture that would help ('' none needed). Junior-game skills are drawn by their game already.
+const PICS={
+"facts-5":["","Five-frame of dots for the two numbers (youngest only)"],
+"facts-10":["","Ten-frame with the dots filled in"],
+"dbl-half-10":["","Two matching rows of dots"],
+"ten-and":["","A full ten-frame and the loose ones"],
+"facts-20":["","Two ten-frames"],
+"dbl-half-20":["","Dot rows split at 5"],
+"skip-10":["","Number track with the gap marked"],"skip-5":["","Number track with the gap marked"],"skip-2":["","Number track with the gap marked"],
+"tables-2":["","Equal rows (array) for small facts only"],
+"bonds-100":["","Hundred square with the known part shaded"],
+"round-10-100":["","Number line between the two tens or hundreds"],
+"round-1000":["","Number line between the two thousands"],
+"round-huge":["",""],
+"unit-fraction-of":["","Fraction bar with the amount on the whole"],
+"fraction-bonds":["","Fraction bar with the known part shaded"],
+"tenths":["","Tenths strip or 0-1 number line"],
+"add-tenths":["",""],
+"decimal-bonds":["","Hundred square, known part shaded (hundredths types)"],
+"times-2by1":["","Area box split into tens and ones"],
+"place-million":["","Place-value chart with headings"],
+"compare-big":["",""],
+"perimeter":["Shape with one side labelled",""],
+"angle-types":["Angle picture on the 'what kind is this' type","Draw the angle on the '110° is…' type too"],
+"metric-mm-km":["","Ruler or unit ladder (maybe)"],
+"compass-4":["","Compass rose with the start arrow and the turn"],
+"clock-read":["Clock face",""],
+"decimal-equivalents":["","Hundred square for the hundredths types"],
+"money-y5":["","Coins and notes for change questions (maybe)"],
+"percent-basic":["","Bar in quarters or tenths"],
+"fraction-of":["","Fraction bar with the amount on the whole"],
+"equivalent-fractions":["","Two fraction bars lined up"],
+"mixed-improper":["","Whole circles cut into parts"],
+"remainders":["","Dots grouped with the left-overs (in the question, not only the help)"],
+"count-zero":["","Thermometer on the temperature type, number line on counting"],
+"time-y6":["",""],
+"time-24":["","24-hour clock ring (12-hour and 24-hour numbers)"],
+"elapsed":["","Two clock faces, start and end"],
+"thousandths":["",""],
+"decimal-order":["",""],
+"metric-y6":["","Measuring jug or scales (maybe)"],
+"fraction-add-y6":["","Fraction bar"],
+"area-y6":["Rectangle, triangle or box with sides labelled",""],
+"angles-y6":["Line, point or crossing lines with the angles",""],
+"coordinates":["Grid on the 'move' type","Grid with the four choice points on the axis type"],
+"chance-words":["","0 to 1 chance line"],
+"spinner":["Coloured spinner",""],
+"percent-of":["",""],
+"mean-range-y6":["","Bar towers (maybe)"],
+"whole-from-fraction":["","Fraction bar with the known part labelled"],
+"pattern-next":["",""],"pattern-decimal":["",""],
+"int-compare":["","Number line through zero"],
+"int-add-sub":["","Thermometer on the temperature types"],
+"fraction-add-easy":["","Two fraction bars (maybe)"],
+"fraction-divide":["","Wholes cut into the fraction"],
+"ratio":["","Bar of equal boxes for sharing"],
+"equations-1":["","Balance scale (maybe)"],
+"metric":["",""],
+"formulas":["Shape with its measurements",""],
+"angle-facts":["Triangle, line or point with the angles",""],
+"polygon-angles":["The polygon",""],
+"compass-degrees":["Compass with the two directions",""],
+"probability":["","Bag of coloured counters, or a dice"],
+"int-negatives":["","Number line through zero"],
+"prime-factors":["","Factor tree"],
+"metric-area-volume":["","Square split into small squares (maybe)"],
+"circle-parts":["Circle with the radius or diameter",""],
+"fraction-times":["","Area grid (maybe)"],
+};
+const RULES=[
+ ["rule-no-tick","Help me means it doesn't count","If a pupil opens Help me, that answer never ticks off, secures or masters a fact. They still answer it, for practice."],
+ ["rule-no-wrong","A wrong answer after Help me doesn't count against them either","So opening help is never a punishment. The answer is saved as 'helped' and left out of the ladder's records."],
+ ["rule-comes-back","The helped question comes back soon","A few questions later the same fact is asked again without help open, so they can bank it themselves."],
+ ["rule-every-q","Help me on every ladder question","Free to open, one tap, in every game that uses the question pop-up. Help uses the question's own numbers and stops one step before the answer."],
+ ["rule-known-fact","Use a fact they already know","On times tables (and doubles and bonds), Help me picks a nearby fact the pupil already has secure, e.g. 'You know 6 × 7 = 42. 6 × 8 is one more 6: 42 + 6 = ?'. If they have none, it shows the table's trick."],
+ ["rule-old-boxes","The Help me boxes we have now follow the same rule","Angles, signs, remainders, axes, fractions and hours are free today and still count. With this they'd stop counting once opened."],
+ ["rule-hint","Help me replaces the Hint button","Games that have a Hint button (greys out two choices) show Help me instead, so there's one kind of help."],
+ ["rule-points","Game points after Help me: half","A right answer after Help me gets half the game's normal reward, so pupils aren't put off using it but don't open it on every question. Say in a comment if you'd rather full or none."],
+ ["rule-teacher","Teachers see who uses help","The Progress tab shows how often each pupil opened Help me per skill, and flags pupils who open it on most questions."],
+ ["rule-junior","Junior games get their help inside the game","The 26 skills beside the ladder get the same kind of help, shown the game's own way (pictures and the read-aloud voice), built game by game."],
+];
+const VIEWS=[["start","Start here"],...[1,2,3,4,5,6,7,8].map(y=>[`year-${y}`,`Year ${y}`]),["all","All years"]];
+const picCards={}; const picks={}, comments={}; let db=null; const busy=new Set(); const cards={};
+const LABEL={yes:"Yes",no:"No",maybe:"Maybe"};
+const $=id=>document.getElementById(id);
+const statusEl=$("status");
+const el=(tag,cls,text)=>{const e=document.createElement(tag); if(cls) e.className=cls; if(text!==undefined) e.textContent=text; return e;};
+function makeCard(id,top,bodyParts,ask){
+  const c=el("article","card"); c.id=`card-${id}`;
+  c.append(top,...bodyParts);
+  const b=el("div","btns"); const btns={}; b.append(el("span","pl",ask));
+  ["yes","no","maybe"].forEach(v=>{const bt=el("button",null,LABEL[v]); bt.type="button"; bt.id=`b-${id}-${v}`; bt.dataset.v=v; bt.addEventListener("click",()=>choose(id,v)); b.append(bt); btns[v]=bt;});
+  const add=el("button",null,"Add comment"); add.type="button"; add.id=`add-${id}`; b.append(add);
+  const cm=el("div","cmt"); const lb=el("label",null,"Your comment"); lb.htmlFor=`c-${id}`;
+  const ta=el("textarea"); ta.id=`c-${id}`; ta.placeholder="What should change in this help? A better trick, a picture, words for younger pupils…";
+  const row=el("div","row"); const sv=el("button",null,"Save comment"); sv.type="button"; sv.id=`s-${id}`; const st=el("span","saved");
+  row.append(sv,st); cm.append(lb,ta,row); c.append(b,cm);
+  const card={el:c,btns,add,cm,ta,sv,st,open:false};
+  add.addEventListener("click",()=>{card.open=true; update(id); ta.focus();});
+  sv.addEventListener("click",()=>saveComment(id));
+  ta.addEventListener("input",()=>{st.textContent= ta.value.trim()===(comments[id]||"") ? "Saved" : "Not saved yet";});
+  cards[id]=card; return c;
+}
+function build(){
+  const tabs=$("tabs");
+  VIEWS.forEach(([h,t])=>{const a=el("a",null,t); a.href=`#${h}`; a.dataset.view=h; tabs.append(a);});
+  RULES.forEach(([id,title,text])=>{
+    const top=el("div","top"); top.append(el("span","name",title));
+    $("rules").append(makeCard(id,top,[el("p","now",text)],"Use this rule?"));
+  });
+  SKILLS.forEach(([id,year,name,ex,title,steps,pic,game,now])=>{
+    const top=el("div","top"); top.append(el("span","yr",`Y${year}`), el("span","name",name));
+    if(game) top.append(el("span","chip game",game));
+    top.append(now? el("span","chip has","Has Help me") : el("span","chip none","No Help me yet"));
+    const q=el("div","q"); q.append(el("span",null,"Question")); q.append(el("code",null,ex));
+    const nowP=el("p","now"); nowP.append("Help now: "); nowP.append(el("strong",null, now || (game ? "whatever the game shows" : "none (some games have a Hint that greys out two choices)")));
+    const h=el("div","help"); h.append(el("span","lbl",now?"Proposed: keep the box and add":"Proposed Help me"), el("span","t",title));
+    const ol=el("ol"); steps.forEach(s=>ol.append(el("li",null,s))); h.append(ol);
+    if(pic) h.append(el("p","pic",`Help picture: ${pic}`));
+    if(game) h.append(el("p","pic",`Shown inside ${game}, read aloud.`));
+    const parts=[q,nowP,h];
+    const pv=PICS[id]||["",""]; const picNow=game?"Drawn by the game":pv[0], picIdea=game?"":pv[1];
+    const pb=el("div","pics"); const pn=el("p","now"); pn.append("Picture in the question now: "); pn.append(el("strong",null,picNow||"none")); pb.append(pn);
+    if(picIdea){ const pi=el("p","now"); pi.append("Picture idea: "); pi.append(el("strong",null,picIdea)); pb.append(pi);
+      const pbt=el("div","btns small"); pbt.append(el("span","pl","Add this picture?")); const pbs={};
+      ["yes","no","maybe"].forEach(v=>{const bt=el("button",null,LABEL[v]); bt.type="button"; bt.id=`b-pic-${id}-${v}`; bt.dataset.v=v; bt.addEventListener("click",()=>choose(`pic-${id}`,v)); pbt.append(bt); pbs[v]=bt;});
+      pb.append(pbt); picCards[`pic-${id}`]={btns:pbs}; }
+    parts.push(pb);
+    const c=makeCard(id,top,parts,"Add this help?");
+    c.dataset.picnow=picNow?"1":""; c.dataset.picidea=picIdea?"1":"";
+    if(picNow) top.append(el("span","chip pic","Has a picture")); else if(picIdea) top.append(el("span","chip none","Picture idea"));
+    c.dataset.year=year; c.dataset.text=`${name} ${ex} ${title} ${steps.join(" ")} ${game}`.toLowerCase();
+    c.dataset.has=now?"1":""; c.dataset.game=game?"1":"";
+    $("list").append(c);
+  });
+  $("search").addEventListener("input",applyView);
+  $("filter").addEventListener("change",applyView);
+  $("bulk").addEventListener("click",bulkYes);
+  window.addEventListener("hashchange",applyView);
+}
+const view=()=>{const h=location.hash.slice(1); return VIEWS.some(v=>v[0]===h)?h:"start";};
+let armed=false, armTimer=null;
+function visibleSkills(){ return SKILLS.filter(s=>!cards[s[0]].el.hidden).map(s=>s[0]); }
+function applyView(){
+  const v=view(), q=$("search").value.trim().toLowerCase(), f=$("filter").value;
+  document.querySelectorAll("#tabs a").forEach(a=>a.setAttribute("aria-current", a.dataset.view===v?"page":"false"));
+  const start=v==="start";
+  $("start").hidden=!start; $("rules").hidden=!start; $("review").hidden=!start;
+  $("list-title").hidden=start; $("list").hidden=start; $("tools").hidden=start;
+  let n=0;
+  SKILLS.forEach(s=>{const c=cards[s[0]].el, id=s[0];
+    let show=!start && (v==="all" || c.dataset.year===v.slice(5));
+    if(show && q) show=c.dataset.text.includes(q);
+    if(show && f==="open") show=!picks[id];
+    if(show && f==="has") show=!!c.dataset.has;
+    if(show && f==="game") show=!!c.dataset.game;
+    if(show && f==="needpic") show=!!c.dataset.picidea;
+    if(show && f==="haspic") show=!!c.dataset.picnow;
+    if(show && f==="commented") show=!!comments[id];
+    c.hidden=!show; if(show) n++;});
+  $("list-title").textContent = v==="all" ? `All years: ${n} skills` : `Year ${v.slice(5)}: ${n} skills`;
+  disarm(); tally();
+}
+function disarm(){ armed=false; clearTimeout(armTimer); const b=$("bulk"); b.dataset.arm=""; const open=visibleSkills().filter(id=>!picks[id]).length; b.textContent=`Yes to all ${open} not picked here`; b.disabled=!db||open===0; }
+async function bulkYes(){
+  if(!db) return;
+  if(!armed){ armed=true; const b=$("bulk"); b.dataset.arm="1"; b.textContent="Tap again to say Yes to them all"; armTimer=setTimeout(disarm,5000); return; }
+  const ids=visibleSkills().filter(id=>!picks[id]); disarm();
+  for(const id of ids) await choose(id,"yes");
+  statusEl.textContent=`Said Yes to ${ids.length} skills.`;
+}
+function update(id){
+  if(picCards[id]){ const c=picks[id]||""; for(const v in picCards[id].btns){ const b=picCards[id].btns[v]; b.setAttribute("aria-pressed",String(c===v)); b.disabled=!db||busy.has(id);} return; }
+  const c=picks[id]||"", k=cards[id];
+  k.el.dataset.c=c;
+  for(const v in k.btns){ k.btns[v].setAttribute("aria-pressed",String(c===v)); k.btns[v].disabled=!db||busy.has(id); }
+  const show = c==="maybe" || c==="no" || !!comments[id] || k.open;
+  k.cm.hidden=!show; k.add.hidden=show; k.add.disabled=!db;
+  k.ta.disabled=!db; k.sv.disabled=!db||busy.has(id);
+  if(document.activeElement!==k.ta && k.ta.value!==(comments[id]||"")) k.ta.value=comments[id]||"";
+  if(document.activeElement!==k.ta) k.st.textContent = comments[id] ? "Saved" : "";
+}
+function tally(){
+  const v=view(); const ids = v==="start" ? RULES.map(r=>r[0]) : SKILLS.filter(s=>v==="all"||String(s[1])===v.slice(5)).map(s=>s[0]);
+  const cnt=x=>ids.filter(id=>picks[id]===x).length;
+  const t=$("tally"); t.textContent="";
+  [[`Yes ${cnt("yes")}`],[`No ${cnt("no")}`],[`Maybe ${cnt("maybe")}`],[`Not picked ${ids.filter(id=>!picks[id]).length}`],[`Comments ${ids.filter(id=>comments[id]).length}`]].forEach(([s])=>t.append(el("span",null,s)));
+  if(v!=="start"){ const pids=ids.map(id=>`pic-${id}`).filter(p=>picCards[p]); t.append(el("span",null,`Picture ideas: ${pids.filter(p=>picks[p]==="yes").length} yes of ${pids.length}`)); }
+  const all=[...RULES.map(r=>r[0]),...SKILLS.map(s=>s[0])];
+  t.append(el("span",null,`Whole page: ${all.filter(id=>picks[id]).length} of ${all.length} picked`));
+}
+function renderAll(){ Object.keys(cards).forEach(update); Object.keys(picCards).forEach(update); applyView(); }
+async function choose(id,v){
+  if(!db||busy.has(id)) return;
+  const prev=picks[id]; picks[id]=v; busy.add(id); update(id); tally();
+  const data={choice:v,at:new Date().toISOString()};
+  try{ const ref=db.doc(`picks/${id}`); await ref.update(data).catch(()=>ref.set({...data,...(comments[id]?{comment:comments[id]}:{})})); statusEl.textContent="Saved. Claude reads these picks from here."; }
+  catch(e){ picks[id]=prev; statusEl.textContent="That pick didn't save. Tap it again."; }
+  finally{ busy.delete(id); update(id); tally(); }
+}
+async function saveComment(id){
+  if(!db||busy.has(id)) return;
+  const k=cards[id], text=k.ta.value.trim().slice(0,2000);
+  busy.add(id); update(id); k.st.textContent="Saving…";
+  try{ const ref=db.doc(`picks/${id}`); const data={comment:text,commentAt:new Date().toISOString()};
+    await ref.update(data).catch(()=>ref.set({...data,...(picks[id]?{choice:picks[id]}:{})}));
+    comments[id]=text; k.st.textContent="Saved"; statusEl.textContent="Comment saved. Claude reads it from here."; }
+  catch(e){ k.st.textContent="Didn't save. Try again."; }
+  finally{ busy.delete(id); update(id); if(k.st.textContent==="") k.st.textContent=text?"Saved":""; }
+}
+build(); renderAll();
+(async()=>{
+  const timer=setTimeout(()=>{ if(!db) statusEl.textContent="Picks can't load here. Open this page signed in to claude.ai to choose."; },10000);
+  try{
+    const d=await claude.use("db");
+    if(!d){ clearTimeout(timer); statusEl.textContent="Picks can't load here. Open this page signed in to claude.ai to choose."; return; }
+    db=d;
+    db.collection("picks").onSnapshot(snap=>{
+      clearTimeout(timer);
+      (snap.docs||[]).forEach(doc=>{ const data=doc.data(); if(!data) return;
+        if(LABEL[data.choice]) picks[doc.id]=data.choice;
+        if(typeof data.comment==="string") comments[doc.id]=data.comment; });
+      statusEl.textContent="Pick each rule and skill, and comment where you want. Everything saves to this page.";
+      renderAll();
+    },()=>{ clearTimeout(timer); statusEl.textContent="Picks couldn't load. Reload the page to try again."; });
+    renderAll();
+  }catch(e){ clearTimeout(timer); statusEl.textContent="Picks couldn't load. Reload the page to try again."; }
+})();
+</script>

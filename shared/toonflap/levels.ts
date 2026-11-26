@@ -57,7 +57,7 @@ export const LEVELS: readonly LevelDef[] = [
  * under `seasonal` in a pupil's progress. Christmas Coast is a Kiwi summer Christmas, open in December and January.
  */
 export const SEASONAL_LEVELS: readonly LevelDef[] = [
-  { n: 11, id: 'xmas', name: 'Christmas Coast', world: 'a sunny Kiwi summer Christmas beach with red-flowering trees, candy canes and presents', seconds: 45, pace: 'slow', gap: 4.6, spacing: 2.4, checks: 2, answerWalls: 1, answerGaps: 2, wander: 1.8, features: ['answer-gaps', 'presents'], newThing: 'Grab the presents as you fly! Get them all in one flight to unlock a Christmas flyer.', months: [12, 1] },
+  { n: 11, id: 'xmas', name: 'Christmas Coast', world: 'a sunny Kiwi summer Christmas beach with red-flowering trees, candy canes and presents', seconds: 45, pace: 'slow', gap: 4.6, spacing: 2.4, checks: 2, answerWalls: 1, answerGaps: 2, wander: 1.8, features: ['answer-gaps', 'presents', 'ghosts'], newThing: 'Grab the presents: 3 presents make a revive potion! Grumpy Santa pushes you like the Spooky Manor ghosts. The arrows show which way.', months: [12, 1] },
 ];
 
 /** Every level: the trail's 10, then the seasonal ones. */

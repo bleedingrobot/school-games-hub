@@ -177,12 +177,35 @@ describe('Christmas Coast (seasonal)', () => {
     expect(levelRecord(all.progress, 'xmas')).toMatchObject({ finishes: 1, medal: 'gold', allPresents: 1 });
     expect(all.progress.presents).toBe(course.presents.length);
     expect(golds(all.progress)).toBe(1);
-    expect(all.unlocks.flyers).toEqual(['santa-fantail']);
+    expect(all.unlocks.flyers).toEqual(['santa-fantail', 'grumpy-santa']); // every present, and no bumps
     expect(trailsUnlocked(all.progress)).toContain('candy-canes');
     expect(unlockRuns('xmas')).toBe(5);
     let q = all.progress;
     for (let i = 0; i < 4; i++) q = addRun(q, run('xmas'), '2026-12-07').progress;
     expect(flyersUnlocked(q)).toContain('surf-sleigh');
     expect(finishesToUnlock(q, 'xmas')).toBe(0);
+  });
+
+  it('pupils\' rules: 3 presents make a potion (one a flight), the Elf Snow Globe flies 1 to 26 December, Santa pushes', async () => {
+    const { SEASONAL_LEVELS } = await import('./levels');
+    const { trailsUnlocked } = await import('./collection');
+    const run = (extra: Partial<RunSummary> = {}): RunSummary => ({ level: 'xmas', maths: true, seconds: 50, medal: 'bronze', bumps: 1, checks: [], rightGaps: 0, potionUsed: false, presentsOf: 8, ...extra });
+    let p = emptyProgress();
+    let r = addRun(p, run({ presents: 2 }), '2026-12-02');
+    expect([r.unlocks.potion, r.progress.potions, r.progress.sack]).toEqual([false, 0, 2]);
+    r = addRun(r.progress, run({ presents: 1 }), '2026-12-02');
+    expect([r.unlocks.potion, r.unlocks.potionFromPresents, r.progress.potions, r.progress.sack]).toEqual([true, true, 1, 0]);
+    r = addRun(r.progress, run({ presents: 8 }), '2026-12-02'); // only one potion a flight; at most 2 wait in the sack
+    expect([r.progress.potions, r.progress.sack]).toEqual([2, 2]);
+    p = r.progress;
+    expect(flyersUnlocked(p, '2026-12-26')).toContain('elf-globe');
+    expect(flyersUnlocked(p, '2026-12-27')).not.toContain('elf-globe');
+    expect(flyersUnlocked(p, '2026-11-30')).not.toContain('elf-globe');
+    expect(flyersUnlocked(p, '2026-12-10')).not.toContain('grumpy-santa'); // every flight so far had a bump
+    expect(trailsUnlocked(p)).not.toContain('baubles');
+    p = addRun(p, run({ bumps: 0, presents: 19 }), '2026-12-03').progress;
+    expect(flyersUnlocked(p)).toContain('grumpy-santa');
+    expect(trailsUnlocked(p)).toContain('baubles'); // 30 presents
+    expect(buildCourse(SEASONAL_LEVELS[0]).zones.some((z) => z.kind === 'ghost')).toBe(true);
   });
 });

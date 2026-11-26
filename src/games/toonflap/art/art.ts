@@ -20,7 +20,7 @@ export type WorldPart = (typeof WORLD_PARTS)[number];
 export type WorldLayer = WorldPart;
 
 export const FLYER_IDS = ['fantail', 'puppy-plane', 'rocket-carrot', 'bathtub-boat', 'mousetrap-glider', 'donut-cruiser', 'mini-van',
-  'toilet-rocket', 'lava-lizard', 'jet-bot', 'saucer-kid', 'rainbow', 'surf-sleigh', 'santa-fantail'] as const;
+  'toilet-rocket', 'lava-lizard', 'jet-bot', 'saucer-kid', 'rainbow', 'surf-sleigh', 'santa-fantail', 'elf-globe', 'grumpy-santa'] as const;
 /** Every flyer has glide, up (zooming upward, shown after a flap) and dizzy (after a bump); the fantail also perches and cheers. */
 export const FLYER_POSES = ['glide', 'up', 'perched', 'cheer', 'dizzy'] as const;
 export type FlyerPose = (typeof FLYER_POSES)[number];
@@ -29,9 +29,12 @@ export const POSES_PAINTED: Record<string, readonly FlyerPose[]> = {
   fantail: ['glide', 'up', 'perched', 'cheer', 'dizzy'],
   rainbow: ['glide', 'up', 'dizzy'],
   'santa-fantail': ['glide', 'up', 'dizzy'],
+  // Pupils' own drawings (one picture each; the game tilts it for up and dizzy).
+  'elf-globe': ['glide'],
+  'grumpy-santa': ['glide'],
 };
 
-export const TRAIL_IDS = ['flowers', 'cookies', 'donut-crumbs', 'pineapples', 'cheese', 'mouse-tail', 'rainbow-stars', 'candy-canes'] as const;
+export const TRAIL_IDS = ['flowers', 'cookies', 'donut-crumbs', 'pineapples', 'cheese', 'mouse-tail', 'rainbow-stars', 'candy-canes', 'baubles'] as const;
 /** gust: the icy wind zone; bubble: the low-gravity zone (draw it see-through); bump-stars: the ring after a bump; present: Christmas Coast's pickup. */
 export const EXTRA_IDS = ['jellyfish', 'ghost', 'steam', 'comet', 'gust', 'bubble', 'bump-stars', 'present'] as const;
 /** badge: the blank round coin behind each answer gap's number (the game writes the number). */
@@ -53,6 +56,13 @@ export const flyerArt = (id: string, pose: FlyerPose = 'glide'): string | undefi
 export const trailArt = (id: string): string | undefined => file(`trails/${id}`);
 export const extraArt = (id: string): string | undefined => file(`extras/${id}`);
 export const uiArt = (id: string): string | undefined => file(`ui/${id}`);
+/**
+ * Pupils' own drawings for Christmas Coast (26 Nov 2026), scanned and cut out (kids/<name>.webp): tree-bottom/tree-top
+ * (a tree pointing up / hanging down, the wall's end) with trunk (repeats), gift-bottom/gift-top with gift-middle
+ * (repeats), present (the pickup) and santa (the grumpy Santa who pushes you, like the Spooky Manor ghosts).
+ */
+export const KIDS_IDS = ['tree-bottom', 'tree-top', 'trunk', 'gift-bottom', 'gift-top', 'gift-middle', 'present', 'santa'] as const;
+export const kidsArt = (id: (typeof KIDS_IDS)[number]): string | undefined => file(`kids/${id}`);
 export const screenArt = (id: (typeof SCREENS)[number]): string | undefined => file(id);
 
 /** Every file, for the art test. */
