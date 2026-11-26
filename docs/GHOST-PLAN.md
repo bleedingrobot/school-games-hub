@@ -26,6 +26,16 @@ James's idea (25 Nov 2026 NZ, from the coordinator's list after Four Corners): e
 - Mechanics (`UNLOCK`): stones from round 1 (pupils bump, ghosts float through); power-ups 2 (garlic shield bounces one catch, speed boots, frost bomb freezes ghosts within 0.25 for 2.5 s; used at once, pupils only); teleports 3; sticky patches 4 (pupils only, half speed); fog 5 (the big screen hides pupils from 12 s into the hunt); bats 6 (a swarm crosses the map and knocks pupils flying). From round 7 a mix of 2 to 4.
 - Map words (`MAP_WORDS`): Moonlit Graveyard, Haunted Mansion, Pumpkin Patch, Ghost Ship.
 
+## Wide map (26 Nov 2026 NZ)
+
+James asked for the map to fill the screen. New games are `GHOST_W` (1.6) wide and 1 high (`w` on the game and round;
+older games without it stay square). Everything that places or clamps spots takes the width: edgeSpot, cryptOf, openSpot,
+teleports, bats (`Roller.span`), stepGhost, pretendDir, clampMove, EdgeRoom.move (`EdgeSync.width`) and the database's
+classlive_move (`classlive_activities.width`, migration 20261126172600). A wider map gets about 1.6x the stones and items,
+3 sticky patches and a second flock of bats. Paintings: map-<map>-wide (docs/ghost-art/config.json), the square one
+cropped until a wide one exists. Big screen: slimmer side panel; iPad landscape: board edge to edge with the Vanish button
+and joystick over its bottom corners.
+
 ## Movement and lag (iPads check in about every 2 s)
 
 - Devices move their avatar at once and save the spot through `classlive_ghost_move` every 0.4 s (0.25 s with someone of the other side within 0.25). It calls the shared `classlive_move` (clamped to `max_speed` 0.6) and answers every other spot with its kind (pupil, ghost, frozen ghost, lantern-lit invisible pupil), no names or ids, plus whether the caller is a ghost now (so a caught pupil's device turns at once, before its own row arrives).
