@@ -167,17 +167,23 @@ function choicesSize(labels: readonly string[] | undefined): string {
   return longest >= 12 ? ' question__choices--xlong' : longest >= 10 ? ' question__choices--long' : longest >= 6 ? ' question__choices--mid' : '';
 }
 
-/** What the comparison signs mean. */
+/** What the comparison signs mean, with the "or equal to" signs spelled out (James, 26 Nov 2026). */
 function SymbolHelp() {
   return (
     <ul className="symbol-help" aria-label="What the signs mean">
       <li><b>&lt;</b> means <strong>less than</strong>: 3 &lt; 8</li>
       <li><b>&gt;</b> means <strong>greater than</strong>: 8 &gt; 3</li>
-      <li><b>≤</b> means <strong>less than or equal to</strong></li>
-      <li><b>≥</b> means <strong>greater than or equal to</strong></li>
-      <li><b>=</b> means <strong>the same as</strong></li>
+      <li>
+        <b>≤</b> means <strong>less than OR equal to</strong>. True if the left side is smaller, and also true if both sides are the same.
+        <span className="symbol-help__eg">4 ≤ 5 ✓ · 5 ≤ 5 ✓ · 6 ≤ 5 ✗</span>
+      </li>
+      <li>
+        <b>≥</b> means <strong>greater than OR equal to</strong>. True if the left side is bigger, and also true if both sides are the same.
+        <span className="symbol-help__eg">6 ≥ 5 ✓ · 5 ≥ 5 ✓ · 4 ≥ 5 ✗</span>
+      </li>
+      <li><b>=</b> means <strong>the same as</strong>: 4 + 1 = 5</li>
       <li><b>≠</b> means <strong>not equal to</strong>: 5 ≠ 7</li>
-      <li>The open mouth always faces the bigger number.</li>
+      <li>The open mouth of &lt; and &gt; always faces the bigger number.</li>
     </ul>
   );
 }
