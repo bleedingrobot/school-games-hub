@@ -12,7 +12,7 @@
  */
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { spokenLabel } from '../../shared/maths/banded';
-import { hintFor } from '../../shared/maths/hint';
+import { helpKind, hintFor } from '../../shared/maths/hint';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { AngleNames, Figure } from './Figure';
 import { isFigure } from '../../shared/maths/figure';
@@ -167,6 +167,21 @@ function choicesSize(labels: readonly string[] | undefined): string {
   return longest >= 12 ? ' question__choices--xlong' : longest >= 10 ? ' question__choices--long' : longest >= 6 ? ' question__choices--mid' : '';
 }
 
+/** What the comparison signs mean. */
+function SymbolHelp() {
+  return (
+    <ul className="symbol-help" aria-label="What the signs mean">
+      <li><b>&lt;</b> means <strong>less than</strong>: 3 &lt; 8</li>
+      <li><b>&gt;</b> means <strong>greater than</strong>: 8 &gt; 3</li>
+      <li><b>≤</b> means <strong>less than or equal to</strong></li>
+      <li><b>≥</b> means <strong>greater than or equal to</strong></li>
+      <li><b>=</b> means <strong>the same as</strong></li>
+      <li><b>≠</b> means <strong>not equal to</strong>: 5 ≠ 7</li>
+      <li>The open mouth always faces the bigger number.</li>
+    </ul>
+  );
+}
+
 export type ShownQuestion = Pick<Question, 'id' | 'parts' | 'spoken' | 'prompt' | 'choices' | 'choiceLabels' | 'maxLength' | 'input' | 'figure'> & { answer?: number };
 
 /**
@@ -230,6 +245,7 @@ export function QuestionModal({
   const [trouble, setTrouble] = useState('');
   const [hint, setHint] = useState<ReturnType<typeof hintFor> | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
+  const help = helpKind(question);
   const [streak, setStreak] = useState(0);
   const [padOpen, setPadOpen] = useState(readPadOpen);
   const shownAt = useRef(performance.now());
@@ -400,9 +416,6 @@ export function QuestionModal({
   };
 
   const blank = typed === '' ? '?' : typed;
-  const isAngle = isFigure(question.figure) && question.figure.kind === 'angle';
-  const isRemainder = question.parts.includes('r');
-  const isAxis = !isAngle && /\b[xy]-axis\b/.test(question.prompt ?? '');
 
   // Money answers are shown with cents: 4.1 → 4.10.
   const rightAnswer = result?.answer ?? question.answer ?? 0;
@@ -431,14 +444,14 @@ export function QuestionModal({
         </h2>
         {note && <p className="question__note">{note}</p>}
         {isFigure(question.figure) && <Figure figure={question.figure} />}
-        {(isAngle || isRemainder || isAxis) && (
-          // Free to open. Angles: a picture of every kind with its name (James, 26 Nov 2026: angle questions need a help me
-          // button). Remainders: what the "r" means, with a worked example. Axes: a small grid (James, 26 Nov 2026).
+        {help && (
+          // Free help, no cost (James, 26 Nov 2026): every kind of angle with its name on angle questions, and what < > ≤ ≥ mean
+          // on any question that uses them; what r means on remainders; a small grid on axis questions.
           <div className="question__help">
             <button type="button" className="question__hintbtn" aria-expanded={helpOpen} onClick={() => setHelpOpen((o) => !o)}>
               {helpOpen ? 'Hide help' : 'Help me'}
             </button>
-            {helpOpen && (isAngle ? <AngleNames /> : isRemainder ? <RemainderHelp parts={question.parts} /> : <AxisHelp />)}
+            {helpOpen && (help === 'angles' ? <AngleNames /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : <SymbolHelp />)}
           </div>
         )}
         {question.prompt && <p className="question__prompt">{question.prompt}</p>}

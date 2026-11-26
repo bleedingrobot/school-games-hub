@@ -3,6 +3,7 @@
  * choices. Typed questions say which small stretch of numbers the answer is in ("between 50 and 60").
  * It never gives the answer away, and the same question always gets the same hint.
  */
+import { isFigure } from './figure';
 import type { Question } from './skillPack';
 
 export interface Hint {
@@ -33,4 +34,17 @@ export function hintFor(q: Pick<Question, 'answer' | 'choices' | 'parts'>): Hint
   const money = q.parts.includes('$');
   const show = (n: number) => (money ? `$${n.toFixed(2)}` : clean(n));
   return { text: `The answer is between ${show(low)} and ${show(high)}.`, remove: [] };
+}
+
+/**
+ * Which free "Help me" picture a question gets (James, 26 Nov 2026): every kind of angle on angle-picture questions, and what
+ * < > ≤ ≥ ≠ mean on any question that shows one of them. Unlike the hint it costs nothing and never narrows the answer.
+ */
+export function helpKind(q: Pick<Question, 'parts' | 'prompt' | 'choiceLabels' | 'figure'>): 'angles' | 'symbols' | 'remainder' | 'axes' | null {
+  if (isFigure(q.figure) && q.figure.kind === 'angle') return 'angles';
+  // A division with a remainder ("9 ÷ 4 = ? r 1"): what the r means. A point on an axis: a small grid (James, 26 Nov 2026).
+  if (q.parts.includes('r')) return 'remainder';
+  if (/\b[xy]-axis\b/.test(q.prompt ?? '')) return 'axes';
+  const texts = [...q.parts, q.prompt ?? '', ...(q.choiceLabels ?? [])];
+  return texts.some((t) => /[<>≤≥≠]/.test(t)) ? 'symbols' : null;
 }
