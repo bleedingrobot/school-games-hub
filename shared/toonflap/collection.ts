@@ -44,9 +44,9 @@ export const FLYERS: readonly Flyer[] = [
   // Christmas Coast's (December and January only); once unlocked they stay all year.
   { id: 'surf-sleigh', name: 'Surf Sleigh', look: 'a jolly Santa in board shorts on a flying surfboard sleigh', level: 'xmas' },
   { id: 'santa-fantail', name: 'Santa Fantail', look: 'a fantail in a Santa hat', level: null, allPresents: 'xmas' },
-  // Pupils' own ideas and drawings (26 Nov 2026): the elf in a snow globe, only from 1 December to Boxing Day, and the
+  // Pupils' own ideas and drawings (26 Nov 2026): the elf in a snow globe, only from 26 November to Boxing Day, and the
   // grumpy Santa, for a flight on Christmas Coast with no bumps.
-  { id: 'elf-globe', name: 'Elf Snow Globe', look: 'an elf on a Christmas tree inside a snow globe (a pupil\'s drawing)', level: null, pupils: true, drawnByPupils: true, window: { from: '12-01', to: '12-26' } },
+  { id: 'elf-globe', name: 'Elf Snow Globe', look: 'an elf on a Christmas tree inside a snow globe (a pupil\'s drawing)', level: null, pupils: true, drawnByPupils: true, window: { from: '11-26', to: '12-26' } },
   { id: 'grumpy-santa', name: 'Grumpy Santa', look: 'a grumpy Santa (a pupil\'s drawing)', level: null, pupils: true, drawnByPupils: true, cleanOn: 'xmas' },
 ];
 

@@ -25,8 +25,8 @@ export interface NewsItem {
 export const HUB_NEWS: NewsItem[] = [
   {
     // Dated the day it opens: the line waits until then (Christmas Coast is open in December and January only).
-    id: 'toonflap-christmas-2026-12-01',
-    date: '2026-12-01',
+    id: 'toonflap-christmas-2026-11-26',
+    date: '2026-11-26',
     emoji: '🎄',
     title: 'Toon Flap: Christmas Coast',
     text: 'Drawn with our pupils’ ideas: grumpy Santa, an Elf flyer and Sky Dash Christmas!',
