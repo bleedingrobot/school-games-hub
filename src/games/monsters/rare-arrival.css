@@ -1,0 +1,170 @@
+/* The big fuss for a rare, ultra rare or shiny wild monster (RareArrival.tsx). Sizes use the arena's
+   container units (cqh, cqw), so it fits a phone as well as a big screen. Nothing here takes taps. */
+.rr--rare { --c1: #d8b4fe; --c2: #9333ea; --edge: #3b0764; --flash: #f3e8ff; --fill: linear-gradient(180deg, #fdf4ff 0%, #e9d5ff 40%, #a855f7 100%); }
+.rr--ultra { --c1: #fde68a; --c2: #f59e0b; --edge: #78350f; --flash: #fffbeb; --fill: linear-gradient(180deg, #fffbeb 0%, #fde047 45%, #f59e0b 100%); }
+.rr--shiny,
+.rr--shiny-max { --c1: #a5f3fc; --c2: #f472b6; --edge: #1e1b4b; --flash: #ffffff; --fill: linear-gradient(90deg, #f472b6, #facc15, #4ade80, #38bdf8, #a78bfa, #f472b6); }
+.rr--shiny-max { --c1: #fde68a; --edge: #451a03; }
+.rr--l1 { --dur: 1.8s; }
+.rr--l2 { --dur: 2.2s; }
+.rr--l3 { --dur: 2.6s; }
+
+/* ---- Behind the monster: rays, rings and sparks ---- */
+.rr-burst { position: absolute; inset: -45%; z-index: -1; pointer-events: none; }
+.rr-rays {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, var(--c1) 0deg 7deg, transparent 7deg 20deg);
+  -webkit-mask: radial-gradient(circle, #000 18%, transparent 68%);
+  mask: radial-gradient(circle, #000 18%, transparent 68%);
+  animation: rr-rays var(--dur) ease-out both;
+}
+.rr--shiny .rr-rays,
+.rr--shiny-max .rr-rays {
+  background: repeating-conic-gradient(from 0deg, #f9a8d4 0deg 6deg, transparent 6deg 15deg, #fde047 15deg 21deg, transparent 21deg 30deg, #86efac 30deg 36deg, transparent 36deg 45deg, #7dd3fc 45deg 51deg, transparent 51deg 60deg);
+}
+.rr-rays--back { inset: 8%; background: repeating-conic-gradient(from 10deg, var(--c2) 0deg 4deg, transparent 4deg 16deg); animation-name: rr-rays-back; opacity: 0.8; }
+@keyframes rr-rays {
+  0% { opacity: 0; transform: scale(0.2) rotate(0deg); }
+  15% { opacity: 1; transform: scale(1.05) rotate(25deg); }
+  70% { opacity: 0.9; transform: scale(1) rotate(80deg); }
+  100% { opacity: 0; transform: scale(1.15) rotate(110deg); }
+}
+@keyframes rr-rays-back {
+  0% { opacity: 0; transform: scale(0.2) rotate(0deg); }
+  18% { opacity: 0.8; transform: scale(1) rotate(-20deg); }
+  70% { opacity: 0.7; transform: scale(1) rotate(-70deg); }
+  100% { opacity: 0; transform: scale(1.1) rotate(-95deg); }
+}
+.rr-ring {
+  position: absolute;
+  inset: 30%;
+  border-radius: 50%;
+  border: 0.9cqh solid var(--c1);
+  box-shadow: 0 0 2cqh var(--c2), inset 0 0 2cqh var(--c2);
+  animation: rr-ring 0.75s ease-out both;
+}
+.rr-ring--late { animation-delay: 0.35s; border-color: var(--c2); }
+@keyframes rr-ring { 0% { opacity: 1; transform: scale(0.1); } 100% { opacity: 0; transform: scale(1.5); } }
+.rr-spark { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform: rotate(var(--a)); }
+.rr-spark::before {
+  content: '';
+  position: absolute;
+  left: -1.6cqh;
+  top: -1.6cqh;
+  width: 3.2cqh;
+  height: 3.2cqh;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 30%, var(--c1) 45%, transparent 72%);
+  animation: rr-spark calc(var(--dur) * 0.55) cubic-bezier(0.15, 0.8, 0.3, 1) var(--t) both;
+}
+.rr-spark--star::before {
+  left: -2.4cqh;
+  top: -2.4cqh;
+  width: 4.8cqh;
+  height: 4.8cqh;
+  border-radius: 0;
+  background: #fff;
+  clip-path: polygon(50% 0, 61% 38%, 100% 50%, 61% 62%, 50% 100%, 39% 62%, 0 50%, 39% 38%);
+  filter: drop-shadow(0 0 0.8cqh var(--c2));
+}
+.rr--shiny .rr-spark::before,
+.rr--shiny-max .rr-spark::before { background: radial-gradient(circle, #fff 0 30%, hsl(var(--h) 95% 70%) 45%, transparent 72%); }
+.rr--shiny .rr-spark--star::before,
+.rr--shiny-max .rr-spark--star::before { background: hsl(var(--h) 95% 80%); }
+@keyframes rr-spark {
+  0% { opacity: 0; transform: translateX(0) scale(0.2) rotate(0deg); }
+  12% { opacity: 1; }
+  70% { opacity: 1; transform: translateX(calc(var(--d) * 0.42cqh)) scale(1) rotate(160deg); }
+  100% { opacity: 0; transform: translateX(calc(var(--d) * 0.5cqh)) scale(0.4) rotate(220deg); }
+}
+
+/* ---- Over the arena: the flash and the banner ---- */
+.rr-front { position: absolute; inset: 0; z-index: 6; pointer-events: none; overflow: hidden; }
+.rr-flash { position: absolute; inset: 0; background: var(--flash); opacity: 0; animation: rr-flash-1 0.45s ease-out both; }
+.rr--l2 .rr-flash { animation-name: rr-flash-2; animation-duration: 0.6s; }
+.rr--l3 .rr-flash { animation-name: rr-flash-3; animation-duration: 0.8s; }
+.rr--shiny .rr-flash,
+.rr--shiny-max .rr-flash { background: radial-gradient(circle at 70% 30%, #fff 0 25%, #fbcfe8 45%, #bae6fd 70%, #fef08a 100%); }
+@keyframes rr-flash-1 { 0% { opacity: 0; } 15% { opacity: 0.85; } 100% { opacity: 0; } }
+@keyframes rr-flash-2 { 0% { opacity: 0; } 10% { opacity: 0.9; } 30% { opacity: 0.1; } 45% { opacity: 0.8; } 100% { opacity: 0; } }
+@keyframes rr-flash-3 { 0% { opacity: 0; } 8% { opacity: 0.95; } 22% { opacity: 0.1; } 34% { opacity: 0.9; } 48% { opacity: 0.1; } 60% { opacity: 0.8; } 100% { opacity: 0; } }
+
+.rr-banner {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  display: grid;
+  justify-items: center;
+  gap: 0.4cqh;
+  padding: 1.2cqh 7cqw 1.6cqh;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  animation: rr-banner var(--dur) cubic-bezier(0.2, 1.4, 0.4, 1) 0.1s both;
+}
+/* A dark ribbon behind the words, with the tier colour along its edges, so it reads on any background. */
+.rr-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  transform: skewX(-12deg);
+  background: linear-gradient(90deg, transparent, rgba(15, 23, 42, 0.82) 12%, rgba(15, 23, 42, 0.82) 88%, transparent);
+  border-block: 0.7cqh solid var(--c2);
+  box-shadow: 0 0 4cqh var(--c2);
+}
+.rr-banner__word {
+  font-size: clamp(1.7rem, min(15cqh, 12cqw), 5.5rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  font-style: italic;
+  color: transparent;
+  background: var(--fill);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-stroke: 0.35cqh var(--edge);
+  filter: drop-shadow(0 0 1.4cqh var(--c2)) drop-shadow(0 0.5cqh 0 var(--edge));
+}
+.rr--l3 .rr-banner__word { font-size: clamp(2rem, min(18cqh, 13cqw), 6.5rem); }
+.rr--shiny .rr-banner__word,
+.rr--shiny-max .rr-banner__word { animation: rr-shimmer 0.9s linear infinite; }
+@keyframes rr-shimmer { to { background-position: -200% 0; } }
+.rr-banner__stars { font-size: clamp(0.9rem, 6cqh, 2rem); color: var(--c1); letter-spacing: 0.25em; text-shadow: 0 0 1cqh var(--c2); }
+.rr-banner__sub { font-size: clamp(0.9rem, 6.5cqh, 2.2rem); font-weight: 900; font-style: italic; color: #fde047; -webkit-text-stroke: 0.2cqh #78350f; text-shadow: 0 0 1.2cqh #f59e0b; }
+@keyframes rr-banner {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(3) rotate(-8deg); }
+  12% { opacity: 1; transform: translate(-50%, -50%) scale(0.92) rotate(2deg); }
+  18% { transform: translate(-50%, -50%) scale(1.06) rotate(-1deg); }
+  24% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  82% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -90%) scale(0.85); }
+}
+
+/* ---- The arena shakes and the monster puffs up ---- */
+.mb-arena.is-rare-l1 { animation: rr-quake 0.4s ease-out 0.12s; }
+.mb-arena.is-rare-l2 { animation: rr-quake 0.55s ease-out 0.12s, rr-zoom 0.9s ease-out 0.05s; }
+.mb-arena.is-rare-l3 { animation: rr-quake-big 0.75s ease-out 0.1s, rr-zoom 1.1s ease-out 0.05s; }
+@keyframes rr-quake {
+  15% { translate: -8px 4px; } 30% { translate: 7px -4px; } 45% { translate: -5px 3px; }
+  60% { translate: 4px -2px; } 80% { translate: -2px 1px; } 100% { translate: 0 0; }
+}
+@keyframes rr-quake-big {
+  10% { translate: -14px 6px; } 20% { translate: 12px -8px; } 32% { translate: -10px 5px; } 44% { translate: 9px -4px; }
+  58% { translate: -6px 3px; } 72% { translate: 4px -2px; } 86% { translate: -2px 1px; } 100% { translate: 0 0; }
+}
+@keyframes rr-zoom { 0% { scale: 1; } 20% { scale: 1.05; } 100% { scale: 1; } }
+.mb-foe.is-rare { animation: rr-punch 0.7s cubic-bezier(0.2, 1.6, 0.4, 1) 0.08s; }
+@keyframes rr-punch { 0% { scale: 1; } 30% { scale: 1.28; } 60% { scale: 0.96; } 100% { scale: 1; } }
+
+/* Reduced motion: no shake, zoom, flash, spinning or flying sparks. The banner still fades in and out. */
+@media (prefers-reduced-motion: reduce) {
+  .mb-arena.is-rare-l1, .mb-arena.is-rare-l2, .mb-arena.is-rare-l3, .mb-foe.is-rare { animation: none; }
+  .rr-flash, .rr-ring, .rr-spark, .rr-rays--back { display: none; }
+  .rr-rays { animation: rr-fade var(--dur) ease both; }
+  .rr-banner { animation: rr-fade var(--dur) ease both; }
+  .rr--shiny .rr-banner__word, .rr--shiny-max .rr-banner__word { animation: none; }
+}
+@keyframes rr-fade { 0% { opacity: 0; } 15% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }

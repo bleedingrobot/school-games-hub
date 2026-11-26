@@ -31,11 +31,13 @@ import { MonsterArt, type MonsterState } from './art/MonsterArt';
 import { lookPic, monsterPic, personPic, preload, scenePic } from './art/painted';
 import { loadMonsterSettings, saveMonsterSettings, type MonsterSettings } from './settings';
 import { beatsFor, ITEM_LABEL, nameOf, type Beat } from './text';
+import { ArrivalBanner, ArrivalBurst, arrivalOf } from './RareArrival';
 import { TypeChart } from './TypeChart';
 import { BagList, NameCard, Sheet, summarise, TeamList } from './ui';
 import { Victory } from './Victory';
 import './art/monster-art.css';
 import './monsters.css';
+import './rare-arrival.css';
 
 export interface BattleResult {
   outcome: 'won' | 'lost' | 'ran' | 'caught';
@@ -357,6 +359,9 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
   const [intro, setIntro] = useState(!!trainerPic);
   const playerPic = trainerPic && look ? lookPic(look) : undefined;
 
+  const arrival = useMemo(() => (setup.kind === 'wild' ? arrivalOf(start.state.foes[0]) : null), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const [fanfare, setFanfare] = useState(false);
+
   // The opening message ("A wild Digibud appeared!").
   useEffect(() => {
     const opening = beatsFor(start.events, setup.kind);
@@ -365,6 +370,14 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
       opening.splice(0, 1, { ...first, text: `${trainer} wants to battle!` }, { ...first, text: `${trainer} sends out ${nameOf(start.state.foes[0].species)}!` });
     }
     startBeats(opening);
+    // A rare, ultra rare or shiny wild monster: the big fuss (banner, flash, sparkles, sound).
+    if (arrival) {
+      later(() => {
+        setFanfare(true);
+        play_(arrival.sound);
+      }, 120);
+      later(() => setFanfare(false), 120 + arrival.ms);
+    }
     // A trainer's other monsters come out later: fetch their pictures now, so they don't pop in.
     preload(...start.state.foes.slice(1).map((m) => monsterPic(m.species, m.shiny)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -606,7 +619,7 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
     <section className={`mb mb--area${battle.area}`} aria-label="Battle">
       {/* A tap on the battle hurries the messages along (the Next button does the same for keyboards). */}
       <div
-        className={`mb-arena${scene.wide ? ' has-art' : ''}${callout && (callout.tone === 'crit' || callout.tone === 'strong' || callout.tone === 'ko') ? ' is-shaking' : ''}`}
+        className={`mb-arena${scene.wide ? ' has-art' : ''}${callout && (callout.tone === 'crit' || callout.tone === 'strong' || callout.tone === 'ko') ? ' is-shaking' : ''}${fanfare && arrival ? ` is-rare-l${arrival.level}` : ''}`}
         style={sceneStyle}
         onClick={(e) => {
           if (mode === 'playing' && !(e.target as HTMLElement).closest('button, .mb-settings')) advance();
@@ -617,6 +630,7 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
             <span>{callout.text}</span>
           </div>
         )}
+        {fanfare && arrival && <ArrivalBanner arrival={arrival} />}
         {!intro && (
           <div className="mb-foe-card">
             <NameCard monster={foe} side="foe" caught={owned?.includes(foe.species)} />
@@ -625,7 +639,8 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
         {/* Decorative: the message already names the trainer. */}
         {intro && <img className="mb-trainer" src={trainerPic} alt="" decoding="async" draggable={false} />}
         {intro && playerPic && <img className="mb-trainer mb-trainer--you" src={playerPic} alt="" decoding="async" draggable={false} />}
-        <div className={`mb-foe${foeLook === 'gone' || intro ? ' is-gone' : ''}${ball ? ' has-ball' : ''}`}>
+        <div className={`mb-foe${foeLook === 'gone' || intro ? ' is-gone' : ''}${ball ? ' has-ball' : ''}${fanfare ? ' is-rare' : ''}`}>
+          {fanfare && arrival && <ArrivalBurst arrival={arrival} />}
           <MonsterArt species={foe.species} shiny={foe.shiny} state={foeLook === 'gone' ? 'idle' : foeLook} flip />
           {ball && <span className={`mb-ball mb-ball--${ball}`} aria-hidden="true" />}
           {fx?.side === 'foe' && <AttackEffect key={fx.id} anim={fx.anim} />}
