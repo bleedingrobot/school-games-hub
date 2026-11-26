@@ -45,9 +45,11 @@ const bonds: Helper = (q) => {
       return card('bonds-100', 'Think in tens', ...head, `${known} is ${t} ${t === 1 ? 'ten' : 'tens'}, and 100 is 10 tens.`, `How many more tens make 10 tens? 10 − ${t} = ?`, 'Write that many tens as a number: ?');
     }
     const tens = Math.floor(known / 10), ones = known % 10;
+    // 9 tens already make 9: nothing to add there, so count on instead.
+    if (tens === 9) return card('bonds-100', 'Count up to 100', ...(take ? [head[0], `Count on from ${known} to 100: ?`] : [`${known} is only a little way below 100.`, `Count on from ${known} to 100.`, `${known} + ? = 100`]));
     return card('bonds-100', 'Tens make 9, ones make 10', ...head,
       `Ones: ${ones} needs how many more to make 10?`,
-      `Tens: ${tens} tens needs how many more tens to make 9?`,
+      `Tens: ${tens} ${tens === 1 ? 'ten' : 'tens'} needs how many more tens to make 9?`,
       'Put the tens digit and the ones digit together: ?');
   }
   if (known % 100 === 0) {
@@ -56,10 +58,11 @@ const bonds: Helper = (q) => {
   }
   const hundreds = Math.floor(known / 100), tens = Math.floor((known % 100) / 10), ones = known % 10;
   if (ones !== 0) return null;
+  const hs = `${hundreds} ${hundreds === 1 ? 'hundred' : 'hundreds'}`;
   return card('bonds-1000', 'Hundreds make 9, tens make 10', ...head,
-    `Tens: ${tens} tens needs how many more to make 10 tens?`,
-    `Hundreds: ${hundreds} hundreds needs how many more to make 9 hundreds?`,
-    'Put the hundreds, tens and a 0 together: ?');
+    `Tens: ${tens} ${tens === 1 ? 'ten' : 'tens'} needs how many more to make 10 tens?`,
+    hundreds === 9 ? 'Hundreds: 9 hundreds is already 9 hundreds, so 0 more.' : `Hundreds: ${hs} needs how many more to make 9 hundreds?`,
+    'Put the hundreds, tens and a 0 together. Leave off any 0 at the front: ?');
 };
 
 // ---------------------------------------------------------------- rounding
@@ -70,15 +73,16 @@ function roundCard(text: string, e: number): HelpCard | null {
   const [ip, dp = ''] = s.split('.');
   const digitAt = (k: number) => (k >= 0 ? (ip[ip.length - 1 - k] ?? '0') : (dp[-k - 1] ?? '0'));
   const d = digitAt(e), dn = digitAt(e - 1);
-  const up = Number(dn) >= 5;
   const where = place(e), next = place(e - 1);
-  const carry = up && d === '9' ? ` (9 + 1 makes 10, so write 0 and carry 1 to the digit before)` : '';
-  const finish = e >= 1 ? `Change every digit after the ${where} digit to 0: ?`
-    : e === 0 ? 'Drop the decimal part and write the whole number: ?'
-      : `Drop every digit after the ${where} digit: ?`;
-  return card('rounding', 'Look next door', `Find the ${where} digit in ${text}: it is ${d}.`,
+  // The pupil decides up or down; the card never says which. A 9 that goes up needs its carry explained.
+  const first = e >= 0 && ip.length - 1 - e === 0;
+  const carry = d === '9' ? (first ? ' If a 9 goes up, 9 + 1 makes 10: put a 1 in front.' : ' If a 9 goes up, 9 + 1 makes 10: write 0 and carry 1 to the digit before.') : '';
+  const finish = e >= 1 ? `Write the ${where} digit (1 more if you rounded up), then 0s after it: ?`
+    : e === 0 ? 'Write the whole number (1 more if you rounded up), without the decimal part: ?'
+      : `Write the number up to the ${where} digit and nothing after it. If you rounded up, that digit is 1 more: ?`;
+  return card('rounding', 'Look at the digit next door', e === 0 && ip.length === 1 ? `Find the ${where} digit in ${text}.` : `Find the ${where} digit in ${text}: it is ${d}.`,
     `Look at the digit next door on the right (${next}): it is ${dn}.`,
-    up ? `${dn} is 5 or more, so round up: the ${where} digit goes up by 1${carry}.` : `${dn} is 4 or less, so the ${where} digit stays the same.`,
+    `Look at the ${dn}. 5 or more: round up. 4 or less: the ${where} digit stays.${carry}`,
     finish);
 }
 
@@ -110,23 +114,28 @@ const timesTens: Helper = (q) => {
     const [p, other] = isPow10(a) ? [a, b] : isPow10(b) ? [b, a] : [0, 0];
     if (p && (p >= 100 || other >= 10)) {
       const z = zerosOf(p);
-      return card('times-tens', `Times ${show(p)} slides the digits`, `Times ${show(p)}: every digit slides ${z} ${z === 1 ? 'place' : 'places'} to the left.`, `The ${z === 1 ? 'gap' : 'gaps'} on the right fill with 0.`, `${show(other)} × ${show(p)} = ?`);
+      const ds = String(other);
+      if (ds.length > 3) return card('times-tens', `Times ${show(p)} slides the digits`, `Times ${show(p)}: every digit slides ${z} ${z === 1 ? 'place' : 'places'} to the left.`, `The ${z === 1 ? 'gap' : 'gaps'} on the right fill with 0.`, `${show(other)} × ${show(p)} = ?`);
+      const where = [...ds].map((c, i) => `the ${c} is in the ${place(ds.length - 1 - i)}`);
+      return card('times-tens', `Times ${show(p)} slides the digits`, `In ${show(other)}, ${where.length === 1 ? where[0] : `${where.slice(0, -1).join(', ')} and ${where[where.length - 1]}`}.`,
+        `Times ${show(p)}: slide ${ds.length === 1 ? 'the digit' : 'each digit'} ${z} ${z === 1 ? 'place' : 'places'} to the left.`,
+        `Put a 0 in ${z === 1 ? 'the empty ones place' : 'each empty place'}. Read the new number: ?`);
     }
     const za = zerosOf(a), zb = zerosOf(b), z = za + zb;
     if (z === 0) return null;
     const a0 = a / 10 ** za, b0 = b / 10 ** zb;
     if (a0 > 12 || b0 > 12) return null;
-    return card('times-tens', 'Do the fact, then add the zeros', `Cover the zeros: ${a0} × ${b0} = ${show(a0 * b0)}.`,
+    return card('times-tens', 'Do the fact, then add the zeros', `Cover the zeros: ${a0} × ${b0} = ?`,
       `${z === 1 ? 'There was 1 zero' : `There were ${z} zeros`} altogether.`,
-      `Put ${z === 1 ? 'that zero' : `those ${z} zeros`} on the end of ${show(a0 * b0)}: ?`);
+      `Put ${z === 1 ? 'that zero' : `those ${z} zeros`} on the end of your answer to ${a0} × ${b0}: ?`);
   }
-  if (s.op === '÷' && a >= 100 && a % 10 === 0 && b >= 2 && b <= 12 && a % b === 0) {
+  if (s.op === '÷' && a >= 20 && a % 10 === 0 && b >= 2 && b <= 12 && a % b === 0) {
     let z = 0;
     while (a % 10 ** (z + 1) === 0 && (a / 10 ** (z + 1)) % b === 0) z++;
     if (z === 0) return null;
     const a0 = a / 10 ** z;
     return card('divide-tens', 'Cover the zeros', `Cover ${z === 1 ? 'the 0' : `${z} zeros`} on ${show(a)}: it is ${a0} ÷ ${b}, a tables fact.`,
-      `Work out ${a0} ÷ ${b}, then put ${z === 1 ? 'the 0' : `the ${z} zeros`} back on the end: ?`);
+      `Work out ${a0} ÷ ${b}.`, `Put ${z === 1 ? 'the 0' : `the ${z} zeros`} back on the end: ?`);
   }
   return null;
 };
@@ -179,10 +188,13 @@ const placeValue: Helper = (q) => {
     if (knownParts.some((x) => x === null)) return null;
     const left = n - knownParts.reduce<number>((t, x) => t + (x ?? 0), 0);
     if (left <= 0) return null;
-    const dig = String(left)[0];
+    const used = [2, 4, 6].filter((i) => i !== idx[0]).map((i) => {
+      const v = num(p[i])!, z = zerosOf(v), digit = String(v / 10 ** z);
+      return digit.length === 1 ? `${p[i]} uses the ${digit} in the ${show(10 ** z)}s column` : null;
+    });
+    if (used.some((u) => u === null)) return card('place-value', 'Which digit is left over?', `Read ${p[0]} one digit at a time, with its place.`, `${[2, 4, 6].filter((i) => i !== idx[0]).map((i) => p[i]).join(' and ')} already use some of the digits.`, 'Which digit is left over? What is it worth in its place? ?');
     return card('place-value', 'Which digit is left over?', `Read ${p[0]} one digit at a time, with its place.`,
-      `${[2, 4, 6].filter((i) => i !== idx[0]).map((i) => p[i]).join(' and ')} already use some of the digits. The digit left over is the ${dig}.`,
-      `What is the ${dig} worth in its place? ?`);
+      `${used.join('. ')}.`, 'Which digit is left over? What is it worth in its place? ?');
   }
   return null;
 };
@@ -195,12 +207,26 @@ const biggest: Helper = (q) => {
   const vals = labs.map((l) => (/^[−-]?\d[\d ]*$/.test(l) ? num(l) : null));
   if (labs.length < 2 || vals.some((v) => v === null || !Number.isInteger(v) || v < 0)) return null;
   const lens = labs.map((l) => plain(l).length);
-  const same = lens.every((x) => x === lens[0]);
+  const word = big ? 'biggest' : 'smallest';
+  const list = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+  const keepLen = big ? Math.max(...lens) : Math.min(...lens);
+  const out = labs.filter((_, i) => lens[i] !== keepLen), kept = labs.filter((_, i) => lens[i] === keepLen);
+  if (kept.length < 2) {
+    return card('compare-big', 'Count digits, then compare from the left',
+      `Count the digits in each number. ${big ? 'More' : 'Fewer'} digits means ${big ? 'bigger' : 'smaller'}.`, `Cross out the numbers with ${big ? 'fewer' : 'more'} digits.`,
+      'If the left-most digits match, look at the next digit along, and so on. The first digit that is different decides.', `Which number is the ${word}? ?`);
+  }
+  // Name the numbers: cross out the wrong length out loud, then name the start they all share.
+  const digits = kept.map(plain);
+  let k = 0;
+  while (k < keepLen - 1 && digits.every((x) => x[k] === digits[0][k])) k++;
+  const nth = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh'][k] ?? `${ordinal(k + 1)}`;
   return card('compare-big', 'Count digits, then compare from the left',
-    same ? `All the numbers have ${lens[0]} digits.` : `Count the digits in each number. ${big ? 'More' : 'Fewer'} digits means ${big ? 'bigger' : 'smaller'}.`,
-    same ? 'Compare the left-most digits first.' : `Cross out the numbers with ${big ? 'fewer' : 'more'} digits.`,
-    'If the left-most digits match, look at the next digit along, and so on. The first digit that is different decides.',
-    `Which number is the ${big ? 'biggest' : 'smallest'}? ?`);
+    out.length
+      ? `${list(out)} ${out.length === 1 ? 'has' : 'have'} ${new Set(out.map((l) => plain(l).length)).size === 1 ? `${plain(out[0]).length} digits. The others have ${keepLen}` : `${big ? 'fewer' : 'more'} than ${keepLen} digits`}, so ${out.length === 1 ? `cross out ${out[0]}` : 'cross them out'}.`
+      : `All the numbers have ${keepLen} digits.`,
+    k === 0 ? `Look at the first digit of ${list(kept)}.` : `${list(kept)} all start with ${digits[0].slice(0, k)}. Look at the ${nth} digit of each.`,
+    `The ${word} ${nth} digit wins. If two match, look at the next digit along. Which number is the ${word}? ?`);
 };
 
 const countBig: Helper = (q) => {
@@ -268,12 +294,31 @@ const factors: Helper = (q) => {
   if (p.length === 5 && p[1] === 'and' && p[2] === '?' && /factor pair of/.test(p[3])) {
     const a = num(p[0]), n = num(p[4]);
     if (a === null || n === null) return null;
+    const k = n / a;
+    // Past the 12 times table there is no table to use backwards: double instead.
+    if (a > 12 && Number.isInteger(k) && k >= 2) {
+      const dbl = k === 2 ? `How many ${a}s make ${n}? Try ${a} + ${a} = ?`
+        : [2, 4, 8].includes(k) ? `Double ${a} = ${2 * a}.${k >= 4 ? ` Double ${2 * a} = ${4 * a}.` : ''}${k >= 8 ? ` Double ${4 * a} = ${8 * a}.` : ''} How many ${a}s is that? ?`
+          : `Try 2 × ${a} = ${2 * a}, then 3 × ${a} = ?, and on, until you reach ${n}.`;
+      return card('factors', 'A factor pair multiplies', `A factor pair is two numbers that multiply to make ${n}.`, `${a} × ? = ${n}`, dbl);
+    }
     return card('factors', 'A factor pair multiplies', `A factor pair is two numbers that multiply to make ${n}.`, `${a} × ? = ${n}`, `Use the ${a} times table backwards: ${n} ÷ ${a} = ?`);
   }
   if (p.length === 2 && /Which is a factor pair of/.test(p[0])) {
     const labs = labelsOf(q);
     const m = /^(\d+) and (\d+)$/.exec(labs[0] ?? '');
     if (!m) return null;
+    // Most choices start with the same number: one division finds its partner.
+    const total = num(p[1].replace('?', ''));
+    const pairs = labs.map((l) => /^(\d+) and (\d+)$/.exec(l)).filter((x): x is RegExpExecArray => !!x).map((x) => [Number(x[1]), Number(x[2])]);
+    const counts = new Map<number, number>();
+    for (const [x] of pairs) counts.set(x, (counts.get(x) ?? 0) + 1);
+    const [shared, count] = [...counts.entries()].sort((x, y) => y[1] - x[1])[0] ?? [0, 0];
+    const right = pairs.filter(([x, y]) => total !== null && x * y === total);
+    if (total !== null && pairs.length === labs.length && count >= 2 && total % shared === 0 && right.length === 1 && right[0][0] === shared) {
+      return card('factors', 'Find the missing partner', `A factor pair multiplies to make ${total}.`,
+        `${count === labs.length ? 'Every choice has' : 'Most choices have'} a ${shared}. Find its partner: ${total} ÷ ${shared} = ?`, `Which choice pairs ${shared} with that number? ?`);
+    }
     return card('factors', 'Multiply each pair', `A factor pair multiplies to make ${p[1].replace('?', '')}.`, `Try the first choice: ${m[1]} × ${m[2]} = ?`, 'Do the same for the others. Which pair makes it? ?');
   }
   return null;
@@ -307,14 +352,21 @@ const squares: Helper = (q) => {
     const n = num(p[1]);
     if (n === null || n <= 1) return null;
     const r = Math.round(Math.sqrt(n));
-    const k = r > 10 ? 10 : r > 5 ? 5 : r > 2 ? 2 : 1;
-    return card('squares', 'Which number times itself?', `The square root of ${n} is the number that times itself makes ${n}.`, `Benchmark: ${k} × ${k} = ${k * k}. Is ${n} bigger or smaller?`, `Try numbers on that side. Which number times itself makes ${n}? ?`);
+    const root = `The square root of ${n} is the number that times itself makes ${n}.`;
+    if (r <= 2) return card('squares', 'Which number times itself?', root, `A fact you know: 1 × 1 = 1. ${n} is bigger, so the answer is more than 1.`, `Try the next number up: ? × ? = ${n}. Which number fits? ?`);
+    // A times-table fact below the root, then one trial next to it (never the root itself).
+    const k = Math.min(r - 2, 12) || 1;
+    return card('squares', 'Which number times itself?', root, `A fact you know: ${k} × ${k} = ${k * k}. ${n} is bigger, so the answer is more than ${k}. If a try is still too small, go up one more.`, `Try the next number up: ${k + 1} × ${k + 1} = ?`);
   }
   if (p.length === 4 && p[0] === 'Cube root of' && p[2] === '=') {
     const n = num(p[1]);
     if (n === null) return null;
-    return card('squares', 'Which number times itself three times?', `The cube root of ${n} is the number that makes ${n} when you multiply it by itself 3 times.`,
-      'Try 1 × 1 × 1 = 1, then 2, then 3, and so on, until you get there.', `Which number, multiplied 3 times, makes ${n}? ?`);
+    const r = Math.round(Math.cbrt(n));
+    const root = `The cube root of ${n} is the number that, times itself 3 times, makes ${n}.`;
+    if (r <= 2) return card('squares', 'Which number times itself three times?', root, `A cube you know: 1 × 1 × 1 = 1. ${n} is bigger.`, `Try the next number up, times itself 3 times. Does it make ${n}? ?`);
+    const t = r - 1;
+    const cubes = [t - 2, t - 1].filter((x) => x >= 1).map((x) => `${x} × ${x} × ${x} = ${x ** 3}`);
+    return card('squares', 'Which number times itself three times?', root, `${cubes.length === 1 ? 'A cube you know' : 'Cubes you know'}: ${cubes.join(' and ')}. ${n} is bigger${cubes.length === 1 ? '' : ' than both'}. If a try is still too small, try the next number up.`, `Try ${t} × ${t} × ${t} = ?`);
   }
   if (p.length === 4 && /next square number after/.test(p[0])) {
     const n = num(p[1]);
@@ -417,18 +469,21 @@ const intSums: Helper = (q) => {
     if (op === '+' && a < 0 && b < 0) return card('negatives', 'Two negatives pile up', 'Two negatives together make a bigger negative, like owing $' + abs(a) + ' and then owing $' + abs(b) + ' more.', `Add the sizes: ${abs(a)} + ${abs(b)} = ?`, 'Put the minus sign back in front of that answer: ?');
     if (op === '+' && a >= 0 && b < 0) return card('negatives', 'Adding a negative is taking away', 'Adding a negative number is the same as taking away.', `${show(a)} + ${show(b)} is ${show(a)} − ${abs(b)}.`, `${show(a)} − ${abs(b)} = ?`);
     if (op === '+' && a < 0 && b >= 0) {
-      if (b >= -a) return card('negatives', 'Up to zero, then on', `Picture a number line. Start at ${sh(a)}.`, `Going up ${abs(b)} steps: ${abs(a)} of them get you to 0.`, `How many steps are left to go past 0? ${abs(b)} − ${abs(a)} = ?`);
-      return card('negatives', 'Up the number line', `Picture a number line. Start at ${sh(a)}, which is ${abs(a)} below 0.`, `Go up ${abs(b)} steps. You stay below 0.`, `${abs(a)} − ${abs(b)} = ? below 0. Write it with a minus sign: ?`);
+      if (b >= -a) return card('negatives', 'Up to zero, then on', `Picture a number line. Start at ${sh(a)}.`, `Going up ${abs(b)} steps: ${abs(a)} ${abs(a) === '1' ? 'step gets' : 'steps get'} you to 0.`, `How many steps are left to go past 0? ${abs(b)} − ${abs(a)} = ?`);
+      return card('negatives', 'Up the number line', `Picture a number line. Start at ${sh(a)}, which is ${abs(a)} below 0.`, `Go up ${abs(b)} steps. You stay below 0.`, `Work out ${abs(a)} − ${abs(b)}, then write the answer below 0 with a minus sign: ?`);
     }
     if (op === '−' && b < 0 && a >= 0) return card('negatives', 'Taking away a negative adds', 'Taking away a negative number is the same as adding.', `${show(a)} − ${show(b)} becomes ${show(a)} + ${abs(b)}.`, `${show(a)} + ${abs(b)} = ?`);
-    if (op === '−' && b < 0 && a < 0) return card('negatives', 'Taking away a negative adds', 'Taking away a negative number is the same as adding.', `${show(a)} − ${show(b)} becomes ${show(a)} + ${abs(b)}.`, `Start at ${show(a)} and go up ${abs(b)} steps: ?`);
+    if (op === '−' && b < 0 && a < 0) return card('negatives', 'Taking away a negative adds', 'Taking away a negative number is the same as adding.', `${show(a)} − ${show(b)} becomes ${show(a)} + ${abs(b)}.`, `Start at ${show(a)} and go up ${abs(b)} ${abs(b) === '1' ? 'step' : 'steps'}: ?`);
     if (op === '−' && a >= 0 && b > a) return card('negatives', 'Down past zero', `Picture a number line. Start at ${sh(a)}.`, `Going down ${sh(b)}: ${show(a)} of the steps get you to 0.`, `${show(b)} − ${show(a)} = ? steps below 0. Write it with a minus sign: ?`);
     if (op === '−' && a >= 0 && b >= 0) return temp ? card('negatives', 'Go down', `Start at ${sh(a)}.`, `Go down ${sh(b)}. You stay at or above 0.`, `${show(a)} − ${show(b)} = ?`) : null;
     if (op === '−' && a < 0 && b >= 0) return card('negatives', 'Further below zero', `${sh(a)} is already below 0, and taking away goes down even more.`, `Add the sizes: ${abs(a)} + ${show(b)} = ?`, 'Put the minus sign back in front of that answer: ?');
     return null;
   }
   if (C === '0' && op === '+' && B === '?' && a !== null && a !== 0) {
-    return card('negatives', 'Back to zero', `${show(a)} is ${Math.abs(a)} ${a < 0 ? 'below' : 'above'} 0.`, 'To get back to 0 you go the other way.', `Do you go ${a < 0 ? 'up' : 'down'} or ${a < 0 ? 'down' : 'up'}? Count the steps: ?`);
+    const u = temp ? '°' : '';
+    const pick = (q.choices?.length ?? 0) > 0;
+    return card('negatives', 'Go back to zero', `Find ${show(a)}${u} on the line. It is ${a < 0 ? 'below' : 'above'} 0.`, `To get back to 0 you go ${a < 0 ? 'up' : 'down'} the same distance.`,
+      a < 0 ? `How far is ${show(a)}${u} from 0? ?` : `How far is ${show(a)}${u} from 0? Then ${pick ? 'pick the choice' : 'write the answer'} with a minus sign: ?`);
   }
   return null;
 };
@@ -450,15 +505,27 @@ const negCompare: Helper = (q) => {
 
 // ---------------------------------------------------------------- powers
 
+/** v × v for a two-digit v: tens and ones, with the easy half done and the harder half left. */
+function bigSquare(v: number): string[] {
+  if (v < 11 || v > 99) return [`${show(v)} × ${show(v)} = ?`];
+  const t = Math.floor(v / 10) * 10, o = v - t;
+  if (o === 0) return [`${v} × ${v} = ?`];
+  return [`${v} × ${v}: think ${v} × ${t} and ${v} × ${o}. ${v} × ${t} = ${v * t}.`, `${v * t} + ${v} × ${o} = ?`];
+}
+
 const pow10: Helper = (q) => {
   const p = q.parts, w = q.prompt ?? '';
   if (p.length === 3 && p[1] === '=' && p[2] === '?') {
     const pw = power(p[0]);
-    if (pw && pw.base === 10 && pw.exp > 0 && !w) return card('powers', 'The small number counts the zeros', `${p[0]} means ten multiplied by itself ${pw.exp} times.`, `The small number is how many 0s follow the 1: ${pw.exp} zeros.`, 'Write 1 and then those zeros: ?');
+    if (pw && pw.base === 10 && (pw.exp > 2 || pw.exp === 1) && !w) return card('powers', 'The small number counts the zeros', `${p[0]} means ten multiplied by itself ${pw.exp} times.`, `The small number is how many 0s follow the 1: ${pw.exp} zeros.`, 'Write 1 and then those zeros: ?');
     if (pw && pw.base === 10 && pw.exp < 0) {
-      return card('powers', 'A negative power is a decimal', `${p[0]}: the minus means it gets smaller than 1, so it is a decimal.`, `The ${-pw.exp} means the 1 sits in the ${ordinal(-pw.exp)} place after the decimal point.`, `Write 0. then fill the places before the 1 with zeros: ?`);
+      const n = -pw.exp, times = n === 1 ? 'one time' : `${n} times`;
+      if (n === 1) return card('powers', 'Divide by 10 again and again', `${p[0]} means 1 ÷ 10.`, '1 ÷ 10 = ?');
+      if (n === 2) return card('powers', 'Divide by 10 again and again', `${p[0]} means 1 ÷ 10, ${times}.`, '1 ÷ 10 = 0.1. Then 0.1 ÷ 10 = ?');
+      return card('powers', 'Divide by 10 again and again', `${p[0]} means 1 ÷ 10, ${times}.`, '1 ÷ 10 = 0.1. Then 0.1 ÷ 10 = ?',
+        n === 3 ? 'Do ÷ 10 one more time and write the number: ?' : `Keep going until you have divided by 10 ${n} times in all. Write the number: ?`);
     }
-    if (pw && pw.base !== 10 && pw.exp >= 2 && pw.exp <= 6) {
+    if (pw && (pw.base !== 10 || pw.exp === 2) && pw.exp >= 2 && pw.exp <= 6) {
       const b = pw.base;
       const run: string[] = [];
       for (let k = 2; k < pw.exp; k++) run.push(`${show(b ** (k - 1))} × ${b} = ${show(b ** k)}`);
@@ -470,14 +537,16 @@ const pow10: Helper = (q) => {
       const b = pw.base, h = Math.floor(pw.exp / 2), odd = pw.exp % 2 === 1;
       const sup = (n: number) => [...String(n)].map((d) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[Number(d)]).join('');
       return card('powers', 'Split the power in half', `${p[0]} is ${b}${sup(h)} × ${b}${sup(h)}${odd ? ` × ${b}` : ''}: the small numbers add up to ${pw.exp}.`,
-        `${b}${sup(h)} = ${Array(h).fill(b).join(' × ')} = ${show(b ** h)}.`, odd ? `${show(b ** h)} × ${show(b ** h)} × ${b} = ?` : `${show(b ** h)} × ${show(b ** h)} = ?`);
+        `${b}${sup(h)} = ${Array(h).fill(b).join(' × ')} = ${show(b ** h)}.`, ...(odd ? [`${show(b ** h)} × ${show(b ** h)} × ${b} = ?`] : bigSquare(b ** h)));
     }
     // "0.01 = ?" as a power of 10, "1 000 000 = ?" as a power of 10, "n = ?" with a prompt
     const dec = /^0\.0*1$/.test(p[0]);
-    if (dec && /power of 10/.test(w)) return card('powers', 'Count the decimal places', `In ${p[0]} the 1 is in the ${ordinal(p[0].length - 2)} place after the decimal point.`, 'A decimal like that is 10 with a minus power.', `The power is − (that place number): 10 to the power ?`);
+    if (dec && /power of 10/.test(w)) {
+      return card('powers', 'Divide by 10 again and again', '1 ÷ 10 = 0.1, and 0.1 is 10⁻¹.', 'Each ÷ 10 moves the 1 one place right and makes the power one smaller.',
+        `In ${p[0]} the 1 is in the ${ordinal(p[0].length - 2)} place. Which power is it? ?`);
+    }
     if (/^[1 ]*0[0 ]*$/.test(p[0]) && /^1(\s?000)*|^10*$/.test(plain(p[0])) && /power of 10/.test(w)) {
-      const z = plain(p[0]).length - 1;
-      return card('powers', 'Count the zeros', `Count the zeros in ${p[0]}: there are ${z}.`, 'The small number in 10 to a power is the number of zeros.', 'Which choice has that small number? ?');
+      return card('powers', 'Count the zeros', `Count the zeros in ${p[0]}.`, 'The small number in 10 to a power is the number of zeros.', 'Which choice has that small number? ?');
     }
     if (p[0] === 'n' && /10ⁿ/.test(w)) {
       const m = /^(\d[\d ]*) = 10ⁿ/.exec(w);
@@ -535,17 +604,50 @@ const primeFactors: Helper = (q) => {
     const n = Number(wh[1]);
     let d = 2;
     while (n % d !== 0 && d < n) d++;
-    return card('prime-factors', 'Split into primes', `Divide by the smallest prime that goes in, again and again: ${n} ÷ ${d} = ${n / d}.`, 'Keep dividing each answer until you are left with a prime.',
-      'Count how many times each prime was used, and write repeats as a small raised number. Which choice matches? ?');
+    const m2 = n / d;
+    const smallest = (x: number) => { let k = 2; while (k < x && x % k !== 0) k++; return k; };
+    const d2 = smallest(m2);
+    if (m2 <= 1 || d2 === m2) return card('prime-factors', 'Split into primes', `Divide by the smallest prime that goes in: ${n} ÷ ${d} = ${m2}.`, `${m2} is a prime, so stop there. Count each prime you used.`, 'Which choice has those primes? ?');
+    return card('prime-factors', 'Split into primes', `Divide by the smallest prime that goes in: ${n} ÷ ${d} = ${m2}.`, `Do it again: ${m2} ÷ ${d2} = ?`,
+      'Keep going until you reach 1. Count each prime you used.', 'Which choice has those primes? ?');
   }
   return null;
 };
+
+const smallestFactor = (n: number) => { for (let k = 2; k * k <= n; k++) if (n % k === 0) return k; return n; };
+const digitSum = (n: number) => `${[...String(n)].join(' + ')} = ${[...String(n)].reduce((t, c) => t + Number(c), 0)}`;
+const listOf = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+
+/** Test one choice that is NOT the answer (a composite for "which is prime", a prime for "which is NOT prime"), then ask for the rest. */
+function primeTest(vals: (number | null)[], isNot: boolean): HelpCard | null {
+  if (vals.length < 3 || vals.some((v) => v === null || !Number.isInteger(v) || v < 11)) return null;
+  const v = vals as number[];
+  const prime = (n: number) => smallestFactor(n) === n;
+  const wrong = v.filter((n) => (isNot ? prime(n) : !prime(n)));
+  if (!wrong.length) return null;
+  const pick = isNot ? wrong[0] : wrong.reduce((a, b) => (smallestFactor(b) < smallestFactor(a) ? b : a));
+  const rest = v.filter((n) => n !== pick).map(show);
+  let test: string;
+  if (isNot) {
+    test = `Try ${show(pick)}: not even, does not end in 5, ${digitSum(pick)} is not in the 3 times table, not in the 7 times table. Nothing divides it.`;
+  } else {
+    const d = smallestFactor(pick);
+    test = d === 2 ? `Try ${show(pick)}: it is even, so it can be divided by 2.`
+      : d === 5 ? `Try ${show(pick)}: it ends in 5, so it can be divided by 5.`
+        : d === 3 ? `Try ${show(pick)}: ${digitSum(pick)}, and ${digitSum(pick).split(' = ')[1]} is in the 3 times table. So ${show(pick)} can be divided by 3.`
+          : `Try ${show(pick)}: ${show(pick)} ÷ ${d} = ${show(pick / d)}. So ${show(pick)} can be divided by ${d}.`;
+  }
+  return card('primes', 'Test the choices', 'A prime only has the factors 1 and itself.', test,
+    `Now test ${listOf(rest)} the same way: even? ends in 5? digits in the 3 times table? in the 7 times table? Which one ${isNot ? 'can' : 'cannot'} be divided? ?`);
+}
 
 const primes: Helper = (q) => {
   const w = words(q);
   const isNot = /not prime/i.test(w);
   if (!(/prime/i.test(w)) || !q.choices?.length && !q.choiceLabels?.length) return null;
   if (/factor|pair/i.test(w)) return null;
+  const worked = primeTest(labelsOf(q).map((l) => num(l)), isNot);
+  if (worked) return worked;
   return card('primes', 'Look for a number that divides it', 'A prime has only two factors: 1 and itself.',
     'Test each number: is it even? Does it end in 5? Do its digits add to a multiple of 3? Is it in the 7 times table?',
     isNot ? 'The one that is NOT prime has one of those. Which is it? ?' : 'The prime one fails all of those tests. Which is it? ?');
@@ -562,8 +664,35 @@ const divisible: Helper = (q) => {
     9: 'Add up the digits. If that total is in the 9 times table, so is the number.', 10: 'It must end in 0.',
     11: 'Add the 1st, 3rd, … digits, then the 2nd, 4th, … digits. If the totals differ by 0 or 11, it works.',
   };
-  return card('divisible', `Test for ${d}`, `Divisible by ${d} means it shares into ${d} groups with nothing left over.`,
-    rule[d] ?? `Check each number against the ${d} times table.`, `Test each choice. Which one passes? ?`);
+  // Try the rule on one choice that fails, so the pupil sees it work, then leave the rest.
+  const vals = labelsOf(q).map((l) => num(l));
+  const base = [`Divisible by ${d} means it shares into ${d} groups with nothing left over.`, rule[d] ?? `Check each number against the ${d} times table.`];
+  if (vals.length >= 3 && vals.every((v) => v !== null && Number.isInteger(v) && v > 0)) {
+    const v = vals as number[];
+    const bad = v.find((n) => n % d !== 0);
+    const last = (n: number) => String(n).slice(-1);
+    const sumTxt = (n: number) => { const t = [...String(n)].reduce((a, c) => a + Number(c), 0); return `${[...String(n)].join(' + ')} = ${t}. ${t} is not in the ${d === 6 ? 3 : d} times table`; };
+    let why: string | null = null;
+    if (bad !== undefined) {
+      if (d === 2) why = `it ends in ${last(bad)}, which is not even`;
+      else if (d === 3 || d === 9) why = sumTxt(bad);
+      else if (d === 6) why = bad % 2 ? 'it is not even' : sumTxt(bad);
+      else if (d === 5) why = `it ends in ${last(bad)}, not 0 or 5`;
+      else if (d === 10) why = `it ends in ${last(bad)}, not 0`;
+      else if (d === 4) why = `its last two digits, ${String(bad % 100).padStart(2, '0')}, are not in the 4 times table`;
+      else if (d === 8) {
+        const steps: string[] = [];
+        let x = bad;
+        for (let i = 0; i < 3; i++) { if (x % 2) { steps.push(`${x} cannot be halved`); break; } steps.push(`${x} ÷ 2 = ${x / 2}`); x /= 2; }
+        why = `${steps.join(', ')}, so it does not halve three times`;
+      }
+    }
+    if (bad !== undefined && why) {
+      return card('divisible', `Test for ${d}`, ...base, `Try ${show(bad)}: ${why}, so ${show(bad)} is out.`,
+        `Now test ${listOf(v.filter((n) => n !== bad).map(show))}. Which one passes? ?`);
+    }
+  }
+  return card('divisible', `Test for ${d}`, ...base, `Test each choice. Which one passes? ?`);
 };
 
 const hcfLcm: Helper = (q) => {
@@ -578,6 +707,7 @@ const hcfLcm: Helper = (q) => {
   }
   const bigger = Math.max(x, y), smaller = Math.min(x, y);
   const k = (bigger * smaller) / gcd(x, y) / bigger;
+  if (gcd(x, y) === 1 && k > 2) return card('lcm', 'Nothing in common: multiply', `${x} and ${y} share no factor except 1.`, `So the smallest number in both times tables is ${x} × ${y}.`, `${x} × ${y} = ?`);
   if (k === 1) return card('lcm', 'List the multiples', `Count in ${bigger}s.`, `Does ${smaller} go into ${bigger}?`, 'The smallest number in both times tables: ?');
   const shown = Array.from({ length: Math.min(3, k - 1) }, (_, i) => bigger * (i + 1));
   return card('lcm', 'List the multiples', `Count in ${bigger}s: ${shown.join(', ')}, …`, `Stop at the first number that is also in the ${smaller} times table.`, 'The smallest number in both times tables: ?');

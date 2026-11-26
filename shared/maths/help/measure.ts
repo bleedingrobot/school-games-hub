@@ -64,7 +64,7 @@ function placeTip(f: number, times: boolean): string[] {
   const d = Math.round(Math.log10(f));
   if (f < 10 || 10 ** d !== f) return [];
   return [times
-    ? `Times ${show(f)} moves every digit ${d} ${plural(d, 'place', 'places')} to the left (put zeros in the gaps).`
+    ? `Times ${show(f)} moves every digit ${d} ${plural(d, 'place', 'places')} to the left (fill any gap with a 0).`
     : `Divide by ${show(f)} and every digit moves ${d} ${plural(d, 'place', 'places')} to the right.`];
 }
 
@@ -75,7 +75,11 @@ function convertOne(q: Qty, to: string): HelpCard | null {
   const times = q.unit === big;
   const n = q.whole ?? 0;
   if (times && n === 1 && !q.fracN && WHY[`${big}-${small}`]) return card('units', `How many ${small} in 1 ${big}?`, ...WHY[`${big}-${small}`]);
-  if (f === 1) return card('units', 'Same amount', fact(big, small, f), `So the number stays the same: ${q.text} ${q.unit} = ? ${to}`);
+  if (f === 1) {
+    return q.unit === 'mL'
+      ? card('units', 'Same amount', fact(big, small, f), 'Think of 1 mL as one 1 cm cube.', `How many 1 cm cubes make ${q.text} mL? ?`)
+      : card('units', 'Same amount', fact(big, small, f), 'Think of 1 cm³ as one little cube that holds 1 mL.', `How many mL do ${q.text} cubes hold? ?`);
+  }
   if (q.fracN > 0) {
     if (!times) return null;
     const each = f / q.fracD;
@@ -85,14 +89,25 @@ function convertOne(q: Qty, to: string): HelpCard | null {
       return card('units', 'Whole ones, then the part', fact(big, small, f), w, `Now ${part}: ${show(each * q.fracN)} ${to}. Add: ${show(n * f)} + ${show(each * q.fracN)} = ?`);
     }
     return card('units', `Part of one ${q.unit}`, fact(big, small, f),
-      `${part} means ${show(f)} ÷ ${q.fracD}${q.fracN > 1 ? `, then × ${q.fracN}` : ''}.`,
-      q.fracN === 1 ? `${show(f)} ÷ ${q.fracD} = ?` : `${show(f)} ÷ ${q.fracD} = ${show(each)}, so ${q.fracN} lots of ${show(each)} = ?`);
+      q.fracN === 1 ? `1/${q.fracD} means ${q.fracD} equal parts, so share ${show(f)} into ${q.fracD} equal parts.` : `1/${q.fracD} of ${show(f)} is ${show(f)} ÷ ${q.fracD} = ${show(each)}.`,
+      q.fracN === 1 ? `${show(f)} ÷ ${q.fracD} = ?` : `${q.fracN} × ${show(each)} = ?`);
   }
-  const why = times
-    ? `${to} is the smaller unit, so you need more of them: multiply.`
-    : `${to} is the bigger unit, so you need fewer of them: divide.`;
+  // Dividing a whole unit ("1000 mL = ? L"): the fact would be the answer, so ask for it another way.
+  if (!times && n === f) {
+    if (q.unit === 'min') return card('units', 'Once round the clock', 'The long hand takes 60 min to go once round the clock.', 'One trip round the clock is how many hours? ?');
+    if (q.unit === 's') return card('units', 'Once round the clock', 'The second hand takes 60 s to go once round the clock.', 'One trip round the clock is how many minutes? ?');
+    return card('units', `Divide by ${show(f)}`, `${q.unit} is the smaller unit, so you need fewer of them: divide.`, `How many lots of ${show(f)} ${q.unit} are in ${show(f)} ${q.unit}?`, `${show(f)} ÷ ${show(f)} = ?`);
+  }
+  // Minutes to hours: 240 min is 24 tens and 60 is 6 tens, so 24 ÷ 6.
+  if (!times && f === 60 && big === 'h' && n % 60 === 0 && n / 60 > 1) {
+    return card('units', 'Divide by 60', fact(big, small, f), `${show(n)} min is ${show(n / 10)} tens, and 60 is 6 tens.`, `${show(n / 10)} ÷ 6 = ?`);
+  }
+  const tip = placeTip(f, times);
+  const step1 = FACTS[`${big}-${small}`]
+    ? `${fact(big, small, f)} ${times ? `${to} is the smaller unit, so multiply.` : `${to} is the bigger unit, so divide.`}`
+    : `1 ${big} = ${show(f)} ${small}, so you need ${times ? 'more' : 'fewer'} ${to} than ${q.unit}: ${times ? 'multiply' : 'divide'}.`;
   const sum = times ? `${q.text} × ${show(f)} = ?` : `${q.text} ÷ ${show(f)} = ?`;
-  return card('units', times ? `Multiply by ${show(f)}` : `Divide by ${show(f)}`, fact(big, small, f), why, ...placeTip(f, times), sum);
+  return card('units', times ? `Multiply by ${show(f)}` : `Divide by ${show(f)}`, step1, ...tip, sum);
 }
 
 const convert: Helper = (q) => {
@@ -125,8 +140,8 @@ const convert: Helper = (q) => {
     }
     if (to === ua) {
       return card('units', 'Keep the big part, change the small', fact(ua, ub, f),
-        `Keep the ${a} ${ua}. Change the ${b} ${ub}: ${b} ÷ ${show(f)} = ${show(Number(b) / f)} ${ua}.`,
-        `Put them together: ${a} + ${show(Number(b) / f)} = ?`);
+        `Keep the ${a} ${ua}. Change the ${b} ${ub} into ${ua}: ${b} ÷ ${show(f)} = ? ${ua}.`,
+        `Put them together: ${a} ${ua} and ? ${ua} = ?`);
     }
     return null;
   }
@@ -158,11 +173,14 @@ const elapsed: Helper = (q) => {
   const hours = Math.floor(rest / 60) * 60, end = rest % 60;
   const nextHour = (a.h % 12) + 1 || 12;
   const hourText = `${a.m > 0 ? nextHour : a.h}:00`;
+  // Same minutes one hour later: the long hand has gone once round.
+  if (total === 60 && a.m === b.m) return card('elapsed', 'Same minutes, one hour later', `${p[0].split(' ')[0]} and ${p[2].split(' ')[0]} have the same minutes: the long hand has gone once round the clock.`, 'The hour hand has moved on 1 hour.', '1 h = ? min');
   const steps: string[] = ['Count up in jumps: to the next o\'clock, then on to the end time.'];
-  const parts: number[] = [];
+  const parts: (number | string)[] = [];
   if (toNext) { parts.push(toNext); steps.push(`${p[0].split(' ')[0]} up to ${hourText} is ${toNext} min.`); }
   if (hours) { parts.push(hours); steps.push(`Whole hours after that: ${hours / 60} h = ${hours} min.`); }
-  if (end) { parts.push(end); steps.push(`Then on to ${p[2].split(' ')[0]}: ${end} min.`); }
+  // The last jump is left for the pupil.
+  if (end) { parts.push('?'); steps.push(`Then on to ${p[2].split(' ')[0]}: how many min?`); }
   if (parts.length === 1) return card('elapsed', 'Count up to the hour', `${p[0].split(' ')[0]} up to ${p[2].split(' ')[0]}.`, toNext ? `A whole hour is 60 min, so take away what is already gone: 60 − ${a.m} = ?` : `${hours / 60} h = ? min`);
   return card('elapsed', 'Jump to the o\'clock', steps[1], ...steps.slice(2), `Add the jumps: ${parts.join(' + ')} = ?`);
 };
@@ -176,14 +194,18 @@ const time24: Helper = (q) => {
     if (!m) return null;
     const h = Number(m[1]);
     if (h === 0) return card('time24', '24-hour to 12-hour', '00:00 is midnight, the start of the day.', 'The hour is 12, and it is am.', 'Write it with am: ?');
-    if (h < 12) return card('time24', 'Before noon is am', 'Times from 00:00 to 11:59 are am.', `The hour number stays the same: ${h} o'clock, and the minutes stay the same.`, `Write ${p[0]} with am or pm: ?`);
+    if (h < 12) return card('time24', 'Before or after noon?', 'Noon is 12:00. Times before noon are am. Times from noon on are pm.', `Is ${p[0]} before noon or after?`, `If it is before noon, the hour and minutes stay the same. Write ${p[0]} with am or pm: ?`);
     if (h === 12) return card('time24', 'Noon hour is pm', '12:00 to 12:59 is just after noon: pm.', 'The hour number stays 12.', `Write ${p[0]} with am or pm: ?`);
     return card('time24', 'Take 12 off', 'Times from 12:00 on are pm.', 'For 13:00 and later, take 12 off the hour. The minutes stay the same.', `${h} − 12 = ? That is the hour, then the minutes, then pm.`);
   }
   if (/24-hour/.test(pr)) {
     const t = clock(p[0]);
     if (!t) return null;
-    if (!t.pm) return card('time24', 'am keeps its hour', 'Morning times (am) look the same in 24-hour time, with a 0 in front if the hour is one digit.', t.h === 12 ? '12 am is midnight, so its hour is 00.' : `Write ${p[0].split(' ')[0]} as a 4-digit time: ?`, 'What is the 24-hour time? ?');
+    if (!t.pm) {
+      return t.h === 12
+        ? card('time24', 'Midnight hour', '12 am is just after midnight, the start of the day.', 'In 24-hour time the hour is 00.', `Write ${p[0].split(' ')[0]} as a 4-digit time: ?`)
+        : card('time24', 'Morning times keep their hour', 'Morning (am) times keep the same hour in 24-hour time.', 'A 24-hour time has 4 digits, so a one-digit hour gets a 0 in front.', `Is the hour ${t.h} one digit or two? Write the 4-digit time with that hour and the same minutes: ?`);
+    }
     if (t.h === 12) return card('time24', 'Noon stays 12', '12 pm is noon, so the hour stays 12.', `Write ${p[0].split(' ')[0]} as a 4-digit time: ?`);
     return card('time24', 'Add 12 to pm hours', 'For pm times, add 12 to the hour. The minutes stay the same.', `${t.h} + 12 = ?`);
   }
@@ -198,15 +220,24 @@ const clockFace: Helper = (q) => {
   if (!long || !short) return null;
   const mark = Number(long[1]);
   const hour = Number(short[1]);
-  const meaning: Record<number, string> = { 12: "On 12 it is o'clock.", 3: 'On 3 it is quarter past.', 6: 'On 6 it is half past.', 9: 'On 9 it is quarter to the next hour.' };
-  const first = `The long hand shows minutes. Each number is 5 minutes: ${mark} × 5 minutes.`;
-  const second = meaning[mark] ?? `So the long hand on ${mark} means ${mark} × 5 minutes past.`;
-  const third = /halfway/.test(t) ? `The short hand is halfway between ${short[1]} and ${short[2]}: that is half past ${short[1]}.`
+  // Words ("quarter past 2") or a time ("2:15") to pick?
+  const isWords = (q.choiceLabels ?? []).some((c) => /past|to \d|o'clock/.test(c));
+  const first = mark === 12
+    ? 'The long hand shows minutes. Each number is 5 minutes, and 12 is the very top of the clock.'
+    : `The long hand is on ${mark}. Each number is 5 minutes: ${mark} × 5 = ? minutes.`;
+  const hourStep = /halfway/.test(t) ? `The short hand is halfway between ${short[1]} and ${short[2]}. It has not got to ${short[2]}, so the hour is ${short[1]}.`
     : /nearly at|just before/.test(t) ? `The short hand is nearly at ${hour}, so it is not ${hour} o'clock yet: the time is before ${hour}.`
-    : mark === 9 ? `For quarter to, the hour is the NEXT one after ${hour}.`
-    : `The short hand tells the hour: ${/between/.test(t) ? `it is between ${short[1]} and ${short[2]}, so use the one it has passed` : `it is on ${hour}`}.`;
-  if (/halfway/.test(t)) return card('clock', 'Half past', first, `${second} ${third}`, 'What time is it? ?');
-  return card('clock', 'Minutes on the long hand', first, second, third, 'What time is it? ?');
+    : mark === 9 && isWords ? `For quarter to, the hour is the NEXT one after ${hour}.`
+    : /between/.test(t) ? `The short hand is between ${short[1]} and ${short[2]}. It has passed ${short[1]}, so the hour is ${short[1]}.`
+    : `The short hand tells the hour: it is on ${hour}.`;
+  if (isWords) {
+    return card('clock', 'Match the minutes to the words', first,
+      "Quarter past is 15 minutes, half past is 30 minutes, quarter to is 45 minutes, and o'clock is 0 minutes (the long hand on 12).",
+      hourStep, 'Put the words and the hour together: ?');
+  }
+  const hourKnown = /between|halfway|just past/.test(t) || !/nearly at|just before/.test(t);
+  const hh = /between|halfway/.test(t) ? short[1] : String(hour);
+  return card('clock', 'Minutes on the long hand', first, hourStep, `Put the hour and the minutes together: ${hourKnown ? `${hh}:?` : '?'}`);
 };
 
 // ---------------------------------------------------------------- shapes: perimeter, area, volume
@@ -234,9 +265,12 @@ const shapes: Helper = (q) => {
     if (name && n.length >= 1) {
       const count = SIDES[name];
       const side = n[n.length - 1];
-      const own = name === 'square' ? 'A square' : /^[aeiou]/.test(name) ? `An ${/equilateral/i.test(all) ? 'equilateral ' : 'regular '}${name}` : `A ${/equilateral/i.test(all) ? 'equilateral ' : /regular/i.test(all) ? 'regular ' : ''}${name}`;
+      const adj = /equilateral/i.test(all) ? 'equilateral ' : /regular/i.test(all) || name !== 'square' ? 'regular ' : '';
+      const own = `${/^[aeiou]/i.test(adj + name) ? 'An' : 'A'} ${adj}${name}`;
+      const last = count === 8 ? `Double ${show(side)} = ${show(side * 2)}, double again = ${show(side * 4)}, double again = ?`
+        : count === 4 ? `Double ${show(side)} = ${show(side * 2)}, double again = ?` : `${count} × ${show(side)} = ?`;
       return card('perimeter', 'Equal sides: times', 'Perimeter is the distance all the way round the edge.',
-        `${own} has ${count} equal sides of ${show(side)} cm.`, `${count} × ${show(side)} = ?`);
+        `${own} has ${count} equal sides of ${show(side)} cm.`, last);
     }
     return null;
   }
@@ -248,7 +282,7 @@ const shapes: Helper = (q) => {
     }
     if (/rectangle/i.test(prompt(q)) && n.length >= 2) {
       return card('area', 'Length × width', 'Area counts the squares inside the shape.',
-        `It is ${show(n[1])} rows with ${show(n[0])} squares in each row, or ${show(n[0])} rows of ${show(n[1])}.`, `${show(n[0])} × ${show(n[1])} = ?`);
+        `The grid has ${show(n[1])} rows with ${show(n[0])} squares in each row.`, `${show(n[0])} × ${show(n[1])} = ?`);
     }
     return null;
   }
@@ -283,7 +317,12 @@ const angleNames: Helper = (q) => {
   const t = q.parts[0];
   const n = /(\d+)°/.exec(t);
   const list = 'Acute: less than 90°. Right: exactly 90°. Obtuse: between 90° and 180°. Straight: exactly 180°. Reflex: more than 180°.';
-  if (/^(Between|Less|More|Exactly)/.test(t)) return card('angle-names', 'Match the clue to the name', list, `Read the clue: "${t}".`, 'Which name matches the clue? ?');
+  if (/^(Between|Less|More|Exactly)/.test(t)) {
+    const clue = /^Less/.test(t) ? 'smaller than a square corner' : /^Exactly 90/.test(t) ? 'exactly a square corner' : /^Between/.test(t) ? 'bigger than a square corner but smaller than a straight line'
+      : /^Exactly 180/.test(t) ? 'exactly a straight line' : 'bigger than a straight line';
+    return card('angle-names', 'Match the clue to a picture', 'A square corner is 90° and a straight line is 180°.',
+      `"${t.replace(/ is$/, '')}" means ${clue}. Look at the five pictures below: which one is that?`, 'What name is under that picture? ?');
+  }
   if (!n) return null;
   return card('angle-names', 'Compare with 90° and 180°', list, `A square corner is 90° and a straight line is 180°. Is ${n[1]}° smaller than, equal to, or bigger than those?`, `Which name fits ${n[1]}°? ?`);
 };
@@ -311,7 +350,7 @@ const angleNext: Helper = (q) => {
   const pr = prompt(q);
   const n = numbersIn(pr)[0];
   if (q.parts[0] === 'Next angle' && n !== undefined) return card('angle-sum', 'Angles on a line add to 180°', 'Two angles side by side on a straight line make 180°.', `180 − ${show(n)} = ?`);
-  if (q.parts[0] === 'Opposite angle' && n !== undefined) return card('angle-opposite', 'Opposite angles are equal', 'When two lines cross, the angles opposite each other (across the middle) are the same size.', `The angle opposite ${show(n)}° is ?°`);
+  if (q.parts[0] === 'Opposite angle' && n !== undefined) return card('angle-opposite', 'Opposite angles are equal', 'The lines cross in the middle.', `The ${show(n)}° angle and the ? angle are across from each other.`, 'Across angles are the same size. How big is the ? angle?');
   return null;
 };
 
@@ -321,8 +360,8 @@ const polygons: Helper = (q) => {
   if (!m) return null;
   const n = Number(m[1]);
   if (q.parts[0] === 'Exterior angle') return card('polygon', 'Outside angles make a full turn', 'The outside (exterior) angles of any polygon add up to 360°.', `A regular shape has ${n} equal ones.`, `360 ÷ ${n} = ?`);
-  if (q.parts[0] === 'Angle sum') return card('polygon', 'Cut into triangles', 'Draw lines from one corner to split the shape into triangles. You get 2 fewer triangles than sides.',
-    `${n} − 2 = ${n - 2} triangles, and each has an angle sum of 180°.`, `${n - 2} × 180 = ?`);
+  if (q.parts[0] === 'Angle sum') return card('polygon', 'Cut into triangles', 'Split the shape into triangles from one corner.',
+    `${n === 8 || n === 11 ? 'An' : 'A'} ${n}-sided shape makes ${n} − 2 = ${n - 2} triangles.`, `Each triangle has 180°: ${n - 2} × 180 = ?`);
   return null;
 };
 
@@ -342,8 +381,8 @@ const compass: Helper = (q) => {
   }
   if (p.length === 5 && p[1] === 'is' && p[2] === '?°' && DIRS.includes(p[0]) && /from north/.test(pr)) {
     const i = DIRS.indexOf(p[0]);
-    const base = 'Clockwise from N: N is 0°, E is 90°, S is 180°, W is 270°, back to N at 360°.';
-    if (i % 2 === 0) return card('compass', 'Quarter turns of 90°', base, `${p[0]} is how many quarter turns round from N?`, 'Quarter turns × 90 = ?');
+    if (i % 2 === 0) return card('compass', 'Quarter turns of 90°', 'Going clockwise from N, each quarter turn is 90°: N, then E, then S, then W.', `How many quarter turns from N to ${p[0]}?`, 'Quarter turns × 90 = ?');
+    const base = 'Clockwise from N: E is 90°, S is 180°, W is 270°, and N is 360° after a full turn.';
     const lo = DIRS[i - 1], hi = DIRS[(i + 1) % 8];
     return card('compass', 'Halfway between', base, `${p[0]} is halfway between ${lo} and ${hi}.`, `Halfway between ${i === 7 ? 270 : (i - 1) * 45}° and ${i === 7 ? 360 : (i + 1) * 45}° is ?`);
   }
@@ -358,6 +397,17 @@ const compassTurn: Helper = (q) => {
   const anti = /anticlockwise/.test(t);
   const k = /half turn/.test(t) ? 2 : (/(\d+) quarter/.exec(t) ? Number(/(\d+) quarter/.exec(t)![1]) : /quarter/.test(t) ? 1 : 0);
   if (!k) return null;
+  const k3 = k === 3;
+  if (k === 2) {
+    return card('compass', 'Half turn: the other way round', 'A half turn means you face the other way.', 'Look at the compass: north and south are opposite, east and west are opposite.', `What is opposite ${face[1]}? ?`);
+  }
+  if (k3) {
+    const other = anti ? 'clockwise' : 'anticlockwise';
+    return card('compass', '3 turns is 1 turn the other way',
+      `Going ${other}: ${anti ? 'north → east → south → west → north' : 'north → west → south → east → north'}.`,
+      `3 quarter turns ${anti ? 'anticlockwise' : 'clockwise'} is the same as 1 quarter turn ${other}.`,
+      `Start at ${face[1]} and take 1 step ${other}: ?`);
+  }
   const order = anti ? 'north → west → south → east → north' : 'north → east → south → west → north';
   const turnStep = /half/.test(t) ? 'A half turn is 2 quarter turns, so 2 steps.' : k === 1 ? 'A quarter turn is 1 step to the next point.' : `${k} quarter turns is ${k} steps.`;
   return card('compass', 'Step round the compass', `Going ${anti ? 'anticlockwise' : 'clockwise'}: ${order}.`, turnStep, `Start at ${face[1]} and take ${k} ${plural(k, 'step', 'steps')}: ?`);
@@ -411,10 +461,10 @@ const averages: Helper = (q) => {
   if (what === 'Range') {
     return card('range', 'Biggest minus smallest', 'The range tells how spread out the numbers are.', `The biggest is ${show(Math.max(...v))} and the smallest is ${show(Math.min(...v))}.`, `${show(Math.max(...v))} − ${show(Math.min(...v))} = ?`);
   }
-  if (what === 'Mode') return card('mode', 'The one that shows up most', 'The mode is the number that appears the most times.', 'Tally each number as you go along the list.', 'Which number has the most tally marks? ?');
+  if (what === 'Mode') return card('mode', 'The one that shows up most', 'The mode is the number that appears the most times.', `Count each number: ${[...new Set(v)].map((x) => `${show(x)} → ?`).join(', ')}.`, 'Which number has the biggest count? ?');
   if (what === 'Median') {
     return v.length % 2
-      ? card('median', 'The middle number', 'Write the numbers in order, smallest to biggest.', 'Cross off the biggest and the smallest, again and again, until one is left in the middle.', 'Which number is left? ?')
+      ? card('median', 'The middle number', `Put ${v.map(show).join(', ')} in order, smallest to biggest.`, 'Cross off the biggest and the smallest. Do it again.', 'Which number is left in the middle? ?')
       : card('median', 'Halfway between the middle two', 'Write the numbers in order, smallest to biggest.', 'Cross off the biggest and smallest until two are left in the middle.', 'Add those two, then halve: ?');
   }
   return null;
@@ -425,13 +475,30 @@ const averages: Helper = (q) => {
 const chance: Helper = (q) => {
   const pr = prompt(q);
   const t = q.parts[0] ?? '';
-  const scale = 'The chance scale runs from 0 to 1: impossible 0, unlikely near 0, even chance 0.5, likely near 1, certain 1.';
+  const WORDS_LINE = 'About half is even chance. A few is unlikely. Most is likely.';
   if (/How likely is it/.test(pr)) {
-    if (/dice/i.test(t)) return card('chance', 'Count the faces that fit', 'A dice has 6 faces: 1, 2, 3, 4, 5, 6.', `Count how many faces fit "${t.replace(/ on a dice$/, '').toLowerCase()}".`, 'None is impossible, all is certain, about half is even chance, a few is unlikely, most is likely. Which word? ?');
-    return card('chance', 'How many ways to win?', 'Think about all the things that could happen.', 'None is impossible, all is certain, about half is even chance, a few is unlikely, most is likely.', 'Which word fits? ?');
+    if (/dice/i.test(t)) {
+      return card('chance', 'Count the faces that fit', 'A dice has 6 faces: 1, 2, 3, 4, 5, 6.', `How many faces fit "${t.replace(/ on a dice$/, '').toLowerCase()}"? Out of 6.`,
+        'None is impossible. All is certain.', `${WORDS_LINE} Which word fits? ?`);
+    }
+    const side = /landing (\w+)/.exec(t)?.[1];
+    return card('chance', 'Count the ways', 'A coin has 2 sides: heads and tails.', side ? `How many of them are ${side}? Out of 2.` : 'How many of them fit? Out of 2.',
+      'None is impossible. All is certain.', `${WORDS_LINE} Which word fits? ?`);
   }
-  if (/Which number fits|Which chance word fits/.test(pr)) {
-    return card('chance', 'The 0 to 1 line', scale, `Find "${t.replace(/ means.*$/, '')}" on the line.`, 'Which choice sits in the right place? ?');
+  if (/Which number fits/.test(pr)) {
+    const w = t.replace(/ means.*$/, '').toLowerCase();
+    const near = w === 'likely' ? ['On the line, 0 is impossible and 1 is certain.', 'Likely is on the right side, close to 1 but not at 1.']
+      : w === 'unlikely' ? ['On the line, 0 is impossible and 1 is certain.', 'Unlikely is on the left side, close to 0 but not at 0.']
+      : w === 'even chance' ? ['The line runs from 0 at the left end to 1 at the right end.', 'Even chance is exactly halfway along the line.']
+      : ['The line runs from 0 at the left end to 1 at the right end.', `${w === 'impossible' ? 'Impossible means it can never happen' : 'Certain means it always happens'}. Which end of the line is that?`];
+    return card('chance', `${w.charAt(0).toUpperCase()}${w.slice(1)} means P = ?`, ...near, 'Which choice sits there? ?');
+  }
+  if (/Which chance word fits/.test(pr)) {
+    const v = /P = ([\d.]+)/.exec(t)?.[1];
+    if (v === '1') return card('chance', 'P = 1 means ?', '0 is impossible: it can never happen.', 'Is P = 1 at the start or the end of the line?', 'The end is the opposite of impossible. Which word is that? ?');
+    if (v === '0') return card('chance', 'P = 0 means ?', '1 is certain: it always happens.', 'Is P = 0 at the start or the end of the line?', 'The start is the opposite of certain. Which word is that? ?');
+    if (v === '0.5') return card('chance', 'P = 0.5 means ?', 'The line runs from 0 to 1.', 'Is 0.5 close to an end, or halfway?', 'Which word is that? ?');
+    if (v) return card('chance', `P = ${v} means ?`, 'On the line, 0 is impossible and 1 is certain.', `${v} is close to ${Number(v) < 0.5 ? '0' : '1'} but not at ${Number(v) < 0.5 ? '0' : '1'}.`, 'Which word fits? ?');
   }
   return null;
 };
@@ -474,6 +541,7 @@ const percentOf: Helper = (q) => {
   const m = /^(\d+) in (\d+)$/.exec(q.parts[0] ?? '');
   if (!m || q.parts[1] !== '=' || q.parts[3] !== '%') return null;
   const a = Number(m[1]), d = Number(m[2]);
+  if (100 % d === 0 && a === 1) return card('percent', 'Make it out of 100', 'Per cent means "out of 100".', `1 in ${d} means 1 share out of ${d} equal shares.`, `Share 100 into ${d} equal parts: 100 ÷ ${d} = ?`);
   if (100 % d === 0) return card('percent', 'Make it out of 100', 'Per cent means "out of 100".', `Out of ${d} to out of 100: ${d} × ${100 / d} = 100.`, `Do the same to the top: ${a} × ${100 / d} = ?`);
   return card('percent', 'Divide, then times 100', 'Per cent means "out of 100".', `Find 1 share: 100 ÷ ${d} = ${show(100 / d)}.`, `${a} × ${show(100 / d)} = ?`);
 };

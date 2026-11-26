@@ -117,15 +117,25 @@ function Body({ f }: { f: FigureSpec }) {
     }
     case 'point':
       return <Fan cx={120} cy={75} sizes={drawSizes(f.angles, 360)} labels={f.angles} start={20} />;
-    case 'crossing':
+    case 'crossing': {
+      // Drawn at the real angle: the wedges to the right and left (the opposite pair) are the angle, the others 180° less.
+      const given = f.angles.map((l) => /^(\d+)°$/.exec(l)).find((m) => m);
+      const deg = Math.min(170, Math.max(10, given ? Number(given[1]) : 70));
+      const half = (deg * Math.PI) / 360;
+      const len = Math.min(100, 62 / Math.sin(half));
+      const dx = len * Math.cos(half);
+      const dy = len * Math.sin(half);
+      // Far enough out for the wedge to be wide enough for its label.
+      const lab = Math.min(len - 8, Math.max(40, 34 / (2 * Math.tan(half))));
       return (
         <>
-          <line x1={30} y1={30} x2={210} y2={120} className="fig__line" />
-          <line x1={30} y1={120} x2={210} y2={30} className="fig__line" />
-          <Label x={120} y={38} text={f.angles[0]} />
-          <Label x={120} y={112} text={f.angles[1]} />
+          <line x1={120 - dx} y1={75 + dy} x2={120 + dx} y2={75 - dy} className="fig__line" />
+          <line x1={120 - dx} y1={75 - dy} x2={120 + dx} y2={75 + dy} className="fig__line" />
+          <Label x={120 + lab} y={75} text={f.angles[0]} />
+          <Label x={120 - lab} y={75} text={f.angles[1]} />
         </>
       );
+    }
     case 'right-angle': {
       const sizes = drawSizes(f.angles, 90);
       return (
@@ -142,6 +152,34 @@ function Body({ f }: { f: FigureSpec }) {
       const w = square ? 96 : 140;
       const h = square ? 96 : 84;
       const y = square ? 18 : 30;
+      // Whole-number sides up to 12: draw the unit squares, so the rows and columns can be read off the picture.
+      const side = (t: string) => {
+        const m = /^(\d+)(?: [a-z]+)?$/.exec(t);
+        return m && Number(m[1]) >= 1 && Number(m[1]) <= 12 ? Number(m[1]) : 0;
+      };
+      const cols = side(f.width);
+      const rows = side(f.height);
+      if (cols && rows) {
+        const cell = Math.min(150 / cols, 90 / rows);
+        const gw = cols * cell;
+        const gh = rows * cell;
+        const gx = (240 - gw) / 2;
+        const gy = 30 + (90 - gh) / 2;
+        return (
+          <>
+            <rect x={gx} y={gy} width={gw} height={gh} className="fig__shape" />
+            {Array.from({ length: cols - 1 }, (_, i) => (
+              <line key={`c${i}`} x1={gx + (i + 1) * cell} y1={gy} x2={gx + (i + 1) * cell} y2={gy + gh} className="fig__gridline" />
+            ))}
+            {Array.from({ length: rows - 1 }, (_, i) => (
+              <line key={`r${i}`} x1={gx} y1={gy + (i + 1) * cell} x2={gx + gw} y2={gy + (i + 1) * cell} className="fig__gridline" />
+            ))}
+            <Label x={gx + gw / 2} y={gy + gh + 16} text={f.width} />
+            <Label x={gx - 14} y={gy + gh / 2} text={f.height} anchor="end" />
+            {f.inside !== undefined && <Label x={gx + gw / 2} y={gy + gh / 2} text={f.inside} />}
+          </>
+        );
+      }
       return (
         <>
           <rect x={x} y={y} width={w} height={h} className="fig__shape" />
@@ -241,6 +279,15 @@ function Body({ f }: { f: FigureSpec }) {
       // The side from the bottom-right corner carried on, to show one exterior angle.
       const [p, q] = [pts[n - 1], pts[0]];
       const ex = { x: q.x + (q.x - p.x) * 0.9, y: q.y + (q.y - p.y) * 0.9 };
+      // No label: an angle-sum question, so show the triangles from one corner instead of the exterior angle.
+      if (!f.label) {
+        return (
+          <>
+            <polygon points={pts.map((o) => `${o.x},${o.y}`).join(' ')} className="fig__shape" />
+            {pts.slice(2, n - 1).map((o, i) => <line key={i} x1={q.x} y1={q.y} x2={o.x} y2={o.y} className="fig__line" />)}
+          </>
+        );
+      }
       return (
         <>
           <polygon points={pts.map((o) => `${o.x},${o.y}`).join(' ')} className="fig__shape" />
@@ -516,7 +563,7 @@ const ANGLE_KINDS: { name: string; degrees: number; words: string }[] = [
   { name: 'Reflex', degrees: 270, words: 'more than 180°' },
 ];
 
-export function AngleNames() {
+export function AngleNames({ hideRanges = false }: { hideRanges?: boolean }) {
   return (
     <ul className="angle-names" aria-label="Kinds of angle">
       {ANGLE_KINDS.map((k) => {
@@ -531,7 +578,7 @@ export function AngleNames() {
               {k.degrees === 90 ? <path d={`M ${cx + 9} ${cy} L ${cx + 9} ${cy - 9} L ${cx} ${cy - 9}`} className="fig__corner" /> : <Arc cx={cx} cy={cy} r={11} a={0} b={k.degrees} />}
             </svg>
             <strong>{k.name}</strong>
-            <span>{k.words}</span>
+            {!hideRanges && <span>{k.words}</span>}
           </li>
         );
       })}

@@ -25,7 +25,11 @@ function Frame({ w, h, label, max = 320, children }: { w: number; h: number; lab
 
 type Shade = 'a' | 'b';
 
-const fmt = (n: number) => String(+n.toFixed(6)).replace('-', '−');
+/** A number as the questions show it: a real minus sign, and 12 500 with a space from 5 digits. */
+const fmt = (n: number) => {
+  const [w, d] = String(Math.abs(+n.toFixed(6))).split('.');
+  return (n < 0 ? '−' : '') + (w.length >= 5 ? w.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : w) + (d ? `.${d}` : '');
+};
 /** A rough width for a bit of text at the label size, to keep neighbours apart. */
 const textW = (s: string, per = 8.5) => s.length * per;
 
@@ -116,13 +120,13 @@ function wedge(cx: number, cy: number, r: number, a: number, b: number) {
   return `M ${cx} ${cy} L ${p(a)} A ${r} ${r} 0 ${b - a > 180 ? 1 : 0} 1 ${p(b)} Z`;
 }
 
-function Frames({ size, counts }: { size: 5 | 10; counts: number[] }) {
+function Frames({ size, counts, frames = 1 }: { size: 5 | 10; counts: number[]; frames?: number }) {
   const cell = 28;
   const rows = size === 10 ? 2 : 1;
   const fw = 5 * cell;
   const fh = rows * cell;
   const seq: Shade[] = counts.flatMap((n, i) => Array.from({ length: Math.max(0, Math.round(n)) }, () => (i % 2 === 0 ? 'a' : 'b') as Shade));
-  const n = Math.max(1, Math.ceil(seq.length / size));
+  const n = Math.max(1, Math.min(4, Math.round(frames)), Math.ceil(seq.length / size));
   const perRow = Math.min(n, 2);
   const lines = Math.ceil(n / perRow);
   const gap = 16;
@@ -174,19 +178,37 @@ function DotRows({ rows, fives }: { rows: number[]; fives?: boolean }) {
   );
 }
 
-function Track({ cells }: { cells: string[] }) {
+function Track({ cells, arcs }: { cells: string[]; arcs?: '+' | '−' }) {
   const cw = Math.max(36, ...cells.map((c) => textW(c, 9.5) + 14));
   const perRow = cells.length > 10 ? Math.ceil(cells.length / 2) : cells.length;
   const lines = Math.ceil(cells.length / perRow);
   const gap = 4;
   const ch = 38;
+  // Jump arrows over the gaps (one row only): a small curve from the middle of each box to the next.
+  const jumps = Boolean(arcs) && lines === 1 && cells.length > 1;
+  const top = jumps ? 34 : 0;
   const w = perRow * cw + (perRow - 1) * gap + 6;
-  const h = lines * ch + (lines - 1) * 8 + 6;
+  const h = top + lines * ch + (lines - 1) * 8 + 6;
   return (
-    <Frame w={w} h={h} label={`Number track: ${cells.map((c) => (c.includes('?') ? 'a missing number' : c)).join(', ')}`}>
+    <Frame w={w} h={h} label={`Number track: ${cells.map((c) => (c.includes('?') ? 'a missing number' : c)).join(', ')}${jumps ? ', with equal jumps between them' : ''}`}>
+      {jumps &&
+        cells.slice(1).map((c, i) => {
+          const x1 = 3 + i * (cw + gap) + cw / 2 + 4;
+          const x2 = 3 + (i + 1) * (cw + gap) + cw / 2 - 4;
+          const y = top + 1;
+          const mid = (x1 + x2) / 2;
+          const ask = c.includes('?') || cells[i].includes('?');
+          return (
+            <g key={`j${i}`}>
+              <path d={`M ${x1} ${y} Q ${mid} ${y - 22} ${x2 - 2} ${y - 3}`} className={`fig__line qp__thin qp__jump${ask ? ' qp__dash' : ''}`} fill="none" strokeDasharray={ask ? '4 3' : undefined} />
+              <polygon points={`${x2},${y} ${x2 - 7},${y - 3} ${x2 - 2},${y - 8}`} className="fig__dot" />
+              <T x={mid} y={y - 22} text={`${arcs}?`} cls="qp__small" />
+            </g>
+          );
+        })}
       {cells.map((c, i) => {
         const x = 3 + (i % perRow) * (cw + gap);
-        const y = 3 + Math.floor(i / perRow) * (ch + 8);
+        const y = top + 3 + Math.floor(i / perRow) * (ch + 8);
         const ask = c.includes('?');
         return (
           <g key={i}>
@@ -277,7 +299,7 @@ function Bars({ bars }: { bars: Extract<Picture, { kind: 'bars' }>['bars'] }) {
           <g key={i}>
             <T x={pad + bw / 2} y={top - 11} text={b.label ?? ''} />
             {Array.from({ length: parts }, (_, k) => (
-              <rect key={k} x={pad + k * pw} y={top} width={pw} height={bh} className={k < b.shaded ? `qp__cell qp__cell--${b.shade ?? 'a'}` : 'qp__cell'} />
+              <rect key={k} x={pad + k * pw} y={top} width={pw} height={bh} className={k >= (b.start ?? 0) && k < (b.start ?? 0) + b.shaded ? `qp__cell qp__cell--${b.shade ?? 'a'}` : 'qp__cell'} />
             ))}
             <rect x={pad} y={top} width={bw} height={bh} className="qp__outline" />
           </g>
@@ -372,17 +394,20 @@ function SplitBox({ tens, ones, by }: { tens: number; ones: number; by: number }
 }
 
 function Place({ headings, digits }: { headings: string[]; digits: string[] }) {
-  const n = Math.max(1, headings.length);
   const lines = headings.map((h) => h.split(' '));
   const longest = Math.max(1, ...lines.flat().map((x) => x.length));
-  const cw = Math.max(40, longest * 8.2 + 8);
+  // A chart with decimals sizes each column to its own heading ('1s' is narrow, 'thousandths' wide), so it stays readable.
+  const point = headings.indexOf('tenths');
+  const cws = headings.map((_, i) => Math.max(40, (point >= 0 ? Math.max(...lines[i].map((x) => x.length)) : longest) * 8.2 + 8));
+  const xs = cws.map((_, i) => 3 + cws.slice(0, i).reduce((a, b) => a + b, 0));
   const hh = Math.max(...lines.map((l) => l.length), 1) * 17 + 10;
   const dh = 44;
-  const w = n * cw + 6;
+  const w = cws.reduce((a, b) => a + b, 0) + 6;
   return (
     <Frame max={360} w={w} h={hh + dh + 6} label={`Place value chart with columns ${list(headings)}${digits.some(Boolean) ? ` and digits ${digits.map((d) => d || 'blank').join(', ')}` : ''}`}>
       {headings.map((_, i) => {
-        const x = 3 + i * cw;
+        const x = xs[i];
+        const cw = cws[i];
         return (
           <g key={i}>
             <rect x={x} y={3} width={cw} height={hh} className="qp__cell qp__cell--head" />
@@ -394,6 +419,8 @@ function Place({ headings, digits }: { headings: string[]; digits: string[] }) {
           </g>
         );
       })}
+      {/* The decimal point, between the 1s and the tenths. */}
+      {point > 0 && <circle cx={xs[point]} cy={3 + hh + dh - 9} r={4} className="fig__dot" />}
     </Frame>
   );
 }
@@ -402,25 +429,27 @@ function Thermometer({ from, to, start }: { from: number; to: number; start: num
   const lo = Math.min(from, to);
   const hi = Math.max(from, to);
   const range = hi - lo || 1;
-  const step = [1, 2, 5, 10, 20, 25, 50, 100].find((s) => range / s <= 8) ?? range;
+  // A small mark for every 1° when there is room (up to 30°, as the help card says), else every 5°; numbers every 2, 5 or 10.
+  const minor = range <= 30 ? 1 : 5;
+  const step = [2, 5, 10, 20, 25, 50, 100].find((s) => range / s <= 6 && s % minor === 0) ?? range;
   const top = 14;
   const bottom = 134;
   const Y = (v: number) => bottom - ((Math.max(lo, Math.min(hi, v)) - lo) / range) * (bottom - top);
   const tx = 100;
   const tw = 18;
-  const first = Math.ceil(lo / step) * step;
-  const ticks: number[] = [];
-  for (let v = first; v <= hi + 1e-9; v += step) ticks.push(v);
+  const marks: number[] = [];
+  for (let v = Math.ceil(lo / minor) * minor; v <= hi + 1e-9; v += minor) marks.push(v);
+  const labelled = (v: number) => Math.abs(v % step) < 1e-9;
   return (
     <Frame w={230} h={172} label={`Thermometer from ${fmt(from)} to ${fmt(to)} degrees with ${fmt(start)} marked`} max={230}>
       <rect x={tx} y={top - 6} width={tw} height={bottom - top + 12} rx={tw / 2} className="fig__shape" />
       <circle cx={tx + tw / 2} cy={bottom + 22} r={17} className="fig__shape" />
       <rect x={tx + 4} y={Y(start)} width={tw - 8} height={bottom + 20 - Y(start)} className="qp__counter qp__b" />
       <circle cx={tx + tw / 2} cy={bottom + 22} r={13} className="qp__counter qp__b" />
-      {ticks.map((v) => (
+      {marks.map((v) => (
         <g key={v}>
-          <line x1={tx + tw} y1={Y(v)} x2={tx + tw + 8} y2={Y(v)} className="fig__line" />
-          <T x={tx + tw + 14} y={Y(v)} text={fmt(v)} anchor="start" cls="qp__small" />
+          <line x1={tx + tw} y1={Y(v)} x2={tx + tw + (labelled(v) ? 9 : 5)} y2={Y(v)} className={labelled(v) ? 'fig__line' : 'fig__line qp__thin'} />
+          {labelled(v) && <T x={tx + tw + 15} y={Y(v)} text={fmt(v)} anchor="start" cls="qp__small" />}
         </g>
       ))}
       <Arrow x1={tx - 44} y1={Y(start)} x2={tx - 4} y2={Y(start)} />
@@ -501,7 +530,11 @@ function Balance({ left, right }: { left: string; right: string }) {
   );
 }
 
-function Towers({ values }: { values: number[] }) {
+function Towers({ values, mark }: { values: number[]; mark?: 'range' }) {
+  // Range: only the tallest and the shortest stand out; otherwise one plain colour.
+  const hi = Math.max(...values);
+  const lo = Math.min(...values);
+  const lit = (v: number) => mark === 'range' && (v === hi || v === lo);
   const bw = 38;
   const gap = 14;
   const max = Math.max(1, ...values.map((v) => Math.abs(v)));
@@ -509,13 +542,13 @@ function Towers({ values }: { values: number[] }) {
   const w = values.length * (bw + gap) - gap + 16;
   const base = 28 + ph;
   return (
-    <Frame w={Math.max(w, 80)} h={base + 8} label={`Towers of height ${list(values)}`}>
+    <Frame w={Math.max(w, 80)} h={base + 8} label={`Towers of height ${list(values)}${mark === 'range' ? `, the tallest and shortest picked out` : ''}`}>
       {values.map((v, i) => {
         const hgt = Math.max(6, (Math.abs(v) / max) * ph);
         const x = 8 + i * (bw + gap);
         return (
           <g key={i}>
-            <rect x={x} y={base - hgt} width={bw} height={hgt} rx={3} className={`qp__counter ${i % 2 === 0 ? 'qp__a' : 'qp__b'}`} />
+            <rect x={x} y={base - hgt} width={bw} height={hgt} rx={3} className={`qp__counter ${lit(v) ? 'qp__b' : 'qp__a'}`} />
             <T x={x + bw / 2} y={base - hgt - 12} text={fmt(v)} />
           </g>
         );
@@ -527,8 +560,8 @@ function Towers({ values }: { values: number[] }) {
 
 function UnitLadder({ units, links, highlight }: { units: string[]; links: string[]; highlight: string[] }) {
   const bw = Math.max(76, ...units.map((u) => textW(u, 10) + 24));
-  const bh = 30;
-  const gap = 32;
+  const bh = 28;
+  const gap = 26;
   const lw = Math.max(0, ...links.map((l) => textW(l, 9)));
   const x0 = 6;
   const w = x0 * 2 + bw + 18 + lw;
@@ -558,11 +591,11 @@ function UnitLadder({ units, links, highlight }: { units: string[]; links: strin
 export function QuestionPicture({ picture }: { picture: Picture }) {
   switch (picture.kind) {
     case 'frames':
-      return <Frames size={picture.size} counts={picture.counts} />;
+      return <Frames size={picture.size} counts={picture.counts} frames={picture.frames} />;
     case 'dot-rows':
       return <DotRows rows={picture.rows} fives={picture.fives} />;
     case 'track':
-      return <Track cells={picture.cells} />;
+      return <Track cells={picture.cells} arcs={picture.arcs} />;
     case 'number-line':
       return <NumberLine p={picture} />;
     case 'hundred':
@@ -586,7 +619,7 @@ export function QuestionPicture({ picture }: { picture: Picture }) {
     case 'balance':
       return <Balance left={picture.left} right={picture.right} />;
     case 'towers':
-      return <Towers values={picture.values} />;
+      return <Towers values={picture.values} mark={picture.mark} />;
     case 'unit-ladder':
       return <UnitLadder units={picture.units} links={picture.links} highlight={picture.highlight} />;
     case 'figure':

@@ -55,7 +55,7 @@ function ofCard(n: number, b: number, N: number): HelpCard {
   const one = Number.isInteger(u) ? show(u) : null;
   if (n === 1) {
     const top = 'The top number is 1, so the answer is just 1 group: 1 group = ?';
-    if (b === 2) return card('fraction-of', 'Half is sharing in 2', 'A half is 1 of 2 equal groups.', `Share ${show(N)} into 2 equal groups: ${show(N)} ÷ 2 is one group.`, top);
+    if (b === 2) return card('fraction-of', 'Half is the double backwards', 'A half is 1 of 2 equal groups.', `Think of the doubles: what number added to itself makes ${show(N)}?`, top);
     if (b === 4 && isEven(N)) return card('fraction-of', 'A quarter is half of a half', 'A quarter is 1 of 4 equal groups: half of a half.', `Half of ${show(N)} is ${show(N / 2)}. Half again is one group.`, top);
     if (b === 10) return card('fraction-of', 'A tenth is divide by 10', 'A tenth is 1 of 10 equal groups.', `÷ 10 moves each digit one place right: ${show(N)} ÷ 10 is one group.`, top);
     return card('fraction-of', `1/${b} is share into ${b}`, `1/${b} means share ${show(N)} into ${b} equal groups.`,
@@ -120,10 +120,10 @@ function decToFrac(t: string, choices: string[] | null): HelpCard | null {
   const simplify = g > 1 && !(choices ?? []).includes(raw);
   const steps = [
     `${d.dp === 1 ? 'One place' : d.dp === 2 ? 'Two places' : 'Three places'} after the point means ${PLACES[d.dp]}: the bottom is ${bottom}.`,
-    `${t} is ${top} ${PLACES[d.dp]}.`,
+    `How many ${PLACES[d.dp]} is ${t}? Look at the digit${d.dp > 1 ? 's' : ''} after the point.`,
   ];
-  if (simplify) steps.push(`Make it simpler: divide the top and the bottom by ${g}: ${top} ÷ ${g} = ? and ${bottom} ÷ ${g} = ?`);
-  else steps.push(`Write ${top} ${PLACES[d.dp]} as a fraction: ?`);
+  if (simplify) steps.push(`Write that many ${PLACES[d.dp]} over ${bottom}, then divide top and bottom by ${g}: ?`);
+  else steps.push(`Write that many ${PLACES[d.dp]} as a fraction: ?`);
   return card('dec-to-fraction', 'Say the decimal in tenths or hundredths', ...steps);
 }
 
@@ -131,8 +131,8 @@ function decToFrac(t: string, choices: string[] | null): HelpCard | null {
 function tenthFracToDec(a: number, b: number): HelpCard | null {
   const dp = b === 10 ? 1 : b === 100 ? 2 : b === 1000 ? 3 : 0;
   if (!dp) return null;
-  return card('frac-to-decimal', 'Put the top in the right places', `The bottom ${b} means ${PLACES[dp]}: ${dp} place${dp > 1 ? 's' : ''} after the point.`,
-    `The top ${a} fills ${dp === 1 ? 'that place' : `those ${dp} places`}${a < b / 10 ? ' (use a 0 in front where the top is short)' : ''}.`, 'Write it with the decimal point: ?');
+  return card('frac-to-decimal', 'Put the top in the right places', `Bottom number (denominator) ${b} means ${PLACES[dp]}: ${dp} place${dp > 1 ? 's' : ''} after the point.`,
+    `Top number (numerator) ${a} fills ${dp === 1 ? 'that place' : `those ${dp} places`}${a < b / 10 ? ' (put a 0 in front)' : ''}.`, 'Write it with the point: ?');
 }
 
 function simpleFracToDec(a: number, b: number): HelpCard | null {
@@ -149,18 +149,25 @@ function pctToFrac(P: number): HelpCard {
 }
 
 const fractionToPct = (a: number, b: number): HelpCard | null =>
-  100 % b === 0 ? card('fraction-to-pct', 'Make the bottom 100', '% means "out of 100", so make the bottom 100.', `${b} × ${100 / b} = 100.`, `Do the same to the top: ${a} × ${100 / b} = ?`) : null;
+  100 % b === 0 ? card('fraction-to-pct', 'Find one part out of 100', '% means "out of 100".', `The bar has ${b} equal parts. 100 ÷ ${b} = ? So 1 part is that many out of 100.`,
+    `${a === 1 ? '1 part is' : `${a} parts are`} shaded: ${a} × that number = ?`) : null;
 
 const decToPct = (t: string, pick: boolean): HelpCard =>
   card('dec-to-pct', 'Times 100 for percent', 'Percent means out of 100, so 1 whole is 100%.', pick ? '× 100 moves each digit two places left. Then pick the choice with that percent.' : '× 100 moves each digit two places left.', `${t} × 100 = ?`);
 
 const pctToDec = (P: number): HelpCard =>
-  card('pct-to-decimal', 'Percent is hundredths', `% means out of 100, so ${show(P)}% is ${show(P)}/100.`, '÷ 100 moves each digit two places right (hundredths are the second place after the point).', `${show(P)} ÷ 100 = ?`);
+  card('pct-to-decimal', 'Percent is hundredths', `% means out of 100, so ${show(P)}% is ${show(P)} hundredths.`, 'The first place after the point is tenths, the second is hundredths.', `Write ${show(P)} hundredths in those places: ?`);
 
 function mixedImproper(a: number, b: number, tap: boolean): HelpCard {
-  return card('mixed-number', 'Each whole is a full set of parts', `Each whole is made of ${b}/${b}.`,
-    tap ? `How many wholes fit in ${a}/${b}? That is the whole number.` : `Take out whole lots of ${b} from the top ${a}: the leftover is the fraction part.`,
-    tap ? `What is left over goes on top of ${b}: ${a} − (wholes × ${b}) = ?` : `How many times does ${b} go into ${a}? ?`);
+  if (tap) {
+    return card('mixed-number', 'Each whole is a full set of parts', `Each whole is made of ${b}/${b}.`, `How many ${b}s fit in ${a} without going over? That is the whole number.`,
+      `Take those ${b}s off ${a}. What is left goes on top of ${b}: ${a} − (those ${b}s) = ?`);
+  }
+  // A known fact that is just too big, so the pupil can see how far to go.
+  const m = [2, 5, 10].find((x) => x * b > a);
+  return card('mixed-number', 'Each whole is a full set of parts', `Each whole uses ${b} parts.`,
+    ...(m ? [`A fact you know: ${m} × ${b} = ${m * b}. That is more than ${a}, so fewer than ${m} wholes fit.`] : []),
+    `Which times-${b} fact gets closest to ${a} without going over? ?`);
 }
 
 const conversions: Helper = (q) => {
@@ -179,6 +186,7 @@ const conversions: Helper = (q) => {
     const d = dec(p[0]);
     if (d) {
       if (ch && ch.some((c) => c.includes('%'))) return decToPct(p[0], true);
+      if (/power of 10/i.test(prompt)) return null;
       return decToFrac(p[0], ch);
     }
     const f = frac(p[0]);
@@ -186,9 +194,20 @@ const conversions: Helper = (q) => {
       const mixed = ch && ch.some((c) => c.includes(' '));
       if (mixed || (ch === null && f[0] > f[1] && /mixed/i.test(prompt))) return mixedImproper(f[0], f[1], true);
       if (ch && ch.some((c) => c.includes('/')) && !/decimal/i.test(prompt)) {
+        // Choice bottoms in the starting bottom's times table: if they all use one multiplier, name it.
+        const ks = new Set<number>();
+        for (const c of ch) {
+          const g = frac(c);
+          if (g && g[1] > f[1] && g[1] % f[1] === 0) ks.add(g[1] / f[1]);
+        }
+        if (ks.size === 1) {
+          const k = [...ks][0], to = f[1] * k;
+          return card('equivalent-fractions', 'Match the bottom first', `Look at the bar: ${f[1]} parts, ${f[0]} shaded.`,
+            `Which choice bottoms are in the ${f[1]} times table? ${f[1]} → ${to} is × ${k}.`, `Do the same to the top: ${f[0]} × ${k} = ? Which choice matches?`);
+        }
         return card('equivalent-fractions', 'Do the same to the top and the bottom',
-          'Equal fractions come from times-ing (or dividing) the top and the bottom by the same number.',
-          `Check each choice: how many times bigger is its bottom than ${f[1]}? And its top than ${f[0]}?`, 'Which choice has both times-ed by the same number? ?');
+          'Equal fractions come from multiplying (or dividing) the top and the bottom by the same number.',
+          `Check each choice: how many times bigger is its bottom than ${f[1]}? And its top than ${f[0]}?`, 'Which choice has both multiplied by the same number? ?');
       }
       return tenthFracToDec(f[0], f[1]) ?? simpleFracToDec(f[0], f[1]);
     }
@@ -205,7 +224,10 @@ const fillIns: Helper = (q) => {
   let m = /^\?\/(\d+)$/.exec(R);
   if (m) {
     const b = Number(m[1]);
-    if (L === '1') return card('fraction-bonds', 'One whole is the bottom over the bottom', `Cut one whole into ${b} equal parts.`, `How many ${nameOf(b)} make the whole? ?`);
+    if (L === '1') {
+      const nm = nameOf(b), single = one(1, nm);
+      return card('fraction-bonds', 'Count the parts in the whole', `The whole is cut into ${nm}.`, `Each ${single} is 1/${b}.`, `How many ${nm} fill the whole? ?`);
+    }
     const mix = /^(\d+) (\d+)\/(\d+)$/.exec(L);
     if (mix && Number(mix[3]) === b) {
       const w = Number(mix[1]), n = Number(mix[2]);
@@ -232,6 +254,23 @@ const fillIns: Helper = (q) => {
 
 // ---------------------------------------------------------------- times and divide by 10, 100, 1000, and decimal order
 
+type Part = { digit: number; exp: number };
+const PLACE_NAMES: Record<number, { one: string; many: string }> = {
+  3: { one: 'thousand', many: 'thousands' }, 2: { one: 'hundred', many: 'hundreds' }, 1: { one: 'ten', many: 'tens' }, 0: { one: 'one', many: 'ones' },
+  [-1]: { one: 'tenth', many: 'tenths' }, [-2]: { one: 'hundredth', many: 'hundredths' }, [-3]: { one: 'thousandth', many: 'thousandths' },
+  [-4]: { one: 'ten-thousandth', many: 'ten-thousandths' }, [-5]: { one: 'hundred-thousandth', many: 'hundred-thousandths' },
+};
+const placeName = (e: number) => PLACE_NAMES[e] ?? { one: 'place', many: 'place' };
+/** The non-zero digits of a plain number with their place values, biggest place first (null when too long to name). */
+function placeParts(x: string): Part[] | null {
+  if (!/^\d+(\.\d+)?$/.test(x)) return null;
+  const [i, f = ''] = x.split('.');
+  const out: Part[] = [];
+  [...i].forEach((c, n) => { if (c !== '0') out.push({ digit: Number(c), exp: i.length - 1 - n }); });
+  [...f].forEach((c, n) => { if (c !== '0') out.push({ digit: Number(c), exp: -(n + 1) }); });
+  return out.length && out.length <= 3 && out.every((d) => d.exp <= 3 && d.exp >= -5) ? out : null;
+}
+
 const shift: Helper = (q) => {
   const s = sum(q);
   if (!s || (s.op !== '×' && s.op !== '÷')) return null;
@@ -240,11 +279,23 @@ const shift: Helper = (q) => {
   const pl = (k: number) => `${k} place${k > 1 ? 's' : ''}`;
   if (s.c === null && s.a !== null && isPow(s.b)) {
     const k = placesOf(s.b!), x = show(s.a);
-    if (s.op === '×') {
-      if (!q.parts[0].includes('.')) return null;
-      return card('times-decimals', `Times ${s.b}: digits move ${pl(k)} left`, `× ${s.b} makes every digit ${s.b} times bigger: each digit moves ${pl(k)} to the left.`, `Slide each digit of ${x} ${pl(k)} to the left (the point seems to move right), filling gaps with zeros.`, 'Read the new number: ?');
-    }
-    return card('divide-decimals', `Divide by ${s.b}: digits move ${pl(k)} right`, `÷ ${s.b} makes every digit ${s.b} times smaller: each digit moves ${pl(k)} to the right.`, `Slide each digit of ${x} ${pl(k)} to the right (the point seems to move left), filling gaps with zeros.`, 'Read the new number: ?');
+    if (s.op === '×' && !q.parts[0].includes('.')) return null;
+    // A times-table fact like 60 ÷ 10 gets the basic facts' "take off the zero" card instead.
+    if (s.op === '÷' && s.b === 10 && Number.isInteger(s.a) && s.a % 10 === 0 && s.a <= 120) return null;
+    const left = s.op === '×', dir = left ? 'left' : 'right';
+    const parts = placeParts(x);
+    const title = `${left ? 'Times' : 'Divide by'} ${s.b}: each digit moves ${pl(k)} ${dir}`;
+    const rule = `${left ? '×' : '÷'} ${s.b} makes every digit ${s.b} times ${left ? 'bigger' : 'smaller'}.`;
+    const kind = left ? 'times-decimals' : 'divide-decimals';
+    if (!parts) return card(kind, title, rule, `Each digit moves ${pl(k)} to the ${dir}.`, 'Write the new number: ?');
+    const say = (d: Part) => `${d.digit} ${d.digit === 1 ? placeName(d.exp).one : placeName(d.exp).many}`;
+    const verb = (d: Part) => (d.digit === 1 ? 'moves' : 'move');
+    const lo = parts[parts.length - 1], hi = parts[0];
+    const landing = (d: Part) => placeName(d.exp + (left ? k : -k)).many;
+    let move: string;
+    if (k === 1 && parts.length > 1) move = `${rule} The ${say(lo)} ${verb(lo)} into the ${landing(lo)} place. Where does the ${say(hi)} go?`;
+    else move = `${rule} Each digit moves ${pl(k)} ${dir}. Which place ${lo.digit === 1 ? 'does' : 'do'} the ${say(lo)} move into?`;
+    return card(kind, title, `${x} is ${parts.map(say).join(parts.length > 2 ? ', ' : ' and ')}.`, move, 'Write the new number: ?');
   }
   if (s.a === null && s.b !== null && isPow(s.b) && s.c !== null) {
     return card('times-decimals', 'Do the opposite', `The opposite of ${s.op} ${s.b} is ${s.op === '×' ? '÷' : '×'} ${s.b}.`, `${show(s.c)} ${s.op === '×' ? '÷' : '×'} ${s.b} = ?`);
@@ -300,7 +351,7 @@ const decimalAddSub: Helper = (q) => {
     if (s.op === '−' && s.c === null && s.a !== null && s.b !== null) {
       const { a, b } = s;
       if (Number.isInteger(a) && dpOf(b) > 0) {
-        if (b < 1 && a > 1) return card('take-from-whole', 'Break off one whole', `Break one whole off ${a}: ${a} is ${a - 1} and 1.`, `1 − ${show(b)} = ? (what makes 1 with ${show(b)}?)`, `Put the ${a - 1} back with it: ${a - 1} + ? = ?`);
+        if (b < 1 && a > 1) return card('take-from-whole', 'Break off one whole', `Break one whole off ${a}: ${a} is ${a - 1} and 1.`, `1 − ${show(b)} = ? (what makes 1 with ${show(b)}?)`, `Put your answer to step 2 back with the ${a - 1}: ?`);
         return gapCard(b, a);
       }
     }
@@ -328,7 +379,7 @@ const decimalAddSub: Helper = (q) => {
     }
     if (Number.isInteger(a)) return null;
     const ceilB = Math.ceil(b), j2 = a - ceilB;
-    return card('count-up', 'Count up from the smaller number', `Count up from ${show(b)} to ${show(a)} in two jumps.`, `First jump to ${ceilB}: ${bt} tenths + ? tenths = 10 tenths.`, `Then ${ceilB} → ${show(a)} is ${show(j2)}. Add the two jumps: ?`);
+    return card('count-up', 'Count up from the smaller number', `Count up from ${show(b)} to ${show(a)} in two jumps.`, `First jump to ${ceilB}: ${bt} tenths + ? tenths = 10 tenths. Write that jump as a decimal.`, `Then ${ceilB} → ${show(a)} is ${show(j2)}. Add the two jumps: ? + ${show(j2)} = ?`);
   }
   // Hundredths: the tenths part of the second number first, then its hundredths.
   const word = s.op === '+' ? 'Add' : 'Take away';
@@ -366,11 +417,12 @@ const decimalDoubleHalf: Helper = (q) => {
   else if (p.length === 4 && /^half of$/i.test(p[0]) && p[2] === '=' && p[3] === '?') x = num(p[1]);
   if (x === null || Number.isInteger(x) || dpOf(x) > 2) return null;
   const w = Math.floor(x), f = Math.round((x - w) * 100) / 100;
+  const tn = Math.round(f * 10), tenths = tn === 1 ? 'tenth' : 'tenths';
   if (double) {
-    if (w === 0) return card('decimal-double', 'Double the tenths', `${show(f)} is ${Math.round(f * 10)} tenths.`, `Double it: ${Math.round(f * 10)} + ${Math.round(f * 10)} = ? tenths.`, 'Write that many tenths as a decimal: ?');
+    if (w === 0) return card('decimal-double', 'Double the tenths', `${show(f)} is ${tn} ${tenths}.`, `Double it: ${tn} + ${tn} = ? tenths.`, 'Write that many tenths as a decimal: ?');
     return card('decimal-double', 'Double each part', `Split ${show(x)} into ${w} and ${show(f)}.`, `Double ${w} is ${w * 2} and double ${show(f)} is ${show(f * 2)}.`, `${w * 2} + ${show(f * 2)} = ?`);
   }
-  if (w === 0) return card('decimal-half', 'Half the tenths', `${show(f)} is ${Math.round(f * 10)} tenths.`, `Share them in 2: ${Math.round(f * 10)} ÷ 2 = ? tenths.`, 'Write that many tenths as a decimal: ?');
+  if (w === 0) return card('decimal-half', 'Half the tenths', `${show(f)} is ${tn} ${tenths}.`, `Share them in 2: ${tn} ÷ 2 = ? tenths.`, 'Write that many tenths as a decimal: ?');
   return card('decimal-half', 'Halve each part', `Split ${show(x)} into ${w} and ${show(f)}.`, `Half of ${w} is ${show(w / 2)} and half of ${show(f)} is ${show(f / 2)}.`, `${show(w / 2)} + ${show(f / 2)} = ?`);
 };
 
@@ -479,7 +531,8 @@ const equivalent: Helper = (q) => {
     if (!f) return null;
     const g = gcd(f[0], f[1]);
     if (g < 2) return null;
-    return card('simplify', 'Divide the top and bottom by the same number', `Find the biggest number that goes into both ${f[0]} and ${f[1]}.`, `${f[0]} and ${f[1]} are both in the ${g} times table.`, `Divide the top and the bottom by ${g}: ${f[0]} ÷ ${g} = ? and ${f[1]} ÷ ${g} = ?`);
+    return card('simplify', 'Divide the top and bottom by the same number', `Find the biggest number that goes into both ${f[0]} and ${f[1]}. Think of the times tables they are both in.`,
+      `Divide the top and the bottom by that number: ${f[0]} ÷ (that number) and ${f[1]} ÷ (that number).`, 'Write the new fraction: ?');
   }
   if (p.length !== 3 || p[1] !== '=') return null;
   void ch;
@@ -494,11 +547,20 @@ const equivalent: Helper = (q) => {
   if (c === null && d !== null) {
     const { op, k } = how(b, d);
     if (!Number.isInteger(k)) return null;
+    // When the multiplier would be the answer, the pupil finds it.
+    if (op === '÷' || a === 1) {
+      return card('equivalent-fractions', 'Do the same to the top and the bottom', `Look at the bottoms: ${b} → ${d}. How many times ${op === '÷' ? 'smaller is' : 'bigger is'} ${d} than ${b}?`,
+        'To keep the fraction equal, do the same to the top.', `${a} ${op} (that number) = ?`);
+    }
     return card('equivalent-fractions', 'Do the same to the top and the bottom', `Look at the bottoms: ${b} → ${d}. That is ${op} ${k}.`, 'To keep the fraction equal, do the same to the top.', `${a} ${op} ${k} = ?`);
   }
   if (d === null && c !== null) {
     const { op, k } = how(a, c);
     if (!Number.isInteger(k)) return null;
+    if (op === '÷' || b === 1) {
+      return card('equivalent-fractions', 'Do the same to the top and the bottom', `Look at the tops: ${a} → ${c}. How many times ${op === '÷' ? 'smaller is' : 'bigger is'} ${c} than ${a}?`,
+        'To keep the fraction equal, do the same to the bottom.', `${b} ${op} (that number) = ?`);
+    }
     return card('equivalent-fractions', 'Do the same to the top and the bottom', `Look at the tops: ${a} → ${c}. That is ${op} ${k}.`, 'To keep the fraction equal, do the same to the bottom.', `${b} ${op} ${k} = ?`);
   }
   return null;
@@ -520,8 +582,9 @@ const percentChange: Helper = (q) => {
   if (p.length === 7 && p[1] === '×' && p[3] === '=' && p[5] === '×' && p[6] === '?') {
     const A = pct(p[0]), B = pct(p[4]), n = num(p[2]);
     if (A !== null && B !== null && n !== null) {
-      return card('percent-swap', 'A percent and a number can swap', 'A trick: the percent and the number can swap places and the answer stays the same.',
-        `On the left the percent is ${A}% and the number is ${n}.`, `On the right the percent is ${B}%. Swap them over: what number goes in the gap? ?`);
+      const ex = [[20, 5, 1], [50, 2, 1], [40, 10, 4], [30, 10, 3]].find(([x, y]) => ![A, B, n].includes(x) && ![A, B, n].includes(y))!;
+      return card('percent-swap', 'Try a small swap', `Try ${ex[0]}% × ${ex[1]} = ${ex[2]}, and ${ex[1]}% × ${ex[0]} = ${ex[2]}. The same!`, 'The percent and the number traded places.',
+        `Your left side is ${A}% × ${n}. Trade places on the right side: ${B}% × ?. What goes in the gap? ?`);
     }
   }
   return null;

@@ -15,7 +15,7 @@ interface Lin {
   op: '+' | '−' | null;
   k: number;
 }
-function parseLin(text: string): Lin | null {
+export function parseLin(text: string): Lin | null {
   const m = /^(\d*)([a-z])(?: ([+−-]) (\d+(?:\.\d+)?))?$/.exec(text.trim());
   if (!m) return null;
   return { coef: m[1] === '' ? 1 : Number(m[1]), letter: m[2], op: m[3] ? (m[3] === '+' ? '+' : '−') : null, k: m[4] ? Number(m[4]) : 0 };
@@ -176,11 +176,12 @@ const patternNext: Helper = (q) => {
   const n = v as number[];
   const jump = n[1] - n[0];
   if (jump === 0 || n.some((x, i) => i > 0 && x - n[i - 1] !== jump)) return null;
-  const up = jump > 0, by = show(Math.abs(jump)), last = n[n.length - 1];
-  return card('pattern-next', up ? `It goes up by ${by}` : `It goes down by ${by}`,
-    `Find the jump: from ${show(n[0])} to ${show(n[1])} is ${up ? 'up' : 'down'} ${by}.`,
-    `Check the next gap: ${show(n[1])} to ${show(n[2])} is ${up ? 'up' : 'down'} ${by} too.`,
-    `${show(last)} ${up ? '+' : '−'} ${by} = ?`);
+  // The pupil finds the jump: its size is never in the title or the steps.
+  const up = jump > 0, last = n[n.length - 1];
+  return card('pattern-next', 'Find the jump',
+    `How far ${up ? 'up' : 'down'} is it from ${show(n[0])} to ${show(n[1])}?`,
+    `Check ${show(n[1])} to ${show(n[2])}: is it the same jump?`,
+    `${show(last)} ${up ? '+' : '−'} that jump = ?`);
 };
 
 // ---------------------------------------------------------------- true or false signs

@@ -114,6 +114,16 @@ function Part({ text: raw, blank, unit }: { text: string; blank: ReactNode; unit
  * What the "r" in a division means, with a worked example and dots in groups. The example is never the question itself.
  */
 export function RemainderHelp({ parts }: { parts: string[] }) {
+  // A big dividend draws a tall picture, so keep this box to its first line.
+  if (Number(parts[0]) > 60) {
+    return (
+      <div className="remainder-help">
+        <p>
+          <strong>r</strong> means <strong>remainder</strong>: what is left over when you share into equal groups.
+        </p>
+      </div>
+    );
+  }
   const [n, d] = parts[0] === '14' && parts[2] === '4' ? [9, 4] : [14, 4];
   const q = Math.floor(n / d);
   const r = n % d;
@@ -215,20 +225,25 @@ export function FractionHelp({ parts }: { parts: string[] }) {
   );
 }
 
-/** Hours into minutes: 1 hour is 60 minutes, so use the 6 times table. The worked example is never the question itself. */
+/**
+ * Hours into minutes (or minutes into seconds): 1 hour is 60 minutes, so use the 6 times table. The worked example is never
+ * the question itself, and the box never states the fact the question asks for (no "1 hour = 60 minutes" on a 1 h question).
+ */
 export function HoursHelp({ parts }: { parts: string[] }) {
-  const asked = /^(\d+) h$/.exec(parts[0] ?? '');
-  const ex = asked && Number(asked[1]) === 4 ? 5 : 4;
+  const asked = /^(\d+) (h|min)(?:\s|$)/.exec(parts[0] ?? '');
+  if (!asked || parts[0] === '1 h' || parts[0] === '1 min') return null;
+  const [big, small] = asked[2] === 'min' ? ['minute', 'seconds'] : ['hour', 'minutes'];
+  const ex = Number(asked[1]) === 4 ? 5 : 4;
   return (
     <div className="remainder-help">
       <p>
-        <strong>1 hour = 60 minutes.</strong> Use your <strong>6 times table</strong>, then put a 0 on the end.
+        <strong>1 {big} = 60 {small}.</strong> Use your <strong>6 times table</strong>, then put a 0 on the end.
       </p>
       <p className="remainder-help__sum">
         {ex} × 6 = {ex * 6}, so {ex} × 60 = {ex * 60}
       </p>
       <p>
-        {ex} hours = {ex * 60} minutes. Half an hour is 30 minutes.
+        {ex} {big}s = {ex * 60} {small}.
       </p>
     </div>
   );
@@ -246,11 +261,14 @@ export function UnitHelp({ parts }: { parts: string[] }) {
   const [exFrom, exTo] = times ? [exBig, exBig * factor] : [exBig * factor, exBig];
   return (
     <div className="remainder-help">
-      <p>
-        <strong>
-          1 {word(big, false)} = {factor} {word(small)}.
-        </strong>
-      </p>
+      {/* "1000 mL = ? L": the fact is the answer, so leave it out. */}
+      {(times || n !== factor) && (
+        <p>
+          <strong>
+            1 {word(big, false)} = {factor} {word(small)}.
+          </strong>
+        </p>
+      )}
       <p>
         {word(from).replace(/^./, (c) => c.toUpperCase())} to {word(to)}: there are {times ? 'more' : 'fewer'} of them, so <strong>{times ? 'multiply' : 'divide'} by {factor}</strong>.
       </p>
@@ -267,7 +285,11 @@ const DIRECTIONS = ['north', 'east', 'south', 'west'];
 export function TurnHelp({ parts }: { parts: string[] }) {
   const m = /^Face (north|east|south|west)/i.exec(parts[0] ?? '');
   const start = m ? DIRECTIONS.indexOf(m[1].toLowerCase()) : 0;
-  const ex = (start + 1) % 4;
+  // Where this question ends up, so the example never shows it (James: the box must not give the answer).
+  const text = parts.join(' ');
+  const steps = /half turn/i.test(text) ? 2 : /(\d+) quarter/i.exec(text) ? Number(/(\d+) quarter/i.exec(text)![1]) : 1;
+  const answer = (((start + (/anticlockwise/i.test(text) ? -steps : steps)) % 4) + 4) % 4;
+  const ex = [0, 1, 2, 3].find((e) => e !== start && e !== answer && (e + 1) % 4 !== answer) ?? 0;
   return (
     <div className="remainder-help">
       <p>
@@ -391,6 +413,8 @@ export function QuestionModal({
   const [hint, setHint] = useState<ReturnType<typeof hintFor> | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const help = helpKind(question);
+  // "Less than 90° is ?": the picture names must not come with the same words as the clue.
+  const clueQuestion = /^(Between|Less|More|Exactly)/.test(question.parts[0] ?? '') && /kind of angle/i.test(question.prompt ?? '');
   // A picture of the numbers (ten-frames, a number line, fraction bars...) when the question has no figure of its own (H8).
   const picture = useMemo(() => pictureFor(question), [question]);
   // The pupil's secure facts, so a card can start from one they know ("You know 6 × 7"). Loaded the first time help opens.
@@ -699,7 +723,7 @@ export function QuestionModal({
                   </ol>
                 </div>
               ))}
-            {helpOpen && help && (help === 'angles' ? <AngleNames /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : help === 'fractions' ? <FractionHelp parts={question.parts} /> : help === 'hours' ? <HoursHelp parts={question.parts} /> : help === 'units' ? <UnitHelp parts={question.parts} /> : help === 'turns' ? <TurnHelp parts={question.parts} /> : <SymbolHelp />)}
+            {helpOpen && help && !(help === 'units' && picture?.kind === 'unit-ladder') && (help === 'angles' ? <AngleNames hideRanges={clueQuestion} /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : help === 'fractions' ? <FractionHelp parts={question.parts} /> : help === 'hours' ? <HoursHelp parts={question.parts} /> : help === 'units' ? <UnitHelp parts={question.parts} /> : help === 'turns' ? <TurnHelp parts={question.parts} /> : <SymbolHelp />)}
           </div>
         )}
         </div>

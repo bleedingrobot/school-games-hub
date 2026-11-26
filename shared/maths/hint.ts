@@ -50,8 +50,10 @@ export function helpKind(q: Pick<Question, 'parts' | 'prompt' | 'choiceLabels' |
   if (fractionSteps(q.parts)) return 'fractions';
   if (unitSteps(q.parts)) return 'units';
   if (/way are you (now )?facing/i.test(q.prompt ?? '')) return 'turns';
-  // Hours into minutes ("3 h = ? min"): use the 6 times table (James, 26 Nov 2026).
-  if (q.parts.includes('min') && q.parts.some((p) => /(\d|½) h(\s|$)/.test(p))) return 'hours';
+  // Hours into minutes ("3 h = ? min") and minutes into seconds ("3 min = ? s"): use the 6 times table (James, 26 Nov 2026).
+  // Not for 1 h, 1 min or a fraction of one: the box's own fact would be the answer.
+  if (q.parts.includes('min') && q.parts.some((p) => /^\d+ h(\s|$)/.test(p) && p !== '1 h')) return 'hours';
+  if (q.parts.includes('s') && q.parts.some((p) => /^\d+ min$/.test(p) && p !== '1 min')) return 'hours';
   const texts = [...q.parts, q.prompt ?? '', ...(q.choiceLabels ?? [])];
   return texts.some((t) => /[<>≤≥≠]/.test(t)) ? 'symbols' : null;
 }
