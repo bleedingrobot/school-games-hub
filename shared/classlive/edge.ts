@@ -17,8 +17,22 @@
 import type { Positions, Spot, Teleport } from './corners';
 import { LANTERN_R, MAX_SPEED, type GhostGame } from './ghost';
 
-/** Teachers whose Ghost Tag games run on Cloudflare (James, 26 Nov 2026 NZ: "with my log on only"). */
+/**
+ * Teachers who get the "Run it on" choice on the Ghost Tag card, to compare Cloudflare with the school server
+ * (James, 26 Nov 2026 NZ: "with my log on only").
+ */
 export const EDGE_TEACHERS: readonly string[] = ['e5dfc120-92de-4a09-a3fa-acc400dd4990'];
+
+/**
+ * Every teacher's Ghost Tag runs on Cloudflare (James, 27 Nov 2026 NZ, after a 30-pupil test: "Move every teacher now").
+ * Set to false to put everyone but EDGE_TEACHERS back on the school server.
+ */
+export const EDGE_EVERYONE = true;
+
+/** Whether this teacher's new game of this activity runs its positions on Cloudflare. */
+export function edgeFor(teacher: string, activity: string): boolean {
+  return activity === 'ghost' && (EDGE_EVERYONE || EDGE_TEACHERS.includes(teacher));
+}
 
 /** How often the room sends devices the spots, and how often a pad sends its own (ms). */
 export const EDGE_TICK_MS = 100;

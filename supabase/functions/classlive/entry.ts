@@ -1,7 +1,7 @@
 // Connects the Class Live handler to Supabase. Edit handler.ts or shared/classlive/server.ts for the logic, then run
 // `npm run build:functions -- classlive` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
-import { EDGE_TEACHERS, makeTicket, TICKET_MS, type EdgeServices } from '../../../shared/classlive/edge';
+import { edgeFor, makeTicket, TICKET_MS, type EdgeServices } from '../../../shared/classlive/edge';
 import { readOpenGames } from '../../../shared/classlive/limits';
 import type { RoomRow, StoredQuestion } from '../../../shared/classlive/server';
 import { parseFocus } from '../../../shared/maths/focus';
@@ -57,7 +57,7 @@ function edgeServices(): EdgeServices | undefined {
   const call = (room: number, what: string, init: RequestInit = {}) =>
     fetch(`${base}/room/${room}/${what}`, { ...init, signal: AbortSignal.timeout(3000), headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' } });
   return {
-    allowed: (teacher, activity) => activity === 'ghost' && EDGE_TEACHERS.includes(teacher),
+    allowed: edgeFor,
     async positions(room) {
       try {
         const res = await call(room, 'positions');

@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { EdgeRoom, ghostSync, makeTicket, readTicket, type EdgeServices } from './edge';
+import { EDGE_EVERYONE, EDGE_TEACHERS, EdgeRoom, edgeFor, ghostSync, makeTicket, readTicket, type EdgeServices } from './edge';
 import type { GhostGame } from './ghost';
 import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock } from './pretendClass';
 import { classLiveStep } from './server';
 
 describe('Class Live on Cloudflare (pilot)', () => {
+  it('every teacher gets Cloudflare for Ghost Tag only', () => {
+    expect(edgeFor('any-teacher', 'ghost')).toBe(EDGE_EVERYONE);
+    expect(edgeFor(EDGE_TEACHERS[0], 'ghost')).toBe(true);
+    expect(edgeFor(EDGE_TEACHERS[0], 'corners')).toBe(false);
+  });
+
   it('tickets, the speed limit, teleports and what each device may see', async () => {
     const tk = await makeTicket('sec', { r: 7, u: 'a', k: 'p', e: 5000 });
     expect(await readTicket('sec', tk, 7, 1000)).toMatchObject({ u: 'a', k: 'p' });

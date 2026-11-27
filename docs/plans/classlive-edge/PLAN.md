@@ -45,3 +45,7 @@ and game stays on the database, with the one-live-game lock (PR #891).
    Corners, Glitches, Floor is Lava, Colour Clash) and other teachers.
 3. Move the whole session (the clock, catches, the `view` tick) into the room, writing only joins, scores and trophies
    to Supabase; then the one-live-game lock can be loosened.
+
+## Everyone on Cloudflare (27 Nov 2026 NZ)
+
+After a 30-pupil test (rooms 64 and 65: fresh positions every 0.1 s instead of 0.39 s, no position calls to the database), James chose "Move every teacher now". `EDGE_EVERYONE` in shared/classlive/edge.ts puts every new Ghost Tag game on Cloudflare; `EDGE_TEACHERS` still get the "Run it on" choice to compare. Set-time games (opened by the database) still run on the school server.
