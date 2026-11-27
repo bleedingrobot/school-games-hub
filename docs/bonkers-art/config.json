@@ -28,6 +28,30 @@
       "max": 800
     },
     {
+      "name": "hero-kitchen-knight-girl",
+      "prompt": "A brave little girl hero dressed as a Kitchen Knight: a shiny saucepan worn as a helmet over her pigtails, a flowery apron, oven-mitt gloves, holding up a giant wooden rolling pin like a mighty sword, determined funny grin, heroic pose, facing slightly to the right. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "kitchen-knight-girl",
+      "max": 800
+    },
+    {
+      "name": "hero-disco-dazzler-boy",
+      "prompt": "A cheeky little boy hero dressed as a Disco Dazzler: a sparkly purple cape, a glittery headband, big round sunglasses, wobbling proudly on a pair of ridiculous sparkly pink high heels with tiny disco balls on the toes, arms out in a funny dance-move pose, huge confident grin, facing slightly to the right. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "disco-dazzler-boy",
+      "max": 800
+    },
+    {
       "name": "monster-sock-goblin",
       "prompt": "A silly little goblin monster made out of a stripy odd sock, one wonky eye bigger than the other, a holey toe for a nose, floppy sock ears, tiny arms waving a clothes peg, cheeky grumpy face, a little cloud of cartoon stink lines, funny not scary. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
       "size": [
