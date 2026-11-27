@@ -114,7 +114,7 @@ select ok((select bool_or(p ->> 'trophy' = 'pair-double-slayer') from jsonb_arra
 select ok(not (select bool_or(p ->> 'trophy' like 'beanstalk-%') from jsonb_array_elements(public.hall_of_fame() -> 'pictures') p),
   'garden friend pictures (maths progress) stay off the hall');
 select pg_temp.reset();
-select is(public.hall_name('Bob'), null, 'a typed own name never shows in the hall');
+select is(public.hall_name('Bob'), 'Bob', 'an approved own name shows in the hall');
 
 -- ---- The new season note ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz');

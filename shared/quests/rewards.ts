@@ -17,7 +17,7 @@ export interface QuestRewardInfo {
 }
 
 export const QUEST_REWARDS: QuestRewardInfo[] = [
-  { id: 'scroll', name: 'Rename Scroll', emoji: '📜', what: 'A Name Scroll: make up your own name (your teacher says yes).', ready: true },
+  { id: 'scroll', name: 'Rename Scroll', emoji: '📜', what: 'A Name Scroll: make up your own name for 3 weeks (your teacher says yes).', ready: true },
   { id: 'title', name: 'Hero Title', emoji: '🏷️', what: 'A title to show under your name, like “the Brave”.', ready: true },
   { id: 'turns', name: 'Bonus Turns Day', emoji: '⏳', what: 'One day of unlimited turns in this game, on a day you choose.', ready: true },
   { id: 'frame', name: 'Quest Frame', emoji: '🖼️', what: 'A frame to go around your avatar.', ready: true },

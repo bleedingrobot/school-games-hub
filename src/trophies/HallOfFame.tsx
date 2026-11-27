@@ -7,7 +7,7 @@ import './favourites.css';
 
 const PLACES = ['1st', '2nd', '3rd', '4th', '5th'];
 
-/** A pupil without a made-up name (an approved own name) shows as "A classmate". */
+/** Every pupil shows by name (made-up or approved own name); "A classmate" only if a name is ever missing. */
 const nameOf = (p: HallPerson) => p.name ?? 'A classmate';
 
 /**

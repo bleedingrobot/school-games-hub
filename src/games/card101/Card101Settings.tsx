@@ -3,6 +3,8 @@ import { useGameKeys } from '../../kit';
 import type { BotLevel } from '../../../shared/botGame';
 import { BOT_LEVEL_NAMES } from './text';
 import type { Card101Prefs } from './prefs';
+import type { CardBacks } from './useCardBacks';
+import { BackRow } from './Window';
 
 const LEVEL_ABOUT: Record<BotLevel, string> = {
   'very-easy': 'Forgets its cards and knocks at random.',
@@ -70,6 +72,7 @@ export function Card101Settings({
   starting = false,
   saves = false,
   onHelp,
+  backs,
 }: {
   prefs: Card101Prefs;
   onChange: (prefs: Card101Prefs) => void;
@@ -80,13 +83,14 @@ export function Card101Settings({
   /** Finished games are saved (false in the stand-alone preview). */
   saves?: boolean;
   onHelp: () => void;
+  backs: CardBacks;
 }) {
   const rootRef = useRef<HTMLElement>(null);
   useGameKeys(rootRef);
   return (
     <section className="chess-setup c101-setup" aria-labelledby="c101-setup-title" ref={rootRef}>
-      <h1 id="c101-setup-title" className="page-title">
-        🃏 101
+      <h1 id="c101-setup-title" className="c101-setup__title">
+        101 <span>Card night at the bach</span>
       </h1>
       <form
         className="chess-setup__card"
@@ -101,6 +105,7 @@ export function Card101Settings({
           reaches {prefs.target}, the lowest total wins.
         </p>
         <CardValues />
+        <BackRow backs={backs} />
 
         <Chips
           legend="Bots"

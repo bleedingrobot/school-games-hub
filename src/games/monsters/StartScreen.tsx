@@ -15,7 +15,7 @@ export function StartScreen({ onStart }: { onStart: (picks: [TypeId, TypeId], te
   return (
     <section className="mp-start" aria-labelledby="mm-start-title">
       <h1 id="mm-start-title">Maths Monsters</h1>
-      <p>Welcome to Harbour Town! Pick the two monsters you start with. Every attack and every catch is a maths question, and each type asks its own kind.</p>
+      <p>Welcome to Harbour Town! Pick the two monsters you start with. Every battle starts with a Power up maths question, and every catch asks one too. They all come from your own maths ladder, whatever type your monster is.</p>
       <div className="mp-start__picks">
         {[0, 1].map((i) => (
           <label key={i}>

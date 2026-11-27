@@ -1,0 +1,259 @@
+{
+  "_about": "101 graphics upgrade (docs/101-ART-PLAN.md). Check with: python3 scripts/game_art.py 101 paint OUT --dry-run",
+  "game": "101",
+  "filename_prefix": "101/img",
+  "style": "s",
+  "styles": {
+    "s": "Bright flat storybook illustration, clean simple shapes, soft gentle shading, sunny cheerful colours, smooth and tidy like a modern children's picture book or a friendly mobile game, made for children aged 7 to 11. No text, no letters, no numbers, no writing anywhere. "
+  },
+  "inbox": "~/dragon-art-inbox/101-art/set",
+  "picks": "docs/101-art/picks.json",
+  "art_dir": "src/games/card101/art/paint",
+  "home_dir": "src/assets/home",
+  "tints": {
+    "silver": {
+      "dark": [
+        48,
+        54,
+        64
+      ],
+      "mid": [
+        168,
+        176,
+        188
+      ],
+      "shine": [
+        250,
+        252,
+        255
+      ]
+    },
+    "bronze": {
+      "dark": [
+        70,
+        30,
+        12
+      ],
+      "mid": [
+        190,
+        112,
+        50
+      ],
+      "shine": [
+        255,
+        222,
+        180
+      ]
+    }
+  },
+  "pictures": [
+    {
+      "name": "back-bach-day",
+      "prompt": "A sunny New Zealand seaside bach deck seen from just behind a wooden outdoor table: weathered wooden deck boards across the bottom, a low wooden railing, golden sand, calm turquoise sea and gentle waves, a green headland on the right, a few round white clouds in a bright blue sky, a pōhutukawa tree with red flowers at the left edge, a striped beach towel over the railing. A quiet, empty place with nobody there, the middle calm and open so things placed on top stand out. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "bach-day"
+    },
+    {
+      "name": "back-bach-evening",
+      "prompt": "The same seaside bach deck at dusk: warm orange and violet sunset over a calm sea, strings of glowing round fairy lights hanging along the top, the wooden deck and railing in soft evening light, a lantern glowing at the right edge, the first stars in the sky. A quiet, empty place with nobody there, the middle calm and open so things placed on top stand out. Wide landscape.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "bach-evening"
+    },
+    {
+      "name": "wood",
+      "prompt": "Warm honey-brown wooden table planks running left to right, gentle wood grain and a few soft knots, friendly and clean, slightly worn like a beach bach table. Seen flat from straight above in even soft light, a plain seamless texture filling the whole picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "texture",
+      "folder": "table",
+      "file": "wood",
+      "max": 768,
+      "blend": true
+    },
+    {
+      "name": "felt",
+      "prompt": "Soft green card-table felt, a calm even mid green with a very faint woven fuzz, plain and smooth. Seen flat from straight above in even soft light, a plain seamless texture filling the whole picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "texture",
+      "folder": "table",
+      "file": "felt",
+      "max": 768,
+      "blend": true
+    },
+    {
+      "name": "back-classic",
+      "prompt": "Deep purple and indigo with neat rows of small round gold dots and a soft gold diamond shape glowing in the middle. A flat decorative pattern that fills the whole tall picture right out to every edge, symmetrical top to bottom, bold simple shapes that still read when tiny.",
+      "size": [
+        832,
+        1152
+      ],
+      "kind": "icon",
+      "folder": "backs",
+      "file": "classic",
+      "max": 360
+    },
+    {
+      "name": "back-pohutukawa",
+      "prompt": "Dark glossy green leaves with bright red fluffy pōhutukawa flowers spread evenly, a big flower in the middle. A flat decorative pattern that fills the whole tall picture right out to every edge, symmetrical top to bottom, bold simple shapes that still read when tiny.",
+      "size": [
+        832,
+        1152
+      ],
+      "kind": "icon",
+      "folder": "backs",
+      "file": "pohutukawa",
+      "max": 360
+    },
+    {
+      "name": "back-koru",
+      "prompt": "Swirling green and teal koru fern spirals curling in from the corners, interlocking in a balanced pattern on dark green. A flat decorative pattern that fills the whole tall picture right out to every edge, symmetrical top to bottom, bold simple shapes that still read when tiny.",
+      "size": [
+        832,
+        1152
+      ],
+      "kind": "icon",
+      "folder": "backs",
+      "file": "koru",
+      "max": 360
+    },
+    {
+      "name": "back-kea",
+      "prompt": "Overlapping olive green kea feathers like scales, with flashes of bright orange underwing feathers in the middle. A flat decorative pattern that fills the whole tall picture right out to every edge, symmetrical top to bottom, bold simple shapes that still read when tiny.",
+      "size": [
+        832,
+        1152
+      ],
+      "kind": "icon",
+      "folder": "backs",
+      "file": "kea",
+      "max": 360
+    },
+    {
+      "name": "back-paua",
+      "prompt": "Shimmering pāua shell swirls in blue, green, teal and violet, glossy and rainbow-like, flowing from the middle outwards. A flat decorative pattern that fills the whole tall picture right out to every edge, symmetrical top to bottom, bold simple shapes that still read when tiny.",
+      "size": [
+        832,
+        1152
+      ],
+      "kind": "icon",
+      "folder": "backs",
+      "file": "paua",
+      "max": 360
+    },
+    {
+      "name": "back-matariki",
+      "prompt": "A deep navy night sky with the small bright matariki star cluster glowing in the middle, tiny stars and a soft milky way sweeping across. A flat decorative pattern that fills the whole tall picture right out to every edge, symmetrical top to bottom, bold simple shapes that still read when tiny.",
+      "size": [
+        832,
+        1152
+      ],
+      "kind": "icon",
+      "folder": "backs",
+      "file": "matariki",
+      "max": 360
+    },
+    {
+      "name": "back-wave",
+      "prompt": "Big curling blue ocean waves with white foam tips stacked in rows, bright and bold like a surf poster. A flat decorative pattern that fills the whole tall picture right out to every edge, symmetrical top to bottom, bold simple shapes that still read when tiny.",
+      "size": [
+        832,
+        1152
+      ],
+      "kind": "icon",
+      "folder": "backs",
+      "file": "wave",
+      "max": 360
+    },
+    {
+      "name": "back-golden",
+      "prompt": "A shining golden sunburst of rays from the middle with a small simple golden crown shape in the centre, rich warm gold and amber. A flat decorative pattern that fills the whole tall picture right out to every edge, symmetrical top to bottom, bold simple shapes that still read when tiny.",
+      "size": [
+        832,
+        1152
+      ],
+      "kind": "icon",
+      "folder": "backs",
+      "file": "golden",
+      "max": 360
+    },
+    {
+      "name": "bird-kea",
+      "prompt": "A friendly cartoon portrait of a cheeky olive green New Zealand kea parrot with a curved grey beak and a flash of orange under its wing, head and shoulders, looking at the viewer with a happy expression, holding a small fan of plain purple playing cards close to its chest. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "birds",
+      "file": "kea",
+      "max": 256
+    },
+    {
+      "name": "bird-tui",
+      "prompt": "A friendly cartoon portrait of a glossy dark New Zealand tūī bird with shiny blue-green feathers and a white tuft of feathers at its throat, head and shoulders, looking at the viewer with a happy expression, holding a small fan of plain purple playing cards close to its chest. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "birds",
+      "file": "tui",
+      "max": 256
+    },
+    {
+      "name": "bird-weka",
+      "prompt": "A friendly cartoon portrait of a curious brown New Zealand weka bird with speckled brown feathers, a strong pointed beak and red eyes, head and shoulders, looking at the viewer with a happy expression, holding a small fan of plain purple playing cards close to its chest. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "birds",
+      "file": "weka",
+      "max": 256
+    },
+    {
+      "name": "knock-burst",
+      "prompt": "A bright burst of warm golden light: a round flash in the middle with short chunky rays and three soft rings spreading out, on a pure black background.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "glow",
+      "folder": "fx",
+      "file": "knock-burst",
+      "max": 384
+    },
+    {
+      "name": "trophy-gold",
+      "prompt": "A shiny gold trophy cup with two round handles on a short wooden base, a small star on the front, simple bold shapes, gentle shine. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "rewards",
+      "file": "trophy-gold",
+      "max": 256,
+      "tints": {
+        "silver": "trophy-silver",
+        "bronze": "trophy-bronze"
+      }
+    }
+  ]
+}

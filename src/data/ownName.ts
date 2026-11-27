@@ -36,6 +36,8 @@ export interface MyNameStatus {
   canPickToday: boolean;
   /** Their name now is a typed one. */
   typed: boolean;
+  /** When their typed name goes back to a made-up one (3 weeks after the teacher's Yes); null when it isn't typed. */
+  typedUntil: string | null;
 }
 
 export async function fetchMyNameStatus(): Promise<MyNameStatus> {
@@ -129,6 +131,8 @@ export interface PupilScrolls {
   scrolls: number;
   waiting: string | null;
   typed: boolean;
+  /** When their typed name goes back to a made-up one. */
+  typedUntil: string | null;
 }
 
 export async function fetchPupilScrolls(
@@ -139,4 +143,20 @@ export async function fetchPupilScrolls(
   });
   if (error || !data) fail(error ?? {}, "We couldn’t load their Name Scrolls.");
   return data as PupilScrolls;
+}
+
+/** Whole days left before a typed name goes back to a made-up one (at least 1 while it hasn't gone back). */
+export function daysLeft(until: string, now = Date.now()): number {
+  return Math.max(1, Math.ceil((new Date(until).getTime() - now) / 86_400_000));
+}
+
+/** "12 more days (until 9 Dec)": how long a typed name has left. Names last 3 weeks (migration 20261128100105). */
+export function timeLeftText(until: string, now = Date.now()): string {
+  const days = daysLeft(until, now);
+  const date = new Date(until).toLocaleDateString("en-NZ", {
+    day: "numeric",
+    month: "short",
+    timeZone: "Pacific/Auckland",
+  });
+  return `${days === 1 ? "1 more day" : `${days} more days`} (until ${date})`;
 }

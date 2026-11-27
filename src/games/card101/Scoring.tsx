@@ -4,12 +4,13 @@
  * then their total goes up. A Skip button shows everyone at once.
  */
 import { useEffect, useRef, useState } from 'react';
-import { AvatarImage } from '../../avatar/AvatarImage';
+import { SeatFace } from './SeatFace';
 import { cardName } from '../../../shared/card101/cards';
 import type { RoundResult } from '../../../shared/card101/engine';
 import { PlayingCard } from './PlayingCard';
 import type { Seat } from './Table';
 import { cancelledSlots, listNames, scoreLines } from './text';
+import { BORROWED } from './art';
 
 /** How long each player's hand stays on its own before the next one turns over (Normal speed). */
 const STEP_MS = 1600;
@@ -74,7 +75,7 @@ export function Scoring({
             return (
               <li key={i} className={`c101-score-row${won ? ' is-winner' : ''}${score.total === 0 ? ' is-zero' : ''}`}>
                 <div className="c101-score-row__who">
-                  <AvatarImage avatar={seats[i].avatar} size={32} />
+                  <SeatFace seat={seats[i]} size={32} />
                   <strong>{name(i)}</strong>
                   {result.knocker === i && <span className="c101-badge c101-badge--knock">✊ Knocked</span>}
                 </div>
@@ -112,7 +113,8 @@ export function Scoring({
         <div className="c101-scoring__footer" aria-live="polite">
           {all ? (
             <>
-              <p className={`c101-scoring__winner${perfect ? ' is-perfect' : ''}`}>
+              <p className={`c101-scoring__winner${perfect ? ' is-perfect' : ''}${iWon ? ' is-mine' : ''}`}>
+                {iWon && <img className="c101-sparkle" src={BORROWED.sparkle} alt="" aria-hidden="true" />}
                 {iWon && winners.length === 1 ? '🏆 You win the round!' : `🏆 ${listNames(winners)} ${winners.length > 1 ? 'share' : 'wins'} the round!`}
                 {perfect && <span> A perfect zero! ✨</span>}
               </p>

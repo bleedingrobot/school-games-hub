@@ -304,6 +304,7 @@ Size L. Database and privacy. Waits for: P3 and P5.
 - `own_name_check`: letters, 2 to 14, one space, each word 2+, the clan rude-word lists (`src/profile/ownName.test.ts` checks the SQL copy matches `shared/clans/words.ts`), and none of the pupil's real name (3+ letters from their email before the @). Names are unique ignoring case (`profiles_display_name_any_case`).
 - `name_history` (last 30, from a trigger on `profiles.display_name`); `teacher_name_history`, `teacher_made_up_name_back`, `teacher_give_name_scroll`, `teacher_name_scrolls` for the pupil page; `teacher_name_requests` / `teacher_answer_name` for "Needs you" and the nav count.
 - `choose_my_name` refuses a second new made-up name on the same NZ day (teachers exempt). `tidy-name-requests` cron clears old answers.
+- **Own names last 3 weeks** (James, 28 Nov 2026; migration `20261128100105_own_names_last_3_weeks.sql`, test `own_name_ends.test.sql`): a pupil's typed name goes back to their made-up name (last one if free, else a new one) 21 days after the Yes, by the `end-own-names` cron every 10 minutes. `own_name_ends` is set by a trigger on `profiles.display_name`, so any route to a typed name starts it and a made-up name clears it. Unused scrolls never run out; teachers' names never run out. Names held on 28 Nov got 3 weeks from then. `my_name_status` / `teacher_name_scrolls` give `typedUntil`; the pupil sees "Your own name lasts N more days".
 
 ```text
 You are building the earn-your-own-name reward in the School Games Hub repo.

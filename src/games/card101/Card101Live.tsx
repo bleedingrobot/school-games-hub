@@ -19,8 +19,14 @@ import { playSound, type GameSound } from '../sounds';
 import { LogPanel, placesFrom, Podium, ScoresPanel, ValuesPanel } from './parts';
 import { Card101Guide } from './Guide';
 import { Scoring } from './Scoring';
+import { motionFor, type Motion } from './motion';
 import { Table, type Flash, type Seat } from './Table';
 import { eventLine, ORDINAL } from './text';
+import type { BackId } from './backs';
+import { knockBurst } from './art';
+import { fetchMyAchievements } from './backsData';
+import { useCardBacks } from './useCardBacks';
+import { Card101Window, NewBacks } from './Window';
 import './card101.css';
 
 /** The last few seconds of a turn show a countdown. */
@@ -52,7 +58,19 @@ export function Card101Live({ session }: { session: CardSession }) {
   const [help, setHelp] = useState(false);
   const [now, setNow] = useState(() => session.serverNow());
   const flashN = useRef(0);
+  const [motion, setMotion] = useState<Motion | null>(null);
+  const motionN = useRef(0);
   const seenVersion = useRef(row.version);
+  const backs = useCardBacks(fetchMyAchievements);
+  const [newBacks, setNewBacks] = useState<BackId[]>([]);
+  const gameOver = row.status === 'finished';
+  // The server awards achievements as the game ends: read them again for any card back this game unlocked.
+  const refreshBacks = backs.refresh;
+  useEffect(() => {
+    if (!gameOver) return;
+    const timer = setTimeout(() => void refreshBacks().then((fresh) => fresh.length && setNewBacks(fresh)), 2500);
+    return () => clearTimeout(timer);
+  }, [gameOver, refreshBacks]);
 
   const seats: Seat[] = info.players.map((player, i) => {
     const card = player ? cards.get(player) : undefined;
@@ -64,6 +82,11 @@ export function Card101Live({ session }: { session: CardSession }) {
   useEffect(() => {
     if (row.version <= seenVersion.current) return;
     seenVersion.current = row.version;
+    const moved = motionFor(row.events, motionN.current + 1);
+    if (moved) {
+      motionN.current = moved.n;
+      setMotion(moved);
+    }
     for (const event of row.events) {
       const sound = EVENT_SOUND[event.kind];
       if (sound && soundOn) playSound(sound);
@@ -159,7 +182,12 @@ export function Card101Live({ session }: { session: CardSession }) {
     document.querySelector<HTMLButtonElement>('.c101-seat--me button.is-pickable, .c101-throw')?.focus({ preventScroll: true });
   }, [placing]);
 
-  if (!view) return <p className="loading">Dealing…</p>;
+  if (!view)
+    return (
+      <Card101Window mode="play" back={backs.back}>
+        <p className="loading c101-loading">Dealing…</p>
+      </Card101Window>
+    );
 
   const out = view.out[mySeat];
   const over = row.status === 'finished';
@@ -238,6 +266,7 @@ export function Card101Live({ session }: { session: CardSession }) {
       shared={(view.winners?.length ?? 0) > 1}
       note={note}
       about={abandoned ? 'Nobody played for 10 minutes, so it ended with no points.' : out ? 'You were out of this game.' : undefined}
+      extra={<NewBacks ids={newBacks} backs={backs} />}
     >
       <button type="button" className="button button--primary" disabled={busy} onClick={() => void act({ action: 'rematch', gameId: id })} autoFocus>
         Rematch
@@ -252,6 +281,7 @@ export function Card101Live({ session }: { session: CardSession }) {
   ) : null;
 
   return (
+    <Card101Window mode="play" back={backs.back}>
     <div className="c101-game">
       <h1 className="sr-only">101 with classmates</h1>
       <div className="c101-game__felt">
@@ -261,6 +291,7 @@ export function Card101Live({ session }: { session: CardSession }) {
           turnSeat={turnSeat}
           thinking={false}
           flash={flash}
+          motion={motion}
           canSwap={myTurn && !!holding && !busy}
           canDraw={myTurn && !holding && !busy}
           onDraw={(from) => doAct(from)}
@@ -318,6 +349,7 @@ export function Card101Live({ session }: { session: CardSession }) {
         </Table>
         {banner && (
           <div className="c101-banner" role="alert">
+            {knockBurst() && <img className="c101-banner__burst" src={knockBurst()} alt="" aria-hidden="true" />}
             ✊ {banner}
           </div>
         )}
@@ -365,5 +397,6 @@ export function Card101Live({ session }: { session: CardSession }) {
         )}
       </aside>
     </div>
+    </Card101Window>
   );
 }

@@ -26,13 +26,20 @@ import type { Card101GameReport } from '../../../shared/card101/save';
 import { applySolo, parseStudentAction, playOneBot, startSolo, STUDENT_SEAT, type SoloGame, type StudentAction } from '../../../shared/card101/solo';
 import { viewFor, type SeatView } from '../../../shared/card101/view';
 import type { Slot } from '../../../shared/card101/cards';
+import type { BackId } from './backs';
 import { Card101Settings } from './Card101Settings';
 import { Card101Guide } from './Guide';
 import { LogPanel, placesFrom, Podium, ScoresPanel, ValuesPanel } from './parts';
 import { loadPrefs, savePrefs, type Card101Prefs } from './prefs';
 import { Scoring } from './Scoring';
+import { motionFor, type Motion } from './motion';
 import { Table, type Flash, type Seat } from './Table';
 import { BOT_BIRDS, BOT_LEVEL_NAMES, eventLine, ORDINAL } from './text';
+import { bird, knockBurst } from './art';
+import { useCardBacks, type LoadAchievements } from './useCardBacks';
+
+const BIRD_PICTURES = ['kea', 'tui', 'weka'] as const;
+import { Card101Window, NewBacks } from './Window';
 import './card101.css';
 
 export interface Card101Player {
@@ -78,6 +85,7 @@ function makeSeats(solo: SoloGame, player: Card101Player, level: BotLevel): Seat
       ? { name: player.name, avatar: player.avatar, isStudent: true }
       : {
           name: BOT_BIRDS[i - 1],
+          picture: bird(BIRD_PICTURES[i - 1]),
           avatar: randomAvatar(randomFromSeed(`${solo.setup.seed}:avatar:${i}`)),
           isStudent: false,
           about: `${BOT_LEVEL_NAMES[level]} bot`,
@@ -99,12 +107,15 @@ export function Card101Solo({
   level,
   onLevelChange,
   saving,
+  achievements,
   timeScale = 1,
 }: {
   player: Card101Player;
   level: BotLevel;
   onLevelChange: (level: BotLevel) => void;
   saving?: Card101Saving;
+  /** Reads the pupil's achievements for the card backs. Missing in the preview: every back is open for trying. */
+  achievements?: LoadAchievements;
   /** Tests set this to 0 so nothing waits. */
   timeScale?: number;
 }) {
@@ -125,6 +136,9 @@ export function Card101Solo({
   const [starting, setStarting] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('practice');
   const [saveMessage, setSaveMessage] = useState('');
+  const backs = useCardBacks(achievements);
+  /** Backs this game unlocked, for the podium. */
+  const [newBacks, setNewBacks] = useState<BackId[]>([]);
 
   const soloRef = useRef<SoloGame | null>(null);
   const gameRef = useRef<Game | null>(null);
@@ -138,6 +152,8 @@ export function Card101Solo({
   const sentRef = useRef(new Set<string>());
   const startingRef = useRef(false);
   const flashN = useRef(0);
+  const [motion, setMotion] = useState<Motion | null>(null);
+  const motionN = useRef(0);
   const live = useRef({ scale: timeScale, sound: soundOn });
   live.current = { scale: timeScale, sound: soundOn };
 
@@ -164,6 +180,8 @@ export function Card101Solo({
     try {
       const answer = await saving.save(report);
       if (soloRef.current === solo) setSaveStatus(answer && answer.countsForPoints === false ? 'saved-no-points' : 'saved');
+      const fresh = await backs.refresh();
+      if (soloRef.current === solo && fresh.length) setNewBacks(fresh);
     } catch (error) {
       if (soloRef.current !== solo) return;
       setSaveMessage(error instanceof Error && error.message ? error.message : 'We couldn’t save this game.');
@@ -207,6 +225,11 @@ export function Card101Solo({
     const names = g.seats.map((s) => s.name);
     const lines = events.map((e) => eventLine(e, names, STUDENT_SEAT)).filter((l): l is string => !!l);
     if (lines.length) setLog((prev) => [...prev, ...lines].slice(-60));
+    const moved = motionFor(events, motionN.current + 1);
+    if (moved) {
+      motionN.current = moved.n;
+      setMotion(moved);
+    }
     for (const event of events) {
       const sound = EVENT_SOUND[event.kind];
       if (sound && live.current.sound) playSound(sound);
@@ -279,6 +302,7 @@ export function Card101Solo({
     setScoringRound(null);
     setShowPodium(false);
     setConfirming(false);
+    setNewBacks([]);
     setPeekLeft(PEEK_SECONDS);
     show(events);
     window.scrollTo({ top: 0 });
@@ -382,7 +406,7 @@ export function Card101Solo({
 
   if (!game || !view) {
     return (
-      <>
+      <Card101Window mode="setup" back={backs.back}>
         <Card101Settings
           prefs={prefs}
           onChange={setPrefs}
@@ -392,9 +416,10 @@ export function Card101Solo({
           starting={starting}
           saves={!!saving}
           onHelp={() => setHelp(true)}
+          backs={backs}
         />
         {help && <Card101Guide onClose={() => setHelp(false)} />}
-      </>
+      </Card101Window>
     );
   }
 
@@ -451,6 +476,7 @@ export function Card101Solo({
       me={STUDENT_SEAT}
       shared={(view.winners?.length ?? 0) > 1}
       note={saveNote(saveStatus, saveMessage, !!saving)}
+      extra={<NewBacks ids={newBacks} backs={backs} />}
     >
       <button data-key="enter" type="button" className="button button--primary" onClick={() => void start()} disabled={starting} autoFocus>
         Play again
@@ -465,6 +491,7 @@ export function Card101Solo({
   ) : null;
 
   return (
+    <Card101Window mode="play" back={backs.back}>
     <div className="c101-game" ref={gameRoot}>
       <h1 className="sr-only">101</h1>
       <div className="c101-game__felt">
@@ -474,6 +501,7 @@ export function Card101Solo({
           turnSeat={turnSeat}
           thinking={phase === 'bots'}
           flash={flash}
+          motion={motion}
           canSwap={myTurn && !!holding}
           canDraw={myTurn && !holding}
           onDraw={(from) => doAct(from === 'stack' ? 'draw:stack' : 'draw:discard')}
@@ -527,6 +555,7 @@ export function Card101Solo({
         </Table>
         {banner && (
           <div className="c101-banner" role="alert">
+            {knockBurst() && <img className="c101-banner__burst" src={knockBurst()} alt="" aria-hidden="true" />}
             ✊ {banner}
           </div>
         )}
@@ -571,6 +600,7 @@ export function Card101Solo({
         )}
       </aside>
     </div>
+    </Card101Window>
   );
 }
 

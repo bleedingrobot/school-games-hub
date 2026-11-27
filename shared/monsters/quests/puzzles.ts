@@ -121,7 +121,8 @@ export const stonesGrid = (p: Extract<Puzzle, { kind: 'stones' }>) => p.grid.map
 
 /**
  * Step onto the stone at row `r`, column `c`, or off the far side with c = the width. You step up, down,
- * left or right; a tap on a stone that is not next to you does nothing but says why (`miss`).
+ * left or right; a tap on a stone that is not next to you does nothing but says why (`miss`). A good stone
+ * in the last column finishes the crossing straight away.
  */
 export function stepStone(p: Extract<Puzzle, { kind: 'stones' }>, s: StonesState, r: number, c: number): StonesState {
   if (s.done) return s;
@@ -132,7 +133,7 @@ export function stepStone(p: Extract<Puzzle, { kind: 'stones' }>, s: StonesState
   if (!next) return { ...s, splash: false, miss: s.at ? 'far' : 'start' };
   if (c === width) return { ...s, at: null, done: true, splash: false, miss: undefined };
   if (grid[r][c] % p.multipleOf !== 0) return { at: null, tries: s.tries + 1, done: false, splash: true };
-  return { ...s, at: [r, c], splash: false, miss: undefined };
+  return { ...s, at: [r, c], done: c === width - 1, splash: false, miss: undefined };
 }
 
 // ---- Ice slide ----
