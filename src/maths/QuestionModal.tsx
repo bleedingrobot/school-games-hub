@@ -296,9 +296,42 @@ export function UnitHelp({ parts }: { parts: string[] }) {
 
 const DIRECTIONS = ['north', 'east', 'south', 'west'];
 
+/** A little clock with a curved arrow round its top: the way its hands go (clockwise) or back the other way (James, 27 Nov 2026). */
+function TurnClock({ way }: { way: 'clockwise' | 'anticlockwise' }) {
+  const cw = way === 'clockwise';
+  // A point on a circle round the middle, measured clockwise from 12 o'clock.
+  const at = (r: number, deg: number) => [50 + r * Math.sin((deg * Math.PI) / 180), 50 - r * Math.cos((deg * Math.PI) / 180)].map((v) => v.toFixed(1)).join(' ');
+  const [from, to] = cw ? [-55, 55] : [55, -55];
+  const id = `turn-arrow-${way}`;
+  return (
+    <figure className="turn-help__clock" data-way={way}>
+      <svg viewBox="0 0 100 100" width="110" height="110" role="img" aria-label={`A clock with an arrow going ${way}`}>
+        <defs>
+          <marker id={id} viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="currentColor" />
+          </marker>
+        </defs>
+        <circle cx="50" cy="50" r="30" className="turn-help__face" />
+        {[12, 3, 6, 9].map((h) => {
+          const [x, y] = at(21, h * 30).split(' ');
+          return (
+            <text key={h} x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize="10" fontWeight="700" fill="currentColor">
+              {h}
+            </text>
+          );
+        })}
+        <line x1="50" y1="50" x2="50" y2="34" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="50" y1="50" x2="60" y2="50" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        <path d={`M ${at(42, from)} A 42 42 0 0 ${cw ? 1 : 0} ${at(42, to)}`} fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" markerEnd={`url(#${id})`} className="turn-help__arrow" />
+      </svg>
+      <figcaption>{cw ? 'Clockwise' : 'Anticlockwise'}</figcaption>
+    </figure>
+  );
+}
+
 /** Turning on a compass: clockwise order, how many steps each turn is, and a worked example that is never the question. */
 export function TurnHelp({ parts }: { parts: string[] }) {
-  const m = /^Face (north|east|south|west)/i.exec(parts[0] ?? '');
+  const m = /^(?:You )?face (north|east|south|west)/i.exec(parts[0] ?? '');
   const start = m ? DIRECTIONS.indexOf(m[1].toLowerCase()) : 0;
   // Where this question ends up, so the example never shows it (James: the box must not give the answer).
   const text = parts.join(' ');
@@ -307,12 +340,16 @@ export function TurnHelp({ parts }: { parts: string[] }) {
   const ex = [0, 1, 2, 3].find((e) => e !== start && e !== answer && (e + 1) % 4 !== answer) ?? 0;
   return (
     <div className="remainder-help">
+      <div className="turn-help__clocks">
+        <TurnClock way="clockwise" />
+        <TurnClock way="anticlockwise" />
+      </div>
       <p>
         <strong>Clockwise</strong> goes north → east → south → west, the way a clock&rsquo;s hands go. <strong>Anticlockwise</strong> goes back the other way.
       </p>
       <p>A quarter turn moves 1 step, a half turn 2 steps, a three-quarter turn 3 steps.</p>
       <p className="remainder-help__sum">
-        Face {DIRECTIONS[ex]}, quarter turn clockwise → {DIRECTIONS[(ex + 1) % 4]}
+        Face {DIRECTIONS[ex]}, make a quarter turn clockwise → {DIRECTIONS[(ex + 1) % 4]}
       </p>
     </div>
   );
@@ -748,12 +785,28 @@ export function QuestionModal({
         )}
         </div>
         <div className="question__main">
-        {question.prompt && <p className="question__prompt">{question.prompt}</p>}
-        <p ref={fact} className="question__fact" aria-label={question.spoken} data-long={question.parts.join('').length > 12 || undefined} data-one-line>
-          {question.parts.map((part, i) => (
-            <Part key={i} text={part} blank={blankBox} unit={i > 0 && question.parts[i - 1].startsWith('?')} />
-          ))}
-        </p>
+        {help === 'turns' ? (
+          // Turning questions read as a little story first, then the question, all the same size (James, 27 Nov 2026).
+          <>
+            <p className="question__prompt question__story" aria-label={question.spoken}>
+              {question.parts.map((part, i) => (
+                <span key={i} className="question__story-line">
+                  {part}
+                </span>
+              ))}
+            </p>
+            {question.prompt && <p className="question__prompt" aria-hidden="true">{question.prompt}</p>}
+          </>
+        ) : (
+          <>
+            {question.prompt && <p className="question__prompt">{question.prompt}</p>}
+            <p ref={fact} className="question__fact" aria-label={question.spoken} data-long={question.parts.join('').length > 12 || undefined} data-one-line>
+              {question.parts.map((part, i) => (
+                <Part key={i} text={part} blank={blankBox} unit={i > 0 && question.parts[i - 1].startsWith('?')} />
+              ))}
+            </p>
+          </>
+        )}
         {secondsLeft !== null && !result && (
           <p className="question__timer" role="timer" aria-label={`${secondsLeft} seconds left`}>
             ⏱ {secondsLeft}

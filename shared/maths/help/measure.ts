@@ -450,16 +450,16 @@ const compass: Helper = (q) => {
 };
 
 const compassTurn: Helper = (q) => {
-  if (!/Which way are you now facing/.test(prompt(q))) return null;
+  if (!/Which way are you (now facing|facing now)/.test(prompt(q))) return null;
   const t = q.parts.join(' ');
-  const face = /Face (\w+)/.exec(t);
+  const face = /(?:Face|You face) (north|east|south|west)/i.exec(t);
   if (!face) return null;
   const anti = /anticlockwise/.test(t);
   const k = /half turn/.test(t) ? 2 : (/(\d+) quarter/.exec(t) ? Number(/(\d+) quarter/.exec(t)![1]) : /quarter/.test(t) ? 1 : 0);
   if (!k) return null;
   const k3 = k === 3;
   if (k === 2) {
-    return card('compass', 'Half turn: the other way round', 'A half turn means you face the other way.', `Look at the compass. Put a finger on ${face[1]} and go straight across the middle to the other side.`, 'Which point do you reach? ?');
+    return card('compass', 'Half turn: the other way round', 'A half turn means you face the other way. Clockwise or anticlockwise, you end up in the same place.', `Look at the compass. Put a finger on ${face[1]} and go straight across the middle to the other side.`, 'Which point do you reach? ?');
   }
   if (k3) {
     const other = anti ? 'clockwise' : 'anticlockwise';

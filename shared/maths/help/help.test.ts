@@ -154,6 +154,9 @@ it('gives every ladder question a help card that teaches without giving the answ
     expect(steps(['240 min', '=', '?', 'h'])).toContain('24 ÷ 6 = ?');
     const turn = steps(['Face west, half turn', ':', '?'], 'Which way are you now facing?');
     expect(turn).toContain('straight across the middle');
+    // The new plain wording (27 Nov 2026) gets the same help.
+    expect(steps(['You face west.', 'You make a half turn clockwise.'], 'Which way are you facing now?')).toContain('straight across the middle');
+    expect(steps(['You face north.', 'You make 3 quarter turns anticlockwise.'], 'Which way are you facing now?')).toContain('1 quarter turn clockwise');
   }
 
   // number help leaves the working to the pupil and handles the edge rolls
