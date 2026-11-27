@@ -162,3 +162,30 @@
 .lv-btn--rescue { background: linear-gradient(180deg, #bbf7d0, #22c55e); box-shadow: 0 4px 0 #166534; }
 .lv-btn--build { animation: lv-target 0.7s ease-in-out infinite alternate; }
 .lv-pad-raft { text-align: center; }
+
+/* ---------- the wide floor (27 Nov 2026: fills a widescreen projector and a landscape iPad) ---------- */
+/* Big screen: a slimmer side panel; the floor as wide as fits, as tall as the screen allows. */
+.lv-scene--wide .fc-stage { align-items: center; height: auto; max-width: 100%; }
+.lv-scene--wide .fc-side { width: 17vw; max-width: 280px; }
+.lv-scene--wide .lv-stage .lv-board { height: auto; max-width: none; width: min(calc(96vw - 2vw - min(17vw, 280px)), calc((100vh - 80px) * 1.625)); }
+.lv-scene--wide .lv-raft__cells { gap: 4px; }
+@media (max-width: 700px) {
+  .lv-scene--wide .fc-side { width: 100%; max-width: none; }
+  .lv-scene--wide .lv-stage .lv-board { width: 96vw; }
+}
+/* iPad: the floor across the whole screen, the buttons and the joystick over its bottom corners. */
+.lv-pad--wide .fc-pad__board { width: min(100%, calc((100dvh - 250px) * 1.625)); }
+@media (orientation: portrait) { .lv-pad--wide .fc-pad__board { width: 100%; } }
+@media (orientation: landscape) and (min-width: 640px) {
+  .cl-c--corners .lv-pad--wide { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .lv-pad--wide .fc-pad__top { flex-direction: row; align-items: center; padding-top: 0; max-width: none; padding-inline: 96px 8px; }
+  .lv-pad--wide .fc-pad__left { font-size: 34px; }
+  .lv-pad--wide .fc-pad__powers { flex-direction: row; min-height: 0; width: auto; position: absolute; top: 44px; left: 0; right: 0; justify-content: center; pointer-events: none; z-index: 3; }
+  .lv-pad--wide .fc-pad__powers > * { pointer-events: auto; max-width: 40vw; }
+  .lv-pad--wide .fc-pad__board { width: min(calc(100vw - 16px), calc((100dvh - 52px) * 1.625)); }
+  .lv-pad--wide .fc-fb { position: fixed; top: 52px; right: 12px; max-width: 30vw; z-index: 4; }
+  .lv-pad--wide .lv-pad__bar { position: fixed; left: max(16px, env(safe-area-inset-left)); bottom: max(16px, env(safe-area-inset-bottom)); flex-direction: column; align-items: flex-start; z-index: 5; }
+  .lv-pad--wide .lv-btn { opacity: 0.95; padding: 14px 20px; font-size: 18px; }
+  .lv-pad--wide .fc-stick { opacity: 0.8; }
+}
+.lv-board--wide .fc-dot { width: calc(3% / 1.625); }

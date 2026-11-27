@@ -29,6 +29,18 @@ It is a Class Live map game built on Four Corners (docs/CORNERS-PLAN.md): same j
 - Power-ups (grab by running over, switched on by a right answer): Fire boots (lava can't hurt you this round), Ice blast (cools glowing tiles near you), Speed boost (1.6× for 3 rounds), Double star, Rescue rope (frees a friend for free).
 - Rewards: podium +2 points, achievements Lava Survivor (25 rounds), Lava Champion (1 win), Bridge Builder (20 tiles rebuilt), Lava Lifeguard (5 rescues). Counts go through `PupilReward.extra` (`lava_rounds`, `lava_wins`, `lava_built`, `lava_rescues`).
 
+## Wide map (27 Nov 2026 NZ)
+
+James asked for the map to fill the screen. New games are `LAVA_COLS` (13) columns by 8 rows of square tiles: the board is
+`LAVA_W` (13/8 = 1.625) wide and 1 high (`w` on the game and round; older games without it stay 8x8). A tile index is
+`r * cols + c`; `tileAt`, `tileCentre`, `patternTiles` and the safe-spot and build helpers take `cols` (`colsOf(w)`), and
+`stepLava` takes the width from its world. Rings, crosses, 2x2 islands and blobs are laid out over the 13 columns; a wide
+floor gets about 1.6x the bubbles, ash patches, power-ups, late cracks and island/blob counts, and the fireball's travel
+(`Fireball.span`) and period scale with the width. Start spots spread across the middle; the database's classlive_move
+clamps to `classlive_activities.width` (1.625). Paintings: lake-<map>-wide (docs/lava-art/config.json), the square one
+cropped until a wide one exists. Big screen: slimmer side panel; iPad landscape: floor edge to edge with the question
+button and joystick over its bottom corners.
+
 ## Maps
 
 Volcano Island, Dragon's Lair, Lava Forge, Lava Planet (the teacher picks, or a new one each game).
