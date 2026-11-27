@@ -166,7 +166,7 @@ export function memoryMove(db: MemoryDb, now: number, room: number, player: stri
 export function memoryAutoRoom(
   db: MemoryDb,
   now: number,
-  o: { schoolId?: number; activity: 'serpent' | 'mural' | 'corners'; lengthMin: number; min: number; startsAt: number; code: string; host?: string; level?: string | null; vote?: boolean },
+  o: { schoolId?: number; activity: 'serpent' | 'mural' | 'corners' | 'ghost'; lengthMin: number; min: number; startsAt: number; code: string; host?: string; level?: string | null; vote?: boolean },
 ): number {
   const id = Math.max(1000, ...db.rooms.keys()) + 1;
   const lobby = { code: o.code, host: o.host ?? 'Games Hub' };

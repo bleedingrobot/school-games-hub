@@ -43,7 +43,7 @@ import { BAYS, isShark, newShark, sharkAdvance, sharkJump, sharkQuestionFor, typ
 
 import { advance as ghostAdvance, freshMine as ghostFresh, ghostDone, ghostPlayer, MAPS as GHOST_MAPS, needsPositions as ghostNeeds, newGhost, nextDeadline as ghostDeadline, publicGhost, type GhostEvent, type GhostGame, type GhostPlayer, type PublicGhost } from './ghost';
 import { ghostStep } from './ghostServer';
-import { ghostSync, type EdgeServices } from './edge';
+import { EDGE_LIVE, edgeSync, type EdgeServices } from './edge';
 import { advanceRelay, joinRelay, newRelay, raceCount, relayDeadline, type RelayEvent, type RelayGame } from './relay';
 import { relayPlayer, relayPublic, relayStep, type RelayPlayer, type RelayPublic } from './relayServer';
 import { advance as crewAdvance, callMeeting, crewDone, crewNick, crewPlayer, freshMine as crewFresh, meetingControl, newCrew, nextDeadline as crewDeadline, publicCrew, type CrewEvent, type CrewGame, type CrewPlayer, type PublicCrew } from './crew';
@@ -481,6 +481,7 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
         s.activity = v.choices[0];
       }
       s.game = gameFor(s.activity, s.auto!.level, () => sv.random());
+      autoEdge(s, sv);
     }
     const autoEvents: Event[] = [];
     if (s.auto && s.state === 'lobby' && sv.now() >= s.auto.startsAt) {
@@ -495,6 +496,7 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
             s.activity = v.winner;
             s.game = gameFor(v.winner, null, () => sv.random());
             s.order.forEach((id, i) => joinGame(s.game, id, i));
+            autoEdge(s, sv);
           }
         }
         startGame(s, sv.now());
@@ -551,7 +553,7 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
       if (s.state === 'live') {
         let spots: Positions = {};
         if (needsPositions(g0, t)) {
-          const got = await sv.positions(room);
+          const got = await roomSpots(sv, s, room);
           if (got === 'busy') return { refuse: busy() };
           spots = got;
         }
@@ -567,7 +569,7 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
       if (s.state === 'live') {
         let spots: Positions = {};
         if (thronesNeedsPositions(g0, t)) {
-          const got = await sv.positions(room);
+          const got = await roomSpots(sv, s, room);
           if (got === 'busy') return { refuse: busy() };
           spots = got;
         }
@@ -594,7 +596,7 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
       if (s.state === 'live') {
         let spots: Positions = {};
         if (lavaNeedsPositions(g0, t)) {
-          const got = await sv.positions(room);
+          const got = await roomSpots(sv, s, room);
           if (got === 'busy') return { refuse: busy() };
           spots = got;
         }
@@ -659,7 +661,7 @@ export async function mutate<T>(sv: ClassLiveServices, room: number, step: Step<
       if (s.edge && sv.edge) {
         // The Cloudflare room learns who is a ghost and who the server moved (instead of classlive_place).
         try {
-          await sv.edge.sync(room, ghostSync(room, s, startedAt, places));
+          await sv.edge.sync(room, edgeSync(room, s, startedAt, places));
         } catch {
           console.error(`classlive: edge sync for room ${room} failed`);
         }
@@ -729,6 +731,12 @@ export function newSession(body: Record<string, unknown>, seed: number, random: 
     game = newThrones(HALLS.find((h) => h === body.hall) ?? HALLS[Math.floor(random() * HALLS.length) % HALLS.length]);
   } else game = newMural(random);
   return { seed, activity, state: 'lobby', lengthMin, players: {}, order: [], game, ...(body.padMusic === true ? { padMusic: true } : {}) };
+}
+
+/** A set-time game (no teacher) runs on Cloudflare when its game is live there for everyone. */
+function autoEdge(s: Session, sv: ClassLiveServices) {
+  if (sv.edge && EDGE_LIVE.includes(s.activity)) s.edge = true;
+  else delete s.edge;
 }
 
 /** A new game of this activity for a set-time game (`level`: its level or map; anything unknown is a surprise). */
@@ -1130,7 +1138,7 @@ async function cornersStep(sv: ClassLiveServices, cur: RoomRow, who: string, bod
   const s0 = cur.session;
   if (s0.state !== 'live') return no(409, s0.state === 'lobby' ? 'Wait for the start!' : 'This one has finished.', s0.state);
   const spotOf = async (): Promise<Spot | undefined | Busy> => {
-    const all = await sv.positions(room);
+    const all = await roomSpots(sv, s0, room);
     if (all === 'busy') return 'busy';
     return all[who];
   };

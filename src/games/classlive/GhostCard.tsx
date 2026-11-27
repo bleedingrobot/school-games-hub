@@ -2,11 +2,10 @@
  * Ghost Tag's parts of the Class Live page (docs/GHOST-PLAN.md): the teacher's setup card, the lobby's head, the
  * How to play sheet and the "How it works" page (power-ups and map tricks, pictures once painted).
  */
-import { useContext, useState, type ReactNode } from 'react';
-import { AuthContext } from '../../auth/AuthContext';
-import { EDGE_TEACHERS } from '../../../shared/classlive/edge';
+import { useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { MAPS, MAP_WORDS, MECHANICS, POWERS, POWER_WORDS, UNLOCK, type GhostGame, type GhostMap } from '../../../shared/classlive/ghost';
+import { useEdgeChoice } from './EdgeChoice';
 import { ghostPic, powerPicG } from './GhostBoard';
 import { MECH_ABOUT } from './GhostScene';
 import { GHOST_HOWTO } from './ghostLines';
@@ -25,9 +24,8 @@ export function GhostPickCard({ busy, hostOk, onOpen, timer, art }: {
   const [map, setMap] = useState<GhostMap | 'any'>('any');
   const [length, setLength] = useState(5);
   const [help, setHelp] = useState(false);
-  // The Cloudflare pilot (shared/classlive/edge.ts): only its teachers see the choice, to compare the two.
-  const pilot = EDGE_TEACHERS.includes(useContext(AuthContext)?.profile?.id ?? '');
-  const [edge, setEdge] = useState(true);
+  // The "Run it on" choice for James, to compare Cloudflare with the school server (EdgeChoice.tsx).
+  const run = useEdgeChoice('ghost');
   return (
     <section className="cl-card cl-card--active cl-card--ghost" aria-label="Ghost Tag">
       {art(painted('pick', 'ghost', true) ?? painted('ghost', 'map-graveyard', true))}
@@ -45,16 +43,8 @@ export function GhostPickCard({ busy, hostOk, onOpen, timer, art }: {
         </div>
       </div>
       {timer(length, setLength)}
-      {pilot && (
-        <div className="cl-opt">
-          <span className="cl-opt__label">Run it on (trial)</span>
-          <div className="cl-chips" role="group" aria-label="Run it on">
-            <button type="button" className={`cl-choice ${edge ? 'cl-choice--on' : ''}`} aria-pressed={edge} onClick={() => setEdge(true)}>Cloudflare</button>
-            <button type="button" className={`cl-choice ${!edge ? 'cl-choice--on' : ''}`} aria-pressed={!edge} onClick={() => setEdge(false)}>School server</button>
-          </div>
-        </div>
-      )}
-      <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen({ length, ...(map === 'any' ? {} : { map }), ...(pilot && !edge ? { edge: false } : {}) })}>{busy ? 'Opening…' : 'Open the room'}</button>
+      {run.node}
+      <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen({ length, ...(map === 'any' ? {} : { map }), ...run.extra })}>{busy ? 'Opening…' : 'Open the room'}</button>
     </section>
   );
 }

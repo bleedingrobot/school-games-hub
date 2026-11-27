@@ -1,16 +1,18 @@
 /**
- * A Cloudflare pilot room's spots over a WebSocket (shared/classlive/edge.ts, docs/plans/classlive-edge/PLAN.md). For a
- * room with `edge`, `useEdgeLink` gives back the same link with `move`, `ghostMove` and `positions` answered from the
- * socket at once (the latest frame the room sent); every other step still goes to the server function. A dropped socket
+ * A Cloudflare room's spots over a WebSocket (shared/classlive/edge.ts, docs/plans/classlive-edge/PLAN.md). For a
+ * room with `edge`, `useEdgeLink` gives back the same link with `move`, `ghostMove`, `crewMove` and `positions` answered
+ * from the socket at once (the latest frame the room sent); every other step still goes to the server function. A dropped socket
  * reconnects by itself (a new ticket each time) and, meanwhile, the spot calls answer null ("nothing new this time").
  */
 import { useEffect, useMemo, useRef } from 'react';
-import { EDGE_IDLE_MS, EDGE_SEND_MS, type PupilFrame } from '../../../shared/classlive/edge';
+import { EDGE_IDLE_MS, EDGE_SEND_MS, type AllFrame, type CrewFrame, type PupilFrame } from '../../../shared/classlive/edge';
 import type { GhostSpots } from '../../../shared/classlive/ghostBot';
 import type { ClassLiveLink } from './link';
 
+type Frame = PupilFrame | AllFrame | CrewFrame;
+
 class EdgeSocket {
-  frame: PupilFrame | null = null;
+  frame: Frame | null = null;
   people: Record<string, { x: number; y: number }> | null = null;
   private ws: WebSocket | null = null;
   private stopped = false;
@@ -44,7 +46,7 @@ class EdgeSocket {
     ws.onmessage = (e) => {
       if (typeof e.data !== 'string' || e.data === 'pong') return;
       try {
-        const m = JSON.parse(e.data) as { s?: PupilFrame; p?: Record<string, [number, number]> };
+        const m = JSON.parse(e.data) as { s?: Frame; p?: Record<string, [number, number]> };
         if (m.s) this.frame = m.s;
         if (m.p) this.people = Object.fromEntries(Object.entries(m.p).map(([id, [x, y]]) => [id, { x, y }]));
       } catch {
@@ -104,8 +106,13 @@ export function useEdgeLink(link: ClassLiveLink, room: number | null, edge: bool
       },
       async ghostMove(_room, x, y): Promise<GhostSpots | null> {
         const s = sock.current;
-        if (!s?.move(x, y) || !s.frame) return null;
-        return s.frame;
+        if (!s?.move(x, y) || !s.frame || !('me' in s.frame) || !('ghost' in s.frame.me)) return null;
+        return s.frame as PupilFrame;
+      },
+      async crewMove(_room, x, y) {
+        const s = sock.current;
+        if (!s?.move(x, y) || !s.frame || !('me' in s.frame) || !('glitch' in s.frame.me)) return null;
+        return s.frame as CrewFrame;
       },
       async positions() {
         return sock.current?.people ?? null;

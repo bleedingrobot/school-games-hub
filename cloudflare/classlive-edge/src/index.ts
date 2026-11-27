@@ -156,7 +156,7 @@ export class GhostRoom {
         if (!tag) continue;
         try {
           if (tag.kind === 't') ws.send(teacher ??= JSON.stringify({ p: this.room.teacherView() }));
-          else ws.send(JSON.stringify({ s: this.room.pupilView(tag.who, now) }));
+          else ws.send(JSON.stringify({ s: this.room.frameFor(tag.who, now) }));
         } catch {
           // A socket closing: the next frame skips it.
         }

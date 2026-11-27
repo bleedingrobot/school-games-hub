@@ -49,3 +49,14 @@ and game stays on the database, with the one-live-game lock (PR #891).
 ## Everyone on Cloudflare (27 Nov 2026 NZ)
 
 After a 30-pupil test (rooms 64 and 65: fresh positions every 0.1 s instead of 0.39 s, no position calls to the database), James chose "Move every teacher now". `EDGE_EVERYONE` in shared/classlive/edge.ts puts every new Ghost Tag game on Cloudflare; `EDGE_TEACHERS` still get the "Run it on" choice to compare. Set-time games (opened by the database) still run on the school server.
+
+## Every moving game (27 Nov 2026 NZ)
+
+James: "might as well" move the other moving games, class-testing each first. The room is now game-neutral:
+
+- `EdgeSync.view` says what pupils see: `ghost`, `all` (every spot, as classlive_move: Four Corners, Shark Bay, Floor is Lava, Musical Thrones, Colour Clash) or `crew` (Glitches: names, colours, other Glitches, only near spots while the lights are out, as classlive_crew_move). `edgeSync()` builds it for any session.
+- Every server read of spots goes through `roomSpots` (or the same check in the kit files), so a Cloudflare room's catches, jumps, seats and grabs use Cloudflare's spots.
+- `EDGE_LIVE` (everyone) and `EDGE_TRIAL` (EDGE_TEACHERS only). A game goes on the trial list in the PR that gives its iPad and big screen `useEdgeLink`, and moves to `EDGE_LIVE` after James's class test.
+- The "Run it on" choice is `useEdgeChoice(activity)` (EdgeChoice.tsx), for every card.
+- Set-time games (`auto`, no teacher) run on Cloudflare when their game is in `EDGE_LIVE` (`autoEdge`).
+- Colour Clash paints in the database on every move (classlive_clash_paint), so it moves in two steps: spots, then the paint board.

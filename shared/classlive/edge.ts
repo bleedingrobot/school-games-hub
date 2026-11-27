@@ -15,6 +15,7 @@
  * Pure: the Worker (cloudflare/classlive-edge), the server function and the tests share it.
  */
 import type { Positions, Spot, Teleport } from './corners';
+import type { CrewGame } from './crew';
 import { LANTERN_R, MAX_SPEED, type GhostGame } from './ghost';
 
 /**
@@ -29,10 +30,22 @@ export const EDGE_TEACHERS: readonly string[] = ['e5dfc120-92de-4a09-a3fa-acc400
  */
 export const EDGE_EVERYONE = true;
 
+/** Games whose positions run on Cloudflare for every teacher. */
+export const EDGE_LIVE: readonly string[] = ['ghost'];
+/**
+ * Games on trial: Cloudflare for EDGE_TEACHERS only (James, 27 Nov 2026 NZ: "might as well" move the other moving games,
+ * class-testing each first). A game joins once its iPad and big screen talk to Cloudflare (useEdgeLink).
+ */
+export const EDGE_TRIAL: readonly string[] = [];
+
 /** Whether this teacher's new game of this activity runs its positions on Cloudflare. */
 export function edgeFor(teacher: string, activity: string): boolean {
-  return activity === 'ghost' && (EDGE_EVERYONE || EDGE_TEACHERS.includes(teacher));
+  if (EDGE_LIVE.includes(activity)) return EDGE_EVERYONE || EDGE_TEACHERS.includes(teacher);
+  return EDGE_TRIAL.includes(activity) && EDGE_TEACHERS.includes(teacher);
 }
+
+/** Whether this teacher sees the "Run it on" choice for this game, to compare the two. */
+export const edgeChoice = (teacher: string, activity: string) => EDGE_TEACHERS.includes(teacher) && edgeFor(teacher, activity);
 
 /** How often the room sends devices the spots, and how often a pad sends its own (ms). */
 export const EDGE_TICK_MS = 100;
@@ -49,9 +62,24 @@ export const TICKET_MS = 6 * 3600_000;
 /** [ghost 1/0, hideTo, frozenTo, lanternTo]: session times (ms since the start). */
 export type EdgeRole = [number, number, number, number];
 
+/**
+ * What each pupil's device is shown: `ghost` (Ghost Tag: kinds, no invisible pupils), `all` (every spot, theirs too, as
+ * classlive_move answers: Four Corners, Shark Bay, Floor is Lava, Musical Thrones, Colour Clash) or `crew` (Glitches: names,
+ * colours, other Glitches; only near spots while the lights are out, as classlive_crew_move answers).
+ */
+export type EdgeView = 'ghost' | 'all' | 'crew';
+
+/** Glitches: [glitch 1/0, drone 1/0, cameraTo, factory name, colour]. */
+export type CrewRole = [number, number, number, string, number];
+
+/** Glitches' lights-out reach (as classlive_crew_move). */
+export const CREW_DARK_R = 0.2;
+
 /** What the server function sends the room after each save. */
 export interface EdgeSync {
   room: number;
+  /** Missing: `ghost` (a room synced before 27 Nov 2026). */
+  view?: EdgeView;
   /** ms since 1970 the session started, or null in the lobby. */
   startedAt: number | null;
   live: boolean;
@@ -63,10 +91,16 @@ export interface EdgeSync {
   roles: Record<string, EdgeRole>;
   /** Players the server just moved (a new round). */
   places: { player: string; x: number; y: number }[];
+  /** Glitches: each player's role, and when the lights come back (session ms). */
+  crew?: { lightsTo: number; roles: Record<string, CrewRole> };
 }
 
 /** What a pupil's device gets: like classlive_ghost_move's answer. Kind 0 pupil, 1 ghost, 2 frozen ghost, 3 lit by my lantern. */
 export interface PupilFrame { me: { ghost: boolean }; spots: [number, number, 0 | 1 | 2 | 3][] }
+/** `all`: every spot, mine too (classlive_move's answer). */
+export interface AllFrame { spots: [number, number][] }
+/** `crew`: classlive_crew_move's answer. Kind 0 crew, 1 drone, 2 another Glitch (shown to Glitches only). */
+export interface CrewFrame { me: { glitch: boolean; drone: boolean }; spots: [number, number, 0 | 1 | 2, string, number][] }
 
 /** The server function's side of the room (entry.ts makes it when the secrets are set). */
 export interface EdgeServices {
@@ -168,6 +202,36 @@ export class EdgeRoom {
     return Object.fromEntries([...this.spots].map(([id, p]) => [id, [r4(p.x), r4(p.y)]]));
   }
 
+  /** What one pupil's device is sent, for this room's game. */
+  frameFor(me: string, now: number): PupilFrame | AllFrame | CrewFrame {
+    const view = this.sync?.view ?? 'ghost';
+    if (view === 'all') return { spots: [...this.spots.values()].map((p) => [r4(p.x), r4(p.y)]) };
+    if (view === 'crew') return this.crewView(me, now);
+    return this.pupilView(me, now);
+  }
+
+  /** Glitches: names and colours; Glitches see each other; while the lights are out the crew see only who is near. */
+  crewView(me: string, now: number): CrewFrame {
+    const s = this.sync;
+    const t = s?.startedAt == null ? 0 : now - s.startedAt;
+    const roles = s?.crew?.roles ?? {};
+    const mine = roles[me];
+    const glitch = !!mine && mine[0] === 1;
+    const drone = !!mine && mine[1] === 1;
+    const dark = (s?.crew?.lightsTo ?? 0) > t && !glitch && !drone && !(mine && mine[2] > t);
+    const here = this.spots.get(me);
+    const spots: CrewFrame['spots'] = [];
+    for (const [id, p] of this.spots) {
+      if (id === me) continue;
+      const role = roles[id];
+      if (!role) continue;
+      if (dark && (!here || Math.hypot(p.x - here.x, p.y - here.y) > CREW_DARK_R)) continue;
+      const kind: 0 | 1 | 2 = role[1] === 1 ? 1 : glitch && role[0] === 1 ? 2 : 0;
+      spots.push([r4(p.x), r4(p.y), kind, role[3], role[4]]);
+    }
+    return { me: { glitch, drone }, spots };
+  }
+
   /** What one pupil may see: no names or ids; the invisible left out unless my lantern is lit and they're near. */
   pupilView(me: string, now: number): PupilFrame {
     const s = this.sync;
@@ -193,8 +257,10 @@ export class EdgeRoom {
   }
 }
 
-/** The sync for a Ghost Tag session (server.ts calls this after each save of a pilot room). */
-export function ghostSync(room: number, s: { state: string; order: string[]; game: { kind: string } }, startedAt: number | null, places: EdgeSync['places']): EdgeSync {
+type SyncSession = { state: string; order: string[]; game: { kind: string }; players?: Record<string, { name?: string | null; colour?: number }> };
+
+/** The sync for a Ghost Tag session. */
+export function ghostSync(room: number, s: SyncSession, startedAt: number | null, places: EdgeSync['places']): EdgeSync {
   const g = s.game.kind === 'ghost' ? (s.game as GhostGame) : null;
   const mine = g?.mine ?? {};
   const roles: Record<string, EdgeRole> = {};
@@ -202,5 +268,24 @@ export function ghostSync(room: number, s: { state: string; order: string[]; gam
     const m = mine[id];
     roles[id] = m ? [m.ghost ? 1 : 0, m.hideTo, m.frozenTo, m.lanternTo] : [0, 0, 0, 0];
   }
-  return { room, startedAt, live: s.state === 'live', maxSpeed: MAX_SPEED, width: g?.w ?? 1, teleports: g?.round?.teleports ?? [], roles, places };
+  return { room, view: 'ghost', startedAt, live: s.state === 'live', maxSpeed: MAX_SPEED, width: g?.w ?? 1, teleports: g?.round?.teleports ?? [], roles, places };
+}
+
+/** A first name for the crew view when a pupil has no factory name yet (as classlive_crew_move). */
+const firstName = (name: string | null | undefined) => (name ?? '').trim().split(' ')[0].slice(0, 20);
+
+/** The sync for any moving game's session (server.ts calls this after each save of a Cloudflare room). */
+export function edgeSync(room: number, s: SyncSession, startedAt: number | null, places: EdgeSync['places']): EdgeSync {
+  if (s.game.kind === 'ghost') return ghostSync(room, s, startedAt, places);
+  const g = s.game as { kind: string; w?: number; round?: { teleports?: Teleport[] } | null };
+  const roles: Record<string, EdgeRole> = Object.fromEntries(s.order.map((id) => [id, [0, 0, 0, 0] as EdgeRole]));
+  const base = { room, startedAt, live: s.state === 'live', maxSpeed: 0.6, width: g.w ?? 1, teleports: g.round?.teleports ?? [], roles, places };
+  if (s.game.kind !== 'crew') return { ...base, view: 'all' };
+  const c = s.game as CrewGame;
+  const crew: Record<string, CrewRole> = {};
+  for (const id of s.order) {
+    const m = c.mine[id];
+    if (m) crew[id] = [m.glitch ? 1 : 0, m.drone ? 1 : 0, m.cameraTo, m.nick ?? firstName(s.players?.[id]?.name), s.players?.[id]?.colour ?? 0];
+  }
+  return { ...base, view: 'crew', crew: { lightsTo: c.round?.lightsTo ?? 0, roles: crew } };
 }
