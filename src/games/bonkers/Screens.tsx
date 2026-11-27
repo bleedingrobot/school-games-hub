@@ -4,6 +4,7 @@ import { CLASS_INFO, CLASSES, GEAR, INNKEEPER, LOOKS, SLOTS, gearById, gearStats
 import { MAX_LEVEL } from '../../../shared/bonkers/config';
 import { heroPower, replay, starsToTrainer, type Hero, type Progress } from '../../../shared/bonkers/engine';
 import type { AdventureView, FinishReply, LoadReply } from './backend';
+import { nextBossWords, type BossStop, type SeasonView } from '../../../shared/bonkers/season';
 import { grannySays, levelTitle, questWords, xp } from './words';
 
 const LOOK_WORDS: Record<Look, string> = { boy: 'Boy', girl: 'Girl', animal: 'Animal' };
@@ -118,6 +119,50 @@ function GearRow({ p }: { p: Progress }) {
   );
 }
 
+const SHORT_DAY = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+
+/** The season's boss road: a Friday boss each week and the mega boss on the last Friday. Tap a stop for its line. */
+function SeasonTimeline({ season }: { season: SeasonView }) {
+  const [open, setOpen] = useState<number | null>(null);
+  const pick = season.stops.find((s) => s.week === open) ?? season.stops.find((s) => s.state === 'today' || s.state === 'next') ?? null;
+  const along = Math.min(100, Math.max(0, (100 * (season.day - 1)) / Math.max(1, season.days - 1)));
+  const stopWords = (s: BossStop) => (s.state === 'beaten-time' ? 'Been and gone' : s.state === 'today' ? 'Today!' : SHORT_DAY(s.date));
+  return (
+    <section className="bq-card bq-season" aria-label={`Season ${season.number}, week ${season.week} of ${season.weeks}`}>
+      <div className="bq-season__top">
+        <h2 className="bq-season__title">Season {season.number} <span>Week {season.week} of {season.weeks}</span></h2>
+        <p className="bq-season__next">{nextBossWords(season)}</p>
+      </div>
+      <div className="bq-season__road">
+        <div className="bq-season__track" aria-hidden="true"><div className="bq-season__fill" style={{ width: `${along}%` }} /></div>
+        <ol className="bq-season__stops">
+          {season.stops.map((s) => (
+            <li key={s.week}>
+              <button
+                type="button"
+                className={`bq-season__stop bq-season__stop--${s.state} bq-season__stop--${s.kind}${pick?.week === s.week ? ' bq-season__stop--picked' : ''}`}
+                aria-pressed={pick?.week === s.week}
+                aria-label={`${s.kind === 'mega' ? 'Mega boss' : `Week ${s.week} Friday boss`}: ${s.boss.name}, ${stopWords(s)}`}
+                onClick={() => setOpen(s.week)}
+              >
+                <span className="bq-season__emoji" aria-hidden="true">{s.boss.emoji}</span>
+                <span className="bq-season__label">{s.kind === 'mega' ? 'MEGA' : `Wk ${s.week}`}</span>
+                <span className="bq-season__when">{stopWords(s)}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      </div>
+      {pick && (
+        <p className="bq-season__note" aria-live="polite">
+          <b>{pick.boss.emoji} {pick.boss.name}</b> {pick.kind === 'mega' ? '(the season’s mega boss)' : `(Friday, week ${pick.week})`}: {pick.boss.blurb}
+          {pick.state === 'beaten-time' ? '' : ' Your class chips away at it all week!'}
+        </p>
+      )}
+    </section>
+  );
+}
+
 export function Inn({ loaded, busy, note, onQuest, onChangeLook }: {
   loaded: LoadReply; busy: boolean; note: string | null; onQuest: (id: string) => void; onChangeLook: () => void;
 }) {
@@ -126,6 +171,7 @@ export function Inn({ loaded, busy, note, onQuest, onChangeLook }: {
   return (
     <section className="bq-inn" aria-label="Home">
       <Granny line={grannySays(p, loaded.waiting)} />
+      {loaded.season && <SeasonTimeline season={loaded.season} />}
       <div className="bq-card bq-inn__hero">
         {p.hero && <HeroBadge hero={p.hero} p={p} />}
         <StarBar p={p} />

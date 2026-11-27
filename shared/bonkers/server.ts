@@ -19,6 +19,7 @@ import type { FactAnswer } from '../maths/leitner';
 import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, type MathsContext, type PublicQuestion } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
 import { nzDate } from '../kit/dayArc';
+import { seasonView, type SeasonClock, type SeasonView } from './season';
 import { MAX_ANSWER_MS, QUESTIONS_AN_ADVENTURE } from './config';
 import {
   adventuresWaiting, emptyProgress, isHeroClass, isLook, makeAdventure, parseQuest, questOptions, replay, rewardsFor,
@@ -37,6 +38,8 @@ export interface Settings {
   enabled: boolean;
   /** The teacher's "Unlimited today" switch for Smash Quest: adventures aren't used up. Missing means off. */
   unlimited?: boolean;
+  /** The school's season clock, for the home screen's boss timeline. Missing: no timeline. */
+  season?: SeasonClock | null;
 }
 
 /** An adventure as it's kept: everything needed to mark and replay it. */
@@ -109,6 +112,8 @@ export interface LoadReply {
   waiting: number | null;
   quests: [Quest, Quest];
   current: AdventureView | null;
+  /** The season's Friday bosses and mega boss, for the home screen (null: no season clock). */
+  season: SeasonView | null;
 }
 
 export interface AnswerReply {
@@ -158,6 +163,7 @@ export async function handleBonkers(services: BonkersServices, player: string, b
       waiting: settings.unlimited ? null : adventuresWaiting(saved.progress, today),
       quests: quests(player, today, saved.progress),
       current: current?.open ? view(current) : null,
+      season: seasonView(settings.season, today),
     };
     return ok(reply);
   }

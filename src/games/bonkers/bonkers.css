@@ -224,3 +224,33 @@
 .bq-chest__item .bq-stats { justify-content: center; }
 .bq-chest__item .bq-stat { font-size: 0.95rem; background: #fff; color: #2e8b3e; animation: bq-pop 0.4s ease both; }
 .bq-chest__new { font-size: 0.8rem; font-weight: 900; color: #fff; background: var(--bq-red); border-radius: 999px; padding: 1px 7px; vertical-align: middle; }
+
+/* The season's boss timeline on the home screen (Friday bosses + the mega boss). */
+.bq-season { margin-bottom: 14px; padding: 14px 14px 12px; }
+.bq-season__top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.bq-season__title { font-size: 1.15rem; margin: 0; }
+.bq-season__title span { font-size: 0.85rem; font-weight: 700; opacity: 0.65; margin-left: 6px; }
+.bq-season__next { margin: 0; font-weight: 800; color: #b53e25; font-size: 0.95rem; }
+.bq-season__road { position: relative; margin-top: 12px; }
+.bq-season__track { position: absolute; left: 10%; right: 10%; top: 26px; height: 8px; border-radius: 99px; background: var(--bq-line); }
+.bq-season__fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--bq-sun), var(--bq-orange)); }
+.bq-season__stops { position: relative; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.bq-season__stop {
+  width: 100%; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0; border: 0; background: none;
+  font: inherit; color: inherit; cursor: pointer;
+}
+.bq-season__emoji {
+  display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; font-size: 1.7rem;
+  background: var(--bq-soft); border: 3px solid #d6c8f0; box-shadow: 0 3px 0 #d6c8f0; transition: transform 0.15s;
+}
+.bq-season__stop--mega .bq-season__emoji { width: 60px; height: 60px; margin-top: -4px; font-size: 2rem; background: #ffe1d6; border-color: var(--bq-red); box-shadow: 0 3px 0 #b53e25; }
+.bq-season__stop--beaten-time .bq-season__emoji { filter: grayscale(1); opacity: 0.5; }
+.bq-season__stop--today .bq-season__emoji, .bq-season__stop--next .bq-season__emoji { background: #fff3c4; border-color: var(--bq-sun); box-shadow: 0 3px 0 #d9a91f; animation: bq-season-bob 1.6s ease-in-out infinite; }
+.bq-season__stop--picked .bq-season__emoji { transform: scale(1.08); outline: 3px solid var(--bq-orange); outline-offset: 2px; }
+.bq-season__label { font-weight: 800; font-size: 0.8rem; }
+.bq-season__stop--mega .bq-season__label { color: #b53e25; }
+.bq-season__when { font-size: 0.72rem; opacity: 0.75; line-height: 1.1; text-align: center; }
+.bq-season__note { margin: 10px 0 0; padding: 8px 10px; border-radius: 12px; background: var(--bq-soft); font-size: 0.9rem; }
+@keyframes bq-season-bob { 50% { transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .bq-season__stop--today .bq-season__emoji, .bq-season__stop--next .bq-season__emoji { animation: none; } }
+@media (max-width: 380px) { .bq-season__emoji { width: 44px; height: 44px; font-size: 1.4rem; } .bq-season__stop--mega .bq-season__emoji { width: 50px; height: 50px; } }

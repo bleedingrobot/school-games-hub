@@ -27,11 +27,13 @@ export function trialBackend({ storageKey }: { storageKey: string }) {
       // Not kept: it lasts until the page closes.
     }
   };
+  // The preview's season: started 9 days ago, so the timeline shows one Friday boss gone and the next coming.
+  const previewSeason = () => ({ start: new Date(Date.now() - 9 * 86_400_000 + 13 * 3_600_000).toISOString().slice(0, 10), days: 35 });
   // The preview's "Unlimited today": on, so testers can play adventure after adventure.
   let unlimited = true;
   const backend = fromServer(async (body) => {
     data = read();
-    return handleBonkers(memoryServices({ data, settings: () => ({ enabled: true, unlimited }), changed: write }), PUPIL, body);
+    return handleBonkers(memoryServices({ data, settings: () => ({ enabled: true, unlimited, season: previewSeason() }), changed: write }), PUPIL, body);
   });
 
   const progress = (): Progress => data.players[PUPIL]?.progress ?? emptyProgress();

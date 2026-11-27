@@ -101,3 +101,20 @@ describe('Smash Quest rules', () => {
     expect(lost.progress.stars).toBe(starsToTrainer(1));
   });
 });
+
+import { nextBossWords, seasonView } from './season';
+
+describe('season timeline', () => {
+  it('puts a boss on each Friday and the mega boss on the last, from the school clock', () => {
+    // Douglas Park: season 1 began Sunday 18 Oct 2026, 35 days; season 2 began 22 Nov.
+    const v = seasonView({ start: '2026-10-18', days: 35 }, '2026-11-28')!;
+    expect(v.number).toBe(2);
+    expect(v.day).toBe(7);
+    expect(v.stops.map((s) => s.date)).toEqual(['2026-11-27', '2026-12-04', '2026-12-11', '2026-12-18', '2026-12-25']);
+    expect(v.stops.map((s) => s.state)).toEqual(['beaten-time', 'next', 'later', 'later', 'later']);
+    expect(v.stops[4].kind).toBe('mega');
+    expect(nextBossWords(v)).toMatch(/^Friday boss in 6 days: /);
+    expect(seasonView({ start: '2026-10-18', days: 35 }, '2026-10-01')).toBeNull();
+    expect(seasonView(null, '2026-11-28')).toBeNull();
+  });
+});
