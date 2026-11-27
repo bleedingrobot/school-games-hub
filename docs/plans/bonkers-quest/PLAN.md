@@ -112,15 +112,15 @@ Kept out (same as Dragon Maths): gore, romance, real-world brands, toilet humour
 
 Asked on question cards in the project thread, 27 Nov 2026. Answers go here.
 
-1. Which ages? 
-2. One game of its own, or a "junior mode" of Dragon Maths?
-3. How long is a day's adventure?
-4. When's the big boss?
-5. Can you lose a fight?
-6. How many classes, and can you swap?
-7. Where does gear come from?
-8. Classmates in it?
+1. Which ages? **Years 2 to 4** (James, 27 Nov): the ladder route (way A from the focus, 4 big choices, voice), with the older games.
+2. One game of its own, or a "junior mode" of Dragon Maths? **Its own game** (James, 27 Nov): own card, heroes, look and saves.
+3. How long is a day's adventure? **1 adventure, 4 to 6 fights** (James, 27 Nov): about 8 to 10 minutes, then tomorrow.
+4. When's the big boss? **Weekly plus season boss** (James, 27 Nov): a mini boss every Friday and a mega boss at season end.
+5. Can you lose a fight? **Nothing lost, smaller prize** (James, 27 Nov): a comic fall-over and fewer stars; never lose stars, gear or turns.
+6. How many classes, and can you swap? **4 classes, kept all season** (James, 27 Nov): swap at a new season. Which four: follow-up card.
+7. Where does gear come from? **Chest plus a sticker shop** (James, 27 Nov): main gear from the chest; fights earn stickers for fun extras (hats, pets).
+8. Classmates in it? **Class boss together** (James, 27 Nov): the class's right answers chip away at a shared Friday boss's health bar; never ranks pupils by maths.
 9. Art style?
-10. How wacky?
-11. Name?
-12. Daily quest: one, or pick from two?
+10. How wacky? **Full bonkers, mild toilet** (James, 27 Nov): gentle burp, smelly sock and Toilet Roll Towers jokes are in; still no gore, romance or anything scary.
+11. Name? **Bonkers Quest** (James, 27 Nov). Suggested id `bonkers`.
+12. Daily quest: one, or pick from two? **Pick 1 of 2** (James, 27 Nov): two zones or monsters on the board each morning.
