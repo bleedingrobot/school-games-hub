@@ -1,6 +1,6 @@
 # Bonkers Quest (working name): a wacky, streamlined Dragon Maths for younger pupils
 
-**Status:** brainstorm and plan only, 27 Nov 2026. Nothing built. Waiting on James's answers (question cards in the project thread); the answers get written into section 10 and this plan becomes `docs/<ID>-PLAN.md` from `docs/game-guide/templates/plan.md` when the build starts.
+**Status:** brainstorm and plan only, 27 Nov 2026. Nothing built. James answered rounds 1 and 2 (section 10); the art look waits on the style test. The answers win over anything earlier in this plan where they differ, and this plan becomes `docs/<ID>-PLAN.md` from `docs/game-guide/templates/plan.md` when the build starts.
 
 James, 27 Nov 2026: "like dragon maths but simplified and streamlined for younger students ... entering an area to fight, slowly getting stronger, defeating a big monster after a set time, getting upgrades in gear, classes to choose from, crazy monsters to battle, trainer to defeat to level up ... more like sky isles with each set of goes being a linear process, eg start > daily quest at the inn > fight, fight, fight > trainer (if needed) > get awarded gear (if earned) ... graphics more fun and friendly, the game itself super weird and wacky, crazy weapons like rolling pins of doom and high heels of distraction."
 
@@ -127,11 +127,11 @@ Asked on question cards in the project thread, 27 Nov 2026. Answers go here.
 
 ### Round 2 (asked 27 Nov 2026)
 
-13. Which four classes?
-14. Season length?
-15. How many levels and trainers?
-16. Missed days?
-17. How the class Friday boss works?
-18. How gear shows on the hero?
-19. Who runs the Wobbly Inn?
-20. What the sticker shop sells?
+13. Which four classes? **Kitchen Knight, Disco Dazzler, Pirate Granny, Bin Ninja** (James, 27 Nov). No healer class.
+14. Season length? **5 weeks** (James, 27 Nov): 5 Friday bosses, then the mega boss and a fresh start.
+15. How many levels and trainers? **10 levels, 9 trainers** (James, 27 Nov): about two level-ups a week for an every-day player.
+16. Missed days? **Save up to 2 adventures** (James, 27 Nov), like Dragon Maths' saved-up turns.
+17. How the class Friday boss works? **Chip all week, finish Friday** (James, 27 Nov): every right answer all week dents the class boss; on Friday each pupil gets a boss fight to finish it.
+18. How gear shows on the hero? **A new painted look per level band** (James, 27 Nov): about 4 painted looks per class (16 hero paintings); gear shows as icons beside the hero.
+19. Who runs the Wobbly Inn? **A grandma with a jetpack** (James, 27 Nov): wild, kind, always just back from a trip; she gives the next-step line. Paint her clearly different from the Pirate Granny class.
+20. What the sticker shop sells? **Hats and pets, looks only** (James, 27 Nov): can't be used to skip maths. A hat sits over the painted hero look, so each look needs a fixed hat spot.
