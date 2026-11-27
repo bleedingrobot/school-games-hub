@@ -142,8 +142,8 @@
 .bq-face--big { font-size: 6rem; }
 .bq-side--foe .bq-face { animation-delay: 0.4s; }
 .bq-vs { font-weight: 900; font-size: 1.4rem; color: var(--bq-red); align-self: center; }
-.bq-hearts { font-size: 1.3rem; letter-spacing: 1px; white-space: nowrap; }
-@media (max-width: 520px) { .bq-hearts { font-size: 0.95rem; letter-spacing: 0; } }
+.bq-hearts { display: grid; grid-template-columns: repeat(5, auto); justify-content: center; gap: 0 2px; font-size: 1.15rem; line-height: 1.25; }
+@media (max-width: 520px) { .bq-hearts { font-size: 0.95rem; gap: 0; } }
 .bq-hp { width: min(160px, 100%); height: 16px; background: rgba(255, 255, 255, 0.85); border-radius: 999px; overflow: hidden; }
 .bq-hp__fill { height: 100%; transition: width 0.5s; border-radius: 999px; }
 .bq-hp__num { font-size: 0.85rem; font-weight: 700; background: rgba(255, 255, 255, 0.7); border-radius: 999px; padding: 0 8px; }
