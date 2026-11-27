@@ -1,5 +1,7 @@
 # Smash Quest (was Bonkers Quest): plan
 
+**XP, not stars (James, 28 Nov 2026):** the screens show experience: each star the rules count is 10 XP (`xp()` in src/games/bonkers/words.ts). Level 10 is now "Smash Legend".
+
 **Longer fights, more hits, monster hearts (James, 28 Nov 2026: "twice as long", "still needs to get hit more", "hearts for monster health"):** 4 to 8 hero smashes before each question, the monster swings back after every second one (2 a question, a heart each, never the last), a wrong answer costs 2 hearts; hero 10 hearts (trainers 13), so 3 wrong answers still lose a fight (4 against a trainer). Monster health is 10 purple hearts.
 
 **The monster hits back (James, 28 Nov 2026: "they never seem to get hit", "hearts"):** while the hero smashes before each question the monster swings back once and knocks off a heart (never the last; not while tied up by Wool Whirlwind), shown one blow at a time. Hearts 5 (trainers 7), so 3 wrong answers still lose a fight (4 against a trainer).

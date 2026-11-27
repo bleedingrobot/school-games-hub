@@ -16,16 +16,23 @@ export function questWords(q: Quest): { title: string; what: string } {
 
 export const levelTitle = (level: number) => LEVEL_TITLES[level] ?? '';
 
+/**
+ * Experience (XP) on screen (James, 28 Nov 2026: "dont like the stars - just use experience"): the rules still count
+ * `stars`, and the screens show each one as this much XP.
+ */
+export const XP_PER_STAR = 10;
+export const xp = (stars: number) => stars * XP_PER_STAR;
+
 /** Granny Jetpack's one-line next step at home. */
 export function grannySays(p: Progress, waiting: number | null): string {
   if (!p.hero) return `Welcome home, dearie! I’m ${INNKEEPER.name}. Pick your hero!`;
-  if (p.level >= MAX_LEVEL) return 'Level 10! You’re Totally Bonkers. The mega boss is coming soon…';
+  if (p.level >= MAX_LEVEL) return 'Level 10! You’re a Smash Legend. The mega boss is coming soon…';
   const t = trainerFor(p.level);
-  if (trainerReady(p)) return `Your star bar is full! ${t?.name ?? 'Your trainer'} is waiting after your next adventure’s fights.`;
+  if (trainerReady(p)) return `Your XP bar is full! ${t?.name ?? 'Your trainer'} is waiting after your next adventure’s fights.`;
   if (waiting === 0) return 'That’s today’s adventure done. Have a cuppa and come back next school day!';
   const left = starsToTrainer(p.level) - p.stars;
   if (p.stats.adventures === 0) return 'Pick a quest, dearie. Your hero smashes away, and every right answer is a MEGA smash!';
-  return `${left} more stars and ${t?.name ?? 'your trainer'} will see you. Pick a quest!`;
+  return `${xp(left)} more XP and ${t?.name ?? 'your trainer'} will see you. Pick a quest!`;
 }
 
 export const moveName = (cls: HeroClass) => CLASS_INFO[cls].move.name;

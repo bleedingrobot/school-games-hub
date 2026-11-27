@@ -4,7 +4,7 @@ import { CLASS_INFO, CLASSES, GEAR, INNKEEPER, LOOKS, SLOTS, gearById, trainerFo
 import { MAX_LEVEL } from '../../../shared/bonkers/config';
 import { heroPower, replay, starsToTrainer, type Hero, type Progress } from '../../../shared/bonkers/engine';
 import type { AdventureView, FinishReply, LoadReply } from './backend';
-import { grannySays, levelTitle, questWords } from './words';
+import { grannySays, levelTitle, questWords, xp } from './words';
 
 const LOOK_WORDS: Record<Look, string> = { boy: 'Boy', girl: 'Girl', animal: 'Animal' };
 
@@ -70,13 +70,13 @@ function HeroBadge({ hero, p }: { hero: Hero; p: Progress }) {
 }
 
 function StarBar({ p }: { p: Progress }) {
-  if (p.level >= MAX_LEVEL) return <p className="bq-bar__done">⭐ Top level! ⭐</p>;
+  if (p.level >= MAX_LEVEL) return <p className="bq-bar__done">🏆 Top level! 🏆</p>;
   const need = starsToTrainer(p.level);
   const t = trainerFor(p.level);
   return (
     <div className="bq-bar">
-      <div className="bq-bar__label"><span>⭐ {p.stars} / {need} stars</span><span>{t?.emoji} {t?.name}</span></div>
-      <div className="bq-bar__track" role="progressbar" aria-label="Stars to your trainer" aria-valuemin={0} aria-valuemax={need} aria-valuenow={p.stars}>
+      <div className="bq-bar__label"><span>✨ {xp(p.stars)} / {xp(need)} XP</span><span>{t?.emoji} {t?.name}</span></div>
+      <div className="bq-bar__track" role="progressbar" aria-label="XP to your trainer" aria-valuemin={0} aria-valuemax={xp(need)} aria-valuenow={xp(p.stars)}>
         <div className="bq-bar__fill" style={{ width: `${Math.min(100, (100 * p.stars) / need)}%` }} />
       </div>
     </div>
@@ -161,7 +161,7 @@ export function Results({ before, result, current, onInn }: { before: Progress; 
       <ul className="bq-tally">
         <li>🥊 Fights won: <b>{won} of {fights.length}</b></li>
         <li>{r.questDone ? '✅' : '➖'} {w.title}: <b>{r.questDone ? 'done!' : 'not this time'}</b></li>
-        <li>⭐ Stars: <b>+{result.starsEarned}</b></li>
+        <li>✨ XP: <b>+{xp(result.starsEarned)}</b></li>
         {result.stickers > 0 && <li>🏷️ Stickers: <b>+{result.stickers}</b></li>}
       </ul>
       {result.gear.length > 0 && (

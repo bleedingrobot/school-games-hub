@@ -189,7 +189,7 @@ export const gearById = (id: string) => GEAR.find((g) => g.id === id);
 export const TOP_TIER = GEAR_NAMES.weapon.length - 1;
 
 /** Silly titles that come with each level. */
-export const LEVEL_TITLES = ['', 'Brand New Hero', 'Puddle Splasher', 'Sock Botherer', 'Jelly Wobbler', 'Custard Champion', 'Trolley Tamer', 'Duck Defeater', 'Toast Master', 'Legend-ish', 'Totally Bonkers'];
+export const LEVEL_TITLES = ['', 'Brand New Hero', 'Puddle Splasher', 'Sock Botherer', 'Jelly Wobbler', 'Custard Champion', 'Trolley Tamer', 'Duck Defeater', 'Toast Master', 'Legend-ish', 'Smash Legend'];
 
 /** The innkeeper. */
 export const INNKEEPER = { name: 'Granny Jetpack', emoji: '👵🏼' };

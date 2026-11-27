@@ -10,7 +10,7 @@ import { BOOSTS, FOE_HEARTS, HEARTS, POINTS, STARS, STICKERS_A_WIN, TRAINER_HEAR
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../maths/QuestionModal';
 import type { AdventureView, AnswerReply, BonkersBackend } from './backend';
-import { questWords } from './words';
+import { questWords, xp } from './words';
 
 const shown = (q: PublicQuestion): ShownQuestion => ({ id: q.slot, parts: q.parts, spoken: q.spoken, prompt: q.prompt, choices: q.choices, choiceLabels: q.choiceLabels, maxLength: q.maxLength, input: q.input, figure: q.figure });
 
@@ -154,7 +154,7 @@ export function Fight({ backend, progress, start, onDone }: {
             <h2 className="bq-h2">You smashed {pause.foe.name}!</h2>
             <p className="bq-speech">{pause.foe.name}: “{look.ouch}”</p>
             <ul className="bq-victory__loot">
-              {!trainer && <li className="bq-pop" style={{ animationDelay: '0.5s' }}>⭐ <b>+{STARS.win}</b> stars</li>}
+              {!trainer && <li className="bq-pop" style={{ animationDelay: '0.5s' }}>✨ <b>+{xp(STARS.win)}</b> XP</li>}
               {!trainer && <li className="bq-pop" style={{ animationDelay: '0.8s' }}>🏷️ <b>+{STICKERS_A_WIN}</b> sticker</li>}
               <li className="bq-pop" style={{ animationDelay: '1.1s' }}>❤️ <b>{pause.blow.hearts}</b> of {trainer ? TRAINER_HEARTS : HEARTS} hearts left</li>
               <li className="bq-pop" style={{ animationDelay: '1.4s' }}>🪙 <b>+{trainer ? POINTS.trainer : POINTS.fightWon}</b> hub points</li>
@@ -166,7 +166,7 @@ export function Fight({ backend, progress, start, onDone }: {
           <p className="bq-face bq-face--big" aria-hidden="true">{look.emoji}</p>
           <h2 className="bq-h2">Smashed! {pause.foe.name} wins this one.</h2>
           <p>Nothing lost, hero. Dust yourself off!</p>
-          {!trainer && <p className="bq-big-line">⭐ +{STARS.bonked} star</p>}
+          {!trainer && <p className="bq-big-line">✨ +{xp(STARS.bonked)} XP</p>}
           {next}
         </div>
         )}
@@ -180,8 +180,8 @@ export function Fight({ backend, progress, start, onDone }: {
       <section className="bq-fight" aria-label="Your trainer">
         {header}
         <div className="bq-card bq-center bq-pop">
-          {r.questDone && <p className="bq-big-line">✅ Quest done! +3 stars</p>}
-          <p>Your star bar is full! Your trainer wants a fight.</p>
+          {r.questDone && <p className="bq-big-line">✅ Quest done! +{xp(STARS.quest)} XP</p>}
+          <p>Your XP bar is full! Your trainer wants a fight.</p>
           <p className="bq-face bq-face--big" aria-hidden="true">{look.emoji}</p>
           <h2 className="bq-h2">{r.foe.name}</h2>
           <p className="bq-speech">“{look.line}”</p>
@@ -197,7 +197,7 @@ export function Fight({ backend, progress, start, onDone }: {
       <section className="bq-fight" aria-label="Adventure over">
         {header}
         <div className="bq-card bq-center bq-pop">
-          {r.questDone && !r.trainerMet && <p className="bq-big-line">✅ Quest done! +3 stars</p>}
+          {r.questDone && !r.trainerMet && <p className="bq-big-line">✅ Quest done! +{xp(STARS.quest)} XP</p>}
           <p className="bq-face bq-face--big" aria-hidden="true">🧰</p>
           <h2 className="bq-h2">Adventure over!</h2>
           <button type="button" className="bq-btn bq-btn--big" disabled={saving} onClick={() => void finish()}>{saving ? 'Saving…' : 'See what you got'}</button>
