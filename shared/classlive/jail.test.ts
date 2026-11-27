@@ -4,6 +4,7 @@ import { classLiveStep, type RoomView } from './server';
 import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock } from './pretendClass';
 import type { JailGame } from './jail';
 import type { JailPublic } from './jailServer';
+import { makeCall, seeded, SIZES, type MingleCall } from './mingle';
 
 describe('Real-life Four Corners', () => {
   it('server: any pupil on the class list answers their way out at a station, their maths and points are theirs, the teacher can let them out', async () => {
@@ -68,5 +69,42 @@ describe('Real-life Four Corners', () => {
     const mine = paid.players.find((p) => p.player === kid)!;
     expect([mine.points, mine.extra]).toEqual([3, { jail_backs: 1 }]);
     expect(paid.players.find((p) => p.player === b)!.points).toBe(1);
+  });
+
+  it('Maths Mingle: the calls make the group size, climb each round, and left-over pupils use the same stations', async () => {
+    // Every call's sum works out to its group size, within the level's sizes, never the same size twice running.
+    const worth = (sum: string) => Function(`return (${sum.replace(/half of (\d+)/, '($1/2)').replace(/double (\d+)/, '(2*$1)').replace(/a quarter of (\d+)/, '($1/4)').replace(/(\d+)% of (\d+)/, '($1/100*$2)').replace(/√(\d+)/, 'Math.sqrt($1)').replace(/2³/, '8').replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-')})`)() as number;
+    for (const level of ['junior', 'senior'] as const) {
+      const r = seeded(level === 'junior' ? 3 : 4);
+      let last: MingleCall | null = null;
+      for (let round = 1; round <= 40; round++) {
+        const c = makeCall(level, round, r, { last, twists: true, players: 28 });
+        expect([SIZES[level].includes(c.size), c.size !== last?.size, worth(c.sum)]).toEqual([true, true, c.size]);
+        expect(c.tier).toBe(round <= 3 ? 0 : round <= 6 ? 1 : 2);
+        if (c.twist) expect(last?.twist ?? null).toBeNull();
+        last = c;
+      }
+    }
+
+    const clock = pretendClock();
+    const pc = pretendClass({ size: 4, seed: 9, clock, later: clock.later });
+    const [station, , , kid] = pc.ids;
+    const step = (who: string, body: Record<string, unknown>) => classLiveStep(pc.services, who, body);
+    const room = (await step(PRETEND_TEACHER, { action: 'open', classId: PRETEND_CLASS, activity: 'mingle', need: 3, level: 'junior', twists: false })).body.room as number;
+    await step(station, { action: 'join' });
+    await step(PRETEND_TEACHER, { action: 'start', room });
+    const game = () => pc.db.rooms.get(room)!.session.game as JailGame;
+    expect([game().mode, game().level, game().twists, game().roster.length]).toEqual(['mingle', 'junior', false, 4]);
+    const pub = (await step(station, { action: 'look', room })).body.view as RoomView;
+    expect([pub.activity, (pub.game as JailPublic).mode]).toEqual(['mingle', 'mingle']);
+    let q = (await step(station, { action: 'play', room, do: 'in', as: kid })).body.question as { slot: number };
+    for (let i = 0; i < 3; i++) {
+      await clock.run(clock.now() + 1000);
+      const right = markQuestion(pc.db.questions.get(`${room}:${kid}`)!.find((x) => x.slot === q.slot)!.question)!.answer;
+      q = (await step(station, { action: 'answer', room, as: kid, slot: q.slot, answer: right, ms: 2000 })).body.question as { slot: number };
+    }
+    expect(game().mine[kid].backs).toBe(1);
+    await step(PRETEND_TEACHER, { action: 'end', room });
+    expect([...pc.db.paid.values()][0].players.find((p) => p.player === kid)!.extra).toEqual({ mingle_backs: 1 });
   });
 });

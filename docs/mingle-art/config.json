@@ -1,0 +1,30 @@
+{
+ "_from": "docs/jail-art/config.json layout. Check with: python3 scripts/game_art.py mingle paint OUT --dry-run",
+ "game": "mingle",
+ "filename_prefix": "mingle/img",
+ "comfy": "http://127.0.0.1:8188",
+ "style": "s",
+ "styles": {
+  "s": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. "
+ },
+ "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly",
+ "inbox": "C:/Users/Giant/Games Hub/mingle-art-out",
+ "picks": "docs/mingle-art/picks.json",
+ "art_dir": "src/games/classlive/art/paint",
+ "home_dir": "src/assets/home",
+ "pictures": [
+  {
+   "name": "pick",
+   "prompt": "A bright cheerful primary school hall with a disco party feeling, coloured spotlights and musical notes floating in the air, happy cartoon children dancing and then gathering into little huddled groups of three and four holding hands, a big glowing screen on the far wall showing a simple division sign, a few tablets on a small table at the side, joyful and energetic, wide landscape picture, no writing anywhere.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "pick",
+   "file": "mingle",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, sad children, scary"
+  }
+ ]
+}

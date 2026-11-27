@@ -37,6 +37,8 @@ import { ThronesScene } from './ThronesScene';
 import { ThronesCard, ThronesLobbyHead } from './ThronesCard';
 import { JailCard, JailLobbyHead } from './JailCard';
 import { JailScene } from './JailScene';
+import { MingleCard, MingleLobbyHead } from './MingleCard';
+import { MingleScene } from './MingleScene';
 import { useMusicOn } from './thronesMusic';
 import { RelayScene } from './RelayScene';
 import { RelayLobbyHead, RelayPickCard } from './RelayCard';
@@ -501,7 +503,18 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
         />
       )}
 
-      {screen && jail && (state === 'live' || state === 'over') && (
+      {screen && jail?.mode === 'mingle' && (state === 'live' || state === 'over') && (
+        <MingleScene
+          screen={screen}
+          game={jail}
+          over={state === 'over'}
+          muted={muted}
+          onEnd={() => { if (room) void act({ action: 'end', room }); }}
+          onRelease={(pupil) => { if (room) void act({ action: 'jailfree', room, pupil }); }}
+          onAgain={forget}
+        />
+      )}
+      {screen && jail && !jail.mode && (state === 'live' || state === 'over') && (
         <JailScene
           screen={screen}
           game={jail}
@@ -717,7 +730,7 @@ function Setup({ busy, problem, onOpen: open, onShowdown, classId }: { busy: boo
         <button type="button" className="cl-btn cl-btn--small cl-chosen__back" onClick={() => choose(null)}>← All games</button>
         <span className="cl-chosen__where">Class Live</span>
       </div>
-      {!chosen.arena && chosen.id !== 'jail' && <div className="cl-where" role="group" aria-label="Who can join?">
+      {!chosen.arena && chosen.id !== 'jail' && chosen.id !== 'mingle' && <div className="cl-where" role="group" aria-label="Who can join?">
         <span className="cl-opt__label">Who can join?</span>
         <button type="button" className={`cl-choice ${where === 'class' ? 'cl-choice--on' : ''}`} aria-pressed={where === 'class'} onClick={() => setWhere('class')}>🏫 My class</button>
         <button type="button" className={`cl-choice ${where === 'lobby' ? 'cl-choice--on' : ''}`} aria-pressed={where === 'lobby'} onClick={() => setWhere('lobby')}>🌏 Open in the lobby</button>
@@ -851,6 +864,7 @@ function Setup({ busy, problem, onOpen: open, onShowdown, classId }: { busy: boo
           <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk || !!chosenLock} onClick={() => onOpen('shark', { length: bLength, run: bRun, ...(bBay === 'any' ? {} : { map: bBay }), ...sharkRun.extra })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
         )}
+        {pick === 'mingle' && <MingleCard busy={busy} hostOk={!chosenLock} onOpen={(body) => open('mingle', body)} Timer={TimerChips} Art={CardArt} />}
         {pick === 'jail' && <JailCard busy={busy} hostOk={!chosenLock} onOpen={(body) => open('jail', body)} Timer={TimerChips} Art={CardArt} />}
         {pick === 'thrones' && <ThronesCard busy={busy} hostOk={hostOk && !chosenLock} onOpen={(body) => onOpen('thrones', body)} Timer={TimerChips} Art={CardArt} />}
         {pick === 'relay' && <RelayPickCard busy={busy} hostOk={hostOk && !chosenLock} onOpen={(body) => onOpen('relay', body)} timer={(l, set) => <TimerChips length={l} setLength={set} />} art={(pic) => <CardArt pic={pic} />} />}
@@ -935,7 +949,7 @@ function Chip({ p, i }: { p: ScreenView['people'][number]; i: number }) {
 
 function Lobby({ screen, game, className, onStart }: { screen: ScreenView; game: ScreenView['game']; className?: string; onStart: () => void }) {
   const n = screen.people.length;
-  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : game.kind === 'corners' ? (isShark(game) ? <SharkLobbyHead bay={game.bay} /> : <CornersLobbyHead map={game.map} />) : game.kind === 'clash' ? <ClashLobbyHead map={game.map} teams={game.teams} /> : game.kind === 'ghost' ? <GhostLobbyHead map={game.map} /> : game.kind === 'crew' ? <CrewLobbyHead /> : game.kind === 'thrones' ? <ThronesLobbyHead hall={game.hall} /> : game.kind === 'lava' ? <LavaLobbyHead map={game.map} /> : game.kind === 'relay' ? <RelayLobbyHead game={game} /> : game.kind === 'jail' ? <JailLobbyHead need={game.need} /> : <MuralLobbyHead />;
+  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : game.kind === 'corners' ? (isShark(game) ? <SharkLobbyHead bay={game.bay} /> : <CornersLobbyHead map={game.map} />) : game.kind === 'clash' ? <ClashLobbyHead map={game.map} teams={game.teams} /> : game.kind === 'ghost' ? <GhostLobbyHead map={game.map} /> : game.kind === 'crew' ? <CrewLobbyHead /> : game.kind === 'thrones' ? <ThronesLobbyHead hall={game.hall} /> : game.kind === 'lava' ? <LavaLobbyHead map={game.map} /> : game.kind === 'relay' ? <RelayLobbyHead game={game} /> : game.kind === 'jail' ? (game.mode === 'mingle' ? <MingleLobbyHead need={game.need} level={game.level ?? 'senior'} /> : <JailLobbyHead need={game.need} />) : <MuralLobbyHead />;
   return (
     <div className={`cl-lobby ${game.kind === 'serpent' ? 'cl-lobby--serpent' : ''}`}>
       {head}

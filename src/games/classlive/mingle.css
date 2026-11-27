@@ -1,0 +1,52 @@
+/* Maths Mingle's big screen (MingleScene.tsx) and card. Prefix mg-. */
+.mg-stage {
+  position: fixed; inset: 0; z-index: 30; display: grid; grid-template-columns: 1fr minmax(200px, 22vw); grid-template-rows: auto 1fr;
+  background: #2b1d4a center / cover no-repeat; color: #fff; font-family: inherit; overflow: hidden;
+}
+.mg-stage::before { content: ''; position: absolute; inset: 0; background: rgba(20, 12, 40, 0.45); pointer-events: none; }
+.mg-stage > * { position: relative; }
+.mg-top { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 18px 10px 64px; background: rgba(0, 0, 0, 0.35); font-size: 1.1rem; }
+.mg-top__gap { flex: 1; }
+.mg-chip { background: rgba(255, 255, 255, 0.18); border-radius: 999px; padding: 2px 12px; font-size: 0.95rem; }
+.mg-main { display: grid; place-items: center; padding: 2vh 2vw; min-width: 0; }
+.mg-card { background: rgba(18, 10, 36, 0.78); border-radius: 28px; padding: 3vh 4vw; max-height: calc(100vh - 90px); box-sizing: border-box; text-align: center; max-width: 92%; display: flex; flex-direction: column; align-items: center; gap: 1.6vh; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4); }
+.mg-card h1 { margin: 0; font-size: clamp(2rem, min(5vw, 9vh), 4.5rem); }
+.mg-card p { margin: 0; font-size: clamp(1.1rem, 2vw, 1.8rem); }
+.mg-card small { opacity: 0.7; }
+.mg-btn { font: inherit; font-weight: 700; border: 0; border-radius: 999px; padding: 8px 18px; background: rgba(255, 255, 255, 0.2); color: #fff; cursor: pointer; }
+.mg-btn:focus-visible { outline: 3px solid #f2c230; outline-offset: 2px; }
+.mg-btn--go { background: #2f9a57; }
+.mg-btn--stop { background: #d8433a; }
+.mg-btn--big { font-size: clamp(1.2rem, 2.4vw, 2rem); padding: 14px 34px; }
+.mg-notes { display: flex; gap: 2vw; font-size: clamp(2.5rem, 6vw, 5rem); }
+.mg-notes i { font-style: normal; animation: mg-bob 0.9s ease-in-out infinite alternate; }
+@keyframes mg-bob { from { transform: translateY(0) rotate(-10deg); } to { transform: translateY(-24px) rotate(10deg); } }
+.mg-stop { font-size: clamp(2.4rem, min(8vw, 11vh), 7rem); line-height: 1; font-weight: 900; color: #ffd84a; letter-spacing: 0.06em; animation: mg-pop 0.5s ease-out; text-shadow: 0 6px 0 #a3361f; }
+@keyframes mg-pop { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.mg-get { font-size: clamp(1.4rem, 3vw, 2.6rem) !important; }
+.mg-sum { white-space: nowrap; font-size: clamp(3rem, min(11vw, 20vh), 10rem); font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; animation: mg-pop 0.45s ease-out; }
+.mg-sum--words { font-size: clamp(2.4rem, min(7vw, 13vh), 6.5rem); }
+.mg-twist { font-size: clamp(1.4rem, 3vw, 2.6rem) !important; color: #ffd84a; font-weight: 700; }
+.mg-clock { --k: 1; width: clamp(80px, min(13vw, 18vh), 170px); aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(#f2c230 calc(var(--k) * 360deg), rgba(255, 255, 255, 0.15) 0); }
+.mg-clock span { width: 78%; aspect-ratio: 1; border-radius: 50%; background: #1c1236; display: grid; place-items: center; font-size: clamp(2rem, 6vw, 4.5rem); font-weight: 900; font-variant-numeric: tabular-nums; }
+.mg-answer { font-size: clamp(2.4rem, min(8vw, 13vh), 6.5rem); line-height: 1; font-weight: 900; color: #7ee2a0; animation: mg-pop 0.45s ease-out; }
+.mg-left { opacity: 0.9; }
+.mg-jail { background: rgba(0, 0, 0, 0.4); padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; overflow-y: auto; }
+.mg-jail h2 { margin: 0; font-size: 1.3rem; }
+.mg-jail ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.mg-jail li button { width: 100%; text-align: left; font: inherit; font-size: 1.15rem; background: rgba(255, 255, 255, 0.14); color: #fff; border: 0; border-radius: 10px; padding: 8px 12px; cursor: pointer; }
+.mg-jail__none, .mg-jail small { opacity: 0.7; margin: 0; }
+.mg-flash { position: absolute; left: 0; right: 0; bottom: 0; min-height: 18vh; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 0 2vw; padding: 3vh 2vw; background: rgba(47, 154, 87, 0.94); z-index: 5; animation: mg-up 0.35s ease-out; pointer-events: none; box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.35); }
+@keyframes mg-up { from { transform: translateY(100%); } to { transform: none; } }
+.mg-flash b { position: relative; font-size: clamp(2.6rem, min(8vw, 14vh), 8rem); line-height: 1; }
+.mg-flash span { position: relative; font-size: clamp(1.6rem, min(4vw, 7vh), 3.5rem); font-weight: 700; }
+.mg-confetti { position: absolute; inset: 0; overflow: hidden; }
+.mg-confetti i { position: absolute; top: -20px; width: 14px; height: 22px; border-radius: 3px; animation: mg-fall 2.6s linear forwards; }
+@keyframes mg-fall { to { transform: translateY(40vh) rotate(720deg); } }
+.mg-over { grid-column: 1 / -1; grid-row: 1 / -1; place-self: center; text-align: center; background: rgba(18, 10, 36, 0.8); border-radius: 28px; padding: 5vh 5vw; display: flex; flex-direction: column; align-items: center; gap: 2vh; }
+.mg-over h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 5rem); }
+.mg-over p { margin: 0; font-size: clamp(1.1rem, 2.2vw, 2rem); }
+.mg-over__names { opacity: 0.85; }
+.mg-card-how { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
+@media (max-width: 700px) { .mg-stage { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; } .mg-jail { max-height: 28vh; } }
+@media (prefers-reduced-motion: reduce) { .mg-notes i, .mg-stop, .mg-sum, .mg-answer, .mg-flash, .mg-confetti i { animation: none; } }
