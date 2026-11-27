@@ -21,19 +21,19 @@ export function oracle(key: string, parts: string[], prompt: string | undefined)
     return null;
   }
   if (key === 'prob:bag') {
-    const m = /^A bag has (\d+) (\w+) and (\d+) (\w+) counters\.$/.exec(prompt!)!;
-    const colour = /^P\((\w+)\)$/.exec(parts[0])![1];
+    const m = /^A bag has (\d+) (\w+) and (\d+) (\w+) counters\. Take one without looking\.$/.exec(prompt!)!;
+    const colour = /^Chance of (\w+)$/.exec(parts[0])![1];
     const mine = colour === m[2] ? Number(m[1]) : Number(m[3]);
     return mine / (Number(m[1]) + Number(m[3]));
   }
   if (key === 'prob:dice') {
-    const m = /^P\((not|more than|less than) (\d)\)$/.exec(parts[0])!;
+    const m = /^Chance of (not a|more than|less than) (\d)$/.exec(parts[0])!;
     const n = Number(m[2]);
-    const faces = [1, 2, 3, 4, 5, 6].filter((f) => (m[1] === 'not' ? f !== n : m[1] === 'more than' ? f > n : f < n));
+    const faces = [1, 2, 3, 4, 5, 6].filter((f) => (m[1] === 'not a' ? f !== n : m[1] === 'more than' ? f > n : f < n));
     return faces.length / 6;
   }
   if (key === 'prob:not') {
-    const p = Number(/= (\d\.\d)$/.exec(prompt!)![1]);
+    const p = Number(/is (\d\.\d)$/.exec(prompt!)![1]);
     return Math.round((1 - p) * 10) / 10;
   }
   if (key === 'prob:percent') {

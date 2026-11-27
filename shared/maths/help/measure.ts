@@ -546,19 +546,19 @@ const chance: Helper = (q) => {
       'None is impossible. All is certain.', `${WORDS_LINE} Which word fits? ?`);
   }
   if (/Which number fits/.test(pr)) {
-    const w = t.replace(/ means.*$/, '').toLowerCase();
+    const w = t.replace(/ (means|is a chance of).*$/, '').toLowerCase();
     const near = w === 'likely' ? ['On the line, 0 is impossible, 0.5 is even chance and 1 is certain.', 'Likely is on the right side, between 0.5 and 1.', 'Which choice is between 0.5 and 1? ?']
       : w === 'unlikely' ? ['On the line, 0 is impossible, 0.5 is even chance and 1 is certain.', 'Unlikely is on the left side, between 0 and 0.5.', 'Which choice is between 0 and 0.5? ?']
       : w === 'even chance' ? ['The line runs from 0 at the left end to 1 at the right end.', 'Even chance is exactly halfway along the line.', 'Which choice sits there? ?']
       : ['The line runs from 0 at the left end to 1 at the right end.', `${w === 'impossible' ? 'Impossible means it can never happen' : 'Certain means it always happens'}. Which end of the line is that?`, 'Which choice sits there? ?'];
-    return card('chance', `${w.charAt(0).toUpperCase()}${w.slice(1)} means P = ?`, ...near);
+    return card('chance', `${w.charAt(0).toUpperCase()}${w.slice(1)} is a chance of ?`, ...near);
   }
   if (/Which chance word fits/.test(pr)) {
-    const v = /P = ([\d.]+)/.exec(t)?.[1];
-    if (v === '1') return card('chance', 'P = 1 means ?', '0 is impossible: it can never happen.', 'P = 1 is at the other end of the line.', 'What word do we use for something that is sure to happen? ?');
-    if (v === '0') return card('chance', 'P = 0 means ?', '1 is certain: it always happens.', 'P = 0 is at the other end of the line.', 'What word do we use for something that can never happen? ?');
-    if (v === '0.5') return card('chance', 'P = 0.5 means ?', 'The line runs from 0 to 1.', 'Is 0.5 close to an end, or halfway?', 'Which word is that? ?');
-    if (v) return card('chance', `P = ${v} means ?`, 'On the line, 0 is impossible and 1 is certain.', `${v} is close to ${Number(v) < 0.5 ? '0' : '1'} but not at ${Number(v) < 0.5 ? '0' : '1'}.`, 'Which word fits? ?');
+    const v = /^A chance of ([\d.]+)/.exec(t)?.[1];
+    if (v === '1') return card('chance', 'A chance of 1 means ?', '0 is impossible: it can never happen.', '1 is at the other end of the line.', 'What word do we use for something that is sure to happen? ?');
+    if (v === '0') return card('chance', 'A chance of 0 means ?', '1 is certain: it always happens.', '0 is at the other end of the line.', 'What word do we use for something that can never happen? ?');
+    if (v === '0.5') return card('chance', 'A chance of 0.5 means ?', 'The line runs from 0 to 1.', 'Is 0.5 close to an end, or halfway?', 'Which word is that? ?');
+    if (v) return card('chance', `A chance of ${v} means ?`, 'On the line, 0 is impossible and 1 is certain.', `${v} is close to ${Number(v) < 0.5 ? '0' : '1'} but not at ${Number(v) < 0.5 ? '0' : '1'}.`, 'Which word fits? ?');
   }
   return null;
 };
@@ -567,8 +567,8 @@ const probability: Helper = (q) => {
   const pr = prompt(q);
   const t = q.parts[0] ?? '';
   if (q.parts[1] !== '=' || q.parts.length < 3) return null;
-  if (/^P\(no/.test(t) || /^P\(not/.test(t)) {
-    const given = /= ([\d.]+\/\d+|[\d.]+)\s*$/.exec(pr);
+  if (/^Chance of (no|not) /.test(t)) {
+    const given = /is ([\d.]+\/\d+|[\d.]+)\s*$/.exec(pr);
     if (given && !/dice/i.test(pr)) {
       const v = given[1];
       if (v.includes('/')) {
@@ -579,20 +579,20 @@ const probability: Helper = (q) => {
     }
   }
   if (/dice/i.test(pr)) {
-    const keep = /^P\((.+)\)$/.exec(t);
+    const keep = /^Chance of (.+)$/.exec(t);
     if (!keep) return null;
     return card('chance', 'Faces that fit, out of 6', 'A fair dice has 6 faces, all equally likely: 1, 2, 3, 4, 5, 6.', `Which faces are "${keep[1]}"? Count them.`, 'That many faces out of 6: ?/6');
   }
   const bag = /(\d+) (\w+) and (\d+) (\w+)/.exec(pr);
-  if (bag && /^P\(/.test(t)) {
+  if (bag && /^Chance of /.test(t)) {
     const total = Number(bag[1]) + Number(bag[3]);
-    return card('chance', 'Wanted over all', 'Probability is a fraction: the ones you want, over all the ones there are.',
-      `Count all the counters: ${bag[1]} + ${bag[3]} = ${total}. That is the bottom number.`, `The top is the number of ${t.slice(2, -1)} counters. P${t.slice(1)} = ?/${total}`);
+    return card('chance', 'Wanted over all', 'The chance is a fraction: the ones you want, over all the ones there are.',
+      `Count all the counters: ${bag[1]} + ${bag[3]} = ${total}. That is the bottom number.`, `The top is the number of ${t.replace(/^Chance of /, '')} counters. Chance = ?/${total}`);
   }
   const spin = /(\d+) equal parts\. (\d+) are (\w+)/.exec(pr);
-  if (spin && /^P\(/.test(t)) {
-    return card('chance', 'Wanted over all', 'Probability is a fraction: the ones you want, over all the parts.',
-      `All the parts are the bottom number: ${spin[1]}.`, `The top is how many parts are ${spin[3]}. P(${spin[3]}) = ?/${spin[1]}`);
+  if (spin && /^Chance of /.test(t)) {
+    return card('chance', 'Wanted over all', 'The chance is a fraction: the ones you want, over all the parts.',
+      `All the parts are the bottom number: ${spin[1]}.`, `The top is how many parts are ${spin[3]}. Chance = ?/${spin[1]}`);
   }
   return null;
 };

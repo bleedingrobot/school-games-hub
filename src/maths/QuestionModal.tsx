@@ -106,6 +106,17 @@ function Part({ text: raw, blank, unit }: { text: string; blank: ReactNode; unit
         {text.split(' ').map((t, k) => (/\d/.test(t) ? <span key={k}>{t}</span> : <span key={k} className="question__unit">{t}</span>))}
       </span>
     );
+  // A blank inside words, like a coordinate "Now at (7, ?)": the answer box goes where the ? is (James, 27 Nov 2026: on
+  // phones there was no box to see the answer go into).
+  const inWords = /^(.*[(,]\s?)\?(\s?[,)].*)$/.exec(text);
+  if (inWords && /[a-z]/i.test(text))
+    return (
+      <span className="question__word">
+        {inWords[1]}
+        {blank}
+        {inWords[2]}
+      </span>
+    );
   if (/[a-z]/i.test(text)) return <span className="question__word">{text}</span>;
   return <span>{text}</span>;
 }

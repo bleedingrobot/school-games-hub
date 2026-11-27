@@ -25,13 +25,13 @@ export function oracle(key: string, parts: string[], prompt: string | undefined)
     // The pattern goes up evenly: the gap sits halfway between its neighbours.
     return (Number(shown[at - 1]) + Number(shown[at + 1])) / 2;
   }
-  if (key === 'chw:number' && parts[1] === 'means P =') return NUMBER_OF[parts[0].toLowerCase()];
+  if (key === 'chw:number' && parts[1] === 'is a chance of') return NUMBER_OF[parts[0].toLowerCase()];
   if (key === 'spin:part') {
     const m = /^A spinner has (\d+) equal parts\. (\d+) (?:is|are) \w+\.$/.exec(prompt!)!;
     return Number(m[2]) / Number(m[1]);
   }
   if (key === 'spin:rest') {
-    const [n, d] = /= (\d+)\/(\d+)$/.exec(prompt!)!.slice(1).map(Number);
+    const [n, d] = /is (\d+)\/(\d+)$/.exec(prompt!)!.slice(1).map(Number);
     return (d - n) / d;
   }
   if (key === 'fa6:same' || key === 'fa6:double') {
