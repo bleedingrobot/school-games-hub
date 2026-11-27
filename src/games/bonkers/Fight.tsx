@@ -5,8 +5,8 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { CLASS_INFO, trainerFor, zoneById, type MonsterInfo } from '../../../shared/bonkers/content';
-import { replay, type Blow, type Foe, type Progress } from '../../../shared/bonkers/engine';
-import { AUTO_SHARE, BOOSTS } from '../../../shared/bonkers/config';
+import { autoSmash, replay, type Blow, type Foe, type Progress } from '../../../shared/bonkers/engine';
+import { BOOSTS } from '../../../shared/bonkers/config';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../maths/QuestionModal';
 import type { AdventureView, AnswerReply, BonkersBackend } from './backend';
@@ -156,7 +156,7 @@ export function Fight({ backend, progress, start, onDone }: {
   const blow = lastBlow && !lastBlow.ended && r.blows.at(-1)?.slot === lastBlow.slot ? lastBlow : null;
   const q = view.question;
   const moment = adv.moments?.[slotNow] ?? { autos: 0, boost: 1 };
-  const autoHit = Math.min(Math.max(1, Math.round(adv.start.power * AUTO_SHARE)) * moment.autos, Math.max(0, r.foeHp - 1));
+  const autoHit = autoSmash(adv.start.power, r.foeHp, moment);
   const ready = smashed === slotNow;
   const hpNow = ready ? r.foeHp - autoHit : r.foeHp;
   const boost = BOOSTS.find((b) => b.times === moment.boost);

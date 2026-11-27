@@ -309,10 +309,21 @@ function questDone(adv: Adventure, results: FightResult[]): boolean {
   return fights.filter((r) => r.foe.id === hunted && r.outcome === 'won').length >= questTarget(q);
 }
 
+/**
+ * The hero's own smashes before a question. One question a fight (James, 27 Nov 2026): they wear the monster down until
+ * the question's boosted smash is enough to finish it, so a right answer always wins the fight. Never the last smash.
+ * Adventures from before moments (no autos) keep the old rules.
+ */
+export function autoSmash(power: number, foeHp: number, moment: Moment): number {
+  if (!moment.autos) return 0;
+  const own = Math.max(1, Math.round(power * AUTO_SHARE)) * moment.autos;
+  const toFinish = foeHp - Math.round(power * moment.boost);
+  return Math.max(0, Math.min(Math.max(own, toFinish), foeHp - 1));
+}
+
 /** Plays the adventure through the server's marks, in order. The fight screen and the server both use it. */
 export function replay(adv: Adventure, marks: readonly Mark[]): Replay {
   const { power, cls, level, stars: startStars } = adv.start;
-  const auto = Math.max(1, Math.round(power * AUTO_SHARE));
   const fresh = (foe: Foe, trainer: boolean) => ({ foe, foeHp: foe.hp, hearts: trainer ? TRAINER_HEARTS : HEARTS, maxHearts: trainer ? TRAINER_HEARTS : HEARTS, specialUsed: false, calm: 0, questions: 0, rights: 0 });
   let phase: Phase = adv.foes.length ? 'fight' : 'done';
   let fight = 0;
@@ -353,7 +364,7 @@ export function replay(adv: Adventure, marks: readonly Mark[]): Replay {
     }
     // The hero's own bonks first (never the last one: a question always finishes a monster), then the question.
     const moment = adv.moments?.[slot] ?? { autos: 0, boost: 1 };
-    const autoHit = Math.min(auto * moment.autos, Math.max(0, cur.foeHp - 1));
+    const autoHit = autoSmash(power, cur.foeHp, moment);
     cur.foeHp -= autoHit;
     const hit = mark.right ? Math.round(power * moment.boost * times) : 0;
     const ouch = !mark.right && !shield;
