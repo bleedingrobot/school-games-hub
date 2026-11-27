@@ -23,6 +23,7 @@ import { motionFor, type Motion } from './motion';
 import { Table, type Flash, type Seat } from './Table';
 import { eventLine, ORDINAL } from './text';
 import type { BackId } from './backs';
+import { knockBurst } from './art';
 import { fetchMyAchievements } from './backsData';
 import { useCardBacks } from './useCardBacks';
 import { Card101Window, NewBacks } from './Window';
@@ -348,6 +349,7 @@ export function Card101Live({ session }: { session: CardSession }) {
         </Table>
         {banner && (
           <div className="c101-banner" role="alert">
+            {knockBurst() && <img className="c101-banner__burst" src={knockBurst()} alt="" aria-hidden="true" />}
             ✊ {banner}
           </div>
         )}

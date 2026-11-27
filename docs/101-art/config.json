@@ -49,7 +49,7 @@
   "pictures": [
     {
       "name": "back-bach-day",
-      "prompt": "A sunny New Zealand seaside bach deck seen from just behind a wooden outdoor table: weathered wooden deck boards across the bottom, a low wooden railing, golden sand, calm turquoise sea and gentle waves, a green headland on the right, a few round white clouds in a bright blue sky, a pōhutukawa tree with red flowers at the left edge, a striped beach towel over the railing. Empty background scenery for a children's game, no people, no animals, the middle calm and uncluttered so things placed on top stand out. Wide landscape.",
+      "prompt": "A sunny New Zealand seaside bach deck seen from just behind a wooden outdoor table: weathered wooden deck boards across the bottom, a low wooden railing, golden sand, calm turquoise sea and gentle waves, a green headland on the right, a few round white clouds in a bright blue sky, a pōhutukawa tree with red flowers at the left edge, a striped beach towel over the railing. A quiet, empty place with nobody there, the middle calm and open so things placed on top stand out. Wide landscape.",
       "size": [
         1536,
         864
@@ -60,7 +60,7 @@
     },
     {
       "name": "back-bach-evening",
-      "prompt": "The same seaside bach deck at dusk: warm orange and violet sunset over a calm sea, strings of glowing round fairy lights hanging along the top, the wooden deck and railing in soft evening light, a lantern glowing at the right edge, the first stars in the sky. Empty background scenery for a children's game, no people, no animals, the middle calm and uncluttered so things placed on top stand out. Wide landscape.",
+      "prompt": "The same seaside bach deck at dusk: warm orange and violet sunset over a calm sea, strings of glowing round fairy lights hanging along the top, the wooden deck and railing in soft evening light, a lantern glowing at the right edge, the first stars in the sky. A quiet, empty place with nobody there, the middle calm and open so things placed on top stand out. Wide landscape.",
       "size": [
         1536,
         864
@@ -71,7 +71,7 @@
     },
     {
       "name": "wood",
-      "prompt": "Warm honey-brown wooden table planks running left to right, gentle wood grain and a few soft knots, friendly and clean, slightly worn like a beach bach table. Seen flat from straight above, even soft light, no shadows, no objects, a seamless even texture filling the whole picture.",
+      "prompt": "Warm honey-brown wooden table planks running left to right, gentle wood grain and a few soft knots, friendly and clean, slightly worn like a beach bach table. Seen flat from straight above in even soft light, a plain seamless texture filling the whole picture.",
       "size": [
         1024,
         1024
@@ -84,7 +84,7 @@
     },
     {
       "name": "felt",
-      "prompt": "Soft green card-table felt, a calm even mid green with a very faint woven fuzz, plain and smooth. Seen flat from straight above, even soft light, no shadows, no objects, a seamless even texture filling the whole picture.",
+      "prompt": "Soft green card-table felt, a calm even mid green with a very faint woven fuzz, plain and smooth. Seen flat from straight above in even soft light, a plain seamless texture filling the whole picture.",
       "size": [
         1024,
         1024
@@ -97,7 +97,7 @@
     },
     {
       "name": "back-classic",
-      "prompt": "Deep purple and indigo with neat rows of small round gold dots and a soft gold diamond shape glowing in the middle. A flat decorative pattern for the back of a playing card, filling the whole tall picture edge to edge, symmetrical top to bottom, bold simple shapes that still read when tiny, no border, no frame, no card edge, no text, no numbers.",
+      "prompt": "Deep purple and indigo with neat rows of small round gold dots and a soft gold diamond shape glowing in the middle. A flat decorative pattern that fills the whole tall picture right out to every edge, symmetrical top to bottom, bold simple shapes that still read when tiny.",
       "size": [
         832,
         1152
@@ -109,7 +109,7 @@
     },
     {
       "name": "back-pohutukawa",
-      "prompt": "Dark glossy green leaves with bright red fluffy pōhutukawa flowers spread evenly, a big flower in the middle. A flat decorative pattern for the back of a playing card, filling the whole tall picture edge to edge, symmetrical top to bottom, bold simple shapes that still read when tiny, no border, no frame, no card edge, no text, no numbers.",
+      "prompt": "Dark glossy green leaves with bright red fluffy pōhutukawa flowers spread evenly, a big flower in the middle. A flat decorative pattern that fills the whole tall picture right out to every edge, symmetrical top to bottom, bold simple shapes that still read when tiny.",
       "size": [
         832,
         1152
@@ -121,7 +121,7 @@
     },
     {
       "name": "back-koru",
-      "prompt": "Swirling green and teal koru fern spirals curling in from the corners, interlocking in a balanced pattern on dark green. A flat decorative pattern for the back of a playing card, filling the whole tall picture edge to edge, symmetrical top to bottom, bold simple shapes that still read when tiny, no border, no frame, no card edge, no text, no numbers.",
+      "prompt": "Swirling green and teal koru fern spirals curling in from the corners, interlocking in a balanced pattern on dark green. A flat decorative pattern that fills the whole tall picture right out to every edge, symmetrical top to bottom, bold simple shapes that still read when tiny.",
       "size": [
         832,
         1152
@@ -133,7 +133,7 @@
     },
     {
       "name": "back-kea",
-      "prompt": "Overlapping olive green kea feathers like scales, with flashes of bright orange underwing feathers in the middle. A flat decorative pattern for the back of a playing card, filling the whole tall picture edge to edge, symmetrical top to bottom, bold simple shapes that still read when tiny, no border, no frame, no card edge, no text, no numbers.",
+      "prompt": "Overlapping olive green kea feathers like scales, with flashes of bright orange underwing feathers in the middle. A flat decorative pattern that fills the whole tall picture right out to every edge, symmetrical top to bottom, bold simple shapes that still read when tiny.",
       "size": [
         832,
         1152
@@ -145,7 +145,7 @@
     },
     {
       "name": "back-paua",
-      "prompt": "Shimmering pāua shell swirls in blue, green, teal and violet, glossy and rainbow-like, flowing from the middle outwards. A flat decorative pattern for the back of a playing card, filling the whole tall picture edge to edge, symmetrical top to bottom, bold simple shapes that still read when tiny, no border, no frame, no card edge, no text, no numbers.",
+      "prompt": "Shimmering pāua shell swirls in blue, green, teal and violet, glossy and rainbow-like, flowing from the middle outwards. A flat decorative pattern that fills the whole tall picture right out to every edge, symmetrical top to bottom, bold simple shapes that still read when tiny.",
       "size": [
         832,
         1152
@@ -157,7 +157,7 @@
     },
     {
       "name": "back-matariki",
-      "prompt": "A deep navy night sky with the small bright matariki star cluster glowing in the middle, tiny stars and a soft milky way sweeping across. A flat decorative pattern for the back of a playing card, filling the whole tall picture edge to edge, symmetrical top to bottom, bold simple shapes that still read when tiny, no border, no frame, no card edge, no text, no numbers.",
+      "prompt": "A deep navy night sky with the small bright matariki star cluster glowing in the middle, tiny stars and a soft milky way sweeping across. A flat decorative pattern that fills the whole tall picture right out to every edge, symmetrical top to bottom, bold simple shapes that still read when tiny.",
       "size": [
         832,
         1152
@@ -169,7 +169,7 @@
     },
     {
       "name": "back-wave",
-      "prompt": "Big curling blue ocean waves with white foam tips stacked in rows, bright and bold like a surf poster. A flat decorative pattern for the back of a playing card, filling the whole tall picture edge to edge, symmetrical top to bottom, bold simple shapes that still read when tiny, no border, no frame, no card edge, no text, no numbers.",
+      "prompt": "Big curling blue ocean waves with white foam tips stacked in rows, bright and bold like a surf poster. A flat decorative pattern that fills the whole tall picture right out to every edge, symmetrical top to bottom, bold simple shapes that still read when tiny.",
       "size": [
         832,
         1152
@@ -181,7 +181,7 @@
     },
     {
       "name": "back-golden",
-      "prompt": "A shining golden sunburst of rays from the middle with a small simple gold crown in the centre, rich warm gold and amber. A flat decorative pattern for the back of a playing card, filling the whole tall picture edge to edge, symmetrical top to bottom, bold simple shapes that still read when tiny, no border, no frame, no card edge, no text, no numbers.",
+      "prompt": "A shining golden sunburst of rays from the middle with a small simple golden crown shape in the centre, rich warm gold and amber. A flat decorative pattern that fills the whole tall picture right out to every edge, symmetrical top to bottom, bold simple shapes that still read when tiny.",
       "size": [
         832,
         1152
@@ -193,7 +193,7 @@
     },
     {
       "name": "bird-kea",
-      "prompt": "A friendly cartoon portrait of a cheeky olive green New Zealand kea parrot with a curved grey beak and a flash of orange under its wing, head and shoulders, looking at the viewer with a happy expression, holding a fan of playing cards close to its chest with only the plain card backs showing. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "prompt": "A friendly cartoon portrait of a cheeky olive green New Zealand kea parrot with a curved grey beak and a flash of orange under its wing, head and shoulders, looking at the viewer with a happy expression, holding a small fan of plain purple playing cards close to its chest. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
       "size": [
         768,
         768
@@ -205,7 +205,7 @@
     },
     {
       "name": "bird-tui",
-      "prompt": "A friendly cartoon portrait of a glossy dark New Zealand tūī bird with shiny blue-green feathers and a white tuft of feathers at its throat, head and shoulders, looking at the viewer with a happy expression, holding a fan of playing cards close to its chest with only the plain card backs showing. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "prompt": "A friendly cartoon portrait of a glossy dark New Zealand tūī bird with shiny blue-green feathers and a white tuft of feathers at its throat, head and shoulders, looking at the viewer with a happy expression, holding a small fan of plain purple playing cards close to its chest. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
       "size": [
         768,
         768
@@ -217,7 +217,7 @@
     },
     {
       "name": "bird-weka",
-      "prompt": "A friendly cartoon portrait of a curious brown New Zealand weka bird with speckled brown feathers, a strong pointed beak and red eyes, head and shoulders, looking at the viewer with a happy expression, holding a fan of playing cards close to its chest with only the plain card backs showing. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
+      "prompt": "A friendly cartoon portrait of a curious brown New Zealand weka bird with speckled brown feathers, a strong pointed beak and red eyes, head and shoulders, looking at the viewer with a happy expression, holding a small fan of plain purple playing cards close to its chest. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around.",
       "size": [
         768,
         768

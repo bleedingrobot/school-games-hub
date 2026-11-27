@@ -4,7 +4,7 @@
  * then their total goes up. A Skip button shows everyone at once.
  */
 import { useEffect, useRef, useState } from 'react';
-import { AvatarImage } from '../../avatar/AvatarImage';
+import { SeatFace } from './SeatFace';
 import { cardName } from '../../../shared/card101/cards';
 import type { RoundResult } from '../../../shared/card101/engine';
 import { PlayingCard } from './PlayingCard';
@@ -75,7 +75,7 @@ export function Scoring({
             return (
               <li key={i} className={`c101-score-row${won ? ' is-winner' : ''}${score.total === 0 ? ' is-zero' : ''}`}>
                 <div className="c101-score-row__who">
-                  <AvatarImage avatar={seats[i].avatar} size={32} />
+                  <SeatFace seat={seats[i]} size={32} />
                   <strong>{name(i)}</strong>
                   {result.knocker === i && <span className="c101-badge c101-badge--knock">✊ Knocked</span>}
                 </div>
