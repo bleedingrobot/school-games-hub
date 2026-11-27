@@ -44,7 +44,7 @@ Deno.serve(
       // Teachers trying it out always have unlimited adventures (their own row, not a class's).
       const [{ data, error }, who] = await Promise.all([
         admin.rpc('settings_of', { player }).maybeSingle(),
-        admin.from('profiles').select('role, school:schools(hub_season_start, hub_season_days)').eq('id', player).maybeSingle(),
+        admin.from('profiles').select('role, school:schools!profiles_school_id_fkey(hub_season_start, hub_season_days)').eq('id', player).maybeSingle(),
       ]);
       if (error || !data || who.error) {
         console.error(`bonkers: settings failed (${error?.code ?? 'none'})`);
@@ -54,7 +54,8 @@ Deno.serve(
       // "Unlimited today" is on while the class's unlimited_days names today's NZ date for Smash Quest.
       const me = who.data as { role?: string; school?: { hub_season_start?: string; hub_season_days?: number } | null } | null;
       const teacher = me?.role === 'teacher';
-      // The school's season clock, for the home screen's boss timeline (Smash Quest's season is the hub season).
+      // The school's season clock (the embed names profiles_school_id_fkey: schools.contact_teacher points back at
+      // profiles, and an unnamed embed fails as ambiguous), for the home screen's boss timeline (Smash Quest's season is the hub season).
       const season = me?.school?.hub_season_start && me.school.hub_season_days ? { start: me.school.hub_season_start, days: me.school.hub_season_days } : null;
       return { enabled: teacher || row.bonkers_enabled === true, unlimited: teacher || isUnlimitedFor(row.unlimited_days, 'bonkers'), season };
     },
