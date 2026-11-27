@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { CLASS_INFO, trainerFor, zoneById, type MonsterInfo } from '../../../shared/bonkers/content';
 import { autoSmash, monsterSwings, replay, type Blow, type Foe, type Progress } from '../../../shared/bonkers/engine';
-import { BOOSTS, FOE_HEARTS } from '../../../shared/bonkers/config';
+import { BOOSTS, FOE_HEARTS, HEARTS, POINTS, STARS, STICKERS_A_WIN, TRAINER_HEARTS } from '../../../shared/bonkers/config';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../maths/QuestionModal';
 import type { AdventureView, AnswerReply, BonkersBackend } from './backend';
@@ -132,18 +132,44 @@ export function Fight({ backend, progress, start, onDone }: {
     const look = looks(pause.foe, adv.quest.zone, adv.start.level);
     const won = pause.blow.ended === 'won';
     const trainer = pause.foe.id.startsWith('trainer-');
+    const next = (
+      <button type="button" className="bq-btn bq-btn--big" onClick={() => setPause(r.phase === 'trainer' && !trainer ? { kind: 'trainer' } : null)}>
+        {r.phase === 'done' ? 'Finish the adventure' : r.phase === 'trainer' && !trainer ? 'Something’s coming…' : 'Next fight!'}
+      </button>
+    );
     return (
       <section className="bq-fight" aria-label="Fight over">
         {header}
+        {won ? (
+          // The victory screen after every won fight (James, 28 Nov 2026).
+          <div className="bq-card bq-center bq-victory" style={{ '--bq-c': ci.colour } as React.CSSProperties}>
+            <div className="bq-victory__confetti" aria-hidden="true">
+              {['⭐', '🎉', '✨', '💥', '🌟', '🎊', '⭐', '✨'].map((c, i) => <span key={i} style={{ '--i': i } as React.CSSProperties}>{c}</span>)}
+            </div>
+            <p className="bq-victory__banner">VICTORY!</p>
+            <div className="bq-victory__scene" aria-hidden="true">
+              <span className="bq-face bq-victory__hero">{ci.emoji[hero.look]}</span>
+              <span className="bq-face bq-victory__foe">{look.emoji}</span>
+            </div>
+            <h2 className="bq-h2">You smashed {pause.foe.name}!</h2>
+            <p className="bq-speech">{pause.foe.name}: “{look.ouch}”</p>
+            <ul className="bq-victory__loot">
+              {!trainer && <li className="bq-pop" style={{ animationDelay: '0.5s' }}>⭐ <b>+{STARS.win}</b> stars</li>}
+              {!trainer && <li className="bq-pop" style={{ animationDelay: '0.8s' }}>🏷️ <b>+{STICKERS_A_WIN}</b> sticker</li>}
+              <li className="bq-pop" style={{ animationDelay: '1.1s' }}>❤️ <b>{pause.blow.hearts}</b> of {trainer ? TRAINER_HEARTS : HEARTS} hearts left</li>
+              <li className="bq-pop" style={{ animationDelay: '1.4s' }}>🪙 <b>+{trainer ? POINTS.trainer : POINTS.fightWon}</b> hub points</li>
+            </ul>
+            {next}
+          </div>
+        ) : (
         <div className="bq-card bq-center bq-pop">
-          <p className="bq-face bq-face--big" aria-hidden="true">{won ? '💫' : look.emoji}</p>
-          <h2 className="bq-h2">{won ? `You smashed ${pause.foe.name}!` : `Smashed! ${pause.foe.name} wins this one.`}</h2>
-          <p>{won ? `“${look.ouch}”` : 'Nothing lost, hero. Dust yourself off!'}</p>
-          {!trainer && <p className="bq-big-line">⭐ +{won ? 3 : 1} {won ? 'stars' : 'star'}</p>}
-          <button type="button" className="bq-btn bq-btn--big" onClick={() => setPause(r.phase === 'trainer' && !trainer ? { kind: 'trainer' } : null)}>
-            {r.phase === 'done' ? 'Finish the adventure' : r.phase === 'trainer' && !trainer ? 'Something’s coming…' : 'Next fight!'}
-          </button>
+          <p className="bq-face bq-face--big" aria-hidden="true">{look.emoji}</p>
+          <h2 className="bq-h2">Smashed! {pause.foe.name} wins this one.</h2>
+          <p>Nothing lost, hero. Dust yourself off!</p>
+          {!trainer && <p className="bq-big-line">⭐ +{STARS.bonked} star</p>}
+          {next}
         </div>
+        )}
       </section>
     );
   }
