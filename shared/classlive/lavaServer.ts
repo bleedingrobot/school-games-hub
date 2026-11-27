@@ -16,6 +16,8 @@ export type LavaPublicRound = Omit<LavaRound, 'items' | 'fell' | 'booted'> & { i
 export interface LavaPublic {
   kind: 'lava';
   map: LavaMap;
+  /** The board's width (height 1); missing: a square board. */
+  w?: number;
   sunk: number[];
   round: LavaPublicRound | null;
   rafted: number;
@@ -53,7 +55,7 @@ export function lavaPublic(g: LavaGame, players: number): LavaPublic {
         return { ...rest, items: items.filter((x) => !x.by).map(({ by: _by, ...x }) => x), ended: fell !== null, fell: fell?.length ?? 0 };
       })()
     : null;
-  return { kind: 'lava', map: g.map, sunk: g.sunk, round, rafted, up: players - rafted };
+  return { kind: 'lava', map: g.map, ...(g.w ? { w: g.w } : {}), sunk: g.sunk, round, rafted, up: players - rafted };
 }
 
 export function lavaPlayer(s: Session, g: LavaGame, id: string, fresh: () => LavaGame['mine'][string]): LavaPlayer {
