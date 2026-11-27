@@ -20,9 +20,8 @@ describe('damage', () => {
     const boosted = play(powered, { kind: 'fight', attack: 0 }, () => 0.5).state;
     expect(boosted.foes[0].hp).toBeLessThan(plain.foes[0].hp);
     expect(boosted.questions).toBe(1);
-  });
 
-  it('knocked-out fighters still share the exp (James, 28 Nov 2026); old battles without the flag do not', () => {
+    // Knocked-out fighters still share the exp (James, 28 Nov 2026); old battles without the flag do not.
     const expOf = (faintedShare: boolean) => {
       const setup = { kind: 'wild' as const, area: 1, team: [makeMonster('plusplash-1', 5), makeMonster('digibud-1', 5)], foes: [makeMonster('digibud-1', 5)], ...(faintedShare ? { faintedShare: true as const } : {}) };
       const s = play(newBattle(setup).state, { kind: 'power-up', answer: 'right' }, () => 0.5).state;
