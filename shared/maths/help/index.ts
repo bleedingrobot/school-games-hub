@@ -24,6 +24,12 @@ function tidy(card: HelpCard): HelpCard {
   return { ...card, steps };
 }
 
+/** A card, then its second way in if it has one (each shown as a card of its own). */
+const withAlso = (card: HelpCard): HelpCard[] => {
+  const { also, ...own } = card;
+  return also && also.steps.length ? [tidy(own), tidy(also)] : [tidy(own)];
+};
+
 export function helpCardFor(q: HelpQuestion, ctx: HelpContext = {}): HelpCard | null {
   for (const helper of HELPERS) {
     try {
@@ -63,10 +69,10 @@ export function helpCardsFor(q: HelpQuestion, ctx: HelpContext = {}): HelpCard[]
     fromPicture = null;
   }
   const cards: HelpCard[] = [];
-  if (fromPicture) cards.push(tidy(fromPicture));
+  if (fromPicture) cards.push(...withAlso(fromPicture));
   // The same idea twice is left out: the thermometer card and the number-line card, the ladder and the units card.
   const repeats = (fromPicture?.kind === 'thermometer' && topic?.kind === 'negatives') || (fromPicture?.kind === 'ladder' && topic?.kind === 'units');
-  if (topic && !repeats && !(fromPicture && (SAME_AS_PICTURE.has(topic.title) || topic.title === fromPicture.title))) cards.push(topic);
+  if (topic && !repeats && !(fromPicture && (SAME_AS_PICTURE.has(topic.title) || topic.title === fromPicture.title))) cards.push(...withAlso(topic));
   if (counting && counting.steps.length) cards.push(tidy(counting));
   return cards;
 }

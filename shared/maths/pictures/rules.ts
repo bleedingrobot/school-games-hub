@@ -7,7 +7,8 @@
  * circles for a mixed number) are the exception James agreed to: the pupil still has to count.
  */
 import { num, show, solve, sum } from '../help/read';
-import type { Picture, PictureRule } from './types';
+import { parseLin } from '../help/algebra';
+import type { BalanceSide, Picture, PictureRule } from './types';
 
 // ---------- small readers ----------
 
@@ -558,7 +559,42 @@ const ratio: PictureRule = (q) => {
 const balance: PictureRule = (q) => {
   const m = /^If (.+?) = (.+)$/.exec(q.prompt ?? '');
   if (!m || q.parts.length !== 3 || q.parts[1] !== '=' || q.parts[2] !== '?') return null;
-  return { kind: 'balance', left: m[1], right: m[2] };
+  const leftBlocks = balanceLeft(m[1]);
+  const rightBlocks = balanceNumber(m[2]);
+  return leftBlocks && rightBlocks ? { kind: 'balance', left: m[1], right: m[2], leftBlocks, rightBlocks } : { kind: 'balance', left: m[1], right: m[2] };
+};
+
+/** A number on a pan: unit squares when small enough to count (up to 30), else one labelled block. */
+function balanceNumber(t: string): BalanceSide | null {
+  const n = whole(t);
+  if (n === null || n < 0) return null;
+  return n <= 30 ? { units: n } : { block: t };
+}
+
+/** The left pan of "p + 11", "n − 2", "9m", "s ÷ 9", "6s + 2": the letter's box(es), then the squares (dashed when taken away). */
+function balanceLeft(t: string): BalanceSide | null {
+  const div = /^([a-z]) ÷ (\d+)$/.exec(t);
+  if (div) return { letter: t };
+  const e = parseLin(t);
+  if (!e || e.coef > 12 || !Number.isInteger(e.k)) return null;
+  const side: BalanceSide = { letter: e.letter, letters: e.coef };
+  if (e.op === '+') {
+    if (e.k > 30) return null;
+    side.units = e.k;
+  } else if (e.op === '−') {
+    if (e.k > 30) return null;
+    side.gone = e.k;
+  }
+  return side;
+}
+
+/** "10⁻³ = ?" (write it as a decimal): the place-value strip with the 1 in the ones. */
+const placeStrip: PictureRule = (q) => {
+  const m = /^10⁻([⁰¹²³⁴⁵⁶⁷⁸⁹]+)$/.exec(q.parts[0] ?? '');
+  if (!m || q.parts.length !== 3 || q.parts[1] !== '=' || q.parts[2] !== '?') return null;
+  if (!/decimal/i.test(q.prompt ?? '')) return null;
+  const places = Number([...m[1]].map((c) => '⁰¹²³⁴⁵⁶⁷⁸⁹'.indexOf(c)).join(''));
+  return places >= 1 && places <= 6 ? { kind: 'place-strip', places } : null;
 };
 
 // ---------- counting ----------
@@ -695,6 +731,7 @@ export const PICTURE_RULES: PictureRule[] = [
   fractionOf,
   ratio,
   balance,
+  placeStrip,
   tenths,
   hundredths,
   hundredBond,

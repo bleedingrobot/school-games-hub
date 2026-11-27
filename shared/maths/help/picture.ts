@@ -484,11 +484,14 @@ function balance(p: Extract<Picture, { kind: 'balance' }>): HelpCard {
   if (r !== null && e) {
     const v = e.letter;
     const k = show(e.k);
-    if (e.coef === 1 && e.op === '+') return steps(`To get ${v} on its own, take ${k} off the left pan. Take ${k} off the other pan too.`, `${show(r)} − ${k} = ?`);
-    if (e.coef === 1 && e.op === '−') return steps(`${v} has ${k} taken away. Put ${k} back on the left pan, and ${k} on the other pan too.`, `${show(r)} + ${k} = ?`);
-    if (e.coef > 1 && !e.op) return steps(`${e.coef}${v} is ${e.coef} equal lots of ${v}. Share each pan into ${e.coef} equal parts.`, `One part of the ${show(r)} pan: ${show(r)} ÷ ${e.coef} = ?`);
+    // Said as squares when the picture draws them.
+    const drawn = !!(p.leftBlocks?.units || p.leftBlocks?.gone);
+    const ks = drawn ? `${k} square${e.k === 1 ? '' : 's'}` : k;
+    if (e.coef === 1 && e.op === '+') return steps(`To get ${v} on its own, take ${ks} off the left pan. Take ${ks} off the other pan too.`, `${show(r)} − ${k} = ?`);
+    if (e.coef === 1 && e.op === '−') return steps(`${v} has ${k} taken away (the dashed ${e.k === 1 ? 'square' : 'squares'}). Put ${ks} back on the left pan, and ${ks} on the other pan too.`, `${show(r)} + ${k} = ?`);
+    if (e.coef > 1 && !e.op) return steps(`${e.coef}${v} is ${e.coef} equal boxes of ${v}. Share each pan into ${e.coef} equal parts.`, `One part of the ${show(r)} pan: ${show(r)} ÷ ${e.coef} = ?`);
     if (e.coef > 1 && e.op) {
-      const back = e.op === '+' ? `Take ${k} off both pans: ${show(r)} − ${k} = ?` : `Put ${k} back on both pans: ${show(r)} + ${k} = ?`;
+      const back = e.op === '+' ? `Take ${ks} off both pans: ${show(r)} − ${k} = ?` : `Put ${ks} back on both pans: ${show(r)} + ${k} = ?`;
       return steps(back, `Now share the ${e.coef}${v} pan into ${e.coef} equal parts: that number ÷ ${e.coef} = ?`);
     }
   }
@@ -508,8 +511,11 @@ function unitLadder(q: HelpQuestion, p: Extract<Picture, { kind: 'unit-ladder' }
   // "50 g ÷ 1000": fewer digits than places to move, so the empty places are 0s.
   const amount = /^\d+$/.exec((q.parts[0] ?? '').split(' ')[0] ?? '')?.[0];
   const short = !down && amount && amount.length < places ? ` ${amount} has only ${amount.length} digit${amount.length === 1 ? '' : 's'}, so fill the empty places with 0s.` : '';
-  return card('ladder', 'Use the unit ladder', `Going down the ladder is ×, going up is ÷. ${from} to ${to} is ${down ? '×' : '÷'} ${factor}.`,
+  const main = card('ladder', 'Use the unit ladder', `Going down the ladder is ×, going up is ÷. ${from} to ${to} is ${down ? '×' : '÷'} ${factor}.`,
     `${down ? '×' : '÷'} ${factor} moves each digit ${places} place${places === 1 ? '' : 's'} to the ${down ? 'left' : 'right'}.${short}`, `${q.parts[0]} ${down ? '×' : '÷'} ${factor} = ?`);
+  // A half of the big unit: halve the whole factor.
+  if (down && /^0?\.5 /.test(q.parts[0] ?? '')) main.also = card('half-whole', 'Half of the whole', '0.5 is a half.', `1 ${from} = ${factor} ${to}.`, `Half of ${factor} = ?`);
+  return main;
 }
 
 /** The card that walks through the question using its picture, or null. */
@@ -527,6 +533,8 @@ export function pictureCard(q: HelpQuestion, picture: Picture | null): HelpCard 
     case 'wholes': return wholes(q, picture);
     case 'place': return place(q);
     case 'balance': return balance(picture);
+    case 'place-strip': return card('place-strip', 'Move the 1 one place right for each ÷ 10', 'The 1 starts in the ones.',
+      `${q.parts[0]} is ÷ 10, ${picture.places} time${picture.places === 1 ? '' : 's'}: move the 1 one place right each time.`, 'Where does the 1 end up? Write the number: ?');
     case 'unit-ladder': return unitLadder(q, picture);
     case 'clock-24': return ringCard(q);
     default: return null;

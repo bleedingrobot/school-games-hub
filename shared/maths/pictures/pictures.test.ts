@@ -158,4 +158,11 @@ it('gives every question type with a picture idea a picture that does not show t
     // Decimals in a place chart, with room for the digits to move into (the answer is never written).
     expect(pic('1.4 ÷ 10 = ?')).toEqual({ kind: 'place', headings: ['1s', 'tenths', 'hundredths'], digits: ['1', '4', ''] });
   }
+  // balance weights and the negative-power strip
+  {
+    expect(pictureFor({ parts: ['p', '=', '?'], prompt: 'If p + 11 = 23' })).toMatchObject({ leftBlocks: { letter: 'p', letters: 1, units: 11 }, rightBlocks: { units: 23 } });
+    expect(pictureFor({ parts: ['m', '=', '?'], prompt: 'If 9m = 72' })).toMatchObject({ leftBlocks: { letter: 'm', letters: 9 }, rightBlocks: { block: '72' } });
+    expect(pictureFor({ parts: ['s', '=', '?'], prompt: 'If s ÷ 9 = 8' })).toMatchObject({ leftBlocks: { letter: 's ÷ 9' }, rightBlocks: { units: 8 } });
+    expect(pictureFor({ parts: ['10⁻³', '=', '?'], prompt: 'Write it as a decimal.' })).toEqual({ kind: 'place-strip', places: 3 });
+  }
 });
