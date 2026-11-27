@@ -7,7 +7,7 @@ import type { JailGame } from '../../../shared/classlive/jail';
 import { rosterNames } from '../../../shared/classlive/jailServer';
 import type { ScreenView } from '../../../shared/classlive/server';
 import { voiceSlug } from '../../speech';
-import { trackUrl, type Track } from './music';
+import { classLiveTrack, trackUrl } from './music';
 import { painted } from './paintedArt';
 import { mountJailStage } from './jailStage';
 import { next, VOICE_FOLDER } from './voiceLines';
@@ -24,8 +24,9 @@ interface Stage {
 function asset(file: string): string {
   const m = /^(map|back|dice)-([a-z]+)\.webp$/.exec(file);
   if (m) return (m[1] === 'dice' ? painted('corners-fx', `dice-${m[2]}`) : painted('corners', `${m[1]}-${m[2]}`)) ?? '';
-  const t = /^(corners-[a-z]+(?:-hot)?)\.mp3$/.exec(file);
-  if (t) return trackUrl(t[1] as Track) ?? '';
+  // The classroom page asks for corners-<map>[-hot].mp3: play Real-life Four Corners' own track when it's there.
+  const t = /^corners-([a-z]+)(-hot)?\.mp3$/.exec(file);
+  if (t) return trackUrl(classLiveTrack('live', 'jail', { map: t[1], hot: !!t[2] })) ?? '';
   return '';
 }
 

@@ -25,6 +25,58 @@
    "file": "jail",
    "style": "s",
    "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, scary prison, sad children, weapons, patchwork, extra squares, more than four colours"
+  },
+  {
+   "name": "station-snow",
+   "prompt": "A wide backdrop painting: a cosy snowy jail station inside a big friendly igloo, ice-block walls, a barred ice doorway at one side, soft blue glowing ice, fairy lights, warm lantern glow, a little bench with blankets at the edge. The middle is calm, darker and softer, an empty open middle with nothing in it, just a plain soft wall and floor, with all the detail round the edges, no characters, nobody inside, no writing anywhere. Wide landscape picture.",
+   "size": [
+    1920,
+    1088
+   ],
+   "kind": "scene",
+   "folder": "jail",
+   "file": "station-snow",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, people, children, characters, faces, figures, busy middle"
+  },
+  {
+   "name": "station-jungle",
+   "prompt": "A wide backdrop painting: a cosy jungle jail station inside an ancient overgrown temple room, a round bamboo and vine cage door at one side, mossy stone walls, giant leaves, warm dappled green light, a little woven mat at the edge. The middle is calm, darker and softer, an empty open middle with nothing in it, just a plain soft wall and floor, with all the detail round the edges, no characters, nobody inside, no writing anywhere. Wide landscape picture.",
+   "size": [
+    1920,
+    1088
+   ],
+   "kind": "scene",
+   "folder": "jail",
+   "file": "station-jungle",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, people, children, characters, faces, figures, busy middle"
+  },
+  {
+   "name": "station-castle",
+   "prompt": "A wide backdrop painting: a cosy friendly castle dungeon jail station, stone walls, an iron barred door at one side, cute candles and torches, purple moonlight from a small barred window, banners, spooky but cute and warm. The middle is calm, darker and softer, an empty open middle with nothing in it, just a plain soft wall and floor, with all the detail round the edges, no characters, nobody inside, no writing anywhere. Wide landscape picture.",
+   "size": [
+    1920,
+    1088
+   ],
+   "kind": "scene",
+   "folder": "jail",
+   "file": "station-castle",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, people, children, characters, faces, figures, busy middle"
+  },
+  {
+   "name": "station-space",
+   "prompt": "A wide backdrop painting: a cosy space ship brig jail station, sleek metal walls, a glowing blue force-field door at one side, round portholes with stars and a ringed planet, soft panel lights, clean and friendly sci-fi. The middle is calm, darker and softer, an empty open middle with nothing in it, just a plain soft wall and floor, with all the detail round the edges, no characters, nobody inside, no writing anywhere. Wide landscape picture.",
+   "size": [
+    1920,
+    1088
+   ],
+   "kind": "scene",
+   "folder": "jail",
+   "file": "station-space",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, people, children, characters, faces, figures, busy middle"
   }
  ]
 }

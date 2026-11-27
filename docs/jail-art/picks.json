@@ -1,3 +1,7 @@
 {
- "pick": 3
+ "pick": 3,
+ "station-snow": 2,
+ "station-jungle": 2,
+ "station-castle": 2,
+ "station-space": 3
 }

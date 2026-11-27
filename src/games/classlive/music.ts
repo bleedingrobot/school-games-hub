@@ -14,7 +14,7 @@ type Calm = 'stars' | 'serpent' | 'boss' | 'goldrush' | 'skyclimb' | 'island' | 
  * Each game and arena has a calm track and a "-hot" one: the same tune made more dramatic and high-energy, for the
  * last 30 seconds and the big moments (James, 25 Nov 2026 NZ). Mystery Mural's hot one is its guessing music.
  */
-export type Track = 'picker' | 'win' | 'mural' | 'guess' | Calm | `${Calm}-hot` | `game-${string}` | `corners-${string}` | `shark-${string}` | `ghost-${string}` | `clash-${string}` | `thrones-${string}` | `lava-${string}` | `crew-${string}` | `relay-${string}`;
+export type Track = 'picker' | 'win' | 'mural' | 'guess' | Calm | `${Calm}-hot` | `game-${string}` | `corners-${string}` | `shark-${string}` | `ghost-${string}` | `clash-${string}` | `thrones-${string}` | `lava-${string}` | `crew-${string}` | `relay-${string}` | `jail-${string}`;
 
 const FILES = import.meta.glob('./music/*.mp3', { eager: true, import: 'default' }) as Record<string, string>;
 const file = (t: string): string | undefined => FILES[`./music/${t}.mp3`];
@@ -230,8 +230,13 @@ export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 's
     if (trackUrl(own)) return own;
     return o.hot ? 'boss-hot' : 'boss';
   }
-  // Real-life Four Corners: the big screen plays its own map tracks with the countdown (JailStage); this is the pads'.
-  if (kind === 'jail') return classLiveTrack(state, 'corners', { hot: o.hot, map: o.map });
+  // Real-life Four Corners: the big screen plays these with the countdown (JailStage) and the stations use them too:
+  // its own map tracks (jail-snow, jail-snow-hot...; made on James's PC, 27 Nov 2026 NZ), else Four Corners'.
+  if (kind === 'jail') {
+    const own: Track = o.hot ? `jail-${o.map}-hot` : `jail-${o.map}`;
+    if (o.map && trackUrl(`jail-${o.map}`)) return own;
+    return classLiveTrack(state, 'corners', { hot: o.hot, map: o.map });
+  }
   if (kind === 'corners') {
     if (o.shark) {
       const bay = o.map ?? 'lagoon';

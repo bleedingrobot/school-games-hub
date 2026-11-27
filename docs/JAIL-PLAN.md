@@ -28,4 +28,14 @@ James's idea (27 Nov 2026 NZ): the class plays Four Corners for real in the room
 
 ## Art
 
-Uses Four Corners' paintings (maps, backdrops, dice, jail rooms for the stations) and music. Picker tile `pick/jail.webp` painted 27 Nov 2026 on JamesGaming (repainted with four clear quarters, try 3).
+Uses Four Corners' maps, backdrops and dice on the big screen. Picker tile `pick/jail.webp` painted 27 Nov 2026 on JamesGaming (repainted with four clear quarters, try 3).
+
+Its own (27 Nov 2026, second batch, `docs/jail-art/config.json`):
+- `jail/station-<map>.webp`: a full-screen backdrop for the jail station iPads, one per map (calm empty middle for the names). The station falls back to Four Corners' `jail-<map>` strip.
+- Music `src/games/classlive/music/jail-<map>.mp3` and `jail-<map>-hot.mp3` (hot plays from 5 s left in the countdown). A real-room game-show feel for each map, so it isn't the same as on-screen Four Corners. Made with ACE-Step like the other Class Live tracks, takes kept in `music/MAKING.json`. A missing track borrows Four Corners'.
+  - `jail-snow`: "cheerful winter game show countdown, jingling sleigh bells, bouncy pizzicato, glockenspiel, ticking clock percussion, playful brass, 124 bpm"
+  - `jail-jungle`: "cheerful jungle game show countdown, bongos and congas, marimba, ticking woodblock, playful whistles, bouncy bass, 124 bpm"
+  - `jail-castle`: "cheerful spooky-cute castle game show countdown, harpsichord, pizzicato, ticking clock, playful bassoon, tubular bells, 120 bpm"
+  - `jail-space`: "cheerful space game show countdown, bouncy synth arpeggios, retro synth bass, ticking electronic hi-hats, sparkly bells, 124 bpm"
+  - each `-hot`: the same instruments, "very energetic, faster, urgent final seconds, pounding drums, starts immediately at full volume, 156 bpm"
+  - every prompt ends ", instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, loopable, steady tempo".

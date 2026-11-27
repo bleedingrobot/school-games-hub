@@ -797,5 +797,93 @@
     "take_kept": 5,
     "lufs_target": -16,
     "note": "26 Nov repaint: take 4 (seed 77777) ran ~170 bpm, not 150; takes 5 (seed 15015) and 6 (seed 60606) made with the same prompt. Take 5 kept: ~158 bpm and steady (155-160 in every 11 s window), loud from the first second, no vocals (Whisper hears none). Take 6 was ~162 bpm with a quiet 6 s opening."
+  },
+  {
+    "name": "jail-snow",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "cheerful winter game show countdown, jingling sleigh bells, bouncy pizzicato, glockenspiel, ticking clock percussion, playful brass, 124 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, loopable, steady tempo",
+    "seed": 15015,
+    "bpm": 128,
+    "seconds": 88.0,
+    "take_kept": 4,
+    "lufs_target": -18,
+    "note": "27 Nov 2026, JamesGaming. Measured bpm. 5 takes; take 4 kept: steady ~128 bpm, no vocals. Take 1 (125) drifted to 136 near the end; others ran 100-185."
+  },
+  {
+    "name": "jail-snow-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "cheerful winter game show countdown, jingling sleigh bells, bouncy pizzicato, glockenspiel, ticking clock percussion, playful brass, very energetic, faster, urgent final seconds, pounding drums, starts immediately at full volume, 156 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, loopable, steady tempo",
+    "seed": 80808,
+    "bpm": 180,
+    "seconds": 88.0,
+    "take_kept": 8,
+    "lufs_target": -16,
+    "note": "27 Nov 2026, JamesGaming. Measured bpm. 8 takes (seeds 11117, 42424, 77777, 15015, 60606, 31313, 52525, 80808); take 8 kept: loud from the first second, steady ~180 bpm (faster than the 156 asked; ACE-Step would not land 156 with a loud opening). Take 3 (~153) was 6 dB quiet for its first seconds."
+  },
+  {
+    "name": "jail-jungle",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "cheerful jungle game show countdown, bongos and congas, marimba, ticking woodblock, playful whistles, bouncy bass, 124 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, loopable, steady tempo",
+    "seed": 36363,
+    "bpm": 144,
+    "seconds": 88.0,
+    "take_kept": 10,
+    "lufs_target": -18,
+    "note": "27 Nov 2026, JamesGaming. Measured bpm. 14 takes; ACE-Step would not play this prompt near 124 (takes ran 81, 85, 105 with drop-outs, or 163-210). Take 10 kept: rock-steady ~144 bpm, no drop-outs, no vocals."
+  },
+  {
+    "name": "jail-jungle-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "cheerful jungle game show countdown, bongos and congas, marimba, ticking woodblock, playful whistles, bouncy bass, very energetic, faster, urgent final seconds, pounding drums, starts immediately at full volume, 156 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, loopable, steady tempo",
+    "seed": 80808,
+    "bpm": 174,
+    "seconds": 88.0,
+    "take_kept": 8,
+    "lufs_target": -16,
+    "note": "27 Nov 2026, JamesGaming. Measured bpm. Take 8 kept: loud from the first second, steady ~174 bpm (faster than the 156 asked). Take 5 (~162) opened 8 dB quiet."
+  },
+  {
+    "name": "jail-castle",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "cheerful spooky-cute castle game show countdown, harpsichord, pizzicato, ticking clock, playful bassoon, tubular bells, 120 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, loopable, steady tempo",
+    "seed": 11117,
+    "bpm": 112,
+    "seconds": 88.0,
+    "take_kept": 1,
+    "lufs_target": -18,
+    "note": "27 Nov 2026, JamesGaming. Measured bpm. Take 1 kept: steady ~112 bpm. Its first 0.5 s was silent, so the file starts 0.5 s into the take (trim 0.5-88.5 s). Other takes ran 156-192 or drifted."
+  },
+  {
+    "name": "jail-castle-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "cheerful spooky-cute castle game show countdown, harpsichord, pizzicato, ticking clock, playful bassoon, tubular bells, very energetic, faster, urgent final seconds, pounding drums, starts immediately at full volume, 156 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, loopable, steady tempo",
+    "seed": 80808,
+    "bpm": 174,
+    "seconds": 88.0,
+    "take_kept": 8,
+    "lufs_target": -16,
+    "note": "27 Nov 2026, JamesGaming. Measured bpm. Take 8 kept: loud from the first second, steady ~174 bpm (faster than the 156 asked). Take 1 (~167) opened 7 dB quiet."
+  },
+  {
+    "name": "jail-space",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "cheerful space game show countdown, bouncy synth arpeggios, retro synth bass, ticking electronic hi-hats, sparkly bells, 124 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, loopable, steady tempo",
+    "seed": 80808,
+    "bpm": 120,
+    "seconds": 88.0,
+    "take_kept": 8,
+    "lufs_target": -18,
+    "note": "27 Nov 2026, JamesGaming. Measured bpm. Take 8 kept: steady 120 bpm, full from the start. Take 1 (~122) drifted 114-137; take 3 (~138) had a near-silent first second."
+  },
+  {
+    "name": "jail-space-hot",
+    "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
+    "prompt": "cheerful space game show countdown, bouncy synth arpeggios, retro synth bass, ticking electronic hi-hats, sparkly bells, very energetic, faster, urgent final seconds, pounding drums, starts immediately at full volume, 156 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, loopable, steady tempo",
+    "seed": 80808,
+    "bpm": 173,
+    "seconds": 88.0,
+    "take_kept": 8,
+    "lufs_target": -16,
+    "note": "27 Nov 2026, JamesGaming. Measured bpm. Take 8 kept: loud from the first second, steady ~173 bpm (faster than the 156 asked)."
   }
 ]
