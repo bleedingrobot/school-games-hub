@@ -10,7 +10,7 @@ import {
 import type { Spot } from './corners';
 import { markQuestion, sameAnswer } from '../maths/serverQuestions';
 import type { ClassLiveServices, Event, PlayerView, RoomRow, Session, StepReply } from './server';
-import { mutateRoom, nextQuestionFor, playerView, roomView } from './server';
+import { mutateRoom, nextQuestionFor, playerView, roomSpots, roomView } from './server';
 
 type Busy = 'busy';
 
@@ -125,7 +125,7 @@ export async function clashStep(sv: ClassLiveServices, cur: RoomRow, who: string
   const s0 = cur.session;
   if (s0.state !== 'live') return no(409, s0.state === 'lobby' ? 'Wait for the start!' : 'This one has finished.', s0.state);
   const spotOf = async (): Promise<Spot | undefined | Busy> => {
-    const all = await sv.positions(room);
+    const all = await roomSpots(sv, s0, room);
     if (all === 'busy') return 'busy';
     return all[who];
   };

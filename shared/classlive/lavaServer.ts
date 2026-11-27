@@ -93,7 +93,7 @@ export async function lavaStep(sv: ClassLiveServices, cur: RoomRow, who: string,
   const s0 = cur.session;
   if (s0.state !== 'live') return no(409, s0.state === 'lobby' ? 'Wait for the start!' : 'This one has finished.', s0.state);
   const spotOf = async (): Promise<Spot | undefined | 'busy'> => {
-    const all = await sv.positions(room);
+    const all = await (s0.edge && sv.edge ? sv.edge.positions(room) : sv.positions(room));
     if (all === 'busy') return 'busy';
     return all[who];
   };
