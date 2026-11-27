@@ -57,6 +57,9 @@ export function memoryServices(db: MemoryDb, clock: { now(): number; random?(): 
       const p = db.pupils.get(player);
       return p ? { classId: p.classId, schoolId: p.schoolId ?? db.schools.get(p.classId) ?? 1, name: p.name, enabled: db.enabled } : null;
     },
+    async classPupils(classId) {
+      return [...db.pupils.entries()].filter(([, p]) => p.classId === classId).map(([id, p]) => ({ id, name: p.name }));
+    },
     async codeRoom(schoolId, code) {
       const r = [...db.rooms.values()].filter((x) => x.schoolId === schoolId && x.session.lobby?.code === code && x.session.state !== 'over' && clock.now() - x.openedAt < 3 * 3600_000).sort((a, b) => b.id - a.id)[0];
       return r ? copy(r) : null;

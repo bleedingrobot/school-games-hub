@@ -63,6 +63,7 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
       if (g.kind === 'thrones') return thronesBot(room, id, skill);
       if (g.kind === 'clash') return clashBot({ db, room, id, skill, rand, now: opts.clock.now, later: opts.later, step: (who, body) => classLiveStep(services, who, body) });
       if (g.kind === 'crew') return crewBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
+      if (g.kind === 'jail') return jailBot(room, id, skill);
       if (g.kind === 'relay') return relayBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
       if (g.kind === 'ghost') return ghostBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
       if (g.kind === 'mural') {
@@ -98,6 +99,35 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
       opts.later(go, speed * (0.6 + rand() * 0.8));
     };
     opts.later(go, speed * rand());
+  };
+
+  /**
+   * A pretend Real-life Four Corners pupil: now and then "is out", taps their own name on their station and answers
+   * until they're back in (docs/JAIL-PLAN.md).
+   */
+  const jailBot = (room: number, id: string, skill: number) => {
+    const step = (body: Record<string, unknown>) => classLiveStep(services, id, { room, as: id, ...body });
+    const answerOne = async (q: { slot: number } | undefined): Promise<void> => {
+      const row = db.rooms.get(room);
+      if (!row || row.session.state !== 'live') return;
+      if (!q) return void opts.later(() => void step({ action: 'ask' }).then((r) => answerOne(r.body.question as { slot: number } | undefined)), 2000);
+      const kept = db.questions.get(`${room}:${id}`)?.find((k) => k.slot === q.slot);
+      const right = markQuestion(kept?.question)?.answer ?? 0;
+      const answer = rand() < skill ? right : right + 1 + Math.floor(rand() * 3);
+      const r = await step({ action: 'answer', slot: q.slot, answer, ms: 3000 });
+      if (r.body.back) return void opts.later(wait, 8000 + rand() * 20_000);
+      opts.later(() => void answerOne(r.body.question as { slot: number } | undefined), 2000 + rand() * 3000);
+    };
+    const wait = () => {
+      const row = db.rooms.get(room);
+      if (!row || row.session.state === 'over') return;
+      if (row.session.state === 'live' && rand() < 0.25) {
+        void step({ action: 'play', do: 'in' }).then((r) => opts.later(() => void answerOne(r.body.question as { slot: number } | undefined), 3000));
+        return;
+      }
+      opts.later(wait, 5000 + rand() * 10_000);
+    };
+    wait();
   };
 
   /**

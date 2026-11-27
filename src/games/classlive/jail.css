@@ -1,0 +1,46 @@
+/* Real-life Four Corners (docs/JAIL-PLAN.md): the jail station iPads and the teacher's card. Prefix jl-. The big screen's
+   own styles live inside its shadow root (jailStage.ts). */
+.jl-stage { position: absolute; inset: 0; z-index: 50; }
+
+.jl-pad { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; max-width: 980px; margin: 0 auto; padding: 4px 4px 16px; color: #fff; }
+.jl-pad__top { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; max-width: 760px; font-weight: 800; font-size: clamp(18px, 2.6vw, 26px); }
+.jl-ask { margin: 0; text-align: center; font-weight: 800; font-size: clamp(18px, 2.4vw, 26px); text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7); }
+.jl-problem { margin: 0; color: #fecaca; font-weight: 800; }
+.jl-names { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.jl-name {
+  width: 100%; min-height: 64px; padding: 8px 10px; border-radius: 16px; border: 3px solid rgba(255, 255, 255, 0.7);
+  background: rgba(20, 16, 40, 0.78); color: #fff; font: inherit; font-weight: 900; font-size: clamp(18px, 2.2vw, 24px); cursor: pointer;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.35); overflow-wrap: anywhere;
+}
+.jl-name:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35); }
+.jl-name:disabled { opacity: 0.6; cursor: default; }
+.jl-name--in { border-color: #fca5a5; background: rgba(127, 29, 29, 0.75); }
+
+.jl-sure { display: grid; gap: 22px; justify-items: center; margin-top: 8vh; text-align: center; }
+.jl-sure h1 { margin: 0; font-size: clamp(34px, 6vw, 64px); text-shadow: 0 3px 10px rgba(0, 0, 0, 0.7); }
+.jl-sure__row { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+.jl-yes, .jl-no { min-height: 72px; padding: 0 34px; border-radius: 20px; border: 0; font: inherit; font-weight: 900; font-size: clamp(22px, 3vw, 30px); cursor: pointer; }
+.jl-yes { background: linear-gradient(180deg, #4ade80, #16a34a); color: #fff; box-shadow: 0 6px 0 #14532d; }
+.jl-no { background: rgba(255, 255, 255, 0.16); color: #fff; border: 3px solid rgba(255, 255, 255, 0.5); }
+
+.jl-notme { min-height: 48px; padding: 0 18px; border-radius: 14px; border: 2px solid rgba(255, 255, 255, 0.6); background: rgba(20, 16, 40, 0.7); color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
+.jl-locks { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; font-size: clamp(26px, 4vw, 38px); }
+.jl-locks i { font-style: normal; filter: grayscale(0.6); }
+.jl-locks i.on { filter: none; animation: jl-pop 0.5s ease-out; }
+.jl-q { width: min(94vw, 560px); border-radius: 20px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5); }
+.jl-wait { text-align: center; font-weight: 800; padding: 30px; background: rgba(20, 16, 40, 0.78); border-radius: 20px; margin: 0; }
+
+.jl-back { display: grid; gap: 14px; justify-items: center; text-align: center; margin-top: 10vh; }
+.jl-back h1 { margin: 0; font-size: clamp(38px, 7vw, 76px); color: #bbf7d0; text-shadow: 0 4px 0 #14532d, 0 0 30px rgba(34, 197, 94, 0.8); }
+.jl-back p { margin: 0; font-weight: 800; font-size: clamp(20px, 3vw, 30px); }
+.jl-back__burst { font-size: 90px; animation: jl-pop 0.7s cubic-bezier(0.2, 1.6, 0.4, 1); }
+@keyframes jl-pop { 0% { transform: scale(2.2); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+.jl-lobby-icons { display: flex; gap: 2vh; justify-content: center; font-size: 7vh; margin: 2vh 0; }
+.jl-lobby-icons i { font-style: normal; animation: jl-bob 1s ease-in-out infinite alternate; }
+@keyframes jl-bob { to { transform: translateY(-12%) scale(1.08); } }
+.jl-card-how { margin: 4px 0 0; padding-left: 1.2em; font-size: 0.95rem; line-height: 1.4; }
+
+@media (prefers-reduced-motion: reduce) {
+  .jl-locks i.on, .jl-back__burst, .jl-lobby-icons i { animation: none; }
+}

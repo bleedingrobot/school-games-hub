@@ -104,6 +104,11 @@ Deno.serve(
       if (row === 'busy') return 'busy';
       return row && { classId: row.class_id, schoolId: Number(row.school_id), name: (row.name ?? 'A player').slice(0, 40), enabled: row.enabled === true };
     },
+    async classPupils(classId) {
+      const raw = await call<{ id: string; name: string | null }[] | null>('classlive_class_pupils', { target_class: classId });
+      if (raw === 'busy') return 'busy';
+      return (Array.isArray(raw) ? raw : []).map((p) => ({ id: String(p.id), name: (p.name ?? 'A player').slice(0, 40) }));
+    },
     async codeRoom(schoolId, code) {
       const raw = await call<RawRow | null>('classlive_code_room', { target_school: schoolId, join_code: code });
       return raw === 'busy' ? 'busy' : rowOf(raw);

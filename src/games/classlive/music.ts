@@ -192,7 +192,7 @@ const SHARK_BORROWS: Record<string, string> = { lagoon: 'jungle', reef: 'space',
  */
 const THRONE_TRACKS: Record<string, Calm> = { castle: 'boss', ice: 'skyclimb', jungle: 'serpent', pirate: 'island' };
 
-export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | 'corners' | 'ghost' | 'clash' | 'thrones' | 'lava' | 'crew' | 'relay' | null, o: { guessing?: boolean; hot?: boolean; /** A Four Corners, Ghost Tag or Colour Clash map, or (with `shark`) a Shark Bay bay. */ map?: string; /** Shark Bay: `map` is a bay. */ shark?: boolean } = {}): Track {
+export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | 'corners' | 'ghost' | 'clash' | 'thrones' | 'lava' | 'crew' | 'relay' | 'jail' | null, o: { guessing?: boolean; hot?: boolean; /** A Four Corners, Ghost Tag or Colour Clash map, or (with `shark`) a Shark Bay bay. */ map?: string; /** Shark Bay: `map` is a bay. */ shark?: boolean } = {}): Track {
   if (state === 'over') return 'win';
   if (!state || !kind || state !== 'live') return 'picker';
   if (kind === 'thrones') {
@@ -230,6 +230,8 @@ export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 's
     if (trackUrl(own)) return own;
     return o.hot ? 'boss-hot' : 'boss';
   }
+  // Real-life Four Corners: the big screen plays its own map tracks with the countdown (JailStage); this is the pads'.
+  if (kind === 'jail') return classLiveTrack(state, 'corners', { hot: o.hot, map: o.map });
   if (kind === 'corners') {
     if (o.shark) {
       const bay = o.map ?? 'lagoon';
