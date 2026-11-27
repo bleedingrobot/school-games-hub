@@ -5,7 +5,7 @@
 .mt-hall--court { aspect-ratio: 1 / 1.3; }
 .mt-board {
   position: absolute; left: 0; top: 0; width: 100%; aspect-ratio: 1;
-  container-type: inline-size;
+  container-type: inline-size; --cq: 1cqw;
   border-radius: 18px; overflow: hidden; background-size: cover; background-position: center;
   box-shadow: 0 14px 50px rgba(0, 0, 0, 0.55), inset 0 0 0 3px rgba(255, 255, 255, 0.18);
   touch-action: none; user-select: none;
@@ -16,7 +16,7 @@
     radial-gradient(circle at 50% 50%, rgba(255, 215, 90, 0.28), transparent 55%),
     repeating-conic-gradient(from 45deg, rgba(0, 0, 0, 0.14) 0 25%, transparent 0 50%) 0 0 / 12.5% 12.5%,
     linear-gradient(135deg, #7f1d1d, #b91c1c 45%, #7f1d1d);
-  box-shadow: inset 0 0 0 5cqw rgba(250, 204, 21, 0.14);
+  box-shadow: inset 0 0 0 calc(5 * var(--cq)) rgba(250, 204, 21, 0.14);
 }
 .mt-board--ice .mt-board__ground {
   background:
@@ -60,11 +60,11 @@
 .mt-tile {
   background-color: rgba(250, 204, 21, 0.28);
   background-image: radial-gradient(circle, rgba(255, 255, 255, 0.85), rgba(250, 204, 21, 0.55) 45%, rgba(236, 72, 153, 0.35) 70%, transparent 74%);
-  box-shadow: 0 0 3cqw rgba(250, 204, 21, 0.9), inset 0 0 2cqw rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 calc(3 * var(--cq)) rgba(250, 204, 21, 0.9), inset 0 0 calc(2 * var(--cq)) rgba(255, 255, 255, 0.8);
   animation: mt-tile 0.7s ease-in-out infinite alternate;
-  display: grid; place-items: center; font-size: 4cqw;
+  display: grid; place-items: center; font-size: calc(4 * var(--cq));
 }
-.mt-tile:nth-child(2n) { animation-delay: 0.2s; background-image: radial-gradient(circle, rgba(255, 255, 255, 0.85), rgba(96, 165, 250, 0.55) 45%, rgba(168, 85, 247, 0.35) 70%, transparent 74%); box-shadow: 0 0 3cqw rgba(96, 165, 250, 0.9), inset 0 0 2cqw #fff; }
+.mt-tile:nth-child(2n) { animation-delay: 0.2s; background-image: radial-gradient(circle, rgba(255, 255, 255, 0.85), rgba(96, 165, 250, 0.55) 45%, rgba(168, 85, 247, 0.35) 70%, transparent 74%); box-shadow: 0 0 calc(3 * var(--cq)) rgba(96, 165, 250, 0.9), inset 0 0 calc(2 * var(--cq)) #fff; }
 .mt-tile:nth-child(3n) { animation-delay: 0.45s; }
 .mt-tile img { width: 100%; height: 100%; object-fit: contain; }
 @keyframes mt-tile { from { transform: scale(0.88); filter: brightness(0.9); } to { transform: scale(1.1); filter: brightness(1.35); } }
@@ -73,15 +73,15 @@
 .mt-throne { position: absolute; display: grid; place-items: center; pointer-events: none; z-index: 2; }
 .mt-throne__seat { width: 100%; height: 100%; display: grid; place-items: center; position: relative; }
 .mt-throne__seat img { width: 100%; height: 100%; object-fit: contain; }
-.mt-throne__emoji { font-size: 8cqw; line-height: 1; filter: drop-shadow(0 0.6cqw 0.8cqw rgba(0, 0, 0, 0.55)); }
-.mt-throne--gold .mt-throne__emoji { filter: drop-shadow(0 0 1.4cqw #facc15) drop-shadow(0 0 3cqw rgba(250, 204, 21, 0.8)) sepia(1) saturate(4) hue-rotate(-12deg); }
-.mt-throne__crown { position: absolute; top: -26%; left: 50%; transform: translateX(-50%); font-style: normal; font-size: 5cqw; filter: drop-shadow(0 0 1cqw #facc15); }
+.mt-throne__emoji { font-size: calc(8 * var(--cq)); line-height: 1; filter: drop-shadow(0 calc(0.6 * var(--cq)) calc(0.8 * var(--cq)) rgba(0, 0, 0, 0.55)); }
+.mt-throne--gold .mt-throne__emoji { filter: drop-shadow(0 0 calc(1.4 * var(--cq)) #facc15) drop-shadow(0 0 calc(3 * var(--cq)) rgba(250, 204, 21, 0.8)) sepia(1) saturate(4) hue-rotate(-12deg); }
+.mt-throne__crown { position: absolute; top: -26%; left: 50%; transform: translateX(-50%); font-style: normal; font-size: calc(5 * var(--cq)); filter: drop-shadow(0 0 calc(1 * var(--cq)) #facc15); }
 .mt-throne__sheet {
   position: absolute; inset: 6% 4%; border-radius: 40% 40% 12% 12%; z-index: 1;
   background: radial-gradient(circle at 35% 25%, #fff, #d4d4e8 70%, #a5a5c5);
-  box-shadow: 0 1cqw 1.6cqw rgba(0, 0, 0, 0.45); opacity: 0.88;
+  box-shadow: 0 calc(1 * var(--cq)) calc(1.6 * var(--cq)) rgba(0, 0, 0, 0.45); opacity: 0.88;
 }
-.mt-throne__sheet::after { content: '?'; position: absolute; inset: 0; display: grid; place-items: center; color: #6b6b8f; font-weight: 900; font-size: 4.5cqw; }
+.mt-throne__sheet::after { content: '?'; position: absolute; inset: 0; display: grid; place-items: center; color: #6b6b8f; font-weight: 900; font-size: calc(4.5 * var(--cq)); }
 .mt-throne--covered .mt-throne__seat { opacity: 0.6; filter: brightness(0.6); }
 .mt-throne--covered.mt-throne--gold .mt-throne__sheet { background: radial-gradient(circle at 35% 25%, #fff8d6, #e9d27a 70%, #b8993a); }
 /* Uncovered: the sheet flies off, the throne glows. */
@@ -98,10 +98,10 @@
 .mt-throne--mine .mt-throne__seat { filter: none; }
 .mt-throne__tag {
   position: absolute; bottom: -14%; left: 50%; transform: translateX(-50%); z-index: 3; white-space: nowrap;
-  font-size: 2cqw; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; color: #fff;
-  background: rgba(127, 29, 29, 0.9); padding: 0 1.2cqw; border-radius: 999px;
+  font-size: calc(2 * var(--cq)); font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; color: #fff;
+  background: rgba(127, 29, 29, 0.9); padding: 0 calc(1.2 * var(--cq)); border-radius: 999px;
 }
-.mt-throne__pop { position: absolute; top: -40%; left: 50%; z-index: 4; font-size: 8cqw; animation: mt-crown-pop 1.6s ease-out forwards; filter: drop-shadow(0 0 1.6cqw #facc15); }
+.mt-throne__pop { position: absolute; top: -40%; left: 50%; z-index: 4; font-size: calc(8 * var(--cq)); animation: mt-crown-pop 1.6s ease-out forwards; filter: drop-shadow(0 0 calc(1.6 * var(--cq)) #facc15); }
 @keyframes mt-crown-pop {
   0% { transform: translate(-50%, 60%) scale(0.2) rotate(-30deg); opacity: 0; }
   25% { transform: translate(-50%, -30%) scale(1.4) rotate(8deg); opacity: 1; }
@@ -113,7 +113,7 @@
 .mt-item {
   display: grid; place-items: center; z-index: 3;
   background: radial-gradient(circle, rgba(255, 255, 255, 0.95), rgba(253, 224, 71, 0.6) 60%, transparent 72%);
-  animation: mt-bob 1.2s ease-in-out infinite alternate; font-size: 5cqw;
+  animation: mt-bob 1.2s ease-in-out infinite alternate; font-size: calc(5 * var(--cq));
   filter: drop-shadow(0 0 5px rgba(250, 204, 21, 0.95)) drop-shadow(0 0 12px rgba(250, 204, 21, 0.6));
 }
 .mt-item img { width: 90%; height: 90%; object-fit: contain; }
@@ -373,3 +373,65 @@
   -webkit-mask: none; box-shadow: inset 0 0.35em 0 -0.1em #fff; background-image: linear-gradient(135deg, #fff 25%, transparent 25%), linear-gradient(225deg, #fff 25%, transparent 25%); background-size: 22% 60%; background-repeat: repeat-x; background-color: #3b0a0a; }
 .mt-mimic--chomp { animation: mt-chomp 0.25s ease-in-out 5; z-index: 4; }
 @keyframes mt-chomp { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25) rotate(-6deg); } }
+
+/* ---------- the wide hall (27 Nov 2026: fills a widescreen projector and a landscape iPad) ---------- */
+/* Sizes drawn in board-width units (cqw) shrink so they stay the same against the board's height. */
+.mt-hall--wide { aspect-ratio: 1.6 / 1; }
+.mt-hall--wide .mt-board { height: 100%; aspect-ratio: auto; --cq: calc(1cqw / var(--mt-w, 1.6)); }
+.mt-hall--wide .mt-board__people { height: 100%; aspect-ratio: auto; }
+.mt-hall--wide .mt-dot { width: calc(3% / 1.6); }
+.mt-hall--wide .mt-board--castle .mt-board__ground,
+.mt-hall--wide .mt-board--jungle .mt-board__ground { background-size: 100% 100%, 7.8% 12.5%; }
+
+/* Big screen: a slim side panel (with the courtyard in it); the board as wide as fits and as tall as the screen allows. */
+.mt-scene--wide { padding-inline: 1.5vw; }
+.mt-scene--wide .mt-stage { align-items: stretch; gap: 1.2vw; }
+.mt-scene--wide .mt-stage .mt-hall { width: min(calc(96vw - 1.2vw - min(17vw, 280px)), calc((100vh - 76px) * var(--mt-w, 1.6))); }
+.mt-scene--wide .mt-side { width: 17vw; max-width: 280px; min-width: 170px; gap: 1vh; min-height: 0; overflow: hidden; }
+.mt-scene--wide .mt-side__round { font-size: clamp(20px, 3.6vh, 44px); }
+.mt-scene--wide .mt-best { padding: 1vh 0.8vw; }
+.mt-scene--wide .mt-best ol { font-size: clamp(11px, 1.7vh, 18px); gap: 0.3vh; }
+.mt-scene--wide .mt-new { font-size: clamp(12px, 1.8vh, 20px); padding: 1vh 0.8vw; }
+/* The dungeon: fills what is left of the side panel. */
+.mt-dungeon {
+  flex: 1 1 0; min-height: 90px; position: relative; display: flex; flex-direction: column; gap: 0.6vh; padding: 1vh 0.8vw; overflow: hidden;
+  border-radius: 14px; background-size: cover; background-position: center; color: #fff;
+  background-image: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.4) 0 6px, transparent 6px 28px), linear-gradient(#2d2940, #1a1626);
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.14);
+}
+.mt-dungeon--ice { background-image: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.4) 0 4px, transparent 4px 28px), linear-gradient(#bfe0f5, #7fb3d9); }
+.mt-dungeon--jungle { background-image: repeating-linear-gradient(90deg, rgba(40, 90, 30, 0.7) 0 6px, transparent 6px 26px), linear-gradient(#35502a, #1e3318); }
+.mt-dungeon--pirate { background-image: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.5) 0 6px, transparent 6px 26px), linear-gradient(#4a3320, #2a1c10); }
+.mt-dungeon::before { content: ''; position: absolute; inset: 0; background: rgba(8, 6, 20, 0.45); pointer-events: none; }
+.mt-dungeon > * { position: relative; }
+.mt-dungeon__label { font-weight: 900; font-size: clamp(13px, 2vh, 22px); text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); }
+.mt-dungeon__label b { background: #ef4444; border-radius: 999px; padding: 0 0.5em; margin-left: 0.4em; }
+.mt-dungeon__list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.6vh 0.5vw; align-content: flex-start; overflow: hidden; min-height: 0; }
+.mt-dungeon__list li { display: grid; justify-items: center; width: clamp(34px, 5.2vh, 56px); }
+.mt-dungeon__face { display: block; width: clamp(30px, 4.6vh, 50px); height: clamp(30px, 4.6vh, 50px); border-radius: 50%; overflow: hidden; background: rgba(255, 255, 255, 0.18); box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6); filter: grayscale(0.4); }
+.mt-dungeon__face > * { width: 100%; height: 100%; display: block; }
+.mt-dungeon__name { font-size: clamp(8px, 1.2vh, 12px); font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 3px #000; }
+.mt-dungeon__more { align-self: center; font-weight: 900; }
+@media (max-width: 760px) {
+  .mt-scene--wide .mt-stage { flex-direction: column; align-items: center; }
+  .mt-scene--wide .mt-stage .mt-hall { width: min(96vw, calc((100vh - 200px) * var(--mt-w, 1.6))); }
+  .mt-scene--wide .mt-side { width: 94vw; max-width: none; }
+  .mt-dungeon { min-height: 80px; flex: none; }
+}
+
+/* iPad: the board across the whole screen, the controls floating over its bottom corners. */
+.mt-pad--wide .mt-pad__board { width: min(100%, calc((100dvh - 190px) * 1.6)); }
+@media (orientation: portrait) { .mt-pad--wide .mt-pad__board { width: 100%; } }
+@media (orientation: landscape) and (min-width: 640px) {
+  .cl-c--thrones .cl-c-body { padding-top: 8px; min-height: 100dvh; }
+  .mt-pad--wide { gap: 4px; padding-bottom: 0; }
+  .mt-pad--wide .mt-pad__top { max-width: none; padding-left: 0; padding-inline: 96px 8px; gap: 24px; justify-content: center; }
+  .mt-pad--wide .mt-crowns { font-size: 30px; }
+  .mt-pad--wide .mt-pad__board { width: min(calc(100vw - 16px), calc((100dvh - 52px) * 1.6)); }
+  .mt-pad--wide .mt-pad__chips { position: fixed; left: 12px; top: 52px; width: auto; max-width: 28vw; flex-direction: column; align-items: flex-start; z-index: 4; pointer-events: none; }
+  .mt-pad--wide .mt-seated { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 5; white-space: nowrap; }
+  .mt-pad--wide .mt-power { position: fixed; left: max(16px, env(safe-area-inset-left)); bottom: max(16px, env(safe-area-inset-bottom)); width: min(44vw, 440px); z-index: 5; opacity: 0.94; }
+  .mt-pad--wide .mt-power__words span { display: none; }
+  .mt-pad--wide .fc-fb { position: fixed; top: 52px; right: 12px; max-width: 30vw; z-index: 4; }
+  .cl-c--thrones .fc-stick { opacity: 0.85; }
+}

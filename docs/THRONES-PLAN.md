@@ -26,6 +26,10 @@ James's idea (25 Nov 2026 NZ, from the coordinator's list of map games after Fou
 - Hazards unlock as Four Corners' (items 2, storm 3, teleport 4, ice 5, roller 6, then a mix), moved by Four Corners' `stepMove`. Each hall names them (`HALL_WORDS`).
 - Ends on the Class Live timer (the round on finishes); the teacher can end it. Podium by crowns.
 
+## Wide map (27 Nov 2026 NZ)
+
+James asked for the games to fill the screen (as Ghost Tag, docs/GHOST-PLAN.md). New games are `THRONES_W` (1.6) wide and 1 high (`w` on the game, the round, and `ThronesPublic`; older games without it stay square, `widthOf`). Everything that places or clamps spots takes the width: `hallStart`, `layThrones` (ovals), `scatterThrones` (thrones appear across the whole hall), `openSpot`, teleports (a second pair), the x roller (`Roller.span`), `stepThrones` (the device, the preview and the pretend pupils; `stepMove` stays square), the Crown thief knock-off, and the database's classlive_move (`classlive_activities.width`, 1.6). A wider hall gets about 1.6x the dance tiles, hazards and items. The courtyard ("Dungeon") is no longer a strip under the hall: on a wide hall it is a panel in the slim side column (its pupils listed there, none drawn on the board), so the hall can be as big as the screen allows. Paintings: `hall-<hall>-wide` (docs/thrones-art/config.json), the square one cropped until a wide one exists. iPad landscape: board edge to edge with the joystick, the held power-up and the chips floating over it.
+
 ## Server and data
 
 `shared/classlive/thronesServer.ts` (views and pupil steps, given server.ts's helpers), hooks in `shared/classlive/server.ts` (rounds advance in `mutate`, at the stop the saved spots are read for dance tiles and royal seats). Pupils' view shows thrones as taken or not, never by whom. Movement and spots: `classlive_move` (moving activity, max speed 0.6).

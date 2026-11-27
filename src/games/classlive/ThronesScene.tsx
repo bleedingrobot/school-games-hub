@@ -16,7 +16,8 @@ import type { ClassLiveSound } from './audio';
 import { lineOf } from './CornersScene';
 import type { ClassLiveLink } from './link';
 import { PLAYER_COLOURS } from './StarSky';
-import { ThronesBoard, Token, type ThronesBoardRound } from './ThronesBoard';
+import { at as spotAt, ThronesBoard, Token, type ThronesBoardRound } from './ThronesBoard';
+import { painted } from './paintedArt';
 import { next } from './voiceLines';
 import './thrones.css';
 
@@ -48,6 +49,9 @@ export function ThronesScene({ screen, game, link, room, clock, sound, say, onTi
   const t = screen.startedAt === null ? 0 : clock() - screen.startedAt;
   const r = game.round;
   const hall: Hall = game.hall;
+  /** The hall's width (height 1): wide since 27 Nov 2026, with the courtyard in the side panel; square for older games. */
+  const bw = r?.w ?? game.w ?? 1;
+  const wide = bw > 1;
   const words = HALL_WORDS[hall];
   const targets = useRef<Record<string, Spot>>({});
   const shown = useRef<Record<string, Spot>>({});
@@ -135,7 +139,7 @@ export function ThronesScene({ screen, game, link, room, clock, sound, say, onTi
     const g = gameRef.current;
     const add: PopText[] = [];
     const sit: number[] = [];
-    const where = (id: string): Spot => shown.current[id] ?? { x: 0.5, y: 0.5 };
+    const where = (id: string): Spot => shown.current[id] ?? { x: bw / 2, y: 0.5 };
     for (const raw of fresh) {
       const e = raw as unknown as ThronesEvent & { seq: number };
       if (e.type === 'round') {
@@ -235,15 +239,17 @@ export function ThronesScene({ screen, game, link, room, clock, sound, say, onTi
   const circ = 2 * Math.PI * 45;
 
   return (
-    <div className={`mt-scene mt-scene--${hall}`}>
+    <div className={`mt-scene mt-scene--${hall} ${wide ? 'mt-scene--wide' : ''}`}>
       <div className={`mt-stage ${Date.now() - shake < 700 ? 'mt-shake' : ''}`}>
-        <ThronesBoard hall={hall} round={board} t={t} covered={covered} crowned={crowned} chomping={chomping} courtLabel={words.court} courtCount={inCourt.length}>
+        <ThronesBoard hall={hall} w={bw} round={board} t={t} covered={covered} crowned={crowned} chomping={chomping} courtLabel={words.court} courtCount={inCourt.length}>
           {screen.people.map((p) => {
             const m = game.mine[p.id];
             const at = shown.current[p.id] ?? m?.spot;
             if (!at || !m) return null;
             const n = r?.n ?? 0;
             const court = m.courtIn !== null;
+            // A wide hall's courtyard is the side panel, not the board.
+            if (court && wide) return null;
             const cls = [
               covered && !court ? 'mt-token--dance' : '', court ? 'mt-token--court' : '', m.seat !== null && !covered ? 'mt-token--sit mt-token--crown' : '',
               m.shieldIn === n ? 'mt-token--shield' : '', m.speedTo !== null && n <= m.speedTo ? 'fc-token--fast' : '', m.ghostTo !== null && n <= m.ghostTo ? 'mt-token--ghost' : '',
@@ -254,7 +260,7 @@ export function ThronesScene({ screen, game, link, room, clock, sound, say, onTi
               </Token>
             );
           })}
-          {pops.map((p) => <span key={p.key} className="mt-pop" style={{ left: `${p.at.x * 100}%`, top: `${p.at.y * 100}%` }}>{p.text}</span>)}
+          {pops.map((p) => <span key={p.key} className="mt-pop" style={spotAt(p.at.x, p.at.y, bw)}>{p.text}</span>)}
         </ThronesBoard>
 
         <aside className="mt-side">
@@ -275,7 +281,11 @@ export function ThronesScene({ screen, game, link, room, clock, sound, say, onTi
               </ol>
             </div>
           )}
-          <div className="mt-courtcount">🔒 {words.court}: <b>{inCourt.length}</b></div>
+          {wide ? (
+            <Dungeon hall={hall} name={words.court} people={inCourt} showNames={screen.showNames} avatars={avatars} />
+          ) : (
+            <div className="mt-courtcount">🔒 {words.court}: <b>{inCourt.length}</b></div>
+          )}
         </aside>
       </div>
 
@@ -298,6 +308,25 @@ export function ThronesScene({ screen, game, link, room, clock, sound, say, onTi
       {top && !over && <div className="mt-top" key={top.key} role="status">{top.text}{top.sub && <small>{top.sub}</small>}</div>}
       {slam && !over && <div className={`mt-slam mt-slam--${slam.kind}`} key={slam.key} role="alert">{slam.text}</div>}
       {over && <ThronesFinish screen={screen} game={game} avatars={avatars} onAgain={onAgain} />}
+    </div>
+  );
+}
+
+/** The wide hall's courtyard: a slim panel in the side column listing who is in it (the square hall draws a strip below the board). */
+function Dungeon({ hall, name, people, showNames, avatars }: { hall: Hall; name: string; people: Person[]; showNames: boolean; avatars: Record<string, unknown> }) {
+  const pic = painted('thrones', `court-${hall}`);
+  return (
+    <div className={`mt-dungeon mt-dungeon--${hall}`} style={pic ? { backgroundImage: `url(${pic})` } : undefined} aria-label={name}>
+      <div className="mt-dungeon__label">🔒 {name}<b>{people.length}</b></div>
+      <ul className="mt-dungeon__list">
+        {people.slice(0, 24).map((p) => (
+          <li key={p.id} title={showNames ? (p.name ?? undefined) : undefined}>
+            <span className="mt-dungeon__face"><AvatarImage avatar={avatars[p.id] ?? null} size={64} /></span>
+            {showNames && <span className="mt-dungeon__name">{p.name}</span>}
+          </li>
+        ))}
+        {people.length > 24 && <li className="mt-dungeon__more">+{people.length - 24}</li>}
+      </ul>
     </div>
   );
 }

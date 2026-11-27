@@ -1,20 +1,21 @@
 /**
  * Musical Thrones' hall (docs/THRONES-PLAN.md), drawn the same on the big screen and on each pupil's device: the hall
  * (painted, or a drawn stand-in for each hall), lit dance tiles, thrones (sheeted while the music plays, glowing when it
- * stops), items, hazards and avatars. Positions are board units (0 to 1), placed in % of the square hall. The courtyard
- * strip (when asked for) hangs below the square, so avatars sent there sit at y > 1.
+ * stops), items, hazards and avatars. Positions are board units (x 0 to w, y 0 to 1), placed in % of the hall, which is
+ * w wide and 1 high (widescreen since 27 Nov 2026; square for older games). On the square hall the courtyard strip (when
+ * asked for) hangs below it, so avatars sent there sit at y > 1; on a wide hall the courtyard is a panel beside it
+ * (ThronesScene), so the board never draws one.
  */
-import type { ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { GRAB_R, rollerAt, rollersOf, TELEPORT_R, type Circle, type Roller, type Teleport } from '../../../shared/classlive/corners';
 import { HALL_WORDS, POWER_WORDS, THRONE_R, type Hall, type ThronePower } from '../../../shared/classlive/thrones';
-import { Token } from './CornersBoard';
 import { painted } from './paintedArt';
 import './corners.css';
 import './thrones.css';
 
-export { Token };
 
-export const throneHall = (hall: Hall) => painted('thrones', `hall-${hall}`);
+/** The hall's painting: a wide one (hall-<hall>-wide) for a wide hall, else the square one (cropped to fit). */
+export const throneHall = (hall: Hall, w = 1) => (w > 1 ? painted('thrones', `hall-${hall}-wide`) : null) ?? painted('thrones', `hall-${hall}`);
 export const thronePowerPic = (p: ThronePower) => painted('thrones-fx', `power-${p}`);
 export const throneHazardPic = (hall: Hall, h: 'storm' | 'ice' | 'roller' | 'teleport') => painted('thrones-fx', `${hall}-${h}`);
 
@@ -34,19 +35,38 @@ export interface ThronesBoardRound {
 }
 
 const pct = (v: number) => `${v * 100}%`;
+/** The hall's width (height 1), for the tokens and dots drawn on it. */
+const Wide = createContext(1);
+export const useHallW = () => useContext(Wide);
+/** Where a spot goes on the hall, as CSS left/top. */
+export const at = (x: number, y: number, w: number) => ({ left: pct(x / w), top: pct(y) });
+
+/** One avatar on the hall (placed by the caller in board units). */
+export function Token({ x, y, size, children, className = '', label }: { x: number; y: number; size: number; children: ReactNode; className?: string; label?: string | null }) {
+  const w = useContext(Wide);
+  return (
+    <div className={`fc-token ${className}`} style={{ ...at(x, y, w), width: pct(size / w), height: pct(size) }}>
+      <div className="fc-token__body">{children}</div>
+      {label && <span className="fc-token__name">{label}</span>}
+    </div>
+  );
+}
 /** Thrones are drawn this much bigger than the sitting circle, so they read from the back of the room. */
 const THRONE_SCALE = 1.5;
 
 function Disc({ x, y, r, className, pic, spin, children }: { x: number; y: number; r: number; className: string; pic?: string | null; spin?: number; children?: ReactNode }) {
+  const w = useContext(Wide);
   return (
-    <div className={className} style={{ left: pct(x - r), top: pct(y - r), width: pct(r * 2), height: pct(r * 2), ...(pic ? { backgroundImage: `url(${pic})` } : {}), ...(spin !== undefined ? { transform: `rotate(${spin}deg)` } : {}) }}>
+    <div className={className} style={{ left: pct((x - r) / w), top: pct(y - r), width: pct((r * 2) / w), height: pct(r * 2), ...(pic ? { backgroundImage: `url(${pic})` } : {}), ...(spin !== undefined ? { transform: `rotate(${spin}deg)` } : {}) }}>
       {children}
     </div>
   );
 }
 
-export function ThronesBoard({ hall, round, t, covered, crowned, chomping, mySeat, courtLabel, courtCount, children }: {
+export function ThronesBoard({ hall, w = 1, round, t, covered, crowned, chomping, mySeat, courtLabel, courtCount, children }: {
   hall: Hall;
+  /** The hall's width (height 1). */
+  w?: number;
   round: ThronesBoardRound | null;
   /** Session time (ms since the start), for the rollers. */
   t: number;
@@ -58,18 +78,21 @@ export function ThronesBoard({ hall, round, t, covered, crowned, chomping, mySea
   crowned?: number[];
   /** The throne this pupil sits on (their pad). */
   mySeat?: number | null;
-  /** Show the courtyard strip below the hall, with this name. */
+  /** Show the courtyard strip below the (square) hall, with this name. A wide hall has none: its courtyard is a side panel. */
   courtLabel?: string | null;
   courtCount?: number;
   /** Avatars and pops on the board (and below it, in the courtyard). */
   children?: ReactNode;
 }) {
-  const pic = throneHall(hall);
+  const pic = throneHall(hall, w);
+  const wide = w > 1;
+  if (wide) courtLabel = null;
   const words = HALL_WORDS[hall];
   const size = THRONE_R * 2 * THRONE_SCALE;
   const courtPic = painted('thrones', `court-${hall}`);
   return (
-    <div className={`mt-hall ${courtLabel ? 'mt-hall--court' : ''}`}>
+    <Wide.Provider value={w}>
+    <div className={`mt-hall ${courtLabel ? 'mt-hall--court' : ''} ${wide ? 'mt-hall--wide' : ''}`} style={wide ? { aspectRatio: `${w} / 1`, ['--mt-w' as string]: w } : undefined}>
       <div className={`mt-board mt-board--${hall}`} style={pic ? { backgroundImage: `url(${pic})` } : undefined} aria-label={words.name}>
         {!pic && <div className="mt-board__ground" aria-hidden="true" />}
         {round?.tiles.map((tl, i) => <Disc key={`tl${i}`} {...tl} className="mt-tile" pic={painted('thrones-fx', 'tile')} />)}
@@ -87,7 +110,7 @@ export function ThronesBoard({ hall, round, t, covered, crowned, chomping, mySea
           const mine = mySeat === th.id;
           const cls = `mt-throne ${th.golden ? 'mt-throne--gold' : ''} ${covered ? 'mt-throne--covered' : 'mt-throne--lit'} ${th.taken ? 'mt-throne--taken' : ''} ${mine ? 'mt-throne--mine' : ''}`;
           return (
-            <div key={`th${th.id}`} className={cls} style={{ left: pct(th.x - size / 2), top: pct(th.y - size / 2), width: pct(size), height: pct(size) }} aria-label={th.golden ? 'Golden throne' : 'Throne'}>
+            <div key={`th${th.id}`} className={cls} style={{ left: pct((th.x - size / 2) / w), top: pct(th.y - size / 2), width: pct(size / w), height: pct(size) }} aria-label={th.golden ? 'Golden throne' : 'Throne'}>
               <div className="mt-throne__seat">
                 {img ? <img src={img} alt="" /> : <span className="mt-throne__emoji" aria-hidden="true">{th.golden && <i className="mt-throne__crown">👑</i>}🪑</span>}
               </div>
@@ -102,7 +125,7 @@ export function ThronesBoard({ hall, round, t, covered, crowned, chomping, mySea
           const img = painted('thrones-fx', bit ? 'mimic-bite' : 'mimic') ?? painted('thrones-fx', 'throne');
           const own = !!painted('thrones-fx', 'mimic');
           return (
-            <div key={`mm${mm.id}`} className={`mt-throne mt-throne--lit mt-mimic ${bit ? 'mt-mimic--bite' : ''} ${chomping?.includes(mm.id) ? 'mt-mimic--chomp' : ''}`} style={{ left: pct(mm.x - size / 2), top: pct(mm.y - size / 2), width: pct(size), height: pct(size) }} aria-label="Throne">
+            <div key={`mm${mm.id}`} className={`mt-throne mt-throne--lit mt-mimic ${bit ? 'mt-mimic--bite' : ''} ${chomping?.includes(mm.id) ? 'mt-mimic--chomp' : ''}`} style={{ left: pct((mm.x - size / 2) / w), top: pct(mm.y - size / 2), width: pct(size / w), height: pct(size) }} aria-label="Throne">
               <div className="mt-throne__seat">
                 {img ? <img src={img} alt="" /> : <span className="mt-throne__emoji" aria-hidden="true">🪑</span>}
               </div>
@@ -132,5 +155,6 @@ export function ThronesBoard({ hall, round, t, covered, crowned, chomping, mySea
       )}
       <div className="mt-board__people">{children}</div>
     </div>
+    </Wide.Provider>
   );
 }

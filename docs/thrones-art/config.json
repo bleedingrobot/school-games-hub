@@ -41,6 +41,19 @@
       "style": "s"
     },
     {
+      "name": "hall-castle-wide",
+      "prompt": "A flat floor texture seen from directly above, filling the whole wide picture edge to edge: polished warm stone tiles inlaid with a big royal red carpet pattern and gold trim lines. Only the floor surface, a flat even pattern, plain and calm, like a game board or a rug, straight-down top view, no perspective, empty, nothing standing on it. Wide landscape widescreen picture, the board fills the whole wide frame edge to edge, the centrepiece exactly in the middle.",
+      "size": [
+        2048,
+        1280
+      ],
+      "kind": "scene",
+      "folder": "thrones",
+      "file": "hall-castle-wide",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, chairs, thrones, tables, furniture, seats, benches, stools, barrels, crates, boxes, walls, pillars, columns, doors, railings, borders of a room, perspective view, objects, props",
+      "style": "s"
+    },
+    {
       "name": "court-castle",
       "prompt": "A wide strip painting of a castle courtyard with stone walls and flower pots, friendly not scary, an empty open floor along the middle, no characters, no writing.",
       "size": [
@@ -76,6 +89,19 @@
       "kind": "scene",
       "folder": "thrones",
       "file": "hall-ice",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, chairs, thrones, tables, furniture, seats, benches, stools, barrels, crates, boxes, walls, pillars, columns, doors, railings, borders of a room, perspective view, objects, props",
+      "style": "s"
+    },
+    {
+      "name": "hall-ice-wide",
+      "prompt": "A flat floor texture seen from directly above, filling the whole wide picture edge to edge: smooth pale blue polished ice with frosty silver snowflake patterns etched into it. Only the floor surface, a flat even pattern, plain and calm, like a game board or a rug, straight-down top view, no perspective, empty, nothing standing on it. Wide landscape widescreen picture, the board fills the whole wide frame edge to edge, the centrepiece exactly in the middle.",
+      "size": [
+        2048,
+        1280
+      ],
+      "kind": "scene",
+      "folder": "thrones",
+      "file": "hall-ice-wide",
       "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, chairs, thrones, tables, furniture, seats, benches, stools, barrels, crates, boxes, walls, pillars, columns, doors, railings, borders of a room, perspective view, objects, props",
       "style": "s"
     },
@@ -119,6 +145,19 @@
       "style": "s"
     },
     {
+      "name": "hall-jungle-wide",
+      "prompt": "A flat floor texture seen from directly above, filling the whole wide picture edge to edge: mossy carved temple flagstones with little patches of grass, vines and tiny flowers growing between the stones. Only the floor surface, a flat even pattern, plain and calm, like a game board or a rug, straight-down top view, no perspective, empty, nothing standing on it. Wide landscape widescreen picture, the board fills the whole wide frame edge to edge, the centrepiece exactly in the middle.",
+      "size": [
+        2048,
+        1280
+      ],
+      "kind": "scene",
+      "folder": "thrones",
+      "file": "hall-jungle-wide",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, chairs, thrones, tables, furniture, seats, benches, stools, barrels, crates, boxes, walls, pillars, columns, doors, railings, borders of a room, perspective view, objects, props",
+      "style": "s"
+    },
+    {
       "name": "court-jungle",
       "prompt": "A wide strip painting of a cage of jungle vines and leaves, friendly not scary, an empty open floor along the middle, no characters, no writing.",
       "size": [
@@ -154,6 +193,19 @@
       "kind": "scene",
       "folder": "thrones",
       "file": "hall-pirate",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, chairs, thrones, tables, furniture, seats, benches, stools, barrels, crates, boxes, walls, pillars, columns, doors, railings, borders of a room, perspective view, objects, props",
+      "style": "s"
+    },
+    {
+      "name": "hall-pirate-wide",
+      "prompt": "A flat floor texture seen from directly above, filling the whole wide picture edge to edge: weathered wooden ship deck planks running in long straight lines, brass nails, a few coiled ropes lying flat. Only the floor surface, a flat even pattern, plain and calm, like a game board or a rug, straight-down top view, no perspective, empty, nothing standing on it. Wide landscape widescreen picture, the board fills the whole wide frame edge to edge, the centrepiece exactly in the middle.",
+      "size": [
+        2048,
+        1280
+      ],
+      "kind": "scene",
+      "folder": "thrones",
+      "file": "hall-pirate-wide",
       "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, chairs, thrones, tables, furniture, seats, benches, stools, barrels, crates, boxes, walls, pillars, columns, doors, railings, borders of a room, perspective view, objects, props",
       "style": "s"
     },
