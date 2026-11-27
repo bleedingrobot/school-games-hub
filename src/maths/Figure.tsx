@@ -13,7 +13,14 @@ function Label({ x, y, text, anchor = 'middle' }: { x: number; y: number; text: 
   const ask = text.includes('?');
   return (
     <text x={x} y={y} textAnchor={anchor} dominantBaseline="middle" className={ask ? 'fig__label fig__label--ask' : 'fig__label'}>
-      {text}
+      {/* A two-line label ("Perimeter" over "24 cm") keeps it inside a small shape. */}
+      {text.includes('\n')
+        ? text.split('\n').map((line, i, all) => (
+            <tspan key={i} x={x} dy={i === 0 ? `${-(all.length - 1) * 0.55}em` : '1.1em'}>
+              {line}
+            </tspan>
+          ))
+        : text}
     </text>
   );
 }
@@ -130,18 +137,30 @@ function Body({ f }: { f: FigureSpec }) {
       const lab = Math.min(len - 8, Math.max(40, 34 / (2 * Math.tan(half))));
       return (
         <>
-          <line x1={120 - dx} y1={75 + dy} x2={120 + dx} y2={75 - dy} className="fig__line" />
-          <line x1={120 - dx} y1={75 - dy} x2={120 + dx} y2={75 + dy} className="fig__line" />
           {f.next ? (
-            <>
-              {/* The angle and the one beside it above, on the same straight line. */}
-              <Arc cx={120} cy={75} r={18} a={-deg / 2} b={deg / 2} />
-              <Arc cx={120} cy={75} r={24} a={deg / 2} b={180 - deg / 2} />
-              <Label x={120 + lab} y={75} text={f.angles[0]} />
-              <Label x={120} y={75 - Math.min(len - 8, Math.max(34, 34 / (2 * Math.tan(Math.PI / 2 - half))))} text={f.angles[1]} />
-            </>
+            (() => {
+              // One line flat, the other through it at the real angle: the given angle on the right, the asked one beside it.
+              const r = (d: number) => (d * Math.PI) / 180;
+              const ray = (d: number, l: number) => ({ x: 120 + l * Math.cos(r(d)), y: 75 - l * Math.sin(r(d)) });
+              const far = ray(deg, 70), back = ray(deg + 180, 70);
+              const at = (from: number, to: number, l: number) => ray((from + to) / 2, l);
+              const narrow = (w: number) => Math.min(66, Math.max(38, 17 / Math.sin(r(w / 2))));
+              const g = at(0, deg, narrow(deg)), q = at(deg, 180, narrow(180 - deg));
+              return (
+                <>
+                  <line x1={40} y1={75} x2={200} y2={75} className="fig__line" />
+                  <line x1={back.x} y1={back.y} x2={far.x} y2={far.y} className="fig__line" />
+                  <Arc cx={120} cy={75} r={18} a={0} b={deg} />
+                  <Arc cx={120} cy={75} r={24} a={deg} b={180} />
+                  <Label x={g.x} y={g.y} text={f.angles[0]} />
+                  <Label x={q.x} y={q.y} text={f.angles[1]} />
+                </>
+              );
+            })()
           ) : (
             <>
+              <line x1={120 - dx} y1={75 + dy} x2={120 + dx} y2={75 - dy} className="fig__line" />
+              <line x1={120 - dx} y1={75 - dy} x2={120 + dx} y2={75 + dy} className="fig__line" />
               {/* The two opposite angles: the same arc and tick on each. */}
               <Arc cx={120} cy={75} r={18} a={-deg / 2} b={deg / 2} />
               <Arc cx={120} cy={75} r={18} a={180 - deg / 2} b={180 + deg / 2} />
@@ -177,7 +196,7 @@ function Body({ f }: { f: FigureSpec }) {
       };
       const cols = side(f.width);
       const rows = side(f.height);
-      if (cols && rows && !/^P\b/.test(f.inside ?? '')) {
+      if (cols && rows && !/^(P\b|Perimeter)/.test(f.inside ?? '')) {
         const cell = Math.min(130 / cols, 90 / rows);
         const gw = cols * cell;
         const gh = rows * cell;
