@@ -5,7 +5,7 @@
 import { ghostBot } from './ghostBot';
 import { crewBot } from './crewBot';
 import { memoryDb, memoryMove, memoryServices, type MemoryDb } from './memoryServices';
-import { boosted as thronesBoosted, ghostly as thronesGhostly, moveRound as thronesMoveRound, nearestFree as thronesNearest, throneAt as thronesAt } from './thrones';
+import { boosted as thronesBoosted, ghostly as thronesGhostly, moveRound as thronesMoveRound, nearestFree as thronesNearest, stepThrones, throneAt as thronesAt } from './thrones';
 import { boosted, CORNERS, cornerOf, ghostly, pretendDir, stepMove, type Corner, type MoveState } from './corners';
 import { bayRound, isShark, quarterOf, sharkMove, sharkPretendDir, spinAt } from './shark';
 import { classLiveStep, type Change, type ClassLiveServices } from './server';
@@ -197,7 +197,7 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
         const item = music && !mine.held ? r.items.find((x) => !x.by && Math.hypot(x.x - m!.p.x, x.y - m!.p.y) < 0.25) : undefined;
         if (music && Math.hypot(roam.x - m.p.x, roam.y - m.p.y) < 0.05) {
           const tile = r.tiles[Math.floor(rand() * r.tiles.length)];
-          roam = tile && rand() < 0.5 ? { x: tile.x, y: tile.y } : { x: 0.1 + rand() * 0.8, y: 0.1 + rand() * 0.8 };
+          roam = tile && rand() < 0.5 ? { x: tile.x, y: tile.y } : { x: 0.1 + rand() * ((g.w ?? 1) - 0.2), y: 0.1 + rand() * 0.8 };
         }
         if (fooledIn !== r.n) { fooledIn = r.n; fooled = rand() < 0.12; }
         const mimic = !music && r.stopped && fooled ? (r.mimics ?? []).slice().sort((a, b) => Math.hypot(a.x - m!.p.x, a.y - m!.p.y) - Math.hypot(b.x - m!.p.x, b.y - m!.p.y))[0] : undefined;
@@ -206,7 +206,7 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
         const len = Math.hypot(dir.x, dir.y);
         dir = len < 0.01 ? { x: 0, y: 0 } : { x: dir.x / len, y: dir.y / len };
         if (rand() > skill + 0.1) dir = { x: dir.x * 0.4, y: dir.y * 0.4 };
-        m = stepMove(m, dir, 200, thronesMoveRound(r), t, { boost: thronesBoosted(mine, r.n), ghost: thronesGhostly(mine, r.n) });
+        m = stepThrones(m, dir, 200, thronesMoveRound(r), t, { boost: thronesBoosted(mine, r.n), ghost: thronesGhostly(mine, r.n) }, g.w ?? 1);
         memoryMove(db, now, room, id, m.p.x, m.p.y);
         const on = !music ? thronesAt(r, m.p) : null;
         if (!busy && mimic && Math.hypot(mimic.x - m.p.x, mimic.y - m.p.y) < 0.06) {

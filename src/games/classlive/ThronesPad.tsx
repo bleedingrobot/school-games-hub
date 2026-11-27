@@ -9,13 +9,13 @@
  */
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { AvatarImage } from '../../avatar/AvatarImage';
-import { AVATAR_R, GRAB_R, startSpot, stepMove, type MoveState, type Spot } from '../../../shared/classlive/corners';
+import { AVATAR_R, GRAB_R, type MoveState, type Spot } from '../../../shared/classlive/corners';
 import type { PlayerView, RoomView } from '../../../shared/classlive/server';
-import { COURT_RIGHT, HALL_WORDS, moveRound, POWER_WORDS, SIT_R, type ThroneRound, type ThronePower } from '../../../shared/classlive/thrones';
+import { COURT_RIGHT, HALL_WORDS, hallStart, moveRound, POWER_WORDS, SIT_R, stepThrones, type ThroneRound, type ThronePower } from '../../../shared/classlive/thrones';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import type { ClassLiveLink } from './link';
-import { ThronesBoard, thronePowerPic, Token } from './ThronesBoard';
+import { at, ThronesBoard, thronePowerPic, Token } from './ThronesBoard';
 import { ThronesGuide } from './ThronesGuide';
 import './controller.css';
 import './thrones.css';
@@ -105,9 +105,11 @@ export function ThronesPad({ link, room, view, me, setMe, setView, clock, avatar
   const pub: Pub | null = view.game.kind === 'thrones' ? view.game : null;
   const mg: Mine | null = me && me.game.kind === 'thrones' ? me.game : null;
   const r = pub?.round ?? null;
+  /** The hall's width (height 1): wide since 27 Nov 2026. */
+  const bw = r?.w ?? pub?.w ?? 1;
   const keysDir = useKeys();
   const stickDir = useRef<Spot>({ x: 0, y: 0 });
-  const pos = useRef<MoveState>({ p: mg?.spot ?? startSpot(0), v: { x: 0, y: 0 } });
+  const pos = useRef<MoveState>({ p: mg?.spot ?? hallStart(0, bw), v: { x: 0, y: 0 } });
   const placed = useRef<number>(-1);
   const others = useRef<Spot[]>([]);
   const lastSent = useRef(0);
@@ -191,7 +193,7 @@ export function ThronesPad({ link, room, view, me, setMe, setView, clock, avatar
         const k = keysDir();
         const dir = k.x || k.y ? k : stickDir.current;
         const hitBefore = pos.current.hitAt;
-        pos.current = stepMove(pos.current, dir, dt, mr, tt, { boost: m.boost, ghost: m.ghost });
+        pos.current = stepThrones(pos.current, dir, dt, mr, tt, { boost: m.boost, ghost: m.ghost }, pb.w ?? rd.w ?? 1);
         if (pos.current.hitAt !== undefined && pos.current.hitAt !== hitBefore) {
           toast(`💥 The ${HALL_WORDS[pb.hall].roller.toLowerCase()} knocked you flying!`);
           buzz(200);
@@ -449,7 +451,7 @@ export function ThronesPad({ link, room, view, me, setMe, setView, clock, avatar
   const goldenSeat = seated && !!r?.thrones.find((x) => x.id === mg.seat)?.golden;
   const heldPic = mg.held ? thronePowerPic(mg.held as ThronePower) : null;
   return (
-    <div className="mt-pad">
+    <div className={`mt-pad ${bw > 1 ? 'mt-pad--wide' : ''}`}>
       <header className="mt-pad__top">
         <span className="mt-crowns" aria-label={`${mg.crowns} crowns`}>👑 <b key={mg.crowns}>{mg.crowns}</b></span>
         <span className="mt-pad__music">
@@ -472,8 +474,8 @@ export function ThronesPad({ link, room, view, me, setMe, setView, clock, avatar
       {onChips.length > 0 && <div className="mt-pad__chips">{onChips.map((c) => <span key={c.key} className={`mt-chip ${c.cls ?? ''}`}>{c.text}</span>)}</div>}
       {seated && <div className="mt-seated" role="status">{goldenSeat ? '👑👑👑 Golden throne! 3 crowns!' : '👑 You got a throne!'}</div>}
       <div className={`mt-pad__board ${Date.now() - shake < 500 ? 'mt-pad__board--hit' : ''}`}>
-        <ThronesBoard hall={pub.hall} round={r ? { ...r, thrones } : null} t={t} covered={music || !r?.stopped} mySeat={mg.seat}>
-          {others.current.filter((o) => o.y <= 1).map((o, i) => <span key={i} className="mt-dot" style={{ left: `${o.x * 100}%`, top: `${o.y * 100}%` }} />)}
+        <ThronesBoard hall={pub.hall} w={bw} round={r ? { ...r, thrones } : null} t={t} covered={music || !r?.stopped} mySeat={mg.seat}>
+          {others.current.filter((o) => o.y <= 1).map((o, i) => <span key={i} className="mt-dot" style={at(o.x, o.y, bw)} />)}
           <Token x={here.x} y={here.y} size={AVATAR_R * 2.2} className={`mt-token--me ${music ? 'mt-token--dance' : ''} ${seated ? 'mt-token--sit' : ''} ${mg.shield ? 'mt-token--shield' : ''} ${mg.boost ? 'fc-token--fast' : ''} ${mg.ghost ? 'mt-token--ghost' : ''}`} label="You">
             <AvatarImage avatar={avatar ?? null} size={64} />
           </Token>

@@ -744,7 +744,7 @@ export function gameFor(activity: Activity, level: string | null, random: () => 
 function joinGame(g: Game, who: string, index: number) {
   if (g.kind === 'corners') g.mine[who] = freshMine(index);
   if (g.kind === 'lava') g.mine[who] = freshLavaMine(index, g.w ?? 1);
-  if (g.kind === 'thrones') g.mine[who] = thronesFresh(index);
+  if (g.kind === 'thrones') g.mine[who] = thronesFresh(index, g.w ?? 1);
   if (g.kind === 'clash') clashJoin(g, who);
   if (g.kind === 'ghost') g.mine[who] = ghostFresh(index, 30, g.w ?? 1);
   if (g.kind === 'crew') g.mine[who] = { ...crewFresh(index, 30, Math.random, g.w ?? 1), nick: crewNick(g, who) };
