@@ -24,8 +24,8 @@ function MonstersIcon({ size = 64 }: { size?: number }) {
 }
 
 /**
- * Maths Monsters (docs/MONSTER-PLAN.md). Walk around, battle and catch monsters; every attack and catch
- * is a maths question. Never ranked. Hidden from the dashboard until a teacher switches it on.
+ * Maths Monsters (docs/MONSTER-PLAN.md). Walk around, battle and catch monsters; each battle opens
+ * with one "Power up!" maths question and every catch is one. Never ranked. Hidden from the dashboard until a teacher switches it on.
  */
 export const monsters: GameDefinition = {
   id: 'monsters',

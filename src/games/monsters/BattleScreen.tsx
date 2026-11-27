@@ -74,7 +74,7 @@ export interface BattleScreenProps {
   place?: string;
   /** A trainer battle: the trainer's name, so their picture can say hello before their first monster comes out. */
   trainer?: string;
-  /** A random wild battle: one "Power up!" question with the first attack, then attacks ask nothing. (Trainers and giants ask every attack.) */
+  /** One "Power up!" question with the first attack, then attacks ask nothing (every battle in the game since 27 Nov 2026). Off: every attack asks. */
   powerUp?: boolean;
   /** The player's chosen look, shown opposite the trainer while they say hello. */
   look?: string;
@@ -184,8 +184,7 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
 
   const start = useMemo(() => newBattle(setup), []); // eslint-disable-line react-hooks/exhaustive-deps
   const [battle, setBattle] = useState<BattleState>(start.state);
-  const wildPowerUp = powerUp && setup.kind === 'wild';
-  const [shown, setShown] = useState<Shown>(() => shownFrom(start.state));
+    const [shown, setShown] = useState<Shown>(() => shownFrom(start.state));
   const [mode, setMode] = useState<Mode>('playing');
   const [beats, setBeats] = useState<Beat[]>([]);
   const [beatIdx, setBeatIdx] = useState(0);
@@ -461,8 +460,8 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
 
   /** Asks the question for a fight, catch or power-up action (the topic and band come from the engine). */
   function ask(action: Asking['action'], back: Mode) {
-    // A random wild battle asks once, with its first attack ("Power up!"); after that attacks go straight in.
-    if (action.kind === 'fight' && wildPowerUp) {
+    // A battle asks once, with its first attack ("Power up!"); after that attacks go straight in.
+    if (action.kind === 'fight' && powerUp) {
       if (battle.powerUp !== undefined) return run({ kind: 'fight', attack: action.attack });
       action = { kind: 'power-up', attack: action.attack };
     }

@@ -8,9 +8,10 @@
  * actions with the same random numbers and you get the same battle: the N.6 server check
  * replays a battle exactly this way (see `replayBattle`).
  *
- * Wild battles ask one "Power up!" question before their first attack (`power-up`; running away
- * first still asks nothing) and then attacks need no answer: the result boosts every attack for the rest of the battle (TUNING.powerUp). Trainers,
- * badge leaders and giants still ask one question per attack (James, 6 Nov 2026).
+ * Every battle (wild, trainer, Tower leader, giant) asks one "Power up!" question before its first attack (`power-up`;
+ * running away first still asks nothing) and then attacks need no answer: the result boosts every attack for the rest of the
+ * battle (TUNING.powerUp). James, 27 Nov 2026 (wild battles since 6 Nov). Fights that carry their own answer (one question per
+ * attack, the old way) still play, so saves made before the change still check.
  *
  * The engine does not make the maths question. `questionFor` says which topic and band to ask;
  * the screen asks it and passes the result in the action. A quick answer is judged by
@@ -53,7 +54,7 @@ export interface BattleState {
   phase: Phase;
   turn: number;
   questions: number;
-  /** A wild battle's "Power up!" answer, once it is asked (before its first attack). */
+  /** The battle's "Power up!" answer, once it is asked (before its first attack). */
   powerUp?: AnswerResult;
 }
 
@@ -68,9 +69,9 @@ export interface BattleSetup {
 }
 
 export type BattleAction =
-  /** `answer` is left out in a wild battle (the power-up counts instead); a trainer battle needs one. */
+  /** `answer` is left out once the power up is answered (it counts instead); old saves carry one per attack. */
   | { kind: 'fight'; attack: number; answer?: AnswerResult }
-  /** A wild battle's one question, asked before its first attack. Takes no turn: the foe does not act. */
+  /** The battle's one question, asked before its first attack. Takes no turn: the foe does not act. */
   | { kind: 'power-up'; answer: AnswerResult }
   | { kind: 'switch'; to: number }
   | { kind: 'item'; item: ItemId; target?: number }
@@ -190,7 +191,6 @@ export function play(prev: BattleState, action: BattleAction, random: () => numb
   }
 
   if (action.kind === 'power-up') {
-    if (s.kind !== 'wild') refuse('Only a wild battle has a power up');
     if (s.powerUp !== undefined) refuse('The power up comes once');
     if (!['right', 'quick-right', 'wrong'].includes(action.answer)) refuse('Unknown answer result');
     s.questions += 1;
@@ -209,8 +209,7 @@ export function play(prev: BattleState, action: BattleAction, random: () => numb
       const type = attackType(speciesOf(me().species), attack);
       let hit: ReturnType<typeof damageFor>;
       if (action.answer === undefined) {
-        // A wild battle's attacks ask nothing: the opening power up boosts them all.
-        if (s.kind !== 'wild') refuse('A trainer battle asks a question for every attack');
+        // Attacks ask nothing: the opening power up boosts them all.
         if (s.powerUp === undefined) refuse('Answer the power up question first');
         hit = damageFor(me(), attack.power, foe(), 'right', random(), type, s.powerUp ? TUNING.powerUp[s.powerUp] : 1);
       } else {
