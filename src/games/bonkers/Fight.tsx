@@ -4,6 +4,7 @@
  * health, so what the pupil sees is exactly what the server will save.
  */
 import { useEffect, useRef, useState } from 'react';
+import { useEnterGoes } from './keys';
 import { CLASS_INFO, trainerFor, zoneById, type MonsterInfo } from '../../../shared/bonkers/content';
 import { autoSmash, monsterSwings, replay, type Blow, type Foe, type Progress } from '../../../shared/bonkers/engine';
 import { BOOSTS, FOE_HEARTS, HEARTS, POINTS, STARS, STICKERS_A_WIN, TRAINER_HEARTS } from '../../../shared/bonkers/config';
@@ -74,6 +75,7 @@ export function Fight({ backend, progress, start, onDone }: {
   // "the auto attacks need to be seen"): `played.n` smashes have landed for question `played.slot`.
   // The monster swings back after every second smash (James, 28 Nov 2026: "they never seem to get hit").
   const [played, setPlayed] = useState({ slot: -1, n: 0 });
+  useEnterGoes();
   const adv = view.adventure;
   const r = replay(adv, view.marks);
   const slotNow = view.marks.length;
