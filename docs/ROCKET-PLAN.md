@@ -22,7 +22,7 @@ James's second pick from the real-life games idea page (https://claude.ai/artifa
 - Server `shared/classlive/rocketServer.ts` (`rocketStep`, `rocketPublic`), wired in `server.ts`; rewards `extra.rocket_runs`, `rocket_wins`.
 - A check-in has no event, so the step names the runner in `players`: otherwise `mutate` sees no change and doesn't save it.
 - Big screen `src/games/classlive/RocketScene.tsx`, station `RocketPad.tsx`, card and lobby `RocketCard.tsx`, styles `rocket.css` (prefix `rk-`).
-- Migration `20261127210645_classlive_rocket.sql`: activity row, 2 trophies.
+- Migration `20261127213026_classlive_rocket.sql`: activity row, 2 trophies.
 - Bella: `LINES.rocketBoost/rocketEnd`, `ROCKET_MOON_LINES`, `HOWTO.rocket` (clips recorded).
 - Test `shared/classlive/rocket.test.ts`; pretend runners in `pretendClass.ts` (`rocketBot`).
 - Art: picker tile `pick/rocket` (`docs/rocket-art/config.json`); the big screen falls back to `back/star-sky`. Music falls back to Sky Climb's track until `rocket` and `rocket-hot` are made.
