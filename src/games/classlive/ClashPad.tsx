@@ -17,6 +17,7 @@ import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import { at, ClashBoard, ClashToken, clashPowerPic, teamColour, withTiles, type Splat } from './ClashBoard';
 import { ClashGuide } from './ClashGuide';
 import { Joystick, useKeys } from './CornersPad';
+import { useEdgeLink } from './edgeLink';
 import type { ClassLiveLink } from './link';
 import './controller.css';
 
@@ -25,12 +26,14 @@ type Pub = Extract<RoomView['game'], { kind: 'clash' }>;
 const SEND_MS = 400;
 const factOf = (q: PublicQuestion, answer: number) => q.parts.map((p) => p.replace(/\?/g, String(answer))).join(' ');
 
-export function ClashPad({ link, room, view, me, setMe, setView, clock, avatar }: {
+export function ClashPad({ link: baseLink, room, view, me, setMe, setView, clock, avatar }: {
   link: ClassLiveLink; room: number | null; view: RoomView; me: PlayerView | null;
   setMe: (m: PlayerView) => void; setView: (f: (v: RoomView | null) => RoomView | null) => void;
   clock: () => number;
   avatar?: unknown;
 }) {
+  // Cloudflare rooms send spots and get the paint over a live connection (edgeLink.ts), 10 times a second.
+  const link = useEdgeLink(baseLink, room, view.edge);
   const pub: Pub | null = view.game.kind === 'clash' ? view.game : null;
   const mg: Mine | null = me && me.game.kind === 'clash' ? me.game : null;
   const r = (pub?.round ?? null) as (ClashRound & { items: { id: number; x: number; y: number; power: ClashPower }[] }) | null;
@@ -102,7 +105,7 @@ export function ClashPad({ link, room, view, me, setMe, setView, clock, avatar }
           setShake(Date.now());
         }
         const warped = Math.hypot(pos.current.p.x - before.x, pos.current.p.y - before.y) > 0.2;
-        if (now - lastSent.current >= SEND_MS || warped) {
+        if (now - lastSent.current >= (link.sendMs ?? SEND_MS) || warped) {
           lastSent.current = now;
           send(pos.current.p);
         }

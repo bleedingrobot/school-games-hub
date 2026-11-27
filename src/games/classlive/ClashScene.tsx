@@ -13,6 +13,7 @@ import type { Spot } from '../../../shared/classlive/corners';
 import type { ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
 import { at, ClashBoard, ClashToken, teamColour, withTiles, type Splat } from './ClashBoard';
+import { useEdgeLink } from './edgeLink';
 import type { ClassLiveLink } from './link';
 import { painted } from './paintedArt';
 import { LINES, next, type LineKey } from './voiceLines';
@@ -31,7 +32,7 @@ const MECH_ABOUT: Record<ClashMechanic, (w: (typeof MAP_WORDS)['park']) => strin
 
 const teamsOf = (g: ClashGame) => ([1, 2, 3, 4] as Team[]).filter((t) => t <= g.teams);
 
-export function ClashScene({ screen, game, link, room, clock, sound, say, onTick, over, onAgain }: {
+export function ClashScene({ screen, game, link: baseLink, room, clock, sound, say, onTick, over, onAgain }: {
   screen: ScreenView; game: ClashGame; link: ClassLiveLink; room: number | null;
   clock: () => number;
   sound: ClassLiveSound; say: (text: string, delay?: number) => void;
@@ -39,6 +40,8 @@ export function ClashScene({ screen, game, link, room, clock, sound, say, onTick
   over: boolean;
   onAgain: () => void;
 }) {
+  // Cloudflare rooms read spots and paint over a live connection (edgeLink.ts), 10 times a second.
+  const link = useEdgeLink(baseLink, room, screen.edge);
   const t = screen.startedAt === null ? 0 : clock() - screen.startedAt;
   const r = game.round;
   /** The board's width (height 1): wide since 27 Nov 2026. */
@@ -85,7 +88,7 @@ export function ClashScene({ screen, game, link, room, clock, sound, say, onTick
       }, () => undefined);
     };
     read();
-    const id = window.setInterval(read, paintingNow ? 300 : 1500);
+    const id = window.setInterval(read, paintingNow ? (link.readMs ?? 300) : 1500);
     return () => { live = false; window.clearInterval(id); };
   }, [room, paintingNow, over, link, bw]);
 
