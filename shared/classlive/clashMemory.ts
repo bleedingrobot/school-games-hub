@@ -3,7 +3,7 @@
  * 20261125001200_classlive_clash: tiles per room and round, the painter counts, painting on a saved move, bombs and
  * the count. Kept beside memoryServices.ts (not in it) so other games' changes there don't clash.
  */
-import { lineTiles, inFountain, painting as _painting, pretendDir, stepMove, speedy, TILES, type ClashGame } from './clash';
+import { lineTiles, inFountain, painting as _painting, pretendDir, stepMove, speedy, tileCount, widthOf, type ClashGame } from './clash';
 import { memoryMove, type MemoryDb } from './memoryServices';
 import type { ClassLiveServices } from './server';
 import type { MoveState, Spot } from './corners';
@@ -22,10 +22,11 @@ function storeOf(db: MemoryDb, room: number): Store {
 }
 
 function put(db: MemoryDb, room: number, round: number, team: number, who: string, idxs: number[], now: number): number {
+  const total = tileCount(widthOf(db.rooms.get(room)?.session.game as { w?: number } | undefined));
   const s = storeOf(db, room);
   let changed = 0;
   for (const i of new Set(idxs)) {
-    if (i < 0 || i >= TILES) continue;
+    if (i < 0 || i >= total) continue;
     const key = `${round}:${i}`;
     const old = s.tiles.get(key);
     if (old && old.team === team) continue;
@@ -64,7 +65,8 @@ export function memoryClashPaint(db: MemoryDb, now: number, room: number, player
       const wide = m.brushTo !== null && t < m.brushTo;
       let from: Spot = prev;
       if (Math.hypot(cur.x - prev.x, cur.y - prev.y) > 0.6 * Math.min(5, Math.max(0, now - prev.at) / 1000) + 0.06) from = cur;
-      const idxs = lineTiles(from, cur, wide).filter((i) => !(r.hole && inFountain(i)));
+      const w = widthOf(g);
+      const idxs = lineTiles(from, cur, wide, w).filter((i) => !(r.hole && inFountain(i, w)));
       put(db, room, n, m.team, player, idxs, now);
     }
   }
@@ -83,7 +85,7 @@ export function memoryClashServices(db: MemoryDb, clock: { now(): number }): Pic
   return {
     async clashBoard(room, round) {
       const s = storeOf(db, room);
-      const a = Array.from({ length: TILES }, (_, i) => String(s.tiles.get(`${round}:${i}`)?.team ?? 0));
+      const a = Array.from({ length: tileCount(widthOf(db.rooms.get(room)?.session.game as { w?: number } | undefined)) }, (_, i) => String(s.tiles.get(`${round}:${i}`)?.team ?? 0));
       return { tiles: a.join(''), painted: Object.fromEntries(s.painted) };
     },
     async clashBomb(room, round, team, player, tiles) {
@@ -102,7 +104,8 @@ export function clashBot(o: { db: MemoryDb; room: number; id: string; skill: num
   const { db, room, id, skill, rand } = o;
   let m: MoveState | null = null;
   let placedSeen = -1;
-  let target: Spot = { x: rand(), y: rand() };
+  const wide = () => widthOf(db.rooms.get(room)?.session.game as { w?: number } | undefined);
+  let target: Spot = { x: rand() * wide(), y: rand() };
   let busy = false;
   let frozenUntil = 0;
   const think = async () => {
@@ -120,7 +123,7 @@ export function clashBot(o: { db: MemoryDb; room: number; id: string; skill: num
       placedSeen = mine.placed;
     }
     if (r && _painting(r, t) && now >= frozenUntil) {
-      if (Math.hypot(target.x - m.p.x, target.y - m.p.y) < 0.05 || rand() < 0.02) target = { x: 0.05 + rand() * 0.9, y: 0.05 + rand() * 0.9 };
+      if (Math.hypot(target.x - m.p.x, target.y - m.p.y) < 0.05 || rand() < 0.02) target = { x: 0.05 + rand() * (wide() - 0.1), y: 0.05 + rand() * 0.9 };
       const item = !mine.held ? r.items.find((x) => !x.by && Math.hypot(x.x - m!.p.x, x.y - m!.p.y) < 0.25) : undefined;
       let dir = item ? { x: item.x - m.p.x, y: item.y - m.p.y } : pretendDir(m.p, target, rand);
       const len = Math.hypot(dir.x, dir.y);

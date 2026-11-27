@@ -25,7 +25,7 @@
   place-items: center;
   background:
     repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.04) 0 1px, transparent 1px calc(100% / 24)),
-    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.04) 0 1px, transparent 1px calc(100% / 24)),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.04) 0 1px, transparent 1px calc(100% / var(--cc-cols, 24))),
     radial-gradient(ellipse at 30% 25%, var(--ga), var(--gb) 55%, var(--gc));
 }
 .cc-board__ground span { font-size: clamp(40px, 14vmin, 180px); opacity: 0.12; }
@@ -306,3 +306,32 @@
 @media (prefers-reduced-motion: reduce) {
   .cc-splat, .cc-splat i, .cc-item, .cc-gold, .cc-portal, .cc-goo, .cc-reveal__bar i { animation-duration: 0.01s; }
 }
+
+/* ---------- the wide board (27 Nov 2026: fills a widescreen projector and a landscape iPad) ---------- */
+/* Big screen: a slimmer side panel; the board as wide as fits, as tall as the screen allows. */
+.cc-scene--wide { padding: 48px 8px 8px; }
+.cc-scene--wide .cc-stage { grid-template-columns: auto min(17vw, 280px); gap: 16px; height: auto; max-width: 100%; }
+.cc-scene--wide .cc-stage .cc-board { height: auto; width: min(calc(100vw - 16px - 16px - min(17vw, 280px)), calc((100vh - 60px) * var(--cc-w, 1.6))); }
+.cc-scene--wide .cc-side { gap: 8px; min-width: 0; }
+.cc-scene--wide .cc-team { padding: 6px 8px; gap: 6px; }
+.cc-scene--wide .cc-team__name { white-space: nowrap; }
+@media (max-width: 900px) {
+  .cc-scene--wide .cc-stage { grid-template-columns: 1fr; }
+  .cc-scene--wide .cc-stage .cc-board { width: 96vw; }
+  .cc-scene--wide .cc-side { width: 100%; max-width: none; }
+}
+/* iPad: the board across the whole screen, the bomb and the joystick over its bottom corners. */
+.cc-pad--wide .cc-pad__board { width: min(100%, calc((100dvh - 300px) * 1.6)); }
+@media (orientation: portrait) { .cc-pad--wide .cc-pad__board { width: 100%; } .cc-pad--wide .cc-pad__controls { padding-right: min(42vw, 190px); } }
+@media (orientation: landscape) and (min-width: 640px) {
+  .cc-pad--run.cc-pad--wide { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0; }
+  .cc-pad--wide .cc-pad__top { flex-direction: row; align-items: center; padding-top: 0; max-width: none; padding-inline: 96px 8px; }
+  .cc-pad--wide .cc-pad__left { font-size: 34px; }
+  .cc-pad--run.cc-pad--wide .cc-pad__board { width: min(calc(100vw - 16px), calc((100dvh - 52px) * 1.6)); }
+  .cc-pad--wide .cc-pad__controls { position: fixed; inset: auto 0 0 0; width: auto; max-width: none; flex-direction: row; align-items: flex-end; padding: 0 max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-bottom)); pointer-events: none; z-index: 5; }
+  .cc-pad--wide .cc-pad__controls > * { pointer-events: auto; }
+  .cc-pad--wide .cc-bomb { opacity: 0.92; }
+  .cc-pad--wide .fc-stick { opacity: 0.8; }
+  .cc-pad--wide .cc-fb { top: 52px; }
+}
+.cc-board--wide .cc-dot { width: calc(2.2% / 1.6); }
