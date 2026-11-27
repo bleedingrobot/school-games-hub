@@ -49,7 +49,7 @@ All 22 are James's (27 Nov 2026), in the brainstorm's section 10. Calls I made w
 
 | Stage | What | Live? |
 |---|---|---|
-| B.1 | Rules, simulator, server function, database, screens with drawn stand-ins, teacher switch and Progress column. Teachers only (code switch off) | building |
+| B.1 | Rules, simulator, server function, database, screens with drawn stand-ins, teacher switch and Progress column. Teachers only (code switch off) | merging 27 Nov 2026 |
 | B.2 | Sticker shop (hats and pets), achievements, monster book | |
 | B.3 | The class's Friday boss (chipped all week), the 5-week season and the mega boss | |
 | B.4 | Guide polish, Bella's voice lines | |
@@ -60,4 +60,5 @@ All 22 are James's (27 Nov 2026), in the brainstorm's section 10. Calls I made w
 
 - Function `bonkers` (`supabase/functions/bonkers/`), rules in `shared/bonkers/`.
 - Tables `bonkers_progress` (one row a pupil, versioned) and `bonkers_adventures` (one a day-ish: the quest, the monsters, the questions as the server made them, the marks).
-- Requests: load 1, start 1, one per question (about 15), finish 1: about 18 an adventure, so 28 pupils is about 500 a lesson.
+- Requests: load 1, start 1, one per question (about 20: the simulator's 18 to 25), finish 1: about 23 an adventure, so 28 pupils is about 650 a lesson.
+- Preview (no sign-in, trial backend in the browser): `npm run bonkers:preview` makes one HTML file.
