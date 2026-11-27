@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'goblinstorm-hero-rounds-2026-11-28',
+    date: '2026-11-28',
+    emoji: '🦸',
+    title: 'Goblin Storm hero rounds',
+    text: 'Beat a boss with every hero you have for bonus gold: +10, +20, +30 and more.',
+    game: 'goblinstorm',
+  },
+  {
     id: 'goblinstorm-rounds-2026-11-27',
     date: '2026-11-27',
     emoji: '🔁',
