@@ -9,7 +9,7 @@ import { MapMaker, PEOPLE, TT, X, towerRooms } from './lib.mjs';
  * Wild levels: area 2: 7-12, 3: 13-19, 4: 20-27, 5: 28-36, 6: 37-45 (shared/monsters/bands.ts).
  */
 
-// ───────────────────────── Area 2: Shell Beach (Water: adding and taking away) ─────────────────────────
+// ───────────────────────── Area 2: Shell Beach (Water) ─────────────────────────
 export function shellBeach() {
   const wild = ['plusplash', 'plusplash', 'minnowus', 'minnowus', 'carrycrab', 'carrycrab', 'factorch', 'squaremander', 'remaindeer', 'sharebear', 'numeratot', 'denomibolt', 'coinrock', 'centipebble'];
   const m = new MapMaker('shell-beach', 'Area 2: Shell Beach', 25, 20, 2, wild, 'beach');
@@ -23,13 +23,13 @@ export function shellBeach() {
   m.hut(16, 15, 19, 16, 'Nurse Hinemoa', 'Kia ora! Come and rest your monsters on the sand.', 'left');
   m.gate('area-3-gate', 3, 1, 'water', 'A rope fence blocks the steep path north. A sign says: "Fire Mountain. Only for trainers with a Water badge!"');
   m.warp('to-fire-mountain', 3, 0, 'fire-mountain', 3, 18, 'up');
-  m.welcome('beach-sign', 22, 17, 'Shell Beach. Water monsters splash about here. Their attacks ask adding and taking away.');
+  m.welcome('beach-sign', 22, 17, 'Shell Beach. Water monsters splash about here. Fire monsters keep well away!');
   m.sign('tower-sign', 11, 6, 'The Water Tower. Beat the Tower trainer to win the Water badge.');
   m.sign('hut-sign', 18, 15, 'Rest hut. Nurse Hinemoa will heal your team for free.');
   m.sign('gate-sign', 5, 4, 'North-west: the path up to Fire Mountain. You need the Water badge.');
   m.sign('chest-sign-1', 21, 10, 'A chest is buried in the dunes just east of here.');
   m.sign('chest-sign-2', 7, 4, 'A chest is hiding in the corner by the sea, up north.');
-  m.person('Hine', PEOPLE.woman, 18, 10, 'down', 'I counted 47 shells on the beach. Then a wave took 18 away. That leaves 29!\nAdding and taking away is what Water monsters are all about.');
+  m.person('Hine', PEOPLE.woman, 18, 10, 'down', 'I counted 47 shells on the beach. Then a wave took 18 away. That leaves 29!\nThere is maths everywhere at the beach, if you look for it.');
   m.person('Old Joe', PEOPLE.elder, 12, 11, 'right', 'What did the ocean say to the beach?\nNothing, it just waved!');
   m.person('Surfer Tui', PEOPLE.man, 6, 10, 'right', 'Tip: Water is strong against Fire, but weak against Leaf. Bring a Leaf monster if you want to beat a Water one!');
   m.trainer('Lifeguard Sam', PEOPLE.guard, 12, 8, 'left', { sight: 2, text: 'Stop right there! Nobody swims past me without a battle!', win: 'You are a strong swimmer! I mean trainer.', team: 'plusplash:9,minnowus:9', loot: 'trainer-small' });
@@ -55,15 +55,15 @@ export function shellBeach() {
   m.save();
   towerRooms({
     n: 2, area: 2, label: 'Water', outside: 'shell-beach', outsideX: 10, outsideY: 6, guide: 'Tower guide Ana', sprite: PEOPLE.villager, badge: 'water',
-    hint: 'Welcome to the Water Tower! Water monsters ask adding and taking away: 47 + 36, 120 - 58, change from a $10 note.\nThe Tower trainer waits at the top. Heal up first, then climb the ladder!',
+    hint: 'Welcome to the Water Tower! Water monsters put out Fire, but Leaf monsters drink them right up.\nThe maths in here comes from your own maths ladder, same as everywhere. Heal up first, then climb the ladder to the Tower trainer!',
     trainerName: 'Tower trainer Moana', trainerSprite: PEOPLE.knight,
-    text: 'The tide is in and so am I! I am Moana. Water monsters are all about adding and taking away. Show me what you have got!',
+    text: 'The tide is in and so am I! I am Moana. My Water monsters will wash you right off the beach. Show me what you have got!',
     win: 'You rode that wave perfectly! The Water badge is yours. Fire Mountain is open now. Wear something cool!',
     team: 'plusplash:12,minnowus:13,carrycrab:14',
   });
 }
 
-// ───────────────────────── Area 3: Fire Mountain (Fire: times tables) ─────────────────────────
+// ───────────────────────── Area 3: Fire Mountain (Fire) ─────────────────────────
 export function fireMountain() {
   const wild = ['factorch', 'factorch', 'multipup', 'multipup', 'squaremander', 'squaremander', 'roundroot', 'placepetal', 'plusplash', 'minnowus', 'remaindeer', 'sharebear', 'numeratot', 'coinrock'];
   const m = new MapMaker('fire-mountain', 'Area 3: Fire Mountain', 25, 20, 3, wild, 'ash');
@@ -77,7 +77,7 @@ export function fireMountain() {
   m.hut(6, 8, 9, 11, 'Nurse Mere', 'Phew, it is hot up here! Come and cool your monsters down.', 'left');
   m.gate('area-4-gate', 20, 1, 'fire', 'A rope fence blocks the icy path north. A sign says: "Snowy Peaks. Only for trainers with a Fire badge!"');
   m.warp('to-snowy-peaks', 20, 0, 'snowy-peaks', 20, 18, 'up');
-  m.welcome('mountain-sign', 5, 17, 'Fire Mountain. Fire monsters live here. Their attacks ask times tables. Keep away from the lava!');
+  m.welcome('mountain-sign', 5, 17, 'Fire Mountain. Fire monsters live here, and they are red hot. Keep away from the lava!');
   m.sign('tower-sign', 14, 6, 'The Fire Tower. Beat the Tower trainer to win the Fire badge.');
   m.sign('hut-sign', 10, 11, 'Rest hut. Nurse Mere will heal your team for free.');
   m.sign('gate-sign', 18, 4, 'North-east: the icy path to Snowy Peaks. You need the Fire badge.');
@@ -109,15 +109,15 @@ export function fireMountain() {
   m.save();
   towerRooms({
     n: 3, area: 3, label: 'Fire', outside: 'fire-mountain', outsideX: 12, outsideY: 6, guide: 'Tower guide Tipene', sprite: PEOPLE.monk, badge: 'fire',
-    hint: 'Welcome to the Fire Tower! Fire monsters ask times tables: 7 x 8, 9 x 6, 12 x 4.\nThe Tower trainer waits at the top. Heal up first, then climb the ladder!',
+    hint: 'Welcome to the Fire Tower! Fire monsters melt Ice, but one splash from a Water monster puts them out.\nYour Power up question still comes from your own maths ladder. Heal up first, then climb the ladder to the Tower trainer!',
     trainerName: 'Tower trainer Rangi', trainerSprite: PEOPLE.viking,
-    text: 'Feel the heat! I am Rangi, keeper of the Fire Tower. My monsters know every times table. Do yours?',
+    text: 'Feel the heat! I am Rangi, keeper of the Fire Tower. My monsters are hotter than the lava outside. Can yours take the heat?',
     win: 'You are on fire! The Fire badge is yours. The icy path to Snowy Peaks is open now. Take a coat!',
     team: 'factorch:19,multipup:20,squaremander:21',
   });
 }
 
-// ───────────────────────── Area 4: Snowy Peaks (Ice: division) ─────────────────────────
+// ───────────────────────── Area 4: Snowy Peaks (Ice) ─────────────────────────
 export function snowyPeaks() {
   const wild = ['divvy', 'divvy', 'remaindeer', 'remaindeer', 'sharebear', 'sharebear', 'digibud', 'roundroot', 'carrycrab', 'minnowus', 'squaremander', 'fractopus', 'pebblepoint', 'centipebble'];
   const m = new MapMaker('snowy-peaks', 'Area 4: Snowy Peaks', 25, 20, 4, wild, 'snow');
@@ -131,7 +131,7 @@ export function snowyPeaks() {
   m.hut(16, 15, 19, 16, 'Nurse Aroha', 'Brrr! Come in from the cold. I will warm your monsters up.', 'left');
   m.gate('area-5-gate', 4, 1, 'ice', 'A rope fence blocks the dark cave mouth north. A sign says: "Glowworm Caves. Only for trainers with an Ice badge!"');
   m.warp('to-glowworm-caves', 4, 0, 'glowworm-caves', 4, 18, 'up');
-  m.welcome('peaks-sign', 22, 17, 'Snowy Peaks. Ice monsters live here. Their attacks ask division: sharing things out equally.');
+  m.welcome('peaks-sign', 22, 17, 'Snowy Peaks. Ice monsters live here. Wrap up warm, they love the cold!');
   m.sign('tower-sign', 15, 6, 'The Ice Tower. Beat the Tower trainer to win the Ice badge.');
   m.sign('hut-sign', 18, 15, 'Rest hut. Nurse Aroha will heal your team for free.');
   m.sign('gate-sign', 6, 4, 'North-west: the way to the Glowworm Caves. You need the Ice badge.');
@@ -164,15 +164,15 @@ export function snowyPeaks() {
   m.save();
   towerRooms({
     n: 4, area: 4, label: 'Ice', outside: 'snowy-peaks', outsideX: 13, outsideY: 6, guide: 'Tower guide Pita', sprite: PEOPLE.villager, badge: 'ice',
-    hint: 'Welcome to the Ice Tower! Ice monsters ask division: 56 divided by 7, 35 divided by 5, and remainders.\nThe Tower trainer waits at the top. Heal up first, then climb the ladder!',
+    hint: 'Welcome to the Ice Tower! Ice monsters freeze Spark monsters solid, but Fire monsters melt them.\nThe maths in here comes from your own maths ladder, like always. Heal up first, then climb the ladder to the Tower trainer!',
     trainerName: 'Tower trainer Maia', trainerSprite: PEOPLE.guard,
-    text: 'Cool as ice, that is me. I am Maia. Ice monsters share everything out fairly. Can you share out my attacks?',
+    text: 'Cool as ice, that is me. I am Maia. My Ice monsters will freeze you in your tracks. Ready to shiver?',
     win: 'Cool! The Ice badge is yours. The Glowworm Caves are open now. Take a torch!',
     team: 'divvy:27,remaindeer:28,sharebear:29',
   });
 }
 
-// ───────────────────────── Area 5: Glowworm Caves (Spark: fractions) ─────────────────────────
+// ───────────────────────── Area 5: Glowworm Caves (Spark) ─────────────────────────
 export function glowwormCaves() {
   const wild = ['fractopus', 'fractopus', 'numeratot', 'numeratot', 'denomibolt', 'denomibolt', 'placepetal', 'plusplash', 'multipup', 'sharebear', 'coinrock', 'pebblepoint'];
   const m = new MapMaker('glowworm-caves', 'Area 5: Glowworm Caves', 25, 20, 5, wild, 'cave');
@@ -186,7 +186,7 @@ export function glowwormCaves() {
   m.hut(14, 14, 13, 14, 'Nurse Kowhai', 'Welcome to the caves! It is cosy in here. Let me look after your monsters.', 'right');
   m.gate('area-6-gate', 19, 1, 'spark', 'A rope fence blocks the tunnel north. A sign says: "Harbour City. Only for trainers with a Spark badge!"');
   m.warp('to-harbour-city', 19, 0, 'harbour-city', 19, 18, 'up');
-  m.welcome('cave-sign', 6, 17, 'Glowworm Caves. Spark monsters glow here. Their attacks ask fractions: halves, quarters and more.');
+  m.welcome('cave-sign', 6, 17, 'Glowworm Caves. Spark monsters glow here, fizzing and crackling in the dark.');
   m.sign('tower-sign', 13, 6, 'The Spark Tower. Beat the Tower trainer to win the Spark badge.');
   m.sign('hut-sign', 13, 15, 'Rest hut. Nurse Kowhai will heal your team for free.');
   m.sign('gate-sign', 17, 4, 'North-east: the tunnel to Harbour City. You need the Spark badge.');
@@ -216,15 +216,15 @@ export function glowwormCaves() {
   m.save();
   towerRooms({
     n: 5, area: 5, label: 'Spark', outside: 'glowworm-caves', outsideX: 11, outsideY: 6, guide: 'Tower guide Ngaio', sprite: PEOPLE.woman, badge: 'spark',
-    hint: 'Welcome to the Spark Tower! Spark monsters ask fractions: half of 18, which is bigger, 2/3 or 3/4, and adding fractions.\nThe Tower trainer waits at the top. Heal up first, then climb the ladder!',
+    hint: 'Welcome to the Spark Tower! Spark monsters zap Stone to bits, but Ice monsters freeze them solid.\nYour Power up question comes from your own maths ladder, so keep climbing! Heal up first, then climb the ladder to the Tower trainer.',
     trainerName: 'Tower trainer Wiremu', trainerSprite: PEOPLE.hooded,
-    text: 'Zap! You found me. I am Wiremu, keeper of the Spark Tower. Every spark is just a small part of a whole. Let us see yours!',
+    text: 'Zap! You found me. I am Wiremu, keeper of the Spark Tower. My monsters are quicker than lightning. Let us see yours!',
     win: 'Electrifying! The Spark badge is yours. The tunnel to Harbour City is open now. Nearly there!',
     team: 'fractopus:36,numeratot:37,denomibolt:38',
   });
 }
 
-// ───────────────────────── Area 6: Harbour City (Stone: decimals and money) ─────────────────────────
+// ───────────────────────── Area 6: Harbour City (Stone) ─────────────────────────
 export function harbourCity() {
   const wild = ['pebblepoint', 'pebblepoint', 'coinrock', 'coinrock', 'centipebble', 'centipebble', 'digibud', 'minnowus', 'factorch', 'remaindeer', 'denomibolt', 'placepetal'];
   const m = new MapMaker('harbour-city', 'Area 6: Harbour City', 25, 20, 6, wild, 'city');
@@ -238,7 +238,7 @@ export function harbourCity() {
   m.towerBuilding(6, 1);
   m.warp('to-tower', 8, 5, 'tower-6-hall', 5, 7, 'up');
   m.hut(14, 14, 17, 14, 'Nurse Sina', 'Welcome to the big city! Let me rest your monsters.', 'left');
-  m.welcome('city-sign', 17, 17, 'Harbour City. Stone monsters live here. Their attacks ask decimals and money: $2.40 + $1.75 and 0.3 + 0.5.');
+  m.welcome('city-sign', 17, 17, 'Harbour City. Stone monsters live here. They are tough as rock and very hard to knock over.');
   m.sign('tower-sign', 10, 6, 'The Stone Tower. Beat the Tower trainer to win the Stone badge, the last one!');
   m.sign('hut-sign', 13, 14, 'Rest hut. Nurse Sina will heal your team for free.');
   m.sign('harbour-sign', 16, 4, 'The harbour. Ships come here from all over the world.\nWon all six badges? Go back to Harbour Town and talk to the Teacher!');
@@ -267,9 +267,9 @@ export function harbourCity() {
   m.save();
   towerRooms({
     n: 6, area: 6, label: 'Stone', outside: 'harbour-city', outsideX: 8, outsideY: 6, guide: 'Tower guide Sefa', sprite: PEOPLE.man, badge: 'stone',
-    hint: 'Welcome to the Stone Tower, the last one! Stone monsters ask decimals and money: 0.3 + 0.5, $10 - $3.65, rounding.\nThe Tower trainer waits at the top. Heal up first, then climb the ladder!',
+    hint: 'Welcome to the Stone Tower, the last one! Stone monsters crush Leaf, but Spark monsters zap them to pieces.\nThe maths in here comes from your own maths ladder, so you are ready for it. Heal up first, then climb the ladder to the Tower trainer!',
     trainerName: 'Tower trainer Aroha', trainerSprite: PEOPLE.knight,
-    text: 'You made it all the way to the Stone Tower! I am Aroha. Stone monsters are tough and exact. Every cent counts!',
+    text: 'You made it all the way to the Stone Tower! I am Aroha. My Stone monsters are as tough as mountains. Every hit counts!',
     win: 'Magnificent! The Stone badge is yours, and that makes all six. You are a Maths Monsters champion!',
     team: 'pebblepoint:45,coinrock:46,centipebble:47',
   });

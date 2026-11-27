@@ -1,6 +1,6 @@
 import { MapMaker, PEOPLE, TT, towerRooms } from './lib.mjs';
 
-// ───────────────────────── Area 1: Kauri Bush (Leaf: place value and rounding) ─────────────────────────
+// ───────────────────────── Area 1: Kauri Bush (Leaf) ─────────────────────────
 // Wild levels 2-6. The Leaf families live here; one of each other type's first forms pops up too.
 export function kauriBush() {
   const wild = ['digibud', 'digibud', 'roundroot', 'roundroot', 'placepetal', 'placepetal', 'plusplash', 'minnowus', 'multipup', 'divvy', 'fractopus', 'pebblepoint'];
@@ -27,7 +27,7 @@ export function kauriBush() {
   m.gate('area-2-gate', 21, 1, 'leaf', 'A rope fence blocks the path north. A sign says: "Shell Beach. Only for trainers with a Leaf badge!"');
   m.warp('to-shell-beach', 21, 0, 'shell-beach', 21, 18, 'up');
   // Signs, people, a trainer and two chests.
-  m.welcome('bush-sign', 10, 18, 'Kauri Bush. Leaf monsters live here. Their attacks ask place value and rounding.\nWild monsters hide in the long grass. Walk in it and see who jumps out!');
+  m.welcome('bush-sign', 10, 18, 'Kauri Bush. Leaf monsters live here, growing tall in the shade of the big trees.\nWild monsters hide in the long grass. Walk in it and see who jumps out!');
   m.sign('trail-sign', 16, 10, 'North: the Leaf Tower, and the gate to Shell Beach (you need the Leaf badge). South: Harbour Town.');
   m.sign('west-sign', 4, 14, 'West trail: lots of long grass. Be ready!');
   m.sign('hut-sign', 13, 14, 'Rest hut. Nurse Pania will heal your team for free.');
@@ -35,7 +35,7 @@ export function kauriBush() {
   m.sign('chest-sign', 9, 11, 'A chest is hidden in the long grass to the west. Look for a little box!');
   m.person('Mere', PEOPLE.elder, 15, 17, 'left', 'Tip: if a monster is nearly out of health, it is much easier to catch.\nA right answer helps too!');
   m.person('Tama', PEOPLE.man, 9, 12, 'right', 'Why was six afraid of seven?\nBecause seven eight nine!');
-  m.person('Hermit', PEOPLE.hooded, 11, 6, 'right', 'Each monster uses the maths of its type. Water monsters ask adding and taking away, Fire monsters ask times tables.\nBring a monster of every type, and you can practise everything!');
+  m.person('Hermit', PEOPLE.hooded, 11, 6, 'right', 'Every monster asks you maths from your own maths ladder, whatever its type. The type only decides who hits who extra hard.\nBring a monster of every type, and nobody can catch you out!');
   m.trainer('Ranger Kiri', 96, 16, 9, 'right', { sight: 4, text: 'Hey! You there! I saw you walk past. Show me your monsters!', win: 'Great battle! You are getting good at this. Keep going!', team: 'digibud:4,plusplash:4', loot: 'trainer-small' });
   m.chest('Chest in the bush', 6, 12, 'balls', 'A wooden chest, half hidden in the grass. You lift the lid...');
   m.chest('Chest by the Tower', 17, 4, 'mixed', 'A chest sits beside the path. You lift the lid...');
@@ -57,9 +57,9 @@ export function kauriBush() {
 
   towerRooms({
     n: 1, area: 1, label: 'Leaf', outside: 'kauri-bush', outsideX: 14, outsideY: 6, guide: 'Tower guide Wiremu', sprite: PEOPLE.villager, badge: 'leaf',
-    hint: 'Welcome to the Leaf Tower! Leaf monsters ask place value and rounding: what is the 4 worth in 3,406? What is 678 to the nearest 10?\nThe Tower trainer waits at the top. Heal up first, then climb the ladder!',
+    hint: 'Welcome to the Leaf Tower! Leaf monsters soak up Water attacks, but Stone monsters squash them flat.\nYour Power up question comes from your own maths ladder, so you climb two ladders in here! Heal up first, then climb to the Tower trainer at the top.',
     trainerName: 'Tower trainer Hemi', trainerSprite: PEOPLE.knight,
-    text: 'So you came to climb my Tower! I am Hemi. Leaf monsters never forget what a digit is worth. Let us see about yours!',
+    text: 'So you came to climb my Tower! I am Hemi. My Leaf monsters have deep roots and they never give up. Let us see about yours!',
     win: 'Well done! The Leaf badge is yours. The path to Shell Beach is open now. Go and see the sea!',
     team: 'digibud:6,roundroot:7,placepetal:8',
   });
