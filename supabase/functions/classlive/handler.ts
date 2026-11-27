@@ -33,9 +33,13 @@ export function makeHandler(services: Services) {
     const token = bearerToken(request);
     const who = token ? await services.userIdFor(token) : null;
     if (!who) return reply(401, { error: 'Please sign in again.' });
-    if (!limiter.allow(who, MAX_REQUESTS_PER_MINUTE)) return reply(429, { error: 'Slow down a little!' });
-
     const body = (await readJsonBody(request)) as Record<string, unknown> | null;
+    // A Real-life Four Corners jail station answers for many pupils in turn (`as`): each pupil there gets the usual
+    // allowance, and the station four times it in all (docs/JAIL-PLAN.md).
+    const as = body && typeof body === 'object' && typeof body.as === 'string' ? body.as.slice(0, 40) : null;
+    if (as ? !limiter.allow(`${who}:as:${as}`, MAX_REQUESTS_PER_MINUTE) || !limiter.allow(`${who}:station`, MAX_REQUESTS_PER_MINUTE * 4) : !limiter.allow(who, MAX_REQUESTS_PER_MINUTE)) {
+      return reply(429, { error: 'Slow down a little!' });
+    }
     if (!body || typeof body !== 'object') return reply(400, { error: "That couldn't be read." });
     try {
       const out = await classLiveStep(services, who, body);

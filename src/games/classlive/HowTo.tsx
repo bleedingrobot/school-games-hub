@@ -53,6 +53,20 @@ export function sheetFor(game: Game): Sheet {
     };
   }
   if (game.kind === 'relay') return relaySheet(game);
+  if (game.kind === 'jail') {
+    const H = HOWTO.jail;
+    return {
+      title: 'How to play Real-life Four Corners', mode: `${game.need} right answers to get back in`, modeSay: null,
+      art: painted('pick', 'jail', true) ?? painted('corners', `map-${game.map}`, true),
+      steps: [
+        { icon: '🏫', text: 'We are playing Four Corners for real, in the classroom!', say: H[0] },
+        { icon: '🏃', text: 'When the countdown starts, run to a corner. Freeze when it ends!', say: H[1] },
+        { icon: '🎲', text: 'The dice picks a corner. Anyone in it, or in no corner, is out.', say: H[2] },
+        { icon: '📱', text: `Out? Go to a jail station, tap your name and get ${game.need} questions right.`, say: H[3] },
+        { icon: '🎉', text: 'Your name flashes up here. You are back in the game!', say: H[4] },
+      ],
+    };
+  }
   if (game.kind === 'lava') {
     const H = LAVA_HOWTO;
     return {

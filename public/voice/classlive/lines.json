@@ -1504,6 +1504,18 @@
   "text": "Into the cave you go!"
  },
  {
+  "slug": "you-are-back-in-the-game",
+  "text": "You are back in the game!"
+ },
+ {
+  "slug": "back-in-you-go-well-done",
+  "text": "Back in you go! Well done!"
+ },
+ {
+  "slug": "free-run-back-into-the-game",
+  "text": "Free! Run back into the game!"
+ },
+ {
   "slug": "we-know-one-times-fact",
   "text": "We know one times fact."
  },
@@ -1702,6 +1714,26 @@
  {
   "slug": "a-throne-is-one-crown-a-golden-throne-is-three-the-most-crowns-wins",
   "text": "A throne is one crown, a golden throne is three. The most crowns wins!"
+ },
+ {
+  "slug": "we-are-playing-four-corners-for-real-in-the-classroom",
+  "text": "We are playing Four Corners for real, in the classroom!"
+ },
+ {
+  "slug": "when-the-countdown-starts-run-to-a-corner-freeze-when-it-ends",
+  "text": "When the countdown starts, run to a corner. Freeze when it ends!"
+ },
+ {
+  "slug": "then-the-dice-picks-a-corner-anyone-in-that-corner-or-in-no-corner-is-out",
+  "text": "Then the dice picks a corner. Anyone in that corner, or in no corner, is out."
+ },
+ {
+  "slug": "out-go-to-a-jail-station-tap-your-name-and-answer-the-questions",
+  "text": "Out? Go to a jail station, tap your name, and answer the questions."
+ },
+ {
+  "slug": "get-them-right-and-your-name-flashes-up-here-you-are-back-in-the-game",
+  "text": "Get them right and your name flashes up here. You are back in the game!"
  },
  {
   "slug": "here-we-go-the-floor-is-lava-watch-for-the-glowing-tiles",

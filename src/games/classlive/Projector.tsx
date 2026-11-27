@@ -35,6 +35,8 @@ import { CornersGuide } from './CornersGuide';
 import { LavaCard, LavaLobbyHead, LavaScene } from './LavaScene';
 import { ThronesScene } from './ThronesScene';
 import { ThronesCard, ThronesLobbyHead } from './ThronesCard';
+import { JailCard, JailLobbyHead } from './JailCard';
+import { JailScene } from './JailScene';
 import { useMusicOn } from './thronesMusic';
 import { RelayScene } from './RelayScene';
 import { RelayLobbyHead, RelayPickCard } from './RelayCard';
@@ -374,6 +376,8 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   const crew = game?.kind === 'crew' ? game : null;
   const thrones = game?.kind === 'thrones' ? game : null;
   const relayG = game?.kind === 'relay' ? game : null;
+  // Real-life Four Corners: its big screen is the classroom page (JailScene), with its own music and backdrop.
+  const jail = game?.kind === 'jail' ? game : null;
   const thronesMusic = useMusicOn(thrones?.round, screen?.startedAt ?? null, serverClock);
   const hall = !screen && !resuming ? painted('pick', 'hall') : null;
   // Background music for what is on screen (James, 25 Nov 2026 NZ).
@@ -382,12 +386,15 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
     // Glitches: the tense track with 3 machines sparking.
     || (crew?.round ? crew.round.machines.filter((m) => m.sparked).length >= 3 : false);
     // Musical Thrones: the music cuts out the moment it stops (and stays off until the next round).
-  useMusic(thrones && state === 'live' && !thronesMusic ? null : classLiveTrack(state, game?.kind ?? null, { guessing: mural?.phase === 'guess', hot: hotNow, map: shark ? shark.bay : corners?.map ?? ghostG?.map ?? clash?.map ?? thrones?.hall ?? lava?.map, shark: !!shark }), !muted);
+  useMusic((thrones && state === 'live' && !thronesMusic) || (jail && state === 'live') ? null : classLiveTrack(state, game?.kind ?? null, { guessing: mural?.phase === 'guess', hot: hotNow, map: shark ? shark.bay : corners?.map ?? ghostG?.map ?? clash?.map ?? thrones?.hall ?? lava?.map, shark: !!shark }), !muted);
   const backPic = hall ?? (clash ? painted('clash', `back-${clash.map}`) ?? painted('corners', 'back-snow') : shark ? painted('shark', `back-${shark.bay}`) : ghostG ? painted('ghost', `back-${ghostG.map}`) : crew ? painted('crew', 'back-factory') : corners ? painted('corners', `back-${corners.map}`) : thrones ? painted('thrones', `back-${thrones.hall}`) : lava ? painted('lava', `back-${lava.map}`) : relayG ? painted('relay', 'back') : painted('back', serpent ? 'jungle-temple' : mural ? 'gallery' : 'star-sky'));
   const lobbyOpen = state === 'lobby' && room !== null;
   useEffect(() => {
     if (lobbyOpen) say(next('joinNow'), 400);
   }, [lobbyOpen, room, say]);
+  // The classroom page has its own top bar: fold the teacher bar away (its tab stays).
+  const jailLive = !!jail && state === 'live';
+  useEffect(() => { if (jailLive) setBarOpen(false); }, [jailLive]);
   useEffect(() => {
     if (state !== 'over') { setRevealed(false); setHideResults(false); }
     if (state !== 'lobby') setShowHow(false);
@@ -490,6 +497,17 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
           say={say}
           over={state === 'over'}
           onTick={() => { if (room) void act({ action: 'view', room }); }}
+          onAgain={forget}
+        />
+      )}
+
+      {screen && jail && (state === 'live' || state === 'over') && (
+        <JailScene
+          screen={screen}
+          game={jail}
+          over={state === 'over'}
+          onEnd={() => { if (room) void act({ action: 'end', room }); }}
+          onRelease={(pupil) => { if (room) void act({ action: 'jailfree', room, pupil }); }}
           onAgain={forget}
         />
       )}
@@ -699,7 +717,7 @@ function Setup({ busy, problem, onOpen: open, onShowdown, classId }: { busy: boo
         <button type="button" className="cl-btn cl-btn--small cl-chosen__back" onClick={() => choose(null)}>← All games</button>
         <span className="cl-chosen__where">Class Live</span>
       </div>
-      {!chosen.arena && <div className="cl-where" role="group" aria-label="Who can join?">
+      {!chosen.arena && chosen.id !== 'jail' && <div className="cl-where" role="group" aria-label="Who can join?">
         <span className="cl-opt__label">Who can join?</span>
         <button type="button" className={`cl-choice ${where === 'class' ? 'cl-choice--on' : ''}`} aria-pressed={where === 'class'} onClick={() => setWhere('class')}>🏫 My class</button>
         <button type="button" className={`cl-choice ${where === 'lobby' ? 'cl-choice--on' : ''}`} aria-pressed={where === 'lobby'} onClick={() => setWhere('lobby')}>🌏 Open in the lobby</button>
@@ -833,6 +851,7 @@ function Setup({ busy, problem, onOpen: open, onShowdown, classId }: { busy: boo
           <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk || !!chosenLock} onClick={() => onOpen('shark', { length: bLength, run: bRun, ...(bBay === 'any' ? {} : { map: bBay }), ...sharkRun.extra })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
         )}
+        {pick === 'jail' && <JailCard busy={busy} hostOk={!chosenLock} onOpen={(body) => open('jail', body)} Timer={TimerChips} Art={CardArt} />}
         {pick === 'thrones' && <ThronesCard busy={busy} hostOk={hostOk && !chosenLock} onOpen={(body) => onOpen('thrones', body)} Timer={TimerChips} Art={CardArt} />}
         {pick === 'relay' && <RelayPickCard busy={busy} hostOk={hostOk && !chosenLock} onOpen={(body) => onOpen('relay', body)} timer={(l, set) => <TimerChips length={l} setLength={set} />} art={(pic) => <CardArt pic={pic} />} />}
         {chosen.arena && onShowdown && <ShowdownCard key={chosen.arena} arena={chosen.arena} busy={busy} locked={!!chosenLock} onOpen={onShowdown} />}
@@ -916,7 +935,7 @@ function Chip({ p, i }: { p: ScreenView['people'][number]; i: number }) {
 
 function Lobby({ screen, game, className, onStart }: { screen: ScreenView; game: ScreenView['game']; className?: string; onStart: () => void }) {
   const n = screen.people.length;
-  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : game.kind === 'corners' ? (isShark(game) ? <SharkLobbyHead bay={game.bay} /> : <CornersLobbyHead map={game.map} />) : game.kind === 'clash' ? <ClashLobbyHead map={game.map} teams={game.teams} /> : game.kind === 'ghost' ? <GhostLobbyHead map={game.map} /> : game.kind === 'crew' ? <CrewLobbyHead /> : game.kind === 'thrones' ? <ThronesLobbyHead hall={game.hall} /> : game.kind === 'lava' ? <LavaLobbyHead map={game.map} /> : game.kind === 'relay' ? <RelayLobbyHead game={game} /> : <MuralLobbyHead />;
+  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : game.kind === 'corners' ? (isShark(game) ? <SharkLobbyHead bay={game.bay} /> : <CornersLobbyHead map={game.map} />) : game.kind === 'clash' ? <ClashLobbyHead map={game.map} teams={game.teams} /> : game.kind === 'ghost' ? <GhostLobbyHead map={game.map} /> : game.kind === 'crew' ? <CrewLobbyHead /> : game.kind === 'thrones' ? <ThronesLobbyHead hall={game.hall} /> : game.kind === 'lava' ? <LavaLobbyHead map={game.map} /> : game.kind === 'relay' ? <RelayLobbyHead game={game} /> : game.kind === 'jail' ? <JailLobbyHead need={game.need} /> : <MuralLobbyHead />;
   return (
     <div className={`cl-lobby ${game.kind === 'serpent' ? 'cl-lobby--serpent' : ''}`}>
       {head}

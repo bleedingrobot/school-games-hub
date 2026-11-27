@@ -136,6 +136,8 @@ export const LINES = {
   sharkFull: ['Simon is full! Nobody is caught!', 'Simon has had enough! Everyone is safe!', 'Lucky! Simon is too full to bite!'],
   sharkBoated: ['The boats kept some pupils safe!', 'Phew! A boat saved some of you!', 'Safe under the boats!'],
   sharkCave: ['Oh no, off to the shark cave!', 'Splash! A crowd is going to the shark cave!', 'Into the cave you go!'],
+  // Real-life Four Corners (docs/JAIL-PLAN.md): a pupil answered their way out at a jail station (names are shown, never said).
+  backIn: ['You are back in the game!', 'Back in you go! Well done!', 'Free! Run back into the game!'],
 } as const;
 
 /** How to play (HowTo.tsx), read in order before a game. No numbers, so every line has a clip. */
@@ -182,6 +184,14 @@ export const HOWTO = {
     'In jail, answer three questions to come back.',
     'Grab power-ups on the map, then answer a question in a corner to switch them on. The most safe rounds wins!',
   ],
+  // Real-life Four Corners (docs/JAIL-PLAN.md).
+  jail: [
+    'We are playing Four Corners for real, in the classroom!',
+    'When the countdown starts, run to a corner. Freeze when it ends!',
+    'Then the dice picks a corner. Anyone in that corner, or in no corner, is out.',
+    'Out? Go to a jail station, tap your name, and answer the questions.',
+    'Get them right and your name flashes up here. You are back in the game!',
+  ],
   clash: CLASH_HOWTO,
   shark: [
     'Swim your avatar with the joystick, or the arrow keys.',
@@ -205,7 +215,7 @@ export function next(key: LineKey): string {
 
 export const allVoiceLines = (): string[] => [
   ...Object.values(LINES).flat(),
-  ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural, ...HOWTO.corners, ...HOWTO.shark, ...GHOST_HOWTO, ...CREW_HOWTO, ...HOWTO.clash, ...HOWTO.thrones,
+  ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural, ...HOWTO.corners, ...HOWTO.shark, ...GHOST_HOWTO, ...CREW_HOWTO, ...HOWTO.clash, ...HOWTO.thrones, ...HOWTO.jail,
   ...allLavaLines(),
   ...allRelayLines(),
 ];

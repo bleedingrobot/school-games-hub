@@ -8,7 +8,7 @@
 import type { Arena } from '../../../shared/showdown/types';
 import { painted } from './paintedArt';
 
-export type LiveGroup = 'think' | 'run' | 'team' | 'battle';
+export type LiveGroup = 'think' | 'run' | 'room' | 'team' | 'battle';
 
 export type LiveGame = {
   id: string;
@@ -27,6 +27,7 @@ export type LiveGame = {
 export const GROUP_WORDS: Record<LiveGroup, { name: string; about: string }> = {
   think: { name: 'Maths puzzles', about: 'The class works together on the big screen' },
   run: { name: 'Joystick games', about: 'Everyone runs an avatar round the map' },
+  room: { name: 'Real-life games', about: 'The class plays in the room. iPads help' },
   team: { name: 'Team races', about: 'Teams take turns and help each other' },
   battle: { name: 'Class Showdown battles', about: 'A live maths battle. Pick an arena' },
 };
@@ -58,6 +59,7 @@ export const LIVE_GAMES: LiveGame[] = [
   { id: 'lava', name: 'Floor is Lava', emoji: '🌋', group: 'run', tint: '#c2410c', blurb: 'Get off the glowing tiles before they crack!', pic: () => painted('pick', 'lava', true) ?? painted('lava', 'lake-volcano', true) },
   { id: 'crew', name: 'Glitches', emoji: '🤖', group: 'run', tint: '#0f766e', blurb: 'Fix the factory with maths. Who are the secret Glitches?', pic: () => painted('pick', 'crew', true) ?? painted('crew', 'map-factory', true) },
   { id: 'thrones', name: 'Musical Thrones', emoji: '👑', group: 'run', tint: '#8a3fc4', blurb: 'Dance, then race to a throne when the music stops!', pic: () => painted('pick', 'thrones', true) ?? painted('thrones', 'hall-castle', true) },
+  { id: 'jail', name: 'Real-life Four Corners', emoji: '🏫', group: 'room', tint: '#b8442f', blurb: 'Play it for real in the room. Out? Answer your way back in on an iPad!', pic: () => painted('pick', 'jail', true) ?? painted('corners', 'jail-jungle', true) },
   { id: 'relay', name: 'Toon Flap Relay', emoji: '🐦', group: 'team', tint: '#0e8fd0', blurb: 'Teams take turns flying. Answer to help your flyer!', pic: () => painted('pick', 'relay', true) ?? painted('relay', 'card', true) },
   ...ARENAS.map((a): LiveGame => ({ id: showdownPick(a.arena), name: a.name, emoji: a.emoji, group: 'battle', tint: a.tint, blurb: a.blurb, pic: showdownPic(a.back), arena: a.arena })),
 ];

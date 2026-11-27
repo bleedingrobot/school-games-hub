@@ -48,13 +48,18 @@ export const POINTS = { joined: 1, played: 3, goal: 2, guessed: 2, max: 10 } as 
 
 export function rewardsOf(s: Session): FinishedSession {
   const g = s.game;
-  const goal = g.kind === 'stars' ? g.creature : g.kind === 'serpent' ? g.awake : g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'crew' || g.kind === 'clash' || g.kind === 'thrones' || g.kind === 'lava' || g.kind === 'relay' ? false : g.solvers.length > 0;
+  const goal = g.kind === 'stars' ? g.creature : g.kind === 'serpent' ? g.awake : g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'crew' || g.kind === 'clash' || g.kind === 'thrones' || g.kind === 'lava' || g.kind === 'relay' || g.kind === 'jail' ? false : g.solvers.length > 0;
   const top = g.kind === 'corners' ? podium(g, s.order) : g.kind === 'ghost' ? ghostPodium(g, s.order) : g.kind === 'crew' ? crewPodium(g, s.order) : g.kind === 'thrones' ? thronesPodium(g, s.order) : g.kind === 'lava' ? lavaPodium(g, s.order) : g.kind === 'relay' ? relayPodium(g, s.order) : [];
   const players = s.order.map((id): PupilReward => {
     let did = false;
     const r: PupilReward = { player: id, points: 0, stars: 0, boxes: 0, head: false, tiles: 0, guessed: false, safe: 0, champion: false, escapes: 0, powers: 0 };
     let podiumPlace = false;
-    if (g.kind === 'relay') {
+    if (g.kind === 'jail') {
+      // Real-life Four Corners (docs/JAIL-PLAN.md): 3 for answering right at a jail station; the trophy counts comebacks.
+      const m = g.mine[id];
+      did = (m?.rightAll ?? 0) > 0;
+      r.extra = { jail_backs: Math.max(0, Math.min(500, m?.backs ?? 0)) };
+    } else if (g.kind === 'relay') {
       // Toon Flap Relay (docs/RELAY-PLAN.md): +2 if your team won a race; trophies count races won, perks given, troubles sent.
       const m = g.mine[id];
       podiumPlace = (m?.wins ?? 0) > 0;
