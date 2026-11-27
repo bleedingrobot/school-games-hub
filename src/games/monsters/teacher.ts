@@ -24,4 +24,4 @@ export function useMonstersSummary(classId: string): string | null {
 
 /** Behind the switch's "?". */
 export const MONSTERS_ABOUT =
-  'A world to walk around where every attack and catch is a maths question from the student’s own maths ladder (or the focus you set), like the other games. Off hides it from students and nothing is saved.';
+  'A world to walk around where every battle opens with a Power up question and every catch asks one, all from the student’s own maths ladder (or the focus you set), like the other games. Off hides it from students and nothing is saved.';
