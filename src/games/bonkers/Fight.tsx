@@ -1,11 +1,12 @@
 /**
  * Bonkers Quest's fights: every hit is a maths question (always 4 choices). The server marks each answer and sends the
- * next question; this screen replays the marks with the same rules (shared/bonkers/engine.ts) to show the bonks, hearts and
+ * next question; this screen replays the marks with the same rules (shared/bonkers/engine.ts) to show the smashes, hearts and
  * health, so what the pupil sees is exactly what the server will save.
  */
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CLASS_INFO, trainerFor, zoneById, type MonsterInfo } from '../../../shared/bonkers/content';
 import { replay, type Blow, type Foe, type Progress } from '../../../shared/bonkers/engine';
+import { AUTO_SHARE, BOOSTS } from '../../../shared/bonkers/config';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../maths/QuestionModal';
 import type { AdventureView, AnswerReply, BonkersBackend } from './backend';
@@ -51,6 +52,14 @@ export function Fight({ backend, progress, start, onDone }: {
   const [saving, setSaving] = useState(false);
   // The answer waiting for the feedback to finish, so the bonk lands after "Correct!".
   const pending = useRef<AnswerReply | null>(null);
+  // The question slot whose auto smashes have played (they play for about a second before each question pops up).
+  const [smashed, setSmashed] = useState(-1);
+  const slotNow = view.marks.length;
+  useEffect(() => {
+    if (pause || smashed === slotNow) return;
+    const t = setTimeout(() => setSmashed(slotNow), (view.adventure.moments?.[slotNow]?.autos ?? 0) ? 1500 : 0);
+    return () => clearTimeout(t);
+  }, [slotNow, smashed, pause, view.adventure.moments]);
   const adv = view.adventure;
   const r = replay(adv, view.marks);
   const cls = adv.start.cls;
@@ -97,7 +106,7 @@ export function Fight({ backend, progress, start, onDone }: {
         {header}
         <div className="bq-card bq-center bq-pop">
           <p className="bq-face bq-face--big" aria-hidden="true">{won ? '💫' : look.emoji}</p>
-          <h2 className="bq-h2">{won ? `You bonked ${pause.foe.name}!` : `Bonked! ${pause.foe.name} wins this one.`}</h2>
+          <h2 className="bq-h2">{won ? `You smashed ${pause.foe.name}!` : `Smashed! ${pause.foe.name} wins this one.`}</h2>
           <p>{won ? `“${look.ouch}”` : 'Nothing lost, hero. Dust yourself off!'}</p>
           {!trainer && <p className="bq-big-line">⭐ +{won ? 3 : 1} {won ? 'stars' : 'star'}</p>}
           <button type="button" className="bq-btn bq-btn--big" onClick={() => setPause(r.phase === 'trainer' && !trainer ? { kind: 'trainer' } : null)}>
@@ -146,13 +155,18 @@ export function Fight({ backend, progress, start, onDone }: {
   // The last answer's bonk, while it's still this fight's.
   const blow = lastBlow && !lastBlow.ended && r.blows.at(-1)?.slot === lastBlow.slot ? lastBlow : null;
   const q = view.question;
+  const moment = adv.moments?.[slotNow] ?? { autos: 0, boost: 1 };
+  const autoHit = Math.min(Math.max(1, Math.round(adv.start.power * AUTO_SHARE)) * moment.autos, Math.max(0, r.foeHp - 1));
+  const ready = smashed === slotNow;
+  const hpNow = ready ? r.foeHp - autoHit : r.foeHp;
+  const boost = BOOSTS.find((b) => b.times === moment.boost);
 
   const answer = async (value: number, ms: number): Promise<MarkedAnswer> => {
     if (!q || !asking) throw new Error('No question');
     try {
       const a = await backend.answer(view.seed, q.slot, value, ms, asking.special);
       pending.current = a;
-      return { correct: a.correct, fact: factText(q.parts, a.answer), boxBefore: 0, boxAfter: 0, answer: a.answer, ...(a.correct ? { reward: 'BONK!' } : {}) };
+      return { correct: a.correct, fact: factText(q.parts, a.answer), boxBefore: 0, boxAfter: 0, answer: a.answer, ...(a.correct ? { reward: 'SMASH!' } : {}) };
     } catch (e) {
       setError(e instanceof Error ? e.message : 'That couldn’t be marked. Try again.');
       setAsking(null);
@@ -185,36 +199,50 @@ export function Fight({ backend, progress, start, onDone }: {
           {r.calm > 0 && <span className="bq-tag">🧶 Tied up for {r.calm}</span>}
         </div>
         <div className="bq-vs" aria-hidden="true">VS</div>
-        <div className={`bq-side bq-side--foe${blow ? ' bq-wobble' : ''}`} key={`f${blow?.slot ?? 'x'}`}>
+        <div className={`bq-side bq-side--foe${blow || (ready && autoHit) ? ' bq-wobble' : ''}`} key={`f${slotNow}${ready ? 'a' : ''}`}>
           <span className={`bq-face${foe.big ? ' bq-face--big' : ''}`} aria-hidden="true">{look.emoji}</span>
           <strong>{foe.name}</strong>
-          <div className="bq-hp" role="progressbar" aria-label={`${foe.name}’s health`} aria-valuemin={0} aria-valuemax={foe.hp} aria-valuenow={r.foeHp}>
-            <div className="bq-hp__fill" style={{ width: `${(100 * r.foeHp) / foe.hp}%`, background: look.colour }} />
+          <div className="bq-hp" role="progressbar" aria-label={`${foe.name}’s health`} aria-valuemin={0} aria-valuemax={foe.hp} aria-valuenow={hpNow}>
+            <div className="bq-hp__fill" style={{ width: `${(100 * hpNow) / foe.hp}%`, background: look.colour }} />
           </div>
-          <span className="bq-hp__num">{r.foeHp} / {foe.hp}</span>
-          {blow && <span className={`bq-float${blow.right ? ' bq-float--big' : ''}`}>-{blow.hit}{blow.special ? '!!' : ''}</span>}
+          <span className="bq-hp__num">{hpNow} / {foe.hp}</span>
+          {ready && autoHit > 0 && <span className="bq-float">-{autoHit}</span>}
+          {!ready && blow?.right && <span className="bq-float bq-float--big">-{blow.hit}{blow.special ? '!!' : ''}</span>}
         </div>
       </div>
-      {!blow && r.foeHp === foe.hp && <p className="bq-speech">{foe.name}: “{look.line}”</p>}
-      {blow && <p className="bq-blow-line" aria-live="polite">{blow.right ? (blow.special ? `${ci.move.name}! A mega bonk!` : 'BONK! Great answer!') : blow.ouch ? 'A little bonk… and it bonked you back!' : 'A little bonk… but it couldn’t bonk you back!'}</p>}
-      <div className="bq-actions">
-        <button type="button" className="bq-btn bq-btn--big" disabled={!q || !!asking} onClick={() => setAsking({ special: false })}>
-          <span aria-hidden="true">💥</span> Bonk it!
-        </button>
-        <button
-          type="button" className="bq-btn bq-btn--special" style={{ '--bq-c': ci.colour } as React.CSSProperties}
-          disabled={!q || !!asking || r.specialUsed} onClick={() => setAsking({ special: true })} title={ci.move.does}
-        >
-          <span aria-hidden="true">✨</span> {ci.move.name}{r.specialUsed ? ' (used)' : ''}
-        </button>
-      </div>
-      <p className="bq-hint">{r.specialUsed ? 'Special move used this fight.' : `${ci.move.name}: ${ci.move.does} Once a fight.`}</p>
+      {!blow && !ready && r.foeHp === foe.hp && <p className="bq-speech">{foe.name}: “{look.line}”</p>}
+      {blow && !ready && (
+        <p className="bq-blow-line" aria-live="polite">
+          {blow.right
+            ? (blow.special ? `${ci.move.name}! ×${blow.boost} MEGA SMASH!` : `SMASH! ×${blow.boost} damage!`)
+            : blow.ouch ? 'Missed… and it smashed you back!' : 'Missed… but it couldn’t smash you back!'}
+        </p>
+      )}
+      {!ready && <p className="bq-hint" aria-live="polite">{moment.autos ? 'Smash… smash… smash…' : ''}</p>}
+      {ready && q && (
+        <div className={`bq-boost bq-pop bq-boost--x${moment.boost}`} role="status">
+          <p className="bq-boost__name">⚡ {boost?.name ?? 'SMASH TIME!'}</p>
+          <p className="bq-boost__what">Answer right to smash for ×{moment.boost} damage!{moment.boost >= 10 ? ' That’s ABSURD!' : ''}</p>
+          <div className="bq-actions">
+            <button type="button" className="bq-btn bq-btn--big" disabled={!!asking} onClick={() => setAsking({ special: false })}>
+              <span aria-hidden="true">💥</span> Answer it!
+            </button>
+            <button
+              type="button" className="bq-btn bq-btn--special" style={{ '--bq-c': ci.colour } as React.CSSProperties}
+              disabled={!!asking || r.specialUsed} onClick={() => setAsking({ special: true })} title={ci.move.does}
+            >
+              <span aria-hidden="true">✨</span> {ci.move.name}{r.specialUsed ? ' (used)' : ''}
+            </button>
+          </div>
+          <p className="bq-hint">{r.specialUsed ? 'Special move used this fight.' : `${ci.move.name}: ${ci.move.does} Once a fight.`}</p>
+        </div>
+      )}
       {error && <p className="bq-note" role="alert">{error}</p>}
       {asking && q && (
         <QuestionModal
           question={shown(q)}
-          title={asking.special ? `${ci.move.name}!` : 'Bonk it!'}
-          note={asking.special ? ci.move.does : 'Right: a big bonk. Wrong: a little bonk, and it may bonk you back.'}
+          title={asking.special ? `${ci.move.name}! ×${moment.boost}` : (boost?.name ?? 'Smash it!')}
+          note={asking.special ? ci.move.does : `Right: a ×${moment.boost} smash. Wrong: no smash, and it may smash you back.`}
           spot="Bonkers Quest"
           onSubmit={answer}
           onDone={landed}

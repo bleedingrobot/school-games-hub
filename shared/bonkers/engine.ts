@@ -5,7 +5,8 @@
  */
 import {
   ADVENTURES_A_DAY, BIG_MONSTER_HITS, HEARTS, MAX_LEVEL, MAX_SAVED_ADVENTURES, MONSTER_HITS, POINTS, SPECIAL, STARS, STARS_TO_TRAINER,
-  STICKERS_A_WIN, TRAINER_HEARTS, TRAINER_HITS, WRONG_BONK_SHARE, basePower, expectedGear, FIGHTS,
+  STICKERS_A_WIN, TRAINER_HEARTS, TRAINER_HITS, AUTO_BONKS, AUTO_SHARE, BOOSTS, basePower, expectedGear, FIGHTS,
+  QUESTIONS_AN_ADVENTURE,
 } from './config';
 import { CLASSES, GEAR, LOOKS, SLOTS, TOP_TIER, openZones, trainerFor, zoneById, type HeroClass, type Look, type Slot } from './content';
 
@@ -185,8 +186,16 @@ export interface Foe {
   big: boolean;
 }
 
+/** Before each question: the hero's own bonks, then the question's surprise damage boost. */
+export interface Moment {
+  autos: number;
+  boost: number;
+}
+
 export interface Adventure {
   quest: Quest;
+  /** One for each question slot (made with the fights, so the server decides them). Missing on the first test adventures. */
+  moments?: Moment[];
   /** The hero as they set out (the fights are sized for this). */
   start: { cls: HeroClass; level: number; power: number; stars: number };
   foes: Foe[];
@@ -213,7 +222,14 @@ export function makeAdventure(seed: number, quest: Quest, p: Pick<Progress, 'her
     return { id: mon.id, name: mon.name, hp: foeHp(p.level, MONSTER_HITS[v]), big: false };
   });
   if (quest.kind === 'big') foes[foes.length - 1] = { id: zone.big.id, name: zone.big.name, hp: foeHp(p.level, BIG_MONSTER_HITS), big: true };
-  return { quest, start: { cls: p.hero.cls, level: p.level, power: heroPower(p), stars: p.stars }, foes };
+  const total = BOOSTS.reduce((t, b) => t + b.weight, 0);
+  const moments: Moment[] = Array.from({ length: QUESTIONS_AN_ADVENTURE }, () => {
+    const autos = AUTO_BONKS.min + Math.floor(r() * (AUTO_BONKS.max - AUTO_BONKS.min + 1));
+    let roll = r() * total;
+    const boost = BOOSTS.find((b) => (roll -= b.weight) < 0) ?? BOOSTS[0];
+    return { autos, boost: boost.times };
+  });
+  return { quest, start: { cls: p.hero.cls, level: p.level, power: heroPower(p), stars: p.stars }, foes, moments };
 }
 
 /** One answer as the server marked it, and whether the special move was used on it. */
@@ -229,7 +245,11 @@ export interface Blow {
   slot: number;
   right: boolean;
   special: boolean;
-  /** Damage to the monster. */
+  /** The hero's own bonks before the question popped up. */
+  auto: number;
+  /** The question's surprise damage boost (×2, ×3 or ×10). */
+  boost: number;
+  /** Damage to the monster from the answer (0 when wrong). */
   hit: number;
   /** The monster bonked you back (lost a heart). */
   ouch: boolean;
@@ -292,7 +312,7 @@ function questDone(adv: Adventure, results: FightResult[]): boolean {
 /** Plays the adventure through the server's marks, in order. The fight screen and the server both use it. */
 export function replay(adv: Adventure, marks: readonly Mark[]): Replay {
   const { power, cls, level, stars: startStars } = adv.start;
-  const bonk = Math.max(1, Math.round(power * WRONG_BONK_SHARE));
+  const auto = Math.max(1, Math.round(power * AUTO_SHARE));
   const fresh = (foe: Foe, trainer: boolean) => ({ foe, foeHp: foe.hp, hearts: trainer ? TRAINER_HEARTS : HEARTS, maxHearts: trainer ? TRAINER_HEARTS : HEARTS, specialUsed: false, calm: 0, questions: 0, rights: 0 });
   let phase: Phase = adv.foes.length ? 'fight' : 'done';
   let fight = 0;
@@ -331,7 +351,11 @@ export function replay(adv: Adventure, marks: readonly Mark[]): Replay {
       if (cls === 'granny') { cur.calm = SPECIAL.granny.calmQuestions; shield = true; }
       if (cls === 'ninja') times = SPECIAL.ninja.times;
     }
-    const hit = mark.right ? Math.round(power * times) : bonk;
+    // The hero's own bonks first (never the last one: a question always finishes a monster), then the question.
+    const moment = adv.moments?.[slot] ?? { autos: 0, boost: 1 };
+    const autoHit = Math.min(auto * moment.autos, Math.max(0, cur.foeHp - 1));
+    cur.foeHp -= autoHit;
+    const hit = mark.right ? Math.round(power * moment.boost * times) : 0;
     const ouch = !mark.right && !shield;
     cur.foeHp = Math.max(0, cur.foeHp - hit);
     if (ouch) cur.hearts -= 1;
@@ -340,7 +364,7 @@ export function replay(adv: Adventure, marks: readonly Mark[]): Replay {
     if (mark.right) cur.rights += 1;
     if (useSpecial && cls === 'ninja' && mark.right) stickers += SPECIAL.ninja.stickers;
     const ended: Outcome | null = cur.foeHp <= 0 ? 'won' : cur.hearts <= 0 ? 'bonked' : null;
-    blows.push({ slot, right: mark.right, special: useSpecial, hit, ouch, foeHp: cur.foeHp, hearts: cur.hearts, ended });
+    blows.push({ slot, right: mark.right, special: useSpecial, auto: autoHit, boost: moment.boost, hit, ouch, foeHp: cur.foeHp, hearts: cur.hearts, ended });
     if (!ended) continue;
     const trainer = (phase as Phase) === 'trainer';
     results.push({ foe: cur.foe, trainer, outcome: ended, questions: cur.questions, rights: cur.rights });

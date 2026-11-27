@@ -21,24 +21,25 @@ describe('Bonkers Quest screens', () => {
     const quests = screen.getAllByRole('button', { name: /Go!/ });
     expect(quests).toHaveLength(2);
     fireEvent.click(quests[0]);
-    expect(await screen.findByRole('button', { name: /Bonk it!/ })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /Answer it!/ }, { timeout: 4000 })).toBeInTheDocument();
+    expect(screen.getByText(/DAMAGE!/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Wool Whirlwind/ })).toBeEnabled();
     expect(screen.getByLabelText('3 of 3 hearts')).toBeInTheDocument();
   });
 
-  it('the server marks the answer, then the bonk lands (a wrong one costs a heart)', async () => {
+  it('the hero smashes on their own, a surprise boost question pops up, and the server’s mark decides the smash (a wrong one costs a heart)', async () => {
     play('bq-test-2');
     fireEvent.click(await screen.findByRole('button', { name: /Kitchen Knight/ }));
     fireEvent.click(screen.getByRole('button', { name: /Be the Kitchen Knight!/ }));
     fireEvent.click((await screen.findAllByRole('button', { name: /Go!/ }))[0]);
-    fireEvent.click(await screen.findByRole('button', { name: /Bonk it!/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Answer it!/ }, { timeout: 4000 }));
     const dialog = await screen.findByRole('dialog');
     // The answer the server marked is shown after; pick a choice and see what happens.
     const choices = dialog.querySelectorAll('button');
     fireEvent.click(choices[choices.length - 1]);
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), { timeout: 8000 });
     const hearts = screen.getByLabelText(/of 3 hearts/).getAttribute('aria-label');
-    const line = screen.getByText(/BONK!|little bonk/).textContent ?? '';
-    expect(line.includes('little bonk') ? hearts === '2 of 3 hearts' : hearts === '3 of 3 hearts').toBe(true);
+    const line = screen.getByText(/SMASH!|Missed/).textContent ?? '';
+    expect(line.includes('Missed') ? hearts === '2 of 3 hearts' : hearts === '3 of 3 hearts').toBe(true);
   }, 15_000);
 });
