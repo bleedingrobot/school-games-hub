@@ -23,6 +23,7 @@ describe('the one hint', () => {
     expect(helpKind({ parts: ['3 h', '=', '?', 'min'] })).toBe('hours');
     expect(helpKind({ parts: ['8 km', '=', '?', 'm'] })).toBe('units');
     expect(helpKind({ parts: ['Face east,', 'quarter turn clockwise:', '?'], prompt: 'Which way are you now facing?' })).toBe('turns');
+    expect(helpKind({ parts: ['You face east.', 'You make a quarter turn clockwise.'], prompt: 'Which way are you facing now?' })).toBe('turns');
     expect(unitSteps(['450 g', '=', '?', 'kg'])).toMatchObject({ big: 'kg', factor: 1000, times: false });
     expect(helpKind({ parts: ['An angle of 250°', 'is', '?'], prompt: 'What kind of angle is it?', choiceLabels: ['reflex', 'obtuse', 'right', 'acute'] })).toBe('angles');
     expect(fractionSteps(['1/8', '+', '3/4', '=', '?'])?.changes).toEqual([{ n: 3, d: 4, by: 2 }]);

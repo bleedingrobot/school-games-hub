@@ -49,10 +49,10 @@ const angleSize: PictureRule = (q) => {
   return degrees >= 1 && degrees <= 359 ? { kind: 'figure', figure: { kind: 'angle', degrees } } : null;
 };
 
-/** "Face south, quarter turn clockwise": the compass with the start arrow (never where the turn ends). */
+/** "You face south. You make a quarter turn clockwise.": the compass with the start arrow (never where the turn ends). */
 const compass: PictureRule = (q) => {
   if (!/facing/i.test(q.prompt ?? '')) return null;
-  const m = /^Face (north|south|east|west),?$/i.exec(q.parts[0] ?? '');
+  const m = /^(?:You )?face (north|south|east|west)[,.]?$/i.exec(q.parts[0] ?? '');
   return m ? { kind: 'figure', figure: { kind: 'compass', from: m[1].toLowerCase() } } : null;
 };
 

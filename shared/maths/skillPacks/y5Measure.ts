@@ -283,16 +283,19 @@ const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 const TURN_SLIP = ['did not turn', 'turned a quarter turn clockwise', 'turned a half turn', 'turned a quarter turn anticlockwise'];
 
 /** The pick question for a start direction and a number of clockwise quarter turns (3 is one quarter turn anticlockwise). */
-function compass(start: number, turns: number, parts: string[], spoken: string, slot: number, salt: number): Made | null {
+function compass(start: number, turns: number, turn: string, slot: number, salt: number): Made | null {
   const right = DIRS[(start + turns) % 4];
+  // Plain words, and always which way round (James, 27 Nov 2026: "Face north, half turn: ?" left him asking "turn half which way?").
+  const parts = [`You face ${DIRS[start]}.`, `You make ${turn}.`];
+  const spoken = `${parts.join(' ')} Which way are you facing now?`;
   const named: Record<string, string> = {};
   for (let t = 0; t < 4; t++) if (t !== turns) named[`${TURN_SLIP[t]} instead`] = DIRS[(start + t) % 4];
-  const made = pick({ parts, spoken, fact: `${cap(DIRS[start])} then ${parts[1].replace(/:$/, '')} is ${right}` }, right, named, { slot, salt });
+  const made = pick({ parts, spoken, fact: `${cap(DIRS[start])} then ${turn} is ${right}` }, right, named, { slot, salt });
   // A compass with an arrow the way you face at the start (James, 26 Nov 2026: he couldn't answer it from words alone).
-  return tap(made, { prompt: 'Which way are you now facing?', figure: { kind: 'compass', from: 'NESW'[start] } });
+  return tap(made, { prompt: 'Which way are you facing now?', figure: { kind: 'compass', from: 'NESW'[start] } });
 }
 
-/** "Face east, quarter turn clockwise: ?". */
+/** "You face east. You make a quarter turn clockwise." */
 const quarter = oneKey(
   'comp5:quarter',
   'Quarter turn from a compass point (face east, quarter turn clockwise)',
@@ -302,11 +305,11 @@ const quarter = oneKey(
   (_k, [s, anti, slot, salt]) => {
     if (!isInt(s, 0, 3) || !isInt(anti, 0, 1) || !goodPick(slot, salt)) return null;
     const way = anti ? 'anticlockwise' : 'clockwise';
-    return compass(s, anti ? 3 : 1, [`Face ${DIRS[s]},`, `quarter turn ${way}:`, '?'], `Face ${DIRS[s]}. Turn a quarter turn ${way}. Which way are you facing now?`, slot, salt);
+    return compass(s, anti ? 3 : 1, `a quarter turn ${way}`, slot, salt);
   },
 );
 
-/** "Face south, half turn: ?". */
+/** "You face south. You make a half turn clockwise." */
 const halfTurn = oneKey(
   'comp5:half',
   'Half turn from a compass point (face south, half turn)',
@@ -315,11 +318,11 @@ const halfTurn = oneKey(
   (_k, r) => [int(r, 0, 3), ...rollPick(r)],
   (_k, [s, slot, salt]) => {
     if (!isInt(s, 0, 3) || !goodPick(slot, salt)) return null;
-    return compass(s, 2, [`Face ${DIRS[s]},`, 'half turn:', '?'], `Face ${DIRS[s]}. Turn a half turn. Which way are you facing now?`, slot, salt);
+    return compass(s, 2, 'a half turn clockwise', slot, salt);
   },
 );
 
-/** "Face west, three quarter turns clockwise: ?". */
+/** "You face west. You make 3 quarter turns clockwise." */
 const three = oneKey(
   'comp5:three',
   'Three quarter turns from a compass point (face west, three quarter turns)',
@@ -329,7 +332,7 @@ const three = oneKey(
   (_k, [s, anti, slot, salt]) => {
     if (!isInt(s, 0, 3) || !isInt(anti, 0, 1) || !goodPick(slot, salt)) return null;
     const way = anti ? 'anticlockwise' : 'clockwise';
-    return compass(s, anti ? 1 : 3, [`Face ${DIRS[s]},`, `3 quarter turns ${way}:`, '?'], `Face ${DIRS[s]}. Turn three quarter turns ${way}. Which way are you facing now?`, slot, salt);
+    return compass(s, anti ? 1 : 3, `3 quarter turns ${way}`, slot, salt);
   },
 );
 

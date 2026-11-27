@@ -8,9 +8,11 @@ const degrees = (text: string) => Number(/(\d+)°/.exec(text)![1]);
 
 const DIRS = ['north', 'east', 'south', 'west'];
 const facing = (parts: string[]) => {
-  const start = DIRS.indexOf(/^Face (\w+),$/.exec(parts[0])![1]);
+  const start = DIRS.indexOf(/^You face (\w+)\.$/.exec(parts[0])![1]);
   const turn = parts[1];
-  const count = /^3 quarter/.test(turn) ? 3 : /^quarter/.test(turn) ? 1 : 2;
+  // Every turn says which way round, the half turn too (27 Nov 2026).
+  expect(turn).toMatch(/^You make (a quarter turn|a half turn|3 quarter turns) (clockwise|anticlockwise)\.$/);
+  const count = /3 quarter/.test(turn) ? 3 : /a quarter/.test(turn) ? 1 : 2;
   const sign = /anticlockwise/.test(turn) ? -1 : 1;
   return DIRS[(((start + sign * count) % 4) + 4) % 4];
 };
