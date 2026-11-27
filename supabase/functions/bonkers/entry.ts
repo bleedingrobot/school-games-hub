@@ -1,0 +1,88 @@
+// Connects the bonkers (Bonkers Quest) handler to Supabase. Edit handler.ts (or shared/bonkers/server.ts) for the logic, then
+// run `npm run build:functions -- bonkers` to rebuild index.ts, the single file that actually gets deployed (never committed).
+import { createClient } from '@supabase/supabase-js';
+import { parseFocus } from '../../../shared/maths/focus';
+import type { FactStats } from '../../../shared/maths/leitner';
+import { unplayed, type KeptAdventure, type Saved } from '../../../shared/bonkers/server';
+import { isUnlimitedFor } from '../../../shared/unlimited';
+import { recordMathsAnswers } from '../_shared/recordAnswers';
+import { userIdFromToken } from '../_shared/signIn';
+import { makeHandler } from './handler';
+
+declare const Deno: {
+  env: { get(name: string): string | undefined };
+  serve(handler: (request: Request) => Response | Promise<Response>): void;
+};
+
+/** The server's own key. Supabase provides it automatically; it never leaves the server. */
+function serverKey(): string {
+  const legacy = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (legacy) return legacy;
+  const keys = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') ?? '{}') as Record<string, string>;
+  return keys.default ?? Object.values(keys)[0] ?? '';
+}
+
+const admin = createClient(Deno.env.get('SUPABASE_URL') ?? '', serverKey(), {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
+
+/** Calls a database function: its answer, or 'busy'. Logs say which one and the error code, never who. */
+async function call<T>(name: string, args: Record<string, unknown>): Promise<T | 'busy'> {
+  const { data, error } = await admin.rpc(name, args);
+  if (!error) return data as T;
+  console.error(`bonkers: ${name} failed (${error.code ?? 'unknown'})`);
+  return 'busy';
+}
+
+Deno.serve(
+  makeHandler({
+    now: () => Date.now(),
+    random: () => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296,
+    userIdFor: userIdFromToken(admin.auth),
+    async settings(player) {
+      // The switches of this pupil's class (or their school's default if they have no class).
+      const { data, error } = await admin.rpc('settings_of', { player }).maybeSingle();
+      if (error || !data) {
+        console.error(`bonkers: settings failed (${error?.code ?? 'none'})`);
+        return null;
+      }
+      const row = data as { bonkers_enabled?: boolean; unlimited_days?: unknown };
+      // "Unlimited today" is on while the class's unlimited_days names today's NZ date for Bonkers Quest.
+      return { enabled: row.bonkers_enabled === true, unlimited: isUnlimitedFor(row.unlimited_days, 'bonkers') };
+    },
+    async load(player) {
+      const saved = await call<Saved | null>('bonkers_load', { player });
+      return saved === 'busy' ? 'busy' : (saved ?? unplayed());
+    },
+    async maths(player) {
+      const context = await call<{ facts: FactStats[]; settings: { enabledTables?: number[]; division?: boolean; missingFactor?: boolean | null }; focus?: unknown } | null>('space_maths_context', { player });
+      if (context === 'busy' || !context) return 'busy';
+      const { enabledTables, division, missingFactor } = context.settings ?? {};
+      const focus = parseFocus(context.focus);
+      return {
+        facts: context.facts ?? [],
+        // Anything odd counts as no focus: the questions are then the times-table step.
+        ...(focus ? { focus } : {}),
+        settings: { enabledTables, division, ...(typeof missingFactor === 'boolean' ? { missingFactor } : {}) },
+      };
+    },
+    current: (player) => call<KeptAdventure | null>('bonkers_current', { player }),
+    saveHero: (player, version, progress) => call<boolean>('bonkers_save', { player, version, progress }),
+    start: (player, version, progress, kept) =>
+      call<boolean>('bonkers_start', { player, version, progress, seed: kept.seed, quest: kept.adventure.quest.id, adventure: kept.adventure, questions: kept.questions }),
+    mark: (player, seed, slot, mark) => call<boolean>('bonkers_mark', { player, seed, slot, mark }),
+    finish: (player, seed, version, progress, result) => call<boolean>('bonkers_finish', { player, seed, version, progress, result }),
+    async recordAnswers(player, once, answers) {
+      // Saved the one approved way: per pack, each pack's own quick time, and counted for the teacher's focus results.
+      await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'bonkers');
+    },
+    async awardPoints(player, points, once) {
+      const { error } = await admin.rpc('add_game_points', { player, game: 'bonkers', points, once });
+      if (error) console.error(`bonkers: points failed (${error.code ?? 'unknown'})`);
+    },
+    async progressChanged(player) {
+      const { error } = await admin.rpc('game_progress_changed', { player, game: 'bonkers' });
+      if (error) console.error(`bonkers: achievements failed (${error.code ?? 'unknown'})`);
+    },
+  }),
+);

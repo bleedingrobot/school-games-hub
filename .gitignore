@@ -51,6 +51,7 @@ dist-preview-chess/
 dist-preview-showdown/
 dist-preview-classlive/
 dist-preview-starweb/
+dist-preview-bonkers/
 
 # Server functions are built by "Test and publish" (npm run build:functions); the bundles are not kept in git.
 supabase/functions/*/index.ts
