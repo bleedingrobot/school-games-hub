@@ -483,7 +483,7 @@ export function WorldGame({
           enabledTopics={enabledTopics}
           place={world.map}
           trainer={scene.trainer?.name}
-          powerUp={scene.setup.kind === 'wild' && !scene.giant}
+          powerUp
           look={world.look}
           owned={world.owned}
         />

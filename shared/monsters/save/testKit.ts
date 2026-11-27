@@ -46,7 +46,7 @@ let nextUuid = 1;
 export const uuid = () => `00000000-0000-4000-8000-${String(nextUuid++).padStart(12, '0')}`;
 
 /** Plays one battle to the end. */
-/** `oldStyle`: a wild battle played the way browsers did before 6 Nov 2026, a question for every attack (still accepted). */
+/** `oldStyle`: a battle played the way browsers did before the power up (wild before 6 Nov, trainers and giants before 27 Nov 2026), a question for every attack (still accepted). */
 export function playBattle(setup: BattleSetup, where: { map: string; trainer?: Thing; oldStyle?: boolean }, student: Student, dice: Dice, clock: Clock): { report: BattleReport; final: BattleState } {
   const packs = new Map<TopicId, ReturnType<typeof makePack>>();
   const pack = (t: TopicId) => {
@@ -65,7 +65,7 @@ export function playBattle(setup: BattleSetup, where: { map: string; trainer?: T
     state = play(state, action, random).state;
     steps.push({ action, ...(q ? { q } : {}), randoms });
   };
-  const powerUp = setup.kind === 'wild' && !where.oldStyle;
+  const powerUp = !where.oldStyle;
   const ask = (kind: 'fight' | 'catch' | 'power-up') => {
     const spec = questionFor(state, { kind })!;
     const topic = effectiveTopic(spec.topic, student.topics);
@@ -97,7 +97,7 @@ export function playBattle(setup: BattleSetup, where: { map: string; trainer?: T
     const attack = speciesOf(me.species).attacks.length - 1;
     const pick = Math.min(attack, Math.floor(dice.next() * 2) + (attack > 1 ? 1 : 0));
     if (powerUp) {
-      // A wild battle asks once, with its first attack; then attacks carry no question.
+      // A battle asks once, with its first attack; then attacks carry no question.
       if (state.powerUp === undefined) {
         const { q, result } = ask('power-up');
         doStep({ kind: 'power-up', answer: result }, q);
