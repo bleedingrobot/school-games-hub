@@ -139,7 +139,7 @@ export function JailPad({ link, room, view, setView }: {
     return (
       <div className="jl-pad jl-pad--asking">
         <header className="jl-pad__top">
-          <b>🔒 {kid.name}</b>
+          <b>{mingle ? '📱' : '🔒'} {kid.name}</b>
           <button type="button" className="jl-notme" onClick={() => void notMe(kid.id)}>Not you?</button>
         </header>
         <div className="jl-locks" aria-label={`${kid.right} of ${kid.need} right`}>
@@ -150,9 +150,9 @@ export function JailPad({ link, room, view, setView }: {
             <QuestionModal
               key={question.slot}
               question={{ id: question.slot, parts: question.parts, spoken: question.spoken, prompt: question.prompt, choices: question.choices, choiceLabels: question.choiceLabels, input: question.input, maxLength: question.maxLength }}
-              title="Answer your way out"
+              title={mingle ? 'Answer your way back in' : 'Answer your way out'}
               note={`${kid.right} of ${kid.need} right`}
-              spot="Real-life Four Corners" inline scribble={false} onSubmit={onSubmit} onDone={onDone}
+              spot={mingle ? 'Maths Mingle' : 'Real-life Four Corners'} inline scribble={false} onSubmit={onSubmit} onDone={onDone}
             />
           ) : <p className="jl-wait">Getting your question…</p>}
         </div>
