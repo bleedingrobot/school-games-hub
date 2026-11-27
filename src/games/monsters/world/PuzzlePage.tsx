@@ -111,7 +111,7 @@ function Stones({ p, report, look, me, sfx }: BoardProps<'stones'>) {
     } else if (next.at && (next.at[0] !== s.at?.[0] || next.at[1] !== s.at?.[1])) {
       if (s.at) setFacing(r < s.at[0] ? 'up' : r > s.at[0] ? 'down' : c < s.at[1] ? 'left' : 'right');
       trail = [...path, next.at];
-      sfx('hop');
+      sfx(next.done ? 'win' : 'hop');
     } else if (next.done) sfx('win');
     setPath(trail);
     const note = next.splash ? 'Splash! Back to the start.' : next.miss ? STONE_MISS[next.miss] : undefined;
@@ -146,7 +146,7 @@ function Stones({ p, report, look, me, sfx }: BoardProps<'stones'>) {
       )}
       {grid.map((_, r) => (
         <button key={`${r}-bank`} type="button" className={`mz-bank${r === 0 ? ' mz-bank--flag' : ''}`} style={{ gridRow: r + 1, gridColumn: width + 2 }} onClick={() => go(r, width)} aria-label={`Far bank, row ${r + 1}`}>
-          {s.done && r === Math.floor(grid.length / 2) && <Me look={me} facing="right" className="mz-me--hop" />}
+          {s.done && !s.at && r === Math.floor(grid.length / 2) && <Me look={me} facing="right" className="mz-me--hop" />}
         </button>
       ))}
     </div>
