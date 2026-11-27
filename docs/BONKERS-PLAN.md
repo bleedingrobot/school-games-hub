@@ -17,7 +17,7 @@ Brainstorm and all 22 of James's answers: [plans/bonkers-quest/PLAN.md](plans/bo
 ## The short version
 
 - A wacky, streamlined Dragon Maths for **Years 2 to 4**: one **adventure** a day on fixed rails, like a Sky Isles turn.
-- **The path:** the Wobbly Inn (Granny Jetpack) > pick 1 of 2 quests > 4 to 6 fights in that zone > the trainer (only when your star bar is full) > the treasure chest (only when earned) > home.
+- **The path:** home (Granny Jetpack; was "the Wobbly Inn", renamed Home by James 28 Nov 2026) > pick 1 of 2 quests > 4 to 6 fights in that zone > the trainer (only when your star bar is full) > the treasure chest (only when earned) > back home.
 - **Every hit is a maths question** (the shared focus, way A, 4 big choices). Right: a big daft hit. Wrong: a little bonk, the monster bonks you back, and the right answer is shown. You can't lose anything: a bonked fight just ends with fewer stars.
 - **Four classes**, kept all season: Kitchen Knight, Disco Dazzler, Pirate Granny, Bin Ninja, each with a boy, girl or animal look and one special move a fight.
 - **Getting stronger:** stars fill the bar, the trainer levels you up (10 levels, 9 trainers), the chest gives wacky gear that adds power.

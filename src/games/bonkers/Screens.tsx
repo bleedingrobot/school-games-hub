@@ -1,4 +1,4 @@
-/** Smash Quest's calm screens: picking a hero, the Wobbly Inn, and what an adventure earned. */
+/** Smash Quest's calm screens: picking a hero, home, and what an adventure earned. */
 import { useState } from 'react';
 import { CLASS_INFO, CLASSES, GEAR, INNKEEPER, LOOKS, SLOTS, gearById, trainerFor, zoneById, type HeroClass, type Look } from '../../../shared/bonkers/content';
 import { MAX_LEVEL } from '../../../shared/bonkers/config';
@@ -14,7 +14,7 @@ export function HeroPick({ hero, busy, onPick }: { hero: Hero | null; busy: bool
   const info = cls ? CLASS_INFO[cls] : null;
   return (
     <section className="bq-hero-pick" aria-label="Pick your hero">
-      <Granny line={hero ? 'A new look? Lovely! Your class stays the same all season.' : `Welcome to the Wobbly Inn! I’m ${INNKEEPER.name}. Pick your hero, dearie. You keep them all season!`} />
+      <Granny line={hero ? 'A new look? Lovely! Your class stays the same all season.' : `Welcome home! I’m ${INNKEEPER.name}. Pick your hero, dearie. You keep them all season!`} />
       <div className="bq-classes">
         {CLASSES.map((c) => {
           const ci = CLASS_INFO[c];
@@ -110,7 +110,7 @@ export function Inn({ loaded, busy, note, onQuest, onChangeLook }: {
   const p = loaded.progress;
   const out = loaded.waiting === 0;
   return (
-    <section className="bq-inn" aria-label="The Wobbly Inn">
+    <section className="bq-inn" aria-label="Home">
       <Granny line={grannySays(p, loaded.waiting)} />
       <div className="bq-card bq-inn__hero">
         {p.hero && <HeroBadge hero={p.hero} p={p} />}
@@ -178,7 +178,7 @@ export function Results({ before, result, current, onInn }: { before: Progress; 
       )}
       {result.points > 0 && <p className="bq-points">+{result.points} hub points</p>}
       <StarBar p={result.progress} />
-      <button type="button" className="bq-btn bq-btn--big" onClick={onInn}>Back to the Wobbly Inn</button>
+      <button type="button" className="bq-btn bq-btn--big" onClick={onInn}>Back home</button>
     </section>
   );
 }
