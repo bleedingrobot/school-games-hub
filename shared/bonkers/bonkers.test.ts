@@ -34,6 +34,11 @@ describe('Smash Quest rules', () => {
     // (A big boost can finish the monster at once: the special is then fresh for the next fight.)
     expect(whack.blows[0].ended !== null || !whack.blows[1].special).toBe(true);
 
+    // One question a fight: the hero's own smashes set it up, so one right answer always wins.
+    const one = replay(adv, [{ right: true, special: false }]);
+    expect(one.results[0]).toMatchObject({ outcome: 'won', questions: 1 });
+    expect(one.blows[0].auto).toBeGreaterThan(0);
+
     // Pirate Granny's Wool Whirlwind: the monster can't bonk back for 2 questions, even when wrong.
     const granny = makeAdventure(123, quest, hero({ hero: { cls: 'granny', look: 'animal' } }));
     const calm = replay(granny, [{ right: false, special: true }, { right: false, special: false }, { right: false, special: false }]);

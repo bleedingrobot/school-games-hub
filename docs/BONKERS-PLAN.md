@@ -1,5 +1,7 @@
 # Smash Quest (was Bonkers Quest): plan
 
+**One question a fight, monsters with double HP (James, 27 Nov 2026 evening):** the hero's own smashes wear the monster down until the question's boosted smash finishes it (`autoSmash` in engine.ts), so a right answer always wins; a wrong one brings another question. Sim: 1.1 to 1.7 questions a fight, same level pace.
+
 **Renamed Smash Quest by James, 27 Nov 2026.** The id, tables, function and folders keep the name `bonkers`. Teachers always get unlimited adventures (the function checks `profiles.role`), so James can test without the daily limit.
 
 **Status: B.1 LIVE for teachers 27 Nov 2026 (PR #942: migration 20261127191027_bonkers.sql applied, `bonkers` function deployed, tables empty, switch on for every class). Code switch OFF: only teachers can open `/#/bonkers` to test the gameplay (James, 27 Nov: "no art though, leave that till last and lets test some gameplay first"). No painting until James has played it and says go.**

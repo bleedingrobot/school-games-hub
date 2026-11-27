@@ -29,16 +29,17 @@ export const basePower = (level: number) => 10 + 3 * (level - 1);
 /** What an ordinary hero carries in gear power by this level (monsters are sized for it). */
 export const expectedGear = (level: number) => 3 * (level - 1);
 
-/** A monster's health, as a number of ordinary right hits (`v` 0 to 2: the zone's weakest to strongest). */
-export const MONSTER_HITS = [4.5, 5, 6];
+/** A monster's health (doubled 27 Nov 2026, James: "more hp"), as a number of ordinary right hits (`v` 0 to 2: the zone's weakest to strongest). */
+export const MONSTER_HITS = [9, 10, 12];
 /** The zone's big monster (the "bonk the big one" quest) and the trainers. */
-export const BIG_MONSTER_HITS = 8;
-export const TRAINER_HITS = 10;
+export const BIG_MONSTER_HITS = 16;
+export const TRAINER_HITS = 20;
 
 /**
- * Less maths, more bonking (James, 27 Nov 2026: "a bit too much maths"): the hero bonks away on their own (this share of
- * their power a bonk, never the last bonk), and every few bonks a question pops up with a surprise damage boost. Right: the
- * boosted hit. Wrong: no hit, the monster bonks you back, and the right answer is shown. About 2 questions a fight.
+ * Less maths, more smashing (James, 27 Nov 2026: "a bit too much maths", then "one question per fight"): the hero smashes
+ * away on their own (at least this share of their power a smash, never the last one) until the question's boosted smash
+ * will finish the monster. Right: the boosted smash wins the fight. Wrong: no smash, the monster smashes back, the right
+ * answer is shown, and another question comes.
  */
 export const AUTO_SHARE = 0.25;
 export const AUTO_BONKS = { min: 2, max: 4 } as const;
@@ -59,7 +60,7 @@ export const SPECIAL = {
 /** Fights in an adventure: each quest says how many (4 to 6). */
 export const FIGHTS = { min: 4, max: 6 } as const;
 
-/** Questions the server makes for an adventure (more than any adventure can use: about 4 a fight, at worst 12). */
+/** Questions the server makes for an adventure (more than any adventure can use: 1 a fight when right, at worst 3). */
 export const QUESTIONS_AN_ADVENTURE = 80;
 
 /** Hub points (inside the 40-a-day cap): never for maths results. */
