@@ -6,7 +6,7 @@
  *
  * The database's record_goblinstorm_run pays the same bonus (migration 20261127210645): keep them together.
  */
-import { MAPS, STORM_FIRST } from './config';
+import { HEROES, MAPS, STORM_FIRST, type HeroId } from './config';
 
 export type RoundGroup = 'kingdom' | 'storm';
 export const ROUND_GROUPS: Record<RoundGroup, { name: string; maps: readonly number[] }> = {
@@ -51,13 +51,16 @@ export const withBeat = (beats: Beats, map: number): number[] =>
   Array.from({ length: Math.max(beats.length, map + 1) }, (_, i) => (beats[i] ?? 0) + (i === map ? 1 : 0));
 
 /** Round bonus gold between two saves (what the end screen shows after a run). */
-export function bonusBetween(before: { roundsPaid?: RoundsPaid } | null | undefined, after: { roundsPaid?: RoundsPaid } | null | undefined): number {
-  if (!before || !after) return 0;
-  let gold = 0;
+export function bonusBetween(before: { roundsPaid?: RoundsPaid; heroRoundsPaid?: number } | null | undefined, after: { roundsPaid?: RoundsPaid; heroRoundsPaid?: number } | null | undefined): { maps: number; heroes: number } {
+  const none = { maps: 0, heroes: 0 };
+  if (!before || !after) return none;
+  let maps = 0;
   for (const g of ROUND_GROUP_IDS) {
-    for (let n = (before.roundsPaid?.[g] ?? 0) + 1; n <= (after.roundsPaid?.[g] ?? 0); n++) gold += roundGold(n);
+    for (let n = (before.roundsPaid?.[g] ?? 0) + 1; n <= (after.roundsPaid?.[g] ?? 0); n++) maps += roundGold(n);
   }
-  return gold;
+  let heroes = 0;
+  for (let n = (before.heroRoundsPaid ?? 0) + 1; n <= (after.heroRoundsPaid ?? 0); n++) heroes += roundGold(n);
+  return { maps, heroes };
 }
 
 /**
@@ -70,4 +73,44 @@ export function afterRun(save: { beats: Beats; roundsPaid: RoundsPaid }, map: nu
   const bonus = goldOwed(beats, save.roundsPaid, group);
   const roundsPaid = { ...save.roundsPaid, [group]: Math.max(save.roundsPaid[group] ?? 0, roundsDone(beats, group)) };
   return { beats, roundsPaid, bonus };
+}
+
+// ---------------------------------------------------------------- hero rounds
+
+/**
+ * Hero rounds (James, 28 Nov 2026): to spread play over every hero, a boss win with each hero the pupil has opened is a
+ * hero round, paid like map rounds (+10, +20, +30 …). The heroes who have won since the last hero round are kept in
+ * `heroRound`; a hero opened mid-round joins the round. Each hero's boss wins are counted for its card. Gold only.
+ * The database does the same in record_goblinstorm_run (migration 20261128064254): keep them together.
+ */
+export interface HeroRounds {
+  /** Boss wins by hero. */
+  heroWins: Partial<Record<HeroId, number>>;
+  /** Heroes with a boss win since the last hero round was paid. */
+  heroRound: HeroId[];
+  /** Hero rounds paid so far. */
+  heroRoundsPaid: number;
+}
+
+/** The heroes a save has open: the free ones and those unlocked. */
+export const openHeroes = (unlocked: readonly HeroId[]): HeroId[] =>
+  HEROES.filter((h) => h.unlock === 'free' || unlocked.includes(h.id)).map((h) => h.id);
+
+/** The next hero round: its number, gold, and the open heroes still to win with. */
+export function nextHeroRound(save: HeroRounds & { heroes: readonly HeroId[] }): { round: number; gold: number; toWin: HeroId[]; done: number; of: number } {
+  const open = openHeroes(save.heroes);
+  const toWin = open.filter((h) => !save.heroRound.includes(h));
+  const round = save.heroRoundsPaid + 1;
+  return { round, gold: roundGold(round), toWin, done: open.length - toWin.length, of: open.length };
+}
+
+/** One finished run with `hero` (`heroes`: the save's unlocked heroes after this run): the hero rounds after it and the bonus. */
+export function afterHeroRun(save: HeroRounds, heroes: readonly HeroId[], hero: HeroId, bossBeaten: boolean): HeroRounds & { bonus: number } {
+  if (!bossBeaten) return { ...save, heroWins: { ...save.heroWins }, heroRound: [...save.heroRound], bonus: 0 };
+  const heroWins = { ...save.heroWins, [hero]: (save.heroWins[hero] ?? 0) + 1 };
+  const heroRound = save.heroRound.includes(hero) ? [...save.heroRound] : [...save.heroRound, hero];
+  if (openHeroes(heroes).every((h) => heroRound.includes(h))) {
+    return { heroWins, heroRound: [], heroRoundsPaid: save.heroRoundsPaid + 1, bonus: roundGold(save.heroRoundsPaid + 1) };
+  }
+  return { heroWins, heroRound, heroRoundsPaid: save.heroRoundsPaid, bonus: 0 };
 }

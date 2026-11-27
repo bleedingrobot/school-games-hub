@@ -1,12 +1,12 @@
 // Goblin Storm's rules (docs/GOBLINSTORM-PLAN.md): the 3 rule tests the plan allows. Balance is the sim's job.
 import { describe, expect, it } from 'vitest';
 import { botRun } from './bot';
-import { HEROES, MAPS, RUN_STEPS, SHOP_IDS, STEPS_PER_SECOND, STORM_FIRST, WEAPONS, healthGrowth, type ShopLevels } from './config';
+import { HEROES, MAPS, type HeroId, RUN_STEPS, SHOP_IDS, STEPS_PER_SECOND, STORM_FIRST, WEAPONS, healthGrowth, type ShopLevels } from './config';
 import { applyPick, makeOffer, maxWeapons, newRun, stepRun, waiting, type RunSetup, type RunState } from './engine';
 import { decodeSteering, encodeSteering, replayRun } from './replay';
 import { freshSave, mapOpen } from './server';
 import { shopTop } from './shop';
-import { afterRun, bonusBetween, nextRound } from './rounds';
+import { afterHeroRun, afterRun, bonusBetween, nextHeroRound, nextRound } from './rounds';
 import { STILL } from './trig';
 
 const knight: RunSetup = { seed: 12345, hero: HEROES[0], map: MAPS[0], shop: {} };
@@ -73,7 +73,14 @@ describe('Goblin Storm rules', () => {
       expect([1, 2, 3].map((m) => win(m))).toEqual([0, 0, 0]);
       const before = save;
       expect(win(4)).toBe(20);
-      expect(bonusBetween(before, save)).toBe(20);
+      expect(bonusBetween(before, save)).toEqual({ maps: 20, heroes: 0 });
+      // Hero rounds: a boss win with every open hero; a hero opened mid-round joins it.
+      let hs = { heroWins: {}, heroRound: [] as HeroId[], heroRoundsPaid: 0 };
+      expect(afterHeroRun(hs, [], 'knight', false).bonus).toBe(0);
+      hs = afterHeroRun(hs, [], 'knight', true);
+      expect(nextHeroRound({ ...hs, heroes: ['cleric'] })).toMatchObject({ round: 1, gold: 10, toWin: ['ranger', 'cleric'] });
+      hs = afterHeroRun(hs, ['cleric'], 'ranger', true);
+      expect(afterHeroRun(hs, ['cleric'], 'cleric', true)).toMatchObject({ bonus: 10, heroRound: [], heroRoundsPaid: 1, heroWins: { knight: 1, ranger: 1, cleric: 1 } });
       // The Storm Lands keep their own rounds.
       expect(win(STORM_FIRST)).toBe(0);
       // Rounds finished before bonuses began are all paid on the next run in that group.
