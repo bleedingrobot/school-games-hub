@@ -92,7 +92,7 @@ export async function clashTick(sv: ClassLiveServices, room: number, s: Session,
   const r = g.round;
   let board: { tiles: string; painted: Record<string, number> } | null = null;
   if (r && needsTiles(g, t)) {
-    const got = await sv.clashBoard(room, r.n);
+    const got = s.edge && sv.edge?.clashBoard ? await sv.edge.clashBoard(room, r.n) : await sv.clashBoard(room, r.n);
     if (got === 'busy') return 'busy';
     board = got;
   }
@@ -181,7 +181,8 @@ export async function clashStep(sv: ClassLiveServices, cur: RoomRow, who: string
   const b = bomb as { round: number; team: Team; tiles: number[] } | null;
   if (b) {
     try {
-      await sv.clashBomb(room, b.round, b.team, who, b.tiles);
+      if (s0.edge && sv.edge?.clashBomb) await sv.edge.clashBomb(room, b.round, b.team, who, b.tiles);
+      else await sv.clashBomb(room, b.round, b.team, who, b.tiles);
     } catch {
       console.error(`classlive: clash bomb in room ${room} failed`);
     }
