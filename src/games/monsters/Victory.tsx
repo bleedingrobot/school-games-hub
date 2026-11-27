@@ -173,7 +173,7 @@ export function Victory({ phase, before, after, caught, questions, loot = [], on
       <p className="mv-questions">
         <span aria-hidden="true">★</span> {questions} question{questions === 1 ? '' : 's'} answered
       </p>
-      <button ref={button} type="button" className="mb-btn mb-btn--primary mv-go" onClick={onContinue} aria-keyshortcuts="Enter">
+      <button ref={button} type="button" className="mb-btn mb-btn--primary mv-go" onClick={onContinue} aria-keyshortcuts="Enter Space">
         Continue <kbd aria-hidden="true">Enter</kbd>
       </button>
     </div>

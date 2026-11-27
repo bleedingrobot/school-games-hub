@@ -550,10 +550,15 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
       return;
     }
     const n = Number(e.key);
-    const enter = e.key === 'Enter';
-    // Enter on a focused button presses that button (the browser does it); otherwise it takes the best choice.
+    // Space works like Enter (James, 28 Nov 2026).
+    const enter = e.key === 'Enter' || e.key === ' ';
+    // Enter or Space on a focused button presses that button (the browser does it); otherwise it takes the best choice.
     const onButton = enter && (e.target as HTMLElement | null)?.tagName === 'BUTTON';
-    if (mode === 'menu') {
+    if (mode === 'playing' && enter && !onButton) {
+      // The Next button lost the keyboard (a tap somewhere else): the key still moves the battle on.
+      e.preventDefault();
+      advance();
+    } else if (mode === 'menu') {
       const item = menuItems.find((m) => m.key === e.key.toLowerCase());
       if (n >= 1 && n <= attacks.length) {
         e.preventDefault();
@@ -721,11 +726,11 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
                   type="button"
                   className={`mb-btn mb-move mb-move--${type}${i === best ? ' is-best' : ''}`}
                   onClick={() => ask({ kind: 'fight', attack: i }, 'menu')}
-                  aria-keyshortcuts={i === best ? `${i + 1} Enter` : String(i + 1)}
+                  aria-keyshortcuts={i === best ? `${i + 1} Enter Space` : String(i + 1)}
                   data-best={i === best || undefined}
                 >
                   <kbd aria-hidden="true">{i + 1}</kbd>
-                  {i === best && <span className="mb-move__enter" aria-hidden="true">Enter</span>}
+                  {i === best && <span className="mb-move__enter" aria-hidden="true">Enter<span className="mb-move__space"> / Space</span></span>}
                   <span className="mb-move__name">{a.name}</span>
                   <span className="mb-move__power">
                     {TYPE_LABEL[type as keyof typeof TYPE_LABEL]} · power {a.power}
