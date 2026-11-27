@@ -136,10 +136,10 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
         const item = !mine.held ? r.items.find((x) => !x.by && Math.hypot(x.x - m!.p.x, x.y - m!.p.y) < 0.25) : undefined;
         // Shark Bay: swim with the spinning quarter, and a few make for a boat.
         const bay = isShark(g) ? bayRound(r) : null;
-        let dir = item ? { x: item.x - m.p.x, y: item.y - m.p.y } : bay ? sharkPretendDir(m.p, target, bay, t, (id.charCodeAt(id.length - 1) + r.n) % 3 === 0, rand) : pretendDir(m.p, target, rand);
+        let dir = item ? { x: item.x - m.p.x, y: item.y - m.p.y } : bay ? sharkPretendDir(m.p, target, bay, t, (id.charCodeAt(id.length - 1) + r.n) % 3 === 0, rand) : pretendDir(m.p, target, rand, g.w ?? 1);
         const len = Math.hypot(dir.x, dir.y);
         if (len > 1) dir = { x: dir.x / len, y: dir.y / len };
-        if (!bay && cornerOf(m.p) === target && !item) dir = { x: 0, y: 0 };
+        if (!bay && cornerOf(m.p, g.w ?? 1) === target && !item) dir = { x: 0, y: 0 };
         if (rand() > skill + 0.1) dir = { x: dir.x * 0.4, y: dir.y * 0.4 };
         m = (bay ? sharkMove : stepMove)(m, dir, 200, r, t, { boost: boosted(mine, r.n), ghost: ghostly(mine, r.n) });
         memoryMove(db, now, room, id, m.p.x, m.p.y);
@@ -149,7 +149,7 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
           busy = false;
         }
       }
-      const wantsQuestion = mine.jailedIn !== null ? mine.jailRight < 3 && t - mine.lastAt > 4000 + rand() * 3000 : !!mine.held && !!r && (isShark(g) && bayRound(r) ? quarterOf(m.p, spinAt(bayRound(r)!, t)) !== null : cornerOf(m.p) !== null) && t < (r?.runEnd ?? 0) && rand() < 0.1;
+      const wantsQuestion = mine.jailedIn !== null ? mine.jailRight < 3 && t - mine.lastAt > 4000 + rand() * 3000 : !!mine.held && !!r && (isShark(g) && bayRound(r) ? quarterOf(m.p, spinAt(bayRound(r)!, t), g.w ?? 1) !== null : cornerOf(m.p, g.w ?? 1) !== null) && t < (r?.runEnd ?? 0) && rand() < 0.1;
       if (wantsQuestion && !busy) {
         busy = true;
         const asked = await classLiveStep(services, id, { action: 'ask', room });

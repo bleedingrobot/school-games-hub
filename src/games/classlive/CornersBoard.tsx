@@ -1,9 +1,11 @@
 /**
  * Four Corners' board (docs/CORNERS-PLAN.md), drawn the same on the big screen and on each pupil's device: the map
  * (painted, or a drawn stand-in for each map), the four coloured corners, the round's hazards, items and avatars.
- * Positions are board units (0 to 1); everything is placed in % of the square board.
+ * Positions are board units (x 0 to w, y 0 to 1); everything is placed in % of the board, which is w wide and 1 high
+ * (widescreen since 27 Nov 2026: the four corners in the wide board's corners, the middle stretched; square for older
+ * games). Shark Bay's board uses the same `BoardW` and `Token`.
  */
-import type { ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { CORNERS, FOG_SHARE, GRAB_R, gateShut, HOLE_R, MAP_WORDS, POWER_WORDS, rollerAt, rollersOf, TELEPORT_R, ZONE, type Corner, type CornerMap, type MoveRound, type Power } from '../../../shared/classlive/corners';
 import { painted } from './paintedArt';
 import './corners.css';
@@ -28,18 +30,27 @@ export interface BoardRound extends MoveRound {
 }
 
 const pct = (v: number) => `${v * 100}%`;
+/** The board's width (height 1), for the tokens and dots drawn on it (Four Corners' and Shark Bay's boards set it). */
+export const BoardW = createContext(1);
+/** Where a spot goes on a board `w` wide, as CSS left/top. */
+export const at = (x: number, y: number, w: number) => ({ left: pct(x / w), top: pct(y) });
+/** The board's own style for a width: its shape, and `--bw` for CSS sizes in % of the width. */
+export const boardStyle = (w: number) => ({ aspectRatio: `${w} / 1`, ['--bw' as string]: String(w) });
 
 /** A circle on the board. */
 function Disc({ x, y, r, className, pic, spin, children }: { x: number; y: number; r: number; className: string; pic?: string | null; spin?: number; children?: ReactNode }) {
+  const w = useContext(BoardW);
   return (
-    <div className={className} style={{ left: pct(x - r), top: pct(y - r), width: pct(r * 2), height: pct(r * 2), ...(pic ? { backgroundImage: `url(${pic})` } : {}), ...(spin !== undefined ? { transform: `rotate(${spin}deg)` } : {}) }}>
+    <div className={className} style={{ left: pct((x - r) / w), top: pct(y - r), width: pct((r * 2) / w), height: pct(r * 2), ...(pic ? { backgroundImage: `url(${pic})` } : {}), ...(spin !== undefined ? { transform: `rotate(${spin}deg)` } : {}) }}>
       {children}
     </div>
   );
 }
 
-export function CornersBoard({ map, round, t, flash, crystal, banned, children, fogOn, onCorner, cornerLabel = true }: {
+export function CornersBoard({ map, w = 1, round, t, flash, crystal, banned, children, fogOn, onCorner, cornerLabel = true }: {
   map: CornerMap;
+  /** The board's width (height 1). */
+  w?: number;
   round: BoardRound | null;
   /** Session time (ms since the start), for the roller, the gate and the fog. */
   t: number;
@@ -57,19 +68,21 @@ export function CornersBoard({ map, round, t, flash, crystal, banned, children, 
   onCorner?: (c: Corner) => void;
   cornerLabel?: boolean;
 }) {
-  const pic = painted('corners', `map-${map}`);
+  // Wide boards have their own wide paintings (map-<map>-wide); the square one, cropped, until then.
+  const pic = (w > 1 ? painted('corners', `map-${map}-wide`) : null) ?? painted('corners', `map-${map}`);
   const words = MAP_WORDS[map];
   const shut = round ? gateShut(round, t) : false;
   const runShare = round ? (t - round.startAt) / Math.max(1, round.runEnd - round.startAt) : 0;
   const fogShows = !!round?.fog && (fogOn ?? true) && runShare >= 1 - FOG_SHARE && t < round.runEnd + 300;
   return (
-    <div className={`fc-board fc-board--${map} ${pic ? 'fc-board--painted' : ''}`} style={pic ? { backgroundImage: `url(${pic})` } : undefined}>
+    <BoardW.Provider value={w}>
+    <div className={`fc-board fc-board--${map} ${w > 1 ? 'fc-board--wide' : ''} ${pic ? 'fc-board--painted' : ''}`} style={{ ...boardStyle(w), ...(pic ? { backgroundImage: `url(${pic})` } : {}) }}>
       {!pic && <div className="fc-board__ground" aria-hidden="true" />}
       {CORNERS.map((c) => {
         const flashing = flash?.includes(c);
         const left = c === 0 || c === 3;
         const top = c < 2;
-        const style = { left: left ? 0 : pct(1 - ZONE), top: top ? 0 : pct(1 - ZONE), width: pct(ZONE), height: pct(ZONE), ['--cc' as string]: CORNER_COLOURS[c] };
+        const style = { left: left ? 0 : pct((w - ZONE) / w), top: top ? 0 : pct(1 - ZONE), width: pct(ZONE / w), height: pct(ZONE), ['--cc' as string]: CORNER_COLOURS[c] };
         const cls = `fc-corner fc-corner--${c} ${flashing ? 'fc-corner--hit' : ''} ${crystal === c ? 'fc-corner--crystal' : ''} ${shut && round?.gate === c ? 'fc-corner--shut' : ''} ${banned === c ? 'fc-corner--banned' : ''}`;
         const inner = (
           <>
@@ -84,7 +97,7 @@ export function CornersBoard({ map, round, t, flash, crystal, banned, children, 
           ? <button key={c} type="button" className={`${cls} fc-corner--btn`} style={style} onClick={() => onCorner(c)} aria-label={`Jump to the ${CORNER_NAMES[c]} corner`}>{inner}</button>
           : <div key={c} className={cls} style={style} aria-label={`${CORNER_NAMES[c]} corner`}>{inner}</div>;
       })}
-      {round?.hole && <Disc x={0.5} y={0.5} r={HOLE_R} className="fc-hole" pic={hazardPic(map, 'hole')} />}
+      {round?.hole && <Disc x={w / 2} y={0.5} r={HOLE_R} className="fc-hole" pic={hazardPic(map, 'hole')} />}
       {round?.storms.map((s, i) => <Disc key={`s${i}`} {...s} className="fc-storm" pic={hazardPic(map, 'storm')}><i /><i /><i /></Disc>)}
       {round?.ice.map((s, i) => <Disc key={`i${i}`} {...s} className="fc-ice" pic={hazardPic(map, 'ice')} />)}
       {round?.teleports.map((tp, i) => (
@@ -107,13 +120,15 @@ export function CornersBoard({ map, round, t, flash, crystal, banned, children, 
       <div className="fc-board__people">{children}</div>
       {fogShows && <div className="fc-fog" aria-label={words.fog} />}
     </div>
+    </BoardW.Provider>
   );
 }
 
 /** One avatar on the board (placed by the caller in board units). */
 export function Token({ x, y, size, children, className = '', label }: { x: number; y: number; size: number; children: ReactNode; className?: string; label?: string | null }) {
+  const w = useContext(BoardW);
   return (
-    <div className={`fc-token ${className}`} style={{ left: pct(x), top: pct(y), width: pct(size), height: pct(size) }}>
+    <div className={`fc-token ${className}`} style={{ ...at(x, y, w), width: pct(size / w), height: pct(size) }}>
       <div className="fc-token__body">{children}</div>
       {label && <span className="fc-token__name">{label}</span>}
     </div>

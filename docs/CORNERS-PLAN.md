@@ -31,6 +31,19 @@ It is the fourth Class Live activity (docs/CLASSLIVE-PLAN.md): same room, lobby 
 - Map mechanics, unlocked by round: 2 power-ups, 3 blizzard (0.45× speed), 4 teleport pair, 5 ice (you slide), 6 fog (big screen hides avatars for the last part of the run, pads show only you), 7 rolling snowball (bumps you aside), 8 cracked ice (the middle is a hole, go round), 9 corner gate (one corner shuts 3 s before the end), 10 twist rolls (two corners, or a lucky roll where nobody is caught). From round 11 a mix of 2 to 4 of them.
 - Each map renames them: snow (blizzard, ice, snowball, cracked ice), jungle (sandstorm, mud slide, rolling boulder, quicksand), castle (ghost mist, slippery moss, rolling barrel, collapsed floor), space (meteor storm, zero-g slide, rolling asteroid, black hole).
 
+## Wide map (27 Nov 2026 NZ)
+
+James asked for the class games to fill the screen like Ghost Tag. New games are `CORNERS_W` (1.6) wide and 1 high (`w`
+on the game, the round and the public game; older games without it stay square, `widthOf`). The four corner zones stay
+0.26 squares in the wide board's corners and the middle is stretched. Everything that places or clamps spots takes the
+width: `cornerOf`, `cornerCentre`, `startSpot`, `freshMine`, `openSpot`, teleports, the hole (`centreOf`), rollers (the
+one rolling across has `span` w, the one rolling down comes by the left or right corners), `stepMove` (the round's `w`,
+or `opts.w` before a round), `pretendDir`, `clampMove`, and the database's classlive_move (`classlive_activities.width`).
+A wider board gets about 1.6x the storms, ice and items. Paintings: map-<map>-wide (docs/corners-art/config.json), the
+square one cropped until a wide one exists. Big screen: slimmer side panel (jail stays in it). iPad landscape: the board
+edge to edge with the joystick and power-ups over its bottom edge between the corners (corners stay clear), messages at
+the top middle. Shark Bay shares the board's `BoardW`, `Token` and the wide CSS (docs/SHARK-PLAN.md).
+
 ## Movement and what counts (server checks)
 
 iPads in a class must not each hit the edge function several times a second (Realtime and function limits, docs/CLASSLIVE-PLAN.md). So:

@@ -44,6 +44,11 @@ export const POWER_WORDS: Record<Power, { name: string; emoji: string; how: stri
 
 /** A corner zone's side (corners are squares in the board's corners). */
 export const ZONE = 0.26;
+/**
+ * How wide the board is, in board heights: widescreen, so it fills a projector (27 Nov 2026 NZ). The four corners sit
+ * in the wide board's corners and the middle is stretched. Games made before are square (1, no `w`).
+ */
+export const CORNERS_W = 1.6;
 /** Board units a second. Crossing a side takes about 3 s. */
 export const SPEED = 0.3;
 export const BOOST = 1.6;
@@ -110,6 +115,8 @@ export interface Round {
   swap?: boolean;
   /** Caught for staying in last round's corner (second half). */
   stayed?: string[];
+  /** The board's width (height 1); missing in square games made before 27 Nov 2026. */
+  w?: number;
 }
 
 /** An untimed game swaps corners from this round. */
@@ -167,6 +174,8 @@ export interface CornersGame {
   /** Shark Bay plays on Four Corners' engine (shared/classlive/shark.ts). Missing: Four Corners. */
   variant?: 'shark';
   map: CornerMap;
+  /** The board's width (height 1); missing in square games made before 27 Nov 2026. */
+  w?: number;
   /** 0 before the first round. */
   round: Round | null;
   mine: Record<string, CornersMine>;
@@ -192,10 +201,14 @@ export type CornersEvent =
 // ---- Board helpers ----
 
 export const START: Spot = { x: 0.5, y: 0.5 };
+/** A game's (or round's) board width; 1 for square games. */
+export const widthOf = (x: { w?: number } | null | undefined): number => x?.w ?? 1;
+/** The middle of a board `w` wide. */
+export const centreOf = (w = 1): Spot => ({ x: w / 2, y: 0.5 });
 
-export function cornerOf(p: Spot): Corner | null {
+export function cornerOf(p: Spot, w = 1): Corner | null {
   const left = p.x <= ZONE;
-  const right = p.x >= 1 - ZONE;
+  const right = p.x >= w - ZONE;
   const top = p.y <= ZONE;
   const bottom = p.y >= 1 - ZONE;
   if (top && left) return 0;
@@ -205,16 +218,17 @@ export function cornerOf(p: Spot): Corner | null {
   return null;
 }
 
-export const cornerCentre = (c: Corner): Spot => ({ x: c === 0 || c === 3 ? ZONE / 2 : 1 - ZONE / 2, y: c < 2 ? ZONE / 2 : 1 - ZONE / 2 });
+export const cornerCentre = (c: Corner, w = 1): Spot => ({ x: c === 0 || c === 3 ? ZONE / 2 : w - ZONE / 2, y: c < 2 ? ZONE / 2 : 1 - ZONE / 2 });
 
 const dist = (a: Spot, b: Spot) => Math.hypot(a.x - b.x, a.y - b.y);
 const clamp01 = (v: number) => Math.min(1 - AVATAR_R, Math.max(AVATAR_R, v));
+const clampW = (v: number, w: number) => Math.min(w - AVATAR_R, Math.max(AVATAR_R, v));
 
-/** A start spot in the middle, spread by player number so avatars don't sit on top of each other. */
-export function startSpot(i: number): Spot {
+/** A start spot in the middle (of a board `w` wide), spread by player number so avatars don't sit on top of each other. */
+export function startSpot(i: number, w = 1): Spot {
   const a = i * 2.399963; // golden angle
   const r = 0.03 + 0.11 * Math.sqrt(((i % 40) + 0.5) / 40);
-  return { x: 0.5 + Math.cos(a) * r, y: 0.5 + Math.sin(a) * r };
+  return { x: w / 2 + Math.cos(a) * r, y: 0.5 + Math.sin(a) * r };
 }
 
 /** A jail seat (drawn beside the board). */
@@ -231,7 +245,7 @@ export function rollerAt(r: Roller, t: number): Spot {
 }
 
 /** What movement needs of a round (the pupils' copy of a round has these too). */
-export type MoveRound = Pick<Round, 'storms' | 'ice' | 'teleports' | 'roller' | 'hole' | 'gate' | 'runEnd'> & { roller2?: Roller | null };
+export type MoveRound = Pick<Round, 'storms' | 'ice' | 'teleports' | 'roller' | 'hole' | 'gate' | 'runEnd'> & { roller2?: Roller | null; w?: number };
 
 /** A round's rollers (one or two). */
 export const rollersOf = (round: Pick<MoveRound, 'roller' | 'roller2'>): Roller[] => [round.roller, round.roller2].filter((x): x is Roller => !!x);
@@ -254,17 +268,21 @@ export interface MoveState {
 /**
  * One step of movement (device and preview): `dir` is the joystick (length 0 to 1), dt in ms. Storms slow, ice keeps
  * momentum, the hole and a shut gate are walls (unless a ghost), teleports warp to the other end, the roller bumps.
+ * The board is the round's `w` wide (or `opts.w` with no round; 1 when neither says).
  */
-export function stepMove(m: MoveState, dir: Spot, dtMs: number, round: MoveRound | null, t: number, opts: { boost: boolean; ghost: boolean }): MoveState {
+export function stepMove(m: MoveState, dir: Spot, dtMs: number, round: MoveRound | null, t: number, opts: { boost: boolean; ghost: boolean; w?: number }): MoveState {
   const dt = Math.min(100, Math.max(0, dtMs)) / 1000;
+  const w = round?.w ?? opts.w ?? 1;
+  const mid = centreOf(w);
+  const cx = (v: number) => clampW(v, w);
   if (m.stun !== undefined && t < m.stun) {
     // Flying: no steering, slowing down as you go; walls still hold.
     const k = Math.max(0, 1 - dt * 2.2);
     const v = { x: m.v.x * k, y: m.v.y * k };
-    let p = { x: clamp01(m.p.x + v.x * dt), y: clamp01(m.p.y + v.y * dt) };
-    if (round?.hole && !opts.ghost && dist(p, START) < HOLE_R + AVATAR_R) {
-      const a = Math.atan2(p.y - 0.5, p.x - 0.5);
-      p = { x: 0.5 + Math.cos(a) * (HOLE_R + AVATAR_R), y: 0.5 + Math.sin(a) * (HOLE_R + AVATAR_R) };
+    let p = { x: cx(m.p.x + v.x * dt), y: clamp01(m.p.y + v.y * dt) };
+    if (round?.hole && !opts.ghost && dist(p, mid) < HOLE_R + AVATAR_R) {
+      const a = Math.atan2(p.y - mid.y, p.x - mid.x);
+      p = { x: mid.x + Math.cos(a) * (HOLE_R + AVATAR_R), y: mid.y + Math.sin(a) * (HOLE_R + AVATAR_R) };
     }
     return { ...m, p, v };
   }
@@ -279,19 +297,19 @@ export function stepMove(m: MoveState, dir: Spot, dtMs: number, round: MoveRound
     const k = Math.min(1, dt * 1.5);
     v = { x: m.v.x + (d.x * speed - m.v.x) * k, y: m.v.y + (d.y * speed - m.v.y) * k };
   } else v = { x: d.x * speed, y: d.y * speed };
-  let p = { x: clamp01(m.p.x + v.x * dt), y: clamp01(m.p.y + v.y * dt) };
+  let p = { x: cx(m.p.x + v.x * dt), y: clamp01(m.p.y + v.y * dt) };
   if (round && !opts.ghost) {
-    if (round.hole && dist(p, START) < HOLE_R + AVATAR_R) {
+    if (round.hole && dist(p, mid) < HOLE_R + AVATAR_R) {
       // Pushed back out to the rim.
-      const a = Math.atan2(p.y - 0.5, p.x - 0.5);
-      p = { x: 0.5 + Math.cos(a) * (HOLE_R + AVATAR_R), y: 0.5 + Math.sin(a) * (HOLE_R + AVATAR_R) };
+      const a = Math.atan2(p.y - mid.y, p.x - mid.x);
+      p = { x: mid.x + Math.cos(a) * (HOLE_R + AVATAR_R), y: mid.y + Math.sin(a) * (HOLE_R + AVATAR_R) };
     }
-    if (gateShut(round, t) && round.gate !== null && cornerOf(p) === round.gate && cornerOf(m.p) !== round.gate) p = { ...m.p };
+    if (gateShut(round, t) && round.gate !== null && cornerOf(p, w) === round.gate && cornerOf(m.p, w) !== round.gate) p = { ...m.p };
     for (const ro of rollersOf(round)) {
       const r = rollerAt(ro, t);
       if (dist(p, r) < ro.r + AVATAR_R) {
         // Knocked flying out of the corners, towards the middle of the board, plus a shove the way it rolls.
-        const s = ro.at < 0.5 ? 1 : -1;
+        const s = ro.at < (ro.axis === 'y' ? w / 2 : 0.5) ? 1 : -1;
         const phase = (t % ro.periodMs) / ro.periodMs;
         const fwd = phase < 0.5 ? 1 : -1;
         const kx = ro.axis === 'x' ? fwd * 0.45 : s;
@@ -300,7 +318,7 @@ export function stepMove(m: MoveState, dir: Spot, dtMs: number, round: MoveRound
         const kv = { x: (kx / kl) * KNOCK_SPEED, y: (ky / kl) * KNOCK_SPEED };
         // Out of its way at once, then flying.
         const push = ro.r + AVATAR_R + 0.01;
-        const out = ro.axis === 'x' ? { x: p.x, y: clamp01(r.y + s * push) } : { x: clamp01(r.x + s * push), y: p.y };
+        const out = ro.axis === 'x' ? { x: p.x, y: clamp01(r.y + s * push) } : { x: cx(r.x + s * push), y: p.y };
         return { p: out, v: kv, stun: t + KNOCK_MS, hitAt: t };
       }
     }
@@ -308,8 +326,8 @@ export function stepMove(m: MoveState, dir: Spot, dtMs: number, round: MoveRound
   if (round) {
     for (const tp of round.teleports) {
       // Walking onto one end puts you just past the other (moving in the same direction, so you don't bounce back).
-      if (dist(m.p, tp.a) >= TELEPORT_R && dist(p, tp.a) < TELEPORT_R) return { p: { x: clamp01(tp.b.x + v.x * 0.25), y: clamp01(tp.b.y + v.y * 0.25) }, v };
-      if (dist(m.p, tp.b) >= TELEPORT_R && dist(p, tp.b) < TELEPORT_R) return { p: { x: clamp01(tp.a.x + v.x * 0.25), y: clamp01(tp.a.y + v.y * 0.25) }, v };
+      if (dist(m.p, tp.a) >= TELEPORT_R && dist(p, tp.a) < TELEPORT_R) return { p: { x: cx(tp.b.x + v.x * 0.25), y: clamp01(tp.b.y + v.y * 0.25) }, v };
+      if (dist(m.p, tp.b) >= TELEPORT_R && dist(p, tp.b) < TELEPORT_R) return { p: { x: cx(tp.a.x + v.x * 0.25), y: clamp01(tp.a.y + v.y * 0.25) }, v };
     }
   }
   return { p, v: onIce ? v : { x: 0, y: 0 }, ...(m.hitAt !== undefined ? { hitAt: m.hitAt } : {}) };
@@ -339,39 +357,47 @@ export function mechanicsFor(n: number, random: () => number): Set<Mechanic> {
   return out;
 }
 
-/** Somewhere in the open middle band (not in a corner, not on the hole). */
-function openSpot(random: () => number, hole: boolean): Spot {
+/** Somewhere in the open middle band (not in a corner, not on the hole) of a board `w` wide. */
+function openSpot(random: () => number, hole: boolean, w = 1): Spot {
+  const mid = centreOf(w);
   for (let i = 0; i < 20; i++) {
-    const p = { x: 0.12 + random() * 0.76, y: 0.12 + random() * 0.76 };
-    if (cornerOf(p) !== null) continue;
-    if (hole && dist(p, START) < HOLE_R + 0.06) continue;
+    const p = { x: 0.12 + random() * (w - 0.24), y: 0.12 + random() * 0.76 };
+    if (cornerOf(p, w) !== null) continue;
+    if (hole && dist(p, mid) < HOLE_R + 0.06) continue;
     return p;
   }
-  return { x: 0.5, y: 0.2 };
+  return { x: w / 2, y: 0.2 };
 }
 
 export function makeRound(g: CornersGame, n: number, startAt: number, random: () => number, players: number): Round {
   const has = mechanicsFor(n, random);
   const hole = has.has('hole');
-  const storms: Circle[] = has.has('storm') ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({ ...openSpot(random, hole), r: 0.12 + random() * 0.06 })) : [];
-  const ice: Circle[] = has.has('ice') ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({ ...openSpot(random, hole), r: 0.1 + random() * 0.05 })) : [];
+  const w = widthOf(g);
+  // A wider board gets more of everything, so the stretched middle isn't empty (the same as before on a square one).
+  const more = (k: number) => Math.round(k * w);
+  const storms: Circle[] = has.has('storm') ? Array.from({ length: more(1 + Math.floor(random() * 2)) }, () => ({ ...openSpot(random, hole, w), r: 0.12 + random() * 0.06 })) : [];
+  const ice: Circle[] = has.has('ice') ? Array.from({ length: more(1 + Math.floor(random() * 2)) }, () => ({ ...openSpot(random, hole, w), r: 0.1 + random() * 0.05 })) : [];
   // A teleport joins two opposite sides, so it can save a long run.
   const teleports: Teleport[] = [];
   if (has.has('teleport')) {
     const along = 0.3 + random() * 0.4;
-    teleports.push(random() < 0.5 ? { a: { x: 0.08, y: along }, b: { x: 0.92, y: 1 - along } } : { a: { x: along, y: 0.08 }, b: { x: 1 - along, y: 0.92 } });
+    teleports.push(random() < 0.5 ? { a: { x: 0.08, y: along }, b: { x: w - 0.08, y: 1 - along } } : { a: { x: along * w, y: 0.08 }, b: { x: (1 - along) * w, y: 0.92 } });
   }
-  // Two rollers, one each way, rolling through the corners (in the middle they missed everyone).
+  // Two rollers, one each way, rolling through the corners (in the middle they missed everyone). On a wide board the
+  // one rolling across rolls the whole width (`span`), a little slower so it crosses at the same speed, and the one
+  // rolling down comes by the left or the right corners.
   const cornerLine = () => (random() < 0.5 ? 0.09 + random() * 0.1 : 0.81 + random() * 0.1);
-  const roller: Roller | null = has.has('roller') ? { axis: 'x', at: cornerLine(), r: 0.08, periodMs: 4500 + Math.floor(random() * 1500) } : null;
-  const roller2: Roller | null = has.has('roller') ? { axis: 'y', at: cornerLine(), r: 0.08, periodMs: 5200 + Math.floor(random() * 1500) } : null;
+  const sideLine = (v: number) => (v < 0.5 ? v : w - (1 - v));
+  const roller: Roller | null = has.has('roller')
+    ? { axis: 'x', at: cornerLine(), r: 0.08, periodMs: Math.round((4500 + Math.floor(random() * 1500)) * w), ...(w !== 1 ? { span: w } : {}) } : null;
+  const roller2: Roller | null = has.has('roller') ? { axis: 'y', at: sideLine(cornerLine()), r: 0.08, periodMs: 5200 + Math.floor(random() * 1500) } : null;
   const gate: Corner | null = has.has('gate') ? pick(CORNERS, random) : null;
   const twist = has.has('twist') ? (random() < 0.6 ? 'two' : 'lucky') : null;
   const items: Item[] = [];
   if (has.has('items')) {
     // About one item for every 6 pupils, at least 2.
-    const count = Math.max(2, Math.min(8, Math.round(players / 6)));
-    for (let i = 0; i < count; i++) items.push({ id: g.nextItem++, power: pick(POWERS, random), by: null, ...openSpot(random, hole) });
+    const count = Math.max(2, Math.min(more(8), Math.round((players / 6) * w)));
+    for (let i = 0; i < count; i++) items.push({ id: g.nextItem++, power: pick(POWERS, random), by: null, ...openSpot(random, hole, w) });
   }
   const first = pick(CORNERS, random);
   const rolled: Corner[] = twist === 'lucky' ? [] : twist === 'two' ? [first, ((first + 1 + Math.floor(random() * 3)) % 4) as Corner] : [first];
@@ -379,18 +405,20 @@ export function makeRound(g: CornersGame, n: number, startAt: number, random: ()
   return {
     n, startAt, runEnd: startAt + run, rollEnd: startAt + run + ROLL_MS, showEnd: startAt + run + ROLL_MS + SHOW_MS,
     storms, ice, teleports, roller, roller2, hole, fog: has.has('fog'), gate, twist, items, rolled, caught: null, saved: [],
+    ...(w !== 1 ? { w } : {}),
     ...(g.halfAt !== undefined ? startAt >= g.halfAt : n >= SWAP_ROUND) ? { swap: true } : {},
   };
 }
 
 export function newCorners(map: CornerMap, runS: number = RUN_DEFAULT_S): CornersGame {
-  return { kind: 'corners', map, round: null, mine: {}, nextItem: 1, runS: runSeconds(runS) };
+  return { kind: 'corners', map, w: CORNERS_W, round: null, mine: {}, nextItem: 1, runS: runSeconds(runS) };
 }
 
-export function freshMine(i: number): CornersMine {
+/** A new pupil's part of the game, standing in the middle of a board `w` wide. */
+export function freshMine(i: number, w = 1): CornersMine {
   return {
     safe: 0, score: 0, caught: 0, jailedIn: null, jailRight: 0, escapes: 0, held: null, shieldIn: null, speedTo: null, ghostTo: null,
-    doubleIn: null, crystalIn: null, jumpIn: null, powersUsed: 0, grabs: 0, freed: 0, answered: 0, lastAt: -ANSWER_GAP_MS, placed: 0, spot: startSpot(i),
+    doubleIn: null, crystalIn: null, jumpIn: null, powersUsed: 0, grabs: 0, freed: 0, answered: 0, lastAt: -ANSWER_GAP_MS, placed: 0, spot: startSpot(i, w),
   };
 }
 
@@ -456,7 +484,7 @@ export function advance(g: CornersGame, t: number, order: string[], positions: P
         m.jailedIn = null;
         m.jailRight = 0;
         m.escapes++;
-        m.spot = startSpot(order.indexOf(id));
+        m.spot = startSpot(order.indexOf(id), widthOf(g));
         m.placed++;
         events.push({ type: 'escape', t: startAt, pupil: id });
       }
@@ -477,7 +505,7 @@ function endRun(g: CornersGame, r: Round, order: string[], positions: Positions)
   for (const id of order) {
     const m = g.mine[id];
     if (!m || m.jailedIn !== null) continue;
-    const c = cornerOf(positions[id] ?? m.spot);
+    const c = cornerOf(positions[id] ?? m.spot, widthOf(g));
     if (c !== null) inCorner[c]++;
   }
   if (!lucky) {
@@ -490,7 +518,7 @@ function endRun(g: CornersGame, r: Round, order: string[], positions: Positions)
     if (!m || m.jailedIn !== null) continue;
     const at = positions[id] ?? m.spot;
     m.spot = { x: at.x, y: at.y };
-    const c = cornerOf(at);
+    const c = cornerOf(at, widthOf(g));
     const stayedPut = !!r.swap && c !== null && m.lastCorner === c;
     const out = c === null || (!lucky && (r.rolled.includes(c) || stayedPut));
     if (stayedPut && out) stayed.push(id);
@@ -556,7 +584,7 @@ export function questionFor(g: CornersGame, who: string, at: Spot | undefined, t
   if (!m) return null;
   if (m.jailedIn !== null) return m.jailRight < JAIL_RIGHT ? 'jail' : null;
   const r = g.round;
-  if (!m.held || !r || r.caught !== null || t >= r.runEnd || !at || cornerOf(at) === null) return null;
+  if (!m.held || !r || r.caught !== null || t >= r.runEnd || !at || cornerOf(at, widthOf(g)) === null) return null;
   return 'power';
 }
 
@@ -620,7 +648,7 @@ export function jump(g: CornersGame, who: string, corner: unknown, order: string
   if (!r || !m || m.jumpIn !== r.n || r.caught !== null || t >= r.runEnd || m.jailedIn !== null) return { ok: false };
   if (!CORNERS.includes(corner as Corner)) return { ok: false };
   if (r.gate === corner && gateShut(r, t)) return { ok: false };
-  const c = cornerCentre(corner as Corner);
+  const c = cornerCentre(corner as Corner, widthOf(g));
   const i = order.indexOf(who);
   const spot = { x: c.x + (((i % 5) - 2) * 0.018), y: c.y + ((Math.floor(i / 5) % 5) - 2) * 0.018 };
   m.jumpIn = null;
@@ -661,8 +689,8 @@ export function clampMove(prev: { x: number; y: number; at: number } | undefined
 }
 
 /** A pretend pupil's joystick: head for a corner (a different one now and then), a little wobbly. */
-export function pretendDir(p: Spot, target: Corner, random: () => number): Spot {
-  const c = cornerCentre(target);
+export function pretendDir(p: Spot, target: Corner, random: () => number, w = 1): Spot {
+  const c = cornerCentre(target, w);
   const dx = c.x - p.x + (random() - 0.5) * 0.1;
   const dy = c.y - p.y + (random() - 0.5) * 0.1;
   const len = Math.hypot(dx, dy);

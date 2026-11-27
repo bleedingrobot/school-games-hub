@@ -9,8 +9,8 @@ import { answerBox, apply, BODY, makeChain, newSerpent, SERPENT_LEVELS } from '.
 import { gridFor, maxOpen, openCap, UNTIMED_PACE_MS, type MuralGame } from './mural';
 import { ARMS, armCounts, isTrue, laggingArm, linkOf, newStars, readFact, tryFact, type Anchor } from './stars';
 import { lagHint } from '../../src/games/classlive/arms';
-import { boatAt, inBay, isShark, makeBayRound, newShark, quarterMid, quarterOf, sharkAdvance, spinAt, type BayRound, type SharkGame } from './shark';
-import { advance, clampMove, cornerOf, freeAt, freshMine, grab, makeRound, ROLL_MS, SHOW_MS, MAX_SPEED, newCorners, rollerAt, rollersOf, startSpot, stepMove, type CornersGame } from './corners';
+import { bayCentre, boatAt, inBay, isShark, makeBayRound, newShark, POOL_R, quarterMid, quarterOf, sharkAdvance, sharkMove, SHARK_W, spinAt, type BayRound, type SharkGame } from './shark';
+import { advance, AVATAR_R, clampMove, cornerOf, CORNERS_W, freeAt, freshMine, grab, makeRound, ROLL_MS, SHOW_MS, MAX_SPEED, newCorners, rollerAt, rollersOf, startSpot, stepMove, ZONE, type CornersGame } from './corners';
 
 const k: Anchor = { x: 6, y: 7, p: 42 };
 const arm = (text: string) => {
@@ -312,7 +312,7 @@ describe('Class Live server', () => {
     const sw = newCorners('snow');
     sw.mine = { a: { ...freshMine(0), lastCorner: 0 }, b: { ...freshMine(1), lastCorner: 0 } };
     sw.round = { ...makeRound(sw, 9, 0, rng(9), 2), swap: true, twist: null, rolled: [2] };
-    advance(sw, sw.round.runEnd, ['a', 'b'], { a: { x: 0.05, y: 0.05 }, b: { x: 0.95, y: 0.05 } }, rng(1));
+    advance(sw, sw.round.runEnd, ['a', 'b'], { a: { x: 0.05, y: 0.05 }, b: { x: CORNERS_W - 0.05, y: 0.05 } }, rng(1));
     expect([sw.round.stayed, sw.round.caught, sw.mine.b.lastCorner]).toEqual([['a'], ['a'], 1]);
     // Out of jail with all 3 right: free when the round after the one they sit out starts.
     sw.mine.a.jailRight = 3;
@@ -335,12 +335,12 @@ describe('Class Live server', () => {
     const br = { ...makeBayRound(bayG, 2, 0, rng(5), 4), twist: null, rolled: [0 as const] };
     expect([makeBayRound(bayG, 1, 0, rng(1), 4).spinRate, br.spinRate !== 0, br.boats.length, br.boats[0].seats]).toEqual([0, true, 1, 2]);
     const boatSpot = boatAt(br.boats[0], br, br.runEnd);
-    const tl = quarterMid(0, spinAt(br, br.runEnd));
+    const tl = quarterMid(0, spinAt(br, br.runEnd), 0.3, SHARK_W);
     const near = (d: number) => ({ x: boatSpot.x + d, y: boatSpot.y });
     bayG.round = br;
     bayG.mine = Object.fromEntries(['j', 'q', 'b1', 'b2', 'b3'].map((id, i) => [id, freshMine(i)]));
-    sharkAdvance(bayG, br.runEnd, Object.keys(bayG.mine), { j: { x: 0.5, y: 0.5 }, q: tl, b1: near(0), b2: near(0.01), b3: near(0.06) }, rng(2));
-    const boatQ = quarterOf(near(0.06), spinAt(br, br.runEnd));
+    sharkAdvance(bayG, br.runEnd, Object.keys(bayG.mine), { j: bayCentre(SHARK_W), q: tl, b1: near(0), b2: near(0.01), b3: near(0.06) }, rng(2));
+    const boatQ = quarterOf(near(0.06), spinAt(br, br.runEnd), SHARK_W);
     expect(br.caught).toEqual(['j', 'q', ...(boatQ === 0 ? ['b3'] : [])]);
     expect([[...(br as BayRound).boated!].sort(), (bayG.mine.b1 as { boats?: number }).boats]).toEqual([['b1', 'b2'], 1]);
     expect(inBay({ x: 0, y: 0 }).x).toBeGreaterThan(0.1);
@@ -360,6 +360,70 @@ describe('Class Live server', () => {
     const spaid = [...sc.db.paid.values()].find((p) => p.activity === 'shark')!;
     expect(spaid.players.every((p) => p.safe === 0 && p.extra && p.extra.shark_safe >= 0)).toBe(true);
     expect(spaid.players.some((p) => (p.extra?.shark_safe ?? 0) > 0)).toBe(true);
+    // Both played on the wide board: every saved spot on it (Shark Bay's in the oval bay), and the wide parts used.
+    const cornerSpots = Object.values(pc.db.spots.get(room)!);
+    expect(cornerSpots.every((p) => p.x >= 0 && p.x <= CORNERS_W && p.y >= 0 && p.y <= 1) && cornerSpots.some((p) => p.x > 1)).toBe(true);
+    const sharkSpots = Object.values(sc.db.spots.get(sroom)!);
+    const inOval = (p: { x: number; y: number }) => ((p.x - SHARK_W / 2) / (POOL_R * SHARK_W)) ** 2 + ((p.y - 0.5) / POOL_R) ** 2 <= 1.0001;
+    expect(sharkSpots.every(inOval) && sharkSpots.some((p) => p.x > 1)).toBe(true);
+
+    // New games are wide (1.6), with everything on the board; older square games stay square.
+    {
+      const fc = newCorners('castle');
+      const sb = newShark('lagoon');
+      expect([fc.w, sb.w, startSpot(0, CORNERS_W).x > 0.7]).toEqual([1.6, 1.6, true]);
+      // Corners sit in the wide board's corners; the stretched middle is no corner. A square game keeps its old corners.
+      expect([cornerOf({ x: 1.5, y: 0.1 }, CORNERS_W), cornerOf({ x: 1.5, y: 0.9 }, CORNERS_W), cornerOf({ x: 0.9, y: 0.1 }, CORNERS_W), cornerOf({ x: 0.9, y: 0.1 })]).toEqual([1, 2, null, 1]);
+      for (let n = 1; n <= 14; n++) {
+        const r = makeRound(fc, n, 0, rng(n), 30);
+        expect(r.w).toBe(CORNERS_W);
+        const spots = [...r.storms, ...r.ice, ...r.items, ...r.teleports.flatMap((tp) => [tp.a, tp.b])];
+        expect(spots.every((p) => p.x > 0 && p.x < CORNERS_W && p.y > 0 && p.y < 1)).toBe(true);
+        expect([...r.storms, ...r.ice, ...r.items].every((p) => cornerOf(p, CORNERS_W) === null)).toBe(true);
+        if (r.roller) expect(r.roller.span).toBe(CORNERS_W);
+        // The roller coming down still rolls through the corners (left or right ones).
+        if (r.roller2) expect(r.roller2.at < ZONE || r.roller2.at > CORNERS_W - ZONE).toBe(true);
+      }
+      // More to grab on a wider board.
+      expect(makeRound(fc, 2, 0, rng(2), 30).items.length).toBeGreaterThan(makeRound({ ...newCorners('castle'), w: undefined }, 2, 0, rng(2), 30).items.length);
+      // Running stays on the wide board; a square game stays on the square.
+      const run = (w: number | undefined) => {
+        let m = { p: { x: 0.9, y: 0.5 }, v: { x: 0, y: 0 } };
+        for (let i = 0; i < 60; i++) m = stepMove(m, { x: 1, y: 0 }, 100, { storms: [], ice: [], teleports: [], roller: null, hole: false, gate: null, runEnd: 99_999, w }, 0, { boost: false, ghost: false });
+        return m.p.x;
+      };
+      expect([run(CORNERS_W), run(undefined)]).toEqual([CORNERS_W - AVATAR_R, 1 - AVATAR_R]);
+      const old = makeRound({ ...newCorners('snow'), w: undefined }, 5, 0, rng(5), 30);
+      expect([old.w, [...old.storms, ...old.ice, ...old.items].every((p) => p.x < 1)]).toEqual([undefined, true]);
+
+      // Shark Bay: an oval bay. The quarters are angles with x squashed by w, so each always has a quarter of the water.
+      const inOval = (p: { x: number; y: number }) => ((p.x - SHARK_W / 2) / (POOL_R * SHARK_W)) ** 2 + ((p.y - 0.5) / POOL_R) ** 2 < 1;
+      for (const spin of [0, 0.7, 2.1]) {
+        for (const q of [0, 1, 2, 3] as const) expect(quarterOf(quarterMid(q, spin, 0.3, SHARK_W), spin, SHARK_W)).toBe(q);
+        const count = [0, 0, 0, 0];
+        for (let x = 0; x < SHARK_W; x += 0.01) for (let y = 0; y < 1; y += 0.01) {
+          const p = { x, y };
+          const q = inOval(p) && Math.hypot(x - 0.8, y - 0.5) > 0.2 ? quarterOf(p, spin, SHARK_W) : null;
+          if (q !== null) count[q]++;
+        }
+        const all = count.reduce((a, b) => a + b, 0);
+        expect(count.every((c) => Math.abs(c / all - 0.25) < 0.01)).toBe(true);
+      }
+      // The far right of the wide bay is water in the quarter straight right of the jetty (as on the square board).
+      expect(quarterOf({ x: 1.45, y: 0.5 }, 0.3, SHARK_W)).toBe(quarterOf({ x: 0.9, y: 0.5 }, 0.3));
+      expect([quarterOf(bayCentre(SHARK_W), 0, SHARK_W), inOval(inBay({ x: 0, y: 0 }, SHARK_W)), Math.round(inBay({ x: 1.6, y: 0.5 }, SHARK_W).x * 1000)]).toEqual([null, true, Math.round((0.8 + POOL_R * SHARK_W - AVATAR_R) * 1000)]);
+      for (let n = 1; n <= 12; n++) {
+        const r = makeBayRound(sb, n, 0, rng(n), 30);
+        expect(r.w).toBe(SHARK_W);
+        const spots = [...r.storms, ...r.ice, ...r.items, ...r.teleports.flatMap((tp) => [tp.a, tp.b]), ...[0, 2000, 5000, 9000].flatMap((t) => r.boats.map((b) => boatAt(b, r, t)))];
+        expect(spots.every(inOval)).toBe(true);
+        if (r.roller) expect(r.roller.span).toBe(SHARK_W);
+      }
+      // Swimming stays in the oval, even before the first round (the pad passes the width).
+      let m = { p: bayCentre(SHARK_W), v: { x: 0, y: 0 } };
+      for (let i = 0; i < 80; i++) m = sharkMove(m, { x: 1, y: -1 }, 100, null, 0, { boost: false, ghost: false, w: SHARK_W });
+      expect([inOval(m.p), m.p.x > 1.1]).toEqual([true, true]);
+    }
   });
 
   it('a lobby game: any pupil of the school joins by its room or code; a class game and other schools stay closed', async () => {
