@@ -120,7 +120,18 @@ Asked on question cards in the project thread, 27 Nov 2026. Answers go here.
 6. How many classes, and can you swap? **4 classes, kept all season** (James, 27 Nov): swap at a new season. Which four: follow-up card.
 7. Where does gear come from? **Chest plus a sticker shop** (James, 27 Nov): main gear from the chest; fights earn stickers for fun extras (hats, pets).
 8. Classmates in it? **Class boss together** (James, 27 Nov): the class's right answers chip away at a shared Friday boss's health bar; never ranks pupils by maths.
-9. Art style?
+9. Art style? James, 27 Nov: wants to see style options first. Style test painting on the gaming PC (4 looks: toon, clay, book, toy; config `docs/bonkers-art/config.json`), small copies in `style-test/`. Not final art.
 10. How wacky? **Full bonkers, mild toilet** (James, 27 Nov): gentle burp, smelly sock and Toilet Roll Towers jokes are in; still no gore, romance or anything scary.
 11. Name? **Bonkers Quest** (James, 27 Nov). Suggested id `bonkers`.
 12. Daily quest: one, or pick from two? **Pick 1 of 2** (James, 27 Nov): two zones or monsters on the board each morning.
+
+### Round 2 (asked 27 Nov 2026)
+
+13. Which four classes?
+14. Season length?
+15. How many levels and trainers?
+16. Missed days?
+17. How the class Friday boss works?
+18. How gear shows on the hero?
+19. Who runs the Wobbly Inn?
+20. What the sticker shop sells?
