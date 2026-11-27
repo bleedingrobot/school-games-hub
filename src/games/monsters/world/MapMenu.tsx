@@ -150,6 +150,7 @@ export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, o
             <label><input type="checkbox" checked={settings.calm} onChange={(e) => onSettingsChange({ ...settings, calm: e.target.checked })} /> Calm (no quick-answer bonus, nothing timed)</label>
             <label><input type="checkbox" checked={settings.multipleChoice} onChange={(e) => onSettingsChange({ ...settings, multipleChoice: e.target.checked })} /> Choose answers (instead of the number pad)</label>
             <label><input type="checkbox" checked={settings.dpad} onChange={(e) => onSettingsChange({ ...settings, dpad: e.target.checked })} /> On-screen arrows (for touch screens)</label>
+            <label><input type="checkbox" checked={settings.tips} onChange={(e) => onSettingsChange({ ...settings, tips: e.target.checked })} /> Show tips on the map (what to do next)</label>
             <p className="mb-empty">Sound follows the speaker button at the top of the page.</p>
             <button type="button" className="mb-btn" onClick={() => onGo('types')}>Who is strong against who?</button>
           </div>

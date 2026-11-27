@@ -28,8 +28,10 @@ beforeEach(() => {
   data.flushQueue.mockResolvedValue('done');
 });
 
+beforeEach(() => localStorage.removeItem('sgh-monsters-tips'));
+
 describe('Maths Monsters opening', () => {
-  it('a new student picks two monsters, and the first save is made straight away saying which', async () => {
+  it('a new student picks two monsters, the first save is made straight away saying which, and the tips can be hidden', async () => {
     data.loadMonsters.mockResolvedValue(opened());
     render(<MonstersPlay />);
     await userEvent.click(await screen.findByRole('button', { name: 'Start walking' }));
@@ -41,5 +43,13 @@ describe('Maths Monsters opening', () => {
     expect(data.writeTail).toHaveBeenCalled();
     expect(data.flushQueue).toHaveBeenCalled();
     expect(await screen.findByText(WORDS.saved)).toBeInTheDocument();
+    // The tips hide with the ✕ (remembered on this device) and come back with the 💡.
+    await userEvent.click(screen.getByRole('button', { name: 'Hide tips' }));
+    expect(screen.queryByText(WORDS.saved)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Tap the map to walk/)).not.toBeInTheDocument();
+    expect(localStorage.getItem('sgh-monsters-tips')).toBe('0');
+    await userEvent.click(screen.getByRole('button', { name: 'Show tips' }));
+    expect(screen.getByText(WORDS.saved)).toBeInTheDocument();
+    expect(localStorage.getItem('sgh-monsters-tips')).toBe('1');
   });
 });
