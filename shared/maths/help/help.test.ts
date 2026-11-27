@@ -97,6 +97,8 @@ it('gives every ladder question a help card that teaches without giving the answ
     expect(helpCardsFor({ parts: ['34/8', '=', '? 2/8'] }).map((c) => c.steps.join(' ')).join(' ')).toContain('40 − 8 = 32');
     expect(helpCardsFor({ parts: '1% of 600 = ?'.split(' ') })[0].title).toBe('1% is divide by 100');
     expect(text('12% × 10 = 10% × ?')).not.toContain('Trade places');
+    // A second way in: the swap card, then Check it the long way.
+    expect(helpCardsFor({ parts: '12% × 10 = 10% × ?'.split(' ') }).map((c) => c.title)).toEqual(['Try a small swap', 'Check it']);
     expect(text('Blue = ?', { prompt: '7 red to 9 blue. There are 42 red.' })).toContain('The bar is one group: 7 red and 9 blue.');
   }
 

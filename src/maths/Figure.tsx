@@ -132,13 +132,25 @@ function Body({ f }: { f: FigureSpec }) {
         <>
           <line x1={120 - dx} y1={75 + dy} x2={120 + dx} y2={75 - dy} className="fig__line" />
           <line x1={120 - dx} y1={75 - dy} x2={120 + dx} y2={75 + dy} className="fig__line" />
-          {/* The two opposite angles: the same arc and tick on each. */}
-          <Arc cx={120} cy={75} r={18} a={-deg / 2} b={deg / 2} />
-          <Arc cx={120} cy={75} r={18} a={180 - deg / 2} b={180 + deg / 2} />
-          <line x1={138} y1={75} x2={146} y2={75} className="fig__arc" />
-          <line x1={102} y1={75} x2={94} y2={75} className="fig__arc" />
-          <Label x={120 + lab} y={75} text={f.angles[0]} />
-          <Label x={120 - lab} y={75} text={f.angles[1]} />
+          {f.next ? (
+            <>
+              {/* The angle and the one beside it above, on the same straight line. */}
+              <Arc cx={120} cy={75} r={18} a={-deg / 2} b={deg / 2} />
+              <Arc cx={120} cy={75} r={24} a={deg / 2} b={180 - deg / 2} />
+              <Label x={120 + lab} y={75} text={f.angles[0]} />
+              <Label x={120} y={75 - Math.min(len - 8, Math.max(34, 34 / (2 * Math.tan(Math.PI / 2 - half))))} text={f.angles[1]} />
+            </>
+          ) : (
+            <>
+              {/* The two opposite angles: the same arc and tick on each. */}
+              <Arc cx={120} cy={75} r={18} a={-deg / 2} b={deg / 2} />
+              <Arc cx={120} cy={75} r={18} a={180 - deg / 2} b={180 + deg / 2} />
+              <line x1={138} y1={75} x2={146} y2={75} className="fig__arc" />
+              <line x1={102} y1={75} x2={94} y2={75} className="fig__arc" />
+              <Label x={120 + lab} y={75} text={f.angles[0]} />
+              <Label x={120 - lab} y={75} text={f.angles[1]} />
+            </>
+          )}
         </>
       );
     }

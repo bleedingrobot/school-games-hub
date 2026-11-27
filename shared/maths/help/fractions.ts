@@ -590,8 +590,16 @@ const percentChange: Helper = (q) => {
     const A = pct(p[0]), B = pct(p[4]), n = num(p[2]);
     if (A !== null && B !== null && n !== null) {
       const ex = [[20, 5, 1], [50, 2, 1], [40, 10, 4], [30, 10, 3]].find(([x, y]) => ![A, B, n].includes(x) && ![A, B, n].includes(y))!;
-      return card('percent-swap', 'Try a small swap', `Try ${ex[0]}% × ${ex[1]} = ${ex[2]}, and ${ex[1]}% × ${ex[0]} = ${ex[2]}. The same!`, 'The percent and the number trade places.',
+      const swap = card('percent-swap', 'Try a small swap', `Try ${ex[0]}% × ${ex[1]} = ${ex[2]}, and ${ex[1]}% × ${ex[0]} = ${ex[2]}. The same!`, 'The percent and the number trade places.',
         `Left side: ${A}% × ${n}. The percent is ${A} and the number is ${n}.`, `Right side: the percent is ${B}. Which number is left over for the gap? ?`);
+      // Check it the long way, only when both steps stay easy: 1% of 10, 20, 50 or 100, and 10%, 25% or 50% on the right.
+      const lots = ({ 10: 10, 25: 4, 50: 2 } as Record<number, number>)[B];
+      if (lots && [10, 20, 50, 100].includes(n)) {
+        const one = show(n / 100), v = show((A * n) / 100);
+        swap.also = card('percent-check', 'Check it', `Left side: 1% of ${n} is ${one}, so ${A}% of ${n} is ${A} × ${one} = ${v}.`,
+          `The right side must be ${v} too: ${B}% of the gap is ${v}.`, `${B}% is 1 of ${lots} equal parts, so the gap is ${lots} lots of ${v}: ${v} × ${lots} = ?`);
+      }
+      return swap;
     }
   }
   return null;

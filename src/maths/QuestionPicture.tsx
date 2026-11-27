@@ -5,6 +5,7 @@
  */
 import type { ReactNode } from 'react';
 import type { Picture } from '../../shared/maths/pictures';
+import type { BalanceSide } from '../../shared/maths/pictures/types';
 import { Figure } from './Figure';
 
 /** The room a picture is drawn in (viewBox units) and the widest it shows (CSS px). */
@@ -541,32 +542,136 @@ function Clock24() {
   );
 }
 
-function Balance({ left, right }: { left: string; right: string }) {
-  const lw = Math.max(88, textW(left, 9) + 22);
-  const rw = Math.max(88, textW(right, 9) + 22);
+const SQ = 11; // a unit square
+const SQ_GAP = 2;
+const BOX_H = 24;
+const BOX_GAP = 4;
+
+/** What sits on one pan, worked out once so the pan knows its size. */
+function panLayout(b: BalanceSide | undefined, fallback: string) {
+  if (!b) return { w: Math.max(88, textW(fallback, 9) + 22), h: 30, boxes: [] as { x: number; y: number; w: number; label: string }[], squares: [] as { x: number; y: number; gone: boolean }[], block: null as { w: number; label: string } | null, text: fallback, boxW: 0, sqW: 0 };
+  const boxes: { x: number; y: number; w: number; label: string }[] = [];
+  const squares: { x: number; y: number; gone: boolean }[] = [];
+  let block: { w: number; label: string } | null = null;
+  let w = 0;
+  let boxW = 0;
+  let sqW = 0;
+  let boxRows = 0;
+  if (b.letter) {
+    const n = b.letters ?? 1;
+    const bw = Math.max(28, textW(b.letter, 9) + 14);
+    const cols = n <= 4 ? n : Math.ceil(n / Math.ceil(n / 4));
+    boxRows = Math.ceil(n / cols);
+    for (let i = 0; i < n; i++) boxes.push({ x: (i % cols) * (bw + BOX_GAP), y: Math.floor(i / cols) * (BOX_H + BOX_GAP), w: bw, label: b.letter });
+    boxW = cols * bw + (cols - 1) * BOX_GAP;
+    w = boxW;
+  }
+  const loose = (b.units ?? 0) + (b.gone ?? 0);
+  const perRow = 10;
+  const unitRows = Math.ceil(loose / perRow);
+  const boxH = boxRows * (BOX_H + BOX_GAP);
+  for (let i = 0; i < loose; i++) squares.push({ x: (i % perRow) * (SQ + SQ_GAP), y: boxH + Math.floor(i / perRow) * (SQ + SQ_GAP), gone: i >= (b.units ?? 0) });
+  if (loose) {
+    sqW = Math.min(loose, perRow) * (SQ + SQ_GAP) - SQ_GAP;
+    w = Math.max(w, sqW);
+  }
+  let h = boxH + unitRows * (SQ + SQ_GAP);
+  if (b.block) {
+    block = { w: Math.max(56, textW(b.block, 9) + 20), label: b.block };
+    w = Math.max(w, block.w);
+    h = Math.max(h, 32);
+  }
+  return { w: Math.max(88, w + 20), h: Math.max(h, 30), boxes, squares, block, text: '', boxW, sqW };
+}
+
+function Balance({ left, right, leftBlocks, rightBlocks }: { left: string; right: string; leftBlocks?: BalanceSide; rightBlocks?: BalanceSide }) {
+  const L = panLayout(leftBlocks, left);
+  const R = panLayout(rightBlocks, right);
+  const lw = L.w;
+  const rw = R.w;
   const gap = 24;
   const w = lw + rw + gap + 16;
   const lc = 8 + lw / 2;
   const rc = w - 8 - rw / 2;
   const mid = w / 2;
   const beamY = 32;
-  const panY = 116;
-  const pan = (cx: number, pw: number, text: string) => (
-    <g>
-      <line x1={cx} y1={beamY} x2={cx - pw / 2} y2={panY} className="fig__line qp__thin" />
-      <line x1={cx} y1={beamY} x2={cx + pw / 2} y2={panY} className="fig__line qp__thin" />
-      <path d={`M ${cx - pw / 2} ${panY} L ${cx + pw / 2} ${panY} L ${cx + pw / 2 - 10} ${panY + 12} L ${cx - pw / 2 + 10} ${panY + 12} Z`} className="qp__counter qp__a" />
-      <T x={cx} y={panY - 14} text={text} />
-    </g>
-  );
+  const hang = Math.max(L.h, R.h) + 10;
+  const topY = beamY + 20;
+  const panY = topY + hang;
+  const pan = (cx: number, pw: number, lay: ReturnType<typeof panLayout>) => {
+    const bx = cx - lay.boxW / 2;
+    const sx = cx - lay.sqW / 2;
+    const top = panY - 6 - lay.h;
+    return (
+      <g>
+        <line x1={cx} y1={beamY} x2={cx - pw / 2} y2={topY} className="fig__line qp__thin" />
+        <line x1={cx} y1={beamY} x2={cx + pw / 2} y2={topY} className="fig__line qp__thin" />
+        <line x1={cx - pw / 2} y1={topY} x2={cx - pw / 2} y2={panY} className="fig__line qp__thin" />
+        <line x1={cx + pw / 2} y1={topY} x2={cx + pw / 2} y2={panY} className="fig__line qp__thin" />
+        <path d={`M ${cx - pw / 2} ${panY} L ${cx + pw / 2} ${panY} L ${cx + pw / 2 - 10} ${panY + 12} L ${cx - pw / 2 + 10} ${panY + 12} Z`} className="qp__counter qp__a" />
+        {lay.text && <T x={cx} y={panY - 14} text={lay.text} />}
+        {lay.boxes.map((b, i) => (
+          <g key={`b${i}`}>
+            <rect x={bx + b.x} y={top + b.y} width={b.w} height={BOX_H} rx={4} className="qp__cell qp__cell--a" />
+            <T x={bx + b.x + b.w / 2} y={top + b.y + BOX_H / 2} text={b.label} />
+          </g>
+        ))}
+        {lay.squares.map((s, i) => (
+          <rect key={`s${i}`} x={sx + s.x} y={top + s.y} width={SQ} height={SQ} className={s.gone ? 'qp__ring' : 'qp__counter qp__b'} />
+        ))}
+        {lay.block && (
+          <g>
+            <rect x={cx - lay.block.w / 2} y={panY - 6 - 28} width={lay.block.w} height={28} rx={4} className="qp__cell qp__cell--b" />
+            <T x={cx} y={panY - 6 - 14} text={lay.block.label} />
+          </g>
+        )}
+      </g>
+    );
+  };
   return (
     <Frame w={w} h={panY + 40} label={`Balance with ${left} on one side and ${right} on the other`}>
       <line x1={lc} y1={beamY} x2={rc} y2={beamY} className="fig__line qp__beam" />
       <line x1={mid} y1={beamY} x2={mid} y2={panY + 22} className="fig__line qp__beam" />
       <path d={`M ${mid - 26} ${panY + 30} L ${mid - 14} ${panY + 22} L ${mid + 14} ${panY + 22} L ${mid + 26} ${panY + 30} Z`} className="fig__shape" />
       <circle cx={mid} cy={beamY} r={5} className="fig__dot" />
-      {pan(lc, lw, left)}
-      {pan(rc, rw, right)}
+      {pan(lc, lw, L)}
+      {pan(rc, rw, R)}
+    </Frame>
+  );
+}
+
+const STRIP_HEADS = ['1s', 'tenths', 'hundredths', 'thousandths', 'ten-thousandths', 'hundred-thousandths', 'millionths'];
+
+/** 10 with a negative power: a 1 in the ones, the point, and a "÷ 10" step for each place. The 1 is never drawn in the last column. */
+function PlaceStrip({ places }: { places: number }) {
+  const heads = STRIP_HEADS.slice(0, places + 1);
+  const cws = heads.map((h, i) => (i === 0 ? 40 : Math.max(50, Math.ceil(h.length * 6.4) + 10)));
+  const xs = cws.map((_, i) => 3 + cws.slice(0, i).reduce((a, b) => a + b, 0));
+  const w = cws.reduce((a, b) => a + b, 0) + 6;
+  const hh = 26;
+  const dh = 40;
+  const ay = 3 + hh + dh + 16;
+  return (
+    <Frame max={360} w={w} h={ay + 28} label={`Place value strip with the 1 in the ones column, and ${places} steps of divide by 10 to the right`}>
+      {heads.map((h, i) => (
+        <g key={i}>
+          <rect x={xs[i]} y={3} width={cws[i]} height={hh} className="qp__cell qp__cell--head" />
+          <rect x={xs[i]} y={3 + hh} width={cws[i]} height={dh} className="qp__cell qp__cell--box" />
+          <T x={xs[i] + cws[i] / 2} y={3 + hh / 2} text={h} cls="qp__small" />
+          {i === 0 && <T x={xs[i] + cws[i] / 2} y={3 + hh + dh / 2} text="1" cls="qp__big" />}
+        </g>
+      ))}
+      <circle cx={xs[1]} cy={3 + hh + dh - 9} r={4} className="fig__dot" />
+      {heads.slice(1).map((_, i) => {
+        const x1 = xs[i] + cws[i] / 2 + 6;
+        const x2 = xs[i + 1] + cws[i + 1] / 2 - 6;
+        return (
+          <g key={i}>
+            <Arrow x1={x1} y1={ay} x2={x2} y2={ay} />
+            <T x={(x1 + x2) / 2} y={ay + 14} text="÷ 10" cls="qp__small" />
+          </g>
+        );
+      })}
     </Frame>
   );
 }
@@ -659,7 +764,9 @@ export function QuestionPicture({ picture }: { picture: Picture }) {
     case 'clock-24':
       return <Clock24 />;
     case 'balance':
-      return <Balance left={picture.left} right={picture.right} />;
+      return <Balance left={picture.left} right={picture.right} leftBlocks={picture.leftBlocks} rightBlocks={picture.rightBlocks} />
+    case 'place-strip':
+      return <PlaceStrip places={picture.places} />;;
     case 'towers':
       return <Towers values={picture.values} mark={picture.mark} />;
     case 'unit-ladder':

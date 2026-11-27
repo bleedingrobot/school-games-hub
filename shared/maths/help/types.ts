@@ -23,6 +23,8 @@ export interface HelpCard {
   title: string;
   /** Two to four short steps, using the question's own numbers. The last one ends with "?" (the pupil finishes it). */
   steps: string[];
+  /** A second way in for the same question, shown straight after this card ("Check it", "Half of the whole"). */
+  also?: HelpCard;
 }
 
 export interface HelpContext {

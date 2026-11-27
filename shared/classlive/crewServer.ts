@@ -6,7 +6,7 @@
  */
 import { markQuestion, sameAnswer } from '../maths/serverQuestions';
 import { answered, canAsk, castVote, fakeWork, grab, jam, lightsOff, purposeAt, type CrewGame } from './crew';
-import { busy, mutate, nextQuestion, no, ok, playerView, roomView, timeOf, type ClassLiveServices, type RoomRow, type Session, type StepReply } from './server';
+import { busy, mutate, nextQuestion, no, ok, playerView, roomSpots, roomView, timeOf, type ClassLiveServices, type RoomRow, type Session, type StepReply } from './server';
 
 const MAX_ANSWER_MS = 120_000;
 
@@ -17,7 +17,7 @@ export async function crewStep(sv: ClassLiveServices, cur: RoomRow, who: string,
   const reply = (session: Session, startedAt: number | null, extra: Record<string, unknown> = {}) =>
     ok({ room, view: roomView(session, startedAt, sv.now()), me: playerView(session, who), now: sv.now(), ...extra });
   const spotOf = async () => {
-    const all = await sv.positions(room);
+    const all = await roomSpots(sv, s0, room);
     return all === 'busy' ? 'busy' as const : all[who];
   };
 

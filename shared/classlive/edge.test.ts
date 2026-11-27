@@ -1,14 +1,54 @@
 import { describe, expect, it } from 'vitest';
-import { EDGE_EVERYONE, EDGE_TEACHERS, EdgeRoom, edgeFor, ghostSync, makeTicket, readTicket, type EdgeServices } from './edge';
+import { EDGE_EVERYONE, EDGE_TEACHERS, EdgeRoom, edgeFor, edgeSync, ghostSync, makeTicket, readTicket, type EdgeServices } from './edge';
 import type { GhostGame } from './ghost';
+import { memoryAutoRoom } from './memoryServices';
 import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock } from './pretendClass';
 import { classLiveStep } from './server';
 
 describe('Class Live on Cloudflare (pilot)', () => {
-  it('every teacher gets Cloudflare for Ghost Tag only', () => {
+  it('which games run on Cloudflare (set-time ones too), and what each game shows: every spot, or Glitches\' names and the dark', async () => {
     expect(edgeFor('any-teacher', 'ghost')).toBe(EDGE_EVERYONE);
     expect(edgeFor(EDGE_TEACHERS[0], 'ghost')).toBe(true);
     expect(edgeFor(EDGE_TEACHERS[0], 'corners')).toBe(false);
+    const clock = pretendClock();
+    const pc = pretendClass({ size: 4, seed: 5, clock, later: () => undefined });
+    const cf = new EdgeRoom();
+    const edge: EdgeServices = { allowed: () => false, positions: async () => cf.positions(), sync: async (_r, s) => cf.applySync(s, clock.now()), ticket: async () => ({ url: '', ticket: '' }) };
+    const sv = { ...pc.services, edge };
+    for (const [activity, on] of [['ghost', true], ['corners', false]] as const) {
+      const room = memoryAutoRoom(pc.db, clock.now(), { activity, lengthMin: 2, min: 2, startsAt: clock.now() + 60_000, code: activity === 'ghost' ? '1111' : '2222' });
+      await classLiveStep(sv, pc.ids[0], { action: 'join', room });
+      expect(pc.db.rooms.get(room)!.session.edge).toBe(on ? true : undefined);
+    }
+    const corners = edgeSync(3, { state: 'live', order: ['a', 'b'], game: { kind: 'corners' } }, 0, []);
+    expect(corners).toMatchObject({ view: 'all', width: 1, roles: { a: [0, 0, 0, 0], b: [0, 0, 0, 0] } });
+    const room = new EdgeRoom();
+    room.applySync(corners, 0);
+    room.move('a', 0.2, 0.2, 0);
+    room.move('b', 0.8, 0.8, 0);
+    expect(room.frameFor('a', 100)).toEqual({ spots: [[0.2, 0.2], [0.8, 0.8]] });
+
+    const crew = { kind: 'crew', round: { lightsTo: 0 }, mine: {
+      a: { glitch: true, drone: false, cameraTo: 0, nick: 'Bolt' },
+      b: { glitch: true, drone: false, cameraTo: 0 },
+      c: { glitch: false, drone: false, cameraTo: 0, nick: 'Cog' },
+    } };
+    const people = { a: { name: 'Ann Lee', colour: 1 }, b: { name: 'Ben Ho', colour: 2 }, c: { name: 'Cat', colour: 3 } };
+    const sync = edgeSync(4, { state: 'live', order: ['a', 'b', 'c'], game: crew, players: people } as never, 0, []);
+    const r = new EdgeRoom();
+    r.applySync(sync, 0);
+    r.move('a', 0.5, 0.5, 0);
+    r.move('b', 0.55, 0.5, 0);
+    r.move('c', 0.9, 0.9, 0);
+    expect(r.frameFor('a', 100)).toEqual({ me: { glitch: true, drone: false }, spots: [[0.55, 0.5, 2, 'Ben', 2], [0.9, 0.9, 0, 'Cog', 3]] });
+    expect((r.frameFor('c', 100) as { spots: unknown[][] }).spots.map((p) => p[2])).toEqual([0, 0]);
+    // Lights out: the crew see only who is near; Glitches still see everyone.
+    r.applySync({ ...sync, crew: { ...sync.crew!, lightsTo: 5000 } }, 200);
+    r.move('c', 0.6, 0.5, 1000);
+    expect((r.frameFor('c', 1100) as { spots: unknown[] }).spots).toHaveLength(2);
+    r.move('c', 0.95, 0.95, 2000);
+    expect((r.frameFor('c', 2100) as { spots: unknown[] }).spots).toHaveLength(0);
+    expect((r.frameFor('a', 2100) as { spots: unknown[] }).spots).toHaveLength(2);
   });
 
   it('tickets, the speed limit, teleports and what each device may see', async () => {
@@ -97,4 +137,6 @@ describe('Class Live on Cloudflare (pilot)', () => {
     expect(kept).toEqual([[room, prey, 'pad', 'edge', { rttP50: 12.3, calls: 50 }]]);
     expect((await classLiveStep(sv, 'someone-else', { action: 'stats', room, part: 'pad', version: 'edge', stats: {} })).status).toBe(403);
   });
+
 });
+
