@@ -1,6 +1,6 @@
 import { useSound } from '../../sound';
 
-/** Bonkers Quest covers the whole window, over the hub's bar, so the way back to the hub and the sound switch sit in its top bar. */
+/** Smash Quest covers the whole window, over the hub's bar, so the way back to the hub and the sound switch sit in its top bar. */
 export function HubButtons() {
   const { soundOn, setSoundOn } = useSound();
   return (

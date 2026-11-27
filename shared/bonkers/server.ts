@@ -35,7 +35,7 @@ export const unplayed = (): Saved => ({ progress: emptyProgress(), version: 0 })
 
 export interface Settings {
   enabled: boolean;
-  /** The teacher's "Unlimited today" switch for Bonkers Quest: adventures aren't used up. Missing means off. */
+  /** The teacher's "Unlimited today" switch for Smash Quest: adventures aren't used up. Missing means off. */
   unlimited?: boolean;
 }
 
@@ -164,7 +164,7 @@ export async function handleBonkers(services: BonkersServices, player: string, b
 
   const settings = await services.settings(player);
   if (!settings) return busy();
-  if (!settings.enabled) return { status: 403, body: { error: 'Bonkers Quest isn’t switched on for your class yet.', code: 'off' } };
+  if (!settings.enabled) return { status: 403, body: { error: 'Smash Quest isn’t switched on for your class yet.', code: 'off' } };
 
   if (action === 'hero') {
     const { cls, look } = body;

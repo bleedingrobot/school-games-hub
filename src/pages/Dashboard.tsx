@@ -93,7 +93,7 @@ function useShownGames(nonMathsOpen: boolean | null, remembered: string[] | unde
   // Class Showdown is reached through the Class Live card when both are on (James, 24 Nov 2026: one Class Live page).
   const games = GAMES.filter((game) => (!game.teacherSwitch || isOn(game.id)) && (nonMathsOpen !== false || game.group !== 'no-maths')
     && !(game.id === 'showdown' && GAMES.some((g) => g.id === 'classlive') && isOn('classlive')));
-  // Bonkers Quest: a card for teachers only while its code switch is off, so James can test it (27 Nov 2026).
+  // Smash Quest: a card for teachers only while its code switch is off, so James can test it (27 Nov 2026).
   return { games: teacher && !bonkersOn() ? [...games, bonkersQuest] : games, on };
 }
 

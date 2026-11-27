@@ -1,5 +1,5 @@
 /**
- * Bonkers Quest's talking to the server (docs/BONKERS-PLAN.md): the `bonkers` function makes each adventure's fights and
+ * Smash Quest's talking to the server (docs/BONKERS-PLAN.md): the `bonkers` function makes each adventure's fights and
  * questions, marks every answer once and replays the adventure to save it. The teacher's switch is at the foot.
  */
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../../config';
@@ -23,7 +23,7 @@ export const liveBonkers: BonkersBackend = fromServer(async (body) => {
       body: JSON.stringify(body),
     });
   } catch {
-    return { status: 503, body: { error: 'Bonkers Quest couldn’t be reached. Check the internet and try again.' } };
+    return { status: 503, body: { error: 'Smash Quest couldn’t be reached. Check the internet and try again.' } };
   }
   let parsed: Record<string, unknown> = {};
   try {
@@ -38,7 +38,7 @@ export const liveBonkers: BonkersBackend = fromServer(async (body) => {
 
 export async function fetchBonkersEnabled(classId?: string | null): Promise<boolean> {
   const row = await readSettings(['bonkers_enabled'], classId);
-  if (!row) throw new FriendlyError('We couldn’t load the Bonkers Quest settings.');
+  if (!row) throw new FriendlyError('We couldn’t load the Smash Quest settings.');
   return (row as Record<string, unknown>).bonkers_enabled !== false;
 }
 

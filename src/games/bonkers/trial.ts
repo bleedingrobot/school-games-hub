@@ -1,4 +1,4 @@
-/** Bonkers Quest's trial backend: the whole game in this browser, for the preview. Never talks to the school's server. */
+/** Smash Quest's trial backend: the whole game in this browser, for the preview. Never talks to the school's server. */
 import { emptyData, memoryServices, type MemoryData } from '../../../shared/bonkers/memoryServices';
 import { handleBonkers } from '../../../shared/bonkers/server';
 import { emptyProgress, starsToTrainer, type Progress } from '../../../shared/bonkers/engine';

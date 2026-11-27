@@ -1,5 +1,5 @@
 /**
- * Bonkers Quest's fights: every hit is a maths question (always 4 choices). The server marks each answer and sends the
+ * Smash Quest's fights: every hit is a maths question (always 4 choices). The server marks each answer and sends the
  * next question; this screen replays the marks with the same rules (shared/bonkers/engine.ts) to show the smashes, hearts and
  * health, so what the pupil sees is exactly what the server will save.
  */
@@ -243,7 +243,7 @@ export function Fight({ backend, progress, start, onDone }: {
           question={shown(q)}
           title={asking.special ? `${ci.move.name}! ×${moment.boost}` : (boost?.name ?? 'Smash it!')}
           note={asking.special ? ci.move.does : `Right: a ×${moment.boost} smash. Wrong: no smash, and it may smash you back.`}
-          spot="Bonkers Quest"
+          spot="Smash Quest"
           onSubmit={answer}
           onDone={landed}
         />

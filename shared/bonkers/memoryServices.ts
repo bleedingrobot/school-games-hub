@@ -1,5 +1,5 @@
 /**
- * Bonkers Quest's database jobs kept in memory, doing what the migration's functions do (progress saved only if its
+ * Smash Quest's database jobs kept in memory, doing what the migration's functions do (progress saved only if its
  * version still matches, one open adventure, a seed used once, each mark added once and in order, an adventure finished
  * once). The preview's trial backend keeps this in the browser; the server function's tests use it in place of the database.
  */

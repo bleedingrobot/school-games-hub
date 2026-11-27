@@ -1,4 +1,4 @@
-// Bonkers Quest's rules (docs/BONKERS-PLAN.md): the fight replay, today's quests and adventures waiting, and the rewards.
+// Smash Quest's rules (docs/BONKERS-PLAN.md): the fight replay, today's quests and adventures waiting, and the rewards.
 // The pace across a season is the sim's job (npm run bonkers:sim), not a test.
 import { describe, expect, it } from 'vitest';
 import { HEARTS, MAX_SAVED_ADVENTURES, POINTS, STARS, TRAINER_HEARTS } from './config';
@@ -11,7 +11,7 @@ import {
 const hero = (over: Partial<Progress> = {}): Progress => ({ ...emptyProgress(), hero: { cls: 'knight', look: 'girl' }, ...over });
 const rights = (n: number, special = false): Mark[] => Array.from({ length: n }, (_, i) => ({ right: true, special: special && i === 0 }));
 
-describe('Bonkers Quest rules', () => {
+describe('Smash Quest rules', () => {
   it('the hero smashes on their own, boosted right answers smash hard, wrong ones lose a heart, and a special move works once a fight', () => {
     const quest = parseQuest('laundry:wins:4:0')!;
     const adv = makeAdventure(123, quest, hero());

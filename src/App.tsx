@@ -149,7 +149,7 @@ export function AppRoutes() {
           {!POWER_CLASH_ON && <Route path="power-clash" element={<GamePage game={powerClash} />} />}
           {!DRAGON_MATHS_ON && <Route path="dragon-maths" element={<GamePage game={dragonMaths} />} />}
           {!CLAN_QUEST_ON && <Route path="clan-quest" element={<GamePage game={clanQuest} />} />}
-          {/* Bonkers Quest: teachers only until its code switch is on (docs/BONKERS-PLAN.md, stage B.5). */}
+          {/* Smash Quest: teachers only until its code switch is on (docs/BONKERS-PLAN.md, stage B.5). */}
           {!bonkersOn() && <Route path="bonkers" element={<BonkersTeacherGate />} />}
           {/* Starting or joining a classmate game waits for Training too (Training before games); games already going don't. */}
           <Route

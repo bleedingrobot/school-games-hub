@@ -1,4 +1,4 @@
-// Connects the bonkers (Bonkers Quest) handler to Supabase. Edit handler.ts (or shared/bonkers/server.ts) for the logic, then
+// Connects the bonkers (Smash Quest) handler to Supabase. Edit handler.ts (or shared/bonkers/server.ts) for the logic, then
 // run `npm run build:functions -- bonkers` to rebuild index.ts, the single file that actually gets deployed (never committed).
 import { createClient } from '@supabase/supabase-js';
 import { parseFocus } from '../../../shared/maths/focus';
@@ -41,14 +41,19 @@ Deno.serve(
     userIdFor: userIdFromToken(admin.auth),
     async settings(player) {
       // The switches of this pupil's class (or their school's default if they have no class).
-      const { data, error } = await admin.rpc('settings_of', { player }).maybeSingle();
-      if (error || !data) {
+      // Teachers trying it out always have unlimited adventures (their own row, not a class's).
+      const [{ data, error }, who] = await Promise.all([
+        admin.rpc('settings_of', { player }).maybeSingle(),
+        admin.from('profiles').select('role').eq('id', player).maybeSingle(),
+      ]);
+      if (error || !data || who.error) {
         console.error(`bonkers: settings failed (${error?.code ?? 'none'})`);
         return null;
       }
       const row = data as { bonkers_enabled?: boolean; unlimited_days?: unknown };
-      // "Unlimited today" is on while the class's unlimited_days names today's NZ date for Bonkers Quest.
-      return { enabled: row.bonkers_enabled === true, unlimited: isUnlimitedFor(row.unlimited_days, 'bonkers') };
+      // "Unlimited today" is on while the class's unlimited_days names today's NZ date for Smash Quest.
+      const teacher = (who.data as { role?: string } | null)?.role === 'teacher';
+      return { enabled: teacher || row.bonkers_enabled === true, unlimited: teacher || isUnlimitedFor(row.unlimited_days, 'bonkers') };
     },
     async load(player) {
       const saved = await call<Saved | null>('bonkers_load', { player });

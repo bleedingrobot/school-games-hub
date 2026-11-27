@@ -1,5 +1,5 @@
 /**
- * The Bonkers Quest preview: the whole game with no sign-in. It never talks to the school's server: the rules are the
+ * The Smash Quest preview: the whole game with no sign-in. It never talks to the school's server: the rules are the
  * shared ones, run by the trial backend in this page, and the pretend pupil is kept in this browser so a reload carries on.
  * Preview tools (not in the real game): fill the star bar, go up a level, adventures unlimited or one a day, start again.
  * Run it: npx vite --config vite.bonkers-preview.config.ts
