@@ -192,7 +192,7 @@
 .mz-cell--wharf { background: var(--mz-wharf, none) center / 200%, #a16207; box-shadow: inset 0 0 0 1px rgba(69, 26, 3, 0.25); }
 .mz-cell--wharf.is-edge { box-shadow: inset 0 -7px 0 #451a03; }
 .mz-cell.is-spot::before { content: ''; position: absolute; inset: 10%; background: var(--mz-mark, none) center / contain no-repeat; border-radius: 50%; }
-.mz-cell.is-spot::after { content: '✕'; position: absolute; inset: 14%; display: grid; place-items: center; border-radius: 50%; border: 3px dashed #fef3c7; color: #fef3c7; font-weight: 900; }
+.mz-cell.is-spot::before { box-shadow: 0 0 10px rgba(254, 243, 199, 0.6); rotate: 45deg; }
 .mz-crate { position: absolute; z-index: 2; background: var(--mz-crate, none) center / 92% no-repeat; transition: left 0.14s ease-out, top 0.14s ease-out; filter: drop-shadow(0 5px 3px rgba(0, 0, 0, 0.5)); }
 .mz-crate:not([style*='--']) { background-color: transparent; }
 .mz-crate.is-on { filter: drop-shadow(0 0 10px #4ade80) drop-shadow(0 4px 2px rgba(0, 0, 0, 0.5)); }
@@ -233,3 +233,9 @@
   .mz *, .mz *::before, .mz *::after, .mz-pool { animation: none !important; transition: none !important; }
   .mz-confetti { display: none; }
 }
+
+/* Wharf extras: a dinghy in the water and bollards with rope on the deck edge (painted, optional). */
+.mz-grid--wharf::before, .mz-grid--wharf::after { content: ''; position: absolute; z-index: 1; pointer-events: none; background: center / contain no-repeat; }
+.mz-grid--wharf::before { right: 1%; bottom: 1%; width: 13%; height: 13%; background-image: var(--mz-boat, none); animation: mz-bob 2.6s ease-in-out infinite; }
+.mz-grid--wharf::after { left: 1.5%; top: 1.5%; width: 11%; height: 11%; background-image: var(--mz-rope, none); }
+.mz-cell--wall.is-post::after { content: ''; position: absolute; inset: 22%; background: var(--mz-bollard, none) center / contain no-repeat; }

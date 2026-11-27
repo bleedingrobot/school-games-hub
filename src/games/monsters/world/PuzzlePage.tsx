@@ -320,7 +320,8 @@ function Crates({ p, report, me, sfx }: BoardProps<'crates'>) {
           {p.grid.flatMap((row, r) => [...row].map((ch, c) => {
             const water = ch === '#';
             const edge = !water && (p.grid[r + 1]?.[c] ?? '#') === '#' ? ' is-edge' : '';
-            return <span key={`${r}-${c}`} className={`mz-cell mz-cell--${water ? 'wall' : 'wharf'}${edge}${on([r, c]) ? ' is-spot' : ''}`} />;
+            const post = water && r === 0 && c % 2 === 1 && (p.grid[1]?.[c] ?? '#') !== '#' ? ' is-post' : '';
+            return <span key={`${r}-${c}`} className={`mz-cell mz-cell--${water ? 'wall' : 'wharf'}${edge}${post}${on([r, c]) ? ' is-spot' : ''}`} />;
           }))}
           {s.crates.map((x, i) => <span key={i} className={`mz-crate${on(x) ? ' is-on' : ''}`} style={at(x)} />)}
           <span className="mz-walker" style={at(s.you)}><Me look={me} facing={facing} /></span>
