@@ -11,6 +11,8 @@ import type { WalkView } from './controller';
 import { TILE, type TileCache } from './tiles';
 
 export const PLAYER_SPRITE = 98;
+/** The little "?" sign over a puzzle not solved yet (docs/MONSTERS-PUZZLE-ART-PLAN.md P7); missing until painted. */
+const PUZZLE_SIGN = Object.values(import.meta.glob('./assets/puzzles/puzzle-sign.webp', { eager: true, import: 'default' }) as Record<string, string>)[0];
 const BACKDROP = '#1e293b';
 /** A painted walker is this many tiles tall, standing with its feet at the bottom of its tile. */
 const WALKER_TILES = 1.5;
@@ -173,7 +175,19 @@ export function drawFrame(ctx: CanvasRenderingContext2D, f: FrameInput) {
   // Glowing rings where a ready egg can hatch: over the tree tops too, since some spots sit under painted trees.
   for (const r of f.rings ?? []) drawRing(ctx, Math.round((r.x * TILE + 8) * S - offX), Math.round((r.y * TILE + 11) * S - offY), S, ringPhase(now), RING_RGB);
   // Over the tree tops, so a pod hidden in a tree still shows.
-  f.twinkles?.forEach((t, i) => drawTwinkle(ctx, Math.round((t.x * TILE + 8) * S - offX), Math.round((t.y * TILE + 5) * S - offY), t.big ? 2 * S : S, twinklePhase(now, i)));
+  const sign = ready(PUZZLE_SIGN);
+  f.twinkles?.forEach((t, i) => {
+    const x = Math.round((t.x * TILE + 8) * S - offX);
+    const y = Math.round((t.y * TILE + 5) * S - offY);
+    if (t.big && sign) {
+      const w = Math.round(TILE * 0.9 * S);
+      const bob = twinklePhase(now, i) < 6 ? 0 : Math.round(S);
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(sign, x - w / 2, y - Math.round(TILE * 1.25 * S) - bob, w, w);
+      ctx.imageSmoothingEnabled = false;
+    }
+    drawTwinkle(ctx, x, y, t.big ? 2 * S : S, twinklePhase(now, i));
+  });
 
   if (f.fade > 0) {
     ctx.fillStyle = `rgba(0,0,0,${f.fade})`;
