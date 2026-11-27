@@ -1,0 +1,60 @@
+/* Rocket Relay: big screen (RocketScene), stations (RocketPad) and card. Prefix rk-. */
+.rk-stage { position: fixed; inset: 0; z-index: 30; display: grid; grid-template-rows: auto auto 1fr; background: #101436 center / cover no-repeat; color: #fff; overflow: hidden; }
+.rk-stage::before { content: ''; position: absolute; inset: 0; background: rgba(8, 10, 32, 0.45); pointer-events: none; }
+.rk-stage > * { position: relative; }
+.rk-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 18px 10px 64px; background: rgba(0, 0, 0, 0.35); font-size: 1.1rem; }
+.rk-top__gap { flex: 1; }
+.rk-chip { background: rgba(255, 255, 255, 0.18); border-radius: 999px; padding: 2px 12px; font-size: 0.95rem; }
+.rk-btn { font: inherit; font-weight: 700; border: 0; border-radius: 999px; padding: 8px 18px; background: rgba(255, 255, 255, 0.2); color: #fff; cursor: pointer; }
+.rk-btn:focus-visible { outline: 3px solid #f2c230; outline-offset: 2px; }
+.rk-btn--go { background: #2f9a57; }
+.rk-btn--stop { background: #d8433a; }
+.rk-moon { text-align: center; font-size: clamp(2.5rem, min(7vw, 10vh), 6rem); line-height: 1; filter: drop-shadow(0 0 24px rgba(255, 240, 180, 0.8)); }
+.rk-lanes { display: grid; gap: 1vw; padding: 0 2vw 1.5vh; min-height: 0; }
+.rk-lane { display: grid; grid-template-rows: 1fr auto; min-width: 0; min-height: 0; }
+.rk-track { position: relative; border-left: 3px dashed color-mix(in srgb, var(--c) 60%, transparent); border-right: 3px dashed color-mix(in srgb, var(--c) 60%, transparent); margin: 0 18%; min-height: 0; }
+.rk-trail { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, color-mix(in srgb, var(--c) 70%, transparent), transparent); transition: height 0.8s ease-out; }
+.rk-rocket { position: absolute; left: 50%; transform: translateX(-50%) rotate(-45deg); font-size: clamp(2.2rem, min(5vw, 8vh), 4.5rem); transition: bottom 0.8s cubic-bezier(.2, 1.4, .4, 1); filter: drop-shadow(0 0 10px var(--c)); }
+.rk-rocket--flare { animation: rk-flare 1.2s ease-out; }
+@keyframes rk-flare { 0% { filter: drop-shadow(0 0 0 #ffd84a); } 30% { filter: drop-shadow(0 0 30px #ffb02e) brightness(1.4); } 100% { filter: drop-shadow(0 0 10px var(--c)); } }
+.rk-foot { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border-radius: 14px; background: color-mix(in srgb, var(--c) 75%, #000); text-align: center; min-width: 0; }
+.rk-foot b { font-size: clamp(1.1rem, 2vw, 1.8rem); }
+.rk-now { font-size: clamp(0.95rem, 1.6vw, 1.4rem); font-weight: 700; overflow-wrap: anywhere; }
+.rk-now--here { color: #ffe27a; animation: rk-pulse 1s ease-in-out infinite alternate; }
+@keyframes rk-pulse { from { opacity: 0.7; } to { opacity: 1; } }
+.rk-next-name { font-size: clamp(0.85rem, 1.3vw, 1.1rem); opacity: 0.85; overflow-wrap: anywhere; }
+.rk-lane--won .rk-foot { box-shadow: 0 0 0 4px #ffe27a; }
+.rk-winner { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); background: rgba(16, 12, 40, 0.92); border-radius: 24px; padding: 3vh 4vw; display: flex; flex-direction: column; align-items: center; gap: 2vh; text-align: center; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); z-index: 4; }
+.rk-winner b { font-size: clamp(1.8rem, 5vw, 4rem); }
+.rk-over { place-self: center; grid-row: 1 / -1; background: rgba(16, 12, 40, 0.85); border-radius: 28px; padding: 4vh 5vw; display: flex; flex-direction: column; align-items: center; gap: 2vh; max-width: 92vw; }
+.rk-over h1 { margin: 0; font-size: clamp(2rem, 5vw, 4.5rem); text-align: center; }
+.rk-over ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; width: min(560px, 80vw); }
+.rk-over li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 16px; border-radius: 12px; border-left: 10px solid; background: rgba(255, 255, 255, 0.1); font-size: clamp(1rem, 2vw, 1.4rem); }
+/* Stations */
+.rk-pad { min-height: 100%; display: flex; flex-direction: column; gap: 14px; color: #fff; padding-bottom: 20px; }
+.rk-pad__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px 12px 96px; border-radius: 0 0 16px 16px; background: rgba(0, 0, 0, 0.45); font-size: 1.3rem; }
+.rk-change { font: inherit; font-size: 0.9rem; border: 0; border-radius: 999px; padding: 6px 14px; background: rgba(255, 255, 255, 0.25); color: #fff; cursor: pointer; }
+.rk-ask { text-align: center; font-size: 1.3rem; font-weight: 700; margin: 8px 16px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6); }
+.rk-teams { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; padding: 0 16px; }
+.rk-team { font: inherit; color: #fff; border: 0; border-radius: 18px; min-height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); }
+.rk-team b { font-size: 1.8rem; }
+.rk-big { margin: auto; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; padding: 24px; background: rgba(10, 10, 30, 0.7); border-radius: 24px; max-width: 92%; }
+.rk-big h1 { margin: 0; font-size: clamp(1.8rem, 6vw, 3.2rem); }
+.rk-big__icon { font-size: 4rem; }
+.rk-up { margin: 0; font-size: 1.4rem; opacity: 0.85; }
+.rk-runner { font-size: clamp(2.6rem, 10vw, 5rem) !important; }
+.rk-here { font: inherit; font-size: 1.7rem; font-weight: 800; border: 0; border-radius: 999px; padding: 18px 40px; background: #2f9a57; color: #fff; cursor: pointer; min-height: 64px; }
+.rk-skip-btn, .rk-skip button { font: inherit; border: 0; border-radius: 999px; padding: 8px 16px; background: rgba(255, 255, 255, 0.2); color: #fff; cursor: pointer; min-height: 44px; }
+.rk-skip { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.rk-next { margin: 0; opacity: 0.85; font-size: 1.1rem; }
+.rk-problem { margin: 0; color: #ffd0c8; }
+.rk-dots { display: flex; justify-content: center; gap: 10px; font-size: 2rem; }
+.rk-dots i { font-style: normal; }
+.rk-q { padding: 0 12px; }
+.rk-wait { text-align: center; font-size: 1.2rem; }
+.rk-card-how { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
+@media (prefers-reduced-motion: reduce) { .rk-rocket, .rk-trail { transition: none; } .rk-rocket--flare, .rk-now--here { animation: none; } }
+.rk-lobby-teams { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 90vw; }
+.rk-lobby-team { display: flex; flex-direction: column; gap: 2px; border-left: 8px solid; background: rgba(0, 0, 0, 0.35); border-radius: 10px; padding: 8px 12px; max-width: 280px; text-align: left; }
+.rk-lobby-team b { font-size: 1.3rem; }
+.rk-lobby-team span { font-size: 0.95rem; opacity: 0.9; }

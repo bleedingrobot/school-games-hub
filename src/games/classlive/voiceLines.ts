@@ -142,8 +142,14 @@ export const LINES = {
   mingleStop: ['Stop! Get into groups!', 'Freeze! Quick, make your groups!', 'The music has stopped! Into groups, everyone!'],
   mingleDance: ['Dance and mingle!', 'Music on! Keep moving!', 'Off you go! Mingle around the room!'],
   mingleLeft: ['Left over? Go to a station and answer your way back in!', 'No group? Off to a station, quick!', 'Anyone left over, head to a station!'],
+  // Rocket Relay (docs/ROCKET-PLAN.md).
+  rocketBoost: ['Boost!', 'Blast off! Great answer!', 'Up goes the rocket!', 'Whoosh! Another boost!'],
+  rocketEnd: ['What a race! Great running and great maths!', 'Brilliant relay, everyone!', 'That was out of this world! Well done!'],
   mingleEnd: ['What a mingle! Great maths, everyone!', 'Brilliant moving and great maths!', 'That was fantastic. Well done, everyone!'],
 } as const;
+
+/** Rocket Relay: a team reached the Moon, one clip per team (TEAM_WORDS order). */
+export const ROCKET_MOON_LINES = ['Red team reached the Moon!', 'Blue team reached the Moon!', 'Green team reached the Moon!', 'Yellow team reached the Moon!', 'Purple team reached the Moon!', 'Orange team reached the Moon!'];
 
 /** Maths Mingle: the answer, said once the scramble ends ("Groups of four!"), one clip per group size. */
 export const MINGLE_SIZE_LINES: Record<number, string> = {
@@ -210,6 +216,14 @@ export const HOWTO = {
     'Left over? Go to a station, tap your name, and answer the questions.',
     'Get them right and your name flashes up on the big screen. Back into the mingle you go!',
   ],
+  // Rocket Relay (docs/ROCKET-PLAN.md).
+  rocket: [
+    'Rocket Relay! Line up in your team at one end of the room.',
+    'Your team iPad is at the other end. The big screen shows who runs next.',
+    'Run to the iPad, tap I am here, and answer your question.',
+    'A right answer boosts your rocket! Wrong? You get one more try.',
+    'Then run back and tag the next runner. First rocket to the Moon wins!',
+  ],
   clash: CLASH_HOWTO,
   shark: [
     'Swim your avatar with the joystick, or the arrow keys.',
@@ -233,7 +247,7 @@ export function next(key: LineKey): string {
 
 export const allVoiceLines = (): string[] => [
   ...Object.values(LINES).flat(),
-  ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural, ...HOWTO.corners, ...HOWTO.shark, ...GHOST_HOWTO, ...CREW_HOWTO, ...HOWTO.clash, ...HOWTO.thrones, ...HOWTO.jail, ...HOWTO.mingle, ...Object.values(MINGLE_SIZE_LINES),
+  ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural, ...HOWTO.corners, ...HOWTO.shark, ...GHOST_HOWTO, ...CREW_HOWTO, ...HOWTO.clash, ...HOWTO.thrones, ...HOWTO.jail, ...HOWTO.mingle, ...Object.values(MINGLE_SIZE_LINES), ...HOWTO.rocket, ...ROCKET_MOON_LINES,
   ...allLavaLines(),
   ...allRelayLines(),
 ];

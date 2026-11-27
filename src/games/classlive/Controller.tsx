@@ -15,6 +15,7 @@ import { LavaPad } from './LavaPad';
 import { RelayPad } from './RelayPad';
 import { ThronesPad } from './ThronesPad';
 import { JailPad } from './JailPad';
+import { RocketPad } from './RocketPad';
 import { useMusicOn } from './thronesMusic';
 import { ClashPad } from './ClashPad';
 import { GhostPad } from './GhostPad';
@@ -216,6 +217,14 @@ export function Controller({ link, me, room: roomProp, code: codeProp, lookElsew
     return (
       <Sky tint="serpent">
         <SerpentPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} />
+      </Sky>
+    );
+  }
+  if (view.game.kind === 'rocket') {
+    // Rocket Relay: this iPad is a team's station (docs/ROCKET-PLAN.md).
+    return (
+      <Sky tint="corners" back={painted('relay', 'back') ?? painted('back', 'star-sky')}>
+        <PadGuard><RocketPad link={link} room={room} view={view} setView={setView} /></PadGuard>
       </Sky>
     );
   }
