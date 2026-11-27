@@ -99,7 +99,7 @@ const percentOf: Helper = (q) => {
   if (P === null) return null;
   if (p[4] === '?' && num(p[2]) !== null) {
     const { how, calc } = pctParts(P, num(p[2])!);
-    return card('percent-of', P === 10 ? '10% is divide by 10' : P === 50 ? '50% is half' : P === 25 ? '25% is a quarter' : 'Find 10% (or a quarter), then build', how, `${calc[0].toUpperCase()}${calc.slice(1)} = ?`);
+    return card('percent-of', P === 10 ? '10% is divide by 10' : P === 1 ? '1% is divide by 100' : P === 50 ? '50% is half' : P === 25 ? '25% is a quarter' : 'Find 10% (or a quarter), then build', how, `${calc[0].toUpperCase()}${calc.slice(1)} = ?`);
   }
   if (p[2] === '?' && num(p[4]) !== null && P > 0) {
     const g = gcd(P, 100);
@@ -145,7 +145,10 @@ function simpleFracToDec(a: number, b: number): HelpCard | null {
 function pctToFrac(P: number): HelpCard {
   const g = gcd(P, 100);
   if (g === 1) return card('pct-to-fraction', 'Percent means out of 100', '% means "out of 100".', `So ${P}% is ${P} out of 100. Write that as a fraction: ?`);
-  return card('pct-to-fraction', 'Percent means out of 100', '% means "out of 100", so a percent is a fraction with 100 on the bottom.', `${P}% is ${P}/100. The biggest number that goes into both ${P} and 100 is ${g}.`, `Divide the top and the bottom by ${g}: ${P} ÷ ${g} = ? and 100 ÷ ${g} = ?`);
+  // The percents a Year 5 pupil should just know come first: 10%, 25%, 50%, 75%.
+  if (P === 75) return card('pct-to-fraction', 'Use a percent you know', '25% is 25 out of 100. 4 lots of 25 make 100.', '75 is 3 lots of 25, so 75% is 3 lots of 25%.', 'Say 25% as a fraction. 3 lots of it make ?/?');
+  if (P === 10 || P === 25 || P === 50) return card('pct-to-fraction', 'Use a percent you know', `${P}% is ${P} out of 100.`, `How many lots of ${P} make 100?`, `So ${P}% is 1 out of that many equal parts: 1/?`);
+  return card('pct-to-fraction', 'Percent means out of 100', '% means "out of 100", so a percent is a fraction with 100 on the bottom.', `${P}% is ${P}/100. What is the biggest number that goes into both ${P} and 100?`, 'Divide the top and the bottom by that number. Write the new fraction: ?');
 }
 
 const fractionToPct = (a: number, b: number): HelpCard | null =>
@@ -158,16 +161,12 @@ const decToPct = (t: string, pick: boolean): HelpCard =>
 const pctToDec = (P: number): HelpCard =>
   card('pct-to-decimal', 'Percent is hundredths', `% means out of 100, so ${show(P)}% is ${show(P)} hundredths.`, 'The first place after the point is tenths, the second is hundredths.', `Write ${show(P)} hundredths in those places: ?`);
 
-function mixedImproper(a: number, b: number, tap: boolean): HelpCard {
-  if (tap) {
-    return card('mixed-number', 'Each whole is a full set of parts', `Each whole is made of ${b}/${b}.`, `How many ${b}s fit in ${a} without going over? That is the whole number.`,
-      `Take those ${b}s off ${a}. What is left goes on top of ${b}: ${a} − (those ${b}s) = ?`);
-  }
-  // A known fact that is just too big, so the pupil can see how far to go.
-  const m = [2, 5, 10].find((x) => x * b > a);
-  return card('mixed-number', 'Each whole is a full set of parts', `Each whole uses ${b} parts.`,
-    ...(m ? [`A fact you know: ${m} × ${b} = ${m * b}. That is more than ${a}, so fewer than ${m} wholes fit.`] : []),
-    `Which times-${b} fact gets closest to ${a} without going over? ?`);
+function mixedImproper(a: number, b: number): HelpCard {
+  // A times fact you know that is just too big, one lot of b over: the wholes are one less (34/8: 5 × 8 = 40, 40 − 8 = 32).
+  const m = [2, 5, 10].find((x) => x * b > a && (x - 1) * b <= a);
+  if (m) return card('mixed-number', 'Use a times fact', `Each whole uses ${b} parts.`, `A fact you know: ${m} × ${b} = ${m * b}. That is more than ${a}.`,
+    `One ${b} less: ${m * b} − ${b} = ${(m - 1) * b}, which fits in ${a}. So how many wholes? ${m} − 1 = ?`);
+  return card('mixed-number', 'Count in lots of the bottom number', `Each whole uses ${b} parts.`, `Count in ${b}s up to ${a}, but don't go past it.`, `How many ${b}s did you count? ?`);
 }
 
 const conversions: Helper = (q) => {
@@ -192,7 +191,7 @@ const conversions: Helper = (q) => {
     const f = frac(p[0]);
     if (f) {
       const mixed = ch && ch.some((c) => c.includes(' '));
-      if (mixed || (ch === null && f[0] > f[1] && /mixed/i.test(prompt))) return mixedImproper(f[0], f[1], true);
+      if (mixed || (ch === null && f[0] > f[1] && /mixed/i.test(prompt))) return mixedImproper(f[0], f[1]);
       if (ch && ch.some((c) => c.includes('/')) && !/decimal/i.test(prompt)) {
         // Choice bottoms in the starting bottom's times table: if they all use one multiplier, name it.
         const ks = new Set<number>();
@@ -201,9 +200,8 @@ const conversions: Helper = (q) => {
           if (g && g[1] > f[1] && g[1] % f[1] === 0) ks.add(g[1] / f[1]);
         }
         if (ks.size === 1) {
-          const k = [...ks][0], to = f[1] * k;
           return card('equivalent-fractions', 'Match the bottom first', `Look at the bar: ${f[1]} parts, ${f[0]} shaded.`,
-            `Which choice bottoms are in the ${f[1]} times table? ${f[1]} → ${to} is × ${k}.`, `Do the same to the top: ${f[0]} × ${k} = ? Which choice matches?`);
+            `Look at the bottoms of the choices. Which one is bigger than ${f[1]} and in the ${f[1]} times table?`, `How many times bigger than ${f[1]} is that bottom? Do the same to the top: ${f[0]} × (that number) = ? Which choice matches?`);
         }
         return card('equivalent-fractions', 'Do the same to the top and the bottom',
           'Equal fractions come from multiplying (or dividing) the top and the bottom by the same number.',
@@ -248,7 +246,7 @@ const fillIns: Helper = (q) => {
   }
   m = /^\? (\d+)\/(\d+)$/.exec(R);
   const f = frac(L);
-  if (m && f && Number(m[2]) === f[1]) return mixedImproper(f[0], f[1], false);
+  if (m && f && Number(m[2]) === f[1]) return mixedImproper(f[0], f[1]);
   return null;
 };
 
@@ -301,6 +299,13 @@ const shift: Helper = (q) => {
     return card('times-decimals', 'Do the opposite', `The opposite of ${s.op} ${s.b} is ${s.op === '×' ? '÷' : '×'} ${s.b}.`, `${show(s.c)} ${s.op === '×' ? '÷' : '×'} ${s.b} = ?`);
   }
   if (s.b === null && s.a !== null && s.c !== null && s.op === '×' && (q.parts[0].includes('.') || q.parts[4].includes('.'))) {
+    const from = placeParts(show(s.a)), to = placeParts(show(s.c));
+    if (from && to && from[0].digit === to[0].digit && to[0].exp - from[0].exp >= 1 && to[0].exp - from[0].exp <= 3) {
+      const d = from[0].digit, path = [];
+      for (let e = from[0].exp; e <= to[0].exp; e++) path.push(placeName(e).many);
+      return card('times-decimals', `Count how far the ${d} moved`, `In ${show(s.a)} the ${d} is in the ${placeName(from[0].exp).many} place. In ${show(s.c)} the ${d} is in the ${placeName(to[0].exp).many} place.`,
+        `Count the places the ${d} moved to the left: ${path.join(' → ')}.`, `1 place left is × 10, 2 places is × 100, 3 places is × 1000. ${show(s.a)} × ? = ${show(s.c)}. Which one is it?`);
+    }
     return card('times-decimals', 'Count how far the digits moved', `Look at how the digits of ${show(s.a)} moved to make ${show(s.c)}.`, '1 place left is × 10, 2 places is × 100, 3 places is × 1000.', 'How many places did they move? ?');
   }
   return null;
@@ -418,12 +423,14 @@ const decimalDoubleHalf: Helper = (q) => {
   if (x === null || Number.isInteger(x) || dpOf(x) > 2) return null;
   const w = Math.floor(x), f = Math.round((x - w) * 100) / 100;
   const tn = Math.round(f * 10), tenths = tn === 1 ? 'tenth' : 'tenths';
+  // The part after the point in tenths, or in hundredths when it has two places.
+  const hun = dpOf(f) === 2, unit = hun ? 'hundredths' : 'tenths', un = `${Math.round(f * (hun ? 100 : 10))} ${unit}`;
   if (double) {
     if (w === 0) return card('decimal-double', 'Double the tenths', `${show(f)} is ${tn} ${tenths}.`, `Double it: ${tn} + ${tn} = ? tenths.`, 'Write that many tenths as a decimal: ?');
-    return card('decimal-double', 'Double each part', `Split ${show(x)} into ${w} and ${show(f)}.`, `Double ${w} is ${w * 2} and double ${show(f)} is ${show(f * 2)}.`, `${w * 2} + ${show(f * 2)} = ?`);
+    return card('decimal-double', 'Double each part', `Split ${show(x)} into ${w} and ${show(f)}.`, `Double ${w} is ${w * 2}. Double ${show(f)}: ${un} + ${un} = ? ${unit}.`, `Put the two doubles together: ${w * 2} + that = ?`);
   }
   if (w === 0) return card('decimal-half', 'Half the tenths', `${show(f)} is ${tn} ${tenths}.`, `Share them in 2: ${tn} ÷ 2 = ? tenths.`, 'Write that many tenths as a decimal: ?');
-  return card('decimal-half', 'Halve each part', `Split ${show(x)} into ${w} and ${show(f)}.`, `Half of ${w} is ${show(w / 2)} and half of ${show(f)} is ${show(f / 2)}.`, `${show(w / 2)} + ${show(f / 2)} = ?`);
+  return card('decimal-half', 'Halve each part', `Split ${show(x)} into ${w} and ${show(f)}.`, `Half of ${w} is ${show(w / 2)}. Half of ${show(f)}: ${un} shared in 2 = ? ${unit}.`, `Put the two halves together: ${show(w / 2)} + that = ?`);
 };
 
 // ---------------------------------------------------------------- money
@@ -583,8 +590,8 @@ const percentChange: Helper = (q) => {
     const A = pct(p[0]), B = pct(p[4]), n = num(p[2]);
     if (A !== null && B !== null && n !== null) {
       const ex = [[20, 5, 1], [50, 2, 1], [40, 10, 4], [30, 10, 3]].find(([x, y]) => ![A, B, n].includes(x) && ![A, B, n].includes(y))!;
-      return card('percent-swap', 'Try a small swap', `Try ${ex[0]}% × ${ex[1]} = ${ex[2]}, and ${ex[1]}% × ${ex[0]} = ${ex[2]}. The same!`, 'The percent and the number traded places.',
-        `Your left side is ${A}% × ${n}. Trade places on the right side: ${B}% × ?. What goes in the gap? ?`);
+      return card('percent-swap', 'Try a small swap', `Try ${ex[0]}% × ${ex[1]} = ${ex[2]}, and ${ex[1]}% × ${ex[0]} = ${ex[2]}. The same!`, 'The percent and the number trade places.',
+        `Left side: ${A}% × ${n}. The percent is ${A} and the number is ${n}.`, `Right side: the percent is ${B}. Which number is left over for the gap? ?`);
     }
   }
   return null;
@@ -617,7 +624,7 @@ const ratio: Helper = (q) => {
   if (eq) {
     const [n1, c1, n2, c2, T, ct] = [Number(eq[1]), eq[2], Number(eq[3]), eq[4], Number(eq[5]), eq[6]];
     const known = ct === c1 ? n1 : n2, other = ct === c1 ? n2 : n1, oc = ct === c1 ? c2 : c1;
-    return card('ratio-groups', 'Count how many groups', `The ratio ${n1} ${c1} : ${n2} ${c2} is one group.`, `How many groups of ${known} ${ct} fit in ${T}? ${T} ÷ ${known} = ?`, `Each group has ${other} ${oc}: groups × ${other} = ?`);
+    return card('ratio-groups', 'Count how many groups', `The bar is one group: ${n1} ${c1} and ${n2} ${c2}.`, `How many groups of ${known} ${ct} fit in ${T}? ${T} ÷ ${known} = ?`, `Each of those groups has ${other} ${oc}: that many groups × ${other} = ?`);
   }
   return null;
 };

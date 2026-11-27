@@ -230,9 +230,9 @@ export function FractionHelp({ parts }: { parts: string[] }) {
  * the question itself, and the box never states the fact the question asks for (no "1 hour = 60 minutes" on a 1 h question).
  */
 export function HoursHelp({ parts }: { parts: string[] }) {
-  // Hours and minutes when an hours part is shown (also "215 min = 3 h ? min"), else minutes and seconds.
-  const hours = parts.find((p) => /^\d+ h(\s|$)/.test(p));
-  const mins = parts.includes('s') ? parts.find((p) => /^\d+ min$/.test(p)) : undefined;
+  // Hours and minutes when the first part is hours, else minutes and seconds.
+  const hours = /^\d+ h(\s|$)/.test(parts[0] ?? '') ? parts[0] : undefined;
+  const mins = parts.includes('s') && /^\d+ min$/.test(parts[0] ?? '') ? parts[0] : undefined;
   const shown = hours ?? mins;
   const asked = shown ? /^(\d+) (h|min)(?:\s|$)/.exec(shown) : null;
   if (!asked || shown === '1 h' || shown === '1 min') return null;
@@ -332,23 +332,28 @@ function choicesSize(labels: readonly string[] | undefined): string {
   return longest >= 12 ? ' question__choices--xlong' : longest >= 10 ? ' question__choices--long' : longest >= 6 ? ' question__choices--mid' : '';
 }
 
-/** What the comparison signs mean, with the "or equal to" signs spelled out (James, 26 Nov 2026). */
-function SymbolHelp() {
+/** What the comparison signs mean, with the "or equal to" signs spelled out (James, 26 Nov 2026). Only the signs on screen. */
+function SymbolHelp({ shown }: { shown: string }) {
+  const has = (c: string) => shown.includes(c);
   return (
     <ul className="symbol-help" aria-label="What the signs mean">
-      <li><b>&lt;</b> means <strong>less than</strong>: 3 &lt; 8</li>
-      <li><b>&gt;</b> means <strong>greater than</strong>: 8 &gt; 3</li>
-      <li>
-        <b>≤</b> means <strong>less than OR equal to</strong>. True if the left side is smaller, and also true if both sides are the same.
-        <span className="symbol-help__eg">4 ≤ 5 ✓ · 5 ≤ 5 ✓ · 6 ≤ 5 ✗</span>
-      </li>
-      <li>
-        <b>≥</b> means <strong>greater than OR equal to</strong>. True if the left side is bigger, and also true if both sides are the same.
-        <span className="symbol-help__eg">6 ≥ 5 ✓ · 5 ≥ 5 ✓ · 4 ≥ 5 ✗</span>
-      </li>
-      <li><b>=</b> means <strong>the same as</strong>: 4 + 1 = 5</li>
-      <li><b>≠</b> means <strong>not equal to</strong>: 5 ≠ 7</li>
-      <li>The open mouth of &lt; and &gt; always faces the bigger number.</li>
+      {has('<') && <li><b>&lt;</b> means <strong>less than</strong>: 3 &lt; 8</li>}
+      {has('>') && <li><b>&gt;</b> means <strong>greater than</strong>: 8 &gt; 3</li>}
+      {has('≤') && (
+        <li>
+          <b>≤</b> means <strong>less than OR equal to</strong>. True if the left side is smaller, and also true if both sides are the same.
+          <span className="symbol-help__eg">4 ≤ 5 ✓ · 5 ≤ 5 ✓ · 6 ≤ 5 ✗</span>
+        </li>
+      )}
+      {has('≥') && (
+        <li>
+          <b>≥</b> means <strong>greater than OR equal to</strong>. True if the left side is bigger, and also true if both sides are the same.
+          <span className="symbol-help__eg">6 ≥ 5 ✓ · 5 ≥ 5 ✓ · 4 ≥ 5 ✗</span>
+        </li>
+      )}
+      {has('=') && <li><b>=</b> means <strong>the same as</strong>: 4 + 1 = 5</li>}
+      {has('≠') && <li><b>≠</b> means <strong>not equal to</strong>: 5 ≠ 7</li>}
+      {(has('<') || has('>')) && <li>The open mouth of &lt; and &gt; always faces the bigger number.</li>}
     </ul>
   );
 }
@@ -727,7 +732,7 @@ export function QuestionModal({
                   </ol>
                 </div>
               ))}
-            {helpOpen && help && !(help === 'units' && picture?.kind === 'unit-ladder') && (help === 'angles' ? <AngleNames hideRanges={clueQuestion} /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : help === 'fractions' ? <FractionHelp parts={question.parts} /> : help === 'hours' ? <HoursHelp parts={question.parts} /> : help === 'units' ? <UnitHelp parts={question.parts} /> : help === 'turns' ? <TurnHelp parts={question.parts} /> : <SymbolHelp />)}
+            {helpOpen && help && !(help === 'units' && picture?.kind === 'unit-ladder') && (help === 'angles' ? <AngleNames hideRanges={clueQuestion} /> : help === 'remainder' ? <RemainderHelp parts={question.parts} /> : help === 'axes' ? <AxisHelp /> : help === 'fractions' ? <FractionHelp parts={question.parts} /> : help === 'hours' ? <HoursHelp parts={question.parts} /> : help === 'units' ? <UnitHelp parts={question.parts} /> : help === 'turns' ? <TurnHelp parts={question.parts} /> : <SymbolHelp shown={[...question.parts, question.prompt ?? '', ...(question.choiceLabels ?? [])].join(' ')} />)}
           </div>
         )}
         </div>

@@ -103,6 +103,7 @@ function Body({ f }: { f: FigureSpec }) {
           <Label x={A.x + 34} y={A.y - 12} text={a} />
           <Label x={B.x - 44} y={B.y - 12} text={b} />
           <Label x={C.x} y={C.y + 26} text={c} />
+          <Label x={120} y={143} text="Not to scale" />
         </>
       );
     }
@@ -131,6 +132,11 @@ function Body({ f }: { f: FigureSpec }) {
         <>
           <line x1={120 - dx} y1={75 + dy} x2={120 + dx} y2={75 - dy} className="fig__line" />
           <line x1={120 - dx} y1={75 - dy} x2={120 + dx} y2={75 + dy} className="fig__line" />
+          {/* The two opposite angles: the same arc and tick on each. */}
+          <Arc cx={120} cy={75} r={18} a={-deg / 2} b={deg / 2} />
+          <Arc cx={120} cy={75} r={18} a={180 - deg / 2} b={180 + deg / 2} />
+          <line x1={138} y1={75} x2={146} y2={75} className="fig__arc" />
+          <line x1={102} y1={75} x2={94} y2={75} className="fig__arc" />
           <Label x={120 + lab} y={75} text={f.angles[0]} />
           <Label x={120 - lab} y={75} text={f.angles[1]} />
         </>
@@ -159,8 +165,8 @@ function Body({ f }: { f: FigureSpec }) {
       };
       const cols = side(f.width);
       const rows = side(f.height);
-      if (cols && rows) {
-        const cell = Math.min(150 / cols, 90 / rows);
+      if (cols && rows && !/^P\b/.test(f.inside ?? '')) {
+        const cell = Math.min(130 / cols, 90 / rows);
         const gw = cols * cell;
         const gh = rows * cell;
         const gx = (240 - gw) / 2;
@@ -193,6 +199,7 @@ function Body({ f }: { f: FigureSpec }) {
       if (f.right)
         return (
           <>
+            <rect x={60} y={24} width={140} height={94} className="fig__dash" />
             <polygon points="60,118 200,118 60,24" className="fig__shape" />
             <polyline points="60,106 72,106 72,118" className="fig__line" fill="none" />
             <Label x={130} y={134} text={f.base} />
@@ -202,6 +209,7 @@ function Body({ f }: { f: FigureSpec }) {
         );
       return (
         <>
+          <rect x={40} y={24} width={160} height={94} className="fig__dash" />
           <polygon points="40,118 200,118 90,24" className="fig__shape" />
           <line x1={90} y1={24} x2={90} y2={118} className="fig__dash" />
           <Label x={120} y={134} text={f.base} />
@@ -236,11 +244,31 @@ function Body({ f }: { f: FigureSpec }) {
       const d = 30;
       const x = 50;
       const y = 130 - h;
+      // Whole-number sides up to 5: faint lines show the layers and the little cubes. A cube only labels its length.
+      const unit = (t: string) => {
+        const m = /^(\d+)(?: [a-z]+)?$/.exec(t);
+        return m && Number(m[1]) >= 1 && Number(m[1]) <= 5 ? Number(m[1]) : 0;
+      };
+      const nl = unit(f.length);
+      const nw = f.cube ? nl : unit(f.width);
+      const nh = f.cube ? nl : unit(f.height);
+      const cells = nl && nw && nh;
+      const range = (n: number) => Array.from({ length: n - 1 }, (_, i) => i + 1);
       return (
         <>
           <rect x={x} y={y} width={w} height={h} className="fig__shape" />
           <polygon points={`${x},${y} ${x + d},${y - d} ${x + w + d},${y - d} ${x + w},${y}`} className="fig__shape fig__shape--top" />
           <polygon points={`${x + w},${y} ${x + w + d},${y - d} ${x + w + d},${y + h - d} ${x + w},${y + h}`} className="fig__shape fig__shape--side" />
+          {cells && (
+            <g>
+              {range(nh).map((i) => <line key={`fh${i}`} x1={x} y1={y + (i * h) / nh} x2={x + w} y2={y + (i * h) / nh} className="fig__gridline" />)}
+              {range(nl).map((i) => <line key={`fv${i}`} x1={x + (i * w) / nl} y1={y} x2={x + (i * w) / nl} y2={y + h} className="fig__gridline" />)}
+              {range(nl).map((i) => <line key={`tl${i}`} x1={x + (i * w) / nl} y1={y} x2={x + (i * w) / nl + d} y2={y - d} className="fig__gridline" />)}
+              {range(nw).map((i) => <line key={`tw${i}`} x1={x + (i * d) / nw} y1={y - (i * d) / nw} x2={x + w + (i * d) / nw} y2={y - (i * d) / nw} className="fig__gridline" />)}
+              {range(nh).map((i) => <line key={`sh${i}`} x1={x + w} y1={y + (i * h) / nh} x2={x + w + d} y2={y - d + (i * h) / nh} className="fig__gridline" />)}
+              {range(nw).map((i) => <line key={`sw${i}`} x1={x + w + (i * d) / nw} y1={y - (i * d) / nw} x2={x + w + (i * d) / nw} y2={y + h - (i * d) / nw} className="fig__gridline" />)}
+            </g>
+          )}
           <Label x={x + w / 2} y={142} text={f.length} />
           {!f.cube && <Label x={x + w + d / 2 + 14} y={y + h - d / 2 + 4} text={f.width} anchor="start" />}
           {!f.cube && <Label x={x - 8} y={y + h / 2} text={f.height} anchor="end" />}

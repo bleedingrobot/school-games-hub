@@ -266,16 +266,25 @@ function NumberLine({ p }: { p: Extract<Picture, { kind: 'number-line' }> }) {
   );
 }
 
-function Hundred({ shaded }: { shaded: number }) {
+function Hundred({ shaded, quarters }: { shaded: number; quarters?: boolean }) {
   const c = 18;
   const pad = 3;
   const n = Math.max(0, Math.min(100, Math.round(shaded)));
+  // Quarters: shade 5 × 5 blocks (top left, top right, bottom left, bottom right) and draw thick lines between them.
+  const lit = (i: number) => (quarters ? (Math.floor(i / 50) * 2 + Math.floor((i % 10) / 5)) * 25 < n : i < n);
+  // 200px, not 240: with two help cards open the pop-up must still fit a 1024 x 768 screen.
   return (
-    <Frame w={c * 10 + pad * 2} h={c * 10 + pad * 2} label={`Hundred square with ${n} squares shaded`} max={240}>
+    <Frame w={c * 10 + pad * 2} h={c * 10 + pad * 2} label={`Hundred square with ${n} squares shaded${quarters ? ', cut into 4 equal parts by thick lines' : ''}`} max={200}>
       {Array.from({ length: 100 }, (_, i) => (
-        <rect key={i} x={pad + (i % 10) * c} y={pad + Math.floor(i / 10) * c} width={c} height={c} className={i < n ? 'qp__cell qp__cell--a' : 'qp__cell'} />
+        <rect key={i} x={pad + (i % 10) * c} y={pad + Math.floor(i / 10) * c} width={c} height={c} className={lit(i) ? 'qp__cell qp__cell--a' : 'qp__cell'} />
       ))}
       <rect x={pad} y={pad} width={c * 10} height={c * 10} className="qp__outline" />
+      {quarters && (
+        <>
+          <line x1={pad + c * 5} y1={pad} x2={pad + c * 5} y2={pad + c * 10} className="qp__outline" />
+          <line x1={pad} y1={pad + c * 5} x2={pad + c * 10} y2={pad + c * 5} className="qp__outline" />
+        </>
+      )}
     </Frame>
   );
 }
@@ -302,6 +311,38 @@ function Bars({ bars }: { bars: Extract<Picture, { kind: 'bars' }>['bars'] }) {
               <rect key={k} x={pad + k * pw} y={top} width={pw} height={bh} className={k >= (b.start ?? 0) && k < (b.start ?? 0) + b.shaded ? `qp__cell qp__cell--${b.shade ?? 'a'}` : 'qp__cell'} />
             ))}
             <rect x={pad} y={top} width={bw} height={bh} className="qp__outline" />
+          </g>
+        );
+      })}
+    </Frame>
+  );
+}
+
+/** Loose slices, k to a row, no circles: the pupil makes the full circles (improper fraction to mixed number). */
+function LooseSlices({ parts, shaded }: { parts: number; shaded: number }) {
+  const k = Math.max(1, Math.round(parts));
+  const n = Math.max(1, Math.round(shaded));
+  const r = 30;
+  const sw = k === 1 ? r * 2 + 6 : Math.min(r * 2, 2 * r * Math.sin(Math.PI / k) + 6);
+  const rowH = r + 10;
+  const lines = Math.ceil(n / k);
+  const w = k * sw + 8;
+  const h = lines * rowH + 8;
+  return (
+    <Frame w={w} h={h} label={`${n} loose slices, each one ${k === 1 ? 'whole circle' : `1 of ${k} equal parts of a circle`}`}>
+      {Array.from({ length: n }, (_, i) => {
+        const cx = 4 + (i % k) * sw + sw / 2;
+        const apexY = 4 + Math.floor(i / k) * rowH + r + 4;
+        const d = k === 1 ? '' : wedge(cx, apexY, r, -180 / k, 180 / k);
+        return k === 1 ? (
+          <g key={i}>
+            <circle cx={cx} cy={apexY - r / 2} r={r / 2} className="qp__fill" />
+            <circle cx={cx} cy={apexY - r / 2} r={r / 2} className="qp__outline" />
+          </g>
+        ) : (
+          <g key={i}>
+            <path d={d} className="qp__fill" />
+            <path d={d} className="qp__outline" />
           </g>
         );
       })}
@@ -558,7 +599,8 @@ function Towers({ values, mark }: { values: number[]; mark?: 'range' }) {
   );
 }
 
-function UnitLadder({ units, links, highlight }: { units: string[]; links: string[]; highlight: string[] }) {
+function UnitLadder({ units, links, highlight, direction }: { units: string[]; links: string[]; highlight: string[]; direction?: 'up' | 'down' }) {
+  const up = direction === 'up';
   const bw = Math.max(76, ...units.map((u) => textW(u, 10) + 24));
   const bh = 28;
   const gap = 26;
@@ -577,7 +619,7 @@ function UnitLadder({ units, links, highlight }: { units: string[]; links: strin
             <T x={x0 + bw / 2} y={y + bh / 2} text={u} />
             {i < units.length - 1 && (
               <>
-                <Arrow x1={x0 + bw / 2} y1={y + bh + 2} x2={x0 + bw / 2} y2={y + bh + gap - 2} />
+                {up ? <Arrow x1={x0 + bw / 2} y1={y + bh + gap - 2} x2={x0 + bw / 2} y2={y + bh + 2} /> : <Arrow x1={x0 + bw / 2} y1={y + bh + 2} x2={x0 + bw / 2} y2={y + bh + gap - 2} />}
                 <T x={x0 + bw / 2 + 14} y={y + bh + gap / 2} text={links[i] ?? ''} anchor="start" cls="qp__small" />
               </>
             )}
@@ -599,11 +641,11 @@ export function QuestionPicture({ picture }: { picture: Picture }) {
     case 'number-line':
       return <NumberLine p={picture} />;
     case 'hundred':
-      return <Hundred shaded={picture.shaded} />;
+      return <Hundred shaded={picture.shaded} quarters={picture.quarters} />;
     case 'bars':
       return <Bars bars={picture.bars} />;
     case 'wholes':
-      return <Wholes count={picture.count} parts={picture.parts} shaded={picture.shaded} />;
+      return picture.packed === false ? <LooseSlices parts={picture.parts} shaded={picture.shaded} /> : <Wholes count={picture.count} parts={picture.parts} shaded={picture.shaded} />;
     case 'array':
       return <ArrayPic rows={picture.rows} cols={picture.cols} extra={picture.extra} groups={picture.groups} />;
     case 'split-box':
@@ -621,7 +663,7 @@ export function QuestionPicture({ picture }: { picture: Picture }) {
     case 'towers':
       return <Towers values={picture.values} mark={picture.mark} />;
     case 'unit-ladder':
-      return <UnitLadder units={picture.units} links={picture.links} highlight={picture.highlight} />;
+      return <UnitLadder units={picture.units} links={picture.links} highlight={picture.highlight} direction={picture.direction} />;
     case 'figure':
       return <Figure figure={picture.figure} />;
     default: {

@@ -52,8 +52,10 @@ export function helpKind(q: Pick<Question, 'parts' | 'prompt' | 'choiceLabels' |
   if (/way are you (now )?facing/i.test(q.prompt ?? '')) return 'turns';
   // Hours into minutes ("3 h = ? min") and minutes into seconds ("3 min = ? s"): use the 6 times table (James, 26 Nov 2026).
   // Not for 1 h, 1 min or a fraction of one: the box's own fact would be the answer.
-  if (q.parts.includes('min') && q.parts.some((p) => /^\d+ h(\s|$)/.test(p) && p !== '1 h')) return 'hours';
-  if (q.parts.includes('s') && q.parts.some((p) => /^\d+ min$/.test(p) && p !== '1 min')) return 'hours';
+  // Only when the first part is the one being changed ("215 min = 3 h ? min" gets no box).
+  const first = q.parts[0] ?? '';
+  if (q.parts.includes('min') && /^\d+ h(\s|$)/.test(first) && first !== '1 h') return 'hours';
+  if (q.parts.includes('s') && /^\d+ min$/.test(first) && first !== '1 min') return 'hours';
   const texts = [...q.parts, q.prompt ?? '', ...(q.choiceLabels ?? [])];
   return texts.some((t) => /[<>≤≥≠]/.test(t)) ? 'symbols' : null;
 }

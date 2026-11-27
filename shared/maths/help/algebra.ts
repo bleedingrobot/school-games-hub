@@ -204,9 +204,17 @@ const trueFalse: Helper = (q) => {
   if (l === null || r === null) return null;
   const steps: string[] = [];
   const hasSum = (t: string) => num(t) === null;
-  if (hasSum(parts[0])) steps.push(`Left side: ${parts[0]} = ${show(l)}.`);
-  if (hasSum(parts[2])) steps.push(`Right side: ${parts[2]} = ${show(r)}.`);
-  steps.push(`Now compare ${show(l)} and ${show(r)}: which sign fits between them?`);
+  // The pupil works each side out ("0.3 × 4" is 3 tenths × 4); only the compare is left as the last step.
+  const work = (t: string, name: string) => {
+    const d = /^(\d+\.\d) × (\d+)$/.exec(t) ?? /^(\d+) × (\d+\.\d)$/.exec(t);
+    const dec = d ? (d[1].includes('.') ? d[1] : d[2]) : null;
+    const other = d ? (d[1].includes('.') ? d[2] : d[1]) : null;
+    if (dec && other && dec.startsWith('0.')) return `${name}: ${t} means ${other} lots of ${dec.slice(2)} tenths. Work out ${dec.slice(2)} × ${other}, then write that many tenths as a decimal.`;
+    return `${name}: work out ${t}.`;
+  };
+  if (hasSum(parts[0])) steps.push(work(parts[0], 'Left side'));
+  if (hasSum(parts[2])) steps.push(work(parts[2], 'Right side'));
+  steps.push(hasSum(parts[0]) && hasSum(parts[2]) ? 'Which side is bigger, or are they the same? Pick the sign that fits: ?' : `Compare your answer with the number on the other side. Which sign fits? ?`);
   return card('true-false', 'Work out each side, then compare', ...steps);
 };
 

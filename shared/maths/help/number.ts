@@ -76,12 +76,13 @@ function roundCard(text: string, e: number): HelpCard | null {
   const where = place(e), next = place(e - 1);
   // The pupil decides up or down; the card never says which. A 9 that goes up needs its carry explained.
   const first = e >= 0 && ip.length - 1 - e === 0;
-  const carry = d === '9' ? (first ? ' If a 9 goes up, 9 + 1 makes 10: put a 1 in front.' : ' If a 9 goes up, 9 + 1 makes 10: write 0 and carry 1 to the digit before.') : '';
   // Keep every digit in front of the rounding digit (569 to the nearest 10 keeps the 5).
   const front = e >= 1 ? ip.slice(0, Math.max(0, ip.length - 1 - e)) : '';
+  const carry = d === '9' ? (first ? ' If a 9 goes up, 9 + 1 makes 10: put a 1 in front.' : ` If a 9 goes up, 9 + 1 makes 10: write 0 and add 1 to the digit in front.${front.endsWith('9') ? ' A 9 in front goes up the same way.' : ''}`) : '';
+  const zeros = e >= 1 ? (e === 1 ? 'a 0' : '0'.repeat(e)) : '';
   const finish = e >= 1 ? (front
-    ? `Keep the ${front} in front${d === '9' ? ' (1 more if you carried)' : ''}, then the ${where} digit (1 more if you rounded up), then 0s: ?`
-    : `Write the ${where} digit (1 more if you rounded up), then 0s after it: ?`)
+    ? `Keep the ${front} in front. After it write the ${where} digit (1 more if you rounded up), then ${zeros}: ?`
+    : `Write the ${where} digit (1 more if you rounded up), then ${zeros} after it: ?`)
     : e === 0 ? 'Write the whole number (1 more if you rounded up), without the decimal part: ?'
       : `Write the number up to the ${where} digit and nothing after it. If you rounded up, that digit is 1 more: ?`;
   return card('rounding', 'Look at the digit next door', e === 0 && ip.length === 1 ? `Find the ${where} digit in ${text}.` : `Find the ${where} digit in ${text}: it is ${d}.`,
@@ -246,7 +247,8 @@ const countBig: Helper = (q) => {
   const shown = p[add ? 0 : 2];
   const edge = add && d === '9' ? ' (9 + 1 makes 10, so it carries into the next place)' : !add && d === '0' ? ' (0 can’t go down, so borrow 1 from the next place)' : '';
   return card('count-big', `Only the ${place(e)} digit changes`, `${show(by)} is 1 in the ${place(e)} place.`, `In ${shown} the ${place(e)} digit is ${d}.`,
-    `${add ? 'Adding' : 'Taking away'} ${show(by)} makes that digit go ${add ? 'up' : 'down'} by 1${edge}.`, 'Write the number with that digit changed: ?');
+    `${add ? 'Adding' : 'Taking away'} ${show(by)} makes that digit go ${add ? 'up' : 'down'} by 1${edge}.`,
+    !add && d === '1' && s.length - 1 - e === 0 ? 'Write the number with that digit changed. Leave off a 0 at the front: ?' : 'Write the number with that digit changed: ?');
 };
 
 const mentalBig: Helper = (q) => {
@@ -287,8 +289,12 @@ const missingBig: Helper = (q) => {
   if (t < 10 && !known.every((n) => n % 1000 === 0)) return null;
   const sc = (n: number | null) => (n === null ? '?' : show(n / t));
   const z = zerosOf(t);
+  const small = s.c === null ? `What is ${sc(s.a)} ${s.op} ${sc(s.b)}?`
+    : s.op === '+' ? `What do you add to ${sc(s.a === null ? s.b : s.a)} to make ${sc(s.c)}?`
+      : s.b === null ? `What do you take away from ${sc(s.a)} to leave ${sc(s.c)}?`
+        : `Which number has ${sc(s.b)} taken away to leave ${sc(s.c)}?`;
   return card('missing-big', 'Cover the zeros', `Cover the ${z === 1 ? 'zero' : `${z} zeros`} on the end of each number: ${sc(s.a)} ${s.op} ${sc(s.b)} = ${sc(s.c)}.`,
-    'Work out the missing number in that smaller sum.', `Put the ${z === 1 ? 'zero' : `${z} zeros`} back on the end: ?`);
+    small, `Put the ${z === 1 ? 'zero' : `${z} zeros`} back on the end: ?`);
 };
 
 // ---------------------------------------------------------------- factors, remainders, squares and cubes
@@ -348,9 +354,17 @@ const squares: Helper = (q) => {
   if (p.length === 4 && (p[1] === 'squared' || p[1] === 'cubed') && p[2] === '=') {
     const n = num(p[0]);
     if (n === null) return null;
-    return p[1] === 'squared'
-      ? card('squares', 'Times itself', 'Squared means a number times itself.', `${n} squared is ${n} × ${n}.`, `${n} × ${n} = ?`)
-      : card('squares', 'Times itself three times', `Cubed means ${n} × ${n} × ${n}.`, `Do the first two: ${n} × ${n} = ${n * n}.`, `${n * n} × ${n} = ?`);
+    if (p[1] === 'squared') {
+      // Bigger squares: a times-table fact (5 or 10 times n) plus a small bit.
+      const base = n >= 6 && n <= 9 ? 5 : n === 11 || n === 12 ? 10 : 0;
+      if (!base) return card('squares', 'Times itself', 'Squared means a number times itself.', `${n} squared is ${n} × ${n}.`, `${n} × ${n} = ?`);
+      const k = n - base;
+      return card('squares', 'Split one of the numbers', `${n} squared is ${n} × ${n}.`, `A fact you know: ${base} × ${n} = ${base * n}.`,
+        `${n} is ${k} more than ${base}, so add ${k} × ${n} = ${k * n}.`, `${base * n} + ${k * n} = ?`);
+    }
+    if (n === 4) return card('squares', 'Double, double', 'Cubed means 4 × 4 × 4.', 'Do the first two: 4 × 4 = 16.', '16 × 4 is double double 16. Double 16 = 32.', 'Double 32 = ?');
+    if (n === 5) return card('squares', 'Half of times 10', 'Cubed means 5 × 5 × 5.', 'Do the first two: 5 × 5 = 25.', '25 × 5 is half of 25 × 10. 25 × 10 = 250.', 'Half of 250 = ?');
+    return card('squares', 'Times itself three times', `Cubed means ${n} × ${n} × ${n}.`, `Do the first two: ${n} × ${n} = ${n * n}.`, `${n * n} × ${n} = ?`);
   }
   if (p.length === 4 && p[0] === 'Square root of' && p[2] === '=') {
     const n = num(p[1]);
@@ -367,10 +381,10 @@ const squares: Helper = (q) => {
     if (n === null) return null;
     const r = Math.round(Math.cbrt(n));
     const root = `The cube root of ${n} is the number that, times itself 3 times, makes ${n}.`;
-    if (r <= 2) return card('squares', 'Which number times itself three times?', root, `A cube you know: 1 × 1 × 1 = 1. ${n} is bigger.`, `Try the next number up, times itself 3 times. Does it make ${n}? ?`);
+    if (r <= 2) return card('squares', 'Which number times itself three times?', root, `A cube you know: 1 × 1 × 1 = 1. ${n} is bigger, so the answer is more than 1.`, `Try the numbers above 1: ? × ? × ? = ${n}. Which number fits? ?`);
     const t = r - 1;
     const cubes = [t - 2, t - 1].filter((x) => x >= 1).map((x) => `${x} × ${x} × ${x} = ${x ** 3}`);
-    return card('squares', 'Which number times itself three times?', root, `${cubes.length === 1 ? 'A cube you know' : 'Cubes you know'}: ${cubes.join(' and ')}. ${n} is bigger${cubes.length === 1 ? '' : ' than both'}. If a try is still too small, try the next number up.`, `Try ${t} × ${t} × ${t} = ?`);
+    return card('squares', 'Which number times itself three times?', root, `${cubes.length === 1 ? 'A cube you know' : 'Cubes you know'}: ${cubes.join(' and ')}. ${n} is bigger${cubes.length === 1 ? '' : ' than both'}. Too small? Try the next number up.`, `Try ${t} × ${t} × ${t} = ?`);
   }
   if (p.length === 4 && /next square number after/.test(p[0])) {
     const n = num(p[1]);
@@ -478,7 +492,8 @@ const intSums: Helper = (q) => {
     }
     if (op === '−' && b < 0 && a >= 0) return card('negatives', 'Taking away a negative adds', 'Taking away a negative number is the same as adding.', `${show(a)} − ${show(b)} becomes ${show(a)} + ${abs(b)}.`, `${show(a)} + ${abs(b)} = ?`);
     if (op === '−' && b < 0 && a < 0) return card('negatives', 'Taking away a negative adds', 'Taking away a negative number is the same as adding.', `${show(a)} − ${show(b)} becomes ${show(a)} + ${abs(b)}.`, `Start at ${show(a)} and go up ${abs(b)} ${abs(b) === '1' ? 'step' : 'steps'}: ?`);
-    if (op === '−' && a >= 0 && b > a) return card('negatives', 'Down past zero', `Picture a number line. Start at ${sh(a)}.`, `Going down ${sh(b)}: ${show(a)} of the steps get you to 0.`, `${show(b)} − ${show(a)} = ? steps below 0. Write it with a minus sign: ?`);
+    if (op === '−' && a >= 0 && b > a) return card('negatives', 'Down past zero', `Picture a number line. Start at ${sh(a)}.`, a === 0 ? `Going down ${sh(b)} takes you below 0 right away.` : `Going down ${sh(b)}: it takes ${show(a)} ${a === 1 ? 'step' : 'steps'} to reach 0.`,
+      a === 0 ? `Count ${show(b)} steps below 0 and put a minus sign on it: ?` : `The steps left go below 0, so the answer has a minus sign. ${show(b)} − ${show(a)} = ?`);
     if (op === '−' && a >= 0 && b >= 0) return temp ? card('negatives', 'Go down', `Start at ${sh(a)}.`, `Go down ${sh(b)}. You stay at or above 0.`, `${show(a)} − ${show(b)} = ?`) : null;
     if (op === '−' && a < 0 && b >= 0) return card('negatives', 'Further below zero', `${sh(a)} is already below 0, and taking away goes down even more.`, `Add the sizes: ${abs(a)} + ${show(b)} = ?`, 'Put the minus sign back in front of that answer: ?');
     return null;
@@ -486,8 +501,8 @@ const intSums: Helper = (q) => {
   if (C === '0' && op === '+' && B === '?' && a !== null && a !== 0) {
     const u = temp ? '°' : '';
     const pick = (q.choices?.length ?? 0) > 0;
-    return card('negatives', 'Go back to zero', `Find ${show(a)}${u} on the line. It is ${a < 0 ? 'below' : 'above'} 0.`, `To get back to 0 you go ${a < 0 ? 'up' : 'down'} the same distance.`,
-      a < 0 ? `How far is ${show(a)}${u} from 0? ?` : `How far is ${show(a)}${u} from 0? Then ${pick ? 'pick the choice' : 'write the answer'} with a minus sign: ?`);
+    return card('negatives', 'Opposites', `To end at 0, the number you add must be the opposite of ${show(a)}${u}.`, 'Opposites are the same distance from 0, one on each side of it.',
+      a < 0 ? `Cover the minus sign on ${show(a)}${u}. What number is left? ?` : pick ? `Which choice is the same distance from 0 as ${show(a)}${u}, but on the other side? ?` : `How far is ${show(a)}${u} from 0? Write the number on the other side of 0: ?`);
   }
   return null;
 };
@@ -521,7 +536,9 @@ const pow10: Helper = (q) => {
   const p = q.parts, w = q.prompt ?? '';
   if (p.length === 3 && p[1] === '=' && p[2] === '?') {
     const pw = power(p[0]);
-    if (pw && pw.base === 10 && (pw.exp > 2 || pw.exp === 1) && !w) return card('powers', 'The small number counts the zeros', `${p[0]} means ten multiplied by itself ${pw.exp} times.`, `The small number is how many 0s follow the 1: ${pw.exp} zeros.`, 'Write 1 and then those zeros: ?');
+    if (pw && pw.base === 10 && pw.exp === 1 && !w) return card('powers', 'Just one ten', `${p[0]} means one ten, on its own.`, 'Write it: ?');
+    if (pw && pw.base === 10 && pw.exp > 2 && !w) return card('powers', 'Count the tens', `${p[0]} means ${pw.exp} tens multiplied together: ${Array(pw.exp).fill(10).join(' × ')}.`,
+      `10 × 10 = 100 has 2 zeros.${pw.exp > 3 ? ' 10 × 10 × 10 = 1000 has 3 zeros.' : ''}`, `How many zeros for ${pw.exp} tens? Write the number: ?`);
     if (pw && pw.base === 10 && pw.exp < 0) {
       const n = -pw.exp, times = n === 1 ? 'one time' : `${n} times`;
       if (n === 1) return card('powers', 'Divide by 10 again and again', `${p[0]} means 1 ÷ 10.`, '1 ÷ 10 = ?');
