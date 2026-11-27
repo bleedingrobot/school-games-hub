@@ -53,9 +53,13 @@ describe('Colour Clash', () => {
     // Pupils' own rows say their team and its place.
     const view = (await classLiveStep(pc.services, winner.player, { action: 'look', room })).body.me as { game: { kind: string; place: number } };
     expect(view.game).toMatchObject({ kind: 'clash', place: 1 });
+    wideBoard();
   });
 
-  it('a new game is wide: more columns, the same rows, and everything stays inside 0 to w', () => {
+});
+
+/** a new game is wide: more columns, the same rows, and everything stays inside 0 to w (folded into the first test: the classlive test budget). */
+function wideBoard() {
     const g = newClash('park', 4);
     expect(g.w).toBe(CLASH_W);
     expect(colsOf(g.w)).toBe(38);
@@ -108,5 +112,4 @@ describe('Colour Clash', () => {
     for (let i = 0; i < 40; i++) m = stepMove(m, { x: 1, y: 0 }, 50, round, 5000, false);
     expect(m.p.x).toBeGreaterThan(1.5);
     expect(m.p.x).toBeLessThanOrEqual(w);
-  });
-});
+}

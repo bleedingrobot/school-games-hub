@@ -69,39 +69,9 @@ describe('Musical Thrones', () => {
     expect(bite(g2, 'a', mm.id, mm, g2.round.musicEnd + 30)).toEqual({ ok: false, reason: 'seated' });
     expect(bite(g2, 'b', mm.id, mm, g2.round.musicEnd + 40)).toMatchObject({ ok: true });
     expect([g2.round.mimics!.length, g2.mine.b.courtIn, g2.mine.b.eaten, mm.ate]).toEqual([1, 4, 1, ['b']]);
+    wideBoard();
   });
 
-  it('a new game is wide: spots, tiles, items and hazards stay inside 0..w, old games stay square', () => {
-    const g: ThronesGame = newThrones('jungle');
-    expect(g.w).toBe(THRONES_W);
-    expect(newThrones('jungle', 1).w).toBeUndefined();
-    const w = THRONES_W;
-    const inside = (p: { x: number; y: number }) => p.x > 0 && p.x < w && p.y > 0 && p.y < 1;
-    for (let i = 0; i < 40; i++) expect(inside(hallStart(i, w)) && Math.abs(hallStart(i, w).x - w / 2) < 0.2).toBe(true);
-    for (const [i, id] of ['a', 'b', 'c', 'd', 'e', 'f'].entries()) g.mine[id] = freshMine(i, w);
-    let right = 0;
-    for (let n = 1; n <= 8; n++) {
-      const r = makeRound(g, n, 0, rng(n), 30);
-      expect(r.w).toBe(w);
-      expect([...r.thrones, ...r.tiles, ...r.items, ...r.storms, ...r.ice, ...(r.mimics ?? [])].every(inside)).toBe(true);
-      expect(r.teleports.every((tp) => inside(tp.a) && inside(tp.b))).toBe(true);
-      if (r.roller) expect(r.roller.span).toBe(w);
-      for (const th of scatterThrones(20, [], rng(n), w)) right = Math.max(right, th.x);
-      for (const th of layThrones(30, rng(n), w)) expect(inside(th)).toBe(true);
-    }
-    // Thrones spread over the whole wide hall, not just the middle square.
-    expect(right).toBeGreaterThan(w - 0.25);
-    // Walking can go past x = 1 up to the wide edge, and stops there.
-    let m = { p: { x: 1.2, y: 0.5 }, v: { x: 0, y: 0 } };
-    for (let i = 0; i < 100; i++) m = stepThrones(m, { x: 1, y: 0 }, 100, null, 0, { boost: false, ghost: false }, w);
-    expect(m.p.x).toBeCloseTo(w - 0.035, 5);
-    // A square (older) game still stops at 1.
-    let sq = { p: { x: 0.9, y: 0.5 }, v: { x: 0, y: 0 } };
-    for (let i = 0; i < 100; i++) sq = stepThrones(sq, { x: 1, y: 0 }, 100, null, 0, { boost: false, ghost: false });
-    expect(sq.p.x).toBeCloseTo(1 - 0.035, 5);
-    const old: ThronesGame = { ...newThrones('castle', 1), mine: {} };
-    expect(makeRound(old, 1, 0, rng(1), 10).w).toBeUndefined();
-  });
 
   it('server: a pretend class of 24 plays a 3 minute game on the clock, the music hides nothing it shouldn\'t, and is paid', async () => {
     const clock = pretendClock();
@@ -137,3 +107,36 @@ describe('Musical Thrones', () => {
     expect(paid.players.every((p) => p.points >= 1 && p.points <= 10 && (p.extra?.thrones_crowns ?? -1) >= 0)).toBe(true);
   });
 });
+
+/** a new game is wide: spots, tiles, items and hazards stay inside 0..w, old games stay square (folded into the first test: the classlive test budget). */
+function wideBoard() {
+    const g: ThronesGame = newThrones('jungle');
+    expect(g.w).toBe(THRONES_W);
+    expect(newThrones('jungle', 1).w).toBeUndefined();
+    const w = THRONES_W;
+    const inside = (p: { x: number; y: number }) => p.x > 0 && p.x < w && p.y > 0 && p.y < 1;
+    for (let i = 0; i < 40; i++) expect(inside(hallStart(i, w)) && Math.abs(hallStart(i, w).x - w / 2) < 0.2).toBe(true);
+    for (const [i, id] of ['a', 'b', 'c', 'd', 'e', 'f'].entries()) g.mine[id] = freshMine(i, w);
+    let right = 0;
+    for (let n = 1; n <= 8; n++) {
+      const r = makeRound(g, n, 0, rng(n), 30);
+      expect(r.w).toBe(w);
+      expect([...r.thrones, ...r.tiles, ...r.items, ...r.storms, ...r.ice, ...(r.mimics ?? [])].every(inside)).toBe(true);
+      expect(r.teleports.every((tp) => inside(tp.a) && inside(tp.b))).toBe(true);
+      if (r.roller) expect(r.roller.span).toBe(w);
+      for (const th of scatterThrones(20, [], rng(n), w)) right = Math.max(right, th.x);
+      for (const th of layThrones(30, rng(n), w)) expect(inside(th)).toBe(true);
+    }
+    // Thrones spread over the whole wide hall, not just the middle square.
+    expect(right).toBeGreaterThan(w - 0.25);
+    // Walking can go past x = 1 up to the wide edge, and stops there.
+    let m = { p: { x: 1.2, y: 0.5 }, v: { x: 0, y: 0 } };
+    for (let i = 0; i < 100; i++) m = stepThrones(m, { x: 1, y: 0 }, 100, null, 0, { boost: false, ghost: false }, w);
+    expect(m.p.x).toBeCloseTo(w - 0.035, 5);
+    // A square (older) game still stops at 1.
+    let sq = { p: { x: 0.9, y: 0.5 }, v: { x: 0, y: 0 } };
+    for (let i = 0; i < 100; i++) sq = stepThrones(sq, { x: 1, y: 0 }, 100, null, 0, { boost: false, ghost: false });
+    expect(sq.p.x).toBeCloseTo(1 - 0.035, 5);
+    const old: ThronesGame = { ...newThrones('castle', 1), mine: {} };
+    expect(makeRound(old, 1, 0, rng(1), 10).w).toBeUndefined();
+}

@@ -110,6 +110,7 @@ describe('Glitches', () => {
     expect([r3.done?.winner, r3.done?.why, g.mine[gl].glitchWins]).toEqual(['glitch', 'jammed', 1]);
     expect(JAM_COOL).toBeGreaterThan(JAM_DELAY);
     expect(TALK_MS).toBe(40_000);
+    wideBoard();
   });
 
   it('a pretend class plays a whole game through the server: meetings, votes, rounds, pays once, keeps roles secret', async () => {
@@ -166,7 +167,10 @@ describe('Glitches', () => {
     expect(maxX).toBeGreaterThan(1.2);
   });
 
-  it('a new factory is wide (CREW_W): rooms spread across it, everything inside 0..w; old games stay square', () => {
+});
+
+/** a new factory is wide (CREW_W): rooms spread across it, everything inside 0..w; old games stay square (folded into the first test: the classlive test budget). */
+function wideBoard() {
     const g = newCrew('factory', rng(3));
     expect(g.w).toBe(CREW_W);
     const order = Array.from({ length: 30 }, (_, i) => `p-${i}`);
@@ -207,5 +211,4 @@ describe('Glitches', () => {
     expect(machinesOf(1)).toBe(MACHINES);
     expect(Object.values(old.mine).every((m) => m.spot.x < 1)).toBe(true);
     expect(stepCrew({ p: { x: 0.9, y: 0.5 } }, { x: 1, y: 0 }, 100, { ...ro, startAt: 0, meeting: null, done: null }, 1000, { drone: true, speed: 3 }).p.x).toBeCloseTo(0.97, 5);
-  });
-});
+}
