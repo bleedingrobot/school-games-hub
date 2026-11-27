@@ -95,7 +95,7 @@
 .bq-class__move { font-size: 0.85rem; background: var(--bq-soft); border-radius: 12px; padding: 6px 8px; }
 .bq-looks { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 
-/* The inn */
+/* Home */
 .bq-inn__hero { display: flex; flex-direction: column; gap: 12px; }
 .bq-badge { display: flex; align-items: center; gap: 12px; }
 .bq-badge__emoji { font-size: 3.4rem; background: color-mix(in srgb, var(--bq-c) 20%, white); border-radius: 50%; width: 76px; height: 76px; display: grid; place-items: center; flex: none; }

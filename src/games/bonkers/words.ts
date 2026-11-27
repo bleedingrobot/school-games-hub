@@ -16,9 +16,9 @@ export function questWords(q: Quest): { title: string; what: string } {
 
 export const levelTitle = (level: number) => LEVEL_TITLES[level] ?? '';
 
-/** Granny Jetpack's one-line next step at the inn. */
+/** Granny Jetpack's one-line next step at home. */
 export function grannySays(p: Progress, waiting: number | null): string {
-  if (!p.hero) return `Welcome to the Wobbly Inn, dearie! I’m ${INNKEEPER.name}. Pick your hero!`;
+  if (!p.hero) return `Welcome home, dearie! I’m ${INNKEEPER.name}. Pick your hero!`;
   if (p.level >= MAX_LEVEL) return 'Level 10! You’re Totally Bonkers. The mega boss is coming soon…';
   const t = trainerFor(p.level);
   if (trainerReady(p)) return `Your star bar is full! ${t?.name ?? 'Your trainer'} is waiting after your next adventure’s fights.`;

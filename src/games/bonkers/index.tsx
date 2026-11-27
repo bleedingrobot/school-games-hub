@@ -20,7 +20,7 @@ function BonkersIcon({ size = 64 }: { size?: number }) {
 
 /**
  * Smash Quest (docs/BONKERS-PLAN.md; id bonkers): a wacky, streamlined Dragon Maths for Years 2 to 4. One adventure a
- * school day on fixed rails: the Wobbly Inn, 1 of 2 quests, 4 to 6 fights where every hit is a maths question from the
+ * school day on fixed rails: home, 1 of 2 quests, 4 to 6 fights where every hit is a maths question from the
  * pupil's own focus, the trainer when the star bar is full, the chest. The `bonkers` server function makes and marks every
  * question. Pupils see it only once `bonkersOn()` is true (stage B.5); until then teachers open `/#/bonkers` to test it.
  */

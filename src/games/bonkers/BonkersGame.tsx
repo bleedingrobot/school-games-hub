@@ -1,7 +1,7 @@
 /**
  * Smash Quest's screens (docs/BONKERS-PLAN.md), on any backend: the school's server (BonkersPlay) or the preview's
- * trial in the browser. The path is fixed, like a Sky Isles turn: the Wobbly Inn > pick 1 of 2 quests > the fights > the
- * trainer (when the star bar is full) > the chest > back to the inn. Drawn stand-ins (emoji) until the paintings (B.6).
+ * trial in the browser. The path is fixed, like a Sky Isles turn: home > pick 1 of 2 quests > the fights > the
+ * trainer (when the star bar is full) > the chest > back home. Drawn stand-ins (emoji) until the paintings (B.6).
  */
 import { useCallback, useEffect, useState } from 'react';
 import type { Progress } from '../../../shared/bonkers/engine';
