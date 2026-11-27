@@ -7,6 +7,7 @@ import {
   askForMyName,
   cancelMyNameRequest,
   fetchMyNameStatus,
+  timeLeftText,
   type MyNameStatus,
 } from "../data/ownName";
 import { FriendlyError } from "../data/profile";
@@ -48,6 +49,13 @@ export function useMyNameStatus() {
 export function ScrollNote() {
   const { status } = useMyNameStatus();
   if (!status) return null;
+  if (status.typedUntil && !status.waiting && status.scrolls === 0)
+    return (
+      <p className="own-name__note">
+        📜 Your own name lasts {timeLeftText(status.typedUntil)}. Earn another
+        Name Scroll to keep making up names!
+      </p>
+    );
   if (status.waiting)
     return (
       <p className="own-name__note">
@@ -110,6 +118,12 @@ export function OwnNamePanel() {
           You’ve picked a new name today. You can pick again tomorrow.
         </p>
       )}
+      {status.typed && status.typedUntil && (
+        <p className="own-name__line">
+          ⏳ Your own name lasts {timeLeftText(status.typedUntil)}. Then it goes
+          back to a made-up name. Earn another Name Scroll to make up a new one.
+        </p>
+      )}
       {status.typed && (
         <p className="own-name__line">
           Picking words from the lists will swap your own name for a made-up
@@ -145,7 +159,7 @@ export function OwnNamePanel() {
           <p>
             📜 <strong>You have a Name Scroll!</strong> Make up your own player
             name: 2 to 14 letters, one space is fine. Don’t use your real name
-            or a friend’s. Your teacher checks it first.
+            or a friend’s. Your teacher checks it first. It lasts 3 weeks.
           </p>
           <label className="own-name__field">
             <span>My own name</span>

@@ -8,6 +8,7 @@ import {
   fetchPupilScrolls,
   giveNameScroll,
   madeUpNameBack,
+  timeLeftText,
   type PastName,
   type PupilScrolls,
 } from "../data/ownName";
@@ -65,7 +66,7 @@ export function NameTools({
       {scrolls && (
         <p className="own-name__line">
           {scrolls.typed
-            ? `${name} is a name they made up and you said Yes to.`
+            ? `${name} is a name they made up and you said Yes to.${scrolls.typedUntil ? ` It goes back to a made-up name in ${timeLeftText(scrolls.typedUntil)}.` : ""}`
             : `${name} is from the word lists.`}{" "}
           {scrolls.waiting
             ? `They’ve asked for “${scrolls.waiting}”: say Yes or No on Today.`
