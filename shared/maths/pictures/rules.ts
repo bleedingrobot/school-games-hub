@@ -394,7 +394,9 @@ const decimalBond: PictureRule = (q) => {
     return { kind: 'number-line', from: 0, to: s.a, step: 1, labels: [0], marks: [{ at: s.a, label: show(s.a) }] };
   }
   // "1.1 − 0.5": both on a line in tenths, either side of the whole between them (count up from one to the other).
-  if (s.op === '−' && s.c === null && s.a !== null && s.b !== null && !Number.isInteger(s.a) && !Number.isInteger(s.b) && s.b > 0 && Math.ceil(s.b) <= Math.floor(s.a)) {
+  // Only when the tenths can't be taken away ("3.8 − 0.6" is ones then tenths, no line).
+  const tenth = (n: number) => Math.round(n * 10) % 10;
+  if (s.op === '−' && s.c === null && s.a !== null && s.b !== null && !Number.isInteger(s.a) && !Number.isInteger(s.b) && s.b > 0 && Math.ceil(s.b) <= Math.floor(s.a) && tenth(s.a) < tenth(s.b)) {
     const from = Math.floor(s.b);
     const to = Math.ceil(s.a);
     if (to - from > 5 || places(String(s.a)) !== 1 || places(String(s.b)) !== 1) return null;

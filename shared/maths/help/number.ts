@@ -77,7 +77,11 @@ function roundCard(text: string, e: number): HelpCard | null {
   // The pupil decides up or down; the card never says which. A 9 that goes up needs its carry explained.
   const first = e >= 0 && ip.length - 1 - e === 0;
   const carry = d === '9' ? (first ? ' If a 9 goes up, 9 + 1 makes 10: put a 1 in front.' : ' If a 9 goes up, 9 + 1 makes 10: write 0 and carry 1 to the digit before.') : '';
-  const finish = e >= 1 ? `Write the ${where} digit (1 more if you rounded up), then 0s after it: ?`
+  // Keep every digit in front of the rounding digit (569 to the nearest 10 keeps the 5).
+  const front = e >= 1 ? ip.slice(0, Math.max(0, ip.length - 1 - e)) : '';
+  const finish = e >= 1 ? (front
+    ? `Keep the ${front} in front${d === '9' ? ' (1 more if you carried)' : ''}, then the ${where} digit (1 more if you rounded up), then 0s: ?`
+    : `Write the ${where} digit (1 more if you rounded up), then 0s after it: ?`)
     : e === 0 ? 'Write the whole number (1 more if you rounded up), without the decimal part: ?'
       : `Write the number up to the ${where} digit and nothing after it. If you rounded up, that digit is 1 more: ?`;
   return card('rounding', 'Look at the digit next door', e === 0 && ip.length === 1 ? `Find the ${where} digit in ${text}.` : `Find the ${where} digit in ${text}: it is ${d}.`,
