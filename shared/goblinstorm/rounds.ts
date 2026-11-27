@@ -4,7 +4,7 @@
  * round 3 (+30) and so on. The Kingdom (the first five maps) and the Storm Lands (maps 6–10) are separate groups, each
  * with its own rounds. Gold only: hub points are untouched.
  *
- * The database's record_goblinstorm_run pays the same bonus (migration 20261127210645): keep them together.
+ * The database's record_goblinstorm_run pays the same bonus (migration 20261127213252): keep them together.
  */
 import { MAPS, STORM_FIRST } from './config';
 

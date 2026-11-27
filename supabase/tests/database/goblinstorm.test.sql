@@ -226,7 +226,7 @@ select is((select count(*)::integer from public.trophies t where t.player = pg_t
 select is((select array_agg(id order by sort) from public.achievement_types where id in ('goblinstorm-gate', 'goblinstorm-breaker')),
   array['goblinstorm-gate', 'goblinstorm-breaker'], 'Storm Gate and Storm Breaker are achievements');
 
--- ---- Round bonuses (migration 20261127210645): every boss in a group again pays 10, 20, 30 ... gold ----
+-- ---- Round bonuses (migration 20261127213252): every boss in a group again pays 10, 20, 30 ... gold ----
 select is((select beats[1:2] from public.goblinstorm_saves where player = pg_temp.id('0a')), (select array_agg(n order by m) from (
            select r.map as m, count(*)::integer as n from public.goblinstorm_runs r where r.player = pg_temp.id('0a') and r.boss_beaten group by r.map) c),
   'each boss win counts on its map');
