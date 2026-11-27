@@ -8,6 +8,8 @@
  * Cards are pictures only (aria-hidden): the button around a card says what it is.
  */
 import { rankOf, suitOf, type Card, type Suit } from '../../../shared/card101/cards';
+import { useCardBack } from './backs';
+import { CardBackArt } from './CardBack';
 
 const RED = '#c62828';
 const BLACK = '#1d1b3a';
@@ -100,29 +102,9 @@ function Face({ card }: { card: Card }) {
   );
 }
 
-function Back() {
-  return (
-    <>
-      <defs>
-        <linearGradient id="card101-back" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#5b3cc4" />
-          <stop offset="1" stopColor="#2b1d7a" />
-        </linearGradient>
-        <pattern id="card101-dots" width="10" height="10" patternUnits="userSpaceOnUse">
-          <circle cx="5" cy="5" r="1.6" fill="rgba(255,255,255,0.18)" />
-        </pattern>
-      </defs>
-      <rect x="1.5" y="1.5" width="97" height="137" rx="9" fill="url(#card101-back)" stroke="#fff" strokeWidth="3" />
-      <rect x="9" y="9" width="82" height="122" rx="6" fill="url(#card101-dots)" stroke="rgba(255,255,255,0.45)" strokeWidth="2" />
-      <text x="50" y="80" textAnchor="middle" fill="#ffd23f" fontSize="30" fontWeight="900" fontFamily="inherit">
-        101
-      </text>
-    </>
-  );
-}
-
 /** One card, face up (`card`) or face down (`card` null). Sized by its container's width. */
 export function PlayingCard({ card, className = '' }: { card: Card | null; className?: string }) {
+  const back = useCardBack();
   return (
     <svg
       className={`playing-card ${card ? 'is-up' : 'is-down'} ${className}`}
@@ -130,7 +112,7 @@ export function PlayingCard({ card, className = '' }: { card: Card | null; class
       aria-hidden="true"
       focusable="false"
     >
-      {card ? <Face card={card} /> : <Back />}
+      {card ? <Face card={card} /> : <CardBackArt id={back} />}
     </svg>
   );
 }

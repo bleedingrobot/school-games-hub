@@ -4,10 +4,11 @@
  * view (shared/card101/view.ts) says they can see; the screen around it decides what
  * happens when something is tapped.
  */
-import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 import { AvatarImage } from '../../avatar/AvatarImage';
 import { cardName, SLOT_NAMES, SLOTS, type Card, type Slot } from '../../../shared/card101/cards';
 import type { SeatView } from '../../../shared/card101/view';
+import { boxOf, playMotion, type Motion } from './motion';
 import { PlayingCard } from './PlayingCard';
 
 export interface Seat {
@@ -105,6 +106,7 @@ export function Table({
   onSwap,
   children,
   overlay,
+  motion = null,
 }: {
   view: SeatView;
   seats: readonly Seat[];
@@ -123,8 +125,36 @@ export function Table({
   children: ReactNode;
   /** The scoring show or podium, over the felt. */
   overlay?: ReactNode;
+  /** The last card movement to animate (deal, draw, swap, throw, knock). */
+  motion?: Motion | null;
 }) {
   const me = view.seat;
+  const rootRef = useRef<HTMLDivElement>(null);
+  /** Where each seat's held card was drawn last time, so a swap or throw can fly from there. */
+  const heldBoxes = useRef(new Map<number, { x: number; y: number; w: number; h: number }>());
+  const played = useRef(0);
+  const [ringSeat, setRingSeat] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (root && motion && motion.n !== played.current) {
+      played.current = motion.n;
+      playMotion(root, motion, heldBoxes.current, view.players, me);
+      if (motion.kind === 'knock') setRingSeat(motion.seat);
+    }
+    // Then remember where held cards are now (for the next motion).
+    if (root) {
+      // Kept, not cleared, when the card is placed: a classmates game may tell us about the swap a moment later.
+      root.querySelectorAll<HTMLElement>('[data-held-seat]').forEach((el) => {
+        const box = boxOf(el.querySelector('.playing-card'));
+        if (box) heldBoxes.current.set(Number(el.dataset.heldSeat), box);
+      });
+    }
+  });
+  useLayoutEffect(() => {
+    if (ringSeat === null) return;
+    const timer = setTimeout(() => setRingSeat(null), 1400);
+    return () => clearTimeout(timer);
+  }, [ringSeat]);
   // Seats go clockwise from mine, whichever seat I'm in.
   const placeOf = (index: number) => PLACES[view.players][(index - me + view.players) % view.players];
   const holding = view.holding;
@@ -141,7 +171,8 @@ export function Table({
     return (
       <section
         key={index}
-        className={`c101-seat c101-seat--${placeOf(index)}${isTurn ? ' is-turn' : ''}${view.out[index] ? ' is-out' : ''}`}
+        data-seat={index}
+        className={`c101-seat c101-seat--${placeOf(index)}${isTurn ? ' is-turn' : ''}${view.out[index] ? ' is-out' : ''}${ringSeat === index ? ' is-knocking' : ''}`}
         aria-label={isMe ? 'Your cards' : `${seat.name}’s cards`}
       >
         <SeatInfo seat={seat} view={view} index={index} thinking={thinking && isTurn && !isMe} />
@@ -156,7 +187,7 @@ export function Table({
                 const face = <PlayingCard key={flashing ? `f${flash.n}` : 'c'} card={card} className={flashing ? 'is-new' : ''} />;
                 if (!isMe) {
                   return (
-                    <div key={slot} className={cls} role="img" aria-label={cardLabel(owner, slot, card)}>
+                    <div key={slot} data-card-slot={slot} className={cls} role="img" aria-label={cardLabel(owner, slot, card)}>
                       {face}
                     </div>
                   );
@@ -167,6 +198,7 @@ export function Table({
                     key={slot}
                     type="button"
                     data-slot={slot}
+                    data-card-slot={slot}
                     className={`${cls}${swappable ? ' is-pickable' : ''}`}
                     disabled={!swappable}
                     onClick={() => onSwap(slot)}
@@ -182,6 +214,7 @@ export function Table({
           {theirHolding && (
             <div
               className="c101-held c101-held--small"
+              data-held-seat={index}
               role="img"
               aria-label={`${seat.name} is holding ${theirHolding.card ? `the ${cardName(theirHolding.card)}` : 'a card from the stack'}`}
             >
@@ -195,12 +228,13 @@ export function Table({
   };
 
   return (
-    <div className={`c101-table c101-table--${view.players}`}>
+    <div ref={rootRef} className={`c101-table c101-table--${view.players}`}>
       {seats.map((_, i) => (i === me ? null : renderSeat(i)))}
       <div className="c101-middle">
         <button
           type="button"
           className="c101-pile c101-pile--stack"
+          data-pile="stack"
           disabled={!canDraw || view.stackCount === 0}
           onClick={() => onDraw('stack')}
           aria-label={`Stack: ${view.stackCount} cards. Take the top card`}
@@ -217,6 +251,7 @@ export function Table({
         <button
           type="button"
           className="c101-pile c101-pile--discard"
+          data-pile="discard"
           disabled={!canDraw || !view.discardTop}
           onClick={() => onDraw('discard')}
           aria-label={view.discardTop ? `Discard pile: ${cardName(view.discardTop)}. Take it` : 'Discard pile: empty'}
@@ -228,7 +263,7 @@ export function Table({
           <span className="c101-pile__label">Discard</span>
         </button>
         {myHolding && (
-          <div className="c101-held c101-held--mine" role="img" aria-label={`Your new card: ${cardName(myHolding.card!)}`}>
+          <div className="c101-held c101-held--mine" data-held-seat={me} role="img" aria-label={`Your new card: ${cardName(myHolding.card!)}`}>
             <PlayingCard card={myHolding.card} className="is-drawn" />
             <span className="c101-pile__label">Your new card</span>
           </div>
