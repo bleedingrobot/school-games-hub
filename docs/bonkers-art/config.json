@@ -1,0 +1,90 @@
+{
+  "_from": "docs/game-guide/templates/art-config.json. STYLE TEST ONLY (27 Nov 2026): four looks for James to choose from, not final art. Check with: python3 scripts/game_art.py bonkers paint OUT --dry-run",
+  "game": "bonkers",
+  "filename_prefix": "bonkers/img",
+  "style": "toon",
+  "styles": {
+    "toon": "Bold bright 2D cartoon illustration, thick clean dark outlines, flat candy colours with simple soft shading, big round googly eyes, rubbery squash-and-stretch shapes, goofy wacky expressions, cheerful kids TV animation look, no text. ",
+    "clay": "Handmade plasticine claymation, everything sculpted from smooth modelling clay with soft fingerprint texture, chunky rounded shapes, bright cheerful colours, soft studio light, stop-motion model look, no text. ",
+    "book": "Soft storybook picture-book illustration, watercolour and gouache with gentle coloured pencil lines, warm cosy colours, whimsical and friendly, no text. ",
+    "toy": "Glossy 3D animated film render, soft rounded vinyl toy shapes, big expressive shiny eyes, bright colourful lighting with soft shadows, playful and squishy, no text. "
+  },
+  "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic, gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly",
+  "inbox": "~/dragon-art-inbox/bonkers-art/style-test",
+  "picks": "docs/bonkers-art/picks.json",
+  "art_dir": "src/games/bonkers/art/paint",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "hero-kitchen-knight",
+      "prompt": "A brave little kid hero dressed as a Kitchen Knight: a shiny saucepan worn as a helmet, a flowery apron over the clothes, oven-mitt gloves, holding up a giant wooden rolling pin like a mighty sword, determined funny grin, heroic pose, facing slightly to the right. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "kitchen-knight",
+      "max": 800
+    },
+    {
+      "name": "hero-kitchen-knight-girl",
+      "prompt": "A brave little girl hero dressed as a Kitchen Knight: a shiny saucepan worn as a helmet over her pigtails, a flowery apron, oven-mitt gloves, holding up a giant wooden rolling pin like a mighty sword, determined funny grin, heroic pose, facing slightly to the right. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "kitchen-knight-girl",
+      "max": 800
+    },
+    {
+      "name": "hero-disco-dazzler-boy",
+      "prompt": "A cheeky little boy hero dressed as a Disco Dazzler: a sparkly purple cape, a glittery headband, big round sunglasses, wobbling proudly on a pair of ridiculous sparkly pink high heels with tiny disco balls on the toes, arms out in a funny dance-move pose, huge confident grin, facing slightly to the right. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "disco-dazzler-boy",
+      "max": 800
+    },
+    {
+      "name": "monster-sock-goblin",
+      "prompt": "A silly little goblin monster made out of a stripy odd sock, one wonky eye bigger than the other, a holey toe for a nose, floppy sock ears, tiny arms waving a clothes peg, cheeky grumpy face, a little cloud of cartoon stink lines, funny not scary. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "sock-goblin",
+      "max": 800
+    },
+    {
+      "name": "item-high-heels",
+      "prompt": "A pair of ridiculous sparkly pink high heels of distraction with tiny disco balls on the toes, glittering stars and swirls floating around them, a magical wacky game item, three-quarter view. Single object, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "high-heels",
+      "max": 600
+    },
+    {
+      "name": "scene-wobbly-inn",
+      "prompt": "A wide view of the Wobbly Inn, a crooked, cheerful village inn built like a giant teapot with a wonky chimney puffing bubbles, a round door, a swinging sign with a picture of a jelly, flower boxes, a cobbled path and a sunny morning sky, a friendly wacky fantasy village behind it, empty open ground in front for characters to stand on, no characters. Wide landscape game background. Suitable for children aged 6 to 9.",
+      "size": [
+        1344,
+        768
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "wobbly-inn"
+    }
+  ]
+}
