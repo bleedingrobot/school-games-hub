@@ -15,7 +15,8 @@ export type Figure =
   /** Angles round a point (3 or 4), adding to 360°. */
   | { kind: 'point'; angles: string[] }
   /** Two straight lines crossing: `angles[0]` and `angles[1]` are vertically opposite. */
-  | { kind: 'crossing'; angles: [string, string] }
+  /** `next` puts `angles[1]` in the angle beside `angles[0]` on the same line (they add to 180°), not opposite it. */
+  | { kind: 'crossing'; angles: [string, string]; next?: boolean }
   /** A right angle split in two. */
   | { kind: 'right-angle'; angles: [string, string] }
   /** A rectangle (or square) with its side labels, and a label inside (its area, or '?'). */

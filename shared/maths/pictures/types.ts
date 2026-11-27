@@ -54,8 +54,16 @@ export type Picture =
   | { kind: 'clocks'; start: { hour: number; minute: number; label: string }; end: { hour: number; minute: number; label: string } | null }
   /** A 12-hour clock face with the 24-hour numbers (13-24) in a ring outside. */
   | { kind: 'clock-24' }
-  /** A balance: left and right pan labels ('2x + 3', '11'). */
-  | { kind: 'balance'; left: string; right: string }
+  /**
+   * A balance: left and right pan labels ('2x + 3', '11'). `leftBlocks` / `rightBlocks` are what sits on each pan: the
+   * letter's weight box(es), loose unit squares, and a single labelled block for a number too big to draw in squares.
+   */
+  | { kind: 'balance'; left: string; right: string; leftBlocks?: BalanceSide; rightBlocks?: BalanceSide }
+  /**
+   * A place-value strip for 10 with a negative power: the ones column then `places` decimal columns, a 1 in the ones and
+   * the point marked, a "÷ 10" arrow over each step. The 1 is never drawn in its last column (that is the answer).
+   */
+  | { kind: 'place-strip'; places: number }
   /** Bar towers, one per value, labelled with the value. `mark: 'range'` colours only the tallest and shortest. */
   | { kind: 'towers'; values: number[]; mark?: 'range' }
   /**
@@ -65,6 +73,19 @@ export type Picture =
   | { kind: 'unit-ladder'; units: string[]; links: string[]; highlight: string[]; direction?: 'up' | 'down' }
   /** A figure that the server-side figure kinds already draw (angle, compass, grid, clock...). */
   | { kind: 'figure'; figure: Figure };
+
+/** What sits on one pan of a balance. */
+export interface BalanceSide {
+  /** The letter's weight box (a letter, or 's ÷ 9'), drawn `letters` times (1 when left out). */
+  letter?: string;
+  letters?: number;
+  /** Small unit squares (up to 30). */
+  units?: number;
+  /** Unit squares shown as taken away (dashed outlines), for "n − 2". */
+  gone?: number;
+  /** One labelled block for a number too big to draw in squares ('72'). */
+  block?: string;
+}
 
 export type PictureKind = Picture['kind'];
 
