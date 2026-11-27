@@ -16,6 +16,8 @@ import type { Spot } from './corners';
 export interface ThronesPublic {
   kind: 'thrones';
   hall: Hall;
+  /** The hall's width (height 1); missing in older games (square). */
+  w?: number;
   round: (Omit<ThroneRound, 'thrones' | 'mimics' | 'items' | 'standing' | 'dancers'> & {
     thrones: { id: number; x: number; y: number; golden: boolean; taken: boolean }[];
     /** Trick thrones with eyes: how many each has eaten, never whom. */
@@ -62,7 +64,7 @@ export function thronesPublic(g: ThronesGame, players: number): ThronesPublic {
   const court = Object.values(g.mine).filter((m) => m.courtIn !== null).length;
   const r = g.round;
   return {
-    kind: 'thrones', hall: g.hall, court, playing: players - court,
+    kind: 'thrones', hall: g.hall, ...(g.w ? { w: g.w } : {}), court, playing: players - court,
     round: r ? {
       ...r, thrones: r.thrones.map((th) => ({ id: th.id, x: th.x, y: th.y, golden: th.golden, taken: th.by !== null })),
       mimics: (r.mimics ?? []).map((mm) => ({ id: mm.id, x: mm.x, y: mm.y, ate: mm.ate.length })),
@@ -72,7 +74,7 @@ export function thronesPublic(g: ThronesGame, players: number): ThronesPublic {
 }
 
 export function thronesPlayer(g: ThronesGame, order: string[], id: string, over: boolean): ThronesPlayer {
-  const m = g.mine[id] ?? freshMine(order.indexOf(id));
+  const m = g.mine[id] ?? freshMine(order.indexOf(id), g.w ?? 1);
   const r = g.round;
   const n = r?.n ?? 0;
   return {

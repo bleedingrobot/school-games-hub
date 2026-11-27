@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { classLiveStep } from './server';
 import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock, rng } from './pretendClass';
 import {
-  advance, answered, callMeeting, castVote, countVotes, fakeWork, freshMine, glitchCount, grab, jam, JAM_DELAY, JAM_COOL, lightsOff, MACHINES, makeRound,
+  advance, answered, callMeeting, castVote, countVotes, fakeWork, freshMine, glitchCount, grab, jam, JAM_DELAY, JAM_COOL, lightsOff, MACHINES, machinesOf, makeRound, CREW_W, canteenOf, stepCrew,
   meetingControl, newCrew, phaseOf, publicCrew, purposeAt, REVEAL_MS, ROLE_MS, TALK_MS, type CrewGame,
 } from './crew';
 import { crewSpotsOf } from './crewBot';
 
-const by = (id: number) => ({ x: MACHINES[id].x + MACHINES[id].r + 0.04, y: MACHINES[id].y });
+// New games are wide (CREW_W): the machines are spread across the factory.
+const WIDE = machinesOf(CREW_W);
+const by = (id: number) => ({ x: WIDE[id].x + WIDE[id].r + 0.04, y: WIDE[id].y });
 
 describe('Glitches', () => {
   it('delayed jams, fixing, jobs, the power bar, meetings, secret votes, drones and wins', () => {
@@ -108,6 +110,7 @@ describe('Glitches', () => {
     expect([r3.done?.winner, r3.done?.why, g.mine[gl].glitchWins]).toEqual(['glitch', 'jammed', 1]);
     expect(JAM_COOL).toBeGreaterThan(JAM_DELAY);
     expect(TALK_MS).toBe(40_000);
+    wideBoard();
   });
 
   it('a pretend class plays a whole game through the server: meetings, votes, rounds, pays once, keeps roles secret', async () => {
@@ -118,8 +121,14 @@ describe('Glitches', () => {
     await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'start', room });
     pc.play(room);
     let meetings = 0;
+    let maxX = 0;
+    let inside = true;
     for (let s = 0; s < 5 * 60 + 30; s += 0.5) {
       await clock.run(clock.now() + 500);
+      for (const p of Object.values(pc.db.spots.get(room) ?? {})) {
+        maxX = Math.max(maxX, p.x);
+        inside &&= p.x >= 0 && p.x <= 1.6 && p.y >= 0 && p.y <= 1;
+      }
       // The teacher calls a meeting about once a minute.
       if (s > 0 && s % 60 === 30) {
         const out = await classLiveStep(pc.services, PRETEND_TEACHER, { action: 'crew', room, do: 'meeting' });
@@ -152,5 +161,54 @@ describe('Glitches', () => {
     const paid = [...pc.db.paid.values()].find((p) => p.activity === 'crew')!;
     expect(paid.players.every((p) => p.points >= 1 && p.points <= 10 && p.extra && 'crew_mends' in p.extra)).toBe(true);
     expect(paid.players.some((p) => p.points >= 4)).toBe(true);
+    // The factory is wide: pupils roamed right across it and nobody left it.
+    expect(g.w).toBe(CREW_W);
+    expect(inside).toBe(true);
+    expect(maxX).toBeGreaterThan(1.2);
   });
+
 });
+
+/** a new factory is wide (CREW_W): rooms spread across it, everything inside 0..w; old games stay square (folded into the first test: the classlive test budget). */
+function wideBoard() {
+    const g = newCrew('factory', rng(3));
+    expect(g.w).toBe(CREW_W);
+    const order = Array.from({ length: 30 }, (_, i) => `p-${i}`);
+    // Round 4 brings in the belts; force crates too by playing on until a round has both.
+    let r = makeRound(g, 4, 0, order, rng(4));
+    for (let n = 5; !(r.items.length && r.belts.length) && n < 40; n++) r = makeRound(g, n, 0, order, rng(n));
+    expect(r.w).toBe(CREW_W);
+    expect(publicCrew(g, order)).toMatchObject({ w: CREW_W });
+    g.round = r;
+    expect(publicCrew(g, order).round).toMatchObject({ w: CREW_W });
+    // Every room keeps its look and row, spread so the factory fills the width; the Canteen (meeting table) in the middle.
+    const canteen = canteenOf(CREW_W);
+    expect(canteen.x).toBeCloseTo(CREW_W / 2);
+    WIDE.forEach((mc, i) => {
+      expect({ ...mc, x: 0 }).toEqual({ ...MACHINES[i], x: 0 });
+      expect(mc.x - mc.r).toBeGreaterThan(0);
+      expect(mc.x + mc.r).toBeLessThan(CREW_W);
+      expect(Math.hypot(mc.x - canteen.x, mc.y - canteen.y)).toBeGreaterThan(canteen.r + mc.r);
+    });
+    expect(Math.min(...WIDE.map((m) => m.x))).toBeLessThan(0.2);
+    expect(Math.max(...WIDE.map((m) => m.x))).toBeGreaterThan(CREW_W - 0.2);
+    // Everyone sits round the wide Canteen; crates and belts lie inside the factory, more crates than on a square one.
+    expect(order.every((id) => Math.hypot(g.mine[id].spot.x - canteen.x, g.mine[id].spot.y - canteen.y) < canteen.r)).toBe(true);
+    expect(r.items.length).toBeGreaterThan(6);
+    expect(r.items.every((it) => it.x > 0 && it.x < CREW_W && it.y > 0 && it.y < 1)).toBe(true);
+    expect(r.items.some((it) => it.x > 1)).toBe(true);
+    expect(r.belts.every((b) => b.x > 0 && b.x + b.w < CREW_W && b.w > 0.7)).toBe(true);
+    // Walking runs to the far wall at x = w (not 1), and bumps the wide machines.
+    const moving = { ...r, startAt: 0, meeting: null, done: null };
+    expect(stepCrew({ p: { x: 1.5, y: 0.5 } }, { x: 1, y: 0 }, 100, moving, 1000, { drone: true, speed: 3 }).p.x).toBeCloseTo(CREW_W - 0.03, 5);
+    const mc = WIDE[4];
+    const bumped = stepCrew({ p: { x: mc.x - mc.r - 0.031, y: mc.y } }, { x: 1, y: 0 }, 100, { ...moving, belts: [] }, 1000, { drone: false, speed: 0.3 }).p;
+    expect(Math.hypot(bumped.x - mc.x, bumped.y - mc.y)).toBeGreaterThanOrEqual(mc.r + 0.03 - 1e-9);
+    // A game from before the wide factory has no w: square, as it was.
+    const old: CrewGame = { ...newCrew('factory', rng(5)), w: undefined };
+    const ro = makeRound(old, 1, 0, order.slice(0, 8), rng(6));
+    expect(ro.w).toBeUndefined();
+    expect(machinesOf(1)).toBe(MACHINES);
+    expect(Object.values(old.mine).every((m) => m.spot.x < 1)).toBe(true);
+    expect(stepCrew({ p: { x: 0.9, y: 0.5 } }, { x: 1, y: 0 }, 100, { ...ro, startAt: 0, meeting: null, done: null }, 1000, { drone: true, speed: 3 }).p.x).toBeCloseTo(0.97, 5);
+}

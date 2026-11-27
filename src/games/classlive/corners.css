@@ -567,3 +567,44 @@
   80% { transform: translate(-2px, 1px); }
 }
 @media (prefers-reduced-motion: reduce) { .fc-pad__board--hit { animation: none; } }
+
+/* ---------- the wide board (27 Nov 2026: fills a widescreen projector and a landscape iPad) ---------- */
+/* Four Corners' and Shark Bay's boards are `--bw` wide (in board heights); dots stay round. */
+.fc-board--wide .fc-dot, .sb-board--wide .fc-dot { width: calc(3% / var(--bw, 1.6)); }
+/* Big screen: a slimmer side panel; the board as wide as fits, as tall as the screen allows. */
+.fc-scene--wide .fc-stage { align-items: center; height: auto; max-width: 100%; }
+.fc-scene--wide .fc-side { width: 17vw; max-width: 280px; max-height: calc(100vh - 80px); overflow: hidden; }
+.fc-scene--wide .fc-stage .fc-board, .fc-scene--wide .fc-stage .sb-board { height: auto; max-width: none; width: min(calc(96vw - 2vw - min(17vw, 280px)), calc((100vh - 80px) * 1.6)); }
+/* A slim jail: five to a row, so a whole class fits. */
+.fc-scene--wide .fc-jail__cells { gap: 4px; }
+.fc-scene--wide .fc-jail__who { width: 44px; }
+.fc-scene--wide .fc-jail__who small { font-size: 10px; max-width: 44px; }
+.fc-scene--wide .fc-jail__locks i { width: 7px; height: 7px; }
+.fc-scene--wide .fc-jail .avatar, .fc-scene--wide .fc-jail svg, .fc-scene--wide .fc-jail img { max-width: 32px; max-height: 32px; }
+@media (max-width: 700px) {
+  .fc-scene--wide .fc-side { width: 100%; max-width: none; max-height: none; }
+  .fc-scene--wide .fc-stage .fc-board, .fc-scene--wide .fc-stage .sb-board { width: 96vw; }
+}
+/* iPad: the board across the whole screen. Four Corners keeps its corners clear: the joystick and the power-ups sit over
+   the board's bottom edge between the corners (a corner is 0.26 / 1.6 of the board's width), the messages at the top. */
+.fc-pad--wide .fc-pad__board { width: min(100%, calc((100dvh - 250px) * 1.6)); }
+@media (orientation: portrait) { .fc-pad--wide .fc-pad__board { width: 100%; } }
+@media (orientation: landscape) and (min-width: 640px) {
+  .fc-pad--wide {
+    --fcb: min(calc(100vw - 16px), calc((100dvh - 52px) * 1.6));
+    --fcz: calc((100vw - var(--fcb)) / 2 + var(--fcb) * 0.1625 + 10px);
+  }
+  .cl-c--corners .fc-pad--run.fc-pad--wide { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-bottom: 0; }
+  .fc-pad--wide .fc-pad__top { flex-direction: row; align-items: center; padding-top: 0; max-width: none; padding-inline: 96px 8px; }
+  .fc-pad--wide .fc-pad__left { font-size: 34px; }
+  .fc-pad--wide .fc-pad__board { width: var(--fcb); }
+  .fc-pad--wide .fc-stick { right: var(--fcz); bottom: max(12px, env(safe-area-inset-bottom)); width: min(26vh, 170px); height: min(26vh, 170px); opacity: 0.8; }
+  .fc-pad--wide .fc-pad__powers {
+    position: fixed; left: var(--fcz); bottom: max(12px, env(safe-area-inset-bottom)); z-index: 6; width: auto;
+    max-width: min(380px, calc(var(--fcb) * 0.675 - min(26vh, 170px) - 40px)); min-height: 0; flex-direction: column; align-items: stretch; gap: 4px;
+  }
+  .fc-pad--wide .fc-power { opacity: 0.93; padding: 4px 10px; }
+  .fc-pad--wide .fc-power__pic { width: 40px; height: 40px; }
+  .fc-pad--wide .fc-chip { align-self: flex-start; }
+  .fc-pad--wide .fc-fb { position: fixed; top: 56px; left: 0; right: 0; margin-inline: auto; width: max-content; max-width: min(40vw, 460px); z-index: 7; pointer-events: none; }
+}

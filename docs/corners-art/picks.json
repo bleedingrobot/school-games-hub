@@ -43,5 +43,9 @@
   "back-snow": 2,
   "back-jungle": 2,
   "back-castle": 3,
-  "back-space": 2
+  "back-space": 2,
+  "map-snow-wide": 2,
+  "map-jungle-wide": 1,
+  "map-castle-wide": 1,
+  "map-space-wide": 1
 }

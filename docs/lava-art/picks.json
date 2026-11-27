@@ -32,5 +32,9 @@
   "power-freeze": 3,
   "power-speed": 1,
   "power-double": 2,
-  "power-rope": 2
+  "power-rope": 2,
+  "lake-volcano-wide": 2,
+  "lake-dragon-wide": 2,
+  "lake-forge-wide": 3,
+  "lake-planet-wide": 1
 }

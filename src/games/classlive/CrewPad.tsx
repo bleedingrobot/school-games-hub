@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AvatarImage } from '../../avatar/AvatarImage';
 import {
-  AVATAR_R, CONTROL, GRAB_R, LIGHT_R, MACHINES, phaseOf, POWER_WORDS, REACH, speedOf, stepCrew, WORK_MS, type CrewMove, type Purpose,
+  AVATAR_R, CONTROL, GRAB_R, LIGHT_R, machinesOf, MACHINES, phaseOf, POWER_WORDS, REACH, speedOf, stepCrew, WORK_MS, type CrewMove, type Purpose,
 } from '../../../shared/classlive/crew';
 import type { CrewSpots } from '../../../shared/classlive/crewBot';
 import type { Spot } from '../../../shared/classlive/corners';
@@ -16,7 +16,7 @@ import type { PlayerView, RoomView } from '../../../shared/classlive/server';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import { Joystick, useKeys } from './CornersPad';
-import { CrewBoard, CrewToken } from './CrewBoard';
+import { at, CrewBoard, CrewToken } from './CrewBoard';
 import { CrewHelp } from './CrewCard';
 import { PLAYER_COLOURS } from './StarSky';
 import { useEdgeLink } from './edgeLink';
@@ -27,15 +27,20 @@ type Mine = Extract<PlayerView['game'], { kind: 'crew' }>;
 type Pub = Extract<RoomView['game'], { kind: 'crew' }>;
 const SEND_MS = 400;
 const factOf = (q: PublicQuestion, answer: number) => q.parts.map((p) => p.replace(/\?/g, String(answer))).join(' ');
-const near = (id: number, p: Spot) => Math.hypot(MACHINES[id].x - p.x, MACHINES[id].y - p.y) <= MACHINES[id].r + REACH;
+/** Close enough to machine `id` on a factory `w` wide. */
+const near = (id: number, p: Spot, w = 1) => {
+  const mc = machinesOf(w)[id];
+  return Math.hypot(mc.x - p.x, mc.y - p.y) <= mc.r + REACH;
+};
 
 /** What a right answer here would do, worked out on the device from what it knows (the server checks again). */
 function localPurpose(r: NonNullable<Pub['round']>, mg: Mine, p: Spot, t: number): Purpose | null {
   if (mg.glitch) return mg.drone ? { kind: 'drone' } : null;
-  if (r.lightsTo > t && near(CONTROL, p)) return { kind: 'lights' };
-  const fix = MACHINES.find((mc) => r.machines[mc.id].sparked && near(mc.id, p));
+  const w = r.w ?? 1;
+  if (r.lightsTo > t && near(CONTROL, p, w)) return { kind: 'lights' };
+  const fix = MACHINES.find((mc) => r.machines[mc.id].sparked && near(mc.id, p, w));
   if (fix) return { kind: 'fix', machine: fix.id };
-  const job = MACHINES.find((mc) => mg.jobs.includes(mc.id) && !r.machines[mc.id].sparked && near(mc.id, p));
+  const job = MACHINES.find((mc) => mg.jobs.includes(mc.id) && !r.machines[mc.id].sparked && near(mc.id, p, w));
   return job ? { kind: 'job', machine: job.id } : null;
 }
 
@@ -50,9 +55,11 @@ export function CrewPad({ link: baseLink, room, view, me, setMe, setView, clock,
   const pub: Pub | null = view.game.kind === 'crew' ? view.game : null;
   const mg: Mine | null = me && me.game.kind === 'crew' ? me.game : null;
   const r = pub?.round ?? null;
+  /** The factory's width (height 1): wide since 27 Nov 2026 NZ. */
+  const bw = r?.w ?? pub?.w ?? 1;
   const keysDir = useKeys();
   const stickDir = useRef<Spot>({ x: 0, y: 0 });
-  const pos = useRef<CrewMove>({ p: mg?.spot ?? { x: 0.5, y: 0.5 } });
+  const pos = useRef<CrewMove>({ p: mg?.spot ?? { x: bw / 2, y: 0.5 } });
   const placed = useRef(-1);
   const seen = useRef<CrewSpots | null>(null);
   const lastSent = useRef(0);
@@ -95,7 +102,7 @@ export function CrewPad({ link: baseLink, room, view, me, setMe, setView, clock,
       if (live && r && mg) {
         const k = keysDir();
         const dir = k.x || k.y ? k : stickDir.current;
-        pos.current = stepCrew(pos.current, question ? { x: 0, y: 0 } : dir, dt, { belts: r.belts, startAt: r.startAt, meeting: r.meeting, done: r.done }, t, { drone: mg.drone, speed: speedOf(mg, t) });
+        pos.current = stepCrew(pos.current, question ? { x: 0, y: 0 } : dir, dt, { belts: r.belts, startAt: r.startAt, meeting: r.meeting, done: r.done, w: r.w }, t, { drone: mg.drone, speed: speedOf(mg, t) });
         const p = pos.current.p;
         const now = Date.now();
         if (now - lastSent.current >= (link.sendMs ?? SEND_MS)) {
@@ -127,7 +134,7 @@ export function CrewPad({ link: baseLink, room, view, me, setMe, setView, clock,
     if (!working || room === null) return;
     const id = window.setTimeout(() => {
       setWorking(null);
-      if (!near(working.machine, pos.current.p)) { toast('You walked away. Try again!'); return; }
+      if (!near(working.machine, pos.current.p, bw)) { toast('You walked away. Try again!'); return; }
       void link.move(room, pos.current.p.x, pos.current.p.y).then(() => link.send({ action: 'play', room, work: working.machine })).then((out) => {
         const b = apply(out);
         toast(out.status === 200 ? '✅ Job done!' : (b.error ?? 'Try again.'), out.status === 200);
@@ -158,9 +165,9 @@ export function CrewPad({ link: baseLink, room, view, me, setMe, setView, clock,
   const here = pos.current.p;
   const purpose = live && r && mg ? localPurpose(r, mg, here, t) : null;
   const canAskNow = !!purpose && !!mg && t >= mg.nextAt && !question;
-  const jamMachine = live && r && mg && mg.glitch && !mg.drone ? MACHINES.find((mc) => !r.machines[mc.id].sparked && near(mc.id, here)) : undefined;
+  const jamMachine = live && r && mg && mg.glitch && !mg.drone ? MACHINES.find((mc) => !r.machines[mc.id].sparked && near(mc.id, here, bw)) : undefined;
   const jamLeft = mg ? Math.max(0, Math.ceil((mg.jamTo - t) / 1000)) : 0;
-  const fakeJob = live && mg?.glitch && !mg.drone ? mg.jobs.find((id) => near(id, here)) : undefined;
+  const fakeJob = live && mg?.glitch && !mg.drone ? mg.jobs.find((id) => near(id, here, bw)) : undefined;
 
   const ask = async () => {
     if (!canAskNow || asking.current || room === null) return;
@@ -316,7 +323,7 @@ export function CrewPad({ link: baseLink, room, view, me, setMe, setView, clock,
   const btnText = !purpose ? '🔧 Go to a machine' : purpose.kind === 'fix' ? '🔧 Fix it' : purpose.kind === 'job' ? '📋 Do the job' : purpose.kind === 'lights' ? '💡 Lights on' : '🛸 Help';
   const workPct = working ? Math.min(100, ((Date.now() - working.from) / WORK_MS) * 100) : 0;
   return (
-    <div className={`fc-pad fc-pad--run sc-pad ${mg.drone ? 'sc-pad--drone' : ''}`}>
+    <div className={`fc-pad fc-pad--run sc-pad ${bw > 1 ? 'sc-pad--wide' : ''} ${mg.drone ? 'sc-pad--drone' : ''}`}>
       <header className="fc-pad__top">
         <span>Shift {roundN}</span>
         <b className="gt-pad__status">{status}</b>
@@ -333,9 +340,9 @@ export function CrewPad({ link: baseLink, room, view, me, setMe, setView, clock,
         {r && <span className="fc-chip">⚡ {Math.floor(r.power)}%</span>}
       </div>
       <div className="fc-pad__board">
-        <CrewBoard round={r} highlight={mg.jobs} dark={dark ? { x: here.x, y: here.y, r: LIGHT_R } : null}>
+        <CrewBoard w={bw} round={r} highlight={mg.jobs} dark={dark ? { x: here.x, y: here.y, r: LIGHT_R } : null}>
           {(seen.current?.spots ?? []).map(([x, y, kind, name, colour], i) => (
-            <span key={i} className={`fc-dot sc-dot sc-dot--${kind}`} style={{ left: `${x * 100}%`, top: `${y * 100}%`, ...(kind === 0 ? { background: PLAYER_COLOURS[(colour ?? 0) % 12] } : {}) }}>
+            <span key={i} className={`fc-dot sc-dot sc-dot--${kind}`} style={{ ...at(x, y, bw), ...(kind === 0 ? { background: PLAYER_COLOURS[(colour ?? 0) % 12] } : {}) }}>
               {kind === 1 ? '🛸' : ''}
               {name && <small className="sc-dot__name">{name}</small>}
             </span>

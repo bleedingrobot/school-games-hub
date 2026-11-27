@@ -15,12 +15,16 @@ James's idea (25 Nov 2026 NZ, from the coordinator's list): kids run over tiles 
 
 ## Rules (shared/classlive/clash.ts)
 
-- Board: unit square, 24 × 24 tiles (idx = row × 24 + col). Teams 1 Red, 2 Blue, 3 Green, 4 Yellow; each starts on its own side, and every round puts everyone back there.
+- Board: 24 rows; new games are `CLASH_W` (1.6) wide, so 38 columns (idx = row × columns + col; see "Wide map"). Games without `w` stay 24 × 24 square. Teams 1 Red, 2 Blue, 3 Green, 4 Yellow; each starts on its own side, and every round puts everyone back there.
 - Round: ready 3.5 s, paint 45/60/90 s (teacher's pick, default 60), count 7 s (reveal). Golden tiles count 3. Ties share the round. Game: most round wins, then most tiles. A timed game ends after the round that is on when time is up.
 - Bomb radius (tiles): 2.2, 2.9 on a streak of 3, 3.6 on 5, Mega Bomb 5.5. One question every 1.5 s at most; only while painting.
 - Power-ups (grab by running over, one at a time; a held power switches on with your next right answer, with the bomb): Big Brush (trail 3 wide, 10 s), Speed Shoes (10 s), Mega Bomb, Rainbow Cross (paints your row and column).
 - Map mechanics by round: 2 power-ups, 3 golden tiles, 4 portals, 5 goo (slow), 6 slippy paint, 7 rollers, 8 fountain (middle wall, its tiles don't count), then mixes. Movement reuses Four Corners' `stepMove`.
 - Maps: Paint Park, Graffiti Rooftops, Splash Beach, Space Paint Lab (MAP_WORDS).
+
+## Wide map (27 Nov 2026 NZ)
+
+James asked for the maps to fill the screen, as Ghost Tag does. New games are `CLASH_W` (1.6) wide and 1 high (`w` on the game and its rounds, `w` on `ClashPublic`; older games without it stay square). The paint grid covers the whole wide board: more columns, the same 24 rows, so tiles stay square (`colsOf(w)` = round(24 w) = 38 columns, 912 tiles, tile width `tileW(w)`), and painted percentages count the bigger grid. Everything that places or clamps takes the width: tileOf, tileCentre, lineTiles, bombTiles, crossTiles, inFountain (the fountain is at x = w/2), blankTiles, scoreTiles, openSpot, teleports, startSpot, golden patches, items, the pretend pupils and Clash's own `stepMove` (Four Corners' clamps to 1; the Clash copy clamps to w). A wider board gets about 1.6x the goo and slippy patches, golden patches and power-ups; still two rollers, the x one rolls the full width (`Roller.span`, period x w, same speed). The database follows in migration 20261127164215 (tile idx up to 1151, `classlive_clash_paint` and `classlive_clash_count` read `w` from the game); moves clamp to `classlive_activities.width` (20261127163618). Paintings: map-<map>-wide (docs/clash-art/config.json), the square one cropped until a wide one exists. Big screen: slimmer side panel; iPad landscape: board edge to edge with the bomb and joystick over its bottom corners.
 
 ## What counts (server checks)
 

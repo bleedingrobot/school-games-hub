@@ -302,3 +302,15 @@
 @media (prefers-reduced-motion: reduce) {
   .sb-shake, .sb-fin__wake, .sb-token--swim .fc-token__body { animation: none; }
 }
+
+/* ---------- the wide bay (27 Nov 2026): the board edge to edge on a landscape iPad ---------- */
+/* The bay is an oval, so the board's corners are sand: the joystick and the power-ups go over the bottom corners (as Ghost
+   Tag), the messages over the top right corner and where you are at the top middle. The rest comes from corners.css. */
+@media (orientation: landscape) and (min-width: 640px) {
+  .sb-pad--wide .fc-stick { right: max(16px, env(safe-area-inset-right)); }
+  .sb-pad--wide .fc-pad__powers { left: max(12px, env(safe-area-inset-left)); max-width: min(300px, 26vw); }
+  .sb-pad--wide .fc-fb { left: auto; right: 12px; top: 52px; margin: 0; max-width: 26vw; }
+  .sb-pad--wide .sb-pad__status { position: fixed; top: 52px; left: 0; right: 0; margin-inline: auto; width: max-content; max-width: 44vw; z-index: 6; pointer-events: none; }
+}
+/* The strike's spotlight stays round on the wide board. */
+.sb-board--wide .sb-dark::after { width: calc(30% / var(--bw, 1.6)); }

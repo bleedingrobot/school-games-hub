@@ -44,5 +44,9 @@
   "icy-boat": 2,
   "icy-dock": 2,
   "fin": 1,
-  "shark": 2
+  "shark": 2,
+  "map-lagoon-wide": 1,
+  "map-reef-wide": 1,
+  "map-pirate-wide": 1,
+  "map-icy-wide": 1
 }

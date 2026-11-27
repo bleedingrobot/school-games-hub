@@ -153,7 +153,7 @@ export type PublicGame =
   /** `tiles`: one character a tile, '1' flipped, '0' not. Never the picture itself (until it is revealed). */
   | { kind: 'mural'; tiles: string; cols: number; rows: number; flipped: number; phase: 'flip' | 'guess'; guessEndsAt: number | null; picked: number; choices: Picture[]; solvers: number; revealed: boolean; picture: Picture | null }
   /** Four Corners: the round without the roll (until the dice lands) and without who was caught. */
-  | { kind: 'corners'; map: CornerMap; round: PublicRound | null; jailed: number; free: number; variant?: 'shark'; bay?: BayMap }
+  | { kind: 'corners'; map: CornerMap; round: PublicRound | null; jailed: number; free: number; variant?: 'shark'; bay?: BayMap; w?: number }
   /** Ghost Tag (shared/classlive/ghost.ts). */
   | PublicGhost
   /** Colour Clash (shared/classlive/clashServer.ts). */
@@ -327,7 +327,7 @@ export function publicGame(g: Game, players: number, t = 0, order: string[] = []
   if (g.kind === 'thrones') return thronesPublic(g, players);
   if (g.kind === 'corners') {
     const jailed = Object.values(g.mine).filter((m) => m.jailedIn !== null).length;
-    return { kind: 'corners', map: g.map, round: g.round ? publicRound(g.round, t) : null, jailed, free: players - jailed, ...(isShark(g) ? { variant: 'shark' as const, bay: g.bay } : {}) };
+    return { kind: 'corners', map: g.map, ...(g.w ? { w: g.w } : {}), round: g.round ? publicRound(g.round, t) : null, jailed, free: players - jailed, ...(isShark(g) ? { variant: 'shark' as const, bay: g.bay } : {}) };
   }
   if (g.kind === 'mural') {
     return {
@@ -377,7 +377,10 @@ export function playerView(s: Session, id: string): PlayerView {
   const p = s.players[id];
   const name = roomNames(s)[id] ?? liveName(p.name);
   if (s.game.kind === 'relay') return { player: id, name, colour: p.colour, game: relayPlayer(s, s.game, id) };
-  if (s.game.kind === 'lava') return { player: id, name, colour: p.colour, game: lavaPlayer(s, s.game, id, () => freshLavaMine(s.order.indexOf(id))) };
+  if (s.game.kind === 'lava') {
+    const w = s.game.w ?? 1;
+    return { player: id, name, colour: p.colour, game: lavaPlayer(s, s.game, id, () => freshLavaMine(s.order.indexOf(id), w)) };
+  }
   if (s.game.kind === 'thrones') return { player: id, name, colour: p.colour, game: thronesPlayer(s.game, s.order, id, s.state === 'over') };
   if (s.game.kind === 'clash') return { player: id, name, colour: p.colour, game: clashPlayer(s, s.game, id) };
   if (s.game.kind === 'crew') {
@@ -388,7 +391,7 @@ export function playerView(s: Session, id: string): PlayerView {
   if (s.game.kind === 'ghost') return { player: id, name, colour: p.colour, game: ghostPlayer(s.game, id, s.order, s.state === 'over') };
   if (s.game.kind === 'corners') {
     const g = s.game;
-    const m = g.mine[id] ?? freshMine(s.order.indexOf(id));
+    const m = g.mine[id] ?? freshMine(s.order.indexOf(id), g.w ?? 1);
     const r = g.round;
     const n = r?.n ?? 0;
     const place = s.state === 'over' ? (podium(g, s.order).find((x) => x.player === id)?.place ?? null) : null;
@@ -747,12 +750,12 @@ export function gameFor(activity: Activity, level: string | null, random: () => 
 
 /** A new player's own part of the game (the `index`th to join). */
 function joinGame(g: Game, who: string, index: number) {
-  if (g.kind === 'corners') g.mine[who] = freshMine(index);
-  if (g.kind === 'lava') g.mine[who] = freshLavaMine(index);
-  if (g.kind === 'thrones') g.mine[who] = thronesFresh(index);
+  if (g.kind === 'corners') g.mine[who] = freshMine(index, g.w ?? 1);
+  if (g.kind === 'lava') g.mine[who] = freshLavaMine(index, g.w ?? 1);
+  if (g.kind === 'thrones') g.mine[who] = thronesFresh(index, g.w ?? 1);
   if (g.kind === 'clash') clashJoin(g, who);
   if (g.kind === 'ghost') g.mine[who] = ghostFresh(index, 30, g.w ?? 1);
-  if (g.kind === 'crew') g.mine[who] = { ...crewFresh(index), nick: crewNick(g, who) };
+  if (g.kind === 'crew') g.mine[who] = { ...crewFresh(index, 30, Math.random, g.w ?? 1), nick: crewNick(g, who) };
   if (g.kind === 'relay') joinRelay(g, who);
 }
 

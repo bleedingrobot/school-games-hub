@@ -1,11 +1,14 @@
 /**
  * Shark Bay's board (docs/SHARK-PLAN.md), drawn the same on the big screen and on each pupil's device: a round bay in
  * a square (sand round the edge), four coloured quarters that spin (rope lines between them), the jetty in the middle,
- * drifting boats, the round's hazards, items and avatars. Board units 0 to 1, placed in % of the square.
+ * drifting boats, the round's hazards, items and avatars. Board units x 0 to w, y 0 to 1, placed in % of the board
+ * (w wide and 1 high: widescreen since 27 Nov 2026, the bay an oval; square for older games). The quarters are drawn on a
+ * square turned by the spin and then stretched w wide, the same squash `quarterOf` undoes (shared/classlive/shark.ts).
  */
-import type { ReactNode } from 'react';
+import { useContext, type ReactNode } from 'react';
 import { FOG_SHARE, GRAB_R, rollerAt, rollersOf, TELEPORT_R, type Corner, type Power } from '../../../shared/classlive/corners';
-import { BAY_WORDS, BOAT_R, boatAt, DOCK_R, POOL_R, QUARTER_COLOURS, QUARTER_NAMES, quarterMid, SHARK_POWER_WORDS, spinAt, type BayMap, type BayRound } from '../../../shared/classlive/shark';
+import { BAY_WORDS, BOAT_R, boatAt, boatHeading, DOCK_R, POOL_R, QUARTER_COLOURS, QUARTER_NAMES, quarterMid, SHARK_POWER_WORDS, spinAt, type BayMap, type BayRound } from '../../../shared/classlive/shark';
+import { at, BoardW, boardStyle } from './CornersBoard';
 import { painted } from './paintedArt';
 import './shark.css';
 
@@ -17,22 +20,25 @@ export const sharkHazardPic = (map: BayMap, h: 'storm' | 'ice' | 'roller' | 'tel
   painted('shark-fx', h === 'fin' || h === 'shark' ? h : `${map}-${h}`);
 
 /** What the board needs of a round (the pupils' copy has these too). */
-export type SharkBoardRound = Pick<BayRound, 'startAt' | 'runEnd' | 'spin0' | 'spinRate' | 'boats' | 'storms' | 'ice' | 'teleports' | 'roller' | 'roller2' | 'fog'> & {
+export type SharkBoardRound = Pick<BayRound, 'startAt' | 'runEnd' | 'spin0' | 'spinRate' | 'boats' | 'storms' | 'ice' | 'teleports' | 'roller' | 'roller2' | 'fog' | 'w'> & {
   items: { id: number; x: number; y: number; power: Power }[];
 };
 
 const pct = (v: number) => `${v * 100}%`;
 
 function Disc({ x, y, r, className, pic, turn, children }: { x: number; y: number; r: number; className: string; pic?: string | null; turn?: number; children?: ReactNode }) {
+  const w = useContext(BoardW);
   return (
-    <div className={className} style={{ left: pct(x - r), top: pct(y - r), width: pct(r * 2), height: pct(r * 2), ...(pic ? { backgroundImage: `url(${pic})` } : {}), ...(turn !== undefined ? { transform: `rotate(${turn}deg)` } : {}) }}>
+    <div className={className} style={{ left: pct((x - r) / w), top: pct(y - r), width: pct((r * 2) / w), height: pct(r * 2), ...(pic ? { backgroundImage: `url(${pic})` } : {}), ...(turn !== undefined ? { transform: `rotate(${turn}deg)` } : {}) }}>
       {children}
     </div>
   );
 }
 
-export function SharkBoard({ map, round, t, flash, periscope, children, fogOn, onQuarter, labels = true, seatsLeft }: {
+export function SharkBoard({ map, w = 1, round, t, flash, periscope, children, fogOn, onQuarter, labels = true, seatsLeft }: {
   map: BayMap;
+  /** The board's width (height 1). */
+  w?: number;
   round: SharkBoardRound | null;
   /** Session time (ms since the start). */
   t: number;
@@ -48,7 +54,8 @@ export function SharkBoard({ map, round, t, flash, periscope, children, fogOn, o
   /** Seats left per boat id (the pad's guess from the spots it sees), shown on each boat. */
   seatsLeft?: Record<number, number>;
 }) {
-  const pic = painted('shark', `map-${map}`);
+  // Wide boards have their own wide paintings (map-<map>-wide); the square one, cropped, until then.
+  const pic = (w > 1 ? painted('shark', `map-${map}-wide`) : null) ?? painted('shark', `map-${map}`);
   const words = BAY_WORDS[map];
   const spin = round ? spinAt(round, t) : 0;
   const deg = (spin * 180) / Math.PI;
@@ -56,13 +63,15 @@ export function SharkBoard({ map, round, t, flash, periscope, children, fogOn, o
   const fogShows = !!round?.fog && (fogOn ?? true) && runShare >= 1 - FOG_SHARE && t < round.runEnd + 300;
   const quarters: Corner[] = [0, 1, 2, 3];
   return (
-    <div className={`sb-board sb-board--${map} ${pic ? 'sb-board--painted' : ''}`} style={pic ? { backgroundImage: `url(${pic})` } : undefined}>
+    <BoardW.Provider value={w}>
+    <div className={`sb-board sb-board--${map} ${w > 1 ? 'sb-board--wide' : ''} ${pic ? 'sb-board--painted' : ''}`} style={{ ...boardStyle(w), ...(pic ? { backgroundImage: `url(${pic})` } : {}) }}>
       <div className="sb-water" style={{ left: pct(0.5 - POOL_R), top: pct(0.5 - POOL_R), width: pct(POOL_R * 2), height: pct(POOL_R * 2) }}>
-        {/* The four quarters: a conic gradient turned by the spin (0 starts top left, clockwise). */}
+        {/* The four quarters: a square turned by the spin (0 starts top left, clockwise), then stretched w wide. */}
         <div
           className="sb-quarters"
           style={{
-            transform: `rotate(${deg}deg)`,
+            left: pct(0.5 - 0.5 / w), width: pct(1 / w),
+            transform: `${w !== 1 ? `scaleX(${w}) ` : ''}rotate(${deg}deg)`,
             ['--q0' as string]: QUARTER_COLOURS[0], ['--q1' as string]: QUARTER_COLOURS[1], ['--q2' as string]: QUARTER_COLOURS[2], ['--q3' as string]: QUARTER_COLOURS[3],
           }}
         >
@@ -72,20 +81,20 @@ export function SharkBoard({ map, round, t, flash, periscope, children, fogOn, o
         </div>
       </div>
       {labels && quarters.map((q) => {
-        const m = quarterMid(q, spin, 0.36);
+        const m = quarterMid(q, spin, 0.36, w);
         const Tag = onQuarter ? 'button' : 'div';
         return (
           <Tag
             key={`l${q}`}
             {...(onQuarter ? { type: 'button' as const, onClick: () => onQuarter(q), 'aria-label': `Zoom to ${QUARTER_NAMES[q]}` } : { 'aria-label': `${QUARTER_NAMES[q]} quarter` })}
             className={`sb-label ${onQuarter ? 'sb-label--btn' : ''} ${flash?.includes(q) ? 'sb-label--hit' : ''}`}
-            style={{ left: pct(m.x), top: pct(m.y), ['--qc' as string]: QUARTER_COLOURS[q] }}
+            style={{ ...at(m.x, m.y, w), ['--qc' as string]: QUARTER_COLOURS[q] }}
           >
             {QUARTER_NAMES[q]}{periscope === q ? ' 🔭' : ''}
           </Tag>
         );
       })}
-      <Disc x={0.5} y={0.5} r={DOCK_R} className="sb-dock" pic={sharkHazardPic(map, 'dock')}><span className="sb-dock__name">{words.dock}</span></Disc>
+      <Disc x={w / 2} y={0.5} r={DOCK_R} className="sb-dock" pic={sharkHazardPic(map, 'dock')}><span className="sb-dock__name">{words.dock}</span></Disc>
       {round?.storms.map((s, i) => <Disc key={`s${i}`} {...s} className="sb-storm" pic={sharkHazardPic(map, 'storm')} />)}
       {round?.ice.map((s, i) => <Disc key={`i${i}`} {...s} className="sb-current" pic={sharkHazardPic(map, 'ice')} turn={(t / 20) % 360} />)}
       {round?.teleports.map((tp, i) => (
@@ -107,7 +116,7 @@ export function SharkBoard({ map, round, t, flash, periscope, children, fogOn, o
         const p = boatAt(b, round, t);
         const left = seatsLeft?.[b.id];
         // The boat points the way it drifts.
-        const a = Math.atan2(p.y - 0.5, p.x - 0.5) + (b.w > 0 ? Math.PI / 2 : -Math.PI / 2);
+        const a = boatHeading(b, p, w);
         return (
           <Disc key={`b${b.id}`} x={p.x} y={p.y} r={BOAT_R * 1.25} className="sb-boat" pic={sharkHazardPic(map, 'boat')} turn={(a * 180) / Math.PI}>
             <span className="sb-boat__seats" style={{ transform: `rotate(${(-a * 180) / Math.PI}deg)` }}>{left !== undefined ? `${Math.max(0, left)}` : b.seats} 🪑</span>
@@ -117,5 +126,6 @@ export function SharkBoard({ map, round, t, flash, periscope, children, fogOn, o
       <div className="sb-board__people">{children}</div>
       {fogShows && <div className="sb-fog" aria-label={words.fog} />}
     </div>
+    </BoardW.Provider>
   );
 }

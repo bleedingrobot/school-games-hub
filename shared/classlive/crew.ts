@@ -8,7 +8,8 @@
  * Glitch found; Glitches win with 4 machines sparking at once, the round's time running out, or as many Glitches as Crew.
  *
  * Pure rules: the server (shared/classlive/server.ts, crewServer.ts) and the screens share them. Times are ms since the
- * session started; positions are board units (a unit square), as Four Corners.
+ * session started; positions are board units (x 0 to w, y 0 to 1: the factory is CREW_W wide since 27 Nov 2026 NZ;
+ * older games without `w` are a unit square), as Four Corners.
  */
 import type { Circle, Spot } from './corners';
 
@@ -39,6 +40,23 @@ export const MACHINES: readonly Machine[] = [
 /** The Control Room's panel switches the lights back on after a Glitch's lights out. */
 export const CONTROL = 5;
 export const CANTEEN: Circle = { x: 0.5, y: 0.5, r: 0.13 };
+
+/** How wide the factory is, in board heights: widescreen, so it fills a projector (27 Nov 2026 NZ). Games made before are square (1). */
+export const CREW_W = 1.6;
+/** A round's (or game's) factory width. */
+export const widthOf = (x: { w?: number } | null | undefined) => x?.w ?? 1;
+/** Across a factory `w` wide: the same rooms, spread from the middle so the outer rooms keep their gap to the walls. */
+export const spreadX = (x: number, w = 1) => (w === 1 ? x : w / 2 + ((x - 0.5) * (w - 0.24)) / 0.76);
+const wideMachines = new Map<number, readonly Machine[]>();
+/** The 8 machines on a factory `w` wide (each room as it was, spread across the width; same ids, names and looks). */
+export function machinesOf(w = 1): readonly Machine[] {
+  if (w === 1) return MACHINES;
+  let out = wideMachines.get(w);
+  if (!out) wideMachines.set(w, (out = MACHINES.map((m) => ({ ...m, x: spreadX(m.x, w) }))));
+  return out;
+}
+/** The Canteen (the meeting table), in the middle of a factory `w` wide. */
+export const canteenOf = (w = 1): Circle => ({ ...CANTEEN, x: w / 2 });
 export const fixNeed = (m: Machine) => (m.big ? 3 : 2);
 
 export const POWERS = ['boots', 'camera', 'toolkit'] as const;
@@ -146,6 +164,8 @@ export interface CrewRound {
   startAt: number;
   /** Work ends here (moved on by each meeting's length). */
   endAt: number;
+  /** The factory's width (height 1); missing in square games made before 27 Nov 2026 NZ. */
+  w?: number;
   glitches: string[];
   crewAtStart: number;
   power: number;
@@ -205,6 +225,8 @@ export interface CrewMine {
 export interface CrewGame {
   kind: 'crew';
   map: CrewMap;
+  /** The factory's width (height 1); missing in square games made before 27 Nov 2026 NZ. */
+  w?: number;
   round: CrewRound | null;
   mine: Record<string, CrewMine>;
   nextItem: number;
@@ -230,9 +252,10 @@ export type CrewEvent =
 
 const dist = (a: Spot, b: Spot) => Math.hypot(a.x - b.x, a.y - b.y);
 const clamp01 = (v: number) => Math.min(1 - AVATAR_R, Math.max(AVATAR_R, v));
+const clampW = (v: number, w: number) => Math.min(w - AVATAR_R, Math.max(AVATAR_R, v));
 
 export function newCrew(map: CrewMap = 'factory', random: () => number = Math.random): CrewGame {
-  return { kind: 'crew', map, round: null, mine: {}, nextItem: 1, salt: Math.floor(random() * 1e6) };
+  return { kind: 'crew', map, w: CREW_W, round: null, mine: {}, nextItem: 1, salt: Math.floor(random() * 1e6) };
 }
 
 // ---- Factory names (James, 26 Nov 2026 NZ: first names clash, so everyone gets a fun name for the game) ----
@@ -267,10 +290,10 @@ export function crewNick(g: CrewGame, who: string): string {
 }
 
 /** A seat round the Canteen (everyone starts and meets here). */
-export function canteenSpot(i: number, of: number): Spot {
+export function canteenSpot(i: number, of: number, w = 1): Spot {
   const a = (i / Math.max(1, of)) * Math.PI * 2 + 0.3;
   const r = CANTEEN.r * (of > 14 && i % 2 ? 0.45 : 0.8);
-  return { x: CANTEEN.x + Math.cos(a) * r, y: CANTEEN.y + Math.sin(a) * r };
+  return { x: w / 2 + Math.cos(a) * r, y: CANTEEN.y + Math.sin(a) * r };
 }
 
 function shuffled<T>(list: readonly T[], random: () => number): T[] {
@@ -287,9 +310,9 @@ export function newJobs(random: () => number, not: number | null = null): number
   return shuffled(MACHINES.map((m) => m.id).filter((id) => id !== not), random).slice(0, JOBS);
 }
 
-export function freshMine(i: number, of = 30, random: () => number = Math.random): CrewMine {
+export function freshMine(i: number, of = 30, random: () => number = Math.random, w = 1): CrewMine {
   return {
-    glitch: false, drone: false, jobs: newJobs(random), spot: canteenSpot(i, of), placed: 0, lastAt: -ANSWER_GAP_MS, lastWork: -WORK_MS, jamTo: 0,
+    glitch: false, drone: false, jobs: newJobs(random), spot: canteenSpot(i, of, w), placed: 0, lastAt: -ANSWER_GAP_MS, lastWork: -WORK_MS, jamTo: 0,
     lightsIn: 0, held: null, bootsTo: 0, cameraTo: 0, toolkit: false, answered: 0, right: 0, wrong: 0, streak: 0, bestStreak: 0, jobsDone: 0,
     fixes: 0, mends: 0, jams: 0, fakeJobs: 0, grabs: 0, lightsOut: 0, detects: 0, wins: 0, glitchWins: 0, timesGlitch: 0, last: null,
   };
@@ -316,21 +339,23 @@ export function pickGlitches(g: CrewGame, order: string[], random: () => number)
   return order.map((id) => ({ id, s: g.mine[id]?.timesGlitch ?? 0, r: random() })).sort((a, b) => a.s - b.s || a.r - b.r).slice(0, k).map((x) => x.id);
 }
 
-function openSpot(random: () => number, taken: Circle[], r: number): Spot {
+function openSpot(random: () => number, taken: Circle[], r: number, w = 1): Spot {
+  const canteen = canteenOf(w);
   for (let i = 0; i < 40; i++) {
-    const p = { x: 0.08 + random() * 0.84, y: 0.08 + random() * 0.84 };
-    if (dist(p, CANTEEN) < CANTEEN.r + r + 0.03) continue;
-    if ([...MACHINES, ...taken].some((c) => dist(c, p) < c.r + r + 0.05)) continue;
+    const p = { x: 0.08 + random() * (w - 0.16), y: 0.08 + random() * 0.84 };
+    if (dist(p, canteen) < canteen.r + r + 0.03) continue;
+    if ([...machinesOf(w), ...taken].some((c) => dist(c, p) < c.r + r + 0.05)) continue;
     return p;
   }
-  return { x: 0.33, y: 0.3 };
+  return { x: spreadX(0.33, w), y: 0.3 };
 }
 
 function seatAll(g: CrewGame, order: string[]) {
+  const w = widthOf(g.round ?? g);
   order.forEach((id, i) => {
     const m = g.mine[id];
     if (!m) return;
-    m.spot = canteenSpot(i, order.length);
+    m.spot = canteenSpot(i, order.length, w);
     m.placed++;
   });
 }
@@ -340,21 +365,28 @@ export function makeRound(g: CrewGame, n: number, readyAt: number, order: string
   const has = mechanicsFor(n, random);
   const glitches = pickGlitches(g, order, random);
   const startAt = readyAt + ROLE_MS;
+  const w = widthOf(g);
   order.forEach((id, i) => {
-    const m = (g.mine[id] ??= freshMine(i, order.length, random));
+    const m = (g.mine[id] ??= freshMine(i, order.length, random, w));
     const glitch = glitches.includes(id);
     Object.assign(m, {
       glitch, drone: false, jobs: newJobs(random), jamTo: startAt + FIRST_JAM, held: null, bootsTo: 0, cameraTo: 0, toolkit: false, lastWork: -WORK_MS,
     });
     if (glitch) m.timesGlitch++;
   });
-  seatAll(g, order);
+  order.forEach((id, i) => {
+    const m = g.mine[id];
+    if (!m) return;
+    m.spot = canteenSpot(i, order.length, w);
+    m.placed++;
+  });
   const items: CrewItem[] = [];
   if (has.has('items')) {
-    const k = Math.max(2, Math.min(6, Math.round(order.length / 6)));
+    // A wider factory gets more crates, so it isn't empty.
+    const k = Math.max(2, Math.min(Math.round(6 * w), Math.round((order.length / 6) * w)));
     const taken: Circle[] = [];
     for (let i = 0; i < k; i++) {
-      const p = openSpot(random, taken, GRAB_R);
+      const p = openSpot(random, taken, GRAB_R, w);
       taken.push({ ...p, r: GRAB_R });
       items.push({ id: g.nextItem++, power: POWERS[Math.floor(random() * POWERS.length) % POWERS.length], ...p, by: null });
     }
@@ -362,11 +394,14 @@ export function makeRound(g: CrewGame, n: number, readyAt: number, order: string
   const belts: Belt[] = [];
   if (has.has('belts')) {
     const dir = random() < 0.5 ? 1 : -1;
-    belts.push({ x: 0.27, y: 0.31, w: 0.46, h: 0.06, dx: dir, dy: 0 });
-    if (random() < 0.6) belts.push({ x: 0.27, y: 0.63, w: 0.46, h: 0.06, dx: -dir, dy: 0 });
+    // The belts run between the rooms above and below the Canteen, as long as the factory is wide.
+    const x0 = spreadX(0.27, w);
+    const bw = spreadX(0.73, w) - x0;
+    belts.push({ x: x0, y: 0.31, w: bw, h: 0.06, dx: dir, dy: 0 });
+    if (random() < 0.6) belts.push({ x: x0, y: 0.63, w: bw, h: 0.06, dx: -dir, dy: 0 });
   }
   return {
-    n, readyAt, startAt, endAt: startAt + ROUND_MS, glitches, crewAtStart: order.length - glitches.length, power: 0, powerAt: startAt,
+    n, readyAt, startAt, endAt: startAt + ROUND_MS, ...(w !== 1 ? { w } : {}), glitches, crewAtStart: order.length - glitches.length, power: 0, powerAt: startAt,
     machines: MACHINES.map(() => ({ jamAt: null, sparkAt: null, sparked: false, by: null, fix: 0, fixedAt: -MEND_GUARD })),
     meeting: null, meetings: 0, lightsTo: 0, lightsFix: 0, items, belts, lights: has.has('lights'), done: null, showEnd: null,
   };
@@ -576,10 +611,11 @@ export function purposeAt(g: CrewGame, who: string, at: Spot | undefined, t: num
   const m = g.mine[who];
   if (!r || !m || !at || phaseOf(r, t) !== 'work') return null;
   if (m.glitch) return m.drone ? { kind: 'drone' } : null;
-  if (r.lightsTo > t && inReach(MACHINES[CONTROL], at, slack)) return { kind: 'lights' };
-  const fix = MACHINES.find((mc) => r.machines[mc.id].sparked && inReach(mc, at, slack));
+  const ms = machinesOf(widthOf(r));
+  if (r.lightsTo > t && inReach(ms[CONTROL], at, slack)) return { kind: 'lights' };
+  const fix = ms.find((mc) => r.machines[mc.id].sparked && inReach(mc, at, slack));
   if (fix) return { kind: 'fix', machine: fix.id };
-  const job = MACHINES.find((mc) => m.jobs.includes(mc.id) && !r.machines[mc.id].sparked && inReach(mc, at, slack));
+  const job = ms.find((mc) => m.jobs.includes(mc.id) && !r.machines[mc.id].sparked && inReach(mc, at, slack));
   if (job) return { kind: 'job', machine: job.id };
   return null;
 }
@@ -657,7 +693,7 @@ export function jam(g: CrewGame, who: string, machine: unknown, at: Spot | undef
   const r = g.round;
   const m = g.mine[who];
   if (!r || !m || !m.glitch || m.drone || !at || phaseOf(r, t) !== 'work') return { ok: false, reason: 'not_now' };
-  const mc = MACHINES.find((x) => x.id === machine);
+  const mc = machinesOf(widthOf(r)).find((x) => x.id === machine);
   if (!mc) return { ok: false, reason: 'not_now' };
   if (!inReach(mc, at)) return { ok: false, reason: 'far' };
   if (t < m.jamTo) return { ok: false, reason: 'wait' };
@@ -674,7 +710,7 @@ export function fakeWork(g: CrewGame, who: string, machine: unknown, at: Spot | 
   const r = g.round;
   const m = g.mine[who];
   if (!r || !m || !m.glitch || m.drone || !at || phaseOf(r, t) !== 'work' || t < m.lastWork + WORK_MS - 300) return { ok: false, reason: 'not_now' };
-  const mc = MACHINES.find((x) => x.id === machine);
+  const mc = machinesOf(widthOf(r)).find((x) => x.id === machine);
   if (!mc || !m.jobs.includes(mc.id)) return { ok: false, reason: 'not_now' };
   if (!inReach(mc, at)) return { ok: false, reason: 'far' };
   m.lastWork = t;
@@ -722,7 +758,7 @@ export function podium(g: CrewGame, order: string[]): { player: string; place: 1
 // ---- Moving (devices, the preview's pretend pupils) ----
 
 export interface CrewMove { p: Spot }
-export type MoveRoundC = Pick<CrewRound, 'belts' | 'startAt'> & { meeting: unknown; done: unknown };
+export type MoveRoundC = Pick<CrewRound, 'belts' | 'startAt' | 'w'> & { meeting: unknown; done: unknown };
 
 export const speedOf = (m: Pick<CrewMine, 'bootsTo'>, t: number) => SPEED * (m.bootsTo > t ? BOOTS : 1);
 export const onBelt = (b: Belt, p: Spot) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
@@ -734,12 +770,13 @@ export const onBelt = (b: Belt, p: Spot) => p.x >= b.x && p.x <= b.x + b.w && p.
 export function stepCrew(m: CrewMove, dir: Spot, dtMs: number, round: MoveRoundC | null, t: number, o: { drone: boolean; speed: number }): CrewMove {
   if (!round || round.done || round.meeting || t < round.startAt) return m;
   const dt = Math.min(100, Math.max(0, dtMs)) / 1000;
+  const w = widthOf(round);
   const len = Math.hypot(dir.x, dir.y);
   const d = len > 1 ? { x: dir.x / len, y: dir.y / len } : dir;
   let p = { x: m.p.x + d.x * o.speed * dt, y: m.p.y + d.y * o.speed * dt };
   if (!o.drone) {
     for (const b of round.belts) if (onBelt(b, m.p)) p = { x: p.x + b.dx * BELT_SPEED * dt, y: p.y + b.dy * BELT_SPEED * dt };
-    for (const mc of MACHINES) {
+    for (const mc of machinesOf(w)) {
       const dd = dist(p, mc);
       const min = mc.r + AVATAR_R;
       if (dd < min) {
@@ -749,7 +786,7 @@ export function stepCrew(m: CrewMove, dir: Spot, dtMs: number, round: MoveRoundC
       }
     }
   }
-  return { p: { x: clamp01(p.x), y: clamp01(p.y) } };
+  return { p: { x: clampW(p.x, w), y: clamp01(p.y) } };
 }
 
 /** A pretend pupil's joystick towards a spot (a little wobble). */
@@ -766,8 +803,9 @@ export function pretendDir(me: Spot, to: Spot, random: () => number): Spot {
 export interface PublicCrew {
   kind: 'crew';
   map: CrewMap;
+  w?: number;
   round: null | {
-    n: number; readyAt: number; startAt: number; endAt: number; power: number; powerAt: number; crewAtStart: number;
+    n: number; w?: number; readyAt: number; startAt: number; endAt: number; power: number; powerAt: number; crewAtStart: number;
     machines: { sparked: boolean; fix: number }[];
     meeting: null | { at: number; talkEnd: number; voteEnd: number; revealEnd: number | null; voted: number; out: boolean | null; glitch: boolean | null };
     lightsTo: number; lightsFix: number; lights: boolean; items: Omit<CrewItem, 'by'>[]; belts: Belt[];
@@ -782,9 +820,9 @@ export interface PublicCrew {
 export function publicCrew(g: CrewGame, order: string[]): PublicCrew {
   const r = g.round;
   return {
-    kind: 'crew', map: g.map, glitches: activeGlitches(g, order).length, active: order.filter((id) => isActive(g.mine[id])).length,
+    kind: 'crew', map: g.map, ...(g.w ? { w: g.w } : {}), glitches: activeGlitches(g, order).length, active: order.filter((id) => isActive(g.mine[id])).length,
     round: r ? {
-      n: r.n, readyAt: r.readyAt, startAt: r.startAt, endAt: r.endAt, power: r.power, powerAt: r.powerAt, crewAtStart: r.crewAtStart,
+      n: r.n, ...(r.w ? { w: r.w } : {}), readyAt: r.readyAt, startAt: r.startAt, endAt: r.endAt, power: r.power, powerAt: r.powerAt, crewAtStart: r.crewAtStart,
       machines: r.machines.map((m) => ({ sparked: m.sparked, fix: m.sparked ? m.fix : 0 })),
       meeting: r.meeting ? {
         at: r.meeting.at, talkEnd: r.meeting.talkEnd, voteEnd: r.meeting.voteEnd, revealEnd: r.meeting.revealEnd, voted: Object.keys(r.meeting.votes).length,
@@ -825,7 +863,7 @@ export interface CrewPlayer {
 }
 
 export function crewPlayer(g: CrewGame, id: string, order: string[], over: boolean, people: (pid: string) => { name: string; colour: number }): CrewPlayer {
-  const m = g.mine[id] ?? freshMine(Math.max(0, order.indexOf(id)), order.length);
+  const m = g.mine[id] ?? freshMine(Math.max(0, order.indexOf(id)), order.length, Math.random, widthOf(g));
   const r = g.round;
   const mt = r?.meeting ?? null;
   return {

@@ -9,12 +9,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AvatarImage } from '../../avatar/AvatarImage';
 import { AVATAR_R, JAIL_RIGHT, podium, ROLL_MS, type Corner, type CornersGame, type CornersMine, type Spot } from '../../../shared/classlive/corners';
 import {
-  BAY_WORDS, bayRound, quarterMid, SHARK, SHARK_MECHANICS, SHARK_POWER_WORDS, SHARK_UNLOCK, spinAt, type BayRound, type SharkGame, type SharkMechanic,
+  BAY_WORDS, bayAngle, bayPoint, bayRound, quarterMid, SHARK, SHARK_MECHANICS, SHARK_POWER_WORDS, SHARK_UNLOCK, spinAt, type BayRound, type SharkGame, type SharkMechanic,
   type SharkMineExtra,
 } from '../../../shared/classlive/shark';
 import type { ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
-import { Token } from './CornersBoard';
+import { at as spotAt, Token } from './CornersBoard';
 import { useEdgeLink } from './edgeLink';
 import type { ClassLiveLink } from './link';
 import { painted } from './paintedArt';
@@ -39,16 +39,16 @@ const SWIM_MS = 1500;
 type Person = ScreenView['people'][number];
 
 const TAU = Math.PI * 2;
-const angleOf = (p: Spot) => Math.atan2(p.y - 0.5, p.x - 0.5);
-const at = (a: number, r: number): Spot => ({ x: 0.5 + Math.cos(a) * r, y: 0.5 + Math.sin(a) * r });
 const ease = (k: number) => 1 - (1 - k) * (1 - k);
 
-/** A fin cutting through the water at angle `a`, on a circle of radius `r`, pointing the way it swims. */
-function Fin({ a, r, bay, size = 0.1, calm }: { a: number; r: number; bay: SharkGame['bay']; size?: number; calm?: boolean }) {
-  const p = at(a, r);
+/** A fin cutting through the water at angle `a` (bay coordinates), on a circle (an oval on a wide board `w`) of radius `r`, pointing the way it swims. */
+function Fin({ a, r, bay, w, size = 0.1, calm }: { a: number; r: number; bay: SharkGame['bay']; w: number; size?: number; calm?: boolean }) {
+  const p = bayPoint(a, r, w);
   const pic = sharkHazardPic(bay, 'fin');
+  // The way round the oval at this point (screen angle).
+  const heading = Math.atan2(Math.cos(a), -Math.sin(a) * w);
   return (
-    <div className={`sb-fin ${calm ? 'sb-fin--calm' : ''}`} style={{ left: `${p.x * 100}%`, top: `${p.y * 100}%`, width: `${size * 100}%`, height: `${size * 100}%`, transform: `translate(-50%, -50%) rotate(${(a * 180) / Math.PI + 90}deg)` }} aria-hidden="true">
+    <div className={`sb-fin ${calm ? 'sb-fin--calm' : ''}`} style={{ ...spotAt(p.x, p.y, w), width: `${(size / w) * 100}%`, height: `${size * 100}%`, transform: `translate(-50%, -50%) rotate(${(heading * 180) / Math.PI}deg)` }} aria-hidden="true">
       {pic ? <img src={pic} alt="" /> : <i className="sb-fin__blade" />}
       <i className="sb-fin__wake" />
     </div>
@@ -56,10 +56,10 @@ function Fin({ a, r, bay, size = 0.1, calm }: { a: number; r: number; bay: Shark
 }
 
 /** Simon bursting out (or snapping) at a spot, with a big splash. */
-function Burst({ at: p, bay, style, late }: { at: Spot; bay: SharkGame['bay']; style: 'leap' | 'spot'; late?: boolean }) {
+function Burst({ at: p, bay, w, style, late }: { at: Spot; bay: SharkGame['bay']; w: number; style: 'leap' | 'spot'; late?: boolean }) {
   const pic = sharkHazardPic(bay, 'shark');
   return (
-    <div className={`sb-burst sb-burst--${style} ${late ? 'sb-burst--late' : ''}`} style={{ left: `${p.x * 100}%`, top: `${p.y * 100}%` }} aria-hidden="true">
+    <div className={`sb-burst sb-burst--${style} ${late ? 'sb-burst--late' : ''}`} style={spotAt(p.x, p.y, w)} aria-hidden="true">
       <i className="sb-burst__ring" /><i className="sb-burst__ring sb-burst__ring--b" /><i className="sb-burst__ring sb-burst__ring--c" />
       <span className="sb-burst__drops">💦</span>
       <span className="sb-burst__shark">{pic ? <img src={pic} alt="" /> : '🦈'}</span>
@@ -83,6 +83,9 @@ export function SharkScene({ screen, game, link: baseLink, room, clock, sound, s
   const t = screen.startedAt === null ? 0 : clock() - screen.startedAt;
   const r = game.round;
   const br: BayRound | null = bayRound(r);
+  /** The board's width (height 1): wide since 27 Nov 2026, the bay an oval. */
+  const bw = r?.w ?? game.w ?? 1;
+  const angleOf = (p: Spot) => bayAngle(p, bw);
   const targets = useRef<Record<string, Spot>>({});
   const shown = useRef<Record<string, Spot>>({});
   const [, setFrame] = useState(0);
@@ -203,7 +206,7 @@ export function SharkScene({ screen, game, link: baseLink, room, clock, sound, s
     seenSeq.current = fresh[fresh.length - 1].seq;
     const add: { key: number; at: Spot; text: string }[] = [];
     for (const e of fresh) {
-      const pos = 'pupil' in e && typeof e.pupil === 'string' ? (shown.current[e.pupil] ?? { x: 0.5, y: 0.5 }) : { x: 0.5, y: 0.5 };
+      const pos = 'pupil' in e && typeof e.pupil === 'string' ? (shown.current[e.pupil] ?? { x: bw / 2, y: 0.5 }) : { x: bw / 2, y: 0.5 };
       // `e.power` is typed for every map game's powers (Musical Thrones adds its own); these events are Shark Bay's.
       if (e.type === 'grab') { sound.play('grab'); add.push({ key: e.seq, at: pos, text: SHARK_POWER_WORDS[e.power as keyof typeof SHARK_POWER_WORDS].emoji }); }
       else if (e.type === 'power') { sound.play('power'); add.push({ key: e.seq, at: pos, text: `${SHARK_POWER_WORDS[e.power as keyof typeof SHARK_POWER_WORDS].emoji} ${SHARK_POWER_WORDS[e.power as keyof typeof SHARK_POWER_WORDS].name}!` }); }
@@ -235,7 +238,7 @@ export function SharkScene({ screen, game, link: baseLink, room, clock, sound, s
 
   // The strike picture: where Simon hits, and the fin's or the spotlight's place on the way.
   const spin = br ? spinAt(br, t) : 0;
-  const strikeAt = (br?.rolled ?? []).map((q) => quarterMid(q, spin, 0.27));
+  const strikeAt = (br?.rolled ?? []).map((q) => quarterMid(q, spin, 0.27, bw));
   const strikeActive = !!br && br.caught !== null && (phase === 'roll' || phase === 'show');
   const finAngles: number[] = [];
   let spot: { p: Spot; q: Corner } | null = null;
@@ -259,7 +262,7 @@ export function SharkScene({ screen, game, link: baseLink, room, clock, sound, s
       }
       const goal = br.rolled[0] ?? 0;
       const q = (((goal - (steps - step)) % 4) + 4) % 4 as Corner;
-      spot = { p: quarterMid(q, spin, 0.27), q };
+      spot = { p: quarterMid(q, spin, 0.27, bw), q };
     }
   }
   const darkness = br && strikeActive && br.style === 'spot' ? Math.min(1, k / 0.12) * (landed ? Math.max(0.25, 1 - (t - br.rollEnd) / 1200) : 1) : 0;
@@ -273,20 +276,20 @@ export function SharkScene({ screen, game, link: baseLink, room, clock, sound, s
     if (!swimming || !justCaught.has(p.id)) return base;
     // Off to the cave strip beside the bay.
     const kk = ease(swimK);
-    return { x: base.x + (1.2 - base.x) * kk, y: base.y + (0.45 - base.y) * kk };
+    return { x: base.x + (bw + 0.2 - base.x) * kk, y: base.y + (0.45 - base.y) * kk };
   };
 
   return (
-    <div className={`fc-scene fc-scene--shark sb-scene sb-scene--${game.bay}`}>
+    <div className={`fc-scene fc-scene--shark sb-scene sb-scene--${game.bay} ${bw > 1 ? 'fc-scene--wide' : ''}`}>
       <div className={`fc-stage ${struck && r && t < r.rollEnd + 900 && !lucky ? 'sb-shake' : ''}`}>
-        <SharkBoard map={game.bay} round={br} t={t} flash={struck && br ? br.rolled : null}>
+        <SharkBoard map={game.bay} w={bw} round={br} t={t} flash={struck && br ? br.rolled : null}>
           {/* A gentle fin circles the bay while everyone swims. */}
-          {br && phase === 'run' && <Fin a={(t / 1000) * 0.55 + br.spin0} r={0.38} bay={game.bay} size={0.07} calm />}
-          {br && strikeActive && !struck && br.style === 'leap' && finAngles.map((a, i) => <Fin key={i} a={a} r={0.3} bay={game.bay} size={0.11} />)}
+          {br && phase === 'run' && <Fin a={(t / 1000) * 0.55 + br.spin0} r={0.38} bay={game.bay} w={bw} size={0.07} calm />}
+          {br && strikeActive && !struck && br.style === 'leap' && finAngles.map((a, i) => <Fin key={i} a={a} r={0.3} bay={game.bay} w={bw} size={0.11} />)}
           {br && strikeActive && br.style === 'spot' && (
             <div
               className="sb-dark"
-              style={{ opacity: darkness, ['--sx' as string]: spot && !struck ? `${spot.p.x * 100}%` : `${(strikeAt[0]?.x ?? 0.5) * 100}%`, ['--sy' as string]: spot && !struck ? `${spot.p.y * 100}%` : `${(strikeAt[0]?.y ?? 0.5) * 100}%`, ['--sc' as string]: spot ? QUARTER_COLOURS[spot.q] : '#fff' }}
+              style={{ opacity: darkness, ['--sx' as string]: spot && !struck ? `${(spot.p.x / bw) * 100}%` : `${((strikeAt[0]?.x ?? bw / 2) / bw) * 100}%`, ['--sy' as string]: spot && !struck ? `${spot.p.y * 100}%` : `${(strikeAt[0]?.y ?? 0.5) * 100}%`, ['--sc' as string]: spot ? QUARTER_COLOURS[spot.q] : '#fff' }}
               aria-hidden="true"
             />
           )}
@@ -310,8 +313,8 @@ export function SharkScene({ screen, game, link: baseLink, room, clock, sound, s
               </Token>
             );
           })}
-          {pops.map((p) => <span key={p.key} className="fc-pop" style={{ left: `${p.at.x * 100}%`, top: `${p.at.y * 100}%` }}>{p.text}</span>)}
-          {br && struck && strikeAt.map((p, i) => <Burst key={`${br.n}-${i}`} at={p} bay={game.bay} style={br.style} late={i > 0} />)}
+          {pops.map((p) => <span key={p.key} className="fc-pop" style={spotAt(p.at.x, p.at.y, bw)}>{p.text}</span>)}
+          {br && struck && strikeAt.map((p, i) => <Burst key={`${br.n}-${i}`} at={p} bay={game.bay} w={bw} style={br.style} late={i > 0} />)}
           {br && strikeActive && lucky && struck && <div className="sb-full" aria-hidden="true">😋</div>}
         </SharkBoard>
 

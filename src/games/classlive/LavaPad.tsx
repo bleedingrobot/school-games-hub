@@ -14,7 +14,7 @@ import type { PlayerView, RoomView } from '../../../shared/classlive/server';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import { Joystick, useKeys } from './CornersPad';
-import { LavaBoard, lavaPowerPic, LavaToken } from './LavaBoard';
+import { at, LavaBoard, lavaPowerPic, LavaToken } from './LavaBoard';
 import { useEdgeLink } from './edgeLink';
 import type { ClassLiveLink } from './link';
 import './controller.css';
@@ -35,9 +35,11 @@ export function LavaPad({ link: baseLink, room, view, me, setMe, setView, clock,
   const pub: Pub | null = view.game.kind === 'lava' ? view.game : null;
   const mg: Mine | null = me && me.game.kind === 'lava' ? me.game : null;
   const r = pub?.round ?? null;
+  /** The floor's width (height 1): wide since 27 Nov 2026. */
+  const bw = r?.w ?? pub?.w ?? 1;
   const keysDir = useKeys();
   const stickDir = useRef<Spot>({ x: 0, y: 0 });
-  const pos = useRef<LavaMove>({ p: mg?.spot ?? lavaStartSpot(0), v: { x: 0, y: 0 } });
+  const pos = useRef<LavaMove>({ p: mg?.spot ?? lavaStartSpot(0, bw), v: { x: 0, y: 0 } });
   const placed = useRef<number>(-1);
   const others = useRef<Spot[]>([]);
   const lastSent = useRef(0);
@@ -62,7 +64,7 @@ export function LavaPad({ link: baseLink, room, view, me, setMe, setView, clock,
 
   const rafted = !!mg?.raft;
   const canRun = !!r && !rafted && view.state === 'live' && !r.ended;
-  const world = pub ? { sunk: pub.sunk, round: r } : null;
+  const world = pub ? { sunk: pub.sunk, w: pub.w, round: r } : null;
 
   useEffect(() => {
     if (room === null || !world) return;
@@ -284,10 +286,10 @@ export function LavaPad({ link: baseLink, room, view, me, setMe, setView, clock,
   }
 
   const here = pos.current.p;
-  const target = mg.bricks > 0 && r ? buildTarget({ sunk: pub.sunk }, { n: r.n, fell: r.ended ? [] : null }, here) : null;
+  const target = mg.bricks > 0 && r ? buildTarget({ sunk: pub.sunk, w: pub.w }, { n: r.n, fell: r.ended ? [] : null }, here) : null;
   const canAnswer = !question && (!!mg.held || mg.bricks < MAX_BRICKS);
   return (
-    <div className="fc-pad fc-pad--run lv-pad">
+    <div className={`fc-pad fc-pad--run lv-pad ${bw > 1 ? 'lv-pad--wide' : ''}`}>
       <header className="fc-pad__top">
         <span>Round {r?.n ?? 0}</span>
         {left !== null ? <b className={`fc-pad__left ${left <= 3 ? 'is-low' : ''}`}>{left}</b> : <b>🌋 Look at the big screen!</b>}
@@ -306,8 +308,8 @@ export function LavaPad({ link: baseLink, room, view, me, setMe, setView, clock,
         </div>
       </div>
       <div className={`fc-pad__board ${Date.now() - shake < 500 ? 'fc-pad__board--hit' : ''}`}>
-        <LavaBoard map={pub.map} sunk={pub.sunk} round={r} t={t} target={target} onTile={(i) => void act({ build: i }, '🧱 Bridge built!')}>
-          {others.current.map((o, i) => <span key={i} className="fc-dot" style={{ left: `${o.x * 100}%`, top: `${o.y * 100}%` }} />)}
+        <LavaBoard map={pub.map} w={bw} sunk={pub.sunk} round={r} t={t} target={target} onTile={(i) => void act({ build: i }, '🧱 Bridge built!')}>
+          {others.current.map((o, i) => <span key={i} className="fc-dot" style={at(o.x, o.y, bw)} />)}
           <LavaToken x={here.x} y={here.y} size={AVATAR_R * 2.4} className={`fc-token--me ${mg.boots ? 'lv-token--boots' : ''} ${mg.boost ? 'fc-token--fast' : ''}`} label="You">
             <AvatarImage avatar={avatar ?? null} size={64} />
           </LavaToken>

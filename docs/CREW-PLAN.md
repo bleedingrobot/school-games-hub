@@ -56,6 +56,18 @@ Way A from each pupil's focus (`makeQuestion`, skips `isUntimed` skills), kept a
 
 As Ghost Tag: devices move their avatar at once and save the spot through `classlive_move` (activity row `moves = true`, `max_speed` 0.6) every 0.4 s; the big screen reads `classlive_positions` every 0.3 s and steps the game (`view`) every 0.5 s (jam timers, drain, round end). Glitch status is never in anything a Crew pad receives (positions carry no roles; the Glitch spark only goes to Glitch pads). During lights out a pad only gets spots within `LIGHT_R` (a small `classlive_crew_move` wrapper, like `classlive_ghost_move`). If the big screen is gone, a pupil's `look` moves the game on at each deadline (+1.5 s).
 
+## Wide map (27 Nov 2026 NZ)
+
+James asked for the class games to fill the screen, like Ghost Tag. New games are `CREW_W` (1.6) wide and 1 high (`w` on
+the game and round; older games without it stay square). The factory keeps its 8 rooms, their looks and rows, spread
+from the middle so the outer rooms keep their gap to the walls (`spreadX`, `machinesOf(w)`); the Canteen (meeting table)
+sits in the middle (`canteenOf(w)`), the belts run as far as the rooms above and below it, and there are about 1.6x the
+power-up crates. Everything that places, reaches or clamps takes the width: canteenSpot, freshMine, openSpot, purposeAt,
+jam, fakeWork, stepCrew, crewBot and the database's classlive_move (`classlive_activities.width`, migration
+20261127163618). Painting: map-factory-wide (docs/crew-art/config.json), the square one cropped until it exists; the
+machine cut-outs stay as they are. Big screen: slimmer side panel; iPad landscape: the factory edge to edge with the
+buttons and joystick over its bottom corners.
+
 ## Rewards
 
 As the other Class Live games: 1 point for joining, 3 for a right answer or (Glitches, who do no maths) a jam that sparks, +2 for being on the winning side in any round, at most 10. Trophies (PupilReward.extra → classlive_stats.extra): **Chief Engineer** (fix 25 machines), **Sharp Detective** (vote for a Glitch 10 times), **Master Glitch** (win 5 rounds as a Glitch).

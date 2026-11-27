@@ -252,3 +252,28 @@
 .sc-nick { margin: 0; font-size: 1.15rem; color: #e2e8f0; }
 .sc-nick b { color: #fde047; font-size: 1.3em; }
 .sc-nick-chip { background: rgba(253, 224, 71, 0.18); color: #fef08a; font-weight: 800; }
+
+/* ---------- the wide factory (27 Nov 2026 NZ: fills a widescreen projector and a landscape iPad; as Ghost Tag's) ---------- */
+/* Big screen: a slimmer side panel; the board as wide as fits, as tall as the screen allows. */
+.sc-scene--wide .fc-stage { align-items: center; height: auto; max-width: 100%; }
+.sc-scene--wide .fc-side { width: 17vw; max-width: 280px; }
+.sc-scene--wide .fc-stage .fc-board { height: auto; max-width: none; width: min(calc(96vw - 2vw - min(17vw, 280px)), calc((100vh - 80px) * 1.6)); }
+@media (max-width: 700px) {
+  .sc-scene--wide .fc-side { width: 100%; max-width: none; }
+  .sc-scene--wide .fc-stage .fc-board { width: 96vw; }
+}
+/* iPad: the factory across the whole screen, the buttons and the joystick over its bottom corners. */
+.sc-pad--wide .fc-pad__board { width: min(100%, calc((100dvh - 250px) * 1.6)); }
+@media (orientation: portrait) { .sc-pad--wide .fc-pad__board { width: 100%; } }
+@media (orientation: landscape) and (min-width: 640px) {
+  .cl-c--corners .sc-pad--wide { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .sc-pad--wide .fc-pad__top { flex-direction: row; align-items: center; padding-top: 0; max-width: none; padding-inline: 96px 8px; }
+  .sc-pad--wide .fc-pad__powers { flex-direction: row; min-height: 0; position: absolute; top: 44px; left: 50%; transform: translateX(-50%); z-index: 3; max-width: calc(100vw - 32px); }
+  .sc-pad--wide .fc-pad__board { width: min(calc(100vw - 16px), calc((100dvh - 52px) * 1.6)); }
+  .sc-pad--wide .fc-fb { position: fixed; top: 52px; right: 12px; max-width: 30vw; z-index: 4; }
+  .sc-pad--wide .gt-controls { position: fixed; inset: auto 0 0 0; padding: 0 max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-bottom)); pointer-events: none; z-index: 5; }
+  .sc-pad--wide .gt-controls > * { pointer-events: auto; }
+  .sc-pad--wide .gt-power { opacity: 0.92; }
+  .sc-pad--wide .fc-stick { opacity: 0.8; }
+}
+.sc-board--wide .fc-dot { width: calc(3% / 1.6); }
