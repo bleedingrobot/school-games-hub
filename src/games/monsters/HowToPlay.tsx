@@ -92,7 +92,7 @@ export function HowToPlayBody() {
         <h3 id="mht-towers">Towers and badges</h3>
         <p>
           There are {AREAS.length} places to explore: {AREAS.map((a) => a.name).join(', ')}. Each has a Tower with trainers inside. Beat the top trainer to win that area’s badge, and the next place opens.
-          Each tower asks the maths of its type.
+          The maths in every Tower still comes from your own maths ladder, whatever type its monsters are.
           Win {FOLLOW_BADGES} badges and the first monster in your team walks behind you on the map.
         </p>
       </section>
