@@ -280,3 +280,12 @@
 
 /* Stories (docs/plans/stories/PLAN.md, ST.3): the kit's StoryBook in Goblin Storm's green and gold. */
 .gs-storybook { --story-bg: #0a120c; --story-ink: #eef6e6; --story-gold: #9be05a; --story-frame: #1e3a1c; --story-dim: #3e5a36; }
+
+/* Round bonus (shared/goblinstorm/rounds.ts): progress strip above the map cards, and a line on the cards still needed. */
+.gs-round { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.8rem; margin: 0 0 0.8rem; padding: 0.6rem 0.9rem; border-radius: 0.9rem; background: rgba(255, 214, 92, 0.12); border: 1px solid rgba(255, 214, 92, 0.35); color: #ffe9b0; }
+.gs-round__title { font-weight: 800; }
+.gs-round__dots { display: inline-flex; gap: 0.3rem; }
+.gs-round__dots i { width: 0.8rem; height: 0.8rem; border-radius: 50%; border: 2px solid #ffd65c; }
+.gs-round__dots i.on { background: #ffd65c; }
+.gs-round__line { flex-basis: 100%; font-size: 0.92rem; color: #f3e6c4; }
+.gs-pick__round { color: #ffd65c; font-size: 0.9rem; font-weight: 700; }

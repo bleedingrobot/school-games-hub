@@ -4,7 +4,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh goblinstorm, then scripts/scratch-test.sh goblinstorm supabase/tests/database/goblinstorm.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(86);
+select plan(94);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -99,7 +99,7 @@ select is((select bosses from public.goblinstorm_saves where player = pg_temp.id
 
 -- A pupil who has started but never finished a run.
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz');
-select is(public.my_goblinstorm() - 'today' - 'unlimited', '{"gold": 0, "shop": {}, "heroes": [], "bosses": [], "codex": [], "weapons": [], "runs": 0, "kills": 0, "guideSeen": false, "bestGold": 0}'::jsonb,
+select is(public.my_goblinstorm() - 'today' - 'unlimited' - 'beats' - 'roundsPaid', '{"gold": 0, "shop": {}, "heroes": [], "bosses": [], "codex": [], "weapons": [], "runs": 0, "kills": 0, "guideSeen": false, "bestGold": 0}'::jsonb,
   'a pupil with no finished run gets an empty save, never anyone else''s');
 select pg_temp.reset();
 
@@ -173,7 +173,7 @@ select pg_temp.reset();
 -- ---- my_goblinstorm: the caller's own save only ----
 select pg_temp.reset();
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
-select is(public.my_goblinstorm() - 'today' - 'unlimited', '{"gold": 45, "shop": {}, "heroes": ["cleric", "wizard", "barbarian", "rogue", "dragonkid"], "bosses": [0, 1], "codex": ["arrows", "blades", "fireball"], "weapons": ["arrows", "axes", "blades", "fireball"], "runs": 3, "kills": 20280, "guideSeen": false, "bestGold": 30}'::jsonb,
+select is(public.my_goblinstorm() - 'today' - 'unlimited' - 'beats' - 'roundsPaid', '{"gold": 45, "shop": {}, "heroes": ["cleric", "wizard", "barbarian", "rogue", "dragonkid"], "bosses": [0, 1], "codex": ["arrows", "blades", "fireball"], "weapons": ["arrows", "axes", "blades", "fireball"], "runs": 3, "kills": 20280, "guideSeen": false, "bestGold": 30}'::jsonb,
   'a pupil reads their own save');
 select pg_temp.reset();
 select set_config('role', 'anon', true);
@@ -190,7 +190,7 @@ select is((select guide_seen from public.goblinstorm_saves where player = pg_tem
 insert into auth.users (id, email) values ('00000000-0000-0000-0000-00000000000c', 'cat@douglaspark.school.nz');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'cat@douglaspark.school.nz');
 select public.goblinstorm_guide_seen();
-select is(public.my_goblinstorm() - 'today' - 'unlimited', '{"gold": 0, "shop": {}, "heroes": [], "bosses": [], "codex": [], "weapons": [], "runs": 0, "kills": 0, "guideSeen": true, "bestGold": 0}'::jsonb,
+select is(public.my_goblinstorm() - 'today' - 'unlimited' - 'beats' - 'roundsPaid', '{"gold": 0, "shop": {}, "heroes": [], "bosses": [], "codex": [], "weapons": [], "runs": 0, "kills": 0, "guideSeen": true, "bestGold": 0}'::jsonb,
   'a brand-new pupil can note the guide before any run: an empty save that remembers it');
 select pg_temp.reset();
 -- Unlimited today in the save (migration 20261122001100): the class switch or the pupil's own Bonus Turns Day.
@@ -225,6 +225,28 @@ select is((select count(*)::integer from public.trophies t where t.player = pg_t
   'beating the Storm King wins the Storm King''s Crown');
 select is((select array_agg(id order by sort) from public.achievement_types where id in ('goblinstorm-gate', 'goblinstorm-breaker')),
   array['goblinstorm-gate', 'goblinstorm-breaker'], 'Storm Gate and Storm Breaker are achievements');
+
+-- ---- Round bonuses (migration 20261127210645): every boss in a group again pays 10, 20, 30 ... gold ----
+select is((select beats[1:2] from public.goblinstorm_saves where player = pg_temp.id('0a')), (select array_agg(n order by m) from (
+           select r.map as m, count(*)::integer as n from public.goblinstorm_runs r where r.player = pg_temp.id('0a') and r.boss_beaten group by r.map) c),
+  'each boss win counts on its map');
+update public.goblinstorm_saves set beats = '{1,1,1,1,0,0,0,0,0,0}', rounds_paid = '{}', gold = 0 where player = pg_temp.id('0c');
+select pg_temp.act_as_server();
+select ok(public.goblinstorm_store_questions(pg_temp.id('0c'), 70, 'knight', 4, '2026-11-19', false, '[]', '{}') and
+          public.record_goblinstorm_run(pg_temp.id('0c'), 70, '4x60', '[]', pg_temp.summary(5, true, array[]::text[])), 'a boss win on the last Kingdom map not yet beaten');
+select pg_temp.reset();
+select is((select gold from public.goblinstorm_saves where player = pg_temp.id('0c')), 15, '... finishes round 1: its 5 gold plus a 10 gold bonus');
+select is((select rounds_paid from public.goblinstorm_saves where player = pg_temp.id('0c')), '{"kingdom": 1}'::jsonb, '... and round 1 is paid');
+update public.goblinstorm_saves set beats = '{4,3,3,5,2,0,0,0,0,0}', gold = 0 where player = pg_temp.id('0c');
+select pg_temp.act_as_server();
+select ok(public.goblinstorm_store_questions(pg_temp.id('0c'), 71, 'knight', 4, '2026-11-19', false, '[]', '{}') and
+          public.record_goblinstorm_run(pg_temp.id('0c'), 71, '4x60', '[]', pg_temp.summary(0, true, array[]::text[])), 'another win on it');
+select pg_temp.reset();
+select is((select gold from public.goblinstorm_saves where player = pg_temp.id('0c')), 50, '... pays rounds 2 and 3 together (20 + 30)');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'cat@douglaspark.school.nz');
+select is(public.my_goblinstorm() -> 'beats', '[4, 3, 3, 5, 3, 0, 0, 0, 0, 0]'::jsonb, 'the save shows each map''s wins');
+select is(public.my_goblinstorm() -> 'roundsPaid', '{"kingdom": 3}'::jsonb, '... and the rounds paid');
+select pg_temp.reset();
 
 select * from finish();
 rollback;

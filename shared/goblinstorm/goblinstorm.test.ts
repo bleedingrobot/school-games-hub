@@ -6,6 +6,7 @@ import { applyPick, makeOffer, maxWeapons, newRun, stepRun, waiting, type RunSet
 import { decodeSteering, encodeSteering, replayRun } from './replay';
 import { freshSave, mapOpen } from './server';
 import { shopTop } from './shop';
+import { afterRun, bonusBetween, nextRound } from './rounds';
 import { STILL } from './trig';
 
 const knight: RunSetup = { seed: 12345, hero: HEROES[0], map: MAPS[0], shop: {} };
@@ -58,7 +59,26 @@ describe('Goblin Storm rules', () => {
     expect(quit.summary.outcome).toBe('quit');
   });
 
-  it('the Storm Lands: the gate, each twist, and Legendary upgrades that work there and nowhere else', () => {
+  it('the Storm Lands: the gate, each twist, Legendary upgrades that work there and nowhere else, and round bonuses', () => {
+    {
+      // Round bonuses: every boss in a group again pays 10, 20, 30 … gold, the Kingdom and Storm Lands apart.
+      let save = { beats: [] as number[], roundsPaid: {} };
+      const win = (map: number, boss = true) => { const r = afterRun(save, map, boss); save = r; return r.bonus; };
+      expect([0, 1, 2, 3].map((m) => win(m))).toEqual([0, 0, 0, 0]);
+      expect(win(0)).toBe(0);
+      expect(nextRound(save.beats, 'kingdom')).toMatchObject({ round: 1, gold: 10, toBeat: [4], done: 4 });
+      expect(win(4)).toBe(10);
+      expect(win(4, false)).toBe(0);
+      expect(nextRound(save.beats, 'kingdom')).toMatchObject({ round: 2, gold: 20, toBeat: [1, 2, 3, 4] });
+      expect([1, 2, 3].map((m) => win(m))).toEqual([0, 0, 0]);
+      const before = save;
+      expect(win(4)).toBe(20);
+      expect(bonusBetween(before, save)).toBe(20);
+      // The Storm Lands keep their own rounds.
+      expect(win(STORM_FIRST)).toBe(0);
+      // Rounds finished before bonuses began are all paid on the next run in that group.
+      expect(afterRun({ beats: [5, 3, 4, 6, 3], roundsPaid: {} }, 0, false)).toMatchObject({ bonus: 60, roundsPaid: { kingdom: 3 } });
+    }
     const map = (id: string) => MAPS.find((m) => m.id === id)!;
     const legend: ShopLevels = { fifth: 1, secondwind: 1, stormmight: 3, surge: 3, anchor: 2, lantern: 2 };
     // Legendary upgrades change nothing on the first five maps.

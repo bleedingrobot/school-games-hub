@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'goblinstorm-rounds-2026-11-27',
+    date: '2026-11-27',
+    emoji: '🔁',
+    title: 'Goblin Storm round bonus',
+    text: 'Beat every boss again for bonus gold: +10, then +20, +30 and more.',
+    game: 'goblinstorm',
+  },
+  {
     // Dated the day it opens: the line waits until then (Christmas Coast is open in December and January only).
     id: 'toonflap-christmas-2026-11-26',
     date: '2026-11-26',
