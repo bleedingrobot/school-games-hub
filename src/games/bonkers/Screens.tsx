@@ -1,10 +1,11 @@
 /** Smash Quest's calm screens: picking a hero, home, and what an adventure earned. */
 import { useState } from 'react';
-import { CLASS_INFO, CLASSES, GEAR, INNKEEPER, LOOKS, SLOTS, gearById, trainerFor, zoneById, type HeroClass, type Look } from '../../../shared/bonkers/content';
+import { CLASS_INFO, CLASSES, GEAR, INNKEEPER, LOOKS, SLOTS, gearById, gearStats, type GearInfo, trainerFor, zoneById, type HeroClass, type Look } from '../../../shared/bonkers/content';
 import { MAX_LEVEL } from '../../../shared/bonkers/config';
 import { heroPower, replay, starsToTrainer, type Hero, type Progress } from '../../../shared/bonkers/engine';
 import type { AdventureView, FinishReply, LoadReply } from './backend';
-import { grannySays, levelTitle, questWords } from './words';
+import { nextBossWords, type BossStop, type SeasonView } from '../../../shared/bonkers/season';
+import { grannySays, levelTitle, questWords, xp } from './words';
 
 const LOOK_WORDS: Record<Look, string> = { boy: 'Boy', girl: 'Girl', animal: 'Animal' };
 
@@ -70,13 +71,13 @@ function HeroBadge({ hero, p }: { hero: Hero; p: Progress }) {
 }
 
 function StarBar({ p }: { p: Progress }) {
-  if (p.level >= MAX_LEVEL) return <p className="bq-bar__done">⭐ Top level! ⭐</p>;
+  if (p.level >= MAX_LEVEL) return <p className="bq-bar__done">🏆 Top level! 🏆</p>;
   const need = starsToTrainer(p.level);
   const t = trainerFor(p.level);
   return (
     <div className="bq-bar">
-      <div className="bq-bar__label"><span>⭐ {p.stars} / {need} stars</span><span>{t?.emoji} {t?.name}</span></div>
-      <div className="bq-bar__track" role="progressbar" aria-label="Stars to your trainer" aria-valuemin={0} aria-valuemax={need} aria-valuenow={p.stars}>
+      <div className="bq-bar__label"><span>✨ {xp(p.stars)} / {xp(need)} XP</span><span>{t?.emoji} {t?.name}</span></div>
+      <div className="bq-bar__track" role="progressbar" aria-label="XP to your trainer" aria-valuemin={0} aria-valuemax={xp(need)} aria-valuenow={xp(p.stars)}>
         <div className="bq-bar__fill" style={{ width: `${Math.min(100, (100 * p.stars) / need)}%` }} />
       </div>
     </div>
@@ -93,14 +94,72 @@ function LevelRoad({ level }: { level: number }) {
   );
 }
 
+/** A piece of gear's stat lines: "+16 Smash", "+5 Crit"… (flavour, see gearStats). */
+function Stats({ g }: { g: GearInfo }) {
+  return (
+    <span className="bq-stats">
+      {gearStats(g).map((s) => <span key={s.label} className="bq-stat"><span aria-hidden="true">{s.icon}</span> +{s.value} {s.label}</span>)}
+    </span>
+  );
+}
+
 function GearRow({ p }: { p: Progress }) {
   return (
     <ul className="bq-gear" aria-label="Your gear">
       {SLOTS.map((slot) => {
         const g = GEAR.find((x) => x.slot === slot && x.tier === p.gear[slot]);
-        return <li key={slot} title={g?.name}><span aria-hidden="true">{g?.emoji}</span> {g?.name}</li>;
+        return (
+          <li key={slot} title={g?.name}>
+            <span aria-hidden="true">{g?.emoji}</span> {g?.name}
+            {g && <Stats g={g} />}
+          </li>
+        );
       })}
     </ul>
+  );
+}
+
+const SHORT_DAY = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+
+/** The season's boss road: a Friday boss each week and the mega boss on the last Friday. Tap a stop for its line. */
+function SeasonTimeline({ season }: { season: SeasonView }) {
+  const [open, setOpen] = useState<number | null>(null);
+  const pick = season.stops.find((s) => s.week === open) ?? season.stops.find((s) => s.state === 'today' || s.state === 'next') ?? null;
+  const along = Math.min(100, Math.max(0, (100 * (season.day - 1)) / Math.max(1, season.days - 1)));
+  const stopWords = (s: BossStop) => (s.state === 'beaten-time' ? 'Been and gone' : s.state === 'today' ? 'Today!' : SHORT_DAY(s.date));
+  return (
+    <section className="bq-card bq-season" aria-label={`Season ${season.number}, week ${season.week} of ${season.weeks}`}>
+      <div className="bq-season__top">
+        <h2 className="bq-season__title">Season {season.number} <span>Week {season.week} of {season.weeks}</span></h2>
+        <p className="bq-season__next">{nextBossWords(season)}</p>
+      </div>
+      <div className="bq-season__road">
+        <div className="bq-season__track" aria-hidden="true"><div className="bq-season__fill" style={{ width: `${along}%` }} /></div>
+        <ol className="bq-season__stops">
+          {season.stops.map((s) => (
+            <li key={s.week}>
+              <button
+                type="button"
+                className={`bq-season__stop bq-season__stop--${s.state} bq-season__stop--${s.kind}${pick?.week === s.week ? ' bq-season__stop--picked' : ''}`}
+                aria-pressed={pick?.week === s.week}
+                aria-label={`${s.kind === 'mega' ? 'Mega boss' : `Week ${s.week} Friday boss`}: ${s.boss.name}, ${stopWords(s)}`}
+                onClick={() => setOpen(s.week)}
+              >
+                <span className="bq-season__emoji" aria-hidden="true">{s.boss.emoji}</span>
+                <span className="bq-season__label">{s.kind === 'mega' ? 'MEGA' : `Wk ${s.week}`}</span>
+                <span className="bq-season__when">{stopWords(s)}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      </div>
+      {pick && (
+        <p className="bq-season__note" aria-live="polite">
+          <b>{pick.boss.emoji} {pick.boss.name}</b> {pick.kind === 'mega' ? '(the season’s mega boss)' : `(Friday, week ${pick.week})`}: {pick.boss.blurb}
+          {pick.state === 'beaten-time' ? '' : ' Your class chips away at it all week!'}
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -112,6 +171,7 @@ export function Inn({ loaded, busy, note, onQuest, onChangeLook }: {
   return (
     <section className="bq-inn" aria-label="Home">
       <Granny line={grannySays(p, loaded.waiting)} />
+      {loaded.season && <SeasonTimeline season={loaded.season} />}
       <div className="bq-card bq-inn__hero">
         {p.hero && <HeroBadge hero={p.hero} p={p} />}
         <StarBar p={p} />
@@ -161,7 +221,7 @@ export function Results({ before, result, current, onInn }: { before: Progress; 
       <ul className="bq-tally">
         <li>🥊 Fights won: <b>{won} of {fights.length}</b></li>
         <li>{r.questDone ? '✅' : '➖'} {w.title}: <b>{r.questDone ? 'done!' : 'not this time'}</b></li>
-        <li>⭐ Stars: <b>+{result.starsEarned}</b></li>
+        <li>✨ XP: <b>+{xp(result.starsEarned)}</b></li>
         {result.stickers > 0 && <li>🏷️ Stickers: <b>+{result.stickers}</b></li>}
       </ul>
       {result.gear.length > 0 && (
@@ -171,7 +231,12 @@ export function Results({ before, result, current, onInn }: { before: Progress; 
           <ul>
             {result.gear.map((id) => {
               const g = gearById(id);
-              return <li key={id} className="bq-chest__item"><span aria-hidden="true">{g?.emoji}</span> {g?.name} <small>(+{g?.power} power)</small></li>;
+              return (
+                <li key={id} className="bq-chest__item">
+                  <span aria-hidden="true">{g?.emoji}</span> {g?.name} <span className="bq-chest__new">NEW!</span>
+                  {g && <Stats g={g} />}
+                </li>
+              );
             })}
           </ul>
         </div>
