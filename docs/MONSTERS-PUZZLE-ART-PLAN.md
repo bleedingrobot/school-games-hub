@@ -220,7 +220,7 @@ JamesGaming (`scripts/monsters-puzzle-paint.py gen`, raw PNGs on branch `monster
 game files with `scripts/monsters-puzzle-pick.py` (contact sheet `docs/monsters-art-test/puzzles-sheet-2.png`).
 
 - Code: `PuzzlePage.tsx` (all boards), `puzzleLook.ts` (scene, person, theme, glowworm counts), `puzzles.css`, MapMenu
-  (`mm--puzzle` stage, area landscape), `render.ts` (painted "?" sign over unsolved puzzle spots). Test: `PuzzlePage.test.tsx`.
+  (`mm--puzzle` stage, area landscape), `render.ts` (painted "?" sign over unsolved puzzle spots). No new test: the monsters area is at its test budget (10); the puzzle rules keep their test in shared/monsters/quests/puzzles.test.ts.
 - Not used after painting (look worse than the CSS stand-in): smoke (came out as a face), cave-roof (glitchy), tag and
   sign (a hole/post sat behind the numbers and words). Deleted; CSS draws them. Repaint later only if wanted.
 - Not done: the seed pod pop on the map (seed-pod.webp is painted and waiting). Bit pictures show on the prize card.
