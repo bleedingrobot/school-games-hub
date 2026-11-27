@@ -13,7 +13,7 @@ export function useBonkersClassSwitch(classId: string) {
 
 export const saveBonkersClassSwitch = (on: boolean, classId: string) => saveBonkersEnabled(on, classId);
 
-export const BONKERS_ABOUT = 'Bonkers Quest (Years 2 to 4): a wacky, simple Dragon Maths. One adventure a school day (saved up to 3): pick 1 of 2 quests from Granny Jetpack, then 4 to 6 monster fights where every hit is a maths question from the student’s own focus, always 4 choices. Right: a big daft bonk. Wrong: a little bonk, the monster bonks back and the right answer is shown. Nothing is ever lost. Stars fill a bar to a trainer, who levels the hero up (10 levels); chests give wacky gear. Points: 2 a fight won, 3 for the quest, 5 for a trainer, inside the daily cap. Off hides it from students.';
+export const BONKERS_ABOUT = 'Bonkers Quest (Years 2 to 4): a wacky, simple Dragon Maths. One adventure a school day (saved up to 3): pick 1 of 2 quests from Granny Jetpack, then 4 to 6 monster fights. The hero smashes away on their own, and about twice a fight a maths question from the student’s own focus pops up (always 4 choices) with a surprise damage boost (×2, ×3, or an ABSURD ×10). Right: the boosted smash. Wrong: no smash, the monster smashes back and the right answer is shown. Nothing is ever lost. Stars fill a bar to a trainer, who levels the hero up (10 levels); chests give wacky gear. Points: 2 a fight won, 3 for the quest, 5 for a trainer, inside the daily cap. Off hides it from students.';
 
 /** The Maths column: how the class is going once anyone has played. Null while loading. */
 export function useBonkersSummary(classId: string): string | null {

@@ -63,7 +63,7 @@ function HeroBadge({ hero, p }: { hero: Hero; p: Progress }) {
       <div>
         <strong>{ci.names[hero.look]}</strong>
         <span className="bq-badge__lvl">Level {p.level}: {levelTitle(p.level)}</span>
-        <span className="bq-badge__pow">Bonk power {heroPower(p)} · {p.stickers} stickers</span>
+        <span className="bq-badge__pow">Smash power {heroPower(p)} · {p.stickers} stickers</span>
       </div>
     </div>
   );

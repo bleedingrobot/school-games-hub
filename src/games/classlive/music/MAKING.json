@@ -232,12 +232,13 @@
   {
     "name": "game-diamond",
     "model": "ACE-Step v1 3.5B (ComfyUI, ace_step_v1_3.5b.safetensors, 50 steps euler, cfg 5, shift 5, lyrics [instrumental])",
-    "prompt": "claw machine arcade, playful chiptune meets funk, catchy but not too busy, background music, light texture, 120 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, cinematic, high quality, loopable, steady tempo",
-    "seed": 11117,
+    "prompt": "claw machine arcade, playful chiptune meets funk, steady unbroken groove, continuous driving beat, no stops, no breaks, catchy but not too busy, background music, light texture, 120 bpm, instrumental, no vocals, video game soundtrack, kids game music, bright, friendly, high quality, loopable, steady tempo",
+    "seed": 21001,
     "bpm": 120,
     "seconds": 88.0,
     "take_kept": 1,
-    "lufs_target": -18
+    "lufs_target": -18,
+    "note": "Remade 27 Nov 2026 NZ: seed 11117 had stop-start dropouts (first 3 s and ~33 s) that sounded laggy. Picked from seeds 21001-21006 by fewest dropouts and steadiest tempo."
   },
   {
     "name": "game-isles",

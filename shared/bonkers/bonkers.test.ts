@@ -12,7 +12,7 @@ const hero = (over: Partial<Progress> = {}): Progress => ({ ...emptyProgress(), 
 const rights = (n: number, special = false): Mark[] => Array.from({ length: n }, (_, i) => ({ right: true, special: special && i === 0 }));
 
 describe('Bonkers Quest rules', () => {
-  it('right answers bonk the monster, wrong ones lose a heart, and a special move works once a fight', () => {
+  it('the hero smashes on their own, boosted right answers smash hard, wrong ones lose a heart, and a special move works once a fight', () => {
     const quest = parseQuest('laundry:wins:4:0')!;
     const adv = makeAdventure(123, quest, hero());
     expect(makeAdventure(123, quest, hero())).toEqual(adv); // the same seed, the same fights
@@ -20,16 +20,19 @@ describe('Bonkers Quest rules', () => {
     const power = heroPower(hero());
     const first = adv.foes[0];
 
-    // Three wrong answers in a row: bonked, with a little bonk on the monster each time, and on to the next fight.
+    // Three wrong answers in a row: smashed, with only the hero's own smashes landing (never the last one), and on to the next fight.
     const bonked = replay(adv, [{ right: false, special: false }, { right: false, special: false }, { right: false, special: false }]);
     expect(bonked.results[0]).toMatchObject({ outcome: 'bonked', questions: 3, rights: 0 });
-    expect(bonked.blows.every((b) => b.ouch && b.hit >= 1)).toBe(true);
+    expect(bonked.blows.every((b) => b.ouch && b.hit === 0 && b.auto >= 0)).toBe(true);
+    expect(bonked.results[0].outcome).toBe('bonked');
     expect(bonked).toMatchObject({ fight: 1, hearts: HEARTS, stars: STARS.bonked });
 
-    // The Kitchen Knight's special triples a right hit, once a fight: asking twice changes nothing the second time.
+    // Each question has a surprise boost (×2, ×3 or ×10), and the Kitchen Knight's special triples it, once a fight.
+    expect(adv.moments?.every((m) => [2, 3, 10].includes(m.boost) && m.autos >= 2 && m.autos <= 4)).toBe(true);
     const whack = replay(adv, [{ right: true, special: true }, { right: true, special: true }]);
-    expect(whack.blows[0]).toMatchObject({ special: true, hit: power * 3 });
-    expect(whack.blows[1]?.special ?? false).toBe(false);
+    expect(whack.blows[0]).toMatchObject({ special: true, hit: power * 3 * adv.moments![0].boost });
+    // (A big boost can finish the monster at once: the special is then fresh for the next fight.)
+    expect(whack.blows[0].ended !== null || !whack.blows[1].special).toBe(true);
 
     // Pirate Granny's Wool Whirlwind: the monster can't bonk back for 2 questions, even when wrong.
     const granny = makeAdventure(123, quest, hero({ hero: { cls: 'granny', look: 'animal' } }));

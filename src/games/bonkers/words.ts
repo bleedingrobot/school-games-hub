@@ -6,10 +6,10 @@ import { MAX_LEVEL } from '../../../shared/bonkers/config';
 export function questWords(q: Quest): { title: string; what: string } {
   const zone = zoneById(q.zone);
   const where = zone?.name ?? 'the wilds';
-  if (q.kind === 'big') return { title: `Bonk the big one`, what: `${q.fights} fights in ${where}, and ${zone?.big.name ?? 'a big monster'} waits at the end!` };
+  if (q.kind === 'big') return { title: `Smash the big one`, what: `${q.fights} fights in ${where}, and ${zone?.big.name ?? 'a big monster'} waits at the end!` };
   if (q.kind === 'hunt') {
     const mon = zone?.monsters[q.monster];
-    return { title: `${mon?.name ?? 'Monster'} hunt`, what: `Bonk ${questTarget(q)} ${mon?.name ?? 'monsters'} in ${where} (${q.fights} fights).` };
+    return { title: `${mon?.name ?? 'Monster'} hunt`, what: `Smash ${questTarget(q)} ${mon?.name ?? 'monsters'} in ${where} (${q.fights} fights).` };
   }
   return { title: `Wild wander`, what: `Win ${questTarget(q)} of ${q.fights} fights in ${where}.` };
 }
@@ -24,7 +24,7 @@ export function grannySays(p: Progress, waiting: number | null): string {
   if (trainerReady(p)) return `Your star bar is full! ${t?.name ?? 'Your trainer'} is waiting after your next adventure’s fights.`;
   if (waiting === 0) return 'That’s today’s adventure done. Have a cuppa and come back next school day!';
   const left = starsToTrainer(p.level) - p.stars;
-  if (p.stats.adventures === 0) return 'Pick a quest, dearie. Every right answer is a big bonk!';
+  if (p.stats.adventures === 0) return 'Pick a quest, dearie. Your hero smashes away, and every right answer is a MEGA smash!';
   return `${left} more stars and ${t?.name ?? 'your trainer'} will see you. Pick a quest!`;
 }
 

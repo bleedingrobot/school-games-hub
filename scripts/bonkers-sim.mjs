@@ -78,12 +78,13 @@ const out = PUPILS.map((pupil) => {
     wonShare: Math.round((100 * sum('won')) / Math.max(1, sum('fights'))),
     trainerLossShare: Math.round((100 * sum('trainerLosses')) / Math.max(1, sum('trainers'))),
     questionsAnAdventure: Math.round(sum('questions') / Math.max(1, sum('adventures'))),
+    questionsAFight: Math.round((10 * sum('questions')) / Math.max(1, sum('fights') + sum('trainers'))) / 10,
   };
 });
 
 if (JSON_OUT) console.log(JSON.stringify(out, null, 2));
 else for (const o of out) {
   console.log(`\n${o.pupil}`);
-  console.log(`  level after 5 weeks (median): ${o.endLevel}   fights won ${o.wonShare}%   trainer beat them ${o.trainerLossShare}% of meetings   ~${o.questionsAnAdventure} questions an adventure`);
+  console.log(`  level after 5 weeks (median): ${o.endLevel}   fights won ${o.wonShare}%   trainer beat them ${o.trainerLossShare}% of meetings   ~${o.questionsAnAdventure} questions an adventure (${o.questionsAFight} a fight)`);
   console.log(`  school day each level is reached: ${Object.entries(o.dayFor).map(([l, d]) => `L${l} ${d ?? '-'}`).join('  ')}`);
 }
