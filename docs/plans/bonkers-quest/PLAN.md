@@ -68,6 +68,8 @@ Either way: the hit is the answer (right = big hit, wrong = little bonk + the ri
 
 **Gear (wacky, shows on the hero):** weapon (Rolling Pin of Doom, Spaghetti Whip, Rubber Chicken of Justice, Baguette Sword, Fish Slapper, Pool Noodle of Power), hat (Teapot Helmet, Traffic Cone Crown), shoes (High Heels of Distraction, Jet-Powered Slippers, Clown Shoes of Stomping), cape (Shower Curtain Cape, Bath Towel of Bravery), pet (a Duck in a Hat, a Very Small Dragon). Each piece has a simple "power" number going up, plus a silly line.
 
+**Boy and girl heroes (James, 27 Nov 2026: "we need to plan for male and female players").** Every class comes as a boy or a girl hero, picked with the class at the start of a season. Names that say who they are get a pair: Pirate Granny / Pirate Grandad (or a neutral "Pirate Nan-Nan"), Kitchen Knight, Disco Dazzler and Bin Ninja stay as they are. Gear, moves and numbers are the same for both; any hero can wear any gear (High Heels of Distraction included: that's the joke). Bella's lines use "you" and the hero's name, never he or she. Hero art doubles: 4 classes x 2 x about 4 looks = about 32 hero paintings. How it's offered: question 21.
+
 **Getting stronger:** level (from trainers) + gear power. Simple numbers a 6-year-old can read: "Power 12". No defence, strength and HP sums.
 
 ## 6. Monsters (wacky, friendly, never scary)
@@ -135,3 +137,4 @@ Asked on question cards in the project thread, 27 Nov 2026. Answers go here.
 18. How gear shows on the hero? **A new painted look per level band** (James, 27 Nov): about 4 painted looks per class (16 hero paintings); gear shows as icons beside the hero.
 19. Who runs the Wobbly Inn? **A grandma with a jetpack** (James, 27 Nov): wild, kind, always just back from a trip; she gives the next-step line. Paint her clearly different from the Pirate Granny class.
 20. What the sticker shop sells? **Hats and pets, looks only** (James, 27 Nov): can't be used to skip maths. A hat sits over the painted hero look, so each look needs a fixed hat spot.
+21. How boy and girl heroes are offered?
