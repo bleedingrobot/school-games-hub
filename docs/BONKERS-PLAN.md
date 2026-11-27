@@ -1,6 +1,6 @@
 # Bonkers Quest: plan
 
-**Status: B.1 (the core adventure, drawn stand-ins, no art) being built 27 Nov 2026 on `claude/project-thread-4k46ll`. Code switch OFF: only teachers can open `/#/bonkers` to test the gameplay (James, 27 Nov: "no art though, leave that till last and lets test some gameplay first").**
+**Status: B.1 LIVE for teachers 27 Nov 2026 (PR #942: migration 20261127191027_bonkers.sql applied, `bonkers` function deployed, tables empty, switch on for every class). Code switch OFF: only teachers can open `/#/bonkers` to test the gameplay (James, 27 Nov: "no art though, leave that till last and lets test some gameplay first"). No painting until James has played it and says go.**
 
 Brainstorm and all 22 of James's answers: [plans/bonkers-quest/PLAN.md](plans/bonkers-quest/PLAN.md) (section 10 wins where it differs). Style test (bouncy cartoon picked): [plans/bonkers-quest/style-test/](plans/bonkers-quest/style-test/).
 
@@ -49,7 +49,7 @@ All 22 are James's (27 Nov 2026), in the brainstorm's section 10. Calls I made w
 
 | Stage | What | Live? |
 |---|---|---|
-| B.1 | Rules, simulator, server function, database, screens with drawn stand-ins, teacher switch and Progress column. Teachers only (code switch off) | merging 27 Nov 2026 |
+| B.1 | Rules, simulator, server function, database, screens with drawn stand-ins, teacher switch and Progress column. Teachers only (code switch off) | LIVE for teachers 27 Nov 2026 (PR #942) |
 | B.2 | Sticker shop (hats and pets), achievements, monster book | |
 | B.3 | The class's Friday boss (chipped all week), the 5-week season and the mega boss | |
 | B.4 | Guide polish, Bella's voice lines | |
