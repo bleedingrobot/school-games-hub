@@ -62,7 +62,7 @@ async function answer(user: ReturnType<typeof userEvent.setup>, right: boolean) 
 }
 
 describe('the battle screen', () => {
-  it('asks the attacker’s topic at the area’s band, and a right answer attacks', async () => {
+  it('asks the attacker’s topic at the area’s band, and a right answer attacks (Space takes the best move)', async () => {
     const { user, asked } = setup(wild({ area: 4, far: true }));
     await passMessages(user);
     // Plusplash's moves are on the first menu with their power and type; one glows as Enter's best move.
@@ -76,5 +76,9 @@ describe('the battle screen', () => {
     expect(message()).toMatch(/Quick answer: critical hit!/);
     await passMessages(user);
     expect(message()).toBe('What will Plusplash do?');
+    // Space works like Enter: the glowing best move is asked.
+    (document.activeElement as HTMLElement | null)?.blur();
+    await user.keyboard(' ');
+    expect(await screen.findByRole('dialog', { name: /./ })).toBeInTheDocument();
   });
 });

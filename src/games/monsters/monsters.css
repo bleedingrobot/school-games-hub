@@ -469,6 +469,8 @@
 }
 @keyframes mb-best { to { box-shadow: 0 4px 0 rgba(15, 23, 42, 0.45), 0 0 18px rgba(253, 224, 71, 0.85); } }
 @media (pointer: coarse) { .mb-move__enter { display: none; } }
+/* Narrow screens: just "Enter", so the badge stays clear of the move's name (Space still works). */
+@media (max-width: 1100px) { .mb-move__space { display: none; } }
 @media (prefers-reduced-motion: reduce) {
   .mb-callout span, .mb-callout::before, .mb-arena.is-shaking, .mb-move.is-best, .mb-next__timer { animation: none !important; }
 }
