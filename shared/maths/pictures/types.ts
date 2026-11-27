@@ -27,15 +27,21 @@ export type Picture =
    * the line with a short label ('8253', '−3', ''). `words` labels ticks with words instead (chance: impossible…certain).
    */
   | { kind: 'number-line'; from: number; to: number; step: number; labels: number[]; marks?: { at: number; label: string }[]; words?: { at: number; label: string }[] }
-  /** A hundred square with the first `shaded` squares shaded (row by row). */
-  | { kind: 'hundred'; shaded: number }
+  /**
+   * A hundred square with the first `shaded` squares shaded (row by row). `quarters` (25 or 75 shaded) draws thick lines
+   * after column 5 and row 5 and shades 5 × 5 blocks instead, so the 4 equal parts show.
+   */
+  | { kind: 'hundred'; shaded: number; quarters?: boolean }
   /**
    * Fraction bars, one under another: each cut into `parts` equal parts with `shaded` shaded, from part `start` (0, the
    * left end, when left out). `label` sits over the whole bar ('35', '$40', '').
    */
   | { kind: 'bars'; bars: { parts: number; shaded: number; start?: number; label?: string; shade?: Shade }[] }
-  /** Whole circles each cut into `parts`, the first `shaded` parts shaded across them all (mixed numbers, ÷ fractions). */
-  | { kind: 'wholes'; count: number; parts: number; shaded: number }
+  /**
+   * Whole circles each cut into `parts`, the first `shaded` parts shaded across them all (mixed numbers, ÷ fractions).
+   * `packed: false` draws only the `shaded` slices, loose in rows of `parts`, so the pupil makes the full circles.
+   */
+  | { kind: 'wholes'; count: number; parts: number; shaded: number; packed?: boolean }
   /** An array: `rows` rows of `cols` dots, then `extra` loose dots in colour b (remainders). `groups` rings each row. */
   | { kind: 'array'; rows: number; cols: number; extra?: number; groups?: boolean }
   /** An area box for 2-digit × 1-digit: the top split into the tens part (20, a value) and the ones part (3), drawn in proportion; the side `by`. No products written. */
@@ -52,8 +58,11 @@ export type Picture =
   | { kind: 'balance'; left: string; right: string }
   /** Bar towers, one per value, labelled with the value. `mark: 'range'` colours only the tallest and shortest. */
   | { kind: 'towers'; values: number[]; mark?: 'range' }
-  /** A unit ladder: steps from big to small with the ×/÷ between them ('km', '× 1000', 'm', ...), the two asked highlighted. */
-  | { kind: 'unit-ladder'; units: string[]; links: string[]; highlight: string[] }
+  /**
+   * A unit ladder: steps from big to small with the ×/÷ between them ('km', '× 1000', 'm', ...), the two asked highlighted.
+   * `direction` is the way the question goes: 'down' (big to small, arrows down, ×) or 'up' (small to big, arrows up, ÷).
+   */
+  | { kind: 'unit-ladder'; units: string[]; links: string[]; highlight: string[]; direction?: 'up' | 'down' }
   /** A figure that the server-side figure kinds already draw (angle, compass, grid, clock...). */
   | { kind: 'figure'; figure: Figure };
 

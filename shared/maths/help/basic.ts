@@ -57,8 +57,13 @@ function addTo20(s: Sum): HelpCard | null {
     if (c === 10 && known === 10) return card('pairs-10', 'Already ten', 'You already have 10.', 'How many more do you need to make 10? ?');
     if (c === 10) return card('pairs-10', 'Pairs that make 10', `${known} and what make 10?`, fingers(known), `${known} + ? = 10`);
     // Make a ten first, then the rest: 4 + ? = 11 is 4 + ? = 10, then 1 more.
+    // The frames card already fills the ten, so this one takes away instead: 4 + ? = 11 is 11 − 4.
     if (known < 10 && c! > 10) {
-      return card('make-ten', 'Make ten, then more', `${known} and how many more make 10? ${known} + ? = 10`, `Then ${c! - 10} more takes you to ${c}.`, 'Put the two jumps together: ?');
+      const toTen = c! - 10, rest = known - toTen;
+      const same = `${known} + ? = ${c} is the same as ${c} − ${known}.`;
+      if (known === 1) return card('take-away', 'Take it away', same, `What is 1 less than ${c}? ?`);
+      if (rest <= 0) return card('take-away', 'Take it away', same, `${c} − ${known} = ?`);
+      return card('take-away', 'Take it away', same, `Take ${known} away from ${c}: ${c} − ${toTen} = 10, then 10 − ${rest} = ?`);
     }
     return card('count-up', 'Count up to the total', `Start at ${known}.`, `Count up to ${c}. ${known < 10 && c! > 10 ? `${known} → 10 is ${10 - known}, then on to ${c}.` : ''}`.trim(), `How many did you count on? ?`);
   }
@@ -80,7 +85,8 @@ function countBack(from: number, n: number): string {
 function doubleSteps(n: number): string[] {
   if (n <= 5) return [`Show ${n} ${n === 1 ? 'finger' : 'fingers'} on each hand.`, 'Count them all: ?'];
   if (n === 10) return ['10 is 1 ten.', 'Double 1 ten is how many tens? ?'];
-  if (n <= 10) return ['5 + 5 = 10.', `${n} is ${n - 5 === 1 ? 'one' : n - 5} more than 5, so add ${n - 5 === 1 ? 'one' : n - 5} more to each 5.`, `10 + ${(n - 5) * 2} = ?`];
+  // From 10 + 10, so it is a different route from the fives split on the dots card.
+  if (n <= 10) return ['10 + 10 = 20.', `${n} is ${10 - n === 1 ? 'one' : 10 - n} less than 10, so take ${10 - n === 1 ? 'one' : 10 - n} off each 10.`, `20 − ${(10 - n) * 2} = ?`];
   const tens = Math.floor(n / 10) * 10, ones = n - tens;
   // A whole number of tens: double the tens like ones, so no step says the answer.
   if (ones === 0) return [`${n} is ${tens / 10} tens.`, `Double ${tens / 10} tens is how many tens? ?`];
@@ -118,7 +124,7 @@ const EASY = [0, 1, 10, 2, 5, 11, 9, 4, 3, 8, 6, 7, 12];
 function trick(n: number, t: number): { title: string; steps: string[] } {
   switch (t) {
     case 0: return { title: 'Times 0', steps: [`${n} lots of nothing is nothing.`, `${n} × 0 = ?`] };
-    case 1: return { title: 'Times 1', steps: ['Times 1 means just one lot: the number stays the same.', `${n} × 1 = ?`] };
+    case 1: return { title: 'Times 1', steps: ['Times 1 means just one lot.', `How many is 1 lot of ${n}? ?`] };
     case 2: return { title: 'Times 2 is a double', steps: [`2 × ${n} is double ${n}: ${n} + ${n}.`, `${n} + ${n} = ?`] };
     case 10: return n < 10
       ? { title: 'Times 10', steps: [`${n} × 10 is ${n} tens.`, `Put the ${n} in the tens place. What goes in the ones place?`, 'Read the number: ?'] }
@@ -178,7 +184,11 @@ function missingFactor(t: number, c: number, ctx: HelpContext = {}): HelpCard {
   if (c === t) return card('tables', 'One group', `${c} things are put into groups of ${c}.`, 'How many groups can you make? ?');
   if (t === 2) return card('tables', 'Halve it', ...halfSteps(c));
   if (t === 10) return card('tables', 'Take off the zero', `${c} ÷ 10 asks: how many tens are in ${c}?`, `Cover the last 0 of ${c}.`, 'What number is left? ?');
-  if (t === 5) return card('tables', 'Double both, then count tens', `Double both: 10 × ? = ${2 * c}.`, `${2 * c} is how many tens? ?`);
+  if (t === 5) {
+    // The 5 times table is known: one lot less than the answer.
+    const k = c / 5 - 1;
+    return card('tables', 'Use a fact you know', `You know 5 × ${k} = ${5 * k}.`, `${c} is one more 5.`, `${k} + 1 = ?`);
+  }
   if (t === 1) return card('tables', 'Lots of 1', 'One lot of anything is itself.', `How many lots of 1 make ${c}? ?`);
   const n = c / t;
   if (t === 4 && c % 2 === 0 && n !== c / 2) return card('halves', 'Halve, then halve again', `Sharing by 4 is halving twice.`, `Half of ${c} = ${c / 2}.`, `Half of ${c / 2} = ?`);
@@ -231,9 +241,13 @@ export function countingCard(q: HelpQuestion): HelpCard | null {
   if (t < 2 || t > 12 || c % t !== 0 || c / t > 12 || c / t < 2) return null;
   const five = 5 * t;
   const fromFive = c >= five + 2 * t;
+  // Show the start only, never the whole list or the lot that lands on the answer.
+  const lots = c / t;
   return card('skip-count', `Count in ${t}s`,
-    fromFive ? `Start at 5 × ${t} = ${five}. Count on in ${t}s to ${c}: ${countBy(five, t, c)}.` : `Count in ${t}s to ${c}: ${countBy(0, t, c)}.`,
-    fromFive ? `5 and how many more ${t}s? ?` : `How many ${t}s is that? ?`);
+    fromFive
+      ? `Start at 5 × ${t} = ${five}. Count on in ${t}s: ${countBy(five, t, five + t * Math.min(lots - 6, 2))}, ... Keep going until you land on ${c}.`
+      : `Count in ${t}s: ${countBy(0, t, t * Math.min(lots - 1, 3))}, ... Keep going until you land on ${c}.`,
+    fromFive ? `5 and how many more ${t}s? ?` : `How many ${t}s did you say? ?`);
 }
 
 function countBy(from: number, step: number, to: number): string {
@@ -261,7 +275,7 @@ function tables(s: Sum, ctx: HelpContext): HelpCard | null {
     if (s.a === by) return card('tables', 'One group', `${s.a} things are shared into some equal groups.`, `Each group gets ${s.a}.`, 'How many groups are there? ?');
     if (by === 1) return s.b !== null
       ? card('tables', 'Share it out', `${s.a} things are shared into 1 group.`, 'How many things are in that group? ?')
-      : card('tables', 'Groups of 1', `${s.a} things are put into groups of 1.`, 'How many groups can you make? ?');
+      : card('tables', 'Share it out', `${s.a} things are shared out so every group gets 1.`, 'How many groups are there? ?');
     if (by === 2 && s.c === null && s.a <= 40) return card('halves', 'Dividing by 2 is halving', ...halfSteps(s.a));
     const fact = missingFactor(by, s.a, ctx);
     if (by === 10) return fact;

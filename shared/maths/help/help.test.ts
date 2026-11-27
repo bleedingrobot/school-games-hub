@@ -51,14 +51,24 @@ it('gives every ladder question a help card that teaches without giving the answ
   }
   expect(problems).toEqual([]);
 
+  // Measure help (round 2): height 1 does not write the answer; a long rectangle side is split; a half turn is not counted in 45s.
+  {
+    const steps = (parts: string[], prompt: string) => helpCardFor({ parts, prompt })?.steps.join(' ') ?? '';
+    expect(steps(['Volume', '=', '?', 'cm³'], 'A box: length 1 cm, width 2 cm, height 1 cm')).not.toContain('= 2 ');
+    expect(steps(['Area', '=', '?', 'cm²'], 'A rectangle 12 cm by 7 cm')).toContain('10 × 7 = 70');
+    expect(steps(['W', 'to', 'E', '=', '?°'], 'Turn clockwise')).toContain('Half of 360');
+  }
+
   // The order James asked for (26 Nov 2026): the picture's help first, other strategies next, counting in lots last.
   const titles = (parts: string, known?: string) => helpCardsFor({ parts: parts.split(' ') }, { known: (k) => k === known }).map((c) => c.title);
   expect(titles('3 × 12 = ?', 'mul:3x11')).toEqual(['Use the box: tens and ones', 'Use a fact you know', 'Count in 12s']);
-  expect(titles('32 ÷ 8 = ?')).toEqual(['Halve three times', 'Count in 8s']);
+  expect(titles('32 ÷ 8 = ?')).toEqual(['Use the array', 'Halve three times', 'Count in 8s']);
   expect(titles('3 × 4 = ?')).toEqual(['Double, then double again', 'Count the rows of dots']);
   // A fraction of an amount ends on how many groups the top number asks for.
   expect(helpCardsFor({ parts: '1/5 of 30 = ?'.split(' ') }).map((c) => c.steps.at(-1))).toEqual([
-    'The top number is 1, so the answer is just 1 part: ?', 'The top number is 1, so the answer is just 1 group: 1 group = ?']);
+    'The top number is 1: take just 1 part. 30 ÷ 5 = ?', 'The top number is 1, so the answer is just 1 group: 1 group = ?']);
+  // The bar card leaves the share for the pupil (no printed 15 ÷ 3 = 5).
+  expect(helpCardsFor({ parts: '2/3 of 15 = ?'.split(' ') })[0].steps.join(' ')).not.toContain('= 5');
 
   // Rounding keeps the digits in front of the rounding digit (569 to the nearest 10 keeps the 5).
   expect(helpCardsFor({ parts: ['Round', '569', 'to the nearest 10', '=', '?'] }).find((c) => c.kind === 'rounding')?.steps.at(-1)).toContain('Keep the 5 in front');
@@ -77,6 +87,18 @@ it('gives every ladder question a help card that teaches without giving the answ
     expect(helpCardsFor({ parts: '1/2 of 14 = ?'.split(' ') }).at(-1)!.title).toBe('Half is the double backwards');
     expect(helpCardsFor({ parts: 'Double 0.1 = ?'.split(' ') }).map((c) => c.steps.join(' ')).join(' ')).toContain('0.1 is 1 tenth.');
   }
+  // round 2 fraction fixes: the pupil does the hard part, nothing is handed over
+  {
+    const text = (parts: string, extra: Partial<{ prompt: string; choiceLabels: string[] }> = {}) => helpCardsFor({ parts: parts.split(' '), ...extra }).map((c) => c.steps.join(' ')).join(' | ');
+    expect(text('Double 1.8 = ?')).not.toContain('1.6');
+    expect(text('Half of 3.8 = ?')).toContain('8 tenths shared in 2 = ? tenths');
+    expect(text('75% = ?')).toContain('3 lots of 25%');
+    expect(text('9.4 × ? = 940')).toContain('ones → tens → hundreds');
+    expect(helpCardsFor({ parts: ['34/8', '=', '? 2/8'] }).map((c) => c.steps.join(' ')).join(' ')).toContain('40 − 8 = 32');
+    expect(helpCardsFor({ parts: '1% of 600 = ?'.split(' ') })[0].title).toBe('1% is divide by 100');
+    expect(text('12% × 10 = 10% × ?')).not.toContain('Trade places');
+    expect(text('Blue = ?', { prompt: '7 red to 9 blue. There are 42 red.' })).toContain('The bar is one group: 7 red and 9 blue.');
+  }
 
   // gives n ÷ n a story, and 24 ÷ ? = 2 skip counting after halving
   // Teacher notes 2, 3 and 5 (27 Nov 2026): n ÷ n gets a sharing story; 24 ÷ ? = 2 gets skip counting after Halve it.
@@ -90,9 +112,9 @@ it('gives every ladder question a help card that teaches without giving the answ
       expect(cards(`${n} ÷ ${n} = ?`).some((c) => c.kind === 'skip-count')).toBe(false);
     }
     expect(helpCardFor({ parts: '12 ÷ ? = 12'.split(' ') })!.steps.join(' ')).toContain('groups');
-    expect(helpCardFor({ parts: '9 ÷ ? = 1'.split(' ') })!.steps.join(' ')).toContain('groups of 1');
+    expect(helpCardFor({ parts: '9 ÷ ? = 1'.split(' ') })!.steps.join(' ')).toContain('every group gets 1');
     expect(helpCardFor({ parts: '0 ÷ 5 = ?'.split(' ') })!.title).toBe('Nothing to share');
-    expect(helpCardsFor({ parts: '24 ÷ ? = 2'.split(' ') }).map((c) => c.title)).toEqual(['Halve it', 'Count in 2s']);
+    expect(helpCardsFor({ parts: '24 ÷ ? = 2'.split(' ') }).map((c) => c.title)).toEqual(['Use the array', 'Halve it', 'Count in 2s']);
   }
 
   // never writes the answer in the take-the-ten-away, pairs-to-10 and adding-zero cards
@@ -129,7 +151,7 @@ it('gives every ladder question a help card that teaches without giving the answ
     expect(steps(['1000 mL', '=', '?', 'L'])).not.toContain('1 L = 1000 mL');
     expect(steps(['240 min', '=', '?', 'h'])).toContain('24 ÷ 6 = ?');
     const turn = steps(['Face west, half turn', ':', '?'], 'Which way are you now facing?');
-    expect(turn).toContain('What is opposite west?');
+    expect(turn).toContain('straight across the middle');
   }
 
   // number help leaves the working to the pupil and handles the edge rolls
@@ -180,5 +202,22 @@ it('gives every ladder question a help card that teaches without giving the answ
     const [first] = helpCardsFor({ parts: ['p', '=', '?'], prompt: 'If p + 11 = 23' });
     expect(first.title).toBe('Keep it balanced');
     expect(first.steps.at(-1)).toBe('23 − 11 = ?');
+  }
+
+  // number help: rounding keeps the front digits, leading zero, missing sum, squares, cubes, opposites, powers of ten
+  {
+    const last = (parts: string[], kind?: string, extra: object = {}) => helpCardsFor({ parts, ...extra }, {}).find((c) => !kind || c.kind === kind)!.steps.at(-1)!;
+    expect(last(['Round', '4914', 'to the nearest 100', '=', '?'], 'rounding')).toBe('Keep the 4 in front. After it write the hundreds digit (1 more if you rounded up), then 00: ?');
+    expect(last(['Round', '42 010', 'to the nearest 1000', '=', '?'], 'rounding')).toContain('Keep the 4 in front');
+    expect(last(['100 000', 'less than', '109 000', '=', '?'], 'count-big')).toContain('Leave off a 0 at the front');
+    expect(last(['100 000', 'less than', '216 000', '=', '?'], 'count-big')).not.toContain('Leave off');
+    expect(helpCardsFor({ parts: ['14 000', '+', '?', '=', '20 000'] }).find((c) => c.kind === 'missing-big')!.steps[1]).toBe('What do you add to 14 to make 20?');
+    expect(last(['12', 'squared', '=', '?'], 'squares')).toBe('120 + 24 = ?');
+    expect(last(['4', 'cubed', '=', '?'], 'squares')).toBe('Double 32 = ?');
+    expect(last(['5', 'cubed', '=', '?'], 'squares')).toBe('Half of 250 = ?');
+    expect(helpCardsFor({ parts: ['5', '−', '14', '=', '?'] }).find((c) => c.kind === 'negatives')!.steps[1]).toBe('Going down 14: it takes 5 steps to reach 0.');
+    expect(helpCardsFor({ parts: ['1', '−', '4', '=', '?'] }).find((c) => c.kind === 'negatives')!.steps[1]).toBe('Going down 4: it takes 1 step to reach 0.');
+    expect(helpCardsFor({ parts: ['−20', '+', '?', '=', '0'] }).find((c) => c.title === 'Opposites')).toBeTruthy();
+    expect(helpCardsFor({ parts: ['10⁶', '=', '?'] }).find((c) => c.kind === 'powers')!.steps[0]).toBe('10⁶ means 6 tens multiplied together: 10 × 10 × 10 × 10 × 10 × 10.');
   }
 });

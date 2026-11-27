@@ -142,7 +142,19 @@ it('gives every question type with a picture idea a picture that does not show t
     // A ratio shades the share asked for.
     expect(pictureFor({ parts: ['Bigger part', '=', '?'], prompt: 'Share 54 in the ratio 4 : 5.' })).toEqual({ kind: 'bars', bars: [{ parts: 9, shaded: 5, start: 4, label: '54' }] });
     // A short unit ladder: only the two units asked.
-    expect(pictureFor({ parts: ['0.3 m', '=', '?', 'cm'] })).toEqual({ kind: 'unit-ladder', units: ['m', 'cm'], links: ['× 100'], highlight: ['m', 'cm'] });
+    expect(pictureFor({ parts: ['0.3 m', '=', '?', 'cm'] })).toEqual({ kind: 'unit-ladder', units: ['m', 'cm'], links: ['× 100'], highlight: ['m', 'cm'], direction: 'down' });
+    {
+      // Going up the ladder: the arrows point up and divide. A half is a two-row array. Bigger divisions get an array.
+      expect(pictureFor({ parts: ['5000 m', '=', '?', 'km'] })).toMatchObject({ kind: 'unit-ladder', links: ['÷ 1000'], direction: 'up' });
+      expect(pic('Half of 6 = ?')).toEqual({ kind: 'array', rows: 2, cols: 3, groups: true });
+      expect(pic('36 ÷ 3 = ?')).toEqual({ kind: 'array', rows: 3, cols: 12, groups: true });
+      expect(pic('60 ÷ 1 = ?')).toBeNull();
+      // The crowded line from −25 to 25 labels every 10; "9.4 × ? = 940" gets a chart; 1 group labels the ratio bar.
+      expect(pic('20 + ? = 0')).toMatchObject({ kind: 'number-line', labels: [-20, -10, 0, 10, 20] });
+      expect(pic('9.4 × ? = 940')).toEqual({ kind: 'place', headings: ['100s', '10s', '1s', 'tenths'], digits: ['', '', '9', '4'] });
+      expect(pic('10 − 9.9 = ?')).toMatchObject({ kind: 'number-line', from: 9, to: 10, marks: [{ at: 9.9, label: '9.9' }] });
+      expect(pic('10 − 5.2 = ?')).toMatchObject({ kind: 'number-line', from: 4, to: 5 });
+    }
     // Decimals in a place chart, with room for the digits to move into (the answer is never written).
     expect(pic('1.4 ÷ 10 = ?')).toEqual({ kind: 'place', headings: ['1s', 'tenths', 'hundredths'], digits: ['1', '4', ''] });
   }

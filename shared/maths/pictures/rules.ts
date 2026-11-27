@@ -145,7 +145,8 @@ function zeroLine(lo: number, hi: number, marks: { at: number; label: string }[]
     hi = Math.ceil(hi / 5) * 5;
   }
   // More than 12 wide, the numbers 1 apart print on top of each other: label only the 5s (0 is one of them).
-  const labels = hi - lo > 12 ? range(lo, hi, 1).filter((v) => v % 5 === 0) : range(lo, hi, 1);
+  // Past 40 wide, even the 5s crowd (−25 to 25): label every 10.
+  const labels = hi - lo > 40 ? range(lo, hi, 1).filter((v) => v % 10 === 0) : hi - lo > 12 ? range(lo, hi, 1).filter((v) => v % 5 === 0) : range(lo, hi, 1);
   return { kind: 'number-line', from: lo, to: hi, step: long ? 5 : 1, labels, marks };
 }
 
@@ -240,15 +241,19 @@ const decimalPlace: PictureRule = (q) => {
   const n = Number(text);
   // Whole-number answers (7 × 10, 70 ÷ 10) are times-table facts, not place value with decimals.
   if (dp === 0 && (p[1] === '×' || n % k === 0)) return null;
+  return decimalChart(text, show(p[1] === '×' ? n * k : n / k).replace(/\s/g, ''));
+};
+
+/** The number `text` in a place-value chart, with room for the columns of `other` (where its digits go). */
+function decimalChart(text: string, other: string): Picture | null {
   const [w, d = ''] = text.split('.');
   // Places counted from the 1s (0), 10s (1), tenths (−1): the number's own, and room for where its digits go.
   const span = (t: string) => {
     const [a, b = ''] = t.split('.');
     return { hi: a.replace(/^0+(?=\d)/, '').length - 1, lo: -b.length };
   };
-  const moved = show(p[1] === '×' ? n * k : n / k).replace(/\s/g, '');
-  const hi = Math.max(span(text).hi, span(moved).hi, 0);
-  const lo = Math.min(span(text).lo, span(moved).lo);
+  const hi = Math.max(span(text).hi, span(other).hi, 0);
+  const lo = Math.min(span(text).lo, span(other).lo);
   const top = 3 - hi;
   const bottom = 3 - lo;
   if (top < 0 || bottom > 6 || bottom - top > 5) return null;
@@ -258,6 +263,19 @@ const decimalPlace: PictureRule = (q) => {
     return place >= 0 ? (w[w.length - 1 - place] ?? '') : (d[-place - 1] ?? '');
   });
   return { kind: 'place', headings, digits };
+}
+
+/** "9.4 × ? = 940": the 9.4 in a chart wide enough to reach the column the 9 moves to (the answer is never written). */
+const timesMissing: PictureRule = (q) => {
+  const p = q.parts;
+  if (p.length !== 5 || p[1] !== '×' || p[3] !== '=') return null;
+  const [known, c] = p[0] === '?' ? [p[2], p[4]] : p[2] === '?' ? [p[0], p[4]] : [undefined, undefined];
+  const text = (known ?? '').trim();
+  const dp = places(text);
+  if (!/^\d+\.\d+$/.test(text) || dp === null || dp > 3 || num(c) === null || p.filter((t) => t === '?').length !== 1) return null;
+  const k = Math.round((num(c)! / Number(text)) * 1e6) / 1e6;
+  if (k !== 10 && k !== 100 && k !== 1000) return null;
+  return decimalChart(text, (c ?? '').replace(/\s/g, ''));
 };
 
 /** "Round 99 to the nearest 10": the line between the two tens (or hundreds, thousands) with the number marked. */
@@ -292,10 +310,20 @@ const unitLadder: PictureRule = (q) => {
   const j = ladder.units.indexOf(p[3]);
   const lo = Math.min(i, j);
   const hi = Math.max(i, j);
-  return { kind: 'unit-ladder', units: ladder.units.slice(lo, hi + 1), links: ladder.links.slice(lo, hi), highlight: [m[1], p[3]] };
+  const links = ladder.links.slice(lo, hi);
+  // Going up (m to km) the arrows point up and divide.
+  return i > j
+    ? { kind: 'unit-ladder', units: ladder.units.slice(lo, hi + 1), links: links.map((l) => l.replace('×', '÷')), highlight: [m[1], p[3]], direction: 'up' }
+    : { kind: 'unit-ladder', units: ladder.units.slice(lo, hi + 1), links, highlight: [m[1], p[3]], direction: 'down' };
 };
 
 // ---------- fractions, decimals, percentages ----------
+
+/** 25% and 75% with fractions to pick from: the square is drawn in 4 blocks (a hundred square is read in rows for the rest). */
+function quarters(q: { choiceLabels?: readonly string[] }, n: number): boolean {
+  const labels = q.choiceLabels ?? [];
+  return (n === 25 || n === 75) && labels.length > 0 && labels.every((l) => l.includes('/'));
+}
 
 /** A bar for a percentage the pupil can see in quarters, fifths or tenths. */
 function percentBar(p: number): { parts: number; shaded: number } | null {
@@ -313,7 +341,7 @@ const percent: PictureRule = (q) => {
   if (!m) return null;
   // "75% = ?": a hundred square, out of 100 (a bar in quarters would be the answer fraction).
   const pc = Number(m[1]);
-  if (p[1] === '=' && p[2] === '?' && p.length === 3) return pc >= 1 && pc <= 100 ? { kind: 'hundred', shaded: pc } : null;
+  if (p[1] === '=' && p[2] === '?' && p.length === 3) return pc >= 1 && pc <= 100 ? { kind: 'hundred', shaded: pc, ...(quarters(q, pc) ? { quarters: true } : {}) } : null;
   const bar = percentBar(Number(m[1]));
   if (!bar) return null;
   if (p[1] === 'of' && whole(p[2]) !== null && p[3] === '=') return { kind: 'bars', bars: [{ ...bar, label: p[2] }] };
@@ -355,7 +383,10 @@ const hundredths: PictureRule = (q) => {
   if (p.length !== 3 || p[1] !== '=' || !(p[2] === '?' || p[2] === '?/100')) return null;
   const f = frac(p[0]);
   if (f && f.d === 100 && f.n >= 1 && f.n <= 100) return { kind: 'hundred', shaded: f.n };
-  if (places(p[0]) === 2 && num(p[0])! > 0 && num(p[0])! < 1) return { kind: 'hundred', shaded: Math.round(num(p[0])! * 100) };
+  if (places(p[0]) === 2 && num(p[0])! > 0 && num(p[0])! < 1) {
+    const n = Math.round(num(p[0])! * 100);
+    return { kind: 'hundred', shaded: n, ...(quarters(q, n) ? { quarters: true } : {}) };
+  }
   return null;
 };
 
@@ -389,8 +420,16 @@ const decimalBond: PictureRule = (q) => {
     return { kind: 'number-line', from, to: s.c, step: s.c - from <= 1 ? 0.1 : 1, labels: [from, s.c], marks: [{ at: k, label: show(k) }] };
   }
   if (s.op === '−' && s.c === null && s.a !== null && s.b !== null && Number.isInteger(s.a) && !Number.isInteger(s.b) && s.b > 0 && s.b < s.a) {
-    // "9 − 0.6": the last whole, 8 to 9, in tenths (the start needs no second label). "10 − 5.2": 0 to 10.
+    // "9 − 0.6": the last whole, 8 to 9, in tenths (the start needs no second label).
     if (s.b < 1) return { kind: 'number-line', from: s.a - 1, to: s.a, step: 0.1, labels: [s.a - 1, s.a], marks: [{ at: s.a, label: '' }] };
+    // "10 − 9.9": close to the start, the line is the last whole with the gap between 9.9 and 10 (count it up).
+    const oneDp = places(String(s.b)) === 1;
+    if (oneDp && s.a - s.b <= 1) return { kind: 'number-line', from: s.a - 1, to: s.a, step: 0.1, labels: [s.a - 1, s.a], marks: [{ at: s.b, label: show(s.b) }] };
+    // "10 − 5.2": jump back the whole part (to 5), then the tenths on the line from 4 to 5.
+    if (oneDp) {
+      const to = s.a - Math.floor(s.b);
+      return { kind: 'number-line', from: to - 1, to, step: 0.1, labels: [to - 1, to], marks: [{ at: to, label: '' }] };
+    }
     return { kind: 'number-line', from: 0, to: s.a, step: 1, labels: [0], marks: [{ at: s.a, label: show(s.a) }] };
   }
   // "1.1 − 0.5": both on a line in tenths, either side of the whole between them (count up from one to the other).
@@ -449,6 +488,7 @@ const mixed: PictureRule = (q) => {
   if (p.length !== 3 || p[1] !== '=' || !/^\?/.test(p[2])) return null;
   let parts: number;
   let shaded: number;
+  let loose = false;
   const m = /^(\d+) (\d+)\/(\d+)$/.exec(p[0]);
   const f = frac(p[0]);
   if (m) {
@@ -457,9 +497,10 @@ const mixed: PictureRule = (q) => {
   } else if (f && f.n > f.d) {
     parts = f.d;
     shaded = f.n;
+    loose = true; // improper fraction: loose slices, the pupil makes the full circles
   } else return null;
   const count = Math.ceil(shaded / parts);
-  return parts >= 2 && parts <= 12 && count <= 6 ? { kind: 'wholes', count, parts, shaded } : null;
+  return parts >= 2 && parts <= 12 && count <= 6 ? { kind: 'wholes', count, parts, shaded, ...(loose ? { packed: false } : {}) } : null;
 };
 
 /** "4/5 = ?" as a decimal: the fraction bar, and a bar in tenths under it (nothing shaded) to show why the bottom becomes 10. */
@@ -484,7 +525,7 @@ const equivalent: PictureRule = (q) => {
   if (!/^(\?|\?\/\d+|\d+\/\?|\d+\/\d+)$/.test(right)) return null;
   const bars: { parts: number; shaded: number }[] = [{ parts: f.d, shaded: f.n }];
   const other = /^\?\/(\d+)$/.exec(right);
-  if (other && Number(other[1]) <= 30) bars.push({ parts: Number(other[1]), shaded: 0 });
+  if (other && Number(other[1]) <= 36) bars.push({ parts: Number(other[1]), shaded: 0 });
   return { kind: 'bars', bars };
 };
 
@@ -508,7 +549,7 @@ const ratio: PictureRule = (q) => {
   if (to) {
     const a = Number(to[1]);
     const b = Number(to[2]);
-    return a + b <= 20 ? { kind: 'bars', bars: [{ parts: a + b, shaded: a }] } : null;
+    return a + b <= 20 ? { kind: 'bars', bars: [{ parts: a + b, shaded: a, label: '1 group' }] } : null;
   }
   return null;
 };
@@ -539,7 +580,7 @@ const remainders: PictureRule = (q) => {
   return null;
 };
 
-/** Doubles and halves: two matching rows of dots, or one row to share. */
+/** Doubles and halves: two matching rows of dots, or a two-row array to share. */
 const doubleHalf: PictureRule = (q) => {
   const p = q.parts;
   if (p.length === 4 && p[0] === 'Double' && p[2] === '=' && p[3] === '?') {
@@ -548,7 +589,8 @@ const doubleHalf: PictureRule = (q) => {
   }
   if (p.length === 5 && p[0] === 'Half' && p[1] === 'of' && p[3] === '=' && p[4] === '?') {
     const n = whole(p[2]);
-    return n !== null && n >= 2 && n <= 20 ? { kind: 'dot-rows', rows: [n], fives: true } : null;
+    // Two equal rows: the picture shows the sharing (same as 10 ÷ 2).
+    return n !== null && n >= 2 && n <= 20 && n % 2 === 0 ? { kind: 'array', rows: 2, cols: n / 2, groups: true } : null;
   }
   const s = sum(q);
   if (s && s.op === '+' && s.c === null && s.a === s.b && Number.isInteger(s.a!) && s.a! >= 1 && s.a! <= 20) return { kind: 'dot-rows', rows: [s.a!, s.a!], fives: true };
@@ -565,9 +607,11 @@ const divideArray: PictureRule = (q) => {
   if (!s || s.op !== '÷' || s.a === null || (s.b === null) === (s.c === null)) return null;
   const a = s.a;
   const k = (s.b ?? s.c)!;
-  if (!Number.isInteger(a) || !Number.isInteger(k) || a < 1 || a > 20 || k < 1 || a % k) return null;
+  if (!Number.isInteger(a) || !Number.isInteger(k) || a < 1 || a > 60 || k < 1 || a % k) return null;
   const u = a / k;
-  return k <= u ? { kind: 'array', rows: k, cols: u, groups: true } : { kind: 'array', rows: u, cols: k, groups: true };
+  const [rows, cols] = k <= u ? [k, u] : [u, k];
+  // Past 20, only arrays that fit on the screen (at most 12 across).
+  return a <= 20 || cols <= 12 ? { kind: 'array', rows, cols, groups: true } : null;
 };
 
 /** "7 × 8" is too big, but "3 × 4 = ?" and the 2 times table: rows of dots. */
@@ -644,6 +688,7 @@ export const PICTURE_RULES: PictureRule[] = [
   track,
   place,
   decimalPlace,
+  timesMissing,
   rounding,
   unitLadder,
   percent,
