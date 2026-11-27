@@ -2,12 +2,13 @@
  "_from": "docs/relay-art/config.json layout. Check with: python3 scripts/game_art.py jail paint OUT --dry-run",
  "game": "jail",
  "filename_prefix": "jail/img",
+ "comfy": "http://127.0.0.1:8188",
  "style": "s",
  "styles": {
   "s": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. "
  },
  "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly",
- "inbox": "~/dragon-art-inbox/jail-art/set",
+ "inbox": "C:/Users/Giant/Games Hub/jail-art-out",
  "picks": "docs/jail-art/picks.json",
  "art_dir": "src/games/classlive/art/paint",
  "home_dir": "src/assets/home",
@@ -15,7 +16,10 @@
   {
    "name": "pick",
    "prompt": "A bright cheerful primary school classroom seen from above at an angle, the four corners of the room each marked with a big coloured square on the floor, red, blue, green and yellow, happy cartoon children running between the corners, a giant friendly dice bouncing in the middle, a small cosy jail corner with toy bars and a few tablets on a little table, playful game feeling, wide landscape picture, no writing anywhere.",
-   "size": [1536, 864],
+   "size": [
+    1536,
+    864
+   ],
    "kind": "scene",
    "folder": "pick",
    "file": "jail",
