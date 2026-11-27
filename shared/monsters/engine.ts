@@ -56,6 +56,8 @@ export interface BattleState {
   questions: number;
   /** The battle's "Power up!" answer, once it is asked (before its first attack). */
   powerUp?: AnswerResult;
+  /** Monsters knocked out after fighting still share the exp (James, 28 Nov 2026). Saves from before leave it out. */
+  faintedShare?: true;
 }
 
 export interface BattleSetup {
@@ -66,6 +68,8 @@ export interface BattleSetup {
   box?: Monster[];
   bag?: Bag;
   foes: Monster[];
+  /** Knocked-out fighters still get a share of the exp. New battles set it; older saved battles leave it out. */
+  faintedShare?: true;
 }
 
 export type BattleAction =
@@ -121,6 +125,7 @@ export function newBattle(setup: BattleSetup): { state: BattleState; events: Bat
     phase: 'choose',
     turn: 0,
     questions: 0,
+    ...(setup.faintedShare ? { faintedShare: true as const } : {}),
   };
   return { state, events: [{ kind: 'start', foe: setup.foes[0].species }] };
 }
@@ -316,12 +321,15 @@ function checkSwitch(s: BattleState, to: number, free: boolean) {
   if (!free && to === s.active) refuse('That monster is already out');
 }
 
-/** Shares the beaten foe's exp between the living monsters that fought it, then levels them. */
+/**
+ * Shares the beaten foe's exp between the monsters that fought it (knocked out ones too, when
+ * `faintedShare` is on; before that only the ones still standing), then levels them.
+ */
 function shareExp(s: BattleState, events: BattleEvent[]) {
-  const alive = s.fought.filter((i) => s.team[i] && s.team[i].hp > 0);
-  if (!alive.length) return;
-  const each = Math.max(1, Math.floor(expYield(s.foes[s.foeActive], s.kind === 'trainer') / alive.length));
-  for (const i of alive) {
+  const sharers = s.fought.filter((i) => s.team[i] && (s.faintedShare || s.team[i].hp > 0));
+  if (!sharers.length) return;
+  const each = Math.max(1, Math.floor(expYield(s.foes[s.foeActive], s.kind === 'trainer') / sharers.length));
+  for (const i of sharers) {
     const result = gainExp(s.team[i], each);
     const from = s.team[i].species;
     events.push({ kind: 'exp', monster: from, amount: each });

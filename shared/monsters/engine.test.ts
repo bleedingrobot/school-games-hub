@@ -21,4 +21,21 @@ describe('damage', () => {
     expect(boosted.foes[0].hp).toBeLessThan(plain.foes[0].hp);
     expect(boosted.questions).toBe(1);
   });
+
+  it('knocked-out fighters still share the exp (James, 28 Nov 2026); old battles without the flag do not', () => {
+    const expOf = (faintedShare: boolean) => {
+      const setup = { kind: 'wild' as const, area: 1, team: [makeMonster('plusplash-1', 5), makeMonster('digibud-1', 5)], foes: [makeMonster('digibud-1', 5)], ...(faintedShare ? { faintedShare: true as const } : {}) };
+      const s = play(newBattle(setup).state, { kind: 'power-up', answer: 'right' }, () => 0.5).state;
+      // The first monster fought and fainted, the second came out and finishes the foe.
+      s.team[0].hp = 0;
+      s.active = 1;
+      s.fought = [0, 1];
+      s.foes[0].hp = 1;
+      const out = play(s, { kind: 'fight', attack: 0 }, () => 0.5);
+      expect(out.state.phase).toBe('won');
+      return out.events.filter((e) => e.kind === 'exp').map((e) => e.kind === 'exp' && e.monster);
+    };
+    expect(expOf(true)).toEqual(['plusplash-1', 'digibud-1']);
+    expect(expOf(false)).toEqual(['digibud-1']);
+  });
 });
