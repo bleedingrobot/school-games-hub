@@ -12,6 +12,7 @@ import type { Story } from '../../../shared/kit/stories';
 import { HEROES, MAPS, STORM_FIRST, STORM_LANDS_ON, UNLOCK_WORDS, type HeroDef } from '../../../shared/goblinstorm/config';
 import { heroOpen, mapOpen, RUNS_A_DAY, stormGateOpen } from '../../../shared/goblinstorm/server';
 import { CODEX_SIZE } from '../../../shared/goblinstorm/shop';
+import { bonusBetween, groupOf, nextRound, ROUND_GROUPS, type RoundGroup } from '../../../shared/goblinstorm/rounds';
 import { AchievementPop } from '../../achievements/AchievementPop';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import { CodexScreen, GoldLine, ShopScreen, codexOf } from './BetweenRuns';
@@ -115,6 +116,8 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
   const [saveError, setSaveError] = useState(false);
   /** The map this run opened, if it beat a boss for the first time. */
   const [newMap, setNewMap] = useState<number | null>(null);
+  /** The save as it was before the run that just ended: the end screen compares it with the new one for a round bonus. */
+  const [saveBefore, setSaveBefore] = useState<MySave | null>(null);
   /** This run is the guided first go (Castle Fields, until the server says it's been seen, or "Replay the guide"). */
   const [guided, setGuided] = useState(false);
   const [quality, setQuality] = useState<Quality>(readQuality);
@@ -254,17 +257,22 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
           {outToday && <DoneToday />}
           {left !== null && !outToday && <RunsToday left={left} unlimited={unlimited} />}
           <p className="gs-menu__sub">Playing as {HERO_ICON[hero.id]} {hero.name}. Survive 3 minutes. A mini-boss comes at 1:30 and the boss at 2:30: beat the boss to win!</p>
+          {save && <RoundStrip save={save} group="kingdom" />}
+          {save && mapCount > STORM_FIRST && mapOpen(save, STORM_FIRST, stormLands) && <RoundStrip save={save} group="storm" />}
           <div className="gs-grid gs-grid--maps">
             {MAPS.slice(0, mapCount).map((m, i) => {
               const open = save ? mapOpen(save, i, stormLands) : i === 0;
               const beaten = save?.bosses.includes(i);
+              const wins = save?.beats[i] ?? (beaten ? 1 : 0);
+              const needed = !!save && open && nextRound(save.beats, groupOf(i)).toBeat.includes(i);
               return (
                 <button key={m.id} type="button" disabled={!open || busy || outToday} data-key={i < 9 ? String(i + 1) : undefined} className={`gs-pick gs-pick--map gs-pick--${m.id}${open ? '' : ' gs-pick--locked'}${shown?.kind === 'map' && shown.map === i ? ' gs-show' : ''}`} onClick={() => storyFirst(mapStory(i), () => void play(i))}>
                   {i < 9 && <KeyBadge k={String(i + 1)} />}
                   <span className="gs-pick__icon" aria-hidden="true">{MAP_ICON[m.id]}</span>
                   <span className="gs-pick__name">{m.name}</span>
                   <span className="gs-pick__blurb">{m.monsters.slice(0, 3).map((x) => x.name).join(', ')}</span>
-                  <span className="gs-pick__blurb">Boss: {m.monsters[4].name}{beaten ? ' 👑 beaten' : ''}</span>
+                  <span className="gs-pick__blurb">Boss: {m.monsters[4].name}{beaten ? ` 👑 beaten ${wins}×` : ''}</span>
+                  {needed && beaten && <span className="gs-pick__round">🔁 Beat again for round {nextRound(save?.beats ?? [], groupOf(i)).round}</span>}
                   {!open && <span className="gs-pick__lock">🔒 {MAP_LOCK[m.id]}</span>}
                   {open && outToday && <span className="gs-pick__lock">🌙 Come back tomorrow</span>}
                 </button>
@@ -349,6 +357,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
             setNewMap(opened ? mapIndex + 1 : null);
             if (e.reply?.valid && e.reply.summary.bossBeaten) storyFirst(bossStory(mapIndex));
             setEnd(e);
+            setSaveBefore(save);
             setScreen('end');
             loadSave();
           }}
@@ -357,7 +366,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
 
       {screen === 'end' && end && (
         <EndScreen end={end} onAgain={() => void play(mapIndex)} onMenu={() => setScreen('hero')} onShop={() => { setBackTo('map'); setScreen('shop'); }} busy={busy} error={error} newMap={newMap}
-          left={unlimited || left === null ? null : left} />
+          left={unlimited || left === null ? null : left} roundBonus={bonusBetween(saveBefore, save)} />
       )}
       {opening.open && <StoryBook story={OPENING} onClose={opening.close} endLabel="Let's go!" className="gs-storybook" />}
       {gate.open && <StoryBook story={STORM_GATE} onClose={gate.close} endLabel="Into the storm!" className="gs-storybook" />}
@@ -372,6 +381,26 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
       {/* Mounted for the whole game, so the trophy line knows what the pupil had before the run ended. */}
       <TrophyWonLine games={['goblinstorm']} watch={end?.reply ?? null} off={!onServer} />
       <AchievementPop games={['goblinstorm']} watch={end?.reply ?? null} off={!onServer} />
+    </div>
+  );
+}
+
+/**
+ * Round bonus progress for one group of maps (shared/goblinstorm/rounds.ts): which round is next, its gold, and the
+ * bosses still to beat for it. It nudges pupils to play every map, not only their favourite.
+ */
+function RoundStrip({ save, group }: { save: MySave; group: RoundGroup }) {
+  const next = nextRound(save.beats, group);
+  const maps = ROUND_GROUPS[group].maps;
+  const names = next.toBeat.map((i) => MAPS[i].name);
+  const left = names.length <= 3 ? names.join(', ').replace(/, (?=[^,]*$)/, ' and ') : `${names.length} maps`;
+  return (
+    <div className="gs-round" role="status">
+      <span className="gs-round__title">🔁 {ROUND_GROUPS[group].name} round {next.round}: +{next.gold} gold</span>
+      <span className="gs-round__dots" aria-hidden="true">
+        {maps.map((i) => <i key={i} className={next.toBeat.includes(i) ? '' : 'on'} title={MAPS[i].name} />)}
+      </span>
+      <span className="gs-round__line">Beat every boss {next.round === 1 ? 'once' : 'again'}. {next.done}/{maps.length} done, still to beat: {left}.</span>
     </div>
   );
 }
@@ -413,8 +442,10 @@ const OUTCOME_WORDS = {
   running: { title: 'Run over', icon: '🚪', line: '' },
 } as const;
 
-function EndScreen({ end, onAgain, onMenu, onShop, busy, error, newMap, left }: {
+function EndScreen({ end, onAgain, onMenu, onShop, busy, error, newMap, left, roundBonus }: {
   end: RunEnd; onAgain: () => void; onMenu: () => void; onShop: () => void; busy: boolean; error: string | null; newMap: number | null;
+  /** Round bonus gold this run paid (0 for none). */
+  roundBonus: number;
   /** Runs left today after this one (null on an Unlimited day). */
   left: number | null;
 }) {
@@ -444,6 +475,7 @@ function EndScreen({ end, onAgain, onMenu, onShop, busy, error, newMap, left }: 
             <div><dt>Bosses</dt><dd>{[sum.miniBeaten && end.map.monsters[3].name, sum.bossBeaten && end.map.monsters[4].name].filter(Boolean).join(', ') || 'none yet'}</dd></div>
           </dl>
         )}
+        {roundBonus > 0 && <p className="gs-end__new">🔁 Round bonus! Every boss beaten again: +{roundBonus} gold</p>}
         {newMap !== null && <p className="gs-end__new">{MAP_ICON[MAPS[newMap].id]} New map open: {MAPS[newMap].name}!</p>}
         {end.reply?.unlocked?.map((id) => {
           const h = HEROES.find((x) => x.id === id);

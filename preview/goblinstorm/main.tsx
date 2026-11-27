@@ -31,6 +31,9 @@ const stormShop = Object.fromEntries([
 const firstFive = MAPS.slice(0, STORM_FIRST).map((_, i) => i);
 const base = openAll ? { ...emptySave(), heroes: HEROES.map((h) => h.id), bosses: (storm ? MAPS : MAPS.slice(0, STORM_FIRST)).map((_, i) => i) } : emptySave();
 const start = { ...base, ...(storm ? { shop: stormShop, bosses: openAll ? base.bosses : firstFive } : {}), gold, today };
+// ?beats=3,1,2,1,1: boss wins per map, to see the round bonus strip and the "beaten 3×" cards.
+const beats = (params.get('beats') ?? '').split(',').filter(Boolean).map((n) => Math.max(0, Math.floor(Number(n)) || 0));
+if (beats.length) Object.assign(start, { beats, roundsPaid: { kingdom: Math.min(...beats.slice(0, STORM_FIRST).concat(Array(STORM_FIRST).fill(0)).slice(0, STORM_FIRST)) } });
 const backend = standInBackend(undefined, multipleChoice, start);
 
 createRoot(document.getElementById('root') as HTMLElement).render(
