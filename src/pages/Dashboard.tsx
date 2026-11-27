@@ -1,6 +1,7 @@
 import { Fragment, lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
+import { bonkersOn, bonkersQuest } from '../games/bonkers';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { ClassWarpCard } from '../components/ClassWarpCard';
 import { ActivityCard, GameCard } from '../components/GameCard';
@@ -86,13 +87,14 @@ const SWITCHED_GAMES = GAMES.filter((g) => g.teacherSwitch).map((g) => g.id);
  * D5). While it loads, the games this device showed last time stand in, so a reload doesn't jump; with no memory, games with a
  * switch wait (as before, so nothing flashes up that the class can't play).
  */
-function useShownGames(nonMathsOpen: boolean | null, remembered: string[] | undefined): { games: GameDefinition[]; on: Set<string> | null } {
+function useShownGames(nonMathsOpen: boolean | null, remembered: string[] | undefined, teacher = false): { games: GameDefinition[]; on: Set<string> | null } {
   const on = useClassSwitches(SWITCHED_GAMES);
   const isOn = (id: string) => (on ? on.has(id) : (remembered?.includes(id) ?? false));
   // Class Showdown is reached through the Class Live card when both are on (James, 24 Nov 2026: one Class Live page).
   const games = GAMES.filter((game) => (!game.teacherSwitch || isOn(game.id)) && (nonMathsOpen !== false || game.group !== 'no-maths')
     && !(game.id === 'showdown' && GAMES.some((g) => g.id === 'classlive') && isOn('classlive')));
-  return { games, on };
+  // Bonkers Quest: a card for teachers only while its code switch is off, so James can test it (27 Nov 2026).
+  return { games: teacher && !bonkersOn() ? [...games, bonkersQuest] : games, on };
 }
 
 /**
@@ -249,7 +251,7 @@ function DashboardPage() {
   const nonMathsOpen = useNonMathsGamesOpen();
   // What this device showed last time, so the page starts from the same cards and doesn't jump (dashboard plan D5).
   const [remembered] = useState(() => readRememberedCards(meId));
-  const { games: shownGames, on: switchesOn } = useShownGames(nonMathsOpen, remembered?.on);
+  const { games: shownGames, on: switchesOn } = useShownGames(nonMathsOpen, remembered?.on, !pupil);
   // The daily Foundational games' "next part" chips: one request, only when one of them is showing.
   // Teachers get them too, for their own goes, so they see what the class sees (James, 5 Nov 2026).
   const nextParts = useNextParts(meId, shownGames.some((g) => g.nextPart));
