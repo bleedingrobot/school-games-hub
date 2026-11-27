@@ -9,7 +9,7 @@
   },
   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly",
   "negative_cut": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
-  "inbox": "showdown-art-out/wide/crew",
+  "inbox": "C:/Users/Giant/Games Hub/showdown-art-out/wide/crew",
   "picks": "docs/wide-art/crew-picks.json",
   "art_dir": "src/games/classlive/art/paint",
   "home_dir": "src/assets/home",

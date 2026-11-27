@@ -11,7 +11,7 @@
   "negative_cut": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, background scenery, cropped, ground shadow, cut off edges",
   "art_dir": "src/games/classlive/art/paint",
   "home_dir": "src/assets/home",
-  "inbox": "showdown-art-out/wide/shark",
+  "inbox": "C:/Users/Giant/Games Hub/showdown-art-out/wide/shark",
   "picks": "docs/wide-art/shark-picks.json",
   "pictures": [
     {
