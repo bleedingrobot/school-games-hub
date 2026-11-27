@@ -120,6 +120,9 @@ it('gives every question type with a picture idea a picture that does not show t
     // Remainders: rows the size of a group, the left-overs as a short row.
     expect(pic('29 ÷ 8 = ? r 5')).toEqual({ kind: 'array', rows: 3, cols: 8, extra: 5 });
   }
+  // Decimal take-away: a line only when the tenths can't be taken away (3.8 − 0.6 is ones then tenths).
+  expect(pictureFor({ parts: '3.8 − 0.6 = ?'.split(' ') })).toBeNull();
+  expect(pictureFor({ parts: '3.1 − 0.6 = ?'.split(' ') })?.kind).toBe('number-line');
 
   // makes pictures match their cards
   {

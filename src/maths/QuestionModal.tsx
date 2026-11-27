@@ -230,8 +230,12 @@ export function FractionHelp({ parts }: { parts: string[] }) {
  * the question itself, and the box never states the fact the question asks for (no "1 hour = 60 minutes" on a 1 h question).
  */
 export function HoursHelp({ parts }: { parts: string[] }) {
-  const asked = /^(\d+) (h|min)(?:\s|$)/.exec(parts[0] ?? '');
-  if (!asked || parts[0] === '1 h' || parts[0] === '1 min') return null;
+  // Hours and minutes when an hours part is shown (also "215 min = 3 h ? min"), else minutes and seconds.
+  const hours = parts.find((p) => /^\d+ h(\s|$)/.test(p));
+  const mins = parts.includes('s') ? parts.find((p) => /^\d+ min$/.test(p)) : undefined;
+  const shown = hours ?? mins;
+  const asked = shown ? /^(\d+) (h|min)(?:\s|$)/.exec(shown) : null;
+  if (!asked || shown === '1 h' || shown === '1 min') return null;
   const [big, small] = asked[2] === 'min' ? ['minute', 'seconds'] : ['hour', 'minutes'];
   const ex = Number(asked[1]) === 4 ? 5 : 4;
   return (

@@ -60,6 +60,9 @@ it('gives every ladder question a help card that teaches without giving the answ
   expect(helpCardsFor({ parts: '1/5 of 30 = ?'.split(' ') }).map((c) => c.steps.at(-1))).toEqual([
     'The top number is 1, so the answer is just 1 part: ?', 'The top number is 1, so the answer is just 1 group: 1 group = ?']);
 
+  // Rounding keeps the digits in front of the rounding digit (569 to the nearest 10 keeps the 5).
+  expect(helpCardsFor({ parts: ['Round', '569', 'to the nearest 10', '=', '?'] }).find((c) => c.kind === 'rounding')?.steps.at(-1)).toContain('Keep the 5 in front');
+
   // fraction cards: curriculum words in brackets, and no digit shift handed over
   {
     // Teacher note: 82/100 as a decimal names the numerator and the denominator.
