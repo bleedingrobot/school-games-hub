@@ -1,11 +1,17 @@
 /* The maths question box and number pad. Shared by any hub game that asks questions. */
 
+/* "safe center": a box taller than the screen starts at the top and scrolls, instead of losing its top and bottom.
+   touch-action / overscroll-behavior: games that stop the page moving (touch-action: none on the play area) still let
+   the box scroll with a finger. */
 .question-backdrop {
   position: fixed;
   inset: 0;
   z-index: 50;
   display: grid;
   place-items: center;
+  place-items: safe center;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
   padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px))
     max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
   background: rgba(15, 23, 42, 0.55);
@@ -68,6 +74,14 @@
   background: #fff7d6;
   box-shadow: inset 0 0 0 3px #f5b800;
   text-align: center;
+}
+/* A blank inside words ("Now at (7, ?)") is as big as the numbers, not shrunk like the words around it. */
+.question__word .question__blank {
+  display: inline-block;
+  font-size: 2.2em;
+  line-height: 1.1;
+  vertical-align: middle;
+  margin-inline: 0.05em;
 }
 .question__blank[data-empty] {
   color: #b8860b;
@@ -992,3 +1006,43 @@
 .qp__num-in { font-size: 13px; }
 .qp__num-out { font-size: 13px; fill: #c2410c; font-weight: 800; }
 .question__picture .qp__head { font-size: 14px; font-weight: 800; }
+
+/* Phones upright (James, 27 Nov 2026: a coordinate grid pushed the number pad off the bottom of an Android phone): the
+   picture shrinks with the screen height so the answer box and the whole pad fit, and the keys get a little shorter on
+   shorter screens. The box can still scroll if a long Help me is open. */
+@media (max-width: 879px) and (min-height: 461px) {
+  .question__figure {
+    max-height: 27dvh;
+  }
+}
+@media (max-width: 879px) and (min-height: 461px) and (max-height: 820px) {
+  .question {
+    gap: 8px;
+    padding: 14px 16px 16px;
+  }
+  .numpad__key {
+    min-height: 52px;
+  }
+}
+@media (max-width: 879px) and (min-height: 461px) and (max-height: 700px) {
+  .question__figure {
+    max-height: 22dvh;
+  }
+  .question__feedback {
+    min-height: 1.2em;
+    font-size: 1.1rem;
+  }
+  .numpad__key {
+    min-height: 48px;
+  }
+}
+/* Phones on their side: the picture sits beside the pad, so it can be taller. */
+@media (max-height: 460px) {
+  .question__figure {
+    max-height: 34dvh;
+  }
+}
+/* The floating music and sound buttons hide while a question is open, so they never cover a key. */
+body:has(.question-backdrop) .game-music {
+  display: none;
+}

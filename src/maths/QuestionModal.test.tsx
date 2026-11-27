@@ -114,5 +114,14 @@ describe('question box', () => {
     expect(screen.getByRole('dialog').querySelector('.question__blank')?.textContent).toBe('?');
     setFeedbackSink(null);
     localStorage.clear();
+    // A ? inside words (a coordinate, "Now at (7, ?)") is the answer box too.
+    cleanup();
+    const coord = render(
+      <QuestionModal question={question({ id: 9, parts: ['Start at (7, 7)', 'Move 1 up', 'Now at (7, ?)'], answer: 8 })} title="Level up!" onSubmit={() => ({ correct: true, fact: '', boxBefore: 0, boxAfter: 0 })} onDone={() => {}} />,
+    );
+    const box = coord.container.querySelector('.question__word .question__blank');
+    expect(box).toHaveTextContent('?');
+    await user.click(screen.getByRole('button', { name: '8' }));
+    expect(box).toHaveTextContent('8');
   });
 });
