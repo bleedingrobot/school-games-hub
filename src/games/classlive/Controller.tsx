@@ -222,7 +222,7 @@ export function Controller({ link, me, room: roomProp, code: codeProp, lookElsew
   if (view.game.kind === 'jail') {
     // Real-life Four Corners: this iPad is a jail station (docs/JAIL-PLAN.md).
     return (
-      <Sky tint="corners" back={painted('corners', `jail-${view.game.map}`) ?? painted('corners', `back-${view.game.map}`)}>
+      <Sky tint="corners" back={painted('jail', `station-${view.game.map}`) ?? painted('corners', `jail-${view.game.map}`) ?? painted('corners', `back-${view.game.map}`)}>
         <PadGuard><JailPad link={link} room={room} view={view} setView={setView} /></PadGuard>
       </Sky>
     );
