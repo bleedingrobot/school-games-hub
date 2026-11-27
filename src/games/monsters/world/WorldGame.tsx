@@ -517,7 +517,16 @@ export function WorldGame({
           <HubButtons />
           <span className="mw-place">{map.name}</span>
           <TeamStrip team={world.team} />
-          <NextLine world={world} quest={quest} />
+          {settings.tips ? (
+            <div className="mw-next">
+              <NextLine world={world} quest={quest} />
+              <button type="button" className="mw-next__hide" onClick={() => onSettingsChange({ ...settings, tips: false })} aria-label="Hide tips" title="Hide tips">✕</button>
+            </div>
+          ) : (
+            <button type="button" className="mw-tipsbtn" onClick={() => onSettingsChange({ ...settings, tips: true })} aria-label="Show tips" title="Show tips">
+              <span aria-hidden="true">💡</span>
+            </button>
+          )}
           <button type="button" className="mw-gear" onClick={() => setMenu({ page: 'main', from: 'menu' })} aria-haspopup="dialog" aria-keyshortcuts="M Escape">Menu</button>
         </div>
         {settings.dpad && (
@@ -556,7 +565,7 @@ export function WorldGame({
           />
         )}
       </div>
-      <div className="mw-talk" onClick={talk ? advance : undefined}>
+      <div className={`mw-talk${!talk && !settings.tips ? ' is-quiet' : ''}`} onClick={talk ? advance : undefined}>
         {/* Decorative: the name is in the words beside it. */}
         {portrait && <img className="mw-talk__face" src={portrait} alt="" decoding="async" draggable={false} />}
         <div className="mw-talk__text" role="status" aria-live="polite" aria-atomic="true">
@@ -571,7 +580,7 @@ export function WorldGame({
           <button type="button" className="mw-talk__next mw-btn" ref={nextButton} onClick={(e) => { e.stopPropagation(); advance(); }}>
             {talk.at + 1 < talk.pages.length ? 'Next' : 'Done'}
           </button>
-        ) : (
+        ) : settings.tips && (
           <p className="mw-talk__hint">
             <span className="mw-hint-keys">Arrow keys or W A S D to walk · Space to talk · or tap the map</span>
             <span className="mw-hint-touch">Tap the map to walk · tap a person or sign to talk to them</span>
@@ -606,7 +615,7 @@ const TeamStrip = memo(function TeamStrip({ team }: { team: readonly Monster[] }
 const NextLine = memo(function NextLine({ world, quest }: { world: WorldState; quest: QuestOptions }) {
   const q = questOf(world);
   const step = nextStep(q, { badges: world.badges, playDays: quest.playDays ?? 0, day: quest.day, player: quest.player, badgeStep: badgeStep(world) });
-  return <p className="mw-next" aria-live="polite"><span aria-hidden="true">➜ </span>{step.text}</p>;
+  return <p className="mw-next__text" aria-live="polite"><span aria-hidden="true">➜ </span>{step.text}</p>;
 });
 
 /** Drawing cost, kept for the test page's smoothness check (read from the browser console: `__mmPerf`). */
