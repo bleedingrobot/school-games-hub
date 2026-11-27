@@ -201,3 +201,19 @@
 @keyframes bq-lunge { 0%, 100% { transform: translateX(0); } 40% { transform: translateX(calc(28px * var(--bq-dir, 1))) rotate(12deg) scale(1.15); } }
 .bq-smash-line { text-align: center; font-weight: 900; font-size: 1.25rem; margin: 0.5rem 0; animation: bq-pop 0.25s ease; }
 .bq-smash-line span { font-weight: 700; font-size: 0.95rem; opacity: 0.7; margin-left: 0.4rem; }
+
+/* The victory screen after every won fight. */
+.bq-victory { position: relative; overflow: hidden; border: 4px solid var(--bq-c, var(--bq-sun)); animation: bq-pop 0.3s ease; }
+.bq-victory__banner { margin: 0.2rem 0; font-size: clamp(2.6rem, 11vw, 4rem); font-weight: 900; letter-spacing: 2px; color: var(--bq-sun); -webkit-text-stroke: 2px var(--bq-ink); animation: bq-victory-banner 0.7s cubic-bezier(.2, 1.6, .4, 1) both; }
+@keyframes bq-victory-banner { from { transform: scale(0.2) rotate(-12deg); opacity: 0; } to { transform: scale(1) rotate(-3deg); opacity: 1; } }
+.bq-victory__scene { display: flex; justify-content: center; align-items: flex-end; gap: 1.5rem; min-height: 5.5rem; }
+.bq-victory__hero { font-size: 4.5rem; animation: bq-victory-jump 0.8s ease-in-out 0.3s infinite; }
+@keyframes bq-victory-jump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-18px) rotate(-6deg); } }
+.bq-victory__foe { font-size: 3.2rem; animation: bq-victory-ko 0.9s ease-out 0.2s both; }
+@keyframes bq-victory-ko { from { transform: rotate(0) translateY(0); opacity: 1; } to { transform: rotate(100deg) translateY(10px) scale(0.8); opacity: 0.55; filter: grayscale(0.7); } }
+.bq-victory__loot { list-style: none; padding: 0; margin: 0.8rem auto; display: grid; gap: 0.35rem; max-width: 18rem; text-align: left; font-size: 1.1rem; }
+.bq-victory__loot li { background: rgba(255, 255, 255, 0.7); border-radius: 12px; padding: 0.35rem 0.7rem; animation-fill-mode: both; }
+.bq-victory__confetti { position: absolute; inset: 0; pointer-events: none; }
+.bq-victory__confetti span { position: absolute; top: -2rem; left: calc(6% + var(--i) * 12%); font-size: 1.6rem; animation: bq-confetti 2.4s ease-in calc(var(--i) * 0.15s) 2 both; }
+@keyframes bq-confetti { from { transform: translateY(0) rotate(0); opacity: 1; } to { transform: translateY(30rem) rotate(540deg); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .bq-victory__confetti { display: none; } .bq-victory__hero, .bq-victory__banner, .bq-victory__foe { animation: none; } }
