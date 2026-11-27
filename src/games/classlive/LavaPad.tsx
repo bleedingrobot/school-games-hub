@@ -15,6 +15,7 @@ import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import { Joystick, useKeys } from './CornersPad';
 import { at, LavaBoard, lavaPowerPic, LavaToken } from './LavaBoard';
+import { useEdgeLink } from './edgeLink';
 import type { ClassLiveLink } from './link';
 import './controller.css';
 
@@ -23,12 +24,14 @@ type Pub = Extract<RoomView['game'], { kind: 'lava' }>;
 const SEND_MS = 400;
 const factOf = (q: PublicQuestion, answer: number) => q.parts.map((p) => p.replace(/\?/g, String(answer))).join(' ');
 
-export function LavaPad({ link, room, view, me, setMe, setView, clock, avatar }: {
+export function LavaPad({ link: baseLink, room, view, me, setMe, setView, clock, avatar }: {
   link: ClassLiveLink; room: number | null; view: RoomView; me: PlayerView | null;
   setMe: (m: PlayerView) => void; setView: (f: (v: RoomView | null) => RoomView | null) => void;
   clock: () => number;
   avatar?: unknown;
 }) {
+  // Cloudflare rooms send and read spots over a live connection (edgeLink.ts), 10 times a second.
+  const link = useEdgeLink(baseLink, room, view.edge);
   const pub: Pub | null = view.game.kind === 'lava' ? view.game : null;
   const mg: Mine | null = me && me.game.kind === 'lava' ? me.game : null;
   const r = pub?.round ?? null;
@@ -83,7 +86,7 @@ export function LavaPad({ link, room, view, me, setMe, setView, clock, avatar }:
         }
         const moved = !sentAt.current || Math.hypot(pos.current.p.x - sentAt.current.x, pos.current.p.y - sentAt.current.y) > 0.002;
         const now = Date.now();
-        if ((moved && now - lastSent.current >= SEND_MS) || now - lastSent.current > 2000) {
+        if ((moved && now - lastSent.current >= (link.sendMs ?? SEND_MS)) || now - lastSent.current > 2000) {
           lastSent.current = now;
           sentAt.current = { ...pos.current.p };
           const p = pos.current.p;

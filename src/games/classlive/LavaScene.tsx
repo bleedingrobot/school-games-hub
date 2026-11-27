@@ -5,6 +5,7 @@
  * Rounds run on the server's clock: this asks the server (`onTick`) just after each deadline.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEdgeChoice } from './EdgeChoice';
 import { AvatarImage } from '../../avatar/AvatarImage';
 import {
   AVATAR_R, LATE_MS, LAVA_MAPS, LAVA_MECHANICS, LAVA_POWER_WORDS, LAVA_UNLOCK, LAVA_WORDS, lavaPodium, PATTERN_FROM, PATTERNS, RAFT_RIGHT,
@@ -13,6 +14,7 @@ import {
 import type { ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
 import { at as boardAt, LavaBoard, LavaToken, type FloorRound } from './LavaBoard';
+import { useEdgeLink } from './edgeLink';
 import type { ClassLiveLink } from './link';
 import { painted } from './paintedArt';
 import { lavaLine, patternLine } from './lavaVoice';
@@ -34,7 +36,7 @@ export const floorRound = (r: LavaGame['round']): FloorRound | null =>
 
 type Person = ScreenView['people'][number];
 
-export function LavaScene({ screen, game, link, room, clock, sound, say, onTick, over, onAgain }: {
+export function LavaScene({ screen, game, link: baseLink, room, clock, sound, say, onTick, over, onAgain }: {
   screen: ScreenView; game: LavaGame; link: ClassLiveLink; room: number | null;
   clock: () => number;
   sound: ClassLiveSound; say: (text: string, delay?: number) => void;
@@ -42,6 +44,8 @@ export function LavaScene({ screen, game, link, room, clock, sound, say, onTick,
   over: boolean;
   onAgain: () => void;
 }) {
+  // Cloudflare rooms send and read spots over a live connection (edgeLink.ts), 10 times a second.
+  const link = useEdgeLink(baseLink, room, screen.edge);
   const t = screen.startedAt === null ? 0 : clock() - screen.startedAt;
   const r = game.round;
   /** The floor's width (height 1): wide since 27 Nov 2026. */
@@ -66,7 +70,7 @@ export function LavaScene({ screen, game, link, room, clock, sound, say, onTick,
     let live = true;
     const read = () => void link.positions(room).then((p) => { if (live && p) targets.current = p; }, () => undefined);
     read();
-    const id = window.setInterval(read, running ? 300 : 2000);
+    const id = window.setInterval(read, running ? (link.readMs ?? 300) : 2000);
     return () => { live = false; window.clearInterval(id); };
   }, [room, running, over, link]);
 
@@ -352,6 +356,7 @@ const TIMERS = [2, 3, 5, 10, 15, 0];
 
 /** The teacher's card on the Class Live picker. */
 export function LavaCard({ busy, disabled, onOpen }: { busy: boolean; disabled: boolean; onOpen: (body: Record<string, unknown>) => void }) {
+  const lavaRun = useEdgeChoice('lava');
   const [map, setMap] = useState<LavaMap | 'any'>('any');
   const [run, setRun] = useState(RUN_DEFAULT_S);
   const [length, setLength] = useState(5);
@@ -382,7 +387,8 @@ export function LavaCard({ busy, disabled, onOpen }: { busy: boolean; disabled: 
           {TIMERS.map((m) => <button key={m} type="button" className={`cl-choice ${length === m ? 'cl-choice--on' : ''}`} aria-pressed={length === m} onClick={() => setLength(m)}>{m === 0 ? 'No timer' : `${m} min`}</button>)}
         </div>
       </div>
-      <button type="button" className="cl-btn cl-btn--go" disabled={busy || disabled} onClick={() => onOpen({ length, run, ...(map === 'any' ? {} : { map }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
+      {lavaRun.node}
+      <button type="button" className="cl-btn cl-btn--go" disabled={busy || disabled} onClick={() => onOpen({ length, run, ...(map === 'any' ? {} : { map }), ...lavaRun.extra })}>{busy ? 'Opening…' : 'Open the room'}</button>
     </section>
   );
 }

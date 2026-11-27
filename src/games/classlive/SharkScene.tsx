@@ -15,6 +15,7 @@ import {
 import type { ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
 import { at as spotAt, Token } from './CornersBoard';
+import { useEdgeLink } from './edgeLink';
 import type { ClassLiveLink } from './link';
 import { painted } from './paintedArt';
 import { SharkBoard, QUARTER_COLOURS, QUARTER_NAMES, sharkHazardPic } from './SharkBoard';
@@ -67,7 +68,7 @@ function Burst({ at: p, bay, w, style, late }: { at: Spot; bay: SharkGame['bay']
   );
 }
 
-export function SharkScene({ screen, game, link, room, clock, sound, say, onTick, over, onAgain }: {
+export function SharkScene({ screen, game, link: baseLink, room, clock, sound, say, onTick, over, onAgain }: {
   screen: ScreenView; game: SharkGame; link: ClassLiveLink; room: number | null;
   /** Server time now (ms). */
   clock: () => number;
@@ -77,6 +78,8 @@ export function SharkScene({ screen, game, link, room, clock, sound, say, onTick
   over: boolean;
   onAgain: () => void;
 }) {
+  // Cloudflare rooms send and read spots over a live connection (edgeLink.ts), 10 times a second.
+  const link = useEdgeLink(baseLink, room, screen.edge);
   const t = screen.startedAt === null ? 0 : clock() - screen.startedAt;
   const r = game.round;
   const br: BayRound | null = bayRound(r);
@@ -105,7 +108,7 @@ export function SharkScene({ screen, game, link, room, clock, sound, say, onTick
     let live = true;
     const read = () => void link.positions(room).then((p) => { if (live && p) targets.current = p; }, () => undefined);
     read();
-    const id = window.setInterval(read, running ? 300 : 2000);
+    const id = window.setInterval(read, running ? (link.readMs ?? 300) : 2000);
     return () => { live = false; window.clearInterval(id); };
   }, [room, running, over, link]);
 

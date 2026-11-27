@@ -19,6 +19,7 @@ import { Joystick, useKeys } from './CornersPad';
 import { at, CrewBoard, CrewToken } from './CrewBoard';
 import { CrewHelp } from './CrewCard';
 import { PLAYER_COLOURS } from './StarSky';
+import { useEdgeLink } from './edgeLink';
 import type { ClassLiveLink } from './link';
 import './controller.css';
 
@@ -43,12 +44,14 @@ function localPurpose(r: NonNullable<Pub['round']>, mg: Mine, p: Spot, t: number
   return job ? { kind: 'job', machine: job.id } : null;
 }
 
-export function CrewPad({ link, room, view, me, setMe, setView, clock, avatar }: {
+export function CrewPad({ link: baseLink, room, view, me, setMe, setView, clock, avatar }: {
   link: ClassLiveLink; room: number | null; view: RoomView; me: PlayerView | null;
   setMe: (m: PlayerView) => void; setView: (f: (v: RoomView | null) => RoomView | null) => void;
   clock: () => number;
   avatar?: unknown;
 }) {
+  // Cloudflare rooms send and read spots over a live connection (edgeLink.ts), 10 times a second.
+  const link = useEdgeLink(baseLink, room, view.edge);
   const pub: Pub | null = view.game.kind === 'crew' ? view.game : null;
   const mg: Mine | null = me && me.game.kind === 'crew' ? me.game : null;
   const r = pub?.round ?? null;
@@ -102,7 +105,7 @@ export function CrewPad({ link, room, view, me, setMe, setView, clock, avatar }:
         pos.current = stepCrew(pos.current, question ? { x: 0, y: 0 } : dir, dt, { belts: r.belts, startAt: r.startAt, meeting: r.meeting, done: r.done, w: r.w }, t, { drone: mg.drone, speed: speedOf(mg, t) });
         const p = pos.current.p;
         const now = Date.now();
-        if (now - lastSent.current >= SEND_MS) {
+        if (now - lastSent.current >= (link.sendMs ?? SEND_MS)) {
           lastSent.current = now;
           const send = link.crewMove ?? (async () => null);
           void send(room, p.x, p.y).then((got) => { if (got) seen.current = got; }, () => undefined);

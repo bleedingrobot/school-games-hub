@@ -36,7 +36,7 @@ export const EDGE_LIVE: readonly string[] = ['ghost'];
  * Games on trial: Cloudflare for EDGE_TEACHERS only (James, 27 Nov 2026 NZ: "might as well" move the other moving games,
  * class-testing each first). A game joins once its iPad and big screen talk to Cloudflare (useEdgeLink).
  */
-export const EDGE_TRIAL: readonly string[] = [];
+export const EDGE_TRIAL: readonly string[] = ['corners', 'shark', 'lava', 'thrones', 'crew'];
 
 /** Whether this teacher's new game of this activity runs its positions on Cloudflare. */
 export function edgeFor(teacher: string, activity: string): boolean {

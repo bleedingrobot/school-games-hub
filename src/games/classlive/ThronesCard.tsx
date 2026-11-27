@@ -3,6 +3,7 @@
  * the other Class Live games built at the same time don't clash with it there.
  */
 import { useState, type ComponentType } from 'react';
+import { useEdgeChoice } from './EdgeChoice';
 import { HALLS, HALL_WORDS, type Hall } from '../../../shared/classlive/thrones';
 import { painted } from './paintedArt';
 import { ThronesGuide } from './ThronesGuide';
@@ -15,6 +16,7 @@ export function ThronesCard({ busy, hostOk, onOpen, Timer, Art }: {
   Timer: ComponentType<{ length: number; setLength: (m: number) => void }>;
   Art: ComponentType<{ pic: string | null }>;
 }) {
+  const thronesRun = useEdgeChoice('thrones');
   const [hall, setHall] = useState<Hall | 'any'>('any');
   const [length, setLength] = useState(5);
   const [guide, setGuide] = useState(false);
@@ -35,7 +37,8 @@ export function ThronesCard({ busy, hostOk, onOpen, Timer, Art }: {
         </div>
       </div>
       <Timer length={length} setLength={setLength} />
-      <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen({ length, ...(hall === 'any' ? {} : { hall }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
+      {thronesRun.node}
+      <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen({ length, ...(hall === 'any' ? {} : { hall }), ...thronesRun.extra })}>{busy ? 'Opening…' : 'Open the room'}</button>
     </section>
   );
 }
