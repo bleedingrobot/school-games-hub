@@ -41,14 +41,13 @@ describe("earn your own name", () => {
       last: null,
       canPickToday: true,
       typed: false,
+      typedUntil: null,
     };
-    names.fetchMyNameStatus
-      .mockResolvedValueOnce(free)
-      .mockResolvedValue({
-        ...free,
-        scrolls: 0,
-        waiting: { name: "Te Ahi", askedAt: new Date().toISOString() },
-      });
+    names.fetchMyNameStatus.mockResolvedValueOnce(free).mockResolvedValue({
+      ...free,
+      scrolls: 0,
+      waiting: { name: "Te Ahi", askedAt: new Date().toISOString() },
+    });
     render(<OwnNamePanel />);
 
     await userEvent.type(await screen.findByLabelText("My own name"), "te ahi");
@@ -61,6 +60,21 @@ describe("earn your own name", () => {
       await screen.findByRole("button", { name: "Take it back" }),
     ).toBeInTheDocument();
     expect(screen.getByText(/is waiting for your teacher/)).toBeInTheDocument();
+  });
+
+  it("tells a pupil how long their own name has left", async () => {
+    names.fetchMyNameStatus.mockResolvedValue({
+      scrolls: 0,
+      waiting: null,
+      last: null,
+      canPickToday: true,
+      typed: true,
+      typedUntil: new Date(Date.now() + 12.5 * 86_400_000).toISOString(),
+    });
+    render(<OwnNamePanel />);
+    expect(
+      await screen.findByText(/Your own name lasts 13 more days/),
+    ).toBeInTheDocument();
   });
 
   it("shows a typed name in Needs you and the nav count, and a Yes answers it", async () => {
