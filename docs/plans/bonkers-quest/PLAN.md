@@ -1,6 +1,6 @@
 # Bonkers Quest (working name): a wacky, streamlined Dragon Maths for younger pupils
 
-**Status:** brainstorm and plan only, 27 Nov 2026. Nothing built. James answered rounds 1 and 2 (section 10); the art look waits on the style test. The answers win over anything earlier in this plan where they differ, and this plan becomes `docs/<ID>-PLAN.md` from `docs/game-guide/templates/plan.md` when the build starts.
+**Status:** brainstorm and plan only, 27 Nov 2026. Nothing built. Planning finished 27 Nov 2026: James answered all 22 questions (section 10) and picked the bouncy cartoon look. The answers win over anything earlier in this plan where they differ, and this plan becomes `docs/<ID>-PLAN.md` from `docs/game-guide/templates/plan.md` when the build starts.
 
 James, 27 Nov 2026: "like dragon maths but simplified and streamlined for younger students ... entering an area to fight, slowly getting stronger, defeating a big monster after a set time, getting upgrades in gear, classes to choose from, crazy monsters to battle, trainer to defeat to level up ... more like sky isles with each set of goes being a linear process, eg start > daily quest at the inn > fight, fight, fight > trainer (if needed) > get awarded gear (if earned) ... graphics more fun and friendly, the game itself super weird and wacky, crazy weapons like rolling pins of doom and high heels of distraction."
 
@@ -122,7 +122,7 @@ Asked on question cards in the project thread, 27 Nov 2026. Answers go here.
 6. How many classes, and can you swap? **4 classes, kept all season** (James, 27 Nov): swap at a new season. Which four: follow-up card.
 7. Where does gear come from? **Chest plus a sticker shop** (James, 27 Nov): main gear from the chest; fights earn stickers for fun extras (hats, pets).
 8. Classmates in it? **Class boss together** (James, 27 Nov): the class's right answers chip away at a shared Friday boss's health bar; never ranks pupils by maths.
-9. Art style? James, 27 Nov: wants to see style options first. Style test painting on the gaming PC (4 looks: toon, clay, book, toy; config `docs/bonkers-art/config.json`), small copies in `style-test/`. Not final art.
+9. Art style? **Bouncy cartoon** (James, 27 Nov, after the style test: page https://claude.ai/artifact/5HVWbmncRrJ1RZH2opch2w, small copies in `style-test/`): thick outlines, flat candy colours, googly eyes. Style key `toon` in `docs/bonkers-art/config.json`; the other three styles come out of the config when the art plan is written.
 10. How wacky? **Full bonkers, mild toilet** (James, 27 Nov): gentle burp, smelly sock and Toilet Roll Towers jokes are in; still no gore, romance or anything scary.
 11. Name? **Bonkers Quest** (James, 27 Nov). Suggested id `bonkers`.
 12. Daily quest: one, or pick from two? **Pick 1 of 2** (James, 27 Nov): two zones or monsters on the board each morning.
