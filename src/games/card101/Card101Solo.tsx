@@ -35,7 +35,10 @@ import { Scoring } from './Scoring';
 import { motionFor, type Motion } from './motion';
 import { Table, type Flash, type Seat } from './Table';
 import { BOT_BIRDS, BOT_LEVEL_NAMES, eventLine, ORDINAL } from './text';
+import { bird, knockBurst } from './art';
 import { useCardBacks, type LoadAchievements } from './useCardBacks';
+
+const BIRD_PICTURES = ['kea', 'tui', 'weka'] as const;
 import { Card101Window, NewBacks } from './Window';
 import './card101.css';
 
@@ -82,6 +85,7 @@ function makeSeats(solo: SoloGame, player: Card101Player, level: BotLevel): Seat
       ? { name: player.name, avatar: player.avatar, isStudent: true }
       : {
           name: BOT_BIRDS[i - 1],
+          picture: bird(BIRD_PICTURES[i - 1]),
           avatar: randomAvatar(randomFromSeed(`${solo.setup.seed}:avatar:${i}`)),
           isStudent: false,
           about: `${BOT_LEVEL_NAMES[level]} bot`,
@@ -551,6 +555,7 @@ export function Card101Solo({
         </Table>
         {banner && (
           <div className="c101-banner" role="alert">
+            {knockBurst() && <img className="c101-banner__burst" src={knockBurst()} alt="" aria-hidden="true" />}
             ✊ {banner}
           </div>
         )}

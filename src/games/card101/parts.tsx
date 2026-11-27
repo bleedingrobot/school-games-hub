@@ -3,7 +3,7 @@
  * (Card101Live): the scores, the card values, the "What happened" list and the podium.
  */
 import { useEffect, useRef, type ReactNode } from 'react';
-import { AvatarImage } from '../../avatar/AvatarImage';
+import { SeatFace } from './SeatFace';
 import type { SeatView } from '../../../shared/card101/view';
 import { CardValues } from './Card101Settings';
 import type { Seat } from './Table';
@@ -35,7 +35,7 @@ export function ScoresPanel({ seats, view, turnSeat }: { seats: readonly Seat[];
           const last = view.history.at(-1)?.hands[i];
           return (
             <li key={i} className={`c101-score${turnSeat === i ? ' is-turn' : ''}${view.out[i] ? ' is-out' : ''}`}>
-              <AvatarImage avatar={seat.avatar} size={30} />
+              <SeatFace seat={seat} size={30} />
               <span className="c101-score__name">{i === view.seat ? 'You' : seat.name}</span>
               <span className="c101-score__total" aria-label={`${total} of ${target}${last != null ? `, last hand ${last}` : ''}`}>
                 {total}
@@ -134,7 +134,7 @@ export function Podium({
         <div className="c101-steps" aria-hidden="true">
           {steps.map((i) => (
             <div key={i} className={`c101-step c101-step--${places[i]}${i === me ? ' is-me' : ''}`}>
-              <AvatarImage avatar={seats[i].avatar} size={places[i] === 1 ? 48 : 38} />
+              <SeatFace seat={seats[i]} size={places[i] === 1 ? 48 : 38} />
               <span className="c101-step__name">{i === me ? 'You' : seats[i].name}</span>
               <span className="c101-step__block">{places[i]}</span>
             </div>
@@ -145,7 +145,7 @@ export function Podium({
             <li key={i} className={i === me ? 'is-me' : ''}>
               <span aria-hidden="true">{MEDALS[places[i]]}</span>
               <span className="sr-only">{ORDINAL[places[i]]}:</span>
-              <AvatarImage avatar={seats[i].avatar} size={32} />
+              <SeatFace seat={seats[i]} size={32} />
               <span>{i === me ? 'You' : seats[i].name}</span>
               <strong>{totals[i]}</strong>
             </li>

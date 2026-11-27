@@ -1636,3 +1636,29 @@ button.c101-slot:disabled {
 .c101-window .c101-log ol {
   padding-left: 28px;
 }
+
+/* ---------- Painted art (28 Nov 2026) ---------- */
+/* The painted felt came out pale lime: a green wash brings it to card-table green. */
+.c101-window[style*='--c101-felt'] .c101-table {
+  background: linear-gradient(rgba(14, 92, 50, 0.62), rgba(10, 70, 38, 0.7)), var(--c101-felt) center / 512px;
+}
+.c101-window[style*="--c101-wood"] .c101-scene--play {
+  background: var(--c101-wood) center / 640px;
+}
+.c101-bird {
+  flex: none;
+  border-radius: 50%;
+  background: #fff8e1;
+  object-fit: contain;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7);
+}
+.c101-banner__burst {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: -1;
+  width: 240px;
+  margin: -120px 0 0 -120px;
+  mix-blend-mode: screen;
+  animation: c101-sparkle 1.2s ease-out both;
+}

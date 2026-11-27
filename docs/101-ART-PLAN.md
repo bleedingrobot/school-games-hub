@@ -2,7 +2,7 @@
 
 *Written 28 Nov 2026 NZ for James ("plan a graphical upgrade of 101 … make a list of the art you need but don't paint it yet, you can do everything else, animations, effects etc, you can add different card backs kids can unlock, you might be able to reuse some Bond Match stuff"). James paints the final art on his gaming PC (ComfyUI) in the evening; the game runs on drawn stand-ins until then, and they stay as the fallback.*
 
-**Status: U.1 (full window, bach look, 10 unlockable card backs) and U.2 (deal, draw, swap and throw animations, knock thump and rings, turn glow, scoring stamps and sparkle, dusk podium with steps and confetti) built 28 Nov 2026 with drawn stand-ins, in one PR. U.3 (birds) waits for the bird paintings: the code only needs `bird()` wired into the bot seats. Nothing painted yet: the art list below is ready to paint.**
+**Status: U.1, U.2 live 28 Nov 2026 (PR #981). All 17 pictures painted on JamesGaming 28 Nov 2026 (one try each; repainted: 6 backs and the knock burst; Pāua and Matariki needed new edge-to-edge "phone wallpaper" prompts) and U.3 birds wired, in the follow-up PR. Weak spots: the Kea back is a whole kea on leaves (cute, not a pattern); the felt painted pale lime, so CSS washes it green.**
 
 ## Where it was
 

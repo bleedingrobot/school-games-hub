@@ -5,7 +5,7 @@
  * happens when something is tapped.
  */
 import { useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
-import { AvatarImage } from '../../avatar/AvatarImage';
+import { SeatFace } from './SeatFace';
 import { cardName, SLOT_NAMES, SLOTS, type Card, type Slot } from '../../../shared/card101/cards';
 import type { SeatView } from '../../../shared/card101/view';
 import { boxOf, playMotion, type Motion } from './motion';
@@ -15,6 +15,8 @@ export interface Seat {
   name: string;
   avatar: unknown;
   isStudent: boolean;
+  /** A bot's painted bird, when there is one. */
+  picture?: string;
   /** "Easy bot", for bots. */
   about?: string;
 }
@@ -76,7 +78,7 @@ function SeatInfo({ seat, view, index, thinking }: { seat: Seat; view: SeatView;
   const out = view.out[index];
   return (
     <div className="c101-seat__info">
-      <AvatarImage avatar={seat.avatar} size={36} />
+      <SeatFace seat={seat} size={36} />
       <span className="c101-seat__name">
         {seat.isStudent ? 'You' : seat.name}
         {seat.about && <small>{seat.about}</small>}
