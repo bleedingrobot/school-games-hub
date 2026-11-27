@@ -3,6 +3,7 @@
  * (docs/plans/help-me/PLAN.md H4-H7). Each helper reads only what the pupil sees and teaches the way in: the unit fact,
  * the formula, the worked steps. The last step always leaves the final bit for the pupil.
  */
+import { knownFactSteps } from './basic';
 import { num, show, words } from './read';
 import type { HelpCard, HelpQuestion, Helper } from './types';
 
@@ -302,8 +303,11 @@ const shapes: Helper = (q) => {
       const own = `${/^[aeiou]/i.test(adj + name) ? 'An' : 'A'} ${adj}${name}`;
       const last = count === 8 ? `Double ${show(side)} = ${show(side * 2)}, double again = ${show(side * 4)}, double again = ?`
         : count === 4 ? `Double ${show(side)} = ${show(side * 2)}, double again = ?` : `${count} × ${show(side)} = ?`;
-      return card('perimeter', 'Equal sides: times', 'Perimeter is the distance all the way round the edge.',
+      const made = card('perimeter', 'Equal sides: times', 'Perimeter is the distance all the way round the edge.',
         `${own} has ${count} equal sides of ${show(side)} cm.`, last);
+      // A fact they know as well (James, 27 Nov 2026): 8 sides of 7 cm from 10 × 7 and 2 × 7.
+      const fact = Number.isInteger(side) && side > 0 && side <= 12 ? knownFactSteps(count, side, ' cm') : null;
+      return fact ? { ...made, also: card('known-fact', 'Use a fact you know', `${count} sides of ${show(side)} cm is ${count} lots of ${show(side)}.`, ...fact) } : made;
     }
     return null;
   }

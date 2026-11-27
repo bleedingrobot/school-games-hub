@@ -146,6 +146,27 @@ function trick(n: number, t: number): { title: string; steps: string[] } {
   }
 }
 
+/**
+ * "Use a fact you know" for `lots` lots of `n`, built from the facts every pupil has (2, 5 and 10 lots), never naming the
+ * answer (James, 27 Nov 2026: "Help should also offer known fact help"). Null for 0, 1, 2 and 10 lots: those are the facts.
+ */
+export function knownFactSteps(lots: number, n: number, unit = ''): string[] | null {
+  const u = (v: number) => `${show(v)}${unit}`;
+  const t2 = 2 * n, t5 = 5 * n, t10 = 10 * n;
+  switch (lots) {
+    case 3: return [`You know 2 × ${u(n)} = ${u(t2)}.`, `3 lots is one more ${u(n)}.`, `${u(t2)} + ${u(n)} = ?`];
+    case 4: return [`You know 5 × ${u(n)} = ${u(t5)}.`, `4 lots is one ${u(n)} less.`, `${u(t5)} − ${u(n)} = ?`];
+    case 5: return [`You know 10 × ${u(n)} = ${u(t10)}.`, '5 lots is half of 10 lots.', `Half of ${u(t10)} = ?`];
+    case 6: return [`You know 5 × ${u(n)} = ${u(t5)}.`, `6 lots is one more ${u(n)}.`, `${u(t5)} + ${u(n)} = ?`];
+    case 7: return [`You know 5 × ${u(n)} = ${u(t5)} and 2 × ${u(n)} = ${u(t2)}.`, '5 lots and 2 lots make 7 lots.', `${u(t5)} + ${u(t2)} = ?`];
+    case 8: return [`You know 10 × ${u(n)} = ${u(t10)} and 2 × ${u(n)} = ${u(t2)}.`, '8 lots is 2 lots less than 10 lots.', `${u(t10)} − ${u(t2)} = ?`];
+    case 9: return [`You know 10 × ${u(n)} = ${u(t10)}.`, `9 lots is one ${u(n)} less.`, `${u(t10)} − ${u(n)} = ?`];
+    case 11: return [`You know 10 × ${u(n)} = ${u(t10)}.`, `11 lots is one more ${u(n)}.`, `${u(t10)} + ${u(n)} = ?`];
+    case 12: return [`You know 10 × ${u(n)} = ${u(t10)} and 2 × ${u(n)} = ${u(t2)}.`, '10 lots and 2 lots make 12 lots.', `${u(t10)} + ${u(t2)} = ?`];
+    default: return null;
+  }
+}
+
 const isKnown = (ctx: HelpContext, x: number, y: number) =>
   !!ctx.known && (ctx.known(`mul:${x}x${y}`) || ctx.known(`mul:${y}x${x}`));
 
@@ -172,7 +193,10 @@ function times(a: number, b: number, ctx: HelpContext): HelpCard {
   const n = t === a ? b : a;
   const { title, steps } = trick(n, t);
   const turned = t === a && a !== b && t > 1 ? [`Turn it round: ${a} × ${b} is the same as ${b} × ${a}.`] : [];
-  return card('tables', title, ...(turned.length + steps.length <= 4 ? turned : []), ...steps);
+  const made = card('tables', title, ...(turned.length + steps.length <= 4 ? turned : []), ...steps);
+  // Doubling tricks (4 and 8 lots) also get a fact they know: 8 × 7 from 10 × 7 and 2 × 7.
+  const fact = [4, 8].includes(t) && n > 2 && n !== 5 && n !== 10 ? knownFactSteps(t, n) : null;
+  return fact ? { ...made, also: card('known-fact', 'Use a fact you know', ...fact) } : made;
 }
 
 /**
@@ -191,10 +215,16 @@ function missingFactor(t: number, c: number, ctx: HelpContext = {}): HelpCard {
   }
   if (t === 1) return card('tables', 'Lots of 1', 'One lot of anything is itself.', `How many lots of 1 make ${c}? ?`);
   const n = c / t;
-  if (t === 4 && c % 2 === 0 && n !== c / 2) return card('halves', 'Halve, then halve again', `Sharing by 4 is halving twice.`, `Half of ${c} = ${c / 2}.`, `Half of ${c / 2} = ?`);
+  if (t === 4 && c % 2 === 0 && n !== c / 2) return { ...card('halves', 'Halve, then halve again', `Sharing by 4 is halving twice.`, `Half of ${c} = ${c / 2}.`, `Half of ${c / 2} = ?`), ...(n > 2 ? { also: fromFact(t, c, ctx) } : {}) };
   if (t === 8 && c % 4 === 0 && n !== c / 4) {
-    return card('halves', 'Halve three times', `Sharing by 8 is halving three times.`, `Half of ${c} = ${c / 2}. Half of ${c / 2} = ${c / 4}.`, `Half of ${c / 4} = ?`);
+    return { ...card('halves', 'Halve three times', `Sharing by 8 is halving three times.`, `Half of ${c} = ${c / 2}. Half of ${c / 2} = ${c / 4}.`, `Half of ${c / 4} = ?`), ...(n > 2 ? { also: fromFact(t, c, ctx) } : {}) };
   }
+  return fromFact(t, c, ctx);
+}
+
+/** Which number times `t` makes `c`, from a fact they know (or 1, 2, 5 or 10 lots) and the lots between. */
+function fromFact(t: number, c: number, ctx: HelpContext): HelpCard {
+  const n = c / t;
   // Start from a fact they know (or an easy one: 2, 5 or 10 lots) that isn't the answer, and count the lots between.
   const anchors = [1, 2, 5, 10, ...(ctx.known ? Array.from({ length: 12 }, (_, i) => i + 1).filter((k) => isKnown(ctx, k, t)) : [])]
     .filter((k) => k !== n && k <= 12);
@@ -279,7 +309,8 @@ function tables(s: Sum, ctx: HelpContext): HelpCard | null {
     if (by === 2 && s.c === null && s.a <= 40) return card('halves', 'Dividing by 2 is halving', ...halfSteps(s.a));
     const fact = missingFactor(by, s.a, ctx);
     if (by === 10) return fact;
-    return card('tables', fact.title, `Think of the times fact: ${by} × ? = ${s.a}.`, ...fact.steps.filter((step) => !step.startsWith('Which number')));
+    const made = card('tables', fact.title, `Think of the times fact: ${by} × ? = ${s.a}.`, ...fact.steps.filter((step) => !step.startsWith('Which number')));
+    return fact.also ? { ...made, also: fact.also } : made;
   }
   return null;
 }

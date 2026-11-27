@@ -62,8 +62,14 @@ it('gives every ladder question a help card that teaches without giving the answ
   // The order James asked for (26 Nov 2026): the picture's help first, other strategies next, counting in lots last.
   const titles = (parts: string, known?: string) => helpCardsFor({ parts: parts.split(' ') }, { known: (k) => k === known }).map((c) => c.title);
   expect(titles('3 × 12 = ?', 'mul:3x11')).toEqual(['Use the box: tens and ones', 'Use a fact you know', 'Count in 12s']);
-  expect(titles('32 ÷ 8 = ?')).toEqual(['Use the array', 'Halve three times', 'Count in 8s']);
-  expect(titles('3 × 4 = ?')).toEqual(['Double, then double again', 'Count the rows of dots']);
+  expect(titles('32 ÷ 8 = ?')).toEqual(['Use the array', 'Halve three times', 'Start from a fact you know', 'Count in 8s']);
+  expect(titles('3 × 4 = ?')).toEqual(['Double, then double again', 'Use a fact you know', 'Count the rows of dots']);
+  {
+    // Doubling help also offers a fact they know (James, 27 Nov 2026), never the answer: 8 × 7 from 10 × 7 and 2 × 7.
+    const last = (parts: string, prompt?: string) => helpCardsFor({ parts: parts.split(' '), prompt }).map((c) => c.steps.at(-1));
+    expect(last('8 × 7 = ?')).toContain('70 − 14 = ?');
+    expect(last('Perimeter = ? cm', 'A regular octagon with sides of 7 cm')).toContain('70 cm − 14 cm = ?');
+  }
   // A fraction of an amount ends on how many groups the top number asks for.
   expect(helpCardsFor({ parts: '1/5 of 30 = ?'.split(' ') }).map((c) => c.steps.at(-1))).toEqual([
     'The top number is 1: take just 1 part. 30 ÷ 5 = ?', 'The top number is 1, so the answer is just 1 group: 1 group = ?']);
