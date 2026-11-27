@@ -12,7 +12,7 @@ import {
 } from '../../../shared/classlive/lava';
 import type { ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
-import { LavaBoard, LavaToken, type FloorRound } from './LavaBoard';
+import { at as boardAt, LavaBoard, LavaToken, type FloorRound } from './LavaBoard';
 import type { ClassLiveLink } from './link';
 import { painted } from './paintedArt';
 import { lavaLine, patternLine } from './lavaVoice';
@@ -44,6 +44,8 @@ export function LavaScene({ screen, game, link, room, clock, sound, say, onTick,
 }) {
   const t = screen.startedAt === null ? 0 : clock() - screen.startedAt;
   const r = game.round;
+  /** The floor's width (height 1): wide since 27 Nov 2026. */
+  const bw = r?.w ?? game.w ?? 1;
   const targets = useRef<Record<string, Spot>>({});
   const shown = useRef<Record<string, Spot>>({});
   const [, setFrame] = useState(0);
@@ -148,7 +150,7 @@ export function LavaScene({ screen, game, link, room, clock, sound, say, onTick,
     seenSeq.current = fresh[fresh.length - 1].seq;
     const add: { key: number; at: Spot; text: string }[] = [];
     for (const e of fresh) {
-      const at = 'pupil' in e && typeof e.pupil === 'string' ? (shown.current[e.pupil] ?? { x: 0.5, y: 0.5 }) : { x: 0.5, y: 0.5 };
+      const at = 'pupil' in e && typeof e.pupil === 'string' ? (shown.current[e.pupil] ?? { x: bw / 2, y: 0.5 }) : { x: bw / 2, y: 0.5 };
       if (e.type === 'lava_grab') { sound.play('grab'); add.push({ key: e.seq, at, text: LAVA_POWER_WORDS[e.power].emoji }); }
       else if (e.type === 'lava_power') { sound.play('power'); add.push({ key: e.seq, at, text: `${LAVA_POWER_WORDS[e.power].emoji} ${LAVA_POWER_WORDS[e.power].name}!` }); }
       else if (e.type === 'build') { sound.play('build'); add.push({ key: e.seq, at, text: '🧱' }); }
@@ -162,7 +164,7 @@ export function LavaScene({ screen, game, link, room, clock, sound, say, onTick,
       setPops((p) => [...p, ...add].slice(-10));
       window.setTimeout(() => setPops((p) => p.filter((x) => !add.includes(x))), 1800);
     }
-  }, [screen.events, screen.seq, sound, say]);
+  }, [screen.events, screen.seq, sound, say, bw]);
 
   const nameOf = (p: Person) => (screen.showNames ? p.name : null);
   const rafted = screen.people.filter((p) => game.mine[p.id] && game.mine[p.id].raftIn !== null);
@@ -180,10 +182,10 @@ export function LavaScene({ screen, game, link, room, clock, sound, say, onTick,
   const fr = floorRound(r);
 
   return (
-    <div className={`fc-scene lv-scene lv-scene--${game.map}`}>
+    <div className={`fc-scene lv-scene lv-scene--${game.map} ${bw > 1 ? 'lv-scene--wide' : ''}`}>
       <div className="lv-heat" aria-hidden="true" />
       <div className={`fc-stage lv-stage ${cracking ? 'lv-shake' : ''}`}>
-        <LavaBoard map={game.map} sunk={game.sunk} round={fr} t={t}>
+        <LavaBoard map={game.map} w={bw} sunk={game.sunk} round={fr} t={t}>
           {onFloor.map((p) => {
             const m = game.mine[p.id];
             const at = shown.current[p.id] ?? m?.spot;
@@ -199,7 +201,7 @@ export function LavaScene({ screen, game, link, room, clock, sound, say, onTick,
               </LavaToken>
             );
           })}
-          {pops.map((p) => <span key={p.key} className="fc-pop" style={{ left: `${p.at.x * 100}%`, top: `${p.at.y * 100}%` }}>{p.text}</span>)}
+          {pops.map((p) => <span key={p.key} className="fc-pop" style={boardAt(p.at.x, p.at.y, bw)}>{p.text}</span>)}
         </LavaBoard>
 
         <aside className="fc-side">

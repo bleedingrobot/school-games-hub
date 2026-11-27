@@ -9,7 +9,7 @@
  * painted by the server function (`bombTiles`). Movement on the device reuses Four Corners' `stepMove`, so goo, slippy
  * paint, teleports and rollers behave the same on both screens.
  */
-import { stepMove as cornersStepMove, type Circle, type MoveRound, type MoveState, type Roller, type Spot, type Teleport } from './corners';
+import { BOOST, HOLE_R, KNOCK_MS, KNOCK_SPEED, rollerAt, rollersOf, SPEED, STORM_SLOW, TELEPORT_R, type Circle, type MoveState, type Roller, type Spot, type Teleport } from './corners';
 
 export const CLASH_MAPS = ['park', 'rooftops', 'beach', 'space'] as const;
 export type ClashMap = (typeof CLASH_MAPS)[number];
@@ -44,10 +44,21 @@ export type ClashMechanic = (typeof MECHANICS)[number];
 /** The round each mechanic first appears (a few at a time, as Four Corners). */
 export const UNLOCK: Record<ClashMechanic, number> = { items: 2, golden: 3, portal: 4, goo: 5, slip: 6, roller: 7, fountain: 8 };
 
-/** Tiles across and down. */
+/**
+ * Tiles down (and across a square board). The board is `w` wide and 1 high (widescreen since 27 Nov 2026 NZ: new games
+ * are CLASH_W wide, older ones, without `w`, stay square), so it has more columns and the same rows: tiles stay square.
+ */
 export const GRID = 24;
 export const TILE = 1 / GRID;
-export const TILES = GRID * GRID;
+/** A new game's board width (height 1). */
+export const CLASH_W = 1.6;
+/** A game's (or round's) board width. */
+export const widthOf = (x: { w?: number } | null | undefined) => x?.w ?? 1;
+/** Tiles across a board of width w (the database does the same: round(24 * w)). */
+export const colsOf = (w = 1) => Math.round(GRID * w);
+export const tileCount = (w = 1) => colsOf(w) * GRID;
+/** A tile's width in board units (just over TILE on a wide board, so the columns fill it exactly). */
+export const tileW = (w = 1) => w / colsOf(w);
 /** A golden tile counts this many. */
 export const GOLDEN_WORTH = 3;
 export const READY_MS = 3500;
@@ -68,6 +79,8 @@ export const AVATAR_R = 0.035;
 export interface ClashItem extends Spot { id: number; power: ClashPower; by: string | null }
 
 export interface ClashRound {
+  /** The board's width (height 1); missing: square. */
+  w?: number;
   n: number;
   /** Times in ms since the session started. Painting is open from paintFrom to paintTo. */
   startAt: number;
@@ -114,6 +127,8 @@ export interface ClashMine {
 export interface ClashGame {
   kind: 'clash';
   map: ClashMap;
+  /** The board's width (height 1); missing: a square board (a game started before the wide map). */
+  w?: number;
   teams: 2 | 3 | 4;
   paintS: number;
   /** Epoch ms of the start, for the database's paint window. Null in the lobby. */
@@ -136,68 +151,74 @@ export type ClashEvent =
 
 // ---- Tiles ----
 
-const clampTile = (v: number) => Math.min(GRID - 1, Math.max(0, Math.floor(v * GRID)));
-export const tileOf = (p: Spot) => clampTile(p.y) * GRID + clampTile(p.x);
-export const tileCentre = (i: number): Spot => ({ x: ((i % GRID) + 0.5) / GRID, y: (Math.floor(i / GRID) + 0.5) / GRID });
+const clampTo = (v: number, n: number) => Math.min(n - 1, Math.max(0, Math.floor(v)));
+export const tileOf = (p: Spot, w = 1) => clampTo(p.y * GRID, GRID) * colsOf(w) + clampTo(p.x / tileW(w), colsOf(w));
+export const tileCentre = (i: number, w = 1): Spot => {
+  const cols = colsOf(w);
+  return { x: ((i % cols) + 0.5) * tileW(w), y: (Math.floor(i / cols) + 0.5) / GRID };
+};
 const dist = (a: Spot, b: Spot) => Math.hypot(a.x - b.x, a.y - b.y);
 export const FOUNTAIN_R = 0.15;
-/** Tiles inside the fountain can't be painted (the database checks this too). */
-export const inFountain = (i: number) => dist(tileCentre(i), { x: 0.5, y: 0.5 }) < FOUNTAIN_R;
+/** Tiles inside the fountain (in the middle of the board) can't be painted (the database checks this too). */
+export const inFountain = (i: number, w = 1) => dist(tileCentre(i, w), { x: w / 2, y: 0.5 }) < FOUNTAIN_R;
 
 /**
  * Tiles on the line from a to b, in steps of half a tile (classlive_clash_paint does the same). Wide: the 8 around each
  * as well (Big Brush).
  */
-export function lineTiles(a: Spot, b: Spot, wide: boolean): number[] {
+export function lineTiles(a: Spot, b: Spot, wide: boolean, w = 1): number[] {
+  const cols = colsOf(w);
   const steps = Math.max(1, Math.ceil(dist(a, b) / (TILE / 2)));
   const out = new Set<number>();
   for (let s = 0; s <= steps; s++) {
     const p = { x: a.x + ((b.x - a.x) * s) / steps, y: a.y + ((b.y - a.y) * s) / steps };
-    const cx = clampTile(p.x);
-    const cy = clampTile(p.y);
+    const cx = clampTo(p.x / tileW(w), cols);
+    const cy = clampTo(p.y * GRID, GRID);
     for (let dy = wide ? -1 : 0; dy <= (wide ? 1 : 0); dy++)
       for (let dx = wide ? -1 : 0; dx <= (wide ? 1 : 0); dx++) {
         const x = cx + dx;
         const y = cy + dy;
-        if (x >= 0 && y >= 0 && x < GRID && y < GRID) out.add(y * GRID + x);
+        if (x >= 0 && y >= 0 && x < cols && y < GRID) out.add(y * cols + x);
       }
   }
   return [...out];
 }
 
 /** A bomb's splat: tiles whose centre is within `r` tiles of the spot. */
-export function bombTiles(at: Spot, r: number): number[] {
+export function bombTiles(at: Spot, r: number, w = 1): number[] {
   const out: number[] = [];
-  for (let i = 0; i < TILES; i++) if (dist(tileCentre(i), at) <= r * TILE) out.push(i);
+  for (let i = 0; i < tileCount(w); i++) if (dist(tileCentre(i, w), at) <= r * TILE) out.push(i);
   return out;
 }
 
 /** Rainbow Cross: the pupil's whole row and column. */
-export function crossTiles(at: Spot): number[] {
-  const cx = clampTile(at.x);
-  const cy = clampTile(at.y);
+export function crossTiles(at: Spot, w = 1): number[] {
+  const cols = colsOf(w);
+  const cx = clampTo(at.x / tileW(w), cols);
+  const cy = clampTo(at.y * GRID, GRID);
   const out: number[] = [];
-  for (let i = 0; i < GRID; i++) out.push(cy * GRID + i, i * GRID + cx);
+  for (let i = 0; i < cols; i++) out.push(cy * cols + i);
+  for (let i = 0; i < GRID; i++) out.push(i * cols + cx);
   return [...new Set(out)];
 }
 
 /** One character a tile: '0' blank, '1' to '4' a team. */
-export const blankTiles = () => '0'.repeat(TILES);
+export const blankTiles = (w = 1) => '0'.repeat(tileCount(w));
 
 export function applyTiles(tiles: string, changes: [number, number][]): string {
   const a = tiles.split('');
-  for (const [i, team] of changes) if (i >= 0 && i < TILES) a[i] = String(team);
+  for (const [i, team] of changes) if (i >= 0 && i < a.length) a[i] = String(team);
   return a.join('');
 }
 
 /** Each team's score (golden tiles count more) and plain tile counts; index = team. */
-export function scoreTiles(tiles: string, golden: number[], hole: boolean): { score: number[]; tiles: number[] } {
+export function scoreTiles(tiles: string, golden: number[], hole: boolean, w = 1): { score: number[]; tiles: number[] } {
   const score = [0, 0, 0, 0, 0];
   const counts = [0, 0, 0, 0, 0];
   const gold = new Set(golden);
-  for (let i = 0; i < TILES; i++) {
+  for (let i = 0; i < tiles.length; i++) {
     const team = Number(tiles[i] ?? '0');
-    if (!team || (hole && inFountain(i))) continue;
+    if (!team || (hole && inFountain(i, w))) continue;
     counts[team]++;
     score[team] += gold.has(i) ? GOLDEN_WORTH : 1;
   }
@@ -206,14 +227,64 @@ export function scoreTiles(tiles: string, golden: number[], hole: boolean): { sc
 
 // ---- Movement (device and pretend pupils) ----
 
-/** The round as Four Corners' movement sees it (no gate). */
-export function moveRound(r: ClashRound | null): MoveRound | null {
-  if (!r) return null;
-  return { storms: r.storms, ice: r.ice, teleports: r.teleports, roller: r.roller, roller2: r.roller2, hole: r.hole, gate: null, runEnd: r.paintTo };
-}
-
+/**
+ * One step of movement (device and pretend pupils), as Four Corners' stepMove but on a board `w` wide (no gate): storms
+ * slow, ice keeps momentum, the fountain is a wall, teleports warp to the other end, rollers knock you flying.
+ */
 export function stepMove(m: MoveState, dir: Spot, dtMs: number, round: ClashRound | null, t: number, speed: boolean): MoveState {
-  return cornersStepMove(m, dir, dtMs, moveRound(round), t, { boost: speed, ghost: false });
+  const w = widthOf(round);
+  const mid = { x: w / 2, y: 0.5 };
+  const cx = (v: number) => Math.min(w - AVATAR_R, Math.max(AVATAR_R, v));
+  const cy = (v: number) => Math.min(1 - AVATAR_R, Math.max(AVATAR_R, v));
+  const dt = Math.min(100, Math.max(0, dtMs)) / 1000;
+  const rim = (p: Spot): Spot => {
+    if (!round?.hole || dist(p, mid) >= HOLE_R + AVATAR_R) return p;
+    const a = Math.atan2(p.y - mid.y, p.x - mid.x);
+    return { x: mid.x + Math.cos(a) * (HOLE_R + AVATAR_R), y: mid.y + Math.sin(a) * (HOLE_R + AVATAR_R) };
+  };
+  if (m.stun !== undefined && t < m.stun) {
+    // Flying: no steering, slowing down as you go; walls still hold.
+    const k = Math.max(0, 1 - dt * 2.2);
+    const v = { x: m.v.x * k, y: m.v.y * k };
+    return { ...m, p: rim({ x: cx(m.p.x + v.x * dt), y: cy(m.p.y + v.y * dt) }), v };
+  }
+  const len = Math.hypot(dir.x, dir.y);
+  const d = len > 1 ? { x: dir.x / len, y: dir.y / len } : dir;
+  let sp = SPEED * (speed ? BOOST : 1);
+  const onIce = !!round && round.ice.some((c) => dist(c, m.p) < c.r);
+  if (round && round.storms.some((c) => dist(c, m.p) < c.r)) sp *= STORM_SLOW;
+  let v: Spot;
+  if (onIce) {
+    // Slide: the joystick only nudges, and you keep going.
+    const k = Math.min(1, dt * 1.5);
+    v = { x: m.v.x + (d.x * sp - m.v.x) * k, y: m.v.y + (d.y * sp - m.v.y) * k };
+  } else v = { x: d.x * sp, y: d.y * sp };
+  let p = { x: cx(m.p.x + v.x * dt), y: cy(m.p.y + v.y * dt) };
+  if (round) {
+    p = rim(p);
+    for (const ro of rollersOf(round)) {
+      const r = rollerAt(ro, t);
+      if (dist(p, r) < ro.r + AVATAR_R) {
+        // Knocked flying, towards the middle of the board, plus a shove the way it rolls.
+        const s = ro.at < (ro.axis === 'x' ? 0.5 : w / 2) ? 1 : -1;
+        const phase = (t % ro.periodMs) / ro.periodMs;
+        const fwd = phase < 0.5 ? 1 : -1;
+        const kx = ro.axis === 'x' ? fwd * 0.45 : s;
+        const ky = ro.axis === 'x' ? s : fwd * 0.45;
+        const kl = Math.hypot(kx, ky);
+        const kv = { x: (kx / kl) * KNOCK_SPEED, y: (ky / kl) * KNOCK_SPEED };
+        const push = ro.r + AVATAR_R + 0.01;
+        const out = ro.axis === 'x' ? { x: p.x, y: cy(r.y + s * push) } : { x: cx(r.x + s * push), y: p.y };
+        return { p: out, v: kv, stun: t + KNOCK_MS, hitAt: t };
+      }
+    }
+    for (const tp of round.teleports) {
+      // Walking onto one end puts you just past the other (moving in the same direction, so you don't bounce back).
+      if (dist(m.p, tp.a) >= TELEPORT_R && dist(p, tp.a) < TELEPORT_R) return { p: { x: cx(tp.b.x + v.x * 0.25), y: cy(tp.b.y + v.y * 0.25) }, v };
+      if (dist(m.p, tp.b) >= TELEPORT_R && dist(p, tp.b) < TELEPORT_R) return { p: { x: cx(tp.a.x + v.x * 0.25), y: cy(tp.a.y + v.y * 0.25) }, v };
+    }
+  }
+  return { p, v: onIce ? v : { x: 0, y: 0 }, ...(m.hitAt !== undefined ? { hitAt: m.hitAt } : {}) };
 }
 
 // ---- Making rounds ----
@@ -238,54 +309,60 @@ export function mechanicsFor(n: number, random: () => number): Set<ClashMechanic
   return out;
 }
 
-function openSpot(random: () => number, hole: boolean): Spot {
+function openSpot(random: () => number, hole: boolean, w: number): Spot {
   for (let i = 0; i < 20; i++) {
-    const p = { x: 0.1 + random() * 0.8, y: 0.1 + random() * 0.8 };
-    if (hole && dist(p, { x: 0.5, y: 0.5 }) < FOUNTAIN_R + 0.06) continue;
+    const p = { x: 0.1 + random() * (w - 0.2), y: 0.1 + random() * 0.8 };
+    if (hole && dist(p, { x: w / 2, y: 0.5 }) < FOUNTAIN_R + 0.06) continue;
     return p;
   }
-  return { x: 0.5, y: 0.2 };
+  return { x: w / 2, y: 0.2 };
 }
 
 export function makeRound(g: ClashGame, n: number, startAt: number, random: () => number, players: number): ClashRound {
+  const w = widthOf(g);
   const has = mechanicsFor(n, random);
   const hole = has.has('fountain');
-  const storms: Circle[] = has.has('goo') ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({ ...openSpot(random, hole), r: 0.1 + random() * 0.05 })) : [];
-  const ice: Circle[] = has.has('slip') ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({ ...openSpot(random, hole), r: 0.1 + random() * 0.04 })) : [];
+  // A wider board gets about w times as many hazards, patches and power-ups (still the same number of rollers).
+  const many = (base: number) => Math.max(1, Math.round(base * w));
+  const storms: Circle[] = has.has('goo') ? Array.from({ length: many(1 + Math.floor(random() * 2)) }, () => ({ ...openSpot(random, hole, w), r: 0.1 + random() * 0.05 })) : [];
+  const ice: Circle[] = has.has('slip') ? Array.from({ length: many(1 + Math.floor(random() * 2)) }, () => ({ ...openSpot(random, hole, w), r: 0.1 + random() * 0.04 })) : [];
   const teleports: Teleport[] = [];
   if (has.has('portal')) {
     const along = 0.3 + random() * 0.4;
-    teleports.push(random() < 0.5 ? { a: { x: 0.06, y: along }, b: { x: 0.94, y: 1 - along } } : { a: { x: along, y: 0.06 }, b: { x: 1 - along, y: 0.94 } });
+    teleports.push(random() < 0.5 ? { a: { x: 0.06, y: along }, b: { x: w - 0.06, y: 1 - along } } : { a: { x: along * w, y: 0.06 }, b: { x: (1 - along) * w, y: 0.94 } });
   }
   const line = () => 0.15 + random() * 0.7;
-  const roller: Roller | null = has.has('roller') ? { axis: 'x', at: line(), r: 0.07, periodMs: 5000 + Math.floor(random() * 1500) } : null;
-  const roller2: Roller | null = has.has('roller') ? { axis: 'y', at: line(), r: 0.07, periodMs: 5600 + Math.floor(random() * 1500) } : null;
+  // A roller crossing the wide way takes w times as long, so it rolls as fast as on a square board.
+  const roller: Roller | null = has.has('roller') ? { axis: 'x', at: line(), r: 0.07, periodMs: Math.round((5000 + Math.floor(random() * 1500)) * w), ...(w > 1 ? { span: w } : {}) } : null;
+  const roller2: Roller | null = has.has('roller') ? { axis: 'y', at: line() * w, r: 0.07, periodMs: 5600 + Math.floor(random() * 1500) } : null;
   const golden: number[] = [];
   if (has.has('golden')) {
     // A few golden patches of 4 tiles.
-    for (let k = 0; k < 3; k++) {
-      const p = openSpot(random, hole);
-      const t = tileOf(p);
-      const x = Math.min(GRID - 2, t % GRID);
-      const y = Math.min(GRID - 2, Math.floor(t / GRID));
-      golden.push(y * GRID + x, y * GRID + x + 1, (y + 1) * GRID + x, (y + 1) * GRID + x + 1);
+    const cols = colsOf(w);
+    for (let k = 0; k < many(3); k++) {
+      const p = openSpot(random, hole, w);
+      const t = tileOf(p, w);
+      const x = Math.min(cols - 2, t % cols);
+      const y = Math.min(GRID - 2, Math.floor(t / cols));
+      golden.push(y * cols + x, y * cols + x + 1, (y + 1) * cols + x, (y + 1) * cols + x + 1);
     }
   }
   const items: ClashItem[] = [];
   if (has.has('items')) {
-    const count = Math.max(2, Math.min(8, Math.round(players / 5)));
-    for (let i = 0; i < count; i++) items.push({ id: g.nextItem++, power: pick(POWERS, random), by: null, ...openSpot(random, hole) });
+    const count = Math.max(2, Math.min(many(8), Math.round((players / 5) * w)));
+    for (let i = 0; i < count; i++) items.push({ id: g.nextItem++, power: pick(POWERS, random), by: null, ...openSpot(random, hole, w) });
   }
   const paintFrom = startAt + READY_MS;
   const paintTo = paintFrom + g.paintS * 1000;
   return {
+    ...(w !== 1 ? { w } : {}),
     n, startAt, paintFrom, paintTo, countEnd: paintTo + COUNT_MS, storms, ice, teleports, roller, roller2, hole,
-    golden: [...new Set(golden)].filter((i) => !(hole && inFountain(i))), items, result: null,
+    golden: [...new Set(golden)].filter((i) => !(hole && inFountain(i, w))), items, result: null,
   };
 }
 
-export function newClash(map: ClashMap, teams: 2 | 3 | 4, paintS: number = PAINT_DEFAULT_S): ClashGame {
-  return { kind: 'clash', map, teams, paintS: paintSeconds(paintS), zeroMs: null, round: null, wins: [0, 0, 0, 0, 0], totals: [0, 0, 0, 0, 0], history: [], mine: {}, nextItem: 1 };
+export function newClash(map: ClashMap, teams: 2 | 3 | 4, paintS: number = PAINT_DEFAULT_S, w: number = CLASH_W): ClashGame {
+  return { kind: 'clash', map, w, teams, paintS: paintSeconds(paintS), zeroMs: null, round: null, wins: [0, 0, 0, 0, 0], totals: [0, 0, 0, 0, 0], history: [], mine: {}, nextItem: 1 };
 }
 
 /** A new pupil joins the smallest team (the lowest-numbered of the smallest). */
@@ -297,16 +374,16 @@ export function teamFor(g: ClashGame): Team {
   return best;
 }
 
-export function freshMine(team: Team): ClashMine {
+export function freshMine(team: Team, w = 1): ClashMine {
   return {
     team, painted: 0, bombs: 0, right: 0, wrong: 0, streak: 0, bestStreak: 0, answered: 0, lastAt: -ANSWER_GAP_MS, held: null, grabs: 0, powersUsed: 0,
-    brushTo: null, speedTo: null, bombTiles: 0, placed: 0, spot: { x: 0.5, y: 0.5 },
+    brushTo: null, speedTo: null, bombTiles: 0, placed: 0, spot: { x: w / 2, y: 0.5 },
   };
 }
 
 /** Where each team starts: its own side of the board. */
-export function startSpot(team: Team, teams: number, i: number): Spot {
-  const sides: Spot[] = teams === 2 ? [{ x: 0.15, y: 0.5 }, { x: 0.85, y: 0.5 }] : [{ x: 0.15, y: 0.15 }, { x: 0.85, y: 0.15 }, { x: 0.85, y: 0.85 }, { x: 0.15, y: 0.85 }];
+export function startSpot(team: Team, teams: number, i: number, w = 1): Spot {
+  const sides: Spot[] = (teams === 2 ? [{ x: 0.15, y: 0.5 }, { x: 0.85, y: 0.5 }] : [{ x: 0.15, y: 0.15 }, { x: 0.85, y: 0.15 }, { x: 0.85, y: 0.85 }, { x: 0.15, y: 0.85 }]).map((s) => ({ x: s.x * w, y: s.y }));
   const c = sides[(team - 1) % sides.length];
   return { x: c.x + ((i % 3) - 1) * 0.04, y: c.y + ((Math.floor(i / 3) % 3) - 1) * 0.04 };
 }
@@ -346,7 +423,7 @@ export function advance(g: ClashGame, t: number, order: string[], board: { tiles
     }
     if (r.result === null) {
       if (t < r.paintTo || !board) break;
-      const { score, tiles } = scoreTiles(board.tiles, r.golden, r.hole);
+      const { score, tiles } = scoreTiles(board.tiles, r.golden, r.hole, widthOf(g));
       const top = Math.max(...score.slice(1, g.teams + 1));
       const winners = top > 0 ? ([1, 2, 3, 4] as Team[]).filter((tm) => tm <= g.teams && score[tm] === top) : [];
       r.result = { score, tiles, winners };
@@ -406,7 +483,8 @@ export function answered(g: ClashGame, who: string, right: boolean, at: Spot | u
   m.right++;
   m.streak++;
   m.bestStreak = Math.max(m.bestStreak, m.streak);
-  const spot = at ?? { x: 0.5, y: 0.5 };
+  const w = widthOf(g);
+  const spot = at ?? { x: w / 2, y: 0.5 };
   const power = m.held;
   const events: ClashEvent[] = [];
   if (power) {
@@ -417,9 +495,9 @@ export function answered(g: ClashGame, who: string, right: boolean, at: Spot | u
     if (power === 'speed') m.speedTo = t + POWER_MS;
   }
   const radius = bombRadius(m.streak, power === 'mega');
-  let tiles = bombTiles(spot, radius);
-  if (power === 'cross') tiles = [...new Set([...tiles, ...crossTiles(spot)])];
-  if (r.hole) tiles = tiles.filter((i) => !inFountain(i));
+  let tiles = bombTiles(spot, radius, w);
+  if (power === 'cross') tiles = [...new Set([...tiles, ...crossTiles(spot, w)])];
+  if (r.hole) tiles = tiles.filter((i) => !inFountain(i, w));
   m.bombs++;
   m.bombTiles += tiles.length;
   events.push({ type: 'clash_bomb', t, pupil: who, team: m.team, x: spot.x, y: spot.y, r: radius, ...(power ? { power } : {}) });

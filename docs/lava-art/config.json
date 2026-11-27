@@ -28,6 +28,19 @@
    "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, rocks, islands, shore, frame, border"
   },
   {
+   "name": "lake-volcano-wide",
+   "prompt": "A top-down painted texture of a bubbling lake of bright orange molten lava with dark crusted swirls, glowing cracks and little sparks, seen straight down from above, even all over, the same everywhere, seamless, no edges, no shore, nothing floating in it, wide picture, no writing anywhere. Wide landscape widescreen picture, the board fills the whole wide frame edge to edge.",
+   "size": [
+    2048,
+    1280
+   ],
+   "kind": "scene",
+   "folder": "lava",
+   "file": "lake-volcano-wide",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, rocks, islands, shore, frame, border"
+  },
+  {
    "name": "tile-volcano",
    "prompt": "A seamless close-up top-down texture of rough dark grey volcanic basalt rock with a few tiny glowing cracks, seen straight down from above, the rock surface covers the entire picture right out to every edge and corner, no slab outline, no background showing, flat even lighting, no writing anywhere.",
    "size": [
@@ -119,6 +132,19 @@
    "kind": "scene",
    "folder": "lava",
    "file": "lake-dragon",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, rocks, islands, shore, frame, border"
+  },
+  {
+   "name": "lake-dragon-wide",
+   "prompt": "A top-down painted texture of a lake of glowing red-orange lava with dark rocky swirls and golden sparkles, seen straight down from above, even all over, the same everywhere, seamless, no edges, no shore, nothing floating in it, wide picture, no writing anywhere. Wide landscape widescreen picture, the board fills the whole wide frame edge to edge.",
+   "size": [
+    2048,
+    1280
+   ],
+   "kind": "scene",
+   "folder": "lava",
+   "file": "lake-dragon-wide",
    "style": "s",
    "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, rocks, islands, shore, frame, border"
   },
@@ -218,6 +244,19 @@
    "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, rocks, islands, shore, frame, border, pot, crucible, container, bowl, rim, pan, vignette, whirlpool, spiral, vortex, dark corners"
   },
   {
+   "name": "lake-forge-wide",
+   "prompt": "A seamless repeating top-down texture of flowing bright yellow-orange molten metal, long wavy streaks of liquid gold with thin dark slag ripples running in straight parallel horizontal lines from left to right, and sparks, across the whole picture, seen straight down from above, the same pattern everywhere right out to every edge and corner, no container, no rim, no shore, nothing floating in it, wide picture, no writing anywhere. Wide landscape widescreen picture, the board fills the whole wide frame edge to edge.",
+   "size": [
+    2048,
+    1280
+   ],
+   "kind": "scene",
+   "folder": "lava",
+   "file": "lake-forge-wide",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, rocks, islands, shore, frame, border, pot, crucible, container, bowl, rim, pan, vignette, whirlpool, spiral, vortex, dark corners"
+  },
+  {
    "name": "tile-forge",
    "prompt": "A top-down painted texture of a chunky square riveted iron floor plate, dark steel with rivets in the corners, seen straight down from above, filling the whole square picture edge to edge, flat even lighting, no writing anywhere.",
    "size": [
@@ -309,6 +348,19 @@
    "kind": "scene",
    "folder": "lava",
    "file": "lake-planet",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, rocks, islands, shore, frame, border"
+  },
+  {
+   "name": "lake-planet-wide",
+   "prompt": "A top-down painted texture of a lake of glowing magenta and orange alien lava with dark swirls and glowing crystals, seen straight down from above, even all over, the same everywhere, seamless, no edges, no shore, nothing floating in it, wide picture, no writing anywhere. Wide landscape widescreen picture, the board fills the whole wide frame edge to edge.",
+   "size": [
+    2048,
+    1280
+   ],
+   "kind": "scene",
+   "folder": "lava",
+   "file": "lake-planet-wide",
    "style": "s",
    "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, perspective view, side view, rocks, islands, shore, frame, border"
   },

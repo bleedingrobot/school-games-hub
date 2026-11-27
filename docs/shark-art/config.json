@@ -27,6 +27,18 @@
       "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view"
     },
     {
+      "name": "map-lagoon-wide",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down painted game board of a sunny tropical lagoon: a big wide oval bay of clear turquoise water filling the picture, golden sand beach, palm trees and bright green bushes round the edges, in the very middle a small round wooden jetty platform, the water calm, open and empty everywhere else, top-down bird's-eye view straight down, game board, wide picture, no boats, no characters, no creatures, no writing anywhere. Wide landscape widescreen picture, the board fills the whole wide frame edge to edge, the centrepiece exactly in the middle.",
+      "size": [
+        2048,
+        1280
+      ],
+      "kind": "scene",
+      "folder": "shark",
+      "file": "map-lagoon-wide",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view"
+    },
+    {
       "name": "back-lagoon",
       "prompt": "A wide backdrop painting: bright sunny tropical sky, white clouds, palm islands. The middle is calm, darker and softer, an empty open middle with nothing in it, just plain soft water, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
       "size": [
@@ -59,6 +71,18 @@
       "kind": "scene",
       "folder": "shark",
       "file": "map-reef",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view"
+    },
+    {
+      "name": "map-reef-wide",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down painted game board of a coral reef bay: a big wide oval bay of clear aqua water with soft sandy patches seen through it filling the picture, pink and orange coral and smooth rocks round the edges, in the very middle a small round wooden jetty platform, the water calm, open and empty everywhere else, top-down bird's-eye view straight down, game board, wide picture, no boats, no characters, no creatures, no writing anywhere. Wide landscape widescreen picture, the board fills the whole wide frame edge to edge, the centrepiece exactly in the middle.",
+      "size": [
+        2048,
+        1280
+      ],
+      "kind": "scene",
+      "folder": "shark",
+      "file": "map-reef-wide",
       "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view"
     },
     {
@@ -97,6 +121,18 @@
       "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view, ship, ships, shipwreck, sails, boat"
     },
     {
+      "name": "map-pirate-wide",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down painted game board of a pirate cove: a big wide oval bay of deep teal water filling the picture, dark rocky cliffs, barrels and treasure chests round the edges, in the very middle a small round wooden jetty platform, the water calm, open and empty everywhere else, top-down bird's-eye view straight down, game board, wide picture, no boats, no ships, no shipwrecks, no characters, no creatures, no writing anywhere. Wide landscape widescreen picture, the board fills the whole wide frame edge to edge, the centrepiece exactly in the middle.",
+      "size": [
+        2048,
+        1280
+      ],
+      "kind": "scene",
+      "folder": "shark",
+      "file": "map-pirate-wide",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view, ship, ships, shipwreck, sails, boat"
+    },
+    {
       "name": "back-pirate",
       "prompt": "A wide backdrop painting: a pirate cove at sunset with a big pirate ship at anchor and a skull-shaped rock, orange sky. The middle is calm, darker and softer, an empty open middle with nothing in it, just plain soft water, with all the detail round the edges. Landscape, no characters, no writing anywhere.",
       "size": [
@@ -129,6 +165,18 @@
       "kind": "scene",
       "folder": "shark",
       "file": "map-icy",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view, penguin, penguins, birds, seals, polar bear"
+    },
+    {
+      "name": "map-icy-wide",
+      "prompt": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. A top-down painted game board of a frozen winter bay: a big wide oval bay of deep cold blue water filling the picture, smooth snowy ice shelves and icebergs round the edges, the snow completely empty and untouched, in the very middle a small round wooden jetty platform, the water calm, open and empty everywhere else, top-down bird's-eye view straight down, game board, wide picture, no boats, no penguins, no animals, no characters, no creatures, no writing anywhere. Wide landscape widescreen picture, the board fills the whole wide frame edge to edge, the centrepiece exactly in the middle.",
+      "size": [
+        2048,
+        1280
+      ],
+      "kind": "scene",
+      "folder": "shark",
+      "file": "map-icy-wide",
       "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, creatures, people, animals, statues, perspective view, side view, penguin, penguins, birds, seals, polar bear"
     },
     {

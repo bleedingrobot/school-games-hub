@@ -34,5 +34,9 @@
   "team-red": 2,
   "team-blue": 1,
   "team-green": 2,
-  "team-yellow": 2
+  "team-yellow": 2,
+  "map-park-wide": 1,
+  "map-rooftops-wide": 1,
+  "map-beach-wide": 1,
+  "map-space-wide": 1
 }

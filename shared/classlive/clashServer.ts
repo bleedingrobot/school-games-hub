@@ -4,7 +4,7 @@
  * the views, and the pupil steps (`clashStep`).
  */
 import {
-  advance, answered, canAsk, champions, clashDone, freshMine, grab, needsTiles, nextDeadline, painting, standings, startSpot, teamFor, ANSWER_GAP_MS,
+  advance, answered, canAsk, champions, clashDone, freshMine, grab, needsTiles, nextDeadline, painting, standings, startSpot, teamFor, widthOf, ANSWER_GAP_MS,
   type ClashGame, type ClashItem, type ClashMap, type ClashPower, type ClashRound, type Team,
 } from './clash';
 import type { Spot } from './corners';
@@ -18,6 +18,8 @@ type Busy = 'busy';
 export interface ClashPublic {
   kind: 'clash';
   map: ClashMap;
+  /** The board's width (height 1); missing: square. */
+  w?: number;
   teams: 2 | 3 | 4;
   /** Epoch ms of the start (pads line their clock up with the database's paint window). */
   zeroMs: number | null;
@@ -54,18 +56,18 @@ export function clashPublic(g: ClashGame): ClashPublic {
   const sizes = [0, 0, 0, 0, 0];
   for (const m of Object.values(g.mine)) sizes[m.team]++;
   return {
-    kind: 'clash', map: g.map, teams: g.teams, zeroMs: g.zeroMs,
+    kind: 'clash', map: g.map, ...(g.w !== undefined ? { w: g.w } : {}), teams: g.teams, zeroMs: g.zeroMs,
     round: g.round ? { ...g.round, items: g.round.items.filter((x) => !x.by).map(({ by: _by, ...x }) => x) } : null,
     wins: g.wins, totals: g.totals, history: g.history, sizes,
   };
 }
 
 export function clashPlayer(s: Session, g: ClashGame, id: string): ClashPlayer {
-  const m = g.mine[id] ?? freshMine(1);
+  const m = g.mine[id] ?? freshMine(1, widthOf(g));
   const place = s.state === 'over' ? (standings(g).find((x) => x.team === m.team)?.place ?? null) : null;
   return {
     kind: 'clash', team: m.team, painted: m.painted, bombs: m.bombs, right: m.right, wrong: m.wrong, streak: m.streak, bestStreak: m.bestStreak,
-    held: m.held, brushTo: m.brushTo, speedTo: m.speedTo, nextAt: m.lastAt + ANSWER_GAP_MS, placed: m.placed ?? 0, spot: m.spot ?? startSpot(m.team, g.teams, 0),
+    held: m.held, brushTo: m.brushTo, speedTo: m.speedTo, nextAt: m.lastAt + ANSWER_GAP_MS, placed: m.placed ?? 0, spot: m.spot ?? startSpot(m.team, g.teams, 0, widthOf(g)),
     place, grabs: m.grabs, powers: m.powersUsed,
   };
 }
@@ -73,9 +75,10 @@ export function clashPlayer(s: Session, g: ClashGame, id: string): ClashPlayer {
 /** A pupil joins: the smallest team, at its side of the board. */
 export function clashJoin(g: ClashGame, who: string) {
   const team = teamFor(g);
-  const m = freshMine(team);
+  const w = widthOf(g);
+  const m = freshMine(team, w);
   const same = Object.values(g.mine).filter((x) => x.team === team).length;
-  m.spot = startSpot(team, g.teams, same);
+  m.spot = startSpot(team, g.teams, same, w);
   m.placed = 0;
   g.mine[who] = m;
 }
@@ -100,7 +103,7 @@ export async function clashTick(sv: ClassLiveServices, room: number, s: Session,
     for (const id of s.order) {
       const m = g.mine[id];
       if (!m) continue;
-      m.spot = startSpot(m.team, g.teams, count[m.team]++);
+      m.spot = startSpot(m.team, g.teams, count[m.team]++, widthOf(g));
       m.placed = (m.placed ?? 0) + 1;
     }
   }

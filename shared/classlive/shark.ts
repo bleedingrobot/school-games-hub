@@ -3,14 +3,15 @@
  * `variant: 'shark'`), so the room, positions, jail, questions, power-ups and rewards all run through Four Corners'
  * code; only what differs lives here.
  *
- * The board is a round bay in the unit square. Rope lines split it into four coloured quarters that slowly spin round
+ * The board is a round bay in the unit square (an oval bay on a wide board, `w` wide: see `bayCentre`, `inBay`,
+ * `quarterOf`). Rope lines split it into four coloured quarters that slowly spin round
  * the bay (from round 2, faster each round). Pupils start on the jetty in the middle. When the run ends the shark strikes
  * one quarter (two in a "two sharks" round, none when it is full): everyone in it is caught, and so is anyone still on
  * the jetty, unless they are hiding under a boat. Boats drift round the bay; each has a few seats, and the pupils nearest
  * its middle fit.
  */
 import {
-  ANSWER_GAP_MS, AVATAR_R, CORNERS, JAIL_RIGHT, READY_MS, ROLL_MS, runMs, SHOW_MS, START, startSpot, stepMove,
+  ANSWER_GAP_MS, AVATAR_R, centreOf, CORNERS, JAIL_RIGHT, READY_MS, ROLL_MS, runMs, SHOW_MS, START, startSpot, stepMove, widthOf,
   type Circle, type Corner, type CornersEvent, type CornersGame, type CornersMine, type CornerMap, type Item, type MoveState,
   type Positions, type Power, type Roller, type Round, type Spot, type Teleport, POWERS, RUN_DEFAULT_S, runSeconds,
 } from './corners';
@@ -46,7 +47,18 @@ export const SHARK_POWER_WORDS: Record<Power, { name: string; emoji: string; how
 // ---- Sizes and times ----
 
 export const CENTRE = START;
-/** The bay's radius (the water inside the unit square). */
+/**
+ * How wide the board is, in board heights (27 Nov 2026 NZ: widescreen, so it fills a projector). The bay is then an
+ * oval `POOL_R * w` across and `POOL_R` down. Games made before are square (1, no `w`).
+ *
+ * Wide maths: a spot's "bay coordinates" squash x by w ((x - w/2) / w, y - 0.5), which turns the oval back into the
+ * round bay. Quarters, the spin, boat orbits, whirlpools and the shark's strike spots are angles and radii in bay
+ * coordinates (so the four quarters always have the same area); the jetty, boats, hazards and avatars stay true circles.
+ */
+export const SHARK_W = 1.6;
+/** The middle of the bay on a board `w` wide. */
+export const bayCentre = (w = 1): Spot => centreOf(w);
+/** The bay's radius (the water inside the unit square; on a wide board, its half height). */
 export const POOL_R = 0.47;
 /** The jetty in the middle: still on it when the shark strikes means caught. */
 export const DOCK_R = 0.15;
@@ -105,38 +117,57 @@ export function spinAt(r: Pick<BayRound, 'spin0' | 'spinRate' | 'startAt' | 'run
   return r.spin0 + r.spinRate * s;
 }
 
+/** The angle of a spot round the bay's middle, in bay coordinates (x squashed by w), as the quarters are drawn. */
+export function bayAngle(p: Spot, w = 1): number {
+  return Math.atan2(p.y - 0.5, (p.x - w / 2) / w);
+}
+
+/** A spot at this angle and radius in bay coordinates (radius 1 is the round bay's edge on a square board). */
+export function bayPoint(a: number, radius: number, w = 1): Spot {
+  return { x: w / 2 + Math.cos(a) * radius * w, y: 0.5 + Math.sin(a) * radius };
+}
+
 /** Which quarter a spot is in at this turn, or null on the jetty. 0 starts top left, then clockwise. */
-export function quarterOf(p: Spot, spin: number): Corner | null {
-  if (dist(p, CENTRE) < DOCK_R) return null;
-  const a = Math.atan2(p.y - CENTRE.y, p.x - CENTRE.x) - spin + Math.PI;
+export function quarterOf(p: Spot, spin: number, w = 1): Corner | null {
+  if (dist(p, bayCentre(w)) < DOCK_R) return null;
+  const a = bayAngle(p, w) - spin + Math.PI;
   const n = ((a % TAU) + TAU) % TAU;
   return (Math.floor(n / (Math.PI / 2)) % 4) as Corner;
 }
 
 /** The middle of a quarter (for a Jet ski, the shark's leap and labels), at this turn. */
-export function quarterMid(q: Corner, spin: number, radius = 0.3): Spot {
-  const a = spin - Math.PI + (q + 0.5) * (Math.PI / 2);
-  return { x: CENTRE.x + Math.cos(a) * radius, y: CENTRE.y + Math.sin(a) * radius };
+export function quarterMid(q: Corner, spin: number, radius = 0.3, w = 1): Spot {
+  return bayPoint(spin - Math.PI + (q + 0.5) * (Math.PI / 2), radius, w);
 }
 
-export function boatAt(b: Boat, r: Pick<BayRound, 'startAt' | 'runEnd'>, t: number): Spot {
+/** Where a boat is: it drifts round the bay's middle (an oval on a wide board, `r.w`). */
+export function boatAt(b: Boat, r: Pick<BayRound, 'startAt' | 'runEnd' | 'w'>, t: number): Spot {
   const s = Math.max(0, Math.min(t, r.runEnd) - r.startAt) / 1000;
-  const a = b.a0 + b.w * s;
-  return { x: CENTRE.x + Math.cos(a) * b.orbit, y: CENTRE.y + Math.sin(a) * b.orbit };
+  return bayPoint(b.a0 + b.w * s, b.orbit, widthOf(r));
 }
 
-/** Keeps a spot in the water. */
-export function inBay(p: Spot): Spot {
-  const d = dist(p, CENTRE);
-  const most = POOL_R - AVATAR_R;
-  if (d <= most) return p;
-  return { x: CENTRE.x + ((p.x - CENTRE.x) / d) * most, y: CENTRE.y + ((p.y - CENTRE.y) / d) * most };
+/** The way a boat points at a spot on its oval (radians, screen angle), for drawing it. */
+export function boatHeading(b: Boat, p: Spot, w = 1): number {
+  const a = bayAngle(p, w);
+  const turn = b.w > 0 ? 1 : -1;
+  return Math.atan2(Math.cos(a) * turn, -Math.sin(a) * w * turn);
+}
+
+/** Keeps a spot in the water (inside the oval on a board `w` wide). */
+export function inBay(p: Spot, w = 1): Spot {
+  const c = bayCentre(w);
+  const ax = POOL_R * w - AVATAR_R;
+  const ay = POOL_R - AVATAR_R;
+  const d = Math.hypot((p.x - c.x) / ax, (p.y - c.y) / ay);
+  if (d <= 1) return p;
+  return { x: c.x + (p.x - c.x) / d, y: c.y + (p.y - c.y) / d };
 }
 
 /** One step of swimming: Four Corners' movement (seaweed, currents, whirlpools, waves), kept inside the bay. */
-export function sharkMove(m: MoveState, dir: Spot, dtMs: number, round: Parameters<typeof stepMove>[3], t: number, opts: { boost: boolean; ghost: boolean }): MoveState {
-  const next = stepMove(m, dir, dtMs, round ? { ...round, hole: false, gate: null } : null, t, opts);
-  return { ...next, p: inBay(next.p) };
+export function sharkMove(m: MoveState, dir: Spot, dtMs: number, round: Parameters<typeof stepMove>[3], t: number, opts: { boost: boolean; ghost: boolean; w?: number }): MoveState {
+  const w = round?.w ?? opts.w ?? 1;
+  const next = stepMove(m, dir, dtMs, round ? { ...round, hole: false, gate: null } : null, t, { ...opts, w });
+  return { ...next, p: inBay(next.p, w) };
 }
 
 // ---- Making rounds ----
@@ -161,11 +192,11 @@ export function sharkMechanicsFor(n: number, random: () => number): Set<SharkMec
   return out;
 }
 
-/** Somewhere in the open water (off the jetty, away from the edge). */
-function waterSpot(random: () => number): Spot {
+/** Somewhere in the open water (off the jetty, away from the edge) of a bay on a board `w` wide. */
+function waterSpot(random: () => number, w = 1): Spot {
   const a = random() * TAU;
   const r = DOCK_R + 0.06 + random() * (POOL_R - DOCK_R - 0.14);
-  return { x: CENTRE.x + Math.cos(a) * r, y: CENTRE.y + Math.sin(a) * r };
+  return bayPoint(a, r, w);
 }
 
 /** How many boats and seats for a class: about a third of the class fits. */
@@ -184,24 +215,28 @@ export function spinRateFor(n: number, frenzy: boolean): number {
 export function makeBayRound(g: CornersGame, n: number, startAt: number, random: () => number, players: number): BayRound {
   const has = sharkMechanicsFor(n, random);
   const frenzy = g.halfAt !== undefined ? startAt >= g.halfAt : n >= 8;
-  const storms: Circle[] = has.has('storm') ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({ ...waterSpot(random), r: 0.1 + random() * 0.05 })) : [];
-  const ice: Circle[] = has.has('ice') ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({ ...waterSpot(random), r: 0.09 + random() * 0.04 })) : [];
+  const w = widthOf(g);
+  // A wider bay gets more of everything, so the extra water isn't empty (the same as before in a round one).
+  const more = (k: number) => Math.round(k * w);
+  const storms: Circle[] = has.has('storm') ? Array.from({ length: more(1 + Math.floor(random() * 2)) }, () => ({ ...waterSpot(random, w), r: 0.1 + random() * 0.05 })) : [];
+  const ice: Circle[] = has.has('ice') ? Array.from({ length: more(1 + Math.floor(random() * 2)) }, () => ({ ...waterSpot(random, w), r: 0.09 + random() * 0.04 })) : [];
   const teleports: Teleport[] = [];
   if (has.has('teleport')) {
     const a = random() * TAU;
-    const at = (ang: number) => ({ x: CENTRE.x + Math.cos(ang) * 0.36, y: CENTRE.y + Math.sin(ang) * 0.36 });
-    teleports.push({ a: at(a), b: at(a + Math.PI) });
+    teleports.push({ a: bayPoint(a, 0.36, w), b: bayPoint(a + Math.PI, 0.36, w) });
   }
-  // Waves roll across the open water (not through the jetty).
+  // Waves roll across the open water (not through the jetty); across a wide bay they roll the whole width (`span`),
+  // a little slower so they cross at the same speed.
   const line = () => (random() < 0.5 ? 0.27 + random() * 0.06 : 0.67 + random() * 0.06);
-  const roller: Roller | null = has.has('roller') ? { axis: 'x', at: line(), r: 0.07, periodMs: 4800 + Math.floor(random() * 1500) } : null;
-  const roller2: Roller | null = has.has('roller') && random() < 0.6 ? { axis: 'y', at: line(), r: 0.07, periodMs: 5400 + Math.floor(random() * 1500) } : null;
+  const roller: Roller | null = has.has('roller')
+    ? { axis: 'x', at: line(), r: 0.07, periodMs: Math.round((4800 + Math.floor(random() * 1500)) * w), ...(w !== 1 ? { span: w } : {}) } : null;
+  const roller2: Roller | null = has.has('roller') && random() < 0.6 ? { axis: 'y', at: w / 2 + (line() - 0.5) * w, r: 0.07, periodMs: 5400 + Math.floor(random() * 1500) } : null;
   const twistOn = has.has('twist') || (frenzy && n >= SHARK_UNLOCK.twist && random() < 0.25);
   const twist = twistOn ? (random() < 0.65 ? 'two' : 'lucky') : null;
   const items: Item[] = [];
   if (has.has('items')) {
-    const count = Math.max(2, Math.min(8, Math.round(players / 6)));
-    for (let i = 0; i < count; i++) items.push({ id: g.nextItem++, power: pick(POWERS, random), by: null, ...waterSpot(random) });
+    const count = Math.max(2, Math.min(more(8), Math.round((players / 6) * w)));
+    for (let i = 0; i < count; i++) items.push({ id: g.nextItem++, power: pick(POWERS, random), by: null, ...waterSpot(random, w) });
   }
   const { count, seats } = boatsFor(players);
   const dirB = random() < 0.5 ? 1 : -1;
@@ -214,13 +249,14 @@ export function makeBayRound(g: CornersGame, n: number, startAt: number, random:
   return {
     n, startAt, runEnd: startAt + run, rollEnd: startAt + run + ROLL_MS, showEnd: startAt + run + ROLL_MS + SHOW_MS,
     storms, ice, teleports, roller, roller2, hole: false, fog: has.has('fog'), gate: null, twist, items, rolled, caught: null, saved: [],
+    ...(w !== 1 ? { w } : {}),
     bay: true, spin0: random() * TAU, spinRate: (random() < 0.5 ? 1 : -1) * spinRateFor(n, frenzy) || 0, boats, style: random() < 0.5 ? 'leap' : 'spot',
   };
 }
 
 export function newShark(bay: BayMap, runS: number = RUN_DEFAULT_S): SharkGame {
   // `map` stays a Four Corners map for code that only knows those; `bay` is Shark Bay's own.
-  return { kind: 'corners', variant: 'shark', bay, map: 'snow' as CornerMap, round: null, mine: {}, nextItem: 1, runS: runSeconds(runS) };
+  return { kind: 'corners', variant: 'shark', bay, map: 'snow' as CornerMap, w: SHARK_W, round: null, mine: {}, nextItem: 1, runS: runSeconds(runS) };
 }
 
 export const bayRound = (r: Round | null | undefined): BayRound | null => (r && (r as BayRound).bay ? (r as BayRound) : null);
@@ -252,12 +288,13 @@ function endBayRun(g: CornersGame, r: BayRound, order: string[], positions: Posi
   const saved: string[] = [];
   const lucky = r.twist === 'lucky';
   const spin = spinAt(r, r.runEnd);
+  const w = widthOf(r);
   const free = order.filter((id) => g.mine[id] && g.mine[id].jailedIn === null);
   const at = (id: string) => positions[id] ?? g.mine[id].spot;
   const boated = seated(r, free.map((id) => ({ id, p: at(id) })));
   const inQ = [0, 0, 0, 0];
   for (const id of free) {
-    const q = quarterOf(at(id), spin);
+    const q = quarterOf(at(id), spin, w);
     if (q !== null && !boated.has(id)) inQ[q]++;
   }
   if (!lucky) {
@@ -269,7 +306,7 @@ function endBayRun(g: CornersGame, r: BayRound, order: string[], positions: Posi
     const m = g.mine[id] as CornersMine & SharkMineExtra;
     const p = at(id);
     m.spot = { x: p.x, y: p.y };
-    const q = quarterOf(p, spin);
+    const q = quarterOf(p, spin, w);
     const struck = q !== null && !lucky && r.rolled.includes(q);
     const inBoat = boated.has(id);
     const out = !inBoat && (q === null || struck);
@@ -327,7 +364,7 @@ export function sharkAdvance(g: CornersGame, t: number, order: string[], positio
         m.jailedIn = null;
         m.jailRight = 0;
         m.escapes++;
-        m.spot = startSpot(order.indexOf(id));
+        m.spot = startSpot(order.indexOf(id), widthOf(g));
         m.placed++;
         events.push({ type: 'escape', t: startAt, pupil: id });
       }
@@ -344,7 +381,7 @@ export function sharkQuestionFor(g: CornersGame, who: string, at: Spot | undefin
   if (!m) return null;
   if (m.jailedIn !== null) return m.jailRight < JAIL_RIGHT ? 'jail' : null;
   const r = bayRound(g.round);
-  if (!m.held || !r || r.caught !== null || t >= r.runEnd || !at || dist(at, CENTRE) < DOCK_R) return null;
+  if (!m.held || !r || r.caught !== null || t >= r.runEnd || !at || dist(at, bayCentre(widthOf(r))) < DOCK_R) return null;
   return 'power';
 }
 
@@ -355,8 +392,9 @@ export function sharkJump(g: CornersGame, who: string, quarter: unknown, order: 
   if (!r || !m || m.jumpIn !== r.n || r.caught !== null || t >= r.runEnd || m.jailedIn !== null) return { ok: false };
   if (!CORNERS.includes(quarter as Corner)) return { ok: false };
   const i = order.indexOf(who);
-  const c = quarterMid(quarter as Corner, spinAt(r, t), 0.3 + ((i % 3) - 1) * 0.04);
-  const spot = inBay({ x: c.x + (((i % 5) - 2) * 0.012), y: c.y + ((Math.floor(i / 5) % 5) - 2) * 0.012 });
+  const w = widthOf(r);
+  const c = quarterMid(quarter as Corner, spinAt(r, t), 0.3 + ((i % 3) - 1) * 0.04, w);
+  const spot = inBay({ x: c.x + (((i % 5) - 2) * 0.012), y: c.y + ((Math.floor(i / 5) % 5) - 2) * 0.012 }, w);
   m.jumpIn = null;
   m.spot = spot;
   m.placed++;
@@ -365,7 +403,7 @@ export function sharkJump(g: CornersGame, who: string, quarter: unknown, order: 
 
 /** A pretend pupil's way: towards the middle of its quarter (it moves), or to a boat. */
 export function sharkPretendDir(p: Spot, target: Corner, r: BayRound | null, t: number, toBoat: boolean, random: () => number): Spot {
-  let c = r ? quarterMid(target, spinAt(r, t)) : quarterMid(target, 0);
+  let c = r ? quarterMid(target, spinAt(r, t), 0.3, widthOf(r)) : quarterMid(target, 0);
   if (r && toBoat && r.boats.length) {
     const near = r.boats.map((b) => boatAt(b, r, t)).sort((a, b) => dist(a, p) - dist(b, p))[0];
     c = near;

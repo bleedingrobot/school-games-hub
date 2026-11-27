@@ -12,7 +12,7 @@ import {
 import type { Spot } from '../../../shared/classlive/corners';
 import type { ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
-import { ClashBoard, ClashToken, teamColour, withTiles, type Splat } from './ClashBoard';
+import { at, ClashBoard, ClashToken, teamColour, withTiles, type Splat } from './ClashBoard';
 import type { ClassLiveLink } from './link';
 import { painted } from './paintedArt';
 import { LINES, next, type LineKey } from './voiceLines';
@@ -41,11 +41,13 @@ export function ClashScene({ screen, game, link, room, clock, sound, say, onTick
 }) {
   const t = screen.startedAt === null ? 0 : clock() - screen.startedAt;
   const r = game.round;
+  /** The board's width (height 1): wide since 27 Nov 2026. */
+  const bw = r?.w ?? game.w ?? 1;
   const targets = useRef<Record<string, Spot>>({});
   const shown = useRef<Record<string, Spot>>({});
   const [, setFrame] = useState(0);
   const [avatars, setAvatars] = useState<Record<string, unknown>>({});
-  const [tiles, setTiles] = useState(blankTiles());
+  const [tiles, setTiles] = useState(blankTiles(bw));
   const tilesRound = useRef(0);
   const since = useRef<number | null>(null);
   const [splats, setSplats] = useState<Splat[]>([]);
@@ -74,10 +76,10 @@ export function ClashScene({ screen, game, link, room, clock, sound, say, onTick
           if (since.current !== null) {
             // A new round: read the whole (clean) board next time.
             since.current = null;
-            setTiles(blankTiles());
+            setTiles(blankTiles(bw));
             return;
           }
-          setTiles(withTiles(blankTiles(), b.tiles));
+          setTiles(withTiles(blankTiles(bw), b.tiles));
         } else if (b.tiles.length) setTiles((old) => withTiles(old, b.tiles));
         since.current = b.now - 50;
       }, () => undefined);
@@ -85,7 +87,7 @@ export function ClashScene({ screen, game, link, room, clock, sound, say, onTick
     read();
     const id = window.setInterval(read, paintingNow ? 300 : 1500);
     return () => { live = false; window.clearInterval(id); };
-  }, [room, paintingNow, over, link]);
+  }, [room, paintingNow, over, link, bw]);
 
   // Glide avatars.
   useEffect(() => {
@@ -167,7 +169,7 @@ export function ClashScene({ screen, game, link, room, clock, sound, say, onTick
     const add: { key: number; at: Spot; text: string }[] = [];
     const boom: Splat[] = [];
     for (const e of fresh) {
-      const at = 'pupil' in e && typeof e.pupil === 'string' ? (shown.current[e.pupil] ?? { x: 0.5, y: 0.5 }) : { x: 0.5, y: 0.5 };
+      const at = 'pupil' in e && typeof e.pupil === 'string' ? (shown.current[e.pupil] ?? { x: bw / 2, y: 0.5 }) : { x: bw / 2, y: 0.5 };
       if (e.type === 'clash_bomb') { boom.push({ key: e.seq, x: e.x, y: e.y, r: e.r, team: e.team }); sound.play('flip'); }
       else if (e.type === 'clash_grab') { sound.play('grab'); add.push({ key: e.seq, at, text: POWER_WORDS[e.power].emoji }); }
       else if (e.type === 'clash_power') { sound.play('power'); add.push({ key: e.seq, at, text: `${POWER_WORDS[e.power].emoji} ${POWER_WORDS[e.power].name}!` }); }
@@ -180,18 +182,18 @@ export function ClashScene({ screen, game, link, room, clock, sound, say, onTick
       setPops((p) => [...p, ...add].slice(-8));
       window.setTimeout(() => setPops((p) => p.filter((x) => !add.includes(x))), 1800);
     }
-  }, [screen.events, screen.seq, sound]);
+  }, [screen.events, screen.seq, sound, bw]);
 
-  const live = useMemo(() => scoreTiles(tiles, r?.golden ?? [], !!r?.hole), [tiles, r]);
+  const live = useMemo(() => scoreTiles(tiles, r?.golden ?? [], !!r?.hole, bw), [tiles, r, bw]);
   const teams = teamsOf(game);
   const most = Math.max(1, ...teams.map((tm) => live.score[tm]));
   const fresh = r ? MECHANICS.find((m) => UNLOCK[m] === r.n) : undefined;
   const nameOf = (id: string) => (screen.showNames ? screen.people.find((p) => p.id === id)?.name ?? null : null);
 
   return (
-    <div className={`cc-scene cc-scene--${game.map}`}>
+    <div className={`cc-scene cc-scene--${game.map} ${bw > 1 ? 'cc-scene--wide' : ''}`}>
       <div className="cc-stage">
-        <ClashBoard map={game.map} round={r} t={t} tiles={tiles} splats={splats} dim={phase !== 'paint'}>
+        <ClashBoard map={game.map} w={bw} round={r} t={t} tiles={tiles} splats={splats} dim={phase !== 'paint'}>
           {screen.people.map((p) => {
             const m = game.mine[p.id];
             const at = shown.current[p.id] ?? m?.spot;
@@ -203,7 +205,7 @@ export function ClashScene({ screen, game, link, room, clock, sound, say, onTick
               </ClashToken>
             );
           })}
-          {pops.map((p) => <span key={p.key} className="cc-pop" style={{ left: `${p.at.x * 100}%`, top: `${p.at.y * 100}%` }}>{p.text}</span>)}
+          {pops.map((p) => <span key={p.key} className="cc-pop" style={at(p.at.x, p.at.y, bw)}>{p.text}</span>)}
         </ClashBoard>
         <aside className="cc-side">
           <div className="cc-side__map">{words.name}</div>

@@ -8,7 +8,10 @@
  * Movement is Four Corners' (`stepMove` in corners.ts) with this round's hazards, so the device, the preview and the
  * projector agree; the database clamps saved moves to the activity's max speed (classlive_move).
  */
-import { AVATAR_R, GRAB_R, startSpot, type Circle, type MoveRound, type Roller, type Spot, type Teleport } from './corners';
+import {
+  AVATAR_R, BOOST, GRAB_R, KNOCK_MS, KNOCK_SPEED, rollerAt, rollersOf, SPEED, startSpot, STORM_SLOW, TELEPORT_R,
+  type Circle, type MoveRound, type MoveState, type Roller, type Spot, type Teleport,
+} from './corners';
 
 export const HALLS = ['castle', 'ice', 'jungle', 'pirate'] as const;
 export type Hall = (typeof HALLS)[number];
@@ -40,6 +43,9 @@ export const POWER_WORDS: Record<ThronePower, { name: string; emoji: string; how
 
 // ---- Sizes and times ----
 
+/** The hall is this wide (height 1) for new games (James, 27 Nov 2026 NZ: fill a widescreen). Older games have no `w`: square. */
+export const THRONES_W = 1.6;
+
 export const THRONE_R = 0.045;
 /** A pupil's device sits them down within this of a throne's middle; the server allows a little more (saved spots lag). */
 export const SIT_R = 0.065;
@@ -69,6 +75,8 @@ export interface ThroneItem extends Spot { id: number; power: ThronePower; by: s
 
 export interface ThroneRound {
   n: number;
+  /** The hall's width (height 1); missing in rounds saved before the wide hall (square). */
+  w?: number;
   /** Times in ms since the session started. */
   startAt: number;
   /** Picked when the round is made. Pupils' devices know it but never show it. */
@@ -139,6 +147,8 @@ export interface ThronesMine {
 export interface ThronesGame {
   kind: 'thrones';
   hall: Hall;
+  /** The hall's width (height 1): THRONES_W for new games; missing in older ones (square). */
+  w?: number;
   round: ThroneRound | null;
   mine: Record<string, ThronesMine>;
   nextItem: number;
@@ -163,7 +173,17 @@ const dist = (a: Spot, b: Spot) => Math.hypot(a.x - b.x, a.y - b.y);
 const pick = <T>(list: readonly T[], random: () => number): T => list[Math.floor(random() * list.length) % list.length];
 
 export const START: Spot = { x: 0.5, y: 0.5 };
-/** A courtyard seat (drawn below the hall). */
+/** A game's hall width (height 1). */
+export const widthOf = (g: { w?: number } | null | undefined) => g?.w ?? 1;
+/** A start spot in the middle of a hall w wide, spread by player number (corners' `startSpot`, moved to the middle). */
+export function hallStart(i: number, w = 1): Spot {
+  const p = startSpot(i);
+  return { x: p.x - 0.5 + w / 2, y: p.y };
+}
+/**
+ * A courtyard seat. On the old square hall it is drawn in a strip below it (y above 1); on a wide hall the courtyard is
+ * a panel beside the hall that lists its pupils, so these spots are only where the game keeps them.
+ */
 export function courtSpot(i: number): Spot {
   return { x: 0.2 + (i % 8) * 0.085, y: 1.08 + Math.floor(i / 8) * 0.06 };
 }
@@ -176,6 +196,56 @@ export const ghostly = (m: ThronesMine | undefined, n: number) => !!m && m.ghost
 export const moveRound = (r: ThroneRound): MoveRound => ({
   storms: r.storms, ice: r.ice, teleports: r.teleports, roller: r.roller, roller2: r.roller2, hole: false, gate: null, runEnd: r.musicEnd,
 });
+
+const clampW = (v: number, max: number) => Math.min(max - AVATAR_R, Math.max(AVATAR_R, v));
+
+/**
+ * One step of movement in a hall w wide (corners' `stepMove` with the x edge at w; no hole, no gate), so the device, the
+ * preview and the projector agree. Storms slow, ice keeps momentum, teleports warp, a roller knocks you flying.
+ */
+export function stepThrones(m: MoveState, dir: Spot, dtMs: number, round: MoveRound | null, t: number, opts: { boost: boolean; ghost: boolean }, w = 1): MoveState {
+  const dt = Math.min(100, Math.max(0, dtMs)) / 1000;
+  const cl = (p: Spot): Spot => ({ x: clampW(p.x, w), y: clampW(p.y, 1) });
+  if (m.stun !== undefined && t < m.stun) {
+    const k = Math.max(0, 1 - dt * 2.2);
+    const v = { x: m.v.x * k, y: m.v.y * k };
+    return { ...m, p: cl({ x: m.p.x + v.x * dt, y: m.p.y + v.y * dt }), v };
+  }
+  const len = Math.hypot(dir.x, dir.y);
+  const d = len > 1 ? { x: dir.x / len, y: dir.y / len } : dir;
+  let speed = SPEED * (opts.boost ? BOOST : 1);
+  const onIce = !!round && !opts.ghost && round.ice.some((c) => dist(c, m.p) < c.r);
+  if (round && !opts.ghost && round.storms.some((c) => dist(c, m.p) < c.r)) speed *= STORM_SLOW;
+  let v: Spot;
+  if (onIce) {
+    const k = Math.min(1, dt * 1.5);
+    v = { x: m.v.x + (d.x * speed - m.v.x) * k, y: m.v.y + (d.y * speed - m.v.y) * k };
+  } else v = { x: d.x * speed, y: d.y * speed };
+  const p = cl({ x: m.p.x + v.x * dt, y: m.p.y + v.y * dt });
+  if (round && !opts.ghost) {
+    for (const ro of rollersOf(round)) {
+      const r = rollerAt(ro, t);
+      if (dist(p, r) < ro.r + AVATAR_R) {
+        // Knocked flying, out of its way, plus a shove the way it rolls.
+        const s = ro.at < (ro.axis === 'y' ? w : 1) / 2 ? 1 : -1;
+        const fwd = (t % ro.periodMs) / ro.periodMs < 0.5 ? 1 : -1;
+        const kx = ro.axis === 'x' ? fwd * 0.45 : s;
+        const ky = ro.axis === 'x' ? s : fwd * 0.45;
+        const kl = Math.hypot(kx, ky);
+        const push = ro.r + AVATAR_R + 0.01;
+        const out = ro.axis === 'x' ? { x: p.x, y: clampW(r.y + s * push, 1) } : { x: clampW(r.x + s * push, w), y: p.y };
+        return { p: out, v: { x: (kx / kl) * KNOCK_SPEED, y: (ky / kl) * KNOCK_SPEED }, stun: t + KNOCK_MS, hitAt: t };
+      }
+    }
+  }
+  if (round) {
+    for (const tp of round.teleports) {
+      if (dist(m.p, tp.a) >= TELEPORT_R && dist(p, tp.a) < TELEPORT_R) return { p: cl({ x: tp.b.x + v.x * 0.25, y: tp.b.y + v.y * 0.25 }), v };
+      if (dist(m.p, tp.b) >= TELEPORT_R && dist(p, tp.b) < TELEPORT_R) return { p: cl({ x: tp.a.x + v.x * 0.25, y: tp.a.y + v.y * 0.25 }), v };
+    }
+  }
+  return { p, v: onIce ? v : { x: 0, y: 0 }, ...(m.hitAt !== undefined ? { hitAt: m.hitAt } : {}) };
+}
 
 /** The phase at time t. */
 export function phaseOf(r: ThroneRound, t: number): 'music' | 'scramble' | 'show' {
@@ -195,8 +265,8 @@ export function thronesFor(n: number, playing: number, before: number | null): n
   return Math.max(1, Math.min(playing - 1, k));
 }
 
-/** Throne spots: rings round the middle (one ring for a few, up to three for a big class), turned at random. */
-export function layThrones(k: number, random: () => number): Spot[] {
+/** Throne spots: rings (ovals in a wide hall) round the middle (one ring for a few, up to three for a big class), turned at random. */
+export function layThrones(k: number, random: () => number, w = 1): Spot[] {
   const rings = k <= 9 ? [0.28] : k <= 22 ? [0.18, 0.36] : [0.13, 0.27, 0.41];
   const weight = rings.reduce((a, r) => a + r, 0);
   const counts = rings.map((r) => Math.max(1, Math.round((k * r) / weight)));
@@ -208,7 +278,8 @@ export function layThrones(k: number, random: () => number): Spot[] {
     const turn = random() * Math.PI * 2;
     for (let j = 0; j < c; j++) {
       const a = turn + (j / c) * Math.PI * 2;
-      out.push({ x: 0.5 + Math.cos(a) * r, y: 0.5 + Math.sin(a) * r });
+      // Rings are ovals as wide as the hall.
+      out.push({ x: w / 2 + Math.cos(a) * r * w, y: 0.5 + Math.sin(a) * r });
     }
   });
   return out.slice(0, k);
@@ -221,20 +292,21 @@ export const APPEAR_GAP = 0.16;
  * Where the thrones appear when the music stops: scattered at random, apart from each other, and at least APPEAR_GAP
  * from every pupil where the hall has room, so nobody is already on one and everyone has to race.
  */
-export function scatterThrones(k: number, avoid: Spot[], random: () => number): Spot[] {
+export function scatterThrones(k: number, avoid: Spot[], random: () => number, w = 1): Spot[] {
   const out: Spot[] = [];
+  const at = (): Spot => ({ x: 0.1 + random() * (w - 0.2), y: 0.1 + random() * 0.8 });
   for (let i = 0; i < k; i++) {
     let best: Spot | null = null;
     let bestScore = -1;
     for (let c = 0; c < 80; c++) {
-      const p = { x: 0.1 + random() * 0.8, y: 0.1 + random() * 0.8 };
+      const p = at();
       const apart = out.reduce((a, q) => Math.min(a, dist(p, q)), 1);
       if (apart < (c < 60 ? 0.12 : 0.08)) continue;
       const clear = avoid.reduce((a, q) => Math.min(a, dist(p, q)), 1);
       const score = Math.min(clear, APPEAR_GAP) + random() * 0.01;
       if (score > bestScore) { bestScore = score; best = p; }
     }
-    out.push(best ?? { x: 0.1 + random() * 0.8, y: 0.1 + random() * 0.8 });
+    out.push(best ?? at());
   }
   return out;
 }
@@ -257,12 +329,12 @@ export function mechanicsFor(n: number, random: () => number): Set<ThroneMechani
 }
 
 /** An open spot away from the thrones. */
-function openSpot(random: () => number, thrones: Spot[], gap = 0.09): Spot {
+function openSpot(random: () => number, thrones: Spot[], gap = 0.09, w = 1): Spot {
   for (let i = 0; i < 30; i++) {
-    const p = { x: 0.08 + random() * 0.84, y: 0.08 + random() * 0.84 };
+    const p = { x: 0.08 + random() * (w - 0.16), y: 0.08 + random() * 0.84 };
     if (thrones.every((th) => dist(th, p) > gap)) return p;
   }
-  return { x: 0.08 + random() * 0.84, y: 0.06 };
+  return { x: 0.08 + random() * (w - 0.16), y: 0.06 };
 }
 
 /** Mimics start in round 2: 1, then 1 more for every 8 thrones, at most 3. */
@@ -270,48 +342,56 @@ export const MIMIC_FROM = 2;
 export const mimicsFor = (n: number, k: number) => (n < MIMIC_FROM ? 0 : Math.min(3, 1 + Math.floor(k / 8)));
 
 export function makeRound(g: ThronesGame, n: number, startAt: number, random: () => number, playing: number): ThroneRound {
+  const w = widthOf(g);
   const has = mechanicsFor(n, random);
   const k = thronesFor(n, playing, g.round ? g.round.thrones.length : null);
-  const spots = layThrones(k, random);
+  const spots = layThrones(k, random, w);
   const goldenAt = n >= 2 ? Math.floor(random() * k) % k : -1;
   const thrones: Throne[] = spots.map((p, i) => ({ id: i, x: p.x, y: p.y, golden: i === goldenAt, by: null }));
-  const tiles: Circle[] = Array.from({ length: 3 + (n % 3) }, () => ({ ...openSpot(random, spots, 0.14), r: TILE_R }));
-  const storms: Circle[] = has.has('storm') ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({ ...openSpot(random, []), r: 0.1 + random() * 0.05 })) : [];
-  const ice: Circle[] = has.has('ice') ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({ ...openSpot(random, []), r: 0.09 + random() * 0.05 })) : [];
+  // A wide hall gets about w times the tiles and hazards.
+  const more = (c: number) => Math.round(c * w);
+  const tiles: Circle[] = Array.from({ length: more(3 + (n % 3)) }, () => ({ ...openSpot(random, spots, 0.14, w), r: TILE_R }));
+  const storms: Circle[] = has.has('storm') ? Array.from({ length: more(1 + Math.floor(random() * 2)) }, () => ({ ...openSpot(random, [], 0.09, w), r: 0.1 + random() * 0.05 })) : [];
+  const ice: Circle[] = has.has('ice') ? Array.from({ length: more(1 + Math.floor(random() * 2)) }, () => ({ ...openSpot(random, [], 0.09, w), r: 0.09 + random() * 0.05 })) : [];
   const teleports: Teleport[] = [];
   if (has.has('teleport')) {
     const along = 0.25 + random() * 0.5;
-    teleports.push(random() < 0.5 ? { a: { x: 0.06, y: along }, b: { x: 0.94, y: 1 - along } } : { a: { x: along, y: 0.06 }, b: { x: 1 - along, y: 0.94 } });
+    teleports.push(random() < 0.5 ? { a: { x: 0.06, y: along }, b: { x: w - 0.06, y: 1 - along } } : { a: { x: along * w, y: 0.06 }, b: { x: (1 - along) * w, y: 0.94 } });
+    // A second pair across the wide hall, the other way.
+    if (w > 1.3) {
+      const x2 = (0.2 + random() * 0.6) * w;
+      teleports.push({ a: { x: x2, y: 0.06 }, b: { x: w - x2, y: 0.94 } });
+    }
   }
-  // Rollers cross the hall through the throne rings.
+  // Rollers cross the hall through the throne rings (the x one rolls the whole width).
   const line = () => 0.2 + random() * 0.6;
-  const roller: Roller | null = has.has('roller') ? { axis: 'x', at: line(), r: 0.07, periodMs: 5000 + Math.floor(random() * 1500) } : null;
-  const roller2: Roller | null = has.has('roller') && random() < 0.5 ? { axis: 'y', at: line(), r: 0.07, periodMs: 5600 + Math.floor(random() * 1500) } : null;
+  const roller: Roller | null = has.has('roller') ? { axis: 'x', at: line(), r: 0.07, periodMs: Math.round((5000 + Math.floor(random() * 1500)) * Math.sqrt(w)), ...(w > 1 ? { span: w } : {}) } : null;
+  const roller2: Roller | null = has.has('roller') && random() < 0.5 ? { axis: 'y', at: line() * w, r: 0.07, periodMs: 5600 + Math.floor(random() * 1500) } : null;
   const items: ThroneItem[] = [];
   if (has.has('items')) {
-    const count = Math.max(2, Math.min(8, Math.round(playing / 5)));
-    for (let i = 0; i < count; i++) items.push({ id: g.nextItem++, power: pick(POWERS, random), by: null, ...openSpot(random, spots) });
+    const count = Math.max(2, Math.min(Math.round(8 * w), Math.round((playing / 5) * w)));
+    for (let i = 0; i < count; i++) items.push({ id: g.nextItem++, power: pick(POWERS, random), by: null, ...openSpot(random, spots, 0.09, w) });
   }
   // Round 1 is a gentle 9 s; then anywhere from 7 to 15 s, so nobody can count it.
   const music = n === 1 ? 9000 : MUSIC_MIN_MS + Math.floor(random() * (MUSIC_MAX_MS - MUSIC_MIN_MS));
   const musicEnd = startAt + music;
   return {
-    n, startAt, musicEnd, scrambleEnd: musicEnd + SCRAMBLE_MS, showEnd: musicEnd + SCRAMBLE_MS + SHOW_MS,
-    thrones, mimics: Array.from({ length: mimicsFor(n, k) }, (_, i) => ({ id: i, x: 0.5, y: 0.5, ate: [] })),
+    n, ...(w > 1 ? { w } : {}), startAt, musicEnd, scrambleEnd: musicEnd + SCRAMBLE_MS, showEnd: musicEnd + SCRAMBLE_MS + SHOW_MS,
+    thrones, mimics: Array.from({ length: mimicsFor(n, k) }, (_, i) => ({ id: i, x: w / 2, y: 0.5, ate: [] })),
     tiles, items, storms, ice, teleports, roller, roller2, stopped: false, standing: null, dancers: [],
   };
 }
 
-export function newThrones(hall: Hall): ThronesGame {
-  return { kind: 'thrones', hall, round: null, mine: {}, nextItem: 1, stealsAll: 0, stoodAll: 0 };
+export function newThrones(hall: Hall, w = THRONES_W): ThronesGame {
+  return { kind: 'thrones', hall, ...(w > 1 ? { w } : {}), round: null, mine: {}, nextItem: 1, stealsAll: 0, stoodAll: 0 };
 }
 
-export function freshMine(i: number): ThronesMine {
+export function freshMine(i: number, w = 1): ThronesMine {
   return {
     crowns: 0, sat: 0, stood: 0, golden: 0, dances: 0, courtIn: null, courtRight: 0, courtStreak: 0, escapes: 0, held: null,
     stealIn: null, shieldIn: null, speedTo: null, ghostTo: null, earIn: null, doubleIn: null, seatIn: null, powersUsed: 0, grabs: 0,
     steals: 0, stolen: 0, eaten: 0, seat: null, answered: 0, right: 0, wrong: 0, streak: 0, bestStreak: 0, fastMs: null, lastAt: -ANSWER_GAP_MS,
-    placed: 0, spot: startSpot(i),
+    placed: 0, spot: hallStart(i, w),
   };
 }
 
@@ -371,12 +451,12 @@ export function advance(g: ThronesGame, t: number, order: string[], positions: P
         m.courtIn = null;
         m.courtRight = 0;
         m.escapes++;
-        m.spot = startSpot(order.indexOf(id));
+        m.spot = hallStart(order.indexOf(id), widthOf(g));
         m.placed++;
         events.push({ type: 'escape', t: startAt, pupil: id });
       } else if (m && m.courtIn === null) {
         // Up off the thrones and back to the middle.
-        m.spot = startSpot(order.indexOf(id));
+        m.spot = hallStart(order.indexOf(id), widthOf(g));
         m.placed++;
       }
     }
@@ -408,7 +488,7 @@ function stopMusic(g: ThronesGame, r: ThroneRound, order: string[], positions: P
   // The thrones appear only now, in new spots away from everyone (James, 25 Nov 2026 NZ: nobody can wait on one).
   // Mimics pop up with them, mixed in.
   const mimics = r.mimics ?? [];
-  const spots = scatterThrones(r.thrones.length + mimics.length, dancing, random);
+  const spots = scatterThrones(r.thrones.length + mimics.length, dancing, random, widthOf(g));
   const order2 = spots.map((_, i) => i);
   for (let i = order2.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)) % (i + 1); [order2[i], order2[j]] = [order2[j], order2[i]]; }
   r.thrones.forEach((th, i) => { th.x = spots[order2[i]].x; th.y = spots[order2[i]].y; });
@@ -505,8 +585,9 @@ export function sit(
   if (m.stealIn !== r.n || !v || v.shieldIn === r.n) return { ok: false, reason: 'taken' };
   // Knocked off, just outside the throne, and free to run for another one.
   v.seat = null;
-  const a = Math.atan2(th.y - 0.5, th.x - 0.5);
-  v.spot = { x: Math.min(0.97, Math.max(0.03, th.x + Math.cos(a) * 0.09)), y: Math.min(0.97, Math.max(0.03, th.y + Math.sin(a) * 0.09)) };
+  const w = widthOf(g);
+  const a = Math.atan2(th.y - 0.5, th.x - w / 2);
+  v.spot = { x: Math.min(w - 0.03, Math.max(0.03, th.x + Math.cos(a) * 0.09)), y: Math.min(0.97, Math.max(0.03, th.y + Math.sin(a) * 0.09)) };
   v.placed++;
   v.stolen++;
   m.stealIn = null;
