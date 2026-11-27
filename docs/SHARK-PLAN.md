@@ -28,6 +28,20 @@ Shark Bay runs on Four Corners' engine: the game is a `CornersGame` with `varian
 - Hazards unlock by round (`SHARK_UNLOCK`): power-ups 2, seaweed 3, whirlpool 4, current 5, murky water 6, waves 7, twists 8. Names per bay in `BAY_WORDS`.
 - Power-ups (`SHARK_POWER_WORDS`): Shark cage, Dolphin dash, Rescue ring, Periscope, Jet ski, Pearl, Ink cloud (Four Corners' seven powers).
 
+## Wide map (27 Nov 2026 NZ)
+
+James asked for the class games to fill the screen like Ghost Tag. New games are `SHARK_W` (1.6) wide and 1 high (`w` on
+the game and round; older games without it stay square). The bay is an oval `POOL_R * w` across and `POOL_R` down,
+centred at `bayCentre(w)`. The maths works in "bay coordinates", x squashed by w (`bayAngle`, `bayPoint`): quarters
+(`quarterOf`), labels and the strike spot (`quarterMid`), boat orbits (`boatAt`), whirlpools and hazard spots are angles
+and radii there, so the four quarters always hold the same share of water as they spin; the board draws the quarters on a
+square turned by the spin and then stretched w wide (`scaleX(w) rotate()`), the same squash. The jetty (`DOCK_R`), boats'
+seats, hazards and avatars stay true circles. `inBay` keeps swimmers inside the oval; `sharkMove` takes the round's `w`
+(or `opts.w` before a round). About 1.6x the seaweed, currents and items; waves across roll the whole width (`span`).
+Paintings: map-<bay>-wide (docs/shark-art/config.json, an oval bay), the square one cropped until then. Big screen: the
+slim side panel with the cave; iPad landscape: the board edge to edge with the joystick and power-ups over its bottom
+corners (sand), messages over the top right and where you are at the top middle.
+
 ## Rewards
 
 Points as Four Corners (podium +2). Trophies from `PupilReward.extra` (kept out of Four Corners' totals): Shark Dodger (20 safe rounds), Boat Hider (5 boat saves), Bay Champion (top of the podium), Cave Escape (5 escapes).
