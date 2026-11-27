@@ -191,3 +191,10 @@
 .bq-boost--x3 { border-color: var(--bq-orange); }
 .bq-boost--x10 { border-color: #c04fd8; background: linear-gradient(135deg, #fff0fb, #f3ecff); }
 .bq-boost--x10 .bq-boost__name { color: #c04fd8; font-size: 2.2rem; }
+
+/* The hero's own smashes, one at a time (each lunges at the monster). */
+.bq-lunge .bq-face { animation: bq-lunge 0.5s ease; }
+.bq-side--hero.bq-lunge .bq-face { --bq-dir: 1; }
+@keyframes bq-lunge { 0%, 100% { transform: translateX(0); } 40% { transform: translateX(calc(28px * var(--bq-dir, 1))) rotate(12deg) scale(1.15); } }
+.bq-smash-line { text-align: center; font-weight: 900; font-size: 1.25rem; margin: 0.5rem 0; animation: bq-pop 0.25s ease; }
+.bq-smash-line span { font-weight: 700; font-size: 0.95rem; opacity: 0.7; margin-left: 0.4rem; }

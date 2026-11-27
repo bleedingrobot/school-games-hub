@@ -39,6 +39,10 @@ function Hearts({ n, of }: { n: number; of: number }) {
   );
 }
 
+/** The hero's own smashes: a beat before the first (so the last blow can be seen), then one at a time. */
+const AUTO_FIRST_MS = 1000;
+const AUTO_STEP_MS = 900;
+
 type Pause = { kind: 'ended'; blow: Blow; foe: Foe } | { kind: 'trainer' } | null;
 
 export function Fight({ backend, progress, start, onDone }: {
@@ -52,14 +56,18 @@ export function Fight({ backend, progress, start, onDone }: {
   const [saving, setSaving] = useState(false);
   // The answer waiting for the feedback to finish, so the bonk lands after "Correct!".
   const pending = useRef<AnswerReply | null>(null);
-  // The question slot whose auto smashes have played (they play for about a second before each question pops up).
-  const [smashed, setSmashed] = useState(-1);
+  // The hero's own smashes before each question, played one at a time so each can be seen (James, 27 Nov 2026:
+  // "the auto attacks need to be seen"): `played.n` smashes have landed for question `played.slot`.
+  const [played, setPlayed] = useState({ slot: -1, n: 0 });
   const slotNow = view.marks.length;
+  const autosNow = view.adventure.moments?.[slotNow]?.autos ?? 0;
+  const smashesShown = played.slot === slotNow ? played.n : 0;
+  const ready = autosNow === 0 || smashesShown > autosNow; // one beat after the last smash, the question pops up
   useEffect(() => {
-    if (pause || smashed === slotNow) return;
-    const t = setTimeout(() => setSmashed(slotNow), (view.adventure.moments?.[slotNow]?.autos ?? 0) ? 1500 : 0);
+    if (pause || ready) return;
+    const t = setTimeout(() => setPlayed({ slot: slotNow, n: smashesShown + 1 }), smashesShown === 0 ? AUTO_FIRST_MS : AUTO_STEP_MS);
     return () => clearTimeout(t);
-  }, [slotNow, smashed, pause, view.adventure.moments]);
+  }, [slotNow, smashesShown, pause, ready]);
   const adv = view.adventure;
   const r = replay(adv, view.marks);
   const cls = adv.start.cls;
@@ -157,8 +165,11 @@ export function Fight({ backend, progress, start, onDone }: {
   const q = view.question;
   const moment = adv.moments?.[slotNow] ?? { autos: 0, boost: 1 };
   const autoHit = autoSmash(adv.start.power, r.foeHp, moment);
-  const ready = smashed === slotNow;
-  const hpNow = ready ? r.foeHp - autoHit : r.foeHp;
+  // The total split into the smashes, landing one by one.
+  const landedBy = (n: number) => (moment.autos ? Math.floor((autoHit * Math.min(n, moment.autos)) / moment.autos) : 0);
+  const smashing = !ready && smashesShown >= 1 && smashesShown <= moment.autos;
+  const thisSmash = smashing ? landedBy(smashesShown) - landedBy(smashesShown - 1) : 0;
+  const hpNow = r.foeHp - (ready ? autoHit : landedBy(smashesShown));
   const boost = BOOSTS.find((b) => b.times === moment.boost);
 
   const answer = async (value: number, ms: number): Promise<MarkedAnswer> => {
@@ -191,34 +202,34 @@ export function Fight({ backend, progress, start, onDone }: {
     <section className="bq-fight" aria-label={`Fight: ${foe.name}`}>
       {header}
       <div className="bq-arena" style={{ background: zone ? `linear-gradient(${zone.sky[0]}, ${zone.sky[1]} 62%, ${zone.ground} 62%)` : undefined }}>
-        <div className={`bq-side bq-side--hero${blow?.ouch ? ' bq-shake' : ''}`} key={`h${blow?.slot ?? 'x'}`}>
+        <div className={`bq-side bq-side--hero${blow?.ouch && !smashing ? ' bq-shake' : ''}${smashing ? ' bq-lunge' : ''}`} key={`h${blow?.slot ?? 'x'}-${slotNow}-${smashesShown}`}>
           <span className="bq-face" aria-hidden="true">{ci.emoji[hero.look]}</span>
           <strong>{ci.names[hero.look]}</strong>
           <Hearts n={r.hearts} of={r.maxHearts} />
-          {blow?.ouch && <span className="bq-float bq-float--ouch">OUCH!</span>}
+          {blow?.ouch && smashesShown === 0 && <span className="bq-float bq-float--ouch">OUCH!</span>}
           {r.calm > 0 && <span className="bq-tag">🧶 Tied up for {r.calm}</span>}
         </div>
         <div className="bq-vs" aria-hidden="true">VS</div>
-        <div className={`bq-side bq-side--foe${blow || (ready && autoHit) ? ' bq-wobble' : ''}`} key={`f${slotNow}${ready ? 'a' : ''}`}>
+        <div className={`bq-side bq-side--foe${(blow && smashesShown === 0) || thisSmash ? ' bq-wobble' : ''}`} key={`f${slotNow}-${smashesShown}`}>
           <span className={`bq-face${foe.big ? ' bq-face--big' : ''}`} aria-hidden="true">{look.emoji}</span>
           <strong>{foe.name}</strong>
           <div className="bq-hp" role="progressbar" aria-label={`${foe.name}’s health`} aria-valuemin={0} aria-valuemax={foe.hp} aria-valuenow={hpNow}>
             <div className="bq-hp__fill" style={{ width: `${(100 * hpNow) / foe.hp}%`, background: look.colour }} />
           </div>
           <span className="bq-hp__num">{hpNow} / {foe.hp}</span>
-          {ready && autoHit > 0 && <span className="bq-float">-{autoHit}</span>}
-          {!ready && blow?.right && <span className="bq-float bq-float--big">-{blow.hit}{blow.special ? '!!' : ''}</span>}
+          {thisSmash > 0 && <span className="bq-float">-{thisSmash}</span>}
+          {smashesShown === 0 && blow?.right && <span className="bq-float bq-float--big">-{blow.hit}{blow.special ? '!!' : ''}</span>}
         </div>
       </div>
       {!blow && !ready && r.foeHp === foe.hp && <p className="bq-speech">{foe.name}: “{look.line}”</p>}
-      {blow && !ready && (
+      {blow && smashesShown === 0 && (
         <p className="bq-blow-line" aria-live="polite">
           {blow.right
             ? (blow.special ? `${ci.move.name}! ×${blow.boost} MEGA SMASH!` : `SMASH! ×${blow.boost} damage!`)
             : blow.ouch ? 'Missed… and it smashed you back!' : 'Missed… but it couldn’t smash you back!'}
         </p>
       )}
-      {!ready && <p className="bq-hint" aria-live="polite">{moment.autos ? 'Smash… smash… smash…' : ''}</p>}
+      {!ready && smashing && <p className="bq-smash-line" aria-live="polite">💥 {ci.names[hero.look]} smashes! <span>{smashesShown} of {moment.autos}</span></p>}
       {ready && q && (
         <div className={`bq-boost bq-pop bq-boost--x${moment.boost}`} role="status">
           <p className="bq-boost__name">⚡ {boost?.name ?? 'SMASH TIME!'}</p>
