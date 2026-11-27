@@ -28,4 +28,4 @@ James's idea (27 Nov 2026 NZ): the class plays Four Corners for real in the room
 
 ## Art
 
-Uses Four Corners' paintings (maps, backdrops, dice, jail rooms for the stations) and music. New: the picker tile `src/games/classlive/art/paint/pick/jail.webp` (+ `-800`); until it is painted the tile shows the jungle jail.
+Uses Four Corners' paintings (maps, backdrops, dice, jail rooms for the stations) and music. Picker tile `pick/jail.webp` painted 27 Nov 2026 on JamesGaming (try 4 of 4; the floor came out as a patchwork rather than four clean corners, repaint if wanted).
