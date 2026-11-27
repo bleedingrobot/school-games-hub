@@ -107,12 +107,12 @@ const chance: PictureRule = (q) => {
   const base = { kind: 'number-line' as const, from: 0, to: 1, step: 0.25, labels: [0, 1] };
   const words = [{ at: 0, label: 'impossible' }, { at: 0.25, label: 'unlikely' }, { at: 0.5, label: 'even chance' }, { at: 0.75, label: 'likely' }, { at: 1, label: 'certain' }];
   if (/^How likely is it/i.test(p)) return { ...base, words };
-  // "Likely means P = ?": the other words on the line (the one asked about is for the pupil to place).
+  // "Likely is a chance of ?": the other words on the line (the one asked about is for the pupil to place).
   if (/^Which number fits/i.test(p)) {
-    const asked = (q.parts[0] ?? '').replace(/ means P$/i, '').toLowerCase();
+    const asked = (q.parts[0] ?? '').replace(/ is a chance of$/i, '').toLowerCase();
     return { ...base, words: words.filter((w) => w.label !== asked) };
   }
-  // "P = 1 means ?": the numbers on the line, no words.
+  // "A chance of 1 means ?": the numbers on the line, no words.
   return /^Which chance word fits/i.test(p) ? { ...base, labels: [0, 0.25, 0.5, 0.75, 1] } : null;
 };
 

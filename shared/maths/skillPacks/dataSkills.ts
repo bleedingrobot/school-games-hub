@@ -164,10 +164,10 @@ const fractions = (named: Record<string, [number, number]>): Record<string, stri
 
 const COLOURS: [string, string][] = [['red', 'blue'], ['green', 'yellow'], ['black', 'white'], ['pink', 'orange']];
 
-/** "A bag has 3 red and 5 blue counters. P(red) = ?" (tap 3/8). */
+/** "A bag has 3 red and 5 blue counters. Chance of red = ?" (tap 3/8). */
 const bag = oneKey(
   'prob:bag',
-  'Chance of a colour from a bag (3 red, 5 blue: P(red))',
+  'Chance of a colour from a bag (3 red, 5 blue: chance of red)',
   PROB,
   6,
   (_k, r) => [int(r, 1, 7), int(r, 1, 7), int(r, 0, COLOURS.length - 1), int(r, 0, 1), ...rollPick(r)],
@@ -182,7 +182,7 @@ const bag = oneKey(
     const colour = which === 0 ? first : second;
     const right = frac(want, total);
     const made = pick(
-      { parts: [`P(${colour})`, '=', '?'], spoken: `A bag has ${a} ${first} and ${b} ${second} counters. What is the probability of ${colour}?`, fact: `P(${colour}) = ${right}` },
+      { parts: [`Chance of ${colour}`, '=', '?'], spoken: `A bag has ${a} ${first} and ${b} ${second} counters. You take one without looking. What is the chance of ${colour}?`, fact: `The chance of ${colour} is ${right}` },
       right,
       fractions({
         'put it over the other colour': [want, other],
@@ -193,16 +193,16 @@ const bag = oneKey(
       }),
       { slot, salt },
     );
-    return made ? { ...made, prompt: `A bag has ${a} ${first} and ${b} ${second} counters.` } : null;
+    return made ? { ...made, prompt: `A bag has ${a} ${first} and ${b} ${second} counters. Take one without looking.` } : null;
   },
 );
 
 const DICE_KINDS = ['not', 'more than', 'less than'] as const;
 
-/** "A fair dice is rolled. P(not 6) = ?" (tap 5/6). */
+/** "A fair dice is rolled. Chance of not a 6 = ?" (tap 5/6). */
 const dice = oneKey(
   'prob:dice',
-  'Chance on a dice (P(not 6), P(more than 3))',
+  'Chance on a dice (not a 6, more than 3)',
   PROB,
   4,
   (_k, r) => {
@@ -222,7 +222,7 @@ const dice = oneKey(
         ? { 'gave the chance of the number': [1, 6], 'put it over the five others': [1, 5], 'gave the number over six': [n, 6], 'took away two faces': [4, 6] }
         : { 'counted the other side': [6 - k, 6], 'counted the number itself': [k + 1, 6], 'left one face out': [k - 1, 6], 'put it over five': [k, 5], 'gave one face': [1, 6] };
     const made = pick(
-      { parts: [`P(${word} ${n})`, '=', '?'], spoken: `A fair dice is rolled. What is the probability of ${phrase}?`, fact: `P(${word} ${n}) = ${right}` },
+      { parts: [`Chance of ${kind === 0 ? `not a ${n}` : `${word} ${n}`}`, '=', '?'], spoken: `A fair dice is rolled. What is the chance of ${phrase}?`, fact: `The chance of ${phrase} is ${right}` },
       right,
       fractions(named),
       { slot, salt },
@@ -231,12 +231,12 @@ const dice = oneKey(
   },
 );
 
-const EVENTS: [string, string][] = [['rain', 'no rain'], ['win', 'not win'], ['late', 'not late'], ['goal', 'no goal']];
+const EVENTS: [string, string][] = [['rain', 'no rain'], ['a win', 'no win'], ['being late', 'not being late'], ['a goal', 'no goal']];
 
-/** "P(rain) = 0.3. P(no rain) = ?" (type 0.7). */
+/** "The chance of rain is 0.3. Chance of no rain = ?" (type 0.7). */
 const not = oneKey(
   'prob:not',
-  'Chance it does not happen (P(rain) = 0.3, P(no rain))',
+  'Chance it does not happen (chance of rain 0.3, chance of no rain)',
   PROB,
   2,
   (_k, r) => [int(r, 1, 9), int(r, 0, EVENTS.length - 1)],
@@ -246,7 +246,7 @@ const not = oneKey(
     const p = tenths / 10;
     const answer = (10 - tenths) / 10;
     return withMistakes(
-      { parts: [`P(${no})`, '=', '?'], spoken: `The probability of ${yes} is ${say(p)}. What is the probability of ${no}?`, answer, input: 'decimal', prompt: `P(${yes}) = ${show(p)}` },
+      { parts: [`Chance of ${no}`, '=', '?'], spoken: `The chance of ${yes} is ${say(p)}. What is the chance of ${no}?`, answer, input: 'decimal', prompt: `The chance of ${yes} is ${show(p)}` },
       { 'gave the same chance': p, 'added it to one': 1 + p, 'took the tenths from ten': 10 - tenths, 'one tenth too many': answer + 0.1, 'one tenth too few': answer - 0.1 },
     );
   },
