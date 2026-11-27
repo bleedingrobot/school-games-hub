@@ -15,7 +15,7 @@
  "pictures": [
   {
    "name": "pick",
-   "prompt": "A bright cheerful primary school classroom seen from above at an angle, the four corners of the room each marked with a big coloured square on the floor, red, blue, green and yellow, happy cartoon children running between the corners, a giant friendly dice bouncing in the middle, a small cosy jail corner with toy bars and a few tablets on a little table, playful game feeling, wide landscape picture, no writing anywhere.",
+   "prompt": "A bright cheerful primary school classroom seen from above at an angle, the classroom floor is divided into exactly four large equal quarters, one in each corner of the room: red top left, blue top right, green bottom right, yellow bottom left, meeting at a cross in the centre, happy cartoon children running between the corners, a giant friendly dice in the very middle where the four quarters meet, a small cosy jail corner with toy bars and a few tablets on a little table, playful game feeling, wide landscape picture, no writing anywhere.",
    "size": [
     1536,
     864
@@ -24,7 +24,7 @@
    "folder": "pick",
    "file": "jail",
    "style": "s",
-   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, scary prison, sad children, weapons"
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, scary prison, sad children, weapons, patchwork, extra squares, more than four colours"
   }
  ]
 }
