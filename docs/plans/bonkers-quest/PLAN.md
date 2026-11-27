@@ -138,4 +138,4 @@ Asked on question cards in the project thread, 27 Nov 2026. Answers go here.
 19. Who runs the Wobbly Inn? **A grandma with a jetpack** (James, 27 Nov): wild, kind, always just back from a trip; she gives the next-step line. Paint her clearly different from the Pirate Granny class.
 20. What the sticker shop sells? **Hats and pets, looks only** (James, 27 Nov): can't be used to skip maths. A hat sits over the painted hero look, so each look needs a fixed hat spot.
 21. How boy and girl heroes are offered? **3 looks per class** (James, 27 Nov): boy, girl and a silly third look; about 48 hero paintings (4 classes x 3 x 4 level looks). What the third look is: question 22.
-22. The third look?
+22. The third look? **An animal per class** (James, 27 Nov): Kitchen Knight badger, Disco Dazzler flamingo, Pirate Granny parrot, Bin Ninja raccoon (animals can change).
