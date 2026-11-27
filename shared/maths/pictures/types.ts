@@ -35,8 +35,11 @@ export type Picture =
   /**
    * Fraction bars, one under another: each cut into `parts` equal parts with `shaded` shaded, from part `start` (0, the
    * left end, when left out). `label` sits over the whole bar ('35', '$40', '').
+   * `group`: a thick line after every `group` shaded parts ("25/30 = 5/?": the 25 parts in 5 groups of 5).
+   * `fill`: the `parts` are all shaded and take up only this share of the bar; the rest is one unknown piece marked '?'
+   * ("5/?" under "25/30": 5 parts as long as the 25, the rest of the bar not yet cut).
    */
-  | { kind: 'bars'; bars: { parts: number; shaded: number; start?: number; label?: string; shade?: Shade }[] }
+  | { kind: 'bars'; bars: { parts: number; shaded: number; start?: number; label?: string; shade?: Shade; group?: number; fill?: number }[] }
   /**
    * Whole circles each cut into `parts`, the first `shaded` parts shaded across them all (mixed numbers, ÷ fractions).
    * `packed: false` draws only the `shaded` slices, loose in rows of `parts`, so the pupil makes the full circles.
