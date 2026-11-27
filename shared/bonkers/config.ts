@@ -30,13 +30,23 @@ export const basePower = (level: number) => 10 + 3 * (level - 1);
 export const expectedGear = (level: number) => 3 * (level - 1);
 
 /** A monster's health, as a number of ordinary right hits (`v` 0 to 2: the zone's weakest to strongest). */
-export const MONSTER_HITS = [3, 3.5, 4];
+export const MONSTER_HITS = [4.5, 5, 6];
 /** The zone's big monster (the "bonk the big one" quest) and the trainers. */
-export const BIG_MONSTER_HITS = 4.8;
-export const TRAINER_HITS = 6.5;
+export const BIG_MONSTER_HITS = 8;
+export const TRAINER_HITS = 10;
 
-/** A wrong answer still lands a little bonk: this share of your power, at least 1. */
-export const WRONG_BONK_SHARE = 0.2;
+/**
+ * Less maths, more bonking (James, 27 Nov 2026: "a bit too much maths"): the hero bonks away on their own (this share of
+ * their power a bonk, never the last bonk), and every few bonks a question pops up with a surprise damage boost. Right: the
+ * boosted hit. Wrong: no hit, the monster bonks you back, and the right answer is shown. About 2 questions a fight.
+ */
+export const AUTO_SHARE = 0.25;
+export const AUTO_BONKS = { min: 2, max: 4 } as const;
+export const BOOSTS = [
+  { times: 2, weight: 6, name: 'DOUBLE DAMAGE!' },
+  { times: 3, weight: 3, name: 'TRIPLE DAMAGE!' },
+  { times: 10, weight: 1, name: 'ABSURD DAMAGE!' },
+] as const;
 
 /** The special moves, once a fight. */
 export const SPECIAL = {

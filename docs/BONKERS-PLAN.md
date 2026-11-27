@@ -2,6 +2,8 @@
 
 **Status: B.1 LIVE for teachers 27 Nov 2026 (PR #942: migration 20261127191027_bonkers.sql applied, `bonkers` function deployed, tables empty, switch on for every class). Code switch OFF: only teachers can open `/#/bonkers` to test the gameplay (James, 27 Nov: "no art though, leave that till last and lets test some gameplay first"). No painting until James has played it and says go.**
 
+**Change after James's first play (27 Nov, PR below): "a bit too much maths", aim for two questions a fight, "smash" not "bonk".** The hero now smashes on their own (2 to 4 small smashes before each question, never the finishing blow), and each question pops up with a surprise boost: DOUBLE (×2, most often), TRIPLE (×3) or ABSURD DAMAGE (×10, rare). A right answer smashes for that boost; a wrong one misses and the monster smashes back. Simulator: about 2.1 questions a fight (11 an adventure) for a steady pupil, 1.8 strong, 2.7 struggling. All game wording says smash; the achievement names below get the same change when B.2 builds them.
+
 Brainstorm and all 22 of James's answers: [plans/bonkers-quest/PLAN.md](plans/bonkers-quest/PLAN.md) (section 10 wins where it differs). Style test (bouncy cartoon picked): [plans/bonkers-quest/style-test/](plans/bonkers-quest/style-test/).
 
 ## The short version
@@ -60,5 +62,5 @@ All 22 are James's (27 Nov 2026), in the brainstorm's section 10. Calls I made w
 
 - Function `bonkers` (`supabase/functions/bonkers/`), rules in `shared/bonkers/`.
 - Tables `bonkers_progress` (one row a pupil, versioned) and `bonkers_adventures` (one a day-ish: the quest, the monsters, the questions as the server made them, the marks).
-- Requests: load 1, start 1, one per question (about 20: the simulator's 18 to 25), finish 1: about 23 an adventure, so 28 pupils is about 650 a lesson.
+- Requests: load 1, start 1, one per question (about 11 since the 27 Nov change), finish 1: about 14 an adventure, so 28 pupils is about 400 a lesson.
 - Preview (no sign-in, trial backend in the browser): `npm run bonkers:preview` makes one HTML file.

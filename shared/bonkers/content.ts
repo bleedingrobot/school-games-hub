@@ -33,13 +33,13 @@ export const CLASS_INFO: Record<HeroClass, ClassInfo> = {
     id: 'dazzler', name: 'Disco Dazzler', names: { boy: 'Disco Dazzler', girl: 'Disco Dazzler', animal: 'Disco Dazzler Flamingo' },
     animal: 'flamingo', emoji: { boy: '🕺', girl: '💃', animal: '🦩' }, colour: '#c04fd8',
     blurb: 'Sparkly cape, giant sunglasses and the dance moves of a legend.',
-    move: { name: 'Dazzle Dance', does: 'The monster is so dazzled it can’t bonk you this question, and a right answer hits harder.' },
+    move: { name: 'Dazzle Dance', does: 'The monster is so dazzled it can’t smash you this question, and a right answer hits harder.' },
   },
   granny: {
     id: 'granny', name: 'Pirate Granny', names: { boy: 'Pirate Grandad', girl: 'Pirate Granny', animal: 'Pirate Parrot' },
     animal: 'parrot', emoji: { boy: '👴', girl: '👵', animal: '🦜' }, colour: '#2f8fbf',
     blurb: 'An eye patch, two knitting needles and absolutely no fear.',
-    move: { name: 'Wool Whirlwind', does: 'The monster is tied up in wool and can’t bonk you for 2 questions.' },
+    move: { name: 'Wool Whirlwind', does: 'The monster is tied up in wool and can’t smash you for 2 questions.' },
   },
   ninja: {
     id: 'ninja', name: 'Bin Ninja', names: { boy: 'Bin Ninja', girl: 'Bin Ninja', animal: 'Bin Ninja Raccoon' },

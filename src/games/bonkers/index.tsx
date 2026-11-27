@@ -27,7 +27,7 @@ function BonkersIcon({ size = 64 }: { size?: number }) {
 export const bonkersQuest: GameDefinition = {
   id: 'bonkers',
   name: 'Bonkers Quest',
-  tagline: 'Bonk monsters with maths',
+  tagline: 'Smash monsters with maths',
   colours: ['#ffb347', '#e8573a'],
   Icon: BonkersIcon,
   Play: BonkersPlay,
