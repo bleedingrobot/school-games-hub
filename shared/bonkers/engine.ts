@@ -342,7 +342,7 @@ export function replay(adv: Adventure, marks: readonly Mark[]): Replay {
     const ended: Outcome | null = cur.foeHp <= 0 ? 'won' : cur.hearts <= 0 ? 'bonked' : null;
     blows.push({ slot, right: mark.right, special: useSpecial, hit, ouch, foeHp: cur.foeHp, hearts: cur.hearts, ended });
     if (!ended) continue;
-    const trainer = phase === 'trainer';
+    const trainer = (phase as Phase) === 'trainer';
     results.push({ foe: cur.foe, trainer, outcome: ended, questions: cur.questions, rights: cur.rights });
     if (trainer) {
       trainerWon = ended === 'won';
@@ -361,7 +361,7 @@ export function replay(adv: Adventure, marks: readonly Mark[]): Replay {
 
   return {
     phase,
-    fight: phase === 'trainer' ? adv.foes.length : fight,
+    fight: (phase as Phase) === 'trainer' ? adv.foes.length : fight,
     foe: cur?.foe ?? null,
     foeHp: cur?.foeHp ?? 0,
     hearts: cur?.hearts ?? 0,
