@@ -29,7 +29,7 @@
   },
   {
    "name": "lake-volcano-wide",
-   "prompt": "A top-down painted texture of a bubbling lake of bright orange molten lava with dark crusted swirls, glowing cracks and little sparks, seen straight down from above, even all over, the same everywhere, seamless, no edges, no shore, nothing floating in it, wide landscape widescreen picture, the lava fills the whole wide frame edge to edge, no writing anywhere.",
+   "prompt": "A top-down painted texture of a bubbling lake of bright orange molten lava with dark crusted swirls, glowing cracks and little sparks, seen straight down from above, even all over, the same everywhere, seamless, no edges, no shore, nothing floating in it, wide picture, no writing anywhere. Wide landscape widescreen picture, the board fills the whole wide frame edge to edge.",
    "size": [
     2048,
     1280
@@ -137,7 +137,7 @@
   },
   {
    "name": "lake-dragon-wide",
-   "prompt": "A top-down painted texture of a lake of glowing red-orange lava with dark rocky swirls and golden sparkles, seen straight down from above, even all over, the same everywhere, seamless, no edges, no shore, nothing floating in it, wide landscape widescreen picture, the lava fills the whole wide frame edge to edge, no writing anywhere.",
+   "prompt": "A top-down painted texture of a lake of glowing red-orange lava with dark rocky swirls and golden sparkles, seen straight down from above, even all over, the same everywhere, seamless, no edges, no shore, nothing floating in it, wide picture, no writing anywhere. Wide landscape widescreen picture, the board fills the whole wide frame edge to edge.",
    "size": [
     2048,
     1280
@@ -245,7 +245,7 @@
   },
   {
    "name": "lake-forge-wide",
-   "prompt": "A seamless repeating top-down texture of flowing bright yellow-orange molten metal, long wavy streaks of liquid gold with thin dark slag ripples and sparks running across the whole picture, seen straight down from above, the same pattern everywhere right out to every edge and corner, no whirlpool, no spiral, no centre, no container, no rim, no shore, nothing floating in it, wide landscape widescreen picture, the lava fills the whole wide frame edge to edge, no writing anywhere.",
+   "prompt": "A seamless repeating top-down texture of flowing bright yellow-orange molten metal, long wavy streaks of liquid gold with thin dark slag ripples running in straight parallel horizontal lines from left to right, and sparks, across the whole picture, seen straight down from above, the same pattern everywhere right out to every edge and corner, no container, no rim, no shore, nothing floating in it, wide picture, no writing anywhere. Wide landscape widescreen picture, the board fills the whole wide frame edge to edge.",
    "size": [
     2048,
     1280
@@ -353,7 +353,7 @@
   },
   {
    "name": "lake-planet-wide",
-   "prompt": "A top-down painted texture of a lake of glowing magenta and orange alien lava with dark swirls and glowing crystals, seen straight down from above, even all over, the same everywhere, seamless, no edges, no shore, nothing floating in it, wide landscape widescreen picture, the lava fills the whole wide frame edge to edge, no writing anywhere.",
+   "prompt": "A top-down painted texture of a lake of glowing magenta and orange alien lava with dark swirls and glowing crystals, seen straight down from above, even all over, the same everywhere, seamless, no edges, no shore, nothing floating in it, wide picture, no writing anywhere. Wide landscape widescreen picture, the board fills the whole wide frame edge to edge.",
    "size": [
     2048,
     1280
