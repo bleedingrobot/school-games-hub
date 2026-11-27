@@ -4,14 +4,14 @@
  * Sheet look as the battle screens; walking is locked while one is open. Every change goes
  * through the pure rules in shared/monsters/world/menu.ts.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { ItemId } from '../../../../shared/monsters/engine';
 import { AREAS } from '../../../../shared/monsters/world/areas';
 import { applyItem, bookCounts, canHeal, moveToBox, moveToFront, moveToTeam, type MenuResult } from '../../../../shared/monsters/world/menu';
 import { ITEM_ORDER } from '../../../../shared/monsters/world/rewards';
 import type { WorldState } from '../../../../shared/monsters/world/types';
 import { TYPE_LABEL } from '../../../../shared/monsters/types';
-import { badgePic } from '../art/painted';
+import { badgePic, scenePic } from '../art/painted';
 import { BoxScreen } from '../BoxScreen';
 import { HowToPlayBody } from '../HowToPlay';
 import { hasLooks, LookPicker, lookName } from '../LookPicker';
@@ -24,6 +24,7 @@ import type { GameMap } from '../../../../shared/monsters/world/types';
 import { questOf, type QuestOptions } from '../../../../shared/monsters/world/questWorld';
 import { BoardPage, EggPage, QuestLogPage, TinkerPage } from './QuestPages';
 import { PuzzlePage } from './PuzzlePage';
+import { lookOf } from './puzzleLook';
 import { WorldMapPage } from './WorldMapPage';
 import { fastTravel } from '../../../../shared/monsters/world/worldMap';
 import { WORLD_MAPS } from '../../../../shared/monsters/maps';
@@ -52,6 +53,12 @@ export interface MapMenuProps {
 
 const TITLES: Record<MenuPage, string> = { main: 'Menu', team: 'Team', bag: 'Bag', book: 'Monster book', badges: 'Badges', settings: 'Settings', types: 'Strong and weak', box: 'Monster box', howto: 'How to play', look: 'Change my look', quests: 'Quests', eggs: 'Egg basket', tinker: 'The Tinker', board: 'Notice board', puzzle: 'Puzzle', world: 'World map' };
 
+/** The puzzle screens stand in front of the area's painted landscape (docs/MONSTERS-PUZZLE-ART-PLAN.md). */
+function puzzleScene(id: string): CSSProperties {
+  const { wide, small } = scenePic(lookOf(id).scene);
+  return { '--mz-scene': wide ? `url("${wide}")` : 'none', '--mz-scene-small': small ? `url("${small}")` : 'none' } as CSSProperties;
+}
+
 export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, onClose, onChange, onTravel, map, questOpts = {}, puzzle }: MapMenuProps) {
   const root = useRef<HTMLDivElement>(null);
   const [message, setMessage] = useState('');
@@ -73,7 +80,8 @@ export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, o
   return (
     <div
       ref={root}
-      className="mm"
+      className={page === 'puzzle' ? `mm mm--puzzle mm--${lookOf(puzzle ?? '').theme}` : 'mm'}
+      style={page === 'puzzle' ? puzzleScene(puzzle ?? '') : undefined}
       onKeyDown={(e) => {
         if (e.key === 'Escape') {
           e.preventDefault();
@@ -115,7 +123,7 @@ export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, o
         {page === 'eggs' && map && <EggPage world={world} apply={apply} map={map} opts={questOpts} />}
         {page === 'tinker' && <TinkerPage world={world} apply={apply} />}
         {page === 'board' && <BoardPage world={world} apply={apply} opts={questOpts} />}
-        {page === 'puzzle' && puzzle && <PuzzlePage world={world} apply={apply} id={puzzle} opts={questOpts} />}
+        {page === 'puzzle' && puzzle && <PuzzlePage world={world} apply={apply} id={puzzle} opts={questOpts} onDone={onClose} />}
         {page === 'world' && (
           <WorldMapPage
             world={world}

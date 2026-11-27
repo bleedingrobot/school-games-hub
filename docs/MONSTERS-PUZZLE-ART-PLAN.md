@@ -1,7 +1,7 @@
 # Maths Monsters puzzles: "make them look MUCH better" (art + presentation plan)
 
 *Written 28 Nov 2026 NZ for James ("can we make the mini games look MUCH better! we can paint new art, but just plan it at
-the moment please"), after he played Stepping stones and found it plain. **Status: PLAN ONLY, nothing built, nothing painted.***
+the moment please"), after he played Stepping stones and found it plain. **Status: BUILT 28 Nov 2026 NZ (see "Built" at the end).***
 
 Plan page with before shots and mock-ups: https://claude.ai/artifact/VBPqyi7NVA2CSpDBD1b7zV . Shots and mock-ups are in project
 files `monsters-puzzles/` (before-*.png, mock-*.png at 1366x768 and 390x844).
@@ -212,3 +212,15 @@ Tests: keep `MonstersPlay.test.tsx` passing; add a PuzzlePage test per stage tha
 - No sideways scroll at 390 px; board never taller than the screen on a 1366x768 Chromebook.
 - Reduced motion respected; mute respected.
 - Art loads lazily per puzzle (only that puzzle's pieces), each under 45 KB.
+
+## Built (28 Nov 2026 NZ)
+
+James: "just do one version of each, and repaint what is needed". All stages built in one go, painted one try each on
+JamesGaming (`scripts/monsters-puzzle-paint.py gen`, raw PNGs on branch `monsters-puzzle-art-inbox`, not for main), made into
+game files with `scripts/monsters-puzzle-pick.py` (contact sheet `docs/monsters-art-test/puzzles-sheet-2.png`).
+
+- Code: `PuzzlePage.tsx` (all boards), `puzzleLook.ts` (scene, person, theme, glowworm counts), `puzzles.css`, MapMenu
+  (`mm--puzzle` stage, area landscape), `render.ts` (painted "?" sign over unsolved puzzle spots). No new test: the monsters area is at its test budget (10); the puzzle rules keep their test in shared/monsters/quests/puzzles.test.ts.
+- Not used after painting (look worse than the CSS stand-in): smoke (came out as a face), cave-roof (glitchy), tag and
+  sign (a hole/post sat behind the numbers and words). Deleted; CSS draws them. Repaint later only if wanted.
+- Not done: the seed pod pop on the map (seed-pod.webp is painted and waiting). Bit pictures show on the prize card.
