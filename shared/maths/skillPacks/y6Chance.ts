@@ -74,7 +74,7 @@ const chwEvent = oneKey(
 
 const chwNumber = oneKey(
   'chw:number',
-  'Chance word and its number on the 0 to 1 scale (P = 0.9 is likely)',
+  'Chance word and its number on the 0 to 1 scale (a chance of 0.9 is likely)',
   CHW_TAGS,
   4,
   (_k, r) => [int(r, 0, 1), int(r, 0, 4), ...rollPick(r)],
@@ -83,14 +83,14 @@ const chwNumber = oneKey(
     const word = WORDS[w];
     const num = NUMBERS[w];
     if (dir === 0) {
-      const made = pick({ parts: [`P = ${num}`, 'means', '?'], spoken: `The probability is ${num}. Which chance word fits?`, fact: `P = ${num} means ${word}` }, word, wordNamed(word), { slot, salt });
+      const made = pick({ parts: [`A chance of ${num}`, 'means', '?'], spoken: `The chance is ${num}. Which chance word fits?`, fact: `A chance of ${num} means ${word}` }, word, wordNamed(word), { slot, salt });
       return made ? { ...made, prompt: 'Which chance word fits?' } : null;
     }
     const named: Record<string, string> = {};
     NUMBERS.forEach((n, i) => {
       if (i !== w) named[`gave the number for ${WORDS[i]}`] = n;
     });
-    const made = pick({ parts: [cap(word), 'means P =', '?'], spoken: `${cap(word)}. What is the probability?`, fact: `${cap(word)} means P = ${num}` }, num, named, { slot, salt });
+    const made = pick({ parts: [cap(word), 'is a chance of', '?'], spoken: `${cap(word)}. What number is that chance?`, fact: `${cap(word)} is a chance of ${num}` }, num, named, { slot, salt });
     return made ? { ...made, prompt: 'Which number fits?' } : null;
   },
 );
@@ -111,7 +111,7 @@ const spinOk = (n: number, k: number, c: number) => isInt(n, 2, 10) && isInt(k, 
 
 const spinPart = oneKey(
   'spin:part',
-  'Chance of a colour on a spinner (3 of 8 parts red: P(red))',
+  'Chance of a colour on a spinner (3 of 8 parts red: chance of red)',
   SPIN_TAGS,
   5,
   (_k, r) => [int(r, 2, 10), int(r, 1, 9), int(r, 0, COLOURS.length - 1), ...rollPick(r)],
@@ -121,7 +121,7 @@ const spinPart = oneKey(
     const right = frac(k, n);
     const text = `A spinner has ${n} equal parts. ${k} ${k === 1 ? 'is' : 'are'} ${colour}.`;
     const made = pick(
-      { parts: [`P(${colour})`, '=', '?'], spoken: `${text} What is the chance of ${colour}?`, fact: `P(${colour}) = ${right}` },
+      { parts: [`Chance of ${colour}`, '=', '?'], spoken: `${text} What is the chance of ${colour}?`, fact: `The chance of ${colour} is ${right}` },
       right,
       labels({
         ['gave the chance of not ' + colour]: labUnder(n - k, n),
@@ -138,7 +138,7 @@ const spinPart = oneKey(
 
 const spinRest = oneKey(
   'spin:rest',
-  'Chance of not (P(red) = 3/8, P(not red))',
+  'Chance of not (chance of red is 3/8, chance of not red)',
   SPIN_TAGS,
   5,
   (_k, r) => [int(r, 2, 10), int(r, 1, 9), int(r, 0, COLOURS.length - 1), ...rollPick(r)],
@@ -148,7 +148,7 @@ const spinRest = oneKey(
     const given = frac(k, n);
     const right = frac(n - k, n);
     const made = pick(
-      { parts: [`P(not ${colour})`, '=', '?'], spoken: `The chance of ${colour} is ${spokenLabel(given)}. What is the chance of not ${colour}?`, fact: `P(not ${colour}) = ${right}` },
+      { parts: [`Chance of not ${colour}`, '=', '?'], spoken: `The chance of ${colour} is ${spokenLabel(given)}. What is the chance of not ${colour}?`, fact: `The chance of not ${colour} is ${right}` },
       right,
       labels({
         ['gave the chance of ' + colour]: labUnder(k, n),
@@ -158,7 +158,7 @@ const spinRest = oneKey(
       }),
       { slot, salt },
     );
-    return made ? { ...made, prompt: `P(${colour}) = ${given}`, figure: { kind: 'spinner', parts: n, shaded: k, colour } } : null;
+    return made ? { ...made, prompt: `The chance of ${colour} is ${given}`, figure: { kind: 'spinner', parts: n, shaded: k, colour } } : null;
   },
 );
 

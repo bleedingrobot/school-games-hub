@@ -37,7 +37,7 @@ export const PICK_CHECKS: Record<string, (parts: string[], prompt: string, right
   },
   'chw:number': (parts, _prompt, right, wrong) => {
     if (parts[1] === 'means') {
-      const number = /^P = (.+)$/.exec(parts[0])![1];
+      const number = /^A chance of (.+)$/.exec(parts[0])![1];
       expect(right, parts[0]).toBe(NUMBER_WORD[number]);
     } else {
       expect(NUMBER_WORD[right], parts[0]).toBe(parts[0].toLowerCase());
