@@ -295,3 +295,26 @@
 .gs-held__partner i { font-style: normal; font-weight: 900; font-size: 0.8rem; color: #d9cff5; }
 .gs-held__partner--none { opacity: 0.45; filter: grayscale(0.8); }
 .gs-held__item--ready { border-color: #7dffb0; box-shadow: 0 0 12px rgba(125, 255, 176, 0.75); }
+
+/* Boss wins boards (James, 28 Nov 2026): a bar of boxes per hero or map, capped at 10 boxes. */
+.gs-wins { margin: 0 0 0.9rem; padding: 0.55rem 0.6rem 0.35rem; border-radius: 1rem; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); }
+.gs-wins__head { display: flex; justify-content: space-between; font-size: 0.8rem; color: #cbbcf2; margin: 0 0.15rem 0.35rem; }
+.gs-wins__row { display: grid; grid-template-columns: 2.4rem 5.5rem minmax(0, 1fr) 1.8rem; align-items: center; gap: 0.4rem; width: 100%; padding: 0.35rem 0.15rem; background: none; border: 0; border-top: 1px solid rgba(255, 255, 255, 0.07); color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: 0.5rem; }
+.gs-wins__row:first-of-type { border-top: 0; }
+.gs-wins__row:not(:disabled):hover { background: rgba(255, 255, 255, 0.06); }
+.gs-wins__row:disabled { cursor: default; }
+.gs-wins__icon { width: 2.3rem; height: 2.3rem; display: grid; place-items: center; border-radius: 50%; background: #fff6dc; border: 2px solid #6b5aa8; overflow: hidden; font-size: 1.3rem; }
+.gs-wins__icon img { width: 100%; height: 100%; object-fit: cover; }
+.gs-wins__name { font-weight: 800; font-size: 0.9rem; line-height: 1.1; }
+.gs-wins__bar { display: flex; gap: 3px; min-width: 0; }
+.gs-wins__bar i, .gs-wins__key i { flex: 1; min-width: 0; height: 1.2rem; border-radius: 4px; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.15); }
+.gs-wins__bar i.on, .gs-wins__key i.on { background: linear-gradient(#ffe27a, #f2a93b); border-color: #ffd65c; }
+.gs-wins__bar i.on.new, .gs-wins__key i.on.new { background: linear-gradient(#9fffc8, #3fd68a); border-color: #7dffb0; }
+.gs-wins__n { font-weight: 900; text-align: right; }
+.gs-wins__need { grid-column: 2 / 5; font-size: 0.78rem; color: #ffd65c; font-weight: 700; margin-top: -0.1rem; }
+.gs-wins__row--locked .gs-wins__icon { filter: grayscale(1); opacity: 0.5; }
+.gs-wins__row--locked .gs-wins__name { color: #9d8fc8; }
+.gs-wins__row--locked .gs-wins__bar i { opacity: 0.4; }
+.gs-wins__key { display: flex; gap: 0.9rem; font-size: 0.78rem; color: #cbbcf2; margin: 0.45rem 0.2rem 0.15rem; }
+.gs-wins__key span { display: inline-flex; align-items: center; gap: 0.3rem; }
+.gs-wins__key i { flex: none; width: 0.7rem; height: 0.95rem; display: inline-block; }

@@ -224,12 +224,28 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
               Your save couldn't be loaded. <button type="button" className="gs-btn gs-btn--ghost" onClick={loadSave}>Try again</button>
             </p>
           )}
+          {save && (
+            <WinsBoard
+              title="👑 Boss wins"
+              rows={HEROES.map((h) => {
+                const open = heroOpen(save, h.id);
+                const inRound = save.heroRound.includes(h.id);
+                return {
+                  key: h.id, open,
+                  icon: h.secret && !open ? <span className="gs-wins__secret">❔</span> : <Pic path={`portraits/${h.id}`} small fallback={HERO_ICON[h.id]} className="gs-pic--portrait" />,
+                  name: h.secret && !open ? 'Secret hero' : h.name,
+                  wins: save.heroWins[h.id] ?? 0,
+                  green: inRound ? (save.heroWins[h.id] ?? 0) : 0,
+                  need: open && !inRound ? `🔁 Win with me for hero round ${save.heroRoundsPaid + 1}` : null,
+                  onPick: () => { setHero(h); storyFirst(heroStory(h.id), () => setScreen('map')); },
+                };
+              })}
+            />
+          )}
           <div className="gs-grid">
             {HEROES.map((h, i) => {
               const open = save ? heroOpen(save, h.id) : false;
               const secret = h.secret && !open;
-              const heroWins = save?.heroWins[h.id] ?? 0;
-              const heroNeeded = !!save && open && nextHeroRound(save).toWin.includes(h.id);
               return (
                 <button
                   key={h.id} type="button" disabled={!open} data-key={i < 9 ? String(i + 1) : undefined}
@@ -247,8 +263,6 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
                       <span className="gs-pick__weapon"><Pic path={powerPic(h.id, h.weapon)} small fallback={WEAPON_ICON[h.weapon]} className="gs-pic--inline" /> {powerWords(h.id, h.weapon).name}</span>
                     </span>
                   )}
-                  {open && heroWins > 0 && <span className="gs-pick__blurb">👑 {heroWins} boss {heroWins === 1 ? 'win' : 'wins'}</span>}
-                  {heroNeeded && <span className="gs-pick__round">🔁 Win with me for hero round {save ? nextHeroRound(save).round : 1}</span>}
                   {!open && <span className="gs-pick__lock">🔒 {UNLOCK_WORDS[h.unlock]}</span>}
                 </button>
               );
@@ -264,20 +278,37 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
           <p className="gs-menu__sub">Playing as {HERO_ICON[hero.id]} {hero.name}. Survive 3 minutes. A mini-boss comes at 1:30 and the boss at 2:30: beat the boss to win!</p>
           {save && <RoundStrip save={save} group="kingdom" />}
           {save && mapCount > STORM_FIRST && mapOpen(save, STORM_FIRST, stormLands) && <RoundStrip save={save} group="storm" />}
+          {save && (
+            <WinsBoard
+              title="👑 Boss wins"
+              disabled={busy || outToday}
+              rows={MAPS.slice(0, mapCount).map((m, i) => {
+                const open = mapOpen(save, i, stormLands);
+                const wins = save.beats[i] ?? (save.bosses.includes(i) ? 1 : 0);
+                const next = nextRound(save.beats, groupOf(i));
+                return {
+                  key: m.id, open, wins,
+                  icon: <span className="gs-wins__emoji">{MAP_ICON[m.id]}</span>,
+                  name: m.name,
+                  // The win that counts for this round: the round-th box, once filled.
+                  green: wins >= next.round ? next.round : 0,
+                  need: open && next.toBeat.includes(i) ? `🔁 ${wins ? 'Beat again' : 'Beat the boss'} for round ${next.round}` : null,
+                  onPick: () => storyFirst(mapStory(i), () => void play(i)),
+                };
+              })}
+            />
+          )}
           <div className="gs-grid gs-grid--maps">
             {MAPS.slice(0, mapCount).map((m, i) => {
               const open = save ? mapOpen(save, i, stormLands) : i === 0;
               const beaten = save?.bosses.includes(i);
-              const wins = save?.beats[i] ?? (beaten ? 1 : 0);
-              const needed = !!save && open && nextRound(save.beats, groupOf(i)).toBeat.includes(i);
               return (
                 <button key={m.id} type="button" disabled={!open || busy || outToday} data-key={i < 9 ? String(i + 1) : undefined} className={`gs-pick gs-pick--map gs-pick--${m.id}${open ? '' : ' gs-pick--locked'}${shown?.kind === 'map' && shown.map === i ? ' gs-show' : ''}`} onClick={() => storyFirst(mapStory(i), () => void play(i))}>
                   {i < 9 && <KeyBadge k={String(i + 1)} />}
                   <span className="gs-pick__icon" aria-hidden="true">{MAP_ICON[m.id]}</span>
                   <span className="gs-pick__name">{m.name}</span>
                   <span className="gs-pick__blurb">{m.monsters.slice(0, 3).map((x) => x.name).join(', ')}</span>
-                  <span className="gs-pick__blurb">Boss: {m.monsters[4].name}{beaten ? ` 👑 beaten ${wins}×` : ''}</span>
-                  {needed && beaten && <span className="gs-pick__round">🔁 Beat again for round {nextRound(save?.beats ?? [], groupOf(i)).round}</span>}
+                  <span className="gs-pick__blurb">Boss: {m.monsters[4].name}{beaten ? ' 👑 beaten' : ''}</span>
                   {!open && <span className="gs-pick__lock">🔒 {MAP_LOCK[m.id]}</span>}
                   {open && outToday && <span className="gs-pick__lock">🌙 Come back tomorrow</span>}
                 </button>
@@ -406,6 +437,38 @@ function RoundStrip({ save, group }: { save: MySave; group: RoundGroup }) {
         {maps.map((i) => <i key={i} className={next.toBeat.includes(i) ? '' : 'on'} title={MAPS[i].name} />)}
       </span>
       <span className="gs-round__line">Beat every boss {next.round === 1 ? 'once' : 'again'}. {next.done}/{maps.length} done, still to beat: {left}.</span>
+    </div>
+  );
+}
+
+/** Boxes shown per row on the wins boards (James, 28 Nov 2026: "cap at 10"); the number beside shows the real count. */
+const WINS_BOXES = 10;
+
+interface WinsRow { key: string; open: boolean; icon: ReactNode; name: string; wins: number; green: number; need: string | null; onPick: () => void }
+
+/**
+ * Boss wins as a bar of boxes, one row per hero or map (James, 28 Nov 2026), so it's easy to see down the list which
+ * ones are played least. A green box is the win that counts for this round. Tap a row to play it, as with the cards.
+ */
+function WinsBoard({ title, rows, disabled = false }: { title: string; rows: WinsRow[]; disabled?: boolean }) {
+  return (
+    <div className="gs-wins">
+      <div className="gs-wins__head"><span>{title}</span><span>tap to play</span></div>
+      {rows.map((r) => (
+        <button key={r.key} type="button" className={`gs-wins__row${r.open ? '' : ' gs-wins__row--locked'}`} disabled={!r.open || disabled} onClick={r.onPick}
+          aria-label={`${r.name}: ${r.wins} boss ${r.wins === 1 ? 'win' : 'wins'}${r.need ? `. ${r.need.replace('🔁 ', '')}` : ''}`}>
+          <span className="gs-wins__icon" aria-hidden="true">{r.icon}</span>
+          <span className="gs-wins__name">{r.name}</span>
+          <span className="gs-wins__bar" aria-hidden="true">
+            {Array.from({ length: WINS_BOXES }, (_, i) => (
+              <i key={i} className={i < r.wins ? (i + 1 === Math.min(r.green, WINS_BOXES) ? 'on new' : 'on') : ''} />
+            ))}
+          </span>
+          <span className="gs-wins__n">{r.open ? r.wins : '🔒'}</span>
+          {r.need && <span className="gs-wins__need">{r.need}</span>}
+        </button>
+      ))}
+      <div className="gs-wins__key"><span><i className="on" />boss win</span><span><i className="on new" />counts for this round</span></div>
     </div>
   );
 }
