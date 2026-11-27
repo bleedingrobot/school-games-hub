@@ -1,5 +1,6 @@
 /** Smash Quest's calm screens: picking a hero, home, and what an adventure earned. */
 import { useState } from 'react';
+import { useEnterGoes } from './keys';
 import { CLASS_INFO, CLASSES, GEAR, INNKEEPER, LOOKS, SLOTS, gearById, gearStats, type GearInfo, trainerFor, zoneById, type HeroClass, type Look } from '../../../shared/bonkers/content';
 import { MAX_LEVEL } from '../../../shared/bonkers/config';
 import { heroPower, replay, starsToTrainer, type Hero, type Progress } from '../../../shared/bonkers/engine';
@@ -208,6 +209,7 @@ export function Inn({ loaded, busy, note, onQuest, onChangeLook }: {
 }
 
 export function Results({ before, result, current, onInn }: { before: Progress; result: FinishReply; current: AdventureView; onInn: () => void }) {
+  useEnterGoes();
   const r = replay(current.adventure, current.marks);
   const fights = r.results.filter((x) => !x.trainer);
   const won = fights.filter((x) => x.outcome === 'won').length;
