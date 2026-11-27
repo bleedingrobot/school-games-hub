@@ -289,3 +289,9 @@
 .gs-round__dots i.on { background: #ffd65c; }
 .gs-round__line { flex-basis: 100%; font-size: 0.92rem; color: #f3e6c4; }
 .gs-pick__round { color: #ffd65c; font-size: 0.9rem; font-weight: 700; }
+
+/* Held row: each weapon with the power it evolves with (James, 28 Nov 2026). */
+.gs-held__partner { display: inline-flex; align-items: center; gap: 2px; margin-left: 0.2rem; padding-left: 0.35rem; border-left: 2px solid rgba(185, 139, 255, 0.7); }
+.gs-held__partner i { font-style: normal; font-weight: 900; font-size: 0.8rem; color: #d9cff5; }
+.gs-held__partner--none { opacity: 0.45; filter: grayscale(0.8); }
+.gs-held__item--ready { border-color: #7dffb0; box-shadow: 0 0 12px rgba(125, 255, 176, 0.75); }

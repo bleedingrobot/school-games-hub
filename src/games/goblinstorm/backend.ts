@@ -12,7 +12,7 @@ import { quickMsForPack } from '../../../shared/maths/config';
 import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRandom, type PublicQuestion } from '../../../shared/maths/serverQuestions';
 import type { Question } from '../../../shared/maths/skillPack';
 
-import { afterRun, type RoundsPaid } from '../../../shared/goblinstorm/rounds';
+import { afterHeroRun, afterRun, type HeroRounds, type RoundsPaid } from '../../../shared/goblinstorm/rounds';
 import { factText, freshSave, newUnlocks, RUNS_A_DAY, type Mark, type Save } from '../../../shared/goblinstorm/server';
 
 export { factText, type Mark };
@@ -36,9 +36,13 @@ export interface MySave extends Save {
   beats: number[];
   /** Round bonuses already paid, by group. */
   roundsPaid: RoundsPaid;
+  /** Boss wins by hero, heroes won with since the last hero round, and hero rounds paid (shared/goblinstorm/rounds.ts). */
+  heroWins: HeroRounds['heroWins'];
+  heroRound: HeroId[];
+  heroRoundsPaid: number;
 }
 
-export const emptySave = (): MySave => ({ ...freshSave(), codex: [], weapons: [], runs: 0, today: 0, bestGold: 0, guideSeen: false, beats: [], roundsPaid: {} });
+export const emptySave = (): MySave => ({ ...freshSave(), codex: [], weapons: [], runs: 0, today: 0, bestGold: 0, guideSeen: false, beats: [], roundsPaid: {}, heroWins: {}, heroRound: [], heroRoundsPaid: 0 });
 
 export interface StartReply {
   seed: number;
@@ -95,10 +99,10 @@ interface Kept { hero: HeroId; map: number; questions: Question[]; marks: (Mark 
 export function standInBackend(focus: MathsFocus = PREVIEW_FOCUS, multipleChoice = false, start: MySave = emptySave()): GoblinStormBackend {
   const runs = new Map<number, Kept>();
   const quickMs = quickMsForPack(null);
-  const save: MySave = { ...start, heroes: [...start.heroes], bosses: [...start.bosses], codex: [...start.codex], weapons: [...start.weapons], shop: { ...start.shop }, beats: [...start.beats], roundsPaid: { ...start.roundsPaid } };
+  const save: MySave = { ...start, heroes: [...start.heroes], bosses: [...start.bosses], codex: [...start.codex], weapons: [...start.weapons], shop: { ...start.shop }, beats: [...start.beats], roundsPaid: { ...start.roundsPaid }, heroWins: { ...start.heroWins }, heroRound: [...start.heroRound] };
   return {
     async me() {
-      return { ...save, heroes: [...save.heroes], bosses: [...save.bosses], codex: [...save.codex], weapons: [...save.weapons], shop: { ...save.shop }, beats: [...save.beats], roundsPaid: { ...save.roundsPaid } };
+      return { ...save, heroes: [...save.heroes], bosses: [...save.bosses], codex: [...save.codex], weapons: [...save.weapons], shop: { ...save.shop }, beats: [...save.beats], roundsPaid: { ...save.roundsPaid }, heroWins: { ...save.heroWins }, heroRound: [...save.heroRound] };
     },
     async start(hero, map) {
       // The same 5-a-day rule as the server (no Unlimited today in the preview).
@@ -137,7 +141,11 @@ export function standInBackend(focus: MathsFocus = PREVIEW_FOCUS, multipleChoice
       const round = afterRun(save, run.map, r.summary.bossBeaten);
       save.beats = round.beats;
       save.roundsPaid = round.roundsPaid;
-      save.gold += r.summary.gold + round.bonus;
+      const heroRound = afterHeroRun(save, save.heroes, run.hero, r.summary.bossBeaten);
+      save.heroWins = heroRound.heroWins;
+      save.heroRound = heroRound.heroRound;
+      save.heroRoundsPaid = heroRound.heroRoundsPaid;
+      save.gold += r.summary.gold + round.bonus + heroRound.bonus;
       save.kills += r.summary.kills;
       save.runs++;
       save.codex = [...new Set([...save.codex, ...r.summary.evolved])].sort();

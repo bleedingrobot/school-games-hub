@@ -711,17 +711,36 @@ function LevelUpCards({ s, offer, mark, onPick, coach, paused = false, onCodex }
   );
 }
 
-/** What the hero holds now: weapons and powers with their levels. */
+/**
+ * What the hero holds now (James, 28 Nov 2026): each weapon with the power it evolves with and both levels, so a pupil
+ * can see what to pick next ("🔥 3 + 📖 0"). The power shows faded at 0 until it's picked up. A weapon at full level
+ * with its power glows: the Evolve! card is on offer. Powers that go with no held weapon follow on their own.
+ */
 function Held({ s }: { s: RunState }) {
+  const hero = s.setup.hero.id;
+  const level = (id: string) => s.passives.find((p) => p.id === id)?.level ?? 0;
+  const paired = new Set(s.weapons.map((w) => WEAPONS[w.id].evolvesWith as string));
   return (
     <div className="gs-held" aria-label="What you have">
-      {s.weapons.map((w) => (
-        <span key={w.id} className={`gs-held__item${w.evolved ? ' gs-held__item--evolved' : ''}`} title={w.evolved ? powerWords(s.setup.hero.id, w.id).evolved : powerWords(s.setup.hero.id, w.id).name}>
-          <Pic path={powerPic(s.setup.hero.id, w.id, w.evolved)} small fallback={WEAPON_ICON[w.id]} /><small>{w.evolved ? '★' : w.level}</small>
-        </span>
-      ))}
-      {s.passives.map((p) => (
-        <span key={p.id} className="gs-held__item gs-held__item--passive" title={PASSIVES[p.id].name}>
+      {s.weapons.map((w) => {
+        const partner = WEAPONS[w.id].evolvesWith;
+        const pl = level(partner);
+        const ready = !w.evolved && w.level >= WEAPON_LEVELS && pl > 0;
+        const name = w.evolved ? powerWords(hero, w.id).evolved : powerWords(hero, w.id).name;
+        return (
+          <span key={w.id} className={`gs-held__item${w.evolved ? ' gs-held__item--evolved' : ''}${ready ? ' gs-held__item--ready' : ''}`}
+            title={w.evolved ? name : `${name} level ${w.level} + ${PASSIVES[partner].name} level ${pl}${ready ? ': ready to evolve!' : ''}`}>
+            <Pic path={powerPic(hero, w.id, w.evolved)} small fallback={WEAPON_ICON[w.id]} /><small>{w.evolved ? '★' : w.level}</small>
+            {!w.evolved && (
+              <span className={`gs-held__partner${pl ? '' : ' gs-held__partner--none'}`}>
+                <i aria-hidden="true">+</i><Pic path={`passives/${partner}`} small fallback={PASSIVE_ICON[partner]} /><small>{pl}</small>
+              </span>
+            )}
+          </span>
+        );
+      })}
+      {s.passives.filter((p) => !paired.has(p.id)).map((p) => (
+        <span key={p.id} className="gs-held__item gs-held__item--passive" title={`${PASSIVES[p.id].name} level ${p.level}`}>
           <Pic path={`passives/${p.id}`} small fallback={PASSIVE_ICON[p.id]} /><small>{p.level}</small>
         </span>
       ))}
