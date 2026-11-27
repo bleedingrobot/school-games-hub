@@ -27,6 +27,18 @@
       "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, robots, people, machines, boxes, crates, pipes, tables, chairs, stools, furniture, objects, conveyor belts, walls, perspective view, side view, shelves, barrels, lamps, poles, columns, cars, vehicles, shadows of objects, 3d objects"
     },
     {
+      "name": "map-factory-wide",
+      "prompt": "A perfectly flat top-down orthographic view straight down, like a floor plan, of a clean empty open robot factory floor, completely flat, covering the entire picture right out to every edge and corner with no walls, cabinets or anything beyond the floor: a patchwork of different metal floor panels, blue-grey diamond tread plate, riveted steel plates and smooth dark panels, painted bright yellow walkway lines and painted yellow arrows on the floor, small round floor hatches and drain grates set flush in the floor, painted coloured zone squares in teal, orange and purple on the floor, soft pools of warm light on the floor, a few small dark oil stains, a thin yellow and black hazard stripe border running right along the outer edge of the picture, and one single big round soft warm orange woven rug lying flat in the exact centre. Everything is painted flat on the floor, nothing stands up, calm and tidy, game board picture for children aged 7 to 11, wide landscape widescreen picture, the board fills the whole wide frame edge to edge, the centrepiece exactly in the middle.",
+      "size": [
+        2048,
+        1280
+      ],
+      "kind": "scene",
+      "folder": "crew",
+      "file": "map-factory-wide",
+      "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, characters, robots, people, machines, boxes, crates, pipes, tables, chairs, stools, furniture, objects, conveyor belts, walls, perspective view, side view, shelves, barrels, lamps, poles, columns, cars, vehicles, shadows of objects, 3d objects"
+    },
+    {
       "name": "back-factory",
       "prompt": "A wide cheerful painting of an empty huge robot factory hall at night with nobody inside: tall glass windows full of stars, glowing blue and teal lights, big pipes along the ceiling and gentle steam, rounded machines far away in the distance, an empty polished floor in front, soft and slightly out of focus so it works as a page background. Wide landscape picture.",
       "size": [
