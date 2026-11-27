@@ -1,0 +1,1579 @@
+{
+  "_from": "docs/game-guide/templates/art-config.json. FULL ART PLAN (28 Nov 2026, docs/BONKERS-ART-PLAN.md). Not painted yet: James says when. Check with: python3 scripts/game_art.py bonkers paint OUT --dry-run",
+  "game": "bonkers",
+  "filename_prefix": "bonkers/img",
+  "style": "toon",
+  "styles": {
+    "toon": "Bold bright 2D cartoon illustration, thick clean dark outlines, flat candy colours with simple soft shading, big round googly eyes, rubbery squash-and-stretch shapes, goofy wacky expressions, cheerful kids TV animation look, no text. ",
+    "toon_item": "Bold bright 2D cartoon illustration of a plain inanimate object, thick clean dark outlines, flat candy colours with simple soft shading, chunky rounded toy-like shapes, cheerful kids TV animation look, a simple prop with a smooth blank surface, no text. ",
+    "toon_place": "Bold bright 2D cartoon background painting, thick clean dark outlines, flat candy colours with simple soft shading, wonky rubbery shapes, cheerful kids TV animation look, an empty deserted place, scenery only, no text. "
+  },
+  "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic, gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly",
+  "inbox": "~/dragon-art-inbox/bonkers-art",
+  "picks": "docs/bonkers-art/picks.json",
+  "art_dir": "src/games/bonkers/art/paint",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "hero-kitchen-knight-boy-1",
+      "prompt": "A brave little boy hero dressed as a Kitchen Knight: a saucepan worn as a helmet, a flowery apron, oven-mitt gloves, holding a giant wooden rolling pin like a sword. Hero look for levels 1 to 2: homemade and a bit wobbly, everything slightly too big, nervous excited grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "kitchen-knight-boy-1",
+      "max": 800
+    },
+    {
+      "name": "hero-kitchen-knight-boy-2",
+      "prompt": "A brave little boy hero dressed as a Kitchen Knight: a saucepan worn as a helmet, a flowery apron, oven-mitt gloves, holding a giant wooden rolling pin like a sword. Hero look for levels 3 to 5: a few shiny upgrades, a short tea-towel cape, proud confident grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "kitchen-knight-boy-2",
+      "max": 800
+    },
+    {
+      "name": "hero-kitchen-knight-boy-3",
+      "prompt": "A brave little boy hero dressed as a Kitchen Knight: a saucepan worn as a helmet, a flowery apron, oven-mitt gloves, holding a giant wooden rolling pin like a sword. Hero look for levels 6 to 8: polished upgraded gear, a flowing cape, sparkles, heroic power pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "kitchen-knight-boy-3",
+      "max": 800
+    },
+    {
+      "name": "hero-kitchen-knight-boy-4",
+      "prompt": "A brave little boy hero dressed as a Kitchen Knight: a saucepan worn as a helmet, a flowery apron, oven-mitt gloves, holding a giant wooden rolling pin like a sword. Hero look for levels 9 to 10: legendary golden version of the outfit, glowing cape, tiny crown, epic triumphant pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "kitchen-knight-boy-4",
+      "max": 800
+    },
+    {
+      "name": "hero-kitchen-knight-girl-1",
+      "prompt": "A brave little girl hero dressed as a Kitchen Knight: a saucepan worn as a helmet, a flowery apron, oven-mitt gloves, holding a giant wooden rolling pin like a sword. Hero look for levels 1 to 2: homemade and a bit wobbly, everything slightly too big, nervous excited grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "kitchen-knight-girl-1",
+      "max": 800
+    },
+    {
+      "name": "hero-kitchen-knight-girl-2",
+      "prompt": "A brave little girl hero dressed as a Kitchen Knight: a saucepan worn as a helmet, a flowery apron, oven-mitt gloves, holding a giant wooden rolling pin like a sword. Hero look for levels 3 to 5: a few shiny upgrades, a short tea-towel cape, proud confident grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "kitchen-knight-girl-2",
+      "max": 800
+    },
+    {
+      "name": "hero-kitchen-knight-girl-3",
+      "prompt": "A brave little girl hero dressed as a Kitchen Knight: a saucepan worn as a helmet, a flowery apron, oven-mitt gloves, holding a giant wooden rolling pin like a sword. Hero look for levels 6 to 8: polished upgraded gear, a flowing cape, sparkles, heroic power pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "kitchen-knight-girl-3",
+      "max": 800
+    },
+    {
+      "name": "hero-kitchen-knight-girl-4",
+      "prompt": "A brave little girl hero dressed as a Kitchen Knight: a saucepan worn as a helmet, a flowery apron, oven-mitt gloves, holding a giant wooden rolling pin like a sword. Hero look for levels 9 to 10: legendary golden version of the outfit, glowing cape, tiny crown, epic triumphant pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "kitchen-knight-girl-4",
+      "max": 800
+    },
+    {
+      "name": "hero-kitchen-knight-animal-1",
+      "prompt": "A cheeky badger hero standing on two legs dressed as a Kitchen Knight: a saucepan worn as a helmet, a flowery apron, oven-mitt gloves, holding a giant wooden rolling pin like a sword. Hero look for levels 1 to 2: homemade and a bit wobbly, everything slightly too big, nervous excited grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "kitchen-knight-animal-1",
+      "max": 800
+    },
+    {
+      "name": "hero-kitchen-knight-animal-2",
+      "prompt": "A cheeky badger hero standing on two legs dressed as a Kitchen Knight: a saucepan worn as a helmet, a flowery apron, oven-mitt gloves, holding a giant wooden rolling pin like a sword. Hero look for levels 3 to 5: a few shiny upgrades, a short tea-towel cape, proud confident grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "kitchen-knight-animal-2",
+      "max": 800
+    },
+    {
+      "name": "hero-kitchen-knight-animal-3",
+      "prompt": "A cheeky badger hero standing on two legs dressed as a Kitchen Knight: a saucepan worn as a helmet, a flowery apron, oven-mitt gloves, holding a giant wooden rolling pin like a sword. Hero look for levels 6 to 8: polished upgraded gear, a flowing cape, sparkles, heroic power pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "kitchen-knight-animal-3",
+      "max": 800
+    },
+    {
+      "name": "hero-kitchen-knight-animal-4",
+      "prompt": "A cheeky badger hero standing on two legs dressed as a Kitchen Knight: a saucepan worn as a helmet, a flowery apron, oven-mitt gloves, holding a giant wooden rolling pin like a sword. Hero look for levels 9 to 10: legendary golden version of the outfit, glowing cape, tiny crown, epic triumphant pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "kitchen-knight-animal-4",
+      "max": 800
+    },
+    {
+      "name": "hero-disco-dazzler-boy-1",
+      "prompt": "A brave little boy hero dressed as a Disco Dazzler: a sparkly flared disco jumpsuit, huge round sunglasses, platform shoes, a little disco ball on a string. Hero look for levels 1 to 2: homemade and a bit wobbly, everything slightly too big, nervous excited grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "disco-dazzler-boy-1",
+      "max": 800
+    },
+    {
+      "name": "hero-disco-dazzler-boy-2",
+      "prompt": "A brave little boy hero dressed as a Disco Dazzler: a sparkly flared disco jumpsuit, huge round sunglasses, platform shoes, a little disco ball on a string. Hero look for levels 3 to 5: a few shiny upgrades, a short tea-towel cape, proud confident grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "disco-dazzler-boy-2",
+      "max": 800
+    },
+    {
+      "name": "hero-disco-dazzler-boy-3",
+      "prompt": "A brave little boy hero dressed as a Disco Dazzler: a sparkly flared disco jumpsuit, huge round sunglasses, platform shoes, a little disco ball on a string. Hero look for levels 6 to 8: polished upgraded gear, a flowing cape, sparkles, heroic power pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "disco-dazzler-boy-3",
+      "max": 800
+    },
+    {
+      "name": "hero-disco-dazzler-boy-4",
+      "prompt": "A brave little boy hero dressed as a Disco Dazzler: a sparkly flared disco jumpsuit, huge round sunglasses, platform shoes, a little disco ball on a string. Hero look for levels 9 to 10: legendary golden version of the outfit, glowing cape, tiny crown, epic triumphant pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "disco-dazzler-boy-4",
+      "max": 800
+    },
+    {
+      "name": "hero-disco-dazzler-girl-1",
+      "prompt": "A brave little girl hero dressed as a Disco Dazzler: a sparkly flared disco jumpsuit, huge round sunglasses, platform shoes, a little disco ball on a string. Hero look for levels 1 to 2: homemade and a bit wobbly, everything slightly too big, nervous excited grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "disco-dazzler-girl-1",
+      "max": 800
+    },
+    {
+      "name": "hero-disco-dazzler-girl-2",
+      "prompt": "A brave little girl hero dressed as a Disco Dazzler: a sparkly flared disco jumpsuit, huge round sunglasses, platform shoes, a little disco ball on a string. Hero look for levels 3 to 5: a few shiny upgrades, a short tea-towel cape, proud confident grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "disco-dazzler-girl-2",
+      "max": 800
+    },
+    {
+      "name": "hero-disco-dazzler-girl-3",
+      "prompt": "A brave little girl hero dressed as a Disco Dazzler: a sparkly flared disco jumpsuit, huge round sunglasses, platform shoes, a little disco ball on a string. Hero look for levels 6 to 8: polished upgraded gear, a flowing cape, sparkles, heroic power pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "disco-dazzler-girl-3",
+      "max": 800
+    },
+    {
+      "name": "hero-disco-dazzler-girl-4",
+      "prompt": "A brave little girl hero dressed as a Disco Dazzler: a sparkly flared disco jumpsuit, huge round sunglasses, platform shoes, a little disco ball on a string. Hero look for levels 9 to 10: legendary golden version of the outfit, glowing cape, tiny crown, epic triumphant pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "disco-dazzler-girl-4",
+      "max": 800
+    },
+    {
+      "name": "hero-disco-dazzler-animal-1",
+      "prompt": "A fabulous pink flamingo hero standing on two legs dressed as a Disco Dazzler: a sparkly flared disco jumpsuit, huge round sunglasses, platform shoes, a little disco ball on a string. Hero look for levels 1 to 2: homemade and a bit wobbly, everything slightly too big, nervous excited grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "disco-dazzler-animal-1",
+      "max": 800
+    },
+    {
+      "name": "hero-disco-dazzler-animal-2",
+      "prompt": "A fabulous pink flamingo hero standing on two legs dressed as a Disco Dazzler: a sparkly flared disco jumpsuit, huge round sunglasses, platform shoes, a little disco ball on a string. Hero look for levels 3 to 5: a few shiny upgrades, a short tea-towel cape, proud confident grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "disco-dazzler-animal-2",
+      "max": 800
+    },
+    {
+      "name": "hero-disco-dazzler-animal-3",
+      "prompt": "A fabulous pink flamingo hero standing on two legs dressed as a Disco Dazzler: a sparkly flared disco jumpsuit, huge round sunglasses, platform shoes, a little disco ball on a string. Hero look for levels 6 to 8: polished upgraded gear, a flowing cape, sparkles, heroic power pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "disco-dazzler-animal-3",
+      "max": 800
+    },
+    {
+      "name": "hero-disco-dazzler-animal-4",
+      "prompt": "A fabulous pink flamingo hero standing on two legs dressed as a Disco Dazzler: a sparkly flared disco jumpsuit, huge round sunglasses, platform shoes, a little disco ball on a string. Hero look for levels 9 to 10: legendary golden version of the outfit, glowing cape, tiny crown, epic triumphant pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "disco-dazzler-animal-4",
+      "max": 800
+    },
+    {
+      "name": "hero-pirate-granny-boy-1",
+      "prompt": "A jolly little old grandad hero dressed as a Pirate: a pirate tricorn hat over a fluffy knitted beanie, an eyepatch, a cardigan with a big wool ball, knitting needles held like swords. Hero look for levels 1 to 2: homemade and a bit wobbly, everything slightly too big, nervous excited grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "pirate-granny-boy-1",
+      "max": 800
+    },
+    {
+      "name": "hero-pirate-granny-boy-2",
+      "prompt": "A jolly little old grandad hero dressed as a Pirate: a pirate tricorn hat over a fluffy knitted beanie, an eyepatch, a cardigan with a big wool ball, knitting needles held like swords. Hero look for levels 3 to 5: a few shiny upgrades, a short tea-towel cape, proud confident grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "pirate-granny-boy-2",
+      "max": 800
+    },
+    {
+      "name": "hero-pirate-granny-boy-3",
+      "prompt": "A jolly little old grandad hero dressed as a Pirate: a pirate tricorn hat over a fluffy knitted beanie, an eyepatch, a cardigan with a big wool ball, knitting needles held like swords. Hero look for levels 6 to 8: polished upgraded gear, a flowing cape, sparkles, heroic power pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "pirate-granny-boy-3",
+      "max": 800
+    },
+    {
+      "name": "hero-pirate-granny-boy-4",
+      "prompt": "A jolly little old grandad hero dressed as a Pirate: a pirate tricorn hat over a fluffy knitted beanie, an eyepatch, a cardigan with a big wool ball, knitting needles held like swords. Hero look for levels 9 to 10: legendary golden version of the outfit, glowing cape, tiny crown, epic triumphant pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "pirate-granny-boy-4",
+      "max": 800
+    },
+    {
+      "name": "hero-pirate-granny-girl-1",
+      "prompt": "A jolly little old granny hero dressed as a Pirate: a pirate tricorn hat over a fluffy knitted beanie, an eyepatch, a cardigan with a big wool ball, knitting needles held like swords. Hero look for levels 1 to 2: homemade and a bit wobbly, everything slightly too big, nervous excited grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "pirate-granny-girl-1",
+      "max": 800
+    },
+    {
+      "name": "hero-pirate-granny-girl-2",
+      "prompt": "A jolly little old granny hero dressed as a Pirate: a pirate tricorn hat over a fluffy knitted beanie, an eyepatch, a cardigan with a big wool ball, knitting needles held like swords. Hero look for levels 3 to 5: a few shiny upgrades, a short tea-towel cape, proud confident grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "pirate-granny-girl-2",
+      "max": 800
+    },
+    {
+      "name": "hero-pirate-granny-girl-3",
+      "prompt": "A jolly little old granny hero dressed as a Pirate: a pirate tricorn hat over a fluffy knitted beanie, an eyepatch, a cardigan with a big wool ball, knitting needles held like swords. Hero look for levels 6 to 8: polished upgraded gear, a flowing cape, sparkles, heroic power pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "pirate-granny-girl-3",
+      "max": 800
+    },
+    {
+      "name": "hero-pirate-granny-girl-4",
+      "prompt": "A jolly little old granny hero dressed as a Pirate: a pirate tricorn hat over a fluffy knitted beanie, an eyepatch, a cardigan with a big wool ball, knitting needles held like swords. Hero look for levels 9 to 10: legendary golden version of the outfit, glowing cape, tiny crown, epic triumphant pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "pirate-granny-girl-4",
+      "max": 800
+    },
+    {
+      "name": "hero-pirate-granny-animal-1",
+      "prompt": "A scruffy green parrot hero standing on two legs dressed as a Pirate: a pirate tricorn hat over a fluffy knitted beanie, an eyepatch, a cardigan with a big wool ball, knitting needles held like swords. Hero look for levels 1 to 2: homemade and a bit wobbly, everything slightly too big, nervous excited grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "pirate-granny-animal-1",
+      "max": 800
+    },
+    {
+      "name": "hero-pirate-granny-animal-2",
+      "prompt": "A scruffy green parrot hero standing on two legs dressed as a Pirate: a pirate tricorn hat over a fluffy knitted beanie, an eyepatch, a cardigan with a big wool ball, knitting needles held like swords. Hero look for levels 3 to 5: a few shiny upgrades, a short tea-towel cape, proud confident grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "pirate-granny-animal-2",
+      "max": 800
+    },
+    {
+      "name": "hero-pirate-granny-animal-3",
+      "prompt": "A scruffy green parrot hero standing on two legs dressed as a Pirate: a pirate tricorn hat over a fluffy knitted beanie, an eyepatch, a cardigan with a big wool ball, knitting needles held like swords. Hero look for levels 6 to 8: polished upgraded gear, a flowing cape, sparkles, heroic power pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "pirate-granny-animal-3",
+      "max": 800
+    },
+    {
+      "name": "hero-pirate-granny-animal-4",
+      "prompt": "A scruffy green parrot hero standing on two legs dressed as a Pirate: a pirate tricorn hat over a fluffy knitted beanie, an eyepatch, a cardigan with a big wool ball, knitting needles held like swords. Hero look for levels 9 to 10: legendary golden version of the outfit, glowing cape, tiny crown, epic triumphant pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "pirate-granny-animal-4",
+      "max": 800
+    },
+    {
+      "name": "hero-bin-ninja-boy-1",
+      "prompt": "A brave little boy hero dressed as a Bin Ninja: a ninja outfit made of black bin bags, a headband, a bin lid on the back, a banana held like a throwing star. Hero look for levels 1 to 2: homemade and a bit wobbly, everything slightly too big, nervous excited grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "bin-ninja-boy-1",
+      "max": 800
+    },
+    {
+      "name": "hero-bin-ninja-boy-2",
+      "prompt": "A brave little boy hero dressed as a Bin Ninja: a ninja outfit made of black bin bags, a headband, a bin lid on the back, a banana held like a throwing star. Hero look for levels 3 to 5: a few shiny upgrades, a short tea-towel cape, proud confident grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "bin-ninja-boy-2",
+      "max": 800
+    },
+    {
+      "name": "hero-bin-ninja-boy-3",
+      "prompt": "A brave little boy hero dressed as a Bin Ninja: a ninja outfit made of black bin bags, a headband, a bin lid on the back, a banana held like a throwing star. Hero look for levels 6 to 8: polished upgraded gear, a flowing cape, sparkles, heroic power pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "bin-ninja-boy-3",
+      "max": 800
+    },
+    {
+      "name": "hero-bin-ninja-boy-4",
+      "prompt": "A brave little boy hero dressed as a Bin Ninja: a ninja outfit made of black bin bags, a headband, a bin lid on the back, a banana held like a throwing star. Hero look for levels 9 to 10: legendary golden version of the outfit, glowing cape, tiny crown, epic triumphant pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "bin-ninja-boy-4",
+      "max": 800
+    },
+    {
+      "name": "hero-bin-ninja-girl-1",
+      "prompt": "A brave little girl hero dressed as a Bin Ninja: a ninja outfit made of black bin bags, a headband, a bin lid on the back, a banana held like a throwing star. Hero look for levels 1 to 2: homemade and a bit wobbly, everything slightly too big, nervous excited grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "bin-ninja-girl-1",
+      "max": 800
+    },
+    {
+      "name": "hero-bin-ninja-girl-2",
+      "prompt": "A brave little girl hero dressed as a Bin Ninja: a ninja outfit made of black bin bags, a headband, a bin lid on the back, a banana held like a throwing star. Hero look for levels 3 to 5: a few shiny upgrades, a short tea-towel cape, proud confident grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "bin-ninja-girl-2",
+      "max": 800
+    },
+    {
+      "name": "hero-bin-ninja-girl-3",
+      "prompt": "A brave little girl hero dressed as a Bin Ninja: a ninja outfit made of black bin bags, a headband, a bin lid on the back, a banana held like a throwing star. Hero look for levels 6 to 8: polished upgraded gear, a flowing cape, sparkles, heroic power pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "bin-ninja-girl-3",
+      "max": 800
+    },
+    {
+      "name": "hero-bin-ninja-girl-4",
+      "prompt": "A brave little girl hero dressed as a Bin Ninja: a ninja outfit made of black bin bags, a headband, a bin lid on the back, a banana held like a throwing star. Hero look for levels 9 to 10: legendary golden version of the outfit, glowing cape, tiny crown, epic triumphant pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "bin-ninja-girl-4",
+      "max": 800
+    },
+    {
+      "name": "hero-bin-ninja-animal-1",
+      "prompt": "A masked raccoon hero standing on two legs dressed as a Bin Ninja: a ninja outfit made of black bin bags, a headband, a bin lid on the back, a banana held like a throwing star. Hero look for levels 1 to 2: homemade and a bit wobbly, everything slightly too big, nervous excited grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "bin-ninja-animal-1",
+      "max": 800
+    },
+    {
+      "name": "hero-bin-ninja-animal-2",
+      "prompt": "A masked raccoon hero standing on two legs dressed as a Bin Ninja: a ninja outfit made of black bin bags, a headband, a bin lid on the back, a banana held like a throwing star. Hero look for levels 3 to 5: a few shiny upgrades, a short tea-towel cape, proud confident grin. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "bin-ninja-animal-2",
+      "max": 800
+    },
+    {
+      "name": "hero-bin-ninja-animal-3",
+      "prompt": "A masked raccoon hero standing on two legs dressed as a Bin Ninja: a ninja outfit made of black bin bags, a headband, a bin lid on the back, a banana held like a throwing star. Hero look for levels 6 to 8: polished upgraded gear, a flowing cape, sparkles, heroic power pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "bin-ninja-animal-3",
+      "max": 800
+    },
+    {
+      "name": "hero-bin-ninja-animal-4",
+      "prompt": "A masked raccoon hero standing on two legs dressed as a Bin Ninja: a ninja outfit made of black bin bags, a headband, a bin lid on the back, a banana held like a throwing star. Hero look for levels 9 to 10: legendary golden version of the outfit, glowing cape, tiny crown, epic triumphant pose. Facing slightly to the right, leave clear space above the head for a hat. Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "heroes",
+      "file": "bin-ninja-animal-4",
+      "max": 800
+    },
+    {
+      "name": "granny-jetpack",
+      "prompt": "A wild, kind grandma with a big silver bun of hair, flying goggles on her forehead, a bright tracksuit, a rocket jetpack on her back puffing little clouds, holding a cup of tea, warm welcoming smile, hovering just off the ground Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "people",
+      "file": "granny-jetpack",
+      "max": 800
+    },
+    {
+      "name": "monster-sock-goblin",
+      "prompt": "A silly cartoon monster: a small green goblin made from mismatched socks, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "sock-goblin",
+      "max": 800
+    },
+    {
+      "name": "monster-lint-monster",
+      "prompt": "A silly cartoon monster: a fluffy grey ball of tumble-dryer lint with angry little eyes, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "lint-monster",
+      "max": 800
+    },
+    {
+      "name": "monster-angry-pegs",
+      "prompt": "A silly cartoon monster: a gang of three cross wooden clothes pegs snapping their jaws, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "angry-pegs",
+      "max": 800
+    },
+    {
+      "name": "monster-odd-sock-king",
+      "prompt": "A big silly boss monster: The Odd Sock King: a big pompous king made of every odd sock, a crown of socks, a long sock cape, larger and grander than a normal monster, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1152,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "odd-sock-king",
+      "max": 800
+    },
+    {
+      "name": "monster-jelly-knight",
+      "prompt": "A silly cartoon monster: a wobbly red jelly in a tiny knight helmet holding a spoon, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "jelly-knight",
+      "max": 800
+    },
+    {
+      "name": "monster-grumpy-teapot",
+      "prompt": "A silly cartoon monster: a grumpy flowery teapot puffing steam from its spout, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "grumpy-teapot",
+      "max": 800
+    },
+    {
+      "name": "monster-sprinkle-bat",
+      "prompt": "A silly cartoon monster: a bat made of a doughnut covered in rainbow sprinkles, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "sprinkle-bat",
+      "max": 800
+    },
+    {
+      "name": "monster-custard-blob",
+      "prompt": "A big silly boss monster: a huge warm lumpy custard blob monster dripping off a spoon, with a skin on top, larger and grander than a normal monster, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1152,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "custard-blob",
+      "max": 800
+    },
+    {
+      "name": "monster-balloon-ogre",
+      "prompt": "A silly cartoon monster: a big round ogre made of twisted party balloons, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "balloon-ogre",
+      "max": 800
+    },
+    {
+      "name": "monster-trampoline-troll",
+      "prompt": "A silly cartoon monster: a stretchy troll bouncing on its own trampoline belly, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "trampoline-troll",
+      "max": 800
+    },
+    {
+      "name": "monster-party-popper-imp",
+      "prompt": "A silly cartoon monster: a tiny imp shaped like a party popper spraying streamers, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "party-popper-imp",
+      "max": 800
+    },
+    {
+      "name": "monster-bouncy-dragon",
+      "prompt": "A big silly boss monster: a big inflatable bouncy-castle dragon, slightly deflating and wheezing, larger and grander than a normal monster, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1152,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "bouncy-dragon",
+      "max": 800
+    },
+    {
+      "name": "monster-trolley-beast",
+      "prompt": "A silly cartoon monster: a shopping trolley with googly eyes and a wonky wheel, growling, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "trolley-beast",
+      "max": 800
+    },
+    {
+      "name": "monster-shouty-banana",
+      "prompt": "A silly cartoon monster: a banana shouting with a huge open mouth, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "shouty-banana",
+      "max": 800
+    },
+    {
+      "name": "monster-frozen-pea-swarm",
+      "prompt": "A silly cartoon monster: a cloud of tiny frozen peas with frosty angry faces, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "frozen-pea-swarm",
+      "max": 800
+    },
+    {
+      "name": "monster-manager-of-mayhem",
+      "prompt": "A big silly boss monster: The Manager of Mayhem: a giant cash register monster with a name badge and a receipt tongue, larger and grander than a normal monster, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1152,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "manager-of-mayhem",
+      "max": 800
+    },
+    {
+      "name": "monster-roll-mummy",
+      "prompt": "A silly cartoon monster: a mummy wrapped in toilet paper trailing a long loose end, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "roll-mummy",
+      "max": 800
+    },
+    {
+      "name": "monster-bubble-bath-beast",
+      "prompt": "A silly cartoon monster: a wobbly pile of white soap foam and shiny see-through soap bubbles shaped like a little creature, a black rubber bath plug on a chain as its nose, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "bubble-bath-beast",
+      "max": 800
+    },
+    {
+      "name": "monster-rubber-duck-gang",
+      "prompt": "A silly cartoon monster: three tough rubber ducks in sunglasses, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "rubber-duck-gang",
+      "max": 800
+    },
+    {
+      "name": "monster-plunger-pirate",
+      "prompt": "A big silly boss monster: The Plunger Pirate: a pirate in a big tricorn hat, one arm ending in a red rubber toilet plunger with a wooden handle, holding a toilet roll up to one eye like a telescope, larger and grander than a normal monster, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1152,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "plunger-pirate",
+      "max": 800
+    },
+    {
+      "name": "monster-toaster-dragon",
+      "prompt": "A silly cartoon monster: a little dragon that is a toaster, toast popping out like wings, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "toaster-dragon",
+      "max": 800
+    },
+    {
+      "name": "monster-lava-lamp",
+      "prompt": "A silly cartoon monster: a lava lamp with goopy glowing blobs and a sulky face, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "lava-lamp",
+      "max": 800
+    },
+    {
+      "name": "monster-hot-sauce-hydra",
+      "prompt": "A silly cartoon monster: a three-headed hydra made of hot sauce bottles, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "hot-sauce-hydra",
+      "max": 800
+    },
+    {
+      "name": "monster-mild-dragon",
+      "prompt": "A big silly boss monster: The Dragon of Mild Inconvenience: a big red dragon looking mildly annoyed, parking a tiny car badly, larger and grander than a normal monster, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1152,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "monsters",
+      "file": "mild-dragon",
+      "max": 800
+    },
+    {
+      "name": "trainer-coach-crumpet",
+      "prompt": "A funny trainer character for a kids game: Coach Crumpet: a crumpet person with a whistle and a tracksuit, friendly but ready to fight, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "trainers",
+      "file": "coach-crumpet",
+      "max": 800
+    },
+    {
+      "name": "trainer-sir-reginald",
+      "prompt": "A funny trainer character for a kids game: Sir Reginald the Very Tall Snail: a very tall snail wearing a monocle and a top hat, friendly but ready to fight, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "trainers",
+      "file": "sir-reginald",
+      "max": 800
+    },
+    {
+      "name": "trainer-madame-moustache",
+      "prompt": "A funny trainer character for a kids game: Madame Moustache: a grand lady fencing teacher in a long purple dress and a feathered hat, wearing an enormous fake curly moustache, holding a thin fencing foil, friendly but ready to fight, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "trainers",
+      "file": "madame-moustache",
+      "max": 800
+    },
+    {
+      "name": "trainer-captain-custard",
+      "prompt": "A funny trainer character for a kids game: Captain Custard: a superhero made of custard in a cape, hands on hips, friendly but ready to fight, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "trainers",
+      "file": "captain-custard",
+      "max": 800
+    },
+    {
+      "name": "trainer-professor-pickle",
+      "prompt": "A funny trainer character for a kids game: Professor Pickle: a pickle in a lab coat and glasses holding a clipboard of sums, friendly but ready to fight, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "trainers",
+      "file": "professor-pickle",
+      "max": 800
+    },
+    {
+      "name": "trainer-great-gazebo",
+      "prompt": "A funny trainer character for a kids game: The Great Gazebo: a garden gazebo tent with arms, flapping its walls fiercely, friendly but ready to fight, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "trainers",
+      "file": "great-gazebo",
+      "max": 800
+    },
+    {
+      "name": "trainer-lady-lasagne",
+      "prompt": "A funny trainer character for a kids game: Lady Lasagne: a grand lady made of lasagne layers with a cheese crown, friendly but ready to fight, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "trainers",
+      "file": "lady-lasagne",
+      "max": 800
+    },
+    {
+      "name": "trainer-baron-bubblewrap",
+      "prompt": "A funny trainer character for a kids game: Baron Von Bubblewrap: a baron made of bubble wrap with a monocle and a sash, friendly but ready to fight, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "trainers",
+      "file": "baron-bubblewrap",
+      "max": 800
+    },
+    {
+      "name": "trainer-king-kevin",
+      "prompt": "A funny trainer character for a kids game: King Kevin the Enormous Toddler: a giant toddler in a nappy and a crown, shouting no nap, friendly but ready to fight, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        896,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "trainers",
+      "file": "king-kevin",
+      "max": 800
+    },
+    {
+      "name": "boss-captain-lost-property",
+      "prompt": "A big silly class boss monster: Captain Lost Property: a big monster made of every forgotten school jumper, drink bottle and lunchbox, grand and goofy, not scary, facing the viewer Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1152,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "bosses",
+      "file": "captain-lost-property",
+      "max": 800
+    },
+    {
+      "name": "boss-lunchbox-lurker",
+      "prompt": "A big silly class boss monster: The Lunchbox Lurker: a bright red plastic school lunchbox on stubby legs, the hinged lid opening like a big mouth, a floppy sandwich sticking out as a tongue, a carry handle on top, crumbs flying everywhere, grand and goofy, not scary, facing the viewer Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1152,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "bosses",
+      "file": "lunchbox-lurker",
+      "max": 800
+    },
+    {
+      "name": "boss-sir-squeaks-a-lot",
+      "prompt": "A big silly class boss monster: Sir Squeaks-a-Lot: a classroom chair knight that squeaks, with tennis-ball feet, grand and goofy, not scary, facing the viewer Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1152,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "bosses",
+      "file": "sir-squeaks-a-lot",
+      "max": 800
+    },
+    {
+      "name": "boss-glitter-gremlin",
+      "prompt": "A big silly class boss monster: The Glitter Gremlin: a cheeky gremlin bursting with clouds of glitter, grand and goofy, not scary, facing the viewer Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1152,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "bosses",
+      "file": "glitter-gremlin",
+      "max": 800
+    },
+    {
+      "name": "boss-mega-mess-monster",
+      "prompt": "An enormous end-of-season mega boss: The Mega Mess Monster: a towering monster made of every mess in a school, paint, crumbs, socks and paper, volcano-sized, epic and silly, not scary, glowing, facing the viewer Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1152,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "bosses",
+      "file": "mega-mess-monster",
+      "max": 800
+    },
+    {
+      "name": "boss-queen-puddle-splash",
+      "prompt": "An enormous end-of-season mega boss: Queen Puddle-Splash: a huge rain queen made of puddles with a raincloud crown and gumboots, epic and silly, not scary, glowing, facing the viewer Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1152,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "bosses",
+      "file": "queen-puddle-splash",
+      "max": 800
+    },
+    {
+      "name": "boss-homework-hydra",
+      "prompt": "An enormous end-of-season mega boss: The Infinite Homework Hydra: a many-headed hydra made of homework sheets and pencils, epic and silly, not scary, glowing, facing the viewer Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1152,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "bosses",
+      "file": "homework-hydra",
+      "max": 800
+    },
+    {
+      "name": "zone-laundry",
+      "prompt": "A wide side-on game background: a swamp made of soapy water, washing lines between trees, floating socks, bubbles, a laundry basket island. Flat open ground across the bottom third for characters to stand on, bright cheerful sky, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
+      "size": [
+        1344,
+        768
+      ],
+      "kind": "scene",
+      "folder": "zones",
+      "file": "laundry",
+      "max": 1344,
+      "style": "toon_place"
+    },
+    {
+      "name": "zone-custard",
+      "prompt": "A wide side-on game background: a cave of yellow custard with jelly crystals, sprinkles on the walls, dripping custard stalactites. Flat open ground across the bottom third for characters to stand on, bright cheerful sky, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
+      "size": [
+        1344,
+        768
+      ],
+      "kind": "scene",
+      "folder": "zones",
+      "file": "custard",
+      "max": 1344,
+      "style": "toon_place"
+    },
+    {
+      "name": "zone-bouncy",
+      "prompt": "A wide side-on game background: the ruins of a giant bouncy castle, half-deflated towers, balloons and streamers, soft pink ground. Flat open ground across the bottom third for characters to stand on, bright cheerful sky, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
+      "size": [
+        1344,
+        768
+      ],
+      "kind": "scene",
+      "folder": "zones",
+      "file": "bouncy",
+      "max": 1344,
+      "style": "toon_place"
+    },
+    {
+      "name": "zone-supermarket",
+      "prompt": "A wide side-on game background: an enormous wacky supermarket aisle, towering shelves, runaway trolleys, price signs without words. Flat open ground across the bottom third for characters to stand on, bright cheerful sky, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
+      "size": [
+        1344,
+        768
+      ],
+      "kind": "scene",
+      "folder": "zones",
+      "file": "supermarket",
+      "max": 1344,
+      "style": "toon_place"
+    },
+    {
+      "name": "zone-toiletroll",
+      "prompt": "A wide side-on game background: towers built from giant toilet rolls, bubble bath clouds, rubber ducks on the battlements. Flat open ground across the bottom third for characters to stand on, bright cheerful sky, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
+      "size": [
+        1344,
+        768
+      ],
+      "kind": "scene",
+      "folder": "zones",
+      "file": "toiletroll",
+      "max": 1344,
+      "style": "toon_place"
+    },
+    {
+      "name": "zone-volcano",
+      "prompt": "A wide side-on game background: a small grumpy volcano puffing toast-shaped smoke, warm orange rocks, a tiny lava river. Flat open ground across the bottom third for characters to stand on, bright cheerful sky, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
+      "size": [
+        1344,
+        768
+      ],
+      "kind": "scene",
+      "folder": "zones",
+      "file": "volcano",
+      "max": 1344,
+      "style": "toon_place"
+    },
+    {
+      "name": "scene-home",
+      "prompt": "A cosy wonky cottage kitchen and garden where heroes rest: a launch pad for a jetpack, a teapot on the table, a gear rack with funny weapons, bunting, warm afternoon light, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
+      "size": [
+        1344,
+        768
+      ],
+      "kind": "scene",
+      "folder": "scenes",
+      "file": "home",
+      "max": 1344,
+      "style": "toon_place"
+    },
+    {
+      "name": "gear-weapon-0",
+      "prompt": "A single game item icon: a wooden spoon, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "weapon-0",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-weapon-1",
+      "prompt": "A single game item icon: a rolling pin of doom with spikes made of icing, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "weapon-1",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-weapon-2",
+      "prompt": "A single game item icon: a whip made of spaghetti, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "weapon-2",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-weapon-3",
+      "prompt": "A single game item icon: a baguette sword, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "weapon-3",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-weapon-4",
+      "prompt": "A single game item icon: a rubber chicken of justice, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "weapon-4",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-weapon-5",
+      "prompt": "A single game item icon: a fish slapper, a big floppy fish with a handle, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "weapon-5",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-weapon-6",
+      "prompt": "A single game item icon: a long bendy bright green foam pool noodle tube, glowing with power, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "weapon-6",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-shoes-0",
+      "prompt": "A single game item icon: fluffy slippers, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "shoes-0",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-shoes-1",
+      "prompt": "A single game item icon: clown shoes of stomping, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "shoes-1",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-shoes-2",
+      "prompt": "A single game item icon: sparkly high heels of distraction, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "shoes-2",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-shoes-3",
+      "prompt": "A single game item icon: jet-powered slippers with tiny rockets, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "shoes-3",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-shoes-4",
+      "prompt": "A single game item icon: roller skates of speed, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "shoes-4",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-shoes-5",
+      "prompt": "A single game item icon: puffy moon boots, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "shoes-5",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-shoes-6",
+      "prompt": "A single game item icon: golden gumboots, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "shoes-6",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-cape-0",
+      "prompt": "A single game item icon: a tea towel cape, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "cape-0",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-cape-1",
+      "prompt": "A single game item icon: a bath towel of bravery, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "cape-1",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-cape-2",
+      "prompt": "A single game item icon: a shower curtain cape with ducks on it, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "cape-2",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-cape-3",
+      "prompt": "A single game item icon: a picnic blanket cape, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "cape-3",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-cape-4",
+      "prompt": "A single game item icon: a bubble wrap cape, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "cape-4",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-cape-5",
+      "prompt": "A single game item icon: a sparkly curtain cape, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "cape-5",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-cape-6",
+      "prompt": "A single game item icon: a superhero duvet cape, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "cape-6",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-shield-0",
+      "prompt": "A single game item icon: a round metal dustbin lid with a handle in the middle, held up as a shield, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "shield-0",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-shield-1",
+      "prompt": "A single game item icon: a pizza box shield, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "shield-1",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-shield-2",
+      "prompt": "A single game item icon: a saucepan shield, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "shield-2",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-shield-3",
+      "prompt": "A single game item icon: a giant biscuit shield, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "shield-3",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-shield-4",
+      "prompt": "A single game item icon: a little trampoline shield, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "shield-4",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-shield-5",
+      "prompt": "A single game item icon: an umbrella of fury, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "shield-5",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "gear-shield-6",
+      "prompt": "A single game item icon: a disco ball shield, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "gear",
+      "file": "shield-6",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "chest-closed",
+      "prompt": "A wobbly cartoon treasure chest made of a laundry basket and a cake tin, closed, bouncing with excitement Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "ui",
+      "file": "chest-closed",
+      "max": 800,
+      "style": "toon_item"
+    },
+    {
+      "name": "chest-open",
+      "prompt": "The same wobbly cartoon treasure chest made of a laundry basket and a cake tin, lid flung open, golden light and confetti bursting out Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "ui",
+      "file": "chest-open",
+      "max": 800,
+      "style": "toon_item"
+    },
+    {
+      "name": "card-bonkers",
+      "prompt": "A bright, flat storybook landscape, wide view: a little hero with a rolling pin smashing a goofy sock monster on a hill, a grandma with a jetpack flying above, laundry swamp and a bouncy castle in the distance, calm sky at the top. Suitable for children aged 6 to 9.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "card",
+      "folder": "",
+      "file": "bonkers"
+    }
+  ],
+  "comfy": "http://127.0.0.1:8188"
+}
