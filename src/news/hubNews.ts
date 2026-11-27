@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: '101-bach-backs-2026-11-28',
+    date: '2026-11-28',
+    emoji: '🃏',
+    title: '101 has a new look',
+    text: 'Card night at the bach! Cards fly round the table, and you can unlock 10 card backs.',
+    game: '101',
+  },
+  {
     id: 'goblinstorm-hero-rounds-2026-11-28',
     date: '2026-11-28',
     emoji: '🦸',

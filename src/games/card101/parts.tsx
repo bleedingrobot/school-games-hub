@@ -8,6 +8,7 @@ import type { SeatView } from '../../../shared/card101/view';
 import { CardValues } from './Card101Settings';
 import type { Seat } from './Table';
 import { ORDINAL } from './text';
+import { scene, trophy } from './art';
 
 /** Places from totals: lowest is 1st, ties share a place. */
 export function placesFrom(totals: readonly number[], out: readonly boolean[]): number[] {
@@ -95,6 +96,7 @@ export function Podium({
   shared,
   note,
   about,
+  extra,
   children,
 }: {
   seats: readonly Seat[];
@@ -106,20 +108,38 @@ export function Podium({
   note: string | null;
   /** Instead of the usual line under the title (e.g. for a player who was out). */
   about?: string;
+  /** Under the places (a new card back). */
+  extra?: ReactNode;
   children: ReactNode;
 }) {
   const mine = places[me];
   const title = mine === 1 ? (shared ? 'You shared the win!' : 'You won!') : mine ? `You came ${ORDINAL[mine]}` : 'The game is over';
   const line = about ?? (mine === 1 ? 'Lowest total wins. Great remembering!' : 'Lowest total wins. Have another go!');
   const order = seats.map((_, i) => i).filter((i) => places[i] > 0).sort((a, b) => places[a] - places[b] || totals[a] - totals[b]);
+  const evening = scene('bach-evening');
+  const medal = mine === 1 ? 'gold' : mine === 2 ? 'silver' : mine === 3 ? 'bronze' : null;
+  const cup = medal ? trophy(medal) : undefined;
+  // The steps: 2nd, 1st, 3rd, the way a real podium stands.
+  const steps = [order[1], order[0], order[2]].filter((i): i is number => i !== undefined);
   return (
-    <div className="chess-result c101-podium" role="dialog" aria-modal="true" aria-labelledby="c101-result-title">
+    <div className={`chess-result c101-podium${evening ? ' is-painted' : ''}`} role="dialog" aria-modal="true" aria-labelledby="c101-result-title">
+      {evening && <img className="c101-podium__scene" src={evening.src} srcSet={evening.srcSet} sizes="100vw" alt="" aria-hidden="true" />}
+      {mine === 1 && <Confetti />}
       <div className={`chess-result__card chess-result__card--${mine === 1 ? 'won' : 'drawn'}`}>
-        <div className="chess-result__emoji" aria-hidden="true">
-          {mine === 1 ? '🏆' : mine ? MEDALS[mine] : '🃏'}
+        <div className="chess-result__emoji c101-podium__cup" aria-hidden="true">
+          {cup ? <img src={cup} alt="" /> : mine === 1 ? '🏆' : mine ? MEDALS[mine] : '🃏'}
         </div>
         <h2 id="c101-result-title">{title}</h2>
         <p>{line}</p>
+        <div className="c101-steps" aria-hidden="true">
+          {steps.map((i) => (
+            <div key={i} className={`c101-step c101-step--${places[i]}${i === me ? ' is-me' : ''}`}>
+              <AvatarImage avatar={seats[i].avatar} size={places[i] === 1 ? 48 : 38} />
+              <span className="c101-step__name">{i === me ? 'You' : seats[i].name}</span>
+              <span className="c101-step__block">{places[i]}</span>
+            </div>
+          ))}
+        </div>
         <ol className="c101-podium__list">
           {order.map((i) => (
             <li key={i} className={i === me ? 'is-me' : ''}>
@@ -136,8 +156,31 @@ export function Podium({
             {note}
           </p>
         )}
+        {extra}
         <div className="chess-result__buttons">{children}</div>
       </div>
+    </div>
+  );
+}
+
+const CONFETTI = ['#ffd23f', '#e53935', '#2e9e5b', '#38bdf8', '#a78bfa', '#fb923c'];
+
+/** A burst of paper confetti when you win (CSS only; none with reduced motion). */
+function Confetti() {
+  return (
+    <div className="c101-confetti" aria-hidden="true">
+      {Array.from({ length: 36 }, (_, i) => (
+        <i
+          key={i}
+          style={{
+            left: `${(i * 37) % 100}%`,
+            background: CONFETTI[i % CONFETTI.length],
+            animationDelay: `${(i % 9) * 0.12}s`,
+            animationDuration: `${2.2 + ((i * 7) % 10) / 10}s`,
+            ['--c101-drift' as string]: `${((i * 53) % 120) - 60}px`,
+          }}
+        />
+      ))}
     </div>
   );
 }
