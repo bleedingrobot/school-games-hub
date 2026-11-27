@@ -11,14 +11,19 @@ export const ADVENTURES_A_DAY = 1;
 export const MAX_SAVED_ADVENTURES = 3;
 
 /**
- * Hearts at the start of every fight (full again each fight: nothing carries over). The monster swings back once while
- * the hero smashes before each question (a heart, never the last one: James, 28 Nov 2026, "they never seem to get hit"),
- * and a wrong answer costs a heart. So 3 wrong answers still lose a fight (4 against a trainer).
+ * Hearts at the start of every fight (full again each fight: nothing carries over). The monster swings back while the
+ * hero smashes before each question (a heart a swing, never the last one: James, 28 Nov 2026, "they never seem to get
+ * hit", then "still needs to get hit more"), and a wrong answer costs 2 hearts. So 3 wrong answers still lose a fight
+ * (4 against a trainer).
  */
-export const HEARTS = 5;
-export const TRAINER_HEARTS = 7;
+export const HEARTS = 10;
+export const TRAINER_HEARTS = 13;
 /** The monster's swings while the hero smashes before each question. */
-export const MONSTER_SWINGS = 1;
+export const MONSTER_SWINGS = 2;
+/** Hearts a wrong answer costs (the monster's big smash back). */
+export const WRONG_HEARTS = 2;
+/** The monster's health is shown as this many hearts (James, 28 Nov 2026: "use hearts for monster health as well"). */
+export const FOE_HEARTS = 10;
 
 /** Stars from a fight. */
 export const STARS = { win: 3, bonked: 1, quest: 3 } as const;
@@ -48,7 +53,7 @@ export const TRAINER_HITS = 20;
  * answer is shown, and another question comes.
  */
 export const AUTO_SHARE = 0.25;
-export const AUTO_BONKS = { min: 2, max: 4 } as const;
+export const AUTO_BONKS = { min: 4, max: 8 } as const; // twice as long (James, 28 Nov 2026)
 export const BOOSTS = [
   { times: 2, weight: 6, name: 'DOUBLE DAMAGE!' },
   { times: 3, weight: 3, name: 'TRIPLE DAMAGE!' },

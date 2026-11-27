@@ -21,10 +21,10 @@ describe('Smash Quest screens', () => {
     const quests = screen.getAllByRole('button', { name: /Go!/ });
     expect(quests).toHaveLength(2);
     fireEvent.click(quests[0]);
-    expect(await screen.findByRole('button', { name: /Answer it!/ }, { timeout: 8000 })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /Answer it!/ }, { timeout: 4000 })).toBeInTheDocument();
     expect(screen.getByText(/DAMAGE!/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Wool Whirlwind/ })).toBeEnabled();
-    expect(screen.getByLabelText('4 of 5 hearts')).toBeInTheDocument(); // the monster swung back once while the hero smashed
+    expect(screen.getByLabelText('8 of 10 hearts')).toBeInTheDocument(); // the monster swung back twice while the hero smashed
   });
 
   it('the hero smashes on their own, a surprise boost question pops up, and the server’s mark decides the smash (a wrong one costs a heart)', async () => {
@@ -32,14 +32,15 @@ describe('Smash Quest screens', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Kitchen Knight/ }));
     fireEvent.click(screen.getByRole('button', { name: /Be the Kitchen Knight!/ }));
     fireEvent.click((await screen.findAllByRole('button', { name: /Go!/ }))[0]);
-    fireEvent.click(await screen.findByRole('button', { name: /Answer it!/ }, { timeout: 8000 }));
+    fireEvent.click(await screen.findByRole('button', { name: /Answer it!/ }, { timeout: 4000 }));
     const dialog = await screen.findByRole('dialog');
     // The answer the server marked is shown after; pick a choice and see what happens.
     const choices = dialog.querySelectorAll('button');
     fireEvent.click(choices[choices.length - 1]);
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), { timeout: 8000 });
-    const hearts = screen.getByLabelText(/of 5 hearts/).getAttribute('aria-label');
-    const line = screen.getByText(/SMASH!|Missed/).textContent ?? '';
-    expect(line.includes('Missed') ? hearts === '3 of 5 hearts' : hearts === '4 of 5 hearts').toBe(true);
+    // Right: one question a fight, so the monster is smashed. Wrong: missed, and the big smash back costs 2 more hearts.
+    if (screen.queryByText(/You smashed/)) return;
+    expect(screen.getByText(/Missed/)).toBeInTheDocument();
+    expect(screen.getByLabelText('6 of 10 hearts')).toBeInTheDocument();
   }, 15_000);
 });

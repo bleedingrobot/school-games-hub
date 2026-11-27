@@ -28,7 +28,7 @@ describe('Smash Quest rules', () => {
     expect(bonked).toMatchObject({ fight: 1, hearts: HEARTS, stars: STARS.bonked });
 
     // Each question has a surprise boost (×2, ×3 or ×10), and the Kitchen Knight's special triples it, once a fight.
-    expect(adv.moments?.every((m) => [2, 3, 10].includes(m.boost) && m.autos >= 2 && m.autos <= 4)).toBe(true);
+    expect(adv.moments?.every((m) => [2, 3, 10].includes(m.boost) && m.autos >= 4 && m.autos <= 8)).toBe(true);
     const whack = replay(adv, [{ right: true, special: true }, { right: true, special: true }]);
     expect(whack.blows[0]).toMatchObject({ special: true, hit: power * 3 * adv.moments![0].boost });
     // (A big boost can finish the monster at once: the special is then fresh for the next fight.)
@@ -43,9 +43,9 @@ describe('Smash Quest rules', () => {
     const granny = makeAdventure(123, quest, hero({ hero: { cls: 'granny', look: 'animal' } }));
     const calm = replay(granny, [{ right: false, special: true }, { right: false, special: false }, { right: false, special: false }]);
     expect(calm.blows.map((b) => b.ouch)).toEqual([false, false, true]);
-    // The monster swings once before questions 1 and 3 (tied up for 2), and bonks back on the wrong third answer.
-    expect(calm.blows.map((b) => b.swung)).toEqual([1, 0, 1]);
-    expect(calm.hearts).toBe(HEARTS - 3);
+    // The monster swings twice before questions 1 and 3 (tied up for 2), and bonks back on the wrong third answer.
+    expect(calm.blows.map((b) => b.swung)).toEqual([2, 0, 2]);
+    expect(calm.hearts).toBe(HEARTS - 6);
     expect(first.hp).toBeGreaterThan(power); // never a one-hit fight without a special
   });
 

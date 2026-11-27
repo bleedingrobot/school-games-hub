@@ -5,7 +5,7 @@
  */
 import {
   ADVENTURES_A_DAY, BIG_MONSTER_HITS, HEARTS, MAX_LEVEL, MAX_SAVED_ADVENTURES, MONSTER_HITS, POINTS, SPECIAL, STARS, STARS_TO_TRAINER,
-  STICKERS_A_WIN, TRAINER_HEARTS, MONSTER_SWINGS, TRAINER_HITS, AUTO_BONKS, AUTO_SHARE, BOOSTS, basePower, expectedGear, FIGHTS,
+  STICKERS_A_WIN, TRAINER_HEARTS, MONSTER_SWINGS, WRONG_HEARTS, TRAINER_HITS, AUTO_BONKS, AUTO_SHARE, BOOSTS, basePower, expectedGear, FIGHTS,
   QUESTIONS_AN_ADVENTURE,
 } from './config';
 import { CLASSES, GEAR, LOOKS, SLOTS, TOP_TIER, openZones, trainerFor, zoneById, type HeroClass, type Look, type Slot } from './content';
@@ -381,7 +381,7 @@ export function replay(adv: Adventure, marks: readonly Mark[]): Replay {
     const hit = mark.right ? Math.round(power * moment.boost * times) : 0;
     const ouch = !mark.right && !shield;
     cur.foeHp = Math.max(0, cur.foeHp - hit);
-    if (ouch) cur.hearts -= 1;
+    if (ouch) cur.hearts = Math.max(0, cur.hearts - WRONG_HEARTS);
     if (cur.calm > 0) cur.calm -= 1;
     cur.questions += 1;
     if (mark.right) cur.rights += 1;

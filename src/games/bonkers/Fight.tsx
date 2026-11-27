@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { CLASS_INFO, trainerFor, zoneById, type MonsterInfo } from '../../../shared/bonkers/content';
 import { autoSmash, monsterSwings, replay, type Blow, type Foe, type Progress } from '../../../shared/bonkers/engine';
-import { BOOSTS } from '../../../shared/bonkers/config';
+import { BOOSTS, FOE_HEARTS } from '../../../shared/bonkers/config';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../maths/QuestionModal';
 import type { AdventureView, AnswerReply, BonkersBackend } from './backend';
@@ -31,17 +31,31 @@ function looks(foe: Foe, zoneId: string, level: number): { emoji: string; colour
   return { emoji: mon?.emoji ?? '👾', colour: mon?.colour ?? '#888', line: mon?.line ?? 'Grrr!', ouch: mon?.ouch ?? 'Ouch!' };
 }
 
-function Hearts({ n, of }: { n: number; of: number }) {
+function Hearts({ n, of, full = '❤️', label }: { n: number; of: number; full?: string; label?: string }) {
   return (
-    <span className="bq-hearts" aria-label={`${n} of ${of} hearts`}>
-      {Array.from({ length: of }, (_, i) => <span key={i} aria-hidden="true">{i < n ? '❤️' : '🤍'}</span>)}
+    <span className="bq-hearts" aria-label={`${label ?? ''}${n} of ${of} hearts`}>
+      {Array.from({ length: of }, (_, i) => <span key={i} aria-hidden="true">{i < n ? full : '🤍'}</span>)}
     </span>
   );
 }
 
+/** The order the blows land before a question: the monster swings back after every second smash (any left over at the end). */
+function blowOrder(smashes: number, swings: number): ('smash' | 'swing')[] {
+  const out: ('smash' | 'swing')[] = [];
+  let left = swings;
+  for (let i = 0; i < smashes; i++) {
+    out.push('smash');
+    if (left > 0 && i % 2 === 1) { out.push('swing'); left -= 1; }
+  }
+  while (left-- > 0) out.push('swing');
+  return out;
+}
+
 /** The hero's own smashes: a beat before the first (so the last blow can be seen), then one at a time. */
-const AUTO_FIRST_MS = 1000;
-const AUTO_STEP_MS = 900;
+// (Screen tests run them quickly, so they stay inside the test budget: docs/TESTING.md.)
+const QUICK = import.meta.env.MODE === 'test';
+const AUTO_FIRST_MS = QUICK ? 20 : 1000;
+const AUTO_STEP_MS = QUICK ? 20 : 900;
 
 type Pause = { kind: 'ended'; blow: Blow; foe: Foe } | { kind: 'trainer' } | null;
 
@@ -58,7 +72,7 @@ export function Fight({ backend, progress, start, onDone }: {
   const pending = useRef<AnswerReply | null>(null);
   // The hero's own smashes before each question, played one at a time so each can be seen (James, 27 Nov 2026:
   // "the auto attacks need to be seen"): `played.n` smashes have landed for question `played.slot`.
-  // The monster swings back once, after the hero's first smash (James, 28 Nov 2026: "they never seem to get hit").
+  // The monster swings back after every second smash (James, 28 Nov 2026: "they never seem to get hit").
   const [played, setPlayed] = useState({ slot: -1, n: 0 });
   const adv = view.adventure;
   const r = replay(adv, view.marks);
@@ -69,9 +83,11 @@ export function Fight({ backend, progress, start, onDone }: {
   const stepsNow = autosNow + swingsNow;
   const stepShown = played.slot === slotNow ? played.n : 0;
   const ready = stepsNow === 0 || stepShown > stepsNow; // one beat after the last blow, the question pops up
-  const swingsShown = swingsNow && stepShown >= 2 ? swingsNow : 0;
-  const smashesShown = Math.min(autosNow, stepShown - swingsShown);
-  const swingingNow = !ready && swingsNow > 0 && stepShown === 2;
+  const kinds = blowOrder(autosNow, swingsNow);
+  const shownKinds = kinds.slice(0, stepShown);
+  const swingsShown = shownKinds.filter((k) => k === 'swing').length;
+  const smashesShown = shownKinds.length - swingsShown;
+  const swingingNow = !ready && kinds[stepShown - 1] === 'swing';
   useEffect(() => {
     if (pause || ready) return;
     const t = setTimeout(() => setPlayed({ slot: slotNow, n: stepShown + 1 }), stepShown === 0 ? AUTO_FIRST_MS : AUTO_STEP_MS);
@@ -220,12 +236,9 @@ export function Fight({ backend, progress, start, onDone }: {
         <div className={`bq-side bq-side--foe${(blow && stepShown === 0) || thisSmash ? ' bq-wobble' : ''}${swingingNow ? ' bq-lunge bq-lunge--back' : ''}`} key={`f${slotNow}-${stepShown}`}>
           <span className={`bq-face${foe.big ? ' bq-face--big' : ''}`} aria-hidden="true">{look.emoji}</span>
           <strong>{foe.name}</strong>
-          <div className="bq-hp" role="progressbar" aria-label={`${foe.name}’s health`} aria-valuemin={0} aria-valuemax={foe.hp} aria-valuenow={hpNow}>
-            <div className="bq-hp__fill" style={{ width: `${(100 * hpNow) / foe.hp}%`, background: look.colour }} />
-          </div>
-          <span className="bq-hp__num">{hpNow} / {foe.hp}</span>
-          {thisSmash > 0 && <span className="bq-float">-{thisSmash}</span>}
-          {stepShown === 0 && blow?.right && <span className="bq-float bq-float--big">-{blow.hit}{blow.special ? '!!' : ''}</span>}
+          <Hearts n={Math.ceil((FOE_HEARTS * hpNow) / foe.hp)} of={FOE_HEARTS} full="💜" label={`${foe.name}’s health: `} />
+          {thisSmash > 0 && <span className="bq-float">SMASH!</span>}
+          {stepShown === 0 && blow?.right && <span className="bq-float bq-float--big">×{blow.boost}{blow.special ? '!!' : ''}</span>}
         </div>
       </div>
       {!blow && !ready && r.foeHp === foe.hp && <p className="bq-speech">{foe.name}: “{look.line}”</p>}
