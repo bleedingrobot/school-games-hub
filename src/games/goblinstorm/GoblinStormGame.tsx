@@ -133,6 +133,8 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
   const unlimited = unlimitedSwitch || save?.unlimited === true;
   /** Runs left today, or null before the save loads. */
   const left = save ? Math.max(0, RUNS_A_DAY - save.today) : null;
+  // The next hero round, and the fewest boss wins among the heroes it still needs (only those heroes ask to be played).
+  const heroNext = save ? (() => { const n = nextHeroRound(save); return { ...n, behind: Math.min(...n.toWin.map((id) => save.heroWins[id] ?? 0)) }; })() : null;
   const outToday = left === 0 && !unlimited;
 
   const loadSave = useCallback(() => {
@@ -224,7 +226,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
               Your save couldn't be loaded. <button type="button" className="gs-btn gs-btn--ghost" onClick={loadSave}>Try again</button>
             </p>
           )}
-          {save && (
+          {save && heroNext && (
             <WinsBoard
               title="👑 Boss wins"
               rows={HEROES.map((h) => {
@@ -236,7 +238,8 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
                   name: h.secret && !open ? 'Secret hero' : h.name,
                   wins: save.heroWins[h.id] ?? 0,
                   green: inRound ? (save.heroWins[h.id] ?? 0) : 0,
-                  need: open && !inRound ? `🔁 Win with me for hero round ${save.heroRoundsPaid + 1}` : null,
+                  // Only the heroes furthest behind (fewest boss wins among those still needed) ask to be played.
+                  need: open && !inRound && (save.heroWins[h.id] ?? 0) === heroNext.behind ? `🔁 Win with me for +${heroNext.gold} bonus gold` : null,
                   onPick: () => { setHero(h); storyFirst(heroStory(h.id), () => setScreen('map')); },
                 };
               })}
@@ -292,7 +295,7 @@ export function GoblinStormGame({ backend, extra, onServer = false, unlimitedTod
                   name: m.name,
                   // The win that counts for this round: the round-th box, once filled.
                   green: wins >= next.round ? next.round : 0,
-                  need: open && next.toBeat.includes(i) ? `🔁 ${wins ? 'Beat again' : 'Beat the boss'} for round ${next.round}` : null,
+                  need: open && next.toBeat.includes(i) ? `🔁 ${wins ? 'Beat me again' : 'Beat my boss'} for +${next.gold} bonus gold` : null,
                   onPick: () => storyFirst(mapStory(i), () => void play(i)),
                 };
               })}
