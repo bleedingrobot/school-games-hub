@@ -14,7 +14,7 @@ import type { MoveState, Spot } from '../../../shared/classlive/corners';
 import type { PlayerView, RoomView } from '../../../shared/classlive/server';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
-import { ClashBoard, ClashToken, clashPowerPic, teamColour, withTiles, type Splat } from './ClashBoard';
+import { at, ClashBoard, ClashToken, clashPowerPic, teamColour, withTiles, type Splat } from './ClashBoard';
 import { ClashGuide } from './ClashGuide';
 import { Joystick, useKeys } from './CornersPad';
 import type { ClassLiveLink } from './link';
@@ -34,15 +34,17 @@ export function ClashPad({ link, room, view, me, setMe, setView, clock, avatar }
   const pub: Pub | null = view.game.kind === 'clash' ? view.game : null;
   const mg: Mine | null = me && me.game.kind === 'clash' ? me.game : null;
   const r = (pub?.round ?? null) as (ClashRound & { items: { id: number; x: number; y: number; power: ClashPower }[] }) | null;
+  /** The board's width (height 1): wide since 27 Nov 2026. */
+  const bw = r?.w ?? pub?.w ?? 1;
   const keysDir = useKeys();
   const stickDir = useRef<Spot>({ x: 0, y: 0 });
-  const pos = useRef<MoveState>({ p: mg?.spot ?? { x: 0.5, y: 0.5 }, v: { x: 0, y: 0 } });
+  const pos = useRef<MoveState>({ p: mg?.spot ?? { x: bw / 2, y: 0.5 }, v: { x: 0, y: 0 } });
   const placed = useRef(-1);
   const others = useRef<Spot[]>([]);
   const lastSent = useRef(0);
   const since = useRef<number | null>(null);
   const tilesRound = useRef(0);
-  const [tiles, setTiles] = useState(blankTiles());
+  const [tiles, setTiles] = useState(blankTiles(bw));
   const grabbing = useRef<number | null>(null);
   const [, setFrame] = useState(0);
   const [question, setQuestion] = useState<PublicQuestion | null>(null);
@@ -70,11 +72,11 @@ export function ClashPad({ link, room, view, me, setMe, setView, clock, avatar }
       if (out.round !== tilesRound.current) {
         // A new round: a clean board.
         tilesRound.current = out.round;
-        setTiles(withTiles(blankTiles(), out.tiles));
+        setTiles(withTiles(blankTiles(bw), out.tiles));
       } else if (out.tiles.length) setTiles((old) => withTiles(old, out.tiles));
       since.current = out.round !== tilesRound.current ? null : out.now - 50;
     }, () => undefined);
-  }, [link, room]);
+  }, [link, room, bw]);
 
   const live = view.state === 'live' && !!r;
   const frozen = !!question || asking;
@@ -223,15 +225,15 @@ export function ClashPad({ link, room, view, me, setMe, setView, clock, avatar }
   const speedOn = mg.speedTo !== null && t < mg.speedTo;
   const brushOn = mg.brushTo !== null && t < mg.brushTo;
   return (
-    <div className="cc-pad cc-pad--run" style={tc}>
+    <div className={`cc-pad cc-pad--run ${bw > 1 ? 'cc-pad--wide' : ''}`} style={tc}>
       <header className="cc-pad__top">
         <span className="cc-pad__team">{team.emoji} {team.name}</span>
         {left !== null ? <b className={`cc-pad__left ${left <= 5 ? 'is-low' : ''}`}>{left}</b> : <b>{ready ? 'Get ready…' : counting ? '👀 Look at the big screen!' : ''}</b>}
         <span>Round {r?.n ?? 0}</span>
       </header>
       <div className={`cc-pad__board ${Date.now() - shake < 500 ? 'cc-pad__hit' : ''}`}>
-        <ClashBoard map={pub.map} round={r} t={t} tiles={tiles} splats={splats} dim={!paintingNow}>
-          {others.current.map((o, i) => <span key={i} className="cc-dot" style={{ left: `${o.x * 100}%`, top: `${o.y * 100}%` }} />)}
+        <ClashBoard map={pub.map} w={bw} round={r} t={t} tiles={tiles} splats={splats} dim={!paintingNow}>
+          {others.current.map((o, i) => <span key={i} className="cc-dot" style={at(o.x, o.y, bw)} />)}
           <ClashToken x={here.x} y={here.y} size={AVATAR_R * 2.3} team={mg.team} className={`cc-token--me ${frozen ? 'cc-token--frozen' : ''} ${speedOn ? 'cc-token--fast' : ''} ${brushOn ? 'cc-token--brush' : ''}`} label="You">
             <AvatarImage avatar={avatar ?? null} size={64} />
           </ClashToken>
