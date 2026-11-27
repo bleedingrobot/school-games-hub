@@ -1,0 +1,30 @@
+{
+ "_from": "docs/mingle-art/config.json layout. Check with: python3 scripts/game_art.py rocket paint OUT --dry-run",
+ "game": "rocket",
+ "filename_prefix": "rocket/img",
+ "comfy": "http://127.0.0.1:8188",
+ "style": "s",
+ "styles": {
+  "s": "Bold storybook illustration, rich colour, warm light, painterly digital art, no text. "
+ },
+ "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly",
+ "inbox": "C:/Users/Giant/Games Hub/rocket-art-out",
+ "picks": "docs/rocket-art/picks.json",
+ "art_dir": "src/games/classlive/art/paint",
+ "home_dir": "src/assets/home",
+ "pictures": [
+  {
+   "name": "pick",
+   "prompt": "A bright cheerful school field on a sunny day, happy cartoon children running a relay race in four coloured teams, red, blue, green and yellow, one child tagging the next with a high five, tablets on little stands at the far end of the field, above them a deep blue sky fading into stars with four cartoon rockets with flame trails racing up toward a big smiling full moon, joyful and energetic, wide landscape picture, no writing anywhere.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "pick",
+   "file": "rocket",
+   "style": "s",
+   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly, sad children, scary"
+  }
+ ]
+}
