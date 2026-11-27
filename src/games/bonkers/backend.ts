@@ -1,5 +1,5 @@
 /**
- * What Bonkers Quest's screens ask of the server: the calls of the `bonkers` function (shared/bonkers/server.ts). The real
+ * What Smash Quest's screens ask of the server: the calls of the `bonkers` function (shared/bonkers/server.ts). The real
  * school server is reached through ./data.ts; the trial backend (./trial.ts) runs the very same rules in this browser for
  * the preview, with a pretend pupil kept in localStorage. Built like Toon Flap.
  */

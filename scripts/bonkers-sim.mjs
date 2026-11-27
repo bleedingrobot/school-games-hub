@@ -1,4 +1,4 @@
-// Bonkers Quest's pace check (docs/BONKERS-PLAN.md): pupils of each kind (how often right, how often they play) go on
+// Smash Quest's pace check (docs/BONKERS-PLAN.md): pupils of each kind (how often right, how often they play) go on
 // one adventure a school day, using their special move on the first question of each fight. Prints the school day each
 // level is reached, fights won and how often the trainer beat them.
 // Run from the project folder: npm run bonkers:sim  [-- --json]

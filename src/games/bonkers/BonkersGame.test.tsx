@@ -4,7 +4,7 @@ import { SoundProvider } from '../../sound';
 import { BonkersGame } from './BonkersGame';
 import { trialBackend } from './trial';
 
-// Bonkers Quest's screens on the trial backend (the same rules as the server).
+// Smash Quest's screens on the trial backend (the same rules as the server).
 const play = (key: string) => {
   const trial = trialBackend({ storageKey: key });
   trial.tools.reset();
@@ -12,7 +12,7 @@ const play = (key: string) => {
   return trial;
 };
 
-describe('Bonkers Quest screens', () => {
+describe('Smash Quest screens', () => {
   it('picks a hero, shows the inn with two quests, and a quest starts a fight with a special move', async () => {
     play('bq-test-1');
     fireEvent.click(await screen.findByRole('button', { name: /Pirate Granny/ }));

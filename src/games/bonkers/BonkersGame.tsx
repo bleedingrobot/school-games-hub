@@ -1,5 +1,5 @@
 /**
- * Bonkers Quest's screens (docs/BONKERS-PLAN.md), on any backend: the school's server (BonkersPlay) or the preview's
+ * Smash Quest's screens (docs/BONKERS-PLAN.md), on any backend: the school's server (BonkersPlay) or the preview's
  * trial in the browser. The path is fixed, like a Sky Isles turn: the Wobbly Inn > pick 1 of 2 quests > the fights > the
  * trainer (when the star bar is full) > the chest > back to the inn. Drawn stand-ins (emoji) until the paintings (B.6).
  */
@@ -91,7 +91,7 @@ export function BonkersGame({ backend, extra }: { backend: BonkersBackend; extra
   return (
     <div className="bq-layer" data-testid="bonkers">
       <header className="bq-top">
-        <span className="bq-title"><span aria-hidden="true">🥄</span> Bonkers Quest</span>
+        <span className="bq-title"><span aria-hidden="true">🥄</span> Smash Quest</span>
         <HubButtons />
       </header>
       <main className="bq-main">
@@ -103,7 +103,7 @@ export function BonkersGame({ backend, extra }: { backend: BonkersBackend; extra
           </div>
         )}
         {(view.at === 'inn' || view.at === 'hero') && !view.loaded.enabled && (
-          <div className="bq-card bq-center"><p>Bonkers Quest isn’t switched on for your class yet.</p></div>
+          <div className="bq-card bq-center"><p>Smash Quest isn’t switched on for your class yet.</p></div>
         )}
         {view.at === 'hero' && view.loaded.enabled && (
           <HeroPick busy={busy} hero={view.loaded.progress.hero} onPick={(cls, look) => void pickHero(view.loaded, cls, look)} />

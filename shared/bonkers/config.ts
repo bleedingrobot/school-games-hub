@@ -1,5 +1,5 @@
 /**
- * Bonkers Quest (docs/BONKERS-PLAN.md): every tuning number in one place. The rules (engine.ts) and the server
+ * Smash Quest (docs/BONKERS-PLAN.md): every tuning number in one place. The rules (engine.ts) and the server
  * (server.ts) read these, and the simulator (`npm run bonkers:sim`) checks the pace.
  */
 

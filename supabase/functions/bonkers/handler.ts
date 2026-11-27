@@ -1,5 +1,5 @@
 /**
- * The Bonkers Quest server function (docs/BONKERS-PLAN.md, stage B.1). This file checks who is asking and how often;
+ * The Smash Quest server function (docs/BONKERS-PLAN.md, stage B.1). This file checks who is asking and how often;
  * what each action does is in shared/bonkers/server.ts, which the preview runs too.
  */
 import { handleBonkers, type BonkersServices } from '../../../shared/bonkers/server';

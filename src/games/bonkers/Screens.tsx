@@ -1,4 +1,4 @@
-/** Bonkers Quest's calm screens: picking a hero, the Wobbly Inn, and what an adventure earned. */
+/** Smash Quest's calm screens: picking a hero, the Wobbly Inn, and what an adventure earned. */
 import { useState } from 'react';
 import { CLASS_INFO, CLASSES, GEAR, INNKEEPER, LOOKS, SLOTS, gearById, trainerFor, zoneById, type HeroClass, type Look } from '../../../shared/bonkers/content';
 import { MAX_LEVEL } from '../../../shared/bonkers/config';

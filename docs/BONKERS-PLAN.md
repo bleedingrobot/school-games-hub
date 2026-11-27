@@ -1,4 +1,6 @@
-# Bonkers Quest: plan
+# Smash Quest (was Bonkers Quest): plan
+
+**Renamed Smash Quest by James, 27 Nov 2026.** The id, tables, function and folders keep the name `bonkers`. Teachers always get unlimited adventures (the function checks `profiles.role`), so James can test without the daily limit.
 
 **Status: B.1 LIVE for teachers 27 Nov 2026 (PR #942: migration 20261127191027_bonkers.sql applied, `bonkers` function deployed, tables empty, switch on for every class). Code switch OFF: only teachers can open `/#/bonkers` to test the gameplay (James, 27 Nov: "no art though, leave that till last and lets test some gameplay first"). No painting until James has played it and says go.**
 

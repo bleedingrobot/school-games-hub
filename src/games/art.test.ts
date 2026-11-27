@@ -14,7 +14,7 @@ const walk = (dir: string): string[] =>
 
 // Home page cards that are not registry games, and games whose card is still a band of colours.
 const OTHER_CARDS = ['quick-looks', 'training'];
-// Bonkers Quest: drawn stand-ins until stage B.6 (James, 27 Nov 2026: "leave that till last").
+// Smash Quest: drawn stand-ins until stage B.6 (James, 27 Nov 2026: "leave that till last").
 const NOT_PAINTED_YET: string[] = ['bonkers'];
 
 describe('the junior games\' painted pictures', () => {

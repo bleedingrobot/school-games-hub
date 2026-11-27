@@ -4,7 +4,7 @@ import { memoryServices, type MemoryOptions } from '../../../shared/bonkers/memo
 import type { Settings } from '../../../shared/bonkers/server';
 import { makeHandler } from './handler';
 
-// Bonkers Quest's server tests: the fairness ones (the rules have their own in shared/bonkers).
+// Smash Quest's server tests: the fairness ones (the rules have their own in shared/bonkers).
 
 function setup(over: MemoryOptions = {}) {
   const clock = Date.UTC(2026, 10, 29, 22); // Monday 30 Nov 2026, 11am in NZ

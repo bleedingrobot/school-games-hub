@@ -1,5 +1,5 @@
 /**
- * Bonkers Quest's names and words (docs/BONKERS-PLAN.md): the classes, zones, monsters, trainers, gear and quests. Kept
+ * Smash Quest's names and words (docs/BONKERS-PLAN.md): the classes, zones, monsters, trainers, gear and quests. Kept
  * apart from the numbers (config.ts) so the words can change without touching the pace. Emoji are drawn stand-ins until
  * the bouncy-cartoon paintings (stage B.6).
  */

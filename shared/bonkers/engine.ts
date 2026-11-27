@@ -1,5 +1,5 @@
 /**
- * Bonkers Quest's rules (docs/BONKERS-PLAN.md), as pure functions shared by the server, the preview and the simulator:
+ * Smash Quest's rules (docs/BONKERS-PLAN.md), as pure functions shared by the server, the preview and the simulator:
  * a pupil's progress, today's two quests, making an adventure, and replaying it from the server's marks. Nothing here
  * reads the clock or a random number of its own: the same inputs always give the same adventure and the same result.
  */
