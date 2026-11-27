@@ -3,7 +3,7 @@
  * `?pretend=30` preview and the tests (docs/CREW-PLAN.md).
  */
 import { markQuestion } from '../maths/serverQuestions';
-import { canAsk, LIGHT_R, MACHINES, phaseOf, pretendDir, speedOf, stepCrew, type CrewGame, type CrewMove } from './crew';
+import { canAsk, LIGHT_R, machinesOf, MACHINES, phaseOf, pretendDir, speedOf, stepCrew, widthOf, type CrewGame, type CrewMove } from './crew';
 import { memoryMove, type MemoryDb } from './memoryServices';
 import { classLiveStep, type ClassLiveServices } from './server';
 
@@ -87,8 +87,9 @@ export function crewBot(o: { db: MemoryDb; services: ClassLiveServices; later: (
       if (target === null || (!mine.glitch && !sparkingAt.includes(target) && !mine.jobs.includes(target)) || rand() < 0.01) {
         target = !mine.glitch && sparkingAt.length && rand() < 0.7 ? sparkingAt[Math.floor(rand() * sparkingAt.length)] : mine.jobs[0] ?? MACHINES[Math.floor(rand() * MACHINES.length)].id;
       }
-      const mc = MACHINES[target];
-      const goal = { x: mc.x + (mc.x < 0.5 ? 1 : -1) * (mc.r + 0.045), y: mc.y };
+      const w = widthOf(r);
+      const mc = machinesOf(w)[target];
+      const goal = { x: mc.x + (mc.x < w / 2 ? 1 : -1) * (mc.r + 0.045), y: mc.y };
       m = stepCrew(m, pretendDir(m.p, goal, rand), 200, r, t, { drone: mine.drone, speed: speedOf(mine, t) * (0.7 + skill * 0.3) });
       memoryCrewMove(db, now, room, id, m.p.x, m.p.y);
       const close = Math.hypot(m.p.x - goal.x, m.p.y - goal.y) < 0.05;
