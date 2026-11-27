@@ -16,6 +16,7 @@ import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import { Token } from './CornersBoard';
 import { QUARTER_COLOURS, SharkBoard, sharkPowerPic } from './SharkBoard';
+import { useEdgeLink } from './edgeLink';
 import type { ClassLiveLink } from './link';
 import './controller.css';
 import './shark.css';
@@ -93,7 +94,7 @@ function Joystick({ onDir }: { onDir: (d: Spot) => void }) {
   );
 }
 
-export function SharkPad({ link, room, view, me, setMe, setView, clock, avatar }: {
+export function SharkPad({ link: baseLink, room, view, me, setMe, setView, clock, avatar }: {
   link: ClassLiveLink; room: number | null; view: RoomView; me: PlayerView | null;
   setMe: (m: PlayerView) => void; setView: (f: (v: RoomView | null) => RoomView | null) => void;
   /** The server's time now (ms). */
@@ -101,6 +102,8 @@ export function SharkPad({ link, room, view, me, setMe, setView, clock, avatar }
   /** The pupil's own hub avatar. */
   avatar?: unknown;
 }) {
+  // Cloudflare rooms send and read spots over a live connection (edgeLink.ts), 10 times a second.
+  const link = useEdgeLink(baseLink, room, view.edge);
   const pub: Pub | null = view.game.kind === 'corners' ? view.game : null;
   const mg: Mine | null = me && me.game.kind === 'corners' ? me.game : null;
   const r = pub?.round ?? null;
@@ -159,7 +162,7 @@ export function SharkPad({ link, room, view, me, setMe, setView, clock, avatar }
         const warped = Math.hypot(pos.current.p.x - before.x, pos.current.p.y - before.y) > 0.2;
         const moved = !sentAt.current || Math.hypot(pos.current.p.x - sentAt.current.x, pos.current.p.y - sentAt.current.y) > 0.002;
         const now = Date.now();
-        if ((moved && now - lastSent.current >= SEND_MS) || warped || (now - lastSent.current > 2000)) {
+        if ((moved && now - lastSent.current >= (link.sendMs ?? SEND_MS)) || warped || (now - lastSent.current > 2000)) {
           lastSent.current = now;
           sentAt.current = { ...pos.current.p };
           const p = pos.current.p;

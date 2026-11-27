@@ -9,7 +9,7 @@ describe('Class Live on Cloudflare (pilot)', () => {
   it('which games run on Cloudflare (set-time ones too), and what each game shows: every spot, or Glitches\' names and the dark', async () => {
     expect(edgeFor('any-teacher', 'ghost')).toBe(EDGE_EVERYONE);
     expect(edgeFor(EDGE_TEACHERS[0], 'ghost')).toBe(true);
-    expect(edgeFor(EDGE_TEACHERS[0], 'corners')).toBe(false);
+    expect([edgeFor(EDGE_TEACHERS[0], 'corners'), edgeFor('any-teacher', 'corners'), edgeFor(EDGE_TEACHERS[0], 'clash')]).toEqual([true, false, false]);
     const clock = pretendClock();
     const pc = pretendClass({ size: 4, seed: 5, clock, later: () => undefined });
     const cf = new EdgeRoom();

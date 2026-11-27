@@ -11,6 +11,7 @@ import {
 import type { ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
 import { CORNER_COLOURS, CORNER_NAMES, CornersBoard, Token } from './CornersBoard';
+import { useEdgeLink } from './edgeLink';
 import type { ClassLiveLink } from './link';
 import { painted } from './paintedArt';
 import { LINES, next, type LineKey } from './voiceLines';
@@ -57,7 +58,7 @@ function Dice({ face, landed, two }: { face: Corner | 'star'; landed: boolean; t
   return <div className="fc-dicebox" aria-hidden="true">{one(face, 0)}{two !== undefined && two !== null && one(two, 1)}</div>;
 }
 
-export function CornersScene({ screen, game, link, room, clock, sound, say, onTick, over, onAgain }: {
+export function CornersScene({ screen, game, link: baseLink, room, clock, sound, say, onTick, over, onAgain }: {
   screen: ScreenView; game: CornersGame; link: ClassLiveLink; room: number | null;
   /** Server time now (ms). */
   clock: () => number;
@@ -67,6 +68,8 @@ export function CornersScene({ screen, game, link, room, clock, sound, say, onTi
   over: boolean;
   onAgain: () => void;
 }) {
+  // Cloudflare rooms send and read spots over a live connection (edgeLink.ts), 10 times a second.
+  const link = useEdgeLink(baseLink, room, screen.edge);
   const t = screen.startedAt === null ? 0 : clock() - screen.startedAt;
   const r = game.round;
   const targets = useRef<Record<string, Spot>>({});
@@ -91,7 +94,7 @@ export function CornersScene({ screen, game, link, room, clock, sound, say, onTi
     let live = true;
     const read = () => void link.positions(room).then((p) => { if (live && p) targets.current = p; }, () => undefined);
     read();
-    const id = window.setInterval(read, running ? 300 : 2000);
+    const id = window.setInterval(read, running ? (link.readMs ?? 300) : 2000);
     return () => { live = false; window.clearInterval(id); };
   }, [room, running, over, link]);
 

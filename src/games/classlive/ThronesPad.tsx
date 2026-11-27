@@ -14,6 +14,7 @@ import type { PlayerView, RoomView } from '../../../shared/classlive/server';
 import { COURT_RIGHT, HALL_WORDS, moveRound, POWER_WORDS, SIT_R, type ThroneRound, type ThronePower } from '../../../shared/classlive/thrones';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
+import { useEdgeLink } from './edgeLink';
 import type { ClassLiveLink } from './link';
 import { ThronesBoard, thronePowerPic, Token } from './ThronesBoard';
 import { ThronesGuide } from './ThronesGuide';
@@ -94,7 +95,7 @@ function Joystick({ onDir }: { onDir: (d: Spot) => void }) {
 
 type Flash = { key: number; kind: 'stop' | 'ear' | 'got'; text: string };
 
-export function ThronesPad({ link, room, view, me, setMe, setView, clock, avatar }: {
+export function ThronesPad({ link: baseLink, room, view, me, setMe, setView, clock, avatar }: {
   link: ClassLiveLink; room: number | null; view: RoomView; me: PlayerView | null;
   setMe: (m: PlayerView) => void; setView: (f: (v: RoomView | null) => RoomView | null) => void;
   /** The server's time now (ms). */
@@ -102,6 +103,8 @@ export function ThronesPad({ link, room, view, me, setMe, setView, clock, avatar
   /** The pupil's own hub avatar. */
   avatar?: unknown;
 }) {
+  // Cloudflare rooms send and read spots over a live connection (edgeLink.ts), 10 times a second.
+  const link = useEdgeLink(baseLink, room, view.edge);
   const pub: Pub | null = view.game.kind === 'thrones' ? view.game : null;
   const mg: Mine | null = me && me.game.kind === 'thrones' ? me.game : null;
   const r = pub?.round ?? null;
@@ -201,7 +204,7 @@ export function ThronesPad({ link, room, view, me, setMe, setView, clock, avatar
         const moved = !sentAt.current || dist(here, sentAt.current) > 0.002;
         const warped = sentAt.current !== null && dist(here, sentAt.current) > 0.2;
         const nowMs = Date.now();
-        if ((moved && nowMs - lastSent.current >= SEND_MS) || warped || nowMs - lastSent.current > 2000) {
+        if ((moved && nowMs - lastSent.current >= (link.sendMs ?? SEND_MS)) || warped || nowMs - lastSent.current > 2000) {
           lastSent.current = nowMs;
           sentAt.current = { ...here };
           void link.move(room, here.x, here.y).then((all) => { if (all) others.current = all; }, () => undefined);

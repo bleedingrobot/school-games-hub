@@ -14,6 +14,7 @@ import {
 } from '../../../shared/classlive/thrones';
 import type { ClassLiveSound } from './audio';
 import { lineOf } from './CornersScene';
+import { useEdgeLink } from './edgeLink';
 import type { ClassLiveLink } from './link';
 import { PLAYER_COLOURS } from './StarSky';
 import { ThronesBoard, Token, type ThronesBoardRound } from './ThronesBoard';
@@ -35,7 +36,7 @@ interface Slam { key: number; text: string; sub?: string; kind: 'stop' | 'steal'
 interface Top { key: number; text: string; sub?: string }
 interface PopText { key: number; at: Spot; text: string }
 
-export function ThronesScene({ screen, game, link, room, clock, sound, say, onTick, over, onAgain }: {
+export function ThronesScene({ screen, game, link: baseLink, room, clock, sound, say, onTick, over, onAgain }: {
   screen: ScreenView; game: ThronesGame; link: ClassLiveLink; room: number | null;
   /** Server time now (ms). */
   clock: () => number;
@@ -45,6 +46,8 @@ export function ThronesScene({ screen, game, link, room, clock, sound, say, onTi
   over: boolean;
   onAgain: () => void;
 }) {
+  // Cloudflare rooms send and read spots over a live connection (edgeLink.ts), 10 times a second.
+  const link = useEdgeLink(baseLink, room, screen.edge);
   const t = screen.startedAt === null ? 0 : clock() - screen.startedAt;
   const r = game.round;
   const hall: Hall = game.hall;
@@ -70,7 +73,7 @@ export function ThronesScene({ screen, game, link, room, clock, sound, say, onTi
     let live = true;
     const read = () => void link.positions(room).then((p) => { if (live && p) targets.current = p; }, () => undefined);
     read();
-    const id = window.setInterval(read, running ? 300 : 2000);
+    const id = window.setInterval(read, running ? (link.readMs ?? 300) : 2000);
     return () => { live = false; window.clearInterval(id); };
   }, [room, running, over, link]);
 

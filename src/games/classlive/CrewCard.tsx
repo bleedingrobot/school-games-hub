@@ -3,6 +3,7 @@
  * How to play sheet and the "How it works" page (roles, machines, meetings, power-ups and tricks).
  */
 import { useState, type ReactNode } from 'react';
+import { useEdgeChoice } from './EdgeChoice';
 import { createPortal } from 'react-dom';
 import { JAM_DELAY, JAMMED_WIN, MACHINES, POWERS, POWER_WORDS, UNLOCK, fixNeed } from '../../../shared/classlive/crew';
 import { crewPic } from './CrewBoard';
@@ -16,6 +17,7 @@ export function CrewPickCard({ busy, hostOk, onOpen, timer, art }: {
   timer: (length: number, setLength: (m: number) => void) => ReactNode;
   art: (pic: string | null) => ReactNode;
 }) {
+  const crewRun = useEdgeChoice('crew');
   const [length, setLength] = useState(15);
   const [help, setHelp] = useState(false);
   return (
@@ -27,7 +29,8 @@ export function CrewPickCard({ busy, hostOk, onOpen, timer, art }: {
       <button type="button" className="cl-btn cl-btn--small fc-guide-btn fc-guide-btn--card" onClick={() => setHelp(true)}>🤖 How it works</button>
       {help && <CrewHelp onClose={() => setHelp(false)} />}
       {timer(length, setLength)}
-      <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen({ length })}>{busy ? 'Opening…' : 'Open the room'}</button>
+      {crewRun.node}
+      <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk} onClick={() => onOpen({ length, ...crewRun.extra })}>{busy ? 'Opening…' : 'Open the room'}</button>
     </section>
   );
 }
