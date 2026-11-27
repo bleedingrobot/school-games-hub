@@ -304,12 +304,25 @@ function Bars({ bars }: { bars: Extract<Picture, { kind: 'bars' }>['bars'] }) {
     <Frame w={bw + pad * 2} h={y - 12 + pad} label={`Fraction bars: ${list(bars.map((b) => `${b.shaded} of ${b.parts} parts shaded${b.label ? ` (${b.label})` : ''}`))}`}>
       {rows.map(({ b, top }, i) => {
         const parts = Math.max(1, Math.round(b.parts));
-        const pw = bw / parts;
+        // A bar that only fills part of the length: its parts, then one uncut piece marked '?'.
+        const fill = b.fill && b.fill > 0 && b.fill < 1 ? b.fill : 1;
+        const pw = (bw * fill) / parts;
+        const group = b.group && b.group > 1 ? Math.round(b.group) : 0;
+        const start = b.start ?? 0;
         return (
           <g key={i}>
             <T x={pad + bw / 2} y={top - 11} text={b.label ?? ''} />
             {Array.from({ length: parts }, (_, k) => (
-              <rect key={k} x={pad + k * pw} y={top} width={pw} height={bh} className={k >= (b.start ?? 0) && k < (b.start ?? 0) + b.shaded ? `qp__cell qp__cell--${b.shade ?? 'a'}` : 'qp__cell'} />
+              <rect key={k} x={pad + k * pw} y={top} width={pw} height={bh} className={k >= start && k < start + b.shaded ? `qp__cell qp__cell--${b.shade ?? 'a'}` : 'qp__cell'} />
+            ))}
+            {fill < 1 && (
+              <g>
+                <rect x={pad + bw * fill} y={top} width={bw * (1 - fill)} height={bh} className="qp__cell" />
+                <T x={pad + bw * fill + (bw * (1 - fill)) / 2} y={top + bh / 2 + 5} text="?" />
+              </g>
+            )}
+            {group > 0 && Array.from({ length: Math.floor(b.shaded / group) }, (_, g) => (
+              <line key={`g${g}`} x1={pad + (start + (g + 1) * group) * pw} y1={top} x2={pad + (start + (g + 1) * group) * pw} y2={top + bh} className="qp__outline" />
             ))}
             <rect x={pad} y={top} width={bw} height={bh} className="qp__outline" />
           </g>

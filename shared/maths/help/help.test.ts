@@ -6,6 +6,7 @@ import { expect, it } from 'vitest';
 import { LADDER, questionForKey } from '../ladder';
 import { helpCardFor, helpCardsFor } from './index';
 import { show } from './read';
+import { pictureFor } from '../pictures';
 
 function seeded(seed: number) {
   return () => {
@@ -64,6 +65,11 @@ it('gives every ladder question a help card that teaches without giving the answ
   expect(titles('3 × 12 = ?', 'mul:3x11')).toEqual(['Use the box: tens and ones', 'Use a fact you know', 'Count in 12s']);
   expect(titles('32 ÷ 8 = ?')).toEqual(['Use the array', 'Halve three times', 'Start from a fact you know', 'Count in 8s']);
   expect(titles('3 × 4 = ?')).toEqual(['Double, then double again', 'Use a fact you know', 'Count the rows of dots']);
+  {
+    // "25/30 = 5/?": the 25 in 5 groups and the 5 as a bar of its own (James, 28 Nov 2026).
+    expect(pictureFor({ parts: '25/30 = 5/?'.split(' ') })).toMatchObject({ kind: 'bars', bars: [{ parts: 30, shaded: 25, group: 5 }, { parts: 5, shaded: 5 }] });
+    expect(helpCardsFor({ parts: '25/30 = 5/?'.split(' ') })[0].steps[1]).toContain('the 25 parts make 5 equal groups');
+  }
   {
     // Doubling help also offers a fact they know (James, 27 Nov 2026), never the answer: 8 × 7 from 10 × 7 and 2 × 7.
     const last = (parts: string, prompt?: string) => helpCardsFor({ parts: parts.split(' '), prompt }).map((c) => c.steps.at(-1));

@@ -524,6 +524,13 @@ const equivalent: PictureRule = (q) => {
   if (!f || f.n > f.d || f.d > 30 || f.n < 1) return null;
   const right = p[2];
   if (!/^(\?|\?\/\d+|\d+\/\?|\d+\/\d+)$/.test(right)) return null;
+  // "25/30 = 5/?": the 25 shaded parts in 5 groups, and under it the 5 as a bar of its own, as long as the 25 (James,
+  // 28 Nov 2026: "help me should show the 25's and the 5's as bars").
+  const fewer = /^(\d+)\/\?$/.exec(right);
+  const t = fewer ? Number(fewer[1]) : 0;
+  if (t >= 1 && t < f.n && f.n % t === 0 && f.n < f.d) {
+    return { kind: 'bars', bars: [{ parts: f.d, shaded: f.n, group: f.n / t, label: `${f.n} of ${f.d} parts` }, { parts: t, shaded: t, fill: f.n / f.d, label: `the same in ${t} part${t === 1 ? '' : 's'}` }] };
+  }
   const bars: { parts: number; shaded: number }[] = [{ parts: f.d, shaded: f.n }];
   const other = /^\?\/(\d+)$/.exec(right);
   if (other && Number(other[1]) <= 36) bars.push({ parts: Number(other[1]), shaded: 0 });

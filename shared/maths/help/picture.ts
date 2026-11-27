@@ -400,6 +400,12 @@ function bars(q: HelpQuestion, p: Extract<Picture, { kind: 'bars' }>): HelpCard 
   if (top && Number(top[1]) < g.n && isInt(g.n / Number(top[1]))) {
     // "2/4 = 1/?": the shaded parts make fewer, bigger groups.
     const t = Number(top[1]);
+    if (p.bars[1]?.fill) {
+      // The 25/30 bar in groups, and the 5/? bar under it with its 5 parts as long as the 25.
+      return card('bars', 'Use the bars', `The top bar is cut into ${g.d} parts, with ${g.n} shaded.`,
+        `The bottom bar shades the same amount with just ${t} part${t === 1 ? '' : 's'}, so the ${g.n} parts make ${t === 1 ? '1 group' : `${t} equal groups`}. How many parts in ${t === 1 ? 'that' : 'each'} group?`,
+        `How many groups that size make all ${g.d} parts? ${g.d} ÷ (parts in a group) = ?`);
+    }
     return card('bars', 'Use the bar', `The bar is cut into ${g.d} parts, with ${g.n} shaded.`,
       `We want the ${g.n} shaded parts to make ${t} equal group${t === 1 ? '' : 's'}. How many parts go in each group?`,
       `How many groups that size make all ${g.d} parts? ${g.d} ÷ (parts in a group) = ?`);
