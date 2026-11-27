@@ -186,6 +186,20 @@ export const GEAR: GearInfo[] = SLOTS.flatMap((slot) =>
 );
 
 export const gearById = (id: string) => GEAR.find((g) => g.id === id);
+
+/**
+ * What each piece of gear says it does (James, 28 Nov 2026: "need to feel like upgrades, even if it's just make
+ * pretend"). Flavour only: the one real number is `power`, which the hero's smash power already counts.
+ */
+const GEAR_STATS: Record<Slot, Array<[string, string, number]>> = {
+  weapon: [['💥', 'Smash', 3], ['🎯', 'Crit', 2]],
+  shoes: [['🌀', 'Dodge', 5], ['💨', 'Speed', 2]],
+  cape: [['✨', 'Swoosh', 4], ['🍀', 'Luck', 2]],
+  shield: [['🛡️', 'Block', 5], ['💪', 'Toughness', 3]],
+};
+export interface GearStat { icon: string; label: string; value: number }
+export const gearStats = (g: GearInfo): GearStat[] =>
+  GEAR_STATS[g.slot].map(([icon, label, step]) => ({ icon, label, value: 1 + g.tier * step }));
 export const TOP_TIER = GEAR_NAMES.weapon.length - 1;
 
 /** Silly titles that come with each level. */

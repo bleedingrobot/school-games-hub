@@ -1,6 +1,6 @@
 /** Smash Quest's calm screens: picking a hero, home, and what an adventure earned. */
 import { useState } from 'react';
-import { CLASS_INFO, CLASSES, GEAR, INNKEEPER, LOOKS, SLOTS, gearById, trainerFor, zoneById, type HeroClass, type Look } from '../../../shared/bonkers/content';
+import { CLASS_INFO, CLASSES, GEAR, INNKEEPER, LOOKS, SLOTS, gearById, gearStats, type GearInfo, trainerFor, zoneById, type HeroClass, type Look } from '../../../shared/bonkers/content';
 import { MAX_LEVEL } from '../../../shared/bonkers/config';
 import { heroPower, replay, starsToTrainer, type Hero, type Progress } from '../../../shared/bonkers/engine';
 import type { AdventureView, FinishReply, LoadReply } from './backend';
@@ -93,12 +93,26 @@ function LevelRoad({ level }: { level: number }) {
   );
 }
 
+/** A piece of gear's stat lines: "+16 Smash", "+5 Crit"… (flavour, see gearStats). */
+function Stats({ g }: { g: GearInfo }) {
+  return (
+    <span className="bq-stats">
+      {gearStats(g).map((s) => <span key={s.label} className="bq-stat"><span aria-hidden="true">{s.icon}</span> +{s.value} {s.label}</span>)}
+    </span>
+  );
+}
+
 function GearRow({ p }: { p: Progress }) {
   return (
     <ul className="bq-gear" aria-label="Your gear">
       {SLOTS.map((slot) => {
         const g = GEAR.find((x) => x.slot === slot && x.tier === p.gear[slot]);
-        return <li key={slot} title={g?.name}><span aria-hidden="true">{g?.emoji}</span> {g?.name}</li>;
+        return (
+          <li key={slot} title={g?.name}>
+            <span aria-hidden="true">{g?.emoji}</span> {g?.name}
+            {g && <Stats g={g} />}
+          </li>
+        );
       })}
     </ul>
   );
@@ -171,7 +185,12 @@ export function Results({ before, result, current, onInn }: { before: Progress; 
           <ul>
             {result.gear.map((id) => {
               const g = gearById(id);
-              return <li key={id} className="bq-chest__item"><span aria-hidden="true">{g?.emoji}</span> {g?.name} <small>(+{g?.power} power)</small></li>;
+              return (
+                <li key={id} className="bq-chest__item">
+                  <span aria-hidden="true">{g?.emoji}</span> {g?.name} <span className="bq-chest__new">NEW!</span>
+                  {g && <Stats g={g} />}
+                </li>
+              );
             })}
           </ul>
         </div>
