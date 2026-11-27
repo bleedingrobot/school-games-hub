@@ -8,13 +8,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AvatarImage } from '../../avatar/AvatarImage';
 import {
-  activeGlitches, AVATAR_R, JAMMED_WIN, MACHINES, MECHANICS, phaseOf, podium, POWER_WORDS, powerNow, sparking, UNLOCK, type CrewGame, type CrewMechanic,
+  activeGlitches, AVATAR_R, JAMMED_WIN, machinesOf, MACHINES, MECHANICS, phaseOf, podium, POWER_WORDS, powerNow, sparking, UNLOCK, type CrewGame, type CrewMechanic,
 } from '../../../shared/classlive/crew';
 import type { Spot } from '../../../shared/classlive/corners';
 import type { ScreenView } from '../../../shared/classlive/server';
 import type { ClassLiveSound } from './audio';
 import { lineOf } from './CornersScene';
-import { CrewBoard, CrewToken } from './CrewBoard';
+import { at as atBoard, CrewBoard, CrewToken } from './CrewBoard';
+import { useEdgeLink } from './edgeLink';
 import type { ClassLiveLink } from './link';
 
 type Person = ScreenView['people'][number];
@@ -33,7 +34,7 @@ const WHY: Record<string, string> = {
   outnumbered: '⚡ As many Glitches as Crew! The Glitches win the round!',
 };
 
-export function CrewScene({ screen, game, link, room, clock, sound, say, onTick, onCrew, over, onAgain }: {
+export function CrewScene({ screen, game, link: baseLink, room, clock, sound, say, onTick, onCrew, over, onAgain }: {
   screen: ScreenView; game: CrewGame; link: ClassLiveLink; room: number | null;
   clock: () => number;
   sound: ClassLiveSound; say: (text: string, delay?: number) => void;
@@ -43,8 +44,12 @@ export function CrewScene({ screen, game, link, room, clock, sound, say, onTick,
   over: boolean;
   onAgain: () => void;
 }) {
+  // Cloudflare rooms send and read spots over a live connection (edgeLink.ts), 10 times a second.
+  const link = useEdgeLink(baseLink, room, screen.edge);
   const t = screen.startedAt === null ? 0 : clock() - screen.startedAt;
   const r = game.round;
+  /** The factory's width (height 1): wide since 27 Nov 2026 NZ. */
+  const bw = r?.w ?? game.w ?? 1;
   const targets = useRef<Record<string, Spot>>({});
   const shown = useRef<Record<string, Spot>>({});
   const [, setFrame] = useState(0);
@@ -66,7 +71,7 @@ export function CrewScene({ screen, game, link, room, clock, sound, say, onTick,
     let live = true;
     const read = () => void link.positions(room).then((p) => { if (live && p) targets.current = p; }, () => undefined);
     read();
-    const id = window.setInterval(read, running ? 300 : 1500);
+    const id = window.setInterval(read, running ? (link.readMs ?? 300) : 1500);
     return () => { live = false; window.clearInterval(id); };
   }, [room, running, over, link]);
 
@@ -198,7 +203,7 @@ export function CrewScene({ screen, game, link, room, clock, sound, say, onTick,
       if (line) say(line, 300);
     };
     for (const e of fresh) {
-      const mAt = 'machine' in e && typeof e.machine === 'number' ? { x: MACHINES[e.machine].x, y: MACHINES[e.machine].y - 0.05 } : null;
+      const mAt = 'machine' in e && typeof e.machine === 'number' ? { x: machinesOf(bw)[e.machine].x, y: machinesOf(bw)[e.machine].y - 0.05 } : null;
       const pAt = 'pupil' in e && typeof e.pupil === 'string' ? (shown.current[e.pupil] ?? null) : null;
       if (e.type === 'c_spark' && mAt) { sound.play('crack'); add.push({ key: e.seq, at: mAt, text: '⚡💥', kind: 'spark' }); chat('crewSpark'); }
       else if (e.type === 'c_fix' && mAt) { sound.play(e.mended ? 'build' : 'plop'); add.push({ key: e.seq, at: mAt, text: e.mended ? '🔧✨' : '🔧', kind: 'fix' }); if (e.mended) chat('crewMend'); }
@@ -212,7 +217,7 @@ export function CrewScene({ screen, game, link, room, clock, sound, say, onTick,
       setPops((p) => [...p, ...add].slice(-12));
       window.setTimeout(() => setPops((p) => p.filter((x) => !add.includes(x))), 1800);
     }
-  }, [screen.events, screen.seq, sound, say]);
+  }, [screen.events, screen.seq, sound, say, bw]);
 
   const nameOf = (p: Person) => (screen.showNames ? p.name : null);
   const byId = (id: string | null) => (id ? screen.people.find((p) => p.id === id) : undefined);
@@ -231,9 +236,9 @@ export function CrewScene({ screen, game, link, room, clock, sound, say, onTick,
   const sparkNames = r ? MACHINES.filter((mc) => r.machines[mc.id].sparked).map((mc) => mc.room) : [];
 
   return (
-    <div className="fc-scene sc-scene">
+    <div className={`fc-scene sc-scene ${bw > 1 ? 'sc-scene--wide' : ''}`}>
       <div className="fc-stage">
-        <CrewBoard round={r} dark={dark ? 'all' : null} meeting={!!mt}>
+        <CrewBoard w={bw} round={r} dark={dark ? 'all' : null} meeting={!!mt}>
           {screen.people.map((p) => {
             const m = game.mine[p.id];
             const at = shown.current[p.id] ?? m?.spot;
@@ -250,7 +255,7 @@ export function CrewScene({ screen, game, link, room, clock, sound, say, onTick,
               </CrewToken>
             );
           })}
-          {pops.map((p) => <span key={p.key} className={`fc-pop sc-pop sc-pop--${p.kind}`} style={{ left: `${p.at.x * 100}%`, top: `${p.at.y * 100}%` }}>{p.text}</span>)}
+          {pops.map((p) => <span key={p.key} className={`fc-pop sc-pop sc-pop--${p.kind}`} style={atBoard(p.at.x, p.at.y, bw)}>{p.text}</span>)}
         </CrewBoard>
 
         <aside className="fc-side sc-side">

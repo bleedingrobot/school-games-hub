@@ -9,13 +9,14 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPoi
 import { AvatarImage } from '../../avatar/AvatarImage';
 import { AVATAR_R, GRAB_R, JAIL_RIGHT, startSpot, type MoveState, type Spot, type Corner, type Power } from '../../../shared/classlive/corners';
 import {
-  BAY_WORDS, BOAT_R, boatAt, CENTRE, DOCK_R, QUARTER_NAMES, quarterOf, SHARK_POWER_WORDS, sharkMove, spinAt, type BayRound,
+  BAY_WORDS, BOAT_R, boatAt, bayCentre, DOCK_R, QUARTER_NAMES, quarterOf, SHARK_POWER_WORDS, sharkMove, spinAt, type BayRound,
 } from '../../../shared/classlive/shark';
 import type { PlayerView, RoomView } from '../../../shared/classlive/server';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
-import { Token } from './CornersBoard';
+import { at, Token } from './CornersBoard';
 import { QUARTER_COLOURS, SharkBoard, sharkPowerPic } from './SharkBoard';
+import { useEdgeLink } from './edgeLink';
 import type { ClassLiveLink } from './link';
 import './controller.css';
 import './shark.css';
@@ -93,7 +94,7 @@ function Joystick({ onDir }: { onDir: (d: Spot) => void }) {
   );
 }
 
-export function SharkPad({ link, room, view, me, setMe, setView, clock, avatar }: {
+export function SharkPad({ link: baseLink, room, view, me, setMe, setView, clock, avatar }: {
   link: ClassLiveLink; room: number | null; view: RoomView; me: PlayerView | null;
   setMe: (m: PlayerView) => void; setView: (f: (v: RoomView | null) => RoomView | null) => void;
   /** The server's time now (ms). */
@@ -101,14 +102,18 @@ export function SharkPad({ link, room, view, me, setMe, setView, clock, avatar }
   /** The pupil's own hub avatar. */
   avatar?: unknown;
 }) {
+  // Cloudflare rooms send and read spots over a live connection (edgeLink.ts), 10 times a second.
+  const link = useEdgeLink(baseLink, room, view.edge);
   const pub: Pub | null = view.game.kind === 'corners' ? view.game : null;
   const mg: Mine | null = me && me.game.kind === 'corners' ? me.game : null;
   const r = pub?.round ?? null;
   // The public round carries the bay's spin and boats too.
   const br = r as unknown as (BayRound & { ended: boolean; caught: number }) | null;
+  /** The board's width (height 1): wide since 27 Nov 2026, the bay an oval. */
+  const bw = r?.w ?? pub?.w ?? 1;
   const keysDir = useKeys();
   const stickDir = useRef<Spot>({ x: 0, y: 0 });
-  const pos = useRef<MoveState>({ p: mg?.spot ?? startSpot(0), v: { x: 0, y: 0 } });
+  const pos = useRef<MoveState>({ p: mg?.spot ?? startSpot(0, bw), v: { x: 0, y: 0 } });
   const placed = useRef<number>(-1);
   const others = useRef<Spot[]>([]);
   const lastSent = useRef(0);
@@ -150,7 +155,7 @@ export function SharkPad({ link, room, view, me, setMe, setView, clock, avatar }
         const dir = k.x || k.y ? k : stickDir.current;
         const before = pos.current.p;
         const hitBefore = pos.current.hitAt;
-        pos.current = sharkMove(pos.current, dir, dt, r, t, { boost: !!mg?.boost, ghost: !!mg?.ghost });
+        pos.current = sharkMove(pos.current, dir, dt, r, t, { boost: !!mg?.boost, ghost: !!mg?.ghost, w: bw });
         if (pos.current.hitAt !== undefined && pos.current.hitAt !== hitBefore) {
           toast(`💥 The ${BAY_WORDS[bay].roller.toLowerCase()} knocked you flying!`);
           try { navigator.vibrate?.(200); } catch { /* not on this device */ }
@@ -159,7 +164,7 @@ export function SharkPad({ link, room, view, me, setMe, setView, clock, avatar }
         const warped = Math.hypot(pos.current.p.x - before.x, pos.current.p.y - before.y) > 0.2;
         const moved = !sentAt.current || Math.hypot(pos.current.p.x - sentAt.current.x, pos.current.p.y - sentAt.current.y) > 0.002;
         const now = Date.now();
-        if ((moved && now - lastSent.current >= SEND_MS) || warped || (now - lastSent.current > 2000)) {
+        if ((moved && now - lastSent.current >= (link.sendMs ?? SEND_MS)) || warped || (now - lastSent.current > 2000)) {
           lastSent.current = now;
           sentAt.current = { ...pos.current.p };
           const p = pos.current.p;
@@ -197,11 +202,11 @@ export function SharkPad({ link, room, view, me, setMe, setView, clock, avatar }
     id = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [room, canRun, r, mg?.boost, mg?.ghost, mg?.held, link]);
+  }, [room, canRun, r, mg?.boost, mg?.ghost, mg?.held, link, bw]);
 
   // A question when one is due: in the cave (until 3 right), or holding a power-up while in the water (off the jetty).
   const t = tNow();
-  const offJetty = dist(pos.current.p, CENTRE) >= DOCK_R;
+  const offJetty = dist(pos.current.p, bayCentre(bw)) >= DOCK_R;
   const wantQuestion = view.state === 'live' && !!r && (jailed ? (mg?.jailRight ?? 0) < JAIL_RIGHT : !!mg?.held && offJetty && t < r.runEnd - 600 && !r.ended);
   // Bumped to ask again after an ask that brought no question (a busy server, a dropped connection).
   const [askAgain, setAskAgain] = useState(0);
@@ -270,11 +275,11 @@ export function SharkPad({ link, room, view, me, setMe, setView, clock, avatar }
     else if (!mg.jailed) {
       const p = pos.current.p;
       const inBoat = !!br && br.boats.some((b) => dist(p, boatAt(b, br, br.runEnd)) < SEAT_R);
-      const q = br ? quarterOf(p, spinAt(br, br.runEnd)) : null;
+      const q = br ? quarterOf(p, spinAt(br, br.runEnd), bw) : null;
       const exposed = q === null || r.rolled.includes(q);
       toast(inBoat && exposed ? `⛵ The ${BAY_WORDS[bay].boat.toLowerCase()} saved you!${count}` : `✅ Safe!${count}`, true);
     }
-  }, [r, br, mg, bay, toast]);
+  }, [r, br, mg, bay, toast, bw]);
 
   const jump = async (c: Corner) => {
     if (room === null) return;
@@ -381,7 +386,7 @@ export function SharkPad({ link, room, view, me, setMe, setView, clock, avatar }
       }
     }
   }
-  const quarter = br && !br.ended ? quarterOf(here, spinAt(br, Math.min(t, br.runEnd))) : null;
+  const quarter = br && !br.ended ? quarterOf(here, spinAt(br, Math.min(t, br.runEnd)), bw) : null;
   let status: { text: string; tone: 'info' | 'warn' | 'good' } | null = null;
   if (running && br) {
     if (left !== null && left <= 3 && quarter === null) status = { text: `On the ${words.dock.toLowerCase()}! Swim off!`, tone: 'warn' };
@@ -391,7 +396,7 @@ export function SharkPad({ link, room, view, me, setMe, setView, clock, avatar }
   } else if (br && !br.ended && t < br.startAt) status = { text: 'Get ready to swim!', tone: 'info' };
 
   return (
-    <div className="fc-pad fc-pad--run">
+    <div className={`fc-pad fc-pad--run ${bw > 1 ? 'fc-pad--wide sb-pad--wide' : ''}`}>
       <header className="fc-pad__top">
         <span>Round {roundN}</span>
         {left !== null ? <b className={`fc-pad__left ${left <= 3 ? 'is-low' : ''}`}>{left}</b> : <b>🦈 Look at the big screen!</b>}
@@ -415,8 +420,8 @@ export function SharkPad({ link, room, view, me, setMe, setView, clock, avatar }
         {mg.stay != null && r && !r.ended && <span className="fc-chip fc-chip--swap">🔁 Change colour! Not {QUARTER_NAMES[mg.stay]}</span>}
       </div>
       <div className={`fc-pad__board ${Date.now() - shake < 500 ? 'fc-pad__board--hit' : ''}`}>
-        <SharkBoard map={bay} round={br} t={t} flash={r?.ended && r.rolled ? r.rolled : null} periscope={mg.crystal} fogOn={false} seatsLeft={seatsLeft} onQuarter={mg.jump && canRun ? (c) => void jump(c) : undefined}>
-          {!fogged && others.current.map((o, i) => <span key={i} className="fc-dot" style={{ left: `${o.x * 100}%`, top: `${o.y * 100}%` }} />)}
+        <SharkBoard map={bay} w={bw} round={br} t={t} flash={r?.ended && r.rolled ? r.rolled : null} periscope={mg.crystal} fogOn={false} seatsLeft={seatsLeft} onQuarter={mg.jump && canRun ? (c) => void jump(c) : undefined}>
+          {!fogged && others.current.map((o, i) => <span key={i} className="fc-dot" style={at(o.x, o.y, bw)} />)}
           <Token x={here.x} y={here.y} size={AVATAR_R * 2.2} className={`fc-token--me ${mg.shield ? 'fc-token--shield' : ''} ${mg.boost ? 'fc-token--fast' : ''} ${mg.ghost ? 'fc-token--ghost' : ''}`} label="You">
             <AvatarImage avatar={avatar ?? null} size={64} />
           </Token>

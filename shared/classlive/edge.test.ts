@@ -9,7 +9,7 @@ describe('Class Live on Cloudflare (pilot)', () => {
   it('which games run on Cloudflare (set-time ones too), and what each game shows: every spot, or Glitches\' names and the dark', async () => {
     expect(edgeFor('any-teacher', 'ghost')).toBe(EDGE_EVERYONE);
     expect(edgeFor(EDGE_TEACHERS[0], 'ghost')).toBe(true);
-    expect(edgeFor(EDGE_TEACHERS[0], 'corners')).toBe(false);
+    expect([edgeFor(EDGE_TEACHERS[0], 'corners'), edgeFor('any-teacher', 'corners'), edgeFor(EDGE_TEACHERS[0], 'relay')]).toEqual([true, false, false]);
     const clock = pretendClock();
     const pc = pretendClass({ size: 4, seed: 5, clock, later: () => undefined });
     const cf = new EdgeRoom();
@@ -49,6 +49,24 @@ describe('Class Live on Cloudflare (pilot)', () => {
     r.move('c', 0.95, 0.95, 2000);
     expect((r.frameFor('c', 2100) as { spots: unknown[] }).spots).toHaveLength(0);
     expect((r.frameFor('a', 2100) as { spots: unknown[] }).spots).toHaveLength(2);
+
+    // Colour Clash: the room paints the line walked while painting is on, sends what changed, and keeps the board for the count.
+    const round = { n: 1, paintFrom: 1000, paintTo: 5000, result: null, items: [] };
+    const clashSync = edgeSync(5, { state: 'live', order: ['a', 'b'], game: { kind: 'clash', zeroMs: 0, round, mine: { a: { team: 1, brushTo: null }, b: { team: 2, brushTo: null } } } } as never, 0, []);
+    const k = new EdgeRoom();
+    k.applySync(clashSync, 0);
+    k.move('a', 0.1, 0.5, 0);
+    k.move('a', 0.2, 0.5, 500);
+    expect(k.board.tiles.size).toBe(0);
+    k.move('a', 0.3, 0.5, 1500);
+    const painted = [...k.board.tiles.keys()];
+    expect(painted.length).toBeGreaterThan(2);
+    expect(k.paintFrame(false)).toEqual({ n: 1, d: painted.map((i) => [i, 1]) });
+    k.paint(1, 2, 'b', [painted[0]]);
+    expect(k.boardOf(1).painted).toEqual({ a: painted.length, b: 1 });
+    expect(k.boardOf(1).tiles.split('').filter((c) => c !== '0').length).toBe(painted.length);
+    k.applySync({ ...clashSync, clash: { ...clashSync.clash!, n: 2 } }, 6000);
+    expect([k.board.tiles.size, k.paintFrame(true)]).toEqual([0, { n: 2, full: true, d: [] }]);
   });
 
   it('tickets, the speed limit, teleports and what each device may see', async () => {

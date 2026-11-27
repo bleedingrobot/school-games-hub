@@ -14,8 +14,9 @@ import {
 import type { PlayerView, RoomView } from '../../../shared/classlive/server';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
-import { CORNER_NAMES, CornersBoard, powerPic, Token } from './CornersBoard';
+import { at, CORNER_NAMES, CornersBoard, powerPic, Token } from './CornersBoard';
 import { CornersGuide } from './CornersGuide';
+import { useEdgeLink } from './edgeLink';
 import type { ClassLiveLink } from './link';
 import './controller.css';
 
@@ -89,7 +90,7 @@ export function Joystick({ onDir }: { onDir: (d: Spot) => void }) {
   );
 }
 
-export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar }: {
+export function CornersPad({ link: baseLink, room, view, me, setMe, setView, clock, avatar }: {
   link: ClassLiveLink; room: number | null; view: RoomView; me: PlayerView | null;
   setMe: (m: PlayerView) => void; setView: (f: (v: RoomView | null) => RoomView | null) => void;
   /** The server's time now (ms). */
@@ -97,12 +98,16 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
   /** The pupil's own hub avatar. */
   avatar?: unknown;
 }) {
+  // Cloudflare rooms send and read spots over a live connection (edgeLink.ts), 10 times a second.
+  const link = useEdgeLink(baseLink, room, view.edge);
   const pub: Pub | null = view.game.kind === 'corners' ? view.game : null;
   const mg: Mine | null = me && me.game.kind === 'corners' ? me.game : null;
   const r = pub?.round ?? null;
+  /** The board's width (height 1): wide since 27 Nov 2026. */
+  const bw = r?.w ?? pub?.w ?? 1;
   const keysDir = useKeys();
   const stickDir = useRef<Spot>({ x: 0, y: 0 });
-  const pos = useRef<MoveState>({ p: mg?.spot ?? startSpot(0), v: { x: 0, y: 0 } });
+  const pos = useRef<MoveState>({ p: mg?.spot ?? startSpot(0, bw), v: { x: 0, y: 0 } });
   const placed = useRef<number>(-1);
   const others = useRef<Spot[]>([]);
   const lastSent = useRef(0);
@@ -144,7 +149,7 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
         const dir = k.x || k.y ? k : stickDir.current;
         const before = pos.current.p;
         const hitBefore = pos.current.hitAt;
-        pos.current = stepMove(pos.current, dir, dt, r, t, { boost: !!mg?.boost, ghost: !!mg?.ghost });
+        pos.current = stepMove(pos.current, dir, dt, r, t, { boost: !!mg?.boost, ghost: !!mg?.ghost, w: bw });
         if (pos.current.hitAt !== undefined && pos.current.hitAt !== hitBefore && pub) {
           // Knocked flying by a roller: say so, buzz and shake.
           toast(`💥 The ${MAP_WORDS[pub.map].roller.toLowerCase()} knocked you flying!`);
@@ -154,7 +159,7 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
         const warped = Math.hypot(pos.current.p.x - before.x, pos.current.p.y - before.y) > 0.2;
         const moved = !sentAt.current || Math.hypot(pos.current.p.x - sentAt.current.x, pos.current.p.y - sentAt.current.y) > 0.002;
         const now = Date.now();
-        if ((moved && now - lastSent.current >= SEND_MS) || warped || (now - lastSent.current > 2000)) {
+        if ((moved && now - lastSent.current >= (link.sendMs ?? SEND_MS)) || warped || (now - lastSent.current > 2000)) {
           lastSent.current = now;
           sentAt.current = { ...pos.current.p };
           const p = pos.current.p;
@@ -191,11 +196,11 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
     id = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [room, canRun, r, mg?.boost, mg?.ghost, mg?.held, link]);
+  }, [room, canRun, r, mg?.boost, mg?.ghost, mg?.held, link, bw]);
 
   // A question when one is due: in jail (until 3 right), or holding a power-up while standing in a corner.
   const t = tNow();
-  const inCorner = cornerOf(pos.current.p);
+  const inCorner = cornerOf(pos.current.p, bw);
   const wantQuestion = view.state === 'live' && !!r && (jailed ? (mg?.jailRight ?? 0) < JAIL_RIGHT : !!mg?.held && inCorner !== null && t < r.runEnd - 600 && !r.ended);
   // Bumped to ask again after an ask that brought no question (a busy server, a dropped connection, the server not
   // seeing the jail yet): without it the pad waited for ever and jailed pupils got no questions (James, 25 Nov 2026 NZ).
@@ -353,7 +358,7 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
 
   const here = pos.current.p;
   return (
-    <div className="fc-pad fc-pad--run">
+    <div className={`fc-pad fc-pad--run ${bw > 1 ? 'fc-pad--wide' : ''}`}>
       <header className="fc-pad__top">
         <span>Round {roundN}</span>
         {left !== null ? <b className={`fc-pad__left ${left <= 3 ? 'is-low' : ''}`}>{left}</b> : <b>🎲 Look at the big screen!</b>}
@@ -372,8 +377,8 @@ export function CornersPad({ link, room, view, me, setMe, setView, clock, avatar
         {mg.stay != null && r && !r.ended && <span className="fc-chip fc-chip--swap">🔁 Change corners! Not {CORNER_NAMES[mg.stay]}</span>}
       </div>
       <div className={`fc-pad__board ${Date.now() - shake < 500 ? 'fc-pad__board--hit' : ''}`}>
-        <CornersBoard map={pub.map} round={r} t={t} flash={r?.ended && r.rolled ? r.rolled : null} crystal={mg.crystal} banned={r && !r.ended ? mg.stay ?? null : null} fogOn={false} onCorner={mg.jump && canRun ? (c) => void jump(c) : undefined}>
-          {!fogged && others.current.map((o, i) => <span key={i} className="fc-dot" style={{ left: `${o.x * 100}%`, top: `${o.y * 100}%` }} />)}
+        <CornersBoard map={pub.map} w={bw} round={r} t={t} flash={r?.ended && r.rolled ? r.rolled : null} crystal={mg.crystal} banned={r && !r.ended ? mg.stay ?? null : null} fogOn={false} onCorner={mg.jump && canRun ? (c) => void jump(c) : undefined}>
+          {!fogged && others.current.map((o, i) => <span key={i} className="fc-dot" style={at(o.x, o.y, bw)} />)}
           <Token x={here.x} y={here.y} size={AVATAR_R * 2.2} className={`fc-token--me ${mg.shield ? 'fc-token--shield' : ''} ${mg.boost ? 'fc-token--fast' : ''} ${mg.ghost ? 'fc-token--ghost' : ''}`} label="You">
             <AvatarImage avatar={avatar ?? null} size={64} />
           </Token>

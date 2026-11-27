@@ -5,12 +5,18 @@
  *   GET  /room/<id>/ws?ticket=…   a device's WebSocket (ticket from the classlive server function)
  *   POST /room/<id>/sync          the server function: who is a ghost, who it moved          (Bearer EDGE_SECRET)
  *   GET  /room/<id>/positions     the server function: every spot, to check for catches      (Bearer EDGE_SECRET)
+ *   GET  /room/<id>/board?round=n Colour Clash: the paint board, to count a round              (Bearer EDGE_SECRET)
+ *   POST /room/<id>/bomb          Colour Clash: a bomb's tiles                               (Bearer EDGE_SECRET)
  *
  * Devices send `{"m":[x,y]}` (pupils) or "ping"; the room sends pupils `{"s":PupilFrame}` and the projector
  * `{"p":{id:[x,y]}}` every 100 ms while something changed (at least every second). With the WebSocket Hibernation API
  * the object can sleep once every socket has closed and wake on the next one.
  */
 import { EDGE_IDLE_MS, EDGE_TICK_MS, EdgeRoom, readTicket, type EdgeSync } from '../../../shared/classlive/edge';
+
+/** Colour Clash: the board is saved this often while it changes, so a restarted room keeps the paint. */
+const BOARD_SAVE_MS = 2000;
+type SavedBoard = { round: number; tiles: [number, number][]; painted: [string, number][] };
 
 // ---- The little of Cloudflare's types this needs (no extra package) ----
 interface CfSocket extends WebSocket {
@@ -36,7 +42,7 @@ const secretOk = (req: Request, env: Env) => !!env.EDGE_SECRET && req.headers.ge
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
-    const m = /^\/room\/(\d{1,15})\/(ws|sync|positions)$/.exec(url.pathname);
+    const m = /^\/room\/(\d{1,15})\/(ws|sync|positions|board|bomb)$/.exec(url.pathname);
     if (!m) return url.pathname === '/' ? new Response('Class Live rooms') : new Response('Not found', { status: 404 });
     const room = Number(m[1]);
     const what = m[2];
@@ -51,7 +57,7 @@ export default {
     } else if (!secretOk(req, env)) return new Response('No', { status: 403 });
     // Rooms start near the school ("oc": Oceania).
     const stub = env.ROOMS.get(env.ROOMS.idFromName(`room-${room}`), { locationHint: 'oc' });
-    return stub.fetch(new Request(`https://room/${what}`, { method: req.method, headers, body: what === 'sync' ? await req.text() : undefined }));
+    return stub.fetch(new Request(`https://room/${what}${url.search}`, { method: req.method, headers, body: what === 'sync' || what === 'bomb' ? await req.text() : undefined }));
   },
 };
 
@@ -62,6 +68,10 @@ export class GhostRoom {
   private timer: ReturnType<typeof setInterval> | null = null;
   private sent = -1;
   private sentAt = 0;
+  /** Sockets that have had the whole paint board. */
+  private hasBoard = new WeakSet<CfSocket>();
+  private boardSavedAt = 0;
+  private boardVersion = -1;
 
   constructor(private ctx: DurableObjectState, _env: Env) {
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong'));
@@ -69,6 +79,8 @@ export class GhostRoom {
     void ctx.blockConcurrencyWhile(async () => {
       const s = await ctx.storage.get<EdgeSync>('sync');
       if (s) this.room.applySync({ ...s, places: [] }, Date.now());
+      const b = await ctx.storage.get<SavedBoard>('board');
+      if (b && b.round === this.room.board.round) this.room.board = { round: b.round, tiles: new Map(b.tiles), painted: new Map(b.painted) };
       for (const ws of ctx.getWebSockets()) {
         const tag = ws.deserializeAttachment() as Tag | null;
         if (tag?.kind === 'p' && typeof tag.x === 'number' && typeof tag.y === 'number') this.room.spots.set(tag.who, { x: tag.x, y: tag.y, at: 0, placedAt: null });
@@ -79,6 +91,19 @@ export class GhostRoom {
   async fetch(req: Request): Promise<Response> {
     const url = new URL(req.url);
     if (url.pathname === '/positions') return json(this.room.positions());
+    if (url.pathname === '/board') return json(this.room.boardOf(Number(url.searchParams.get('round')) || 0));
+    if (url.pathname === '/bomb') {
+      let b: { round?: unknown; team?: unknown; player?: unknown; tiles?: unknown };
+      try {
+        b = (await req.json()) as typeof b;
+      } catch {
+        return new Response('Bad bomb', { status: 400 });
+      }
+      if (typeof b.player !== 'string' || !Array.isArray(b.tiles)) return new Response('Bad bomb', { status: 400 });
+      this.room.paint(Number(b.round), Number(b.team), b.player, b.tiles.map(Number));
+      this.wake();
+      return json({ ok: true });
+    }
     if (url.pathname === '/sync') {
       let s: EdgeSync;
       try {
@@ -151,15 +176,26 @@ export class GhostRoom {
       this.sent = this.room.version;
       this.sentAt = now;
       let teacher: string | null = null;
+      const paint = this.room.paintFrame(false);
       for (const ws of sockets) {
         const tag = ws.deserializeAttachment() as Tag | null;
         if (!tag) continue;
+        // Colour Clash: a device's first frame has the whole board, later ones what changed.
+        const c = paint && !this.hasBoard.has(ws) ? this.room.paintFrame(true) : paint;
+        if (paint) this.hasBoard.add(ws);
         try {
-          if (tag.kind === 't') ws.send(teacher ??= JSON.stringify({ p: this.room.teacherView() }));
-          else ws.send(JSON.stringify({ s: this.room.frameFor(tag.who, now) }));
+          if (tag.kind === 't') ws.send(c === paint ? (teacher ??= JSON.stringify({ p: this.room.teacherView(), c })) : JSON.stringify({ p: this.room.teacherView(), c }));
+          else ws.send(JSON.stringify({ s: this.room.frameFor(tag.who, now), c }));
         } catch {
           // A socket closing: the next frame skips it.
         }
+      }
+      this.room.delta = [];
+      if (paint && this.room.version !== this.boardVersion && now - this.boardSavedAt >= BOARD_SAVE_MS) {
+        this.boardSavedAt = now;
+        this.boardVersion = this.room.version;
+        const b = this.room.board;
+        void this.ctx.storage.put('board', { round: b.round, tiles: [...b.tiles], painted: [...b.painted] } satisfies SavedBoard);
       }
     }, EDGE_TICK_MS);
   }

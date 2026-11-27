@@ -76,6 +76,25 @@ function edgeServices(): EdgeServices | undefined {
       if (!res.ok) throw new Error(`edge sync ${res.status}`);
       await res.body?.cancel();
     },
+    async clashBoard(room, round) {
+      try {
+        const res = await call(room, `board?round=${round}`);
+        if (!res.ok) return 'busy';
+        const b = (await res.json()) as { tiles?: unknown; painted?: unknown };
+        if (typeof b.tiles !== 'string' || !b.painted || typeof b.painted !== 'object') return 'busy';
+        const painted: Record<string, number> = {};
+        for (const [id, n] of Object.entries(b.painted as Record<string, unknown>)) if (Number.isFinite(Number(n))) painted[id] = Number(n);
+        return { tiles: b.tiles, painted };
+      } catch {
+        console.error('classlive: edge board failed');
+        return 'busy';
+      }
+    },
+    async clashBomb(room, round, team, player, tiles) {
+      const res = await call(room, 'bomb', { method: 'POST', body: JSON.stringify({ round, team, player, tiles }) });
+      if (!res.ok) throw new Error(`edge bomb ${res.status}`);
+      await res.body?.cancel();
+    },
     async ticket(room, who, kind) {
       return { url: `${base.replace(/^https:/, 'wss:')}/room/${room}/ws`, ticket: await makeTicket(secret, { r: room, u: who, k: kind, e: Date.now() + TICKET_MS }) };
     },

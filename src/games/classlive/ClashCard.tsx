@@ -5,10 +5,12 @@
 import { useState } from 'react';
 import { CLASH_MAPS, MAP_WORDS, PAINT_DEFAULT_S, PAINT_S, TEAM_COUNTS, type ClashMap } from '../../../shared/classlive/clash';
 import { ClashGuide } from './ClashGuide';
+import { useEdgeChoice } from './EdgeChoice';
 import { painted } from './paintedArt';
 import { CardArt, TimerChips } from './Projector';
 
 export function ClashCard({ busy, disabled, onOpen }: { busy: boolean; disabled: boolean; onOpen: (body: Record<string, unknown>) => void }) {
+  const clashRun = useEdgeChoice('clash');
   const [map, setMap] = useState<ClashMap | 'any'>('any');
   const [teams, setTeams] = useState<number>(4);
   const [paint, setPaint] = useState<number>(PAINT_DEFAULT_S);
@@ -47,7 +49,8 @@ export function ClashCard({ busy, disabled, onOpen }: { busy: boolean; disabled:
         </div>
       </div>
       <TimerChips length={length} setLength={setLength} />
-      <button type="button" className="cl-btn cl-btn--go" disabled={busy || disabled} onClick={() => onOpen({ length, teams, paint, ...(map === 'any' ? {} : { map }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
+      {clashRun.node}
+      <button type="button" className="cl-btn cl-btn--go" disabled={busy || disabled} onClick={() => onOpen({ length, teams, paint, ...(map === 'any' ? {} : { map }), ...clashRun.extra })}>{busy ? 'Opening…' : 'Open the room'}</button>
     </section>
   );
 }

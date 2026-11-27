@@ -41,10 +41,19 @@ export const LAVA_POWER_WORDS: Record<LavaPower, { name: string; emoji: string; 
 
 // ---- Sizes and times ----
 
-/** Tiles a side: the floor is GRID × GRID tiles over the unit square. */
+/**
+ * Rows of tiles: the board is 1 high and GRID rows tall, and tiles are square (TILE a side). New games are LAVA_COLS
+ * columns wide (LAVA_W, 27 Nov 2026 NZ, so the floor fills a widescreen); older games have no `w` and stay GRID × GRID
+ * over the unit square. A tile index is r * cols + c.
+ */
 export const GRID = 8;
 export const TILE = 1 / GRID;
-export const TILES = GRID * GRID;
+export const LAVA_COLS = 13;
+export const LAVA_W = LAVA_COLS / GRID;
+/** Columns of tiles for a board w wide (squares: GRID). */
+export const colsOf = (w?: number): number => (w ? Math.max(1, Math.round(w * GRID)) : GRID);
+/** How many tiles a board w wide has. */
+export const tilesOf = (w?: number): number => colsOf(w) * GRID;
 export const SPEED = 0.3;
 export const BOOST = 1.6;
 export const BUBBLE_SLOW = 0.45;
@@ -78,11 +87,14 @@ export const lavaRunSeconds = (v: unknown): number =>
 
 export interface Spot { x: number; y: number }
 export interface Circle extends Spot { r: number }
-export interface Fireball { axis: 'x' | 'y'; at: number; r: number; periodMs: number }
+/** `span` is how far it travels along its axis (the board's width for an x ball, 1 for a y ball); missing: 1. */
+export interface Fireball { axis: 'x' | 'y'; at: number; r: number; periodMs: number; span?: number }
 export interface LavaItem extends Spot { id: number; power: LavaPower; by: string | null }
 
 export interface LavaRound {
   n: number;
+  /** The board's width (height 1); missing: a square board. */
+  w?: number;
   startAt: number;
   runEnd: number;
   crackEnd: number;
@@ -136,6 +148,8 @@ export interface LavaMine {
 export interface LavaGame {
   kind: 'lava';
   map: LavaMap;
+  /** The board's width (height 1), LAVA_W for new games; missing: a square board. */
+  w?: number;
   round: LavaRound | null;
   /** Per tile: the last round it is lava in (0: solid rock). */
   sunk: number[];
@@ -160,24 +174,29 @@ export type LavaEvent =
 // ---- Floor helpers ----
 
 export const START: Spot = { x: 0.5, y: 0.5 };
+/** The middle of a board w wide. */
+export const middleOf = (w?: number): Spot => ({ x: (w ?? 1) / 2, y: 0.5 });
 const dist = (a: Spot, b: Spot) => Math.hypot(a.x - b.x, a.y - b.y);
-const clamp01 = (v: number) => Math.min(1 - AVATAR_R, Math.max(AVATAR_R, v));
+const clampTo = (v: number, max: number) => Math.min(max - AVATAR_R, Math.max(AVATAR_R, v));
+const clampY = (v: number) => clampTo(v, 1);
 
-export const tileAt = (p: Spot): number => {
-  const c = Math.min(GRID - 1, Math.max(0, Math.floor(p.x * GRID)));
+/** The tile under p, on a board `cols` columns wide (GRID: the old square board). */
+export const tileAt = (p: Spot, cols: number = GRID): number => {
+  const c = Math.min(cols - 1, Math.max(0, Math.floor(p.x * GRID)));
   const r = Math.min(GRID - 1, Math.max(0, Math.floor(p.y * GRID)));
-  return r * GRID + c;
+  return r * cols + c;
 };
-export const tileCentre = (i: number): Spot => ({ x: ((i % GRID) + 0.5) * TILE, y: (Math.floor(i / GRID) + 0.5) * TILE });
+export const tileCentre = (i: number, cols: number = GRID): Spot => ({ x: ((i % cols) + 0.5) * TILE, y: (Math.floor(i / cols) + 0.5) * TILE });
 
 /** Is tile i lava during round n (sunk before, not cooled yet)? */
 export const isLava = (g: Pick<LavaGame, 'sunk'>, i: number, n: number) => g.sunk[i] >= n && g.sunk[i] > 0;
 
 /** A start spot near the middle, spread so avatars don't sit on top of each other. */
-export function lavaStartSpot(i: number): Spot {
+export function lavaStartSpot(i: number, w = 1): Spot {
   const a = i * 2.399963;
   const r = 0.03 + 0.14 * Math.sqrt(((i % 40) + 0.5) / 40);
-  return { x: 0.5 + Math.cos(a) * r, y: 0.5 + Math.sin(a) * r };
+  // A wide board spreads them across its middle (an oval, as wide as the board is).
+  return { x: w / 2 + Math.cos(a) * r * w, y: 0.5 + Math.sin(a) * r };
 }
 
 /** A seat on the raft (drawn beside the floor). */
@@ -188,7 +207,7 @@ export function raftSpot(i: number): Spot {
 export function fireballAt(f: Fireball, t: number): Spot {
   const phase = (t % f.periodMs) / f.periodMs;
   const along = phase < 0.5 ? phase * 2 : 2 - phase * 2;
-  const v = -0.1 + along * 1.2;
+  const v = -0.1 + along * ((f.span ?? 1) + 0.2);
   return f.axis === 'x' ? { x: v, y: f.at } : { x: f.at, y: v };
 }
 
@@ -203,7 +222,7 @@ export interface LavaMove {
 }
 
 /** What movement needs of the game (the pupils' copy has these too). */
-export type LavaMoveWorld = { sunk: number[]; round: Pick<LavaRound, 'n' | 'bubbles' | 'crust' | 'fireball'> | null };
+export type LavaMoveWorld = { sunk: number[]; w?: number; round: Pick<LavaRound, 'n' | 'bubbles' | 'crust' | 'fireball'> | null };
 
 /**
  * One step of movement: `dir` is the joystick (length 0 to 1), dt in ms. Lava tiles are walls (you can't walk onto a sunk
@@ -213,11 +232,13 @@ export function stepLava(m: LavaMove, dir: Spot, dtMs: number, w: LavaMoveWorld,
   const dt = Math.min(100, Math.max(0, dtMs)) / 1000;
   const r = w.round;
   const n = r?.n ?? 0;
-  const blocked = (p: Spot) => !opts.boots && n > 0 && isLava(w, tileAt(p), n) && !isLava(w, tileAt(m.p), n);
+  const bw = w.w ?? 1;
+  const cols = colsOf(w.w);
+  const blocked = (p: Spot) => !opts.boots && n > 0 && isLava(w, tileAt(p, cols), n) && !isLava(w, tileAt(m.p, cols), n);
   if (m.stun !== undefined && t < m.stun) {
     const k = Math.max(0, 1 - dt * 2.2);
     const v = { x: m.v.x * k, y: m.v.y * k };
-    const p = { x: clamp01(m.p.x + v.x * dt), y: clamp01(m.p.y + v.y * dt) };
+    const p = { x: clampTo(m.p.x + v.x * dt, bw), y: clampY(m.p.y + v.y * dt) };
     // Knocked flying can throw you into the lava: that is the drama.
     return { ...m, p, v };
   }
@@ -231,7 +252,7 @@ export function stepLava(m: LavaMove, dir: Spot, dtMs: number, w: LavaMoveWorld,
     const k = Math.min(1, dt * 1.5);
     v = { x: m.v.x + (d.x * speed - m.v.x) * k, y: m.v.y + (d.y * speed - m.v.y) * k };
   } else v = { x: d.x * speed, y: d.y * speed };
-  let p = { x: clamp01(m.p.x + v.x * dt), y: clamp01(m.p.y + v.y * dt) };
+  let p = { x: clampTo(m.p.x + v.x * dt, bw), y: clampY(m.p.y + v.y * dt) };
   if (blocked(p)) {
     // Slide along the edge of the lava: try each direction on its own.
     const px = { x: p.x, y: m.p.y };
@@ -245,14 +266,15 @@ export function stepLava(m: LavaMove, dir: Spot, dtMs: number, w: LavaMoveWorld,
     const f = r.fireball;
     const fp = fireballAt(f, t);
     if (dist(p, fp) < f.r + AVATAR_R) {
-      const s = f.at < 0.5 ? 1 : -1;
+      // Knocked away from the middle of the line it travels along (an x ball: the board's middle height; a y ball: its middle width).
+      const s = f.at < (f.axis === 'x' ? 0.5 : bw / 2) ? 1 : -1;
       const phase = (t % f.periodMs) / f.periodMs;
       const fwd = phase < 0.5 ? 1 : -1;
       const kx = f.axis === 'x' ? fwd * 0.45 : s;
       const ky = f.axis === 'x' ? s : fwd * 0.45;
       const kl = Math.hypot(kx, ky);
       const push = f.r + AVATAR_R + 0.01;
-      const out = f.axis === 'x' ? { x: p.x, y: clamp01(fp.y + s * push) } : { x: clamp01(fp.x + s * push), y: p.y };
+      const out = f.axis === 'x' ? { x: p.x, y: clampY(fp.y + s * push) } : { x: clampTo(fp.x + s * push, bw), y: p.y };
       return { p: out, v: { x: (kx / kl) * KNOCK_SPEED, y: (ky / kl) * KNOCK_SPEED }, stun: t + KNOCK_MS, hitAt: t };
     }
   }
@@ -262,7 +284,7 @@ export function stepLava(m: LavaMove, dir: Spot, dtMs: number, w: LavaMoveWorld,
 // ---- Making rounds ----
 
 const pick = <T>(list: readonly T[], random: () => number): T => list[Math.floor(random() * list.length) % list.length];
-const rc = (i: number) => ({ c: i % GRID, r: Math.floor(i / GRID) });
+const rcOf = (cols: number) => (i: number) => ({ c: i % cols, r: Math.floor(i / cols) });
 
 /** The pattern for round n: each new one on its unlock round, then a mix of the open ones. */
 export function patternFor(n: number, random: () => number): Pattern {
@@ -274,36 +296,41 @@ export function patternFor(n: number, random: () => number): Pattern {
 /** How much of the solid floor glows: almost a third at first, up to 60%. */
 export const glowShare = (n: number) => Math.min(0.6, 0.3 + (n - 1) * 0.03);
 
-/** The tiles a pattern lights up (before trimming to the share), from the solid tiles. */
-export function patternTiles(pattern: Pattern, n: number, random: () => number): number[] {
-  const all = Array.from({ length: TILES }, (_, i) => i);
+/** The tiles a pattern lights up (before trimming to the share), from the solid tiles of a floor `cols` columns wide. */
+export function patternTiles(pattern: Pattern, n: number, random: () => number, cols: number = GRID): number[] {
+  const tiles = cols * GRID;
+  const all = Array.from({ length: tiles }, (_, i) => i);
+  const rc = rcOf(cols);
   const odd = random() < 0.5 ? 1 : 0;
   switch (pattern) {
     case 'rows': {
-      const cols = random() < 0.5;
+      const byCols = random() < 0.5;
       const k = odd;
-      return all.filter((i) => ((cols ? rc(i).c : rc(i).r) + k) % 2 === 0);
+      return all.filter((i) => ((byCols ? rc(i).c : rc(i).r) + k) % 2 === 0);
     }
     case 'checker':
       return all.filter((i) => (rc(i).c + rc(i).r + odd) % 2 === 0);
     case 'ring': {
       // The outside ring, or the middle: one of the two.
-      const edge = (i: number) => Math.min(rc(i).c, rc(i).r, GRID - 1 - rc(i).c, GRID - 1 - rc(i).r);
+      const edge = (i: number) => Math.min(rc(i).c, rc(i).r, cols - 1 - rc(i).c, GRID - 1 - rc(i).r);
       const ring = Math.floor(random() * (GRID / 2));
       return all.filter((i) => edge(i) === ring || edge(i) === (ring + 2) % (GRID / 2));
     }
     case 'cross': {
+      // Two bars down the middle of the floor and two across; a wide floor gets a pair of side bars too.
       const a = 3 + Math.floor(random() * 2);
-      return all.filter((i) => rc(i).c === a || rc(i).r === a || rc(i).c === a - 1 + (odd ? 2 : 0) || rc(i).r === 7 - a);
+      const ac = Math.floor(cols / 2) - 1 + Math.floor(random() * 2);
+      const side = cols > GRID ? (c: number) => Math.abs(c - ac) === 5 : () => false;
+      return all.filter((i) => rc(i).c === ac || rc(i).r === a || rc(i).c === ac - 1 + (odd ? 2 : 0) || rc(i).r === 7 - a || side(rc(i).c));
     }
     case 'islands': {
-      // Everything except a few 2×2 islands.
+      // Everything except a few 2×2 islands (more of them on a wide floor).
       const keep = new Set<number>();
-      const count = 3 + Math.floor(random() * 2);
+      const count = Math.round((3 + Math.floor(random() * 2)) * (cols / GRID));
       for (let k = 0; k < count; k++) {
-        const c = Math.floor(random() * (GRID - 1));
+        const c = Math.floor(random() * (cols - 1));
         const r = Math.floor(random() * (GRID - 1));
-        for (const [dc, dr] of [[0, 0], [1, 0], [0, 1], [1, 1]]) keep.add((r + dr) * GRID + c + dc);
+        for (const [dc, dr] of [[0, 0], [1, 0], [0, 1], [1, 1]]) keep.add((r + dr) * cols + c + dc);
       }
       return all.filter((i) => !keep.has(i));
     }
@@ -313,19 +340,19 @@ export function patternTiles(pattern: Pattern, n: number, random: () => number):
       return all.filter((i) => Math.abs(((rc(i).c + rc(i).r) % GRID) - at) <= 1 || Math.abs(((rc(i).c + rc(i).r) % GRID) - at) >= GRID - 1);
     }
     default: {
-      // Random patches: a few blobs.
+      // Random patches: a few blobs (more on a wide floor).
       const out = new Set<number>();
-      const blobs = 5 + Math.floor(random() * 3) + Math.floor(n / 2);
+      const blobs = Math.round((5 + Math.floor(random() * 3) + Math.floor(n / 2)) * (cols / GRID));
       for (let k = 0; k < blobs; k++) {
-        let i = Math.floor(random() * TILES);
+        let i = Math.floor(random() * tiles);
         const size = 3 + Math.floor(random() * 4);
         for (let s = 0; s < size; s++) {
           out.add(i);
           const { c, r } = rc(i);
           const step = pick([[1, 0], [-1, 0], [0, 1], [0, -1]], random);
-          const c2 = Math.min(GRID - 1, Math.max(0, c + step[0]));
+          const c2 = Math.min(cols - 1, Math.max(0, c + step[0]));
           const r2 = Math.min(GRID - 1, Math.max(0, r + step[1]));
-          i = r2 * GRID + c2;
+          i = r2 * cols + c2;
         }
       }
       return [...out];
@@ -358,55 +385,67 @@ export function lavaMechanicsFor(n: number, random: () => number): Set<LavaMecha
   return out;
 }
 
+/** A fireball rolling along a row or column; on a wide board it takes longer to cross, so it is as fast as before. */
+function makeFireball(random: () => number, w: number): Fireball {
+  const axis = random() < 0.5 ? 'x' : 'y';
+  const span = axis === 'x' ? w : 1;
+  const at = axis === 'x' ? 0.15 + random() * 0.7 : (0.15 + random() * 0.7) * w;
+  return { axis, at, r: 0.06, periodMs: Math.round((4200 + Math.floor(random() * 1600)) * span), ...(w > 1 ? { span } : {}) };
+}
+
 export function makeLavaRound(g: LavaGame, n: number, startAt: number, random: () => number, players: number): LavaRound {
   const has = lavaMechanicsFor(n, random);
   const pattern = patternFor(n, random);
-  const solid = Array.from({ length: TILES }, (_, i) => i).filter((i) => !isLava(g, i, n));
+  const w = g.w ?? 1;
+  const cols = colsOf(g.w);
+  const tiles = tilesOf(g.w);
+  const wideK = cols / GRID;
+  const solid = Array.from({ length: tiles }, (_, i) => i).filter((i) => !isLava(g, i, n));
   const solidSet = new Set(solid);
   // The pattern's tiles that are still rock, trimmed so at most the round's share glows and enough floor is left for
   // everyone (about two avatars a tile, and never under a fifth of the floor).
-  let lit = shuffled(patternTiles(pattern, n, random).filter((i) => solidSet.has(i)), random);
-  const keepAtLeast = Math.max(Math.ceil(TILES * 0.2), Math.ceil(players / 2) + 4);
+  let lit = shuffled(patternTiles(pattern, n, random, cols).filter((i) => solidSet.has(i)), random);
+  const keepAtLeast = Math.max(Math.ceil(tiles * 0.2), Math.ceil(players / 2) + 4);
   const most = Math.max(0, Math.min(Math.round(solid.length * glowShare(n) * (pattern === 'patches' ? 1 : 1.6)), solid.length - keepAtLeast));
   lit = lit.slice(0, most);
   const late: number[] = [];
   if (has.has('late')) {
     const litSet = new Set(lit);
     const spare = shuffled(solid.filter((i) => !litSet.has(i)), random);
-    late.push(...spare.slice(0, Math.min(4, Math.max(0, solid.length - lit.length - keepAtLeast))));
+    late.push(...spare.slice(0, Math.min(Math.round(4 * wideK), Math.max(0, solid.length - lit.length - keepAtLeast))));
   }
   const openSpot = (): Spot => {
     for (let i = 0; i < 20; i++) {
-      const p = { x: 0.08 + random() * 0.84, y: 0.08 + random() * 0.84 };
-      if (!isLava(g, tileAt(p), n)) return p;
+      const p = { x: 0.08 + random() * (w - 0.16), y: 0.08 + random() * 0.84 };
+      if (!isLava(g, tileAt(p, cols), n)) return p;
     }
-    return { ...START };
+    return middleOf(g.w);
   };
-  const bubbles: Circle[] = has.has('bubbles') ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({ ...openSpot(), r: 0.1 + random() * 0.05 })) : [];
-  const crust: Circle[] = has.has('crust') ? Array.from({ length: 1 + Math.floor(random() * 2) }, () => ({ ...openSpot(), r: 0.09 + random() * 0.05 })) : [];
+  const bubbles: Circle[] = has.has('bubbles') ? Array.from({ length: Math.round((1 + Math.floor(random() * 2)) * wideK) }, () => ({ ...openSpot(), r: 0.1 + random() * 0.05 })) : [];
+  const crust: Circle[] = has.has('crust') ? Array.from({ length: Math.round((1 + Math.floor(random() * 2)) * wideK) }, () => ({ ...openSpot(), r: 0.09 + random() * 0.05 })) : [];
   const fireball: Fireball | null = has.has('fireball')
-    ? { axis: random() < 0.5 ? 'x' : 'y', at: 0.15 + random() * 0.7, r: 0.06, periodMs: 4200 + Math.floor(random() * 1600) }
+    ? makeFireball(random, w)
     : null;
   const items: LavaItem[] = [];
   if (has.has('items')) {
-    const count = Math.max(2, Math.min(7, Math.round(players / 6)));
+    const count = Math.round(Math.max(2, Math.min(7, Math.round(players / 6))) * wideK);
     for (let i = 0; i < count; i++) items.push({ id: g.nextItem++, power: pick(LAVA_POWERS, random), by: null, ...openSpot() });
   }
   const run = g.runS * 1000;
   return {
-    n, startAt, runEnd: startAt + run, crackEnd: startAt + run + CRACK_MS, showEnd: startAt + run + CRACK_MS + SHOW_MS,
+    n, ...(g.w ? { w: g.w } : {}), startAt, runEnd: startAt + run, crackEnd: startAt + run + CRACK_MS, showEnd: startAt + run + CRACK_MS + SHOW_MS,
     pattern, glow: lit, late, frozen: [], bubbles, crust, fireball, items, fell: null, booted: [],
   };
 }
 
 export function newLava(map: LavaMap, runS: number = RUN_DEFAULT_S): LavaGame {
-  return { kind: 'lava', map, round: null, sunk: Array(TILES).fill(0), mine: {}, nextItem: 1, runS: lavaRunSeconds(runS), sankAll: 0, builtAll: 0 };
+  return { kind: 'lava', map, w: LAVA_W, round: null, sunk: Array(tilesOf(LAVA_W)).fill(0), mine: {}, nextItem: 1, runS: lavaRunSeconds(runS), sankAll: 0, builtAll: 0 };
 }
 
-export function freshLavaMine(i: number): LavaMine {
+export function freshLavaMine(i: number, w = 1): LavaMine {
   return {
     up: 0, score: 0, falls: 0, raftIn: null, raftRight: 0, climbs: 0, bricks: 0, built: 0, rescues: 0, held: null, bootsIn: null, speedTo: null,
-    doubleIn: null, powersUsed: 0, grabs: 0, answered: 0, right: 0, wrong: 0, streak: 0, bestStreak: 0, lastAt: -ANSWER_GAP_MS, placed: 0, spot: lavaStartSpot(i),
+    doubleIn: null, powersUsed: 0, grabs: 0, answered: 0, right: 0, wrong: 0, streak: 0, bestStreak: 0, lastAt: -ANSWER_GAP_MS, placed: 0, spot: lavaStartSpot(i, w),
   };
 }
 
@@ -478,11 +517,13 @@ export function advanceLava(g: LavaGame, t: number, order: string[], positions: 
 
 /** A rock tile to climb back onto in round n (spread by player number), the middle if none. */
 export function safeSpot(g: LavaGame, n: number, i: number): Spot {
-  const solid = Array.from({ length: TILES }, (_, k) => k).filter((k) => !isLava(g, k, n));
-  if (!solid.length) return { ...START };
-  // Nearest the middle first, so climbers don't land on the edge.
-  solid.sort((a, b) => dist(tileCentre(a), START) - dist(tileCentre(b), START));
-  const c = tileCentre(solid[i % Math.min(solid.length, 12)]);
+  const cols = colsOf(g.w);
+  const mid = middleOf(g.w);
+  const solid = Array.from({ length: tilesOf(g.w) }, (_, k) => k).filter((k) => !isLava(g, k, n));
+  if (!solid.length) return mid;
+  // Nearest the middle first, so climbers don't land on the edge (a wide floor has room for more of them).
+  solid.sort((a, b) => dist(tileCentre(a, cols), mid) - dist(tileCentre(b, cols), mid));
+  const c = tileCentre(solid[i % Math.min(solid.length, Math.round(12 * cols / GRID))], cols);
   return { x: c.x + (((i * 7) % 5) - 2) * 0.012, y: c.y + (((i * 3) % 5) - 2) * 0.012 };
 }
 
@@ -498,7 +539,7 @@ function crack(g: LavaGame, r: LavaRound, order: string[], positions: LavaPositi
     const at = positions[id] ?? m.spot;
     m.spot = { x: at.x, y: at.y };
     // Lava now: sunk this round, or still sunk from before (a knocked-in pupil).
-    const lava = g.sunk[tileAt(at)] >= r.n && g.sunk[tileAt(at)] > 0;
+    const lava = g.sunk[tileAt(at, colsOf(g.w))] >= r.n && g.sunk[tileAt(at, colsOf(g.w))] > 0;
     if (!lava) {
       m.up++;
       m.score += m.doubleIn === r.n ? 2 : 1;
@@ -599,12 +640,12 @@ export function lavaAnswered(g: LavaGame, who: string, right: boolean, order: st
   else if (power === 'double') m.doubleIn = n;
   else if (power === 'freeze') {
     if (r.fell === null) {
-      const near = [...r.glow, ...r.late].filter((i) => !r.frozen.includes(i) && dist(tileCentre(i), m.spot) <= FREEZE_REACH);
+      const near = [...r.glow, ...r.late].filter((i) => !r.frozen.includes(i) && dist(tileCentre(i, colsOf(g.w)), m.spot) <= FREEZE_REACH);
       r.frozen.push(...near);
       ev.cooled = near;
     } else {
       // Between rounds: cools the sunk tiles around you instead.
-      const near = Array.from({ length: TILES }, (_, i) => i).filter((i) => g.sunk[i] > 0 && dist(tileCentre(i), m.spot) <= FREEZE_REACH);
+      const near = Array.from({ length: g.sunk.length }, (_, i) => i).filter((i) => g.sunk[i] > 0 && dist(tileCentre(i, colsOf(g.w)), m.spot) <= FREEZE_REACH);
       for (const i of near) g.sunk[i] = 0;
       ev.cooled = near;
     }
@@ -625,12 +666,12 @@ export function lavaBuild(g: LavaGame, who: string, tile: unknown, at: Spot | un
   const r = g.round;
   if (!m || !r || m.raftIn !== null) return { ok: false, reason: 'not_now' };
   if (m.bricks < 1) return { ok: false, reason: 'no_bricks' };
-  if (!Number.isInteger(tile) || (tile as number) < 0 || (tile as number) >= TILES) return { ok: false, reason: 'solid' };
+  if (!Number.isInteger(tile) || (tile as number) < 0 || (tile as number) >= g.sunk.length) return { ok: false, reason: 'solid' };
   const i = tile as number;
   const n = r.fell === null ? r.n : r.n + 1;
   // Only lava can be rebuilt (a bridge); a glowing tile can only be saved with an Ice blast.
   if (!isLava(g, i, n)) return { ok: false, reason: 'solid' };
-  if (!at || dist(tileCentre(i), at) > BUILD_REACH) return { ok: false, reason: 'far' };
+  if (!at || dist(tileCentre(i, colsOf(g.w)), at) > BUILD_REACH) return { ok: false, reason: 'far' };
   m.bricks--;
   m.built++;
   g.builtAll++;
@@ -652,14 +693,15 @@ export function lavaRescue(g: LavaGame, who: string, order: string[], t: number)
 }
 
 /** The best build target for a pupil standing at p: the nearest lava tile within reach (lava now, or after this run), or null. */
-export function buildTarget(g: Pick<LavaGame, 'sunk'>, round: Pick<LavaRound, 'n' | 'fell'> | null, p: Spot): number | null {
+export function buildTarget(g: Pick<LavaGame, 'sunk' | 'w'>, round: Pick<LavaRound, 'n' | 'fell'> | null, p: Spot): number | null {
   if (!round) return null;
   const n = round.fell === null ? round.n : round.n + 1;
   let best: number | null = null;
   let bestD = Infinity;
-  for (let i = 0; i < TILES; i++) {
+  const cols = colsOf(g.w);
+  for (let i = 0; i < g.sunk.length; i++) {
     if (!isLava(g, i, n)) continue;
-    const d = dist(tileCentre(i), p);
+    const d = dist(tileCentre(i, cols), p);
     if (d <= BUILD_REACH - 0.02 && d < bestD) {
       best = i;
       bestD = d;
@@ -687,18 +729,19 @@ export function lavaPretendDir(p: Spot, target: Spot, random: () => number): Spo
 }
 
 /** A safe tile for a pretend pupil to run to: the nearest rock tile that won't sink this round. */
-export function safeTarget(g: Pick<LavaGame, 'sunk'>, r: LavaRound, p: Spot, random: () => number, seeLate: boolean): Spot {
+export function safeTarget(g: Pick<LavaGame, 'sunk' | 'w'>, r: LavaRound, p: Spot, random: () => number, seeLate: boolean): Spot {
   const sink = new Set(sinking(seeLate ? r : { ...r, late: [] }));
   // Now and then a pupil picks a tile at random (and may be wrong).
-  if (random() < 0.15) return tileCentre(Math.floor(random() * TILES));
+  const cols = colsOf(g.w);
+  if (random() < 0.15) return tileCentre(Math.floor(random() * g.sunk.length), cols);
   let best: Spot = p;
   let bestD = Infinity;
-  for (let i = 0; i < TILES; i++) {
+  for (let i = 0; i < g.sunk.length; i++) {
     if (sink.has(i) || isLava(g, i, r.n)) continue;
-    const d = dist(tileCentre(i), p) + random() * 0.08;
+    const d = dist(tileCentre(i, cols), p) + random() * 0.08;
     if (d < bestD) {
       bestD = d;
-      best = tileCentre(i);
+      best = tileCentre(i, cols);
     }
   }
   return best;

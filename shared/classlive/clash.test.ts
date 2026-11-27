@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { classLiveStep } from './server';
 import { PRETEND_CLASS, PRETEND_TEACHER, pretendClass, pretendClock } from './pretendClass';
-import { bombTiles, lineTiles, scoreTiles, standings, teamFor, freshMine, newClash, GRID, type ClashGame } from './clash';
+import { bombTiles, lineTiles, scoreTiles, standings, teamFor, freshMine, newClash, makeRound, startSpot, stepMove, colsOf, tileCount, tileOf, tileCentre, inFountain, crossTiles, CLASH_W, GRID, type ClashGame } from './clash';
 import { memoryClashBoard, memoryClashPaint } from './clashMemory';
 import { rewardsOf } from './rewards';
 
@@ -53,5 +53,63 @@ describe('Colour Clash', () => {
     // Pupils' own rows say their team and its place.
     const view = (await classLiveStep(pc.services, winner.player, { action: 'look', room })).body.me as { game: { kind: string; place: number } };
     expect(view.game).toMatchObject({ kind: 'clash', place: 1 });
+    wideBoard();
   });
+
 });
+
+/** a new game is wide: more columns, the same rows, and everything stays inside 0 to w (folded into the first test: the classlive test budget). */
+function wideBoard() {
+    const g = newClash('park', 4);
+    expect(g.w).toBe(CLASH_W);
+    expect(colsOf(g.w)).toBe(38);
+    expect(tileCount(g.w)).toBe(38 * GRID);
+    // A game started before the wide board has no w and stays 24 x 24.
+    expect(tileCount(undefined)).toBe(GRID * GRID);
+    const w = CLASH_W;
+    // Tile maths on the wide grid: the far column and the middle.
+    expect(tileOf({ x: w - 0.001, y: 0.999 }, w)).toBe(38 * GRID - 1);
+    expect(tileCentre(tileOf({ x: w / 2, y: 0.5 }, w), w).x).toBeCloseTo(w / 2, 1);
+    expect(lineTiles({ x: 0.5, y: 0.01 }, { x: 1.5, y: 0.01 }, false, w).every((i) => i < 38)).toBe(true);
+    expect(crossTiles({ x: 1, y: 0.5 }, w)).toHaveLength(38 + GRID - 1);
+    expect(bombTiles({ x: 1.5, y: 0.5 }, 2.2, w).length).toBeGreaterThan(12);
+    expect(inFountain(tileOf({ x: w / 2, y: 0.5 }, w), w)).toBe(true);
+    expect(inFountain(tileOf({ x: 0.5, y: 0.5 }, w), w)).toBe(false);
+    // Everything a round places is on the board, and a wide board gets more of it than a square one.
+    const wide = { items: 0, storms: 0 };
+    const square = { items: 0, storms: 0 };
+    for (let n = 1; n <= 10; n++) {
+      let seed = n * 7919;
+      const random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+      const sq = { ...newClash('park', 4), w: undefined };
+      const r = makeRound(g, n, 0, random, 30);
+      const r1 = makeRound(sq, n, 0, random, 30);
+      wide.items += r.items.length; wide.storms += r.storms.length + r.ice.length;
+      square.items += r1.items.length; square.storms += r1.storms.length + r1.ice.length;
+      expect(r.w).toBe(w);
+      expect(r1.w).toBeUndefined();
+      for (const p of [...r.items, ...r.storms, ...r.ice, ...r.teleports.flatMap((t) => [t.a, t.b])]) {
+        expect(p.x).toBeGreaterThanOrEqual(0);
+        expect(p.x).toBeLessThanOrEqual(w);
+        expect(p.y).toBeGreaterThanOrEqual(0);
+        expect(p.y).toBeLessThanOrEqual(1);
+      }
+      for (const p of [...r1.items, ...r1.storms, ...r1.ice]) expect(p.x).toBeLessThanOrEqual(1);
+      expect(r.golden.every((i) => i >= 0 && i < tileCount(w))).toBe(true);
+      if (r.roller) expect(r.roller.span).toBe(w);
+    }
+    expect(wide.items).toBeGreaterThan(square.items);
+    expect(wide.storms).toBeGreaterThan(square.storms);
+    // Team start spots are on the wide board, spread across it; avatars can walk the whole width.
+    for (const team of [1, 2, 3, 4] as const) for (let i = 0; i < 9; i++) {
+      const sp = startSpot(team, 4, i, w);
+      expect(sp.x).toBeGreaterThan(0);
+      expect(sp.x).toBeLessThan(w);
+    }
+    expect(startSpot(2, 2, 0, w).x).toBeGreaterThan(1.2);
+    const round = makeRound(g, 1, 0, () => 0.5, 10);
+    let m = { p: { x: 1.4, y: 0.5 }, v: { x: 0, y: 0 } };
+    for (let i = 0; i < 40; i++) m = stepMove(m, { x: 1, y: 0 }, 50, round, 5000, false);
+    expect(m.p.x).toBeGreaterThan(1.5);
+    expect(m.p.x).toBeLessThanOrEqual(w);
+}

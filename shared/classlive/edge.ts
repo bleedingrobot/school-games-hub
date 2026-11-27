@@ -15,6 +15,7 @@
  * Pure: the Worker (cloudflare/classlive-edge), the server function and the tests share it.
  */
 import type { Positions, Spot, Teleport } from './corners';
+import { inFountain, lineTiles, tileCount, type ClashGame } from './clash';
 import type { CrewGame } from './crew';
 import { LANTERN_R, MAX_SPEED, type GhostGame } from './ghost';
 
@@ -36,7 +37,7 @@ export const EDGE_LIVE: readonly string[] = ['ghost'];
  * Games on trial: Cloudflare for EDGE_TEACHERS only (James, 27 Nov 2026 NZ: "might as well" move the other moving games,
  * class-testing each first). A game joins once its iPad and big screen talk to Cloudflare (useEdgeLink).
  */
-export const EDGE_TRIAL: readonly string[] = [];
+export const EDGE_TRIAL: readonly string[] = ['corners', 'shark', 'lava', 'thrones', 'crew', 'clash'];
 
 /** Whether this teacher's new game of this activity runs its positions on Cloudflare. */
 export function edgeFor(teacher: string, activity: string): boolean {
@@ -93,7 +94,28 @@ export interface EdgeSync {
   places: { player: string; x: number; y: number }[];
   /** Glitches: each player's role, and when the lights come back (session ms). */
   crew?: { lightsTo: number; roles: Record<string, CrewRole> };
+  /** Colour Clash: the room paints the tiles a move crosses (as classlive_clash_paint). */
+  clash?: ClashSync;
 }
+
+/** Colour Clash's painting, for the room. Times are ms since `zeroMs` (ms since 1970). */
+export interface ClashSync {
+  /** The round (0 before the first). */
+  n: number;
+  zeroMs: number | null;
+  paintFrom: number;
+  paintTo: number;
+  /** The round was counted: no more paint. */
+  counted: boolean;
+  hole: boolean;
+  /** [team 1-4, Big Brush until (or -1)]. */
+  teams: Record<string, [number, number]>;
+}
+
+/** The paint board the room keeps (one round at a time). */
+export interface EdgeBoard { round: number; tiles: Map<number, number>; painted: Map<string, number> }
+/** A frame's paint: the round and the tiles that changed since the last frame (`full`: the whole board). */
+export interface PaintFrame { n: number; full?: boolean; d: [number, number][] }
 
 /** What a pupil's device gets: like classlive_ghost_move's answer. Kind 0 pupil, 1 ghost, 2 frozen ghost, 3 lit by my lantern. */
 export interface PupilFrame { me: { ghost: boolean }; spots: [number, number, 0 | 1 | 2 | 3][] }
@@ -106,6 +128,9 @@ export interface CrewFrame { me: { glitch: boolean; drone: boolean }; spots: [nu
 export interface EdgeServices {
   /** May this teacher's game of this kind run on Cloudflare? */
   allowed(teacher: string, activity: string): boolean;
+  /** Colour Clash: the room's board, and a bomb's tiles. */
+  clashBoard?(room: number, round: number): Promise<{ tiles: string; painted: Record<string, number> } | 'busy'>;
+  clashBomb?(room: number, round: number, team: number, player: string, tiles: number[]): Promise<void>;
   positions(room: number): Promise<Positions | 'busy'>;
   sync(room: number, sync: EdgeSync): Promise<void>;
   ticket(room: number, who: string, kind: 'p' | 't'): Promise<{ url: string; ticket: string }>;
@@ -157,9 +182,16 @@ export class EdgeRoom {
   sync: EdgeSync | null = null;
   /** Bumped on every change, so the room only sends when something moved. */
   version = 0;
+  /** Colour Clash: the board, and the tiles changed since the last frame went out. */
+  board: EdgeBoard = { round: 0, tiles: new Map(), painted: new Map() };
+  delta: [number, number][] = [];
 
   applySync(s: EdgeSync, now: number) {
     this.sync = s;
+    if (s.clash && s.clash.n !== this.board.round) {
+      this.board = { round: s.clash.n, tiles: new Map(), painted: this.board.painted };
+      this.delta = [];
+    }
     for (const p of s.places) if (finite(p.x) && finite(p.y)) this.spots.set(p.player, { x: p.x, y: p.y, at: now, placedAt: now });
     for (const id of this.spots.keys()) if (!s.roles[id]) this.spots.delete(id);
     this.version++;
@@ -189,8 +221,51 @@ export class EdgeRoom {
       }
     }
     this.spots.set(id, { x: nx, y: ny, at: now, placedAt: prev?.placedAt ?? null });
+    if (prev && s.clash) this.paintLine(id, prev, { x: nx, y: ny }, now - prev.at, now);
     this.version++;
     return true;
+  }
+
+  /** Colour Clash: paint the line walked, while this round's painting is on (a long jump paints only where they land). */
+  private paintLine(id: string, from: Spot, to: Spot, dt: number, now: number) {
+    const c = this.sync!.clash!;
+    const team = c.teams[id];
+    if (!team || c.n <= 0 || c.counted || c.zeroMs === null) return;
+    const t = now - c.zeroMs;
+    if (t < c.paintFrom || t >= c.paintTo) return;
+    const w = this.sync!.width ?? 1;
+    const start = Math.hypot(to.x - from.x, to.y - from.y) > 0.6 * Math.min(5, Math.max(0, dt) / 1000) + 0.06 ? to : from;
+    this.paint(c.n, team[0], id, lineTiles(start, to, team[1] > t, w).filter((i) => !(c.hole && inFountain(i, w))));
+  }
+
+  /** Tiles take the team's colour (a painted line or a bomb); the painter is counted for each tile that changed. */
+  paint(round: number, team: number, who: string, idxs: number[]) {
+    if (round !== this.board.round) return;
+    const total = tileCount(this.sync?.width ?? 1);
+    let changed = 0;
+    for (const i of new Set(idxs)) {
+      if (!Number.isInteger(i) || i < 0 || i >= total || this.board.tiles.get(i) === team) continue;
+      this.board.tiles.set(i, team);
+      this.delta.push([i, team]);
+      changed++;
+    }
+    if (changed) {
+      this.board.painted.set(who, (this.board.painted.get(who) ?? 0) + changed);
+      this.version++;
+    }
+  }
+
+  /** The board for the server's count: one character a tile, and each painter's tiles. */
+  boardOf(round: number): { tiles: string; painted: Record<string, number> } {
+    const n = tileCount(this.sync?.width ?? 1);
+    const a = Array.from({ length: n }, (_, i) => (round === this.board.round ? String(this.board.tiles.get(i) ?? 0) : '0'));
+    return { tiles: a.join(''), painted: Object.fromEntries(this.board.painted) };
+  }
+
+  /** This frame's paint for a device: the whole board for one that just joined, else what changed. */
+  paintFrame(full: boolean): PaintFrame | undefined {
+    if (!this.sync?.clash) return undefined;
+    return full ? { n: this.board.round, full: true, d: [...this.board.tiles] } : { n: this.board.round, d: this.delta };
   }
 
   positions(): Positions {
@@ -280,6 +355,16 @@ export function edgeSync(room: number, s: SyncSession, startedAt: number | null,
   const g = s.game as { kind: string; w?: number; round?: { teleports?: Teleport[] } | null };
   const roles: Record<string, EdgeRole> = Object.fromEntries(s.order.map((id) => [id, [0, 0, 0, 0] as EdgeRole]));
   const base = { room, startedAt, live: s.state === 'live', maxSpeed: 0.6, width: g.w ?? 1, teleports: g.round?.teleports ?? [], roles, places };
+  if (s.game.kind === 'clash') {
+    const k = s.game as ClashGame;
+    const r = k.round;
+    const teams: ClashSync['teams'] = {};
+    for (const id of s.order) {
+      const m = k.mine[id];
+      if (m) teams[id] = [m.team, m.brushTo ?? -1];
+    }
+    return { ...base, teleports: (r as { teleports?: Teleport[] } | null)?.teleports ?? [], view: 'all', clash: { n: r?.n ?? 0, zeroMs: k.zeroMs, paintFrom: r?.paintFrom ?? 0, paintTo: r?.paintTo ?? 0, counted: !!r?.result, hole: !!r?.hole, teams } };
+  }
   if (s.game.kind !== 'crew') return { ...base, view: 'all' };
   const c = s.game as CrewGame;
   const crew: Record<string, CrewRole> = {};

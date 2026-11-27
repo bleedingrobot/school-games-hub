@@ -5,6 +5,7 @@
  * ever draws good things: there are no wrong answers in the screen data.
  */
 import { classLiveTrack, HOT_MS, musicSettings, useMusic } from './music';
+import { useEdgeChoice } from './EdgeChoice';
 import { MusicControl } from './MusicControl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GROUP_WORDS, liveGame, pickableGames, showdownPick, type LiveGame, type LiveGroup } from './gameList';
@@ -661,6 +662,8 @@ const readKept = (key: string): string | null => { try { return window.localStor
 const keep = (key: string, v: string) => { try { window.localStorage.setItem(key, v); } catch { /* private window: not kept */ } };
 
 function Setup({ busy, problem, onOpen: open, onShowdown, classId }: { busy: boolean; problem: string; onOpen: (activity: Activity, body: Record<string, unknown>) => void; onShowdown: ((s: ShowdownStart) => void) | null; classId: string }) {
+  const sharkRun = useEdgeChoice('shark');
+  const cornersRun = useEdgeChoice('corners');
   const [level, setLevel] = useState<LevelPick>('middle');
   const [sLevel, setSLevel] = useState<SerpentLevel>('gold');
   const [sLength, setSLength] = useState(0);
@@ -810,7 +813,8 @@ function Setup({ busy, problem, onOpen: open, onShowdown, classId }: { busy: boo
             </div>
           </div>
           <TimerChips length={cLength} setLength={setCLength} />
-          <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk || !!chosenLock} onClick={() => onOpen('corners', { length: cLength, run: cRun, ...(cMap === 'any' ? {} : { map: cMap }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
+          {cornersRun.node}
+          <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk || !!chosenLock} onClick={() => onOpen('corners', { length: cLength, run: cRun, ...(cMap === 'any' ? {} : { map: cMap }), ...cornersRun.extra })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
         )}
         {pick === 'clash' && <ClashCard busy={busy} disabled={!hostOk || !!chosenLock} onOpen={(body) => onOpen('clash', body)} />}
@@ -843,7 +847,8 @@ function Setup({ busy, problem, onOpen: open, onShowdown, classId }: { busy: boo
             </div>
           </div>
           <TimerChips length={bLength} setLength={setBLength} />
-          <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk || !!chosenLock} onClick={() => onOpen('shark', { length: bLength, run: bRun, ...(bBay === 'any' ? {} : { map: bBay }) })}>{busy ? 'Opening…' : 'Open the room'}</button>
+          {sharkRun.node}
+          <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk || !!chosenLock} onClick={() => onOpen('shark', { length: bLength, run: bRun, ...(bBay === 'any' ? {} : { map: bBay }), ...sharkRun.extra })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
         )}
         {pick === 'jail' && <JailCard busy={busy} hostOk={!chosenLock} onOpen={(body) => open('jail', body)} Timer={TimerChips} Art={CardArt} />}
