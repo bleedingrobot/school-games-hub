@@ -24,7 +24,7 @@ describe('Smash Quest screens', () => {
     expect(await screen.findByRole('button', { name: /Answer it!/ }, { timeout: 8000 })).toBeInTheDocument();
     expect(screen.getByText(/DAMAGE!/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Wool Whirlwind/ })).toBeEnabled();
-    expect(screen.getByLabelText('3 of 3 hearts')).toBeInTheDocument();
+    expect(screen.getByLabelText('4 of 5 hearts')).toBeInTheDocument(); // the monster swung back once while the hero smashed
   });
 
   it('the hero smashes on their own, a surprise boost question pops up, and the server’s mark decides the smash (a wrong one costs a heart)', async () => {
@@ -38,8 +38,8 @@ describe('Smash Quest screens', () => {
     const choices = dialog.querySelectorAll('button');
     fireEvent.click(choices[choices.length - 1]);
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), { timeout: 8000 });
-    const hearts = screen.getByLabelText(/of 3 hearts/).getAttribute('aria-label');
+    const hearts = screen.getByLabelText(/of 5 hearts/).getAttribute('aria-label');
     const line = screen.getByText(/SMASH!|Missed/).textContent ?? '';
-    expect(line.includes('Missed') ? hearts === '2 of 3 hearts' : hearts === '3 of 3 hearts').toBe(true);
+    expect(line.includes('Missed') ? hearts === '3 of 5 hearts' : hearts === '4 of 5 hearts').toBe(true);
   }, 15_000);
 });

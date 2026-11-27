@@ -43,7 +43,9 @@ describe('Smash Quest rules', () => {
     const granny = makeAdventure(123, quest, hero({ hero: { cls: 'granny', look: 'animal' } }));
     const calm = replay(granny, [{ right: false, special: true }, { right: false, special: false }, { right: false, special: false }]);
     expect(calm.blows.map((b) => b.ouch)).toEqual([false, false, true]);
-    expect(calm.hearts).toBe(HEARTS - 1);
+    // The monster swings once before questions 1 and 3 (tied up for 2), and bonks back on the wrong third answer.
+    expect(calm.blows.map((b) => b.swung)).toEqual([1, 0, 1]);
+    expect(calm.hearts).toBe(HEARTS - 3);
     expect(first.hp).toBeGreaterThan(power); // never a one-hit fight without a special
   });
 
