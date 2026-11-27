@@ -145,7 +145,7 @@ export async function fetchMyTrophyPairs(): Promise<TrophyPair[]> {
   }
 }
 
-/** Someone in the hall of fame. `name` is null for a pupil without a made-up name: show "A classmate". */
+/** Someone in the hall of fame. `name` is the pupil's made-up or approved own name ("A classmate" if ever missing). */
 export interface HallPerson {
   name: string | null;
   avatar: unknown;
