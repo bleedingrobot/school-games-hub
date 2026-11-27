@@ -200,7 +200,15 @@
 .mm-howto kbd { display: inline-block; min-width: 1.4em; padding: 0 5px; border: 1px solid #94a3b8; border-bottom-width: 2px; border-radius: 5px; background: #f1f5f9; font: 700 0.85em/1.4 inherit; text-align: center; }
 
 /* Quests: the "what next" line on the map, and the quest pages in the menu. */
-.mw-next { position: absolute; top: 52px; left: 8px; margin: 0; width: fit-content; max-width: min(560px, calc(100% - 16px)); padding: 6px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.92); color: #0f172a; font-size: 0.9rem; font-weight: 700; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25); pointer-events: none; }
+.mw-next { position: absolute; top: 52px; left: 8px; display: flex; align-items: flex-start; gap: 4px; margin: 0; width: fit-content; max-width: min(560px, calc(100% - 16px)); padding: 6px 4px 6px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.92); color: #0f172a; font-size: 0.9rem; font-weight: 700; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25); pointer-events: none; }
+.mw-next__text { margin: 0; padding: 4px 0; }
+/* Hide tips (the ✕ on the tip) and Show tips (the 💡 left in its place). Big enough to tap. */
+.mw-next__hide { flex: none; display: grid; place-items: center; width: 36px; height: 36px; margin: -2px 0; border: 0; border-radius: 8px; background: transparent; color: #475569; font: inherit; font-size: 1rem; font-weight: 900; cursor: pointer; pointer-events: auto; }
+.mw-next__hide:hover { background: #e2e8f0; color: #0f172a; }
+.mw-tipsbtn { position: absolute; top: 52px; left: 8px; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 2px solid var(--mw-ink); border-radius: 999px; background: rgba(255, 255, 255, 0.92); font-size: 1.2rem; cursor: pointer; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25); }
+.mw-next__hide:focus-visible, .mw-tipsbtn:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+/* Tips hidden and nobody talking: the talk box folds away so the map gets the room. */
+.mw-talk.is-quiet { min-height: 0; padding: 0; }
 .mq { display: grid; gap: 12px; }
 .mq-bits { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .mq-bit { padding: 3px 10px; border-radius: 999px; background: #f1f5f9; font-size: 0.85rem; }

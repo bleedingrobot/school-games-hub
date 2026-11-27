@@ -274,9 +274,12 @@ export function MonstersPlay() {
       )}
       <TrophyWonLine games={['monsters']} watch={saves || null} />
       <AchievementPop games={['monsters']} watch={saves || null} />
-      <p className="mp-play__note" role="status">
-        {status === 'saved' ? WORDS.saved : status === 'later' ? WORDS.later : WORDS.stopped}
-      </p>
+      {/* With tips hidden, "saved" is not shown; a save that did not work still is. */}
+      {(settings.tips || status !== 'saved') && (
+        <p className="mp-play__note" role="status">
+          {status === 'saved' ? WORDS.saved : status === 'later' ? WORDS.later : WORDS.stopped}
+        </p>
+      )}
     </div>
     </Window>
   );

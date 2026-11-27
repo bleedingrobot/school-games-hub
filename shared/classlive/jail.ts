@@ -7,6 +7,7 @@
  * Pure rules: the server (jailServer.ts) loads the room, calls these and saves.
  */
 import { MAPS, type CornerMap } from './corners';
+import type { MingleLevel } from './mingle';
 
 /** How many right answers get you out of jail (the teacher's choice). */
 export const NEEDS = [3, 5, 10] as const;
@@ -50,6 +51,14 @@ export interface JailGame {
   mine: Record<string, JailMine>;
   /** Everyone back in so far, newest last (session ms). */
   backs: { id: string; t: number }[];
+  /**
+   * Maths Mingle (docs/MINGLE-PLAN.md) uses these same station rules with its own big screen: pupils left out of a group
+   * answer their way back in. Absent for Real-life Four Corners.
+   */
+  mode?: 'mingle';
+  /** Maths Mingle: the group calls' level, and whether silly twists come up. */
+  level?: MingleLevel;
+  twists?: boolean;
 }
 
 export type JailEvent =
@@ -62,8 +71,8 @@ export const needOf = (v: unknown): Need => (NEEDS as readonly number[]).include
 export const mapOf = (v: unknown, random: () => number): CornerMap =>
   MAPS.find((m) => m === v) ?? MAPS[Math.floor(random() * MAPS.length) % MAPS.length];
 
-export function newJail(map: CornerMap, need: Need, roster: RosterPupil[] = []): JailGame {
-  return { kind: 'jail', map, need, roster: roster.slice(0, ROSTER_MAX), mine: {}, backs: [] };
+export function newJail(map: CornerMap, need: Need, roster: RosterPupil[] = [], mingle?: { level: MingleLevel; twists: boolean }): JailGame {
+  return { kind: 'jail', map, need, roster: roster.slice(0, ROSTER_MAX), mine: {}, backs: [], ...(mingle ? { mode: 'mingle' as const, level: mingle.level, twists: mingle.twists } : {}) };
 }
 
 export const freshJailMine = (): JailMine => ({ inAt: null, right: 0, answered: 0, rightAll: 0, wrong: 0, backs: 0, outs: 0, lastAt: -Infinity });

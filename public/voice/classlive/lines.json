@@ -1516,6 +1516,54 @@
   "text": "Free! Run back into the game!"
  },
  {
+  "slug": "stop-get-into-groups",
+  "text": "Stop! Get into groups!"
+ },
+ {
+  "slug": "freeze-quick-make-your-groups",
+  "text": "Freeze! Quick, make your groups!"
+ },
+ {
+  "slug": "the-music-has-stopped-into-groups-everyone",
+  "text": "The music has stopped! Into groups, everyone!"
+ },
+ {
+  "slug": "dance-and-mingle",
+  "text": "Dance and mingle!"
+ },
+ {
+  "slug": "music-on-keep-moving",
+  "text": "Music on! Keep moving!"
+ },
+ {
+  "slug": "off-you-go-mingle-around-the-room",
+  "text": "Off you go! Mingle around the room!"
+ },
+ {
+  "slug": "left-over-go-to-a-station-and-answer-your-way-back-in",
+  "text": "Left over? Go to a station and answer your way back in!"
+ },
+ {
+  "slug": "no-group-off-to-a-station-quick",
+  "text": "No group? Off to a station, quick!"
+ },
+ {
+  "slug": "anyone-left-over-head-to-a-station",
+  "text": "Anyone left over, head to a station!"
+ },
+ {
+  "slug": "what-a-mingle-great-maths-everyone",
+  "text": "What a mingle! Great maths, everyone!"
+ },
+ {
+  "slug": "brilliant-moving-and-great-maths",
+  "text": "Brilliant moving and great maths!"
+ },
+ {
+  "slug": "that-was-fantastic-well-done-everyone",
+  "text": "That was fantastic. Well done, everyone!"
+ },
+ {
   "slug": "we-know-one-times-fact",
   "text": "We know one times fact."
  },
@@ -1734,6 +1782,54 @@
  {
   "slug": "get-them-right-and-your-name-flashes-up-here-you-are-back-in-the-game",
   "text": "Get them right and your name flashes up here. You are back in the game!"
+ },
+ {
+  "slug": "maths-mingle-when-the-music-plays-dance-and-mingle-around-the-room",
+  "text": "Maths Mingle! When the music plays, dance and mingle around the room."
+ },
+ {
+  "slug": "when-the-music-stops-the-screen-shows-a-sum-the-answer-is-your-group-size",
+  "text": "When the music stops, the screen shows a sum. The answer is your group size!"
+ },
+ {
+  "slug": "quick-get-into-groups-of-that-many-before-the-countdown-ends",
+  "text": "Quick, get into groups of that many before the countdown ends."
+ },
+ {
+  "slug": "left-over-go-to-a-station-tap-your-name-and-answer-the-questions",
+  "text": "Left over? Go to a station, tap your name, and answer the questions."
+ },
+ {
+  "slug": "get-them-right-and-your-name-flashes-up-on-the-big-screen-back-into-the-mingle-you-go",
+  "text": "Get them right and your name flashes up on the big screen. Back into the mingle you go!"
+ },
+ {
+  "slug": "groups-of-two",
+  "text": "Groups of two!"
+ },
+ {
+  "slug": "groups-of-three",
+  "text": "Groups of three!"
+ },
+ {
+  "slug": "groups-of-four",
+  "text": "Groups of four!"
+ },
+ {
+  "slug": "groups-of-five",
+  "text": "Groups of five!"
+ },
+ {
+  "slug": "groups-of-six",
+  "text": "Groups of six!"
+ },
+ {
+  "slug": "groups-of-seven",
+  "text": "Groups of seven!"
+ },
+ {
+  "slug": "groups-of-eight",
+  "text": "Groups of eight!"
  },
  {
   "slug": "here-we-go-the-floor-is-lava-watch-for-the-glowing-tiles",
