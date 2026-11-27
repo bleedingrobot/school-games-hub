@@ -58,7 +58,8 @@ export function rewardsOf(s: Session): FinishedSession {
       // Real-life Four Corners (docs/JAIL-PLAN.md): 3 for answering right at a jail station; the trophy counts comebacks.
       const m = g.mine[id];
       did = (m?.rightAll ?? 0) > 0;
-      r.extra = { jail_backs: Math.max(0, Math.min(500, m?.backs ?? 0)) };
+      // Maths Mingle (docs/MINGLE-PLAN.md) shares the stations; its trophy counts its own comebacks.
+      r.extra = { [g.mode === 'mingle' ? 'mingle_backs' : 'jail_backs']: Math.max(0, Math.min(500, m?.backs ?? 0)) };
     } else if (g.kind === 'relay') {
       // Toon Flap Relay (docs/RELAY-PLAN.md): +2 if your team won a race; trophies count races won, perks given, troubles sent.
       const m = g.mine[id];

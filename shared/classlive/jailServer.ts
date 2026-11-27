@@ -23,6 +23,10 @@ export interface JailPublic {
   inJail: string[];
   /** Comebacks so far. */
   backs: number;
+  /** Maths Mingle (docs/MINGLE-PLAN.md): same stations, own big screen. */
+  mode?: 'mingle';
+  level?: JailGame['level'];
+  twists?: boolean;
 }
 
 /** The station's own row (the signed-in device): nothing of its own to show. */
@@ -47,6 +51,7 @@ export function jailPublic(g: JailGame): JailPublic {
   return {
     kind: 'jail', map: g.map, need: g.need, roster: g.roster.map((p) => ({ id: p.id, name: names[p.id] ?? 'A player' })).sort((a, b) => a.name.localeCompare(b.name)),
     inJail: jailed(g), backs: g.backs.length,
+    ...(g.mode ? { mode: g.mode, level: g.level, twists: g.twists } : {}),
   };
 }
 

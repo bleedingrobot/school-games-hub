@@ -53,6 +53,20 @@ export function sheetFor(game: Game): Sheet {
     };
   }
   if (game.kind === 'relay') return relaySheet(game);
+  if (game.kind === 'jail' && game.mode === 'mingle') {
+    const H = HOWTO.mingle;
+    return {
+      title: 'How to play Maths Mingle', mode: `${game.need} right answers to get back in`, modeSay: null,
+      art: painted('pick', 'mingle', true) ?? painted('thrones', 'back-castle', true),
+      steps: [
+        { icon: '🎵', text: 'When the music plays, dance and mingle around the room.', say: H[0] },
+        { icon: '➗', text: 'When it stops, the screen shows a sum. The answer is your group size!', say: H[1] },
+        { icon: '👥', text: 'Quick, get into groups of that many before the countdown ends.', say: H[2] },
+        { icon: '📱', text: `Left over? Go to a station, tap your name and get ${game.need} questions right.`, say: H[3] },
+        { icon: '🎉', text: 'Your name flashes up on the big screen. Back into the mingle!', say: H[4] },
+      ],
+    };
+  }
   if (game.kind === 'jail') {
     const H = HOWTO.jail;
     return {

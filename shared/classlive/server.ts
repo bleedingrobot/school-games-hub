@@ -49,12 +49,13 @@ import { relayPlayer, relayPublic, relayStep, type RelayPlayer, type RelayPublic
 import { advance as crewAdvance, callMeeting, crewDone, crewNick, crewPlayer, freshMine as crewFresh, meetingControl, newCrew, nextDeadline as crewDeadline, publicCrew, type CrewEvent, type CrewGame, type CrewPlayer, type PublicCrew } from './crew';
 import { crewStep } from './crewServer';
 import { mapOf, needOf, newJail, release as jailRelease, ROSTER_MAX, type JailEvent, type JailGame, type RosterPupil } from './jail';
+import { mingleLevelOf } from './mingle';
 import { jailPublic, jailStep, type JailPlayer, type JailPublic } from './jailServer';
 
-export const ACTIVITIES = ['stars', 'serpent', 'mural', 'corners', 'shark', 'ghost', 'clash', 'thrones', 'lava', 'crew', 'relay', 'jail'] as const;
+export const ACTIVITIES = ['stars', 'serpent', 'mural', 'corners', 'shark', 'ghost', 'clash', 'thrones', 'lava', 'crew', 'relay', 'jail', 'mingle'] as const;
 export type Activity = (typeof ACTIVITIES)[number];
 export const LENGTHS = [0, 2, 3, 5, 10, 15] as const;
-export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners', shark: 'Shark Bay', ghost: 'Ghost Tag', clash: 'Colour Clash', thrones: 'Musical Thrones', lava: 'Floor is Lava', crew: 'Glitches', relay: 'Toon Flap Relay', jail: 'Real-life Four Corners' };
+export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners', shark: 'Shark Bay', ghost: 'Ghost Tag', clash: 'Colour Clash', thrones: 'Musical Thrones', lava: 'Floor is Lava', crew: 'Glitches', relay: 'Toon Flap Relay', jail: 'Real-life Four Corners', mingle: 'Maths Mingle' };
 
 export interface LivePlayer {
   id: string;
@@ -741,6 +742,9 @@ export function newSession(body: Record<string, unknown>, seed: number, random: 
   } else if (activity === 'jail') {
     // Real-life Four Corners (docs/JAIL-PLAN.md): the class list is added when the room opens.
     game = newJail(mapOf(body.map, random), needOf(body.need));
+  } else if (activity === 'mingle') {
+    // Maths Mingle (docs/MINGLE-PLAN.md): Real-life Four Corners' stations with its own big screen.
+    game = newJail(mapOf(body.map, random), needOf(body.need), [], { level: mingleLevelOf(body.level), twists: body.twists !== false });
   } else if (activity === 'thrones') {
     game = newThrones(HALLS.find((h) => h === body.hall) ?? HALLS[Math.floor(random() * HALLS.length) % HALLS.length]);
   } else game = newMural(random);
@@ -796,7 +800,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
     if (typeof session === 'string') return no(400, session);
     if (session.game.kind === 'jail') {
       // Every pupil of the class can tap their name on a station, joined or not (James, 27 Nov 2026 NZ).
-      if (body.where === 'lobby') return no(400, 'Real-life Four Corners is for your own class.');
+      if (body.where === 'lobby') return no(400, `${ACTIVITY_NAMES[session.activity]} is for your own class.`);
       const pupils = sv.classPupils ? await sv.classPupils(classId) : [];
       if (pupils === 'busy') return busy();
       session.game.roster = pupils.slice(0, ROSTER_MAX).map((p) => ({ id: p.id, name: p.name.slice(0, 40) }));

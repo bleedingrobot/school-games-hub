@@ -29,6 +29,8 @@ export function JailPad({ link, room, view, setView }: {
   setView: (v: RoomView) => void;
 }) {
   const g = view.game as JailPublic;
+  // Maths Mingle uses these stations too (docs/MINGLE-PLAN.md), with its own words.
+  const mingle = g.mode === 'mingle';
   const [step, setStep] = useState<Step>({ at: 'names' });
   const [problem, setProblem] = useState('');
   const [busy, setBusy] = useState(false);
@@ -115,8 +117,8 @@ export function JailPad({ link, room, view, setView }: {
 
   const top = (
     <header className="jl-pad__top">
-      <b>🔒 Jail station</b>
-      <span>{g.inJail.length === 0 ? 'Nobody in jail' : `${g.inJail.length} in jail`}</span>
+      <b>{mingle ? '📱 Mingle station' : '🔒 Jail station'}</b>
+      <span>{g.inJail.length === 0 ? (mingle ? 'Nobody here' : 'Nobody in jail') : `${g.inJail.length} ${mingle ? 'here' : 'in jail'}`}</span>
     </header>
   );
 
@@ -137,7 +139,7 @@ export function JailPad({ link, room, view, setView }: {
     return (
       <div className="jl-pad jl-pad--asking">
         <header className="jl-pad__top">
-          <b>🔒 {kid.name}</b>
+          <b>{mingle ? '📱' : '🔒'} {kid.name}</b>
           <button type="button" className="jl-notme" onClick={() => void notMe(kid.id)}>Not you?</button>
         </header>
         <div className="jl-locks" aria-label={`${kid.right} of ${kid.need} right`}>
@@ -148,9 +150,9 @@ export function JailPad({ link, room, view, setView }: {
             <QuestionModal
               key={question.slot}
               question={{ id: question.slot, parts: question.parts, spoken: question.spoken, prompt: question.prompt, choices: question.choices, choiceLabels: question.choiceLabels, input: question.input, maxLength: question.maxLength }}
-              title="Answer your way out"
+              title={mingle ? 'Answer your way back in' : 'Answer your way out'}
               note={`${kid.right} of ${kid.need} right`}
-              spot="Real-life Four Corners" inline scribble={false} onSubmit={onSubmit} onDone={onDone}
+              spot={mingle ? 'Maths Mingle' : 'Real-life Four Corners'} inline scribble={false} onSubmit={onSubmit} onDone={onDone}
             />
           ) : <p className="jl-wait">Getting your question…</p>}
         </div>
@@ -176,7 +178,7 @@ export function JailPad({ link, room, view, setView }: {
   return (
     <div className="jl-pad">
       {top}
-      <p className="jl-ask">{live ? `Out? Tap your name, then get ${g.need} right to get back in.` : view.state === 'lobby' ? 'Waiting for your teacher to start. This iPad is a jail station.' : 'The game has finished. Well done!'}</p>
+      <p className="jl-ask">{live ? `${mingle ? 'Left over' : 'Out'}? Tap your name, then get ${g.need} right to get back in.` : view.state === 'lobby' ? `Waiting for your teacher to start. This iPad is a ${mingle ? 'station' : 'jail station'}.` : 'The game has finished. Well done!'}</p>
       {problem && <p className="jl-problem" role="alert">{problem}</p>}
       <ul className="jl-names">
         {g.roster.map((p) => {

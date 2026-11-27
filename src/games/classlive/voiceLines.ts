@@ -138,7 +138,17 @@ export const LINES = {
   sharkCave: ['Oh no, off to the shark cave!', 'Splash! A crowd is going to the shark cave!', 'Into the cave you go!'],
   // Real-life Four Corners (docs/JAIL-PLAN.md): a pupil answered their way out at a jail station (names are shown, never said).
   backIn: ['You are back in the game!', 'Back in you go! Well done!', 'Free! Run back into the game!'],
+  // Maths Mingle (docs/MINGLE-PLAN.md): the music stops and the call goes up; then the answer.
+  mingleStop: ['Stop! Get into groups!', 'Freeze! Quick, make your groups!', 'The music has stopped! Into groups, everyone!'],
+  mingleDance: ['Dance and mingle!', 'Music on! Keep moving!', 'Off you go! Mingle around the room!'],
+  mingleLeft: ['Left over? Go to a station and answer your way back in!', 'No group? Off to a station, quick!', 'Anyone left over, head to a station!'],
+  mingleEnd: ['What a mingle! Great maths, everyone!', 'Brilliant moving and great maths!', 'That was fantastic. Well done, everyone!'],
 } as const;
+
+/** Maths Mingle: the answer, said once the scramble ends ("Groups of four!"), one clip per group size. */
+export const MINGLE_SIZE_LINES: Record<number, string> = {
+  2: 'Groups of two!', 3: 'Groups of three!', 4: 'Groups of four!', 5: 'Groups of five!', 6: 'Groups of six!', 7: 'Groups of seven!', 8: 'Groups of eight!',
+};
 
 /** How to play (HowTo.tsx), read in order before a game. No numbers, so every line has a clip. */
 export const HOWTO = {
@@ -192,6 +202,14 @@ export const HOWTO = {
     'Out? Go to a jail station, tap your name, and answer the questions.',
     'Get them right and your name flashes up here. You are back in the game!',
   ],
+  // Maths Mingle (docs/MINGLE-PLAN.md).
+  mingle: [
+    'Maths Mingle! When the music plays, dance and mingle around the room.',
+    'When the music stops, the screen shows a sum. The answer is your group size!',
+    'Quick, get into groups of that many before the countdown ends.',
+    'Left over? Go to a station, tap your name, and answer the questions.',
+    'Get them right and your name flashes up on the big screen. Back into the mingle you go!',
+  ],
   clash: CLASH_HOWTO,
   shark: [
     'Swim your avatar with the joystick, or the arrow keys.',
@@ -215,7 +233,7 @@ export function next(key: LineKey): string {
 
 export const allVoiceLines = (): string[] => [
   ...Object.values(LINES).flat(),
-  ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural, ...HOWTO.corners, ...HOWTO.shark, ...GHOST_HOWTO, ...CREW_HOWTO, ...HOWTO.clash, ...HOWTO.thrones, ...HOWTO.jail,
+  ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural, ...HOWTO.corners, ...HOWTO.shark, ...GHOST_HOWTO, ...CREW_HOWTO, ...HOWTO.clash, ...HOWTO.thrones, ...HOWTO.jail, ...HOWTO.mingle, ...Object.values(MINGLE_SIZE_LINES),
   ...allLavaLines(),
   ...allRelayLines(),
 ];
