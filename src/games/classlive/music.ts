@@ -14,7 +14,7 @@ type Calm = 'stars' | 'serpent' | 'boss' | 'goldrush' | 'skyclimb' | 'island' | 
  * Each game and arena has a calm track and a "-hot" one: the same tune made more dramatic and high-energy, for the
  * last 30 seconds and the big moments (James, 25 Nov 2026 NZ). Mystery Mural's hot one is its guessing music.
  */
-export type Track = 'picker' | 'win' | 'mural' | 'guess' | Calm | `${Calm}-hot` | `game-${string}` | `corners-${string}` | `shark-${string}` | `ghost-${string}` | `clash-${string}` | `thrones-${string}` | `lava-${string}` | `crew-${string}` | `relay-${string}` | `jail-${string}`;
+export type Track = 'picker' | 'win' | 'mural' | 'guess' | Calm | `${Calm}-hot` | `game-${string}` | `corners-${string}` | `shark-${string}` | `ghost-${string}` | `clash-${string}` | `thrones-${string}` | `lava-${string}` | `crew-${string}` | `relay-${string}` | `jail-${string}` | 'rocket' | 'rocket-hot';
 
 const FILES = import.meta.glob('./music/*.mp3', { eager: true, import: 'default' }) as Record<string, string>;
 const file = (t: string): string | undefined => FILES[`./music/${t}.mp3`];
@@ -192,7 +192,7 @@ const SHARK_BORROWS: Record<string, string> = { lagoon: 'jungle', reef: 'space',
  */
 const THRONE_TRACKS: Record<string, Calm> = { castle: 'boss', ice: 'skyclimb', jungle: 'serpent', pirate: 'island' };
 
-export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | 'corners' | 'ghost' | 'clash' | 'thrones' | 'lava' | 'crew' | 'relay' | 'jail' | null, o: { guessing?: boolean; hot?: boolean; /** A Four Corners, Ghost Tag or Colour Clash map, or (with `shark`) a Shark Bay bay. */ map?: string; /** Shark Bay: `map` is a bay. */ shark?: boolean } = {}): Track {
+export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 'stars' | 'serpent' | 'mural' | 'corners' | 'ghost' | 'clash' | 'thrones' | 'lava' | 'crew' | 'relay' | 'jail' | 'rocket' | null, o: { guessing?: boolean; hot?: boolean; /** A Four Corners, Ghost Tag or Colour Clash map, or (with `shark`) a Shark Bay bay. */ map?: string; /** Shark Bay: `map` is a bay. */ shark?: boolean } = {}): Track {
   if (state === 'over') return 'win';
   if (!state || !kind || state !== 'live') return 'picker';
   if (kind === 'thrones') {
@@ -214,6 +214,8 @@ export function classLiveTrack(state: 'lobby' | 'live' | 'over' | null, kind: 's
     const own: Track = o.hot ? `ghost-${o.map ?? 'graveyard'}-hot` : `ghost-${o.map ?? 'graveyard'}`;
     return trackUrl(own) ? own : o.hot ? 'boss-hot' : 'boss';
   }
+  // Rocket Relay (docs/ROCKET-PLAN.md): its own track once made (rocket[-hot].mp3), else Sky Climb's.
+  if (kind === 'rocket') return trackUrl(o.hot ? 'rocket-hot' : 'rocket') ? (o.hot ? 'rocket-hot' : 'rocket') : o.hot ? 'skyclimb-hot' : 'skyclimb';
   if (kind === 'relay') {
     // Toon Flap Relay: its own stadium track once painted (relay-stadium[-hot].mp3), else Sky Climb's.
     const own: Track = o.hot ? 'relay-stadium-hot' : 'relay-stadium';

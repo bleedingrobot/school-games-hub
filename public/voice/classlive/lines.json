@@ -1552,6 +1552,34 @@
   "text": "Anyone left over, head to a station!"
  },
  {
+  "slug": "boost",
+  "text": "Boost!"
+ },
+ {
+  "slug": "blast-off-great-answer",
+  "text": "Blast off! Great answer!"
+ },
+ {
+  "slug": "up-goes-the-rocket",
+  "text": "Up goes the rocket!"
+ },
+ {
+  "slug": "whoosh-another-boost",
+  "text": "Whoosh! Another boost!"
+ },
+ {
+  "slug": "what-a-race-great-running-and-great-maths",
+  "text": "What a race! Great running and great maths!"
+ },
+ {
+  "slug": "brilliant-relay-everyone",
+  "text": "Brilliant relay, everyone!"
+ },
+ {
+  "slug": "that-was-out-of-this-world-well-done",
+  "text": "That was out of this world! Well done!"
+ },
+ {
   "slug": "what-a-mingle-great-maths-everyone",
   "text": "What a mingle! Great maths, everyone!"
  },
@@ -1830,6 +1858,50 @@
  {
   "slug": "groups-of-eight",
   "text": "Groups of eight!"
+ },
+ {
+  "slug": "rocket-relay-line-up-in-your-team-at-one-end-of-the-room",
+  "text": "Rocket Relay! Line up in your team at one end of the room."
+ },
+ {
+  "slug": "your-team-ipad-is-at-the-other-end-the-big-screen-shows-who-runs-next",
+  "text": "Your team iPad is at the other end. The big screen shows who runs next."
+ },
+ {
+  "slug": "run-to-the-ipad-tap-i-am-here-and-answer-your-question",
+  "text": "Run to the iPad, tap I am here, and answer your question."
+ },
+ {
+  "slug": "a-right-answer-boosts-your-rocket-wrong-you-get-one-more-try",
+  "text": "A right answer boosts your rocket! Wrong? You get one more try."
+ },
+ {
+  "slug": "then-run-back-and-tag-the-next-runner-first-rocket-to-the-moon-wins",
+  "text": "Then run back and tag the next runner. First rocket to the Moon wins!"
+ },
+ {
+  "slug": "red-team-reached-the-moon",
+  "text": "Red team reached the Moon!"
+ },
+ {
+  "slug": "blue-team-reached-the-moon",
+  "text": "Blue team reached the Moon!"
+ },
+ {
+  "slug": "green-team-reached-the-moon",
+  "text": "Green team reached the Moon!"
+ },
+ {
+  "slug": "yellow-team-reached-the-moon",
+  "text": "Yellow team reached the Moon!"
+ },
+ {
+  "slug": "purple-team-reached-the-moon",
+  "text": "Purple team reached the Moon!"
+ },
+ {
+  "slug": "orange-team-reached-the-moon",
+  "text": "Orange team reached the Moon!"
  },
  {
   "slug": "here-we-go-the-floor-is-lava-watch-for-the-glowing-tiles",

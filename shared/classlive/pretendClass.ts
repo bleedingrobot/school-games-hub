@@ -64,6 +64,7 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
       if (g.kind === 'clash') return clashBot({ db, room, id, skill, rand, now: opts.clock.now, later: opts.later, step: (who, body) => classLiveStep(services, who, body) });
       if (g.kind === 'crew') return crewBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
       if (g.kind === 'jail') return jailBot(room, id, skill);
+      if (g.kind === 'rocket') return rocketBot(room, id, skill);
       if (g.kind === 'relay') return relayBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
       if (g.kind === 'ghost') return ghostBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
       if (g.kind === 'mural') {
@@ -105,6 +106,35 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
    * A pretend Real-life Four Corners pupil: now and then "is out", taps their own name on their station and answers
    * until they're back in (docs/JAIL-PLAN.md).
    */
+  /**
+   * A pretend Rocket Relay runner (docs/ROCKET-PLAN.md): when it's their turn they "run" for a few seconds, check in at
+   * their team's iPad and answer until the run is over.
+   */
+  const rocketBot = (room: number, id: string, skill: number) => {
+    const live = () => { const r = db.rooms.get(room); return r && r.session.state === 'live' && r.session.game.kind === 'rocket' ? r.session.game : null; };
+    const team = () => live()?.teams.findIndex((t) => t.order.includes(id)) ?? -1;
+    const step = (body: Record<string, unknown>) => classLiveStep(services, id, { room, as: id, team: team(), ...body });
+    const answerOne = async (q: { slot: number } | undefined): Promise<void> => {
+      if (!live()) return;
+      if (!q) return void opts.later(wait, 1000);
+      const kept = db.questions.get(`${room}:${id}`)?.find((k) => k.slot === q.slot);
+      const right = markQuestion(kept?.question)?.answer ?? 0;
+      const r = await step({ action: 'answer', slot: q.slot, answer: rand() < skill ? right : right + 1, ms: 3000 });
+      if (r.body.runOver !== false) return void opts.later(wait, 1000);
+      opts.later(() => void answerOne(r.body.question as { slot: number } | undefined), 1500 + rand() * 2500);
+    };
+    const wait = () => {
+      const g = live();
+      const i = team();
+      if (!g || i < 0) { const r = db.rooms.get(room); if (r && r.session.state !== 'over') opts.later(wait, 2000); return; }
+      const t = g.teams[i];
+      const mine = (t.active ?? t.order[t.turn % t.order.length]) === id && g.winner === null;
+      if (!mine) return void opts.later(wait, 1000);
+      opts.later(() => void step({ action: 'play', do: 'here' }).then((r) => answerOne(r.body.question as { slot: number } | undefined)), 3000 + rand() * 3000);
+    };
+    wait();
+  };
+
   const jailBot = (room: number, id: string, skill: number) => {
     const step = (body: Record<string, unknown>) => classLiveStep(services, id, { room, as: id, ...body });
     const answerOne = async (q: { slot: number } | undefined): Promise<void> => {

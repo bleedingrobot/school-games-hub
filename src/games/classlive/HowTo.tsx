@@ -53,6 +53,20 @@ export function sheetFor(game: Game): Sheet {
     };
   }
   if (game.kind === 'relay') return relaySheet(game);
+  if (game.kind === 'rocket') {
+    const H = HOWTO.rocket;
+    return {
+      title: 'How to play Rocket Relay', mode: game.perRun === 1 ? '1 question a run' : `${game.perRun} questions a run`, modeSay: null,
+      art: painted('pick', 'rocket', true) ?? painted('pick', 'relay', true),
+      steps: [
+        { icon: '🧍', text: 'Line up in your team at one end of the room.', say: H[0] },
+        { icon: '📱', text: 'Your team iPad is at the other end. The big screen shows who runs next.', say: H[1] },
+        { icon: '🏃', text: "Run to the iPad, tap I'm here, and answer your question.", say: H[2] },
+        { icon: '🚀', text: 'A right answer boosts your rocket! Wrong? One more try.', say: H[3] },
+        { icon: '🌕', text: 'Run back and tag the next runner. First rocket to the Moon wins!', say: H[4] },
+      ],
+    };
+  }
   if (game.kind === 'jail' && game.mode === 'mingle') {
     const H = HOWTO.mingle;
     return {

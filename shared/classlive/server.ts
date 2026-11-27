@@ -50,12 +50,14 @@ import { advance as crewAdvance, callMeeting, crewDone, crewNick, crewPlayer, fr
 import { crewStep } from './crewServer';
 import { mapOf, needOf, newJail, release as jailRelease, ROSTER_MAX, type JailEvent, type JailGame, type RosterPupil } from './jail';
 import { mingleLevelOf } from './mingle';
+import { newRocket, perRunOf, teamCountOf, type RocketEvent, type RocketGame } from './rocket';
+import { rocketPublic, rocketStep, type RocketPlayer, type RocketPublic } from './rocketServer';
 import { jailPublic, jailStep, type JailPlayer, type JailPublic } from './jailServer';
 
-export const ACTIVITIES = ['stars', 'serpent', 'mural', 'corners', 'shark', 'ghost', 'clash', 'thrones', 'lava', 'crew', 'relay', 'jail', 'mingle'] as const;
+export const ACTIVITIES = ['stars', 'serpent', 'mural', 'corners', 'shark', 'ghost', 'clash', 'thrones', 'lava', 'crew', 'relay', 'jail', 'mingle', 'rocket'] as const;
 export type Activity = (typeof ACTIVITIES)[number];
 export const LENGTHS = [0, 2, 3, 5, 10, 15] as const;
-export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners', shark: 'Shark Bay', ghost: 'Ghost Tag', clash: 'Colour Clash', thrones: 'Musical Thrones', lava: 'Floor is Lava', crew: 'Glitches', relay: 'Toon Flap Relay', jail: 'Real-life Four Corners', mingle: 'Maths Mingle' };
+export const ACTIVITY_NAMES: Record<Activity, string> = { stars: 'Star Web', serpent: 'Serpent Chain', mural: 'Mystery Mural', corners: 'Four Corners', shark: 'Shark Bay', ghost: 'Ghost Tag', clash: 'Colour Clash', thrones: 'Musical Thrones', lava: 'Floor is Lava', crew: 'Glitches', relay: 'Toon Flap Relay', jail: 'Real-life Four Corners', mingle: 'Maths Mingle', rocket: 'Rocket Relay' };
 
 export interface LivePlayer {
   id: string;
@@ -65,8 +67,8 @@ export interface LivePlayer {
   colour: number;
 }
 
-export type Game = StarsGame | SerpentGame | MuralGame | CornersGame | GhostGame | ClashGame | ThronesGame | LavaGame | CrewGame | RelayGame | JailGame;
-export type GameEvent = StarsEvent | SerpentEvent | MuralEvent | CornersEvent | GhostEvent | ClashEvent | ThronesEvent | LavaEvent | CrewEvent | RelayEvent | JailEvent;
+export type Game = StarsGame | SerpentGame | MuralGame | CornersGame | GhostGame | ClashGame | ThronesGame | LavaGame | CrewGame | RelayGame | JailGame | RocketGame;
+export type GameEvent = StarsEvent | SerpentEvent | MuralEvent | CornersEvent | GhostEvent | ClashEvent | ThronesEvent | LavaEvent | CrewEvent | RelayEvent | JailEvent | RocketEvent;
 
 export interface Session {
   seed: number;
@@ -165,7 +167,8 @@ export type PublicGame =
   | LavaPublic
   | PublicCrew
   | RelayPublic
-  | JailPublic;
+  | JailPublic
+  | RocketPublic;
 
 export type PublicRound = Omit<Round, 'rolled' | 'caught' | 'saved' | 'items'> & {
   rolled: Corner[] | null;
@@ -215,7 +218,8 @@ export interface PlayerView {
     | LavaPlayer
     | CrewPlayer
     | RelayPlayer
-    | JailPlayer;
+    | JailPlayer
+    | RocketPlayer;
 }
 
 export interface RoomRow {
@@ -330,6 +334,7 @@ export function publicGame(g: Game, players: number, t = 0, order: string[] = []
   if (g.kind === 'crew') return publicCrew(g, order);
   if (g.kind === 'relay') return relayPublic(g);
   if (g.kind === 'jail') return jailPublic(g);
+  if (g.kind === 'rocket') return rocketPublic(g);
   if (g.kind === 'clash') return clashPublic(g);
   if (g.kind === 'lava') return lavaPublic(g, players);
   if (g.kind === 'thrones') return thronesPublic(g, players);
@@ -386,6 +391,7 @@ export function playerView(s: Session, id: string): PlayerView {
   const name = roomNames(s)[id] ?? liveName(p.name);
   if (s.game.kind === 'relay') return { player: id, name, colour: p.colour, game: relayPlayer(s, s.game, id) };
   if (s.game.kind === 'jail') return { player: id, name, colour: p.colour, game: { kind: 'jail' } };
+  if (s.game.kind === 'rocket') return { player: id, name, colour: p.colour, game: { kind: 'rocket' } };
   if (s.game.kind === 'lava') {
     const w = s.game.w ?? 1;
     return { player: id, name, colour: p.colour, game: lavaPlayer(s, s.game, id, () => freshLavaMine(s.order.indexOf(id), w)) };
@@ -742,6 +748,9 @@ export function newSession(body: Record<string, unknown>, seed: number, random: 
   } else if (activity === 'jail') {
     // Real-life Four Corners (docs/JAIL-PLAN.md): the class list is added when the room opens.
     game = newJail(mapOf(body.map, random), needOf(body.need));
+  } else if (activity === 'rocket') {
+    // Rocket Relay (docs/ROCKET-PLAN.md): teams are dealt from the class list when the room opens.
+    game = newRocket([], teamCountOf(body.teams), perRunOf(body.perRun), random);
   } else if (activity === 'mingle') {
     // Maths Mingle (docs/MINGLE-PLAN.md): Real-life Four Corners' stations with its own big screen.
     game = newJail(mapOf(body.map, random), needOf(body.need), [], { level: mingleLevelOf(body.level), twists: body.twists !== false });
@@ -804,6 +813,15 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
       const pupils = sv.classPupils ? await sv.classPupils(classId) : [];
       if (pupils === 'busy') return busy();
       session.game.roster = pupils.slice(0, ROSTER_MAX).map((p) => ({ id: p.id, name: p.name.slice(0, 40) }));
+    }
+    if (session.game.kind === 'rocket') {
+      // Rocket Relay: teams from the whole class list (a runner needn't have a device).
+      if (body.where === 'lobby') return no(400, 'Rocket Relay is for your own class.');
+      const pupils = sv.classPupils ? await sv.classPupils(classId) : [];
+      if (pupils === 'busy') return busy();
+      const roster = pupils.slice(0, ROSTER_MAX).map((p) => ({ id: p.id, name: p.name.slice(0, 40) }));
+      if (roster.length < 2) return no(400, 'Rocket Relay needs at least 2 pupils in the class.');
+      session.game = newRocket(roster, teamCountOf(body.teams), perRunOf(body.perRun), () => sv.random());
     }
     // James can still pick the school server for a game, to compare (body.edge false).
     if (body.edge !== false && sv.edge?.allowed(who, session.activity)) session.edge = true;
@@ -1007,6 +1025,10 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
       }
       return ok({ room, view: roomView(cur.session, cur.startedAt, sv.now()), me: playerView(cur.session, who), now: sv.now() });
     }
+    if (cur.session.game.kind === 'rocket' && (action === 'ask' || action === 'answer' || action === 'play')) {
+      const out = await rocketStep({ sv, mutate, nextQuestion, roomView, ok, no, busy, maxAnswerMs: MAX_ANSWER_MS, maxPlayers: MAX_PLAYERS }, cur, body);
+      return cur.session.state === 'live' ? out : withRoom(out);
+    }
     if (cur.session.game.kind === 'jail' && (action === 'ask' || action === 'answer' || action === 'play')) {
       const out = await jailStep({ sv, mutate, nextQuestion, roomView, ok, no, busy, maxAnswerMs: MAX_ANSWER_MS, maxPlayers: MAX_PLAYERS }, cur, body);
       return cur.session.state === 'live' ? out : withRoom(out);
@@ -1071,7 +1093,7 @@ export async function classLiveStep(sv: ClassLiveServices, who: string, body: Re
         }
         return { reply: out.reply, events: out.events, players: [who] };
       }
-      if (s.game.kind === 'corners' || s.game.kind === 'ghost' || s.game.kind === 'crew' || s.game.kind === 'clash' || s.game.kind === 'thrones' || s.game.kind === 'lava' || s.game.kind === 'relay' || s.game.kind === 'jail') return { refuse: no(409, 'Use the joystick!', 'not_now') };
+      if (s.game.kind === 'corners' || s.game.kind === 'ghost' || s.game.kind === 'crew' || s.game.kind === 'clash' || s.game.kind === 'thrones' || s.game.kind === 'lava' || s.game.kind === 'relay' || s.game.kind === 'jail' || s.game.kind === 'rocket') return { refuse: no(409, 'Use the joystick!', 'not_now') };
       const out = tryFact(s.game, who, body.fact, t);
       if (!out.ok) return { refuse: no(409, 'One at a time!', out.reason) };
       return { reply: out.reply, events: out.events, players: [who] };
@@ -1112,7 +1134,7 @@ export async function nextQuestion(sv: ClassLiveServices, row: RoomRow, who: str
   const ctx = await sv.mathsContext(who);
   if (!ctx) return null;
   const g = row.session.game;
-  const m = g.kind === 'mural' || g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'crew' || g.kind === 'clash' || g.kind === 'thrones' || g.kind === 'lava' || g.kind === 'relay' || g.kind === 'jail' ? g.mine[who] : undefined;
+  const m = g.kind === 'mural' || g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'crew' || g.kind === 'clash' || g.kind === 'thrones' || g.kind === 'lava' || g.kind === 'relay' || g.kind === 'jail' || g.kind === 'rocket' ? g.mine[who] : undefined;
   const q = makeQuestion(ctx, `${row.session.seed}:${who}:${m?.answered ?? 0}`);
   if (!q) return null;
   const kept = await sv.keepQuestion(row.id, who, q);
