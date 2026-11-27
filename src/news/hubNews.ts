@@ -28,7 +28,7 @@ export const HUB_NEWS: NewsItem[] = [
     date: '2026-11-27',
     emoji: '🔁',
     title: 'Goblin Storm round bonus',
-    text: 'Beat every boss to finish a round and win bonus gold: +10, then +20, then +30 and more each round. Each map now shows how many times you have beaten it.',
+    text: 'Beat every boss again for bonus gold: +10, then +20, +30 and more.',
     game: 'goblinstorm',
   },
   {
