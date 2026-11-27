@@ -5,7 +5,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { CLASS_INFO, trainerFor, zoneById, type MonsterInfo } from '../../../shared/bonkers/content';
-import { autoSmash, replay, type Blow, type Foe, type Progress } from '../../../shared/bonkers/engine';
+import { autoSmash, monsterSwings, replay, type Blow, type Foe, type Progress } from '../../../shared/bonkers/engine';
 import { BOOSTS } from '../../../shared/bonkers/config';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../maths/QuestionModal';
@@ -58,18 +58,25 @@ export function Fight({ backend, progress, start, onDone }: {
   const pending = useRef<AnswerReply | null>(null);
   // The hero's own smashes before each question, played one at a time so each can be seen (James, 27 Nov 2026:
   // "the auto attacks need to be seen"): `played.n` smashes have landed for question `played.slot`.
+  // The monster swings back once, after the hero's first smash (James, 28 Nov 2026: "they never seem to get hit").
   const [played, setPlayed] = useState({ slot: -1, n: 0 });
-  const slotNow = view.marks.length;
-  const autosNow = view.adventure.moments?.[slotNow]?.autos ?? 0;
-  const smashesShown = played.slot === slotNow ? played.n : 0;
-  const ready = autosNow === 0 || smashesShown > autosNow; // one beat after the last smash, the question pops up
-  useEffect(() => {
-    if (pause || ready) return;
-    const t = setTimeout(() => setPlayed({ slot: slotNow, n: smashesShown + 1 }), smashesShown === 0 ? AUTO_FIRST_MS : AUTO_STEP_MS);
-    return () => clearTimeout(t);
-  }, [slotNow, smashesShown, pause, ready]);
   const adv = view.adventure;
   const r = replay(adv, view.marks);
+  const slotNow = view.marks.length;
+  const moment = adv.moments?.[slotNow] ?? { autos: 0, boost: 1 };
+  const autosNow = moment.autos;
+  const swingsNow = monsterSwings(r.hearts, moment, r.calm > 0);
+  const stepsNow = autosNow + swingsNow;
+  const stepShown = played.slot === slotNow ? played.n : 0;
+  const ready = stepsNow === 0 || stepShown > stepsNow; // one beat after the last blow, the question pops up
+  const swingsShown = swingsNow && stepShown >= 2 ? swingsNow : 0;
+  const smashesShown = Math.min(autosNow, stepShown - swingsShown);
+  const swingingNow = !ready && swingsNow > 0 && stepShown === 2;
+  useEffect(() => {
+    if (pause || ready) return;
+    const t = setTimeout(() => setPlayed({ slot: slotNow, n: stepShown + 1 }), stepShown === 0 ? AUTO_FIRST_MS : AUTO_STEP_MS);
+    return () => clearTimeout(t);
+  }, [slotNow, stepShown, pause, ready]);
   const cls = adv.start.cls;
   const hero = progress.hero ?? { cls, look: 'girl' as const };
   const ci = CLASS_INFO[cls];
@@ -163,12 +170,12 @@ export function Fight({ backend, progress, start, onDone }: {
   // The last answer's bonk, while it's still this fight's.
   const blow = lastBlow && !lastBlow.ended && r.blows.at(-1)?.slot === lastBlow.slot ? lastBlow : null;
   const q = view.question;
-  const moment = adv.moments?.[slotNow] ?? { autos: 0, boost: 1 };
   const autoHit = autoSmash(adv.start.power, r.foeHp, moment);
   // The total split into the smashes, landing one by one.
   const landedBy = (n: number) => (moment.autos ? Math.floor((autoHit * Math.min(n, moment.autos)) / moment.autos) : 0);
-  const smashing = !ready && smashesShown >= 1 && smashesShown <= moment.autos;
+  const smashing = !ready && stepShown >= 1 && !swingingNow;
   const thisSmash = smashing ? landedBy(smashesShown) - landedBy(smashesShown - 1) : 0;
+  const heartsNow = r.hearts - (ready ? swingsNow : swingsShown);
   const hpNow = r.foeHp - (ready ? autoHit : landedBy(smashesShown));
   const boost = BOOSTS.find((b) => b.times === moment.boost);
 
@@ -202,15 +209,15 @@ export function Fight({ backend, progress, start, onDone }: {
     <section className="bq-fight" aria-label={`Fight: ${foe.name}`}>
       {header}
       <div className="bq-arena" style={{ background: zone ? `linear-gradient(${zone.sky[0]}, ${zone.sky[1]} 62%, ${zone.ground} 62%)` : undefined }}>
-        <div className={`bq-side bq-side--hero${blow?.ouch && !smashing ? ' bq-shake' : ''}${smashing ? ' bq-lunge' : ''}`} key={`h${blow?.slot ?? 'x'}-${slotNow}-${smashesShown}`}>
+        <div className={`bq-side bq-side--hero${(blow?.ouch && stepShown === 0) || swingingNow ? ' bq-shake' : ''}${smashing ? ' bq-lunge' : ''}`} key={`h${blow?.slot ?? 'x'}-${slotNow}-${stepShown}`}>
           <span className="bq-face" aria-hidden="true">{ci.emoji[hero.look]}</span>
           <strong>{ci.names[hero.look]}</strong>
-          <Hearts n={r.hearts} of={r.maxHearts} />
-          {blow?.ouch && smashesShown === 0 && <span className="bq-float bq-float--ouch">OUCH!</span>}
+          <Hearts n={heartsNow} of={r.maxHearts} />
+          {((blow?.ouch && stepShown === 0) || swingingNow) && <span className="bq-float bq-float--ouch">OUCH!</span>}
           {r.calm > 0 && <span className="bq-tag">🧶 Tied up for {r.calm}</span>}
         </div>
         <div className="bq-vs" aria-hidden="true">VS</div>
-        <div className={`bq-side bq-side--foe${(blow && smashesShown === 0) || thisSmash ? ' bq-wobble' : ''}`} key={`f${slotNow}-${smashesShown}`}>
+        <div className={`bq-side bq-side--foe${(blow && stepShown === 0) || thisSmash ? ' bq-wobble' : ''}${swingingNow ? ' bq-lunge bq-lunge--back' : ''}`} key={`f${slotNow}-${stepShown}`}>
           <span className={`bq-face${foe.big ? ' bq-face--big' : ''}`} aria-hidden="true">{look.emoji}</span>
           <strong>{foe.name}</strong>
           <div className="bq-hp" role="progressbar" aria-label={`${foe.name}’s health`} aria-valuemin={0} aria-valuemax={foe.hp} aria-valuenow={hpNow}>
@@ -218,18 +225,19 @@ export function Fight({ backend, progress, start, onDone }: {
           </div>
           <span className="bq-hp__num">{hpNow} / {foe.hp}</span>
           {thisSmash > 0 && <span className="bq-float">-{thisSmash}</span>}
-          {smashesShown === 0 && blow?.right && <span className="bq-float bq-float--big">-{blow.hit}{blow.special ? '!!' : ''}</span>}
+          {stepShown === 0 && blow?.right && <span className="bq-float bq-float--big">-{blow.hit}{blow.special ? '!!' : ''}</span>}
         </div>
       </div>
       {!blow && !ready && r.foeHp === foe.hp && <p className="bq-speech">{foe.name}: “{look.line}”</p>}
-      {blow && smashesShown === 0 && (
+      {blow && stepShown === 0 && (
         <p className="bq-blow-line" aria-live="polite">
           {blow.right
             ? (blow.special ? `${ci.move.name}! ×${blow.boost} MEGA SMASH!` : `SMASH! ×${blow.boost} damage!`)
             : blow.ouch ? 'Missed… and it smashed you back!' : 'Missed… but it couldn’t smash you back!'}
         </p>
       )}
-      {!ready && smashing && <p className="bq-smash-line" aria-live="polite">💥 {ci.names[hero.look]} smashes! <span>{smashesShown} of {moment.autos}</span></p>}
+      {smashing && <p className="bq-smash-line" aria-live="polite">💥 {ci.names[hero.look]} smashes! <span>{smashesShown} of {moment.autos}</span></p>}
+      {swingingNow && <p className="bq-smash-line bq-smash-line--ouch" aria-live="polite">👊 {foe.name} smashes back!</p>}
       {ready && q && (
         <div className={`bq-boost bq-pop bq-boost--x${moment.boost}`} role="status">
           <p className="bq-boost__name">⚡ {boost?.name ?? 'SMASH TIME!'}</p>

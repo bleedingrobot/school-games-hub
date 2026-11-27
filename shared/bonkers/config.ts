@@ -10,9 +10,15 @@ export const MAX_LEVEL = 10;
 export const ADVENTURES_A_DAY = 1;
 export const MAX_SAVED_ADVENTURES = 3;
 
-/** Hearts at the start of every fight (full again each fight: nothing carries over). */
-export const HEARTS = 3;
-export const TRAINER_HEARTS = 4;
+/**
+ * Hearts at the start of every fight (full again each fight: nothing carries over). The monster swings back once while
+ * the hero smashes before each question (a heart, never the last one: James, 28 Nov 2026, "they never seem to get hit"),
+ * and a wrong answer costs a heart. So 3 wrong answers still lose a fight (4 against a trainer).
+ */
+export const HEARTS = 5;
+export const TRAINER_HEARTS = 7;
+/** The monster's swings while the hero smashes before each question. */
+export const MONSTER_SWINGS = 1;
 
 /** Stars from a fight. */
 export const STARS = { win: 3, bonked: 1, quest: 3 } as const;

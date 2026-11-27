@@ -1,5 +1,7 @@
 # Smash Quest (was Bonkers Quest): plan
 
+**The monster hits back (James, 28 Nov 2026: "they never seem to get hit", "hearts"):** while the hero smashes before each question the monster swings back once and knocks off a heart (never the last; not while tied up by Wool Whirlwind), shown one blow at a time. Hearts 5 (trainers 7), so 3 wrong answers still lose a fight (4 against a trainer).
+
 **One question a fight, monsters with double HP (James, 27 Nov 2026 evening):** the hero's own smashes wear the monster down until the question's boosted smash finishes it (`autoSmash` in engine.ts), so a right answer always wins; a wrong one brings another question. Sim: 1.1 to 1.7 questions a fight, same level pace.
 
 **Renamed Smash Quest by James, 27 Nov 2026.** The id, tables, function and folders keep the name `bonkers`. Teachers always get unlimited adventures (the function checks `profiles.role`), so James can test without the daily limit.

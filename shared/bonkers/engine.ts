@@ -5,7 +5,7 @@
  */
 import {
   ADVENTURES_A_DAY, BIG_MONSTER_HITS, HEARTS, MAX_LEVEL, MAX_SAVED_ADVENTURES, MONSTER_HITS, POINTS, SPECIAL, STARS, STARS_TO_TRAINER,
-  STICKERS_A_WIN, TRAINER_HEARTS, TRAINER_HITS, AUTO_BONKS, AUTO_SHARE, BOOSTS, basePower, expectedGear, FIGHTS,
+  STICKERS_A_WIN, TRAINER_HEARTS, MONSTER_SWINGS, TRAINER_HITS, AUTO_BONKS, AUTO_SHARE, BOOSTS, basePower, expectedGear, FIGHTS,
   QUESTIONS_AN_ADVENTURE,
 } from './config';
 import { CLASSES, GEAR, LOOKS, SLOTS, TOP_TIER, openZones, trainerFor, zoneById, type HeroClass, type Look, type Slot } from './content';
@@ -251,6 +251,8 @@ export interface Blow {
   boost: number;
   /** Damage to the monster from the answer (0 when wrong). */
   hit: number;
+  /** Hearts the monster knocked off while the hero smashed before the question (never the last one). */
+  swung: number;
   /** The monster bonked you back (lost a heart). */
   ouch: boolean;
   foeHp: number;
@@ -309,6 +311,12 @@ function questDone(adv: Adventure, results: FightResult[]): boolean {
   return fights.filter((r) => r.foe.id === hunted && r.outcome === 'won').length >= questTarget(q);
 }
 
+/** The monster's hits on the hero while they smash, before a question: never the last heart. Tied up (Wool Whirlwind): none. */
+export function monsterSwings(hearts: number, moment: Moment, tiedUp: boolean): number {
+  if (!moment.autos || tiedUp) return 0;
+  return Math.max(0, Math.min(MONSTER_SWINGS, hearts - 1));
+}
+
 /**
  * The hero's own smashes before a question. One question a fight (James, 27 Nov 2026): they wear the monster down until
  * the question's boosted smash is enough to finish it, so a right answer always wins the fight. Never the last smash.
@@ -352,6 +360,9 @@ export function replay(adv: Adventure, marks: readonly Mark[]): Replay {
 
   for (let slot = 0; slot < marks.length && cur && phase !== 'done'; slot++) {
     const mark = marks[slot];
+    // The monster's swing lands while the hero smashes, before the answer (and so before any special move).
+    const swung = monsterSwings(cur.hearts, adv.moments?.[slot] ?? { autos: 0, boost: 1 }, cur.calm > 0);
+    cur.hearts -= swung;
     const useSpecial = mark.special && !cur.specialUsed;
     if (useSpecial) cur.specialUsed = true;
     let times = 1;
@@ -362,7 +373,8 @@ export function replay(adv: Adventure, marks: readonly Mark[]): Replay {
       if (cls === 'granny') { cur.calm = SPECIAL.granny.calmQuestions; shield = true; }
       if (cls === 'ninja') times = SPECIAL.ninja.times;
     }
-    // The hero's own bonks first (never the last one: a question always finishes a monster), then the question.
+    // The hero's own smashes first (never the last one: a question always finishes a monster) while the monster swings
+    // back (never the hero's last heart), then the question.
     const moment = adv.moments?.[slot] ?? { autos: 0, boost: 1 };
     const autoHit = autoSmash(power, cur.foeHp, moment);
     cur.foeHp -= autoHit;
@@ -375,7 +387,7 @@ export function replay(adv: Adventure, marks: readonly Mark[]): Replay {
     if (mark.right) cur.rights += 1;
     if (useSpecial && cls === 'ninja' && mark.right) stickers += SPECIAL.ninja.stickers;
     const ended: Outcome | null = cur.foeHp <= 0 ? 'won' : cur.hearts <= 0 ? 'bonked' : null;
-    blows.push({ slot, right: mark.right, special: useSpecial, auto: autoHit, boost: moment.boost, hit, ouch, foeHp: cur.foeHp, hearts: cur.hearts, ended });
+    blows.push({ slot, right: mark.right, special: useSpecial, auto: autoHit, boost: moment.boost, hit, swung, ouch, foeHp: cur.foeHp, hearts: cur.hearts, ended });
     if (!ended) continue;
     const trainer = (phase as Phase) === 'trainer';
     results.push({ foe: cur.foe, trainer, outcome: ended, questions: cur.questions, rights: cur.rights });
