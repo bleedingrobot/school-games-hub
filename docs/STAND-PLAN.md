@@ -26,5 +26,5 @@ James's third pick from the real-life games idea page (https://claude.ai/artifac
 - Migration `20261129084320_classlive_stand.sql`: activity row, 2 trophies.
 - Bella: `LINES.standThink/standAllIn/standCount/standReveal/standEnd`, `STAND_SIGN_LINES`, `HOWTO.stand`.
 - Test `shared/classlive/stand.test.ts`; pretend pupils in `pretendClass.ts` (`standBot`).
-- Art: picker tile `pick/stand` and backdrop `stand/back` (`docs/stand-art/config.json`); until painted the tile falls back to Maths Mingle's and the backdrop to `back/star-sky`. Music falls back to Hill's track until `stand` and `stand-hot` are made.
+- Art: picker tile `pick/stand` and backdrop `stand/back`, painted 29 Nov 2026 (`docs/stand-art/config.json`, picks in `picks.json`). Music falls back to Hill's track until `stand` and `stand-hot` are made.
 - Preview: `npx vite --config vite.classlive-preview.config.ts`, `?pretend=20&pick=stand`.
