@@ -4,7 +4,7 @@ import { BOT_LEVELS, isBotLevel, isRanked } from './types';
 
 describe('game registry', () => {
   it('has chess, checkers, Wormholes & Black Holes, 101, Gem Keep, Power Clash, Maths Monsters, Dragon Maths, Clan Quest, Marble Rush, Bond Match, Mine Runner, Archery Challenge, Star Trader, Diamond Drop, Sky Isles, Royal Decree, Glyph Gates, the Order Up! activity, Goblin Storm, Circuit Racer and Class Showdown (Kingdom Keeper is off, kept for teachers)', () => {
-    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space', '101', 'gem-keep', 'power-clash', 'monsters', 'dragon-maths', 'clan-quest', 'marble', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'decree', 'robin', 'pipi', 'beanstalk', 'korora', 'tui', 'weka', 'parrot', 'hop', 'lizard', 'pigeon', 'swamphen', 'toonflap', 'glyph', 'orderup', 'goblinstorm', 'circuit', 'showdown', 'classlive', 'starweb']);
+    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space', '101', 'gem-keep', 'power-clash', 'monsters', 'dragon-maths', 'clan-quest', 'marble', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'decree', 'robin', 'pipi', 'beanstalk', 'korora', 'tui', 'weka', 'parrot', 'hop', 'lizard', 'pigeon', 'swamphen', 'toonflap', 'glyph', 'orderup', 'goblinstorm', 'circuit', 'showdown', 'classlive', 'starweb', 'bonkers']);
   });
 
   it('shows Power Clash on the dashboard while the switch is on', () => {
@@ -41,9 +41,9 @@ describe('game registry', () => {
   });
 
   it('the games with a teacher switch and teacher parts say so themselves', () => {
-    expect(ALL_GAMES.filter((g) => g.teacherSwitch).map((g) => g.id)).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'decree', 'robin', 'pipi', 'beanstalk', 'korora', 'tui', 'weka', 'parrot', 'hop', 'lizard', 'pigeon', 'swamphen', 'toonflap', 'glyph', 'orderup', 'goblinstorm', 'circuit', 'showdown', 'classlive', 'starweb', 'kingdom', 'bonkers']);
+    expect(ALL_GAMES.filter((g) => g.teacherSwitch).map((g) => g.id)).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'decree', 'robin', 'pipi', 'beanstalk', 'korora', 'tui', 'weka', 'parrot', 'hop', 'lizard', 'pigeon', 'swamphen', 'toonflap', 'glyph', 'orderup', 'goblinstorm', 'circuit', 'showdown', 'classlive', 'starweb', 'bonkers', 'kingdom']);
     // The teacher contract (docs/TEACHER-VIEW-PLAN.md, stage 3).
-    expect(ALL_GAMES.filter((g) => g.teacher).map((g) => g.id)).toEqual(['space', 'gem-keep', 'monsters', 'dragon-maths', 'clan-quest', 'marble', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'decree', 'robin', 'pipi', 'beanstalk', 'korora', 'tui', 'weka', 'parrot', 'hop', 'lizard', 'pigeon', 'swamphen', 'toonflap', 'glyph', 'orderup', 'goblinstorm', 'circuit', 'showdown', 'classlive', 'starweb', 'kingdom', 'bonkers']);
+    expect(ALL_GAMES.filter((g) => g.teacher).map((g) => g.id)).toEqual(['space', 'gem-keep', 'monsters', 'dragon-maths', 'clan-quest', 'marble', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'decree', 'robin', 'pipi', 'beanstalk', 'korora', 'tui', 'weka', 'parrot', 'hop', 'lizard', 'pigeon', 'swamphen', 'toonflap', 'glyph', 'orderup', 'goblinstorm', 'circuit', 'showdown', 'classlive', 'starweb', 'bonkers', 'kingdom']);
   });
 
   it('finds games by id', () => {
