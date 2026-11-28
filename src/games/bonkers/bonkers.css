@@ -325,7 +325,7 @@
 .bq-granny--fly .bq-granny__face { font-size: clamp(2.6rem, 6dvh, 3.8rem); }
 .bq-granny--fly .bq-granny__bubble { font-size: 0.98rem; }
 .bq-home__me { position: relative; align-self: center; }
-.bq-home__figure { display: block; font-size: clamp(50px, 12dvh, 130px); line-height: 1; animation: bq-breathe 2s ease-in-out infinite; transform-origin: 50% 100%; }
+.bq-home__figure { display: block; font-size: clamp(46px, 10dvh, 130px); line-height: 1; animation: bq-breathe 2s ease-in-out infinite; transform-origin: 50% 100%; }
 .bq-home__figure::after { content: ''; position: absolute; z-index: -1; left: 10%; right: 10%; bottom: -0.05em; height: 0.18em; background: radial-gradient(ellipse, rgba(0, 0, 0, 0.35), transparent 70%); }
 .bq-home__lvl {
   position: absolute; top: 4%; right: -34px; width: 64px; height: 64px; display: grid; place-items: center;
@@ -361,14 +361,14 @@
 .bq-quest {
   position: relative; overflow: hidden; font: inherit; color: inherit; cursor: pointer; text-align: center;
   display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 6px;
-  min-height: clamp(230px, 40dvh, 360px); padding: 10px; box-sizing: border-box;
+  min-height: clamp(200px, 32dvh, 340px); padding: 10px; box-sizing: border-box;
   border: 5px solid #fff; border-radius: 26px; box-shadow: 0 8px 0 rgba(0, 0, 0, 0.25);
   transition: transform 0.15s; animation: bq-pop 0.45s ease-out both;
 }
 .bq-quest:hover:not(:disabled), .bq-quest:focus-visible { transform: translateY(-5px) rotate(-1deg) scale(1.02); }
 .bq-quest:disabled { opacity: 0.65; cursor: default; }
 .bq-quest__zone { align-self: flex-start; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #fff; background: rgba(43, 33, 64, 0.75); border-radius: 999px; padding: 2px 10px; }
-.bq-quest__face { font-size: clamp(42px, 8dvh, 84px); line-height: 1; animation: bq-bounce 1.6s ease-in-out infinite; }
+.bq-quest__face { font-size: clamp(40px, 7dvh, 84px); line-height: 1; animation: bq-bounce 1.6s ease-in-out infinite; }
 .bq-quest__face .bq-pic { height: 2em; }
 .bq-quest:hover .bq-quest__face { animation-duration: 0.6s; }
 .bq-quest__words { display: flex; flex-direction: column; background: rgba(255, 255, 255, 0.92); border-radius: 14px; padding: 6px 10px; width: 100%; box-sizing: border-box; }
