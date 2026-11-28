@@ -202,19 +202,21 @@ export function Inn({ loaded, busy, note, onQuest, onChangeLook, onShop, onBook 
           <StarBar p={p} />
           <LevelRoad level={p.level} />
           <GearRow p={p} />
-          <div className="bq-home__more">
-            <button type="button" className="bq-btn bq-btn--small bq-btn--shop" onClick={onShop}>🛍️ Sticker shop <span>🏷️ {p.stickers}</span></button>
-            <button type="button" className="bq-btn bq-btn--small bq-btn--soft" onClick={onBook}>📖 Monster Book</button>
-          </div>
           <button type="button" className="bq-link" onClick={onChangeLook}>Change your look</button>
         </div>
       </div>
       <div className="bq-home__go">
         {loaded.season && <SeasonTimeline season={loaded.season} />}
+        <div className="bq-home__row">
+        <div className="bq-home__more">
+          <button type="button" className="bq-btn bq-btn--small bq-btn--shop" onClick={onShop}>🛍️ Sticker shop <span>🏷️ {p.stickers}</span></button>
+          <button type="button" className="bq-btn bq-btn--small bq-btn--book" onClick={onBook}>📖 Monster Book</button>
+        </div>
         <h2 className="bq-h2 bq-h2--banner">
           Today’s quests
           <span className="bq-waiting">{loaded.waiting === null ? 'Unlimited today' : `${loaded.waiting} adventure${loaded.waiting === 1 ? '' : 's'} waiting`}</span>
         </h2>
+        </div>
         <div className="bq-quests">
           {loaded.quests.map((q, i) => {
             const zone = zoneById(q.zone);
