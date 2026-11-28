@@ -3,7 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { parseFocus } from '../../../shared/maths/focus';
 import type { FactStats } from '../../../shared/maths/leitner';
-import { unplayed, type KeptAdventure, type Saved } from '../../../shared/bonkers/server';
+import { unplayed, type BossState, type KeptAdventure, type Saved } from '../../../shared/bonkers/server';
 import { isUnlimitedFor } from '../../../shared/unlimited';
 import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { userIdFromToken } from '../_shared/signIn';
@@ -93,5 +93,7 @@ Deno.serve(
       const { error } = await admin.rpc('game_progress_changed', { player, game: 'bonkers' });
       if (error) console.error(`bonkers: achievements failed (${error.code ?? 'unknown'})`);
     },
+    boss: (player, key, add, finishing) =>
+      call<BossState | null>('bonkers_class_boss', { player, season: key.season, week: key.week, mega: key.mega, add, finishing }),
   }),
 );

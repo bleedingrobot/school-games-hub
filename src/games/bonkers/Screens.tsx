@@ -7,7 +7,7 @@ import { Pic, bossArt, chestArt, gearArt, grannyArt, heroArt, heroPickArt, homeA
 import { CLASS_INFO, CLASSES, GEAR, INNKEEPER, LOOKS, SLOTS, gearById, gearStats, type GearInfo, trainerFor, zoneById, type HeroClass, type Look } from '../../../shared/bonkers/content';
 import { MAX_LEVEL } from '../../../shared/bonkers/config';
 import { heroPower, replay, starsToTrainer, type Hero, type Progress } from '../../../shared/bonkers/engine';
-import type { AdventureView, FinishReply, LoadReply } from './backend';
+import type { AdventureView, ClassBoss, FinishReply, LoadReply } from './backend';
 import { nextBossWords, type BossStop, type SeasonView } from '../../../shared/bonkers/season';
 import { grannySays, levelTitle, questWords, xp } from './words';
 
@@ -139,7 +139,7 @@ function GearRow({ p }: { p: Progress }) {
 const SHORT_DAY = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 
 /** The season's boss road: a Friday boss each week and the mega boss on the last Friday. Tap a stop for its line. */
-function SeasonTimeline({ season }: { season: SeasonView }) {
+function SeasonTimeline({ season, boss }: { season: SeasonView; boss: ClassBoss | null }) {
   const [open, setOpen] = useState<number | null>(null);
   const pick = season.stops.find((s) => s.week === open) ?? season.stops.find((s) => s.state === 'today' || s.state === 'next') ?? null;
   const along = Math.min(100, Math.max(0, (100 * (season.day - 1)) / Math.max(1, season.days - 1)));
@@ -170,6 +170,7 @@ function SeasonTimeline({ season }: { season: SeasonView }) {
           ))}
         </ol>
       </div>
+      {boss && <BossBar boss={boss} />}
       {pick && (
         <p className="bq-season__note" aria-live="polite">
           <b>{pick.boss.emoji} {pick.boss.name}</b> {pick.kind === 'mega' ? '(the season’s mega boss)' : `(Friday, week ${pick.week})`}: {pick.boss.blurb}
@@ -177,6 +178,41 @@ function SeasonTimeline({ season }: { season: SeasonView }) {
         </p>
       )}
     </section>
+  );
+}
+
+/** How far the class has dented this week's boss (B.3). */
+function BossBar({ boss }: { boss: ClassBoss }) {
+  const pc = Math.min(100, Math.round((100 * boss.dealt) / Math.max(1, boss.hp)));
+  return (
+    <div className={`bq-bossbar${boss.beaten ? ' bq-bossbar--beaten' : ''}${boss.mega ? ' bq-bossbar--mega' : ''}`}>
+      <span className="bq-bossbar__face" aria-hidden="true"><Pic src={bossArt(boss.name)} emoji={boss.emoji} /></span>
+      <div className="bq-bossbar__words">
+        <b>{boss.beaten ? `Your class beat ${boss.name}! 🎉` : `Your class vs ${boss.name}`}</b>
+        <div className="bq-bossbar__track" role="progressbar" aria-label={`Your class has dented ${boss.name}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pc}>
+          <div className="bq-bossbar__fill" style={{ width: `${pc}%` }} />
+        </div>
+        <span className="bq-bossbar__hint">
+          {boss.beaten ? 'Everyone who helped wins a trophy!' : boss.today ? (boss.fought ? `${pc}% done. Your classmates can finish it today!` : `${pc}% done. Boss fight today: finish it!`) : `${pc}% dented. Every right answer helps, then Friday's boss fight finishes it.`}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** Friday's boss fight, on top of the day's quests (it never uses up an adventure). */
+function BossQuest({ boss, busy, onGo }: { boss: ClassBoss; busy: boolean; onGo: () => void }) {
+  const pc = Math.min(100, Math.round((100 * boss.dealt) / Math.max(1, boss.hp)));
+  return (
+    <button type="button" className={`bq-quest bq-quest--boss${boss.mega ? ' bq-quest--mega' : ''}`} disabled={busy} onClick={onGo}>
+      <span className="bq-quest__zone">{boss.mega ? 'MEGA BOSS' : 'FRIDAY BOSS'}</span>
+      <span className="bq-quest__face" aria-hidden="true"><Pic src={bossArt(boss.name)} emoji={boss.emoji} /></span>
+      <span className="bq-quest__words">
+        <strong>{boss.name}</strong>
+        <span>Your class has dented it {pc}%. Win your boss fight to finish it! (It doesn’t use an adventure.)</span>
+      </span>
+      <span className="bq-quest__go">FIGHT!</span>
+    </button>
   );
 }
 
@@ -206,7 +242,7 @@ export function Inn({ loaded, busy, note, onQuest, onChangeLook, onShop, onBook 
         </div>
       </div>
       <div className="bq-home__go">
-        {loaded.season && <SeasonTimeline season={loaded.season} />}
+        {loaded.season && <SeasonTimeline season={loaded.season} boss={loaded.boss ?? null} />}
         <div className="bq-home__row">
         <div className="bq-home__more">
           <button type="button" className="bq-btn bq-btn--small bq-btn--shop" onClick={onShop}>🛍️ Sticker shop <span>🏷️ {p.stickers}</span></button>
@@ -218,6 +254,7 @@ export function Inn({ loaded, busy, note, onQuest, onChangeLook, onShop, onBook 
         </h2>
         </div>
         <div className="bq-quests">
+          {loaded.boss?.quest && <BossQuest boss={loaded.boss} busy={busy} onGo={() => onQuest(loaded.boss!.quest!.id)} />}
           {loaded.quests.map((q, i) => {
             const zone = zoneById(q.zone);
             const w = questWords(q);
@@ -264,11 +301,15 @@ export function Results({ before, result, current, onInn, offline }: {
       <h2 className="bq-h2 bq-h2--shout">{result.levelUp ? `Level ${result.levelUp}! ${levelTitle(result.levelUp)}!` : 'Adventure done!'}</h2>
       {result.levelUp && trainer && <p className="bq-big-line"><span aria-hidden="true">{trainer.emoji}</span> {trainer.beaten}</p>}
       {r.trainerMet && !r.trainerWon && trainer && <p className="bq-big-line"><span aria-hidden="true">{trainer.emoji}</span> {trainer.name} won this time. They’ll be waiting next adventure!</p>}
+      {current.adventure.quest.kind === 'boss' && result.boss?.beaten && (
+        <p className="bq-shout bq-shout--small">Your class beat {result.boss.name}!</p>
+      )}
       <ul className="bq-tally">
         <li>🥊 Fights won: <b>{won} of {fights.length}</b></li>
         <li>{r.questDone ? '✅' : '➖'} {w.title}: <b>{r.questDone ? 'done!' : 'not this time'}</b></li>
         <li>✨ XP: <b>+{xp(result.starsEarned)}</b></li>
         {result.stickers > 0 && <li>🏷️ Stickers: <b>+{result.stickers}</b></li>}
+        {result.bossDamage > 0 && result.boss && <li>👹 You dented {result.boss.name}: <b>{result.bossDamage}</b></li>}
       </ul>
       {result.gear.length > 0 && (
         <div className="bq-chest">

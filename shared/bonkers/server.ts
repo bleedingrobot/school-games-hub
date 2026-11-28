@@ -20,10 +20,10 @@ import type { FactAnswer } from '../maths/leitner';
 import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, type MathsContext, type PublicQuestion } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
 import { nzDate } from '../kit/dayArc';
-import { seasonView, type SeasonClock, type SeasonView } from './season';
-import { MAX_ANSWER_MS, QUESTIONS_AN_ADVENTURE } from './config';
+import { bossIndex, seasonView, type SeasonClock, type SeasonView } from './season';
+import { CLASS_BOSS, MAX_ANSWER_MS, QUESTIONS_AN_ADVENTURE } from './config';
 import {
-  adventuresWaiting, buyItem, emptyProgress, wearItem, isHeroClass, isLook, makeAdventure, parseQuest, questOptions, replay, rewardsFor,
+  adventuresWaiting, bossQuest, buyItem, emptyProgress, wearItem, isHeroClass, isLook, makeAdventure, parseQuest, questOptions, replay, rewardsFor,
   type Adventure, type Mark, type Progress, type Quest, type Rewards,
 } from './engine';
 
@@ -77,6 +77,37 @@ export interface BonkersServices {
   awardPoints(player: string, points: number, once: string): Promise<void>;
   /** Achievements are checked again. A failure is only logged. */
   progressChanged(player: string): Promise<void>;
+  /**
+   * The pupil's class boss for a season's week (B.3), after adding `add` damage. Without `finishing` the damage stops at
+   * CLASS_BOSS.chipShare of its health (only Friday's boss fights can finish it). Null: the player has no class.
+   */
+  boss(player: string, key: BossKey, add: number, finishing: boolean): Promise<BossState | null | 'busy'>;
+}
+
+export interface BossKey {
+  season: number;
+  week: number;
+  mega: boolean;
+}
+
+export interface BossState {
+  hp: number;
+  dealt: number;
+  beaten: boolean;
+}
+
+/** This week's class boss, as the home screen shows it. */
+export interface ClassBoss extends BossState {
+  name: string;
+  emoji: string;
+  mega: boolean;
+  week: number;
+  /** It's boss day (Friday). */
+  today: boolean;
+  /** This pupil has had today's boss fight. */
+  fought: boolean;
+  /** The boss fight on offer now (boss day, not fought yet, boss not beaten), or null. */
+  quest: Quest | null;
 }
 
 /** What's saved with a finished adventure, for the teacher and for checking. */
@@ -115,6 +146,8 @@ export interface LoadReply {
   current: AdventureView | null;
   /** The season's Friday bosses and mega boss, for the home screen (null: no season clock). */
   season: SeasonView | null;
+  /** This week's class boss (null: no season clock, or no class). */
+  boss: ClassBoss | null;
 }
 
 export interface AnswerReply {
@@ -129,6 +162,10 @@ export interface AnswerReply {
 export interface FinishReply extends Rewards {
   waiting: number | null;
   quests: [Quest, Quest];
+  /** The class boss after this adventure's damage (null: none). */
+  boss: ClassBoss | null;
+  /** Damage this adventure did to the class boss. */
+  bossDamage: number;
 }
 
 const busy = (): Reply => ({ status: 503, body: { error: 'The server is busy. Try again in a moment.', code: 'busy' } });
@@ -148,6 +185,22 @@ export function view(kept: KeptAdventure): AdventureView {
   return { seed: kept.seed, adventure: kept.adventure, marks: kept.marks, question: q ? publicQuestion(q, kept.marks.length) : null };
 }
 
+/** This week's class boss, after adding `add` damage (0 just looks). */
+async function classBoss(services: BonkersServices, player: string, settings: Settings, today: string, p: Progress, add = 0, finishing = false): Promise<ClassBoss | null | 'busy'> {
+  const v = seasonView(settings.season, today);
+  const stop = v?.stops.find((x) => x.week === v.week);
+  if (!v || !stop) return null;
+  const mega = stop.kind === 'mega';
+  const state = await services.boss(player, { season: v.number, week: v.week, mega }, Math.max(0, Math.round(add)), finishing);
+  if (state === 'busy' || !state) return state;
+  const today_ = stop.state === 'today';
+  const fought = p.bossDay === today;
+  return {
+    ...state, name: stop.boss.name, emoji: stop.boss.emoji, mega, week: v.week, today: today_, fought,
+    quest: today_ && !fought && !state.beaten && p.hero ? bossQuest(p.level, bossIndex(stop.boss)) : null,
+  };
+}
+
 const quests = (player: string, today: string, p: Progress) => questOptions(player, today, p.level, p.stats.adventures);
 
 export async function handleBonkers(services: BonkersServices, player: string, body: Record<string, unknown>): Promise<Reply> {
@@ -157,6 +210,7 @@ export async function handleBonkers(services: BonkersServices, player: string, b
   if (action === 'load') {
     const [settings, saved, current] = await Promise.all([services.settings(player), services.load(player), services.current(player)]);
     if (!settings || saved === 'busy' || current === 'busy') return busy();
+    const boss = await classBoss(services, player, settings, today, saved.progress);
     const reply: LoadReply = {
       enabled: settings.enabled,
       progress: saved.progress,
@@ -165,6 +219,7 @@ export async function handleBonkers(services: BonkersServices, player: string, b
       quests: quests(player, today, saved.progress),
       current: current?.open ? view(current) : null,
       season: seasonView(settings.season, today),
+      boss: boss === 'busy' ? null : boss,
     };
     return ok(reply);
   }
@@ -211,9 +266,15 @@ export async function handleBonkers(services: BonkersServices, player: string, b
     if (current?.open) return ok({ current: view(current) });
     const p = saved.progress;
     if (!p.hero) return { status: 409, body: { error: 'Pick your hero first.', code: 'no-hero' } };
-    if (!quests(player, today, p).some((q) => q.id === quest.id)) return { status: 409, body: { error: 'Granny Jetpack has new quests now. Pick again!', code: 'stale' } };
+    const isBoss = quest.kind === 'boss';
+    if (isBoss) {
+      const boss = await classBoss(services, player, settings, today, p);
+      if (boss === 'busy') return busy();
+      if (boss?.quest?.id !== quest.id) return { status: 409, body: { error: 'The boss fight isn’t on right now.', code: 'stale' } };
+    } else if (!quests(player, today, p).some((q) => q.id === quest.id)) return { status: 409, body: { error: 'Granny Jetpack has new quests now. Pick again!', code: 'stale' } };
     const waiting = adventuresWaiting(p, today);
-    if (!settings.unlimited && waiting < 1) return { status: 429, body: { error: 'That’s today’s adventure done. Come back next school day!', code: 'done-today' } };
+    // Friday's boss fight is extra: it never uses up an adventure.
+    if (!isBoss && !settings.unlimited && waiting < 1) return { status: 429, body: { error: 'That’s today’s adventure done. Come back next school day!', code: 'done-today' } };
     const context = await services.maths(player);
     if (context === 'busy') return busy();
     const seed = seedText(services.random);
@@ -221,11 +282,12 @@ export async function handleBonkers(services: BonkersServices, player: string, b
     // Always 4 choices: Years 2 to 4, quick on iPads.
     const questions = makeRunQuestions({ ...context, settings: { ...context.settings, multipleChoice: true } }, QUESTIONS_AN_ADVENTURE, services.random);
     if (!questions.length) return busy();
-    const progress: Progress = settings.unlimited ? p : { ...p, credits: waiting - 1, creditDay: today };
+    const progress: Progress = isBoss ? { ...p, bossDay: today } : settings.unlimited ? p : { ...p, credits: waiting - 1, creditDay: today };
     const kept = await services.start(player, saved.version, progress, { seed, adventure, questions });
     if (kept === 'busy') return busy();
     if (!kept) return { status: 409, body: { error: 'Try again.', code: 'again' } };
-    return ok({ current: view({ seed, adventure, questions, marks: [], open: true }), progress, waiting: settings.unlimited ? null : waiting - 1 });
+    const left = settings.unlimited ? null : isBoss ? waiting : waiting - 1;
+    return ok({ current: view({ seed, adventure, questions, marks: [], open: true }), progress, waiting: left });
   }
 
   if (action === 'answer') {
@@ -281,8 +343,15 @@ export async function handleBonkers(services: BonkersServices, player: string, b
     if (!done) return { status: 409, body: { error: 'That adventure is already saved.', code: 'ended' } };
     if (got.points > 0) await services.awardPoints(player, got.points, `bonkers:${seed}`);
     await services.progressChanged(player);
+    // Every right answer dents the class boss; a boss fight won hits it hard and can finish it.
+    const isBoss = kept.adventure.quest.kind === 'boss';
+    const rights = r.results.reduce((s, x) => s + x.rights, 0);
+    const bossDamage = rights + (isBoss && r.questDone ? CLASS_BOSS.finish : 0);
+    const boss = await classBoss(services, player, settings, today, got.progress, bossDamage, isBoss);
     const reply: FinishReply = {
       ...got,
+      boss: boss === 'busy' ? null : boss,
+      bossDamage: boss && boss !== 'busy' ? bossDamage : 0,
       waiting: settings.unlimited ? null : adventuresWaiting(got.progress, today),
       quests: quests(player, today, got.progress),
     };

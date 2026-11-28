@@ -111,7 +111,7 @@ export function BonkersGame({ backend, extra }: { backend: BonkersBackend; extra
   };
 
   const backToInn = (loaded: LoadReply, result: FinishReply) =>
-    setView({ at: 'inn', loaded: { ...loaded, progress: result.progress, waiting: result.waiting, quests: result.quests, current: null } });
+    setView({ at: 'inn', loaded: { ...loaded, progress: result.progress, waiting: result.waiting, quests: result.quests, current: null, boss: result.boss ?? loaded.boss } });
 
   return (
     <div className="bq-layer" data-testid="bonkers">

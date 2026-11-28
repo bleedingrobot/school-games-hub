@@ -8,7 +8,8 @@ import { useSound } from '../../sound';
 import { playSound, type GameSound } from '../sounds';
 import { useEnterGoes } from './keys';
 import { HeroFigure } from './Shop';
-import { Pic, chestArt, monsterArt, trainerArt, zoneBigArt } from './art';
+import { Pic, bossArt, chestArt, monsterArt, trainerArt, zoneBigArt } from './art';
+import { ALL_BOSSES } from '../../../shared/bonkers/season';
 import { CLASS_INFO, trainerFor, zoneById, type MonsterInfo } from '../../../shared/bonkers/content';
 import { autoSmash, monsterSwings, replay, type Blow, type Foe, type Progress } from '../../../shared/bonkers/engine';
 import { BOOSTS, FOE_HEARTS, HEARTS, POINTS, STARS, STICKERS_A_WIN, TRAINER_HEARTS } from '../../../shared/bonkers/config';
@@ -27,6 +28,10 @@ export function factText(parts: readonly string[], answer: number): string {
 
 /** How a foe looks: a zone monster, the zone's big one, or a trainer. */
 function looks(foe: Foe, zoneId: string, level: number): { emoji: string; art?: string; colour: string; line: string; ouch: string } {
+  if (foe.id.startsWith('boss-')) {
+    const b = ALL_BOSSES[Number(foe.id.slice(5))];
+    return { emoji: b?.emoji ?? '👹', art: b ? bossArt(b.name) : undefined, colour: '#c04fd8', line: b?.blurb ?? 'You and whose class?', ouch: 'Noooo! Beaten by a whole class!' };
+  }
   if (foe.id.startsWith('trainer-')) {
     const t = trainerFor(level);
     return { emoji: t?.emoji ?? '🏋️', art: t ? trainerArt(t.to) : undefined, colour: t?.colour ?? '#888', line: t?.line ?? 'Fight me!', ouch: t?.beaten ?? 'Well done!' };
