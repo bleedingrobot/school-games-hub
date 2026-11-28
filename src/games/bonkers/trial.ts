@@ -28,12 +28,20 @@ export function trialBackend({ storageKey }: { storageKey: string }) {
     }
   };
   // The preview's season: started 9 days ago, so the timeline shows one Friday boss gone and the next coming.
+  // "Pretend it's Friday" (a preview tool): the clock jumps to the coming Friday, 11am NZ, so the boss fight is on.
+  let friday = false;
+  const nextFriday = () => {
+    const d = new Date(Date.now() + 13 * 3_600_000);
+    const add = (5 - d.getUTCDay() + 7) % 7;
+    return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + add, -2);
+  };
+  const clock = () => (friday ? nextFriday() : Date.now());
   const previewSeason = () => ({ start: new Date(Date.now() - 9 * 86_400_000 + 13 * 3_600_000).toISOString().slice(0, 10), days: 35 });
   // The preview's "Unlimited today": on, so testers can play adventure after adventure.
   let unlimited = true;
   const backend = fromServer(async (body) => {
     data = read();
-    return handleBonkers(memoryServices({ data, settings: () => ({ enabled: true, unlimited, season: previewSeason() }), changed: write }), PUPIL, body);
+    return handleBonkers(memoryServices({ data, now: clock, settings: () => ({ enabled: true, unlimited, season: previewSeason() }), changed: write }), PUPIL, body);
   });
 
   const progress = (): Progress => data.players[PUPIL]?.progress ?? emptyProgress();
@@ -59,6 +67,10 @@ export function trialBackend({ storageKey }: { storageKey: string }) {
     stickers: () => {
       const p = progress();
       setProgress({ ...p, stickers: p.stickers + 50 });
+    },
+    /** The clock jumps to Friday, the class boss's day (or back). */
+    setFriday: (on: boolean) => {
+      friday = on;
     },
     setUnlimited: (on: boolean) => {
       unlimited = on;
