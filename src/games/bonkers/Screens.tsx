@@ -3,13 +3,14 @@ import { useState } from 'react';
 import { useEnterGoes } from './keys';
 import { HeroFigure } from './Shop';
 import { AchievementPop } from '../../achievements/AchievementPop';
-import { Pic, bossArt, chestArt, gearArt, grannyArt, heroArt, heroPickArt, homeArt, monsterArt, zoneArt } from './art';
-import { CLASS_INFO, CLASSES, GEAR, INNKEEPER, LOOKS, SLOTS, gearById, gearStats, type GearInfo, trainerFor, zoneById, type HeroClass, type Look } from '../../../shared/bonkers/content';
+import { Pic, bossArt, chestArt, gearArt, heroArt, heroPickArt, homeArt, monsterArt, zoneArt } from './art';
+import { CLASS_INFO, CLASSES, GEAR, LOOKS, SLOTS, gearById, gearStats, type GearInfo, trainerFor, zoneById, type HeroClass, type Look } from '../../../shared/bonkers/content';
 import { MAX_LEVEL } from '../../../shared/bonkers/config';
 import { heroPower, replay, starsToTrainer, type Hero, type Progress } from '../../../shared/bonkers/engine';
 import type { AdventureView, ClassBoss, FinishReply, LoadReply } from './backend';
 import { nextBossWords, type BossStop, type SeasonView } from '../../../shared/bonkers/season';
-import { grannySays, levelTitle, questWords, xp } from './words';
+import { GRANNY, grannySays, levelTitle, questWords, xp } from './words';
+import { Granny } from './Granny';
 
 const LOOK_WORDS: Record<Look, string> = { boy: 'Boy', girl: 'Girl', animal: 'Animal' };
 
@@ -30,7 +31,7 @@ export function HeroPick({ hero, busy, onPick }: { hero: Hero | null; busy: bool
   return (
     <Screen label="Pick your hero" pic={heroPickArt()} className="bq-hero-pick">
       <h1 className="bq-shout">{hero ? 'A new look!' : 'Pick your hero!'}</h1>
-      <Granny line={hero ? 'A new look? Lovely! Your class stays the same all season.' : `Welcome home! I’m ${INNKEEPER.name}. Pick your hero, dearie. You keep them all season!`} />
+      <Granny line={hero ? GRANNY.newLook : GRANNY.pick} />
       <div className="bq-classes">
         {CLASSES.map((c) => {
           const ci = CLASS_INFO[c];
@@ -60,15 +61,6 @@ export function HeroPick({ hero, busy, onPick }: { hero: Hero | null; busy: bool
         {info ? `Be the ${info.names[look]}!` : 'Pick a hero'}
       </button>
     </Screen>
-  );
-}
-
-function Granny({ line, className }: { line: string; className?: string }) {
-  return (
-    <div className={`bq-granny${className ? ` ${className}` : ''}`}>
-      <span className="bq-granny__face" aria-hidden="true">{grannyArt() ? <Pic src={grannyArt()} emoji="" /> : <>{INNKEEPER.emoji}<span className="bq-granny__jet">🚀</span></>}</span>
-      <p className="bq-granny__bubble" aria-live="polite"><b>{INNKEEPER.name}:</b> {line}</p>
-    </div>
   );
 }
 
@@ -304,6 +296,7 @@ export function Results({ before, result, current, onInn, offline }: {
       {current.adventure.quest.kind === 'boss' && result.boss?.beaten && (
         <p className="bq-shout bq-shout--small">Your class beat {result.boss.name}!</p>
       )}
+      {before.stats.adventures === 0 && <Granny line={GRANNY.tipResults} className="bq-granny--tip" />}
       <ul className="bq-tally">
         <li>🥊 Fights won: <b>{won} of {fights.length}</b></li>
         <li>{r.questDone ? '✅' : '➖'} {w.title}: <b>{r.questDone ? 'done!' : 'not this time'}</b></li>
