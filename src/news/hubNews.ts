@@ -28,7 +28,7 @@ export const HUB_NEWS: NewsItem[] = [
     date: '2026-11-29',
     emoji: '🥄',
     title: 'New game: Smash Quest',
-    text: 'Pick a silly hero, smash wacky monsters with maths, and beat the Friday boss with your class!',
+    text: 'Pick a hero, smash wacky monsters with maths, and beat the Friday boss with your class!',
     game: 'bonkers',
   },
   {
