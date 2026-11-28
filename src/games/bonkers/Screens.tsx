@@ -1,7 +1,7 @@
 /** Smash Quest's calm screens: picking a hero, home, and what an adventure earned. */
 import { useState } from 'react';
 import { useEnterGoes } from './keys';
-import { Pic, bossArt, chestArt, gearArt, grannyArt, heroArt, monsterArt } from './art';
+import { Pic, bossArt, chestArt, gearArt, grannyArt, heroArt, heroPickArt, homeArt, monsterArt, zoneArt } from './art';
 import { CLASS_INFO, CLASSES, GEAR, INNKEEPER, LOOKS, SLOTS, gearById, gearStats, type GearInfo, trainerFor, zoneById, type HeroClass, type Look } from '../../../shared/bonkers/content';
 import { MAX_LEVEL } from '../../../shared/bonkers/config';
 import { heroPower, replay, starsToTrainer, type Hero, type Progress } from '../../../shared/bonkers/engine';
@@ -11,12 +11,23 @@ import { grannySays, levelTitle, questWords, xp } from './words';
 
 const LOOK_WORDS: Record<Look, string> = { boy: 'Boy', girl: 'Girl', animal: 'Animal' };
 
+/** A calm screen filling the window: its painting edge to edge, the content on top (docs/FULL-WINDOW.md). */
+function Screen({ label, pic, className, children }: { label: string; pic: string | undefined; className?: string; children: React.ReactNode }) {
+  return (
+    <section className={`bq-screen${className ? ` ${className}` : ''}`} aria-label={label}>
+      <div className="bq-stage__bg" style={pic ? { background: `center bottom / cover no-repeat url(${pic})` } : undefined} aria-hidden="true" />
+      <div className="bq-screen__inner">{children}</div>
+    </section>
+  );
+}
+
 export function HeroPick({ hero, busy, onPick }: { hero: Hero | null; busy: boolean; onPick: (cls: HeroClass, look: Look) => void }) {
   const [cls, setCls] = useState<HeroClass | null>(hero?.cls ?? null);
   const [look, setLook] = useState<Look>(hero?.look ?? 'girl');
   const info = cls ? CLASS_INFO[cls] : null;
   return (
-    <section className="bq-hero-pick" aria-label="Pick your hero">
+    <Screen label="Pick your hero" pic={heroPickArt()} className="bq-hero-pick">
+      <h1 className="bq-shout">{hero ? 'A new look!' : 'Pick your hero!'}</h1>
       <Granny line={hero ? 'A new look? Lovely! Your class stays the same all season.' : `Welcome home! I’m ${INNKEEPER.name}. Pick your hero, dearie. You keep them all season!`} />
       <div className="bq-classes">
         {CLASSES.map((c) => {
@@ -28,6 +39,7 @@ export function HeroPick({ hero, busy, onPick }: { hero: Hero | null; busy: bool
               aria-pressed={cls === c} disabled={locked} onClick={() => setCls(c)}
             >
               <span className="bq-class__emoji" aria-hidden="true"><Pic src={heroArt(c, look, 1)} emoji={ci.emoji[look]} /></span>
+              {cls === c && <span className="bq-class__tick" aria-hidden="true">✔</span>}
               <strong>{ci.names[look]}</strong>
               <span className="bq-class__blurb">{ci.blurb}</span>
               <span className="bq-class__move"><b>{ci.move.name}:</b> {ci.move.does}</span>
@@ -42,16 +54,16 @@ export function HeroPick({ hero, busy, onPick }: { hero: Hero | null; busy: bool
           </button>
         ))}
       </div>
-      <button type="button" className="bq-btn bq-btn--big" disabled={!cls || busy} onClick={() => cls && onPick(cls, look)}>
+      <button type="button" className="bq-btn bq-btn--big bq-btn--go" disabled={!cls || busy} onClick={() => cls && onPick(cls, look)}>
         {info ? `Be the ${info.names[look]}!` : 'Pick a hero'}
       </button>
-    </section>
+    </Screen>
   );
 }
 
-function Granny({ line }: { line: string }) {
+function Granny({ line, className }: { line: string; className?: string }) {
   return (
-    <div className="bq-granny">
+    <div className={`bq-granny${className ? ` ${className}` : ''}`}>
       <span className="bq-granny__face" aria-hidden="true">{grannyArt() ? <Pic src={grannyArt()} emoji="" /> : <>{INNKEEPER.emoji}<span className="bq-granny__jet">🚀</span></>}</span>
       <p className="bq-granny__bubble" aria-live="polite"><b>{INNKEEPER.name}:</b> {line}</p>
     </div>
@@ -112,7 +124,8 @@ function GearRow({ p }: { p: Progress }) {
         const g = GEAR.find((x) => x.slot === slot && x.tier === p.gear[slot]);
         return (
           <li key={slot} title={g?.name}>
-            <span className="bq-gear__icon" aria-hidden="true"><Pic src={g && gearArt(g.id)} emoji={g?.emoji ?? ''} /></span> {g?.name}
+            <span className="bq-gear__icon" aria-hidden="true"><Pic src={g && gearArt(g.id)} emoji={g?.emoji ?? ''} /></span>
+            <span className="bq-gear__name">{g?.name}</span>
             {g && <Stats g={g} />}
           </li>
         );
@@ -130,7 +143,7 @@ function SeasonTimeline({ season }: { season: SeasonView }) {
   const along = Math.min(100, Math.max(0, (100 * (season.day - 1)) / Math.max(1, season.days - 1)));
   const stopWords = (s: BossStop) => (s.state === 'beaten-time' ? 'Been and gone' : s.state === 'today' ? 'Today!' : SHORT_DAY(s.date));
   return (
-    <section className="bq-card bq-season" aria-label={`Season ${season.number}, week ${season.week} of ${season.weeks}`}>
+    <section className="bq-panel bq-season" aria-label={`Season ${season.number}, week ${season.week} of ${season.weeks}`}>
       <div className="bq-season__top">
         <h2 className="bq-season__title">Season {season.number} <span>Week {season.week} of {season.weeks}</span></h2>
         <p className="bq-season__next">{nextBossWords(season)}</p>
@@ -170,42 +183,56 @@ export function Inn({ loaded, busy, note, onQuest, onChangeLook }: {
 }) {
   const p = loaded.progress;
   const out = loaded.waiting === 0;
+  const ci = p.hero ? CLASS_INFO[p.hero.cls] : null;
   return (
-    <section className="bq-inn" aria-label="Home">
-      <Granny line={grannySays(p, loaded.waiting)} />
-      {loaded.season && <SeasonTimeline season={loaded.season} />}
-      <div className="bq-card bq-inn__hero">
-        {p.hero && <HeroBadge hero={p.hero} p={p} />}
-        <StarBar p={p} />
-        <LevelRoad level={p.level} />
-        <GearRow p={p} />
-        <button type="button" className="bq-link" onClick={onChangeLook}>Change your look</button>
+    <Screen label="Home" pic={homeArt()} className="bq-home">
+      <div className="bq-home__hero" style={ci ? ({ '--bq-c': ci.colour } as React.CSSProperties) : undefined}>
+        <Granny line={grannySays(p, loaded.waiting)} className="bq-granny--fly" />
+        {p.hero && ci && (
+          <div className="bq-home__me">
+            <span className="bq-home__figure" aria-hidden="true"><Pic src={heroArt(p.hero.cls, p.hero.look, p.level)} emoji={ci.emoji[p.hero.look]} /></span>
+            <span className="bq-home__lvl" aria-hidden="true">Lv {p.level}</span>
+          </div>
+        )}
+        <div className="bq-panel bq-inn__hero">
+          {p.hero && <HeroBadge hero={p.hero} p={p} />}
+          <StarBar p={p} />
+          <LevelRoad level={p.level} />
+          <GearRow p={p} />
+          <button type="button" className="bq-link" onClick={onChangeLook}>Change your look</button>
+        </div>
       </div>
-      <h2 className="bq-h2">
-        Today’s quests
-        <span className="bq-waiting">{loaded.waiting === null ? 'Unlimited today' : `${loaded.waiting} adventure${loaded.waiting === 1 ? '' : 's'} waiting`}</span>
-      </h2>
-      <div className="bq-quests">
-        {loaded.quests.map((q) => {
-          const zone = zoneById(q.zone);
-          const w = questWords(q);
-          const mon = q.kind === 'big' ? zone?.big : q.kind === 'hunt' ? zone?.monsters[q.monster] : zone?.monsters[0];
-          return (
-            <button
-              key={q.id} type="button" className="bq-quest" disabled={busy || out} onClick={() => onQuest(q.id)}
-              style={{ background: `linear-gradient(${zone?.sky[0]}, ${zone?.sky[1]} 70%, ${zone?.ground} 70%)` }}
-            >
-              <span className="bq-quest__face" aria-hidden="true"><Pic src={mon && monsterArt(mon.id)} emoji={mon?.emoji ?? ''} /></span>
-              <span className="bq-quest__zone">{zone?.name}</span>
-              <strong>{w.title}</strong>
-              <span>{w.what}</span>
-              <span className="bq-quest__go">{out ? 'Tomorrow!' : 'Go!'}</span>
-            </button>
-          );
-        })}
+      <div className="bq-home__go">
+        {loaded.season && <SeasonTimeline season={loaded.season} />}
+        <h2 className="bq-h2 bq-h2--banner">
+          Today’s quests
+          <span className="bq-waiting">{loaded.waiting === null ? 'Unlimited today' : `${loaded.waiting} adventure${loaded.waiting === 1 ? '' : 's'} waiting`}</span>
+        </h2>
+        <div className="bq-quests">
+          {loaded.quests.map((q, i) => {
+            const zone = zoneById(q.zone);
+            const w = questWords(q);
+            const mon = q.kind === 'big' ? zone?.big : q.kind === 'hunt' ? zone?.monsters[q.monster] : zone?.monsters[0];
+            const pic = zone && zoneArt(zone.id);
+            return (
+              <button
+                key={q.id} type="button" className="bq-quest" disabled={busy || out} onClick={() => onQuest(q.id)}
+                style={{ background: pic ? `center bottom / cover no-repeat url(${pic})` : `linear-gradient(${zone?.sky[0]}, ${zone?.sky[1]} 70%, ${zone?.ground} 70%)`, animationDelay: `${i * 0.15}s` }}
+              >
+                <span className="bq-quest__zone">{zone?.name}</span>
+                <span className="bq-quest__face" aria-hidden="true"><Pic src={mon && monsterArt(mon.id)} emoji={mon?.emoji ?? ''} /></span>
+                <span className="bq-quest__words">
+                  <strong>{w.title}</strong>
+                  <span>{w.what}</span>
+                </span>
+                <span className="bq-quest__go">{out ? 'Tomorrow!' : 'GO!'}</span>
+              </button>
+            );
+          })}
+        </div>
+        {note && <p className="bq-note" role="alert">{note}</p>}
       </div>
-      {note && <p className="bq-note" role="alert">{note}</p>}
-    </section>
+    </Screen>
   );
 }
 
@@ -217,8 +244,13 @@ export function Results({ before, result, current, onInn }: { before: Progress; 
   const trainer = trainerFor(before.level);
   const w = questWords(current.adventure.quest);
   return (
-    <section className="bq-results bq-card" aria-label="Adventure done">
-      <h2 className="bq-h2">{result.levelUp ? `Level ${result.levelUp}! ${levelTitle(result.levelUp)}!` : 'Adventure done!'}</h2>
+    <Screen label="Adventure done" pic={homeArt()} className="bq-results-screen">
+      <div className="bq-rays bq-rays--gold" aria-hidden="true" />
+      {result.gear.length === 0 && (
+        <p className="bq-results__chest" aria-hidden="true"><Pic src={chestArt(true)} emoji="🧰" /></p>
+      )}
+      <div className="bq-results bq-panel">
+      <h2 className="bq-h2 bq-h2--shout">{result.levelUp ? `Level ${result.levelUp}! ${levelTitle(result.levelUp)}!` : 'Adventure done!'}</h2>
       {result.levelUp && trainer && <p className="bq-big-line"><span aria-hidden="true">{trainer.emoji}</span> {trainer.beaten}</p>}
       {r.trainerMet && !r.trainerWon && trainer && <p className="bq-big-line"><span aria-hidden="true">{trainer.emoji}</span> {trainer.name} won this time. They’ll be waiting next adventure!</p>}
       <ul className="bq-tally">
@@ -246,7 +278,8 @@ export function Results({ before, result, current, onInn }: { before: Progress; 
       )}
       {result.points > 0 && <p className="bq-points">+{result.points} hub points</p>}
       <StarBar p={result.progress} />
-      <button type="button" className="bq-btn bq-btn--big" onClick={onInn}>Back home</button>
-    </section>
+      <button type="button" className="bq-btn bq-btn--big bq-btn--go" onClick={onInn}>Back home</button>
+      </div>
+    </Screen>
   );
 }
