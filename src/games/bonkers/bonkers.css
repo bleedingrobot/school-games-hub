@@ -457,3 +457,51 @@
   .bq-layer *, .bq-layer *::before, .bq-layer *::after { animation: none !important; transition: none !important; }
   .bq-flash, .bq-splash, .bq-victory__confetti { display: none; }
 }
+
+/* ---- The hero with a hat and a pet (sticker shop, B.2) ---- */
+.bq-figure { position: relative; display: block; width: max-content; max-width: 100%; margin: 0 auto; }
+.bq-figure__hat { position: absolute; left: 50%; top: -0.32em; width: 0.95em; translate: -50% 0; rotate: -4deg; pointer-events: none; }
+.bq-figure__hat .bq-pic { height: auto; width: 100%; max-height: 0.8em; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.18)); }
+.bq-figure__hat--granny { top: -0.42em; }
+.bq-figure__pet { position: absolute; left: -0.45em; bottom: 0; pointer-events: none; animation: bq-pet 1.4s ease-in-out infinite; }
+.bq-figure__pet .bq-pic { height: 0.62em; }
+@keyframes bq-pet { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-0.08em) rotate(-5deg); } }
+.bq-fighter--hero .bq-figure__pet, .bq-versus__hero .bq-figure__pet { left: -0.55em; }
+
+.bq-btn--small { font-size: 0.95rem; padding: 6px 14px; }
+.bq-home__more { display: flex; flex-wrap: wrap; gap: 8px; }
+.bq-btn--shop { background: #7a4fd8; box-shadow: 0 4px 0 #5b36ad; }
+.bq-btn--shop span { background: rgba(255, 255, 255, 0.25); border-radius: 999px; padding: 0 8px; margin-left: 4px; }
+
+/* ---- Sticker shop ---- */
+.bq-shop .bq-screen__inner, .bq-book .bq-screen__inner { align-items: center; }
+.bq-shop__grid { display: grid; grid-template-columns: minmax(220px, 340px) minmax(0, 640px); gap: 16px 24px; align-items: end; width: 100%; justify-content: center; }
+.bq-shop__me { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.bq-shop__figure { font-size: clamp(56px, 13dvh, 140px); line-height: 1; padding-top: 0.3em; }
+.bq-shop__stickers { margin: 0; font-size: 1.3rem; background: rgba(43, 33, 64, 0.8); color: #fff; border-radius: 999px; padding: 4px 18px; }
+.bq-shop__trying { margin: 0; background: #fff; border-radius: 999px; padding: 2px 12px; font-weight: 700; }
+.bq-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+.bq-tab { font: inherit; font-weight: 800; border: 0; border-radius: 999px; padding: 6px 16px; background: var(--bq-soft); color: var(--bq-ink); cursor: pointer; }
+.bq-tab--on { background: var(--bq-sun); box-shadow: 0 3px 0 #d9a91f; }
+.bq-shop__items { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+.bq-item { display: flex; flex-direction: column; align-items: center; gap: 4px; background: #fff; border-radius: 16px; padding: 8px 6px; border: 3px solid transparent; box-shadow: 0 3px 0 var(--bq-line); }
+.bq-item--trying { border-color: var(--bq-orange); }
+.bq-item--wearing { border-color: var(--bq-green); }
+.bq-item__look { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.bq-item__pic { font-size: 2.3rem; line-height: 1; transition: transform 0.15s; }
+.bq-item__look:hover .bq-item__pic { transform: scale(1.12) rotate(-4deg); }
+.bq-item__name { font-weight: 700; font-size: 0.9rem; text-align: center; line-height: 1.15; }
+.bq-shop__home { margin-top: 4px; }
+
+/* ---- Monster Book ---- */
+.bq-book__count { margin: 0; font-size: 1.15rem; background: rgba(43, 33, 64, 0.8); color: #fff; border-radius: 999px; padding: 4px 18px; }
+.bq-book__zone { width: min(1000px, 100%); }
+.bq-book__title { margin: 0 0 8px; font-size: 1.2rem; }
+.bq-book__pages { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.bq-page { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; background: #fff; border-radius: 16px; padding: 8px; box-shadow: 0 3px 0 var(--bq-line); }
+.bq-page--big { background: #fff4d6; }
+.bq-page__pic { font-size: 2.8rem; line-height: 1; }
+.bq-page--unknown .bq-page__pic { filter: brightness(0) opacity(0.35); }
+.bq-page__n { font-size: 0.85rem; font-weight: 700; color: #6a3fb0; }
+.bq-page__line { font-size: 0.8rem; font-style: italic; opacity: 0.75; }
+@media (max-width: 700px) { .bq-shop__grid { grid-template-columns: 1fr; } }

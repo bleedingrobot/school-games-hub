@@ -11,6 +11,7 @@
  *           fights and only the question to show now;
  *   answer  marks the next question once (in order), with the special move if it was used, records it, and sends the
  *           next question; the browser replays the marks with the same rules (engine.ts) to show the fight;
+ *   buy     spends stickers on a sticker-shop hat or pet (B.2) and wears it; wear puts on or takes off one already bought;
  *   finish  replays the whole adventure from the server's marks, saves the stars, level, gear and stickers, gives points.
  *
  * Nothing that counts comes from the browser: not the marks, the damage, the stars or the chest.
@@ -22,7 +23,7 @@ import { nzDate } from '../kit/dayArc';
 import { seasonView, type SeasonClock, type SeasonView } from './season';
 import { MAX_ANSWER_MS, QUESTIONS_AN_ADVENTURE } from './config';
 import {
-  adventuresWaiting, emptyProgress, isHeroClass, isLook, makeAdventure, parseQuest, questOptions, replay, rewardsFor,
+  adventuresWaiting, buyItem, emptyProgress, wearItem, isHeroClass, isLook, makeAdventure, parseQuest, questOptions, replay, rewardsFor,
   type Adventure, type Mark, type Progress, type Quest, type Rewards,
 } from './engine';
 
@@ -181,6 +182,21 @@ export async function handleBonkers(services: BonkersServices, player: string, b
     // The class is kept all season (James, 27 Nov 2026); the look can change.
     if (had && had.cls !== cls) return { status: 409, body: { error: 'Your hero class stays the same all season.', code: 'locked' } };
     const progress: Progress = { ...saved.progress, hero: { cls, look } };
+    const done = await services.saveHero(player, saved.version, progress);
+    if (done === 'busy') return busy();
+    if (!done) return { status: 409, body: { error: 'Try again.', code: 'again' } };
+    return ok({ progress });
+  }
+
+  if (action === 'buy' || action === 'wear') {
+    const saved = await services.load(player);
+    if (saved === 'busy') return busy();
+    const kind = body.kind === 'hat' || body.kind === 'pet' ? body.kind : null;
+    const item = body.item === null ? null : typeof body.item === 'string' ? body.item : undefined;
+    const progress = action === 'buy'
+      ? (typeof item === 'string' ? buyItem(saved.progress, item) : null)
+      : (kind && item !== undefined ? wearItem(saved.progress, kind, item) : null);
+    if (!progress) return { status: 409, body: { error: action === 'buy' ? 'Not enough stickers for that yet.' : 'That isn’t yours yet.', code: 'shop' } };
     const done = await services.saveHero(player, saved.version, progress);
     if (done === 'busy') return busy();
     if (!done) return { status: 409, body: { error: 'Try again.', code: 'again' } };

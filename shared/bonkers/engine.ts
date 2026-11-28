@@ -8,7 +8,7 @@ import {
   STICKERS_A_WIN, TRAINER_HEARTS, MONSTER_SWINGS, WRONG_HEARTS, TRAINER_HITS, AUTO_BONKS, AUTO_SHARE, BOOSTS, basePower, expectedGear, FIGHTS,
   QUESTIONS_AN_ADVENTURE,
 } from './config';
-import { CLASSES, GEAR, LOOKS, SLOTS, TOP_TIER, openZones, trainerFor, zoneById, type HeroClass, type Look, type Slot } from './content';
+import { CLASSES, GEAR, LOOKS, SLOTS, TOP_TIER, openZones, shopItem, trainerFor, zoneById, type HeroClass, type Look, type ShopKind, type Slot } from './content';
 
 // ---------------------------------------------------------------- progress
 
@@ -40,6 +40,12 @@ export interface Progress {
   credits: number;
   creditDay: string | null;
   stats: Stats;
+  /** The sticker shop (B.2): what's bought, and the hat and pet worn. Missing on saves from before the shop. */
+  owned?: string[];
+  hat?: string | null;
+  pet?: string | null;
+  /** The Monster Book (B.2): times each monster has been smashed, by id. Missing on saves from before the book. */
+  book?: Record<string, number>;
 }
 
 export const emptyProgress = (): Progress => ({
@@ -459,6 +465,10 @@ export function rewardsFor(before: Progress, r: Replay): Rewards {
   } else {
     p.stars = p.level >= MAX_LEVEL ? 0 : Math.min(need, p.stars + r.stars);
   }
+  // The Monster Book: every monster smashed this adventure gets a tick.
+  const book = { ...(before.book ?? {}) };
+  for (const f of fights) if (f.outcome === 'won') book[f.foe.id] = (book[f.foe.id] ?? 0) + 1;
+  p.book = book;
   const gear: string[] = [];
   const chests = (r.questDone ? 1 : 0) + (r.trainerWon ? 1 : 0);
   let extraStickers = 0;
@@ -476,4 +486,21 @@ export function rewardsFor(before: Progress, r: Replay): Rewards {
   p.stickers += stickers;
   const points = won * POINTS.fightWon + (r.questDone ? POINTS.quest : 0) + (r.trainerWon ? POINTS.trainer : 0);
   return { progress: p, starsEarned: r.stars, levelUp, gear, stickers, points };
+}
+
+/** Buys a shop item and wears it straight away. Null when it can't be bought (unknown, already owned, too few stickers). */
+export function buyItem(before: Progress, id: string): Progress | null {
+  const item = shopItem(id);
+  const owned = before.owned ?? [];
+  if (!item || owned.includes(item.id) || before.stickers < item.price) return null;
+  return { ...before, stickers: before.stickers - item.price, owned: [...owned, item.id], [item.kind]: item.id };
+}
+
+/** Wears an owned hat or pet, or takes it off (null). Null when it isn't owned. */
+export function wearItem(before: Progress, kind: ShopKind, id: string | null): Progress | null {
+  if (id !== null) {
+    const item = shopItem(id);
+    if (!item || item.kind !== kind || !(before.owned ?? []).includes(id)) return null;
+  }
+  return { ...before, [kind]: id };
 }
