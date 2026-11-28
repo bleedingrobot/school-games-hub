@@ -5,7 +5,7 @@
  */
 import type { AdventureView, AnswerReply, FinishReply, LoadReply, Reply } from '../../../shared/bonkers/server';
 import type { Progress } from '../../../shared/bonkers/engine';
-import type { HeroClass, Look } from '../../../shared/bonkers/content';
+import type { HeroClass, Look, ShopKind } from '../../../shared/bonkers/content';
 
 export type { AdventureView, AnswerReply, FinishReply, LoadReply };
 
@@ -22,6 +22,9 @@ export interface BonkersBackend {
   /** Marks the next answer once; asking again for the same slot gives the first mark. */
   answer(seed: string, slot: number, value: number, ms: number, special: boolean): Promise<AnswerReply>;
   finish(seed: string): Promise<FinishReply>;
+  /** The sticker shop: buy a hat or pet (and wear it), or wear one already bought (null takes it off). */
+  buy(item: string): Promise<Progress>;
+  wear(kind: ShopKind, item: string | null): Promise<Progress>;
   /** True for the preview's trial in the browser: nothing is saved, so no achievements or trophies to ask about. */
   offline?: boolean;
 }
@@ -50,5 +53,7 @@ export function fromServer(send: Send): BonkersBackend {
     start: async (quest) => (await ask({ action: 'start', quest })) as unknown as StartReply,
     answer: async (seed, slot, value, ms, special) => (await ask({ action: 'answer', seed, slot, value, ms, special })) as unknown as AnswerReply,
     finish: async (seed) => (await ask({ action: 'finish', seed })) as unknown as FinishReply,
+    buy: async (item) => ((await ask({ action: 'buy', item })) as { progress: Progress }).progress,
+    wear: async (kind, item) => ((await ask({ action: 'wear', kind, item })) as { progress: Progress }).progress,
   };
 }

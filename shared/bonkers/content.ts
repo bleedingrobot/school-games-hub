@@ -207,3 +207,40 @@ export const LEVEL_TITLES = ['', 'Brand New Hero', 'Puddle Splasher', 'Sock Both
 
 /** The innkeeper. */
 export const INNKEEPER = { name: 'Granny Jetpack', emoji: '👵🏼' };
+
+/**
+ * The sticker shop (stage B.2; James's brainstorm: hats and pets). Stickers come from fights won (1 each, 2 more with the
+ * Banana Peel) and full chests, so about 5 a day: the first hat on day 1, a golden crown after a few weeks. Bought for
+ * keeps (through New Season too); one hat and one pet worn at a time. Looks only: nothing here changes a fight.
+ */
+export type ShopKind = 'hat' | 'pet';
+export interface ShopItem {
+  id: string;
+  kind: ShopKind;
+  name: string;
+  emoji: string;
+  price: number;
+}
+
+export const SHOP: ShopItem[] = [
+  { id: 'hat-paper-crown', kind: 'hat', name: 'Paper Crown', emoji: '👑', price: 5 },
+  { id: 'hat-party', kind: 'hat', name: 'Party Hat', emoji: '🥳', price: 10 },
+  { id: 'hat-propeller', kind: 'hat', name: 'Propeller Cap', emoji: '🧢', price: 12 },
+  { id: 'hat-chef', kind: 'hat', name: 'Chef’s Hat', emoji: '👨‍🍳', price: 15 },
+  { id: 'hat-viking', kind: 'hat', name: 'Viking Helmet', emoji: '⛑️', price: 20 },
+  { id: 'hat-wizard', kind: 'hat', name: 'Wizard Hat', emoji: '🧙', price: 25 },
+  { id: 'hat-top-hat', kind: 'hat', name: 'Fancy Top Hat', emoji: '🎩', price: 30 },
+  { id: 'hat-unicorn', kind: 'hat', name: 'Unicorn Horn', emoji: '🦄', price: 40 },
+  { id: 'hat-golden-crown', kind: 'hat', name: 'Golden Crown', emoji: '👑', price: 60 },
+  { id: 'pet-pet-rock', kind: 'pet', name: 'Pet Rock', emoji: '🪨', price: 8 },
+  { id: 'pet-rubber-duck', kind: 'pet', name: 'Rubber Duck', emoji: '🦆', price: 15 },
+  { id: 'pet-hamster', kind: 'pet', name: 'Hamster Ball', emoji: '🐹', price: 20 },
+  { id: 'pet-flying-toast', kind: 'pet', name: 'Flying Toast', emoji: '🍞', price: 25 },
+  { id: 'pet-jelly-slime', kind: 'pet', name: 'Jelly Slime', emoji: '🟢', price: 35 },
+  { id: 'pet-baby-dragon', kind: 'pet', name: 'Baby Dragon', emoji: '🐉', price: 50 },
+];
+
+export const shopItem = (id: unknown): ShopItem | undefined => (typeof id === 'string' ? SHOP.find((x) => x.id === id) : undefined);
+
+/** Every monster the Monster Book has a page for, zone by zone (the big one last). */
+export const BOOK_MONSTERS: MonsterInfo[] = ZONES.flatMap((z) => [...z.monsters, z.big]);

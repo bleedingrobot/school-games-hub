@@ -22,6 +22,7 @@ function Tools({ reload }: { reload: () => void }) {
       <p>Only in this preview. Nothing is saved to the school. The questions are times tables here; at school they come from each pupil’s own focus.</p>
       <button type="button" onClick={() => { trial.tools.fillBar(); reload(); }}>Fill the star bar (meet the trainer)</button>
       <button type="button" onClick={() => { trial.tools.levelUp(); reload(); }}>Up a level</button>
+      <button type="button" onClick={() => { trial.tools.stickers(); reload(); }}>+50 stickers</button>
       <button type="button" onClick={() => { trial.tools.setUnlimited(!unlimited); setUnlimited(!unlimited); reload(); }}>
         {unlimited ? 'Adventures: unlimited (tap for 1 a day)' : 'Adventures: 1 a day (tap for unlimited)'}
       </button>

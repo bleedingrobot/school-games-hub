@@ -9,6 +9,8 @@ import type { HeroClass, Look } from '../../../shared/bonkers/content';
 import { BonkersError, type AdventureView, type BonkersBackend, type FinishReply, type LoadReply } from './backend';
 import { Fight } from './Fight';
 import { HeroPick, Inn, Results } from './Screens';
+import { MonsterBook, Shop } from './Shop';
+import type { ShopKind } from '../../../shared/bonkers/content';
 import { HubButtons } from './HubButtons';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import './bonkers.css';
@@ -18,6 +20,8 @@ type View =
   | { at: 'error'; message: string }
   | { at: 'inn'; loaded: LoadReply }
   | { at: 'hero'; loaded: LoadReply }
+  | { at: 'shop'; loaded: LoadReply }
+  | { at: 'book'; loaded: LoadReply }
   | { at: 'fight'; loaded: LoadReply; current: AdventureView }
   | { at: 'results'; loaded: LoadReply; before: Progress; result: FinishReply; current: AdventureView };
 
@@ -59,6 +63,21 @@ export function BonkersGame({ backend, extra }: { backend: BonkersBackend; extra
       setBusy(false);
     }
   };
+
+  const shopping = async (loaded: LoadReply, act: () => Promise<Progress>) => {
+    setBusy(true);
+    setNote(null);
+    try {
+      const progress = await act();
+      setView({ at: 'shop', loaded: { ...loaded, progress } });
+    } catch (e) {
+      setNote(words(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const buy = (loaded: LoadReply, id: string) => shopping(loaded, () => backend.buy(id));
+  const wear = (loaded: LoadReply, kind: ShopKind, id: string | null) => shopping(loaded, () => backend.wear(kind, id));
 
   const startQuest = async (loaded: LoadReply, quest: string) => {
     setBusy(true);
@@ -121,8 +140,18 @@ export function BonkersGame({ backend, extra }: { backend: BonkersBackend; extra
             note={note}
             onQuest={(id) => void startQuest(view.loaded, id)}
             onChangeLook={() => setView({ at: 'hero', loaded: view.loaded })}
+            onShop={() => { setNote(null); setView({ at: 'shop', loaded: view.loaded }); }}
+            onBook={() => setView({ at: 'book', loaded: view.loaded })}
           />
         )}
+        {view.at === 'shop' && (
+          <Shop
+            progress={view.loaded.progress} busy={busy} note={note}
+            onBuy={(id) => void buy(view.loaded, id)} onWear={(k, id) => void wear(view.loaded, k, id)}
+            onHome={() => { setNote(null); setView({ at: 'inn', loaded: view.loaded }); }}
+          />
+        )}
+        {view.at === 'book' && <MonsterBook progress={view.loaded.progress} onHome={() => setView({ at: 'inn', loaded: view.loaded })} />}
         {view.at === 'fight' && (
           <Fight backend={backend} progress={view.loaded.progress} start={view.current} onDone={(current) => finish(view.loaded, current)} />
         )}

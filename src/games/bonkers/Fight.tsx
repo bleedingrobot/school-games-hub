@@ -7,7 +7,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useSound } from '../../sound';
 import { playSound, type GameSound } from '../sounds';
 import { useEnterGoes } from './keys';
-import { Pic, chestArt, heroArt, monsterArt, trainerArt, zoneBigArt } from './art';
+import { HeroFigure } from './Shop';
+import { Pic, chestArt, monsterArt, trainerArt, zoneBigArt } from './art';
 import { CLASS_INFO, trainerFor, zoneById, type MonsterInfo } from '../../../shared/bonkers/content';
 import { autoSmash, monsterSwings, replay, type Blow, type Foe, type Progress } from '../../../shared/bonkers/engine';
 import { BOOSTS, FOE_HEARTS, HEARTS, POINTS, STARS, STICKERS_A_WIN, TRAINER_HEARTS } from '../../../shared/bonkers/config';
@@ -168,7 +169,7 @@ export function Fight({ backend, progress, start, onDone }: {
   const bg = zonePic
     ? `center bottom / cover no-repeat url(${zonePic})`
     : zone ? `linear-gradient(${zone.sky[0]}, ${zone.sky[1]} 62%, ${zone.ground} 62%)` : undefined;
-  const heroPic = <Pic src={heroArt(cls, hero.look, adv.start.level)} emoji={ci.emoji[hero.look]} />;
+  const heroPic = <HeroFigure cls={cls} look={hero.look} level={adv.start.level} hat={progress.hat} pet={progress.pet} />;
 
   // A fight just ended: say how it went before the next one (or the trainer, or the end).
   if (pause?.kind === 'ended') {

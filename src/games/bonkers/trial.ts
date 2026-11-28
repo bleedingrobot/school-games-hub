@@ -55,6 +55,11 @@ export function trialBackend({ storageKey }: { storageKey: string }) {
       const p = progress();
       setProgress({ ...p, level: Math.min(MAX_LEVEL, p.level + 1), stars: 0 });
     },
+    /** 50 stickers for the sticker shop. */
+    stickers: () => {
+      const p = progress();
+      setProgress({ ...p, stickers: p.stickers + 50 });
+    },
     setUnlimited: (on: boolean) => {
       unlimited = on;
     },

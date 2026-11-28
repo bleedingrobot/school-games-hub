@@ -1,9 +1,10 @@
--- Smash Quest (id bonkers) stage B.2, part 1: achievements and a trophy (docs/BONKERS-PLAN.md).
+-- Smash Quest (id bonkers) stage B.2: achievements and a trophy (the sticker shop and Monster Book live in the progress) (docs/BONKERS-PLAN.md).
 -- James, 28 Nov 2026: "leader board and trophies and achievements etc all done? ... yes please, push right on".
 -- The achievements count on the school Leaderboard by themselves, and Smash Quest's own board on 🎮 Game boards ranks
 -- them (docs/LEADERBOARD-PLAN.md). None measures maths: fights won, quests done and the hero's level.
---   1. Counts      bonkers_counts gains bonkers_quests (quests done).
---   2. Achievements 7, kept through New Season (hub_games.keep_achievements is already true).
+--   1. Counts      bonkers_counts gains bonkers_quests (quests done), bonkers_book (monsters in the Monster Book) and
+--                  bonkers_shop (hats and pets bought).
+--   2. Achievements 10, kept through New Season (hub_games.keep_achievements is already true).
 --   3. Trophy      the Smash Quest Trophy in steps: level 4 (bronze), 7 (silver), 10 (gold), given by a trigger on
 --                  bonkers_progress, so the server function's save doesn't change. A trophy that fails never stops a save.
 
@@ -20,10 +21,14 @@ as $$
   select jsonb_build_object(
     'bonkers_fights', coalesce((select (b.progress -> 'stats' ->> 'fightsWon')::int from public.bonkers_progress b where b.player = who), 0),
     'bonkers_level', coalesce((select (b.progress ->> 'level')::int from public.bonkers_progress b where b.player = who), 0),
-    'bonkers_quests', coalesce((select (b.progress -> 'stats' ->> 'quests')::int from public.bonkers_progress b where b.player = who), 0))
+    'bonkers_quests', coalesce((select (b.progress -> 'stats' ->> 'quests')::int from public.bonkers_progress b where b.player = who), 0),
+    'bonkers_book', coalesce((select count(*)::int from public.bonkers_progress b, jsonb_each(case when jsonb_typeof(b.progress -> 'book') = 'object' then b.progress -> 'book' else '{}'::jsonb end) e
+      where b.player = who and e.value <> '0'::jsonb), 0),
+    'bonkers_shop', coalesce((select jsonb_array_length(b.progress -> 'owned') from public.bonkers_progress b
+      where b.player = who and jsonb_typeof(b.progress -> 'owned') = 'array'), 0))
 $$;
 
-insert into public.achievement_measures (measure) values ('bonkers_quests');
+insert into public.achievement_measures (measure) values ('bonkers_quests'), ('bonkers_book'), ('bonkers_shop');
 
 -- ---------------------------------------------------------------------------
 -- 2. Achievements
@@ -36,7 +41,10 @@ insert into public.achievement_types (id, game, name, emoji, measure, goal, sort
   ('bonkers-quest-keeper', 'bonkers', 'Quest Keeper: 10 quests', '📜', 'bonkers_quests', 10, 4, 'Finish 10 quests in Smash Quest.', 2),
   ('bonkers-halfway-hero', 'bonkers', 'Halfway Hero: level 5', '🦸', 'bonkers_level', 5, 5, 'Get your Smash Quest hero to level 5.', 2),
   ('bonkers-smash-boss', 'bonkers', 'Smash Boss: 100 fights', '👊', 'bonkers_fights', 100, 6, 'Win 100 fights in Smash Quest.', 3),
-  ('bonkers-legend', 'bonkers', 'Smash Legend: level 10', '🏆', 'bonkers_level', 10, 7, 'Get your Smash Quest hero all the way to level 10.', 3);
+  ('bonkers-legend', 'bonkers', 'Smash Legend: level 10', '🏆', 'bonkers_level', 10, 7, 'Get your Smash Quest hero all the way to level 10.', 3),
+  ('bonkers-dressed-up', 'bonkers', 'Dressed Up', '🎩', 'bonkers_shop', 1, 8, 'Buy a hat or a pet in the Smash Quest sticker shop.', 1),
+  ('bonkers-monster-spotter', 'bonkers', 'Monster Spotter: 12 kinds', '📖', 'bonkers_book', 12, 9, 'Smash 12 different monsters for your Smash Quest Monster Book.', 2),
+  ('bonkers-monster-book', 'bonkers', 'Full Monster Book: all 24', '📚', 'bonkers_book', 24, 10, 'Smash all 24 monsters to fill your Smash Quest Monster Book.', 3);
 
 -- ---------------------------------------------------------------------------
 -- 3. Trophy
