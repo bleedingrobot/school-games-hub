@@ -3,6 +3,7 @@
  * once a session is over and paid once per room and session (`classlive_finish`). Pupils who only joined get 1 point.
  */
 import { winningTeam } from './rocket';
+import { topStreak } from './stand';
 import { podium } from './corners';
 import { lavaPodium } from './lava';
 import { podium as thronesPodium } from './thrones';
@@ -49,13 +50,20 @@ export const POINTS = { joined: 1, played: 3, goal: 2, guessed: 2, max: 10 } as 
 
 export function rewardsOf(s: Session): FinishedSession {
   const g = s.game;
-  const goal = g.kind === 'stars' ? g.creature : g.kind === 'serpent' ? g.awake : g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'crew' || g.kind === 'clash' || g.kind === 'thrones' || g.kind === 'lava' || g.kind === 'relay' || g.kind === 'jail' || g.kind === 'rocket' ? false : g.solvers.length > 0;
+  const goal = g.kind === 'stars' ? g.creature : g.kind === 'serpent' ? g.awake : g.kind === 'corners' || g.kind === 'ghost' || g.kind === 'crew' || g.kind === 'clash' || g.kind === 'thrones' || g.kind === 'lava' || g.kind === 'relay' || g.kind === 'jail' || g.kind === 'rocket' || g.kind === 'stand' ? false : g.solvers.length > 0;
   const top = g.kind === 'corners' ? podium(g, s.order) : g.kind === 'ghost' ? ghostPodium(g, s.order) : g.kind === 'crew' ? crewPodium(g, s.order) : g.kind === 'thrones' ? thronesPodium(g, s.order) : g.kind === 'lava' ? lavaPodium(g, s.order) : g.kind === 'relay' ? relayPodium(g, s.order) : [];
   const players = s.order.map((id): PupilReward => {
     let did = false;
     const r: PupilReward = { player: id, points: 0, stars: 0, boxes: 0, head: false, tiles: 0, guessed: false, safe: 0, champion: false, escapes: 0, powers: 0 };
     let podiumPlace = false;
-    if (g.kind === 'rocket') {
+    if (g.kind === 'stand') {
+      // Stand Up If (docs/STAND-PLAN.md): 3 for a round right; +2 for the class's longest streak (3 or more in a row).
+      const m = g.mine[id];
+      did = (m?.spots ?? 0) > 0;
+      const top = topStreak(g, s.order);
+      podiumPlace = did && top > 0 && (m?.best ?? 0) === top;
+      r.extra = { stand_spots: Math.max(0, Math.min(500, m?.spots ?? 0)), stand_streaks: (m?.best ?? 0) >= 5 ? 1 : 0 };
+    } else if (g.kind === 'rocket') {
       // Rocket Relay (docs/ROCKET-PLAN.md): 3 for a right answer on a run; +2 if your team won; trophies count runs and wins.
       const m = g.mine[id];
       did = (m?.rightAll ?? 0) > 0;

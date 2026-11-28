@@ -145,11 +145,24 @@ export const LINES = {
   // Rocket Relay (docs/ROCKET-PLAN.md).
   rocketBoost: ['Boost!', 'Blast off! Great answer!', 'Up goes the rocket!', 'Whoosh! Another boost!'],
   rocketEnd: ['What a race! Great running and great maths!', 'Brilliant relay, everyone!', 'That was out of this world! Well done!'],
+  // Stand Up If (docs/STAND-PLAN.md).
+  standAllIn: ['Everyone is ready!', 'All locked in! Here we go!', 'Everyone has chosen!'],
+  standCount: ['Three, two, one... stand up or sit down!', 'Ready? Three, two, one... go!', 'Three, two, one... show me!'],
+  standReveal: ['Check your iPad! Were you right?', 'How did you go? Look at your iPad!', 'Sit down, everyone, and check your iPad!'],
+  standEnd: ['What a game! Great thinking about those signs!', 'Brilliant! You are sign experts now!', 'Well done, everyone! Fantastic maths!'],
   mingleEnd: ['What a mingle! Great maths, everyone!', 'Brilliant moving and great maths!', 'That was fantastic. Well done, everyone!'],
 } as const;
 
 /** Rocket Relay: a team reached the Moon, one clip per team (TEAM_WORDS order). */
 export const ROCKET_MOON_LINES = ['Red team reached the Moon!', 'Blue team reached the Moon!', 'Green team reached the Moon!', 'Yellow team reached the Moon!', 'Purple team reached the Moon!', 'Orange team reached the Moon!'];
+
+/** Stand Up If: the round's call, one clip per sign (said as a round starts). */
+export const STAND_SIGN_LINES: Record<'>' | '<' | '≥' | '≤', string> = {
+  '>': 'Stand up if your answer is greater than your number!',
+  '<': 'Stand up if your answer is less than your number!',
+  '≥': 'Stand up if your answer is greater than or equal to your number!',
+  '≤': 'Stand up if your answer is less than or equal to your number!',
+};
 
 /** Maths Mingle: the answer, said once the scramble ends ("Groups of four!"), one clip per group size. */
 export const MINGLE_SIZE_LINES: Record<number, string> = {
@@ -216,6 +229,14 @@ export const HOWTO = {
     'Left over? Go to a station, tap your name, and answer the questions.',
     'Get them right and your name flashes up on the big screen. Back into the mingle you go!',
   ],
+  // Stand Up If (docs/STAND-PLAN.md).
+  stand: [
+    'Stand Up If! Everyone plays on their own iPad.',
+    'Your iPad gives you a question and your own number. The big screen shows the sign.',
+    'Work out your answer, then check the sign. True for you? Tap Stand. Not true? Tap Sit.',
+    'When the big screen counts down, everyone stands up or sits down for real, all at once!',
+    'Then check your iPad. Get it right to keep your streak going. How many can you get in a row?',
+  ],
   // Rocket Relay (docs/ROCKET-PLAN.md).
   rocket: [
     'Rocket Relay! Line up in your team at one end of the room.',
@@ -247,7 +268,7 @@ export function next(key: LineKey): string {
 
 export const allVoiceLines = (): string[] => [
   ...Object.values(LINES).flat(),
-  ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural, ...HOWTO.corners, ...HOWTO.shark, ...GHOST_HOWTO, ...CREW_HOWTO, ...HOWTO.clash, ...HOWTO.thrones, ...HOWTO.jail, ...HOWTO.mingle, ...Object.values(MINGLE_SIZE_LINES), ...HOWTO.rocket, ...ROCKET_MOON_LINES,
+  ...HOWTO.stars, ...HOWTO.serpent, ...Object.values(HOWTO.serpentLevel), ...HOWTO.mural, ...HOWTO.corners, ...HOWTO.shark, ...GHOST_HOWTO, ...CREW_HOWTO, ...HOWTO.clash, ...HOWTO.thrones, ...HOWTO.jail, ...HOWTO.mingle, ...Object.values(MINGLE_SIZE_LINES), ...HOWTO.rocket, ...ROCKET_MOON_LINES, ...HOWTO.stand, ...Object.values(STAND_SIGN_LINES),
   ...allLavaLines(),
   ...allRelayLines(),
 ];

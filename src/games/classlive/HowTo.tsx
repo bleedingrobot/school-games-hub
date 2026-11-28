@@ -53,6 +53,20 @@ export function sheetFor(game: Game): Sheet {
     };
   }
   if (game.kind === 'relay') return relaySheet(game);
+  if (game.kind === 'stand') {
+    const H = HOWTO.stand;
+    return {
+      title: 'How to play Stand Up If', mode: game.level === 'junior' ? 'Junior: > and <' : 'Senior: > < ≥ ≤', modeSay: null,
+      art: painted('pick', 'stand', true) ?? painted('pick', 'mingle', true),
+      steps: [
+        { icon: '📱', text: 'Everyone plays on their own iPad.', say: H[0] },
+        { icon: '🔢', text: 'Your iPad gives you a question and your own number. The big screen shows the sign.', say: H[1] },
+        { icon: '🐊', text: 'Work out your answer, then check the sign. True for you? Tap Stand. Not true? Tap Sit.', say: H[2] },
+        { icon: '🧍', text: 'On 3, 2, 1, everyone stands up or sits down for real, all at once!', say: H[3] },
+        { icon: '🔥', text: 'Check your iPad. Get it right to keep your streak going!', say: H[4] },
+      ],
+    };
+  }
   if (game.kind === 'rocket') {
     const H = HOWTO.rocket;
     return {

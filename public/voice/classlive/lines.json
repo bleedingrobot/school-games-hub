@@ -1580,6 +1580,54 @@
   "text": "That was out of this world! Well done!"
  },
  {
+  "slug": "everyone-is-ready",
+  "text": "Everyone is ready!"
+ },
+ {
+  "slug": "all-locked-in-here-we-go",
+  "text": "All locked in! Here we go!"
+ },
+ {
+  "slug": "everyone-has-chosen",
+  "text": "Everyone has chosen!"
+ },
+ {
+  "slug": "three-two-one-stand-up-or-sit-down",
+  "text": "Three, two, one... stand up or sit down!"
+ },
+ {
+  "slug": "ready-three-two-one-go",
+  "text": "Ready? Three, two, one... go!"
+ },
+ {
+  "slug": "three-two-one-show-me",
+  "text": "Three, two, one... show me!"
+ },
+ {
+  "slug": "check-your-ipad-were-you-right",
+  "text": "Check your iPad! Were you right?"
+ },
+ {
+  "slug": "how-did-you-go-look-at-your-ipad",
+  "text": "How did you go? Look at your iPad!"
+ },
+ {
+  "slug": "sit-down-everyone-and-check-your-ipad",
+  "text": "Sit down, everyone, and check your iPad!"
+ },
+ {
+  "slug": "what-a-game-great-thinking-about-those-signs",
+  "text": "What a game! Great thinking about those signs!"
+ },
+ {
+  "slug": "brilliant-you-are-sign-experts-now",
+  "text": "Brilliant! You are sign experts now!"
+ },
+ {
+  "slug": "well-done-everyone-fantastic-maths",
+  "text": "Well done, everyone! Fantastic maths!"
+ },
+ {
   "slug": "what-a-mingle-great-maths-everyone",
   "text": "What a mingle! Great maths, everyone!"
  },
@@ -1902,6 +1950,42 @@
  {
   "slug": "orange-team-reached-the-moon",
   "text": "Orange team reached the Moon!"
+ },
+ {
+  "slug": "stand-up-if-everyone-plays-on-their-own-ipad",
+  "text": "Stand Up If! Everyone plays on their own iPad."
+ },
+ {
+  "slug": "your-ipad-gives-you-a-question-and-your-own-number-the-big-screen-shows-the-sign",
+  "text": "Your iPad gives you a question and your own number. The big screen shows the sign."
+ },
+ {
+  "slug": "work-out-your-answer-then-check-the-sign-true-for-you-tap-stand-not-true-tap-sit",
+  "text": "Work out your answer, then check the sign. True for you? Tap Stand. Not true? Tap Sit."
+ },
+ {
+  "slug": "when-the-big-screen-counts-down-everyone-stands-up-or-sits-down-for-real-all-at-once",
+  "text": "When the big screen counts down, everyone stands up or sits down for real, all at once!"
+ },
+ {
+  "slug": "then-check-your-ipad-get-it-right-to-keep-your-streak-going-how-many-can-you-get-in-a-row",
+  "text": "Then check your iPad. Get it right to keep your streak going. How many can you get in a row?"
+ },
+ {
+  "slug": "stand-up-if-your-answer-is-greater-than-your-number",
+  "text": "Stand up if your answer is greater than your number!"
+ },
+ {
+  "slug": "stand-up-if-your-answer-is-less-than-your-number",
+  "text": "Stand up if your answer is less than your number!"
+ },
+ {
+  "slug": "stand-up-if-your-answer-is-greater-than-or-equal-to-your-number",
+  "text": "Stand up if your answer is greater than or equal to your number!"
+ },
+ {
+  "slug": "stand-up-if-your-answer-is-less-than-or-equal-to-your-number",
+  "text": "Stand up if your answer is less than or equal to your number!"
  },
  {
   "slug": "here-we-go-the-floor-is-lava-watch-for-the-glowing-tiles",

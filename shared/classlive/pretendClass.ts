@@ -16,6 +16,7 @@ import { pretendFacts } from './stars';
 import { lavaBot } from './lavaPretend';
 import { clashBot } from './clashMemory';
 import { relayBot } from './relayBot';
+import { holds, standPhase } from './stand';
 
 export const PRETEND_TEACHER = '00000000-0000-4000-8000-00000000feed';
 export const PRETEND_CLASS = '00000000-0000-4000-8000-00000000c1a5';
@@ -65,6 +66,7 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
       if (g.kind === 'crew') return crewBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
       if (g.kind === 'jail') return jailBot(room, id, skill);
       if (g.kind === 'rocket') return rocketBot(room, id, skill);
+      if (g.kind === 'stand') return standBot(room, id, skill);
       if (g.kind === 'relay') return relayBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
       if (g.kind === 'ghost') return ghostBot({ db, services, later: opts.later, now: opts.clock.now, rand }, room, id, skill);
       if (g.kind === 'mural') {
@@ -133,6 +135,40 @@ export function pretendClass(opts: { size: number; seed: number; clock: { now():
       opts.later(() => void step({ action: 'play', do: 'here' }).then((r) => answerOne(r.body.question as { slot: number } | undefined)), 3000 + rand() * 3000);
     };
     wait();
+  };
+
+  /**
+   * A pretend Stand Up If pupil (docs/STAND-PLAN.md): each round they ask, answer after a few seconds and tap Stand or
+   * Sit (usually the right one).
+   */
+  const standBot = (room: number, id: string, skill: number) => {
+    let done = 0;
+    const step = (body: Record<string, unknown>) => classLiveStep(services, id, { room, ...body });
+    const tick = async (): Promise<void> => {
+      const row = db.rooms.get(room);
+      if (!row || row.session.state === 'over') return;
+      const g = row.session.game;
+      if (row.session.state !== 'live' || g.kind !== 'stand') return void opts.later(tick, 1000);
+      const t = row.startedAt === null ? 0 : opts.clock.now() - row.startedAt;
+      const r = g.round;
+      if (!r || done === r.n || standPhase(r, t) !== 'think') {
+        if (r && standPhase(r, t) !== 'think') await step({ action: 'look' });
+        return void opts.later(tick, 1000);
+      }
+      done = r.n;
+      const asked = await step({ action: 'ask' });
+      const q = asked.body.question as { slot: number } | undefined;
+      if (!q) return void opts.later(tick, 1000);
+      const kept = db.questions.get(`${room}:${id}`)?.find((k) => k.slot === q.slot);
+      const right = markQuestion(kept?.question)?.answer ?? 0;
+      opts.later(async () => {
+        const a = await step({ action: 'answer', n: r.n, slot: q.slot, answer: rand() < skill ? right : right + 1, ms: 4000 });
+        if (a.status !== 200) return void opts.later(tick, 1000);
+        const truth = holds(right, r.sign, asked.body.target as number);
+        opts.later(async () => { await step({ action: 'play', n: r.n, stand: rand() < skill ? truth : !truth }); opts.later(tick, 1000); }, 800 + rand() * 1500);
+      }, 2500 + rand() * 6000);
+    };
+    void tick();
   };
 
   const jailBot = (room: number, id: string, skill: number) => {
