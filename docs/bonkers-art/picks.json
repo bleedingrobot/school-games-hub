@@ -90,10 +90,10 @@
   "boss-homework-hydra": 1,
   "zone-laundry": 1,
   "zone-custard": 1,
-  "zone-bouncy": 1,
+  "zone-bouncy": 2,
   "zone-supermarket": 1,
-  "zone-toiletroll": 1,
-  "zone-volcano": 1,
+  "zone-toiletroll": 2,
+  "zone-volcano": 2,
   "scene-home": 1,
   "gear-weapon-0": 1,
   "gear-weapon-1": 1,
@@ -125,5 +125,6 @@
   "gear-shield-6": 1,
   "chest-closed": 1,
   "chest-open": 1,
-  "card-bonkers": 1
+  "card-bonkers": 1,
+  "scene-heropick": 1
 }

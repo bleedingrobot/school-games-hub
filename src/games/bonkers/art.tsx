@@ -19,7 +19,10 @@ const TRAINER_FILES = ['coach-crumpet', 'sir-reginald', 'madame-moustache', 'cap
 export const trainerArt = (toLevel: number) => paint(`trainers/${TRAINER_FILES[toLevel - 2] ?? ''}`);
 
 export const monsterArt = (id: string) => paint(`monsters/${id}`);
+/** The small copy, for the quest cards. */
 export const zoneArt = (id: string) => paint(`zones/${id}-800`) ?? paint(`zones/${id}`);
+/** The full-size painting, for a fight filling the window. */
+export const zoneBigArt = (id: string) => paint(`zones/${id}`) ?? paint(`zones/${id}-800`);
 export const gearArt = (id: string) => paint(`gear/${id}`);
 
 const BOSS_FILES: Record<string, string> = {
@@ -30,7 +33,9 @@ const BOSS_FILES: Record<string, string> = {
 export const bossArt = (name: string) => paint(`bosses/${BOSS_FILES[name] ?? ''}`);
 export const grannyArt = () => paint('people/granny-jetpack');
 export const chestArt = (open: boolean) => paint(`ui/chest-${open ? 'open' : 'closed'}`);
-export const homeArt = () => paint('scenes/home-800') ?? paint('scenes/home');
+export const homeArt = () => paint('scenes/home') ?? paint('scenes/home-800');
+/** The stage the heroes are picked on (Home's painting until it's painted). */
+export const heroPickArt = () => paint('scenes/heropick') ?? homeArt();
 
 /** A painted picture sized by the font size around it (like the emoji it replaces), or the emoji if not painted yet. */
 export function Pic({ src, emoji, className }: { src: string | undefined; emoji: string; className?: string }) {

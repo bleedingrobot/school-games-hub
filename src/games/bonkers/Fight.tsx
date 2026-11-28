@@ -4,8 +4,10 @@
  * health, so what the pupil sees is exactly what the server will save.
  */
 import { useEffect, useRef, useState } from 'react';
+import { useSound } from '../../sound';
+import { playSound, type GameSound } from '../sounds';
 import { useEnterGoes } from './keys';
-import { Pic, chestArt, heroArt, monsterArt, trainerArt, zoneArt } from './art';
+import { Pic, chestArt, heroArt, monsterArt, trainerArt, zoneBigArt } from './art';
 import { CLASS_INFO, trainerFor, zoneById, type MonsterInfo } from '../../../shared/bonkers/content';
 import { autoSmash, monsterSwings, replay, type Blow, type Foe, type Progress } from '../../../shared/bonkers/engine';
 import { BOOSTS, FOE_HEARTS, HEARTS, POINTS, STARS, STICKERS_A_WIN, TRAINER_HEARTS } from '../../../shared/bonkers/config';
@@ -59,6 +61,37 @@ const QUICK = import.meta.env.MODE === 'test';
 const AUTO_FIRST_MS = QUICK ? 20 : 1000;
 const AUTO_STEP_MS = QUICK ? 20 : 900;
 
+/** Comic words for each smash, taking turns. */
+const POWS = ['POW!', 'BONK!', 'WHAM!', 'SPLAT!', 'BOING!', 'THWACK!', 'KAPOW!', 'SPLODGE!'];
+
+/** A comic starburst: the spiky shape behind a smash word. */
+function Burst({ word, tone, big }: { word: string; tone: 'hit' | 'ouch' | 'mega'; big?: boolean }) {
+  const pts = Array.from({ length: 24 }, (_, i) => {
+    const a = (Math.PI * 2 * i) / 24;
+    const r = i % 2 ? 30 : 50;
+    return `${50 + r * Math.cos(a)},${50 + r * Math.sin(a)}`;
+  }).join(' ');
+  return (
+    <span className={`bq-burst bq-burst--${tone}${big ? ' bq-burst--big' : ''}`} aria-hidden="true">
+      <svg viewBox="0 0 100 100"><polygon points={pts} /></svg>
+      <b>{word}</b>
+    </span>
+  );
+}
+
+/** The full-window stage every fight screen sits on: the zone's painting edge to edge, with the fight's top bar. */
+function Stage({ label, bg, top, fx, className, children }: {
+  label: string; bg: string | undefined; top: React.ReactNode; fx?: string; className?: string; children: React.ReactNode;
+}) {
+  return (
+    <section className={`bq-stage${fx ? ` bq-stage--${fx}` : ''}${className ? ` ${className}` : ''}`} aria-label={label}>
+      <div className="bq-stage__bg" style={{ background: bg }} aria-hidden="true" />
+      {top}
+      {children}
+    </section>
+  );
+}
+
 type Pause = { kind: 'ended'; blow: Blow; foe: Foe } | { kind: 'trainer' } | null;
 
 export function Fight({ backend, progress, start, onDone }: {
@@ -77,6 +110,8 @@ export function Fight({ backend, progress, start, onDone }: {
   // The monster swings back after every second smash (James, 28 Nov 2026: "they never seem to get hit").
   const [played, setPlayed] = useState({ slot: -1, n: 0 });
   useEnterGoes();
+  // Each new screen in the fight starts at the top of the window (a tall one on a phone may have scrolled).
+  useEffect(() => { document.querySelector('.bq-layer')?.scrollTo?.(0, 0); }, [pause?.kind]);
   const adv = view.adventure;
   const r = replay(adv, view.marks);
   const slotNow = view.marks.length;
@@ -124,11 +159,16 @@ export function Fight({ backend, progress, start, onDone }: {
   );
 
   const header = (
-    <div className="bq-fight__top" style={{ background: zone ? `linear-gradient(90deg, ${zone.sky[0]}, ${zone.sky[1]})` : undefined }}>
-      <span><b>{zone?.name}</b> · {quest.title}</span>
+    <div className="bq-fight__top">
+      <span className="bq-fight__where"><b>{zone?.name}</b> <span>{quest.title}</span></span>
       {fightDots}
     </div>
   );
+  const zonePic = zone && zoneBigArt(zone.id);
+  const bg = zonePic
+    ? `center bottom / cover no-repeat url(${zonePic})`
+    : zone ? `linear-gradient(${zone.sky[0]}, ${zone.sky[1]} 62%, ${zone.ground} 62%)` : undefined;
+  const heroPic = <Pic src={heroArt(cls, hero.look, adv.start.level)} emoji={ci.emoji[hero.look]} />;
 
   // A fight just ended: say how it went before the next one (or the trainer, or the end).
   if (pause?.kind === 'ended') {
@@ -136,77 +176,81 @@ export function Fight({ backend, progress, start, onDone }: {
     const won = pause.blow.ended === 'won';
     const trainer = pause.foe.id.startsWith('trainer-');
     const next = (
-      <button type="button" className="bq-btn bq-btn--big" onClick={() => setPause(r.phase === 'trainer' && !trainer ? { kind: 'trainer' } : null)}>
+      <button type="button" className="bq-btn bq-btn--big bq-btn--go" onClick={() => setPause(r.phase === 'trainer' && !trainer ? { kind: 'trainer' } : null)}>
         {r.phase === 'done' ? 'Finish the adventure' : r.phase === 'trainer' && !trainer ? 'Something’s coming…' : 'Next fight!'}
       </button>
     );
-    return (
-      <section className="bq-fight" aria-label="Fight over">
-        {header}
-        {won ? (
-          // The victory screen after every won fight (James, 28 Nov 2026).
-          <div className="bq-card bq-center bq-victory" style={{ '--bq-c': ci.colour } as React.CSSProperties}>
-            <div className="bq-victory__confetti" aria-hidden="true">
-              {['⭐', '🎉', '✨', '💥', '🌟', '🎊', '⭐', '✨'].map((c, i) => <span key={i} style={{ '--i': i } as React.CSSProperties}>{c}</span>)}
-            </div>
-            <p className="bq-victory__banner">VICTORY!</p>
-            <div className="bq-victory__scene" aria-hidden="true">
-              <span className="bq-face bq-victory__hero"><Pic src={heroArt(cls, hero.look, adv.start.level)} emoji={ci.emoji[hero.look]} /></span>
-              <span className="bq-face bq-victory__foe"><Pic src={look.art} emoji={look.emoji} /></span>
-            </div>
-            <h2 className="bq-h2">You smashed {pause.foe.name}!</h2>
-            <p className="bq-speech">{pause.foe.name}: “{look.ouch}”</p>
-            <ul className="bq-victory__loot">
-              {!trainer && <li className="bq-pop" style={{ animationDelay: '0.5s' }}>✨ <b>+{xp(STARS.win)}</b> XP</li>}
-              {!trainer && <li className="bq-pop" style={{ animationDelay: '0.8s' }}>🏷️ <b>+{STICKERS_A_WIN}</b> sticker</li>}
-              <li className="bq-pop" style={{ animationDelay: '1.1s' }}>❤️ <b>{pause.blow.hearts}</b> of {trainer ? TRAINER_HEARTS : HEARTS} hearts left</li>
-              <li className="bq-pop" style={{ animationDelay: '1.4s' }}>🪙 <b>+{trainer ? POINTS.trainer : POINTS.fightWon}</b> hub points</li>
-            </ul>
-            {next}
-          </div>
-        ) : (
-        <div className="bq-card bq-center bq-pop">
-          <p className="bq-face bq-face--big" aria-hidden="true"><Pic src={look.art} emoji={look.emoji} /></p>
+    return won ? (
+      // The victory screen after every won fight (James, 28 Nov 2026), full window with spinning rays.
+      <Stage label="Fight over" bg={bg} top={header} className="bq-victory" fx="flash">
+        <div className="bq-rays" aria-hidden="true" />
+        <div className="bq-victory__confetti" aria-hidden="true">
+          {['⭐', '🎉', '✨', '💥', '🌟', '🎊', '⭐', '✨', '🎉', '🌟'].map((c, i) => <span key={i} style={{ '--i': i } as React.CSSProperties}>{c}</span>)}
+        </div>
+        <p className="bq-victory__banner">VICTORY!</p>
+        <div className="bq-victory__scene" aria-hidden="true">
+          <span className="bq-fighter__body bq-victory__hero">{heroPic}</span>
+          <span className="bq-fighter__body bq-victory__foe"><Pic src={look.art} emoji={look.emoji} /></span>
+        </div>
+        <div className="bq-panel bq-center">
+          <h2 className="bq-h2">You smashed {pause.foe.name}!</h2>
+          <p className="bq-speech">{pause.foe.name}: “{look.ouch}”</p>
+          <ul className="bq-victory__loot">
+            {!trainer && <li className="bq-pop" style={{ animationDelay: '0.5s' }}>✨ <b>+{xp(STARS.win)}</b> XP</li>}
+            {!trainer && <li className="bq-pop" style={{ animationDelay: '0.7s' }}>🏷️ <b>+{STICKERS_A_WIN}</b> sticker</li>}
+            <li className="bq-pop" style={{ animationDelay: '0.9s' }}>❤️ <b>{pause.blow.hearts}</b> of {trainer ? TRAINER_HEARTS : HEARTS} hearts left</li>
+            <li className="bq-pop" style={{ animationDelay: '1.1s' }}>🪙 <b>+{trainer ? POINTS.trainer : POINTS.fightWon}</b> hub points</li>
+          </ul>
+          {next}
+        </div>
+      </Stage>
+    ) : (
+      <Stage label="Fight over" bg={bg} top={header} className="bq-lost">
+        <div className="bq-solo" aria-hidden="true"><span className="bq-fighter__body bq-lost__foe"><Pic src={look.art} emoji={look.emoji} /></span></div>
+        <div className="bq-panel bq-center bq-pop">
           <h2 className="bq-h2">Smashed! {pause.foe.name} wins this one.</h2>
           <p>Nothing lost, hero. Dust yourself off!</p>
           {!trainer && <p className="bq-big-line">✨ +{xp(STARS.bonked)} XP</p>}
           {next}
         </div>
-        )}
-      </section>
+      </Stage>
     );
   }
 
   if (pause?.kind === 'trainer' && r.foe) {
     const look = looks(r.foe, adv.quest.zone, adv.start.level);
     return (
-      <section className="bq-fight" aria-label="Your trainer">
-        {header}
-        <div className="bq-card bq-center bq-pop">
+      <Stage label="Your trainer" bg={bg} top={header} className="bq-trainer" fx="flash">
+        <div className="bq-rays bq-rays--slow" aria-hidden="true" />
+        <div className="bq-versus" aria-hidden="true">
+          <span className="bq-fighter__body bq-versus__hero">{heroPic}</span>
+          <span className="bq-versus__vs">VS</span>
+          <span className="bq-fighter__body bq-versus__foe"><Pic src={look.art} emoji={look.emoji} /></span>
+        </div>
+        <div className="bq-panel bq-center bq-pop">
           {r.questDone && <p className="bq-big-line">✅ Quest done! +{xp(STARS.quest)} XP</p>}
           <p>Your XP bar is full! Your trainer wants a fight.</p>
-          <p className="bq-face bq-face--big" aria-hidden="true"><Pic src={look.art} emoji={look.emoji} /></p>
           <h2 className="bq-h2">{r.foe.name}</h2>
           <p className="bq-speech">“{look.line}”</p>
           <p>Beat them to reach level {adv.start.level + 1}. You have {r.maxHearts} hearts this time.</p>
-          <button type="button" className="bq-btn bq-btn--big" onClick={() => setPause(null)}>Fight!</button>
+          <button type="button" className="bq-btn bq-btn--big bq-btn--go" onClick={() => setPause(null)}>Fight!</button>
         </div>
-      </section>
+      </Stage>
     );
   }
 
   if (r.phase === 'done') {
     return (
-      <section className="bq-fight" aria-label="Adventure over">
-        {header}
-        <div className="bq-card bq-center bq-pop">
+      <Stage label="Adventure over" bg={bg} top={header} className="bq-done">
+        <div className="bq-rays bq-rays--gold" aria-hidden="true" />
+        <div className="bq-solo" aria-hidden="true"><span className="bq-fighter__body bq-done__chest"><Pic src={chestArt(false)} emoji="🧰" /></span></div>
+        <div className="bq-panel bq-center bq-pop">
           {r.questDone && !r.trainerMet && <p className="bq-big-line">✅ Quest done! +{xp(STARS.quest)} XP</p>}
-          <p className="bq-face bq-face--big" aria-hidden="true"><Pic src={chestArt(false)} emoji="🧰" /></p>
-          <h2 className="bq-h2">Adventure over!</h2>
-          <button type="button" className="bq-btn bq-btn--big" disabled={saving} onClick={() => void finish()}>{saving ? 'Saving…' : 'See what you got'}</button>
+          <h2 className="bq-h2 bq-h2--shout">Adventure over!</h2>
+          <button type="button" className="bq-btn bq-btn--big bq-btn--go" disabled={saving} onClick={() => void finish()}>{saving ? 'Saving…' : 'Open the chest!'}</button>
           {error && <p className="bq-note" role="alert">{error}</p>}
         </div>
-      </section>
+      </Stage>
     );
   }
 
@@ -223,6 +267,14 @@ export function Fight({ backend, progress, start, onDone }: {
   const heartsNow = r.hearts - (ready ? swingsNow : swingsShown);
   const hpNow = r.foeHp - (ready ? autoHit : landedBy(smashesShown));
   const boost = BOOSTS.find((b) => b.times === moment.boost);
+  const answerShown = !!blow && stepShown === 0;
+  const hitByAnswer = answerShown && blow.right;
+  const ouchByAnswer = answerShown && blow.ouch;
+  const heroHurt = ouchByAnswer || swingingNow;
+  const foeHurt = hitByAnswer || thisSmash > 0;
+  // What just happened, for the flashes: a smash, an answer's big smash, a mega (×10 or special) smash, or an ouch.
+  const fx = hitByAnswer ? (blow.boost >= 10 || blow.special ? 'mega' : 'big') : thisSmash > 0 ? 'hit' : heroHurt ? 'ouch' : answerShown ? 'miss' : undefined;
+  const fxKey = `${slotNow}-${stepShown}-${blow?.slot ?? 'x'}`;
 
   const answer = async (value: number, ms: number): Promise<MarkedAnswer> => {
     if (!q || !asking) throw new Error('No question');
@@ -251,55 +303,8 @@ export function Fight({ backend, progress, start, onDone }: {
   };
 
   return (
-    <section className="bq-fight" aria-label={`Fight: ${foe.name}`}>
-      {header}
-      <div className="bq-arena" style={{ background: zone ? (zoneArt(zone.id) ? `center / cover no-repeat url(${zoneArt(zone.id)})` : `linear-gradient(${zone.sky[0]}, ${zone.sky[1]} 62%, ${zone.ground} 62%)`) : undefined }}>
-        <div className={`bq-side bq-side--hero${(blow?.ouch && stepShown === 0) || swingingNow ? ' bq-shake' : ''}${smashing ? ' bq-lunge' : ''}`} key={`h${blow?.slot ?? 'x'}-${slotNow}-${stepShown}`}>
-          <span className="bq-face" aria-hidden="true"><Pic src={heroArt(cls, hero.look, adv.start.level)} emoji={ci.emoji[hero.look]} /></span>
-          <strong>{ci.names[hero.look]}</strong>
-          <Hearts n={heartsNow} of={r.maxHearts} />
-          {((blow?.ouch && stepShown === 0) || swingingNow) && <span className="bq-float bq-float--ouch">OUCH!</span>}
-          {r.calm > 0 && <span className="bq-tag">🧶 Tied up for {r.calm}</span>}
-        </div>
-        <div className="bq-vs" aria-hidden="true">VS</div>
-        <div className={`bq-side bq-side--foe${(blow && stepShown === 0) || thisSmash ? ' bq-wobble' : ''}${swingingNow ? ' bq-lunge bq-lunge--back' : ''}`} key={`f${slotNow}-${stepShown}`}>
-          <span className={`bq-face${foe.big ? ' bq-face--big' : ''}`} aria-hidden="true"><Pic src={look.art} emoji={look.emoji} /></span>
-          <strong>{foe.name}</strong>
-          <Hearts n={Math.ceil((FOE_HEARTS * hpNow) / foe.hp)} of={FOE_HEARTS} full="💜" label={`${foe.name}’s health: `} />
-          {thisSmash > 0 && <span className="bq-float">SMASH!</span>}
-          {stepShown === 0 && blow?.right && <span className="bq-float bq-float--big">×{blow.boost}{blow.special ? '!!' : ''}</span>}
-        </div>
-      </div>
-      {!blow && !ready && r.foeHp === foe.hp && <p className="bq-speech">{foe.name}: “{look.line}”</p>}
-      {blow && stepShown === 0 && (
-        <p className="bq-blow-line" aria-live="polite">
-          {blow.right
-            ? (blow.special ? `${ci.move.name}! ×${blow.boost} MEGA SMASH!` : `SMASH! ×${blow.boost} damage!`)
-            : blow.ouch ? 'Missed… and it smashed you back!' : 'Missed… but it couldn’t smash you back!'}
-        </p>
-      )}
-      {smashing && <p className="bq-smash-line" aria-live="polite">💥 {ci.names[hero.look]} smashes! <span>{smashesShown} of {moment.autos}</span></p>}
-      {swingingNow && <p className="bq-smash-line bq-smash-line--ouch" aria-live="polite">👊 {foe.name} smashes back!</p>}
-      {ready && q && (
-        <div className={`bq-boost bq-pop bq-boost--x${moment.boost}`} role="status">
-          <p className="bq-boost__name">⚡ {boost?.name ?? 'SMASH TIME!'}</p>
-          <p className="bq-boost__what">Answer right to smash for ×{moment.boost} damage!{moment.boost >= 10 ? ' That’s ABSURD!' : ''}</p>
-          <div className="bq-actions">
-            <button type="button" className="bq-btn bq-btn--big" disabled={!!asking} onClick={() => setAsking({ special: false })}>
-              <span aria-hidden="true">💥</span> Answer it!
-            </button>
-            <button
-              type="button" className="bq-btn bq-btn--special" style={{ '--bq-c': ci.colour } as React.CSSProperties}
-              disabled={!!asking || r.specialUsed} onClick={() => setAsking({ special: true })} title={ci.move.does}
-            >
-              <span aria-hidden="true">✨</span> {ci.move.name}{r.specialUsed ? ' (used)' : ''}
-            </button>
-          </div>
-          <p className="bq-hint">{r.specialUsed ? 'Special move used this fight.' : `${ci.move.name}: ${ci.move.does} Once a fight.`}</p>
-        </div>
-      )}
-      {error && <p className="bq-note" role="alert">{error}</p>}
-      {asking && q && (
+    <FightStage fx={fx} fxKey={fxKey} label={`Fight: ${foe.name}`} bg={bg} header={header} splash={ready && q ? `${slotNow}` : null} boostTimes={moment.boost}
+      after={asking && q && (
         <QuestionModal
           question={shown(q)}
           title={asking.special ? `${ci.move.name}! ×${moment.boost}` : (boost?.name ?? 'Smash it!')}
@@ -309,6 +314,91 @@ export function Fight({ backend, progress, start, onDone }: {
           onDone={landed}
         />
       )}
-    </section>
+    >
+      {ready && q && (
+        <div className={`bq-splash bq-splash--x${moment.boost}`} key={`splash-${slotNow}`} aria-hidden="true">
+          <span>⚡ {boost?.name ?? 'SMASH TIME!'}</span>
+        </div>
+      )}
+      <div className="bq-arena">
+        <div className={`bq-fighter bq-fighter--hero${heroHurt ? ' bq-shake' : ''}${smashing ? ' bq-lunge' : ''}`} key={`h${fxKey}`}>
+          <div className="bq-plate">
+            <strong>{ci.names[hero.look]}</strong>
+            <Hearts n={heartsNow} of={r.maxHearts} />
+            {r.calm > 0 && <span className="bq-tag">🧶 Tied up for {r.calm}</span>}
+          </div>
+          <span className="bq-fighter__body" aria-hidden="true">{heroPic}</span>
+          {heroHurt && <Burst word="OUCH!" tone="ouch" />}
+          {heroHurt && <span className="bq-dmg bq-dmg--ouch" aria-hidden="true">−1 ❤️</span>}
+        </div>
+        <div className={`bq-fighter bq-fighter--foe${foe.big ? ' bq-fighter--big' : ''}${foeHurt ? ' bq-wobble' : ''}${swingingNow ? ' bq-lunge bq-lunge--back' : ''}`} key={`f${fxKey}`}>
+          <div className="bq-plate">
+            <strong>{foe.name}</strong>
+            <Hearts n={Math.ceil((FOE_HEARTS * hpNow) / foe.hp)} of={FOE_HEARTS} full="💜" label={`${foe.name}’s health: `} />
+          </div>
+          <span className="bq-fighter__body" aria-hidden="true"><Pic src={look.art} emoji={look.emoji} /></span>
+          {!blow && !ready && stepShown === 0 && r.foeHp === foe.hp && <p className="bq-bubble">“{look.line}”</p>}
+          {thisSmash > 0 && <Burst word={POWS[(slotNow * 3 + stepShown) % POWS.length]} tone="hit" />}
+          {thisSmash > 0 && <span className="bq-dmg" aria-hidden="true">−{thisSmash}</span>}
+          {hitByAnswer && <Burst word={blow.special ? ci.move.name.toUpperCase() + '!' : `×${blow.boost} SMASH!`} tone={blow.boost >= 10 || blow.special ? 'mega' : 'hit'} big />}
+          {hitByAnswer && blow.hit > 0 && <span className="bq-dmg bq-dmg--big" aria-hidden="true">−{blow.hit}</span>}
+          {answerShown && !blow.right && <Burst word="MISS!" tone="ouch" />}
+        </div>
+      </div>
+      <div className="bq-panel">
+        {answerShown && (
+          <p className={`bq-blow-line${blow.right ? '' : ' bq-smash-line--ouch'}`} aria-live="polite">
+            {blow.right
+              ? (blow.special ? `${ci.move.name}! ×${blow.boost} MEGA SMASH!` : `SMASH! ×${blow.boost} damage!`)
+              : blow.ouch ? 'Missed… and it smashed you back!' : 'Missed… but it couldn’t smash you back!'}
+          </p>
+        )}
+        {smashing && <p className="bq-smash-line" aria-live="polite">💥 {ci.names[hero.look]} smashes! <span>{smashesShown} of {moment.autos}</span></p>}
+        {swingingNow && <p className="bq-smash-line bq-smash-line--ouch" aria-live="polite">👊 {foe.name} smashes back!</p>}
+        {!answerShown && !smashing && !swingingNow && !ready && <p className="bq-smash-line">Get ready…</p>}
+        {ready && q && (
+          <div className={`bq-boost bq-pop bq-boost--x${moment.boost}`} role="status">
+            <p className="bq-boost__name">⚡ {boost?.name ?? 'SMASH TIME!'}</p>
+            <p className="bq-boost__what">Answer right to smash for ×{moment.boost} damage!{moment.boost >= 10 ? ' That’s ABSURD!' : ''}</p>
+            <div className="bq-actions">
+              <button type="button" className="bq-btn bq-btn--big bq-btn--go" disabled={!!asking} onClick={() => setAsking({ special: false })}>
+                <span aria-hidden="true">💥</span> Answer it!
+              </button>
+              <button
+                type="button" className="bq-btn bq-btn--special" style={{ '--bq-c': ci.colour } as React.CSSProperties}
+                disabled={!!asking || r.specialUsed} onClick={() => setAsking({ special: true })} title={ci.move.does}
+              >
+                <span aria-hidden="true">✨</span> {ci.move.name}{r.specialUsed ? ' (used)' : ''}
+              </button>
+            </div>
+            <p className="bq-hint">{r.specialUsed ? 'Special move used this fight.' : `${ci.move.name}: ${ci.move.does} Once a fight.`}</p>
+          </div>
+        )}
+        {error && <p className="bq-note" role="alert">{error}</p>}
+      </div>
+    </FightStage>
+  );
+}
+
+const FX_SOUND: Record<string, GameSound> = { hit: 'capture', big: 'boom', mega: 'boom', ouch: 'knock', miss: 'end' };
+
+/** The fight's stage, with a flash and a screen shake on every smash and a sound to go with it. */
+function FightStage({ fx, fxKey, label, bg, header, splash, boostTimes, after, children }: {
+  fx: string | undefined; fxKey: string; label: string; bg: string | undefined; header: React.ReactNode; splash: string | null; boostTimes: number;
+  after?: React.ReactNode; children: React.ReactNode;
+}) {
+  const { soundOn } = useSound();
+  useEffect(() => {
+    if (soundOn && fx) playSound(FX_SOUND[fx]);
+  }, [fxKey, fx, soundOn]);
+  useEffect(() => {
+    if (soundOn && splash !== null) playSound(boostTimes >= 10 ? 'shiny' : 'flash');
+  }, [splash, boostTimes, soundOn]);
+  return (
+    <Stage label={label} bg={bg} top={header} className={splash !== null && boostTimes >= 10 ? 'bq-stage--absurd' : undefined}>
+      {fx && <div className={`bq-flash bq-flash--${fx}`} key={`flash-${fxKey}`} aria-hidden="true" />}
+      <div className={`bq-world${fx ? ` bq-world--${fx}` : ''}`} key={`world-${fxKey}`}>{children}</div>
+      {after}
+    </Stage>
   );
 }

@@ -42,6 +42,11 @@ export function BonkersGame({ backend, extra }: { backend: BonkersBackend; extra
     void load();
   }, [load]);
 
+  // Each screen starts at the top of the window.
+  useEffect(() => {
+    document.querySelector('.bq-layer')?.scrollTo?.(0, 0);
+  }, [view.at]);
+
   const pickHero = async (loaded: LoadReply, cls: HeroClass, look: Look) => {
     setBusy(true);
     try {

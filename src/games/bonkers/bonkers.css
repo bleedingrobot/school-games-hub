@@ -1,4 +1,5 @@
-/* Smash Quest (docs/BONKERS-PLAN.md): bright, bouncy and big for Years 2 to 4. Drawn stand-ins until the paintings (B.6).
+/* Smash Quest (docs/BONKERS-PLAN.md): bright, bouncy and big for Years 2 to 4. Full window (docs/FULL-WINDOW.md):
+   every screen is a painting edge to edge with the content on top, and every smash flashes, shakes and goes POW.
    Covers the whole window, over the hub's bar. Every class starts bq-. */
 
 .bq-layer {
@@ -11,95 +12,333 @@
   --bq-green: #4fb34f;
   --bq-soft: #f3ecff;
   --bq-line: #e6dccb;
+  --bq-glass: rgba(255, 250, 240, 0.93);
   position: fixed;
   inset: 0;
   z-index: 40;
   display: flex;
   flex-direction: column;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   color: var(--bq-ink);
-  background: radial-gradient(circle at 20% 0%, #fff3c4, transparent 50%), linear-gradient(#ffe7b8, var(--bq-paper) 40%);
+  background: #2a1d44;
   font-family: 'Baloo 2', 'Comic Sans MS', 'Trebuchet MS', system-ui, sans-serif;
   font-size: 1.05rem;
 }
 
 .bq-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
+/* The title and the Hub and sound buttons float on the painting. */
 .bq-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 16px;
-  background: var(--bq-orange);
-  color: #fff;
-  box-shadow: 0 3px 0 #d96a22;
+  position: absolute; top: 0; left: 0; right: 0; z-index: 30;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 10px 14px; pointer-events: none;
 }
-.bq-title { font-weight: 800; font-size: 1.3rem; letter-spacing: 0.5px; text-shadow: 0 2px 0 #c85a18; }
+.bq-top > * { pointer-events: auto; }
+.bq-title {
+  font-weight: 800; font-size: 1.2rem; letter-spacing: 0.5px; color: #fff;
+  background: rgba(43, 33, 64, 0.72); border-radius: 999px; padding: 4px 16px 4px 12px;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35); box-shadow: 0 3px 0 rgba(0, 0, 0, 0.25);
+}
 .bq-hubbtns { display: flex; gap: 6px; }
+.bq-top .bq-btn--ghost { background: rgba(43, 33, 64, 0.72); box-shadow: 0 3px 0 rgba(0, 0, 0, 0.25); }
 
-.bq-main { flex: 1; width: 100%; max-width: 920px; margin: 0 auto; padding: 16px; box-sizing: border-box; }
-.bq-loading { text-align: center; font-size: 1.3rem; margin-top: 20vh; }
+.bq-main { flex: 1; position: relative; display: flex; flex-direction: column; width: 100%; min-height: 100%; }
+.bq-main > .bq-card { margin: auto; max-width: 520px; width: calc(100% - 32px); box-sizing: border-box; }
+.bq-loading { margin: auto; text-align: center; font-size: 1.4rem; font-weight: 800; color: #fff; animation: bq-bounce 1.2s ease-in-out infinite; }
 
 .bq-btn {
-  font: inherit;
-  font-weight: 700;
-  border: 0;
-  border-radius: 999px;
-  padding: 10px 18px;
-  background: var(--bq-red);
-  color: #fff;
-  cursor: pointer;
-  box-shadow: 0 4px 0 #b53e25;
-  transition: transform 0.1s;
+  font: inherit; font-weight: 700; border: 0; border-radius: 999px; padding: 10px 18px;
+  background: var(--bq-red); color: #fff; cursor: pointer; box-shadow: 0 4px 0 #b53e25; transition: transform 0.1s;
 }
 .bq-btn:hover:not(:disabled) { transform: translateY(-2px); }
 .bq-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 #b53e25; }
 .bq-btn:disabled { opacity: 0.5; cursor: default; }
 .bq-btn--ghost { background: rgba(255, 255, 255, 0.2); box-shadow: none; padding: 6px 12px; text-decoration: none; display: inline-flex; gap: 4px; align-items: center; }
-.bq-btn--big { font-size: 1.25rem; padding: 14px 26px; }
+.bq-btn--big { font-size: 1.3rem; padding: 14px 30px; }
+.bq-btn--go:not(:disabled) { animation: bq-go 1.4s ease-in-out infinite; }
+@keyframes bq-go { 0%, 100% { box-shadow: 0 5px 0 #b53e25, 0 0 0 0 rgba(255, 211, 77, 0.9); } 50% { box-shadow: 0 5px 0 #b53e25, 0 0 0 10px rgba(255, 211, 77, 0); } }
 .bq-btn--soft { background: var(--bq-soft); color: var(--bq-ink); box-shadow: 0 3px 0 #d6c8f0; }
 .bq-btn--picked { background: var(--bq-sun); box-shadow: 0 3px 0 #d9a91f; }
-.bq-btn--special { background: var(--bq-c, #7a4fd8); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25); font-size: 1.1rem; padding: 14px 20px; }
+.bq-btn--special { background: var(--bq-c, #7a4fd8); color: #fff; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25); font-size: 1.1rem; padding: 14px 20px; }
 .bq-link { font: inherit; background: none; border: 0; color: #7a4fd8; text-decoration: underline; cursor: pointer; padding: 4px; }
 
 .bq-card { background: var(--bq-card); border-radius: 22px; padding: 16px; box-shadow: 0 6px 0 var(--bq-line); }
-.bq-center { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.bq-h2 { font-size: 1.5rem; margin: 18px 0 10px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; justify-content: space-between; }
-.bq-center .bq-h2 { justify-content: center; margin: 4px 0; }
-.bq-note { color: #b53e25; font-weight: 700; text-align: center; }
+.bq-panel {
+  position: relative; z-index: 2; box-sizing: border-box; width: min(660px, 100%); margin: 0 auto;
+  background: var(--bq-glass); border-radius: 22px; padding: 12px 16px; box-shadow: 0 8px 0 rgba(0, 0, 0, 0.2);
+}
+.bq-center { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.bq-h2 { font-size: 1.5rem; margin: 4px 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; justify-content: space-between; }
+.bq-center .bq-h2 { justify-content: center; }
+.bq-h2--shout { font-size: clamp(1.7rem, 4vw, 2.4rem); color: var(--bq-red); justify-content: center; }
+.bq-h2--banner {
+  align-self: flex-start; align-items: center; margin: 0; padding: 4px 8px 4px 18px; border-radius: 999px;
+  background: rgba(43, 33, 64, 0.78); color: #fff; font-size: 1.4rem;
+}
+.bq-note { color: #b53e25; font-weight: 700; text-align: center; background: #fff; border-radius: 12px; padding: 4px 10px; }
 .bq-big-line { font-size: 1.2rem; font-weight: 700; margin: 4px 0; }
 .bq-hint { text-align: center; font-size: 0.9rem; opacity: 0.8; margin: 6px 0 0; }
-
-/* Granny Jetpack */
-.bq-granny { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-.bq-granny__face { font-size: 3.4rem; position: relative; animation: bq-hover 2.4s ease-in-out infinite; flex: none; }
-.bq-granny__jet { position: absolute; font-size: 1.4rem; left: -10px; bottom: -4px; transform: rotate(-135deg); }
-.bq-granny__bubble { background: #fff; border-radius: 18px; padding: 10px 14px; margin: 0; box-shadow: 0 4px 0 var(--bq-line); position: relative; }
-@keyframes bq-hover { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-
-/* Hero pick */
-.bq-hero-pick { display: flex; flex-direction: column; align-items: center; gap: 14px; }
-.bq-classes { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; width: 100%; }
-.bq-class {
-  font: inherit; color: inherit; text-align: center; cursor: pointer;
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  background: #fff; border: 4px solid transparent; border-radius: 22px; padding: 14px 12px;
-  box-shadow: 0 6px 0 var(--bq-line);
+.bq-shout {
+  margin: 0; text-align: center; font-size: clamp(2rem, 6vw, 3.6rem); font-weight: 900; letter-spacing: 1px; line-height: 1.05;
+  color: var(--bq-sun); -webkit-text-stroke: 2px var(--bq-ink); paint-order: stroke fill; text-shadow: 0 5px 0 var(--bq-ink);
+  transform: rotate(-2deg); animation: bq-banner-in 0.7s cubic-bezier(.2, 1.6, .4, 1) both;
 }
-.bq-class--on { border-color: var(--bq-c); transform: scale(1.03); }
+@keyframes bq-banner-in { from { transform: scale(0.2) rotate(-12deg); opacity: 0; } to { transform: scale(1) rotate(-2deg); opacity: 1; } }
+
+/* ---- The full-window stage (fights) and screens (home, hero pick, results) ---- */
+.bq-stage, .bq-screen {
+  position: relative; flex: 1; min-height: 100dvh; box-sizing: border-box; overflow: hidden;
+  display: flex; flex-direction: column; padding: 62px 16px 16px;
+}
+.bq-stage__bg { position: absolute; inset: 0; background-color: #6fc3ff; background-size: cover; }
+.bq-stage__bg::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(rgba(20, 10, 40, 0.35), transparent 18%, transparent 70%, rgba(20, 10, 40, 0.3));
+}
+.bq-screen__inner { position: relative; z-index: 2; flex: 1; width: 100%; max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+
+/* Spinning sun rays behind a victory, a trainer and a chest. */
+.bq-rays {
+  position: absolute; z-index: 1; left: 50%; top: 48%; width: 240vmax; height: 240vmax; pointer-events: none;
+  translate: -50% -50%; border-radius: 50%;
+  background: repeating-conic-gradient(rgba(255, 255, 255, 0.32) 0 9deg, transparent 9deg 18deg);
+  -webkit-mask: radial-gradient(circle, #000 8%, transparent 32%); mask: radial-gradient(circle, #000 8%, transparent 32%);
+  animation: bq-spin 14s linear infinite;
+}
+.bq-rays--slow { animation-duration: 30s; background: repeating-conic-gradient(rgba(255, 90, 60, 0.28) 0 9deg, transparent 9deg 18deg); }
+.bq-rays--gold { background: repeating-conic-gradient(rgba(255, 211, 77, 0.45) 0 9deg, transparent 9deg 18deg); }
+@keyframes bq-spin { to { rotate: 360deg; } }
+
+/* ---- Fights ---- */
+.bq-fight__top {
+  position: relative; z-index: 3; align-self: center; max-width: 100%; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center; gap: 6px 12px; flex-wrap: wrap;
+  background: rgba(43, 33, 64, 0.75); color: #fff; border-radius: 22px; padding: 6px 10px 6px 16px;
+}
+.bq-fight__where span { opacity: 0.8; margin-left: 4px; }
+.bq-dots { display: flex; gap: 4px; list-style: none; padding: 0; margin: 0; color: var(--bq-ink); }
+.bq-dots li { min-width: 26px; height: 26px; border-radius: 13px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.75); font-size: 0.85rem; font-weight: 700; padding: 0 4px; }
+.bq-dots .bq-dots--now { background: var(--bq-sun); transform: scale(1.2); }
+.bq-dots .bq-dots--won { background: var(--bq-green); color: #fff; }
+.bq-dots .bq-dots--bonked { background: #c9b9a6; }
+
+.bq-world { position: relative; z-index: 2; flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 10px; }
+.bq-world--hit { animation: bq-quake 0.32s ease; }
+.bq-world--big, .bq-world--ouch { animation: bq-quake 0.5s ease; --bq-q: 14px; }
+.bq-world--mega { animation: bq-quake 0.9s ease; --bq-q: 22px; }
+@keyframes bq-quake {
+  0%, 100% { translate: 0 0; }
+  15% { translate: calc(var(--bq-q, 8px) * -1) calc(var(--bq-q, 8px) * 0.5); }
+  30% { translate: var(--bq-q, 8px) calc(var(--bq-q, 8px) * -0.4); }
+  45% { translate: calc(var(--bq-q, 8px) * -0.7) calc(var(--bq-q, 8px) * -0.3); }
+  60% { translate: calc(var(--bq-q, 8px) * 0.6) calc(var(--bq-q, 8px) * 0.3); }
+  80% { translate: calc(var(--bq-q, 8px) * -0.3) 0; }
+}
+
+.bq-arena { flex: 1; display: flex; justify-content: space-around; align-items: flex-end; gap: 8px; padding: 0 1vw; min-height: 0; }
+.bq-fighter { position: relative; display: flex; flex-direction: column; align-items: center; max-width: 50%; text-align: center; }
+.bq-plate {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; margin-bottom: 6px; padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.92); border-radius: 16px; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2); max-width: 100%; box-sizing: border-box;
+}
+.bq-plate strong { font-size: 1.05rem; line-height: 1.2; }
+.bq-fighter__body {
+  display: block; line-height: 1; position: relative;
+  font-size: clamp(46px, min(19dvh, 19vw), 240px);
+  animation: bq-breathe 1.8s ease-in-out infinite; transform-origin: 50% 100%;
+}
+.bq-fighter__body::after {
+  content: ''; position: absolute; z-index: -1; left: 15%; right: 15%; bottom: -0.06em; height: 0.16em;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.35), transparent 70%);
+}
+.bq-fighter--foe .bq-fighter__body { animation-delay: 0.4s; }
+.bq-fighter--big .bq-fighter__body { font-size: clamp(54px, min(23dvh, 21vw), 290px); }
+.bq-pic { display: block; height: 1.9em; width: auto; max-width: 100%; object-fit: contain; margin: 0 auto; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.15)); }
+@keyframes bq-breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.03, 0.97) translateY(1px); } }
+@keyframes bq-bounce { 0%, 100% { transform: translateY(0) scale(1, 1); } 45% { transform: translateY(-10px) scale(0.95, 1.05); } 60% { transform: translateY(0) scale(1.08, 0.92); } }
+
+.bq-hearts { display: grid; grid-template-columns: repeat(5, auto); justify-content: center; gap: 0 2px; font-size: 1.1rem; line-height: 1.25; }
+.bq-tag { font-size: 0.85rem; background: var(--bq-soft); border-radius: 999px; padding: 2px 8px; }
+
+/* The hero lunges at the monster for each smash; the monster lunges back. */
+.bq-lunge .bq-fighter__body { animation: bq-lunge 0.5s ease; }
+.bq-lunge--back .bq-fighter__body { --bq-dir: -1; }
+@keyframes bq-lunge { 0%, 100% { transform: translateX(0); } 40% { transform: translateX(calc(14vw * var(--bq-dir, 1))) rotate(calc(14deg * var(--bq-dir, 1))) scale(1.15); } }
+.bq-wobble .bq-fighter__body { animation: bq-wobble 0.6s ease; }
+@keyframes bq-wobble { 0% { transform: rotate(0); filter: none; } 15% { filter: brightness(3) saturate(0); } 25% { transform: rotate(-14deg) scale(0.88); } 40% { filter: none; } 50% { transform: rotate(10deg) scale(1.12, 0.84); } 75% { transform: rotate(-5deg); } 100% { transform: rotate(0); } }
+.bq-shake .bq-fighter__body { animation: bq-hurt 0.55s ease; }
+@keyframes bq-hurt { 0%, 100% { transform: translateX(0); filter: none; } 15% { filter: sepia(1) saturate(6) hue-rotate(-50deg); } 20% { transform: translateX(-16px) rotate(-8deg); } 40% { transform: translateX(14px) rotate(6deg); } 60% { transform: translateX(-8px); filter: none; } 80% { transform: translateX(6px); } }
+
+/* Comic starbursts and damage numbers. */
+.bq-burst {
+  position: absolute; z-index: 4; left: 50%; top: 42%; width: clamp(120px, 24vmin, 230px); aspect-ratio: 1; pointer-events: none;
+  display: grid; place-items: center; translate: -50% -50%; animation: bq-burst 0.9s cubic-bezier(.2, 1.5, .4, 1) both;
+}
+.bq-burst svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.bq-burst polygon { fill: var(--bq-sun); stroke: var(--bq-ink); stroke-width: 3; stroke-linejoin: round; }
+.bq-burst b {
+  position: relative; font-size: clamp(1.1rem, 3.6vmin, 2rem); font-weight: 900; letter-spacing: 1px; color: var(--bq-red);
+  -webkit-text-stroke: 1.5px var(--bq-ink); paint-order: stroke fill; transform: rotate(-8deg); white-space: nowrap;
+}
+.bq-burst--big { width: clamp(150px, 32vmin, 300px); }
+.bq-burst--big b { font-size: clamp(1.3rem, 4.6vmin, 2.6rem); }
+.bq-burst--ouch polygon { fill: #fff; }
+.bq-burst--mega polygon { fill: #ff7ad9; animation: bq-rainbow 0.4s linear infinite; }
+.bq-burst--mega b { color: #fff; }
+@keyframes bq-burst { 0% { transform: scale(0) rotate(-30deg); opacity: 1; } 35% { transform: scale(1.2) rotate(6deg); } 50% { transform: scale(1) rotate(0); } 80% { opacity: 1; } 100% { transform: scale(1.1); opacity: 0; } }
+@keyframes bq-rainbow { to { filter: hue-rotate(360deg); } }
+.bq-dmg {
+  position: absolute; z-index: 5; left: 50%; top: 14%; translate: -50% 0; pointer-events: none; white-space: nowrap;
+  font-size: clamp(2rem, 7vmin, 3.6rem); font-weight: 900; color: #fff; -webkit-text-stroke: 2px var(--bq-ink); paint-order: stroke fill;
+  animation: bq-dmg 1.1s ease-out both;
+}
+.bq-dmg--big { font-size: clamp(2.6rem, 10vmin, 5rem); color: var(--bq-sun); }
+.bq-dmg--ouch { color: var(--bq-red); font-size: clamp(1.6rem, 5vmin, 2.6rem); }
+@keyframes bq-dmg { 0% { transform: translateY(20px) scale(0.4); opacity: 0; } 25% { transform: translateY(-10px) scale(1.3); opacity: 1; } 70% { opacity: 1; } 100% { transform: translateY(-60px) scale(1); opacity: 0; } }
+
+/* A flash over the whole window on every smash: white for the hero's, rainbow for an ABSURD one, red for an ouch. */
+.bq-flash { position: absolute; inset: 0; z-index: 6; pointer-events: none; background: #fff; animation: bq-flash 0.3s ease-out both; }
+.bq-flash--hit { opacity: 0.45; }
+.bq-flash--big { animation-duration: 0.45s; }
+.bq-flash--mega { background: conic-gradient(#ff5a5a, #ffd34d, #6fe06f, #5ac8ff, #c04fd8, #ff5a5a); animation: bq-flash-mega 0.9s ease-out both; }
+.bq-flash--ouch { background: radial-gradient(ellipse at center, transparent 35%, rgba(232, 40, 30, 0.75)); animation-duration: 0.6s; }
+.bq-flash--miss { background: rgba(60, 60, 90, 0.4); }
+@keyframes bq-flash { from { opacity: var(--bq-o, 0.9); } to { opacity: 0; } }
+@keyframes bq-flash-mega { 0%, 30%, 60% { opacity: 0.75; } 15%, 45% { opacity: 0.15; } 100% { opacity: 0; } }
+.bq-stage--absurd .bq-stage__bg { animation: bq-rainbow 0.7s linear 3; }
+
+/* The surprise boost bursting onto the screen before each question. */
+.bq-splash { position: absolute; inset: 0; z-index: 7; display: grid; place-items: center; pointer-events: none; }
+.bq-splash span {
+  font-size: clamp(2.2rem, 9vw, 6rem); font-weight: 900; letter-spacing: 2px; text-align: center; padding: 0 12px;
+  color: var(--bq-sun); -webkit-text-stroke: 3px var(--bq-ink); paint-order: stroke fill; text-shadow: 0 6px 0 var(--bq-ink);
+  animation: bq-splash 1.5s cubic-bezier(.2, 1.4, .4, 1) both;
+}
+.bq-splash--x3 span { color: var(--bq-orange); }
+.bq-splash--x10 span { color: #ff7ad9; animation: bq-splash 1.9s cubic-bezier(.2, 1.4, .4, 1) both, bq-rainbow 0.35s linear infinite; }
+@keyframes bq-splash { 0% { transform: scale(3) rotate(8deg); opacity: 0; } 18% { transform: scale(1) rotate(-4deg); opacity: 1; } 70% { transform: scale(1.06) rotate(-4deg); opacity: 1; } 100% { transform: scale(0.5) translateY(40vh); opacity: 0; } }
+
+.bq-bubble {
+  position: absolute; z-index: 3; top: 28%; right: 88%; width: max-content; max-width: min(240px, 40vw); margin: 0;
+  background: #fff; border-radius: 18px; padding: 8px 12px; font-style: italic; font-weight: 700; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+  animation: bq-pop 0.35s ease-out 0.3s both;
+}
+.bq-bubble::after { content: ''; position: absolute; right: -10px; top: 40%; border: 8px solid transparent; border-left: 12px solid #fff; }
+.bq-speech { text-align: center; font-style: italic; font-size: 1.1rem; margin: 0; }
+.bq-blow-line { text-align: center; font-weight: 900; font-size: 1.3rem; margin: 0; animation: bq-pop 0.25s ease; }
+.bq-smash-line { text-align: center; font-weight: 900; font-size: 1.25rem; margin: 0; animation: bq-pop 0.25s ease; }
+.bq-smash-line span { font-weight: 700; font-size: 0.95rem; opacity: 0.7; margin-left: 0.4rem; }
+.bq-smash-line--ouch { color: var(--bq-red); }
+.bq-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.bq-pop { animation: bq-pop 0.35s ease-out both; }
+@keyframes bq-pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* The surprise damage boost before each question (James, 27 Nov 2026), in the panel at the bottom. */
+.bq-boost { text-align: center; }
+.bq-boost p { margin: 2px 0 8px; }
+.bq-boost__name { font-size: clamp(1.7rem, 4vw, 2.3rem); font-weight: 900; color: var(--bq-red); letter-spacing: 1px; animation: bq-glow 0.9s ease-in-out infinite; }
+@keyframes bq-glow { 0%, 100% { text-shadow: 0 0 0 transparent; transform: scale(1); } 50% { text-shadow: 0 0 18px var(--bq-sun); transform: scale(1.05); } }
+.bq-boost__what { font-weight: 700; }
+.bq-boost--x3 .bq-boost__name { color: #e06a10; }
+.bq-boost--x10 .bq-boost__name { color: #c04fd8; animation: bq-glow 0.6s ease-in-out infinite, bq-rainbow 0.5s linear infinite; }
+.bq-panel:has(.bq-boost--x10) { box-shadow: 0 0 0 4px #c04fd8, 0 0 30px 8px rgba(255, 122, 217, 0.8); }
+.bq-panel:has(.bq-boost--x3) { box-shadow: 0 0 0 4px var(--bq-orange), 0 8px 0 rgba(0, 0, 0, 0.2); }
+.bq-panel:has(.bq-boost--x2) { box-shadow: 0 0 0 4px var(--bq-sun), 0 8px 0 rgba(0, 0, 0, 0.2); }
+
+/* The victory screen after every won fight. */
+.bq-victory__banner {
+  position: relative; z-index: 3; margin: 0; text-align: center;
+  font-size: clamp(3rem, 12vw, 7rem); font-weight: 900; letter-spacing: 3px; line-height: 1;
+  color: var(--bq-sun); -webkit-text-stroke: 3px var(--bq-ink); paint-order: stroke fill; text-shadow: 0 7px 0 var(--bq-ink);
+  animation: bq-victory-banner 0.7s cubic-bezier(.2, 1.6, .4, 1) both, bq-victory-glow 1.2s ease-in-out 0.7s infinite;
+}
+@keyframes bq-victory-banner { from { transform: scale(0.2) rotate(-12deg); opacity: 0; } to { transform: scale(1) rotate(-3deg); opacity: 1; } }
+@keyframes bq-victory-glow { 50% { transform: scale(1.06) rotate(-3deg); filter: brightness(1.2); } 0%, 100% { transform: scale(1) rotate(-3deg); } }
+.bq-victory__scene { position: relative; z-index: 2; flex: 1; display: flex; justify-content: center; align-items: flex-end; gap: 6vw; min-height: 0; }
+.bq-victory__hero { font-size: clamp(50px, min(19dvh, 22vw), 230px); animation: bq-victory-jump 0.8s ease-in-out 0.3s infinite; }
+@keyframes bq-victory-jump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px) rotate(-6deg); } }
+.bq-victory__foe { font-size: clamp(36px, min(12dvh, 15vw), 150px); animation: bq-victory-ko 1s ease-out 0.2s both; }
+@keyframes bq-victory-ko { from { transform: rotate(0) translateY(0); opacity: 1; } 30% { transform: rotate(40deg) translateY(-40px); } to { transform: rotate(100deg) translateY(10px) scale(0.8); opacity: 0.6; filter: grayscale(0.7); } }
+.bq-victory__loot { list-style: none; padding: 0; margin: 2px auto; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; font-size: 1.05rem; }
+.bq-victory__loot li { background: #fff; border-radius: 12px; padding: 4px 10px; box-shadow: 0 3px 0 var(--bq-line); }
+.bq-victory__confetti { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.bq-victory__confetti span { position: absolute; top: -3rem; left: calc(4% + var(--i) * 10%); font-size: clamp(1.6rem, 4vmin, 2.6rem); animation: bq-confetti 2.6s ease-in calc(var(--i) * 0.13s) 2 both; }
+@keyframes bq-confetti { from { transform: translateY(0) rotate(0); opacity: 1; } to { transform: translateY(105dvh) rotate(600deg); opacity: 0.2; } }
+
+/* A lost fight, the trainer arriving, the end of the adventure: one big picture over the panel. */
+.bq-solo { position: relative; z-index: 2; flex: 1; display: flex; justify-content: center; align-items: flex-end; min-height: 0; padding-bottom: 8px; }
+.bq-lost__foe { font-size: clamp(50px, min(22dvh, 26vw), 260px); animation: bq-laugh 0.5s ease-in-out infinite; }
+@keyframes bq-laugh { 0%, 100% { transform: rotate(-4deg) translateY(0); } 50% { transform: rotate(4deg) translateY(-12px); } }
+.bq-done__chest { font-size: clamp(54px, min(20dvh, 24vw), 230px); animation: bq-rattle 1.2s ease-in-out infinite; }
+@keyframes bq-rattle { 0%, 60%, 100% { transform: rotate(0); } 65% { transform: rotate(-6deg) translateY(-6px); } 75% { transform: rotate(6deg) translateY(-10px); } 85% { transform: rotate(-4deg); } }
+.bq-versus { position: relative; z-index: 2; flex: 1; display: flex; justify-content: center; align-items: flex-end; gap: 3vw; min-height: 0; padding-bottom: 8px; }
+.bq-versus .bq-fighter__body { font-size: clamp(46px, min(19dvh, 20vw), 230px); }
+.bq-versus__hero { animation: bq-slide-left 0.6s cubic-bezier(.2, 1.4, .4, 1) both !important; }
+.bq-versus__foe { animation: bq-slide-right 0.6s cubic-bezier(.2, 1.4, .4, 1) 0.15s both !important; }
+.bq-versus__vs {
+  align-self: center; font-size: clamp(2.4rem, 8vw, 5rem); font-weight: 900; color: var(--bq-red);
+  -webkit-text-stroke: 3px #fff; paint-order: stroke fill; text-shadow: 0 6px 0 var(--bq-ink); animation: bq-slam 0.5s ease-out 0.6s both;
+}
+@keyframes bq-slide-left { from { transform: translateX(-60vw); } to { transform: none; } }
+@keyframes bq-slide-right { from { transform: translateX(60vw); } to { transform: none; } }
+@keyframes bq-slam { from { transform: scale(4); opacity: 0; } 60% { transform: scale(0.9); opacity: 1; } to { transform: scale(1); } }
+
+/* ---- Granny Jetpack ---- */
+.bq-granny { display: flex; align-items: center; gap: 12px; }
+.bq-granny__face { font-size: 3.4rem; position: relative; animation: bq-hover 2.4s ease-in-out infinite; flex: none; }
+.bq-granny__face .bq-pic { height: 1.8em; }
+.bq-granny__jet { position: absolute; font-size: 1.4rem; left: -10px; bottom: -4px; transform: rotate(-135deg); }
+.bq-granny__bubble { background: #fff; border-radius: 18px; padding: 10px 14px; margin: 0; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.18); position: relative; }
+.bq-granny__bubble::before { content: ''; position: absolute; left: -12px; top: 40%; border: 8px solid transparent; border-right: 12px solid #fff; }
+@keyframes bq-hover { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-10px) rotate(3deg); } }
+
+/* ---- Hero pick ---- */
+.bq-hero-pick .bq-screen__inner { align-items: center; max-width: 1120px; gap: 10px; }
+.bq-classes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; }
+.bq-class {
+  position: relative; font: inherit; color: inherit; text-align: center; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: var(--bq-glass); border: 4px solid #fff; border-radius: 22px; padding: 10px 10px 12px;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.2); transition: transform 0.15s;
+  animation: bq-pop 0.4s ease-out both;
+}
+.bq-class:nth-child(2) { animation-delay: 0.08s; } .bq-class:nth-child(3) { animation-delay: 0.16s; } .bq-class:nth-child(4) { animation-delay: 0.24s; }
+.bq-class:hover:not(:disabled) { transform: translateY(-4px); }
+.bq-class--on { border-color: var(--bq-c); transform: scale(1.04); box-shadow: 0 0 0 4px #fff, 0 0 26px 6px var(--bq-c); }
 .bq-class:disabled { opacity: 0.35; cursor: default; }
-.bq-class__emoji { font-size: 3.6rem; }
-.bq-class strong { color: var(--bq-c); font-size: 1.2rem; }
-.bq-class__blurb { font-size: 0.92rem; }
-.bq-class__move { font-size: 0.85rem; background: var(--bq-soft); border-radius: 12px; padding: 6px 8px; }
+.bq-class__emoji {
+  font-size: clamp(44px, 9dvh, 96px); line-height: 1; width: 100%;
+  background: radial-gradient(ellipse 55% 30% at 50% 92%, color-mix(in srgb, var(--bq-c) 55%, transparent), transparent);
+}
+.bq-class__emoji .bq-pic { height: 2.1em; }
+.bq-class--on .bq-class__emoji .bq-pic { animation: bq-bounce 1.2s ease-in-out infinite; }
+.bq-class__tick { position: absolute; top: -12px; right: -10px; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--bq-c); color: #fff; font-weight: 900; font-size: 1.2rem; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.25); animation: bq-slam 0.35s ease-out both; }
+.bq-class strong { color: var(--bq-c); font-size: 1.2rem; line-height: 1.15; }
+.bq-class__blurb { font-size: 0.9rem; line-height: 1.25; }
+.bq-class__move { font-size: 0.82rem; background: var(--bq-soft); border-radius: 12px; padding: 5px 8px; line-height: 1.25; }
 .bq-looks { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 
-/* Home */
-.bq-inn__hero { display: flex; flex-direction: column; gap: 12px; }
-.bq-badge { display: flex; align-items: center; gap: 12px; }
-.bq-badge__emoji { font-size: 3.4rem; background: color-mix(in srgb, var(--bq-c) 20%, white); border-radius: 50%; width: 76px; height: 76px; display: grid; place-items: center; flex: none; }
-.bq-badge strong { display: block; font-size: 1.3rem; color: var(--bq-c); }
+/* ---- Home ---- */
+.bq-home .bq-screen__inner { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: 16px 22px; align-items: end; }
+.bq-home__hero { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.bq-granny--fly .bq-granny__face { font-size: clamp(2.6rem, 6dvh, 3.8rem); }
+.bq-granny--fly .bq-granny__bubble { font-size: 0.98rem; }
+.bq-home__me { position: relative; align-self: center; }
+.bq-home__figure { display: block; font-size: clamp(46px, 10dvh, 130px); line-height: 1; animation: bq-breathe 2s ease-in-out infinite; transform-origin: 50% 100%; }
+.bq-home__figure::after { content: ''; position: absolute; z-index: -1; left: 10%; right: 10%; bottom: -0.05em; height: 0.18em; background: radial-gradient(ellipse, rgba(0, 0, 0, 0.35), transparent 70%); }
+.bq-home__lvl {
+  position: absolute; top: 4%; right: -34px; width: 64px; height: 64px; display: grid; place-items: center;
+  background: var(--bq-c, var(--bq-red)); color: #fff; font-weight: 900; font-size: 1.2rem; border-radius: 50%;
+  border: 4px solid #fff; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25); transform: rotate(10deg);
+}
+.bq-inn__hero { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.bq-home__go { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.bq-badge { display: flex; align-items: center; gap: 10px; }
+.bq-badge__emoji { font-size: 2.6rem; background: color-mix(in srgb, var(--bq-c) 20%, white); border-radius: 50%; width: 60px; height: 60px; display: grid; place-items: center; flex: none; overflow: hidden; }
+.bq-badge__emoji .bq-pic { height: 1.35em; }
+.bq-home .bq-badge__emoji { display: none; }
+.bq-badge strong { display: block; font-size: 1.3rem; color: var(--bq-c); line-height: 1.15; }
 .bq-badge__lvl, .bq-badge__pow { display: block; }
 .bq-badge__pow { font-size: 0.9rem; opacity: 0.8; }
 .bq-bar__label { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; flex-wrap: wrap; }
@@ -110,113 +349,48 @@
 .bq-road li { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: #f1e6cf; font-weight: 700; font-size: 0.9rem; }
 .bq-road .bq-road--done { background: var(--bq-green); color: #fff; }
 .bq-road .bq-road--now { background: var(--bq-red); color: #fff; transform: scale(1.15); }
-.bq-gear { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 6px; list-style: none; padding: 0; margin: 0; font-size: 0.92rem; }
-.bq-gear li { background: var(--bq-soft); border-radius: 12px; padding: 6px 8px; }
-.bq-waiting { font-size: 0.95rem; background: var(--bq-sun); border-radius: 999px; padding: 2px 12px; }
-.bq-quests { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.bq-gear { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; list-style: none; padding: 0; margin: 0; font-size: 0.78rem; }
+.bq-gear li { background: var(--bq-soft); border-radius: 12px; padding: 4px; display: flex; flex-direction: column; align-items: center; text-align: center; line-height: 1.15; }
+.bq-gear__icon { display: inline-block; vertical-align: middle; font-size: 1.6rem; }
+.bq-gear__icon .bq-pic { display: inline-block; height: 1.5em; filter: none; }
+.bq-gear__name { font-weight: 700; }
+.bq-gear .bq-stats { justify-content: center; }
+.bq-gear .bq-stat { font-size: 0.68rem; padding: 0 5px; }
+.bq-waiting { font-size: 0.95rem; background: var(--bq-sun); color: var(--bq-ink); border-radius: 999px; padding: 2px 12px; }
+.bq-quests { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
 .bq-quest {
-  font: inherit; color: inherit; cursor: pointer; text-align: center;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  border: 0; border-radius: 22px; padding: 16px 14px; box-shadow: 0 6px 0 rgba(0, 0, 0, 0.15);
+  position: relative; overflow: hidden; font: inherit; color: inherit; cursor: pointer; text-align: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 6px;
+  min-height: clamp(200px, 32dvh, 340px); padding: 10px; box-sizing: border-box;
+  border: 5px solid #fff; border-radius: 26px; box-shadow: 0 8px 0 rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s; animation: bq-pop 0.45s ease-out both;
 }
-.bq-quest:hover:not(:disabled) { transform: translateY(-3px) rotate(-1deg); }
-.bq-quest:disabled { opacity: 0.6; cursor: default; }
-.bq-quest__face { font-size: 3.6rem; animation: bq-bounce 1.6s ease-in-out infinite; }
-.bq-quest__zone { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.75; }
-.bq-quest strong { font-size: 1.25rem; }
-.bq-quest__go { margin-top: 6px; background: var(--bq-red); color: #fff; font-weight: 800; border-radius: 999px; padding: 6px 22px; }
-@keyframes bq-bounce { 0%, 100% { transform: translateY(0) scale(1, 1); } 45% { transform: translateY(-10px) scale(0.95, 1.05); } 60% { transform: translateY(0) scale(1.08, 0.92); } }
+.bq-quest:hover:not(:disabled), .bq-quest:focus-visible { transform: translateY(-5px) rotate(-1deg) scale(1.02); }
+.bq-quest:disabled { opacity: 0.65; cursor: default; }
+.bq-quest__zone { align-self: flex-start; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #fff; background: rgba(43, 33, 64, 0.75); border-radius: 999px; padding: 2px 10px; }
+.bq-quest__face { font-size: clamp(40px, 7dvh, 84px); line-height: 1; animation: bq-bounce 1.6s ease-in-out infinite; }
+.bq-quest__face .bq-pic { height: 2em; }
+.bq-quest:hover .bq-quest__face { animation-duration: 0.6s; }
+.bq-quest__words { display: flex; flex-direction: column; background: rgba(255, 255, 255, 0.92); border-radius: 14px; padding: 6px 10px; width: 100%; box-sizing: border-box; }
+.bq-quest strong { font-size: 1.25rem; line-height: 1.2; }
+.bq-quest__go { background: var(--bq-red); color: #fff; font-weight: 900; font-size: 1.3rem; letter-spacing: 1px; border-radius: 999px; padding: 6px 34px; box-shadow: 0 4px 0 #b53e25; animation: bq-go 1.4s ease-in-out infinite; }
+.bq-quest:disabled .bq-quest__go { animation: none; background: #8a7f99; box-shadow: none; }
 
-/* Fights */
-.bq-fight { display: flex; flex-direction: column; gap: 12px; }
-.bq-fight__top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; border-radius: 16px; padding: 8px 12px; }
-.bq-dots { display: flex; gap: 4px; list-style: none; padding: 0; margin: 0; }
-.bq-dots li { min-width: 26px; height: 26px; border-radius: 13px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.7); font-size: 0.85rem; font-weight: 700; padding: 0 4px; }
-.bq-dots .bq-dots--now { background: var(--bq-sun); transform: scale(1.15); }
-.bq-dots .bq-dots--won { background: var(--bq-green); color: #fff; }
-.bq-dots .bq-dots--bonked { background: #c9b9a6; }
-.bq-arena { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 8px; border-radius: 22px; padding: 20px 12px 16px; min-height: 230px; box-shadow: 0 6px 0 rgba(0, 0, 0, 0.12); }
-.bq-side { display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; text-align: center; }
-.bq-side strong { background: rgba(255, 255, 255, 0.85); border-radius: 999px; padding: 2px 10px; }
-.bq-face { font-size: 4.4rem; line-height: 1; display: block; animation: bq-bounce 1.8s ease-in-out infinite; }
-.bq-face--big { font-size: 6rem; }
-.bq-side--foe .bq-face { animation-delay: 0.4s; }
-.bq-vs { font-weight: 900; font-size: 1.4rem; color: var(--bq-red); align-self: center; }
-.bq-hearts { display: grid; grid-template-columns: repeat(5, auto); justify-content: center; gap: 0 2px; font-size: 1.15rem; line-height: 1.25; }
-@media (max-width: 520px) { .bq-hearts { font-size: 0.95rem; gap: 0; } }
-.bq-hp { width: min(160px, 100%); height: 16px; background: rgba(255, 255, 255, 0.85); border-radius: 999px; overflow: hidden; }
-.bq-hp__fill { height: 100%; transition: width 0.5s; border-radius: 999px; }
-.bq-hp__num { font-size: 0.85rem; font-weight: 700; background: rgba(255, 255, 255, 0.7); border-radius: 999px; padding: 0 8px; }
-.bq-tag { font-size: 0.85rem; background: #fff; border-radius: 999px; padding: 2px 8px; }
-.bq-float { position: absolute; top: -6px; font-weight: 900; font-size: 1.6rem; color: #fff; -webkit-text-stroke: 1.5px var(--bq-ink); animation: bq-float 1.2s ease-out forwards; pointer-events: none; }
-.bq-float--big { font-size: 2.4rem; color: var(--bq-sun); }
-.bq-float--ouch { color: var(--bq-red); }
-@keyframes bq-float { from { opacity: 1; transform: translateY(0) scale(0.6); } 30% { transform: translateY(-14px) scale(1.2); } to { opacity: 0; transform: translateY(-40px) scale(1); } }
-.bq-wobble .bq-face { animation: bq-wobble 0.6s ease; }
-@keyframes bq-wobble { 0% { transform: rotate(0); } 25% { transform: rotate(-14deg) scale(0.9); } 50% { transform: rotate(10deg) scale(1.1, 0.85); } 75% { transform: rotate(-5deg); } 100% { transform: rotate(0); } }
-.bq-shake .bq-face { animation: bq-shake 0.5s ease; }
-@keyframes bq-shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-10px); } 40% { transform: translateX(10px); } 60% { transform: translateX(-6px); } 80% { transform: translateX(6px); } }
-.bq-speech { text-align: center; font-style: italic; font-size: 1.1rem; margin: 0; }
-.bq-blow-line { text-align: center; font-weight: 800; font-size: 1.2rem; margin: 0; }
-.bq-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-.bq-pop { animation: bq-pop 0.35s ease-out; }
-@keyframes bq-pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-/* Results */
-.bq-results { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+/* ---- Results ---- */
+.bq-results-screen .bq-screen__inner { align-items: center; justify-content: center; }
+.bq-results-screen .bq-rays { z-index: 1; }
+.bq-results__chest { position: relative; z-index: 2; margin: 0; font-size: clamp(50px, 12dvh, 120px); line-height: 1; animation: bq-slam 0.5s ease-out both; }
+.bq-results { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; width: min(600px, 100%); }
 .bq-tally { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; font-size: 1.15rem; }
 .bq-chest { background: #fff4d6; border-radius: 18px; padding: 10px 16px; width: 100%; box-sizing: border-box; }
-.bq-chest__lid { font-size: 3rem; margin: 0; animation: bq-bounce 1.2s ease-in-out 2; }
+.bq-chest p { margin: 0; font-weight: 800; }
+.bq-chest__lid { font-size: 3.6rem; margin: 0; line-height: 1; animation: bq-slam 0.5s ease-out both; filter: drop-shadow(0 0 18px rgba(255, 211, 77, 0.9)); }
+.bq-chest__lid .bq-pic { height: 1.9em; }
 .bq-chest ul { list-style: none; padding: 0; margin: 0; }
-.bq-chest__item { font-size: 1.2rem; font-weight: 700; }
-.bq-points { font-weight: 700; color: var(--bq-green); }
+.bq-chest__item { font-size: 1.2rem; font-weight: 700; animation: bq-pop 0.4s ease-out 0.4s both; }
+.bq-chest__item .bq-gear__icon { font-size: 2rem; }
+.bq-points { font-weight: 700; color: var(--bq-green); margin: 0; }
 .bq-results .bq-bar { width: 100%; }
-
-@media (max-width: 520px) {
-  .bq-main { padding: 12px 16px; }
-  .bq-face { font-size: 3.4rem; }
-  .bq-face--big { font-size: 4.4rem; }
-  .bq-arena { padding: 14px 6px; min-height: 190px; }
-  .bq-title { font-size: 1.1rem; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .bq-layer *, .bq-layer *::before { animation: none !important; transition: none !important; }
-}
-
-/* The surprise damage pop-up before each question (James, 27 Nov 2026). */
-.bq-boost { background: #fff; border-radius: 22px; padding: 12px 16px; text-align: center; box-shadow: 0 6px 0 var(--bq-line); border: 4px solid var(--bq-sun); }
-.bq-boost p { margin: 2px 0 8px; }
-.bq-boost__name { font-size: 1.8rem; font-weight: 900; color: var(--bq-red); letter-spacing: 1px; animation: bq-bounce 1s ease-in-out infinite; }
-.bq-boost__what { font-weight: 700; }
-.bq-boost--x3 { border-color: var(--bq-orange); }
-.bq-boost--x10 { border-color: #c04fd8; background: linear-gradient(135deg, #fff0fb, #f3ecff); }
-.bq-boost--x10 .bq-boost__name { color: #c04fd8; font-size: 2.2rem; }
-
-/* The hero's own smashes, one at a time (each lunges at the monster). */
-.bq-lunge .bq-face { animation: bq-lunge 0.5s ease; }
-.bq-side--hero.bq-lunge .bq-face { --bq-dir: 1; }
-.bq-lunge--back .bq-face { --bq-dir: -1; }
-.bq-smash-line--ouch { color: var(--bq-red); }
-@keyframes bq-lunge { 0%, 100% { transform: translateX(0); } 40% { transform: translateX(calc(28px * var(--bq-dir, 1))) rotate(12deg) scale(1.15); } }
-.bq-smash-line { text-align: center; font-weight: 900; font-size: 1.25rem; margin: 0.5rem 0; animation: bq-pop 0.25s ease; }
-.bq-smash-line span { font-weight: 700; font-size: 0.95rem; opacity: 0.7; margin-left: 0.4rem; }
-
-/* The victory screen after every won fight. */
-.bq-victory { position: relative; overflow: hidden; border: 4px solid var(--bq-c, var(--bq-sun)); animation: bq-pop 0.3s ease; }
-.bq-victory__banner { margin: 0.2rem 0; font-size: clamp(2.6rem, 11vw, 4rem); font-weight: 900; letter-spacing: 2px; color: var(--bq-sun); -webkit-text-stroke: 2px var(--bq-ink); animation: bq-victory-banner 0.7s cubic-bezier(.2, 1.6, .4, 1) both; }
-@keyframes bq-victory-banner { from { transform: scale(0.2) rotate(-12deg); opacity: 0; } to { transform: scale(1) rotate(-3deg); opacity: 1; } }
-.bq-victory__scene { display: flex; justify-content: center; align-items: flex-end; gap: 1.5rem; min-height: 5.5rem; }
-.bq-victory__hero { font-size: 4.5rem; animation: bq-victory-jump 0.8s ease-in-out 0.3s infinite; }
-@keyframes bq-victory-jump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-18px) rotate(-6deg); } }
-.bq-victory__foe { font-size: 3.2rem; animation: bq-victory-ko 0.9s ease-out 0.2s both; }
-@keyframes bq-victory-ko { from { transform: rotate(0) translateY(0); opacity: 1; } to { transform: rotate(100deg) translateY(10px) scale(0.8); opacity: 0.55; filter: grayscale(0.7); } }
-.bq-victory__loot { list-style: none; padding: 0; margin: 0.8rem auto; display: grid; gap: 0.35rem; max-width: 18rem; text-align: left; font-size: 1.1rem; }
-.bq-victory__loot li { background: rgba(255, 255, 255, 0.7); border-radius: 12px; padding: 0.35rem 0.7rem; animation-fill-mode: both; }
-.bq-victory__confetti { position: absolute; inset: 0; pointer-events: none; }
-.bq-victory__confetti span { position: absolute; top: -2rem; left: calc(6% + var(--i) * 12%); font-size: 1.6rem; animation: bq-confetti 2.4s ease-in calc(var(--i) * 0.15s) 2 both; }
-@keyframes bq-confetti { from { transform: translateY(0) rotate(0); opacity: 1; } to { transform: translateY(30rem) rotate(540deg); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .bq-victory__confetti { display: none; } .bq-victory__hero, .bq-victory__banner, .bq-victory__foe { animation: none; } }
 
 /* Gear stat lines (flavour): "+16 Smash", "+5 Crit". */
 .bq-stats { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
@@ -226,7 +400,7 @@
 .bq-chest__new { font-size: 0.8rem; font-weight: 900; color: #fff; background: var(--bq-red); border-radius: 999px; padding: 1px 7px; vertical-align: middle; }
 
 /* The season's boss timeline on the home screen (Friday bosses + the mega boss). */
-.bq-season { margin-bottom: 14px; padding: 14px 14px 12px; }
+.bq-season { padding: 12px 14px 10px; }
 .bq-season__top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
 .bq-season__title { font-size: 1.15rem; margin: 0; }
 .bq-season__title span { font-size: 0.85rem; font-weight: 700; opacity: 0.65; margin-left: 6px; }
@@ -255,16 +429,31 @@
 @media (prefers-reduced-motion: reduce) { .bq-season__stop--today .bq-season__emoji, .bq-season__stop--next .bq-season__emoji { animation: none; } }
 @media (max-width: 380px) { .bq-season__emoji { width: 44px; height: 44px; font-size: 1.4rem; } .bq-season__stop--mega .bq-season__emoji { width: 50px; height: 50px; } }
 
-/* Painted pictures (art.tsx): sized by the font size of the emoji they replace. */
-.bq-pic { display: block; height: 1.9em; width: auto; max-width: 100%; object-fit: contain; margin: 0 auto; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.12)); }
-.bq-face--big .bq-pic { height: 2em; }
-.bq-class__emoji .bq-pic { height: 2.2em; }
-.bq-badge__emoji { overflow: hidden; }
-.bq-badge__emoji .bq-pic { height: 1.35em; }
-.bq-granny__face .bq-pic { height: 1.7em; }
 .bq-season__emoji .bq-pic { height: 1.35em; }
-.bq-quest__face .bq-pic { height: 1.8em; }
-.bq-chest__lid .bq-pic { height: 1.8em; }
-.bq-gear__icon { display: inline-block; vertical-align: middle; }
-.bq-gear__icon .bq-pic { display: inline-block; height: 1.6em; filter: none; }
-.bq-arena .bq-side strong { background: rgba(255, 255, 255, 0.85); border-radius: 99px; padding: 1px 10px; }
+
+/* ---- Smaller windows ---- */
+@media (max-width: 860px) {
+  .bq-home .bq-screen__inner { grid-template-columns: 1fr; align-items: stretch; }
+  .bq-home__me { order: -1; }
+  .bq-classes { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px) {
+  .bq-stage, .bq-screen { padding: 58px 12px 12px; }
+  .bq-title { font-size: 1rem; padding: 3px 12px 3px 10px; }
+  .bq-hearts { font-size: 0.85rem; gap: 0; }
+  .bq-plate { padding: 3px 8px; }
+  .bq-plate strong { font-size: 0.9rem; }
+  .bq-class__move { display: none; }
+  .bq-bubble { right: auto; left: -10%; top: -2.5em; }
+  .bq-bubble::after { display: none; }
+  .bq-btn--big { font-size: 1.15rem; padding: 12px 22px; }
+  .bq-home__lvl { width: 52px; height: 52px; font-size: 1rem; right: -28px; }
+}
+@media (max-height: 560px) and (min-width: 700px) {
+  .bq-stage, .bq-screen { padding-top: 54px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bq-layer *, .bq-layer *::before, .bq-layer *::after { animation: none !important; transition: none !important; }
+  .bq-flash, .bq-splash, .bq-victory__confetti { display: none; }
+}

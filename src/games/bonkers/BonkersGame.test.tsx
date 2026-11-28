@@ -18,11 +18,11 @@ describe('Smash Quest screens', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Pirate Granny/ }));
     fireEvent.click(screen.getByRole('button', { name: /Be the Pirate Granny!/ }));
     expect(await screen.findByText('Today’s quests')).toBeInTheDocument();
-    const quests = screen.getAllByRole('button', { name: /Go!/ });
+    const quests = screen.getAllByRole('button', { name: /Go!/i });
     expect(quests).toHaveLength(2);
     fireEvent.click(quests[0]);
     expect(await screen.findByRole('button', { name: /Answer it!/ }, { timeout: 4000 })).toBeInTheDocument();
-    expect(screen.getByText(/DAMAGE!/)).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(/DAMAGE!/);
     expect(screen.getByRole('button', { name: /Wool Whirlwind/ })).toBeEnabled();
     expect(screen.getByLabelText('8 of 10 hearts')).toBeInTheDocument(); // the monster swung back twice while the hero smashed
   });
@@ -31,7 +31,7 @@ describe('Smash Quest screens', () => {
     play('bq-test-2');
     fireEvent.click(await screen.findByRole('button', { name: /Kitchen Knight/ }));
     fireEvent.click(screen.getByRole('button', { name: /Be the Kitchen Knight!/ }));
-    fireEvent.click((await screen.findAllByRole('button', { name: /Go!/ }))[0]);
+    fireEvent.click((await screen.findAllByRole('button', { name: /Go!/i }))[0]);
     fireEvent.click(await screen.findByRole('button', { name: /Answer it!/ }, { timeout: 4000 }));
     const dialog = await screen.findByRole('dialog');
     // The answer the server marked is shown after; pick a choice and see what happens.

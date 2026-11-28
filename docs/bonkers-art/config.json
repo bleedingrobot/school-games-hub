@@ -6,7 +6,8 @@
   "styles": {
     "toon": "Bold bright 2D cartoon illustration, thick clean dark outlines, flat candy colours with simple soft shading, big round googly eyes, rubbery squash-and-stretch shapes, goofy wacky expressions, cheerful kids TV animation look, no text. ",
     "toon_item": "Bold bright 2D cartoon illustration of a plain inanimate object, thick clean dark outlines, flat candy colours with simple soft shading, chunky rounded toy-like shapes, cheerful kids TV animation look, a simple prop with a smooth blank surface, no text. ",
-    "toon_place": "Bold bright 2D cartoon background painting, thick clean dark outlines, flat candy colours with simple soft shading, wonky rubbery shapes, cheerful kids TV animation look, an empty deserted place, scenery only, no text. "
+    "toon_place": "Bold bright 2D cartoon background painting, thick clean dark outlines, flat candy colours with simple soft shading, wonky rubbery shapes, cheerful kids TV animation look, an empty deserted place, scenery only, no text. ",
+    "toon_world": "Bold bright 2D cartoon background painting, thick clean dark outlines, saturated candy colours with soft shading and glowing highlights, rich detailed layered scenery with a foreground, middle ground and far background, wonky rubbery shapes, dramatic sunny light, exciting adventure video game title screen look, an empty deserted place, scenery only, no text. "
   },
   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic, gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly",
   "inbox": "~/dragon-art-inbox/bonkers-art",
@@ -1084,7 +1085,7 @@
     },
     {
       "name": "zone-laundry",
-      "prompt": "A wide side-on game background: a swamp made of soapy water, washing lines between trees, floating socks, bubbles, a laundry basket island. Flat open ground across the bottom third for characters to stand on, bright cheerful sky, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
+      "prompt": "A wide side-on adventure game battle background in a magical laundry swamp: glowing soapy water, giant washing lines strung between twisted trees with colourful socks and shirts flapping, huge floating rainbow bubbles, a laundry basket island, a washing machine waterfall far away, purple and teal evening sky. Flat open ground across the bottom third for characters to stand on, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
       "size": [
         1344,
         768
@@ -1093,11 +1094,11 @@
       "folder": "zones",
       "file": "laundry",
       "max": 1344,
-      "style": "toon_place"
+      "style": "toon_world"
     },
     {
       "name": "zone-custard",
-      "prompt": "A wide side-on game background: a cave of yellow custard with jelly crystals, sprinkles on the walls, dripping custard stalactites. Flat open ground across the bottom third for characters to stand on, bright cheerful sky, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
+      "prompt": "A wide side-on adventure game battle background inside a glowing custard cave: shiny yellow custard walls, giant wobbly jelly crystals in red green and blue lighting the cave, sprinkles sparkling on the walls, dripping custard stalactites, a custard river far below. Flat open ground across the bottom third for characters to stand on, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
       "size": [
         1344,
         768
@@ -1106,11 +1107,11 @@
       "folder": "zones",
       "file": "custard",
       "max": 1344,
-      "style": "toon_place"
+      "style": "toon_world"
     },
     {
       "name": "zone-bouncy",
-      "prompt": "A wide side-on game background: the ruins of a giant bouncy castle, half-deflated towers, balloons and streamers, soft pink ground. Flat open ground across the bottom third for characters to stand on, bright cheerful sky, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
+      "prompt": "A wide side-on adventure game battle background at the ruins of a giant bouncy castle kingdom: wobbly half-deflated pink and yellow towers, bunches of balloons floating up, streamers and confetti in the air, a bright blue sky with fluffy clouds, soft pink bouncy ground. Flat open ground across the bottom third for characters to stand on, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
       "size": [
         1344,
         768
@@ -1119,11 +1120,11 @@
       "folder": "zones",
       "file": "bouncy",
       "max": 1344,
-      "style": "toon_place"
+      "style": "toon_world"
     },
     {
       "name": "zone-supermarket",
-      "prompt": "A wide side-on game background: an enormous wacky supermarket aisle, towering shelves, runaway trolleys, price signs without words. Flat open ground across the bottom third for characters to stand on, bright cheerful sky, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
+      "prompt": "A wide side-on adventure game battle background in an enormous wacky supermarket: towering shelves stacked to the ceiling with colourful tins and cereal boxes, runaway trolleys piled high, a giant pyramid of oranges, bright ceiling lights, a shiny tiled floor. Flat open ground across the bottom third for characters to stand on, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
       "size": [
         1344,
         768
@@ -1132,11 +1133,11 @@
       "folder": "zones",
       "file": "supermarket",
       "max": 1344,
-      "style": "toon_place"
+      "style": "toon_world"
     },
     {
       "name": "zone-toiletroll",
-      "prompt": "A wide side-on game background: towers built from giant toilet rolls, bubble bath clouds, rubber ducks on the battlements. Flat open ground across the bottom third for characters to stand on, bright cheerful sky, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
+      "prompt": "A wide side-on adventure game battle background at a castle built from giant toilet rolls: tall white towers, bubble bath clouds, rubber ducks on the battlements, a bright sunset sky in pink and orange, soap bubbles drifting. Flat open ground across the bottom third for characters to stand on, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
       "size": [
         1344,
         768
@@ -1145,11 +1146,11 @@
       "folder": "zones",
       "file": "toiletroll",
       "max": 1344,
-      "style": "toon_place"
+      "style": "toon_world"
     },
     {
       "name": "zone-volcano",
-      "prompt": "A wide side-on game background: a small grumpy volcano puffing toast-shaped smoke, warm orange rocks, a tiny lava river. Flat open ground across the bottom third for characters to stand on, bright cheerful sky, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
+      "prompt": "A wide side-on adventure game battle background at a grumpy volcano island: a big volcano with a cross face puffing toast-shaped smoke, glowing orange lava rivers, warm red and orange rocks, a dramatic orange and purple sky with sparks. Flat open ground across the bottom third for characters to stand on, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
       "size": [
         1344,
         768
@@ -1158,11 +1159,11 @@
       "folder": "zones",
       "file": "volcano",
       "max": 1344,
-      "style": "toon_place"
+      "style": "toon_world"
     },
     {
       "name": "scene-home",
-      "prompt": "A cosy wonky cottage kitchen and garden where heroes rest: a launch pad for a jetpack, a teapot on the table, a gear rack with funny weapons, bunting, warm afternoon light, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
+      "prompt": "A wide bright adventure game home base: Granny Jetpack's wonky crooked cottage with a red roof and round windows on the left, a jetpack launch pad with a rocket trail in the sky, bunting and fairy lights, a gear rack with giant wooden spoons and frying pans, a treasure chest, a winding path leading off to faraway adventure lands with a volcano, a bouncy castle and a supermarket on the horizon, big sunny sky with fluffy clouds. Flat open ground across the bottom third for characters to stand on, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
       "size": [
         1344,
         768
@@ -1171,7 +1172,7 @@
       "folder": "scenes",
       "file": "home",
       "max": 1344,
-      "style": "toon_place"
+      "style": "toon_world"
     },
     {
       "name": "gear-weapon-0",
@@ -1573,6 +1574,19 @@
       "kind": "card",
       "folder": "",
       "file": "bonkers"
+    },
+    {
+      "name": "scene-heropick",
+      "prompt": "A wide bright adventure game hero select stage: a wooden stage with red curtains pulled open in a garden, four glowing spotlight circles on the stage floor, stars and confetti in the air, bunting, a big sunny sky behind with fluffy clouds and a rainbow. Flat open ground across the bottom third for characters to stand on, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
+      "size": [
+        1344,
+        768
+      ],
+      "kind": "scene",
+      "folder": "scenes",
+      "file": "heropick",
+      "max": 1344,
+      "style": "toon_world"
     }
   ]
 }
