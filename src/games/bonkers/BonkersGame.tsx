@@ -10,6 +10,7 @@ import { BonkersError, type AdventureView, type BonkersBackend, type FinishReply
 import { Fight } from './Fight';
 import { HeroPick, Inn, Results } from './Screens';
 import { HubButtons } from './HubButtons';
+import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import './bonkers.css';
 
 type View =
@@ -126,8 +127,9 @@ export function BonkersGame({ backend, extra }: { backend: BonkersBackend; extra
           <Fight backend={backend} progress={view.loaded.progress} start={view.current} onDone={(current) => finish(view.loaded, current)} />
         )}
         {view.at === 'results' && (
-          <Results before={view.before} result={view.result} current={view.current} onInn={() => backToInn(view.loaded, view.result)} />
+          <Results before={view.before} result={view.result} current={view.current} onInn={() => backToInn(view.loaded, view.result)} offline={backend.offline} />
         )}
+        <TrophyWonLine games={['bonkers']} watch={view.at === 'results' ? view.result : null} off={backend.offline} />
         {extra?.({ reload: () => void load() })}
       </main>
     </div>

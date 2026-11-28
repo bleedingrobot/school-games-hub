@@ -1,6 +1,7 @@
 /** Smash Quest's calm screens: picking a hero, home, and what an adventure earned. */
 import { useState } from 'react';
 import { useEnterGoes } from './keys';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import { Pic, bossArt, chestArt, gearArt, grannyArt, heroArt, heroPickArt, homeArt, monsterArt, zoneArt } from './art';
 import { CLASS_INFO, CLASSES, GEAR, INNKEEPER, LOOKS, SLOTS, gearById, gearStats, type GearInfo, trainerFor, zoneById, type HeroClass, type Look } from '../../../shared/bonkers/content';
 import { MAX_LEVEL } from '../../../shared/bonkers/config';
@@ -236,7 +237,9 @@ export function Inn({ loaded, busy, note, onQuest, onChangeLook }: {
   );
 }
 
-export function Results({ before, result, current, onInn }: { before: Progress; result: FinishReply; current: AdventureView; onInn: () => void }) {
+export function Results({ before, result, current, onInn, offline }: {
+  before: Progress; result: FinishReply; current: AdventureView; onInn: () => void; offline?: boolean;
+}) {
   useEnterGoes();
   const r = replay(current.adventure, current.marks);
   const fights = r.results.filter((x) => !x.trainer);
@@ -280,6 +283,7 @@ export function Results({ before, result, current, onInn }: { before: Progress; 
       <StarBar p={result.progress} />
       <button type="button" className="bq-btn bq-btn--big bq-btn--go" onClick={onInn}>Back home</button>
       </div>
+      <AchievementPop games={['bonkers']} watch={result} off={offline} atOpen />
     </Screen>
   );
 }

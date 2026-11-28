@@ -22,6 +22,8 @@ export interface BonkersBackend {
   /** Marks the next answer once; asking again for the same slot gives the first mark. */
   answer(seed: string, slot: number, value: number, ms: number, special: boolean): Promise<AnswerReply>;
   finish(seed: string): Promise<FinishReply>;
+  /** True for the preview's trial in the browser: nothing is saved, so no achievements or trophies to ask about. */
+  offline?: boolean;
 }
 
 /** A refusal or failure, with words a child (or their teacher) can be shown. */

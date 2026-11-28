@@ -63,5 +63,5 @@ export function trialBackend({ storageKey }: { storageKey: string }) {
       write();
     },
   };
-  return { backend, tools };
+  return { backend: { ...backend, offline: true }, tools };
 }

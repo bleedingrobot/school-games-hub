@@ -3,7 +3,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh bonkers, then scripts/scratch-test.sh bonkers supabase/tests/database/bonkers.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(24);
+select plan(28);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -69,7 +69,16 @@ select pg_temp.reset();
 select ok(exists (select 1 from public.hub_games where id = 'bonkers' and switch_column = 'bonkers_enabled' and counts_fn is not null
   and rules_fn is not null and players_fn is not null and season_fn is null and last_played_fn is not null and keep_achievements),
   'Bonkers Quest is registered with its hooks');
-select is(public.bonkers_counts(pg_temp.id('0a')), '{"bonkers_fights": 4, "bonkers_level": 2}'::jsonb, 'the counts come from the progress');
+select is(public.bonkers_counts(pg_temp.id('0a')), '{"bonkers_fights": 4, "bonkers_level": 2, "bonkers_quests": 0}'::jsonb, 'the counts come from the progress');
+
+-- ---- Achievements and the Smash Quest Trophy (migration 20261128135655) ----
+select is((select count(*)::int from public.achievement_types where game = 'bonkers'), 7, 'Smash Quest has 7 achievements');
+select is((select count(*)::int from public.trophies where player = pg_temp.id('0a') and trophy = 'bonkers-hero'), 0, 'no trophy at level 2');
+update public.bonkers_progress set progress = pg_temp.progress(7, 30) where player = pg_temp.id('0a');
+select is((select array_agg(season order by season) from public.trophies where player = pg_temp.id('0a') and trophy = 'bonkers-hero'), array[1, 2],
+  'level 7 wins the bronze and silver steps of the Smash Quest Trophy');
+update public.bonkers_progress set progress = pg_temp.progress(7, 31) where player = pg_temp.id('0a');
+select is((select count(*)::int from public.trophies where player = pg_temp.id('0a') and trophy = 'bonkers-hero'), 2, '... and saving again wins nothing twice');
 
 select * from finish();
 rollback;
