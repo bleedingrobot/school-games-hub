@@ -65,7 +65,7 @@ All 22 are James's (27 Nov 2026), in the brainstorm's section 10. Calls I made w
 | B.2 | Sticker shop (hats and pets), achievements, monster book | LIVE 28 Nov 2026 (PR #988): 10 achievements, Smash Quest Trophy, 9 hats and 6 pets painted |
 | B.3 | The class's Friday boss (chipped all week), the 5-week season and the mega boss | LIVE 28 Nov 2026 (PR #989): class boss chipped to 80% all week, one free Friday fight finishes it, mega boss, boss trophies, new-season reset |
 | B.4 | Guide polish, Bella's voice lines | Granny Jetpack's tips through the first adventure and on the trainer screen, all her lines read by Bella (33 clips). LIVE 29 Nov 2026 |
-| B.5 | Switch on for pupils | |
+| B.5 | Switch on for pupils | LIVE 29 Nov 2026 NZ |
 | B.6 | Paint everything on JamesGaming (bouncy cartoon) | Done 28 Nov 2026 (PRs #986, #987, #988) |
 
 ## Server, data and cost
