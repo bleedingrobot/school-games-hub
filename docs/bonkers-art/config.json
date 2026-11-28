@@ -1587,6 +1587,195 @@
       "file": "heropick",
       "max": 1344,
       "style": "toon_world"
+    },
+    {
+      "name": "hat-paper-crown",
+      "prompt": "A single game item icon: a wonky paper crown folded from newspaper with crayon jewels, seen from the front, upright, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "hats",
+      "file": "paper-crown",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "hat-propeller",
+      "prompt": "A single game item icon: a bright striped propeller beanie cap with a red propeller on top, seen from the front, upright, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "hats",
+      "file": "propeller",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "hat-party",
+      "prompt": "A single game item icon: a pointy party hat with stripes, spots and a pom-pom on top, seen from the front, upright, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "hats",
+      "file": "party",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "hat-chef",
+      "prompt": "A single game item icon: a tall puffy white chef hat, seen from the front, upright, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "hats",
+      "file": "chef",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "hat-viking",
+      "prompt": "A single game item icon: a round viking helmet with two big curly horns, seen from the front, upright, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "hats",
+      "file": "viking",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "hat-wizard",
+      "prompt": "A single game item icon: a tall floppy purple wizard hat covered in yellow stars and moons, seen from the front, upright, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "hats",
+      "file": "wizard",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "hat-unicorn",
+      "prompt": "A single game item icon: a sparkly rainbow unicorn horn on a headband with little ears, seen from the front, upright, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "hats",
+      "file": "unicorn",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "hat-top-hat",
+      "prompt": "A single game item icon: a tall shiny black top hat with a sparkly gold band, seen from the front, upright, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "hats",
+      "file": "top-hat",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "hat-golden-crown",
+      "prompt": "A single game item icon: a big shining golden king crown with red and blue jewels, seen from the front, upright, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "hats",
+      "file": "golden-crown",
+      "max": 512,
+      "style": "toon_item"
+    },
+    {
+      "name": "pet-pet-rock",
+      "prompt": "A cute cartoon pet sidekick: a small round grey pet rock with big googly eyes and a happy smile, facing slightly to the right. Single character, whole body visible with space around it, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "pets",
+      "file": "pet-rock",
+      "max": 512
+    },
+    {
+      "name": "pet-rubber-duck",
+      "prompt": "A cute cartoon pet sidekick: a cheeky little yellow rubber duck with big eyes, facing slightly to the right. Single character, whole body visible with space around it, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "pets",
+      "file": "rubber-duck",
+      "max": 512
+    },
+    {
+      "name": "pet-hamster",
+      "prompt": "A cute cartoon pet sidekick: a chubby little orange hamster rolling inside a clear hamster ball, facing slightly to the right. Single character, whole body visible with space around it, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "pets",
+      "file": "hamster",
+      "max": 512
+    },
+    {
+      "name": "pet-flying-toast",
+      "prompt": "A cute cartoon pet sidekick: a slice of toast with tiny white wings and a happy face, flying, facing slightly to the right. Single character, whole body visible with space around it, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "pets",
+      "file": "flying-toast",
+      "max": 512
+    },
+    {
+      "name": "pet-jelly-slime",
+      "prompt": "A cute cartoon pet sidekick: a wobbly green jelly slime blob with a big grin, facing slightly to the right. Single character, whole body visible with space around it, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "pets",
+      "file": "jelly-slime",
+      "max": 512
+    },
+    {
+      "name": "pet-baby-dragon",
+      "prompt": "A cute cartoon pet sidekick: a tiny chubby purple baby dragon with little wings, very cute, facing slightly to the right. Single character, whole body visible with space around it, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "pets",
+      "file": "baby-dragon",
+      "max": 512
     }
   ]
 }

@@ -43,3 +43,6 @@ export function Pic({ src, emoji, className }: { src: string | undefined; emoji:
     ? <img className={`bq-pic${className ? ` ${className}` : ''}`} src={src} alt="" draggable={false} />
     : <>{emoji}</>;
 }
+
+/** The sticker shop's hats and pets (ids like 'hat-viking', 'pet-hamster'). */
+export const shopArt = (id: string) => paint(`${id.startsWith('hat-') ? 'hats' : 'pets'}/${id.slice(4)}`);

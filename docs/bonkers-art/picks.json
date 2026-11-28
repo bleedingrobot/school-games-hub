@@ -126,5 +126,20 @@
   "chest-closed": 1,
   "chest-open": 1,
   "card-bonkers": 1,
-  "scene-heropick": 1
+  "scene-heropick": 1,
+  "hat-chef": 1,
+  "hat-golden-crown": 1,
+  "hat-paper-crown": 2,
+  "hat-party": 2,
+  "hat-propeller": 2,
+  "hat-top-hat": 2,
+  "hat-unicorn": 1,
+  "hat-viking": 2,
+  "hat-wizard": 2,
+  "pet-baby-dragon": 1,
+  "pet-flying-toast": 2,
+  "pet-hamster": 1,
+  "pet-jelly-slime": 1,
+  "pet-pet-rock": 1,
+  "pet-rubber-duck": 1
 }

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { HEARTS, MAX_SAVED_ADVENTURES, POINTS, STARS, TRAINER_HEARTS } from './config';
 import { zoneById } from './content';
 import {
-  adventuresWaiting, chestPiece, emptyProgress, heroPower, makeAdventure, parseQuest, questOptions, replay, rewardsFor,
+  adventuresWaiting, buyItem, chestPiece, wearItem, emptyProgress, heroPower, makeAdventure, parseQuest, questOptions, replay, rewardsFor,
   starsToTrainer, type Mark, type Progress,
 } from './engine';
 
@@ -116,5 +116,23 @@ describe('season timeline', () => {
     expect(nextBossWords(v)).toMatch(/^Friday boss in 6 days: /);
     expect(seasonView({ start: '2026-10-18', days: 35 }, '2026-10-01')).toBeNull();
     expect(seasonView(null, '2026-11-28')).toBeNull();
+  });
+
+  it('the sticker shop sells each hat or pet once for stickers, wears what you buy, and the Monster Book counts the monsters smashed', () => {
+    const p = hero({ stickers: 12 });
+    expect(buyItem(p, 'hat-golden-crown')).toBeNull(); // too dear
+    expect(buyItem(p, 'nope')).toBeNull();
+    const a = buyItem(p, 'hat-paper-crown')!;
+    expect(a).toMatchObject({ stickers: 7, owned: ['hat-paper-crown'], hat: 'hat-paper-crown' });
+    expect(buyItem(a, 'hat-paper-crown')).toBeNull(); // once
+    expect(wearItem(a, 'hat', null)!.hat).toBeNull();
+    expect(wearItem(a, 'pet', 'hat-paper-crown')).toBeNull(); // a hat isn't a pet
+    expect(wearItem(a, 'hat', 'hat-wizard')).toBeNull(); // not bought
+    const quest = parseQuest('laundry:wins:4:0')!;
+    const adv = makeAdventure(7, quest, hero());
+    const r = replay(adv, rights(60));
+    const book = rewardsFor(hero({ book: { 'sock-goblin': 2 } }), r).progress.book!;
+    const won = r.results.filter((x) => !x.trainer && x.outcome === 'won');
+    expect(Object.values(book).reduce((s, n) => s + n, 0)).toBe(2 + won.length);
   });
 });

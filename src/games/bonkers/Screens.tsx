@@ -1,6 +1,8 @@
 /** Smash Quest's calm screens: picking a hero, home, and what an adventure earned. */
 import { useState } from 'react';
 import { useEnterGoes } from './keys';
+import { HeroFigure } from './Shop';
+import { AchievementPop } from '../../achievements/AchievementPop';
 import { Pic, bossArt, chestArt, gearArt, grannyArt, heroArt, heroPickArt, homeArt, monsterArt, zoneArt } from './art';
 import { CLASS_INFO, CLASSES, GEAR, INNKEEPER, LOOKS, SLOTS, gearById, gearStats, type GearInfo, trainerFor, zoneById, type HeroClass, type Look } from '../../../shared/bonkers/content';
 import { MAX_LEVEL } from '../../../shared/bonkers/config';
@@ -12,7 +14,7 @@ import { grannySays, levelTitle, questWords, xp } from './words';
 const LOOK_WORDS: Record<Look, string> = { boy: 'Boy', girl: 'Girl', animal: 'Animal' };
 
 /** A calm screen filling the window: its painting edge to edge, the content on top (docs/FULL-WINDOW.md). */
-function Screen({ label, pic, className, children }: { label: string; pic: string | undefined; className?: string; children: React.ReactNode }) {
+export function Screen({ label, pic, className, children }: { label: string; pic: string | undefined; className?: string; children: React.ReactNode }) {
   return (
     <section className={`bq-screen${className ? ` ${className}` : ''}`} aria-label={label}>
       <div className="bq-stage__bg" style={pic ? { background: `center bottom / cover no-repeat url(${pic})` } : undefined} aria-hidden="true" />
@@ -178,8 +180,9 @@ function SeasonTimeline({ season }: { season: SeasonView }) {
   );
 }
 
-export function Inn({ loaded, busy, note, onQuest, onChangeLook }: {
+export function Inn({ loaded, busy, note, onQuest, onChangeLook, onShop, onBook }: {
   loaded: LoadReply; busy: boolean; note: string | null; onQuest: (id: string) => void; onChangeLook: () => void;
+  onShop: () => void; onBook: () => void;
 }) {
   const p = loaded.progress;
   const out = loaded.waiting === 0;
@@ -190,7 +193,7 @@ export function Inn({ loaded, busy, note, onQuest, onChangeLook }: {
         <Granny line={grannySays(p, loaded.waiting)} className="bq-granny--fly" />
         {p.hero && ci && (
           <div className="bq-home__me">
-            <span className="bq-home__figure" aria-hidden="true"><Pic src={heroArt(p.hero.cls, p.hero.look, p.level)} emoji={ci.emoji[p.hero.look]} /></span>
+            <span className="bq-home__figure" aria-hidden="true"><HeroFigure cls={p.hero.cls} look={p.hero.look} level={p.level} hat={p.hat} pet={p.pet} /></span>
             <span className="bq-home__lvl" aria-hidden="true">Lv {p.level}</span>
           </div>
         )}
@@ -204,10 +207,16 @@ export function Inn({ loaded, busy, note, onQuest, onChangeLook }: {
       </div>
       <div className="bq-home__go">
         {loaded.season && <SeasonTimeline season={loaded.season} />}
+        <div className="bq-home__row">
+        <div className="bq-home__more">
+          <button type="button" className="bq-btn bq-btn--small bq-btn--shop" onClick={onShop}>🛍️ Sticker shop <span>🏷️ {p.stickers}</span></button>
+          <button type="button" className="bq-btn bq-btn--small bq-btn--book" onClick={onBook}>📖 Monster Book</button>
+        </div>
         <h2 className="bq-h2 bq-h2--banner">
           Today’s quests
           <span className="bq-waiting">{loaded.waiting === null ? 'Unlimited today' : `${loaded.waiting} adventure${loaded.waiting === 1 ? '' : 's'} waiting`}</span>
         </h2>
+        </div>
         <div className="bq-quests">
           {loaded.quests.map((q, i) => {
             const zone = zoneById(q.zone);
@@ -236,7 +245,9 @@ export function Inn({ loaded, busy, note, onQuest, onChangeLook }: {
   );
 }
 
-export function Results({ before, result, current, onInn }: { before: Progress; result: FinishReply; current: AdventureView; onInn: () => void }) {
+export function Results({ before, result, current, onInn, offline }: {
+  before: Progress; result: FinishReply; current: AdventureView; onInn: () => void; offline?: boolean;
+}) {
   useEnterGoes();
   const r = replay(current.adventure, current.marks);
   const fights = r.results.filter((x) => !x.trainer);
@@ -280,6 +291,7 @@ export function Results({ before, result, current, onInn }: { before: Progress; 
       <StarBar p={result.progress} />
       <button type="button" className="bq-btn bq-btn--big bq-btn--go" onClick={onInn}>Back home</button>
       </div>
+      <AchievementPop games={['bonkers']} watch={result} off={offline} atOpen />
     </Screen>
   );
 }
