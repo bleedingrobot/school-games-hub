@@ -45,6 +45,15 @@ export const MONSTER_HITS = [9, 10, 12];
 /** The zone's big monster (the "bonk the big one" quest) and the trainers. */
 export const BIG_MONSTER_HITS = 16;
 export const TRAINER_HITS = 20;
+/** The class's Friday boss, fought by each pupil on Friday (B.3): the longest fight, about 3 right answers. */
+export const BOSS_HITS = 28;
+
+/**
+ * The class boss (B.3, James 27 Nov 2026: "chip all week, finish Friday"). Its health is sized by the class: this many
+ * per pupil (at least 8 pupils). Every right answer all week chips 1, up to CHIP_SHARE of it, so only Friday's boss
+ * fights can finish it: each one won hits BOSS_FINISH more (plus its right answers).
+ */
+export const CLASS_BOSS = { perPupil: 25, megaPerPupil: 35, minPupils: 8, chipShare: 0.8, finish: 12 } as const;
 
 /**
  * Less maths, more smashing (James, 27 Nov 2026: "a bit too much maths", then "one question per fight"): the hero smashes

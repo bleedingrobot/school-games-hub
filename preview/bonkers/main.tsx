@@ -16,6 +16,7 @@ const trial = trialBackend({ storageKey: 'bonkers-preview' });
 
 function Tools({ reload }: { reload: () => void }) {
   const [unlimited, setUnlimited] = useState(true);
+  const [friday, setFriday] = useState(false);
   return (
     <details className="bqp-tools">
       <summary>Preview tools</summary>
@@ -23,6 +24,9 @@ function Tools({ reload }: { reload: () => void }) {
       <button type="button" onClick={() => { trial.tools.fillBar(); reload(); }}>Fill the star bar (meet the trainer)</button>
       <button type="button" onClick={() => { trial.tools.levelUp(); reload(); }}>Up a level</button>
       <button type="button" onClick={() => { trial.tools.stickers(); reload(); }}>+50 stickers</button>
+      <button type="button" onClick={() => { trial.tools.setFriday(!friday); setFriday(!friday); reload(); }}>
+        {friday ? 'Clock: Friday, boss day (tap for today)' : 'Clock: today (tap for Friday, boss day)'}
+      </button>
       <button type="button" onClick={() => { trial.tools.setUnlimited(!unlimited); setUnlimited(!unlimited); reload(); }}>
         {unlimited ? 'Adventures: unlimited (tap for 1 a day)' : 'Adventures: 1 a day (tap for unlimited)'}
       </button>

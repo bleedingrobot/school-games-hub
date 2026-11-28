@@ -4,10 +4,11 @@
  * reads the clock or a random number of its own: the same inputs always give the same adventure and the same result.
  */
 import {
-  ADVENTURES_A_DAY, BIG_MONSTER_HITS, HEARTS, MAX_LEVEL, MAX_SAVED_ADVENTURES, MONSTER_HITS, POINTS, SPECIAL, STARS, STARS_TO_TRAINER,
+  ADVENTURES_A_DAY, BIG_MONSTER_HITS, BOSS_HITS, HEARTS, MAX_LEVEL, MAX_SAVED_ADVENTURES, MONSTER_HITS, POINTS, SPECIAL, STARS, STARS_TO_TRAINER,
   STICKERS_A_WIN, TRAINER_HEARTS, MONSTER_SWINGS, WRONG_HEARTS, TRAINER_HITS, AUTO_BONKS, AUTO_SHARE, BOOSTS, basePower, expectedGear, FIGHTS,
   QUESTIONS_AN_ADVENTURE,
 } from './config';
+import { ALL_BOSSES } from './season';
 import { CLASSES, GEAR, LOOKS, SLOTS, TOP_TIER, openZones, shopItem, trainerFor, zoneById, type HeroClass, type Look, type ShopKind, type Slot } from './content';
 
 // ---------------------------------------------------------------- progress
@@ -46,6 +47,8 @@ export interface Progress {
   pet?: string | null;
   /** The Monster Book (B.2): times each monster has been smashed, by id. Missing on saves from before the book. */
   book?: Record<string, number>;
+  /** The last day (NZ) this pupil had the class boss fight (B.3): one a Friday. */
+  bossDay?: string;
 }
 
 export const emptyProgress = (): Progress => ({
@@ -107,7 +110,7 @@ export function adventuresWaiting(p: Pick<Progress, 'credits' | 'creditDay'>, to
 
 // ---------------------------------------------------------------- quests
 
-export type QuestKind = 'wins' | 'big' | 'hunt';
+export type QuestKind = 'wins' | 'big' | 'hunt' | 'boss';
 
 export interface Quest {
   /** `zone:kind:fights:monster`, e.g. "laundry:hunt:5:0". */
@@ -148,7 +151,9 @@ export function parseQuest(id: unknown): Quest | null {
   const [zone, kind, f, mon] = id.split(':');
   const fights = Number(f);
   const monster = Number(mon);
-  if (!zoneById(zone) || !['wins', 'big', 'hunt'].includes(kind)) return null;
+  if (!zoneById(zone) || !['wins', 'big', 'hunt', 'boss'].includes(kind)) return null;
+  // The class's Friday (or mega) boss: one long fight; `monster` is the boss (seasonBoss).
+  if (kind === 'boss') return fights === 1 && Number.isInteger(monster) && monster >= 0 && monster < ALL_BOSSES.length ? { id, zone, kind, fights, monster } : null;
   if (!Number.isInteger(fights) || fights < FIGHTS.min || fights > FIGHTS.max || !Number.isInteger(monster) || monster < 0 || monster > 2) return null;
   return { id, zone, kind: kind as QuestKind, fights, monster };
 }
@@ -179,7 +184,14 @@ export function questOptions(player: string, today: string, level: number, adven
 }
 
 /** How many it takes to finish the quest. */
-export const questTarget = (q: Quest) => (q.kind === 'wins' ? q.fights - 1 : q.kind === 'big' ? 1 : 3);
+export const questTarget = (q: Quest) => (q.kind === 'wins' ? q.fights - 1 : q.kind === 'big' || q.kind === 'boss' ? 1 : 3);
+
+/** The boss fight quest for a Friday: fought in the hero's newest zone. */
+export function bossQuest(level: number, boss: number): Quest {
+  const zones = openZones(level);
+  const q = { zone: zones[zones.length - 1].id, kind: 'boss' as const, fights: 1, monster: boss };
+  return { ...q, id: questId(q) };
+}
 
 // ---------------------------------------------------------------- an adventure
 
@@ -215,6 +227,11 @@ export function makeAdventure(seed: number, quest: Quest, p: Pick<Progress, 'her
   const zone = zoneById(quest.zone);
   if (!zone || !p.hero) throw new Error('No such quest.');
   const r = seeded(seed);
+  if (quest.kind === 'boss') {
+    const b = ALL_BOSSES[quest.monster];
+    const foes: Foe[] = [{ id: `boss-${quest.monster}`, name: b.name, hp: foeHp(p.level, BOSS_HITS), big: true }];
+    return { quest, start: { cls: p.hero.cls, level: p.level, power: heroPower(p), stars: p.stars }, foes, moments: makeMoments(r) };
+  }
   const picks: number[] = [];
   for (let i = 0; i < quest.fights; i++) picks.push(Math.floor(r() * 3));
   if (quest.kind === 'hunt') {
@@ -228,14 +245,18 @@ export function makeAdventure(seed: number, quest: Quest, p: Pick<Progress, 'her
     return { id: mon.id, name: mon.name, hp: foeHp(p.level, MONSTER_HITS[v]), big: false };
   });
   if (quest.kind === 'big') foes[foes.length - 1] = { id: zone.big.id, name: zone.big.name, hp: foeHp(p.level, BIG_MONSTER_HITS), big: true };
+  return { quest, start: { cls: p.hero.cls, level: p.level, power: heroPower(p), stars: p.stars }, foes, moments: makeMoments(r) };
+}
+
+/** Before each question slot: the hero's own smashes and the surprise boost. */
+function makeMoments(r: () => number): Moment[] {
   const total = BOOSTS.reduce((t, b) => t + b.weight, 0);
-  const moments: Moment[] = Array.from({ length: QUESTIONS_AN_ADVENTURE }, () => {
+  return Array.from({ length: QUESTIONS_AN_ADVENTURE }, () => {
     const autos = AUTO_BONKS.min + Math.floor(r() * (AUTO_BONKS.max - AUTO_BONKS.min + 1));
     let roll = r() * total;
     const boost = BOOSTS.find((b) => (roll -= b.weight) < 0) ?? BOOSTS[0];
     return { autos, boost: boost.times };
   });
-  return { quest, start: { cls: p.hero.cls, level: p.level, power: heroPower(p), stars: p.stars }, foes, moments };
 }
 
 /** One answer as the server marked it, and whether the special move was used on it. */
@@ -311,7 +332,7 @@ function questDone(adv: Adventure, results: FightResult[]): boolean {
   const fights = results.filter((r) => !r.trainer);
   const q = adv.quest;
   if (q.kind === 'wins') return fights.filter((r) => r.outcome === 'won').length >= questTarget(q);
-  if (q.kind === 'big') return fights.some((r) => r.foe.big && r.outcome === 'won');
+  if (q.kind === 'big' || q.kind === 'boss') return fights.some((r) => r.foe.big && r.outcome === 'won');
   const zone = zoneById(q.zone);
   const hunted = zone?.monsters[q.monster].id;
   return fights.filter((r) => r.foe.id === hunted && r.outcome === 'won').length >= questTarget(q);
@@ -353,7 +374,8 @@ export function replay(adv: Adventure, marks: readonly Mark[]): Replay {
   const afterFights = () => {
     done = questDone(adv, results);
     if (done) stars += STARS.quest;
-    const barFull = level < MAX_LEVEL && startStars + stars >= starsToTrainer(level);
+    // No trainer after a boss fight: the boss is the day's big moment.
+    const barFull = adv.quest.kind !== 'boss' && level < MAX_LEVEL && startStars + stars >= starsToTrainer(level);
     if (barFull) {
       trainerMet = true;
       phase = 'trainer';
@@ -467,7 +489,7 @@ export function rewardsFor(before: Progress, r: Replay): Rewards {
   }
   // The Monster Book: every monster smashed this adventure gets a tick.
   const book = { ...(before.book ?? {}) };
-  for (const f of fights) if (f.outcome === 'won') book[f.foe.id] = (book[f.foe.id] ?? 0) + 1;
+  for (const f of fights) if (f.outcome === 'won' && !f.foe.id.startsWith('boss-')) book[f.foe.id] = (book[f.foe.id] ?? 0) + 1;
   p.book = book;
   const gear: string[] = [];
   const chests = (r.questDone ? 1 : 0) + (r.trainerWon ? 1 : 0);

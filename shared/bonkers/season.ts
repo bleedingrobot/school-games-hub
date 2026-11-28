@@ -35,6 +35,10 @@ export const MEGA_BOSSES: readonly BossInfo[] = [
   { name: 'The Infinite Homework Hydra', emoji: '🐍', blurb: 'Finish one page and two more grow back.' },
 ];
 
+/** Every boss in one list: the 4 Friday bosses, then the 3 mega bosses (a boss quest's `monster` is the index). */
+export const ALL_BOSSES: readonly BossInfo[] = [...FRIDAY_BOSSES, ...MEGA_BOSSES];
+export const bossIndex = (b: BossInfo) => ALL_BOSSES.indexOf(b);
+
 export type StopState = 'beaten-time' | 'today' | 'next' | 'later';
 
 export interface BossStop {

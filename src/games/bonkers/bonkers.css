@@ -507,3 +507,21 @@
 .bq-page__n { font-size: 0.85rem; font-weight: 700; color: #6a3fb0; }
 .bq-page__line { font-size: 0.8rem; font-style: italic; opacity: 0.75; }
 @media (max-width: 700px) { .bq-shop__grid { grid-template-columns: 1fr; } }
+
+/* ---- The class boss (B.3) ---- */
+.bq-bossbar { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 8px 10px; border-radius: 14px; background: #ffe9f4; border: 2px solid #ff7ad9; }
+.bq-bossbar--mega { background: #fff0e6; border-color: var(--bq-red); }
+.bq-bossbar--beaten { background: #e6f8e6; border-color: var(--bq-green); }
+.bq-bossbar__face { font-size: 1.8rem; line-height: 1; flex: none; }
+.bq-bossbar__face .bq-pic { height: 1.7em; }
+.bq-bossbar--beaten .bq-bossbar__face { filter: grayscale(0.6); rotate: 80deg; }
+.bq-bossbar__words { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; font-size: 0.92rem; }
+.bq-bossbar__track { height: 14px; border-radius: 99px; background: rgba(0, 0, 0, 0.1); overflow: hidden; }
+.bq-bossbar__fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #ff7ad9, var(--bq-red)); transition: width 0.6s; }
+.bq-bossbar--beaten .bq-bossbar__fill { background: var(--bq-green); }
+.bq-bossbar__hint { font-size: 0.8rem; opacity: 0.8; }
+.bq-quest--boss { background: radial-gradient(circle at 50% 40%, #ff9ad9, #7a2fa0 75%) !important; border-color: var(--bq-sun); animation: bq-pop 0.45s ease-out both, bq-boss-glow 1.2s ease-in-out infinite; }
+.bq-quest--mega { background: radial-gradient(circle at 50% 40%, #ffb36b, #a5281c 75%) !important; }
+@keyframes bq-boss-glow { 50% { box-shadow: 0 8px 0 rgba(0, 0, 0, 0.25), 0 0 30px 8px rgba(255, 211, 77, 0.8); } }
+.bq-quest--boss .bq-quest__face { font-size: clamp(48px, 9dvh, 96px); }
+.bq-shout--small { font-size: clamp(1.4rem, 4vw, 2.2rem); }

@@ -5,6 +5,7 @@
  */
 import type { FactAnswer, FactStats } from '../maths/leitner';
 import type { MathsContext } from '../maths/serverQuestions';
+import { CLASS_BOSS } from './config';
 import { unplayed, type BonkersServices, type FinishedAdventure, type KeptAdventure, type Saved, type Settings } from './server';
 
 export interface MemoryAdventure {
@@ -19,7 +20,12 @@ export interface MemoryData {
   facts: Record<string, FactStats[]>;
   /** The `once` of every batch of answers or points, so one sent twice counts once. */
   recorded: string[];
+  /** The class boss for each season and week ("season:week"): one pretend class of MEMORY_CLASS pupils. */
+  bosses?: Record<string, { hp: number; dealt: number; beaten: boolean }>;
 }
+
+/** The pretend class's size, for the class boss's health. */
+export const MEMORY_CLASS = 20;
 
 export interface MemoryOptions {
   data?: MemoryData;
@@ -97,5 +103,18 @@ export function memoryServices(options: MemoryOptions = {}): BonkersServices & {
       saved();
     },
     progressChanged: async () => undefined,
+    async boss(_player, key, add, finishing) {
+      data.bosses ??= {};
+      const id = `${key.season}:${key.week}`;
+      const hp = Math.max(CLASS_BOSS.minPupils, MEMORY_CLASS) * (key.mega ? CLASS_BOSS.megaPerPupil : CLASS_BOSS.perPupil);
+      const b = (data.bosses[id] ??= { hp, dealt: 0, beaten: false });
+      if (add > 0 && !b.beaten) {
+        const cap = finishing ? b.hp : Math.max(b.dealt, Math.floor(b.hp * CLASS_BOSS.chipShare));
+        b.dealt = Math.min(cap, b.dealt + add);
+        if (b.dealt >= b.hp) b.beaten = true;
+        saved();
+      }
+      return copy(b);
+    },
   };
 }

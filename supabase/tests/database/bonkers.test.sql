@@ -3,7 +3,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh bonkers, then scripts/scratch-test.sh bonkers supabase/tests/database/bonkers.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(29);
+select plan(34);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -67,7 +67,7 @@ select pg_temp.reset();
 
 -- ---- In the hub ----
 select ok(exists (select 1 from public.hub_games where id = 'bonkers' and switch_column = 'bonkers_enabled' and counts_fn is not null
-  and rules_fn is not null and players_fn is not null and season_fn is null and last_played_fn is not null and keep_achievements),
+  and rules_fn is not null and players_fn is not null and season_fn is not null and last_played_fn is not null and keep_achievements),
   'Bonkers Quest is registered with its hooks');
 select is(public.bonkers_counts(pg_temp.id('0a')), '{"bonkers_fights": 4, "bonkers_level": 2, "bonkers_quests": 0, "bonkers_book": 0, "bonkers_shop": 0}'::jsonb, 'the counts come from the progress');
 
@@ -83,6 +83,21 @@ select is(public.bonkers_counts(pg_temp.id('0a')) - 'bonkers_fights' - 'bonkers_
   'the Monster Book counts the monsters smashed, and the shop what''s bought');
 update public.bonkers_progress set progress = pg_temp.progress(7, 31) where player = pg_temp.id('0a');
 select is((select count(*)::int from public.trophies where player = pg_temp.id('0a') and trophy = 'bonkers-hero'), 2, '... and saving again wins nothing twice');
+
+-- ---- The class boss (migration bonkers_class_boss) ----
+insert into public.class_members (student_id, class_id) values (pg_temp.id('0a'), current_setting('test.cls')::uuid) on conflict (student_id) do nothing;
+select set_config('test.hp', (select (greatest(8, count(*)) * 25)::text from public.class_members m
+  where m.class_id = (select class_id from public.class_members where student_id = pg_temp.id('0a'))), true);
+select is((public.bonkers_class_boss(pg_temp.id('0a'), 1, 1, false, 0, false) ->> 'hp')::int, current_setting('test.hp')::int,
+  'the class boss''s health is 25 a pupil (at least 8)');
+select is((public.bonkers_class_boss(pg_temp.id('0a'), 1, 1, false, 999, false) ->> 'dealt')::int, floor(current_setting('test.hp')::int * 0.8)::int,
+  'right answers all week dent it, but only up to 80%');
+select is(public.bonkers_class_boss(pg_temp.id('0a'), 1, 1, false, 999, true) ->> 'beaten', 'true', 'a Friday boss fight won can finish it');
+select is((select count(*)::int from public.trophies where player = pg_temp.id('0a') and trophy = 'bonkers-friday'), 1,
+  '... and everyone who dented it wins the Friday Boss Trophy');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
+select throws_ok($$ select public.bonkers_class_boss(pg_temp.id('0a'), 1, 2, false, 5, true) $$, '42501', null, 'pupils can''t hit the boss themselves');
+select pg_temp.reset();
 
 select * from finish();
 rollback;

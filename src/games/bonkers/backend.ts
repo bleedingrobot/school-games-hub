@@ -3,11 +3,11 @@
  * school server is reached through ./data.ts; the trial backend (./trial.ts) runs the very same rules in this browser for
  * the preview, with a pretend pupil kept in localStorage. Built like Toon Flap.
  */
-import type { AdventureView, AnswerReply, FinishReply, LoadReply, Reply } from '../../../shared/bonkers/server';
+import type { AdventureView, AnswerReply, ClassBoss, FinishReply, LoadReply, Reply } from '../../../shared/bonkers/server';
 import type { Progress } from '../../../shared/bonkers/engine';
 import type { HeroClass, Look, ShopKind } from '../../../shared/bonkers/content';
 
-export type { AdventureView, AnswerReply, FinishReply, LoadReply };
+export type { AdventureView, AnswerReply, ClassBoss, FinishReply, LoadReply };
 
 export interface StartReply {
   current: AdventureView;

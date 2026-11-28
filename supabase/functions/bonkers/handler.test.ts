@@ -103,3 +103,29 @@ it('replays the marks to save the result once, gives points once, and uses up th
   expect((await off.send('pupil-a', { action: 'hero', cls: 'knight', look: 'boy' })).body.code).toBe('off');
   expect((await off.send('pupil-a', { action: 'load' })).body.enabled).toBe(false);
 });
+
+it('the class boss: right answers dent it all week (up to 80%), and Friday brings one free boss fight that can finish it', async () => {
+  const friday = Date.UTC(2026, 11, 3, 22); // Friday 4 Dec 2026, 11am in NZ: week 1's boss day
+  const s = setup({ now: () => friday, settings: (): Settings => ({ enabled: true, season: { start: '2026-11-30', days: 35 } }) });
+  services = s.services;
+  const { send } = s;
+  await send('pupil-a', { action: 'hero', cls: 'granny', look: 'girl' });
+  const load = (await send('pupil-a', { action: 'load' })).body;
+  expect(load.boss).toMatchObject({ name: 'Captain Lost Property', hp: 500, dealt: 0, beaten: false, today: true, fought: false, mega: false });
+  expect(load.boss.quest.kind).toBe('boss');
+  const start = (await send('pupil-a', { action: 'start', quest: load.boss.quest.id })).body;
+  expect(start.waiting).toBe(1); // the boss fight doesn't use up the day's adventure
+  expect(start.current.adventure.foes).toHaveLength(1);
+  await playThrough(send, 'pupil-a', start.current, () => true);
+  const done = (await send('pupil-a', { action: 'finish', seed: start.current.seed })).body;
+  expect(done.bossDamage).toBeGreaterThan(12); // its right answers, and 12 more for winning
+  expect(done.boss).toMatchObject({ dealt: done.bossDamage, fought: true, quest: null });
+  // One boss fight a Friday.
+  expect((await send('pupil-a', { action: 'start', quest: load.boss.quest.id })).body.code).toBe('stale');
+  // A big week of right answers only dents it to 80%.
+  services.data.bosses!['1:1'].dealt = 399;
+  const next = (await send('pupil-a', { action: 'load' })).body;
+  const cur = (await send('pupil-a', { action: 'start', quest: next.quests[0].id })).body.current;
+  await playThrough(send, 'pupil-a', cur, () => true);
+  expect((await send('pupil-a', { action: 'finish', seed: cur.seed })).body.boss.dealt).toBe(400);
+});
