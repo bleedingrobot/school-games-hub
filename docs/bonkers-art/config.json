@@ -1,10 +1,12 @@
 {
-  "_from": "docs/game-guide/templates/art-config.json. FULL ART PLAN (28 Nov 2026, docs/BONKERS-ART-PLAN.md). Not painted yet: James says when. Check with: python3 scripts/game_art.py bonkers paint OUT --dry-run",
+  "_from": "docs/game-guide/templates/art-config.json. Painted on JamesGaming 28 Nov 2026 (one try each; 46 repainted with the toon_item / toon_place styles or new words). docs/BONKERS-ART-PLAN.md",
   "game": "bonkers",
   "filename_prefix": "bonkers/img",
   "style": "toon",
   "styles": {
-    "toon": "Bold bright 2D cartoon illustration, thick clean dark outlines, flat candy colours with simple soft shading, big round googly eyes, rubbery squash-and-stretch shapes, goofy wacky expressions, cheerful kids TV animation look, no text. "
+    "toon": "Bold bright 2D cartoon illustration, thick clean dark outlines, flat candy colours with simple soft shading, big round googly eyes, rubbery squash-and-stretch shapes, goofy wacky expressions, cheerful kids TV animation look, no text. ",
+    "toon_item": "Bold bright 2D cartoon illustration of a plain inanimate object, thick clean dark outlines, flat candy colours with simple soft shading, chunky rounded toy-like shapes, cheerful kids TV animation look, a simple prop with a smooth blank surface, no text. ",
+    "toon_place": "Bold bright 2D cartoon background painting, thick clean dark outlines, flat candy colours with simple soft shading, wonky rubbery shapes, cheerful kids TV animation look, an empty deserted place, scenery only, no text. "
   },
   "negative": "text, letters, words, numbers, watermark, logo, signature, blurry, low quality, extra limbs, deformed, photo, realistic, gore, blood, frightening horror, existing game characters, copyrighted characters, real people, ugly",
   "inbox": "~/dragon-art-inbox/bonkers-art",
@@ -806,7 +808,7 @@
     },
     {
       "name": "monster-bubble-bath-beast",
-      "prompt": "A silly cartoon monster: a monster made of bath bubbles with a rubber plug nose, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "prompt": "A silly cartoon monster: a wobbly pile of white soap foam and shiny see-through soap bubbles shaped like a little creature, a black rubber bath plug on a chain as its nose, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
       "size": [
         1024,
         1024
@@ -830,7 +832,7 @@
     },
     {
       "name": "monster-plunger-pirate",
-      "prompt": "A big silly boss monster: The Plunger Pirate: a pirate with a toilet plunger for a hand and a toilet roll telescope, larger and grander than a normal monster, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "prompt": "A big silly boss monster: The Plunger Pirate: a pirate in a big tricorn hat, one arm ending in a red rubber toilet plunger with a wooden handle, holding a toilet roll up to one eye like a telescope, larger and grander than a normal monster, goofy and not scary, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
       "size": [
         1152,
         1152
@@ -914,7 +916,7 @@
     },
     {
       "name": "trainer-madame-moustache",
-      "prompt": "A funny trainer character for a kids game: Madame Moustache: a fencing teacher with an enormous curly moustache and a foil sword, friendly but ready to fight, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "prompt": "A funny trainer character for a kids game: Madame Moustache: a grand lady fencing teacher in a long purple dress and a feathered hat, wearing an enormous fake curly moustache, holding a thin fencing foil, friendly but ready to fight, facing slightly to the left Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
       "size": [
         896,
         1152
@@ -1010,7 +1012,7 @@
     },
     {
       "name": "boss-lunchbox-lurker",
-      "prompt": "A big silly class boss monster: The Lunchbox Lurker: a lunchbox monster with a sandwich tongue and crumbs everywhere, grand and goofy, not scary, facing the viewer Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "prompt": "A big silly class boss monster: The Lunchbox Lurker: a bright red plastic school lunchbox on stubby legs, the hinged lid opening like a big mouth, a floppy sandwich sticking out as a tongue, a carry handle on top, crumbs flying everywhere, grand and goofy, not scary, facing the viewer Single character, centred, whole body visible with space around it, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
       "size": [
         1152,
         1152
@@ -1082,7 +1084,7 @@
     },
     {
       "name": "zone-laundry",
-      "prompt": "A wide side-on game background: a swamp made of soapy water, washing lines between trees, floating socks, bubbles, a laundry basket island. Flat open ground across the bottom third for characters to stand on, bright cheerful sky No characters, no people. Suitable for children aged 6 to 9.",
+      "prompt": "A wide side-on game background: a swamp made of soapy water, washing lines between trees, floating socks, bubbles, a laundry basket island. Flat open ground across the bottom third for characters to stand on, bright cheerful sky, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
       "size": [
         1344,
         768
@@ -1090,11 +1092,12 @@
       "kind": "scene",
       "folder": "zones",
       "file": "laundry",
-      "max": 1344
+      "max": 1344,
+      "style": "toon_place"
     },
     {
       "name": "zone-custard",
-      "prompt": "A wide side-on game background: a cave of yellow custard with jelly crystals, sprinkles on the walls, dripping custard stalactites. Flat open ground across the bottom third for characters to stand on, bright cheerful sky No characters, no people. Suitable for children aged 6 to 9.",
+      "prompt": "A wide side-on game background: a cave of yellow custard with jelly crystals, sprinkles on the walls, dripping custard stalactites. Flat open ground across the bottom third for characters to stand on, bright cheerful sky, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
       "size": [
         1344,
         768
@@ -1102,11 +1105,12 @@
       "kind": "scene",
       "folder": "zones",
       "file": "custard",
-      "max": 1344
+      "max": 1344,
+      "style": "toon_place"
     },
     {
       "name": "zone-bouncy",
-      "prompt": "A wide side-on game background: the ruins of a giant bouncy castle, half-deflated towers, balloons and streamers, soft pink ground. Flat open ground across the bottom third for characters to stand on, bright cheerful sky No characters, no people. Suitable for children aged 6 to 9.",
+      "prompt": "A wide side-on game background: the ruins of a giant bouncy castle, half-deflated towers, balloons and streamers, soft pink ground. Flat open ground across the bottom third for characters to stand on, bright cheerful sky, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
       "size": [
         1344,
         768
@@ -1114,11 +1118,12 @@
       "kind": "scene",
       "folder": "zones",
       "file": "bouncy",
-      "max": 1344
+      "max": 1344,
+      "style": "toon_place"
     },
     {
       "name": "zone-supermarket",
-      "prompt": "A wide side-on game background: an enormous wacky supermarket aisle, towering shelves, runaway trolleys, price signs without words. Flat open ground across the bottom third for characters to stand on, bright cheerful sky No characters, no people. Suitable for children aged 6 to 9.",
+      "prompt": "A wide side-on game background: an enormous wacky supermarket aisle, towering shelves, runaway trolleys, price signs without words. Flat open ground across the bottom third for characters to stand on, bright cheerful sky, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
       "size": [
         1344,
         768
@@ -1126,11 +1131,12 @@
       "kind": "scene",
       "folder": "zones",
       "file": "supermarket",
-      "max": 1344
+      "max": 1344,
+      "style": "toon_place"
     },
     {
       "name": "zone-toiletroll",
-      "prompt": "A wide side-on game background: towers built from giant toilet rolls, bubble bath clouds, rubber ducks on the battlements. Flat open ground across the bottom third for characters to stand on, bright cheerful sky No characters, no people. Suitable for children aged 6 to 9.",
+      "prompt": "A wide side-on game background: towers built from giant toilet rolls, bubble bath clouds, rubber ducks on the battlements. Flat open ground across the bottom third for characters to stand on, bright cheerful sky, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
       "size": [
         1344,
         768
@@ -1138,11 +1144,12 @@
       "kind": "scene",
       "folder": "zones",
       "file": "toiletroll",
-      "max": 1344
+      "max": 1344,
+      "style": "toon_place"
     },
     {
       "name": "zone-volcano",
-      "prompt": "A wide side-on game background: a small grumpy volcano puffing toast-shaped smoke, warm orange rocks, a tiny lava river. Flat open ground across the bottom third for characters to stand on, bright cheerful sky No characters, no people. Suitable for children aged 6 to 9.",
+      "prompt": "A wide side-on game background: a small grumpy volcano puffing toast-shaped smoke, warm orange rocks, a tiny lava river. Flat open ground across the bottom third for characters to stand on, bright cheerful sky, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
       "size": [
         1344,
         768
@@ -1150,11 +1157,12 @@
       "kind": "scene",
       "folder": "zones",
       "file": "volcano",
-      "max": 1344
+      "max": 1344,
+      "style": "toon_place"
     },
     {
       "name": "scene-home",
-      "prompt": "A cosy wonky cottage kitchen and garden where heroes rest: a launch pad for a jetpack, a teapot on the table, a gear rack with funny weapons, bunting, warm afternoon light No characters, no people. Suitable for children aged 6 to 9.",
+      "prompt": "A cosy wonky cottage kitchen and garden where heroes rest: a launch pad for a jetpack, a teapot on the table, a gear rack with funny weapons, bunting, warm afternoon light, the whole place empty and quiet, nobody around. Suitable for children aged 6 to 9.",
       "size": [
         1344,
         768
@@ -1162,7 +1170,8 @@
       "kind": "scene",
       "folder": "scenes",
       "file": "home",
-      "max": 1344
+      "max": 1344,
+      "style": "toon_place"
     },
     {
       "name": "gear-weapon-0",
@@ -1174,7 +1183,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "weapon-0",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-weapon-1",
@@ -1186,7 +1196,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "weapon-1",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-weapon-2",
@@ -1198,7 +1209,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "weapon-2",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-weapon-3",
@@ -1210,7 +1222,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "weapon-3",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-weapon-4",
@@ -1222,7 +1235,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "weapon-4",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-weapon-5",
@@ -1234,11 +1248,12 @@
       "kind": "cut",
       "folder": "gear",
       "file": "weapon-5",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-weapon-6",
-      "prompt": "A single game item icon: a pool noodle of power, glowing, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "prompt": "A single game item icon: a long bendy bright green foam pool noodle tube, glowing with power, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
       "size": [
         1024,
         1024
@@ -1246,7 +1261,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "weapon-6",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-shoes-0",
@@ -1258,7 +1274,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "shoes-0",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-shoes-1",
@@ -1270,7 +1287,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "shoes-1",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-shoes-2",
@@ -1282,7 +1300,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "shoes-2",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-shoes-3",
@@ -1294,7 +1313,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "shoes-3",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-shoes-4",
@@ -1306,7 +1326,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "shoes-4",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-shoes-5",
@@ -1318,7 +1339,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "shoes-5",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-shoes-6",
@@ -1330,7 +1352,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "shoes-6",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-cape-0",
@@ -1342,7 +1365,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "cape-0",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-cape-1",
@@ -1354,7 +1378,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "cape-1",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-cape-2",
@@ -1366,7 +1391,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "cape-2",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-cape-3",
@@ -1378,7 +1404,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "cape-3",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-cape-4",
@@ -1390,7 +1417,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "cape-4",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-cape-5",
@@ -1402,7 +1430,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "cape-5",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-cape-6",
@@ -1414,11 +1443,12 @@
       "kind": "cut",
       "folder": "gear",
       "file": "cape-6",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-shield-0",
-      "prompt": "A single game item icon: a dustbin lid shield, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
+      "prompt": "A single game item icon: a round metal dustbin lid with a handle in the middle, held up as a shield, chunky and shiny, slightly tilted, centred, on a plain pure white background, clean empty white all around. Suitable for children aged 6 to 9.",
       "size": [
         1024,
         1024
@@ -1426,7 +1456,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "shield-0",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-shield-1",
@@ -1438,7 +1469,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "shield-1",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-shield-2",
@@ -1450,7 +1482,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "shield-2",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-shield-3",
@@ -1462,7 +1495,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "shield-3",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-shield-4",
@@ -1474,7 +1508,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "shield-4",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-shield-5",
@@ -1486,7 +1521,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "shield-5",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "gear-shield-6",
@@ -1498,7 +1534,8 @@
       "kind": "cut",
       "folder": "gear",
       "file": "shield-6",
-      "max": 512
+      "max": 512,
+      "style": "toon_item"
     },
     {
       "name": "chest-closed",
@@ -1510,7 +1547,8 @@
       "kind": "cut",
       "folder": "ui",
       "file": "chest-closed",
-      "max": 800
+      "max": 800,
+      "style": "toon_item"
     },
     {
       "name": "chest-open",
@@ -1522,7 +1560,8 @@
       "kind": "cut",
       "folder": "ui",
       "file": "chest-open",
-      "max": 800
+      "max": 800,
+      "style": "toon_item"
     },
     {
       "name": "card-bonkers",

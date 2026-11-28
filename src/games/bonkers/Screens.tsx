@@ -1,6 +1,7 @@
 /** Smash Quest's calm screens: picking a hero, home, and what an adventure earned. */
 import { useState } from 'react';
 import { useEnterGoes } from './keys';
+import { Pic, bossArt, chestArt, gearArt, grannyArt, heroArt, monsterArt } from './art';
 import { CLASS_INFO, CLASSES, GEAR, INNKEEPER, LOOKS, SLOTS, gearById, gearStats, type GearInfo, trainerFor, zoneById, type HeroClass, type Look } from '../../../shared/bonkers/content';
 import { MAX_LEVEL } from '../../../shared/bonkers/config';
 import { heroPower, replay, starsToTrainer, type Hero, type Progress } from '../../../shared/bonkers/engine';
@@ -26,7 +27,7 @@ export function HeroPick({ hero, busy, onPick }: { hero: Hero | null; busy: bool
               key={c} type="button" className={`bq-class${cls === c ? ' bq-class--on' : ''}`} style={{ '--bq-c': ci.colour } as React.CSSProperties}
               aria-pressed={cls === c} disabled={locked} onClick={() => setCls(c)}
             >
-              <span className="bq-class__emoji" aria-hidden="true">{ci.emoji[look]}</span>
+              <span className="bq-class__emoji" aria-hidden="true"><Pic src={heroArt(c, look, 1)} emoji={ci.emoji[look]} /></span>
               <strong>{ci.names[look]}</strong>
               <span className="bq-class__blurb">{ci.blurb}</span>
               <span className="bq-class__move"><b>{ci.move.name}:</b> {ci.move.does}</span>
@@ -51,7 +52,7 @@ export function HeroPick({ hero, busy, onPick }: { hero: Hero | null; busy: bool
 function Granny({ line }: { line: string }) {
   return (
     <div className="bq-granny">
-      <span className="bq-granny__face" aria-hidden="true">{INNKEEPER.emoji}<span className="bq-granny__jet">🚀</span></span>
+      <span className="bq-granny__face" aria-hidden="true">{grannyArt() ? <Pic src={grannyArt()} emoji="" /> : <>{INNKEEPER.emoji}<span className="bq-granny__jet">🚀</span></>}</span>
       <p className="bq-granny__bubble" aria-live="polite"><b>{INNKEEPER.name}:</b> {line}</p>
     </div>
   );
@@ -61,7 +62,7 @@ function HeroBadge({ hero, p }: { hero: Hero; p: Progress }) {
   const ci = CLASS_INFO[hero.cls];
   return (
     <div className="bq-badge" style={{ '--bq-c': ci.colour } as React.CSSProperties}>
-      <span className="bq-badge__emoji" aria-hidden="true">{ci.emoji[hero.look]}</span>
+      <span className="bq-badge__emoji" aria-hidden="true"><Pic src={heroArt(hero.cls, hero.look, p.level)} emoji={ci.emoji[hero.look]} /></span>
       <div>
         <strong>{ci.names[hero.look]}</strong>
         <span className="bq-badge__lvl">Level {p.level}: {levelTitle(p.level)}</span>
@@ -111,7 +112,7 @@ function GearRow({ p }: { p: Progress }) {
         const g = GEAR.find((x) => x.slot === slot && x.tier === p.gear[slot]);
         return (
           <li key={slot} title={g?.name}>
-            <span aria-hidden="true">{g?.emoji}</span> {g?.name}
+            <span className="bq-gear__icon" aria-hidden="true"><Pic src={g && gearArt(g.id)} emoji={g?.emoji ?? ''} /></span> {g?.name}
             {g && <Stats g={g} />}
           </li>
         );
@@ -146,7 +147,7 @@ function SeasonTimeline({ season }: { season: SeasonView }) {
                 aria-label={`${s.kind === 'mega' ? 'Mega boss' : `Week ${s.week} Friday boss`}: ${s.boss.name}, ${stopWords(s)}`}
                 onClick={() => setOpen(s.week)}
               >
-                <span className="bq-season__emoji" aria-hidden="true">{s.boss.emoji}</span>
+                <span className="bq-season__emoji" aria-hidden="true"><Pic src={bossArt(s.boss.name)} emoji={s.boss.emoji} /></span>
                 <span className="bq-season__label">{s.kind === 'mega' ? 'MEGA' : `Wk ${s.week}`}</span>
                 <span className="bq-season__when">{stopWords(s)}</span>
               </button>
@@ -188,13 +189,13 @@ export function Inn({ loaded, busy, note, onQuest, onChangeLook }: {
         {loaded.quests.map((q) => {
           const zone = zoneById(q.zone);
           const w = questWords(q);
-          const face = q.kind === 'big' ? zone?.big.emoji : q.kind === 'hunt' ? zone?.monsters[q.monster].emoji : zone?.monsters[0].emoji;
+          const mon = q.kind === 'big' ? zone?.big : q.kind === 'hunt' ? zone?.monsters[q.monster] : zone?.monsters[0];
           return (
             <button
               key={q.id} type="button" className="bq-quest" disabled={busy || out} onClick={() => onQuest(q.id)}
               style={{ background: `linear-gradient(${zone?.sky[0]}, ${zone?.sky[1]} 70%, ${zone?.ground} 70%)` }}
             >
-              <span className="bq-quest__face" aria-hidden="true">{face}</span>
+              <span className="bq-quest__face" aria-hidden="true"><Pic src={mon && monsterArt(mon.id)} emoji={mon?.emoji ?? ''} /></span>
               <span className="bq-quest__zone">{zone?.name}</span>
               <strong>{w.title}</strong>
               <span>{w.what}</span>
@@ -228,14 +229,14 @@ export function Results({ before, result, current, onInn }: { before: Progress; 
       </ul>
       {result.gear.length > 0 && (
         <div className="bq-chest">
-          <p className="bq-chest__lid" aria-hidden="true">🧰✨</p>
+          <p className="bq-chest__lid" aria-hidden="true">{chestArt(true) ? <Pic src={chestArt(true)} emoji="" /> : '🧰✨'}</p>
           <p>Treasure chest!</p>
           <ul>
             {result.gear.map((id) => {
               const g = gearById(id);
               return (
                 <li key={id} className="bq-chest__item">
-                  <span aria-hidden="true">{g?.emoji}</span> {g?.name} <span className="bq-chest__new">NEW!</span>
+                  <span className="bq-gear__icon" aria-hidden="true"><Pic src={g && gearArt(g.id)} emoji={g?.emoji ?? ''} /></span> {g?.name} <span className="bq-chest__new">NEW!</span>
                   {g && <Stats g={g} />}
                 </li>
               );

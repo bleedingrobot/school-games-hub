@@ -6,7 +6,7 @@ import { ALL_GAMES } from './registry';
 
 // The Foundational (junior) games' painted pictures: every one is a small .webp (a Chromebook on school wifi has to load
 // them) and the folder says where its pictures came from. Quick looks has no painted pictures yet, only a CREDITS.md.
-const FOLDERS = ['beanstalk', 'hop', 'korora', 'pipi', 'tui', 'weka'].map((g) => join(__dirname, g, 'art'));
+const FOLDERS = ['beanstalk', 'bonkers', 'hop', 'korora', 'pipi', 'tui', 'weka'].map((g) => join(__dirname, g, 'art'));
 const MAX_KB = 150;
 
 const walk = (dir: string): string[] =>
@@ -14,8 +14,8 @@ const walk = (dir: string): string[] =>
 
 // Home page cards that are not registry games, and games whose card is still a band of colours.
 const OTHER_CARDS = ['quick-looks', 'training'];
-// Smash Quest: drawn stand-ins until stage B.6 (James, 27 Nov 2026: "leave that till last").
-const NOT_PAINTED_YET: string[] = ['bonkers'];
+// Games whose home card is still a band of colours.
+const NOT_PAINTED_YET: string[] = [];
 
 describe('the junior games\' painted pictures', () => {
   it('are small .webp files, and each art folder has a CREDITS.md; every home card has its picture and there are no spares', () => {
