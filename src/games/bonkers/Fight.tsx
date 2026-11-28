@@ -16,7 +16,8 @@ import { BOOSTS, FOE_HEARTS, HEARTS, POINTS, STARS, STICKERS_A_WIN, TRAINER_HEAR
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../maths/QuestionModal';
 import type { AdventureView, AnswerReply, BonkersBackend } from './backend';
-import { questWords, xp } from './words';
+import { GRANNY, questWords, xp } from './words';
+import { Granny } from './Granny';
 
 const shown = (q: PublicQuestion): ShownQuestion => ({ id: q.slot, parts: q.parts, spoken: q.spoken, prompt: q.prompt, choices: q.choices, choiceLabels: q.choiceLabels, maxLength: q.maxLength, input: q.input, figure: q.figure });
 
@@ -142,6 +143,9 @@ export function Fight({ backend, progress, start, onDone }: {
   const ci = CLASS_INFO[cls];
   const zone = zoneById(adv.quest.zone);
   const quest = questWords(adv.quest);
+  // The first adventure explains each step as it comes, in Granny Jetpack's words (plan: guide for new players).
+  const firstTime = progress.stats.adventures === 0;
+  const tip = (line: string) => (firstTime ? <Granny line={line} className="bq-granny--tip" /> : null);
 
   const finish = async () => {
     setSaving(true);
@@ -207,6 +211,7 @@ export function Fight({ backend, progress, start, onDone }: {
             <li className="bq-pop" style={{ animationDelay: '0.9s' }}>❤️ <b>{pause.blow.hearts}</b> of {trainer ? TRAINER_HEARTS : HEARTS} hearts left</li>
             <li className="bq-pop" style={{ animationDelay: '1.1s' }}>🪙 <b>+{trainer ? POINTS.trainer : POINTS.fightWon}</b> hub points</li>
           </ul>
+          {r.results.filter((x) => x.outcome === 'won').length === 1 && tip(GRANNY.tipWon)}
           {next}
         </div>
       </Stage>
@@ -217,6 +222,7 @@ export function Fight({ backend, progress, start, onDone }: {
           <h2 className="bq-h2">Smashed! {pause.foe.name} wins this one.</h2>
           <p>Nothing lost, hero. Dust yourself off!</p>
           {!trainer && <p className="bq-big-line">✨ +{xp(STARS.bonked)} XP</p>}
+          {r.results.filter((x) => x.outcome !== 'won').length === 1 && tip(GRANNY.tipLost)}
           {next}
         </div>
       </Stage>
@@ -235,7 +241,7 @@ export function Fight({ backend, progress, start, onDone }: {
         </div>
         <div className="bq-panel bq-center bq-pop">
           {r.questDone && <p className="bq-big-line">✅ Quest done! +{xp(STARS.quest)} XP</p>}
-          <p>Your XP bar is full! Your trainer wants a fight.</p>
+          <Granny line={GRANNY.trainerHere} className="bq-granny--tip" />
           <h2 className="bq-h2">{r.foe.name}</h2>
           <p className="bq-speech">“{look.line}”</p>
           <p>Beat them to reach level {adv.start.level + 1}. You have {r.maxHearts} hearts this time.</p>
@@ -253,6 +259,7 @@ export function Fight({ backend, progress, start, onDone }: {
         <div className="bq-panel bq-center bq-pop">
           {r.questDone && !r.trainerMet && <p className="bq-big-line">✅ Quest done! +{xp(STARS.quest)} XP</p>}
           <h2 className="bq-h2 bq-h2--shout">Adventure over!</h2>
+          {tip(GRANNY.tipChest)}
           <button type="button" className="bq-btn bq-btn--big bq-btn--go" disabled={saving} onClick={() => void finish()}>{saving ? 'Saving…' : 'Open the chest!'}</button>
           {error && <p className="bq-note" role="alert">{error}</p>}
         </div>
@@ -377,7 +384,10 @@ export function Fight({ backend, progress, start, onDone }: {
                 <span aria-hidden="true">✨</span> {ci.move.name}{r.specialUsed ? ' (used)' : ''}
               </button>
             </div>
-            <p className="bq-hint">{r.specialUsed ? 'Special move used this fight.' : `${ci.move.name}: ${ci.move.does} Once a fight.`}</p>
+            {/* In the first adventure Granny's tip takes the hint's place, so the panel stays short. */}
+            {(firstTime && slotNow === 0 && tip(GRANNY.tipSmash))
+              || (firstTime && slotNow === 1 && !r.specialUsed && tip(GRANNY.tipSpecial))
+              || <p className="bq-hint">{r.specialUsed ? 'Special move used this fight.' : `${ci.move.name}: ${ci.move.does} Once a fight.`}</p>}
           </div>
         )}
         {error && <p className="bq-note" role="alert">{error}</p>}

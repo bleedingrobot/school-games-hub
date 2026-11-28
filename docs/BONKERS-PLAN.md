@@ -62,11 +62,11 @@ All 22 are James's (27 Nov 2026), in the brainstorm's section 10. Calls I made w
 | Stage | What | Live? |
 |---|---|---|
 | B.1 | Rules, simulator, server function, database, screens with drawn stand-ins, teacher switch and Progress column. Teachers only (code switch off) | LIVE for teachers 27 Nov 2026 (PR #942) |
-| B.2 | Sticker shop (hats and pets), achievements, monster book | |
-| B.3 | The class's Friday boss (chipped all week), the 5-week season and the mega boss | Home-screen season timeline LIVE 28 Nov 2026 (`shared/bonkers/season.ts`: season = the school's hub season, 5 Fridays, last one the mega boss); the fights themselves not built |
-| B.4 | Guide polish, Bella's voice lines | |
+| B.2 | Sticker shop (hats and pets), achievements, monster book | LIVE 28 Nov 2026 (PR #988): 10 achievements, Smash Quest Trophy, 9 hats and 6 pets painted |
+| B.3 | The class's Friday boss (chipped all week), the 5-week season and the mega boss | LIVE 28 Nov 2026 (PR #989): class boss chipped to 80% all week, one free Friday fight finishes it, mega boss, boss trophies, new-season reset |
+| B.4 | Guide polish, Bella's voice lines | Granny Jetpack's tips through the first adventure and on the trainer screen, all her lines read by Bella (33 clips). LIVE 29 Nov 2026 |
 | B.5 | Switch on for pupils | |
-| B.6 | Paint everything on JamesGaming (bouncy cartoon) | |
+| B.6 | Paint everything on JamesGaming (bouncy cartoon) | Done 28 Nov 2026 (PRs #986, #987, #988) |
 
 ## Server, data and cost
 

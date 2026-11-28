@@ -525,3 +525,10 @@
 @keyframes bq-boss-glow { 50% { box-shadow: 0 8px 0 rgba(0, 0, 0, 0.25), 0 0 30px 8px rgba(255, 211, 77, 0.8); } }
 .bq-quest--boss .bq-quest__face { font-size: clamp(48px, 9dvh, 96px); }
 .bq-shout--small { font-size: clamp(1.4rem, 4vw, 2.2rem); }
+
+/* Granny Jetpack's tips in the first adventure, and her word on the trainer screen: small, inside a panel. */
+.bq-granny--tip { margin: 10px auto; max-width: 34rem; text-align: left; }
+.bq-granny--tip .bq-granny__face { font-size: 2.4rem; }
+.bq-granny--tip .bq-granny__bubble { font-size: 0.95rem; background: #fff7d6; }
+.bq-granny--tip .bq-granny__bubble::before { border-right-color: #fff7d6; }
+.bq-btn--dim { opacity: 0.55; }
