@@ -79,7 +79,7 @@ begin
   insert into public.bonkers_bosses as x (class_id, season, week, mega, hp)
   values (cls, bonkers_class_boss.season, bonkers_class_boss.week, bonkers_class_boss.mega,
     greatest(8, pupils) * case when bonkers_class_boss.mega then 35 else 25 end)
-  on conflict (class_id, season, week) do nothing;
+  on conflict on constraint bonkers_bosses_pkey do nothing;
   select * into b from public.bonkers_bosses x
   where x.class_id = cls and x.season = bonkers_class_boss.season and x.week = bonkers_class_boss.week for update;
 
@@ -93,7 +93,7 @@ begin
     end if;
     insert into public.bonkers_boss_hits as h (class_id, season, week, player, dealt)
     values (cls, b.season, b.week, bonkers_class_boss.player, room)
-    on conflict (class_id, season, week, player) do update set dealt = h.dealt + excluded.dealt;
+    on conflict on constraint bonkers_boss_hits_pkey do update set dealt = h.dealt + excluded.dealt;
 
     if b.dealt >= b.hp then
       update public.bonkers_bosses x set beaten_at = now()
