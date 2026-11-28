@@ -24,6 +24,14 @@ export interface NewsItem {
 
 export const HUB_NEWS: NewsItem[] = [
   {
+    id: 'bonkers-new-game-2026-11-29',
+    date: '2026-11-29',
+    emoji: '🥄',
+    title: 'New game: Smash Quest',
+    text: 'Pick a hero, smash wacky monsters with maths, and beat the Friday boss with your class!',
+    game: 'bonkers',
+  },
+  {
     id: '101-bach-backs-2026-11-28',
     date: '2026-11-28',
     emoji: '🃏',
