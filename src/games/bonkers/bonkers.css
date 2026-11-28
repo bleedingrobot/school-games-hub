@@ -254,3 +254,17 @@
 @keyframes bq-season-bob { 50% { transform: translateY(-4px); } }
 @media (prefers-reduced-motion: reduce) { .bq-season__stop--today .bq-season__emoji, .bq-season__stop--next .bq-season__emoji { animation: none; } }
 @media (max-width: 380px) { .bq-season__emoji { width: 44px; height: 44px; font-size: 1.4rem; } .bq-season__stop--mega .bq-season__emoji { width: 50px; height: 50px; } }
+
+/* Painted pictures (art.tsx): sized by the font size of the emoji they replace. */
+.bq-pic { display: block; height: 1.9em; width: auto; max-width: 100%; object-fit: contain; margin: 0 auto; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.12)); }
+.bq-face--big .bq-pic { height: 2em; }
+.bq-class__emoji .bq-pic { height: 2.2em; }
+.bq-badge__emoji { overflow: hidden; }
+.bq-badge__emoji .bq-pic { height: 1.35em; }
+.bq-granny__face .bq-pic { height: 1.7em; }
+.bq-season__emoji .bq-pic { height: 1.35em; }
+.bq-quest__face .bq-pic { height: 1.8em; }
+.bq-chest__lid .bq-pic { height: 1.8em; }
+.bq-gear__icon { display: inline-block; vertical-align: middle; }
+.bq-gear__icon .bq-pic { display: inline-block; height: 1.6em; filter: none; }
+.bq-arena .bq-side strong { background: rgba(255, 255, 255, 0.85); border-radius: 99px; padding: 1px 10px; }

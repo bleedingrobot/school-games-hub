@@ -5,6 +5,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useEnterGoes } from './keys';
+import { Pic, chestArt, heroArt, monsterArt, trainerArt, zoneArt } from './art';
 import { CLASS_INFO, trainerFor, zoneById, type MonsterInfo } from '../../../shared/bonkers/content';
 import { autoSmash, monsterSwings, replay, type Blow, type Foe, type Progress } from '../../../shared/bonkers/engine';
 import { BOOSTS, FOE_HEARTS, HEARTS, POINTS, STARS, STICKERS_A_WIN, TRAINER_HEARTS } from '../../../shared/bonkers/config';
@@ -22,14 +23,14 @@ export function factText(parts: readonly string[], answer: number): string {
 }
 
 /** How a foe looks: a zone monster, the zone's big one, or a trainer. */
-function looks(foe: Foe, zoneId: string, level: number): { emoji: string; colour: string; line: string; ouch: string } {
+function looks(foe: Foe, zoneId: string, level: number): { emoji: string; art?: string; colour: string; line: string; ouch: string } {
   if (foe.id.startsWith('trainer-')) {
     const t = trainerFor(level);
-    return { emoji: t?.emoji ?? '🏋️', colour: t?.colour ?? '#888', line: t?.line ?? 'Fight me!', ouch: t?.beaten ?? 'Well done!' };
+    return { emoji: t?.emoji ?? '🏋️', art: t ? trainerArt(t.to) : undefined, colour: t?.colour ?? '#888', line: t?.line ?? 'Fight me!', ouch: t?.beaten ?? 'Well done!' };
   }
   const zone = zoneById(zoneId);
   const mon: MonsterInfo | undefined = zone ? [...zone.monsters, zone.big].find((m) => m.id === foe.id) : undefined;
-  return { emoji: mon?.emoji ?? '👾', colour: mon?.colour ?? '#888', line: mon?.line ?? 'Grrr!', ouch: mon?.ouch ?? 'Ouch!' };
+  return { emoji: mon?.emoji ?? '👾', art: mon ? monsterArt(mon.id) : undefined, colour: mon?.colour ?? '#888', line: mon?.line ?? 'Grrr!', ouch: mon?.ouch ?? 'Ouch!' };
 }
 
 function Hearts({ n, of, full = '❤️', label }: { n: number; of: number; full?: string; label?: string }) {
@@ -150,8 +151,8 @@ export function Fight({ backend, progress, start, onDone }: {
             </div>
             <p className="bq-victory__banner">VICTORY!</p>
             <div className="bq-victory__scene" aria-hidden="true">
-              <span className="bq-face bq-victory__hero">{ci.emoji[hero.look]}</span>
-              <span className="bq-face bq-victory__foe">{look.emoji}</span>
+              <span className="bq-face bq-victory__hero"><Pic src={heroArt(cls, hero.look, adv.start.level)} emoji={ci.emoji[hero.look]} /></span>
+              <span className="bq-face bq-victory__foe"><Pic src={look.art} emoji={look.emoji} /></span>
             </div>
             <h2 className="bq-h2">You smashed {pause.foe.name}!</h2>
             <p className="bq-speech">{pause.foe.name}: “{look.ouch}”</p>
@@ -165,7 +166,7 @@ export function Fight({ backend, progress, start, onDone }: {
           </div>
         ) : (
         <div className="bq-card bq-center bq-pop">
-          <p className="bq-face bq-face--big" aria-hidden="true">{look.emoji}</p>
+          <p className="bq-face bq-face--big" aria-hidden="true"><Pic src={look.art} emoji={look.emoji} /></p>
           <h2 className="bq-h2">Smashed! {pause.foe.name} wins this one.</h2>
           <p>Nothing lost, hero. Dust yourself off!</p>
           {!trainer && <p className="bq-big-line">✨ +{xp(STARS.bonked)} XP</p>}
@@ -184,7 +185,7 @@ export function Fight({ backend, progress, start, onDone }: {
         <div className="bq-card bq-center bq-pop">
           {r.questDone && <p className="bq-big-line">✅ Quest done! +{xp(STARS.quest)} XP</p>}
           <p>Your XP bar is full! Your trainer wants a fight.</p>
-          <p className="bq-face bq-face--big" aria-hidden="true">{look.emoji}</p>
+          <p className="bq-face bq-face--big" aria-hidden="true"><Pic src={look.art} emoji={look.emoji} /></p>
           <h2 className="bq-h2">{r.foe.name}</h2>
           <p className="bq-speech">“{look.line}”</p>
           <p>Beat them to reach level {adv.start.level + 1}. You have {r.maxHearts} hearts this time.</p>
@@ -200,7 +201,7 @@ export function Fight({ backend, progress, start, onDone }: {
         {header}
         <div className="bq-card bq-center bq-pop">
           {r.questDone && !r.trainerMet && <p className="bq-big-line">✅ Quest done! +{xp(STARS.quest)} XP</p>}
-          <p className="bq-face bq-face--big" aria-hidden="true">🧰</p>
+          <p className="bq-face bq-face--big" aria-hidden="true"><Pic src={chestArt(false)} emoji="🧰" /></p>
           <h2 className="bq-h2">Adventure over!</h2>
           <button type="button" className="bq-btn bq-btn--big" disabled={saving} onClick={() => void finish()}>{saving ? 'Saving…' : 'See what you got'}</button>
           {error && <p className="bq-note" role="alert">{error}</p>}
@@ -252,9 +253,9 @@ export function Fight({ backend, progress, start, onDone }: {
   return (
     <section className="bq-fight" aria-label={`Fight: ${foe.name}`}>
       {header}
-      <div className="bq-arena" style={{ background: zone ? `linear-gradient(${zone.sky[0]}, ${zone.sky[1]} 62%, ${zone.ground} 62%)` : undefined }}>
+      <div className="bq-arena" style={{ background: zone ? (zoneArt(zone.id) ? `center / cover no-repeat url(${zoneArt(zone.id)})` : `linear-gradient(${zone.sky[0]}, ${zone.sky[1]} 62%, ${zone.ground} 62%)`) : undefined }}>
         <div className={`bq-side bq-side--hero${(blow?.ouch && stepShown === 0) || swingingNow ? ' bq-shake' : ''}${smashing ? ' bq-lunge' : ''}`} key={`h${blow?.slot ?? 'x'}-${slotNow}-${stepShown}`}>
-          <span className="bq-face" aria-hidden="true">{ci.emoji[hero.look]}</span>
+          <span className="bq-face" aria-hidden="true"><Pic src={heroArt(cls, hero.look, adv.start.level)} emoji={ci.emoji[hero.look]} /></span>
           <strong>{ci.names[hero.look]}</strong>
           <Hearts n={heartsNow} of={r.maxHearts} />
           {((blow?.ouch && stepShown === 0) || swingingNow) && <span className="bq-float bq-float--ouch">OUCH!</span>}
@@ -262,7 +263,7 @@ export function Fight({ backend, progress, start, onDone }: {
         </div>
         <div className="bq-vs" aria-hidden="true">VS</div>
         <div className={`bq-side bq-side--foe${(blow && stepShown === 0) || thisSmash ? ' bq-wobble' : ''}${swingingNow ? ' bq-lunge bq-lunge--back' : ''}`} key={`f${slotNow}-${stepShown}`}>
-          <span className={`bq-face${foe.big ? ' bq-face--big' : ''}`} aria-hidden="true">{look.emoji}</span>
+          <span className={`bq-face${foe.big ? ' bq-face--big' : ''}`} aria-hidden="true"><Pic src={look.art} emoji={look.emoji} /></span>
           <strong>{foe.name}</strong>
           <Hearts n={Math.ceil((FOE_HEARTS * hpNow) / foe.hp)} of={FOE_HEARTS} full="💜" label={`${foe.name}’s health: `} />
           {thisSmash > 0 && <span className="bq-float">SMASH!</span>}

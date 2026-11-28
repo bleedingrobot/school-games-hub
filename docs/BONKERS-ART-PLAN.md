@@ -1,6 +1,6 @@
 # Smash Quest art plan
 
-**Status:** planned 28 Nov 2026. Nothing has been painted. James said, after playtesting: "you can plan all the art if you like, dont start making it yet". Do not paint until he says go.
+**Status:** all 127 painted and live, 28 Nov 2026 (James: "just do one version of each, and repaint what is needed"). The pictures are wired in through `src/games/bonkers/art.tsx`, and any picture that's missing falls back to its emoji. On the PC, 46 were repainted: gear and the chest use style `toon_item` (no faces), places use `toon_place` (nobody in them), and 9 characters got new seeds or new words.
 
 - **Style:** `toon` (bouncy cartoon: thick outlines, flat candy colours, googly eyes), picked from the style test (`docs/plans/bonkers-quest/style-test/`).
 - **Config:** every picture and its prompt are in [docs/bonkers-art/config.json](bonkers-art/config.json): 127 pictures, 2 tries each = 254 paintings. It was generated from the game's content (names match `shared/bonkers/content.ts` and `season.ts`).
