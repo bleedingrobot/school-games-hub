@@ -16,6 +16,7 @@ import { RelayPad } from './RelayPad';
 import { ThronesPad } from './ThronesPad';
 import { JailPad } from './JailPad';
 import { RocketPad } from './RocketPad';
+import { StandPad } from './StandPad';
 import { useMusicOn } from './thronesMusic';
 import { ClashPad } from './ClashPad';
 import { GhostPad } from './GhostPad';
@@ -217,6 +218,14 @@ export function Controller({ link, me, room: roomProp, code: codeProp, lookElsew
     return (
       <Sky tint="serpent">
         <SerpentPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} />
+      </Sky>
+    );
+  }
+  if (view.game.kind === 'stand') {
+    // Stand Up If: every pupil on their own iPad (docs/STAND-PLAN.md).
+    return (
+      <Sky tint="corners" back={painted('stand', 'back')}>
+        <PadGuard><StandPad link={link} room={room} view={view} me={mine} setMe={setMine} setView={setView} clock={clock} /></PadGuard>
       </Sky>
     );
   }

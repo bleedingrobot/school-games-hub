@@ -11,7 +11,7 @@
  * The AudioContext is made on the first sound (browsers need a tap first), busy moments are rate-limited, and every call is
  * wrapped so a browser without audio just stays quiet.
  */
-export type Kit = 'stars' | 'serpent' | 'mural' | 'corners' | 'ghost' | 'clash' | 'thrones' | 'lava' | 'crew' | 'relay' | 'jail' | 'rocket';
+export type Kit = 'stars' | 'serpent' | 'mural' | 'corners' | 'ghost' | 'clash' | 'thrones' | 'lava' | 'crew' | 'relay' | 'jail' | 'rocket' | 'stand';
 
 export type SoundName =
   | 'join' | 'start' | 'over'
@@ -147,6 +147,8 @@ const KITS: Record<Kit, { root: number; scale: number[]; lead: InstrumentName[];
   // Toon Flap Relay: sports day. Bright major pentatonic on glockenspiel, kalimba and marimba.
   relay: { root: 392, scale: [0, 2, 4, 7, 9], lead: ['glock', 'kalimba', 'marimba'], low: ['logdrum', 'wood'] },
   rocket: { root: 293.66, scale: [0, 2, 4, 7, 9], lead: ['glock', 'marimba', 'pizz'], low: ['logdrum', 'pizz'] },
+  // Stand Up If: a bright, bouncy count-down feel.
+  stand: { root: 329.63, scale: [0, 2, 4, 7, 9], lead: ['marimba', 'glock', 'kalimba'], low: ['wood', 'logdrum'] },
   jail: { root: 261.63, scale: [0, 2, 4, 5, 7, 9], lead: ['glock', 'marimba', 'pizz'], low: ['logdrum', 'pizz'] },
 };
 

@@ -43,7 +43,7 @@ const BUDGET: Record<string, number> = {
   clans: 20,
   trader: 12,
   monsters: 10,
-  classlive: 23, // 8, plus 1 for Real-life Four Corners and 1 for Maths Mingle (shared/classlive/jail.test.ts), plus 1 for Rocket Relay (shared/classlive/rocket.test.ts), plus 2 (a rules test and a server test) for each map game: Floor is Lava, Musical Thrones, Colour Clash, Ghost Tag, Shark Bay (James, 25 Nov 2026 NZ), Saboteur Crew (docs/CREW-PLAN.md)
+  classlive: 24, // 8, plus 1 for Real-life Four Corners and 1 for Maths Mingle (shared/classlive/jail.test.ts), plus 1 for Rocket Relay (shared/classlive/rocket.test.ts), plus 1 for Stand Up If (shared/classlive/stand.test.ts), plus 2 (a rules test and a server test) for each map game: Floor is Lava, Musical Thrones, Colour Clash, Ghost Tag, Shark Bay (James, 25 Nov 2026 NZ), Saboteur Crew (docs/CREW-PLAN.md)
   'chess+checkers': 16,
   maths: 33, // 27, plus 1 for Help me cards and 1 for question pictures on every ladder question (26 Nov 2026), plus 2 for the Year 7-8 notation and question pictures, plus 2 for the Year 7-8 skills and the Stop at Year 6 switch (24 Nov 2026)
   'src/pages': 29, // 25, plus 4 for the profile page (docs/TESTING.md, 12 Nov 2026)

@@ -1,0 +1,86 @@
+/* Stand Up If: big screen (StandScene), pupils' iPads (StandPad) and card. Prefix su-. */
+.su-stage { position: fixed; inset: 0; z-index: 30; display: grid; grid-template-rows: auto 1fr; background: #123a2e center / cover no-repeat; color: #fff; overflow: hidden; }
+.su-stage::before { content: ''; position: absolute; inset: 0; background: rgba(6, 24, 18, 0.5); pointer-events: none; }
+.su-stage > * { position: relative; }
+.su-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 18px 10px 64px; background: rgba(0, 0, 0, 0.35); font-size: 1.1rem; }
+.su-top__gap { flex: 1; }
+.su-chip { background: rgba(255, 255, 255, 0.18); border-radius: 999px; padding: 2px 12px; font-size: 0.95rem; }
+.su-btn { font: inherit; font-weight: 700; border: 0; border-radius: 999px; padding: 8px 18px; background: rgba(255, 255, 255, 0.2); color: #fff; cursor: pointer; }
+.su-btn:focus-visible, .su-pick:focus-visible { outline: 3px solid #f2c230; outline-offset: 2px; }
+.su-btn--go { background: #2f9a57; }
+.su-btn--stop { background: #d8433a; }
+.su-main { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.4vh; padding: 2vh 3vw; min-height: 0; text-align: center; }
+.su-get { margin: 0; font-size: clamp(2.4rem, 7vw, 6rem); }
+.su-croc { font-size: clamp(3rem, 8vw, 6rem); line-height: 1; }
+.su-croc--big { font-size: clamp(4rem, 12vw, 9rem); animation: su-chomp 1.4s ease-in-out infinite alternate; }
+@keyframes su-chomp { from { transform: rotate(-6deg); } to { transform: rotate(6deg) scale(1.05); } }
+
+.su-call { display: flex; flex-direction: column; align-items: center; gap: 1.4vh; background: rgba(8, 28, 22, 0.78); border-radius: 28px; padding: 2.4vh 4vw; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45); max-width: 96vw; }
+.su-call__lead { margin: 0; font-size: clamp(1.6rem, 4vw, 3.4rem); font-weight: 800; color: #ffe27a; }
+.su-sum { display: flex; align-items: center; gap: 2vw; flex-wrap: wrap; justify-content: center; }
+.su-box { font-size: clamp(1.3rem, 3.4vw, 3rem); font-weight: 800; background: #fff; color: #173f31; border-radius: 18px; padding: 1vh 2vw; box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25); }
+.su-sign { font-size: clamp(5rem, 16vw, 13rem); font-weight: 900; line-height: 0.9; color: #7cf0a8; text-shadow: 0 6px 0 #0d5a34, 0 0 40px rgba(124, 240, 168, 0.6); animation: su-pop 0.6s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes su-pop { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.su-call__words { margin: 0; font-size: clamp(1.1rem, 2.6vw, 2.2rem); }
+.su-call__words b { color: #7cf0a8; }
+.su-call__words--small { font-size: clamp(1rem, 2vw, 1.6rem); opacity: 0.9; }
+.su-tip { margin: 0; font-size: clamp(1rem, 2vw, 1.6rem); background: rgba(0, 0, 0, 0.35); border-radius: 999px; padding: 0.6vh 2vw; }
+.su-time { width: min(900px, 80vw); height: 16px; border-radius: 999px; background: rgba(255, 255, 255, 0.2); overflow: hidden; }
+.su-time i { display: block; height: 100%; background: linear-gradient(90deg, #f2c230, #7cf0a8); transition: width 0.25s linear; }
+.su-ready { margin: 0; font-size: clamp(1.1rem, 2.4vw, 2rem); font-weight: 700; }
+.su-dots { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 80vw; }
+.su-dots i { width: clamp(14px, 1.6vw, 24px); aspect-ratio: 1; border-radius: 50%; background: rgba(255, 255, 255, 0.22); transition: background 0.3s; }
+.su-dots i.on { background: #7cf0a8; box-shadow: 0 0 10px #7cf0a8; }
+
+.su-count { font-size: clamp(10rem, 34vw, 26rem); font-weight: 900; line-height: 1; color: #ffe27a; text-shadow: 0 10px 0 #8a5d00; animation: su-pop 0.5s cubic-bezier(.2, 1.6, .4, 1); }
+.su-count--go { font-size: clamp(3rem, 10vw, 9rem); color: #7cf0a8; text-shadow: 0 8px 0 #0d5a34; }
+.su-result { background: rgba(8, 28, 22, 0.82); border-radius: 28px; padding: 3vh 4vw; display: flex; flex-direction: column; align-items: center; gap: 1.4vh; }
+.su-result__big { font-size: clamp(2.4rem, 7vw, 6rem); font-weight: 900; }
+.su-result p { margin: 0; font-size: clamp(1.1rem, 2.4vw, 2rem); }
+.su-result__best { color: #ffb15c; font-weight: 800; }
+.su-next { margin: 0; font-size: clamp(1rem, 2vw, 1.5rem); opacity: 0.85; }
+.su-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.su-confetti i { position: absolute; top: -20px; width: 12px; height: 18px; border-radius: 3px; animation: su-fall 2.4s ease-in forwards; }
+@keyframes su-fall { to { transform: translateY(110vh) rotate(540deg); } }
+.su-over { place-self: center; grid-row: 1 / -1; background: rgba(8, 28, 22, 0.88); border-radius: 28px; padding: 4vh 5vw; display: flex; flex-direction: column; align-items: center; gap: 2vh; max-width: 92vw; text-align: center; }
+.su-over h1 { margin: 0; font-size: clamp(2rem, 5vw, 4.5rem); }
+.su-over p { margin: 0; font-size: clamp(1.1rem, 2.4vw, 1.8rem); }
+.su-over__best { color: #ffb15c; font-weight: 800; }
+
+/* Pupils' iPads */
+.su-pad { min-height: 100%; display: flex; flex-direction: column; gap: 14px; color: #fff; padding-bottom: 20px; }
+.su-pad__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 12px 16px 12px 96px; border-radius: 0 0 16px 16px; background: rgba(0, 0, 0, 0.45); font-size: 1.2rem; }
+.su-streak { display: flex; gap: 10px; align-items: center; }
+.su-streak__now { background: #e2672f; border-radius: 999px; padding: 4px 12px; font-weight: 800; }
+.su-streak__best { opacity: 0.85; font-size: 0.95rem; }
+.su-pad__big { margin: auto; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; padding: 22px; background: rgba(8, 28, 22, 0.78); border-radius: 24px; width: min(640px, calc(100% - 32px)); box-sizing: border-box; }
+.su-pad__big h1 { margin: 0; font-size: clamp(1.8rem, 6vw, 3rem); }
+.su-pad__big p { margin: 0; font-size: 1.15rem; }
+.su-pad__icon { font-size: 4rem; line-height: 1; }
+.su-mine { margin: 0 16px; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; background: rgba(8, 28, 22, 0.8); border-radius: 20px; padding: 10px 16px; font-size: 1.3rem; font-weight: 700; }
+.su-mine__sign { font-size: 3rem; line-height: 1; color: #7cf0a8; }
+.su-mine__num { font-size: 2.6rem; line-height: 1; background: #fff; color: #173f31; border-radius: 14px; padding: 4px 16px; }
+.su-q { padding: 0 12px; }
+.su-wait { text-align: center; font-size: 1.2rem; }
+.su-answer { font-size: 1.2rem !important; }
+.su-ask { font-size: clamp(2rem, 8vw, 3.4rem) !important; }
+.su-ask__sum { white-space: nowrap; color: #ffe27a; }
+.su-ask__words { opacity: 0.9; }
+.su-choose { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; }
+.su-pick { font: inherit; font-size: 1.5rem; font-weight: 800; color: #fff; border: 4px solid transparent; border-radius: 22px; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3); }
+.su-pick span { font-size: 3rem; line-height: 1; }
+.su-pick--stand { background: #2f9a57; }
+.su-pick--sit { background: #3f6fd0; }
+.su-pick--on { border-color: #ffe27a; transform: translateY(2px); box-shadow: 0 0 0 4px rgba(255, 226, 122, 0.4), 0 4px 0 rgba(0, 0, 0, 0.3); }
+.su-pick:disabled { opacity: 0.7; }
+.su-locked { opacity: 0.9; }
+.su-problem { color: #ffd0c8; }
+.su-pad--stand .su-pad__big { background: rgba(30, 120, 70, 0.9); }
+.su-pad--sit .su-pad__big { background: rgba(40, 80, 170, 0.9); }
+.su-pad--right .su-pad__big { background: rgba(30, 120, 70, 0.88); }
+.su-pad--wrong .su-pad__big { background: rgba(120, 60, 30, 0.88); }
+.su-why { font-size: 1.4rem !important; font-weight: 700; }
+.su-hot { color: #ffe27a; font-weight: 800; font-size: 1.5rem !important; }
+.su-card-how { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
+@media (max-width: 480px) { .su-pad__top { padding-left: 72px; } .su-pick { min-height: 96px; font-size: 1.2rem; } }
+@media (prefers-reduced-motion: reduce) { .su-croc--big, .su-sign, .su-count, .su-confetti i { animation: none; } .su-confetti { display: none; } }

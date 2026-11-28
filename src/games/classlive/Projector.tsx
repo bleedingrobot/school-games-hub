@@ -41,6 +41,8 @@ import { MingleCard, MingleLobbyHead } from './MingleCard';
 import { MingleScene } from './MingleScene';
 import { RocketCard, RocketLobbyHead } from './RocketCard';
 import { RocketScene } from './RocketScene';
+import { StandCard, StandLobbyHead } from './StandCard';
+import { StandScene } from './StandScene';
 import { rocketPublic } from '../../../shared/classlive/rocketServer';
 import { useMusicOn } from './thronesMusic';
 import { RelayScene } from './RelayScene';
@@ -385,6 +387,8 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
   const jail = game?.kind === 'jail' ? game : null;
   // Rocket Relay: its own big screen (RocketScene).
   const rocket = game?.kind === 'rocket' ? game : null;
+  // Stand Up If: its own big screen (StandScene).
+  const stand = game?.kind === 'stand' ? game : null;
   const thronesMusic = useMusicOn(thrones?.round, screen?.startedAt ?? null, serverClock);
   const hall = !screen && !resuming ? painted('pick', 'hall') : null;
   // Background music for what is on screen (James, 25 Nov 2026 NZ).
@@ -400,7 +404,7 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
     if (lobbyOpen) say(next('joinNow'), 400);
   }, [lobbyOpen, room, say]);
   // The classroom page has its own top bar: fold the teacher bar away (its tab stays).
-  const jailLive = (!!jail || !!rocket) && state === 'live';
+  const jailLive = (!!jail || !!rocket || !!stand) && state === 'live';
   useEffect(() => { if (jailLive) setBarOpen(false); }, [jailLive]);
   useEffect(() => {
     if (state !== 'over') { setRevealed(false); setHideResults(false); }
@@ -508,6 +512,14 @@ export function Projector({ link, classId, className, sound, onShowdown }: {
         />
       )}
 
+      {screen && stand && (state === 'live' || state === 'over') && (
+        <StandScene
+          screen={screen} game={stand} over={state === 'over'} muted={muted} clock={serverClock}
+          onTick={() => { if (room) void act({ action: 'view', room }); }}
+          onGo={() => { if (room) void act({ action: 'standgo', room }); }}
+          onEnd={() => { if (room) void act({ action: 'end', room }); }} onAgain={forget}
+        />
+      )}
       {screen && rocket && (state === 'live' || state === 'over') && (
         <RocketScene screen={screen} game={rocket} over={state === 'over'} muted={muted} onEnd={() => { if (room) void act({ action: 'end', room }); }} onAgain={forget} />
       )}
@@ -738,7 +750,7 @@ function Setup({ busy, problem, onOpen: open, onShowdown, classId }: { busy: boo
         <button type="button" className="cl-btn cl-btn--small cl-chosen__back" onClick={() => choose(null)}>← All games</button>
         <span className="cl-chosen__where">Class Live</span>
       </div>
-      {!chosen.arena && chosen.id !== 'jail' && chosen.id !== 'mingle' && chosen.id !== 'rocket' && <div className="cl-where" role="group" aria-label="Who can join?">
+      {!chosen.arena && chosen.id !== 'jail' && chosen.id !== 'mingle' && chosen.id !== 'rocket' && chosen.id !== 'stand' && <div className="cl-where" role="group" aria-label="Who can join?">
         <span className="cl-opt__label">Who can join?</span>
         <button type="button" className={`cl-choice ${where === 'class' ? 'cl-choice--on' : ''}`} aria-pressed={where === 'class'} onClick={() => setWhere('class')}>🏫 My class</button>
         <button type="button" className={`cl-choice ${where === 'lobby' ? 'cl-choice--on' : ''}`} aria-pressed={where === 'lobby'} onClick={() => setWhere('lobby')}>🌏 Open in the lobby</button>
@@ -872,6 +884,7 @@ function Setup({ busy, problem, onOpen: open, onShowdown, classId }: { busy: boo
           <button type="button" className="cl-btn cl-btn--go" disabled={busy || !hostOk || !!chosenLock} onClick={() => onOpen('shark', { length: bLength, run: bRun, ...(bBay === 'any' ? {} : { map: bBay }), ...sharkRun.extra })}>{busy ? 'Opening…' : 'Open the room'}</button>
         </section>
         )}
+        {pick === 'stand' && <StandCard busy={busy} hostOk={!chosenLock} onOpen={(body) => open('stand', body)} Timer={TimerChips} Art={CardArt} />}
         {pick === 'rocket' && <RocketCard busy={busy} hostOk={!chosenLock} onOpen={(body) => open('rocket', body)} Timer={TimerChips} Art={CardArt} />}
         {pick === 'mingle' && <MingleCard busy={busy} hostOk={!chosenLock} onOpen={(body) => open('mingle', body)} Timer={TimerChips} Art={CardArt} />}
         {pick === 'jail' && <JailCard busy={busy} hostOk={!chosenLock} onOpen={(body) => open('jail', body)} Timer={TimerChips} Art={CardArt} />}
@@ -958,7 +971,7 @@ function Chip({ p, i }: { p: ScreenView['people'][number]; i: number }) {
 
 function Lobby({ screen, game, className, onStart }: { screen: ScreenView; game: ScreenView['game']; className?: string; onStart: () => void }) {
   const n = screen.people.length;
-  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : game.kind === 'corners' ? (isShark(game) ? <SharkLobbyHead bay={game.bay} /> : <CornersLobbyHead map={game.map} />) : game.kind === 'clash' ? <ClashLobbyHead map={game.map} teams={game.teams} /> : game.kind === 'ghost' ? <GhostLobbyHead map={game.map} /> : game.kind === 'crew' ? <CrewLobbyHead /> : game.kind === 'thrones' ? <ThronesLobbyHead hall={game.hall} /> : game.kind === 'lava' ? <LavaLobbyHead map={game.map} /> : game.kind === 'relay' ? <RelayLobbyHead game={game} /> : game.kind === 'rocket' ? <RocketLobbyHead game={rocketPublic(game)} showNames={screen.showNames} /> : game.kind === 'jail' ? (game.mode === 'mingle' ? <MingleLobbyHead need={game.need} level={game.level ?? 'senior'} /> : <JailLobbyHead need={game.need} />) : <MuralLobbyHead />;
+  const head = game.kind === 'serpent' ? <SerpentLobbyHead game={game} /> : game.kind === 'stars' ? <StarsLobbyHead game={game} /> : game.kind === 'corners' ? (isShark(game) ? <SharkLobbyHead bay={game.bay} /> : <CornersLobbyHead map={game.map} />) : game.kind === 'clash' ? <ClashLobbyHead map={game.map} teams={game.teams} /> : game.kind === 'ghost' ? <GhostLobbyHead map={game.map} /> : game.kind === 'crew' ? <CrewLobbyHead /> : game.kind === 'thrones' ? <ThronesLobbyHead hall={game.hall} /> : game.kind === 'lava' ? <LavaLobbyHead map={game.map} /> : game.kind === 'relay' ? <RelayLobbyHead game={game} /> : game.kind === 'stand' ? <StandLobbyHead level={game.level} think={game.think} /> : game.kind === 'rocket' ? <RocketLobbyHead game={rocketPublic(game)} showNames={screen.showNames} /> : game.kind === 'jail' ? (game.mode === 'mingle' ? <MingleLobbyHead need={game.need} level={game.level ?? 'senior'} /> : <JailLobbyHead need={game.need} />) : <MuralLobbyHead />;
   return (
     <div className={`cl-lobby ${game.kind === 'serpent' ? 'cl-lobby--serpent' : ''}`}>
       {head}
