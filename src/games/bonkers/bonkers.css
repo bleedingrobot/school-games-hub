@@ -88,7 +88,8 @@
 
 /* ---- The full-window stage (fights) and screens (home, hero pick, results) ---- */
 .bq-stage, .bq-screen {
-  position: relative; flex: 1; min-height: 100dvh; box-sizing: border-box; overflow: hidden;
+  /* Grows with its content (never squashed to the window's height), so a tall screen scrolls on a phone. */
+  position: relative; flex: 1 0 auto; min-height: 100dvh; box-sizing: border-box; overflow: hidden;
   display: flex; flex-direction: column; padding: 62px 16px 16px;
 }
 .bq-stage__bg { position: absolute; inset: 0; background-color: #6fc3ff; background-size: cover; }
