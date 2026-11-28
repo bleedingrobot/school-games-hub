@@ -257,7 +257,7 @@ export const RESTING_TALK = 'Your monsters have battled lots today! Come back to
 
 /** The battle a wild trigger starts. */
 export function wildBattle(state: WorldState, trigger: Extract<Trigger, { kind: 'wild' }>): BattleSetup {
-  return { kind: 'wild', area: trigger.area, far: trigger.far, team: state.team, box: state.box, bag: state.bag, foes: [trigger.foe] };
+  return { kind: 'wild', area: trigger.area, far: trigger.far, team: state.team, box: state.box, bag: state.bag, foes: [trigger.foe], faintedShare: true };
 }
 
 /** The battle a trainer starts: the far half of the area, so the harder questions. */
@@ -271,13 +271,14 @@ export function trainerBattle(state: WorldState, opts: WorldOptions, trainer: Th
     box: state.box,
     bag: state.bag,
     foes: (trainer.team ?? []).map((m) => makeMonster(m.species, m.level)),
+    faintedShare: true,
   };
 }
 
 /** A woken giant: a wild battle (so it can be caught) with the giant, using the harder questions of its area. */
 export function giantBattle(state: WorldState, opts: WorldOptions, giant: Giant): BattleSetup {
   const map = mapOf(opts, state);
-  return { kind: 'wild', area: Math.max(map.area, 1), far: true, team: state.team, box: state.box, bag: state.bag, foes: [giantFoe(giant)] };
+  return { kind: 'wild', area: Math.max(map.area, 1), far: true, team: state.team, box: state.box, bag: state.bag, foes: [giantFoe(giant)], faintedShare: true };
 }
 
 export interface FinishedBattle {
